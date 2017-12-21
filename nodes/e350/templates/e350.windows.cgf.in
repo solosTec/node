@@ -1,0 +1,12 @@
+#
+#	startup configuration for @PROJECT_NAME@ http node
+#	created : ${${PROJECT_NAME}_NOW_UTC}
+#	platform: @CMAKE_SYSTEM@
+#
+[service]
+enabled = false
+name = node_http_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
+
+[setup]
+json = $ENV{ProgramData}\node\http_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
+pool-size = ${${PROJECT_NAME}_CPU_COUNT}
