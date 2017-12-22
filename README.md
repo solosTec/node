@@ -3,7 +3,7 @@
 
 ## Introduction ##
 
-* Current version is 0.1. It's a very early version.
+* Current version is 0.2. It's an alpha version.
 * Linux (64 bit) are supported
 * Windows 7 (64 bit) or higher are supported.
 * Crosscompiling for Raspberry 3 is supported
