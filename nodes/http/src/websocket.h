@@ -50,21 +50,21 @@ namespace node
             //
             //  for any reason gcc prior 5.4 has a problem with bind(...)
             //
-#if defined(NODE_LEGACY_MODE_ON)
+//#if defined(NODE_LEGACY_MODE_ON)
             std::function<void(boost::beast::websocket::frame_type, boost::beast::string_view)> f = std::bind(
  					&websocket_session::on_control_callback,
  					this,
  					std::placeholders::_1,
  					std::placeholders::_2);
 			ws_.control_callback(f);
-#else				
- 			ws_.control_callback(
- 				std::bind(
- 					&websocket_session::on_control_callback,
- 					this,
- 					std::placeholders::_1,
- 					std::placeholders::_2));
-#endif		
+// #else				
+//  			ws_.control_callback(
+//  				std::bind(
+//  					&websocket_session::on_control_callback,
+//  					this,
+//  					std::placeholders::_1,
+//  					std::placeholders::_2));
+// #endif		
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
 			on_timer({});
