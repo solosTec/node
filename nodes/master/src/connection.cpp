@@ -13,6 +13,9 @@ namespace node
 	: socket_(std::move(socket))
 	, logger_(logger)
 	, buffer_()
+	, parser_([this](cyng::vector_t&& prg) {
+		CYNG_LOG_INFO(logger_, prg.size() << "cyng instructions received");	
+	})
 	{}
 		
 	void connection::start()

@@ -11,6 +11,8 @@
 #include <cyng/compatibility/io_service.h>
 #include <NODE_project_info.h>
 #include <cyng/log.h>
+#include <cyng/io/parser/parser.h>
+
 #include <array>
 #include <memory>
 
@@ -66,6 +68,11 @@ namespace node
 		 * Buffer for incoming data.
 		 */
 		std::array<char, NODE_PREFERRED_BUFFER_SIZE> buffer_;
+		
+		/**
+		 * Parser for binary cyng data stream (from cluster members)
+		 */
+		cyng::parser 	parser_;		
 		
 	};
 }

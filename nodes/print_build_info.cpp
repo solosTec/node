@@ -7,6 +7,7 @@
 
 #include "print_build_info.h"
 #include <NODE_project_info.h>
+#include <CYNG_project_info.h>
 #include <boost/config.hpp>
 #include <boost/version.hpp>
 #include <boost/asio/version.hpp>
@@ -46,6 +47,13 @@ namespace node
 		<< (BOOST_ASIO_VERSION / 100 % 1000)
 		<< '.'
 		<< (BOOST_ASIO_VERSION % 100)
+		<< std::endl
+		<< "CyngLib      : v"
+		<< CYNG_VERSION
+		<< " ("
+		<< CYNG_BUILD_DATE
+		<< ")"
+		<< std::endl
 		<< std::endl
 		
 // BOOST_ASIO_VERSION % 100 is the sub-minor version
