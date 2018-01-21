@@ -8,11 +8,10 @@
 #ifndef NODE_MASTER_CONNECTION_H
 #define NODE_MASTER_CONNECTION_H
 
-#include <cyng/compatibility/io_service.h>
+#include "session.h"
+#include <smf/cluster/serializer.h>
 #include <NODE_project_info.h>
 #include <cyng/log.h>
-#include <cyng/io/parser/parser.h>
-
 #include <array>
 #include <memory>
 
@@ -30,7 +29,13 @@ namespace node
 		/**
 		 * Construct a connection with the specified socket 
 		 */
-		explicit connection(boost::asio::ip::tcp::socket&&, cyng::logging::log_ptr logger);
+		explicit connection(boost::asio::ip::tcp::socket&&
+			, cyng::async::mux& mux
+			, cyng::logging::log_ptr logger
+			, cyng::store::db&
+			, std::string const& account
+			, std::string const& pwd
+			, std::chrono::seconds const& monitor);
 		
 		/**
 		 * Start the first asynchronous operation for the connection.
@@ -47,11 +52,6 @@ namespace node
 		 * Perform an asynchronous read operation.
 		 */
 		void do_read();
-
-		/**
-		 * Perform an asynchronous write operation.
-		 */
-		void do_write();
 		
 	private:
 		/**
@@ -70,10 +70,16 @@ namespace node
 		std::array<char, NODE_PREFERRED_BUFFER_SIZE> buffer_;
 		
 		/**
-		 * Parser for binary cyng data stream (from cluster members)
+		 * Implements the session logic
 		 */
-		cyng::parser 	parser_;		
-		
+		session	session_;
+
+		/**
+		 * wrapper class to serialize and send
+		 * data and code.
+		 */
+		serializer		serializer_;
+
 	};
 }
 

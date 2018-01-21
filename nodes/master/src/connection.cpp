@@ -6,17 +6,32 @@
  */ 
 
 #include "connection.h"
+#include <cyng/vm/domain/asio_domain.h>
+#ifdef SMF_IO_DEBUG
+#include <cyng/io/hex_dump.hpp>
+#endif
+#include <cyng/vm/generator.h>
 
 namespace node 
 {
-	connection::connection(boost::asio::ip::tcp::socket&& socket, cyng::logging::log_ptr logger)
+	connection::connection(boost::asio::ip::tcp::socket&& socket
+		, cyng::async::mux& mux
+		, cyng::logging::log_ptr logger
+		, cyng::store::db& db
+		, std::string const& account
+		, std::string const& pwd
+		, std::chrono::seconds const& monitor)
 	: socket_(std::move(socket))
 	, logger_(logger)
 	, buffer_()
-	, parser_([this](cyng::vector_t&& prg) {
-		CYNG_LOG_INFO(logger_, prg.size() << "cyng instructions received");	
-	})
-	{}
+	, session_(mux, logger, db, account, pwd, monitor)
+	, serializer_(socket_, session_.vm_)
+	{
+		//
+		//	register socket operations to session VM
+		//
+		cyng::register_socket(socket_, session_.vm_);
+	}
 		
 	void connection::start()
 	{
@@ -25,6 +40,7 @@ namespace node
 
 	void connection::stop()
 	{
+		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
 		socket_.close();
 	}
 	
@@ -36,50 +52,27 @@ namespace node
 			{
 				if (!ec)
 				{
-// 					request_parser::result_type result;
-// 					std::tie(result, std::ignore) = request_parser_.parse(request_, buffer_.data(), buffer_.data() + bytes_transferred);
+					//CYNG_LOG_TRACE(logger_, bytes_transferred << " bytes read");
+					session_.vm_.async_run(cyng::generate_invoke("log.msg.trace", "cluster connection received", bytes_transferred, "bytes"));
 
-// 					if (result == request_parser::good)
-// 					{
-// 						request_handler_.handle_request(request_, reply_);
-// 						do_write();
-// 					}
-// 					else if (result == request_parser::bad)
-// 					{
-// 						reply_ = reply::stock_reply(reply::bad_request);
-// 						do_write();
-// 					}
-// 					else
-// 					{
-						do_read();
-// 					}
+#ifdef SMF_IO_DEBUG
+					cyng::io::hex_dump hd;
+					std::stringstream ss;
+					hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
+					CYNG_LOG_TRACE(logger_, "cluster connection received " << ss.str());
+#endif
+
+					session_.parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
+					do_read();
 				}
-				else if (ec != boost::asio::error::operation_aborted)
+				else //if (ec != boost::asio::error::operation_aborted)
 				{
+					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.message() << '>');
 // 					connection_manager_.stop(shared_from_this());
 				}
 			});
 	}
 
-	void connection::do_write()
-	{
-		auto self(shared_from_this());
-// 		boost::asio::async_write(socket_, reply_.to_buffers(),
-// 			[this, self](boost::system::error_code ec, std::size_t)
-// 			{
-// 				if (!ec)
-// 				{
-// 					// Initiate graceful connection closure.
-// 					boost::system::error_code ignored_ec;
-// 					socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
-// 				}
-// 
-// 				if (ec != boost::asio::error::operation_aborted)
-// 				{
-// // 					connection_manager_.stop(shared_from_this());
-// 				}
-// 			});
-	}
 }
 
 

@@ -51,6 +51,7 @@ int main(int argc, char **argv)
 	//("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
     ("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
     ("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
+	("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
     ;
 
@@ -140,18 +141,17 @@ int main(int argc, char **argv)
 		}
 
 		//
-		//	create a controller object
+		//	establish controller
 		//
-// 		noddy::controller ctrl(pool_size, json_path);
+		node::controller ctrl(pool_size, json_path);
 
 		//
 		//	check start optiones
 		//
-		const std::string config_type = vm["default"].as<std::string>();
-		if (!config_type.empty())
+		if (vm["default"].as< bool >())
 		{
 			//	write default configuration
-// 			return ctrl.create_config(config_type);
+ 			return ctrl.create_config();
 		}
 
 		if (vm["init"].as< bool >())
@@ -182,7 +182,7 @@ int main(int argc, char **argv)
 #endif
 
 		BOOST_ASSERT_MSG(pool_size != 0, "empty thread pool");
-// 		return ctrl.run(true);
+		return ctrl.run(vm["console"].as< bool >());
 	}
 	catch (std::bad_cast const& e)
 	{

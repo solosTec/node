@@ -10,6 +10,7 @@
 #include "../../../print_version_info.h"
 #include "../../../set_start_options.h"
 #include "../../../show_ip_address.h"
+#include "controller.h"
 #include <boost/filesystem.hpp>
 #include <iostream>
 #ifdef _MSC_VER 
@@ -40,13 +41,10 @@ int main(int argc, char **argv)
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
-		("noconsole", boost::program_options::bool_switch()->default_value(false), "do not show console output")
+		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
 		;
 		
-	//	get the working directory
-// 	const boost::filesystem::path cwd = boost::filesystem::current_path();
-
 	//	path to JSON configuration file
 	std::string json_path;
 	unsigned int pool_size = 1;
@@ -132,18 +130,18 @@ int main(int argc, char **argv)
 		//
 		//	establish controller
 		//
-// 		noddy::controller ctrl(pool_size, json_path);
+ 		node::controller ctrl(pool_size, json_path);
 
 		if (vm["default"].as< bool >())
 		{
 			//	write default configuration
-// 			return ctrl.create_config();
+ 			return ctrl.create_config();
 		}
 
 		if (vm["show"].as< bool >())
 		{
 			//	show configuration
-// 			return ctrl.show_config();
+ 			//return ctrl.show_config();
 		}
 
 #if BOOST_OS_WINDOWS
@@ -163,7 +161,7 @@ int main(int argc, char **argv)
 #endif
 
 		BOOST_ASSERT_MSG(pool_size != 0, "empty thread pool");
-// 		return ctrl.run(!vm["noconsole"].as< bool >());
+ 		return ctrl.run(vm["console"].as< bool >());
 	}
 	catch (std::bad_cast const& e)
 	{

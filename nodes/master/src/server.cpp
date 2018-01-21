@@ -7,23 +7,37 @@
 
 
 #include "server.h"
-// #include <cstdint>
+#include "db.h"
+#include "connection.h"
+
 
 namespace node 
 {
-	server::server(cyng::io_service_t& io_ctx, cyng::logging::log_ptr logger)
-	: io_ctx_(io_ctx)
+	server::server(cyng::async::mux& mux
+		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid tag
+		, std::string account
+		, std::string pwd
+		, int monitor
+		, cyng::tuple_t cfg_session)
+	: mux_(mux)
 	, logger_(logger)
-	, acceptor_(io_ctx)
+	, account_(account)
+	, pwd_(pwd)
+	, monitor_(monitor)
+	, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
 	, socket_(io_ctx_)
 #endif
-	{}
+	, db_()
+	{
+		init(logger_, db_, tag);
+	}
 	
 	void server::run(std::string const& address, std::string const& service)
 	{
 		// Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
-		boost::asio::ip::tcp::resolver resolver(io_ctx_);
+		boost::asio::ip::tcp::resolver resolver(mux_.get_io_service());
 #if (BOOST_VERSION >= 106600)
 		boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(address, service).begin();
 #else
@@ -51,8 +65,19 @@ namespace node
 
 			if ( !ec ) {
 				CYNG_LOG_TRACE(logger_, "accept " << socket.remote_endpoint());
-// 				connection_manager_.start ( std::make_shared<connection> (
-// 												std::move ( socket ), connection_manager_, request_handler_ ) );
+				
+				//
+				//	There is no connection manager or list of open connections. 
+				//	Connections are managed by there own and are controlled
+				//	by a maintenance task.
+				//
+				std::make_shared<connection>(std::move(socket)
+					, mux_
+					, logger_
+					, db_
+					, account_
+					, pwd_
+					, monitor_)->start();
 				do_accept();
 			}
 
@@ -64,8 +89,12 @@ namespace node
 			if (acceptor_.is_open() && !ec) {
 
 				CYNG_LOG_TRACE(logger_, "accept " << socket_.remote_endpoint());
-			//	// 				connection_manager_.start ( std::make_shared<connection> (
-			//	// 												std::move ( socket ), connection_manager_, request_handler_ ) );
+				//
+				//	There is no connection manager or list of open connections. 
+				//	Connections are managed by there own and are controlled
+				//	by a maintenance task.
+				//
+				std::make_shared<connection>(std::move(socket), mux_, logger_, db_)->start();
 				do_accept();
 			}
 
