@@ -1,12 +1,10 @@
 /*
- * Copyright Sylko Olzscher 2017
- * 
- * Use, modification, and distribution is subject to the Boost Software
- * License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
- * http://www.boost.org/LICENSE_1_0.txt)
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
  */
 
-// #include <project_info.h>
 #include "../../../print_build_info.h"
 #include "../../../print_version_info.h"
 #include "../../../set_start_options.h"
@@ -63,7 +61,7 @@ int main(int argc, char **argv)
 	//
 	//	IP-T node options
 	//
-	boost::program_options::options_description node_options("gateway");
+	boost::program_options::options_description node_options("ipt:gateway");
 	node::set_start_options(node_options
 		, "gateway"
 		, json_path

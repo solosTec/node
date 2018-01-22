@@ -49,7 +49,7 @@ namespace node
 	{
 		cyng::vector_t prg;
 		return prg
-			<< cyng::generate_invoke("log.msg.warning", "shutdown cluster member", cyng::IDENT)
+			<< cyng::generate_invoke("log.msg.warning", "shutdown cluster member", cyng::code::IDENT)
 			<< cyng::generate_invoke("ip.tcp.socket.shutdown")
 			<< cyng::generate_invoke("ip.tcp.socket.close")
 			;
@@ -64,7 +64,7 @@ namespace node
 			, cyng::generate_invoke_remote("stream.serialize", cyng::generate_invoke_reflect("db.trx.start"))
 			, cyng::generate_invoke_remote("stream.flush")
 
-			, cyng::generate_invoke_remote("bus.req.subscribe", table, cyng::IDENT)
+			, cyng::generate_invoke_remote("bus.req.subscribe", table, cyng::code::IDENT)
 
 			//	bounce back 
 			, cyng::generate_invoke_remote("stream.serialize", cyng::generate_invoke_reflect("db.trx.commit"))
@@ -79,7 +79,7 @@ namespace node
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke("stream.serialize"
-			, cyng::generate_invoke_remote("bus.req.unsubscribe", table, cyng::IDENT))
+			, cyng::generate_invoke_remote("bus.req.unsubscribe", table, cyng::code::IDENT))
 			<< cyng::generate_invoke("stream.flush")
 			;
 	}
@@ -91,7 +91,7 @@ namespace node
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke("stream.serialize"
-			, cyng::generate_invoke_remote("db.insert", table, key, data, generation, cyng::IDENT))
+			, cyng::generate_invoke_remote("db.insert", table, key, data, generation, cyng::code::IDENT))
 			<< cyng::generate_invoke("stream.flush")
 			;
 	}
@@ -104,7 +104,7 @@ namespace node
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke("stream.serialize"
-			, cyng::generate_invoke_remote("client.req.login", tag, cyng::IDENT, cyng::invoke("bus.seq.next"), name, pwd, scheme, bag))
+			, cyng::generate_invoke_remote("client.req.login", tag, cyng::code::IDENT, cyng::invoke("bus.seq.next"), name, pwd, scheme, bag))
 			<< cyng::generate_invoke("stream.flush")
 			;
 	}
@@ -120,7 +120,7 @@ namespace node
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke("stream.serialize"
-			, cyng::generate_invoke_remote("client.req.open.push.channel", tag, cyng::IDENT, cyng::invoke("bus.seq.next"), target, device, number, version, id, timeout, bag))
+			, cyng::generate_invoke_remote("client.req.open.push.channel", tag, cyng::code::IDENT, cyng::invoke("bus.seq.next"), target, device, number, version, id, timeout, bag))
 			<< cyng::generate_invoke("stream.flush")
 			;
 	}
@@ -133,7 +133,7 @@ namespace node
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke("stream.serialize"
-			, cyng::generate_invoke_remote("client.res.login", tag, cyng::IDENT, seq, success, msg, bag))
+			, cyng::generate_invoke_remote("client.res.login", tag, cyng::code::IDENT, seq, success, msg, bag))
 			<< cyng::generate_invoke("stream.flush")
 			;
 	}

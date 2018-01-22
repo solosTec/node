@@ -28,6 +28,8 @@ set (node_ipt_collector_info
 )
 
 set (node_ipt_collector_tasks
+	nodes/ipt/collector/src/tasks/network.h
+	nodes/ipt/collector/src/tasks/network.cpp
 )
 
 set (node_ipt_collector_res

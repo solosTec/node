@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
-		("noconsole", boost::program_options::bool_switch()->default_value(false), "do not show console output")
+		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
 		;
 		
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
 		if (vm["default"].as< bool >())
 		{
 			//	write default configuration
-// 			return ctrl.create_config();
+ 			return ctrl.create_config();
 		}
 
 		if (vm["show"].as< bool >())
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
 #endif
 
 		BOOST_ASSERT_MSG(pool_size != 0, "empty thread pool");
-// 		return ctrl.run(!vm["noconsole"].as< bool >());
+		return ctrl.run(vm["console"].as< bool >());
 	}
 	catch (std::bad_cast const& e)
 	{

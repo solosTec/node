@@ -262,35 +262,35 @@ namespace node
 				{
 				case code::TP_REQ_CLOSE_CONNECTION:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "TP_REQ_CLOSE_CONNECTION with invalid length");
-					parser_.code_ << cyng::generate_invoke("ipt.req.close.connection", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.req.close.connection", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				case code::APP_REQ_PROTOCOL_VERSION:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "APP_REQ_PROTOCOL_VERSION with invalid length");
-					parser_.code_ << cyng::generate_invoke("ipt.req.protocol.version", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.req.protocol.version", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				case code::APP_REQ_SOFTWARE_VERSION:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "APP_REQ_SOFTWARE_VERSION with invalid length");
-					parser_.code_ << cyng::generate_invoke("ipt.req.software.version", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.req.software.version", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				case code::APP_REQ_DEVICE_IDENTIFIER:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "APP_REQ_DEVICE_IDENTIFIER with invalid length");
-					parser_.code_ << cyng::generate_invoke("ipt.req.device.id", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.req.device.id", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				case code::APP_REQ_NETWORK_STATUS:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "APP_REQ_NETWORK_STATUS with invalid length");
-					parser_.code_ << cyng::generate_invoke("ipt.req.net.stat", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.req.net.stat", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				case code::APP_REQ_IP_STATISTICS:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "APP_REQ_IP_STATISTICS with invalid length");
-					parser_.code_ << cyng::generate_invoke("ipt.req.ip.statistics", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.req.ip.statistics", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				case code::APP_REQ_DEVICE_AUTHENTIFICATION:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "APP_REQ_DEVICE_AUTHENTIFICATION with invalid length");
-					parser_.code_ << cyng::generate_invoke("ipt.req.dev.auth", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.req.dev.auth", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				case code::APP_REQ_DEVICE_TIME:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "APP_REQ_DEVICE_TIME with invalid length");
-					parser_.code_ << cyng::generate_invoke("ipt.req.dev.time", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.req.dev.time", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				//case code::APP_REQ_PUSH_TARGET_NAMELIST:
 				//	BOOST_ASSERT_MSG((size(parser_.header_) == 0), "APP_REQ_PUSH_TARGET_NAMELIST with invalid length");
@@ -299,20 +299,20 @@ namespace node
 				case code::APP_REQ_PUSH_TARGET_ECHO:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "APP_REQ_PUSH_TARGET_ECHO with invalid length");
 					BOOST_ASSERT_MSG(false, "APP_REQ_PUSH_TARGET_ECHO is deprecated");
-					parser_.code_ << cyng::generate_invoke("ipt.req.push.target.echo", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.req.push.target.echo", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				case code::APP_REQ_TRACEROUTE:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "APP_REQ_TRACEROUTE with invalid length");
 					BOOST_ASSERT_MSG(false, "APP_REQ_TRACEROUTE is deprecated");
-					parser_.code_ << cyng::generate_invoke("ipt.req.traceroute", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.req.traceroute", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				case code::CTRL_REQ_WATCHDOG:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "CTRL_REQ_WATCHDOG with invalid length");
-					parser_.code_ << cyng::generate_invoke("ipt.req.watchdog", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.req.watchdog", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				case code::CTRL_RES_WATCHDOG:
 					BOOST_ASSERT_MSG((size(parser_.header_) == 0), "CTRL_RES_WATCHDOG with invalid length");
-					parser_.code_ << cyng::generate_invoke("ipt.res.watchdog", cyng::IDENT, parser_.header_.sequence_);
+					parser_.code_ << cyng::generate_invoke("ipt.res.watchdog", cyng::code::IDENT, parser_.header_.sequence_);
 					return STATE_STREAM;
 				default:
 					break;
@@ -330,7 +330,7 @@ namespace node
 			if (req.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.req.open.push.channel"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_string	//	target name
 					, parser_.f_read_string	//	account
@@ -350,7 +350,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.open.push.channel"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8	//	response
 					, parser_.f_read_uint32	//	channel id
@@ -370,7 +370,7 @@ namespace node
 			if (req.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.req.close.push.channel"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint32);	//	channel id
 				return STATE_STREAM;
@@ -384,7 +384,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.close.push.channel"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8	//	response
 					, parser_.f_read_uint32);	//	channel id
@@ -399,7 +399,7 @@ namespace node
 			if (req.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.req.transfer.pushdata"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint32	//	channel id
 					, parser_.f_read_uint32	//	source id (session tag)
@@ -419,7 +419,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.transfer.pushdata"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8	//	response code
 					, parser_.f_read_uint32	//	channel id
@@ -437,7 +437,7 @@ namespace node
 			if (req.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.req.open.connection"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_string);	//	number
 				return STATE_STREAM;
@@ -451,7 +451,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.open.connection"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8);	//	response
 				return STATE_STREAM;
@@ -465,7 +465,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.close.connection"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8);	//	response
 				return STATE_STREAM;
@@ -480,7 +480,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.protocol.version"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8);
 				return STATE_STREAM;
@@ -494,7 +494,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.software.version"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_string);
 				return STATE_STREAM;
@@ -509,7 +509,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.dev.id"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_string);
 				return STATE_STREAM;
@@ -523,7 +523,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.network.stat"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8	//	device type
 					, parser_.f_read_uint32	//	status_vector	status_[ 0 ];
@@ -545,7 +545,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.ip.statistics"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8	//	response type
 					, parser_.f_read_uint64	//	rx
@@ -562,7 +562,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.dev.auth"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_string	//	account
 					, parser_.f_read_string		//	password
@@ -580,7 +580,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.dev.time"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint32	//	seconds since 1970
 				);
@@ -607,7 +607,7 @@ namespace node
 				//
 				//	open frame
 				//
-				parser_.code_ << cyng::ESBA;
+				parser_.code_ << cyng::code::ESBA;
 
 				for (auto idx = 0; idx < size; ++idx)
 				{
@@ -625,7 +625,7 @@ namespace node
 					<< size
 					<< response
 					<< cyng::invoke("ipt.res.push.target.namelist")
-					<< cyng::REBA	//	close frame
+					<< cyng::code::REBA	//	close frame
 					;
 				return STATE_STREAM;
 			}
@@ -662,7 +662,7 @@ namespace node
 			if (req.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.req.login.public"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.f_read_string	//	name
 					, parser_.f_read_string	//	password
 					);
@@ -683,7 +683,7 @@ namespace node
 				parser_.code_
 					<< cyng::generate_invoke("ipt.set.sk.def", sk)
 					<< cyng::generate_invoke("ipt.req.login.scrambled"
-						, cyng::IDENT
+						, cyng::code::IDENT
 						, name	//	name
 						, pwd	//	password
 						, sk)	//	scramble key
@@ -701,7 +701,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.login.public"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.f_read_uint8	//	response
 					, parser_.f_read_uint16	//	watchdog
 					, parser_.f_read_string);	//	redirect
@@ -716,7 +716,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.login.scrambled"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.f_read_uint8	//	response
 					, parser_.f_read_uint16	//	watchdog
 					, parser_.f_read_string);	//	redirect
@@ -732,7 +732,7 @@ namespace node
 			if (req.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.req.register.target"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 				);
 				return STATE_STREAM;
@@ -747,7 +747,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.register.target"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 				);
 				return STATE_STREAM;
@@ -762,7 +762,7 @@ namespace node
 			if (req.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.req.deregister.target"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 				);
 				return STATE_STREAM;
@@ -777,7 +777,7 @@ namespace node
 			if (res.pos_ == size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.deregister.target"
-					, cyng::IDENT
+					, cyng::code::IDENT
 					, parser_.header_.sequence_
 				);
 				return STATE_STREAM;

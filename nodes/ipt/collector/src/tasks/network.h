@@ -5,8 +5,8 @@
 *
 */
 
-#ifndef NODE_IPT_GATEWAY_TASK_NETWORK_H
-#define NODE_IPT_GATEWAY_TASK_NETWORK_H
+#ifndef NODE_IPT_COLLECTOR_TASK_NETWORK_H
+#define NODE_IPT_COLLECTOR_TASK_NETWORK_H
 
 #include <smf/ipt/bus.h>
 #include <smf/ipt/config.h>
@@ -28,7 +28,6 @@ namespace node
 		public:
 			network(cyng::async::base_task* bt
 				, cyng::logging::log_ptr
-				//, std::vector<std::size_t> const&
 				, master_config_t const& cfg);
 			void run();
 			void stop();

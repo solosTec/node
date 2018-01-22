@@ -160,7 +160,7 @@ namespace node
 				, cyng::param_factory("hardware", cyng::tuple_factory(
 					cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF)
 					cyng::param_factory("model", "Gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
-					cyng::param_factory("serial", boost::uuids::random_generator()()),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
+					cyng::param_factory("serial", rgen()),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
 					cyng::param_factory("class", "129-129:199.130.83*255")	//	device class (81 81 C7 82 02 FF) MUC-LAN/DSL
 					//cyng::param_factory("mac", "")	//	mac 
 				))

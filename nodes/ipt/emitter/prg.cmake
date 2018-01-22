@@ -28,6 +28,8 @@ set (node_ipt_emitter_info
 )
 
 set (node_ipt_emitter_tasks
+	nodes/ipt/emitter/src/tasks/network.h
+	nodes/ipt/emitter/src/tasks/network.cpp
 )
 
 set (node_ipt_emitter_res

@@ -143,6 +143,14 @@ if (CMAKE_COMPILER_IS_GNUCC)
 	# only shared libraries
 	set(GLOBAL_LIBRARY_TYPE SHARED)
 
+	#
+	#	provide a hint for a local installation of boost
+	#
+	if(NOT BOOST_ROOT)
+		set(BOOST_ROOT "~/development/boost_1_66_0/root/" CACHE PATH "BOOST_ROOT" )
+		message(STATUS "** Set BOOST_ROOT  : ${BOOST_ROOT}")
+	endif()
+	
 elseif(MSVC)
 
 	#
@@ -292,21 +300,27 @@ add_executable(hello ${hello})
 #
 include (lib/cluster/lib.cmake)
 add_library(lib_cluster ${GLOBAL_LIBRARY_TYPE} ${cluster_lib})
-#if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-#	target_link_libraries(lib_cluster boost_thread)
-#endif()
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	target_link_libraries(lib_cluster cyng_domain)
+endif()
 
 #
 #	ipt protocol library
 #
 include (lib/ipt/protocol/lib.cmake)
 add_library(lib_protocol_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_protocol_lib})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	target_link_libraries(lib_protocol_ipt cyng_vm)
+endif()
 
 #
 #	ipt bus library (client)
 #
 include (lib/ipt/bus/lib.cmake)
 add_library(lib_bus_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_bus_lib})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	target_link_libraries(lib_bus_ipt cyng_domain)
+endif()
 
 #
 # generic HTTP server
@@ -350,7 +364,7 @@ target_link_libraries(e350 ${e350_link_libs})
 include (nodes/ipt/collector/prg.cmake)
 add_executable(collector ${node_ipt_collector})
 # libraries to link
-set(collector_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json)
+set(collector_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table lib_protocol_ipt lib_bus_ipt)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND collector_link_libs "${Boost_LIBRARIES}")
 endif()
@@ -362,7 +376,7 @@ target_link_libraries(collector ${collector_link_libs})
 include (nodes/ipt/emitter/prg.cmake)
 add_executable(emitter ${node_ipt_emitter})
 # libraries to link
-set(emitter_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json)
+set(emitter_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table lib_protocol_ipt lib_bus_ipt)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND emitter_link_libs "${Boost_LIBRARIES}")
 endif()
@@ -374,7 +388,7 @@ target_link_libraries(emitter ${emitter_link_libs})
 include (nodes/ipt/gateway/prg.cmake)
 add_executable(gateway ${node_ipt_gateway})
 # libraries to link
-set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain lib_protocol_ipt lib_bus_ipt)
+set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table lib_protocol_ipt lib_bus_ipt)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND gateway_link_libs "${Boost_LIBRARIES}")
 endif()
@@ -451,7 +465,7 @@ target_link_libraries(modem ${modem_link_libs})
 include (nodes/mqtt/prg.cmake)
 add_executable(mqtt ${node_mqtt})
 # libraries to link
-set(mqtt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain lib_cluster)
+set(mqtt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table lib_cluster)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND mqtt_link_libs "${Boost_LIBRARIES}")
 endif()
@@ -489,7 +503,8 @@ set_property(
 set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table lib_protocol_ipt)
 
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND unittest_link_libs "${Boost_LIBRARIES} ${OPENSSL_LIBRARIES}")
+#	list(APPEND unittest_link_libs "${Boost_LIBRARIES} ${OPENSSL_LIBRARIES}")
+	list(APPEND unittest_link_libs ${Boost_LIBRARIES})
 endif()
 
 target_link_libraries(unit_test ${unittest_link_libs})

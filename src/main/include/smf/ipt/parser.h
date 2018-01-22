@@ -51,107 +51,105 @@ namespace node
 				STATE_DATA,
 			};
 
-
-			struct command 
-			{
+			struct base{
 				std::size_t pos_;
+				base() : pos_(0) {}				
+			};
+			struct command : base
+			{
 				char overlay_[HEADER_SIZE];
 
-				command() : pos_(0)
-				{}
+				command() {}
 			};
-			struct tp_req_open_push_channel {
-				std::size_t pos_ = 0;
+			struct tp_req_open_push_channel : base {
+				tp_req_open_push_channel() {}
 			};
-			struct tp_res_open_push_channel {
-				std::size_t pos_ = 0;
+			struct tp_res_open_push_channel : base {
+				tp_res_open_push_channel() {}
 			};
-			struct tp_req_close_push_channel {
-				std::size_t pos_ = 0;
+			struct tp_req_close_push_channel : base {
+				tp_req_close_push_channel() {}
 			};
-			struct tp_res_close_push_channel {
-				std::size_t pos_ = 0;
+			struct tp_res_close_push_channel : base {
+				tp_res_close_push_channel() {}
 			};
-			struct tp_req_pushdata_transfer {
-				std::size_t pos_ = 0;
+			struct tp_req_pushdata_transfer : base {
+				tp_req_pushdata_transfer() {}
 			};
-			struct tp_res_pushdata_transfer {
-				std::size_t pos_ = 0;
+			struct tp_res_pushdata_transfer : base {
+				tp_res_pushdata_transfer() {}
 			};
-			struct tp_req_open_connection {
-				std::size_t pos_ = 0;
+			struct tp_req_open_connection : base {
+				tp_req_open_connection() {}
 			};
-			struct tp_res_open_connection {
-				std::size_t pos_ = 0;
+			struct tp_res_open_connection : base {
+				tp_res_open_connection() {}
 			};
-			//struct tp_req_close_connection {
-			//	std::size_t pos_ = 0;
-			//};
-			struct tp_res_close_connection {
-				std::size_t pos_ = 0;
+			struct tp_res_close_connection : base {
+				tp_res_close_connection() {}
 			};
 
-			struct app_res_protocol_version {
-				std::size_t pos_ = 0;
+			struct app_res_protocol_version : base {
+				app_res_protocol_version() {}
 			};
-			struct app_res_software_version {
-				std::size_t pos_ = 0;
+			struct app_res_software_version : base {
+				app_res_software_version() {}
 			};
-			struct app_res_device_identifier {
-				std::size_t pos_ = 0;
+			struct app_res_device_identifier : base {
+				app_res_device_identifier() {}
 			};
-			struct app_res_network_status {
-				std::size_t pos_ = 0;
+			struct app_res_network_status : base {
+				app_res_network_status() {}
 			};
-			struct app_res_ip_statistics {
-				std::size_t pos_ = 0;
+			struct app_res_ip_statistics : base {
+				app_res_ip_statistics() {}
 			};
-			struct app_res_device_authentification {
-				std::size_t pos_ = 0;
+			struct app_res_device_authentification : base {
+				app_res_device_authentification() {}
 			};
-			struct app_res_device_time {
-				std::size_t pos_ = 0;
+			struct app_res_device_time : base {
+				app_res_device_time() {}
 			};
-			struct app_res_push_target_namelist {
-				std::size_t pos_ = 0;
+			struct app_res_push_target_namelist : base {
+				app_res_push_target_namelist() {}
 			};
-			struct app_res_push_target_echo {
-				std::size_t pos_ = 0;
+			struct app_res_push_target_echo : base {
+				app_res_push_target_echo() {}
 			};
-			struct app_res_traceroute {
-				std::size_t pos_ = 0;
-			};
-
-			struct ctrl_req_login_public {
-				std::size_t pos_ = 0;
-			};
-			struct ctrl_req_login_scrambled {
-				std::size_t pos_ = 0;
-			};
-			struct ctrl_res_login_public {
-				std::size_t pos_ = 0;
-			};
-			struct ctrl_res_login_scrambled {
-				std::size_t pos_ = 0;
+			struct app_res_traceroute : base {
+				app_res_traceroute() {}
 			};
 
-			struct ctrl_req_register_target {
-				std::size_t pos_ = 0;
+			struct ctrl_req_login_public : base {
+				ctrl_req_login_public() {}
 			};
-			struct ctrl_res_register_target {
-				std::size_t pos_ = 0;
+			struct ctrl_req_login_scrambled : base {
+				ctrl_req_login_scrambled() {}
 			};
-			struct ctrl_req_deregister_target {
-				std::size_t pos_ = 0;
+			struct ctrl_res_login_public : base {
+				ctrl_res_login_public() {}
 			};
-			struct ctrl_res_deregister_target {
-				std::size_t pos_ = 0;
+			struct ctrl_res_login_scrambled : base {
+				ctrl_res_login_scrambled() {}
 			};
-			struct ctrl_req_watchdog {
-				std::size_t pos_ = 0;
+
+			struct ctrl_req_register_target : base {
+				ctrl_req_register_target() {}
 			};
-			struct ctrl_res_watchdog {
-				std::size_t pos_ = 0;
+			struct ctrl_res_register_target : base {
+				ctrl_res_register_target() {}
+			};
+			struct ctrl_req_deregister_target : base {
+				ctrl_req_deregister_target() {}
+			};
+			struct ctrl_res_deregister_target : base {
+				ctrl_res_deregister_target() {}
+			};
+			struct ctrl_req_watchdog : base {
+				ctrl_req_watchdog() {}
+			};
+			struct ctrl_res_watchdog : base {
+				ctrl_res_watchdog() {}
 			};
 
 
