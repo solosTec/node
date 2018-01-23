@@ -64,7 +64,7 @@ namespace node
 				remote_tag_ = cyng::value_cast(frame.at(1), boost::uuids::nil_uuid());
 				remote_version_ = cyng::value_cast(frame.at(2), remote_version_);
 				lag_ = std::chrono::duration_cast<std::chrono::microseconds>( std::chrono::system_clock::now() - cyng::value_cast(frame.at(3), std::chrono::system_clock::now()));
-				CYNG_LOG_TRACE(logger_, "lag " << lag_.count() << u8" µs");
+				CYNG_LOG_TRACE(logger_, "lag " << lag_.count() << " microsec");
 
 				//
 				//	slot [0]

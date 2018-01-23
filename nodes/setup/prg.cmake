@@ -10,6 +10,7 @@ set (node_setup_cpp
 set (node_setup_h
 
 	nodes/setup/src/controller.h
+	nodes/setup/src/tasks/setup_defs.h
 
 )
 

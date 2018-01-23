@@ -67,9 +67,9 @@ namespace node
 					//	initialize logger
 					//
 #if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("setup", true);
+					auto logger = cyng::logging::make_sys_logger("ipt:master", true);
 #else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "setup");
+					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "ipt:master");
 #endif
 
 					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));

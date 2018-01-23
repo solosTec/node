@@ -6,6 +6,7 @@
 */
 
 #include "sync.h"
+#include "setup_defs.h"
 #include <smf/cluster/generator.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
@@ -36,11 +37,6 @@ namespace node
 		<< "> is syncing "
 		<< table_);
 
-		//
-		//	create table
-		//
-		create_table();
-
 	}
 
 	void sync::run()
@@ -49,10 +45,10 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> subscribe "
+			<< "> run "
 			<< table_);
 
-		subscribe();
+		//subscribe();
 	}
 
 	void sync::stop()
@@ -62,58 +58,39 @@ namespace node
 			<< " is stopped");
 	}
 
-	void sync::create_table()
-	{
-		CYNG_LOG_TRACE(logger_, "create table cache " << table_);
-
-		if (boost::algorithm::equals(table_, "TDevice"))
-		{
-			cache_.create_table(cyng::table::make_meta_table<1, 7>("TDevice",
-				{ "pk", "name", "number", "descr", "id", "vFirmware", "enabled", "created" },
-				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
-				{ 36, 128, 128, 512, 64, 64, 0, 0 }));
-
-		}
-		else if (boost::algorithm::equals(table_, "TGateway"))
-		{
-			cache_.create_table(cyng::table::make_meta_table<1, 13>("TGateway", { "pk"	//	primary key
-				, "id"	//	(1) Server-ID (i.e. 0500153B02517E)
-				, "manufacturer"	//	(2) manufacturer (i.e. EMH)
-				, "model"	//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
-				, "made"	//	(4) production date
-				, "vFirmware"	//	(5) firmwareversion (i.e. 11600000)
-				, "factoryNr"	//	(6) fabrik nummer (i.e. 06441734)
-				, "ifService"	//	(7) MAC of service interface
-				, "ifData"	//	(8) MAC od data interface
-				, "pwdDef"	//	(9) Default PW
-				, "pwdRoot"	//	(10)
-				, "mbus"	//	(11)
-				, "userName"	//	(12)
-				, "userPwd"	//	(13)
-				},
-				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_MAC48, cyng::TC_MAC48, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
-				{ 36, 23, 64, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 }));
-
-		}
-		else
-		{
-			CYNG_LOG_ERROR(logger_, table_ << " is an undefined data scheme")
-		}
-	}
-
 	void sync::subscribe()
 	{
-		bus_->vm_.async_run(bus_req_subscribe(table_));
-		bus_->vm_.async_run(bus_reflect("cluster.task.resume", tsk_, static_cast<std::size_t>(0), table_, base_.get_id()));
+		//
+		//	manage table state
+		//
+		cache_.set_state(table_, TS_SYNC);
+
+		bus_->vm_.async_run(bus_req_subscribe(table_, base_.get_id()));
+		bus_->vm_.async_run(bus_reflect("cluster.task.resume"
+			, base_.get_id()
+			, static_cast<std::size_t>(1)	//	slot
+			, base_.get_id()));
+	}
+
+	cyng::continuation sync::process(std::string name, std::size_t sync_tsk)
+	{
+		BOOST_ASSERT(name == table_);
+		CYNG_LOG_INFO(logger_, table_
+			<< " cache complete - start sync");
+
+		subscribe();
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	cyng::continuation sync::process(std::size_t size)
 	{
-		CYNG_LOG_INFO(logger_, "cache complete - send "
-			<< cache_.size()
+		CYNG_LOG_INFO(logger_, "cache "
+			<< table_
+			<< " complete - send "
+			<< cache_.size(table_)
 			<< " record(s)");
 
-		BOOST_ASSERT(size == cache_.size());
+		//BOOST_ASSERT(size == cache_.size());
 
 		//
 		//	upload cache
@@ -158,8 +135,51 @@ namespace node
 			, std::bind(&sync::csig, this, std::placeholders::_1)
 			, std::bind(&sync::msig, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
+		//
+		//	manage table state
+		//
+		cache_.set_state(table_, TS_READY);
+
 		return cyng::continuation::TASK_CONTINUE;
 	}
+
+	//cyng::continuation sync::process(std::string name, cyng::vector_t const& key)
+	//{
+	//	CYNG_LOG_INFO(logger_, "cache "
+	//		<< table_
+	//		<< " sync data from "
+	//		<< name);
+
+	//	//
+	//	//	clean up cache
+	//	//
+	//	cache_.access([this, &key](cyng::store::table* tbl)->void {
+
+	//		if (tbl->exist(key))
+	//		{
+	//			CYNG_LOG_WARNING(logger_, "cache "
+	//				<< tbl->meta().get_name()
+	//				<< " clean up record "
+	//				<< cyng::io::to_str(key));
+
+	//			tbl->erase(key);
+	//		}
+	//		else
+	//		{
+	//			//
+	//			//	insert into SQL database
+	//			//
+	//			CYNG_LOG_TRACE(logger_, "cache "
+	//				<< tbl->meta().get_name()
+	//				<< " insert record "
+	//				<< cyng::io::to_str(key));
+	//		}
+
+	//	}, cyng::store::write_access(table_));
+
+	//	return cyng::continuation::TASK_CONTINUE;
+	//}
+
 
 	void sync::isig(cyng::store::table const* tbl, cyng::table::key_type const&, cyng::table::data_type const&, std::uint64_t)
 	{

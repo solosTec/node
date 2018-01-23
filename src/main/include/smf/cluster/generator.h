@@ -31,18 +31,26 @@ namespace node
 
 	/**
 	 * Subscribe specified table
+	 * The task ID is optional.
 	 */
-	cyng::vector_t bus_req_subscribe(std::string const&);
+	cyng::vector_t bus_req_subscribe(std::string const&, std::size_t tsk);
 	cyng::vector_t bus_req_unsubscribe(std::string const&);
 
 	/**
 	 * database operations
+	 * The task ID is optional.
 	 */
 	cyng::vector_t bus_db_insert(std::string const&
 		, cyng::vector_t const&
 		, cyng::vector_t const&
 		, std::uint64_t generation);
 
+	cyng::vector_t bus_db_insert(std::string const&
+		, cyng::vector_t const&
+		, cyng::vector_t const&
+		, std::uint64_t generation
+		, boost::uuids::uuid tag
+		, std::size_t tsk);
 	/**
 	 * Send an arbitrary function call to receiver, which will send it back.
 	 */
@@ -85,6 +93,14 @@ namespace node
 		, std::string const& version
 		, std::string const& id
 		, std::uint16_t timeout
+		, cyng::param_map_t const& bag);
+
+	cyng::vector_t client_res_open_push_channel(boost::uuids::uuid tag
+		, std::uint64_t seq
+		, bool success
+		, std::uint32_t channel
+		, std::uint32_t source
+		, cyng::param_map_t const& options
 		, cyng::param_map_t const& bag);
 }
 

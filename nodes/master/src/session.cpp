@@ -9,6 +9,7 @@
 #include "session.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
+#include <smf/ipt/response.hpp>
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/store_domain.h>
 #include <cyng/io/serializer.h>
@@ -48,7 +49,7 @@ namespace node
 		//
 		vm_.async_run(cyng::register_function("bus.req.login", 5, std::bind(&session::bus_req_login, this, std::placeholders::_1)));
 		vm_.async_run(cyng::register_function("client.req.login", 7, std::bind(&session::client_req_login, this, std::placeholders::_1)));
-		vm_.async_run(cyng::register_function("client.req.open.push.channel", 7, std::bind(&session::client_req_open_push_channel, this, std::placeholders::_1)));
+		vm_.async_run(cyng::register_function("client.req.open.push.channel", 10, std::bind(&session::client_req_open_push_channel, this, std::placeholders::_1)));
 		//
 		//	ToDo: start maintenance task
 		//
@@ -78,7 +79,7 @@ namespace node
 			//
 			//	subscribe/unsubscribe
 			//
-			ctx.run(cyng::register_function("bus.req.subscribe", 1, std::bind(&session::bus_req_subscribe, this, std::placeholders::_1)));
+			ctx.run(cyng::register_function("bus.req.subscribe", 3, std::bind(&session::bus_req_subscribe, this, std::placeholders::_1)));
 			ctx.run(cyng::register_function("bus.req.unsubscribe", 1, std::bind(&session::bus_req_unsubscribe, this, std::placeholders::_1)));
 		}
 		else
@@ -91,21 +92,32 @@ namespace node
 
 	void session::bus_req_subscribe(cyng::context& ctx)
 	{
-		//	[TDevice,2a88dd99-0592-4f4b-8a6c-251e1dbe49fe]
+		//
+		//	[TDevice,cfa27fa4-3164-4d2a-80cc-504541c673db,3]
+		//
+		//	* table to subscribe
+		//	* remote session id
+		//	* optional task id (to redistribute by receiver)
+		//	
 		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, "subscribe (1)" << cyng::io::to_str(frame));
 		const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
+		const boost::uuids::uuid tag = cyng::value_cast(frame.at(1), boost::uuids::nil_uuid());
+		const std::size_t tsk = cyng::value_cast(frame.at(2), static_cast<std::size_t>(0));
 		CYNG_LOG_INFO(logger_, "subscribe " << table);
 
-		db_.access([this, &ctx](const cyng::store::table* tbl)->void {
+		db_.access([this, &ctx, tag, tsk](const cyng::store::table* tbl)->void {
 
 			CYNG_LOG_INFO(logger_, tbl->meta().get_name() << "->size(" << tbl->size() << ")");
-			tbl->loop([this, tbl, &ctx](cyng::table::record const& rec) {
+			tbl->loop([this, tbl, &ctx, tag, tsk](cyng::table::record const& rec) {
 
 				//CYNG_LOG_TRACE(logger_, cyng::io::to_str(rec[0]));
 				ctx.run(bus_db_insert(tbl->meta().get_name()
 					, rec.key()
 					, rec.data()
-					, rec.get_generation()));
+					, rec.get_generation()
+					, tag
+					, tsk));
 			});
 
 		}, cyng::store::read_access(table));
@@ -170,9 +182,39 @@ namespace node
 
 	void session::client_req_open_push_channel(cyng::context& ctx)
 	{
+		//	[933e5761-7cdb-41f0-8608-242b981bd06d,e9956acc-a433-4171-9e5f-b1f3aa272460,11,LSM_Events,,,,,60,("seq":),("tp-layer":ipt)]
+		//
+		//	* client tag
+		//	* peer
+		//	* bus sequence
+		//	* target
+		//	* device
+		//	* number
+		//	* version
+		//	* id
+		//	* timeout
+		//	* bag
+		//
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_INFO(logger_, "client.req.open.push.channel " << cyng::io::to_str(frame));
 
+		const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+		const std::uint64_t seq = cyng::value_cast<std::uint64_t>(frame.at(2), 0);
+		cyng::param_map_t options;
+		auto bag = cyng::value_cast(frame.at(9), options);
+
+		options["response-code"] = cyng::make_object(ipt::tp_res_close_push_channel_policy::UNREACHABLE);
+		options["channel-status"] = cyng::make_object<std::uint8_t>(0);
+		options["packet-size"] = cyng::make_object<std::uint16_t>(0);
+		options["window-size"] = cyng::make_object<std::uint8_t>(0);
+
+		ctx.run(client_res_open_push_channel(tag
+			, seq
+			, false
+			, 0		//	channel
+			, 0		//	source
+			, options
+			, bag));
 	}
 
 }

@@ -23,6 +23,8 @@ namespace node
 			, scramble_key const& def)
 		: buffer_()
 			, ostream_(&buffer_)
+			, sgen_()
+			, last_seq_(0)
 			, scrambler_()
 			, def_key_(def)
 		{
@@ -67,8 +69,86 @@ namespace node
 			vm.async_run(cyng::register_function("res.login.public", 2, std::bind(&serializer::res_login_public, this, std::placeholders::_1)));
 			vm.async_run(cyng::register_function("res.login.scrambled", 3, std::bind(&serializer::res_login_scrambled, this, std::placeholders::_1)));
 
+			vm.async_run(cyng::register_function("req.open.push.channel", 1, std::bind(&serializer::req_open_push_channel, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.open.push.channel", 1, std::bind(&serializer::res_open_push_channel, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.close.push.channel", 1, std::bind(&serializer::req_close_push_channel, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.close.push.channel", 1, std::bind(&serializer::res_close_push_channel, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.transfer.push.data", 1, std::bind(&serializer::req_transfer_push_data, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.transfer.push.data", 1, std::bind(&serializer::res_transfer_push_data, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.open.connection", 1, std::bind(&serializer::req_open_connection, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.open.connection", 1, std::bind(&serializer::res_open_connection, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.close.connection", 1, std::bind(&serializer::req_close_connection, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.close.connection", 1, std::bind(&serializer::res_close_connection, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.protocol.version", 1, std::bind(&serializer::req_protocol_version, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.protocol.version", 1, std::bind(&serializer::res_protocol_version, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.software.version", 1, std::bind(&serializer::req_software_version, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.software.version", 1, std::bind(&serializer::res_software_version, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.device.id", 1, std::bind(&serializer::req_device_id, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.device.id", 1, std::bind(&serializer::res_device_id, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.network.status", 1, std::bind(&serializer::req_network_status, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.network.status", 1, std::bind(&serializer::res_network_status, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.ip.statistics", 1, std::bind(&serializer::req_ip_statistics, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.ip.statistics", 1, std::bind(&serializer::res_ip_statistics, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.device.auth", 1, std::bind(&serializer::req_device_auth, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.device.auth", 1, std::bind(&serializer::res_device_auth, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.device.time", 1, std::bind(&serializer::req_device_time, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.device.time", 1, std::bind(&serializer::res_device_time, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.push.target.namelist", 1, std::bind(&serializer::req_push_target_namelist, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.push.target.namelist", 1, std::bind(&serializer::res_push_target_namelist, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.push.target.echo", 1, std::bind(&serializer::req_push_target_echo, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.push.target.echo", 1, std::bind(&serializer::res_push_target_echo, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.traceroute", 1, std::bind(&serializer::req_traceroute, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.traceroute", 1, std::bind(&serializer::res_traceroute, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.maintenance", 1, std::bind(&serializer::req_maintenance, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.maintenance", 1, std::bind(&serializer::res_maintenance, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.logout", 1, std::bind(&serializer::req_logout, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.logout", 1, std::bind(&serializer::res_logout, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.register.push.target", 1, std::bind(&serializer::req_register_push_target, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.register.push.target", 1, std::bind(&serializer::res_register_push_target, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.deregister.push.target", 1, std::bind(&serializer::req_deregister_push_target, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.deregister.push.target", 1, std::bind(&serializer::res_deregister_push_target, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.deregister.push.target", 1, std::bind(&serializer::req_deregister_push_target, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.deregister.push.target", 1, std::bind(&serializer::res_deregister_push_target, this, std::placeholders::_1)));
+
 			vm.async_run(cyng::register_function("req.watchdog", 1, std::bind(&serializer::req_watchdog, this, std::placeholders::_1)));
 			vm.async_run(cyng::register_function("res.watchdog", 1, std::bind(&serializer::res_watchdog, this, std::placeholders::_1)));
+
+			vm.async_run(cyng::register_function("req.multi.ctrl.public.login", 1, std::bind(&serializer::req_multi_ctrl_public_login, this, std::placeholders::_1)));
+			vm.async_run(cyng::register_function("res.multi.ctrl.public.login", 1, std::bind(&serializer::req_multi_ctrl_public_login, this, std::placeholders::_1)));
+
+			////	control - multi public login request
+			//MULTI_CTRL_REQ_LOGIN_SCRAMBLED = 0xC00A,	//!<	request
+			//MULTI_CTRL_RES_LOGIN_SCRAMBLED = 0x400A,	//!<	response
+
+			////	server mode
+			//SERVER_MODE_REQUEST = 0xC010,	//!<	request
+			//SERVER_MODE_RESPONSE = 0x4010,	//!<	response
+
+			////	server mode reconnect
+			//SERVER_MODE_RECONNECT_REQUEST = 0xC011,	//!<	request
+			//SERVER_MODE_RECONNECT_RESPONSE = 0x4011,	//!<	response
+
+			//UNKNOWN = 0x7fff,	//!<	unknown command
+
 
 		}
 
@@ -153,6 +233,232 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			const sequence_type seq = cyng::value_cast(frame.at(0), sequence_type(0));
 			write_header(code::CTRL_RES_WATCHDOG, seq, 0);
+		}
+
+		void serializer::req_open_push_channel(cyng::context& ctx)
+		{
+			last_seq_ = sgen_();
+		}
+
+		void serializer::res_open_push_channel(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			const sequence_type seq = cyng::value_cast<sequence_type>(frame.at(0), 0);
+			const response_type res = cyng::value_cast<response_type>(frame.at(0), 0);
+			const std::uint32_t channel = cyng::value_cast<uint32_t>(frame.at(1), 0);
+			const std::uint32_t source = cyng::value_cast<uint32_t>(frame.at(1), 0);
+			const std::uint16_t packet_size = cyng::value_cast<uint16_t>(frame.at(1), 0);
+			const std::uint8_t window_size = cyng::value_cast<uint8_t>(frame.at(1), 0);
+			const std::uint8_t status = cyng::value_cast<uint8_t>(frame.at(1), 0);
+			const std::uint32_t count = cyng::value_cast<uint32_t>(frame.at(1), 0);
+
+			static_assert(17 == sizeof(res)
+					+ sizeof(channel)
+					+ sizeof(source)
+					+ sizeof(packet_size)
+					+ sizeof(window_size)
+					+ sizeof(status)
+					+ sizeof(count), "res_open_push_channel(length assumption invalid)");
+
+			write_header(code::TP_RES_OPEN_PUSH_CHANNEL, seq, 17);
+			write_numeric(res);
+			write_numeric(channel);
+			write_numeric(source);
+			write_numeric(packet_size);
+			write_numeric(window_size);
+			write_numeric(status);
+			write_numeric(count);
+		}
+
+		void serializer::req_close_push_channel(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_close_push_channel(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_transfer_push_data(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_transfer_push_data(cyng::context& ctx)
+		{
+
+		}
+
+
+		void serializer::req_open_connection(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_open_connection(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_close_connection(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_close_connection(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_protocol_version(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_protocol_version(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_software_version(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_software_version(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_device_id(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_device_id(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_network_status(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_network_status(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_ip_statistics(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_ip_statistics(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_device_auth(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_device_auth(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_device_time(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_device_time(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_push_target_namelist(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_push_target_namelist(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_push_target_echo(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_push_target_echo(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_traceroute(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_traceroute(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_maintenance(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_maintenance(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_logout(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_logout(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_register_push_target(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_register_push_target(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_deregister_push_target(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_deregister_push_target(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::req_multi_ctrl_public_login(cyng::context& ctx)
+		{
+
+		}
+
+		void serializer::res_multi_ctrl_public_login(cyng::context& ctx)
+		{
+
 		}
 
 		void serializer::write_header(command_type cmd, sequence_type seq, std::size_t length)

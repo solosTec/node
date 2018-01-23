@@ -39,6 +39,7 @@ namespace node
 			//	client responses
 			//
 			bus_->vm_.async_run(cyng::register_function("client.res.login", 1, std::bind(&server::client_res_login, this, std::placeholders::_1)));
+			bus_->vm_.async_run(cyng::register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1)));
 
 		}
 
@@ -179,6 +180,22 @@ namespace node
 
 			}
 		}
+
+		void server::client_res_open_push_channel(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "client.res.open.push.channel " << cyng::io::to_str(frame));
+
+			const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+
+			auto pos = client_map_.find(tag);
+			if (pos != client_map_.end())
+			{
+				//(*pos).second->session_.client_res_open_push_channel(seq, success, msg);
+
+			}
+		}
+
 
 	}
 }

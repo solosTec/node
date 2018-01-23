@@ -61,16 +61,14 @@ namespace node
 	}
 
 	//	slot 0 - merge
-	cyng::continuation storage_db::process(std::string name, std::size_t tsk)
+	cyng::continuation storage_db::process(std::string name, std::size_t sync_tsk)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> merge & upload " 
-			<< name
-			<< " -> "
-			<< tsk);
+			<< "> load table "
+			<< name);
 
 		auto pos = meta_map_.find(name);
 		if (pos != meta_map_.end())
@@ -80,7 +78,7 @@ namespace node
 			cyng::sql::command cmd(meta, s.get_dialect());
 			cmd.select().all();
 			std::string sql = cmd.to_str();
-			CYNG_LOG_TRACE(logger_, sql);
+			CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
 
 			auto stmt = s.create_statement();
 			stmt->prepare(sql);
@@ -88,8 +86,14 @@ namespace node
 			//
 			//	lookup cache
 			//
-			cache_.access([this, meta, stmt](cyng::store::table* tbl)->void {
+			std::size_t counter{ 0 };
+			cache_.access([this, meta, stmt, &counter](cyng::store::table* tbl)->void {
 
+				BOOST_ASSERT(meta->get_name() == tbl->meta().get_name());
+
+				//
+				//	read all results and populate cache
+				//
 				while (auto res = stmt->get_result())
 				{
 					//
@@ -98,35 +102,39 @@ namespace node
 					cyng::table::record rec = cyng::to_record(meta, res);
 
 					//
-					//	search cache for same record
+					//	ToDo: transform SQL record into cache record
 					//
-					cyng::table::record entry = tbl->lookup(rec.key());
-					if (entry.empty())
+					if (!tbl->insert(rec.key(), rec.data(), rec.get_generation()))
 					{
-						//	cache miss -> upload
-						CYNG_LOG_TRACE(logger_, "cache miss");
+						CYNG_LOG_ERROR(logger_, "copy record into cache " 
+							<< meta->get_name()
+							<< " failed - "
+							<< cyng::io::to_str(rec.key()));
 					}
 					else
 					{
-						//	cache hit -> merge and delete
-						CYNG_LOG_TRACE(logger_, "cache hit - delete record from " << meta->get_name());
-
-						//
-						//	ToDo: merge
-						//
-
-						//
-						//	delete this record
-						//
-						tbl->erase(rec.key());
+						CYNG_LOG_TRACE(logger_, "insert record into cache "
+							<< meta->get_name()
+							<< " - "
+							<< cyng::io::to_str(rec.key()));
+						counter++;
 					}
 				}
+
+				CYNG_LOG_INFO(logger_, "cache "
+					<< meta->get_name()
+					<< " is populated with "
+					<< counter
+					<< " records");
+
 			}, cyng::store::write_access(name));
 
 			//
-			//	cache updated
+			//	cache complete
+			//	tell sync to synchronise the cache with master
 			//
-			base_.mux_.send(tsk, 0, cyng::tuple_factory(cache_.size()));
+			BOOST_ASSERT(counter == cache_.size(name));
+			base_.mux_.send(sync_tsk, 0, cyng::tuple_factory(name, counter));
 		}
 		else
 		{
@@ -140,6 +148,86 @@ namespace node
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
+
+	cyng::continuation storage_db::process(std::string name
+		, cyng::vector_t const& key
+		, cyng::vector_t const& data
+		, std::uint64_t gen)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> insert "
+			<< name
+			<< " "
+			<< cyng::io::to_str(key)
+			<< cyng::io::to_str(data)
+			<< " - gen "
+			<< gen);
+
+		//
+		//	ToDo: insert into SQL database
+		//
+		auto pos = meta_map_.find(name);
+		if (pos != meta_map_.end())
+		{
+			auto s = pool_.get_session();
+			cyng::table::meta_table_ptr meta = (*pos).second;
+			cyng::sql::command cmd(meta, s.get_dialect());
+			cmd.insert();
+			std::string sql = cmd.to_str();
+			CYNG_LOG_TRACE(logger_, sql);	//	insert
+
+			auto stmt = s.create_statement();
+			std::pair<int, bool> r = stmt->prepare(sql);
+			BOOST_ASSERT(r.second);
+
+			if (boost::algorithm::equals(name, "TDevice"))
+			{
+				//	[763ae055-449c-4783-b383-8fc8cd52f44f]
+				//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
+				//	bind parameters
+				//	INSERT INTO TDevice (pk, gen, name, number, descr, id, vFirmware, enabled, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+				BOOST_ASSERT(r.first == 9);	//	9 parameters to bind
+				//stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
+				stmt->push(key.at(0), 36)
+					.push(cyng::make_object(gen), 0)
+					.push(data.at(6), 128)
+					.push(data.at(5), 128)
+					.push(data.at(4), 512)
+					.push(data.at(3), 64)
+					.push(data.at(2), 64)
+					.push(data.at(1), 0)
+					.push(data.at(0), 0)
+					;
+				stmt->execute();
+				stmt->clear();
+
+			}
+			else
+			{
+				CYNG_LOG_ERROR(logger_, "unknown table "
+				<< name);	//	insert
+			}
+			//	INSERT INTO TDevice (pk, gen, name, number, descr, id, vFirmware, enabled, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			//auto stmt = s.create_statement();
+			//std::pair<int, bool> r = stmt->prepare(sql);
+
+		}
+		else
+		{
+			CYNG_LOG_FATAL(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> unknown table "
+				<< name);
+		}
+
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
 
 	int storage_db::init_db(cyng::tuple_t tpl)
 	{
@@ -162,32 +250,49 @@ namespace node
 				std::string sql = cmd.to_str();
 				std::cout << sql << std::endl;
 				s.execute(sql);
+
+#ifdef _DEBUG
+				if (tbl.first == "TDevice")
+				{
+					cmd.insert();
+					sql = cmd.to_str();
+					auto stmt = s.create_statement();
+					std::pair<int, bool> r = stmt->prepare(sql);
+					BOOST_ASSERT(r.first == 9);	//	3 parameters to bind
+					BOOST_ASSERT(r.second);
+
+					//	bind parameters
+					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
+						.push(cyng::make_object(27ull), 0)
+						.push(cyng::make_object("Douglas Adams"), 128)
+						.push(cyng::make_object("42"), 128)
+						.push(cyng::make_object("in search for the last question"), 512)
+						.push(cyng::make_object("ID"), 64)
+						.push(cyng::make_object("vFirmware"), 64)
+						.push(cyng::make_object(true), 0)
+						.push(cyng::make_object(std::chrono::system_clock::now()), 0)
+						;
+					stmt->execute();
+					stmt->clear();
+
+					r = stmt->prepare(sql);
+					//	bind parameters
+					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
+						.push(cyng::make_object(344ull), 0)
+						.push(cyng::make_object("Jon Smith"), 128)
+						.push(cyng::make_object("987"), 128)
+						.push(cyng::make_object("dull head"), 512)
+						.push(cyng::make_object("american"), 64)
+						.push(cyng::make_object("0.1"), 64)
+						.push(cyng::make_object(false), 0)
+						.push(cyng::make_object(std::chrono::system_clock::now()), 0)
+						;
+					stmt->execute();
+					stmt->clear();
+				}
+#endif
 			}
 
-
-			/*
-			cmd.insert();
-			sql = cmd.to_str();
-			auto stmt = s.create_statement();
-			std::pair<int, bool> r = stmt->prepare(sql);
-			BOOST_ASSERT(r.first == 10);	//	3 parameters to bind
-			BOOST_ASSERT(r.second);
-
-			//	bind parameters
-			stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
-				.push(cyng::make_object("Douglas Adams"), 128)
-				.push(cyng::make_object("42"), 128)
-				.push(cyng::make_object("in search for the last question"), 512)
-				.push(cyng::make_object("ID"), 64)
-				.push(cyng::make_object("vFirmware"), 64)
-				.push(cyng::make_object(true), 0)
-				.push(cyng::make_object(std::chrono::system_clock::now()), 0)
-				.push(cyng::make_object("config"), 1024)
-				.push(cyng::make_object(27ull), 0)
-				;
-			stmt->execute();
-			stmt->clear();
-			*/
 
 
 			return EXIT_SUCCESS;
@@ -202,28 +307,28 @@ namespace node
 		//	SQL table scheme
 		//
 		std::map<std::string, cyng::table::meta_table_ptr> meta_map;
-		meta_map.emplace("TDevice", cyng::table::make_meta_table<1, 9>("TDevice",
-			{ "pk", "name", "number", "descr", "id", "vFirmware", "enabled", "created", "config", "gen" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_PARAM_MAP, cyng::TC_UINT64 },
-			{ 36, 128, 128, 512, 64, 64, 0, 0, 1024, 0 }));
+		meta_map.emplace("TDevice", cyng::table::make_meta_table<1, 8>("TDevice",
+			{ "pk", "gen", "name", "number", "descr", "id", "vFirmware", "enabled", "created" },
+			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
+			{ 36, 0, 128, 128, 512, 64, 64, 0, 0 }));
 
 		meta_map.emplace("TUser", cyng::table::make_meta_table<1, 6>("TUser",
-			{ "pk", "name", "team", "priv_read", "priv_write", "priv_delete", "gen" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_BOOL, cyng::TC_BOOL, cyng::TC_BOOL, cyng::TC_UINT64 },
-			{ 36, 128, 0, 0, 0, 0, 0 }));
+			{ "pk", "gen", "name", "team", "priv_read", "priv_write", "priv_delete" },
+			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_BOOL, cyng::TC_BOOL, cyng::TC_BOOL },
+			{ 36, 0, 128, 0, 0, 0, 0 }));
 
 		meta_map.emplace("TGroup", cyng::table::make_meta_table<1, 4>("TGroup",
-			{ "id", "descr", "admin", "shortname", "gen" },
-			{ cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_STRING, cyng::TC_UINT64 },
-			{ 0, 256, 0, 64, 0 }));
+			{ "id", "gen", "descr", "admin", "shortname" },
+			{ cyng::TC_UINT32, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_STRING },
+			{ 0, 0, 256, 0, 64 }));
 
 		//	vFirmware: (i.e. MUC-ETHERNET-1.318_11332000)
 		//	factoryNr: (i.e. 06441734)
 		//	mbus: W-Mbus ID (i.e. A815408943050131)
 		meta_map.emplace("TGateway", cyng::table::make_meta_table<1, 14>("TGateway",
-			{ "pk", "serverId", "manufacturer", "model", "proddata", "vFirmare", "factoryNr", "ifService", "ifData", "pwdDef", "pwdRoot", "mbus", "userName", "userPwd", "gen" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT64 },
-			{ 36, 23, 64, 64, 0, 64, 8, 18, 18, 32, 32, 16, 32, 32, 0 }));
+			{ "pk", "gen", "serverId", "manufacturer", "model", "proddata", "vFirmare", "factoryNr", "ifService", "ifData", "pwdDef", "pwdRoot", "mbus", "userName", "userPwd" },
+			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
+			{ 36, 0, 23, 64, 64, 0, 64, 8, 18, 18, 32, 32, 16, 32, 32 }));
 
 		//	id: (i.e. 1EMH0006441734)
 		//	vParam: parameterization software version (i.e. 16A098828.pse)
@@ -231,9 +336,9 @@ namespace node
 		//	item: artikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 		//	class: Metrological Class: A, B, C, Q3/Q1, ...
 		meta_map.emplace("TMeter", cyng::table::make_meta_table<1, 9>("TMeter",
-			{ "pk", "id", "manufacturer", "proddata", "vFirmare", "vParam", "factoryNr", "item", "class", "gen" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT64 },
-			{ 36, 64, 64, 0, 64, 64, 8, 128, 8, 0 }));
+			{ "pk", "gen", "id", "manufacturer", "proddata", "vFirmare", "vParam", "factoryNr", "item", "class" },
+			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
+			{ 36, 0, 64, 64, 0, 64, 64, 8, 128, 8 }));
 
 		return meta_map;
 	}

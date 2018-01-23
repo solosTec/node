@@ -53,6 +53,7 @@ namespace node
 		void task_resume(cyng::context& ctx);
 		void reconfigure(cyng::context& ctx);
 		void reconfigure_impl();
+		void create_cache();
 
 	private:
 		cyng::async::base_task& base_;

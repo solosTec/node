@@ -34,17 +34,6 @@ namespace node
 				<< base_.get_class_name()
 				<< "> is running");
 
-			//
-			//	ToDo: implement in data handler task
-			//
-			//bus_->vm_.async_run(cyng::register_function("db.trx.start", 0, [this](cyng::context& ctx) {
-			//	CYNG_LOG_TRACE(logger_, "db.trx.start");
-			//}));
-			//bus_->vm_.async_run(cyng::register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
-			//	CYNG_LOG_TRACE(logger_, "db.trx.commit");
-			//}));
-
-			//bus_->vm_.async_run(cyng::register_function("db.insert", 5, std::bind(&network::db_insert, this, std::placeholders::_1)));
 
 			//
 			//	request handler

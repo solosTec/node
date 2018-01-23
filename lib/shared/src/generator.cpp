@@ -55,7 +55,7 @@ namespace node
 			;
 	}
 
-	cyng::vector_t bus_req_subscribe(std::string const& table)
+	cyng::vector_t bus_req_subscribe(std::string const& table, std::size_t tsk)
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke("stream.serialize"
@@ -64,7 +64,7 @@ namespace node
 			, cyng::generate_invoke_remote("stream.serialize", cyng::generate_invoke_reflect("db.trx.start"))
 			, cyng::generate_invoke_remote("stream.flush")
 
-			, cyng::generate_invoke_remote("bus.req.subscribe", table, cyng::code::IDENT)
+			, cyng::generate_invoke_remote("bus.req.subscribe", table, cyng::code::IDENT, tsk)
 
 			//	bounce back 
 			, cyng::generate_invoke_remote("stream.serialize", cyng::generate_invoke_reflect("db.trx.commit"))
@@ -96,6 +96,20 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_db_insert(std::string const& table
+		, cyng::vector_t const& key
+		, cyng::vector_t const& data
+		, std::uint64_t generation
+		, boost::uuids::uuid tag
+		, std::size_t tsk)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke("stream.serialize"
+			, cyng::generate_invoke_remote("db.insert", table, key, data, generation, tag, tsk))
+			<< cyng::generate_invoke("stream.flush")
+			;
+	}
+
 	cyng::vector_t client_req_login(boost::uuids::uuid tag
 		, std::string const& name
 		, std::string const& pwd
@@ -105,22 +119,6 @@ namespace node
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke("stream.serialize"
 			, cyng::generate_invoke_remote("client.req.login", tag, cyng::code::IDENT, cyng::invoke("bus.seq.next"), name, pwd, scheme, bag))
-			<< cyng::generate_invoke("stream.flush")
-			;
-	}
-
-	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
-		, std::string const& target
-		, std::string const& device
-		, std::string const& number
-		, std::string const& version
-		, std::string const& id
-		, std::uint16_t timeout
-		, cyng::param_map_t const& bag)
-	{
-		cyng::vector_t prg;
-		return prg << cyng::generate_invoke("stream.serialize"
-			, cyng::generate_invoke_remote("client.req.open.push.channel", tag, cyng::code::IDENT, cyng::invoke("bus.seq.next"), target, device, number, version, id, timeout, bag))
 			<< cyng::generate_invoke("stream.flush")
 			;
 	}
@@ -139,4 +137,43 @@ namespace node
 	}
 
 
+	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
+		, std::string const& target
+		, std::string const& device
+		, std::string const& number
+		, std::string const& version
+		, std::string const& id
+		, std::uint16_t timeout
+		, cyng::param_map_t const& bag)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke("stream.serialize"
+			, cyng::generate_invoke_remote("client.req.open.push.channel", tag, cyng::code::IDENT, cyng::invoke("bus.seq.next"), target, device, number, version, id, timeout, bag))
+			<< cyng::generate_invoke("stream.flush")
+			;
+	}
+
+	cyng::vector_t client_res_open_push_channel(boost::uuids::uuid tag
+		, std::uint64_t seq
+		, bool success
+		, std::uint32_t channel
+		, std::uint32_t source
+		, cyng::param_map_t const& options
+		, cyng::param_map_t const& bag)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke("stream.serialize"
+			, cyng::generate_invoke_remote("client.res.open.push.channel"
+				, tag
+				, cyng::code::IDENT
+				, seq
+				, success
+				, channel
+				, source
+				//, options
+				, bag))
+			<< cyng::generate_invoke("stream.flush")
+			;
+
+	}
 }

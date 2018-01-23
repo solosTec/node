@@ -46,6 +46,7 @@ namespace node
 			/// Perform an asynchronous accept operation.
 			void do_accept();
 			void client_res_login(cyng::context&);
+			void client_res_open_push_channel(cyng::context&);
 
 		private:
 			/*

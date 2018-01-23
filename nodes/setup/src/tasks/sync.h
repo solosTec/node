@@ -8,10 +8,10 @@
 #ifndef NODE_SETUP_TASK_SYNC_H
 #define NODE_SETUP_TASK_SYNC_H
 
+#include <smf/cluster/bus.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
-#include <smf/cluster/bus.h>
 #include <cyng/store/db.h>
 
 namespace node
@@ -26,8 +26,9 @@ namespace node
 	class sync
 	{
 	public:
-		using msg_0 = std::tuple<std::size_t>;
-		using signatures_t = std::tuple<msg_0>;
+		using msg_0 = std::tuple<std::string, std::size_t>;
+		using msg_1 = std::tuple<std::size_t>;
+		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
 		sync(cyng::async::base_task* bt
@@ -40,12 +41,17 @@ namespace node
 		void stop();
 
 		/**
-		 * slot [0]
+		 * slot [0] - load cache complete
+		 */
+		cyng::continuation process(std::string name, std::size_t sync_tsk);
+
+		/**
+		 * slot [1]
 		 */
 		cyng::continuation process(std::size_t);
 
+
 	private:
-		void create_table();
 		void subscribe();
 
 		void isig(cyng::store::table const*, cyng::table::key_type const&, cyng::table::data_type const&, std::uint64_t);

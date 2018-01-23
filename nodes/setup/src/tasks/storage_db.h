@@ -22,7 +22,8 @@ namespace node
 	{
 	public:
 		using msg_0 = std::tuple<std::string, std::size_t>;
-		using signatures_t = std::tuple<msg_0>;
+		using msg_1 = std::tuple<std::string, cyng::vector_t, cyng::vector_t, std::uint64_t>;
+		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
 		storage_db(cyng::async::base_task* bt
@@ -31,7 +32,19 @@ namespace node
 			, cyng::param_map_t);
 		void run();
 		void stop();
-		cyng::continuation process(std::string name, std::size_t );
+
+		/**
+		 * slot [0] - load cache
+		 */
+		cyng::continuation process(std::string name, std::size_t sync_tsk);
+
+		/**
+		 * slot [1] - insert data
+		 */
+		cyng::continuation process(std::string name
+			, cyng::vector_t const&
+			, cyng::vector_t const&
+			, std::uint64_t);
 
 		/**
 		 * static method to create tables.

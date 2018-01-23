@@ -56,6 +56,7 @@ namespace node
 			vm_.async_run(cyng::register_function("ipt.req.open.push.channel", 8, std::bind(&session::ipt_req_open_push_channel, this, std::placeholders::_1)));
 			vm_.async_run(cyng::register_function("ipt.req.transmit.data", 1, std::bind(&session::ipt_req_transmit_data, this, std::placeholders::_1)));
 			vm_.async_run(cyng::register_function("ipt.res.watchdog", 0, std::bind(&session::ipt_res_watchdog, this, std::placeholders::_1)));
+			//client.res.open.push.channel
 
 			//
 			//	ToDo: start maintenance task
@@ -213,11 +214,19 @@ namespace node
 
 			if (success)
 			{
-				CYNG_LOG_TRACE(logger_, "send login response - watchdog: " << watchdog_);
+				//CYNG_LOG_TRACE(logger_, "send login response - watchdog: " << watchdog_);
+				vm_.async_run(cyng::generate_invoke("log.msg.info"
+					, "send login response"
+					, msg
+					, "watchdog"
+					, watchdog_	));
 			}
 			else
 			{
-				CYNG_LOG_WARNING(logger_, "send login response");
+				//CYNG_LOG_WARNING(logger_, "send login response");
+				vm_.async_run(cyng::generate_invoke("log.msg.warning"
+					, "send login response"
+					, msg));
 			}
 
 			vm_.async_run(cyng::generate_invoke("res.login.scrambled", res, watchdog_, ""));
