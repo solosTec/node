@@ -433,6 +433,27 @@ namespace node
 			}
 
 			//	+-----------------------------------------------------------------+
+			//	| TP_RES_OPEN_STREAM_CHANNEL [definition]
+			//	+-----------------------------------------------------------------+
+			bool response_policy< code::TP_RES_OPEN_STREAM_CHANNEL >::is_success(unsigned r)
+			{
+				return r == SUCCESS;
+			}
+			const char* response_policy< code::TP_RES_OPEN_STREAM_CHANNEL >::get_response_name(unsigned r)
+			{
+				switch (r)
+				{
+				case GENERAL_ERROR:	return "stream source cannot be reached";
+				case SUCCESS:		return "success";
+				case NOT_REGISTERED:	return "stream source not registered";
+				default:
+					break;
+				}
+				return "unknown open stream channel response";
+
+			}
+
+			//	+-----------------------------------------------------------------+
 			//	| APP_RES_IP_STATISTICS [definition]
 			//	+-----------------------------------------------------------------+
 

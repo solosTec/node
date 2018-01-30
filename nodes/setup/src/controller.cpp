@@ -26,6 +26,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/random.hpp>
 
 namespace node 
 {
@@ -146,6 +147,9 @@ namespace node
 			const boost::filesystem::path pwd = boost::filesystem::current_path();
 			boost::uuids::random_generator rgen;
 
+			boost::random::mt19937 rng_;
+			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
+
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 				, cyng::param_factory("log-level", "INFO")
@@ -173,7 +177,7 @@ namespace node
 					cyng::param_factory("account", "root"),
 					cyng::param_factory("pwd", NODE_PWD),
 					cyng::param_factory("salt", NODE_SALT),
-					cyng::param_factory("monitor", 57)	//	seconds
+					cyng::param_factory("monitor", monitor_dist(rng_))	//	seconds
 				)})	)
 			)
 			});
@@ -208,7 +212,7 @@ namespace node
 
 		if (!vec.empty())
 		{
-			cyng::select_reader<cyng::object>::type dom(vec[0]);
+			auto dom = cyng::make_reader(vec[0]);
 			cyng::tuple_t tpl;
 			return storage_db::init_db(cyng::value_cast(dom.get("DB"), tpl));
 		}
@@ -218,7 +222,7 @@ namespace node
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
-		cyng::select_reader<cyng::object>::type dom(cfg);
+		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator rgen;
 		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());

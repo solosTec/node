@@ -10,7 +10,7 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
-#include <cyng/dom/reader.h>
+//#include <cyng/dom/reader.h>
 #include <boost/uuid/random_generator.hpp>
 
 namespace node
@@ -120,6 +120,7 @@ namespace node
 			, config_[master_].service_
 			, config_[master_].account_
 			, config_[master_].pwd_
+			, config_[master_].auto_config_
 			, "ipt"));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent");

@@ -33,7 +33,7 @@ namespace node
 	//
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	void join_network(cyng::async::mux&, cyng::logging::log_ptr, std::vector<std::size_t> const&, cyng::vector_t const&);
+	void join_network(cyng::async::mux&, cyng::logging::log_ptr, std::vector<std::size_t> const&, cyng::vector_t const&, std::vector<std::string> const&);
 	std::vector<std::size_t> connect_data_store(cyng::async::mux&, cyng::logging::log_ptr, std::vector<std::string> const&, cyng::object cfg);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
@@ -74,9 +74,9 @@ namespace node
 					//	initialize logger
 					//
 #if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("setup", true);
+					auto logger = cyng::logging::make_sys_logger("store", true);
 #else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "setup");
+					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "store");
 #endif
 
 					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
@@ -153,7 +153,7 @@ namespace node
 
 				, cyng::param_factory("DB", cyng::tuple_factory(
 					cyng::param_factory("type", "SQLite"),
-					cyng::param_factory("file-name", (pwd / "setup.database").string()),
+					cyng::param_factory("file-name", (pwd / "store.database").string()),
 					cyng::param_factory("busy-timeout", 12),		//	seconds
 					cyng::param_factory("watchdog", 30),		//	for database connection
 					cyng::param_factory("pool-size", 1)		//	no pooling for SQLite
@@ -174,7 +174,7 @@ namespace node
 					cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "26862"),
-						cyng::param_factory("account", "smart-data-exchange"),
+						cyng::param_factory("account", "data-store"),
 						cyng::param_factory("pwd", "to-define"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", true),
@@ -182,7 +182,7 @@ namespace node
 					cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "26863"),
-						cyng::param_factory("account", "smart-data-exchange"),
+						cyng::param_factory("account", "data-store"),
 						cyng::param_factory("pwd", "to-define"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", false),
@@ -222,7 +222,7 @@ namespace node
 
 		if (!vec.empty())
 		{
-			cyng::select_reader<cyng::object>::type dom(vec[0]);
+			auto dom = cyng::make_reader(vec[0]);
 			cyng::tuple_t tpl;
 			return ipt::storage_db::init_db(cyng::value_cast(dom.get("DB"), tpl));
 		}
@@ -232,7 +232,7 @@ namespace node
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
-		cyng::select_reader<cyng::object>::type dom(cfg);
+		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator rgen;
 		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
@@ -260,7 +260,7 @@ namespace node
 		//	connect to cluster
 		//
 		cyng::vector_t tmp;
-		join_network(mux, logger, tsks, cyng::value_cast(dom.get("ipt"), tmp));
+		join_network(mux, logger, tsks, cyng::value_cast(dom.get("ipt"), tmp), cyng::vector_cast<std::string>(dom.get("targets"), ""));
 
 		//
 		//	wait for system signals
@@ -318,7 +318,7 @@ namespace node
 	{
 		std::vector<std::size_t> tsks;
 		cyng::tuple_t tpl;
-		cyng::select_reader<cyng::object>::type dom(cfg);
+		auto dom = cyng::make_reader(cfg);
 
 		for (const auto& config_type : config_types)
 		{
@@ -359,7 +359,11 @@ namespace node
 		return tsks;
 	}
 
-	void join_network(cyng::async::mux& mux, cyng::logging::log_ptr logger, std::vector<std::size_t> const& tsks, cyng::vector_t const& cfg)
+	void join_network(cyng::async::mux& mux
+		, cyng::logging::log_ptr logger
+		, std::vector<std::size_t> const& tsks
+		, cyng::vector_t const& cfg
+		, std::vector<std::string> const& targets)
 	{
 		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg.size());
 
@@ -367,7 +371,8 @@ namespace node
 			, std::chrono::seconds(1)
 			, logger
 			, tsks
-			, ipt::load_cluster_cfg(cfg));
+			, ipt::load_cluster_cfg(cfg)
+			, targets);
 
 	}
 

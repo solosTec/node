@@ -22,8 +22,9 @@ namespace node
 		const std::string pwd_;
 		const int salt_;
 		const std::chrono::seconds monitor_;
+		const bool auto_config_;
 		cluster_record();
-		cluster_record(std::string const&, std::string const&, std::string const&, std::string const&, int, int);
+		cluster_record(std::string const&, std::string const&, std::string const&, std::string const&, int, int, bool);
 	};
 
 	/**

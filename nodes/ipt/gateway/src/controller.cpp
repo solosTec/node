@@ -72,9 +72,9 @@ namespace node
 					//	initialize logger
 					//
 #if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("setup", true);
+					auto logger = cyng::logging::make_sys_logger("ipt:gateway", true);
 #else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "setup");
+					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "ipt:gateway");
 #endif
 
 					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
@@ -168,7 +168,7 @@ namespace node
 					cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "26862"),
-						cyng::param_factory("account", "smart-data-exchange"),
+						cyng::param_factory("account", "data-store"),
 						cyng::param_factory("pwd", "to-define"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", true),
@@ -176,7 +176,7 @@ namespace node
 					cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "26863"),
-						cyng::param_factory("account", "smart-data-exchange"),
+						cyng::param_factory("account", "data-store"),
 						cyng::param_factory("pwd", "to-define"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", false),
@@ -207,7 +207,7 @@ namespace node
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
-		cyng::select_reader<cyng::object>::type dom(cfg);
+		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator rgen;
 		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());

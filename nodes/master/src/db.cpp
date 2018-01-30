@@ -7,8 +7,10 @@
 
 
 #include "db.h"
+#include <NODE_project_info.h>
 #include <cyng/table/meta.hpp>
 #include <cyng/intrinsics/traits/tag.hpp>
+#include <cyng/intrinsics/traits.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
 namespace node 
@@ -28,24 +30,20 @@ namespace node
 		//	(5) identifier [std::string] (device identifier/type)
 		//	(6) firmware version [std::string]
 		//	(7) enabled [bool] (only login allowed)
-		//	(8) age [std::chrono::system_clock::time_stamp]
+		//	(8) created [std::chrono::system_clock::time_stamp]
 		//	(9) config [cyng::param_map_t]
 
-		//if (!db.create_table(cyng::store::make_meta_table<1, 8>("TDevice",
-		//	{ "pk", "name", "number", "descr", "id", "vFirmware", "enabled", "created", "config" },
-		//	{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_PARAM_MAP },
-		//	{ 36, 128, 128, 512, 64, 64, 0, 0, 1024 })))
-		if (!db.create_table(cyng::table::make_meta_table<1, 7>("TDevice",
-			{ "pk", "name", "number", "descr", "id", "vFirmware", "enabled", "created" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
-			{ 36, 128, 128, 512, 64, 64, 0, 0 })))
+		if (!db.create_table(cyng::table::make_meta_table<1, 8>("TDevice",
+			{ "pk", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime" },
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
+			{ 36, 128, 16, 128, 512, 64, 64, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TDevice");
 		}
 		else
 		{
 			//db.insert("TDevice", cyng::store::key_generator(tag), cyng::store::data_generator("name", "number", "descr", "id", "vFirmware", true, std::chrono::system_clock::now(), cyng::param_map_t()), 72);
-			db.insert("TDevice", cyng::table::key_generator(tag), cyng::table::data_generator("name", "number", "descr", "id", "vFirmware", true, std::chrono::system_clock::now()), 72);
+			db.insert("TDevice", cyng::table::key_generator(tag), cyng::table::data_generator("master", "undefined", "0000", "synthetic test device", "smf", NODE_VERSION, true, std::chrono::system_clock::now()), 72);
 
 		}
 
@@ -84,6 +82,86 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
 		}
 
+		//
+		//	TLL table - leased lines
+		//
+		//	(1) first (UUID) - pk
+		//	(2) second (UUID) - pk
+		//	+-----------------
+		//	(3) description [std::string]
+		//	(4) creation-time [std::chrono::system_clock::time_stamp]
+
+		if (!db.create_table(cyng::table::make_meta_table<2, 3>("TLL",
+			{ "first"
+			, "second"
+			, "descr"
+			, "enabled"
+			, "creationTime" },
+			{ cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
+			{ 36, 36, 128, 0, 0 })))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table TLL");
+		}
+		else
+		{
+			//db.insert("TDevice", cyng::store::key_generator(tag), cyng::store::data_generator("name", "number", "descr", "id", "vFirmware", true, std::chrono::system_clock::now(), cyng::param_map_t()), 72);
+			db.insert("TDevice", cyng::table::key_generator(tag), cyng::table::data_generator("name", "number", "descr", "id", "vFirmware", true, std::chrono::system_clock::now()), 72);
+
+		}
+
+		//
+		//	The session tables uses the same tag as the remote session
+		//	
+		if (!db.create_table(cyng::table::make_meta_table<1, 8>("*Session", { "tag"	//	client session - primary key [uuid]
+			, "local"	//	[object] local peer object (hold reference)
+			, "remote"	//	[object] remote peer object (if connected)
+			, "peer"	//	[uuid] remote peer
+			, "device"	//	[uuid] - owner of the session
+			, "name"	//	[string] - account
+			, "source"	//	[uint32] - ipt source id (unique)
+			, "login-time"	//	last login time
+			, "rtag"	//	[uuid] client session if connected
+			},
+			{ cyng::TC_UUID, cyng::traits::PREDEF_SESSION, cyng::traits::PREDEF_SESSION, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_UUID },
+			{ 36, 0, 0, 36, 36, 64, 0, 0, 36 })))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table *Session");
+		}
+
+		if (!db.create_table(cyng::table::make_meta_table<2, 7>("*Target", { "target"	//	name - primary key
+			, "tag"		//	client session - primary key [uuid]
+			, "peer"	//	[uuid]
+			, "channel"	//	[uint32] - target id
+			, "device"	//	[uuid] - owner of target
+			, "p-size"	//	packet size
+			, "w-size"	//	window size
+			, "reg-time"	//	registration time
+			, "px"		//	incoming data
+			},
+			{ cyng::TC_STRING, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UINT16, cyng::TC_UINT8, cyng::TC_TIME_POINT, cyng::TC_UINT64 },
+			{ 64, 36, 36, 0, 36, 0, 0, 0, 0 })))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table *Target");
+		}
+
+		//
+		//	ack-time: the time interval (in seconds) in which a Push Data Transfer Response is expected
+		//	after the transmission of the last character of a Push Data Transfer Request.
+		//
+		if (!db.create_table(cyng::table::make_meta_table<3, 5>("*Channel", { "channel"	//	primary key [uint32]
+			, "source"		//	primary key [uint32]
+			, "target"		//	primary key [uint32]
+			, "tag"			//	target session - primary key [uuid]
+			, "peer"		//	[uuid]
+			, "p-size"		//	[uint16] - max packet size
+			, "ack-time"	//	[uint32] - See description above
+			, "count"		//	[size_t] target count
+			},
+			{ cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_UINT16, cyng::TC_UINT32,cyng::TC_UINT64 },
+			{ 0, 0, 0, 0, 0, 0, 0, 0 })))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table *Target");
+		}
 
 	}
 

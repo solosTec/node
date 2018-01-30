@@ -19,6 +19,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <boost/uuid/random_generator.hpp>
+#include <boost/random.hpp>
 
 namespace node 
 {
@@ -137,12 +138,17 @@ namespace node
 			const boost::filesystem::path pwd = boost::filesystem::current_path();
 			boost::uuids::random_generator rgen;
 
+			//
+			//	reconnect to master on different times
+			//
+			boost::random::mt19937 rng_;
+			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
+
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 				, cyng::param_factory("log-level", "INFO")
 				, cyng::param_factory("tag", rgen())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
-				//, cyng::param_factory("input", "DB")	//	options are XML, JSON, DB
 
 				, cyng::param_factory("server", cyng::tuple_factory(
 					cyng::param_factory("address", "0.0.0.0"),
@@ -157,7 +163,8 @@ namespace node
 					cyng::param_factory("account", "root"),
 					cyng::param_factory("pwd", NODE_PWD),
 					cyng::param_factory("salt", NODE_SALT),
-					cyng::param_factory("monitor", 57)	//	seconds
+					cyng::param_factory("monitor", monitor_dist(rng_)),	//	seconds
+					cyng::param_factory("auto-config", false)	//	client security
 				) }))
 				)
 			});
@@ -181,7 +188,8 @@ namespace node
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
-		cyng::select_reader<cyng::object>::type dom(cfg);
+		//cyng::select_reader<cyng::object>::type dom(cfg);
+		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator rgen;
 		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
@@ -249,7 +257,7 @@ namespace node
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cls.size());
 
-		cyng::select_reader<cyng::tuple_t>::type dom(cfg_srv);
+		auto dom = cyng::make_reader(cfg_srv);
 
 		//
 		//	read default scramble key

@@ -44,6 +44,18 @@ namespace node
 				TP_REQ_CLOSE_CONNECTION = 0x9004,	//!<	request
 				TP_RES_CLOSE_CONNECTION = 0x1004,	//!<	response
 
+				//	open stream channel
+				TP_REQ_OPEN_STREAM_CHANNEL = 0x9006,
+				TP_RES_OPEN_STREAM_CHANNEL = 0x1006,
+
+				//	close stream channel
+				TP_REQ_CLOSE_STREAM_CHANNEL = 0x9007,
+				TP_RES_CLOSE_STREAM_CHANNEL = 0x1007,
+
+				//	stream channel data transfer
+				TP_REQ_STREAMDATA_TRANSFER = 0x9008,
+				TP_RES_STREAMDATA_TRANSFER = 0x1008,
+
 				//	transport - connection data transfer *** non-standard ***
 				//	0x900B:	//	request
 				//	0x100B:	//	response
@@ -123,6 +135,14 @@ namespace node
 				MULTI_CTRL_REQ_LOGIN_SCRAMBLED = 0xC00A,	//!<	request
 				MULTI_CTRL_RES_LOGIN_SCRAMBLED = 0x400A,	//!<	response
 
+				//	stream source register
+				CTRL_REQ_REGISTER_STREAM_SOURCE = 0xC00B,
+				CTRL_RES_REGISTER_STREAM_SOURCE = 0x400B,
+
+				//	stream source deregister
+				CTRL_REQ_DEREGISTER_STREAM_SOURCE = 0xC00C,
+				CTRL_RES_DEREGISTER_STREAM_SOURCE = 0x400C,
+
 				//	server mode
 				SERVER_MODE_REQUEST = 0xC010,	//!<	request
 				SERVER_MODE_RESPONSE = 0x4010,	//!<	response
@@ -130,6 +150,7 @@ namespace node
 				//	server mode reconnect
 				SERVER_MODE_RECONNECT_REQUEST = 0xC011,	//!<	request
 				SERVER_MODE_RECONNECT_RESPONSE = 0x4011,	//!<	response
+
 
 				UNKNOWN = 0x7fff,	//!<	unknown command
 

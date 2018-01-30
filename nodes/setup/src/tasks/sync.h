@@ -28,7 +28,8 @@ namespace node
 	public:
 		using msg_0 = std::tuple<std::string, std::size_t>;
 		using msg_1 = std::tuple<std::size_t>;
-		using signatures_t = std::tuple<msg_0, msg_1>;
+		using msg_2 = std::tuple<>;	//	disconnect
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
 
 	public:
 		sync(cyng::async::base_task* bt
@@ -50,6 +51,10 @@ namespace node
 		 */
 		cyng::continuation process(std::size_t);
 
+		/**
+		 * slot [2] - disconnect from cache
+		 */
+		cyng::continuation process();
 
 	private:
 		void subscribe();

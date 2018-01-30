@@ -189,11 +189,13 @@ namespace node
 				//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
 				//	bind parameters
 				//	INSERT INTO TDevice (pk, gen, name, number, descr, id, vFirmware, enabled, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-				BOOST_ASSERT(r.first == 9);	//	9 parameters to bind
-				//stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
+				BOOST_ASSERT(r.first == 10);	//	9 parameters to bind
+				BOOST_ASSERT_MSG(key.size() == 1, "wrong TDevice key size");
+				BOOST_ASSERT_MSG(data.size() == 8, "wrong TDevice data size");
 				stmt->push(key.at(0), 36)
 					.push(cyng::make_object(gen), 0)
-					.push(data.at(6), 128)
+					.push(data.at(7), 128)
+					.push(data.at(6), 16)
 					.push(data.at(5), 128)
 					.push(data.at(4), 512)
 					.push(data.at(3), 64)
@@ -254,17 +256,19 @@ namespace node
 #ifdef _DEBUG
 				if (tbl.first == "TDevice")
 				{
+					/*
 					cmd.insert();
 					sql = cmd.to_str();
 					auto stmt = s.create_statement();
 					std::pair<int, bool> r = stmt->prepare(sql);
-					BOOST_ASSERT(r.first == 9);	//	3 parameters to bind
+					BOOST_ASSERT(r.first == 10);	//	3 parameters to bind
 					BOOST_ASSERT(r.second);
 
 					//	bind parameters
 					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
 						.push(cyng::make_object(27ull), 0)
 						.push(cyng::make_object("Douglas Adams"), 128)
+						.push(cyng::make_object("secret"), 16)
 						.push(cyng::make_object("42"), 128)
 						.push(cyng::make_object("in search for the last question"), 512)
 						.push(cyng::make_object("ID"), 64)
@@ -280,6 +284,7 @@ namespace node
 					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
 						.push(cyng::make_object(344ull), 0)
 						.push(cyng::make_object("Jon Smith"), 128)
+						.push(cyng::make_object("secret"), 16)
 						.push(cyng::make_object("987"), 128)
 						.push(cyng::make_object("dull head"), 512)
 						.push(cyng::make_object("american"), 64)
@@ -289,6 +294,41 @@ namespace node
 						;
 					stmt->execute();
 					stmt->clear();
+					*/
+				}
+				else if (tbl.first == "TLL")
+				{
+					/*
+					cmd.insert();
+					sql = cmd.to_str();
+					auto stmt = s.create_statement();
+					std::pair<int, bool> r = stmt->prepare(sql);
+					//BOOST_ASSERT(r.first == 9);	//	3 parameters to bind
+					BOOST_ASSERT(r.second);
+
+					//	bind parameters
+					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
+						.push(cyng::make_object(boost::uuids::random_generator()()), 0)
+						.push(cyng::make_object(14ull), 0)
+						.push(cyng::make_object("Leased Line -  1"), 128)
+						.push(cyng::make_object(true), 0)
+						.push(cyng::make_object(std::chrono::system_clock::now()), 0)
+						;
+					stmt->execute();
+					stmt->clear();
+
+					r = stmt->prepare(sql);
+					//	bind parameters
+					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
+						.push(cyng::make_object(boost::uuids::random_generator()()), 0)
+						.push(cyng::make_object(441ull), 0)
+						.push(cyng::make_object("Leased Line - 2"), 128)
+						.push(cyng::make_object(false), 0)
+						.push(cyng::make_object(std::chrono::system_clock::now()), 0)
+						;
+					stmt->execute();
+					stmt->clear();
+					*/
 				}
 #endif
 			}
@@ -307,10 +347,10 @@ namespace node
 		//	SQL table scheme
 		//
 		std::map<std::string, cyng::table::meta_table_ptr> meta_map;
-		meta_map.emplace("TDevice", cyng::table::make_meta_table<1, 8>("TDevice",
-			{ "pk", "gen", "name", "number", "descr", "id", "vFirmware", "enabled", "created" },
-			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
-			{ 36, 0, 128, 128, 512, 64, 64, 0, 0 }));
+		meta_map.emplace("TDevice", cyng::table::make_meta_table<1, 9>("TDevice",
+			{ "pk", "gen", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime" },
+			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
+			{ 36, 0, 128, 16, 128, 512, 64, 64, 0, 0 }));
 
 		meta_map.emplace("TUser", cyng::table::make_meta_table<1, 6>("TUser",
 			{ "pk", "gen", "name", "team", "priv_read", "priv_write", "priv_delete" },
@@ -339,6 +379,16 @@ namespace node
 			{ "pk", "gen", "id", "manufacturer", "proddata", "vFirmare", "vParam", "factoryNr", "item", "class" },
 			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
 			{ 36, 0, 64, 64, 0, 64, 64, 8, 128, 8 }));
+
+		meta_map.emplace("TLL", cyng::table::make_meta_table<2, 4>("TLL",
+			{ "first"
+			, "second"
+			, "gen"
+			, "descr"
+			, "enabled"
+			, "creationTime" },
+			{ cyng::TC_UUID, cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
+			{ 36, 36, 0, 128, 0, 0 }));
 
 		return meta_map;
 	}

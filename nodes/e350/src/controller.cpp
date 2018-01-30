@@ -18,6 +18,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <boost/uuid/random_generator.hpp>
+#include <boost/random.hpp>
 
 namespace node 
 {
@@ -66,9 +67,9 @@ namespace node
 					//	initialize logger
 					//
 #if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("setup", true);
+					auto logger = cyng::logging::make_sys_logger("e350", true);
 #else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "setup");
+					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "e350");
 #endif
 
 					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
@@ -136,6 +137,9 @@ namespace node
 			const boost::filesystem::path pwd = boost::filesystem::current_path();
 			boost::uuids::random_generator rgen;
 
+			boost::random::mt19937 rng_;
+			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
+
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 				, cyng::param_factory("log-level", "INFO")
@@ -153,7 +157,7 @@ namespace node
 						cyng::param_factory("account", "root"),
 						cyng::param_factory("pwd", NODE_PWD),
 						cyng::param_factory("salt", NODE_SALT),
-						cyng::param_factory("monitor", 57)	//	seconds
+						cyng::param_factory("monitor", monitor_dist(rng_))	//	seconds
 					) }))
 				)
 				});
@@ -177,7 +181,7 @@ namespace node
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
-		cyng::select_reader<cyng::object>::type dom(cfg);
+		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator rgen;
 		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());

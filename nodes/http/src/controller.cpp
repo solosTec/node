@@ -226,7 +226,7 @@ namespace node
 	bool start(cyng::async::scheduler& scheduler, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found" );	
-		cyng::select_reader<cyng::object>::type dom(cfg);
+		auto dom = cyng::make_reader(cfg);
 		
  		const auto doc_root = cyng::io::to_str(dom[0]["http"].get("document-root"));
 		const auto host = cyng::io::to_str(dom[0]["http"].get("address"));

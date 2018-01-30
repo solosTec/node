@@ -47,6 +47,9 @@ namespace node
 			cyng::register_socket(socket_, vm_);
 			vm_.async_run(cyng::generate_invoke("log.msg.info", "ip:tcp:socket domain is running"));
 
+			//
+			//	set new scramble key after scrambled login request
+			//
 			vm_.async_run(cyng::register_function("ipt.set.sk", 1, [this](cyng::context& ctx) {
 				const cyng::vector_t frame = ctx.get_frame();
 				CYNG_LOG_TRACE(logger_, "set new scramble key "
@@ -54,8 +57,20 @@ namespace node
 
 				//	set new scramble key
 				parser_.set_sk(cyng::value_cast<scramble_key>(frame.at(0), scramble_key::null_scramble_key_).key());
-				//scrambler_ = cyng::value_cast(frame.at(0), def_key_).key();
 			}));
+
+			//
+			//	reset parser before reconnect
+			//
+			vm_.async_run(cyng::register_function("ipt.reset.parser", 1, [this](cyng::context& ctx) {
+				const cyng::vector_t frame = ctx.get_frame();
+				CYNG_LOG_TRACE(logger_, "reset parser "
+					<< cyng::value_cast<scramble_key>(frame.at(0), scramble_key::null_scramble_key_));
+
+				//	set new scramble key
+				parser_.reset(cyng::value_cast<scramble_key>(frame.at(0), scramble_key::null_scramble_key_).key());
+			}));
+			
 
 			//
 			//	register ipt request handler
@@ -64,74 +79,15 @@ namespace node
 				this->start();
 			}));
 
-			vm_.async_run(cyng::register_function("ipt.res.login.public", 4, [this](cyng::context& ctx) {
-				const cyng::vector_t frame = ctx.get_frame();
+			//
+			//	login response
+			//
+			vm_.async_run(cyng::register_function("ipt.res.login.public", 4, std::bind(&bus::ipt_res_login, this, std::placeholders::_1, false)));
+			vm_.async_run(cyng::register_function("ipt.res.login.scrambled", 4, std::bind(&bus::ipt_res_login, this, std::placeholders::_1, true)));
 
-				//	[8d2c4721-7b0a-4ee4-ae25-63db3d5bc7bd,,30,]
-				//CYNG_LOG_INFO(logger_, "ipt.res.login.public " << cyng::io::to_str(frame));
-				const auto res = make_login_response(cyng::value_cast(frame.at(1), response_type(0)));
-				const std::uint16_t watchdog = cyng::value_cast(frame.at(2), std::uint16_t(23));
-				const std::string redirect = cyng::value_cast<std::string>(frame.at(3), "");
-
-				CYNG_LOG_INFO(logger_, "ipt.res.login.public " << res.get_response_name());
-
-				if (res.is_success())
-				{
-					ctx.run(cyng::generate_invoke("log.msg.info", "successful authorized"));
-					state_ = STATE_AUTHORIZED_;
-
-					//
-					//	slot [0]
-					//
-					mux_.send(task_, 0, cyng::tuple_factory(watchdog, redirect));
-
-				}
-				else
-				{
-					state_ = STATE_ERROR_;
-
-					//
-					//	slot [1]
-					//
-					mux_.send(task_, 1, cyng::tuple_t());
-				}
-
-			}));
-			vm_.async_run(cyng::register_function("ipt.res.login.scrambled", 4, [this](cyng::context& ctx) {
-				const cyng::vector_t frame = ctx.get_frame();
-
-				//	[8d2c4721-7b0a-4ee4-ae25-63db3d5bc7bd,,30,]
-				//CYNG_LOG_INFO(logger_, "ipt.res.login.scrambled " << cyng::io::to_str(frame));
-
-				const auto res = make_login_response(cyng::value_cast(frame.at(1), response_type(0)));
-				const std::uint16_t watchdog = cyng::value_cast(frame.at(2), std::uint16_t(23));
-				const std::string redirect = cyng::value_cast<std::string>(frame.at(3), "");
-
-				CYNG_LOG_INFO(logger_, "ipt.res.login.scrambled " << res.get_response_name());
-
-				if (res.is_success())
-				{
-					ctx.run(cyng::generate_invoke("log.msg.info", "successful authorized"));
-					state_ = STATE_AUTHORIZED_;
-
-					//
-					//	slot [0]
-					//
-					mux_.send(task_, 0, cyng::tuple_factory(watchdog, redirect));
-
-				}
-				else
-				{
-					state_ = STATE_ERROR_;
-
-					//
-					//	slot [1]
-					//
-					mux_.send(task_, 1, cyng::tuple_t());
-				}
-
-			}));
-
+			vm_.async_run(cyng::register_function("ipt.res.register.push.target", 4, std::bind(&bus::ipt_res_register_push_target, this, std::placeholders::_1)));
+			vm_.async_run(cyng::register_function("ipt.req.transmit.data", 1, std::bind(&bus::ipt_req_transmit_data, this, std::placeholders::_1)));
+			vm_.async_run(cyng::register_function("ipt.req.open.connection", 1, std::bind(&bus::ipt_req_open_connection, this, std::placeholders::_1)));
 		}
 
 		void bus::start()
@@ -168,11 +124,115 @@ namespace node
 				}
 				else
 				{
-					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.message() << '>');
+					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
 					state_ = STATE_ERROR_;
+
+					//
+					//	slot [1] - go offline
+					//
+					mux_.send(task_, 1, cyng::tuple_t());
+
 				}
 			});
 
+		}
+
+		void bus::ipt_res_login(cyng::context& ctx, bool scrambled)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+
+			//	[8d2c4721-7b0a-4ee4-ae25-63db3d5bc7bd,,30,]
+			//CYNG_LOG_INFO(logger_, "ipt.res.login.public " << cyng::io::to_str(frame));
+
+			//
+			//	same for public and scrambled
+			//
+			const auto res = make_login_response(cyng::value_cast(frame.at(1), response_type(0)));
+			const std::uint16_t watchdog = cyng::value_cast(frame.at(2), std::uint16_t(23));
+			const std::string redirect = cyng::value_cast<std::string>(frame.at(3), "");
+
+			if (scrambled)
+			{
+				ctx.run(cyng::generate_invoke("log.msg.trace", "ipt.res.login.scrambled", res.get_response_name()));
+			}
+			else
+			{
+				ctx.run(cyng::generate_invoke("log.msg.trace", "ipt.res.login.public", res.get_response_name()));
+			}
+
+			if (res.is_success())
+			{
+				ctx.run(cyng::generate_invoke("log.msg.info", "successful authorized"));
+				state_ = STATE_AUTHORIZED_;
+
+				//
+				//	slot [0]
+				//
+				mux_.send(task_, 0, cyng::tuple_factory(watchdog, redirect));
+
+			}
+			else
+			{
+				state_ = STATE_ERROR_;
+
+				//
+				//	slot [1]
+				//
+				mux_.send(task_, 1, cyng::tuple_t());
+			}
+		}
+
+		void bus::ipt_res_register_push_target(cyng::context& ctx)
+		{
+			//	[79ba1da7-67b3-4c4f-9e1f-c217f5ea25a6,2,2,0]
+			//
+			//	* session tag
+			//	* sequence
+			//	* result code
+			//	* channel
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt.res.register.push.target", frame));
+
+			const response_type res = cyng::value_cast<response_type>(frame.at(2), 0);
+			ctrl_res_register_target_policy::get_response_name(res);
+			vm_.async_run(cyng::generate_invoke("log.msg.info", "client.res.register.push.target", ctrl_res_register_target_policy::get_response_name(res)));
+			//mux_.send(task_, 2, cyng::tuple_factory(channel));
+
+		}
+
+		void bus::ipt_req_transmit_data(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt.req.transmit.data", frame));
+		}
+
+		void bus::ipt_req_open_connection(cyng::context& ctx)
+		{
+			//	[ipt.req.open.connection,[ec2451b6-67df-4942-a801-9e13ec7a448c,1,1024]]
+			//
+			//	* session tag
+			//	* ipt sequence 
+			//	* number
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt.req.open.connection", frame));
+
+			switch (state_)
+			{
+			case STATE_AUTHORIZED_:
+				// forward to session
+				mux_.send(task_, 2, cyng::tuple_factory(frame.at(1), frame.at(2)));
+				break;
+			case STATE_CONNECTED_:
+				//	busy
+				vm_.async_run(cyng::generate_invoke("res.open.connection", frame.at(1), cyng::make_object<std::uint8_t>(ipt::tp_res_open_connection_policy::BUSY)));
+				vm_.async_run(cyng::generate_invoke("stream.flush"));
+				break;
+			default:
+				vm_.async_run(cyng::generate_invoke("res.open.connection", frame.at(1), cyng::make_object<std::uint8_t>(ipt::tp_res_open_connection_policy::DIALUP_FAILED)));
+				vm_.async_run(cyng::generate_invoke("stream.flush"));
+				break;
+			}
 		}
 
 

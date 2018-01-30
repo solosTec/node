@@ -15,7 +15,7 @@ namespace node
 	{
 		master_record load_cluster_rec(cyng::tuple_t const& cfg)
 		{
-			cyng::select_reader<cyng::tuple_t>::type dom(cfg);
+			auto dom = cyng::make_reader(cfg);
 			return master_record(cyng::value_cast<std::string>(dom.get("host"), "")
 				, cyng::value_cast<std::string>(dom.get("service"), "")
 				, cyng::value_cast<std::string>(dom.get("account"), "")
@@ -59,7 +59,7 @@ namespace node
 			, service_(service)
 			, account_(account)
 			, pwd_(pwd)
-			, sk_()
+			, sk_(sk)
 			, scrambled_(scrambled)
 			, monitor_(monitor)
 		{}

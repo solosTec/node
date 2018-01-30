@@ -48,6 +48,7 @@ namespace node
 			, config_[master_].service_
 			, config_[master_].account_
 			, config_[master_].pwd_
+			, config_[master_].auto_config_
 			, "lora"));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent");
@@ -93,6 +94,7 @@ namespace node
 				, config_[master_].service_
 				, config_[master_].account_
 				, config_[master_].pwd_
+				, config_[master_].auto_config_
 				, "lora"));
 
 		}

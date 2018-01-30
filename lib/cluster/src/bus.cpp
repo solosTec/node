@@ -36,22 +36,31 @@ namespace node
 		//	register logger domain
 		//
 		cyng::register_logger(logger_, vm_);
-		vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
+		vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
 		//
 		//	register socket domain
 		//
 		cyng::register_socket(socket_, vm_);
-		vm_.async_run(cyng::generate_invoke("log.msg.info", "ip:tcp:socket domain is running"));
+		vm_.run(cyng::generate_invoke("log.msg.info", "ip:tcp:socket domain is running"));
+
+		//
+		//	increase sequence and set as result value
+		//
+		vm_.run(cyng::register_function("bus.seq.next", 0, [this](cyng::context& ctx) {
+			++this->seq_;
+			ctx.push(cyng::make_object(this->seq_));
+		}));
+		vm_.run(cyng::generate_invoke("log.msg.trace", "bus.seq.next() is registered"));
 
 		//
 		//	register bus request handler
 		//
-		vm_.async_run(cyng::register_function("bus.start", 0, [this](cyng::context& ctx) {
+		vm_.run(cyng::register_function("bus.start", 0, [this](cyng::context& ctx) {
 			this->start();
 		}));
 
-		vm_.async_run(cyng::register_function("bus.res.login", 5, [this](cyng::context& ctx) {
+		vm_.run(cyng::register_function("bus.res.login", 5, [this](cyng::context& ctx) {
 			const cyng::vector_t frame = ctx.get_frame();
 
 			//	[true,435a75e4-b97d-4152-a9b7-cdc2e21e8599,0.2,2018-01-11 16:54:48.89934220,2018-01-11 16:54:48.91710660]
@@ -84,14 +93,6 @@ namespace node
 
 		}));
 
-		//
-		//	increase sequence and set as resulz value
-		//
-		vm_.async_run(cyng::register_function("bus.seq.next", 0, [this](cyng::context& ctx) {
-			++this->seq_;
-			ctx.push(cyng::make_object(this->seq_));
-			//ctx.set_return_value(cyng::make_object(this->seq_), 0);
-		}));
 
 		
 	}

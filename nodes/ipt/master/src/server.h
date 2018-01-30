@@ -47,7 +47,13 @@ namespace node
 			void do_accept();
 			void client_res_login(cyng::context&);
 			void client_res_open_push_channel(cyng::context&);
+			void client_res_register_push_target(cyng::context&);
+			void client_res_open_connection(cyng::context&);
+			void client_req_open_connection_forward(cyng::context&);
+			void client_res_open_connection_forward(cyng::context&);
+			void client_req_transmit_data_forward(cyng::context&);
 
+			void propagate(std::string, cyng::vector_t&&);
 		private:
 			/*
 			 * task manager and running I/O context

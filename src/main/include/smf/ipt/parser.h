@@ -88,6 +88,17 @@ namespace node
 			struct tp_res_close_connection : base {
 				tp_res_close_connection() {}
 			};
+			//	open stream channel
+			//TP_REQ_OPEN_STREAM_CHANNEL = 0x9006,
+			//TP_RES_OPEN_STREAM_CHANNEL = 0x1006,
+
+			//	close stream channel
+			//TP_REQ_CLOSE_STREAM_CHANNEL = 0x9007,
+			//TP_RES_CLOSE_STREAM_CHANNEL = 0x1007,
+
+			//	stream channel data transfer
+			//TP_REQ_STREAMDATA_TRANSFER = 0x9008,
+			//TP_RES_STREAMDATA_TRANSFER = 0x1008,
 
 			struct app_res_protocol_version : base {
 				app_res_protocol_version() {}
@@ -146,11 +157,19 @@ namespace node
 				ctrl_res_deregister_target() {}
 			};
 			struct ctrl_req_watchdog : base {
-				ctrl_req_watchdog() {}
+				ctrl_req_watchdog() {}	//	0xC008
 			};
 			struct ctrl_res_watchdog : base {
-				ctrl_res_watchdog() {}
+				ctrl_res_watchdog() {}	//	0x4008
 			};
+
+			//	stream source register
+			//CTRL_REQ_REGISTER_STREAM_SOURCE = 0xC00B,
+			//CTRL_RES_REGISTER_STREAM_SOURCE = 0x400B,
+
+			//	stream source deregister
+			//CTRL_REQ_DEREGISTER_STREAM_SOURCE = 0xC00C,
+			//CTRL_RES_DEREGISTER_STREAM_SOURCE = 0x400C,
 
 
 			using parser_state_t = boost::variant<command,
@@ -272,6 +291,10 @@ namespace node
 			 */
 			void set_sk(scramble_key const&);
 
+			/**
+			 * Reset parser (default scramble key)
+			 */
+			void reset(scramble_key const&);
 		private:
 			/**
 			 * read a single byte and update
@@ -336,7 +359,7 @@ namespace node
 			 */
 			std::iostream			input_;
 
-			const scramble_key def_sk_;	//!<	system wide default scramble key
+			scramble_key def_sk_;	//!<	system wide default scramble key
 
 			/**
 			 * Decrypting data stream
@@ -361,6 +384,7 @@ namespace node
 			std::function<std::uint16_t()> f_read_uint16;
 			std::function<std::uint32_t()> f_read_uint32;
 			std::function<std::uint64_t()> f_read_uint64;
+			std::function<cyng::buffer_t()> f_read_data;
 
 		};
 	}

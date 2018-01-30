@@ -34,6 +34,9 @@ namespace node
 
 		private:
 			void set_sk(cyng::context& ctx);
+			void reset(cyng::context& ctx);
+			void push_seq(cyng::context& ctx);
+			void transfer_data(cyng::context& ctx);
 
 			void req_login_public(cyng::context& ctx);
 			void req_login_scrambled(cyng::context& ctx);
@@ -103,6 +106,8 @@ namespace node
 			void req_multi_ctrl_public_login(cyng::context& ctx);
 			void res_multi_ctrl_public_login(cyng::context& ctx);
 
+			void res_unknown_command(cyng::context& ctx);
+
 			void write_header(command_type cmd, sequence_type seq, std::size_t length);
 
 			/**
@@ -124,6 +129,13 @@ namespace node
 				put(reinterpret_cast<const char*>(&v), sizeof(T));
 			}
 
+			/**
+			 * Send data escaped over the wire.
+			 * In IP-T layer data bytes should not contain single 
+			 * escape values (0x1b). 
+			 */
+			void write(cyng::buffer_t const& data);
+
 
 		private:
 			boost::asio::streambuf buffer_;
@@ -140,7 +152,7 @@ namespace node
 			 * Encrypting data stream
 			 */
 			scrambler_t	scrambler_;
-			const scramble_key	def_key_;	//!< default scramble key
+			scramble_key	def_key_;	//!< default scramble key
 		};
 	}
 }

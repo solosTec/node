@@ -9,6 +9,7 @@ set (node_master_cpp
 	nodes/master/src/connection.cpp
 	nodes/master/src/db.cpp
 	nodes/master/src/session.cpp
+	nodes/master/src/client.cpp
 )
 
 set (node_master_h
@@ -18,6 +19,7 @@ set (node_master_h
 	nodes/master/src/connection.h
 	nodes/master/src/db.h
 	nodes/master/src/session.h
+	nodes/master/src/client.h
 )
 
 set (node_master_info

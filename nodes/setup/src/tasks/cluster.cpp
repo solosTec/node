@@ -51,7 +51,7 @@ namespace node
 		//
 		//	request handler
 		//
-		bus_->vm_.async_run(cyng::register_function("cluster.task.resume", 3, std::bind(&cluster::task_resume, this, std::placeholders::_1)));
+		bus_->vm_.async_run(cyng::register_function("cluster.task.resume", 2, std::bind(&cluster::task_resume, this, std::placeholders::_1)));
 		bus_->vm_.async_run(cyng::register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1)));
 
 		//
@@ -62,6 +62,14 @@ namespace node
 
 	void cluster::run()
 	{	
+		//
+		//	disconnect all sync tasks from cache
+		//
+		base_.mux_.send("node::sync", 2, cyng::tuple_t());
+
+		//
+		//	reconnect
+		//
 		CYNG_LOG_INFO(logger_, "connect to redundancy [ "
 		<< master_
 		<< " ] "
@@ -73,9 +81,11 @@ namespace node
 			, config_[master_].service_
 			, config_[master_].account_
 			, config_[master_].pwd_
+			, config_[master_].auto_config_
 			, "setup"));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent");
+
 
 	}
 
@@ -143,7 +153,7 @@ namespace node
 		//	* origin session id
 		//	* optional task id
 		//	
-		//CYNG_LOG_TRACE(logger_, "db.insert - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, "db.insert - " << cyng::io::to_str(frame));
 		const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
 
 		const auto state = cache_.get_state(table);
@@ -253,10 +263,10 @@ namespace node
 	{
 		CYNG_LOG_TRACE(logger_, "create cache tables");
 
-		cache_.create_table(cyng::table::make_meta_table<1, 7>("TDevice",
-			{ "pk", "name", "number", "descr", "id", "vFirmware", "enabled", "created" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
-			{ 36, 128, 128, 512, 64, 64, 0, 0 }));
+		cache_.create_table(cyng::table::make_meta_table<1, 8>("TDevice",
+			{ "pk", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime" },
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
+			{ 36, 128, 16, 128, 512, 64, 64, 0, 0 }));
 
 		cache_.create_table(cyng::table::make_meta_table<1, 13>("TGateway", { "pk"	//	primary key
 			, "id"	//	(1) Server-ID (i.e. 0500153B02517E)

@@ -246,6 +246,30 @@ namespace node
 				static const char* get_response_name(unsigned);
 			};
 
+			/**
+			 * open stream channel
+			 * TP_RES_OPEN_STREAM_CHANNEL = 0x1006,
+			 */
+			template <>
+			struct response_policy< code::TP_RES_OPEN_STREAM_CHANNEL >
+			{
+				enum Response : response_type
+				{
+					GENERAL_ERROR,		//!<	stream source cannot be reached
+					SUCCESS,
+					NOT_REGISTERED,		//!<	stream source not registered
+				};
+
+				static bool is_success(unsigned);
+				static const char* get_response_name(unsigned);
+			};
+
+			//	close stream channel
+			//TP_RES_CLOSE_STREAM_CHANNEL = 0x1007,
+
+			//	stream channel data transfer
+			//TP_RES_STREAMDATA_TRANSFER = 0x1008,
+
 			/**	@brief network status response (0x2004).
 			 *
 			 *	Acknowledge network status request.
@@ -253,7 +277,7 @@ namespace node
 			template <>
 			struct response_policy< code::APP_RES_NETWORK_STATUS >
 			{
-				enum DeviceType
+				enum DeviceType : std::uint8_t
 				{
 					GPRS_SLAVE,
 					LAN_SLAVE,
@@ -407,19 +431,19 @@ namespace node
 
 		//	map into namespace node::ipt
 		typedef detail::response_policy< code::CTRL_RES_LOGIN_PUBLIC >	ctrl_res_login_public_policy;
-		typedef detail::response_policy< code::CTRL_RES_LOGOUT >	public_CTRL_RES_LOGOUT_policy;
+		typedef detail::response_policy< code::CTRL_RES_LOGOUT >	public_ctrl_res_logout_policy;
 		typedef detail::response_policy< code::MAINTENANCE_RESPONSE >	maintenance_response_policy;
 		typedef detail::response_policy< code::TP_RES_OPEN_PUSH_CHANNEL >	tp_res_open_push_channel_policy;
 		typedef detail::response_policy< code::TP_RES_CLOSE_PUSH_CHANNEL >	tp_res_close_push_channel_policy;
-		typedef detail::response_policy< code::TP_RES_OPEN_CONNECTION >	TP_RES_OPEN_CONNECTION_policy;
-		typedef detail::response_policy< code::TP_RES_CLOSE_CONNECTION >	TP_RES_CLOSE_CONNECTION_policy;
+		typedef detail::response_policy< code::TP_RES_OPEN_CONNECTION >	tp_res_open_connection_policy;
+		typedef detail::response_policy< code::TP_RES_CLOSE_CONNECTION >	tp_res_close_connection_policy;
 		typedef detail::response_policy< code::APP_RES_NETWORK_STATUS >	app_res_network_status_policy;
 		typedef detail::response_policy< code::APP_RES_IP_STATISTICS >	ip_statistics_response_policy;
-		typedef detail::response_policy< code::CTRL_RES_REGISTER_TARGET >	CTRL_RES_REGISTER_TARGET_policy;
-		typedef detail::response_policy< code::CTRL_RES_DEREGISTER_TARGET >	CTRL_RES_DEREGISTER_TARGET_policy;
-		typedef detail::response_policy< code::TP_RES_PUSHDATA_TRANSFER >	TP_RES_PUSHDATA_TRANSFER_policy;
-		typedef detail::response_policy< code::APP_RES_PUSH_TARGET_NAMELIST >	APP_RES_PUSH_TARGET_NAMELIST_policy;
-		typedef detail::response_policy< code::MULTI_CTRL_RES_LOGIN_PUBLIC >	multiple_CTRL_RES_LOGIN_PUBLIC_policy;
+		typedef detail::response_policy< code::CTRL_RES_REGISTER_TARGET >	ctrl_res_register_target_policy;
+		typedef detail::response_policy< code::CTRL_RES_DEREGISTER_TARGET >	ctrl_res_deregister_target_policy;
+		typedef detail::response_policy< code::TP_RES_PUSHDATA_TRANSFER >	tp_res_pushdata_transfer_policy;
+		typedef detail::response_policy< code::APP_RES_PUSH_TARGET_NAMELIST >	app_res_push_target_namelist_policy;
+		typedef detail::response_policy< code::MULTI_CTRL_RES_LOGIN_PUBLIC >	multiple_ctrl_res_login_public_policy;
 
 	}	//	ipt
 }	//	node

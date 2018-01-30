@@ -11,6 +11,8 @@
 #include <cyng/io/hex_dump.hpp>
 #endif
 #include <cyng/vm/generator.h>
+#include <cyng/object_cast.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node 
 {
@@ -24,13 +26,16 @@ namespace node
 	: socket_(std::move(socket))
 	, logger_(logger)
 	, buffer_()
-	, session_(mux, logger, db, account, pwd, monitor)
-	, serializer_(socket_, session_.vm_)
+	, session_(make_session(mux, logger, db, account, pwd, monitor))
+	, serializer_(socket_, this->get_session()->vm_)
 	{
 		//
 		//	register socket operations to session VM
 		//
-		cyng::register_socket(socket_, session_.vm_);
+		cyng::register_socket(socket_, get_session()->vm_);
+
+		get_session()->vm_.async_run(cyng::register_function("push.session", 0, std::bind(&connection::push_session, this, std::placeholders::_1)));
+
 	}
 		
 	void connection::start()
@@ -53,7 +58,7 @@ namespace node
 				if (!ec)
 				{
 					//CYNG_LOG_TRACE(logger_, bytes_transferred << " bytes read");
-					session_.vm_.async_run(cyng::generate_invoke("log.msg.trace", "cluster connection received", bytes_transferred, "bytes"));
+					get_session()->vm_.async_run(cyng::generate_invoke("log.msg.trace", "cluster connection received", bytes_transferred, "bytes"));
 
 #ifdef SMF_IO_DEBUG
 					cyng::io::hex_dump hd;
@@ -62,15 +67,37 @@ namespace node
 					CYNG_LOG_TRACE(logger_, "cluster connection received " << ss.str());
 #endif
 
-					session_.parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
+					get_session()->parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
 					do_read();
 				}
 				else //if (ec != boost::asio::error::operation_aborted)
 				{
-					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.message() << '>');
+					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
 // 					connection_manager_.stop(shared_from_this());
+
+					//
+					//	session cleanup - hold a reference of the session
+					//
+					get_session()->vm_.run(cyng::generate_invoke("session.cleanup", cyng::invoke("push.session"), ec));
 				}
 			});
+	}
+
+	session* connection::get_session()
+	{
+		return const_cast<session*>(cyng::object_cast<session>(session_));
+	}
+	session const* connection::get_session() const
+	{
+		return cyng::object_cast<session>(session_);
+	}
+
+	void connection::push_session(cyng::context& ctx)
+	{
+		CYNG_LOG_TRACE(logger_, "push session " 
+			<< get_session()->tag_
+			<< " on stack");
+		ctx.push(session_);
 	}
 
 }

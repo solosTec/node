@@ -12,13 +12,14 @@ namespace node
 {
 	cluster_record load_cluster_rec(cyng::tuple_t const& cfg)
 	{
-		cyng::select_reader<cyng::tuple_t>::type dom(cfg);
+		auto dom = cyng::make_reader(cfg);
 		return cluster_record(cyng::value_cast<std::string>(dom.get("host"), "")
 			, cyng::value_cast<std::string>(dom.get("service"), "")
 			, cyng::value_cast<std::string>(dom.get("account"), "")
 			, cyng::value_cast<std::string>(dom.get("pwd"), "")
 			, cyng::value_cast(dom.get("salt"), 1)
-			, cyng::value_cast(dom.get("monitor"), 60));
+			, cyng::value_cast(dom.get("monitor"), 60)
+			, cyng::value_cast(dom.get("auto-config"), false));
 	}
 
 	cluster_config_t load_cluster_cfg(cyng::vector_t const& cfg)
@@ -41,6 +42,7 @@ namespace node
 		, pwd_()
 		, salt_(1)
 		, monitor_(0)
+		, auto_config_(false)
 	{}
 
 	cluster_record::cluster_record(std::string const& host
@@ -48,13 +50,15 @@ namespace node
 		, std::string const& account
 		, std::string const& pwd
 		, int salt
-		, int monitor)
-		: host_(host)
+		, int monitor
+		, bool auto_config)
+	: host_(host)
 		, service_(service)
 		, account_(account)
 		, pwd_(pwd)
 		, salt_(salt)
 		, monitor_(monitor)
+		, auto_config_(auto_config)
 	{}
 
 }

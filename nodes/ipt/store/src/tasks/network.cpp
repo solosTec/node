@@ -6,7 +6,7 @@
 */
 
 #include "network.h"
-//#include "sync.h"
+#include <smf/ipt/response.hpp>
 //#include <smf/ipt/generator.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
@@ -21,12 +21,14 @@ namespace node
 		network::network(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
 			, std::vector<std::size_t> const& tsks
-			, master_config_t const& cfg)
+			, master_config_t const& cfg
+			, std::vector<std::string> const& targets)
 		: base_(*btp)
 			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id()))
 			, logger_(logger)
 			, storage_tsk_(0)	//	ToDo
 			, config_(cfg)
+			, targets_(targets)
 			, master_(0)
 		{
 			CYNG_LOG_INFO(logger_, "task #"
@@ -68,9 +70,10 @@ namespace node
 			else
 			{
 				//
-				//	set default sk
+				//	reset parser and serializer
 				//
-				//bus_->vm_.async_run(cyng::generate_invoke("ipt.set.sk.def", config_[master_].sk_));
+				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_[master_].sk_));
+				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_[master_].sk_));
 
 				//
 				//	login request
@@ -100,22 +103,15 @@ namespace node
 				CYNG_LOG_INFO(logger_, "start watchdog: " << watchdog << " minutes");
 				base_.suspend(std::chrono::minutes(watchdog));
 			}
-			//std::cout << "simple::slot-0($" << base_.get_id() << ", v" << v.major() << "." << v.minor() << ")" << std::endl;
-			//if (v < cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
-			//{
-			//	CYNG_LOG_WARNING(logger_, "insufficient network protocol version: " << v);
-			//}
 
 			//
-			//	start data synchronisation
+			//	register callbacks
 			//
-			//cyng::async::start_task_delayed<sync>(base_.mux_
-			//	, std::chrono::seconds(1)
-			//	, logger_
-			//	, bus_
-			//	, storage_tsk_
-			//	, "TDevice"
-			//	, cache_);
+
+			//
+			//	register targets
+			//
+			register_targets();
 
 			return cyng::continuation::TASK_CONTINUE;
 		}
@@ -126,6 +122,22 @@ namespace node
 			//	switch to other configuration
 			//
 			reconfigure_impl();
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type seq, std::string const& number)
+		{
+			CYNG_LOG_TRACE(logger_, "incoming call " << +seq << ':' << number);
+
+			//
+			//	don't accept incoming calls
+			//
+			bus_->vm_.async_run(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(ipt::tp_res_open_connection_policy::BUSY)));
+			bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
 
 			//
 			//	continue task
@@ -192,17 +204,17 @@ namespace node
 
 			cyng::vector_t prg;
 			return prg
-				<< cyng::generate_invoke("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
+				<< cyng::generate_invoke_unwinded("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
 				<< ":SEND-LOGIN-REQUEST"			//	label
 				<< cyng::code::JNE					//	jump if no error
-				<< cyng::generate_invoke("bus.reconfigure", cyng::code::LERR)
-				<< cyng::generate_invoke("log.msg.error", cyng::code::LERR)	// load error register
+				<< cyng::generate_invoke_unwinded("bus.reconfigure", cyng::code::LERR)
+				<< cyng::generate_invoke_unwinded("log.msg.error", cyng::code::LERR)	// load error register
 				<< ":STOP"							//	label
 				<< cyng::code::JA					//	jump always
 				<< cyng::label(":SEND-LOGIN-REQUEST")
-				<< cyng::generate_invoke("ipt.start")		//	start reading ipt network
-				<< cyng::generate_invoke("req.login.public", config_[master_].account_, config_[master_].pwd_)
-				<< cyng::generate_invoke("stream.flush")
+				<< cyng::generate_invoke_unwinded("ipt.start")		//	start reading ipt network
+				<< cyng::generate_invoke_unwinded("req.login.public", config_[master_].account_, config_[master_].pwd_)
+				<< cyng::generate_invoke_unwinded("stream.flush")
 				<< cyng::label(":STOP")
 				<< cyng::code::NOOP
 				<< cyng::reloc()
@@ -222,23 +234,46 @@ namespace node
 
 			cyng::vector_t prg;
 			return prg
-				<< cyng::generate_invoke("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
+				<< cyng::generate_invoke_unwinded("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
 				<< ":SEND-LOGIN-REQUEST"			//	label
 				<< cyng::code::JNE					//	jump if no error
-				<< cyng::generate_invoke("bus.reconfigure", cyng::code::LERR)
-				<< cyng::generate_invoke("log.msg.error", cyng::code::LERR)	// load error register
+				<< cyng::generate_invoke_unwinded("bus.reconfigure", cyng::code::LERR)
+				<< cyng::generate_invoke_unwinded("log.msg.error", cyng::code::LERR)	// load error register
 				<< ":STOP"							//	label
 				<< cyng::code::JA					//	jump always
 				<< cyng::label(":SEND-LOGIN-REQUEST")
-				<< cyng::generate_invoke("ipt.start")		//	start reading ipt network
-				<< cyng::generate_invoke("ipt.set.sk", sk)	//	set new scramble key for parser
-				<< cyng::generate_invoke("req.login.scrambled", config_[master_].account_, config_[master_].pwd_, sk)
-				<< cyng::generate_invoke("stream.flush")
+				<< cyng::generate_invoke_unwinded("ipt.start")		//	start reading ipt network
+				<< cyng::generate_invoke_unwinded("ipt.set.sk", sk)	//	set new scramble key for parser
+				<< cyng::generate_invoke_unwinded("req.login.scrambled", config_[master_].account_, config_[master_].pwd_, sk)
+				<< cyng::generate_invoke_unwinded("stream.flush")
 				<< cyng::label(":STOP")
 				<< cyng::code::NOOP
 				<< cyng::reloc()
 				;
 
+		}
+
+		void network::register_targets()
+		{
+			if (targets_.empty())
+			{
+				CYNG_LOG_WARNING(logger_, "no push targets defined");
+			}
+			else
+			{
+				for (auto target : targets_)
+				{
+					CYNG_LOG_INFO(logger_, "register target " << target);
+					cyng::vector_t prg;
+					prg
+						<< cyng::generate_invoke_unwinded("req.register.push.target", target, static_cast<std::uint16_t>(0xffff), static_cast<std::uint8_t>(1))
+						<< cyng::generate_invoke_unwinded("stream.flush")
+						;
+
+					bus_->vm_.async_run(std::move(prg));
+				}
+
+			}
 		}
 
 	}

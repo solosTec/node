@@ -48,7 +48,6 @@ namespace node
 			<< "> run "
 			<< table_);
 
-		//subscribe();
 	}
 
 	void sync::stop()
@@ -66,6 +65,7 @@ namespace node
 		cache_.set_state(table_, TS_SYNC);
 
 		bus_->vm_.async_run(bus_req_subscribe(table_, base_.get_id()));
+		//	This currently doesn' happen
 		bus_->vm_.async_run(bus_reflect("cluster.task.resume"
 			, base_.get_id()
 			, static_cast<std::size_t>(1)	//	slot
@@ -100,7 +100,7 @@ namespace node
 			BOOST_ASSERT(tbl->meta().get_name() == table_);
 
 			//CYNG_LOG_INFO(logger_, tbl->meta().get_name() << "->size(" << tbl->size() << ")");
-			tbl->loop([this, tbl](cyng::table::record const& rec) {
+			tbl->loop([this, tbl](cyng::table::record const& rec) -> bool {
 
 				//
 				//	upload	
@@ -110,6 +110,9 @@ namespace node
 					, rec.key()
 					, rec.data()
 					, rec.get_generation()));
+
+				//	continue
+				return true;
 			});
 
 		}, cyng::store::read_access(table_));
@@ -143,43 +146,19 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	//cyng::continuation sync::process(std::string name, cyng::vector_t const& key)
-	//{
-	//	CYNG_LOG_INFO(logger_, "cache "
-	//		<< table_
-	//		<< " sync data from "
-	//		<< name);
+	cyng::continuation sync::process()
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> unsubscribe from cache "
+			<< table_);
 
-	//	//
-	//	//	clean up cache
-	//	//
-	//	cache_.access([this, &key](cyng::store::table* tbl)->void {
-
-	//		if (tbl->exist(key))
-	//		{
-	//			CYNG_LOG_WARNING(logger_, "cache "
-	//				<< tbl->meta().get_name()
-	//				<< " clean up record "
-	//				<< cyng::io::to_str(key));
-
-	//			tbl->erase(key);
-	//		}
-	//		else
-	//		{
-	//			//
-	//			//	insert into SQL database
-	//			//
-	//			CYNG_LOG_TRACE(logger_, "cache "
-	//				<< tbl->meta().get_name()
-	//				<< " insert record "
-	//				<< cyng::io::to_str(key));
-	//		}
-
-	//	}, cyng::store::write_access(table_));
-
-	//	return cyng::continuation::TASK_CONTINUE;
-	//}
-
+		cache_.disconnect(table_);
+		cache_.clear(table_);
+		return cyng::continuation::TASK_STOP;
+	}
 
 	void sync::isig(cyng::store::table const* tbl, cyng::table::key_type const&, cyng::table::data_type const&, std::uint64_t)
 	{

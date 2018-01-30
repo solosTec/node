@@ -52,7 +52,12 @@ namespace node
 		 * Perform an asynchronous read operation.
 		 */
 		void do_read();
-		
+
+		session* get_session();
+		session const* get_session() const;
+
+		void push_session(cyng::context& ctx);
+
 	private:
 		/**
 		 * connection socket
@@ -72,7 +77,8 @@ namespace node
 		/**
 		 * Implements the session logic
 		 */
-		session	session_;
+		//session	session_;
+		cyng::object session_;
 
 		/**
 		 * wrapper class to serialize and send
