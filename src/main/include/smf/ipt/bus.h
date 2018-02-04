@@ -50,6 +50,14 @@ namespace node
 			void ipt_req_transmit_data(cyng::context& ctx);
 			void ipt_req_open_connection(cyng::context& ctx);
 
+			void ipt_req_protocol_version(cyng::context& ctx);
+			void ipt_req_software_version(cyng::context& ctx);
+			void ipt_req_device_id(cyng::context& ctx);
+			void ipt_req_net_stat(cyng::context& ctx);
+			void ipt_req_ip_statistics(cyng::context& ctx);
+			void ipt_req_dev_auth(cyng::context& ctx);
+			void ipt_req_dev_time(cyng::context& ctx);
+
 		public:
 			/**
 			 * Interface to cyng VM

@@ -263,10 +263,10 @@ namespace node
 	{
 		CYNG_LOG_TRACE(logger_, "create cache tables");
 
-		cache_.create_table(cyng::table::make_meta_table<1, 8>("TDevice",
-			{ "pk", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
-			{ 36, 128, 16, 128, 512, 64, 64, 0, 0 }));
+		cache_.create_table(cyng::table::make_meta_table<1, 9>("TDevice",
+			{ "pk", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
+			{ 36, 128, 16, 128, 512, 64, 64, 0, 0, 0 }));
 
 		cache_.create_table(cyng::table::make_meta_table<1, 13>("TGateway", { "pk"	//	primary key
 			, "id"	//	(1) Server-ID (i.e. 0500153B02517E)

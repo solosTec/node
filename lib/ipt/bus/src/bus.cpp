@@ -8,6 +8,7 @@
 #include <smf/ipt/bus.h>
 #include <smf/ipt/scramble_key_io.hpp>
 #include <smf/ipt/response.hpp>
+#include <NODE_project_info.h>
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/asio_domain.h>
 #include <cyng/value_cast.hpp>
@@ -88,6 +89,14 @@ namespace node
 			vm_.async_run(cyng::register_function("ipt.res.register.push.target", 4, std::bind(&bus::ipt_res_register_push_target, this, std::placeholders::_1)));
 			vm_.async_run(cyng::register_function("ipt.req.transmit.data", 1, std::bind(&bus::ipt_req_transmit_data, this, std::placeholders::_1)));
 			vm_.async_run(cyng::register_function("ipt.req.open.connection", 1, std::bind(&bus::ipt_req_open_connection, this, std::placeholders::_1)));
+
+			vm_.async_run(cyng::register_function("ipt.req.protocol.version", 2, std::bind(&bus::ipt_req_protocol_version, this, std::placeholders::_1)));
+			vm_.async_run(cyng::register_function("ipt.req.software.version", 2, std::bind(&bus::ipt_req_software_version, this, std::placeholders::_1)));
+			vm_.async_run(cyng::register_function("ipt.req.device.id", 0, std::bind(&bus::ipt_req_device_id, this, std::placeholders::_1)));
+			vm_.async_run(cyng::register_function("ipt.req.net.stat", 2, std::bind(&bus::ipt_req_net_stat, this, std::placeholders::_1)));
+			vm_.async_run(cyng::register_function("ipt.req.ip.statistics", 2, std::bind(&bus::ipt_req_ip_statistics, this, std::placeholders::_1)));
+			vm_.async_run(cyng::register_function("ipt.req.dev.auth", 2, std::bind(&bus::ipt_req_dev_auth, this, std::placeholders::_1)));
+			vm_.async_run(cyng::register_function("ipt.req.dev.time", 2, std::bind(&bus::ipt_req_dev_time, this, std::placeholders::_1)));
 		}
 
 		void bus::start()
@@ -191,7 +200,7 @@ namespace node
 			//	* result code
 			//	* channel
 			const cyng::vector_t frame = ctx.get_frame();
-			vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt.res.register.push.target", frame));
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.res.register.push.target", frame));
 
 			const response_type res = cyng::value_cast<response_type>(frame.at(2), 0);
 			ctrl_res_register_target_policy::get_response_name(res);
@@ -215,7 +224,7 @@ namespace node
 			//	* number
 			//
 			const cyng::vector_t frame = ctx.get_frame();
-			vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt.req.open.connection", frame));
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.open.connection", frame));
 
 			switch (state_)
 			{
@@ -225,14 +234,71 @@ namespace node
 				break;
 			case STATE_CONNECTED_:
 				//	busy
-				vm_.async_run(cyng::generate_invoke("res.open.connection", frame.at(1), cyng::make_object<std::uint8_t>(ipt::tp_res_open_connection_policy::BUSY)));
+				vm_.async_run(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_open_connection_policy::BUSY)));
 				vm_.async_run(cyng::generate_invoke("stream.flush"));
 				break;
 			default:
-				vm_.async_run(cyng::generate_invoke("res.open.connection", frame.at(1), cyng::make_object<std::uint8_t>(ipt::tp_res_open_connection_policy::DIALUP_FAILED)));
+				vm_.async_run(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_open_connection_policy::DIALUP_FAILED)));
 				vm_.async_run(cyng::generate_invoke("stream.flush"));
 				break;
 			}
+		}
+
+		void bus::ipt_req_protocol_version(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.protocol.version", frame));
+			vm_.async_run(cyng::generate_invoke("res.protocol.version", frame.at(1), static_cast<std::uint8_t>(1)));
+			vm_.async_run(cyng::generate_invoke("stream.flush"));
+		}
+
+		void bus::ipt_req_software_version(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.software.version", frame));
+			vm_.async_run(cyng::generate_invoke("res.software.version", frame.at(1), NODE_VERSION));
+			vm_.async_run(cyng::generate_invoke("stream.flush"));
+		}
+
+		void bus::ipt_req_device_id(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.device.id", frame));
+			vm_.async_run(cyng::generate_invoke("res.device.id", frame.at(1), "ipt:store"));
+			vm_.async_run(cyng::generate_invoke("stream.flush"));
+		}
+
+		void bus::ipt_req_net_stat(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.net.stat", frame));
+			vm_.async_run(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint32_t>(code::APP_REQ_NETWORK_STATUS)));
+			vm_.async_run(cyng::generate_invoke("stream.flush"));
+		}
+
+		void bus::ipt_req_ip_statistics(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.ip.statistics", frame));
+			vm_.async_run(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint32_t>(code::APP_REQ_IP_STATISTICS)));
+			vm_.async_run(cyng::generate_invoke("stream.flush"));
+		}
+
+		void bus::ipt_req_dev_auth(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.device.auth", frame));
+			//vm_.async_run(cyng::generate_invoke("res.device.auth", frame.at(1)));
+			vm_.async_run(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint32_t>(code::APP_REQ_DEVICE_AUTHENTIFICATION)));
+			vm_.async_run(cyng::generate_invoke("stream.flush"));
+		}
+
+		void bus::ipt_req_dev_time(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.device.time", frame));
+			vm_.async_run(cyng::generate_invoke("res.device.time", frame.at(1)));
+			vm_.async_run(cyng::generate_invoke("stream.flush"));
 		}
 
 

@@ -85,7 +85,10 @@ namespace node
 		, std::uint64_t seq
 		, bool success
 		, std::string const& msg 
+		, std::uint32_t query
 		, cyng::param_map_t const& bag);
+
+	cyng::vector_t client_req_close(boost::uuids::uuid tag, int);
 
 	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
 		, std::string const& target
@@ -94,6 +97,10 @@ namespace node
 		, std::string const& version
 		, std::string const& id
 		, std::uint16_t timeout
+		, cyng::param_map_t const& bag);
+
+	cyng::vector_t client_req_close_push_channel(boost::uuids::uuid tag
+		, std::uint32_t channel
 		, cyng::param_map_t const& bag);
 
 	cyng::vector_t client_res_open_push_channel(boost::uuids::uuid tag
@@ -148,6 +155,24 @@ namespace node
 		, std::uint64_t seq
 		, cyng::param_map_t bag
 		, cyng::object const& data);
+
+	cyng::vector_t client_req_transfer_pushdata(boost::uuids::uuid tag
+		, std::uint32_t
+		, std::uint32_t
+		, cyng::object 
+		, cyng::param_map_t const&);
+
+	cyng::vector_t client_res_transfer_pushdata(boost::uuids::uuid tag
+		, std::uint64_t seq
+		, std::uint32_t source
+		, std::uint32_t channel
+		, std::size_t count		//	count
+		, cyng::param_map_t const& bag);
+
+	cyng::vector_t client_update_attr(boost::uuids::uuid tag
+		, std::string attr
+		, cyng::object value
+		, cyng::param_map_t const& bag);
 
 }
 

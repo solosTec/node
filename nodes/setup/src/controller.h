@@ -43,7 +43,7 @@ namespace node
 		 *
 		 * @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
 		 */
-		int init_db();
+		int init_db(std::size_t count);
 
 	private:
 		const unsigned int pool_size_;

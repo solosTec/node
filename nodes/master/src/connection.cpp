@@ -73,7 +73,6 @@ namespace node
 				else //if (ec != boost::asio::error::operation_aborted)
 				{
 					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
-// 					connection_manager_.stop(shared_from_this());
 
 					//
 					//	session cleanup - hold a reference of the session
@@ -95,7 +94,7 @@ namespace node
 	void connection::push_session(cyng::context& ctx)
 	{
 		CYNG_LOG_TRACE(logger_, "push session " 
-			<< get_session()->tag_
+			<< get_session()->hash()
 			<< " on stack");
 		ctx.push(session_);
 	}

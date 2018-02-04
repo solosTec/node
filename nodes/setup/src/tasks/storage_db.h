@@ -49,7 +49,7 @@ namespace node
 		/**
 		 * static method to create tables.
 		 */
-		static int init_db(cyng::tuple_t);
+		static int init_db(cyng::tuple_t, std::size_t count);
 		static std::map<std::string, cyng::table::meta_table_ptr> init_meta_map();
 
 	private:

@@ -15,6 +15,7 @@
 #include <cyng/store/db.h>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
+#include <boost/functional/hash.hpp>
 #include <unordered_map>
 
 namespace node 
@@ -45,6 +46,10 @@ namespace node
 		private:
 			/// Perform an asynchronous accept operation.
 			void do_accept();
+
+			void insert_connection(cyng::context&);
+			void close_connection(cyng::context&);
+
 			void client_res_login(cyng::context&);
 			void client_res_open_push_channel(cyng::context&);
 			void client_res_register_push_target(cyng::context&);
@@ -52,6 +57,7 @@ namespace node
 			void client_req_open_connection_forward(cyng::context&);
 			void client_res_open_connection_forward(cyng::context&);
 			void client_req_transmit_data_forward(cyng::context&);
+			void client_res_transfer_pushdata(cyng::context& ctx);
 
 			void propagate(std::string, cyng::vector_t&&);
 		private:
@@ -87,7 +93,9 @@ namespace node
 			/**
 			 * client map
 			 */
-			std::map<boost::uuids::uuid, std::shared_ptr<connection> >	client_map_;
+			std::map<boost::uuids::uuid, cyng::object>	client_map_;
+
+			//boost::hash<boost::uuids::uuid> uuid_hasher_;
 
 		};
 	}

@@ -231,7 +231,7 @@ namespace node
 	}
 
 
-	int storage_db::init_db(cyng::tuple_t tpl)
+	int storage_db::init_db(cyng::tuple_t tpl, std::size_t count)
 	{
 		auto cfg = cyng::to_param_map(tpl);
 		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
@@ -256,49 +256,34 @@ namespace node
 #ifdef _DEBUG
 				if (tbl.first == "TDevice")
 				{
-					/*
-					cmd.insert();
-					sql = cmd.to_str();
-					auto stmt = s.create_statement();
-					std::pair<int, bool> r = stmt->prepare(sql);
-					BOOST_ASSERT(r.first == 10);	//	3 parameters to bind
-					BOOST_ASSERT(r.second);
+					for (std::size_t idx = 0; idx < count; ++idx)
+					{
+						cmd.insert();
+						sql = cmd.to_str();
+						auto stmt = s.create_statement();
+						std::pair<int, bool> r = stmt->prepare(sql);
+						BOOST_ASSERT(r.first == 11);	//	11 parameters to bind
+						BOOST_ASSERT(r.second);
 
-					//	bind parameters
-					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
-						.push(cyng::make_object(27ull), 0)
-						.push(cyng::make_object("Douglas Adams"), 128)
-						.push(cyng::make_object("secret"), 16)
-						.push(cyng::make_object("42"), 128)
-						.push(cyng::make_object("in search for the last question"), 512)
-						.push(cyng::make_object("ID"), 64)
-						.push(cyng::make_object("vFirmware"), 64)
-						.push(cyng::make_object(true), 0)
-						.push(cyng::make_object(std::chrono::system_clock::now()), 0)
-						;
-					stmt->execute();
-					stmt->clear();
-
-					r = stmt->prepare(sql);
-					//	bind parameters
-					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
-						.push(cyng::make_object(344ull), 0)
-						.push(cyng::make_object("Jon Smith"), 128)
-						.push(cyng::make_object("secret"), 16)
-						.push(cyng::make_object("987"), 128)
-						.push(cyng::make_object("dull head"), 512)
-						.push(cyng::make_object("american"), 64)
-						.push(cyng::make_object("0.1"), 64)
-						.push(cyng::make_object(false), 0)
-						.push(cyng::make_object(std::chrono::system_clock::now()), 0)
-						;
-					stmt->execute();
-					stmt->clear();
-					*/
+						//	bind parameters
+						stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
+							.push(cyng::make_object<std::uint64_t>(idx), 0)
+							.push(cyng::make_object("device-" + std::to_string(idx + 1)), 128)
+							.push(cyng::make_object("secret"), 16)
+							.push(cyng::make_object(std::to_string(idx + 1001)), 128)
+							.push(cyng::make_object("comment #" + std::to_string(idx + 1)), 512)
+							.push(cyng::make_object("ID"), 64)
+							.push(cyng::make_object("v" + std::to_string(idx + 1)), 64)
+							.push(cyng::make_object(true), 0)
+							.push(cyng::make_object(std::chrono::system_clock::now()), 0)
+							.push(cyng::make_object<std::uint32_t>((((idx + 1)% 7) == 0) ? 319 : 6), 0)
+							;
+						stmt->execute();
+						stmt->clear();
+					}
 				}
 				else if (tbl.first == "TLL")
 				{
-					/*
 					cmd.insert();
 					sql = cmd.to_str();
 					auto stmt = s.create_statement();
@@ -328,7 +313,6 @@ namespace node
 						;
 					stmt->execute();
 					stmt->clear();
-					*/
 				}
 #endif
 			}
@@ -347,10 +331,10 @@ namespace node
 		//	SQL table scheme
 		//
 		std::map<std::string, cyng::table::meta_table_ptr> meta_map;
-		meta_map.emplace("TDevice", cyng::table::make_meta_table<1, 9>("TDevice",
-			{ "pk", "gen", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime" },
-			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
-			{ 36, 0, 128, 16, 128, 512, 64, 64, 0, 0 }));
+		meta_map.emplace("TDevice", cyng::table::make_meta_table<1, 10>("TDevice",
+			{ "pk", "gen", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
+			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
+			{ 36, 0, 128, 16, 128, 512, 64, 64, 0, 0, 0 }));
 
 		meta_map.emplace("TUser", cyng::table::make_meta_table<1, 6>("TUser",
 			{ "pk", "gen", "name", "team", "priv_read", "priv_write", "priv_delete" },

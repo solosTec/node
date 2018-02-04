@@ -6,11 +6,12 @@
  */ 
 
 #include "connection.h"
+#include <smf/cluster/generator.h>
 #include <cyng/vm/domain/asio_domain.h>
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
 #endif
-#include <cyng/vm/generator.h>
+//#include <cyng/vm/generator.h>
 
 namespace node 
 {
@@ -26,6 +27,7 @@ namespace node
 			, std::chrono::seconds const& timeout)
 		: socket_(std::move(socket))
 			, logger_(logger)
+			, tag_(tag)
 			, buffer_()
 			, session_(mux, logger, bus, tag, sk, watchdog, timeout)
 			, serializer_(socket_, session_.vm_, sk)
@@ -49,9 +51,9 @@ namespace node
 
 		void connection::do_read()
 		{
-			auto self(shared_from_this());
+			//auto self(shared_from_this());
 			socket_.async_read_some(boost::asio::buffer(buffer_),
-				[this, self](boost::system::error_code ec, std::size_t bytes_transferred)
+				[this/*, self*/](boost::system::error_code ec, std::size_t bytes_transferred)
 			{
 				if (!ec)
 				{
@@ -73,13 +75,50 @@ namespace node
 				}
 				else //if (ec != boost::asio::error::operation_aborted)
 				{
-					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.message() << '>');
-					// 					connection_manager_.stop(shared_from_this());
+					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
+					session_.bus_->vm_.async_run(client_req_close(tag_, ec.value()));
+					session_.bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", tag_, ec));
 				}
 			});
 		}
 
+		std::size_t connection::hash() const noexcept
+		{
+			return session_.vm_.hash();
+		}
+
+		cyng::object make_connection(boost::asio::ip::tcp::socket&& socket
+			, cyng::async::mux& mux
+			, cyng::logging::log_ptr logger
+			, bus::shared_type bus
+			, boost::uuids::uuid tag
+			, scramble_key const& sk
+			, std::uint16_t watchdog
+			, std::chrono::seconds const& timeout)
+		{
+			return cyng::make_object<connection>(std::move(socket)
+				, mux
+				, logger 
+				, bus
+				, tag 
+				, sk 
+				, watchdog 
+				, timeout);
+
+		}
+
 	}
+}
+
+namespace cyng
+{
+	namespace traits
+	{
+
+#if defined(CYNG_LEGACY_MODE_ON)
+		const char type_tag<node::ipt::connection>::name[] = "ipt::connection";
+#endif
+	}	// traits	
 }
 
 

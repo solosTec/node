@@ -51,19 +51,23 @@ namespace node
 		cyng::vector_t reply(cyng::vector_t const&, bool);
 
 		void client_req_login(cyng::context& ctx);
+		void client_req_close(cyng::context& ctx);
+
 		void client_req_open_push_channel(cyng::context& ctx);
+		void client_req_close_push_channel(cyng::context& ctx);
 		void client_req_register_push_target(cyng::context& ctx);
 		void client_req_open_connection(cyng::context& ctx);
 		void client_res_open_connection(cyng::context& ctx);
 		void client_req_close_connection(cyng::context& ctx);
+		void client_req_transfer_pushdata(cyng::context& ctx);
 
 		void client_req_transmit_data(cyng::context& ctx);
+		void client_update_attr(cyng::context& ctx);
 
 	private:
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
-		const boost::uuids::uuid tag_;
 		cyng::controller vm_;
 		const std::string account_;
 		const std::string pwd_;

@@ -199,7 +199,7 @@ namespace node
 		return EXIT_FAILURE;
 	}
 
-	int controller::init_db()
+	int controller::init_db(std::size_t count)
 	{
 		//
 		//	read configuration file
@@ -214,7 +214,7 @@ namespace node
 		{
 			auto dom = cyng::make_reader(vec[0]);
 			cyng::tuple_t tpl;
-			return storage_db::init_db(cyng::value_cast(dom.get("DB"), tpl));
+			return storage_db::init_db(cyng::value_cast(dom.get("DB"), tpl), count);
 		}
 		return EXIT_FAILURE;
 	}

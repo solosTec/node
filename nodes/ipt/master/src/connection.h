@@ -24,11 +24,11 @@ namespace node
 		 * Cluster member connection
 		 */
 		class server;
-		class connection : public std::enable_shared_from_this<connection>
+		class connection //: public std::enable_shared_from_this<connection>
 		{
 			friend class server;
 		public:
-			using shared_type = std::shared_ptr<connection>;
+			//using shared_type = std::shared_ptr<connection>;
 
 		public:
 			connection(connection const&) = delete;
@@ -56,6 +56,11 @@ namespace node
 			 */
 			void stop();
 
+			/**
+			 * @return connection specific hash based in internal tag
+			 */
+			std::size_t hash() const noexcept;
+
 		private:
 			/**
 			 * Perform an asynchronous read operation.
@@ -78,6 +83,8 @@ namespace node
 			 */
 			cyng::logging::log_ptr logger_;
 
+			const boost::uuids::uuid tag_;
+
 			/**
 			 * Buffer for incoming data.
 			 */
@@ -95,7 +102,69 @@ namespace node
 			serializer		serializer_;
 
 		};
+
+		cyng::object make_connection(boost::asio::ip::tcp::socket&&
+			, cyng::async::mux& mux
+			, cyng::logging::log_ptr logger
+			, bus::shared_type
+			, boost::uuids::uuid
+			, scramble_key const& sk
+			, std::uint16_t watchdog
+			, std::chrono::seconds const& timeout);
+
 	}
+}
+
+#include <cyng/intrinsics/traits.hpp>
+namespace cyng
+{
+	namespace traits
+	{
+		template <>
+		struct type_tag<node::ipt::connection>
+		{
+			using type = node::ipt::connection;
+			using tag = std::integral_constant<std::size_t, PREDEF_CONNECTION>;
+#if defined(CYNG_LEGACY_MODE_ON)
+			const static char name[];
+#else
+			constexpr static char name[] = "ipt:connection";
+#endif
+		};
+
+		template <>
+		struct reverse_type < PREDEF_CONNECTION >
+		{
+			using type = node::ipt::connection;
+		};
+	}
+}
+
+#include <functional>
+#include <boost/functional/hash.hpp>
+
+namespace std
+{
+	template<>
+	struct hash<node::ipt::connection>
+	{
+		inline size_t operator()(node::ipt::connection const& conn) const noexcept
+		{
+			return conn.hash();
+		}
+	};
+	template<>
+	struct equal_to<node::ipt::connection>
+	{
+		using result_type = bool;
+		using first_argument_type = node::ipt::connection;
+		using second_argument_type = node::ipt::connection;
+
+		inline bool operator()(node::ipt::connection const& conn1, node::ipt::connection const& conn2) const noexcept
+		{
+			return conn1.hash() == conn2.hash();
+		}
+	};
 }
 
 #endif

@@ -13,6 +13,7 @@
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
 #endif
+#include <cyng/tuple_cast.hpp>
 #include <boost/predef.h>
 
 namespace node
@@ -106,11 +107,11 @@ namespace node
 			vm.run(cyng::register_function("req.software.version", 0, std::bind(&serializer::req_software_version, this, std::placeholders::_1)));
 			vm.run(cyng::register_function("res.software.version", 2, std::bind(&serializer::res_software_version, this, std::placeholders::_1)));
 
-			vm.run(cyng::register_function("req.device.id", 1, std::bind(&serializer::req_device_id, this, std::placeholders::_1)));
+			vm.run(cyng::register_function("req.device.id", 0, std::bind(&serializer::req_device_id, this, std::placeholders::_1)));
 			vm.run(cyng::register_function("res.device.id", 2, std::bind(&serializer::res_device_id, this, std::placeholders::_1)));
 
-			vm.run(cyng::register_function("req.network.status", 0, std::bind(&serializer::req_network_status, this, std::placeholders::_1)));
-			vm.run(cyng::register_function("res.network.status", 9, std::bind(&serializer::res_network_status, this, std::placeholders::_1)));
+			vm.run(cyng::register_function("req.net.status", 0, std::bind(&serializer::req_network_status, this, std::placeholders::_1)));
+			vm.run(cyng::register_function("res.net.status", 9, std::bind(&serializer::res_network_status, this, std::placeholders::_1)));
 
 			vm.run(cyng::register_function("req.ip.statistics", 0, std::bind(&serializer::req_ip_statistics, this, std::placeholders::_1)));
 			vm.run(cyng::register_function("res.ip.statistics", 3, std::bind(&serializer::res_ip_statistics, this, std::placeholders::_1)));
@@ -294,31 +295,37 @@ namespace node
 		void serializer::res_open_push_channel(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			const sequence_type seq = cyng::value_cast<sequence_type>(frame.at(0), 0);
-			const response_type res = cyng::value_cast<response_type>(frame.at(0), 0);
-			const std::uint32_t channel = cyng::value_cast<std::uint32_t>(frame.at(1), 0);
-			const std::uint32_t source = cyng::value_cast<std::uint32_t>(frame.at(1), 0);
-			const std::uint16_t packet_size = cyng::value_cast<std::uint16_t>(frame.at(1), 0);
-			const std::uint8_t window_size = cyng::value_cast<std::uint8_t>(frame.at(1), 0);
-			const std::uint8_t status = cyng::value_cast<std::uint8_t>(frame.at(1), 0);
-			const std::uint32_t count = cyng::value_cast<std::uint32_t>(frame.at(1), 0);
+			auto const tpl = cyng::tuple_cast<
+				sequence_type,		//	[0] ipt seq
+				response_type,		//	[1] response value
+				std::uint32_t,		//	[2] channel
+				std::uint32_t,		//	[3] source
+				std::uint16_t,		//	[4] packet size
+				std::uint8_t,		//	[5] window size
+				std::uint8_t,		//	[6] status
+				std::uint32_t		//	[7] count
+			>(frame);
 
-			static_assert(17 == sizeof(res)
-					+ sizeof(channel)
-					+ sizeof(source)
-					+ sizeof(packet_size)
-					+ sizeof(window_size)
-					+ sizeof(status)
-					+ sizeof(count), "res_open_push_channel(length assumption invalid)");
+			//static_assert(17 == sizeof(res)
+			//		+ sizeof(channel)
+			//		+ sizeof(source)
+			//		+ sizeof(packet_size)
+			//		+ sizeof(window_size)
+			//		+ sizeof(status)
+			//		+ sizeof(count), "res_open_push_channel(length assumption invalid)");
 
-			write_header(code::TP_RES_OPEN_PUSH_CHANNEL, seq, 17);
-			write_numeric(res);
-			write_numeric(channel);
-			write_numeric(source);
-			write_numeric(packet_size);
-			write_numeric(window_size);
-			write_numeric(status);
-			write_numeric(count);
+			//static_assert(18 == sizeof(tpl), "res_open_push_channel(length assumption invalid)");
+			//	== 32
+			//std::cout << sizeof(tpl) << std::endl;
+
+			write_header(code::TP_RES_OPEN_PUSH_CHANNEL, std::get<0>(tpl), 17);
+			write_numeric(std::get<1>(tpl));
+			write_numeric(std::get<2>(tpl));
+			write_numeric(std::get<3>(tpl));
+			write_numeric(std::get<4>(tpl));
+			write_numeric(std::get<5>(tpl));
+			write_numeric(std::get<6>(tpl));
+			write_numeric(std::get<7>(tpl));
 		}
 
 		void serializer::req_close_push_channel(cyng::context& ctx)
@@ -361,33 +368,35 @@ namespace node
 			write_numeric(source);
 			write_numeric(status);
 			write_numeric(block);
-			write_numeric(size);
-			put(data.data(), data.size());
+			write_numeric(data.size());
+			put(data.data(), data.size());	//	no escaping
 		}
 
 		void serializer::res_transfer_push_data(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			const sequence_type seq = cyng::value_cast<sequence_type>(frame.at(0), 0);
-			const response_type res = cyng::value_cast<response_type>(frame.at(1), 0);
-			const std::uint32_t channel = cyng::value_cast<std::uint32_t>(frame.at(2), 0);
-			const std::uint32_t source = cyng::value_cast<std::uint32_t>(frame.at(3), 0);
-			const std::uint8_t status = cyng::value_cast<std::uint8_t>(frame.at(4), 0);
-			const std::uint8_t block = cyng::value_cast<std::uint8_t>(frame.at(5), 0);
+			auto const tpl = cyng::tuple_cast<
+				sequence_type,		//	[0] ipt seq
+				response_type,		//	[1] response value
+				std::uint32_t,		//	[2] channel
+				std::uint32_t,		//	[3] source
+				std::uint8_t,		//	[4] status
+				std::uint8_t		//	[5] block
+			>(frame);
 
-			static_assert(11 == sizeof(res)
-				+ sizeof(channel)
-				+ sizeof(source)
-				+ sizeof(status)
-				+ sizeof(block), "res_transfer_push_data(length assumption invalid)");
+			//static_assert(11 == sizeof(res)
+			//	+ sizeof(channel)
+			//	+ sizeof(source)
+			//	+ sizeof(status)
+			//	+ sizeof(block), "res_transfer_push_data(length assumption invalid)");
 
-			write_header(code::TP_RES_PUSHDATA_TRANSFER, seq, 11);
+			write_header(code::TP_RES_PUSHDATA_TRANSFER, std::get<0>(tpl), 11);
 
-			write_numeric(res);
-			write_numeric(channel);
-			write_numeric(source);
-			write_numeric(status);
-			write_numeric(block);
+			write_numeric(std::get<1>(tpl));
+			write_numeric(std::get<2>(tpl));
+			write_numeric(std::get<3>(tpl));
+			write_numeric(std::get<4>(tpl));
+			write_numeric(std::get<5>(tpl));
 
 		}
 
@@ -466,7 +475,7 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			const sequence_type seq = cyng::value_cast<sequence_type>(frame.at(0), 0);
 			const std::string id = cyng::value_cast<std::string >(frame.at(1), "");
-			write_header(code::APP_RES_SOFTWARE_VERSION, seq, id.size() + 1);
+			write_header(code::APP_RES_DEVICE_IDENTIFIER, seq, id.size() + 1);
 			write(id);
 		}
 
@@ -682,7 +691,7 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			const sequence_type seq = cyng::value_cast<sequence_type>(frame.at(0), 0);
 			const command_type cmd = cyng::value_cast<command_type>(frame.at(1), 0);
-			write_header(code::CTRL_RES_DEREGISTER_TARGET, seq, sizeof(cmd));
+			write_header(code::UNKNOWN, seq, sizeof(cmd));
 			write_numeric(cmd);
 		}
 

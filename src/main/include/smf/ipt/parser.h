@@ -144,6 +144,13 @@ namespace node
 				ctrl_res_login_scrambled() {}
 			};
 
+			struct ctrl_req_logout : base {
+				ctrl_req_logout() {}	//	deprecated
+			};
+			struct ctrl_res_logout : base {
+				ctrl_res_logout() {}	//	deprecated
+			};
+
 			struct ctrl_req_register_target : base {
 				ctrl_req_register_target() {}
 			};
@@ -170,6 +177,10 @@ namespace node
 			//	stream source deregister
 			//CTRL_REQ_DEREGISTER_STREAM_SOURCE = 0xC00C,
 			//CTRL_RES_DEREGISTER_STREAM_SOURCE = 0x400C,
+
+			struct unknown_cmd : base {
+				unknown_cmd() {}	//	0x7fff
+			};
 
 
 			using parser_state_t = boost::variant<command,
@@ -202,12 +213,17 @@ namespace node
 				ctrl_res_login_public,		//	0x4001
 				ctrl_res_login_scrambled,	//	0x4002
 
+				ctrl_req_logout,			//	0xc004
+				ctrl_res_logout,			//	0x4004
+
 				ctrl_req_register_target,	//	0xc005
 				ctrl_res_register_target,	//	0x4005
 				ctrl_req_deregister_target,	//	0xc006
-				ctrl_res_deregister_target	//	0x4006
+				ctrl_res_deregister_target,	//	0x4006
 				//ctrl_req_watchdog,			//	0xc008
 				//ctrl_res_watchdog			//	0x4008
+
+				unknown_cmd					//	0x7fff
 			>;
 
 			//
@@ -245,10 +261,15 @@ namespace node
 				state operator()(ctrl_res_login_public&) const;
 				state operator()(ctrl_res_login_scrambled&) const;
 
+				state operator()(ctrl_req_logout&) const;
+				state operator()(ctrl_res_logout&) const;
+
 				state operator()(ctrl_req_register_target&) const;
 				state operator()(ctrl_res_register_target&) const;
 				state operator()(ctrl_req_deregister_target&) const;
 				state operator()(ctrl_res_deregister_target&) const;
+
+				state operator()(unknown_cmd&) const;
 
 				parser& parser_;
 				const char c_;

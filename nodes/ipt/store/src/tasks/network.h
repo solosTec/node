@@ -25,6 +25,7 @@ namespace node
 			using msg_0 = std::tuple<std::uint16_t, std::string>;
 			using msg_1 = std::tuple<>;
 			using msg_2 = std::tuple<sequence_type, std::string>;
+			//using msg_3 = std::tuple<sequence_type, std::uint32_t>;
 			using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
 
 		public:

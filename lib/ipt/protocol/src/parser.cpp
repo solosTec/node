@@ -117,6 +117,9 @@ namespace node
 					case code::TP_RES_OPEN_CONNECTION:
 						parser_state_ = tp_res_open_connection();
 						break;
+					//case code::TP_REQ_CLOSE_CONNECTION:
+					//	parser_state_ = tp_req_close_connection();
+					//	break;
 					case code::TP_RES_CLOSE_CONNECTION:
 						parser_state_ = tp_res_close_connection();
 						break;
@@ -177,6 +180,13 @@ namespace node
 						parser_state_ = ctrl_res_login_scrambled();
 						break;
 
+					case code::CTRL_REQ_LOGOUT:
+						parser_state_ = ctrl_req_logout();
+						break;
+					case code::CTRL_RES_LOGOUT:
+						parser_state_ = ctrl_res_logout();
+						break;
+
 					case code::CTRL_REQ_REGISTER_TARGET:
 						parser_state_ = ctrl_req_register_target();
 						break;
@@ -197,6 +207,10 @@ namespace node
 					//	stream source deregister
 					//CTRL_REQ_DEREGISTER_STREAM_SOURCE = 0xC00C,
 					//CTRL_RES_DEREGISTER_STREAM_SOURCE = 0x400C,
+
+					case code::UNKNOWN:
+						parser_state_ = unknown_cmd();
+						break;
 
 					default:
 						break;
@@ -495,11 +509,10 @@ namespace node
 			parser_.input_.put(c_);
 			if (res.pos_ == size(parser_.header_))
 			{
-				parser_.code_ << cyng::generate_invoke("ipt.res.close.connection"
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.close.connection"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_uint8)	//	response
-					<< cyng::unwind_vec();
+					, parser_.f_read_uint8);	//	response
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -511,11 +524,10 @@ namespace node
 			parser_.input_.put(c_);
 			if (res.pos_ == size(parser_.header_))
 			{
-				parser_.code_ << cyng::generate_invoke("ipt.res.protocol.version"
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.protocol.version"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_uint8)
-					<< cyng::unwind_vec();
+					, parser_.f_read_uint8);
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -542,11 +554,10 @@ namespace node
 			parser_.input_.put(c_);
 			if (res.pos_ == size(parser_.header_))
 			{
-				parser_.code_ << cyng::generate_invoke("ipt.res.dev.id"
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.dev.id"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_string)
-					<< cyng::unwind_vec();
+					, parser_.f_read_string);
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -560,7 +571,7 @@ namespace node
 				//
 				//	Note: no response code
 				//
-				parser_.code_ << cyng::generate_invoke("ipt.res.network.stat"
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.network.stat"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8	//	device type
@@ -570,8 +581,7 @@ namespace node
 					, parser_.f_read_uint32	//	status_vector	status_[ 3 ];
 					, parser_.f_read_uint32	//	status_vector	status_[ 4 ];
 					, parser_.f_read_string  //	//	IMSI
-					, parser_.f_read_string)  //	//	IMEI
-					<< cyng::unwind_vec();
+					, parser_.f_read_string);  //	//	IMEI
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -582,13 +592,12 @@ namespace node
 			parser_.input_.put(c_);
 			if (res.pos_ == size(parser_.header_))
 			{
-				parser_.code_ << cyng::generate_invoke("ipt.res.ip.statistics"
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.ip.statistics"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8	//	response type
 					, parser_.f_read_uint64		//	rx
-					, parser_.f_read_uint64)	//	tx
-					<< cyng::unwind_vec();
+					, parser_.f_read_uint64);	//	tx
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -599,14 +608,13 @@ namespace node
 			parser_.input_.put(c_);
 			if (res.pos_ == size(parser_.header_))
 			{
-				parser_.code_ << cyng::generate_invoke("ipt.res.dev.auth"
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.dev.auth"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_string	//	account
 					, parser_.f_read_string		//	password
 					, parser_.f_read_string		//	number
-					, parser_.f_read_string)	//	description
-					<< cyng::unwind_vec();
+					, parser_.f_read_string);	//	description
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -617,11 +625,10 @@ namespace node
 			parser_.input_.put(c_);
 			if (res.pos_ == size(parser_.header_))
 			{
-				parser_.code_ << cyng::generate_invoke("ipt.res.dev.time"
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.dev.time"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_uint32)	//	seconds since 1970
-					<< cyng::unwind_vec();
+					, parser_.f_read_uint32);	//	seconds since 1970
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -765,12 +772,38 @@ namespace node
 			parser_.input_.put(c_);
 			if (res.pos_ == size(parser_.header_))
 			{
-				parser_.code_ << cyng::generate_invoke("ipt.res.login.scrambled"
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.login.scrambled"
 					, cyng::code::IDENT
 					, parser_.f_read_uint8	//	response
 					, parser_.f_read_uint16	//	watchdog
-					, parser_.f_read_string)	//	redirect
-					<< cyng::unwind_vec();
+					, parser_.f_read_string);	//	redirect
+				return STATE_STREAM;
+			}
+			return STATE_DATA;
+		}
+
+		parser::state parser::state_visitor::operator()(ctrl_req_logout& res) const
+		{
+			res.pos_++;
+			parser_.input_.put(c_);
+			if (res.pos_ == size(parser_.header_))
+			{
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.logout"
+					, cyng::code::IDENT
+					, parser_.f_read_uint8);	//	reason
+				return STATE_STREAM;
+			}
+			return STATE_DATA;
+		}
+		parser::state parser::state_visitor::operator()(ctrl_res_logout& res) const
+		{
+			res.pos_++;
+			parser_.input_.put(c_);
+			if (res.pos_ == size(parser_.header_))
+			{
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.logout"
+					, cyng::code::IDENT
+					, parser_.f_read_uint8);	//	response
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -835,6 +868,21 @@ namespace node
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8		//	response
 					, parser_.f_read_string);	//target name
+				return STATE_STREAM;
+			}
+			return STATE_DATA;
+		}
+
+		parser::state  parser::state_visitor::operator()(unknown_cmd& cmd) const
+		{
+			cmd.pos_++;
+			parser_.input_.put(c_);
+			if (cmd.pos_ == size(parser_.header_))
+			{
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.unknown.cmd"
+					, cyng::code::IDENT
+					, parser_.header_.sequence_
+					, parser_.f_read_uint32);		//	command code
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
