@@ -186,8 +186,8 @@ namespace node
 								cyng::param_factory("realm", "Restricted Content"),
 								cyng::param_factory("name", "auth@example.com"),
 								cyng::param_factory("pwd", "secret")
-							)
-						})),
+							)}
+						)),
 						cyng::param_factory("redirect", cyng::vector_factory({
 							cyng::param_factory("/", "/index.html")
 						}))

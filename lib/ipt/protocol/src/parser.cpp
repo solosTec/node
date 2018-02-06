@@ -882,7 +882,7 @@ namespace node
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.unknown.cmd"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_uint32);		//	command code
+					, parser_.f_read_uint16);		//	command code
 				return STATE_STREAM;
 			}
 			return STATE_DATA;

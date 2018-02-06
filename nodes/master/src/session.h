@@ -64,6 +64,18 @@ namespace node
 		void client_req_transmit_data(cyng::context& ctx);
 		void client_update_attr(cyng::context& ctx);
 
+		void sig_ins(cyng::store::table const*
+			, cyng::table::key_type const&
+			, cyng::table::data_type const&
+			, std::uint64_t
+			, boost::uuids::uuid);
+		void sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid);
+		void sig_clr(cyng::store::table const*, boost::uuids::uuid);
+		void sig_mod(cyng::store::table const*
+			, cyng::table::key_type const&
+			, cyng::attr_t const&
+			, boost::uuids::uuid);
+
 	private:
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;

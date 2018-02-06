@@ -323,6 +323,15 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 endif()
 
 #
+#	sml protocol library
+#
+include (lib/sml/protocol/lib.cmake)
+add_library(lib_protocol_sml ${GLOBAL_LIBRARY_TYPE} ${sml_protocol_lib})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	target_link_libraries(lib_protocol_sml cyng_vm)
+endif()
+
+#
 # generic HTTP server
 #
 include (nodes/http/prg.cmake)
@@ -340,7 +349,7 @@ target_link_libraries(http ${http_link_libs})
 include (nodes/dash/prg.cmake)
 add_executable(dash ${node_dash})
 # libraries to link
-set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json)
+set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain lib_cluster)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND dashboard_link_libs "${Boost_LIBRARIES}")
 endif()

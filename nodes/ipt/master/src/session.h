@@ -71,6 +71,7 @@ namespace node
 			void client_req_open_connection_forward(cyng::context& ctx);
 			void client_res_open_connection_forward(cyng::context& ctx);
 			void client_res_transfer_pushdata(cyng::context& ctx);
+			void client_req_transfer_pushdata_forward(cyng::context& ctx);
 
 			void ipt_req_register_push_target(cyng::context& ctx);
 			void client_res_register_push_target(cyng::context& ctx);

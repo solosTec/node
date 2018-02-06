@@ -21,9 +21,10 @@ namespace node
 	class storage_db
 	{
 	public:
-		using msg_0 = std::tuple<std::string, std::size_t>;
+		using msg_0 = std::tuple<std::string, std::size_t, boost::uuids::uuid>;
 		using msg_1 = std::tuple<std::string, cyng::vector_t, cyng::vector_t, std::uint64_t>;
-		using signatures_t = std::tuple<msg_0, msg_1>;
+		using msg_2 = std::tuple<std::string, cyng::vector_t, cyng::attr_t>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
 
 	public:
 		storage_db(cyng::async::base_task* bt
@@ -36,7 +37,9 @@ namespace node
 		/**
 		 * slot [0] - load cache
 		 */
-		cyng::continuation process(std::string name, std::size_t sync_tsk);
+		cyng::continuation process(std::string name
+			, std::size_t sync_tsk
+			, boost::uuids::uuid);
 
 		/**
 		 * slot [1] - insert data
@@ -45,6 +48,13 @@ namespace node
 			, cyng::vector_t const&
 			, cyng::vector_t const&
 			, std::uint64_t);
+
+		/**
+		 * slot [2] - update data
+		 */
+		cyng::continuation process(std::string name
+			, cyng::vector_t const&
+			, cyng::attr_t const&);
 
 		/**
 		 * static method to create tables.

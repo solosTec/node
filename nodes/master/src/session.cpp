@@ -34,7 +34,6 @@ namespace node
 	: mux_(mux)
 		, logger_(logger)
 		, db_(db)
-		//, tag_(boost::uuids::random_generator()())
 		, vm_(mux.get_io_service(), boost::uuids::random_generator()())
 		, parser_([this](cyng::vector_t&& prg) {
 			CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
@@ -104,11 +103,16 @@ namespace node
 		//	remove affected targets
 		//
 		db_.access([&](cyng::store::table* tbl_target)->void {
-			const auto count = cyng::erase(tbl_target, get_targets_by_peer(tbl_target, this->hash()));
+			const auto count = cyng::erase(tbl_target, get_targets_by_peer(tbl_target, this->hash()), ctx.tag());
 			ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", count, "targets"));
 		}, cyng::store::write_access("*Target"));
 
 
+		//
+		//	remove all subscriptions
+		//
+		db_.disconnect("TDevice");
+		db_.disconnect("TGateway");
 
 		//
 		//	hold reference of this session
@@ -139,7 +143,7 @@ namespace node
 			//	remove all session records
 			//
 			ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", pks.size()));
-			cyng::erase(tbl_session, pks);
+			cyng::erase(tbl_session, pks, ctx.tag());
 
 		}, cyng::store::write_access("*Session"));
 	}
@@ -190,31 +194,95 @@ namespace node
 		//	* optional task id (to redistribute by receiver)
 		//	
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "subscribe (1)" << cyng::io::to_str(frame));
-		const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
-		const boost::uuids::uuid tag = cyng::value_cast(frame.at(1), boost::uuids::nil_uuid());
-		const std::size_t tsk = cyng::value_cast(frame.at(2), static_cast<std::size_t>(0));
-		CYNG_LOG_INFO(logger_, "subscribe " << table);
 
-		db_.access([this, &ctx, tag, tsk](const cyng::store::table* tbl)->void {
+		auto const tpl = cyng::tuple_cast<
+			std::string,			//	[0] table name
+			boost::uuids::uuid,		//	[1] remote session tag
+			std::size_t				//	[2] task id
+		>(frame);
+
+		CYNG_LOG_INFO(logger_, "subscribe " << std::get<0>(tpl));
+
+		db_.access([&](cyng::store::table* tbl)->void {
 
 			CYNG_LOG_INFO(logger_, tbl->meta().get_name() << "->size(" << tbl->size() << ")");
-			tbl->loop([this, tbl, &ctx, tag, tsk](cyng::table::record const& rec) -> bool {
+			tbl->loop([&](cyng::table::record const& rec) -> bool {
 
-				//CYNG_LOG_TRACE(logger_, cyng::io::to_str(rec[0]));
 				ctx.run(bus_db_insert(tbl->meta().get_name()
 					, rec.key()
 					, rec.data()
 					, rec.get_generation()
-					, tag
-					, tsk));
+					, std::get<1>(tpl)		//	session tag
+					, std::get<2>(tpl)));	//	task id (optional)
 
 				//	continue loop
 				return true;
 			});
 
-		}, cyng::store::read_access(table));
+			//
+			//	one set of callbacks for multiple tables
+			//
+			tbl->get_listener(std::bind(&session::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+				, std::bind(&session::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+				, std::bind(&session::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+				, std::bind(&session::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
+		}, cyng::store::write_access(std::get<0>(tpl)));
+	}
+
+	void session::sig_ins(cyng::store::table const* tbl
+		, cyng::table::key_type const& key
+		, cyng::table::data_type const& data
+		, std::uint64_t gen
+		, boost::uuids::uuid source)
+	{
+		//
+		//	don't send data back to sender
+		//
+		if (source != vm_.tag())
+		{
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.ins", tbl->meta().get_name(), source));
+			vm_.async_run(bus_db_insert(tbl->meta().get_name()
+				, key
+				, data
+				, gen));
+		}
+	}
+
+	void session::sig_del(cyng::store::table const* tbl, cyng::table::key_type const& key, boost::uuids::uuid source)
+	{
+		//
+		//	don't send data back to sender
+		//
+		if (source != vm_.tag())
+		{
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.del", tbl->meta().get_name(), source));
+			vm_.async_run(bus_db_remove(tbl->meta().get_name(), key));
+		}
+	}
+
+	void session::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
+	{
+		//
+		//	don't send data back to sender
+		//
+		if (source != vm_.tag())
+		{
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.clr", tbl->meta().get_name(), source));
+			vm_.async_run(bus_db_clear(tbl->meta().get_name()));
+		}
+	}
+
+	void session::sig_mod(cyng::store::table const* tbl, cyng::table::key_type const& key, cyng::attr_t const& attr, boost::uuids::uuid source)
+	{
+		//
+		//	don't send data back to sender
+		//
+		if (source != vm_.tag())
+		{
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.mod", tbl->meta().get_name(), source));
+			vm_.async_run(bus_db_modify(tbl->meta().get_name(), key, attr));
+		}
 	}
 
 	void session::bus_req_unsubscribe(cyng::context& ctx)

@@ -92,7 +92,7 @@ namespace node
 			vm.run(cyng::register_function("req.close.push.channel", 1, std::bind(&serializer::req_close_push_channel, this, std::placeholders::_1)));
 			vm.run(cyng::register_function("res.close.push.channel", 3, std::bind(&serializer::res_close_push_channel, this, std::placeholders::_1)));
 
-			vm.run(cyng::register_function("req.transfer.push.data", 6, std::bind(&serializer::req_transfer_push_data, this, std::placeholders::_1)));
+			vm.run(cyng::register_function("req.transfer.push.data", 5, std::bind(&serializer::req_transfer_push_data, this, std::placeholders::_1)));
 			vm.run(cyng::register_function("res.transfer.push.data", 6, std::bind(&serializer::res_transfer_push_data, this, std::placeholders::_1)));
 
 			vm.run(cyng::register_function("req.open.connection", 1, std::bind(&serializer::req_open_connection, this, std::placeholders::_1)));
@@ -358,9 +358,10 @@ namespace node
 			const std::uint32_t source = cyng::value_cast<std::uint32_t>(frame.at(1), 0);
 			const std::uint8_t status = cyng::value_cast<std::uint8_t>(frame.at(2), 0);
 			const std::uint8_t block = cyng::value_cast<std::uint8_t>(frame.at(3), 0);
-			const std::uint32_t size = cyng::value_cast<std::uint32_t>(frame.at(4), 0);
+			//const std::uint32_t size = cyng::value_cast<std::uint32_t>(frame.at(4), 0);
 			cyng::buffer_t data;
-			data = cyng::value_cast<cyng::buffer_t>(frame.at(5), data);
+			data = cyng::value_cast<cyng::buffer_t>(frame.at(4), data);
+			const std::uint32_t size = data.size();
 
 			last_seq_ = sgen_();
 			write_header(code::TP_REQ_PUSHDATA_TRANSFER, last_seq_, sizeof(channel) + sizeof(source) + sizeof(status) + sizeof(block) + sizeof(size) + data.size());
@@ -368,7 +369,7 @@ namespace node
 			write_numeric(source);
 			write_numeric(status);
 			write_numeric(block);
-			write_numeric(data.size());
+			write_numeric(size);
 			put(data.data(), data.size());	//	no escaping
 		}
 

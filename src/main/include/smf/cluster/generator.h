@@ -52,6 +52,19 @@ namespace node
 		, boost::uuids::uuid tag
 		, std::size_t tsk);
 
+	cyng::vector_t bus_db_modify(std::string const&
+		, cyng::vector_t const&
+		, cyng::attr_t const&);
+
+	cyng::vector_t bus_db_modify(std::string const&
+		, cyng::vector_t const&
+		, cyng::param_t const&);
+
+	cyng::vector_t bus_db_remove(std::string const&
+		, cyng::vector_t const&);
+
+	cyng::vector_t bus_db_clear(std::string const&);
+
 	/**
 	 * Send an arbitrary function call to receiver, which will send it back.
 	 */
@@ -160,6 +173,13 @@ namespace node
 		, std::uint32_t
 		, std::uint32_t
 		, cyng::object 
+		, cyng::param_map_t const&);
+
+	cyng::vector_t client_req_transfer_pushdata_forward(boost::uuids::uuid tag
+		, std::uint32_t
+		, std::uint32_t
+		, std::uint32_t
+		, cyng::object
 		, cyng::param_map_t const&);
 
 	cyng::vector_t client_res_transfer_pushdata(boost::uuids::uuid tag

@@ -5,15 +5,15 @@
 *
 */
 
-#ifndef NODE_SETUP_TASK_CLUSTER_H
-#define NODE_SETUP_TASK_CLUSTER_H
+#ifndef NODE_DASH_TASK_CLUSTER_H
+#define NODE_DASH_TASK_CLUSTER_H
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
+//#include "../server.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
-#include <cyng/store/db.h>
 
 namespace node
 {
@@ -28,9 +28,11 @@ namespace node
 	public:
 		cluster(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, cyng::store::db& cache
-			, std::size_t
-			, cluster_config_t const& cfg);
+			, cluster_config_t const& cfg_cls
+			, std::string const& address
+			, std::string const& service
+			, uint16_t watchdog
+			, int timeout);
 		void run();
 		void stop();
 
@@ -49,25 +51,19 @@ namespace node
 		cyng::continuation process();
 
 	private:
-		void db_insert(cyng::context& ctx);
-		void db_modify_by_attr(cyng::context& ctx);
-		void task_resume(cyng::context& ctx);
+		void connect();
 		void reconfigure(cyng::context& ctx);
 		void reconfigure_impl();
-		void create_cache();
 
 	private:
 		cyng::async::base_task& base_;
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-		const std::size_t storage_tsk_;
 		const cluster_config_t	config_;
+		const std::string http_address_;
+		const std::string http_service_;
+		//ipt::server	server_;
 		std::size_t master_;
-
-		/**
-		 * global data cache
-		 */
-		cyng::store::db& cache_;
 	};
 	
 }

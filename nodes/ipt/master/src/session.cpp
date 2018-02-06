@@ -79,6 +79,8 @@ namespace node
 			//	transport - push channel data transfer
 			//TP_REQ_PUSHDATA_TRANSFER = 0x9002,	//!<	request
 			vm_.run(cyng::register_function("ipt.req.transfer.pushdata", 7, std::bind(&session::ipt_req_transfer_pushdata, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("client.req.transfer.pushdata.forward", 7, std::bind(&session::client_req_transfer_pushdata_forward, this, std::placeholders::_1)));
+
 			//TP_RES_PUSHDATA_TRANSFER = 0x1002,	//!<	response
 			vm_.run(cyng::register_function("client.res.transfer.pushdata", 7, std::bind(&session::client_res_transfer_pushdata, this, std::placeholders::_1)));
 
@@ -508,7 +510,7 @@ namespace node
 				bag["tp-layer"] = cyng::make_object("ipt");
 				bag["seq"] = frame.at(1);
 				bus_->vm_.async_run(client_update_attr(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, "software.version"
+					, "TDevice.vFirmware"
 					, frame.at(2)
 					, bag));
 			}
@@ -530,7 +532,7 @@ namespace node
 				bag["tp-layer"] = cyng::make_object("ipt");
 				bag["seq"] = frame.at(1);
 				bus_->vm_.async_run(client_update_attr(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, "device.id"
+					, "TDevice.id"
 					, frame.at(2)
 					, bag));
 			}
@@ -582,8 +584,15 @@ namespace node
 
 		void session::ipt_unknown_cmd(cyng::context& ctx)
 		{
+			//	 [9c08c93e-b2fe-4738-9fb4-4b16ed57a06e,6,00000000]
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.warning", "ipt.unknown.cmd", frame));
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] tag
+				sequence_type,			//	[1] ipt seq
+				std::uint16_t			//	[2] command
+			>(frame);
+
+			ctx.run(cyng::generate_invoke("log.msg.warning", "ipt.unknown.cmd", std::get<2>(tpl), command_name(std::get<2>(tpl))));
 		}
 
 		void session::client_res_login(cyng::context& ctx)
@@ -947,6 +956,51 @@ namespace node
 			vm_.async_run(cyng::generate_invoke("stream.flush"));
 		}
 
+		void session::client_req_transfer_pushdata_forward(cyng::context& ctx)
+		{
+			//	[284afa0f-d192-47c6-870c-e65a54e276b2,eb11e1fd-de09-4de3-aa4c-e3ad4e2269e3,12,b9d09511,3895afe1,e7e1faee,
+			//	%(("block":0),("seq":47),("status":c1),("tp-layer":ipt)),
+			//	1B1B1B1B01010101760636383337316200620072...97E010163A4DC00]
+
+			//
+			//	* session tag
+			//	* peer
+			//	* cluster sequence
+			//	* channel
+			//	* source
+			//	* target
+			//	* bag
+			//	* data
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+			ctx.run(cyng::generate_invoke("log.msg.debug", "client.req.transfer.pushdata.forward", frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] tag
+				boost::uuids::uuid,		//	[1] peer
+				std::uint64_t,			//	[2] cluster sequence
+				std::uint32_t,			//	[3] channel
+				std::uint32_t,			//	[4] source
+				std::uint32_t,			//	[5] target
+				cyng::param_map_t,		//	[6] bag
+				cyng::buffer_t			//	[7] data
+			>(frame);
+
+			//
+			//	dom reader
+			//
+			auto dom = cyng::make_reader(std::get<6>(tpl));
+			auto status = cyng::value_cast<std::uint8_t>(dom.get("status"), 0);
+			auto block = cyng::value_cast<std::uint8_t>(dom.get("block"), 0);
+
+			vm_.async_run(cyng::generate_invoke("req.transfer.push.data"
+				, std::get<5>(tpl)	//	channel
+				, std::get<4>(tpl)	//	source
+				, status 
+				, block 
+				, std::get<7>(tpl)));	//	data
+			vm_.async_run(cyng::generate_invoke("stream.flush"));
+		}
 
 		void session::ipt_req_close_connection(cyng::context& ctx)
 		{

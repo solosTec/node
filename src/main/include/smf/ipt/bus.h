@@ -58,6 +58,8 @@ namespace node
 			void ipt_req_dev_auth(cyng::context& ctx);
 			void ipt_req_dev_time(cyng::context& ctx);
 
+			void ipt_req_transfer_pushdata(cyng::context& ctx);
+
 		public:
 			/**
 			 * Interface to cyng VM

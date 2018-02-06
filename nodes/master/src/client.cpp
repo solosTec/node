@@ -12,6 +12,7 @@
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
 #include <cyng/value_cast.hpp>
+#include <cyng/object_cast.hpp>
 #include <cyng/dom/reader.h>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -82,7 +83,7 @@ namespace node
 								, distribution_(rng_)
 								, std::chrono::system_clock::now()
 								, boost::uuids::nil_uuid())
-							, 1))
+							, 1, tag))
 						{
 							prg << cyng::unwinder(client_res_login(tag
 								, seq
@@ -191,7 +192,7 @@ namespace node
 			//
 			//	remove session
 			//
-			if (tbl_session->erase(key))
+			if (tbl_session->erase(key, tag))
 			{
 				prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
 					, "client session"
@@ -353,11 +354,11 @@ namespace node
 				//
 				//	update "remote" attributes
 				//
-				tbl_session->modify(caller_tag, cyng::param_t("remote", callee_rec["local"]));
-				tbl_session->modify(caller_tag, cyng::param_t("rtag", cyng::make_object(rtag)));
+				tbl_session->modify(caller_tag, cyng::param_t("remote", callee_rec["local"]), tag);
+				tbl_session->modify(caller_tag, cyng::param_t("rtag", cyng::make_object(rtag)), tag);
 
-				tbl_session->modify(callee_tag, cyng::param_t("remote", caller_rec["local"]));
-				tbl_session->modify(callee_tag, cyng::param_t("rtag", cyng::make_object(tag)));
+				tbl_session->modify(callee_tag, cyng::param_t("remote", caller_rec["local"]), tag);
+				tbl_session->modify(callee_tag, cyng::param_t("rtag", cyng::make_object(tag)), tag);
 
 			}, cyng::store::write_access("*Session"));
 		}
@@ -490,21 +491,38 @@ namespace node
 				const std::uint32_t target = cyng::value_cast<std::uint32_t>(target_rec["channel"], 0);
 
 				//
-				//	insert new push channel
+				//	get target session
 				//
-				if (tbl_channel->insert(cyng::table::key_generator(channel, source, target)
-					, cyng::table::data_generator(target_rec["tag"], target_rec["peer"], r.second, timeout, r.first.size())
-					, 1))
+				const boost::uuids::uuid target_session_tag = cyng::value_cast(target_rec["tag"], boost::uuids::nil_uuid());
+				auto target_session_rec = tbl_session->lookup(cyng::table::key_generator(target_session_tag));
+				//BOOST_ASSERT_MSG(!target_session_rec.empty(), "no target session");
+				if (!target_session_rec.empty())
 				{
-					prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
-						, "open push channel"
-						, channel, source, target));
+
+					//
+					//	insert new push channel
+					//
+					if (tbl_channel->insert(cyng::table::key_generator(channel, source, target)
+						, cyng::table::data_generator(target_rec["tag"], target_session_rec["local"], r.second, timeout, r.first.size())
+						//, cyng::table::data_generator(target_rec["tag"], target_rec["peer"], r.second, timeout, r.first.size())
+						, 1, tag))
+					{
+						prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
+							, "open push channel"
+							, channel, source, target));
+					}
+					else
+					{
+						prg << cyng::unwinder(cyng::generate_invoke("log.msg.error"
+							, "open push channel - failed"
+							, channel, source, target));
+					}
 				}
 				else
 				{
-					prg << cyng::unwinder(cyng::generate_invoke("log.msg.error"
-						, "open push channel - failed"
-						, channel, source, target));
+					prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
+						, "open push channel - no target session"
+						, target_session_tag));
 				}
 			}
 
@@ -553,7 +571,7 @@ namespace node
 				//	continue
 				return true;
 			});
-			cyng::erase(tbl_channel, pks);
+			cyng::erase(tbl_channel, pks, tag);
 		}, cyng::store::write_access("*Channel"));
 
 		//
@@ -590,7 +608,7 @@ namespace node
 				// [transfer.push.data,474ba8c4,e9d30005,[18f86863,a1e24bba,e7e1faee]]
 				// [transfer.push.data,474ba8c4,e9d30005,[474ba8c4,e9d30005,d5c31f79]]
 				// [transfer.push.data,474ba8c4,e9d30005,[8c16a625,2082352c,22ae9ef6]]
-				prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
+				prg << cyng::unwinder(cyng::generate_invoke("log.msg.debug"
 					, "transfer.push.data"
 					, channel, source, rec.key()));
 
@@ -599,8 +617,21 @@ namespace node
 					counter++;
 
 					//
-					//	ToDo: transfer data
+					//	transfer data
 					//
+					//prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
+					//	, "transfer.push.data"
+					//	, channel, source, rec.key()));
+
+					const auto target_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+					const auto target = cyng::value_cast<std::uint32_t>(rec["target"], 0);
+
+					cyng::object_cast<session>(rec["peer"])->vm_.async_run(client_req_transfer_pushdata_forward(target_tag
+						, channel
+						, source
+						, target
+						, data
+						, bag));
 				}
 
 
@@ -682,7 +713,7 @@ namespace node
 						, w_size
 						, std::chrono::system_clock::now()	//	reg-time
 						, static_cast<std::uint64_t>(0))
-					, 1);
+					, 1, tag);
 			}
 			else
 			{
@@ -721,6 +752,41 @@ namespace node
 			, name
 			, value));
 
+		if (boost::algorithm::equals(name, "TDevice.vFirmware") || boost::algorithm::equals(name, "TDevice.id"))
+		{
+			db_.access([&](cyng::store::table const* tbl_session, cyng::store::table* tbl_device)->void {
+
+				auto session_rec = tbl_session->lookup(cyng::table::key_generator(tag));
+				if (!session_rec.empty())
+				{
+					const boost::uuids::uuid dev_tag = cyng::value_cast(session_rec["device"], boost::uuids::nil_uuid());
+					const auto dev_pk = cyng::table::key_generator(dev_tag);
+
+					prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
+						, "update device"
+						, dev_tag
+						, session_rec["name"]));
+
+					if (boost::algorithm::equals(name, "TDevice.vFirmware"))
+					{ 
+						tbl_device->modify(dev_pk, cyng::param_t("vFirmware", value), tag);
+					}
+					else if (boost::algorithm::equals(name, "TDevice.id"))
+					{
+						tbl_device->modify(dev_pk, cyng::param_t("id", value), tag);
+					}
+				}
+			}	, cyng::store::read_access("*Session")
+				, cyng::store::write_access("TDevice"));
+
+		}
+		else
+		{
+			prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
+				, "client.update.attr - cannot handle "
+				, name));
+		}
+		
 		return prg;
 	}
 
@@ -788,12 +854,12 @@ namespace node
 		//
 		//	remove targets of session tag
 		//
-		return cyng::erase(tbl_target, pks);
+		return cyng::erase(tbl_target, pks, tag);
 	}
 
 	cyng::table::key_list_t get_targets_by_peer(cyng::store::table const* tbl_target, std::size_t hash)
 	{
-		boost::hash<boost::uuids::uuid> uuid_hasher;
+		static boost::hash<boost::uuids::uuid> uuid_hasher;
 
 		//
 		//	get all registered targets of the specified peer

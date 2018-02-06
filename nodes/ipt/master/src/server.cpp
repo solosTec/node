@@ -54,6 +54,7 @@ namespace node
 			bus_->vm_.run(cyng::register_function("client.res.open.connection.forward", 0, std::bind(&server::client_res_open_connection_forward, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.req.transmit.data.forward", 0, std::bind(&server::client_req_transmit_data_forward, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.transfer.pushdata", 7, std::bind(&server::client_res_transfer_pushdata, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("client.req.transfer.pushdata.forward", 7, std::bind(&server::client_req_transfer_pushdata_forward, this, std::placeholders::_1)));
 
 		}
 
@@ -273,6 +274,11 @@ namespace node
 		void server::client_res_transfer_pushdata(cyng::context& ctx)
 		{
 			propagate("client.res.transfer.pushdata", ctx.get_frame());
+		}
+
+		void server::client_req_transfer_pushdata_forward(cyng::context& ctx)
+		{
+			propagate("client.req.transfer.pushdata.forward", ctx.get_frame());
 		}
 
 	}

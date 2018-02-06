@@ -43,7 +43,11 @@ namespace node
 		else
 		{
 			//db.insert("TDevice", cyng::store::key_generator(tag), cyng::store::data_generator("name", "number", "descr", "id", "vFirmware", true, std::chrono::system_clock::now(), cyng::param_map_t()), 72);
-			db.insert("TDevice", cyng::table::key_generator(tag), cyng::table::data_generator("master", "undefined", "0000", "synthetic test device", "smf", NODE_VERSION, true, std::chrono::system_clock::now()), 72);
+			db.insert("TDevice"
+				, cyng::table::key_generator(tag)
+				, cyng::table::data_generator("master", "undefined", "0000", "synthetic test device", "smf", NODE_VERSION, true, std::chrono::system_clock::now(), 6u)
+				, 72
+				, tag);
 
 		}
 
@@ -104,8 +108,11 @@ namespace node
 		}
 		else
 		{
-			//db.insert("TDevice", cyng::store::key_generator(tag), cyng::store::data_generator("name", "number", "descr", "id", "vFirmware", true, std::chrono::system_clock::now(), cyng::param_map_t()), 72);
-			db.insert("TDevice", cyng::table::key_generator(tag), cyng::table::data_generator("name", "number", "descr", "id", "vFirmware", true, std::chrono::system_clock::now()), 72);
+			//db.insert("TLL"
+			//	, cyng::table::key_generator(tag)
+			//	, cyng::table::data_generator("name", "number", "descr", "id", "vFirmware", true, std::chrono::system_clock::now())
+			//	, 72
+			//	, tag);
 
 		}
 
@@ -149,16 +156,19 @@ namespace node
 		//	after the transmission of the last character of a Push Data Transfer Request.
 		//
 		if (!db.create_table(cyng::table::make_meta_table<3, 5>("*Channel", 
-			{ "channel"		//	primary key [uint32]
-			, "source"		//	primary key [uint32]
-			, "target"		//	primary key [uint32]
-			, "tag"			//	target session - primary key [uuid]
-			, "peer"		//	[uuid]
+			{ "channel"		//	[uint32] primary key 
+			, "source"		//	[uint32] primary key 
+			, "target"		//	[uint32] primary key 
+			, "tag"			//	[uuid] target session tag
+			, "peer"		//	[session] target peer object
 			, "p-size"		//	[uint16] - max packet size
 			, "ack-time"	//	[uint32] - See description above
 			, "count"		//	[size_t] target count
 			},
-			{ cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_UINT16, cyng::TC_UINT32,cyng::TC_UINT64 },
+			{	
+				cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, 
+				cyng::TC_UUID, cyng::traits::PREDEF_SESSION, cyng::TC_UINT16, cyng::TC_UINT32,cyng::TC_UINT64
+			},
 			{ 0, 0, 0, 0, 0, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table *Channel");

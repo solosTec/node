@@ -47,6 +47,7 @@ namespace node
 		}));
 
 		bus_->vm_.async_run(cyng::register_function("db.insert", 6, std::bind(&cluster::db_insert, this, std::placeholders::_1)));
+		bus_->vm_.async_run(cyng::register_function("db.modify.by.attr", 3, std::bind(&cluster::db_modify_by_attr, this, std::placeholders::_1)));
 
 		//
 		//	request handler
@@ -102,7 +103,7 @@ namespace node
 	{
 		if (v < cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 		{
-			CYNG_LOG_WARNING(logger_, "insufficient cluster protocol version: "	<< v);
+			CYNG_LOG_ERROR(logger_, "insufficient cluster protocol version: "	<< v);
 		}
 
 		auto r = cyng::async::start_task_delayed<sync>(base_.mux_
@@ -118,7 +119,7 @@ namespace node
 		//
 		if (r.second)
 		{
-			base_.mux_.send(storage_tsk_, 0, cyng::tuple_factory("TDevice", r.first));
+			base_.mux_.send(storage_tsk_, 0, cyng::tuple_factory("TDevice", r.first, bus_->vm_.tag()));
 		}
 		else
 		{
@@ -164,7 +165,7 @@ namespace node
 
 		if (state == TS_SYNC)
 		{
-			cache_.access([this, &frame](cyng::store::table* tbl)->void {
+			cache_.access([&](cyng::store::table* tbl)->void {
 
 				cyng::table::key_type key;
 				key = cyng::value_cast<cyng::table::key_type>(frame.at(1), key);
@@ -182,7 +183,7 @@ namespace node
 						<< " clean up record "
 						<< cyng::io::to_str(key));
 
-					tbl->erase(key);
+					tbl->erase(key, ctx.tag());
 				}
 				else
 				{
@@ -205,6 +206,41 @@ namespace node
 			//	insert into SQL database
 			//
 			base_.mux_.send(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
+
+		}
+	}
+
+	void cluster::db_modify_by_attr(cyng::context& ctx)
+	{
+		//	[TDevice,[eaec7649-80d5-4b71-8450-3ee2c7ef4917],(4:ipt:store)]
+		//
+		//	* table name
+		//	* record key
+		//	* attr [column,value]
+		//	
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "db.modify.by.attr - " << cyng::io::to_str(frame));
+		const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
+
+		const auto state = cache_.get_state(table);
+
+		if (state == TS_READY)
+		{
+			CYNG_LOG_TRACE(logger_, "db.db.modify.by.attr( "
+				<< table
+				<< " ) - state: "
+				<< state);
+
+			base_.mux_.send(storage_tsk_, 2, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2) });
+
+
+		}
+		else
+		{
+			CYNG_LOG_ERROR(logger_, "db.db.modify.by.attr( "
+				<< table
+				<< " ) - wrong state: "
+				<< state);
 
 		}
 	}

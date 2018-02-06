@@ -97,6 +97,7 @@ namespace node
 			vm_.async_run(cyng::register_function("ipt.req.ip.statistics", 2, std::bind(&bus::ipt_req_ip_statistics, this, std::placeholders::_1)));
 			vm_.async_run(cyng::register_function("ipt.req.dev.auth", 2, std::bind(&bus::ipt_req_dev_auth, this, std::placeholders::_1)));
 			vm_.async_run(cyng::register_function("ipt.req.dev.time", 2, std::bind(&bus::ipt_req_dev_time, this, std::placeholders::_1)));
+			vm_.async_run(cyng::register_function("ipt.req.transfer.pushdata", 7, std::bind(&bus::ipt_req_transfer_pushdata, this, std::placeholders::_1)));
 		}
 
 		void bus::start()
@@ -272,7 +273,7 @@ namespace node
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.net.stat", frame));
-			vm_.async_run(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint32_t>(code::APP_REQ_NETWORK_STATUS)));
+			vm_.async_run(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_NETWORK_STATUS)));
 			vm_.async_run(cyng::generate_invoke("stream.flush"));
 		}
 
@@ -280,7 +281,7 @@ namespace node
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.ip.statistics", frame));
-			vm_.async_run(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint32_t>(code::APP_REQ_IP_STATISTICS)));
+			vm_.async_run(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_IP_STATISTICS)));
 			vm_.async_run(cyng::generate_invoke("stream.flush"));
 		}
 
@@ -289,7 +290,7 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.device.auth", frame));
 			//vm_.async_run(cyng::generate_invoke("res.device.auth", frame.at(1)));
-			vm_.async_run(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint32_t>(code::APP_REQ_DEVICE_AUTHENTIFICATION)));
+			vm_.async_run(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_DEVICE_AUTHENTIFICATION)));
 			vm_.async_run(cyng::generate_invoke("stream.flush"));
 		}
 
@@ -301,6 +302,20 @@ namespace node
 			vm_.async_run(cyng::generate_invoke("stream.flush"));
 		}
 
+		void bus::ipt_req_transfer_pushdata(cyng::context& ctx)
+		{
+			//	[7aee3dff-c81b-414e-a5dc-4e3dbe4122f5,9,fb2a0137,a1e24bba,c1,0,1B1B1B1B010101017606363939373462006200726301017601080500153B0223B3063639393733080500153B0223B3010163C4F400]
+			//
+			//	* session tag
+			//	* sequence
+			//	* channel
+			//	* source
+			//	* status
+			//	* block
+			//	* data
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.transfer.pushdata", frame));
+		}
 
 		bus::shared_type bus_factory(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger

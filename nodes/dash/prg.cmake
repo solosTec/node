@@ -14,6 +14,8 @@ set (node_dash_h
 )
 
 set (node_dash_tasks
+	nodes/dash/src/tasks/cluster.h
+	nodes/dash/src/tasks/cluster.cpp
 )
 
 set (node_dash_res

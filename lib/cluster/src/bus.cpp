@@ -10,6 +10,9 @@
 #include <cyng/vm/domain/asio_domain.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/io/io_chrono.hpp>
+#ifdef SMF_IO_DEBUG
+#include <cyng/io/hex_dump.hpp>
+#endif
 #include <boost/uuid/nil_generator.hpp>
 
 namespace node
@@ -117,6 +120,12 @@ namespace node
 			if (!ec)
 			{
 				CYNG_LOG_TRACE(logger_, bytes_transferred << " bytes read");
+#ifdef SMF_IO_DEBUG
+				cyng::io::hex_dump hd;
+				std::stringstream ss;
+				hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
+				CYNG_LOG_TRACE(logger_, "ipt input dump \n" << ss.str());
+#endif
 				parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
 				do_read();
 			}

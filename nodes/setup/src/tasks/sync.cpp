@@ -64,8 +64,15 @@ namespace node
 		//
 		cache_.set_state(table_, TS_SYNC);
 
+		//
+		//	Get existing records from master. This could be setup data
+		//	from another redundancy or data collected during a line disruption.
+		//
 		bus_->vm_.async_run(bus_req_subscribe(table_, base_.get_id()));
-		//	This currently doesn' happen
+
+		//	
+		//	Continue uplading remaining records
+		//	
 		bus_->vm_.async_run(bus_reflect("cluster.task.resume"
 			, base_.get_id()
 			, static_cast<std::size_t>(1)	//	slot
@@ -120,7 +127,7 @@ namespace node
 		//
 		//	clear table
 		//
-		cache_.clear(table_);
+		cache_.clear(table_, bus_->vm_.tag());
 
 		//
 		//	subscribe cache
@@ -133,10 +140,10 @@ namespace node
 			<< table_);
 
 		cache_.get_listener(table_
-			, std::bind(&sync::isig, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
-			, std::bind(&sync::rsig, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&sync::csig, this, std::placeholders::_1)
-			, std::bind(&sync::msig, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+			, std::bind(&sync::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&sync::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&sync::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&sync::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
 		//
 		//	manage table state
@@ -156,31 +163,38 @@ namespace node
 			<< table_);
 
 		cache_.disconnect(table_);
-		cache_.clear(table_);
+		cache_.clear(table_, bus_->vm_.tag());
 		return cyng::continuation::TASK_STOP;
 	}
 
-	void sync::isig(cyng::store::table const* tbl, cyng::table::key_type const&, cyng::table::data_type const&, std::uint64_t)
+	void sync::sig_ins(cyng::store::table const* tbl
+		, cyng::table::key_type const&
+		, cyng::table::data_type const&
+		, std::uint64_t
+		, boost::uuids::uuid source)
 	{
-		CYNG_LOG_INFO(logger_, "isig " << table_);
+		CYNG_LOG_INFO(logger_, "sig.ins " << table_);
 		BOOST_ASSERT(tbl->meta().get_name() == table_);
 	}
 
-	void sync::rsig(cyng::store::table const* tbl, cyng::table::key_type const&)
+	void sync::sig_del(cyng::store::table const* tbl, cyng::table::key_type const&, boost::uuids::uuid source)
 	{
-		CYNG_LOG_INFO(logger_, "rsig " << table_);
+		CYNG_LOG_INFO(logger_, "sig.gel " << table_);
 		BOOST_ASSERT(tbl->meta().get_name() == table_);
 	}
 
-	void sync::csig(cyng::store::table const* tbl)
+	void sync::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
 	{
-		CYNG_LOG_INFO(logger_, "csig " << table_);
+		CYNG_LOG_INFO(logger_, "sig.clr " << table_);
 		BOOST_ASSERT(tbl->meta().get_name() == table_);
 	}
 
-	void sync::msig(cyng::store::table const* tbl, cyng::table::key_type const&, cyng::attr_t const&)
+	void sync::sig_mod(cyng::store::table const* tbl
+		, cyng::table::key_type const&
+		, cyng::attr_t const&
+		, boost::uuids::uuid source)
 	{
-		CYNG_LOG_INFO(logger_, "msig " << table_);
+		CYNG_LOG_INFO(logger_, "sig.mod " << table_);
 		BOOST_ASSERT(tbl->meta().get_name() == table_);
 	}
 

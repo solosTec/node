@@ -100,7 +100,8 @@ namespace node
 		//
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("db.insert", table, key, data, generation, cyng::code::IDENT))
+			//, cyng::generate_invoke_remote_unwinded("db.insert", table, key, data, generation, cyng::defer(cyng::code::IDENT)))
+			, cyng::generate_invoke_remote_unwinded("db.insert", table, key, data, generation))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}
@@ -121,6 +122,48 @@ namespace node
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}
+
+	cyng::vector_t bus_db_modify(std::string const& table
+		, cyng::vector_t const& key
+		, cyng::attr_t const& value)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("db.modify.by.attr", table, key, value))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_db_modify(std::string const& table
+		, cyng::vector_t const& key
+		, cyng::param_t const& value)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("db.modify.by.param", table, key, value))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_db_remove(std::string const& table
+		, cyng::vector_t const& key)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("db.remove", table, key))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_db_clear(std::string const& table)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("db.clear", table))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
 
 	cyng::vector_t client_req_login(boost::uuids::uuid tag
 		, std::string const& name
@@ -386,6 +429,28 @@ namespace node
 				, cyng::invoke("bus.seq.next")
 				, source 
 				, channel
+				, bag
+				, data))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t client_req_transfer_pushdata_forward(boost::uuids::uuid tag
+		, std::uint32_t channel
+		, std::uint32_t source
+		, std::uint32_t target
+		, cyng::object data
+		, cyng::param_map_t const& bag)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("client.req.transfer.pushdata.forward"
+				, tag
+				, cyng::code::IDENT
+				, cyng::invoke("bus.seq.next")
+				, channel
+				, source
+				, target
 				, bag
 				, data))
 			<< cyng::generate_invoke_unwinded("stream.flush")

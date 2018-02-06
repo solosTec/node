@@ -41,6 +41,7 @@ namespace node
 		//	to calculate uptime
 		//
 		const std::chrono::system_clock::time_point tp_start = std::chrono::system_clock::now();
+
 		//
 		//	controller loop
 		//

@@ -20,7 +20,7 @@ namespace node
 		 * @param pool_size thread pool size 
 		 * @param json_path path to JSON configuration file 
 		 */
-		controller(std::size_t pool_size, std::string const& json_path);
+		controller(unsigned int pool_size, std::string const& json_path);
 		
 		/**
 		 * Start controller loop.
@@ -28,10 +28,17 @@ namespace node
 		 * 
 		 * @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
 		 */
-		int run();
+		int run(bool);
 		
+		/**
+		* create a configuration file with default values.
+		*
+		* @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
+		*/
+		int create_config() const;
+
 	private:
-		const std::size_t pool_size_;
+		const unsigned int pool_size_;
 		const std::string json_path_;
 	};
 }

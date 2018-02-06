@@ -16,6 +16,11 @@
 #include <cyng/value_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/sql.h>
+#include <cyng/sql/dsl/binary_expr.hpp>
+#include <cyng/sql/dsl/list_expr.hpp>
+#include <cyng/sql/dsl/operators.hpp>
+#include <cyng/sql/dsl/assign.hpp>
+#include <cyng/sql/dsl/aggregate.h>
 #include <cyng/table/meta.hpp>
 
 #include <boost/uuid/random_generator.hpp>
@@ -61,7 +66,7 @@ namespace node
 	}
 
 	//	slot 0 - merge
-	cyng::continuation storage_db::process(std::string name, std::size_t sync_tsk)
+	cyng::continuation storage_db::process(std::string name, std::size_t sync_tsk, boost::uuids::uuid tag)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -87,7 +92,7 @@ namespace node
 			//	lookup cache
 			//
 			std::size_t counter{ 0 };
-			cache_.access([this, meta, stmt, &counter](cyng::store::table* tbl)->void {
+			cache_.access([&](cyng::store::table* tbl)->void {
 
 				BOOST_ASSERT(meta->get_name() == tbl->meta().get_name());
 
@@ -104,7 +109,7 @@ namespace node
 					//
 					//	ToDo: transform SQL record into cache record
 					//
-					if (!tbl->insert(rec.key(), rec.data(), rec.get_generation()))
+					if (!tbl->insert(rec.key(), rec.data(), rec.get_generation(), tag))
 					{
 						CYNG_LOG_ERROR(logger_, "copy record into cache " 
 							<< meta->get_name()
@@ -167,7 +172,7 @@ namespace node
 			<< gen);
 
 		//
-		//	ToDo: insert into SQL database
+		//	insert into SQL database
 		//
 		auto pos = meta_map_.find(name);
 		if (pos != meta_map_.end())
@@ -189,9 +194,9 @@ namespace node
 				//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
 				//	bind parameters
 				//	INSERT INTO TDevice (pk, gen, name, number, descr, id, vFirmware, enabled, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-				BOOST_ASSERT(r.first == 10);	//	9 parameters to bind
+				BOOST_ASSERT(r.first == 11);	//	9 parameters to bind
 				BOOST_ASSERT_MSG(key.size() == 1, "wrong TDevice key size");
-				BOOST_ASSERT_MSG(data.size() == 8, "wrong TDevice data size");
+				BOOST_ASSERT_MSG(data.size() == 9, "wrong TDevice data size");
 				stmt->push(key.at(0), 36)
 					.push(cyng::make_object(gen), 0)
 					.push(data.at(7), 128)
@@ -230,6 +235,55 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
+	cyng::continuation storage_db::process(std::string name
+		, cyng::vector_t const& key
+		, cyng::attr_t const& data)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> update "
+			<< name
+			<< " "
+			<< cyng::io::to_str(key)
+			<< data.first
+			<< " = "
+			<< cyng::io::to_str(data.second));
+
+		auto pos = meta_map_.find(name);
+		if (pos != meta_map_.end())
+		{
+			auto s = pool_.get_session();
+			cyng::table::meta_table_ptr meta = (*pos).second;
+			cyng::sql::command cmd(meta, s.get_dialect());
+
+			//
+			//	To add 3 is a hack and requires that internal table and
+			//	SQL table have a similiar structure.
+			//
+			cmd.update(cyng::sql::make_assign(data.first + 3, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
+			std::string sql = cmd.to_str();
+			CYNG_LOG_TRACE(logger_, sql);	//	update
+
+			auto stmt = s.create_statement();
+			std::pair<int, bool> r = stmt->prepare(sql);
+			BOOST_ASSERT(r.second);
+
+			stmt->push(data.second, 0)
+				.push(key.at(0), 36);
+			stmt->execute();
+			stmt->clear();
+
+		}
+		else
+		{
+			CYNG_LOG_ERROR(logger_, "unknown table "
+				<< name);	//	insert
+		}
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
 
 	int storage_db::init_db(cyng::tuple_t tpl, std::size_t count)
 	{
@@ -242,7 +296,7 @@ namespace node
 			//
 			//	connect string
 			//
-			std::cout << r.first << std::endl;
+			//std::cout << r.first << std::endl;
 
 			auto meta_map = storage_db::init_meta_map();
 			for (auto tbl : meta_map)
