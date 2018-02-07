@@ -307,7 +307,6 @@ namespace node
 				std::cout << sql << std::endl;
 				s.execute(sql);
 
-#ifdef _DEBUG
 				if (tbl.first == "TDevice")
 				{
 					for (std::size_t idx = 0; idx < count; ++idx)
@@ -336,6 +335,7 @@ namespace node
 						stmt->clear();
 					}
 				}
+#ifdef _DEBUG
 				else if (tbl.first == "TLL")
 				{
 					cmd.insert();
