@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <type_traits>
 #include <exception>
+#include <string>
 
 namespace node
 {
