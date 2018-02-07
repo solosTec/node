@@ -180,7 +180,21 @@ else()
 	
 endif()
 
+<<<<<<< .merge_file_a05352
 set(Boost_ADDITIONAL_VERSIONS "1.65.0 1.66.0" "1.67.0")
+=======
+#
+#	setup Boost library
+#
+#set(BOOST_LIBRARYDIR "C:\\local\\boost_1_66_0_b1_rc2\\lib64-msvc-14.1")
+#set(BOOST_ROOT "C:\\local\\boost_1_66_0_b1_rc2\\boost")
+
+# if(UNIX)
+# set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_66_0/release")
+# set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_66_0/release/lib")
+# endif(UNIX)
+set(Boost_ADDITIONAL_VERSIONS "1.61.0" "1.62.0" "1.63.0" "1.64.0" "1.65.1" "1.66.0")
+>>>>>>> .merge_file_a07844
 message(STATUS "** Search Boost    : ${Boost_ADDITIONAL_VERSIONS}")
 find_package(Boost 1.66 REQUIRED COMPONENTS thread system date_time filesystem program_options random signals unit_test_framework regex)
 
@@ -191,12 +205,16 @@ if(Boost_FOUND)
 	message(STATUS "** Boost Path       : ${Boost_LIBRARY_DIRS}")
 	message(STATUS "** Boost Libraries  : ${Boost_LIBRARIES}")
 
+<<<<<<< .merge_file_a05352
 if(Boost_VERSION VERSION_LESS  "1.66.0")
 	#
 	# When working with a Boost version prior 1.66.0 newer versions of Asio and Beast 
 	# are required.
 	#
 	message(WARING "** Newer versions of Asio and Beast are required")
+=======
+if(UNIX)
+>>>>>>> .merge_file_a07844
 	include_directories($ENV{HOME}/projects/beast/include)
 	include_directories($ENV{HOME}/projects/asio/include)
 endif()
@@ -253,9 +271,9 @@ if (UNIX)
 	else()
 		get_filename_component(cyng_LIBRARY_DIRS "${PROJECT_SOURCE_DIR}/../cyng/build" REALPATH)
 		include_directories("${PROJECT_SOURCE_DIR}/../cyng/build")
+		link_directories(${cyng_LIBRARY_DIRS})
  	endif(CROSS_COMPILE)
 	message(STATUS "** cyng Libraries   : ${cyng_LIBRARY_DIRS}")
-	link_directories(${cyng_LIBRARY_DIRS})
 else()
 	#
 	#	$(ConfigurationName) is a variable used by the MS build system
