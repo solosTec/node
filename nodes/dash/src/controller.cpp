@@ -278,12 +278,25 @@ namespace node
 
 		auto dom = cyng::make_reader(cfg_srv);
 
+		const boost::filesystem::path pwd = boost::filesystem::current_path();
+
+		//	http::server build a string view
+		static auto doc_root = cyng::value_cast(dom.get("document-root"), (pwd / "htdocs").string());
+		auto address = cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0");
+		auto service = cyng::value_cast<std::string>(dom.get("service"), "26862");
+		auto const host = cyng::make_address(address);
+		const auto port = static_cast<unsigned short>(std::stoi(service));
+
+		CYNG_LOG_INFO(logger, "document root: " << doc_root);
+		CYNG_LOG_INFO(logger, "address: " << address);
+		CYNG_LOG_INFO(logger, "service: " << service);
+
 		cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
 			, load_cluster_cfg(cfg_cls)
-			, cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0")
-			, cyng::value_cast<std::string>(dom.get("service"), "26862")
+			, boost::asio::ip::tcp::endpoint{ host, port }
+			, doc_root
 			, cyng::value_cast<int>(dom.get("watchdog"), 30)
 			, cyng::value_cast<int>(dom.get("timeout"), 12));
 

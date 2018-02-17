@@ -51,27 +51,14 @@ namespace node
             //  for any reason gcc prior 5.4 has a problem with bind(...)
 			//	and actual version 7.2.0 has problems too
             //
-<<<<<<< .merge_file_a04560
-#if defined(NODE_LEGACY_MODE_ON) || defined(__GNUC__) || defined(__GNUG__)
-=======
-//#if defined(NODE_LEGACY_MODE_ON)
->>>>>>> .merge_file_a14300
-            std::function<void(boost::beast::websocket::frame_type, boost::beast::string_view)> f = std::bind(
- 					&websocket_session::on_control_callback,
- 					this,
- 					std::placeholders::_1,
- 					std::placeholders::_2);
+//#if defined(NODE_LEGACY_MODE_ON) || defined(__GNUC__) || defined(__GNUG__)
+			std::function<void(boost::beast::websocket::frame_type, boost::beast::string_view)> f = std::bind(
+				&websocket_session::on_control_callback,
+				this,
+				std::placeholders::_1,
+				std::placeholders::_2);
+
 			ws_.control_callback(f);
-<<<<<<< .merge_file_a04560
-#else				
-  			ws_.control_callback(
-  				std::bind(
-  					&websocket_session::on_control_callback,
-  					this,
-  					std::placeholders::_1,
-  					std::placeholders::_2));
-#endif		
-=======
 // #else				
 //  			ws_.control_callback(
 //  				std::bind(
@@ -80,7 +67,6 @@ namespace node
 //  					std::placeholders::_1,
 //  					std::placeholders::_2));
 // #endif		
->>>>>>> .merge_file_a14300
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
 			on_timer({});

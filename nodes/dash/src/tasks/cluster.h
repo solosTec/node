@@ -10,7 +10,7 @@
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
-//#include "../server.h"
+#include <smf/http/srv/server.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -29,8 +29,8 @@ namespace node
 		cluster(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, cluster_config_t const& cfg_cls
-			, std::string const& address
-			, std::string const& service
+			, boost::asio::ip::tcp::endpoint
+			, std::string const& doc_root
 			, uint16_t watchdog
 			, int timeout);
 		void run();
@@ -60,9 +60,8 @@ namespace node
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
 		const cluster_config_t	config_;
-		const std::string http_address_;
-		const std::string http_service_;
-		//ipt::server	server_;
+		http::server	server_;
+		//std::shared_ptr<http::server>	server_;
 		std::size_t master_;
 	};
 	

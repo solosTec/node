@@ -180,9 +180,6 @@ else()
 	
 endif()
 
-<<<<<<< .merge_file_a05352
-set(Boost_ADDITIONAL_VERSIONS "1.65.0 1.66.0" "1.67.0")
-=======
 #
 #	setup Boost library
 #
@@ -193,8 +190,7 @@ set(Boost_ADDITIONAL_VERSIONS "1.65.0 1.66.0" "1.67.0")
 # set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_66_0/release")
 # set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_66_0/release/lib")
 # endif(UNIX)
-set(Boost_ADDITIONAL_VERSIONS "1.61.0" "1.62.0" "1.63.0" "1.64.0" "1.65.1" "1.66.0")
->>>>>>> .merge_file_a07844
+set(Boost_ADDITIONAL_VERSIONS "1.65.0 1.66.0" "1.67.0")
 message(STATUS "** Search Boost    : ${Boost_ADDITIONAL_VERSIONS}")
 find_package(Boost 1.66 REQUIRED COMPONENTS thread system date_time filesystem program_options random signals unit_test_framework regex)
 
@@ -205,19 +201,18 @@ if(Boost_FOUND)
 	message(STATUS "** Boost Path       : ${Boost_LIBRARY_DIRS}")
 	message(STATUS "** Boost Libraries  : ${Boost_LIBRARIES}")
 
-<<<<<<< .merge_file_a05352
-if(Boost_VERSION VERSION_LESS  "1.66.0")
-	#
-	# When working with a Boost version prior 1.66.0 newer versions of Asio and Beast 
-	# are required.
-	#
-	message(WARING "** Newer versions of Asio and Beast are required")
-=======
-if(UNIX)
->>>>>>> .merge_file_a07844
-	include_directories($ENV{HOME}/projects/beast/include)
-	include_directories($ENV{HOME}/projects/asio/include)
-endif()
+	if(Boost_VERSION VERSION_LESS  "1.66.0")
+		#
+		# When working with a Boost version prior 1.66.0 newer versions of Asio and Beast 
+		# are required.
+		#
+		message(WARING "** Newer versions of Asio and Beast are required")
+
+		if(UNIX)
+			include_directories($ENV{HOME}/projects/beast/include)
+			include_directories($ENV{HOME}/projects/asio/include)
+		endif()
+	endif()
 
 	include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
@@ -289,6 +284,32 @@ else()
 endif()
 
 #
+#	Use CMake modules from CYNG project
+#
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/../cyng/src/modules/")
+message(STATUS "** CMake modules         :  ${CMAKE_MODULE_PATH}")
+
+#
+# libpugixml-dev (v1.8)
+# On Windows set CMake variables PugiXML_INCLUDE_DIRS and PugiXML_LIBRARIES 
+#
+find_package(PugiXML)
+if(PugiXML_FOUND)
+
+	message(STATUS "** PugiXML Include   : ${PUGIXML_INCLUDE_DIR}")
+	message(STATUS "** PugiXML Libraries : ${PUGIXML_LIBRARY}")
+	set(${PROJECT_NAME}_PUGIXML_INSTALLED ON)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D${PROJECT_NAME}_PUGIXML_INSTALLED" )
+	include_directories(${PUGIXML_INCLUDE_DIR})
+
+else()
+
+	message(WARNING "** PugiXML not found - don't build XML lib")
+	set(${PROJECT_NAME}_PUGIXML_INSTALLED OFF)
+
+endif()
+
+#
 # include directories for all C/C++ projects
 #
 include_directories(src/main/include)
@@ -350,6 +371,15 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 endif()
 
 #
+#	http server library
+#
+include (lib/http/server/lib.cmake)
+add_library(lib_http_srv ${GLOBAL_LIBRARY_TYPE} ${http_srv_lib})
+#if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+#	target_link_libraries(lib_http_srv cyng_vm)
+#endif()
+
+#
 # generic HTTP server
 #
 include (nodes/http/prg.cmake)
@@ -367,7 +397,7 @@ target_link_libraries(http ${http_link_libs})
 include (nodes/dash/prg.cmake)
 add_executable(dash ${node_dash})
 # libraries to link
-set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain lib_cluster)
+set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain lib_cluster lib_http_srv)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND dashboard_link_libs "${Boost_LIBRARIES}")
 endif()
@@ -439,7 +469,7 @@ target_link_libraries(ipt ${ipt_link_libs})
 include (nodes/ipt/store/prg.cmake)
 add_executable(store ${node_ipt_store})
 # libraries to link
-set(store_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table lib_protocol_ipt lib_bus_ipt)
+set(store_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_xml lib_protocol_ipt lib_bus_ipt lib_protocol_sml)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND store_link_libs "${Boost_LIBRARIES}")
 endif()
@@ -448,6 +478,9 @@ if(WIN32)
 else()
 	list(APPEND store_link_libs ${SQLite3_LIBRARY})
 endif(WIN32)
+if (${PROJECT_NAME}_PUGIXML_INSTALLED)
+	list(APPEND store_link_libs ${PUGIXML_LIBRARY})
+endif()
 target_link_libraries(store ${store_link_libs})
 	
 #
@@ -527,7 +560,7 @@ set_property(
 	TARGET unit_test
 	PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
 
-set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table lib_protocol_ipt)
+set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml lib_protocol_ipt lib_protocol_sml)
 
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 #	list(APPEND unittest_link_libs "${Boost_LIBRARIES} ${OPENSSL_LIBRARIES}")

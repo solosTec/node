@@ -936,22 +936,58 @@ namespace node
 			//	* count
 			//	* bag
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.debug", "client.res.transfer.pushdata", frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] tag
+				boost::uuids::uuid,		//	[1] peer
+				std::uint64_t,			//	[2] cluster sequence
+				std::uint32_t,			//	[3] source
+				std::uint32_t,			//	[4] channel
+				std::size_t,			//	[5] count
+				cyng::param_map_t		//	[6] bag
+			>(frame);
 
 			//
 			//	dom reader
 			//
-			auto dom = cyng::make_reader(frame);
+			auto dom = cyng::make_reader(std::get<6>(tpl));
+			const sequence_type seq = cyng::value_cast<sequence_type>(dom.get("seq"), 0);
 
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom[6].get("seq"), 0);
+			//
+			//	set acknownlegde flag
+			//
+			std::uint8_t status = cyng::value_cast<std::uint8_t>(dom.get("status"), 0);
+			BOOST_ASSERT_MSG(status == 0xc1, "invalid push channel status");
+			status |= ipt::tp_res_pushdata_transfer_policy::ACK;
+
+			//
+			//	response
+			//
+			response_type res = (std::get<5>(tpl) != 0)
+				? ipt::tp_res_pushdata_transfer_policy::SUCCESS
+				: ipt::tp_res_pushdata_transfer_policy::BROKEN
+				;
+
+			if (std::get<5>(tpl) != 0)
+			{
+				ctx.run(cyng::generate_invoke("log.msg.debug"
+					, "client.res.transfer.pushdata - channel"
+					, std::get<3>(tpl)
+					, std::get<4>(tpl)
+					, std::get<5>(tpl)));
+			}
+			else
+			{
+				ctx.run(cyng::generate_invoke("log.msg.warning", "client.res.transfer.pushdata - failed", frame));
+			}
 
 			vm_.async_run(cyng::generate_invoke("res.transfer.push.data"
 				, seq
-				, ipt::tp_res_pushdata_transfer_policy::SUCCESS
-				, cyng::value_cast<std::uint32_t>(dom.get(3), 0)	//	source
-				, cyng::value_cast<std::uint32_t>(dom.get(4), 0)	//	channel
-				, (cyng::value_cast<std::uint8_t>(dom[6].get("status"), 0) | ipt::tp_res_pushdata_transfer_policy::ACK)
-				, cyng::value_cast<std::uint8_t>(dom[6].get("block"), 0)
+				, res
+				, std::get<3>(tpl)	//	source
+				, std::get<4>(tpl)	//	channel
+				, status
+				, cyng::value_cast<std::uint8_t>(dom.get("block"), 0)
 			));
 			vm_.async_run(cyng::generate_invoke("stream.flush"));
 		}

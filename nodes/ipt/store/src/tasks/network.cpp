@@ -1,16 +1,19 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #include "network.h"
 #include <smf/ipt/response.hpp>
-//#include <smf/ipt/generator.h>
+#include <smf/ipt/generator.h>
+#include <cyng/factory/set_factory.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
+#include <cyng/io/serializer.h>
+#include <cyng/tuple_cast.hpp>
 #include <boost/uuid/random_generator.hpp>
 
 namespace node
@@ -26,10 +29,12 @@ namespace node
 		: base_(*btp)
 			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id()))
 			, logger_(logger)
-			, storage_tsk_(0)	//	ToDo
+			, tasks_(tsks)
 			, config_(cfg)
 			, targets_(targets)
 			, master_(0)
+			, seq_target_map_()
+			, channel_target_map_()
 		{
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -38,23 +43,12 @@ namespace node
 				<< "> is running");
 
 			//
-			//	ToDo: implement in data handler task
-			//
-			//bus_->vm_.async_run(cyng::register_function("db.trx.start", 0, [this](cyng::context& ctx) {
-			//	CYNG_LOG_TRACE(logger_, "db.trx.start");
-			//}));
-			//bus_->vm_.async_run(cyng::register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
-			//	CYNG_LOG_TRACE(logger_, "db.trx.commit");
-			//}));
-
-			//bus_->vm_.async_run(cyng::register_function("db.insert", 5, std::bind(&network::db_insert, this, std::placeholders::_1)));
-
-			//
 			//	request handler
 			//
 			bus_->vm_.async_run(cyng::register_function("network.task.resume", 4, std::bind(&network::task_resume, this, std::placeholders::_1)));
 			bus_->vm_.async_run(cyng::register_function("bus.reconfigure", 1, std::bind(&network::reconfigure, this, std::placeholders::_1)));
 
+			bus_->vm_.async_run(cyng::register_function("net.insert.rel", 1, std::bind(&network::insert_rel, this, std::placeholders::_1)));
 		}
 
 		void network::run()
@@ -145,6 +139,72 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
+		cyng::continuation network::process(sequence_type seq, std::uint32_t channel, std::uint32_t source, cyng::buffer_t const& data)
+		{
+			//
+			//	distribute to output tasks
+			//
+
+			auto pos = channel_target_map_.find(channel);
+			if (pos != channel_target_map_.end())
+			{
+				CYNG_LOG_TRACE(logger_, "distribute "
+					<< data.size()
+					<< " bytes from "
+					<< pos->second
+					<< " to "
+					<< tasks_.size()
+					<< " task(s)");
+
+				for (auto tsk : tasks_)
+				{
+					CYNG_LOG_DEBUG(logger_, "distribute "
+						<< data.size()
+						<< " bytes to task "
+						<< tsk);
+
+					base_.mux_.send(tsk, 0, cyng::tuple_factory(channel, source, pos->second, data));
+				}
+			}
+			else
+			{
+				CYNG_LOG_ERROR(logger_, "channel "
+					<< channel
+					<< " has no target "
+					<< data.size()
+					<< " bytes get lost");
+
+			}
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [4]
+		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
+		{
+			if (success)
+			{
+				auto pos = seq_target_map_.find(seq);
+				if (pos != seq_target_map_.end())
+				{
+					CYNG_LOG_INFO(logger_, "target "
+						<< pos->second
+						<< " on channel "
+						<< channel);
+
+					channel_target_map_.emplace(channel, pos->second);
+				}
+			}
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
 		void network::task_resume(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
@@ -202,23 +262,7 @@ namespace node
 				<< ':'
 				<< config_[master_].service_);
 
-			cyng::vector_t prg;
-			return prg
-				<< cyng::generate_invoke_unwinded("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
-				<< ":SEND-LOGIN-REQUEST"			//	label
-				<< cyng::code::JNE					//	jump if no error
-				<< cyng::generate_invoke_unwinded("bus.reconfigure", cyng::code::LERR)
-				<< cyng::generate_invoke_unwinded("log.msg.error", cyng::code::LERR)	// load error register
-				<< ":STOP"							//	label
-				<< cyng::code::JA					//	jump always
-				<< cyng::label(":SEND-LOGIN-REQUEST")
-				<< cyng::generate_invoke_unwinded("ipt.start")		//	start reading ipt network
-				<< cyng::generate_invoke_unwinded("req.login.public", config_[master_].account_, config_[master_].pwd_)
-				<< cyng::generate_invoke_unwinded("stream.flush")
-				<< cyng::label(":STOP")
-				<< cyng::code::NOOP
-				<< cyng::reloc()
-				;
+			return gen::ipt_req_login_public(config_, master_);
 		}
 
 		cyng::vector_t network::ipt_req_login_scrambled() const
@@ -230,26 +274,7 @@ namespace node
 				<< ':'
 				<< config_[master_].service_);
 
-			scramble_key sk = gen_random_sk();
-
-			cyng::vector_t prg;
-			return prg
-				<< cyng::generate_invoke_unwinded("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
-				<< ":SEND-LOGIN-REQUEST"			//	label
-				<< cyng::code::JNE					//	jump if no error
-				<< cyng::generate_invoke_unwinded("bus.reconfigure", cyng::code::LERR)
-				<< cyng::generate_invoke_unwinded("log.msg.error", cyng::code::LERR)	// load error register
-				<< ":STOP"							//	label
-				<< cyng::code::JA					//	jump always
-				<< cyng::label(":SEND-LOGIN-REQUEST")
-				<< cyng::generate_invoke_unwinded("ipt.start")		//	start reading ipt network
-				<< cyng::generate_invoke_unwinded("ipt.set.sk", sk)	//	set new scramble key for parser
-				<< cyng::generate_invoke_unwinded("req.login.scrambled", config_[master_].account_, config_[master_].pwd_, sk)
-				<< cyng::generate_invoke_unwinded("stream.flush")
-				<< cyng::label(":STOP")
-				<< cyng::code::NOOP
-				<< cyng::reloc()
-				;
+			return gen::ipt_req_login_scrambled(config_, master_);
 
 		}
 
@@ -261,12 +286,15 @@ namespace node
 			}
 			else
 			{
+				seq_target_map_.clear();
+				channel_target_map_.clear();
 				for (auto target : targets_)
 				{
 					CYNG_LOG_INFO(logger_, "register target " << target);
 					cyng::vector_t prg;
 					prg
 						<< cyng::generate_invoke_unwinded("req.register.push.target", target, static_cast<std::uint16_t>(0xffff), static_cast<std::uint8_t>(1))
+						<< cyng::generate_invoke_unwinded("net.insert.rel", cyng::invoke("ipt.push.seq"),  target)
 						<< cyng::generate_invoke_unwinded("stream.flush")
 						;
 
@@ -276,5 +304,26 @@ namespace node
 			}
 		}
 
+		void network::insert_rel(cyng::context& ctx)
+		{
+			//	[5,power@solostec]
+			//
+			//	* ipt sequence
+			//	* target name
+			const cyng::vector_t frame = ctx.get_frame();
+			//CYNG_LOG_TRACE(logger_, "insert relation - " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				sequence_type,		//	[0] ipt seq
+				std::string			//	[1] target
+			>(frame);
+
+			CYNG_LOG_TRACE(logger_, "insert relation - " 
+				<< +std::get<0>(tpl)
+				<< " ==> "
+				<< std::get<1>(tpl));
+
+			seq_target_map_.emplace(std::get<0>(tpl), std::get<1>(tpl));
+		}
 	}
 }

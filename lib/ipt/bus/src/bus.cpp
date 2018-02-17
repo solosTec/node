@@ -13,9 +13,11 @@
 #include <cyng/vm/domain/asio_domain.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/io/serializer.h>
+#include <cyng/tuple_cast.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
+#include <fstream>
 #endif
 
 namespace node
@@ -201,12 +203,18 @@ namespace node
 			//	* result code
 			//	* channel
 			const cyng::vector_t frame = ctx.get_frame();
-			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.res.register.push.target", frame));
+			//vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.res.register.push.target", frame));
 
 			const response_type res = cyng::value_cast<response_type>(frame.at(2), 0);
-			ctrl_res_register_target_policy::get_response_name(res);
-			vm_.async_run(cyng::generate_invoke("log.msg.info", "client.res.register.push.target", ctrl_res_register_target_policy::get_response_name(res)));
-			//mux_.send(task_, 2, cyng::tuple_factory(channel));
+			if (ctrl_res_register_target_policy::is_success(res))
+			{
+				vm_.async_run(cyng::generate_invoke("log.msg.info", "client.res.register.push.target", ctrl_res_register_target_policy::get_response_name(res)));
+			}
+			else
+			{
+				vm_.async_run(cyng::generate_invoke("log.msg.warning", "client.res.register.push.target", ctrl_res_register_target_policy::get_response_name(res)));
+			}
+			mux_.send(task_, 4, cyng::tuple_factory(frame.at(1), ctrl_res_register_target_policy::is_success(res), frame.at(3)));
 
 		}
 
@@ -314,7 +322,35 @@ namespace node
 			//	* block
 			//	* data
 			const cyng::vector_t frame = ctx.get_frame();
-			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.transfer.pushdata", frame));
+			//vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.transfer.pushdata", frame));
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] session tag
+				sequence_type,			//	[1] ipt seq
+				std::uint32_t,			//	[2] channel
+				std::uint32_t,			//	[3] source
+				std::uint8_t,			//	[4] status
+				std::uint8_t,			//	[5] block
+				cyng::buffer_t			//	[6] data
+			>(frame);
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.req.transfer.pushdata"
+				, std::get<2>(tpl)
+				, std::get<3>(tpl)
+				, std::get<6>(tpl).size()
+				, "bytes"));
+
+
+#ifdef SMF_IO_DEBUG
+
+			std::ofstream of("push-data-" + std::to_string(std::get<2>(tpl)) + "-" + std::to_string(std::get<3>(tpl)) + ".bin"
+			, std::ios::out | std::ios::binary | std::ios::app);
+			if (of.is_open())
+			{
+				of.write(std::get<6>(tpl).data(), std::get<6>(tpl).size());
+			}
+#endif
+			// forward to session
+			mux_.send(task_, 3, cyng::tuple_factory(frame.at(1), frame.at(2), frame.at(3), frame.at(6)));
+
 		}
 
 		bus::shared_type bus_factory(cyng::async::mux& mux

@@ -13,42 +13,50 @@
 #include <cyng/async/policy.h>
 #include <cyng/db/session_pool.h>
 #include <cyng/table/meta_interface.h>
-//#include <cyng/store/db.h>
+#include <cyng/vm/context.h>
 #include <map>
+#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
-	namespace ipt
+	class storage_db
 	{
-		class storage_db
-		{
-		public:
-			using msg_0 = std::tuple<std::string, std::size_t>;
-			using signatures_t = std::tuple<msg_0>;
+	public:
+		using msg_0 = std::tuple<std::uint32_t, std::uint32_t, std::string, cyng::buffer_t>;
+		using signatures_t = std::tuple<msg_0>;
 
-		public:
-			storage_db(cyng::async::base_task* bt
-				, cyng::logging::log_ptr
-				, cyng::param_map_t);
-			void run();
-			void stop();
-			cyng::continuation process(std::string name, std::size_t);
+	public:
+		storage_db(cyng::async::base_task* bt
+			, cyng::logging::log_ptr
+			, cyng::param_map_t);
+		void run();
+		void stop();
 
-			/**
-			 * static method to create tables.
-			 */
-			static int init_db(cyng::tuple_t);
-			static std::map<std::string, cyng::table::meta_table_ptr> init_meta_map();
+		/**
+		 * @brief slot [0]
+		 *
+		 * push data
+		 */
+		cyng::continuation process(std::uint32_t, std::uint32_t, std::string const&, cyng::buffer_t const&);
 
-		private:
-			cyng::async::base_task& base_;
-			cyng::logging::log_ptr logger_;
-			cyng::db::session_pool pool_;
-			std::map<std::string, cyng::table::meta_table_ptr>	meta_map_;
+		/**
+		 * static method to create tables.
+		 */
+		static int init_db(cyng::tuple_t);
+		static std::map<std::string, cyng::table::meta_table_ptr> init_meta_map();
 
+	private:
+		void stop_writer(cyng::context& ctx);
 
-		};
-	}
+	private:
+		cyng::async::base_task& base_;
+		cyng::logging::log_ptr logger_;
+		cyng::db::session_pool pool_;
+		std::map<std::string, cyng::table::meta_table_ptr>	meta_map_;
+		std::map<std::uint64_t, std::size_t>	lines_;
+		boost::uuids::random_generator rng_;
+
+	};
 }
 
 #endif

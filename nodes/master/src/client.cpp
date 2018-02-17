@@ -235,12 +235,16 @@ namespace node
 			//	search device with the given number
 			//
 			prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
-				, "select device with number"
-				, number));
+				, "select number"
+				, number
+				, " from "
+				, tbl_device->size()
+				, " devices"));
 
 			tbl_device->loop([&](cyng::table::record const& rec) -> bool {
 
 				const auto dev_number = cyng::value_cast<std::string>(rec["number"], "");
+				//prg << cyng::unwinder(cyng::generate_invoke("log.msg.debug", dev_number));
 				if (boost::algorithm::equals(number, dev_number))
 				{
 					//
@@ -299,7 +303,7 @@ namespace node
 			options["response-code"] = cyng::make_object<std::uint8_t>(ipt::tp_res_open_connection_policy::DIALUP_FAILED);
 
 			prg 
-				<< cyng::unwinder(cyng::generate_invoke("log.msg.info", "send connection open response", options))
+				<< cyng::unwinder(cyng::generate_invoke("log.msg.warning", "send connection open response", options))
 				<< cyng::unwinder(client_res_open_connection_forward(tag
 				, seq
 				, success

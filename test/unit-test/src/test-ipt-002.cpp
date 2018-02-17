@@ -11,11 +11,34 @@
 #include <smf/ipt/scramble_key_io.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
+#include <type_traits>
+#include <typeinfo>
+#include <boost/core/demangle.hpp>
 
 namespace node 
 {
+	template <typename T>
+	void test(T const& v)
+	{
+		char const * name_1 = typeid(T).name();
+		std::cout << name_1 << std::endl; // prints 1XIiE
+		std::cout << boost::core::demangle(name_1) << std::endl; // prints X<int>
+
+		using type = std::decay<T>::type;
+		char const * name_2 = typeid(type).name();
+		std::cout << name_2 << std::endl; // prints 1XIiE
+		std::cout << boost::core::demangle(name_2) << std::endl; // prints X<int>
+
+	}
+
 	bool test_ipt_002()
 	{
+		//
+		//	std::decay converts char [6] to char * __ptr64
+		//
+		test("hello");
+		test(std::string("hello"));
+
 		ipt::scramble_key sk = ipt::gen_random_sk();
 		cyng::vector_t result;
 		ipt::parser p([&result](cyng::vector_t&& prg) {

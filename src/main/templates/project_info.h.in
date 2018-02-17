@@ -10,7 +10,7 @@
 namespace @PROJECT_NAME@
 {
 	const char project_name[] = "@PROJECT_NAME@";
-	const char version_string[] = "${PROJECT_NAME}v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_PATCH_LEVEL}";
+	const char version_string[] = "${PROJECT_NAME}/v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_PATCH_LEVEL}";
 }
 
 #define @PROJECT_NAME@_PLATFORM	 	"@CMAKE_SYSTEM@"

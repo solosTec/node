@@ -43,8 +43,6 @@ namespace node
 		, account_(account)
 		, pwd_(pwd)
 		, monitor_(monitor)
-		, rng_()
-		, distribution_(std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max())
 		, seq_(0)
 		, client_(mux, logger, db)
 	{

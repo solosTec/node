@@ -64,25 +64,25 @@ namespace node
 
 		namespace messages
 		{
-			inline std::string name(std::uint16_t code)
+			inline const char* name(std::uint16_t code)
 			{
 				switch (code)
 				{
-				case BODY_OPEN_REQUEST:	return "PublicOpen_Req";
-				case BODY_OPEN_RESPONSE:	return "PublicOpen_Res";
-				case BODY_CLOSE_REQUEST:	return "PublicClose_Req";
-				case BODY_CLOSE_RESPONSE:	return "PublicClose_Res";
-				case BODY_GET_PROFILE_PACK_REQUEST:	return "BODY_GET_PROFILE_PACK_REQUEST";
-				case BODY_GET_PROFILE_PACK_RESPONSE:	return "BODY_GET_PROFILE_PACK_RESPONSE";
-				case BODY_GET_PROFILE_LIST_REQUEST:	return "BODY_GET_PROFILE_LIST_REQUEST";
-				case BODY_GET_PROFILE_LIST_RESPONSE:	return "BODY_GET_PROFILE_LIST_RESPONSE";
-				case BODY_GET_PROC_PARAMETER_REQUEST:	return "GetProcParameter_Req";
-				case BODY_GET_PROC_PARAMETER_RESPONSE:	return "GetProcParameter_Res";
-				case BODY_SET_PROC_PARAMETER_REQUEST:	return "BODY_SET_PROC_PARAMETER_REQUEST";
-				case BODY_SET_PROC_PARAMETER_RESPONSE:	return "BODY_SET_PROC_PARAMETER_RESPONSE";
-				case BODY_GET_LIST_REQUEST:	return "BODY_GET_LIST_REQUEST";
-				case BODY_GET_LIST_RESPONSE:	return "BODY_GET_LIST_RESPONSE";
-				case BODY_ATTENTION_RESPONSE:	return "BODY_ATTENTION_RESPONSE";
+				case BODY_OPEN_REQUEST:	return "PublicOpenRequest";
+				case BODY_OPEN_RESPONSE:	return "PublicOpenResponse";
+				case BODY_CLOSE_REQUEST:	return "PublicCloseRequest";
+				case BODY_CLOSE_RESPONSE:	return "PublicCloseResponse";
+				case BODY_GET_PROFILE_PACK_REQUEST:	return "GetPrpfilePackRequest";
+				case BODY_GET_PROFILE_PACK_RESPONSE:	return "GetProfilePackResponse";
+				case BODY_GET_PROFILE_LIST_REQUEST:	return "GetProfileListRequest";
+				case BODY_GET_PROFILE_LIST_RESPONSE:	return "GetProfileListResponse";
+				case BODY_GET_PROC_PARAMETER_REQUEST:	return "GetProcParameterRequest";
+				case BODY_GET_PROC_PARAMETER_RESPONSE:	return "GetProcParameterResponse";
+				case BODY_SET_PROC_PARAMETER_REQUEST:	return "SetProcParameterRequest";
+				case BODY_SET_PROC_PARAMETER_RESPONSE:	return "SetProcParameterResponse";
+				case BODY_GET_LIST_REQUEST:	return "GetListRequest";
+				case BODY_GET_LIST_RESPONSE:	return "GetListResponse";
+				case BODY_ATTENTION_RESPONSE:	return "Attention";
 				default:
 					break;
 				}

@@ -1,12 +1,13 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #include "cluster.h"
 #include <smf/cluster/generator.h>
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
@@ -17,17 +18,15 @@ namespace node
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, cluster_config_t const& cfg_cls
-		, std::string const& address
-		, std::string const& service
+		, boost::asio::ip::tcp::endpoint ep
+		, std::string const& doc_root
 		, uint16_t watchdog
 		, int timeout)
 	: base_(*btp)
 	, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 	, logger_(logger)
 	, config_(cfg_cls)
-	, http_address_(address)
-	, http_service_(service)
-	//, server_(btp->mux_, logger_, bus_, sk, watchdog, timeout)
+	, server_(btp->mux_.get_io_service(), ep, doc_root)
 	, master_(0)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -56,7 +55,7 @@ namespace node
 		//
 		//	stop server
 		//
-		//server_.close();
+		server_.close();
 
 		//
 		//	ToDo: stop all sessions
@@ -80,7 +79,7 @@ namespace node
 		//
 		//	start http server
 		//
-		//server_.run(http_address_, http_service_);
+		server_.run();
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -94,7 +93,7 @@ namespace node
 		//
 		//	stop server
 		//
-		//server_.close();
+		server_.close();
 
 		//
 		//	ToDo: stop all sessions

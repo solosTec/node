@@ -168,7 +168,7 @@ namespace node
 					cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "26862"),
-						cyng::param_factory("account", "data-store"),
+						cyng::param_factory("account", "gateway"),
 						cyng::param_factory("pwd", "to-define"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", true),
@@ -176,7 +176,7 @@ namespace node
 					cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "26863"),
-						cyng::param_factory("account", "data-store"),
+						cyng::param_factory("account", "gateway"),
 						cyng::param_factory("pwd", "to-define"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", false),

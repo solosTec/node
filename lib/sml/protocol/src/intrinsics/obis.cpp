@@ -62,7 +62,15 @@ namespace node
 
 		bool obis::equal(obis const& other) const	
 		{
-			return std::equal(value_.begin(), value_.end(), other.value_.begin());
+			return 	value_[0] == other.value_[0]
+				&& value_[1] == other.value_[1]
+				&& value_[2] == other.value_[2]
+				&& value_[3] == other.value_[3]
+				&& value_[4] == other.value_[4]
+				&& value_[5] == other.value_[5]
+				;
+
+			//return std::equal(value_.begin(), value_.end(), other.value_.begin());
 		}
 
 		bool obis::less(obis const& other) const	

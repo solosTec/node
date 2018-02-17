@@ -6,6 +6,7 @@
 */
 
 #include "network.h"
+#include <smf/ipt/generator.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
@@ -18,7 +19,6 @@ namespace node
 
 		network::network(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
-			//, std::vector<std::size_t> const& tsks
 			, master_config_t const& cfg)
 		: base_(*btp)
 			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id()))
@@ -161,23 +161,24 @@ namespace node
 				<< ':'
 				<< config_[master_].service_);
 
-			cyng::vector_t prg;
-			return prg
-				<< cyng::generate_invoke("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
-				<< ":SEND-LOGIN-REQUEST"			//	label
-				<< cyng::code::JNE					//	jump if no error
-				<< cyng::generate_invoke("bus.reconfigure", cyng::code::LERR)
-				<< cyng::generate_invoke("log.msg.error", cyng::code::LERR)	// load error register
-				<< ":STOP"							//	label
-				<< cyng::code::JA					//	jump always
-				<< cyng::label(":SEND-LOGIN-REQUEST")
-				<< cyng::generate_invoke("ipt.start")		//	start reading ipt network
-				<< cyng::generate_invoke("req.login.public", config_[master_].account_, config_[master_].pwd_)
-				<< cyng::generate_invoke("stream.flush")
-				<< cyng::label(":STOP")
-				<< cyng::code::NOOP
-				<< cyng::reloc()
-				;
+			return gen::ipt_req_login_public(config_, master_);
+			//cyng::vector_t prg;
+			//return prg
+			//	<< cyng::generate_invoke("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
+			//	<< ":SEND-LOGIN-REQUEST"			//	label
+			//	<< cyng::code::JNE					//	jump if no error
+			//	<< cyng::generate_invoke("bus.reconfigure", cyng::code::LERR)
+			//	<< cyng::generate_invoke("log.msg.error", cyng::code::LERR)	// load error register
+			//	<< ":STOP"							//	label
+			//	<< cyng::code::JA					//	jump always
+			//	<< cyng::label(":SEND-LOGIN-REQUEST")
+			//	<< cyng::generate_invoke("ipt.start")		//	start reading ipt network
+			//	<< cyng::generate_invoke("req.login.public", config_[master_].account_, config_[master_].pwd_)
+			//	<< cyng::generate_invoke("stream.flush")
+			//	<< cyng::label(":STOP")
+			//	<< cyng::code::NOOP
+			//	<< cyng::reloc()
+			//	;
 		}
 
 		cyng::vector_t network::ipt_req_login_scrambled() const
@@ -189,26 +190,27 @@ namespace node
 				<< ':'
 				<< config_[master_].service_);
 
-			scramble_key sk = gen_random_sk();
+			return gen::ipt_req_login_scrambled(config_, master_);
+			//scramble_key sk = gen_random_sk();
 
-			cyng::vector_t prg;
-			return prg
-				<< cyng::generate_invoke("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
-				<< ":SEND-LOGIN-REQUEST"			//	label
-				<< cyng::code::JNE					//	jump if no error
-				<< cyng::generate_invoke("bus.reconfigure", cyng::code::LERR)
-				<< cyng::generate_invoke("log.msg.error", cyng::code::LERR)	// load error register
-				<< ":STOP"							//	label
-				<< cyng::code::JA					//	jump always
-				<< cyng::label(":SEND-LOGIN-REQUEST")
-				<< cyng::generate_invoke("ipt.start")		//	start reading ipt network
-				<< cyng::generate_invoke("ipt.set.sk", sk)	//	set new scramble key for parser
-				<< cyng::generate_invoke("req.login.scrambled", config_[master_].account_, config_[master_].pwd_, sk)
-				<< cyng::generate_invoke("stream.flush")
-				<< cyng::label(":STOP")
-				<< cyng::code::NOOP
-				<< cyng::reloc()
-				;
+			//cyng::vector_t prg;
+			//return prg
+			//	<< cyng::generate_invoke("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
+			//	<< ":SEND-LOGIN-REQUEST"			//	label
+			//	<< cyng::code::JNE					//	jump if no error
+			//	<< cyng::generate_invoke("bus.reconfigure", cyng::code::LERR)
+			//	<< cyng::generate_invoke("log.msg.error", cyng::code::LERR)	// load error register
+			//	<< ":STOP"							//	label
+			//	<< cyng::code::JA					//	jump always
+			//	<< cyng::label(":SEND-LOGIN-REQUEST")
+			//	<< cyng::generate_invoke("ipt.start")		//	start reading ipt network
+			//	<< cyng::generate_invoke("ipt.set.sk", sk)	//	set new scramble key for parser
+			//	<< cyng::generate_invoke("req.login.scrambled", config_[master_].account_, config_[master_].pwd_, sk)
+			//	<< cyng::generate_invoke("stream.flush")
+			//	<< cyng::label(":STOP")
+			//	<< cyng::code::NOOP
+			//	<< cyng::reloc()
+			//	;
 
 		}
 

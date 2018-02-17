@@ -8,6 +8,11 @@
 #include "controller.h"
 #include <NODE_project_info.h>
 #include "tasks/storage_db.h"
+#include "tasks/storage_xml.h"
+#include "tasks/storage_abl.h"
+#include "tasks/storage_binary.h"
+#include "tasks/storage_json.h"
+#include "tasks/storage_log.h"
 #include "tasks/network.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -149,6 +154,7 @@ namespace node
 				, cyng::param_factory("log-level", "INFO")
 				, cyng::param_factory("tag", rgen())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
+				, cyng::param_factory("log-pushdata", false)	//	log file for each channel
 				, cyng::param_factory("output", cyng::vector_factory({"DB"}))	//	options are XML, JSON, DB
 
 				, cyng::param_factory("DB", cyng::tuple_factory(
@@ -168,6 +174,15 @@ namespace node
 				))
 				, cyng::param_factory("ABL", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "abl").string()),
+					cyng::param_factory("prefix", "smf")
+				))
+				, cyng::param_factory("BIN", cyng::tuple_factory(
+					cyng::param_factory("root-dir", (pwd / "sml").string()),
+					cyng::param_factory("prefix", "smf"),
+					cyng::param_factory("suffix", "sml")
+				))
+				, cyng::param_factory("LOG", cyng::tuple_factory(
+					cyng::param_factory("root-dir", (pwd / "log").string()),
 					cyng::param_factory("prefix", "smf")
 				))
 				, cyng::param_factory("ipt", cyng::vector_factory({
@@ -224,7 +239,7 @@ namespace node
 		{
 			auto dom = cyng::make_reader(vec[0]);
 			cyng::tuple_t tpl;
-			return ipt::storage_db::init_db(cyng::value_cast(dom.get("DB"), tpl));
+			return storage_db::init_db(cyng::value_cast(dom.get("DB"), tpl));
 		}
 		return EXIT_FAILURE;
 	}
@@ -237,12 +252,12 @@ namespace node
 		boost::uuids::random_generator rgen;
 		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
 
+		const auto log_pushdata = cyng::value_cast(dom.get("log-pushdata"), false);
+		
 		//
 		//	get configuration type
 		//
-		//const auto config_type = cyng::io::to_str(dom.get("output"));
 		const auto config_types = cyng::vector_cast<std::string>(dom.get("output"), "");
-		//CYNG_LOG_TRACE(logger, "config types are " << config_type);
 
 		//
 		//	storage manager task
@@ -328,33 +343,92 @@ namespace node
 
 				tpl = cyng::value_cast(dom.get(config_type), tpl);
 
-				tsks.push_back(cyng::async::start_task_delayed<ipt::storage_db>(mux
+				tsks.push_back(cyng::async::start_task_delayed<storage_db>(mux
 					, std::chrono::seconds(1)
 					, logger
 					, cyng::to_param_map(tpl)).first);
 			}
-			//else if (boost::algorithm::iequals(config_type, "XML"))
-			//{
-			//	CYNG_LOG_INFO(logger, "open XML configuration files");
+			else if (boost::algorithm::iequals(config_type, "XML"))
+			{
+				CYNG_LOG_INFO(logger, "start XML storage");
 
-			//	return cyng::async::start_task_delayed<ipt::storage_xml>(mux
-			//		, std::chrono::seconds(1)
-			//		, logger
-			//		, cyng::to_param_map(cfg)).first;
-			//}
-			//else if (boost::algorithm::iequals(config_type, "JSON"))
-			//{
-			//	CYNG_LOG_INFO(logger, "open JSONL configuration files");
+				tpl = cyng::value_cast(dom.get(config_type), tpl);
 
-			//	return cyng::async::start_task_delayed<ipt::storage_json>(mux
-			//		, std::chrono::seconds(1)
-			//		, logger
-			//		, cyng::to_param_map(cfg)).first;
-			//}
+				auto root_dir = cyng::value_cast<std::string>(dom[config_type].get("root-dir"), "");
+				auto root_name = cyng::value_cast<std::string>(dom[config_type].get("root-name"), "SML");
+				auto encoding = cyng::value_cast<std::string>(dom[config_type].get("endcoding"), "UTF-8");
+
+				tsks.push_back(cyng::async::start_task_delayed<storage_xml>(mux
+					, std::chrono::seconds(1)
+					, logger
+					, root_dir
+					, root_name
+					, encoding).first);
+			}
+			else if (boost::algorithm::iequals(config_type, "JSON"))
+			{
+				CYNG_LOG_INFO(logger, "start JSON storage");
+
+				tpl = cyng::value_cast(dom.get(config_type), tpl);
+
+				auto root_dir = cyng::value_cast<std::string>(dom[config_type].get("root-dir"), "");
+				auto prefix = cyng::value_cast<std::string>(dom[config_type].get("prefix"), "sml");
+				auto suffix = cyng::value_cast<std::string>(dom[config_type].get("suffix"), "json");
+
+				tsks.push_back(cyng::async::start_task_delayed<storage_json>(mux
+					, std::chrono::seconds(1)
+					, logger
+					, root_dir
+					, prefix
+					, suffix).first);
+			}
+			else if (boost::algorithm::iequals(config_type, "ABL"))
+			{
+				CYNG_LOG_INFO(logger, "start ABL storage");
+
+				tpl = cyng::value_cast(dom.get(config_type), tpl);
+
+				auto root_dir = cyng::value_cast<std::string>(dom[config_type].get("root-dir"), "");
+				auto prefix = cyng::value_cast<std::string>(dom[config_type].get("prefix"), "sml");
+				auto suffix = cyng::value_cast<std::string>(dom[config_type].get("suffix"), "abl");
+
+				tsks.push_back(cyng::async::start_task_delayed<storage_abl>(mux
+					, std::chrono::seconds(1)
+					, logger
+					, cyng::to_param_map(tpl)).first);
+			}
+			else if (boost::algorithm::iequals(config_type, "BIN"))
+			{
+				CYNG_LOG_INFO(logger, "start BINary storage");
+
+				auto root_dir = cyng::value_cast<std::string>(dom[config_type].get("root-dir"), "");
+				auto prefix = cyng::value_cast<std::string>(dom[config_type].get("prefix"), "sml");
+				auto suffix = cyng::value_cast<std::string>(dom[config_type].get("suffix"), "sml");
+
+				tsks.push_back(cyng::async::start_task_delayed<storage_binary>(mux
+					, std::chrono::seconds(1)
+					, logger
+					, root_dir
+					, prefix
+					, suffix).first);
+			}
+			else if (boost::algorithm::iequals(config_type, "LOG"))
+			{
+				CYNG_LOG_INFO(logger, "start LOG storage");
+
+				tpl = cyng::value_cast(dom.get(config_type), tpl);
+
+				tsks.push_back(cyng::async::start_task_delayed<storage_log>(mux
+					, std::chrono::seconds(1)
+					, logger
+					, cyng::to_param_map(tpl)).first);
+			}
 			else
 			{
 				CYNG_LOG_ERROR(logger, "unknown config type " << config_type);
 			}
+
+			tpl.clear();
 		}
 		return tsks;
 	}
