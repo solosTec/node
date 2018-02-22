@@ -106,6 +106,7 @@ namespace node
 			//	provide storage functionality
 			//
 			cyng::async::task_cast<write_db>(tp)->vm_.run(cyng::register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1)));
+			cyng::async::task_cast<write_db>(tp)->init();
 
 			//	start task
 			auto res = cyng::async::start_task_sync(base_.mux_, tp);

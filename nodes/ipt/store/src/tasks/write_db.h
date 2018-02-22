@@ -57,6 +57,7 @@ namespace node
 		cyng::continuation process();
 
 	private:
+		void init();
 		void sml_msg(cyng::context& ctx);
 		void sml_eom(cyng::context& ctx);
 		void insert_meta_data(cyng::context& ctx);

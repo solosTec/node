@@ -62,12 +62,15 @@ namespace node
 			<< source
 			<< " established ");
 
+	}
+
+	void write_xml::init()
+	{
 		cyng::register_logger(logger_, vm_);
 		vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
 		vm_.run(cyng::register_function("sml.msg", 1, std::bind(&write_xml::sml_msg, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("sml.eom", 1, std::bind(&write_xml::sml_eom, this, std::placeholders::_1)));
-
 	}
 
 	void write_xml::run()
