@@ -176,7 +176,8 @@ namespace node
 		const auto obj = cyng::json::read(str);
 // 		cyng::io::serialize_json(std::cout, obj);
 // 		std::cout << std::endl;
-		auto reader = cyng::select_reader< cyng::object >::type(obj);
+		auto reader = cyng::make_reader(obj);
+
 		//	{"cmd": "subscribe", "channel": "sys.cpu.load", "timer": true}
 		
 		bool sys_cpu_load = false;

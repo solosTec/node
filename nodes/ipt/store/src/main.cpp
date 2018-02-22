@@ -39,12 +39,12 @@ int main(int argc, char **argv)
 		("help,h", "print usage message")
 		("version,v", "print version string")
 		("build,b", "last built timestamp and platform")
-		("config,C", boost::program_options::value<std::string>(&config_file)->default_value(node::get_cfg_name("data")), "specify the configuration file")
+		("config,C", boost::program_options::value<std::string>(&config_file)->default_value(node::get_cfg_name("store")), "specify the configuration file")
 		("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
-		("noconsole", boost::program_options::bool_switch()->default_value(false), "do not show console output")
+		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
 		;
 		
@@ -63,9 +63,9 @@ int main(int argc, char **argv)
 	//
 	//	data node options
 	//
-	boost::program_options::options_description node_options("data");
+	boost::program_options::options_description node_options("store");
 	node::set_start_options(node_options
-		, "data"
+		, "store"
 		, json_path
 		, pool_size
 #if BOOST_OS_LINUX
@@ -133,18 +133,21 @@ int main(int argc, char **argv)
 
 		}
 
-// 		noddy::controller ctrl(pool_size, json_path);
+		//
+		//	establish controller
+		//
+		node::controller ctrl(pool_size, json_path);
 
 		if (vm["default"].as< bool >())
 		{
 			//	write default configuration
-// 			return ctrl.create_config();
+ 			return ctrl.create_config();
 		}
 
 		if (vm["init"].as< bool >())
 		{
 			//	initialize database
-// 			return ctrl.init_db();
+ 			return ctrl.init_db();
 		}
 
 		if (vm["show"].as< bool >())
@@ -170,7 +173,7 @@ int main(int argc, char **argv)
 #endif
 
 		BOOST_ASSERT_MSG(pool_size != 0, "empty thread pool");
-// 		return ctrl.run(!vm["noconsole"].as< bool >());
+		return ctrl.run(vm["console"].as< bool >());
 	}
 	catch (std::bad_cast const& e)
 	{

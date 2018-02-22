@@ -186,8 +186,8 @@ namespace node
 								cyng::param_factory("realm", "Restricted Content"),
 								cyng::param_factory("name", "auth@example.com"),
 								cyng::param_factory("pwd", "secret")
-							)
-						})),
+							)}
+						)),
 						cyng::param_factory("redirect", cyng::vector_factory({
 							cyng::param_factory("/", "/index.html")
 						}))
@@ -226,7 +226,7 @@ namespace node
 	bool start(cyng::async::scheduler& scheduler, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found" );	
-		cyng::select_reader<cyng::object>::type dom(cfg);
+		auto dom = cyng::make_reader(cfg);
 		
  		const auto doc_root = cyng::io::to_str(dom[0]["http"].get("document-root"));
 		const auto host = cyng::io::to_str(dom[0]["http"].get("address"));

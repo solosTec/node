@@ -9,7 +9,6 @@
 #include "server.h"
 #include <NODE_project_info.h>
 #include <cyng/log.h>
-// #include <cyng/async/scheduler.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/signal_handler.h>
 #include <cyng/factory/set_factory.h>
@@ -17,8 +16,9 @@
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/json.h>
+#include <cyng/value_cast.hpp>
 #include <fstream>
-#include <boost/algorithm/string/predicate.hpp>
+//#include <boost/algorithm/string/predicate.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/filesystem.hpp>
 
@@ -81,7 +81,7 @@ namespace node
 					//	start application
 					//
 					cyng::vector_t tmp;
- 					shutdown = start(mux, logger, config);
+					shutdown = start(mux, logger, cyng::value_cast(config, tmp)[0]);
 					
 					//
 					//	print uptime
@@ -126,6 +126,10 @@ namespace node
 		std::fstream fout(json_path_, std::ios::trunc | std::ios::out);
 		if (fout.is_open())
 		{
+			std::cout 
+				<< "write to file "
+				<< json_path_
+				<< std::endl;
 			//
 			//	get default values
 			//
@@ -138,8 +142,6 @@ namespace node
 					, cyng::param_factory("log-level", "INFO")
 					, cyng::param_factory("tag", rgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
-					, cyng::param_factory("favicon", "")
-					, cyng::param_factory("mime-config", (pwd / "mime.xml").string())
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "7701")
@@ -164,24 +166,50 @@ namespace node
 			cyng::json::write(fout, cyng::make_object(conf));
 			return EXIT_SUCCESS;
 		}
+		else
+		{
+			std::cerr
+				<< "unable to open file "
+				<< json_path_
+				<< std::endl;
+
+		}
 		return EXIT_FAILURE;
 	}
 	
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found" );		
-		cyng::select_reader<cyng::object>::type dom(cfg);
-		
-		const auto address = cyng::io::to_str(dom[0]["server"].get("address"));
-		const auto service = cyng::io::to_str(dom[0]["server"].get("service"));
-		
-		CYNG_LOG_INFO(logger, "listener address: " << address);		
-		CYNG_LOG_INFO(logger, "listener service: " << service);		
+		auto dom = cyng::make_reader(cfg);
+
+		boost::uuids::random_generator rgen;
+		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
+
+		//cyng::param_factory("account", "root"),
+		//cyng::param_factory("pwd", NODE_PWD),
+		//cyng::param_factory("salt", NODE_SALT),
+		//cyng::param_factory("monitor", 57)	//	seconds
 
 		//
-		//	start server
+		//	create server
 		//
-		server srv(mux.get_io_service(), logger);
+		cyng::tuple_t tmp;
+		server srv(mux
+			, logger
+			, tag
+			, cyng::value_cast<std::string>(dom["cluster"].get("account"), "")
+			, cyng::value_cast<std::string>(dom["cluster"].get("pwd"), "")	//	ToDo: md5 + salt
+			, cyng::value_cast(dom["cluster"].get("monitor"), 60)
+			, cyng::value_cast(dom.get("session"), tmp));
+
+		//
+		//	server runtime configuration
+		//
+		const auto address = cyng::io::to_str(dom["server"].get("address"));
+		const auto service = cyng::io::to_str(dom["server"].get("service"));
+
+		CYNG_LOG_INFO(logger, "listener address: " << address);
+		CYNG_LOG_INFO(logger, "listener service: " << service);
 		srv.run(address, service);
 		
 		//

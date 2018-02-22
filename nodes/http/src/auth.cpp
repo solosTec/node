@@ -23,7 +23,8 @@ namespace node
 		cfg = cyng::value_cast(obj, cfg);
 		for (auto d : cfg)
 		{
-			cyng::select_reader<cyng::object>::type dom(d);
+			auto dom = cyng::make_reader(d);
+
  			result.emplace(std::piecewise_construct,
               std::forward_as_tuple(cyng::io::to_str(dom.get("directory"))),
               std::forward_as_tuple(cyng::io::to_str(dom.get("authType"))

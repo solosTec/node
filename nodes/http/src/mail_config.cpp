@@ -14,8 +14,7 @@ namespace node
 {
 	void init(cyng::object obj, mail_config& mc)
 	{
-// 		std::cout << std::endl << "mail configuration: " << cyng::io::to_str(obj) << std::endl;
-		cyng::select_reader<cyng::object>::type dom(obj);
+		auto dom = cyng::make_reader(obj);
 
 		mc.host_ = cyng::io::to_str(dom.get("host"));
 		mc.port_ = cyng::value_cast<int>(dom.get("port"), 465);
@@ -31,7 +30,7 @@ namespace node
 // 		std::cout << recipients.size() << " recipients" << std::endl;
 		for (auto r : recipients)
 		{
-			cyng::select_reader<cyng::object>::type r_dom(r);
+			auto r_dom = cyng::make_reader(r);
 			mc.recipients_.emplace_back(cyng::io::to_str(r_dom.get("name")), cyng::io::to_str(r_dom.get("address")));
 		}
 	}

@@ -1,12 +1,10 @@
 /*
- * Copyright Sylko Olzscher 2017
- * 
- * Use, modification, and distribution is subject to the Boost Software
- * License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
- * http://www.boost.org/LICENSE_1_0.txt)
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
  */
 
-// #include <project_info.h>
 #include "../../../print_build_info.h"
 #include "../../../print_version_info.h"
 #include "../../../set_start_options.h"
@@ -43,7 +41,7 @@ int main(int argc, char **argv)
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
-		("noconsole", boost::program_options::bool_switch()->default_value(false), "do not show console output")
+		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
 		;
 		
@@ -63,7 +61,7 @@ int main(int argc, char **argv)
 	//
 	//	IP-T node options
 	//
-	boost::program_options::options_description node_options("gateway");
+	boost::program_options::options_description node_options("ipt:gateway");
 	node::set_start_options(node_options
 		, "gateway"
 		, json_path
@@ -132,12 +130,15 @@ int main(int argc, char **argv)
 
 		}
 
- 		node::controller ctrl(pool_size, json_path);
+		//
+		//	establish controller
+		//
+		node::controller ctrl(pool_size, json_path);
 
 		if (vm["default"].as< bool >())
 		{
 			//	write default configuration
-// 			return ctrl.create_config();
+ 			return ctrl.create_config();
 		}
 
 		if (vm["show"].as< bool >())
@@ -163,7 +164,7 @@ int main(int argc, char **argv)
 #endif
 
 		BOOST_ASSERT_MSG(pool_size != 0, "empty thread pool");
-// 		return ctrl.run(!vm["noconsole"].as< bool >());
+		return ctrl.run(vm["console"].as< bool >());
 	}
 	catch (std::bad_cast const& e)
 	{
