@@ -95,7 +95,7 @@ namespace node
 		template <typename T>
 		cyng::tuple_t make_value(T&& v)
 		{
-			using type = std::decay<T>::type;
+			using type = typename std::decay<T>::type;
 			return detail::factory_policy<type>::create(std::forward<T>(v));
 		}
 

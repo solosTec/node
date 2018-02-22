@@ -35,13 +35,23 @@ namespace node
 		{
 			// Set the control callback. This will be called
 			// on every incoming ping, pong, and close frame.
+#if defined(__GNUG__)
+            //  for any reason gcc has a problem with bind(...)
+			std::function<void(boost::beast::websocket::frame_type, boost::beast::string_view)> f = std::bind(
+					&websocket_session::on_control_callback,
+					this,
+					std::placeholders::_1,
+					std::placeholders::_2);
+			ws_.control_callback(f);
+            
+#else
 			ws_.control_callback(
 				std::bind(
 					&websocket_session::on_control_callback,
 					this,
 					std::placeholders::_1,
 					std::placeholders::_2));
-
+#endif
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
 			on_timer({});

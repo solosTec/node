@@ -24,7 +24,7 @@ namespace node
 		std::cout << name_1 << std::endl; // prints 1XIiE
 		std::cout << boost::core::demangle(name_1) << std::endl; // prints X<int>
 
-		using type = std::decay<T>::type;
+		using type = typename std::decay<T>::type;
 		char const * name_2 = typeid(type).name();
 		std::cout << name_2 << std::endl; // prints 1XIiE
 		std::cout << boost::core::demangle(name_2) << std::endl; // prints X<int>
