@@ -51,6 +51,7 @@ namespace node
 		const std::string endocing_;
 		std::map<std::uint64_t, std::size_t>	lines_;
 		boost::uuids::random_generator rng_;
+		std::list<std::size_t>	hit_list_;
 	};
 }
 

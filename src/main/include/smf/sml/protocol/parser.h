@@ -277,7 +277,7 @@ namespace node
 			/**
 			 * push data complete
 			 */
-			void finalize();
+			void finalize(std::uint16_t crc, std::uint8_t gap);
 
 		private:
 			/**

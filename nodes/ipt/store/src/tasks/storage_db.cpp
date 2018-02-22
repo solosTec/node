@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #include "storage_db.h"
 #include "write_db.h"
@@ -33,6 +33,7 @@ namespace node
 		, meta_map_(init_meta_map())
 		, lines_()
 		, rng_()
+		, hit_list_()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -54,7 +55,19 @@ namespace node
 
 	void storage_db::run()
 	{
-		CYNG_LOG_INFO(logger_, "storage_db is running");
+		BOOST_ASSERT(pool_.get_pool_size() != 0);
+		for (auto tsk : hit_list_)
+		{
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> stop.writer " 
+				<< tsk);
+			base_.mux_.send(tsk, 1, cyng::tuple_t{});
+		}
+		hit_list_.clear();
+		base_.suspend(std::chrono::seconds(1));
 	}
 
 	void storage_db::stop()
@@ -86,7 +99,8 @@ namespace node
 				, channel
 				, source
 				, target
-				, pool_.get_session());
+				, pool_.get_session()
+				, meta_map_);
 
 			//
 			//	provide storage functionality
@@ -101,12 +115,14 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< " processing line "
+				<< "> processing line "
 				<< std::dec
 				<< source
 				<< ':'
 				<< channel
-				<< " with new task "
+				<< ':'
+				<< target
+				<< " ==> new task "
 				<< res.first);
 
 			//	insert into task list
@@ -122,12 +138,14 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< " processing line "
+				<< "> processing line "
 				<< std::dec
 				<< source
 				<< ':'
 				<< channel
-				<< " with task "
+				<< ':'
+				<< target
+				<< " ==> task "
 				<< pos->second);
 
 			//	take the existing task
@@ -137,7 +155,7 @@ namespace node
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< " processing line "
+					<< "> processing line "
 					<< std::dec
 					<< source
 					<< ':'
@@ -174,32 +192,6 @@ namespace node
 				s.execute(sql);
 			}
 
-
-			/*
-			cmd.insert();
-			sql = cmd.to_str();
-			auto stmt = s.create_statement();
-			std::pair<int, bool> r = stmt->prepare(sql);
-			BOOST_ASSERT(r.first == 10);	//	3 parameters to bind
-			BOOST_ASSERT(r.second);
-
-			//	bind parameters
-			stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
-				.push(cyng::make_object("Douglas Adams"), 128)
-				.push(cyng::make_object("42"), 128)
-				.push(cyng::make_object("in search for the last question"), 512)
-				.push(cyng::make_object("ID"), 64)
-				.push(cyng::make_object("vFirmware"), 64)
-				.push(cyng::make_object(true), 0)
-				.push(cyng::make_object(std::chrono::system_clock::now()), 0)
-				.push(cyng::make_object("config"), 1024)
-				.push(cyng::make_object(27ull), 0)
-				;
-			stmt->execute();
-			stmt->clear();
-			*/
-
-
 			return EXIT_SUCCESS;
 		}
 		std::cerr << "connect to database failed" << std::endl;
@@ -209,7 +201,6 @@ namespace node
 	void storage_db::stop_writer(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		//CYNG_LOG_INFO(logger_, "stop.writer " << cyng::io::to_str(frame));
 
 		auto tsk = cyng::value_cast<std::size_t>(frame.at(0), 0);
 
@@ -217,16 +208,16 @@ namespace node
 		{
 			if (pos->second == tsk)
 			{
-				CYNG_LOG_INFO(logger_, "stop.writer " << tsk);
+				CYNG_LOG_INFO(logger_, "remove.writer " << tsk);
 				lines_.erase(pos);
-				base_.mux_.send(tsk, 1, cyng::tuple_t{});
+				hit_list_.push_back(tsk);
 				return;
 			}
 		}
 		CYNG_LOG_ERROR(logger_, "stop.writer " << tsk << " not found");
 	}
 
-	std::map<std::string, cyng::table::meta_table_ptr> storage_db::init_meta_map()
+	cyng::table::mt_table storage_db::init_meta_map()
 	{
 		//
 		//	SQL table scheme
@@ -238,10 +229,10 @@ namespace node
 		//	status - M-Bus status
 		//
 		std::map<std::string, cyng::table::meta_table_ptr> meta_map;
-		meta_map.emplace("TSMLMeta", cyng::table::make_meta_table<1, 10>("TSMLMeta",
-			{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32 },
-			{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0 }));
+		meta_map.emplace("TSMLMeta", cyng::table::make_meta_table<1, 11>("TSMLMeta",
+			{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target" },
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING },
+			{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32 }));
 
 		//
 		//	unitCode - physical unit

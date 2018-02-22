@@ -32,7 +32,10 @@ namespace node
 			, logger_(logger)
 			, task_(tsk)
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
+				CYNG_LOG_DEBUG(logger_, prg.size() << " ipt instructions received");
+#ifdef SMF_IO_DEBUG
+				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+#endif
 				vm_.async_run(std::move(prg));
 			}, sk)
 			, serializer_(socket_, vm_, sk)

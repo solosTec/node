@@ -150,15 +150,15 @@ namespace node
 			{
 				CYNG_LOG_TRACE(logger_, "distribute "
 					<< data.size()
-					<< " bytes from "
+					<< " bytes from ["
 					<< pos->second
-					<< " to "
+					<< "] to "
 					<< tasks_.size()
 					<< " task(s)");
 
 				for (auto tsk : tasks_)
 				{
-					CYNG_LOG_DEBUG(logger_, "distribute "
+					CYNG_LOG_DEBUG(logger_, "send "
 						<< data.size()
 						<< " bytes to task "
 						<< tsk);
@@ -190,10 +190,10 @@ namespace node
 				auto pos = seq_target_map_.find(seq);
 				if (pos != seq_target_map_.end())
 				{
-					CYNG_LOG_INFO(logger_, "target "
-						<< pos->second
-						<< " on channel "
-						<< channel);
+					CYNG_LOG_INFO(logger_, "channel "
+						<< channel
+						<< " ==> "
+						<< pos->second);
 
 					channel_target_map_.emplace(channel, pos->second);
 				}
@@ -311,14 +311,13 @@ namespace node
 			//	* ipt sequence
 			//	* target name
 			const cyng::vector_t frame = ctx.get_frame();
-			//CYNG_LOG_TRACE(logger_, "insert relation - " << cyng::io::to_str(frame));
 
 			auto const tpl = cyng::tuple_cast<
 				sequence_type,		//	[0] ipt seq
 				std::string			//	[1] target
 			>(frame);
 
-			CYNG_LOG_TRACE(logger_, "insert relation - " 
+			CYNG_LOG_TRACE(logger_, "ipt sequence " 
 				<< +std::get<0>(tpl)
 				<< " ==> "
 				<< std::get<1>(tpl));

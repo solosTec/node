@@ -131,10 +131,26 @@ namespace node
 		using SML_ESCAPE	= std::integral_constant<std::uint32_t, 0x1b1b1b1b>;
 		using SML_VERSION_1 = std::integral_constant<std::uint32_t, 0x01010101>;
 
-		/**
-		 *	Defines a stack of obis codes describing the path from root to the value.
-		 */
-		//typedef std::vector<noddy::m2m::obis>	path_type;
+		enum address_type : std::uint8_t	
+		{
+			MBUS_WIRELESS = 0x01,	//!<	(1) Die 8 Bytes der Wireless-M-Bus-Adresse werden direkt im Anschluss an das Byte 0 (MSB)angeordnet
+			MBUS_WIRED = 0x02,		//!<	(2) Die 8 Bytes der Wired-M-Bus-Adresse werden direkt im Anschluss an das Byte 0 (MSB)angeordnet
+			RHEIN_ENERGY = 0x03,	//!<	(3) 9 bytes
+			E_ON = 0x04,			//!<	(4) 7 bytes
+			MAC_ADDRESS = 0x05,		//!<	(5) 6 bytes (MUC, gateway)
+			DKE_1 = 0x06,			//!<	(6) 6 bytes (E DIN 43863-5:2010-02)
+			IMEI = 0x07,			//!<	(7) 7 bytes
+			RWE = 0x08,				//!<	(8) 7 bytes
+			DKE_2 = 0x09,			//!<	(9) 10 bytes (E DIN 43863-5:2010-07)
+			ACTOR = 0x0A,			//!<	(0x0A) 
+			SUB_ADDRESS = 0x7F,		//!<	(0x7F) 
+
+			//	special cases
+//			SERIAL_NUMBER,			//!<	8 bytes as ASCII code: example "30 32 34 36 37 34 38 36" this is the serial number of the M-Bus encoding
+
+			RESERVED,
+			OTHER
+		};
 
 
 	}	//	sml

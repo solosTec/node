@@ -9,14 +9,17 @@
 #include <smf/sml/exporter/xml_exporter.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
+#include <smf/sml/srv_id_io.h>
 #include <smf/sml/units.h>
 #include <smf/sml/scaler.h>
+#include <smf/sml/mbus/defs.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/value_cast.hpp>
 #include <cyng/xml.h>
 #include <cyng/factory.h>
+#include <cyng/chrono.h>
 
 namespace node
 {
@@ -65,6 +68,9 @@ namespace node
 
 		boost::filesystem::path xml_exporter::get_filename() const
 		{
+			auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			std::tm time = cyng::chrono::convert_utc(tt);
+
 			std::stringstream ss;
 			ss
 				<< root_name_
@@ -76,6 +82,18 @@ namespace node
 				<< '-'
 				<< std::setw(4)
 				<< source_
+				<< '-'
+				<< std::dec
+				<< cyng::chrono::year(time)
+				<< std::setw(2)
+				<< cyng::chrono::month(time)
+				<< std::setw(2)
+				<< 'T'
+				<< cyng::chrono::day(time)
+				<< std::setw(2)
+				<< cyng::chrono::hour(time)
+				<< std::setw(2)
+				<< cyng::chrono::minute(time)
 				<< '-'
 				<< target_
 				<< ".xml"
@@ -130,8 +148,9 @@ namespace node
 			//	This is typically a printable sequence of 6 up to 9 ASCII values
 			//
 			//std::cout << cyng::io::to_ascii(cyng::value_cast<cyng::buffer_t>(*pos, cyng::buffer_t())) << std::endl;
-			const std::string trx = cyng::io::to_ascii(cyng::value_cast<cyng::buffer_t>(*pos, cyng::buffer_t()));
-			cyng::xml::write(msg.append_child("trx"), *pos++).append_attribute("ascii").set_value(trx.c_str());
+			read_string(msg.append_child("trx"), *pos++);
+			//const std::string trx = cyng::io::to_ascii(cyng::value_cast<cyng::buffer_t>(*pos, cyng::buffer_t()));
+			//cyng::xml::write(msg.append_child("trx"), *pos++).append_attribute("ascii").set_value(trx.c_str());
 
 			//
 			//	(2) groupNo
@@ -233,18 +252,18 @@ namespace node
 			//
 			//	clientId (MAC)
 			//	Typically 7 bytes to identify gateway/MUC
-			cyng::xml::write(node.append_child("clientId"), *pos++);
+			read_client_id(node.append_child("clientId"), *pos++);
 
 			//
 			//	reqFileId
 			//
-			cyng::xml::write(node.append_child("reqFileId"), *pos++);
+			read_string(node.append_child("reqFileId"), *pos++);
 
 			//
 			//	serverId
 			//
-			cyng::xml::write(node.append_child("serverId"), *pos++);
-
+			read_server_id(node.append_child("serverId"), *pos++);
+			
 			//
 			//	username
 			//
@@ -273,17 +292,17 @@ namespace node
 			//
 			//	clientId (MAC)
 			//	Typically 7 bytes to identify gateway/MUC
-			cyng::xml::write(node.append_child("clientId"), *pos++);
+			read_client_id(node.append_child("clientId"), *pos++);
 
 			//
 			//	reqFileId
 			//
-			cyng::xml::write(node.append_child("reqFileId"), *pos++);
+			read_string(node.append_child("reqFileId"), *pos++);
 
 			//
 			//	serverId
 			//
-			cyng::xml::write(node.append_child("serverId"), *pos++);
+			read_server_id(node.append_child("serverId"), *pos++);
 
 			//
 			//	refTime
@@ -303,7 +322,7 @@ namespace node
 			//
 			//	serverId
 			//
-			cyng::xml::write(node.append_child("serverId"), *pos++);
+			read_server_id(node.append_child("serverId"), *pos++);
 
 			//
 			//	actTime
@@ -353,7 +372,7 @@ namespace node
 			//
 			//	serverId
 			//
-			cyng::xml::write(node.append_child("serverId"), *pos++);
+			read_server_id(node.append_child("serverId"), *pos++);
 
 			//
 			//	parameterTreePath (OBIS)
@@ -377,7 +396,7 @@ namespace node
 			//
 			//	serverId
 			//
-			cyng::xml::write(node.append_child("serverId"), *pos++);
+			read_server_id(node.append_child("serverId"), *pos++);
 
 			//
 			//	attentionNo (OBIS)
@@ -462,6 +481,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Period Entry");
+
+			node.append_attribute("idx").set_value(index);
 
 			//
 			//	object name
@@ -569,6 +590,48 @@ namespace node
 			return scaler;
 		}
 
+		std::string xml_exporter::read_string(pugi::xml_node node, cyng::object obj)
+		{
+			cyng::buffer_t buffer;
+			buffer = cyng::value_cast(obj, buffer);
+			const auto str = cyng::io::to_ascii(buffer);
+			node.append_attribute("value").set_value(str.c_str());
+			cyng::xml::write(node, obj);
+			return str;
+
+		}
+
+		std::string xml_exporter::read_server_id(pugi::xml_node node, cyng::object obj)
+		{
+			cyng::buffer_t buffer;
+			buffer = cyng::value_cast(obj, buffer);
+			const auto str = from_server_id(buffer);
+			node.append_attribute("value").set_value(str.c_str());
+			if (is_mbus(buffer))
+			{
+				//
+				//	extract manufacturer name
+				//	example: 01-2d2c-68866869-1c-04
+				//
+				const auto manufacturer = decode(buffer.at(1), buffer.at(2));
+				node.append_attribute("manufacturer").set_value(manufacturer.c_str());
+
+			}
+
+			cyng::xml::write(node, obj);
+			return str;
+		}
+
+		std::string xml_exporter::read_client_id(pugi::xml_node node, cyng::object obj)
+		{
+			cyng::buffer_t buffer;
+			buffer = cyng::value_cast(obj, buffer);
+			const auto str = from_server_id(buffer);
+			node.append_attribute("value").set_value(str.c_str());
+			cyng::xml::write(node, obj);
+			return str;
+		}
+
 		void xml_exporter::read_value(pugi::xml_node node, obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj)
 		{
 			//
@@ -603,6 +666,38 @@ namespace node
 				const auto tp = std::chrono::system_clock::from_time_t(tm);
 				const auto str = cyng::to_str(tp);
 				node.append_attribute("sensorTime").set_value(str.c_str());
+			}
+			else if (code == OBIS_SERIAL_NR)
+			{
+				cyng::buffer_t buffer;
+				buffer = cyng::value_cast(obj, buffer);
+				const auto serial_nr = from_server_id(buffer);
+				node.append_attribute("serial-nr-1").set_value(serial_nr.c_str());
+				if (buffer.size() == 8)
+				{
+					//
+					//	extract manufacturer name
+					//	example: 01-2d2c-68866869-1c-04
+					//
+					const auto manufacturer = decode(buffer.at(0), buffer.at(1));
+					node.append_attribute("manufacturer").set_value(manufacturer.c_str());
+				}
+			}
+			else if (code == OBIS_SERIAL_NR_SECOND)
+			{
+				cyng::buffer_t buffer;
+				buffer = cyng::value_cast(obj, buffer);
+				const auto serial_nr = from_server_id(buffer);
+				node.append_attribute("serial-nr-2").set_value(serial_nr.c_str());
+				if (buffer.size() == 8)
+				{
+					//
+					//	extract manufacturer name
+					//	example: 01-2d2c-68866869-1c-04
+					//
+					const auto manufacturer = decode(buffer.at(0), buffer.at(1));
+					node.append_attribute("manufacturer").set_value(manufacturer.c_str());
+				}
 			}
 			else if (code == OBIS_CLASS_RADIO_KEY)
 			{
@@ -641,12 +736,6 @@ namespace node
 			tpl = cyng::value_cast(obj, tpl);
 			if (tpl.size() == 2)
 			{
-
-			//PROC_PAR_VALUE = 1,
-			//PROC_PAR_PERIODENTRY = 2,
-			//PROC_PAR_TUPELENTRY = 3,
-			//PROC_PAR_TIME = 4,
-
 				const auto type = cyng::value_cast<std::uint8_t>(tpl.front(), 0);
 				switch (type)
 				{

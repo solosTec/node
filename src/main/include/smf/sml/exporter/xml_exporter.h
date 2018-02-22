@@ -70,8 +70,11 @@ namespace node
 			obis read_obis(pugi::xml_node, cyng::object);
 			std::uint8_t read_unit(pugi::xml_node, cyng::object);
 			std::int8_t read_scaler(pugi::xml_node, cyng::object);
+			std::string read_string(pugi::xml_node, cyng::object);
 			void read_value(pugi::xml_node, obis, std::int8_t, std::uint8_t, cyng::object);
 			void read_parameter(pugi::xml_node, obis, cyng::object);
+			std::string read_server_id(pugi::xml_node, cyng::object);
+			std::string read_client_id(pugi::xml_node, cyng::object);
 
 			void read_period_list(pugi::xml_node, std::vector<obis> const&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_period_entry(pugi::xml_node, std::vector<obis> const&, std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);

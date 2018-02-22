@@ -16,6 +16,7 @@
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/vm/controller.h>
 #include <cyng/db/session.h>
+#include <cyng/table/meta_interface.h>
 
 namespace node
 {
@@ -36,7 +37,8 @@ namespace node
 			, std::uint32_t channel
 			, std::uint32_t source
 			, std::string target
-			, cyng::db::session);
+			, cyng::db::session
+			, cyng::table::mt_table&);
 		void run();
 		void stop();
 
@@ -57,6 +59,7 @@ namespace node
 	private:
 		void sml_msg(cyng::context& ctx);
 		void sml_eom(cyng::context& ctx);
+		void insert_meta_data(cyng::context& ctx);
 
 	private:
 		cyng::async::base_task& base_;
@@ -64,6 +67,7 @@ namespace node
 		cyng::controller vm_;
 		sml::parser parser_;
 		cyng::db::session db_;
+		cyng::table::mt_table mt_table_;
 		sml::db_exporter exporter_;	
 	};
 }

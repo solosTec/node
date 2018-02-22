@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IPT_STORE_TASK_STORAGE_DB_H
 #define NODE_IPT_STORE_TASK_STORAGE_DB_H
@@ -43,7 +43,7 @@ namespace node
 		 * static method to create tables.
 		 */
 		static int init_db(cyng::tuple_t);
-		static std::map<std::string, cyng::table::meta_table_ptr> init_meta_map();
+		static cyng::table::mt_table init_meta_map();
 
 	private:
 		void stop_writer(cyng::context& ctx);
@@ -52,10 +52,10 @@ namespace node
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		cyng::db::session_pool pool_;
-		std::map<std::string, cyng::table::meta_table_ptr>	meta_map_;
+		cyng::table::mt_table	meta_map_;
 		std::map<std::uint64_t, std::size_t>	lines_;
 		boost::uuids::random_generator rng_;
-
+		std::list<std::size_t>	hit_list_;
 	};
 }
 

@@ -31,6 +31,7 @@ namespace node
 		, endocing_(endocing)
 		, lines_()
 		, rng_()
+		, hit_list_()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -42,7 +43,18 @@ namespace node
 
 	void storage_xml::run()
 	{
-		CYNG_LOG_INFO(logger_, "storage_xml is running");
+		for (auto tsk : hit_list_)
+		{
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> stop.writer "
+				<< tsk);
+			base_.mux_.send(tsk, 1, cyng::tuple_t{});
+		}
+		hit_list_.clear();
+		base_.suspend(std::chrono::seconds(1));
 	}
 
 	void storage_xml::stop()
@@ -90,11 +102,13 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< " processing line "
+				<< "> processing line "
 				<< std::dec
 				<< source
 				<< ':'
 				<< channel
+				<< ':'
+				<< target
 				<< " with new task "
 				<< res.first
 			);
@@ -112,7 +126,7 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< " processing line "
+				<< "> processing line "
 				<< std::dec
 				<< source
 				<< ':'
@@ -151,10 +165,9 @@ namespace node
 		{
 			if (pos->second == tsk)
 			{
-				CYNG_LOG_INFO(logger_, "stop.writer " << tsk);
+				CYNG_LOG_INFO(logger_, "remove.writer " << tsk);
 				lines_.erase(pos);
-				//base_.mux_.stop(tsk);
-				base_.mux_.send(tsk, 1, cyng::tuple_t{});
+				hit_list_.push_back(tsk);
 				return;
 			}
 		}

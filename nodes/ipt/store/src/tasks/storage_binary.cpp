@@ -11,9 +11,9 @@
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/set_cast.h>
+#include <cyng/chrono.h>
 #include <fstream>
 #include <sstream>
-//#include <boost/uuid/random_generator.hpp>
 #include <boost/filesystem.hpp>
 
 namespace node
@@ -59,6 +59,9 @@ namespace node
 
 	cyng::continuation storage_binary::process(std::uint32_t channel, std::uint32_t source, std::string const& target, cyng::buffer_t const& data)
 	{
+		auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+		std::tm time = cyng::chrono::convert_utc(tt);
+
 		//
 		//	generate file name
 		//
@@ -73,6 +76,18 @@ namespace node
 			<< '-'
 			<< std::setw(4)
 			<< source
+			<< '-'
+			<< std::dec
+			<< cyng::chrono::year(time)
+			<< std::setw(2)
+			<< cyng::chrono::month(time)
+			<< std::setw(2)
+			<< 'T'
+			<< cyng::chrono::day(time)
+			<< std::setw(2)
+			<< cyng::chrono::hour(time)
+			<< std::setw(2)
+			<< cyng::chrono::minute(time)
 			<< '-'
 			<< target
 			<< '.'

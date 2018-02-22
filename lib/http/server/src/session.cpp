@@ -106,15 +106,19 @@ namespace node
 	{
 		// Happens when the timer closes the socket
 		if (ec == boost::asio::error::operation_aborted)
+		{
 			return;
+		}
 
 		// This means they closed the connection
 		if (ec == boost::beast::http::error::end_of_stream)
+		{
 			return do_close();
+		}
 
 		if (ec)
 		{
-			BOOST_ASSERT_MSG(!ec, "READ");
+			//BOOST_ASSERT_MSG(!ec, "READ");
 			return;
 		}
 

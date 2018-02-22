@@ -15,6 +15,7 @@ set (sml_protocol_cpp
 	lib/sml/protocol/src/mbus_defs.cpp
 	lib/sml/protocol/src/obis_db.cpp
 	lib/sml/protocol/src/obis_io.cpp
+	lib/sml/protocol/src/srv_id_io.cpp
 )
 
 set (sml_protocol_h
@@ -29,6 +30,7 @@ set (sml_protocol_h
 	src/main/include/smf/sml/mbus/defs.h
 	src/main/include/smf/sml/obis_db.h
 	src/main/include/smf/sml/obis_io.h
+	src/main/include/smf/sml/srv_id_io.h
 )
 
 

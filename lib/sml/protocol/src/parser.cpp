@@ -34,7 +34,6 @@ namespace node
 			, crc_on_(true)
 			, counter_(0)
 			, stack_()
-			//, result_()
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
 			parser_state_ = sml_start();
@@ -134,7 +133,15 @@ namespace node
 					break;
 
 				default:
-					std::cerr << stream_state_ << '@' << pos_ << std::endl;
+					{
+						std::stringstream ss;
+						ss
+							<< stream_state_ 
+							<< '@' 
+							<< pos_
+							;
+						cb_(cyng::generate_invoke("log.msg.error", ss.str()));
+					}
 					break;
 				}
 			}
@@ -196,14 +203,16 @@ namespace node
 				default:
 					if (parser_.verbose_)
 					{
-						std::cerr << "unknown type: "
+						std::stringstream ss;
+						ss
+							<< "unknown type: "
 							<< std::dec
 							<< +high
 							<< " @"
 							<< std::hex
 							<< parser_.pos_
-							<< std::endl
 							;
+						parser_.cb_(cyng::generate_invoke("log.msg.error", ss.str()));
 					}
 					break;
 				}
@@ -446,11 +455,13 @@ namespace node
 			{
 				if (parser_.verbose_)
 				{
-					std::cerr
-						<< "***FATAL invalid TL field @"
+					std::stringstream ss;
+					ss
+						<< "invalid TL field @"
 						<< std::hex
 						<< parser_.pos_
-						<< std::endl;
+						;
+					parser_.cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
 				}
 
 				//
@@ -475,11 +486,15 @@ namespace node
 			case 0x04:	return STATE_BLOCK_SIZE;
 			case 0x1a:	return STATE_EOM;
 			default:
-				std::cerr
-					<< "***error: escape property "
+			{
+				std::stringstream ss;
+				ss
+					<< "escape property "
 					<< +c_
 					<< " not supported"
-					<< std::endl;
+					;
+				parser_.cb_(cyng::generate_invoke("log.msg.error", ss.str()));
+			}
 				break;
 			}
 
@@ -503,7 +518,6 @@ namespace node
 				//
 				//	start new message
 				//
-				//parser_.result_ << cyng::code::ESBA;
 				return STATE_START;
 			}
 			return parser_.stream_state_;
@@ -604,7 +618,8 @@ namespace node
 			{
 				if (parser_.verbose_)
 				{
-					std::cerr
+					std::stringstream ss;
+					ss
 						<< "end of message "
 						<< std::dec
 						<< +s.pads_
@@ -615,11 +630,13 @@ namespace node
 						<< parser_.crc_
 						<< " @"
 						<< parser_.pos_
-						<< std::endl;
+						;
+					parser_.cb_(cyng::generate_invoke("log.msg.debug", ss.str()));
+
 				}
 
 				parser_.crc_on_ = true;
-				parser_.finalize();
+				parser_.finalize(s.crc_, s.pads_);
 				return STATE_START;
 			}
 			return parser_.stream_state_;
@@ -709,13 +726,17 @@ namespace node
 
 				return STATE_START;
 			default:
-				std::cerr 
-					<< "***FATAL: unknown data type "
+			{
+				std::stringstream ss;
+				ss
+					<< "unknown data type "
 					<< tl_.type_
 					<< " @"
 					<< std::hex
 					<< pos_
-					<< std::endl;
+					;
+				cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
+			}
 				BOOST_ASSERT_MSG(false, "unknown data type");
 				break;
 			}
@@ -726,12 +747,15 @@ namespace node
 		{
 			if (stack_.size() > 1)
 			{
-				std::cerr << "***error: " << "EOM with stack size: "
+				std::stringstream ss;
+				ss
+					<< "EOM with stack size: "
 					<< stack_.size()
 					<< " @"
 					<< std::hex
 					<< pos_
-					<< std::endl;
+					;
+				cb_(cyng::generate_invoke("log.msg.error", ss.str()));
 			}
 
 			if (verbose_)
@@ -832,17 +856,19 @@ namespace node
 					push(cyng::make_object(values));
 				}
 			}
-			else if (verbose_)
+			else //if (verbose_)
 			{
-				std::cerr
-					<< "*** fatal: SML protocol error (cannot reduce list) @"
-					<< std::hex 
+				std::stringstream ss;
+				ss
+					<< "SML protocol error (cannot reduce list) @"
+					<< std::hex
 					<< pos_
-					<< std::endl;
+					;
+				cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
 			}
 		}
 
-		void parser::finalize()
+		void parser::finalize(std::uint16_t crc, std::uint8_t gap)
 		{
 			cyng::vector_t prg;
 			prg

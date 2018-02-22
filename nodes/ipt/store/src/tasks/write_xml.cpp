@@ -13,6 +13,7 @@
 #include <cyng/set_cast.h>
 #include <cyng/io/hex_dump.hpp>
 #include <cyng/vm/generator.h>
+#include <cyng/vm/domain/log_domain.h>
 
 #include <boost/uuid/random_generator.hpp>
 
@@ -60,6 +61,9 @@ namespace node
 			<< ':'
 			<< source
 			<< " established ");
+
+		cyng::register_logger(logger_, vm_);
+		vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
 		vm_.run(cyng::register_function("sml.msg", 1, std::bind(&write_xml::sml_msg, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("sml.eom", 1, std::bind(&write_xml::sml_eom, this, std::placeholders::_1)));
@@ -130,14 +134,17 @@ namespace node
 	void write_xml::sml_msg(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		//CYNG_LOG_DEBUG(logger_, "sml.msg " << cyng::io::to_str(frame));
 
 		//
 		//	print sml message number
 		//
 		const std::size_t idx = cyng::value_cast<std::size_t>(frame.at(1), 0);
-		//std::cout << "#" << idx << std::endl;
-		CYNG_LOG_DEBUG(logger_, "sml.msg #" << idx);
+		CYNG_LOG_DEBUG(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> sml.msg #"
+			<< idx);
 
 		//
 		//	get message body
@@ -151,16 +158,24 @@ namespace node
 
 	void write_xml::sml_eom(cyng::context& ctx)
 	{
+		//	[5213,3]
+		//
+		//	* CRC
+		//	* message counter
+		//
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "sml.eom " << cyng::io::to_str(frame));
+		//CYNG_LOG_INFO(logger_, "sml.eom " << cyng::io::to_str(frame));
 
+		const std::size_t idx = cyng::value_cast<std::size_t>(frame.at(1), 0);
 		const auto p = root_dir_ / exporter_.get_filename();
 
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> sml.eom " 
+			<< "> sml.eom #" 
+			<< idx
+			<< ' '
 			<< p);
 
 		boost::filesystem::remove(p);
