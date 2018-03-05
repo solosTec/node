@@ -6,8 +6,7 @@
  */
 
 #include "storage_xml.h"
-#include "write_xml.h"
-#include <cyng/async/task/task_builder.hpp>
+#include <cyng/async/task/base_task.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
@@ -16,6 +15,8 @@
 #include <cyng/vm/generator.h>
 
 #include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/nil_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node
 {
@@ -37,24 +38,38 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> established");
-
+			<< "> initialized");
 	}
 
 	void storage_xml::run()
 	{
-		for (auto tsk : hit_list_)
+		if (!hit_list_.empty())
 		{
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> stop.writer "
-				<< tsk);
-			base_.mux_.send(tsk, 1, cyng::tuple_t{});
+				<< "> stop "
+				<< hit_list_.size()
+				<< " processor(s)");
+			for (auto line : hit_list_)
+			{
+				lines_.erase(line);
+			}
+			hit_list_.clear();
 		}
-		hit_list_.clear();
-		base_.suspend(std::chrono::seconds(1));
+		else
+		{
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< lines_.size()
+				<< " processor(s) online");
+
+		}
+		base_.suspend(std::chrono::seconds(16));
 	}
 
 	void storage_xml::stop()
@@ -79,47 +94,36 @@ namespace node
 		const auto pos = lines_.find(line);
 		if (pos == lines_.end())
 		{
-			//	create a new task
-			auto tp = cyng::async::make_task<write_xml>(base_.mux_
-				, logger_
-				, rng_()
-				, root_dir_
-				, root_name_
-				, endocing_
-				, channel
-				, source
-				, target);
-
 			//
-			//	provide storage functionality
+			//	create new processor
 			//
-			cyng::async::task_cast<write_xml>(tp)->vm_.run(cyng::register_function("stop.writer", 1, std::bind(&storage_xml::stop_writer, this, std::placeholders::_1)));
-			cyng::async::task_cast<write_xml>(tp)->init();
+			auto res = lines_.emplace(std::piecewise_construct,
+				std::forward_as_tuple(line),
+				std::forward_as_tuple(base_.mux_.get_io_service()
+					, logger_
+					, rng_()
+					, root_dir_
+					, root_name_
+					, endocing_
+					, channel
+					, source
+					, target));
 
-			//	start task
-			auto res = cyng::async::start_task_sync(base_.mux_, tp);
-
-			CYNG_LOG_TRACE(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> processing line "
-				<< std::dec
-				<< source
-				<< ':'
-				<< channel
-				<< ':'
-				<< target
-				<< " with new task "
-				<< res.first
-			);
-
-			//	insert into task list
-			lines_[line] = res.first;
-
-			//	take the new task
-			base_.mux_.send(res.first, 0, cyng::tuple_factory(data));
-
+			if (res.second)
+			{
+				res.first->second.vm_.async_run(cyng::register_function("stop.writer", 1, std::bind(&storage_xml::stop_writer, this, std::placeholders::_1)));
+				res.first->second.process(data);
+			}
+			else
+			{
+				CYNG_LOG_FATAL(logger_, "startup processor for line "
+					<< channel
+					<< ':'
+					<< source
+					<< ':'
+					<< target
+					<< " failed");
+			}
 		}
 		else
 		{
@@ -132,24 +136,10 @@ namespace node
 				<< source
 				<< ':'
 				<< channel
-				<< " with task "
-				<< pos->second);
+				<< " with processor "
+				<< pos->second.vm_.tag());
 
-			//	take the existing task
-			if (!base_.mux_.send(pos->second, 0, cyng::tuple_factory(data)))
-			{
-				CYNG_LOG_ERROR(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< " processing line "
-					<< std::dec
-					<< source
-					<< ':'
-					<< channel
-					<< " no task "
-					<< pos->second);
-			}
+			pos->second.process(data);
 		}
 
 		return cyng::continuation::TASK_CONTINUE;
@@ -158,20 +148,18 @@ namespace node
 	void storage_xml::stop_writer(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		//CYNG_LOG_INFO(logger_, "stop.writer " << cyng::io::to_str(frame));
-
-		auto tsk = cyng::value_cast<std::size_t>(frame.at(0), 0);
+		auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 
 		for (auto pos = lines_.begin(); pos != lines_.end(); ++pos)
 		{
-			if (pos->second == tsk)
+			if (pos->second.vm_.tag() == tag)
 			{
-				CYNG_LOG_INFO(logger_, "remove.writer " << tsk);
-				lines_.erase(pos);
-				hit_list_.push_back(tsk);
+				CYNG_LOG_INFO(logger_, "remove xml processor " << tag);
+				//lines_.erase(pos);
+				hit_list_.push_back(pos->first);
 				return;
 			}
 		}
-		CYNG_LOG_ERROR(logger_, "stop.writer " << tsk << " not found");
+		CYNG_LOG_ERROR(logger_, "xml processor " << tag << " not found");
 	}
 }

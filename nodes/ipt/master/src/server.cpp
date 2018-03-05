@@ -46,7 +46,7 @@ namespace node
 			//
 			//	client responses
 			//
-			bus_->vm_.run(cyng::register_function("client.res.login", 6, std::bind(&server::client_res_login, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("client.res.login", 7, std::bind(&server::client_res_login, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.open.connection", 6, std::bind(&server::client_res_open_connection, this, std::placeholders::_1)));
@@ -55,6 +55,8 @@ namespace node
 			bus_->vm_.run(cyng::register_function("client.req.transmit.data.forward", 0, std::bind(&server::client_req_transmit_data_forward, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.transfer.pushdata", 7, std::bind(&server::client_res_transfer_pushdata, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.req.transfer.pushdata.forward", 7, std::bind(&server::client_req_transfer_pushdata_forward, this, std::placeholders::_1)));
+
+			bus_->vm_.run(cyng::register_function("push.connection", 1, std::bind(&server::push_connection, this, std::placeholders::_1)));
 
 		}
 
@@ -196,6 +198,27 @@ namespace node
 			}
 		}
 
+		void server::push_connection(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+			auto pos = client_map_.find(tag);
+			if (pos != client_map_.end())
+			{
+				CYNG_LOG_TRACE(logger_, "push connection "
+					<< tag
+					<< " on stack");
+				ctx.push(pos->second);
+			}
+			else
+			{
+				CYNG_LOG_FATAL(logger_, "push connection "
+					<< tag
+					<< " not found");
+				ctx.push(cyng::make_object());
+			}
+		}
+
 		void server::client_res_login(cyng::context& ctx)
 		{
 			//	[068544fb-9513-4cbe-9007-c9dd9892aff6,d03ff1a5-838a-4d71-91a1-fc8880b157a6,17,true,OK,%(("tp-layer":ipt))]
@@ -204,6 +227,7 @@ namespace node
 			//	* peer
 			//	* sequence
 			//	* response (bool)
+			//	* name
 			//	* msg (optional)
 			//	* query
 			//	* bag
@@ -224,7 +248,7 @@ namespace node
 					<< cyng::invoke(fun)
 					<< cyng::code::REBA
 					;
-				cyng::object_cast<connection>((*pos).second)->session_.vm_.run(std::move(prg));
+				cyng::object_cast<connection>((*pos).second)->session_.vm_.async_run(std::move(prg));
 			}
 			else
 			{

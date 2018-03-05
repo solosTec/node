@@ -105,6 +105,13 @@ namespace node
 			ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", count, "targets"));
 		}, cyng::store::write_access("*Target"));
 
+		//
+		//	remove affected channels
+		//
+		db_.access([&](cyng::store::table* tbl_channel)->void {
+			const auto count = cyng::erase(tbl_channel, get_channels_by_peer(tbl_channel, this->hash()), ctx.tag());
+			ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", count, "channels"));
+		}, cyng::store::write_access("*Channel"));
 
 		//
 		//	remove all subscriptions
@@ -548,7 +555,7 @@ namespace node
 		//	* bag
 		//	* data
 		const cyng::vector_t frame = ctx.get_frame();
-		ctx.run(cyng::generate_invoke("log.msg.info", "client.req.transfer.pushdata", frame));
+		//ctx.run(cyng::generate_invoke("log.msg.info", "client.req.transfer.pushdata", frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] origin client tag
@@ -644,6 +651,7 @@ namespace cyng
 		const char type_tag<node::session>::name[] = "session";
 #endif
 	}	// traits	
+
 }
 
 

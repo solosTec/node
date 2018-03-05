@@ -56,6 +56,9 @@ namespace node
 		session* get_session();
 		session const* get_session() const;
 
+		/**
+		 * create a reference of this object on stack.
+		 */
 		void push_session(cyng::context& ctx);
 
 	private:
@@ -77,7 +80,6 @@ namespace node
 		/**
 		 * Implements the session logic
 		 */
-		//session	session_;
 		cyng::object session_;
 
 		/**

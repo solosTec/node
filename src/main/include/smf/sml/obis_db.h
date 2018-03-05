@@ -142,11 +142,31 @@ namespace node
 		//		const static obis	OBIS_CLASS_OP_LOG_EVENT(0x81, 0x81, 0xC7, 0x89, 0xE2, 0xFF);	//	Ereignis (uint32)
 		const static obis	OBIS_CLASS_OP_LOG_PEER_ADDRESS(0x81, 0x81, 0x00, 0x00, 0x00, 0xFF);	//	Peer Adresse (octet string)
 		const static obis	OBIS_CLASS_OP_MONITORING_STATUS(0x00, 0x80, 0x80, 0x11, 0x13, 0x01);	//	Überwachungsstatus (uint8) - tatsächlich i32
+
 		/**
 		 *	Statuswort (per Schreiben ist das Rücksetzen ausgewählter Statusbits) Unsigned64
+		 *	see also http://www.sagemcom.com/fileadmin/user_upload/Energy/Dr.Neuhaus/Support/ZDUE-MUC/Doc_communs/ZDUE-MUC_Anwenderhandbuch_V2_5.pdf
+		 *	bit meaning
+		 *	0	always 0
+		 *	1	always 1
+		 *	2-7	always 0
+		 *	8	1 if error was detected
+		 *	9	1 if restart was triggered by watchdog reset
+		 *	10	0 if IP address is available (DHCP)
+		 *	11	0 if ethernet link is available
+		 *	12	always 0
+		 *	13	0 if authorized on IP-T server
+		 *	14	1 ic case of out of memory
+		 *	15	always 0
+		 *	16	1 if Service interface is available (Kundenschnittstelle)
+		 *	17	1 if extension interface is available (Erweiterungs-Schnittstelle)
+		 *	18	1 if Wireless M-Bus interface is available
+		 *	19	1 if PLC is available
+		 *	20-31	always 0
+		 *	32	1 if time base is unsure
 		 */
-		const static obis	OBIS_CLASS_OP_LOG_STATUS_WORD(0x81, 0x00, 0x60, 0x05, 0x00, 0x00);
-		const static obis	OBIS_CLASS_OP_LOG_FIELD_STRENGTH(0x81, 0x04, 0x2B, 0x07, 0x00, 0x00);
+		const static obis	DEFINE_OBIS_CODE(81, 00, 60, 05, 00, 00, CLASS_OP_LOG_STATUS_WORD);	
+		const static obis	DEFINE_OBIS_CODE(81, 04, 2B, 07, 00, 00, CLASS_OP_LOG_FIELD_STRENGTH);
 		const static obis	OBIS_CLASS_OP_LOG_CELL(0x81, 0x04, 0x1A, 0x07, 0x00, 0x00);	//	aktuelle Zelleninformation (uint16)
 		const static obis	OBIS_CLASS_OP_LOG_AREA_CODE(0x81, 0x04, 0x17, 0x07, 0x00, 0x00);	//	aktueller Location - oder Areacode(uint16)
 		const static obis	OBIS_CLASS_OP_LOG_PROVIDER(0x81, 0x04, 0x0D, 0x06, 0x00, 0x00);	//	aktueller Provider-Identifier(uint32)

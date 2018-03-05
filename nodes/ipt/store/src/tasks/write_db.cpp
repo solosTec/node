@@ -42,6 +42,8 @@ namespace node
 				<< prg.size()
 				<< " instructions");
 
+			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+
 			//
 			//	execute programm
 			//
@@ -62,11 +64,10 @@ namespace node
 	void write_db::init()
 	{
 		cyng::register_logger(logger_, vm_);
-		vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
-
-		vm_.run(cyng::register_function("sml.msg", 1, std::bind(&write_db::sml_msg, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("sml.eom", 1, std::bind(&write_db::sml_eom, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("db.insert.meta", 1, std::bind(&write_db::insert_meta_data, this, std::placeholders::_1)));
+		vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running #", base_.get_id()))
+			.async_run(cyng::register_function("sml.msg", 1, std::bind(&write_db::sml_msg, this, std::placeholders::_1)))
+			.async_run(cyng::register_function("sml.eom", 1, std::bind(&write_db::sml_eom, this, std::placeholders::_1)))
+			.async_run(cyng::register_function("db.insert.meta", 1, std::bind(&write_db::insert_meta_data, this, std::placeholders::_1)));
 	}
 
 	void write_db::run()

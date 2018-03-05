@@ -8,6 +8,7 @@
 #ifndef NODE_IPT_STORE_TASK_STORAGE_DB_H
 #define NODE_IPT_STORE_TASK_STORAGE_DB_H
 
+#include "../processors/db_processor.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -53,9 +54,9 @@ namespace node
 		cyng::logging::log_ptr logger_;
 		cyng::db::session_pool pool_;
 		cyng::table::mt_table	meta_map_;
-		std::map<std::uint64_t, std::size_t>	lines_;
+		std::map<std::uint64_t, db_processor>	lines_;
 		boost::uuids::random_generator rng_;
-		std::list<std::size_t>	hit_list_;
+		std::list<std::uint64_t>	hit_list_;
 	};
 }
 

@@ -8,6 +8,7 @@ set (http_srv_cpp
 	lib/http/server/src/server.cpp
 	lib/http/server/src/session.cpp
 	lib/http/server/src/mime_type.cpp
+	lib/http/server/src/connections.cpp
 
 )
 
@@ -18,6 +19,7 @@ set (http_srv_h
 	src/main/include/smf/http/srv/session.h
 	src/main/include/smf/http/srv/handle_request.hpp
 	src/main/include/smf/http/srv/mime_type.h
+	src/main/include/smf/http/srv/connections.h
 )
 
 

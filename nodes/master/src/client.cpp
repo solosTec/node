@@ -88,6 +88,7 @@ namespace node
 							prg << cyng::unwinder(client_res_login(tag
 								, seq
 								, true
+								, account
 								, "OK"
 								, rec_query
 								, bag));
@@ -97,6 +98,7 @@ namespace node
 							prg << cyng::unwinder(client_res_login(tag
 								, seq
 								, false
+								, account
 								, "cannot create session"
 								, rec_query
 								, bag));
@@ -136,6 +138,7 @@ namespace node
 			prg << cyng::unwinder(client_res_login(tag
 				, seq
 				, false
+				, account
 				, "unknown device"
 				, 0
 				, bag));
@@ -385,7 +388,7 @@ namespace node
 		cyng::object data)
 	{
 		//
-		//	transfer data
+		//	transmit data
 		//
 		db_.access([&](cyng::store::table* tbl_session)->void {
 
@@ -422,7 +425,10 @@ namespace node
 			}
 			else
 			{
-				CYNG_LOG_ERROR(logger_, "remote peer is null");
+				CYNG_LOG_ERROR(logger_, tag 
+					<< " ("
+					<< cyng::value_cast<std::string>(rec["name"], "")
+					<< ") has no remote peer - data transfer failed");
 			}
 
 		}, cyng::store::write_access("*Session"));
@@ -612,23 +618,33 @@ namespace node
 				// [transfer.push.data,474ba8c4,e9d30005,[18f86863,a1e24bba,e7e1faee]]
 				// [transfer.push.data,474ba8c4,e9d30005,[474ba8c4,e9d30005,d5c31f79]]
 				// [transfer.push.data,474ba8c4,e9d30005,[8c16a625,2082352c,22ae9ef6]]
-				prg << cyng::unwinder(cyng::generate_invoke("log.msg.debug"
-					, "transfer.push.data"
-					, channel, source, rec.key()));
+				//prg << cyng::unwinder(cyng::generate_invoke("log.msg.debug"
+				//	, "transfer.push.data"
+				//	, channel, source, rec.key()));
 
 				if (channel == cyng::value_cast<std::uint32_t>(rec["channel"], 0))
 				{
 					counter++;
 
+					const auto target_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+					const auto target = cyng::value_cast<std::uint32_t>(rec["target"], 0);
+
 					//
 					//	transfer data
 					//
-					//prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
-					//	, "transfer.push.data"
-					//	, channel, source, rec.key()));
+					CYNG_LOG_INFO(logger_, "transfer.push.data "
+						<< tag
+						<< " =="
+						<< channel
+						<< ':'
+						<< source
+						<< ':'
+						<< target
+						<< '#'
+						<< counter
+						<< "==> "
+						<< target_tag);
 
-					const auto target_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
-					const auto target = cyng::value_cast<std::uint32_t>(rec["target"], 0);
 
 					cyng::object_cast<session>(rec["peer"])->vm_.async_run(client_req_transfer_pushdata_forward(target_tag
 						, channel
@@ -645,6 +661,17 @@ namespace node
 
 		}, cyng::store::write_access("*Channel"));
 
+		if (counter == 0)
+		{
+			CYNG_LOG_WARNING(logger_, "transfer.push.data "
+				<< tag
+				<< " =="
+				<< channel
+				<< ':'
+				<< source
+				<< "==> no target ");
+
+		}
 		prg << cyng::unwinder(client_res_transfer_pushdata(tag
 			, seq
 			, channel		//	channel
@@ -870,6 +897,27 @@ namespace node
 		//
 		cyng::table::key_list_t pks;
 		tbl_target->loop([&](cyng::table::record const& rec) -> bool {
+			if (hash == uuid_hasher(cyng::value_cast(rec["peer"], boost::uuids::nil_uuid())))
+			{
+				pks.push_back(rec.key());
+			}
+
+			//	continue
+			return true;
+		});
+
+		return pks;
+	}
+
+	cyng::table::key_list_t get_channels_by_peer(cyng::store::table const* tbl_channel, std::size_t hash)
+	{
+		static boost::hash<boost::uuids::uuid> uuid_hasher;
+
+		//
+		//	get all registered targets of the specified peer
+		//
+		cyng::table::key_list_t pks;
+		tbl_channel->loop([&](cyng::table::record const& rec) -> bool {
 			if (hash == uuid_hasher(cyng::value_cast(rec["peer"], boost::uuids::nil_uuid())))
 			{
 				pks.push_back(rec.key());

@@ -380,13 +380,27 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 endif()
 
 #
+#	sml bus library (client)
+#
+include (lib/sml/bus/lib.cmake)
+add_library(lib_bus_sml ${GLOBAL_LIBRARY_TYPE} ${sml_bus_lib})
+set(sml_bus_link_libs lib_protocol_sml)
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	list(sml_bus_link_libs http_link_libs cyng_domain)
+endif()
+target_link_libraries(lib_bus_sml ${sml_bus_link_libs})
+
+#
 #	http server library
 #
 include (lib/http/server/lib.cmake)
 add_library(lib_http_srv ${GLOBAL_LIBRARY_TYPE} ${http_srv_lib})
-#if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-#	target_link_libraries(lib_http_srv cyng_vm)
-#endif()
+
+#
+#	https server library
+#
+include (lib/https/server/lib.cmake)
+add_library(lib_https_srv ${GLOBAL_LIBRARY_TYPE} ${https_srv_lib})
 
 #
 # generic HTTP server
@@ -404,12 +418,36 @@ endif()
 target_link_libraries(http ${http_link_libs})
 	
 #
+# generic HTTPS server
+#
+include (nodes/https/prg.cmake)
+add_executable(https ${node_https})
+# libraries to link 
+set(https_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_crypto cyng_sys lib_https_srv ${OPENSSL_LIBRARIES})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	list(APPEND https_link_libs "${Boost_LIBRARIES}")
+    if (UNIX)
+        list(APPEND https_link_libs pthread)
+    endif()
+endif()
+target_link_libraries(https ${https_link_libs})
+
+#
+# https://raw.githubusercontent.com/boostorg/beast/develop/example/advanced/server/advanced_server.cpp
+#
+include (nodes/as/prg.cmake)
+add_executable(as ${node_as})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+target_link_libraries(as ${Boost_LIBRARIES})
+endif()
+
+#
 # dashboard
 #
 include (nodes/dash/prg.cmake)
 add_executable(dash ${node_dash})
 # libraries to link
-set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain lib_cluster lib_http_srv)
+set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys lib_cluster lib_http_srv)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND dashboard_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -469,13 +507,22 @@ target_link_libraries(emitter ${emitter_link_libs})
 include (nodes/ipt/gateway/prg.cmake)
 add_executable(gateway ${node_ipt_gateway})
 # libraries to link
-set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table lib_protocol_ipt lib_bus_ipt)
+set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain lib_protocol_ipt lib_bus_ipt lib_bus_sml)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND gateway_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
         list(APPEND gateway_link_libs pthread)
     endif()
 endif()
+if(WIN32)
+	list(APPEND gateway_link_libs odbc32.lib lib_sqlite3)
+else()
+	list(APPEND gateway_link_libs ${SQLite3_LIBRARY})
+endif(WIN32)
+if (${PROJECT_NAME}_PUGIXML_INSTALLED)
+	list(APPEND gateway_link_libs ${PUGIXML_LIBRARY})
+endif()
+
 target_link_libraries(gateway ${gateway_link_libs})
 
 #

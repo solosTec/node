@@ -1,15 +1,19 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #include "network.h"
+#include <smf/ipt/response.hpp>
 #include <smf/ipt/generator.h>
+#include <cyng/factory/set_factory.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
+#include <cyng/io/serializer.h>
+#include <cyng/tuple_cast.hpp>
 #include <boost/uuid/random_generator.hpp>
 
 namespace node
@@ -23,7 +27,6 @@ namespace node
 		: base_(*btp)
 			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id()))
 			, logger_(logger)
-			, storage_tsk_(0)	//	ToDo
 			, config_(cfg)
 			, master_(0)
 		{
@@ -32,7 +35,6 @@ namespace node
 				<< " <"
 				<< base_.get_class_name()
 				<< "> is running");
-
 
 			//
 			//	request handler
@@ -55,27 +57,27 @@ namespace node
 			else
 			{
 				//
-				//	set default sk
+				//	reset parser and serializer
 				//
-				//bus_->vm_.async_run(cyng::generate_invoke("ipt.set.sk.def", config_[master_].sk_));
+				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_[master_].sk_));
+				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_[master_].sk_));
 
 				//
 				//	login request
 				//
 				if (config_[master_].scrambled_)
 				{
-					bus_->vm_.async_run(ipt_req_login_scrambled());
+					bus_->vm_.async_run(gen::ipt_req_login_scrambled(config_, master_));
 				}
 				else
 				{
-					bus_->vm_.async_run(ipt_req_login_public());
+					bus_->vm_.async_run(gen::ipt_req_login_public(config_, master_));
 				}
 			}
 		}
 
 		void network::stop()
 		{
-			//bus_->vm_.async_run(bus_shutdown());
 			CYNG_LOG_INFO(logger_, "network is stopped");
 		}
 
@@ -97,6 +99,45 @@ namespace node
 			//	switch to other configuration
 			//
 			reconfigure_impl();
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type seq, std::string const& number)
+		{
+			CYNG_LOG_TRACE(logger_, "incoming call " << +seq << ':' << number);
+
+			//
+			//	don't accept incoming calls
+			//
+			bus_->vm_.async_run(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(ipt::tp_res_open_connection_policy::BUSY)));
+			bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type seq, std::uint32_t channel, std::uint32_t source, cyng::buffer_t const& data)
+		{
+			//
+			//	distribute to output tasks
+			//
+
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [4]
+		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
+		{
 
 			//
 			//	continue task
@@ -149,68 +190,6 @@ namespace node
 				<< config_[master_].monitor_.count()
 				<< " seconds");
 			base_.suspend(config_[master_].monitor_);
-
-		}
-
-		cyng::vector_t network::ipt_req_login_public() const
-		{
-			CYNG_LOG_INFO(logger_, "send public login request [ "
-				<< master_
-				<< " ] "
-				<< config_[master_].host_
-				<< ':'
-				<< config_[master_].service_);
-
-			return gen::ipt_req_login_public(config_, master_);
-			//cyng::vector_t prg;
-			//return prg
-			//	<< cyng::generate_invoke("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
-			//	<< ":SEND-LOGIN-REQUEST"			//	label
-			//	<< cyng::code::JNE					//	jump if no error
-			//	<< cyng::generate_invoke("bus.reconfigure", cyng::code::LERR)
-			//	<< cyng::generate_invoke("log.msg.error", cyng::code::LERR)	// load error register
-			//	<< ":STOP"							//	label
-			//	<< cyng::code::JA					//	jump always
-			//	<< cyng::label(":SEND-LOGIN-REQUEST")
-			//	<< cyng::generate_invoke("ipt.start")		//	start reading ipt network
-			//	<< cyng::generate_invoke("req.login.public", config_[master_].account_, config_[master_].pwd_)
-			//	<< cyng::generate_invoke("stream.flush")
-			//	<< cyng::label(":STOP")
-			//	<< cyng::code::NOOP
-			//	<< cyng::reloc()
-			//	;
-		}
-
-		cyng::vector_t network::ipt_req_login_scrambled() const
-		{
-			CYNG_LOG_INFO(logger_, "send scrambled login request [ "
-				<< master_
-				<< " ] "
-				<< config_[master_].host_
-				<< ':'
-				<< config_[master_].service_);
-
-			return gen::ipt_req_login_scrambled(config_, master_);
-			//scramble_key sk = gen_random_sk();
-
-			//cyng::vector_t prg;
-			//return prg
-			//	<< cyng::generate_invoke("ip.tcp.socket.resolve", config_[master_].host_, config_[master_].service_)
-			//	<< ":SEND-LOGIN-REQUEST"			//	label
-			//	<< cyng::code::JNE					//	jump if no error
-			//	<< cyng::generate_invoke("bus.reconfigure", cyng::code::LERR)
-			//	<< cyng::generate_invoke("log.msg.error", cyng::code::LERR)	// load error register
-			//	<< ":STOP"							//	label
-			//	<< cyng::code::JA					//	jump always
-			//	<< cyng::label(":SEND-LOGIN-REQUEST")
-			//	<< cyng::generate_invoke("ipt.start")		//	start reading ipt network
-			//	<< cyng::generate_invoke("ipt.set.sk", sk)	//	set new scramble key for parser
-			//	<< cyng::generate_invoke("req.login.scrambled", config_[master_].account_, config_[master_].pwd_, sk)
-			//	<< cyng::generate_invoke("stream.flush")
-			//	<< cyng::label(":STOP")
-			//	<< cyng::code::NOOP
-			//	<< cyng::reloc()
-			//	;
 
 		}
 

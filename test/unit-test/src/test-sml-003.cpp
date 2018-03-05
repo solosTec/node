@@ -78,7 +78,8 @@ namespace node
 		//std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\push-data-3586334585-418932835.bin", std::ios::binary | std::ios::app);
 		//	GetProcParameterResponse
 		//std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\sml\\smf-48cd47c-e9d30005.bin", std::ios::binary | std::ios::app);
-		std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\sml\\smf-4fabc9ed-474ba8c4-LSM_Status.bin", std::ios::binary | std::ios::app);
+		//std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\sml\\smf-4fabc9ed-474ba8c4-LSM_Status.bin", std::ios::binary | std::ios::app);
+		std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\analyse\\smf-3895afe1-512d6e73-2018020T231145-pushStore.bin", std::ios::binary | std::ios::app);
 		if (ifile.is_open())
 		{
 			//	dont skip whitepsaces

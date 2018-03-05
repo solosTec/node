@@ -60,7 +60,6 @@ namespace node
 				//
 				//	establish I/O context
 				//
-	// 			cyng::io_service_t ioc{static_cast<int>(pool_size_)};
 				cyng::async::scheduler scheduler{this->pool_size_};
 				
 				//
@@ -255,6 +254,7 @@ namespace node
 			doc_root,
 			mx,
  			ad);
+
 		if (srv->run())
 		{
 			//

@@ -8,17 +8,15 @@
 #define NODE_LIB_SML_PARSER_H
 
  //	set packing alignment to 1 (dense)
-#pragma pack( push, 1 )
+//#pragma pack( push, 1 )
 
 
 #include <smf/sml/defs.h>
 #include <cyng/intrinsics/sets.h>
 
-#include <boost/asio.hpp>
 #include <boost/variant.hpp>
 #include <functional>
 #include <stack>
-#include <type_traits>
 
 namespace node 
 {
@@ -321,11 +319,10 @@ namespace node
 			 * Collect nested data
 			 */
 			std::stack<list>	stack_;
-			//cyng::vector_t		result_;
 		};
 	}
 }	//	node
 
-#pragma pack( pop )	//	reset packing alignment
+//#pragma pack( pop )	//	reset packing alignment
 
 #endif // NODE_LIB_SML_PARSER_H

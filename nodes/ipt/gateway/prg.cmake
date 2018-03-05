@@ -5,11 +5,17 @@ set (node_ipt_gateway_cpp
 
 	nodes/ipt/gateway/src/main.cpp	
 	nodes/ipt/gateway/src/controller.cpp
+#	nodes/ipt/gateway/src/server.cpp
+#	nodes/ipt/gateway/src/session.cpp
+#	nodes/ipt/gateway/src/connection.cpp
 )
 
 set (node_ipt_gateway_h
 
 	nodes/ipt/gateway/src/controller.h
+#	nodes/ipt/gateway/src/server.h
+#	nodes/ipt/gateway/src/session.h
+#	nodes/ipt/gateway/src/connection.h
 
 )
 
@@ -28,13 +34,25 @@ set (node_ipt_gateway_info
 )
 
 set (node_ipt_gateway_tasks
+
 	nodes/ipt/gateway/src/tasks/network.h
 	nodes/ipt/gateway/src/tasks/network.cpp
-)
 
-set (node_ipt_gateway_res
 )
 	
+set (node_ipt_gateway_server
+
+	nodes/ipt/gateway/src/connection.h
+	nodes/ipt/gateway/src/connection.cpp
+	nodes/ipt/gateway/src/session.h
+	nodes/ipt/gateway/src/session.cpp
+	nodes/ipt/gateway/src/server.h
+	nodes/ipt/gateway/src/server.cpp
+	nodes/ipt/gateway/src/sml_reader.h
+	nodes/ipt/gateway/src/sml_reader.cpp
+
+)
+
 if(WIN32)
 
 	set (node_ipt_gateway_service
@@ -54,9 +72,9 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_ipt_gateway_tasks})
-source_group("resources" FILES ${node_ipt_gateway_res})
 source_group("service" FILES ${node_ipt_gateway_service})
 source_group("info" FILES ${node_ipt_gateway_info})
+source_group("server" FILES ${node_ipt_gateway_server})
 
 
 # define the main program
@@ -64,8 +82,8 @@ set (node_ipt_gateway
   ${node_ipt_gateway_cpp}
   ${node_ipt_gateway_h}
   ${node_ipt_gateway_tasks}
-  ${node_ipt_gateway_res}
   ${node_ipt_gateway_service}
   ${node_ipt_gateway_info}
+  ${node_ipt_gateway_server}
 )
 

@@ -18,7 +18,6 @@
 #include <cyng/json.h>
 #include <cyng/value_cast.hpp>
 #include <fstream>
-//#include <boost/algorithm/string/predicate.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/filesystem.hpp>
 

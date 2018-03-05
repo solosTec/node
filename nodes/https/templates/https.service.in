@@ -1,0 +1,12 @@
+[Unit]
+Description=https server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_PATCH_LEVEL} (project ${PROJECT_NAME})
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/node/https -C/opt/node/https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
+Restart=on-failure
+RestartSec=12
+
+[Install]
+WantedBy=multi-user.target

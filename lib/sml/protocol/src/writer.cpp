@@ -73,56 +73,6 @@ namespace node
 			//std::cout << "write " << std::hex << (+tl) << std::endl;
 
 		}
-		//void write_length_field(std::ostream& os, std::uint32_t length)
-		//{
-		//	//	TL-field
-		//	if (length > 0xF)
-		//	{
-
-		//		// how much shifts are necessary
-		//		int mask_pos = (sizeof(unsigned int) * 2) - 1;
-
-		//		// the 4 most significant bits of length (1111 0000 0000 ...)
-		//		unsigned int mask = 0xF0 << (8 * (sizeof(unsigned int) - 1));
-
-		//		// select the next 4 most significant bits with a bit set until there 
-		//		// is something
-		//		while (!(mask & length))
-		//		{
-		//			mask >>= 4;
-		//			mask_pos--;
-		//		}
-
-		//		length += mask_pos; // for every TL-field
-
-		//		if ((0x0F << (4 * (mask_pos + 1))) & length)
-		//		{
-		//			// for the rare case that the addition of the number of TL-fields
-		//			// result in another TL-field.
-		//			mask_pos++;
-		//			length++;
-		//		}
-
-		//		// copy 4 bits of the number to the buffer
-		//		std::uint8_t c = 0;
-		//		while (mask > 0xF)
-		//		{
-		//			c |= 0x80;
-		//			//c |= mask;
-		//			c |= ((mask & length) >> (4 * mask_pos));
-		//			os.put(c);
-		//			mask >>= 4;
-		//			mask_pos--;
-		//		}
-		//	}
-
-		//	//
-		//	//	set "continuation" flag
-		//	//
-		//	os.put(length & 0xF);
-
-		//}
-
 		std::ostream& serializer <bool> ::write(std::ostream& os, bool v)
 		{
 			os.put(0x42);	//	TL field

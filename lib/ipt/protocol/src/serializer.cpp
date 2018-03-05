@@ -41,6 +41,7 @@ namespace node
 				cyng::io::hex_dump hd;
 				hd(std::cerr, p, p + size);
 #endif
+				//BOOST_ASSERT(s.is_open());
 
 				boost::system::error_code ec;
 				boost::asio::write(s, buffer_, ec);

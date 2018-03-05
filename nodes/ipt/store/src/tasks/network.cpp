@@ -85,7 +85,6 @@ namespace node
 
 		void network::stop()
 		{
-			//bus_->vm_.async_run(bus_shutdown());
 			CYNG_LOG_INFO(logger_, "network is stopped");
 		}
 

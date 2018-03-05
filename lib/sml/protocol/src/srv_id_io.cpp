@@ -88,16 +88,17 @@ namespace node
 					<< std::setfill('0')
 					;
 
-				bool init{ false };
+				//	skip leading 0x05
+				std::size_t counter{ 0 };
 				for (auto c : buffer)
 				{
-					if (init) {
-						os << ':';
+					if (counter > 0) {
+						if (counter > 1) {
+							os << ':';
+						}
+						os << std::setw(2) << (+c & 0xFF);
 					}
-					else {
-						init = true;
-					}
-					os << std::setw(2) << (+c & 0xFF);
+					++counter;
 				}
 			}
 			else if (buffer.size() == 8)

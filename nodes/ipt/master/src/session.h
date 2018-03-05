@@ -37,6 +37,10 @@ namespace node
 			session(session const&) = delete;
 			session& operator=(session const&) = delete;
 
+			virtual ~session();
+
+			void stop();
+
 		private:
 			void ipt_req_login_public(cyng::context& ctx);
 			void ipt_req_login_scrambled(cyng::context& ctx);
@@ -90,7 +94,7 @@ namespace node
 			const std::chrono::seconds timeout_;
 
 			/**
-			 * Parser for binary cyng data stream (from cluster members)
+			 * ipt parser
 			 */
 			parser 	parser_;
 

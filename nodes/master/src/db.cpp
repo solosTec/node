@@ -34,7 +34,7 @@ namespace node
 		//	(9) [std::uint32] query
 
 		if (!db.create_table(cyng::table::make_meta_table<1, 9>("TDevice",
-			{ "pk", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
+			{ "pk", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
 			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
 			{ 36, 128, 16, 128, 512, 64, 64, 0, 0, 0 })))
 		{
@@ -117,11 +117,11 @@ namespace node
 		}
 
 		//
-		//	The session tables uses the same tag as the remote session
+		//	The session tables uses the same tag as the remote client session
 		//	
 		if (!db.create_table(cyng::table::make_meta_table<1, 8>("*Session", { "tag"	//	client session - primary key [uuid]
-			, "local"	//	[object] local peer object (hold reference)
-			, "remote"	//	[object] remote peer object (if connected)
+			, "local"	//	[object] local peer object (hold session reference)
+			, "remote"	//	[object] remote peer object (if session connected)
 			, "peer"	//	[uuid] remote peer
 			, "device"	//	[uuid] - owner of the session
 			, "name"	//	[string] - account

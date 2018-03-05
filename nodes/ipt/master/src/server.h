@@ -61,6 +61,13 @@ namespace node
 			void client_req_transfer_pushdata_forward(cyng::context& ctx);
 
 			void propagate(std::string, cyng::vector_t&&);
+
+			/**
+			 * create a reference of this object on stack.
+			 */
+			void push_connection(cyng::context& ctx);
+
+
 		private:
 			/*
 			 * task manager and running I/O context

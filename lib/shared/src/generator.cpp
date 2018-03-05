@@ -181,13 +181,14 @@ namespace node
 	cyng::vector_t client_res_login(boost::uuids::uuid tag
 		, std::uint64_t seq
 		, bool success
+		, std::string const& name
 		, std::string const& msg
 		, std::uint32_t query
 		, cyng::param_map_t const& bag)
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke("stream.serialize"
-			, cyng::generate_invoke_remote("client.res.login", tag, cyng::code::IDENT, seq, success, msg, query, bag))
+			, cyng::generate_invoke_remote("client.res.login", tag, cyng::code::IDENT, seq, success, name, msg, query, bag))
 			<< cyng::generate_invoke("stream.flush")
 			<< cyng::unwind_vec()
 			;

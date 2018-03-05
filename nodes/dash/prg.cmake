@@ -19,6 +19,11 @@ set (node_dash_tasks
 )
 
 set (node_dash_res
+	nodes/dash/htdocs/index.html
+	nodes/dash/htdocs/config.device.html
+	nodes/dash/htdocs/config.gateway.html
+	nodes/dash/htdocs/status.session.html
+	nodes/dash/htdocs/status.system.html
 )
 
 set (node_dash_info
@@ -57,7 +62,7 @@ endif()
 source_group("tasks" FILES ${node_dash_tasks})
 source_group("resources" FILES ${node_dash_res})
 source_group("service" FILES ${node_dash_service})
-source_group("info" FILES ${node_e350_info})
+source_group("info" FILES ${node_dash_info})
 
 
 # define the main program

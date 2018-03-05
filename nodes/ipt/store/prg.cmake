@@ -43,10 +43,6 @@ set (node_ipt_store_tasks
 	nodes/ipt/store/src/tasks/storage_log.h
 	nodes/ipt/store/src/tasks/storage_log.cpp
 
-	nodes/ipt/store/src/tasks/write_db.h
-	nodes/ipt/store/src/tasks/write_db.cpp
-	nodes/ipt/store/src/tasks/write_xml.h
-	nodes/ipt/store/src/tasks/write_xml.cpp
 	nodes/ipt/store/src/tasks/write_json.h
 	nodes/ipt/store/src/tasks/write_json.cpp
 	nodes/ipt/store/src/tasks/write_abl.h
@@ -55,13 +51,17 @@ set (node_ipt_store_tasks
 	nodes/ipt/store/src/tasks/write_log.cpp
 
 )
+set (node_ipt_store_processors
+	nodes/ipt/store/src/processors/xml_processor.h
+	nodes/ipt/store/src/processors/xml_processor.cpp
+	nodes/ipt/store/src/processors/db_processor.h
+	nodes/ipt/store/src/processors/db_processor.cpp
+)
 
 set (node_ipt_store_exporter
 
 	src/main/include/smf/sml/exporter/xml_exporter.h
 	lib/sml/exporter/src/xml_exporter.cpp
-#	lib/sml/exporter/src/abl.cpp
-#	lib/sml/exporter/src/json.cpp
 	src/main/include/smf/sml/exporter/db_exporter.h
 	lib/sml/exporter/src/db_exporter.cpp
 
@@ -89,6 +89,7 @@ source_group("tasks" FILES ${node_ipt_store_tasks})
 source_group("exporter" FILES ${node_ipt_store_exporter})
 source_group("service" FILES ${node_ipt_store_service})
 source_group("info" FILES ${node_ipt_store_info})
+source_group("processors" FILES ${node_ipt_store_processors})
 
 
 # define the main program
@@ -99,5 +100,6 @@ set (node_ipt_store
   ${node_ipt_store_exporter}
   ${node_ipt_store_service}
   ${node_ipt_store_info}
+  ${node_ipt_store_processors}
 )
 

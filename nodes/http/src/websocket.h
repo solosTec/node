@@ -10,7 +10,6 @@
 #include <NODE_project_info.h>
 #include "mail_config.h"
 #include <cyng/compatibility/io_service.h>
-// #include <cyng/compatibility/general.h>
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <memory>

@@ -272,7 +272,7 @@ namespace node
 		CYNG_LOG_TRACE(logger, tsks.size() << " output channel(s) defined");
 
 		//
-		//	connect to cluster
+		//	connect to ipt master
 		//
 		cyng::vector_t tmp;
 		join_network(mux, logger, tsks, cyng::value_cast(dom.get("ipt"), tmp), cyng::vector_cast<std::string>(dom.get("targets"), ""));

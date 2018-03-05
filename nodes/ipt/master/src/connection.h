@@ -24,11 +24,9 @@ namespace node
 		 * Cluster member connection
 		 */
 		class server;
-		class connection //: public std::enable_shared_from_this<connection>
+		class connection 
 		{
 			friend class server;
-		public:
-			//using shared_type = std::shared_ptr<connection>;
 
 		public:
 			connection(connection const&) = delete;

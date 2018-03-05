@@ -5,8 +5,8 @@
  * 
  */ 
 
-#ifndef NODE_HTTP_CONTROLLER_H
-#define NODE_HTTP_CONTROLLER_H
+#ifndef NODE_IPT_STORE_CONTROLLER_H
+#define NODE_IPT_STORE_CONTROLLER_H
 
 #include <string>
 #include <cstdint>
@@ -36,7 +36,15 @@ namespace node
 		 * @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
 		 */
 		int create_config() const;
-		
+
+		/**
+		 * Read the JSON configuration, connects to database and create all
+		 * required (empty) tables.
+		 *
+		 * @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
+		 */
+		//int init_db();
+
 	private:
 		const unsigned int pool_size_;
 		const std::string json_path_;

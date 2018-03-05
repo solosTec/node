@@ -6,6 +6,8 @@
  */ 
 
 #include "controller.h"
+#include "server.h"
+#include <NODE_project_info.h>
 #include "tasks/network.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -32,11 +34,10 @@ namespace node
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
 	void join_network(cyng::async::mux&, cyng::logging::log_ptr, cyng::vector_t const&);
-	//std::vector<std::size_t> connect_data_store(cyng::async::mux&, cyng::logging::log_ptr, std::vector<std::string> const&, cyng::object cfg);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
-		: pool_size_(pool_size)
-		, json_path_(json_path)
+	: pool_size_(pool_size)
+	, json_path_(json_path)
 	{}
 
 	int controller::run(bool console)
@@ -72,9 +73,9 @@ namespace node
 					//	initialize logger
 					//
 #if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("ipt:gateway", true);
+					auto logger = cyng::logging::make_sys_logger("gateway", true);
 #else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "ipt:gateway");
+					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "gateway");
 #endif
 
 					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
@@ -142,12 +143,18 @@ namespace node
 			const boost::filesystem::path pwd = boost::filesystem::current_path();
 			boost::uuids::random_generator rgen;
 
+			//
+			//	reconnect to master on different times
+			//
+			boost::random::mt19937 rng_;
+			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
+
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 				, cyng::param_factory("log-level", "INFO")
 				, cyng::param_factory("tag", rgen())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
-				//, cyng::param_factory("output", cyng::vector_factory({ "DB" }))	//	options are XML, JSON, DB
+				, cyng::param_factory("log-pushdata", false)	//	log file for each channel
 
 				//	on this address the gateway acts as a server
 				, cyng::param_factory("server", cyng::tuple_factory(
@@ -157,6 +164,7 @@ namespace node
 					cyng::param_factory("account", "operator"),
 					cyng::param_factory("pwd", "operator")
 				))
+
 				, cyng::param_factory("hardware", cyng::tuple_factory(
 					cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF)
 					cyng::param_factory("model", "Gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
@@ -164,6 +172,7 @@ namespace node
 					cyng::param_factory("class", "129-129:199.130.83*255")	//	device class (81 81 C7 82 02 FF) MUC-LAN/DSL
 					//cyng::param_factory("mac", "")	//	mac 
 				))
+
 				, cyng::param_factory("ipt", cyng::vector_factory({
 					cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
@@ -172,7 +181,7 @@ namespace node
 						cyng::param_factory("pwd", "to-define"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", true),
-						cyng::param_factory("monitor", 57)),	//	seconds
+						cyng::param_factory("monitor", monitor_dist(rng_))),	//	seconds
 					cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "26863"),
@@ -180,12 +189,11 @@ namespace node
 						cyng::param_factory("pwd", "to-define"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", false),
-						cyng::param_factory("monitor", 57))
+						cyng::param_factory("monitor", monitor_dist(rng_)))
 					}))
 					//, cyng::param_factory("targets", cyng::vector_factory({ "data.sink.1", "data.sink.2" }))	//	list of targets
 				)
 				});
-			//cyng::vector_factory({});
 
 			cyng::json::write(std::cout, cyng::make_object(conf));
 			std::cout << std::endl;
@@ -203,7 +211,6 @@ namespace node
 		return EXIT_FAILURE;
 	}
 
-
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
@@ -212,17 +219,39 @@ namespace node
 		boost::uuids::random_generator rgen;
 		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
 
+		const auto log_pushdata = cyng::value_cast(dom.get("log-pushdata"), false);
+		
 		//
 		//	get configuration type
 		//
-		//const auto config_types = cyng::vector_cast<std::string>(dom.get("output"), "");
-
+		const auto config_types = cyng::vector_cast<std::string>(dom.get("output"), "");
 
 		//
-		//	connect to cluster
+		//	connect to ipt master
 		//
 		cyng::vector_t tmp;
 		join_network(mux, logger, cyng::value_cast(dom.get("ipt"), tmp));
+
+		//
+		//	create server
+		//
+		cyng::tuple_t tpl;
+		server srv(mux
+			, logger
+			, tag
+			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
+			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
+			, cyng::value_cast(dom.get("session"), tpl));
+
+		//
+		//	server runtime configuration
+		//
+		const auto address = cyng::io::to_str(dom["server"].get("address"));
+		const auto service = cyng::io::to_str(dom["server"].get("service"));
+
+		CYNG_LOG_INFO(logger, "listener address: " << address);
+		CYNG_LOG_INFO(logger, "listener service: " << service);
+		srv.run(address, service);
 
 		//
 		//	wait for system signals
@@ -233,7 +262,7 @@ namespace node
 		//	close acceptor
 		//
 		CYNG_LOG_INFO(logger, "close acceptor");
-		//srv.close();
+		srv.close();
 
 		//
 		//	stop all connections
@@ -274,7 +303,9 @@ namespace node
 	}
 
 
-	void join_network(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::vector_t const& cfg)
+	void join_network(cyng::async::mux& mux
+		, cyng::logging::log_ptr logger
+		, cyng::vector_t const& cfg)
 	{
 		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg.size());
 
@@ -284,4 +315,5 @@ namespace node
 			, ipt::load_cluster_cfg(cfg));
 
 	}
+
 }

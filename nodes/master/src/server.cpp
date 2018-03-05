@@ -55,15 +55,16 @@ namespace node
 	void server::do_accept()
 	{
 #if (BOOST_VERSION >= 106600)
-		acceptor_.async_accept (
-		[this] ( boost::system::error_code ec, boost::asio::ip::tcp::socket socket ) {
+		acceptor_.async_accept([this] ( boost::system::error_code ec, boost::asio::ip::tcp::socket socket ) {
 			// Check whether the server was stopped by a signal before this
 			// completion handler had a chance to run.
-			if ( !acceptor_.is_open() ) {
+			if ( !acceptor_.is_open() ) 
+			{
 				return;
 			}
 
-			if ( !ec ) {
+			if ( !ec ) 
+			{
 				CYNG_LOG_TRACE(logger_, "accept " << socket.remote_endpoint());
 				
 				//

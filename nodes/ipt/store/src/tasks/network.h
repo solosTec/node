@@ -92,6 +92,7 @@ namespace node
 			const master_config_t	config_;
 			const std::vector<std::string> targets_;
 			std::size_t master_;
+
 			/**
 			 * maintain relation between sequence and registered target
 			 */

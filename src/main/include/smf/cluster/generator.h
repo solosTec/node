@@ -97,7 +97,8 @@ namespace node
 	cyng::vector_t client_res_login(boost::uuids::uuid tag
 		, std::uint64_t seq
 		, bool success
-		, std::string const& msg 
+		, std::string const& name
+		, std::string const& msg
 		, std::uint32_t query
 		, cyng::param_map_t const& bag);
 

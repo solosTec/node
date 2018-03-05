@@ -8,8 +8,6 @@
 #ifndef NODE_MASTER_SERVER_H
 #define NODE_MASTER_SERVER_H
 
-//#include "session.h"
-//#include <cyng/compatibility/io_service.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/store/db.h>
@@ -49,18 +47,10 @@ namespace node
 		 */
 		cyng::async::mux& mux_;
 
-		/// The io_context used to perform asynchronous operations.
-		//cyng::io_service_t& io_ctx_;
-		
 		/**
 		 * The logger
 		 */
 		cyng::logging::log_ptr logger_;
-
-		/**
-		 * node tag
-		 */
-		//boost::uuids::uuid tag_;
 
 		//	credentials
 		const std::string account_;

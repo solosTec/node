@@ -148,7 +148,7 @@ namespace node
 					, cyng::param_factory("tag", rgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 
-					, cyng::param_factory("server", cyng::tuple_factory(
+					, cyng::param_factory("http", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8080"),
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
@@ -219,7 +219,7 @@ namespace node
 		//
 		cyng::vector_t tmp_vec;
 		cyng::tuple_t tmp_tpl;
-		join_cluster(mux, logger, cyng::value_cast(dom.get("cluster"), tmp_vec), cyng::value_cast(dom.get("server"), tmp_tpl));
+		join_cluster(mux, logger, cyng::value_cast(dom.get("cluster"), tmp_vec), cyng::value_cast(dom.get("http"), tmp_tpl));
 
 		//
 		//	wait for system signals

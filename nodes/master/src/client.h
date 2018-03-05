@@ -23,6 +23,7 @@ namespace node
 	std::uint32_t get_source_channel(const cyng::store::table* tbl_session, boost::uuids::uuid);
 	std::size_t remove_targets_by_tag(cyng::store::table* tbl_target, boost::uuids::uuid);
 	cyng::table::key_list_t get_targets_by_peer(cyng::store::table const* tbl_target, std::size_t hash);
+	cyng::table::key_list_t get_channels_by_peer(cyng::store::table const* tbl_channel, std::size_t hash);
 
 	class client
 	{

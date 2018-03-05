@@ -14,7 +14,7 @@
 #include <cyng/store/db.h>
 #include <cyng/vm/controller.h>
 #include <cyng/io/parser/parser.h>
-//#include <boost/random.hpp>
+#include <cyng/io/serializer/serialize.hpp>
 
 namespace node 
 {
@@ -90,13 +90,10 @@ namespace node
 		 */
 		cyng::parser 	parser_;
 
-		//boost::random::mt19937 rng_;
-		//boost::random::uniform_int_distribution<std::uint32_t> distribution_;
-
 		std::uint64_t seq_;
 
 		/**
-		 * separate implementation of client logix
+		 * separate implementation of client logic
 		 */
 		client	client_;
 	};
@@ -132,6 +129,7 @@ namespace cyng
 			using type = node::session;
 		};
 	}
+
 }
 
 #include <functional>

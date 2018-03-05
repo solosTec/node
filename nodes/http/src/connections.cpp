@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  * 
- * Copyright (c) 2017 Sylko Olzscher 
+ * Copyright (c) 2018 Sylko Olzscher 
  * 
  */ 
 

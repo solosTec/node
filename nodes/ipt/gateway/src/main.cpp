@@ -1,8 +1,9 @@
 /*
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 Sylko Olzscher
- *
+ * Copyright Sylko Olzscher 2016-2017
+ * 
+ * Use, modification, and distribution is subject to the Boost Software
+ * License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+ * http://www.boost.org/LICENSE_1_0.txt)
  */
 
 #include "../../../print_build_info.h"
@@ -11,7 +12,7 @@
 #include "../../../show_ip_address.h"
 #include "controller.h"
 #include <iostream>
-#include <boost/filesystem.hpp>
+#include <fstream>
 #ifdef _MSC_VER 
 #include <Windows.h>
 #endif
@@ -23,8 +24,6 @@
  */
 int main(int argc, char **argv) 
 {
-
-	
 	//	will contain the path to an optional configuration file
 	std::string config_file;
 	
@@ -38,6 +37,7 @@ int main(int argc, char **argv)
 		("version,v", "print version string")
 		("build,b", "last built timestamp and platform")
 		("config,C", boost::program_options::value<std::string>(&config_file)->default_value(node::get_cfg_name("gateway")), "specify the configuration file")
+		//("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
@@ -46,12 +46,11 @@ int main(int argc, char **argv)
 		;
 		
 	//	get the working directory
-	const boost::filesystem::path cwd = boost::filesystem::current_path();
+// 	const boost::filesystem::path cwd = boost::filesystem::current_path();
 
 	//	path to JSON configuration file
 	std::string json_path;
 	unsigned int pool_size = 1;
-		
 #if BOOST_OS_LINUX
 	struct rlimit rl;
 	int rc = ::getrlimit(RLIMIT_NOFILE, &rl);
@@ -59,9 +58,9 @@ int main(int argc, char **argv)
 #endif
 
 	//
-	//	IP-T node options
+	//	data node options
 	//
-	boost::program_options::options_description node_options("ipt:gateway");
+	boost::program_options::options_description node_options("gateway");
 	node::set_start_options(node_options
 		, "gateway"
 		, json_path
@@ -69,8 +68,8 @@ int main(int argc, char **argv)
 #if BOOST_OS_LINUX
 		, rl
 #endif
-	);
-		
+		);
+			
 	//
 	//	all you can grab from the command line
 	//
@@ -87,15 +86,15 @@ int main(int argc, char **argv)
 	if (vm.count("help")) 
 	{  
 		std::cout 
-		<< cmdline_options 
-		<< std::endl
+			<< cmdline_options 
+			<< std::endl
 		;
 		return EXIT_SUCCESS;
 	}
 	
 	if (vm.count("version")) 
 	{  
-		return node::print_version_info(std::cout, "ipt::master");
+		return node::print_version_info(std::cout, "ipt::data");
 	}
 	
 	if (vm.count("build")) 
@@ -109,6 +108,7 @@ int main(int argc, char **argv)
 		return node::show_ip_address(std::cout);
 	}
 	
+
 	try
 	{
 		//	read parameters from config file
@@ -141,6 +141,12 @@ int main(int argc, char **argv)
  			return ctrl.create_config();
 		}
 
+		//if (vm["init"].as< bool >())
+		//{
+		//	//	initialize database
+ 	//		return ctrl.init_db();
+		//}
+
 		if (vm["show"].as< bool >())
 		{
 			//	show configuration
@@ -150,12 +156,12 @@ int main(int argc, char **argv)
 #if BOOST_OS_WINDOWS
 		if (vm["service.enabled"].as< bool >())
 		{
-			::OutputDebugString("start gateway node");
+			::OutputDebugString("start Setup node");
 
 			//	run as service 
 			const std::string srv_name = vm["service.name"].as< std::string >();
 // 			return ctrl.run_as_service(std::move(ctrl), srv_name);
-	}
+		}
 #endif
 
 #if BOOST_OS_LINUX
