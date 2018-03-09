@@ -141,6 +141,6 @@ namespace node
 		exporter_.write(p);
 		exporter_.reset();
 
-		ctx.attach(cyng::generate_invoke("stop.writer", cyng::IDENT));
+		ctx.attach(cyng::generate_invoke("stop.writer", cyng::code::IDENT));
 	}
 }

@@ -128,7 +128,7 @@ namespace node
 
 		exporter_.reset();
 
-		ctx.attach(cyng::generate_invoke("stop.writer", cyng::IDENT));
+		ctx.attach(cyng::generate_invoke("stop.writer", cyng::code::IDENT));
 	}
 
 	void db_processor::insert_meta_data(cyng::context& ctx)

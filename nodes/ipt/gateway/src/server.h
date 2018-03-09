@@ -54,9 +54,7 @@ namespace node
 		//	credentials
 		const std::string account_;
 		const std::string pwd_;
-		const std::chrono::seconds monitor_;
 
-		
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor acceptor_;		
 
