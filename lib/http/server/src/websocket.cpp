@@ -33,6 +33,7 @@ namespace node
 			, ping_cb_()
 		{
 			vm_.run(cyng::register_function("ws.send.json", 1, std::bind(&websocket_session::ws_send_json, this, std::placeholders::_1)));
+			//vm_.run(cyng::register_function("ws.push", 1, std::bind(&connection_manager::push_ws, &cm, std::placeholders::_1)));
 		}
 
 		websocket_session::~websocket_session()
@@ -244,9 +245,8 @@ namespace node
 
 			//
 			//	execute on bus VM
-			//	ToDo: add tag
 			//
-			bus_->vm_.run(cyng::generate_invoke("ws.read", vm_.tag(), cyng::json::read(str)));
+			bus_->vm_.run(cyng::generate_invoke("ws.read", vm_.tag(), cyng::invoke("ws.push"), cyng::json::read(str)));
 
 			// Clear buffer
 			ws_.text();

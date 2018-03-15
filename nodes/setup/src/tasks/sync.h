@@ -66,7 +66,7 @@ namespace node
 			, boost::uuids::uuid source);
 		void sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid source);
 		void sig_clr(cyng::store::table const*, boost::uuids::uuid source);
-		void sig_mod(cyng::store::table const*, cyng::table::key_type const&, cyng::attr_t const&, boost::uuids::uuid source);
+		void sig_mod(cyng::store::table const*, cyng::table::key_type const&, cyng::attr_t const&, std::uint64_t, boost::uuids::uuid source);
 
 	private:
 		cyng::async::base_task& base_;

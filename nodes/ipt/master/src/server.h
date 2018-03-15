@@ -59,6 +59,7 @@ namespace node
 			void client_req_transmit_data_forward(cyng::context&);
 			void client_res_transfer_pushdata(cyng::context& ctx);
 			void client_req_transfer_pushdata_forward(cyng::context& ctx);
+			void client_res_close_push_channel(cyng::context& ctx);
 
 			void propagate(std::string, cyng::vector_t&&);
 

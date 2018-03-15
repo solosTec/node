@@ -26,7 +26,7 @@
             <ul class="navbar-nav mr-auto">
 
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+                    <a class="nav-link" href="index.html">Home <span class="sr-only">(current)</span></a>
                 </li>
 
                 <li class="nav-item dropdown">
@@ -93,7 +93,7 @@
                 <!--<img class="card-img-top" src="..." alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">I/O</h5>
-                    <p class="card-text">Bytes received from server.</p>
+                    <p class="card-text">Bytes exchanged with server.</p>
                 </div>
                 <div class="card-footer">
                     <small class="text-muted"><span id="ws-io-load"></span></small>
@@ -165,8 +165,12 @@
 
             function startSysTimer() {
                 $('#ws-activity-symbol').show();
-                connection.send(JSON.stringify({ cmd: "update", channel: "sys.mem.virtual.used" }));
-                connection.send(JSON.stringify({ cmd: "update", channel: "sys.cpu.usage.total" }));
+                var queryMem = JSON.stringify({ cmd: "update", channel: "sys.mem.virtual.used" });
+                connection.send(queryMem);
+                totalIO += queryMem.length;
+                var queryCPU = JSON.stringify({ cmd: "update", channel: "sys.cpu.usage.total" });
+                connection.send(queryCPU);
+                totalIO += queryCPU.length;
                 $('#ws-io-load').html(format_bytes(totalIO));
                 sysTimer = setTimeout(startSysTimer, 5000);
                 $('#ws-activity-text').html('running on ' + location.hostname);

@@ -73,7 +73,7 @@ namespace node
 			//	transport - push channel close
 			//TP_REQ_CLOSE_PUSH_CHANNEL = 0x9001,	//!<	request
 			vm_.run(cyng::register_function("ipt.req.close.push.channel", 3, std::bind(&session::ipt_req_close_push_channel, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.res.close.push.channel", 1, std::bind(&session::client_res_close_push_channel, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("client.res.close.push.channel", 6, std::bind(&session::client_res_close_push_channel, this, std::placeholders::_1)));
 			//TP_RES_CLOSE_PUSH_CHANNEL = 0x1001,	//!<	response
 
 			//	transport - push channel data transfer
@@ -751,17 +751,17 @@ namespace node
 			>(frame);
 
 			//
-			//	dom reader
+			//	dom/options reader
 			//
-
-			//	options
 			auto dom_options = cyng::make_reader(std::get<7>(tpl));
 			const response_type res = cyng::value_cast<response_type>(dom_options.get("response-code"), 0);
 			const std::uint16_t p_size = cyng::value_cast<std::uint16_t>(dom_options.get("packet-size"), 0);
 			const std::uint8_t w_size = cyng::value_cast<std::uint8_t>(dom_options.get("window-size"), 0);
 			const std::uint8_t status = cyng::value_cast<std::uint8_t>(dom_options.get("channel-status"), 0);
 
-			//	bag
+			//
+			//	dom/bag reader
+			//
 			auto dom_bag = cyng::make_reader(std::get<8>(tpl));
 			const sequence_type seq = cyng::value_cast<sequence_type>(dom_bag.get("seq"), 0);
 
@@ -776,9 +776,40 @@ namespace node
 		}
 		void session::client_res_close_push_channel(cyng::context& ctx)
 		{
-			//	[]
+			//	[ba2298ad-50d3-44ec-ba2f-ce35451b677d,11495a42-9fd3-4ab2-9f70-3ac6b16f4158,232,true,8c006d5f,%(("seq":4b),("tp-layer":ipt))]
+			//
+			//	* session tag
+			//	* peer
+			//	* cluster bus sequence
+			//	* success flag
+			//	* channel
+			//	* bag
+			//	
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "client.res.open.push.channel(2) " << cyng::io::to_str(frame));
+			CYNG_LOG_TRACE(logger_, "client.res.close.push.channel " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] tag
+				boost::uuids::uuid,		//	[1] peer
+				std::uint64_t,			//	[2] cluster sequence
+				bool,					//	[3] success flag
+				std::uint32_t,			//	[4] channel
+				cyng::param_map_t		//	[5] bag
+			>(frame);
+
+			//
+			//	dom/bag reader
+			//
+			auto dom_bag = cyng::make_reader(std::get<5>(tpl));
+			const sequence_type seq = cyng::value_cast<sequence_type>(dom_bag.get("seq"), 0);
+
+			const response_type res = (std::get<3>(tpl))
+				? ipt::tp_res_close_push_channel_policy::SUCCESS
+				: ipt::tp_res_close_push_channel_policy::BROKEN
+				;
+
+			ctx.attach(cyng::generate_invoke("res.close.push.channel", seq, res, std::get<4>(tpl)))
+				.attach(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -932,7 +963,7 @@ namespace node
 
 			const bool success = cyng::value_cast(dom.get(3), false);
 			const sequence_type seq = cyng::value_cast<sequence_type>(dom[5].get("seq"), 0);
-			const response_type res = success
+			const response_type res = (success)
 				? ipt::tp_res_open_connection_policy::DIALUP_SUCCESS
 				: ipt::tp_res_open_connection_policy::DIALUP_FAILED
 				;

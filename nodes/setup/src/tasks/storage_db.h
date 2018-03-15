@@ -23,8 +23,9 @@ namespace node
 	public:
 		using msg_0 = std::tuple<std::string, std::size_t, boost::uuids::uuid>;
 		using msg_1 = std::tuple<std::string, cyng::vector_t, cyng::vector_t, std::uint64_t>;
-		using msg_2 = std::tuple<std::string, cyng::vector_t, cyng::attr_t>;
-		using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
+		using msg_2 = std::tuple<std::string, cyng::vector_t, cyng::param_t, std::uint64_t>;
+		using msg_3 = std::tuple<std::string, cyng::vector_t>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3>;
 
 	public:
 		storage_db(cyng::async::base_task* bt
@@ -46,7 +47,7 @@ namespace node
 		 */
 		cyng::continuation process(std::string name
 			, cyng::vector_t const&
-			, cyng::vector_t const&
+			, cyng::vector_t
 			, std::uint64_t);
 
 		/**
@@ -54,7 +55,14 @@ namespace node
 		 */
 		cyng::continuation process(std::string name
 			, cyng::vector_t const&
-			, cyng::attr_t const&);
+			, cyng::param_t const&
+			, std::uint64_t);
+
+		/**
+		 * slot [3] - delete data
+		 */
+		cyng::continuation process(std::string name
+			, cyng::vector_t const&);
 
 		/**
 		 * static method to create tables.

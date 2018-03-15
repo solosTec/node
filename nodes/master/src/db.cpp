@@ -119,18 +119,22 @@ namespace node
 		//
 		//	The session tables uses the same tag as the remote client session
 		//	
-		if (!db.create_table(cyng::table::make_meta_table<1, 8>("*Session", { "tag"	//	client session - primary key [uuid]
+		if (!db.create_table(cyng::table::make_meta_table<1, 12>("*Session", { "tag"	//	client session - primary key [uuid]
 			, "local"	//	[object] local peer object (hold session reference)
 			, "remote"	//	[object] remote peer object (if session connected)
 			, "peer"	//	[uuid] remote peer
 			, "device"	//	[uuid] - owner of the session
 			, "name"	//	[string] - account
 			, "source"	//	[uint32] - ipt source id (unique)
-			, "login-time"	//	last login time
+			, "loginTime"	//	last login time
 			, "rtag"	//	[uuid] client session if connected
+			, "layer"	//	[string] protocol layer
+			, "rx"		//	[uint64] received bytes (from device)
+			, "sx"		//	[uint64] sent bytes (to device)
+			, "px"		//	[uint64] sent push data (to push target)
 			},
-			{ cyng::TC_UUID, cyng::traits::PREDEF_SESSION, cyng::traits::PREDEF_SESSION, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_UUID },
-			{ 36, 0, 0, 36, 36, 64, 0, 0, 36 })))
+			{ cyng::TC_UUID, cyng::traits::PREDEF_SESSION, cyng::traits::PREDEF_SESSION, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT64, cyng::TC_UINT64, cyng::TC_UINT64 },
+			{ 36, 0, 0, 36, 36, 64, 0, 0, 36, 16, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table *Session");
 		}

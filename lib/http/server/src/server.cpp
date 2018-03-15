@@ -25,7 +25,7 @@ namespace node
 			, doc_root_(doc_root)
 			, bus_(bus)
 			, cache_(cache)
-			, connection_manager_(logger)
+			, connection_manager_(logger, bus)
 			, is_listening_(false)
 			, shutdown_complete_()
 			, mutex_()
@@ -149,9 +149,19 @@ namespace node
 			}
 		}
 
-		void server::send_ws(boost::uuids::uuid tag, cyng::vector_t&& prg)
+		void server::run_on_ws(boost::uuids::uuid tag, cyng::vector_t&& prg)
 		{
-			connection_manager_.send_ws(tag, std::move(prg));
+			connection_manager_.run_on_ws(tag, std::move(prg));
+		}
+
+		void server::add_channel(boost::uuids::uuid tag, std::string const& channel)
+		{
+			connection_manager_.add_channel(tag, channel);
+		}
+
+		void server::process_event(std::string const& channel, cyng::vector_t&& prg)
+		{
+			connection_manager_.process_event(channel, std::move(prg));
 		}
 
 	}

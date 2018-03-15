@@ -94,7 +94,7 @@ namespace node
 	void connection::push_session(cyng::context& ctx)
 	{
 		CYNG_LOG_TRACE(logger_, "push session " 
-			<< get_session()->hash()
+			<< get_session()->vm_.tag()
 			<< " on stack");
 		ctx.push(session_);
 	}

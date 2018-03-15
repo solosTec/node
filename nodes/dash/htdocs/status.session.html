@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="SWF dashboard">
     <meta name="author" content="solos::Tec">
-    <title>smf :: home</title>
+    <title>smf :: sessions</title>
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
@@ -16,6 +16,7 @@
             padding-bottom: 2px;
         }
     </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
@@ -62,7 +63,6 @@
             <span id="ws-activity-text" class="navbar-text">
                 connection state
             </span>
-
         </div>
     </nav>
 
@@ -78,8 +78,14 @@
                 <table id="smf-table-session" class="table table-condensed table-striped table-bordered" cellspacing="0">
                     <thead>
                         <tr>
-                            <th class="sml-col-ses-pk">UUID</th>
-                            <th class="sml-col-ses-name">Name</th>
+                            <th scope="col" class="sml-col-ses-pk">UUID</th>
+                            <th scope="col" class="sml-col-ses-name">Name</th>
+                            <th scope="col" class="sml-col-ses-source">Source</th>
+                            <th scope="col" class="sml-col-ses-layer">Layer</th>
+                            <th scope="col" class="sml-col-ses-rx">rx</th>
+                            <th scope="col" class="sml-col-ses-sx">sx</th>
+                            <th scope="col" class="sml-col-ses-px">px</th>
+                            <th scope="col" class="sml-col-ses-login">Login</th>
                         </tr>
                     </thead>
                 </table>
@@ -92,6 +98,20 @@
     <script type="text/javascript" src="popper.min.js"></script>
 
     <script>
+
+        var renderDate = function (data, type, full, meta) {
+            if (type == "display") {
+                return data.toLocaleString();
+            }
+            return data;
+        };
+        var renderBytes = function (data, type, full, meta) {
+            if (type == "display") {
+                return format_bytes(data);
+            }
+            return data;
+        };
+
         //  globals
         var table_ses;
         var connection;
@@ -114,6 +134,12 @@
             columnDefs: [
                 { targets: 'sml-col-ses-pk', visible: false, name: 'ses-pk' },
                 { targets: 'sml-col-ses-name', visible: true, name: 'ses-name' },
+                { targets: 'sml-col-ses-source', visible: true, name: 'ses-source', className: 'text-right' },
+                { targets: 'sml-col-ses-layer', visible: true, name: 'ses-layer' },
+                { targets: 'sml-col-ses-rx', visible: true, name: 'ses-rx', className: 'text-right', render: renderBytes },
+                { targets: 'sml-col-ses-sx', visible: true, name: 'ses-sx', className: 'text-right', render: renderBytes },
+                { targets: 'sml-col-ses-px', visible: true, name: 'ses-px', className: 'text-right', render: renderBytes },
+                { targets: 'sml-col-ses-login', visible: true, name: 'ses-login', render: renderDate }
             ]
         };
 
@@ -143,7 +169,7 @@
 
             connection.onmessage = function (e) {
                 $('#ws-activity-symbol').show();
-                console.log('socket data: ' + e.data);
+                console.log('incoming data: ' + e.data);
                 //console.log(Object.keys(e.data).length + ' bytes');
                 totalIO += Object.keys(e.data).length;
                 var obj = JSON.parse(e.data);
@@ -151,7 +177,37 @@
                     if (obj.cmd == 'insert') {
                         //  don't display HTML codes
                         var name = $('<div/>').text(obj.rec.data.name).html();
-                        var rowNode = table_ses.row.add([obj.rec.key.tag, name]).draw().node();
+                        var layer = $('<div/>').text(obj.rec.data.layer).html();
+                        var login = new Date(obj.rec.data.loginTime);
+                        var rowNode = table_ses.row.add([obj.rec.key.tag, name, obj.rec.data.source, layer, obj.rec.data.rx, obj.rec.data.sx, obj.rec.data.px, login]).draw().node();
+                    }
+                    else if (obj.cmd == 'delete') {
+                        table_ses.row(function (idx, data, node) {
+                            if (data[0] == obj.key) {
+                                return true;
+                            }
+                            return false;
+                        }).remove().draw(false);
+                    }
+                    else if (obj.cmd == 'modify') {
+                        table_ses.row(function (idx, data, node) {
+                            if (data[0] == obj.key) {
+                                var r = table_ses.row(node);
+                                var d = r.data();
+                                if (obj.value.rx != null) {
+                                    d[4] = obj.value.rx;
+                                }
+                                else if (obj.value.sx != null) {
+                                    d[5] = obj.value.sx;
+                                }
+                                else if (obj.value.px != null) {
+                                    d[6] = obj.value.px;
+                                }
+                                r.data(d);
+                                return true;    //  record found
+                            }
+                            return false;
+                        });
                     }
                 }
                 $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
@@ -160,6 +216,21 @@
 
         });
 
+    </script>
+
+    <script>
+        const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+        function format_bytes(x) {
+
+            let l = 0, n = parseInt(x, 10) || 0;
+
+            while (n >= 1024 && ++l) {
+                n = n / 1024;
+            }
+
+            return (n.toFixed(n >= 10 || l < 1 ? 0 : 1) + ' ' + units[l]);
+        }
     </script>
 
 </body>

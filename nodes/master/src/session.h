@@ -74,6 +74,7 @@ namespace node
 		void sig_mod(cyng::store::table const*
 			, cyng::table::key_type const&
 			, cyng::attr_t const&
+			, std::uint64_t
 			, boost::uuids::uuid);
 
 	private:
@@ -96,6 +97,11 @@ namespace node
 		 * separate implementation of client logic
 		 */
 		client	client_;
+
+		/**
+		 * table subscriptions
+		 */
+		cyng::store::subscriptions_t	subscriptions_;
 	};
 
 	cyng::object make_session(cyng::async::mux& mux

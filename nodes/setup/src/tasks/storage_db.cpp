@@ -156,9 +156,11 @@ namespace node
 
 	cyng::continuation storage_db::process(std::string name
 		, cyng::vector_t const& key
-		, cyng::vector_t const& data
+		, cyng::vector_t data
 		, std::uint64_t gen)
 	{
+		std::reverse(data.begin(), data.end());
+
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -182,7 +184,7 @@ namespace node
 			cyng::sql::command cmd(meta, s.get_dialect());
 			cmd.insert();
 			std::string sql = cmd.to_str();
-			CYNG_LOG_TRACE(logger_, sql);	//	insert
+			//CYNG_LOG_TRACE(logger_, sql);	//	insert
 
 			auto stmt = s.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);
@@ -193,34 +195,33 @@ namespace node
 				//	[763ae055-449c-4783-b383-8fc8cd52f44f]
 				//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
 				//	bind parameters
-				//	INSERT INTO TDevice (pk, gen, name, number, descr, id, vFirmware, enabled, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-				BOOST_ASSERT(r.first == 11);	//	9 parameters to bind
+				//	INSERT INTO TDevice (pk, gen, name, pwd, number, descr, id, vFirmware, enabled, creationTime, query) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				BOOST_ASSERT(r.first == 11);	//	11 parameters to bind
 				BOOST_ASSERT_MSG(key.size() == 1, "wrong TDevice key size");
 				BOOST_ASSERT_MSG(data.size() == 9, "wrong TDevice data size");
-				stmt->push(key.at(0), 36)
-					.push(cyng::make_object(gen), 0)
-					.push(data.at(7), 128)
-					.push(data.at(6), 16)
-					.push(data.at(5), 128)
-					.push(data.at(4), 512)
-					.push(data.at(3), 64)
-					.push(data.at(2), 64)
-					.push(data.at(1), 0)
-					.push(data.at(0), 0)
+				stmt->push(key.at(0), 36)	//	pk
+					.push(cyng::make_object(gen), 0)	//	generation
+					.push(data.at(0), 128)	//	name
+					.push(data.at(1), 16)	//	password
+					.push(data.at(2), 128)	//	
+					.push(data.at(3), 512)
+					.push(data.at(4), 64)
+					.push(data.at(5), 64)	//	firmware
+					.push(data.at(6), 0)	//	enabled
+					.push(data.at(7), 0)	//	creationTime
+					.push(data.at(8), 0)	//	query
 					;
-				stmt->execute();
+				if (!stmt->execute())
+				{
+					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+				}
 				stmt->clear();
 
 			}
 			else
 			{
-				CYNG_LOG_ERROR(logger_, "unknown table "
-				<< name);	//	insert
+				CYNG_LOG_ERROR(logger_, "unknown table " << name);	//	insert
 			}
-			//	INSERT INTO TDevice (pk, gen, name, number, descr, id, vFirmware, enabled, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-			//auto stmt = s.create_statement();
-			//std::pair<int, bool> r = stmt->prepare(sql);
-
 		}
 		else
 		{
@@ -237,7 +238,8 @@ namespace node
 
 	cyng::continuation storage_db::process(std::string name
 		, cyng::vector_t const& key
-		, cyng::attr_t const& data)
+		, cyng::param_t const& data
+		, std::uint64_t gen)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -245,8 +247,9 @@ namespace node
 			<< base_.get_class_name()
 			<< "> update "
 			<< name
-			<< " "
+			<< ' '
 			<< cyng::io::to_str(key)
+			<< ' '
 			<< data.first
 			<< " = "
 			<< cyng::io::to_str(data.second));
@@ -259,22 +262,56 @@ namespace node
 			cyng::sql::command cmd(meta, s.get_dialect());
 
 			//
-			//	To add 3 is a hack and requires that internal table and
-			//	SQL table have a similiar structure.
+			//	To add 1 hack is required since the column index starts with 1 (and not 0)
+			//	The where clause works only for tables with a simple primary key.
 			//
-			cmd.update(cyng::sql::make_assign(data.first + 3, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
-			std::string sql = cmd.to_str();
-			CYNG_LOG_TRACE(logger_, sql);	//	update
+			std::pair<std::ptrdiff_t, bool> idx = meta->get_record_index(data.first);
+			if (idx.second)
+			{
+				//
+				//	update specific attribute
+				//
+				cmd.update(cyng::sql::make_assign(idx.first + 1, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
 
-			auto stmt = s.create_statement();
-			std::pair<int, bool> r = stmt->prepare(sql);
-			BOOST_ASSERT(r.second);
+				std::string sql = cmd.to_str();
+				CYNG_LOG_TRACE(logger_, sql);	//	update
 
-			stmt->push(data.second, 0)
-				.push(key.at(0), 36);
-			stmt->execute();
-			stmt->clear();
+				auto stmt = s.create_statement();
+				std::pair<int, bool> r = stmt->prepare(sql);
+				BOOST_ASSERT(r.second);
 
+				stmt->push(data.second, 0)
+					.push(key.at(0), 36);
+				if (!stmt->execute())
+				{
+					CYNG_LOG_ERROR(logger_, "sql update failed: " << sql);
+				}
+				stmt->clear();
+
+				//
+				//	update gen(eration)
+				//
+				cmd.update(cyng::sql::make_assign(2, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
+				sql = cmd.to_str();
+				CYNG_LOG_TRACE(logger_, sql);	//	update
+
+				//stmt = s.create_statement();
+				r = stmt->prepare(sql);
+				BOOST_ASSERT(r.second);
+
+				stmt->push(cyng::make_object(gen), 0)
+					.push(key.at(0), 36);
+				if (!stmt->execute())
+				{
+					CYNG_LOG_ERROR(logger_, "sql update failed: " << sql);
+				}
+				stmt->clear();
+			}
+			else
+			{
+				CYNG_LOG_ERROR(logger_, "sql update unknown index: " << data.first);
+
+			}
 		}
 		else
 		{
@@ -284,6 +321,52 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
+	cyng::continuation storage_db::process(std::string name
+		, cyng::vector_t const& key)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> remove "
+			<< name
+			<< " "
+			<< cyng::io::to_str(key));
+		auto pos = meta_map_.find(name);
+		if (pos != meta_map_.end())
+		{
+			auto s = pool_.get_session();
+			cyng::table::meta_table_ptr meta = (*pos).second;
+			cyng::sql::command cmd(meta, s.get_dialect());
+
+			cmd.remove().by_key();	//	different key size
+			std::string sql = cmd.to_str();
+			CYNG_LOG_TRACE(logger_, sql);	//	update
+
+			auto stmt = s.create_statement();
+			std::pair<int, bool> r = stmt->prepare(sql);
+			BOOST_ASSERT(r.second);
+			BOOST_ASSERT(r.first == key.size());
+
+			//stmt->push(key.at(0), 36);
+			for (int idx = 0; idx < key.size(); ++idx)
+			{
+				stmt->push(key.at(idx), 0);
+			}
+			if (!stmt->execute())
+			{
+				CYNG_LOG_ERROR(logger_, "sql delete failed: " << sql);
+			}
+			stmt->clear();
+
+		}
+		else
+		{
+			CYNG_LOG_ERROR(logger_, "unknown table "
+				<< name);	//	remove
+		}
+		return cyng::continuation::TASK_CONTINUE;
+	}
 
 	int storage_db::init_db(cyng::tuple_t tpl, std::size_t count)
 	{
@@ -386,7 +469,7 @@ namespace node
 		//
 		std::map<std::string, cyng::table::meta_table_ptr> meta_map;
 		meta_map.emplace("TDevice", cyng::table::make_meta_table<1, 10>("TDevice",
-			{ "pk", "gen", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
+			{ "pk", "gen", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
 			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
 			{ 36, 0, 128, 16, 128, 512, 64, 64, 0, 0, 0 }));
 

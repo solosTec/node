@@ -56,7 +56,7 @@ namespace node
 
 				if (boost::algorithm::equals(account, rec_account))
 				{
-					prg << cyng::unwinder(cyng::generate_invoke("log.msg.info", "account match [", account, "] OK"));
+					prg << cyng::unwinder(cyng::generate_invoke("log.msg.trace", "account match [", account, "] OK"));
 
 					//
 					//	matching name
@@ -74,6 +74,10 @@ namespace node
 						const auto rec_tag = cyng::value_cast(rec["pk"], boost::uuids::nil_uuid());
 						const auto rec_query = cyng::value_cast<std::uint32_t>(rec["query"], 6);
 
+						//	bag
+						//	%(("security":scrambled),("tp-layer":ipt))
+						auto dom = cyng::make_reader(bag);
+
 						if (tbl_session->insert(cyng::table::key_generator(tag)
 							, cyng::table::data_generator(self
 								, cyng::make_object()
@@ -82,8 +86,11 @@ namespace node
 								, account
 								, distribution_(rng_)
 								, std::chrono::system_clock::now()
-								, boost::uuids::nil_uuid())
-							, 1, tag))
+								, boost::uuids::nil_uuid()
+								, cyng::value_cast<std::string>(dom.get("tp-layer"), "tcp/ip")
+								, 0u, 0u, 0u)
+							, 1
+							, tag))
 						{
 							prg << cyng::unwinder(client_res_login(tag
 								, seq
@@ -92,6 +99,9 @@ namespace node
 								, "OK"
 								, rec_query
 								, bag));
+
+							prg << cyng::unwinder(cyng::generate_invoke("log.msg.info", "[" + account + "] has session tag", tag));
+
 						}
 						else
 						{
@@ -246,8 +256,8 @@ namespace node
 
 			tbl_device->loop([&](cyng::table::record const& rec) -> bool {
 
-				const auto dev_number = cyng::value_cast<std::string>(rec["number"], "");
-				//prg << cyng::unwinder(cyng::generate_invoke("log.msg.debug", dev_number));
+				const auto dev_number = cyng::value_cast<std::string>(rec["msisdn"], "");
+				prg << cyng::unwinder(cyng::generate_invoke("log.msg.debug", dev_number));
 				if (boost::algorithm::equals(number, dev_number))
 				{
 					//
@@ -306,7 +316,7 @@ namespace node
 			options["response-code"] = cyng::make_object<std::uint8_t>(ipt::tp_res_open_connection_policy::DIALUP_FAILED);
 
 			prg 
-				<< cyng::unwinder(cyng::generate_invoke("log.msg.warning", "send connection open response", options))
+				<< cyng::unwinder(cyng::generate_invoke("log.msg.warning", "cannot open connection: device or session not found", options))
 				<< cyng::unwinder(client_res_open_connection_forward(tag
 				, seq
 				, success
@@ -401,27 +411,48 @@ namespace node
 			//	get session objects
 			//
 			cyng::table::record rec = tbl_session->lookup(cyng::table::key_generator(tag));
-
 			BOOST_ASSERT_MSG(!rec.empty(), "no session record");
+
+			//
+			//	data size
+			//
+			const std::size_t size = cyng::object_cast<cyng::buffer_t>(data)->size();
+
+			//
+			//	update rx
+			//	data from device
+			//
+			const std::uint64_t rx = cyng::value_cast<std::uint64_t>(rec["rx"], 0);
+			tbl_session->modify(rec.key(), cyng::param_factory("rx", static_cast<std::uint64_t>(rx + size)), tag);
 
 			//
 			//	transfer data
 			//
 			boost::uuids::uuid link = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
 
-			CYNG_LOG_INFO(logger_, "client sessions are "
-				<< tag
-				<< " / "
-				<< link);
-
 			auto remote_peer = cyng::object_cast<session>(rec["remote"]);
 			if (remote_peer)
 			{
+				CYNG_LOG_TRACE(logger_, "transmit  "
+					<< size
+					<< " bytes from "
+					<< tag
+					<< " => "
+					<< link);
 
 				cyng::object_cast<session>(rec["remote"])->vm_.async_run(client_req_transfer_data_forward(link
 					, seq
 					, bag
 					, data));
+
+				//
+				//	update sx
+				//	data to device
+				//
+				cyng::table::record rec_link = tbl_session->lookup(cyng::table::key_generator(link));
+				std::uint64_t sx = cyng::value_cast<std::uint64_t>(rec_link["sx"], 0);
+				tbl_session->modify(rec_link.key(), cyng::param_factory("sx", static_cast<std::uint64_t>(sx + size)), tag);
+
 			}
 			else
 			{
@@ -585,13 +616,13 @@ namespace node
 		}, cyng::store::write_access("*Channel"));
 
 		//
-		//	ToDo: send response
+		//	send response
 		//
-		//prg << cyng::unwinder(client_res_close_push_channel(tag
-		//	, seq
-		//	, !pks.empty()	//	success
-		//	, channel		//	channel
-		//	, bag));
+		prg << cyng::unwinder(client_res_close_push_channel(tag
+			, seq
+			, !pks.empty()	//	success
+			, channel		//	channel
+			, bag));
 
 		return prg;
 	}
@@ -671,6 +702,38 @@ namespace node
 				<< source
 				<< "==> no target ");
 
+		}
+		else
+		{
+			//
+			//	update px value of session
+			//	doesn' work
+			//	ToDo: fix it
+			//
+			db_.access([&](cyng::store::table* tbl_session)->void {
+
+				//
+				//	get data size
+				//
+				const std::size_t size = cyng::object_cast<cyng::buffer_t>(data)->size();
+
+				//
+				//	generate tabley key
+				//
+				cyng::table::record rec = tbl_session->lookup(cyng::table::key_generator(tag));
+				if (rec.empty())
+				{
+					CYNG_LOG_WARNING(logger_, "transfer.push.data - session "
+						<< tag
+						<< " not found");
+
+				}
+				else
+				{
+					std::uint64_t px = cyng::value_cast<std::uint64_t>(rec["px"], 0);
+					tbl_session->modify(rec.key(), cyng::param_factory("px", static_cast<std::uint64_t>(px + size)), tag);
+				}
+			}, cyng::store::write_access("*Session"));
 		}
 		prg << cyng::unwinder(client_res_transfer_pushdata(tag
 			, seq

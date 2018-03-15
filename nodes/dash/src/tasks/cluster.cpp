@@ -7,17 +7,18 @@
 
 #include "cluster.h"
 #include <smf/cluster/generator.h>
+//#include <smf/http/srv/websocket.h>
 
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
 #include <cyng/table/meta.hpp>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/set_cast.h>
 #include <cyng/dom/reader.h>
 #include <cyng/sys/cpu.h>
 #include <cyng/sys/memory.h>
 
-#include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -31,7 +32,8 @@ namespace node
 		, uint16_t watchdog
 		, int timeout)
 	: base_(*btp)
-		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
+		, rgn_()
+		, bus_(bus_factory(btp->mux_, logger, rgn_(), btp->get_id()))
 		, logger_(logger)
 		, config_(cfg_cls)
 		, cache_()
@@ -48,6 +50,7 @@ namespace node
 		//	init cache
 		//
 		create_cache();
+		subscribe_cache();
 
 		//
 		//	implement request handler
@@ -63,13 +66,20 @@ namespace node
 		bus_->vm_.run(cyng::register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
 			CYNG_LOG_TRACE(logger_, "db.trx.commit");
 		}));
-		bus_->vm_.run(cyng::register_function("db.insert", 6, std::bind(&cluster::db_insert, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.modify.by.attr", 3, std::bind(&cluster::db_modify_by_attr, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.res.insert", 4, std::bind(&cluster::db_res_insert, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.res.remove", 2, std::bind(&cluster::db_res_remove, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.res.modify.by.attr", 3, std::bind(&cluster::db_res_modify_by_attr, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.res.modify.by.param", 3, std::bind(&cluster::db_res_modify_by_param, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.req.insert", 4, std::bind(&cluster::db_req_insert, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.req.remove", 3, std::bind(&cluster::db_req_remove, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.req.modify.by.param", 5, std::bind(&cluster::db_req_modify_by_param, this, std::placeholders::_1)));
 
 		//
 		//	input from HTTP session / ws
 		//
-		bus_->vm_.run(cyng::register_function("ws.read", 2, std::bind(&cluster::ws_read, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("ws.read", 3, std::bind(&cluster::ws_read, this, std::placeholders::_1)));
+
 
 	}
 
@@ -214,7 +224,7 @@ namespace node
 
 	}
 
-	void cluster::db_insert(cyng::context& ctx)
+	void cluster::res_subscribe(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
 		//	[TDevice,[763ae055-449c-4783-b383-8fc8cd52f44f],[2018-01-23 13:02:05.66872930,true,vFirmware,id,descr,number,name],72,aa7dc32f-91ff-4b08-89fc-53afb244a6a9,3]
@@ -227,7 +237,7 @@ namespace node
 		//	* origin session id
 		//	* optional task id
 		//	
-		CYNG_LOG_TRACE(logger_, "db.insert - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, "res.subscribe - " << cyng::io::to_str(frame));
 
 		auto tpl = cyng::tuple_cast<
 			std::string,			//	[0] table name
@@ -238,8 +248,7 @@ namespace node
 			std::size_t				//	[5] origin task id
 		>(frame);
 
-		//const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
-		CYNG_LOG_TRACE(logger_, "db.insert " 
+		CYNG_LOG_TRACE(logger_, "res.subscribe " 
 			<< std::get<0>(tpl)		// table name
 			<< " - "
 			<< cyng::io::to_str(std::get<1>(tpl)));
@@ -253,44 +262,277 @@ namespace node
 			, std::get<3>(tpl)
 			, std::get<4>(tpl)))
 		{
-			CYNG_LOG_WARNING(logger_, "db.insert failed "
+			CYNG_LOG_WARNING(logger_, "res.subscribe failed "
 				<< std::get<0>(tpl)		// table name
 				<< " - "
 				<< cyng::io::to_str(std::get<1>(tpl)));
 		}
 	}
 
-	void cluster::db_modify_by_attr(cyng::context& ctx)
+	void cluster::db_res_insert(cyng::context& ctx)
 	{
-		//	[TDevice,[eaec7649-80d5-4b71-8450-3ee2c7ef4917],(4:ipt:store)]
+		const cyng::vector_t frame = ctx.get_frame();
+		//
+		//	[TDevice,[32f1a373-83c9-4f24-8fac-b13103bc7466],[00000006,2018-03-11 18:35:33.61302590,true,,,comment #10,1010000,secret,device-10000],0]
+		//
+		//	* table name
+		//	* record key
+		//	* record data
+		//	* generation
+		//	
+		CYNG_LOG_TRACE(logger_, "db.res.insert - " << cyng::io::to_str(frame));
+
+		auto tpl = cyng::tuple_cast<
+			std::string,			//	[0] table name
+			cyng::table::key_type,	//	[1] table key
+			cyng::table::data_type,	//	[2] record
+			std::uint64_t			//	[3] generation
+		>(frame);
+
+		//
+		//	assemble a record
+		//
+		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
+		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
+		cyng::table::record rec(cache_.meta(std::get<0>(tpl)), std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl));
+
+		if (!cache_.insert(std::get<0>(tpl)
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl)
+			, ctx.tag()))	//	self
+		{
+			CYNG_LOG_WARNING(logger_, "db.res.insert failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_str(std::get<1>(tpl)));
+		}
+
+	}
+
+	void cluster::db_req_insert(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		//
+		//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
+		//
+		//	* table name
+		//	* record key
+		//	* record data
+		//	* generation
+		//	
+		CYNG_LOG_TRACE(logger_, "db.req.insert - " << cyng::io::to_str(frame));
+
+		auto tpl = cyng::tuple_cast<
+			std::string,			//	[0] table name
+			cyng::table::key_type,	//	[1] table key
+			cyng::table::data_type,	//	[2] record
+			std::uint64_t,			//	[3] generation
+			boost::uuids::uuid		//	[4] source
+		>(frame);
+
+		//
+		//	assemble a record
+		//
+		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
+		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
+		cyng::table::record rec(cache_.meta(std::get<0>(tpl)), std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl));
+
+		if (!cache_.insert(std::get<0>(tpl)
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl)
+			, std::get<4>(tpl)))
+		{
+			CYNG_LOG_WARNING(logger_, "db.req.insert failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_str(std::get<1>(tpl)));
+		}
+	}
+
+	void cluster::db_req_remove(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		//
+		//	[*Session,[e72bc048-cb37-4a86-b156-d07f22608476]]
+		//
+		//	* table name
+		//	* record key
+		//	* source
+		//	
+		CYNG_LOG_TRACE(logger_, "db.req.remove - " << cyng::io::to_str(frame));
+
+		auto tpl = cyng::tuple_cast<
+			std::string,			//	[0] table name
+			cyng::table::key_type,	//	[1] table key
+			boost::uuids::uuid		//	[2] source
+		>(frame);
+
+		//
+		//	reordering table key
+		//	
+		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
+
+		if (!cache_.erase(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl)))
+		{
+			CYNG_LOG_WARNING(logger_, "db.req.remove failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_str(std::get<1>(tpl)));
+
+		}
+	}
+	void cluster::db_res_remove(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		//
+		//	[TDevice,[def8e1ef-4a67-49ff-84a9-fda31509dd8e]]
+		//
+		//	* table name
+		//	* record key
+		//	
+		CYNG_LOG_TRACE(logger_, "db.res.remove - " << cyng::io::to_str(frame));
+
+		auto tpl = cyng::tuple_cast<
+			std::string,			//	[0] table name
+			cyng::table::key_type	//	[1] table key
+		>(frame);
+
+		//
+		//	reordering table key
+		//	
+		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
+
+		if (!cache_.erase(std::get<0>(tpl), std::get<1>(tpl), ctx.tag()))
+		{
+			CYNG_LOG_WARNING(logger_, "db.res.remove failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_str(std::get<1>(tpl)));
+		}
+	}
+
+	void cluster::db_res_modify_by_attr(cyng::context& ctx)
+	{
+		//	[TDevice,[0950f361-7800-4d80-b3bc-c6689f159439],(1:secret)]
 		//
 		//	* table name
 		//	* record key
 		//	* attr [column,value]
 		//	
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "db.modify.by.attr - " << cyng::io::to_str(frame));
-		const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
+		CYNG_LOG_TRACE(logger_, "db.res.modify.by.attr - " << cyng::io::to_str(frame));
+
+		auto tpl = cyng::tuple_cast<
+			std::string,			//	[0] table name
+			cyng::table::key_type,	//	[1] table key
+			cyng::attr_t			//	[2] attribute
+		>(frame);
+
+		//
+		//	reordering table key
+		//	
+		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
+
+		if (!cache_.modify(std::get<0>(tpl), std::get<1>(tpl), std::move(std::get<2>(tpl)), ctx.tag()))
+		{
+			CYNG_LOG_WARNING(logger_, "db.res.modify.by.attr failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_str(std::get<1>(tpl)));
+		}
 	}
+
+	void cluster::db_res_modify_by_param(cyng::context& ctx)
+	{
+		//	
+		//
+		//	* table name
+		//	* record key
+		//	* param [column,value]
+		//	
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "db.res.modify.by.param - " << cyng::io::to_str(frame));
+
+		auto tpl = cyng::tuple_cast<
+			std::string,			//	[0] table name
+			cyng::table::key_type,	//	[1] table key
+			cyng::param_t			//	[2] parameter
+		>(frame);
+
+		if (!cache_.modify(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl), ctx.tag()))
+		{
+			CYNG_LOG_WARNING(logger_, "db.res.modify.by.param failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_str(std::get<1>(tpl)));
+		}
+	}
+
+	void cluster::db_req_modify_by_param(cyng::context& ctx)
+	{
+		//	
+		//	[*Session,[35d1d76d-56c3-4df7-b1ff-b7ad374d2e8f],("rx":33344),327,35d1d76d-56c3-4df7-b1ff-b7ad374d2e8f]
+		//
+		//	* table name
+		//	* record key
+		//	* param [column,value]
+		//	* generation
+		//	* source
+		//	
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "db.req.modify.by.param - " << cyng::io::to_str(frame));
+
+		auto tpl = cyng::tuple_cast<
+			std::string,			//	[0] table name
+			cyng::table::key_type,	//	[1] table key
+			cyng::param_t,			//	[2] parameter
+			std::uint64_t,			//	[3] generation
+			boost::uuids::uuid		//	[4] source
+		>(frame);
+
+		//
+		//	reordering table key
+		//	
+		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
+
+		if (!cache_.modify(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl), std::get<4>(tpl)))
+		{
+			CYNG_LOG_WARNING(logger_, "db.req.modify.by.param failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_str(std::get<1>(tpl)));
+		}
+	}
+
 
 	void cluster::ws_read(cyng::context& ctx)
 	{
-		//	[29198287-c6c2-45ac-a405-ab6afd2bbec1,{("cmd":subscribe),("channel":sys.cpu.load)}]
+		//	[1adb06d2-bfbf-4b00-a7b1-80b49ba48f79,<!261:ws>,{("cmd":subscribe),("channel":status.session),("push":true)}]
 		//	
 		//	* session tag
+		//	* ws object
 		//	* json object
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_TRACE(logger_, "ws.read - " << cyng::io::to_str(frame));
 
-		auto reader = cyng::make_reader(frame.at(1));
+		auto wsp = cyng::object_cast<http::websocket_session>(frame.at(1));
+
+		auto reader = cyng::make_reader(frame.at(2));
 		const std::string cmd = cyng::value_cast<std::string>(reader.get("cmd"), "");
 		if (boost::algorithm::equals(cmd, "subscribe"))
 		{
 			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
 			CYNG_LOG_TRACE(logger_, "ws.read - subscribe channel [" << channel << "]");
+
 			if (boost::algorithm::starts_with(channel, "config.device"))
 			{
 				subscribe_devices(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+			}
+			else if (boost::algorithm::starts_with(channel, "config.gateway"))
+			{
+				subscribe_gateways(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
 			else if (boost::algorithm::starts_with(channel, "status.session"))
 			{
@@ -306,57 +548,123 @@ namespace node
 			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
 			CYNG_LOG_TRACE(logger_, "ws.read - pull channel [" << channel << "]");
 			if (boost::algorithm::starts_with(channel, "sys.cpu.usage.total"))
-			{
-				update_sys_cpu_usage_total(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+			{				
+				update_sys_cpu_usage_total(channel, const_cast<http::websocket_session*>(wsp));
 			}
 			else if (boost::algorithm::starts_with(channel, "sys.mem.virtual.total"))
 			{
-				update_sys_mem_virtual_total(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+				update_sys_mem_virtual_total(channel, const_cast<http::websocket_session*>(wsp));
 			}
 			else if (boost::algorithm::starts_with(channel, "sys.mem.virtual.used"))
 			{
-				update_sys_mem_virtual_used(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+				update_sys_mem_virtual_used(channel, const_cast<http::websocket_session*>(wsp));
 			}
 			else
 			{
 				CYNG_LOG_WARNING(logger_, "ws.read - unknown update channel [" << channel << "]");
 			}
 		}
+		else if (boost::algorithm::equals(cmd, "insert"))
+		{
+			//	{"cmd":"insert","channel":"config.device","rec":{"key":{"pk":"0b5c2a64-5c48-48f1-883b-e5be3a3b1e3d"},"data":{"name":"demo","msisdn":"demo","descr":"comment #55","enabled":true,"pwd":"secret","age":"2018-02-04T14:31:34.000Z"}}}
+			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+			CYNG_LOG_TRACE(logger_, "ws.read - insert channel [" << channel << "]");
+			if (boost::algorithm::starts_with(channel, "config.device"))
+			{
+				ctx.attach(bus_req_db_insert("TDevice"
+					//	generate new key
+					, cyng::table::key_generator(rgn_())	
+					//	build data vector
+					, cyng::vector_t{ reader["rec"]["data"].get("name")
+						, reader["rec"]["data"].get("pwd")
+						, reader["rec"]["data"].get("msisdn")
+						, reader["rec"]["data"].get("descr")
+						, cyng::make_object("")	//	model
+						, cyng::make_object("")	//	version
+						, reader["rec"]["data"].get("enabled")
+						, cyng::make_now()
+						, cyng::make_object(static_cast<std::uint32_t>(6)) }
+					, 0
+					, ctx.tag()));
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "ws.read - unknown insert channel [" << channel << "]");
+			}
+		}
+		else if (boost::algorithm::equals(cmd, "delete"))
+		{
+			//	[ce28c0c4-1914-45d1-bcf1-22bcbe461855,{("cmd":delete),("channel":config.device),("key":{("tag":a8b3d691-6ea9-40d3-83aa-b1e4dfbcb2f1)})}]
+			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+			CYNG_LOG_TRACE(logger_, "ws.read - delete channel [" << channel << "]");
+			if (boost::algorithm::starts_with(channel, "config.device"))
+			{
+				cyng::vector_t vec;
+				ctx.attach(bus_req_db_remove("TDevice", cyng::value_cast(reader["key"].get("tag"), vec), ctx.tag()));
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "ws.read - unknown delete channel [" << channel << "]");
+			}
+		}
+		else if (boost::algorithm::equals(cmd, "modify"))
+		{
+			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+			CYNG_LOG_TRACE(logger_, "ws.read - modify channel [" << channel << "]");
+			if (boost::algorithm::starts_with(channel, "config.device"))
+			{
+				cyng::tuple_t tpl;
+				tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
+				for (auto p : tpl)
+				{
+					cyng::vector_t vec;
+					cyng::param_t param;
+					ctx.attach(bus_req_db_modify("TDevice"
+						, cyng::value_cast(reader["rec"].get("key"), vec)
+						, cyng::value_cast(p, param)
+						, 0
+						, ctx.tag()));
+				}
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "ws.read - unknown modify channel [" << channel << "]");
+			}
+		}
 		else
 		{
 			CYNG_LOG_WARNING(logger_, "ws.read - unknown command " << cmd);
-
 		}
 	}
 
-	void cluster::update_sys_cpu_usage_total(std::string const& channel, boost::uuids::uuid tag)
+	void cluster::update_sys_cpu_usage_total(std::string const& channel, http::websocket_session* wss)
 	{
 		//
 		//	Total CPU load of the system in %
 		//
-		server_.send_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+		wss->run(cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
 			cyng::param_factory("cmd", std::string("update")),
 			cyng::param_factory("channel", channel),
 			cyng::param_factory("value", cyng::sys::get_total_cpu_load()))));
 	}
 
-	void cluster::update_sys_mem_virtual_total(std::string const& channel, boost::uuids::uuid tag)
+	void cluster::update_sys_mem_virtual_total(std::string const& channel, http::websocket_session* wss)
 	{
 		//
 		//	total virtual memory in bytes
 		//
-		server_.send_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+		wss->run(cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
 			cyng::param_factory("cmd", std::string("update")),
 			cyng::param_factory("channel", channel),
 			cyng::param_factory("value", cyng::sys::get_total_virtual_memory()))));
 	}
 
-	void cluster::update_sys_mem_virtual_used(std::string const& channel, boost::uuids::uuid tag)
+	void cluster::update_sys_mem_virtual_used(std::string const& channel, http::websocket_session* wss)
 	{
 		//
 		//	used virtual memory in bytes
 		//
-		server_.send_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+		wss->run(cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
 			cyng::param_factory("cmd", std::string("update")),
 			cyng::param_factory("channel", channel),
 			cyng::param_factory("value", cyng::sys::get_used_virtual_memory()))));
@@ -364,6 +672,8 @@ namespace node
 
 	void cluster::subscribe_devices(std::string const& channel, boost::uuids::uuid tag)
 	{
+		server_.add_channel(tag, channel);
+
 		//
 		//	send initial data set of device table
 		//
@@ -373,9 +683,7 @@ namespace node
 				CYNG_LOG_TRACE(logger_, "ws.read - insert device " << cyng::io::to_str(rec.key()));
 
 				//	{ "pk", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
-
-
-				server_.send_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				server_.run_on_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
 					cyng::param_factory("cmd", std::string("insert")),
 					cyng::param_factory("channel", channel),
 					cyng::param_factory("rec", rec.convert()))));
@@ -388,8 +696,35 @@ namespace node
 		}, cyng::store::read_access("TDevice"));
 	}
 
+	void cluster::subscribe_gateways(std::string const& channel, boost::uuids::uuid tag)
+	{
+		server_.add_channel(tag, channel);
+
+		//
+		//	send initial data set of device table
+		//
+		cache_.access([&](cyng::store::table const* tbl) {
+			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+				CYNG_LOG_TRACE(logger_, "ws.read - insert gateway " << cyng::io::to_str(rec.key()));
+
+				server_.run_on_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+					cyng::param_factory("cmd", std::string("insert")),
+					cyng::param_factory("channel", channel),
+					cyng::param_factory("rec", rec.convert()))));
+
+				//	continue
+				return true;
+			});
+			CYNG_LOG_INFO(logger_, counter << "TGateway records sent");
+
+		}, cyng::store::read_access("TGateway"));
+	}
+
 	void cluster::subscribe_sessions(std::string const& channel, boost::uuids::uuid tag)
 	{
+		server_.add_channel(tag, channel);
+
 		//
 		//	send initial data set of session table
 		//
@@ -398,7 +733,7 @@ namespace node
 
 				CYNG_LOG_TRACE(logger_, "ws.read - insert session " << cyng::io::to_str(rec.key()));
 
-				server_.send_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				server_.run_on_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
 					cyng::param_factory("cmd", std::string("insert")),
 					cyng::param_factory("channel", channel),
 					cyng::param_factory("rec", rec.convert()))));
@@ -411,6 +746,120 @@ namespace node
 		}, cyng::store::read_access("*Session"));
 	}
 
+	void cluster::sig_ins(cyng::store::table const* tbl
+		, cyng::table::key_type const& key
+		, cyng::table::data_type const& data
+		, std::uint64_t gen
+		, boost::uuids::uuid source)
+	{
+		cyng::table::record rec(tbl->meta_ptr(), key, data, gen);
+
+		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
+		{
+			//	data: {"cmd": "insert", "channel": "config.device", "rec": {"key": {"pk":"0b5c2a64-5c48-48f1-883b-e5be3a3b1e3d"}, "data": {"creationTime":"2018-02-04 15:31:34.00000000","descr":"comment #55","enabled":true,"id":"ID","msisdn":"1055","name":"device-55","pwd":"crypto","query":6,"vFirmware":"v55"}, "gen": 55}}
+			server_.process_event("config.device", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("insert")),
+				cyng::param_factory("channel", "config.device"),
+				cyng::param_factory("rec", rec.convert()))));
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
+		{ 
+			//	data: {"cmd": "insert", "channel": "config.device", "rec": {"key": {"pk":"0b5c2a64-5c48-48f1-883b-e5be3a3b1e3d"}, "data": {"creationTime":"2018-02-04 15:31:34.00000000","descr":"comment #55","enabled":true,"id":"ID","msisdn":"1055","name":"device-55","pwd":"crypto","query":6,"vFirmware":"v55"}, "gen": 55}}
+			server_.process_event("status.session", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("insert")),
+				cyng::param_factory("channel", "status.session"),
+				cyng::param_factory("rec", rec.convert()))));
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Session"))
+		{
+			server_.process_event("config.gateway", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("insert")),
+				cyng::param_factory("channel", "config.gateway"),
+				cyng::param_factory("rec", rec.convert()))));
+		}
+		else
+		{
+			CYNG_LOG_WARNING(logger_, "sig.ins - unknown table "
+				<< tbl->meta().get_name());
+		}
+	}
+
+	void cluster::sig_del(cyng::store::table const* tbl, cyng::table::key_type const& key, boost::uuids::uuid source)
+	{
+		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
+		{
+			server_.process_event("config.device", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("delete")),
+				cyng::param_factory("channel", "config.device"),
+				cyng::param_factory("key", key))));
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
+		{
+			server_.process_event("config.gateway", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("delete")),
+				cyng::param_factory("channel", "config.gateway"),
+				cyng::param_factory("key", key))));
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Session"))
+		{
+			server_.process_event("status.session", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("delete")),
+				cyng::param_factory("channel", "status.session"),
+				cyng::param_factory("key", key))));
+		}
+		else
+		{
+			CYNG_LOG_WARNING(logger_, "sig.del - unknown table "
+				<< tbl->meta().get_name());
+		}
+	}
+
+	void cluster::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
+	{
+	}
+
+	void cluster::sig_mod(cyng::store::table const* tbl
+		, cyng::table::key_type const& key
+		, cyng::attr_t const& attr
+		, std::uint64_t gen
+		, boost::uuids::uuid source)
+	{
+		//
+		//	convert attribute to parameter (as map)
+		//
+		auto pm = tbl->meta().to_param_map(attr);
+
+		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
+		{
+			server_.process_event("config.device", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("modify")),
+				cyng::param_factory("channel", "config.device"),
+				cyng::param_factory("key", key),
+				cyng::param_factory("value", pm))));
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
+		{
+			server_.process_event("config.gateway", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("modify")),
+				cyng::param_factory("channel", "config.gateway"),
+				cyng::param_factory("key", key),
+				cyng::param_factory("value", pm))));
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Session"))
+		{
+			server_.process_event("status.session", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("modify")),
+				cyng::param_factory("channel", "status.session"),
+				cyng::param_factory("key", key),
+				cyng::param_factory("value", pm))));
+		}
+		else
+		{
+			CYNG_LOG_WARNING(logger_, "sig.mode - unknown table "
+				<< tbl->meta().get_name());
+
+		}
+	}
 
 	void cluster::create_cache()
 	{
@@ -439,22 +888,45 @@ namespace node
 			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_MAC48, cyng::TC_MAC48, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
 			{ 36, 23, 64, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 }));
 
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 8>("*Session", { "tag"	//	client session - primary key [uuid]
+		if (!cache_.create_table(cyng::table::make_meta_table<1, 12>("*Session", { "tag"	//	client session - primary key [uuid]
 			, "local"	//	[object] local peer object (hold session reference)
 			, "remote"	//	[object] remote peer object (if session connected)
 			, "peer"	//	[uuid] remote peer
 			, "device"	//	[uuid] - owner of the session
 			, "name"	//	[string] - account
 			, "source"	//	[uint32] - ipt source id (unique)
-			, "login-time"	//	last login time
+			, "loginTime"	//	last login time
 			, "rtag"	//	[uuid] client session if connected
+			, "layer"	//	[string] protocol layer
+			, "rx"		//	[uint64] received bytes (from device)
+			, "sx"		//	[uint64] sent bytes (to device)
+			, "px"		//	[uint64] sent push data (to push target)
 			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_UUID },
-			{ 36, 0, 0, 36, 36, 64, 0, 0, 36 })))
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT64, cyng::TC_UINT64, cyng::TC_UINT64 },
+			{ 36, 0, 0, 36, 36, 64, 0, 0, 36, 16, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table *Session");
 		}
 
+	}
+
+	void cluster::subscribe_cache()
+	{
+		cache_.get_listener("TDevice"
+			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		cache_.get_listener("TGateway"
+			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		cache_.get_listener("*Session"
+			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 	}
 
 }

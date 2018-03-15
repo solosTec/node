@@ -346,8 +346,8 @@ namespace node
 			const response_type res = cyng::value_cast<response_type>(frame.at(1), 0);
 			const std::uint32_t channel = cyng::value_cast<std::uint32_t>(frame.at(2), 0);
 
-			last_seq_ = sgen_();
-			write_header(code::TP_RES_CLOSE_PUSH_CHANNEL, last_seq_, sizeof(res) + sizeof(channel));
+			//last_seq_ = sgen_();
+			write_header(code::TP_RES_CLOSE_PUSH_CHANNEL, seq, sizeof(res) + sizeof(channel));
 			write_numeric(res);
 			write_numeric(channel);
 		}

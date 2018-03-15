@@ -36,31 +36,57 @@ namespace node
 	cyng::vector_t bus_req_subscribe(std::string const&, std::size_t tsk);
 	cyng::vector_t bus_req_unsubscribe(std::string const&);
 
-	/**
-	 * database operations
-	 * The task ID is optional.
+	/** 
+	 * similiar to db.insert() but contains more information
 	 */
-	cyng::vector_t bus_db_insert(std::string const&
-		, cyng::vector_t const&
-		, cyng::vector_t const&
-		, std::uint64_t generation);
-
-	cyng::vector_t bus_db_insert(std::string const&
+	cyng::vector_t bus_res_subscribe(std::string const&
 		, cyng::vector_t const&
 		, cyng::vector_t const&
 		, std::uint64_t generation
 		, boost::uuids::uuid tag
 		, std::size_t tsk);
 
-	cyng::vector_t bus_db_modify(std::string const&
+	/**
+	 * database operations
+	 * The task ID is optional.
+	 */
+	cyng::vector_t bus_req_db_insert(std::string const&
 		, cyng::vector_t const&
-		, cyng::attr_t const&);
-
-	cyng::vector_t bus_db_modify(std::string const&
 		, cyng::vector_t const&
-		, cyng::param_t const&);
+		, std::uint64_t generation
+		, boost::uuids::uuid source);
 
-	cyng::vector_t bus_db_remove(std::string const&
+	cyng::vector_t bus_res_db_insert(std::string const&
+		, cyng::vector_t const&
+		, cyng::vector_t const&
+		, std::uint64_t generation);
+
+	cyng::vector_t bus_req_db_modify(std::string const&
+		, cyng::vector_t const&
+		, cyng::attr_t const&
+		, boost::uuids::uuid source);
+
+	cyng::vector_t bus_res_db_modify(std::string const&
+		, cyng::vector_t const&
+		, cyng::attr_t const&
+		, std::uint64_t gen);
+
+	cyng::vector_t bus_res_db_modify(std::string const&
+		, cyng::vector_t const&
+		, cyng::param_t&&
+		, std::uint64_t gen);
+
+	cyng::vector_t bus_req_db_modify(std::string const&
+		, cyng::vector_t const&
+		, cyng::param_t const&
+		, std::uint64_t gen
+		, boost::uuids::uuid source);
+
+	cyng::vector_t bus_req_db_remove(std::string const&
+		, cyng::vector_t const&
+		, boost::uuids::uuid source);
+
+	cyng::vector_t bus_res_db_remove(std::string const&
 		, cyng::vector_t const&);
 
 	cyng::vector_t bus_db_clear(std::string const&);
@@ -124,6 +150,12 @@ namespace node
 		, std::uint32_t source
 		, std::uint32_t count
 		, cyng::param_map_t const& options
+		, cyng::param_map_t const& bag);
+
+	cyng::vector_t client_res_close_push_channel(boost::uuids::uuid tag
+		, std::uint64_t seq
+		, bool success
+		, std::uint32_t channel
 		, cyng::param_map_t const& bag);
 
 	cyng::vector_t client_req_register_push_target(boost::uuids::uuid tag

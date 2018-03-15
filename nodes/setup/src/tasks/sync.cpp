@@ -113,10 +113,11 @@ namespace node
 				//	upload	
 				//
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(rec[0]));
-				bus_->vm_.async_run(bus_db_insert(tbl->meta().get_name()
+				bus_->vm_.run(bus_req_db_insert(tbl->meta().get_name()
 					, rec.key()
 					, rec.data()
-					, rec.get_generation()));
+					, rec.get_generation()
+					, bus_->vm_.tag()));
 
 				//	continue
 				return true;
@@ -143,7 +144,7 @@ namespace node
 			, std::bind(&sync::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
 			, std::bind(&sync::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&sync::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&sync::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+			, std::bind(&sync::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 
 		//
 		//	manage table state
@@ -192,6 +193,7 @@ namespace node
 	void sync::sig_mod(cyng::store::table const* tbl
 		, cyng::table::key_type const&
 		, cyng::attr_t const&
+		, std::uint64_t gen
 		, boost::uuids::uuid source)
 	{
 		CYNG_LOG_INFO(logger_, "sig.mod " << table_);

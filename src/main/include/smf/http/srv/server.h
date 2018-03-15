@@ -46,7 +46,10 @@ namespace node
 			/**
 			 * send data to websocket
 			 */
-			void send_ws(boost::uuids::uuid, cyng::vector_t&&);
+			void run_on_ws(boost::uuids::uuid, cyng::vector_t&&);
+
+			void add_channel(boost::uuids::uuid tag, std::string const& channel);
+			void process_event(std::string const& channel, cyng::vector_t&&);
 
 		private:
 			void on_accept(boost::system::error_code ec);

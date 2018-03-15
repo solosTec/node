@@ -181,7 +181,7 @@
             columnDefs: [
                 { targets: 'sml-col-dev-pk', visible: false, name: 'dev-pk' },
                 { targets: 'sml-col-dev-name', visible: true, name: 'dev-name' },
-                { targets: 'sml-col-dev-msisdn', visible: true, name: 'dev-msisdn', defaultContent: '<i>Not set</i>' },
+                { targets: 'sml-col-dev-msisdn', visible: true, name: 'dev-msisdn', className: 'text-right', defaultContent: '<i>Not set</i>' },
                 { targets: 'sml-col-dev-pwd', visible: false, name: 'dev-pwd', defaultContent: '<i>Not set</i>' },
                 { targets: 'sml-col-dev-descr', visible: true, name: 'dev-descr', defaultContent: '<i>Not set</i>' },
                 { targets: 'sml-col-dev-id', visible: true, name: 'dev-id'},
@@ -241,7 +241,7 @@
 
             connection.onmessage = function (e) {
                 $('#ws-activity-symbol').show();
-                console.log('socket data: ' + e.data);
+                console.log('incoming data: ' + e.data);
                 //console.log(Object.keys(e.data).length + ' bytes');
                 totalIO += Object.keys(e.data).length;
                 var obj = JSON.parse(e.data);
@@ -263,6 +263,47 @@
                             $(rowNode).css('color', 'LightGray');
                         }
                     }
+                    else if (obj.cmd == 'delete') {
+                        table_dev.row(function (idx, data, node) {
+                            if (data[0] == obj.key) {
+                                return true;
+                            }
+                            return false;
+                        }).remove().draw(false);
+                    }
+                    else if (obj.cmd == 'modify') {
+                        // {"cmd": "modify", "channel": "config.device", "key": "82f84d25-50c3-460d-b636-f69c91aa3f6b", "value": {"enabled":true}}
+                        table_dev.row(function (idx, data, node) {
+                            if (data[0] == obj.key) {
+                                var r = table_dev.row(node);
+                                var d = r.data();
+                                if (obj.value.name != null) {
+                                    d[1] = obj.value.name;
+                                }
+                                else if (obj.value.msisdn != null) {
+                                    d[2] = obj.value.msisdn;
+                                }
+                                else if (obj.value.pwd != null) {
+                                    d[3] = obj.value.pwd;
+                                }
+                                else if (obj.value.descr != null) {
+                                    d[4] = obj.value.descr;
+                                }
+                                else if (obj.value.enabled != null) {
+                                    d[7] = obj.value.enabled;
+                                    if (obj.value.enabled) {
+                                        $(node).css('color', '');
+                                    }
+                                    else {
+                                        $(node).css('color', 'LightGray');
+                                    }
+                                }
+                                r.data(d);
+                                return true;
+                            }
+                            return false;
+                        });
+                    }
                 }
                 $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
                 $('#ws-activity-symbol').fadeOut();
@@ -274,14 +315,14 @@
 
                 connection.send(JSON.stringify({
                     cmd: "modify", channel: "config.device", rec: {
-                        key: { pk: $('#smf-form-dev-tag').val() },
+                        key: [$('#smf-form-dev-tag').val()],
                         data: {
                             name: $('#smf-form-dev-name').val(),
                             msisdn: $('#smf-form-dev-msisdn').val(),
                             descr: $('#smf-form-dev-descr').val(),
                             enabled: $('#smf-form-dev-enabled').is(':checked'),
-                            pwd: $('#smf-form-dev-pwd').val(),
-                            age: new Date($('#smf-form-dev-age').val())
+                            pwd: $('#smf-form-dev-pwd').val()
+                            //age: new Date($('#smf-form-dev-age').val())
                             //gateway: $('#idFormIsGW').is(':checked'),
                             //server: $('#idServerId').val()
                         }
@@ -297,7 +338,7 @@
 
                 connection.send(JSON.stringify({
                     cmd: 'delete', channel: 'config.device', key: {
-                        tag: key
+                        tag: [key]
                     }
                 }));
 
@@ -323,6 +364,17 @@
                 }));
 
 
+            });
+
+            $('#smf-table-device tbody').on('click', 'tr', function () {
+                //console.log("select: single " + this.outerText);
+                if ($(this).hasClass('selected')) {
+                    $(this).removeClass('selected');
+                }
+                else {
+                    table_dev.$('tr.selected').removeClass('selected');
+                    $(this).addClass('selected');
+                }
             });
         });
 

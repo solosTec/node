@@ -51,8 +51,12 @@ namespace node
 			CYNG_LOG_TRACE(logger_, "db.trx.commit");
 		}));
 
-		bus_->vm_.run(cyng::register_function("db.insert", 6, std::bind(&cluster::db_insert, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.modify.by.attr", 3, std::bind(&cluster::db_modify_by_attr, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.req.insert", 4, std::bind(&cluster::db_req_insert, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.res.insert", 4, std::bind(&cluster::db_res_insert, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.req.modify.by.attr", 3, std::bind(&cluster::db_req_modify_by_attr, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.req.modify.by.param", 3, std::bind(&cluster::db_req_modify_by_param, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("db.req.remove", 2, std::bind(&cluster::db_remove, this, std::placeholders::_1)));
 
 		//
 		//	request handler
@@ -143,7 +147,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void cluster::db_insert(cyng::context& ctx)
+	void cluster::res_subscribe(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
 		//	[TDevice,[763ae055-449c-4783-b383-8fc8cd52f44f],[2018-01-23 13:02:05.66872930,true,vFirmware,id,descr,number,name],72,aa7dc32f-91ff-4b08-89fc-53afb244a6a9,3]
@@ -155,11 +159,11 @@ namespace node
 		//	* origin session id
 		//	* optional task id
 		//	
-		CYNG_LOG_TRACE(logger_, "db.insert - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, "res.subscribe - " << cyng::io::to_str(frame));
 		const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
 
 		const auto state = cache_.get_state(table);
-		CYNG_LOG_TRACE(logger_, "db.insert( " 
+		CYNG_LOG_TRACE(logger_, "res.subscribe( " 
 			<< table
 			<< " ) - state: "
 			<< state);
@@ -170,12 +174,6 @@ namespace node
 
 				cyng::table::key_type key;
 				key = cyng::value_cast<cyng::table::key_type>(frame.at(1), key);
-
-				//cyng::table::data_type data;
-				//data = cyng::value_cast<cyng::table::data_type>(frame.at(2), data);
-
-				//std::uint64_t gen = cyng::value_cast<std::uint64_t>(frame.at(3), 0);
-				//std::size_t tsk = cyng::value_cast<std::size_t>(frame.at(5), 0);
 
 				if (tbl->exist(key))
 				{
@@ -211,34 +209,164 @@ namespace node
 		}
 	}
 
-	void cluster::db_modify_by_attr(cyng::context& ctx)
+	void cluster::db_req_insert(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		//	[TDevice,[763ae055-449c-4783-b383-8fc8cd52f44f],[2018-01-23 13:02:05.66872930,true,vFirmware,id,descr,number,name],72,aa7dc32f-91ff-4b08-89fc-53afb244a6a9,3]
+		//
+		//	* table name
+		//	* record key
+		//	* record data
+		//	* generation
+		//	
+		CYNG_LOG_TRACE(logger_, "db.req.insert - " << cyng::io::to_str(frame));
+		const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
+		const auto state = cache_.get_state(table);
+		if (state == TS_READY)
+		{
+			CYNG_LOG_ERROR(logger_, "db.req.insert( "
+				<< table
+				<< " ) - wrong state: "
+				<< state);
+		}
+		else
+		{
+			//
+			//	insert into SQL database
+			//
+			base_.mux_.send(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
+
+		}
+	}
+
+	void cluster::db_res_insert(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		//	[TDevice,[763ae055-449c-4783-b383-8fc8cd52f44f],[2018-01-23 13:02:05.66872930,true,vFirmware,id,descr,number,name],72,aa7dc32f-91ff-4b08-89fc-53afb244a6a9,3]
+		//
+		//	* table name
+		//	* record key
+		//	* record data
+		//	* generation
+		//	
+		//CYNG_LOG_TRACE(logger_, "db.res.insert - " << cyng::io::to_str(frame));
+
+		//
+		//	db.res.insert doesn't make sense for setup node
+		//
+		CYNG_LOG_TRACE(logger_, "db.res.insert - skipped");
+		//const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
+		//const auto state = cache_.get_state(table);
+		//if (state == TS_READY)
+		//{
+		//	//
+		//	//	insert into SQL database
+		//	//
+		//	base_.mux_.send(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
+		//}
+		//else
+		//{
+		//	CYNG_LOG_ERROR(logger_, "db.res.insert( "
+		//		<< table
+		//		<< " ) - wrong state: "
+		//		<< state);
+		//}
+	}
+
+	void cluster::db_req_modify_by_attr(cyng::context& ctx)
 	{
 		//	[TDevice,[eaec7649-80d5-4b71-8450-3ee2c7ef4917],(4:ipt:store)]
 		//
 		//	* table name
 		//	* record key
 		//	* attr [column,value]
+		//	* gen
 		//	
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "db.modify.by.attr - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, "db.req.modify.by.attr - " << cyng::io::to_str(frame));
 		const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
 
 		const auto state = cache_.get_state(table);
 
 		if (state == TS_READY)
 		{
-			CYNG_LOG_TRACE(logger_, "db.db.modify.by.attr( "
+			CYNG_LOG_TRACE(logger_, "db.req.modify.by.attr( "
 				<< table
 				<< " ) - state: "
 				<< state);
 
-			base_.mux_.send(storage_tsk_, 2, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2) });
-
+			//	ToDo: implement slot for attributes
+			//base_.mux_.send(storage_tsk_, 2, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2) });
 
 		}
 		else
 		{
-			CYNG_LOG_ERROR(logger_, "db.db.modify.by.attr( "
+			CYNG_LOG_ERROR(logger_, "db.req.modify.by.attr( "
+				<< table
+				<< " ) - wrong state: "
+				<< state);
+
+		}
+	}
+
+	void cluster::db_req_modify_by_param(cyng::context& ctx)
+	{
+		//	
+		//
+		//	* table name
+		//	* record key
+		//	* param [name,value]
+		//	* gen
+		//	
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "db.req.modify.by.param - " << cyng::io::to_str(frame));
+		const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
+
+		const auto state = cache_.get_state(table);
+
+		if (state == TS_READY)
+		{
+			CYNG_LOG_TRACE(logger_, "db.req.modify.by.param( "
+				<< table
+				<< " ) - state: "
+				<< state);
+
+			base_.mux_.send(storage_tsk_, 2, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
+
+		}
+		else
+		{
+			CYNG_LOG_ERROR(logger_, "db.req.modify.by.param( "
+				<< table
+				<< " ) - wrong state: "
+				<< state);
+
+		}
+	}
+
+	void cluster::db_remove(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+
+		//
+		//	[TDevice,[3723d50f-b745-4f0d-acdb-123706995493]]
+		//
+		//	* table name
+		//	* record key
+		//	
+		CYNG_LOG_TRACE(logger_, "db.remove - " << cyng::io::to_str(frame));
+		const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
+		const auto state = cache_.get_state(table);
+		if (state == TS_READY)
+		{
+			//
+			//	remove from SQL database
+			//
+			base_.mux_.send(storage_tsk_, 3, cyng::tuple_t{ frame.at(0), frame.at(1) });
+		}
+		else
+		{
+			CYNG_LOG_ERROR(logger_, "db.remove( "
 				<< table
 				<< " ) - wrong state: "
 				<< state);
@@ -301,7 +429,7 @@ namespace node
 		CYNG_LOG_TRACE(logger_, "create cache tables");
 
 		cache_.create_table(cyng::table::make_meta_table<1, 9>("TDevice",
-			{ "pk", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
+			{ "pk", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
 			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
 			{ 36, 128, 16, 128, 512, 64, 64, 0, 0, 0 }));
 

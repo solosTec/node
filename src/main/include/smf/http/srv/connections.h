@@ -21,6 +21,8 @@ namespace node
 	{
 		class connection_manager
 		{
+			friend class websocket_session;
+
 		public:
 			connection_manager(const connection_manager&) = delete;
 			connection_manager& operator=(const connection_manager&) = delete;
@@ -28,7 +30,7 @@ namespace node
 			/**
 			 * Construct a connection manager.
 			 */
-			connection_manager(cyng::logging::log_ptr);
+			connection_manager(cyng::logging::log_ptr, bus::shared_type);
 
 			/**
 			 * Add the specified connection to the manager and start it.
@@ -56,7 +58,17 @@ namespace node
 			/**
 			 * deliver a message to an websocket
 			 */
-			void send_ws(boost::uuids::uuid tag, cyng::vector_t&& prg);
+			void run_on_ws(boost::uuids::uuid tag, cyng::vector_t&& prg);
+
+			bool add_channel(boost::uuids::uuid tag, std::string const& channel);
+			void process_event(std::string const& channel, cyng::vector_t&&);
+
+		private:
+			/**
+			 * put a websocket object on stack
+			 */
+			void push_ws(cyng::context& ctx);
+			cyng::object get_ws(boost::uuids::uuid) const;
 
 		private:
 			cyng::logging::log_ptr logger_;
@@ -65,7 +77,12 @@ namespace node
 			std::set<session_ptr> connections_;
 			std::map<boost::uuids::uuid, cyng::object>	ws_;
 
-			cyng::async::mutex mutex_;
+			/**
+			 * channel list
+			 */
+			std::multimap<std::string, cyng::object>	listener_;
+
+			mutable cyng::async::shared_mutex mutex_;
 
 		};
 	}

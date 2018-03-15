@@ -49,8 +49,12 @@ namespace node
 		cyng::continuation process();
 
 	private:
-		void db_insert(cyng::context& ctx);
-		void db_modify_by_attr(cyng::context& ctx);
+		void res_subscribe(cyng::context& ctx);
+		void db_req_insert(cyng::context& ctx);
+		void db_res_insert(cyng::context& ctx);
+		void db_req_modify_by_attr(cyng::context& ctx);
+		void db_req_modify_by_param(cyng::context& ctx);
+		void db_remove(cyng::context& ctx);
 		void task_resume(cyng::context& ctx);
 		void reconfigure(cyng::context& ctx);
 		void reconfigure_impl();

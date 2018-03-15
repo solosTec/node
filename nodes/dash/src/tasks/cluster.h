@@ -15,6 +15,7 @@
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
 #include <cyng/store/db.h>
+#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
@@ -57,22 +58,48 @@ namespace node
 		void reconfigure_impl();
 
 		void create_cache();
-		void db_insert(cyng::context& ctx);
-		void db_modify_by_attr(cyng::context& ctx);
+		void subscribe_cache();
+		void res_subscribe(cyng::context& ctx);
+		void db_res_insert(cyng::context& ctx);
+		void db_res_remove(cyng::context& ctx);
+		void db_res_modify_by_attr(cyng::context& ctx);
+		void db_res_modify_by_param(cyng::context& ctx);
+		void db_req_insert(cyng::context& ctx);
+		void db_req_remove(cyng::context& ctx);
+		void db_req_modify_by_param(cyng::context& ctx);
 
 		void ws_read(cyng::context& ctx);
 
 		void snyc_table(std::string const&);
 
-		void update_sys_cpu_usage_total(std::string const&, boost::uuids::uuid);
-		void update_sys_mem_virtual_total(std::string const&, boost::uuids::uuid);
-		void update_sys_mem_virtual_used(std::string const&, boost::uuids::uuid);
+		void update_sys_cpu_usage_total(std::string const&, http::websocket_session* wss);
+		void update_sys_mem_virtual_total(std::string const&, http::websocket_session* wss);
+		void update_sys_mem_virtual_used(std::string const&, http::websocket_session* wss);
 
 		void subscribe_devices(std::string const&, boost::uuids::uuid);
+		void subscribe_gateways(std::string const&, boost::uuids::uuid);
 		void subscribe_sessions(std::string const&, boost::uuids::uuid);
+
+		void sig_ins(cyng::store::table const*
+			, cyng::table::key_type const&
+			, cyng::table::data_type const&
+			, std::uint64_t
+			, boost::uuids::uuid);
+		void sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid);
+		void sig_clr(cyng::store::table const*, boost::uuids::uuid);
+		void sig_mod(cyng::store::table const*
+			, cyng::table::key_type const&
+			, cyng::attr_t const&
+			, std::uint64_t
+			, boost::uuids::uuid);
 
 	private:
 		cyng::async::base_task& base_;
+		boost::uuids::random_generator rgn_;
+
+		/**
+		 * communication bus to master
+		 */
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
 		const cluster_config_t	config_;
@@ -81,7 +108,15 @@ namespace node
 		 * global data cache
 		 */
 		cyng::store::db cache_;
+
+		/**
+		 * the HTTP server
+		 */
 		http::server	server_;
+
+		/**
+		 * current master node
+		 */
 		std::size_t master_;
 
 	};

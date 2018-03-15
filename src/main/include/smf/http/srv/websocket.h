@@ -20,7 +20,7 @@ namespace node
 	namespace http
 	{
 		class connection_manager;
-		class websocket_session //: public std::enable_shared_from_this<websocket_session>
+		class websocket_session
 		{
 		public:
 			// Take ownership of the socket
