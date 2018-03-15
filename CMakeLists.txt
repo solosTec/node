@@ -350,60 +350,60 @@ add_executable(hello ${hello})
 #	cluster library (client side)
 #
 include (lib/cluster/lib.cmake)
-add_library(lib_cluster ${GLOBAL_LIBRARY_TYPE} ${cluster_lib})
+add_library(smf_cluster ${GLOBAL_LIBRARY_TYPE} ${cluster_lib})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	target_link_libraries(lib_cluster cyng_domain)
+	target_link_libraries(smf_cluster cyng_domain)
 endif()
 
 #
 #	ipt protocol library
 #
 include (lib/ipt/protocol/lib.cmake)
-add_library(lib_protocol_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_protocol_lib})
+add_library(smf_protocol_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_protocol_lib})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	target_link_libraries(lib_protocol_ipt cyng_vm)
+	target_link_libraries(smf_protocol_ipt cyng_vm)
 endif()
 
 #
 #	ipt bus library (client)
 #
 include (lib/ipt/bus/lib.cmake)
-add_library(lib_bus_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_bus_lib})
+add_library(smf_bus_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_bus_lib})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	target_link_libraries(lib_bus_ipt cyng_domain)
+	target_link_libraries(smf_bus_ipt cyng_domain)
 endif()
 
 #
 #	sml protocol library
 #
 include (lib/sml/protocol/lib.cmake)
-add_library(lib_protocol_sml ${GLOBAL_LIBRARY_TYPE} ${sml_protocol_lib})
+add_library(smf_protocol_sml ${GLOBAL_LIBRARY_TYPE} ${sml_protocol_lib})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	target_link_libraries(lib_protocol_sml cyng_vm)
+	target_link_libraries(smf_protocol_sml cyng_vm)
 endif()
 
 #
 #	sml bus library (client)
 #
 include (lib/sml/bus/lib.cmake)
-add_library(lib_bus_sml ${GLOBAL_LIBRARY_TYPE} ${sml_bus_lib})
-set(sml_bus_link_libs lib_protocol_sml)
+add_library(smf_bus_sml ${GLOBAL_LIBRARY_TYPE} ${sml_bus_lib})
+set(sml_bus_link_libs smf_protocol_sml)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND sml_bus_link_libs cyng_domain)
 endif()
-target_link_libraries(lib_bus_sml ${sml_bus_link_libs})
+target_link_libraries(smf_bus_sml ${sml_bus_link_libs})
 
 #
 #	http server library
 #
 include (lib/http/server/lib.cmake)
-add_library(lib_http_srv ${GLOBAL_LIBRARY_TYPE} ${http_srv_lib})
+add_library(smf_http_srv ${GLOBAL_LIBRARY_TYPE} ${http_srv_lib})
 
 #
 # https server library
 #
 include (lib/https/server/lib.cmake)
-add_library(lib_https_srv ${GLOBAL_LIBRARY_TYPE} ${https_srv_lib})
+add_library(smf_https_srv ${GLOBAL_LIBRARY_TYPE} ${https_srv_lib})
 
 #
 # generic HTTP server
@@ -426,7 +426,7 @@ target_link_libraries(http ${http_link_libs})
 include (nodes/https/prg.cmake)
 add_executable(https ${node_https})
 # libraries to link 
-set(https_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_crypto cyng_sys lib_https_srv ${OPENSSL_LIBRARIES})
+set(https_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_crypto cyng_sys smf_https_srv ${OPENSSL_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND https_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -454,7 +454,7 @@ endif()
 include (nodes/dash/prg.cmake)
 add_executable(dash ${node_dash})
 # libraries to link
-set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys lib_cluster lib_http_srv)
+set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys smf_cluster smf_http_srv)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND dashboard_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -469,7 +469,7 @@ target_link_libraries(dash ${dashboard_link_libs})
 include (nodes/e350/prg.cmake)
 add_executable(e350 ${node_e350})
 # libraries to link
-set(e350_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain lib_cluster)
+set(e350_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain smf_cluster)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND e350_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -484,7 +484,7 @@ target_link_libraries(e350 ${e350_link_libs})
 include (nodes/ipt/collector/prg.cmake)
 add_executable(collector ${node_ipt_collector})
 # libraries to link
-set(collector_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table lib_protocol_ipt lib_bus_ipt)
+set(collector_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table smf_protocol_ipt smf_bus_ipt)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND collector_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -499,7 +499,7 @@ target_link_libraries(collector ${collector_link_libs})
 include (nodes/ipt/emitter/prg.cmake)
 add_executable(emitter ${node_ipt_emitter})
 # libraries to link
-set(emitter_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table lib_protocol_ipt lib_bus_ipt)
+set(emitter_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table smf_protocol_ipt smf_bus_ipt)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND emitter_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -514,7 +514,7 @@ target_link_libraries(emitter ${emitter_link_libs})
 include (nodes/ipt/gateway/prg.cmake)
 add_executable(gateway ${node_ipt_gateway})
 # libraries to link
-set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain lib_protocol_ipt lib_bus_ipt lib_bus_sml)
+set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain smf_protocol_ipt smf_bus_ipt smf_bus_sml)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND gateway_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -538,7 +538,7 @@ target_link_libraries(gateway ${gateway_link_libs})
 include (nodes/ipt/master/prg.cmake)
 add_executable(ipt ${node_ipt_master})
 # libraries to link
-set(ipt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain lib_cluster lib_protocol_ipt)
+set(ipt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain smf_cluster smf_protocol_ipt)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND ipt_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -553,7 +553,7 @@ target_link_libraries(ipt ${ipt_link_libs})
 include (nodes/ipt/store/prg.cmake)
 add_executable(store ${node_ipt_store})
 # libraries to link
-set(store_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_xml lib_protocol_ipt lib_bus_ipt lib_protocol_sml)
+set(store_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_xml smf_protocol_ipt smf_bus_ipt smf_protocol_sml)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND store_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -576,7 +576,7 @@ target_link_libraries(store ${store_link_libs})
 include (nodes/lora/prg.cmake)
 add_executable(lora ${node_lora})
 # libraries to link
-set(lora_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain lib_cluster)
+set(lora_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain smf_cluster)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND lora_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -621,7 +621,7 @@ target_link_libraries(modem ${modem_link_libs})
 include (nodes/mqtt/prg.cmake)
 add_executable(mqtt ${node_mqtt})
 # libraries to link
-set(mqtt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table lib_cluster)
+set(mqtt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table smf_cluster)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND mqtt_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -636,7 +636,7 @@ target_link_libraries(mqtt ${mqtt_link_libs})
 include (nodes/setup/prg.cmake)
 add_executable(setup ${node_setup})
 # libraries to link
-set(setup_link_libs cyng_core cyng_io cyng_async cyng_log cyng_parser cyng_json cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table lib_cluster)
+set(setup_link_libs cyng_core cyng_io cyng_async cyng_log cyng_parser cyng_json cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table smf_cluster)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND setup_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -662,7 +662,7 @@ set_property(
 	TARGET unit_test
 	PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
 
-set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml lib_protocol_ipt lib_protocol_sml)
+set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml smf_protocol_ipt smf_protocol_sml)
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 	list(APPEND unittest_link_libs ${PUGIXML_LIBRARY} cyng_xml)
