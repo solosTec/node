@@ -7,7 +7,7 @@
 * Linux (64 bit) are supported
 * Windows 7 (64 bit) or higher are supported.
 * Crosscompiling for Raspberry 3 is supported
-* Requires [g++](https://gcc.gnu.org/) >= 4.8 or cl 19.00.24215.1 (this is VS 14.0) and [boost](http://www.boost.org/) >= 1.66.0
+* Requires [g++](https://gcc.gnu.org/) >= 4.8 or cl 19.00.24215.1 (this is VS 14.0), [boost](http://www.boost.org/) >= 1.66.0 and [pugixml](https://pugixml.org/) 1.8
 
 ## How do I get set up? ##
 
