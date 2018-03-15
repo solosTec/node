@@ -229,6 +229,7 @@
                 n = n / 1024;
             }
 
+            if (n == 0) return '-';
             return (n.toFixed(n >= 10 || l < 1 ? 0 : 1) + ' ' + units[l]);
         }
     </script>
