@@ -104,7 +104,7 @@ namespace node
 
 		void session::on_read(boost::system::error_code ec)
 		{
-			CYNG_LOG_TRACE(logger_, "session read use count " << this->weak_from_this().use_count());
+			CYNG_LOG_TRACE(logger_, "session read use count " << (this->shared_from_this().use_count() - 1));
 
 			// Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
