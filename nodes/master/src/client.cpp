@@ -24,12 +24,17 @@ namespace node
 {
 	client::client(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cyng::store::db& db)
+		, cyng::store::db& db
+		, bool connection_auto_login
+		, bool connection_superseed)
 	: mux_(mux)
 		, logger_(logger)
 		, db_(db)
+		, connection_auto_login_(connection_auto_login)
+		, connection_superseed_(connection_superseed)
 		, rng_()
 		, distribution_(std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max())
+		, uuid_gen_()
 	{
 	}
 
@@ -48,6 +53,7 @@ namespace node
 		//	test credentials
 		//
 		bool found{ false };
+		bool wrong_pwd{ false };
 		db_.access([&](const cyng::store::table* tbl_device, cyng::store::table* tbl_session)->void {
 
 			tbl_device->loop([&](cyng::table::record const& rec) -> bool {
@@ -127,6 +133,11 @@ namespace node
 					}
 					else
 					{
+						//
+						//	set wrong password marker
+						//
+						wrong_pwd = true;
+
 						prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
 							, "password match ["
 							, account
@@ -153,9 +164,37 @@ namespace node
 				, 0
 				, bag));
 
-			prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
-				, account
-				, "not found"));
+
+			if (!wrong_pwd && connection_auto_login_)
+			{
+				//
+				//	create new device record
+				//
+				db_.insert("TDevice"
+					, cyng::table::key_generator(uuid_gen_())	//	new pk
+					, cyng::table::data_generator(account
+						, pwd
+						, account	//	use account as number
+						, "auto"	//	comment
+						, ""	//	device id
+						, NODE_VERSION	//	firmware version
+						, true	//	enabled
+						, std::chrono::system_clock::now()
+						, 6u)
+					, 1
+					, tag);
+
+				prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
+					, account
+					, "auto login"));
+			}
+			else
+			{
+				prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
+					, account
+					, "not found"));
+
+			}
 		}
 
 		return prg;
@@ -368,14 +407,25 @@ namespace node
 				BOOST_ASSERT_MSG(!caller_rec.empty(), "no caller record");
 				BOOST_ASSERT_MSG(!callee_rec.empty(), "no callee record");
 
-				//
-				//	update "remote" attributes
-				//
-				tbl_session->modify(caller_tag, cyng::param_t("remote", callee_rec["local"]), tag);
-				tbl_session->modify(caller_tag, cyng::param_t("rtag", cyng::make_object(rtag)), tag);
+				if (!caller_rec.empty() && !callee_rec.empty())
+				{
+					//
+					//	update "remote" attributes
+					//
+					tbl_session->modify(caller_tag, cyng::param_t("remote", callee_rec["local"]), tag);
+					tbl_session->modify(caller_tag, cyng::param_t("rtag", cyng::make_object(rtag)), tag);
 
-				tbl_session->modify(callee_tag, cyng::param_t("remote", caller_rec["local"]), tag);
-				tbl_session->modify(callee_tag, cyng::param_t("rtag", cyng::make_object(tag)), tag);
+					tbl_session->modify(callee_tag, cyng::param_t("remote", caller_rec["local"]), tag);
+					tbl_session->modify(callee_tag, cyng::param_t("rtag", cyng::make_object(tag)), tag);
+				}
+				else
+				{
+					CYNG_LOG_FATAL(logger_, "client.res.open.connection between "
+						<< tag
+						<< " and "
+						<< rtag
+						<< " failed");
+				}
 
 			}, cyng::store::write_access("*Session"));
 		}
@@ -388,7 +438,6 @@ namespace node
 			, success
 			, options
 			, bag);
-
 	}
 
 	void client::req_transmit_data(boost::uuids::uuid tag,

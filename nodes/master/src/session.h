@@ -31,7 +31,10 @@ namespace node
 			, cyng::store::db&
 			, std::string const& account
 			, std::string const& pwd
-			, std::chrono::seconds const& monitor);
+			, std::chrono::seconds connection_open_timeout
+			, std::chrono::seconds connection_close_timeout
+			, bool connection_auto_login
+			, bool connection_superseed);
 
 		session(session const&) = delete;
 		session& operator=(session const&) = delete;
@@ -84,7 +87,8 @@ namespace node
 		cyng::controller vm_;
 		const std::string account_;
 		const std::string pwd_;
-		const std::chrono::seconds monitor_;
+		const std::chrono::seconds connection_open_timeout_;
+		const std::chrono::seconds connection_close_timeout_;
 
 		/**
 		 * Parser for binary cyng data stream (from cluster members)
@@ -109,7 +113,10 @@ namespace node
 		, cyng::store::db&
 		, std::string const& account
 		, std::string const& pwd
-		, std::chrono::seconds const& monitor);
+		, std::chrono::seconds connection_open_timeout
+		, std::chrono::seconds connection_close_timeout
+		, bool connection_auto_login
+		, bool connection_superseed);
 }
 
 #include <cyng/intrinsics/traits.hpp>

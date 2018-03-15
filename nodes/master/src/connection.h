@@ -35,7 +35,10 @@ namespace node
 			, cyng::store::db&
 			, std::string const& account
 			, std::string const& pwd
-			, std::chrono::seconds const& monitor);
+			, std::chrono::seconds connection_open_timeout
+			, std::chrono::seconds connection_close_timeout
+			, bool connection_auto_login
+			, bool connection_superseed);
 		
 		/**
 		 * Start the first asynchronous operation for the connection.

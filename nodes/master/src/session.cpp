@@ -30,7 +30,10 @@ namespace node
 		, cyng::store::db& db
 		, std::string const& account
 		, std::string const& pwd
-		, std::chrono::seconds const& monitor)
+		, std::chrono::seconds connection_open_timeout
+		, std::chrono::seconds connection_close_timeout
+		, bool connection_auto_login
+		, bool connection_superseed)
 	: mux_(mux)
 		, logger_(logger)
 		, db_(db)
@@ -42,9 +45,10 @@ namespace node
 		})
 		, account_(account)
 		, pwd_(pwd)
-		, monitor_(monitor)
+		, connection_open_timeout_(connection_open_timeout)
+		, connection_close_timeout_(connection_close_timeout)
 		, seq_(0)
-		, client_(mux, logger, db)
+		, client_(mux, logger, db, connection_auto_login, connection_superseed)
 		, subscriptions_()
 	{
 		//
@@ -670,9 +674,16 @@ namespace node
 		, cyng::store::db& db
 		, std::string const& account
 		, std::string const& pwd
-		, std::chrono::seconds const& monitor)
+		, std::chrono::seconds connection_open_timeout
+		, std::chrono::seconds connection_close_timeout
+		, bool connection_auto_login
+		, bool connection_superseed)
 	{
-		return cyng::make_object<session>(mux, logger, db, account, pwd, monitor);
+		return cyng::make_object<session>(mux, logger, db, account, pwd
+			, connection_open_timeout
+			, connection_close_timeout
+			, connection_auto_login
+			, connection_superseed);
 	}
 
 }

@@ -53,7 +53,7 @@ namespace node
 			cyng::register_logger(logger_, vm_);
 			vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
-			vm_.run(cyng::register_function("session.store.relation", 0, std::bind(&session::store_relation, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1)));
 
 			//
 			//	register request handler

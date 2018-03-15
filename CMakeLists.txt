@@ -400,10 +400,15 @@ include (lib/http/server/lib.cmake)
 add_library(lib_http_srv ${GLOBAL_LIBRARY_TYPE} ${http_srv_lib})
 
 #
-#	https server library
+# https server library
+# requires a sufficient compiler
 #
+if (((CMAKE_COMPILER_IS_GNUCC) AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.4")) OR (MSVC))
+
 include (lib/https/server/lib.cmake)
 add_library(lib_https_srv ${GLOBAL_LIBRARY_TYPE} ${https_srv_lib})
+
+endif()
 
 #
 # generic HTTP server
@@ -422,7 +427,10 @@ target_link_libraries(http ${http_link_libs})
 	
 #
 # generic HTTPS server
+# requires a sufficient compiler
 #
+if (((CMAKE_COMPILER_IS_GNUCC) AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.4")) OR (MSVC))
+
 include (nodes/https/prg.cmake)
 add_executable(https ${node_https})
 # libraries to link 
@@ -434,6 +442,8 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
     endif()
 endif()
 target_link_libraries(https ${https_link_libs})
+
+endif()
 
 #
 # https://raw.githubusercontent.com/boostorg/beast/develop/example/advanced/server/advanced_server.cpp

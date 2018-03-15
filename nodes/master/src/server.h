@@ -55,9 +55,14 @@ namespace node
 		//	credentials
 		const std::string account_;
 		const std::string pwd_;
-		const std::chrono::seconds monitor_;
+		const std::chrono::seconds monitor_;	//!< cluster monitor
 
-		
+		//	connection parameters
+		std::chrono::seconds connection_open_timeout_;
+		std::chrono::seconds connection_close_timeout_;
+		bool connection_auto_login_; 
+		bool connection_superseed_;
+
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor acceptor_;		
 

@@ -13,6 +13,7 @@
 #include <cyng/store/db.h>
 #include <cyng/table/key.hpp>
 #include <boost/random.hpp>
+#include <boost/uuid/random_generator.hpp>
 
 namespace node 
 {
@@ -32,7 +33,9 @@ namespace node
 	public:
 		client(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, cyng::store::db&);
+			, cyng::store::db&
+			, bool connection_auto_login
+			, bool connection_superseed);
 
 		client(client const&) = delete;
 		client& operator=(client const&) = delete;
@@ -117,9 +120,12 @@ namespace node
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
+		const bool connection_auto_login_;
+		const bool connection_superseed_;
 
 		boost::random::mt19937 rng_;
 		boost::random::uniform_int_distribution<std::uint32_t> distribution_;
+		boost::uuids::random_generator uuid_gen_;
 
 	};
 

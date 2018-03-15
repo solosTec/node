@@ -9,7 +9,7 @@
 #include "server.h"
 #include "db.h"
 #include "connection.h"
-
+#include <cyng/dom/reader.h>
 
 namespace node 
 {
@@ -18,20 +18,34 @@ namespace node
 		, boost::uuids::uuid tag
 		, std::string account
 		, std::string pwd
-		, int monitor
+		, int monitor	//	cluster
 		, cyng::tuple_t cfg_session)
 	: mux_(mux)
-	, logger_(logger)
-	, account_(account)
-	, pwd_(pwd)
-	, monitor_(monitor)
-	, acceptor_(mux.get_io_service())
+		, logger_(logger)
+		, account_(account)
+		, pwd_(pwd)
+		, monitor_(monitor)
+		, connection_open_timeout_(12)
+		, connection_close_timeout_(12)
+		, connection_auto_login_(false)
+		, connection_superseed_(true)
+		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
-	, socket_(io_ctx_)
+		, socket_(io_ctx_)
 #endif
-	, db_()
+		, db_()
 	{
 		init(logger_, db_, tag);
+
+		//
+		//	read session configuration
+		//
+		auto dom = cyng::make_reader(cfg_session);
+		connection_open_timeout_ = std::chrono::seconds(cyng::value_cast(dom.get("connection-open-timeout"), 12));
+		connection_open_timeout_ = std::chrono::seconds(cyng::value_cast(dom.get("connection-close-timeout"), 12));
+		connection_auto_login_ = cyng::value_cast(dom.get("auto-login"), connection_auto_login_);
+		connection_superseed_ = cyng::value_cast(dom.get("supersede"), connection_superseed_);
+
 	}
 	
 	void server::run(std::string const& address, std::string const& service)
@@ -72,13 +86,18 @@ namespace node
 				//	Connections are managed by there own and are controlled
 				//	by a maintenance task.
 				//
+
 				std::make_shared<connection>(std::move(socket)
 					, mux_
 					, logger_
 					, db_
 					, account_
 					, pwd_
-					, monitor_)->start();
+					, connection_open_timeout_
+					, connection_close_timeout_
+					, connection_auto_login_
+					, connection_superseed_)->start();
+
 				do_accept();
 			}
 

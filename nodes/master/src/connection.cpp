@@ -22,12 +22,15 @@ namespace node
 		, cyng::store::db& db
 		, std::string const& account
 		, std::string const& pwd
-		, std::chrono::seconds const& monitor)
+		, std::chrono::seconds connection_open_timeout
+		, std::chrono::seconds connection_close_timeout
+		, bool connection_auto_login
+		, bool connection_superseed)
 	: socket_(std::move(socket))
-	, logger_(logger)
-	, buffer_()
-	, session_(make_session(mux, logger, db, account, pwd, monitor))
-	, serializer_(socket_, this->get_session()->vm_)
+		, logger_(logger)
+		, buffer_()
+		, session_(make_session(mux, logger, db, account, pwd, connection_open_timeout, connection_close_timeout, connection_auto_login, connection_superseed))
+		, serializer_(socket_, this->get_session()->vm_)
 	{
 		//
 		//	register socket operations to session VM
