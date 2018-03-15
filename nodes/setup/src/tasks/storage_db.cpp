@@ -379,7 +379,7 @@ namespace node
 			//
 			//	connect string
 			//
-			//std::cout << r.first << std::endl;
+			std::cout << "connect string: " << r.first << std::endl;
 
 			auto meta_map = storage_db::init_meta_map();
 			for (auto tbl : meta_map)
