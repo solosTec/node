@@ -3,7 +3,7 @@
 
 ## Introduction ##
 
-* Current version is 0.2. It's an alpha version.
+* Current version is 0.3. It's still an alpha version.
 * Linux (64 bit) are supported
 * Windows 7 (64 bit) or higher are supported.
 * Crosscompiling for Raspberry 3 is supported
@@ -43,7 +43,7 @@ Some hints to build Boost since the SMF requires the latest Boost version 1.66.0
 * For unicode support install ICU: (sudo apt install libicu-dev). 
 * tar -xvjf boost_1_66_0.tar.bz2
 * cd boost_1_66_0/
-* ./bootstrap.sh --prefix=release --with-toolset=gcc --with-icu
+* ./bootstrap.sh --prefix=install --with-toolset=gcc --with-icu
 * Build the library with ./b2 --architecture=x86 --address-model=64 install -j 4. Depending on your machine this may take some time. 
 * Instruct CMake to use the path to the Boost library specified with the --prefix option
 
