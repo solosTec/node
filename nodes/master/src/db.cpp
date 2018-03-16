@@ -42,12 +42,11 @@ namespace node
 		}
 		else
 		{
-			//db.insert("TDevice", cyng::store::key_generator(tag), cyng::store::data_generator("name", "number", "descr", "id", "vFirmware", true, std::chrono::system_clock::now(), cyng::param_map_t()), 72);
-			db.insert("TDevice"
-				, cyng::table::key_generator(tag)
-				, cyng::table::data_generator("master", "undefined", "0000", "synthetic test device", "smf", NODE_VERSION, true, std::chrono::system_clock::now(), 6u)
-				, 72
-				, tag);
+			//db.insert("TDevice"
+			//	, cyng::table::key_generator(tag)
+			//	, cyng::table::data_generator("master", "undefined", "0000", "synthetic test device", "smf", NODE_VERSION, true, std::chrono::system_clock::now(), 6u)
+			//	, 72
+			//	, tag);
 
 		}
 
@@ -84,6 +83,23 @@ namespace node
 			{ 36, 23, 64, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
+		}
+
+		if (!db.create_table(cyng::table::make_meta_table<1, 9>("TMeter", { "pk"
+			, "ident"	//	ident nummer (i.e. 1EMH0006441734)
+			, "manufacturer"
+			, "factoryNr"	//	fabrik nummer (i.e. 06441734)
+			, "age"	//	production data
+			, "vParam"	//	parametrierversion (i.e. 16A098828.pse)
+			, "vFirmware"	//	firmwareversion (i.e. 11600000)
+			, "item"	//	 artikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+			, "class"	//	Metrological Class: A, B, C, Q3/Q1, ...
+			, "source"	//	source client (UUID)
+			},
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UUID },
+			{ 36, 64, 64, 8, 0, 64, 64, 128, 8, 36 })))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
 		}
 
 		//
@@ -139,18 +155,19 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table *Session");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<2, 7>("*Target", { "name"	//	name - primary key
+		if (!db.create_table(cyng::table::make_meta_table<1, 9>("*Target", { "channel"	//	[uint32] - target id: primary key
 			, "tag"		//	[uuid] owner session - primary key 
 			, "peer"	//	[uuid] peer of owner
-			, "channel"	//	[uint32] - target id
+			, "name"	//	[string] target name
 			, "device"	//	[uuid] - owner of target
-			, "p-size"	//	[uint16] - packet size
-			, "w-size"	//	[uint8] - window size
-			, "reg-time"	//	registration time
+			, "account"	//	[string] - name of target owner
+			, "pSize"	//	[uint16] - packet size
+			, "wSize"	//	[uint8] - window size
+			, "regTime"	//	registration time
 			, "px"		//	incoming data
 			},
-			{ cyng::TC_STRING, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UINT16, cyng::TC_UINT8, cyng::TC_TIME_POINT, cyng::TC_UINT64 },
-			{ 64, 36, 36, 0, 36, 0, 0, 0, 0 })))
+			{ cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT16, cyng::TC_UINT8, cyng::TC_TIME_POINT, cyng::TC_UINT64 },
+			{ 0, 36, 36, 64, 36, 64, 0, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table *Target");
 		}
@@ -165,8 +182,8 @@ namespace node
 			, "target"		//	[uint32] primary key 
 			, "tag"			//	[uuid] target session tag
 			, "peer"		//	[session] target peer object
-			, "p-size"		//	[uint16] - max packet size
-			, "ack-time"	//	[uint32] - See description above
+			, "pSize"		//	[uint16] - max packet size
+			, "ackTime"	//	[uint32] - See description above
 			, "count"		//	[size_t] target count
 			},
 			{	

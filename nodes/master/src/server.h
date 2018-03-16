@@ -61,6 +61,7 @@ namespace node
 		std::chrono::seconds connection_open_timeout_;
 		std::chrono::seconds connection_close_timeout_;
 		bool connection_auto_login_; 
+		bool connection_auto_enabled_;
 		bool connection_superseed_;
 
 		/// Acceptor used to listen for incoming connections.

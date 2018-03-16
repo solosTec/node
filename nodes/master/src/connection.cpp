@@ -25,11 +25,21 @@ namespace node
 		, std::chrono::seconds connection_open_timeout
 		, std::chrono::seconds connection_close_timeout
 		, bool connection_auto_login
+		, bool connection_auto_enabled
 		, bool connection_superseed)
 	: socket_(std::move(socket))
 		, logger_(logger)
 		, buffer_()
-		, session_(make_session(mux, logger, db, account, pwd, connection_open_timeout, connection_close_timeout, connection_auto_login, connection_superseed))
+		, session_(make_session(mux
+			, logger
+			, db
+			, account
+			, pwd
+			, connection_open_timeout
+			, connection_close_timeout
+			, connection_auto_login
+			, connection_auto_enabled
+			, connection_superseed))
 		, serializer_(socket_, this->get_session()->vm_)
 	{
 		//

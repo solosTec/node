@@ -26,11 +26,13 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cyng::store::db& db
 		, bool connection_auto_login
+		, bool connection_auto_emabled
 		, bool connection_superseed)
 	: mux_(mux)
 		, logger_(logger)
 		, db_(db)
 		, connection_auto_login_(connection_auto_login)
+		, connection_auto_enabled_(connection_auto_emabled)
 		, connection_superseed_(connection_superseed)
 		, rng_()
 		, distribution_(std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max())
@@ -178,7 +180,7 @@ namespace node
 						, "auto"	//	comment
 						, ""	//	device id
 						, NODE_VERSION	//	firmware version
-						, true	//	enabled
+						, connection_auto_enabled_	//	enabled
 						, std::chrono::system_clock::now()
 						, 6u)
 					, 1
@@ -574,6 +576,7 @@ namespace node
 			for (auto key : r.first)
 			{
 				auto target_rec = tbl_target->lookup(key);
+				BOOST_ASSERT(!target_rec.empty());
 
 				//
 				//	get target channel
@@ -593,8 +596,11 @@ namespace node
 					//	insert new push channel
 					//
 					if (tbl_channel->insert(cyng::table::key_generator(channel, source, target)
-						, cyng::table::data_generator(target_rec["tag"], target_session_rec["local"], r.second, timeout, r.first.size())
-						//, cyng::table::data_generator(target_rec["tag"], target_rec["peer"], r.second, timeout, r.first.size())
+						, cyng::table::data_generator(target_rec["tag"]	//	target session tag
+							, target_session_rec["local"]	//	target peer object
+							, r.second	//	max packet size
+							, timeout	//	timeout
+							, r.first.size())	//	target count
 						, 1, tag))
 					{
 						prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
@@ -684,7 +690,15 @@ namespace node
 		cyng::param_map_t const& bag,
 		cyng::object data)
 	{
+		//
+		//	program to generate
+		//
 		cyng::vector_t prg;
+
+		//
+		//	list of all target session
+		//
+		cyng::table::key_list_t targets;
 
 		//
 		//	push data to target(s)
@@ -704,8 +718,6 @@ namespace node
 
 				if (channel == cyng::value_cast<std::uint32_t>(rec["channel"], 0))
 				{
-					counter++;
-
 					const auto target_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
 					const auto target = cyng::value_cast<std::uint32_t>(rec["target"], 0);
 
@@ -732,8 +744,13 @@ namespace node
 						, target
 						, data
 						, bag));
-				}
 
+					//
+					//	list of all target session
+					//
+					targets.push_back(cyng::table::key_generator(target));
+					counter++;
+				}
 
 				//	continue
 				return true;
@@ -755,16 +772,14 @@ namespace node
 		else
 		{
 			//
+			//	get data size
+			//
+			const std::size_t size = cyng::object_cast<cyng::buffer_t>(data)->size();
+
+			//
 			//	update px value of session
-			//	doesn' work
-			//	ToDo: fix it
 			//
 			db_.access([&](cyng::store::table* tbl_session)->void {
-
-				//
-				//	get data size
-				//
-				const std::size_t size = cyng::object_cast<cyng::buffer_t>(data)->size();
 
 				//
 				//	generate tabley key
@@ -783,6 +798,22 @@ namespace node
 					tbl_session->modify(rec.key(), cyng::param_factory("px", static_cast<std::uint64_t>(px + size)), tag);
 				}
 			}, cyng::store::write_access("*Session"));
+
+			//
+			//	update px value of targets
+			//
+			db_.access([&](cyng::store::table* tbl_target)->void {
+
+				for (const auto& key : targets)
+				{
+					auto rec = tbl_target->lookup(key);
+					if (!rec.empty())
+					{
+						std::uint64_t px = cyng::value_cast<std::uint64_t>(rec["px"], 0);
+						tbl_target->modify(rec.key(), cyng::param_factory("px", static_cast<std::uint64_t>(px + size)), tag);
+					}
+				}
+			}, cyng::store::write_access("*Target"));
 		}
 		prg << cyng::unwinder(client_res_transfer_pushdata(tag
 			, seq
@@ -834,8 +865,11 @@ namespace node
 	{
 		cyng::param_map_t options;
 
-		bool success{ false };
+		//
+		//	generate a random new target/channel id
+		//
 		const auto channel = distribution_(rng_);
+		bool success{ false };
 		db_.access([&](const cyng::store::table* tbl_session, cyng::store::table* tbl_target)->void {
 
 			auto session_rec = tbl_session->lookup(cyng::table::key_generator(tag));
@@ -845,13 +879,15 @@ namespace node
 				//	session found - insert new target
 				//
 				auto dom = cyng::make_reader(bag);
-				const std::uint16_t p_size = cyng::value_cast<std::uint16_t>(dom.get("p-size"), 0xffff);
-				const std::uint8_t w_size = cyng::value_cast<std::uint8_t>(dom.get("w-size"), 1);
+				const std::uint16_t p_size = cyng::value_cast<std::uint16_t>(dom.get("pSize"), 0xffff);
+				const std::uint8_t w_size = cyng::value_cast<std::uint8_t>(dom.get("wSize"), 1);
 
-				success = tbl_target->insert(cyng::table::key_generator(target, tag)
-					, cyng::table::data_generator(peer
-						, channel	//	channel
+				success = tbl_target->insert(cyng::table::key_generator(channel)
+					, cyng::table::data_generator(tag
+						, peer
+						, target
 						, session_rec["device"]	//	owner of target
+						, session_rec["name"]	//	name of target owner
 						, p_size
 						, w_size
 						, std::chrono::system_clock::now()	//	reg-time
@@ -955,8 +991,8 @@ namespace node
 			{
 				if (boost::algorithm::starts_with(rec_name, target))
 				{
-					const std::uint16_t p_size = cyng::value_cast<std::uint16_t>(rec["p-size"], 0);
-					//	lower threshold is 0xff
+					const std::uint16_t p_size = cyng::value_cast<std::uint16_t>(rec["pSize"], 0);
+					//	lowest threshold is 0xff
 					if ((p_size < packet_size) && (p_size > 0xff))
 					{
 						packet_size = p_size;

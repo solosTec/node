@@ -832,8 +832,8 @@ namespace node
 				cyng::param_map_t bag;
 				bag["tp-layer"] = cyng::make_object("ipt");
 				bag["seq"] = frame.at(1);
-				bag["p-size"] = frame.at(3);
-				bag["w-size"] = frame.at(4);
+				bag["pSize"] = frame.at(3);
+				bag["wSize"] = frame.at(4);
 				bus_->vm_.async_run(client_req_register_push_target(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")
 					, bag));
@@ -852,7 +852,7 @@ namespace node
 		}
 		void session::client_res_register_push_target(cyng::context& ctx)
 		{
-			//	[377de26e-1190-4d12-b87e-374b5a163d66,2bd281df-ba1b-43f6-9c79-f8c55f730c04,3,false,0,("response-code":2),("p-size":65535),("seq":2),("tp-layer":ipt),("w-size":1)]
+			//	[377de26e-1190-4d12-b87e-374b5a163d66,2bd281df-ba1b-43f6-9c79-f8c55f730c04,3,false,0,("response-code":2),("pSize":65535),("seq":2),("tp-layer":ipt),("wSize":1)]
 			//
 			//	* session tag
 			//	* remote peer

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="SWF dashboard">
     <meta name="author" content="solos::Tec">
-    <title>smf :: sessions</title>
+    <title>smf :: push targets</title>
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
@@ -50,8 +50,8 @@
                         Status
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                        <a class="dropdown-item active" href="status.session.html">Sessions</a>
-                        <a class="dropdown-item" href="status.targets.html">Targets</a>
+                        <a class="dropdown-item" href="status.session.html">Sessions</a>
+                        <a class="dropdown-item active" href="status.targets.html">Targets</a>
                         <a class="dropdown-item" href="status.connections.html">Connections</a>
                         <a class="dropdown-item" href="status.system.html">System</a>
                         <a class="dropdown-item" href="status.user.html">User</a>
@@ -62,29 +62,28 @@
             <span id="ws-activity-text" class="navbar-text">
                 connection state
             </span>
+
         </div>
     </nav>
-
     <div class="jumbotron jumbotron-fluid">
         <div class="container">
-            <h1 class="display-4">All subscribers that are online.</h1>
+            <h1 class="display-4">Registered push targets.</h1>
         </div>
     </div>
 
     <div class="container-fluid">
         <div class="row">
             <div class="table-responsive col-md-12">
-                <table id="smf-table-session" class="table table-condensed table-striped table-bordered" cellspacing="0">
+                <table id="smf-table-target" class="table table-condensed table-striped table-bordered" cellspacing="0">
                     <thead>
                         <tr>
-                            <th scope="col" class="sml-col-ses-pk">UUID</th>
-                            <th scope="col" class="sml-col-ses-name">Name</th>
-                            <th scope="col" class="sml-col-ses-source">Source</th>
-                            <th scope="col" class="sml-col-ses-layer">Layer</th>
-                            <th scope="col" class="sml-col-ses-rx">rx</th>
-                            <th scope="col" class="sml-col-ses-sx">sx</th>
-                            <th scope="col" class="sml-col-ses-px">px</th>
-                            <th scope="col" class="sml-col-ses-login">Login</th>
+                            <th scope="col" class="sml-col-target-channel">Channel</th>
+                            <th scope="col" class="sml-col-target-tag">UUID</th>
+                            <th scope="col" class="sml-col-target-name">Name</th>
+                            <th scope="col" class="sml-col-target-device">Device</th>
+                            <th scope="col" class="sml-col-target-account">Account</th>
+                            <th scope="col" class="sml-col-target-px">px</th>
+                            <th scope="col" class="sml-col-target-reg">Registered</th>
                         </tr>
                     </thead>
                 </table>
@@ -112,7 +111,7 @@
         };
 
         //  globals
-        var table_ses;
+        var table_target;
         var connection;
         var totalIO = 0;
 
@@ -131,28 +130,27 @@
             //keys: true,  //  table navigation
             //dom: '<"top"ilp>rt<"bottom"f><"clear">',
             columnDefs: [
-                { targets: 'sml-col-ses-pk', visible: false, name: 'ses-pk' },
-                { targets: 'sml-col-ses-name', visible: true, name: 'ses-name' },
-                { targets: 'sml-col-ses-source', visible: true, name: 'ses-source', className: 'text-right' },
-                { targets: 'sml-col-ses-layer', visible: true, name: 'ses-layer' },
-                { targets: 'sml-col-ses-rx', visible: true, name: 'ses-rx', className: 'text-right', render: renderBytes },
-                { targets: 'sml-col-ses-sx', visible: true, name: 'ses-sx', className: 'text-right', render: renderBytes },
-                { targets: 'sml-col-ses-px', visible: true, name: 'ses-px', className: 'text-right', render: renderBytes },
-                { targets: 'sml-col-ses-login', visible: true, name: 'ses-login', render: renderDate }
+                { targets: 'sml-col-target-channel', visible: true, name: 'target-channel', className: 'text-right' },
+                { targets: 'sml-col-target-tag', visible: false, name: 'target-tag' },
+                { targets: 'sml-col-target-name', visible: true, name: 'target-name' },
+                { targets: 'sml-col-target-device', visible: false, name: 'target-device' },
+                { targets: 'sml-col-target-account', visible: true, name: 'target-account' },
+                { targets: 'sml-col-target-px', visible: true, name: 'target-px', className: 'text-right', render: renderBytes },
+                { targets: 'sml-col-target-reg', visible: true, name: 'ses-reg', render: renderDate }
             ]
         };
 
         $(document).ready(function () {
             console.log('document ready');
-            table_ses = $('#smf-table-session').DataTable(tbl_config);
+            table_target = $('#smf-table-target').DataTable(tbl_config);
 
-            //table_ses.row.add(["a6d2e9d9-e1ed-4692-b49c-e38b9b0dc31d", "name", "1234567"]).draw().node();
+            //table_target.row.add(["a6d2e9d9-e1ed-4692-b49c-e38b9b0dc31d", "name", "1234567"]).draw().node();
 
             $('#ws-activity-text').html('connecting to ' + location.host + '...');
-            connection = new WebSocket('ws://' + location.host + '/smf/api/session/v0.1', ['SMF']);
+            connection = new WebSocket('ws://' + location.host + '/smf/api/target/v0.1', ['SMF']);
             connection.onopen = function () {
                 //  subscribe system status
-                connection.send(JSON.stringify({ cmd: "subscribe", channel: "status.session", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "status.target", push: true }));
             };
 
             connection.onclose = function (event) {
@@ -166,6 +164,7 @@
                 $('#ws-activity-text').html('ws error');
             };
 
+            //  {"cmd": "insert", "channel": "status.target", "rec": {"key": {"channel":581869302}, "data": {"account":"data-store","device":"eaec7649-80d5-4b71-8450-3ee2c7ef4917","name":"LSM_Status","pSize":"65535","peer":"702bd512-32ba-4eef-acd8-ce3b7442a991","px":0,"regTime":"2018-03-16 14:00:09.53312660","tag":"1567cd24-4196-4fb5-a68b-137bf142f3b2","wSize":1}, "gen": 1}}
             connection.onmessage = function (e) {
                 $('#ws-activity-symbol').show();
                 console.log('incoming data: ' + e.data);
@@ -176,12 +175,12 @@
                     if (obj.cmd == 'insert') {
                         //  don't display HTML codes
                         var name = $('<div/>').text(obj.rec.data.name).html();
-                        var layer = $('<div/>').text(obj.rec.data.layer).html();
-                        var login = new Date(obj.rec.data.loginTime);
-                        var rowNode = table_ses.row.add([obj.rec.key.tag, name, obj.rec.data.source, layer, obj.rec.data.rx, obj.rec.data.sx, obj.rec.data.px, login]).draw().node();
+                        var account = $('<div/>').text(obj.rec.data.account).html();
+                        var registered = new Date(obj.rec.data.regTime);
+                        var rowNode = table_target.row.add([obj.rec.key.channel, obj.rec.data.tag, name, obj.rec.data.device, account, obj.rec.data.px, registered]).draw().node();
                     }
                     else if (obj.cmd == 'delete') {
-                        table_ses.row(function (idx, data, node) {
+                        table_target.row(function (idx, data, node) {
                             if (data[0] == obj.key) {
                                 return true;
                             }
@@ -189,9 +188,9 @@
                         }).remove().draw(false);
                     }
                     else if (obj.cmd == 'modify') {
-                        table_ses.row(function (idx, data, node) {
+                        table_target.row(function (idx, data, node) {
                             if (data[0] == obj.key) {
-                                var r = table_ses.row(node);
+                                var r = table_target.row(node);
                                 var d = r.data();
                                 if (obj.value.rx != null) {
                                     d[4] = obj.value.rx;

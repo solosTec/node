@@ -15,7 +15,7 @@
 </head>
 <body>
     <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
-        <a class="navbar-brand" href="#">
+        <a class="navbar-brand" href="http://solostec.ch">
             <img src="images/logo.svg" width="30" height="30" class="d-inline-block align-top" alt="">
             solos::Tec
         </a>
@@ -121,6 +121,7 @@
             connection = new WebSocket('ws://' + location.host + '/smf/api/system/v0.1', ['SMF']);
 
             connection.onopen = function () {
+                $('#ws-activity-text').html('connected with ' + location.host);
                 //  subscribe system status
                 connection.send(JSON.stringify({ cmd: "update", channel: "sys.mem.virtual.total", push: false }));
                 startSysTimer();

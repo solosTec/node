@@ -33,6 +33,7 @@ namespace node
 		, std::chrono::seconds connection_open_timeout
 		, std::chrono::seconds connection_close_timeout
 		, bool connection_auto_login
+		, bool connection_auto_enabled
 		, bool connection_superseed)
 	: mux_(mux)
 		, logger_(logger)
@@ -48,7 +49,7 @@ namespace node
 		, connection_open_timeout_(connection_open_timeout)
 		, connection_close_timeout_(connection_close_timeout)
 		, seq_(0)
-		, client_(mux, logger, db, connection_auto_login, connection_superseed)
+		, client_(mux, logger, db, connection_auto_login, connection_auto_enabled, connection_superseed)
 		, subscriptions_()
 	{
 		//
@@ -485,7 +486,7 @@ namespace node
 
 	void session::client_req_register_push_target(cyng::context& ctx)
 	{
-		//	[4e5dc7e8-37e7-4267-a3b6-d68a9425816f,76fbb814-3e74-419b-8d43-2b7b59dab7f1,67,data.sink.2,%(("p-size":65535),("seq":2),("tp-layer":ipt),("w-size":1))]
+		//	[4e5dc7e8-37e7-4267-a3b6-d68a9425816f,76fbb814-3e74-419b-8d43-2b7b59dab7f1,67,data.sink.2,%(("pSize":65535),("seq":2),("tp-layer":ipt),("wSize":1))]
 		//
 		//	* client tag
 		//	* peer
@@ -677,12 +678,14 @@ namespace node
 		, std::chrono::seconds connection_open_timeout
 		, std::chrono::seconds connection_close_timeout
 		, bool connection_auto_login
+		, bool connection_auto_emabled
 		, bool connection_superseed)
 	{
 		return cyng::make_object<session>(mux, logger, db, account, pwd
 			, connection_open_timeout
 			, connection_close_timeout
 			, connection_auto_login
+			, connection_auto_emabled
 			, connection_superseed);
 	}
 

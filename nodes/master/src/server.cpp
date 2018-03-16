@@ -28,6 +28,7 @@ namespace node
 		, connection_open_timeout_(12)
 		, connection_close_timeout_(12)
 		, connection_auto_login_(false)
+		, connection_auto_enabled_(true)
 		, connection_superseed_(true)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
@@ -44,6 +45,7 @@ namespace node
 		connection_open_timeout_ = std::chrono::seconds(cyng::value_cast(dom.get("connection-open-timeout"), 12));
 		connection_open_timeout_ = std::chrono::seconds(cyng::value_cast(dom.get("connection-close-timeout"), 12));
 		connection_auto_login_ = cyng::value_cast(dom.get("auto-login"), connection_auto_login_);
+		connection_auto_enabled_ = cyng::value_cast(dom.get("auto-enabled"), connection_auto_enabled_);
 		connection_superseed_ = cyng::value_cast(dom.get("supersede"), connection_superseed_);
 
 	}
@@ -96,6 +98,7 @@ namespace node
 					, connection_open_timeout_
 					, connection_close_timeout_
 					, connection_auto_login_
+					, connection_auto_enabled_
 					, connection_superseed_)->start();
 
 				do_accept();

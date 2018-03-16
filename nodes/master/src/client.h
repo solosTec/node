@@ -35,6 +35,7 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, cyng::store::db&
 			, bool connection_auto_login
+			, bool connection_auto_enabled
 			, bool connection_superseed);
 
 		client(client const&) = delete;
@@ -121,6 +122,7 @@ namespace node
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
 		const bool connection_auto_login_;
+		const bool connection_auto_enabled_;
 		const bool connection_superseed_;
 
 		boost::random::mt19937 rng_;

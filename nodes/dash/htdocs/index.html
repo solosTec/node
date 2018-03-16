@@ -10,8 +10,6 @@
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
-    <!-- Custom styles for this template -->
-    <!--<link href="dashboard.css" rel="stylesheet">-->
 </head>
 <body>
     <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
@@ -54,7 +52,7 @@
                     </div>
                 </li>
             </ul>
-            <span id="ws-activity-symbol"><svg height="44" width="20"><circle cx="10" cy="25" r="6" stroke="red" stroke-width="0" fill="yellow" /></svg></span>
+            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey" /></svg></span>
             <span id="ws-activity-text" class="navbar-text">
                 connection state
             </span>
@@ -75,33 +73,34 @@
                 <!--<img class="card-img-top" src="images/bus-gateway.svg" alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Configure Devices</h5>
-                    <p class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p>
+                    <p class="card-text">Managing the device pool.</p>
+                    <p class="card-text" id="d3-chart-device"></p>
                     <a href="config.device.html" class="btn btn-primary">Devices</a>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted">Last updated 3 mins ago</small>
+                    <small class="text-muted"><span id="ws-table-device-count"></span> devices configured</small>
                 </div>
             </div>
             <div class="card">
                 <!--<img class="card-img-top" src="..." alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Configure Gateways</h5>
-                    <p class="card-text">This card has supporting text below as a natural lead-in to additional content.</p>
+                    <p class="card-text">Special support for gateways.</p>
                     <a href="config.gateway.html" class="btn btn-primary">Gateways</a>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted">Last updated 3 mins ago</small>
+                    <small class="text-muted"><span id="ws-table-gateway-count"></span> gateways available</small>
                 </div>
             </div>
             <div class="card">
                 <!--<img class="card-img-top" src="..." alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Configure Meter</h5>
-                    <p class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This card has even longer content than the first to show that equal height action.</p>
+                    <p class="card-text">Meter overview</p>
                     <a href="config.meter.html" class="btn btn-primary">Meter</a>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted">Last updated 3 mins ago</small>
+                    <small class="text-muted"><span id="ws-table-meter-count"></span> meters configured</small>
                 </div>
             </div>
         </div>
@@ -112,33 +111,33 @@
                 <!--<img class="card-img-top" src="..." alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Show Sessions</h5>
-                    <p class="card-text">Show a list of all the subscribers now online.</p>
+                    <p class="card-text">Show a list of all devices online now and their data throughput in realtime.</p>
                     <a href="status.session.html" class="btn btn-primary">Sessions</a>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted">Last updated 3 mins ago</small>
+                    <small class="text-muted"><span id="ws-table-session-count"></span> sessions online</small>
                 </div>
             </div>
             <div class="card">
                 <!--<img class="card-img-top" src="..." alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Registered Targets</h5>
-                    <p class="card-text">This card has supporting text below as a natural lead-in to additional content.</p>
+                    <p class="card-text">All registered targets and their data throughput in realtime.</p>
                     <a href="status.targets.html" class="btn btn-primary">Targets</a>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted">Last updated 3 mins ago</small>
+                    <small class="text-muted"><span id="ws-table-target-count"></span> targets registered</small>
                 </div>
             </div>
             <div class="card">
                 <!--<img class="card-img-top" src="..." alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Connections</h5>
-                    <p class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This card has even longer content than the first to show that equal height action.</p>
+                    <p class="card-text">See connections and manage leased lines.</p>
                     <a href="status.connections.html" class="btn btn-primary">Connections</a>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted">Last updated 3 mins ago</small>
+                    <small class="text-muted">No data avilable yet</small>
                 </div>
             </div>
         </div>
@@ -151,13 +150,66 @@
     <script>
 
         var connection;
+        var sysTimer;
 
         $(document).ready(function () {
             console.log('document ready');
             $('#ws-activity-text').html('connecting to ' + location.host + '...');
-            connection = new WebSocket('ws://' + location.host + '/smf/api/v0.1', ['SMF']);
+            connection = new WebSocket('ws://' + location.host + '/smf/api/system/v0.1', ['SMF']);
+
+            connection.onopen = function () {
+                $('#ws-activity-text').html('connected with ' + location.host);
+                //  subscribe system status
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.device.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.gateway.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.meter.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.session.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.target.count", push: true }));
+            };
+
+            connection.onclose = function (event) {
+                $('#ws-activity-symbol').show();
+                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
+                $('#ws-activity-text').html('error ' + event.code);
+            };
+
+            connection.onerror = function (error) {
+                console.log('ws error');
+                $('#ws-activity-text').html('ws error');
+            };
+
+            //  {"cmd": "update", "channel": "table.device.count", "value": 77}
+            connection.onmessage = function (e) {
+                $('#ws-activity-symbol').show();
+                console.log('incoming data: ' + e.data);
+                var obj = JSON.parse(e.data);
+                if (obj.cmd != null) {
+                    if (obj.cmd == 'update') {
+                        if (obj.channel != null) {
+                            if (obj.channel == 'table.device.count') {
+                                $('#ws-table-device-count').text(obj.value);
+                            }
+                            else if (obj.channel == 'table.gateway.count') {
+                                $('#ws-table-gateway-count').text(obj.value);
+                            }
+                            else if (obj.channel == 'table.meter.count') {
+                                $('#ws-table-meter-count').text(obj.value);
+                            }
+                            else if (obj.channel == 'table.session.count') {
+                                $('#ws-table-session-count').text(obj.value);
+                            }
+                            else if (obj.channel == 'table.target.count') {
+                                $('#ws-table-target-count').text(obj.value);
+                            }
+                        }
+                    }
+                }
+            };
         });
     </script>
+
+    <!--<script src="http://d3js.org/d3.v3.min.js"></script>-->
+    <!--"d3-chart-device"-->
 
 </body>
 </html >

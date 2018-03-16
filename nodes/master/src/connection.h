@@ -38,6 +38,7 @@ namespace node
 			, std::chrono::seconds connection_open_timeout
 			, std::chrono::seconds connection_close_timeout
 			, bool connection_auto_login
+			, bool connection_auto_enabled
 			, bool connection_superseed);
 		
 		/**

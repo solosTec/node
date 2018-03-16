@@ -24,6 +24,7 @@ set (node_dash_res
 	nodes/dash/htdocs/config.gateway.html
 	nodes/dash/htdocs/status.session.html
 	nodes/dash/htdocs/status.system.html
+	nodes/dash/htdocs/status.targets.html
 )
 
 set (node_dash_info

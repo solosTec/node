@@ -79,6 +79,14 @@ namespace node
 		void subscribe_devices(std::string const&, boost::uuids::uuid);
 		void subscribe_gateways(std::string const&, boost::uuids::uuid);
 		void subscribe_sessions(std::string const&, boost::uuids::uuid);
+		void subscribe_targets(std::string const&, boost::uuids::uuid);
+		void subscribe_table_device_count(std::string const&, boost::uuids::uuid);
+		void subscribe_table_gateway_count(std::string const&, boost::uuids::uuid);
+		void subscribe_table_meter_count(std::string const&, boost::uuids::uuid);
+		void subscribe_table_session_count(std::string const&, boost::uuids::uuid);
+		void subscribe_table_target_count(std::string const&, boost::uuids::uuid);
+
+		void update_channel(std::string const&, std::size_t);
 
 		void sig_ins(cyng::store::table const*
 			, cyng::table::key_type const&
