@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
     //	path to JSON configuration file
     std::string json_path;
-	unsigned int pool_size = 1;
+	unsigned int pool_size = 4;
 
 #if BOOST_OS_LINUX
     struct rlimit rl;
@@ -123,8 +123,9 @@ int main(int argc, char **argv)
 
 		//
 		//	create a controller object
+		//  minimum pool size is 4
 		//
-		node::controller ctrl(pool_size, json_path);
+		node::controller ctrl((pool_size < 4) ? 4 : pool_size, json_path);
 
 		//
 		//	check start optiones

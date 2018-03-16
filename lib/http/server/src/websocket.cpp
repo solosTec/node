@@ -9,6 +9,7 @@
 #include <smf/http/srv/connections.h>
 #include <cyng/json.h>
 #include <cyng/vm/generator.h>
+#include <cyng/vm/domain/log_domain.h>
 #include <boost/assert.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
@@ -33,12 +34,14 @@ namespace node
 			, ping_cb_()
 		{
 			vm_.run(cyng::register_function("ws.send.json", 1, std::bind(&websocket_session::ws_send_json, this, std::placeholders::_1)));
-			//vm_.run(cyng::register_function("ws.push", 1, std::bind(&connection_manager::push_ws, &cm, std::placeholders::_1)));
+            
+            cyng::register_logger(logger_, vm_);
+            vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 		}
 
 		websocket_session::~websocket_session()
 		{
-			std::cerr << "websocket_session::~websocket_session()" << std::endl;
+// 			std::cerr << "websocket_session::~websocket_session()" << std::endl;
 		}
 
 		boost::uuids::uuid websocket_session::tag() const noexcept
@@ -171,17 +174,20 @@ namespace node
 			{
 				/// A close frame was received
 			case boost::beast::websocket::frame_type::close:
-				CYNG_LOG_TRACE(logger_, "ws::close - " << payload);
+// 				CYNG_LOG_TRACE(logger_, "ws::close - " << payload);
+                vm_.async_run(cyng::generate_invoke("log.msg.trace", "ws::close"));
 				break;
 
 				/// A ping frame was received
 			case boost::beast::websocket::frame_type::ping:
-				CYNG_LOG_TRACE(logger_, "ws::ping - " << payload);
+// 				CYNG_LOG_TRACE(logger_, "ws::ping - " << payload);
+                vm_.async_run(cyng::generate_invoke("log.msg.trace", "ws::ping"));
 				break;
 
 				/// A pong frame was received
 			case boost::beast::websocket::frame_type::pong:
-				CYNG_LOG_TRACE(logger_, "ws::pong - " << payload);
+// 				CYNG_LOG_TRACE(logger_, "ws::pong - " << payload);
+                vm_.async_run(cyng::generate_invoke("log.msg.trace", "ws::pong"));
 				break;
 
 			default:
@@ -323,8 +329,9 @@ namespace node
 		void websocket_session::run(cyng::vector_t&& prg)
 		{
 			//ws_.write(boost::asio::buffer("{'key' : 2}"));
-			CYNG_LOG_TRACE(logger_, "run " << cyng::io::to_str(prg));
+			CYNG_LOG_TRACE(logger_, "run " << vm_.tag() << "... " << cyng::io::to_str(prg));
 			vm_.run(std::move(prg));
+			CYNG_LOG_TRACE(logger_, "...run " << vm_.tag());
 		}
 
 		void websocket_session::ws_send_json(cyng::context& ctx)

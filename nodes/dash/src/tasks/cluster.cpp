@@ -7,7 +7,6 @@
 
 #include "cluster.h"
 #include <smf/cluster/generator.h>
-//#include <smf/http/srv/websocket.h>
 
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
@@ -717,7 +716,8 @@ namespace node
 				//	continue
 				return true;
 			});
-			CYNG_LOG_INFO(logger_, counter << "TDevice records sent");
+            BOOST_ASSERT(counter == 0);
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
 
 		}, cyng::store::read_access("TDevice"));
 	}
@@ -742,7 +742,8 @@ namespace node
 				//	continue
 				return true;
 			});
-			CYNG_LOG_INFO(logger_, counter << "TGateway records sent");
+            BOOST_ASSERT(counter == 0);
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
 
 		}, cyng::store::read_access("TGateway"));
 	}
@@ -767,7 +768,8 @@ namespace node
 				//	continue
 				return true;
 			});
-			CYNG_LOG_INFO(logger_, counter << "*Session records sent");
+            BOOST_ASSERT(counter == 0);
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
 
 		}, cyng::store::read_access("*Session"));
 	}
@@ -792,7 +794,8 @@ namespace node
 				//	continue
 				return true;
 			});
-			CYNG_LOG_INFO(logger_, counter << "*Target records sent");
+            BOOST_ASSERT(counter == 0);
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
 
 		}, cyng::store::read_access("*Target"));
 	}
