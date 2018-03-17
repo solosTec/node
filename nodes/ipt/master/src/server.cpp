@@ -38,8 +38,11 @@ namespace node
 #endif
 			, rnd_()
 			, client_map_()
-			//, uuid_hasher_()
 		{
+			//
+			//	connection management
+			//
+			bus_->vm_.run(cyng::register_function("push.connection", 1, std::bind(&server::push_connection, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("server.insert.connection", 2, std::bind(&server::insert_connection, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("server.close.connection", 1, std::bind(&server::close_connection, this, std::placeholders::_1)));
 
@@ -56,8 +59,6 @@ namespace node
 			bus_->vm_.run(cyng::register_function("client.res.transfer.pushdata", 7, std::bind(&server::client_res_transfer_pushdata, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.req.transfer.pushdata.forward", 7, std::bind(&server::client_req_transfer_pushdata_forward, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.close.push.channel", 6, std::bind(&server::client_res_close_push_channel, this, std::placeholders::_1)));
-
-			bus_->vm_.run(cyng::register_function("push.connection", 1, std::bind(&server::push_connection, this, std::placeholders::_1)));
 
 		}
 

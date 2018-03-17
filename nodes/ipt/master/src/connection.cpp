@@ -73,7 +73,11 @@ namespace node
 
 					do_read();
 				}
-				else //if (ec != boost::asio::error::operation_aborted)
+				//else if (ec != boost::asio::error::operation_aborted)
+				//{
+				//	std::cerr << ec.message() << std::endl;
+				//}
+				else
 				{
 					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
 					session_.bus_->vm_.run(client_req_close(tag_, ec.value()));

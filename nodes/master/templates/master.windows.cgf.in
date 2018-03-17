@@ -9,4 +9,4 @@ name = node_master_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_M
 
 [setup]
 json = $ENV{ProgramData}\node\master_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
-pool-size = ${${PROJECT_NAME}_CPU_COUNT}
+pool-size = ${${PROJECT_NAME}_POOL_SIZE}

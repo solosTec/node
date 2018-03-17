@@ -23,8 +23,8 @@ namespace node
 
 	std::uint32_t get_source_channel(const cyng::store::table* tbl_session, boost::uuids::uuid);
 	std::size_t remove_targets_by_tag(cyng::store::table* tbl_target, boost::uuids::uuid);
-	cyng::table::key_list_t get_targets_by_peer(cyng::store::table const* tbl_target, std::size_t hash);
-	cyng::table::key_list_t get_channels_by_peer(cyng::store::table const* tbl_channel, std::size_t hash);
+	cyng::table::key_list_t get_targets_by_peer(cyng::store::table const* tbl_target, boost::uuids::uuid);
+	cyng::table::key_list_t get_channels_by_peer(cyng::store::table const* tbl_channel, boost::uuids::uuid);
 
 	class client
 	{
@@ -83,7 +83,8 @@ namespace node
 			std::string,			//	[6] device software version
 			std::string,			//	[7] device id
 			std::chrono::seconds,	//	[8] timeout
-			cyng::param_map_t const&);		//	[9] bag
+			cyng::param_map_t const&,		//	[9] bag
+			boost::uuids::uuid);	//	[10] local session tag
 
 		cyng::vector_t req_close_push_channel(boost::uuids::uuid tag,
 			boost::uuids::uuid peer,
@@ -100,10 +101,11 @@ namespace node
 			cyng::object);			//	data
 
 		cyng::vector_t req_register_push_target(boost::uuids::uuid,		//	[0] remote client tag
-			boost::uuids::uuid,		//	[1] peer tag
+			boost::uuids::uuid,		//	[1] remote peer tag
 			std::uint64_t,			//	[2] sequence number
 			std::string,			//	[3] target name
-			cyng::param_map_t const&);
+			cyng::param_map_t const&,
+			boost::uuids::uuid);	//	[5] local session tag
 
 		cyng::vector_t update_attr(boost::uuids::uuid,		//	[0] origin client tag
 			boost::uuids::uuid,		//	[1] peer tag
@@ -116,6 +118,9 @@ namespace node
 		cyng::vector_t req_open_push_channel_empty(boost::uuids::uuid tag,
 			std::uint64_t seq, 
 			cyng::param_map_t const& bag);
+
+		bool check_online_state(cyng::vector_t&, cyng::store::table*, std::string const&);
+		std::tuple<bool, bool, boost::uuids::uuid, std::uint32_t> test_credential(cyng::vector_t&, const cyng::store::table*, std::string const&, std::string const&);
 
 	private:
 		cyng::async::mux& mux_;

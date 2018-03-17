@@ -192,14 +192,8 @@
                             if (data[0] == obj.key) {
                                 var r = table_target.row(node);
                                 var d = r.data();
-                                if (obj.value.rx != null) {
-                                    d[4] = obj.value.rx;
-                                }
-                                else if (obj.value.sx != null) {
-                                    d[5] = obj.value.sx;
-                                }
-                                else if (obj.value.px != null) {
-                                    d[6] = obj.value.px;
+                                if (obj.value.px != null) {
+                                    d[5] = obj.value.px;
                                 }
                                 r.data(d);
                                 return true;    //  record found

@@ -222,21 +222,17 @@ namespace node
 		CYNG_LOG_TRACE(logger_, "db.req.insert - " << cyng::io::to_str(frame));
 		const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
 		const auto state = cache_.get_state(table);
-		if (state == TS_READY)
-		{
-			CYNG_LOG_ERROR(logger_, "db.req.insert( "
-				<< table
-				<< " ) - wrong state: "
-				<< state);
-		}
-		else
-		{
-			//
-			//	insert into SQL database
-			//
-			base_.mux_.send(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
 
-		}
+		CYNG_LOG_DEBUG(logger_, "db.req.insert - table " 
+			<< table
+			<< " in state "
+			<< ((state == TS_READY) ? "READY" : "SYNC"));
+
+		//
+		//	insert into SQL database
+		//
+		base_.mux_.send(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
+
 	}
 
 	void cluster::db_res_insert(cyng::context& ctx)

@@ -110,6 +110,11 @@ namespace node
 
 	}
 
+	/**
+	 * Node has to close specified client
+	 */
+	cyng::vector_t bus_close_client(boost::uuids::uuid);
+
 
 	/**
 	 * client management

@@ -176,21 +176,22 @@ namespace node
 		//	ack-time: the time interval (in seconds) in which a Push Data Transfer Response is expected
 		//	after the transmission of the last character of a Push Data Transfer Request.
 		//
-		if (!db.create_table(cyng::table::make_meta_table<3, 5>("*Channel", 
+		if (!db.create_table(cyng::table::make_meta_table<3, 6>("*Channel", 
 			{ "channel"		//	[uint32] primary key 
 			, "source"		//	[uint32] primary key 
 			, "target"		//	[uint32] primary key 
 			, "tag"			//	[uuid] target session tag
-			, "peer"		//	[session] target peer object
+			, "TargetPeer"	//	[object] target peer session
+			, "ChannelPeer"	//	[uuid] owner/channel peer session
 			, "pSize"		//	[uint16] - max packet size
-			, "ackTime"	//	[uint32] - See description above
+			, "ackTime"		//	[uint32] - See description above
 			, "count"		//	[size_t] target count
 			},
 			{	
 				cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, 
-				cyng::TC_UUID, cyng::traits::PREDEF_SESSION, cyng::TC_UINT16, cyng::TC_UINT32,cyng::TC_UINT64
+				cyng::TC_UUID, cyng::traits::PREDEF_SESSION, cyng::TC_UUID, cyng::TC_UINT16, cyng::TC_UINT32,cyng::TC_UINT64
 			},
-			{ 0, 0, 0, 0, 0, 0, 0, 0 })))
+			{ 0, 0, 0, 0, 0, 0, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table *Channel");
 		}

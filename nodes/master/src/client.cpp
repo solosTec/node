@@ -58,100 +58,81 @@ namespace node
 		bool wrong_pwd{ false };
 		db_.access([&](const cyng::store::table* tbl_device, cyng::store::table* tbl_session)->void {
 
-			tbl_device->loop([&](cyng::table::record const& rec) -> bool {
+			//
+			// check for running session(s) with the same name
+			//
+			const bool online = check_online_state(prg, tbl_session, account);
 
-				const auto rec_account = cyng::value_cast<std::string>(rec["name"], "");
+			if (!online)
+			{
+				//
+				//	test credentials
+				//
+				boost::uuids::uuid dev_tag{ boost::uuids::nil_uuid() };
+				std::uint32_t query{ 6 };
+				std::tie(found, wrong_pwd, dev_tag, query) = test_credential(prg, tbl_device, account, pwd);
 
-				if (boost::algorithm::equals(account, rec_account))
+				if (found && !wrong_pwd)
 				{
-					prg << cyng::unwinder(cyng::generate_invoke("log.msg.trace", "account match [", account, "] OK"));
+					//	bag
+					//	%(("security":scrambled),("tp-layer":ipt))
+					auto dom = cyng::make_reader(bag);
 
-					//
-					//	matching name
-					//	test password
-					//
-					const auto rec_pwd = cyng::value_cast<std::string>(rec["pwd"], "");
-					if (boost::algorithm::equals(pwd, rec_pwd))
+					if (tbl_session->insert(cyng::table::key_generator(tag)
+						, cyng::table::data_generator(self
+							, cyng::make_object()
+							, peer
+							, dev_tag
+							, account
+							, distribution_(rng_)
+							, std::chrono::system_clock::now()
+							, boost::uuids::nil_uuid()
+							, cyng::value_cast<std::string>(dom.get("tp-layer"), "tcp/ip")
+							, 0u, 0u, 0u)
+						, 1
+						, tag))
 					{
-						prg << cyng::unwinder(cyng::generate_invoke("log.msg.info", "password match [", account, "] OK"));
+						prg << cyng::unwinder(client_res_login(tag
+							, seq
+							, true
+							, account
+							, "OK"
+							, query
+							, bag));
 
-						//
-						//	matching password
-						//	insert new session
-						//
-						const auto rec_tag = cyng::value_cast(rec["pk"], boost::uuids::nil_uuid());
-						const auto rec_query = cyng::value_cast<std::uint32_t>(rec["query"], 6);
+						prg << cyng::unwinder(cyng::generate_invoke("log.msg.info", "[" + account + "] has session tag", tag));
 
-						//	bag
-						//	%(("security":scrambled),("tp-layer":ipt))
-						auto dom = cyng::make_reader(bag);
-
-						if (tbl_session->insert(cyng::table::key_generator(tag)
-							, cyng::table::data_generator(self
-								, cyng::make_object()
-								, peer
-								, rec_tag
-								, account
-								, distribution_(rng_)
-								, std::chrono::system_clock::now()
-								, boost::uuids::nil_uuid()
-								, cyng::value_cast<std::string>(dom.get("tp-layer"), "tcp/ip")
-								, 0u, 0u, 0u)
-							, 1
-							, tag))
-						{
-							prg << cyng::unwinder(client_res_login(tag
-								, seq
-								, true
-								, account
-								, "OK"
-								, rec_query
-								, bag));
-
-							prg << cyng::unwinder(cyng::generate_invoke("log.msg.info", "[" + account + "] has session tag", tag));
-
-						}
-						else
-						{
-							prg << cyng::unwinder(client_res_login(tag
-								, seq
-								, false
-								, account
-								, "cannot create session"
-								, rec_query
-								, bag));
-
-							prg << cyng::unwinder(cyng::generate_invoke("log.msg.error"
-								, "cannot insert new session of account "
-								, account
-								, " with pk "
-								, tag));
-						}
-
-						//
-						//	terminate loop
-						//
-						found = true;
 					}
 					else
 					{
-						//
-						//	set wrong password marker
-						//
-						wrong_pwd = true;
-
-						prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
-							, "password match ["
+						prg << cyng::unwinder(client_res_login(tag
+							, seq
+							, false
 							, account
-							, pwd
-							, rec_pwd
-							, "failed"));
+							, "cannot create session"
+							, query
+							, bag));
+
+						prg << cyng::unwinder(cyng::generate_invoke("log.msg.error"
+							, "cannot insert new session of account "
+							, account
+							, " with pk "
+							, tag));
 					}
 				}
+			}
+			else
+			{
+				found = true;
 
-				//	continue loop
-				return !found;
-			});
+				prg << cyng::unwinder(client_res_login(tag
+					, seq
+					, false
+					, account
+					, "already online"
+					, 0
+					, bag));
+			}
 
 		}	, cyng::store::read_access("TDevice")
 			, cyng::store::write_access("*Session"));
@@ -166,13 +147,12 @@ namespace node
 				, 0
 				, bag));
 
-
 			if (!wrong_pwd && connection_auto_login_)
 			{
 				//
 				//	create new device record
 				//
-				db_.insert("TDevice"
+				if (!db_.insert("TDevice"
 					, cyng::table::key_generator(uuid_gen_())	//	new pk
 					, cyng::table::data_generator(account
 						, pwd
@@ -184,11 +164,19 @@ namespace node
 						, std::chrono::system_clock::now()
 						, 6u)
 					, 1
-					, tag);
+					, tag))
+				{
+					prg << cyng::unwinder(cyng::generate_invoke("log.msg.error"
+						, account
+						, "auto login failed"));
 
-				prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
-					, account
-					, "auto login"));
+				}
+				else
+				{
+					prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
+						, account
+						, "auto login"));
+				}
 			}
 			else
 			{
@@ -200,6 +188,95 @@ namespace node
 		}
 
 		return prg;
+	}
+
+	std::tuple<bool, bool, boost::uuids::uuid, std::uint32_t> 
+		client::test_credential(cyng::vector_t& prg, const cyng::store::table* tbl, std::string const& account, std::string const& pwd)
+	{
+		bool found{ false };
+		bool wrong_pwd{ false };
+		boost::uuids::uuid dev_tag{ boost::uuids::nil_uuid() };
+		std::uint32_t query{ 6 };
+
+		tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+			const auto rec_account = cyng::value_cast<std::string>(rec["name"], "");
+
+			if (boost::algorithm::equals(account, rec_account))
+			{
+				prg << cyng::unwinder(cyng::generate_invoke("log.msg.trace", "account match [", account, "] OK"));
+
+				//
+				//	matching name
+				//	test password
+				//
+				const auto rec_pwd = cyng::value_cast<std::string>(rec["pwd"], "");
+				if (boost::algorithm::equals(pwd, rec_pwd))
+				{
+					prg << cyng::unwinder(cyng::generate_invoke("log.msg.info", "password match [", account, "] OK"));
+
+					//
+					//	matching password
+					//	insert new session
+					//
+					dev_tag = cyng::value_cast(rec["pk"], dev_tag);
+					query = cyng::value_cast<std::uint32_t>(rec["query"], 6);
+
+					//
+					//	terminate loop
+					//
+					found = true;
+				}
+				else
+				{
+					//
+					//	set wrong password marker
+					//
+					wrong_pwd = true;
+
+					prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
+						, "password match ["
+						, account
+						, pwd
+						, rec_pwd
+						, "failed"));
+				}
+			}
+
+			//	continue loop
+			return !found;
+		});
+
+		return std::make_tuple(found, wrong_pwd, dev_tag, query);
+	}
+
+
+	bool client::check_online_state(cyng::vector_t& prg, cyng::store::table* tbl, std::string const& account)
+	{
+		bool online{ false };
+		tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+			const auto rec_name = cyng::value_cast<std::string>(rec["name"], "");
+			if (boost::algorithm::equals(account, rec_name))
+			{
+				//
+				//	already online
+				//
+				online = true;
+				const auto rec_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+				prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning", account, rec_tag, "already online"));
+
+				if (connection_superseed_)
+				{
+					prg << cyng::unwinder(bus_close_client(rec_tag));
+				}
+			}
+
+			//	false terminates the loop
+			return !online;
+		});
+
+		return online;
 	}
 
 	cyng::vector_t client::req_close(boost::uuids::uuid tag,
@@ -517,8 +594,8 @@ namespace node
 
 	}
 
-	cyng::vector_t client::req_open_push_channel(boost::uuids::uuid tag,
-		boost::uuids::uuid peer,
+	cyng::vector_t client::req_open_push_channel(boost::uuids::uuid tag, //	remote tag
+		boost::uuids::uuid peer,	//	[1] remote peer
 		std::uint64_t seq,			//	[2] sequence number
 		std::string name,			//	[3] target name
 		std::string account,		//	[4] device name
@@ -526,7 +603,8 @@ namespace node
 		std::string software,		//	[6] device software version
 		std::string version,			//	[7] device id
 		std::chrono::seconds timeout,	//	[8] timeout
-		cyng::param_map_t const& bag)
+		cyng::param_map_t const& bag,
+		boost::uuids::uuid self)		//	[10] local session tag
 	{
 		if (name.empty())
 		{
@@ -597,7 +675,8 @@ namespace node
 					//
 					if (tbl_channel->insert(cyng::table::key_generator(channel, source, target)
 						, cyng::table::data_generator(target_rec["tag"]	//	target session tag
-							, target_session_rec["local"]	//	target peer object
+							, target_session_rec["local"]	//	target peer object - TargetPeer
+							, self	// ChannelPeer
 							, r.second	//	max packet size
 							, timeout	//	timeout
 							, r.first.size())	//	target count
@@ -738,7 +817,7 @@ namespace node
 						<< target_tag);
 
 
-					cyng::object_cast<session>(rec["peer"])->vm_.async_run(client_req_transfer_pushdata_forward(target_tag
+					cyng::object_cast<session>(rec["TargetPeer"])->vm_.async_run(client_req_transfer_pushdata_forward(target_tag
 						, channel
 						, source
 						, target
@@ -857,11 +936,12 @@ namespace node
 	}
 
 
-	cyng::vector_t client::req_register_push_target(boost::uuids::uuid tag,
-		boost::uuids::uuid peer,
+	cyng::vector_t client::req_register_push_target(boost::uuids::uuid tag, //	remote tag
+		boost::uuids::uuid peer,	//	remote peer
 		std::uint64_t seq,
 		std::string target,
-		cyng::param_map_t const& bag)
+		cyng::param_map_t const& bag,
+		boost::uuids::uuid self)
 	{
 		cyng::param_map_t options;
 
@@ -884,7 +964,7 @@ namespace node
 
 				success = tbl_target->insert(cyng::table::key_generator(channel)
 					, cyng::table::data_generator(tag
-						, peer
+						, self
 						, target
 						, session_rec["device"]	//	owner of target
 						, session_rec["name"]	//	name of target owner
@@ -1036,7 +1116,7 @@ namespace node
 		return cyng::erase(tbl_target, pks, tag);
 	}
 
-	cyng::table::key_list_t get_targets_by_peer(cyng::store::table const* tbl_target, std::size_t hash)
+	cyng::table::key_list_t get_targets_by_peer(cyng::store::table const* tbl_target, boost::uuids::uuid tag)
 	{
 		static boost::hash<boost::uuids::uuid> uuid_hasher;
 
@@ -1045,7 +1125,8 @@ namespace node
 		//
 		cyng::table::key_list_t pks;
 		tbl_target->loop([&](cyng::table::record const& rec) -> bool {
-			if (hash == uuid_hasher(cyng::value_cast(rec["peer"], boost::uuids::nil_uuid())))
+			//const auto tag = cyng::value_cast(rec["peer"], boost::uuids::nil_uuid());
+			if (tag == cyng::value_cast(rec["peer"], boost::uuids::nil_uuid()))
 			{
 				pks.push_back(rec.key());
 			}
@@ -1057,16 +1138,14 @@ namespace node
 		return pks;
 	}
 
-	cyng::table::key_list_t get_channels_by_peer(cyng::store::table const* tbl_channel, std::size_t hash)
+	cyng::table::key_list_t get_channels_by_peer(cyng::store::table const* tbl_channel, boost::uuids::uuid tag)
 	{
-		static boost::hash<boost::uuids::uuid> uuid_hasher;
-
 		//
 		//	get all registered targets of the specified peer
 		//
 		cyng::table::key_list_t pks;
 		tbl_channel->loop([&](cyng::table::record const& rec) -> bool {
-			if (hash == uuid_hasher(cyng::value_cast(rec["peer"], boost::uuids::nil_uuid())))
+			if (tag == cyng::value_cast(rec["ChannelPeer"], boost::uuids::nil_uuid()))
 			{
 				pks.push_back(rec.key());
 			}

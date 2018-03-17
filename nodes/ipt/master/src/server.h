@@ -68,7 +68,6 @@ namespace node
 			 */
 			void push_connection(cyng::context& ctx);
 
-
 		private:
 			/*
 			 * task manager and running I/O context
@@ -103,8 +102,6 @@ namespace node
 			 * client map
 			 */
 			std::map<boost::uuids::uuid, cyng::object>	client_map_;
-
-			//boost::hash<boost::uuids::uuid> uuid_hasher_;
 
 		};
 	}

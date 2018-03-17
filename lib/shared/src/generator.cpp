@@ -214,6 +214,16 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_close_client(boost::uuids::uuid tag)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("server.close.connection", tag))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+
 	cyng::vector_t client_req_login(boost::uuids::uuid tag
 		, std::string const& name
 		, std::string const& pwd

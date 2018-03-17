@@ -64,12 +64,20 @@ set (${PROJECT_NAME}_NOW_UTC ${NOW_UTC})
 include(ProcessorCount)
 ProcessorCount(${PROJECT_NAME}_CPU_COUNT)
 
+if (${${PROJECT_NAME}_CPU_COUNT} LESS 4)
+	set(${PROJECT_NAME}_POOL_SIZE 4)
+else()
+	set(${PROJECT_NAME}_POOL_SIZE ${${PROJECT_NAME}_CPU_COUNT})
+endif()
+
+
 message(STATUS "** CMake           : v${CMAKE_VERSION}")
 message(STATUS "** Generator       : ${CMAKE_GENERATOR}")
 message(STATUS "** Platform        : ${CMAKE_SYSTEM}")
 message(STATUS "** Compiler        : ${CMAKE_CXX_COMPILER_ID} v${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "** Timestamp       : ${${PROJECT_NAME}_NOW_UTC}")
 message(STATUS "** CPU Cores       : ${${PROJECT_NAME}_CPU_COUNT}")
+message(STATUS "** Pool Size       : ${${PROJECT_NAME}_POOL_SIZE}")
 message(STATUS "** Patchlevel      : ${${PROJECT_NAME}_PATCH_LEVEL}")
 if(UNIX)
 # has no meaning on VS

@@ -329,9 +329,13 @@ namespace node
 		void websocket_session::run(cyng::vector_t&& prg)
 		{
 			//ws_.write(boost::asio::buffer("{'key' : 2}"));
+			const auto now = std::chrono::system_clock::now();
 			CYNG_LOG_TRACE(logger_, "run " << vm_.tag() << "... " << cyng::io::to_str(prg));
 			vm_.run(std::move(prg));
-			CYNG_LOG_TRACE(logger_, "...run " << vm_.tag());
+			CYNG_LOG_TRACE(logger_, "...run " 
+				<< std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - now).count()
+				<< " microsec "
+				<< vm_.tag());
 		}
 
 		void websocket_session::ws_send_json(cyng::context& ctx)

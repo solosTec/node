@@ -99,6 +99,8 @@ namespace node
 
 	void session::cleanup(cyng::context& ctx)
 	{
+		BOOST_ASSERT(this->vm_.tag() == ctx.tag());
+
 		//	 [session.cleanup,[<!259:session>,asio.misc:2]]
 		const cyng::vector_t frame = ctx.get_frame();
 		ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", frame));
@@ -107,15 +109,16 @@ namespace node
 		//	remove affected targets
 		//
 		db_.access([&](cyng::store::table* tbl_target)->void {
-			const auto count = cyng::erase(tbl_target, get_targets_by_peer(tbl_target, this->hash()), ctx.tag());
+			const auto count = cyng::erase(tbl_target, get_targets_by_peer(tbl_target, ctx.tag()), ctx.tag());
 			ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", count, "targets"));
 		}, cyng::store::write_access("*Target"));
 
 		//
-		//	remove affected channels
+		//	remove affected channels.
+		//	Channels are 2-way: There is an owner session and a target session. Both could be different.
 		//
 		db_.access([&](cyng::store::table* tbl_channel)->void {
-			const auto count = cyng::erase(tbl_channel, get_channels_by_peer(tbl_channel, this->hash()), ctx.tag());
+			const auto count = cyng::erase(tbl_channel, get_channels_by_peer(tbl_channel, ctx.tag()), ctx.tag());
 			ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", count, "channels"));
 		}, cyng::store::write_access("*Channel"));
 
@@ -433,7 +436,7 @@ namespace node
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] remote client tag
-			boost::uuids::uuid,		//	[1] peer tag
+			boost::uuids::uuid,		//	[1] remote peer tag
 			std::uint64_t,			//	[2] sequence number
 			std::string,			//	[3] target name
 			std::string,			//	[4] device name
@@ -453,7 +456,8 @@ namespace node
 			, std::get<6>(tpl)
 			, std::get<7>(tpl)
 			, std::get<8>(tpl)
-			, std::get<9>(tpl)));
+			, std::get<9>(tpl)
+			, ctx.tag()));
 	}
 
 	void session::client_req_close_push_channel(cyng::context& ctx)
@@ -488,8 +492,8 @@ namespace node
 	{
 		//	[4e5dc7e8-37e7-4267-a3b6-d68a9425816f,76fbb814-3e74-419b-8d43-2b7b59dab7f1,67,data.sink.2,%(("pSize":65535),("seq":2),("tp-layer":ipt),("wSize":1))]
 		//
-		//	* client tag
-		//	* peer
+		//	* remote client tag
+		//	* remote peer
 		//	* bus sequence
 		//	* target
 		//	* bag
@@ -509,7 +513,8 @@ namespace node
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
-			, std::get<4>(tpl)));
+			, std::get<4>(tpl)
+			, ctx.tag()));
 
 	}
 
