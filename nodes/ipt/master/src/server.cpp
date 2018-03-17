@@ -9,6 +9,7 @@
 #include "server.h"
 #include "connection.h"
 #include <smf/ipt/scramble_key_io.hpp>
+#include <smf/cluster/generator.h>
 #include <cyng/vm/generator.h>
 #include <cyng/dom/reader.h>
 #include <cyng/object_cast.hpp>
@@ -185,6 +186,7 @@ namespace node
 			}
 		}
 
+		//	"server.close.connection"
 		void server::close_connection(cyng::context& ctx)
 		{
 			//	[6ac8cc52-18ed-43f5-a86c-ef948f0d960f,system:10054]
@@ -192,6 +194,7 @@ namespace node
 			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 			if (client_map_.erase(tag) != 0)
 			{
+				bus_->vm_.run(client_req_close(tag, 0));
 				bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", "server.close.connection", frame));
 			}
 			else
