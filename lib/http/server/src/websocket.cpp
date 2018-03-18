@@ -175,19 +175,19 @@ namespace node
 				/// A close frame was received
 			case boost::beast::websocket::frame_type::close:
 // 				CYNG_LOG_TRACE(logger_, "ws::close - " << payload);
-                vm_.async_run(cyng::generate_invoke("log.msg.trace", "ws::close"));
+                vm_.run(cyng::generate_invoke("log.msg.trace", "ws::close"));
 				break;
 
 				/// A ping frame was received
 			case boost::beast::websocket::frame_type::ping:
 // 				CYNG_LOG_TRACE(logger_, "ws::ping - " << payload);
-                vm_.async_run(cyng::generate_invoke("log.msg.trace", "ws::ping"));
+                vm_.run(cyng::generate_invoke("log.msg.trace", "ws::ping"));
 				break;
 
 				/// A pong frame was received
 			case boost::beast::websocket::frame_type::pong:
 // 				CYNG_LOG_TRACE(logger_, "ws::pong - " << payload);
-                vm_.async_run(cyng::generate_invoke("log.msg.trace", "ws::pong"));
+                vm_.run(cyng::generate_invoke("log.msg.trace", "ws::pong"));
 				break;
 
 			default:
