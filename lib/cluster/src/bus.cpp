@@ -14,6 +14,7 @@
 #include <cyng/io/hex_dump.hpp>
 #endif
 #include <boost/uuid/nil_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node
 {
@@ -119,7 +120,7 @@ namespace node
 		{
 			if (!ec)
 			{
-				CYNG_LOG_TRACE(logger_, bytes_transferred << " bytes read");
+				CYNG_LOG_TRACE(logger_, "cluster bus " << vm_.tag() << " received " << bytes_transferred << " bytes");
 #ifdef SMF_IO_DEBUG
 				cyng::io::hex_dump hd;
 				std::stringstream ss;
@@ -131,7 +132,7 @@ namespace node
 			}
 			else
 			{
-				CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.message() << '>');
+				CYNG_LOG_WARNING(logger_, "cluster read <" << ec << ':' << ec.message() << '>');
 				state_ = STATE_ERROR_;
 				remote_tag_ = boost::uuids::nil_uuid();
 				remote_version_ = cyng::version(0, 0);

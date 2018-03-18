@@ -41,8 +41,8 @@ namespace node
 			, watchdog_(watchdog)
 			, timeout_(timeout)
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
-				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+				CYNG_LOG_INFO(logger_, prg.size() << " ipt instructions received");
+				CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
 				vm_.run(std::move(prg));
 			}, sk)
 			, task_db_()

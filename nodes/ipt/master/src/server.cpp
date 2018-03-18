@@ -170,6 +170,8 @@ namespace node
 
 		void server::insert_connection(cyng::context& ctx)
 		{
+			BOOST_ASSERT(bus_->vm_.tag() == ctx.tag());
+
 			//	[a95f46e9-eccd-4b47-b02c-17d5172218af,<!260:ipt::connection>]
 			const cyng::vector_t frame = ctx.get_frame();
 
@@ -177,29 +179,31 @@ namespace node
 			auto r = client_map_.emplace(tag, frame.at(1));
 			if (r.second)
 			{
-				bus_->vm_.async_run(cyng::generate_invoke("log.msg.trace", "server.insert.connection", frame));
+				ctx.attach(cyng::generate_invoke("log.msg.trace", "server.insert.connection", frame));
 				const_cast<connection*>(cyng::object_cast<connection>((*r.first).second))->start();
 			}
 			else
 			{
-				bus_->vm_.async_run(cyng::generate_invoke("log.msg.error", "server.insert.connection - failed", frame));
+				ctx.attach(cyng::generate_invoke("log.msg.error", "server.insert.connection - failed", frame));
 			}
 		}
 
 		//	"server.close.connection"
 		void server::close_connection(cyng::context& ctx)
 		{
+			BOOST_ASSERT(bus_->vm_.tag() == ctx.tag());
+
 			//	[6ac8cc52-18ed-43f5-a86c-ef948f0d960f,system:10054]
 			const cyng::vector_t frame = ctx.get_frame();
 			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 			if (client_map_.erase(tag) != 0)
 			{
-				bus_->vm_.run(client_req_close(tag, 0));
-				bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", "server.close.connection", frame));
+				ctx.attach(client_req_close(tag, 0));
+				ctx.attach(cyng::generate_invoke("log.msg.info", "server.close.connection", frame));
 			}
 			else
 			{
-				bus_->vm_.async_run(cyng::generate_invoke("log.msg.error", "server.close.connection - failed", frame));
+				ctx.attach(cyng::generate_invoke("log.msg.error", "server.close.connection - failed", frame));
 			}
 		}
 
