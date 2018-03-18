@@ -85,6 +85,7 @@
                             <th scope="col" class="sml-col-ses-sx">sx</th>
                             <th scope="col" class="sml-col-ses-px">px</th>
                             <th scope="col" class="sml-col-ses-login">Login</th>
+                            <th scope="col" class="sml-col-ses-last">Last Seen</th>
                         </tr>
                     </thead>
                 </table>
@@ -138,7 +139,8 @@
                 { targets: 'sml-col-ses-rx', visible: true, name: 'ses-rx', className: 'text-right', render: renderBytes },
                 { targets: 'sml-col-ses-sx', visible: true, name: 'ses-sx', className: 'text-right', render: renderBytes },
                 { targets: 'sml-col-ses-px', visible: true, name: 'ses-px', className: 'text-right', render: renderBytes },
-                { targets: 'sml-col-ses-login', visible: true, name: 'ses-login', render: renderDate }
+                { targets: 'sml-col-ses-login', visible: true, name: 'ses-login', render: renderDate },
+                { targets: 'sml-col-ses-last', visible: true, name: 'ses-last', render: renderDate }
             ]
         };
 
@@ -178,7 +180,8 @@
                         var name = $('<div/>').text(obj.rec.data.name).html();
                         var layer = $('<div/>').text(obj.rec.data.layer).html();
                         var login = new Date(obj.rec.data.loginTime);
-                        var rowNode = table_ses.row.add([obj.rec.key.tag, name, obj.rec.data.source, layer, obj.rec.data.rx, obj.rec.data.sx, obj.rec.data.px, login]).draw().node();
+                        var last = new Date();
+                        var rowNode = table_ses.row.add([obj.rec.key.tag, name, obj.rec.data.source, layer, obj.rec.data.rx, obj.rec.data.sx, obj.rec.data.px, login, last]).draw().node();
                     }
                     else if (obj.cmd == 'delete') {
                         table_ses.row(function (idx, data, node) {
@@ -202,6 +205,7 @@
                                 else if (obj.value.px != null) {
                                     d[6] = obj.value.px;
                                 }
+                                d[8] = new Date();
                                 r.data(d);
                                 return true;    //  record found
                             }

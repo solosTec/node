@@ -44,6 +44,8 @@ namespace node
 			//	connection management
 			//
 			bus_->vm_.run(cyng::register_function("push.connection", 1, std::bind(&server::push_connection, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("push.ep.local", 1, std::bind(&server::push_ep_local, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("push.ep.remote", 1, std::bind(&server::push_ep_remote, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("server.insert.connection", 2, std::bind(&server::insert_connection, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1)));
 
@@ -209,19 +211,70 @@ namespace node
 			auto pos = client_map_.find(tag);
 			if (pos != client_map_.end())
 			{
-				CYNG_LOG_TRACE(logger_, "push connection "
+				CYNG_LOG_TRACE(logger_, "push.connection "
 					<< tag
 					<< " on stack");
 				ctx.push(pos->second);
 			}
 			else
 			{
-				CYNG_LOG_FATAL(logger_, "push connection "
+				CYNG_LOG_FATAL(logger_, "push.connection "
 					<< tag
 					<< " not found");
 				ctx.push(cyng::make_object());
 			}
 		}
+
+		void server::push_ep_local(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+			auto pos = client_map_.find(tag);
+			if (pos != client_map_.end())
+			{
+				auto ep = const_cast<connection*>(cyng::object_cast<connection>(pos->second))->socket_.local_endpoint();
+				CYNG_LOG_TRACE(logger_, "push.ep.local "
+					<< tag
+					<< ": "
+					<< ep
+					<< " on stack");
+
+				ctx.push(cyng::make_object(ep));
+			}
+			else
+			{
+				CYNG_LOG_FATAL(logger_, "push.ep.local "
+					<< tag
+					<< " not found");
+				ctx.push(cyng::make_object());
+			}
+		}
+
+		void server::push_ep_remote(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+			auto pos = client_map_.find(tag);
+			if (pos != client_map_.end())
+			{
+				auto ep = const_cast<connection*>(cyng::object_cast<connection>(pos->second))->socket_.remote_endpoint();
+				CYNG_LOG_TRACE(logger_, "push.ep.remote "
+					<< tag
+					<< ": "
+					<< ep
+					<< " on stack");
+
+				ctx.push(cyng::make_object(ep));
+			}
+			else
+			{
+				CYNG_LOG_FATAL(logger_, "push.ep.remote "
+					<< tag
+					<< " not found");
+				ctx.push(cyng::make_object());
+			}
+		}
+
 
 		void server::client_res_login(cyng::context& ctx)
 		{

@@ -69,6 +69,8 @@ namespace node
 			 * create a reference of this object on stack.
 			 */
 			void push_connection(cyng::context& ctx);
+			void push_ep_local(cyng::context& ctx);
+			void push_ep_remote(cyng::context& ctx);
 
 		private:
 			/*

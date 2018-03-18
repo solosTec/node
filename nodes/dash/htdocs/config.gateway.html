@@ -6,12 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="SWF dashboard">
     <meta name="author" content="solos::Tec">
-    <title>smf :: home</title>
+    <title>smf :: config gateways</title>
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
-    <!-- Custom styles for this template -->
-    <!--<link href="dashboard.css" rel="stylesheet">-->
+    <style>
+        table.dataTable tbody > tr > td {
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
@@ -54,7 +58,7 @@
                     </div>
                 </li>
             </ul>
-            <span id="ws-activity-symbol"><svg height="44" width="20"><circle cx="10" cy="25" r="6" stroke="red" stroke-width="0" fill="yellow" /></svg></span>
+            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey" /></svg></span>
             <span id="ws-activity-text" class="navbar-text">
                 connection state
             </span>
@@ -63,25 +67,13 @@
     </nav>
     <div class="jumbotron jumbotron-fluid">
         <div class="container">
-            <h1 class="display-4">Your SMF dashboard</h1>
-            <hr class="my-4">
-            <p class="lead">Start managing your SMF framework</p>
-        </div>
-    </div>
-    <div class="container-fluid">
-        <h1>Config Gateways</h1>
-        <div class="row">
+            <h1 class="display-4">Gateway Management</h1>
         </div>
     </div>
 
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
     <script type="text/javascript" src="popper.min.js"></script>
-    <!-- Icons -->
-    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
-    <script>
-        feather.replace()
-    </script>
 
 </body>
 </html>
