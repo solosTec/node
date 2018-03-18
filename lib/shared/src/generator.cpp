@@ -214,14 +214,14 @@ namespace node
 			;
 	}
 
-	cyng::vector_t bus_close_client(boost::uuids::uuid tag)
-	{
-		cyng::vector_t prg;
-		return prg << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("server.close.connection", tag))
-			<< cyng::generate_invoke_unwinded("stream.flush")
-			;
-	}
+	//cyng::vector_t bus_close_client(boost::uuids::uuid tag)
+	//{
+	//	cyng::vector_t prg;
+	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
+	//		, cyng::generate_invoke_remote_unwinded("server.close.connection", tag))
+	//		<< cyng::generate_invoke_unwinded("stream.flush")
+	//		;
+	//}
 
 
 	cyng::vector_t client_req_login(boost::uuids::uuid tag
@@ -258,6 +258,15 @@ namespace node
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
 			, cyng::generate_invoke_remote_unwinded("client.req.close", tag, cyng::code::IDENT, cyng::invoke("bus.seq.next"), value))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t client_res_close(boost::uuids::uuid tag, std::uint64_t seq)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("client.res.close", tag, cyng::code::IDENT, seq))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}

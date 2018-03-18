@@ -396,7 +396,7 @@ namespace node
 		//
 		//	* remote client tag
 		//	* remote peer tag
-		//	* sequence number (should be continually incremented)
+		//	* sequence number (should be continuously incremented)
 		//	* error code value
 		//
 		const cyng::vector_t frame = ctx.get_frame();
@@ -464,8 +464,8 @@ namespace node
 	{
 		//	[b7fcf460-84e4-493e-910e-2f9736774351,fbda6a25-d406-4d22-aca0-0ba3a8cd589a,682,2fd6e208,%(("seq":d7),("tp-layer":ipt))]
 		//
-		//	* session tag
-		//	* peer
+		//	* remote session tag
+		//	* remote peer
 		//	* cluster sequence
 		//	* channel
 		//	* bag

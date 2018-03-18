@@ -113,7 +113,7 @@ namespace node
 	/**
 	 * Node has to close specified client
 	 */
-	cyng::vector_t bus_close_client(boost::uuids::uuid);
+	//cyng::vector_t bus_close_client(boost::uuids::uuid);
 
 
 	/**
@@ -134,6 +134,7 @@ namespace node
 		, cyng::param_map_t const& bag);
 
 	cyng::vector_t client_req_close(boost::uuids::uuid tag, int);
+	cyng::vector_t client_res_close(boost::uuids::uuid tag, std::uint64_t seq);
 
 	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
 		, std::string const& target

@@ -78,8 +78,7 @@ namespace node
 				else
 				{
 					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
-					//session_.bus_->vm_.run(client_req_close(tag_, ec.value()));
-					session_.bus_->vm_.run(cyng::generate_invoke("server.close.connection", tag_, cyng::invoke("push.connection"), ec));
+					session_.bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", tag_, cyng::invoke("push.connection"), ec));
 				}
 			});
 		}

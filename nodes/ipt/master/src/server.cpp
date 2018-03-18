@@ -45,12 +45,14 @@ namespace node
 			//
 			bus_->vm_.run(cyng::register_function("push.connection", 1, std::bind(&server::push_connection, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("server.insert.connection", 2, std::bind(&server::insert_connection, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("server.close.connection", 1, std::bind(&server::close_connection, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1)));
 
 			//
 			//	client responses
 			//
 			bus_->vm_.run(cyng::register_function("client.res.login", 7, std::bind(&server::client_res_login, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("client.res.close", 3, std::bind(&server::client_res_close_impl, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("client.req.close", 4, std::bind(&server::client_req_close_impl, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.open.connection", 6, std::bind(&server::client_res_open_connection, this, std::placeholders::_1)));
@@ -196,15 +198,8 @@ namespace node
 			//	[6ac8cc52-18ed-43f5-a86c-ef948f0d960f,system:10054]
 			const cyng::vector_t frame = ctx.get_frame();
 			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-			if (client_map_.erase(tag) != 0)
-			{
-				ctx.attach(client_req_close(tag, 0));
-				ctx.attach(cyng::generate_invoke("log.msg.info", "server.close.connection", frame));
-			}
-			else
-			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "server.close.connection - failed", frame));
-			}
+			auto ec = cyng::value_cast(frame.at(1), boost::system::error_code());
+			ctx.attach(client_req_close(tag, ec.value()));
 		}
 
 		void server::push_connection(cyng::context& ctx)
@@ -242,6 +237,59 @@ namespace node
 			//	* bag
 			//	
 			propagate("client.res.login", ctx.get_frame());
+		}
+
+		void server::client_res_close_impl(cyng::context& ctx)
+		{
+			//	[9f6585e8-c7c6-4f93-9b99-e21986dec2bb,3ed440a2-958f-4863-9f86-ff8b1a0dc2f1,19]
+			//
+			//	* client tag
+			//	* peer
+			//	* sequence
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+			ctx.attach(cyng::generate_invoke("log.msg.info", "client.res.close", frame));
+
+			const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+			if (client_map_.erase(tag) != 0)
+			{
+				CYNG_LOG_INFO(logger_, "connection "
+					<< tag
+					<< " removed from session pool");
+			}
+			else
+			{
+				ctx.attach(cyng::generate_invoke("log.msg.error", "client.res.close - failed", frame));
+			}
+		}
+
+		void server::client_req_close_impl(cyng::context& ctx)
+		{
+			//
+			//	Master requests to close a specific session. Typical reason is a login with an account
+			//	that is already online. In supersede mode the running session will be canceled in favor  
+			//	the new session.
+			//
+
+			//	[1d166271-ca0b-4875-93a3-0cec92dbe34d,ef013e5f-50b0-4afe-ae7b-4a2f1c83f287,1,0]
+			//
+			//	* client tag
+			//	* peer
+			//	* sequence
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+			ctx.attach(cyng::generate_invoke("log.msg.info", "client.req.close", frame));
+			const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+			auto pos = client_map_.find(tag);
+			if (pos != client_map_.end())
+			{
+				ctx.attach(cyng::generate_invoke("log.msg.trace", "client.req.close", frame));
+				const_cast<connection*>(cyng::object_cast<connection>(pos->second))->stop();
+			}
+			else
+			{
+				ctx.attach(cyng::generate_invoke("log.msg.error", "client.req.close - failed", frame));
+			}
 		}
 
 		void server::propagate(std::string fun, cyng::vector_t&& msg)

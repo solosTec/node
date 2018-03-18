@@ -264,11 +264,19 @@ namespace node
 				//
 				online = true;
 				const auto rec_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
-				prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning", account, rec_tag, "already online"));
 
 				if (connection_superseed_)
 				{
-					prg << cyng::unwinder(bus_close_client(rec_tag));
+					//
+					//	ToDo: probably not the same peer!
+					//
+					prg << cyng::unwinder(client_req_close(rec_tag, 0));
+					prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning", account, rec_tag, "will be superseded"));
+				}
+				else
+				{
+					prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning", account, rec_tag, "already online"));
+
 				}
 			}
 
@@ -343,6 +351,12 @@ namespace node
 		}	, cyng::store::write_access("*Session")
 			, cyng::store::write_access("*Target"));
 
+		//
+		//	send a response
+		//
+		prg
+			<< cyng::unwinder(client_res_close(tag
+				, seq));
 		return prg;
 	}
 
