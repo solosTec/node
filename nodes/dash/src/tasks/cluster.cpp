@@ -129,6 +129,7 @@ namespace node
 		snyc_table("TMeter");
 		snyc_table("*Session");
 		snyc_table("*Target");
+		snyc_table("*Cluster");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -543,6 +544,10 @@ namespace node
 			{
 				subscribe_targets(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
+			else if (boost::algorithm::starts_with(channel, "status.cluster"))
+			{
+				subscribe_cluster(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+			}
 			else if (boost::algorithm::starts_with(channel, "table.device.count"))
 			{
 				subscribe_table_device_count(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
@@ -800,6 +805,32 @@ namespace node
 		}, cyng::store::read_access("*Target"));
 	}
 
+	void cluster::subscribe_cluster(std::string const& channel, boost::uuids::uuid tag)
+	{
+		server_.add_channel(tag, channel);
+
+		//
+		//	send initial data set of cluster table
+		//
+		cache_.access([&](cyng::store::table const* tbl) {
+			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+				CYNG_LOG_TRACE(logger_, "ws.read - insert node " << cyng::io::to_str(rec.key()));
+
+				server_.run_on_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+					cyng::param_factory("cmd", std::string("insert")),
+					cyng::param_factory("channel", channel),
+					cyng::param_factory("rec", rec.convert()))));
+
+				//	continue
+				return true;
+			});
+			BOOST_ASSERT(counter == 0);
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
+
+		}, cyng::store::read_access("*Cluster"));
+	}
+
 	void cluster::subscribe_table_device_count(std::string const& channel, boost::uuids::uuid tag)
 	{
 		server_.add_channel(tag, channel);
@@ -890,6 +921,15 @@ namespace node
 
 			update_channel("table.target.count", tbl->size());
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Cluster"))
+		{
+			server_.process_event("status.cluster", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("insert")),
+				cyng::param_factory("channel", "status.cluster"),
+				cyng::param_factory("rec", rec.convert()))));
+
+			update_channel("table.cluster.count", tbl->size());
+		}
 		else
 		{
 			CYNG_LOG_WARNING(logger_, "sig.ins - unknown table "
@@ -936,6 +976,15 @@ namespace node
 				cyng::param_factory("key", key))));
 
 			update_channel("table.target.count", tbl->size());
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Cluster"))
+		{
+			server_.process_event("status.cluster", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("delete")),
+				cyng::param_factory("channel", "status.cluster"),
+				cyng::param_factory("key", key))));
+
+			update_channel("table.cluster.count", tbl->size());
 		}
 		else
 		{
@@ -988,6 +1037,14 @@ namespace node
 			server_.process_event("status.target", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
 				cyng::param_factory("cmd", std::string("modify")),
 				cyng::param_factory("channel", "status.target"),
+				cyng::param_factory("key", key),
+				cyng::param_factory("value", pm))));
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Cluster"))
+		{
+			server_.process_event("status.cluster", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("modify")),
+				cyng::param_factory("channel", "status.cluster"),
 				cyng::param_factory("key", key),
 				cyng::param_factory("value", pm))));
 		}
@@ -1086,6 +1143,19 @@ namespace node
 			CYNG_LOG_FATAL(logger_, "cannot create table *Target");
 		}
 
+		if (!cache_.create_table(cyng::table::make_meta_table<1, 5>("*Cluster", { "tag"	//	client session - primary key [uuid]
+			, "class"
+			, "loginTime"	//	last login time
+			, "version"
+			, "clients"	//	client counter
+			, "ping"	//	ping time
+			},
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_VERSION, cyng::TC_UINT64, cyng::TC_MICRO_SECOND },
+			{ 36, 0, 32, 0, 0, 0 })))
+		{
+			CYNG_LOG_FATAL(logger_, "cannot create table *Cluster");
+		}
+
 	}
 
 	void cluster::subscribe_cache()
@@ -1111,6 +1181,11 @@ namespace node
 			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 		cache_.get_listener("*Target"
+			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		cache_.get_listener("*Cluster"
 			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
 			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)

@@ -41,13 +41,10 @@ namespace node
 				<< prg.size()
 				<< " instructions");
 
-			//CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
-			//std::cerr << cyng::io::to_str(prg) << std::endl;
-
 			//
 			//	execute programm
 			//
-			vm_.async_run(std::move(prg));
+			vm_.run(std::move(prg));
 
 		}, false)
 		, db_(db)
@@ -55,14 +52,18 @@ namespace node
 		, exporter_(channel, source, target)
 	{
 		init();
-		vm_.async_run(cyng::generate_invoke("log.msg.info", "DB processor", channel, source, target));
+		CYNG_LOG_INFO(logger_, "DB processor "
+			<< channel
+			<< ':'
+			<< source
+			<< ':'
+			<< target
+			<< " is running");
 	}
 
 	void db_processor::init()
 	{
-		cyng::register_logger(logger_, vm_);
-		vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"))
-			.run(cyng::register_function("sml.msg", 1, std::bind(&db_processor::sml_msg, this, std::placeholders::_1)))
+		vm_.run(cyng::register_function("sml.msg", 1, std::bind(&db_processor::sml_msg, this, std::placeholders::_1)))
 			.run(cyng::register_function("sml.eom", 1, std::bind(&db_processor::sml_eom, this, std::placeholders::_1)))
 			.run(cyng::register_function("db.insert.meta", 1, std::bind(&db_processor::insert_meta_data, this, std::placeholders::_1)));
 	}

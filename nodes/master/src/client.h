@@ -50,10 +50,11 @@ namespace node
 			cyng::param_map_t const&,		//	[6] bag)
 			cyng::object session);
 
-		cyng::vector_t req_close(boost::uuids::uuid,		//	[0] remote client tag
-			boost::uuids::uuid,		//	[1] peer tag
-			std::uint64_t,			//	[2] sequence number
-			int);
+		cyng::vector_t req_close(boost::uuids::uuid		//	[0] remote client tag
+			, boost::uuids::uuid	//	[1] peer tag
+			, std::uint64_t			//	[2] sequence number
+			, int
+			, boost::uuids::uuid self);
 
 		cyng::vector_t req_open_connection(boost::uuids::uuid,		//	[0] remote client tag
 			boost::uuids::uuid,		//	[1] peer tag
@@ -121,6 +122,8 @@ namespace node
 
 		bool check_online_state(cyng::vector_t&, cyng::store::table*, std::string const&);
 		std::tuple<bool, bool, boost::uuids::uuid, std::uint32_t> test_credential(cyng::vector_t&, const cyng::store::table*, std::string const&, std::string const&);
+
+		cyng::table::key_list_t get_clients_by_peer(const cyng::store::table* tbl_session, boost::uuids::uuid);
 
 	private:
 		cyng::async::mux& mux_;

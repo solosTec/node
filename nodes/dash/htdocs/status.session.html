@@ -105,6 +105,12 @@
             }
             return data;
         };
+        var renderUTC = function (data, type, full, meta) {
+            if (type == "display") {
+                return ('00' + data.getUTCHours()).slice(-2) + ":" + ('00' + data.getUTCMinutes()).slice(-2) + ":" + ('00' + data.getUTCSeconds()).slice(-2);
+            }
+            return data;
+        };
         var renderBytes = function (data, type, full, meta) {
             if (type == "display") {
                 return format_bytes(data);
@@ -140,7 +146,7 @@
                 { targets: 'sml-col-ses-sx', visible: true, name: 'ses-sx', className: 'text-right', render: renderBytes },
                 { targets: 'sml-col-ses-px', visible: true, name: 'ses-px', className: 'text-right', render: renderBytes },
                 { targets: 'sml-col-ses-login', visible: true, name: 'ses-login', render: renderDate },
-                { targets: 'sml-col-ses-last', visible: true, name: 'ses-last', render: renderDate }
+                { targets: 'sml-col-ses-last', visible: true, name: 'ses-last', render: renderUTC }
             ]
         };
 

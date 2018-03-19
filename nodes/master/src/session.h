@@ -96,6 +96,9 @@ namespace node
 		 */
 		cyng::parser 	parser_;
 
+		/**
+		 * cluster bus sequence
+		 */
 		std::uint64_t seq_;
 
 		/**

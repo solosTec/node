@@ -189,11 +189,24 @@ namespace node
 			},
 			{	
 				cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, 
-				cyng::TC_UUID, cyng::traits::PREDEF_SESSION, cyng::TC_UUID, cyng::TC_UINT16, cyng::TC_UINT32,cyng::TC_UINT64
+				cyng::TC_UUID, cyng::traits::PREDEF_SESSION, cyng::TC_UUID, cyng::TC_UINT16, cyng::TC_UINT32, cyng::TC_UINT64
 			},
 			{ 0, 0, 0, 0, 0, 0, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table *Channel");
+		}
+
+		if (!db.create_table(cyng::table::make_meta_table<1, 5>("*Cluster", { "tag"	//	client session - primary key [uuid]
+			, "class"
+			, "loginTime"	//	last login time
+			, "version"
+			, "clients"	//	client counter
+			, "ping"	//	ping time
+			},
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_VERSION, cyng::TC_UINT64, cyng::TC_MICRO_SECOND },
+			{ 36, 0, 32, 0, 0, 0 })))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table *Cluster");
 		}
 
 	}

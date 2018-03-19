@@ -63,7 +63,7 @@
         <div class="container">
             <h1 class="display-4">Your SMF dashboard</h1>
             <hr class="my-4">
-            <p class="lead">Start managing your SMF framework</p>
+            <p class="lead">Start managing your Smart Metering Framework</p>
         </div>
     </div>
     <div class="container-fluid">
@@ -159,6 +159,7 @@
 
             connection.onopen = function () {
                 $('#ws-activity-text').html('connected with ' + location.host);
+                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
                 //  subscribe system status
                 connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.device.count", push: true }));
                 connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.gateway.count", push: true }));

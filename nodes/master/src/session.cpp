@@ -66,6 +66,9 @@ namespace node
 			ctx.push(cyng::make_object(this->seq_));
 		}));
 
+		//
+		//	session shutdown - initiated by connection
+		//
 		vm_.run(cyng::register_function("session.cleanup", 2, std::bind(&session::cleanup, this, std::placeholders::_1)));
 
 		//
@@ -160,15 +163,41 @@ namespace node
 			cyng::erase(tbl_session, pks, ctx.tag());
 
 		}, cyng::store::write_access("*Session"));
+
+		//
+		//	remove from cluster table
+		//
+		db_.erase("*Cluster", cyng::table::key_generator(ctx.tag()), ctx.tag());
 	}
 
 	void session::bus_req_login(cyng::context& ctx)
 	{
-		//	[-1:00:0.000000,2018-01-08 01:41:18.88740470,setup,0.2,23ec874e-74cf-45cf-8dcf-f3daf720b92f,root,kKU0j1UT]
 		const cyng::vector_t frame = ctx.get_frame();
 
-		const std::string account = cyng::value_cast<std::string>(frame.at(0), "");
-		const std::string pwd = cyng::value_cast<std::string>(frame.at(1), "");
+		//	[root,X0kUj59N,46ca0590-e852-417d-a1c7-54ed17d9148f,setup,0.2,-1:00:0.000000,2018-03-19 10:01:36.40087970,false]
+		//
+		//	* account
+		//	* password
+		//	* tag
+		//	* class
+		//	* version
+		//	* timezone delta
+		//	* timestamp
+		//
+
+		auto const tpl = cyng::tuple_cast<
+			std::string,			//	[0] account
+			std::string,			//	[1] password
+			boost::uuids::uuid,		//	[2] session tag
+			std::string,			//	[3] class
+			cyng::version,			//	[4] version
+			std::chrono::minutes,	//	[5] delta
+			std::chrono::system_clock::time_point,	//	[6] timestamp
+			bool					//	[7] autologin
+		>(frame);
+
+		const std::string account = std::get<0>(tpl);
+		const std::string pwd = std::get<1>(tpl);
 		if ((account == account_) && (pwd == pwd_))
 		{
 			CYNG_LOG_INFO(logger_, "cluster member successful authorized with " << cyng::io::to_str(frame));
@@ -189,6 +218,13 @@ namespace node
 			//
 			ctx.attach(reply(frame, true));
 
+			//
+			//	insert into cluster table
+			//
+			db_.insert("*Cluster"
+				, cyng::table::key_generator(ctx.tag())
+				, cyng::table::data_generator(std::get<3>(tpl), std::get<6>(tpl), std::get<4>(tpl), 0u, std::chrono::microseconds(1))
+				, 0, ctx.tag());
 		}
 		else
 		{
@@ -412,7 +448,8 @@ namespace node
 		ctx.attach(client_.req_close(std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
-			, std::get<3>(tpl)));
+			, std::get<3>(tpl)
+			, ctx.tag()));
 
 	}
 

@@ -56,7 +56,7 @@ namespace node
 		//
 		bool found{ false };
 		bool wrong_pwd{ false };
-		db_.access([&](const cyng::store::table* tbl_device, cyng::store::table* tbl_session)->void {
+		db_.access([&](const cyng::store::table* tbl_device, cyng::store::table* tbl_session, cyng::store::table* tbl_cluster)->void {
 
 			//
 			// check for running session(s) with the same name
@@ -102,6 +102,13 @@ namespace node
 
 						prg << cyng::unwinder(cyng::generate_invoke("log.msg.info", "[" + account + "] has session tag", tag));
 
+						//
+						//	update cluster table
+						//
+						auto tag_cluster = cyng::object_cast<session>(self)->vm_.tag();
+						auto key_cluster = cyng::table::key_generator(tag_cluster);
+						auto list = get_clients_by_peer(tbl_session, tag_cluster);
+						tbl_cluster->modify(key_cluster, cyng::param_factory("clients", static_cast<std::uint64_t>(list.size())), tag);
 					}
 					else
 					{
@@ -135,7 +142,8 @@ namespace node
 			}
 
 		}	, cyng::store::read_access("TDevice")
-			, cyng::store::write_access("*Session"));
+			, cyng::store::write_access("*Session")
+			, cyng::store::write_access("*Cluster"));
 
 		if (!found)
 		{
@@ -287,17 +295,18 @@ namespace node
 		return online;
 	}
 
-	cyng::vector_t client::req_close(boost::uuids::uuid tag,
-		boost::uuids::uuid peer,
-		std::uint64_t seq,	
-		int code)
+	cyng::vector_t client::req_close(boost::uuids::uuid tag
+		, boost::uuids::uuid peer
+		, std::uint64_t seq
+		, int code
+		, boost::uuids::uuid self)
 	{
 		cyng::vector_t prg;
 
 		//
 		//	remove session record
 		//
-		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_target)->void {
+		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_target, cyng::store::table* tbl_cluster)->void {
 
 			//
 			//	generate tabley keys
@@ -338,6 +347,13 @@ namespace node
 					, tag
 					, rec["name"]
 					, "removed"));
+
+				//
+				//	update cluster table
+				//
+				auto list = get_clients_by_peer(tbl_session, self);
+				auto key_cluster = cyng::table::key_generator(self);
+				tbl_cluster->modify(key_cluster, cyng::param_factory("clients", static_cast<std::uint64_t>(list.size())), tag);
 			}
 			else
 			{
@@ -349,7 +365,8 @@ namespace node
 			}
 
 		}	, cyng::store::write_access("*Session")
-			, cyng::store::write_access("*Target"));
+			, cyng::store::write_access("*Target")
+			, cyng::store::write_access("*Cluster"));
 
 		//
 		//	send a response
@@ -1063,6 +1080,22 @@ namespace node
 		return prg;
 	}
 
+	cyng::table::key_list_t client::get_clients_by_peer(const cyng::store::table* tbl_session, boost::uuids::uuid tag)
+	{
+		cyng::table::key_list_t pks;
+		tbl_session->loop([&](cyng::table::record const& rec) -> bool {
+
+			if (tag == cyng::object_cast<session>(rec["local"])->vm_.tag())
+			{
+				pks.push_back(rec.key());
+			}
+
+			//	continue
+			return true;
+		});
+
+		return pks;
+	}
 
 	std::pair<cyng::table::key_list_t, std::uint16_t> collect_matching_targets(const cyng::store::table* tbl
 		, boost::uuids::uuid tag
@@ -1139,7 +1172,6 @@ namespace node
 		//
 		cyng::table::key_list_t pks;
 		tbl_target->loop([&](cyng::table::record const& rec) -> bool {
-			//const auto tag = cyng::value_cast(rec["peer"], boost::uuids::nil_uuid());
 			if (tag == cyng::value_cast(rec["peer"], boost::uuids::nil_uuid()))
 			{
 				pks.push_back(rec.key());
@@ -1170,6 +1202,8 @@ namespace node
 
 		return pks;
 	}
+
+
 
 }
 

@@ -10,8 +10,12 @@
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
-    <!-- Custom styles for this template -->
-    <!--<link href="dashboard.css" rel="stylesheet">-->
+    <style>
+        table.dataTable tbody > tr > td {
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
@@ -67,6 +71,7 @@
             <h1>System Status</h1>
         </div>
     </div>
+
     <div class="container-fluid">
         <div class="card-deck">
             <div class="card">
@@ -100,6 +105,23 @@
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="table-responsive col-md-12 p-4">
+                <h2>Cluster Nodes</h2>
+                <table id="smf-table-cluster" class="table table-condensed table-striped table-bordered" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="sml-col-cluster-pk">UUID</th>
+                            <th scope="col" class="sml-col-cluster-class">Class</th>
+                            <th scope="col" class="sml-col-cluster-version">Version</th>
+                            <th scope="col" class="sml-col-cluster-clients">Clients</th>
+                            <th scope="col" class="sml-col-cluster-login">Login</th>
+                            <th scope="col" class="sml-col-cluster-ping">Ping</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- JavaScript -->
@@ -108,13 +130,48 @@
 
     <script>
 
+        var renderDate = function (data, type, full, meta) {
+            if (type == "display") {
+                return data.toLocaleString();
+            }
+            return data;
+        };
+
         //  globals
         var connection;
         var sysTimer;
         var totalIO = 0;
+        var table_cluster;
+
+        var tbl_config = {
+            paging: true,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            pageLength: 25,
+            ordering: true,
+            info: true,
+            //scrollY: "100%",
+            autoWidth: false,
+            deferRender: false,
+            processing: true,
+            searching: true,
+            select: true,
+            //keys: true,  //  table navigation
+            //dom: '<"top"ilp>rt<"bottom"f><"clear">',
+            columnDefs: [
+                { targets: 'sml-col-cluster-pk', visible: false, name: 'cluster-pk' },
+                { targets: 'sml-col-cluster-class', visible: true, name: 'cluster-class' },
+                { targets: 'sml-col-cluster-version', visible: true, name: 'cluster-version', className: 'text-right' },
+                { targets: 'sml-col-cluster-clients', visible: true, name: 'cluster-clients', className: 'text-right' },
+                { targets: 'sml-col-cluster-login', visible: true, name: 'cluster-login', render: renderDate },
+                { targets: 'sml-col-cluster-ping', visible: true, name: 'cluster-ping' }
+            ]
+        };
 
         $(document).ready(function () {
             console.log('document ready');
+
+            table_cluster = $('#smf-table-cluster').DataTable(tbl_config);
+
             $('#ws-activity-text').html('connecting to ' + location.host + '...');
 
             //var connection = new WebSocket('ws://' + location.host + '/smf/api/system/v0.1');
@@ -124,6 +181,8 @@
                 $('#ws-activity-text').html('connected with ' + location.host);
                 //  subscribe system status
                 connection.send(JSON.stringify({ cmd: "update", channel: "sys.mem.virtual.total", push: false }));
+                //  subscribe cluster status
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "status.cluster", push: true }));
                 startSysTimer();
             };
 
@@ -158,6 +217,39 @@
                                 $('#ws-mem-virtual-total').html(format_bytes(obj.value));
                             }
                         }
+                    }
+                    else if (obj.cmd == 'insert') {
+                        if (obj.channel != null) {
+                            if (obj.channel == 'status.cluster') {
+                                var name = $('<div/>').text(obj.rec.data.class).html();
+                                var version = $('<div/>').text(obj.rec.data.version).html();
+                                var login = new Date(obj.rec.data.loginTime);
+                                var ping = $('<div/>').text(obj.rec.data.ping).html();
+                                var rowNode = table_cluster.row.add([obj.rec.key.tag, name, version, obj.rec.data.clients, login, ping]).draw().node();
+                            }
+                        }
+                    }
+                    else if (obj.cmd == 'delete') {
+                        table_cluster.row(function (idx, data, node) {
+                            if (data[0] == obj.key) {
+                                return true;
+                            }
+                            return false;
+                        }).remove().draw(false);
+                    }
+                    else if (obj.cmd == 'modify') {
+                        table_cluster.row(function (idx, data, node) {
+                            if (data[0] == obj.key) {
+                                var r = table_cluster.row(node);
+                                var d = r.data();
+                                if (obj.value.clients != null) {
+                                    d[3] = obj.value.clients;
+                                }
+                                r.data(d);
+                                return true;
+                            }
+                            return false;
+                        });
                     }
                 }
                 $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
