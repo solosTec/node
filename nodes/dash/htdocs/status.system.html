@@ -245,6 +245,16 @@
                                 if (obj.value.clients != null) {
                                     d[3] = obj.value.clients;
                                 }
+                                else if (obj.value.ping != null) {
+                                    var prev = d[5]
+                                    if (obj.value.ping < prev) {
+                                        $(node).css('color', 'green');
+                                    }
+                                    else {
+                                        $(node).css('color', 'red');
+                                    }
+                                    d[5] = obj.value.ping;
+                                }
                                 r.data(d);
                                 return true;
                             }

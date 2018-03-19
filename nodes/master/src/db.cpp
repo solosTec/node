@@ -208,6 +208,19 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table *Cluster");
 		}
+		else
+		{
+			db.insert("*Cluster"
+				, cyng::table::key_generator(tag)
+				, cyng::table::data_generator("master"
+					, std::chrono::system_clock::now()
+					, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)
+					, 0u	//	no clients yet
+					, std::chrono::microseconds(0))
+				, 1
+				, tag);
+
+		}
 
 	}
 

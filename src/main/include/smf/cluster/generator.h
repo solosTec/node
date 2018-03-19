@@ -91,6 +91,9 @@ namespace node
 
 	cyng::vector_t bus_db_clear(std::string const&);
 
+	cyng::vector_t bus_req_watchdog();
+	cyng::vector_t bus_res_watchdog(std::uint64_t seq, std::chrono::system_clock::time_point);
+
 	/**
 	 * Send an arbitrary function call to receiver, which will send it back.
 	 */
@@ -109,12 +112,6 @@ namespace node
 			;
 
 	}
-
-	/**
-	 * Node has to close specified client
-	 */
-	//cyng::vector_t bus_close_client(boost::uuids::uuid);
-
 
 	/**
 	 * client management

@@ -66,6 +66,8 @@ namespace node
 		acceptor_.listen();
 		
 		do_accept();
+
+
 	}
 	
 	void server::do_accept()
@@ -133,10 +135,14 @@ namespace node
 	
 	void server::close()
 	{
+		CYNG_LOG_INFO(logger_, "close acceptor");
+
 		// The server is stopped by cancelling all outstanding asynchronous
         // operations. Once all operations have finished the io_context::run()
         // call will exit.
         acceptor_.close();
+
+
 	}
 	
 

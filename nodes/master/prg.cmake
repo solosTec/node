@@ -37,6 +37,8 @@ set (node_master_info
 )
 
 set (node_master_tasks
+	nodes/master/src/tasks/watchdog.h
+	nodes/master/src/tasks/watchdog.cpp	
 )
 
 set (node_master_res

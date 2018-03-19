@@ -55,14 +55,13 @@ namespace node
 		, exporter_(endocing, root_name, channel, source, target)
 	{
 		init();
-		vm_.run(cyng::generate_invoke("log.msg.info", "XML processor", channel, source, target));
+		//vm_.run(cyng::generate_invoke("log.msg.info", "XML processor", channel, source, target));
 	}
 
 	void xml_processor::init()
 	{
-		cyng::register_logger(logger_, vm_);
-		vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"))
-			.run(cyng::register_function("sml.msg", 1, std::bind(&xml_processor::sml_msg, this, std::placeholders::_1)))
+		//cyng::register_logger(logger_, vm_);
+		vm_.run(cyng::register_function("sml.msg", 1, std::bind(&xml_processor::sml_msg, this, std::placeholders::_1)))
 			.run(cyng::register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1)));
 	}
 

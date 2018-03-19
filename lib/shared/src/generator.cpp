@@ -191,6 +191,24 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_req_watchdog()
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.req.watchdog", cyng::code::IDENT, cyng::invoke("bus.seq.next"), std::chrono::system_clock::now()))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_res_watchdog(std::uint64_t seq, std::chrono::system_clock::time_point tp)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.res.watchdog", cyng::code::IDENT, seq, tp))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
 	cyng::vector_t bus_res_db_modify(std::string const& table
 		, cyng::vector_t const& key
 		, cyng::attr_t const& attr

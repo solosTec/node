@@ -6,9 +6,11 @@
 */
 
 #include <smf/cluster/bus.h>
+#include <smf/cluster/generator.h>
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/asio_domain.h>
 #include <cyng/value_cast.hpp>
+#include <cyng/tuple_cast.hpp>
 #include <cyng/io/io_chrono.hpp>
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
@@ -97,7 +99,26 @@ namespace node
 
 		}));
 
+		vm_.run(cyng::register_function("bus.req.watchdog", 3, [this](cyng::context& ctx) {
+			const cyng::vector_t frame = ctx.get_frame();
+			//	[42dd5709-be73-45ae-98b3-35df10765015,5,2018-03-19 17:55:56.48749690]
+			//
+			//	* remote session
+			//	* remote time stamp
+			//	* sequence
+			//CYNG_LOG_INFO(logger_, "bus.req.watchdog " << cyng::io::to_str(frame));
 
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] session tag
+				std::uint64_t,			//	[1] sequence
+				std::chrono::system_clock::time_point	//	[2] timestamp
+			>(frame);
+
+			//
+			//	send watchdog response
+			//
+			ctx.attach(bus_res_watchdog(std::get<1>(tpl), std::get<2>(tpl)));
+		}));
 		
 	}
 

@@ -20,10 +20,12 @@ namespace node
 {
 	class connection;
 	class client;
+	class watchdog;
 	class session
 	{
 		friend class connection;
 		friend class client;
+		friend class watchdog;
 
 	public:
 		session(cyng::async::mux& mux
@@ -49,6 +51,8 @@ namespace node
 		void bus_req_login(cyng::context& ctx);
 		void bus_req_subscribe(cyng::context& ctx);
 		void bus_req_unsubscribe(cyng::context& ctx);
+		void bus_start_watchdog(cyng::context& ctx);
+		void res_watchdog(cyng::context& ctx);
 
 		void cleanup(cyng::context& ctx);
 
@@ -110,6 +114,9 @@ namespace node
 		 * table subscriptions
 		 */
 		cyng::store::subscriptions_t	subscriptions_;
+
+		std::size_t tsk_watchdog_;
+
 	};
 
 	cyng::object make_session(cyng::async::mux& mux

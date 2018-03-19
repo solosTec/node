@@ -8,6 +8,7 @@
 
 #include "session.h"
 #include "client.h"
+#include "tasks/watchdog.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
@@ -16,8 +17,10 @@
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/object_cast.hpp>
-#include <cyng/dom/reader.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/dom/reader.h>
+#include <cyng/async/task/task_builder.hpp>
+
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -51,6 +54,7 @@ namespace node
 		, seq_(0)
 		, client_(mux, logger, db, connection_auto_login, connection_auto_enabled, connection_superseed)
 		, subscriptions_()
+		, tsk_watchdog_(cyng::async::NO_TASK)
 	{
 		//
 		//	register logger domain
@@ -65,6 +69,8 @@ namespace node
 			++this->seq_;
 			ctx.push(cyng::make_object(this->seq_));
 		}));
+
+		vm_.run(cyng::register_function("bus.res.watchdog", 3, std::bind(&session::res_watchdog, this, std::placeholders::_1)));
 
 		//
 		//	session shutdown - initiated by connection
@@ -89,9 +95,6 @@ namespace node
 
 		vm_.run(cyng::register_function("client.update.attr", 6, std::bind(&session::client_update_attr, this, std::placeholders::_1)));
 
-		//
-		//	ToDo: start maintenance task
-		//
 	}
 
 
@@ -107,6 +110,16 @@ namespace node
 		//	 [session.cleanup,[<!259:session>,asio.misc:2]]
 		const cyng::vector_t frame = ctx.get_frame();
 		ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", frame));
+
+		//
+		//	stop watchdog task
+		//
+		if (tsk_watchdog_ != cyng::async::NO_TASK)
+		{
+			CYNG_LOG_INFO(logger_, "stop watchdog task #" << tsk_watchdog_);
+			mux_.stop(tsk_watchdog_);
+			tsk_watchdog_ = cyng::async::NO_TASK;
+		}
 
 		//
 		//	remove affected targets
@@ -212,6 +225,7 @@ namespace node
 			//
 			ctx.attach(cyng::register_function("bus.req.subscribe", 3, std::bind(&session::bus_req_subscribe, this, std::placeholders::_1)));
 			ctx.attach(cyng::register_function("bus.req.unsubscribe", 2, std::bind(&session::bus_req_unsubscribe, this, std::placeholders::_1)));
+			ctx.attach(cyng::register_function("bus.start.watchdog", 5, std::bind(&session::bus_start_watchdog, this, std::placeholders::_1)));
 
 			//
 			//	send reply
@@ -221,10 +235,9 @@ namespace node
 			//
 			//	insert into cluster table
 			//
-			db_.insert("*Cluster"
-				, cyng::table::key_generator(ctx.tag())
-				, cyng::table::data_generator(std::get<3>(tpl), std::get<6>(tpl), std::get<4>(tpl), 0u, std::chrono::microseconds(1))
-				, 0, ctx.tag());
+			std::chrono::microseconds ping = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - std::get<6>(tpl));
+			ctx.attach(cyng::generate_invoke("bus.start.watchdog"
+				, std::get<3>(tpl), std::get<6>(tpl), std::get<4>(tpl), ping, cyng::invoke("push.session")));
 		}
 		else
 		{
@@ -233,6 +246,62 @@ namespace node
 
 		}
 	}
+
+	void session::bus_start_watchdog(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, "bus.start.watchdog " << cyng::io::to_str(frame));
+
+		//	[setup,2018-03-19 16:10:29.12002940,0.2,00:00:0.052402,<!259:session>]
+		//
+		//	* class
+		//	* login
+		//	* version
+		//	* ping
+		//	* session object
+		
+		//
+		//	insert into cluster table
+		//
+		db_.insert("*Cluster"
+			, cyng::table::key_generator(ctx.tag())
+			, cyng::table::data_generator(frame.at(0), frame.at(1), frame.at(2), 0u, frame.at(3))
+			, 0, ctx.tag());
+
+		//
+		//	start watchdog task
+		//
+		tsk_watchdog_ = cyng::async::start_task_delayed<watchdog>(mux_, std::chrono::seconds(30)
+			, logger_
+			, db_
+			, frame.at(4)
+			, std::chrono::seconds(30)).first;
+
+	}
+
+	void session::res_watchdog(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		//CYNG_LOG_INFO(logger_, "bus.res.watchdog " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] session tag
+			std::uint64_t,			//	[1] sequence
+			std::chrono::system_clock::time_point	//	[2] timestamp
+		>(frame);
+
+		//
+		//	calculate ping time
+		//
+		auto ping = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - std::get<2>(tpl));
+		CYNG_LOG_INFO(logger_, "bus.res.watchdog - ping time " << ping.count() << " microsec");
+
+		db_.modify("*Cluster"
+			, cyng::table::key_generator(ctx.tag())
+			, cyng::param_factory("ping", ping)
+			, ctx.tag());
+	}
+
 
 	void session::bus_req_subscribe(cyng::context& ctx)
 	{
