@@ -94,7 +94,7 @@ namespace node
 		vm_.run(cyng::register_function("client.req.register.push.target", 5, std::bind(&session::client_req_register_push_target, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.open.connection", 6, std::bind(&session::client_req_open_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.res.open.connection", 4, std::bind(&session::client_res_open_connection, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.req.close.connection", 0, std::bind(&session::client_req_close_connection, this, std::placeholders::_1)));
+		vm_.run(cyng::register_function("client.req.close.connection", 4, std::bind(&session::client_req_close_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.transfer.pushdata", 6, std::bind(&session::client_req_transfer_pushdata, this, std::placeholders::_1)));
 
 		vm_.run(cyng::register_function("client.req.transmit.data", 5, std::bind(&session::client_req_transmit_data, this, std::placeholders::_1)));
@@ -757,9 +757,28 @@ namespace node
 
 	void session::client_req_close_connection(cyng::context& ctx)
 	{
+		//
+		//	* remote session tag
+		//	* remote peer
+		//	* cluster sequence
+		//	* bag
+		//
 		const cyng::vector_t frame = ctx.get_frame();
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] origin client tag
+			boost::uuids::uuid,		//	[1] peer tag
+			std::uint64_t,			//	[2] sequence number
+			cyng::param_map_t		//	[3] bag
+		>(frame);
+
 		ctx.run(cyng::generate_invoke("log.msg.info", "client.req.close.connection", frame));
 		ctx.run(cyng::generate_invoke("log.msg.error", "client.req.close.connection - not implemented yet", frame));
+
+		ctx.attach(client_.req_close_connection(std::get<0>(tpl)
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl));
 
 	}
 
@@ -812,11 +831,11 @@ namespace node
 			cyng::param_map_t		//	[3] bag
 		>(frame);
 
-		client_.req_transmit_data(std::get<0>(tpl)
+		ctx.attach(client_.req_transmit_data(std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
-			, frame.at(4));
+			, frame.at(4)));
 
 	}
 	

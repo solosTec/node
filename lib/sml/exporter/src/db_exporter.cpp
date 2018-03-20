@@ -68,12 +68,12 @@ namespace node
 			//
 			//	delayed output
 			//
-			ctx.attach(cyng::generate_invoke("log.msg.debug"
-				, "message #"
-				, idx
-				, source_
-				, channel_
-				, target_));
+			//ctx.attach(cyng::generate_invoke("log.msg.debug"
+			//	, "message #"
+			//	, idx
+			//	, source_
+			//	, channel_
+			//	, target_));
 
 			//
 			//	reset readout context

@@ -491,6 +491,22 @@ namespace node
 			;
 	}
 
+	cyng::vector_t client_req_close_connection_forward(boost::uuids::uuid tag
+		, cyng::param_map_t const& options
+		, cyng::param_map_t const& bag)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("client.req.close.connection.forward"
+				, tag
+				, cyng::code::IDENT
+				, cyng::invoke("bus.seq.next")
+				, options
+				, bag))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
 	cyng::vector_t client_req_transmit_data(boost::uuids::uuid tag
 		, cyng::param_map_t bag
 		, cyng::object const& data)

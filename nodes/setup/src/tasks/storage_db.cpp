@@ -282,7 +282,7 @@ namespace node
 				{
 					//	maybe database connection was closed
 					CYNG_LOG_FATAL(logger_, "sql prepare failed: " << sql);
-					CYNG_LOG_INFO(logger_, "test if datanase connection was closed");
+					CYNG_LOG_INFO(logger_, "test if database connection was closed");
 					//BOOST_ASSERT(r.second);
 				}
 				else

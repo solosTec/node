@@ -89,7 +89,7 @@ namespace node
 		const std::uint64_t line = (((std::uint64_t)channel) << 32) | ((std::uint64_t)source);
 
 		//
-		//	select/create a SML processor task
+		//	select/create a SML processor
 		//
 		const auto pos = lines_.find(line);
 		if (pos == lines_.end())
@@ -111,7 +111,17 @@ namespace node
 
 			if (res.second)
 			{
-				res.first->second.vm_.async_run(cyng::register_function("stop.writer", 1, std::bind(&storage_xml::stop_writer, this, std::placeholders::_1)));
+				//
+				//	This is a workaround for problems with nested strands
+				//
+				if (res.first->second.vm_.same_thread())
+				{
+					res.first->second.vm_.async_run(cyng::register_function("stop.writer", 1, std::bind(&storage_xml::stop_writer, this, std::placeholders::_1)));
+				}
+				else
+				{
+					res.first->second.vm_.run(cyng::register_function("stop.writer", 1, std::bind(&storage_xml::stop_writer, this, std::placeholders::_1)));
+				}
 				res.first->second.process(data);
 			}
 			else

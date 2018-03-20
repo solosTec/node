@@ -197,6 +197,10 @@ namespace node
 	cyng::vector_t client_req_close_connection(boost::uuids::uuid tag
 		, cyng::param_map_t const& bag);
 
+	cyng::vector_t client_req_close_connection_forward(boost::uuids::uuid tag
+		, cyng::param_map_t const& options
+		, cyng::param_map_t const& bag);
+
 	cyng::vector_t client_req_transmit_data(boost::uuids::uuid tag
 		, cyng::param_map_t bag
 		, cyng::object const& data);

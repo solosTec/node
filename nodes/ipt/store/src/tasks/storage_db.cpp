@@ -124,7 +124,14 @@ namespace node
 
 			if (res.second)
 			{
-				res.first->second.vm_.async_run(cyng::register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1)));
+				if (res.first->second.vm_.same_thread())
+				{
+					res.first->second.vm_.async_run(cyng::register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1)));
+				}
+				else
+				{
+					res.first->second.vm_.run(cyng::register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1)));
+				}
 				res.first->second.process(data);
 			}
 			else

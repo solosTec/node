@@ -393,8 +393,7 @@ namespace node
 		cyng::param_map_t options;
 		options["origin-tag"] = cyng::make_object(tag);	//	send response to this session
 		options["local-peer"] = cyng::make_object(peer);	//	and this peer
-
-		//
+															//
 		//	following actions
 		//
 		cyng::vector_t prg;
@@ -402,7 +401,7 @@ namespace node
 		bool success{ false };
 		db_.access([&](cyng::store::table const* tbl_device, cyng::store::table* tbl_session)->void {
 
-			//
+																//
 			//	search device with the given number
 			//
 			CYNG_LOG_INFO(logger_, "select number "
@@ -464,7 +463,7 @@ namespace node
 								CYNG_LOG_TRACE(logger_, "connection between "
 									<< tag
 									<< " and "
-									<< cyng::value_cast(rec["tag"], boost::uuids::nil_uuid())
+									<< remote_tag
 									<< " is local");
 
 								//
@@ -480,7 +479,7 @@ namespace node
 								CYNG_LOG_TRACE(logger_, "connection between "
 									<< tag
 									<< " and "
-									<< cyng::value_cast(rec["tag"], boost::uuids::nil_uuid())
+									<< remote_tag
 									<< " is distinct");
 
 								//
@@ -563,7 +562,7 @@ namespace node
 		db_.access([&](cyng::store::table* tbl_session)->void {
 
 			//
-			//	generate tabley keys
+			//	generate table keys
 			//
 			auto caller_tag = cyng::table::key_generator(tag);
 			auto callee_tag = cyng::table::key_generator(rtag);
@@ -641,12 +640,14 @@ namespace node
 		return prg;
 	}
 
-	void client::req_transmit_data(boost::uuids::uuid tag,
+	cyng::vector_t client::req_transmit_data(boost::uuids::uuid tag,
 		boost::uuids::uuid peer,
 		std::uint64_t seq,
 		cyng::param_map_t const& bag,
 		cyng::object data)
 	{
+		cyng::vector_t prg;
+
 		//
 		//	transmit data
 		//
@@ -680,20 +681,44 @@ namespace node
 			//
 			boost::uuids::uuid link = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
 
+			auto local_peer = cyng::object_cast<session>(rec["local"]);
 			auto remote_peer = cyng::object_cast<session>(rec["remote"]);
-			if (remote_peer)
-			{
-				CYNG_LOG_TRACE(logger_, "transmit  "
-					<< size
-					<< " bytes from "
-					<< tag
-					<< " => "
-					<< link);
 
-				cyng::object_cast<session>(rec["remote"])->vm_.async_run(client_req_transfer_data_forward(link
-					, seq
-					, bag
-					, data));
+			if (remote_peer && local_peer)
+			{
+				if (local_peer->hash() == remote_peer->hash())
+				{
+					CYNG_LOG_TRACE(logger_, "transmit local "
+						<< size
+						<< " bytes from "
+						<< tag
+						<< " => "
+						<< link);
+					//
+					//	local connection
+					//
+					prg << cyng::unwinder(client_req_transfer_data_forward(link
+						, seq
+						, bag
+						, data));
+				}
+				else
+				{
+					CYNG_LOG_TRACE(logger_, "transmit distinct "
+						<< size
+						<< " bytes from "
+						<< tag
+						<< " => "
+						<< link);
+
+					//
+					//	distinct connection
+					//
+					remote_peer->vm_.async_run(client_req_transfer_data_forward(link
+						, seq
+						, bag
+						, data));
+				}
 
 				//
 				//	update sx
@@ -714,6 +739,62 @@ namespace node
 
 		}, cyng::store::write_access("*Session"));
 
+		return prg;
+	}
+
+	cyng::vector_t client::req_close_connection(boost::uuids::uuid tag
+		, boost::uuids::uuid peer
+		, std::uint64_t	seq
+		, cyng::param_map_t const&	bag)
+	{
+		//
+		//	!!! INCOMPLETE !!!
+		//
+
+		cyng::vector_t prg;
+
+		db_.access([&](cyng::store::table* tbl_session)->void {
+
+			cyng::param_map_t options;
+			options["origin-tag"] = cyng::make_object(tag);		//	send response to this session
+			options["local-peer"] = cyng::make_object(peer);	//	and this peer
+
+			//
+			//	get trigger session record 
+			//
+			auto trigger_tag = cyng::table::key_generator(tag);
+			cyng::table::record rec = tbl_session->lookup(trigger_tag);
+			if (!rec.empty())
+			{
+				auto local_peer = cyng::object_cast<session>(rec["local"]);
+				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
+				auto remote_tag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+
+				if (local_peer->hash() == remote_peer->hash())
+				{
+					prg << cyng::unwinder(client_req_close_connection_forward(remote_tag
+							, options
+							, bag));
+				}
+				else
+				{
+					//
+					//	forward connection close request in different VM
+					//
+					remote_peer->vm_.async_run(client_req_close_connection_forward(remote_tag
+						, options
+						, bag));
+				}
+			}
+			else
+			{
+				//	error
+				CYNG_LOG_ERROR(logger_, "no session record: " << tag);
+			}
+
+		}, cyng::store::write_access("*Session"));
+
+		return prg;
 	}
 
 	cyng::vector_t client::req_open_push_channel(boost::uuids::uuid tag, //	remote tag

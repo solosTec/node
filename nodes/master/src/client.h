@@ -70,11 +70,16 @@ namespace node
 			cyng::param_map_t const&,		//	[4] options
 			cyng::param_map_t const&);		//	[5] bag);
 
-		void req_transmit_data(boost::uuids::uuid,		//	[0] origin client tag
+		cyng::vector_t req_transmit_data(boost::uuids::uuid,		//	[0] origin client tag
 			boost::uuids::uuid,		//	[1] peer tag
 			std::uint64_t,			//	[2] sequence number
 			cyng::param_map_t const&,		//	[5] bag
 			cyng::object);	//	data
+
+		cyng::vector_t req_close_connection(boost::uuids::uuid	//	[0] remote client tag
+			, boost::uuids::uuid	//	[1] peer tag
+			, std::uint64_t			//	[2] sequence number
+			, cyng::param_map_t const&);		//	[3] bag)
 
 		cyng::vector_t req_open_push_channel(boost::uuids::uuid,		//	[0] remote client tag
 			boost::uuids::uuid,		//	[1] peer tag
