@@ -274,38 +274,54 @@ namespace node
 				cmd.update(cyng::sql::make_assign(idx.first + 1, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
 
 				std::string sql = cmd.to_str();
-				CYNG_LOG_TRACE(logger_, sql);	//	update
+				//CYNG_LOG_TRACE(logger_, sql);	//	update
 
 				auto stmt = s.create_statement();
 				std::pair<int, bool> r = stmt->prepare(sql);
-				BOOST_ASSERT(r.second);
-
-				stmt->push(data.second, 0)
-					.push(key.at(0), 36);
-				if (!stmt->execute())
+				if (!r.second)
 				{
-					CYNG_LOG_ERROR(logger_, "sql update failed: " << sql);
+					//	maybe database connection was closed
+					CYNG_LOG_FATAL(logger_, "sql prepare failed: " << sql);
+					CYNG_LOG_INFO(logger_, "test if datanase connection was closed");
+					//BOOST_ASSERT(r.second);
 				}
-				stmt->clear();
+				else
+				{
+					stmt->push(data.second, 0)
+						.push(key.at(0), 36);
+					if (!stmt->execute())
+					{
+						CYNG_LOG_ERROR(logger_, "sql update failed: " << sql);
+					}
+					stmt->clear();
+				}
 
 				//
 				//	update gen(eration)
 				//
 				cmd.update(cyng::sql::make_assign(2, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
 				sql = cmd.to_str();
-				CYNG_LOG_TRACE(logger_, sql);	//	update
+				//CYNG_LOG_TRACE(logger_, sql);	//	update
 
 				//stmt = s.create_statement();
 				r = stmt->prepare(sql);
-				BOOST_ASSERT(r.second);
-
-				stmt->push(cyng::make_object(gen), 0)
-					.push(key.at(0), 36);
-				if (!stmt->execute())
+				if (!r.second)
 				{
-					CYNG_LOG_ERROR(logger_, "sql update failed: " << sql);
+					//	maybe database connection was closed
+					CYNG_LOG_FATAL(logger_, "sql prepare failed: " << sql);
+					CYNG_LOG_INFO(logger_, "test if datanase connection was closed");
+					//BOOST_ASSERT(r.second);
 				}
-				stmt->clear();
+				else
+				{
+					stmt->push(cyng::make_object(gen), 0)
+						.push(key.at(0), 36);
+					if (!stmt->execute())
+					{
+						CYNG_LOG_ERROR(logger_, "sql update failed: " << sql);
+					}
+					stmt->clear();
+				}
 			}
 			else
 			{
