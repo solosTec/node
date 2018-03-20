@@ -11,8 +11,9 @@
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/store/db.h>
-#include <boost/uuid/uuid.hpp>
 #include <unordered_map>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/random_generator.hpp>
 
 namespace node 
 {
@@ -52,6 +53,8 @@ namespace node
 		 */
 		cyng::logging::log_ptr logger_;
 
+		//	master tag
+		const boost::uuids::uuid tag_;	
 		//	credentials
 		const std::string account_;
 		const std::string pwd_;
@@ -76,6 +79,10 @@ namespace node
 		 */
 		cyng::store::db	db_;
 
+		/**
+		 * generate session tags
+		 */
+		boost::uuids::random_generator rgn_;
 	};
 }
 

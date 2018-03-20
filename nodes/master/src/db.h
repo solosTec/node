@@ -14,7 +14,25 @@
 
 namespace node 
 {
-	void init(cyng::logging::log_ptr logger, cyng::store::db&, boost::uuids::uuid tag);
+	void init(cyng::logging::log_ptr logger
+		, cyng::store::db&
+		, boost::uuids::uuid tag
+		, boost::asio::ip::tcp::endpoint
+		, std::chrono::seconds connection_open_timeout
+		, std::chrono::seconds connection_close_timeout
+		, bool connection_auto_login
+		, bool connection_auto_enabled
+		, bool connection_superseed);
+
+	void insert_msg(cyng::store::db&
+		, cyng::logging::severity
+		, std::string const&
+		, boost::uuids::uuid tag);
+
+	void insert_msg(cyng::store::table* tbl
+		, cyng::logging::severity
+		, std::string const&
+		, boost::uuids::uuid tag);
 }
 
 #endif

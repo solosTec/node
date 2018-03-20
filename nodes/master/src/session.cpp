@@ -8,6 +8,7 @@
 
 #include "session.h"
 #include "client.h"
+#include "db.h"
 #include "tasks/watchdog.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
@@ -21,7 +22,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/async/task/task_builder.hpp>
 
-#include <boost/uuid/random_generator.hpp>
+//#include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -30,9 +31,12 @@ namespace node
 {
 	session::session(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid mtag // master tag
 		, cyng::store::db& db
 		, std::string const& account
 		, std::string const& pwd
+		, boost::uuids::uuid stag
+		, std::chrono::seconds monitor
 		, std::chrono::seconds connection_open_timeout
 		, std::chrono::seconds connection_close_timeout
 		, bool connection_auto_login
@@ -40,8 +44,9 @@ namespace node
 		, bool connection_superseed)
 	: mux_(mux)
 		, logger_(logger)
+		, mtag_(mtag)
 		, db_(db)
-		, vm_(mux.get_io_service(), boost::uuids::random_generator()())
+		, vm_(mux.get_io_service(), stag)
 		, parser_([this](cyng::vector_t&& prg) {
 			CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
 			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
@@ -55,6 +60,7 @@ namespace node
 		, client_(mux, logger, db, connection_auto_login, connection_auto_enabled, connection_superseed)
 		, subscriptions_()
 		, tsk_watchdog_(cyng::async::NO_TASK)
+		, group_(0)
 	{
 		//
 		//	register logger domain
@@ -80,13 +86,13 @@ namespace node
 		//
 		//	register request handler
 		//
-		vm_.run(cyng::register_function("bus.req.login", 5, std::bind(&session::bus_req_login, this, std::placeholders::_1)));
+		vm_.run(cyng::register_function("bus.req.login", 10, std::bind(&session::bus_req_login, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.login", 8, std::bind(&session::client_req_login, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.close", 2, std::bind(&session::client_req_close, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.open.push.channel", 10, std::bind(&session::client_req_open_push_channel, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.close.push.channel", 5, std::bind(&session::client_req_close_push_channel, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.register.push.target", 5, std::bind(&session::client_req_register_push_target, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.req.open.connection", 5, std::bind(&session::client_req_open_connection, this, std::placeholders::_1)));
+		vm_.run(cyng::register_function("client.req.open.connection", 6, std::bind(&session::client_req_open_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.res.open.connection", 4, std::bind(&session::client_res_open_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.close.connection", 0, std::bind(&session::client_req_close_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.transfer.pushdata", 6, std::bind(&session::client_req_transfer_pushdata, this, std::placeholders::_1)));
@@ -178,14 +184,34 @@ namespace node
 		}, cyng::store::write_access("*Session"));
 
 		//
-		//	remove from cluster table
+		//	cluster table
 		//
-		db_.erase("*Cluster", cyng::table::key_generator(ctx.tag()), ctx.tag());
+		db_.access([&](cyng::store::table* tbl_cluster)->void {
+
+			//
+			//	remove from cluster table
+			//
+			tbl_cluster->erase(cyng::table::key_generator(ctx.tag()), ctx.tag());
+
+			//
+			//	update master record
+			//
+			tbl_cluster->modify(cyng::table::key_generator(mtag_), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
+			
+
+		} , cyng::store::write_access("*Cluster"));
+
+		insert_msg(db_
+			, cyng::logging::severity::LEVEL_WARNING
+			, "cluster member closed: " + cyng::io::to_str(frame)
+			, ctx.tag());
+
 	}
 
 	void session::bus_req_login(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
+		//CYNG_LOG_INFO(logger_, "bus.req.login " << cyng::io::to_str(frame));
 
 		//	[root,X0kUj59N,46ca0590-e852-417d-a1c7-54ed17d9148f,setup,0.2,-1:00:0.000000,2018-03-19 10:01:36.40087970,false]
 		//
@@ -196,6 +222,9 @@ namespace node
 		//	* version
 		//	* timezone delta
 		//	* timestamp
+		//	* auto config allowed
+		//	* group id
+		//	* remote ep
 		//
 
 		auto const tpl = cyng::tuple_cast<
@@ -206,7 +235,9 @@ namespace node
 			cyng::version,			//	[4] version
 			std::chrono::minutes,	//	[5] delta
 			std::chrono::system_clock::time_point,	//	[6] timestamp
-			bool					//	[7] autologin
+			bool,					//	[7] autologin
+			std::uint32_t,			//	[8] group
+			boost::asio::ip::tcp::endpoint	//	[9] remote ep
 		>(frame);
 
 		const std::string account = std::get<0>(tpl);
@@ -225,7 +256,12 @@ namespace node
 			//
 			ctx.attach(cyng::register_function("bus.req.subscribe", 3, std::bind(&session::bus_req_subscribe, this, std::placeholders::_1)));
 			ctx.attach(cyng::register_function("bus.req.unsubscribe", 2, std::bind(&session::bus_req_unsubscribe, this, std::placeholders::_1)));
-			ctx.attach(cyng::register_function("bus.start.watchdog", 5, std::bind(&session::bus_start_watchdog, this, std::placeholders::_1)));
+			ctx.attach(cyng::register_function("bus.start.watchdog", 6, std::bind(&session::bus_start_watchdog, this, std::placeholders::_1)));
+
+			//
+			//	set group id
+			//
+			group_ = std::get<8>(tpl);
 
 			//
 			//	send reply
@@ -237,12 +273,17 @@ namespace node
 			//
 			std::chrono::microseconds ping = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - std::get<6>(tpl));
 			ctx.attach(cyng::generate_invoke("bus.start.watchdog"
-				, std::get<3>(tpl), std::get<6>(tpl), std::get<4>(tpl), ping, cyng::invoke("push.session")));
+				, std::get<3>(tpl), std::get<6>(tpl), std::get<4>(tpl), ping, cyng::invoke("push.session"), std::get<9>(tpl)));
 		}
 		else
 		{
 			CYNG_LOG_WARNING(logger_, "cluster member login failed: " << cyng::io::to_str(frame));
 			ctx.attach(reply(frame, false));
+
+			insert_msg(db_
+				, cyng::logging::severity::LEVEL_ERROR
+				, "cluster member login failed: " + std::get<3>(tpl)
+				, ctx.tag());
 
 		}
 	}
@@ -259,14 +300,35 @@ namespace node
 		//	* version
 		//	* ping
 		//	* session object
+		//	* ep
 		
 		//
 		//	insert into cluster table
 		//
-		db_.insert("*Cluster"
-			, cyng::table::key_generator(ctx.tag())
-			, cyng::table::data_generator(frame.at(0), frame.at(1), frame.at(2), 0u, frame.at(3))
-			, 0, ctx.tag());
+		//
+		//	cluster table
+		//
+		db_.access([&](cyng::store::table* tbl_cluster)->void {
+
+			//
+			//	remove from cluster table
+			//
+			if (!tbl_cluster->insert(cyng::table::key_generator(ctx.tag())
+				, cyng::table::data_generator(frame.at(0), frame.at(1), frame.at(2), 0u, frame.at(3), frame.at(5))
+				, 0u, ctx.tag()))
+			{
+				CYNG_LOG_ERROR(logger_, "bus.start.watchdog - Cluster table insert failed" << cyng::io::to_str(frame));
+
+			}
+
+			//
+			//	update master record
+			//
+			tbl_cluster->modify(cyng::table::key_generator(mtag_), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
+
+
+		}, cyng::store::write_access("*Cluster"));
+
 
 		//
 		//	start watchdog task
@@ -276,6 +338,12 @@ namespace node
 			, db_
 			, frame.at(4)
 			, std::chrono::seconds(30)).first;
+
+		insert_msg(db_
+			, cyng::logging::severity::LEVEL_INFO
+			, "new cluster member: " + cyng::io::to_str(frame)
+			, ctx.tag());
+
 
 	}
 
@@ -633,6 +701,7 @@ namespace node
 		//	* bus sequence
 		//	* number
 		//	* bag
+		//	* this session object
 		//
 		const cyng::vector_t frame = ctx.get_frame();
 		ctx.run(cyng::generate_invoke("log.msg.info", "client.req.open.connection", frame));
@@ -649,8 +718,8 @@ namespace node
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
-			, std::get<4>(tpl)));
-
+			, std::get<4>(tpl)
+			, frame.at(5)));
 	}
 
 	void session::client_res_open_connection(cyng::context& ctx)
@@ -783,16 +852,19 @@ namespace node
 
 	cyng::object make_session(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid mtag
 		, cyng::store::db& db
 		, std::string const& account
 		, std::string const& pwd
+		, boost::uuids::uuid stag
+		, std::chrono::seconds monitor //	cluster watchdog
 		, std::chrono::seconds connection_open_timeout
 		, std::chrono::seconds connection_close_timeout
 		, bool connection_auto_login
 		, bool connection_auto_emabled
 		, bool connection_superseed)
 	{
-		return cyng::make_object<session>(mux, logger, db, account, pwd
+		return cyng::make_object<session>(mux, logger, mtag, db, account, pwd, stag, monitor
 			, connection_open_timeout
 			, connection_close_timeout
 			, connection_auto_login

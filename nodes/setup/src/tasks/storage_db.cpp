@@ -511,6 +511,14 @@ namespace node
 			{ cyng::TC_UUID, cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
 			{ 36, 36, 0, 128, 0, 0 }));
 
+		meta_map.emplace("TSysMsg", cyng::table::make_meta_table<1, 3>("TSysMsg",
+			{ "id"
+			, "ts"
+			, "severity"
+			, "msg" },
+			{ cyng::TC_UINT64, cyng::TC_TIME_POINT, cyng::TC_UINT8, cyng::TC_STRING },
+			{ 0, 0, 0, 256 }));
+
 		return meta_map;
 	}
 

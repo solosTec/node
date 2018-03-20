@@ -15,7 +15,15 @@
 
 namespace node 
 {
-	void init(cyng::logging::log_ptr logger, cyng::store::db& db, boost::uuids::uuid tag)
+	void init(cyng::logging::log_ptr logger
+		, cyng::store::db& db
+		, boost::uuids::uuid tag
+		, boost::asio::ip::tcp::endpoint ep
+		, std::chrono::seconds connection_open_timeout
+		, std::chrono::seconds connection_close_timeout
+		, bool connection_auto_login
+		, bool connection_auto_enabled
+		, bool connection_superseed)
 	{
 		CYNG_LOG_INFO(logger, "initialize database as node " << tag);
 
@@ -180,7 +188,7 @@ namespace node
 			{ "channel"		//	[uint32] primary key 
 			, "source"		//	[uint32] primary key 
 			, "target"		//	[uint32] primary key 
-			, "tag"			//	[uuid] target session tag
+			, "tag"			//	[uuid] remote target session tag
 			, "TargetPeer"	//	[object] target peer session
 			, "ChannelPeer"	//	[uuid] owner/channel peer session
 			, "pSize"		//	[uint16] - max packet size
@@ -196,15 +204,16 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table *Channel");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 5>("*Cluster", { "tag"	//	client session - primary key [uuid]
+		if (!db.create_table(cyng::table::make_meta_table<1, 6>("*Cluster", { "tag"	//	client session - primary key [uuid]
 			, "class"
 			, "loginTime"	//	last login time
 			, "version"
 			, "clients"	//	client counter
 			, "ping"	//	ping time
+			, "ep"		//	remote endpoint
 			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_VERSION, cyng::TC_UINT64, cyng::TC_MICRO_SECOND },
-			{ 36, 0, 32, 0, 0, 0 })))
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_VERSION, cyng::TC_UINT64, cyng::TC_MICRO_SECOND, cyng::TC_IP_TCP_ENDPOINT },
+			{ 36, 0, 32, 0, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table *Cluster");
 		}
@@ -216,12 +225,73 @@ namespace node
 					, std::chrono::system_clock::now()
 					, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)
 					, 0u	//	no clients yet
-					, std::chrono::microseconds(0))
+					, std::chrono::microseconds(0)
+					, ep)
 				, 1
 				, tag);
 
 		}
 
+		if (!db.create_table(cyng::table::make_meta_table<1, 1>("*Config", { "name"	//	parameter name
+			, "value"	//	parameter value
+			},
+			{ cyng::TC_STRING, cyng::TC_STRING },
+			{ 64, 128 })))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table *Config");
+		}
+		else
+		{
+			//db.insert("*Config", cyng::table::key_generator("startup"), cyng::table::data_generator(std::chrono::system_clock::now()), 1, tag);
+			db.insert("*Config", cyng::table::key_generator("master-tag"), cyng::table::data_generator(tag), 1, tag);
+			db.insert("*Config", cyng::table::key_generator("connection-open-timeout"), cyng::table::data_generator(connection_open_timeout), 1, tag);
+			db.insert("*Config", cyng::table::key_generator("connection-close-timeout"), cyng::table::data_generator(connection_close_timeout), 1, tag);
+			db.insert("*Config", cyng::table::key_generator("connection-auto-login"), cyng::table::data_generator(connection_auto_login), 1, tag);
+			db.insert("*Config", cyng::table::key_generator("connection-auto-enabled"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
+			db.insert("*Config", cyng::table::key_generator("connection-superseed"), cyng::table::data_generator(connection_superseed), 1, tag);
+		}
+
+		if (!db.create_table(cyng::table::make_meta_table<1, 3>("*SysMsg", { "id"	//	message number
+			, "ts"	//	timestamp
+			, "severity"	
+			, "msg"	//	message text
+			},
+			{ cyng::TC_UINT64, cyng::TC_TIME_POINT, cyng::TC_UINT8, cyng::TC_STRING },
+			{ 0, 0, 0, 128 })))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table *SysMsg");
+		}
+		else
+		{
+			insert_msg(db, cyng::logging::severity::LEVEL_INFO, "startup", tag);
+		}
+
+	}
+
+	void insert_msg(cyng::store::db& db
+		, cyng::logging::severity level
+		, std::string const& msg
+		, boost::uuids::uuid tag)
+	{
+		db.access([&](cyng::store::table* tbl)->void {
+			insert_msg(tbl, level, msg, tag);
+		}, cyng::store::write_access("*SysMsg"));
+
+	}
+
+	void insert_msg(cyng::store::table* tbl
+		, cyng::logging::severity level
+		, std::string const& msg
+		, boost::uuids::uuid tag)
+	{
+		tbl->insert(cyng::table::key_generator(static_cast<std::uint64_t>(tbl->size()))
+			, cyng::table::data_generator(std::chrono::system_clock::now(), static_cast<std::uint8_t>(level), msg)
+			, 1, tag);
+
+		if (tbl->size() > 1000)
+		{
+			tbl->clear(tag);
+		}
 	}
 
 }

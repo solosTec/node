@@ -19,9 +19,12 @@ namespace node
 	connection::connection(boost::asio::ip::tcp::socket&& socket
 		, cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid mtag // master tag
 		, cyng::store::db& db
 		, std::string const& account
 		, std::string const& pwd
+		, boost::uuids::uuid stag
+		, std::chrono::seconds monitor //	cluster watchdog
 		, std::chrono::seconds connection_open_timeout
 		, std::chrono::seconds connection_close_timeout
 		, bool connection_auto_login
@@ -32,9 +35,12 @@ namespace node
 		, buffer_()
 		, session_(make_session(mux
 			, logger
+			, mtag
 			, db
 			, account
 			, pwd
+			, stag
+			, monitor
 			, connection_open_timeout
 			, connection_close_timeout
 			, connection_auto_login

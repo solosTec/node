@@ -156,7 +156,8 @@ namespace node
 						cyng::param_factory("account", "root"),
 						cyng::param_factory("pwd", NODE_PWD),
 						cyng::param_factory("salt", NODE_SALT),
-						cyng::param_factory("monitor", monitor_dist(rng_))	//	seconds
+						cyng::param_factory("monitor", monitor_dist(rng_)),	//	seconds
+						cyng::param_factory("group", 0)	//	customer ID
 					) }))
 				)
 				});

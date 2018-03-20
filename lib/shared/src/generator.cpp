@@ -16,6 +16,7 @@ namespace node
 		, std::string const& account
 		, std::string const& pwd
 		, bool auto_config
+		, std::uint32_t group
 		, std::string const& node_class)
 	{
 		cyng::vector_t prg;
@@ -37,8 +38,11 @@ namespace node
 					, node_class
 					, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)
 					, cyng::make_object(cyng::chrono::delta())
-					, cyng::make_object(std::chrono::system_clock::now())
-					, cyng::make_object(auto_config)))
+					, cyng::make_now()
+					, cyng::make_object(auto_config)
+					, group
+					, cyng::invoke_remote("ip.tcp.socket.ep.remote")
+				))
 			<< cyng::generate_invoke("stream.flush")
 			<< cyng::label(":STOP")
 			<< cyng::code::NOOP
@@ -411,7 +415,8 @@ namespace node
 				, cyng::code::IDENT
 				, cyng::invoke("bus.seq.next")
 				, number
-				, bag))
+				, bag
+				, cyng::invoke_remote("push.session")))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}

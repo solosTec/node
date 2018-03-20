@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="SWF dashboard">
     <meta name="author" content="solos::Tec">
-    <title>smf :: push targets</title>
+    <title>smf :: config gateways</title>
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
@@ -19,7 +19,7 @@
 </head>
 <body>
     <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
-        <a class="navbar-brand" href="http://solostec.ch">
+        <a class="navbar-brand" href="index.html">
             <img src="images/logo.svg" width="30" height="30" class="d-inline-block align-top" alt="">
             solos::Tec
         </a>
@@ -45,25 +45,25 @@
                     </div>
                 </li>
 
-                <li class="nav-item dropdown active">
+                <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Status
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="status.session.html">Sessions</a>
-                        <a class="dropdown-item active" href="status.targets.html">Targets</a>
+                        <a class="dropdown-item" href="status.targets.html">Targets</a>
                         <a class="dropdown-item" href="status.connections.html">Connections</a>
                         <a class="dropdown-item" href="status.system.html">System</a>
                         <a class="dropdown-item" href="status.user.html">User</a>
                     </div>
                 </li>
 
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown active">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Monitoring
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                        <a class="dropdown-item" href="monitor.msg.html">Messages</a>
+                        <a class="dropdown-item active" href="monitor.msg.html">Messages</a>
                     </div>
                 </li>
 
@@ -77,23 +77,20 @@
     </nav>
     <div class="jumbotron jumbotron-fluid">
         <div class="container">
-            <h1 class="display-4">Registered push targets.</h1>
+            <h1 class="display-4">System Messages</h1>
         </div>
     </div>
 
     <div class="container-fluid">
         <div class="row">
             <div class="table-responsive col-md-12">
-                <table id="smf-table-target" class="table table-condensed table-striped table-bordered" cellspacing="0">
+                <table id="smf-table-msg" class="table table-condensed table-striped table-bordered" cellspacing="0">
                     <thead>
                         <tr>
-                            <th scope="col" class="sml-col-target-channel">Channel</th>
-                            <th scope="col" class="sml-col-target-tag">UUID</th>
-                            <th scope="col" class="sml-col-target-name">Name</th>
-                            <th scope="col" class="sml-col-target-device">Device</th>
-                            <th scope="col" class="sml-col-target-account">Account</th>
-                            <th scope="col" class="sml-col-target-px">px</th>
-                            <th scope="col" class="sml-col-target-reg">Registered</th>
+                            <th scope="col" class="sml-col-msg-id">ID</th>
+                            <th scope="col" class="sml-col-msg-ts">Timestamp</th>
+                            <th scope="col" class="sml-col-msg-severity">Severity</th>
+                            <th scope="col" class="sml-col-msg-txt">Message</th>
                         </tr>
                     </thead>
                 </table>
@@ -113,15 +110,9 @@
             }
             return data;
         };
-        var renderBytes = function (data, type, full, meta) {
-            if (type == "display") {
-                return format_bytes(data);
-            }
-            return data;
-        };
 
         //  globals
-        var table_target;
+        var table_msg;
         var connection;
         var totalIO = 0;
 
@@ -140,27 +131,22 @@
             //keys: true,  //  table navigation
             //dom: '<"top"ilp>rt<"bottom"f><"clear">',
             columnDefs: [
-                { targets: 'sml-col-target-channel', visible: true, name: 'target-channel', className: 'text-right' },
-                { targets: 'sml-col-target-tag', visible: false, name: 'target-tag' },
-                { targets: 'sml-col-target-name', visible: true, name: 'target-name' },
-                { targets: 'sml-col-target-device', visible: false, name: 'target-device' },
-                { targets: 'sml-col-target-account', visible: true, name: 'target-account' },
-                { targets: 'sml-col-target-px', visible: true, name: 'target-px', className: 'text-right', render: renderBytes },
-                { targets: 'sml-col-target-reg', visible: true, name: 'ses-reg', render: renderDate }
+                { targets: 'sml-col-msg-id', visible: true, name: 'msg-id', className: 'text-right' },
+                { targets: 'sml-col-msg-ts', visible: true, name: 'msg-ts', render: renderDate },
+                { targets: 'sml-col-msg-severity', visible: false, name: 'msg-severity' },
+                { targets: 'sml-col-msg-txt', visible: true, name: 'msg-txt' }
             ]
         };
 
         $(document).ready(function () {
             console.log('document ready');
-            table_target = $('#smf-table-target').DataTable(tbl_config);
-
-            //table_target.row.add(["a6d2e9d9-e1ed-4692-b49c-e38b9b0dc31d", "name", "1234567"]).draw().node();
+            table_msg = $('#smf-table-msg').DataTable(tbl_config);
 
             $('#ws-activity-text').html('connecting to ' + location.host + '...');
-            connection = new WebSocket('ws://' + location.host + '/smf/api/target/v0.1', ['SMF']);
+            connection = new WebSocket('ws://' + location.host + '/smf/api/msg/v0.1', ['SMF']);
             connection.onopen = function () {
                 //  subscribe system status
-                connection.send(JSON.stringify({ cmd: "subscribe", channel: "status.target", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "monitor.msg", push: true }));
             };
 
             connection.onclose = function (event) {
@@ -174,66 +160,35 @@
                 $('#ws-activity-text').html('ws error');
             };
 
-            //  {"cmd": "insert", "channel": "status.target", "rec": {"key": {"channel":581869302}, "data": {"account":"data-store","device":"eaec7649-80d5-4b71-8450-3ee2c7ef4917","name":"LSM_Status","pSize":"65535","peer":"702bd512-32ba-4eef-acd8-ce3b7442a991","px":0,"regTime":"2018-03-16 14:00:09.53312660","tag":"1567cd24-4196-4fb5-a68b-137bf142f3b2","wSize":1}, "gen": 1}}
+            //  {"cmd": "insert", "channel": "monitor.msg", "rec": {"key": {"id":0}, "data": {"msg":"startup","severity":3,"ts":"2018-03-20 18:05:24.71590930"}, "gen": 1}}
             connection.onmessage = function (e) {
                 $('#ws-activity-symbol').show();
                 console.log('incoming data: ' + e.data);
-                //console.log(Object.keys(e.data).length + ' bytes');
-                totalIO += Object.keys(e.data).length;
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
                     if (obj.cmd == 'insert') {
-                        //  don't display HTML codes
-                        var name = $('<div/>').text(obj.rec.data.name).html();
-                        var account = $('<div/>').text(obj.rec.data.account).html();
-                        var registered = new Date(obj.rec.data.regTime);
-                        var rowNode = table_target.row.add([obj.rec.key.channel, obj.rec.data.tag, name, obj.rec.data.device, account, obj.rec.data.px, registered]).draw().node();
-                    }
-                    else if (obj.cmd == 'delete') {
-                        table_target.row(function (idx, data, node) {
-                            if (data[0] == obj.key) {
-                                return true;
-                            }
-                            return false;
-                        }).remove().draw(false);
-                    }
-                    else if (obj.cmd == 'modify') {
-                        table_target.row(function (idx, data, node) {
-                            if (data[0] == obj.key) {
-                                var r = table_target.row(node);
-                                var d = r.data();
-                                if (obj.value.px != null) {
-                                    d[5] = obj.value.px;
-                                }
-                                r.data(d);
-                                return true;    //  record found
-                            }
-                            return false;
-                        });
+                        var msg = $('<div/>').text(obj.rec.data.msg).html();
+                        var ts = new Date(obj.rec.data.ts);
+                        var rowNode = table_msg.row.add([obj.rec.key.id, ts, obj.rec.data.severity, msg]).draw().node();
+                        if (obj.rec.data.severity == 3) {
+                            $(rowNode).css('color', 'LimeGreen');
+                        }
+                        else if (obj.rec.data.severity == 4) {
+                            $(rowNode).css('color', 'gold');
+                        }
+                        else if (obj.rec.data.severity == 5) {
+                            $(rowNode).css('color', 'orange');
+                        }
+                        else if (obj.rec.data.severity == 6) {
+                            $(rowNode).css('color', 'OrangeRed');
+                        }
                     }
                 }
                 $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
                 $('#ws-activity-symbol').fadeOut();
+
             };
-
         });
-
-    </script>
-
-    <script>
-        const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-        function format_bytes(x) {
-
-            let l = 0, n = parseInt(x, 10) || 0;
-
-            while (n >= 1024 && ++l) {
-                n = n / 1024;
-            }
-
-            if (n == 0) return '-';
-            return (n.toFixed(n >= 10 || l < 1 ? 0 : 1) + ' ' + units[l]);
-        }
     </script>
 
 </body>

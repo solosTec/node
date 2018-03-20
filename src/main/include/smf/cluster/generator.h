@@ -22,6 +22,7 @@ namespace node
 		, std::string const& account
 		, std::string const& pwd
 		, bool auto_config
+		, std::uint32_t group
 		, std::string const& node_class);
 
 	/**

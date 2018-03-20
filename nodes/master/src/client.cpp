@@ -8,12 +8,14 @@
 
 #include "client.h"
 #include "session.h"
+#include "db.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
 #include <cyng/value_cast.hpp>
 #include <cyng/object_cast.hpp>
 #include <cyng/dom/reader.h>
+#include <cyng/io/serializer.h>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -378,17 +380,24 @@ namespace node
 	}
 
 
-	cyng::vector_t client::req_open_connection(boost::uuids::uuid tag,
-		boost::uuids::uuid peer,
-		std::uint64_t seq,
-		std::string number,
-		cyng::param_map_t const& bag)
+	cyng::vector_t client::req_open_connection(boost::uuids::uuid tag
+		, boost::uuids::uuid peer
+		, std::uint64_t seq
+		, std::string number
+		, cyng::param_map_t const& bag
+		, cyng::object self)
 	{
-		cyng::vector_t prg;
+		auto caller_peer = cyng::object_cast<session>(self);
+		BOOST_ASSERT(caller_peer != nullptr);
 
 		cyng::param_map_t options;
 		options["origin-tag"] = cyng::make_object(tag);	//	send response to this session
 		options["local-peer"] = cyng::make_object(peer);	//	and this peer
+
+		//
+		//	following actions
+		//
+		cyng::vector_t prg;
 
 		bool success{ false };
 		db_.access([&](cyng::store::table const* tbl_device, cyng::store::table* tbl_session)->void {
@@ -396,24 +405,28 @@ namespace node
 			//
 			//	search device with the given number
 			//
-			prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
-				, "select number"
-				, number
-				, " from "
-				, tbl_device->size()
-				, " devices"));
+			CYNG_LOG_INFO(logger_, "select number "
+				<< number
+				<< " from "
+				<< tbl_device->size()
+				<< " devices");
 
 			tbl_device->loop([&](cyng::table::record const& rec) -> bool {
 
+				//
+				//	search a matching number
+				//
 				const auto dev_number = cyng::value_cast<std::string>(rec["msisdn"], "");
-				prg << cyng::unwinder(cyng::generate_invoke("log.msg.debug", dev_number));
+
+				//CYNG_LOG_DEBUG(logger_, dev_number);
 				if (boost::algorithm::equals(number, dev_number))
 				{
 					//
 					//	device found
 					//
-					prg << cyng::unwinder(cyng::generate_invoke("log.msg.trace"
-						, "matching device", rec.key(), rec.data()));
+					CYNG_LOG_TRACE(logger_, "matching device " 
+						<< cyng::io::to_str(rec.key())
+						<< cyng::io::to_str(rec.data()));
 
 					//
 					//	search session of this device
@@ -429,8 +442,9 @@ namespace node
 							//
 							//	session found
 							//
-							prg << cyng::unwinder(cyng::generate_invoke("log.msg.trace"
-								, "matching session", rec.key(), rec.data()));
+							CYNG_LOG_TRACE(logger_, "matching session " 
+								<< cyng::io::to_str(rec.key())
+								<< cyng::io::to_str(rec.data()));
 
 							options["remote-tag"] = rec["tag"];
 							options["remote-peer"] = rec["peer"];
@@ -439,10 +453,45 @@ namespace node
 							//	forward connection open request
 							//
 							auto remote_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
-							cyng::object_cast<session>(rec["local"])->vm_.async_run(client_req_open_connection_forward(remote_tag
-								, number
-								, options
-								, bag));
+
+							auto callee_peer = cyng::object_cast<session>(rec["local"]);
+							BOOST_ASSERT(callee_peer != nullptr);
+
+							options["local-connect"] = cyng::make_object(caller_peer->hash() == callee_peer->hash());
+
+							if (caller_peer->hash() == callee_peer->hash())
+							{
+								CYNG_LOG_TRACE(logger_, "connection between "
+									<< tag
+									<< " and "
+									<< cyng::value_cast(rec["tag"], boost::uuids::nil_uuid())
+									<< " is local");
+
+								//
+								//	forward connection open request in same VM
+								//
+								prg << cyng::unwinder(client_req_open_connection_forward(remote_tag
+									, number
+									, options
+									, bag));
+							}
+							else
+							{
+								CYNG_LOG_TRACE(logger_, "connection between "
+									<< tag
+									<< " and "
+									<< cyng::value_cast(rec["tag"], boost::uuids::nil_uuid())
+									<< " is distinct");
+
+								//
+								//	forward connection open request in different VM
+								//
+								callee_peer->vm_.async_run(client_req_open_connection_forward(remote_tag
+									, number
+									, options
+									, bag));
+							}
+
 
 							success = true;
 							return false;
@@ -463,14 +512,22 @@ namespace node
 		if (!success)
 		{
 			options["response-code"] = cyng::make_object<std::uint8_t>(ipt::tp_res_open_connection_policy::DIALUP_FAILED);
+			CYNG_LOG_WARNING(logger_, "cannot open connection: device #"
+				<< number
+				<< " not found");
 
-			prg 
-				<< cyng::unwinder(cyng::generate_invoke("log.msg.warning", "cannot open connection: device or session not found", options))
-				<< cyng::unwinder(client_res_open_connection_forward(tag
+			prg << cyng::unwinder(client_res_open_connection_forward(tag
 				, seq
 				, success
 				, options
 				, bag));
+
+			//
+			//	place a system message
+			//
+			insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
+				, "cannot open connection: device #" + number + " not found"
+				, tag);
 		}
 
 		return prg;
@@ -483,71 +540,105 @@ namespace node
 		cyng::param_map_t const& options,
 		cyng::param_map_t const& bag)
 	{
-		if (success)
-		{
-			//	"remote-tag":5e8843cc-cba3-4a0e-80dd-5c734950017c
-			//
-			//	dom reader
-			//
-			auto dom = cyng::make_reader(options);
-			auto rtag = cyng::value_cast(dom.get("remote-tag"), boost::uuids::nil_uuid());
+		//	"remote-tag":5e8843cc-cba3-4a0e-80dd-5c734950017c
+		//
+		//	dom reader
+		//
+		auto dom = cyng::make_reader(options);
+		auto rtag = cyng::value_cast(dom.get("remote-tag"), boost::uuids::nil_uuid());
 
-			CYNG_LOG_INFO(logger_, "establish connection between "
-				<< tag
-				<< " and "
-				<< rtag);
+		CYNG_LOG_INFO(logger_, "establish connection between "
+			<< tag
+			<< " and "
+			<< rtag);
+
+		//
+		//	following actions
+		//
+		cyng::vector_t prg;
+
+		//
+		//	insert connection record
+		//
+		db_.access([&](cyng::store::table* tbl_session)->void {
 
 			//
-			//	insert connection record
+			//	generate tabley keys
 			//
-			db_.access([&](cyng::store::table* tbl_session)->void {
+			auto caller_tag = cyng::table::key_generator(tag);
+			auto callee_tag = cyng::table::key_generator(rtag);
+
+			//
+			//	get session objects
+			//
+			cyng::table::record caller_rec = tbl_session->lookup(caller_tag);
+			cyng::table::record callee_rec = tbl_session->lookup(callee_tag);
+
+			BOOST_ASSERT_MSG(!caller_rec.empty(), "no caller record");
+			BOOST_ASSERT_MSG(!callee_rec.empty(), "no callee record");
+
+			if (!caller_rec.empty() && !callee_rec.empty())
+			{
+				auto caller_peer = cyng::object_cast<session>(caller_rec["local"]);
+				auto callee_peer = cyng::object_cast<session>(callee_rec["local"]);
 
 				//
-				//	generate tabley keys
+				//	update "remote" attributes
 				//
-				auto caller_tag = cyng::table::key_generator(tag);
-				auto callee_tag = cyng::table::key_generator(rtag);
+				tbl_session->modify(caller_tag, cyng::param_t("remote", callee_rec["local"]), tag);
+				tbl_session->modify(caller_tag, cyng::param_t("rtag", cyng::make_object(rtag)), tag);
 
-				//
-				//	get session objects
-				//
-				cyng::table::record caller_rec = tbl_session->lookup(caller_tag);
-				cyng::table::record callee_rec = tbl_session->lookup(callee_tag);
+				tbl_session->modify(callee_tag, cyng::param_t("remote", caller_rec["local"]), tag);
+				tbl_session->modify(callee_tag, cyng::param_t("rtag", cyng::make_object(tag)), tag);
 
-				BOOST_ASSERT_MSG(!caller_rec.empty(), "no caller record");
-				BOOST_ASSERT_MSG(!callee_rec.empty(), "no callee record");
-
-				if (!caller_rec.empty() && !callee_rec.empty())
+				if (caller_peer->hash() == callee_peer->hash())
 				{
-					//
-					//	update "remote" attributes
-					//
-					tbl_session->modify(caller_tag, cyng::param_t("remote", callee_rec["local"]), tag);
-					tbl_session->modify(caller_tag, cyng::param_t("rtag", cyng::make_object(rtag)), tag);
-
-					tbl_session->modify(callee_tag, cyng::param_t("remote", caller_rec["local"]), tag);
-					tbl_session->modify(callee_tag, cyng::param_t("rtag", cyng::make_object(tag)), tag);
-				}
-				else
-				{
-					CYNG_LOG_FATAL(logger_, "client.res.open.connection between "
+					CYNG_LOG_TRACE(logger_, "connection between "
 						<< tag
 						<< " and "
 						<< rtag
-						<< " failed");
+						<< " is local");
+
+					//
+					//	forward to caller (origin)
+					//	same VM
+					//
+					prg << cyng::unwinder(client_res_open_connection_forward(tag
+						, seq
+						, success
+						, options
+						, bag));
 				}
+				else
+				{
+					CYNG_LOG_TRACE(logger_, "connection between "
+						<< tag
+						<< " and "
+						<< rtag
+						<< " is distinct");
 
-			}, cyng::store::write_access("*Session"));
-		}
+					//
+					//	different VM
+					//
+					caller_peer->vm_.async_run(client_res_open_connection_forward(tag
+						, seq
+						, success
+						, options
+						, bag));
+				}
+			}
+			else
+			{
+				CYNG_LOG_FATAL(logger_, "client.res.open.connection between "
+					<< tag
+					<< " and "
+					<< rtag
+					<< " failed");
+			}
 
-		//
-		//	forward to caller (origin)
-		//
-		return client_res_open_connection_forward(tag
-			, seq
-			, success
-			, options
-			, bag);
+		}, cyng::store::write_access("*Session"));
+
+		return prg;
 	}
 
 	void client::req_transmit_data(boost::uuids::uuid tag,
@@ -639,6 +730,9 @@ namespace node
 	{
 		if (name.empty())
 		{
+			insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
+				, "no target specified"
+				, tag);
 			return req_open_push_channel_empty(tag, seq, bag);
 		}
 
@@ -649,7 +743,8 @@ namespace node
 		//
 		db_.access([&](const cyng::store::table* tbl_target
 			, cyng::store::table* tbl_channel
-			, const cyng::store::table* tbl_session)->void {
+			, const cyng::store::table* tbl_session
+			, cyng::store::table* tbl_msg)->void {
 
 			//
 			//	new channel id
@@ -660,7 +755,6 @@ namespace node
 			//	get source channel
 			//
 			const std::uint32_t source = get_source_channel(tbl_session, tag);
-			//CYNG_LOG_INFO(logger_, "source channel " << source);
 
 			//
 			//	get a list of matching targets (matching by name)
@@ -679,6 +773,13 @@ namespace node
 			//	ToDo: check if device is enabled
 			//
 
+			if (r.first.empty())
+			{
+				insert_msg(tbl_msg
+					, cyng::logging::severity::LEVEL_WARNING
+					, "no target [" + name + "] registered"
+					, tag);
+			}
 			//
 			//	create push channels
 			//
@@ -697,7 +798,6 @@ namespace node
 				//
 				const boost::uuids::uuid target_session_tag = cyng::value_cast(target_rec["tag"], boost::uuids::nil_uuid());
 				auto target_session_rec = tbl_session->lookup(cyng::table::key_generator(target_session_tag));
-				//BOOST_ASSERT_MSG(!target_session_rec.empty(), "no target session");
 				if (!target_session_rec.empty())
 				{
 
@@ -722,6 +822,12 @@ namespace node
 						prg << cyng::unwinder(cyng::generate_invoke("log.msg.error"
 							, "open push channel - failed"
 							, channel, source, target));
+
+						insert_msg(tbl_msg
+							, cyng::logging::severity::LEVEL_WARNING
+							, "open push channel - [" + name + "] failed"
+							, tag);
+
 					}
 				}
 				else
@@ -729,6 +835,12 @@ namespace node
 					prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
 						, "open push channel - no target session"
 						, target_session_tag));
+
+					insert_msg(tbl_msg
+						, cyng::logging::severity::LEVEL_WARNING
+						, "open push channel - no target [" + name + "] session"
+						, tag);
+
 				}
 			}
 
@@ -749,7 +861,8 @@ namespace node
 
 		}	, cyng::store::read_access("*Target")
 			, cyng::store::write_access("*Channel")
-			, cyng::store::read_access("*Session"));
+			, cyng::store::read_access("*Session")
+			, cyng::store::write_access("*SysMsg"));
 
 
 		return prg;
@@ -830,30 +943,58 @@ namespace node
 				{
 					const auto target_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
 					const auto target = cyng::value_cast<std::uint32_t>(rec["target"], 0);
+					const auto owner_peer = cyng::value_cast(rec["ChannelPeer"], boost::uuids::nil_uuid());
 
 					//
 					//	transfer data
 					//
-					CYNG_LOG_INFO(logger_, "transfer.push.data "
-						<< tag
-						<< " =="
-						<< channel
-						<< ':'
-						<< source
-						<< ':'
-						<< target
-						<< '#'
-						<< counter
-						<< "==> "
-						<< target_tag);
 
+					auto target_session = cyng::object_cast<session>(rec["TargetPeer"]);
+					BOOST_ASSERT(target_session != nullptr);
+					if (owner_peer == target_session->vm_.tag())
+					{
+						CYNG_LOG_INFO(logger_, "transfer.push.data local: "
+							<< tag
+							<< " =="
+							<< channel
+							<< ':'
+							<< source
+							<< ':'
+							<< target
+							<< '#'
+							<< counter
+							<< "==> "
+							<< target_tag);
 
-					cyng::object_cast<session>(rec["TargetPeer"])->vm_.async_run(client_req_transfer_pushdata_forward(target_tag
-						, channel
-						, source
-						, target
-						, data
-						, bag));
+						prg << cyng::unwinder(client_req_transfer_pushdata_forward(target_tag
+							, channel
+							, source
+							, target
+							, data
+							, bag));
+					}
+					else
+					{
+						CYNG_LOG_INFO(logger_, "transfer.push.data distinct: "
+							<< tag
+							<< " ==="
+							<< channel
+							<< ':'
+							<< source
+							<< ':'
+							<< target
+							<< '#'
+							<< counter
+							<< "===> "
+							<< target_tag);
+
+						target_session->vm_.async_run(client_req_transfer_pushdata_forward(target_tag
+							, channel
+							, source
+							, target
+							, data
+							, bag));
+					}
 
 					//
 					//	list of all target session
@@ -878,6 +1019,10 @@ namespace node
 				<< source
 				<< "==> no target ");
 
+			insert_msg(db_
+				, cyng::logging::severity::LEVEL_WARNING
+				, "transfer.push.data without target"
+				, tag);
 		}
 		else
 		{

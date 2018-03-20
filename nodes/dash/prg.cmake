@@ -22,9 +22,11 @@ set (node_dash_res
 	nodes/dash/htdocs/index.html
 	nodes/dash/htdocs/config.device.html
 	nodes/dash/htdocs/config.gateway.html
+	nodes/dash/htdocs/config.meter.html
 	nodes/dash/htdocs/status.session.html
 	nodes/dash/htdocs/status.system.html
 	nodes/dash/htdocs/status.targets.html
+	nodes/dash/htdocs/monitor.msg.html
 )
 
 set (node_dash_info

@@ -32,9 +32,12 @@ namespace node
 		explicit connection(boost::asio::ip::tcp::socket&&
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
+			, boost::uuids::uuid mtag //	master tag
 			, cyng::store::db&
 			, std::string const& account
 			, std::string const& pwd
+			, boost::uuids::uuid stag
+			, std::chrono::seconds monitor
 			, std::chrono::seconds connection_open_timeout
 			, std::chrono::seconds connection_close_timeout
 			, bool connection_auto_login

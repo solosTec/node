@@ -29,8 +29,11 @@ namespace node
 		, task_(tsk)
 		, parser_([this](cyng::vector_t&& prg) {
 			CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
+#ifdef SMF_IO_DEBUG
+			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+#endif
 			vm_.async_run(std::move(prg));
-		})
+	})
 		, serializer_(socket_, vm_)
 		, state_(STATE_INITIAL_)
 		, remote_tag_(boost::uuids::nil_uuid())
@@ -146,7 +149,7 @@ namespace node
 				cyng::io::hex_dump hd;
 				std::stringstream ss;
 				hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
-				CYNG_LOG_TRACE(logger_, "ipt input dump \n" << ss.str());
+				CYNG_LOG_TRACE(logger_, "cluster input dump \n" << ss.str());
 #endif
 				parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
 				do_read();

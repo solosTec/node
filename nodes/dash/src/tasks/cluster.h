@@ -86,6 +86,7 @@ namespace node
 		void subscribe_table_meter_count(std::string const&, boost::uuids::uuid);
 		void subscribe_table_session_count(std::string const&, boost::uuids::uuid);
 		void subscribe_table_target_count(std::string const&, boost::uuids::uuid);
+		void subscribe_monitor_msg(std::string const&, boost::uuids::uuid);
 
 		void update_channel(std::string const&, std::size_t);
 

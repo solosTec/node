@@ -30,9 +30,12 @@ namespace node
 	public:
 		session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
+			, boost::uuids::uuid mtag
 			, cyng::store::db&
 			, std::string const& account
 			, std::string const& pwd
+			, boost::uuids::uuid stag
+			, std::chrono::seconds monitor
 			, std::chrono::seconds connection_open_timeout
 			, std::chrono::seconds connection_close_timeout
 			, bool connection_auto_login
@@ -88,6 +91,7 @@ namespace node
 	private:
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
+		boost::uuids::uuid mtag_;	// master tag
 		cyng::store::db& db_;
 		cyng::controller vm_;
 		const std::string account_;
@@ -115,15 +119,25 @@ namespace node
 		 */
 		cyng::store::subscriptions_t	subscriptions_;
 
+		/**
+		 * watchdog task id
+		 */
 		std::size_t tsk_watchdog_;
 
+		/**
+		 * group id
+		 */
+		std::uint32_t group_;
 	};
 
 	cyng::object make_session(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid mtag
 		, cyng::store::db&
 		, std::string const& account
 		, std::string const& pwd
+		, boost::uuids::uuid stag
+		, std::chrono::seconds monitor //	cluster watchdog
 		, std::chrono::seconds connection_open_timeout
 		, std::chrono::seconds connection_close_timeout
 		, bool connection_auto_login

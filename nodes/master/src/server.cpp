@@ -22,6 +22,7 @@ namespace node
 		, cyng::tuple_t cfg_session)
 	: mux_(mux)
 		, logger_(logger)
+		, tag_(tag)
 		, account_(account)
 		, pwd_(pwd)
 		, monitor_(monitor)
@@ -35,9 +36,8 @@ namespace node
 		, socket_(io_ctx_)
 #endif
 		, db_()
+		, rgn_()
 	{
-		init(logger_, db_, tag);
-
 		//
 		//	read session configuration
 		//
@@ -65,9 +65,21 @@ namespace node
 		acceptor_.bind(endpoint);
 		acceptor_.listen();
 		
+		//
+		//	initialize database
+		//	
+		CYNG_LOG_TRACE(logger_, "init database");
+		init(logger_
+			, db_
+			, tag_
+			, acceptor_.local_endpoint()
+			, connection_open_timeout_
+			, connection_close_timeout_
+			, connection_auto_login_
+			, connection_auto_enabled_
+			, connection_superseed_);
+
 		do_accept();
-
-
 	}
 	
 	void server::do_accept()
@@ -90,13 +102,16 @@ namespace node
 				//	Connections are managed by there own and are controlled
 				//	by a maintenance task.
 				//
-
+				
 				std::make_shared<connection>(std::move(socket)
 					, mux_
 					, logger_
+					, tag_
 					, db_
 					, account_
 					, pwd_
+					, rgn_()
+					, monitor_ // cluster watchdog
 					, connection_open_timeout_
 					, connection_close_timeout_
 					, connection_auto_login_
@@ -135,13 +150,17 @@ namespace node
 	
 	void server::close()
 	{
-		CYNG_LOG_INFO(logger_, "close acceptor");
+		insert_msg(db_
+			, cyng::logging::severity::LEVEL_FATAL
+			, "server closed"
+			, tag_);
+
+		CYNG_LOG_FATAL(logger_, "close server");
 
 		// The server is stopped by cancelling all outstanding asynchronous
         // operations. Once all operations have finished the io_context::run()
         // call will exit.
         acceptor_.close();
-
 
 	}
 	

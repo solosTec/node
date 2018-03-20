@@ -19,7 +19,8 @@ namespace node
 			, cyng::value_cast<std::string>(dom.get("pwd"), "")
 			, cyng::value_cast(dom.get("salt"), 1)
 			, cyng::value_cast(dom.get("monitor"), 60)
-			, cyng::value_cast(dom.get("auto-config"), false));
+			, cyng::value_cast(dom.get("auto-config"), false)
+			, cyng::value_cast(dom.get("group"), 0));
 	}
 
 	cluster_config_t load_cluster_cfg(cyng::vector_t const& cfg)
@@ -43,6 +44,7 @@ namespace node
 		, salt_(1)
 		, monitor_(0)
 		, auto_config_(false)
+		, group_(0)
 	{}
 
 	cluster_record::cluster_record(std::string const& host
@@ -51,7 +53,8 @@ namespace node
 		, std::string const& pwd
 		, int salt
 		, int monitor
-		, bool auto_config)
+		, bool auto_config
+		, int group)
 	: host_(host)
 		, service_(service)
 		, account_(account)
@@ -59,6 +62,7 @@ namespace node
 		, salt_(salt)
 		, monitor_(monitor)
 		, auto_config_(auto_config)
+		, group_(group)
 	{}
 
 }

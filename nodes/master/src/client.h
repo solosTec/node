@@ -56,11 +56,12 @@ namespace node
 			, int
 			, boost::uuids::uuid self);
 
-		cyng::vector_t req_open_connection(boost::uuids::uuid,		//	[0] remote client tag
-			boost::uuids::uuid,		//	[1] peer tag
-			std::uint64_t,			//	[2] sequence number
-			std::string,			//	[3] number
-			cyng::param_map_t const&);		//	[4] bag)
+		cyng::vector_t req_open_connection(boost::uuids::uuid	//	[0] remote client tag
+			, boost::uuids::uuid	//	[1] peer tag
+			, std::uint64_t			//	[2] sequence number
+			, std::string			//	[3] number
+			, cyng::param_map_t const&		//	[4] bag)
+			, cyng::object self);
 
 		cyng::vector_t res_open_connection(boost::uuids::uuid,		//	[0] origin client tag
 			boost::uuids::uuid,		//	[1] peer tag

@@ -23,8 +23,9 @@ namespace node
 		const int salt_;
 		const std::chrono::seconds monitor_;
 		const bool auto_config_;
+		const std::int32_t group_;	//	customer id
 		cluster_record();
-		cluster_record(std::string const&, std::string const&, std::string const&, std::string const&, int, int, bool);
+		cluster_record(std::string const&, std::string const&, std::string const&, std::string const&, int, int, bool, int);
 	};
 
 	/**

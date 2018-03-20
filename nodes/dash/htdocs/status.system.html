@@ -79,6 +79,11 @@
                 <div class="card-body">
                     <h5 class="card-title">CPU</h5>
                     <p class="card-text">Total CPU usage.</p>
+                    <!--<div id="smf-widget-cpu">
+                        <svg style="width: 100%; height: 100%; padding: 10px" id="svg-widget-cpu">
+                            <circle cx="50%" cy="50%" r="50%" stroke="black" stroke-width="3" fill="red" />
+                        </svg>
+                    </div>-->
                 </div>
                 <div class="card-footer">
                     <small class="text-muted"><span id="ws-cpu-load"></span></small>
@@ -117,6 +122,7 @@
                             <th scope="col" class="sml-col-cluster-clients">Clients</th>
                             <th scope="col" class="sml-col-cluster-login">Login</th>
                             <th scope="col" class="sml-col-cluster-ping">Ping</th>
+                            <th scope="col" class="sml-col-cluster-ep">IP</th>
                         </tr>
                     </thead>
                 </table>
@@ -127,6 +133,7 @@
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
     <script type="text/javascript" src="popper.min.js"></script>
+   <!-- <script src="http://d3js.org/d3.v3.js"></script>-->
 
     <script>
 
@@ -163,12 +170,27 @@
                 { targets: 'sml-col-cluster-version', visible: true, name: 'cluster-version', className: 'text-right' },
                 { targets: 'sml-col-cluster-clients', visible: true, name: 'cluster-clients', className: 'text-right' },
                 { targets: 'sml-col-cluster-login', visible: true, name: 'cluster-login', render: renderDate },
-                { targets: 'sml-col-cluster-ping', visible: true, name: 'cluster-ping' }
+                { targets: 'sml-col-cluster-ping', visible: true, name: 'cluster-ping' },
+                { targets: 'sml-col-cluster-ep', visible: true, name: 'cluster-ep' }
             ]
         };
 
         $(document).ready(function () {
             console.log('document ready');
+
+            //d3.select(window).on('resize', function () {
+
+            //    let width = parseInt(d3.select('#smf-widget-cpu').style("width"));
+            //    let height = parseInt(d3.select('#smf-widget-cpu').style("height"));
+            //    console.log('d3 resize: ' + width + ", " + height);
+            //    if (width > height) {
+            //        d3.select('#svg-widget-cpu').style("width", height);
+            //    }
+            //    else {
+            //        d3.select('#svg-widget-cpu').style("height", width);
+            //    }
+                
+            //});
 
             table_cluster = $('#smf-table-cluster').DataTable(tbl_config);
 
@@ -225,7 +247,8 @@
                                 var version = $('<div/>').text(obj.rec.data.version).html();
                                 var login = new Date(obj.rec.data.loginTime);
                                 var ping = $('<div/>').text(obj.rec.data.ping).html();
-                                var rowNode = table_cluster.row.add([obj.rec.key.tag, name, version, obj.rec.data.clients, login, ping]).draw().node();
+                                var ep = $('<div/>').text(obj.rec.data.ep).html();
+                                var rowNode = table_cluster.row.add([obj.rec.key.tag, name, version, obj.rec.data.clients, login, ping, ep]).draw().node();
                             }
                         }
                     }
@@ -279,7 +302,7 @@
                 $('#ws-activity-text').html('running on ' + location.hostname);
                 $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
                 $('#ws-activity-symbol').fadeOut();
-            }  
+            }
         });
 
     </script>

@@ -49,6 +49,7 @@ namespace node
 			, config_[master_].account_
 			, config_[master_].pwd_
 			, config_[master_].auto_config_
+			, config_[master_].group_
 			, "e350"));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent");
@@ -95,6 +96,7 @@ namespace node
 				, config_[master_].account_
 				, config_[master_].pwd_
 				, config_[master_].auto_config_
+				, config_[master_].group_
 				, "e350"));
 
 		}
