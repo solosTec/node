@@ -58,12 +58,13 @@ namespace node
 			bus_->vm_.run(cyng::register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.open.connection", 6, std::bind(&server::client_res_open_connection, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.req.open.connection.forward", 0, std::bind(&server::client_req_open_connection_forward, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.res.open.connection.forward", 0, std::bind(&server::client_res_open_connection_forward, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.req.transmit.data.forward", 0, std::bind(&server::client_req_transmit_data_forward, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("client.req.open.connection.forward", 6, std::bind(&server::client_req_open_connection_forward, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("client.res.open.connection.forward", 6, std::bind(&server::client_res_open_connection_forward, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("client.req.transmit.data.forward", 5, std::bind(&server::client_req_transmit_data_forward, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.transfer.pushdata", 7, std::bind(&server::client_res_transfer_pushdata, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.req.transfer.pushdata.forward", 7, std::bind(&server::client_req_transfer_pushdata_forward, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.close.push.channel", 6, std::bind(&server::client_res_close_push_channel, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("client.req.close.connection.forward", 6, std::bind(&server::client_req_close_connection_forward, this, std::placeholders::_1)));
 
 		}
 
@@ -418,6 +419,11 @@ namespace node
 		void server::client_res_close_push_channel(cyng::context& ctx)
 		{
 			propagate("client.res.close.push.channel", ctx.get_frame());
+		}
+
+		void server::client_req_close_connection_forward(cyng::context& ctx)
+		{
+			propagate("client.req.close.connection.forward", ctx.get_frame());
 		}
 
 	}

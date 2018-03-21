@@ -38,6 +38,10 @@ set (node_ipt_master_tasks
 	nodes/ipt/master/src/tasks/cluster.cpp
 	nodes/ipt/master/src/tasks/open_connection.h
 	nodes/ipt/master/src/tasks/open_connection.cpp
+	nodes/ipt/master/src/tasks/close_connection.h
+	nodes/ipt/master/src/tasks/close_connection.cpp
+	nodes/ipt/master/src/tasks/gatekeeper.h
+	nodes/ipt/master/src/tasks/gatekeeper.cpp
 )
 
 set (node_ipt_master_res

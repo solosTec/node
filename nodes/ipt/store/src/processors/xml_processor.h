@@ -39,17 +39,11 @@ namespace node
 		 *
 		 * push data
 		 */
-		void process(cyng::buffer_t const&);
-
-		/**
-		 * @brief slot [1]
-		 *
-		 * stop 
-		 */
-		//cyng::continuation process();
+		void parse(cyng::buffer_t const&);
 
 	private:
 		void init();
+		void sml_parse(cyng::context& ctx);
 		void sml_msg(cyng::context& ctx);
 		void sml_eom(cyng::context& ctx);
 

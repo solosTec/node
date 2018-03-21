@@ -163,12 +163,21 @@ namespace node
 				//
 				//	build list with all affected session records
 				//
-				auto phash = cyng::object_cast<session>(rec["local"])->hash();
-				ctx.attach(cyng::generate_invoke("log.msg.trace", "session.cleanup", this->hash(), phash));
-				this->hash();
-				if (this->hash() == phash)
+				auto local_peer = cyng::object_cast<session>(rec["local"]);
+				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
+				auto name = cyng::value_cast<std::string>(rec["name"], "");
+				auto tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+
+				ctx.attach(cyng::generate_invoke("log.msg.trace", "session.cleanup", tag, tag));
+				if (local_peer && (local_peer->vm_.tag() == ctx.tag()))
 				{
 					pks.push_back(rec.key());
+					if (remote_peer && (local_peer->hash() != remote_peer->hash()))
+					{
+						//
+						//	ToDo: close connection
+						//
+					}
 				}
 
 				//	continue
@@ -201,6 +210,9 @@ namespace node
 
 		} , cyng::store::write_access("*Cluster"));
 
+		//
+		//	emit a system message
+		//
 		insert_msg(db_
 			, cyng::logging::severity::LEVEL_WARNING
 			, "cluster member closed: " + cyng::io::to_str(frame)
@@ -778,7 +790,7 @@ namespace node
 		ctx.attach(client_.req_close_connection(std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
-			, std::get<3>(tpl));
+			, std::get<3>(tpl)));
 
 	}
 

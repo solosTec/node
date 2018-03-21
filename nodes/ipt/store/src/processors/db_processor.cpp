@@ -67,12 +67,14 @@ namespace node
 		{
 			vm_.async_run(cyng::register_function("sml.msg", 1, std::bind(&db_processor::sml_msg, this, std::placeholders::_1)))
 				.async_run(cyng::register_function("sml.eom", 1, std::bind(&db_processor::sml_eom, this, std::placeholders::_1)))
+				.async_run(cyng::register_function("sml.parse", 1, std::bind(&db_processor::sml_parse, this, std::placeholders::_1)))
 				.async_run(cyng::register_function("db.insert.meta", 1, std::bind(&db_processor::insert_meta_data, this, std::placeholders::_1)));
 		}
 		else
 		{
 			vm_.run(cyng::register_function("sml.msg", 1, std::bind(&db_processor::sml_msg, this, std::placeholders::_1)))
 				.run(cyng::register_function("sml.eom", 1, std::bind(&db_processor::sml_eom, this, std::placeholders::_1)))
+				.run(cyng::register_function("sml.parse", 1, std::bind(&db_processor::sml_parse, this, std::placeholders::_1)))
 				.run(cyng::register_function("db.insert.meta", 1, std::bind(&db_processor::insert_meta_data, this, std::placeholders::_1)));
 		}
 		//
@@ -97,13 +99,21 @@ namespace node
 		CYNG_LOG_INFO(logger_, "DB processor stopped");
 	}
 
-	void db_processor::process(cyng::buffer_t const& data)
+	void db_processor::parse(cyng::buffer_t const& data)
 	{
-		CYNG_LOG_INFO(logger_, "DB processor processing "
+		CYNG_LOG_INFO(logger_, "SML/DB processor parse "
 			<< data.size()
 			<< " bytes");
 
 		parser_.read(data.begin(), data.end());
+	}
+
+	void db_processor::sml_parse(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		cyng::buffer_t data;
+		data = cyng::value_cast(frame.at(0), data);
+		parse(data);
 	}
 
 	void db_processor::sml_msg(cyng::context& ctx)

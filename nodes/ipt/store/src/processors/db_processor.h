@@ -12,7 +12,7 @@
 #include <smf/sml/exporter/db_exporter.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
-#include <cyng/async/policy.h>
+//#include <cyng/async/policy.h>
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/vm/controller.h>
 #include <cyng/db/session.h>
@@ -41,14 +41,15 @@ namespace node
 		/**
 		 * @brief slot [0]
 		 *
-		 * push data
+		 * parser SML data
 		 */
-		void process(cyng::buffer_t const&);
+		void parse(cyng::buffer_t const&);
 
 	private:
 		void init();
 		void sml_msg(cyng::context& ctx);
 		void sml_eom(cyng::context& ctx);
+		void sml_parse(cyng::context& ctx);
 		void insert_meta_data(cyng::context& ctx);
 
 	private:

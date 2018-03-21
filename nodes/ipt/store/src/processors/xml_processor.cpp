@@ -66,14 +66,16 @@ namespace node
 		if (vm_.same_thread())
 		{
 			vm_.async_run(cyng::register_function("sml.msg", 1, std::bind(&xml_processor::sml_msg, this, std::placeholders::_1)))
-				.async_run(cyng::register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1)));
-
-
+				.async_run(cyng::register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1)))
+				.async_run(cyng::register_function("sml.parse", 1, std::bind(&xml_processor::sml_parse, this, std::placeholders::_1)))
+				;
 		}
 		else
 		{
 			vm_.run(cyng::register_function("sml.msg", 1, std::bind(&xml_processor::sml_msg, this, std::placeholders::_1)))
-				.run(cyng::register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1)));
+				.run(cyng::register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1)))
+				.run(cyng::register_function("sml.parse", 1, std::bind(&xml_processor::sml_parse, this, std::placeholders::_1)))
+				;
 		}
 
 		//
@@ -98,7 +100,7 @@ namespace node
 
 	}
 
-	void xml_processor::process(cyng::buffer_t const& data)
+	void xml_processor::parse(cyng::buffer_t const& data)
 	{
 		CYNG_LOG_INFO(logger_, "XML processor processing "
 			<< data.size()
@@ -111,7 +113,14 @@ namespace node
 
 
 		parser_.read(data.begin(), data.end());
-		//return cyng::continuation::TASK_CONTINUE;
+	}
+
+	void xml_processor::sml_parse(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		cyng::buffer_t data;
+		data = cyng::value_cast(frame.at(0), data);
+		parse(data);
 	}
 
 	void xml_processor::sml_msg(cyng::context& ctx)

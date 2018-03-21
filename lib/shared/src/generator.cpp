@@ -485,6 +485,7 @@ namespace node
 			, cyng::generate_invoke_remote_unwinded("client.req.close.connection"
 				, tag
 				, cyng::code::IDENT
+				, shutdown
 				, cyng::invoke("bus.seq.next")
 				, bag))
 			<< cyng::generate_invoke_unwinded("stream.flush")
@@ -492,6 +493,7 @@ namespace node
 	}
 
 	cyng::vector_t client_req_close_connection_forward(boost::uuids::uuid tag
+		, bool shutdown
 		, cyng::param_map_t const& options
 		, cyng::param_map_t const& bag)
 	{
@@ -501,10 +503,31 @@ namespace node
 				, tag
 				, cyng::code::IDENT
 				, cyng::invoke("bus.seq.next")
+				, shutdown
 				, options
 				, bag))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
+	}
+
+	cyng::vector_t client_res_close_connection(boost::uuids::uuid tag
+		, std::uint64_t seq
+		, bool success
+		, cyng::param_map_t const& options
+		, cyng::param_map_t const& bag)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("client.res.close.connection"
+				, tag
+				, cyng::code::IDENT
+				, seq
+				, success
+				, options
+				, bag))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+
 	}
 
 	cyng::vector_t client_req_transmit_data(boost::uuids::uuid tag

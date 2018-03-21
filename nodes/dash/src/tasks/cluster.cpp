@@ -520,9 +520,17 @@ namespace node
 		//	* ws object
 		//	* json object
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "ws.read - " << cyng::io::to_str(frame));
 
 		auto wsp = cyng::object_cast<http::websocket_session>(frame.at(1));
+		if (!wsp)
+		{
+			CYNG_LOG_FATAL(logger_, "ws.read - no websocket: " << cyng::io::to_str(frame));
+			return;
+		}
+		else
+		{
+			CYNG_LOG_TRACE(logger_, "ws.read - " << cyng::io::to_str(frame));
+		}
 
 		auto reader = cyng::make_reader(frame.at(2));
 		const std::string cmd = cyng::value_cast<std::string>(reader.get("cmd"), "");
@@ -963,6 +971,13 @@ namespace node
 				cyng::param_factory("rec", rec.convert()))));
 
 			update_channel("table.cluster.count", tbl->size());
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Config"))
+		{
+			server_.process_event("config.sys", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("insert")),
+				cyng::param_factory("channel", "config.sys"),
+				cyng::param_factory("rec", rec.convert()))));
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "*SysMsg"))
 		{

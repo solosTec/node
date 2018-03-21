@@ -53,9 +53,8 @@ namespace node
 			void ipt_req_close_connection(cyng::context& ctx);
 			void ipt_res_open_connection(cyng::context& ctx);
 			void ipt_req_transfer_pushdata(cyng::context& ctx);
-
+			void ipt_res_close_connection(cyng::context& ctx);
 			void ipt_req_transmit_data(cyng::context& ctx);
-			void client_req_transmit_data_forward(cyng::context& ctx);
 			void ipt_res_watchdog(cyng::context& ctx);
 
 			void ipt_res_protocol_version(cyng::context& ctx);
@@ -74,8 +73,10 @@ namespace node
 			void client_res_close_push_channel(cyng::context& ctx);
 			void client_req_open_connection_forward(cyng::context& ctx);
 			void client_res_open_connection_forward(cyng::context& ctx);
+			void client_req_transmit_data_forward(cyng::context& ctx);
 			void client_res_transfer_pushdata(cyng::context& ctx);
 			void client_req_transfer_pushdata_forward(cyng::context& ctx);
+			void client_req_close_connection_forward(cyng::context& ctx);
 
 			void ipt_req_register_push_target(cyng::context& ctx);
 			void client_res_register_push_target(cyng::context& ctx);
@@ -98,8 +99,15 @@ namespace node
 			 */
 			parser 	parser_;
 
+			/**
+			 * bookkeeping of ip-t sequence to task relation
+			 */
 			std::map<sequence_type, std::size_t>	task_db_;
 
+			/**
+			 * gatekeeper task
+			 */
+			std::size_t gate_keeper_;
 		};
 	}
 }

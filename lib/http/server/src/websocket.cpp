@@ -260,18 +260,6 @@ namespace node
 
 			buffer_.consume(buffer_.size());
 
-			//std::stringstream ss;
-			//ss << "{'tag' : '"
-			//	<< tag_
-			//	<< "'}";
-
-			//ws_.async_write(boost::asio::buffer(ss.str()),
-			//ws_.async_write(boost::asio::buffer("{'key' : 1}"),
-			//	boost::asio::bind_executor(strand_,
-			//		std::bind(&websocket_session::on_write,
-			//			shared_from_this(),
-			//			std::placeholders::_1,
-			//			std::placeholders::_2)));
 			do_read();
 		}
 
@@ -313,6 +301,11 @@ namespace node
 
 			//CYNG_LOG_TRACE(logger_, "ws::do_close(use count " << shared_from_this().use_count() << ")");
 
+			//
+			//	stop VM engine
+			//
+			vm_.halt();
+
 			// Send a TCP shutdown
 			boost::system::error_code ec;
 			ws_.next_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
@@ -331,7 +324,15 @@ namespace node
 			//ws_.write(boost::asio::buffer("{'key' : 2}"));
 			const auto now = std::chrono::system_clock::now();
 			CYNG_LOG_TRACE(logger_, "run " << vm_.tag() << "... " << cyng::io::to_str(prg));
-			vm_.run(std::move(prg));
+
+			//
+			//	Typically the calling connection manager has a LOCK.
+			//	So calling in SYNC mode would deadlocks further processing.
+			//
+
+			vm_.async_run(std::move(prg));
+
+
 			CYNG_LOG_TRACE(logger_, "...run " 
 				<< std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - now).count()
 				<< " microsec "

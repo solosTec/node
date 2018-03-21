@@ -323,7 +323,40 @@ namespace node
 			if (!rec.empty())
 			{
 				//
-				//	ToDo: close open connections
+				//	close open connections
+				//	
+				auto local_peer = cyng::object_cast<session>(rec["local"]);
+				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
+				if (local_peer && remote_peer)
+				{
+					//
+					//	There is an open connection
+					//
+					auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+
+					cyng::param_map_t options;
+					options["origin-tag"] = cyng::make_object(tag);	//	send response to this session
+					options["local-peer"] = cyng::make_object(peer);	//	and this peer
+					options["send-response"] = cyng::make_object(false);	//	client closed
+					options["local-connect"] = cyng::make_object(local_peer->hash() == remote_peer->hash());
+
+					if (local_peer->hash() == remote_peer->hash())
+					{
+						prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
+							, "close local connection to "
+							, rtag));
+						prg << cyng::unwinder(client_req_close_connection_forward(rtag, true, options, cyng::param_map_t()));
+					}
+					else
+					{
+						prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
+							, "close distinct connection to "
+							, rtag));
+						remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, true, options, cyng::param_map_t()));
+					}
+				}
+
+				//
 				//	ToDo: close open channels
 				//
 
@@ -747,10 +780,6 @@ namespace node
 		, std::uint64_t	seq
 		, cyng::param_map_t const&	bag)
 	{
-		//
-		//	!!! INCOMPLETE !!!
-		//
-
 		cyng::vector_t prg;
 
 		db_.access([&](cyng::store::table* tbl_session)->void {
@@ -769,12 +798,15 @@ namespace node
 				auto local_peer = cyng::object_cast<session>(rec["local"]);
 				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
 				auto remote_tag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+				options["send-response"] = cyng::make_object(false);	//	client closed
+				options["local-connect"] = cyng::make_object(local_peer->hash() == remote_peer->hash());
 
 				if (local_peer->hash() == remote_peer->hash())
 				{
 					prg << cyng::unwinder(client_req_close_connection_forward(remote_tag
-							, options
-							, bag));
+						, false
+						, options
+						, bag));
 				}
 				else
 				{
@@ -782,6 +814,7 @@ namespace node
 					//	forward connection close request in different VM
 					//
 					remote_peer->vm_.async_run(client_req_close_connection_forward(remote_tag
+						, false
 						, options
 						, bag));
 				}
