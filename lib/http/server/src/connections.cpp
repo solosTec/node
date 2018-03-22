@@ -168,7 +168,17 @@ namespace node
 			for (auto pos = range.first; pos != range.second; ++pos)
 			{
 				auto ptr = cyng::object_cast<websocket_session>(pos->second);
-				const_cast<websocket_session*>(ptr)->run(cyng::vector_t(prg));
+                if (ptr)
+                {
+                    //
+                    //  websocket works asynch internally
+                    //
+                    const_cast<websocket_session*>(ptr)->run(cyng::vector_t(prg));
+                }
+                else
+                {
+                    CYNG_LOG_ERROR(logger_, "ws of channel " << channel << " is NULL");
+                }
 			}
 		}
 

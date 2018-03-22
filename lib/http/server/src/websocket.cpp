@@ -108,7 +108,11 @@ namespace node
 					// or we sent a ping and it never completed or
 					// we never got back a control frame, so close.
 
-					// Closing the socket cancels all outstanding operations. They
+                    CYNG_LOG_WARNING(logger_, "ws - incomplete ping");
+                    do_close();
+                    connection_manager_.stop(this);
+
+                    // Closing the socket cancels all outstanding operations. They
 					// will complete with boost::asio::error::operation_aborted
 					//connection_manager_.stop(this);
 					//do_close();
@@ -236,8 +240,8 @@ namespace node
 			if (ec)
 			{
 				CYNG_LOG_ERROR(logger_, "ws read: " << ec << " - " << ec.message());
-				timer_.cancel();
-				connection_manager_.stop(this);
+                do_close();
+                connection_manager_.stop(this);
 				return;
 			}
 
@@ -345,10 +349,11 @@ namespace node
 
             if (ws_.is_open())
             {
-                CYNG_LOG_TRACE(logger_, "ws.send.json - " << cyng::io::to_str(frame));
+                CYNG_LOG_TRACE(logger_, "ws.send.json... - " << cyng::io::to_str(frame));
                 std::stringstream ss;
                 cyng::json::write(ss, frame.at(0));
                 ws_.write(boost::asio::buffer(ss.str()));
+                CYNG_LOG_TRACE(logger_, "...ws.send.json");
             }
             else
             {

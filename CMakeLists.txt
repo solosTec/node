@@ -156,8 +156,8 @@ if (CMAKE_COMPILER_IS_GNUCC)
 	#
 	if(NOT BOOST_ROOT)
 
-		set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_66_0/install" CACHE PATH "BOOST_ROOT")
-        set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_66_0/install/lib")
+        set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_67_0/install" CACHE PATH "BOOST_ROOT")
+        set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_67_0/install/lib")
 		
 		message(STATUS "** Set BOOST_ROOT  : ${BOOST_ROOT}")
 	endif()
@@ -210,7 +210,7 @@ if(UNIX)
     endif()
 endif(UNIX)
 
-set(Boost_ADDITIONAL_VERSIONS "1.65.0 1.66.0" "1.67.0")
+set(Boost_ADDITIONAL_VERSIONS "1.65.0" "1.66.0" "1.67.0")
 message(STATUS "** Search Boost    : ${Boost_ADDITIONAL_VERSIONS}")
 find_package(Boost 1.66 REQUIRED COMPONENTS thread system date_time filesystem program_options random signals unit_test_framework regex)
 
@@ -244,7 +244,7 @@ if(Boost_FOUND)
 	# possible values are  30, 40 or 50 
 	#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
 	#define BOOST_MPL_LIMIT_LIST_SIZE 30
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_MPL_CFG_NO_PREPROCESSED_HEADERS -DBOOST_MPL_LIMIT_LIST_SIZE=50")	
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_MPL_CFG_NO_PREPROCESSED_HEADERS -DBOOST_MPL_LIMIT_LIST_SIZE=50 -DBOOST_ASIO_ENABLE_HANDLER_TRACKING")
 
 else()
 	set(${PROJECT_NAME}_BOOST_LIBRARY ${PROJECT_NAME}_BOOST_LIBRARY_NOT_FOUND)
@@ -662,6 +662,7 @@ target_link_libraries(setup ${setup_link_libs})
 # test unit using Boost.Test
 # BOOST_TEST_DYN_LINK is required to build a main() function
 #
+if(${PROJECT_NAME}_BUILD_TEST)
 include (test/unit-test/unit-test.cmake)
 add_executable(unit_test ${unit_test})
 	
@@ -685,6 +686,7 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 endif()
 
 target_link_libraries(unit_test ${unittest_link_libs})
+endif()
 
 #
 #   Generate configuration files
