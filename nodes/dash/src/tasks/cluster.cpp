@@ -479,6 +479,7 @@ namespace node
 	{
 		//	
 		//	[*Session,[35d1d76d-56c3-4df7-b1ff-b7ad374d2e8f],("rx":33344),327,35d1d76d-56c3-4df7-b1ff-b7ad374d2e8f]
+		//	[*Cluster,[1e4527b3-6479-4b2c-854b-e4793f40d864],("ping":00:00:0.003736),4,1e4527b3-6479-4b2c-854b-e4793f40d864]
 		//
 		//	* table name
 		//	* record key
@@ -1061,6 +1062,8 @@ namespace node
 		, std::uint64_t gen
 		, boost::uuids::uuid source)
 	{
+		CYNG_LOG_DEBUG(logger_, "sig.mode - "
+			<< tbl->meta().get_name());
 		//
 		//	convert attribute to parameter (as map)
 		//
