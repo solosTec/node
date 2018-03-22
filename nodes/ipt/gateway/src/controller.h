@@ -10,6 +10,7 @@
 
 #include <string>
 #include <cstdint>
+#include <boost/predef.h>	//	requires Boost 1.55
 #if BOOST_OS_WINDOWS
 #include <boost/asio.hpp>
 #endif
