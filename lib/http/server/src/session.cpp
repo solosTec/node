@@ -9,6 +9,7 @@
 #include <smf/http/srv/websocket.h>
 #include <smf/http/srv/handle_request.hpp>
 #include <smf/http/srv/connections.h>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node
 {
@@ -32,8 +33,8 @@ namespace node
 			, bus_(bus)
 			, cache_(cache)
 			, tag_(tag)
-			//, vm_(socket_.get_executor().context(), tag)
 			, queue_(*this)
+            , shutdown_(false)
 		{
 		}
 
@@ -54,7 +55,12 @@ namespace node
 
 		void session::do_read()
 		{
-			// Set the timer
+            //
+            //  no activities during shutdown
+            //
+            if (shutdown_)  return;
+
+            // Set the timer
 			timer_.expires_after(std::chrono::seconds(15));
 
 			// Read a request
@@ -70,7 +76,12 @@ namespace node
 		// Called when the timer expires.
 		void session::on_timer(boost::system::error_code ec)
 		{
-			if (ec && ec != boost::asio::error::operation_aborted)
+            //
+            //  no activities during shutdown
+            //
+            if (shutdown_)  return;
+
+            if (ec && ec != boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, "session timer aborted");
 				return;
@@ -104,7 +115,12 @@ namespace node
 
 		void session::on_read(boost::system::error_code ec)
 		{
-			CYNG_LOG_TRACE(logger_, "session read use count " << (this->shared_from_this().use_count() - 1));
+            //
+            //  no activities during shutdown
+            //
+            if (shutdown_)  return;
+
+            CYNG_LOG_TRACE(logger_, "session read use count " << (this->shared_from_this().use_count() - 1));
 
 			// Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
@@ -153,6 +169,11 @@ namespace node
 
 		void session::on_write(boost::system::error_code ec, bool close)
 		{
+            //
+            //  no activities during shutdown
+            //
+            if (shutdown_)  return;
+
 			// Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
 			{
@@ -184,9 +205,23 @@ namespace node
 
 		void session::do_close()
 		{
-			// Send a TCP shutdown
-			boost::system::error_code ec;
-			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+            shutdown_ = true;
+
+            timer_.cancel();
+
+            if (socket_.is_open())
+            {
+                CYNG_LOG_WARNING(logger_, "session::do_close(" << socket_.remote_endpoint() << ")");
+                // Send a TCP shutdown
+                boost::system::error_code ec;
+                socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+                socket_.close(ec);
+            }
+            else
+            {
+                CYNG_LOG_WARNING(logger_, "session::do_close(" << tag_ << ")");
+            }
+
 
 			// At this point the connection is closed gracefully
 		}

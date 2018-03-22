@@ -124,12 +124,12 @@ namespace node
 			void on_read(boost::system::error_code ec, std::size_t bytes_transferred);
 			void on_write(boost::system::error_code ec, std::size_t bytes_transferred);
 			void do_close();
+            void do_shutdown();
 
-			bool send_msg(std::string const&);
-			/**
-			 * Execute a program
-			 */
-			//void run(cyng::vector_t&& prg);
+            /**
+             * Send a (JSON) message to client
+             */
+            bool send_msg(std::string const&);
 
 		private:
 			/**
@@ -152,10 +152,10 @@ namespace node
 			cyng::logging::log_ptr logger_;
 			connection_manager& connection_manager_;
 			bus::shared_type bus_;
-			//cyng::controller vm_;	//!< websocket
 			boost::uuids::uuid tag_;
 			char ping_state_ = 0;
 			std::function<void(boost::beast::websocket::frame_type, boost::beast::string_view)>	ping_cb_;
+            bool shutdown_;
 		};
 
 		cyng::object make_websocket(cyng::logging::log_ptr

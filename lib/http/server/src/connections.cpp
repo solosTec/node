@@ -116,9 +116,13 @@ namespace node
 				sp->do_close();
 			}
 			CYNG_LOG_INFO(logger_, "stop " << ws_.size() << " websockets");
-			for (auto wssp : ws_)
+            for (auto & wssp : ws_)
 			{
-				//wssp->do_close();
+                auto ptr = cyng::object_cast<websocket_session>(wssp.second);
+                if (ptr)
+                {
+                    const_cast<websocket_session*>(ptr)->do_shutdown();
+                }
 			}
 			connections_.clear();
 			ws_.clear();

@@ -163,10 +163,6 @@ namespace node
 			}
 		}
 
-		//void server::run_on_ws(boost::uuids::uuid tag, cyng::vector_t&& prg)
-		//{
-		//	connection_manager_.run_on_ws(tag, std::move(prg));
-		//}
 		bool server::send_msg(boost::uuids::uuid tag, std::string const& msg)
 		{
 			return connection_manager_.send_msg(tag, msg);
@@ -177,10 +173,6 @@ namespace node
 			connection_manager_.add_channel(tag, channel);
 		}
 
-		//void server::process_event(std::string const& channel, cyng::vector_t&& prg)
-		//{
-		//	connection_manager_.process_event(channel, std::move(prg));
-		//}
 		void server::process_event(std::string const& channel, std::string const& msg)
 		{
 			connection_manager_.process_event(channel, msg);

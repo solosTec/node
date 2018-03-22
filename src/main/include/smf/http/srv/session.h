@@ -135,6 +135,7 @@ namespace node
 			//cyng::controller vm_;	//!< http session
 			boost::beast::http::request<boost::beast::http::string_body> req_;
 			queue queue_;
+            bool shutdown_;
 		};
 
 		/**
