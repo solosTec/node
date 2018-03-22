@@ -36,6 +36,7 @@ namespace node
 			bus& operator=(bus const&) = delete;
 
 			void start();
+            void stop();
 
 			/**
 			 * @return true if online with master
@@ -84,6 +85,9 @@ namespace node
 			 */
 			cyng::logging::log_ptr logger_;
 
+            /**
+             * Owner task
+             */
 			const std::size_t task_;
 
 			/**

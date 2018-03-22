@@ -60,13 +60,9 @@ namespace node
 		server_.close();
 
 		//
-		//	ToDo: stop all sessions
-		//
-
-		//
 		//	sign off from cloud
 		//
-		bus_->vm_.async_run(bus_shutdown());
+       bus_->stop();
 		CYNG_LOG_INFO(logger_, "cluster is stopped");
 	}
 

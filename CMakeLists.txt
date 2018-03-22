@@ -150,17 +150,6 @@ if (CMAKE_COMPILER_IS_GNUCC)
 	
 	# only shared libraries
 	set(GLOBAL_LIBRARY_TYPE SHARED)
-
-	#
-	#	provide a hint for a local installation of boost
-	#
-	if(NOT BOOST_ROOT)
-
-        set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_67_0/install" CACHE PATH "BOOST_ROOT")
-        set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_67_0/install/lib")
-		
-		message(STATUS "** Set BOOST_ROOT  : ${BOOST_ROOT}")
-	endif()
 	
 elseif(MSVC)
 
@@ -244,7 +233,8 @@ if(Boost_FOUND)
 	# possible values are  30, 40 or 50 
 	#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
 	#define BOOST_MPL_LIMIT_LIST_SIZE 30
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_MPL_CFG_NO_PREPROCESSED_HEADERS -DBOOST_MPL_LIMIT_LIST_SIZE=50 -DBOOST_ASIO_ENABLE_HANDLER_TRACKING")
+	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_MPL_CFG_NO_PREPROCESSED_HEADERS -DBOOST_MPL_LIMIT_LIST_SIZE=50 -DBOOST_ASIO_ENABLE_HANDLER_TRACKING")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_MPL_CFG_NO_PREPROCESSED_HEADERS -DBOOST_MPL_LIMIT_LIST_SIZE=50")
 
 else()
 	set(${PROJECT_NAME}_BOOST_LIBRARY ${PROJECT_NAME}_BOOST_LIBRARY_NOT_FOUND)
@@ -553,6 +543,7 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND ipt_link_libs pthread)
     endif()
 endif()
+#message(STATUS "** link ipt_master       : ${ipt_link_libs}")
 target_link_libraries(ipt ${ipt_link_libs})
 
 #
@@ -576,6 +567,7 @@ endif(WIN32)
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 	list(APPEND store_link_libs ${PUGIXML_LIBRARY})
 endif()
+#message(STATUS "** link ipt_store        : ${store_link_libs}")
 target_link_libraries(store ${store_link_libs})
 	
 #
@@ -591,6 +583,7 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND lora_link_libs pthread)
     endif()
 endif()
+#message(STATUS "** link lora             : ${lora_link_libs}")
 target_link_libraries(lora ${lora_link_libs})
 
 #
@@ -606,6 +599,7 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND master_link_libs pthread)
     endif()
 endif()
+#message(STATUS "** link master           : ${master_link_libs}")
 target_link_libraries(master ${master_link_libs})
 
 #
@@ -621,6 +615,7 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND modem_link_libs pthread)
     endif()
 endif()
+#message(STATUS "** link modem            : ${modem_link_libs}")
 target_link_libraries(modem ${modem_link_libs})
 
 #
@@ -636,6 +631,7 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND mqtt_link_libs pthread)
     endif()
 endif()
+#message(STATUS "** link mqtt             : ${mqtt_link_libs}")
 target_link_libraries(mqtt ${mqtt_link_libs})
 
 #
@@ -654,8 +650,9 @@ endif()
 if(WIN32)
 	list(APPEND setup_link_libs odbc32.lib lib_sqlite3)
 else()
-	list(APPEND db_link_libs ${SQLite3_LIBRARY})
+	list(APPEND setup_link_libs ${SQLite3_LIBRARY})
 endif(WIN32)
+#message(STATUS "** link setup            : ${setup_link_libs}")
 target_link_libraries(setup ${setup_link_libs})
 
 #
@@ -685,7 +682,8 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
     endif()
 endif()
 
-target_link_libraries(unit_test ${unittest_link_libs})
+#message(STATUS "** link unit-test        : ${unittest_link_libs}")
+arget_link_libraries(unit_test ${unittest_link_libs})
 endif()
 
 #

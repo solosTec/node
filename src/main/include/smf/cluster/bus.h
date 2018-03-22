@@ -33,6 +33,7 @@ namespace node
 		bus& operator=(bus const&) = delete;
 
 		void start();
+        void stop();
 
 		/**
 		 * @return true if online with master

@@ -44,6 +44,8 @@ namespace node
 				, std::uint16_t watchdog
 				, std::chrono::seconds const& timeout);
 
+            virtual ~connection();
+
 			/**
 			 * Start the first asynchronous operation for the connection.
 			 */
@@ -99,6 +101,11 @@ namespace node
 			 */
 			serializer		serializer_;
 
+            /**
+             * system shutdown flag - supress all futher
+             * communication
+             */
+            bool shutdown_;
 		};
 
 		cyng::object make_connection(boost::asio::ip::tcp::socket&&

@@ -167,10 +167,28 @@ namespace node
 
 		void server::close()
 		{
-			// The server is stopped by cancelling all outstanding asynchronous
+            //
+            //	close acceptor
+            //
+            CYNG_LOG_INFO(logger_, "close acceptor");
+
+            // The server is stopped by cancelling all outstanding asynchronous
 			// operations. Once all operations have finished the io_context::run()
 			// call will exit.
 			acceptor_.close();
+
+            //
+            // close all clients
+            //
+            CYNG_LOG_INFO(logger_, "close "
+                << client_map_.size()
+                << " ipt client(s)");
+
+            for(auto& conn : client_map_)
+            {
+                const_cast<connection*>(cyng::object_cast<connection>(conn.second))->stop();
+            }
+
 		}
 
 		void server::insert_connection(cyng::context& ctx)

@@ -12,6 +12,7 @@
 #include <cyng/log.h>
 #include <cyng/store/db.h>
 #include <unordered_map>
+#include <boost/version.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
 

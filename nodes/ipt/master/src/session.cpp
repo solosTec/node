@@ -720,7 +720,7 @@ namespace node
 			else
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.warning"
-					, "send login response"
+                    , "received login response"
 					, std::get<4>(tpl)	//	name
 					, std::get<5>(tpl)));	//	msg
 
@@ -906,7 +906,7 @@ namespace node
 					, cyng::value_cast<std::string>(frame.at(2), "")	//	number
 					, bag));
 			}
-			else
+            else
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.error", "client.req.open.connection", frame));
 				ctx.attach(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<response_type>(tp_res_open_connection_policy::NO_MASTER)));
@@ -1232,7 +1232,7 @@ namespace node
 			if (pos != task_db_.end())
 			{
 				const auto tsk = pos->second;
-				vm_.async_run(cyng::generate_invoke("log.msg.trace", "continue task", tsk));
+                ctx.attach(cyng::generate_invoke("log.msg.trace", "continue task", tsk));
 				mux_.send(tsk, 0, cyng::tuple_factory(res));
 
 				//
@@ -1266,7 +1266,7 @@ namespace node
 			if (pos != task_db_.end())
 			{
 				const auto tsk = pos->second;
-				vm_.async_run(cyng::generate_invoke("log.msg.trace", "continue task", tsk));
+                ctx.attach(cyng::generate_invoke("log.msg.trace", "continue task", tsk));
 				mux_.send(tsk, 0, cyng::tuple_factory(res));
 
 				//

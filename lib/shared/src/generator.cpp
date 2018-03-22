@@ -52,16 +52,16 @@ namespace node
 
 	}
 
-	cyng::vector_t bus_shutdown()
-	{
-		cyng::vector_t prg;
-		return prg
-			<< cyng::generate_invoke("log.msg.warning", "shutdown cluster member", cyng::code::IDENT)
-			<< cyng::generate_invoke("ip.tcp.socket.shutdown")
-			<< cyng::generate_invoke("ip.tcp.socket.close")
-			<< cyng::unwind_vec(8)
-			;
-	}
+//	cyng::vector_t bus_shutdown()
+//	{
+//		cyng::vector_t prg;
+//		return prg
+//			<< cyng::generate_invoke("log.msg.warning", "shutdown cluster member", cyng::code::IDENT)
+//			<< cyng::generate_invoke("ip.tcp.socket.shutdown")
+//			<< cyng::generate_invoke("ip.tcp.socket.close")
+//			<< cyng::unwind_vec(8)
+//			;
+//	}
 
 	cyng::vector_t bus_req_subscribe(std::string const& table, std::size_t tsk)
 	{

@@ -11,6 +11,7 @@
 #include <cyng/scm/service.hpp>
 #endif
 #include <iostream>
+#include <chrono>
 
 namespace node 
 {

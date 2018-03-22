@@ -19,9 +19,8 @@
 </head>
 <body>
     <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
-        <a class="navbar-brand" href="index.html">
-            <img src="images/logo.svg" width="30" height="30" class="d-inline-block align-top" alt="">
-            solos::Tec
+        <a class="navbar-brand" href="#">
+        <img src="images/logo.png" height="30" class="d-inline-block align-top" alt="">
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -111,6 +110,21 @@
             return data;
         };
 
+        var renderSeverity = function (data, type, full, meta) {
+            if (type == "display") {
+                switch(data) {
+                case 1: return "TRACE";
+                case 2: return "DEBUG";
+                case 3: return "INFO ";
+                case 4: return "WARN ";
+                case 5: return "ERROR";
+                case 6: return "FATAL";
+                default: break;
+                }
+            }
+            return 'ALL';
+        };
+
         //  globals
         var table_msg;
         var connection;
@@ -133,7 +147,7 @@
             columnDefs: [
                 { targets: 'sml-col-msg-id', visible: true, name: 'msg-id', className: 'text-right' },
                 { targets: 'sml-col-msg-ts', visible: true, name: 'msg-ts', render: renderDate },
-                { targets: 'sml-col-msg-severity', visible: false, name: 'msg-severity' },
+                { targets: 'sml-col-msg-severity', visible: true, name: 'msg-severity', render: renderSeverity },
                 { targets: 'sml-col-msg-txt', visible: true, name: 'msg-txt' }
             ]
         };

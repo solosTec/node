@@ -247,22 +247,22 @@ namespace node
 
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
-		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found" );		
-		auto dom = cyng::make_reader(cfg);
-
 		boost::uuids::random_generator rgen;
-		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
-
-		//cyng::param_factory("account", "root"),
-		//cyng::param_factory("pwd", NODE_PWD),
-		//cyng::param_factory("salt", NODE_SALT),
-		//cyng::param_factory("monitor", 57)	//	seconds
+        auto dom = cyng::make_reader(cfg);
+        const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
 
 		//
 		//	create server
 		//
 		cyng::tuple_t tmp;
-		server srv(mux
+        tmp = cyng::value_cast(dom.get("session"), tmp);
+
+        CYNG_LOG_TRACE(logger, tmp.size()
+            << '/'
+            << cyng::dom_counter(cfg)
+            << " configuration nodes (session/total)" );
+
+        server srv(mux
 			, logger
 			, tag
 			, cyng::value_cast<std::string>(dom["cluster"].get("account"), "")

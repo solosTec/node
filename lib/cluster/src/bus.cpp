@@ -128,16 +128,43 @@ namespace node
 	void bus::start()
 	{
 		CYNG_LOG_TRACE(logger_, "start cluster bus");
+        state_ = STATE_INITIAL_;
 		do_read();
 	}
 
-	bool bus::is_online() const
+    void bus::stop()
+    {
+        CYNG_LOG_TRACE(logger_, "stop cluster bus");
+
+        //
+        //  update state
+        //
+        state_ = STATE_SHUTDOWN_;
+
+        //
+        //  no more callbacks
+        //
+        vm_.halt();
+
+        //
+        //  close socket
+        //
+        socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+        socket_.close();
+    }
+
+    bool bus::is_online() const
 	{
 		return state_ == STATE_AUTHORIZED_;
 	}
 
 	void bus::do_read()
 	{
+        //
+        //  do nothing during shutdown
+        //
+        if (state_ == STATE_SHUTDOWN_)  return;
+
 		auto self(shared_from_this());
 		socket_.async_read_some(boost::asio::buffer(buffer_),
 			[this, self](boost::system::error_code ec, std::size_t bytes_transferred)

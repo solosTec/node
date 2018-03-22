@@ -11,6 +11,7 @@
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
 #endif
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node 
 {
@@ -30,12 +31,19 @@ namespace node
 			, buffer_()
 			, session_(mux, logger, bus, tag, sk, watchdog, timeout)
 			, serializer_(socket_, session_.vm_, sk)
+            , shutdown_(false)
 		{
 			//
 			//	register socket operations to session VM
 			//
 			cyng::register_socket(socket_, session_.vm_);
 		}
+
+        connection::~connection()
+        {
+            //std::cerr << "connection::~connection(" << tag_ << ")" << std::endl;
+            CYNG_LOG_DEBUG(logger_, "deconstruct connection(" << tag_ << ')');
+        }
 
 		void connection::start()
 		{
@@ -44,12 +52,28 @@ namespace node
 
 		void connection::stop()
 		{
+            CYNG_LOG_DEBUG(logger_, "shutdown connection(" << tag_ << ')');
+            shutdown_ = true;
+
+            //
+            //  no more callbacks
+            //
+            session_.stop();
+
+            //
+            //  close socket
+            //
 			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
 			socket_.close();
 		}
 
 		void connection::do_read()
 		{
+            //
+            //  check system shutdown
+            //
+            if (shutdown_)  return;
+
 			socket_.async_read_some(boost::asio::buffer(buffer_),
 				[this](boost::system::error_code ec, std::size_t bytes_transferred)
 			{
@@ -77,8 +101,9 @@ namespace node
 				//}
 				else
 				{
-					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
-					session_.bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", tag_, cyng::invoke("push.connection"), ec));
+                    CYNG_LOG_WARNING(logger_, "ipt connection closed <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
+                    session_.stop();
+                    session_.bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", tag_, cyng::invoke("push.connection"), ec));
 				}
 			});
 		}

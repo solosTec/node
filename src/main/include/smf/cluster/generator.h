@@ -28,7 +28,7 @@ namespace node
 	/**
 	 * Close socket 
 	 */
-	cyng::vector_t bus_shutdown();
+//	cyng::vector_t bus_shutdown();
 
 	/**
 	 * Subscribe specified table

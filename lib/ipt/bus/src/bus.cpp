@@ -108,8 +108,29 @@ namespace node
 		void bus::start()
 		{
 			CYNG_LOG_TRACE(logger_, "start ipt network");
-			do_read();
+            state_ = STATE_INITIAL_;
+            do_read();
 		}
+
+        void bus::stop()
+        {
+            //
+            //  update state
+            //
+            state_ = STATE_SHUTDOWN_;
+
+            //
+            //  no more callbacks
+            //
+            vm_.halt();
+
+            //
+            //  close socket
+            //
+            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+            socket_.close();
+
+        }
 
 		bool bus::is_online() const
 		{
@@ -118,6 +139,11 @@ namespace node
 
 		void bus::do_read()
 		{
+            //
+            //  do nothing during shutdown
+            //
+            if (state_ == STATE_SHUTDOWN_)  return;
+
 			auto self(shared_from_this());
 			BOOST_ASSERT(socket_.is_open());
 			socket_.async_read_some(boost::asio::buffer(buffer_),
@@ -159,8 +185,12 @@ namespace node
 
 			const cyng::vector_t frame = ctx.get_frame();
 
-			//	[8d2c4721-7b0a-4ee4-ae25-63db3d5bc7bd,,30,]
-			//CYNG_LOG_INFO(logger_, "ipt.res.login.public " << cyng::io::to_str(frame));
+            //
+            //  * [uuid] ident
+            //  * [uin8] response
+            //  * [uin16] watchdog
+            //  * [string] redirect
+            //
 
 			//
 			//	same for public and scrambled
@@ -192,6 +222,7 @@ namespace node
 			else
 			{
 				state_ = STATE_ERROR_;
+                ctx.attach(cyng::generate_invoke("log.msg.warning", "login failed"));
 
 				//
 				//	slot [1]
