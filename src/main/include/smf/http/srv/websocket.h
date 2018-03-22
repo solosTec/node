@@ -10,7 +10,7 @@
 
 #include <smf/cluster/bus.h>
 #include <cyng/log.h>
-#include <cyng/vm/controller.h>
+//#include <cyng/vm/controller.h>
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <cyng/log.h>
@@ -71,7 +71,7 @@ namespace node
 				on_timer({});
 
 				// Set the timer
-				timer_.expires_after(std::chrono::seconds(15));
+				//timer_.expires_after(std::chrono::seconds(15));
 
 				//
 				//	check subprotocols
@@ -125,10 +125,11 @@ namespace node
 			void on_write(boost::system::error_code ec, std::size_t bytes_transferred);
 			void do_close();
 
+			bool send_msg(std::string const&);
 			/**
 			 * Execute a program
 			 */
-			void run(cyng::vector_t&& prg);
+			//void run(cyng::vector_t&& prg);
 
 		private:
 			/**
@@ -141,7 +142,7 @@ namespace node
 			 */
 			void on_timer(boost::system::error_code ec);
 
-			void ws_send_json(cyng::context& ctx);
+			//void ws_send_json(cyng::context& ctx);
 
 		private:
 			boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
@@ -151,7 +152,8 @@ namespace node
 			cyng::logging::log_ptr logger_;
 			connection_manager& connection_manager_;
 			bus::shared_type bus_;
-			cyng::controller vm_;	//!< websocket
+			//cyng::controller vm_;	//!< websocket
+			boost::uuids::uuid tag_;
 			char ping_state_ = 0;
 			std::function<void(boost::beast::websocket::frame_type, boost::beast::string_view)>	ping_cb_;
 		};

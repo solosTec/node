@@ -56,12 +56,14 @@ namespace node
 			void stop_all();
 
 			/**
-			 * deliver a message to an websocket
+			 * deliver a message to a websocket
 			 */
-			void run_on_ws(boost::uuids::uuid tag, cyng::vector_t&& prg);
+			//void run_on_ws(boost::uuids::uuid tag, cyng::vector_t&& prg);
+			bool send_msg(boost::uuids::uuid tag, std::string const&);
 
 			bool add_channel(boost::uuids::uuid tag, std::string const& channel);
-			void process_event(std::string const& channel, cyng::vector_t&&);
+			//void process_event(std::string const& channel, cyng::vector_t&&);
+			void process_event(std::string const& channel, std::string const&);
 
 		private:
 			/**

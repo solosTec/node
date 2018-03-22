@@ -125,7 +125,26 @@ namespace node
 			listener_.clear();
 		}
 
-		void connection_manager::run_on_ws(boost::uuids::uuid tag, cyng::vector_t&& prg)
+		//void connection_manager::run_on_ws(boost::uuids::uuid tag, cyng::vector_t&& prg)
+		//{
+		//	//
+		//	//	shared lock 
+		//	//
+		//	cyng::async::shared_lock<cyng::async::shared_mutex> lock(mutex_);
+
+		//	auto pos = ws_.find(tag);
+		//	if (pos != ws_.end())
+		//	{
+		//		auto ptr = cyng::object_cast<websocket_session>(pos->second);
+		//		if (ptr)
+		//		{
+		//			const_cast<websocket_session*>(ptr)->run(std::move(prg));
+		//		}
+		//	}
+		//	
+		//}
+
+		bool connection_manager::send_msg(boost::uuids::uuid tag, std::string const& msg)
 		{
 			//
 			//	shared lock 
@@ -136,10 +155,15 @@ namespace node
 			if (pos != ws_.end())
 			{
 				auto ptr = cyng::object_cast<websocket_session>(pos->second);
-				const_cast<websocket_session*>(ptr)->run(std::move(prg));
+				if (ptr)
+				{
+					const_cast<websocket_session*>(ptr)->send_msg(msg);
+					return true;
+				}
 			}
-			
+			return false;
 		}
+
 
 		bool connection_manager::add_channel(boost::uuids::uuid tag, std::string const& channel)
 		{
@@ -158,7 +182,30 @@ namespace node
 			return false;
 		}
 
-		void connection_manager::process_event(std::string const& channel, cyng::vector_t&& prg)
+		//void connection_manager::process_event(std::string const& channel, cyng::vector_t&& prg)
+		//{
+		//	//
+		//	//	shared lock 
+		//	//
+		//	cyng::async::shared_lock<cyng::async::shared_mutex> lock(mutex_);
+		//	auto range = listener_.equal_range(channel);
+		//	for (auto pos = range.first; pos != range.second; ++pos)
+		//	{
+		//		auto ptr = cyng::object_cast<websocket_session>(pos->second);
+  //              if (ptr)
+  //              {
+  //                  //
+  //                  //  websocket works asynch internally
+  //                  //
+  //                  const_cast<websocket_session*>(ptr)->run(cyng::vector_t(prg));
+  //              }
+  //              else
+  //              {
+  //                  CYNG_LOG_ERROR(logger_, "ws of channel " << channel << " is NULL");
+  //              }
+		//	}
+		//}
+		void connection_manager::process_event(std::string const& channel, std::string const& msg)
 		{
 			//
 			//	shared lock 
@@ -168,17 +215,18 @@ namespace node
 			for (auto pos = range.first; pos != range.second; ++pos)
 			{
 				auto ptr = cyng::object_cast<websocket_session>(pos->second);
-                if (ptr)
-                {
-                    //
-                    //  websocket works asynch internally
-                    //
-                    const_cast<websocket_session*>(ptr)->run(cyng::vector_t(prg));
-                }
-                else
-                {
-                    CYNG_LOG_ERROR(logger_, "ws of channel " << channel << " is NULL");
-                }
+				if (ptr)
+				{
+					//
+					//  websocket works asynch internally
+					//
+					//const_cast<websocket_session*>(ptr)->run(cyng::vector_t(prg));
+					const_cast<websocket_session*>(ptr)->send_msg(msg);
+				}
+				else
+				{
+					CYNG_LOG_ERROR(logger_, "ws of channel " << channel << " is NULL");
+				}
 			}
 		}
 

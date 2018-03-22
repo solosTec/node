@@ -17,7 +17,6 @@ namespace node
 {
 	namespace http
 	{
-
 		websocket_session::websocket_session(cyng::logging::log_ptr logger
 			, connection_manager& cm
 			, boost::asio::ip::tcp::socket&& socket
@@ -30,13 +29,14 @@ namespace node
 			, logger_(logger)
 			, connection_manager_(cm)
 			, bus_(bus)
-			, vm_(ws_.get_executor().context(), tag)
+			, tag_(tag)
+			//, vm_(ws_.get_executor().context(), tag)
 			, ping_cb_()
 		{
-			vm_.run(cyng::register_function("ws.send.json", 1, std::bind(&websocket_session::ws_send_json, this, std::placeholders::_1)));
+			//vm_.run(cyng::register_function("ws.send.json", 1, std::bind(&websocket_session::ws_send_json, this, std::placeholders::_1)));
             
-            cyng::register_logger(logger_, vm_);
-            vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
+            //cyng::register_logger(logger_, vm_);
+            //vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 		}
 
 		websocket_session::~websocket_session()
@@ -46,7 +46,8 @@ namespace node
 
 		boost::uuids::uuid websocket_session::tag() const noexcept
 		{
-			return vm_.tag();
+			return tag_;
+			//return vm_.tag();
 		}
 
 		void websocket_session::on_accept(boost::system::error_code ec)
@@ -107,7 +108,7 @@ namespace node
 					// The timer expired while trying to handshake,
 					// or we sent a ping and it never completed or
 					// we never got back a control frame, so close.
-
+					std::cerr << ec << std::endl;
                     CYNG_LOG_WARNING(logger_, "ws - incomplete ping");
                     do_close();
                     connection_manager_.stop(this);
@@ -123,10 +124,10 @@ namespace node
 			}
 
 			// Wait on the timer
-			timer_.async_wait(boost::asio::bind_executor(strand_,
-				std::bind(&websocket_session::on_timer
-					, this
-					, std::placeholders::_1)));
+			//timer_.async_wait(boost::asio::bind_executor(strand_,
+			//	std::bind(&websocket_session::on_timer
+			//		, this
+			//		, std::placeholders::_1)));
 		}
 
 		// Called to indicate activity from the remote peer
@@ -178,20 +179,17 @@ namespace node
 			{
 				/// A close frame was received
 			case boost::beast::websocket::frame_type::close:
-// 				CYNG_LOG_TRACE(logger_, "ws::close - " << payload);
-                vm_.run(cyng::generate_invoke("log.msg.trace", "ws::close"));
+ 				CYNG_LOG_TRACE(logger_, "ws::close - " << tag_);
 				break;
 
 				/// A ping frame was received
 			case boost::beast::websocket::frame_type::ping:
-// 				CYNG_LOG_TRACE(logger_, "ws::ping - " << payload);
-                vm_.run(cyng::generate_invoke("log.msg.trace", "ws::ping"));
+ 				CYNG_LOG_TRACE(logger_, "ws::ping - " << tag_);
 				break;
 
 				/// A pong frame was received
 			case boost::beast::websocket::frame_type::pong:
-// 				CYNG_LOG_TRACE(logger_, "ws::pong - " << payload);
-                vm_.run(cyng::generate_invoke("log.msg.trace", "ws::pong"));
+ 				CYNG_LOG_TRACE(logger_, "ws::pong - " << tag_);
 				break;
 
 			default:
@@ -256,7 +254,7 @@ namespace node
 			//
 			//	execute on bus VM
 			//
-			bus_->vm_.run(cyng::generate_invoke("ws.read", vm_.tag(), cyng::invoke("ws.push"), cyng::json::read(str)));
+			bus_->vm_.run(cyng::generate_invoke("ws.read", tag_, cyng::invoke("ws.push"), cyng::json::read(str)));
 
 			// Clear buffer
 			ws_.text();
@@ -308,7 +306,7 @@ namespace node
 			//
 			//	stop VM engine
 			//
-			vm_.halt();
+			//vm_.halt();
 
 			// Send a TCP shutdown
 			boost::system::error_code ec;
@@ -323,43 +321,57 @@ namespace node
 			// At this point the connection is closed gracefully
 		}
 
-		void websocket_session::run(cyng::vector_t&& prg)
+		//void websocket_session::run(cyng::vector_t&& prg)
+		//{
+		//	//ws_.write(boost::asio::buffer("{'key' : 2}"));
+		//	const auto now = std::chrono::system_clock::now();
+		//	CYNG_LOG_TRACE(logger_, "run " << vm_.tag() << "... " << cyng::io::to_str(prg));
+
+		//	//
+		//	//	Typically the calling connection manager has a LOCK.
+		//	//	So calling in SYNC mode would deadlocks further processing.
+		//	//
+
+		//	vm_.async_run(std::move(prg));
+
+
+		//	CYNG_LOG_TRACE(logger_, "...run " 
+		//		<< std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - now).count()
+		//		<< " microsec "
+		//		<< vm_.tag());
+		//}
+
+		//void websocket_session::ws_send_json(cyng::context& ctx)
+		//{
+		//	const cyng::vector_t frame = ctx.get_frame();
+
+  //          if (ws_.is_open())
+  //          {
+  //              CYNG_LOG_TRACE(logger_, "ws.send.json... - " << cyng::io::to_str(frame));
+  //              std::stringstream ss;
+  //              cyng::json::write(ss, frame.at(0));
+  //              ws_.write(boost::asio::buffer(ss.str()));
+  //              CYNG_LOG_TRACE(logger_, "...ws.send.json");
+  //          }
+  //          else
+  //          {
+  //              CYNG_LOG_WARNING(logger_, "ws.send.json - closed " << cyng::io::to_str(frame));
+  //          }
+		//}
+
+		bool websocket_session::send_msg(std::string const& msg)
 		{
-			//ws_.write(boost::asio::buffer("{'key' : 2}"));
-			const auto now = std::chrono::system_clock::now();
-			CYNG_LOG_TRACE(logger_, "run " << vm_.tag() << "... " << cyng::io::to_str(prg));
-
-			//
-			//	Typically the calling connection manager has a LOCK.
-			//	So calling in SYNC mode would deadlocks further processing.
-			//
-
-			vm_.async_run(std::move(prg));
-
-
-			CYNG_LOG_TRACE(logger_, "...run " 
-				<< std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - now).count()
-				<< " microsec "
-				<< vm_.tag());
+			if (ws_.is_open())
+			{
+			    CYNG_LOG_TRACE(logger_, "ws.send.json... - " << msg);
+			    ws_.write(boost::asio::buffer(msg));
+			    CYNG_LOG_TRACE(logger_, "...ws.send.json");
+				return true;
+			}
+		    CYNG_LOG_WARNING(logger_, "ws.send.json - closed " << msg);
+			return false;
 		}
 
-		void websocket_session::ws_send_json(cyng::context& ctx)
-		{
-			const cyng::vector_t frame = ctx.get_frame();
-
-            if (ws_.is_open())
-            {
-                CYNG_LOG_TRACE(logger_, "ws.send.json... - " << cyng::io::to_str(frame));
-                std::stringstream ss;
-                cyng::json::write(ss, frame.at(0));
-                ws_.write(boost::asio::buffer(ss.str()));
-                CYNG_LOG_TRACE(logger_, "...ws.send.json");
-            }
-            else
-            {
-                CYNG_LOG_WARNING(logger_, "ws.send.json - closed " << cyng::io::to_str(frame));
-            }
-		}
 
 		cyng::object make_websocket(cyng::logging::log_ptr logger
 			, connection_manager& cm

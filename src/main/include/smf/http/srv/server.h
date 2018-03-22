@@ -46,10 +46,12 @@ namespace node
 			/**
 			 * send data to websocket
 			 */
-			void run_on_ws(boost::uuids::uuid, cyng::vector_t&&);
+			//void run_on_ws(boost::uuids::uuid, cyng::vector_t&&);
+			bool send_msg(boost::uuids::uuid, std::string const&);
 
 			void add_channel(boost::uuids::uuid tag, std::string const& channel);
-			void process_event(std::string const& channel, cyng::vector_t&&);
+			//void process_event(std::string const& channel, cyng::vector_t&&);
+			void process_event(std::string const& channel, std::string const&);
 
 		private:
 			void on_accept(boost::system::error_code ec);
