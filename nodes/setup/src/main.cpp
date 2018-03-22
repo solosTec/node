@@ -10,13 +10,14 @@
 #include "../../print_version_info.h"
 #include "../../set_start_options.h"
 #include "../../show_ip_address.h"
+#if BOOST_OS_WINDOWS
+#define NOMINMAX
+#include <boost/asio.hpp>
+#endif
+#include "controller.h"
 #include "controller.h"
 #include <boost/filesystem.hpp>
 #include <iostream>
-#ifdef _MSC_VER 
-#define NOMINMAX
-#include <Windows.h>
-#endif
 #include <limits>
 
 /**
@@ -161,7 +162,7 @@ int main(int argc, char **argv)
 
 			//	run as service 
 			const std::string srv_name = vm["service.name"].as< std::string >();
-// 			return ctrl.run_as_service(std::move(ctrl), srv_name);
+ 			return ctrl.run_as_service(std::move(ctrl), srv_name);
 		}
 #endif
 

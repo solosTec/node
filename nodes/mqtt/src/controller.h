@@ -10,6 +10,10 @@
 
 #include <string>
 #include <cstdint>
+#include <boost/predef.h>	//	requires Boost 1.55
+#if BOOST_OS_WINDOWS
+#include <boost/asio.hpp>
+#endif
 
 namespace node 
 {
@@ -36,6 +40,15 @@ namespace node
 		 * @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
 		 */
 		int create_config() const;
+
+#if BOOST_OS_WINDOWS
+		/**
+		* run as windows service
+		*/
+		static int run_as_service(controller&&, std::string const&);
+		virtual void control_handler(DWORD);
+
+#endif
 
 	private:
 		const unsigned int pool_size_;

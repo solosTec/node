@@ -10,11 +10,12 @@
 #include "../../print_version_info.h"
 #include "../../set_start_options.h"
 #include "../../show_ip_address.h"
+#if BOOST_OS_WINDOWS
+#include <boost/asio.hpp>
+#endif
+#include "controller.h"
 #include <boost/filesystem.hpp>
 #include <iostream>
-#ifdef _MSC_VER 
-#include <Windows.h>
-#endif
 
 /**
  * main entry point.
@@ -128,7 +129,10 @@ int main(int argc, char **argv)
 
 		}
 
-// 		noddy::controller ctrl(pool_size, json_path);
+		//
+		//	establish controller
+		//
+		node::controller ctrl(pool_size, json_path);
 
 		if (vm["default"].as< bool >())
 		{
@@ -157,7 +161,7 @@ int main(int argc, char **argv)
 		BOOST_ASSERT_MSG(rc == 0, "setrlimit() failed");
 #endif
 		BOOST_ASSERT_MSG(pool_size != 0, "empty thread pool");
-// 		return ctrl.run(true);
+		return ctrl.run(vm["console"].as< bool >());
 	}
 	catch (std::bad_cast const& e)
 	{

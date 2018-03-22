@@ -9,12 +9,12 @@
 #include "../../../print_version_info.h"
 #include "../../../set_start_options.h"
 #include "../../../show_ip_address.h"
+#if BOOST_OS_WINDOWS
+#include <boost/asio.hpp>
+#endif
 #include "controller.h"
 #include <iostream>
 #include <boost/filesystem.hpp>
-#ifdef _MSC_VER 
-#include <Windows.h>
-#endif
 
 /**
  * main entry point.
@@ -147,11 +147,9 @@ int main(int argc, char **argv)
 #if BOOST_OS_WINDOWS
 		if (vm["service.enabled"].as< bool >())
 		{
-			::OutputDebugString("start collector node");
-
 			//	run as service 
 			const std::string srv_name = vm["service.name"].as< std::string >();
-// 			return ctrl.run_as_service(std::move(ctrl), srv_name);
+ 			return ctrl.run_as_service(std::move(ctrl), srv_name);
 	}
 #endif
 
