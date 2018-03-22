@@ -342,11 +342,18 @@ namespace node
 		void websocket_session::ws_send_json(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_TRACE(logger_, "ws.send.json - " << cyng::io::to_str(frame));
 
-			std::stringstream ss;
-			cyng::json::write(ss, frame.at(0));
-			ws_.write(boost::asio::buffer(ss.str()));
+            if (ws_.is_open())
+            {
+                CYNG_LOG_TRACE(logger_, "ws.send.json - " << cyng::io::to_str(frame));
+                std::stringstream ss;
+                cyng::json::write(ss, frame.at(0));
+                ws_.write(boost::asio::buffer(ss.str()));
+            }
+            else
+            {
+                CYNG_LOG_WARNING(logger_, "ws.send.json - closed " << cyng::io::to_str(frame));
+            }
 		}
 
 		cyng::object make_websocket(cyng::logging::log_ptr logger
