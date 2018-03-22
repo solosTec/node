@@ -3,7 +3,7 @@
 
 ## Introduction ##
 
-* Current version is 0.2. It's an alpha version.
+* Current version is 0.3. It's a beta version and starts to be usefull.
 * Linux (64 bit) are supported
 * Windows 7 (64 bit) or higher are supported.
 * Crosscompiling for Raspberry 3 is supported
@@ -46,5 +46,5 @@ Some hints to build Boost since the SMF requires the latest Boost version 1.66.0
 * ./bootstrap.sh --prefix=release --with-toolset=gcc --with-icu
 * Build the library with ./b2 --architecture=x86 --address-model=64 install -j 4. Depending on your machine this may take some time. 
 * Instruct CMake to use the path to the Boost library specified with the --prefix option
-
+* Make sure to update your linker configuration to find this path. To make changes permanent add a .conf file below /etc/ld.so.conf.d/.
 
