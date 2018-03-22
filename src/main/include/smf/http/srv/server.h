@@ -53,6 +53,7 @@ namespace node
 
 		private:
 			void on_accept(boost::system::error_code ec);
+            bool bind(boost::asio::ip::tcp::endpoint, std::size_t);
 
 		private:
 			boost::asio::ip::tcp::acceptor acceptor_;
