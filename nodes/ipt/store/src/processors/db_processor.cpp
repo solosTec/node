@@ -44,7 +44,7 @@ namespace node
 			//
 			//	execute programm
 			//
-			vm_.run(std::move(prg));
+			vm_.async_run(std::move(prg));
 
 		}, false)
 		, db_(db)
