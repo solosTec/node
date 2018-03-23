@@ -56,6 +56,7 @@ set (node_ipt_store_processors
 	nodes/ipt/store/src/processors/xml_processor.cpp
 	nodes/ipt/store/src/processors/db_processor.h
 	nodes/ipt/store/src/processors/db_processor.cpp
+	${PUGIXML_INCLUDE_DIR}/pugixml.cpp
 )
 
 set (node_ipt_store_exporter

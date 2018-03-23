@@ -103,7 +103,7 @@ namespace node
 
 		void xml_exporter::reset()
 		{
-			doc_.reset();
+            doc_.reset();
 
 			// Generate XML declaration
 			auto declarationNode = doc_.append_child(pugi::node_declaration);
