@@ -296,17 +296,6 @@ namespace node
 		const bool shutdown = wait(logger);
 
 		//
-		//	close acceptor
-		//
-		CYNG_LOG_INFO(logger, "close acceptor");
-		//srv.close();
-
-		//
-		//	stop all connections
-		//
-		CYNG_LOG_INFO(logger, "stop all connections");
-
-		//
 		//	stop all tasks
 		//
 		CYNG_LOG_INFO(logger, "stop all tasks");

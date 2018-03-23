@@ -99,10 +99,6 @@ namespace node
 		server_.close();
 
 		//
-		//	ToDo: stop all sessions
-		//
-
-		//
 		//	sign off from cloud
 		//
         bus_->stop();

@@ -39,9 +39,9 @@
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="config.device.html">Devices</a>
-                        <a class="dropdown-item" href="config.gateway.html">Gateway</a>
-                        <a class="dropdown-item" href="config.meter.html">Meter</a>
-                        <a class="dropdown-item" href="config.user.html">User</a>
+<!--                        <a class="dropdown-item" href="config.gateway.html">Gateway</a>-->
+<!--                        <a class="dropdown-item" href="config.meter.html">Meter</a>-->
+<!--                        <a class="dropdown-item" href="config.user.html">User</a>-->
                     </div>
                 </li>
 
@@ -52,8 +52,8 @@
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="status.session.html">Sessions</a>
                         <a class="dropdown-item" href="status.targets.html">Targets</a>
-                        <a class="dropdown-item" href="status.connections.html">Connections</a>
-                        <a class="dropdown-item" href="status.user.html">User</a>
+<!--                        <a class="dropdown-item" href="status.connections.html">Connections</a>-->
+<!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
                     </div>
                 </li>
 
@@ -302,10 +302,10 @@
             function startSysTimer() {
                 $('#ws-activity-symbol').show();
                 var queryMem = JSON.stringify({ cmd: "update", channel: "sys.mem.virtual.used" });
-                //connection.send(queryMem);
+                connection.send(queryMem);
                 totalIO += queryMem.length;
                 var queryCPU = JSON.stringify({ cmd: "update", channel: "sys.cpu.usage.total" });
-                //connection.send(queryCPU);
+                connection.send(queryCPU);
                 totalIO += queryCPU.length;
                 $('#ws-io-load').html(format_bytes(totalIO));
                 sysTimer = setTimeout(startSysTimer, 5000);

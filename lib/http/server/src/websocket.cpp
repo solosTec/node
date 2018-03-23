@@ -32,6 +32,7 @@ namespace node
 			, tag_(tag)
 			//, vm_(ws_.get_executor().context(), tag)
 			, ping_cb_()
+            , shutdown_(false)
 		{
 			//vm_.run(cyng::register_function("ws.send.json", 1, std::bind(&websocket_session::ws_send_json, this, std::placeholders::_1)));
             
@@ -52,7 +53,7 @@ namespace node
 
 		void websocket_session::on_accept(boost::system::error_code ec)
 		{
-			// Happens when the timer closes the socket
+            // Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, "ws aborted - read");
@@ -74,7 +75,12 @@ namespace node
 		// Called when the timer expires.
 		void websocket_session::on_timer(boost::system::error_code ec)
 		{
-			if (ec && ec != boost::asio::error::operation_aborted)
+            //
+            //  no activities after shutdown
+            //
+            if (shutdown_)  return;
+
+            if (ec && ec != boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, "ws timer aborted - read");
 				return;
@@ -133,17 +139,27 @@ namespace node
 		// Called to indicate activity from the remote peer
 		void websocket_session::activity()
 		{
-			// Note that the connection is alive
+            //
+            //  no activities after shutdown
+            //
+            if (shutdown_)  return;
+
+            // Note that the connection is alive
 			ping_state_ = 0;
 
 			// Set the timer
-			timer_.expires_after(std::chrono::seconds(15));
+//			timer_.expires_after(std::chrono::seconds(15));
 		}
 
 		// Called after a ping is sent.
 		void websocket_session::on_ping(boost::system::error_code ec)
 		{
-			// Happens when the timer closes the socket
+            //
+            //  no activities after shutdown
+            //
+            if (shutdown_)  return;
+
+            // Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, "ws aborted - ping");
@@ -173,7 +189,12 @@ namespace node
 		void websocket_session::on_control_callback(boost::beast::websocket::frame_type kind,
 			boost::beast::string_view payload)
 		{
-			boost::ignore_unused(kind, payload);
+            //
+            //  no activities after shutdown
+            //
+            if (shutdown_)  return;
+
+            boost::ignore_unused(kind, payload);
 
 			switch (kind)
 			{
@@ -203,7 +224,12 @@ namespace node
 
 		void websocket_session::do_read()
 		{
-			// Read a message into our buffer
+            //
+            //  no activities after shutdown
+            //
+            if (shutdown_)  return;
+
+            // Read a message into our buffer
 			ws_.async_read(	buffer_,
 				boost::asio::bind_executor(strand_,
 					std::bind(&websocket_session::on_read
@@ -215,6 +241,11 @@ namespace node
 		void websocket_session::on_read(boost::system::error_code ec,
 			std::size_t bytes_transferred)
 		{
+            //
+            //  no activities after shutdown
+            //
+            if (shutdown_)  return;
+
 			boost::ignore_unused(bytes_transferred);
 
 			// Happens when the timer closes the socket
@@ -268,7 +299,12 @@ namespace node
 		void websocket_session::on_write(boost::system::error_code ec,
 			std::size_t bytes_transferred)
 		{
-			boost::ignore_unused(bytes_transferred);
+            //
+            //  no activities after shutdown
+            //
+            if (shutdown_)  return;
+
+            boost::ignore_unused(bytes_transferred);
 
 			// Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
@@ -298,15 +334,15 @@ namespace node
 
 		void websocket_session::do_close()
 		{
-			CYNG_LOG_TRACE(logger_, "ws::do_close(cancel timer)");
+            //
+            //  no activities after shutdown
+            //
+            if (shutdown_)  return;
+
+            CYNG_LOG_TRACE(logger_, "ws::do_close(cancel timer)");
 			timer_.cancel();
 
 			//CYNG_LOG_TRACE(logger_, "ws::do_close(use count " << shared_from_this().use_count() << ")");
-
-			//
-			//	stop VM engine
-			//
-			//vm_.halt();
 
 			// Send a TCP shutdown
 			boost::system::error_code ec;
@@ -321,47 +357,35 @@ namespace node
 			// At this point the connection is closed gracefully
 		}
 
-		//void websocket_session::run(cyng::vector_t&& prg)
-		//{
-		//	//ws_.write(boost::asio::buffer("{'key' : 2}"));
-		//	const auto now = std::chrono::system_clock::now();
-		//	CYNG_LOG_TRACE(logger_, "run " << vm_.tag() << "... " << cyng::io::to_str(prg));
+        void websocket_session::do_shutdown()
+        {
+            shutdown_ = true;
 
-		//	//
-		//	//	Typically the calling connection manager has a LOCK.
-		//	//	So calling in SYNC mode would deadlocks further processing.
-		//	//
+            timer_.cancel();
 
-		//	vm_.async_run(std::move(prg));
+            if (ws_.is_open())
+            {
+                CYNG_LOG_WARNING(logger_, "ws::do_shutdown(" << ws_.next_layer().remote_endpoint() << ")");
+                // Send a TCP shutdown
+                boost::system::error_code ec;
+                ws_.next_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+                ws_.next_layer().close(ec);
+            }
+            else
+            {
+                CYNG_LOG_WARNING(logger_, "ws::do_shutdown(" << tag_ << ")");
+            }
 
-
-		//	CYNG_LOG_TRACE(logger_, "...run " 
-		//		<< std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - now).count()
-		//		<< " microsec "
-		//		<< vm_.tag());
-		//}
-
-		//void websocket_session::ws_send_json(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-
-  //          if (ws_.is_open())
-  //          {
-  //              CYNG_LOG_TRACE(logger_, "ws.send.json... - " << cyng::io::to_str(frame));
-  //              std::stringstream ss;
-  //              cyng::json::write(ss, frame.at(0));
-  //              ws_.write(boost::asio::buffer(ss.str()));
-  //              CYNG_LOG_TRACE(logger_, "...ws.send.json");
-  //          }
-  //          else
-  //          {
-  //              CYNG_LOG_WARNING(logger_, "ws.send.json - closed " << cyng::io::to_str(frame));
-  //          }
-		//}
+        }
 
 		bool websocket_session::send_msg(std::string const& msg)
 		{
-			if (ws_.is_open())
+            //
+            //  no activities after shutdown
+            //
+            if (shutdown_)  return false;
+
+            if (ws_.is_open())
 			{
 			    CYNG_LOG_TRACE(logger_, "ws.send.json... - " << msg);
 			    ws_.write(boost::asio::buffer(msg));
