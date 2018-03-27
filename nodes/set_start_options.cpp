@@ -25,7 +25,20 @@ namespace node
 	{
 		//	get the working directory
 		const boost::filesystem::path cwd = boost::filesystem::current_path();
-// 		json = /etc/opt/node/http_v0.1.json
+
+#if BOOST_OS_WINDOWS
+		//
+		//	build service name
+		//
+		std::stringstream ss;
+		ss
+			<< "node_"
+			<< name
+			<< "_v"
+			<< NODE_VERSION_MAJOR
+			;
+#endif
+
 		opt.add_options()
 
 			("setup.json,J", boost::program_options::value<std::string>(&json_path)->default_value((cwd / (name + "_" + NODE_SUFFIX + ".json")).string()), "JSON configuration file")
@@ -35,7 +48,7 @@ namespace node
 			("RLIMIT_NOFILE.hard", boost::program_options::value< rlim_t >()->default_value(rl.rlim_max), "RLIMIT_NOFILE hard")
 #else
 			("service.enabled,S", boost::program_options::value<bool>()->default_value(false), "run as NT service")
-			("service.name", boost::program_options::value< std::string >()->default_value(("node_"+ name) + std::string(NODE_VERSION)), "NT service name")
+			("service.name", boost::program_options::value< std::string >()->default_value(ss.str()), "NT service name")
 #endif
 			;
 	}

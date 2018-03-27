@@ -7,6 +7,6 @@ REM	platform: @CMAKE_SYSTEM@
 REM
 echo create service node_master_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create node_master_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\node\master.exe -C\"$ENV{ProgramFiles}\node\master_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "master server v${${PROJECT_NAME}_VERSION_MAJOR}" type= share start= auto 
-sc description node_master_v${${PROJECT_NAME}_VERSION_MAJOR} "master server v${${PROJECT_NAME}_VERSION_MAJOR} (created at ${${PROJECT_NAME}_NOW_UTC})"
+sc create node_master_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\solosTec\SMF\master.exe --config=\"$ENV{ProgramFiles}\solosTec\SMF\master_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF master server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description node_master_v${${PROJECT_NAME}_VERSION_MAJOR} "Master server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
 @echo on

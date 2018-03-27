@@ -7,6 +7,6 @@ REM	platform: @CMAKE_SYSTEM@
 REM
 echo create service node_emitter_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create node_emitter_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\node\emitter.exe -C\"$ENV{ProgramFiles}\node\emitter_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "emitter server v${${PROJECT_NAME}_VERSION_MAJOR}" type= share start= auto 
-sc description node_emitter_v${${PROJECT_NAME}_VERSION_MAJOR} "emitter server v${${PROJECT_NAME}_VERSION_MAJOR} (created at ${${PROJECT_NAME}_NOW_UTC})"
+sc create node_emitter_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\solosTec\SMF\emitter.exe --config=\"$ENV{ProgramFiles}\solosTec\SMF\emitter_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF emitter server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description node_emitter_v${${PROJECT_NAME}_VERSION_MAJOR} "Emitter server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
 @echo on

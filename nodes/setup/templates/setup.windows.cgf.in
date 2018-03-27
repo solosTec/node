@@ -5,8 +5,8 @@
 #
 [service]
 enabled = false
-name = node_setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
+name = node_setup_v${${PROJECT_NAME}_VERSION_MAJOR}
 
 [setup]
-json = $ENV{ProgramData}\node\setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
+json = $ENV{ProgramData}\solosTec\SMF\setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
 pool-size = ${${PROJECT_NAME}_POOL_SIZE}

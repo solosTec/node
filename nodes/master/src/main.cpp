@@ -24,7 +24,7 @@
  */
 int main(int argc, char **argv) 
 {
-	
+
 	//	will contain the path to an optional configuration file
 	std::string config_file;
 	
@@ -77,14 +77,21 @@ int main(int argc, char **argv)
 	boost::program_options::options_description cmdline_options;
 	cmdline_options.add(generic).add(node_options);
 	
+
 	//
 	//	read all data
 	//
+#if BOOST_OS_WINDOWS
+	::OutputDebugString(argv[0]);
+	::OutputDebugString(argv[1]);
+	::OutputDebugString(argv[2]);
+#endif
 	boost::program_options::variables_map vm;
 	boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).run(), vm);
 	boost::program_options::notify(vm);
 	
-	if (vm.count("help")) 
+
+	if (vm.count("help"))
 	{  
 		std::cout 
 		<< cmdline_options 
@@ -113,6 +120,7 @@ int main(int argc, char **argv)
 	try 
 	{
 		const std::string cfg = vm["config"].as< std::string >();
+
 		std::ifstream ifs(cfg);
 		if (ifs.is_open())
 		{
@@ -149,11 +157,11 @@ int main(int argc, char **argv)
 #if BOOST_OS_WINDOWS
 		if (vm["service.enabled"].as< bool >())
 		{
-			::OutputDebugString("start Setup node");
-
 			//	run as service 
+			::OutputDebugString("start master node");
 			const std::string srv_name = vm["service.name"].as< std::string >();
- 			return ctrl.run_as_service(std::move(ctrl), srv_name);
+			::OutputDebugString(srv_name.c_str());
+			return ctrl.run_as_service(std::move(ctrl), srv_name);
 		}
 
 #endif
