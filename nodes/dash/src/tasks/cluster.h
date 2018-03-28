@@ -73,6 +73,7 @@ namespace node
 		void snyc_table(std::string const&);
 
 		void update_sys_cpu_usage_total(std::string const&, http::websocket_session* wss);
+		void update_sys_cpu_count(std::string const&, http::websocket_session* wss);
 		void update_sys_mem_virtual_total(std::string const&, http::websocket_session* wss);
 		void update_sys_mem_virtual_used(std::string const&, http::websocket_session* wss);
 

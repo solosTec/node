@@ -595,6 +595,10 @@ namespace node
 			{				
 				update_sys_cpu_usage_total(channel, const_cast<http::websocket_session*>(wsp));
 			}
+			else if (boost::algorithm::starts_with(channel, "sys.cpu.count"))
+			{
+				update_sys_cpu_count(channel, const_cast<http::websocket_session*>(wsp));
+			}
 			else if (boost::algorithm::starts_with(channel, "sys.mem.virtual.total"))
 			{
 				update_sys_mem_virtual_total(channel, const_cast<http::websocket_session*>(wsp));
@@ -694,12 +698,23 @@ namespace node
 		auto msg = cyng::json::to_string(tpl);
 
 		if (wss)	wss->send_msg(msg);
-
-		//wss->run(cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-		//	cyng::param_factory("cmd", std::string("update")),
-		//	cyng::param_factory("channel", channel),
-		//	cyng::param_factory("value", cyng::sys::get_total_cpu_load()))));
 	}
+
+	void cluster::update_sys_cpu_count(std::string const& channel, http::websocket_session* wss)
+	{
+		//
+		//	CPU count
+		//
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("update")),
+			cyng::param_factory("channel", channel),
+			cyng::param_factory("value", std::thread::hardware_concurrency()));
+
+		auto msg = cyng::json::to_string(tpl);
+
+		if (wss)	wss->send_msg(msg);
+	}
+
 
 	void cluster::update_sys_mem_virtual_total(std::string const& channel, http::websocket_session* wss)
 	{

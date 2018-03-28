@@ -88,7 +88,7 @@
                 <!--<img class="card-img-top" src="images/bus-gateway.svg" alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">CPU</h5>
-                    <p class="card-text">Total CPU usage.</p>
+                    <p class="card-text"><span id="ws-cpu-count"></span> CPUs available.</p>
                     <!--<div id="smf-widget-cpu">
                         <svg style="width: 100%; height: 100%; padding: 10px" id="svg-widget-cpu">
                             <circle cx="50%" cy="50%" r="50%" stroke="black" stroke-width="3" fill="red" />
@@ -133,6 +133,7 @@
                             <th scope="col" class="sml-col-cluster-login">Login</th>
                             <th scope="col" class="sml-col-cluster-ping">Ping</th>
                             <th scope="col" class="sml-col-cluster-ep">IP</th>
+                            <th scope="col" class="sml-col-cluster-elapsed">Elapsed</th>
                         </tr>
                     </thead>
                 </table>
@@ -163,7 +164,7 @@
         var tbl_config = {
             paging: true,
             lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
-            pageLength: 25,
+            pageLength: 10,
             ordering: true,
             info: true,
             //scrollY: "100%",
@@ -181,7 +182,8 @@
                 { targets: 'sml-col-cluster-clients', visible: true, name: 'cluster-clients', className: 'text-right' },
                 { targets: 'sml-col-cluster-login', visible: true, name: 'cluster-login', render: renderDate },
                 { targets: 'sml-col-cluster-ping', visible: true, name: 'cluster-ping' },
-                { targets: 'sml-col-cluster-ep', visible: true, name: 'cluster-ep' }
+                { targets: 'sml-col-cluster-ep', visible: true, name: 'cluster-ep' },
+                { targets: 'sml-col-cluster-elapsed', visible: true, name: 'cluster-last' }
             ]
         };
 
@@ -213,6 +215,7 @@
                 $('#ws-activity-text').html('connected with ' + location.host);
                 //  subscribe system status
                 connection.send(JSON.stringify({ cmd: "update", channel: "sys.mem.virtual.total", push: false }));
+                connection.send(JSON.stringify({ cmd: "update", channel: "sys.cpu.count", push: false }));
                 //  subscribe cluster status
                 connection.send(JSON.stringify({ cmd: "subscribe", channel: "status.cluster", push: true }));
                 startSysTimer();
@@ -232,8 +235,8 @@
 
             connection.onmessage = function (e) {
                 $('#ws-activity-symbol').show();
-                console.log('socket data: ' + e.data);
-                console.log(Object.keys(e.data).length + ' bytes');
+                //console.log('socket data: ' + e.data);
+                //console.log(Object.keys(e.data).length + ' bytes');
                 totalIO += Object.keys(e.data).length;
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
@@ -241,6 +244,9 @@
                         if (obj.channel != null) {
                             if (obj.channel == 'sys.cpu.usage.total') {
                                 $('#ws-cpu-load').html('CPU load ' + obj.value.toFixed(2) + '%');
+                            }
+                            else if (obj.channel == 'sys.cpu.count') {
+                                $('#ws-cpu-count').html(obj.value);
                             }
                             else if (obj.channel == 'sys.mem.virtual.used') {
                                 $('#ws-mem-load').html(format_bytes(obj.value));
@@ -258,7 +264,8 @@
                                 var login = new Date(obj.rec.data.loginTime);
                                 var ping = $('<div/>').text(obj.rec.data.ping).html();
                                 var ep = $('<div/>').text(obj.rec.data.ep).html();
-                                var rowNode = table_cluster.row.add([obj.rec.key.tag, name, version, obj.rec.data.clients, login, ping, ep]).draw().node();
+                                //var last = new Date();
+                                var rowNode = table_cluster.row.add([obj.rec.key.tag, name, version, obj.rec.data.clients, login, ping, ep, 0]).draw().node();
                             }
                         }
                     }
@@ -275,18 +282,21 @@
                             if (data[0] == obj.key) {
                                 var r = table_cluster.row(node);
                                 var d = r.data();
+                                //var last = new Date();
                                 if (obj.value.clients != null) {
                                     d[3] = obj.value.clients;
+                                    d[7] = 0;
                                 }
                                 else if (obj.value.ping != null) {
                                     var prev = d[5]
-                                    if (obj.value.ping < prev) {
-                                        $(node).css('color', 'green');
-                                    }
-                                    else {
-                                        $(node).css('color', 'red');
-                                    }
+                                    //if (obj.value.ping < prev) {
+                                    //    $(node).css('color', 'green');
+                                    //}
+                                    //else {
+                                    //    $(node).css('color', 'red');
+                                    //}
                                     d[5] = obj.value.ping;
+                                    d[7] = 0;
                                 }
                                 r.data(d);
                                 return true;
@@ -312,7 +322,30 @@
                 $('#ws-activity-text').html('running on ' + location.hostname);
                 $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
                 $('#ws-activity-symbol').fadeOut();
+
+                //  update timeout
+                table_cluster.row(function (idx, data, node) {
+                    var r = table_cluster.row(node);
+                    var d = r.data();
+                    //console.log('update: ' + d[1]);
+                    if (d[1] != 'master') {
+                        d[7] = d[7] + 5;
+                        if (d[7] < 20) {
+                            $(node).css('color', 'green');
+                        }
+                        else if (d[7] < 40) {
+                            $(node).css('color', 'orange');
+                        }
+                        else {
+                            $(node).css('color', 'red');
+                        }
+                        r.data(d);
+                    } else {
+                        d[7] = '*';
+                    }
+                });
             }
+
         });
 
     </script>
