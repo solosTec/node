@@ -13,10 +13,11 @@
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/store/db.h>
+#include <unordered_map>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/functional/hash.hpp>
-#include <unordered_map>
+#include <boost/version.hpp>
 
 namespace node 
 {
