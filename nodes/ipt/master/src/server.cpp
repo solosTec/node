@@ -35,7 +35,7 @@ namespace node
 			, timeout_(timeout)
 			, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
-			, socket_(io_ctx_)
+            , socket_(mux_.get_io_service())
 #endif
 			, rnd_()
 			, client_map_()
