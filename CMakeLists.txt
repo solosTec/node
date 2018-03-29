@@ -244,8 +244,8 @@ if(Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
 	
-	set(${PROJECT_NAME}_BOOST_LIBRARY ${PROJECT_NAME}_BOOST_LIBRARY_FOUND)
-	set(${PROJECT_NAME}_BOOST_VERSION ${PROJECT_NAME}_BOOST_${Boost_VERSION})
+        set(${PROJECT_NAME}_BOOST_FOUND ${PROJECT_NAME}_BOOST_LIBRARY_FOUND)
+        set(${PROJECT_NAME}_BOOST_VERSION ${Boost_VERSION})
 	
 	# increase MPL list size for Boost.Variant
 	# possible values are  30, 40 or 50 
@@ -278,7 +278,10 @@ if(OPENSSL_FOUND)
  
  	include_directories(${OPENSSL_INCLUDE_DIR})
  	link_directories(${OPENSSL_LIBRARIES})
-	
+        set(${PROJECT_NAME}_SSL_VERSION ${OPENSSL_VERSION})
+#
+else()
+        set(${PROJECT_NAME}_SSL_VERSION "unknown")
 endif()
 
 #

@@ -12,6 +12,7 @@
 #include <boost/version.hpp>
 #include <boost/asio/version.hpp>
 #include <boost/predef.h>
+#include <ctime>
 
 namespace node 
 {
@@ -22,26 +23,32 @@ namespace node
 		<< NODE_BUILD_DATE
 		<< " UTC"
 		<< std::endl
+
 		<< "last built at: "
 		<< __DATE__
 		<< " "
 		<< __TIME__
 		<< std::endl
+
 		<< "Platform     : "
 		<< NODE_PLATFORM
 		<< std::endl
+
 		<< "Compiler     : "
 		<< BOOST_COMPILER
 		<< std::endl
+
 		<< "StdLib       : "
 		<< BOOST_STDLIB
 		<< std::endl
+
 		<< "BOOSTLib     : v"
 		<< BOOST_LIB_VERSION
 		<< " ("
-		<< BOOST_VERSION
+        << NODE_BOOST_VERSION
 		<< ")"
 		<< std::endl
+
 		<< "Boost.Asio   : v"
 		<< (BOOST_ASIO_VERSION / 100000)
 		<< '.'
@@ -49,20 +56,18 @@ namespace node
 		<< '.'
 		<< (BOOST_ASIO_VERSION % 100)
 		<< std::endl
+
 		<< "CyngLib      : v"
 		<< CYNG_VERSION
 		<< " ("
 		<< CYNG_BUILD_DATE
 		<< ")"
 		<< std::endl
-		
-// BOOST_ASIO_VERSION % 100 is the sub-minor version
-// BOOST_ASIO_VERSION / 100 % 1000 is the minor version
-// BOOST_ASIO_VERSION / 100000 is the major version
 
-// 			<< "OpenSSL      : v"
-// 			<< NODDY_SSL_VERSION
-// 			<< std::endl
+        << "SSL/TSL      : v"
+        << NODE_SSL_VERSION
+        << std::endl
+
 		<< "build type   : "
 #if BOOST_OS_WINDOWS
 #ifdef _DEBUG
@@ -74,13 +79,18 @@ namespace node
 		<< NODE_BUILD_TYPE
 #endif
 		<< std::endl
-// 			<< "shared libs  : "
-// 			<< NODDY_SHARED_LIBS
-// 			<< std::endl
-// 		<< "CPU count    : "
-// 		<< std::thread::hardware_concurrency()
-// 		<< std::endl
-		;
+
+        << "std::time_t  : "
+        << sizeof(std::time_t)
+        << " bytes"
+        << std::endl
+
+        << "std::size_t  : "
+        << sizeof(std::time_t)
+        << " bytes"
+        << std::endl
+
+           ;
         return EXIT_SUCCESS;
 	}
 }
