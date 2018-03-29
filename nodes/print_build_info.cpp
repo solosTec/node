@@ -86,11 +86,16 @@ namespace node
         << std::endl
 
         << "std::size_t  : "
-        << sizeof(std::time_t)
+        << sizeof(std::size_t)
         << " bytes"
         << std::endl
 
-           ;
+        << "double       : "
+        << sizeof(double)
+        << " bytes"
+        << std::endl
+        ;
+
         return EXIT_SUCCESS;
 	}
 }
