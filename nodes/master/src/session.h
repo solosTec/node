@@ -52,6 +52,19 @@ namespace node
 
 	private:
 		void bus_req_login(cyng::context& ctx);
+		void bus_req_login_impl(cyng::context& ctx
+			, cyng::version
+			, std::string const&
+			, std::string const&
+			, boost::uuids::uuid		//	[3] session tag
+			, std::string const&			//	[4] class
+			, std::chrono::minutes	//	[5] delta
+			, std::chrono::system_clock::time_point	//	[6] timestamp
+			, bool					//	[7] autologin
+			, std::uint32_t			//	[8] group
+			, boost::asio::ip::tcp::endpoint	//	[9] remote ep
+			, std::string				//	[10] platform
+		);
 		void bus_req_subscribe(cyng::context& ctx);
 		void bus_req_unsubscribe(cyng::context& ctx);
 		void bus_start_watchdog(cyng::context& ctx);
@@ -59,7 +72,7 @@ namespace node
 
 		void cleanup(cyng::context& ctx);
 
-		cyng::vector_t reply(cyng::vector_t const&, bool);
+		cyng::vector_t reply(std::chrono::system_clock::time_point, bool);
 
 		void client_req_login(cyng::context& ctx);
 		void client_req_close(cyng::context& ctx);

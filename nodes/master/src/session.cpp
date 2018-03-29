@@ -232,6 +232,7 @@ namespace node
 		//	* tag
 		//	* class
 		//	* version
+		//	* plattform (since v0.4)
 		//	* timezone delta
 		//	* timestamp
 		//	* auto config allowed
@@ -239,24 +240,100 @@ namespace node
 		//	* remote ep
 		//
 
-		auto const tpl = cyng::tuple_cast<
-			std::string,			//	[0] account
-			std::string,			//	[1] password
-			boost::uuids::uuid,		//	[2] session tag
-			std::string,			//	[3] class
-			cyng::version,			//	[4] version
-			std::chrono::minutes,	//	[5] delta
-			std::chrono::system_clock::time_point,	//	[6] timestamp
-			bool,					//	[7] autologin
-			std::uint32_t,			//	[8] group
-			boost::asio::ip::tcp::endpoint	//	[9] remote ep
-		>(frame);
+		//
+		// To be compatible with version prior v0.4 we have first to detect the structur.
+		// Prior v0.4 the first element was the account name  and version was on index 4.
+		//
+		if (frame.at(0).get_class().tag() == cyng::TC_STRING
+			&& frame.at(0).get_class().tag() == cyng::TC_VERSION)
+		{
+			//
+			//	v0.3
+			//
+			auto const tpl = cyng::tuple_cast<
+				std::string,			//	[0] account
+				std::string,			//	[1] password
+				boost::uuids::uuid,		//	[2] session tag
+				std::string,			//	[3] class
+				cyng::version,			//	[4] version
+				std::chrono::minutes,	//	[5] delta
+				std::chrono::system_clock::time_point,	//	[6] timestamp
+				bool,					//	[7] autologin
+				std::uint32_t,			//	[8] group
+				boost::asio::ip::tcp::endpoint	//	[9] remote ep
+			>(frame);
 
-		const std::string account = std::get<0>(tpl);
-		const std::string pwd = std::get<1>(tpl);
+			BOOST_ASSERT_MSG(std::get<4>(tpl) == cyng::version(0, 3), "version 0.3 expected");
+
+			bus_req_login_impl(ctx
+				, std::get<4>(tpl)
+				, std::get<0>(tpl)
+				, std::get<1>(tpl)
+				, std::get<2>(tpl)
+				, std::get<3>(tpl)
+				, std::get<5>(tpl)
+				, std::get<6>(tpl)
+				, std::get<7>(tpl)
+				, std::get<8>(tpl)
+				, std::get<9>(tpl)
+				, "unknown"	);
+		}
+		else
+		{
+			//
+			//	v0.4 or higher
+			//
+			auto const tpl = cyng::tuple_cast<
+				cyng::version,			//	[0] version
+				std::string,			//	[1] account
+				std::string,			//	[2] password
+				boost::uuids::uuid,		//	[3] session tag
+				std::string,			//	[4] class
+				std::chrono::minutes,	//	[5] delta
+				std::chrono::system_clock::time_point,	//	[6] timestamp
+				bool,					//	[7] autologin
+				std::uint32_t,			//	[8] group
+				boost::asio::ip::tcp::endpoint,	//	[9] remote ep
+				std::string				//	[10] platform
+			>(frame);
+
+			BOOST_ASSERT_MSG(std::get<0>(tpl) > cyng::version(0, 3), "version 0.4 or higher expected");
+
+			bus_req_login_impl(ctx
+				, std::get<0>(tpl)
+				, std::get<1>(tpl)
+				, std::get<2>(tpl)
+				, std::get<3>(tpl)
+				, std::get<4>(tpl)
+				, std::get<5>(tpl)
+				, std::get<6>(tpl)
+				, std::get<7>(tpl)
+				, std::get<8>(tpl)
+				, std::get<9>(tpl)
+				, std::get<10>(tpl));
+		}
+	}
+
+	void session::bus_req_login_impl(cyng::context& ctx
+		, cyng::version ver
+		, std::string const& account
+		, std::string const& pwd
+		, boost::uuids::uuid tag
+		, std::string const& node_class	
+		, std::chrono::minutes delta
+		, std::chrono::system_clock::time_point ts
+		, bool autologin
+		, std::uint32_t group
+		, boost::asio::ip::tcp::endpoint ep
+		, std::string platform)
+	{
 		if ((account == account_) && (pwd == pwd_))
 		{
-			CYNG_LOG_INFO(logger_, "cluster member successful authorized with " << cyng::io::to_str(frame));
+			CYNG_LOG_INFO(logger_, "cluster member "
+				<< node_class
+				<< '@'
+				<< ep
+				<< " successful authorized");
 
 			//
 			//	register additional request handler
@@ -273,32 +350,50 @@ namespace node
 			//
 			//	set group id
 			//
-			group_ = std::get<8>(tpl);
+			group_ = group;
 
 			//
 			//	send reply
 			//
-			ctx.attach(reply(frame, true));
+			ctx.attach(reply(ts, true));
 
 			//
 			//	insert into cluster table
 			//
-			std::chrono::microseconds ping = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - std::get<6>(tpl));
+			std::chrono::microseconds ping = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - ts);
 			ctx.attach(cyng::generate_invoke("bus.start.watchdog"
-				, std::get<3>(tpl), std::get<6>(tpl), std::get<4>(tpl), ping, cyng::invoke("push.session"), std::get<9>(tpl)));
+				, tag
+				, ts
+				, ver
+				, ping
+				, cyng::invoke("push.session")
+				, ep));
 		}
 		else
 		{
-			CYNG_LOG_WARNING(logger_, "cluster member login failed: " << cyng::io::to_str(frame));
-			ctx.attach(reply(frame, false));
+			CYNG_LOG_WARNING(logger_, "cluster member login failed: " 
+				<< account
+				<< ':'
+				<< pwd);
 
+			//
+			//	emit system message
+			//
+			std::stringstream ss;
+			ss
+				<< "cluster member login failed: " 
+				<< node_class
+				<< '@'
+				<< ep
+				;
 			insert_msg(db_
 				, cyng::logging::severity::LEVEL_ERROR
-				, "cluster member login failed: " + std::get<3>(tpl)
+				, ss.str()
 				, ctx.tag());
 
 		}
 	}
+
 
 	void session::bus_start_watchdog(cyng::context& ctx)
 	{
@@ -524,15 +619,15 @@ namespace node
 		cyng::store::close_subscription(subscriptions_, std::get<0>(tpl));
 	}
 
-	cyng::vector_t session::reply(cyng::vector_t const& frame, bool success)
+	cyng::vector_t session::reply(std::chrono::system_clock::time_point ts, bool success)
 	{
 		cyng::vector_t prg;
 		return prg	<< cyng::generate_invoke_unwinded("stream.serialize"
 			, success
 			, cyng::code::IDENT
 			, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)
-			, frame.at(5)	//	timestamp of sender
-			, cyng::make_object(std::chrono::system_clock::now())
+			, ts	//	timestamp of sender
+			, std::chrono::system_clock::now()
 			, cyng::invoke_remote("bus.res.login"))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;

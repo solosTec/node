@@ -32,16 +32,17 @@ namespace node
 			<< cyng::generate_invoke("bus.start")		//	start reading cluster bus
 			<< cyng::generate_invoke("stream.serialize"
 				, cyng::generate_invoke_remote("bus.req.login"
+					, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)
 					, account
 					, pwd
 					, cyng::code::IDENT
 					, node_class
-					, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)
 					, cyng::make_object(cyng::chrono::delta())
 					, cyng::make_now()
 					, cyng::make_object(auto_config)
 					, group
 					, cyng::invoke_remote("ip.tcp.socket.ep.remote")
+					, NODE_PLATFORM	//	since v0.4
 				))
 			<< cyng::generate_invoke("stream.flush")
 			<< cyng::label(":STOP")

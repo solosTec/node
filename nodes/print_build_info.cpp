@@ -81,25 +81,31 @@ namespace node
 #endif
 		<< std::endl
 
+        << "address model: "
+        << NODE_ADDRESS_MODEL
+        << " bit"
+        << std::endl
+			
+
         << "std::time_t  : "
         << sizeof(std::time_t)
         << " bytes"
         << std::endl
 
-        << "std::size_t  : "
-        << sizeof(std::size_t)
-        << " bytes"
-        << std::endl
+        //<< "std::size_t  : "
+        //<< sizeof(std::size_t)
+        //<< " bytes"
+        //<< std::endl
 
-        << "double       : "
-        << sizeof(double)
-        << " bytes"
-        << std::endl
+        //<< "double       : "
+        //<< sizeof(double)
+        //<< " bytes"
+        //<< std::endl
 
-        << "duration     : "
-        << sizeof(std::chrono::system_clock::time_point::duration::rep)
-        << " bytes"
-        << std::endl
+        //<< "duration     : "
+        //<< sizeof(std::chrono::system_clock::time_point::duration::rep)
+        //<< " bytes"
+        //<< std::endl
         ;
 		
 
