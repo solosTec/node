@@ -13,6 +13,7 @@
 #include <boost/asio/version.hpp>
 #include <boost/predef.h>
 #include <ctime>
+#include <chrono>
 
 namespace node 
 {
@@ -94,7 +95,13 @@ namespace node
         << sizeof(double)
         << " bytes"
         << std::endl
+
+        << "duration     : "
+        << sizeof(std::chrono::system_clock::time_point::duration::rep)
+        << " bytes"
+        << std::endl
         ;
+		
 
         return EXIT_SUCCESS;
 	}
