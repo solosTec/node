@@ -651,12 +651,19 @@ namespace node
 				//
 				//	TDevice key is of type UUID
 				//
-				cyng::vector_t vec;
-				vec = cyng::value_cast(reader["key"].get("tag"), vec);
-				BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
-				auto key = cyng::table::key_generator(boost::uuids::string_generator()(cyng::value_cast<std::string>(vec.at(0), "")));
+				try {
+					cyng::vector_t vec;
+					vec = cyng::value_cast(reader["key"].get("tag"), vec);
+					BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
+					const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+					CYNG_LOG_DEBUG(logger_, "TDevice key [" << str << "]");
+					auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
 
-				ctx.attach(bus_req_db_remove("TDevice", key, ctx.tag()));
+					ctx.attach(bus_req_db_remove("TDevice", key, ctx.tag()));
+				}
+				catch (std::exception const& ex) {
+					CYNG_LOG_ERROR(logger_, "ws.read - delete channel [" << channel << "] failed");
+				}
 			}
 			else
 			{
@@ -673,22 +680,30 @@ namespace node
 				//	TDevice key is of type UUID
 				//	all values have the same key
 				//
-				cyng::vector_t vec;
-				vec = cyng::value_cast(reader["rec"].get("key"), vec);
-				BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
+				try {
 
-				auto key = cyng::table::key_generator(boost::uuids::string_generator()(cyng::value_cast<std::string>(vec.at(0), "")));
+					cyng::vector_t vec;
+					vec = cyng::value_cast(reader["rec"].get("key"), vec);
+					BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
 
-				cyng::tuple_t tpl;
-				tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
-				for (auto p : tpl)
-				{
-					cyng::param_t param;
-					ctx.attach(bus_req_db_modify("TDevice"
-						, key
-						, cyng::value_cast(p, param)
-						, 0
-						, ctx.tag()));
+					const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+					CYNG_LOG_DEBUG(logger_, "TDevice key [" << str << "]");
+					auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+
+					cyng::tuple_t tpl;
+					tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
+					for (auto p : tpl)
+					{
+						cyng::param_t param;
+						ctx.attach(bus_req_db_modify("TDevice"
+							, key
+							, cyng::value_cast(p, param)
+							, 0
+							, ctx.tag()));
+					}
+				}
+				catch (std::exception const& ex) {
+					CYNG_LOG_ERROR(logger_, "ws.read - modify channel [" << channel << "] failed");
 				}
 			}
 			else
