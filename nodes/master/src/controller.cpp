@@ -83,7 +83,19 @@ namespace node
 					//	start application
 					//
 					cyng::vector_t tmp;
-					shutdown = start(mux, logger, cyng::value_cast(config, tmp)[0]);
+					tmp = cyng::value_cast(config, tmp);
+					if (!tmp.empty())
+					{
+						shutdown = start(mux, logger, tmp.at(0));
+					}
+					else
+					{
+						CYNG_LOG_FATAL(logger, "config file " 
+							<< json_path_
+							<< " is empty - shutdown" );
+
+						shutdown = true;
+					}
 					
 					//
 					//	print uptime
@@ -290,11 +302,6 @@ namespace node
 		//
 		CYNG_LOG_INFO(logger, "close acceptor");	
 		srv.close();
-		
-		//
-		//	stop all connections
-		//
-		CYNG_LOG_INFO(logger, "stop all connections");	
 		
 		//
 		//	stop all tasks

@@ -424,9 +424,9 @@ namespace node
 		BOOST_ASSERT(caller_peer != nullptr);
 
 		cyng::param_map_t options;
-		options["origin-tag"] = cyng::make_object(tag);	//	send response to this session
+		options["origin-tag"] = cyng::make_object(tag);		//	send response to this session
 		options["local-peer"] = cyng::make_object(peer);	//	and this peer
-															//
+															
 		//	following actions
 		//
 		cyng::vector_t prg;

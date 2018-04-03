@@ -109,6 +109,13 @@ namespace node
 		return vm_.hash();
 	}
 
+	void session::stop()
+	{
+		vm_	.run(cyng::generate_invoke("ip.tcp.socket.shutdown"))
+			.run(cyng::generate_invoke("ip.tcp.socket.close"));
+		vm_.halt();
+	}
+
 	void session::cleanup(cyng::context& ctx)
 	{
 		BOOST_ASSERT(this->vm_.tag() == ctx.tag());
@@ -245,7 +252,7 @@ namespace node
 		// Prior v0.4 the first element was the account name  and version was on index 4.
 		//
 		if (frame.at(0).get_class().tag() == cyng::TC_STRING
-			&& frame.at(0).get_class().tag() == cyng::TC_VERSION)
+			&& frame.at(4).get_class().tag() == cyng::TC_VERSION)
 		{
 			//
 			//	v0.3
@@ -264,6 +271,11 @@ namespace node
 			>(frame);
 
 			BOOST_ASSERT_MSG(std::get<4>(tpl) == cyng::version(0, 3), "version 0.3 expected");
+
+			CYNG_LOG_WARNING(logger_, "cluster member "
+				<< std::get<0>(tpl)
+				<< " login with version "
+				<< std::get<4>(tpl));
 
 			bus_req_login_impl(ctx
 				, std::get<4>(tpl)
@@ -362,7 +374,7 @@ namespace node
 			//
 			std::chrono::microseconds ping = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - ts);
 			ctx.attach(cyng::generate_invoke("bus.start.watchdog"
-				, tag
+				, node_class
 				, ts
 				, ver
 				, ping

@@ -48,7 +48,6 @@ namespace node
 
 	void watchdog::stop()
 	{
-
 		//
 		//	terminate task
 		//
@@ -60,10 +59,27 @@ namespace node
 
 	}
 
-	//	slot 0
-	cyng::continuation watchdog::process()
+	/**
+	 * slot[0] - master shutdown
+	 *
+	 * @param tag master tag
+	 */
+	cyng::continuation watchdog::process(boost::uuids::uuid tag)
 	{
-		return cyng::continuation::TASK_STOP;
+		//
+		//	Stop peer
+		//
+		auto sp = cyng::object_cast<session>(session_obj_);
+
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> shutdown peer "
+			<< sp->vm_.tag());
+
+		const_cast<session*>(sp)->stop();
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void watchdog::send_watchdogs()

@@ -80,9 +80,10 @@ int main(int argc, char **argv)
     //	read all data
     //
 #if BOOST_OS_WINDOWS
-	::OutputDebugString(argv[0]);
-	::OutputDebugString(argv[1]);
-	::OutputDebugString(argv[2]);
+	for (auto idx = 0; idx < argc; ++idx)
+	{
+		::OutputDebugString(argv[idx]);
+	}
 #endif
 	boost::program_options::variables_map vm;
     boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).run(), vm);

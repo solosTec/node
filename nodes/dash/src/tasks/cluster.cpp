@@ -20,6 +20,7 @@
 #include <cyng/json.h>
 
 #include <boost/uuid/nil_generator.hpp>
+#include <boost/uuid/string_generator.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 namespace node
@@ -647,8 +648,15 @@ namespace node
 			CYNG_LOG_TRACE(logger_, "ws.read - delete channel [" << channel << "]");
 			if (boost::algorithm::starts_with(channel, "config.device"))
 			{
+				//
+				//	TDevice key is of type UUID
+				//
 				cyng::vector_t vec;
-				ctx.attach(bus_req_db_remove("TDevice", cyng::value_cast(reader["key"].get("tag"), vec), ctx.tag()));
+				vec = cyng::value_cast(reader["key"].get("tag"), vec);
+				BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
+				auto key = cyng::table::key_generator(boost::uuids::string_generator()(cyng::value_cast<std::string>(vec.at(0), "")));
+
+				ctx.attach(bus_req_db_remove("TDevice", key, ctx.tag()));
 			}
 			else
 			{
@@ -661,14 +669,23 @@ namespace node
 			CYNG_LOG_TRACE(logger_, "ws.read - modify channel [" << channel << "]");
 			if (boost::algorithm::starts_with(channel, "config.device"))
 			{
+				//
+				//	TDevice key is of type UUID
+				//	all values have the same key
+				//
+				cyng::vector_t vec;
+				vec = cyng::value_cast(reader["rec"].get("key"), vec);
+				BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
+
+				auto key = cyng::table::key_generator(boost::uuids::string_generator()(cyng::value_cast<std::string>(vec.at(0), "")));
+
 				cyng::tuple_t tpl;
 				tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
 				for (auto p : tpl)
 				{
-					cyng::vector_t vec;
 					cyng::param_t param;
 					ctx.attach(bus_req_db_modify("TDevice"
-						, cyng::value_cast(reader["rec"].get("key"), vec)
+						, key
 						, cyng::value_cast(p, param)
 						, 0
 						, ctx.tag()));
@@ -1030,11 +1047,6 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("config.device", msg);
-
-			//server_.process_event("config.device", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("insert")),
-			//	cyng::param_factory("channel", "config.device"),
-			//	cyng::param_factory("rec", rec.convert()))));
 
 			update_channel("table.device.count", tbl->size());
 

@@ -20,7 +20,7 @@ namespace node
 	class watchdog
 	{
 	public:
-		using msg_0 = std::tuple<>;
+		using msg_0 = std::tuple<boost::uuids::uuid>;
 		using signatures_t = std::tuple<msg_0>;
 
 	public:
@@ -37,7 +37,7 @@ namespace node
 		 *
 		 * sucessful cluster login
 		 */
-		cyng::continuation process();
+		cyng::continuation process(boost::uuids::uuid tag);
 
 	private:
 		void send_watchdogs();

@@ -155,7 +155,12 @@ namespace node
 			, "server closed"
 			, tag_);
 
-		CYNG_LOG_FATAL(logger_, "close server");
+		CYNG_LOG_WARNING(logger_, "close server");
+
+		//
+		//	terminate all sessions
+		//
+		mux_.send("node::watchdog", 0, cyng::tuple_factory(tag_));
 
 		// The server is stopped by cancelling all outstanding asynchronous
         // operations. Once all operations have finished the io_context::run()

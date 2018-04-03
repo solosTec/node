@@ -50,6 +50,11 @@ namespace node
 		 */
 		std::size_t hash() const noexcept;
 
+		/**
+		 * Fast session shutdown
+		 */
+		void stop();
+
 	private:
 		void bus_req_login(cyng::context& ctx);
 		void bus_req_login_impl(cyng::context& ctx

@@ -416,7 +416,20 @@ namespace node
 
 		void server::client_res_open_connection_forward(cyng::context& ctx)
 		{
-			propagate("client.res.open.connection.forward", ctx.get_frame());
+			cyng::vector_t frame = ctx.get_frame();
+			//"local-connect"
+			//	[6baa9ee2-4812-4698-9eb6-c79a3df19d51,1a4ac8fd-2997-43c8-8b4a-e2dae1e167b8,1,false,
+			//	%(),
+			//	%(("seq":1),("tp-layer":ipt))]
+			//
+			//	* session tag
+			//	* peer
+			//	* cluster sequence
+			//	* success
+			//	* options
+			//	* bag
+			ctx.run(cyng::generate_invoke("log.msg.trace", "client.res.open.connection.forward", frame));
+			propagate("client.res.open.connection.forward", std::move(frame));
 		}
 
 		void server::client_req_transmit_data_forward(cyng::context& ctx)
