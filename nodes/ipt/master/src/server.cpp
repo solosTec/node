@@ -13,6 +13,8 @@
 #include <cyng/vm/generator.h>
 #include <cyng/dom/reader.h>
 #include <cyng/object_cast.hpp>
+#include <cyng/tuple_cast.hpp>
+#include <cyng/factory/set_factory.h>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -39,6 +41,7 @@ namespace node
 #endif
 			, rnd_()
 			, client_map_()
+			, connection_map_()
 		{
 			//
 			//	connection management
@@ -48,6 +51,8 @@ namespace node
 			bus_->vm_.run(cyng::register_function("push.ep.remote", 1, std::bind(&server::push_ep_remote, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("server.insert.connection", 2, std::bind(&server::insert_connection, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1)));
 
 			//
 			//	client responses
@@ -221,6 +226,72 @@ namespace node
 			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 			auto ec = cyng::value_cast(frame.at(1), boost::system::error_code());
 			ctx.attach(client_req_close(tag, ec.value()));
+
+			//
+			//	clean up connection_map_
+			//
+			auto pos = connection_map_.find(tag);
+			if (pos != connection_map_.end())
+			{
+				auto receiver = pos->second;
+
+				CYNG_LOG_INFO(logger_, "clean up local connection: "
+					<< tag
+					<< " <==> "
+					<< receiver);
+
+
+				//
+				//	remove both entries
+				//
+				connection_map_.erase(pos);
+				connection_map_.erase(receiver);
+
+			}
+		}
+
+		void server::transmit_data(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			//
+			//	[8113a678-903f-4975-8f11-49c1bf63a3c6,1B1B1B1B010101017681063138303430...000001B1B1B1B1A039946]
+			//
+			//	* sender
+			//	* data
+			//
+			//ctx.attach(cyng::generate_invoke("log.msg.debug", "server.transmit.data", frame));
+			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+			auto pos = connection_map_.find(tag);
+			if (pos != connection_map_.end())
+			{
+				auto receiver = pos->second;
+
+				CYNG_LOG_TRACE(logger_, "transfer data local "
+					<< tag
+					<< " ==> "
+					<< receiver);
+
+				propagate("ipt.transfer.data", receiver, cyng::vector_t({ frame.at(1) }));
+				propagate("stream.flush", receiver, cyng::vector_t({}));
+
+				//
+				//	update meta data
+				//
+				auto dp = cyng::object_cast<cyng::buffer_t>(frame.at(1));
+				if (dp != nullptr)
+				{
+					ctx.attach(client_inc_throughput(tag
+						, receiver
+						, dp->size()));
+				}
+			}
+			else
+			{
+				CYNG_LOG_ERROR(logger_, "transmit data failed: "
+					<< tag
+					<< " is not member of connection map");
+
+			}
 		}
 
 		void server::push_connection(cyng::context& ctx)
@@ -364,9 +435,29 @@ namespace node
 			}
 		}
 
-		void server::propagate(std::string fun, cyng::vector_t&& msg)
+		void server::propagate(std::string fun, cyng::vector_t const& msg)
 		{
-			const boost::uuids::uuid tag = cyng::value_cast(msg.at(0), boost::uuids::nil_uuid());
+			if (!msg.empty())
+			{
+				auto pos = msg.begin();
+				BOOST_ASSERT(pos != msg.end());
+				auto tag = cyng::value_cast(*pos, boost::uuids::nil_uuid());
+
+				//
+				//	remove duplicate information
+				//
+				propagate(fun, tag, cyng::vector_t(++pos, msg.end()));
+			}
+			else
+			{
+				CYNG_LOG_FATAL(logger_, "empty function "
+					<< fun);
+			}
+		}
+
+		void server::propagate(std::string fun, boost::uuids::uuid tag, cyng::vector_t&& msg)
+		{
+			//const boost::uuids::uuid tag = cyng::value_cast(msg.at(0), boost::uuids::nil_uuid());
 			auto pos = client_map_.find(tag);
 			if (pos != client_map_.end())
 			{
@@ -417,9 +508,10 @@ namespace node
 		void server::client_res_open_connection_forward(cyng::context& ctx)
 		{
 			cyng::vector_t frame = ctx.get_frame();
-			//"local-connect"
-			//	[6baa9ee2-4812-4698-9eb6-c79a3df19d51,1a4ac8fd-2997-43c8-8b4a-e2dae1e167b8,1,false,
-			//	%(),
+
+			//
+			//	[bff22fb4-f410-4239-83ae-40027fb2609e,f07f47e1-7f4d-4398-8fb5-ae1d8942a50e,16,true,
+			//	%(("device-name":LSMTest4),("local-connect":true),("local-peer":3d5994f1-60df-4410-b6ba-c2934f8bfd5e),("origin-tag":bff22fb4-f410-4239-83ae-40027fb2609e),("remote-peer":3d5994f1-60df-4410-b6ba-c2934f8bfd5e),("remote-tag":3f972487-e9a9-4e03-92d4-e2df8f6d30c5)),
 			//	%(("seq":1),("tp-layer":ipt))]
 			//
 			//	* session tag
@@ -427,8 +519,56 @@ namespace node
 			//	* cluster sequence
 			//	* success
 			//	* options
-			//	* bag
-			ctx.run(cyng::generate_invoke("log.msg.trace", "client.res.open.connection.forward", frame));
+			//	* bag - original data
+			//ctx.run(cyng::generate_invoke("log.msg.trace", "client.res.open.connection.forward", frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] tag
+				boost::uuids::uuid,		//	[1] peer
+				std::uint64_t,			//	[2] cluster sequence
+				bool,					//	[3] success
+				cyng::param_map_t,		//	[4] options
+				cyng::param_map_t		//	[5] bag
+			>(frame);
+
+
+			const bool success = std::get<3>(tpl);
+
+			//
+			//	dom reader
+			//
+			auto dom = cyng::make_reader(std::get<4>(tpl));
+			auto local_connect = cyng::value_cast(dom.get("local-connect"), false);
+			if (local_connect && success)
+			{
+				auto origin_tag = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
+				auto remote_tag = cyng::value_cast(dom.get("remote-tag"), boost::uuids::nil_uuid());
+				BOOST_ASSERT(origin_tag == std::get<0>(tpl));
+				BOOST_ASSERT(origin_tag != remote_tag);
+				ctx.run(cyng::generate_invoke("log.msg.trace", "establish local connection", origin_tag, remote_tag));
+
+				//
+				//	insert both directions
+				//
+				connection_map_.emplace(origin_tag, remote_tag);
+				connection_map_.emplace(remote_tag, origin_tag);
+				BOOST_ASSERT((connection_map_.size() % 2) == 0);
+
+				//
+				//	update connection state of remote session
+				//
+				cyng::vector_t prg;
+				prg
+					<< origin_tag
+					<< true
+					;
+
+				propagate("session.update.connection.state", remote_tag, std::move(prg));
+			}
+
+			//
+			//	forward to session
+			//
 			propagate("client.res.open.connection.forward", std::move(frame));
 		}
 

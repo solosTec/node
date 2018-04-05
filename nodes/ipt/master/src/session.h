@@ -25,6 +25,12 @@ namespace node
 			friend class connection;
 			friend class server;
 
+			struct connect_state
+			{
+				connect_state();
+				bool connected_local_;
+			};
+
 		public:
 			session(cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
@@ -84,6 +90,7 @@ namespace node
 			void client_res_open_connection(cyng::context& ctx);
 
 			void store_relation(cyng::context& ctx);
+			void update_connection_state(cyng::context& ctx);
 
 		private:
 			cyng::async::mux& mux_;
@@ -108,6 +115,11 @@ namespace node
 			 * gatekeeper task
 			 */
 			std::size_t gate_keeper_;
+
+			/**
+			 * contains state of local connections
+			 */
+			connect_state	connect_state_;
 		};
 	}
 }

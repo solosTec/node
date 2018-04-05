@@ -80,7 +80,7 @@ namespace node
 				, "vFirmware"	//	(5) firmwareversion (i.e. 11600000)
 				, "factoryNr"	//	(6) fabrik nummer (i.e. 06441734)
 				, "ifService"	//	(7) MAC of service interface
-				, "ifData"	//	(8) MAC od data interface
+				, "ifData"	//	(8) MAC of data interface
 				, "pwdDef"	//	(9) Default PW
 				, "pwdRoot"	//	(10)
 				, "mbus"	//	(11)
@@ -92,6 +92,27 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
 		}
+		else
+		{
+			db.insert("TGateway"
+				, cyng::table::key_generator(tag)
+				, cyng::table::data_generator("0500153B02517E"
+					, "EMH"
+					, "Variomuc ETHERNET"
+					, std::chrono::system_clock::now()
+					, "11600000"
+					, "06441734"
+					, cyng::mac48(0, 1, 2, 3, 4, 5)
+					, cyng::mac48(0, 1, 2, 3, 4, 6)
+					, "secret"
+					, "secret"
+					, "mbus"
+					, "operator"
+					, "operator")
+				, 94
+				, tag);
+		}
+
 
 		if (!db.create_table(cyng::table::make_meta_table<1, 9>("TMeter", { "pk"
 			, "ident"	//	ident nummer (i.e. 1EMH0006441734)

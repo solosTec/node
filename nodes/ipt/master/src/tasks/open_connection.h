@@ -52,7 +52,7 @@ namespace node
 		cyng::logging::log_ptr logger_;
 		bus::shared_type bus_;	//!< cluster bus
 		cyng::controller& vm_;	//!< ipt device
-		const boost::uuids::uuid tag_;	//!< remote session tag to address response
+		const boost::uuids::uuid tag_;	//!< origin session tag to address response
 		const std::size_t seq_;
 		const std::string number_;
 		const cyng::param_map_t options_;

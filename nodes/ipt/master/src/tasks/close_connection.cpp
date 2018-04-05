@@ -41,13 +41,15 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> is running");
+			<< "> is running in "
+			<< (shutdown_ ? "shutdown" : "normal")
+			<< " mode");
 	}
 
 	void close_connection::run()
 	{	
 		//
-		//	* forward connection opne request to device
+		//	* forward connection close request to device
 		//	* store sequence - task relation
 		//	* start timer to check connection setup
 		//

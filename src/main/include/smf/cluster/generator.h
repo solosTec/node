@@ -245,6 +245,10 @@ namespace node
 		, cyng::object value
 		, cyng::param_map_t const& bag);
 
+	cyng::vector_t client_inc_throughput(boost::uuids::uuid origin
+		, boost::uuids::uuid target
+		, std::uint64_t);
+
 }
 
 #endif

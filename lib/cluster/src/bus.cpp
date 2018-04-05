@@ -73,11 +73,11 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 
 			//	[true,435a75e4-b97d-4152-a9b7-cdc2e21e8599,0.2,2018-01-11 16:54:48.89934220,2018-01-11 16:54:48.91710660]
-			std::cerr << cyng::io::to_str(frame.at(0)) << std::endl;
-			std::cerr << cyng::io::to_str(frame.at(1)) << std::endl;
-			std::cerr << cyng::io::to_str(frame.at(2)) << std::endl;
-			std::cerr << cyng::io::to_str(frame.at(3)) << std::endl;
-			std::cerr << cyng::io::to_str(frame.at(4)) << std::endl;
+			//std::cerr << cyng::io::to_str(frame.at(0)) << std::endl;
+			//std::cerr << cyng::io::to_str(frame.at(1)) << std::endl;
+			//std::cerr << cyng::io::to_str(frame.at(2)) << std::endl;
+			//std::cerr << cyng::io::to_str(frame.at(3)) << std::endl;
+			//std::cerr << cyng::io::to_str(frame.at(4)) << std::endl;
 			CYNG_LOG_INFO(logger_, "login response " << cyng::io::to_str(frame));
 
 			if (cyng::value_cast(frame.at(0), false))

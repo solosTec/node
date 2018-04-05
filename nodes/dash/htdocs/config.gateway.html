@@ -39,9 +39,9 @@
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="config.device.html">Devices</a>
-<!--                        <a class="dropdown-item active" href="config.gateway.html">Gateway</a>-->
-<!--                        <a class="dropdown-item" href="config.meter.html">Meter</a>-->
-<!--                        <a class="dropdown-item" href="config.user.html">User</a>-->
+                        <a class="dropdown-item active" href="config.gateway.html">Gateway</a>
+                        <!--                        <a class="dropdown-item" href="config.meter.html">Meter</a>-->
+                        <!--                        <a class="dropdown-item" href="config.user.html">User</a>-->
                     </div>
                 </li>
 
@@ -52,8 +52,8 @@
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="status.session.html">Sessions</a>
                         <a class="dropdown-item" href="status.targets.html">Targets</a>
-<!--                        <a class="dropdown-item" href="status.connections.html">Connections</a>-->
-<!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
+                        <!--                        <a class="dropdown-item" href="status.connections.html">Connections</a>-->
+                        <!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
                     </div>
                 </li>
 
@@ -81,9 +81,115 @@
         </div>
     </div>
 
+    <div class="container-fluid">
+        <div class="row">
+            <div class="table-responsive col-md-12">
+                <table id="smf-table-gw" class="table table-condensed table-striped table-bordered" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th class="sml-col-gw-pk">UUID</th>
+                            <th class="sml-col-gw-server">Server ID</th>
+                            <!--<th class="sml-col-gw-device">Device</th>-->
+                            <th class="sml-col-gw-manufacturer">Manufacturer</th>
+                            <th class="sml-col-gw-id">Model</th>
+                            <th class="sml-col-gw-user">User</th>
+                            <th class="sml-col-gw-pwd">Password</th>
+                            <th class="sml-col-gw-online">Online</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
     <script type="text/javascript" src="popper.min.js"></script>
 
-</body>
-</html>
+    <script>
+        //  globals
+        var table_gw;
+        var connection;
+
+        var tbl_config = {
+            paging: true,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            pageLength: 25,
+            ordering: true,
+            info: true,
+            //scrollY: "100%",
+            autoWidth: false,
+            deferRender: false,
+            processing: true,
+            searching: true,
+            select: true,
+            //keys: true,  //  table navigation
+            //dom: '<"top"ilp>rt<"bottom"f><"clear">',
+            columnDefs: [
+                { targets: 'sml-col-gw-pk', visible: true, name: 'gw-pk' },
+                { targets: 'sml-col-gw-server', visible: true, name: 'gw-server' },
+//                { targets: 'sml-col-gw-device', visible: true, name: 'gw-device' },
+                { targets: 'sml-col-gw-manufacturer', visible: true, name: 'gw-manufacturer' },
+                { targets: 'sml-col-gw-id', visible: true, name: 'gw-id'},
+                { targets: 'sml-col-gw-user', visible: true, name: 'gw-user'},
+                { targets: 'sml-col-gw-pwd', visible: true, name: 'gw-pwd' },
+                { targets: 'sml-col-gw-online', visible: true, name: 'gw-online' }
+            ]
+        };
+
+        $(document).ready(function () {
+            console.log('document ready');
+            table_gw = $('#smf-table-gw').DataTable(tbl_config);
+
+            $('#ws-activity-text').html('connecting to ' + location.host + '...');
+            connection = new WebSocket('ws://' + location.host + '/smf/api/gw/v0.1', ['SMF']);
+            connection.onopen = function () {
+                //  subscribe system status
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "config.gateway", push: true }));
+            };
+
+            connection.onclose = function (event) {
+                $('#ws-activity-symbol').show();
+                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
+                $('#ws-activity-text').html('error ' + event.code);
+            };
+
+            connection.onerror = function (error) {
+                console.log('ws error');
+                $('#ws-activity-text').html('ws error');
+            };
+
+            connection.onmessage = function (e) {
+                $('#ws-activity-symbol').show();
+                console.log('incoming data: ' + e.data);
+                var obj = JSON.parse(e.data);
+                if (obj.cmd != null) {
+                    if (obj.cmd == 'insert') {
+                        //  {"cmd": "insert", "channel": "config.gateway", "rec": {"key": {"pk":"01cb55e5-b4a3-4b97-bb4e-4f02025fe485"}, 
+                        //  "data": { "factoryNr": "06441734", "id": "0500153B02517E", "ifData": "00:01:02:03:04:06", "ifService": "00:01:02:03:04:05", "made": "2018-04-05 13:21:42.61796360", "manufacturer": "EMH", "mbus": "mbus", "model": "Variomuc ETHERNET", "pwdDef": "secret", "pwdRoot": "secret", "userName": "secret", "userPwd": "secret", "vFirmware": "11600000" }, "gen": 94}}
+                        //
+                        var server = $('<div/>').text(obj.rec.data.id).html();
+                        var manufacturer = $('<div/>').text(obj.rec.data.manufacturer).html();
+                        var model = $('<div/>').text(obj.rec.data.model).html();
+                        var userName = $('<div/>').text(obj.rec.data.userName).html();
+                        var userPwd = $('<div/>').text(obj.rec.data.userPwd).html();
+                        var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, model, userName, userPwd, false]).draw().node();
+
+                    }
+                    else if (obj.cmd == 'delete') {
+
+                    }
+                    else if (obj.cmd == 'modify') {
+
+                    }
+                }
+                $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
+                $('#ws-activity-symbol').fadeOut();
+            };
+
+        });
+
+    </script>
+
+</body >
+</html >

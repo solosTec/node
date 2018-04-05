@@ -88,9 +88,11 @@ namespace node
 		void client_req_open_connection(cyng::context& ctx);
 		void client_res_open_connection(cyng::context& ctx);
 		void client_req_close_connection(cyng::context& ctx);
+		void client_res_close_connection(cyng::context& ctx);
 		void client_req_transfer_pushdata(cyng::context& ctx);
 
 		void client_req_transmit_data(cyng::context& ctx);
+		void client_inc_throughput(cyng::context& ctx);
 		void client_update_attr(cyng::context& ctx);
 
 		void sig_ins(cyng::store::table const*

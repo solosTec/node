@@ -95,9 +95,11 @@ namespace node
 		vm_.run(cyng::register_function("client.req.open.connection", 6, std::bind(&session::client_req_open_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.res.open.connection", 4, std::bind(&session::client_res_open_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.close.connection", 4, std::bind(&session::client_req_close_connection, this, std::placeholders::_1)));
+		vm_.run(cyng::register_function("client.res.close.connection", 6, std::bind(&session::client_res_close_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.transfer.pushdata", 6, std::bind(&session::client_req_transfer_pushdata, this, std::placeholders::_1)));
 
 		vm_.run(cyng::register_function("client.req.transmit.data", 5, std::bind(&session::client_req_transmit_data, this, std::placeholders::_1)));
+		vm_.run(cyng::register_function("client.inc.throughput", 3, std::bind(&session::client_inc_throughput, this, std::placeholders::_1)));
 
 		vm_.run(cyng::register_function("client.update.attr", 6, std::bind(&session::client_update_attr, this, std::placeholders::_1)));
 
@@ -901,6 +903,37 @@ namespace node
 
 	}
 
+	void session::client_res_close_connection(cyng::context& ctx)
+	{
+			//	, tag
+			//	, cyng::code::IDENT
+			//	, seq
+			//	, success
+			//	, options
+			//	, bag))
+
+		const cyng::vector_t frame = ctx.get_frame();
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] origin client tag
+			boost::uuids::uuid,		//	[1] peer tag
+			std::uint64_t,			//	[2] sequence number
+			bool,					//	[3] success
+			cyng::param_map_t,		//	[4] options
+			cyng::param_map_t		//	[5] bag
+		>(frame);
+
+		BOOST_ASSERT_MSG(false, "client.res.close.connection not implemented yet");
+
+		//ctx.attach(client_.res_close_connection(std::get<0>(tpl)
+		//	, std::get<1>(tpl)
+		//	, std::get<2>(tpl)
+		//	, std::get<3>(tpl)
+		//	, std::get<4>(tpl)
+		//	, std::get<5>(tpl)));
+
+	}
+
 	void session::client_req_transfer_pushdata(cyng::context& ctx)
 	{
 		//	[89fd8b7b-ceae-4803-bdd9-e88dfa07cbf0,1bbcd541-5d5f-46fa-b6a8-2e8c5fa25d26,17,4ee4092b,f807b7df,%(("block":0),("seq":a3),("status":c1),("tp-layer":ipt)),1B1B1B1B010101017608343131323237...53B01EC46010163FA7D00]
@@ -955,6 +988,37 @@ namespace node
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
 			, frame.at(4)));
+	}
+
+	void session::client_inc_throughput(cyng::context& ctx)
+	{
+		//	[31481e4a-7952-40a7-9e13-6bd9255ac84b,812a8baa-41aa-4633-9379-0cb9a562ce62,112]
+		const cyng::vector_t frame = ctx.get_frame();
+		//ctx.run(cyng::generate_invoke("log.msg.trace", "client.inc.throughput", frame));
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] origin tag
+			boost::uuids::uuid,		//	[1] target tag
+			boost::uuids::uuid,		//	[2] peer
+			std::uint64_t			//	[3] bytes transferred
+		>(frame);
+
+		db_.access([&](cyng::store::table* tbl_session)->void {
+
+			cyng::table::record rec_origin = tbl_session->lookup(cyng::table::key_generator(std::get<0>(tpl)));
+			if (!rec_origin.empty())
+			{
+				const std::uint64_t rx = cyng::value_cast<std::uint64_t>(rec_origin["rx"], 0);
+				tbl_session->modify(rec_origin.key(), cyng::param_factory("rx", static_cast<std::uint64_t>(rx + std::get<3>(tpl))), std::get<2>(tpl));
+			}
+
+			cyng::table::record rec_target = tbl_session->lookup(cyng::table::key_generator(std::get<1>(tpl)));
+			if (!rec_target.empty())
+			{
+				const std::uint64_t sx = cyng::value_cast<std::uint64_t>(rec_target["sx"], 0);
+				tbl_session->modify(rec_target.key(), cyng::param_factory("sx", static_cast<std::uint64_t>(sx + std::get<3>(tpl))), std::get<2>(tpl));
+			}
+
+		}, cyng::store::write_access("*Session"));
 
 	}
 	

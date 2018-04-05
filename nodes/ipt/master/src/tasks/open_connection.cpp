@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #include "open_connection.h"
 #include <smf/cluster/generator.h>
@@ -11,6 +11,8 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
+#include <cyng/dom/reader.h>
+#include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/random_generator.hpp>
 
 namespace node
@@ -29,7 +31,7 @@ namespace node
 		, logger_(logger)
 		, bus_(bus)
 		, vm_(vm)
-		, tag_(tag)
+		, tag_(tag)	//	origin tag
 		, seq_(seq)
 		, number_(number)
 		, options_(options)
@@ -48,7 +50,7 @@ namespace node
 	void open_connection::run()
 	{	
 		//
-		//	* forward connection opne request to device
+		//	* forward connection open request to device
 		//	* store sequence - task relation
 		//	* start timer to check connection setup
 		//
@@ -70,6 +72,29 @@ namespace node
 
 	void open_connection::stop()
 	{
+		if (ipt::tp_res_open_connection_policy::is_success(response_))
+		{
+			auto dom = cyng::make_reader(options_);
+			const auto local_connect = cyng::value_cast(dom.get("local-connect"), false);
+			if (local_connect)
+			{
+				auto origin_tag = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
+				auto remote_tag = cyng::value_cast(dom.get("remote-tag"), boost::uuids::nil_uuid());
+				BOOST_ASSERT(origin_tag == tag_);	//	this station got the call
+				BOOST_ASSERT(origin_tag != remote_tag);
+
+				CYNG_LOG_DEBUG(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> prepare local connection "
+					<< origin_tag
+					<< " <==> "
+					<< remote_tag);
+
+			}
+		}
+
 		//
 		//	send response to cluster master
 		//

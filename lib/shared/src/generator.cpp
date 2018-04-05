@@ -645,4 +645,20 @@ namespace node
 			;
 	}
 
+	cyng::vector_t client_inc_throughput(boost::uuids::uuid origin
+		, boost::uuids::uuid target
+		, std::uint64_t size)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("client.inc.throughput"
+				, origin
+				, target
+				, cyng::code::IDENT
+				, size))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+
+	}
+
 }

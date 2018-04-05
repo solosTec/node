@@ -50,6 +50,7 @@ namespace node
 
 			void insert_connection(cyng::context&);
 			void close_connection(cyng::context&);
+			void transmit_data(cyng::context& ctx);	//!< transmit data locally
 
 			void client_res_login(cyng::context&);
 			void client_res_close_impl(cyng::context&);
@@ -65,7 +66,8 @@ namespace node
 			void client_res_close_push_channel(cyng::context& ctx);
 			void client_req_close_connection_forward(cyng::context& ctx);
 
-			void propagate(std::string, cyng::vector_t&&);
+			void propagate(std::string, cyng::vector_t const&);
+			void propagate(std::string, boost::uuids::uuid, cyng::vector_t&&);
 
 			/**
 			 * create a reference of this object on stack.
@@ -109,6 +111,10 @@ namespace node
 			 */
 			std::map<boost::uuids::uuid, cyng::object>	client_map_;
 
+			/**
+			 * connection map
+			 */
+			std::map<boost::uuids::uuid, boost::uuids::uuid> connection_map_;
 		};
 	}
 }
