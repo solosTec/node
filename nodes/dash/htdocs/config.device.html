@@ -137,9 +137,8 @@
                             <label class="control-label" for="smf-form-dev-update">Commit Changes</label>
                         </div>
                         <div class="form-group">
-                            <!--<button type="submit" class="btn btn-danger col-md-4" id="smf-form-dev-delete" name="smf-form-dev-delete" disabled>Delete</button>-->
                             <a id="smf-form-dev-delete" href="#" class="btn btn-danger col-md-4 disabled">Delete</a>
-                            <label class="control-label" for="smf-form-dev-delete">Remove Device</label>
+                            <label class="control-label" for="smf-form-dev-delete">Remove <span id="smf-form-dev-delete-name">Device</span></label>
                         </div>
                         <hr />
                         <div class="form-group">
@@ -208,7 +207,7 @@
                 //  select: 10e6b0c4-2cbd-42c7-a8b3-e810571a49ad,device-43,1043,secret,comment #43,ID,v43,true,Sun Feb 04 2018 15:31:33 GMT+0100 (W. Europe Standard Time), length:9
                 var rowData = datatable.rows(indexes).data().toArray()[0];
                 var rows = table_dev.rows(indexes).data();
-                console.log("select: " + rows.toArray() + ", length:" + rowData.length);
+                //console.log("select: " + rows.toArray() + ", length:" + rowData.length);
                 $('#smf-form-legend-dev').text("{" + rowData[0] + "}");
                 $('#smf-form-dev-tag').val(rowData[0]);
                 $('#smf-form-dev-age').val(rowData[8]);
@@ -221,6 +220,7 @@
                 //  enable submit button
                 $('#smf-form-dev-update').removeClass('disabled');
                 $('#smf-form-dev-delete').removeClass('disabled');
+                $('#smf-form-dev-delete-name').text(rowData[1]);
 
             });
 
@@ -273,6 +273,7 @@
                     else if (obj.cmd == 'delete') {
                         table_dev.row(function (idx, data, node) {
                             if (data[0] == obj.key) {
+                                $('#smf-form-dev-delete-name').text("Device");
                                 return true;
                             }
                             return false;
@@ -342,14 +343,14 @@
                 event.preventDefault();
                 var key = $('#smf-form-dev-tag').val();
                 console.log($(this).text() + ' ' + key);
-
                 connection.send(JSON.stringify({
                     cmd: 'delete', channel: 'config.device', key: {
                         tag: [key]
                     }
                 }));
-
+                $('#smf-form-dev-delete').addClass('disabled');
             });
+
             $('#smf-form-dev-insert').on("click", function (event) {
                 event.preventDefault();
                 console.log('insert: ' + $('#smf-form-dev').serialize());

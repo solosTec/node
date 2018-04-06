@@ -51,6 +51,7 @@ namespace node
 		 */
 		cyng::continuation process();
 
+
 	private:
 		void connect();
 		void reconfigure(cyng::context& ctx);

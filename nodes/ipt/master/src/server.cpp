@@ -53,6 +53,7 @@ namespace node
 			bus_->vm_.run(cyng::register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1)));
+			//bus_->vm_.run(cyng::register_function("bus.req.stop.client", 3, std::bind(&server::req_stop_client, this, std::placeholders::_1)));
 
 			//
 			//	client responses
@@ -293,6 +294,36 @@ namespace node
 
 			}
 		}
+
+		//void server::req_stop_client(cyng::context& ctx)
+		//{
+		//	const cyng::vector_t frame = ctx.get_frame();
+
+		//	//	[2,[1ca8529b-9b95-4a3a-ba2f-26c7280aa878],ac70b95e-76b9-463a-a961-bb02f70e86c8]
+		//	//
+		//	//	* bus sequence
+		//	//	* session key
+		//	//	* source
+
+		//	auto const tpl = cyng::tuple_cast<
+		//		std::uint64_t,			//	[0] sequence
+		//		cyng::vector_t,			//	[1] session key
+		//		boost::uuids::uuid		//	[2] source
+		//	>(frame);
+
+		//	//
+		//	//	slot [2] - stop session
+		//	//
+		//	if (std::get<1>(tpl).size() == 1)
+		//	{
+		//		CYNG_LOG_INFO(logger_, "bus.req.stop.client " << cyng::io::to_str(frame));
+		//		//mux_.post(task_, 2, cyng::tuple_factory(std::get<1>(tpl)[0]));
+		//	}
+		//	else
+		//	{
+		//		CYNG_LOG_ERROR(logger_, "bus.req.stop.client " << cyng::io::to_str(frame));
+		//	}
+		//}
 
 		void server::push_connection(cyng::context& ctx)
 		{

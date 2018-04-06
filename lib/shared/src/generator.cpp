@@ -214,6 +214,17 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_req_stop_client(cyng::vector_t const& key
+		, boost::uuids::uuid source)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.req.stop.client", cyng::invoke("bus.seq.next"), key, source))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+
+	}
+
 	cyng::vector_t bus_res_db_modify(std::string const& table
 		, cyng::vector_t const& key
 		, cyng::attr_t const& attr

@@ -126,8 +126,7 @@ namespace node
 			//	send watchdog response
 			//
 			ctx.attach(bus_res_watchdog(std::get<1>(tpl), std::get<2>(tpl)));
-		}));
-		
+		}));		
 	}
 
 	void bus::start()

@@ -7,10 +7,6 @@
 #ifndef NODE_LIB_SML_PARSER_H
 #define NODE_LIB_SML_PARSER_H
 
- //	set packing alignment to 1 (dense)
-//#pragma pack( push, 1 )
-
-
 #include <smf/sml/defs.h>
 #include <cyng/intrinsics/sets.h>
 
@@ -245,7 +241,7 @@ namespace node
 			void put(char);
 
 			/**
-			 * Probe if parsing is completed and
+			 * Probe if parsing is complete and
 			 * inform listener.
 			 */
 			void post_processing();

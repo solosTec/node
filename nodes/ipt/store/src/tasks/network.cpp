@@ -27,7 +27,7 @@ namespace node
 			, master_config_t const& cfg
 			, std::vector<std::string> const& targets)
 		: base_(*btp)
-			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id()))
+			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:store"))
 			, logger_(logger)
 			, tasks_(tsks)
 			, config_(cfg)
@@ -162,7 +162,10 @@ namespace node
 						<< " bytes to task "
 						<< tsk);
 
-					base_.mux_.send(tsk, 0, cyng::tuple_factory(channel, source, pos->second, data));
+					//
+					//	distribute async
+					//
+					base_.mux_.post(tsk, 0, cyng::tuple_factory(channel, source, pos->second, data));
 				}
 			}
 			else

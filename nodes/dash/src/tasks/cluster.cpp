@@ -711,6 +711,35 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "ws.read - unknown modify channel [" << channel << "]");
 			}
 		}
+		else if (boost::algorithm::equals(cmd, "stop"))
+		{
+			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+			CYNG_LOG_TRACE(logger_, "ws.read - stop channel [" << channel << "]");
+			if (boost::algorithm::starts_with(channel, "status.session"))
+			{
+				//
+				//	TDevice key is of type UUID
+				//	all values have the same key
+				//
+				try {
+
+					cyng::vector_t vec;
+					vec = cyng::value_cast(reader.get("key"), vec);
+					BOOST_ASSERT_MSG(vec.size() == 1, "*Session key has wrong size");
+
+					const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+					CYNG_LOG_DEBUG(logger_, "*Session key [" << str << "]");
+					auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+
+					ctx.attach(bus_req_stop_client(key, ctx.tag()));
+
+				}
+				catch (std::exception const& ex) {
+					CYNG_LOG_ERROR(logger_, "ws.read - modify channel [" << channel << "] failed");
+				}
+
+			}
+		}
 		else
 		{
 			CYNG_LOG_WARNING(logger_, "ws.read - unknown command " << cmd);
@@ -843,11 +872,6 @@ namespace node
 
 				auto msg = cyng::json::to_string(tpl);
 				server_.send_msg(tag, msg);
-
-				//server_.run_on_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-				//	cyng::param_factory("cmd", std::string("insert")),
-				//	cyng::param_factory("channel", channel),
-				//	cyng::param_factory("rec", rec.convert()))));
 
 				//	continue
 				return true;

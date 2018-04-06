@@ -30,7 +30,8 @@ namespace node
 				, cyng::logging::log_ptr logger
 				, boost::uuids::uuid tag
 				, scramble_key const&
-				, std::size_t tsk);
+				, std::size_t tsk
+				, std::string const& model);
 
 			bus(bus const&) = delete;
 			bus& operator=(bus const&) = delete;
@@ -50,6 +51,7 @@ namespace node
 			void ipt_res_register_push_target(cyng::context& ctx);
 			void ipt_req_transmit_data(cyng::context& ctx);
 			void ipt_req_open_connection(cyng::context& ctx);
+			void ipt_req_close_connection(cyng::context& ctx);
 
 			void ipt_req_protocol_version(cyng::context& ctx);
 			void ipt_req_software_version(cyng::context& ctx);
@@ -102,6 +104,11 @@ namespace node
 			serializer		serializer_;
 
 			/**
+			 * device id - response device id request
+			 */
+			const std::string model_;
+
+			/**
 			 * session state
 			 */
 			enum {
@@ -121,7 +128,8 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, boost::uuids::uuid tag
 			, scramble_key const& sk
-			, std::size_t tsk);
+			, std::size_t tsk
+			, std::string const& model);
 	}
 }
 

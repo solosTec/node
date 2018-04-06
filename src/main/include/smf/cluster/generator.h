@@ -25,10 +25,6 @@ namespace node
 		, std::uint32_t group
 		, std::string const& node_class);
 
-	/**
-	 * Close socket 
-	 */
-//	cyng::vector_t bus_shutdown();
 
 	/**
 	 * Subscribe specified table
@@ -113,6 +109,12 @@ namespace node
 			;
 
 	}
+
+	/**
+	 * Terminate a client
+	 */
+	cyng::vector_t bus_req_stop_client(cyng::vector_t const&
+		, boost::uuids::uuid source);
 
 	/**
 	 * client management

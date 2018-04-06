@@ -74,7 +74,7 @@ namespace node
 		void bus_req_unsubscribe(cyng::context& ctx);
 		void bus_start_watchdog(cyng::context& ctx);
 		void res_watchdog(cyng::context& ctx);
-
+		void bus_req_stop_client_impl(cyng::context& ctx);
 		void cleanup(cyng::context& ctx);
 
 		cyng::vector_t reply(std::chrono::system_clock::time_point, bool);

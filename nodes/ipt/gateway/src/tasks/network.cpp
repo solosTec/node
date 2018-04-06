@@ -25,10 +25,16 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, master_config_t const& cfg)
 		: base_(*btp)
-			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id()))
+			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:gateway"))
 			, logger_(logger)
 			, config_(cfg)
 			, master_(0)
+			, parser_([this](cyng::vector_t&& prg) {
+				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
+				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+				//vm_.async_run(std::move(prg));
+			}, false)
+			, reader_()
 		{
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -106,14 +112,17 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
+		//	slot [2]
 		cyng::continuation network::process(sequence_type seq, std::string const& number)
 		{
 			CYNG_LOG_TRACE(logger_, "incoming call " << +seq << ':' << number);
 
+			BOOST_ASSERT(bus_->is_online());
+
 			//
-			//	don't accept incoming calls
+			//	accept incoming calls
 			//
-			bus_->vm_.async_run(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(ipt::tp_res_open_connection_policy::BUSY)));
+			bus_->vm_.async_run(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(ipt::tp_res_open_connection_policy::DIALUP_SUCCESS)));
 			bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
 
 			//
@@ -138,6 +147,22 @@ namespace node
 		//	slot [4]
 		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
 		{
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [5]
+		cyng::continuation network::process(cyng::buffer_t const& data)
+		{
+			CYNG_LOG_TRACE(logger_, "incoming SML data " << data.size() << " bytes");
+
+			//
+			//	parse incoming data
+			//
+			parser_.read(data.begin(), data.end());
 
 			//
 			//	continue task

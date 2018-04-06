@@ -100,157 +100,211 @@
                 </table>
             </div>
         </div>
-    </div>
 
-    <!-- JavaScript -->
-    <script type="text/javascript" src="DataTables/datatables.min.js"></script>
-    <script type="text/javascript" src="popper.min.js"></script>
+        <hr />
+        <div class="row">
+            <div class="table-responsive col-md-12">
+                <form class="form-horizontal" id="smf-form-ses" style="padding-left:15px; padding-right:15px;">
+                    <fieldset>
+                        <legend id="smf-form-legend-ses" class="small">No session selected</legend>
+                        <input type="hidden" id="smf-form-ses-pk" name="smf-form-ses-pk" />
 
-    <script>
+                        <div class="form-group">
+                            <a id="smf-form-ses-stop" href="#" class="btn btn-danger col-md-4 disabled">Stop</a>
+                            <label class="control-label" for="smf-form-ses-stop">Stop <span id="smf-form-ses-stop-name">Session</span></label>
+                        </div>
 
-        var renderDate = function (data, type, full, meta) {
-            if (type == "display") {
-                return data.toLocaleString();
-            }
-            return data;
-        };
-        var renderUTC = function (data, type, full, meta) {
-            if (type == "display") {
-                return ('00' + data.getUTCHours()).slice(-2) + ":" + ('00' + data.getUTCMinutes()).slice(-2) + ":" + ('00' + data.getUTCSeconds()).slice(-2);
-            }
-            return data;
-        };
-        var renderBytes = function (data, type, full, meta) {
-            if (type == "display") {
-                return format_bytes(data);
-            }
-            return data;
-        };
+                    </fieldset>
+                </form>
+            </div>
+        </div>
 
-        //  globals
-        var table_ses;
-        var connection;
-        var totalIO = 0;
+        <!-- JavaScript -->
+        <script type="text/javascript" src="DataTables/datatables.min.js"></script>
+        <script type="text/javascript" src="popper.min.js"></script>
 
-        var tbl_config = {
-            paging: true,
-            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
-            pageLength: 25,
-            ordering: true,
-            info: true,
-            //scrollY: "100%",
-            autoWidth: false,
-            deferRender: false,
-            processing: true,
-            searching: true,
-            select: true,
-            //keys: true,  //  table navigation
-            //dom: '<"top"ilp>rt<"bottom"f><"clear">',
-            columnDefs: [
-                { targets: 'sml-col-ses-pk', visible: false, name: 'ses-pk' },
-                { targets: 'sml-col-ses-name', visible: true, name: 'ses-name' },
-                { targets: 'sml-col-ses-source', visible: true, name: 'ses-source', className: 'text-right' },
-                { targets: 'sml-col-ses-layer', visible: true, name: 'ses-layer' },
-                { targets: 'sml-col-ses-rx', visible: true, name: 'ses-rx', className: 'text-right', render: renderBytes },
-                { targets: 'sml-col-ses-sx', visible: true, name: 'ses-sx', className: 'text-right', render: renderBytes },
-                { targets: 'sml-col-ses-px', visible: true, name: 'ses-px', className: 'text-right', render: renderBytes },
-                { targets: 'sml-col-ses-login', visible: true, name: 'ses-login', render: renderDate },
-                { targets: 'sml-col-ses-last', visible: true, name: 'ses-last', render: renderUTC }
-            ]
-        };
+        <script>
 
-        $(document).ready(function () {
-            console.log('document ready');
-            table_ses = $('#smf-table-session').DataTable(tbl_config);
-
-            //table_ses.row.add(["a6d2e9d9-e1ed-4692-b49c-e38b9b0dc31d", "name", "1234567"]).draw().node();
-
-            $('#ws-activity-text').html('connecting to ' + location.host + '...');
-            connection = new WebSocket('ws://' + location.host + '/smf/api/session/v0.1', ['SMF']);
-            connection.onopen = function () {
-                //  subscribe system status
-                connection.send(JSON.stringify({ cmd: "subscribe", channel: "status.session", push: true }));
-            };
-
-            connection.onclose = function (event) {
-                $('#ws-activity-symbol').show();
-                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
-                $('#ws-activity-text').html('error ' + event.code);
-            };
-
-            connection.onerror = function (error) {
-                console.log('ws error');
-                $('#ws-activity-text').html('ws error');
-            };
-
-            connection.onmessage = function (e) {
-                $('#ws-activity-symbol').show();
-                console.log('incoming data: ' + e.data);
-                //console.log(Object.keys(e.data).length + ' bytes');
-                totalIO += Object.keys(e.data).length;
-                var obj = JSON.parse(e.data);
-                if (obj.cmd != null) {
-                    if (obj.cmd == 'insert') {
-                        //  don't display HTML codes
-                        var name = $('<div/>').text(obj.rec.data.name).html();
-                        var layer = $('<div/>').text(obj.rec.data.layer).html();
-                        var login = new Date(obj.rec.data.loginTime);
-                        var last = new Date();
-                        var rowNode = table_ses.row.add([obj.rec.key.tag, name, obj.rec.data.source, layer, obj.rec.data.rx, obj.rec.data.sx, obj.rec.data.px, login, last]).draw().node();
-                    }
-                    else if (obj.cmd == 'delete') {
-                        table_ses.row(function (idx, data, node) {
-                            if (data[0] == obj.key) {
-                                return true;
-                            }
-                            return false;
-                        }).remove().draw(false);
-                    }
-                    else if (obj.cmd == 'modify') {
-                        table_ses.row(function (idx, data, node) {
-                            if (data[0] == obj.key) {
-                                var r = table_ses.row(node);
-                                var d = r.data();
-                                if (obj.value.rx != null) {
-                                    d[4] = obj.value.rx;
-                                }
-                                else if (obj.value.sx != null) {
-                                    d[5] = obj.value.sx;
-                                }
-                                else if (obj.value.px != null) {
-                                    d[6] = obj.value.px;
-                                }
-                                d[8] = new Date();
-                                r.data(d);
-                                return true;    //  record found
-                            }
-                            return false;
-                        });
-                    }
+            var renderDate = function (data, type, full, meta) {
+                if (type == "display") {
+                    return data.toLocaleString();
                 }
-                $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
-                $('#ws-activity-symbol').fadeOut();
+                return data;
+            };
+            var renderUTC = function (data, type, full, meta) {
+                if (type == "display") {
+                    return ('00' + data.getUTCHours()).slice(-2) + ":" + ('00' + data.getUTCMinutes()).slice(-2) + ":" + ('00' + data.getUTCSeconds()).slice(-2);
+                }
+                return data;
+            };
+            var renderBytes = function (data, type, full, meta) {
+                if (type == "display") {
+                    return format_bytes(data);
+                }
+                return data;
             };
 
-        });
+            //  globals
+            var table_ses;
+            var connection;
+            var totalIO = 0;
 
-    </script>
+            var tbl_config = {
+                paging: true,
+                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+                pageLength: 25,
+                ordering: true,
+                info: true,
+                //scrollY: "100%",
+                autoWidth: false,
+                deferRender: false,
+                processing: true,
+                searching: true,
+                select: true,
+                //keys: true,  //  table navigation
+                //dom: '<"top"ilp>rt<"bottom"f><"clear">',
+                columnDefs: [
+                    { targets: 'sml-col-ses-pk', visible: false, name: 'ses-pk' },
+                    { targets: 'sml-col-ses-name', visible: true, name: 'ses-name' },
+                    { targets: 'sml-col-ses-source', visible: true, name: 'ses-source', className: 'text-right' },
+                    { targets: 'sml-col-ses-layer', visible: true, name: 'ses-layer' },
+                    { targets: 'sml-col-ses-rx', visible: true, name: 'ses-rx', className: 'text-right', render: renderBytes },
+                    { targets: 'sml-col-ses-sx', visible: true, name: 'ses-sx', className: 'text-right', render: renderBytes },
+                    { targets: 'sml-col-ses-px', visible: true, name: 'ses-px', className: 'text-right', render: renderBytes },
+                    { targets: 'sml-col-ses-login', visible: true, name: 'ses-login', render: renderDate },
+                    { targets: 'sml-col-ses-last', visible: true, name: 'ses-last', render: renderUTC }
+                ]
+            };
 
-    <script>
-        const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            $(document).ready(function () {
+                console.log('document ready');
+                table_ses = $('#smf-table-session').DataTable(tbl_config);
 
-        function format_bytes(x) {
+                table_ses.on('select', function (e, datatable, type, indexes) {
+                    var rowData = datatable.rows(indexes).data().toArray()[0];
+                    var rows = table_ses.rows(indexes).data();
+                    console.log("select: " + rows.toArray() + ", length:" + rowData.length);
+                    $('#smf-form-legend-ses').text("{" + rowData[0] + "}");
+                    $('#smf-form-ses-pk').val(rowData[0]);
+                    $('#smf-form-ses-stop-name').text(rowData[1]);
+                    //  enable submit button
+                    $('#smf-form-ses-stop').removeClass('disabled');
+                });
 
-            let l = 0, n = parseInt(x, 10) || 0;
+                $('#ws-activity-text').html('connecting to ' + location.host + '...');
+                connection = new WebSocket('ws://' + location.host + '/smf/api/session/v0.1', ['SMF']);
+                connection.onopen = function () {
+                    //  subscribe system status
+                    connection.send(JSON.stringify({ cmd: "subscribe", channel: "status.session", push: true }));
+                };
 
-            while (n >= 1024 && ++l) {
-                n = n / 1024;
+                connection.onclose = function (event) {
+                    $('#ws-activity-symbol').show();
+                    $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
+                    if (event.code == 1006) {
+                        $('#ws-activity-text').html('connection lost: ' + event.code);
+                    }
+                    else {
+                        $('#ws-activity-text').html('error ' + event.code);
+                    }
+                };
+
+                connection.onerror = function (error) {
+                    console.log('ws error');
+                    $('#ws-activity-text').html('ws error');
+                };
+
+                connection.onmessage = function (e) {
+                    $('#ws-activity-symbol').show();
+                    console.log('incoming data: ' + e.data);
+                    //console.log(Object.keys(e.data).length + ' bytes');
+                    totalIO += Object.keys(e.data).length;
+                    var obj = JSON.parse(e.data);
+                    if (obj.cmd != null) {
+                        if (obj.cmd == 'insert') {
+                            //  don't display HTML codes
+                            var name = $('<div/>').text(obj.rec.data.name).html();
+                            var layer = $('<div/>').text(obj.rec.data.layer).html();
+                            var login = new Date(obj.rec.data.loginTime);
+                            var last = new Date();
+                            var rowNode = table_ses.row.add([obj.rec.key.tag, name, obj.rec.data.source, layer, obj.rec.data.rx, obj.rec.data.sx, obj.rec.data.px, login, last]).draw().node();
+                        }
+                        else if (obj.cmd == 'delete') {
+                            table_ses.row(function (idx, data, node) {
+                                if (data[0] == obj.key) {
+                                    return true;
+                                }
+                                return false;
+                            }).remove().draw(false);
+                        }
+                        else if (obj.cmd == 'modify') {
+                            table_ses.row(function (idx, data, node) {
+                                if (data[0] == obj.key) {
+                                    var r = table_ses.row(node);
+                                    var d = r.data();
+                                    if (obj.value.rx != null) {
+                                        d[4] = obj.value.rx;
+                                    }
+                                    else if (obj.value.sx != null) {
+                                        d[5] = obj.value.sx;
+                                    }
+                                    else if (obj.value.px != null) {
+                                        d[6] = obj.value.px;
+                                    }
+                                    d[8] = new Date();
+                                    r.data(d);
+                                    return true;    //  record found
+                                }
+                                return false;
+                            });
+                        }
+                    }
+                    $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
+                    $('#ws-activity-symbol').fadeOut();
+                };
+
+                $('#smf-form-ses-stop').on("click", function (event) {
+                    event.preventDefault();
+                    var pk = $('#smf-form-ses-pk').val();
+                    console.log($(this).text() + ' ' + pk);
+                    connection.send(JSON.stringify({
+                        cmd: 'stop',
+                        channel: 'status.session',
+                        key: [pk]
+                    }));
+                    $('#smf-form-ses-stop').addClass('disabled');
+                });
+
+                $('#smf-table-session tbody').on('click', 'tr', function () {
+                    //console.log("select: single " + this.outerText);
+                    if ($(this).hasClass('selected')) {
+                        $(this).removeClass('selected');
+                    }
+                    else {
+                        table_ses.$('tr.selected').removeClass('selected');
+                        $(this).addClass('selected');
+                    }
+                });
+
+            }); //  document ready
+
+        </script>
+
+        <script>
+            const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+            function format_bytes(x) {
+
+                let l = 0, n = parseInt(x, 10) || 0;
+
+                while (n >= 1024 && ++l) {
+                    n = n / 1024;
+                }
+
+                if (n == 0) return '-';
+                return (n.toFixed(n >= 10 || l < 1 ? 0 : 1) + ' ' + units[l]);
             }
-
-            if (n == 0) return '-';
-            return (n.toFixed(n >= 10 || l < 1 ? 0 : 1) + ' ' + units[l]);
-        }
-    </script>
+        </script>
 
 </body>
 </html>
