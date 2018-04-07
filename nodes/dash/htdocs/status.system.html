@@ -133,6 +133,7 @@
                             <th scope="col" class="sml-col-cluster-login">Login</th>
                             <th scope="col" class="sml-col-cluster-ping">Ping</th>
                             <th scope="col" class="sml-col-cluster-ep">IP</th>
+                            <th scope="col" class="sml-col-cluster-pid">PID</th>
                             <th scope="col" class="sml-col-cluster-elapsed">Elapsed</th>
                         </tr>
                     </thead>
@@ -183,6 +184,7 @@
                 { targets: 'sml-col-cluster-login', visible: true, name: 'cluster-login', render: renderDate },
                 { targets: 'sml-col-cluster-ping', visible: true, name: 'cluster-ping' },
                 { targets: 'sml-col-cluster-ep', visible: true, name: 'cluster-ep' },
+                { targets: 'sml-col-cluster-pid', visible: true, name: 'cluster-pid', className: 'text-right' },
                 { targets: 'sml-col-cluster-elapsed', visible: true, name: 'cluster-last' }
             ]
         };
@@ -265,7 +267,7 @@
                                 var ping = $('<div/>').text(obj.rec.data.ping).html();
                                 var ep = $('<div/>').text(obj.rec.data.ep).html();
                                 //var last = new Date();
-                                var rowNode = table_cluster.row.add([obj.rec.key.tag, name, version, obj.rec.data.clients, login, ping, ep, 0]).draw().node();
+                                var rowNode = table_cluster.row.add([obj.rec.key.tag, name, version, obj.rec.data.clients, login, ping, ep, obj.rec.data.pid, 0]).draw().node();
                             }
                         }
                     }
@@ -285,7 +287,7 @@
                                 //var last = new Date();
                                 if (obj.value.clients != null) {
                                     d[3] = obj.value.clients;
-                                    d[7] = 0;
+                                    d[8] = 0;
                                 }
                                 else if (obj.value.ping != null) {
                                     var prev = d[5]
@@ -296,7 +298,7 @@
                                     //    $(node).css('color', 'red');
                                     //}
                                     d[5] = obj.value.ping;
-                                    d[7] = 0;
+                                    d[8] = 0;
                                 }
                                 r.data(d);
                                 return true;
@@ -329,11 +331,11 @@
                     var d = r.data();
                     //console.log('update: ' + d[1]);
                     if (d[1] != 'master') {
-                        d[7] = d[7] + 5;
-                        if (d[7] < 20) {
+                        d[8] = d[8] + 5;
+                        if (d[8] < 20) {
                             $(node).css('color', 'green');
                         }
-                        else if (d[7] < 40) {
+                        else if (d[8] < 40) {
                             $(node).css('color', 'orange');
                         }
                         else {
@@ -341,7 +343,7 @@
                         }
                         r.data(d);
                     } else {
-                        d[7] = '*';
+                        d[8] = '*';
                     }
                 });
             }

@@ -42,7 +42,8 @@ namespace node
 					, cyng::make_object(auto_config)
 					, group
 					, cyng::invoke_remote("ip.tcp.socket.ep.remote")
-					, NODE_PLATFORM	//	since v0.4
+					, NODE_PLATFORM		//	since v0.4
+					, cyng::code::PID	//	since v0.4
 				))
 			<< cyng::generate_invoke("stream.flush")
 			<< cyng::label(":STOP")

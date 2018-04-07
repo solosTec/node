@@ -12,6 +12,7 @@
 #include <cyng/intrinsics/traits/tag.hpp>
 #include <cyng/intrinsics/traits.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/process/environment.hpp>
 
 namespace node 
 {
@@ -225,16 +226,17 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table *Channel");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 6>("*Cluster", { "tag"	//	client session - primary key [uuid]
+		if (!db.create_table(cyng::table::make_meta_table<1, 7>("*Cluster", { "tag"	//	client session - primary key [uuid]
 			, "class"
 			, "loginTime"	//	last login time
 			, "version"
 			, "clients"	//	client counter
 			, "ping"	//	ping time
 			, "ep"		//	remote endpoint
+			, "pid"		//	process id
 			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_VERSION, cyng::TC_UINT64, cyng::TC_MICRO_SECOND, cyng::TC_IP_TCP_ENDPOINT },
-			{ 36, 0, 32, 0, 0, 0, 0 })))
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_VERSION, cyng::TC_UINT64, cyng::TC_MICRO_SECOND, cyng::TC_IP_TCP_ENDPOINT, cyng::TC_INT64 },
+			{ 36, 0, 32, 0, 0, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table *Cluster");
 		}
@@ -247,7 +249,8 @@ namespace node
 					, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)
 					, 0u	//	no clients yet
 					, std::chrono::microseconds(0)
-					, ep)
+					, ep
+					, boost::this_process::get_id())
 				, 1
 				, tag);
 

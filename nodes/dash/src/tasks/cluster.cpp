@@ -1490,16 +1490,17 @@ namespace node
 			CYNG_LOG_FATAL(logger_, "cannot create table *Target");
 		}
 
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 6>("*Cluster", { "tag"	//	client session - primary key [uuid]
+		if (!cache_.create_table(cyng::table::make_meta_table<1, 7>("*Cluster", { "tag"	//	client session - primary key [uuid]
 			, "class"
 			, "loginTime"	//	last login time
 			, "version"
 			, "clients"	//	client counter
 			, "ping"	//	ping time
 			, "ep"		//	remote endpoint
+			, "pid"		//	process id
 			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_VERSION, cyng::TC_UINT64, cyng::TC_MICRO_SECOND, cyng::TC_IP_TCP_ENDPOINT },
-			{ 36, 0, 32, 0, 0, 0, 0 })))
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_VERSION, cyng::TC_UINT64, cyng::TC_MICRO_SECOND, cyng::TC_IP_TCP_ENDPOINT, cyng::TC_INT64 },
+			{ 36, 0, 32, 0, 0, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table *Cluster");
 		}

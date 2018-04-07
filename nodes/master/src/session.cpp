@@ -22,7 +22,6 @@
 #include <cyng/dom/reader.h>
 #include <cyng/async/task/task_builder.hpp>
 
-//#include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -86,7 +85,7 @@ namespace node
 		//
 		//	register request handler
 		//
-		vm_.run(cyng::register_function("bus.req.login", 10, std::bind(&session::bus_req_login, this, std::placeholders::_1)));
+		vm_.run(cyng::register_function("bus.req.login", 11, std::bind(&session::bus_req_login, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("bus.req.stop.client", 3, std::bind(&session::bus_req_stop_client_impl, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.login", 8, std::bind(&session::client_req_login, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.close", 2, std::bind(&session::client_req_close, this, std::placeholders::_1)));
@@ -291,7 +290,8 @@ namespace node
 				, std::get<7>(tpl)
 				, std::get<8>(tpl)
 				, std::get<9>(tpl)
-				, "unknown"	);
+				, "unknown"
+				, 0);
 		}
 		else
 		{
@@ -309,7 +309,8 @@ namespace node
 				bool,					//	[7] autologin
 				std::uint32_t,			//	[8] group
 				boost::asio::ip::tcp::endpoint,	//	[9] remote ep
-				std::string				//	[10] platform
+				std::string,				//	[10] platform
+				boost::process::pid_t		//	[11] process id
 			>(frame);
 
 			BOOST_ASSERT_MSG(std::get<0>(tpl) > cyng::version(0, 3), "version 0.4 or higher expected");
@@ -325,7 +326,8 @@ namespace node
 				, std::get<7>(tpl)
 				, std::get<8>(tpl)
 				, std::get<9>(tpl)
-				, std::get<10>(tpl));
+				, std::get<10>(tpl)
+				, std::get<11>(tpl));
 		}
 	}
 
@@ -340,7 +342,8 @@ namespace node
 		, bool autologin
 		, std::uint32_t group
 		, boost::asio::ip::tcp::endpoint ep
-		, std::string platform)
+		, std::string platform
+		, boost::process::pid_t pid)
 	{
 		if ((account == account_) && (pwd == pwd_))
 		{
@@ -360,7 +363,7 @@ namespace node
 			//
 			ctx.attach(cyng::register_function("bus.req.subscribe", 3, std::bind(&session::bus_req_subscribe, this, std::placeholders::_1)));
 			ctx.attach(cyng::register_function("bus.req.unsubscribe", 2, std::bind(&session::bus_req_unsubscribe, this, std::placeholders::_1)));
-			ctx.attach(cyng::register_function("bus.start.watchdog", 6, std::bind(&session::bus_start_watchdog, this, std::placeholders::_1)));
+			ctx.attach(cyng::register_function("bus.start.watchdog", 7, std::bind(&session::bus_start_watchdog, this, std::placeholders::_1)));
 
 			//
 			//	set group id
@@ -382,7 +385,8 @@ namespace node
 				, ver
 				, ping
 				, cyng::invoke("push.session")
-				, ep));
+				, ep
+				, pid));
 		}
 		else
 		{
@@ -438,8 +442,6 @@ namespace node
 				{ 
 					auto tag = cyng::value_cast(std::get<1>(tpl).at(0), boost::uuids::nil_uuid());
 					peer->vm_.async_run(node::client_req_close(tag, 0));
-					//peer->vm_.async_run(bus_req_stop_client(std::get<1>(tpl)
-					//	, std::get<2>(tpl)));
 				}
 			}
 			else
@@ -464,6 +466,7 @@ namespace node
 		//	* ping
 		//	* session object
 		//	* ep
+		//	* pid
 		
 		//
 		//	insert into cluster table
@@ -477,7 +480,7 @@ namespace node
 			//	remove from cluster table
 			//
 			if (!tbl_cluster->insert(cyng::table::key_generator(ctx.tag())
-				, cyng::table::data_generator(frame.at(0), frame.at(1), frame.at(2), 0u, frame.at(3), frame.at(5))
+				, cyng::table::data_generator(frame.at(0), frame.at(1), frame.at(2), 0u, frame.at(3), frame.at(5), frame.at(6))
 				, 0u, ctx.tag()))
 			{
 				CYNG_LOG_ERROR(logger_, "bus.start.watchdog - Cluster table insert failed" << cyng::io::to_str(frame));
