@@ -204,12 +204,23 @@ namespace node
 		//
 		//	cluster table
 		//
+		std::string node_class;
 		db_.access([&](cyng::store::table* tbl_cluster)->void {
+
+			//
+			//	get node class
+			//
+			const auto key = cyng::table::key_generator(ctx.tag());
+			const auto rec = tbl_cluster->lookup(key);
+			if (!rec.empty())
+			{
+				node_class = cyng::value_cast<std::string>(rec["class"], "");
+			}
 
 			//
 			//	remove from cluster table
 			//
-			tbl_cluster->erase(cyng::table::key_generator(ctx.tag()), ctx.tag());
+			tbl_cluster->erase(key, ctx.tag());
 
 			//
 			//	update master record
@@ -222,9 +233,17 @@ namespace node
 		//
 		//	emit a system message
 		//
+		std::stringstream ss;
+		ss
+			<< "cluster member "
+			<< node_class
+			<< ':'
+			<< ctx.tag()
+			<< " closed"
+			;
 		insert_msg(db_
 			, cyng::logging::severity::LEVEL_WARNING
-			, "cluster member closed: " + cyng::io::to_str(frame)
+			, ss.str()
 			, ctx.tag());
 
 	}
@@ -505,9 +524,22 @@ namespace node
 			, frame.at(4)
 			, std::chrono::seconds(30)).first;
 
+		//
+		//	print system message
+		//	[ipt,2018-04-07 18:11:30.55812420,0.4,00:00:0.070892,<!259:session>,127.0.0.1:55190,1056]
+		//
+		std::stringstream ss;
+		ss
+			<< "cluster member "
+			<< cyng::value_cast<std::string>(frame.at(0), "")
+			<< ':'
+			<< ctx.tag()
+			<< " joined"
+			;
 		insert_msg(db_
 			, cyng::logging::severity::LEVEL_INFO
-			, "new cluster member: " + cyng::io::to_str(frame)
+			, ss.str()
+			//, "new cluster member: " + cyng::io::to_str(frame)
 			, ctx.tag());
 
 

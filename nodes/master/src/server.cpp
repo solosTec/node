@@ -150,9 +150,17 @@ namespace node
 	
 	void server::close()
 	{
+		//
+		//	shutdown message
+		//
+		std::stringstream ss;
+		ss
+			<< "shutdown cluster master "
+			<< tag_
+			;
 		insert_msg(db_
 			, cyng::logging::severity::LEVEL_FATAL
-			, "server closed"
+			, ss.str()
 			, tag_);
 
 		CYNG_LOG_WARNING(logger_, "close server");

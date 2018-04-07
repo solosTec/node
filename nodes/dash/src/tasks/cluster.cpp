@@ -122,19 +122,20 @@ namespace node
 		//
 		//	sync tables
 		//
-		snyc_table("TDevice");
-		snyc_table("TGateway");
-		snyc_table("TMeter");
-		snyc_table("*Session");
-		snyc_table("*Target");
-		snyc_table("*Cluster");
-		snyc_table("*Config");
-		snyc_table("*SysMsg");
+		sync_table("TDevice");
+		sync_table("TGateway");
+		sync_table("TMeter");
+		sync_table("*Session");
+		sync_table("*Target");
+		sync_table("*Cluster");
+		sync_table("*Config");
+		cache_.clear("*SysMsg", bus_->vm_.tag());
+		sync_table("*SysMsg");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void cluster::snyc_table(std::string const& name)
+	void cluster::sync_table(std::string const& name)
 	{
 		CYNG_LOG_INFO(logger_, "sync table " << name);
 
@@ -158,9 +159,16 @@ namespace node
 		//
 
 		//
-		//	tell server to scratch all data
+		//	tell server to discard all data
 		//
-		//server_.close();
+		cache_.clear("TDevice", bus_->vm_.tag());
+		cache_.clear("TGateway", bus_->vm_.tag());
+		cache_.clear("TMeter", bus_->vm_.tag());
+		cache_.clear("*Session", bus_->vm_.tag());
+		cache_.clear("*Target", bus_->vm_.tag());
+		cache_.clear("*Cluster", bus_->vm_.tag());
+		cache_.clear("*Config", bus_->vm_.tag());
+		//cache_.clear("*SysMsg", bus_->vm_.tag());
 
 		//
 		//	switch to other configuration
@@ -581,8 +589,7 @@ namespace node
 			else if (boost::algorithm::starts_with(channel, "monitor.msg"))
 			{
 				subscribe_monitor_msg(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
-			}
-			
+			}		
 			else
 			{
 				CYNG_LOG_WARNING(logger_, "ws.read - unknown subscribe channel [" << channel << "]");
@@ -1039,11 +1046,6 @@ namespace node
 				auto msg = cyng::json::to_string(tpl);
 				server_.send_msg(tag, msg);
 
-				//server_.run_on_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-				//	cyng::param_factory("cmd", std::string("insert")),
-				//	cyng::param_factory("channel", channel),
-				//	cyng::param_factory("rec", rec.convert()))));
-
 				//	continue
 				return true;
 			});
@@ -1062,11 +1064,6 @@ namespace node
 
 		auto msg = cyng::json::to_string(tpl);
 		server_.process_event(channel, msg);
-
-		//server_.process_event(channel, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-		//	cyng::param_factory("cmd", std::string("update")),
-		//	cyng::param_factory("channel", channel),
-		//	cyng::param_factory("value", size))));
 	}
 
 	void cluster::sig_ins(cyng::store::table const* tbl
@@ -1088,7 +1085,6 @@ namespace node
 			server_.process_event("config.device", msg);
 
 			update_channel("table.device.count", tbl->size());
-
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
 		{ 
@@ -1100,11 +1096,6 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("config.gateway", msg);
-
-			//server_.process_event("config.gateway", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("insert")),
-			//	cyng::param_factory("channel", "config.gateway"),
-			//	cyng::param_factory("rec", rec.convert()))));
 
 			update_channel("table.gateway.count", tbl->size());
 		}
@@ -1118,11 +1109,6 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("status.session", msg);
 
-			//server_.process_event("status.session", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("insert")),
-			//	cyng::param_factory("channel", "status.session"),
-			//	cyng::param_factory("rec", rec.convert()))));
-
 			update_channel("table.session.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Target"))
@@ -1134,11 +1120,6 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("status.target", msg);
-
-			//server_.process_event("status.target", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("insert")),
-			//	cyng::param_factory("channel", "status.target"),
-			//	cyng::param_factory("rec", rec.convert()))));
 
 			update_channel("table.target.count", tbl->size());
 		}
@@ -1152,11 +1133,6 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("status.cluster", msg);
 
-			//server_.process_event("status.cluster", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("insert")),
-			//	cyng::param_factory("channel", "status.cluster"),
-			//	cyng::param_factory("rec", rec.convert()))));
-
 			update_channel("table.cluster.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Config"))
@@ -1168,11 +1144,6 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("config.sys", msg);
-
-			//server_.process_event("config.sys", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("insert")),
-			//	cyng::param_factory("channel", "config.sys"),
-			//	cyng::param_factory("rec", rec.convert()))));
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "*SysMsg"))
 		{
@@ -1183,12 +1154,6 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("monitor.msg", msg);
-
-			//server_.process_event("monitor.msg", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("insert")),
-			//	cyng::param_factory("channel", "monitor.msg"),
-			//	cyng::param_factory("rec", rec.convert()))));
-
 		}
 		else
 		{
@@ -1209,11 +1174,6 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("config.device", msg);
 
-			//server_.process_event("config.device", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("delete")),
-			//	cyng::param_factory("channel", "config.device"),
-			//	cyng::param_factory("key", key))));
-
 			update_channel("table.device.count", tbl->size());
 
 		}
@@ -1226,12 +1186,6 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("config.gateway", msg);
-
-			//server_.process_event("config.gateway", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("delete")),
-			//	cyng::param_factory("channel", "config.gateway"),
-			//	cyng::param_factory("key", key))));
-
 			update_channel("table.gateway.count", tbl->size());
 
 		}
@@ -1245,11 +1199,6 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("status.session", msg);
 
-			//server_.process_event("status.session", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("delete")),
-			//	cyng::param_factory("channel", "status.session"),
-			//	cyng::param_factory("key", key))));
-
 			update_channel("table.session.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Target"))
@@ -1261,11 +1210,6 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("status.target", msg);
-
-			//server_.process_event("status.target", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("delete")),
-			//	cyng::param_factory("channel", "status.target"),
-			//	cyng::param_factory("key", key))));
 
 			update_channel("table.target.count", tbl->size());
 		}
@@ -1279,22 +1223,87 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("status.cluster", msg);
 
-			//server_.process_event("status.cluster", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("delete")),
-			//	cyng::param_factory("channel", "status.cluster"),
-			//	cyng::param_factory("key", key))));
-
 			update_channel("table.cluster.count", tbl->size());
 		}
 		else
 		{
-			CYNG_LOG_WARNING(logger_, "sig.del - unknown table "
+			CYNG_LOG_ERROR(logger_, "sig.del - unknown table "
 				<< tbl->meta().get_name());
 		}
 	}
 
 	void cluster::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
 	{
+		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("clear")),
+				cyng::param_factory("channel", "config.device"));
+
+			auto msg = cyng::json::to_string(tpl);
+			server_.process_event("config.device", msg);
+
+			update_channel("table.device.count", tbl->size());
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("clear")),
+				cyng::param_factory("channel", "config.gateway"));
+
+			auto msg = cyng::json::to_string(tpl);
+			server_.process_event("config.gateway", msg);
+			update_channel("table.gateway.count", tbl->size());
+
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Session"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("clear")),
+				cyng::param_factory("channel", "status.session"));
+
+			auto msg = cyng::json::to_string(tpl);
+			server_.process_event("status.session", msg);
+
+			update_channel("table.session.count", tbl->size());
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Target"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("clear")),
+				cyng::param_factory("channel", "status.target"));
+
+			auto msg = cyng::json::to_string(tpl);
+			server_.process_event("status.target", msg);
+
+			update_channel("table.target.count", tbl->size());
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Cluster"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("clear")),
+				cyng::param_factory("channel", "status.cluster"));
+
+			auto msg = cyng::json::to_string(tpl);
+			server_.process_event("status.cluster", msg);
+
+			update_channel("table.cluster.count", tbl->size());
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*SysMsg"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("clear")),
+				cyng::param_factory("channel", "monitor.msg"));
+
+			auto msg = cyng::json::to_string(tpl);
+			server_.process_event("monitor.msg", msg);
+
+		}
+		else
+		{
+			CYNG_LOG_ERROR(logger_, "sig.clr - unknown table "
+				<< tbl->meta().get_name());
+		}
 	}
 
 	void cluster::sig_mod(cyng::store::table const* tbl
@@ -1321,11 +1330,6 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("config.device", msg);
 
-			//server_.process_event("config.device", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("modify")),
-			//	cyng::param_factory("channel", "config.device"),
-			//	cyng::param_factory("key", key),
-			//	cyng::param_factory("value", pm))));
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
 		{
@@ -1338,11 +1342,6 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("config.gateway", msg);
 
-			//server_.process_event("config.gateway", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("modify")),
-			//	cyng::param_factory("channel", "config.gateway"),
-			//	cyng::param_factory("key", key),
-			//	cyng::param_factory("value", pm))));
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Session"))
 		{
@@ -1355,11 +1354,6 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("status.session", msg);
 
-			//server_.process_event("status.session", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("modify")),
-			//	cyng::param_factory("channel", "status.session"),
-			//	cyng::param_factory("key", key),
-			//	cyng::param_factory("value", pm))));
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Target"))
 		{
@@ -1372,11 +1366,6 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("status.target", msg);
 
-			//server_.process_event("status.target", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("modify")),
-			//	cyng::param_factory("channel", "status.target"),
-			//	cyng::param_factory("key", key),
-			//	cyng::param_factory("value", pm))));
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Cluster"))
 		{
@@ -1389,11 +1378,6 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("status.cluster", msg);
 
-			//server_.process_event("status.cluster", cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-			//	cyng::param_factory("cmd", std::string("modify")),
-			//	cyng::param_factory("channel", "status.cluster"),
-			//	cyng::param_factory("key", key),
-			//	cyng::param_factory("value", pm))));
 		}
 		else
 		{

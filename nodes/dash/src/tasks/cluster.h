@@ -70,7 +70,7 @@ namespace node
 
 		void ws_read(cyng::context& ctx);
 
-		void snyc_table(std::string const&);
+		void sync_table(std::string const&);
 
 		void update_sys_cpu_usage_total(std::string const&, http::websocket_session* wss);
 		void update_sys_cpu_count(std::string const&, http::websocket_session* wss);

@@ -284,7 +284,6 @@
                             if (data[0] == obj.key) {
                                 var r = table_cluster.row(node);
                                 var d = r.data();
-                                //var last = new Date();
                                 if (obj.value.clients != null) {
                                     d[3] = obj.value.clients;
                                     d[8] = 0;
@@ -306,7 +305,10 @@
                             return false;
                         });
                     }
-                }
+                    else if (obj.cmd == 'clear') {
+                        table_cluster.clear().draw(false);
+                    }
+              }
                 $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
                 $('#ws-activity-symbol').fadeOut();
             };

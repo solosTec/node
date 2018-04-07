@@ -199,7 +199,10 @@
                             $(rowNode).css('color', 'OrangeRed');
                         }
                     }
-                }
+                    else if (obj.cmd == 'clear') {
+                        table_msg.clear().draw(false);
+                    }
+               }
                 $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
                 $('#ws-activity-symbol').fadeOut();
 

@@ -258,7 +258,10 @@
                                 return false;
                             });
                         }
-                    }
+                        else if (obj.cmd == 'clear') {
+                            table_ses.clear().draw(false);
+                        }
+                   }
                     $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
                     $('#ws-activity-symbol').fadeOut();
                 };
