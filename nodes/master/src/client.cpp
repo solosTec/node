@@ -61,88 +61,106 @@ namespace node
 		db_.access([&](const cyng::store::table* tbl_device, cyng::store::table* tbl_session, cyng::store::table* tbl_cluster)->void {
 
 			//
-			// check for running session(s) with the same name
+			// check is session is already authorized
 			//
-			const bool online = check_online_state(prg, tbl_session, account);
-
-			if (!online)
+			const bool auth = check_auth_state(prg, tbl_session, tag);
+			if (auth)
 			{
-				//
-				//	test credentials
-				//
-				boost::uuids::uuid dev_tag{ boost::uuids::nil_uuid() };
-				std::uint32_t query{ 6 };
-				std::tie(found, wrong_pwd, dev_tag, query) = test_credential(prg, tbl_device, account, pwd);
-
-				if (found && !wrong_pwd)
-				{
-					//	bag
-					//	%(("security":scrambled),("tp-layer":ipt))
-					auto dom = cyng::make_reader(bag);
-
-					if (tbl_session->insert(cyng::table::key_generator(tag)
-						, cyng::table::data_generator(self
-							, cyng::make_object()
-							, peer
-							, dev_tag
-							, account
-							, distribution_(rng_)
-							, std::chrono::system_clock::now()
-							, boost::uuids::nil_uuid()
-							, cyng::value_cast<std::string>(dom.get("tp-layer"), "tcp/ip")
-							, 0u, 0u, 0u)
-						, 1
-						, tag))
-					{
-						prg << cyng::unwinder(client_res_login(tag
-							, seq
-							, true
-							, account
-							, "OK"
-							, query
-							, bag));
-
-						prg << cyng::unwinder(cyng::generate_invoke("log.msg.info", "[" + account + "] has session tag", tag));
-
-						//
-						//	update cluster table
-						//
-						auto tag_cluster = cyng::object_cast<session>(self)->vm_.tag();
-						auto key_cluster = cyng::table::key_generator(tag_cluster);
-						auto list = get_clients_by_peer(tbl_session, tag_cluster);
-						tbl_cluster->modify(key_cluster, cyng::param_factory("clients", static_cast<std::uint64_t>(list.size())), tag);
-					}
-					else
-					{
-						prg << cyng::unwinder(client_res_login(tag
-							, seq
-							, false
-							, account
-							, "cannot create session"
-							, query
-							, bag));
-
-						prg << cyng::unwinder(cyng::generate_invoke("log.msg.error"
-							, "cannot insert new session of account "
-							, account
-							, " with pk "
-							, tag));
-					}
-				}
-			}
-			else
-			{
-				found = true;
-
+				prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning", "[" + account + "] already authorized", tag));
 				prg << cyng::unwinder(client_res_login(tag
 					, seq
 					, false
 					, account
-					, "already online"
+					, "already authorized"
 					, 0
 					, bag));
 			}
+			else
+			{
 
+				//
+				// check for running session(s) with the same name
+				//
+				const bool online = check_online_state(prg, tbl_session, account);
+
+				if (!online)
+				{
+					//
+					//	test credentials
+					//
+					boost::uuids::uuid dev_tag{ boost::uuids::nil_uuid() };
+					std::uint32_t query{ 6 };
+					std::tie(found, wrong_pwd, dev_tag, query) = test_credential(prg, tbl_device, account, pwd);
+
+					if (found && !wrong_pwd)
+					{
+						//	bag
+						//	%(("security":scrambled),("tp-layer":ipt))
+						auto dom = cyng::make_reader(bag);
+
+						if (tbl_session->insert(cyng::table::key_generator(tag)
+							, cyng::table::data_generator(self
+								, cyng::make_object()
+								, peer
+								, dev_tag
+								, account
+								, distribution_(rng_)
+								, std::chrono::system_clock::now()
+								, boost::uuids::nil_uuid()
+								, cyng::value_cast<std::string>(dom.get("tp-layer"), "tcp/ip")
+								, 0u, 0u, 0u)
+							, 1
+							, tag))
+						{
+							prg << cyng::unwinder(client_res_login(tag
+								, seq
+								, true
+								, account
+								, "OK"
+								, query
+								, bag));
+
+							prg << cyng::unwinder(cyng::generate_invoke("log.msg.info", "[" + account + "] has session tag", tag));
+
+							//
+							//	update cluster table
+							//
+							auto tag_cluster = cyng::object_cast<session>(self)->vm_.tag();
+							auto key_cluster = cyng::table::key_generator(tag_cluster);
+							auto list = get_clients_by_peer(tbl_session, tag_cluster);
+							tbl_cluster->modify(key_cluster, cyng::param_factory("clients", static_cast<std::uint64_t>(list.size())), tag);
+						}
+						else
+						{
+							prg << cyng::unwinder(client_res_login(tag
+								, seq
+								, false
+								, account
+								, "cannot create session"
+								, query
+								, bag));
+
+							prg << cyng::unwinder(cyng::generate_invoke("log.msg.error"
+								, "cannot insert new session of account "
+								, account
+								, " with pk "
+								, tag));
+						}
+					}
+				}
+				else
+				{
+					found = true;
+
+					prg << cyng::unwinder(client_res_login(tag
+						, seq
+						, false
+						, account
+						, "already online"
+						, 0
+						, bag));
+				}
+			}
 		}	, cyng::store::read_access("TDevice")
 			, cyng::store::write_access("*Session")
 			, cyng::store::write_access("*Cluster"));
@@ -260,6 +278,14 @@ namespace node
 		return std::make_tuple(found, wrong_pwd, dev_tag, query);
 	}
 
+	bool client::check_auth_state(cyng::vector_t& prg, cyng::store::table* tbl, boost::uuids::uuid tag)
+	{
+		//
+		//	generate table key
+		//
+		auto key = cyng::table::key_generator(tag);
+		return tbl->exist(key);
+	}
 
 	bool client::check_online_state(cyng::vector_t& prg, cyng::store::table* tbl, std::string const& account)
 	{
@@ -311,7 +337,7 @@ namespace node
 		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_target, cyng::store::table* tbl_cluster)->void {
 
 			//
-			//	generate tabley keys
+			//	generate table keys
 			//
 			auto key = cyng::table::key_generator(tag);
 
@@ -337,7 +363,7 @@ namespace node
 					cyng::param_map_t options;
 					options["origin-tag"] = cyng::make_object(tag);	//	send response to this session
 					options["local-peer"] = cyng::make_object(peer);	//	and this peer
-					options["send-response"] = cyng::make_object(false);	//	client closed
+					//options["send-response"] = cyng::make_object(false);	//	client closed - redundant
 					options["local-connect"] = cyng::make_object(local_peer->hash() == remote_peer->hash());
 
 					if (local_peer->hash() == remote_peer->hash())
@@ -673,6 +699,90 @@ namespace node
 		return prg;
 	}
 
+	cyng::vector_t client::res_close_connection(boost::uuids::uuid tag
+		, boost::uuids::uuid peer
+		, std::uint64_t seq
+		, bool success
+		, cyng::param_map_t const& options
+		, cyng::param_map_t const& bag)
+	{
+		//	[906add5a-403d-4237-8275-478ba9efec4b,4386c0d0-4307-4160-bb76-6fb8ae4d5c4b,2,true,%(("local-connect":false),("local-peer":08b3ef0a-c492-4317-be22-d34b95651e56),("origin-tag":906add5a-403d-4237-8275-478ba9efec4b),("send-response":false)),%()]
+		cyng::vector_t prg;
+
+		db_.access([&](cyng::store::table* tbl_session)->void {
+
+			//
+			//	create table key
+			//
+			auto key = cyng::table::key_generator(tag);
+
+			//
+			//	get session objects
+			//
+			cyng::table::record rec = tbl_session->lookup(key);
+
+			if (!rec.empty())
+			{
+				auto local_peer = cyng::object_cast<session>(rec["local"]);
+				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
+
+				if (remote_peer && local_peer)
+				{
+					if (local_peer->hash() == remote_peer->hash())
+					{
+						CYNG_LOG_TRACE(logger_, "forward connection close request (local) to "
+							<< cyng::value_cast<std::string>(rec["name"], "")
+							<< ':'
+							<< tag);
+
+						//
+						//	forward to caller (origin)
+						//	same VM
+						//
+						prg << cyng::unwinder(client_res_close_connection_forward(tag
+							, seq
+							, success
+							, options
+							, bag));
+
+					}
+					else
+					{
+						CYNG_LOG_TRACE(logger_, "forward connection close request (distinct) to "
+							<< cyng::value_cast<std::string>(rec["name"], "")
+							<< ':'
+							<< tag);
+
+						//
+						//	different VM
+						//
+						local_peer->vm_.async_run(client_res_close_connection_forward(tag
+							, seq
+							, success
+							, options
+							, bag));
+					}
+				}
+				else
+				{
+					CYNG_LOG_ERROR(logger_, tag
+						<< "session ("
+						<< cyng::value_cast<std::string>(rec["name"], "")
+						<< ") has no remote peer - cannot forward connection close response");
+				}
+			}
+			else
+			{
+				CYNG_LOG_ERROR(logger_, "session ("
+					<< tag
+					<< ") not found - cannot forward connection close response");
+			}
+
+		}, cyng::store::write_access("*Session"));
+
+		return prg;
+	}
+
 	cyng::vector_t client::req_transmit_data(boost::uuids::uuid tag,
 		boost::uuids::uuid peer,
 		std::uint64_t seq,
@@ -687,7 +797,7 @@ namespace node
 		db_.access([&](cyng::store::table* tbl_session)->void {
 
 			//
-			//	generate tabley keys
+			//	generate table keys
 			//
 			auto caller_tag = cyng::table::key_generator(tag);
 
@@ -798,13 +908,13 @@ namespace node
 				auto local_peer = cyng::object_cast<session>(rec["local"]);
 				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
 				auto remote_tag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
-				options["send-response"] = cyng::make_object(false);	//	client closed
+				//options["send-response"] = cyng::make_object(true);	//	not a shutdown - redundant
 				options["local-connect"] = cyng::make_object(local_peer->hash() == remote_peer->hash());
 
 				if (local_peer->hash() == remote_peer->hash())
 				{
 					prg << cyng::unwinder(client_req_close_connection_forward(remote_tag
-						, false
+						, false	//	no shutdown
 						, options
 						, bag));
 				}
@@ -814,7 +924,7 @@ namespace node
 					//	forward connection close request in different VM
 					//
 					remote_peer->vm_.async_run(client_req_close_connection_forward(remote_tag
-						, false
+						, false	//	no shutdown
 						, options
 						, bag));
 				}
@@ -1151,7 +1261,7 @@ namespace node
 			db_.access([&](cyng::store::table* tbl_session)->void {
 
 				//
-				//	generate tabley key
+				//	generate table key
 				//
 				cyng::table::record rec = tbl_session->lookup(cyng::table::key_generator(tag));
 				if (rec.empty())
@@ -1324,6 +1434,13 @@ namespace node
 					{
 						tbl_device->modify(dev_pk, cyng::param_t("id", value), tag);
 					}
+				}
+				else
+				{
+					prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
+						, "client.update.attr - session not found "
+						, tag));
+
 				}
 			}	, cyng::store::read_access("*Session")
 				, cyng::store::write_access("TDevice"));

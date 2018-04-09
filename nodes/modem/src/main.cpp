@@ -41,6 +41,7 @@ int main(int argc, char **argv)
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
+		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
 		;
 		
@@ -143,7 +144,7 @@ int main(int argc, char **argv)
 		if (vm["default"].as< bool >())
 		{
 			//	write default configuration
-// 			return ctrl.create_config();
+			return ctrl.create_config();
 		}
 
 		if (vm["show"].as< bool >())
@@ -155,10 +156,12 @@ int main(int argc, char **argv)
 #if BOOST_OS_WINDOWS
 		if (vm["service.enabled"].as< bool >())
 		{
+			::OutputDebugString("start modem node");
+
 			//	run as service 
 			const std::string srv_name = vm["service.name"].as< std::string >();
 			::OutputDebugString(srv_name.c_str());
-// 			return ctrl.run_as_service(std::move(ctrl), srv_name);
+ 			return ctrl.run_as_service(std::move(ctrl), srv_name);
 		}
 #endif
 

@@ -321,7 +321,7 @@ endif()
 #	Use CMake modules from CYNG project
 #
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/../cyng/src/modules/")
-message(STATUS "** CMake modules         :  ${CMAKE_MODULE_PATH}")
+message(STATUS "** CMake modules         : ${CMAKE_MODULE_PATH}")
 
 #
 # libpugixml-dev (v1.8)
@@ -330,7 +330,7 @@ message(STATUS "** CMake modules         :  ${CMAKE_MODULE_PATH}")
 # Included as 3party software
 #
 set(PUGIXML_INCLUDE_DIR "${cyng_SOURCE_DIR}/3party/pugixml-181")
-message(STATUS "** PugiXML Include   : ${PUGIXML_INCLUDE_DIR}")
+message(STATUS "** PugiXML Include       : ${PUGIXML_INCLUDE_DIR}")
 set(${PROJECT_NAME}_PUGIXML_INSTALLED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D${PROJECT_NAME}_PUGIXML_INSTALLED" )
 include_directories(${PUGIXML_INCLUDE_DIR})
@@ -406,6 +406,24 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND sml_bus_link_libs cyng_domain)
 endif()
 target_link_libraries(smf_bus_sml ${sml_bus_link_libs})
+
+#
+#	modem/AT protocol library
+#
+include (lib/modem/protocol/lib.cmake)
+add_library(smf_protocol_modem ${GLOBAL_LIBRARY_TYPE} ${modem_protocol_lib})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	target_link_libraries(smf_protocol_modem cyng_vm)
+endif()
+
+#
+#	modem/AT bus library (client)
+#
+#include (lib/modem/bus/lib.cmake)
+#add_library(smf_bus_modem ${GLOBAL_LIBRARY_TYPE} ${modem_bus_lib})
+#if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+#	target_link_libraries(smf_bus_modem cyng_domain)
+#endif()
 
 #
 #	http server library
@@ -624,7 +642,7 @@ target_link_libraries(master ${master_link_libs})
 include (nodes/modem/prg.cmake)
 add_executable(modem ${node_modem})
 # libraries to link
-set(modem_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json)
+set(modem_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain smf_cluster smf_protocol_modem)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND modem_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -696,10 +714,13 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
     if (UNIX)
         list(APPEND unittest_link_libs pthread)
     endif()
+else()
+	message(STATUS "** link unit-test        : ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}")
+	list(APPEND unittest_link_libs ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 endif()
 
 #message(STATUS "** link unit-test        : ${unittest_link_libs}")
-arget_link_libraries(unit_test ${unittest_link_libs})
+target_link_libraries(unit_test ${unittest_link_libs})
 endif()
 
 #

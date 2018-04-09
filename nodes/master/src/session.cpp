@@ -971,7 +971,6 @@ namespace node
 		>(frame);
 
 		ctx.run(cyng::generate_invoke("log.msg.info", "client.req.close.connection", frame));
-		ctx.run(cyng::generate_invoke("log.msg.error", "client.req.close.connection - not implemented yet", frame));
 
 		ctx.attach(client_.req_close_connection(std::get<0>(tpl)
 			, std::get<1>(tpl)
@@ -982,14 +981,16 @@ namespace node
 
 	void session::client_res_close_connection(cyng::context& ctx)
 	{
-			//	, tag
-			//	, cyng::code::IDENT
-			//	, seq
-			//	, success
-			//	, options
-			//	, bag))
+		//	[906add5a-403d-4237-8275-478ba9efec4b,4386c0d0-4307-4160-bb76-6fb8ae4d5c4b,2,true,%(("local-connect":false),("local-peer":08b3ef0a-c492-4317-be22-d34b95651e56),("origin-tag":906add5a-403d-4237-8275-478ba9efec4b),("send-response":false)),%()]
+		//	, tag
+		//	, cyng::code::IDENT
+		//	, seq
+		//	, success
+		//	, options
+		//	, bag))
 
 		const cyng::vector_t frame = ctx.get_frame();
+		ctx.run(cyng::generate_invoke("log.msg.info", "client.res.close.connection", frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] origin client tag
@@ -1000,14 +1001,14 @@ namespace node
 			cyng::param_map_t		//	[5] bag
 		>(frame);
 
-		BOOST_ASSERT_MSG(false, "client.res.close.connection not implemented yet");
+		//BOOST_ASSERT_MSG(false, "client.res.close.connection not implemented yet");
 
-		//ctx.attach(client_.res_close_connection(std::get<0>(tpl)
-		//	, std::get<1>(tpl)
-		//	, std::get<2>(tpl)
-		//	, std::get<3>(tpl)
-		//	, std::get<4>(tpl)
-		//	, std::get<5>(tpl)));
+		ctx.attach(client_.res_close_connection(std::get<0>(tpl)
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl)
+			, std::get<4>(tpl)
+			, std::get<5>(tpl)));
 
 	}
 

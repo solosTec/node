@@ -8,7 +8,6 @@
 
 #include "server.h"
 #include "connection.h"
-#include <smf/ipt/scramble_key_io.hpp>
 #include <smf/cluster/generator.h>
 #include <cyng/vm/generator.h>
 #include <cyng/dom/reader.h>
@@ -21,20 +20,20 @@
 
 namespace node 
 {
-	namespace ipt
+	namespace modem
 	{
 		server::server(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
-			, scramble_key const& sk
-			, uint16_t watchdog
-			, int timeout)
+			, int timeout
+			, bool auto_answer
+			, std::chrono::milliseconds guard_time)
 		: mux_(mux)
 			, logger_(logger)
 			, bus_(bus)
-			, sk_(sk)
-			, watchdog_(watchdog)
 			, timeout_(timeout)
+			, auto_answer_(auto_answer)
+			, guard_time_(guard_time)
 			, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
             , socket_(mux_.get_io_service())
@@ -53,7 +52,6 @@ namespace node
 			bus_->vm_.run(cyng::register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1)));
-			//bus_->vm_.run(cyng::register_function("bus.req.stop.client", 3, std::bind(&server::req_stop_client, this, std::placeholders::_1)));
 
 			//
 			//	client responses
@@ -128,9 +126,9 @@ namespace node
 						, logger_
 						, bus_
 						, tag
-						, sk_
-						, watchdog_
-						, timeout_);
+						, timeout_
+						, auto_answer_
+						, guard_time_);
 
 					//
 					//	bus is synchronizing access to client_map_

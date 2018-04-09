@@ -7,13 +7,11 @@
 
 
 #include "session.h"
-#include "tasks/open_connection.h"
-#include "tasks/close_connection.h"
-#include "tasks/gatekeeper.h"
+//#include "tasks/open_connection.h"
+//#include "tasks/close_connection.h"
+//#include "tasks/gatekeeper.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
-#include <smf/ipt/response.hpp>
-#include <smf/ipt/scramble_key_io.hpp>
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/store_domain.h>
 #include <cyng/io/serializer.h>
@@ -26,33 +24,31 @@
 
 namespace node 
 {
-	namespace ipt
+	namespace modem
 	{
 		session::session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
 			, boost::uuids::uuid tag
-			, scramble_key const& sk
-			, std::uint16_t watchdog
-			, std::chrono::seconds const& timeout)
+			, std::chrono::seconds const& timeout
+			, bool auto_answer
+			, std::chrono::milliseconds guard_time)
 		: mux_(mux)
 			, logger_(logger)
 			, bus_(bus)
 			, vm_(mux.get_io_service(), tag)
-			, sk_(sk)
-			, watchdog_(watchdog)
 			, timeout_(timeout)
+			, auto_answer_(auto_answer)
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_INFO(logger_, prg.size() << " ipt instructions received");
+				CYNG_LOG_INFO(logger_, prg.size() << " modem instructions received");
 				CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
 				vm_.run(std::move(prg));
-			}, sk)
-			, task_db_()
-			, gate_keeper_(cyng::async::start_task_sync<gatekeeper>(mux_
-				, logger_
-				, vm_
-				, tag
-				, timeout_).first)
+			}, guard_time)
+			//, gate_keeper_(cyng::async::start_task_sync<gatekeeper>(mux_
+			//	, logger_
+			//	, vm_
+			//	, tag
+			//	, timeout_).first)
 			, connect_state_()
 		{
 			//
@@ -67,7 +63,7 @@ namespace node
 			//
 			//	register request handler
 			//	client.req.transmit.data.forward
-			vm_.run(cyng::register_function("ipt.req.transmit.data", 2, std::bind(&session::ipt_req_transmit_data, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("modem.req.transmit.data", 2, std::bind(&session::modem_req_transmit_data, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("client.req.transmit.data.forward", 4, std::bind(&session::client_req_transmit_data_forward, this, std::placeholders::_1)));
 
 
@@ -95,7 +91,7 @@ namespace node
 
 			//	transport - connection open
 			//TP_REQ_OPEN_CONNECTION = 0x9003,	//!<	request
-			vm_.run(cyng::register_function("ipt.req.open.connection", 3, std::bind(&session::ipt_req_open_connection, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("modem.req.open.connection", 2, std::bind(&session::modem_req_open_connection, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("client.req.open.connection.forward", 5, std::bind(&session::client_req_open_connection_forward, this, std::placeholders::_1)));
 			//TP_RES_OPEN_CONNECTION = 0x1003,	//!<	response
 			vm_.run(cyng::register_function("ipt.res.open.connection", 3, std::bind(&session::ipt_res_open_connection, this, std::placeholders::_1)));
@@ -104,7 +100,7 @@ namespace node
 
 			//	transport - connection close
 			//TP_REQ_CLOSE_CONNECTION = 0x9004,	//!<	request
-			vm_.run(cyng::register_function("ipt.req.close.connection", 0, std::bind(&session::ipt_req_close_connection, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("modem.req.close.connection", 0, std::bind(&session::modem_req_close_connection, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("client.req.close.connection.forward", 5, std::bind(&session::client_req_close_connection_forward, this, std::placeholders::_1)));
 			//TP_RES_CLOSE_CONNECTION = 0x1004,	//!<	response
 			vm_.run(cyng::register_function("ipt.res.close.connection", 0, std::bind(&session::ipt_res_close_connection, this, std::placeholders::_1)));
@@ -179,8 +175,7 @@ namespace node
 			//CTRL_RES_LOGIN_SCRAMBLED = 0x4002,	//!<	scrambled login response
 			//CTRL_REQ_LOGIN_PUBLIC = 0xC001,	//!<	public login request
 			//CTRL_REQ_LOGIN_SCRAMBLED = 0xC002,	//!<	scrambled login request
-			vm_.run(cyng::register_function("ipt.req.login.public", 2, std::bind(&session::ipt_req_login_public, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.login.scrambled", 3, std::bind(&session::ipt_req_login_scrambled, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("modem.req.login.public", 2, std::bind(&session::modem_req_login, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("client.res.login", 6, std::bind(&session::client_res_login, this, std::placeholders::_1)));
 
 			//	control - maintenance
@@ -261,7 +256,7 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "session.store.relation " << cyng::io::to_str(frame));
 
-			task_db_.emplace(cyng::value_cast<sequence_type>(frame.at(0), 0), cyng::value_cast<std::size_t>(frame.at(1), 0));
+			//task_db_.emplace(cyng::value_cast<sequence_type>(frame.at(0), 0), cyng::value_cast<std::size_t>(frame.at(1), 0));
 		}
 
 		void session::update_connection_state(cyng::context& ctx)
@@ -276,13 +271,14 @@ namespace node
 			connect_state_.connected_local_ = std::get<1>(tpl);
 		}
 
-		void session::ipt_req_login_public(cyng::context& ctx)
+
+		void session::modem_req_login(cyng::context& ctx)
 		{
 			BOOST_ASSERT(ctx.tag() == vm_.tag());
 
 			//	[LSMTest5,LSMTest5,<sk>]
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "ipt.req.login.public " << cyng::io::to_str(frame));
+			CYNG_LOG_INFO(logger_, "modem.req.login.public " << cyng::io::to_str(frame));
 
 			//
 			//	send authorization request to master
@@ -291,7 +287,7 @@ namespace node
 			{
 				//const std::string name = cyng::value_cast<std::string>(frame.at(0));
 				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
+				bag["tp-layer"] = cyng::make_object("modem");
 				bag["security"] = cyng::make_object("public");
 				bag["time"] = cyng::make_now();
 
@@ -309,58 +305,11 @@ namespace node
 				//
 				//	reject login - no master
 				//
-				const response_type res = ctrl_res_login_public_policy::MALFUNCTION;
-
-				ctx.attach(cyng::generate_invoke("res.login.public", res, watchdog_, ""));
+				ctx.attach(cyng::generate_invoke("print.error"));
 				ctx.attach(cyng::generate_invoke("stream.flush"));
 			}
 
 
-		}
-
-		void session::ipt_req_login_scrambled(cyng::context& ctx)
-		{
-			//	[LSMTest5,LSMTest5,<sk>]
-			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "ipt.req.login.scrambled " << cyng::io::to_str(frame));
-
-			CYNG_LOG_TRACE(logger_, "set new scramble key "
-				<< cyng::value_cast<scramble_key>(frame.at(3), scramble_key::null_scramble_key_));
-
-			//
-			//	ToDo: test if already authorized
-			//
-
-			//
-			//	send authorization request to master
-			//
-			if (bus_->is_online())
-			{
-				//const std::string name = cyng::value_cast<std::string>(frame.at(0));
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["security"] = cyng::make_object("scrambled");
-				bag["time"] = cyng::make_now();
-
-				bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::string>(frame.at(1), "")
-					, cyng::value_cast<std::string>(frame.at(2), "")
-					, "plain" //	login scheme
-					, bag));
-				
-			}
-			else
-			{
-				CYNG_LOG_WARNING(logger_, "cannot forward authorization request - no master");
-
-				//
-				//	reject login - no master
-				//
-				const response_type res = ctrl_res_login_public_policy::MALFUNCTION;
-
-				ctx.attach(cyng::generate_invoke("res.login.scrambled", res, watchdog_, ""));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
-			}
 		}
 
 		void session::ipt_req_logout(cyng::context& ctx)
@@ -418,16 +367,16 @@ namespace node
 			else
 			{
 				CYNG_LOG_ERROR(logger_, "ipt.req.open.push.channel - no master " << cyng::io::to_str(frame));
-				ctx.attach(cyng::generate_invoke("res.open.push.channel"
-					, frame.at(1)
-					, static_cast<ipt::response_type>(ipt::tp_res_open_push_channel_policy::UNREACHABLE)
-					, static_cast<std::uint32_t>(0)	//	channel
-					, static_cast<std::uint32_t>(0)	//	source
-					, static_cast<std::uint16_t>(0)	//	packet size
-					, static_cast<std::uint8_t>(0)	//	window size
-					, static_cast<std::uint8_t>(0)	//	status
-					, static_cast<std::uint32_t>(0)));	//	count
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				//ctx.attach(cyng::generate_invoke("res.open.push.channel"
+				//	, frame.at(1)
+				//	, static_cast<ipt::response_type>(ipt::tp_res_open_push_channel_policy::UNREACHABLE)
+				//	, static_cast<std::uint32_t>(0)	//	channel
+				//	, static_cast<std::uint32_t>(0)	//	source
+				//	, static_cast<std::uint16_t>(0)	//	packet size
+				//	, static_cast<std::uint8_t>(0)	//	window size
+				//	, static_cast<std::uint8_t>(0)	//	status
+				//	, static_cast<std::uint32_t>(0)));	//	count
+				//ctx.attach(cyng::generate_invoke("stream.flush"));
 
 			}
 		}
@@ -456,16 +405,16 @@ namespace node
 			else
 			{				
 				CYNG_LOG_ERROR(logger_, "ipt.req.close.push.channel - no master " << cyng::io::to_str(frame));
-				ctx.attach(cyng::generate_invoke("res.close.push.channel"
-					, frame.at(1)
-					, static_cast<ipt::response_type>(ipt::tp_res_close_push_channel_policy::BROKEN)
-					, frame.at(2)));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				//ctx.attach(cyng::generate_invoke("res.close.push.channel"
+				//	, frame.at(1)
+				//	, static_cast<ipt::response_type>(ipt::tp_res_close_push_channel_policy::BROKEN)
+				//	, frame.at(2)));
+				//ctx.attach(cyng::generate_invoke("stream.flush"));
 			}
 
 		}
 
-		void session::ipt_req_transmit_data(cyng::context& ctx)
+		void session::modem_req_transmit_data(cyng::context& ctx)
 		{
 			//	[ipt.req.transmit.data,
 			//	[c5eae235-d5f5-413f-a008-5d317d8baab7,1B1B1B1B01010101768106313830313...1B1B1B1B1A034276]]
@@ -481,7 +430,7 @@ namespace node
 				else
 				{
 					cyng::param_map_t bag;
-					bag["tp-layer"] = cyng::make_object("ipt");
+					bag["tp-layer"] = cyng::make_object("modem");
 
 					bus_->vm_.async_run(client_req_transmit_data(tag
 						, bag
@@ -490,7 +439,7 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "ipt.req.transmit.data", "no master", frame));
+				ctx.attach(cyng::generate_invoke("log.msg.warning", "modem.req.transmit.data", "no master", frame));
 			}
 		}
 
@@ -510,7 +459,7 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx.run(cyng::generate_invoke("log.msg.info", "client.req.transmit.data.forward", frame));
 
-			ctx.attach(cyng::generate_invoke("ipt.transfer.data", frame.at(3)));
+			ctx.attach(cyng::generate_invoke("modem.transfer.data", frame.at(3)));
 			ctx.attach(cyng::generate_invoke("stream.flush"));
 			
 		}
@@ -628,13 +577,13 @@ namespace node
 		{
 			//	 [9c08c93e-b2fe-4738-9fb4-4b16ed57a06e,6,00000000]
 			const cyng::vector_t frame = ctx.get_frame();
-			auto const tpl = cyng::tuple_cast<
-				boost::uuids::uuid,		//	[0] tag
-				sequence_type,			//	[1] ipt seq
-				std::uint16_t			//	[2] command
-			>(frame);
+			//auto const tpl = cyng::tuple_cast<
+			//	boost::uuids::uuid,		//	[0] tag
+			//	sequence_type,			//	[1] ipt seq
+			//	std::uint16_t			//	[2] command
+			//>(frame);
 
-			ctx.attach(cyng::generate_invoke("log.msg.warning", "ipt.unknown.cmd", std::get<2>(tpl), command_name(std::get<2>(tpl))));
+			//ctx.attach(cyng::generate_invoke("log.msg.warning", "ipt.unknown.cmd", std::get<2>(tpl), command_name(std::get<2>(tpl))));
 		}
 
 		void session::client_res_login(cyng::context& ctx)
@@ -655,20 +604,47 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 
 			auto const tpl = cyng::tuple_cast<
-				//boost::uuids::uuid,		//	[0] tag
-				boost::uuids::uuid,		//	[1] peer tag
-				std::uint64_t,			//	[2] sequence number
-				bool,					//	[3] success
-				std::string,			//	[4] name
-				std::string,			//	[5] msg
-				std::uint32_t,			//	[6] query
-				cyng::param_map_t		//	[7] bag
+				boost::uuids::uuid,		//	[0] peer tag
+				std::uint64_t,			//	[1] sequence number
+				bool,					//	[2] success
+				std::string,			//	[3] name
+				std::string,			//	[4] msg
+				std::uint32_t,			//	[5] query
+				cyng::param_map_t		//	[6] bag
 			>(frame);
 
-			const response_type res = std::get<2>(tpl)
-				? ctrl_res_login_public_policy::SUCCESS
-				: ctrl_res_login_public_policy::UNKNOWN_ACCOUNT
-				;
+			if (std::get<2>(tpl))
+			{
+				ctx.attach(cyng::generate_invoke("log.msg.info"
+					, "login response"
+					, std::get<3>(tpl)	//	name
+					, std::get<4>(tpl)));	//	msg
+				ctx.attach(cyng::generate_invoke("print.ok"));
+				ctx.attach(cyng::generate_invoke("stream.flush"));
+
+				cyng::param_map_t bag;
+				bag["tp-layer"] = cyng::make_object("ipt");
+				bag["seq"] = frame.at(1);
+				bus_->vm_.async_run(client_update_attr(ctx.tag()
+					, "TDevice.vFirmware"
+					, cyng::make_object(NODE_VERSION)
+					, bag));
+				bus_->vm_.async_run(client_update_attr(ctx.tag()
+					, "TDevice.id"
+					, cyng::make_object("modem")
+					, bag));
+
+			}
+			else
+			{
+				ctx.attach(cyng::generate_invoke("log.msg.warning"
+					, "login response"
+					, std::get<3>(tpl)	//	name
+					, std::get<4>(tpl)));	//	msg
+				ctx.attach(cyng::generate_invoke("print.error"));
+				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"));
+				ctx.attach(cyng::generate_invoke("ip.tcp.socket.close"));			}
 
 			//
 			//	bag reader
@@ -678,80 +654,80 @@ namespace node
 			//
 			//	stop gatekeeper
 			//
-			mux_.send(gate_keeper_, 0, cyng::tuple_factory(res));
+			//mux_.send(gate_keeper_, 0, cyng::tuple_factory(res));
 
-			const std::string security = cyng::value_cast<std::string>(dom.get("security"), "undef");
-			if (boost::algorithm::equals(security, "scrambled"))
-			{
-				ctx.attach(cyng::generate_invoke("res.login.scrambled", res, watchdog_, ""));
-			}
-			else
-			{
-				ctx.attach(cyng::generate_invoke("res.login.public", res, watchdog_, ""));
-			}
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			//const std::string security = cyng::value_cast<std::string>(dom.get("security"), "undef");
+			//if (boost::algorithm::equals(security, "scrambled"))
+			//{
+			//	ctx.attach(cyng::generate_invoke("res.login.scrambled", res, watchdog_, ""));
+			//}
+			//else
+			//{
+			//	ctx.attach(cyng::generate_invoke("res.login.public", res, watchdog_, ""));
+			//}
+			//ctx.attach(cyng::generate_invoke("stream.flush"));
 
-			//	success
-			if (std::get<2>(tpl))
-			{
-				ctx.attach(cyng::generate_invoke("log.msg.info"
-					, "send login response"
-					, std::get<3>(tpl)	//	name
-					, std::get<4>(tpl)	//	msg
-					, "watchdog"
-					, watchdog_));
+			////	success
+			//if (std::get<2>(tpl))
+			//{
+			//	ctx.attach(cyng::generate_invoke("log.msg.info"
+			//		, "send login response"
+			//		, std::get<3>(tpl)	//	name
+			//		, std::get<4>(tpl)	//	msg
+			//		, "watchdog"
+			//		, watchdog_));
 
-				const auto query = std::get<5>(tpl);
-				if ((query & QUERY_PROTOCOL_VERSION) == QUERY_PROTOCOL_VERSION)
-				{
-					ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_PROTOCOL_VERSION"));
-					ctx.attach(cyng::generate_invoke("req.protocol.version"));
-				}
-				if ((query & QUERY_FIRMWARE_VERSION) == QUERY_FIRMWARE_VERSION)
-				{
-					ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_FIRMWARE_VERSION"));
-					ctx.attach(cyng::generate_invoke("req.software.version"));
-				}
-				if ((query & QUERY_DEVICE_IDENTIFIER) == QUERY_DEVICE_IDENTIFIER)
-				{
-					ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_IDENTIFIER"));
-					ctx.attach(cyng::generate_invoke("req.device.id"));
-				}
-				if ((query & QUERY_NETWORK_STATUS) == QUERY_NETWORK_STATUS)
-				{
-					ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_NETWORK_STATUS"));
-					ctx.attach(cyng::generate_invoke("req.net.status"));
-				}
-				if ((query & QUERY_IP_STATISTIC) == QUERY_IP_STATISTIC)
-				{
-					ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_IP_STATISTIC"));
-					ctx.attach(cyng::generate_invoke("req.ip.statistics"));
-				}
-				if ((query & QUERY_DEVICE_AUTHENTIFICATION) == QUERY_DEVICE_AUTHENTIFICATION)
-				{
-					ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_AUTHENTIFICATION"));
-					ctx.attach(cyng::generate_invoke("req.device.auth"));
-				}
-				if ((query & QUERY_DEVICE_TIME) == QUERY_DEVICE_TIME)
-				{
-					ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_TIME"));
-					ctx.attach(cyng::generate_invoke("req.device.time"));
-				}
-				ctx.attach(cyng::generate_invoke("stream.flush"));
-			}
-			else
-			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning"
-                    , "received login response"
-					, std::get<3>(tpl)	//	name
-					, std::get<4>(tpl)));	//	msg
+			//	const auto query = std::get<5>(tpl);
+			//	if ((query & QUERY_PROTOCOL_VERSION) == QUERY_PROTOCOL_VERSION)
+			//	{
+			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_PROTOCOL_VERSION"));
+			//		ctx.attach(cyng::generate_invoke("req.protocol.version"));
+			//	}
+			//	if ((query & QUERY_FIRMWARE_VERSION) == QUERY_FIRMWARE_VERSION)
+			//	{
+			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_FIRMWARE_VERSION"));
+			//		ctx.attach(cyng::generate_invoke("req.software.version"));
+			//	}
+			//	if ((query & QUERY_DEVICE_IDENTIFIER) == QUERY_DEVICE_IDENTIFIER)
+			//	{
+			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_IDENTIFIER"));
+			//		ctx.attach(cyng::generate_invoke("req.device.id"));
+			//	}
+			//	if ((query & QUERY_NETWORK_STATUS) == QUERY_NETWORK_STATUS)
+			//	{
+			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_NETWORK_STATUS"));
+			//		ctx.attach(cyng::generate_invoke("req.net.status"));
+			//	}
+			//	if ((query & QUERY_IP_STATISTIC) == QUERY_IP_STATISTIC)
+			//	{
+			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_IP_STATISTIC"));
+			//		ctx.attach(cyng::generate_invoke("req.ip.statistics"));
+			//	}
+			//	if ((query & QUERY_DEVICE_AUTHENTIFICATION) == QUERY_DEVICE_AUTHENTIFICATION)
+			//	{
+			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_AUTHENTIFICATION"));
+			//		ctx.attach(cyng::generate_invoke("req.device.auth"));
+			//	}
+			//	if ((query & QUERY_DEVICE_TIME) == QUERY_DEVICE_TIME)
+			//	{
+			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_TIME"));
+			//		ctx.attach(cyng::generate_invoke("req.device.time"));
+			//	}
+			//	ctx.attach(cyng::generate_invoke("stream.flush"));
+			//}
+			//else
+			//{
+			//	ctx.attach(cyng::generate_invoke("log.msg.warning"
+   //                 , "received login response"
+			//		, std::get<3>(tpl)	//	name
+			//		, std::get<4>(tpl)));	//	msg
 
-				//
-				//	close session
-				//
-				ctx.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"));
-				ctx.attach(cyng::generate_invoke("ip.tcp.socket.close"));
-			}
+			//	//
+			//	//	close session
+			//	//
+			//	ctx.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"));
+			//	ctx.attach(cyng::generate_invoke("ip.tcp.socket.close"));
+			//}
 
 		}
 
@@ -788,27 +764,26 @@ namespace node
 			//
 			//	dom/options reader
 			//
-			auto dom_options = cyng::make_reader(std::get<6>(tpl));
-			const response_type res = cyng::value_cast<response_type>(dom_options.get("response-code"), 0);
-			const std::uint16_t p_size = cyng::value_cast<std::uint16_t>(dom_options.get("packet-size"), 0);
-			const std::uint8_t w_size = cyng::value_cast<std::uint8_t>(dom_options.get("window-size"), 0);
-			const std::uint8_t status = cyng::value_cast<std::uint8_t>(dom_options.get("channel-status"), 0);
+			//auto dom_options = cyng::make_reader(std::get<6>(tpl));
+			//const response_type res = cyng::value_cast<response_type>(dom_options.get("response-code"), 0);
+			//const std::uint16_t p_size = cyng::value_cast<std::uint16_t>(dom_options.get("packet-size"), 0);
+			//const std::uint8_t w_size = cyng::value_cast<std::uint8_t>(dom_options.get("window-size"), 0);
+			//const std::uint8_t status = cyng::value_cast<std::uint8_t>(dom_options.get("channel-status"), 0);
 
-			//
-			//	dom/bag reader
-			//
-			auto dom_bag = cyng::make_reader(std::get<7>(tpl));
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom_bag.get("seq"), 0);
+			////
+			////	dom/bag reader
+			////
+			//auto dom_bag = cyng::make_reader(std::get<7>(tpl));
+			//const sequence_type seq = cyng::value_cast<sequence_type>(dom_bag.get("seq"), 0);
 
-			const std::uint32_t channel = std::get<3>(tpl);
-			const std::uint32_t source = std::get<4>(tpl);
-			const std::uint32_t count = std::get<5>(tpl);
+			//const std::uint32_t channel = std::get<3>(tpl);
+			//const std::uint32_t source = std::get<4>(tpl);
+			//const std::uint32_t count = std::get<5>(tpl);
 
-			ctx.attach(cyng::generate_invoke("res.open.push.channel", seq, res, channel, source, p_size, w_size, status, count));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
-
-
+			//ctx.attach(cyng::generate_invoke("res.open.push.channel", seq, res, channel, source, p_size, w_size, status, count));
+			//ctx.attach(cyng::generate_invoke("stream.flush"));
 		}
+
 		void session::client_res_close_push_channel(cyng::context& ctx)
 		{
 			//	[ba2298ad-50d3-44ec-ba2f-ce35451b677d,11495a42-9fd3-4ab2-9f70-3ac6b16f4158,232,true,8c006d5f,%(("seq":4b),("tp-layer":ipt))]
@@ -835,16 +810,16 @@ namespace node
 			//
 			//	dom/bag reader
 			//
-			auto dom_bag = cyng::make_reader(std::get<4>(tpl));
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom_bag.get("seq"), 0);
+			//auto dom_bag = cyng::make_reader(std::get<4>(tpl));
+			//const sequence_type seq = cyng::value_cast<sequence_type>(dom_bag.get("seq"), 0);
 
-			const response_type res = (std::get<2>(tpl))
-				? ipt::tp_res_close_push_channel_policy::SUCCESS
-				: ipt::tp_res_close_push_channel_policy::BROKEN
-				;
+			//const response_type res = (std::get<2>(tpl))
+			//	? ipt::tp_res_close_push_channel_policy::SUCCESS
+			//	: ipt::tp_res_close_push_channel_policy::BROKEN
+			//	;
 
-			ctx.attach(cyng::generate_invoke("res.close.push.channel", seq, res, std::get<3>(tpl)))
-				.attach(cyng::generate_invoke("stream.flush"));
+			//ctx.attach(cyng::generate_invoke("res.close.push.channel", seq, res, std::get<3>(tpl)))
+			//	.attach(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -876,15 +851,15 @@ namespace node
 			else
 			{
 				CYNG_LOG_ERROR(logger_, "ipt.req.register.push.target - no master " << cyng::io::to_str(frame));
-				ctx.attach(cyng::generate_invoke("res.register.push.target"
-					, frame.at(1)
-					, static_cast<response_type>(ctrl_res_register_target_policy::GENERAL_ERROR)
-					, static_cast<std::uint32_t>(0)));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				//ctx.attach(cyng::generate_invoke("res.register.push.target"
+				//	, frame.at(1)
+				//	, static_cast<response_type>(ctrl_res_register_target_policy::GENERAL_ERROR)
+				//	, static_cast<std::uint32_t>(0)));
+				//ctx.attach(cyng::generate_invoke("stream.flush"));
 
 			}
-
 		}
+
 		void session::client_res_register_push_target(cyng::context& ctx)
 		{
 			//	[377de26e-1190-4d12-b87e-374b5a163d66,2bd281df-ba1b-43f6-9c79-f8c55f730c04,3,false,0,("response-code":2),("pSize":65535),("seq":2),("tp-layer":ipt),("wSize":1)]
@@ -905,33 +880,32 @@ namespace node
 			//
 			auto dom = cyng::make_reader(frame);
 
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom[5].get("seq"), 0);
-			const response_type res = cyng::value_cast<response_type>(dom[4].get("response-code"), 0);
-			const std::uint32_t channel = cyng::value_cast<std::uint32_t>(dom.get(3), 0);	
+			//const sequence_type seq = cyng::value_cast<sequence_type>(dom[5].get("seq"), 0);
+			//const response_type res = cyng::value_cast<response_type>(dom[4].get("response-code"), 0);
+			//const std::uint32_t channel = cyng::value_cast<std::uint32_t>(dom.get(3), 0);	
 
-			ctx.attach(cyng::generate_invoke("res.register.push.target", seq, res, channel));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			//ctx.attach(cyng::generate_invoke("res.register.push.target", seq, res, channel));
+			//ctx.attach(cyng::generate_invoke("stream.flush"));
 
 		}
 
-		void session::ipt_req_open_connection(cyng::context& ctx)
+		void session::modem_req_open_connection(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			if (bus_->is_online())
 			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.open.connection", frame));
+				ctx.run(cyng::generate_invoke("log.msg.info", "modem.req.open.connection", frame));
 
 				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
+				bag["tp-layer"] = cyng::make_object("modem");
 				bus_->vm_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::string>(frame.at(2), "")	//	number
+					, cyng::value_cast<std::string>(frame.at(1), "")	//	number
 					, bag));
 			}
             else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "ipt.req.open.connection", frame));
-				ctx.attach(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<response_type>(tp_res_open_connection_policy::NO_MASTER)));
+				ctx.attach(cyng::generate_invoke("log.msg.error", "modem.req.open.connection", frame));
+				ctx.attach(cyng::generate_invoke("print.error"));
 				ctx.attach(cyng::generate_invoke("stream.flush"));
 			}
 		}
@@ -968,18 +942,51 @@ namespace node
 			auto dom = cyng::make_reader(std::get<3>(tpl));
 
 			cyng::param_map_t tmp;
-			const std::size_t tsk = cyng::async::start_task_sync<open_connection>(mux_
-				, logger_
-				, bus_
-				, vm_
-				, cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid())
-				, std::get<1>(tpl)	//	cluster bus sequence
-				, std::get<2>(tpl)	//	number
-				, std::get<3>(tpl)	//	options
-				, std::get<4>(tpl)	//	bag
-				, timeout_).first;
 
-			CYNG_LOG_TRACE(logger_, "client.req.open.connection.forward - task #" << tsk);
+			ctx.attach(cyng::generate_invoke("print.ring"));
+			if (auto_answer_)
+			{
+				ctx.attach(cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward - auto answer", ctx.get_frame()));
+
+				//
+				//	update parser state
+				//
+				parser_.set_stream_mode();
+
+				//
+				//	send connection open response response
+				//
+				auto target = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
+				bus_->vm_.async_run(node::client_res_open_connection(target
+					, std::get<1>(tpl)
+					, true
+					, std::get<3>(tpl)
+					, std::get<4>(tpl)));
+
+			}
+			else
+			{
+				ctx.attach(cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward - wait for ATA", ctx.get_frame()));
+
+				//
+				//	ToDo: start task
+				//
+
+				//const std::size_t tsk = cyng::async::start_task_sync<open_connection>(mux_
+				//	, logger_
+				//	, bus_
+				//	, vm_
+				//	, cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid())
+				//	, std::get<1>(tpl)	//	cluster bus sequence
+				//	, std::get<2>(tpl)	//	number
+				//	, std::get<3>(tpl)	//	options
+				//	, std::get<4>(tpl)	//	bag
+				//	, timeout_).first;
+
+				//CYNG_LOG_TRACE(logger_, "client.req.open.connection.forward - task #" << tsk);
+			}
+
+			ctx.attach(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -1017,26 +1024,24 @@ namespace node
 			auto dom = cyng::make_reader(std::get<3>(tpl));
 
 			cyng::param_map_t tmp;
-			const std::size_t tsk = cyng::async::start_task_sync<close_connection>(mux_
-				, logger_
-				, bus_
-				, vm_
-				, shutdown
-				, cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid())
-				, std::get<1>(tpl)	//	cluster bus sequence
-				, std::get<3>(tpl)	//	options
-				, std::get<4>(tpl)	//	bag
-				, timeout_).first;
+			//const std::size_t tsk = cyng::async::start_task_sync<close_connection>(mux_
+			//	, logger_
+			//	, bus_
+			//	, vm_
+			//	, shutdown
+			//	, cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid())
+			//	, std::get<1>(tpl)	//	cluster bus sequence
+			//	, std::get<3>(tpl)	//	options
+			//	, std::get<4>(tpl)	//	bag
+			//	, timeout_).first;
 
-			CYNG_LOG_TRACE(logger_, "client.req.close.connection.forward - task #" << tsk);
+			//CYNG_LOG_TRACE(logger_, "client.req.close.connection.forward - task #" << tsk);
 
 		}
 
 		void session::client_res_close_connection_forward(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			//ctx.run(cyng::generate_invoke("log.msg.trace", "client.res.close.connection.forward", frame));
-
 			//
 			//	[d6aac617-2f91-47ab-87a3-287f584f55a4,24,true,
 			//	%(("local-connect":false),("local-peer":22206aa4-0bc3-40c0-9ef4-17b3733a3aae),("origin-tag":5c2fa815-82bc-46dd-a3b9-8b07124c4994)),
@@ -1050,29 +1055,18 @@ namespace node
 				cyng::param_map_t		//	[4] bag
 			>(frame);
 
-			//
-			//	dom reader
-			//
-			auto dom = cyng::make_reader(std::get<4>(tpl));
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom.get("seq"), 0);
-			BOOST_ASSERT(seq != 0);	//	values of 0 not allowed
-
 			if (std::get<2>(tpl))
 			{
 				ctx.run(cyng::generate_invoke("log.msg.trace", "client.res.close.connection.forward", frame));
-				ctx.attach(cyng::generate_invoke("res.close.connection", seq, static_cast<response_type>(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED)));
-
-				//
-				//	reset connection state
-				//
-				connect_state_.connected_local_ = false;
+				ctx.attach(cyng::generate_invoke("print.ok"));
+				ctx.attach(cyng::generate_invoke("stream.flush"));
 			}
 			else
 			{
 				ctx.run(cyng::generate_invoke("log.msg.warning", "client.res.close.connection.forward", frame));
-				ctx.attach(cyng::generate_invoke("res.close.connection", seq, static_cast<response_type>(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN)));
+				ctx.attach(cyng::generate_invoke("print.error"));
+				ctx.attach(cyng::generate_invoke("stream.flush"));
 			}
-
 		}
 
 		void session::client_res_open_connection_forward(cyng::context& ctx)
@@ -1100,29 +1094,27 @@ namespace node
 
 			const bool success = std::get<2>(tpl);
 
-			//
-			//	dom reader
-			//
-			auto dom = cyng::make_reader(std::get<4>(tpl));
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom.get("seq"), 0);
-			BOOST_ASSERT(seq != 0);	//	values of 0 not allowed
-
 			if (success)
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.info", "client.res.open.connection.forward", ctx.get_frame()));
-				ctx.attach(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(ipt::tp_res_open_connection_policy::DIALUP_SUCCESS)));
+				ctx.attach(cyng::generate_invoke("print.ok"));
 
 				//
-				//	hides outer variable dom
+				//	dom reader
 				//
 				auto dom = cyng::make_reader(std::get<3>(tpl));
 				BOOST_ASSERT(!connect_state_.connected_local_);
 				connect_state_.connected_local_ = cyng::value_cast(dom.get("local-connect"), false);
+
+				//
+				//	update parser state
+				//
+				parser_.set_stream_mode();
 			}
 			else
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.open.connection.forward", ctx.get_frame()));
-				ctx.attach(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(ipt::tp_res_open_connection_policy::DIALUP_FAILED)));
+				ctx.attach(cyng::generate_invoke("print.no-answer"));
 			}
 
 			ctx.attach(cyng::generate_invoke("stream.flush"));
@@ -1156,49 +1148,49 @@ namespace node
 			//
 			//	dom reader
 			//
-			auto dom = cyng::make_reader(std::get<5>(tpl));
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom.get("seq"), 0);
+			//auto dom = cyng::make_reader(std::get<5>(tpl));
+			//const sequence_type seq = cyng::value_cast<sequence_type>(dom.get("seq"), 0);
 
-			//
-			//	set acknownlegde flag
-			//
-			std::uint8_t status = cyng::value_cast<std::uint8_t>(dom.get("status"), 0);
-			BOOST_ASSERT_MSG(status == 0xc1, "invalid push channel status");
-			status |= ipt::tp_res_pushdata_transfer_policy::ACK;
+			////
+			////	set acknownlegde flag
+			////
+			//std::uint8_t status = cyng::value_cast<std::uint8_t>(dom.get("status"), 0);
+			//BOOST_ASSERT_MSG(status == 0xc1, "invalid push channel status");
+			//status |= ipt::tp_res_pushdata_transfer_policy::ACK;
 
-			//
-			//	response
-			//
-			response_type res = (std::get<4>(tpl) != 0)
-				? ipt::tp_res_pushdata_transfer_policy::SUCCESS
-				: ipt::tp_res_pushdata_transfer_policy::BROKEN
-				;
+			////
+			////	response
+			////
+			//response_type res = (std::get<4>(tpl) != 0)
+			//	? ipt::tp_res_pushdata_transfer_policy::SUCCESS
+			//	: ipt::tp_res_pushdata_transfer_policy::BROKEN
+			//	;
 
-			if (std::get<4>(tpl) != 0)
-			{
-				ctx.attach(cyng::generate_invoke("log.msg.debug"
-					, "client.res.transfer.pushdata - source"
-					, std::get<2>(tpl)
-					, "channel"
-					, std::get<3>(tpl)
-					, "count"
-					, std::get<4>(tpl)
-					, "OK"));
-			}
-			else
-			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.transfer.pushdata - failed", frame));
-			}
+			//if (std::get<4>(tpl) != 0)
+			//{
+			//	ctx.attach(cyng::generate_invoke("log.msg.debug"
+			//		, "client.res.transfer.pushdata - source"
+			//		, std::get<2>(tpl)
+			//		, "channel"
+			//		, std::get<3>(tpl)
+			//		, "count"
+			//		, std::get<4>(tpl)
+			//		, "OK"));
+			//}
+			//else
+			//{
+			//	ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.transfer.pushdata - failed", frame));
+			//}
 
-			ctx.attach(cyng::generate_invoke("res.transfer.push.data"
-				, seq
-				, res
-				, std::get<2>(tpl)	//	source
-				, std::get<3>(tpl)	//	channel
-				, status
-				, cyng::value_cast<std::uint8_t>(dom.get("block"), 0)
-			));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			//ctx.attach(cyng::generate_invoke("res.transfer.push.data"
+			//	, seq
+			//	, res
+			//	, std::get<2>(tpl)	//	source
+			//	, std::get<3>(tpl)	//	channel
+			//	, status
+			//	, cyng::value_cast<std::uint8_t>(dom.get("block"), 0)
+			//));
+			//ctx.attach(cyng::generate_invoke("stream.flush"));
 		}
 
 		void session::client_req_transfer_pushdata_forward(cyng::context& ctx)
@@ -1254,23 +1246,22 @@ namespace node
 			ctx.attach(cyng::generate_invoke("stream.flush"));
 		}
 
-		void session::ipt_req_close_connection(cyng::context& ctx)
+		void session::modem_req_close_connection(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			if (bus_->is_online())
 			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.close.connection", frame));
+				ctx.run(cyng::generate_invoke("log.msg.info", "modem.req.close.connection", frame));
 
 				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
+				bag["tp-layer"] = cyng::make_object("modem");
 				bus_->vm_.async_run(client_req_close_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, bag));
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "ipt.req.close.connection - no master", frame));
-				ctx.attach(cyng::generate_invoke("res.close.connection", frame.at(1), static_cast<response_type>(tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN)));
+				ctx.attach(cyng::generate_invoke("log.msg.error", "modem.req.close.connection - no master", frame));
+				ctx.attach(cyng::generate_invoke("print.error"));
 				ctx.attach(cyng::generate_invoke("stream.flush"));
 			}
 		}
@@ -1294,11 +1285,11 @@ namespace node
 			//
 			auto dom = cyng::make_reader(frame);
 
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom[4].get("seq"), 0);
-			const response_type res = cyng::value_cast<response_type>(dom[3].get("response-code"), 0);
+			//const sequence_type seq = cyng::value_cast<sequence_type>(dom[4].get("seq"), 0);
+			//const response_type res = cyng::value_cast<response_type>(dom[3].get("response-code"), 0);
 
-			ctx.attach(cyng::generate_invoke("res.open.connection", seq, res));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			//ctx.attach(cyng::generate_invoke("res.open.connection", seq, res));
+			//ctx.attach(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -1318,28 +1309,28 @@ namespace node
 			//
 			auto dom = cyng::make_reader(frame);
 
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom.get(1), 0);
-			const response_type res = cyng::value_cast<response_type>(dom.get(2), 0);
+			//const sequence_type seq = cyng::value_cast<sequence_type>(dom.get(1), 0);
+			//const response_type res = cyng::value_cast<response_type>(dom.get(2), 0);
 
-			//
-			//	search related task
-			//
-			auto pos = task_db_.find(seq);
-			if (pos != task_db_.end())
-			{
-				const auto tsk = pos->second;
-                ctx.attach(cyng::generate_invoke("log.msg.trace", "continue task", tsk));
-				mux_.send(tsk, 0, cyng::tuple_factory(res));
+			////
+			////	search related task
+			////
+			//auto pos = task_db_.find(seq);
+			//if (pos != task_db_.end())
+			//{
+			//	const auto tsk = pos->second;
+   //             ctx.attach(cyng::generate_invoke("log.msg.trace", "continue task", tsk));
+			//	mux_.send(tsk, 0, cyng::tuple_factory(res));
 
-				//
-				//	remove entry
-				//
-				task_db_.erase(pos);
-			}
-			else
-			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "empty sequence/task relation", seq));
-			}
+			//	//
+			//	//	remove entry
+			//	//
+			//	task_db_.erase(pos);
+			//}
+			//else
+			//{
+			//	ctx.attach(cyng::generate_invoke("log.msg.error", "empty sequence/task relation", seq));
+			//}
 		}
 
 		void session::ipt_res_close_connection(cyng::context& ctx)
@@ -1352,28 +1343,28 @@ namespace node
 			//
 			auto dom = cyng::make_reader(frame);
 
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom.get(1), 0);
-			const response_type res = cyng::value_cast<response_type>(dom.get(2), 0);
+			//const sequence_type seq = cyng::value_cast<sequence_type>(dom.get(1), 0);
+			//const response_type res = cyng::value_cast<response_type>(dom.get(2), 0);
 
-			//
-			//	search related task
-			//
-			auto pos = task_db_.find(seq);
-			if (pos != task_db_.end())
-			{
-				const auto tsk = pos->second;
-                ctx.attach(cyng::generate_invoke("log.msg.trace", "continue task", tsk));
-				mux_.send(tsk, 0, cyng::tuple_factory(res));
+			////
+			////	search related task
+			////
+			//auto pos = task_db_.find(seq);
+			//if (pos != task_db_.end())
+			//{
+			//	const auto tsk = pos->second;
+   //             ctx.attach(cyng::generate_invoke("log.msg.trace", "continue task", tsk));
+			//	mux_.send(tsk, 0, cyng::tuple_factory(res));
 
-				//
-				//	remove entry
-				//
-				task_db_.erase(pos);
-			}
-			else
-			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "empty sequence/task relation", seq));
-			}
+			//	//
+			//	//	remove entry
+			//	//
+			//	task_db_.erase(pos);
+			//}
+			//else
+			//{
+			//	ctx.attach(cyng::generate_invoke("log.msg.error", "empty sequence/task relation", seq));
+			//}
 		}
 
 		void session::ipt_req_transfer_pushdata(cyng::context& ctx)
@@ -1407,8 +1398,8 @@ namespace node
 			else
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.error", "ipt.req.transfer.pushdata", frame));
-				ctx.attach(cyng::generate_invoke("res.close.connection", frame.at(1), static_cast<response_type>(tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN)));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				//ctx.attach(cyng::generate_invoke("res.close.connection", frame.at(1), static_cast<response_type>(tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN)));
+				//ctx.attach(cyng::generate_invoke("stream.flush"));
 			}
 		}
 

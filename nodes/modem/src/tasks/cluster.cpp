@@ -19,16 +19,16 @@ namespace node
 		, cluster_config_t const& cfg_cls
 		, std::string const& address
 		, std::string const& service
-		, ipt::scramble_key const& sk
-		, uint16_t watchdog
-		, int timeout)
+		, int timeout
+		, bool auto_answer
+		, std::chrono::milliseconds guard_time)
 	: base_(*btp)
 	, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 	, logger_(logger)
 	, config_(cfg_cls)
-	, ipt_address_(address)
-	, ipt_service_(service)
-	, server_(btp->mux_, logger_, bus_, sk, watchdog, timeout)
+	, address_(address)
+	, service_(service)
+	, server_(btp->mux_, logger_, bus_, timeout, auto_answer, guard_time)
 	, master_(0)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -62,7 +62,7 @@ namespace node
 		//
 		//	sign off from cloud
 		//
-        bus_->stop();
+		bus_->stop();
 		CYNG_LOG_INFO(logger_, "cluster is stopped");
 	}
 
@@ -77,7 +77,7 @@ namespace node
 		//
 		//	start ipt master
 		//
-		server_.run(ipt_address_, ipt_service_);
+		server_.run(address_, service_);
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -92,10 +92,6 @@ namespace node
 		//	stop server
 		//
 		server_.close();
-
-		//
-		//	ToDo: stop all sessions
-		//
 
 		//
 		//	switch to other configuration
@@ -117,7 +113,7 @@ namespace node
 			, config_[master_].pwd_
 			, config_[master_].auto_config_
 			, config_[master_].group_
-			, "ipt"));
+			, "modem"));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent");
 

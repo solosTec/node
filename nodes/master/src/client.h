@@ -70,6 +70,13 @@ namespace node
 			cyng::param_map_t const&,		//	[4] options
 			cyng::param_map_t const&);		//	[5] bag);
 
+		cyng::vector_t res_close_connection(boost::uuids::uuid,		//	[0] origin client tag
+			boost::uuids::uuid,		//	[1] peer tag
+			std::uint64_t,			//	[2] sequence number
+			bool,					//	[3] success
+			cyng::param_map_t const&,		//	[4] options
+			cyng::param_map_t const&);		//	[5] bag
+
 		cyng::vector_t req_transmit_data(boost::uuids::uuid,		//	[0] origin client tag
 			boost::uuids::uuid,		//	[1] peer tag
 			std::uint64_t,			//	[2] sequence number
@@ -126,6 +133,7 @@ namespace node
 			std::uint64_t seq, 
 			cyng::param_map_t const& bag);
 
+		bool check_auth_state(cyng::vector_t&, cyng::store::table*, boost::uuids::uuid);
 		bool check_online_state(cyng::vector_t&, cyng::store::table*, std::string const&);
 		std::tuple<bool, bool, boost::uuids::uuid, std::uint32_t> test_credential(cyng::vector_t&, const cyng::store::table*, std::string const&, std::string const&);
 

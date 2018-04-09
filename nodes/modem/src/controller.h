@@ -34,6 +34,13 @@ namespace node
 		 */
 		int run(bool console);
 
+		/**
+		* create a configuration file with default values.
+		*
+		* @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
+		*/
+		int create_config() const;
+
 #if BOOST_OS_WINDOWS
 		/**
 		 * run as windows service

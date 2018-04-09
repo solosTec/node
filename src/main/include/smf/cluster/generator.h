@@ -199,6 +199,12 @@ namespace node
 	cyng::vector_t client_req_close_connection(boost::uuids::uuid tag
 		, cyng::param_map_t const& bag);
 
+	cyng::vector_t client_res_close_connection_forward(boost::uuids::uuid tag
+		, std::uint64_t seq
+		, bool success
+		, cyng::param_map_t const& options
+		, cyng::param_map_t const& bag);
+
 	/**
 	 * If shutdown is true, no response is required
 	 */

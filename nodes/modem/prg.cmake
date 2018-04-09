@@ -5,12 +5,17 @@ set (node_modem_cpp
 
 	nodes/modem/src/main.cpp	
 	nodes/modem/src/controller.cpp
+	nodes/modem/src/server.cpp
+	nodes/modem/src/connection.cpp
+	nodes/modem/src/session.cpp
 )
 
 set (node_modem_h
 
 	nodes/modem/src/controller.h
-
+	nodes/modem/src/server.h
+	nodes/modem/src/connection.h
+	nodes/modem/src/session.h
 )
 
 set (node_modem_info
@@ -28,6 +33,8 @@ set (node_modem_info
 )
 
 set (node_modem_tasks
+	nodes/modem/src/tasks/cluster.h
+	nodes/modem/src/tasks/cluster.cpp
 )
 
 set (node_modem_res

@@ -5,11 +5,10 @@
  * 
  */ 
 
-#ifndef NODE_IPT_MASTER_SERVER_H
-#define NODE_IPT_MASTER_SERVER_H
+#ifndef NODE_MODEM_SERVER_H
+#define NODE_MODEM_SERVER_H
 
 #include <smf/cluster/bus.h>
-#include <smf/ipt/scramble_key.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/store/db.h>
@@ -21,7 +20,7 @@
 
 namespace node 
 {
-	namespace ipt
+	namespace modem
 	{
 		class connection;
 		class server
@@ -30,9 +29,9 @@ namespace node
 			server(cyng::async::mux&
 				, cyng::logging::log_ptr logger
 				, bus::shared_type
-				, scramble_key const& sk
-				, uint16_t watchdog
-				, int timeout);
+				, int timeout
+				, bool auto_answer
+				, std::chrono::milliseconds guard_time);
 
 			/**
 			 * start listening
@@ -51,7 +50,6 @@ namespace node
 			void insert_connection(cyng::context&);
 			void close_connection(cyng::context&);
 			void transmit_data(cyng::context& ctx);	//!< transmit data locally
-			//void req_stop_client(cyng::context&);
 
 			void client_res_login(cyng::context&);
 			void client_res_close_impl(cyng::context&);
@@ -95,10 +93,9 @@ namespace node
 			bus::shared_type bus_;
 
 			 //	configuration
-			 const scramble_key sk_;
-			 const std::uint16_t watchdog_;
 			 const std::chrono::seconds timeout_;
-
+			 const bool auto_answer_;
+			 const std::chrono::milliseconds guard_time_;
 
 			/// Acceptor used to listen for incoming connections.
 			boost::asio::ip::tcp::acceptor acceptor_;
