@@ -244,17 +244,12 @@ public:
 	{
 		// Set the control callback. This will be called
 		// on every incoming ping, pong, and close frame.
-#if (__GNUG__)
-        //  https://github.com/boostorg/beast/issues/1047
-        // error: no matching function for call to ‘boost::beast::websocket::stream<boost::asio::basic_stream_socket<boost::asio::ip::tcp> >::control_callback(std::_Bind_helper<false, void (websocket_session::*)(boost::beast::websocket::frame_type, boost::basic_string_view<char, std::char_traits<char> >), websocket_session*, const std::_Placeholder<1>&, const std::_Placeholder<2>&>::type)’
-#else
 		ws_.control_callback(
 			std::bind(
 				&websocket_session::on_control_callback,
 				this,
 				std::placeholders::_1,
 				std::placeholders::_2));
-#endif
 
 		// Run the timer. The timer is operated
 		// continuously, this simplifies the code.

@@ -23,6 +23,8 @@ set (node_dash_res
 	nodes/dash/htdocs/config.device.html
 	nodes/dash/htdocs/config.gateway.html
 	nodes/dash/htdocs/config.meter.html
+	nodes/dash/htdocs/config.upload.html
+	nodes/dash/htdocs/config.download.html
 	nodes/dash/htdocs/status.session.html
 	nodes/dash/htdocs/status.system.html
 	nodes/dash/htdocs/status.targets.html

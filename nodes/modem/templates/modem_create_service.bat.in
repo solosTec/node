@@ -8,5 +8,5 @@ REM
 echo create service node_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
 sc create node_modem_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\solosTec\SMF\modem.exe --config=\"$ENV{ProgramFiles}\solosTec\SMF\modem_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF modem server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
-sc description node_modem_v${${PROJECT_NAME}_VERSION_MAJOR} "Modem server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sc description node_modem_v${${PROJECT_NAME}_VERSION_MAJOR} "Modem Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
 @echo on

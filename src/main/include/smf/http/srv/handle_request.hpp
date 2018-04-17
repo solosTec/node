@@ -86,7 +86,8 @@ namespace node
 
 		// Make sure we can handle the method
 		if (req.method() != boost::beast::http::verb::get &&
-			req.method() != boost::beast::http::verb::head)
+			req.method() != boost::beast::http::verb::head &&
+			req.method() != boost::beast::http::verb::post)
 		{
 			return send(bad_request("Unknown HTTP-method"));
 		}
@@ -105,50 +106,75 @@ namespace node
 
 		CYNG_LOG_TRACE(logger, "HTTP request: " << req.target());
 
-		// Build the path to the requested file
-		std::string path = path_cat(doc_root, req.target());
-		if (req.target().back() == '/')
+		if (req.method() == boost::beast::http::verb::get ||
+			req.method() == boost::beast::http::verb::head)
 		{
-			path.append("index.html");
+
+			// Build the path to the requested file
+			std::string path = path_cat(doc_root, req.target());
+			if (req.target().back() == '/')
+			{
+				path.append("index.html");
+			}
+
+			// Attempt to open the file
+			boost::beast::error_code ec;
+			boost::beast::http::file_body::value_type body;
+			body.open(path.c_str(), boost::beast::file_mode::scan, ec);
+
+			// Handle the case where the file doesn't exist
+			if (ec == boost::system::errc::no_such_file_or_directory)
+			{
+				return send(not_found(req.target()));
+			}
+
+			// Handle an unknown error
+			if (ec)
+			{
+				return send(server_error(ec.message()));
+			}
+
+			// Cache the size since we need it after the move
+			auto const size = body.size();
+
+			// Respond to HEAD request
+			if (req.method() == boost::beast::http::verb::head)
+			{
+				boost::beast::http::response<boost::beast::http::empty_body> res{ boost::beast::http::status::ok, req.version() };
+				res.set(boost::beast::http::field::server, NODE::version_string);
+				res.set(boost::beast::http::field::content_type, mime_type(path));
+				res.content_length(size);
+				res.keep_alive(req.keep_alive());
+				return send(std::move(res));
+			}
+			else if (req.method() == boost::beast::http::verb::get)
+			{
+				// Respond to GET request
+				boost::beast::http::response<boost::beast::http::file_body> res{
+					std::piecewise_construct,
+					std::make_tuple(std::move(body)),
+					std::make_tuple(boost::beast::http::status::ok, req.version()) };
+				res.set(boost::beast::http::field::server, NODE::version_string);
+				res.set(boost::beast::http::field::content_type, mime_type(path));
+				res.content_length(size);
+				res.keep_alive(req.keep_alive());
+				return send(std::move(res));
+			}
 		}
-
-		// Attempt to open the file
-		boost::beast::error_code ec;
-		boost::beast::http::file_body::value_type body;
-		body.open(path.c_str(), boost::beast::file_mode::scan, ec);
-
-		// Handle the case where the file doesn't exist
-		if (ec == boost::system::errc::no_such_file_or_directory)
-			return send(not_found(req.target()));
-
-		// Handle an unknown error
-		if (ec)
-			return send(server_error(ec.message()));
-
-		// Cache the size since we need it after the move
-		auto const size = body.size();
-
-		// Respond to HEAD request
-		if (req.method() == boost::beast::http::verb::head)
+		else if (req.method() == boost::beast::http::verb::post)
 		{
-			boost::beast::http::response<boost::beast::http::empty_body> res{ boost::beast::http::status::ok, req.version() };
+			//boost::beast::http::file_body::value_type body;
+			//boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::bad_request, req.version() };
+			boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::ok, req.version() };
 			res.set(boost::beast::http::field::server, NODE::version_string);
-			res.set(boost::beast::http::field::content_type, mime_type(path));
-			res.content_length(size);
+			//res.set(boost::beast::http::field::content_type, mime_type(path));
+			res.body() = std::string("");
+			res.prepare_payload();
+			//res.content_length(body.size());
 			res.keep_alive(req.keep_alive());
 			return send(std::move(res));
 		}
-
-		// Respond to GET request
-		boost::beast::http::response<boost::beast::http::file_body> res{
-			std::piecewise_construct,
-			std::make_tuple(std::move(body)),
-			std::make_tuple(boost::beast::http::status::ok, req.version()) };
-		res.set(boost::beast::http::field::server, NODE::version_string);
-		res.set(boost::beast::http::field::content_type, mime_type(path));
-		res.content_length(size);
-		res.keep_alive(req.keep_alive());
-		return send(std::move(res));
+		return send(std::move(req));
 	}
 }
 #endif

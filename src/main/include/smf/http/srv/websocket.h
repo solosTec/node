@@ -47,25 +47,24 @@ namespace node
 //#if defined(__GNUG__)
 				//  for any reason gcc has a problem with bind(...)
 				//static std::function<void(boost::beast::websocket::frame_type, boost::beast::string_view)> f;
-
+#if (BOOST_BEAST_VERSION < 167)
 				//
 				//	This mess will be fixed with Boost 1.67
 				//	see: https://github.com/boostorg/beast/issues/1054
 				//
 				ping_cb_ = std::bind(&websocket_session::on_control_callback,
-						//this->shared_from_this(),
 						this,
 						std::placeholders::_1,
 						std::placeholders::_2);
 				ws_.control_callback(ping_cb_);
 
-//#else
-				//ws_.control_callback(std::bind(&websocket_session::on_control_callback
-				//	, this->shared_from_this()
-				//	//, this
-				//	, std::placeholders::_1
-				//	, std::placeholders::_2));
-//#endif
+#else
+				ws_.control_callback(std::bind(&websocket_session::on_control_callback
+					, this
+					, std::placeholders::_1
+					, std::placeholders::_2));
+
+#endif
 				// Run the timer. The timer is operated
 				// continuously, this simplifies the code.
 				on_timer({});
@@ -89,6 +88,10 @@ namespace node
 						//
 						for (auto pos = req.find(boost::beast::http::field::sec_websocket_protocol); pos != req.end(); pos++)
 						{
+#ifdef _DEBUG
+							const auto n = pos->name();
+							const auto v = pos->value();
+#endif
 							CYNG_LOG_TRACE(logger_, pos->name() << ": " << pos->value());
 							res.set(boost::beast::http::field::sec_websocket_protocol, pos->value());
 						}
@@ -154,7 +157,9 @@ namespace node
 			bus::shared_type bus_;
 			boost::uuids::uuid tag_;
 			char ping_state_ = 0;
+#if (BOOST_BEAST_VERSION < 167)
 			std::function<void(boost::beast::websocket::frame_type, boost::beast::string_view)>	ping_cb_;
+#endif
             bool shutdown_;
 		};
 

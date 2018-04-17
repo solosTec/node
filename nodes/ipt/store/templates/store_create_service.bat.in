@@ -8,5 +8,5 @@ REM
 echo create service node_store_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
 sc create node_store_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\solosTec\SMF\store.exe --config=\"$ENV{ProgramFiles}\solosTec\SMF\store_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF store server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
-sc description node_store_v${${PROJECT_NAME}_VERSION_MAJOR} "Store server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sc description node_store_v${${PROJECT_NAME}_VERSION_MAJOR} "Store Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
 @echo on

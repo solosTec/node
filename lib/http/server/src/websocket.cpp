@@ -30,8 +30,9 @@ namespace node
 			, connection_manager_(cm)
 			, bus_(bus)
 			, tag_(tag)
-			//, vm_(ws_.get_executor().context(), tag)
+#if (BOOST_BEAST_VERSION < 167)
 			, ping_cb_()
+#endif
             , shutdown_(false)
 		{
 			//vm_.run(cyng::register_function("ws.send.json", 1, std::bind(&websocket_session::ws_send_json, this, std::placeholders::_1)));
@@ -48,7 +49,6 @@ namespace node
 		boost::uuids::uuid websocket_session::tag() const noexcept
 		{
 			return tag_;
-			//return vm_.tag();
 		}
 
 		void websocket_session::on_accept(boost::system::error_code ec)

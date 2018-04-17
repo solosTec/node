@@ -8,5 +8,5 @@ REM
 echo create service node_collector_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
 sc create node_collector_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\solosTec\SMF\collector.exe --config=\"$ENV{ProgramFiles}\node\collector_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF collector server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
-sc description node_collector_v${${PROJECT_NAME}_VERSION_MAJOR} "Collector server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sc description node_collector_v${${PROJECT_NAME}_VERSION_MAJOR} "IP-T Collector Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
 @echo on

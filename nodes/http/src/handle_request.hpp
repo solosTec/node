@@ -92,7 +92,8 @@ namespace node
 
 		// Make sure we can handle the method
 		if( req.method() != boost::beast::http::verb::get &&
-			req.method() != boost::beast::http::verb::head)
+			req.method() != boost::beast::http::verb::head &&
+			req.method() != boost::beast::http::verb::post)
 		{
 			return send(bad_request("Unknown HTTP-method"));
 		}
@@ -165,20 +166,34 @@ namespace node
 			res.keep_alive(req.keep_alive());
 			return send(std::move(res));
 		}
-
-
-		// Respond to GET request
-		boost::beast::http::response<boost::beast::http::file_body> res{
-			std::piecewise_construct,
-			std::make_tuple(std::move(body)),
-			std::make_tuple(boost::beast::http::status::ok, req.version())};
-		res.set(boost::beast::http::field::server, NODE::version_string);
-		res.set(boost::beast::http::field::content_type, mime_type(path));
-// 		res.set(boost::beast::http::field::access_control_allow_origin, "*");
-// 		res.set(boost::beast::http::field::access_control_allow_methods, "GET, POST");
-		res.content_length(body.size());
-		res.keep_alive(req.keep_alive());
-		return send(std::move(res));
+		else if (req.method() == boost::beast::http::verb::get)
+		{
+			// Respond to GET request
+			boost::beast::http::response<boost::beast::http::file_body> res{
+				std::piecewise_construct,
+				std::make_tuple(std::move(body)),
+				std::make_tuple(boost::beast::http::status::ok, req.version()) };
+			res.set(boost::beast::http::field::server, NODE::version_string);
+			res.set(boost::beast::http::field::content_type, mime_type(path));
+			// 		res.set(boost::beast::http::field::access_control_allow_origin, "*");
+			// 		res.set(boost::beast::http::field::access_control_allow_methods, "GET, POST");
+			res.content_length(body.size());
+			res.keep_alive(req.keep_alive());
+			return send(std::move(res));
+		}
+		else if (req.method() == boost::beast::http::verb::post)
+		{
+			boost::beast::http::response<boost::beast::http::file_body> res{
+				std::piecewise_construct,
+				std::make_tuple(std::move(body)),
+				std::make_tuple(boost::beast::http::status::ok, req.version()) };
+			res.set(boost::beast::http::field::server, NODE::version_string);
+			res.set(boost::beast::http::field::content_type, mime_type(path));
+			res.content_length(body.size());
+			res.keep_alive(req.keep_alive());
+			return send(std::move(res));
+		}
+		return send(std::move(req));
 	}
 	
 }

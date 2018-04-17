@@ -1,0 +1,228 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="SWF dashboard">
+    <meta name="author" content="solos::Tec">
+    <title>smf :: config upload</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
+    <!-- Custom styles for this template -->
+    <!--<link href="dashboard.css" rel="stylesheet">-->
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
+        <a class="navbar-brand" href="http://solostec.ch">
+            <img src="images/logo.svg" width="30" height="30" class="d-inline-block align-top" alt="">
+            solos::Tec
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav mr-auto">
+
+                <li class="nav-item active">
+                    <a class="nav-link" href="index.html">Home <span class="sr-only">(current)</span></a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Configuration
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="config.device.html">Devices</a>
+                        <a class="dropdown-item" href="config.gateway.html">Gateway</a>
+                        <a class="dropdown-item" href="config.meter.html">Meter</a>
+                        <a class="dropdown-item" href="config.user.html">User</a>
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Status
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="status.session.html">Sessions</a>
+                        <a class="dropdown-item" href="status.targets.html">Targets</a>
+                        <a class="dropdown-item" href="status.connections.html">Connections</a>
+                        <!--<a class="dropdown-item" href="status.user.html">User</a>-->
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Monitoring
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="status.system.html">System</a>
+                        <a class="dropdown-item" href="monitor.msg.html">Messages</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1 class="display-4">Upload Configuration Files</h1>
+            <hr class="my-4">
+            <p class="lead">Restore or enlarge the system configuration</p>
+            <div class="progress" id="progressbar">
+                <div class="progress-bar progress-bar-striped bg-success" style="width:0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="card-deck">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Devices</h5>
+                    <form id="smf-upload-config-device" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
+                        <div class="form-group">
+                            <label for="smf-upload-config-device-file" id="smf-upload-config-device-header">Select a device configuration file<span id="xxx"></span></label>
+                            <input type="file" class="form-control-file" id="smf-upload-config-device-file" accept=".xml, application/xml" multiple>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-upload-config-device-version" id="smf-upload-config-device-v31" value="v3.1">
+                                <label class="form-check-label" for="smf-upload-config-device-v31">Version 3.1</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-upload-config-device-version" id="smf-upload-config-device-v4" value="v4.0">
+                                <label class="form-check-label" for="smf-upload-config-device-v4">Version 4.0</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-upload-config-device-version" id="smf-upload-config-device-v5" value="v5.0" checked>
+                                <label class="form-check-label" for="smf-upload-config-device-v5">version 5.0</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">&#8682; Upload</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Gateways</h5>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="card-deck">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Meters</h5>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">User</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- JavaScript -->
+    <script type="text/javascript" src="DataTables/datatables.min.js"></script>
+    <!--<script type="text/javascript" src="popper.min.js"></script>-->
+
+    <script>
+        $('#smf-upload-config-device').on('change', function () {
+
+            var files = this['smf-upload-config-device-file'].files;
+            var total = 0;
+            console.log(files.length + " file(s) selected");
+            for (var ii = 0; ii < files.length; ii++) {
+                var file = files[ii];
+                total += file.size;
+                // This code is only for demo ...
+                console.log("name : " + file.name);
+                console.log("size : " + file.size);
+                console.log("type : " + file.type);
+                console.log("date : " + file.lastModified);
+            }
+
+            $('#smf-upload-config-device-header').text('Upload ' + files.length + ' config file(s) with ' + total + ' bytes in total');
+            $('#progressbar').fadeIn(1000);
+        });
+
+        $('#smf-upload-config-device').submit(function (event) {
+            event.preventDefault();
+            console.log('upload: ' + $('#smf-upload-config-device').serialize());
+            //console.log('upload ' + event.target.baseURI);
+            var data = $('#smf-upload-config-device').serializeArray();
+            var files = this['smf-upload-config-device-file'].files;
+            console.log("Handler for .submit() called with " + data.length + ' param(s) and ' + files.length + ' file(s)');
+
+            //var version = data.find(x => x.name === 'deviceConfigVersion').value;
+            //uploadConfigFiles(data, files, "devConf_", '/upload/config/device/' + version);
+            uploadConfigFiles(data, files, "devConf_", '/upload/config/device/');
+
+        });
+
+        function uploadConfigFiles(data, files, prefix, url) {
+
+            var formData = new FormData();
+
+            for (var ii = 0; ii < files.length; ii++) {
+                var file = files[ii];
+                formData.append(prefix + ii, file);
+            }
+
+            for (var ii = 0; ii < data.length; ii++) {
+                formData.append(data[ii].name, data[ii].value);
+            }
+
+            //  content type true ==> 'application/x-www-form-urlencoded; charset=UTF-8'
+            $.ajax(
+                {
+                    url: url,
+                    type: 'POST',
+                    processData: false,
+                    contentType: false,  //  multipart/form-data
+                    data: formData,
+                    success: function (response, textStatus, jqXHR) {
+                        console.log("upload " + textStatus);
+                        $("#progressbar").val(0);
+                        //$("#progressbar").css('color: green')
+                        $('#progressbar').fadeOut(2000);
+                        //$('#progressbar').hide();
+                    },
+                    error: function (jqXHR, textStatus, errorMessage) {
+                        console.log(errorMessage); // Optional
+                        $('#progressbar').fadeOut(2000);
+                    },
+                    xhr: function () {
+                        var myXhr = $.ajaxSettings.xhr();
+                        if (myXhr.upload) {
+                            myXhr.upload.addEventListener('progress', progress, false);
+                        }
+                        return myXhr;
+                    },
+                });
+        }
+
+        function progress(e) {
+
+            if (e.lengthComputable) {
+                var max = e.total;
+                var current = e.loaded;
+
+                var percentage = (current * 100) / max;
+                console.log(percentage + '%');
+
+                $("#progressbar").val(percentage);
+                if (percentage >= 100) {
+                    // process completed  
+                }
+            }
+        }
+
+
+    </script>
+
+</body>
+</html>

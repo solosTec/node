@@ -968,11 +968,11 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/gateway_delete_service.bat")
+		  "${PROJECT_BINARY_DIR}/ipt_delete_service.bat")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/gateway_restart_service.bat")
+		  "${PROJECT_BINARY_DIR}/ipt_restart_service.bat")
 
 	# ipt store
 	configure_file (
