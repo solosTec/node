@@ -510,13 +510,14 @@ namespace node
 			;
 	}
 
-	cyng::vector_t client_req_close_connection(boost::uuids::uuid tag
+	cyng::vector_t client_req_close_connection(boost::uuids::uuid rtag
+		, bool shutdown
 		, cyng::param_map_t const& bag)
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
 			, cyng::generate_invoke_remote_unwinded("client.req.close.connection"
-				, tag
+				, rtag
 				, cyng::code::IDENT
 				, shutdown
 				, cyng::invoke("bus.seq.next")
@@ -525,7 +526,8 @@ namespace node
 			;
 	}
 
-	cyng::vector_t client_req_close_connection_forward(boost::uuids::uuid tag
+	cyng::vector_t client_req_close_connection_forward(boost::uuids::uuid rtag
+		, boost::uuids::uuid origin_tag
 		, bool shutdown
 		, cyng::param_map_t const& options
 		, cyng::param_map_t const& bag)
@@ -533,9 +535,10 @@ namespace node
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
 			, cyng::generate_invoke_remote_unwinded("client.req.close.connection.forward"
-				, tag
+				, rtag
 				, cyng::code::IDENT
 				, cyng::invoke("bus.seq.next")
+				, origin_tag
 				, shutdown
 				, options
 				, bag))

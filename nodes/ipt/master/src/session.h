@@ -54,6 +54,14 @@ namespace node
 			void ipt_res_logout(cyng::context& ctx);
 
 			void ipt_req_open_push_channel(cyng::context& ctx);
+
+			/**
+			 * Normally this function should not be used, because the open
+			 * push channel request is answered by the IP-T master.
+			 * There is a bug in the VARIOSafe Manager to answer an open
+			 * connection request with an open push channel response.
+			 */
+			void ipt_res_open_push_channel(cyng::context& ctx);
 			void ipt_req_close_push_channel(cyng::context& ctx);
 			void ipt_req_open_connection(cyng::context& ctx);
 			void ipt_req_close_connection(cyng::context& ctx);

@@ -53,6 +53,7 @@ namespace node
 		})
 		, account_(account)
 		, pwd_(pwd)
+		, cluster_monitor_(monitor)
 		, connection_open_timeout_(connection_open_timeout)
 		, connection_close_timeout_(connection_close_timeout)
 		, seq_(0)
@@ -94,7 +95,7 @@ namespace node
 		vm_.run(cyng::register_function("client.req.register.push.target", 5, std::bind(&session::client_req_register_push_target, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.open.connection", 6, std::bind(&session::client_req_open_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.res.open.connection", 4, std::bind(&session::client_res_open_connection, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.req.close.connection", 4, std::bind(&session::client_req_close_connection, this, std::placeholders::_1)));
+		vm_.run(cyng::register_function("client.req.close.connection", 5, std::bind(&session::client_req_close_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.res.close.connection", 6, std::bind(&session::client_res_close_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.transfer.pushdata", 6, std::bind(&session::client_req_transfer_pushdata, this, std::placeholders::_1)));
 
@@ -514,21 +515,61 @@ namespace node
 
 		}, cyng::store::write_access("*Cluster"));
 
+		//
+		//	build message strings
+		//
+		std::stringstream ss;
 
 		//
 		//	start watchdog task
 		//
-		tsk_watchdog_ = cyng::async::start_task_delayed<watchdog>(mux_, std::chrono::seconds(30)
-			, logger_
-			, db_
-			, frame.at(4)
-			, std::chrono::seconds(30)).first;
+		if (cluster_monitor_.count() > 5)
+		{
+			tsk_watchdog_ = cyng::async::start_task_delayed<watchdog>(mux_, std::chrono::seconds(30)
+				, logger_
+				, db_
+				, frame.at(4)
+				, cluster_monitor_).first;
+
+			ss
+				<< "start watchdog task #"
+				<< tsk_watchdog_
+				<< " for cluster member "
+				<< cyng::value_cast<std::string>(frame.at(0), "")
+				<< ':'
+				<< ctx.tag()
+				<< " with "
+				<< cluster_monitor_.count()
+				<< " seconds"
+				;
+			insert_msg(db_
+				, cyng::logging::severity::LEVEL_INFO
+				, ss.str()
+				, ctx.tag());
+
+		}
+		else
+		{
+			ss
+				<< "do not start watchdog task for cluster member "
+				<< cyng::value_cast<std::string>(frame.at(0), "")
+				<< ':'
+				<< ctx.tag()
+				<< " - watchdog timer is "
+				<< cluster_monitor_.count()
+				<< " second(s)"
+				;
+			insert_msg(db_
+				, cyng::logging::severity::LEVEL_WARNING
+				, ss.str()
+				, ctx.tag());
+		}
 
 		//
 		//	print system message
-		//	[ipt,2018-04-07 18:11:30.55812420,0.4,00:00:0.070892,<!259:session>,127.0.0.1:55190,1056]
+		//	cluster member modem:c97ff026-768d-4c71-b9bc-7bb2ad186c34 joined
 		//
-		std::stringstream ss;
+		ss.str("");
 		ss
 			<< "cluster member "
 			<< cyng::value_cast<std::string>(frame.at(0), "")
@@ -539,7 +580,6 @@ namespace node
 		insert_msg(db_
 			, cyng::logging::severity::LEVEL_INFO
 			, ss.str()
-			//, "new cluster member: " + cyng::io::to_str(frame)
 			, ctx.tag());
 
 
@@ -956,8 +996,12 @@ namespace node
 	void session::client_req_close_connection(cyng::context& ctx)
 	{
 		//
+		//	[5afa7628-caa3-484d-b1de-a4730b53a656,bdc31cf8-e18e-4d95-ad31-ad821661e857,false,8,
+		//	%(("tp-layer":modem))]
+		//
 		//	* remote session tag
 		//	* remote peer
+		//	* shutdown
 		//	* cluster sequence
 		//	* bag
 		//
@@ -966,16 +1010,17 @@ namespace node
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] origin client tag
 			boost::uuids::uuid,		//	[1] peer tag
-			std::uint64_t,			//	[2] sequence number
-			cyng::param_map_t		//	[3] bag
+			bool,					//	[2] shutdown (unused)
+			std::uint64_t,			//	[3] sequence number
+			cyng::param_map_t		//	[4] bag
 		>(frame);
 
 		ctx.run(cyng::generate_invoke("log.msg.info", "client.req.close.connection", frame));
 
 		ctx.attach(client_.req_close_connection(std::get<0>(tpl)
 			, std::get<1>(tpl)
-			, std::get<2>(tpl)
-			, std::get<3>(tpl)));
+			, std::get<3>(tpl)
+			, std::get<4>(tpl)));
 
 	}
 
@@ -1080,23 +1125,41 @@ namespace node
 			std::uint64_t			//	[3] bytes transferred
 		>(frame);
 
-		db_.access([&](cyng::store::table* tbl_session)->void {
+		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection)->void {
 
 			cyng::table::record rec_origin = tbl_session->lookup(cyng::table::key_generator(std::get<0>(tpl)));
 			if (!rec_origin.empty())
 			{
-				const std::uint64_t rx = cyng::value_cast<std::uint64_t>(rec_origin["rx"], 0);
+				const std::uint64_t rx = cyng::value_cast<std::uint64_t>(rec_origin["rx"], 0u);
 				tbl_session->modify(rec_origin.key(), cyng::param_factory("rx", static_cast<std::uint64_t>(rx + std::get<3>(tpl))), std::get<2>(tpl));
 			}
 
 			cyng::table::record rec_target = tbl_session->lookup(cyng::table::key_generator(std::get<1>(tpl)));
 			if (!rec_target.empty())
 			{
-				const std::uint64_t sx = cyng::value_cast<std::uint64_t>(rec_target["sx"], 0);
+				const std::uint64_t sx = cyng::value_cast<std::uint64_t>(rec_target["sx"], 0u);
 				tbl_session->modify(rec_target.key(), cyng::param_factory("sx", static_cast<std::uint64_t>(sx + std::get<3>(tpl))), std::get<2>(tpl));
 			}
 
-		}, cyng::store::write_access("*Session"));
+			cyng::table::record rec_conn = tbl_connection->lookup(cyng::table::key_generator(std::get<0>(tpl), std::get<1>(tpl)));
+			if (!rec_conn.empty())
+			{
+				const std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_conn["throughput"], 0u);
+				tbl_connection->modify(rec_conn.key(), cyng::param_factory("throughput", static_cast<std::uint64_t>(throughput + std::get<3>(tpl))), std::get<2>(tpl));
+			}
+			else
+			{
+				rec_conn = tbl_connection->lookup(cyng::table::key_generator(std::get<1>(tpl), std::get<0>(tpl)));
+				if (!rec_conn.empty())
+				{
+					const std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_conn["throughput"], 0u);
+					tbl_connection->modify(rec_conn.key(), cyng::param_factory("throughput", static_cast<std::uint64_t>(throughput + std::get<3>(tpl))), std::get<2>(tpl));
+				}
+			}
+
+
+		}	, cyng::store::write_access("*Session")
+			, cyng::store::write_access("*Connection"));
 
 	}
 	

@@ -117,6 +117,7 @@ namespace node
 		cyng::controller vm_;
 		const std::string account_;
 		const std::string pwd_;
+		const std::chrono::seconds cluster_monitor_;
 		const std::chrono::seconds connection_open_timeout_;
 		const std::chrono::seconds connection_close_timeout_;
 

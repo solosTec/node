@@ -52,8 +52,8 @@ namespace node
 			void transmit_data(cyng::context& ctx);	//!< transmit data locally
 
 			void client_res_login(cyng::context&);
-			void client_res_close_impl(cyng::context&);
-			void client_req_close_impl(cyng::context&);
+			void client_res_close(cyng::context&);
+			void client_req_close(cyng::context&);
 			void client_res_open_push_channel(cyng::context&);
 			void client_res_register_push_target(cyng::context&);
 			void client_res_open_connection(cyng::context&);

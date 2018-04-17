@@ -26,6 +26,7 @@ set (node_dash_res
 	nodes/dash/htdocs/status.session.html
 	nodes/dash/htdocs/status.system.html
 	nodes/dash/htdocs/status.targets.html
+	nodes/dash/htdocs/status.connections.html
 	nodes/dash/htdocs/monitor.msg.html
 )
 

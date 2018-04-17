@@ -172,7 +172,7 @@ namespace node
 			, "device"	//	[uuid] - owner of the session
 			, "name"	//	[string] - account
 			, "source"	//	[uint32] - ipt source id (unique)
-			, "loginTime"	//	last login time
+			, "loginTime"	//	[tp] last login time
 			, "rtag"	//	[uuid] client session if connected
 			, "layer"	//	[string] protocol layer
 			, "rx"		//	[uint64] received bytes (from device)
@@ -193,7 +193,7 @@ namespace node
 			, "account"	//	[string] - name of target owner
 			, "pSize"	//	[uint16] - packet size
 			, "wSize"	//	[uint8] - window size
-			, "regTime"	//	registration time
+			, "regTime"	//	[tp] registration time
 			, "px"		//	incoming data
 			},
 			{ cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT16, cyng::TC_UINT8, cyng::TC_TIME_POINT, cyng::TC_UINT64 },
@@ -211,8 +211,8 @@ namespace node
 			, "source"		//	[uint32] primary key 
 			, "target"		//	[uint32] primary key 
 			, "tag"			//	[uuid] remote target session tag
-			, "TargetPeer"	//	[object] target peer session
-			, "ChannelPeer"	//	[uuid] owner/channel peer session
+			, "peerTarget"	//	[object] target peer session
+			, "peerChannel"	//	[uuid] owner/channel peer session
 			, "pSize"		//	[uint16] - max packet size
 			, "ackTime"		//	[uint32] - See description above
 			, "count"		//	[size_t] target count
@@ -226,8 +226,32 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table *Channel");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 7>("*Cluster", { "tag"	//	client session - primary key [uuid]
-			, "class"
+		//
+		//	All dial-up connections. Leased Lines have to be incorporated.
+		//
+		if (!db.create_table(cyng::table::make_meta_table<2, 7>("*Connection",
+			{ "first"		//	[uuid] primary key 
+			, "second"		//	[uuid] primary key 
+			, "aName"		//	[string] caller
+			, "bName"		//	[string] callee
+			, "local"		//	[bool] true if local connection
+			, "aLayer"		//	[string] protocol layer of caller
+			, "bLayer"		//	[string] protocol layer of callee
+			, "throughput"	//	[uint64] data throughput
+			, "start"		//	[tp] start time
+			},
+			{
+				cyng::TC_UUID, cyng::TC_UUID,
+				cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT64, cyng::TC_TIME_POINT
+			},
+			{ 0, 0, 128, 128, 0, 16, 16, 0, 0 })))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table *Connection");
+		}
+
+		if (!db.create_table(cyng::table::make_meta_table<1, 7>("*Cluster", 
+			{ "tag"			//	[uuid] client session - primary key 
+			, "class"		//	[string] node class
 			, "loginTime"	//	last login time
 			, "version"
 			, "clients"	//	client counter
@@ -287,9 +311,27 @@ namespace node
 		}
 		else
 		{
-			insert_msg(db, cyng::logging::severity::LEVEL_INFO, "startup", tag);
+			std::stringstream ss;
+			boost::system::error_code ec;
+			auto host = boost::asio::ip::host_name(ec);
+			if (!ec)
+			{ 
+				ss
+					<< "startup master node "
+					<< tag
+					<< " on "
+					<< host
+					;
+			}
+			else
+			{
+				ss
+					<< "startup master node "
+					<< tag
+					;
+			}
+			insert_msg(db, cyng::logging::severity::LEVEL_INFO, ss.str(), tag);
 		}
-
 	}
 
 	void insert_msg(cyng::store::db& db

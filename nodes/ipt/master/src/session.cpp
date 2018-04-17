@@ -78,6 +78,7 @@ namespace node
 			vm_.run(cyng::register_function("client.res.open.push.channel", 8, std::bind(&session::client_res_open_push_channel, this, std::placeholders::_1)));
 
 			//TP_RES_OPEN_PUSH_CHANNEL = 0x1000,	//!<	response
+			vm_.run(cyng::register_function("ipt.res.open.push.channel", 9, std::bind(&session::ipt_res_open_push_channel, this, std::placeholders::_1)));
 
 			//	transport - push channel close
 			//TP_REQ_CLOSE_PUSH_CHANNEL = 0x9001,	//!<	request
@@ -105,7 +106,7 @@ namespace node
 			//	transport - connection close
 			//TP_REQ_CLOSE_CONNECTION = 0x9004,	//!<	request
 			vm_.run(cyng::register_function("ipt.req.close.connection", 0, std::bind(&session::ipt_req_close_connection, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.req.close.connection.forward", 5, std::bind(&session::client_req_close_connection_forward, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("client.req.close.connection.forward", 6, std::bind(&session::client_req_close_connection_forward, this, std::placeholders::_1)));
 			//TP_RES_CLOSE_CONNECTION = 0x1004,	//!<	response
 			vm_.run(cyng::register_function("ipt.res.close.connection", 0, std::bind(&session::ipt_res_close_connection, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("client.res.close.connection.forward", 5, std::bind(&session::client_res_close_connection_forward, this, std::placeholders::_1)));
@@ -420,7 +421,7 @@ namespace node
 				CYNG_LOG_ERROR(logger_, "ipt.req.open.push.channel - no master " << cyng::io::to_str(frame));
 				ctx.attach(cyng::generate_invoke("res.open.push.channel"
 					, frame.at(1)
-					, static_cast<ipt::response_type>(ipt::tp_res_open_push_channel_policy::UNREACHABLE)
+					, static_cast<response_type>(tp_res_open_push_channel_policy::UNREACHABLE)
 					, static_cast<std::uint32_t>(0)	//	channel
 					, static_cast<std::uint32_t>(0)	//	source
 					, static_cast<std::uint16_t>(0)	//	packet size
@@ -432,6 +433,54 @@ namespace node
 			}
 		}
 
+		void session::ipt_res_open_push_channel(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			//CYNG_LOG_INFO(logger_, "ipt.res.open.push.channel " << cyng::io::to_str(frame));
+			if (bus_->is_online())
+			{
+				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.res.open.push.channel", frame));
+
+				cyng::param_map_t bag, options;
+				bag["tp-layer"] = cyng::make_object("ipt");
+				bag["seq"] = frame.at(1);
+
+				auto const tpl = cyng::tuple_cast<
+					boost::uuids::uuid,		//	[0] tag
+					sequence_type,			//	[1] ipt seq
+					response_type,			//	[2] response
+					std::uint32_t,			//	[3] channel
+					std::uint32_t,			//	[4] source
+					std::uint16_t,			//	[5] packet size
+					std::uint8_t,			//	[6] window size
+					std::uint8_t,			//	[7] status
+					std::uint32_t			//	[8] target count
+				>(frame);
+
+				//auto res = cyng::value_cast<response_type>(frame.at(2), tp_res_open_push_channel_policy::UNREACHABLE);
+
+				bus_->vm_.async_run(node::client_res_open_push_channel(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+					, 0u //	sequence
+					, tp_res_open_push_channel_policy::is_success(std::get<2>(tpl))
+					, std::get<3>(tpl)	//	channel
+					, std::get<4>(tpl)	//	source
+					, std::get<8>(tpl)	//	count
+					, options
+					, bag));
+			}
+			else
+			{
+				CYNG_LOG_ERROR(logger_, "ipt.res.open.push.channel - no master " << cyng::io::to_str(frame));
+				//ctx.attach(cyng::generate_invoke("res.open.push.channel"
+				//	, frame.at(1)
+				//	, static_cast<response_type>(tp_res_open_push_channel_policy::UNREACHABLE)
+				//	, frame.at(2)));
+				ctx.attach(cyng::generate_invoke("stream.flush"));
+			}
+
+
+		}
+
 		void session::ipt_req_close_push_channel(cyng::context& ctx)
 		{
 			//	[b1b6a46c-bb14-4722-bc3e-3cf8d6e74c00,bf,d268409a]
@@ -440,7 +489,7 @@ namespace node
 			//	* ipt sequence
 			//	* channel 
 			const cyng::vector_t frame = ctx.get_frame();
-			//CYNG_LOG_INFO(logger_, "ipt_req_close_push_channel " << cyng::io::to_str(frame));
+			//CYNG_LOG_INFO(logger_, "ipt.req.close.push.channel " << cyng::io::to_str(frame));
 
 			if (bus_->is_online())
 			{
@@ -458,11 +507,10 @@ namespace node
 				CYNG_LOG_ERROR(logger_, "ipt.req.close.push.channel - no master " << cyng::io::to_str(frame));
 				ctx.attach(cyng::generate_invoke("res.close.push.channel"
 					, frame.at(1)
-					, static_cast<ipt::response_type>(ipt::tp_res_close_push_channel_policy::BROKEN)
+					, static_cast<response_type>(tp_res_close_push_channel_policy::BROKEN)
 					, frame.at(2)));
 				ctx.attach(cyng::generate_invoke("stream.flush"));
 			}
-
 		}
 
 		void session::ipt_req_transmit_data(cyng::context& ctx)
@@ -839,8 +887,8 @@ namespace node
 			const sequence_type seq = cyng::value_cast<sequence_type>(dom_bag.get("seq"), 0);
 
 			const response_type res = (std::get<2>(tpl))
-				? ipt::tp_res_close_push_channel_policy::SUCCESS
-				: ipt::tp_res_close_push_channel_policy::BROKEN
+				? tp_res_close_push_channel_policy::SUCCESS
+				: tp_res_close_push_channel_policy::BROKEN
 				;
 
 			ctx.attach(cyng::generate_invoke("res.close.push.channel", seq, res, std::get<3>(tpl)))
@@ -986,7 +1034,7 @@ namespace node
 		void session::client_req_close_connection_forward(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			//ctx.run(cyng::generate_invoke("log.msg.trace", "client.req.close.connection.forward", frame));
+			ctx.run(cyng::generate_invoke("log.msg.trace", "client.req.close.connection.forward", frame));
 
 			//	[d347320a-6028-4fe0-9bde-28abb853f479,cca243a2-c567-4ac0-b327-24b48064d0e3,2,true,
 			//	%(("local-connect":true),("local-peer":101b4159-d5ef-4d7f-b52a-1f1bd4caf55d),("origin-tag":ea0903a3-8262-4477-a9d2-87303d0a29b5),("send-response":false)),
@@ -1001,20 +1049,21 @@ namespace node
 			auto const tpl = cyng::tuple_cast<
 				boost::uuids::uuid,		//	[0] peer
 				std::uint64_t,			//	[1] cluster sequence
-				bool,					//	[2] shutdown flag
-				cyng::param_map_t,		//	[3] options
-				cyng::param_map_t		//	[4] bag
+				boost::uuids::uuid,		//	[2] origin-tag
+				bool,					//	[3] shutdown flag
+				cyng::param_map_t,		//	[4] options
+				cyng::param_map_t		//	[5] bag
 			>(frame);
 
 			//
 			//	in shutdown mode no response should be sent.
 			//
-			auto shutdown = std::get<2>(tpl);
+			const bool shutdown = std::get<3>(tpl);
 
 			//
 			//	dom reader
 			//
-			auto dom = cyng::make_reader(std::get<3>(tpl));
+			auto dom = cyng::make_reader(std::get<4>(tpl));
 
 			cyng::param_map_t tmp;
 			const std::size_t tsk = cyng::async::start_task_sync<close_connection>(mux_
@@ -1022,10 +1071,10 @@ namespace node
 				, bus_
 				, vm_
 				, shutdown
-				, cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid())
+				, std::get<2>(tpl)
 				, std::get<1>(tpl)	//	cluster bus sequence
-				, std::get<3>(tpl)	//	options
-				, std::get<4>(tpl)	//	bag
+				, std::get<4>(tpl)	//	options
+				, std::get<5>(tpl)	//	bag
 				, timeout_).first;
 
 			CYNG_LOG_TRACE(logger_, "client.req.close.connection.forward - task #" << tsk);
@@ -1060,7 +1109,7 @@ namespace node
 			if (std::get<2>(tpl))
 			{
 				ctx.run(cyng::generate_invoke("log.msg.trace", "client.res.close.connection.forward", frame));
-				ctx.attach(cyng::generate_invoke("res.close.connection", seq, static_cast<response_type>(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED)));
+				ctx.attach(cyng::generate_invoke("res.close.connection", seq, static_cast<response_type>(tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED)));
 
 				//
 				//	reset connection state
@@ -1070,7 +1119,7 @@ namespace node
 			else
 			{
 				ctx.run(cyng::generate_invoke("log.msg.warning", "client.res.close.connection.forward", frame));
-				ctx.attach(cyng::generate_invoke("res.close.connection", seq, static_cast<response_type>(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN)));
+				ctx.attach(cyng::generate_invoke("res.close.connection", seq, static_cast<response_type>(tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN)));
 			}
 
 		}
@@ -1110,7 +1159,7 @@ namespace node
 			if (success)
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.info", "client.res.open.connection.forward", ctx.get_frame()));
-				ctx.attach(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(ipt::tp_res_open_connection_policy::DIALUP_SUCCESS)));
+				ctx.attach(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(tp_res_open_connection_policy::DIALUP_SUCCESS)));
 
 				//
 				//	hides outer variable dom
@@ -1122,7 +1171,7 @@ namespace node
 			else
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.open.connection.forward", ctx.get_frame()));
-				ctx.attach(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(ipt::tp_res_open_connection_policy::DIALUP_FAILED)));
+				ctx.attach(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(tp_res_open_connection_policy::DIALUP_FAILED)));
 			}
 
 			ctx.attach(cyng::generate_invoke("stream.flush"));
@@ -1164,14 +1213,14 @@ namespace node
 			//
 			std::uint8_t status = cyng::value_cast<std::uint8_t>(dom.get("status"), 0);
 			BOOST_ASSERT_MSG(status == 0xc1, "invalid push channel status");
-			status |= ipt::tp_res_pushdata_transfer_policy::ACK;
+			status |= tp_res_pushdata_transfer_policy::ACK;
 
 			//
 			//	response
 			//
 			response_type res = (std::get<4>(tpl) != 0)
-				? ipt::tp_res_pushdata_transfer_policy::SUCCESS
-				: ipt::tp_res_pushdata_transfer_policy::BROKEN
+				? tp_res_pushdata_transfer_policy::SUCCESS
+				: tp_res_pushdata_transfer_policy::BROKEN
 				;
 
 			if (std::get<4>(tpl) != 0)
@@ -1263,8 +1312,10 @@ namespace node
 
 				cyng::param_map_t bag;
 				bag["tp-layer"] = cyng::make_object("ipt");
+				bag["origin-tag"] = cyng::make_object(ctx.tag());		//	send response to this session
 				bag["seq"] = frame.at(1);
-				bus_->vm_.async_run(client_req_close_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				bus_->vm_.async_run(node::client_req_close_connection(ctx.tag()
+					, false //	no shutdown
 					, bag));
 			}
 			else

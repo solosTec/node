@@ -94,6 +94,13 @@ namespace node
 			parser_state_ = stream();
 		}
 
+		void parser::set_cmd_mode()
+		{
+			post_processing();
+			stream_state_ = STATE_COMMAND;
+			parser_state_ = command();
+		}
+
 		parser::state_visitor::state_visitor(parser& p, char c)
 			: parser_(p)
 			, c_(c)

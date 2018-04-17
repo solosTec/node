@@ -163,6 +163,11 @@ namespace node
 			 */
 			void set_stream_mode();
 
+			/**
+			 * transit to command mode
+			 */
+			void set_cmd_mode();
+
 		private:
 			/**
 			 * read a single byte and update

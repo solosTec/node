@@ -150,6 +150,7 @@ namespace node
 			//	reconnect to master on different times
 			//
 			boost::random::mt19937 rng_;
+			rng_.seed(std::time(0));
 			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
 
 			const auto conf = cyng::vector_factory({
@@ -287,6 +288,11 @@ namespace node
 
 		boost::uuids::random_generator rgen;
 		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
+
+		//
+		//	apply severity threshold
+		//
+		logger->set_severity(cyng::logging::to_severity(cyng::value_cast<std::string>(dom.get("log-level"), "INFO")));
 
 		const auto log_pushdata = cyng::value_cast(dom.get("log-pushdata"), false);
 		

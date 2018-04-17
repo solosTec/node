@@ -75,6 +75,7 @@ namespace node
 			vm.run(cyng::register_function("print.no-carrier", 0, std::bind(&serializer::print_msg, this, std::placeholders::_1, "NO CARRIER")));
 			vm.run(cyng::register_function("print.no-answer", 0, std::bind(&serializer::print_msg, this, std::placeholders::_1, "NO ANSWER")));
 			vm.run(cyng::register_function("print.ring", 0, std::bind(&serializer::print_msg, this, std::placeholders::_1, "RING")));
+			vm.run(cyng::register_function("print.connect", 0, std::bind(&serializer::print_msg, this, std::placeholders::_1, "CONNECT")));
 
 			//
 			//	generated from master node (mostly)

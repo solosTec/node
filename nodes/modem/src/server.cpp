@@ -57,8 +57,8 @@ namespace node
 			//	client responses
 			//
 			bus_->vm_.run(cyng::register_function("client.res.login", 7, std::bind(&server::client_res_login, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.res.close", 3, std::bind(&server::client_res_close_impl, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.req.close", 4, std::bind(&server::client_req_close_impl, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("client.res.close", 3, std::bind(&server::client_res_close, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("client.req.close", 4, std::bind(&server::client_req_close, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.open.connection", 6, std::bind(&server::client_res_open_connection, this, std::placeholders::_1)));
@@ -225,7 +225,7 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 			auto ec = cyng::value_cast(frame.at(1), boost::system::error_code());
-			ctx.attach(client_req_close(tag, ec.value()));
+			ctx.attach(node::client_req_close(tag, ec.value()));
 
 			//
 			//	clean up connection_map_
@@ -271,7 +271,7 @@ namespace node
 					<< " ==> "
 					<< receiver);
 
-				propagate("ipt.transfer.data", receiver, cyng::vector_t({ frame.at(1) }));
+				propagate("modem.transfer.data", receiver, cyng::vector_t({ frame.at(1) }));
 				propagate("stream.flush", receiver, cyng::vector_t({}));
 
 				//
@@ -412,7 +412,7 @@ namespace node
 			propagate("client.res.login", ctx.get_frame());
 		}
 
-		void server::client_res_close_impl(cyng::context& ctx)
+		void server::client_res_close(cyng::context& ctx)
 		{
 			//	[9f6585e8-c7c6-4f93-9b99-e21986dec2bb,3ed440a2-958f-4863-9f86-ff8b1a0dc2f1,19]
 			//
@@ -436,7 +436,7 @@ namespace node
 			}
 		}
 
-		void server::client_req_close_impl(cyng::context& ctx)
+		void server::client_req_close(cyng::context& ctx)
 		{
 			//
 			//	Master requests to close a specific session. Typical reason is a login with an account

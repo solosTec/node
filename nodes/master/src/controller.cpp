@@ -264,6 +264,11 @@ namespace node
         const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
 
 		//
+		//	apply severity threshold
+		//
+		logger->set_severity(cyng::logging::to_severity(cyng::value_cast<std::string>(dom.get("log-level"), "INFO")));
+				
+		//
 		//	create server
 		//
 		cyng::tuple_t tmp;

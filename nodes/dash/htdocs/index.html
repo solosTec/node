@@ -46,7 +46,7 @@
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="status.session.html">Sessions</a>
                         <a class="dropdown-item" href="status.targets.html">Targets</a>
-<!--                        <a class="dropdown-item" href="status.connections.html">Connections</a>-->
+                        <a class="dropdown-item" href="status.connections.html">Connections</a>
 <!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
                     </div>
                 </li>
@@ -107,7 +107,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Configure Meter</h5>
                     <p class="card-text">Meter overview</p>
-                    <a href="config.meter.html" class="btn btn-primary">Meter</a>
+                    <a href="config.meter.html" class="btn btn-primary disabled">Meter</a>
                 </div>
                 <div class="card-footer">
                     <small class="text-muted"><span id="ws-table-meter-count"></span> meters configured</small>
@@ -147,7 +147,7 @@
                     <a href="status.connections.html" class="btn btn-primary">Connections</a>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted">No data avilable yet</small>
+                    <small class="text-muted"><span id="ws-table-connection-count"></span> running connections</small>
                 </div>
             </div>
         </div>
@@ -176,6 +176,7 @@
                 connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.meter.count", push: true }));
                 connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.session.count", push: true }));
                 connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.target.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.connection.count", push: true }));
             };
 
             connection.onclose = function (event) {
@@ -211,6 +212,9 @@
                             }
                             else if (obj.channel == 'table.target.count') {
                                 $('#ws-table-target-count').text(obj.value);
+                            }
+                            else if (obj.channel == 'table.connection.count') {
+                                $('#ws-table-connection-count').text(obj.value);
                             }
                         }
                     }

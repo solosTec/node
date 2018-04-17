@@ -70,7 +70,7 @@ namespace node
 			bus_->vm_.run(cyng::register_function("client.res.transfer.pushdata", 7, std::bind(&server::client_res_transfer_pushdata, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.req.transfer.pushdata.forward", 7, std::bind(&server::client_req_transfer_pushdata_forward, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.close.push.channel", 6, std::bind(&server::client_res_close_push_channel, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.req.close.connection.forward", 6, std::bind(&server::client_req_close_connection_forward, this, std::placeholders::_1)));
+			bus_->vm_.run(cyng::register_function("client.req.close.connection.forward", 7, std::bind(&server::client_req_close_connection_forward, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.close.connection.forward", 6, std::bind(&server::client_res_close_connection_forward, this, std::placeholders::_1)));
 
 		}

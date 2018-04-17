@@ -197,6 +197,7 @@ namespace node
 		, cyng::param_map_t const& bag);
 
 	cyng::vector_t client_req_close_connection(boost::uuids::uuid tag
+		, bool shutdown
 		, cyng::param_map_t const& bag);
 
 	cyng::vector_t client_res_close_connection_forward(boost::uuids::uuid tag
@@ -208,7 +209,8 @@ namespace node
 	/**
 	 * If shutdown is true, no response is required
 	 */
-	cyng::vector_t client_req_close_connection_forward(boost::uuids::uuid tag
+	cyng::vector_t client_req_close_connection_forward(boost::uuids::uuid rtag
+		, boost::uuids::uuid origin_tag
 		, bool shutdown
 		, cyng::param_map_t const& options
 		, cyng::param_map_t const& bag);
