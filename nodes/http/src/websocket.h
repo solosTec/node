@@ -9,11 +9,12 @@
 
 #include <NODE_project_info.h>
 #include "mail_config.h"
+#include <cyng/log.h>
 #include <cyng/compatibility/io_service.h>
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/steady_timer.hpp>
+#include <boost/algorithm/string.hpp>
 #include <memory>
-#include <cyng/log.h>
 
 namespace node 
 {
@@ -28,7 +29,7 @@ namespace node
 		boost::beast::multi_buffer buffer_;
 		char ping_state_;
 		const mail_config mail_config_;
-
+		std::string reply_;
 
 	public:
 		// Take ownership of the socket
@@ -47,9 +48,9 @@ namespace node
 			// on every incoming ping, pong, and close frame.
             
             //
-            //  for any reason gcc has a problem with bind(...)
+            //  API change
             //
-#if defined(__GNUC__) || defined(__GNUG__)
+#if (BOOST_BEAST_VERSION < 167)
 			std::function<void(boost::beast::websocket::frame_type, boost::beast::string_view)> f = std::bind(
 				&websocket_session::on_control_callback,
 				this,
@@ -72,29 +73,42 @@ namespace node
 			// Set the timer
 			timer_.expires_after(std::chrono::seconds(15));
 			
-			bool cyng_protocol = false;
-			const auto pcount = req.count(boost::beast::http::field::sec_websocket_protocol);
-			if (pcount != 0)
-			{
-// 				CYNG_LOG_INFO(logger_, "websocket::do_accept - " << protocols << " available");
-				for (auto pos = req.find(boost::beast::http::field::sec_websocket_protocol); pos != req.end(); pos++)
-				{
- 					CYNG_LOG_INFO(logger_, pos->name() << ": " << pos->value());
-					cyng_protocol = pos->value().find("CYNG") != std::string::npos;
-				}
-			}
-			
 			//
 			//	debug
 			//	print all headers
-// 			for (auto pos = req.begin(); pos != req.end(); pos++)
-// 			{
-// 				std::cout << pos->name() << ": " << pos->value() << std::endl;
-// 			}
+			// 			for (auto pos = req.begin(); pos != req.end(); pos++)
+			// 			{
+			// 				std::cout << pos->name() << ": " << pos->value() << std::endl;
+			// 			}
+
+			bool cyng_protocol = false;
+			const auto pos = req.find(boost::beast::http::field::sec_websocket_protocol);
+			if (pos != req.end())
+			{
+				CYNG_LOG_TRACE(logger_, "ws subprotocol(s) available: " << pos->value());
+				//
+				//	accept a subprotocol
+				//
+				std::vector<std::string> subprotocols;
+				boost::algorithm::split(subprotocols, pos->value(), boost::is_any_of(","), boost::token_compress_on);
+
+				for (auto idx = subprotocols.begin(); idx != subprotocols.end(); idx++)
+				{
+					CYNG_LOG_TRACE(logger_, "subprotocol: " << *idx);
+					if (boost::algorithm::equals(*idx, "CYNG"))
+					{
+						cyng_protocol = true;
+						break;
+						//res.set(boost::beast::http::field::sec_websocket_protocol, *idx);
+					}
+				}
+			}
+			
 			
 			// Accept the websocket handshake
 			ws_.async_accept_ex(req, [cyng_protocol](boost::beast::websocket::response_type& res){
 					res.set(boost::beast::http::field::user_agent, NODE::version_string);
+					res.set(boost::beast::http::field::server, NODE::version_string);
 					if (cyng_protocol)
 					{
 						res.set(boost::beast::http::field::sec_websocket_protocol, "CYNG");
@@ -106,14 +120,6 @@ namespace node
 						&websocket_session::on_accept,
 						shared_from_this(),
 						std::placeholders::_1)));
-// 			ws_.async_accept(
-// 				req,
-// 				boost::asio::bind_executor(
-// 					strand_,
-// 					std::bind(
-// 						&websocket_session::on_accept,
-// 						shared_from_this(),
-// 						std::placeholders::_1)));
 		}
 
 		// Called when the timer expires.

@@ -19,7 +19,6 @@
 
 namespace node
 {
-
 	class cluster
 	{
 	public:
@@ -132,6 +131,10 @@ namespace node
 		 */
 		std::size_t master_;
 
+		/**
+		 * system task
+		 */
+		const std::size_t sys_tsk_;
 	};
 	
 }

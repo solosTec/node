@@ -192,7 +192,7 @@
                             var bName = $('<div/>').text(obj.rec.data.bName).html();
                             var aLayer = $('<div/>').text(obj.rec.data.aLayer).html();
                             var bLayer = $('<div/>').text(obj.rec.data.bLayer).html();
-                            var start = new Date(obj.rec.data.start);
+                            var start = new Date(obj.rec.data.start.substring(0, 19));
                             var rowNode = table_conn.row.add([obj.rec.key.first, obj.rec.key.second, aName, bName, obj.rec.data.local, aLayer, bLayer, obj.rec.data.throughput, start]).draw().node();
                         }
                         else if (obj.cmd == 'delete') {

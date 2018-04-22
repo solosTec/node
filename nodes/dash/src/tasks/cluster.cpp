@@ -6,6 +6,7 @@
  */
 
 #include "cluster.h"
+#include "system.h"
 #include <smf/cluster/generator.h>
 
 #include <cyng/async/task/task_builder.hpp>
@@ -15,7 +16,7 @@
 #include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/dom/reader.h>
-#include <cyng/sys/cpu.h>
+//#include <cyng/sys/cpu.h>
 #include <cyng/sys/memory.h>
 #include <cyng/json.h>
 
@@ -40,6 +41,7 @@ namespace node
 		, cache_()
 		, server_(logger, btp->mux_.get_io_service(), ep, doc_root, bus_, cache_)
 		, master_(0)
+		, sys_tsk_(cyng::async::start_task_detached<system>(btp->mux_, logger_, cache_, bus_->vm_.tag()))
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 		<< base_.get_id()
@@ -765,17 +767,30 @@ namespace node
 
 	void cluster::update_sys_cpu_usage_total(std::string const& channel, http::websocket_session* wss)
 	{
-		//
-		//	Total CPU load of the system in %
-		//
-		auto tpl = cyng::tuple_factory(
-			cyng::param_factory("cmd", std::string("update")),
-			cyng::param_factory("channel", channel),
-			cyng::param_factory("value", cyng::sys::get_total_cpu_load()));
+		cache_.access([&](cyng::store::table* tbl) {
+			const auto rec = tbl->lookup(cyng::table::key_generator("cpu:load"));
+			if (!rec.empty())
+			{
+				
+				CYNG_LOG_WARNING(logger_, cyng::io::to_str(rec["value"]));
+				//
+				//	Total CPU load of the system in %
+				//
+				auto tpl = cyng::tuple_factory(
+					cyng::param_factory("cmd", std::string("update")),
+					cyng::param_factory("channel", channel),
+					cyng::param_t("value", rec["value"]));
+					//cyng::param_factory("value", cyng::sys::get_total_cpu_load()));
 
-		auto msg = cyng::json::to_string(tpl);
+				auto msg = cyng::json::to_string(tpl);
 
-		if (wss)	wss->send_msg(msg);
+				if (wss)	wss->send_msg(msg);
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "record cpu:load not found");
+			}
+		}, cyng::store::write_access("*Config"));
 	}
 
 	void cluster::update_sys_cpu_count(std::string const& channel, http::websocket_session* wss)
@@ -807,11 +822,6 @@ namespace node
 		auto msg = cyng::json::to_string(tpl);
 
 		if (wss)	wss->send_msg(msg);
-
-		//wss->run(cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-		//	cyng::param_factory("cmd", std::string("update")),
-		//	cyng::param_factory("channel", channel),
-		//	cyng::param_factory("value", cyng::sys::get_total_virtual_memory()))));
 	}
 
 	void cluster::update_sys_mem_virtual_used(std::string const& channel, http::websocket_session* wss)
@@ -827,11 +837,6 @@ namespace node
 		auto msg = cyng::json::to_string(tpl);
 
 		if (wss)	wss->send_msg(msg);
-
-		//wss->run(cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-		//	cyng::param_factory("cmd", std::string("update")),
-		//	cyng::param_factory("channel", channel),
-		//	cyng::param_factory("value", cyng::sys::get_used_virtual_memory()))));
 	}
 
 	void cluster::subscribe_devices(std::string const& channel, boost::uuids::uuid tag)
@@ -853,13 +858,6 @@ namespace node
 
 				auto msg = cyng::json::to_string(tpl);
 				server_.send_msg(tag, msg);
-
-				//	{ "pk", "name", "pwd", "number", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
-				//server_.run_on_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-				//	cyng::param_factory("cmd", std::string("insert")),
-				//	cyng::param_factory("channel", channel),
-				//	cyng::param_factory("rec", rec.convert()))));
-
 
 				//	continue
 				return true;
@@ -918,11 +916,6 @@ namespace node
 
 				auto msg = cyng::json::to_string(tpl);
 				server_.send_msg(tag, msg);
-
-				//server_.run_on_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-				//	cyng::param_factory("cmd", std::string("insert")),
-				//	cyng::param_factory("channel", channel),
-				//	cyng::param_factory("rec", rec.convert()))));
 
 				//	continue
 				return true;
@@ -1010,11 +1003,6 @@ namespace node
 
 				auto msg = cyng::json::to_string(tpl);
 				server_.send_msg(tag, msg);
-
-				//server_.run_on_ws(tag, cyng::generate_invoke("ws.send.json", cyng::tuple_factory(
-				//	cyng::param_factory("cmd", std::string("insert")),
-				//	cyng::param_factory("channel", channel),
-				//	cyng::param_factory("rec", rec.convert()))));
 
 				//	continue
 				return true;
@@ -1388,8 +1376,10 @@ namespace node
 		, std::uint64_t gen
 		, boost::uuids::uuid source)
 	{
-		CYNG_LOG_DEBUG(logger_, "sig.mod - "
-			<< tbl->meta().get_name());
+		//	to much noise
+		//CYNG_LOG_DEBUG(logger_, "sig.mod - "
+		//	<< tbl->meta().get_name());
+
 		//
 		//	convert attribute to parameter (as map)
 		//
@@ -1461,6 +1451,8 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("status.cluster", msg);
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Config"))
+		{ }
 		else
 		{
 			CYNG_LOG_WARNING(logger_, "sig.mode - unknown table "
@@ -1598,6 +1590,13 @@ namespace node
 			{ 64, 128 })))
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table *Config");
+		}
+		else
+		{
+			//
+			//	set initial value
+			//
+			cache_.insert("*Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, bus_->vm_.tag());
 		}
 
 		if (!cache_.create_table(cyng::table::make_meta_table<1, 3>("*SysMsg", { "id"	//	message number

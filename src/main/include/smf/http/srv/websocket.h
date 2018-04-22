@@ -10,10 +10,9 @@
 
 #include <smf/cluster/bus.h>
 #include <cyng/log.h>
-//#include <cyng/vm/controller.h>
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/steady_timer.hpp>
-#include <cyng/log.h>
+#include <boost/algorithm/string.hpp>
 
 namespace node
 {
@@ -43,10 +42,9 @@ namespace node
 			{
 				// Set the control callback. This will be called
 				// on every incoming ping, pong, and close frame.
-				//	Buggy - don't call this
-//#if defined(__GNUG__)
-				//  for any reason gcc has a problem with bind(...)
-				//static std::function<void(boost::beast::websocket::frame_type, boost::beast::string_view)> f;
+				//
+				//  API change
+				//
 #if (BOOST_BEAST_VERSION < 167)
 				//
 				//	This mess will be fixed with Boost 1.67
@@ -75,33 +73,37 @@ namespace node
 				//
 				//	check subprotocols
 				//
-				const auto pcount = req.count(boost::beast::http::field::sec_websocket_protocol);
-				if (pcount != 0)
+				const auto pos = req.find(boost::beast::http::field::sec_websocket_protocol);
+				if (pos != req.end())
 				{
-					CYNG_LOG_TRACE(logger_, pcount << " ws subprotocol(s) available");
-					ws_.async_accept_ex(req, [&req, this](boost::beast::websocket::response_type& res) {
+					CYNG_LOG_TRACE(logger_, "ws subprotocol(s) available: " << pos->value());
+					ws_.async_accept_ex(req, [&req, pos, this](boost::beast::websocket::response_type& res) {
 
+						//
+						//	user agent
+						//
 						res.set(boost::beast::http::field::user_agent, NODE::version_string);
+						res.set(boost::beast::http::field::server, NODE::version_string);
 
 						//
-						//	accept all subprotocol
+						//	accept a subprotocol
 						//
-						for (auto pos = req.find(boost::beast::http::field::sec_websocket_protocol); pos != req.end(); pos++)
+						std::vector<std::string> subprotocols;
+						boost::algorithm::split(subprotocols, pos->value(), boost::is_any_of(","), boost::token_compress_on);
+
+						for (auto idx = subprotocols.begin(); idx != subprotocols.end(); idx++)
 						{
-#ifdef _DEBUG
-							const auto n = pos->name();
-							const auto v = pos->value();
-#endif
-							CYNG_LOG_TRACE(logger_, pos->name() << ": " << pos->value());
-							res.set(boost::beast::http::field::sec_websocket_protocol, pos->value());
+							CYNG_LOG_TRACE(logger_, "subprotocol: " << *idx );
+							if (boost::algorithm::equals(*idx, "SMF"))
+							{
+								res.set(boost::beast::http::field::sec_websocket_protocol, *idx);
+							}
 						}
-
 
 					}, boost::asio::bind_executor(strand_,
 						std::bind(&websocket_session::on_accept
 							, this
 							, std::placeholders::_1)));
-
 				}
 				else
 				{

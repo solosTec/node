@@ -184,7 +184,7 @@
                 if (obj.cmd != null) {
                     if (obj.cmd == 'insert') {
                         var msg = $('<div/>').text(obj.rec.data.msg).html();
-                        var ts = new Date(obj.rec.data.ts);
+                        var ts = new Date(obj.rec.data.ts.substring(0, 19));
                         var rowNode = table_msg.row.add([obj.rec.key.id, ts, obj.rec.data.severity, msg]).draw().node();
                         if (obj.rec.data.severity == 3) {
                             $(rowNode).css('color', 'LimeGreen');

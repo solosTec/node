@@ -68,7 +68,7 @@
                 </li>
 
             </ul>
-            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey" /></svg></span>
+            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey"></circle></svg></span>
             <span id="ws-activity-text" class="navbar-text">
                 connection state
             </span>
@@ -144,8 +144,8 @@
 
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
-    <script type="text/javascript" src="popper.min.js"></script>
-   <!-- <script src="http://d3js.org/d3.v3.js"></script>-->
+    <!--<script type="text/javascript" src="popper.min.js"></script>-->
+    <!-- <script src="http://d3js.org/d3.v3.js"></script>-->
 
     <script>
 
@@ -237,7 +237,7 @@
 
             connection.onmessage = function (e) {
                 $('#ws-activity-symbol').show();
-                //console.log('socket data: ' + e.data);
+                console.log('socket data: ' + e.data);
                 //console.log(Object.keys(e.data).length + ' bytes');
                 totalIO += Object.keys(e.data).length;
                 var obj = JSON.parse(e.data);
@@ -263,7 +263,7 @@
                             if (obj.channel == 'status.cluster') {
                                 var name = $('<div/>').text(obj.rec.data.class).html();
                                 var version = $('<div/>').text(obj.rec.data.version).html();
-                                var login = new Date(obj.rec.data.loginTime);
+                                var login = new Date(obj.rec.data.loginTime.substring(0, 19));
                                 var ping = $('<div/>').text(obj.rec.data.ping).html();
                                 var ep = $('<div/>').text(obj.rec.data.ep).html();
                                 //var last = new Date();

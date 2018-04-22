@@ -182,10 +182,10 @@ namespace node
 		
 		bool sys_cpu_load = false;
 		bool io_mail_out = false;
-		if (cyng::value_cast<std::string>(reader.get("cmd"), "") == "subscribe")
+		if (cyng::value_cast<std::string>(reader.get("cmd"), "") == "update")
 		{
 			CYNG_LOG_INFO(logger_, "subscribe " << cyng::value_cast<std::string>(reader.get("channel"), ""));
-			sys_cpu_load = cyng::value_cast<std::string>(reader.get("channel"), "") == "sys.cpu.load";
+			sys_cpu_load = cyng::value_cast<std::string>(reader.get("channel"), "") == "sys.cpu.usage.total";
 		}
 		
 // 		{"cmd":"send","channel":"io.mail.out","contact":{"name":"Sylko Olzscher","email":"CmdPirx@gmail.com"}}
@@ -284,7 +284,7 @@ namespace node
 			CYNG_LOG_TRACE(logger_, "get_total_cpu_load( " << usage << " )");
 			auto res = cyng::tuple_factory(
 				cyng::param_factory("cmd", std::string("update")),
-				cyng::param_factory("key", std::string("sys.cpu.load")),
+				cyng::param_factory("channel", std::string("sys.cpu.usage.total")),
 				cyng::param_factory("value", usage));
 // 				cyng::param_factory("value", cyng::sys::get_cpu_load_by_process()));
 			cyng::json::write(ss, cyng::make_object(res));
@@ -313,9 +313,9 @@ namespace node
 		
 // 		buffer_.consume(buffer_.size());
 
+		reply_ = ss.str();
         ws_.async_write(
-			boost::asio::buffer(ss.str()),
-//             buffer_.data(),	//	echo
+			boost::asio::buffer(reply_),
             boost::asio::bind_executor(
                 strand_,
                 std::bind(

@@ -137,7 +137,7 @@ namespace node
 		// See if it is a WebSocket Upgrade
 		if(boost::beast::websocket::is_upgrade(req_))
 		{
-			CYNG_LOG_ERROR(logger_, "session::upgrade to websocket " << socket_.remote_endpoint());
+			CYNG_LOG_INFO(logger_, "session::upgrade to websocket " << socket_.remote_endpoint());
 			// Create a WebSocket websocket_session by transferring the socket
 			connection_manager_.upgrade(shared_from_this())->do_accept(std::move(req_));;
 			return;
