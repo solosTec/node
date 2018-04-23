@@ -24,26 +24,22 @@
 
 namespace node 
 {
-	namespace modem
+	namespace imega
 	{
 		session::session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
 			, boost::uuids::uuid tag
-			, std::chrono::seconds const& timeout
-			, bool auto_answer
-			, std::chrono::milliseconds guard_time)
+			, std::chrono::seconds timout)
 		: mux_(mux)
 			, logger_(logger)
 			, bus_(bus)
 			, vm_(mux.get_io_service(), tag)
-			, timeout_(timeout)
-			, auto_answer_(auto_answer)
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_INFO(logger_, prg.size() << " modem instructions received");
+				CYNG_LOG_INFO(logger_, prg.size() << " imega instructions received");
 				CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
 				vm_.run(std::move(prg));
-			}, guard_time)
+			})
 			//, gate_keeper_(cyng::async::start_task_sync<gatekeeper>(mux_
 			//	, logger_
 			//	, vm_
@@ -63,7 +59,7 @@ namespace node
 			//
 			//	register request handler
 			//	client.req.transmit.data.forward
-			vm_.run(cyng::register_function("modem.req.transmit.data", 2, std::bind(&session::modem_req_transmit_data, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("imegae.req.transmit.data", 2, std::bind(&session::imega_req_transmit_data, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("client.req.transmit.data.forward", 4, std::bind(&session::client_req_transmit_data_forward, this, std::placeholders::_1)));
 
 
@@ -175,7 +171,7 @@ namespace node
 			//CTRL_RES_LOGIN_SCRAMBLED = 0x4002,	//!<	scrambled login response
 			//CTRL_REQ_LOGIN_PUBLIC = 0xC001,	//!<	public login request
 			//CTRL_REQ_LOGIN_SCRAMBLED = 0xC002,	//!<	scrambled login request
-			vm_.run(cyng::register_function("modem.req.login.public", 2, std::bind(&session::modem_req_login, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("imega.req.login.public", 5, std::bind(&session::imega_req_login, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("client.res.login", 6, std::bind(&session::client_res_login, this, std::placeholders::_1)));
 
 			//	control - maintenance
@@ -231,6 +227,10 @@ namespace node
 			//UNKNOWN = 0x7fff,	//!<	unknown command
 			//vm_.run(cyng::register_function("ipt.unknown.cmd", 3, std::bind(&session::ipt_unknown_cmd, this, std::placeholders::_1)));
 
+			
+			//
+			//	ToDo: start maintenance task
+			//
 		}
 
 		session::~session()
@@ -238,6 +238,7 @@ namespace node
 
 		void session::stop()
 		{
+			//parser_.stop():
 			vm_.halt();
 		}
 
@@ -267,29 +268,34 @@ namespace node
 		}
 
 
-		void session::modem_req_login(cyng::context& ctx)
+		void session::imega_req_login(cyng::context& ctx)
 		{
 			BOOST_ASSERT(ctx.tag() == vm_.tag());
 
 			//	[LSMTest5,LSMTest5,<sk>]
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "modem.req.login.public " << cyng::io::to_str(frame));
+			CYNG_LOG_INFO(logger_, "imega.req.login.public " << cyng::io::to_str(frame));
 
 			//
 			//	send authorization request to master
 			//
 			if (bus_->is_online())
 			{
+				//const std::string name = cyng::value_cast<std::string>(frame.at(0));
 				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("modem");
+				bag["tp-layer"] = cyng::make_object("imega");
 				bag["security"] = cyng::make_object("public");
 				bag["time"] = cyng::make_now();
+				bag["imega-protocol"] = frame.at(1);
+				bag["imega-version"] = frame.at(2);
+				bag["imega-meter"] = frame.at(4);
 
 				bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::string>(frame.at(1), "")
-					, cyng::value_cast<std::string>(frame.at(2), "")
+					, cyng::value_cast<std::string>(frame.at(3), "")
+					, cyng::value_cast<std::string>(frame.at(3), "")
 					, "plain" //	login scheme
 					, bag));
+
 			}
 			else
 			{
@@ -305,8 +311,7 @@ namespace node
 
 		}
 
-
-		void session::modem_req_transmit_data(cyng::context& ctx)
+		void session::imega_req_transmit_data(cyng::context& ctx)
 		{
 			//	[ipt.req.transmit.data,
 			//	[c5eae235-d5f5-413f-a008-5d317d8baab7,1B1B1B1B01010101768106313830313...1B1B1B1B1A034276]]
@@ -322,7 +327,7 @@ namespace node
 				else
 				{
 					cyng::param_map_t bag;
-					bag["tp-layer"] = cyng::make_object("modem");
+					bag["tp-layer"] = cyng::make_object("imega");
 
 					bus_->vm_.async_run(client_req_transmit_data(tag
 						, bag
@@ -389,8 +394,8 @@ namespace node
 					, "login response"
 					, std::get<3>(tpl)	//	name
 					, std::get<4>(tpl)));	//	msg
-				ctx.attach(cyng::generate_invoke("print.ok"));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				//ctx.attach(cyng::generate_invoke("print.ok"));
+				//ctx.attach(cyng::generate_invoke("stream.flush"));
 
 				cyng::param_map_t bag;
 				bag["tp-layer"] = cyng::make_object("ipt");
@@ -401,7 +406,7 @@ namespace node
 					, bag));
 				bus_->vm_.async_run(client_update_attr(ctx.tag()
 					, "TDevice.id"
-					, cyng::make_object("modem")
+					, cyng::make_object("iMEGA")
 					, bag));
 
 			}
@@ -411,8 +416,9 @@ namespace node
 					, "login response"
 					, std::get<3>(tpl)	//	name
 					, std::get<4>(tpl)));	//	msg
-				ctx.attach(cyng::generate_invoke("print.error"));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+
+				//ctx.attach(cyng::generate_invoke("print.error"));
+				//ctx.attach(cyng::generate_invoke("stream.flush"));
 				ctx.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"));
 				ctx.attach(cyng::generate_invoke("ip.tcp.socket.close"));			}
 
@@ -676,15 +682,16 @@ namespace node
 
 			cyng::param_map_t tmp;
 
-			ctx.attach(cyng::generate_invoke("print.ring"));
-			if (auto_answer_)
+			//ctx.attach(cyng::generate_invoke("print.ring"));
+			//if (auto_answer_)
+			if (true)
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward - auto answer", ctx.get_frame()));
 
 				//
 				//	update parser state
 				//
-				parser_.set_stream_mode();
+				//parser_.set_stream_mode();
 
 				//
 				//	send connection open response response
@@ -760,7 +767,7 @@ namespace node
 			//
 			//	update parser state
 			//
-			parser_.set_cmd_mode();
+			//parser_.set_cmd_mode();
 
 			//
 			//	in shutdown mode no response should be sent.
@@ -854,7 +861,7 @@ namespace node
 				//
 				//	update parser state
 				//
-				parser_.set_stream_mode();
+				//parser_.set_stream_mode();
 			}
 			else
 			{
@@ -1040,10 +1047,6 @@ namespace node
 			//ctx.attach(cyng::generate_invoke("stream.flush"));
 
 		}
-
-
-
-
 		session::connect_state::connect_state()
 			: connected_local_(false)
 		{}

@@ -313,10 +313,10 @@ namespace node
 
 	void join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cyng::vector_t const& cfg_cls
+		, cyng::vector_t const& cfg_cluster
 		, cyng::tuple_t const& cfg_srv)
 	{
-		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cls.size());
+		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cluster.size());
 
 		auto dom = cyng::make_reader(cfg_srv);
 
@@ -324,7 +324,7 @@ namespace node
 		cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
-			, load_cluster_cfg(cfg_cls)
+			, load_cluster_cfg(cfg_cluster)
 			, cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0")
 			, cyng::value_cast<std::string>(dom.get("service"), "9000")
 			, cyng::value_cast<int>(dom.get("timeout"), 12)

@@ -82,7 +82,7 @@ namespace node
 
 			if (cyng::value_cast(frame.at(0), false))
 			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "successful authorized"));
+				ctx.run(cyng::generate_invoke("log.msg.info", "successful logged on to cluster"));
 				state_ = STATE_AUTHORIZED_;
 				remote_tag_ = cyng::value_cast(frame.at(1), boost::uuids::nil_uuid());
 				remote_version_ = cyng::value_cast(frame.at(2), remote_version_);
@@ -98,6 +98,7 @@ namespace node
 			else
 			{
 				state_ = STATE_ERROR_;
+				ctx.run(cyng::generate_invoke("log.msg.warning", "cluster login failed"));
 
 				//
 				//	slot [1] - go offline

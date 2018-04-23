@@ -16,12 +16,18 @@ namespace node
 {
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, cluster_config_t const& cfg)
+		, cluster_config_t const& cfg
+		, std::string const& address
+		, std::string const& service
+		, int timeout)
 	: base_(*btp)
-	, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
-	, logger_(logger)
-	, config_(cfg)
-	, master_(0)
+		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
+		, logger_(logger)
+		, config_(cfg)
+		, address_(address)
+		, service_(service)
+		, server_(btp->mux_, logger_, bus_, timeout)
+		, master_(0)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 		<< base_.get_id()
@@ -58,7 +64,15 @@ namespace node
 
 	void cluster::stop()
 	{
-        bus_->stop();
+		//
+		//	stop server
+		//
+		server_.close();
+		
+		//
+		//	sign off from cluster
+		//
+		bus_->stop();
 		CYNG_LOG_INFO(logger_, "cluster is stopped");
 	}
 
@@ -70,6 +84,11 @@ namespace node
 		{
 			CYNG_LOG_WARNING(logger_, "insufficient cluster protocol version: "	<< v);
 		}
+
+		//
+		//	start iMEGA server
+		//
+		server_.run(address_, service_);
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

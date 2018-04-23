@@ -5,18 +5,18 @@
  * 
  */ 
 
-#ifndef NODE_MODEM_SESSION_H
-#define NODE_MODEM_SESSION_H
+#ifndef NODE_E350_SESSION_H
+#define NODE_E350_SESSION_H
 
 #include <smf/cluster/bus.h>
-#include <smf/modem/parser.h>
+#include <smf/imega/parser.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
 
 namespace node 
 {
-	namespace modem
+	namespace imega
 	{
 		class connection;
 		class server;
@@ -36,9 +36,7 @@ namespace node
 				, cyng::logging::log_ptr logger
 				, bus::shared_type
 				, boost::uuids::uuid tag
-				, std::chrono::seconds const& timeout
-				, bool auto_answer
-				, std::chrono::milliseconds guard_time);
+				, std::chrono::seconds);
 
 			session(session const&) = delete;
 			session& operator=(session const&) = delete;
@@ -49,7 +47,7 @@ namespace node
 
 		private:
 
-			void modem_req_login(cyng::context& ctx);
+			void imega_req_login(cyng::context& ctx);
 			//void ipt_req_logout(cyng::context& ctx);
 			//void ipt_res_logout(cyng::context& ctx);
 
@@ -60,7 +58,7 @@ namespace node
 			//void ipt_res_open_connection(cyng::context& ctx);
 			//void ipt_req_transfer_pushdata(cyng::context& ctx);
 			//void ipt_res_close_connection(cyng::context& ctx);
-			void modem_req_transmit_data(cyng::context& ctx);
+			void imega_req_transmit_data(cyng::context& ctx);
 			//void ipt_res_watchdog(cyng::context& ctx);
 
 			//void ipt_res_protocol_version(cyng::context& ctx);
@@ -97,12 +95,12 @@ namespace node
 			cyng::async::mux& mux_;
 			cyng::logging::log_ptr logger_;
 			bus::shared_type bus_;	//!< cluster bus
-			cyng::controller vm_;	//!< modem device
-			const std::chrono::seconds timeout_;
-			const bool auto_answer_;
+			cyng::controller vm_;	//!< iMEGA device
+			//const std::chrono::seconds timeout_;
+			//const bool auto_answer_;
 
 			/**
-			 * modem parser
+			 * iMEGA parser
 			 */
 			parser 	parser_;
 

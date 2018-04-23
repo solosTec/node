@@ -7,8 +7,6 @@
 #ifndef NODE_MODEM_PARSER_H
 #define NODE_MODEM_PARSER_H
 
-
-//#include <smf/ipt/header.h>
 #include <cyng/intrinsics/sets.h>
 #include <cyng/intrinsics/buffer.h>
 
@@ -144,7 +142,7 @@ namespace node
 			 * parse the specified range
 			 */
 			template < typename I >
-			std::size_t read(I start, I end)
+			auto read(I start, I end) -> typename std::iterator_traits<I>::difference_type
 			{
 				std::for_each(start, end, [this](char c)
 				{
@@ -181,30 +179,6 @@ namespace node
 			 * inform listener.
 			 */
 			void post_processing();
-
-			/**
-			 * Read a single string from input stream.
-			 * This is safe since each ipt requires to terminate
-			 * each string with 0x00.
-			 */
-			//std::string read_string();
-
-			/**
-			 * read data block
-			 */
-			//cyng::buffer_t read_data();
-
-			/**
-			 * Read a numeric value
-			 */
-			//template <typename T>
-			//T read_numeric()
-			//{
-			//	static_assert(std::is_arithmetic<T>::value, "arithmetic type required");
-			//	T v{ 0 };
-			//	input_.read(reinterpret_cast<std::istream::char_type*>(&v), sizeof(v));
-			//	return v;
-			//}
 
 		private:
 			/**

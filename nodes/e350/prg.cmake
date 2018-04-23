@@ -5,11 +5,17 @@ set (node_e350_cpp
 
 	nodes/e350/src/main.cpp	
 	nodes/e350/src/controller.cpp
+	nodes/e350/src/server.cpp
+	nodes/e350/src/session.cpp
+	nodes/e350/src/connection.cpp
 )
 
 set (node_e350_h
 
 	nodes/e350/src/controller.h
+	nodes/e350/src/server.h
+	nodes/e350/src/session.h
+	nodes/e350/src/connection.h
 )
 
 set (node_e350_info

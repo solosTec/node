@@ -16,20 +16,20 @@ namespace node
 {
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, cluster_config_t const& cfg_cls
+		, cluster_config_t const& cfg_cluster
 		, std::string const& address
 		, std::string const& service
 		, int timeout
 		, bool auto_answer
 		, std::chrono::milliseconds guard_time)
 	: base_(*btp)
-	, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
-	, logger_(logger)
-	, config_(cfg_cls)
-	, address_(address)
-	, service_(service)
-	, server_(btp->mux_, logger_, bus_, timeout, auto_answer, guard_time)
-	, master_(0)
+		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
+		, logger_(logger)
+		, config_(cfg_cluster)
+		, address_(address)
+		, service_(service)
+		, server_(btp->mux_, logger_, bus_, timeout, auto_answer, guard_time)
+		, master_(0)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 		<< base_.get_id()
@@ -60,7 +60,7 @@ namespace node
 		server_.close();
 
 		//
-		//	sign off from cloud
+		//	sign off from cluster
 		//
 		bus_->stop();
 		CYNG_LOG_INFO(logger_, "cluster is stopped");
@@ -75,7 +75,7 @@ namespace node
 		}
 
 		//
-		//	start ipt master
+		//	start modem server
 		//
 		server_.run(address_, service_);
 

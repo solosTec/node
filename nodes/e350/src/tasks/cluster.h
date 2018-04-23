@@ -10,6 +10,7 @@
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
+#include "../server.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -27,7 +28,10 @@ namespace node
 	public:
 		cluster(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, cluster_config_t const& cfg);
+			, cluster_config_t const& cfg
+			, std::string const& address
+			, std::string const& service
+			, int timeout);
 		void run();
 		void stop();
 
@@ -54,6 +58,9 @@ namespace node
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
 		const cluster_config_t	config_;
+		const std::string address_;
+		const std::string service_;
+		imega::server	server_;
 		std::size_t master_;
 
 	};

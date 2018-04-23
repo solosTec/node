@@ -30,7 +30,7 @@ namespace node
 	//
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	void join_cluster(cyng::async::mux&, cyng::logging::log_ptr, cyng::vector_t const&);
+	void join_cluster(cyng::async::mux&, cyng::logging::log_ptr, cyng::vector_t const&, cyng::tuple_t const&);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -153,7 +153,8 @@ namespace node
 
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
-						cyng::param_factory("service", "26863")
+						cyng::param_factory("service", "6000"),
+						cyng::param_factory("timeout", 12)		//	connection timeout
 					))
 					, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
@@ -265,24 +266,14 @@ namespace node
 		//
 		//	connect to cluster
 		//
-		cyng::vector_t tmp;
-		join_cluster(mux, logger, cyng::value_cast(dom.get("cluster"), tmp));
+		cyng::vector_t tmp_vec;
+		cyng::tuple_t tmp_tpl;
+		join_cluster(mux, logger, cyng::value_cast(dom.get("cluster"), tmp_vec), cyng::value_cast(dom.get("server"), tmp_tpl));
 
 		//
 		//	wait for system signals
 		//
 		const bool shutdown = wait(logger);
-
-		//
-		//	close acceptor
-		//
-		CYNG_LOG_INFO(logger, "close acceptor");
-		//srv.close();
-
-		//
-		//	stop all connections
-		//
-		CYNG_LOG_INFO(logger, "stop all connections");
 
 		//
 		//	stop all tasks
@@ -319,14 +310,20 @@ namespace node
 
 	void join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cyng::vector_t const& cfg)
+		, cyng::vector_t const& cfg_cluster
+		, cyng::tuple_t const& cfg_srv)
 	{
-		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg.size());
+		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cluster.size());
+
+		auto dom = cyng::make_reader(cfg_srv);
 
 		cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
-			, load_cluster_cfg(cfg));
+			, load_cluster_cfg(cfg_cluster)
+			, cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0")
+			, cyng::value_cast<std::string>(dom.get("service"), "6000")
+			, cyng::value_cast<int>(dom.get("timeout"), 12)	);
 
 	}
 
