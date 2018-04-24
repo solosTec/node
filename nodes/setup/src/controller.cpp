@@ -25,11 +25,15 @@
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
 #endif
-#include <fstream>
+#if BOOST_OS_LINUX
+#include <cyng/sys/process.h>
+#endif
+#include <boost/uuid/uuid_io.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/random.hpp>
+#include <fstream>
 
 namespace node 
 {
@@ -235,6 +239,22 @@ namespace node
 		//	apply severity threshold
 		//
 		logger->set_severity(cyng::logging::to_severity(cyng::value_cast<std::string>(dom.get("log-level"), "INFO")));
+
+#if BOOST_OS_LINUX
+        const boost::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
+        const auto pid = (log_dir / boost::uuids::to_string(tag)).replace_extension(".pid").string();
+        std::fstream fout(pid, std::ios::trunc | std::ios::out);
+        if (fout.is_open())
+        {
+            CYNG_LOG_INFO(logger, "write PID file: " << pid);
+            fout << cyng::sys::get_process_id();
+            fout.close();
+        }
+        else
+        {
+            CYNG_LOG_ERROR(logger, "could not write PID file: " << pid);
+        }
+#endif
 
 		//
 		//	get configuration type

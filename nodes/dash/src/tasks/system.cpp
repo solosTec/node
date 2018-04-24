@@ -42,6 +42,11 @@ namespace node
 		<< base_.get_class_name()
 		<< "> is running");
 
+        //
+        //	set initial value
+        //
+        cache_.insert("*Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, tag);
+
 	}
 
 	void system::run()

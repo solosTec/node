@@ -105,6 +105,9 @@ namespace node
 			, std::uint64_t
 			, boost::uuids::uuid);
 
+        void start_sys_task();
+        void stop_sys_task();
+
 	private:
 		cyng::async::base_task& base_;
 		boost::uuids::random_generator rgn_;
@@ -134,7 +137,7 @@ namespace node
 		/**
 		 * system task
 		 */
-		const std::size_t sys_tsk_;
+        std::size_t sys_tsk_;
 	};
 	
 }

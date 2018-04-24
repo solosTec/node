@@ -16,7 +16,6 @@
 #include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/dom/reader.h>
-//#include <cyng/sys/cpu.h>
 #include <cyng/sys/memory.h>
 #include <cyng/json.h>
 
@@ -41,7 +40,7 @@ namespace node
 		, cache_()
 		, server_(logger, btp->mux_.get_io_service(), ep, doc_root, bus_, cache_)
 		, master_(0)
-		, sys_tsk_(cyng::async::start_task_detached<system>(btp->mux_, logger_, cache_, bus_->vm_.tag()))
+        , sys_tsk_(cyng::async::NO_TASK)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 		<< base_.get_id()
@@ -86,6 +85,30 @@ namespace node
 
 	}
 
+    void cluster::start_sys_task()
+    {
+        //
+        // start collecting system data
+        //
+        auto r = cyng::async::start_task_delayed<system>(base_.mux_, std::chrono::seconds(2), logger_, cache_, bus_->vm_.tag());
+        if (r.second)
+        {
+            sys_tsk_ = r.first;
+        }
+        else
+        {
+            CYNG_LOG_ERROR(logger_, "could not start system task");
+        }
+    }
+
+    void cluster::stop_sys_task()
+    {
+        if (sys_tsk_ != cyng::async::NO_TASK)
+        {
+            base_.mux_.stop(sys_tsk_);
+        }
+    }
+
 	void cluster::run()
 	{	
 		if (!bus_->is_online())
@@ -96,6 +119,11 @@ namespace node
 
 	void cluster::stop()
 	{
+        //
+        //  stop collecting system data
+        //
+        stop_sys_task();
+
 		//
 		//	stop server
 		//
@@ -115,6 +143,11 @@ namespace node
 		{
 			CYNG_LOG_WARNING(logger_, "insufficient cluster protocol version: "	<< v);
 		}
+
+        //
+        //  collect system data
+        //
+        start_sys_task();
 
 		//
 		//	start http server
@@ -160,6 +193,11 @@ namespace node
 		//
 		//	Connection to master lost
 		//
+
+        //
+        //  stop collecting system data
+        //
+        stop_sys_task();
 
 		//
 		//	tell server to discard all data
@@ -1596,7 +1634,7 @@ namespace node
 			//
 			//	set initial value
 			//
-			cache_.insert("*Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, bus_->vm_.tag());
+            //cache_.insert("*Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, bus_->vm_.tag());
 		}
 
 		if (!cache_.create_table(cyng::table::make_meta_table<1, 3>("*SysMsg", { "id"	//	message number
