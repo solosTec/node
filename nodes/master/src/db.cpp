@@ -351,7 +351,8 @@ namespace node
 		, boost::uuids::uuid tag)
 	{
 		tbl->insert(cyng::table::key_generator(static_cast<std::uint64_t>(tbl->size()))
-			, cyng::table::data_generator(std::chrono::system_clock::now(), static_cast<std::uint8_t>(level), msg)
+			, cyng::table::data_generator(std::chrono::system_clock::now()
+			, static_cast<std::uint8_t>(level), msg)
 			, 1, tag);
 
 		if (tbl->size() > 1000)

@@ -78,9 +78,9 @@ namespace node
 					//	initialize logger
 					//
 #if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("ipt:collector", true);
+					auto logger = cyng::logging::make_sys_logger("ipt:stress", true);
 #else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "ipt:collector");
+					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "ipt:stress");
 #endif
 
 					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
@@ -168,20 +168,13 @@ namespace node
 						cyng::param_factory("scrambled", false),
 						cyng::param_factory("monitor", 57))
 					}))
-				, cyng::param_factory("collector", cyng::vector_factory({
-					cyng::tuple_factory(
-						cyng::param_factory("address", "0.0.0.0"),
-						cyng::param_factory("service", "33001"),
- 						cyng::param_factory("account", "collector-33001"),
- 						cyng::param_factory("pwd", "to-define"),
-						cyng::param_factory("tag", rgen())),
-					cyng::tuple_factory(
-						cyng::param_factory("address", "0.0.0.0"),
-						cyng::param_factory("service", "33002"),
- 						cyng::param_factory("account", "collector-33002"),
- 						cyng::param_factory("pwd", "to-define"),
-						cyng::param_factory("tag", rgen()))
-					}))
+				//	generate a data set
+				, cyng::param_factory("stress", cyng::tuple_factory(
+						cyng::param_factory("config", (pwd / "ipt-stress.xml").string()),
+						cyng::param_factory("max-count", 0),
+						cyng::param_factory("auto-generate", false)
+						)
+					)
 				)
 				});
 

@@ -92,6 +92,11 @@ namespace node
 	cyng::vector_t bus_res_watchdog(std::uint64_t seq, std::chrono::system_clock::time_point);
 
 	/**
+	 * place a system message
+	 */
+	cyng::vector_t bus_insert_msg(cyng::logging::severity, std::string const&);
+
+	/**
 	 * Send an arbitrary function call to receiver, which will send it back.
 	 */
 	template < typename ...Args >

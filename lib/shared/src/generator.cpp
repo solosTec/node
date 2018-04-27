@@ -215,6 +215,15 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_insert_msg(cyng::logging::severity level, std::string const& msg)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.insert.msg", cyng::code::IDENT, level, msg))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
 	cyng::vector_t bus_req_stop_client(cyng::vector_t const& key
 		, boost::uuids::uuid source)
 	{

@@ -11,6 +11,7 @@
 #include <NODE_project_info.h>
 #include <smf/http/srv/path_cat.h>
 #include <smf/http/srv/mime_type.h>
+#include <smf/http/srv/parser/multi_part.h>
 #include <cyng/log.h>
 
 namespace node
@@ -27,7 +28,9 @@ namespace node
 		handle_request(cyng::logging::log_ptr logger
 			, boost::beast::string_view doc_root
 			, boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>>&& req
-			, Send&& send)
+			, Send&& send
+			, boost::uuids::uuid tag
+			, std::function<void(cyng::vector_t&&)> vm)
 	{
 		// Returns a bad request response
 		auto const bad_request = [&req, logger](boost::beast::string_view why) {
@@ -163,11 +166,35 @@ namespace node
 		}
 		else if (req.method() == boost::beast::http::verb::post)
 		{
-			//boost::beast::http::file_body::value_type body;
-			//boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::bad_request, req.version() };
+			auto target = req.target();	//	/upload/config/device/
+			CYNG_LOG_INFO(logger, *req.payload_size() << " bytes posted to " << target);
+
+			boost::beast::string_view content_type = req[boost::beast::http::field::content_type];
+			CYNG_LOG_INFO(logger, "content type " << content_type);
+			//if (content_type != "multipart/form-data" && content_type != "application/x-www-form-urlencoded")
+			//{
+			//	return send(bad_request("Bad request"));
+			//}
+			CYNG_LOG_DEBUG(logger, "payload \n" << req.body());
+
+			std::uint32_t payload_size = *req.payload_size();
+			http::multi_part_parser mpp(vm
+				, logger
+				, payload_size
+				, target
+				, tag);
+
+
+			for (char c : req.body())
+			{ 
+				mpp.parse(c);
+			}
+			
+			//
+			//	consider to send a 302 - Object moved response
+			//
 			boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::ok, req.version() };
 			res.set(boost::beast::http::field::server, NODE::version_string);
-			//res.set(boost::beast::http::field::content_type, mime_type(path));
 			res.body() = std::string("");
 			res.prepare_payload();
 			//res.content_length(body.size());

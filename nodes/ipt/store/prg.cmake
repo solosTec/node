@@ -56,7 +56,6 @@ set (node_ipt_store_processors
 	nodes/ipt/store/src/processors/xml_processor.cpp
 	nodes/ipt/store/src/processors/db_processor.h
 	nodes/ipt/store/src/processors/db_processor.cpp
-	${PUGIXML_INCLUDE_DIR}/pugixml.cpp
 )
 
 set (node_ipt_store_exporter
@@ -104,3 +103,12 @@ set (node_ipt_store
   ${node_ipt_store_processors}
 )
 
+if (${PROJECT_NAME}_PUGIXML_INSTALLED)
+	set (node_ipt_store_xml
+		${PUGIXML_INCLUDE_DIR}/pugixml.hpp
+		${PUGIXML_INCLUDE_DIR}/pugixml.cpp
+	)
+	list(APPEND node_ipt_store ${node_ipt_store_xml})
+	source_group("XML" FILES ${node_ipt_store_xml})
+
+endif()

@@ -23,6 +23,7 @@
 #include <boost/uuid/string_generator.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
+
 namespace node
 {
 	cluster::cluster(cyng::async::base_task* btp
@@ -82,7 +83,10 @@ namespace node
 		//
 		bus_->vm_.run(cyng::register_function("ws.read", 3, std::bind(&cluster::ws_read, this, std::placeholders::_1)));
 
-
+		bus_->vm_.run(cyng::register_function("http.upload.data", 5, std::bind(&cluster::http_upload_data, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("http.upload.var", 3, std::bind(&cluster::http_upload_var, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("http.upload.progress", 4, std::bind(&cluster::http_upload_progress, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("http.upload.complete", 4, std::bind(&cluster::http_upload_complete, this, std::placeholders::_1)));
 	}
 
     void cluster::start_sys_task()
@@ -560,6 +564,242 @@ namespace node
 		}
 	}
 
+	void cluster::read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc)
+	{
+		//
+		//	example line:
+		//	<device auto_update="false" description="BF Haus 18" enabled="true" expires="never" gid="2" latitude="0.000000" limit="no" locked="false" longitude="0.000000" monitor="00:00:12" name="a00153B018EEFen" number="20113083736" oid="2" pwd="aen_ict_1111" query="6" redirect="" watchdog="00:12:00">cc6a0256-5689-4804-a5fc-bf3599fac23a</device>
+		//
+
+		std::size_t counter{ 0 };
+		pugi::xpath_node_set data = doc.select_nodes("config/units/device");
+		for (pugi::xpath_node_set::const_iterator it = data.begin(); it != data.end(); ++it)
+		{
+			counter++;
+			pugi::xml_node node = it->node();
+			const std::string pk = node.child_value();
+			
+			const std::string name = node.attribute("name").value();
+
+			CYNG_LOG_TRACE(logger_, "session "
+				<< ctx.tag()
+				<< " - insert device "
+				<< pk
+				<< " - "
+				<< name);
+
+			//
+			//	forward to process bus task
+			//
+			ctx.attach(bus_req_db_insert("TDevice"
+				//	generate new key
+				, cyng::table::key_generator(boost::uuids::string_generator()(pk))
+				//	build data vector
+				, cyng::table::data_generator(name
+					, node.attribute("pwd").value()
+					, node.attribute("number").value()
+					, node.attribute("description").value()
+					, std::string("")	//	model
+					, std::string("")	//	version
+					, node.attribute("enabled").as_bool()
+					, std::chrono::system_clock::now()
+					, node.attribute("query").as_uint())
+				, 0
+				, ctx.tag()));
+		}
+
+		std::stringstream ss;
+		ss
+			<< counter
+			<< " device records (v3.2) uploaded"
+			;
+		ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_INFO, ss.str()));
+		
+	}
+
+	void cluster::read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc)
+	{
+		std::size_t counter{ 0 };
+		pugi::xpath_node_set data = doc.select_nodes("configuration/records/device");
+		for (pugi::xpath_node_set::const_iterator it = data.begin(); it != data.end(); ++it)
+		{
+			counter++;
+			pugi::xpath_node node = *it;
+			const std::string name = node.node().child_value("name");
+
+			CYNG_LOG_TRACE(logger_, "session "
+				<< ctx.tag()
+				<< " - insert device "
+				<< name);
+
+			//auto obj = cyng::traverse(node.node());
+			//CYY_LOG_TRACE(logger_, "session "
+			//	<< cyy::uuid_short_format(vm_.tag())
+			//	<< " - "
+			//	<< cyy::to_literal(obj, cyx::io::custom));
+
+			//	("device":
+			//	%(("age":"2016.11.24 14:48:09.00000000"ts),
+			//	("config":%(("pwd":"LUsregnP"),("scheme":"plain"))),
+			//	("descr":"-[0008]-"),
+			//	("enabled":true),
+			//	("id":""),
+			//	("name":"oJtrQQfSCRrF"),
+			//	("number":"609971066"),
+			//	("revision":0u32),
+			//	("source":"d365c4c7-e89d-4187-86ae-a143d54f4cfe"uuid),
+			//	("tag":"e29938f5-71a9-4860-97e2-0a78097a6858"uuid),
+			//	("ver":"")))
+
+			//cyy::object_reader reader(obj);
+
+			//
+			//	collect data
+			//	forward to process bus task
+			//
+			//insert("TDevice"
+			//	, cyy::store::key_generator(reader["device"].get_uuid("tag"))
+			//	, cyy::store::data_generator(reader["device"].get_object("revision")
+			//		, reader["device"].get_object("name")
+			//		, reader["device"].get_object("number")
+			//		, reader["device"].get_object("descr")
+			//		, reader["device"].get_object("id")	//	device ID
+			//		, reader["device"].get_object("ver")	//	firmware 
+			//		, reader["device"].get_object("enabled")
+			//		, reader["device"].get_object("age")
+
+			//		//	configuration as parameter map
+			//		, reader["device"].get_object("config")
+			//		, reader["device"].get_object("source")));
+
+			//ctx.attach(bus_req_db_insert("TDevice"
+			//	//	generate new key
+			//	, cyng::table::key_generator(boost::uuids::string_generator()(pk))
+			//	//	build data vector
+			//	, cyng::table::data_generator(name
+			//		, node.attribute("pwd").value()
+			//		, node.attribute("number").value()
+			//		, node.attribute("description").value()
+			//		, std::string("")	//	model
+			//		, std::string("")	//	version
+			//		, node.attribute("enabled").as_bool()
+			//		, std::chrono::system_clock::now()
+			//		, node.attribute("query").as_uint())
+			//	, 0
+			//	, ctx.tag()));
+		}
+
+		std::stringstream ss;
+		ss
+			<< counter
+			<< " device records (v4.0) uploaded"
+			;
+		ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_INFO, ss.str()));
+
+	}
+
+
+	void cluster::http_upload_data(cyng::context& ctx)
+	{
+		//	http.upload.data - [ecf139d4-184e-441d-a857-9d02eb58148b,devConf_0,device_localhost.xml,text/xml,3C3F786D6C2....]
+		//
+		//	* session tag
+		//	* variable name
+		//	* file name
+		//	* mime type
+		//	* content
+		//	
+		const cyng::vector_t frame = ctx.get_frame();
+		//CYNG_LOG_TRACE(logger_, "http.upload.data - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, "http.upload.data - " 
+			<< cyng::value_cast<std::string>(frame.at(2), "no file name specified")
+			<< " - "
+			<< cyng::value_cast<std::string>(frame.at(3), "no mime type specified"));
+
+		//
+		//	get pointer to XML data
+		//
+		auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(4));
+		if (ptr != nullptr)
+		{
+			//	create empty XML document
+			pugi::xml_document doc;
+			const pugi::xml_parse_result result = doc.load_buffer(ptr->data(), ptr->size());
+			if (!result)
+			{
+				std::stringstream ss;
+				ss
+					<< "XML parser error: "
+					<< result.description()
+					<< ", character pos= "
+					<< result.offset
+					;
+				ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+			}
+			else
+			{
+				read_device_configuration_3_2(ctx, doc);
+			}
+		}
+	}
+
+	void cluster::http_upload_var(cyng::context& ctx)
+	{
+		//	[5910f652-95ce-4d94-b60f-6ff4a26730ba,smf-upload-config-device-version,v5.0]
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "http.upload.var - " << cyng::io::to_str(frame));
+	}
+
+	void cluster::http_upload_progress(cyng::context& ctx)
+	{
+		//	[ecf139d4-184e-441d-a857-9d02eb58148b,0000a84c,0000a84c,00000064]
+		//
+		//	* session tag
+		//	* upload size
+		//	* content size
+		//	* progress in %
+		//	
+		const cyng::vector_t frame = ctx.get_frame();
+		//CYNG_LOG_TRACE(logger_, "http.upload.progress - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, "http.upload.progress - " << cyng::value_cast<std::uint32_t>(frame.at(3), 0) << "%");
+
+#ifdef __DEBUG
+		std::stringstream ss;
+		ss 
+			<< "http.upload.progress: " 
+			<< cyng::value_cast<std::uint32_t>(frame.at(3), 0) 
+			<< "%";
+		ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_TRACE, ss.str()));
+#endif
+	}
+
+	void cluster::http_upload_complete(cyng::context& ctx)
+	{
+		//	[300dc453-d52d-40c0-843c-e8fd7495ff0e,true,0000a84a,/upload/config/device/]
+		//
+		//	* session tag
+		//	* success flag
+		//	* total size in bytes
+		//	* target path
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "http.upload.complete - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			bool,				//	[1] success
+			std::uint32_t,		//	[2] size in bytes
+			std::string			//	[3] target
+		>(frame);
+
+		std::stringstream ss;
+		ss
+			<< "upload "
+			<< std::get<2>(tpl)
+			<< " bytes to "
+			<< std::get<3>(tpl);
+		ctx.attach(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_INFO : cyng::logging::severity::LEVEL_WARNING), ss.str()));
+	}
 
 	void cluster::ws_read(cyng::context& ctx)
 	{

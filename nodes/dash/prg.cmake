@@ -83,3 +83,12 @@ set (node_dash
   ${node_dash_info}
 )
 
+if (${PROJECT_NAME}_PUGIXML_INSTALLED)
+	set (node_dash_xml
+		${PUGIXML_INCLUDE_DIR}/pugixml.hpp
+		${PUGIXML_INCLUDE_DIR}/pugixml.cpp
+	)
+	list(APPEND node_dash ${node_dash_xml})
+	source_group("XML" FILES ${node_dash_xml})
+
+endif()

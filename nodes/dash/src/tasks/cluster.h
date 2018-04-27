@@ -16,6 +16,7 @@
 #include <cyng/async/policy.h>
 #include <cyng/store/db.h>
 #include <boost/uuid/random_generator.hpp>
+#include <pugixml.hpp>
 
 namespace node
 {
@@ -68,6 +69,10 @@ namespace node
 		void db_req_modify_by_param(cyng::context& ctx);
 
 		void ws_read(cyng::context& ctx);
+		void http_upload_data(cyng::context& ctx);
+		void http_upload_var(cyng::context& ctx);
+		void http_upload_progress(cyng::context& ctx);
+		void http_upload_complete(cyng::context& ctx);
 
 		void sync_table(std::string const&);
 
@@ -107,6 +112,9 @@ namespace node
 
         void start_sys_task();
         void stop_sys_task();
+
+		void read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc);
+		void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc);
 
 	private:
 		cyng::async::base_task& base_;

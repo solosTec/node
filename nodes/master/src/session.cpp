@@ -88,6 +88,8 @@ namespace node
 		//
 		vm_.run(cyng::register_function("bus.req.login", 11, std::bind(&session::bus_req_login, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("bus.req.stop.client", 3, std::bind(&session::bus_req_stop_client_impl, this, std::placeholders::_1)));
+		vm_.run(cyng::register_function("bus.insert.msg", 2, std::bind(&session::bus_insert_msg, this, std::placeholders::_1)));
+
 		vm_.run(cyng::register_function("client.req.login", 8, std::bind(&session::client_req_login, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.close", 2, std::bind(&session::client_req_close, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.open.push.channel", 10, std::bind(&session::client_req_open_push_channel, this, std::placeholders::_1)));
@@ -103,7 +105,6 @@ namespace node
 		vm_.run(cyng::register_function("client.inc.throughput", 3, std::bind(&session::client_inc_throughput, this, std::placeholders::_1)));
 
 		vm_.run(cyng::register_function("client.update.attr", 6, std::bind(&session::client_update_attr, this, std::placeholders::_1)));
-
 	}
 
 
@@ -1190,7 +1191,28 @@ namespace node
 			, std::get<3>(tpl)
 			, frame.at(5)
 			, std::get<4>(tpl)));
+	}
 
+	void session::bus_insert_msg(cyng::context& ctx)
+	{
+		//	[2308f3d1-4a68-45ae-b5fa-cedf019e29b7,TRACE,http.upload.progress: 72%]
+		//
+		//	* session tag
+		//	* severity
+		//	* message
+		const cyng::vector_t frame = ctx.get_frame();
+		ctx.run(cyng::generate_invoke("log.msg.trace", "client.insert.msg", frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,			//	[0] origin client tag
+			cyng::logging::severity,	//	[1] level
+			std::string					//	[2] msg
+		>(frame);
+
+		insert_msg(db_
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, ctx.tag());
 	}
 
 	cyng::object make_session(cyng::async::mux& mux

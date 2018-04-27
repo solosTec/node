@@ -52,7 +52,7 @@ namespace node
 					, *this
 					, std::move(sp->socket_)
 					, sp->bus_
-					, sp->tag_));
+					, sp->tag_));	//	share same tag
 
 			//
 			//	remove HTTP session

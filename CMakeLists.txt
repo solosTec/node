@@ -331,6 +331,7 @@ message(STATUS "** CMake modules         : ${CMAKE_MODULE_PATH}")
 #
 set(PUGIXML_INCLUDE_DIR "${cyng_SOURCE_DIR}/3party/pugixml-181")
 message(STATUS "** PugiXML Include       : ${PUGIXML_INCLUDE_DIR}")
+#message(STATUS "** PugiXML Library       : ${PUGIXML_LIBRARY}")
 set(${PROJECT_NAME}_PUGIXML_INSTALLED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D${PROJECT_NAME}_PUGIXML_INSTALLED" )
 include_directories(${PUGIXML_INCLUDE_DIR})
@@ -567,9 +568,6 @@ if(WIN32)
 else()
 	list(APPEND gateway_link_libs ${SQLite3_LIBRARY})
 endif(WIN32)
-if (${PROJECT_NAME}_PUGIXML_INSTALLED)
-	list(APPEND gateway_link_libs ${PUGIXML_LIBRARY})
-endif()
 
 target_link_libraries(gateway ${gateway_link_libs})
 
@@ -607,12 +605,28 @@ if(WIN32)
 else()
 	list(APPEND store_link_libs ${SQLite3_LIBRARY})
 endif(WIN32)
-if (${PROJECT_NAME}_PUGIXML_INSTALLED)
-	list(APPEND store_link_libs ${PUGIXML_LIBRARY})
-endif()
-#message(STATUS "** link ipt_store        : ${store_link_libs}")
 target_link_libraries(store ${store_link_libs})
 	
+#
+# IP-T stress
+#
+include (nodes/ipt/stress/prg.cmake)
+add_executable(stress ${node_ipt_stress})
+# libraries to link
+set(stress_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_xml cyng_sys smf_protocol_ipt smf_bus_ipt smf_protocol_sml)
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	list(APPEND stress_link_libs "${Boost_LIBRARIES}")
+    if (UNIX)
+        list(APPEND stress_link_libs pthread)
+    endif()
+endif()
+if(WIN32)
+	list(APPEND stress_link_libs odbc32.lib lib_sqlite3)
+else()
+	list(APPEND stress_link_libs ${SQLite3_LIBRARY})
+endif(WIN32)
+target_link_libraries(stress ${stress_link_libs})
+
 #
 # lora
 #
@@ -714,7 +728,7 @@ set_property(
 set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml smf_protocol_ipt smf_protocol_sml)
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)
-	list(APPEND unittest_link_libs ${PUGIXML_LIBRARY} cyng_xml)
+	list(APPEND unittest_link_libs cyng_xml)
 endif()
 
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")

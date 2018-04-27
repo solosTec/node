@@ -87,3 +87,12 @@ set (node_ipt_gateway
   ${node_ipt_gateway_server}
 )
 
+if (${PROJECT_NAME}_PUGIXML_INSTALLED)
+	set (node_ipt_gateway_xml
+		${PUGIXML_INCLUDE_DIR}/pugixml.hpp
+		${PUGIXML_INCLUDE_DIR}/pugixml.cpp
+	)
+	list(APPEND node_ipt_gateway ${node_ipt_gateway_xml})
+	source_group("XML" FILES ${node_ipt_gateway_xml})
+
+endif()

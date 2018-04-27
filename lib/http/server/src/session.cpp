@@ -158,7 +158,10 @@ namespace node
 
 			// Send the response
 			CYNG_LOG_TRACE(logger_, "handle request " << socket_.remote_endpoint());
-			handle_request(logger_, doc_root_, std::move(req_), queue_);
+			handle_request(logger_, doc_root_, std::move(req_), queue_, tag_, [&](cyng::vector_t&& prg) {
+				CYNG_LOG_DEBUG(logger_, "prg size " << prg.size());
+				bus_->vm_.async_run(std::move(prg));
+			});
 
 			// If we aren't at the queue limit, try to pipeline another request
 			if (!queue_.is_full())

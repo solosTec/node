@@ -42,3 +42,12 @@ set (unit_test
   ${sml_exporter}
 )
 
+if (${PROJECT_NAME}_PUGIXML_INSTALLED)
+	set (unit_test_xml
+		${PUGIXML_INCLUDE_DIR}/pugixml.hpp
+		${PUGIXML_INCLUDE_DIR}/pugixml.cpp
+	)
+	list(APPEND unit_test ${unit_test_xml})
+	source_group("XML" FILES ${unit_test_xml})
+
+endif()

@@ -78,3 +78,12 @@ set (node_setup
   ${node_setup_info}
 )
 
+if (${PROJECT_NAME}_PUGIXML_INSTALLED)
+	set (node_setup_xml
+		${PUGIXML_INCLUDE_DIR}/pugixml.hpp
+		${PUGIXML_INCLUDE_DIR}/pugixml.cpp
+	)
+	list(APPEND node_setup ${node_setup_xml})
+	source_group("XML" FILES ${node_setup_xml})
+
+endif()
