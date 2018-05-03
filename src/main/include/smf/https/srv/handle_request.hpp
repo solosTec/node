@@ -9,8 +9,11 @@
 #define NODE_LIB_HTTPS_SRV_HANDLE_REQUEST_HPP
 
 #include <NODE_project_info.h>
+#include <smf/https/srv/https.h>
 #include <smf/https/srv/path_cat.h>
 #include <smf/https/srv/mime_type.h>
+#include <cyng/object.h>
+#include <boost/beast/http.hpp>
 
 namespace node
 {
@@ -23,15 +26,17 @@ namespace node
 		template<
 			class Body, class Allocator,
 			class Send>
-			void
-			handle_request(boost::beast::string_view doc_root,
-				boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>>&& req,
-				Send&& send)
+			void handle_request(cyng::logging::log_ptr logger
+				, boost::beast::string_view doc_root
+				, boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>>&& req
+				, Send&& send
+				, session_callback_t cb
+				, cyng::object obj)
 		{
 			// Returns a bad request response
-			auto const bad_request =
-				[&req](boost::beast::string_view why)
+			auto const bad_request = [&req, logger](boost::beast::string_view why)
 			{
+				CYNG_LOG_WARNING(logger, "400 - bad request: " << why);
 				boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::bad_request, req.version() };
 				res.set(boost::beast::http::field::server, NODE::version_string);
 				res.set(boost::beast::http::field::content_type, "text/html");
@@ -42,9 +47,9 @@ namespace node
 			};
 
 			// Returns a not found response
-			auto const not_found =
-				[&req](boost::beast::string_view target)
+			auto const not_found = [&req, logger](boost::beast::string_view target)
 			{
+				CYNG_LOG_WARNING(logger, "404 - not found: " << target);
 				boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::not_found, req.version() };
 				res.set(boost::beast::http::field::server, NODE::version_string);
 				res.set(boost::beast::http::field::content_type, "text/html");
@@ -55,9 +60,9 @@ namespace node
 			};
 
 			// Returns a 500 - server error response
-			auto const server_error =
-				[&req](boost::beast::string_view what)
+			auto const server_error = [&req, logger](boost::beast::string_view what)
 			{
+				CYNG_LOG_WARNING(logger, "500 - server error: " << what);
 				boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::internal_server_error, req.version() };
 				res.set(boost::beast::http::field::server, NODE::version_string);
 				res.set(boost::beast::http::field::content_type, "text/html");
@@ -68,10 +73,9 @@ namespace node
 			};
 
 			// Returns 401 - not authorized
-			auto const not_authorized =
-				[&req](boost::beast::string_view target, std::string const& realm)
+			auto const not_authorized = [&req, logger](boost::beast::string_view target, std::string const& realm)
 			{
-				//CYNG_LOG_WARNING(logger, "401 - not authorized: " << target);
+				CYNG_LOG_WARNING(logger, "401 - not authorized: " << target);
 				boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::unauthorized, req.version() };
 				res.set(boost::beast::http::field::server, NODE::version_string);
 				res.set(boost::beast::http::field::content_type, "text/plain");
@@ -82,71 +86,131 @@ namespace node
 				return res;
 			};
 
-			// Make sure we can handle the method
-			if (req.method() != boost::beast::http::verb::get &&
-				req.method() != boost::beast::http::verb::head)
-				return send(bad_request("Unknown HTTP-method"));
-
 			// Request path must be absolute and not contain "..".
 			if (req.target().empty() ||
 				req.target()[0] != '/' ||
 				req.target().find("..") != boost::beast::string_view::npos)
 			{
-				return send(bad_request("Illegal request-target"));
-			}
-
-			// Build the path to the requested file
-			std::string path = path_cat(doc_root, req.target());
-			if (req.target().back() == '/')
-			{
-				path.append("index.html");
+				CYNG_LOG_WARNING(logger, "Illegal request-target: [" << req.target() << "]");
+				return send(obj, bad_request("Illegal request-target"));
 			}
 
 			//
 			//	ToDo: test authorization
 			//
 
-			// Attempt to open the file
-			boost::beast::error_code ec;
-			boost::beast::http::file_body::value_type body;
-			body.open(path.c_str(), boost::beast::file_mode::scan, ec);
-
-			// Handle the case where the file doesn't exist
-			if (ec == boost::system::errc::no_such_file_or_directory)
+			//
+			//	GET/HEAD
+			//
+			if (req.method() == boost::beast::http::verb::get ||
+				req.method() == boost::beast::http::verb::head)
 			{
-				return send(not_found(req.target()));
-			}
+				// Build the path to the requested file
+				std::string path = path_cat(doc_root, req.target());
+				if (req.target().back() == '/')
+				{
+					path.append("index.html");
+				}
 
-			// Handle an unknown error
-			if (ec)
-			{
-				return send(server_error(ec.message()));
-			}
+				// Attempt to open the file
+				boost::beast::error_code ec;
+				boost::beast::http::file_body::value_type body;
+				body.open(path.c_str(), boost::beast::file_mode::scan, ec);
 
-			// Cache the size since we need it after the move
-			auto const size = body.size();
+				// Handle the case where the file doesn't exist
+				if (ec == boost::system::errc::no_such_file_or_directory)
+				{
+					return send(obj, not_found(req.target()));
+				}
 
-			// Respond to HEAD request
-			if (req.method() == boost::beast::http::verb::head)
-			{
-				boost::beast::http::response<boost::beast::http::empty_body> res{ boost::beast::http::status::ok, req.version() };
+				// Handle an unknown error
+				if (ec)
+				{
+					return send(obj, server_error(ec.message()));
+				}
+
+				// Cache the size since we need it after the move
+				auto const size = body.size();
+
+				// Respond to HEAD request
+				if (req.method() == boost::beast::http::verb::head)
+				{
+					CYNG_LOG_TRACE(logger, "HEAD " << req.target());
+					boost::beast::http::response<boost::beast::http::empty_body> res{ boost::beast::http::status::ok, req.version() };
+					res.set(boost::beast::http::field::server, NODE::version_string);
+					res.set(boost::beast::http::field::content_type, mime_type(path));
+					res.content_length(size);
+					res.keep_alive(req.keep_alive());
+					return send(obj, std::move(res));
+				}
+
+				// Respond to GET request
+				CYNG_LOG_TRACE(logger, "GET " << req.target());
+				boost::beast::http::response<boost::beast::http::file_body> res{
+					std::piecewise_construct,
+					std::make_tuple(std::move(body)),
+					std::make_tuple(boost::beast::http::status::ok, req.version()) };
+
 				res.set(boost::beast::http::field::server, NODE::version_string);
 				res.set(boost::beast::http::field::content_type, mime_type(path));
 				res.content_length(size);
 				res.keep_alive(req.keep_alive());
-				return send(std::move(res));
+				return send(obj, std::move(res));
+			}
+			else if (req.method() == boost::beast::http::verb::post)
+			{
+				const std::string target(req.target().begin(), req.target().end());	//	/upload/config/device/
+				CYNG_LOG_TRACE(logger, *req.payload_size() << " bytes posted to " << target);
+
+				boost::beast::string_view content_type = req[boost::beast::http::field::content_type];
+				CYNG_LOG_TRACE(logger, "content type " << content_type);
+				//CYNG_LOG_DEBUG(logger, "payload \n" << req.body());
+
+				//
+				//	parse content
+				//
+				if (boost::algorithm::equals(content_type, "application/xml"))
+				{
+					cb(cyng::generate_invoke("https.post.xml", obj, target, std::string(req.body().begin(), req.body().end())));
+				}
+				//	Content-Type:application/json; charset=UTF-8
+				else if (boost::algorithm::starts_with(content_type, "application/json"))
+				{
+					cb(cyng::generate_invoke("https.post.json", obj, target, std::string(req.body().begin(), req.body().end())));
+				}
+				else if (boost::algorithm::equals(content_type, "application/x-www-form-urlencoded"))
+				{
+					//	ToDo: start parser
+					cb(cyng::generate_invoke("https.post.form.urlencoded", obj, target, std::string(req.body().begin(), req.body().end())));
+				}
+				else if (boost::algorithm::equals(content_type, "multipart/form-data"))
+				{
+					//	ToDo: start parser
+					cb(cyng::generate_invoke("https.post.form.data", obj, target, std::string(req.body().begin(), req.body().end())));
+				}
+				else
+				{
+					CYNG_LOG_WARNING(logger, "unknown MIME content type: " << content_type);
+				}
+
+				//
+				//	response
+				//	consider to send a 302 - Object moved response
+				//
+				boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::ok, req.version() };
+				res.set(boost::beast::http::field::server, NODE::version_string);
+				res.body() = std::string("OK");
+				res.prepare_payload();
+				res.keep_alive(req.keep_alive());
+				return send(obj, std::move(res));
+
 			}
 
-			// Respond to GET request
-			boost::beast::http::response<boost::beast::http::file_body> res{
-				std::piecewise_construct,
-				std::make_tuple(std::move(body)),
-				std::make_tuple(boost::beast::http::status::ok, req.version()) };
-			res.set(boost::beast::http::field::server, NODE::version_string);
-			res.set(boost::beast::http::field::content_type, mime_type(path));
-			res.content_length(size);
-			res.keep_alive(req.keep_alive());
-			return send(std::move(res));
+			//
+			//	unknown method
+			//
+			CYNG_LOG_WARNING(logger, "Unknown HTTP-method: " << req.method());
+			return send(obj, bad_request("Unknown HTTP-method"));
 		}
 
 	}

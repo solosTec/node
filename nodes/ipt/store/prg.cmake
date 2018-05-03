@@ -70,9 +70,9 @@ set (node_ipt_store_exporter
 if(WIN32)
 
 	set (node_ipt_store_service
-		nodes/ipt/store/templates/store_create_service.bat.in
-		nodes/ipt/store/templates/store_delete_service.bat.in
-		nodes/ipt/store/templates/store_restart_service.bat.in
+		nodes/ipt/store/templates/store_create_service.cmd.in
+		nodes/ipt/store/templates/store_delete_service.cmd.in
+		nodes/ipt/store/templates/store_restart_service.cmd.in
 		nodes/ipt/store/templates/store.windows.cgf.in
 	)
  

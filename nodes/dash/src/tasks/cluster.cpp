@@ -134,7 +134,7 @@ namespace node
 		server_.close();
 
 		//
-		//	sign off from cloud
+		//	sign off from cluster
 		//
         bus_->stop();
 		CYNG_LOG_INFO(logger_, "cluster is stopped");
@@ -1846,7 +1846,7 @@ namespace node
 			CYNG_LOG_FATAL(logger_, "cannot create table *Connection");
 		}
 
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 7>("*Cluster", { "tag"	//	client session - primary key [uuid]
+		if (!cache_.create_table(cyng::table::make_meta_table<1, 8>("*Cluster", { "tag"	//	client session - primary key [uuid]
 			, "class"
 			, "loginTime"	//	last login time
 			, "version"
@@ -1854,9 +1854,19 @@ namespace node
 			, "ping"	//	ping time
 			, "ep"		//	remote endpoint
 			, "pid"		//	process id
+			, "self"	//	"session" - surrogate
 			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_VERSION, cyng::TC_UINT64, cyng::TC_MICRO_SECOND, cyng::TC_IP_TCP_ENDPOINT, cyng::TC_INT64 },
-			{ 36, 0, 32, 0, 0, 0, 0, 0 })))
+			{ cyng::TC_UUID			//	tag (pk)
+			, cyng::TC_STRING		//	class
+			, cyng::TC_TIME_POINT	//	loginTime
+			, cyng::TC_VERSION		//	version
+			, cyng::TC_UINT64		//	clients
+			, cyng::TC_MICRO_SECOND		//	ping
+			, cyng::TC_IP_TCP_ENDPOINT	//	ep
+			, cyng::TC_INT64	//	pid
+			, cyng::TC_STRING	//	self == "session"
+			},
+			{ 36, 0, 32, 0, 0, 0, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table *Cluster");
 		}

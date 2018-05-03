@@ -50,9 +50,9 @@ set (node_ipt_master_res
 if(WIN32)
 
 	set (node_ipt_master_service
-		nodes/ipt/master/templates/ipt_create_service.bat.in
-		nodes/ipt/master/templates/ipt_delete_service.bat.in
-		nodes/ipt/master/templates/ipt_restart_service.bat.in
+		nodes/ipt/master/templates/ipt_create_service.cmd.in
+		nodes/ipt/master/templates/ipt_delete_service.cmd.in
+		nodes/ipt/master/templates/ipt_restart_service.cmd.in
 		nodes/ipt/master/templates/ipt.windows.cgf.in
 	)
  

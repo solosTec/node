@@ -47,9 +47,9 @@ set (node_setup_res
 if(WIN32)
 
 	set (node_setup_service
-		nodes/setup/templates/setup_create_service.bat.in
-		nodes/setup/templates/setup_delete_service.bat.in
-		nodes/setup/templates/setup_restart_service.bat.in
+		nodes/setup/templates/setup_create_service.cmd.in
+		nodes/setup/templates/setup_delete_service.cmd.in
+		nodes/setup/templates/setup_restart_service.cmd.in
 		nodes/setup/templates/setup.windows.cgf.in
 	)
  

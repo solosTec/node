@@ -63,6 +63,7 @@ namespace node
 		//
 		bus_->vm_.run(cyng::register_function("cluster.task.resume", 2, std::bind(&cluster::task_resume, this, std::placeholders::_1)));
 		bus_->vm_.run(cyng::register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1)));
+		bus_->vm_.run(cyng::register_function("bus.req.push.data", 0, std::bind(&cluster::bus_req_push_data, this, std::placeholders::_1)));
 
 	}
 
@@ -381,6 +382,38 @@ namespace node
 
 		//cyng::tuple_t tpl(frame.begin() + 2, frame.end());
 		base_.mux_.send(tsk, slot, cyng::tuple_t(frame.begin() + 2, frame.end()));
+	}
+
+	void cluster::bus_req_push_data(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		//	[1,TLoraMeta,[5fff3e47-b434-4170-a5e3-9d2ed99f3262],[F03D291000001180,2015-10-22 13:39:59.48900000,0001,1,1,0,148,3233...3538,444eefd3,-99,7,12,G1,LC2,1,29000071,100000728,52,5],40326cbe-d41e-4285-8500-26e3253813af]
+		//
+		//	* seq (cluster)
+		//	* channel/table
+		//	* key
+		//	* data
+		//	* source
+		//
+		CYNG_LOG_TRACE(logger_, "bus.req.push.data - " << cyng::io::to_str(frame));
+
+		//
+		//	effectively this is an SQL insert
+		//
+		const std::string table = cyng::value_cast<std::string>(frame.at(1), "");
+		const auto state = cache_.get_state(table);
+
+		CYNG_LOG_DEBUG(logger_, "bus.req.push.data - table "
+			<< table
+			<< " in state "
+			<< ((state == TS_READY) ? "READY" : "SYNC"));
+
+		//
+		//	insert into SQL database
+		//
+		base_.mux_.send(storage_tsk_, 1, cyng::tuple_t{ frame.at(1), frame.at(2), frame.at(3), cyng::make_object<std::size_t>(0u) });
+
+
 	}
 
 	void cluster::reconfigure(cyng::context& ctx)

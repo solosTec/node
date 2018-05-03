@@ -42,6 +42,15 @@ namespace node
 			}
 			CYNG_LOG_TRACE(logger_, "open: " << endpoint.address().to_string() << ':' << endpoint.port());
 
+			// Allow address reuse
+			acceptor_.set_option(boost::asio::socket_base::reuse_address(true));
+			if (ec)
+			{
+				CYNG_LOG_FATAL(logger_, "allow address reuse: " << ec.message());
+				//BOOST_ASSERT_MSG(!ec, "SET_OPTION");
+				return;
+			}
+
 			// Bind to the server address
 			if (!bind(endpoint, 16))	return;
 			CYNG_LOG_TRACE(logger_, "bind: " << endpoint.address().to_string() << ':' << endpoint.port());
@@ -132,10 +141,11 @@ namespace node
 					, bus_
 					, cache_
 					, rgn_()));
-			}
 
-			// Accept another connection
-			do_accept();
+				// Accept another connection
+				do_accept();
+
+			}
 		}
 
 		void server::close()

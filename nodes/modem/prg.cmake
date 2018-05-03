@@ -43,9 +43,9 @@ set (node_modem_res
 if(WIN32)
 
 	set (node_modem_service
-		nodes/modem/templates/modem_create_service.bat.in
-		nodes/modem/templates/modem_delete_service.bat.in
-		nodes/modem/templates/modem_restart_service.bat.in
+		nodes/modem/templates/modem_create_service.cmd.in
+		nodes/modem/templates/modem_delete_service.cmd.in
+		nodes/modem/templates/modem_restart_service.cmd.in
 		nodes/modem/templates/modem.windows.cgf.in
 	)
  

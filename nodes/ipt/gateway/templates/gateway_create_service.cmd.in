@@ -1,0 +1,12 @@
+REM
+REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is generated automatically. Do not edit.
+REM install gateway service
+REM	created : ${${PROJECT_NAME}_NOW_UTC}
+REM	platform: @CMAKE_SYSTEM@
+REM
+echo create service node_gateway_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo off
+sc create node_gateway_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\solosTec\SMF\gateway.exe --config=\"$ENV{ProgramFiles}\solosTec\SMF\gateway_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF gateway server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description node_gateway_v${${PROJECT_NAME}_VERSION_MAJOR} "Gateway server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+@echo on

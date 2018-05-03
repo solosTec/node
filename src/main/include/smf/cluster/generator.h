@@ -122,6 +122,30 @@ namespace node
 		, boost::uuids::uuid source);
 
 	/**
+	 * data bus
+	 */
+	cyng::vector_t bus_req_push_data(std::string const& class_name
+		, std::string const& channel_name
+		, bool distribution	//	single, all
+		, cyng::vector_t const&
+		, cyng::vector_t const&
+		, boost::uuids::uuid source);
+
+	/**
+	 * deliver bus data
+	 */
+	cyng::vector_t bus_req_push_data(std::uint64_t seq
+		, std::string const& channel_name
+		, cyng::vector_t const&
+		, cyng::vector_t const&
+		, boost::uuids::uuid source);
+
+	cyng::vector_t bus_res_push_data(std::uint64_t seq
+		, std::string const& class_name
+		, std::string const& channel_name
+		, std::size_t);
+
+	/**
 	 * client management
 	 */
 	cyng::vector_t client_req_login(boost::uuids::uuid tag

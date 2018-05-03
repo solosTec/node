@@ -5,11 +5,13 @@ set (node_lora_cpp
 
 	nodes/lora/src/main.cpp	
 	nodes/lora/src/controller.cpp
+	nodes/lora/src/processor.cpp
 )
 
 set (node_lora_h
 
 	nodes/lora/src/controller.h
+	nodes/lora/src/processor.h
 
 )
 set (node_lora_info
@@ -37,9 +39,9 @@ set (node_lora_res
 if(WIN32)
 
 	set (node_lora_service
-		nodes/lora/templates/lora_create_service.bat.in
-		nodes/lora/templates/lora_delete_service.bat.in
-		nodes/lora/templates/lora_restart_service.bat.in
+		nodes/lora/templates/lora_create_service.cmd.in
+		nodes/lora/templates/lora_delete_service.cmd.in
+		nodes/lora/templates/lora_restart_service.cmd.in
 		nodes/lora/templates/lora.windows.cgf.in
 	)
  
@@ -68,3 +70,13 @@ set (node_lora
   ${node_lora_info}
 )
 
+
+if (${PROJECT_NAME}_PUGIXML_INSTALLED)
+	set (node_lora_xml
+		${PUGIXML_INCLUDE_DIR}/pugixml.hpp
+		${PUGIXML_INCLUDE_DIR}/pugixml.cpp
+	)
+	list(APPEND node_lora ${node_lora_xml})
+	source_group("XML" FILES ${node_lora_xml})
+
+endif()

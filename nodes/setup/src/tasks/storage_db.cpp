@@ -218,6 +218,41 @@ namespace node
 				stmt->clear();
 
 			}
+			else if (boost::algorithm::equals(name, "TLoraUplink"))
+			{
+				//	INSERT INTO TLoraUplink (pk, DevEUI, roTime, FPort, FCntUp, ADRbit, MType, FCntDn, payload, mic, LrrRSSI, LrrSNR, SpFact, SubBand, Channel, DevLrrCnt, Lrrid, CustomerID, LrrLAT, LrrLON) VALUES (?, ?, julianday(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				//	[96205c3e-3973-4db0-b07c-294e58596720][5,52,100000728,29000071,1,LC2,G1,12,7,-99,444eefd3,32332...3538,148,0,1,1,0001,2015-10-22 13:39:59.48900000,F03D291000001180]
+				BOOST_ASSERT(r.first == 21);	//	20 parameters to bind
+				BOOST_ASSERT_MSG(key.size() == 1, "wrong TLoraUplink key size");
+				BOOST_ASSERT_MSG(data.size() == 19, "wrong TLoraUplink data size");
+				stmt->push(key.at(0), 36)	//	pk
+					.push(cyng::make_object(gen), 0)	//	generation
+					.push(data.at(18), 19)	//	DevEUI
+					.push(data.at(17), 0)	//	roTime
+					.push(data.at(16), 0)	//	FPort
+					.push(data.at(15), 0)	//	FCntUp
+					.push(data.at(14), 0)	//	ADRbit
+					.push(data.at(13), 0)	//	MType
+					.push(data.at(12), 0)	//	FCntDn
+					.push(data.at(11), 40)	//	payload_hex
+					.push(data.at(10), 8)	//	mic_hex
+					.push(data.at(9), 0)	//	LrrRSSI
+					.push(data.at(8), 0)	//	LrrSNR
+					.push(data.at(7), 8)	//	SpFact
+					.push(data.at(6), 8)	//	SubBand
+					.push(data.at(5), 8)	//	Channel
+					.push(data.at(4), 0)	//	DevLrrCnt
+					.push(data.at(3), 8)	//	Lrrid
+					.push(data.at(2), 16)	//	CustomerID
+					.push(data.at(1), 0)	//	LrrLAT
+					.push(data.at(0), 0)	//	LrrLON
+					;
+				if (!stmt->execute())
+				{
+					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+				}
+				stmt->clear();
+			}
 			else
 			{
 				CYNG_LOG_ERROR(logger_, "unknown table " << name);	//	insert
@@ -534,6 +569,136 @@ namespace node
 			, "msg" },
 			{ cyng::TC_UINT64, cyng::TC_TIME_POINT, cyng::TC_UINT8, cyng::TC_STRING },
 			{ 0, 0, 0, 256 }));
+
+		//
+		//	meta data (without payload)
+		//
+		meta_map.emplace("TLoraUplink", cyng::table::make_meta_table<1, 20>("TLoraUplink",
+			{ "pk"
+			, "gen"		//	virtual
+			, "DevEUI"
+			, "roTime"
+			, "FPort" 
+			, "FCntUp"
+			, "ADRbit"
+			, "MType"
+			, "FCntDn"
+			, "payload"	//	payload_hex
+			, "mic"		//	mic_hex
+						//	skip <Lrcid>
+			, "LrrRSSI"
+			, "LrrSNR"
+			, "SpFact"
+			, "SubBand"
+			, "Channel"
+			, "DevLrrCnt"
+			, "Lrrid"		//	Lrrid
+							//	skip <Lrrs>
+			, "CustomerID"	//	CustomerID
+							//	skip <CustomerData>
+							//	skip <ModelCfg>
+							//	There are geo data available: latitude, longitute
+							//	<LrrLAT>47.386738< / LrrLAT>
+							//	<LrrLON>8.522902< / LrrLON>
+			, "LrrLAT"
+			, "LrrLON"
+			},
+
+			{ cyng::TC_UUID			//	pk [boost::uuids::uuid]
+			, cyng::TC_UINT64		//	gen
+			, cyng::TC_STRING		//	DevEUI [cyng::mac64]
+			//, cyng::TC_MAC64		//	DevEUI [cyng::mac64] - ToDo: implement adaptor
+			, cyng::TC_TIME_POINT	//	roTime [ std::chrono::system_clock::time_point]
+			, cyng::TC_UINT16		//	FPort [std::uint16_t]
+			, cyng::TC_INT32		//	FCntUp [std::int32_t]
+			, cyng::TC_INT32		//	ADRbit [std::int32_t]
+			, cyng::TC_INT32		//	MType [std::int32_t]
+			, cyng::TC_INT32		//	FCntDn [std::int32_t]
+			, cyng::TC_STRING		//	payload_hex [std::string]
+			, cyng::TC_STRING		//	mic_hex [std::string]
+			, cyng::TC_DOUBLE		//	LrrRSSI [double]
+			, cyng::TC_DOUBLE		//	LrrSNR [double]
+			, cyng::TC_STRING		//	SpFact [std::string]
+			, cyng::TC_STRING		//	SubBand [std::string]
+			, cyng::TC_STRING		//	Channel [std::string]
+			, cyng::TC_INT32		//	DevLrrCnt [std::int32_t]
+			, cyng::TC_STRING		//	Lrrid [std::string]
+			, cyng::TC_STRING		//	CustomerID [std::string]
+			, cyng::TC_DOUBLE		//	LrrLAT
+			, cyng::TC_DOUBLE		//	LrrLON
+			},
+			{ 36, 0, 0, 0, 0, 0, 0, 0, 0, 40, 8, 0, 0, 8, 8, 8, 0, 8, 16, 0, 0 }));
+
+		meta_map.emplace("TLoraLocation", cyng::table::make_meta_table<1, 13>("TLoraLocation",
+			{ "pk"
+			, "gen"		//	virtual
+			, "DevEUI"
+			, "DevAddr"
+			, "Lrcid"
+			, "roTime"
+			, "DevLocTime"
+			, "DevLAT"
+			, "DevLON"
+			, "DevAlt"
+			, "DevAcc"
+			, "DevLocRadius"
+			, "DevAltRadius"
+			, "CustomerID"	//	CustomerID
+			},
+
+			{ cyng::TC_UUID			//	pk [boost::uuids::uuid]
+			, cyng::TC_UINT64		//	gen
+			, cyng::TC_MAC64		//	DevEUI [cyng::mac64]
+			, cyng::TC_UINT32		//	DevAddr [std::uint32_t]
+			, cyng::TC_UINT32		//	Lrcid [std::uint32_t]
+			, cyng::TC_TIME_POINT	//	roTime [ std::chrono::system_clock::time_point]
+			, cyng::TC_TIME_POINT	//	DevLocTime [ std::chrono::system_clock::time_point]
+			, cyng::TC_DOUBLE		//	DevLAT [double]
+			, cyng::TC_DOUBLE		//	DevLON [double]
+			, cyng::TC_DOUBLE		//	DevAlt [double]
+			, cyng::TC_DOUBLE		//	DevAcc [double]
+			, cyng::TC_DOUBLE		//	DevLocRadius [double]
+			, cyng::TC_DOUBLE		//	DevAltRadius [double]
+			, cyng::TC_STRING		//	CustomerID [std::string]
+			},
+			{ 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16 }));
+
+		meta_map.emplace("TLoraPayload", cyng::table::make_meta_table<1, 15>("TLoraPayload",
+			{ "pk"		
+			, "gen"		//	virtual
+			, "type"	//	version
+			, "manufacturer"
+			, "id"
+			, "medium"
+			, "state"
+			, "actd"	//	actuality duration
+			, "vif"
+			, "volume"
+			, "value"
+			, "afun"
+			, "lifetime"	//	battery lifetime (plain)
+			, "semester"	//	battery lifetime (calculated semester)
+			, "lnkErr"		//	link error (bit 2)
+			, "CRC"
+			},
+			{ cyng::TC_UUID			//	pk [boost::uuids::uuid]
+			, cyng::TC_UINT64		//	gen
+			, cyng::TC_UINT8		//	type [std::uint8_t]
+			, cyng::TC_STRING		//	manufacturer [std::string]
+			, cyng::TC_STRING		//	meter ID [std::string]
+			, cyng::TC_UINT8		//	medium [std::uint8_t]
+			, cyng::TC_UINT8		//	M-Bus state [std::uint8_t]
+			, cyng::TC_UINT16		//	actuality duration [std::uint16_t]
+			, cyng::TC_UINT8		//	Volume VIF [std::uint8_t]
+			, cyng::TC_UINT32		//	Volume [std::uint32_t]
+			, cyng::TC_STRING		//	value [std::string]
+			, cyng::TC_UINT8		//	addition functions [std::uint8_t]
+			, cyng::TC_UINT8		//	battery lifetime (semester) [std::uint8_t]
+			, cyng::TC_UINT32		//	battery lifetime (calculated) [std::uint32_t]
+			, cyng::TC_BOOL			//	link error (bit 2) [bool]
+			, cyng::TC_BOOL			//	CRC OK [bool]
+			},
+			{ 36, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0 }));
 
 		return meta_map;
 	}

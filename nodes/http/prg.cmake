@@ -56,9 +56,9 @@ set (node_http_res
 if(WIN32)
 
 	set (node_http_service
-		nodes/http/templates/http_create_service.bat.in
-		nodes/http/templates/http_delete_service.bat.in
-		nodes/http/templates/http_restart_service.bat.in
+		nodes/http/templates/http_create_service.cmd.in
+		nodes/http/templates/http_delete_service.cmd.in
+		nodes/http/templates/http_restart_service.cmd.in
 		nodes/http/templates/http.windows.cgf.in
 	)
  

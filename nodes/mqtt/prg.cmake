@@ -38,9 +38,9 @@ set (node_mqtt_res
 if(WIN32)
 
 	set (node_mqtt_service
-		nodes/mqtt/templates/mqtt_create_service.bat.in
-		nodes/mqtt/templates/mqtt_delete_service.bat.in
-		nodes/mqtt/templates/mqtt_restart_service.bat.in
+		nodes/mqtt/templates/mqtt_create_service.cmd.in
+		nodes/mqtt/templates/mqtt_delete_service.cmd.in
+		nodes/mqtt/templates/mqtt_restart_service.cmd.in
 		nodes/mqtt/templates/mqtt.windows.cgf.in
 	)
  

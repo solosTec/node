@@ -38,9 +38,9 @@ set (node_ipt_collector_res
 if(WIN32)
 
 	set (node_ipt_collector_service
-		nodes/ipt/collector/templates/collector_create_service.bat.in
-		nodes/ipt/collector/templates/collector_delete_service.bat.in
-		nodes/ipt/collector/templates/collector_restart_service.bat.in
+		nodes/ipt/collector/templates/collector_create_service.cmd.in
+		nodes/ipt/collector/templates/collector_delete_service.cmd.in
+		nodes/ipt/collector/templates/collector_restart_service.cmd.in
 		nodes/ipt/collector/templates/collector.windows.cgf.in
 	)
  

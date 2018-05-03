@@ -52,9 +52,9 @@ set (node_dash_info
 if(WIN32)
 
 	set (node_dash_service
-		nodes/dash/templates/dash_create_service.bat.in
-		nodes/dash/templates/dash_delete_service.bat.in
-		nodes/dash/templates/dash_restart_service.bat.in
+		nodes/dash/templates/dash_create_service.cmd.in
+		nodes/dash/templates/dash_delete_service.cmd.in
+		nodes/dash/templates/dash_restart_service.cmd.in
 		nodes/dash/templates/dash.windows.cgf.in
 	)
  

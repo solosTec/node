@@ -39,9 +39,9 @@ set (node_https_res
 if(WIN32)
 
 	set (node_https_service
-		nodes/https/templates/https_create_service.bat.in
-		nodes/https/templates/https_delete_service.bat.in
-		nodes/https/templates/https_restart_service.bat.in
+		nodes/https/templates/https_create_service.cmd.in
+		nodes/https/templates/https_delete_service.cmd.in
+		nodes/https/templates/https_restart_service.cmd.in
 		nodes/https/templates/https.windows.cgf.in
 	)
  

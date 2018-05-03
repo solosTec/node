@@ -249,7 +249,7 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table *Connection");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 7>("*Cluster", 
+		if (!db.create_table(cyng::table::make_meta_table<1, 8>("*Cluster", 
 			{ "tag"			//	[uuid] client session - primary key 
 			, "class"		//	[string] node class
 			, "loginTime"	//	last login time
@@ -258,9 +258,19 @@ namespace node
 			, "ping"	//	ping time
 			, "ep"		//	remote endpoint
 			, "pid"		//	process id
+			, "self"	//	[object] session instance
 			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_VERSION, cyng::TC_UINT64, cyng::TC_MICRO_SECOND, cyng::TC_IP_TCP_ENDPOINT, cyng::TC_INT64 },
-			{ 36, 0, 32, 0, 0, 0, 0, 0 })))
+			{ cyng::TC_UUID			//	tag
+			, cyng::TC_STRING		//	class
+			, cyng::TC_TIME_POINT	//	loginTime
+			, cyng::TC_VERSION		//	version
+			, cyng::TC_UINT64		//	clients (dynamic)
+			, cyng::TC_MICRO_SECOND	//	ping time (dynamic)
+			, cyng::TC_IP_TCP_ENDPOINT	//	ep
+			, cyng::TC_INT64		//	pid
+			, cyng::traits::PREDEF_SESSION	//	self
+			},
+			{ 36, 0, 32, 0, 0, 0, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table *Cluster");
 		}

@@ -57,6 +57,7 @@ namespace node
 		void db_remove(cyng::context& ctx);
 		void task_resume(cyng::context& ctx);
 		void reconfigure(cyng::context& ctx);
+		void bus_req_push_data(cyng::context& ctx);
 		void reconfigure_impl();
 		void create_cache();
 

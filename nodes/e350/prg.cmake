@@ -43,9 +43,9 @@ set (node_e350_res
 if(WIN32)
 
 	set (node_e350_service
-		nodes/e350/templates/e350_create_service.bat.in
-		nodes/e350/templates/e350_delete_service.bat.in
-		nodes/e350/templates/e350_restart_service.bat.in
+		nodes/e350/templates/e350_create_service.cmd.in
+		nodes/e350/templates/e350_delete_service.cmd.in
+		nodes/e350/templates/e350_restart_service.cmd.in
 		nodes/e350/templates/e350.windows.cgf.in
 	)
  

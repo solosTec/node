@@ -38,9 +38,9 @@ set (node_ipt_stress_res
 if(WIN32)
 
 	set (node_ipt_stress_service
-		nodes/ipt/stress/templates/stress_create_service.bat.in
-		nodes/ipt/stress/templates/stress_delete_service.bat.in
-		nodes/ipt/stress/templates/stress_restart_service.bat.in
+		nodes/ipt/stress/templates/stress_create_service.cmd.in
+		nodes/ipt/stress/templates/stress_delete_service.cmd.in
+		nodes/ipt/stress/templates/stress_restart_service.cmd.in
 		nodes/ipt/stress/templates/stress.windows.cgf.in
 	)
  

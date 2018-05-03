@@ -35,11 +35,19 @@ namespace node
 		int run(bool);
 		
 		/**
-		* create a configuration file with default values.
-		*
-		* @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
-		*/
+		 * create a configuration file with default values.
+		 *
+		 * @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
+		 */
 		int create_config() const;
+
+		/**
+		 * Generate X509 Certificate
+		 */
+		int generate_x509(std::string const& c
+			, std::string const& l
+			, std::string const& o
+			, std::string const& cn);
 
 #if BOOST_OS_WINDOWS
 		/**

@@ -56,9 +56,9 @@ set (node_ipt_gateway_server
 if(WIN32)
 
 	set (node_ipt_gateway_service
-		nodes/ipt/gateway/templates/gateway_create_service.bat.in
-		nodes/ipt/gateway/templates/gateway_delete_service.bat.in
-		nodes/ipt/gateway/templates/gateway_restart_service.bat.in
+		nodes/ipt/gateway/templates/gateway_create_service.cmd.in
+		nodes/ipt/gateway/templates/gateway_delete_service.cmd.in
+		nodes/ipt/gateway/templates/gateway_restart_service.cmd.in
 		nodes/ipt/gateway/templates/gateway.windows.cgf.in
 	)
  

@@ -41,6 +41,14 @@ namespace node
 		 */
 		int create_config() const;
 
+		/**
+		 * Generate X509 Certificate
+		 */
+		int generate_x509(std::string const& c
+			, std::string const& l
+			, std::string const& o
+			, std::string const& cn);
+
 #if BOOST_OS_WINDOWS
 		/**
 		* run as windows service

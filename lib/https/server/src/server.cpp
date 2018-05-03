@@ -6,21 +6,29 @@
  */
 
 #include <smf/https/srv/server.h>
-#include <smf/https/srv/session.h>
+#include <smf/https/srv/detector.h>
 
 namespace node
 {
 	namespace https
 	{
-		server::server(boost::asio::io_context& ioc,
-			boost::asio::ssl::context& ctx,
-			boost::asio::ip::tcp::endpoint endpoint,
-			std::string const& doc_root)
-		: ctx_(ctx)
+		server::server(cyng::logging::log_ptr logger
+			, server_callback_t cb
+			, boost::asio::io_context& ioc
+			, boost::asio::ssl::context& ctx
+			, boost::asio::ip::tcp::endpoint endpoint
+			, std::string const& doc_root
+			, std::vector<std::string> const& sub_protocols)
+		: logger_(logger)
+			, cb_(cb)
+			, ctx_(ctx)
 			, acceptor_(ioc)
 			, socket_(ioc)
 			, doc_root_(doc_root)
+			, sub_protocols_(sub_protocols)
 			, is_listening_(false)
+			, shutdown_complete_()
+			, mutex_()
 		{
 			boost::system::error_code ec;
 
@@ -28,7 +36,7 @@ namespace node
 			acceptor_.open(endpoint.protocol(), ec);
 			if (ec)
 			{
-				BOOST_ASSERT_MSG(!ec, "OPEN");
+				CYNG_LOG_FATAL(logger_, "open: " << ec.message());
 				return;
 			}
 
@@ -36,7 +44,7 @@ namespace node
 			acceptor_.set_option(boost::asio::socket_base::reuse_address(true));
 			if (ec)
 			{
-				BOOST_ASSERT_MSG(!ec, "SET_OPTION");
+				CYNG_LOG_FATAL(logger_, "allow address reuse: " << ec.message());
 				return;
 			}
 
@@ -44,16 +52,15 @@ namespace node
 			acceptor_.bind(endpoint, ec);
 			if (ec)
 			{
-				BOOST_ASSERT_MSG(!ec, "BIND");
+				CYNG_LOG_FATAL(logger_, "bind: " << ec.message());
 				return;
 			}
 
 			// Start listening for connections
-			acceptor_.listen(
-				boost::asio::socket_base::max_listen_connections, ec);
+			acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
 			if (ec)
 			{
-				BOOST_ASSERT_MSG(!ec, "LISTEN");
+				CYNG_LOG_FATAL(logger_, "listen: " << ec.message());
 				return;
 			}
 		}
@@ -79,7 +86,7 @@ namespace node
 				socket_,
 				std::bind(
 					&server::on_accept,
-					shared_from_this(),
+					this,
 					std::placeholders::_1));
 		}
 
@@ -87,40 +94,56 @@ namespace node
 		{
 			if (ec)
 			{
-				BOOST_ASSERT_MSG(!ec, "ACCEPT");
+				CYNG_LOG_WARNING(logger_, "accept: " << ec.message());
+
+				//
+				//	remove listener flag
+				//
+				is_listening_.exchange(false);
+
+				//
+				//	notify
+				//
+				cyng::async::lock_guard<cyng::async::mutex> lk(mutex_);
+				shutdown_complete_.notify_all();
 			}
 			else
 			{
-				// Create the session and run it
-				std::make_shared<session>(
-					std::move(socket_),
-					ctx_,
-					doc_root_)->run();
-			}
+				CYNG_LOG_TRACE(logger_, "accept: " << socket_.remote_endpoint());
 
-			// Accept another connection
-			do_accept();
+				// Create the session and run it
+				std::make_shared<detector>(logger_
+					, cb_
+					, std::move(socket_)
+					, ctx_
+					, doc_root_
+					, sub_protocols_)->run();
+
+				// Accept another connection
+				do_accept();
+
+			}
 		}
 
 		void server::close()
 		{
 			if (is_listening_)
 			{
-				//cyng::async::unique_lock<cyng::async::mutex> lock(mutex_);
+				cyng::async::unique_lock<cyng::async::mutex> lock(mutex_);
 
 				acceptor_.cancel();
 				acceptor_.close();
 
-				//CYNG_LOG_TRACE(logger_, "listener is waiting for cancellation");
+				CYNG_LOG_TRACE(logger_, "listener is waiting for cancellation");
 				//	wait for cancellation of accept operation
-				//shutdown_complete_.wait(lock, [this] {
-				//	return !is_listening_.load();
-				//});
-				//CYNG_LOG_TRACE(logger_, "listener cancellation complete");
+				shutdown_complete_.wait(lock, [this] {
+					return !is_listening_.load();
+				});
+				CYNG_LOG_TRACE(logger_, "listener cancellation complete");
 			}
 			else
 			{
-				//CYNG_LOG_WARNING(logger_, "listener already closed");
+				CYNG_LOG_WARNING(logger_, "listener already closed");
 			}
 
 			//
@@ -131,53 +154,6 @@ namespace node
 
 		}
 
+
 	}
 }
-
-//------------------------------------------------------------------------------
-
-//int main(int argc, char* argv[])
-//{
-//	// Check command line arguments.
-//	if (argc != 5)
-//	{
-//		std::cerr <<
-//			"Usage: http-server-async-ssl <address> <port> <doc_root> <threads>\n" <<
-//			"Example:\n" <<
-//			"    http-server-async-ssl 0.0.0.0 8080 . 1\n";
-//		return EXIT_FAILURE;
-//	}
-//	auto const address = boost::asio::ip::make_address(argv[1]);
-//	auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
-//	std::string const doc_root = argv[3];
-//	auto const threads = std::max<int>(1, std::atoi(argv[4]));
-//
-//	// The io_context is required for all I/O
-//	boost::asio::io_context ioc{ threads };
-//
-//	// The SSL context is required, and holds certificates
-//	ssl::context ctx{ ssl::context::sslv23 };
-//
-//	// This holds the self-signed certificate used by the server
-//	load_server_certificate(ctx);
-//
-//	// Create and launch a listening port
-//	std::make_shared<server>(
-//		ioc,
-//		ctx,
-//		tcp::endpoint{ address, port },
-//		doc_root)->run();
-//
-//	// Run the I/O service on the requested number of threads
-//	std::vector<std::thread> v;
-//	v.reserve(threads - 1);
-//	for (auto i = threads - 1; i > 0; --i)
-//		v.emplace_back(
-//			[&ioc]
-//	{
-//		ioc.run();
-//	});
-//	ioc.run();
-//
-//	return EXIT_SUCCESS;
-//}

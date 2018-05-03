@@ -38,9 +38,9 @@ set (node_ipt_emitter_res
 if(WIN32)
 
 	set (node_ipt_emitter_service
-		nodes/ipt/emitter/templates/emitter_create_service.bat.in
-		nodes/ipt/emitter/templates/emitter_delete_service.bat.in
-		nodes/ipt/emitter/templates/emitter_restart_service.bat.in
+		nodes/ipt/emitter/templates/emitter_create_service.cmd.in
+		nodes/ipt/emitter/templates/emitter_delete_service.cmd.in
+		nodes/ipt/emitter/templates/emitter_restart_service.cmd.in
 		nodes/ipt/emitter/templates/emitter.windows.cgf.in
 	)
  

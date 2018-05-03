@@ -18,10 +18,12 @@
 #include <cyng/json.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/compatibility/io_service.h>
+#include <cyng/vector_cast.hpp>
 
 #include <fstream>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/assert.hpp>
 
@@ -32,6 +34,7 @@ namespace node
 	//
 	bool start(cyng::async::scheduler&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
+	void session_callback(boost::uuids::uuid tag, cyng::vector_t&& prg);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -166,6 +169,7 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8080"),
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
+						cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
 							//	authType:
@@ -232,6 +236,11 @@ namespace node
 		const auto service = cyng::io::to_str(dom[0]["https"].get("service"));
 		const auto port = static_cast<unsigned short>(std::stoi(service));
  		
+		//
+		//	get subprotocols
+		//
+		const auto sub_protocols = cyng::vector_cast<std::string>(dom[0]["https"].get("sub-protocols"), "");
+
  		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
 
 		// The SSL context is required, and holds certificates
@@ -244,10 +253,13 @@ namespace node
 		BOOST_ASSERT_MSG(scheduler.is_running(), "scheduler not running");
 		
 		// Create and launch a listening port
-		auto srv = std::make_shared<https::server>(scheduler.get_io_service()
+		auto srv = std::make_shared<https::server>(logger
+			, std::bind(&session_callback, std::placeholders::_1, std::placeholders::_2)
+			, scheduler.get_io_service()
 			, ctx
 			, boost::asio::ip::tcp::endpoint{address, port}
-			, doc_root);
+			, doc_root
+			, sub_protocols);
 
 		if (srv->run())
 		{
@@ -303,6 +315,13 @@ namespace node
 			break;
 		}
 		return shutdown;
+	}
+
+	void session_callback(boost::uuids::uuid tag, cyng::vector_t&& prg)
+	{
+		std::cout << "received " << prg.size() << " HTTP(s) instructions from " << tag;
+		std::cout << "session callback: " << cyng::io::to_str(prg);
+
 	}
 
 }

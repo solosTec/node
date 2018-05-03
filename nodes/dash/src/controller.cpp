@@ -8,6 +8,8 @@
 #include "controller.h"
 #include "tasks/cluster.h"
 #include <NODE_project_info.h>
+//#include <smf/https/srv/auth.h>
+
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>
@@ -17,6 +19,9 @@
 #include <cyng/json.h>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
+#include <cyng/vector_cast.hpp>
+#include <cyng/crypto/x509.h>
+
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
 #endif
@@ -156,19 +161,24 @@ namespace node
 					, cyng::param_factory("tag", rgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 
-					, cyng::param_factory("http", cyng::tuple_factory(
+					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8080"),
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
+						cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
+						cyng::param_factory("tls-pwd", "test"),
+						cyng::param_factory("tls-certificate-chain", "demo.cert"),
+						cyng::param_factory("tls-private-kay", "priv.key"),
+						cyng::param_factory("tls-dh", "demo.dh"),	//	diffie-hellman
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
 							//	authType:
 							//	user:
 							//	pwd:
 							cyng::tuple_factory(
-								cyng::param_factory("directory", "/cv"),
+								cyng::param_factory("directory", "/"),
 								cyng::param_factory("authType", "Basic"),
-								cyng::param_factory("realm", "Restricted Content"),
+								cyng::param_factory("realm", "Root Areay"),
 								cyng::param_factory("name", "auth@example.com"),
 								cyng::param_factory("pwd", "secret")
 							),
@@ -180,6 +190,10 @@ namespace node
 								cyng::param_factory("pwd", "secret")
 							) }
 						)),	//	auth
+						//185.244.25.187
+						cyng::param_factory("blacklist", cyng::vector_factory({
+							cyng::make_address("185.244.25.187")	//	KV Solutions B.V. scans for login.cgi
+							})),	//	blacklist
 						cyng::param_factory("redirect", cyng::vector_factory({
 							cyng::param_factory("/", "/index.html")
 						}))
@@ -213,6 +227,36 @@ namespace node
 
 		}
 		return EXIT_FAILURE;
+	}
+
+	int controller::generate_x509(std::string const& c
+		, std::string const& l
+		, std::string const& o
+		, std::string const& cn)
+	{
+		//::OPENSSL_init_ssl(0, NULL);
+
+		cyng::crypto::EVP_KEY_ptr pkey(cyng::crypto::generate_key(), ::EVP_PKEY_free);
+		if (!pkey)
+		{
+			return EXIT_FAILURE;
+		}
+		cyng::crypto::X509_ptr x509(cyng::crypto::generate_x509(pkey.get()
+			, 31536000L
+			, c.c_str()
+			//, l.c_str()
+			, o.c_str()
+			, cn.c_str()), ::X509_free);
+		if (!x509)
+		{
+			return EXIT_FAILURE;
+		}
+
+		std::cout << "Writing key and certificate to disk..." << std::endl;
+		bool ret = cyng::crypto::write_to_disk(pkey.get(), x509.get());
+		return (ret)
+			? EXIT_SUCCESS
+			: EXIT_FAILURE;
 	}
 
 #if BOOST_OS_WINDOWS
@@ -314,7 +358,7 @@ namespace node
 		//
 		cyng::vector_t tmp_vec;
 		cyng::tuple_t tmp_tpl;
-		join_cluster(mux, logger, cyng::value_cast(dom.get("cluster"), tmp_vec), cyng::value_cast(dom.get("http"), tmp_tpl));
+		join_cluster(mux, logger, cyng::value_cast(dom.get("cluster"), tmp_vec), cyng::value_cast(dom.get("server"), tmp_tpl));
 
 		//
 		//	wait for system signals
@@ -329,6 +373,7 @@ namespace node
 
 		return shutdown;
 	}
+
 	bool wait(cyng::logging::log_ptr logger)
 	{
 		//
@@ -367,13 +412,24 @@ namespace node
 		//	http::server build a string view
 		static auto doc_root = cyng::value_cast(dom.get("document-root"), (pwd / "htdocs").string());
 		auto address = cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0");
-		auto service = cyng::value_cast<std::string>(dom.get("service"), "26862");
+		auto service = cyng::value_cast<std::string>(dom.get("service"), "8080");
 		auto const host = cyng::make_address(address);
 		const auto port = static_cast<unsigned short>(std::stoi(service));
+
+		//
+		//	get subprotocols
+		//
+		const auto sub_protocols = cyng::vector_cast<std::string>(dom.get("sub-protocols"), "");
+
+		//auth_dirs ad;
+		//init(dom[0]["http"].get("auth"), ad);
+
 
 		CYNG_LOG_INFO(logger, "document root: " << doc_root);
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
+		CYNG_LOG_INFO(logger, sub_protocols.size() << " subprotocols");
+
 
 		cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)

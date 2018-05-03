@@ -89,6 +89,7 @@ namespace node
 		vm_.run(cyng::register_function("bus.req.login", 11, std::bind(&session::bus_req_login, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("bus.req.stop.client", 3, std::bind(&session::bus_req_stop_client_impl, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("bus.insert.msg", 2, std::bind(&session::bus_insert_msg, this, std::placeholders::_1)));
+		vm_.run(cyng::register_function("bus.req.push.data", 7, std::bind(&session::bus_req_push_data, this, std::placeholders::_1)));
 
 		vm_.run(cyng::register_function("client.req.login", 8, std::bind(&session::client_req_login, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.close", 2, std::bind(&session::client_req_close, this, std::placeholders::_1)));
@@ -417,6 +418,11 @@ namespace node
 				<< pwd);
 
 			//
+			//	send reply
+			//
+			ctx.attach(reply(ts, false));
+
+			//
 			//	emit system message
 			//
 			std::stringstream ss;
@@ -479,7 +485,7 @@ namespace node
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_INFO(logger_, "bus.start.watchdog " << cyng::io::to_str(frame));
 
-		//	[setup,2018-03-19 16:10:29.12002940,0.2,00:00:0.052402,<!259:session>]
+		//	[setup,2018-05-02 09:55:02.49315500,0.4,00:00:0.034161,<!259:session>,127.0.0.1:53116,10984]
 		//
 		//	* class
 		//	* login
@@ -498,10 +504,10 @@ namespace node
 		db_.access([&](cyng::store::table* tbl_cluster)->void {
 
 			//
-			//	remove from cluster table
+			//	insert into cluster table
 			//
 			if (!tbl_cluster->insert(cyng::table::key_generator(ctx.tag())
-				, cyng::table::data_generator(frame.at(0), frame.at(1), frame.at(2), 0u, frame.at(3), frame.at(5), frame.at(6))
+				, cyng::table::data_generator(frame.at(0), frame.at(1), frame.at(2), 0u, frame.at(3), frame.at(5), frame.at(6), frame.at(4))
 				, 0u, ctx.tag()))
 			{
 				CYNG_LOG_ERROR(logger_, "bus.start.watchdog - Cluster table insert failed" << cyng::io::to_str(frame));
@@ -1213,6 +1219,77 @@ namespace node
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, ctx.tag());
+	}
+
+	void session::bus_req_push_data(cyng::context& ctx)
+	{
+		//	[1,store,TLoraMeta,false
+		//	[7df1353e-8968-47b7-81bd-1c3097dcc878],
+		//	[5,52,100000728,29000071,1,LC2,G1,12,7,-99,444eefd3,32332e31342c2032332e32302c20313031342c2035352e3538,148,0,1,1,0001,2015-10-22 13:39:59.48900000,F03D291000001180],
+		//	9228e436-7a13-4140-82f1-2c38229d0f7a]
+		//
+		//	* bus sequene
+		//	* class name
+		//	* channel/table name
+		//	* distribution (single=false/all=true)
+		//	* key
+		//	* data
+		//	* source
+		const cyng::vector_t frame = ctx.get_frame();
+		ctx.run(cyng::generate_invoke("log.msg.trace", "bus.req.push.data", frame));
+
+		auto const tpl = cyng::tuple_cast<
+			std::uint64_t,		//	[0] sequence number
+			std::string,		//	[1] class
+			std::string,		//	[2] channel
+			bool,				//	[3] distribution
+			cyng::vector_t,		//	[4] key
+			cyng::vector_t,		//	[5] data
+			boost::uuids::uuid	//	[6] source
+		>(frame);
+
+		//
+		//	search for requested class
+		//
+		std::size_t counter{ 0 };
+		db_.access([&](cyng::store::table const* tbl_cluster)->void {
+			tbl_cluster->loop([&](cyng::table::record const& rec) -> bool {
+
+				//
+				//	search class
+				//
+				//CYNG_LOG_TRACE(logger_, "search node class " << std::get<1>(tpl) << " ?= " << cyng::value_cast<std::string>(rec["class"], ""));
+				if (boost::algorithm::equals(cyng::value_cast<std::string>(rec["class"], ""), std::get<1>(tpl)))
+				{
+					//
+					//	required class found
+					//
+					CYNG_LOG_TRACE(logger_, "node class " 
+						<< std::get<1>(tpl) 
+						<< " found: "
+						<< cyng::value_cast<>(rec["ep"], boost::asio::ip::tcp::endpoint()));
+
+					auto peer = cyng::object_cast<session>(rec["self"]);
+					if (peer)
+					{
+						counter++;
+						peer->vm_.async_run(node::bus_req_push_data(std::get<0>(tpl), std::get<2>(tpl), std::get<4>(tpl), std::get<5>(tpl), std::get<6>(tpl)));
+					}
+
+					//
+					//	single=false / all=true
+					//
+					return std::get<3>(tpl);
+				}
+				//	continue
+				return true;
+			});
+		}, cyng::store::read_access("*Cluster"));
+
+		ctx.attach(node::bus_res_push_data(std::get<0>(tpl)	//	seq
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, counter));
 	}
 
 	cyng::object make_session(cyng::async::mux& mux

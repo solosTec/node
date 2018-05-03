@@ -235,6 +235,46 @@ namespace node
 
 	}
 
+	cyng::vector_t bus_req_push_data(std::string const& class_name
+		, std::string const& channel_name
+		, bool distribution	//	single, all
+		, cyng::vector_t const& key
+		, cyng::vector_t const& data
+		, boost::uuids::uuid source)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.req.push.data", cyng::invoke("bus.seq.next"), class_name, channel_name, distribution, key, data, source))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_req_push_data(std::uint64_t seq
+		, std::string const& channel_name
+		, cyng::vector_t const& key 
+		, cyng::vector_t const& data
+		, boost::uuids::uuid source)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.req.push.data", seq, channel_name, key, data, source))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_res_push_data(std::uint64_t seq
+		, std::string const& class_name
+		, std::string const& channel_name
+		, std::size_t count)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.res.push.data", seq, class_name, channel_name, count))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+
+	}
+
 	cyng::vector_t bus_res_db_modify(std::string const& table
 		, cyng::vector_t const& key
 		, cyng::attr_t const& attr

@@ -5,86 +5,190 @@
  *
  */
 
-#include <memory>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/websocket.hpp>
-#include <boost/asio.hpp>
-#include <boost/asio/ssl/stream.hpp>
+#ifndef NODE_LIB_HTTPS_SRV_SESSION_H
+#define NODE_LIB_HTTPS_SRV_SESSION_H
+
+#include <smf/https/srv/session.hpp>
+#include <smf/https/srv/ssl_stream.hpp>
+#include <cyng/object.h>
 
 namespace node
 {
 	namespace https
 	{
-		// Handles an boost::beast::http server connection
-		class session : public std::enable_shared_from_this<session>
+		/**
+		 * Handles a plain HTTP connection
+		 */
+		class plain_session 
+			: public session<plain_session>
+			//, public std::enable_shared_from_this<plain_session>
 		{
-			// This is the C++11 equivalent of a generic lambda.
-			// The function object is used to send an boost::beast::http message.
-			struct send_lambda
-			{
-				session& self_;
-
-				explicit
-					send_lambda(session& self)
-					: self_(self)
-				{
-				}
-
-				template<bool isRequest, class Body, class Fields>
-				void operator()(boost::beast::http::message<isRequest, Body, Fields>&& msg) const
-				{
-					// The lifetime of the message has to extend
-					// for the duration of the async operation so
-					// we use a shared_ptr to manage it.
-					auto sp = std::make_shared<
-						boost::beast::http::message<isRequest, Body, Fields>>(std::move(msg));
-
-					// Store a type-erased version of the shared
-					// pointer in the class to keep it alive.
-					self_.res_ = sp;
-
-					// Write the response
-					boost::beast::http::async_write(
-						self_.stream_,
-						*sp,
-						boost::asio::bind_executor(
-							self_.strand_,
-							std::bind(
-								&session::on_write,
-								self_.shared_from_this(),
-								std::placeholders::_1,
-								std::placeholders::_2,
-								sp->need_eof())));
-				}
-			};
-
-			boost::asio::ip::tcp::socket socket_;
-			boost::asio::ssl::stream<boost::asio::ip::tcp::socket&> stream_;
-			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
-			boost::beast::flat_buffer buffer_;
-			std::string const& doc_root_;
-			boost::beast::http::request<boost::beast::http::string_body> req_;
-			std::shared_ptr<void> res_;
-			send_lambda lambda_;
 
 		public:
-			// Take ownership of the socket
-			explicit session(boost::asio::ip::tcp::socket socket,
-				boost::asio::ssl::context& ctx,
-				std::string const& doc_root);
+			// Create the http_session
+			plain_session(cyng::logging::log_ptr logger
+				, session_callback_t cb
+				, boost::asio::ip::tcp::socket socket
+				, boost::beast::flat_buffer buffer
+				, std::string const& doc_root
+				, std::vector<std::string> const&);
+
+			virtual ~plain_session();
+
+			// Called by the base class
+			boost::asio::ip::tcp::socket& stream();
+
+			// Called by the base class
+			boost::asio::ip::tcp::socket release_stream();
 
 			// Start the asynchronous operation
-			void run();
-			void on_handshake(boost::system::error_code ec);
-			void do_read();
-			void on_read(boost::system::error_code ec,
-				std::size_t bytes_transferred);
-			void on_write(boost::system::error_code ec,
-				std::size_t bytes_transferred,
-				bool close);
-			void do_close();
-			void on_shutdown(boost::system::error_code ec);
+			void run(cyng::object);
+			void do_timeout(cyng::object obj);
+			void do_eof(cyng::object obj);
+
+		private:
+			boost::asio::ip::tcp::socket socket_;
+			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 		};
+
+		/** 
+		 * Handles an SSL HTTP connection
+		 */
+		class ssl_session
+			: public session<ssl_session>
+			//, public std::enable_shared_from_this<ssl_session>
+		{
+		public:
+			// Create the session
+			ssl_session(cyng::logging::log_ptr logger
+				, session_callback_t cb
+				, boost::asio::ip::tcp::socket socket
+				, boost::asio::ssl::context& ctx
+				, boost::beast::flat_buffer buffer
+				, std::string const& doc_root
+				, std::vector<std::string> const&);
+
+			virtual ~ssl_session();
+
+			// Called by the base class
+			ssl_stream<boost::asio::ip::tcp::socket>& stream();
+
+			// Called by the base class
+			ssl_stream<boost::asio::ip::tcp::socket> release_stream();
+
+			/**
+			 * Start the asynchronous operation
+			 */
+			void run(cyng::object);
+			void do_eof(cyng::object obj);
+			void do_timeout(cyng::object obj);
+
+		private:
+			void on_handshake(cyng::object obj, boost::system::error_code ec, std::size_t bytes_used);
+			void on_shutdown(cyng::object obj, boost::system::error_code ec);
+
+		private:
+			ssl_stream<boost::asio::ip::tcp::socket> stream_;
+			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
+			bool eof_ = false;
+
+		};
+
 	}
 }
+
+#include <cyng/intrinsics/traits.hpp>
+namespace cyng
+{
+	namespace traits
+	{
+		template <>
+		struct type_tag<node::https::plain_session>
+		{
+			using type = node::https::plain_session;
+			using tag = std::integral_constant<std::size_t, PREDEF_SESSION>;
+#if defined(CYNG_LEGACY_MODE_ON)
+			const static char name[];
+#else
+			constexpr static char name[] = "plain-session";
+#endif
+		};
+
+		template <>
+		struct reverse_type < PREDEF_SESSION >
+		{
+			using type = node::https::plain_session;
+		};
+
+		template <>
+		struct type_tag<node::https::ssl_session>
+		{
+			using type = node::https::ssl_session;
+			using tag = std::integral_constant<std::size_t, PREDEF_SSL_SESSION>;
+#if defined(CYNG_LEGACY_MODE_ON)
+			const static char name[];
+#else
+			constexpr static char name[] = "ssl-session";
+#endif
+		};
+
+		template <>
+		struct reverse_type < PREDEF_SSL_SESSION >
+		{
+			using type = node::https::ssl_session;
+		};
+
+	}
+
+}
+
+#include <functional>
+#include <boost/functional/hash.hpp>
+
+namespace std
+{
+	template<>
+	struct hash<node::https::plain_session>
+	{
+		inline size_t operator()(node::https::plain_session const& s) const noexcept
+		{
+			return s.hash();
+		}
+	};
+	template<>
+	struct equal_to<node::https::plain_session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::https::plain_session;
+		using second_argument_type = node::https::plain_session;
+
+		inline bool operator()(node::https::plain_session const& s1, node::https::plain_session const& s2) const noexcept
+		{
+			return s1.hash() == s2.hash();
+		}
+	};
+
+	template<>
+	struct hash<node::https::ssl_session>
+	{
+		inline size_t operator()(node::https::ssl_session const& s) const noexcept
+		{
+			return s.hash();
+		}
+	};
+	template<>
+	struct equal_to<node::https::ssl_session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::https::ssl_session;
+		using second_argument_type = node::https::ssl_session;
+
+		inline bool operator()(node::https::ssl_session const& s1, node::https::ssl_session const& s2) const noexcept
+		{
+			return s1.hash() == s2.hash();
+		}
+	};
+
+}
+
+#endif

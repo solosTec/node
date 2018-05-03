@@ -68,11 +68,23 @@ int main(int argc, char **argv)
 #endif
 		);
 
+	//
+	//	certificate
+	//
+	boost::program_options::options_description node_x509("X509 Certificate");
+	node_x509.add_options()
+
+		("x509.C", boost::program_options::value<std::string>()->default_value("CH"), "Country")
+		("x509.L", boost::program_options::value<std::string>()->default_value("Lucerne"), "City")
+		("x509.O", boost::program_options::value<std::string>()->default_value("solosTec"), "Organisation")
+		("x509.CN", boost::program_options::value<std::string>()->default_value("Lucerne"), "Common Name")
+		;
+
     //
     //	all you can grab from the command line
     //
     boost::program_options::options_description cmdline_options;
-    cmdline_options.add(generic).add(node_options);
+    cmdline_options.add(generic).add(node_options).add(node_x509);
 
     //
     //	read all data

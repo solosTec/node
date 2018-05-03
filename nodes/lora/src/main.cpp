@@ -48,9 +48,9 @@ int main(int argc, char **argv)
 	("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
 	//	json, XML
 	("default,D", boost::program_options::value<std::string>()->default_value("")->implicit_value("json"), "generate a default configuration and exit. options are json and XML")
-	//("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
     ("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
-    ("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
+    //("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
+	("generate,X", boost::program_options::bool_switch()->default_value(false), "generate X509 certificate")
 	("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
     ;
@@ -81,11 +81,23 @@ int main(int argc, char **argv)
 #endif
 		);
 	
+	//
+	//	certificate
+	//
+	boost::program_options::options_description node_x509("X509 Certificate");
+	node_x509.add_options()
+
+		("x509.C", boost::program_options::value<std::string>()->default_value("CH"), "Country")
+		("x509.L", boost::program_options::value<std::string>()->default_value("Lucerne"), "City")
+		("x509.O", boost::program_options::value<std::string>()->default_value("solosTec"), "Organisation")
+		("x509.CN", boost::program_options::value<std::string>()->default_value("Lucerne"), "Common Name")
+		;
+
     //
     //	all you can grab from the command line
     //
     boost::program_options::options_description cmdline_options;
-    cmdline_options.add(generic).add(node_options);
+    cmdline_options.add(generic).add(node_options).add(node_x509);
 
     //
     //	read all data
@@ -154,7 +166,8 @@ int main(int argc, char **argv)
 		//
 		//	check start optiones
 		//
-		if (vm["default"].as< bool >())
+		const std::string config_type = vm["default"].as<std::string>();
+		if (!config_type.empty())
 		{
 			//	write default configuration
  			return ctrl.create_config();
@@ -166,10 +179,13 @@ int main(int argc, char **argv)
 // 			return ctrl.init_db();
 		}
 
-		if (vm["show"].as< bool >())
+		if (vm["generate"].as< bool >())
 		{
-			//	show configuration
-// 			return ctrl.show_config();
+			//	generate X509 certificate
+			return ctrl.generate_x509(vm["x509.C"].as< std::string >()
+				, vm["x509.L"].as< std::string >()
+				, vm["x509.O"].as< std::string >()
+				, vm["x509.CN"].as< std::string >());
 		}
 
 #if BOOST_OS_WINDOWS

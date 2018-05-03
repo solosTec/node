@@ -55,9 +55,9 @@ set (node_master_shared
 if(WIN32)
 
 	set (node_master_service
-		nodes/master/templates/master_create_service.bat.in
-		nodes/master/templates/master_delete_service.bat.in
-		nodes/master/templates/master_restart_service.bat.in
+		nodes/master/templates/master_create_service.cmd.in
+		nodes/master/templates/master_delete_service.cmd.in
+		nodes/master/templates/master_restart_service.cmd.in
 		nodes/master/templates/master.windows.cgf.in
 	)
  

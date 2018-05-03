@@ -436,6 +436,12 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 endif()
 
 #
+#	LoRa payload library
+#
+include (lib/lora/payload/lib.cmake)
+add_library(smf_lora ${GLOBAL_LIBRARY_TYPE} ${lora_payload_lib})
+
+#
 #	http server library
 #
 include (lib/http/server/lib.cmake)
@@ -468,7 +474,7 @@ target_link_libraries(http ${http_link_libs})
 include (nodes/https/prg.cmake)
 add_executable(https ${node_https})
 # libraries to link 
-set(https_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_crypto cyng_sys smf_https_srv ${OPENSSL_LIBRARIES})
+set(https_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_crypto cyng_sys cyng_vm smf_https_srv ${OPENSSL_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND https_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -496,7 +502,7 @@ endif()
 include (nodes/dash/prg.cmake)
 add_executable(dash ${node_dash})
 # libraries to link
-set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys smf_cluster smf_http_srv)
+set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_crypto smf_cluster smf_http_srv ${OPENSSL_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND dashboard_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -628,19 +634,18 @@ endif(WIN32)
 target_link_libraries(stress ${stress_link_libs})
 
 #
-# lora
+# LoRa
 #
 include (nodes/lora/prg.cmake)
 add_executable(lora ${node_lora})
 # libraries to link
-set(lora_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys smf_cluster)
+set(lora_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_crypto smf_cluster smf_https_srv smf_lora smf_protocol_sml ${OPENSSL_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND lora_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
         list(APPEND lora_link_libs pthread)
     endif()
 endif()
-#message(STATUS "** link lora             : ${lora_link_libs}")
 target_link_libraries(lora ${lora_link_libs})
 
 #
@@ -656,7 +661,6 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND master_link_libs pthread)
     endif()
 endif()
-#message(STATUS "** link master           : ${master_link_libs}")
 target_link_libraries(master ${master_link_libs})
 
 #
@@ -688,7 +692,6 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND mqtt_link_libs pthread)
     endif()
 endif()
-#message(STATUS "** link mqtt             : ${mqtt_link_libs}")
 target_link_libraries(mqtt ${mqtt_link_libs})
 
 #
@@ -709,7 +712,6 @@ if(WIN32)
 else()
 	list(APPEND setup_link_libs ${SQLite3_LIBRARY})
 endif(WIN32)
-#message(STATUS "** link setup            : ${setup_link_libs}")
 target_link_libraries(setup ${setup_link_libs})
 
 #
@@ -884,16 +886,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/http_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/http_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/http_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/http_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/http_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/http_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/http_restart_service.cmd")
 
 	# dash
 	configure_file (
@@ -901,16 +903,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/dash_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/dash_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/dash_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/dash_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/dash_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/dash_restart_service.cmd")
 
 	# e355
 	configure_file (
@@ -918,16 +920,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/e350_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/e350_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/e350_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/e350_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/e350_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/e350_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/e350_restart_service.cmd")
 
 	# ipt collector 
 	configure_file (
@@ -935,16 +937,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/collector_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/collector_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/collector_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/collector_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/collector_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/collector_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/collector_restart_service.cmd")
 
 	# ipt emitter 
 	configure_file (
@@ -952,16 +954,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/emitter_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/emitter_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/emitter_create_service.cmd")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/emitter_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/emitter_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/emitter_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/emitter_restart_service.cmd")
 
 	# ipt gateway
 	configure_file (
@@ -969,16 +971,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/gateway_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/gateway_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/gateway_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/gateway_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/gateway_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/gateway_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/gateway_restart_service.cmd")
 
 	# ipt master
 	configure_file (
@@ -986,16 +988,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/ipt_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/ipt_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/ipt_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/ipt_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/ipt_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/ipt_restart_service.cmd")
 
 	# ipt store
 	configure_file (
@@ -1003,16 +1005,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/store_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/store_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/store_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/store_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/store_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/store_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/store_restart_service.cmd")
 
 	# lora
 	configure_file (
@@ -1020,16 +1022,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/lora_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/lora_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/lora_create_service.cmd")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/lora_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/lora_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/lora_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/lora_restart_service.cmd")
 
 	# master
 	configure_file (
@@ -1037,16 +1039,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/master_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/master_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/master_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/master_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/master_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/master_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/master_restart_service.cmd")
 
 	# modem
 	configure_file (
@@ -1054,16 +1056,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/modem_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/modem_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/modem_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/modem_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/modem_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/modem_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/modem_restart_service.cmd")
 
 	# mqtt
 	configure_file (
@@ -1071,16 +1073,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/mqtt_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/mqtt_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/mqtt_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/mqtt_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/mqtt_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/mqtt_restart_service.cmd")
 
 	# setup
 	configure_file (
@@ -1088,16 +1090,16 @@ else()
 		  "${PROJECT_BINARY_DIR}/setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup_create_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/setup_create_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/setup_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup_delete_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/setup_delete_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/setup_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup_restart_service.bat.in"
-		  "${PROJECT_BINARY_DIR}/setup_restart_service.bat")
+		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/setup_restart_service.cmd")
 
 endif(UNIX)
 
