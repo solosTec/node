@@ -9,6 +9,7 @@
 #define NODE_LIB_HTTPS_SRV_WEBSOCKET_HPP
 
 #include <smf/https/srv/https.h>
+#include <NODE_project_info.h>
 #include <cyng/vm/generator.h>
 #include <cyng/json.h>
 #include <boost/beast/websocket.hpp>

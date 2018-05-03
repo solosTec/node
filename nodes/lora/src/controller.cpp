@@ -234,7 +234,7 @@ namespace node
 		, std::string const& o
 		, std::string const& cn)
 	{
-		::OPENSSL_init_ssl(0, NULL);
+        //::OPENSSL_init_ssl(0, NULL);
 
 		cyng::crypto::EVP_KEY_ptr pkey(cyng::crypto::generate_key(), ::EVP_PKEY_free);
 		if (!pkey)
