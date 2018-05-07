@@ -47,8 +47,11 @@ namespace node
 		, db_(db)
 		, vm_(mux.get_io_service(), stag)
 		, parser_([this](cyng::vector_t&& prg) {
-			CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
-			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+			CYNG_LOG_INFO(logger_, prg.size() 
+				<< " instructions received (including "
+				<< cyng::op_counter(prg, cyng::code::INVOKE)
+				<< " invoke(s))");
+			CYNG_LOG_TRACE(logger_, "exec: " << cyng::io::to_str(prg));
 			vm_.async_run(std::move(prg));
 		})
 		, account_(account)
@@ -168,7 +171,7 @@ namespace node
 		auto session_ref = cyng::object_cast<session>(frame.at(0));
 
 		//	remove all client sessions of this node
-		db_.access([&](cyng::store::table* tbl_session)->void {
+		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection)->void {
 			cyng::table::key_list_t pks;
 			tbl_session->loop([&](cyng::table::record const& rec) -> bool {
 
@@ -184,11 +187,32 @@ namespace node
 				if (local_peer && (local_peer->vm_.tag() == ctx.tag()))
 				{
 					pks.push_back(rec.key());
-					if (remote_peer && (local_peer->hash() != remote_peer->hash()))
+					if (remote_peer)
 					{
+						//	remote connection
+						auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+
 						//
-						//	ToDo: close connection
+						//	close connection
 						//
+						if (local_peer->hash() != remote_peer->hash())
+						{
+
+							ctx.attach(cyng::generate_invoke("log.msg.warning"
+								, "close distinct connection to "
+								, rtag));
+							cyng::param_map_t options;
+							options["origin-tag"] = cyng::make_object(tag);		//	send no response to this session
+							options["local-peer"] = cyng::make_object(tag);		//	and this peer
+							options["local-connect"] = cyng::make_object(true);
+							//	shutdown mode
+							remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, true, options, cyng::param_map_t()));
+						}
+
+						//
+						//	remove from table
+						//
+						connection_erase(tbl_connection, cyng::table::key_generator(tag, rtag), tag);
 					}
 				}
 
@@ -202,7 +226,8 @@ namespace node
 			ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", pks.size()));
 			cyng::erase(tbl_session, pks, ctx.tag());
 
-		}, cyng::store::write_access("*Session"));
+		}	, cyng::store::write_access("*Session")
+			, cyng::store::write_access("*Connection"));
 
 		//
 		//	cluster table
@@ -370,6 +395,8 @@ namespace node
 		if ((account == account_) && (pwd == pwd_))
 		{
 			CYNG_LOG_INFO(logger_, "cluster member "
+				<< ctx.tag()
+				<< " - "
 				<< node_class
 				<< '@'
 				<< ep
@@ -393,11 +420,6 @@ namespace node
 			group_ = group;
 
 			//
-			//	send reply
-			//
-			ctx.attach(reply(ts, true));
-
-			//
 			//	insert into cluster table
 			//
 			std::chrono::microseconds ping = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - ts);
@@ -409,10 +431,18 @@ namespace node
 				, cyng::invoke("push.session")
 				, ep
 				, pid));
+
+			//
+			//	send reply
+			//
+			ctx.attach(reply(ts, true));
+
 		}
 		else
 		{
 			CYNG_LOG_WARNING(logger_, "cluster member login failed: " 
+				<< ctx.tag()
+				<< " - "
 				<< account
 				<< ':'
 				<< pwd);
@@ -635,7 +665,7 @@ namespace node
 
 		ctx.attach(cyng::generate_invoke("log.msg.info", "bus.req.subscribe", std::get<0>(tpl), std::get<1>(tpl)));
 
-		db_.access([&](cyng::store::table* tbl)->void {
+		db_.access([&](cyng::store::table const* tbl)->void {
 
 			CYNG_LOG_INFO(logger_, tbl->meta().get_name() << "->size(" << tbl->size() << ")");
 			tbl->loop([&](cyng::table::record const& rec) -> bool {
@@ -651,6 +681,9 @@ namespace node
 				return true;
 			});
 
+		}, cyng::store::read_access(std::get<0>(tpl)));
+
+		db_.access([&](cyng::store::table* tbl)->void {
 			//
 			//	One set of callbacks for multiple tables.
 			//	Store connections array for clean disconnect
@@ -661,8 +694,8 @@ namespace node
 					, std::bind(&session::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 					, std::bind(&session::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 					, std::bind(&session::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)));
-
 		}, cyng::store::write_access(std::get<0>(tpl)));
+
 	}
 
 	void session::sig_ins(cyng::store::table const* tbl
@@ -671,13 +704,36 @@ namespace node
 		, std::uint64_t gen
 		, boost::uuids::uuid source)
 	{
-		vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.ins", source, tbl->meta().get_name()));
+#ifdef __DEBUG
+		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
+		{
+			vm_.async_run(cyng::generate_invoke("log.msg.debug"	
+				, "sig.ins"
+				, source
+				, tbl->meta().get_name()
+				, ((source != vm_.tag()) ? "req" : "res")
+				, key
+				, data
+			));
+		}
+		else
+		{
+			vm_.async_run(cyng::generate_invoke("log.msg.debug"
+				, "sig.ins"
+				, source
+				, tbl->meta().get_name()
+				, ((source != vm_.tag()) ? "req" : "res")));
+		}
+#else
+		//vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.ins", source, tbl->meta().get_name()));
+#endif
 
 		//
 		//	don't send data back to sender
 		//
 		if (source != vm_.tag())
 		{
+			//	forward request
 			vm_.async_run(bus_req_db_insert(tbl->meta().get_name()
 				, key
 				, data
@@ -686,10 +742,11 @@ namespace node
 		}
 		else
 		{
-			vm_.async_run(bus_res_db_insert(tbl->meta().get_name()
-				, key
-				, data
-				, gen));
+			//	send response
+			//vm_.async_run(bus_res_db_insert(tbl->meta().get_name()
+			//	, key
+			//	, data
+			//	, gen));
 		}
 	}
 
@@ -760,15 +817,18 @@ namespace node
 	cyng::vector_t session::reply(std::chrono::system_clock::time_point ts, bool success)
 	{
 		cyng::vector_t prg;
-		return prg	<< cyng::generate_invoke_unwinded("stream.serialize"
-			, success
-			, cyng::code::IDENT
-			, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)
-			, ts	//	timestamp of sender
-			, std::chrono::system_clock::now()
-			, cyng::invoke_remote("bus.res.login"))
+		prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.res.login"
+				, success
+				, cyng::code::IDENT
+				, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)
+				, ts	//	timestamp of sender
+				, std::chrono::system_clock::now()));
+		prg
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
+		CYNG_LOG_TRACE(logger_, "reply: " << cyng::io::to_str(prg));
+		return prg;
 	}
 
 
@@ -1148,23 +1208,12 @@ namespace node
 				tbl_session->modify(rec_target.key(), cyng::param_factory("sx", static_cast<std::uint64_t>(sx + std::get<3>(tpl))), std::get<2>(tpl));
 			}
 
-			cyng::table::record rec_conn = tbl_connection->lookup(cyng::table::key_generator(std::get<0>(tpl), std::get<1>(tpl)));
+			cyng::table::record rec_conn = connection_lookup(tbl_connection, cyng::table::key_generator(std::get<0>(tpl), std::get<1>(tpl)));
 			if (!rec_conn.empty())
 			{
 				const std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_conn["throughput"], 0u);
 				tbl_connection->modify(rec_conn.key(), cyng::param_factory("throughput", static_cast<std::uint64_t>(throughput + std::get<3>(tpl))), std::get<2>(tpl));
 			}
-			else
-			{
-				rec_conn = tbl_connection->lookup(cyng::table::key_generator(std::get<1>(tpl), std::get<0>(tpl)));
-				if (!rec_conn.empty())
-				{
-					const std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_conn["throughput"], 0u);
-					tbl_connection->modify(rec_conn.key(), cyng::param_factory("throughput", static_cast<std::uint64_t>(throughput + std::get<3>(tpl))), std::get<2>(tpl));
-				}
-			}
-
-
 		}	, cyng::store::write_access("*Session")
 			, cyng::store::write_access("*Connection"));
 

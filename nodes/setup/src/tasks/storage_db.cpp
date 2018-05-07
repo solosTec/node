@@ -179,6 +179,12 @@ namespace node
 		auto pos = meta_map_.find(name);
 		if (pos != meta_map_.end())
 		{
+			//
+			//	test consistency
+			//
+			BOOST_ASSERT_MSG(pos->second->check_key(key), "invalid key");
+			BOOST_ASSERT_MSG(pos->second->size() == (key.size() + data.size() + 1), "invalid key or data");
+
 			auto s = pool_.get_session();
 			cyng::table::meta_table_ptr meta = (*pos).second;
 			cyng::sql::command cmd(meta, s.get_dialect());
@@ -188,7 +194,13 @@ namespace node
 
 			auto stmt = s.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);
+
+			//
+			//	test 
+			//
 			BOOST_ASSERT(r.second);
+			BOOST_ASSERT_MSG(r.first == pos->second->size(), "invalid key or data");
+
 
 			if (boost::algorithm::equals(name, "TDevice"))
 			{
@@ -196,9 +208,9 @@ namespace node
 				//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
 				//	bind parameters
 				//	INSERT INTO TDevice (pk, gen, name, pwd, number, descr, id, vFirmware, enabled, creationTime, query) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-				BOOST_ASSERT(r.first == 11);	//	11 parameters to bind
-				BOOST_ASSERT_MSG(key.size() == 1, "wrong TDevice key size");
-				BOOST_ASSERT_MSG(data.size() == 9, "wrong TDevice data size");
+				//BOOST_ASSERT(r.first == 11);	//	11 parameters to bind
+				//BOOST_ASSERT_MSG(key.size() == 1, "wrong TDevice key size");
+				//BOOST_ASSERT_MSG(data.size() == 9, "wrong TDevice data size");
 				stmt->push(key.at(0), 36)	//	pk
 					.push(cyng::make_object(gen), 0)	//	generation
 					.push(data.at(0), 128)	//	name

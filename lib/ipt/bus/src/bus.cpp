@@ -40,6 +40,7 @@ namespace node
 			}, sk)
 			, serializer_(socket_, vm_, sk)
 			, model_(model)
+			, watchdog_(0)
 			, state_(STATE_INITIAL_)
 		{
 			//
@@ -139,6 +140,16 @@ namespace node
 			return state_ == STATE_AUTHORIZED_;
 		}
 
+		bool bus::has_watchdog() const
+		{
+			return watchdog_ != 0u;
+		}
+
+		std::uint16_t bus::get_watchdog() const
+		{
+			return watchdog_;
+		}
+
 		void bus::do_read()
 		{
             //
@@ -198,7 +209,7 @@ namespace node
 			//	same for public and scrambled
 			//
 			const auto res = make_login_response(cyng::value_cast(frame.at(1), response_type(0)));
-			const std::uint16_t watchdog = cyng::value_cast(frame.at(2), std::uint16_t(23));
+			watchdog_ = cyng::value_cast(frame.at(2), std::uint16_t(23));
 			const std::string redirect = cyng::value_cast<std::string>(frame.at(3), "");
 
 			if (scrambled)
@@ -218,12 +229,13 @@ namespace node
 				//
 				//	slot [0]
 				//
-				mux_.send(task_, 0, cyng::tuple_factory(watchdog, redirect));
+				mux_.send(task_, 0, cyng::tuple_factory(watchdog_, redirect));
 
 			}
 			else
 			{
 				state_ = STATE_ERROR_;
+				watchdog_ = 0u;
                 ctx.attach(cyng::generate_invoke("log.msg.warning", "login failed"));
 
 				//

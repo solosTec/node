@@ -139,7 +139,7 @@ namespace node
 			return response(code::CTRL_RES_LOGIN_PUBLIC, 0, code);
 		}
 
-		response make_CTRL_RES_LOGOUT(sequence_type seq, response_type code)
+		response make_ctrl_res_logout(sequence_type seq, response_type code)
 		{
 			return response(code::CTRL_RES_LOGOUT, seq, code);
 		}
@@ -148,52 +148,52 @@ namespace node
 		{
 			return response(code::MAINTENANCE_RESPONSE, seq, code);
 		}
-		response make_TP_RES_OPEN_PUSH_CHANNEL(sequence_type seq, response_type code)
+		response make_tp_res_open_push_channel(sequence_type seq, response_type code)
 		{
 			return response(code::TP_RES_OPEN_PUSH_CHANNEL, seq, code);
 		}
 
-		response make_TP_RES_CLOSE_PUSH_CHANNEL(sequence_type seq, response_type code)
+		response make_tp_res_close_push_channel(sequence_type seq, response_type code)
 		{
 			return response(code::TP_RES_CLOSE_PUSH_CHANNEL, seq, code);
 		}
 
-		response make_TP_RES_PUSHDATA_TRANSFER(sequence_type seq, response_type code)
+		response make_tp_res_pushdata_transfer(sequence_type seq, response_type code)
 		{
 			return response(code::TP_RES_PUSHDATA_TRANSFER, seq, code);
 		}
 
-		response make_push_CTRL_RES_REGISTER_TARGET(sequence_type seq, response_type code)
+		response make_push_ctrl_res_register_target(sequence_type seq, response_type code)
 		{
 			return response(code::CTRL_RES_REGISTER_TARGET, seq, code);
 		}
 
-		response make_push_CTRL_RES_DEREGISTER_TARGET(sequence_type seq, response_type code)
+		response make_push_ctrl_res_deregister_target(sequence_type seq, response_type code)
 		{
 			return response(code::CTRL_RES_DEREGISTER_TARGET, seq, code);
 		}
 
-		response make_TP_RES_OPEN_CONNECTION(sequence_type seq, response_type code)
+		response make_tp_res_open_connection(sequence_type seq, response_type code)
 		{
 			return response(code::TP_RES_OPEN_CONNECTION, seq, code);
 		}
 
-		response make_TP_RES_CLOSE_CONNECTION(sequence_type seq, response_type code)
+		response make_tp_res_close_connection(sequence_type seq, response_type code)
 		{
 			return response(code::TP_RES_CLOSE_CONNECTION, seq, code);
 		}
 
-		response make_APP_RES_NETWORK_STATUS(sequence_type seq, response_type code)
+		response make_app_res_network_status(sequence_type seq, response_type code)
 		{
 			return response(code::APP_RES_NETWORK_STATUS, seq, code);
 		}
 
-		response make_APP_RES_IP_STATISTICS(sequence_type seq, response_type code)
+		response make_app_res_ip_statistics(sequence_type seq, response_type code)
 		{
 			return response(code::APP_RES_IP_STATISTICS, seq, code);
 		}
 
-		response make_APP_RES_PUSH_TARGET_NAMELIST(sequence_type seq, response_type code)
+		response make_app_res_push_target_namelist(sequence_type seq, response_type code)
 		{
 			return response(code::APP_RES_PUSH_TARGET_NAMELIST, seq, code);
 		}

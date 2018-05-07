@@ -109,6 +109,11 @@ namespace node
 			//CYNG_LOG_INFO(logger_, tbl->meta().get_name() << "->size(" << tbl->size() << ")");
 			tbl->loop([this, tbl](cyng::table::record const& rec) -> bool {
 
+#ifdef _DEBUG
+				BOOST_ASSERT_MSG(tbl->meta().check_key(rec.key()), "invalid key");
+				BOOST_ASSERT_MSG((tbl->meta().size() == (rec.key().size() + rec.data().size())), "invalid key or data");
+#endif
+
 				//
 				//	upload	
 				//

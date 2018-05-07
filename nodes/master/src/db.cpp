@@ -12,7 +12,9 @@
 #include <cyng/intrinsics/traits/tag.hpp>
 #include <cyng/intrinsics/traits.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/nil_generator.hpp>
 #include <boost/process/environment.hpp>
+#include <algorithm>
 
 namespace node 
 {
@@ -370,6 +372,29 @@ namespace node
 			tbl->clear(tag);
 		}
 	}
+
+	cyng::table::record connection_lookup(cyng::store::table* tbl, cyng::table::key_type&& key)
+	{
+		cyng::table::record rec = tbl->lookup(key);
+		if (!rec.empty())
+		{
+			return rec;
+		}
+		std::reverse(key.begin(), key.end());
+		return tbl->lookup(key);
+
+		//
+		//	implementation note: C++20 will provide reverse_copy<>().
+		//
+	}
+
+	bool connection_erase(cyng::store::table* tbl, cyng::table::key_type&& key, boost::uuids::uuid tag)
+	{
+		if (tbl->erase(key, tag))	return true;
+		std::reverse(key.begin(), key.end());
+		return tbl->erase(key, tag);
+	}
+
 
 }
 

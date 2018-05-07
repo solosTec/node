@@ -6,7 +6,8 @@
  */ 
 
 #include "controller.h"
-#include "tasks/network.h"
+#include "tasks/sender.h"
+#include "tasks/receiver.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>
@@ -38,7 +39,7 @@ namespace node
 	//
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	void join_network(cyng::async::mux&, cyng::logging::log_ptr, cyng::vector_t const&);
+	void boot_up(cyng::async::mux&, cyng::logging::log_ptr, cyng::vector_t const&, cyng::tuple_t const&);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 		: pool_size_(pool_size)
@@ -148,6 +149,14 @@ namespace node
 			const boost::filesystem::path pwd = boost::filesystem::current_path();
 			boost::uuids::random_generator rgen;
 
+			//
+			//	reconnect to master on different times
+			//
+			boost::random::mt19937 rng_;
+			rng_.seed(std::time(0));
+			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
+
+
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 				, cyng::param_factory("log-level", "INFO")
@@ -160,18 +169,18 @@ namespace node
 						cyng::param_factory("service", "26862"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", true),
-						cyng::param_factory("monitor", 57)),	//	seconds
+						cyng::param_factory("monitor", monitor_dist(rng_))),	//	seconds
 					cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "26863"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", false),
-						cyng::param_factory("monitor", 57))
+						cyng::param_factory("monitor", monitor_dist(rng_)))
 					}))
 				//	generate a data set
 				, cyng::param_factory("stress", cyng::tuple_factory(
-						cyng::param_factory("config", (pwd / "ipt-stress.xml").string()),
-						cyng::param_factory("max-count", 0),
+						//cyng::param_factory("config", (pwd / "ipt-stress.xml").string()),
+						cyng::param_factory("max-count", 4),	//	x 2
 						cyng::param_factory("auto-generate", false)
 						)
 					)
@@ -289,10 +298,11 @@ namespace node
 #endif
 
 		//
-		//	connect to cluster
+		//	boot up test
 		//
-		cyng::vector_t tmp;
-		join_network(mux, logger, cyng::value_cast(dom.get("ipt"), tmp));
+		cyng::vector_t tmp_ipt;
+		cyng::tuple_t tmp_stress;
+		boot_up(mux, logger, cyng::value_cast(dom.get("ipt"), tmp_ipt), cyng::value_cast(dom.get("stress"), tmp_stress));
 
 		//
 		//	wait for system signals
@@ -302,13 +312,13 @@ namespace node
 		//
 		//	close acceptor
 		//
-		CYNG_LOG_INFO(logger, "close acceptor");
+		//CYNG_LOG_INFO(logger, "close acceptor");
 		//srv.close();
 
 		//
 		//	stop all connections
 		//
-		CYNG_LOG_INFO(logger, "stop all connections");
+		//CYNG_LOG_INFO(logger, "stop all connections");
 
 		//
 		//	stop all tasks
@@ -344,14 +354,62 @@ namespace node
 	}
 
 
-	void join_network(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::vector_t const& cfg)
+	void boot_up(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::vector_t const& cfg_ipt, cyng::tuple_t const& cfg_stress)
 	{
-		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg.size());
+		auto dom = cyng::make_reader(cfg_stress);
+		auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
+		CYNG_LOG_INFO(logger, "boot up " << count * 2 << " tasks");
 
-		cyng::async::start_task_delayed<ipt::network>(mux
-			, std::chrono::seconds(1)
-			, logger
-			, ipt::load_cluster_cfg(cfg));
+		ipt::master_config_t cfg = ipt::load_cluster_cfg(cfg_ipt);
+		BOOST_ASSERT_MSG(!cfg.empty(), "no IP-T configuration available");
+		std::stringstream ss;
+		ss.fill('0');
+		for (std::size_t idx = 0u; idx < count; idx++)
+		{
+			ss.str("");
+			ss
+				<< "sender-"
+				<< std::setw(4)
+				<< idx;
 
+			std::for_each(cfg.begin(), cfg.end(), [&](ipt::master_record& rec) {
+				const_cast<std::string&>(rec.account_) = ss.str();
+				const_cast<std::string&>(rec.pwd_) = ss.str();
+			});
+
+			auto sender = cyng::async::start_task_delayed<ipt::sender>(mux
+				, std::chrono::milliseconds(idx * 10)
+				, logger
+				, cfg);
+
+			if (sender.second)
+			{
+				ss.str("");
+				ss
+					<< "receiver-"
+					<< std::setw(4)
+					<< idx;
+
+				std::for_each(cfg.begin(), cfg.end(), [&](ipt::master_record& rec) {
+					const_cast<std::string&>(rec.account_) = ss.str();
+					const_cast<std::string&>(rec.pwd_) = ss.str();
+				});
+
+				auto receiver = cyng::async::start_task_delayed<ipt::receiver>(mux
+					, std::chrono::milliseconds(idx * 20)
+					, logger
+					, cfg
+					, sender.first);
+				if (!receiver.second)
+				{
+					CYNG_LOG_FATAL(logger, "could not start IP-T receiver #" << idx);
+				}
+
+			}
+			else
+			{
+				CYNG_LOG_FATAL(logger, "could not start IP-T sender #" << idx);
+			}
+		}
 	}
 }

@@ -28,8 +28,10 @@ set (node_ipt_stress_info
 )
 
 set (node_ipt_stress_tasks
-	nodes/ipt/stress/src/tasks/network.h
-	nodes/ipt/stress/src/tasks/network.cpp
+	nodes/ipt/stress/src/tasks/sender.h
+	nodes/ipt/stress/src/tasks/sender.cpp
+	nodes/ipt/stress/src/tasks/receiver.h
+	nodes/ipt/stress/src/tasks/receiver.cpp
 )
 
 set (node_ipt_stress_res

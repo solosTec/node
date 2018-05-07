@@ -387,14 +387,7 @@ namespace node
 					//
 					//	close open connection
 					//
-					if (tbl_connection->exist(cyng::table::key_generator(tag, rtag)))
-					{
-						tbl_connection->erase(cyng::table::key_generator(tag, rtag), tag);
-					}
-					else if(tbl_connection->exist(cyng::table::key_generator(rtag, tag)))
-					{
-						tbl_connection->erase(cyng::table::key_generator(rtag, tag), tag);
-					}
+					connection_erase(tbl_connection, cyng::table::key_generator(tag, rtag), tag);
 				}
 
 				//
@@ -678,7 +671,7 @@ namespace node
 					if (!tbl_connection->insert(cyng::table::key_generator(tag, rtag)
 						, cyng::table::data_generator(caller_rec["name"]	//	caller
 							, callee_rec["name"]	//	callee
-							, local	// local/distinguied
+							, local	// local/distinguished
 							, caller_rec["layer"]	//	protocol layer of caller
 							, callee_rec["layer"]	//	protocol layer of callee
 							, 0u	//	data throughput
@@ -819,10 +812,7 @@ namespace node
 					//
 					//	remove connection record
 					//
-					if (!tbl_connection->erase(cyng::table::key_generator(tag, rec["rtag"]), tag))
-					{
-						tbl_connection->erase(cyng::table::key_generator(rec["rtag"], tag), tag);
-					}
+					connection_erase(tbl_connection, cyng::table::key_generator(tag, rec["rtag"]), tag);
 				}
 				else
 				{
@@ -936,7 +926,8 @@ namespace node
 				//
 				//	generate connection table key
 				//
-				cyng::table::record rec_conn = tbl_connection->lookup(cyng::table::key_generator(tag, link));
+				cyng::table::record rec_conn = connection_lookup(tbl_connection, cyng::table::key_generator(tag, link));
+				//cyng::table::record rec_conn = tbl_connection->lookup(cyng::table::key_generator(tag, link));
 				if (!rec_conn.empty())
 				{
 					//
@@ -944,18 +935,6 @@ namespace node
 					//
 					std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_link["throughput"], 0u);
 					tbl_connection->modify(rec_conn.key(), cyng::param_factory("throughput", static_cast<std::uint64_t>(throughput + size)), tag);
-				}
-				else
-				{
-					rec_conn = tbl_connection->lookup(cyng::table::key_generator(link, tag));
-					if (!rec_conn.empty())
-					{
-						//
-						//	update connection throughput
-						//
-						std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_link["throughput"], 0u);
-						tbl_connection->modify(rec_conn.key(), cyng::param_factory("throughput", static_cast<std::uint64_t>(throughput + size)), tag);
-					}
 				}
 			}
 			else

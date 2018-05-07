@@ -76,8 +76,7 @@ namespace node
 			{
 				if (!ec)
 				{
-					//CYNG_LOG_TRACE(logger_, bytes_transferred << " bytes read");
-					get_session()->vm_.async_run(cyng::generate_invoke("log.msg.trace", "cluster connection received", bytes_transferred, "bytes"));
+					//get_session()->vm_.async_run(cyng::generate_invoke("log.msg.trace", "cluster connection received", bytes_transferred, "bytes"));
 
 #ifdef SMF_IO_DEBUG
 					cyng::io::hex_dump hd;
@@ -86,7 +85,14 @@ namespace node
 					CYNG_LOG_TRACE(logger_, "cluster connection received " << ss.str());
 #endif
 
-					get_session()->parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
+					const std::size_t count = get_session()->parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
+					CYNG_LOG_TRACE(logger_, "cluster connection "
+						<< get_session()->vm_.tag()
+						<< " received "
+						<< bytes_transferred
+						<< " bytes -> "
+						<< count
+						<< " ops");
 					do_read();
 				}
 				else //if (ec != boost::asio::error::operation_aborted)

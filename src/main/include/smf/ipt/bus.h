@@ -44,6 +44,12 @@ namespace node
 			 */
 			bool is_online() const;
 
+			/**
+			 * @return true if watchdog is requested
+			 */
+			bool has_watchdog() const;
+			std::uint16_t get_watchdog() const;
+
 		private:
 			void do_read();
 
@@ -107,6 +113,11 @@ namespace node
 			 * device id - response device id request
 			 */
 			const std::string model_;
+
+			/** 
+			 * watchdog in minutes
+			 */
+			std::uint16_t watchdog_;
 
 			/**
 			 * session state

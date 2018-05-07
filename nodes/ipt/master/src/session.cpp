@@ -1165,7 +1165,7 @@ namespace node
 				//	hides outer variable dom
 				//
 				auto dom = cyng::make_reader(std::get<3>(tpl));
-				BOOST_ASSERT(!connect_state_.connected_local_);
+				BOOST_ASSERT_MSG(!connect_state_.connected_local_, "already connected");
 				connect_state_.connected_local_ = cyng::value_cast(dom.get("local-connect"), false);
 			}
 			else

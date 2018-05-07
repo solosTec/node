@@ -19,12 +19,14 @@ set (node_ipt_emitter_info
 	nodes/print_build_info.h
 	nodes/print_version_info.h
 	nodes/set_start_options.h
-	nodes/show_ip_address.h
+	nodes/show_ip_address.h	
+	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
+	nodes/write_pid.cpp
 )
 
 set (node_ipt_emitter_tasks

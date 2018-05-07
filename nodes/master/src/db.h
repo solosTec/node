@@ -33,6 +33,9 @@ namespace node
 		, cyng::logging::severity
 		, std::string const&
 		, boost::uuids::uuid tag);
+
+	cyng::table::record connection_lookup(cyng::store::table* tbl, cyng::table::key_type&& key);
+	bool connection_erase(cyng::store::table* tbl, cyng::table::key_type&& key, boost::uuids::uuid tag);
 }
 
 #endif

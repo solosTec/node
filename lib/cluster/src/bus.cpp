@@ -28,10 +28,13 @@ namespace node
 		, logger_(logger)
 		, task_(tsk)
 		, parser_([this](cyng::vector_t&& prg) {
-			CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
-#ifdef SMF_IO_DEBUG
-			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
-#endif
+			CYNG_LOG_INFO(logger_, prg.size()
+				<< " instructions received (including "
+				<< cyng::op_counter(prg, cyng::code::INVOKE)
+				<< " invoke(s))");
+//#ifdef SMF_IO_DEBUG
+			CYNG_LOG_TRACE(logger_, "exec: " << cyng::io::to_str(prg));
+//#endif
 			vm_.async_run(std::move(prg));
 	})
 		, serializer_(socket_, vm_)
@@ -72,6 +75,7 @@ namespace node
 		vm_.run(cyng::register_function("bus.res.login", 5, [this](cyng::context& ctx) {
 			const cyng::vector_t frame = ctx.get_frame();
 
+			//	[20,true,9a07da33-589f-442f-b927-f638531e41f3,0.4,2018-05-07 13:34:01.58677900,2018-05-07 13:34:01.68164700]
 			//	[true,435a75e4-b97d-4152-a9b7-cdc2e21e8599,0.2,2018-01-11 16:54:48.89934220,2018-01-11 16:54:48.91710660]
 			//std::cerr << cyng::io::to_str(frame.at(0)) << std::endl;
 			//std::cerr << cyng::io::to_str(frame.at(1)) << std::endl;
