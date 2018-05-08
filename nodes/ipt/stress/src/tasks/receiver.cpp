@@ -113,7 +113,8 @@ namespace node
 
 		cyng::continuation receiver::process(sequence_type seq, std::string const& number)
 		{
-			CYNG_LOG_TRACE(logger_, "incoming call " << +seq << ':' << number);
+			CYNG_LOG_TRACE(logger_, config_[master_].account_
+				<< " incoming call " << +seq << ':' << number);
 
 			//
 			//	accept incoming calls
@@ -136,7 +137,15 @@ namespace node
 
 		cyng::continuation receiver::process(cyng::buffer_t const& data)
 		{
-			CYNG_LOG_TRACE(logger_, "received " << std::string(data.begin(), data.end()));
+			CYNG_LOG_TRACE(logger_, config_[master_].account_
+				<< " received " 
+				<< std::string(data.begin(), data.end()))
+				;
+
+			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			bus_->vm_.async_run(cyng::generate_invoke("ipt.transfer.data", cyng::buffer_t({ 'p', 'i', 'n', 'g' })));
+			bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
@@ -193,6 +202,8 @@ namespace node
 			CYNG_LOG_INFO(logger_, "send public login request [ "
 				<< master_
 				<< " ] "
+				<< config_[master_].account_
+				<< '@'
 				<< config_[master_].host_
 				<< ':'
 				<< config_[master_].service_);
@@ -205,6 +216,8 @@ namespace node
 			CYNG_LOG_INFO(logger_, "send scrambled login request [ "
 				<< master_
 				<< " ] "
+				<< config_[master_].account_
+				<< '@'
 				<< config_[master_].host_
 				<< ':'
 				<< config_[master_].service_);

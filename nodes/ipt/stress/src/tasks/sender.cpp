@@ -141,8 +141,17 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		cyng::continuation sender::process(cyng::buffer_t const&)
+		cyng::continuation sender::process(cyng::buffer_t const& data)
 		{
+			CYNG_LOG_TRACE(logger_, config_[master_].account_
+				<< " received "
+				<< std::string(data.begin(), data.end()))
+				;
+
+			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			//bus_->vm_.async_run(cyng::generate_invoke("ipt.transfer.data", cyng::buffer_t({ 'p', 'o', 'n', 'g' })));
+			//bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
@@ -212,6 +221,8 @@ namespace node
 			CYNG_LOG_INFO(logger_, "send public login request [ "
 				<< master_
 				<< " ] "
+				<< config_[master_].account_
+				<< '@'
 				<< config_[master_].host_
 				<< ':'
 				<< config_[master_].service_);
@@ -224,6 +235,8 @@ namespace node
 			CYNG_LOG_INFO(logger_, "send scrambled login request [ "
 				<< master_
 				<< " ] "
+				<< config_[master_].account_
+				<< '@'
 				<< config_[master_].host_
 				<< ':'
 				<< config_[master_].service_);

@@ -310,17 +310,6 @@ namespace node
 		const bool shutdown = wait(logger);
 
 		//
-		//	close acceptor
-		//
-		//CYNG_LOG_INFO(logger, "close acceptor");
-		//srv.close();
-
-		//
-		//	stop all connections
-		//
-		//CYNG_LOG_INFO(logger, "stop all connections");
-
-		//
 		//	stop all tasks
 		//
 		CYNG_LOG_INFO(logger, "stop all tasks");
@@ -378,7 +367,7 @@ namespace node
 			});
 
 			auto sender = cyng::async::start_task_delayed<ipt::sender>(mux
-				, std::chrono::milliseconds(idx * 10)
+				, std::chrono::seconds(idx + 1)
 				, logger
 				, cfg);
 
@@ -396,7 +385,7 @@ namespace node
 				});
 
 				auto receiver = cyng::async::start_task_delayed<ipt::receiver>(mux
-					, std::chrono::milliseconds(idx * 20)
+					, std::chrono::seconds(idx + 2)
 					, logger
 					, cfg
 					, sender.first);
@@ -404,7 +393,6 @@ namespace node
 				{
 					CYNG_LOG_FATAL(logger, "could not start IP-T receiver #" << idx);
 				}
-
 			}
 			else
 			{
