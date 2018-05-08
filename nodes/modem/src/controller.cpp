@@ -18,7 +18,7 @@
 #include <cyng/dom/tree_walker.h>
 #include <cyng/async/task/task_builder.hpp>
 #if BOOST_OS_LINUX
-#include <cyng/sys/process.h>
+#include "../../write_pid.h"
 #endif
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -272,18 +272,7 @@ namespace node
 
 #if BOOST_OS_LINUX
         const boost::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
-        const auto pid = (log_dir / boost::uuids::to_string(tag)).replace_extension(".pid").string();
-        std::fstream fout(pid, std::ios::trunc | std::ios::out);
-        if (fout.is_open())
-        {
-            CYNG_LOG_INFO(logger, "write PID file: " << pid);
-            fout << cyng::sys::get_process_id();
-            fout.close();
-        }
-        else
-        {
-            CYNG_LOG_ERROR(logger, "could not write PID file: " << pid);
-        }
+        write_pid(log_dir, tag);
 #endif
 
 		//
