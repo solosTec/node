@@ -452,6 +452,9 @@ add_library(smf_http_srv ${GLOBAL_LIBRARY_TYPE} ${http_srv_lib})
 #
 include (lib/https/server/lib.cmake)
 add_library(smf_https_srv ${GLOBAL_LIBRARY_TYPE} ${https_srv_lib})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+        target_link_libraries(smf_https_srv cyng_crypto cyng_io cyng_vm)
+endif()
 
 #
 # generic HTTP server
