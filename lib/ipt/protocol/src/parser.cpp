@@ -42,7 +42,8 @@ namespace node
 
 		parser::~parser()
 		{
-			cb_.swap(parser_callback());
+            parser_callback pcb;
+            cb_.swap(pcb);
 		}
 
 		void parser::set_sk(scramble_key const& sk)
