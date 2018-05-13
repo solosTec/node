@@ -704,7 +704,7 @@ namespace node
 		, std::uint64_t gen
 		, boost::uuids::uuid source)
 	{
-#ifdef __DEBUG
+#ifdef _DEBUG
 		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
 		{
 			vm_.async_run(cyng::generate_invoke("log.msg.debug"	
@@ -725,7 +725,7 @@ namespace node
 				, ((source != vm_.tag()) ? "req" : "res")));
 		}
 #else
-		//vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.ins", source, tbl->meta().get_name()));
+		vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.ins", source, tbl->meta().get_name()));
 #endif
 
 		//
@@ -743,10 +743,10 @@ namespace node
 		else
 		{
 			//	send response
-			//vm_.async_run(bus_res_db_insert(tbl->meta().get_name()
-			//	, key
-			//	, data
-			//	, gen));
+			vm_.async_run(bus_res_db_insert(tbl->meta().get_name()
+				, key
+				, data
+				, gen));
 		}
 	}
 
