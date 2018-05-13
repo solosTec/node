@@ -367,7 +367,7 @@ namespace node
 			});
 
 			auto sender = cyng::async::start_task_delayed<ipt::sender>(mux
-				, std::chrono::seconds(idx + 1)
+				, std::chrono::milliseconds(idx + 1)
 				, logger
 				, cfg);
 
@@ -385,7 +385,7 @@ namespace node
 				});
 
 				auto receiver = cyng::async::start_task_delayed<ipt::receiver>(mux
-					, std::chrono::seconds(idx + 2)
+					, std::chrono::milliseconds(idx + 2)
 					, logger
 					, cfg
 					, sender.first);

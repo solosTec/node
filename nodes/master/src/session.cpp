@@ -47,11 +47,11 @@ namespace node
 		, db_(db)
 		, vm_(mux.get_io_service(), stag)
 		, parser_([this](cyng::vector_t&& prg) {
-			CYNG_LOG_INFO(logger_, prg.size() 
+			CYNG_LOG_TRACE(logger_, prg.size() 
 				<< " instructions received (including "
 				<< cyng::op_counter(prg, cyng::code::INVOKE)
 				<< " invoke(s))");
-			CYNG_LOG_TRACE(logger_, "exec: " << cyng::io::to_str(prg));
+			CYNG_LOG_DEBUG(logger_, "exec: " << cyng::io::to_str(prg));
 			vm_.async_run(std::move(prg));
 		})
 		, account_(account)

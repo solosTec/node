@@ -20,7 +20,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/vector_cast.hpp>
-#include <cyng/crypto/x509.h>
+//#include <cyng/crypto/x509.h>
 
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
@@ -230,35 +230,35 @@ namespace node
 		return EXIT_FAILURE;
 	}
 
-	int controller::generate_x509(std::string const& c
-		, std::string const& l
-		, std::string const& o
-		, std::string const& cn)
-	{
-		//::OPENSSL_init_ssl(0, NULL);
+	//int controller::generate_x509(std::string const& c
+	//	, std::string const& l
+	//	, std::string const& o
+	//	, std::string const& cn)
+	//{
+	//	//::OPENSSL_init_ssl(0, NULL);
 
-		cyng::crypto::EVP_KEY_ptr pkey(cyng::crypto::generate_key(), ::EVP_PKEY_free);
-		if (!pkey)
-		{
-			return EXIT_FAILURE;
-		}
-		cyng::crypto::X509_ptr x509(cyng::crypto::generate_x509(pkey.get()
-			, 31536000L
-			, c.c_str()
-			//, l.c_str()
-			, o.c_str()
-			, cn.c_str()), ::X509_free);
-		if (!x509)
-		{
-			return EXIT_FAILURE;
-		}
+	//	cyng::crypto::EVP_KEY_ptr pkey(cyng::crypto::generate_key(), ::EVP_PKEY_free);
+	//	if (!pkey)
+	//	{
+	//		return EXIT_FAILURE;
+	//	}
+	//	cyng::crypto::X509_ptr x509(cyng::crypto::generate_x509(pkey.get()
+	//		, 31536000L
+	//		, c.c_str()
+	//		//, l.c_str()
+	//		, o.c_str()
+	//		, cn.c_str()), ::X509_free);
+	//	if (!x509)
+	//	{
+	//		return EXIT_FAILURE;
+	//	}
 
-		std::cout << "Writing key and certificate to disk..." << std::endl;
-		bool ret = cyng::crypto::write_to_disk(pkey.get(), x509.get());
-		return (ret)
-			? EXIT_SUCCESS
-			: EXIT_FAILURE;
-	}
+	//	std::cout << "Writing key and certificate to disk..." << std::endl;
+	//	bool ret = cyng::crypto::write_to_disk(pkey.get(), x509.get());
+	//	return (ret)
+	//		? EXIT_SUCCESS
+	//		: EXIT_FAILURE;
+	//}
 
 #if BOOST_OS_WINDOWS
 	int controller::run_as_service(controller&& ctrl, std::string const& srv_name)
