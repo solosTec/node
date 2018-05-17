@@ -489,17 +489,40 @@ namespace node
 				if (boost::algorithm::equals(number, dev_number))
 				{
 					//
-					//	device found
-					//
-					CYNG_LOG_TRACE(logger_, "matching device " 
-						<< cyng::io::to_str(rec.key())
-						<< cyng::io::to_str(rec.data()));
-
-					//
 					//	search session of this device
 					//
 					const auto dev_tag = cyng::value_cast(rec["pk"], boost::uuids::nil_uuid());
 					options["device-name"] = rec["name"];
+
+					//
+					//	do not call if device is not enabled
+					//
+					const auto enabled = cyng::value_cast(rec["enabled"], false);
+
+					if (enabled)
+					{
+						//
+						//	device found
+						//
+						CYNG_LOG_TRACE(logger_, "matching device "
+							<< cyng::io::to_str(rec.key())
+							<< cyng::io::to_str(rec.data()));
+					}
+					else
+					{
+						//
+						//	device found but disabled
+						//
+						CYNG_LOG_WARNING(logger_, "matching device "
+							<< cyng::io::to_str(rec.key())
+							<< cyng::io::to_str(rec.data())
+							<< " is not enabled");
+
+						//
+						//	abort loop
+						//
+						return false;
+					}
 
 					tbl_session->loop([&](cyng::table::record const& rec) -> bool {
 
@@ -1425,27 +1448,73 @@ namespace node
 			if (!session_rec.empty())
 			{
 				//
-				//	session found - insert new target
+				//	test for duplicate target names of same session
 				//
-				auto dom = cyng::make_reader(bag);
-				const std::uint16_t p_size = cyng::value_cast<std::uint16_t>(dom.get("pSize"), 0xffff);
-				const std::uint8_t w_size = cyng::value_cast<std::uint8_t>(dom.get("wSize"), 1);
+				bool already_registered{ false };
+				tbl_target->loop([&](cyng::table::record const& rec)->bool {
 
-				success = tbl_target->insert(cyng::table::key_generator(channel)
-					, cyng::table::data_generator(tag
-						, self
-						, target
-						, session_rec["device"]	//	owner of target
-						, session_rec["name"]	//	name of target owner
-						, p_size
-						, w_size
-						, std::chrono::system_clock::now()	//	reg-time
-						, static_cast<std::uint64_t>(0))
-					, 1, tag);
+					auto target_name = cyng::value_cast<std::string>(rec["name"], "");
+					if (boost::algorithm::equals(target_name, target))
+					{
+						//
+						//	test if this session already registered a target with the same name
+						//	[uuid] owner session - primary key 
+						//
+						const boost::uuids::uuid rec_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+						if (tag == rec_tag)
+						{
+							//
+							//	duplicate target name
+							//
+							CYNG_LOG_WARNING(logger_, "client.req.register.push.target - session "
+								<< tag
+								<< " already registered "
+								<< target_name);
+
+							already_registered = true;
+
+							//	stop loop
+							return false;
+						}
+						else
+						{
+							CYNG_LOG_TRACE(logger_, "client.req.register.push.target - session "
+								<< rec_tag
+								<< " registered "
+								<< target_name
+								<< " too");
+						}
+					}
+
+					//	continue
+					return true;
+				});
+
+				if (!already_registered)
+				{
+					//
+					//	session found - insert new target
+					//
+					auto dom = cyng::make_reader(bag);
+					const std::uint16_t p_size = cyng::value_cast<std::uint16_t>(dom.get("pSize"), 0xffff);
+					const std::uint8_t w_size = cyng::value_cast<std::uint8_t>(dom.get("wSize"), 1);
+
+					success = tbl_target->insert(cyng::table::key_generator(channel)
+						, cyng::table::data_generator(tag
+							, self
+							, target
+							, session_rec["device"]	//	owner of target
+							, session_rec["name"]	//	name of target owner
+							, p_size
+							, w_size
+							, std::chrono::system_clock::now()	//	reg-time
+							, static_cast<std::uint64_t>(0))
+						, 1, tag);
+				}
 			}
 			else
 			{
-				CYNG_LOG_FATAL(logger_, "client.req.open.push.channel - session "
+				CYNG_LOG_FATAL(logger_, "client.req.register.push.target - session "
 					<< tag
 					<< " not found");
 			}
@@ -1465,6 +1534,74 @@ namespace node
 			, options
 			, bag);
 	}
+
+	cyng::vector_t client::req_deregister_push_target(boost::uuids::uuid tag, //	remote tag
+		boost::uuids::uuid peer,	//	remote peer
+		std::uint64_t seq,
+		std::string target,
+		cyng::param_map_t const& bag,
+		boost::uuids::uuid self)
+	{
+		cyng::param_map_t options;
+
+		bool success{ false };
+		db_.access([&](const cyng::store::table* tbl_session, cyng::store::table* tbl_target)->void {
+
+			auto session_rec = tbl_session->lookup(cyng::table::key_generator(tag));
+			if (!session_rec.empty())
+			{
+				cyng::table::key_type target_key;
+				tbl_target->loop([&](cyng::table::record const& rec)->bool {
+
+					auto target_name = cyng::value_cast<std::string>(rec["name"], "");
+					const boost::uuids::uuid owner_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+					if (boost::algorithm::equals(target_name, target) && (owner_tag == tag))
+					{
+						//
+						//	target and owner found
+						//
+						CYNG_LOG_INFO(logger_, "client.req.deregister.push.target - "
+							<< target_name
+							<< " of owner  "
+							<< tag);
+
+						target_key = rec.key();
+
+						//	stop loop
+						return false;
+					}
+
+					//	continue
+					return true;
+				});
+
+				if (!target_key.empty())
+				{
+					success = tbl_target->erase(target_key, tag);
+				}
+			}
+			else
+			{
+				CYNG_LOG_FATAL(logger_, "client.req.register.push.target - session "
+					<< tag
+					<< " not found");
+			}
+		}	, cyng::store::read_access("*Session")
+			, cyng::store::write_access("*Target"));
+
+		options["response-code"] = cyng::make_object<std::uint8_t>(success
+			? ipt::ctrl_res_deregister_target_policy::OK
+			: ipt::ctrl_res_deregister_target_policy::GENERAL_ERROR);
+
+		return client_res_deregister_push_target(tag
+			, seq
+			, success
+			, target		//	channel
+			, options
+			, bag);
+
+	}
+
 
 	cyng::vector_t client::update_attr(boost::uuids::uuid tag,
 		boost::uuids::uuid peer,

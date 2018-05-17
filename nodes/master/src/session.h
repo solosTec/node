@@ -88,6 +88,7 @@ namespace node
 		void client_req_open_push_channel(cyng::context& ctx);
 		void client_req_close_push_channel(cyng::context& ctx);
 		void client_req_register_push_target(cyng::context& ctx);
+		void client_req_deregister_push_target(cyng::context& ctx);
 		void client_req_open_connection(cyng::context& ctx);
 		void client_res_open_connection(cyng::context& ctx);
 		void client_req_close_connection(cyng::context& ctx);

@@ -99,6 +99,7 @@ namespace node
 		vm_.run(cyng::register_function("client.req.open.push.channel", 10, std::bind(&session::client_req_open_push_channel, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.close.push.channel", 5, std::bind(&session::client_req_close_push_channel, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.register.push.target", 5, std::bind(&session::client_req_register_push_target, this, std::placeholders::_1)));
+		vm_.run(cyng::register_function("client.req.deregister.push.target", 5, std::bind(&session::client_req_deregister_push_target, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.open.connection", 6, std::bind(&session::client_req_open_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.res.open.connection", 4, std::bind(&session::client_res_open_connection, this, std::placeholders::_1)));
 		vm_.run(cyng::register_function("client.req.close.connection", 5, std::bind(&session::client_req_close_connection, this, std::placeholders::_1)));
@@ -989,6 +990,36 @@ namespace node
 		>(frame);
 
 		ctx.attach(client_.req_register_push_target(std::get<0>(tpl)
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl)
+			, std::get<4>(tpl)
+			, ctx.tag()));
+
+	}
+
+	void session::client_req_deregister_push_target(cyng::context& ctx)
+	{
+		//	[4e5dc7e8-37e7-4267-a3b6-d68a9425816f,76fbb814-3e74-419b-8d43-2b7b59dab7f1,67,power@solostec,%(("seq":2),("tp-layer":ipt))]
+		//
+		//	* remote client tag
+		//	* remote peer
+		//	* bus sequence
+		//	* target
+		//	* bag
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		ctx.run(cyng::generate_invoke("log.msg.info", "client.req.deregister.push.target", frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] remote client tag
+			boost::uuids::uuid,		//	[1] peer tag
+			std::uint64_t,			//	[2] sequence number
+			std::string,			//	[3] target name
+			cyng::param_map_t		//	[4] bag
+		>(frame);
+
+		ctx.attach(client_.req_deregister_push_target(std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)

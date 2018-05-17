@@ -84,7 +84,7 @@ namespace node
 			//
 			vm.run(cyng::register_function("req.login.public", 2, std::bind(&serializer::req_login_public, this, std::placeholders::_1)));
 			vm.run(cyng::register_function("req.login.scrambled", 3, std::bind(&serializer::req_login_scrambled, this, std::placeholders::_1)));
-			vm.run(cyng::register_function("res.login.public", 2, std::bind(&serializer::res_login_public, this, std::placeholders::_1)));
+			vm.run(cyng::register_function("res.login.public", 3, std::bind(&serializer::res_login_public, this, std::placeholders::_1)));
 			vm.run(cyng::register_function("res.login.scrambled", 3, std::bind(&serializer::res_login_scrambled, this, std::placeholders::_1)));
 
 			vm.run(cyng::register_function("req.open.push.channel", 1, std::bind(&serializer::req_open_push_channel, this, std::placeholders::_1)));

@@ -29,7 +29,8 @@ namespace node
 			using msg_3 = std::tuple<sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t>;
 			using msg_4 = std::tuple<sequence_type, bool, std::uint32_t>;
 			using msg_5 = std::tuple<cyng::buffer_t>;
-			using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5>;
+			using msg_6 = std::tuple<sequence_type, bool, std::string>;
+			using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6>;
 
 		public:
 			network(cyng::async::base_task* bt
@@ -80,10 +81,19 @@ namespace node
 			 */
 			cyng::continuation process(cyng::buffer_t const& data);
 
+			/**
+			 * @brief slot [6]
+			 *
+			 * deregister target response
+			 */
+			cyng::continuation process(sequence_type, bool, std::string const&);
+
 		private:
 			void task_resume(cyng::context& ctx);
 			void reconfigure(cyng::context& ctx);
+			void insert_rel(cyng::context& ctx);
 			void reconfigure_impl();
+			void register_targets();
 
 		private:
 			cyng::async::base_task& base_;
@@ -101,6 +111,12 @@ namespace node
 			 * read SML tree and generate commands
 			 */
 			node::sml::sml_reader reader_;
+
+			/**
+			 * maintain relation between sequence and registered target
+			 */
+			std::map<sequence_type, std::string>	seq_target_map_;
+			std::map<std::uint32_t, std::string>	channel_target_map_;
 
 		};
 	}

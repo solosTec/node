@@ -217,8 +217,9 @@
                 connection.onmessage = function (e) {
                     $('#ws-activity-symbol').show();
                     console.log('incoming data: ' + e.data);
-                    //console.log(Object.keys(e.data).length + ' bytes');
-                    totalIO += Object.keys(e.data).length;
+                    //console.log(e.data.length + ' bytes');
+                    totalIO += e.data.length;
+                    //totalIO += Object.keys(e.data).length;
                     var obj = JSON.parse(e.data);
                     if (obj.cmd != null) {
                         if (obj.cmd == 'insert') {
@@ -262,7 +263,8 @@
                             table_ses.clear().draw(false);
                         }
                    }
-                    $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
+                    $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
+                    //$('#ws-activity-text').html(e.data.length + ' bytes received');
                     $('#ws-activity-symbol').fadeOut();
                 };
 
@@ -305,7 +307,7 @@
                 }
 
                 if (n == 0) return '-';
-                return (n.toFixed(n >= 10 || l < 1 ? 0 : 1) + ' ' + units[l]);
+                return (n.toFixed(l < 1 ? 0 : 1) + ' ' + units[l]);
             }
         </script>
 

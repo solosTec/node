@@ -94,13 +94,14 @@ namespace node
 			vm_.run(cyng::register_function("ipt.res.login.scrambled", 4, std::bind(&bus::ipt_res_login, this, std::placeholders::_1, true)));
 
 			vm_.run(cyng::register_function("ipt.res.register.push.target", 4, std::bind(&bus::ipt_res_register_push_target, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("ipt.res.deregister.push.target", 4, std::bind(&bus::ipt_res_deregister_push_target, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("ipt.req.transmit.data", 1, std::bind(&bus::ipt_req_transmit_data, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("ipt.req.open.connection", 1, std::bind(&bus::ipt_req_open_connection, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("ipt.req.close.connection", 1, std::bind(&bus::ipt_req_close_connection, this, std::placeholders::_1)));
 
 			vm_.run(cyng::register_function("ipt.req.protocol.version", 2, std::bind(&bus::ipt_req_protocol_version, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("ipt.req.software.version", 2, std::bind(&bus::ipt_req_software_version, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.device.id", 0, std::bind(&bus::ipt_req_device_id, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("ipt.req.device.id", 2, std::bind(&bus::ipt_req_device_id, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("ipt.req.net.stat", 2, std::bind(&bus::ipt_req_net_stat, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("ipt.req.ip.statistics", 2, std::bind(&bus::ipt_req_ip_statistics, this, std::placeholders::_1)));
 			vm_.run(cyng::register_function("ipt.req.dev.auth", 2, std::bind(&bus::ipt_req_dev_auth, this, std::placeholders::_1)));
@@ -265,9 +266,24 @@ namespace node
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.register.push.target", ctrl_res_register_target_policy::get_response_name(res)));
 			}
-			mux_.send(task_, 4, cyng::tuple_factory(frame.at(1), ctrl_res_register_target_policy::is_success(res), frame.at(3)));
-
+			mux_.post(task_, 4, cyng::tuple_factory(frame.at(1), ctrl_res_register_target_policy::is_success(res), frame.at(3)));
 		}
+
+		void bus::ipt_res_deregister_push_target(cyng::context& ctx)
+		{
+			//	[aab5764f-fc49-4bdf-ac6b-5abab1491846,2,1,power@solostec]
+			//
+			//	* session tag
+			//	* seq
+			//	* response
+			//	* target name
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.res.deregister.push.target", frame));
+			const response_type res = cyng::value_cast<response_type>(frame.at(2), 0);
+			mux_.post(task_, 6, cyng::tuple_factory(frame.at(1), ctrl_res_deregister_target_policy::is_success(res), frame.at(3)));
+		}
+
 
 		void bus::ipt_req_transmit_data(cyng::context& ctx)
 		{

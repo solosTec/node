@@ -239,7 +239,8 @@
                 $('#ws-activity-symbol').show();
                 console.log('socket data: ' + e.data);
                 //console.log(Object.keys(e.data).length + ' bytes');
-                totalIO += Object.keys(e.data).length;
+                totalIO += e.data.length;
+                //totalIO += Object.keys(e.data).length;
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
                     if (obj.cmd == 'update') {
@@ -309,7 +310,8 @@
                         table_cluster.clear().draw(false);
                     }
               }
-                $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
+                $('#ws-activity-text').html(e.data.length + ' bytes received');
+                //$('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
                 $('#ws-activity-symbol').fadeOut();
             };
 
@@ -334,10 +336,10 @@
                     //console.log('update: ' + d[1]);
                     if (d[1] != 'master') {
                         d[8] = d[8] + 5;
-                        if (d[8] < 20) {
+                        if (d[8] < 60) {
                             $(node).css('color', 'green');
                         }
-                        else if (d[8] < 40) {
+                        else if (d[8] < 70) {
                             $(node).css('color', 'orange');
                         }
                         else {

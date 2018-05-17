@@ -183,7 +183,8 @@
                     $('#ws-activity-symbol').show();
                     console.log('incoming data: ' + e.data);
                     //console.log(Object.keys(e.data).length + ' bytes');
-                    totalIO += Object.keys(e.data).length;
+                    totalIO += e.data.length;
+                    //totalIO += Object.keys(e.data).length;
                     var obj = JSON.parse(e.data);
                     if (obj.cmd != null) {
                         if (obj.cmd == 'insert') {
@@ -221,7 +222,8 @@
                             table_conn.clear().draw(false);
                         }
                    }
-                    $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
+                    //$('#ws-activity-text').html(e.data.length + ' bytes received');
+                    $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
                     $('#ws-activity-symbol').fadeOut();
                 };
 

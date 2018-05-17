@@ -188,7 +188,7 @@ namespace node
 		}
 
 		if (!db.create_table(cyng::table::make_meta_table<1, 9>("*Target", { "channel"	//	[uint32] - target id: primary key
-			, "tag"		//	[uuid] owner session - primary key 
+			, "tag"		//	[uuid] owner session
 			, "peer"	//	[uuid] peer of owner
 			, "name"	//	[string] target name
 			, "device"	//	[uuid] - owner of target

@@ -55,6 +55,7 @@ namespace node
 
 			void ipt_res_login(cyng::context& ctx, bool scrambled);
 			void ipt_res_register_push_target(cyng::context& ctx);
+			void ipt_res_deregister_push_target(cyng::context& ctx);
 			void ipt_req_transmit_data(cyng::context& ctx);
 			void ipt_req_open_connection(cyng::context& ctx);
 			void ipt_req_close_connection(cyng::context& ctx);

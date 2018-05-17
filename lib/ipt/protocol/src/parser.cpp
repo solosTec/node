@@ -851,7 +851,7 @@ namespace node
 			parser_.input_.put(c_);
 			if (req.pos_ == size(parser_.header_))
 			{
-				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.deregister.target"
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.deregister.push.target"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_string);	//target name
@@ -866,7 +866,7 @@ namespace node
 			parser_.input_.put(c_);
 			if (res.pos_ == size(parser_.header_))
 			{
-				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.deregister.target"
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.deregister.push.target"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8		//	response

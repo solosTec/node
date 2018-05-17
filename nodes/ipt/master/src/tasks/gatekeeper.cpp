@@ -67,6 +67,7 @@ namespace node
 		//
 		//	terminate task
 		//
+		auto uptime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_);
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -74,7 +75,8 @@ namespace node
 			<< "> is stopped: "
 			<< tag_
 			<< " after "
-			<< cyng::io::to_str(cyng::make_object(std::chrono::system_clock::now() - start_)));
+			<< uptime.count()
+			<< " milliseconds");
 
 	}
 

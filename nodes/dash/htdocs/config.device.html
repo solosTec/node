@@ -40,8 +40,8 @@
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item active" href="config.device.html">Devices</a>
                         <a class="dropdown-item" href="config.gateway.html">Gateway</a>
-<!--                        <a class="dropdown-item" href="config.meter.html">Meter</a>-->
-<!--                        <a class="dropdown-item" href="config.user.html">User</a>-->
+                        <!--                        <a class="dropdown-item" href="config.meter.html">Meter</a>-->
+                        <!--                        <a class="dropdown-item" href="config.user.html">User</a>-->
                     </div>
                 </li>
 
@@ -53,7 +53,7 @@
                         <a class="dropdown-item" href="status.session.html">Sessions</a>
                         <a class="dropdown-item" href="status.targets.html">Targets</a>
                         <a class="dropdown-item" href="status.connections.html">Connections</a>
-<!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
+                        <!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
                     </div>
                 </li>
 
@@ -250,7 +250,8 @@
                 $('#ws-activity-symbol').show();
                 console.log('incoming data: ' + e.data);
                 //console.log(Object.keys(e.data).length + ' bytes');
-                totalIO += Object.keys(e.data).length;
+                //totalIO += Object.keys(e.data).length;  //    doesn't work for IE11: argument is not an object
+                totalIO += e.data.length;
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
                     if (obj.cmd == 'insert') {
@@ -263,8 +264,8 @@
                         var vFirmware = $('<div/>').text(obj.rec.data.vFirmware).html();
                         var age = new Date(obj.rec.data.creationTime.substring(0, 19));
                         var rowNode = table_dev.row.add([obj.rec.key.pk, name, msisdn, pwd, descr, id, vFirmware, obj.rec.data.enabled, age]).draw().node();
-                        //  {"cmd": "insert", "channel": "config.device", 
-                        //  "rec": { "key": { "pk":"e92d32cf-5387-48ff-ad8b-29507a033075" }, 
+                        //  {"cmd": "insert", "channel": "config.device",
+                        //  "rec": { "key": { "pk":"e92d32cf-5387-48ff-ad8b-29507a033075" },
                         //  "data": { "creationTime":"2018-02-04 15:31:30.00000000", "descr":"comment #4", "enabled":true, "id":"ID", "msisdn":"1004", "name":"device-4", "pwd":"secret", "query":6, "vFirmware":"v4" }, "gen": 4}}
                         if (!obj.rec.data.enabled) {
                             $(rowNode).css('color', 'LightGray');
@@ -316,7 +317,8 @@
                         table_dev.clear().draw(false);
                     }
                 }
-                $('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
+                $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
+                //$('#ws-activity-text').html(e.data.length + ' bytes received');
                 $('#ws-activity-symbol').fadeOut();
             };
 
@@ -390,5 +392,22 @@
         });
 
     </script>
+
+    <script>
+            const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+            function format_bytes(x) {
+
+                let l = 0, n = parseInt(x, 10) || 0;
+
+                while (n >= 1024 && ++l) {
+                    n = n / 1024;
+                }
+
+                if (n == 0) return '-';
+                return (n.toFixed(l < 1 ? 0 : 1) + ' ' + units[l]);
+            }
+    </script>
+
 </body>
 </html>

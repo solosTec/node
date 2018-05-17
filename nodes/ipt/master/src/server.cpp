@@ -63,6 +63,8 @@ namespace node
 			bus_->vm_.run(cyng::register_function("client.req.close", 4, std::bind(&server::client_req_close_impl, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1)));
+			bus_->vm_.register_function("client.res.deregister.push.target", 6, std::bind(&server::client_res_deregister_push_target, this, std::placeholders::_1));
+
 			bus_->vm_.run(cyng::register_function("client.res.open.connection", 6, std::bind(&server::client_res_open_connection, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.req.open.connection.forward", 6, std::bind(&server::client_req_open_connection_forward, this, std::placeholders::_1)));
 			bus_->vm_.run(cyng::register_function("client.res.open.connection.forward", 6, std::bind(&server::client_res_open_connection_forward, this, std::placeholders::_1)));
@@ -525,6 +527,11 @@ namespace node
 		void server::client_res_register_push_target(cyng::context& ctx)
 		{
 			propagate("client.res.register.push.target", ctx.get_frame());
+		}
+
+		void server::client_res_deregister_push_target(cyng::context& ctx)
+		{
+			propagate("client.res.deregister.push.target", ctx.get_frame());
 		}
 
 		void server::client_res_open_connection(cyng::context& ctx)

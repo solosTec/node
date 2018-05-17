@@ -75,13 +75,6 @@ namespace node
 					//
 					//	initialize logger
 					//
-#if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("ipt:master", true);
-#else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "ipt:master");
-#endif
-
-					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
 
 					//
 					//	start application
@@ -89,20 +82,46 @@ namespace node
 					cyng::vector_t vec;
 					vec = cyng::value_cast(config, vec);
 					BOOST_ASSERT_MSG(!vec.empty(), "invalid configuration");
-					shutdown = vec.empty()
-						? true
-						: start(mux, logger, vec[0]);
 
-					//
-					//	print uptime
-					//
-					const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-					CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+					if (vec.empty())
+					{
+						std::cerr
+							<< "use option -D to generate a configuration file"
+							<< std::endl;
+						shutdown = true;
+					}
+					else
+					{
+#if BOOST_OS_LINUX
+						auto logger = cyng::logging::make_sys_logger("ipt:master", true);
+#else
+						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
+						auto dom = cyng::make_reader(vec[0]);
+						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
+
+						auto logger = (console)
+							? cyng::logging::make_console_logger(mux.get_io_service(), "ipt:master")
+							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "ipt-master.log"))
+							;
+#endif
+
+						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
+
+						shutdown = start(mux, logger, vec[0]);
+
+						//
+						//	print uptime
+						//
+						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
+						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+
+					}
+
 				}
 				else
 				{
 					// 	CYNG_LOG_FATAL(logger, "no configuration data");
-					std::cout
+					std::cerr
 						<< "use option -D to generate a configuration file"
 						<< std::endl;
 
@@ -263,7 +282,6 @@ namespace node
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
-		//cyng::select_reader<cyng::object>::type dom(cfg);
 		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator rgen;

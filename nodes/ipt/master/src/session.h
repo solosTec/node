@@ -46,6 +46,7 @@ namespace node
 			virtual ~session();
 
 			void stop();
+			void stop(boost::system::error_code ec);
 
 		private:
 			void ipt_req_login_public(cyng::context& ctx);
@@ -69,14 +70,22 @@ namespace node
 			void ipt_req_transfer_pushdata(cyng::context& ctx);
 			void ipt_res_close_connection(cyng::context& ctx);
 			void ipt_req_transmit_data(cyng::context& ctx);
+			void ipt_req_watchdog(cyng::context& ctx);
 			void ipt_res_watchdog(cyng::context& ctx);
 
+			void ipt_req_protocol_version(cyng::context& ctx);
 			void ipt_res_protocol_version(cyng::context& ctx);
+			void ipt_req_software_version(cyng::context& ctx);
 			void ipt_res_software_version(cyng::context& ctx);
 			void ipt_res_dev_id(cyng::context& ctx);
+			void ipt_req_device_id(cyng::context& ctx);
+			void ipt_req_net_stat(cyng::context& ctx);
 			void ipt_res_network_stat(cyng::context& ctx);
+			void ipt_req_ip_statistics(cyng::context& ctx);
 			void ipt_res_ip_statistics(cyng::context& ctx);
+			void ipt_req_dev_auth(cyng::context& ctx);
 			void ipt_res_dev_auth(cyng::context& ctx);
+			void ipt_req_dev_time(cyng::context& ctx);
 			void ipt_res_dev_time(cyng::context& ctx);
 
 			void ipt_unknown_cmd(cyng::context& ctx);
@@ -95,6 +104,8 @@ namespace node
 
 			void ipt_req_register_push_target(cyng::context& ctx);
 			void client_res_register_push_target(cyng::context& ctx);
+			void ipt_req_deregister_push_target(cyng::context& ctx);
+			void client_res_deregister_push_target(cyng::context& ctx);
 
 			void client_res_open_connection(cyng::context& ctx);
 

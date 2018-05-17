@@ -197,10 +197,21 @@ namespace node
 		, std::string const& target
 		, cyng::param_map_t const& bag);
 
+	cyng::vector_t client_req_deregister_push_target(boost::uuids::uuid tag
+		, std::string const& target
+		, cyng::param_map_t const& bag);
+
 	cyng::vector_t client_res_register_push_target(boost::uuids::uuid tag
 		, std::uint64_t seq
 		, bool success
 		, std::uint32_t channel
+		, cyng::param_map_t const& options
+		, cyng::param_map_t const& bag);
+
+	cyng::vector_t client_res_deregister_push_target(boost::uuids::uuid tag
+		, std::uint64_t seq
+		, bool success
+		, std::string const& target
 		, cyng::param_map_t const& options
 		, cyng::param_map_t const& bag);
 

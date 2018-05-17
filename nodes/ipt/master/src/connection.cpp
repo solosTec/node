@@ -101,8 +101,8 @@ namespace node
 				//}
 				else
 				{
-                    CYNG_LOG_WARNING(logger_, "ipt connection closed <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
-                    session_.stop();
+                    //CYNG_LOG_WARNING(logger_, "ipt connection closed <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
+                    session_.stop(ec);
                     session_.bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", tag_, cyng::invoke("push.connection"), ec));
 				}
 			});

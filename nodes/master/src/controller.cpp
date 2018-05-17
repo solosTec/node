@@ -72,44 +72,47 @@ namespace node
 				if (config)
 				{
 					//
-					//	initialize logger
-					//
-#if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("master", true);
-// 					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "master");
-#else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "master");
-#endif
-				
-					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
-					
-					//
 					//	start application
 					//
-					cyng::vector_t tmp;
-					tmp = cyng::value_cast(config, tmp);
-					if (!tmp.empty())
+					cyng::vector_t vec;
+					vec = cyng::value_cast(config, vec);
+					if (!vec.empty())
 					{
-						shutdown = start(mux, logger, tmp.at(0));
+#if BOOST_OS_LINUX
+						auto logger = cyng::logging::make_sys_logger("smf:master", true);
+#else
+						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
+						auto dom = cyng::make_reader(vec[0]);
+						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
+
+						auto logger = (console)
+							? cyng::logging::make_console_logger(mux.get_io_service(), "smf:master")
+							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "smf-master.log"))
+							;
+#endif
+
+						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
+
+						shutdown = start(mux, logger, vec.at(0));
+
+						//
+						//	print uptime
+						//
+						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
+						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+
 					}
 					else
 					{
-						CYNG_LOG_FATAL(logger, "config file " 
-							<< json_path_
-							<< " is empty - shutdown" );
+						std::cerr
+							<< "use option -D to generate a configuration file"
+							<< std::endl;
 
 						shutdown = true;
 					}
-					
-					//
-					//	print uptime
-					//
-					const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-					CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
 				}
 				else 
 				{
-// 					CYNG_LOG_FATAL(logger, "no configuration data");
 					std::cout
 						<< "use option -D to generate a configuration file"
 						<< std::endl;
@@ -123,7 +126,6 @@ namespace node
 				//
 				//	shutdown scheduler
 				//
-// 				CYNG_LOG_INFO(logger, "shutdown scheduler");	
 				mux.shutdown();
 			}
 			

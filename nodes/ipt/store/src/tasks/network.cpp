@@ -98,10 +98,6 @@ namespace node
 			}
 
 			//
-			//	register callbacks
-			//
-
-			//
 			//	register targets
 			//
 			register_targets();
@@ -198,6 +194,7 @@ namespace node
 						<< pos->second);
 
 					channel_target_map_.emplace(channel, pos->second);
+					seq_target_map_.erase(pos);
 				}
 			}
 

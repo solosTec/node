@@ -121,6 +121,13 @@ namespace node
 			cyng::param_map_t const&,
 			boost::uuids::uuid);	//	[5] local session tag
 
+		cyng::vector_t req_deregister_push_target(boost::uuids::uuid,		//	[0] remote client tag
+			boost::uuids::uuid,		//	[1] remote peer tag
+			std::uint64_t,			//	[2] sequence number
+			std::string,			//	[3] target name
+			cyng::param_map_t const&,
+			boost::uuids::uuid);	//	[5] local session tag
+
 		cyng::vector_t update_attr(boost::uuids::uuid,		//	[0] origin client tag
 			boost::uuids::uuid,		//	[1] peer tag
 			std::uint64_t,			//	[2] sequence number

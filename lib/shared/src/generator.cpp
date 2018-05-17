@@ -444,6 +444,23 @@ namespace node
 			;
 	}
 
+	cyng::vector_t client_req_deregister_push_target(boost::uuids::uuid tag
+		, std::string const& target
+		, cyng::param_map_t const& bag)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke("stream.serialize"
+			, cyng::generate_invoke_remote("client.req.deregister.push.target"
+				, tag
+				, cyng::code::IDENT
+				, cyng::invoke("bus.seq.next")
+				, target
+				, bag))
+			<< cyng::generate_invoke("stream.flush")
+			<< cyng::unwind_vec()
+			;
+	}
+
 	cyng::vector_t client_res_register_push_target(boost::uuids::uuid tag
 		, std::uint64_t seq
 		, bool success
@@ -459,6 +476,28 @@ namespace node
 				, seq
 				, success
 				, channel
+				, options
+				, bag))
+			<< cyng::generate_invoke("stream.flush")
+			<< cyng::unwind_vec()
+			;
+	}
+
+	cyng::vector_t client_res_deregister_push_target(boost::uuids::uuid tag
+		, std::uint64_t seq
+		, bool success
+		, std::string const& target
+		, cyng::param_map_t const& options
+		, cyng::param_map_t const& bag)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke("stream.serialize"
+			, cyng::generate_invoke_remote("client.res.deregister.push.target"
+				, tag
+				, cyng::code::IDENT
+				, seq
+				, success
+				, target
 				, options
 				, bag))
 			<< cyng::generate_invoke("stream.flush")
