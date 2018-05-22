@@ -95,6 +95,13 @@ namespace node
 			void reconfigure_impl();
 			void register_targets();
 
+			void sml_msg(cyng::context& ctx);
+			void sml_eom(cyng::context& ctx);
+
+			void sml_public_open_request(cyng::context& ctx);
+			void sml_public_close_request(cyng::context& ctx);
+			void sml_get_proc_parameter_request(cyng::context& ctx);
+
 		private:
 			cyng::async::base_task& base_;
 			bus::shared_type bus_;

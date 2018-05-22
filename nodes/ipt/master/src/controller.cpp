@@ -69,19 +69,13 @@ namespace node
 				//	read configuration file
 				//
 				cyng::object config = cyng::json::read_file(json_path_);
-
 				if (config)
 				{
-					//
-					//	initialize logger
-					//
-
 					//
 					//	start application
 					//
 					cyng::vector_t vec;
 					vec = cyng::value_cast(config, vec);
-					BOOST_ASSERT_MSG(!vec.empty(), "invalid configuration");
 
 					if (vec.empty())
 					{
@@ -92,6 +86,9 @@ namespace node
 					}
 					else
 					{
+						//
+						//	initialize logger
+						//
 #if BOOST_OS_LINUX
 						auto logger = cyng::logging::make_sys_logger("ipt:master", true);
 #else
@@ -107,6 +104,9 @@ namespace node
 
 						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
 
+						//
+						//	start
+						//
 						shutdown = start(mux, logger, vec[0]);
 
 						//

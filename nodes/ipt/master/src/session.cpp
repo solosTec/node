@@ -23,6 +23,10 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/nil_generator.hpp>
+#ifdef SMF_IO_LOG
+#include <cyng/io/hex_dump.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#endif
 
 namespace node 
 {
@@ -55,7 +59,10 @@ namespace node
 				, tag
 				, timeout_).first)
 			, connect_state_()
-		{
+#ifdef SMF_IO_LOG
+			, log_counter_(0)
+#endif
+			{
 			//
 			//	register logger domain
 			//
@@ -545,6 +552,32 @@ namespace node
 			if (bus_->is_online())
 			{
 				const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+				BOOST_ASSERT(tag == ctx.tag());
+
+#ifdef SMF_IO_LOG
+				std::stringstream ss;
+				ss
+					<< "ipt-rx-"
+					<< boost::uuids::to_string(tag) 
+					<< "-"
+					<< std::setw(4)
+					<< std::setfill('0')
+					<< std::dec
+					<< ++log_counter_
+					<< ".log"
+					;
+				const std::string file_name = ss.str();
+				std::ofstream of(file_name, std::ios::out | std::ios::app);
+				if (of.is_open())
+				{
+					cyng::io::hex_dump hd;
+					auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(1));
+					hd(of, ptr->begin(), ptr->end());
+
+					CYNG_LOG_TRACE(logger_, "write debug log " << file_name);
+					of.close();
+				}
+#endif
 
 				if (connect_state_.connected_local_)
 				{
@@ -569,11 +602,10 @@ namespace node
 		void session::client_req_transmit_data_forward(cyng::context& ctx)
 		{
 			//	[client.req.transmit.data.forward,
-			//	[812518c9-c532-413f-a1c8-6d4a73de35b9,95a4ccf9-1171-4ff0-ad64-d06cb74da24e,8,
+			//	[95a4ccf9-1171-4ff0-ad64-d06cb74da24e,8,
 			//	%(("tp-layer":ipt)),
 			//	1B1B1B1B01010101768106313830313330323133...0000001B1B1B1B1A0353AD]]
 			//
-			//	* [session tag] - removed
 			//	* peer
 			//	* cluster sequence
 			//	* bag
@@ -581,10 +613,34 @@ namespace node
 			//
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx.run(cyng::generate_invoke("log.msg.info", "client.req.transmit.data.forward", frame));
+		
+#ifdef SMF_IO_LOG
+			std::stringstream ss;
+			ss
+				<< "ipt-sx-"
+				<< boost::uuids::to_string(ctx.tag())
+				<< "-"
+				<< std::setw(4)
+				<< std::setfill('0')
+				<< std::dec
+				<< ++log_counter_
+				<< ".log"
+				;
+			const std::string file_name = ss.str();
+			std::ofstream of(file_name, std::ios::out | std::ios::app);
+			if (of.is_open())
+			{
+				cyng::io::hex_dump hd;
+				auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(3));
+				hd(of, ptr->begin(), ptr->end());
 
+				CYNG_LOG_TRACE(logger_, "write debug log " << file_name);
+				of.close();
+			}
+#endif
 			ctx.attach(cyng::generate_invoke("ipt.transfer.data", frame.at(3)));
 			ctx.attach(cyng::generate_invoke("stream.flush"));
-			
+
 		}
 
 		void session::ipt_res_watchdog(cyng::context& ctx)

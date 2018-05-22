@@ -39,8 +39,8 @@ namespace node
 			vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
 			//	sml parser
-			vm_.run(cyng::register_function("sml.msg", 1, std::bind(&session::sml_msg, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("sml.eom", 1, std::bind(&session::sml_eom, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("sml.msg", 2, std::bind(&session::sml_msg, this, std::placeholders::_1)));
+			vm_.run(cyng::register_function("sml.eom", 2, std::bind(&session::sml_eom, this, std::placeholders::_1)));
 
 			//	sml reader
 			vm_.run(cyng::register_function("sml.public.open.request", 8, std::bind(&session::sml_public_open_request, this, std::placeholders::_1)));
@@ -62,8 +62,7 @@ namespace node
 			//	print sml message number
 			//
 			const std::size_t idx = cyng::value_cast<std::size_t>(frame.at(1), 0);
-			CYNG_LOG_INFO(logger_, "XML processor sml.msg #"
-				<< idx);
+			CYNG_LOG_INFO(logger_, "XML processor sml.msg #" << idx);
 
 			//
 			//	get message body

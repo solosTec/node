@@ -140,6 +140,12 @@ namespace node
 			 * contains state of local connections
 			 */
 			connect_state	connect_state_;
+
+//#ifdef SMF_IO_LOG
+#ifdef _DEBUG
+
+			std::size_t log_counter_;
+#endif
 		};
 	}
 }

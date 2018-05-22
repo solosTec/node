@@ -32,6 +32,7 @@ namespace node
 			, parser_([this](cyng::vector_t&& prg) {
 				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+				bus_->vm_.async_run(std::move(prg));
 				//vm_.async_run(std::move(prg));
 			}, false)
 			, reader_()
@@ -51,6 +52,19 @@ namespace node
 			bus_->vm_.async_run(cyng::register_function("bus.reconfigure", 1, std::bind(&network::reconfigure, this, std::placeholders::_1)));
 			bus_->vm_.register_function("net.insert.rel", 1, std::bind(&network::insert_rel, this, std::placeholders::_1));
 
+			//
+			//	SML transport
+			//
+			bus_->vm_.register_function("sml.msg", 2, std::bind(&network::sml_msg, this, std::placeholders::_1));
+			bus_->vm_.register_function("sml.eom", 2, std::bind(&network::sml_eom, this, std::placeholders::_1));
+
+			//
+			//	SML data
+			//
+			bus_->vm_.register_function("sml.public.open.request", 8, std::bind(&network::sml_public_open_request, this, std::placeholders::_1));
+			bus_->vm_.register_function("sml.public.close.request", 3, std::bind(&network::sml_public_close_request, this, std::placeholders::_1));
+			bus_->vm_.register_function("sml.get.proc.parameter.request", 8, std::bind(&network::sml_get_proc_parameter_request, this, std::placeholders::_1));
+
 		}
 
 		void network::run()
@@ -60,7 +74,7 @@ namespace node
 				//
 				//	deregister target
 				//
-				bus_->vm_.async_run(cyng::generate_invoke("req.deregister.push.target", "DEMO"));
+				//bus_->vm_.async_run(cyng::generate_invoke("req.deregister.push.target", "DEMO"));
 
 				//
 				//	send watchdog response - without request
@@ -108,7 +122,7 @@ namespace node
 			//
 			//	register targets
 			//
-			register_targets();
+			//register_targets();
 
 			return cyng::continuation::TASK_CONTINUE;
 		}
@@ -158,7 +172,7 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		//	slot [4]
+		//	slot [4] - register target response
 		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
 		{
 			if (success)
@@ -302,6 +316,132 @@ namespace node
 				;
 
 			bus_->vm_.async_run(std::move(prg));
+
+		}
+
+		void network::sml_msg(cyng::context& ctx)
+		{
+			//	[{31383035323232323535353231383235322D31,0,0,{0100,{null,005056C00008,3230313830353232323235353532,0500153B02297E,6F70657261746F72,6F70657261746F72,null}},9c91},0]
+			//	[{31383035323232323535353231383235322D32,1,0,{0500,{0500153B02297E,6F70657261746F72,6F70657261746F72,{810060050000},null}},f8b5},1]
+			//	[{31383035323232323535353231383235322D33,2,0,{0500,{0500153B02297E,6F70657261746F72,6F70657261746F72,{8181C78201FF},null}},4d37},2]
+			//	[{31383035323232323535353231383235322D34,0,0,{0200,{null}},e6e8},3]
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+			const std::size_t idx = cyng::value_cast<std::size_t>(frame.at(1), 0);
+			//CYNG_LOG_TRACE(logger_, "sml.msg - " << cyng::io::to_str(frame));
+			CYNG_LOG_INFO(logger_, "sml.msg #" << idx);
+
+			//
+			//	get message body
+			//
+			cyng::tuple_t msg;
+			msg = cyng::value_cast(frame.at(0), msg);
+			CYNG_LOG_INFO(logger_, "sml.msg " << cyng::io::to_str(frame));
+
+			reader_.read(ctx, msg, idx);
+
+		}
+
+		void network::sml_eom(cyng::context& ctx)
+		{
+			//[4aa5,4]
+			//
+			//	* CRC
+			//	* message counter
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+			const std::size_t idx = cyng::value_cast<std::size_t>(frame.at(1), 0);
+			//CYNG_LOG_TRACE(logger_, "sml.eom - " << cyng::io::to_str(frame));
+			CYNG_LOG_INFO(logger_, "sml.eom #" << idx);
+			reader_.reset();
+
+		}
+
+		void network::sml_public_open_request(cyng::context& ctx)
+		{
+			//	[34481794-6866-4776-8789-6f914b4e34e7,180301091943374505-1,0,005056c00008,00:15:3b:02:23:b3,20180301092332,operator,operator]
+			//
+			//	* pk
+			//	* transaction id
+			//	* SML message id
+			//	* client ID - MAC from client
+			//	* server ID - target server/gateway
+			//	* request file id
+			//	* username
+			//	* password
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, "sml.public.open.request " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::uint64_t,		//	[2] SML message id
+				std::string,		//	[3] client ID
+				std::string,		//	[4] server ID
+				std::string,		//	[5] request file id
+				std::string,		//	[6] username
+				std::string			//	[7] password
+			>(frame);
+			CYNG_LOG_INFO(logger_, "sml.public.open.request - trx: "
+				<< std::get<1>(tpl)
+				<< ", msg id: "
+				<< std::get<2>(tpl)
+				<< ", client id: "
+				<< std::get<3>(tpl)
+				<< ", server id: "
+				<< std::get<4>(tpl)
+				<< ", file id: "
+				<< std::get<5>(tpl)
+				<< ", user: "
+				<< std::get<6>(tpl)
+				<< ", pwd: "
+				<< std::get<7>(tpl))
+				;
+
+			//
+			//	ToDo: generate public open response
+			//
+		}
+
+		void network::sml_public_close_request(cyng::context& ctx)
+		{
+			//	
+			//
+			//	* pk
+			//	* transaction id
+			//	* SML message id
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.public.close.request " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::string			//	[2] msg id
+			>(frame);
+			CYNG_LOG_INFO(logger_, "sml.public.close.request - trx: "
+				<< std::get<1>(tpl)
+				<< ", msg id: "
+				<< std::get<2>(tpl))
+				;
+		}
+
+		void network::sml_get_proc_parameter_request(cyng::context& ctx)
+		{
+			//	[b5cfc8a0-0bf4-4afe-9598-ded99f71469c,180301094328243436-3,2,05:00:15:3b:02:23:b3,operator,operator,81 81 c7 82 01 ff,null]
+			//	[50cfab74-eef0-4c92-89d4-46b28ab9da20,180522233943303816-2,1,00:15:3b:02:29:7e,operator,operator,81 00 60 05 00 00,null]
+			//
+			//	* pk
+			//	* transaction id
+			//	* SML message id
+			//	* server ID
+			//	* username
+			//	* password
+			//	* OBIS (requested parameter)
+			//	* attribute (should be null)
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.get.proc.parameter.request " << cyng::io::to_str(frame));
+
+			//CODE_ROOT_DEVICE_IDENT
 
 		}
 
