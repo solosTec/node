@@ -53,21 +53,21 @@ namespace node
 			 */
 			void reset();
 
-			void read(cyng::context&, cyng::tuple_t const&, std::size_t idx);
+			cyng::vector_t read(cyng::tuple_t const&, std::size_t idx);
 
 		private:
 			/**
 			 * read SML message.
 			 */
-			void read_msg(cyng::context&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator, std::size_t idx);
-			void read_body(cyng::context&, cyng::object, cyng::object);
-			void read_public_open_request(cyng::context&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_public_close_request(cyng::context&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_get_profile_list_response(cyng::context&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_get_proc_parameter_response(cyng::context&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_get_proc_parameter_request(cyng::context&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_attention_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t read_msg(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator, std::size_t idx);
+			cyng::vector_t read_body(cyng::object, cyng::object);
+			cyng::vector_t read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t read_public_close_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t read_get_profile_list_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t read_get_proc_parameter_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t read_get_proc_parameter_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t read_attention_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
 			void read_time(std::string const&, cyng::object);
 			std::vector<obis> read_param_tree_path(cyng::object);

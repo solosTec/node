@@ -66,6 +66,13 @@ namespace node
 			std::uint16_t	crc_;
 			std::uint8_t	data_[2];
 		};
+
+		/**
+		 * calculate the CRC16 value of the buffer and patch this values
+		 * on the CRC16 position.
+		 */
+		std::uint16_t sml_set_crc16(cyng::buffer_t& buffer);
+
 		
 	}	//	sml
 }	//	node

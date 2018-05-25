@@ -286,7 +286,8 @@ namespace node
 					, 0u	//	no clients yet
 					, std::chrono::microseconds(0)
 					, ep
-					, boost::this_process::get_id())
+					, boost::this_process::get_id()
+					, cyng::null())	//	no session instance
 				, 1
 				, tag);
 

@@ -73,6 +73,13 @@ namespace node
 			//std::cout << "write " << std::hex << (+tl) << std::endl;
 
 		}
+
+		std::ostream& serializer <cyng::eod>::write(std::ostream& os, cyng::eod v)
+		{
+			os.put(0x00);	//	EndOfMessage
+			return os;
+		}
+
 		std::ostream& serializer <bool> ::write(std::ostream& os, bool v)
 		{
 			os.put(0x42);	//	TL field
@@ -212,7 +219,7 @@ namespace node
 		std::ostream& serializer <cyng::buffer_t> ::write(std::ostream& os, cyng::buffer_t const& v)
 		{
 			//	length field
-			write_length_field(os, v.size(), 0x00);
+			write_length_field(os, v.size() + 1, 0x00);
 
 			//	data
 			os.write(v.data(), v.size());

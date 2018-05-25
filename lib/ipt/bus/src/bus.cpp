@@ -339,7 +339,7 @@ namespace node
 			case STATE_CONNECTED_:
 				state_ = STATE_AUTHORIZED_;
 				//	accept closing
-				//mux_.send(task_, 6, cyng::tuple_factory(frame.at(1), frame.at(2)));
+				//mux_.send(task_, 7, cyng::tuple_factory(frame.at(1), frame.at(2)));
 				break;
 			default:
 				break;
@@ -348,8 +348,8 @@ namespace node
 			//
 			//	accept request in every case
 			//
-			ctx.attach(cyng::generate_invoke("res.close.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED)));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.attach(cyng::generate_invoke("res.close.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED)))
+				.attach(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -357,9 +357,9 @@ namespace node
 		{
 			BOOST_ASSERT(vm_.tag() == ctx.tag());
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.protocol.version", frame));
-			ctx.attach(cyng::generate_invoke("res.protocol.version", frame.at(1), static_cast<std::uint8_t>(1)));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.protocol.version", frame))
+				.attach(cyng::generate_invoke("res.protocol.version", frame.at(1), static_cast<std::uint8_t>(1)))
+				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus::ipt_req_software_version(cyng::context& ctx)

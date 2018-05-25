@@ -71,7 +71,10 @@ namespace node
 			msg = cyng::value_cast(frame.at(0), msg);
 			CYNG_LOG_INFO(logger_, "sml.msg " << cyng::io::to_str(frame));
 
-			reader_.read(ctx, msg, idx);
+			//
+			//	add generated instruction vector
+			//
+			ctx.attach(reader_.read(msg, idx));
 		}
 
 
@@ -132,7 +135,7 @@ namespace node
 			//	* OBIS (requested parameter)
 			//	* attribute (should be null)
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "sml.get.proc.parameter.request " << cyng::io::to_str(frame));
+			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request " << cyng::io::to_str(frame));
 
 			//CODE_ROOT_DEVICE_IDENT
 

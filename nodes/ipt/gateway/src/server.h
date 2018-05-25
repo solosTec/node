@@ -10,7 +10,7 @@
 
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
-//#include <cyng/store/db.h>
+#include <cyng/intrinsics/mac.h>
 #include <boost/uuid/uuid.hpp>
 #include <unordered_map>
 
@@ -24,7 +24,9 @@ namespace node
 			, boost::uuids::uuid
 			, std::string account
 			, std::string pwd
-			, cyng::tuple_t cfg_session);
+			, std::string manufacturer
+			, std::string model
+			, cyng::mac48);
 
 		/**
 		 * start listening
@@ -54,6 +56,13 @@ namespace node
 		//	credentials
 		const std::string account_;
 		const std::string pwd_;
+
+		//
+		//	hardware
+		//
+		const std::string manufacturer_;
+		const std::string model_;
+		const cyng::buffer_t server_id_;
 
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor acceptor_;		

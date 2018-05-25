@@ -17,8 +17,16 @@ namespace node
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), b);
 			}
+			cyng::tuple_t factory_policy<const bool&>::create(bool b)
+			{
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), b);
+			}
 
 			cyng::tuple_t factory_policy<std::uint8_t>::create(std::uint8_t v)
+			{
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
+			}
+			cyng::tuple_t factory_policy<const std::uint8_t&>::create(std::uint8_t v)
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
 			}
@@ -27,8 +35,16 @@ namespace node
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
 			}
+			cyng::tuple_t factory_policy<const std::uint16_t&>::create(std::uint16_t v)
+			{
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
+			}
 
 			cyng::tuple_t factory_policy<std::uint32_t>::create(std::uint32_t v)
+			{
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
+			}
+			cyng::tuple_t factory_policy<const std::uint32_t&>::create(std::uint32_t v)
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
 			}
@@ -49,19 +65,42 @@ namespace node
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
 			}
+			cyng::tuple_t  factory_policy<const std::int32_t&>::create(std::int32_t v)
+			{
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
+			}
 			cyng::tuple_t factory_policy<std::int64_t>::create(std::int64_t v)
+			{
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
+			}
+			cyng::tuple_t factory_policy<const std::int64_t&>::create(std::int64_t v)
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
 			}
 			cyng::tuple_t factory_policy<std::chrono::system_clock::time_point>::create(std::chrono::system_clock::time_point v)
 			{
-				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), v);
+				//return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), std::chrono::system_clock::to_time_t(v));
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), make_timestamp(v));
+			}
+			cyng::tuple_t factory_policy<const std::chrono::system_clock::time_point&>::create(std::chrono::system_clock::time_point v)
+			{
+				//return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), std::chrono::system_clock::to_time_t(v));
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), make_timestamp(v));				
 			}
 			cyng::tuple_t factory_policy<cyng::buffer_t>::create(cyng::buffer_t&& v)
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), std::forward<cyng::buffer_t>(v));
 			}
+			cyng::tuple_t factory_policy<const cyng::buffer_t&>::create(const cyng::buffer_t& v)
+			{
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
+			}
 			cyng::tuple_t factory_policy<std::string>::create(std::string&& v)
+			{
+				//	convert to buffer_t
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), cyng::buffer_t(v.begin(), v.end()));
+			}
+			cyng::tuple_t factory_policy<const std::string&>::create(const std::string& v)
 			{
 				//	convert to buffer_t
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), cyng::buffer_t(v.begin(), v.end()));
@@ -70,6 +109,11 @@ namespace node
 			{
 				//	convert to buffer_t
 				return factory_policy<std::string>::create(p);
+			}
+			cyng::tuple_t factory_policy<obis>::create(obis&& v)
+			{
+				//	convert to buffer_t
+				return factory_policy<cyng::buffer_t>::create(v.to_buffer());
 			}
 		}
 
@@ -103,6 +147,11 @@ namespace node
 			//	1. UNIX timestamp - Y2K38 problem.
 			std::time_t ut = std::chrono::system_clock::to_time_t(tp);
 			return cyng::tuple_factory(static_cast<std::uint8_t>(TIME_SECINDEX), static_cast<std::uint32_t>(ut));
+		}
+
+		cyng::tuple_t make_sec_index_value(std::chrono::system_clock::time_point tp)
+		{
+			return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), make_sec_index(tp));
 		}
 
 	}

@@ -177,5 +177,12 @@ namespace node
 			return "00000000";
 		}
 
+		cyng::buffer_t to_gateway_srv_id(cyng::mac48 mac)
+		{
+			cyng::buffer_t buffer(mac.to_buffer());
+			buffer.insert(buffer.begin(), 0x05);
+			return buffer;
+		}
+
 	}
 }

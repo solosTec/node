@@ -16,6 +16,7 @@ set (sml_protocol_cpp
 	lib/sml/protocol/src/obis_db.cpp
 	lib/sml/protocol/src/obis_io.cpp
 	lib/sml/protocol/src/srv_id_io.cpp
+	lib/sml/protocol/src/message.cpp
 )
 
 set (sml_protocol_h
@@ -25,6 +26,7 @@ set (sml_protocol_h
 	src/main/include/smf/sml/scaler.h
 	src/main/include/smf/sml/protocol/parser.h
 	src/main/include/smf/sml/protocol/serializer.h
+	src/main/include/smf/sml/protocol/message.h
 	src/main/include/smf/sml/intrinsics/obis.h
 	src/main/include/smf/sml/protocol/value.hpp
 	src/main/include/smf/sml/mbus/defs.h

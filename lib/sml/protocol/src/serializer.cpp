@@ -25,12 +25,15 @@ namespace node
 			if (p != nullptr)	serial_t::write(os, *p);
 		}
 
-		void serialize(std::ostream& os, cyng::object const& obj)
+		void serialize(std::ostream& os, cyng::object obj)
 		{
 			switch (obj.get_class().tag())
 			{
 			case cyng::TC_NULL:
 				do_write<typename std::tuple_element<cyng::TC_NULL, cyng::traits::tag_t>::type>(os, obj);
+				break;
+			case cyng::TC_EOD:
+				do_write<typename std::tuple_element<cyng::TC_EOD, cyng::traits::tag_t>::type>(os, obj);
 				break;
 			case cyng::TC_BOOL:
 				do_write<typename std::tuple_element<cyng::TC_BOOL, cyng::traits::tag_t>::type>(os, obj);
@@ -168,15 +171,39 @@ namespace node
 				do_write<typename std::tuple_element<cyng::TC_IP_ADDRESS, cyng::traits::tag_t>::type>(os, obj);
 				break;
 
-			case cyng::TC_EOD:
-				do_write<typename std::tuple_element<cyng::TC_EOD, cyng::traits::tag_t>::type>(os, obj);
-				break;
+			//
+			//	ToDo: obis 
+			//
+
 			default:
 				std::cerr << "unknown type code: " << obj.get_class().tag() << ", " << obj.get_class().type_name() << std::endl;
 				//do_write_custom<S>(os, obj);
 				break;
 			}
+		}
+	
+		void serialize(std::ostream& os, cyng::tuple_t tpl)
+		{
+			using serial_t = serializer <cyng::tuple_t>;
+			serial_t::write(os, tpl);
+		}
 
+		cyng::buffer_t linearize(cyng::tuple_t tpl)
+		{
+			//	temporary buffer
+			boost::asio::streambuf stream_buffer;
+			std::ostream os(&stream_buffer);
+
+			//	serialize into a stream
+			serialize(os, tpl);
+
+			//	get content of buffer
+			boost::asio::const_buffer cbuffer(*stream_buffer.data().begin());
+			const char* p = boost::asio::buffer_cast<const char*>(cbuffer);
+			const std::size_t size = boost::asio::buffer_size(cbuffer);
+
+			//	create buffer object
+			return cyng::buffer_t(p, p + size);
 		}
 	}
 }

@@ -9,6 +9,7 @@
 #define NODE_SML_PROTOCOL_VALUE_HPP
 
 #include <smf/sml/defs.h>
+#include <smf/sml/intrinsics/obis.h>
 #include <cyng/intrinsics/sets.h>
 #include <cyng/factory/set_factory.h>
 #include <type_traits>
@@ -31,7 +32,17 @@ namespace node
 				static cyng::tuple_t create(bool b);
 			};
 			template<>
+			struct factory_policy<const bool&>
+			{
+				static cyng::tuple_t create(bool b);
+			};
+			template<>
 			struct factory_policy<std::uint8_t>
+			{
+				static cyng::tuple_t create(std::uint8_t v);
+			};
+			template<>
+			struct factory_policy<const std::uint8_t&>
 			{
 				static cyng::tuple_t create(std::uint8_t v);
 			};
@@ -41,7 +52,17 @@ namespace node
 				static cyng::tuple_t create(std::uint16_t v);
 			};
 			template<>
+			struct factory_policy<const std::uint16_t&>
+			{
+				static cyng::tuple_t create(std::uint16_t);
+			};
+			template<>
 			struct factory_policy<std::uint32_t>
+			{
+				static cyng::tuple_t create(std::uint32_t v);
+			};
+			template<>
+			struct factory_policy<const std::uint32_t&>
 			{
 				static cyng::tuple_t create(std::uint32_t v);
 			};
@@ -66,7 +87,17 @@ namespace node
 				static cyng::tuple_t create(std::int32_t v);
 			};
 			template<>
+			struct factory_policy<const std::int32_t&>
+			{
+				static cyng::tuple_t create(std::int32_t v);
+			};
+			template<>
 			struct factory_policy<std::int64_t>
+			{
+				static cyng::tuple_t create(std::int64_t v);
+			};
+			template<>
+			struct factory_policy<const std::int64_t&>
 			{
 				static cyng::tuple_t create(std::int64_t v);
 			};
@@ -76,9 +107,19 @@ namespace node
 				static cyng::tuple_t create(std::chrono::system_clock::time_point v);
 			};
 			template<>
+			struct factory_policy<const std::chrono::system_clock::time_point&>
+			{
+				static cyng::tuple_t create(std::chrono::system_clock::time_point v);
+			};
+			template<>
 			struct factory_policy<cyng::buffer_t>
 			{
 				static cyng::tuple_t create(cyng::buffer_t&& v);
+			};
+			template<>
+			struct factory_policy<const cyng::buffer_t&>
+			{
+				static cyng::tuple_t create(cyng::buffer_t const& v);
 			};
 			template<>
 			struct factory_policy<std::string>
@@ -86,21 +127,51 @@ namespace node
 				static cyng::tuple_t create(std::string&& v);
 			};
 			template<>
+			struct factory_policy<const std::string&>
+			{
+				static cyng::tuple_t create(const std::string&);
+			};
+
+			template< std::size_t N >
+			struct factory_policy<const char(&)[N]>
+			{
+				static cyng::tuple_t create(const char (&p)[N])
+				{
+					return factory_policy<std::string>::create(std::string(p, N - 1));
+				}
+			};
+
+			template<>
 			struct factory_policy<char*>
 			{
 				static cyng::tuple_t create(char const* p);
 			};
+
+			template<>
+			struct factory_policy<obis>
+			{
+				static cyng::tuple_t create(obis&& v);
+			};
+
 		}
 
 		template <typename T>
 		cyng::tuple_t make_value(T&& v)
 		{
-			using type = typename std::decay<T>::type;
-			return detail::factory_policy<type>::create(std::forward<T>(v));
-		}
+			//
+			//	When using decay<T> to get the plain data type we cannot longer
+			//	detect string literals. Without decay<T> we have to handle each 
+			//	variation with const and & individually.
+			//
 
-        /**
-         * SML Time of type 3 is not defined in SML v1.03
+
+			//using type = typename std::decay<T>::type;
+			//return detail::factory_policy<type>::create(std::forward<T>(v));
+			return detail::factory_policy<T>::create(std::forward<T>(v));
+		}
+		
+		/**
+         * SML Time of type 3 is used but not defined in SML v1.03
          */
 		cyng::tuple_t make_local_timestamp(std::chrono::system_clock::time_point);
 
@@ -113,6 +184,7 @@ namespace node
 		 * Make a timestamp as type TIME_SECINDEX (1)
 		 */
 		cyng::tuple_t make_sec_index(std::chrono::system_clock::time_point);
+		cyng::tuple_t make_sec_index_value(std::chrono::system_clock::time_point);
 
 	}
 }

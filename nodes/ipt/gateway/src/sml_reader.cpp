@@ -39,22 +39,27 @@ namespace node
 			ro_.reset(rgn_(), 0);
 		}
 
-		void sml_reader::read(cyng::context& ctx, cyng::tuple_t const& msg, std::size_t idx)
+		cyng::vector_t sml_reader::read(cyng::tuple_t const& msg, std::size_t idx)
 		{
-			read_msg(ctx, msg.begin(), msg.end(), idx);
+			return read_msg(msg.begin(), msg.end(), idx);
 		}
 
-		void sml_reader::read_msg(cyng::context& ctx, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end, std::size_t idx)
+		cyng::vector_t sml_reader::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end, std::size_t idx)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
 
 			//
+			//	instruction vector
+			//
+			cyng::vector_t prg;
+
+			//
 			//	delayed output
 			//
-			ctx.attach(cyng::generate_invoke("log.msg.debug"
+			prg << cyng::generate_invoke_unwinded("log.msg.debug"
 				, "message #"
-				, idx));
+				, idx);
 
 			//
 			//	reset readout context
@@ -87,16 +92,18 @@ namespace node
 			if (choice.size() == 2)
 			{
 				ro_.set_value("code", choice.front());
-				read_body(ctx, choice.front(), choice.back());
+				prg << cyng::unwinder(read_body(choice.front(), choice.back()));
 			}
 
 			//
 			//	(6) CRC16
 			//
 			ro_.set_value("crc16", *pos);
+
+			return prg;
 		}
 
-		void sml_reader::read_body(cyng::context& ctx, cyng::object type, cyng::object body)
+		cyng::vector_t sml_reader::read_body(cyng::object type, cyng::object body)
 		{
 			auto code = cyng::value_cast<std::uint16_t>(type, 0);
 
@@ -106,14 +113,11 @@ namespace node
 			switch (code)
 			{
 			case BODY_OPEN_REQUEST:
-				read_public_open_request(ctx, tpl.begin(), tpl.end());
-				break;
+				return read_public_open_request(tpl.begin(), tpl.end());
 			case BODY_OPEN_RESPONSE:
-				read_public_open_response(tpl.begin(), tpl.end());
-				break;
+				return read_public_open_response(tpl.begin(), tpl.end());
 			case BODY_CLOSE_REQUEST:
-				read_public_close_request(ctx, tpl.begin(), tpl.end());
-				break;
+				return read_public_close_request(tpl.begin(), tpl.end());
 			case BODY_CLOSE_RESPONSE:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
@@ -127,14 +131,11 @@ namespace node
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_GET_PROFILE_LIST_RESPONSE:
-				read_get_profile_list_response(ctx, tpl.begin(), tpl.end());
-				break;
+				return read_get_profile_list_response(tpl.begin(), tpl.end());
 			case BODY_GET_PROC_PARAMETER_REQUEST:
-				read_get_proc_parameter_request(ctx, tpl.begin(), tpl.end());
-				break;
+				return read_get_proc_parameter_request(tpl.begin(), tpl.end());
 			case BODY_GET_PROC_PARAMETER_RESPONSE:
-				read_get_proc_parameter_response(ctx, tpl.begin(), tpl.end());
-				break;
+				return read_get_proc_parameter_response(tpl.begin(), tpl.end());
 			case BODY_SET_PROC_PARAMETER_REQUEST:
 				//cyng::xml::write(node, body);
 				break;
@@ -148,15 +149,18 @@ namespace node
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_ATTENTION_RESPONSE:
-				read_attention_response(tpl.begin(), tpl.end());
-				break;
+				return read_attention_response(tpl.begin(), tpl.end());
 			default:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			}
+
+			return cyng::generate_invoke("log.msg.fatal"
+				, "unknown SML message code"
+				, code);
 		}
 
-		void sml_reader::read_public_open_request(cyng::context& ctx, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t sml_reader::read_public_open_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 7, "Public Open Request");
@@ -195,7 +199,11 @@ namespace node
 			//
 			ro_.set_value("SMLVersion", *pos++);
 
-			ctx.attach(cyng::generate_invoke("sml.public.open.request"
+			//
+			//	instruction vector
+			//
+			cyng::vector_t prg;
+			return prg << cyng::generate_invoke_unwinded("sml.public.open.request"
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
@@ -203,11 +211,11 @@ namespace node
 				, ro_.get_value("serverId")
 				, ro_.get_value("reqFileId")
 				, ro_.get_value("userName")
-				, ro_.get_value("password")));
+				, ro_.get_value("password"));
 
 		}
 
-		void sml_reader::read_public_open_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t sml_reader::read_public_open_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 6, "Public Open Response");
@@ -238,23 +246,24 @@ namespace node
 			//	sml-Version: default = 1
 			ro_.set_value("SMLVersion", *pos++);
 
+			return cyng::vector_t();
 		}
 
-		void sml_reader::read_public_close_request(cyng::context& ctx, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t sml_reader::read_public_close_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 1, "Public Close Request");
 
 			ro_.set_value("globalSignature", *pos++);
 
-			ctx.attach(cyng::generate_invoke("sml.public.close.request"
+			cyng::vector_t prg;
+			return prg << cyng::generate_invoke_unwinded("sml.public.close.request"
 				, ro_.pk_
 				, ro_.trx_
-				, ro_.idx_));
-
+				, ro_.idx_);
 		}
 
-		void sml_reader::read_get_profile_list_response(cyng::context& ctx, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t sml_reader::read_get_profile_list_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
@@ -302,7 +311,8 @@ namespace node
 			//	periodSignature
 			ro_.set_value("signature", *pos++);
 
-			ctx.attach(cyng::generate_invoke("db.insert.meta"
+			cyng::vector_t prg;
+			return prg << cyng::generate_invoke_unwinded("db.insert.meta"
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
@@ -311,11 +321,11 @@ namespace node
 				, ro_.get_value("valTime")
 				, ro_.get_value("clientId")
 				, ro_.get_value("serverId")
-				, ro_.get_value("status")));
+				, ro_.get_value("status"));
 
 		}
 
-		void sml_reader::read_get_proc_parameter_response(cyng::context& ctx, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t sml_reader::read_get_proc_parameter_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "Get Proc Parameter Response");
@@ -337,9 +347,10 @@ namespace node
 			tpl = cyng::value_cast(*pos++, tpl);
 			read_param_tree(0, tpl.begin(), tpl.end());
 
+			return cyng::vector_t();
 		}
 
-		void sml_reader::read_get_proc_parameter_request(cyng::context& ctx, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t sml_reader::read_get_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Get Profile List Request");
@@ -360,16 +371,193 @@ namespace node
 			read_string("password", *pos++);
 
 			//
-			//	parameterTreePath
+			//	parameterTreePath == parameter address
 			//
 			std::vector<obis> path = read_param_tree_path(*pos++);
 
 			//
-			//	attribute
+			//	attribute/constraints
 			//
-			//	ToDo:
+			//	*pos
 
-			ctx.attach(cyng::generate_invoke("sml.get.proc.parameter.request"
+			cyng::vector_t prg;
+
+			if (!path.empty())
+			{
+				if (path.at(0) == OBIS_CLASS_OP_LOG_STATUS_WORD)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.status.word"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_DEVICE_IDENT)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.device.id"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_DEVICE_TIME)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.device.time"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_NTP)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.ntp.config"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_ACCESS_RIGHTS)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.access.rights"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_CUSTOM_INTERFACE)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.custom.interface"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_CUSTOM_PARAM)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.custom.param"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_WAN)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.wan.config"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_GSM)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.gsm.config"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_IPT_STATE)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.ipt.state"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_GPRS_PARAM)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.gprs.param"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_LAN_DSL)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.lan.config"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_IF_LAN_DSL)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.lan.if"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_MEMORY_USAGE)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.mem.usage"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_ACTIVE_DEVICES)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.active.devices"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_VISIBLE_DEVICES)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.visible.devices"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_DEVICE_INFO)
+				{
+					//	extended device information
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.device.info"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+
+			}
+			return prg << cyng::generate_invoke_unwinded("sml.get.proc.parameter.request"
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
@@ -377,12 +565,10 @@ namespace node
 				, ro_.get_value("userName")
 				, ro_.get_value("password")
 				, to_hex(path.at(0))
-				, *pos	//	attribute
-			));
-
+				, *pos);	//	attribute
 		}
 
-		void sml_reader::read_attention_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t sml_reader::read_attention_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 4, "Attention Response");
@@ -409,6 +595,7 @@ namespace node
 			tpl = cyng::value_cast(*pos++, tpl);
 			read_param_tree(0, tpl.begin(), tpl.end());
 
+			return cyng::vector_t();
 		}
 
 		void sml_reader::read_param_tree(std::size_t depth
@@ -582,18 +769,19 @@ namespace node
 		{
 			cyng::buffer_t buffer;
 			buffer = cyng::value_cast(obj, buffer);
-			const auto str = from_server_id(buffer);
-			ro_.set_value("serverId", cyng::make_object(str));
-			return str;
+			//const auto str = from_server_id(buffer);
+			ro_.set_value("serverId", cyng::make_object(buffer));
+			return from_server_id(buffer);
 		}
 
 		std::string sml_reader::read_client_id(cyng::object obj)
 		{
 			cyng::buffer_t buffer;
 			buffer = cyng::value_cast(obj, buffer);
-			const auto str = from_server_id(buffer);
-			ro_.set_value("clientId", cyng::make_object(str));
-			return str;
+			//const auto str = from_server_id(buffer);
+			//ro_.set_value("clientId", cyng::make_object(str));
+			ro_.set_value("clientId", cyng::make_object(buffer));
+			return from_server_id(buffer);
 		}
 
 		std::int8_t sml_reader::read_scaler(cyng::object obj)

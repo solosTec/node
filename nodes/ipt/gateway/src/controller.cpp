@@ -15,12 +15,14 @@
 #include <cyng/async/signal_handler.h>
 #include <cyng/factory/set_factory.h>
 #include <cyng/io/serializer.h>
+#include <cyng/parser/mac_parser.h>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/json.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/vector_cast.hpp>
+#include <cyng/sys/mac.h>
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
 #endif
@@ -41,7 +43,12 @@ namespace node
 	//
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	void join_network(cyng::async::mux&, cyng::logging::log_ptr, cyng::vector_t const&);
+	void join_network(cyng::async::mux&
+		, cyng::logging::log_ptr
+		, cyng::vector_t const& cfg
+		, std::string manufacturer
+		, std::string model
+		, cyng::mac48);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -158,6 +165,15 @@ namespace node
 			rng_.seed(std::time(0));
 			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
 
+			//
+			//	get adapter data
+			//
+			auto macs = cyng::sys::retrieve_mac48();
+			if (macs.empty())
+			{
+				macs.push_back(cyng::generate_random_mac48());
+			}
+
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 				, cyng::param_factory("log-level", "INFO")
@@ -176,10 +192,10 @@ namespace node
 
 				, cyng::param_factory("hardware", cyng::tuple_factory(
 					cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF)
-					cyng::param_factory("model", "Gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
+					cyng::param_factory("model", "virtual.gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
 					cyng::param_factory("serial", rgen()),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
-					cyng::param_factory("class", "129-129:199.130.83*255")	//	device class (81 81 C7 82 02 FF) MUC-LAN/DSL
-					//cyng::param_factory("mac", "")	//	mac 
+					cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF) MUC-LAN/DSL
+					cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ...)
 				))
 
 				, cyng::param_factory("ipt", cyng::vector_factory({
@@ -315,21 +331,48 @@ namespace node
 		const auto config_types = cyng::vector_cast<std::string>(dom.get("output"), "");
 
 		//
+		//	get hardware info
+		//
+
+		const std::string manufacturer = cyng::value_cast<std::string>(dom["hardware"].get("manufacturer"), "solosTec");
+		const std::string model = cyng::value_cast<std::string>(dom["hardware"].get("model"), "Gateway");
+		const auto serial = cyng::value_cast(dom["hardware"].get("serial"), rgen());
+		const std::string dev_class = cyng::value_cast<std::string>(dom["hardware"].get("class"), "129-129:199.130.83*255");
+
+		std::string rnd_mac_str;
+		using cyng::io::operator<<;
+		std::stringstream ss;
+		ss << cyng::generate_random_mac48();
+		ss >> rnd_mac_str;
+		const std::string mac = cyng::value_cast<std::string>(dom["hardware"].get("mac"), rnd_mac_str);
+
+		std::pair<cyng::mac48, bool > r = cyng::parse_mac48(mac);
+
+		CYNG_LOG_INFO(logger, "manufacturer: " << manufacturer);
+		CYNG_LOG_INFO(logger, "model: " << model);
+		CYNG_LOG_INFO(logger, "dev_class: " << dev_class);
+		CYNG_LOG_INFO(logger, "mac: " << mac);
+
+		//
 		//	connect to ipt master
 		//
 		cyng::vector_t tmp;
-		join_network(mux, logger, cyng::value_cast(dom.get("ipt"), tmp));
+		join_network(mux, logger, cyng::value_cast(dom.get("ipt"), tmp)
+			, manufacturer
+			, model
+			, r.first);
 
 		//
 		//	create server
 		//
-		cyng::tuple_t tpl;
 		server srv(mux
 			, logger
 			, tag
 			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
-			, cyng::value_cast(dom.get("session"), tpl));
+			, manufacturer
+			, model
+			, r.first);
 
 		//
 		//	server runtime configuration
@@ -393,14 +436,20 @@ namespace node
 
 	void join_network(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cyng::vector_t const& cfg)
+		, cyng::vector_t const& cfg
+		, std::string manufacturer
+		, std::string model
+		, cyng::mac48 mac)
 	{
 		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg.size());
 
 		cyng::async::start_task_delayed<ipt::network>(mux
 			, std::chrono::seconds(1)
 			, logger
-			, ipt::load_cluster_cfg(cfg));
+			, ipt::load_cluster_cfg(cfg)
+			, manufacturer
+			, model 
+			, mac);
 
 	}
 

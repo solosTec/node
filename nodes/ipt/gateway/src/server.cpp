@@ -7,6 +7,7 @@
 
 
 #include "server.h"
+#include <smf/sml/srv_id_io.h>
 #include <cyng/object.h>
 #include "connection.h"
 
@@ -17,11 +18,16 @@ namespace node
 		, boost::uuids::uuid tag
 		, std::string account
 		, std::string pwd
-		, cyng::tuple_t cfg_session)
+		, std::string manufacturer
+		, std::string model
+		, cyng::mac48 mac)
 	: mux_(mux)
 		, logger_(logger)
 		, account_(account)
 		, pwd_(pwd)
+		, manufacturer_(manufacturer)
+		, model_(model)
+		, server_id_(node::sml::to_gateway_srv_id(mac))
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
 		, socket_(io_ctx_)

@@ -64,5 +64,23 @@ namespace node
 				: 0
 				;
 		}
+
+		std::uint16_t sml_set_crc16(cyng::buffer_t& buffer)
+		{
+			BOOST_ASSERT_MSG(buffer.size() > 4, "message buffer to small");
+
+			crc_16_data crc;
+			crc.crc_ = sml_crc16_calculate(buffer);
+
+			if (buffer.size() > 4)
+			{
+				//	patch 
+				buffer[buffer.size() - 3] = crc.data_[1];
+				buffer[buffer.size() - 2] = crc.data_[0];
+				BOOST_ASSERT_MSG(buffer[buffer.size() - 1] == 0, "invalid EOD");
+			}
+			return crc.crc_;
+		}
+
 	}
 }

@@ -6,9 +6,9 @@
  */
 
 #include <smf/sml/protocol/serializer.h>
-#include <smf/sml/protocol/serializer.h>
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/intrinsics/sets.h>
+#include <cyng/intrinsics/eod.h>
 #include <chrono>
 
 namespace node
@@ -24,6 +24,12 @@ namespace node
 				os.put(0x01);	//	TL field without data
 				return os;
 			}
+		};
+
+		template <>
+		struct serializer <cyng::eod>
+		{
+			static std::ostream& write(std::ostream& os, cyng::eod v);
 		};
 
 		template <>
