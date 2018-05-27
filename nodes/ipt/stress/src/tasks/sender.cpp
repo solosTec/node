@@ -38,9 +38,9 @@ namespace node
 			//
 			//	request handler
 			//
-			bus_->vm_.async_run(cyng::register_function("network.task.resume", 4, std::bind(&sender::task_resume, this, std::placeholders::_1)));
-			bus_->vm_.async_run(cyng::register_function("bus.reconfigure", 1, std::bind(&sender::reconfigure, this, std::placeholders::_1)));
-			bus_->vm_.async_run(cyng::register_function("ipt.res.open.connection", 3, std::bind(&sender::res_open_connection, this, std::placeholders::_1)));
+			bus_->vm_.register_function("network.task.resume", 4, std::bind(&sender::task_resume, this, std::placeholders::_1));
+			bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&sender::reconfigure, this, std::placeholders::_1));
+			bus_->vm_.register_function("ipt.res.open.connection", 3, std::bind(&sender::res_open_connection, this, std::placeholders::_1));
 
 		}
 

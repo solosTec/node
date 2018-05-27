@@ -44,26 +44,26 @@ namespace node
 		//
 		//	ToDo: implement in data handler task
 		//
-		bus_->vm_.run(cyng::register_function("db.trx.start", 0, [this](cyng::context& ctx) {
+		bus_->vm_.register_function("db.trx.start", 0, [this](cyng::context& ctx) {
 			CYNG_LOG_TRACE(logger_, "db.trx.start");
-		}));
-		bus_->vm_.run(cyng::register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
+		});
+		bus_->vm_.register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
 			CYNG_LOG_TRACE(logger_, "db.trx.commit");
-		}));
+		});
 
-		bus_->vm_.run(cyng::register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.req.insert", 4, std::bind(&cluster::db_req_insert, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.res.insert", 4, std::bind(&cluster::db_res_insert, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.req.modify.by.attr", 3, std::bind(&cluster::db_req_modify_by_attr, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.req.modify.by.param", 3, std::bind(&cluster::db_req_modify_by_param, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.req.remove", 2, std::bind(&cluster::db_remove, this, std::placeholders::_1)));
+		bus_->vm_.register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.req.insert", 4, std::bind(&cluster::db_req_insert, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.res.insert", 4, std::bind(&cluster::db_res_insert, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.req.modify.by.attr", 3, std::bind(&cluster::db_req_modify_by_attr, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.req.modify.by.param", 3, std::bind(&cluster::db_req_modify_by_param, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.req.remove", 2, std::bind(&cluster::db_remove, this, std::placeholders::_1));
 
 		//
 		//	request handler
 		//
-		bus_->vm_.run(cyng::register_function("cluster.task.resume", 2, std::bind(&cluster::task_resume, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("bus.req.push.data", 0, std::bind(&cluster::bus_req_push_data, this, std::placeholders::_1)));
+		bus_->vm_.register_function("cluster.task.resume", 2, std::bind(&cluster::task_resume, this, std::placeholders::_1));
+		bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1));
+		bus_->vm_.register_function("bus.req.push.data", 0, std::bind(&cluster::bus_req_push_data, this, std::placeholders::_1));
 
 	}
 

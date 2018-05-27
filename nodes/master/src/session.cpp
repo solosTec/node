@@ -74,42 +74,42 @@ namespace node
 		//
 		//	increase sequence and set as result value
 		//
-		vm_.run(cyng::register_function("bus.seq.next", 0, [this](cyng::context& ctx) {
+		vm_.register_function("bus.seq.next", 0, [this](cyng::context& ctx) {
 			++this->seq_;
 			ctx.push(cyng::make_object(this->seq_));
-		}));
+		});
 
-		vm_.run(cyng::register_function("bus.res.watchdog", 3, std::bind(&session::res_watchdog, this, std::placeholders::_1)));
+		vm_.register_function("bus.res.watchdog", 3, std::bind(&session::res_watchdog, this, std::placeholders::_1));
 
 		//
 		//	session shutdown - initiated by connection
 		//
-		vm_.run(cyng::register_function("session.cleanup", 2, std::bind(&session::cleanup, this, std::placeholders::_1)));
+		vm_.register_function("session.cleanup", 2, std::bind(&session::cleanup, this, std::placeholders::_1));
 
 		//
 		//	register request handler
 		//
-		vm_.run(cyng::register_function("bus.req.login", 11, std::bind(&session::bus_req_login, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("bus.req.stop.client", 3, std::bind(&session::bus_req_stop_client_impl, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("bus.insert.msg", 2, std::bind(&session::bus_insert_msg, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("bus.req.push.data", 7, std::bind(&session::bus_req_push_data, this, std::placeholders::_1)));
+		vm_.register_function("bus.req.login", 11, std::bind(&session::bus_req_login, this, std::placeholders::_1));
+		vm_.register_function("bus.req.stop.client", 3, std::bind(&session::bus_req_stop_client_impl, this, std::placeholders::_1));
+		vm_.register_function("bus.insert.msg", 2, std::bind(&session::bus_insert_msg, this, std::placeholders::_1));
+		vm_.register_function("bus.req.push.data", 7, std::bind(&session::bus_req_push_data, this, std::placeholders::_1));
 
-		vm_.run(cyng::register_function("client.req.login", 8, std::bind(&session::client_req_login, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.req.close", 2, std::bind(&session::client_req_close, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.req.open.push.channel", 10, std::bind(&session::client_req_open_push_channel, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.req.close.push.channel", 5, std::bind(&session::client_req_close_push_channel, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.req.register.push.target", 5, std::bind(&session::client_req_register_push_target, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.req.deregister.push.target", 5, std::bind(&session::client_req_deregister_push_target, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.req.open.connection", 6, std::bind(&session::client_req_open_connection, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.res.open.connection", 4, std::bind(&session::client_res_open_connection, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.req.close.connection", 5, std::bind(&session::client_req_close_connection, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.res.close.connection", 6, std::bind(&session::client_res_close_connection, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.req.transfer.pushdata", 6, std::bind(&session::client_req_transfer_pushdata, this, std::placeholders::_1)));
+		vm_.register_function("client.req.login", 8, std::bind(&session::client_req_login, this, std::placeholders::_1));
+		vm_.register_function("client.req.close", 2, std::bind(&session::client_req_close, this, std::placeholders::_1));
+		vm_.register_function("client.req.open.push.channel", 10, std::bind(&session::client_req_open_push_channel, this, std::placeholders::_1));
+		vm_.register_function("client.req.close.push.channel", 5, std::bind(&session::client_req_close_push_channel, this, std::placeholders::_1));
+		vm_.register_function("client.req.register.push.target", 5, std::bind(&session::client_req_register_push_target, this, std::placeholders::_1));
+		vm_.register_function("client.req.deregister.push.target", 5, std::bind(&session::client_req_deregister_push_target, this, std::placeholders::_1));
+		vm_.register_function("client.req.open.connection", 6, std::bind(&session::client_req_open_connection, this, std::placeholders::_1));
+		vm_.register_function("client.res.open.connection", 4, std::bind(&session::client_res_open_connection, this, std::placeholders::_1));
+		vm_.register_function("client.req.close.connection", 5, std::bind(&session::client_req_close_connection, this, std::placeholders::_1));
+		vm_.register_function("client.res.close.connection", 6, std::bind(&session::client_res_close_connection, this, std::placeholders::_1));
+		vm_.register_function("client.req.transfer.pushdata", 6, std::bind(&session::client_req_transfer_pushdata, this, std::placeholders::_1));
 
-		vm_.run(cyng::register_function("client.req.transmit.data", 5, std::bind(&session::client_req_transmit_data, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("client.inc.throughput", 3, std::bind(&session::client_inc_throughput, this, std::placeholders::_1)));
+		vm_.register_function("client.req.transmit.data", 5, std::bind(&session::client_req_transmit_data, this, std::placeholders::_1));
+		vm_.register_function("client.inc.throughput", 3, std::bind(&session::client_inc_throughput, this, std::placeholders::_1));
 
-		vm_.run(cyng::register_function("client.update.attr", 6, std::bind(&session::client_update_attr, this, std::placeholders::_1)));
+		vm_.register_function("client.update.attr", 6, std::bind(&session::client_update_attr, this, std::placeholders::_1));
 	}
 
 

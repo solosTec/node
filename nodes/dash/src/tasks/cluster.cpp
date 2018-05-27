@@ -58,35 +58,35 @@ namespace node
 		//
 		//	implement request handler
 		//
-		bus_->vm_.run(cyng::register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1)));
+		bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1));
 
 		//
 		//	data handling
 		//
-		bus_->vm_.run(cyng::register_function("db.trx.start", 0, [this](cyng::context& ctx) {
+		bus_->vm_.register_function("db.trx.start", 0, [this](cyng::context& ctx) {
 			CYNG_LOG_TRACE(logger_, "db.trx.start");
-		}));
-		bus_->vm_.run(cyng::register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
+		});
+		bus_->vm_.register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
 			CYNG_LOG_TRACE(logger_, "db.trx.commit");
-		}));
-		bus_->vm_.run(cyng::register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.res.insert", 4, std::bind(&cluster::db_res_insert, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.res.remove", 2, std::bind(&cluster::db_res_remove, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.res.modify.by.attr", 3, std::bind(&cluster::db_res_modify_by_attr, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.res.modify.by.param", 3, std::bind(&cluster::db_res_modify_by_param, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.req.insert", 4, std::bind(&cluster::db_req_insert, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.req.remove", 3, std::bind(&cluster::db_req_remove, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("db.req.modify.by.param", 5, std::bind(&cluster::db_req_modify_by_param, this, std::placeholders::_1)));
+		});
+		bus_->vm_.register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.res.insert", 4, std::bind(&cluster::db_res_insert, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.res.remove", 2, std::bind(&cluster::db_res_remove, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.res.modify.by.attr", 3, std::bind(&cluster::db_res_modify_by_attr, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.res.modify.by.param", 3, std::bind(&cluster::db_res_modify_by_param, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.req.insert", 4, std::bind(&cluster::db_req_insert, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.req.remove", 3, std::bind(&cluster::db_req_remove, this, std::placeholders::_1));
+		bus_->vm_.register_function("db.req.modify.by.param", 5, std::bind(&cluster::db_req_modify_by_param, this, std::placeholders::_1));
 
 		//
 		//	input from HTTP session / ws
 		//
-		bus_->vm_.run(cyng::register_function("ws.read", 3, std::bind(&cluster::ws_read, this, std::placeholders::_1)));
+		bus_->vm_.register_function("ws.read", 3, std::bind(&cluster::ws_read, this, std::placeholders::_1));
 
-		bus_->vm_.run(cyng::register_function("http.upload.data", 5, std::bind(&cluster::http_upload_data, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("http.upload.var", 3, std::bind(&cluster::http_upload_var, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("http.upload.progress", 4, std::bind(&cluster::http_upload_progress, this, std::placeholders::_1)));
-		bus_->vm_.run(cyng::register_function("http.upload.complete", 4, std::bind(&cluster::http_upload_complete, this, std::placeholders::_1)));
+		bus_->vm_.register_function("http.upload.data", 5, std::bind(&cluster::http_upload_data, this, std::placeholders::_1));
+		bus_->vm_.register_function("http.upload.var", 3, std::bind(&cluster::http_upload_var, this, std::placeholders::_1));
+		bus_->vm_.register_function("http.upload.progress", 4, std::bind(&cluster::http_upload_progress, this, std::placeholders::_1));
+		bus_->vm_.register_function("http.upload.complete", 4, std::bind(&cluster::http_upload_complete, this, std::placeholders::_1));
 	}
 
     void cluster::start_sys_task()
