@@ -22,11 +22,11 @@ namespace node
 		, bus_(bus)
 		, rgn_()
 	{
-		vm_.run(cyng::register_function("https.post.xml", 3, std::bind(&processor::https_post_xml, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("https.launch.session.plain", 0, std::bind(&processor::https_launch_session_plain, this, std::placeholders::_1)));
-		vm_.run(cyng::register_function("https.eof.session.plain", 0, std::bind(&processor::https_eof_session_plain, this, std::placeholders::_1)));
+		vm_.register_function("https.post.xml", 3, std::bind(&processor::https_post_xml, this, std::placeholders::_1));
+		vm_.register_function("https.launch.session.plain", 0, std::bind(&processor::https_launch_session_plain, this, std::placeholders::_1));
+		vm_.register_function("https.eof.session.plain", 0, std::bind(&processor::https_eof_session_plain, this, std::placeholders::_1));
 
-		bus_->vm_.run(cyng::register_function("bus.res.push.data", 0, std::bind(&processor::res_push_data, this, std::placeholders::_1)));
+		bus_->vm_.register_function("bus.res.push.data", 0, std::bind(&processor::res_push_data, this, std::placeholders::_1));
 	}
 
 	cyng::controller& processor::vm()

@@ -45,31 +45,31 @@ namespace node
 			//
 			//	connection management
 			//
-			bus_->vm_.run(cyng::register_function("push.connection", 1, std::bind(&server::push_connection, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("push.ep.local", 1, std::bind(&server::push_ep_local, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("push.ep.remote", 1, std::bind(&server::push_ep_remote, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("server.insert.connection", 2, std::bind(&server::insert_connection, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1)));
+			bus_->vm_.register_function("push.connection", 1, std::bind(&server::push_connection, this, std::placeholders::_1));
+			bus_->vm_.register_function("push.ep.local", 1, std::bind(&server::push_ep_local, this, std::placeholders::_1));
+			bus_->vm_.register_function("push.ep.remote", 1, std::bind(&server::push_ep_remote, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.insert.connection", 2, std::bind(&server::insert_connection, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1));
 
 			//
 			//	client responses
 			//
-			bus_->vm_.run(cyng::register_function("client.res.login", 7, std::bind(&server::client_res_login, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.res.close", 3, std::bind(&server::client_res_close, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.req.close", 4, std::bind(&server::client_req_close, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.res.open.connection", 6, std::bind(&server::client_res_open_connection, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.req.open.connection.forward", 6, std::bind(&server::client_req_open_connection_forward, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.res.open.connection.forward", 6, std::bind(&server::client_res_open_connection_forward, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.req.transmit.data.forward", 5, std::bind(&server::client_req_transmit_data_forward, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.res.transfer.pushdata", 7, std::bind(&server::client_res_transfer_pushdata, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.req.transfer.pushdata.forward", 7, std::bind(&server::client_req_transfer_pushdata_forward, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.res.close.push.channel", 6, std::bind(&server::client_res_close_push_channel, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.req.close.connection.forward", 6, std::bind(&server::client_req_close_connection_forward, this, std::placeholders::_1)));
-			bus_->vm_.run(cyng::register_function("client.res.close.connection.forward", 6, std::bind(&server::client_res_close_connection_forward, this, std::placeholders::_1)));
+			bus_->vm_.register_function("client.res.login", 7, std::bind(&server::client_res_login, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.res.close", 3, std::bind(&server::client_res_close, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.req.close", 4, std::bind(&server::client_req_close, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.res.open.connection", 6, std::bind(&server::client_res_open_connection, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.req.open.connection.forward", 6, std::bind(&server::client_req_open_connection_forward, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.res.open.connection.forward", 6, std::bind(&server::client_res_open_connection_forward, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.req.transmit.data.forward", 5, std::bind(&server::client_req_transmit_data_forward, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.res.transfer.pushdata", 7, std::bind(&server::client_res_transfer_pushdata, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.req.transfer.pushdata.forward", 7, std::bind(&server::client_req_transfer_pushdata_forward, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.res.close.push.channel", 6, std::bind(&server::client_res_close_push_channel, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.req.close.connection.forward", 6, std::bind(&server::client_req_close_connection_forward, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.res.close.connection.forward", 6, std::bind(&server::client_res_close_connection_forward, this, std::placeholders::_1));
 
 		}
 

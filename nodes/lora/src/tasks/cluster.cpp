@@ -45,7 +45,7 @@ namespace node
 		//
 		//	implement request handler
 		//
-		bus_->vm_.run(cyng::register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1)));
+		bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1));
 
 	}
 

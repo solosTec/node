@@ -39,13 +39,13 @@ namespace node
 			vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
 			//	sml parser
-			vm_.run(cyng::register_function("sml.msg", 2, std::bind(&session::sml_msg, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("sml.eom", 2, std::bind(&session::sml_eom, this, std::placeholders::_1)));
+			vm_.register_function("sml.msg", 2, std::bind(&session::sml_msg, this, std::placeholders::_1));
+			vm_.register_function("sml.eom", 2, std::bind(&session::sml_eom, this, std::placeholders::_1));
 
 			//	sml reader
-			vm_.run(cyng::register_function("sml.public.open.request", 8, std::bind(&session::sml_public_open_request, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("sml.public.close.request", 3, std::bind(&session::sml_public_close_request, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("sml.get.proc.parameter.request", 8, std::bind(&session::sml_get_proc_parameter_request, this, std::placeholders::_1)));
+			vm_.register_function("sml.public.open.request", 8, std::bind(&session::sml_public_open_request, this, std::placeholders::_1));
+			vm_.register_function("sml.public.close.request", 3, std::bind(&session::sml_public_close_request, this, std::placeholders::_1));
+			vm_.register_function("sml.get.proc.parameter.request", 8, std::bind(&session::sml_get_proc_parameter_request, this, std::placeholders::_1));
 		}
 
 		std::size_t session::hash() const noexcept

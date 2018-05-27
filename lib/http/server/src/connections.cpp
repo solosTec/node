@@ -23,7 +23,7 @@ namespace node
 			, listener_()
 			, mutex_()
 		{
-			bus->vm_.run(cyng::register_function("ws.push", 1, std::bind(&connection_manager::push_ws, this, std::placeholders::_1)));
+			bus->vm_.register_function("ws.push", 1, std::bind(&connection_manager::push_ws, this, std::placeholders::_1));
 		}
 
 		void connection_manager::start(session_ptr sp)

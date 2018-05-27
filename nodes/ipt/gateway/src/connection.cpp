@@ -35,7 +35,7 @@ namespace node
 			//
 			cyng::register_socket(socket_, get_session()->vm_);
 
-			get_session()->vm_.run(cyng::register_function("push.session", 0, std::bind(&connection::push_session, this, std::placeholders::_1)));
+			get_session()->vm_.register_function("push.session", 0, std::bind(&connection::push_session, this, std::placeholders::_1));
 
 		}
 

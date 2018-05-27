@@ -59,20 +59,20 @@ namespace node
 		//
 		//	increase sequence and set as result value
 		//
-		vm_.run(cyng::register_function("bus.seq.next", 0, [this](cyng::context& ctx) {
+		vm_.register_function("bus.seq.next", 0, [this](cyng::context& ctx) {
 			++this->seq_;
 			ctx.push(cyng::make_object(this->seq_));
-		}));
+		});
 		vm_.run(cyng::generate_invoke("log.msg.trace", "bus.seq.next() is registered"));
 
 		//
 		//	register bus request handler
 		//
-		vm_.run(cyng::register_function("bus.start", 0, [this](cyng::context& ctx) {
+		vm_.register_function("bus.start", 0, [this](cyng::context& ctx) {
 			this->start();
-		}));
+		});
 
-		vm_.run(cyng::register_function("bus.res.login", 5, [this](cyng::context& ctx) {
+		vm_.register_function("bus.res.login", 5, [this](cyng::context& ctx) {
 			const cyng::vector_t frame = ctx.get_frame();
 
 			//	[20,true,9a07da33-589f-442f-b927-f638531e41f3,0.4,2018-05-07 13:34:01.58677900,2018-05-07 13:34:01.68164700]
@@ -110,9 +110,9 @@ namespace node
 				mux_.send(task_, 1, cyng::tuple_t());
 			}
 
-		}));
+		});
 
-		vm_.run(cyng::register_function("bus.req.watchdog", 3, [this](cyng::context& ctx) {
+		vm_.register_function("bus.req.watchdog", 3, [this](cyng::context& ctx) {
 			const cyng::vector_t frame = ctx.get_frame();
 			//	[42dd5709-be73-45ae-98b3-35df10765015,5,2018-03-19 17:55:56.48749690]
 			//
@@ -131,7 +131,7 @@ namespace node
 			//	send watchdog response
 			//
 			ctx.attach(bus_res_watchdog(std::get<1>(tpl), std::get<2>(tpl)));
-		}));		
+		});		
 	}
 
 	void bus::start()

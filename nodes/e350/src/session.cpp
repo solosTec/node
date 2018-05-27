@@ -53,54 +53,54 @@ namespace node
 			cyng::register_logger(logger_, vm_);
 			vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
-			vm_.run(cyng::register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1)));
+			vm_.register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1));
+			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
 
 			//
 			//	register request handler
 			//	client.req.transmit.data.forward
-			vm_.run(cyng::register_function("imegae.req.transmit.data", 2, std::bind(&session::imega_req_transmit_data, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.req.transmit.data.forward", 4, std::bind(&session::client_req_transmit_data_forward, this, std::placeholders::_1)));
+			vm_.register_function("imegae.req.transmit.data", 2, std::bind(&session::imega_req_transmit_data, this, std::placeholders::_1));
+			vm_.register_function("client.req.transmit.data.forward", 4, std::bind(&session::client_req_transmit_data_forward, this, std::placeholders::_1));
 
 
 			//	transport
 			//	transport - push channel open
 			//TP_REQ_OPEN_PUSH_CHANNEL = 0x9000,
-			//vm_.run(cyng::register_function("ipt.req.open.push.channel", 8, std::bind(&session::ipt_req_open_push_channel, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.res.open.push.channel", 8, std::bind(&session::client_res_open_push_channel, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.req.open.push.channel", 8, std::bind(&session::ipt_req_open_push_channel, this, std::placeholders::_1));
+			vm_.register_function("client.res.open.push.channel", 8, std::bind(&session::client_res_open_push_channel, this, std::placeholders::_1));
 
 			//TP_RES_OPEN_PUSH_CHANNEL = 0x1000,	//!<	response
 
 			//	transport - push channel close
 			//TP_REQ_CLOSE_PUSH_CHANNEL = 0x9001,	//!<	request
-			//vm_.run(cyng::register_function("ipt.req.close.push.channel", 3, std::bind(&session::ipt_req_close_push_channel, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.res.close.push.channel", 5, std::bind(&session::client_res_close_push_channel, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.req.close.push.channel", 3, std::bind(&session::ipt_req_close_push_channel, this, std::placeholders::_1));
+			vm_.register_function("client.res.close.push.channel", 5, std::bind(&session::client_res_close_push_channel, this, std::placeholders::_1));
 			//TP_RES_CLOSE_PUSH_CHANNEL = 0x1001,	//!<	response
 
 			//	transport - push channel data transfer
 			//TP_REQ_PUSHDATA_TRANSFER = 0x9002,	//!<	request
-			//vm_.run(cyng::register_function("ipt.req.transfer.pushdata", 7, std::bind(&session::ipt_req_transfer_pushdata, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.req.transfer.pushdata.forward", 6, std::bind(&session::client_req_transfer_pushdata_forward, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.req.transfer.pushdata", 7, std::bind(&session::ipt_req_transfer_pushdata, this, std::placeholders::_1));
+			vm_.register_function("client.req.transfer.pushdata.forward", 6, std::bind(&session::client_req_transfer_pushdata_forward, this, std::placeholders::_1));
 
 			//TP_RES_PUSHDATA_TRANSFER = 0x1002,	//!<	response
-			vm_.run(cyng::register_function("client.res.transfer.pushdata", 6, std::bind(&session::client_res_transfer_pushdata, this, std::placeholders::_1)));
+			vm_.register_function("client.res.transfer.pushdata", 6, std::bind(&session::client_res_transfer_pushdata, this, std::placeholders::_1));
 
 			//	transport - connection open
 			//TP_REQ_OPEN_CONNECTION = 0x9003,	//!<	request
-			vm_.run(cyng::register_function("modem.req.open.connection", 2, std::bind(&session::modem_req_open_connection, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.req.open.connection.forward", 5, std::bind(&session::client_req_open_connection_forward, this, std::placeholders::_1)));
+			vm_.register_function("modem.req.open.connection", 2, std::bind(&session::modem_req_open_connection, this, std::placeholders::_1));
+			vm_.register_function("client.req.open.connection.forward", 5, std::bind(&session::client_req_open_connection_forward, this, std::placeholders::_1));
 			//TP_RES_OPEN_CONNECTION = 0x1003,	//!<	response
-			//vm_.run(cyng::register_function("ipt.res.open.connection", 3, std::bind(&session::ipt_res_open_connection, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.res.open.connection", 5, std::bind(&session::client_res_open_connection, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.res.open.connection.forward", 5, std::bind(&session::client_res_open_connection_forward, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.res.open.connection", 3, std::bind(&session::ipt_res_open_connection, this, std::placeholders::_1));
+			vm_.register_function("client.res.open.connection", 5, std::bind(&session::client_res_open_connection, this, std::placeholders::_1));
+			vm_.register_function("client.res.open.connection.forward", 5, std::bind(&session::client_res_open_connection_forward, this, std::placeholders::_1));
 
 			//	transport - connection close
 			//TP_REQ_CLOSE_CONNECTION = 0x9004,	//!<	request
-			vm_.run(cyng::register_function("modem.req.close.connection", 1, std::bind(&session::modem_req_close_connection, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.req.close.connection.forward", 6, std::bind(&session::client_req_close_connection_forward, this, std::placeholders::_1)));
+			vm_.register_function("modem.req.close.connection", 1, std::bind(&session::modem_req_close_connection, this, std::placeholders::_1));
+			vm_.register_function("client.req.close.connection.forward", 6, std::bind(&session::client_req_close_connection_forward, this, std::placeholders::_1));
 			//TP_RES_CLOSE_CONNECTION = 0x1004,	//!<	response
-			//vm_.run(cyng::register_function("ipt.res.close.connection", 0, std::bind(&session::ipt_res_close_connection, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.res.close.connection.forward", 5, std::bind(&session::client_res_close_connection_forward, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.res.close.connection", 0, std::bind(&session::ipt_res_close_connection, this, std::placeholders::_1));
+			vm_.register_function("client.res.close.connection.forward", 5, std::bind(&session::client_res_close_connection_forward, this, std::placeholders::_1));
 
 			//	open stream channel
 			//TP_REQ_OPEN_STREAM_CHANNEL = 0x9006,
@@ -122,37 +122,37 @@ namespace node
 			//	application - protocol version
 			//APP_REQ_PROTOCOL_VERSION = 0xA000,	//!<	request
 			//APP_RES_PROTOCOL_VERSION = 0x2000,	//!<	response
-			//vm_.run(cyng::register_function("ipt.res.protocol.version", 3, std::bind(&session::ipt_res_protocol_version, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.res.protocol.version", 3, std::bind(&session::ipt_res_protocol_version, this, std::placeholders::_1));
 
 			//	application - device firmware version
 			//APP_REQ_SOFTWARE_VERSION = 0xA001,	//!<	request
 			//APP_RES_SOFTWARE_VERSION = 0x2001,	//!<	response
-			//vm_.run(cyng::register_function("ipt.res.software.version", 3, std::bind(&session::ipt_res_software_version, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.res.software.version", 3, std::bind(&session::ipt_res_software_version, this, std::placeholders::_1));
 
 			//	application - device identifier
 			//APP_REQ_DEVICE_IDENTIFIER = 0xA003,	//!<	request
 			//APP_RES_DEVICE_IDENTIFIER = 0x2003,
-			//vm_.run(cyng::register_function("ipt.res.dev.id", 3, std::bind(&session::ipt_res_dev_id, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.res.dev.id", 3, std::bind(&session::ipt_res_dev_id, this, std::placeholders::_1));
 
 			//	application - network status
 			//APP_REQ_NETWORK_STATUS = 0xA004,	//!<	request
 			//APP_RES_NETWORK_STATUS = 0x2004,	//!<	response
-			//vm_.run(cyng::register_function("ipt.res.network.stat", 10, std::bind(&session::ipt_res_network_stat, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.res.network.stat", 10, std::bind(&session::ipt_res_network_stat, this, std::placeholders::_1));
 
 			//	application - IP statistic
 			//APP_REQ_IP_STATISTICS = 0xA005,	//!<	request
 			//APP_RES_IP_STATISTICS = 0x2005,	//!<	response
-			//vm_.run(cyng::register_function("ipt.res.ip.statistics", 5, std::bind(&session::ipt_res_ip_statistics, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.res.ip.statistics", 5, std::bind(&session::ipt_res_ip_statistics, this, std::placeholders::_1));
 
 			//	application - device authentification
 			//APP_REQ_DEVICE_AUTHENTIFICATION = 0xA006,	//!<	request
 			//APP_RES_DEVICE_AUTHENTIFICATION = 0x2006,	//!<	response
-			//vm_.run(cyng::register_function("ipt.res.dev.auth", 6, std::bind(&session::ipt_res_dev_auth, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.res.dev.auth", 6, std::bind(&session::ipt_res_dev_auth, this, std::placeholders::_1));
 
 			//	application - device time
 			//APP_REQ_DEVICE_TIME = 0xA007,	//!<	request
 			//APP_RES_DEVICE_TIME = 0x2007,	//!<	response
-			//vm_.run(cyng::register_function("ipt.res.dev.time", 3, std::bind(&session::ipt_res_dev_time, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.res.dev.time", 3, std::bind(&session::ipt_res_dev_time, this, std::placeholders::_1));
 
 			//	application - push-target namelist
 			//APP_REQ_PUSH_TARGET_NAMELIST = 0xA008,	//!<	request
@@ -171,8 +171,8 @@ namespace node
 			//CTRL_RES_LOGIN_SCRAMBLED = 0x4002,	//!<	scrambled login response
 			//CTRL_REQ_LOGIN_PUBLIC = 0xC001,	//!<	public login request
 			//CTRL_REQ_LOGIN_SCRAMBLED = 0xC002,	//!<	scrambled login request
-			vm_.run(cyng::register_function("imega.req.login.public", 5, std::bind(&session::imega_req_login, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.res.login", 6, std::bind(&session::client_res_login, this, std::placeholders::_1)));
+			vm_.register_function("imega.req.login.public", 5, std::bind(&session::imega_req_login, this, std::placeholders::_1));
+			vm_.register_function("client.res.login", 6, std::bind(&session::client_res_login, this, std::placeholders::_1));
 
 			//	control - maintenance
 			//MAINTENANCE_REQUEST = 0xC003,	//!<	request *** deprecated ***
@@ -181,13 +181,13 @@ namespace node
 			//	control - logout
 			//CTRL_REQ_LOGOUT = 0xC004,	//!<	request *** deprecated ***
 			//CTRL_RES_LOGOUT = 0x4004,	//!<	response *** deprecated ***
-			//vm_.run(cyng::register_function("ipt.req.logout", 2, std::bind(&session::ipt_req_logout, this, std::placeholders::_1)));
-			//vm_.run(cyng::register_function("ipt.res.logout", 2, std::bind(&session::ipt_res_logout, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.req.logout", 2, std::bind(&session::ipt_req_logout, this, std::placeholders::_1));
+			//vm_.register_function("ipt.res.logout", 2, std::bind(&session::ipt_res_logout, this, std::placeholders::_1));
 
 			//	control - push target register
 			//CTRL_REQ_REGISTER_TARGET = 0xC005,	//!<	request
-			//vm_.run(cyng::register_function("ipt.req.register.push.target", 5, std::bind(&session::ipt_req_register_push_target, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("client.res.register.push.target", 6, std::bind(&session::client_res_register_push_target, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.req.register.push.target", 5, std::bind(&session::ipt_req_register_push_target, this, std::placeholders::_1));
+			vm_.register_function("client.res.register.push.target", 6, std::bind(&session::client_res_register_push_target, this, std::placeholders::_1));
 			//CTRL_RES_REGISTER_TARGET = 0x4005,	//!<	response
 
 			//	control - push target deregister
@@ -197,7 +197,7 @@ namespace node
 			//	control - watchdog
 			//CTRL_REQ_WATCHDOG = 0xC008,	//!<	request
 			//CTRL_RES_WATCHDOG = 0x4008,	//!<	response
-			//vm_.run(cyng::register_function("ipt.res.watchdog", 0, std::bind(&session::ipt_res_watchdog, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.res.watchdog", 0, std::bind(&session::ipt_res_watchdog, this, std::placeholders::_1));
 
 			//	control - multi public login request
 			//MULTI_CTRL_REQ_LOGIN_PUBLIC = 0xC009,	//!<	request
@@ -225,7 +225,7 @@ namespace node
 
 
 			//UNKNOWN = 0x7fff,	//!<	unknown command
-			//vm_.run(cyng::register_function("ipt.unknown.cmd", 3, std::bind(&session::ipt_unknown_cmd, this, std::placeholders::_1)));
+			//vm_.register_function("ipt.unknown.cmd", 3, std::bind(&session::ipt_unknown_cmd, this, std::placeholders::_1));
 
 			
 			//

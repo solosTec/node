@@ -133,12 +133,12 @@ namespace node
 						<< ':'
 						<< target
 						<< " in same thread");
-					res.first->second.vm_.async_run(cyng::register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1)));
+					res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1));
 					res.first->second.vm_.async_run(cyng::generate_invoke("sml.parse", data));
 				}
 				else
 				{
-					res.first->second.vm_.run(cyng::register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1)));
+					res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1));
 					res.first->second.parse(data);
 				}
 			}

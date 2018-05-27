@@ -58,55 +58,55 @@ namespace node
 			//
 			//	set new scramble key after scrambled login request
 			//
-			vm_.run(cyng::register_function("ipt.set.sk", 1, [this](cyng::context& ctx) {
+			vm_.register_function("ipt.set.sk", 1, [this](cyng::context& ctx) {
 				const cyng::vector_t frame = ctx.get_frame();
 				CYNG_LOG_TRACE(logger_, "set new scramble key "
 					<< cyng::value_cast<scramble_key>(frame.at(0), scramble_key::null_scramble_key_));
 
 				//	set new scramble key
 				parser_.set_sk(cyng::value_cast<scramble_key>(frame.at(0), scramble_key::null_scramble_key_).key());
-			}));
+			});
 
 			//
 			//	reset parser before reconnect
 			//
-			vm_.run(cyng::register_function("ipt.reset.parser", 1, [this](cyng::context& ctx) {
+			vm_.register_function("ipt.reset.parser", 1, [this](cyng::context& ctx) {
 				const cyng::vector_t frame = ctx.get_frame();
 				CYNG_LOG_TRACE(logger_, "reset parser "
 					<< cyng::value_cast<scramble_key>(frame.at(0), scramble_key::null_scramble_key_));
 
 				//	set new scramble key
 				parser_.reset(cyng::value_cast<scramble_key>(frame.at(0), scramble_key::null_scramble_key_).key());
-			}));
+			});
 			
 
 			//
 			//	register ipt request handler
 			//
-			vm_.run(cyng::register_function("ipt.start", 0, [this](cyng::context& ctx) {
+			vm_.register_function("ipt.start", 0, [this](cyng::context& ctx) {
 				this->start();
-			}));
+			});
 
 			//
 			//	login response
 			//
-			vm_.run(cyng::register_function("ipt.res.login.public", 4, std::bind(&bus::ipt_res_login, this, std::placeholders::_1, false)));
-			vm_.run(cyng::register_function("ipt.res.login.scrambled", 4, std::bind(&bus::ipt_res_login, this, std::placeholders::_1, true)));
+			vm_.register_function("ipt.res.login.public", 4, std::bind(&bus::ipt_res_login, this, std::placeholders::_1, false));
+			vm_.register_function("ipt.res.login.scrambled", 4, std::bind(&bus::ipt_res_login, this, std::placeholders::_1, true));
 
-			vm_.run(cyng::register_function("ipt.res.register.push.target", 4, std::bind(&bus::ipt_res_register_push_target, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.res.deregister.push.target", 4, std::bind(&bus::ipt_res_deregister_push_target, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.transmit.data", 1, std::bind(&bus::ipt_req_transmit_data, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.open.connection", 1, std::bind(&bus::ipt_req_open_connection, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.close.connection", 1, std::bind(&bus::ipt_req_close_connection, this, std::placeholders::_1)));
+			vm_.register_function("ipt.res.register.push.target", 4, std::bind(&bus::ipt_res_register_push_target, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.deregister.push.target", 4, std::bind(&bus::ipt_res_deregister_push_target, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.transmit.data", 1, std::bind(&bus::ipt_req_transmit_data, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.open.connection", 1, std::bind(&bus::ipt_req_open_connection, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.close.connection", 1, std::bind(&bus::ipt_req_close_connection, this, std::placeholders::_1));
 
-			vm_.run(cyng::register_function("ipt.req.protocol.version", 2, std::bind(&bus::ipt_req_protocol_version, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.software.version", 2, std::bind(&bus::ipt_req_software_version, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.device.id", 2, std::bind(&bus::ipt_req_device_id, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.net.stat", 2, std::bind(&bus::ipt_req_net_stat, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.ip.statistics", 2, std::bind(&bus::ipt_req_ip_statistics, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.dev.auth", 2, std::bind(&bus::ipt_req_dev_auth, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.dev.time", 2, std::bind(&bus::ipt_req_dev_time, this, std::placeholders::_1)));
-			vm_.run(cyng::register_function("ipt.req.transfer.pushdata", 7, std::bind(&bus::ipt_req_transfer_pushdata, this, std::placeholders::_1)));
+			vm_.register_function("ipt.req.protocol.version", 2, std::bind(&bus::ipt_req_protocol_version, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.software.version", 2, std::bind(&bus::ipt_req_software_version, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.device.id", 2, std::bind(&bus::ipt_req_device_id, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.net.stat", 2, std::bind(&bus::ipt_req_net_stat, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.ip.statistics", 2, std::bind(&bus::ipt_req_ip_statistics, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.dev.auth", 2, std::bind(&bus::ipt_req_dev_auth, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.dev.time", 2, std::bind(&bus::ipt_req_dev_time, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.transfer.pushdata", 7, std::bind(&bus::ipt_req_transfer_pushdata, this, std::placeholders::_1));
 		}
 
 		void bus::start()

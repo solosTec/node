@@ -65,17 +65,15 @@ namespace node
 		//
 		if (vm_.same_thread())
 		{
-			vm_.async_run(cyng::register_function("sml.msg", 1, std::bind(&xml_processor::sml_msg, this, std::placeholders::_1)))
-				.async_run(cyng::register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1)))
-				.async_run(cyng::register_function("sml.parse", 1, std::bind(&xml_processor::sml_parse, this, std::placeholders::_1)))
-				;
+			vm_.register_function("sml.msg", 1, std::bind(&xml_processor::sml_msg, this, std::placeholders::_1));
+			vm_.register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1));
+			vm_.register_function("sml.parse", 1, std::bind(&xml_processor::sml_parse, this, std::placeholders::_1));
 		}
 		else
 		{
-			vm_.run(cyng::register_function("sml.msg", 1, std::bind(&xml_processor::sml_msg, this, std::placeholders::_1)))
-				.run(cyng::register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1)))
-				.run(cyng::register_function("sml.parse", 1, std::bind(&xml_processor::sml_parse, this, std::placeholders::_1)))
-				;
+			vm_.register_function("sml.msg", 1, std::bind(&xml_processor::sml_msg, this, std::placeholders::_1));
+			vm_.register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1));
+			vm_.register_function("sml.parse", 1, std::bind(&xml_processor::sml_parse, this, std::placeholders::_1));
 		}
 
 		//
