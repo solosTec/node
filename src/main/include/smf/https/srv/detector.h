@@ -48,7 +48,7 @@ namespace node
 			/**
 			 * Generate unique session tags
 			 */
-			boost::uuids::random_generator_mt19937 rgn_;
+			boost::uuids::random_generator rgn_;
 
 		};
 	}
