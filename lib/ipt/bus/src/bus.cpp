@@ -151,6 +151,16 @@ namespace node
 			return watchdog_;
 		}
 
+		boost::asio::ip::tcp::endpoint bus::local_endpoint() const
+		{
+			return socket_.local_endpoint();
+		}
+
+		boost::asio::ip::tcp::endpoint bus::remote_endpoint() const
+		{
+			return socket_.remote_endpoint();
+		}
+
 		void bus::do_read()
 		{
             //

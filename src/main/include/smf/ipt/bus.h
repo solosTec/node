@@ -50,6 +50,9 @@ namespace node
 			bool has_watchdog() const;
 			std::uint16_t get_watchdog() const;
 
+			boost::asio::ip::tcp::endpoint local_endpoint() const;
+			boost::asio::ip::tcp::endpoint remote_endpoint() const;
+
 		private:
 			void do_read();
 

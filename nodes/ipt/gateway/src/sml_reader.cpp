@@ -484,6 +484,16 @@ namespace node
 						, ro_.get_value("userName")
 						, ro_.get_value("password"));
 				}
+				else if (path.at(0) == OBIS_CODE_ROOT_IPT_PARAM)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.ipt.param"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
 				else if (path.at(0) == OBIS_CODE_ROOT_GPRS_PARAM)
 				{
 					return prg << cyng::generate_invoke_unwinded("sml.get.proc.gprs.param"
