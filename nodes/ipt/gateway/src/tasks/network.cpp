@@ -91,7 +91,8 @@ namespace node
 			//"sml.get.proc.custom.param"
 			//"sml.get.proc.wan.config"
 			//"sml.get.proc.gsm.config"
-			//"sml.get.proc.ipt.state"
+			bus_->vm_.register_function("sml.get.proc.ipt.state", 6, std::bind(&network::sml_get_proc_ipt_state, this, std::placeholders::_1));
+			bus_->vm_.register_function("sml.get.proc.ipt.param", 6, std::bind(&network::sml_get_proc_ipt_param, this, std::placeholders::_1));
 			//"sml.get.proc.gprs.param"
 			bus_->vm_.register_function("sml.get.proc.lan.config", 6, std::bind(&network::sml_get_proc_lan_config, this, std::placeholders::_1));
 			bus_->vm_.register_function("sml.get.proc.lan.if", 6, std::bind(&network::sml_get_proc_lan_if, this, std::placeholders::_1));
@@ -1053,7 +1054,12 @@ namespace node
 							node::sml::parameter_tree(node::sml::OBIS_CLASS_TIMESTAMP_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
 						}),
 						node::sml::child_list_tree(node::sml::obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x02),{
-							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), node::sml::make_value(cyng::buffer_t{ 0x24, 0x23, 0x02, 0x12, (char)0x90, 0x20, 0x07, (char)0x86 })),
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), node::sml::make_value(cyng::buffer_t{ 0x01, (char)0xA8, 0x15, 0x74, (char)0x31, 0x45, 0x05, (char)0x01, (char)0x02 })),
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), node::sml::make_value(device_class)),
+							node::sml::parameter_tree(node::sml::OBIS_CLASS_TIMESTAMP_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
+						}),
+						node::sml::child_list_tree(node::sml::obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x03),{
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), node::sml::make_value(cyng::buffer_t{ 0x01, (char)0xA8, 0x15, 0x74, (char)0x31, 0x45, 0x04, (char)0x01, (char)0x02 })),
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), node::sml::make_value(device_class)),
 							node::sml::parameter_tree(node::sml::OBIS_CLASS_TIMESTAMP_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
 						})
@@ -1144,6 +1150,268 @@ namespace node
 				, get_proc_parameter_response(frame.at(3)	//	server id
 					, node::sml::OBIS_CODE_ROOT_DEVICE_INFO	//	path entry - 81 81 12 06 FF FF
 					, node::sml::empty_tree(node::sml::OBIS_CODE_ROOT_DEVICE_INFO))));
+
+		}
+
+		void network::sml_get_proc_ipt_state(cyng::context& ctx)
+		{
+			//	[fd167248-a823-46d6-ba0a-03157a28a104,1805241520113192-3,2,0500153B02297E,operator,operator]
+			//
+			//	* pk
+			//	* transaction id
+			//	* SML message id
+			//	* server ID
+			//	* username
+			//	* password
+			//	* OBIS (requested parameter)
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.get.proc.ipt.state " << cyng::io::to_str(frame));
+
+			//76                                                SML_Message(Sequence): 
+			//  81063137303531313136303831363537393537312D33    transactionId: 170511160816579571-3
+			//  6202                                            groupNo: 2
+			//  6200                                            abortOnError: 0
+			//  72                                              messageBody(Choice): 
+			//	630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
+			//	73                                            SML_GetProcParameter_Res(Sequence): 
+			//	  080500153B01EC46                            serverId: 05 00 15 3B 01 EC 46 
+			//	  71                                          parameterTreePath(SequenceOf): 
+			//		0781490D0600FF                            path_Entry: 81 49 0D 06 00 FF 
+			//	  73                                          parameterTree(Sequence): 
+			//		0781490D0600FF                            parameterName: 81 49 0D 06 00 FF 
+			//		01                                        parameterValue: not set
+			//		73                                        child_List(SequenceOf): 
+			//		  73                                      tree_Entry(Sequence): 
+			//			07814917070000                        parameterName: 81 49 17 07 00 00 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  652A96A8C0                          smlValue: 714516672
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			0781491A070000                        parameterName: 81 49 1A 07 00 00 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  6368EF                              smlValue: 26863
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			07814919070000                        parameterName: 81 49 19 07 00 00 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  631019                              smlValue: 4121
+			//			01                                    child_List: not set
+			//  639CB8                                          crc16: 40120
+			//  00                                              endOfSmlMsg: 00 
+
+			const std::uint32_t ip_address = bus_->remote_endpoint().address().to_v4().to_ulong();
+			const std::uint16_t target_port = bus_->local_endpoint().port()
+				, source_port = bus_->remote_endpoint().port();
+
+			//
+			//	linearize and set CRC16
+			//	append to current SML message
+			//
+			append_msg(node::sml::message(frame.at(1)	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, node::sml::BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(frame.at(3)	//	server id  
+					, node::sml::OBIS_CODE_ROOT_IPT_STATE	//	path entry - 81 49 0D 06 00 FF 
+					, node::sml::child_list_tree(node::sml::OBIS_CODE_ROOT_IPT_STATE, {
+
+						node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x00), node::sml::make_value(ip_address)),
+						node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x00), node::sml::make_value(target_port)),
+						node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x19, 0x07, 0x00, 0x00), node::sml::make_value(source_port))
+			}))));
+		}
+
+		void network::sml_get_proc_ipt_param(cyng::context& ctx)
+		{
+			//	[fd167248-a823-46d6-ba0a-03157a28a104,1805241520113192-3,2,0500153B02297E,operator,operator]
+			//
+			//	* pk
+			//	* transaction id
+			//	* SML message id
+			//	* server ID
+			//	* username
+			//	* password
+			//	* OBIS (requested parameter)
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.get.proc.ipt.param " << cyng::io::to_str(frame));
+
+			//76                                                SML_Message(Sequence): 
+			//  81063137303531313136303831363537393537312D32    transactionId: 170511160816579571-2
+			//  6201                                            groupNo: 1
+			//  6200                                            abortOnError: 0
+			//  72                                              messageBody(Choice): 
+			//	630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
+			//	73                                            SML_GetProcParameter_Res(Sequence): 
+			//	  080500153B01EC46                            serverId: 05 00 15 3B 01 EC 46 
+			//	  71                                          parameterTreePath(SequenceOf): 
+			//		0781490D0700FF                            path_Entry: 81 49 0D 07 00 FF 
+			//	  73                                          parameterTree(Sequence): 
+			//		0781490D0700FF                            parameterName: 81 49 0D 07 00 FF 
+			//		01                                        parameterValue: not set
+			//		76                                        child_List(SequenceOf): 
+			//		  73                                      tree_Entry(Sequence): 
+			//			0781490D070001                        parameterName: 81 49 0D 07 00 01 
+			//			01                                    parameterValue: not set
+			//			75                                    child_List(SequenceOf): 
+			//			  73                                  tree_Entry(Sequence): 
+			//				07814917070001                    parameterName: 81 49 17 07 00 01 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  652A96A8C0                      smlValue: 714516672
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				0781491A070001                    parameterName: 81 49 1A 07 00 01 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  6368EF                          smlValue: 26863
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				07814919070001                    parameterName: 81 49 19 07 00 01 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  6200                            smlValue: 0
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				078149633C0101                    parameterName: 81 49 63 3C 01 01 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  094C534D5465737432              smlValue: LSMTest2
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				078149633C0201                    parameterName: 81 49 63 3C 02 01 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  094C534D5465737432              smlValue: LSMTest2
+			//				01                                child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			0781490D070002                        parameterName: 81 49 0D 07 00 02 
+			//			01                                    parameterValue: not set
+			//			75                                    child_List(SequenceOf): 
+			//			  73                                  tree_Entry(Sequence): 
+			//				07814917070002                    parameterName: 81 49 17 07 00 02 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  65B596A8C0                      smlValue: 3046549696
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				0781491A070002                    parameterName: 81 49 1A 07 00 02 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  6368F0                          smlValue: 26864
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				07814919070002                    parameterName: 81 49 19 07 00 02 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  6200                            smlValue: 0
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				078149633C0102                    parameterName: 81 49 63 3C 01 02 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  094C534D5465737432              smlValue: LSMTest2
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				078149633C0202                    parameterName: 81 49 63 3C 02 02 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  094C534D5465737432              smlValue: LSMTest2
+			//				01                                child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			07814827320601                        parameterName: 81 48 27 32 06 01 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  6201                                smlValue: 1
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			07814831320201                        parameterName: 81 48 31 32 02 01 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  6278                                smlValue: 120
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			070080800003FF                        parameterName: 00 80 80 00 03 FF 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  4200                                smlValue: False
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			070080800004FF                        parameterName: 00 80 80 00 04 FF 
+			//			01                                    parameterValue: not set
+			//			01                                    child_List: not set
+			//  63915D                                          crc16: 37213
+			//  00                                              endOfSmlMsg: 00 
+
+			const std::uint32_t ip_address_primary_master = 714516672;	//	192.168.150.42
+			const std::uint16_t target_port_primary_master = 26862
+				, source_port_primary_master = 0;
+			const std::string user_pm = config_[0].account_
+				, pwd_pm = config_[0].pwd_;
+
+			const std::uint32_t ip_address_secondary_master = 3046549696;	//	192.168.150.181
+			const std::uint16_t target_port_secondary_master = 26863
+				, source_port_seccondary_master = 0;
+			const std::string user_sm = config_[1].account_
+				, pwd_sm = config_[1].pwd_;
+
+			const std::uint16_t wait_time = bus_->get_watchdog();	//	minutes
+			const std::uint16_t repetitions = 120;	//	counter
+			const bool ssl = false;
+
+			//
+			//	linearize and set CRC16
+			//	append to current SML message
+			//
+			append_msg(node::sml::message(frame.at(1)	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, node::sml::BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(frame.at(3)	//	server id  
+					, node::sml::OBIS_CODE_ROOT_IPT_PARAM	//	path entry - 81 49 0D 07 00 FF 
+					, node::sml::child_list_tree(node::sml::OBIS_CODE_ROOT_IPT_PARAM, {
+
+						//	primary master
+						node::sml::child_list_tree(node::sml::obis(0x81, 0x49, 0x0D, 0x07, 0x00, 0x01), {
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x01), node::sml::make_value(ip_address_primary_master)),
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x01), node::sml::make_value(target_port_primary_master)),
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x19, 0x07, 0x00, 0x01), node::sml::make_value(source_port_primary_master)),
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x63, 0x3C, 0x01, 0x01), node::sml::make_value(user_pm)),
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x63, 0x3C, 0x02, 0x01), node::sml::make_value(pwd_pm))
+						}),
+
+						//	secondary master
+						node::sml::child_list_tree(node::sml::obis(0x81, 0x49, 0x0D, 0x07, 0x00, 0x02), {
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x02), node::sml::make_value(ip_address_secondary_master)),
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x02), node::sml::make_value(target_port_secondary_master)),
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x19, 0x07, 0x00, 0x02), node::sml::make_value(source_port_seccondary_master)),
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x63, 0x3C, 0x01, 0x02), node::sml::make_value(user_sm)),
+							node::sml::parameter_tree(node::sml::obis(0x81, 0x49, 0x63, 0x3C, 0x02, 0x02), node::sml::make_value(pwd_sm))
+						}),
+
+						//	waiting time (Wartezeit)
+						node::sml::parameter_tree(node::sml::obis(0x81, 0x48, 0x27, 0x32, 0x06, 0x01), node::sml::make_value(wait_time)),
+
+						//	repetitions
+						node::sml::parameter_tree(node::sml::obis(0x81, 0x48, 0x31, 0x32, 0x02, 0x01), node::sml::make_value(repetitions)),
+
+						//	SSL
+						node::sml::parameter_tree(node::sml::obis(0x00, 0x80, 0x80, 0x00, 0x03, 0xFF), node::sml::make_value(ssl)),
+
+						//	certificates (none)
+						node::sml::empty_tree(node::sml::obis(0x00, 0x80, 0x80, 0x00, 0x04, 0xFF))
+
+			}))));
 
 		}
 

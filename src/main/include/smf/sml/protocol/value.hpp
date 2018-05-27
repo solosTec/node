@@ -26,16 +26,22 @@ namespace node
 				//static_assert(false, "not a valid SML data type");
 			};
 
+			template<typename T>
+			struct factory_policy<const T&>
+			{
+				static cyng::tuple_t create(T v);
+			};
+
 			template<>
 			struct factory_policy<bool>
 			{
 				static cyng::tuple_t create(bool b);
 			};
-			template<>
-			struct factory_policy<const bool&>
-			{
-				static cyng::tuple_t create(bool b);
-			};
+			//template<>
+			//struct factory_policy<const bool&>
+			//{
+			//	static cyng::tuple_t create(bool b);
+			//};
 			template<>
 			struct factory_policy<std::uint8_t>
 			{
@@ -152,7 +158,6 @@ namespace node
 			{
 				static cyng::tuple_t create(obis&& v);
 			};
-
 		}
 
 		template <typename T>
