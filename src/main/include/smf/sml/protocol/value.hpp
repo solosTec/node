@@ -29,7 +29,11 @@ namespace node
 			template<typename T>
 			struct factory_policy<const T&>
 			{
-				static cyng::tuple_t create(T v);
+				using factory = factory_policy<T>;
+				static cyng::tuple_t create(T v)
+				{
+					return factory::create(v);
+				}
 			};
 
 			template<>
@@ -37,18 +41,8 @@ namespace node
 			{
 				static cyng::tuple_t create(bool b);
 			};
-			//template<>
-			//struct factory_policy<const bool&>
-			//{
-			//	static cyng::tuple_t create(bool b);
-			//};
 			template<>
 			struct factory_policy<std::uint8_t>
-			{
-				static cyng::tuple_t create(std::uint8_t v);
-			};
-			template<>
-			struct factory_policy<const std::uint8_t&>
 			{
 				static cyng::tuple_t create(std::uint8_t v);
 			};
@@ -58,17 +52,7 @@ namespace node
 				static cyng::tuple_t create(std::uint16_t v);
 			};
 			template<>
-			struct factory_policy<const std::uint16_t&>
-			{
-				static cyng::tuple_t create(std::uint16_t);
-			};
-			template<>
 			struct factory_policy<std::uint32_t>
-			{
-				static cyng::tuple_t create(std::uint32_t v);
-			};
-			template<>
-			struct factory_policy<const std::uint32_t&>
 			{
 				static cyng::tuple_t create(std::uint32_t v);
 			};
@@ -93,27 +77,12 @@ namespace node
 				static cyng::tuple_t create(std::int32_t v);
 			};
 			template<>
-			struct factory_policy<const std::int32_t&>
-			{
-				static cyng::tuple_t create(std::int32_t v);
-			};
-			template<>
 			struct factory_policy<std::int64_t>
 			{
 				static cyng::tuple_t create(std::int64_t v);
 			};
 			template<>
-			struct factory_policy<const std::int64_t&>
-			{
-				static cyng::tuple_t create(std::int64_t v);
-			};
-			template<>
 			struct factory_policy<std::chrono::system_clock::time_point>
-			{
-				static cyng::tuple_t create(std::chrono::system_clock::time_point v);
-			};
-			template<>
-			struct factory_policy<const std::chrono::system_clock::time_point&>
 			{
 				static cyng::tuple_t create(std::chrono::system_clock::time_point v);
 			};

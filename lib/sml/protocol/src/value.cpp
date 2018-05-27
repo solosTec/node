@@ -17,34 +17,18 @@ namespace node
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), b);
 			}
-			cyng::tuple_t factory_policy<const bool&>::create(bool b)
-			{
-				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), b);
-			}
 
 			cyng::tuple_t factory_policy<std::uint8_t>::create(std::uint8_t v)
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
 			}
-			cyng::tuple_t factory_policy<const std::uint8_t&>::create(std::uint8_t v)
-			{
-				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-			}
-
+			
 			cyng::tuple_t factory_policy<std::uint16_t>::create(std::uint16_t v)
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
 			}
-			cyng::tuple_t factory_policy<const std::uint16_t&>::create(std::uint16_t v)
-			{
-				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-			}
-
+			
 			cyng::tuple_t factory_policy<std::uint32_t>::create(std::uint32_t v)
-			{
-				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-			}
-			cyng::tuple_t factory_policy<const std::uint32_t&>::create(std::uint32_t v)
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
 			}
@@ -65,15 +49,7 @@ namespace node
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
 			}
-			cyng::tuple_t  factory_policy<const std::int32_t&>::create(std::int32_t v)
-			{
-				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-			}
 			cyng::tuple_t factory_policy<std::int64_t>::create(std::int64_t v)
-			{
-				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-			}
-			cyng::tuple_t factory_policy<const std::int64_t&>::create(std::int64_t v)
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
 			}
@@ -81,11 +57,6 @@ namespace node
 			{
 				//return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), std::chrono::system_clock::to_time_t(v));
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), make_timestamp(v));
-			}
-			cyng::tuple_t factory_policy<const std::chrono::system_clock::time_point&>::create(std::chrono::system_clock::time_point v)
-			{
-				//return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), std::chrono::system_clock::to_time_t(v));
-				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), make_timestamp(v));				
 			}
 			cyng::tuple_t factory_policy<cyng::buffer_t>::create(cyng::buffer_t&& v)
 			{
