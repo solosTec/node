@@ -141,9 +141,7 @@ namespace node
 			 */
 			connect_state	connect_state_;
 
-//#ifdef SMF_IO_LOG
-#ifdef _DEBUG
-
+#ifdef SMF_IO_LOG
 			std::size_t log_counter_;
 #endif
 		};

@@ -328,8 +328,8 @@ namespace node
 				bag["time"] = cyng::make_now();
 
 				bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::string>(frame.at(1), "")
-					, cyng::value_cast<std::string>(frame.at(2), "")
+					, cyng::value_cast<std::string>(frame.at(1), "")	//	name
+					, cyng::value_cast<std::string>(frame.at(2), "")	//	pwd
 					, "plain" //	login scheme
 					, bag));
 
@@ -375,8 +375,8 @@ namespace node
 				bag["time"] = cyng::make_now();
 
 				bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::string>(frame.at(1), "")
-					, cyng::value_cast<std::string>(frame.at(2), "")
+					, cyng::value_cast<std::string>(frame.at(1), "")	//	name
+					, cyng::value_cast<std::string>(frame.at(2), "")	//	pwd
 					, "plain" //	login scheme
 					, bag));
 				
