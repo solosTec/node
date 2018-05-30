@@ -32,9 +32,7 @@ namespace node
 			, cyng::logging::log_ptr
 			, cluster_config_t const& cfg_cls
 			, boost::asio::ip::tcp::endpoint
-			, std::string const& doc_root
-			, uint16_t watchdog
-			, int timeout);
+			, std::string const& doc_root);
 		void run();
 		void stop();
 

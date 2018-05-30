@@ -30,9 +30,7 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cluster_config_t const& cfg_cls
 		, boost::asio::ip::tcp::endpoint ep
-		, std::string const& doc_root
-		, uint16_t watchdog
-		, int timeout)
+		, std::string const& doc_root)
 	: base_(*btp)
 		, rgn_()
 		, bus_(bus_factory(btp->mux_, logger, rgn_(), btp->get_id()))

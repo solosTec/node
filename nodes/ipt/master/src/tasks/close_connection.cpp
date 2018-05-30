@@ -54,14 +54,17 @@ namespace node
 		//	* start timer to check connection setup
 		//
 
-		cyng::vector_t prg;
-		prg
-			<< cyng::generate_invoke_unwinded("req.close.connection")
-			<< cyng::generate_invoke_unwinded("session.store.relation", cyng::invoke("ipt.push.seq"), base_.get_id())
-			<< cyng::generate_invoke_unwinded("stream.flush")
-			<< cyng::generate_invoke_unwinded("log.msg.info", "client.req.close.connection.forward", cyng::invoke("ipt.push.seq"))
-			;
-		vm_.async_run(std::move(prg));
+		//	prepare IP-T command: close connection request
+		vm_.async_run(cyng::generate_invoke("req.close.connection"));
+
+		//	tie IP-T sequence with this task id
+		vm_.async_run(cyng::generate_invoke("session.store.relation", cyng::invoke("ipt.push.seq"), base_.get_id()));
+
+			//	send IP-T request
+		vm_.async_run(cyng::generate_invoke("stream.flush"));
+
+		//	logging
+		vm_.async_run(cyng::generate_invoke("log.msg.info", "client.req.close.connection.forward", cyng::invoke("ipt.push.seq")));
 
 		//
 		//	start monitor

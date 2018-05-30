@@ -68,7 +68,7 @@ namespace node
 				if (!ec)
 				{
 					//CYNG_LOG_TRACE(logger_, bytes_transferred << " sml bytes read");
-					get_session()->vm_.run(cyng::generate_invoke("log.msg.trace", "sml", bytes_transferred, "bytes"));
+					get_session()->vm_.async_run(cyng::generate_invoke("log.msg.trace", "sml", bytes_transferred, "bytes"));
 
 #ifdef SMF_IO_DEBUG
 					cyng::io::hex_dump hd;
@@ -95,7 +95,7 @@ namespace node
 					//
 					//	session cleanup - hold a reference of the session
 					//
-					get_session()->vm_.run(cyng::generate_invoke("session.cleanup", cyng::invoke("push.session"), ec));
+					get_session()->vm_.async_run(cyng::generate_invoke("session.cleanup", cyng::invoke("push.session"), ec));
 				}
 			});
 		}

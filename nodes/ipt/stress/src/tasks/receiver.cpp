@@ -27,6 +27,8 @@ namespace node
 			, config_(cfg)
 			, tsk_sender_(tsk_sender)
 			, master_(0)
+			, rnd_device_()
+			, mersenne_engine_(rnd_device_())
 		{
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -77,7 +79,12 @@ namespace node
 
 		void receiver::stop()
 		{
-			CYNG_LOG_INFO(logger_, "network is stopped");
+			bus_->stop();
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> is stopped");
 		}
 
 		//	slot 0
@@ -142,8 +149,21 @@ namespace node
 				<< std::string(data.begin(), data.end()))
 				;
 
-			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			bus_->vm_.async_run(cyng::generate_invoke("ipt.transfer.data", cyng::buffer_t({ 'p', 'i', 'n', 'g' })));
+			//
+			//	buffer size
+			//
+			std::uniform_int_distribution<int> dist_buffer_size(512, 1024);
+			cyng::buffer_t buffer(dist_buffer_size(rnd_device_));
+
+			//
+			//	fill buffer
+			//
+			std::uniform_int_distribution<int> dist(std::numeric_limits<char>::min(), std::numeric_limits<char>::max());
+			auto gen = std::bind(dist, mersenne_engine_);
+			std::generate(begin(buffer), end(buffer), gen);
+
+			//bus_->vm_.async_run(cyng::generate_invoke("ipt.transfer.data", cyng::buffer_t({ 'p', 'i', 'n', 'g' })));
+			bus_->vm_.async_run(cyng::generate_invoke("ipt.transfer.data", buffer));
 			bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
 
 			return cyng::continuation::TASK_CONTINUE;

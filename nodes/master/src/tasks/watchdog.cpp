@@ -29,8 +29,6 @@ namespace node
 			<< "> "
 			<< cyng::object_cast<session>(obj)->vm_.tag()
 			<< " is running");
-
-		
 	}
 
 	void watchdog::run()
@@ -78,7 +76,7 @@ namespace node
 			<< "> shutdown peer "
 			<< sp->vm_.tag());
 
-		const_cast<session*>(sp)->stop();
+		const_cast<session*>(sp)->stop(session_obj_);
 		return cyng::continuation::TASK_CONTINUE;
 	}
 

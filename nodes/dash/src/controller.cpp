@@ -426,9 +426,7 @@ namespace node
 			, logger
 			, load_cluster_cfg(cfg_cls)
 			, boost::asio::ip::tcp::endpoint{ host, port }
-			, doc_root
-			, cyng::value_cast<int>(dom.get("watchdog"), 30)
-			, cyng::value_cast<int>(dom.get("timeout"), 12));
+			, doc_root);
 
 	}
 

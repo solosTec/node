@@ -53,16 +53,18 @@ namespace node
             CYNG_LOG_DEBUG(logger_, "shutdown connection(" << tag_ << ')');
             shutdown_ = true;
 
-            //
+			//
+			//  close socket
+			//
+			boost::system::error_code ec;
+			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+			socket_.close(ec);
+			
+			//
             //  no more callbacks
             //
-            session_.stop();
+            session_.stop(ec);
 
-            //
-            //  close socket
-            //
-			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-			socket_.close();
 		}
 
 		void connection::do_read()
@@ -93,15 +95,11 @@ namespace node
 
 					do_read();
 				}
-				//else if (ec != boost::asio::error::operation_aborted)
-				//{
-				//	std::cerr << ec.message() << std::endl;
-				//}
 				else
 				{
                     CYNG_LOG_WARNING(logger_, "imega connection closed <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
-                    session_.stop();
-                    session_.bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", tag_, cyng::invoke("push.connection"), ec));
+                    session_.stop(ec);
+                    //session_.bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", tag_, cyng::invoke("push.connection"), ec));
 				}
 			});
 		}

@@ -43,7 +43,7 @@ namespace node
 
 			virtual ~session();
 
-			void stop();
+			void stop(boost::system::error_code ec);
 
 		private:
 
@@ -96,8 +96,6 @@ namespace node
 			cyng::logging::log_ptr logger_;
 			bus::shared_type bus_;	//!< cluster bus
 			cyng::controller vm_;	//!< iMEGA device
-			//const std::chrono::seconds timeout_;
-			//const bool auto_answer_;
 
 			/**
 			 * iMEGA parser

@@ -36,7 +36,7 @@ namespace node
 #ifdef SMF_IO_DEBUG
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 #endif
-				vm_.run(std::move(prg));
+				vm_.async_run(std::move(prg));
 			}, sk)
 			, serializer_(socket_, vm_, sk)
 			, model_(model)
@@ -47,13 +47,13 @@ namespace node
 			//	register logger domain
 			//
 			cyng::register_logger(logger_, vm_);
-			vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
+			vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
 			//
 			//	register socket domain
 			//
 			cyng::register_socket(socket_, vm_);
-			vm_.run(cyng::generate_invoke("log.msg.info", "ip:tcp:socket domain is running"));
+			vm_.async_run(cyng::generate_invoke("log.msg.info", "ip:tcp:socket domain is running"));
 
 			//
 			//	set new scramble key after scrambled login request
@@ -121,19 +121,24 @@ namespace node
             //
             //  update state
             //
+			BOOST_ASSERT_MSG(state_ != STATE_SHUTDOWN_, "already in shutdown state");
             state_ = STATE_SHUTDOWN_;
 
-            //
+			//
+			//  close socket
+			//
+			boost::system::error_code ec;
+			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+			socket_.close(ec);
+			
+			//
             //  no more callbacks
             //
-            vm_.halt();
-
-            //
-            //  close socket
-            //
-            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-            socket_.close();
-
+			auto self(this->shared_from_this());
+			vm_.access([self](cyng::vm& vm) {
+				vm.run(cyng::generate_invoke("log.msg.info", "fast shutdown"));
+				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
+			});
         }
 
 		bool bus::is_online() const
@@ -188,7 +193,7 @@ namespace node
 
 					do_read();
 				}
-				else
+				else if (ec != boost::asio::error::operation_aborted)
 				{
 					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
 					state_ = STATE_ERROR_;
@@ -196,8 +201,14 @@ namespace node
 					//
 					//	slot [1] - go offline
 					//
-					mux_.send(task_, 1, cyng::tuple_t());
+					mux_.post(task_, 1, cyng::tuple_t());
 
+				}
+				else
+				{
+					//
+					//	The connection was closed intentionally.
+					//
 				}
 			});
 
@@ -240,7 +251,7 @@ namespace node
 				//
 				//	slot [0]
 				//
-				mux_.send(task_, 0, cyng::tuple_factory(watchdog_, redirect));
+				mux_.post(task_, 0, cyng::tuple_factory(watchdog_, redirect));
 
 			}
 			else
@@ -252,7 +263,7 @@ namespace node
 				//
 				//	slot [1]
 				//
-				mux_.send(task_, 1, cyng::tuple_t());
+				mux_.post(task_, 1, cyng::tuple_t());
 			}
 		}
 
@@ -300,7 +311,7 @@ namespace node
 			//	[0b5d8da4-ce8d-4c4f-bb02-9a9f173391d4,1B1B1B1B010101017681063...2007101633789000000001B1B1B1B1A034843]
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx.attach(cyng::generate_invoke("log.msg.trace", "ipt.req.transmit.data", frame));
-			mux_.send(task_, 5, cyng::tuple_factory(frame.at(1)));
+			mux_.post(task_, 5, cyng::tuple_factory(frame.at(1)));
 		}
 
 		void bus::ipt_req_open_connection(cyng::context& ctx)
@@ -318,7 +329,7 @@ namespace node
 			{
 			case STATE_AUTHORIZED_:
 				// forward to session
-				mux_.send(task_, 2, cyng::tuple_factory(frame.at(1), frame.at(2)));
+				mux_.post(task_, 2, cyng::tuple_factory(frame.at(1), frame.at(2)));
 				break;
 			case STATE_CONNECTED_:
 				//	busy
@@ -460,7 +471,7 @@ namespace node
 			}
 #endif
 			// forward to session
-			mux_.send(task_, 3, cyng::tuple_factory(frame.at(1), frame.at(2), frame.at(3), frame.at(6)));
+			mux_.post(task_, 3, cyng::tuple_factory(frame.at(1), frame.at(2), frame.at(3), frame.at(6)));
 
 		}
 

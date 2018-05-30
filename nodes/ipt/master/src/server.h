@@ -50,6 +50,11 @@ namespace node
 
 			void insert_connection(cyng::context&);
 			void close_connection(cyng::context&);
+
+			/**
+			 * @return true if entry was found
+			 */
+			bool clear_connection_map(boost::uuids::uuid);
 			void transmit_data(cyng::context& ctx);	//!< transmit data locally
 			//void req_stop_client(cyng::context&);
 
@@ -110,12 +115,14 @@ namespace node
 			boost::uuids::random_generator rnd_;
 
 			/**
-			 * client map
+			 * client map:
+			 * Establishes the connection between an UUID and a connection/session object.
 			 */
 			std::map<boost::uuids::uuid, cyng::object>	client_map_;
 
 			/**
-			 * connection map
+			 * connection map:
+			 * Contains all local connections.
 			 */
 			std::map<boost::uuids::uuid, boost::uuids::uuid> connection_map_;
 		};

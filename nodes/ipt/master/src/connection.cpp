@@ -31,7 +31,6 @@ namespace node
 			, buffer_()
 			, session_(mux, logger, bus, tag, sk, watchdog, timeout)
 			, serializer_(socket_, session_.vm_, sk)
-            , shutdown_(false)
 		{
 			//
 			//	register socket operations to session VM
@@ -41,8 +40,8 @@ namespace node
 
         connection::~connection()
         {
-            //std::cerr << "connection::~connection(" << tag_ << ")" << std::endl;
-            CYNG_LOG_DEBUG(logger_, "deconstruct connection(" << tag_ << ')');
+			CYNG_LOG_DEBUG(logger_, "deconstruct connection(" << tag_ << ')');
+			BOOST_ASSERT_MSG(session_.vm_.is_halted(), "session not in HALT state");
         }
 
 		void connection::start()
@@ -50,30 +49,32 @@ namespace node
 			do_read();
 		}
 
-		void connection::stop()
+		void connection::close()
 		{
-            CYNG_LOG_DEBUG(logger_, "shutdown connection(" << tag_ << ')');
-            shutdown_ = true;
-
-            //
-            //  no more callbacks
-            //
-            session_.stop();
-
-            //
-            //  close socket
-            //
+			//
+			//  close socket
+			//
 			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
 			socket_.close();
 		}
 
+		void connection::stop(cyng::object obj)
+		{
+            CYNG_LOG_DEBUG(logger_, "shutdown connection(" << tag_ << ')');
+
+			//
+			//  close socket
+			//
+			close();
+			
+			//
+            //  no more callbacks
+            //
+            session_.stop(obj);
+		}
+
 		void connection::do_read()
 		{
-            //
-            //  check system shutdown
-            //
-            if (shutdown_)  return;
-
 			socket_.async_read_some(boost::asio::buffer(buffer_),
 				[this](boost::system::error_code ec, std::size_t bytes_transferred)
 			{
@@ -95,15 +96,22 @@ namespace node
 
 					do_read();
 				}
-				//else if (ec != boost::asio::error::operation_aborted)
-				//{
-				//	std::cerr << ec.message() << std::endl;
-				//}
+				else if (ec != boost::asio::error::operation_aborted)
+				{
+					//CYNG_LOG_WARNING(logger_, "ipt connection closed <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
+
+					//
+					//	device/party closed connection or network shutdown
+					//
+					session_.stop(ec);
+					//session_.bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", tag_, cyng::invoke("push.connection"), ec));
+				}
 				else
 				{
-                    //CYNG_LOG_WARNING(logger_, "ipt connection closed <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
-                    session_.stop(ec);
-                    session_.bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", tag_, cyng::invoke("push.connection"), ec));
+					//
+					//	The session was closed intentionally.
+					//	At this point nothing more is to do. Service is going down and all session have to be stopped fast.
+					//
 				}
 			});
 		}

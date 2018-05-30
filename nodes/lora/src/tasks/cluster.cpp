@@ -153,7 +153,7 @@ namespace node
 	{
 		CYNG_LOG_TRACE(logger_, "received " << prg.size() << " HTTP(s) instructions from " << tag);
 		//CYNG_LOG_TRACE(logger_, "session callback: " << cyng::io::to_str(prg));
-		this->processor_.vm().run(std::move(prg));
+		this->processor_.vm().async_run(std::move(prg));
 	}
 
 }

@@ -48,13 +48,13 @@ namespace node
 		//	register logger domain
 		//
 		cyng::register_logger(logger_, vm_);
-		vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
+		vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
 		//
 		//	register socket domain
 		//
 		cyng::register_socket(socket_, vm_);
-		vm_.run(cyng::generate_invoke("log.msg.info", "ip:tcp:socket domain is running"));
+		vm_.async_run(cyng::generate_invoke("log.msg.info", "ip:tcp:socket domain is running"));
 
 		//
 		//	increase sequence and set as result value
@@ -63,7 +63,7 @@ namespace node
 			++this->seq_;
 			ctx.push(cyng::make_object(this->seq_));
 		});
-		vm_.run(cyng::generate_invoke("log.msg.trace", "bus.seq.next() is registered"));
+		vm_.async_run(cyng::generate_invoke("log.msg.trace", "bus.seq.next() is registered"));
 
 		//
 		//	register bus request handler
@@ -150,16 +150,20 @@ namespace node
         //
         state_ = STATE_SHUTDOWN_;
 
+		//
+		//  close socket
+		//
+		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+		socket_.close();
+
         //
         //  no more callbacks
         //
-        vm_.halt();
-
-        //
-        //  close socket
-        //
-        socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-        socket_.close();
+		auto self(this->shared_from_this());
+		vm_.access([self](cyng::vm& vm) {
+			vm.run(cyng::generate_invoke("log.msg.info", "fast shutdown"));
+			vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
+		});
     }
 
     bool bus::is_online() const
@@ -174,7 +178,7 @@ namespace node
         //
         if (state_ == STATE_SHUTDOWN_)  return;
 
-		auto self(shared_from_this());
+		auto self(this->shared_from_this());
 		socket_.async_read_some(boost::asio::buffer(buffer_),
 			[this, self](boost::system::error_code ec, std::size_t bytes_transferred)
 		{
@@ -190,7 +194,7 @@ namespace node
 				parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
 				do_read();
 			}
-			else
+			else if (ec != boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, "cluster read <" << ec << ':' << ec.message() << '>');
 				state_ = STATE_ERROR_;
@@ -201,8 +205,14 @@ namespace node
 				//
 				//	slot [1] - go offline
 				//
-				mux_.send(task_, 1, cyng::tuple_t());
+				mux_.post(task_, 1, cyng::tuple_t());
 
+			}
+			else
+			{
+				//
+				//	The connection was closed intentionally.
+				//
 			}
 		});
 

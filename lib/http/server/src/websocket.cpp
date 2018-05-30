@@ -285,7 +285,7 @@ namespace node
 			//
 			//	execute on bus VM
 			//
-			bus_->vm_.run(cyng::generate_invoke("ws.read", tag_, cyng::invoke("ws.push"), cyng::json::read(str)));
+			bus_->vm_.async_run(cyng::generate_invoke("ws.read", tag_, cyng::invoke("ws.push"), cyng::json::read(str)));
 
 			// Clear buffer
 			ws_.text();

@@ -118,7 +118,7 @@ namespace node
 				//	upload	
 				//
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(rec[0]));
-				bus_->vm_.run(bus_req_db_insert(tbl->meta().get_name()
+				bus_->vm_.async_run(bus_req_db_insert(tbl->meta().get_name()
 					, rec.key()
 					, rec.data()
 					, rec.get_generation()

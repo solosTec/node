@@ -264,23 +264,48 @@ namespace node
 		session::~session()
 		{}
 
-		void session::stop()
+		void session::stop(cyng::object obj)
 		{
-			vm_.halt();
+			vm_.access([obj](cyng::vm& vm) {
+				vm.run(cyng::generate_invoke("log.msg.info", "fast shutdown"));
+				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
+			});
+
 		}
 
 		void session::stop(boost::system::error_code ec)
 		{
-			CYNG_LOG_WARNING(logger_, "ipt session " 
-				<< vm_.tag()
-				<< " closed <" 
-				<< ec 
-				<< ':' 
-				<< ec.value() 
-				<< ':' 
-				<< ec.message() 
-				<< '>');
-			vm_.halt();
+			//
+			//	device/party closed connection or network shutdown
+			//
+			vm_.access([this, ec](cyng::vm& vm) {
+
+				//
+				//	halt VM
+				//
+				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
+
+				//
+				//	tell server to remove this session
+				//
+				bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", vm_.tag(), cyng::invoke("push.connection"), ec));
+
+				CYNG_LOG_WARNING(logger_, "ipt session "
+					<< vm_.tag()
+					<< " closed <"
+					<< ec
+					<< ':'
+					<< ec.value()
+					<< ':'
+					<< ec.message()
+					<< '>');
+			});
+
+			//
+			//	force context switch
+			//
+			std::this_thread::yield();
+
 		}
 
 		void session::store_relation(cyng::context& ctx)
@@ -346,8 +371,6 @@ namespace node
 				ctx.attach(cyng::generate_invoke("res.login.public", res, watchdog_, ""));
 				ctx.attach(cyng::generate_invoke("stream.flush"));
 			}
-
-
 		}
 
 		void session::ipt_req_login_scrambled(cyng::context& ctx)

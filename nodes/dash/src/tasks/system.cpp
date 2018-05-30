@@ -6,24 +6,15 @@
  */
 
 #include "system.h"
-//#include <smf/cluster/generator.h>
 
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
-//#include <cyng/vm/generator.h>
 #include <cyng/table/meta.hpp>
-//#include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/table/key.hpp>
 #include <cyng/table/body.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/sys/cpu.h>
-//#include <cyng/sys/memory.h>
-//#include <cyng/json.h>
-
-//#include <boost/uuid/nil_generator.hpp>
-//#include <boost/uuid/string_generator.hpp>
-//#include <boost/algorithm/string/predicate.hpp>
 
 namespace node
 {

@@ -45,7 +45,7 @@ namespace node
 
 			virtual ~session();
 
-			void stop();
+			void stop(cyng::object);
 			void stop(boost::system::error_code ec);
 
 		private:

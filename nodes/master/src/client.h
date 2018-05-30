@@ -53,8 +53,8 @@ namespace node
 		cyng::vector_t req_close(boost::uuids::uuid		//	[0] remote client tag
 			, boost::uuids::uuid	//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
-			, int
-			, boost::uuids::uuid self);
+			, boost::uuids::uuid self
+			, bool );
 
 		cyng::vector_t req_open_connection(boost::uuids::uuid	//	[0] remote client tag
 			, boost::uuids::uuid	//	[1] peer tag

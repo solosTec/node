@@ -28,6 +28,8 @@ namespace node
 			, config_(cfg)
 			, master_(0)
 			, task_state_(TASK_STATE_INITIAL_)
+			, rnd_device_()
+			, mersenne_engine_(rnd_device_())
 		{
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -55,15 +57,39 @@ namespace node
 				{
 					bus_->vm_.async_run(cyng::generate_invoke("res.watchdog", static_cast<std::uint8_t>(0)));
 					base_.suspend(std::chrono::minutes(bus_->get_watchdog()));
+					CYNG_LOG_INFO(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> has watchdog with "
+						<< bus_->get_watchdog()
+						<< " minute(s)");
 				}
 				else
 				{
 					base_.suspend(config_[master_].monitor_);
+					CYNG_LOG_INFO(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> has monitor with "
+						<< config_[master_].monitor_.count()
+						<< " seconds(s)");
 				}
 
 				if (task_state_ == TASK_STATE_CONNECTED_)
 				{
-					bus_->vm_.async_run(cyng::generate_invoke("ipt.transfer.data", cyng::buffer_t({ 'h', 'e', 'l', 'l', 'o' })));
+					std::uniform_int_distribution<int> dist_buffer_size(512, 1024);
+					cyng::buffer_t buffer(dist_buffer_size(rnd_device_));
+
+					//
+					//	fill buffer
+					//
+					std::uniform_int_distribution<int> dist(std::numeric_limits<char>::min(), std::numeric_limits<char>::max());
+					auto gen = std::bind(dist, mersenne_engine_);
+
+					std::generate(begin(buffer), end(buffer), gen);
+					bus_->vm_.async_run(cyng::generate_invoke("ipt.transfer.data", buffer));
 				}
 
 				bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
@@ -92,7 +118,12 @@ namespace node
 
 		void sender::stop()
 		{
-			CYNG_LOG_INFO(logger_, "network is stopped");
+			bus_->stop();
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> is stopped");
 		}
 
 		//	slot 0
@@ -100,8 +131,24 @@ namespace node
 		{
 			if (watchdog != 0)
 			{
-				CYNG_LOG_INFO(logger_, "start watchdog: " << watchdog << " minutes");
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> has watchdog with "
+					<< watchdog
+					<< " minute(s)");
 				base_.suspend(std::chrono::minutes(watchdog));
+			}
+			else
+			{
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> has monitor with "
+					<< config_[master_].monitor_.count()
+					<< " seconds(s)");
 			}
 
 			//
@@ -162,7 +209,7 @@ namespace node
 			//
 			CYNG_LOG_INFO(logger_, "open connection to: " << number);
 			bus_->vm_.async_run(cyng::generate_invoke("req.open.connection", number));
-			bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+			//bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));	//	delay
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
@@ -271,7 +318,21 @@ namespace node
 				BOOST_ASSERT_MSG(task_state_ == TASK_STATE_AUTHORIZED_, "wrong task state");
 				task_state_ = TASK_STATE_CONNECTED_;
 
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.transfer.data", cyng::buffer_t({'w', 'e', 'l', 'c', 'o', 'm', 'e' })));
+				//
+				//	buffer size
+				//
+				std::uniform_int_distribution<int> dist_buffer_size(512, 1024);
+				cyng::buffer_t buffer(dist_buffer_size(rnd_device_));
+
+				//
+				//	fill buffer
+				//
+				std::uniform_int_distribution<int> dist(std::numeric_limits<char>::min(), std::numeric_limits<char>::max());
+				auto gen = std::bind(dist, mersenne_engine_);
+				std::generate(begin(buffer), end(buffer), gen);
+
+				bus_->vm_.async_run(cyng::generate_invoke("ipt.transfer.data", buffer));
+				//bus_->vm_.async_run(cyng::generate_invoke("ipt.transfer.data", cyng::buffer_t({ 'w', 'e', 'l', 'c', 'o', 'm', 'e' })));
 				bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
 
 			}

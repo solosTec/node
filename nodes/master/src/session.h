@@ -52,9 +52,13 @@ namespace node
 		std::size_t hash() const noexcept;
 
 		/**
-		 * Fast session shutdown
+		 * Fast session shutdown. No cleanup.
+		 * Session watchdog calls this method during service
+		 * shutdown.
+		 *
+		 * @param obj reference object of this session to keep session alive
 		 */
-		void stop();
+		void stop(cyng::object obj);
 
 	private:
 		void bus_req_login(cyng::context& ctx);
@@ -84,6 +88,7 @@ namespace node
 
 		void client_req_login(cyng::context& ctx);
 		void client_req_close(cyng::context& ctx);
+		void client_res_close(cyng::context& ctx);
 
 		void client_req_open_push_channel(cyng::context& ctx);
 		void client_req_close_push_channel(cyng::context& ctx);
@@ -111,6 +116,8 @@ namespace node
 			, cyng::attr_t const&
 			, std::uint64_t
 			, boost::uuids::uuid);
+
+		void stop_cb(cyng::vm&, cyng::object);
 
 	private:
 		cyng::async::mux& mux_;

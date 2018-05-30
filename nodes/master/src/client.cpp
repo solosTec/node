@@ -327,14 +327,15 @@ namespace node
 	cyng::vector_t client::req_close(boost::uuids::uuid tag
 		, boost::uuids::uuid peer
 		, std::uint64_t seq
-		, int code
-		, boost::uuids::uuid self)
+		, boost::uuids::uuid self
+		, bool req)
 	{
 		cyng::vector_t prg;
 
 		//
 		//	remove session record
 		//
+		bool success{ false };
 		db_.access([&](cyng::store::table* tbl_session
 			, cyng::store::table* tbl_target
 			, cyng::store::table* tbl_cluster
@@ -411,6 +412,11 @@ namespace node
 			//
 			if (tbl_session->erase(key, tag))
 			{
+				//
+				//	update success flag
+				//
+				success = true;
+
 				prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
 					, "client session"
 					, tag
@@ -438,12 +444,17 @@ namespace node
 			, cyng::store::write_access("*Cluster")
 			, cyng::store::write_access("*Connection"));
 
-		//
-		//	send a response
-		//
-		prg
-			<< cyng::unwinder(client_res_close(tag
-				, seq));
+		if (req)
+		{
+			//
+			//	send a response
+			//
+			prg
+				<< cyng::unwinder(client_res_close(tag
+					, seq
+					, success));
+		}
+
 		return prg;
 	}
 

@@ -168,7 +168,7 @@ namespace node
 		//
 		//	terminate all sessions
 		//
-		mux_.send("node::watchdog", 0, cyng::tuple_factory(tag_));
+		mux_.post("node::watchdog", 0, cyng::tuple_factory(tag_));
 
 		// The server is stopped by cancelling all outstanding asynchronous
         // operations. Once all operations have finished the io_context::run()

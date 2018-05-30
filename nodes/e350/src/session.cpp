@@ -7,9 +7,6 @@
 
 
 #include "session.h"
-//#include "tasks/open_connection.h"
-//#include "tasks/close_connection.h"
-//#include "tasks/gatekeeper.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <cyng/vm/domain/log_domain.h>
@@ -38,7 +35,7 @@ namespace node
 			, parser_([this](cyng::vector_t&& prg) {
 				CYNG_LOG_INFO(logger_, prg.size() << " imega instructions received");
 				CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
-				vm_.run(std::move(prg));
+				vm_.async_run(std::move(prg));
 			})
 			//, gate_keeper_(cyng::async::start_task_sync<gatekeeper>(mux_
 			//	, logger_
@@ -51,7 +48,7 @@ namespace node
 			//	register logger domain
 			//
 			cyng::register_logger(logger_, vm_);
-			vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
+			vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
 			vm_.register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1));
 			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
@@ -236,10 +233,20 @@ namespace node
 		session::~session()
 		{}
 
-		void session::stop()
+		void session::stop(boost::system::error_code ec)
 		{
 			//parser_.stop():
-			vm_.halt();
+			//vm_.halt();
+			vm_.access([this, ec](cyng::vm& vm) {
+
+				//
+				//	halt VM
+				//
+				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
+
+				bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", vm.tag(), cyng::invoke("push.connection"), ec));
+
+			});
 		}
 
 		void session::store_relation(cyng::context& ctx)

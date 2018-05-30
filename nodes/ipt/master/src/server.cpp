@@ -50,10 +50,8 @@ namespace node
 			bus_->vm_.register_function("push.ep.local", 1, std::bind(&server::push_ep_local, this, std::placeholders::_1));
 			bus_->vm_.register_function("push.ep.remote", 1, std::bind(&server::push_ep_remote, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.insert.connection", 2, std::bind(&server::insert_connection, this, std::placeholders::_1));
-			bus_->vm_.register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1));
-			bus_->vm_.register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.close.connection", 3, std::bind(&server::close_connection, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1));
-			//bus_->vm_.register_function("bus.req.stop.client", 3, std::bind(&server::req_stop_client, this, std::placeholders::_1));
 
 			//
 			//	client responses
@@ -61,6 +59,7 @@ namespace node
 			bus_->vm_.register_function("client.res.login", 7, std::bind(&server::client_res_login, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.res.close", 3, std::bind(&server::client_res_close_impl, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.req.close", 4, std::bind(&server::client_req_close_impl, this, std::placeholders::_1));
+
 			bus_->vm_.register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.res.deregister.push.target", 6, std::bind(&server::client_res_deregister_push_target, this, std::placeholders::_1));
@@ -195,7 +194,7 @@ namespace node
 
             for(auto& conn : client_map_)
             {
-                const_cast<connection*>(cyng::object_cast<connection>(conn.second))->stop();
+                const_cast<connection*>(cyng::object_cast<connection>(conn.second))->stop(conn.second);
             }
 
 		}
@@ -225,15 +224,49 @@ namespace node
 		{
 			BOOST_ASSERT(bus_->vm_.tag() == ctx.tag());
 
-			//	[6ac8cc52-18ed-43f5-a86c-ef948f0d960f,system:10054]
+			//	[d1d7f8ef-fa12-4cf7-84ad-2e87bd73f19e,<!261:ipt::connection>,system:10054]
+			//
+			//	* client tag
+			//	* connection object
+			//	* error code
+			//
 			const cyng::vector_t frame = ctx.get_frame();
+			//CYNG_LOG_TRACE(logger_, "server.close.connection " << cyng::io::to_str(frame));
 			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-			auto ec = cyng::value_cast(frame.at(1), boost::system::error_code());
+			auto ec = cyng::value_cast(frame.at(2), boost::system::error_code());
+
+			//
+			//	tell master to remove this client session
+			//
 			ctx.attach(client_req_close(tag, ec.value()));
+
+			//
+			//	If session is in an connection a "client.req.close.connection.forward" command
+			//	will be send to remote party.
+			//
+			//	Master will send a "client.res.close"
+			//
+
 
 			//
 			//	clean up connection_map_
 			//
+			//if (!clear_connection_map(tag))
+			//{
+			//	CYNG_LOG_WARNING(logger_, "client "
+			//		<< tag
+			//		<< " not found in session list");
+			//}
+			//else
+			//{
+			//	CYNG_LOG_INFO(logger_, "client "
+			//		<< tag
+			//		<< " removed from session list");
+			//}
+		}
+
+		bool server::clear_connection_map(boost::uuids::uuid tag)
+		{
 			auto pos = connection_map_.find(tag);
 			if (pos != connection_map_.end())
 			{
@@ -251,7 +284,10 @@ namespace node
 				connection_map_.erase(pos);
 				connection_map_.erase(receiver);
 
+				return true;
 			}
+
+			return false;
 		}
 
 		void server::transmit_data(cyng::context& ctx)
@@ -452,20 +488,39 @@ namespace node
 			//
 			//	* client tag
 			//	* peer
-			//	* sequence
+			//	* cluster sequence
 			//
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.info", "client.req.close", frame));
+			const auto seq = cyng::value_cast<std::uint64_t>(frame.at(2), 0u);
 			const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 			auto pos = client_map_.find(tag);
 			if (pos != client_map_.end())
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.trace", "client.req.close", frame));
-				const_cast<connection*>(cyng::object_cast<connection>(pos->second))->stop();
+				auto cp = cyng::object_cast<connection>(pos->second);
+				if (cp != nullptr)
+				{
+					ctx.attach(cyng::generate_invoke("log.msg.trace", "client.req.close", frame));
+					const_cast<connection*>(cp)->stop(pos->second);
+				}
+
+				//
+				//	remove from client list
+				//
+				client_map_.erase(pos);
+				clear_connection_map(tag);
+
+				/**
+				 * acknowledge that session was closed
+				 */
+				//boost::system::error_code ec(boost::asio::error::operation_aborted);
+				//ctx.attach(client_req_close(tag, ec.value()));
+				
+				ctx.attach(client_res_close(tag, seq, true));
 			}
 			else
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.error", "client.req.close - failed", frame));
+				ctx.attach(client_res_close(tag, seq, false));
 			}
 		}
 
@@ -491,7 +546,6 @@ namespace node
 
 		void server::propagate(std::string fun, boost::uuids::uuid tag, cyng::vector_t&& msg)
 		{
-			//const boost::uuids::uuid tag = cyng::value_cast(msg.at(0), boost::uuids::nil_uuid());
 			auto pos = client_map_.find(tag);
 			if (pos != client_map_.end())
 			{
@@ -506,16 +560,30 @@ namespace node
 			}
 			else
 			{
-				CYNG_LOG_ERROR(logger_, "session "
-					<< tag
-					<< " not found");
+				if (boost::algorithm::equals(fun, "client.req.close.connection.forward"))
+				{
+					CYNG_LOG_WARNING(logger_, "session "
+						<< tag
+						<< " not found - clean up connection map");
+
+					//
+					//	clean up connection_map_
+					//
+					clear_connection_map(tag);
+				}
+				else
+				{
+					CYNG_LOG_ERROR(logger_, "session "
+						<< tag
+						<< " not found");
 
 #ifdef _DEBUG
-				for (auto client : client_map_)
-				{
-					CYNG_LOG_TRACE(logger_, client.first);
-				}
+					for (auto client : client_map_)
+					{
+						CYNG_LOG_TRACE(logger_, client.first);
+					}
 #endif
+				}
 			}
 		}
 

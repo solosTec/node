@@ -92,9 +92,14 @@ namespace node
 		//
 		//	halt VM
 		//
-		vm_.halt();
+		vm_.access([this](cyng::vm& vm) {
 
-		CYNG_LOG_INFO(logger_, "XML processor stopped");
+			//
+			//	halt VM
+			//
+			vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
+			CYNG_LOG_INFO(logger_, "XML processor stopped");
+		});
 
 	}
 

@@ -13,6 +13,7 @@
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
+#include <random>
 
 namespace node
 {
@@ -94,6 +95,11 @@ namespace node
 			const master_config_t	config_;
 			const std::size_t tsk_sender_;
 			std::size_t master_;
+
+			// First create an instance of an engine.
+			std::random_device rnd_device_;
+			// Specify the engine and distribution.
+			std::mt19937 mersenne_engine_;
 
 		};
 	}

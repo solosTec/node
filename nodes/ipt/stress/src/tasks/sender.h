@@ -13,6 +13,7 @@
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
+#include <random>
 
 namespace node
 {
@@ -108,6 +109,10 @@ namespace node
 				TASK_STATE_CONNECTED_,
 			} task_state_;
 
+			// First create an instance of an engine.
+			std::random_device rnd_device_;
+			// Specify the engine and distribution.
+			std::mt19937 mersenne_engine_;
 		};
 	}
 }

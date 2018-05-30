@@ -54,7 +54,12 @@ namespace node
 			/**
 			 * Stop all asynchronous operations associated with the connection.
 			 */
-			void stop();
+			void stop(cyng::object);
+
+			/**
+			 * Close TCP/IP connection
+			 */
+			void close();
 
 			/**
 			 * @return connection specific hash based in internal tag
@@ -70,7 +75,7 @@ namespace node
 			/**
 			 * Perform an asynchronous write operation.
 			 */
-			void do_write();
+			//void do_write();
 
 		private:
 			/**
@@ -101,11 +106,6 @@ namespace node
 			 */
 			serializer		serializer_;
 
-            /**
-             * system shutdown flag - supress all futher
-             * communication
-             */
-            bool shutdown_;
 		};
 
 		cyng::object make_connection(boost::asio::ip::tcp::socket&&

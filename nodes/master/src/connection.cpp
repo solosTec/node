@@ -76,8 +76,6 @@ namespace node
 			{
 				if (!ec)
 				{
-					//get_session()->vm_.async_run(cyng::generate_invoke("log.msg.trace", "cluster connection received", bytes_transferred, "bytes"));
-
 #ifdef SMF_IO_DEBUG
 					cyng::io::hex_dump hd;
 					std::stringstream ss;
@@ -95,14 +93,24 @@ namespace node
 						<< " ops");
 					do_read();
 				}
-				else //if (ec != boost::asio::error::operation_aborted)
+				else if (ec != boost::asio::error::operation_aborted)
 				{
 					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
 
 					//
 					//	session cleanup - hold a reference of the session
 					//
-					get_session()->vm_.run(cyng::generate_invoke("session.cleanup", cyng::invoke("push.session"), ec));
+					//get_session()->vm_.async_run(cyng::generate_invoke("session.cleanup", cyng::invoke("push.session"), ec));
+					get_session()->vm_.access([&ec, self](cyng::vm& vm) {
+						vm.run(cyng::generate_invoke("session.cleanup", cyng::invoke("push.session"), ec));
+					});
+				}
+				else
+				{
+					//
+					//	The session was closed intentionally.
+					//	At this point nothing more is to do. Service is going down and all session have to be stopped fast.
+					//
 				}
 			});
 	}

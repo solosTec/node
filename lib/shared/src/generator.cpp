@@ -344,11 +344,11 @@ namespace node
 			;
 	}
 
-	cyng::vector_t client_res_close(boost::uuids::uuid tag, std::uint64_t seq)
+	cyng::vector_t client_res_close(boost::uuids::uuid tag, std::uint64_t seq, bool success)
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("client.res.close", tag, cyng::code::IDENT, seq))
+			, cyng::generate_invoke_remote_unwinded("client.res.close", tag, cyng::code::IDENT, seq, success))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}
