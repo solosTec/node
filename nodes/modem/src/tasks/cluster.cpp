@@ -115,7 +115,10 @@ namespace node
 			, config_[master_].group_
 			, "modem"));
 
-		CYNG_LOG_INFO(logger_, "cluster login request is sent");
+		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
+			<< config_[master_].host_
+			<< ':'
+			<< config_[master_].service_);
 
 	}
 

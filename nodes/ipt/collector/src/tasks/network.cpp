@@ -127,7 +127,7 @@ namespace node
 			CYNG_LOG_TRACE(logger_, "resume task - " << cyng::io::to_str(frame));
 			std::size_t tsk = cyng::value_cast<std::size_t>(frame.at(0), 0);
 			std::size_t slot = cyng::value_cast<std::size_t>(frame.at(1), 0);
-			base_.mux_.send(tsk, slot, cyng::tuple_t{ frame.at(2), frame.at(3) });
+			base_.mux_.post(tsk, slot, cyng::tuple_t{ frame.at(2), frame.at(3) });
 		}
 
 		void network::reconfigure(cyng::context& ctx)

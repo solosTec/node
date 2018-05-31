@@ -139,7 +139,7 @@ namespace node
 			//	tell sync to synchronise the cache with master
 			//
 			BOOST_ASSERT(counter == cache_.size(name));
-			base_.mux_.send(sync_tsk, 0, cyng::tuple_factory(name, counter));
+			base_.mux_.post(sync_tsk, 0, cyng::tuple_factory(name, counter));
 		}
 		else
 		{

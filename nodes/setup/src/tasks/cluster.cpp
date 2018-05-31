@@ -72,7 +72,7 @@ namespace node
 		//
 		//	disconnect all sync tasks from cache
 		//
-		base_.mux_.send("node::sync", 2, cyng::tuple_t());
+		base_.mux_.post("node::sync", 2, cyng::tuple_t());
 
 		//
 		//	reconnect
@@ -92,8 +92,10 @@ namespace node
 			, config_[master_].group_
 			, "setup"));
 
-		CYNG_LOG_INFO(logger_, "cluster login request is sent");
-
+		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
+			<< config_[master_].host_
+			<< ':'
+			<< config_[master_].service_);
 
 	}
 
@@ -126,7 +128,7 @@ namespace node
 		//
 		if (r.second)
 		{
-			base_.mux_.send(storage_tsk_, 0, cyng::tuple_factory("TDevice", r.first, bus_->vm_.tag()));
+			base_.mux_.post(storage_tsk_, 0, cyng::tuple_factory("TDevice", r.first, bus_->vm_.tag()));
 		}
 		else
 		{
@@ -196,7 +198,7 @@ namespace node
 					//	<< " insert record "
 					//	<< cyng::io::to_str(key));
 
-					base_.mux_.send(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
+					base_.mux_.post(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
 				}
 
 			}, cyng::store::write_access(table));
@@ -206,7 +208,7 @@ namespace node
 			//
 			//	insert into SQL database
 			//
-			base_.mux_.send(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
+			base_.mux_.post(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
 
 		}
 	}
@@ -233,7 +235,7 @@ namespace node
 		//
 		//	insert into SQL database
 		//
-		base_.mux_.send(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
+		base_.mux_.post(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
 
 	}
 
@@ -260,7 +262,7 @@ namespace node
 		//	//
 		//	//	insert into SQL database
 		//	//
-		//	base_.mux_.send(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
+		//	base_.mux_.post(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
 		//}
 		//else
 		//{
@@ -294,7 +296,7 @@ namespace node
 				<< state);
 
 			//	ToDo: implement slot for attributes
-			//base_.mux_.send(storage_tsk_, 2, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2) });
+			//base_.mux_.post(storage_tsk_, 2, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2) });
 
 		}
 		else
@@ -329,7 +331,7 @@ namespace node
 				<< " ) - state: "
 				<< state);
 
-			base_.mux_.send(storage_tsk_, 2, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
+			base_.mux_.post(storage_tsk_, 2, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
 
 		}
 		else
@@ -360,7 +362,7 @@ namespace node
 			//
 			//	remove from SQL database
 			//
-			base_.mux_.send(storage_tsk_, 3, cyng::tuple_t{ frame.at(0), frame.at(1) });
+			base_.mux_.post(storage_tsk_, 3, cyng::tuple_t{ frame.at(0), frame.at(1) });
 		}
 		else
 		{
@@ -381,7 +383,7 @@ namespace node
 		std::size_t slot = cyng::value_cast<std::size_t>(frame.at(1), 0);
 
 		//cyng::tuple_t tpl(frame.begin() + 2, frame.end());
-		base_.mux_.send(tsk, slot, cyng::tuple_t(frame.begin() + 2, frame.end()));
+		base_.mux_.post(tsk, slot, cyng::tuple_t(frame.begin() + 2, frame.end()));
 	}
 
 	void cluster::bus_req_push_data(cyng::context& ctx)
@@ -411,7 +413,7 @@ namespace node
 		//
 		//	insert into SQL database
 		//
-		base_.mux_.send(storage_tsk_, 1, cyng::tuple_t{ frame.at(1), frame.at(2), frame.at(3), cyng::make_object<std::size_t>(0u) });
+		base_.mux_.post(storage_tsk_, 1, cyng::tuple_t{ frame.at(1), frame.at(2), frame.at(3), cyng::make_object<std::size_t>(0u) });
 
 
 	}
