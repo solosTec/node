@@ -65,6 +65,7 @@ namespace node
 		bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1));
 		bus_->vm_.register_function("bus.req.push.data", 0, std::bind(&cluster::bus_req_push_data, this, std::placeholders::_1));
 
+		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 	}
 
 	void cluster::run()
@@ -77,12 +78,12 @@ namespace node
 		//
 		//	reconnect
 		//
-		CYNG_LOG_INFO(logger_, "connect to redundancy [ "
-		<< master_
-		<< " ] "
-		<< config_[master_].host_
-		<< ':'
-		<< config_[master_].service_);
+		//CYNG_LOG_INFO(logger_, "connect to redundancy [ "
+		//<< master_
+		//<< " ] "
+		//<< config_[master_].host_
+		//<< ':'
+		//<< config_[master_].service_);
 
 		bus_->vm_.async_run(bus_req_login(config_[master_].host_
 			, config_[master_].service_

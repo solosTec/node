@@ -12,6 +12,7 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
+#include <cyng/vm/domain/log_domain.h>
 #include <cyng/table/meta.hpp>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>
@@ -85,6 +86,9 @@ namespace node
 		bus_->vm_.register_function("http.upload.var", 3, std::bind(&cluster::http_upload_var, this, std::placeholders::_1));
 		bus_->vm_.register_function("http.upload.progress", 4, std::bind(&cluster::http_upload_progress, this, std::placeholders::_1));
 		bus_->vm_.register_function("http.upload.complete", 4, std::bind(&cluster::http_upload_complete, this, std::placeholders::_1));
+
+		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+
 	}
 
     void cluster::start_sys_task()
@@ -116,6 +120,10 @@ namespace node
 		if (!bus_->is_online())
 		{
 			connect();
+		}
+		else
+		{
+			CYNG_LOG_DEBUG(logger_, "cluster bus is online");
 		}
 	}
 
@@ -1898,6 +1906,8 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table *SysMsg");
 		}
+
+		CYNG_LOG_INFO(logger_, cache_.size() << " tables created");
 
 	}
 

@@ -100,6 +100,9 @@ namespace node
 			bus_->vm_.register_function("sml.get.proc.active.devices", 6, std::bind(&network::sml_get_proc_active_devices, this, std::placeholders::_1));
 			bus_->vm_.register_function("sml.get.proc.visible.devices", 6, std::bind(&network::sml_get_proc_visible_devices, this, std::placeholders::_1));
 			bus_->vm_.register_function("sml.get.proc.device.info", 6, std::bind(&network::sml_get_proc_device_info, this, std::placeholders::_1));
+
+			bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+
 		}
 
 		void network::run()
