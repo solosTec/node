@@ -80,7 +80,8 @@ namespace node
 #endif
 				
 					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
-					
+					CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
+
 					//
 					//	start application
 					//

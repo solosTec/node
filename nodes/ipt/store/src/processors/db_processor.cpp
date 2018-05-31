@@ -86,7 +86,7 @@ namespace node
 
 	db_processor::~db_processor()
 	{
-		stop();
+		//stop();
 	}
 
 	void db_processor::stop()

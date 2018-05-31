@@ -85,7 +85,12 @@ namespace node
 
 		void network::stop()
 		{
-			CYNG_LOG_INFO(logger_, "network is stopped");
+			bus_->stop();
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> is stopped");
 		}
 
 		//	slot 0

@@ -63,18 +63,9 @@ namespace node
 		//	vm_.run() could assert since there is a small chance that the VM controller detects
 		//	running_in_this_thread()
 		//
-		if (vm_.same_thread())
-		{
-			vm_.register_function("sml.msg", 1, std::bind(&xml_processor::sml_msg, this, std::placeholders::_1));
-			vm_.register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1));
-			vm_.register_function("sml.parse", 1, std::bind(&xml_processor::sml_parse, this, std::placeholders::_1));
-		}
-		else
-		{
-			vm_.register_function("sml.msg", 1, std::bind(&xml_processor::sml_msg, this, std::placeholders::_1));
-			vm_.register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1));
-			vm_.register_function("sml.parse", 1, std::bind(&xml_processor::sml_parse, this, std::placeholders::_1));
-		}
+		vm_.register_function("sml.msg", 1, std::bind(&xml_processor::sml_msg, this, std::placeholders::_1));
+		vm_.register_function("sml.eom", 1, std::bind(&xml_processor::sml_eom, this, std::placeholders::_1));
+		vm_.register_function("sml.parse", 1, std::bind(&xml_processor::sml_parse, this, std::placeholders::_1));
 
 		//
 		//	register logger domain
@@ -84,7 +75,7 @@ namespace node
 
 	xml_processor::~xml_processor()
 	{
-		stop();
+		CYNG_LOG_TRACE(logger_, "~xml_processor()");
 	}
 
 	void xml_processor::stop()
@@ -100,7 +91,6 @@ namespace node
 			vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
 			CYNG_LOG_INFO(logger_, "XML processor stopped");
 		});
-
 	}
 
 	void xml_processor::parse(cyng::buffer_t const& data)

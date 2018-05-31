@@ -54,6 +54,9 @@ namespace node
 				<< " processor(s)");
 			for (auto line : hit_list_)
 			{
+				//
+				//	call destructor
+				//
 				lines_.erase(line);
 			}
 			hit_list_.clear();
@@ -173,7 +176,15 @@ namespace node
 			if (pos->second.vm_.tag() == tag)
 			{
 				CYNG_LOG_INFO(logger_, "remove xml processor " << tag);
-				//lines_.erase(pos);
+
+				//
+				//	stop VM (async)
+				//
+				pos->second.stop();
+
+				//
+				//	add to hitlist and remove later
+				//
 				hit_list_.push_back(pos->first);
 				return;
 			}

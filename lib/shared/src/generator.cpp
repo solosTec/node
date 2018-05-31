@@ -21,6 +21,7 @@ namespace node
 	{
 		cyng::vector_t prg;
 		return prg
+			<< cyng::generate_invoke("log.msg.debug", "resolve", host)	// debug
 			<< cyng::generate_invoke("ip.tcp.socket.resolve", host, service)
 			<< ":SEND-LOGIN-REQUEST"			//	label
 			<< cyng::code::JNE					//	jump if no error
@@ -29,6 +30,7 @@ namespace node
 			<< ":STOP"							//	label
 			<< cyng::code::JA					//	jump always
 			<< cyng::label(":SEND-LOGIN-REQUEST")
+			<< cyng::generate_invoke("log.msg.debug", "starting cluster bus")	// debug
 			<< cyng::generate_invoke("bus.start")		//	start reading cluster bus
 			<< cyng::generate_invoke("stream.serialize"
 				, cyng::generate_invoke_remote("bus.req.login"
@@ -53,17 +55,6 @@ namespace node
 			;
 
 	}
-
-//	cyng::vector_t bus_shutdown()
-//	{
-//		cyng::vector_t prg;
-//		return prg
-//			<< cyng::generate_invoke("log.msg.warning", "shutdown cluster member", cyng::code::IDENT)
-//			<< cyng::generate_invoke("ip.tcp.socket.shutdown")
-//			<< cyng::generate_invoke("ip.tcp.socket.close")
-//			<< cyng::unwind_vec(8)
-//			;
-//	}
 
 	cyng::vector_t bus_req_subscribe(std::string const& table, std::size_t tsk)
 	{
