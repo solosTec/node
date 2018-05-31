@@ -1958,6 +1958,9 @@ namespace node
 			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+
+		CYNG_LOG_INFO(logger_, "cache has " << cache_.num_all_slots() << " connected slots");
+		
 	}
 
 }
