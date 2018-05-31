@@ -116,6 +116,7 @@ namespace node
 	void cluster::connect()
 	{
 
+		BOOST_ASSERT_MSG(!bus_->vm_.is_halted(), "cluster bus is halted");
 		bus_->vm_.async_run(bus_req_login(config_[master_].host_
 			, config_[master_].service_
 			, config_[master_].account_

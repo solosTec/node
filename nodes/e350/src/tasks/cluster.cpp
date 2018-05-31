@@ -43,12 +43,7 @@ namespace node
 
 	void cluster::run()
 	{	
-		CYNG_LOG_INFO(logger_, "connect to redundancy [ "
-		<< master_
-		<< " ] "
-		<< config_[master_].host_
-		<< ':'
-		<< config_[master_].service_);
+		BOOST_ASSERT_MSG(!bus_->vm_.is_halted(), "cluster bus is halted");
 
 		bus_->vm_.async_run(bus_req_login(config_[master_].host_
 			, config_[master_].service_
