@@ -53,7 +53,7 @@ namespace node
 		//
 		cyng::register_socket(socket_, get_session()->vm_);
 
-		get_session()->vm_.async_run(cyng::register_function("push.session", 0, std::bind(&connection::push_session, this, std::placeholders::_1)));
+        get_session()->vm_.register_function("push.session", 0, std::bind(&connection::push_session, this, std::placeholders::_1));
 
 	}
 		
@@ -70,10 +70,12 @@ namespace node
 	
 	void connection::do_read()
 	{
+		CYNG_LOG_TRACE(logger_, "DO READ");
 		auto self(shared_from_this());
 		socket_.async_read_some(boost::asio::buffer(buffer_),
 			[this, self](boost::system::error_code ec, std::size_t bytes_transferred)
 			{
+				CYNG_LOG_TRACE(logger_, "READ SOME");
 				if (!ec)
 				{
 #ifdef SMF_IO_DEBUG

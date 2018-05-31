@@ -14,7 +14,7 @@ namespace node
 		: buffer_()
 		, ostream_(&buffer_)
 	{
-		vm.async_run(cyng::register_function("stream.flush", 0, [this, &s](cyng::context& ctx) {
+        vm.register_function("stream.flush", 0, [this, &s](cyng::context& ctx) {
 
 #ifdef SMF_IO_DEBUG
 			//	get content of buffer
@@ -29,9 +29,9 @@ namespace node
 			boost::system::error_code ec;
 			boost::asio::write(s, buffer_, ec);
 			ctx.set_register(ec);
-		}));
+        });
 
-		vm.async_run(cyng::register_function("stream.serialize", 0, [this](cyng::context& ctx) {
+        vm.register_function("stream.serialize", 0, [this](cyng::context& ctx) {
 
 			const cyng::vector_t frame = ctx.get_frame();
 			for (auto obj : frame)
@@ -40,7 +40,7 @@ namespace node
 				cyng::io::serialize_binary(ostream_, obj);
 			}
 
-		}));
+        });
 
 	}
 
