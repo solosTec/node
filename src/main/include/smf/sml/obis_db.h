@@ -28,6 +28,9 @@ namespace node
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 03, FF, DATA_MANUFACTURER);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 05, FF, DATA_PUBLIC_KEY);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 03, FF, DATA_AES_KEY);
+		const static obis	DEFINE_OBIS_CODE(81, 81, 61, 3C, 01, FF, DATA_USER_NAME);
+		const static obis	DEFINE_OBIS_CODE(81, 81, 61, 3C, 02, FF, DATA_USER_PWD);
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 10, FF, PROFILE_1_MINUTE);	//	1 minute
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 11, FF, PROFILE_15_MINUTE);
@@ -69,11 +72,12 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, 81, 60, FF, FF, CODE_ROOT_ACCESS_RIGHTS);	//	see: 7.3.1.2 Datenstruktur zur Parametrierung der Rollen / Benutzerrechte 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 01, FF, CODE_ROOT_DEVICE_IDENT);	//	see: 7.3.2.9 Datenstruktur zur Abfrage der Geräte-Identifikation) 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 02, FF, CODE_DEVICE_CLASS);	//	Geräteklasse 
-		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 04, FF, CODE_SERVER_ID_VISIBLE);	//	Server ID der sichtbaren Komponenten
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 04, FF, CODE_SERVER_ID);	//	Server ID der sichtbaren Komponenten
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 00, FF, CODE_ROOT_SENSOR_PROPERTY);	//	properties of data sensor/actor (Eigenschaften eines Datenspiegels)
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 01, FF, CODE_ROOT_NTP);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 10, FF, CODE_ROOT_DEVICE_TIME);	//	device time
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 20, FF, CODE_ROOT_DATA_COLLECTOR);	//	properties of data collector (Eigenschaften eines Datensammlers)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 02, FF, CODE_AVERAGE_TIME_MS);	//	average time between two received data records (milliseconds)
 
 		//
 		//	Interfaces
@@ -104,7 +108,8 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 03, FF, SERVER_ID_1_4);		//	Identifikationsnummer 1.4
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 09, FF, DEVICE_ID);	//	encode profiles
 
-		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 09, 0B, 00, READOUT_UTC);	//	readout time in UTC
+		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 09, 0B, 00, CURRENT_UTC);	//	readout time in UTC
+		//const static obis	OBIS_CLASS_TIMESTAMP_UTC(0x01, 0x00, 0x00, 0x09, 0x0B, 0x00);	//	timestamp UTC - SML_Time (Zeitsynchronisation per NTPZugriff erfolgt)
 
 
 		//	Spannung - voltage
@@ -170,7 +175,6 @@ namespace node
 		const static obis	OBIS_CLASS_OP_LOG_CELL(0x81, 0x04, 0x1A, 0x07, 0x00, 0x00);	//	aktuelle Zelleninformation (uint16)
 		const static obis	OBIS_CLASS_OP_LOG_AREA_CODE(0x81, 0x04, 0x17, 0x07, 0x00, 0x00);	//	aktueller Location - oder Areacode(uint16)
 		const static obis	OBIS_CLASS_OP_LOG_PROVIDER(0x81, 0x04, 0x0D, 0x06, 0x00, 0x00);	//	aktueller Provider-Identifier(uint32)
-		const static obis	OBIS_CLASS_TIMESTAMP_UTC(0x01, 0x00, 0x00, 0x09, 0x0B, 0x00);	//	timestamp UTC - SML_Time (Zeitsynchronisation per NTPZugriff erfolgt)
 
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 10, 00, 01, CLASS_OP_LSM_STATUS);	//	LSM status
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 11, 10, FF, CLASS_OP_LSM_ACTOR_ID);	//	ServerID des Aktors (uint16)

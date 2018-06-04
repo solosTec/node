@@ -50,9 +50,9 @@ namespace node
 		cache_.modify("*Config", cyng::table::key_generator("cpu:load"), cyng::param_factory("value", load), tag_);
 
 		//
-		//	measure CPU load every second
+		//	measure CPU load every 4 seconds
 		//
-		base_.suspend(std::chrono::seconds(1));
+		base_.suspend(std::chrono::seconds(4));
 	}
 
 	void system::stop()

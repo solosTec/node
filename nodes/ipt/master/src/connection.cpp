@@ -104,7 +104,6 @@ namespace node
 					//	device/party closed connection or network shutdown
 					//
 					session_.stop(ec);
-					//session_.bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", tag_, cyng::invoke("push.connection"), ec));
 				}
 				else
 				{
@@ -112,6 +111,8 @@ namespace node
 					//	The session was closed intentionally.
 					//	At this point nothing more is to do. Service is going down and all session have to be stopped fast.
 					//
+					CYNG_LOG_WARNING(logger_, "ipt connection closed intentionally: " << ec << ':' << ec.value() << ':' << ec.message() << '>');
+
 				}
 			});
 		}

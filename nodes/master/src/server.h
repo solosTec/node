@@ -12,6 +12,7 @@
 #include <cyng/log.h>
 #include <cyng/store/db.h>
 #include <unordered_map>
+#include <atomic>
 #include <boost/version.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -62,11 +63,11 @@ namespace node
 		const std::chrono::seconds monitor_;	//!< cluster monitor
 
 		//	connection parameters
-		std::chrono::seconds connection_open_timeout_;
-		std::chrono::seconds connection_close_timeout_;
-		bool connection_auto_login_; 
-		bool connection_auto_enabled_;
-		bool connection_superseed_;
+		std::atomic<std::chrono::seconds> connection_open_timeout_;
+		std::atomic<std::chrono::seconds> connection_close_timeout_;
+		std::atomic<bool> connection_auto_login_;
+		std::atomic<bool> connection_auto_enabled_;
+		std::atomic<bool> connection_superseed_;
 
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor acceptor_;		

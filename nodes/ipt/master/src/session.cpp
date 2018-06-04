@@ -427,13 +427,15 @@ namespace node
 		void session::ipt_res_logout(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "ipt.res.login - deprecated " << cyng::io::to_str(frame));
+			CYNG_LOG_INFO(logger_, "ipt.res.logout - deprecated " << cyng::io::to_str(frame));
 
 			//
 			//	close session
 			//
-			ctx.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"));
-			ctx.attach(cyng::generate_invoke("ip.tcp.socket.close"));
+			ctx	.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"))
+				.attach(cyng::generate_invoke("ip.tcp.socket.close"));
+
+			stop(boost::system::error_code(boost::asio::error::operation_aborted));
 
 		}
 
@@ -1053,7 +1055,7 @@ namespace node
 				: tp_res_close_push_channel_policy::BROKEN
 				;
 
-			ctx.attach(cyng::generate_invoke("res.close.push.channel", seq, res, std::get<3>(tpl)))
+			ctx	.attach(cyng::generate_invoke("res.close.push.channel", seq, res, std::get<3>(tpl)))
 				.attach(cyng::generate_invoke("stream.flush"));
 
 		}
@@ -1086,11 +1088,11 @@ namespace node
 			else
 			{
 				CYNG_LOG_ERROR(logger_, "ipt.req.register.push.target - no master " << cyng::io::to_str(frame));
-				ctx.attach(cyng::generate_invoke("res.register.push.target"
+				ctx	.attach(cyng::generate_invoke("res.register.push.target"
 					, frame.at(1)
 					, static_cast<response_type>(ctrl_res_register_target_policy::GENERAL_ERROR)
-					, static_cast<std::uint32_t>(0)));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+					, static_cast<std::uint32_t>(0)))
+					.attach(cyng::generate_invoke("stream.flush"));
 
 			}
 		}
@@ -1112,11 +1114,11 @@ namespace node
 			else
 			{
 				CYNG_LOG_ERROR(logger_, "ipt.req.deregister.push.target - no master " << cyng::io::to_str(frame));
-				ctx.attach(cyng::generate_invoke("res.deregister.push.target"
+				ctx	.attach(cyng::generate_invoke("res.deregister.push.target"
 					, frame.at(1)		//	seq
 					, static_cast<response_type>(ctrl_res_deregister_target_policy::GENERAL_ERROR)
-					, frame.at(2)));	//	target name
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+					, frame.at(2)))	//	target name
+					.attach(cyng::generate_invoke("stream.flush"));
 
 			}
 		}
@@ -1144,8 +1146,8 @@ namespace node
 			const response_type res = cyng::value_cast<response_type>(dom[4].get("response-code"), 0);
 			const std::string target = cyng::value_cast<std::string>(dom.get(3), "");
 
-			ctx.attach(cyng::generate_invoke("res.deregister.push.target", seq, res, target));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.attach(cyng::generate_invoke("res.deregister.push.target", seq, res, target))
+				.attach(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -1173,8 +1175,8 @@ namespace node
 			const response_type res = cyng::value_cast<response_type>(dom[4].get("response-code"), 0);
 			const std::uint32_t channel = cyng::value_cast<std::uint32_t>(dom.get(3), 0);	
 
-			ctx.attach(cyng::generate_invoke("res.register.push.target", seq, res, channel));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.attach(cyng::generate_invoke("res.register.push.target", seq, res, channel))
+				.attach(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -1194,9 +1196,9 @@ namespace node
 			}
             else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "ipt.req.open.connection", frame));
-				ctx.attach(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<response_type>(tp_res_open_connection_policy::NO_MASTER)));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx	.attach(cyng::generate_invoke("log.msg.error", "ipt.req.open.connection", frame))
+					.attach(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<response_type>(tp_res_open_connection_policy::NO_MASTER)))
+					.attach(cyng::generate_invoke("stream.flush"));
 			}
 		}
 
@@ -1334,8 +1336,8 @@ namespace node
 			}
 			else
 			{
-				ctx.run(cyng::generate_invoke("log.msg.warning", "client.res.close.connection.forward", frame));
-				ctx.attach(cyng::generate_invoke("res.close.connection", seq, static_cast<response_type>(tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN)));
+				ctx	.attach(cyng::generate_invoke("log.msg.warning", "client.res.close.connection.forward", frame))
+					.attach(cyng::generate_invoke("res.close.connection", seq, static_cast<response_type>(tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN)));
 			}
 
 		}
@@ -1374,8 +1376,8 @@ namespace node
 
 			if (success)
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.info", "client.res.open.connection.forward", ctx.get_frame()));
-				ctx.attach(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(tp_res_open_connection_policy::DIALUP_SUCCESS)));
+				ctx	.attach(cyng::generate_invoke("log.msg.info", "client.res.open.connection.forward", ctx.get_frame()))
+					.attach(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(tp_res_open_connection_policy::DIALUP_SUCCESS)));
 
 				//
 				//	hides outer variable dom
@@ -1386,8 +1388,8 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.open.connection.forward", ctx.get_frame()));
-				ctx.attach(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(tp_res_open_connection_policy::DIALUP_FAILED)));
+				ctx	.attach(cyng::generate_invoke("log.msg.warning", "client.res.open.connection.forward", ctx.get_frame()))
+					.attach(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(tp_res_open_connection_policy::DIALUP_FAILED)));
 			}
 
 			ctx.attach(cyng::generate_invoke("stream.flush"));
@@ -1455,15 +1457,15 @@ namespace node
 				ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.transfer.pushdata - failed", frame));
 			}
 
-			ctx.attach(cyng::generate_invoke("res.transfer.push.data"
+			ctx	.attach(cyng::generate_invoke("res.transfer.push.data"
 				, seq
 				, res
 				, std::get<2>(tpl)	//	source
 				, std::get<3>(tpl)	//	channel
 				, status
 				, cyng::value_cast<std::uint8_t>(dom.get("block"), 0)
-			));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			))
+				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
 		void session::client_req_transfer_pushdata_forward(cyng::context& ctx)
@@ -1510,13 +1512,14 @@ namespace node
 			auto status = cyng::value_cast<std::uint8_t>(dom.get("status"), 0);
 			auto block = cyng::value_cast<std::uint8_t>(dom.get("block"), 0);
 
-			ctx.attach(cyng::generate_invoke("req.transfer.push.data"
+			ctx	.attach(cyng::generate_invoke("req.transfer.push.data"
 				, std::get<4>(tpl)	//	channel
 				, std::get<3>(tpl)	//	source
 				, status 
 				, block 
-				, std::get<6>(tpl)));	//	data
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+				, std::get<6>(tpl)))	//	data
+			
+				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
 		void session::ipt_req_close_connection(cyng::context& ctx)
@@ -1536,9 +1539,9 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "ipt.req.close.connection - no master", frame));
-				ctx.attach(cyng::generate_invoke("res.close.connection", frame.at(1), static_cast<response_type>(tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN)));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx	.attach(cyng::generate_invoke("log.msg.error", "ipt.req.close.connection - no master", frame))
+					.attach(cyng::generate_invoke("res.close.connection", frame.at(1), static_cast<response_type>(tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN)))
+					.attach(cyng::generate_invoke("stream.flush"));
 			}
 		}
 
@@ -1564,8 +1567,8 @@ namespace node
 			const sequence_type seq = cyng::value_cast<sequence_type>(dom[4].get("seq"), 0);
 			const response_type res = cyng::value_cast<response_type>(dom[3].get("response-code"), 0);
 
-			ctx.attach(cyng::generate_invoke("res.open.connection", seq, res));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.attach(cyng::generate_invoke("res.open.connection", seq, res))
+				.attach(cyng::generate_invoke("stream.flush"));
 
 		}
 

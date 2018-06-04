@@ -246,23 +246,6 @@ namespace node
 			//
 			//	Master will send a "client.res.close"
 			//
-
-
-			//
-			//	clean up connection_map_
-			//
-			//if (!clear_connection_map(tag))
-			//{
-			//	CYNG_LOG_WARNING(logger_, "client "
-			//		<< tag
-			//		<< " not found in session list");
-			//}
-			//else
-			//{
-			//	CYNG_LOG_INFO(logger_, "client "
-			//		<< tag
-			//		<< " removed from session list");
-			//}
 		}
 
 		bool server::clear_connection_map(boost::uuids::uuid tag)
@@ -283,6 +266,8 @@ namespace node
 				//
 				connection_map_.erase(pos);
 				connection_map_.erase(receiver);
+
+				BOOST_ASSERT((connection_map_.size() % 2) == 0);
 
 				return true;
 			}
@@ -469,6 +454,11 @@ namespace node
 				CYNG_LOG_INFO(logger_, "connection "
 					<< tag
 					<< " removed from session pool");
+
+				//
+				//	clean up connection_map_
+				//
+				clear_connection_map(tag);
 			}
 			else
 			{
@@ -509,12 +499,9 @@ namespace node
 				client_map_.erase(pos);
 				clear_connection_map(tag);
 
-				/**
-				 * acknowledge that session was closed
-				 */
-				//boost::system::error_code ec(boost::asio::error::operation_aborted);
-				//ctx.attach(client_req_close(tag, ec.value()));
-				
+				//
+				//	acknowledge that session was closed
+				//
 				ctx.attach(client_res_close(tag, seq, true));
 			}
 			else

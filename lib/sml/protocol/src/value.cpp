@@ -66,6 +66,10 @@ namespace node
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
 			}
+			cyng::tuple_t factory_policy<cyng::buffer_t&>::create(cyng::buffer_t& v)
+			{
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
+			}
 			cyng::tuple_t factory_policy<std::string>::create(std::string&& v)
 			{
 				//	convert to buffer_t
@@ -86,6 +90,11 @@ namespace node
 				//	convert to buffer_t
 				return factory_policy<cyng::buffer_t>::create(v.to_buffer());
 			}
+		}
+
+		cyng::tuple_t make_value()
+		{
+			return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), cyng::null());
 		}
 
 		cyng::tuple_t make_local_timestamp(std::chrono::system_clock::time_point tp)

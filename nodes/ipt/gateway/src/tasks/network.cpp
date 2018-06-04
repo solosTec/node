@@ -100,6 +100,7 @@ namespace node
 			bus_->vm_.register_function("sml.get.proc.active.devices", 6, std::bind(&network::sml_get_proc_active_devices, this, std::placeholders::_1));
 			bus_->vm_.register_function("sml.get.proc.visible.devices", 6, std::bind(&network::sml_get_proc_visible_devices, this, std::placeholders::_1));
 			bus_->vm_.register_function("sml.get.proc.device.info", 6, std::bind(&network::sml_get_proc_device_info, this, std::placeholders::_1));
+			bus_->vm_.register_function("sml.get.proc.sensor.property", 6, std::bind(&network::sml_get_proc_sensor_property, this, std::placeholders::_1));
 
 			bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
@@ -1013,7 +1014,7 @@ namespace node
 					//
 					, node::sml::child_list_tree(node::sml::OBIS_CODE_ROOT_DEVICE_TIME, {
 
-						node::sml::parameter_tree(node::sml::OBIS_CLASS_TIMESTAMP_UTC, node::sml::make_value(now)),	//	timestamp (01 00 00 09 0B 00 )
+						node::sml::parameter_tree(node::sml::OBIS_CURRENT_UTC, node::sml::make_value(now)),	//	timestamp (01 00 00 09 0B 00 )
 						node::sml::parameter_tree(node::sml::obis(0x00, 0x00, 0x60, 0x08, 0x00, 0xFF), node::sml::make_sec_index_value(now)),
 						node::sml::parameter_tree(node::sml::obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x01), node::sml::make_value(tz)),
 						node::sml::parameter_tree(node::sml::obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x02), node::sml::make_value(sync_active))
@@ -1059,17 +1060,17 @@ namespace node
 						node::sml::child_list_tree(node::sml::obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x01),{
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), node::sml::make_value(server_id_)),
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), node::sml::make_value(device_class)),
-							node::sml::parameter_tree(node::sml::OBIS_CLASS_TIMESTAMP_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
+							node::sml::parameter_tree(node::sml::OBIS_CURRENT_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
 						}),
 						node::sml::child_list_tree(node::sml::obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x02),{
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), node::sml::make_value(cyng::buffer_t{ 0x01, (char)0xA8, 0x15, 0x74, (char)0x31, 0x45, 0x05, (char)0x01, (char)0x02 })),
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), node::sml::make_value(device_class)),
-							node::sml::parameter_tree(node::sml::OBIS_CLASS_TIMESTAMP_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
+							node::sml::parameter_tree(node::sml::OBIS_CURRENT_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
 						}),
 						node::sml::child_list_tree(node::sml::obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x03),{
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), node::sml::make_value(cyng::buffer_t{ 0x01, (char)0xA8, 0x15, 0x74, (char)0x31, 0x45, 0x04, (char)0x01, (char)0x02 })),
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), node::sml::make_value(device_class)),
-							node::sml::parameter_tree(node::sml::OBIS_CLASS_TIMESTAMP_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
+							node::sml::parameter_tree(node::sml::OBIS_CURRENT_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
 						})
 					}) 
 				}))));
@@ -1113,17 +1114,17 @@ namespace node
 						node::sml::child_list_tree(node::sml::obis(0x81, 0x81, 0x10, 0x06, 0x01, 0x01),{
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), node::sml::make_value(server_id_)),
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), node::sml::make_value(device_class)),
-							node::sml::parameter_tree(node::sml::OBIS_CLASS_TIMESTAMP_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
+							node::sml::parameter_tree(node::sml::OBIS_CURRENT_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
 						}),
 						node::sml::child_list_tree(node::sml::obis(0x81, 0x81, 0x10, 0x06, 0x01, 0x02),{
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), node::sml::make_value(cyng::buffer_t{ 0x24, 0x23, 0x02, 0x12, (char)0x90, 0x20, 0x07, (char)0x86 })),
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), node::sml::make_value(device_class)),
-							node::sml::parameter_tree(node::sml::OBIS_CLASS_TIMESTAMP_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
+							node::sml::parameter_tree(node::sml::OBIS_CURRENT_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
 						}),
 						node::sml::child_list_tree(node::sml::obis(0x81, 0x81, 0x10, 0x06, 0x01, 0x02),{
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), node::sml::make_value(cyng::buffer_t{ 0x24, 0x23, 0x02, 0x15, (char)0x90, 0x20, 0x07, (char)0x86 })),
 							node::sml::parameter_tree(node::sml::obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), node::sml::make_value(device_class)),
-							node::sml::parameter_tree(node::sml::OBIS_CLASS_TIMESTAMP_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
+							node::sml::parameter_tree(node::sml::OBIS_CURRENT_UTC, node::sml::make_value(now))	//	timestamp (01 00 00 09 0B 00 )
 						})
 					})
 				}))));
@@ -1420,6 +1421,92 @@ namespace node
 						node::sml::empty_tree(node::sml::obis(0x00, 0x80, 0x80, 0x00, 0x04, 0xFF))
 
 			}))));
+
+		}
+
+		void network::sml_get_proc_sensor_property(cyng::context& ctx)
+		{
+			//	[fd167248-a823-46d6-ba0a-03157a28a104,1805241520113192-3,2,0500153B02297E,operator,operator]
+			//
+			//	* pk
+			//	* transaction id
+			//	* SML message id
+			//	* server ID
+			//	* username
+			//	* password
+			//	* OBIS (requested parameter)
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.get.proc.sensor.property " << cyng::io::to_str(frame));
+
+			//	ServerId: 05 00 15 3B 02 29 7E 
+			//	ServerId: 01 E6 1E 13 09 00 16 3C 07 
+			//	81 81 C7 86 00 FF                Not set
+			//	   81 81 C7 82 04 FF             _______<_ (01 E6 1E 13 09 00 16 3C 07 )
+			//	   81 81 C7 82 02 FF              ()
+			//	   81 81 C7 82 03 FF             GWF (47 57 46 )
+			//	   81 00 60 05 00 00             _ (00 )
+			//	   81 81 C7 86 01 FF             0 (30 )
+			//	   81 81 C7 86 02 FF             26000 (32 36 30 30 30 )
+			//	   01 00 00 09 0B 00             1528100055 (timestamp)
+			//	   81 81 C7 82 05 FF             ___________5}_w_ (18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03 )
+			//	   81 81 C7 86 03 FF              ()
+			//	   81 81 61 3C 01 FF             Not set
+			//	   81 81 61 3C 02 FF             Not set
+
+			const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+			const cyng::buffer_t	public_key{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 };
+			cyng::buffer_t server_id;
+			server_id = cyng::value_cast(frame.at(3), server_id);
+			const cyng::buffer_t status{ 0x00 };
+
+			//
+			//	linearize and set CRC16
+			//	append to current SML message
+			//
+			append_msg(node::sml::message(frame.at(1)	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, node::sml::BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(frame.at(3)	//	server id  
+					, node::sml::OBIS_CODE_ROOT_SENSOR_PROPERTY	//	path entry - 81 81 C7 86 00 FF
+					, node::sml::child_list_tree(node::sml::OBIS_CODE_ROOT_SENSOR_PROPERTY, {
+
+						//	repeat server id
+						node::sml::parameter_tree(node::sml::OBIS_CODE_SERVER_ID, node::sml::make_value(server_id)),
+
+						//	Geräteklasse
+						node::sml::parameter_tree(node::sml::OBIS_CODE_DEVICE_CLASS, node::sml::make_value()),
+
+						//	Manufacturer
+						node::sml::parameter_tree(node::sml::OBIS_DATA_MANUFACTURER, node::sml::make_value("solosTec")),
+
+						//	Statuswort [octet string]
+						node::sml::parameter_tree(node::sml::OBIS_CLASS_OP_LOG_STATUS_WORD, node::sml::make_value(status)),
+
+						//	Bitmaske zur Definition von Bits, deren Änderung zu einem Eintrag im Betriebslogbuch zum Datenspiegel führt
+						node::sml::parameter_tree(node::sml::OBIS_CLASS_OP_LOG_STATUS_WORD, node::sml::make_value(static_cast<std::uint8_t>(0x0))),
+
+						//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
+						node::sml::parameter_tree(node::sml::OBIS_CODE_AVERAGE_TIME_MS, node::sml::make_value(static_cast<std::uint16_t>(1234))),
+
+						//	aktuelle UTC-Zeit
+						node::sml::parameter_tree(node::sml::OBIS_CURRENT_UTC, node::sml::make_value(now)),
+
+						//	public key
+						node::sml::parameter_tree(node::sml::OBIS_DATA_PUBLIC_KEY, node::sml::make_value(public_key)),
+
+						//	AES Schlüssel für wireless M-Bus
+						node::sml::empty_tree(node::sml::OBIS_DATA_AES_KEY),
+
+						node::sml::parameter_tree(node::sml::OBIS_DATA_USER_NAME, node::sml::make_value("user")),
+						node::sml::parameter_tree(node::sml::OBIS_DATA_USER_PWD, node::sml::make_value("pwd"))
+
+			}))));
+
 
 		}
 

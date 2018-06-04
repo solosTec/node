@@ -1,0 +1,264 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="SWF dashboard">
+    <meta name="author" content="solos::Tec">
+    <title>smf :: config devices</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
+    <style>
+        table.dataTable tbody > tr > td {
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
+        <a class="navbar-brand" href="http://solostec.ch">
+            <img src="images/logo.svg" width="30" height="30" class="d-inline-block align-top" alt="">
+            solos::Tec
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav mr-auto">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html">Home <span class="sr-only">(current)</span></a>
+                </li>
+
+                <li class="nav-item dropdown active">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Configuration
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="config.device.html">Devices</a>
+                        <a class="dropdown-item" href="config.gateway.html">Gateway</a>
+                        <!--                        <a class="dropdown-item" href="config.meter.html">Meter</a>-->
+                        <!--                        <a class="dropdown-item" href="config.user.html">User</a>-->
+                        <a class="dropdown-item active" href="config.system.html">System</a>
+                        <a class="dropdown-item" href="config.upload.html">Upload</a>
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Status
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="status.session.html">Sessions</a>
+                        <a class="dropdown-item" href="status.targets.html">Targets</a>
+                        <a class="dropdown-item" href="status.connections.html">Connections</a>
+                        <!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
+                    </div>
+                </li>
+
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Monitoring
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="status.system.html">System</a>
+                        <a class="dropdown-item" href="monitor.msg.html">Messages</a>
+                    </div>
+                </li>
+
+            </ul>
+            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey" /></svg></span>
+            <span id="ws-activity-text" class="navbar-text">
+                connection state
+            </span>
+
+        </div>
+    </nav>
+
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1 class="display-4">Configure your System</h1>
+            <hr class="my-4">
+            <p class="lead"><span id="smf-config-system-host-name">...</span> is the current master node</p>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="card-deck">
+            <div class="card">
+                <!--<img class="card-img-top" src="images/config-supersede.svg" alt="Card image cap">-->
+                <div class="card-body">
+                    <h5 class="card-title">Auto Login</h5>
+                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-auto-login-data" value=""> Automatic transfer of unknown devices to the configuration database.</label>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">default = NO</small>
+                </div>
+            </div>
+            <div class="card">
+                <!--<img class="card-img-top" src="..." alt="Card image cap">-->
+                <div class="card-body">
+                    <h5 class="card-title">Auto Enabled</h5>
+                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-auto-enabled-data" value=""> Set automtically configured devices as enabled.</label>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">default = YES</small>
+                </div>
+            </div>
+            <div class="card">
+                <!--<img class="card-img-top" src="images/config-supersede.svg" alt="Card image cap">-->
+                <div class="card-body">
+                    <h5 class="card-title">Supersede</h5>
+                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-supersede-data" value=""> End current sessions on new logon.</label>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">default = YES</small>
+                </div>
+            </div>
+        </div>
+        <br>
+
+    </div>
+
+    <!-- JavaScript -->
+    <script type="text/javascript" src="DataTables/datatables.min.js"></script>
+    <!--<script type="text/javascript" src="popper.min.js"></script>-->
+
+    <script>
+
+        var totalIO = 0;
+
+        $(document).ready(function () {
+            console.log('document ready');
+
+            $('#ws-activity-text').html('connecting to ' + location.host + '...');
+            connection = new WebSocket('ws://' + location.host + '/smf/api/system/v0.1', ['SMF']);
+            connection.onopen = function () {
+                //  subscribe system configuration
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "config.system", push: true }));
+            };
+
+            connection.onclose = function (event) {
+                $('#ws-activity-symbol').show();
+                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
+                if (event.code == 1006) {
+                    $('#ws-activity-text').html('connection lost - press reload');
+                }
+                else {
+                    $('#ws-activity-text').html('error ' + event.code);
+                }
+            };
+
+            connection.onerror = function (error) {
+                console.log('ws error');
+                $('#ws-activity-text').html('ws error');
+            };
+
+            connection.onmessage = function (e) {
+                $('#ws-activity-symbol').show();
+                console.log('incoming data: ' + e.data);
+                //  {"cmd": "insert", "channel": "config.system", "rec": {"key": {"name":"connection-auto-login"}, "data": {"value":false}, "gen": 1}}
+                totalIO += e.data.length;
+                var obj = JSON.parse(e.data);
+                if (obj.cmd != null) {
+                    if (obj.cmd == 'insert') {
+                        if (obj.rec.key.name == 'connection-auto-login') {
+                            console.log('connection-auto-login: ' + obj.rec.data.value);
+                            $("#smf-config-system-auto-login-data").prop("checked", obj.rec.data.value);
+                        }
+                        else if (obj.rec.key.name == 'connection-auto-enabled') {
+                            console.log('connection-auto-enabled: ' + obj.rec.data.value);
+                            $("#smf-config-system-auto-enabled-data").prop("checked", obj.rec.data.value);
+                        }
+                        else if (obj.rec.key.name == 'connection-superseed') {
+                            console.log('connection-superseed: ' + obj.rec.data.value);
+                            $("#smf-config-system-supersede-data").prop("checked", obj.rec.data.value);
+                        }
+                        else if (obj.rec.key.name == 'host-name') {
+                            console.log('host-name: ' + obj.rec.data.value);
+                            $("#smf-config-system-host-name").html(obj.rec.data.value);
+                        }
+                        
+                    }
+                    else if (obj.cmd == 'delete') {
+                    }
+                    else if (obj.cmd == 'modify') {
+                        //{"cmd": "modify", "channel": "config.system", "key": ["connection-auto-login"], "value": {"value":false}}
+                        if (obj.key[0] == 'connection-auto-login') {
+                            //console.log('connection-auto-login: ' + obj.value.value);
+                            $("#smf-config-system-auto-login-data").prop("checked", obj.value.value);
+                        }
+                        else if (obj.key[0] == 'connection-auto-enabled') {
+                            console.log('connection-auto-enabled: ' + obj.value.value);
+                            $("#smf-config-system-auto-enabled-data").prop("checked", obj.value.value);
+                        }
+                        else if (obj.key[0] == 'connection-superseed') {
+                            console.log('connection-superseed: ' + obj.value.value);
+                            $("#smf-config-system-supersede-data").prop("checked", obj.value.value);
+                        }
+                    }
+                    else if (obj.cmd == 'clear') {
+                    }
+                }
+                $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
+                $('#ws-activity-symbol').fadeOut();
+            };
+        });
+
+        $('#smf-config-system-auto-login-data').change(function (val) {
+            connection.send(JSON.stringify({
+                cmd: "modify", channel: "config.system", rec: {
+                    key: { name: "connection-auto-login" },
+                    data: {
+                        value: this.checked
+                    }
+                }
+            }));
+        });
+
+        $('#smf-config-system-auto-enabled-data').change(function (val) {
+            connection.send(JSON.stringify({
+                cmd: "modify", channel: "config.system", rec: {
+                    key: { name: "connection-auto-enabled" },
+                    data: {
+                        value: this.checked
+                    }
+                }
+            }));
+        });
+
+        $('#smf-config-system-supersede-data').change(function (val) {
+            connection.send(JSON.stringify({
+                cmd: "modify", channel: "config.system", rec: {
+                    key: { name: "connection-superseed" },
+                    data: {
+                        value: this.checked
+                    }
+                }
+            }));
+        });
+
+    </script>
+
+    <script>
+            const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+            function format_bytes(x) {
+
+                let l = 0, n = parseInt(x, 10) || 0;
+
+                while (n >= 1024 && ++l) {
+                    n = n / 1024;
+                }
+
+                if (n == 0) return '-';
+                return (n.toFixed(l < 1 ? 0 : 1) + ' ' + units[l]);
+            }
+    </script>
+
+</body>
+</html>

@@ -116,6 +116,7 @@ namespace node
 			void sml_get_proc_device_info(cyng::context& ctx);
 			void sml_get_proc_ipt_state(cyng::context& ctx);
 			void sml_get_proc_ipt_param(cyng::context& ctx);
+			void sml_get_proc_sensor_property(cyng::context& ctx);
 
 			void append_msg(cyng::tuple_t&&);
 

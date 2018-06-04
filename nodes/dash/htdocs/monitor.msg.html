@@ -15,6 +15,16 @@
             padding-top: 2px;
             padding-bottom: 2px;
         }
+
+        .table-striped > tbody > tr:nth-child(odd) > td,
+        .table-striped > tbody > tr:nth-child(odd) > th {
+            background-color: #606060;
+        }
+
+        .table-striped > tbody > tr:nth-child(even) > td,
+        .table-striped > tbody > tr:nth-child(even) > th {
+            background-color: #808080;
+        }
     </style>
 </head>
 <body>
@@ -40,8 +50,9 @@
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="config.device.html">Devices</a>
                         <a class="dropdown-item" href="config.gateway.html">Gateway</a>
-<!--                        <a class="dropdown-item" href="config.meter.html">Meter</a>-->
-<!--                        <a class="dropdown-item" href="config.user.html">User</a>-->
+                        <!--                        <a class="dropdown-item" href="config.meter.html">Meter</a>-->
+                        <!--                        <a class="dropdown-item" href="config.user.html">User</a>-->
+                        <a class="dropdown-item" href="config.system.html">System</a>
                     </div>
                 </li>
 
@@ -85,6 +96,7 @@
         <div class="row">
             <div class="table-responsive col-md-12">
                 <table id="smf-table-msg" class="table table-condensed table-striped table-bordered" cellspacing="0">
+                    <!--<table id="smf-table-msg" class="table table-condensed table-striped table-bordered" cellspacing="0" style="background-color:#808080;">-->
                     <thead>
                         <tr>
                             <th scope="col" class="sml-col-msg-id">ID</th>
@@ -190,7 +202,7 @@
                             $(rowNode).css('color', 'LimeGreen');
                         }
                         else if (obj.rec.data.severity == 4) {
-                            $(rowNode).css('color', 'gold');
+                            $(rowNode).css('color', '#ff9900');
                         }
                         else if (obj.rec.data.severity == 5) {
                             $(rowNode).css('color', 'orange');

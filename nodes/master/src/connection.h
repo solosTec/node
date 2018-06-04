@@ -38,11 +38,11 @@ namespace node
 			, std::string const& pwd
 			, boost::uuids::uuid stag
 			, std::chrono::seconds monitor
-			, std::chrono::seconds connection_open_timeout
-			, std::chrono::seconds connection_close_timeout
-			, bool connection_auto_login
-			, bool connection_auto_enabled
-			, bool connection_superseed);
+			, std::atomic<std::chrono::seconds>& connection_open_timeout
+			, std::atomic<std::chrono::seconds>& connection_close_timeout
+			, std::atomic<bool>& connection_auto_login
+			, std::atomic<bool>& connection_auto_enabled
+			, std::atomic<bool>& connection_superseed);
 		
 		/**
 		 * Start the first asynchronous operation for the connection.

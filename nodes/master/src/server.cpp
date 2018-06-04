@@ -26,8 +26,8 @@ namespace node
 		, account_(account)
 		, pwd_(pwd)
 		, monitor_(monitor)
-		, connection_open_timeout_(12)
-		, connection_close_timeout_(12)
+		, connection_open_timeout_(std::chrono::seconds(12))
+		, connection_close_timeout_(std::chrono::seconds(12))
 		, connection_auto_login_(false)
 		, connection_auto_enabled_(true)
 		, connection_superseed_(true)
@@ -44,9 +44,9 @@ namespace node
 		auto dom = cyng::make_reader(cfg_session);
 		connection_open_timeout_ = std::chrono::seconds(cyng::value_cast(dom.get("connection-open-timeout"), 12));
 		connection_open_timeout_ = std::chrono::seconds(cyng::value_cast(dom.get("connection-close-timeout"), 12));
-		connection_auto_login_ = cyng::value_cast(dom.get("auto-login"), connection_auto_login_);
-		connection_auto_enabled_ = cyng::value_cast(dom.get("auto-enabled"), connection_auto_enabled_);
-		connection_superseed_ = cyng::value_cast(dom.get("supersede"), connection_superseed_);
+		connection_auto_login_ = cyng::value_cast(dom.get("auto-login"), connection_auto_login_.load());
+		connection_auto_enabled_ = cyng::value_cast(dom.get("auto-enabled"), connection_auto_enabled_.load());
+		connection_superseed_ = cyng::value_cast(dom.get("supersede"), connection_superseed_.load());
 
 	}
 	

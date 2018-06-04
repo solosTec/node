@@ -12,6 +12,7 @@
 #include <cyng/log.h>
 #include <cyng/store/db.h>
 #include <cyng/table/key.hpp>
+#include <atomic>
 #include <boost/random.hpp>
 #include <boost/uuid/random_generator.hpp>
 
@@ -34,9 +35,9 @@ namespace node
 		client(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, cyng::store::db&
-			, bool connection_auto_login
-			, bool connection_auto_enabled
-			, bool connection_superseed);
+			, std::atomic<bool>& connection_auto_login
+			, std::atomic<bool>& connection_auto_enabled
+			, std::atomic<bool>& connection_superseed);
 
 		client(client const&) = delete;
 		client& operator=(client const&) = delete;
@@ -135,6 +136,10 @@ namespace node
 			cyng::object,			//	[4] value
 			cyng::param_map_t);
 
+		bool set_connection_auto_login(cyng::object);
+		bool set_connection_auto_enabled(cyng::object);
+		bool set_connection_superseed(cyng::object);
+
 	private:
 		cyng::vector_t req_open_push_channel_empty(boost::uuids::uuid tag,
 			std::uint64_t seq, 
@@ -150,9 +155,9 @@ namespace node
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
-		const bool connection_auto_login_;
-		const bool connection_auto_enabled_;
-		const bool connection_superseed_;
+		std::atomic<bool>& connection_auto_login_;
+		std::atomic<bool>& connection_auto_enabled_;
+		std::atomic<bool>& connection_superseed_;
 
 		boost::random::mt19937 rng_;
 		boost::random::uniform_int_distribution<std::uint32_t> distribution_;

@@ -25,11 +25,11 @@ namespace node
 		, std::string const& pwd
 		, boost::uuids::uuid stag
 		, std::chrono::seconds monitor //	cluster watchdog
-		, std::chrono::seconds connection_open_timeout
-		, std::chrono::seconds connection_close_timeout
-		, bool connection_auto_login
-		, bool connection_auto_enabled
-		, bool connection_superseed)
+		, std::atomic<std::chrono::seconds>& connection_open_timeout
+		, std::atomic<std::chrono::seconds>& connection_close_timeout
+		, std::atomic<bool>& connection_auto_login
+		, std::atomic<bool>& connection_auto_enabled
+		, std::atomic<bool>& connection_superseed)
 	: socket_(std::move(socket))
 		, logger_(logger)
 		, buffer_()
@@ -70,12 +70,12 @@ namespace node
 	
 	void connection::do_read()
 	{
-		CYNG_LOG_TRACE(logger_, "DO READ");
+		//CYNG_LOG_TRACE(logger_, "DO READ");
 		auto self(shared_from_this());
 		socket_.async_read_some(boost::asio::buffer(buffer_),
 			[this, self](boost::system::error_code ec, std::size_t bytes_transferred)
 			{
-				CYNG_LOG_TRACE(logger_, "READ SOME");
+				//CYNG_LOG_TRACE(logger_, "READ SOME");
 				if (!ec)
 				{
 #ifdef SMF_IO_DEBUG

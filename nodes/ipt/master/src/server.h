@@ -56,7 +56,6 @@ namespace node
 			 */
 			bool clear_connection_map(boost::uuids::uuid);
 			void transmit_data(cyng::context& ctx);	//!< transmit data locally
-			//void req_stop_client(cyng::context&);
 
 			void client_res_login(cyng::context&);
 			void client_res_close_impl(cyng::context&);

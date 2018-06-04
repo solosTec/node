@@ -646,7 +646,7 @@ namespace node
 				const auto manufacturer = cyng::io::to_ascii(buffer);
 				node.append_attribute("name").set_value(manufacturer.c_str());
 			}
-			else if (code == OBIS_READOUT_UTC)
+			else if (code == OBIS_CURRENT_UTC)
 			{
 				if (obj.get_class().tag() == cyng::TC_TUPLE)
 				{

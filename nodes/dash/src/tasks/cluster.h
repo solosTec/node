@@ -82,6 +82,7 @@ namespace node
 		void subscribe_devices(std::string const&, boost::uuids::uuid);
 		void subscribe_gateways(std::string const&, boost::uuids::uuid);
 		void subscribe_sessions(std::string const&, boost::uuids::uuid);
+		void subscribe_system(std::string const&, boost::uuids::uuid);
 		void subscribe_targets(std::string const&, boost::uuids::uuid);
 		void subscribe_connections(std::string const&, boost::uuids::uuid);
 		void subscribe_cluster(std::string const&, boost::uuids::uuid);

@@ -310,6 +310,16 @@ namespace node
 			db.insert("*Config", cyng::table::key_generator("connection-auto-login"), cyng::table::data_generator(connection_auto_login), 1, tag);
 			db.insert("*Config", cyng::table::key_generator("connection-auto-enabled"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
 			db.insert("*Config", cyng::table::key_generator("connection-superseed"), cyng::table::data_generator(connection_superseed), 1, tag);
+
+			//	get hostname
+			boost::system::error_code ec;
+			const auto host_name = boost::asio::ip::host_name(ec);
+			if (!ec) {
+				db.insert("*Config", cyng::table::key_generator("host-name"), cyng::table::data_generator(host_name), 1, tag);
+			}
+			else {
+				db.insert("*Config", cyng::table::key_generator("host-name"), cyng::table::data_generator(ec.message()), 1, tag);
+			}
 		}
 
 		if (!db.create_table(cyng::table::make_meta_table<1, 3>("*SysMsg", { "id"	//	message number

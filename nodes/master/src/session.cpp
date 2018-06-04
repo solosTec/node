@@ -36,11 +36,11 @@ namespace node
 		, std::string const& pwd
 		, boost::uuids::uuid stag
 		, std::chrono::seconds monitor
-		, std::chrono::seconds connection_open_timeout
-		, std::chrono::seconds connection_close_timeout
-		, bool connection_auto_login
-		, bool connection_auto_enabled
-		, bool connection_superseed)
+		, std::atomic<std::chrono::seconds>& connection_open_timeout
+		, std::atomic<std::chrono::seconds>& connection_close_timeout
+		, std::atomic<bool>& connection_auto_login
+		, std::atomic<bool>& connection_auto_enabled
+		, std::atomic<bool>& connection_superseed)
 	: mux_(mux)
 		, logger_(logger)
 		, mtag_(mtag)
@@ -823,7 +823,24 @@ namespace node
 		}
 		else
 		{
+			//	send response
 			vm_.async_run(bus_res_db_modify(tbl->meta().get_name(), key, attr, gen));
+			
+			if (boost::algorithm::equals(tbl->meta().get_name(), "*Config"))
+			{
+				if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "connection-auto-login"))
+				{
+					client_.set_connection_auto_login(attr.second);
+				}
+				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "connection-auto-enabled"))
+				{
+					client_.set_connection_auto_enabled(attr.second);
+				}
+				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "connection-superseed"))
+				{
+					client_.set_connection_superseed(attr.second);
+				}
+			}
 		}
 	}
 
@@ -1439,17 +1456,17 @@ namespace node
 		, std::string const& pwd
 		, boost::uuids::uuid stag
 		, std::chrono::seconds monitor //	cluster watchdog
-		, std::chrono::seconds connection_open_timeout
-		, std::chrono::seconds connection_close_timeout
-		, bool connection_auto_login
-		, bool connection_auto_emabled
-		, bool connection_superseed)
+		, std::atomic<std::chrono::seconds>& connection_open_timeout
+		, std::atomic<std::chrono::seconds>& connection_close_timeout
+		, std::atomic<bool>& connection_auto_login
+		, std::atomic<bool>& connection_auto_enabled
+		, std::atomic<bool>& connection_superseed)
 	{
 		return cyng::make_object<session>(mux, logger, mtag, db, account, pwd, stag, monitor
 			, connection_open_timeout
 			, connection_close_timeout
 			, connection_auto_login
-			, connection_auto_emabled
+			, connection_auto_enabled
 			, connection_superseed);
 	}
 

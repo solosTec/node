@@ -97,6 +97,11 @@ namespace node
 				static cyng::tuple_t create(cyng::buffer_t const& v);
 			};
 			template<>
+			struct factory_policy<cyng::buffer_t&>
+			{
+				static cyng::tuple_t create(cyng::buffer_t& v);
+			};
+			template<>
 			struct factory_policy<std::string>
 			{
 				static cyng::tuple_t create(std::string&& v);
@@ -114,7 +119,7 @@ namespace node
 				{
 					return factory_policy<std::string>::create(std::string(p, N - 1));
 				}
-			};
+		 	};
 
 			template<>
 			struct factory_policy<char*>
@@ -143,6 +148,12 @@ namespace node
 			//return detail::factory_policy<type>::create(std::forward<T>(v));
 			return detail::factory_policy<T>::create(std::forward<T>(v));
 		}
+
+		/**
+		 * generate an empty value
+		 */
+		cyng::tuple_t make_value();
+
 		
 		/**
          * SML Time of type 3 is used but not defined in SML v1.03

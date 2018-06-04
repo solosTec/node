@@ -845,6 +845,10 @@ namespace node
 			{
 				subscribe_gateways(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
+			else if (boost::algorithm::starts_with(channel, "config.system"))
+			{
+				subscribe_system(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+			}
 			else if (boost::algorithm::starts_with(channel, "status.session"))
 			{
 				subscribe_sessions(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
@@ -1011,6 +1015,32 @@ namespace node
 				catch (std::exception const& ex) {
 					CYNG_LOG_ERROR(logger_, "ws.read - modify channel [" << channel << "] failed");
 				}
+			}
+			else if (boost::algorithm::starts_with(channel, "config.system"))
+			{
+				//	{"cmd":"modify","channel":"config.system","rec":{"key":{"name":"connection-auto-login"},"data":{"value":true}}}
+				const std::string name = cyng::value_cast<std::string>(reader["rec"]["key"].get("name"), "?");
+				const cyng::object value = reader["rec"]["data"].get("value");
+				ctx.attach(bus_req_db_modify("*Config"
+					//	generate new key
+					, cyng::table::key_generator(reader["rec"]["key"].get("name"))
+					//	build parameter
+					, cyng::param_t("value", value)
+					, 0
+					, ctx.tag()));
+
+				std::stringstream ss;
+				ss
+					<< "system configuration changed "
+					<< name
+					<< " ["
+					<< value.get_class().type_name()
+					<< "] = "
+					<< cyng::io::to_str(value)
+					;
+
+				ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+
 			}
 			else
 			{
@@ -1211,6 +1241,36 @@ namespace node
 			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
 
 		}, cyng::store::read_access("*Session"));
+	}
+
+	void cluster::subscribe_system(std::string const& channel, boost::uuids::uuid tag)
+	{
+		server_.add_channel(tag, channel);
+
+		//
+		//	send initial data set of *Config table
+		//
+		cache_.access([&](cyng::store::table const* tbl) {
+			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+				CYNG_LOG_TRACE(logger_, "ws.read - insert session " << cyng::io::to_str(rec.key()));
+
+				auto tpl = cyng::tuple_factory(
+					cyng::param_factory("cmd", std::string("insert")),
+					cyng::param_factory("channel", channel),
+					cyng::param_factory("rec", rec.convert()));
+
+				auto msg = cyng::json::to_string(tpl);
+				server_.send_msg(tag, msg);
+
+				//	continue
+				return true;
+			});
+			BOOST_ASSERT(counter == 0);
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
+
+		}, cyng::store::read_access("*Config"));
+
 	}
 
 	void cluster::subscribe_targets(std::string const& channel, boost::uuids::uuid tag)
@@ -1739,7 +1799,16 @@ namespace node
 			server_.process_event("status.cluster", msg);
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Config"))
-		{ }
+		{ 
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("modify")),
+				cyng::param_factory("channel", "config.system"),
+				cyng::param_factory("key", key),
+				cyng::param_factory("value", pm));
+
+			auto msg = cyng::json::to_string(tpl);
+			server_.process_event("config.system", msg);
+		}
 		else
 		{
 			CYNG_LOG_WARNING(logger_, "sig.mode - unknown table "

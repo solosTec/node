@@ -38,7 +38,7 @@ namespace node
 			else if (code == OBIS_CODE_ROOT_NTP)				return "root-NTP";
 			else if (code == OBIS_CODE_ROOT_DEVICE_IDENT)		return "root-device-id";
 			else if (code == OBIS_CODE_DEVICE_CLASS)			return "device-class";
-			else if (code == OBIS_CODE_SERVER_ID_VISIBLE)		return "server-id-visible";
+			else if (code == OBIS_CODE_SERVER_ID)		return "server-id-visible";
 			else if (code == OBIS_CODE_ROOT_ACCESS_RIGHTS)		return "root-auth";
 			else if (code == OBIS_CODE_ROOT_CUSTOM_INTERFACE)	return "root-custom-interface";
 			else if (code == OBIS_CODE_ROOT_CUSTOM_PARAM)		return "root-custom-param";
@@ -86,7 +86,7 @@ namespace node
 			else if (code == OBIS_SERVER_ID_1_4)		return "identifier-1-4";
 			else if (code == OBIS_DEVICE_ID)			return "device-id";
 
-			else if (code == OBIS_READOUT_UTC)			return "readout-utc";
+			else if (code == OBIS_CURRENT_UTC)			return "readout-utc";
 
 			else if (code == OBIS_REG_POS_AE_NO_TARIFF)			return "pos-act-energy-no-tariff";
 			else if (code == OBIS_REG_POS_AE_T1)				return "pos-act-energy-tariff-1";
@@ -108,7 +108,7 @@ namespace node
 			//const static obis	OBIS_CLASS_OP_LOG_CELL(0x81, 0x04, 0x1A, 0x07, 0x00, 0x00);	//	aktuelle Zelleninformation (uint16)
 			//const static obis	OBIS_CLASS_OP_LOG_AREA_CODE(0x81, 0x04, 0x17, 0x07, 0x00, 0x00);	//	aktueller Location - oder Areacode(uint16)
 			//const static obis	OBIS_CLASS_OP_LOG_PROVIDER(0x81, 0x04, 0x0D, 0x06, 0x00, 0x00);	//	aktueller Provider-Identifier(uint32)
-			//const static obis	OBIS_CLASS_TIMESTAMP_UTC(0x01, 0x00, 0x00, 0x09, 0x0B, 0x00);	//	timestamp UTC - SML_Time (Zeitsynchronisation per NTPZugriff erfolgt)
+			//const static obis	OBIS_CURRENT_UTC(0x01, 0x00, 0x00, 0x09, 0x0B, 0x00);	//	timestamp UTC - SML_Time (Zeitsynchronisation per NTPZugriff erfolgt)
 
 			else if (code == OBIS_CLASS_OP_LSM_STATUS)					return "LSM-status";
 			else if (code == OBIS_CLASS_OP_LSM_ACTOR_ID)				return "LSM-actor-id";

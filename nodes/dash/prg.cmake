@@ -22,6 +22,7 @@ set (node_dash_tasks
 
 set (node_dash_res
 	nodes/dash/htdocs/index.html
+	nodes/dash/htdocs/config.system.html
 	nodes/dash/htdocs/config.device.html
 	nodes/dash/htdocs/config.gateway.html
 	nodes/dash/htdocs/config.meter.html

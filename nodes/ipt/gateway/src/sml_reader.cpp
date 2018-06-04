@@ -565,6 +565,17 @@ namespace node
 						, ro_.get_value("userName")
 						, ro_.get_value("password"));
 				}
+				else if (path.at(0) == OBIS_CODE_ROOT_SENSOR_PROPERTY)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.sensor.property"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+
+				}
 
 			}
 			return prg << cyng::generate_invoke_unwinded("sml.get.proc.parameter.request"
@@ -815,7 +826,7 @@ namespace node
 				const auto manufacturer = cyng::io::to_ascii(buffer);
 				ro_.set_value("manufacturer", cyng::make_object(manufacturer));
 			}
-			else if (code == OBIS_READOUT_UTC)
+			else if (code == OBIS_CURRENT_UTC)
 			{
 				if (obj.get_class().tag() == cyng::TC_TUPLE)
 				{

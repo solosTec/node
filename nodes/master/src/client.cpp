@@ -27,14 +27,14 @@ namespace node
 	client::client(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, cyng::store::db& db
-		, bool connection_auto_login
-		, bool connection_auto_emabled
-		, bool connection_superseed)
+		, std::atomic<bool>& connection_auto_login
+		, std::atomic<bool>& connection_auto_enabled
+		, std::atomic<bool>& connection_superseed)
 	: mux_(mux)
 		, logger_(logger)
 		, db_(db)
 		, connection_auto_login_(connection_auto_login)
-		, connection_auto_enabled_(connection_auto_emabled)
+		, connection_auto_enabled_(connection_auto_enabled)
 		, connection_superseed_(connection_superseed)
 		, rng_()
 		, distribution_(std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max())
@@ -42,6 +42,22 @@ namespace node
 	{
 		rng_.seed(std::time(0));
 	}
+
+	bool client::set_connection_auto_login(cyng::object obj)
+	{
+		return connection_auto_login_.exchange(cyng::value_cast(obj, false));
+	}
+
+	bool client::set_connection_auto_enabled(cyng::object obj)
+	{
+		return connection_auto_enabled_.exchange(cyng::value_cast(obj, true));
+	}
+
+	bool client::set_connection_superseed(cyng::object obj)
+	{
+		return connection_superseed_.exchange(cyng::value_cast(obj, true));
+	}
+
 
 	cyng::vector_t client::req_login(boost::uuids::uuid tag,
 		boost::uuids::uuid peer,
@@ -176,7 +192,7 @@ namespace node
 				, 0
 				, bag));
 
-			if (!wrong_pwd && connection_auto_login_)
+			if (!wrong_pwd && connection_auto_login_.load())
 			{
 				//
 				//	create new device record
@@ -189,7 +205,7 @@ namespace node
 						, "auto"	//	comment
 						, ""	//	device id
 						, NODE_VERSION	//	firmware version
-						, connection_auto_enabled_	//	enabled
+						, connection_auto_enabled_.load()	//	enabled
 						, std::chrono::system_clock::now()
 						, 6u)
 					, 1
