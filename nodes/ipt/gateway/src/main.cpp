@@ -45,9 +45,6 @@ int main(int argc, char **argv)
 
 		;
 		
-	//	get the working directory
-// 	const boost::filesystem::path cwd = boost::filesystem::current_path();
-
 	//	path to JSON configuration file
 	std::string json_path;
 	unsigned int pool_size = 1;

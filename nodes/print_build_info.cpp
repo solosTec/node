@@ -8,6 +8,7 @@
 #include "print_build_info.h"
 #include <NODE_project_info.h>
 #include <CYNG_project_info.h>
+//#include <cyng/io/io_chrono.hpp>
 #include <boost/config.hpp>
 #include <boost/version.hpp>
 #include <boost/asio/version.hpp>
@@ -20,37 +21,41 @@ namespace node
 	int print_build_info(std::ostream& os)
 	{
 		os
-		<< "configured at: "
+		<< "configured at : "
 		<< NODE_BUILD_DATE
 		<< " UTC"
 		<< std::endl
 
-		<< "last built at: "
+		<< "last built at : "
 		<< __DATE__
 		<< " "
 		<< __TIME__
 		<< std::endl
 
-		<< "Platform     : "
+		<< "Platform      : "
 		<< NODE_PLATFORM
 		<< std::endl
 
-		<< "Compiler     : "
+		<< "Compiler      : "
 		<< BOOST_COMPILER
 		<< std::endl
 
-		<< "StdLib       : "
+		<< "StdLib        : "
 		<< BOOST_STDLIB
 		<< std::endl
 
-		<< "BOOSTLib     : v"
-		<< BOOST_LIB_VERSION
+		<< "BOOSTLib      : v"
+		<< (BOOST_VERSION / 100000)		//	major version
+		<< '.'
+		<< (BOOST_VERSION / 100 % 1000)	//	minor version
+		<< '.'
+		<< (BOOST_VERSION % 100)	//	patch level
 		<< " ("
         << NODE_BOOST_VERSION
 		<< ")"
 		<< std::endl
 
-		<< "Boost.Asio   : v"
+		<< "Boost.Asio    : v"
 		<< (BOOST_ASIO_VERSION / 100000)
 		<< '.'
 		<< (BOOST_ASIO_VERSION / 100 % 1000)
@@ -58,18 +63,18 @@ namespace node
 		<< (BOOST_ASIO_VERSION % 100)
 		<< std::endl
 
-		<< "CyngLib      : v"
+		<< "CyngLib       : v"
 		<< CYNG_VERSION
 		<< " ("
 		<< CYNG_BUILD_DATE
 		<< ")"
 		<< std::endl
 
-        << "SSL/TSL      : v"
+        << "SSL/TSL       : v"
         << NODE_SSL_VERSION
         << std::endl
 
-		<< "build type   : "
+		<< "build type    : "
 #if BOOST_OS_WINDOWS
 #ifdef _DEBUG
 		<< "Debug"
@@ -81,31 +86,21 @@ namespace node
 #endif
 		<< std::endl
 
-        << "address model: "
+        << "address model : "
         << NODE_ADDRESS_MODEL
         << " bit"
         << std::endl
 			
 
-        << "std::time_t  : "
-        << sizeof(std::time_t)
-        << " bytes"
-        << std::endl
-
-        //<< "std::size_t  : "
-        //<< sizeof(std::size_t)
+        //<< "std::time_t   : "
+        //<< sizeof(std::time_t)
         //<< " bytes"
         //<< std::endl
 
-        //<< "double       : "
-        //<< sizeof(double)
-        //<< " bytes"
+        //<< "max. timestamp: "
+        //<< cyng::to_str(std::chrono::system_clock::time_point::max())
         //<< std::endl
 
-        //<< "duration     : "
-        //<< sizeof(std::chrono::system_clock::time_point::duration::rep)
-        //<< " bytes"
-        //<< std::endl
         ;
 		
 
