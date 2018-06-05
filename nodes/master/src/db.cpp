@@ -167,7 +167,7 @@ namespace node
 			, "local"	//	[object] local peer object (hold session reference)
 			, "remote"	//	[object] remote peer object (if session connected)
 			, "peer"	//	[uuid] remote peer
-			, "device"	//	[uuid] - owner of the session
+			, "device"	//	[uuid] - owner of the session <TDevice>
 			, "name"	//	[string] - account
 			, "source"	//	[uint32] - ipt source id (unique)
 			, "loginTime"	//	[tp] last login time

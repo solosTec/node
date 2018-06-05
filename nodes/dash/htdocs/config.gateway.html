@@ -90,12 +90,11 @@
                         <tr>
                             <th class="sml-col-gw-pk">UUID</th>
                             <th class="sml-col-gw-server">Server ID</th>
-                            <!--<th class="sml-col-gw-device">Device</th>-->
                             <th class="sml-col-gw-manufacturer">Manufacturer</th>
                             <th class="sml-col-gw-id">Model</th>
                             <th class="sml-col-gw-user">User</th>
                             <th class="sml-col-gw-pwd">Password</th>
-                            <th class="sml-col-gw-online">Online</th>
+                            <th class="sml-col-gw-online" style="width:10px">&#11156;</th>
                         </tr>
                     </thead>
                 </table>
@@ -105,9 +104,19 @@
 
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
-    <script type="text/javascript" src="popper.min.js"></script>
+    <!--<script type="text/javascript" src="popper.min.js"></script>-->
 
     <script>
+        var renderOnlineState = function (data, type, full, meta) {
+            if (type == "display") {
+                if (!data) {
+                    return "<div style='width: 10px; border: 10px #ccc solid;'></div>";
+                }
+                return "<div style='width: 10px; border: 10px green solid; border-radius: 50%;'></div>";
+            }
+            return data;
+        };
+
         //  globals
         var table_gw;
         var connection;
@@ -118,23 +127,20 @@
             pageLength: 25,
             ordering: true,
             info: true,
-            //scrollY: "100%",
             autoWidth: false,
             deferRender: false,
             processing: true,
             searching: true,
             select: true,
-            //keys: true,  //  table navigation
-            //dom: '<"top"ilp>rt<"bottom"f><"clear">',
+            //colReorder: true,
             columnDefs: [
                 { targets: 'sml-col-gw-pk', visible: true, name: 'gw-pk' },
                 { targets: 'sml-col-gw-server', visible: true, name: 'gw-server' },
-//                { targets: 'sml-col-gw-device', visible: true, name: 'gw-device' },
                 { targets: 'sml-col-gw-manufacturer', visible: true, name: 'gw-manufacturer' },
                 { targets: 'sml-col-gw-id', visible: true, name: 'gw-id'},
                 { targets: 'sml-col-gw-user', visible: true, name: 'gw-user'},
                 { targets: 'sml-col-gw-pwd', visible: true, name: 'gw-pwd' },
-                { targets: 'sml-col-gw-online', visible: true, name: 'gw-online' }
+                { targets: 'sml-col-gw-online', visible: true, name: 'gw-online', render: renderOnlineState }
             ]
         };
 
@@ -152,7 +158,12 @@
             connection.onclose = function (event) {
                 $('#ws-activity-symbol').show();
                 $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
-                $('#ws-activity-text').html('error ' + event.code);
+                if (event.code == 1006) {
+                    $('#ws-activity-text').html('connection lost - press reload');
+                }
+                else {
+                    $('#ws-activity-text').html('error ' + event.code);
+                }
             };
 
             connection.onerror = function (error) {
@@ -174,14 +185,26 @@
                         var model = $('<div/>').text(obj.rec.data.model).html();
                         var userName = $('<div/>').text(obj.rec.data.userName).html();
                         var userPwd = $('<div/>').text(obj.rec.data.userPwd).html();
-                        var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, model, userName, userPwd, false]).draw().node();
+                        var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, model, userName, userPwd, obj.rec.data.online]).draw().node();
 
                     }
                     else if (obj.cmd == 'delete') {
 
                     }
                     else if (obj.cmd == 'modify') {
-
+                        //  {"cmd": "modify", "channel": "config.gateway", "key": ["dca135f3-ff2b-4bf7-8371-a9904c74522b"], "value": {"online":true}}
+                        table_gw.row(function (idx, data, node) {
+                            if (data[0] == obj.key) {
+                                var r = table_gw.row(node);
+                                var d = r.data();
+                                if (obj.value.online != null) {
+                                    d[6] = obj.value.online;
+                                }
+                                r.data(d);
+                                return true;
+                            }
+                            return false;
+                        });
                     }
                     else if (obj.cmd == 'clear') {
                         table_gw.clear().draw(false);

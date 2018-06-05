@@ -1784,7 +1784,7 @@ namespace node
 
 		if (boost::algorithm::equals(name, "TDevice.vFirmware") || boost::algorithm::equals(name, "TDevice.id"))
 		{
-			db_.access([&](cyng::store::table const* tbl_session, cyng::store::table* tbl_device)->void {
+			db_.access([&](cyng::store::table const* tbl_session, cyng::store::table* tbl_device, cyng::store::table* tbl_gw)->void {
 
 				auto session_rec = tbl_session->lookup(cyng::table::key_generator(tag));
 				if (!session_rec.empty())
@@ -1799,11 +1799,51 @@ namespace node
 
 					if (boost::algorithm::equals(name, "TDevice.vFirmware"))
 					{ 
+						//	firmware
 						tbl_device->modify(dev_pk, cyng::param_t("vFirmware", value), tag);
 					}
 					else if (boost::algorithm::equals(name, "TDevice.id"))
 					{
+						//	model
 						tbl_device->modify(dev_pk, cyng::param_t("id", value), tag);
+
+						//
+						//	model names are hard coded
+						//
+						const std::string model = cyng::value_cast<std::string>(value, "");
+						if (boost::algorithm::starts_with(model, "EMH")
+							|| boost::algorithm::starts_with(model, "Variomuc ")
+							|| boost::algorithm::equals(model, "ipt:gateway"))
+						{
+							auto dev_rec = tbl_device->lookup(dev_pk);
+
+							//
+							//	test for gateway (same key as TDevice)
+							//
+							auto gw_rec = tbl_gw->lookup(dev_pk);
+							if (gw_rec.empty() && !dev_rec.empty())
+							{
+								//
+								//	create a gateway record
+								//
+								tbl_gw->insert(dev_pk
+									, cyng::table::data_generator("05000000000000"
+										, (boost::algorithm::equals(model, "ipt:gateway") ? "solosTec" : "EMH")
+										, value
+										, std::chrono::system_clock::now()
+										, dev_rec["vFirmware"]
+										, "factory-nr"
+										, cyng::mac48(0, 1, 2, 3, 4, 5)
+										, cyng::mac48(0, 1, 2, 3, 4, 6)
+										, "user"
+										, "pwd"
+										, "mbus"
+										, "operator"
+										, "operator")
+									, 0
+									, tag);
+							}
+						}
 					}
 				}
 				else
@@ -1814,7 +1854,8 @@ namespace node
 
 				}
 			}	, cyng::store::read_access("*Session")
-				, cyng::store::write_access("TDevice"));
+				, cyng::store::write_access("TDevice")
+				, cyng::store::write_access("TGateway"));
 
 		}
 		else

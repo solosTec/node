@@ -293,8 +293,11 @@ namespace node
 	void cluster::res_subscribe(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		//	[TDevice,[763ae055-449c-4783-b383-8fc8cd52f44f],[2018-01-23 13:02:05.66872930,true,vFirmware,id,descr,number,name],72,aa7dc32f-91ff-4b08-89fc-53afb244a6a9,3]
-		//	[*Session,[762b6635-5d37-45bd-b287-a34eeff87bdb],[00000000-0000-0000-0000-000000000000,2018-03-04 16:59:35.54259310,d091bb5c,LSMTest5,5fabcce3-a019-4264-a0f8-14d791a61eb9,b3aa75c9-0d50-44c5-b9dc-3e41d36daa6a,null,session],1,00f30cd8-786e-4616-8b9f-00c0b6ef272a,1]
+		//
+		//	examples:
+		//	[TDevice,[911fc4a1-8d9b-4d18-97f7-84a1cd576139],[00000006,2018-02-04 15:31:37.00000000,true,v88,ID,comment #88,1088,secret,device-88],88,dfa6b9a1-4170-41bd-8945-80b936059231,1]
+		//	[TGateway,[dca135f3-ff2b-4bf7-8371-a9904c74522b],[operator,operator,mbus,pwd,user,00:01:02:03:04:06,00:01:02:03:04:05,factory-nr,VSES-1.13_1133000038X025d,2018-06-05 16:01:06.29959300,EMH-VSES,EMH,05000000000000],0,e197fc51-0f13-4643-968d-8d0332bae068,1]
+		//	[*SysMsg,[14],[cluster member dash:63efc328-218a-4635-a582-1cb4ddc7af25 closed,4,2018-06-05 16:17:50.88472100],1,e197fc51-0f13-4643-968d-8d0332bae068,1]
 		//
 		//	* table name
 		//	* record key
@@ -303,7 +306,7 @@ namespace node
 		//	* origin session id
 		//	* optional task id
 		//	
-		CYNG_LOG_TRACE(logger_, "res.subscribe - " << cyng::io::to_str(frame));
+		//CYNG_LOG_TRACE(logger_, "res.subscribe - " << cyng::io::to_str(frame));
 
 		auto tpl = cyng::tuple_cast<
 			std::string,			//	[0] table name
@@ -311,7 +314,7 @@ namespace node
 			cyng::table::data_type,	//	[2] record
 			std::uint64_t,			//	[3] generation
 			boost::uuids::uuid,		//	[4] origin session id
-			std::size_t				//	[5] origin task id
+			std::size_t				//	[5] optional task id
 		>(frame);
 
 		CYNG_LOG_TRACE(logger_, "res.subscribe " 
@@ -319,13 +322,44 @@ namespace node
 			<< " - "
 			<< cyng::io::to_str(std::get<1>(tpl)));
 
-		//	 [TDevice,[911fc4a1-8d9b-4d18-97f7-84a1cd576139],[00000006,2018-02-04 15:31:37.00000000,true,v88,ID,comment #88,1088,secret,device-88],88,dfa6b9a1-4170-41bd-8945-80b936059231,1]
+		//
+		//	reorder vectors
+		//
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
-		if (!cache_.insert(std::get<0>(tpl)
-			, std::get<1>(tpl)
-			, std::get<2>(tpl)
-			, std::get<3>(tpl)
+
+		if (boost::algorithm::equals(std::get<0>(tpl), "TGateway"))
+		{
+			//
+			//	add/set online flag
+			//
+			//cyng::param_map_t pm;
+			//pm["online"] = cyng::make_object(true);
+			cache_.access([&](const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
+
+				//
+				//	Gateway and Device table share the same table key
+				//	look for a session of this device
+				//
+				auto ses_rec = tbl_ses->find_first(cyng::param_t("device", std::get<1>(tpl).at(0)));
+
+				//
+				//	set online state
+				//
+				std::get<2>(tpl).push_back(cyng::make_object(!ses_rec.empty()));
+
+				//
+				//	ToDo: set device name
+				//
+
+			}	, cyng::store::read_access("TDevice")
+				, cyng::store::read_access("*Session"));
+
+		}
+		if (!cache_.insert(std::get<0>(tpl)	//	table name
+			, std::get<1>(tpl)	//	table key
+			, std::get<2>(tpl)	//	table data
+			, std::get<3>(tpl)	//	generation
 			, std::get<4>(tpl)))
 		{
 			CYNG_LOG_WARNING(logger_, "res.subscribe failed "
@@ -404,7 +438,32 @@ namespace node
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
 		cyng::table::record rec(cache_.meta(std::get<0>(tpl)), std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl));
 
-		if (!cache_.insert(std::get<0>(tpl)
+		if (boost::algorithm::equals(std::get<0>(tpl), "TGateway"))
+		{
+			//cyng::param_map_t pm;
+			//pm["online"] = cyng::make_object(true);
+
+			cache_.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+
+				//
+				//	search session with this device/GW tag
+				//
+				auto ses_rec = tbl_ses->find_first(cyng::param_t("device", std::get<1>(tpl).at(0)));
+
+				std::get<2>(tpl).push_back(cyng::make_object(!ses_rec.empty()));	//	add on/offline flag
+				if (!tbl_gw->insert(std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl), std::get<4>(tpl)))
+				{
+
+					CYNG_LOG_WARNING(logger_, "db.req.insert failed "
+						<< std::get<0>(tpl)		// table name
+						<< " - "
+						<< cyng::io::to_str(std::get<1>(tpl)));
+
+				}
+			}	, cyng::store::write_access("TGateway")
+				, cyng::store::read_access("*Session"));
+		}
+		else if (!cache_.insert(std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
@@ -414,6 +473,23 @@ namespace node
 				<< std::get<0>(tpl)		// table name
 				<< " - "
 				<< cyng::io::to_str(std::get<1>(tpl)));
+		}
+		else if (boost::algorithm::equals(std::get<0>(tpl), "*Session"))
+		{
+			cache_.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+
+				//
+				//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
+				//	Gateway and Device table share the same table key
+				//
+				auto rec = tbl_ses->lookup(std::get<1>(tpl));
+				if (!rec.empty())
+				{
+					//	set online state
+					tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", true), std::get<4>(tpl));
+				}
+			}	, cyng::store::write_access("TGateway")
+				, cyng::store::read_access("*Session"));
 		}
 	}
 
@@ -439,6 +515,26 @@ namespace node
 		//	reordering table key
 		//	
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
+
+		//
+		//	we have to query session data before session will be removed
+		//
+		if (boost::algorithm::equals(std::get<0>(tpl), "*Session"))
+		{
+			cache_.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+
+				//
+				//	Gateway and Device table share the same table key
+				//
+				auto rec = tbl_ses->lookup(std::get<1>(tpl));
+				if (!rec.empty())
+				{
+					//	set online state
+					tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", false), std::get<2>(tpl));
+				}
+			}	, cyng::store::write_access("TGateway")
+				, cyng::store::read_access("*Session"));
+		}
 
 		if (!cache_.erase(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl)))
 		{
@@ -1190,7 +1286,7 @@ namespace node
 		server_.add_channel(tag, channel);
 
 		//
-		//	send initial data set of device table
+		//	send initial data set of gateway table
 		//
 		cache_.access([&](cyng::store::table const* tbl) {
 			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
@@ -1211,7 +1307,7 @@ namespace node
             BOOST_ASSERT(counter == 0);
 			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
 
-		}, cyng::store::read_access("TGateway"));
+		}	, cyng::store::read_access("TGateway"));
 	}
 
 	void cluster::subscribe_sessions(std::string const& channel, boost::uuids::uuid tag)
@@ -1829,7 +1925,7 @@ namespace node
 			CYNG_LOG_FATAL(logger_, "cannot create table TDevice");
 		}
 
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 13>("TGateway", { "pk"	//	primary key
+		if (!cache_.create_table(cyng::table::make_meta_table<1, 14>("TGateway", { "pk"	//	primary key
 			, "id"	//	(1) Server-ID (i.e. 0500153B02517E)
 			, "manufacturer"	//	(2) manufacturer (i.e. EMH)
 			, "model"	//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
@@ -1843,9 +1939,10 @@ namespace node
 			, "mbus"	//	(11)
 			, "userName"	//	(12)
 			, "userPwd"	//	(13)
+			, "online"	//	(14)
 			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_MAC48, cyng::TC_MAC48, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
-			{ 36, 23, 64, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 })))
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_MAC48, cyng::TC_MAC48, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL },
+			{ 36, 23, 64, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32, 0 })))
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table TGateway");
 		}
