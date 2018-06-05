@@ -62,12 +62,8 @@ namespace node
 		const std::string pwd_;
 		const std::chrono::seconds monitor_;	//!< cluster monitor
 
-		//	connection parameters
-		std::atomic<std::chrono::seconds> connection_open_timeout_;
-		std::atomic<std::chrono::seconds> connection_close_timeout_;
-		std::atomic<bool> connection_auto_login_;
-		std::atomic<bool> connection_auto_enabled_;
-		std::atomic<bool> connection_superseed_;
+		//	global configuration parameters
+		std::atomic<std::uint64_t>	global_configuration_;
 
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor acceptor_;		

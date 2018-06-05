@@ -93,7 +93,7 @@
                 <!--<img class="card-img-top" src="images/config-supersede.svg" alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Auto Login</h5>
-                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-auto-login-data" value=""> Automatic transfer of unknown devices to the configuration database.</label>
+                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-auto-login-data" value=""> Accept unknown devices and transfer the login data to the configuration database.</label>
                 </div>
                 <div class="card-footer">
                     <small class="text-muted">default = NO</small>
@@ -103,7 +103,7 @@
                 <!--<img class="card-img-top" src="..." alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Auto Enabled</h5>
-                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-auto-enabled-data" value=""> Set automtically configured devices as enabled.</label>
+                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-auto-enabled-data" value=""> Set automatically configured devices as enabled.</label>
                 </div>
                 <div class="card-footer">
                     <small class="text-muted">default = YES</small>
@@ -117,6 +117,16 @@
                 </div>
                 <div class="card-footer">
                     <small class="text-muted">default = YES</small>
+                </div>
+            </div>
+            <div class="card">
+                <!--<img class="card-img-top" src="images/config-supersede.svg" alt="Card image cap">-->
+                <div class="card-body">
+                    <h5 class="card-title">Generate Time-Series</h5>
+                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-time-series-data" value=""> Generate statistics.</label>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">default = NO</small>
                 </div>
             </div>
         </div>
@@ -178,6 +188,10 @@
                             console.log('connection-superseed: ' + obj.rec.data.value);
                             $("#smf-config-system-supersede-data").prop("checked", obj.rec.data.value);
                         }
+                        else if (obj.rec.key.name == 'generate-time-series') {
+                            console.log('generate-time-series: ' + obj.rec.data.value);
+                            $("#smf-config-system-time-series-data").prop("checked", obj.rec.data.value);
+                        }
                         else if (obj.rec.key.name == 'host-name') {
                             console.log('host-name: ' + obj.rec.data.value);
                             $("#smf-config-system-host-name").html(obj.rec.data.value);
@@ -199,6 +213,10 @@
                         else if (obj.key[0] == 'connection-superseed') {
                             console.log('connection-superseed: ' + obj.value.value);
                             $("#smf-config-system-supersede-data").prop("checked", obj.value.value);
+                        }
+                        else if (obj.key[0] == 'generate-time-series') {
+                            console.log('generate-time-series: ' + obj.value.value);
+                            $("#smf-config-system-time-series-data").prop("checked", obj.value.value);
                         }
                     }
                     else if (obj.cmd == 'clear') {
@@ -242,6 +260,16 @@
             }));
         });
 
+        $('#smf-config-system-time-series-data').change(function (val) {
+            connection.send(JSON.stringify({
+                cmd: "modify", channel: "config.system", rec: {
+                    key: { name: "generate-time-series" },
+                    data: {
+                        value: this.checked
+                    }
+                }
+            }));
+        });
     </script>
 
     <script>

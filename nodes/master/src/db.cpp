@@ -22,11 +22,7 @@ namespace node
 		, cyng::store::db& db
 		, boost::uuids::uuid tag
 		, boost::asio::ip::tcp::endpoint ep
-		, std::chrono::seconds connection_open_timeout
-		, std::chrono::seconds connection_close_timeout
-		, bool connection_auto_login
-		, bool connection_auto_enabled
-		, bool connection_superseed)
+		, std::uint64_t global_config)
 	{
 		CYNG_LOG_INFO(logger, "initialize database as node " << tag);
 
@@ -303,13 +299,17 @@ namespace node
 		}
 		else
 		{
-			//db.insert("*Config", cyng::table::key_generator("startup"), cyng::table::data_generator(std::chrono::system_clock::now()), 1, tag);
+			const bool connection_auto_login = global_config & SMF_CONNECTION_AUTO_LOGIN;
+			const bool connection_auto_enabled = global_config & SMF_CONNECTION_AUTO_ENABLED;
+			const bool connection_superseed = global_config & SMF_CONNECTION_SUPERSEDED;
+			const bool generate_time_series = global_config & SMF_GENERATE_TIME_SERIES;
+
+			db.insert("*Config", cyng::table::key_generator("startup"), cyng::table::data_generator(std::chrono::system_clock::now()), 1, tag);
 			db.insert("*Config", cyng::table::key_generator("master-tag"), cyng::table::data_generator(tag), 1, tag);
-			db.insert("*Config", cyng::table::key_generator("connection-open-timeout"), cyng::table::data_generator(connection_open_timeout), 1, tag);
-			db.insert("*Config", cyng::table::key_generator("connection-close-timeout"), cyng::table::data_generator(connection_close_timeout), 1, tag);
 			db.insert("*Config", cyng::table::key_generator("connection-auto-login"), cyng::table::data_generator(connection_auto_login), 1, tag);
 			db.insert("*Config", cyng::table::key_generator("connection-auto-enabled"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
 			db.insert("*Config", cyng::table::key_generator("connection-superseed"), cyng::table::data_generator(connection_superseed), 1, tag);
+			db.insert("*Config", cyng::table::key_generator("generate-time-series"), cyng::table::data_generator(generate_time_series), 1, tag);
 
 			//	get hostname
 			boost::system::error_code ec;

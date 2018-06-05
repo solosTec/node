@@ -35,9 +35,7 @@ namespace node
 		client(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, cyng::store::db&
-			, std::atomic<bool>& connection_auto_login
-			, std::atomic<bool>& connection_auto_enabled
-			, std::atomic<bool>& connection_superseed);
+			, std::atomic<std::uint64_t>& global_configuration);
 
 		client(client const&) = delete;
 		client& operator=(client const&) = delete;
@@ -139,6 +137,12 @@ namespace node
 		bool set_connection_auto_login(cyng::object);
 		bool set_connection_auto_enabled(cyng::object);
 		bool set_connection_superseed(cyng::object);
+		bool set_generate_time_series(cyng::object);
+
+		bool is_connection_auto_login() const;
+		bool is_connection_auto_enabled() const;
+		bool is_connection_superseed() const;
+		bool is_generate_time_series() const;
 
 	private:
 		cyng::vector_t req_open_push_channel_empty(boost::uuids::uuid tag,
@@ -155,9 +159,7 @@ namespace node
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
-		std::atomic<bool>& connection_auto_login_;
-		std::atomic<bool>& connection_auto_enabled_;
-		std::atomic<bool>& connection_superseed_;
+		std::atomic<std::uint64_t>& global_configuration_;
 
 		boost::random::mt19937 rng_;
 		boost::random::uniform_int_distribution<std::uint32_t> distribution_;

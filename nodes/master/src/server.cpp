@@ -26,11 +26,6 @@ namespace node
 		, account_(account)
 		, pwd_(pwd)
 		, monitor_(monitor)
-		, connection_open_timeout_(std::chrono::seconds(12))
-		, connection_close_timeout_(std::chrono::seconds(12))
-		, connection_auto_login_(false)
-		, connection_auto_enabled_(true)
-		, connection_superseed_(true)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
 		, socket_(io_ctx_)
@@ -42,11 +37,25 @@ namespace node
 		//	read session configuration
 		//
 		auto dom = cyng::make_reader(cfg_session);
-		connection_open_timeout_ = std::chrono::seconds(cyng::value_cast(dom.get("connection-open-timeout"), 12));
-		connection_open_timeout_ = std::chrono::seconds(cyng::value_cast(dom.get("connection-close-timeout"), 12));
-		connection_auto_login_ = cyng::value_cast(dom.get("auto-login"), connection_auto_login_.load());
-		connection_auto_enabled_ = cyng::value_cast(dom.get("auto-enabled"), connection_auto_enabled_.load());
-		connection_superseed_ = cyng::value_cast(dom.get("supersede"), connection_superseed_.load());
+
+		if (cyng::value_cast(dom.get("auto-login"), false))
+		{
+			global_configuration_ |= SMF_CONNECTION_AUTO_LOGIN;
+		}
+		if (cyng::value_cast(dom.get("auto-enabled"), true))
+		{
+			global_configuration_ |= SMF_CONNECTION_AUTO_ENABLED;
+		}
+		if (cyng::value_cast(dom.get("supersede"), true))
+		{
+			global_configuration_ |= SMF_CONNECTION_SUPERSEDED;
+		}
+		if (cyng::value_cast(dom.get("generate-time-series"), false))
+		{
+			global_configuration_ |= SMF_GENERATE_TIME_SERIES;
+		}
+
+		CYNG_LOG_TRACE(logger_, "global configuration bitmask: " << global_configuration_.load());
 
 	}
 	
@@ -73,11 +82,7 @@ namespace node
 			, db_
 			, tag_
 			, acceptor_.local_endpoint()
-			, connection_open_timeout_
-			, connection_close_timeout_
-			, connection_auto_login_
-			, connection_auto_enabled_
-			, connection_superseed_);
+			, global_configuration_.load());
 
 		do_accept();
 	}
@@ -112,11 +117,7 @@ namespace node
 					, pwd_
 					, rgn_()
 					, monitor_ // cluster watchdog
-					, connection_open_timeout_
-					, connection_close_timeout_
-					, connection_auto_login_
-					, connection_auto_enabled_
-					, connection_superseed_)->start();
+					, global_configuration_)->start();
 
 				do_accept();
 			}

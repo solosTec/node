@@ -37,11 +37,7 @@ namespace node
 			, std::string const& pwd
 			, boost::uuids::uuid stag
 			, std::chrono::seconds monitor
-			, std::atomic<std::chrono::seconds>& connection_open_timeout
-			, std::atomic<std::chrono::seconds>& connection_close_timeout
-			, std::atomic<bool>& connection_auto_login
-			, std::atomic<bool>& connection_auto_enabled
-			, std::atomic<bool>& connection_superseed);
+			, std::atomic<std::uint64_t>& global_configuration);
 
 		session(session const&) = delete;
 		session& operator=(session const&) = delete;
@@ -128,8 +124,6 @@ namespace node
 		const std::string account_;
 		const std::string pwd_;
 		const std::chrono::seconds cluster_monitor_;
-		std::atomic<std::chrono::seconds>& connection_open_timeout_;
-		std::atomic<std::chrono::seconds>& connection_close_timeout_;
 
 		/**
 		 * Parser for binary cyng data stream (from cluster members)
@@ -170,11 +164,7 @@ namespace node
 		, std::string const& pwd
 		, boost::uuids::uuid stag
 		, std::chrono::seconds monitor //	cluster watchdog
-		, std::atomic<std::chrono::seconds>& connection_open_timeout
-		, std::atomic<std::chrono::seconds>& connection_close_timeout
-		, std::atomic<bool>& connection_auto_login
-		, std::atomic<bool>& connection_auto_enabled
-		, std::atomic<bool>& connection_superseed);
+		, std::atomic<std::uint64_t>& global_configuration);
 }
 
 #include <cyng/intrinsics/traits.hpp>

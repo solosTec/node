@@ -1,0 +1,247 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="SWF dashboard">
+    <meta name="author" content="solos::Tec">
+    <title>smf :: home</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
+        <a class="navbar-brand" href="http://solostec.ch">
+            <img src="images/logo.svg" width="30" height="30" class="d-inline-block align-top" alt="">
+            solos::Tec
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav mr-auto">
+
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Configuration
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="config.device.snippet" id="devices">Devices</a>
+                        <a class="dropdown-item" href="config.gateway.html" >Gateway</a>
+                        <!--                        <a class="dropdown-item" href="config.meter.html">Meter</a>-->
+                        <!--                        <a class="dropdown-item" href="config.user.html">User</a>-->
+                        <a class="dropdown-item" href="config.system.html">System</a>
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Status
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="status.session.html">Sessions</a>
+                        <a class="dropdown-item" href="status.targets.html">Targets</a>
+                        <a class="dropdown-item" href="status.connections.html">Connections</a>
+<!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Monitoring
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="status.system.html">System</a>
+                        <a class="dropdown-item" href="monitor.msg.html">Messages</a>
+                    </div>
+                </li>
+
+            </ul>
+            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey" /></svg></span>
+            <span id="ws-activity-text" class="navbar-text">
+                connection state
+            </span>
+
+        </div>
+    </nav>
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1 class="display-4">Your SMF dashboard</h1>
+            <hr class="my-4">
+            <p class="lead">Start managing your Smart Metering Framework</p>
+        </div>
+    </div>
+    <div class="container-fluid">
+        <!--card deck config-->
+        <div class="card-deck" id="main">
+            <div class="card">
+                <!--<img class="card-img-top" src="images/bus-gateway.svg" alt="Card image cap">-->
+                <div class="card-body">
+                    <h5 class="card-title">Configure Devices</h5>
+                    <p class="card-text">Managing the device pool.</p>
+                    <p class="card-text" id="d3-chart-device"></p>
+                    <a href="config.device.html" class="btn btn-primary">Devices</a>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted"><span id="ws-table-device-count"></span> devices configured</small>
+                </div>
+            </div>
+            <div class="card">
+                <!--<img class="card-img-top" src="..." alt="Card image cap">-->
+                <div class="card-body">
+                    <h5 class="card-title">Configure Gateways</h5>
+                    <p class="card-text">Special support for gateways.</p>
+                    <a href="config.gateway.html" class="btn btn-primary">Gateways</a>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted"><span id="ws-table-gateway-count"></span> gateways available</small>
+                </div>
+            </div>
+            <div class="card">
+                <!--<img class="card-img-top" src="..." alt="Card image cap">-->
+                <div class="card-body">
+                    <h5 class="card-title">Configure Meter</h5>
+                    <p class="card-text">Meter overview</p>
+                    <a href="config.meter.html" class="btn btn-primary disabled">Meter</a>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted"><span id="ws-table-meter-count"></span> meters configured</small>
+                </div>
+            </div>
+        </div>
+        <br>
+        <!--card deck config-->
+        <div class="card-deck">
+            <div class="card">
+                <!--<img class="card-img-top" src="..." alt="Card image cap">-->
+                <div class="card-body">
+                    <h5 class="card-title">Show Sessions</h5>
+                    <p class="card-text">Show a list of all devices online now and their data throughput in realtime.</p>
+                    <a href="status.session.html" class="btn btn-primary">Sessions</a>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted"><span id="ws-table-session-count"></span> sessions online</small>
+                </div>
+            </div>
+            <div class="card">
+                <!--<img class="card-img-top" src="..." alt="Card image cap">-->
+                <div class="card-body">
+                    <h5 class="card-title">Registered Targets</h5>
+                    <p class="card-text">All registered targets and their data throughput in realtime.</p>
+                    <a href="status.targets.html" class="btn btn-primary">Targets</a>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted"><span id="ws-table-target-count"></span> targets registered</small>
+                </div>
+            </div>
+            <div class="card">
+                <!--<img class="card-img-top" src="..." alt="Card image cap">-->
+                <div class="card-body">
+                    <h5 class="card-title">Connections</h5>
+                    <p class="card-text">See connections and manage leased lines.</p>
+                    <a href="status.connections.html" class="btn btn-primary">Connections</a>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted"><span id="ws-table-connection-count"></span> running connections</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script type="text/javascript" src="DataTables/datatables.min.js"></script>
+    <!--<script type="text/javascript" src="popper.min.js"></script>-->
+
+    <script>
+
+        var connection;
+        var sysTimer;
+
+        $(document).ready(function () {
+            console.log('document ready');
+            $('#ws-activity-text').html('connecting to ' + location.host + '...');
+            //connection = new WebSocket('ws://' + location.host + '/smf/api/system/v0.1');
+            connection = new WebSocket('ws://' + location.host + '/smf/api/system/v0.1', ['SMF']);
+
+            connection.onopen = function () {
+                $('#ws-activity-text').html('connected with ' + location.host);
+                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
+                //  subscribe system status
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.device.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.gateway.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.meter.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.session.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.target.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.connection.count", push: true }));
+            };
+
+            connection.onclose = function (event) {
+                $('#ws-activity-symbol').show();
+                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
+                $('#ws-activity-text').html('error ' + event.code);
+            };
+
+            connection.onerror = function (error) {
+                console.log('ws error');
+                $('#ws-activity-text').html('ws error');
+            };
+
+            //  {"cmd": "update", "channel": "table.device.count", "value": 77}
+            connection.onmessage = function (e) {
+                $('#ws-activity-symbol').show();
+                console.log('incoming data: ' + e.data);
+                var obj = JSON.parse(e.data);
+                if (obj.cmd != null) {
+                    if (obj.cmd == 'update') {
+                        if (obj.channel != null) {
+                            if (obj.channel == 'table.device.count') {
+                                $('#ws-table-device-count').text(obj.value);
+                            }
+                            else if (obj.channel == 'table.gateway.count') {
+                                $('#ws-table-gateway-count').text(obj.value);
+                            }
+                            else if (obj.channel == 'table.meter.count') {
+                                $('#ws-table-meter-count').text(obj.value);
+                            }
+                            else if (obj.channel == 'table.session.count') {
+                                $('#ws-table-session-count').text(obj.value);
+                            }
+                            else if (obj.channel == 'table.target.count') {
+                                $('#ws-table-target-count').text(obj.value);
+                            }
+                            else if (obj.channel == 'table.connection.count') {
+                                $('#ws-table-connection-count').text(obj.value);
+                            }
+                        }
+                    }
+                }
+            };
+
+            $(".dropdown-item").click(function (event) {
+                event.preventDefault();
+                //alert("ID: " + $(this).attr("id"));
+                alert("HREF: " + $(this).attr("href"));
+                $("#main").load(key, function (response, status, xhr) {
+                    if (status == "error") {
+                        var msg = "Sorry but there was an error: ";
+                        $("#main").html(msg + xhr.status + " " + xhr.statusText);
+                        alert(msg + xhr.status + " " + xhr.statusText);
+                    }
+                });
+
+            });
+        });
+    </script>
+
+
+    <!--<script src="http://d3js.org/d3.v3.min.js"></script>-->
+    <!--"d3-chart-device"-->
+
+</body>
+</html >

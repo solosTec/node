@@ -168,11 +168,10 @@ namespace node
 						cyng::param_factory("service", "7701")
 					))
 					, cyng::param_factory("session", cyng::tuple_factory(
-						cyng::param_factory("connection-open-timeout", 12),		//	seconds - gatekeeper
-						cyng::param_factory("connection-close-timeout", 12),	//	seconds
 						cyng::param_factory("auto-login", false),
 						cyng::param_factory("auto-enabled", true),
-						cyng::param_factory("supersede", true)
+						cyng::param_factory("supersede", true),
+						cyng::param_factory("generate-time-series", false)
 					))
 					, cyng::param_factory("cluster", cyng::tuple_factory(
 						cyng::param_factory("account", "root"),

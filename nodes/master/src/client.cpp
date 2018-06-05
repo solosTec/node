@@ -27,15 +27,11 @@ namespace node
 	client::client(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, cyng::store::db& db
-		, std::atomic<bool>& connection_auto_login
-		, std::atomic<bool>& connection_auto_enabled
-		, std::atomic<bool>& connection_superseed)
+		, std::atomic<std::uint64_t>& global_configuration)
 	: mux_(mux)
 		, logger_(logger)
 		, db_(db)
-		, connection_auto_login_(connection_auto_login)
-		, connection_auto_enabled_(connection_auto_enabled)
-		, connection_superseed_(connection_superseed)
+		, global_configuration_(global_configuration)
 		, rng_()
 		, distribution_(std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max())
 		, uuid_gen_()
@@ -45,19 +41,75 @@ namespace node
 
 	bool client::set_connection_auto_login(cyng::object obj)
 	{
-		return connection_auto_login_.exchange(cyng::value_cast(obj, false));
+		if (cyng::value_cast(obj, false))
+		{
+			global_configuration_ |= SMF_CONNECTION_AUTO_LOGIN;
+		}
+		else
+		{
+			global_configuration_ &= ~SMF_CONNECTION_AUTO_LOGIN;
+		}
+		return is_connection_auto_login();
 	}
 
 	bool client::set_connection_auto_enabled(cyng::object obj)
 	{
-		return connection_auto_enabled_.exchange(cyng::value_cast(obj, true));
+		if (cyng::value_cast(obj, true))
+		{
+			global_configuration_ |= SMF_CONNECTION_AUTO_ENABLED;
+		}
+		else
+		{
+			global_configuration_ &= ~SMF_CONNECTION_AUTO_ENABLED;
+		}
+		return is_connection_auto_enabled();
 	}
 
 	bool client::set_connection_superseed(cyng::object obj)
 	{
-		return connection_superseed_.exchange(cyng::value_cast(obj, true));
+		if (cyng::value_cast(obj, true))
+		{
+			global_configuration_ |= SMF_CONNECTION_SUPERSEDED;
+		}
+		else
+		{
+			global_configuration_ &= ~SMF_CONNECTION_SUPERSEDED;
+		}
+		return is_connection_superseed();
 	}
 
+	bool client::set_generate_time_series(cyng::object obj)
+	{
+		if (cyng::value_cast(obj, false))
+		{
+			global_configuration_ |= SMF_GENERATE_TIME_SERIES;
+		}
+		else
+		{
+			global_configuration_ &= ~SMF_GENERATE_TIME_SERIES;
+		}
+		return is_generate_time_series();
+	}
+
+	bool client::is_connection_auto_login() const
+	{
+		return (global_configuration_ & SMF_CONNECTION_AUTO_ENABLED) == SMF_CONNECTION_AUTO_ENABLED;
+	}
+
+	bool client::is_connection_auto_enabled() const
+	{
+		return (global_configuration_ & SMF_CONNECTION_AUTO_ENABLED) == SMF_CONNECTION_AUTO_ENABLED;
+	}
+
+	bool client::is_connection_superseed() const
+	{
+		return (global_configuration_ & SMF_CONNECTION_SUPERSEDED) == SMF_CONNECTION_SUPERSEDED;
+	}
+
+	bool client::is_generate_time_series() const
+	{
+		return (global_configuration_ & SMF_GENERATE_TIME_SERIES) == SMF_GENERATE_TIME_SERIES;
+	}
 
 	cyng::vector_t client::req_login(boost::uuids::uuid tag,
 		boost::uuids::uuid peer,
@@ -192,7 +244,7 @@ namespace node
 				, 0
 				, bag));
 
-			if (!wrong_pwd && connection_auto_login_.load())
+			if (!wrong_pwd && is_connection_auto_login())
 			{
 				//
 				//	create new device record
@@ -205,7 +257,7 @@ namespace node
 						, "auto"	//	comment
 						, ""	//	device id
 						, NODE_VERSION	//	firmware version
-						, connection_auto_enabled_.load()	//	enabled
+						, is_connection_auto_enabled()	//	enabled
 						, std::chrono::system_clock::now()
 						, 6u)
 					, 1
@@ -318,7 +370,7 @@ namespace node
 				online = true;
 				const auto rec_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
 
-				if (connection_superseed_)
+				if (is_connection_superseed())
 				{
 					//
 					//	ToDo: probably not the same peer!

@@ -18,11 +18,7 @@ namespace node
 		, cyng::store::db&
 		, boost::uuids::uuid tag
 		, boost::asio::ip::tcp::endpoint
-		, std::chrono::seconds connection_open_timeout
-		, std::chrono::seconds connection_close_timeout
-		, bool connection_auto_login
-		, bool connection_auto_enabled
-		, bool connection_superseed);
+		, std::uint64_t global_config);
 
 	void insert_msg(cyng::store::db&
 		, cyng::logging::severity
@@ -36,6 +32,17 @@ namespace node
 
 	cyng::table::record connection_lookup(cyng::store::table* tbl, cyng::table::key_type&& key);
 	bool connection_erase(cyng::store::table* tbl, cyng::table::key_type&& key, boost::uuids::uuid tag);
+
+	/**
+	 * Define configuration bits
+	 */
+	enum system_config : std::uint64_t
+	{
+		SMF_CONNECTION_AUTO_LOGIN	= (1 << 0),
+		SMF_CONNECTION_AUTO_ENABLED = (1 << 1),
+		SMF_CONNECTION_SUPERSEDED	= (1 << 2),
+		SMF_GENERATE_TIME_SERIES	= (1 << 3),
+	};
 }
 
 #endif

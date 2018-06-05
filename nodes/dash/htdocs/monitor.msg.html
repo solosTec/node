@@ -149,6 +149,7 @@
             lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
             pageLength: 25,
             ordering: true,
+            order: [[0, "desc"]],
             info: true,
             //scrollY: "100%",
             autoWidth: false,
@@ -156,8 +157,6 @@
             processing: true,
             searching: true,
             select: true,
-            //keys: true,  //  table navigation
-            //dom: '<"top"ilp>rt<"bottom"f><"clear">',
             columnDefs: [
                 { targets: 'sml-col-msg-id', visible: true, name: 'msg-id', className: 'text-right' },
                 { targets: 'sml-col-msg-ts', visible: true, name: 'msg-ts', render: renderDate },

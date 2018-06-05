@@ -36,11 +36,7 @@ namespace node
 		, std::string const& pwd
 		, boost::uuids::uuid stag
 		, std::chrono::seconds monitor
-		, std::atomic<std::chrono::seconds>& connection_open_timeout
-		, std::atomic<std::chrono::seconds>& connection_close_timeout
-		, std::atomic<bool>& connection_auto_login
-		, std::atomic<bool>& connection_auto_enabled
-		, std::atomic<bool>& connection_superseed)
+		, std::atomic<std::uint64_t>& global_configuration)
 	: mux_(mux)
 		, logger_(logger)
 		, mtag_(mtag)
@@ -57,10 +53,10 @@ namespace node
 		, account_(account)
 		, pwd_(pwd)
 		, cluster_monitor_(monitor)
-		, connection_open_timeout_(connection_open_timeout)
-		, connection_close_timeout_(connection_close_timeout)
+		//, connection_open_timeout_(connection_open_timeout)
+		//, connection_close_timeout_(connection_close_timeout)
 		, seq_(0)
-		, client_(mux, logger, db, connection_auto_login, connection_auto_enabled, connection_superseed)
+		, client_(mux, logger, db, global_configuration)
 		, subscriptions_()
 		, tsk_watchdog_(cyng::async::NO_TASK)
 		, group_(0)
@@ -840,6 +836,10 @@ namespace node
 				{
 					client_.set_connection_superseed(attr.second);
 				}
+				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "generate-time-series"))
+				{
+					client_.set_generate_time_series(attr.second);
+				}
 			}
 		}
 	}
@@ -1456,18 +1456,10 @@ namespace node
 		, std::string const& pwd
 		, boost::uuids::uuid stag
 		, std::chrono::seconds monitor //	cluster watchdog
-		, std::atomic<std::chrono::seconds>& connection_open_timeout
-		, std::atomic<std::chrono::seconds>& connection_close_timeout
-		, std::atomic<bool>& connection_auto_login
-		, std::atomic<bool>& connection_auto_enabled
-		, std::atomic<bool>& connection_superseed)
+		, std::atomic<std::uint64_t>& global_configuration)
 	{
 		return cyng::make_object<session>(mux, logger, mtag, db, account, pwd, stag, monitor
-			, connection_open_timeout
-			, connection_close_timeout
-			, connection_auto_login
-			, connection_auto_enabled
-			, connection_superseed);
+			, global_configuration);
 	}
 
 }
