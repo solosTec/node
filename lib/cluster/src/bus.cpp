@@ -96,7 +96,7 @@ namespace node
 				//
 				//	slot [0]
 				//
-				mux_.send(task_, 0, cyng::tuple_factory(remote_version_));
+				mux_.post(task_, 0, cyng::tuple_factory(remote_version_));
 
 			}
 			else
@@ -107,7 +107,7 @@ namespace node
 				//
 				//	slot [1] - go offline
 				//
-				mux_.send(task_, 1, cyng::tuple_t());
+				mux_.post(task_, 1, cyng::tuple_t());
 			}
 
 		});

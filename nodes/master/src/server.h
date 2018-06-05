@@ -64,6 +64,7 @@ namespace node
 
 		//	global configuration parameters
 		std::atomic<std::uint64_t>	global_configuration_;
+		boost::filesystem::path stat_dir_;
 
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor acceptor_;		

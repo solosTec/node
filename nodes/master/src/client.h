@@ -22,7 +22,7 @@ namespace node
 		, boost::uuids::uuid
 		, std::string const& name);
 
-	std::uint32_t get_source_channel(const cyng::store::table* tbl_session, boost::uuids::uuid);
+	std::tuple<std::uint32_t, std::string, boost::uuids::uuid> get_source_channel(const cyng::store::table* tbl_session, boost::uuids::uuid);
 	std::size_t remove_targets_by_tag(cyng::store::table* tbl_target, boost::uuids::uuid);
 	cyng::table::key_list_t get_targets_by_peer(cyng::store::table const* tbl_target, boost::uuids::uuid);
 	cyng::table::key_list_t get_channels_by_peer(cyng::store::table const* tbl_channel, boost::uuids::uuid);
@@ -35,7 +35,8 @@ namespace node
 		client(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, cyng::store::db&
-			, std::atomic<std::uint64_t>& global_configuration);
+			, std::atomic<std::uint64_t>& global_configuration
+			, boost::filesystem::path stat_dir);
 
 		client(client const&) = delete;
 		client& operator=(client const&) = delete;
@@ -139,10 +140,10 @@ namespace node
 		bool set_connection_superseed(cyng::object);
 		bool set_generate_time_series(cyng::object);
 
-		bool is_connection_auto_login() const;
-		bool is_connection_auto_enabled() const;
-		bool is_connection_superseed() const;
 		bool is_generate_time_series() const;
+
+		void set_class(std::string const&);
+		bool open_stat(std::ofstream&, std::string const& account);
 
 	private:
 		cyng::vector_t req_open_push_channel_empty(boost::uuids::uuid tag,
@@ -160,12 +161,22 @@ namespace node
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
 		std::atomic<std::uint64_t>& global_configuration_;
+		const boost::filesystem::path stat_dir_;
+
+		/**
+		 * transport layer
+		 */
+		std::string node_class_;
 
 		boost::random::mt19937 rng_;
 		boost::random::uniform_int_distribution<std::uint32_t> distribution_;
 		boost::uuids::random_generator uuid_gen_;
 
 	};
+
+	bool write_stat(std::ofstream&, boost::uuids::uuid, std::string const&, const char*);
+	bool write_stat(std::ofstream&, boost::uuids::uuid, std::string const&, bool value);
+	bool write_stat(std::ofstream&, boost::uuids::uuid, std::string const&, std::size_t value);
 
 }
 

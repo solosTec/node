@@ -36,7 +36,8 @@ namespace node
 		, std::string const& pwd
 		, boost::uuids::uuid stag
 		, std::chrono::seconds monitor
-		, std::atomic<std::uint64_t>& global_configuration)
+		, std::atomic<std::uint64_t>& global_configuration
+		, boost::filesystem::path stat_dir )
 	: mux_(mux)
 		, logger_(logger)
 		, mtag_(mtag)
@@ -53,10 +54,8 @@ namespace node
 		, account_(account)
 		, pwd_(pwd)
 		, cluster_monitor_(monitor)
-		//, connection_open_timeout_(connection_open_timeout)
-		//, connection_close_timeout_(connection_close_timeout)
 		, seq_(0)
-		, client_(mux, logger, db, global_configuration)
+		, client_(mux, logger, db, global_configuration, stat_dir)
 		, subscriptions_()
 		, tsk_watchdog_(cyng::async::NO_TASK)
 		, group_(0)
@@ -190,7 +189,7 @@ namespace node
 		//
 		//	remove all client sessions of this node and close open connections
 		//
-		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection)->void {
+		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection, const cyng::store::table* tbl_device)->void {
 			cyng::table::key_list_t pks;
 			tbl_session->loop([&](cyng::table::record const& rec) -> bool {
 
@@ -199,10 +198,12 @@ namespace node
 				//
 				auto local_peer = cyng::object_cast<session>(rec["local"]);
 				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
-				auto name = cyng::value_cast<std::string>(rec["name"], "");
+				auto account = cyng::value_cast<std::string>(rec["name"], "");
 				auto tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
 
-				//ctx.attach(cyng::generate_invoke("log.msg.trace", "session.cleanup", ctx.tag(), tag));
+				//
+				//	Check if the client belongs to this session.
+				//
 				if (local_peer && (local_peer->vm_.tag() == ctx.tag()))
 				{
 					pks.push_back(rec.key());
@@ -229,9 +230,19 @@ namespace node
 						}
 
 						//
-						//	remove from table
+						//	remove from connection table
 						//
 						connection_erase(tbl_connection, cyng::table::key_generator(tag, rtag), tag);
+					}
+
+					//
+					//	generate statistics
+					//	
+					std::ofstream stat_stream;
+					if (client_.is_generate_time_series())
+					{
+						client_.open_stat(stat_stream, account);
+						write_stat(stat_stream, vm_.tag(), "shutdown", "node");
 					}
 				}
 
@@ -246,7 +257,8 @@ namespace node
 			cyng::erase(tbl_session, pks, ctx.tag());
 
 		}	, cyng::store::write_access("*Session")
-			, cyng::store::write_access("*Connection"));
+			, cyng::store::write_access("*Connection")
+			, cyng::store::read_access("TDevice"));
 
 		//
 		//	cluster table
@@ -434,9 +446,10 @@ namespace node
 			ctx.attach(cyng::register_function("bus.start.watchdog", 7, std::bind(&session::bus_start_watchdog, this, std::placeholders::_1)));
 
 			//
-			//	set group id
+			//	set node class and group id
 			//
 			group_ = group;
+			client_.set_class(node_class);
 
 			//
 			//	insert into cluster table
@@ -1456,10 +1469,11 @@ namespace node
 		, std::string const& pwd
 		, boost::uuids::uuid stag
 		, std::chrono::seconds monitor //	cluster watchdog
-		, std::atomic<std::uint64_t>& global_configuration)
+		, std::atomic<std::uint64_t>& global_configuration
+		, boost::filesystem::path stat_dir)
 	{
 		return cyng::make_object<session>(mux, logger, mtag, db, account, pwd, stag, monitor
-			, global_configuration);
+			, global_configuration, stat_dir);
 	}
 
 }

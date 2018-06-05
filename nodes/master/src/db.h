@@ -43,6 +43,16 @@ namespace node
 		SMF_CONNECTION_SUPERSEDED	= (1 << 2),
 		SMF_GENERATE_TIME_SERIES	= (1 << 3),
 	};
+
+	bool is_connection_auto_login(std::uint64_t);
+	bool is_connection_auto_enabled(std::uint64_t);
+	bool is_connection_superseed(std::uint64_t);
+	bool is_generate_time_series(std::uint64_t);
+
+	bool set_connection_auto_login(std::atomic<std::uint64_t>&, bool);
+	bool set_connection_auto_enabled(std::atomic<std::uint64_t>&, bool);
+	bool set_connection_superseed(std::atomic<std::uint64_t>&, bool);
+	bool set_generate_time_series(std::atomic<std::uint64_t>&, bool);
 }
 
 #endif

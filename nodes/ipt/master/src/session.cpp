@@ -1599,7 +1599,7 @@ namespace node
 			{
 				const auto tsk = pos->second;
                 ctx.attach(cyng::generate_invoke("log.msg.trace", "continue task", tsk));
-				mux_.send(tsk, 0, cyng::tuple_factory(res));
+				mux_.post(tsk, 0, cyng::tuple_factory(res));
 
 				//
 				//	remove entry
@@ -1633,7 +1633,7 @@ namespace node
 			{
 				const auto tsk = pos->second;
                 ctx.attach(cyng::generate_invoke("log.msg.trace", "continue task", tsk));
-				mux_.send(tsk, 0, cyng::tuple_factory(res));
+				mux_.post(tsk, 0, cyng::tuple_factory(res));
 
 				//
 				//	remove entry

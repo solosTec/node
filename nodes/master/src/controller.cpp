@@ -171,7 +171,8 @@ namespace node
 						cyng::param_factory("auto-login", false),
 						cyng::param_factory("auto-enabled", true),
 						cyng::param_factory("supersede", true),
-						cyng::param_factory("generate-time-series", false)
+						cyng::param_factory("generate-time-series", false),
+						cyng::param_factory("stat-dir", tmp.string())	//	store statistics
 					))
 					, cyng::param_factory("cluster", cyng::tuple_factory(
 						cyng::param_factory("account", "root"),
@@ -278,7 +279,6 @@ namespace node
 		const boost::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
 		write_pid(log_dir, tag);
 #endif
-
 		//
 		//	create server
 		//

@@ -25,7 +25,8 @@ namespace node
 		, std::string const& pwd
 		, boost::uuids::uuid stag
 		, std::chrono::seconds monitor //	cluster watchdog
-		, std::atomic<std::uint64_t>& global_configuration)
+		, std::atomic<std::uint64_t>& global_configuration
+		, boost::filesystem::path stat_dir)
 	: socket_(std::move(socket))
 		, logger_(logger)
 		, buffer_()
@@ -37,7 +38,8 @@ namespace node
 			, pwd
 			, stag
 			, monitor
-			, global_configuration))
+			, global_configuration
+			, stat_dir))
 		, serializer_(socket_, this->get_session()->vm_)
 	{
 		//

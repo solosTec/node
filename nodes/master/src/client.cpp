@@ -27,11 +27,14 @@ namespace node
 	client::client(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, cyng::store::db& db
-		, std::atomic<std::uint64_t>& global_configuration)
+		, std::atomic<std::uint64_t>& global_configuration
+		, boost::filesystem::path stat_dir)
 	: mux_(mux)
 		, logger_(logger)
 		, db_(db)
 		, global_configuration_(global_configuration)
+		, stat_dir_(stat_dir)
+		, node_class_("undefined")
 		, rng_()
 		, distribution_(std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max())
 		, uuid_gen_()
@@ -41,74 +44,50 @@ namespace node
 
 	bool client::set_connection_auto_login(cyng::object obj)
 	{
-		if (cyng::value_cast(obj, false))
-		{
-			global_configuration_ |= SMF_CONNECTION_AUTO_LOGIN;
-		}
-		else
-		{
-			global_configuration_ &= ~SMF_CONNECTION_AUTO_LOGIN;
-		}
-		return is_connection_auto_login();
+		return node::set_connection_auto_login(global_configuration_, cyng::value_cast(obj, false));
 	}
 
 	bool client::set_connection_auto_enabled(cyng::object obj)
 	{
-		if (cyng::value_cast(obj, true))
-		{
-			global_configuration_ |= SMF_CONNECTION_AUTO_ENABLED;
-		}
-		else
-		{
-			global_configuration_ &= ~SMF_CONNECTION_AUTO_ENABLED;
-		}
-		return is_connection_auto_enabled();
+		return node::set_connection_auto_enabled(global_configuration_, cyng::value_cast(obj, true));
 	}
 
 	bool client::set_connection_superseed(cyng::object obj)
 	{
-		if (cyng::value_cast(obj, true))
-		{
-			global_configuration_ |= SMF_CONNECTION_SUPERSEDED;
-		}
-		else
-		{
-			global_configuration_ &= ~SMF_CONNECTION_SUPERSEDED;
-		}
-		return is_connection_superseed();
+		return node::set_connection_superseed(global_configuration_, cyng::value_cast(obj, true));
 	}
 
 	bool client::set_generate_time_series(cyng::object obj)
 	{
-		if (cyng::value_cast(obj, false))
-		{
-			global_configuration_ |= SMF_GENERATE_TIME_SERIES;
-		}
-		else
-		{
-			global_configuration_ &= ~SMF_GENERATE_TIME_SERIES;
-		}
-		return is_generate_time_series();
-	}
-
-	bool client::is_connection_auto_login() const
-	{
-		return (global_configuration_ & SMF_CONNECTION_AUTO_ENABLED) == SMF_CONNECTION_AUTO_ENABLED;
-	}
-
-	bool client::is_connection_auto_enabled() const
-	{
-		return (global_configuration_ & SMF_CONNECTION_AUTO_ENABLED) == SMF_CONNECTION_AUTO_ENABLED;
-	}
-
-	bool client::is_connection_superseed() const
-	{
-		return (global_configuration_ & SMF_CONNECTION_SUPERSEDED) == SMF_CONNECTION_SUPERSEDED;
+		return node::set_generate_time_series(global_configuration_, cyng::value_cast(obj, false));
 	}
 
 	bool client::is_generate_time_series() const
 	{
-		return (global_configuration_ & SMF_GENERATE_TIME_SERIES) == SMF_GENERATE_TIME_SERIES;
+		return node::is_generate_time_series(global_configuration_.load());
+	}
+
+	void client::set_class(std::string const& node_class)
+	{
+		node_class_ = node_class;
+	}
+
+	bool client::open_stat(std::ofstream& of, std::string const& account)
+	{
+		//
+		//	file name
+		//
+		std::stringstream ss;
+		ss
+			<< "smf-stat-"
+			<< node_class_
+			<< '-'
+			<< account
+			<< ".log"
+			;
+
+		of.open((stat_dir_ / ss.str()).string(), std::ios::out | std::ios::app);
+		return of.is_open();
 	}
 
 	cyng::vector_t client::req_login(boost::uuids::uuid tag,
@@ -123,6 +102,18 @@ namespace node
 		cyng::vector_t prg;
 
 		//
+		//	generate statistics
+		//	
+		std::ofstream stat_stream;
+		if (is_generate_time_series())
+		{
+			if (!open_stat(stat_stream, account))
+			{
+				prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning", "cannot write statistics", account));
+			}
+		}
+
+		//
 		//	test credentials
 		//
 		bool found{ false };
@@ -130,7 +121,7 @@ namespace node
 		db_.access([&](const cyng::store::table* tbl_device, cyng::store::table* tbl_session, cyng::store::table* tbl_cluster)->void {
 
 			//
-			// check is session is already authorized
+			// check if session is already authorized
 			//
 			const bool auth = check_auth_state(prg, tbl_session, tag);
 			if (auth)
@@ -192,12 +183,18 @@ namespace node
 							prg << cyng::unwinder(cyng::generate_invoke("log.msg.info", "[" + account + "] has session tag", tag));
 
 							//
+							//	write statistics
+							//
+							write_stat(stat_stream, tag, "online", "OK");
+
+							//
 							//	update cluster table
 							//
 							auto tag_cluster = cyng::object_cast<session>(self)->vm_.tag();
 							auto key_cluster = cyng::table::key_generator(tag_cluster);
 							auto list = get_clients_by_peer(tbl_session, tag_cluster);
 							tbl_cluster->modify(key_cluster, cyng::param_factory("clients", static_cast<std::uint64_t>(list.size())), tag);
+
 						}
 						else
 						{
@@ -214,6 +211,12 @@ namespace node
 								, account
 								, " with pk "
 								, tag));
+
+							//
+							//	write statistics
+							//
+							write_stat(stat_stream, tag, "online", "internal error");
+
 						}
 					}
 				}
@@ -228,6 +231,12 @@ namespace node
 						, "already online"
 						, 0
 						, bag));
+
+					//
+					//	write statistics
+					//
+					write_stat(stat_stream, tag, "online", "already online");
+
 				}
 			}
 		}	, cyng::store::read_access("TDevice")
@@ -244,7 +253,7 @@ namespace node
 				, 0
 				, bag));
 
-			if (!wrong_pwd && is_connection_auto_login())
+			if (!wrong_pwd && is_connection_auto_login(global_configuration_.load()))
 			{
 				//
 				//	create new device record
@@ -257,7 +266,7 @@ namespace node
 						, "auto"	//	comment
 						, ""	//	device id
 						, NODE_VERSION	//	firmware version
-						, is_connection_auto_enabled()	//	enabled
+						, is_connection_auto_enabled(global_configuration_.load())	//	enabled
 						, std::chrono::system_clock::now()
 						, 6u)
 					, 1
@@ -280,6 +289,17 @@ namespace node
 				prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
 					, account
 					, "not found"));
+
+			}
+
+			//
+			//	system message
+			//
+			if (wrong_pwd)
+			{
+				insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
+					, "login of " + account + " failed because of an incorrect password"
+					, tag);
 
 			}
 		}
@@ -370,7 +390,7 @@ namespace node
 				online = true;
 				const auto rec_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
 
-				if (is_connection_superseed())
+				if (is_connection_superseed(global_configuration_.load()))
 				{
 					//
 					//	ToDo: probably not the same peer!
@@ -400,6 +420,7 @@ namespace node
 	{
 		cyng::vector_t prg;
 
+
 		//
 		//	remove session record
 		//
@@ -421,6 +442,20 @@ namespace node
 
 			if (!rec.empty())
 			{
+
+				//
+				//	generate statistics
+				//	
+				const std::string account = cyng::value_cast<std::string>(rec["name"], "");
+				std::ofstream stat_stream;
+				if (is_generate_time_series())
+				{
+					if (!open_stat(stat_stream, account))
+					{
+						prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning", "cannot write statistics", account));
+					}
+				}
+
 				//
 				//	close open connections
 				//	
@@ -444,6 +479,9 @@ namespace node
 							, "close local connection to "
 							, rtag));
 						prg << cyng::unwinder(client_req_close_connection_forward(rtag, tag, true, options, cyng::param_map_t()));
+
+						write_stat(stat_stream, rtag, "close connection", "local");
+
 					}
 					else
 					{
@@ -451,6 +489,8 @@ namespace node
 							, "close distinct connection to "
 							, rtag));
 						remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, true, options, cyng::param_map_t()));
+
+						write_stat(stat_stream, rtag, "close connection", "remote");
 					}
 
 					//
@@ -473,23 +513,23 @@ namespace node
 					, tag
 					, "removed"));
 
-			}
+				if (count_targets != 0u) {
+					write_stat(stat_stream, tag, "remove targets", count_targets);
+				}
 
-			//
-			//	remove session
-			//
-			if (tbl_session->erase(key, tag))
-			{
 				//
+				//	remove session
 				//	update success flag
 				//
-				success = true;
+				success = tbl_session->erase(key, tag);
 
 				prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
 					, "client session"
 					, tag
-					, rec["name"]
+					, account
 					, "removed"));
+
+				write_stat(stat_stream, tag, "offline", true);
 
 				//
 				//	update cluster table
@@ -1139,17 +1179,57 @@ namespace node
 		db_.access([&](const cyng::store::table* tbl_target
 			, cyng::store::table* tbl_channel
 			, const cyng::store::table* tbl_session
-			, cyng::store::table* tbl_msg)->void {
+			, cyng::store::table* tbl_msg
+			, const cyng::store::table* tbl_device)->void {
 
-			//
-			//	new channel id
-			//
-			const std::uint32_t channel = distribution_(rng_);
 
 			//
 			//	get source channel
 			//
-			const std::uint32_t source = get_source_channel(tbl_session, tag);
+			std::uint32_t source_channel;
+			std::string account;
+			boost::uuids::uuid source_tag;	//	key for device table
+			std::tie(source_channel, account, source_tag) = get_source_channel(tbl_session, tag);
+
+			//
+			//	check if device is enabled
+			//
+			auto device_rec = tbl_device->lookup(cyng::table::key_generator(source_tag));
+			BOOST_ASSERT_MSG(!device_rec.empty(), "node device record");
+			const bool enabled = !device_rec.empty() && cyng::value_cast(device_rec["enabled"], false);
+			if (!enabled)
+			{
+				prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
+						, "open push channel - device"
+						, account
+						, "is not enabled"))
+					<< cyng::unwinder(req_open_push_channel_empty(tag, seq, bag))
+					;
+
+				insert_msg(tbl_msg
+					, cyng::logging::severity::LEVEL_INFO
+					, "open push channel - device [" + account + "] is not enabled"
+					, tag);
+
+				return;
+			}
+
+			//
+			//	generate statistics
+			//	
+			std::ofstream stat_stream;
+			if (is_generate_time_series())
+			{
+				if (!open_stat(stat_stream, account))
+				{
+					prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning", "cannot write statistics", account));
+				}
+			}
+
+			//
+			//	new (random) channel id
+			//
+			const std::uint32_t channel = distribution_(rng_);
 
 			//
 			//	get a list of matching targets (matching by name)
@@ -1165,7 +1245,6 @@ namespace node
 
 			//
 			//	ToDo: check device name, number, version and id
-			//	ToDo: check if device is enabled
 			//
 
 			if (r.first.empty())
@@ -1199,7 +1278,7 @@ namespace node
 					//
 					//	insert new push channel
 					//
-					if (tbl_channel->insert(cyng::table::key_generator(channel, source, target)
+					if (tbl_channel->insert(cyng::table::key_generator(channel, source_channel, target)
 						, cyng::table::data_generator(target_rec["tag"]	//	target session tag
 							, target_session_rec["local"]	//	target peer object - TargetPeer
 							, self	// ChannelPeer
@@ -1210,13 +1289,19 @@ namespace node
 					{
 						prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
 							, "open push channel"
-							, channel, source, target));
+							, channel, source_channel, target));
+
+						//
+						//	write statistics
+						//
+						write_stat(stat_stream, tag, "open push channel", name.c_str());
+
 					}
 					else
 					{
 						prg << cyng::unwinder(cyng::generate_invoke("log.msg.error"
 							, "open push channel - failed"
-							, channel, source, target));
+							, channel, source_channel, target));
 
 						insert_msg(tbl_msg
 							, cyng::logging::severity::LEVEL_WARNING
@@ -1248,16 +1333,17 @@ namespace node
 			prg << cyng::unwinder(client_res_open_push_channel(tag
 				, seq
 				, !r.first.empty()	//	success
-				, channel		//	channel
-				, source		//	source
-				, r.first.size()		//	count
+				, channel			//	channel
+				, source_channel	//	source
+				, r.first.size()	//	count
 				, options
 				, bag));
 
 		}	, cyng::store::read_access("*Target")
 			, cyng::store::write_access("*Channel")
 			, cyng::store::read_access("*Session")
-			, cyng::store::write_access("*SysMsg"));
+			, cyng::store::write_access("*SysMsg")
+			, cyng::store::read_access("TDevice"));
 
 
 		return prg;
@@ -1796,10 +1882,12 @@ namespace node
 		return std::make_pair(keys, packet_size);
 	}
 
-	std::uint32_t get_source_channel(const cyng::store::table* tbl_session, boost::uuids::uuid tag)
+	std::tuple<std::uint32_t, std::string, boost::uuids::uuid> get_source_channel(const cyng::store::table* tbl_session, boost::uuids::uuid tag)
 	{
 		auto session_rec = tbl_session->lookup(cyng::table::key_generator(tag));
-		return cyng::value_cast<std::uint32_t>(session_rec["source"], 0);
+		return std::make_tuple(cyng::value_cast<std::uint32_t>(session_rec["source"], 0)
+			, cyng::value_cast<std::string>(session_rec["name"], "")
+			, cyng::value_cast(session_rec["device"], boost::uuids::nil_uuid()));
 	}
 
 	std::size_t remove_targets_by_tag(cyng::store::table* tbl_target, boost::uuids::uuid tag)
@@ -1865,6 +1953,88 @@ namespace node
 	}
 
 
+	bool write_stat(std::ofstream& of, boost::uuids::uuid tag, std::string const& evt, const char* value)
+	{
+		if (of.is_open())
+		{
+			//
+			//	want to use stream operator from namespace cyng
+			// 	cyng::operator<<(os, rec.tp_);
+			//
+			using cyng::operator<<;
+
+			of
+				<< std::chrono::system_clock::now()
+				<< ';'
+				<< tag
+				<< ';'
+				<< '"'
+				<< evt
+				<< '"'
+				<< ';'
+				<< value
+				<< std::endl
+				;
+			return true;
+		}
+		return false;
+	}
+
+	bool write_stat(std::ofstream& of, boost::uuids::uuid tag, std::string const& evt, bool value)
+	{
+		if (of.is_open())
+		{
+			//
+			//	want to use stream operator from namespace cyng
+			// 	cyng::operator<<(os, rec.tp_);
+			//
+			using cyng::operator<<;
+
+			of
+				<< std::chrono::system_clock::now()
+				<< ';'
+				<< tag
+				<< ';'
+				<< '"'
+				<< evt
+				<< '"'
+				<< ';'
+				<< std::boolalpha
+				<< value
+				<< std::endl
+				;
+			return true;
+		}
+		return false;
+	}
+
+	bool write_stat(std::ofstream& of, boost::uuids::uuid tag, std::string const& evt, std::size_t value)
+	{
+		if (of.is_open())
+		{
+			//
+			//	want to use stream operator from namespace cyng
+			// 	cyng::operator<<(os, rec.tp_);
+			//
+			using cyng::operator<<;
+
+			of
+				<< std::chrono::system_clock::now()
+				<< ';'
+				<< tag
+				<< ';'
+				<< '"'
+				<< evt
+				<< '"'
+				<< ';'
+				<< value
+				<< std::endl
+				;
+			return true;
+		}
+		return false;
+
+	}
 
 }
 

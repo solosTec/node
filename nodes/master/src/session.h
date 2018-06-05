@@ -37,7 +37,8 @@ namespace node
 			, std::string const& pwd
 			, boost::uuids::uuid stag
 			, std::chrono::seconds monitor
-			, std::atomic<std::uint64_t>& global_configuration);
+			, std::atomic<std::uint64_t>& global_configuration
+			, boost::filesystem::path);
 
 		session(session const&) = delete;
 		session& operator=(session const&) = delete;
@@ -164,7 +165,8 @@ namespace node
 		, std::string const& pwd
 		, boost::uuids::uuid stag
 		, std::chrono::seconds monitor //	cluster watchdog
-		, std::atomic<std::uint64_t>& global_configuration);
+		, std::atomic<std::uint64_t>& global_configuration
+		, boost::filesystem::path);
 }
 
 #include <cyng/intrinsics/traits.hpp>

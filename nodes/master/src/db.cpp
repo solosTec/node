@@ -299,10 +299,10 @@ namespace node
 		}
 		else
 		{
-			const bool connection_auto_login = global_config & SMF_CONNECTION_AUTO_LOGIN;
-			const bool connection_auto_enabled = global_config & SMF_CONNECTION_AUTO_ENABLED;
-			const bool connection_superseed = global_config & SMF_CONNECTION_SUPERSEDED;
-			const bool generate_time_series = global_config & SMF_GENERATE_TIME_SERIES;
+			const bool connection_auto_login = is_connection_auto_login(global_config);
+			const bool connection_auto_enabled = is_connection_auto_enabled(global_config);
+			const bool connection_superseed = is_connection_superseed(global_config);
+			const bool generate_time_series = is_generate_time_series(global_config);
 
 			db.insert("*Config", cyng::table::key_generator("startup"), cyng::table::data_generator(std::chrono::system_clock::now()), 1, tag);
 			db.insert("*Config", cyng::table::key_generator("master-tag"), cyng::table::data_generator(tag), 1, tag);
@@ -310,6 +310,11 @@ namespace node
 			db.insert("*Config", cyng::table::key_generator("connection-auto-enabled"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
 			db.insert("*Config", cyng::table::key_generator("connection-superseed"), cyng::table::data_generator(connection_superseed), 1, tag);
 			db.insert("*Config", cyng::table::key_generator("generate-time-series"), cyng::table::data_generator(generate_time_series), 1, tag);
+
+			db.insert("*Config", cyng::table::key_generator("connection-auto-login-default"), cyng::table::data_generator(connection_auto_login), 1, tag);
+			db.insert("*Config", cyng::table::key_generator("connection-auto-enabled-default"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
+			db.insert("*Config", cyng::table::key_generator("connection-superseed-default"), cyng::table::data_generator(connection_superseed), 1, tag);
+			db.insert("*Config", cyng::table::key_generator("generate-time-series-default"), cyng::table::data_generator(generate_time_series), 1, tag);
 
 			//	get hostname
 			boost::system::error_code ec;
@@ -406,6 +411,50 @@ namespace node
 		return tbl->erase(key, tag);
 	}
 
+	bool is_connection_auto_login(std::uint64_t cfg)
+	{
+		return (cfg & SMF_CONNECTION_AUTO_LOGIN) == SMF_CONNECTION_AUTO_LOGIN;
+	}
+	bool is_connection_auto_enabled(std::uint64_t cfg)
+	{
+		return (cfg & SMF_CONNECTION_AUTO_ENABLED) == SMF_CONNECTION_AUTO_ENABLED;
+	}
+	bool is_connection_superseed(std::uint64_t cfg)
+	{
+		return (cfg & SMF_CONNECTION_SUPERSEDED) == SMF_CONNECTION_SUPERSEDED;
+	}
+	bool is_generate_time_series(std::uint64_t cfg)
+	{
+		return (cfg & SMF_GENERATE_TIME_SERIES) == SMF_GENERATE_TIME_SERIES;
+	}
+
+	bool set_connection_auto_login(std::atomic<std::uint64_t>& cfg, bool b)
+	{
+		return is_connection_auto_login(b
+			? cfg.fetch_or(SMF_CONNECTION_AUTO_LOGIN)
+			: cfg.fetch_and(~SMF_CONNECTION_AUTO_LOGIN));
+	}
+
+	bool set_connection_auto_enabled(std::atomic<std::uint64_t>& cfg, bool b)
+	{
+		return is_connection_auto_enabled(b
+			? cfg.fetch_or(SMF_CONNECTION_AUTO_ENABLED)
+			: cfg.fetch_and(~SMF_CONNECTION_AUTO_ENABLED));
+	}
+
+	bool set_connection_superseed(std::atomic<std::uint64_t>& cfg, bool b)
+	{
+		return is_connection_superseed(b
+			? cfg.fetch_or(SMF_CONNECTION_SUPERSEDED)
+			: cfg.fetch_and(~SMF_CONNECTION_SUPERSEDED));
+	}
+
+	bool set_generate_time_series(std::atomic<std::uint64_t>& cfg, bool b)
+	{
+		return is_generate_time_series(b
+			? cfg.fetch_or(SMF_GENERATE_TIME_SERIES)
+			: cfg.fetch_and(~SMF_GENERATE_TIME_SERIES));
+	}
 
 }
 

@@ -38,7 +38,8 @@ namespace node
 			, std::string const& pwd
 			, boost::uuids::uuid stag
 			, std::chrono::seconds monitor
-			, std::atomic<std::uint64_t>& global_configuration);
+			, std::atomic<std::uint64_t>& global_configuration
+			, boost::filesystem::path);
 		
 		/**
 		 * Start the first asynchronous operation for the connection.

@@ -26,6 +26,8 @@ namespace node
 		, account_(account)
 		, pwd_(pwd)
 		, monitor_(monitor)
+		, global_configuration_(0)
+		, stat_dir_()
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
 		, socket_(io_ctx_)
@@ -56,6 +58,10 @@ namespace node
 		}
 
 		CYNG_LOG_TRACE(logger_, "global configuration bitmask: " << global_configuration_.load());
+
+		const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
+		stat_dir_ = cyng::value_cast(dom.get("stat-dir"), tmp.string());
+		CYNG_LOG_INFO(logger_, "store statistics data at " << stat_dir_);
 
 	}
 	
@@ -117,7 +123,8 @@ namespace node
 					, pwd_
 					, rgn_()
 					, monitor_ // cluster watchdog
-					, global_configuration_)->start();
+					, global_configuration_
+					, stat_dir_)->start();
 
 				do_accept();
 			}
