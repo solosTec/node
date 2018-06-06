@@ -84,20 +84,64 @@
 
     <div class="container-fluid">
         <div class="row">
-            <div class="table-responsive col-md-12">
+            <div class="table-responsive col-md-9">
                 <table id="smf-table-gw" class="table table-condensed table-striped table-bordered" cellspacing="0">
                     <thead>
                         <tr>
                             <th class="sml-col-gw-pk">UUID</th>
                             <th class="sml-col-gw-server">Server ID</th>
                             <th class="sml-col-gw-manufacturer">Manufacturer</th>
+                            <th class="sml-col-gw-name">Name</th>
                             <th class="sml-col-gw-id">Model</th>
+                            <th class="sml-col-gw-fw">Firmware</th>
                             <th class="sml-col-gw-user">User</th>
                             <th class="sml-col-gw-pwd">Password</th>
                             <th class="sml-col-gw-online" style="width:10px">&#11156;</th>
                         </tr>
                     </thead>
                 </table>
+            </div>
+            <div class="col-md-3">
+                <form class="form-horizontal" id="smf-form-gw">
+                    <fieldset>
+                        <legend id="smf-form-legend-gw" class="small">No gateway selected</legend>
+                        <input type="hidden" id="smf-form-gw-tag" name="smf-form-gw-tag" />
+                        <input type="hidden" id="smf-form-gw-serial" name="smf-form-gw-serial" />
+                        <input type="hidden" id="smf-form-gw-if-data" name="smf-form-gw-if-data" />
+                        <input type="hidden" id="smf-form-gw-if-config" name="smf-form-gw-if-config" />
+                        <div class="form-group">
+                            <label class="control-label" for="smf-form-gw-server">Server ID</label>
+                            <input id="smf-form-gw-server" name="smf-form-gw-server" type="text" placeholder="<Server ID>" class="form-control input-md">
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label" for="smf-form-gw-manufacturer">Manufacturer</label>
+                            <input id="smf-form-gw-manufacturer" name="smf-form-gw-manufacturer" type="text" placeholder="<Manufacturer>" class="form-control input-md">
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label" for="smf-form-gw-user">User</label>
+                            <input id="smf-form-gw-user" name="smf-form-gw-user" type="text" placeholder="<User>" class="form-control input-md">
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label" for="smf-form-gw-pwd">Password</label>
+                            <input id="smf-form-gw-pwd" name="smf-form-gw-pwd" type="text" placeholder="<Password>" class="form-control input-md">
+                        </div>
+
+                        <div class="form-group">
+                            <a id="smf-form-gw-update" href="#" class="btn btn-info col-md-4 disabled">Update</a>
+                            <label class="control-label" for="smf-form-gw-update">Commit Changes</label>
+                        </div>
+                        <div class="form-group">
+                            <a id="smf-form-gw-delete" href="#" class="btn btn-danger col-md-4 disabled">Delete</a>
+                            <label class="control-label" for="smf-form-gw-delete">Remove <span id="smf-form-gw-delete-name">Device</span></label>
+                        </div>
+                        <hr />
+                        <div class="form-group">
+                            <a id="smf-form-gw-reboot" href="#" class="btn btn-warning col-md-4 disabled">Reboot</a>
+                            <label class="control-label" for="smf-form-gw-reboot">Reboot Device</label>
+                        </div>
+
+                    </fieldset>
+                </form>
             </div>
         </div>
     </div>
@@ -120,6 +164,7 @@
         //  globals
         var table_gw;
         var connection;
+        var totalIO = 0;
 
         var tbl_config = {
             paging: true,
@@ -134,11 +179,13 @@
             select: true,
             //colReorder: true,
             columnDefs: [
-                { targets: 'sml-col-gw-pk', visible: true, name: 'gw-pk' },
+                { targets: 'sml-col-gw-pk', visible: false, name: 'gw-pk' },
                 { targets: 'sml-col-gw-server', visible: true, name: 'gw-server' },
                 { targets: 'sml-col-gw-manufacturer', visible: true, name: 'gw-manufacturer' },
-                { targets: 'sml-col-gw-id', visible: true, name: 'gw-id'},
-                { targets: 'sml-col-gw-user', visible: true, name: 'gw-user'},
+                { targets: 'sml-col-gw-name', visible: true, name: 'gw-name' },
+                { targets: 'sml-col-gw-id', visible: true, name: 'gw-id' },
+                { targets: 'sml-col-gw-fw', visible: true, name: 'gw-fw' },
+                { targets: 'sml-col-gw-user', visible: true, name: 'gw-user' },
                 { targets: 'sml-col-gw-pwd', visible: true, name: 'gw-pwd' },
                 { targets: 'sml-col-gw-online', visible: true, name: 'gw-online', render: renderOnlineState }
             ]
@@ -147,6 +194,35 @@
         $(document).ready(function () {
             console.log('document ready');
             table_gw = $('#smf-table-gw').DataTable(tbl_config);
+
+            table_gw.on('select', function (e, datatable, type, indexes) {
+
+                //  select: a584c1cc-7ae1-455b-99d1-de0f9483520d,05000000000000,solosTec,gateway,ipt:gateway,0.5.2018155,operator,operator,false, length:9
+                var rowData = datatable.rows(indexes).data().toArray()[0];
+                var rows = table_gw.rows(indexes).data();
+                console.log("select: " + rows.toArray() + ", length:" + rowData.length);
+                $('#smf-form-legend-gw').text("{" + rowData[0] + "}");
+                $('#smf-form-gw-tag').val(rowData[0]);
+                $('#smf-form-gw-server').val(rowData[1]);
+                $('#smf-form-gw-manufacturer').val(rowData[2]);
+
+                $('#smf-form-gw-user').val(rowData[6]);
+                $('#smf-form-gw-pwd').val(rowData[7]);
+
+                //  enable submit button
+                $('#smf-form-gw-update').removeClass('disabled');
+                $('#smf-form-gw-delete').removeClass('disabled');
+                $('#smf-form-gw-delete-name').html('<abbr title=' + rowData[0] + ' class="font-italic">' + rowData[3] + '</abbr>');
+
+                //  online state
+                if (rowData[8]) {
+                    $('#smf-form-gw-reboot').removeClass('disabled');
+                }
+                else {
+                    $('#smf-form-gw-reboot').addClass('disabled');
+                }
+
+            });
 
             $('#ws-activity-text').html('connecting to ' + location.host + '...');
             connection = new WebSocket('ws://' + location.host + '/smf/api/gw/v0.1', ['SMF']);
@@ -174,33 +250,62 @@
             connection.onmessage = function (e) {
                 $('#ws-activity-symbol').show();
                 console.log('incoming data: ' + e.data);
+                totalIO += e.data.length;
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
                     if (obj.cmd == 'insert') {
-                        //  {"cmd": "insert", "channel": "config.gateway", "rec": {"key": {"pk":"01cb55e5-b4a3-4b97-bb4e-4f02025fe485"}, 
-                        //  "data": { "factoryNr": "06441734", "id": "0500153B02517E", "ifData": "00:01:02:03:04:06", "ifService": "00:01:02:03:04:05", "made": "2018-04-05 13:21:42.61796360", "manufacturer": "EMH", "mbus": "mbus", "model": "Variomuc ETHERNET", "pwdDef": "secret", "pwdRoot": "secret", "userName": "secret", "userPwd": "secret", "vFirmware": "11600000" }, "gen": 94}}
+                        //  
+                        // {"cmd": "insert", "channel": "config.gateway", "rec": 
+                        //  {"key": {"pk":"d28cd24a-980d-46fc-b5ac-8c445415adbf"}, 
+                        //  "data": {"factoryNr":"06441734","id":"0500153B02517E","ifData":"00:01:02:03:04:06","ifService":"00:01:02:03:04:05","made":"2018-06-06 13:24:51.38650500","manufacturer":"EMH","mbus":"mbus","model":"MODEL","name":"NAME","online":false,"pwdDef":"secret","pwdRoot":"secret","userName":"operator","userPwd":"operator","vFirmware":"FIRMWARE"}, "gen": 94}}
                         //
                         var server = $('<div/>').text(obj.rec.data.id).html();
                         var manufacturer = $('<div/>').text(obj.rec.data.manufacturer).html();
+                        var name = $('<div/>').text(obj.rec.data.name).html();
                         var model = $('<div/>').text(obj.rec.data.model).html();
+                        var firmware = $('<div/>').text(obj.rec.data.vFirmware).html();
                         var userName = $('<div/>').text(obj.rec.data.userName).html();
                         var userPwd = $('<div/>').text(obj.rec.data.userPwd).html();
-                        var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, model, userName, userPwd, obj.rec.data.online]).draw().node();
+                        var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, name, model, firmware, userName, userPwd, obj.rec.data.online]).draw().node();
 
                     }
                     else if (obj.cmd == 'delete') {
-
+                        //  {"cmd": "delete", "channel": "config.gateway", "key": ["28754043-1f38-4318-a95e-dd9965e80895"]}
+                        table_gw.row(function (idx, data, node) {
+                            if (data[0] == obj.key) {
+                                $('#smf-form-gw-delete-name').text("Device");
+                                $('#smf-form-gw-update').addClass('disabled');
+                                $('#smf-form-gw-delete').addClass('disabled');
+                                $('#smf-form-gw-reboot').addClass('disabled');
+                                return true;
+                            }
+                            return false;
+                        }).remove().draw(false);
                     }
                     else if (obj.cmd == 'modify') {
                         //  {"cmd": "modify", "channel": "config.gateway", "key": ["dca135f3-ff2b-4bf7-8371-a9904c74522b"], "value": {"online":true}}
+                        //  {"cmd": "modify", "channel": "config.gateway", "key": ["a584c1cc-7ae1-455b-99d1-de0f9483520d"], "value": {"online":false}}
                         table_gw.row(function (idx, data, node) {
                             if (data[0] == obj.key) {
                                 var r = table_gw.row(node);
                                 var d = r.data();
                                 if (obj.value.online != null) {
-                                    d[6] = obj.value.online;
+                                    d[8] = obj.value.online;
+                                }
+                                else if (obj.value.id != null) {
+                                    d[1] = obj.value.id;
+                                }
+                                else if (obj.value.manufacturer != null) {
+                                    d[2] = obj.value.manufacturer;
+                                }
+                                else if (obj.value.userName != null) {
+                                    d[6] = obj.value.userName;
+                                }
+                                else if (obj.value.userPwd != null) {
+                                    d[7] = obj.value.userPwd;
                                 }
                                 r.data(d);
+                                $('#smf-form-gw-delete').addClass('disabled');
                                 return true;
                             }
                             return false;
@@ -210,14 +315,65 @@
                         table_gw.clear().draw(false);
                     }
               }
-                $('#ws-activity-text').html('data received');
-                //$('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
+                $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
                 $('#ws-activity-symbol').fadeOut();
             };
+
+            $('#smf-form-gw-delete').on("click", function (event) {
+                event.preventDefault();
+                var key = $('#smf-form-gw-tag').val();
+                console.log($(this).text() + ' ' + key);
+                connection.send(JSON.stringify({
+                    cmd: 'delete', channel: 'config.gateway', key: {
+                        tag: [key]
+                    }
+                }));
+                //$('#smf-form-gw-delete').addClass('disabled');
+            });
+
+            $('#smf-form-gw-update').on("click", function (event) {
+                event.preventDefault();
+                console.log('update: ' + $('#smf-form-gw').serialize());
+
+                connection.send(JSON.stringify({
+                    cmd: "modify", channel: "config.gateway", rec: {
+                        key: [$('#smf-form-gw-tag').val()],
+                        data: {
+                            'id': $('#smf-form-gw-server').val(),
+                            'manufacturer': $('#smf-form-gw-manufacturer').val(),
+                            'userName': $('#smf-form-gw-user').val(),
+                            'userPwd': $('#smf-form-gw-pwd').val()
+                        }
+                    }
+                }));
+            });
+
+            $('#smf-form-gw-reboot').on("click", function (event) {
+                event.preventDefault();
+                console.log('reboot: ' + $('#smf-form-gw').serialize());
+
+                connection.send(JSON.stringify({
+                    cmd: "reboot", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                }));
+            });
 
         });
 
     </script>
 
-</body >
+    <script>
+            const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            function format_bytes(x) {
+
+                let l = 0, n = parseInt(x, 10) || 0;
+                while (n >= 1024 && ++l) {
+                    n = n / 1024;
+                }
+
+                if (n == 0) return '-';
+                return (n.toFixed(l < 1 ? 0 : 1) + ' ' + units[l]);
+            }
+    </script>
+
+</body>
 </html >

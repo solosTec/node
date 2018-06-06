@@ -111,19 +111,19 @@
                         <input type="hidden" id="smf-form-dev-age" name="smf-form-dev-age" />
                         <div class="form-group">
                             <label class="control-label" for="smf-form-dev-name">Device Name</label>
-                            <input id="smf-form-dev-name" name="smf-form-dev-name" type="text" placeholder="Device Name" class="form-control input-md">
+                            <input id="smf-form-dev-name" name="smf-form-dev-name" type="text" placeholder="<Device Name>" class="form-control input-md">
                         </div>
                         <div class="form-group">
                             <label class="control-label" for="smf-form-dev-msisdn">MSISDN</label>
-                            <input id="smf-form-dev-msisdn" name="smf-form-dev-msisdn" type="text" placeholder="MSISDN" class="form-control input-md">
+                            <input id="smf-form-dev-msisdn" name="smf-form-dev-msisdn" type="text" placeholder="<MSISDN>" class="form-control input-md">
                         </div>
                         <div class="form-group">
                             <label class="control-label" for="smf-form-dev-pwd">Password</label>
-                            <input id="smf-form-dev-pwd" name="smf-form-dev-pwd" type="text" placeholder="Password" class="form-control input-md">
+                            <input id="smf-form-dev-pwd" name="smf-form-dev-pwd" type="text" placeholder="<Password>" class="form-control input-md">
                         </div>
                         <div class="form-group">
                             <label class="control-label" for="smf-form-dev-descr">Description</label>
-                            <input id="smf-form-dev-descr" name="smf-form-dev-descr" type="text" placeholder="Description" class="form-control input-md">
+                            <input id="smf-form-dev-descr" name="smf-form-dev-descr" type="text" placeholder="<Description>" class="form-control input-md">
                         </div>
                         <div class="form-group">
                             <div class="col-md-offset-4 col-md-8">
@@ -155,7 +155,7 @@
 
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
-    <script type="text/javascript" src="popper.min.js"></script>
+    <!--<script type="text/javascript" src="popper.min.js"></script>-->
 
     <script>
 
@@ -200,7 +200,6 @@
         $(document).ready(function () {
             console.log('document ready');
             table_dev = $('#smf-table-device').DataTable(tbl_config);
-            //table_dev.keys.enable('navigation-only');
 
             table_dev.on('select', function (e, datatable, type, indexes) {
 
@@ -220,7 +219,8 @@
                 //  enable submit button
                 $('#smf-form-dev-update').removeClass('disabled');
                 $('#smf-form-dev-delete').removeClass('disabled');
-                $('#smf-form-dev-delete-name').text(rowData[1]);
+                //$('#smf-form-dev-delete-name').text(rowData[1]);
+                $('#smf-form-dev-delete-name').html('<abbr title=' + rowData[0] + ' class="font-italic">' + rowData[1] + '</abbr>');
 
             });
 
@@ -248,9 +248,7 @@
 
             connection.onmessage = function (e) {
                 $('#ws-activity-symbol').show();
-                console.log('incoming data: ' + e.data);
-                //console.log(Object.keys(e.data).length + ' bytes');
-                //totalIO += Object.keys(e.data).length;  //    doesn't work for IE11: argument is not an object
+                //console.log('incoming data: ' + e.data);
                 totalIO += e.data.length;
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
@@ -275,6 +273,8 @@
                         table_dev.row(function (idx, data, node) {
                             if (data[0] == obj.key) {
                                 $('#smf-form-dev-delete-name').text("Device");
+                                $('#smf-form-dev-update').addClass('disabled');
+                                $('#smf-form-dev-delete').addClass('disabled');
                                 return true;
                             }
                             return false;
@@ -318,7 +318,6 @@
                     }
                 }
                 $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
-                //$('#ws-activity-text').html(e.data.length + ' bytes received');
                 $('#ws-activity-symbol').fadeOut();
             };
 
@@ -353,7 +352,7 @@
                         tag: [key]
                     }
                 }));
-                $('#smf-form-dev-delete').addClass('disabled');
+                //$('#smf-form-dev-delete').addClass('disabled');
             });
 
             $('#smf-form-dev-insert').on("click", function (event) {
@@ -395,11 +394,9 @@
 
     <script>
             const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
             function format_bytes(x) {
 
                 let l = 0, n = parseInt(x, 10) || 0;
-
                 while (n >= 1024 && ++l) {
                     n = n / 1024;
                 }

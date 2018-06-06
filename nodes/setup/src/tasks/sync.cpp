@@ -26,7 +26,7 @@ namespace node
 	: base_(*btp)
 	, logger_(logger)
 	, bus_(cl_bus)
-	, tsk_(tsk)
+	, tsk_cluster_(tsk)
 	, table_(table)
 	, cache_(cache)
 	{
@@ -138,23 +138,26 @@ namespace node
 		//
 		//	subscribe cache
 		//
-		CYNG_LOG_INFO(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> subscribe cache "
-			<< table_);
+		//CYNG_LOG_INFO(logger_, "task #"
+		//	<< base_.get_id()
+		//	<< " <"
+		//	<< base_.get_class_name()
+		//	<< "> subscribe cache "
+		//	<< table_);
 
-		cache_.get_listener(table_
-			, std::bind(&sync::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&sync::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&sync::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&sync::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		//cache_.get_listener(table_
+		//	, std::bind(&sync::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+		//	, std::bind(&sync::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+		//	, std::bind(&sync::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+		//	, std::bind(&sync::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 
 		//
 		//	manage table state
 		//
 		cache_.set_state(table_, TS_READY);
+
+		base_.mux_.post(tsk_cluster_, 2, cyng::tuple_factory(table_, base_.get_id()));
+
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -168,41 +171,41 @@ namespace node
 			<< "> unsubscribe from cache "
 			<< table_);
 
-		cache_.disconnect(table_);
+		//cache_.disconnect(table_);
 		cache_.clear(table_, bus_->vm_.tag());
 		return cyng::continuation::TASK_STOP;
 	}
 
-	void sync::sig_ins(cyng::store::table const* tbl
-		, cyng::table::key_type const&
-		, cyng::table::data_type const&
-		, std::uint64_t
-		, boost::uuids::uuid source)
-	{
-		CYNG_LOG_INFO(logger_, "sig.ins " << table_);
-		BOOST_ASSERT(tbl->meta().get_name() == table_);
-	}
+	//void sync::sig_ins(cyng::store::table const* tbl
+	//	, cyng::table::key_type const&
+	//	, cyng::table::data_type const&
+	//	, std::uint64_t
+	//	, boost::uuids::uuid source)
+	//{
+	//	CYNG_LOG_INFO(logger_, "sig.ins " << table_);
+	//	BOOST_ASSERT(tbl->meta().get_name() == table_);
+	//}
 
-	void sync::sig_del(cyng::store::table const* tbl, cyng::table::key_type const&, boost::uuids::uuid source)
-	{
-		CYNG_LOG_INFO(logger_, "sig.gel " << table_);
-		BOOST_ASSERT(tbl->meta().get_name() == table_);
-	}
+	//void sync::sig_del(cyng::store::table const* tbl, cyng::table::key_type const&, boost::uuids::uuid source)
+	//{
+	//	CYNG_LOG_INFO(logger_, "sig.gel " << table_);
+	//	BOOST_ASSERT(tbl->meta().get_name() == table_);
+	//}
 
-	void sync::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
-	{
-		CYNG_LOG_INFO(logger_, "sig.clr " << table_);
-		BOOST_ASSERT(tbl->meta().get_name() == table_);
-	}
+	//void sync::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
+	//{
+	//	CYNG_LOG_INFO(logger_, "sig.clr " << table_);
+	//	BOOST_ASSERT(tbl->meta().get_name() == table_);
+	//}
 
-	void sync::sig_mod(cyng::store::table const* tbl
-		, cyng::table::key_type const&
-		, cyng::attr_t const&
-		, std::uint64_t gen
-		, boost::uuids::uuid source)
-	{
-		CYNG_LOG_INFO(logger_, "sig.mod " << table_);
-		BOOST_ASSERT(tbl->meta().get_name() == table_);
-	}
+	//void sync::sig_mod(cyng::store::table const* tbl
+	//	, cyng::table::key_type const&
+	//	, cyng::attr_t const&
+	//	, std::uint64_t gen
+	//	, boost::uuids::uuid source)
+	//{
+	//	CYNG_LOG_INFO(logger_, "sig.mod " << table_);
+	//	BOOST_ASSERT(tbl->meta().get_name() == table_);
+	//}
 
 }

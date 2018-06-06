@@ -107,25 +107,7 @@ namespace node
 			CYNG_LOG_ERROR(logger_, "insufficient cluster protocol version: "	<< v);
 		}
 
-		auto r = cyng::async::start_task_delayed<sync>(base_.mux_
-			, std::chrono::seconds(1)
-			, logger_
-			, bus_
-			, storage_tsk_	//	storage task
-			, "TDevice"
-			, cache_);
-
-		//
-		//	start data synchronisation - load cache
-		//
-		if (r.second)
-		{
-			base_.mux_.post(storage_tsk_, 0, cyng::tuple_factory("TDevice", r.first, bus_->vm_.tag()));
-		}
-		else
-		{
-			CYNG_LOG_ERROR(logger_, "could not start <sync> task TDevice");
-		}
+		sync_table("TDevice");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -141,6 +123,51 @@ namespace node
 		//	continue task
 		//
 		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	cyng::continuation cluster::process(std::string table, std::size_t tsk)
+	{
+		CYNG_LOG_INFO(logger_, "task "
+			<< tsk
+			<< " synchronized table "
+			<< table);
+
+		if (boost::algorithm::equals(table, "TDevice"))
+		{
+			sync_table("TGateway");
+		}
+		else
+		{
+			CYNG_LOG_INFO(logger_, "*** sync phase completed ***");
+		}
+
+		//
+		//	continue task
+		//
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	void cluster::sync_table(std::string table)
+	{
+		auto r = cyng::async::start_task_delayed<sync>(base_.mux_
+			, std::chrono::milliseconds(1)
+			, logger_
+			, bus_
+			, base_.get_id()	//	cluster task
+			, table
+			, cache_);
+
+		//
+		//	start data synchronisation - load cache
+		//
+		if (r.second)
+		{
+			base_.mux_.post(storage_tsk_, 0, cyng::tuple_factory(table, r.first, bus_->vm_.tag()));
+		}
+		else
+		{
+			CYNG_LOG_ERROR(logger_, "could not start <sync> task " << table);
+		}
 	}
 
 	void cluster::res_subscribe(cyng::context& ctx)

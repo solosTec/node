@@ -122,6 +122,12 @@ namespace node
 		, boost::uuids::uuid source);
 
 	/**
+	 * Reboot a client
+	 */
+	cyng::vector_t bus_req_reboot_client(cyng::vector_t const&
+		, boost::uuids::uuid source);
+
+	/**
 	 * data bus
 	 */
 	cyng::vector_t bus_req_push_data(std::string const& class_name

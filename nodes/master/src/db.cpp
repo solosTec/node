@@ -42,8 +42,18 @@ namespace node
 
 		if (!db.create_table(cyng::table::make_meta_table<1, 9>("TDevice",
 			{ "pk", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
-			{ 36, 128, 16, 128, 512, 64, 64, 0, 0, 0 })))
+			{ cyng::TC_UUID		//	pk (36)
+			, cyng::TC_STRING	//	name (128)
+			, cyng::TC_STRING	//	pwd	(32)
+			, cyng::TC_STRING	//	msisdn (64)
+			, cyng::TC_STRING	//	description (512)
+			, cyng::TC_STRING	//	identifier (64)
+			, cyng::TC_STRING	//	vFirmware (64)
+			, cyng::TC_BOOL		//	enabled
+			, cyng::TC_TIME_POINT	//	creationTime
+			, cyng::TC_UINT32	//	query
+			},
+			{ 36, 128, 32, 64, 512, 64, 64, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TDevice");
 		}
@@ -71,23 +81,36 @@ namespace node
 		//	(10) root PW
 		//	(11) W-Mbus ID (i.e. A815408943050131)
 		//	(12) source (UUID) - usefull to detect multiple configuration uploads
-		if (!db.create_table(cyng::table::make_meta_table<1, 13>("TGateway", { "pk"	//	primary key
+		if (!db.create_table(cyng::table::make_meta_table<1, 11>("TGateway", { "pk"	//	primary key
 				, "id"	//	(1) Server-ID (i.e. 0500153B02517E)
 				, "manufacturer"	//	(2) manufacturer (i.e. EMH)
-				, "model"	//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
-				, "made"	//	(4) production date
-				, "vFirmware"	//	(5) firmwareversion (i.e. 11600000)
-				, "factoryNr"	//	(6) fabrik nummer (i.e. 06441734)
-				, "ifService"	//	(7) MAC of service interface
-				, "ifData"	//	(8) MAC of data interface
-				, "pwdDef"	//	(9) Default PW
-				, "pwdRoot"	//	(10)
-				, "mbus"	//	(11)
-				, "userName"	//	(12)
-				, "userPwd"	//	(13)
+				, "made"	//	(3) production date
+				, "factoryNr"	//	(4) fabrik nummer (i.e. 06441734)
+				, "ifService"	//	(5) MAC of service interface
+				, "ifData"		//	(6) MAC of data interface
+				, "pwdDef"		//	(7) Default PW
+				, "pwdRoot"		//	(8) root PW
+				, "mbus"		//	(9) W-Mbus ID (i.e. A815408943050131)
+				, "userName"	//	(10)
+				, "userPwd"		//	(11)
+				//, "model"	//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
+				//, "vFirmware"	//	(5) firmwareversion (i.e. 11600000)
 			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_MAC48, cyng::TC_MAC48, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
-			{ 36, 23, 64, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 })))
+			{ cyng::TC_UUID
+			, cyng::TC_STRING	//	server ID
+			, cyng::TC_STRING	//	manufacturer
+			//, cyng::TC_STRING - model
+			, cyng::TC_TIME_POINT
+			//, cyng::TC_STRING - firmware version
+			, cyng::TC_MAC48
+			, cyng::TC_MAC48
+			, cyng::TC_STRING
+			, cyng::TC_STRING
+			, cyng::TC_STRING
+			, cyng::TC_STRING
+			, cyng::TC_STRING 
+			},
+			{ 36, 23, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
 		}
@@ -97,9 +120,9 @@ namespace node
 				, cyng::table::key_generator(tag)
 				, cyng::table::data_generator("0500153B02517E"
 					, "EMH"
-					, "Variomuc ETHERNET"
+					//, "Variomuc ETHERNET"
 					, std::chrono::system_clock::now()
-					, "11600000"
+					//, "11600000"
 					, "06441734"
 					, cyng::mac48(0, 1, 2, 3, 4, 5)
 					, cyng::mac48(0, 1, 2, 3, 4, 6)

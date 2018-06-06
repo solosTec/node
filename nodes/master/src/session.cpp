@@ -86,6 +86,7 @@ namespace node
 		//
 		vm_.register_function("bus.req.login", 11, std::bind(&session::bus_req_login, this, std::placeholders::_1));
 		vm_.register_function("bus.req.stop.client", 3, std::bind(&session::bus_req_stop_client_impl, this, std::placeholders::_1));
+		vm_.register_function("bus.req.reboot.client", 3, std::bind(&session::bus_req_reboot_client, this, std::placeholders::_1));
 		vm_.register_function("bus.insert.msg", 2, std::bind(&session::bus_insert_msg, this, std::placeholders::_1));
 		vm_.register_function("bus.req.push.data", 7, std::bind(&session::bus_req_push_data, this, std::placeholders::_1));
 
@@ -542,7 +543,48 @@ namespace node
 
 			}
 		}, cyng::store::write_access("*Session"));
+	}
 
+	void session::bus_req_reboot_client(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, "bus.req.reboot.client " << cyng::io::to_str(frame));
+
+		//	[2,[1ca8529b-9b95-4a3a-ba2f-26c7280aa878],ac70b95e-76b9-463a-a961-bb02f70e86c8]
+		//
+		//	* bus sequence
+		//	* session key
+		//	* source
+
+		auto const tpl = cyng::tuple_cast<
+			std::uint64_t,			//	[0] sequence
+			cyng::vector_t,			//	[1] session key
+			boost::uuids::uuid		//	[2] source
+		>(frame);
+
+		//	reboot a gateway (client)
+		//
+		db_.access([&](cyng::store::table* tbl_session)->void {
+			cyng::table::record rec = tbl_session->lookup(std::get<1>(tpl));
+			if (!rec.empty())
+			{
+				auto peer = cyng::object_cast<session>(rec["local"]);
+				BOOST_ASSERT(peer->vm_.tag() != ctx.tag());
+				if (peer && (peer->vm_.tag() != ctx.tag()) && (std::get<1>(tpl).size() == 1))
+				{
+					//
+					//	node will send a client reboot response
+					//
+					auto tag = cyng::value_cast(std::get<1>(tpl).at(0), boost::uuids::nil_uuid());
+					//peer->vm_.async_run(node::client_req_close(tag, 0));
+				}
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "bus.req.reboot.client not found " << cyng::io::to_str(frame));
+
+			}
+		}, cyng::store::write_access("*Session"));
 	}
 
 	void session::bus_start_watchdog(cyng::context& ctx)

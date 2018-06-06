@@ -1812,7 +1812,7 @@ namespace node
 						//
 						const std::string model = cyng::value_cast<std::string>(value, "");
 						if (boost::algorithm::starts_with(model, "EMH")
-							|| boost::algorithm::starts_with(model, "Variomuc ")
+							|| boost::algorithm::istarts_with(model, "variomuc")
 							|| boost::algorithm::equals(model, "ipt:gateway"))
 						{
 							auto dev_rec = tbl_device->lookup(dev_pk);
@@ -1829,9 +1829,9 @@ namespace node
 								tbl_gw->insert(dev_pk
 									, cyng::table::data_generator("05000000000000"
 										, (boost::algorithm::equals(model, "ipt:gateway") ? "solosTec" : "EMH")
-										, value
+										//, value
 										, std::chrono::system_clock::now()
-										, dev_rec["vFirmware"]
+										//, dev_rec["vFirmware"]
 										, "factory-nr"
 										, cyng::mac48(0, 1, 2, 3, 4, 5)
 										, cyng::mac48(0, 1, 2, 3, 4, 6)

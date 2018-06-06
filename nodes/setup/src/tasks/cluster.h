@@ -23,7 +23,8 @@ namespace node
 	public:
 		using msg_0 = std::tuple<cyng::version>;
 		using msg_1 = std::tuple<>;
-		using signatures_t = std::tuple<msg_0, msg_1>;
+		using msg_2 = std::tuple<std::string, std::size_t>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
 
 	public:
 		cluster(cyng::async::base_task* bt
@@ -48,6 +49,15 @@ namespace node
 		 */
 		cyng::continuation process();
 
+		/**
+		 * @brief slot [2]
+		 *
+		 * sync complete
+		 * @param table table name
+		 * @param tsk sender
+		 */
+		cyng::continuation process(std::string table, std::size_t tsk);
+
 	private:
 		void res_subscribe(cyng::context& ctx);
 		void db_req_insert(cyng::context& ctx);
@@ -60,6 +70,8 @@ namespace node
 		void bus_req_push_data(cyng::context& ctx);
 		void reconfigure_impl();
 		void create_cache();
+
+		void sync_table(std::string);
 
 	private:
 		cyng::async::base_task& base_;

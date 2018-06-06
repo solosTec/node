@@ -47,7 +47,7 @@ namespace node
 		cyng::continuation process(std::string name, std::size_t sync_tsk);
 
 		/**
-		 * slot [1]
+		 * slot [1] - cache complete, upload data to master
 		 */
 		cyng::continuation process(std::size_t);
 
@@ -59,20 +59,20 @@ namespace node
 	private:
 		void subscribe();
 
-		void sig_ins(cyng::store::table const*
-			, cyng::table::key_type const&
-			, cyng::table::data_type const&
-			, std::uint64_t
-			, boost::uuids::uuid source);
-		void sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid source);
-		void sig_clr(cyng::store::table const*, boost::uuids::uuid source);
-		void sig_mod(cyng::store::table const*, cyng::table::key_type const&, cyng::attr_t const&, std::uint64_t, boost::uuids::uuid source);
+		//void sig_ins(cyng::store::table const*
+		//	, cyng::table::key_type const&
+		//	, cyng::table::data_type const&
+		//	, std::uint64_t
+		//	, boost::uuids::uuid source);
+		//void sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid source);
+		//void sig_clr(cyng::store::table const*, boost::uuids::uuid source);
+		//void sig_mod(cyng::store::table const*, cyng::table::key_type const&, cyng::attr_t const&, std::uint64_t, boost::uuids::uuid source);
 
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		bus::shared_type bus_;
-		const std::size_t tsk_;
+		const std::size_t tsk_cluster_;	//!< cluster task
 		const std::string table_;
 		cyng::store::db& cache_;
 	};

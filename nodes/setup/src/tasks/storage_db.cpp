@@ -149,6 +149,7 @@ namespace node
 				<< base_.get_class_name()
 				<< "> unknown table "
 				<< name);
+			base_.mux_.post(sync_tsk, 0, cyng::tuple_factory(name, 0));
 		}
 
 		return cyng::continuation::TASK_CONTINUE;
@@ -208,27 +209,60 @@ namespace node
 				//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
 				//	bind parameters
 				//	INSERT INTO TDevice (pk, gen, name, pwd, number, descr, id, vFirmware, enabled, creationTime, query) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-				//BOOST_ASSERT(r.first == 11);	//	11 parameters to bind
-				//BOOST_ASSERT_MSG(key.size() == 1, "wrong TDevice key size");
-				//BOOST_ASSERT_MSG(data.size() == 9, "wrong TDevice data size");
-				stmt->push(key.at(0), 36)	//	pk
-					.push(cyng::make_object(gen), 0)	//	generation
-					.push(data.at(0), 128)	//	name
-					.push(data.at(1), 16)	//	password
-					.push(data.at(2), 128)	//	
-					.push(data.at(3), 512)
-					.push(data.at(4), 64)
-					.push(data.at(5), 64)	//	firmware
-					.push(data.at(6), 0)	//	enabled
-					.push(data.at(7), 0)	//	creationTime
-					.push(data.at(8), 0)	//	query
-					;
+				stmt->push(key.at(0), 36);	//	pk
+				meta->loop_body([&](cyng::table::column&& col) {
+					if (col.pos_ == 0)
+					{
+						stmt->push(cyng::make_object(gen), col.width_);
+					}
+					else
+					{
+						stmt->push(data.at(col.pos_ - 1), col.width_);
+					}
+				});
+				//.push(cyng::make_object(gen), 0)	//	generation
+					//.push(data.at(0), 128)	//	name
+					//.push(data.at(1), 16)	//	password
+					//.push(data.at(2), 128)	//	
+					//.push(data.at(3), 512)
+					//.push(data.at(4), 64)
+					//.push(data.at(5), 64)	//	firmware
+					//.push(data.at(6), 0)	//	enabled
+					//.push(data.at(7), 0)	//	creationTime
+					//.push(data.at(8), 0)	//	query
+					//;
 				if (!stmt->execute())
 				{
 					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
 				}
 				stmt->clear();
 
+			}
+			else if (boost::algorithm::equals(name, "TGateway"))
+			{
+				//	[54c15b9e-858a-431c-9c2c-8b654c7d7651][05000000000000,EMH,EMH-VMET,2018-06-06 07:22:47.26852400,VARIOMUC-ETHERNET-1.407_14232___11X022a,factory-nr,00:01:02:03:04:05,00:01:02:03:04:06,user,pwd,mbus,operator,operator]
+
+				//meta_map.emplace("TGateway", cyng::table::make_meta_table<1, 14>("TGateway",
+				//	{ "pk", "gen", "serverId", "manufacturer", "model", "proddata", "vFirmare", "factoryNr", "ifService", "ifData", "pwdDef", "pwdRoot", "mbus", "userName", "userPwd" },
+				//	{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
+				//	{ 36, 0, 23, 64, 64, 0, 64, 8, 18, 18, 32, 32, 16, 32, 32 }));
+
+				stmt->push(key.at(0), 36);	//	pk (same as TDevice)
+				meta->loop_body([&](cyng::table::column&& col) {
+					if (col.pos_ == 0)
+					{
+						stmt->push(cyng::make_object(gen), col.width_);
+					}
+					else
+					{
+						stmt->push(data.at(col.pos_ - 1), col.width_);
+					}
+				});
+				if (!stmt->execute())
+				{
+					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+				}
+				stmt->clear();
 			}
 			else if (boost::algorithm::equals(name, "TLoraUplink"))
 			{
@@ -549,10 +583,40 @@ namespace node
 		//	vFirmware: (i.e. MUC-ETHERNET-1.318_11332000)
 		//	factoryNr: (i.e. 06441734)
 		//	mbus: W-Mbus ID (i.e. A815408943050131)
-		meta_map.emplace("TGateway", cyng::table::make_meta_table<1, 14>("TGateway",
-			{ "pk", "gen", "serverId", "manufacturer", "model", "proddata", "vFirmare", "factoryNr", "ifService", "ifData", "pwdDef", "pwdRoot", "mbus", "userName", "userPwd" },
-			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
-			{ 36, 0, 23, 64, 64, 0, 64, 8, 18, 18, 32, 32, 16, 32, 32 }));
+		meta_map.emplace("TGateway", cyng::table::make_meta_table<1, 12>("TGateway",
+			{ "pk"
+			, "gen"
+			, "serverId"	//	05 + MAC
+			, "manufacturer"
+			//, "model"		//	-> comes from TDevice
+			, "proddata"	//	production date
+			//, "vFirmare"	//	-> comes from TDevice
+			, "factoryNr"	//	example: "06441734"
+			, "ifService"	//	MAC service interface
+			, "ifData"		//	MAC data interface
+			, "pwdDef"		//	default password
+			, "pwdRoot"		//	root password
+			, "mbus"		//	W-Mbus ID (i.e. A815408943050131)
+			, "userName"	//	usually: operator
+			, "userPwd"		//	usually: operator
+			},
+			{ cyng::TC_UUID
+			, cyng::TC_UINT64	//	gen
+			, cyng::TC_STRING	//	server ID
+			, cyng::TC_STRING	//	manufacturer
+			//, cyng::TC_STRING	- model
+			, cyng::TC_TIME_POINT
+			//, cyng::TC_STRING	- firmware version
+			, cyng::TC_STRING	//	factoryNr
+			, cyng::TC_STRING	//	ifService
+			, cyng::TC_STRING	//	ifData
+			, cyng::TC_STRING	//	pwdDef
+			, cyng::TC_STRING	//	pwdRoot
+			, cyng::TC_STRING	//	mbus
+			, cyng::TC_STRING	//	userName
+			, cyng::TC_STRING	//	userPwd
+			},
+			{ 36, 0, 23, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 }));
 
 		//	id: (i.e. 1EMH0006441734)
 		//	vParam: parameterization software version (i.e. 16A098828.pse)
