@@ -82,7 +82,7 @@ namespace node
 		//
 		//	Interfaces
 		//
-		const static obis	OBIS_CODE_IF_LAN_DSL(0x81, 0x48, 0x17, 0x07, 0x00, 0xFF);	// see: 7.3.1.18 Datenstruktur zum Lesen / Setzen der LAN/DSL-Parameter
+		const static obis	DEFINE_OBIS_CODE(81, 48, 17, 07, 00, FF, CODE_IF_LAN_DSL);	// see: 7.3.1.18 Datenstruktur zum Lesen / Setzen der LAN/DSL-Parameter
 		const static obis	OBIS_CODE_IF_GSM(0x81, 0x04, 0x02, 0x07, 0x00, 0xFF);
 		const static obis	OBIS_CODE_IF_GPRS(0x81, 0x04, 0x0D, 0x07, 0x00, 0xFF);
 		const static obis	OBIS_CODE_IF_USER(0x81, 0x02, 0x00, 0x07, 0x00, 0xFF);	//	Endkundenschnittstelle:

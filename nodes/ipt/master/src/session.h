@@ -111,6 +111,7 @@ namespace node
 
 			void store_relation(cyng::context& ctx);
 			void update_connection_state(cyng::context& ctx);
+			void client_req_reboot(cyng::context& ctx);
 
 		private:
 			cyng::async::mux& mux_;

@@ -354,6 +354,15 @@ namespace node
 			;
 	}
 
+	cyng::vector_t client_req_reboot(boost::uuids::uuid tag, cyng::buffer_t const& server, std::string const& name, std::string const& pwd)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("client.req.reboot", tag, cyng::code::IDENT, cyng::invoke("bus.seq.next"), server, name, pwd))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
 	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
 		, std::string const& target
 		, std::string const& device

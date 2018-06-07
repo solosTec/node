@@ -5,17 +5,13 @@ set (node_ipt_gateway_cpp
 
 	nodes/ipt/gateway/src/main.cpp	
 	nodes/ipt/gateway/src/controller.cpp
-#	nodes/ipt/gateway/src/server.cpp
-#	nodes/ipt/gateway/src/session.cpp
-#	nodes/ipt/gateway/src/connection.cpp
+	nodes/ipt/gateway/src/kernel.cpp
 )
 
 set (node_ipt_gateway_h
 
 	nodes/ipt/gateway/src/controller.h
-#	nodes/ipt/gateway/src/server.h
-#	nodes/ipt/gateway/src/session.h
-#	nodes/ipt/gateway/src/connection.h
+	nodes/ipt/gateway/src/kernel.h
 
 )
 

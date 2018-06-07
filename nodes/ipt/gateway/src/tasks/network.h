@@ -11,7 +11,7 @@
 #include <smf/ipt/bus.h>
 #include <smf/ipt/config.h>
 #include <smf/sml/protocol/parser.h>
-#include "../sml_reader.h"
+#include "../kernel.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -36,6 +36,8 @@ namespace node
 			network(cyng::async::base_task* bt
 				, cyng::logging::log_ptr
 				, master_config_t const& cfg
+				, std::string account
+				, std::string pwd
 				, std::string manufacturer
 				, std::string model
 				, cyng::mac48 mac);
@@ -98,40 +100,12 @@ namespace node
 			void reconfigure_impl();
 			void register_targets();
 
-			void sml_msg(cyng::context& ctx);
-			void sml_eom(cyng::context& ctx);
-
-			void sml_public_open_request(cyng::context& ctx);
-			void sml_public_close_request(cyng::context& ctx);
-			void sml_get_proc_parameter_request(cyng::context& ctx);
-			void sml_get_proc_status_word(cyng::context& ctx);
-			void sml_get_proc_device_id(cyng::context& ctx);
-			void sml_get_proc_mem_usage(cyng::context& ctx);
-			void sml_get_proc_lan_if(cyng::context& ctx);
-			void sml_get_proc_lan_config(cyng::context& ctx);
-			void sml_get_proc_ntp_config(cyng::context& ctx);
-			void sml_get_proc_device_time(cyng::context& ctx);
-			void sml_get_proc_active_devices(cyng::context& ctx);
-			void sml_get_proc_visible_devices(cyng::context& ctx);
-			void sml_get_proc_device_info(cyng::context& ctx);
-			void sml_get_proc_ipt_state(cyng::context& ctx);
-			void sml_get_proc_ipt_param(cyng::context& ctx);
-			void sml_get_proc_sensor_property(cyng::context& ctx);
-
-			void append_msg(cyng::tuple_t&&);
-
 		private:
 			cyng::async::base_task& base_;
 			bus::shared_type bus_;
 			cyng::logging::log_ptr logger_;
 			const master_config_t	config_;
 
-			//
-			//	hardware
-			//
-			const std::string manufacturer_;
-			const std::string model_;
-			const cyng::buffer_t server_id_;
 
 			std::size_t master_;	//!< IP-T master
 
@@ -141,15 +115,9 @@ namespace node
 			node::sml::parser 	parser_;
 
 			/**
-			 * read SML tree and generate commands
+			 * Provide core functions of an SML gateway
 			 */
-			node::sml::sml_reader reader_;
-
-			/**
-			 * buffer for current SML message
-			 */
-			std::vector<cyng::buffer_t>	sml_msg_;
-			std::uint8_t	group_no_;
+			node::sml::kernel core_;
 
 			/**
 			 * maintain relation between sequence and registered target

@@ -19,7 +19,10 @@ namespace node
 		session::session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, std::string const& account
-			, std::string const& pwd)
+			, std::string const& pwd
+			, std::string manufacturer
+			, std::string model
+			, cyng::mac48 mac)
 		: mux_(mux)
 			, logger_(logger)
 			, vm_(mux.get_io_service(), boost::uuids::random_generator()())
@@ -28,24 +31,13 @@ namespace node
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 				vm_.async_run(std::move(prg));
 			}, false)
-			, account_(account)
-			, pwd_(pwd)
-			, reader_()
+			, core_(logger_, vm_, true, account, pwd, manufacturer, model, mac)
 		{
 			//
 			//	register logger domain
 			//
 			cyng::register_logger(logger_, vm_);
 			vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
-
-			//	sml parser
-			vm_.register_function("sml.msg", 2, std::bind(&session::sml_msg, this, std::placeholders::_1));
-			vm_.register_function("sml.eom", 2, std::bind(&session::sml_eom, this, std::placeholders::_1));
-
-			//	sml reader
-			vm_.register_function("sml.public.open.request", 8, std::bind(&session::sml_public_open_request, this, std::placeholders::_1));
-			vm_.register_function("sml.public.close.request", 3, std::bind(&session::sml_public_close_request, this, std::placeholders::_1));
-			vm_.register_function("sml.get.proc.parameter.request", 8, std::bind(&session::sml_get_proc_parameter_request, this, std::placeholders::_1));
 		}
 
 		std::size_t session::hash() const noexcept
@@ -53,100 +45,15 @@ namespace node
 			return vm_.hash();
 		}
 
-
-		void session::sml_msg(cyng::context& ctx)
-		{
-			const cyng::vector_t frame = ctx.get_frame();
-
-			//
-			//	print sml message number
-			//
-			const std::size_t idx = cyng::value_cast<std::size_t>(frame.at(1), 0);
-			CYNG_LOG_INFO(logger_, "XML processor sml.msg #" << idx);
-
-			//
-			//	get message body
-			//
-			cyng::tuple_t msg;
-			msg = cyng::value_cast(frame.at(0), msg);
-			CYNG_LOG_INFO(logger_, "sml.msg " << cyng::io::to_str(frame));
-
-			//
-			//	add generated instruction vector
-			//
-			ctx.attach(reader_.read(msg, idx));
-		}
-
-
-		void session::sml_eom(cyng::context& ctx)
-		{
-			//	[5213,3]
-			//
-			//	* CRC
-			//	* message counter
-			//
-			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "sml.eom " << cyng::io::to_str(frame));
-
-			const std::size_t idx = cyng::value_cast<std::size_t>(frame.at(1), 0);
-
-			reader_.reset();
-		}
-
-		void session::sml_public_open_request(cyng::context& ctx)
-		{
-			//	[34481794-6866-4776-8789-6f914b4e34e7,180301091943374505-1,0,005056c00008,00:15:3b:02:23:b3,20180301092332,operator,operator]
-			//
-			//	* pk
-			//	* transaction id
-			//	* SML message id
-			//	* client ID - MAC from client
-			//	* server ID - target server/gateway
-			//	* request file id
-			//	* username
-			//	* password
-			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "sml.public.open.request " << cyng::io::to_str(frame));
-
-		}
-
-		void session::sml_public_close_request(cyng::context& ctx)
-		{
-			//	
-			//
-			//	* pk
-			//	* transaction id
-			//	* SML message id
-			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "sml.public.close.request " << cyng::io::to_str(frame));
-
-		}
-
-		void session::sml_get_proc_parameter_request(cyng::context& ctx)
-		{
-			//	[b5cfc8a0-0bf4-4afe-9598-ded99f71469c,180301094328243436-3,2,05:00:15:3b:02:23:b3,operator,operator,81 81 c7 82 01 ff,null]
-			//
-			//	* pk
-			//	* transaction id
-			//	* SML message id
-			//	* server ID
-			//	* username
-			//	* password
-			//	* OBIS (requested parameter)
-			//	* attribute (should be null)
-			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request " << cyng::io::to_str(frame));
-
-			//CODE_ROOT_DEVICE_IDENT
-
-		}
-
 		cyng::object make_session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, std::string const& account
-			, std::string const& pwd)
+			, std::string const& pwd
+			, std::string manufacturer
+			, std::string model
+			, cyng::mac48 mac)
 		{
-			return cyng::make_object<session>(mux, logger, account, pwd);
+			return cyng::make_object<session>(mux, logger, account, pwd, manufacturer, model, mac);
 		}
 
 	}

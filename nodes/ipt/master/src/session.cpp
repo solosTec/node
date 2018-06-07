@@ -71,6 +71,7 @@ namespace node
 
 			vm_.register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1));
 			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
+			vm_.register_function("client.req.reboot", 5, std::bind(&session::client_req_reboot, this, std::placeholders::_1));
 
 			//
 			//	register request handler
@@ -331,6 +332,24 @@ namespace node
 			>(frame);
 
 			connect_state_.connected_local_ = std::get<1>(tpl);
+		}
+
+		void session::client_req_reboot(cyng::context& ctx)
+		{
+			//	 [a661501f-d2bf-48ef-8d1c-898ef1614c3d,3,05000000000000,operator,operator]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "client.req.reboot " << cyng::io::to_str(frame));
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] remote tag
+				std::uint64_t,			//	[1] cluster seq
+				cyng::buffer_t,			//	[2] server id
+				std::string,			//	[3] name
+				std::string				//	[4] pwd
+			>(frame);
+
+			//
+			//	send 81 81 C7 83 82 01 
+			//
 		}
 
 		void session::ipt_req_login_public(cyng::context& ctx)

@@ -26,8 +26,24 @@ namespace node
 				//static_assert(false, "not a valid SML data type");
 			};
 
+			/**
+			 * Catch all <const T&>  
+			 */
 			template<typename T>
 			struct factory_policy<const T&>
+			{
+				using factory = factory_policy<T>;
+				static cyng::tuple_t create(T v)
+				{
+					return factory::create(v);
+				}
+			};
+
+			/**
+			 * Catch all <T&>  
+			 */
+			template<typename T>
+			struct factory_policy<T&>
 			{
 				using factory = factory_policy<T>;
 				static cyng::tuple_t create(T v)

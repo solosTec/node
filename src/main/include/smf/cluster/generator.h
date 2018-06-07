@@ -171,6 +171,9 @@ namespace node
 	cyng::vector_t client_req_close(boost::uuids::uuid tag, int);
 	cyng::vector_t client_res_close(boost::uuids::uuid tag, std::uint64_t seq, bool success);
 
+	cyng::vector_t client_req_reboot(boost::uuids::uuid tag, cyng::buffer_t const&, std::string const&, std::string const&);
+	//cyng::vector_t client_res_reboot(boost::uuids::uuid tag, std::uint64_t seq, bool success);
+
 	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
 		, std::string const& target
 		, std::string const& device

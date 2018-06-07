@@ -59,6 +59,7 @@ namespace node
 			bus_->vm_.register_function("client.res.login", 7, std::bind(&server::client_res_login, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.res.close", 3, std::bind(&server::client_res_close_impl, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.req.close", 4, std::bind(&server::client_req_close_impl, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.req.reboot", 6, std::bind(&server::client_req_reboot, this, std::placeholders::_1));
 
 			bus_->vm_.register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1));
@@ -509,6 +510,18 @@ namespace node
 				ctx.attach(cyng::generate_invoke("log.msg.error", "client.req.close - failed", frame));
 				ctx.attach(client_res_close(tag, seq, false));
 			}
+		}
+
+		void server::client_req_reboot(cyng::context& ctx)
+		{
+			//
+			//	Master requests to send a reboot sequence to a specific session.
+			//
+			//	[dca135f3-ff2b-4bf7-8371-a9904c74522b,4ef534ba-8ae3-4c83-92ef-2f978df104cb,25,05000000000011,operator,operator]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, "client.req.reboot " << cyng::io::to_str(frame));
+			propagate("client.req.reboot", ctx.get_frame());
+
 		}
 
 		void server::propagate(std::string fun, cyng::vector_t const& msg)

@@ -46,6 +46,8 @@ namespace node
 	void join_network(cyng::async::mux&
 		, cyng::logging::log_ptr
 		, cyng::vector_t const& cfg
+		, std::string account
+		, std::string pwd
 		, std::string manufacturer
 		, std::string model
 		, cyng::mac48);
@@ -183,6 +185,7 @@ namespace node
 				, cyng::param_factory("log-pushdata", false)	//	log file for each channel
 
 				//	on this address the gateway acts as a server
+				//	configuration interface
 				, cyng::param_factory("server", cyng::tuple_factory(
 					cyng::param_factory("address", "0.0.0.0"),
 					cyng::param_factory("service", "7259"),
@@ -191,6 +194,7 @@ namespace node
 					cyng::param_factory("pwd", "operator")
 				))
 
+				//	data interface
 				, cyng::param_factory("hardware", cyng::tuple_factory(
 					cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF)
 					cyng::param_factory("model", "virtual.gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
@@ -359,6 +363,8 @@ namespace node
 		//
 		cyng::vector_t tmp;
 		join_network(mux, logger, cyng::value_cast(dom.get("ipt"), tmp)
+			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
+			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
 			, manufacturer
 			, model
 			, r.first);
@@ -438,6 +444,8 @@ namespace node
 	void join_network(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, cyng::vector_t const& cfg
+		, std::string account
+		, std::string pwd
 		, std::string manufacturer
 		, std::string model
 		, cyng::mac48 mac)
@@ -448,6 +456,8 @@ namespace node
 			, std::chrono::seconds(1)
 			, logger
 			, ipt::load_cluster_cfg(cfg)
+			, account 
+			, pwd
 			, manufacturer
 			, model 
 			, mac);

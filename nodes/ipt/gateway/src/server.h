@@ -62,7 +62,7 @@ namespace node
 		//
 		const std::string manufacturer_;
 		const std::string model_;
-		const cyng::buffer_t server_id_;
+		const cyng::mac48 server_id_;
 
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor acceptor_;		

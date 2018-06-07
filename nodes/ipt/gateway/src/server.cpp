@@ -27,7 +27,7 @@ namespace node
 		, pwd_(pwd)
 		, manufacturer_(manufacturer)
 		, model_(model)
-		, server_id_(node::sml::to_gateway_srv_id(mac))
+		, server_id_(mac)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
 		, socket_(io_ctx_)
@@ -78,7 +78,10 @@ namespace node
 					, mux_
 					, logger_
 					, account_
-					, pwd_)->start();
+					, pwd_
+					, manufacturer_
+					, model_
+					, server_id_)->start();
 
 				do_accept();
 			}

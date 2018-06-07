@@ -93,15 +93,11 @@ namespace node
 				, "mbus"		//	(9) W-Mbus ID (i.e. A815408943050131)
 				, "userName"	//	(10)
 				, "userPwd"		//	(11)
-				//, "model"	//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
-				//, "vFirmware"	//	(5) firmwareversion (i.e. 11600000)
 			},
 			{ cyng::TC_UUID
 			, cyng::TC_STRING	//	server ID
 			, cyng::TC_STRING	//	manufacturer
-			//, cyng::TC_STRING - model
 			, cyng::TC_TIME_POINT
-			//, cyng::TC_STRING - firmware version
 			, cyng::TC_MAC48
 			, cyng::TC_MAC48
 			, cyng::TC_STRING
@@ -120,9 +116,7 @@ namespace node
 				, cyng::table::key_generator(tag)
 				, cyng::table::data_generator("0500153B02517E"
 					, "EMH"
-					//, "Variomuc ETHERNET"
 					, std::chrono::system_clock::now()
-					//, "11600000"
 					, "06441734"
 					, cyng::mac48(0, 1, 2, 3, 4, 5)
 					, cyng::mac48(0, 1, 2, 3, 4, 6)

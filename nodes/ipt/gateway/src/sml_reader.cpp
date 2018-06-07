@@ -1,10 +1,9 @@
 /*
-* Copyright Sylko Olzscher 2016
-*
-* Use, modification, and distribution is subject to the Boost Software
-* License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
-* http://www.boost.org/LICENSE_1_0.txt)
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #include "sml_reader.h"
 #include <smf/sml/obis_db.h>

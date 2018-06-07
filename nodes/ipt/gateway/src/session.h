@@ -10,6 +10,7 @@
 
 #include <smf/sml/protocol/parser.h>
 #include "sml_reader.h"
+#include "kernel.h"
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
@@ -26,7 +27,10 @@ namespace node
 			session(cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
 				, std::string const& account
-				, std::string const& pwd);
+				, std::string const& pwd
+				, std::string manufacturer
+				, std::string model
+				, cyng::mac48 mac);
 
 			session(session const&) = delete;
 			session& operator=(session const&) = delete;
@@ -37,18 +41,9 @@ namespace node
 			std::size_t hash() const noexcept;
 
 		private:
-			void sml_msg(cyng::context& ctx);
-			void sml_eom(cyng::context& ctx);
-			void sml_public_open_request(cyng::context& ctx);
-			void sml_public_close_request(cyng::context& ctx);
-			void sml_get_proc_parameter_request(cyng::context& ctx);
-
-		private:
 			cyng::async::mux& mux_;
 			cyng::logging::log_ptr logger_;
 			cyng::controller vm_;
-			const std::string account_;
-			const std::string pwd_;
 
 			/**
 			 * SML parser
@@ -56,15 +51,18 @@ namespace node
 			parser 	parser_;
 
 			/**
-			 * read SML tree and generate commands
+			 * Provide core functions of an SML gateway
 			 */
-			sml_reader reader_;
+			node::sml::kernel core_;
 		};
 
 		cyng::object make_session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, std::string const& account
-			, std::string const& pwd);
+			, std::string const& pwd
+			, std::string manufacturer
+			, std::string model
+			, cyng::mac48 mac);
 
 	}
 }

@@ -23,11 +23,14 @@ namespace node
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, std::string const& account
-			, std::string const& pwd)
+			, std::string const& pwd
+			, std::string manufacturer
+			, std::string model
+			, cyng::mac48 mac)
 		: socket_(std::move(socket))
 			, logger_(logger)
 			, buffer_()
-			, session_(make_session(mux, logger, account, pwd))
+			, session_(make_session(mux, logger, account, pwd, manufacturer, model, mac))
 			, serializer_(socket_, this->get_session()->vm_)
 		{
 			//
@@ -88,7 +91,7 @@ namespace node
 					get_session()->parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
 					do_read();
 				}
-				else //if (ec != boost::asio::error::operation_aborted)
+				else if (ec != boost::asio::error::operation_aborted)
 				{
 					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
 
@@ -96,6 +99,15 @@ namespace node
 					//	session cleanup - hold a reference of the session
 					//
 					get_session()->vm_.async_run(cyng::generate_invoke("session.cleanup", cyng::invoke("push.session"), ec));
+				}
+				else
+				{
+					//
+					//	The session was closed intentionally.
+					//	At this point nothing more is to do. Service is going down and all session have to be stopped fast.
+					//
+					CYNG_LOG_WARNING(logger_, "ipt connection closed intentionally: " << ec << ':' << ec.value() << ':' << ec.message() << '>');
+
 				}
 			});
 		}

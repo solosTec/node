@@ -21,6 +21,7 @@
 #include <cyng/tuple_cast.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/async/task/task_builder.hpp>
+#include <cyng/parser/buffer_parser.h>
 
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -522,7 +523,7 @@ namespace node
 
 		//	stop a client session
 		//
-		db_.access([&](cyng::store::table* tbl_session)->void {
+		db_.access([&](const cyng::store::table* tbl_session)->void {
 			cyng::table::record rec = tbl_session->lookup(std::get<1>(tpl));
 			if (!rec.empty())
 			{
@@ -542,7 +543,7 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "bus.req.stop.client not found " << cyng::io::to_str(frame));
 
 			}
-		}, cyng::store::write_access("*Session"));
+		}, cyng::store::read_access("*Session"));
 	}
 
 	void session::bus_req_reboot_client(cyng::context& ctx)
@@ -550,7 +551,8 @@ namespace node
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_INFO(logger_, "bus.req.reboot.client " << cyng::io::to_str(frame));
 
-		//	[2,[1ca8529b-9b95-4a3a-ba2f-26c7280aa878],ac70b95e-76b9-463a-a961-bb02f70e86c8]
+		//	bus.req.reboot.client not found 
+		//	[1,[dca135f3-ff2b-4bf7-8371-a9904c74522b],430681d9-a735-47be-a26c-c9cac94d6729]
 		//
 		//	* bus sequence
 		//	* session key
@@ -564,19 +566,49 @@ namespace node
 
 		//	reboot a gateway (client)
 		//
-		db_.access([&](cyng::store::table* tbl_session)->void {
-			cyng::table::record rec = tbl_session->lookup(std::get<1>(tpl));
-			if (!rec.empty())
+		db_.access([&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
+
+			BOOST_ASSERT(!std::get<1>(tpl).empty());
+
+			auto rec_gw = tbl_gw->lookup(std::get<1>(tpl));
+			auto rec_session = tbl_session->find_first(cyng::param_t("device", std::get<1>(tpl).at(0)));
+			if (!rec_gw.empty() && !rec_session.empty())
 			{
-				auto peer = cyng::object_cast<session>(rec["local"]);
+				auto peer = cyng::object_cast<session>(rec_session["local"]);
 				BOOST_ASSERT(peer->vm_.tag() != ctx.tag());
 				if (peer && (peer->vm_.tag() != ctx.tag()) && (std::get<1>(tpl).size() == 1))
 				{
 					//
 					//	node will send a client reboot response
 					//
-					auto tag = cyng::value_cast(std::get<1>(tpl).at(0), boost::uuids::nil_uuid());
-					//peer->vm_.async_run(node::client_req_close(tag, 0));
+					auto tag = cyng::value_cast(rec_session.key().at(0), boost::uuids::nil_uuid());
+
+					//
+					//	get login parameters
+					//
+					const auto server = cyng::value_cast<std::string>(rec_gw["id"], "05000000000000");
+					const auto name = cyng::value_cast<std::string>(rec_gw["userName"], "");
+					const auto pwd = cyng::value_cast<std::string>(rec_gw["userPwd"], "");
+
+					const auto id = cyng::parse_hex_string(server);
+					if (id.second)
+					{
+						CYNG_LOG_INFO(logger_, "bus.req.reboot.client "
+							<< cyng::io::to_str(rec_session["name"])
+							<< ", server: "
+							<< server
+							<< ", name: "
+							<< name
+							<< ", pwd: "
+							<< pwd);
+
+						peer->vm_.async_run(node::client_req_reboot(tag, id.first, name, pwd));
+					}
+					else
+					{
+						CYNG_LOG_WARNING(logger_, "bus.req.reboot.client - invalid server id: "
+							<< server);
+					}
 				}
 			}
 			else
@@ -584,7 +616,8 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "bus.req.reboot.client not found " << cyng::io::to_str(frame));
 
 			}
-		}, cyng::store::write_access("*Session"));
+		}	, cyng::store::read_access("*Session")
+			, cyng::store::read_access("TGateway"));
 	}
 
 	void session::bus_start_watchdog(cyng::context& ctx)

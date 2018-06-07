@@ -60,6 +60,7 @@ namespace node
 			void client_res_login(cyng::context&);
 			void client_res_close_impl(cyng::context&);
 			void client_req_close_impl(cyng::context&);
+			void client_req_reboot(cyng::context&);
 			void client_res_open_push_channel(cyng::context&);
 			void client_res_register_push_target(cyng::context&);
 			void client_res_deregister_push_target(cyng::context& ctx);

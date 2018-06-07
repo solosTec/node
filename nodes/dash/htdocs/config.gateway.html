@@ -328,7 +328,6 @@
                         tag: [key]
                     }
                 }));
-                //$('#smf-form-gw-delete').addClass('disabled');
             });
 
             $('#smf-form-gw-update').on("click", function (event) {
@@ -339,10 +338,10 @@
                     cmd: "modify", channel: "config.gateway", rec: {
                         key: [$('#smf-form-gw-tag').val()],
                         data: {
-                            'id': $('#smf-form-gw-server').val(),
-                            'manufacturer': $('#smf-form-gw-manufacturer').val(),
-                            'userName': $('#smf-form-gw-user').val(),
-                            'userPwd': $('#smf-form-gw-pwd').val()
+                            id: $('#smf-form-gw-server').val(),
+                            manufacturer: $('#smf-form-gw-manufacturer').val(),
+                            userName: $('#smf-form-gw-user').val(),
+                            userPwd: $('#smf-form-gw-pwd').val()
                         }
                     }
                 }));

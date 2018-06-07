@@ -387,9 +387,9 @@ namespace node
 
             if (ws_.is_open())
 			{
-			    CYNG_LOG_TRACE(logger_, "ws.send.json... - " << msg);
+			    CYNG_LOG_TRACE(logger_, "ws.send.json: " << msg);
 			    ws_.write(boost::asio::buffer(msg));
-			    CYNG_LOG_TRACE(logger_, "...ws.send.json");
+			    //CYNG_LOG_TRACE(logger_, "...ws.send.json");
 				return true;
 			}
 		    CYNG_LOG_WARNING(logger_, "ws.send.json - closed " << msg);

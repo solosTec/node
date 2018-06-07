@@ -34,7 +34,10 @@ namespace node
 				, cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
 				, std::string const& account
-				, std::string const& pwd);
+				, std::string const& pwd
+				, std::string manufacturer
+				, std::string model
+				, cyng::mac48 mac);
 
 			/**
 			 * Start the first asynchronous operation for the connection.
