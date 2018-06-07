@@ -71,11 +71,11 @@
                 </li>
 
             </ul>
-            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey" /></svg></span>
             <span id="ws-activity-text" class="navbar-text">
                 connection state
             </span>
-
+            <span>&nbsp;</span>
+            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="10" stroke="red" stroke-width="0" fill="grey" /></svg></span>
         </div>
     </nav>
 
@@ -169,8 +169,7 @@
             };
 
             connection.onmessage = function (e) {
-                $('#ws-activity-symbol').show();
-                console.log('incoming data: ' + e.data);
+                //console.log('incoming data: ' + e.data);
                 //  {"cmd": "insert", "channel": "config.system", "rec": {"key": {"name":"connection-auto-login"}, "data": {"value":false}, "gen": 1}}
                 totalIO += e.data.length;
                 var obj = JSON.parse(e.data);
@@ -221,9 +220,18 @@
                     }
                     else if (obj.cmd == 'clear') {
                     }
+                    else if (obj.cmd == 'load') {
+                        if (obj.show != null && obj.show) {
+                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });
+                            $('#ws-activity-symbol').show();
+                        }
+                        else {
+                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
+                            $('#ws-activity-symbol').fadeOut();
+                        }
+                    }
                 }
                 $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
-                $('#ws-activity-symbol').fadeOut();
             };
         });
 
@@ -274,11 +282,9 @@
 
     <script>
             const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
             function format_bytes(x) {
 
                 let l = 0, n = parseInt(x, 10) || 0;
-
                 while (n >= 1024 && ++l) {
                     n = n / 1024;
                 }

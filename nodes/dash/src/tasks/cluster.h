@@ -20,6 +20,10 @@
 
 namespace node
 {
+	/**
+	 * 15.859 kB
+	 * 15.792 kB
+	 */
 	class cluster
 	{
 	public:
@@ -79,20 +83,13 @@ namespace node
 		void update_sys_mem_virtual_total(std::string const&, http::websocket_session* wss);
 		void update_sys_mem_virtual_used(std::string const&, http::websocket_session* wss);
 
-		void subscribe_devices(std::string const&, boost::uuids::uuid);
-		void subscribe_gateways(std::string const&, boost::uuids::uuid);
-		void subscribe_sessions(std::string const&, boost::uuids::uuid);
-		void subscribe_system(std::string const&, boost::uuids::uuid);
-		void subscribe_targets(std::string const&, boost::uuids::uuid);
-		void subscribe_connections(std::string const&, boost::uuids::uuid);
-		void subscribe_cluster(std::string const&, boost::uuids::uuid);
+		void subscribe(std::string table, std::string const&, boost::uuids::uuid);
 		void subscribe_table_device_count(std::string const&, boost::uuids::uuid);
 		void subscribe_table_gateway_count(std::string const&, boost::uuids::uuid);
 		void subscribe_table_meter_count(std::string const&, boost::uuids::uuid);
 		void subscribe_table_session_count(std::string const&, boost::uuids::uuid);
 		void subscribe_table_target_count(std::string const&, boost::uuids::uuid);
 		void subscribe_table_connection_count(std::string const&, boost::uuids::uuid);
-		void subscribe_monitor_msg(std::string const&, boost::uuids::uuid);
 
 		void update_channel(std::string const&, std::size_t);
 
@@ -114,6 +111,8 @@ namespace node
 
 		void read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc);
 		void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc);
+
+		void display_loading_icon(boost::uuids::uuid tag, bool, std::string const&);
 
 	private:
 		cyng::async::base_task& base_;

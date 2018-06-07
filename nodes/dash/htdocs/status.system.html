@@ -54,7 +54,7 @@
                         <a class="dropdown-item" href="status.session.html">Sessions</a>
                         <a class="dropdown-item" href="status.targets.html">Targets</a>
                         <a class="dropdown-item" href="status.connections.html">Connections</a>
-<!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
+                        <!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
                     </div>
                 </li>
 
@@ -69,11 +69,11 @@
                 </li>
 
             </ul>
-            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey"></circle></svg></span>
             <span id="ws-activity-text" class="navbar-text">
                 connection state
             </span>
-
+            <span>&nbsp;</span>
+            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="10" stroke="red" stroke-width="0" fill="grey" /></svg></span>
         </div>
     </nav>
 
@@ -226,7 +226,12 @@
             connection.onclose = function (event) {
                 $('#ws-activity-symbol').show();
                 $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
-                $('#ws-activity-text').html('error ' + event.code);
+                if (event.code == 1006) {
+                    $('#ws-activity-text').html('connection lost - press reload');
+                }
+                else {
+                    $('#ws-activity-text').html('error ' + event.code);
+                }
                 clearTimeout(sysTimer);
             };
 
@@ -236,11 +241,8 @@
             };
 
             connection.onmessage = function (e) {
-                $('#ws-activity-symbol').show();
-                console.log('socket data: ' + e.data);
-                //console.log(Object.keys(e.data).length + ' bytes');
+                //console.log('socket data: ' + e.data);
                 totalIO += e.data.length;
-                //totalIO += Object.keys(e.data).length;
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
                     if (obj.cmd == 'update') {
@@ -309,10 +311,18 @@
                     else if (obj.cmd == 'clear') {
                         table_cluster.clear().draw(false);
                     }
-              }
-                $('#ws-activity-text').html(e.data.length + ' bytes received');
-                //$('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
-                $('#ws-activity-symbol').fadeOut();
+                    else if (obj.cmd == 'load') {
+                        if (obj.show != null && obj.show) {
+                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });
+                            $('#ws-activity-symbol').show();
+                        }
+                        else {
+                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
+                            $('#ws-activity-symbol').fadeOut();
+                        }
+                    }
+                }
+                $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
             };
 
             function startSysTimer() {
@@ -358,11 +368,9 @@
 
     <script>
         const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
         function format_bytes(x) {
 
             let l = 0, n = parseInt(x, 10) || 0;
-
             while (n >= 1024 && ++l) {
                 n = n / 1024;
             }

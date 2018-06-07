@@ -990,31 +990,31 @@ namespace node
 
 			if (boost::algorithm::starts_with(channel, "config.device"))
 			{
-				subscribe_devices(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+				subscribe("TDevice", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
 			else if (boost::algorithm::starts_with(channel, "config.gateway"))
 			{
-				subscribe_gateways(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+				subscribe("TGateway", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
 			else if (boost::algorithm::starts_with(channel, "config.system"))
 			{
-				subscribe_system(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+				subscribe("*Config", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
 			else if (boost::algorithm::starts_with(channel, "status.session"))
 			{
-				subscribe_sessions(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+				subscribe("*Session", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
 			else if (boost::algorithm::starts_with(channel, "status.target"))
 			{
-				subscribe_targets(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+				subscribe("*Target", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
 			else if (boost::algorithm::starts_with(channel, "status.connection"))
 			{
-				subscribe_connections(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+				subscribe("*Connection", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
 			else if (boost::algorithm::starts_with(channel, "status.cluster"))
 			{
-				subscribe_cluster(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+				subscribe("*Cluster", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
 			else if (boost::algorithm::starts_with(channel, "table.device.count"))
 			{
@@ -1042,7 +1042,8 @@ namespace node
 			}
 			else if (boost::algorithm::starts_with(channel, "monitor.msg"))
 			{
-				subscribe_monitor_msg(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+				subscribe("*SysMsg", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+				//subscribe_monitor_msg(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}		
 			else
 			{
@@ -1387,104 +1388,22 @@ namespace node
 		if (wss)	wss->send_msg(msg);
 	}
 
-	void cluster::subscribe_devices(std::string const& channel, boost::uuids::uuid tag)
+	void cluster::subscribe(std::string table, std::string const& channel, boost::uuids::uuid tag)
 	{
+		//
+		//	install channel
+		//
 		server_.add_channel(tag, channel);
 
 		//
 		//	send initial data set of device table
 		//
 		cache_.access([&](cyng::store::table const* tbl) {
+
+			display_loading_icon(tag, true, channel);
 			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
 
-				CYNG_LOG_TRACE(logger_, "ws.read - insert device " << cyng::io::to_str(rec.key()));
-
-				auto tpl = cyng::tuple_factory(
-					cyng::param_factory("cmd", std::string("insert")),
-					cyng::param_factory("channel", channel),
-					cyng::param_factory("rec", rec.convert()));
-
-				auto msg = cyng::json::to_string(tpl);
-				server_.send_msg(tag, msg);
-
-				//	continue
-				return true;
-			});
-            BOOST_ASSERT(counter == 0);
-			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
-
-		}, cyng::store::read_access("TDevice"));
-	}
-
-	void cluster::subscribe_gateways(std::string const& channel, boost::uuids::uuid tag)
-	{
-		server_.add_channel(tag, channel);
-
-		//
-		//	send initial data set of gateway table
-		//
-		cache_.access([&](cyng::store::table const* tbl) {
-			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
-
-				CYNG_LOG_TRACE(logger_, "ws.read - insert gateway " << cyng::io::to_str(rec.key()));
-
-				auto tpl = cyng::tuple_factory(
-					cyng::param_factory("cmd", std::string("insert")),
-					cyng::param_factory("channel", channel),
-					cyng::param_factory("rec", rec.convert()));
-
-				auto msg = cyng::json::to_string(tpl);
-				server_.send_msg(tag, msg);
-
-				//	continue
-				return true;
-			});
-            BOOST_ASSERT(counter == 0);
-			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
-
-		}	, cyng::store::read_access("TGateway"));
-	}
-
-	void cluster::subscribe_sessions(std::string const& channel, boost::uuids::uuid tag)
-	{
-		server_.add_channel(tag, channel);
-
-		//
-		//	send initial data set of session table
-		//
-		cache_.access([&](cyng::store::table const* tbl) {
-			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
-
-				CYNG_LOG_TRACE(logger_, "ws.read - insert session " << cyng::io::to_str(rec.key()));
-
-				auto tpl = cyng::tuple_factory(
-					cyng::param_factory("cmd", std::string("insert")),
-					cyng::param_factory("channel", channel),
-					cyng::param_factory("rec", rec.convert()));
-
-				auto msg = cyng::json::to_string(tpl);
-				server_.send_msg(tag, msg);
-
-				//	continue
-				return true;
-			});
-            BOOST_ASSERT(counter == 0);
-			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
-
-		}, cyng::store::read_access("*Session"));
-	}
-
-	void cluster::subscribe_system(std::string const& channel, boost::uuids::uuid tag)
-	{
-		server_.add_channel(tag, channel);
-
-		//
-		//	send initial data set of *Config table
-		//
-		cache_.access([&](cyng::store::table const* tbl) {
-			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
-
-				CYNG_LOG_TRACE(logger_, "ws.read - insert session " << cyng::io::to_str(rec.key()));
+				CYNG_LOG_TRACE(logger_, "ws.read - insert " << table << cyng::io::to_str(rec.key()));
 
 				auto tpl = cyng::tuple_factory(
 					cyng::param_factory("cmd", std::string("insert")),
@@ -1500,95 +1419,16 @@ namespace node
 			BOOST_ASSERT(counter == 0);
 			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
 
-		}, cyng::store::read_access("*Config"));
-
+			display_loading_icon(tag, false, channel);
+		}, cyng::store::read_access(table));
 	}
 
-	void cluster::subscribe_targets(std::string const& channel, boost::uuids::uuid tag)
+	void cluster::display_loading_icon(boost::uuids::uuid tag, bool b, std::string const& channel)
 	{
-		server_.add_channel(tag, channel);
-
-		//
-		//	send initial data set of target table
-		//
-		cache_.access([&](cyng::store::table const* tbl) {
-			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
-
-				CYNG_LOG_TRACE(logger_, "ws.read - insert target " << cyng::io::to_str(rec.key()));
-
-				auto tpl = cyng::tuple_factory(
-					cyng::param_factory("cmd", std::string("insert")),
-					cyng::param_factory("channel", channel),
-					cyng::param_factory("rec", rec.convert()));
-
-				auto msg = cyng::json::to_string(tpl);
-				server_.send_msg(tag, msg);
-
-				//	continue
-				return true;
-			});
-            BOOST_ASSERT(counter == 0);
-			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
-
-		}, cyng::store::read_access("*Target"));
-	}
-
-	void cluster::subscribe_connections(std::string const& channel, boost::uuids::uuid tag)
-	{
-		server_.add_channel(tag, channel);
-
-		//
-		//	send initial data set of connection table
-		//
-		cache_.access([&](cyng::store::table const* tbl) {
-			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
-
-				CYNG_LOG_TRACE(logger_, "ws.read - insert connection " << cyng::io::to_str(rec.key()));
-
-				auto tpl = cyng::tuple_factory(
-					cyng::param_factory("cmd", std::string("insert")),
-					cyng::param_factory("channel", channel),
-					cyng::param_factory("rec", rec.convert()));
-
-				auto msg = cyng::json::to_string(tpl);
-				server_.send_msg(tag, msg);
-
-				//	continue
-				return true;
-			});
-			BOOST_ASSERT(counter == 0);
-			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
-
-		}, cyng::store::read_access("*Connection"));
-	}
-
-	void cluster::subscribe_cluster(std::string const& channel, boost::uuids::uuid tag)
-	{
-		server_.add_channel(tag, channel);
-
-		//
-		//	send initial data set of cluster table
-		//
-		cache_.access([&](cyng::store::table const* tbl) {
-			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
-
-				CYNG_LOG_TRACE(logger_, "ws.read - insert node " << cyng::io::to_str(rec.key()));
-
-				auto tpl = cyng::tuple_factory(
-					cyng::param_factory("cmd", std::string("insert")),
-					cyng::param_factory("channel", channel),
-					cyng::param_factory("rec", rec.convert()));
-
-				auto msg = cyng::json::to_string(tpl);
-				server_.send_msg(tag, msg);
-
-				//	continue
-				return true;
-			});
-			BOOST_ASSERT(counter == 0);
-			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
-
-		}, cyng::store::read_access("*Cluster"));
+		server_.send_msg(tag
+			, cyng::json::to_string(cyng::tuple_factory(cyng::param_factory("cmd", std::string("load"))
+				, cyng::param_factory("channel", channel)
+				, cyng::param_factory("show", b))));
 	}
 
 	void cluster::subscribe_table_device_count(std::string const& channel, boost::uuids::uuid tag)
@@ -1631,35 +1471,6 @@ namespace node
 		server_.add_channel(tag, channel);
 		const auto size = cache_.size("*Connection");
 		update_channel(channel, size);
-	}
-
-	void cluster::subscribe_monitor_msg(std::string const& channel, boost::uuids::uuid tag)
-	{
-		server_.add_channel(tag, channel);
-
-		//
-		//	send initial data set of SysMsg table
-		//
-		cache_.access([&](cyng::store::table const* tbl) {
-			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
-
-				CYNG_LOG_TRACE(logger_, "ws.read - insert msg " << cyng::io::to_str(rec.key()));
-
-				auto tpl = cyng::tuple_factory(
-					cyng::param_factory("cmd", std::string("insert")),
-					cyng::param_factory("channel", channel),
-					cyng::param_factory("rec", rec.convert()));
-
-				auto msg = cyng::json::to_string(tpl);
-				server_.send_msg(tag, msg);
-
-				//	continue
-				return true;
-			});
-			BOOST_ASSERT(counter == 0);
-			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
-
-		}, cyng::store::read_access("*SysMsg"));
 	}
 
 	void cluster::update_channel(std::string const& channel, std::size_t size)

@@ -159,7 +159,6 @@ namespace node
 			//	variation with const and & individually.
 			//
 
-
 			//using type = typename std::decay<T>::type;
 			//return detail::factory_policy<type>::create(std::forward<T>(v));
 			return detail::factory_policy<T>::create(std::forward<T>(v));

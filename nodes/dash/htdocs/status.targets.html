@@ -54,7 +54,7 @@
                         <a class="dropdown-item" href="status.session.html">Sessions</a>
                         <a class="dropdown-item active" href="status.targets.html">Targets</a>
                         <a class="dropdown-item" href="status.connections.html">Connections</a>
-<!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
+                        <!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
                     </div>
                 </li>
 
@@ -69,11 +69,11 @@
                 </li>
 
             </ul>
-            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey" /></svg></span>
             <span id="ws-activity-text" class="navbar-text">
                 connection state
             </span>
-
+            <span>&nbsp;</span>
+            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="10" stroke="red" stroke-width="0" fill="grey" /></svg></span>
         </div>
     </nav>
     <div class="jumbotron jumbotron-fluid">
@@ -166,7 +166,12 @@
             connection.onclose = function (event) {
                 $('#ws-activity-symbol').show();
                 $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
-                $('#ws-activity-text').html('error ' + event.code);
+                if (event.code == 1006) {
+                    $('#ws-activity-text').html('connection lost - press reload');
+                }
+                else {
+                    $('#ws-activity-text').html('error ' + event.code);
+                }
             };
 
             connection.onerror = function (error) {
@@ -174,13 +179,9 @@
                 $('#ws-activity-text').html('ws error');
             };
 
-            //  {"cmd": "insert", "channel": "status.target", "rec": {"key": {"channel":581869302}, "data": {"account":"data-store","device":"eaec7649-80d5-4b71-8450-3ee2c7ef4917","name":"LSM_Status","pSize":"65535","peer":"702bd512-32ba-4eef-acd8-ce3b7442a991","px":0,"regTime":"2018-03-16 14:00:09.53312660","tag":"1567cd24-4196-4fb5-a68b-137bf142f3b2","wSize":1}, "gen": 1}}
             connection.onmessage = function (e) {
-                $('#ws-activity-symbol').show();
-                console.log('incoming data: ' + e.data);
-                //console.log(Object.keys(e.data).length + ' bytes');
+                //console.log('incoming data: ' + e.data);
                 totalIO += e.data.length;
-                //totalIO += Object.keys(e.data).length;
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
                     if (obj.cmd == 'insert') {
@@ -215,10 +216,18 @@
                     else if (obj.cmd == 'clear') {
                         table_target.clear().draw(false);
                     }
-               }
-                $('#ws-activity-text').html(e.data.length + ' bytes received');
-                //$('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
-                $('#ws-activity-symbol').fadeOut();
+                    else if (obj.cmd == 'load') {
+                        if (obj.show != null && obj.show) {
+                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });
+                            $('#ws-activity-symbol').show();
+                        }
+                        else {
+                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
+                            $('#ws-activity-symbol').fadeOut();
+                        }
+                    }
+                }
+                $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
             };
 
         });
@@ -231,7 +240,6 @@
         function format_bytes(x) {
 
             let l = 0, n = parseInt(x, 10) || 0;
-
             while (n >= 1024 && ++l) {
                 n = n / 1024;
             }

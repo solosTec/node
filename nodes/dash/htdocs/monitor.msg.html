@@ -64,7 +64,7 @@
                         <a class="dropdown-item" href="status.session.html">Sessions</a>
                         <a class="dropdown-item" href="status.targets.html">Targets</a>
                         <a class="dropdown-item" href="status.connections.html">Connections</a>
-<!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
+                        <!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
                     </div>
                 </li>
 
@@ -79,11 +79,11 @@
                 </li>
 
             </ul>
-            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey" /></svg></span>
             <span id="ws-activity-text" class="navbar-text">
                 connection state
             </span>
-
+            <span>&nbsp;</span>
+            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="10" stroke="red" stroke-width="0" fill="grey" /></svg></span>
         </div>
     </nav>
     <div class="jumbotron jumbotron-fluid">
@@ -112,7 +112,7 @@
 
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
-    <script type="text/javascript" src="popper.min.js"></script>
+    <!--<script type="text/javascript" src="popper.min.js"></script>-->
 
     <script>
 
@@ -179,7 +179,12 @@
             connection.onclose = function (event) {
                 $('#ws-activity-symbol').show();
                 $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
-                $('#ws-activity-text').html('error ' + event.code);
+                if (event.code == 1006) {
+                    $('#ws-activity-text').html('connection lost - press reload');
+                }
+                else {
+                    $('#ws-activity-text').html('error ' + event.code);
+                }
             };
 
             connection.onerror = function (error) {
@@ -189,8 +194,8 @@
 
             //  {"cmd": "insert", "channel": "monitor.msg", "rec": {"key": {"id":0}, "data": {"msg":"startup","severity":3,"ts":"2018-03-20 18:05:24.71590930"}, "gen": 1}}
             connection.onmessage = function (e) {
-                $('#ws-activity-symbol').show();
-                console.log('incoming data: ' + e.data);
+                //console.log('incoming data: ' + e.data);
+                totalIO += e.data.length;
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
                     if (obj.cmd == 'insert') {
@@ -213,13 +218,33 @@
                     else if (obj.cmd == 'clear') {
                         table_msg.clear().draw(false);
                     }
-               }
-                $('#ws-activity-text').html('data received');
-                //$('#ws-activity-text').html(Object.keys(e.data).length + ' bytes received');
-                $('#ws-activity-symbol').fadeOut();
-
+                    else if (obj.cmd == 'load') {
+                        if (obj.show != null && obj.show) {
+                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });
+                            $('#ws-activity-symbol').show();
+                        }
+                        else {
+                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
+                            $('#ws-activity-symbol').fadeOut();
+                        }
+                    }
+                }
+                $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
             };
         });
+    </script>
+    <script>
+            const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            function format_bytes(x) {
+
+                let l = 0, n = parseInt(x, 10) || 0;
+                while (n >= 1024 && ++l) {
+                    n = n / 1024;
+                }
+
+                if (n == 0) return '-';
+                return (n.toFixed(l < 1 ? 0 : 1) + ' ' + units[l]);
+            }
     </script>
 
 </body>
