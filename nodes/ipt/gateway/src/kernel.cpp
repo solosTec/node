@@ -6,9 +6,9 @@
  */
 
 #include "kernel.h"
-#include <NODE_project_info.h>
-#include <smf/sml/crc16.h>
-#include <smf/sml/protocol/serializer.h>
+//#include <NODE_project_info.h>
+//#include <smf/sml/crc16.h>
+//#include <smf/sml/protocol/serializer.h>
 #include <smf/sml/protocol/message.h>
 #include <smf/sml/protocol/value.hpp>
 #include <smf/sml/obis_db.h>
@@ -44,8 +44,9 @@ namespace node
 			, server_id_(to_gateway_srv_id(mac))
 			, reader_()
 			, status_(0x070202)
-			, msg_()
-			, group_no_(0)
+			, sml_gen_()
+			//, msg_()
+			//, group_no_(0)
 		{
 			reset();
 
@@ -88,27 +89,8 @@ namespace node
 			//
 			//	reset reader
 			//
-			msg_.clear();
-			group_no_ = 0;
+			sml_gen_.reset();
 			reader_.reset();
-		}
-
-		void kernel::append_msg(cyng::tuple_t&& msg)
-		{
-#ifdef SMF_IO_DEBUG
-			CYNG_LOG_TRACE(logger_, "msg: " << cyng::io::to_str(msg));
-#endif
-
-			//
-			//	linearize and set CRC16
-			//
-			cyng::buffer_t b = linearize(msg);
-			sml_set_crc16(b);
-
-			//
-			//	append to current SML message
-			//
-			msg_.push_back(b);
 		}
 
 		void kernel::sml_msg(cyng::context& ctx)
@@ -151,7 +133,8 @@ namespace node
 			//
 			//	build SML message frame
 			//
-			cyng::buffer_t buf = boxing(msg_);
+			//cyng::buffer_t buf = boxing(msg_);
+			cyng::buffer_t buf = sml_gen_.boxing();;
 
 #ifdef SMF_IO_DEBUG
 			cyng::io::hex_dump hd;
@@ -224,29 +207,16 @@ namespace node
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			BOOST_ASSERT_MSG(msg_.empty(), "pending SML data");
-			append_msg(message(frame.at(1)
-				, 0	//	group
-				, 0 // abort code
-				, BODY_OPEN_RESPONSE
-
-				//
-				//	generate public open response
-				//
-				, open_response(cyng::make_object()	// codepage
-					, frame.at(3)	//	client id
-					, frame.at(5)	//	req file id
-					, frame.at(4)	//	server id
-					, cyng::make_object()	//	 ref time
-					, cyng::make_object())));
-
-#ifdef SMF_IO_DEBUG
-			//cyng::io::hex_dump hd;
-			//std::stringstream ss;
-			//hd(ss, b.begin(), b.end());
-			//CYNG_LOG_TRACE(logger_, "response:\n" << ss.str());
-#endif
-
+			//BOOST_ASSERT_MSG(msg_.empty(), "pending SML data");
+			sml_gen_.public_open(frame.at(1)	// trx
+				, frame.at(3)	//	client id
+				, frame.at(5)	//	req file id
+				, frame.at(4));
+			//append_msg(res_generator::public_open(frame.at(1)	// trx
+			//	, frame.at(3)	//	client id
+			//	, frame.at(5)	//	req file id
+			//	, frame.at(4)	//	server id
+			//));
 		}
 
 		void kernel::sml_public_close_request(cyng::context& ctx)
@@ -276,15 +246,7 @@ namespace node
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			append_msg(message(frame.at(1)
-				, 0	//	group
-				, 0 //	abort code
-				, BODY_CLOSE_RESPONSE
-
-				//
-				//	generate public open response
-				//
-				, close_response(cyng::make_object())));
+			sml_gen_.public_close(frame.at(1));
 		}
 
 		void kernel::sml_get_proc_parameter_request(cyng::context& ctx)
@@ -383,17 +345,9 @@ namespace node
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id
-					, obis(0x81, 0x00, 0x60, 0x05, 0x00, 0x00)	//	path entry
-					, parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(status_)))));
+			sml_gen_.get_proc_parameter_status_word(frame.at(1)
+				, frame.at(3)
+				, status_);
 
 		}
 
@@ -411,53 +365,12 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "sml.get.proc.device.id " << cyng::io::to_str(frame));
 
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id
-					, obis(0x81, 0x81, 0xC7, 0x82, 0x01, 0xFF)	//	path entry
-
-					//
-					//	generate get process parameter response
-					//	const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 01, FF, CODE_ROOT_DEVICE_IDENT);	
-					//	see: 7.3.2.9 Datenstruktur zur Abfrage der Geräte-Identifikation) 
-					//
-					, child_list_tree(OBIS_CODE_ROOT_DEVICE_IDENT, {
-
-						//	device class (81 81 C7 82 53 FF == MUC-LAN/DSL)
-						parameter_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x02, 0xff), make_value(obis(0x81, 0x81, 0xC7, 0x82, 0x53, 0xFF))),
-						parameter_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x03, 0xff), make_value(manufacturer_)),	// manufacturer
-						parameter_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x04, 0xff), make_value(server_id_)),	// server id
-
-						//	firmware
-						child_list_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x06, 0xff), {
-							//	section 1
-							child_list_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x07, 0x01), {
-									parameter_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x08, 0xff), make_value("CURRENT_VERSION")),
-									parameter_tree(obis(0x81, 0x81, 0x00, 0x02, 0x00, 0x00), make_value(NODE_VERSION)),
-									parameter_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x0e, 0xff), make_value(true)) 	//	activated
-								}),
-							//	section 2
-							child_list_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x07, 0x02),	{
-									parameter_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x08, 0xff), make_value("KERNEL")),
-									parameter_tree(obis(0x81, 0x81, 0x00, 0x02, 0x00, 0x00), make_value(NODE_PLATFORM)),
-									parameter_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x0e, 0xff), make_value(true)) 	//	activated
-								})
-
-							}),
-
-						//	hardware
-						child_list_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x09, 0xff), {
-							//	Typenschlüssel
-							parameter_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x01), make_value("VSES-1KW-221-1F0")),
-							parameter_tree(obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x02), make_value("serial.number"))
-						})
-					}))));
+			sml_gen_.get_proc_parameter_device_id(frame.at(1)
+				, frame.at(3)	//	server id
+				, manufacturer_
+				, server_id_
+				, "VSES-1KW-221-1F0"
+				, "serial.number");
 		}
 
 		void kernel::sml_get_proc_mem_usage(cyng::context& ctx)
@@ -512,8 +425,8 @@ namespace node
 			const std::uint8_t mirror = cyng::sys::get_used_virtual_memory_in_percent()
 				, tmp = cyng::sys::get_used_physical_memory_in_percent();
 
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
 
@@ -521,16 +434,16 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(frame.at(3)	//	server id
-					, obis(0x00, 0x80, 0x80, 0x00, 0x10, 0xFF)	//	path entry
+					, OBIS_CODE(00, 80, 80, 00, 10, FF)		//	path entry
 
 					//
 					//	generate get process parameter response
 					//	2 uint8 values 
 					//
-					, child_list_tree(obis(0x00, 0x80, 0x80, 0x00, 0x10, 0xFF), {
+					, child_list_tree(OBIS_CODE(00, 80, 80, 00, 10, FF), {
 
-						parameter_tree(obis(0x00, 0x80, 0x80, 0x00, 0x11, 0xFF), make_value(mirror)),	//	mirror
-						parameter_tree(obis(0x00, 0x80, 0x80, 0x00, 0x12, 0xFF), make_value(tmp))	// tmp
+						parameter_tree(OBIS_CODE(00, 80, 80, 00, 11, FF), make_value(mirror)),	//	mirror
+						parameter_tree(OBIS_CODE(00, 80, 80, 00, 12, FF), make_value(tmp))	// tmp
 			}))));
 		}
 
@@ -551,8 +464,8 @@ namespace node
 			//
 			//	ToDo: implement
 			//
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
 
@@ -583,8 +496,8 @@ namespace node
 			//
 			//	ToDo: implement
 			//
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
 
@@ -673,8 +586,8 @@ namespace node
 			const bool ntp_active = true;
 			const std::uint16_t ntp_tz = 3600;
 
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
 
@@ -765,8 +678,8 @@ namespace node
 			const std::int32_t tz = 60;
 			const bool sync_active = true;
 
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
 
@@ -806,8 +719,8 @@ namespace node
 			const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 			const std::string device_class = "---";	//	2D 2D 2D
 
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
 
@@ -860,8 +773,8 @@ namespace node
 			const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 			const std::string device_class = "---";	//	2D 2D 2D
 
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
 
@@ -914,8 +827,8 @@ namespace node
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
 
@@ -989,8 +902,8 @@ namespace node
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
 
@@ -1153,8 +1066,8 @@ namespace node
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
 
@@ -1238,8 +1151,8 @@ namespace node
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			append_msg(message(frame.at(1)	//	trx
-				, ++group_no_	//	group
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
 

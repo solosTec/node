@@ -40,6 +40,23 @@ namespace node
 			, cyng::object version);
 
 		/**
+		 * @param codepage optional codepage
+		 * @param client_id optional client ID
+		 * @param req_file_id request file id
+		 * @param server_id server ID
+		 * @param username optional login name
+		 * @param password optional password
+		 * @param version optional SML version
+		 */
+		cyng::tuple_t open_request(cyng::object codepage
+			, cyng::object client_id
+			, cyng::object req_file_id
+			, cyng::object server_id
+			, cyng::object username
+			, cyng::object password
+			, cyng::object version);
+
+		/**
 		 * @param signature optional global signature
 		 */
 		cyng::tuple_t close_response(cyng::object signature);
@@ -50,6 +67,19 @@ namespace node
 		 * @param params parameter tree
 		 */
 		cyng::tuple_t get_proc_parameter_response(cyng::object server_id
+			, obis code
+			, cyng::tuple_t params);
+
+		/**
+		 * @param server_id
+		 * @param username
+		 * @param password
+		 * @param code parameter tree path
+		 * @param params parameter tree
+		 */
+		cyng::tuple_t set_proc_parameter_request(cyng::object server_id
+			, std::string const& username
+			, std::string const& password
 			, obis code
 			, cyng::tuple_t params);
 

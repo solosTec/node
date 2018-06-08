@@ -40,6 +40,17 @@ namespace node
 			return cyng::tuple_t({ codepage, client_id, req_file_id, server_id, ref_time, version });
 		}
 
+		cyng::tuple_t open_request(cyng::object codepage
+			, cyng::object client_id
+			, cyng::object req_file_id
+			, cyng::object server_id
+			, cyng::object username
+			, cyng::object password
+			, cyng::object version)
+		{
+			return cyng::tuple_t({ codepage, client_id, req_file_id, server_id, username, password, version });
+		}
+
 		cyng::tuple_t close_response(cyng::object signature)
 		{
 			return cyng::tuple_t({ signature });
@@ -50,6 +61,19 @@ namespace node
 			, cyng::tuple_t params)
 		{
 			return cyng::tuple_factory( server_id
+				, cyng::tuple_factory(code.to_buffer())	//	path entry
+				, params);
+		}
+
+		cyng::tuple_t set_proc_parameter_request(cyng::object server_id
+			, std::string const& username
+			, std::string const& password
+			, obis code
+			, cyng::tuple_t params)
+		{
+			return cyng::tuple_factory(server_id
+				, username
+				, password
 				, cyng::tuple_factory(code.to_buffer())	//	path entry
 				, params);
 		}

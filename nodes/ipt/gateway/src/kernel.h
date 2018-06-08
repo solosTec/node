@@ -11,6 +11,7 @@
 
 #include <smf/sml/defs.h>
 #include "sml_reader.h"
+#include <smf/sml/protocol/generator.h>
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
 
@@ -39,7 +40,7 @@ namespace node
 			void reset();
 
 		private:
-			void append_msg(cyng::tuple_t&&);
+			//void append_msg(cyng::tuple_t&&);
 
 			void sml_msg(cyng::context& ctx);
 			void sml_eom(cyng::context& ctx);
@@ -88,8 +89,7 @@ namespace node
 			/**
 			 * buffer for current SML message
 			 */
-			std::vector<cyng::buffer_t>	msg_;
-			std::uint8_t	group_no_;
+			res_generator sml_gen_;
 
 		};
 

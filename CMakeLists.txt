@@ -586,7 +586,7 @@ target_link_libraries(gateway ${gateway_link_libs})
 include (nodes/ipt/master/prg.cmake)
 add_executable(ipt ${node_ipt_master})
 # libraries to link
-set(ipt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys smf_cluster smf_protocol_ipt)
+set(ipt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys smf_cluster smf_protocol_ipt smf_protocol_sml)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND ipt_link_libs "${Boost_LIBRARIES}")
     if (UNIX)

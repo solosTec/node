@@ -14,6 +14,7 @@
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/scramble_key_io.hpp>
+#include <smf/sml/protocol/generator.h>
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/store_domain.h>
 #include <cyng/io/serializer.h>
@@ -350,6 +351,32 @@ namespace node
 			//
 			//	send 81 81 C7 83 82 01 
 			//
+			node::sml::req_generator sml_gen;
+			sml_gen.public_open(cyng::mac48(), std::get<2>(tpl), std::get<3>(tpl), std::get<4>(tpl));
+			sml_gen.set_proc_parameter_restart(std::get<2>(tpl), std::get<3>(tpl), std::get<4>(tpl));
+			sml_gen.public_close();
+			cyng::buffer_t msg = sml_gen.boxing();
+
+#ifdef SMF_IO_LOG
+			cyng::io::hex_dump hd;
+			hd(std::cerr, msg.begin(), msg.end());
+#endif
+
+			//	[0000]  1b 1b 1b 1b 01 01 01 01  76 0a 33 34 35 36 34 35  ........ v.345645
+			//	[0010]  30 2d 31 62 00 62 00 72  63 01 00 77 01 07 00 00  0-1b.b.r c..w....
+			//	[0020]  00 00 00 00 0f 32 30 31  38 30 36 30 38 31 36 30  .....201 80608160
+			//	[0030]  32 34 39 01 09 6f 70 65  72 61 74 6f 72 09 6f 70  249..ope rator.op
+			//	[0040]  65 72 61 74 6f 72 01 63  8c ad 00 76 0a 33 34 35  erator.c ...v.345
+			//	[0050]  36 34 35 30 2d 32 62 00  62 00 72 63 06 00 75 01  6450-2b. b.rc..u.
+			//	[0060]  09 6f 70 65 72 61 74 6f  72 09 6f 70 65 72 61 74  .operato r.operat
+			//	[0070]  6f 72 71 07 81 81 c7 83  82 01 73 07 81 81 c7 83  orq..... ..s.....
+			//	[0080]  82 01 01 01 63 7f cc 00  76 0a 33 34 35 36 34 35  ....c... v.345645
+			//	[0090]  30 2d 33 62 00 62 00 72  63 02 00 71 01 63 05 32  0-3b.b.r c..q.c.2
+			//	[00a0]  00 00 00 00 1b 1b 1b 1b  1a 03 c0 ea              ........ ....
+
+			ctx	.attach(cyng::generate_invoke("ipt.transfer.data", msg))
+				.attach(cyng::generate_invoke("stream.flush"));
+
 		}
 
 		void session::ipt_req_login_public(cyng::context& ctx)
@@ -432,8 +459,8 @@ namespace node
 				//
 				const response_type res = ctrl_res_login_public_policy::MALFUNCTION;
 
-				ctx.attach(cyng::generate_invoke("res.login.scrambled", res, watchdog_, ""));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx	.attach(cyng::generate_invoke("res.login.scrambled", res, watchdog_, ""))
+					.attach(cyng::generate_invoke("stream.flush"));
 			}
 		}
 

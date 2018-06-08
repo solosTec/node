@@ -16,6 +16,9 @@
 #define DEFINE_OBIS_CODE(p1, p2, p3, p4, p5, p6, name)	\
 	OBIS_##name (0x##p1, 0x##p2, 0x##p3, 0x##p4, 0x##p5, 0x##p6)
 
+#define OBIS_CODE(p1, p2, p3, p4, p5, p6)	\
+	node::sml::obis (0x##p1, 0x##p2, 0x##p3, 0x##p4, 0x##p5, 0x##p6)
+
 namespace node
 {
 	namespace sml
@@ -78,6 +81,7 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 10, FF, CODE_ROOT_DEVICE_TIME);	//	device time
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 20, FF, CODE_ROOT_DATA_COLLECTOR);	//	properties of data collector (Eigenschaften eines Datensammlers)
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 02, FF, CODE_AVERAGE_TIME_MS);	//	average time between two received data records (milliseconds)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 83, 82, 01, CODE_REBOOT);	//	request reboot
 
 		//
 		//	Interfaces
