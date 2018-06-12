@@ -169,6 +169,7 @@ namespace node
 		//
 		sync_table("TDevice");
 		sync_table("TGateway");
+		sync_table("TLoRaDevice");
 		sync_table("TMeter");
 		sync_table("*Session");
 		sync_table("*Target");
@@ -996,6 +997,10 @@ namespace node
 			{
 				subscribe("TGateway", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
+			else if (boost::algorithm::starts_with(channel, "config.lora"))
+			{
+				subscribe("TLoRaDevice", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+			}
 			else if (boost::algorithm::starts_with(channel, "config.system"))
 			{
 				subscribe("*Config", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
@@ -1517,6 +1522,19 @@ namespace node
 
 			update_channel("table.gateway.count", tbl->size());
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
+		{
+			//	
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("insert")),
+				cyng::param_factory("channel", "config.lora"),
+				cyng::param_factory("rec", rec.convert()));
+
+			auto msg = cyng::json::to_string(tpl);
+			server_.process_event("config.lora", msg);
+
+			update_channel("table.lora.count", tbl->size());
+		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Session"))
 		{
 			auto tpl = cyng::tuple_factory(
@@ -1927,6 +1945,33 @@ namespace node
 			CYNG_LOG_FATAL(logger_, "cannot create table TGateway");
 		}
 
+		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices
+		//	DevEUI - 64 bit end-device identifier, EUI-64 (unique)
+		//	DevAddr - 32 bit device address (non-unique)
+		if (!cache_.create_table(cyng::table::make_meta_table<1, 7>("TLoRaDevice",
+			{ "pk"
+			, "DevEUI"
+			, "AESKey"		// 256 Bit
+			, "driver"
+			, "activation"	//	OTAA/ABP
+			, "DevAddr"		//	32 bit device address (non-unique)
+			, "AppEUI"		//	64 bit application identifier, EUI-64 (unique)
+			, "GatewayEUI"	//	64 bit gateway identifier, EUI-64 (unique)
+			},
+			{ cyng::TC_UUID
+			, cyng::TC_MAC64	//	DevEUI
+			, cyng::TC_STRING	//	AESKey
+			, cyng::TC_STRING	//	driver
+			, cyng::TC_BOOL		//	activation
+			, cyng::TC_UINT32	//	DevAddr
+			, cyng::TC_MAC64	//	AppEUI
+			, cyng::TC_MAC64	//	GatewayEUI
+			},
+			{ 36, 0, 64, 32, 0, 0, 0, 0 })))
+		{
+			CYNG_LOG_FATAL(logger_, "cannot create table TLoRaDevice");
+		}
+
 		if (!cache_.create_table(cyng::table::make_meta_table<1, 9>("TMeter", { "pk"
 			, "ident"	//	ident nummer (i.e. 1EMH0006441734)
 			, "manufacturer"
@@ -2065,6 +2110,11 @@ namespace node
 			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 		cache_.get_listener("TGateway"
+			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		cache_.get_listener("TLoRaDevice"
 			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
 			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)

@@ -329,7 +329,7 @@ message(STATUS "** CMake modules         : ${CMAKE_MODULE_PATH}")
 #
 # Included as 3party software
 #
-set(PUGIXML_INCLUDE_DIR "${cyng_SOURCE_DIR}/3party/pugixml-181")
+set(PUGIXML_INCLUDE_DIR "${cyng_SOURCE_DIR}/3party/pugixml-190")
 message(STATUS "** PugiXML Include       : ${PUGIXML_INCLUDE_DIR}")
 #message(STATUS "** PugiXML Library       : ${PUGIXML_LIBRARY}")
 set(${PROJECT_NAME}_PUGIXML_INSTALLED ON)

@@ -129,6 +129,57 @@ namespace node
 				, tag);
 		}
 
+		//	(1) tag (UUID) - pk
+		//	+-----------------
+		//	(1) id (server/gateway ID) - unique
+		//	(2) manufacturer (i.e. EMH)
+		//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
+		//	(4) production date/time
+		//	(5) firmwareversion (i.e. 11600000)
+		//	(6) fabrik nummer (i.e. 06441734)
+		//	(7) MAC of service interface
+		//	(8) MAC od data interface
+		//	(9) Default PW
+		//	(10) root PW
+		//	(11) W-Mbus ID (i.e. A815408943050131)
+		//	(12) source (UUID) - usefull to detect multiple configuration uploads
+		if (!db.create_table(cyng::table::make_meta_table<1, 7>("TLoRaDevice", { "pk"	//	primary key
+			, "DevEUI"		//	(1) 64 bit end-device identifier, EUI-64 (unique)
+			, "AESKey"		//	(2)	256 bit
+			, "driver"		//	(3) production date
+			, "activation"	//	(4) fabrik nummer (i.e. 06441734)
+			, "DevAddr"		//	(5) MAC of service interface
+			, "AppEUI"		//	(6) MAC of data interface
+			, "GatewayEUI"		//	(7) Default PW
+			},
+			{ cyng::TC_UUID
+			, cyng::TC_MAC64	//	EUI-64 (unique)
+			, cyng::TC_STRING	//	AESKey
+			, cyng::TC_STRING	//	driver
+			, cyng::TC_BOOL		//	activation
+			, cyng::TC_UINT32	//	DevAddr
+			, cyng::TC_MAC64	//	AppEUI
+			, cyng::TC_MAC64	//	GatewayEUI
+			},
+			{ 36, 0, 64, 32, 0, 0, 0, 0 })))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table TLoRaDevice");
+		}
+		else
+		{
+			db.insert("TLoRaDevice"
+				, cyng::table::key_generator(tag)
+				, cyng::table::data_generator(cyng::mac64(0, 1, 2, 3, 4, 5, 6, 7)
+					, "1122334455667788990011223344556677889900112233445566778899001122"
+					, "demo"
+					, true	//	OTAA
+					, 0x64	//	DevAddr
+					, cyng::mac64(0, 1, 2, 3, 4, 6, 7, 8)
+					, cyng::mac64(0, 1, 2, 3, 4, 6, 7, 8))
+				, 8
+				, tag);
+		}
+
 
 		if (!db.create_table(cyng::table::make_meta_table<1, 9>("TMeter", { "pk"
 			, "ident"	//	ident nummer (i.e. 1EMH0006441734)

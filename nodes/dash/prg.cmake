@@ -25,6 +25,7 @@ set (node_dash_res
 	nodes/dash/htdocs/config.system.html
 	nodes/dash/htdocs/config.device.html
 	nodes/dash/htdocs/config.gateway.html
+	nodes/dash/htdocs/config.lora.html
 	nodes/dash/htdocs/config.meter.html
 	nodes/dash/htdocs/config.upload.html
 	nodes/dash/htdocs/config.download.html

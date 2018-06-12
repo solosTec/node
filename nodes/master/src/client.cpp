@@ -1820,18 +1820,24 @@ namespace node
 							//
 							//	test for gateway (same key as TDevice)
 							//
+							std::string server_id = "05000000000000";
 							auto gw_rec = tbl_gw->lookup(dev_pk);
 							if (gw_rec.empty() && !dev_rec.empty())
 							{
 								//
 								//	create a gateway record
+								//	a00153b01EA61en ==> 0500153b01EA61
 								//
+								const std::string dev_name = cyng::value_cast<std::string>(dev_rec["name"], "");
+								if (boost::algorithm::starts_with(dev_name, "a00153b") && dev_name.size() == 15)
+								{
+									server_id = dev_name.substr(1, 12);
+								}
+
 								tbl_gw->insert(dev_pk
-									, cyng::table::data_generator("05000000000000"
+									, cyng::table::data_generator(server_id
 										, (boost::algorithm::equals(model, "ipt:gateway") ? "solosTec" : "EMH")
-										//, value
 										, std::chrono::system_clock::now()
-										//, dev_rec["vFirmware"]
 										, "factory-nr"
 										, cyng::mac48(0, 1, 2, 3, 4, 5)
 										, cyng::mac48(0, 1, 2, 3, 4, 6)

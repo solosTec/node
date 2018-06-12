@@ -588,9 +588,7 @@ namespace node
 			, "gen"
 			, "serverId"	//	05 + MAC
 			, "manufacturer"
-			//, "model"		//	-> comes from TDevice
 			, "proddata"	//	production date
-			//, "vFirmare"	//	-> comes from TDevice
 			, "factoryNr"	//	example: "06441734"
 			, "ifService"	//	MAC service interface
 			, "ifData"		//	MAC data interface
@@ -604,9 +602,7 @@ namespace node
 			, cyng::TC_UINT64	//	gen
 			, cyng::TC_STRING	//	server ID
 			, cyng::TC_STRING	//	manufacturer
-			//, cyng::TC_STRING	- model
 			, cyng::TC_TIME_POINT
-			//, cyng::TC_STRING	- firmware version
 			, cyng::TC_STRING	//	factoryNr
 			, cyng::TC_STRING	//	ifService
 			, cyng::TC_STRING	//	ifData
@@ -627,6 +623,32 @@ namespace node
 			{ "pk", "gen", "id", "manufacturer", "proddata", "vFirmare", "vParam", "factoryNr", "item", "class" },
 			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
 			{ 36, 0, 64, 64, 0, 64, 64, 8, 128, 8 }));
+
+		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices
+		//	DevEUI - 64 bit end-device identifier, EUI-64 (unique)
+		//	DevAddr - 32 bit device address (non-unique)
+		meta_map.emplace("TLoRaDevice", cyng::table::make_meta_table<1, 8>("TLoRaDevice",
+			{ "pk"
+			, "gen"
+			, "DevEUI"
+			, "AESKey"		// 256 Bit
+			, "driver"	
+			, "activation"	//	OTAA/ABP
+			, "DevAddr"		//	32 bit device address (non-unique)
+			, "AppEUI"		//	64 bit application identifier, EUI-64 (unique)
+			, "GatewayEUI"	//	64 bit gateway identifier, EUI-64 (unique)
+			},
+			{ cyng::TC_UUID
+			, cyng::TC_UINT64	//	gen
+			, cyng::TC_MAC64	//	DevEUI
+			, cyng::TC_STRING	//	AESKey
+			, cyng::TC_STRING	//	driver
+			, cyng::TC_BOOL		//	activation
+			, cyng::TC_UINT32	//	DevAddr
+			, cyng::TC_MAC64	//	AppEUI
+			, cyng::TC_MAC64	//	GatewayEUI
+			},
+			{ 36, 0, 0, 64, 32, 0, 0, 0, 0 }));
 
 		meta_map.emplace("TLL", cyng::table::make_meta_table<2, 4>("TLL",
 			{ "first"

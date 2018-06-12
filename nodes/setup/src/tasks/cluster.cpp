@@ -136,6 +136,10 @@ namespace node
 		{
 			sync_table("TGateway");
 		}
+		else if (boost::algorithm::equals(table, "TGateway"))
+		{
+			sync_table("TLoRaDevice");
+		}
 		else
 		{
 			CYNG_LOG_INFO(logger_, "*** sync phase completed ***");
@@ -479,28 +483,68 @@ namespace node
 	{
 		CYNG_LOG_TRACE(logger_, "create cache tables");
 
-		cache_.create_table(cyng::table::make_meta_table<1, 9>("TDevice",
+		if (!cache_.create_table(cyng::table::make_meta_table<1, 9>("TDevice",
 			{ "pk", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
 			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
-			{ 36, 128, 16, 128, 512, 64, 64, 0, 0, 0 }));
+			{ 36, 128, 16, 128, 512, 64, 64, 0, 0, 0 })))
+		{
+			CYNG_LOG_FATAL(logger_, "cannot create table TDevice");
+		}
 
-		cache_.create_table(cyng::table::make_meta_table<1, 13>("TGateway", { "pk"	//	primary key
-			, "id"	//	(1) Server-ID (i.e. 0500153B02517E)
+		if (!cache_.create_table(cyng::table::make_meta_table<1, 11>("TGateway",
+			{ "pk"	//	primary key
+			, "id"				//	(1) Server-ID (i.e. 0500153B02517E)
 			, "manufacturer"	//	(2) manufacturer (i.e. EMH)
-			, "model"	//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
-			, "made"	//	(4) production date
-			, "vFirmware"	//	(5) firmwareversion (i.e. 11600000)
-			, "factoryNr"	//	(6) fabrik nummer (i.e. 06441734)
-			, "ifService"	//	(7) MAC of service interface
-			, "ifData"	//	(8) MAC od data interface
-			, "pwdDef"	//	(9) Default PW
-			, "pwdRoot"	//	(10)
-			, "mbus"	//	(11)
-			, "userName"	//	(12)
-			, "userPwd"	//	(13)
+			, "made"		//	(3) production date
+			, "factoryNr"	//	(4) fabrik nummer (i.e. 06441734)
+			, "ifService"	//	(5) MAC of service interface
+			, "ifData"		//	(6) MAC od data interface
+			, "pwdDef"		//	(7) Default PW
+			, "pwdRoot"		//	(8)
+			, "mbus"		//	(9)
+			, "userName"	//	(10)
+			, "userPwd"		//	(11)
 			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_MAC48, cyng::TC_MAC48, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
-			{ 36, 23, 64, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 }));
+			{ cyng::TC_UUID
+			, cyng::TC_STRING	//	server ID
+			, cyng::TC_STRING	//	manufacturer
+			, cyng::TC_TIME_POINT
+			, cyng::TC_STRING	//	factoryNr
+			, cyng::TC_MAC48	//	ifService
+			, cyng::TC_MAC48	//	ifData
+			, cyng::TC_STRING	//	pwdDef
+			, cyng::TC_STRING	//	pwdRoot
+			, cyng::TC_STRING	//	mbus
+			, cyng::TC_STRING
+			, cyng::TC_STRING },
+			{ 36, 23, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 })))
+		{
+			CYNG_LOG_FATAL(logger_, "cannot create table TGateway");
+		}
+
+		if (!cache_.create_table(cyng::table::make_meta_table<1, 7>("TLoRaDevice",
+			{ "pk"
+			, "DevEUI"
+			, "AESKey"		// 256 Bit
+			, "driver"
+			, "activation"	//	OTAA/ABP
+			, "DevAddr"		//	32 bit device address (non-unique)
+			, "AppEUI"		//	64 bit application identifier, EUI-64 (unique)
+			, "GatewayEUI"	//	64 bit gateway identifier, EUI-64 (unique)
+			},
+			{ cyng::TC_UUID
+			, cyng::TC_MAC64	//	DevEUI
+			, cyng::TC_STRING	//	AESKey
+			, cyng::TC_STRING	//	driver
+			, cyng::TC_BOOL		//	activation
+			, cyng::TC_UINT32	//	DevAddr
+			, cyng::TC_MAC64	//	AppEUI
+			, cyng::TC_MAC64	//	GatewayEUI
+			},
+			{ 36, 0, 64, 32, 0, 0, 0, 0 })))
+		{
+			CYNG_LOG_FATAL(logger_, "cannot create table TLoRaDevice");
+		}
 
 	}
 
