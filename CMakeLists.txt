@@ -139,15 +139,15 @@ if (CMAKE_COMPILER_IS_GNUCC)
 		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_ON)
 		message(STATUS "** C++ support     : C++11")
 	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "7.0")
-		add_definitions(-std=c++14)	
+		add_definitions(-std=c++17)	
 		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_OFF)
-		message(STATUS "** C++ support     : C++14")
+		message(STATUS "** C++ support     : C++17")
 	else()
 		add_definitions(-std=c++17)	
 		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_OFF)
 		message(STATUS "** C++ support     : C++17")
 	endif()
-	
+		
 	# only shared libraries
 	set(GLOBAL_LIBRARY_TYPE SHARED)
 	
@@ -289,8 +289,9 @@ endif()
 #	assume parallel installation
 #
 include_directories("${PROJECT_SOURCE_DIR}/../cyng/src/main/include")
+get_filename_component(cyng_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../cyng/src/main/include" REALPATH)
 if (UNIX)
-	if (CROSS_COMPILE)
+	if (${PROJECT_NAME}_CROSS_COMPILE)
 		get_filename_component(cyng_LIBRARY_DIRS "$ENV{HOME}/development/tools/arm-bcm2708/arm-rpi-4.9.3-linux-gnueabihf/arm-linux-gnueabihf/sysroot/" REALPATH)
  		get_filename_component(cyng_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../cyng/cross" REALPATH)
 		include_directories("${PROJECT_SOURCE_DIR}/../cyng/cross")
@@ -300,15 +301,16 @@ if (UNIX)
  		get_filename_component(cyng_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../cyng" REALPATH)
 		include_directories("${PROJECT_SOURCE_DIR}/../cyng/build")
 		link_directories(${cyng_LIBRARY_DIRS})
- 	endif(CROSS_COMPILE)
-	message(STATUS "** cyng Libraries   : ${cyng_LIBRARY_DIRS}")
+ 	endif()
+	set(cyng_INCLUDE_DIRS "${cyng_LIBRARY_DIRS}" ${cyng_INCLUDE_DIR})
+	message(STATUS "** CYNG Include Paths    : ${cyng_INCLUDE_DIRS}")
+	message(STATUS "** CYNG Libraries        : ${cyng_LIBRARY_DIRS}")
 else()
 	#
 	#	$(ConfigurationName) is a variable used by the MS build system
 	#
  	get_filename_component(cyng_LIBRARY_DIRS "${PROJECT_BINARY_DIR}/../cyng" REALPATH)
  	get_filename_component(cyng_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../cyng" REALPATH)
- 	get_filename_component(cyng_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../cyng/src/main/include" REALPATH)
 	set(cyng_INCLUDE_DIRS "${cyng_LIBRARY_DIRS}" ${cyng_INCLUDE_DIR})
 	include_directories(${cyng_INCLUDE_DIRS})
 	link_directories(${cyng_LIBRARY_DIRS}/$(ConfigurationName))
@@ -328,8 +330,8 @@ message(STATUS "** CMake modules         : ${CMAKE_MODULE_PATH}")
 # On Windows set CMake variables PugiXML_INCLUDE_DIRS and PugiXML_LIBRARIES 
 #
 # Included as 3party software
-#
-set(PUGIXML_INCLUDE_DIR "${cyng_SOURCE_DIR}/3party/pugixml-190")
+# 
+set(PUGIXML_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../cyng/3party/pugixml-190")
 message(STATUS "** PugiXML Include       : ${PUGIXML_INCLUDE_DIR}")
 #message(STATUS "** PugiXML Library       : ${PUGIXML_LIBRARY}")
 set(${PROJECT_NAME}_PUGIXML_INSTALLED ON)
