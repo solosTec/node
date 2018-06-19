@@ -9,6 +9,8 @@
 #include "server.h"
 #include <NODE_project_info.h>
 #include "tasks/network.h"
+#include <smf/sml/srv_id_io.h>
+#include <smf/sml/status.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>
@@ -23,6 +25,8 @@
 #include <cyng/set_cast.h>
 #include <cyng/vector_cast.hpp>
 #include <cyng/sys/mac.h>
+#include <cyng/store/db.h>
+#include <cyng/table/meta.hpp>
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
 #endif
@@ -45,12 +49,15 @@ namespace node
 	bool wait(cyng::logging::log_ptr logger);
 	void join_network(cyng::async::mux&
 		, cyng::logging::log_ptr
+		, sml::status&
+		, cyng::store::db&
 		, cyng::vector_t const& cfg
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
 		, std::string model
 		, cyng::mac48);
+	void init_config(cyng::logging::log_ptr logger, cyng::store::db&, boost::uuids::uuid, cyng::mac48);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -338,7 +345,6 @@ namespace node
 		//
 		//	get hardware info
 		//
-
 		const std::string manufacturer = cyng::value_cast<std::string>(dom["hardware"].get("manufacturer"), "solosTec");
 		const std::string model = cyng::value_cast<std::string>(dom["hardware"].get("model"), "Gateway");
 		const auto serial = cyng::value_cast(dom["hardware"].get("serial"), rgen());
@@ -358,11 +364,31 @@ namespace node
 		CYNG_LOG_INFO(logger, "dev_class: " << dev_class);
 		CYNG_LOG_INFO(logger, "mac: " << mac);
 
+		/**
+		 * Global status word
+		 * 459266:dec == ‭70202‬:hex == ‭01110000001000000010‬:bin
+		 */
+		sml::status status_word;
+#ifdef _DEBUG
+		status_word.set_mbus_if_available(true);
+#endif
+
+
+		/**
+		 * global data cache
+		 */
+		cyng::store::db config_db;
+		init_config(logger, config_db, tag, r.first);
+
 		//
 		//	connect to ipt master
 		//
 		cyng::vector_t tmp;
-		join_network(mux, logger, cyng::value_cast(dom.get("ipt"), tmp)
+		join_network(mux
+			, logger
+			, status_word
+			, config_db
+			, cyng::value_cast(dom.get("ipt"), tmp)
 			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
 			, manufacturer
@@ -374,6 +400,8 @@ namespace node
 		//
 		server srv(mux
 			, logger
+			, status_word
+			, config_db
 			, tag
 			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
@@ -443,6 +471,8 @@ namespace node
 
 	void join_network(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
+		, sml::status& status
+		, cyng::store::db& config_db
 		, cyng::vector_t const& cfg
 		, std::string account
 		, std::string pwd
@@ -455,12 +485,79 @@ namespace node
 		cyng::async::start_task_delayed<ipt::network>(mux
 			, std::chrono::seconds(1)
 			, logger
+			, status
+			, config_db
 			, ipt::load_cluster_cfg(cfg)
 			, account 
 			, pwd
 			, manufacturer
 			, model 
 			, mac);
+
+	}
+
+	void init_config(cyng::logging::log_ptr logger, cyng::store::db& config, boost::uuids::uuid tag, cyng::mac48 mac)
+	{
+		CYNG_LOG_TRACE(logger, "init configuration db");
+
+		if (!config.create_table(cyng::table::make_meta_table<1, 5>("devices",
+			{ "serverID"			//	server ID
+			, "lastSeen"	//	last seen
+			, "class"		//	device class (always "---" == 2D 2D 2D)
+			, "visible"
+			, "active"
+			, "descr"
+			},
+			{ cyng::TC_BUFFER		//	server ID
+			, cyng::TC_TIME_POINT	//	last seen
+			, cyng::TC_STRING		//	device class
+			, cyng::TC_BOOL			//	visible
+			, cyng::TC_BOOL			//	active
+			, cyng::TC_STRING		//	description
+			},
+			{ 9
+			, 0
+			, 16	//	device class
+			, 0		//	visible
+			, 0		//	active
+			, 128	//	description
+			})))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table devices");
+		}
+		else
+		{
+			//	insert demo device
+			config.insert("devices"
+				, cyng::table::key_generator(sml::to_gateway_srv_id(mac))
+				, cyng::table::data_generator(std::chrono::system_clock::now()
+					, "---"
+					, true	//	visible
+					, true	//	active
+					, "demo entry")
+				, 1	//	generation
+				, tag);
+
+			config.insert("devices"
+				, cyng::table::key_generator(cyng::buffer_t{ 0x01, (char)0xA8, 0x15, 0x74, (char)0x31, 0x45, 0x05, (char)0x01, (char)0x02 })
+				, cyng::table::data_generator(std::chrono::system_clock::now()
+					, "---"
+					, true	//	visible
+					, true	//	active
+					, "01 A8 15 74 31 45 05 01 02")
+				, 1	//	generation
+				, tag);
+
+			config.insert("devices"
+				, cyng::table::key_generator(cyng::buffer_t{ 0x01, (char)0xE6, (char)0x1E, 0x74, (char)0x31, 0x45, 0x04, (char)0x01, (char)0x02 })
+				, cyng::table::data_generator(std::chrono::system_clock::now()
+					, "---"
+					, true	//	visible
+					, false	//	active
+					, "01 E6 1E 74 31 45 05 01 02")
+				, 1	//	generation
+				, tag);
+		}
 
 	}
 

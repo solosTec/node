@@ -8,9 +8,11 @@
 #ifndef NODE_IPT_GATEWAY_SERVER_H
 #define NODE_IPT_GATEWAY_SERVER_H
 
+#include <smf/sml/status.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/intrinsics/mac.h>
+#include <cyng/store/db.h>
 #include <boost/uuid/uuid.hpp>
 #include <unordered_map>
 
@@ -21,6 +23,8 @@ namespace node
 	public:
 		server(cyng::async::mux&
 			, cyng::logging::log_ptr logger
+			, sml::status& status_word
+			, cyng::store::db& config_db
 			, boost::uuids::uuid
 			, std::string account
 			, std::string pwd
@@ -52,6 +56,16 @@ namespace node
 		 * The logger
 		 */
 		cyng::logging::log_ptr logger_;
+
+		/**
+		 * Global status word
+		 */
+		sml::status&	status_word_;
+
+		/**
+		 * configuration db
+		 */
+		cyng::store::db& config_db_;
 
 		//	credentials
 		const std::string account_;

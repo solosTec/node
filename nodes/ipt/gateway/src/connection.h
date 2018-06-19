@@ -10,6 +10,7 @@
 
 #include <NODE_project_info.h>
 #include <smf/sml/bus/serializer.h>
+#include <smf/sml/status.h>
 #include <cyng/object.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
@@ -33,6 +34,8 @@ namespace node
 			explicit connection(boost::asio::ip::tcp::socket&&
 				, cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
+				, status& status_word
+				, cyng::store::db& config_db
 				, std::string const& account
 				, std::string const& pwd
 				, std::string manufacturer

@@ -38,10 +38,10 @@ namespace node
 	 */
 	enum system_config : std::uint64_t
 	{
-		SMF_CONNECTION_AUTO_LOGIN	= (1 << 0),
-		SMF_CONNECTION_AUTO_ENABLED = (1 << 1),
-		SMF_CONNECTION_SUPERSEDED	= (1 << 2),
-		SMF_GENERATE_TIME_SERIES	= (1 << 3),
+		SMF_CONNECTION_AUTO_LOGIN	= (1ull << 0),
+		SMF_CONNECTION_AUTO_ENABLED = (1ull << 1),
+		SMF_CONNECTION_SUPERSEDED	= (1ull << 2),
+		SMF_GENERATE_TIME_SERIES	= (1ull << 3),
 	};
 
 	bool is_connection_auto_login(std::uint64_t);

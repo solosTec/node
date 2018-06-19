@@ -27,6 +27,8 @@ namespace node
 	{
 		network::network(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
+			, node::sml::status& status_word
+			, cyng::store::db& config_db
 			, master_config_t const& cfg
 			, std::string account
 			, std::string pwd
@@ -45,7 +47,7 @@ namespace node
 #endif
 				bus_->vm_.async_run(std::move(prg));
 			}, false)
-			, core_(logger_, bus_->vm_, false, account, pwd, manufacturer, model, mac)
+			, core_(logger_, bus_->vm_, status_word, config_db, false, account, pwd, manufacturer, model, mac)
 			, seq_target_map_()
 			, channel_target_map_()
 		{
@@ -124,15 +126,20 @@ namespace node
 			}
 
 			//
-			//	register targets
+			//	update status word
 			//
-			//register_targets();
+			core_.status_word_.set_authorized(true);
 
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		cyng::continuation network::process()
 		{
+			//
+			//	update status word
+			//
+			core_.status_word_.set_authorized(false);
+
 			//
 			//	switch to other configuration
 			//

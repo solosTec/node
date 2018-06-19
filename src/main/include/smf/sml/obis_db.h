@@ -70,7 +70,9 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, 01, 16, FF, FF, CODE_ROOT_NEW_DEVICES);	//	new active devices
 		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 26, FF, FF, CODE_ROOT_INVISIBLE_DEVICES);	//	not longer visible devices
 		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 06, FF, FF, CODE_ROOT_VISIBLE_DEVICES);	//	visible devices (Liste der sichtbaren Sensoren)
+		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 06, 01, FF, CODE_LIST_1_VISIBLE_DEVICES);	//	1. Liste der sichtbaren Sensoren
 		const static obis	DEFINE_OBIS_CODE(81, 81, 11, 06, FF, FF, CODE_ROOT_ACTIVE_DEVICES);	//	active devices (Liste der aktiven Sensoren)
+		const static obis	DEFINE_OBIS_CODE(81, 81, 11, 06, 01, FF, CODE_LIST_1_ACTIVE_DEVICES);	//	1. Liste der aktiven Sensoren)
 		const static obis	DEFINE_OBIS_CODE(81, 81, 12, 06, FF, FF, CODE_ROOT_DEVICE_INFO);	//	extended device information
 		const static obis	DEFINE_OBIS_CODE(81, 81, 81, 60, FF, FF, CODE_ROOT_ACCESS_RIGHTS);	//	see: 7.3.1.2 Datenstruktur zur Parametrierung der Rollen / Benutzerrechte 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 01, FF, CODE_ROOT_DEVICE_IDENT);	//	see: 7.3.2.9 Datenstruktur zur Abfrage der Geräte-Identifikation) 
@@ -80,6 +82,7 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 01, FF, CODE_ROOT_NTP);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 10, FF, CODE_ROOT_DEVICE_TIME);	//	device time
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 20, FF, CODE_ROOT_DATA_COLLECTOR);	//	properties of data collector (Eigenschaften eines Datensammlers)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 00, FF, CODE_ROOT_1107_IF);	 //	1107 interface
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 02, FF, CODE_AVERAGE_TIME_MS);	//	average time between two received data records (milliseconds)
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 83, 82, 01, CODE_REBOOT);	//	request reboot
 

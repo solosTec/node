@@ -9,6 +9,7 @@
 #define NODE_IPT_GATEWAY_SESSION_H
 
 #include <smf/sml/protocol/parser.h>
+#include <smf/sml/status.h>
 #include "sml_reader.h"
 #include "kernel.h"
 #include <cyng/async/mux.h>
@@ -26,6 +27,8 @@ namespace node
 		public:
 			session(cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
+				, status& status_word
+				, cyng::store::db& config_db
 				, std::string const& account
 				, std::string const& pwd
 				, std::string manufacturer
@@ -58,6 +61,8 @@ namespace node
 
 		cyng::object make_session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
+			, status& status_word
+			, cyng::store::db& config_db
 			, std::string const& account
 			, std::string const& pwd
 			, std::string manufacturer

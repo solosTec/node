@@ -118,8 +118,8 @@ namespace node
 			{
 				//	only 3 bytes required
 				os.put(0x64);	//	TL field
-				//	write the first 3 bytes to stream
-				cyng::io::write_binary<std::uint32_t, 3>(os, cyng::swap_num(v));
+				//	write the last 3 bytes to stream 
+				cyng::io::write_binary<std::uint32_t, 3>(os, cyng::swap_num(v) >> 8);
 			}
 			else
 			{
@@ -139,19 +139,19 @@ namespace node
 			{
 				//	only 5 bytes required
 				os.put(0x66);	//	TL field
-				cyng::io::write_binary<std::uint64_t, 5>(os, cyng::swap_num(v));
+				cyng::io::write_binary<std::uint64_t, 5>(os, cyng::swap_num(v) >> 24);
 			}
 			else if (v < std::numeric_limits<std::uint64_t>::max() / 0x1000)
 			{
 				//	only 6 bytes required
 				os.put(0x67);	//	TL field
-				cyng::io::write_binary<std::uint64_t, 6>(os, cyng::swap_num(v));
+				cyng::io::write_binary<std::uint64_t, 6>(os, cyng::swap_num(v) >> 16);
 			}
 			else if (v < std::numeric_limits<std::uint64_t>::max() / 0x100)
 			{
 				//	only 7 bytes required
 				os.put(0x68);	//	TL field
-				cyng::io::write_binary<std::uint64_t, 7>(os, cyng::swap_num(v));
+				cyng::io::write_binary<std::uint64_t, 7>(os, cyng::swap_num(v) >> 8);
 			}
 			else
 			{

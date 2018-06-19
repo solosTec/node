@@ -15,6 +15,8 @@ namespace node
 {
 	server::server(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
+		, sml::status& status_word
+		, cyng::store::db& config_db
 		, boost::uuids::uuid tag
 		, std::string account
 		, std::string pwd
@@ -23,6 +25,8 @@ namespace node
 		, cyng::mac48 mac)
 	: mux_(mux)
 		, logger_(logger)
+		, status_word_(status_word)
+		, config_db_(config_db)
 		, account_(account)
 		, pwd_(pwd)
 		, manufacturer_(manufacturer)
@@ -51,6 +55,8 @@ namespace node
 		acceptor_.listen();
 		
 		do_accept();
+
+		status_word_.set_service_if_available(true);
 	}
 	
 	void server::do_accept()
@@ -77,6 +83,8 @@ namespace node
 				std::make_shared<sml::connection>(std::move(socket)
 					, mux_
 					, logger_
+					, status_word_
+					, config_db_
 					, account_
 					, pwd_
 					, manufacturer_

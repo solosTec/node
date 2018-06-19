@@ -575,6 +575,26 @@ namespace node
 						, ro_.get_value("password"));
 
 				}
+				else if (path.at(0) == OBIS_CODE_ROOT_DATA_COLLECTOR)
+				{
+				return prg << cyng::generate_invoke_unwinded("sml.get.proc.data.collector"
+					, ro_.pk_
+					, ro_.trx_
+					, ro_.idx_
+					, ro_.get_value("serverId")
+					, ro_.get_value("userName")
+					, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_1107_IF)
+				{
+				return prg << cyng::generate_invoke_unwinded("sml.get.proc.1107.if"
+					, ro_.pk_
+					, ro_.trx_
+					, ro_.idx_
+					, ro_.get_value("serverId") // gateway MAC
+					, ro_.get_value("userName")
+					, ro_.get_value("password"));
+				}
 
 			}
 			return prg << cyng::generate_invoke_unwinded("sml.get.proc.parameter.request"

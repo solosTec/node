@@ -22,6 +22,8 @@ namespace node
 		connection::connection(boost::asio::ip::tcp::socket&& socket
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
+			, status& status_word
+			, cyng::store::db& config_db
 			, std::string const& account
 			, std::string const& pwd
 			, std::string manufacturer
@@ -30,7 +32,7 @@ namespace node
 		: socket_(std::move(socket))
 			, logger_(logger)
 			, buffer_()
-			, session_(make_session(mux, logger, account, pwd, manufacturer, model, mac))
+			, session_(make_session(mux, logger, status_word, config_db, account, pwd, manufacturer, model, mac))
 			, serializer_(socket_, this->get_session()->vm_)
 		{
 			//
