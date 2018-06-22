@@ -550,10 +550,10 @@ namespace node
 		std::map<std::string, std::string>	target_cfg;
 		for (auto const& target : targets)
 		{
-			auto pos = target_cfg.emplace(target.first, cyng::value_cast<std::string>(target.second, "SML"));
-			CYNG_LOG_TRACE(logger, pos->first << ':' << pos->second);
-			if (!boost::algorithm::equals(pos->second, "SML")) {
-				CYNG_LOG_WARNING(logger, "data layer " << pos->second << " not supported");
+			const auto pos = target_cfg.emplace(target.first, cyng::value_cast<std::string>(target.second, "SML"));
+			CYNG_LOG_TRACE(logger, pos.first->first << ':' << pos.first->second);
+			if (pos.second && !boost::algorithm::equals(pos.first->second, "SML")) {
+				CYNG_LOG_WARNING(logger, "data layer " << pos.first->second << " not supported");
 			}
 		}
 
