@@ -25,7 +25,7 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, std::vector<std::size_t> const& tsks
 			, master_config_t const& cfg
-			, std::vector<std::string> const& targets)
+			, std::map<std::string, std::string> const& targets)
 		: base_(*btp)
 			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:store"))
 			, logger_(logger)
@@ -185,7 +185,7 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		//	slot [4]
+		//	slot [4] - register target response
 		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
 		{
 			if (success)
@@ -193,13 +193,43 @@ namespace node
 				auto pos = seq_target_map_.find(seq);
 				if (pos != seq_target_map_.end())
 				{
-					CYNG_LOG_INFO(logger_, "channel "
-						<< channel
-						<< " ==> "
-						<< pos->second);
 
-					channel_target_map_.emplace(channel, pos->second);
+					//
+					//	get data layer
+					//
+					auto target = targets_.find(pos->second);
+					if (target != targets_.end())
+					{
+						CYNG_LOG_INFO(logger_, "channel "
+							<< channel
+							<< " ==> "
+							<< pos->second
+							<< ':'
+							<< target->second);
+
+						//
+						//	insert into channel => target map
+						//
+						channel_target_map_.emplace(channel, pos->second);
+
+					}
+					else
+					{
+						CYNG_LOG_ERROR(logger_, "target "
+							<< pos->second
+							<< " not found in target list");
+					}
+
+					//
+					//	remove from sequence => target map
+					//
 					seq_target_map_.erase(pos);
+				}
+				else
+				{
+					CYNG_LOG_ERROR(logger_, "no entry for sequence "
+						<< seq
+						<< " found");
 				}
 			}
 
@@ -294,17 +324,16 @@ namespace node
 				channel_target_map_.clear();
 				for (auto target : targets_)
 				{
-					CYNG_LOG_INFO(logger_, "register target " << target);
+					CYNG_LOG_INFO(logger_, "register target " << target.first << ':' << target.second);
 					cyng::vector_t prg;
 					prg
-						<< cyng::generate_invoke_unwinded("req.register.push.target", target, static_cast<std::uint16_t>(0xffff), static_cast<std::uint8_t>(1))
-						<< cyng::generate_invoke_unwinded("net.insert.rel", cyng::invoke("ipt.push.seq"),  target)
+						<< cyng::generate_invoke_unwinded("req.register.push.target", target.first, static_cast<std::uint16_t>(0xffff), static_cast<std::uint8_t>(1))
+						<< cyng::generate_invoke_unwinded("net.insert.rel", cyng::invoke("ipt.push.seq"),  target.first)
 						<< cyng::generate_invoke_unwinded("stream.flush")
 						;
 
 					bus_->vm_.async_run(std::move(prg));
 				}
-
 			}
 		}
 

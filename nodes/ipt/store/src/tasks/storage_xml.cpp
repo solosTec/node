@@ -114,26 +114,8 @@ namespace node
 
 			if (res.second)
 			{
-				//
-				//	This is a workaround for problems with nested strands
-				//
-				if (res.first->second.vm_.same_thread())
-				{
-					CYNG_LOG_FATAL(logger_, "SML/XML process line "
-						<< channel
-						<< ':'
-						<< source
-						<< ':'
-						<< target
-						<< " in same thread");
-					res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_xml::stop_writer, this, std::placeholders::_1));
-					res.first->second.vm_.async_run(cyng::generate_invoke("sml.parse", data));
-				}
-				else
-				{
-					res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_xml::stop_writer, this, std::placeholders::_1));
-					res.first->second.parse(data);
-				}
+				res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_xml::stop_writer, this, std::placeholders::_1));
+				res.first->second.parse(data);
 			}
 			else
 			{

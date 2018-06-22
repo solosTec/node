@@ -79,10 +79,11 @@ namespace node
 
 					if (vec.empty())
 					{
+						shutdown = true;
+
 						std::cerr
 							<< "use option -D to generate a configuration file"
 							<< std::endl;
-						shutdown = true;
 					}
 					else
 					{
@@ -117,11 +118,9 @@ namespace node
 						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
 
 					}
-
 				}
 				else
 				{
-					// 	CYNG_LOG_FATAL(logger, "no configuration data");
 					std::cerr
 						<< "use option -D to generate a configuration file"
 						<< std::endl;

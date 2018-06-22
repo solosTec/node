@@ -138,6 +138,10 @@ namespace node
 		}
 		else if (boost::algorithm::equals(table, "TGateway"))
 		{
+			sync_table("TMeter");
+		}
+		else if (boost::algorithm::equals(table, "TMeter"))
+		{
 			sync_table("TLoRaDevice");
 		}
 		else
@@ -278,22 +282,6 @@ namespace node
 		//	db.res.insert doesn't make sense for setup node
 		//
 		CYNG_LOG_TRACE(logger_, "db.res.insert - skipped");
-		//const std::string table = cyng::value_cast<std::string>(frame.at(0), "");
-		//const auto state = cache_.get_state(table);
-		//if (state == TS_READY)
-		//{
-		//	//
-		//	//	insert into SQL database
-		//	//
-		//	base_.mux_.post(storage_tsk_, 1, cyng::tuple_t{ frame.at(0), frame.at(1), frame.at(2), frame.at(3) });
-		//}
-		//else
-		//{
-		//	CYNG_LOG_ERROR(logger_, "db.res.insert( "
-		//		<< table
-		//		<< " ) - wrong state: "
-		//		<< state);
-		//}
 	}
 
 	void cluster::db_req_modify_by_attr(cyng::context& ctx)

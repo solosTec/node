@@ -33,7 +33,7 @@ namespace node
 				, cyng::logging::log_ptr
 				, std::vector<std::size_t> const&
 				, master_config_t const& cfg
-				, std::vector<std::string> const& targets);
+				, std::map<std::string, std::string> const& targets);
 			void run();
 			void stop();
 
@@ -90,7 +90,7 @@ namespace node
 			cyng::logging::log_ptr logger_;
 			const std::vector<std::size_t> tasks_;
 			const master_config_t	config_;
-			const std::vector<std::string> targets_;
+			const std::map<std::string, std::string> targets_;
 			std::size_t master_;
 
 			/**

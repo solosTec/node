@@ -798,6 +798,18 @@ namespace node
 			},
 			{ 36, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0 }));
 
+		//	IEC 62056-21 meters
+		meta_map.emplace("TIEC62056", cyng::table::make_meta_table<1, 2>("TIEC62056",
+			{ "pk"	//	reference to TMeter
+			, "gen"
+			, "address" },
+			{ cyng::TC_UUID		//	pk
+			, cyng::TC_UINT64	//	gen
+			, cyng::TC_IP_ADDRESS },
+			{ 36
+			, 0	//	gen
+			, 0 }));
+
 		return meta_map;
 	}
 

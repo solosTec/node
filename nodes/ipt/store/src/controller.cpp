@@ -45,7 +45,7 @@ namespace node
 	//
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	void join_network(cyng::async::mux&, cyng::logging::log_ptr, std::vector<std::size_t> const&, cyng::vector_t const&, std::vector<std::string> const&);
+	void join_network(cyng::async::mux&, cyng::logging::log_ptr, std::vector<std::size_t> const&, cyng::vector_t const&, cyng::param_map_t const&);
 	std::vector<std::size_t> connect_data_store(cyng::async::mux&, cyng::logging::log_ptr, std::vector<std::string> const&, cyng::object cfg);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
@@ -79,40 +79,58 @@ namespace node
 				//	read configuration file
 				//
 				cyng::object config = cyng::json::read_file(json_path_);
-
-				if (!config.is_null())
+				if (config)
 				{
-					//
-					//	initialize logger
-					//
-#if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("store", true);
-#else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "store");
-#endif
-
-					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
-					CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
-
 					//
 					//	start application
 					//
 					cyng::vector_t vec;
 					vec = cyng::value_cast(config, vec);
-					BOOST_ASSERT_MSG(!vec.empty(), "invalid configuration");
-					shutdown = vec.empty()
-						? true
-						: start(mux, logger, vec[0]);
 
-					//
-					//	print uptime
-					//
-					const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-					CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+					if (vec.empty())
+					{
+						shutdown = true;
+
+						std::cerr
+							<< "use option -D to generate a configuration file"
+							<< std::endl;
+					}
+					else
+					{
+
+						//
+						//	initialize logger
+						//
+#if BOOST_OS_LINUX
+						auto logger = cyng::logging::make_sys_logger("ipt:master", true);
+#else
+						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
+						auto dom = cyng::make_reader(vec[0]);
+						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
+
+						auto logger = (console)
+							? cyng::logging::make_console_logger(mux.get_io_service(), "ipt:master")
+							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "ipt-master.log"))
+							;
+#endif
+
+						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
+						CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
+
+						//
+						//	start
+						//
+						shutdown = start(mux, logger, vec[0]);
+
+						//
+						//	print uptime
+						//
+						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
+						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+					}
 				}
 				else
 				{
-					// 					CYNG_LOG_FATAL(logger, "no configuration data");
 					std::cout
 						<< "use option -D to generate a configuration file"
 						<< std::endl;
@@ -211,10 +229,11 @@ namespace node
 						cyng::param_factory("scrambled", false),
 						cyng::param_factory("monitor", 57))
 					}))
-					, cyng::param_factory("targets", cyng::vector_factory({ "data.sink.1", "data.sink.2" }))	//	list of targets
-					//, cyng::param_factory("targets", cyng::vector_factory({ 
-					//	cyng::param_factory("data.sink.1", "SML")
-					//	, cyng::param_factory("data.sink.2", "IEC") }))	//	list of targets
+					//, cyng::param_factory("targets", cyng::vector_factory({ "data.sink.1", "data.sink.2" }))	//	list of targets
+					, cyng::param_factory("targets", cyng::vector_factory({ 
+						  cyng::param_factory("data.sink.sml", "SML")
+						, cyng::param_factory("data.sink.iec", "IEC") //	IEC 62056-21
+						}))	//	list of targets
 				)
 				});
 			//cyng::vector_factory({});
@@ -364,23 +383,20 @@ namespace node
 		//	connect to ipt master
 		//
 		cyng::vector_t tmp;
-		join_network(mux, logger, tsks, cyng::value_cast(dom.get("ipt"), tmp), cyng::vector_cast<std::string>(dom.get("targets"), ""));
+		//	vector of tuples with parameters
+		cyng::vector_t target_vec;
+		target_vec = cyng::value_cast(dom.get("targets"), target_vec);
+
+		join_network(mux
+			, logger
+			, tsks
+			, cyng::value_cast(dom.get("ipt"), tmp)
+			, cyng::to_param_map(target_vec));
 
 		//
 		//	wait for system signals
 		//
 		const bool shutdown = wait(logger);
-
-		//
-		//	close acceptor
-		//
-		CYNG_LOG_INFO(logger, "close acceptor");
-		//srv.close();
-
-		//
-		//	stop all connections
-		//
-		CYNG_LOG_INFO(logger, "stop all connections");
 
 		//
 		//	stop all tasks
@@ -526,16 +542,27 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, std::vector<std::size_t> const& tsks
 		, cyng::vector_t const& cfg
-		, std::vector<std::string> const& targets)
+		, cyng::param_map_t const& targets)
 	{
-		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg.size());
+		CYNG_LOG_TRACE(logger, cfg.size() << " IP-T master(s) configured");
+		CYNG_LOG_TRACE(logger, targets.size() << " push target(s) configured:");
+
+		std::map<std::string, std::string>	target_cfg;
+		for (auto const& target : targets)
+		{
+			auto pos = target_cfg.emplace(target.first, cyng::value_cast<std::string>(target.second, "SML"));
+			CYNG_LOG_TRACE(logger, pos->first << ':' << pos->second);
+			if (!boost::algorithm::equals(pos->second, "SML")) {
+				CYNG_LOG_WARNING(logger, "data layer " << pos->second << " not supported");
+			}
+		}
 
 		cyng::async::start_task_delayed<ipt::network>(mux
 			, std::chrono::seconds(1)
 			, logger
 			, tsks
 			, ipt::load_cluster_cfg(cfg)
-			, targets);
+			, target_cfg);
 
 	}
 

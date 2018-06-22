@@ -67,8 +67,7 @@ namespace node
 				//
 				//	read configuration file
 				//
-				cyng::object config = cyng::json::read_file(json_path_);
-				
+				cyng::object config = cyng::json::read_file(json_path_);				
 				if (config)
 				{
 					//
