@@ -20,6 +20,9 @@ set (node_dash_tasks
 	nodes/dash/src/tasks/system.cpp
 )
 
+#
+# Download actual versions from https://datatables.net/download/
+#
 set (node_dash_res
 	nodes/dash/htdocs/index.html
 	nodes/dash/htdocs/config.system.html

@@ -1197,7 +1197,7 @@ namespace node
 		//	[client.req.open.connection,[29feef99-3f33-4c90-b0db-8c2c50d3d098,90732ba2-1c8a-4587-a19f-caf27752c65a,3,LSMTest1,%(("seq":1),("tp-layer":ipt))]]
 		//
 		//	* client tag
-		//	* peer
+		//	* remote peer
 		//	* bus sequence
 		//	* number
 		//	* bag
@@ -1214,12 +1214,16 @@ namespace node
 			cyng::param_map_t		//	[4] bag
 		>(frame);
 
+		auto self = cyng::object_cast<session>(frame.at(5));
+		BOOST_ASSERT(self != nullptr);
+		BOOST_ASSERT(self->vm_.tag() == ctx.tag());
+
 		ctx.attach(client_.req_open_connection(std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
 			, std::get<4>(tpl)
-			, frame.at(5)));
+			, self));
 	}
 
 	void session::client_res_open_connection(cyng::context& ctx)

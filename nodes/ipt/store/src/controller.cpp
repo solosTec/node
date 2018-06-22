@@ -212,6 +212,9 @@ namespace node
 						cyng::param_factory("monitor", 57))
 					}))
 					, cyng::param_factory("targets", cyng::vector_factory({ "data.sink.1", "data.sink.2" }))	//	list of targets
+					//, cyng::param_factory("targets", cyng::vector_factory({ 
+					//	cyng::param_factory("data.sink.1", "SML")
+					//	, cyng::param_factory("data.sink.2", "IEC") }))	//	list of targets
 				)
 				});
 			//cyng::vector_factory({});

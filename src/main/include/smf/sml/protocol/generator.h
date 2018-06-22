@@ -203,6 +203,10 @@ namespace node
 			std::size_t get_proc_visible_devices(cyng::object trx
 				, cyng::object server_id
 				, const cyng::store::table*);
+
+			std::size_t get_proc_sensor_property(cyng::object trx
+				, cyng::object server_id
+				, const cyng::table::record&);
 		};
 
 	}

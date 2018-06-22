@@ -500,13 +500,22 @@ namespace node
 	{
 		CYNG_LOG_TRACE(logger, "init configuration db");
 
-		if (!config.create_table(cyng::table::make_meta_table<1, 5>("devices",
+		if (!config.create_table(cyng::table::make_meta_table<1, 12>("devices",
 			{ "serverID"			//	server ID
-			, "lastSeen"	//	last seen
+			, "lastSeen"	//	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
 			, "class"		//	device class (always "---" == 2D 2D 2D)
 			, "visible"
 			, "active"
 			, "descr"
+			//	---
+			, "status"	//	"Statusinformation: 00"
+			, "mask"	//	"Bitmaske: 00 00"
+			, "interval"	//	"Zeit zwischen zwei Datensätzen: 49000"
+			//	--- optional data
+			, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
+			, "aes"	//	AES-Schlüssel: "
+			, "user"
+			, "pwd"
 			},
 			{ cyng::TC_BUFFER		//	server ID
 			, cyng::TC_TIME_POINT	//	last seen
@@ -514,6 +523,14 @@ namespace node
 			, cyng::TC_BOOL			//	visible
 			, cyng::TC_BOOL			//	active
 			, cyng::TC_STRING		//	description
+
+			, cyng::TC_UINT64		//	status (81 00 60 05 00 00)
+			, cyng::TC_BUFFER		//	bit mask (81 81 C7 86 01 FF)
+			, cyng::TC_UINT32		//	interval (milliseconds)
+			, cyng::TC_BUFFER		//	pubKey
+			, cyng::TC_BUFFER		//	aes
+			, cyng::TC_STRING		//	user
+			, cyng::TC_STRING		//	pwd
 			},
 			{ 9
 			, 0
@@ -521,6 +538,14 @@ namespace node
 			, 0		//	visible
 			, 0		//	active
 			, 128	//	description
+
+			, 0		//	status
+			, 8		//	mask
+			, 0		//	interval
+			, 16	//	pubKey
+			, 32	//	aes
+			, 32	//	user
+			, 32	//	pwd
 			})))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
@@ -534,7 +559,14 @@ namespace node
 					, "---"
 					, true	//	visible
 					, true	//	active
-					, "demo entry")
+					, "demo entry"
+					, 0ull	//	status
+					, cyng::buffer_t{ 0, 0 }	//	mask
+					, 26000ul	//	interval
+					, cyng::buffer_t{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 }	//	pubKey
+					, cyng::buffer_t{}	//	aes
+					, "user"
+					, "pwd")
 				, 1	//	generation
 				, tag);
 
@@ -544,7 +576,14 @@ namespace node
 					, "---"
 					, true	//	visible
 					, true	//	active
-					, "01 A8 15 74 31 45 05 01 02")
+					, "01 A8 15 74 31 45 05 01 02"
+					, 0ull	//	status
+					, cyng::buffer_t{ 0, 0 }	//	mask
+					, 26000ul	//	interval
+					, cyng::buffer_t{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 }	//	pubKey
+					, cyng::buffer_t{}	//	aes
+					, "user"
+					, "pwd")
 				, 1	//	generation
 				, tag);
 
@@ -554,7 +593,14 @@ namespace node
 					, "---"
 					, true	//	visible
 					, false	//	active
-					, "01 E6 1E 74 31 45 05 01 02")
+					, "01 E6 1E 74 31 45 05 01 02"
+					, 0ull	//	status
+					, cyng::buffer_t{ 0, 0 }	//	mask
+					, 26000ul	//	interval
+					, cyng::buffer_t{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 }	//	pubKey
+					, cyng::buffer_t{}	//	aes
+					, "user"
+					, "pwd")
 				, 1	//	generation
 				, tag);
 		}

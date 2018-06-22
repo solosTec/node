@@ -961,74 +961,78 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "sml.get.proc.sensor.property " << cyng::io::to_str(frame));
 
-			//	ServerId: 05 00 15 3B 02 29 7E 
-			//	ServerId: 01 E6 1E 13 09 00 16 3C 07 
-			//	81 81 C7 86 00 FF                Not set
-			//	   81 81 C7 82 04 FF             _______<_ (01 E6 1E 13 09 00 16 3C 07 )
-			//	   81 81 C7 82 02 FF              ()
-			//	   81 81 C7 82 03 FF             GWF (47 57 46 )
-			//	   81 00 60 05 00 00             _ (00 )
-			//	   81 81 C7 86 01 FF             0 (30 )
-			//	   81 81 C7 86 02 FF             26000 (32 36 30 30 30 )
-			//	   01 00 00 09 0B 00             1528100055 (timestamp)
-			//	   81 81 C7 82 05 FF             ___________5}_w_ (18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03 )
-			//	   81 81 C7 86 03 FF              ()
-			//	   81 81 61 3C 01 FF             Not set
-			//	   81 81 61 3C 02 FF             Not set
+			config_db_.access([&](const cyng::store::table* tbl) {
 
-			const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-			const cyng::buffer_t	public_key{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 };
-			cyng::buffer_t server_id;
-			server_id = cyng::value_cast(frame.at(3), server_id);
-			const cyng::buffer_t status{ 0x00 };
+				CYNG_LOG_INFO(logger_, tbl->size() << " devices");
+				auto rec = tbl->lookup(cyng::table::key_generator(frame.at(3)));
+				if (rec.empty())
+				{
+					sml_gen_.empty(frame.at(1)
+						, frame.at(3)	//	server id
+						, OBIS_CODE_ROOT_SENSOR_PROPERTY);
+				}
+				else
+				{
+					sml_gen_.get_proc_sensor_property(frame.at(1)
+						, frame.at(3)	//	server id
+						, rec);
+				}
+
+			}, cyng::store::read_access("devices"));
+
+			//const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+			//const cyng::buffer_t	public_key{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 };
+			//cyng::buffer_t server_id;
+			//server_id = cyng::value_cast(frame.at(3), server_id);
+			//const cyng::buffer_t status{ 0x00 };
 
 			//
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			sml_gen_.append_msg(message(frame.at(1)	//	trx
-				, 2 //, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+			//sml_gen_.append_msg(message(frame.at(1)	//	trx
+			//	, 2 //, ++group_no_	//	group
+			//	, 0 //	abort code
+			//	, BODY_GET_PROC_PARAMETER_RESPONSE
 
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id  
-					, OBIS_CODE_ROOT_SENSOR_PROPERTY	//	path entry - 81 81 C7 86 00 FF
-					, child_list_tree(OBIS_CODE_ROOT_SENSOR_PROPERTY, {
+			//	//
+			//	//	generate get process parameter response
+			//	//
+			//	, get_proc_parameter_response(frame.at(3)	//	server id  
+			//		, OBIS_CODE_ROOT_SENSOR_PROPERTY	//	path entry - 81 81 C7 86 00 FF
+			//		, child_list_tree(OBIS_CODE_ROOT_SENSOR_PROPERTY, {
 
-						//	repeat server id
-						parameter_tree(OBIS_CODE_SERVER_ID, make_value(server_id)),
+			//			//	repeat server id
+			//			parameter_tree(OBIS_CODE_SERVER_ID, make_value(server_id)),
 
-						//	Geräteklasse
-						parameter_tree(OBIS_CODE_DEVICE_CLASS, make_value()),
+			//			//	Geräteklasse
+			//			parameter_tree(OBIS_CODE_DEVICE_CLASS, make_value()),
 
-						//	Manufacturer
-						parameter_tree(OBIS_DATA_MANUFACTURER, make_value("solosTec")),
+			//			//	Manufacturer
+			//			parameter_tree(OBIS_DATA_MANUFACTURER, make_value("solosTec")),
 
-						//	Statuswort [octet string]
-						parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(status)),
+			//			//	Statuswort [octet string]
+			//			parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(status)),
 
-						//	Bitmaske zur Definition von Bits, deren Änderung zu einem Eintrag im Betriebslogbuch zum Datenspiegel führt
-						parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(static_cast<std::uint8_t>(0x0))),
+			//			//	Bitmaske zur Definition von Bits, deren Änderung zu einem Eintrag im Betriebslogbuch zum Datenspiegel führt
+			//			parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(static_cast<std::uint8_t>(0x0))),
 
-						//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
-						parameter_tree(OBIS_CODE_AVERAGE_TIME_MS, make_value(static_cast<std::uint16_t>(1234))),
+			//			//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
+			//			parameter_tree(OBIS_CODE_AVERAGE_TIME_MS, make_value(static_cast<std::uint16_t>(1234))),
 
-						//	aktuelle UTC-Zeit
-						parameter_tree(OBIS_CURRENT_UTC, make_value(now)),
+			//			//	aktuelle UTC-Zeit
+			//			parameter_tree(OBIS_CURRENT_UTC, make_value(now)),
 
-						//	public key
-						parameter_tree(OBIS_DATA_PUBLIC_KEY, make_value(public_key)),
+			//			//	public key
+			//			parameter_tree(OBIS_DATA_PUBLIC_KEY, make_value(public_key)),
 
-						//	AES Schlüssel für wireless M-Bus
-						empty_tree(OBIS_DATA_AES_KEY),
+			//			//	AES Schlüssel für wireless M-Bus
+			//			empty_tree(OBIS_DATA_AES_KEY),
 
-						parameter_tree(OBIS_DATA_USER_NAME, make_value("user")),
-						parameter_tree(OBIS_DATA_USER_PWD, make_value("pwd"))
+			//			parameter_tree(OBIS_DATA_USER_NAME, make_value("user")),
+			//			parameter_tree(OBIS_DATA_USER_PWD, make_value("pwd"))
 
-			}))));
+			//}))));
 		}
 
 		void kernel::sml_get_proc_data_collector(cyng::context& ctx)

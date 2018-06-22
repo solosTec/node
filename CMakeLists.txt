@@ -532,6 +532,21 @@ endif()
 target_link_libraries(e350 ${e350_link_libs})
 
 #
+# IEC 62056-21
+#
+include (nodes/iec/prg.cmake)
+add_executable(iec ${node_iec})
+# libraries to link
+set(iec_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys smf_cluster)
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	list(APPEND iec_link_libs "${Boost_LIBRARIES}")
+    if (UNIX)
+        list(APPEND iec_link_libs pthread)
+    endif()
+endif()
+target_link_libraries(iec ${iec_link_libs})
+
+#
 # IP-T collector
 #
 include (nodes/ipt/collector/prg.cmake)
@@ -791,6 +806,15 @@ if(UNIX)
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350.service.in"
 		  "${PROJECT_BINARY_DIR}/node-e350.service")
 
+	# iec
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/iec/templates/iec.linux.cgf.in"
+		  "${PROJECT_BINARY_DIR}/iec_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/iec/templates/iec.service.in"
+		  "${PROJECT_BINARY_DIR}/node-iec.service")
+
 	# ipt collector 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector.linux.cgf.in"
@@ -935,6 +959,23 @@ else()
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/e350_restart_service.cmd")
+
+	# iec
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/iec/templates/iec.windows.cgf.in"
+		  "${PROJECT_BINARY_DIR}/iec_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/iec/templates/iec_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/iec_create_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/iec/templates/iec_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/iec_delete_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/iec/templates/iec_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/iec_restart_service.cmd")
 
 	# ipt collector 
 	configure_file (

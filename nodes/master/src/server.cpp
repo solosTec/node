@@ -121,8 +121,8 @@ namespace node
 					, db_
 					, account_
 					, pwd_
-					, rgn_()
-					, monitor_ // cluster watchdog
+					, rgn_()	//	unique session tag
+					, monitor_	//	cluster watchdog
 					, global_configuration_
 					, stat_dir_)->start();
 

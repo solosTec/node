@@ -27,6 +27,7 @@ namespace node
 	cyng::table::key_list_t get_targets_by_peer(cyng::store::table const* tbl_target, boost::uuids::uuid);
 	cyng::table::key_list_t get_channels_by_peer(cyng::store::table const* tbl_channel, boost::uuids::uuid);
 
+	class session;
 	class client
 	{
 		friend class connection;
@@ -61,7 +62,7 @@ namespace node
 			, std::uint64_t			//	[2] sequence number
 			, std::string			//	[3] number
 			, cyng::param_map_t const&		//	[4] bag)
-			, cyng::object self);
+			, session const* self);
 
 		cyng::vector_t res_open_connection(boost::uuids::uuid,		//	[0] origin client tag
 			boost::uuids::uuid,		//	[1] peer tag

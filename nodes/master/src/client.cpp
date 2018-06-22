@@ -568,18 +568,19 @@ namespace node
 
 
 	cyng::vector_t client::req_open_connection(boost::uuids::uuid tag
-		, boost::uuids::uuid peer
+		, boost::uuids::uuid peer	//	remote peer
 		, std::uint64_t seq
 		, std::string number
 		, cyng::param_map_t const& bag
-		, cyng::object self)
+		, session const* self)
 	{
-		auto caller_peer = cyng::object_cast<session>(self);
-		BOOST_ASSERT(caller_peer != nullptr);
+		//auto caller_peer = cyng::object_cast<session>(self);
+		//BOOST_ASSERT(caller_peer != nullptr);
+		//BOOST_ASSERT(caller_peer->vm_.tag() == nullptr);
 
 		cyng::param_map_t options;
 		options["origin-tag"] = cyng::make_object(tag);		//	send response to this session
-		options["local-peer"] = cyng::make_object(peer);	//	and this peer
+		options["local-peer"] = cyng::make_object(peer);	//	and remote peer of caller
 															
 		//	following actions
 		//
@@ -597,12 +598,12 @@ namespace node
 				<< tbl_device->size()
 				<< " devices");
 
-			tbl_device->loop([&](cyng::table::record const& rec) -> bool {
+			tbl_device->loop([&](cyng::table::record const& dev_rec) -> bool {
 
 				//
 				//	search a matching number
 				//
-				const auto dev_number = cyng::value_cast<std::string>(rec["msisdn"], "");
+				const auto dev_number = cyng::value_cast<std::string>(dev_rec["msisdn"], "");
 
 				//CYNG_LOG_DEBUG(logger_, dev_number);
 				if (boost::algorithm::equals(number, dev_number))
@@ -610,22 +611,22 @@ namespace node
 					//
 					//	search session of this device
 					//
-					const auto dev_tag = cyng::value_cast(rec["pk"], boost::uuids::nil_uuid());
-					options["device-name"] = rec["name"];
+					const auto dev_tag = cyng::value_cast(dev_rec["pk"], boost::uuids::nil_uuid());
+					const auto dev_name = cyng::value_cast<std::string>(dev_rec["name"], "");
+					options["device-name"] = dev_rec["name"];
 
 					//
 					//	do not call if device is not enabled
 					//
-					const auto enabled = cyng::value_cast(rec["enabled"], false);
+					const auto enabled = cyng::value_cast(dev_rec["enabled"], false);
 
 					if (enabled)
 					{
 						//
 						//	device found
 						//
-						CYNG_LOG_TRACE(logger_, "matching device "
-							<< cyng::io::to_str(rec.key())
-							<< cyng::io::to_str(rec.data()));
+						CYNG_LOG_TRACE(logger_, "matching device is "
+							<< dev_name);
 					}
 					else
 					{
@@ -633,8 +634,8 @@ namespace node
 						//	device found but disabled
 						//
 						CYNG_LOG_WARNING(logger_, "matching device "
-							<< cyng::io::to_str(rec.key())
-							<< cyng::io::to_str(rec.data())
+							<< cyng::io::to_str(dev_rec.key())
+							<< cyng::io::to_str(dev_rec.data())
 							<< " is not enabled");
 
 						//
@@ -643,32 +644,35 @@ namespace node
 						return false;
 					}
 
-					tbl_session->loop([&](cyng::table::record const& rec) -> bool {
+					tbl_session->loop([&](cyng::table::record const& ses_rec) -> bool {
 
-						const auto ses_tag = cyng::value_cast(rec["device"], boost::uuids::nil_uuid());
+						const auto ses_tag = cyng::value_cast(ses_rec["device"], boost::uuids::nil_uuid());
 						if (dev_tag == ses_tag)
 						{
 							//
 							//	session found
 							//
-							CYNG_LOG_TRACE(logger_, "matching session " 
-								<< cyng::io::to_str(rec.key())
-								<< cyng::io::to_str(rec.data()));
+							CYNG_LOG_TRACE(logger_, "matching session to call " 
+								<< cyng::io::to_str(ses_rec.key())
+								<< cyng::io::to_str(ses_rec.data()));
 
-							options["remote-tag"] = rec["tag"];
-							options["remote-peer"] = rec["peer"];
+							options["remote-tag"] = ses_rec["tag"];
+							options["remote-peer"] = ses_rec["peer"];
 
 							//
 							//	forward connection open request
 							//
-							auto remote_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+							auto remote_tag = cyng::value_cast(ses_rec["tag"], boost::uuids::nil_uuid());
 
-							auto callee_peer = cyng::object_cast<session>(rec["local"]);
+							auto callee_peer = cyng::object_cast<session>(ses_rec["local"]);
 							BOOST_ASSERT(callee_peer != nullptr);
 
-							options["local-connect"] = cyng::make_object(caller_peer->hash() == callee_peer->hash());
+							//CYNG_LOG_TRACE(logger_, "caller local peer: " << self->vm_.tag());
+							//CYNG_LOG_TRACE(logger_, "callee local peer: " << callee_peer->vm_.tag());
 
-							if (caller_peer->hash() == callee_peer->hash())
+							options["local-connect"] = cyng::make_object(self->vm_.tag() == callee_peer->vm_.tag());
+
+							if (self->vm_.tag() == callee_peer->vm_.tag())
 							{
 								CYNG_LOG_TRACE(logger_, "connection between "
 									<< tag

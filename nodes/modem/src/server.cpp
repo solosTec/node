@@ -544,6 +544,10 @@ namespace node
 			//	%(("device-name":LSMTest4),("local-connect":true),("local-peer":3d5994f1-60df-4410-b6ba-c2934f8bfd5e),("origin-tag":bff22fb4-f410-4239-83ae-40027fb2609e),("remote-peer":3d5994f1-60df-4410-b6ba-c2934f8bfd5e),("remote-tag":3f972487-e9a9-4e03-92d4-e2df8f6d30c5)),
 			//	%(("seq":1),("tp-layer":ipt))]
 			//
+			//	[f657222b-be94-419b-a591-0773f2025b0b,4,false,
+			//	%(("device-name":LZQJ),("local-connect":false),("local-peer":3402d935-b7b0-45eb-be4d-2e552cf1d010),("origin-tag":30d68460-f66d-4118-89f3-c82f2a6dc96d),("remote-peer":3f01ec0a-b2af-4cc2-b694-667e1ff2b369),("remote-tag":257ff533-105e-483f-ae6d-97f05f746693)),
+			//	%(("tp-layer":modem))]
+			//
 			//	* session tag
 			//	* peer
 			//	* cluster sequence
