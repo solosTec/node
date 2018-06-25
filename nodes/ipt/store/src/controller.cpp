@@ -102,15 +102,15 @@ namespace node
 						//	initialize logger
 						//
 #if BOOST_OS_LINUX
-						auto logger = cyng::logging::make_sys_logger("ipt:master", true);
+						auto logger = cyng::logging::make_sys_logger("ipt:store", true);
 #else
 						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 						auto dom = cyng::make_reader(vec[0]);
 						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
 
 						auto logger = (console)
-							? cyng::logging::make_console_logger(mux.get_io_service(), "ipt:master")
-							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "ipt-master.log"))
+							? cyng::logging::make_console_logger(mux.get_io_service(), "ipt:store")
+							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "ipt-store.log"))
 							;
 #endif
 

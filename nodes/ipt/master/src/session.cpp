@@ -478,10 +478,11 @@ namespace node
 			//
 			//	close session
 			//
-			ctx	.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"))
-				.attach(cyng::generate_invoke("ip.tcp.socket.close"));
+			bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", vm_.tag(), cyng::invoke("push.connection"), boost::system::error_code(boost::asio::error::operation_aborted)));
+			//ctx	.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"))
+			//	.attach(cyng::generate_invoke("ip.tcp.socket.close"));
 
-			stop(boost::system::error_code(boost::asio::error::operation_aborted));
+			//stop(boost::system::error_code(boost::asio::error::operation_aborted));
 
 		}
 
@@ -1476,7 +1477,11 @@ namespace node
 			//	set acknownlegde flag
 			//
 			std::uint8_t status = cyng::value_cast<std::uint8_t>(dom.get("status"), 0);
-			BOOST_ASSERT_MSG(status == 0xc1, "invalid push channel status");
+			//BOOST_ASSERT_MSG(status == 0xc1, "invalid push channel status");
+			if (status != 0xc1)
+			{
+				ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.transfer.pushdata - status", status));
+			}
 			status |= tp_res_pushdata_transfer_policy::ACK;
 
 			//

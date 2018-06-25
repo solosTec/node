@@ -110,24 +110,6 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
 		}
-		else
-		{
-			db.insert("TGateway"
-				, cyng::table::key_generator(tag)
-				, cyng::table::data_generator("0500153B02517E"
-					, "EMH"
-					, std::chrono::system_clock::now()
-					, "06441734"
-					, cyng::mac48(0, 1, 2, 3, 4, 5)
-					, cyng::mac48(0, 1, 2, 3, 4, 6)
-					, "secret"
-					, "secret"
-					, "mbus"
-					, "operator"
-					, "operator")
-				, 94
-				, tag);
-		}
 
 		//	(1) tag (UUID) - pk
 		//	+-----------------
