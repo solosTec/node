@@ -1161,7 +1161,7 @@ namespace node
 		std::string version,			//	[7] device id
 		std::chrono::seconds timeout,	//	[8] timeout
 		cyng::param_map_t const& bag,
-		boost::uuids::uuid self)		//	[10] local session tag
+		boost::uuids::uuid self)		//	[10] local peer tag
 	{
 		if (name.empty())
 		{
@@ -1226,10 +1226,6 @@ namespace node
 				}
 			}
 
-			//
-			//	new (random) channel id
-			//
-			const std::uint32_t channel = distribution_(rng_);
 
 			//
 			//	get a list of matching targets (matching by name)
@@ -1253,7 +1249,19 @@ namespace node
 					, cyng::logging::severity::LEVEL_WARNING
 					, "no target [" + name + "] registered"
 					, tag);
+
+				//
+				//	write statistics
+				//
+				write_stat(stat_stream, tag, "no target", name.c_str());
+
 			}
+
+			//
+			//	new (random) channel id
+			//
+			const std::uint32_t channel = distribution_(rng_);
+
 			//
 			//	create push channels
 			//
@@ -1262,66 +1270,27 @@ namespace node
 				auto target_rec = tbl_target->lookup(key);
 				BOOST_ASSERT(!target_rec.empty());
 
-				//
-				//	get target channel
-				//
-				const std::uint32_t target = cyng::value_cast<std::uint32_t>(target_rec["channel"], 0);
-
-				//
-				//	get target session
-				//
-				const boost::uuids::uuid target_session_tag = cyng::value_cast(target_rec["tag"], boost::uuids::nil_uuid());
-				auto target_session_rec = tbl_session->lookup(cyng::table::key_generator(target_session_tag));
-				if (!target_session_rec.empty())
+				if (create_channel(prg
+					, tbl_channel
+					, tbl_session
+					, tbl_msg
+					, name
+					, source_channel
+					, channel
+					, target_rec
+					, tag
+					, self
+					, timeout
+					, r.second
+					, r.first.size()))
 				{
-
 					//
-					//	insert new push channel
+					//	write statistics
 					//
-					if (tbl_channel->insert(cyng::table::key_generator(channel, source_channel, target)
-						, cyng::table::data_generator(target_rec["tag"]	//	target session tag
-							, target_session_rec["local"]	//	target peer object - TargetPeer
-							, self	// ChannelPeer
-							, r.second	//	max packet size
-							, timeout	//	timeout
-							, r.first.size())	//	target count
-						, 1, tag))
-					{
-						prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
-							, "open push channel"
-							, channel, source_channel, target));
-
-						//
-						//	write statistics
-						//
-						write_stat(stat_stream, tag, "open push channel", name.c_str());
-
-					}
-					else
-					{
-						prg << cyng::unwinder(cyng::generate_invoke("log.msg.error"
-							, "open push channel - failed"
-							, channel, source_channel, target));
-
-						insert_msg(tbl_msg
-							, cyng::logging::severity::LEVEL_WARNING
-							, "open push channel - [" + name + "] failed"
-							, tag);
-
-					}
-				}
-				else
-				{
-					prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
-						, "open push channel - no target session"
-						, target_session_tag));
-
-					insert_msg(tbl_msg
-						, cyng::logging::severity::LEVEL_WARNING
-						, "open push channel - no target [" + name + "] session"
-						, tag);
+					write_stat(stat_stream, tag, "open push channel", name.c_str());
 
 				}
+
 			}
 
 			cyng::param_map_t options;
@@ -1347,6 +1316,81 @@ namespace node
 
 
 		return prg;
+	}
+
+	bool client::create_channel(cyng::vector_t& prg
+		, cyng::store::table* tbl_channel
+		, const cyng::store::table* tbl_session
+		, cyng::store::table* tbl_msg
+		, std::string const& name
+		, std::uint32_t source_channel
+		, std::uint32_t channel
+		, cyng::table::record const& target_rec
+		, boost::uuids::uuid tag
+		, boost::uuids::uuid self
+		, std::chrono::seconds timeout
+		, std::uint16_t max_packet_size
+		, std::size_t count)
+	{
+		//
+		//	get target channel
+		//
+		const std::uint32_t target = cyng::value_cast<std::uint32_t>(target_rec["channel"], 0);
+
+		//
+		//	get target session
+		//
+		const boost::uuids::uuid target_session_tag = cyng::value_cast(target_rec["tag"], boost::uuids::nil_uuid());
+		auto target_session_rec = tbl_session->lookup(cyng::table::key_generator(target_session_tag));
+		if (!target_session_rec.empty())
+		{
+
+			//
+			//	insert new push channel
+			//
+			if (tbl_channel->insert(cyng::table::key_generator(channel, source_channel, target)
+				, cyng::table::data_generator(target_rec["tag"]	//	target session tag
+					, target_session_rec["local"]	//	target peer object - TargetPeer
+					, self	// ChannelPeer
+					, max_packet_size	//	max packet size
+					, timeout	//	timeout
+					, count)	//	target count
+				, 1, tag))
+			{
+				prg << cyng::unwinder(cyng::generate_invoke("log.msg.info"
+					, "open push channel"
+					, channel
+					, source_channel
+					, target));
+
+				return true;
+			}
+			else
+			{
+				prg << cyng::unwinder(cyng::generate_invoke("log.msg.error"
+					, "open push channel - failed"
+					, channel, source_channel, target));
+
+				insert_msg(tbl_msg
+					, cyng::logging::severity::LEVEL_WARNING
+					, "open push channel - [" + name + "] failed"
+					, tag);
+
+			}
+		}
+		else
+		{
+			prg << cyng::unwinder(cyng::generate_invoke("log.msg.warning"
+				, "open push channel - no target session"
+				, target_session_tag));
+
+			insert_msg(tbl_msg
+				, cyng::logging::severity::LEVEL_WARNING
+				, "open push channel - no target [" + name + "] session"
+				, tag);
+
+		}
+		return false;
 	}
 
 	cyng::vector_t client::req_close_push_channel(boost::uuids::uuid tag,

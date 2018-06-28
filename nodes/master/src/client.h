@@ -156,6 +156,20 @@ namespace node
 
 		cyng::table::key_list_t get_clients_by_peer(const cyng::store::table* tbl_session, boost::uuids::uuid);
 
+		bool create_channel(cyng::vector_t& prg
+			, cyng::store::table* tbl_channel
+			, const cyng::store::table* tbl_session
+			, cyng::store::table* tbl_msg
+			, std::string const& name
+			, std::uint32_t source_channel
+			, std::uint32_t channel
+			, cyng::table::record const& target_rec
+			, boost::uuids::uuid tag
+			, boost::uuids::uuid self
+			, std::chrono::seconds timeout
+			, std::uint16_t max_packet_size
+			, std::size_t count);
+
 	private:
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;

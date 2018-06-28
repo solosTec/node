@@ -25,7 +25,7 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, std::vector<std::size_t> const& tsks
 			, master_config_t const& cfg
-			, std::vector<std::string> const& targets)
+			, std::map<std::string, std::string> const& targets)
 		: base_(*btp)
 			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:store"))
 			, logger_(logger)
@@ -48,7 +48,7 @@ namespace node
 			bus_->vm_.register_function("network.task.resume", 4, std::bind(&network::task_resume, this, std::placeholders::_1));
 			bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&network::reconfigure, this, std::placeholders::_1));
 
-			bus_->vm_.register_function("net.insert.rel", 1, std::bind(&network::insert_rel, this, std::placeholders::_1));
+			bus_->vm_.register_function("net.insert.rel", 3, std::bind(&network::insert_rel, this, std::placeholders::_1));
 		}
 
 		void network::run()
@@ -185,7 +185,7 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		//	slot [4]
+		//	slot [4] - register target response
 		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
 		{
 			if (success)
@@ -193,12 +193,20 @@ namespace node
 				auto pos = seq_target_map_.find(seq);
 				if (pos != seq_target_map_.end())
 				{
-					CYNG_LOG_INFO(logger_, "channel "
-						<< channel
-						<< " ==> "
-						<< pos->second);
+					auto pos_target = targets_.find(pos->second);
+					if (pos_target != targets_.end())
+					{
+						BOOST_ASSERT(pos->second == pos_target->first);
 
-					channel_target_map_.emplace(channel, pos->second);
+						CYNG_LOG_INFO(logger_, "channel "
+							<< channel
+							<< " ==> "
+							<< pos->second
+							<< ':'
+							<< pos_target->second);
+
+						channel_target_map_.emplace(channel, pos->second);
+					}
 					seq_target_map_.erase(pos);
 				}
 			}
@@ -294,11 +302,11 @@ namespace node
 				channel_target_map_.clear();
 				for (auto target : targets_)
 				{
-					CYNG_LOG_INFO(logger_, "register target " << target);
+					CYNG_LOG_INFO(logger_, "register target " << target.first << ':' << target.second);
 					cyng::vector_t prg;
 					prg
-						<< cyng::generate_invoke_unwinded("req.register.push.target", target, static_cast<std::uint16_t>(0xffff), static_cast<std::uint8_t>(1))
-						<< cyng::generate_invoke_unwinded("net.insert.rel", cyng::invoke("ipt.push.seq"),  target)
+						<< cyng::generate_invoke_unwinded("req.register.push.target", target.first, static_cast<std::uint16_t>(0xffff), static_cast<std::uint8_t>(1))
+						<< cyng::generate_invoke_unwinded("net.insert.rel", cyng::invoke("ipt.push.seq"),  target.first, target.second)
 						<< cyng::generate_invoke_unwinded("stream.flush")
 						;
 
@@ -314,17 +322,21 @@ namespace node
 			//
 			//	* ipt sequence
 			//	* target name
+			//	* protocol layer
 			const cyng::vector_t frame = ctx.get_frame();
 
 			auto const tpl = cyng::tuple_cast<
 				sequence_type,		//	[0] ipt seq
-				std::string			//	[1] target
+				std::string,		//	[1] target
+				std::string			//	[2] protocol
 			>(frame);
 
 			CYNG_LOG_TRACE(logger_, "ipt sequence " 
 				<< +std::get<0>(tpl)
 				<< " ==> "
-				<< std::get<1>(tpl));
+				<< std::get<1>(tpl)
+				<< ':'
+				<< std::get<2>(tpl));
 
 			seq_target_map_.emplace(std::get<0>(tpl), std::get<1>(tpl));
 		}

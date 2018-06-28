@@ -221,6 +221,8 @@ namespace node
 		cache_.clear("*Connection", bus_->vm_.tag());
 		cache_.clear("*Cluster", bus_->vm_.tag());
 		cache_.clear("*Config", bus_->vm_.tag());
+		cache_.insert("*Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, bus_->vm_.tag());
+
 		//cache_.clear("*SysMsg", bus_->vm_.tag());
 
 		//
@@ -1334,7 +1336,6 @@ namespace node
 					cyng::param_factory("cmd", std::string("update")),
 					cyng::param_factory("channel", channel),
 					cyng::param_t("value", rec["value"]));
-					//cyng::param_factory("value", cyng::sys::get_total_cpu_load()));
 
 				auto msg = cyng::json::to_string(tpl);
 

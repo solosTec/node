@@ -221,7 +221,6 @@ namespace node
 						cyng::param_factory("scrambled", false),
 						cyng::param_factory("monitor", monitor_dist(rng_)))
 					}))
-					//, cyng::param_factory("targets", cyng::vector_factory({ "data.sink.1", "data.sink.2" }))	//	list of targets
 				)
 				});
 

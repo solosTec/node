@@ -156,8 +156,9 @@ namespace node
 		//
 		//  close socket
 		//
-		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-		socket_.close();
+		boost::system::error_code ec;
+		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+		socket_.close(ec);
 
         //
         //  no more callbacks

@@ -58,8 +58,9 @@ namespace node
 
 	void connection::stop()
 	{
-		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-		socket_.close();
+		boost::system::error_code ec;
+		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+		socket_.close(ec);
 	}
 	
 	void connection::do_read()

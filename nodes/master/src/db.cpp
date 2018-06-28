@@ -22,7 +22,8 @@ namespace node
 		, cyng::store::db& db
 		, boost::uuids::uuid tag
 		, boost::asio::ip::tcp::endpoint ep
-		, std::uint64_t global_config)
+		, std::uint64_t global_config
+		, boost::filesystem::path stat_dir)
 	{
 		CYNG_LOG_INFO(logger, "initialize database as node " << tag);
 
@@ -383,6 +384,8 @@ namespace node
 			db.insert("*Config", cyng::table::key_generator("connection-auto-enabled-default"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
 			db.insert("*Config", cyng::table::key_generator("connection-superseed-default"), cyng::table::data_generator(connection_superseed), 1, tag);
 			db.insert("*Config", cyng::table::key_generator("generate-time-series-default"), cyng::table::data_generator(generate_time_series), 1, tag);
+			db.insert("*Config", cyng::table::key_generator("generate-time-series-dir"), cyng::table::data_generator(stat_dir.string()), 1, tag);
+			
 
 			//	get hostname
 			boost::system::error_code ec;

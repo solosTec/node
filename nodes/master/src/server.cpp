@@ -40,22 +40,13 @@ namespace node
 		//
 		auto dom = cyng::make_reader(cfg_session);
 
-		if (cyng::value_cast(dom.get("auto-login"), false))
-		{
-			global_configuration_ |= SMF_CONNECTION_AUTO_LOGIN;
-		}
-		if (cyng::value_cast(dom.get("auto-enabled"), true))
-		{
-			global_configuration_ |= SMF_CONNECTION_AUTO_ENABLED;
-		}
-		if (cyng::value_cast(dom.get("supersede"), true))
-		{
-			global_configuration_ |= SMF_CONNECTION_SUPERSEDED;
-		}
-		if (cyng::value_cast(dom.get("generate-time-series"), false))
-		{
-			global_configuration_ |= SMF_GENERATE_TIME_SERIES;
-		}
+		//
+		//	set global configuration bitmask
+		//
+		set_connection_auto_login(global_configuration_, cyng::value_cast(dom.get("auto-login"), false));
+		set_connection_auto_enabled(global_configuration_, cyng::value_cast(dom.get("auto-enabled"), true));
+		set_connection_superseed(global_configuration_, cyng::value_cast(dom.get("supersede"), true));
+		set_generate_time_series(global_configuration_, cyng::value_cast(dom.get("generate-time-series"), false));
 
 		CYNG_LOG_TRACE(logger_, "global configuration bitmask: " << global_configuration_.load());
 
@@ -88,7 +79,8 @@ namespace node
 			, db_
 			, tag_
 			, acceptor_.local_endpoint()
-			, global_configuration_.load());
+			, global_configuration_.load()
+			, stat_dir_);
 
 		do_accept();
 	}

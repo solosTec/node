@@ -18,7 +18,8 @@ namespace node
 		, cyng::store::db&
 		, boost::uuids::uuid tag
 		, boost::asio::ip::tcp::endpoint
-		, std::uint64_t global_config);
+		, std::uint64_t global_config
+		, boost::filesystem::path stat_dir);
 
 	void insert_msg(cyng::store::db&
 		, cyng::logging::severity

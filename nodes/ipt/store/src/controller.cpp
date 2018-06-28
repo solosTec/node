@@ -45,7 +45,7 @@ namespace node
 	//
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	void join_network(cyng::async::mux&, cyng::logging::log_ptr, std::vector<std::size_t> const&, cyng::vector_t const&, std::vector<std::string> const&);
+	void join_network(cyng::async::mux&, cyng::logging::log_ptr, std::vector<std::size_t> const&, cyng::vector_t const&, cyng::param_map_t);
 	std::vector<std::size_t> connect_data_store(cyng::async::mux&, cyng::logging::log_ptr, std::vector<std::string> const&, cyng::object cfg);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
@@ -211,10 +211,11 @@ namespace node
 						cyng::param_factory("scrambled", false),
 						cyng::param_factory("monitor", 57))
 					}))
-					, cyng::param_factory("targets", cyng::vector_factory({ "data.sink.1", "data.sink.2" }))	//	list of targets
-				)
+					, cyng::param_factory("targets", cyng::vector_factory({ 
+						cyng::param_factory("data.sink.sml", "SML"),
+						cyng::param_factory("data.sink.iec", "IEC") }))	//	list of targets
+					)
 				});
-			//cyng::vector_factory({});
 
 			cyng::json::write(std::cout, cyng::make_object(conf));
 			std::cout << std::endl;
@@ -361,7 +362,11 @@ namespace node
 		//	connect to ipt master
 		//
 		cyng::vector_t tmp;
-		join_network(mux, logger, tsks, cyng::value_cast(dom.get("ipt"), tmp), cyng::vector_cast<std::string>(dom.get("targets"), ""));
+		join_network(mux
+			, logger
+			, tsks
+			, cyng::value_cast(dom.get("ipt"), tmp)
+			, cyng::to_param_map(cyng::value_cast(dom.get("targets"), tmp)));
 
 		//
 		//	wait for system signals
@@ -523,16 +528,23 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, std::vector<std::size_t> const& tsks
 		, cyng::vector_t const& cfg
-		, std::vector<std::string> const& targets)
+		, cyng::param_map_t targets)
 	{
 		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg.size());
+
+		std::map<std::string, std::string> target_list;
+		for (auto const& target : targets)
+		{
+			auto pos = target_list.emplace(target.first, cyng::value_cast<std::string>(target.second, ""));
+			CYNG_LOG_TRACE(logger, "target " << pos.first->first << ':' << pos.first->second);
+		}
 
 		cyng::async::start_task_delayed<ipt::network>(mux
 			, std::chrono::seconds(1)
 			, logger
 			, tsks
 			, ipt::load_cluster_cfg(cfg)
-			, targets);
+			, target_list);
 
 	}
 

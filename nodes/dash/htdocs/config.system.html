@@ -11,10 +11,6 @@
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
     <style>
-        table.dataTable tbody > tr > td {
-            padding-top: 2px;
-            padding-bottom: 2px;
-        }
     </style>
 </head>
 <body>
@@ -93,10 +89,10 @@
                 <!--<img class="card-img-top" src="images/config-supersede.svg" alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Auto Login</h5>
-                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-auto-login-data" value=""> Accept unknown devices and transfer the login data to the configuration database.</label>
+                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-auto-login-data" value=""> Accept unknown devices and transfer the login data to the configuration database (not recommended).</label>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted">default = NO</small>
+                    <small class="text-muted">default = <span id="smf-config-system-auto-login-data-default">?</span></small>
                 </div>
             </div>
             <div class="card">
@@ -106,27 +102,27 @@
                     <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-auto-enabled-data" value=""> Set automatically configured devices as enabled.</label>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted">default = YES</small>
+                    <small class="text-muted">default = <span id="smf-config-system-auto-enabled-data-default">?</span></small>
                 </div>
             </div>
             <div class="card">
                 <!--<img class="card-img-top" src="images/config-supersede.svg" alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Supersede</h5>
-                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-supersede-data" value=""> End current sessions on new logon.</label>
+                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-supersede-data" value=""> New login terminates running session with same credentials (recommended).</label>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted">default = YES</small>
+                    <small class="text-muted">default = <span id="smf-config-system-supersede-data-default">?</span></small>
                 </div>
             </div>
             <div class="card">
                 <!--<img class="card-img-top" src="images/config-supersede.svg" alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Generate Time-Series</h5>
-                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-time-series-data" value=""> Generate statistics.</label>
+                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-time-series-data" value=""> Write statistics into <span id="smf-config-system-time-series-dir" style="font-style: italic;">dir</span>.</label>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted">default = NO</small>
+                    <small class="text-muted">default = <span id="smf-config-system-time-series-data-default">?</span></small>
                 </div>
             </div>
         </div>
@@ -195,7 +191,26 @@
                             console.log('host-name: ' + obj.rec.data.value);
                             $("#smf-config-system-host-name").html(obj.rec.data.value);
                         }
-                        
+                        else if (obj.rec.key.name == "connection-auto-login-default") {
+                            console.log('connection-auto-login-default: ' + obj.rec.data.value);
+                            $("#smf-config-system-auto-login-data-default").text(obj.rec.data.value);
+                        }
+                        else if (obj.rec.key.name == "connection-auto-enabled-default") {
+                            console.log('connection-auto-enabled-default: ' + obj.rec.data.value);
+                            $("#smf-config-system-auto-enabled-data-default").text(obj.rec.data.value);
+                        }
+                        else if (obj.rec.key.name == "connection-superseed-default") {
+                            console.log('connection-superseed-default: ' + obj.rec.data.value);
+                            $("#smf-config-system-supersede-data-default").text(obj.rec.data.value);
+                        }
+                        else if (obj.rec.key.name == "generate-time-series-default") {
+                            console.log('generate-time-series-default: ' + obj.rec.data.value);
+                            $("#smf-config-system-time-series-data-default").text(obj.rec.data.value);
+                        }
+                        else if (obj.rec.key.name == "generate-time-series-dir") {
+                            console.log('generate-time-series-dir: ' + obj.rec.data.value);
+                            $("#smf-config-system-time-series-dir").text(obj.rec.data.value);
+                        }
                     }
                     else if (obj.cmd == 'delete') {
                     }
