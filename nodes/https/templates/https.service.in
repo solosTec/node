@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStart=/opt/node/https -C/opt/node/https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
-Restart=on-failure
+Restart=always
 RestartSec=12
 
 [Install]
