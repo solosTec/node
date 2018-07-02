@@ -266,7 +266,7 @@
                             if (obj.channel == 'status.cluster') {
                                 var name = $('<div/>').text(obj.rec.data.class).html();
                                 var version = $('<div/>').text(obj.rec.data.version).html();
-                                var login = new Date(obj.rec.data.loginTime.substring(0, 19));
+                                var login = new Date(obj.rec.data.loginTime.substring(0, 19).replace(" ", "T"));
                                 var ping = $('<div/>').text(obj.rec.data.ping).html();
                                 var ep = $('<div/>').text(obj.rec.data.ep).html();
                                 //var last = new Date();

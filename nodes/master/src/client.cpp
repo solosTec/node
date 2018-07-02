@@ -1833,9 +1833,9 @@ namespace node
 								//	a00153b01EA61en ==> 0500153b01EA61
 								//
 								const std::string dev_name = cyng::value_cast<std::string>(dev_rec["name"], "");
-								if (boost::algorithm::starts_with(dev_name, "a00153b") && dev_name.size() == 15)
+								if (boost::algorithm::istarts_with(dev_name, "a00153b") && dev_name.size() == 15)
 								{
-									server_id = dev_name.substr(1, 12);
+									server_id = "05" + dev_name.substr(1, 12);
 								}
 
 								tbl_gw->insert(dev_pk

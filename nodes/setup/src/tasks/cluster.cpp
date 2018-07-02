@@ -136,14 +136,14 @@ namespace node
 		{
 			sync_table("TGateway");
 		}
-		else if (boost::algorithm::equals(table, "TGateway"))
-		{
-			sync_table("TMeter");
-		}
-		else if (boost::algorithm::equals(table, "TMeter"))
-		{
-			sync_table("TLoRaDevice");
-		}
+		//else if (boost::algorithm::equals(table, "TGateway"))
+		//{
+		//	sync_table("TMeter");
+		//}
+		//else if (boost::algorithm::equals(table, "TMeter"))
+		//{
+		//	sync_table("TLoRaDevice");
+		//}
 		else
 		{
 			CYNG_LOG_INFO(logger_, "*** sync phase completed ***");

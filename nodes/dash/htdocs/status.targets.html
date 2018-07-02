@@ -188,7 +188,7 @@
                         //  don't display HTML codes
                         var name = $('<div/>').text(obj.rec.data.name).html();
                         var account = $('<div/>').text(obj.rec.data.account).html();
-                        var registered = new Date(obj.rec.data.regTime);
+                        var registered = new Date(obj.rec.data.regTime.substring(0, 19).replace(" ", "T"));
                         var rowNode = table_target.row.add([obj.rec.key.channel, obj.rec.data.tag, name, obj.rec.data.device, account, obj.rec.data.px, registered]).draw().node();
                     }
                     else if (obj.cmd == 'delete') {

@@ -264,7 +264,7 @@
                         var descr = $('<div/>').text(obj.rec.data.descr).html();
                         var id = $('<div/>').text(obj.rec.data.id).html();
                         var vFirmware = $('<div/>').text(obj.rec.data.vFirmware).html();
-                        var age = new Date(obj.rec.data.creationTime.substring(0, 19));
+                        var age = new Date(obj.rec.data.creationTime.substring(0, 19).replace(" ", "T"));
                         var rowNode = table_dev.row.add([obj.rec.key.pk, name, msisdn, pwd, descr, id, vFirmware, obj.rec.data.enabled, age]).draw().node();
                         //  {"cmd": "insert", "channel": "config.device",
                         //  "rec": { "key": { "pk":"e92d32cf-5387-48ff-ad8b-29507a033075" },
