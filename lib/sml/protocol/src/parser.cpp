@@ -21,9 +21,10 @@ namespace node
 		//
 		//	parser
 		//
-		parser::parser(parser_callback cb, bool verbose)
+		parser::parser(parser_callback cb, bool verbose, bool log)
 			: cb_(cb)
 			, verbose_(verbose)
+			, log_(log)
 			, pos_(0)
 			, code_()
 			, tl_()
@@ -301,15 +302,25 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_)
+				if (parser_.verbose_ ||parser_.log_)
 				{
-					std::cerr
+					std::stringstream ss;
+					ss
 						<< parser_.prefix()
 						<< "UINT8 "
 						<< std::dec
 						<< +s.u_.n_
-						<< std::endl;
 					;
+					if (parser_.verbose_)
+					{
+						std::cerr 
+							<< ss.rdbuf() 
+							<< std::endl;
+					}
+					if (parser_.log_)
+					{
+						parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
+					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
 				return STATE_START;
@@ -320,14 +331,25 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_)
+				if (parser_.verbose_ || parser_.log_)
 				{
-					std::cerr 
-						<< parser_.prefix() 
+					std::stringstream ss;
+					ss
+						<< parser_.prefix()
 						<< "UINT16 " 
 						<< std::dec
 						<< s.u_.n_
-						<< std::endl;
+						;
+					if (parser_.verbose_)
+					{
+						std::cerr
+							<< ss.rdbuf()
+							<< std::endl;
+					}
+					if (parser_.log_)
+					{
+						parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
+					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
 				return STATE_START;
@@ -339,14 +361,25 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_)
+				if (parser_.verbose_ || parser_.log_)
 				{
-					std::cerr
+					std::stringstream ss;
+					ss
 						<< parser_.prefix()
 						<< "UINT32 "
 						<< std::dec
 						<< s.u_.n_
-						<< std::endl;
+						;
+					if (parser_.verbose_)
+					{
+						std::cerr
+							<< ss.rdbuf()
+							<< std::endl;
+					}
+					if (parser_.log_)
+					{
+						parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
+					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
 				return STATE_START;
@@ -357,14 +390,25 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_)
+				if (parser_.verbose_ || parser_.log_)
 				{
-					std::cerr
+					std::stringstream ss;
+					ss
 						<< parser_.prefix()
 						<< "UINT64 "
 						<< std::dec
 						<< s.u_.n_
-						<< std::endl;
+						;
+					if (parser_.verbose_)
+					{
+						std::cerr
+							<< ss.rdbuf()
+							<< std::endl;
+					}
+					if (parser_.log_)
+					{
+						parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
+					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
 				return STATE_START;
@@ -375,14 +419,25 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_)
+				if (parser_.verbose_ || parser_.log_)
 				{
-					std::cerr
+					std::stringstream ss;
+					ss
 						<< parser_.prefix()
 						<< "INT8 "
 						<< std::dec
 						<< +s.u_.n_
-						<< std::endl;
+						;
+					if (parser_.verbose_)
+					{
+						std::cerr
+							<< ss.rdbuf()
+							<< std::endl;
+					}
+					if (parser_.log_)
+					{
+						parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
+					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
 				return STATE_START;
@@ -393,13 +448,24 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_)
+				if (parser_.verbose_ || parser_.log_)
 				{
-					std::cerr
+					std::stringstream ss;
+					ss
 						<< parser_.prefix()
 						<< "INT16 "
 						<< s.u_.n_
-						<< std::endl;
+						;
+					if (parser_.verbose_)
+					{
+						std::cerr
+							<< ss.rdbuf()
+							<< std::endl;
+					}
+					if (parser_.log_)
+					{
+						parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
+					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
 				return STATE_START;
@@ -410,13 +476,24 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_)
+				if (parser_.verbose_ || parser_.log_)
 				{
-					std::cerr
+					std::stringstream ss;
+					ss
 						<< parser_.prefix()
 						<< "INT32 "
 						<< s.u_.n_
-						<< std::endl;
+						;
+					if (parser_.verbose_)
+					{
+						std::cerr
+							<< ss.rdbuf()
+							<< std::endl;
+					}
+					if (parser_.log_)
+					{
+						parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
+					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
 				return STATE_START;
@@ -427,13 +504,24 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_)
+				if (parser_.verbose_ || parser_.log_)
 				{
-					std::cerr
+					std::stringstream ss;
+					ss
 						<< parser_.prefix()
 						<< "INT64 "
 						<< s.u_.n_
-						<< std::endl;
+						;
+					if (parser_.verbose_)
+					{
+						std::cerr
+							<< ss.rdbuf()
+							<< std::endl;
+					}
+					if (parser_.log_)
+					{
+						parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
+					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
 				return STATE_START;
@@ -800,7 +888,7 @@ namespace node
 
 		void parser::emit_nil()
 		{
-			prefix();
+			//prefix();
 			if (verbose_)
 			{
 				std::cerr 

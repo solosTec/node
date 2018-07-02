@@ -219,7 +219,6 @@
                 //  enable submit button
                 $('#smf-form-dev-update').removeClass('disabled');
                 $('#smf-form-dev-delete').removeClass('disabled');
-                //$('#smf-form-dev-delete-name').text(rowData[1]);
                 $('#smf-form-dev-delete-name').html('<abbr title=' + rowData[0] + ' class="font-italic">' + rowData[1] + '</abbr>');
 
             });
@@ -233,6 +232,7 @@
             connection.onopen = function () {
                 //  subscribe system status
                 connection.send(JSON.stringify({ cmd: "subscribe", channel: "config.device", push: true }));
+                //connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.device.count", push: true }));
             };
 
             connection.onclose = function (event) {
@@ -320,6 +320,13 @@
                     else if (obj.cmd == 'clear') {
                         table_dev.clear().draw(false);
                     }
+                    //else if (obj.cmd == 'update') {
+                    //    if (obj.channel != null) {
+                    //        if (obj.channel == 'table.device.count') {
+                    //            $('#ws-table-device-count').text(obj.value);
+                    //        }
+                    //    }
+                    //}
                     else if (obj.cmd == 'load') {
                         if (obj.show != null && obj.show) {
                             $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });

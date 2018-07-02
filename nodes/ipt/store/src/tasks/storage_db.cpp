@@ -6,6 +6,7 @@
  */
 
 #include "storage_db.h"
+#include <NODE_project_info.h>
 #include <cyng/async/task/base_task.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -31,7 +32,8 @@ namespace node
 	: base_(*btp)
 		, logger_(logger)
 		, pool_(base_.mux_.get_io_service(), cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite")))
-		, meta_map_(init_meta_map())
+		, schema_(cyng::value_cast<std::string>(cfg["db-schema"], NODE_SUFFIX))
+		, meta_map_(init_meta_map(schema_))
 		, lines_()
 		, rng_()
 		, hit_list_()
@@ -41,6 +43,11 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> established");
+
+		if (!boost::algorithm::equals(schema_, NODE_SUFFIX))
+		{
+			CYNG_LOG_WARNING(logger_, "use non-standard db schema " << schema_);
+		}
 
 		if (!pool_.start(cfg))
 		{
@@ -86,7 +93,7 @@ namespace node
 				<< " processor(s) online");
 
 		}
-		base_.suspend(std::chrono::seconds(16));
+		base_.suspend(std::chrono::seconds(30));
 	}
 
 	void storage_db::stop()
@@ -98,7 +105,11 @@ namespace node
 			<< " stopped");
 	}
 
-	cyng::continuation storage_db::process(std::uint32_t channel, std::uint32_t source, std::string const& target, cyng::buffer_t const& data)
+	cyng::continuation storage_db::process(std::uint32_t channel
+		, std::uint32_t source
+		, std::string const& target
+		, std::string const& protocol
+		, cyng::buffer_t const& data)
 	{
 		//
 		//	create the line ID by combining source and channel into one 64 bit integer
@@ -123,27 +134,14 @@ namespace node
 					, source
 					, target
 					, pool_.get_session()
+					, schema_
 					, meta_map_));
 
 			if (res.second)
 			{
-				if (res.first->second.vm_.same_thread())
-				{
-					CYNG_LOG_FATAL(logger_, "SML/DB process line "
-						<< channel
-						<< ':'
-						<< source
-						<< ':'
-						<< target
-						<< " in same thread");
-					res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1));
-					res.first->second.vm_.async_run(cyng::generate_invoke("sml.parse", data));
-				}
-				else
-				{
-					res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1));
-					res.first->second.parse(data);
-				}
+				res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1));
+				res.first->second.parse(data);	//	sync
+				//res.first->second.vm_.async_run(cyng::generate_invoke("sml.parse", data));
 			}
 			else
 			{
@@ -179,6 +177,12 @@ namespace node
 	int storage_db::init_db(cyng::tuple_t tpl)
 	{
 		auto cfg = cyng::to_param_map(tpl);
+		auto schema = cyng::value_cast<std::string>(cfg["db-schema"], NODE_SUFFIX);
+		//if (!boost::algorithm::equals(schema, NODE_SUFFIX))
+		//{
+
+		//}
+
 		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
 		cyng::db::session s(con_type);
 		auto r = s.connect(cfg);
@@ -189,7 +193,7 @@ namespace node
 			//
 			std::cout << r.first << std::endl;
 
-			auto meta_map = storage_db::init_meta_map();
+			auto meta_map = storage_db::init_meta_map(schema);
 			for (auto tbl : meta_map)
 			{
 				cyng::sql::command cmd(tbl.second, s.get_dialect());
@@ -232,32 +236,110 @@ namespace node
 		CYNG_LOG_ERROR(logger_, "db processor " << tag << " not found");
 	}
 
-	cyng::table::mt_table storage_db::init_meta_map()
+	cyng::table::mt_table storage_db::init_meta_map(std::string const& ver)
 	{
 		//
-		//	SQL table scheme
-		//
-
-		//
-		//	trxID - unique for every message
-		//	msgIdx - message index
-		//	status - M-Bus status
+		//	SQL table schemes
 		//
 		std::map<std::string, cyng::table::meta_table_ptr> meta_map;
-		meta_map.emplace("TSMLMeta", cyng::table::make_meta_table<1, 11>("TSMLMeta",
-			{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING },
-			{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32 }));
 
-		//
-		//	unitCode - physical unit
-		//	unitName - descriptiv
-		//	
-		meta_map.emplace("TSMLData", cyng::table::make_meta_table<2, 6>("TSMLData",
-			{ "pk", "OBIS", "unitCode", "unitName", "dataType", "scaler", "val", "result" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT8, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_INT32, cyng::TC_INT64, cyng::TC_STRING },
-			{ 36, 24, 0, 64, 16, 0, 0, 512 }));
+		if(boost::algorithm::equals(ver, "v4.0"))
+		{
 
+			meta_map.emplace("TSMLMeta", cyng::table::make_meta_table<1, 11>("TSMLMeta",
+				{ "ident"
+				, "trxID"	//	unique for every message
+				, "midx"	//	message index
+				, "roTime"	//	readout time
+				, "actTime"	//	timestamp
+				, "valTime"	//	seconds index
+				, "gateway"
+				, "server"
+				, "meter"
+				, "status"	//	M-Bus status
+				, "source"
+				, "channel" },
+				{ cyng::TC_UUID		//	ident
+				, cyng::TC_STRING	//	trxID
+				, cyng::TC_UINT32	//	midx
+				, cyng::TC_TIME_POINT	//	roTime
+				, cyng::TC_TIME_POINT	//	actTime
+				, cyng::TC_UINT32	//	valTime
+				, cyng::TC_STRING	//	gateway
+				, cyng::TC_STRING	//	server
+				, cyng::TC_STRING	//	meter
+				, cyng::TC_UINT32	//	status
+				, cyng::TC_UINT32	//	source
+				, cyng::TC_UINT32 },	//	channel
+				{ 36	//	ident
+				, 16	//	trxID
+				, 0		//	midx
+				, 0		//	roTime
+				, 0		//	actTime
+				, 0		//	valTime
+				, 23	//	gateway
+				, 23	//	server
+				, 10	//	meter
+				, 0		//	status
+				, 0		//	source
+				, 0 }));	//	channel
+
+			meta_map.emplace("TSMLData", cyng::table::make_meta_table<2, 6>("TSMLData",
+				{ "ident"
+				, "OBIS"
+				, "unitCode"
+				, "unitName"
+				, "dataType"
+				, "scaler"
+				, "val"		//	changed to val (since value is an SQL keyword)
+				, "result" },
+				{ cyng::TC_UUID		//	ident
+				, cyng::TC_STRING	//	OBIS
+				, cyng::TC_UINT8	//	unitCode
+				, cyng::TC_STRING	//	unitName
+				, cyng::TC_STRING	//	dataType
+				, cyng::TC_INT32	//	scaler
+				, cyng::TC_INT64	//	val
+				, cyng::TC_STRING },	//	result
+				{ 36	//	ident
+				, 24	//	OBIS
+				, 0		//	unitCode
+				, 64	//	unitName
+				, 16	//	dataType
+				, 0		//	scaler
+				, 0		//	val
+				, 512 }));	//	result
+
+		}
+		else
+		{
+
+			//
+			//	trxID - unique for every message
+			//	msgIdx - message index
+			//	status - M-Bus status
+			//
+			meta_map.emplace("TSMLMeta", cyng::table::make_meta_table<1, 11>("TSMLMeta",
+				{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target" },
+				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING },
+				{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32 }));
+
+			//
+			//	unitCode - physical unit
+			//	unitName - descriptiv
+			//	
+			meta_map.emplace("TSMLData", cyng::table::make_meta_table<2, 6>("TSMLData",
+				{ "pk", "OBIS", "unitCode", "unitName", "dataType", "scaler", "val", "result" },
+				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT8, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_INT32, cyng::TC_INT64, cyng::TC_STRING },
+				{ 36, 24, 0, 64, 16, 0, 0, 512 }));
+		}
 		return meta_map;
 	}
+
+	//
+	//	version 1
+	//	CREATE TABLE TSMLMeta (ident TEXT, trxID TEXT, midx INT, roTime FLOAT, actTime FLOAT, valTime INT, gateway TEXT, server TEXT, meter TEXT, status INT, source INT, channel INT, PRIMARY KEY(ident));
+	//	CREATE TABLE TSMLData (ident TEXT, OBIS TEXT, unitCode INT, unitName TEXT, dataType TEXT, scaler INT, val INT, result TEXT, PRIMARY KEY(ident, OBIS));
+	//
+
 }

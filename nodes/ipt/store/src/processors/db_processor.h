@@ -12,7 +12,6 @@
 #include <smf/sml/exporter/db_exporter.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
-//#include <cyng/async/policy.h>
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/vm/controller.h>
 #include <cyng/db/session.h>
@@ -33,6 +32,7 @@ namespace node
 			, std::uint32_t source
 			, std::string target
 			, cyng::db::session
+			, std::string const& schema
 			, cyng::table::mt_table&);
 
 		virtual ~db_processor();
@@ -57,6 +57,7 @@ namespace node
 		cyng::controller vm_;
 		sml::parser parser_;
 		cyng::db::session db_;
+		const std::string schema_;
 		cyng::table::mt_table mt_table_;
 		sml::db_exporter exporter_;	
 	};

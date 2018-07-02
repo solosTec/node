@@ -84,7 +84,11 @@ namespace node
 			<< " stopped");
 	}
 
-	cyng::continuation storage_xml::process(std::uint32_t channel, std::uint32_t source, std::string const& target, cyng::buffer_t const& data)
+	cyng::continuation storage_xml::process(std::uint32_t channel
+		, std::uint32_t source
+		, std::string const& target
+		, std::string const& protocol
+		, cyng::buffer_t const& data)
 	{
 		//
 		//	create the line ID by combining source and channel into one 64 bit integer
@@ -117,23 +121,8 @@ namespace node
 				//
 				//	This is a workaround for problems with nested strands
 				//
-				if (res.first->second.vm_.same_thread())
-				{
-					CYNG_LOG_FATAL(logger_, "SML/XML process line "
-						<< channel
-						<< ':'
-						<< source
-						<< ':'
-						<< target
-						<< " in same thread");
-					res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_xml::stop_writer, this, std::placeholders::_1));
-					res.first->second.vm_.async_run(cyng::generate_invoke("sml.parse", data));
-				}
-				else
-				{
-					res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_xml::stop_writer, this, std::placeholders::_1));
-					res.first->second.parse(data);
-				}
+				res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_xml::stop_writer, this, std::placeholders::_1));
+				res.first->second.parse(data);
 			}
 			else
 			{

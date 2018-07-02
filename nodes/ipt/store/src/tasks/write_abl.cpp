@@ -39,7 +39,7 @@ namespace node
 				//<< source_
 				<< ' '
 				<< cyng::io::to_str(r));
-	}, true)
+	}, true, false)	//	verbose, no log instructions
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

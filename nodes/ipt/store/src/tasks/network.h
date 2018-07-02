@@ -97,7 +97,11 @@ namespace node
 			 * maintain relation between sequence and registered target
 			 */
 			std::map<sequence_type, std::string>	seq_target_map_;
-			std::map<std::uint32_t, std::string>	channel_target_map_;
+
+			/**
+			 * maintain relation between channel and target name/protocol
+			 */
+			std::map<std::uint32_t, std::pair<std::string, std::string>>	channel_target_map_;
 		};
 	}
 }

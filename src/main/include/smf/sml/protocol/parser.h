@@ -205,7 +205,7 @@ namespace node
 			/**
 			 * @param cb this function is called, when parsing is complete
 			 */
-			parser(parser_callback cb, bool);
+			parser(parser_callback cb, bool verbose, bool log);
 
 			/**
 			 * The destructor is required since the unique_ptr
@@ -280,6 +280,7 @@ namespace node
 			parser_callback	cb_;
 
 			const bool verbose_;
+			const bool log_;	//!< generate log instructions
 			std::size_t pos_;	//!< position index
 
 			/**

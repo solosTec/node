@@ -65,16 +65,6 @@ namespace node
 			BOOST_ASSERT_MSG(count == 5, "SML message");
 
 			//
-			//	delayed output
-			//
-			//ctx.attach(cyng::generate_invoke("log.msg.debug"
-			//	, "message #"
-			//	, idx
-			//	, source_
-			//	, channel_
-			//	, target_));
-
-			//
 			//	reset readout context
 			//
 			ro_.set_index(idx);
@@ -303,8 +293,10 @@ namespace node
 				, ro_.get_value("roTime")
 				, ro_.get_value("actTime")
 				, ro_.get_value("valTime")
-				, ro_.get_value("clientId")
-				, ro_.get_value("serverId")
+				, ro_.get_value("client")	//	gateway
+				, ro_.get_value("clientId")	//	gateway - formatted
+				, ro_.get_value("server")	//	server
+				, ro_.get_value("serverId")	//	server - formatted
 				, ro_.get_value("status")
 				, source_
 				, channel_
@@ -536,6 +528,7 @@ namespace node
 		{
 			cyng::buffer_t buffer;
 			buffer = cyng::value_cast(obj, buffer);
+			ro_.set_value("server", cyng::make_object(buffer));
 			const auto str = from_server_id(buffer);
 			ro_.set_value("serverId", cyng::make_object(str));
 			return str;
@@ -545,6 +538,7 @@ namespace node
 		{
 			cyng::buffer_t buffer;
 			buffer = cyng::value_cast(obj, buffer);
+			ro_.set_value("client", cyng::make_object(buffer));
 			const auto str = from_server_id(buffer);
 			ro_.set_value("clientId", cyng::make_object(str));
 			return str;

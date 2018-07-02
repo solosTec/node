@@ -151,7 +151,9 @@ namespace node
 				CYNG_LOG_TRACE(logger_, "distribute "
 					<< data.size()
 					<< " bytes from ["
-					<< pos->second
+					<< pos->second.first
+					<< ':'
+					<< pos->second.second
 					<< "] to "
 					<< tasks_.size()
 					<< " task(s)");
@@ -166,7 +168,7 @@ namespace node
 					//
 					//	distribute async
 					//
-					base_.mux_.post(tsk, 0, cyng::tuple_factory(channel, source, pos->second, data));
+					base_.mux_.post(tsk, 0, cyng::tuple_factory(channel, source, pos->second.first, pos->second.second, data));
 				}
 			}
 			else
@@ -205,7 +207,7 @@ namespace node
 							<< ':'
 							<< pos_target->second);
 
-						channel_target_map_.emplace(channel, pos->second);
+						channel_target_map_.emplace(channel, std::make_pair(pos->second, pos_target->second));
 					}
 					seq_target_map_.erase(pos);
 				}

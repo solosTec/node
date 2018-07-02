@@ -13,7 +13,6 @@
 #include <smf/sml/intrinsics/obis.h>
 #include <smf/sml/units.h>
 #include <smf/sml/intrinsics/obis.h>
-//#include <cyng/vm/controller.h>
 #include <cyng/vm/context.h>
 #include <cyng/intrinsics/sets.h>
 #include <cyng/object.h>

@@ -123,8 +123,11 @@
                         </div>
                         <div class="form-group">
                             <div class="col-md-offset-4 col-md-8">
-                                <div class="checkbox">
-                                    <label><input id="smf-form-lora-activation" name="smf-form-lora-activation" type="checkbox"> OTAA</label>
+                                <div class="form-check-inline">
+                                    <label class="form-check-label"><input id="smf-form-lora-activation-otaa" name="smf-form-lora-activation-otaa" type="radio"> OTAA</label>
+                                </div>
+                                <div class="form-check-inline">
+                                    <label class="form-check-label"><input id="smf-form-lora-activation-abp" name="smf-form-lora-activation-abp" type="radio"> ABP</label>
                                 </div>
                             </div>
                         </div>
@@ -203,8 +206,13 @@
                 $('#smf-form-lora-DevEUI').val(rowData[1]);
                 $('#smf-form-lora-aes').val(rowData[2]);
                 $('#smf-form-lora-driver').val(rowData[3]);
-                //$('#smf-form-lora-activation').val(rowData[4]);
-                $('#smf-form-lora-activation').prop('checked', rowData[4]);
+                //$('#smf-form-lora-activation').prop('checked', rowData[4]);
+                if (rowData[4]) {
+                    $('#smf-form-lora-activation-otaa').prop("checked", true);
+                }
+                else {
+                    $('#smf-form-lora-activation-abp').prop("checked", true);
+                }
 
 
                 //  enable submit button

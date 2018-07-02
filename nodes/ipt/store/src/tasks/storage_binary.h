@@ -19,7 +19,7 @@ namespace node
 	class storage_binary
 	{
 	public:
-		using msg_0 = std::tuple<std::uint32_t, std::uint32_t, std::string, cyng::buffer_t>;
+		using msg_0 = std::tuple<std::uint32_t, std::uint32_t, std::string, std::string, cyng::buffer_t>;
 		using signatures_t = std::tuple<msg_0>;
 
 	public:
@@ -36,7 +36,11 @@ namespace node
 			*
 			* push data
 			*/
-		cyng::continuation process(std::uint32_t, std::uint32_t, std::string const&, cyng::buffer_t const&);
+		cyng::continuation process(std::uint32_t channel
+			, std::uint32_t source
+			, std::string const& target
+			, std::string const& protocol
+			, cyng::buffer_t const& data);
 
 	private:
 		cyng::async::base_task& base_;

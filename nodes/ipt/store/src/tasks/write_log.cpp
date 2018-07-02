@@ -33,12 +33,9 @@ namespace node
 				<< " <"
 				<< base_.get_class_name()
 				<< "> process "
-				//<< channel_
-				//<< ':'
-				//<< source_
 				<< ' '
 				<< cyng::io::to_str(r));
-	}, true)
+	}, false, true)	//	not verbose, generate log instructions
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

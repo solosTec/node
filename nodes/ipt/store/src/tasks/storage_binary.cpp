@@ -57,7 +57,11 @@ namespace node
 			<< " stopped");
 	}
 
-	cyng::continuation storage_binary::process(std::uint32_t channel, std::uint32_t source, std::string const& target, cyng::buffer_t const& data)
+	cyng::continuation storage_binary::process(std::uint32_t channel
+		, std::uint32_t source
+		, std::string const& target
+		, std::string const& protocol
+		, cyng::buffer_t const& data)
 	{
 		auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 		std::tm time = cyng::chrono::convert_utc(tt);
@@ -88,6 +92,8 @@ namespace node
 			<< cyng::chrono::hour(time)
 			<< std::setw(2)
 			<< cyng::chrono::minute(time)
+			<< '-'
+			<< protocol
 			<< '-'
 			<< target
 			<< '.'

@@ -50,6 +50,7 @@ namespace node
 			{
 				//
 				//	serial number with M-bus prefix
+				//	example: 01-e61e-13090016-3c-07
 				//
 				os
 					<< std::hex

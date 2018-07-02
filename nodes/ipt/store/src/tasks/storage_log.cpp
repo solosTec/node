@@ -46,7 +46,11 @@ namespace node
 			<< " stopped");
 	}
 
-	cyng::continuation storage_log::process(std::uint32_t channel, std::uint32_t source, std::string const& target, cyng::buffer_t const& data)
+	cyng::continuation storage_log::process(std::uint32_t channel
+		, std::uint32_t source
+		, std::string const& target
+		, std::string const& protocol
+		, cyng::buffer_t const& data)
 	{
 		//
 		//	create the line ID by combining source and channel into one 64 bit integer
@@ -58,49 +62,83 @@ namespace node
 		const auto pos = lines_.find(line);
 		if (pos == lines_.end())
 		{
-			//	create a new task
-			//auto r = broker_.get_factory().start < task_process_db >(logger_
-			//	, broker_.get_tag()
-			//	, pool_
-			//	, source
-			//	, channel);
+			//
+			//	ToDo: start a task with a type according to specified protocol.
+			//	Then send data to this task.
+			//
 
-			CYNG_LOG_TRACE(logger_, "processing line "
-				<< std::hex
-				<< line
-				<< ": "
-				<< std::dec
-				<< source
-				<< '/'
-				<< channel
-				<< " with new task "
-				//<< r.second
-			);
+			//	create a new parser
+			if (boost::algorithm::equals(protocol, "SML"))
+			{
+				auto res = lines_.emplace(std::piecewise_construct,
+					std::forward_as_tuple(line),
+					std::forward_as_tuple(std::bind(&storage_log::cb, this, channel, source, target, protocol, std::placeholders::_1)
+						, false
+						, true));
 
-			//	insert into task list
-			//lines_[line] = r.second;
+				CYNG_LOG_TRACE(logger_, "processing line "
+					<< std::hex
+					<< line
+					<< ": "
+					<< std::dec
+					<< source
+					<< '/'
+					<< channel
+					<< " with new task "
+				);
 
-			//	take the new task
-			//broker_.get_ruler().send<cyy::buffer_t>(r.second, 0, cyy::buffer_t(data));
+				if (res.second)
+				{
+					//res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_log::stop_writer, this, std::placeholders::_1));
+					res.first->second.read(data.begin(), data.end());
+				}
+				else
+				{
+					CYNG_LOG_FATAL(logger_, "startup processor for line "
+						<< channel
+						<< ':'
+						<< source
+						<< ':'
+						<< target
+						<< " failed");
+				}
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "protocol "
+					<< protocol
+					<< " not supported yet");
 
+			}
 		}
 		else
 		{
-			CYNG_LOG_TRACE(logger_, "processing line "
-				<< std::hex
-				<< line
-				<< ": "
-				<< std::dec
-				<< source
-				<< '/'
-				<< channel
-				<< " with task "
-				<< pos->second);
 
 			//	take the existing task
-			//broker_.get_ruler().send<cyy::buffer_t>(pos->second, 0, cyy::buffer_t(data));
+			pos->second.read(data.begin(), data.end());
 		}
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
+
+	void storage_log::cb(std::uint32_t channel
+		, std::uint32_t source
+		, std::string const& target
+		, std::string const& protocol
+		, cyng::vector_t&& prg)
+	{
+		CYNG_LOG_DEBUG(logger_, "db processor "
+			<< channel
+			<< ':'
+			<< source
+			<< ':'
+			<< target
+			<< " - "
+			<< protocol
+			<< " - "
+			<< prg.size()
+			<< " instructions");
+
+	}
+
 }

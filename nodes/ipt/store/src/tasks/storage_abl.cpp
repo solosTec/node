@@ -46,7 +46,11 @@ namespace node
 			<< " stopped");
 	}
 
-	cyng::continuation storage_abl::process(std::uint32_t channel, std::uint32_t source, std::string const& target, cyng::buffer_t const& dat)
+	cyng::continuation storage_abl::process(std::uint32_t channel
+		, std::uint32_t source
+		, std::string const& target
+		, std::string const& protocol
+		, cyng::buffer_t const& data)
 	{
 		const std::uint64_t line = (((std::uint64_t)channel) << 32) | ((std::uint64_t)source);
 		return cyng::continuation::TASK_CONTINUE;

@@ -51,7 +51,7 @@ namespace node
 			//
 			vm_.async_run(std::move(prg));
 
-		}, false)
+		}, false, false)	//	not verbose, no log instructions
 		, exporter_(endocing, root_name, channel, source, target)
 	{
 		init();
