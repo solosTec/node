@@ -88,12 +88,12 @@
                 <table id="smf-table-target" class="table table-condensed table-striped table-bordered" cellspacing="0">
                     <thead>
                         <tr>
-                            <th scope="col" class="sml-col-target-channel">Channel</th>
                             <th scope="col" class="sml-col-target-tag">UUID</th>
                             <th scope="col" class="sml-col-target-name">Name</th>
                             <th scope="col" class="sml-col-target-device">Device</th>
                             <th scope="col" class="sml-col-target-account">Account</th>
                             <th scope="col" class="sml-col-target-px">px</th>
+                            <th scope="col" class="sml-col-target-channel">Channel</th>
                             <th scope="col" class="sml-col-target-reg">Registered</th>
                         </tr>
                     </thead>
@@ -104,7 +104,7 @@
 
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
-    <script type="text/javascript" src="popper.min.js"></script>
+<!--     <script type="text/javascript" src="popper.min.js"></script> -->
 
     <script>
 
@@ -140,12 +140,12 @@
             select: true,
             colReorder: true,
             columnDefs: [
-                { targets: 'sml-col-target-channel', visible: true, name: 'target-channel', className: 'text-right' },
                 { targets: 'sml-col-target-tag', visible: false, name: 'target-tag' },
                 { targets: 'sml-col-target-name', visible: true, name: 'target-name' },
                 { targets: 'sml-col-target-device', visible: false, name: 'target-device' },
                 { targets: 'sml-col-target-account', visible: true, name: 'target-account' },
                 { targets: 'sml-col-target-px', visible: true, name: 'target-px', className: 'text-right', render: renderBytes },
+                { targets: 'sml-col-target-channel', visible: true, name: 'target-channel', className: 'text-right' },
                 { targets: 'sml-col-target-reg', visible: true, name: 'ses-reg', render: renderDate }
             ]
         };
@@ -189,7 +189,7 @@
                         var name = $('<div/>').text(obj.rec.data.name).html();
                         var account = $('<div/>').text(obj.rec.data.account).html();
                         var registered = new Date(obj.rec.data.regTime);
-                        var rowNode = table_target.row.add([obj.rec.key.channel, obj.rec.data.tag, name, obj.rec.data.device, account, obj.rec.data.px, registered]).draw().node();
+                        var rowNode = table_target.row.add([obj.rec.data.tag, name, obj.rec.data.device, account, obj.rec.data.px, obj.rec.key.channel, registered]).draw().node();
                     }
                     else if (obj.cmd == 'delete') {
                         table_target.row(function (idx, data, node) {
@@ -205,7 +205,7 @@
                                 var r = table_target.row(node);
                                 var d = r.data();
                                 if (obj.value.px != null) {
-                                    d[5] = obj.value.px;
+                                    d[6] = obj.value.px;
                                 }
                                 r.data(d);
                                 return true;    //  record found

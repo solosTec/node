@@ -6,6 +6,7 @@
  */ 
 
 #include "controller.h"
+#include <NODE_project_info.h>
 #include <smf/https/srv/server.h>
 #include "server_certificate.hpp"
 #include <cyng/log.h>
@@ -164,6 +165,7 @@ namespace node
 					, cyng::param_factory("log-level", "INFO")
 					, cyng::param_factory("tag", rgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
+					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 					, cyng::param_factory("favicon", "")
 					, cyng::param_factory("mime-config", (pwd / "mime.xml").string())
 					, cyng::param_factory("https", cyng::tuple_factory(

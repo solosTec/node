@@ -44,7 +44,7 @@ namespace node
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 #endif
 				bus_->vm_.async_run(std::move(prg));
-			}, false)
+			}, false, false)	//	not verbose, no log instructions
 			, core_(logger_, bus_->vm_, false, account, pwd, manufacturer, model, mac)
 			, seq_target_map_()
 			, channel_target_map_()
