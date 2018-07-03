@@ -36,11 +36,6 @@ namespace node
 		 */
 		cyng::buffer_t to_gateway_srv_id(cyng::mac48);
 
-		/**
-		 *
-		 */
-		//cyng::buffer_t to_serial(boost::uuids::uuid);
-
 	}	//	sml
 }	//	node
 

@@ -178,10 +178,10 @@ namespace node
 	{
 		auto cfg = cyng::to_param_map(tpl);
 		auto schema = cyng::value_cast<std::string>(cfg["db-schema"], NODE_SUFFIX);
-		//if (!boost::algorithm::equals(schema, NODE_SUFFIX))
-		//{
-
-		//}
+		if (!boost::algorithm::equals(schema, NODE_SUFFIX))
+		{
+			std::cerr << "WARNING: use compatibility schema: " << schema << std::endl;
+		}
 
 		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
 		cyng::db::session s(con_type);

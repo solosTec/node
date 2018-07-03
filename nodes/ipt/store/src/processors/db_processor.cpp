@@ -10,6 +10,7 @@
 #include <smf/sml/srv_id_io.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
+// #include <cyng/io/io_buffer.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/vm/generator.h>
@@ -206,8 +207,9 @@ namespace node
 			//	601a7c18-ee9a-4957-8d06-d255b6b42ca2|533395235|1|2458300.51017361|2458300.51070602|48450161|0500153b026d31|02-d81c-05252350-ff-02|50232505|0|-150802599|581869302
 			//	b70815c1-74e9-4881-b9d8-00db2f9a7fe6|49606703|4|2458300.51018519|2458300.51070602|44489752|0500153b026d35|01-a815-78957202-01-02|02729578|640|1323567403|581869302
 
-			cyng::buffer_t server;
+			cyng::buffer_t server, client;
 			server = cyng::value_cast(frame.at(8), server);
+			client = cyng::value_cast(frame.at(6), client);
 
 			stmt->push(frame.at(0), 0)	//	ident
 				.push(frame.at(1), 16)	//	trxID
@@ -215,9 +217,9 @@ namespace node
 				.push(frame.at(3), 0)	//	roTime
 				.push(frame.at(4), 0)	//	actTime
 				.push(frame.at(5), 0)	//	valTime
-				.push(frame.at(6), 0)	//	gateway
-				//	clientId
-				.push(frame.at(8), 0)	//	server
+				.push(cyng::make_object(cyng::io::to_hex(client)), 0)	//	gateway/client
+				//	clientId from_server_id
+				.push(cyng::make_object(sml::from_server_id(server)), 0)	//	server
 				//	serverId
 				.push(cyng::make_object(sml::get_serial(server)), 0)	//	meter
 				.push(frame.at(10), 0)	//	status

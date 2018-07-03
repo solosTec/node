@@ -182,6 +182,7 @@ namespace node
 				, cyng::param_factory("log-level", "INFO")
 				, cyng::param_factory("tag", rgen())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
+				, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 				, cyng::param_factory("log-pushdata", false)	//	log file for each channel
 
 				//	on this address the gateway acts as a server
