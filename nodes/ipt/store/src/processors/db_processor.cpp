@@ -8,6 +8,7 @@
 #include "db_processor.h"
 #include <NODE_project_info.h>
 #include <smf/sml/srv_id_io.h>
+#include <smf/sml/obis_io.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
@@ -293,22 +294,42 @@ namespace node
 		CYNG_LOG_INFO(logger_, "db.insert.data " << sql);
 		auto stmt = db_.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
-		//BOOST_ASSERT(r.first == 12);	//	11 parameters to bind
+		BOOST_ASSERT(r.first == 8);	//	11 parameters to bind
 		BOOST_ASSERT(r.second);
 
-		cyng::buffer_t obis;
-		obis = cyng::value_cast(frame.at(3), obis);
+		cyng::buffer_t tmp = cyng::value_cast(frame.at(3), tmp);
 
+		if (boost::algorithm::equals(schema_, "v4.0"))
+		{
+			sml::obis code(cyng::value_cast(frame.at(3), tmp));
+			stmt->push(frame.at(0), 36)	//	pk
+				.push(cyng::make_object(sml::to_string(code)), 24)	//	OBIS
+				.push(frame.at(4), 0)	//	unitCode
+				.push(frame.at(5), 0)	//	unitName
+				.push(frame.at(6), 0)	//	SML data type
+				.push(frame.at(7), 0)	//	scaler
+				.push(frame.at(8), 0)	//	value
+				.push(frame.at(9), 512)	//	result
+				;
+		}
+		else
+		{
+			if (!boost::algorithm::equals(schema_, NODE_SUFFIX))
+			{
+				CYNG_LOG_WARNING(logger_, "use non-standard db schema " << schema_);
+			}
 
-		stmt->push(frame.at(0), 36)	//	pk
-			.push(cyng::make_object(cyng::io::to_hex(obis)), 24)	//	OBIS
-			.push(frame.at(4), 0)	//	unitCode
-			.push(frame.at(5), 0)	//	unitName
-			.push(frame.at(6), 0)	//	SML data type
-			.push(frame.at(7), 0)	//	scaler
-			.push(frame.at(8), 0)	//	value
-			.push(frame.at(9), 0)	//	result
-			;
+			stmt->push(frame.at(0), 36)	//	pk
+				.push(cyng::make_object(cyng::io::to_hex(tmp)), 24)	//	OBIS
+				.push(frame.at(4), 0)	//	unitCode
+				.push(frame.at(5), 0)	//	unitName
+				.push(frame.at(6), 0)	//	SML data type
+				.push(frame.at(7), 0)	//	scaler
+				.push(frame.at(8), 0)	//	value
+				.push(frame.at(9), 512)	//	result
+				;
+
+		}
 
 		if (!stmt->execute())
 		{
