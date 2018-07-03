@@ -77,13 +77,17 @@ namespace node
 			std::uint8_t read_unit(std::string const&, cyng::object);
 			std::int8_t read_scaler(cyng::object);
 			std::string read_string(std::string const&, cyng::object);
-			void read_value(obis, std::int8_t, std::uint8_t, cyng::object);
+
+			/**
+			 * @return CYNG data type tag
+			 */
+			std::size_t read_value(obis, std::int8_t, std::uint8_t, cyng::object);
 			void read_parameter(obis, cyng::object);
 			std::string read_server_id(cyng::object);
 			std::string read_client_id(cyng::object);
 
-			void read_period_list(std::vector<obis> const&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_period_entry(std::vector<obis> const&, std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			void read_period_list(cyng::context&, std::vector<obis> const&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			void read_period_entry(cyng::context&, std::vector<obis> const&, std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_param_tree(std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
 		private:

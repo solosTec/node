@@ -10,7 +10,6 @@
 #include <smf/sml/srv_id_io.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
-// #include <cyng/io/io_buffer.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/vm/generator.h>
@@ -72,6 +71,7 @@ namespace node
 		vm_.register_function("sml.eom", 1, std::bind(&db_processor::sml_eom, this, std::placeholders::_1));
 		vm_.register_function("sml.parse", 1, std::bind(&db_processor::sml_parse, this, std::placeholders::_1));
 		vm_.register_function("db.insert.meta", 14, std::bind(&db_processor::insert_meta_data, this, std::placeholders::_1));
+		vm_.register_function("db.insert.data", 10, std::bind(&db_processor::insert_value_data, this, std::placeholders::_1));
 
 		//
 		//	register logger domain
@@ -152,7 +152,7 @@ namespace node
 		CYNG_LOG_INFO(logger_, "DB processor sml.eom #"
 			<< idx);
 
-		exporter_.reset();
+		//exporter_.reset();
 
 		ctx.attach(cyng::generate_invoke("stop.writer", cyng::code::IDENT));
 	}
@@ -177,7 +177,7 @@ namespace node
 		//	* channel
 		//	* target
 		const cyng::vector_t frame = ctx.get_frame();
-		//CYNG_LOG_INFO(logger_, "db.insert.meta " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, "db.insert.meta " << cyng::io::to_str(frame));
 
 		
 		cyng::sql::command cmd(mt_table_.find("TSMLMeta")->second, db_.get_dialect());
@@ -257,6 +257,58 @@ namespace node
 				.push(frame.at(13), 32)	//	target
 				;
 		}
+
+		if (!stmt->execute())
+		{
+			CYNG_LOG_ERROR(logger_, sql << " failed with the following data set: " << cyng::io::to_str(frame));
+
+		}
+		stmt->clear();
+
+	}
+
+	void db_processor::insert_value_data(cyng::context& ctx)
+	{
+		//
+		//	[0e5c944f-b2af-487a-b67d-f3fff1ccdfcd,5120143,100,81062B070000,ff,counter,i32, ,-29,-29]
+		//	
+		//	* [uuid] pk (meta)
+		//	* [string] trx
+		//	* idx
+		//	* [buffer] OBIS code 
+		//	* [uint8] unit code
+		//	* [string] unit name
+		//	* [string] CYNG data type name
+		//	* scaler
+		//	* raw value
+		//	* formatted value
+
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, "db.insert.data " << cyng::io::to_str(frame));
+
+
+		cyng::sql::command cmd(mt_table_.find("TSMLData")->second, db_.get_dialect());
+		cmd.insert();
+		auto sql = cmd.to_str();
+		CYNG_LOG_INFO(logger_, "db.insert.data " << sql);
+		auto stmt = db_.create_statement();
+		std::pair<int, bool> r = stmt->prepare(sql);
+		//BOOST_ASSERT(r.first == 12);	//	11 parameters to bind
+		BOOST_ASSERT(r.second);
+
+		cyng::buffer_t obis;
+		obis = cyng::value_cast(frame.at(3), obis);
+
+
+		stmt->push(frame.at(0), 36)	//	pk
+			.push(cyng::make_object(cyng::io::to_hex(obis)), 24)	//	OBIS
+			.push(frame.at(4), 0)	//	unitCode
+			.push(frame.at(5), 0)	//	unitName
+			.push(frame.at(6), 0)	//	SML data type
+			.push(frame.at(7), 0)	//	scaler
+			.push(frame.at(8), 0)	//	value
+			.push(frame.at(9), 0)	//	result
+			;
 
 		if (!stmt->execute())
 		{

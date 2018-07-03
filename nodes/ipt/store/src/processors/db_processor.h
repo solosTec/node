@@ -51,6 +51,7 @@ namespace node
 		void sml_eom(cyng::context& ctx);
 		void sml_parse(cyng::context& ctx);
 		void insert_meta_data(cyng::context& ctx);
+		void insert_value_data(cyng::context& ctx);
 
 	private:
 		cyng::logging::log_ptr logger_;

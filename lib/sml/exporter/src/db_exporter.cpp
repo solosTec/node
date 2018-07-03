@@ -14,7 +14,8 @@
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
-#include <cyng/value_cast.hpp>
+#include <cyng/numeric_cast.hpp>
+#include <cyng/intrinsics/traits/tag_names.hpp>
 #include <cyng/xml.h>
 #include <cyng/factory.h>
 #include <cyng/vm/generator.h>
@@ -67,6 +68,7 @@ namespace node
 			//
 			//	reset readout context
 			//
+			reset();
 			ro_.set_index(idx);
 
 			//
@@ -278,7 +280,7 @@ namespace node
 			//	the we store the entries in TSMLPeriodEntry.
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(*pos++, tpl);
-			read_period_list(path, tpl.begin(), tpl.end());
+			read_period_list(ctx, path, tpl.begin(), tpl.end());
 
 			//	rawdata
 			ro_.set_value("rawData", *pos++);
@@ -388,7 +390,8 @@ namespace node
 			}
 		}
 
-		void db_exporter::read_period_list(std::vector<obis> const& path
+		void db_exporter::read_period_list(cyng::context& ctx
+			, std::vector<obis> const& path
 			, cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)
 		{
@@ -404,13 +407,14 @@ namespace node
 			{
 				cyng::tuple_t tpl;
 				tpl = cyng::value_cast(*pos++, tpl);
-				read_period_entry(path, counter, tpl.begin(), tpl.end());
+				read_period_entry(ctx, path, counter, tpl.begin(), tpl.end());
 				++counter;
 
 			}
 		}
 
-		void db_exporter::read_period_entry(std::vector<obis> const& path
+		void db_exporter::read_period_entry(cyng::context& ctx
+			, std::vector<obis> const& path
 			, std::size_t index
 			, cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)
@@ -436,13 +440,24 @@ namespace node
 			//
 			//	value
 			//
-			read_value(code, scaler, unit, *pos++);
+			const auto type_tag = read_value(code, scaler, unit, *pos++);
 
 			//
 			//	valueSignature
 			//
 			ro_.set_value("signature", *pos++);
 
+			ctx.attach(cyng::generate_invoke("db.insert.data"
+				, ro_.pk_
+				, ro_.trx_
+				, ro_.idx_
+				, code.to_buffer()
+				, unit
+				, get_unit_name(unit)
+				, cyng::traits::get_type_name(type_tag)	//	CYNG data type name
+				, scaler	//	scaler
+				, ro_.get_value("raw")	//	raw value
+				, ro_.get_value("value")));	//	formatted value
 		}
 
 
@@ -494,16 +509,7 @@ namespace node
 			cyng::buffer_t tmp;
 			tmp = cyng::value_cast(obj, tmp);
 
-			const obis code = obis(tmp);
-			//const std::string name_dec = to_string(code);
-			//const std::string name_hex = to_hex(code);
-
-			//auto child = node.append_child("profile");
-			//child.append_attribute("type").set_value(get_name(code));
-			//child.append_attribute("obis").set_value(name_hex.c_str());
-			//child.append_child(pugi::node_pcdata).set_value(name_dec.c_str());
-
-			return code;
+			return obis(tmp);
 		}
 
 		std::uint8_t db_exporter::read_unit(std::string const& name, cyng::object obj)
@@ -546,47 +552,46 @@ namespace node
 
 		std::int8_t db_exporter::read_scaler(cyng::object obj)
 		{
-			std::int8_t scaler = cyng::value_cast<std::int8_t>(obj, 0);
-			//node.append_child(pugi::node_pcdata).set_value(std::to_string(+scaler).c_str());
+			std::int8_t scaler = cyng::numeric_cast<std::int8_t>(obj, 0);
 			return scaler;
 		}
 
-		void db_exporter::read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj)
+		std::size_t db_exporter::read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj)
 		{
 			//
 			//	write value
 			//
-			//cyng::xml::write(node, obj);
+			const auto type_tag = obj.get_class().tag();
+			ro_.set_value("raw", obj);
 
 			if (code == OBIS_DATA_MANUFACTURER)
 			{
 				cyng::buffer_t buffer;
 				buffer = cyng::value_cast(obj, buffer);
 				const auto manufacturer = cyng::io::to_ascii(buffer);
-				ro_.set_value("manufacturer", cyng::make_object(manufacturer));
+				ro_.set_value("value", cyng::make_object(manufacturer));
+				ro_.set_value("type", cyng::make_object("manufacturer"));
 			}
 			else if (code == OBIS_CURRENT_UTC)
 			{
-				if (obj.get_class().tag() == cyng::TC_TUPLE)
+				if (type_tag == cyng::TC_TUPLE)
 				{
-					read_time("roTime", obj);
+					read_time("value", obj);
 				}
 				else
 				{
 					const auto tm = cyng::value_cast<std::uint32_t>(obj, 0);
 					const auto tp = std::chrono::system_clock::from_time_t(tm);
-					//const auto str = cyng::to_str(tp);
-					//node.append_attribute("readoutTime").set_value(str.c_str());
-					ro_.set_value("roTime", cyng::make_object(tp));
+					ro_.set_value("value", cyng::make_object(tp));
 				}
+				ro_.set_value("type", cyng::make_object("roTime"));
 			}
 			else if (code == OBIS_ACT_SENSOR_TIME)
 			{
 				const auto tm = cyng::value_cast<std::uint32_t>(obj, 0);
 				const auto tp = std::chrono::system_clock::from_time_t(tm);
-				//const auto str = cyng::to_str(tp);
-				//node.append_attribute("sensorTime").set_value(str.c_str());
-				ro_.set_value("actTime", cyng::make_object(tp));
+				ro_.set_value("value", cyng::make_object(tp));
+				ro_.set_value("type", cyng::make_object("actTime"));
 			}
 			else if (code == OBIS_SERIAL_NR)
 			{ 
@@ -594,7 +599,8 @@ namespace node
 				buffer = cyng::value_cast(obj, buffer);
 				std::reverse(buffer.begin(), buffer.end());
 				const auto serial_nr = cyng::io::to_ascii(buffer);
-				ro_.set_value("serialNr", cyng::make_object(serial_nr));
+				ro_.set_value("value", cyng::make_object(serial_nr));
+				ro_.set_value("type", cyng::make_object("serialNr"));
 			}
 			else if (code == OBIS_SERIAL_NR_SECOND)
 			{
@@ -602,19 +608,30 @@ namespace node
 				buffer = cyng::value_cast(obj, buffer);
 				std::reverse(buffer.begin(), buffer.end());
 				const auto serial_nr = cyng::io::to_ascii(buffer);
-				ro_.set_value("serialNr", cyng::make_object(serial_nr));
+				ro_.set_value("value", cyng::make_object(serial_nr));
+				ro_.set_value("type", cyng::make_object("serialNr2"));
+			}
+			else if (code == OBIS_MBUS_STATE)
+			{
+				//	see EN13757-3
+				//std::uint8_t status = cyng::value_cast<std::uint8_t>(obj, 0u);
+				//ro_.set_value("MBusPermanentError", cyng::make_object(((status & 0x08) == 0x08)));
+				//ro_.set_value("MBusTemporaryError", cyng::make_object(((status & 0x10) == 0x10)));
+				ro_.set_value("value", obj);
+				ro_.set_value("type", cyng::make_object("MBus"));
 			}
 			else
 			{
 				if (scaler != 0)
 				{
-					switch (obj.get_class().tag())
+					switch (type_tag)
 					{
 					case cyng::TC_INT64:
 					{
 						const std::int64_t value = cyng::value_cast<std::int64_t>(obj, 0);
 						const auto str = scale_value(value, scaler);
 						ro_.set_value("value", cyng::make_object(str));
+						ro_.set_value("type", cyng::make_object("valueScaled64"));
 					}
 					break;
 					case cyng::TC_INT32:
@@ -622,13 +639,23 @@ namespace node
 						const std::int32_t value = cyng::value_cast<std::int32_t>(obj, 0);
 						const auto str = scale_value(value, scaler);
 						ro_.set_value("value", cyng::make_object(str));
+						ro_.set_value("type", cyng::make_object("valueScaled32"));
 					}
 					break;
 					default:
+						ro_.set_value("value", obj);
+						ro_.set_value("type", cyng::make_object("value"));
 						break;
 					}
 				}
+				else
+				{
+					ro_.set_value("value", obj);
+					ro_.set_value("type", cyng::make_object("value"));
+				}
 			}
+
+			return type_tag;
 		}
 
 		void db_exporter::read_parameter(obis code, cyng::object obj)
