@@ -59,15 +59,6 @@ namespace node
 	private:
 		void subscribe();
 
-		//void sig_ins(cyng::store::table const*
-		//	, cyng::table::key_type const&
-		//	, cyng::table::data_type const&
-		//	, std::uint64_t
-		//	, boost::uuids::uuid source);
-		//void sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid source);
-		//void sig_clr(cyng::store::table const*, boost::uuids::uuid source);
-		//void sig_mod(cyng::store::table const*, cyng::table::key_type const&, cyng::attr_t const&, std::uint64_t, boost::uuids::uuid source);
-
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
