@@ -65,14 +65,14 @@ namespace node
 		cyng::async::scheduler ios;
 		cyng::controller ctrl(ios.get_io_service(), boost::uuids::random_generator()());
 
-		ctrl.run(cyng::register_function("sml.msg", 1, std::bind(&sml_msg, std::placeholders::_1)));
-		ctrl.run(cyng::register_function("sml.eom", 1, std::bind(&sml_eom, std::placeholders::_1)));
+		ctrl.async_run(cyng::register_function("sml.msg", 1, std::bind(&sml_msg, std::placeholders::_1)));
+		ctrl.async_run(cyng::register_function("sml.eom", 1, std::bind(&sml_eom, std::placeholders::_1)));
 
 		sml::parser p([&](cyng::vector_t&& prg) {
 			//cyng::vector_t r = std::move(prg);
 			//std::cout << cyng::io::to_str(r) << std::endl;
-			ctrl.run(std::move(prg));
-		}, false);
+			ctrl.async_run(std::move(prg));
+		}, false, false);
 
 		//	GetProfileListResponse
 		//std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\push-data-3586334585-418932835.bin", std::ios::binary | std::ios::app);

@@ -27,7 +27,7 @@ namespace node
 		sml::parser p([](cyng::vector_t&& prg) {
 			cyng::vector_t r = std::move(prg);
 			std::cout << cyng::io::to_str(r) << std::endl;
-		}, true);
+		}, true, false);
 
 		//std::ifstream ifile("push-data-3890346734-4161255391.bin", std::ios::binary | std::ios::app);
 		std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\push-data-3586334585-418932835.bin", std::ios::binary | std::ios::app);
