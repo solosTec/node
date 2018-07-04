@@ -14,6 +14,7 @@
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
+#include <cyng/io/serializer.h>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/intrinsics/traits/tag_names.hpp>
 #include <cyng/xml.h>
@@ -68,7 +69,6 @@ namespace node
 			//
 			//	reset readout context
 			//
-			reset();
 			ro_.set_index(idx);
 
 			//
@@ -172,6 +172,11 @@ namespace node
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 7, "Public Open Request");
 
+			//
+			//	reset context
+			//
+			reset();
+			
 			//	codepage "ISO 8859-15"
 			ro_.set_value("codepage", *pos++);
 
@@ -212,6 +217,11 @@ namespace node
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 6, "Public Open Response");
 
+			//
+			//	reset context
+			//
+			reset();
+			
 			//	codepage "ISO 8859-15"
 			ro_.set_value("codepage", *pos++);
 
@@ -435,6 +445,7 @@ namespace node
 			//
 			//	scaler
 			//
+			ctx.attach(cyng::generate_invoke("log.msg.debug", "scaler: ", std::string(pos->get_class().type_name()), *pos));
 			const auto scaler = read_scaler(*pos++);
 
 			//
@@ -479,7 +490,6 @@ namespace node
 				break;
 				case TIME_SECINDEX:
 					ro_.set_value(name, choice.back());
-					//cyng::xml::write(node, choice.back());
 					break;
 				default:
 					break;
@@ -552,8 +562,8 @@ namespace node
 
 		std::int8_t db_exporter::read_scaler(cyng::object obj)
 		{
-			std::int8_t scaler = cyng::numeric_cast<std::int8_t>(obj, 0);
-			return scaler;
+// 			return cyng::value_cast<std::int8_t>(obj, 0);
+ 			return cyng::numeric_cast<std::int8_t>(obj, 0);
 		}
 
 		std::size_t db_exporter::read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj)
@@ -562,7 +572,18 @@ namespace node
 			//	write value
 			//
 			const auto type_tag = obj.get_class().tag();
-			ro_.set_value("raw", obj);
+			if (type_tag == cyng::TC_BUFFER) {
+				//
+				//	write binary data (octets) as hex string
+				//
+				cyng::buffer_t buffer;
+				buffer = cyng::value_cast(obj, buffer);
+				const auto raw = cyng::io::to_hex(buffer);
+				ro_.set_value("raw", cyng::make_object(raw));
+			}
+			else {
+				ro_.set_value("raw", obj);
+			}
 
 			if (code == OBIS_DATA_MANUFACTURER)
 			{
@@ -577,12 +598,14 @@ namespace node
 				if (type_tag == cyng::TC_TUPLE)
 				{
 					read_time("value", obj);
+					read_time("roTime", obj);
 				}
 				else
 				{
 					const auto tm = cyng::value_cast<std::uint32_t>(obj, 0);
 					const auto tp = std::chrono::system_clock::from_time_t(tm);
 					ro_.set_value("value", cyng::make_object(tp));
+					ro_.set_value("roTime", cyng::make_object(tp));
 				}
 				ro_.set_value("type", cyng::make_object("roTime"));
 			}
@@ -598,7 +621,7 @@ namespace node
 				cyng::buffer_t buffer;
 				buffer = cyng::value_cast(obj, buffer);
 				std::reverse(buffer.begin(), buffer.end());
-				const auto serial_nr = cyng::io::to_ascii(buffer);
+				const auto serial_nr = cyng::io::to_hex(buffer);
 				ro_.set_value("value", cyng::make_object(serial_nr));
 				ro_.set_value("type", cyng::make_object("serialNr"));
 			}
@@ -607,7 +630,7 @@ namespace node
 				cyng::buffer_t buffer;
 				buffer = cyng::value_cast(obj, buffer);
 				std::reverse(buffer.begin(), buffer.end());
-				const auto serial_nr = cyng::io::to_ascii(buffer);
+				const auto serial_nr = cyng::io::to_hex(buffer);
 				ro_.set_value("value", cyng::make_object(serial_nr));
 				ro_.set_value("type", cyng::make_object("serialNr2"));
 			}
