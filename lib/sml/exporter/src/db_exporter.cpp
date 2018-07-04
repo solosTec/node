@@ -445,7 +445,7 @@ namespace node
 			//
 			//	scaler
 			//
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "scaler: ", std::string(pos->get_class().type_name()), *pos));
+// 			ctx.attach(cyng::generate_invoke("log.msg.debug", "scaler: ", std::string(pos->get_class().type_name()), *pos));
 			const auto scaler = read_scaler(*pos++);
 
 			//
