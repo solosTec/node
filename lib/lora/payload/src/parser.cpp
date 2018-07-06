@@ -6,7 +6,7 @@
  */
 
 #include <smf/lora/payload/parser.h>
-#include <smf/sml/mbus/defs.h>
+#include <smf/mbus/defs.h>
 #include <smf/sml/scaler.h>
 #include <cyng/parser/buffer_parser.h>
 

@@ -445,6 +445,15 @@ endif()
 #endif()
 
 #
+#	M-Bus/EN 13757-3 protocol/application layer library
+#
+include (lib/mbus/protocol/lib.cmake)
+add_library(smf_protocol_mbus ${GLOBAL_LIBRARY_TYPE} ${mbus_protocol_lib})
+#if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+#	target_link_libraries(smf_protocol_mbus cyng_vm)
+#endif()
+
+#
 #	iMega/CU protocol library
 #
 include (lib/imega/protocol/lib.cmake)
@@ -740,6 +749,7 @@ target_link_libraries(setup ${setup_link_libs})
 # BOOST_TEST_DYN_LINK is required to build a main() function
 # cmake -DNODE_BUILD_TEST:bool=ON ..
 #
+
 if(${PROJECT_NAME}_BUILD_TEST)
 include (test/unit-test/unit-test.cmake)
 add_executable(unit_test ${unit_test})
@@ -749,7 +759,7 @@ set_property(
 	TARGET unit_test
 	PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
 
-set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml smf_protocol_ipt smf_protocol_sml)
+set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml smf_protocol_ipt smf_protocol_sml smf_protocol_mbus)
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 	list(APPEND unittest_link_libs cyng_xml)

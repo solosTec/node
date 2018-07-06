@@ -6,8 +6,9 @@
  */
 
 
-#include <smf/sml/mbus/defs.h>
+#include <smf/mbus/defs.h>
 #include <limits>
+#include <numeric>
 
 namespace node
 {
@@ -19,9 +20,28 @@ namespace node
 			if (id.size() == 3)
 			{
 				// [ASCII(1. Buchstabe)-64] * 32 * 32 + [ASCII(2. Buchstabe)-64] * 32 + [ASCII(3. Buchstabe)-64]
-				return ((id.at(0) - 64) * 1024)
-					+ ((id.at(1) - 64) * 32)
-					+ (id.at(2) - 64);
+				//return ((id.at(0) - 64) * 1024)
+				//	+ ((id.at(1) - 64) * 32)
+				//	+ (id.at(2) - 64);
+
+
+				auto start = 0x400;
+				return std::accumulate(id.begin(), id.end(), std::uint16_t(0), [&start](std::uint16_t id, char c)->std::uint16_t {
+					if (c > 0x60 && c < 0x7B) {
+						//	to uppercase
+						std::uint16_t v = ((c - 0x20) - 0x40);
+						v *= start;
+						start /= 0x20;
+						return id + v;
+					}
+					else if (c > 0x40 && c < 0x5B) {
+						std::uint16_t v = c - 0x40;
+						v *= start;
+						start /= 0x20;
+						return id + v;
+					}
+					return id;
+				});
 			}
 			return std::numeric_limits<std::uint16_t>::max();
 		}
@@ -52,9 +72,9 @@ namespace node
 			switch (code)
 			{
 			case 0x0442: return "ABB Kent Meters AB";
-			case 0x0465: return "Actaris (Elektrizität)";
-			case 0x0467: return "Actaris (Gas)";
-			case 0x0477: return "Actaris (Wasser und Wärme)";
+			case 0x0465: return "Actaris (Elektrizität)";	//	SCE
+			case 0x0467: return "Actaris (Gas)";	//	ACG
+			case 0x0477: return "Actaris (Wasser und Wärme)";	//	ACW
 			case 0x04A7: return "AEG";
 			case 0x04AC: return "Kohler, Türkei";
 			case 0x04AD: return "S.C. AEM S.A. Romania";

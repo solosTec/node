@@ -57,3 +57,20 @@ BOOST_AUTO_TEST_CASE(sml_003)
 	BOOST_CHECK(test_sml_003());
 }
 BOOST_AUTO_TEST_SUITE_END()	//	SML
+
+
+#include "test-mbus-001.h"
+#include "test-mbus-002.h"
+
+BOOST_AUTO_TEST_SUITE(MBUS)
+BOOST_AUTO_TEST_CASE(mbus_001)
+{
+	using namespace node;
+	BOOST_CHECK(test_mbus_001());
+}
+BOOST_AUTO_TEST_CASE(mbus_002)
+{
+	using namespace node;
+	BOOST_CHECK(test_mbus_002());
+}
+BOOST_AUTO_TEST_SUITE_END()	//	MBUS

@@ -11,7 +11,7 @@
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/units.h>
 #include <smf/sml/scaler.h>
-#include <smf/sml/mbus/defs.h>
+#include <smf/mbus/defs.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
