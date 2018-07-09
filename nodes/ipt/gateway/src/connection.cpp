@@ -1,9 +1,9 @@
 /*
- * The MIT License (MIT)
- * 
- * Copyright (c) 2018 Sylko Olzscher 
- * 
- */ 
+* The MIT License (MIT)
+*
+* Copyright (c) 2018 Sylko Olzscher
+*
+*/
 
 #include "session.h"
 #include "connection.h"
@@ -22,15 +22,17 @@ namespace node
 		connection::connection(boost::asio::ip::tcp::socket&& socket
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
+			, status& status_word
+			, cyng::store::db& config_db
 			, std::string const& account
 			, std::string const& pwd
 			, std::string manufacturer
 			, std::string model
 			, cyng::mac48 mac)
-		: socket_(std::move(socket))
+			: socket_(std::move(socket))
 			, logger_(logger)
 			, buffer_()
-			, session_(make_session(mux, logger, account, pwd, manufacturer, model, mac))
+			, session_(make_session(mux, logger, status_word, config_db, account, pwd, manufacturer, model, mac))
 			, serializer_(socket_, this->get_session()->vm_)
 		{
 			//
@@ -106,8 +108,13 @@ namespace node
 					//	The session was closed intentionally.
 					//	At this point nothing more is to do. Service is going down and all session have to be stopped fast.
 					//
-					CYNG_LOG_WARNING(logger_, "ipt connection closed intentionally: " << ec << ':' << ec.value() << ':' << ec.message() << '>');
-
+					CYNG_LOG_WARNING(logger_, "ipt connection closed intentionally: " 
+						<< ec 
+						<< ':' 
+						<< ec.value() 
+						<< ':' 
+						<< ec.message() 
+						<< '>');
 				}
 			});
 		}

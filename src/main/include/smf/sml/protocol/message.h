@@ -97,6 +97,9 @@ namespace node
 		cyng::tuple_t child_list_tree(obis, cyng::tuple_t value);
 		cyng::tuple_t child_list_tree(obis, std::initializer_list<cyng::tuple_t> list);
 
+		cyng::tuple_t tree(obis code, cyng::tuple_t param, cyng::tuple_t list);
+		cyng::tuple_t tree(obis code, cyng::tuple_t param, std::initializer_list<cyng::tuple_t> list);
+
 	}
 }
 #endif

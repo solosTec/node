@@ -6,6 +6,7 @@
  */
 
 #include <smf/sml/protocol/value.hpp>
+#include <cyng/value_cast.hpp>
 
 namespace node
 {
@@ -89,6 +90,29 @@ namespace node
 			{
 				//	convert to buffer_t
 				return factory_policy<cyng::buffer_t>::create(v.to_buffer());
+			}
+			cyng::tuple_t factory_policy<cyng::object>::create(cyng::object const& obj)
+			{
+				switch (obj.get_class().tag()) {
+				case cyng::TC_BOOL:
+				case cyng::TC_UINT8:
+				case cyng::TC_UINT16:
+				case cyng::TC_UINT32:
+				case cyng::TC_UINT64:
+				case cyng::TC_INT8:
+				case cyng::TC_INT16:
+				case cyng::TC_INT32:
+				case cyng::TC_INT64:
+				case cyng::TC_BUFFER:
+					return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), obj);
+				case cyng::TC_STRING:
+					return factory_policy<std::string>::create(cyng::value_cast<std::string>(obj, ""));
+				case cyng::TC_TIME_POINT:
+					return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), obj);
+				default:
+					break;
+				}
+				return make_value();
 			}
 		}
 

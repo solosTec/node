@@ -1,9 +1,9 @@
 /*
- * The MIT License (MIT)
- * 
- * Copyright (c) 2018 Sylko Olzscher 
- * 
- */ 
+* The MIT License (MIT)
+*
+* Copyright (c) 2018 Sylko Olzscher
+*
+*/
 
 #include "session.h"
 #include <cyng/vm/domain/log_domain.h>
@@ -18,21 +18,28 @@ namespace node
 	{
 		session::session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
+			, status& status_word
+			, cyng::store::db& config_db
 			, std::string const& account
 			, std::string const& pwd
 			, std::string manufacturer
 			, std::string model
 			, cyng::mac48 mac)
-		: mux_(mux)
+			: mux_(mux)
 			, logger_(logger)
 			, vm_(mux.get_io_service(), boost::uuids::random_generator()())
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
-				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
-				vm_.async_run(std::move(prg));
-			}, false, false)	//	not verbose, no log instructions
-			, core_(logger_, vm_, true, account, pwd, manufacturer, model, mac)
+			CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
+			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+			vm_.async_run(std::move(prg));
+		}, false, false)
+			, core_(logger_, vm_, status_word, config_db, true, account, pwd, manufacturer, model, mac)
 		{
+			//
+			//	this external interface
+			//
+			core_.status_word_.set_ext_if_available(true);
+
 			//
 			//	register logger domain
 			//
@@ -47,13 +54,15 @@ namespace node
 
 		cyng::object make_session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
+			, status& status_word
+			, cyng::store::db& config_db
 			, std::string const& account
 			, std::string const& pwd
 			, std::string manufacturer
 			, std::string model
 			, cyng::mac48 mac)
 		{
-			return cyng::make_object<session>(mux, logger, account, pwd, manufacturer, model, mac);
+			return cyng::make_object<session>(mux, logger, status_word, config_db, account, pwd, manufacturer, model, mac);
 		}
 
 	}

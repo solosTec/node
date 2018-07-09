@@ -1,14 +1,15 @@
 /*
- * The MIT License (MIT)
- * 
- * Copyright (c) 2018 Sylko Olzscher 
- * 
- */ 
+* The MIT License (MIT)
+*
+* Copyright (c) 2018 Sylko Olzscher
+*
+*/
 
 #ifndef NODE_IPT_GATEWAY_SESSION_H
 #define NODE_IPT_GATEWAY_SESSION_H
 
 #include <smf/sml/protocol/parser.h>
+#include <smf/sml/status.h>
 #include "sml_reader.h"
 #include "kernel.h"
 #include <cyng/async/mux.h>
@@ -26,6 +27,8 @@ namespace node
 		public:
 			session(cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
+				, status& status_word
+				, cyng::store::db& config_db
 				, std::string const& account
 				, std::string const& pwd
 				, std::string manufacturer
@@ -36,8 +39,8 @@ namespace node
 			session& operator=(session const&) = delete;
 
 			/**
-			 * @return session specific hash based in internal tag
-			 */
+			* @return session specific hash based in internal tag
+			*/
 			std::size_t hash() const noexcept;
 
 		private:
@@ -46,18 +49,20 @@ namespace node
 			cyng::controller vm_;
 
 			/**
-			 * SML parser
-			 */
+			* SML parser
+			*/
 			parser 	parser_;
 
 			/**
-			 * Provide core functions of an SML gateway
-			 */
+			* Provide core functions of an SML gateway
+			*/
 			node::sml::kernel core_;
 		};
 
 		cyng::object make_session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
+			, status& status_word
+			, cyng::store::db& config_db
 			, std::string const& account
 			, std::string const& pwd
 			, std::string manufacturer

@@ -9,9 +9,12 @@
 #define NODE_LIB_SML_GENERATOR_H
 
 #include <smf/sml/defs.h>
+#include <smf/sml/intrinsics/obis.h>
 #include <cyng/intrinsics/sets.h>
 #include <cyng/intrinsics/mac.h>
+#include <cyng/store/table.h>
 #include <random>
+#include <chrono>
 
 namespace node
 {
@@ -156,6 +159,13 @@ namespace node
 			std::size_t public_close(cyng::object trx);
 
 			/**
+			 * Generate an empty response with the specified tree path
+			 */
+			std::size_t empty(cyng::object trx
+				, cyng::object server_id
+				, obis);
+
+			/**
 			 * OBIS_CLASS_OP_LOG_STATUS_WORD
 			 */
 			std::size_t get_proc_parameter_status_word(cyng::object trx
@@ -172,6 +182,31 @@ namespace node
 				, std::string const& model_code
 				, std::string const& serial);
 
+			/**
+			 * OBIS_CODE_ROOT_MEMORY_USAGE - 00 80 80 00 10 FF
+			 */
+			std::size_t get_proc_mem_usage(cyng::object trx
+				, cyng::object server_id
+				, std::uint8_t
+				, std::uint8_t);
+
+			std::size_t get_proc_device_time(cyng::object trx
+				, cyng::object server_id
+				, std::chrono::system_clock::time_point
+				, std::int32_t
+				, bool);
+
+			std::size_t get_proc_active_devices(cyng::object trx
+				, cyng::object server_id
+				, const cyng::store::table*);
+
+			std::size_t get_proc_visible_devices(cyng::object trx
+				, cyng::object server_id
+				, const cyng::store::table*);
+
+			std::size_t get_proc_sensor_property(cyng::object trx
+				, cyng::object server_id
+				, const cyng::table::record&);
 		};
 
 	}

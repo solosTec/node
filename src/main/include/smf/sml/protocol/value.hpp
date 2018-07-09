@@ -148,6 +148,12 @@ namespace node
 			{
 				static cyng::tuple_t create(obis&& v);
 			};
+
+			template<>
+			struct factory_policy<cyng::object>
+			{
+				static cyng::tuple_t create(cyng::object const& v);
+			};
 		}
 
 		template <typename T>

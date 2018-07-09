@@ -1,14 +1,11 @@
 ﻿/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 Sylko Olzscher
- *
- */
+* The MIT License (MIT)
+*
+* Copyright (c) 2018 Sylko Olzscher
+*
+*/
 
 #include "kernel.h"
-//#include <NODE_project_info.h>
-//#include <smf/sml/crc16.h>
-//#include <smf/sml/protocol/serializer.h>
 #include <smf/sml/protocol/message.h>
 #include <smf/sml/protocol/value.hpp>
 #include <smf/sml/obis_db.h>
@@ -30,12 +27,16 @@ namespace node
 
 		kernel::kernel(cyng::logging::log_ptr logger
 			, cyng::controller& vm
+			, status& status_word
+			, cyng::store::db& config_db
 			, bool server_mode
 			, std::string account
 			, std::string pwd, std::string manufacturer
 			, std::string model
 			, cyng::mac48 mac)
-		: logger_(logger)
+			: status_word_(status_word)
+			, logger_(logger)
+			, config_db_(config_db)
 			, server_mode_(server_mode)
 			, account_(account)
 			, pwd_(pwd)
@@ -43,10 +44,7 @@ namespace node
 			, model_(model)
 			, server_id_(to_gateway_srv_id(mac))
 			, reader_()
-			, status_(0x070202)
 			, sml_gen_()
-			//, msg_()
-			//, group_no_(0)
 		{
 			reset();
 
@@ -81,6 +79,10 @@ namespace node
 			//"sml.get.proc.wan.config"
 			//"sml.get.proc.gsm.config"
 			//"sml.get.proc.gprs.param"
+			vm.register_function("sml.get.proc.data.collector", 6, std::bind(&kernel::sml_get_proc_data_collector, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.1107.if", 6, std::bind(&kernel::sml_get_proc_1107_if, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.0080800000FF", 6, std::bind(&kernel::sml_get_proc_0080800000FF, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.push.ops", 6, std::bind(&kernel::sml_get_proc_push_ops, this, std::placeholders::_1));
 
 		}
 
@@ -207,16 +209,10 @@ namespace node
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			//BOOST_ASSERT_MSG(msg_.empty(), "pending SML data");
 			sml_gen_.public_open(frame.at(1)	// trx
 				, frame.at(3)	//	client id
 				, frame.at(5)	//	req file id
 				, frame.at(4));
-			//append_msg(res_generator::public_open(frame.at(1)	// trx
-			//	, frame.at(3)	//	client id
-			//	, frame.at(5)	//	req file id
-			//	, frame.at(4)	//	server id
-			//));
 		}
 
 		void kernel::sml_public_close_request(cyng::context& ctx)
@@ -298,7 +294,7 @@ namespace node
 			//	Zeitbasis unsicher          : rot
 			//	PLC Schnittstelle           : false
 
-			//	0x000070202 - 000000000000001110000001000000010
+			//	0x000070202 - ‭0111 0000 0010 0000 0010‬
 			//	fataler Fehler              : false
 			//	am Funknetz angemeldet      : false
 			//	Endkundenschnittstelle      : true
@@ -323,7 +319,7 @@ namespace node
 			//	9	1 if restart was triggered by watchdog reset
 			//	10	0 if IP address is available (DHCP)
 			//	11	0 if ethernet link is available
-			//	12	always 0
+			//	12	always 0 (authorized on WAN)
 			//	13	0 if authorized on IP-T server
 			//	14	1 in case of out of memory
 			//	15	always 0
@@ -339,15 +335,13 @@ namespace node
 
 			//	81 00 60 05 00 00 = OBIS_CLASS_OP_LOG_STATUS_WORD
 
-			//node::sml::parameter_tree(node::sml::OBIS_CLASS_OP_LOG_STATUS_WORD, node::sml::make_value(static_cast<std::uint64_t>(0x000070202)));
-
 			//
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
 			sml_gen_.get_proc_parameter_status_word(frame.at(1)
 				, frame.at(3)
-				, status_);
+				, status_word_);
 
 		}
 
@@ -371,6 +365,7 @@ namespace node
 				, server_id_
 				, "VSES-1KW-221-1F0"
 				, "serial.number");
+
 		}
 
 		void kernel::sml_get_proc_mem_usage(cyng::context& ctx)
@@ -425,26 +420,11 @@ namespace node
 			const std::uint8_t mirror = cyng::sys::get_used_virtual_memory_in_percent()
 				, tmp = cyng::sys::get_used_physical_memory_in_percent();
 
-			sml_gen_.append_msg(message(frame.at(1)	//	trx
-				, 2 //, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+			sml_gen_.get_proc_mem_usage(frame.at(1)
+				, frame.at(3)	//	server id
+				, mirror
+				, tmp);
 
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id
-					, OBIS_CODE(00, 80, 80, 00, 10, FF)		//	path entry
-
-					//
-					//	generate get process parameter response
-					//	2 uint8 values 
-					//
-					, child_list_tree(OBIS_CODE(00, 80, 80, 00, 10, FF), {
-
-						parameter_tree(OBIS_CODE(00, 80, 80, 00, 11, FF), make_value(mirror)),	//	mirror
-						parameter_tree(OBIS_CODE(00, 80, 80, 00, 12, FF), make_value(tmp))	// tmp
-			}))));
 		}
 
 		void kernel::sml_get_proc_lan_if(cyng::context& ctx)
@@ -464,18 +444,9 @@ namespace node
 			//
 			//	ToDo: implement
 			//
-			sml_gen_.append_msg(message(frame.at(1)	//	trx
-				, 2 //, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id
-					, OBIS_CODE_IF_LAN_DSL	//	path entry - 81 48 17 07 00 FF
-					, empty_tree(OBIS_CODE_IF_LAN_DSL))));
-
+			sml_gen_.empty(frame.at(1)
+				, frame.at(3)	//	server id
+				, OBIS_CODE_IF_LAN_DSL);
 
 		}
 
@@ -492,21 +463,13 @@ namespace node
 			//	* OBIS (requested parameter)
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "sml.get.proc.lan.config " << cyng::io::to_str(frame));
-			
+
 			//
 			//	ToDo: implement
 			//
-			sml_gen_.append_msg(message(frame.at(1)	//	trx
-				, 2 //, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id
-					, OBIS_CODE_ROOT_LAN_DSL	//	path entry - 81 48 0D 06 00 FF
-					, empty_tree(OBIS_CODE_ROOT_LAN_DSL))));
+			sml_gen_.empty(frame.at(1)
+				, frame.at(3)	//	server id
+				, OBIS_CODE_ROOT_LAN_DSL);
 
 		}
 
@@ -595,23 +558,23 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(frame.at(3)	//	server id
-					, obis(0x81, 0x81, 0xC7, 0x88, 0x01, 0xFF)	//	path entry
+					, OBIS_CODE_ROOT_NTP	//	path entry
 
-					//
-					//	generate get process parameter response
-					//
-					, child_list_tree(obis(0x81, 0x81, 0xC7, 0x88, 0x01, 0xFF), {
+											//
+											//	generate get process parameter response
+											//
+					, child_list_tree(OBIS_CODE_ROOT_NTP, {
 
 						//	NTP servers
-						child_list_tree(obis(0x81, 0x81, 0xC7, 0x88, 0x02, 0xFF),{
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x88, 0x02, 0x01), make_value(ntp_primary)),	
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x88, 0x02, 0x02), make_value(ntp_secondary)),
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x88, 0x02, 0x03), make_value(ntp_tertiary))
-						}),
-						parameter_tree(obis(0x81, 0x81, 0xC7, 0x88, 0x03, 0xFF), make_value(ntp_port)),	//	NTP port
-						parameter_tree(obis(0x81, 0x81, 0xC7, 0x88, 0x06, 0xFF), make_value(ntp_active)),	// enabled/disabled
-						parameter_tree(obis(0x81, 0x81, 0xC7, 0x88, 0x04, 0xFF), make_value(ntp_tz))	// timezone
-			}))));
+						child_list_tree(OBIS_CODE(81, 81, C7, 88, 02, FF),{
+							parameter_tree(OBIS_CODE(81, 81, C7, 88, 02, 01), make_value(ntp_primary)),
+							parameter_tree(OBIS_CODE(81, 81, C7, 88, 02, 02), make_value(ntp_secondary)),
+							parameter_tree(OBIS_CODE(81, 81, C7, 88, 02, 03), make_value(ntp_tertiary))
+							}),
+						parameter_tree(OBIS_CODE(81, 81, C7, 88, 03, FF), make_value(ntp_port)),	//	NTP port
+						parameter_tree(OBIS_CODE(81, 81, C7, 88, 06, FF), make_value(ntp_active)),	// enabled/disabled
+						parameter_tree(OBIS_CODE(81, 81, C7, 88, 04, FF), make_value(ntp_tz))	// timezone
+						}))));
 
 		}
 
@@ -628,77 +591,17 @@ namespace node
 			//	* OBIS (requested parameter)
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "sml.get.proc.device.time " << cyng::io::to_str(frame));
-			//76                                                SML_Message(Sequence): 
-			//  81063137303531323136353635313836333431352D33    transactionId: 170512165651863415-3
-			//  6202                                            groupNo: 2
-			//  6200                                            abortOnError: 0
-			//  72                                              messageBody(Choice): 
-			//	630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
-			//	73                                            SML_GetProcParameter_Res(Sequence): 
-			//	  080500153B01EC46                            serverId: 05 00 15 3B 01 EC 46 
-			//	  71                                          parameterTreePath(SequenceOf): 
-			//		078181C78810FF                            path_Entry: 81 81 C7 88 10 FF 
-			//	  73                                          parameterTree(Sequence): 
-			//		078181C78810FF                            parameterName: 81 81 C7 88 10 FF 
-			//		01                                        parameterValue: not set
-			//		74                                        child_List(SequenceOf): 
-			//		  73                                      tree_Entry(Sequence): 
-			//			07010000090B00                        parameterName: 01 00 00 09 0B 00 
-			//			72                                    parameterValue(Choice): 
-			//			  6204                                parameterValue: 4 => smlTime (0x04)
-			//			  72                                  smlTime(Choice): 
-			//				6202                              smlTime: 2 => timestamp (0x02)
-			//				655915CD3C                        timestamp: 1494601020
-			//			01                                    child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			070000600800FF                        parameterName: 00 00 60 08 00 FF 
-			//			72                                    parameterValue(Choice): 
-			//			  6204                                parameterValue: 4 => smlTime (0x04)
-			//			  72                                  smlTime(Choice): 
-			//				6201                              smlTime: 1 => secIndex (0x01)
-			//				6505E5765F                        secIndex: 98924127
-			//			01                                    child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			07810000090B01                        parameterName: 81 00 00 09 0B 01 
-			//			72                                    parameterValue(Choice): 
-			//			  6201                                parameterValue: 1 => smlValue (0x01)
-			//			  550000003C                          smlValue: 60
-			//			01                                    child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			07810000090B02                        parameterName: 81 00 00 09 0B 02 
-			//			72                                    parameterValue(Choice): 
-			//			  6201                                parameterValue: 1 => smlValue (0x01)
-			//			  4200                                smlValue: False
-			//			01                                    child_List: not set
-			//  633752                                          crc16: 14162
-			//  00                                              endOfSmlMsg: 00 
 
 			const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-			const std::time_t now_tt = std::chrono::system_clock::to_time_t(now);
 			const std::int32_t tz = 60;
 			const bool sync_active = true;
 
-			sml_gen_.append_msg(message(frame.at(1)	//	trx
-				, 2 //, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+			sml_gen_.get_proc_device_time(frame.at(1)
+				, frame.at(3)	//	server id
+				, now
+				, tz
+				, sync_active);
 
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id
-					, OBIS_CODE_ROOT_DEVICE_TIME	//	path entry 81 81 C7 88 10 FF 
-
-					//
-					//	generate get process parameter response
-					//
-					, child_list_tree(OBIS_CODE_ROOT_DEVICE_TIME, {
-
-						parameter_tree(OBIS_CURRENT_UTC, make_value(now)),	//	timestamp (01 00 00 09 0B 00 )
-						parameter_tree(obis(0x00, 0x00, 0x60, 0x08, 0x00, 0xFF), make_sec_index_value(now)),
-						parameter_tree(obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x01), make_value(tz)),
-						parameter_tree(obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x02), make_value(sync_active))
-					}))));
 		}
 
 		void kernel::sml_get_proc_active_devices(cyng::context& ctx)
@@ -715,44 +618,15 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "sml.get.proc.active.devices " << cyng::io::to_str(frame));
 
-			//	last received data
-			const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-			const std::string device_class = "---";	//	2D 2D 2D
+			config_db_.access([&](const cyng::store::table* tbl) {
 
-			sml_gen_.append_msg(message(frame.at(1)	//	trx
-				, 2 //, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+				CYNG_LOG_INFO(logger_, tbl->size() << " devices");
+				sml_gen_.get_proc_active_devices(frame.at(1)
+					, frame.at(3)	//	server id
+					, tbl);
 
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id
-					, OBIS_CODE_ROOT_ACTIVE_DEVICES	//	path entry 81 81 11 06 FF FF
+			}, cyng::store::read_access("devices"));
 
-					//
-					//	generate get process parameter response
-					//
-					, child_list_tree(OBIS_CODE_ROOT_ACTIVE_DEVICES, {
-						child_list_tree(obis(0x81, 0x81, 0x11, 0x06, 0x01, 0xFF), {
-
-						child_list_tree(obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x01),{
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), make_value(server_id_)),
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), make_value(device_class)),
-							parameter_tree(OBIS_CURRENT_UTC, make_value(now))	//	timestamp (01 00 00 09 0B 00 )
-						}),
-						child_list_tree(obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x02),{
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), make_value(cyng::buffer_t{ 0x01, (char)0xA8, 0x15, 0x74, (char)0x31, 0x45, 0x05, (char)0x01, (char)0x02 })),
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), make_value(device_class)),
-							parameter_tree(OBIS_CURRENT_UTC, make_value(now))	//	timestamp (01 00 00 09 0B 00 )
-						}),
-						child_list_tree(obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x03),{
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), make_value(cyng::buffer_t{ 0x01, (char)0xA8, 0x15, 0x74, (char)0x31, 0x45, 0x04, (char)0x01, (char)0x02 })),
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), make_value(device_class)),
-							parameter_tree(OBIS_CURRENT_UTC, make_value(now))	//	timestamp (01 00 00 09 0B 00 )
-						})
-					}) 
-				}))));
 		}
 
 		void kernel::sml_get_proc_visible_devices(cyng::context& ctx)
@@ -769,44 +643,15 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "sml.get.proc.visible.devices " << cyng::io::to_str(frame));
 
-			//	last received data
-			const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-			const std::string device_class = "---";	//	2D 2D 2D
+			config_db_.access([&](const cyng::store::table* tbl) {
 
-			sml_gen_.append_msg(message(frame.at(1)	//	trx
-				, 2 //, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+				CYNG_LOG_INFO(logger_, tbl->size() << " devices");
+				sml_gen_.get_proc_visible_devices(frame.at(1)
+					, frame.at(3)	//	server id
+					, tbl);
 
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id
-					, OBIS_CODE_ROOT_VISIBLE_DEVICES	//	path entry 81 81 10 06 FF FF
+			}, cyng::store::read_access("devices"));
 
-					//
-					//	generate get process parameter response
-					//
-					, child_list_tree(OBIS_CODE_ROOT_VISIBLE_DEVICES, {
-						child_list_tree(obis(0x81, 0x81, 0x10, 0x06, 0x01, 0xFF), {
-
-						child_list_tree(obis(0x81, 0x81, 0x10, 0x06, 0x01, 0x01),{
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), make_value(server_id_)),
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), make_value(device_class)),
-							parameter_tree(OBIS_CURRENT_UTC, make_value(now))	//	timestamp (01 00 00 09 0B 00 )
-						}),
-						child_list_tree(obis(0x81, 0x81, 0x10, 0x06, 0x01, 0x02),{
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), make_value(cyng::buffer_t{ 0x24, 0x23, 0x02, 0x12, (char)0x90, 0x20, 0x07, (char)0x86 })),
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), make_value(device_class)),
-							parameter_tree(OBIS_CURRENT_UTC, make_value(now))	//	timestamp (01 00 00 09 0B 00 )
-						}),
-						child_list_tree(obis(0x81, 0x81, 0x10, 0x06, 0x01, 0x02),{
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x04, 0xFF), make_value(cyng::buffer_t{ 0x24, 0x23, 0x02, 0x15, (char)0x90, 0x20, 0x07, (char)0x86 })),
-							parameter_tree(obis(0x81, 0x81, 0xC7, 0x82, 0x02, 0xFF), make_value(device_class)),
-							parameter_tree(OBIS_CURRENT_UTC, make_value(now))	//	timestamp (01 00 00 09 0B 00 )
-						})
-					})
-				}))));
 		}
 
 		void kernel::sml_get_proc_device_info(cyng::context& ctx)
@@ -827,17 +672,9 @@ namespace node
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			sml_gen_.append_msg(message(frame.at(1)	//	trx
-				, 2 //, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id
-					, OBIS_CODE_ROOT_DEVICE_INFO	//	path entry - 81 81 12 06 FF FF
-					, empty_tree(OBIS_CODE_ROOT_DEVICE_INFO))));
+			sml_gen_.empty(frame.at(1)
+				, frame.at(3)	//	server id
+				, OBIS_CODE_ROOT_DEVICE_INFO);
 
 		}
 
@@ -914,10 +751,10 @@ namespace node
 					, OBIS_CODE_ROOT_IPT_STATE	//	path entry - 81 49 0D 06 00 FF 
 					, child_list_tree(OBIS_CODE_ROOT_IPT_STATE, {
 
-						parameter_tree(obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x00), make_value(ip_address)),
-						parameter_tree(obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x00), make_value(target_port)),
-						parameter_tree(obis(0x81, 0x49, 0x19, 0x07, 0x00, 0x00), make_value(source_port))
-			}))));
+						parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 00), make_value(ip_address)),
+						parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 00), make_value(target_port)),
+						parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 00), make_value(source_port))
+						}))));
 		}
 
 		void kernel::sml_get_proc_ipt_param(cyng::context& ctx)
@@ -1079,36 +916,36 @@ namespace node
 					, child_list_tree(OBIS_CODE_ROOT_IPT_PARAM, {
 
 						//	primary master
-						child_list_tree(obis(0x81, 0x49, 0x0D, 0x07, 0x00, 0x01), {
-							parameter_tree(obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x01), make_value(ip_address_primary_master)),
-							parameter_tree(obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x01), make_value(target_port_primary_master)),
-							parameter_tree(obis(0x81, 0x49, 0x19, 0x07, 0x00, 0x01), make_value(source_port_primary_master)),
-							parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x01, 0x01), make_value(user_pm)),
-							parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x02, 0x01), make_value(pwd_pm))
-						}),
+						child_list_tree(OBIS_CODE(81, 49, 0D, 07, 00, 01),{
+							parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 01), make_value(ip_address_primary_master)),
+							parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 01), make_value(target_port_primary_master)),
+							parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 01), make_value(source_port_primary_master)),
+							parameter_tree(OBIS_CODE(81, 49, 63, 3C, 01, 01), make_value(user_pm)),
+							parameter_tree(OBIS_CODE(81, 49, 63, 3C, 02, 01), make_value(pwd_pm))
+							}),
 
 						//	secondary master
-						child_list_tree(obis(0x81, 0x49, 0x0D, 0x07, 0x00, 0x02), {
-							parameter_tree(obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x02), make_value(ip_address_secondary_master)),
-							parameter_tree(obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x02), make_value(target_port_secondary_master)),
-							parameter_tree(obis(0x81, 0x49, 0x19, 0x07, 0x00, 0x02), make_value(source_port_seccondary_master)),
-							parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x01, 0x02), make_value(user_sm)),
-							parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x02, 0x02), make_value(pwd_sm))
-						}),
+						child_list_tree(OBIS_CODE(81, 49, 0D, 07, 00, 02),{
+							parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 02), make_value(ip_address_secondary_master)),
+							parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 02), make_value(target_port_secondary_master)),
+							parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 02), make_value(source_port_seccondary_master)),
+							parameter_tree(OBIS_CODE(81, 49, 63, 3C, 01, 02), make_value(user_sm)),
+							parameter_tree(OBIS_CODE(81, 49, 63, 3C, 02, 02), make_value(pwd_sm))
+							}),
 
 						//	waiting time (Wartezeit)
-						parameter_tree(obis(0x81, 0x48, 0x27, 0x32, 0x06, 0x01), make_value(wait_time)),
+						parameter_tree(OBIS_CODE(81, 48, 27, 32, 06, 01), make_value(wait_time)),
 
 						//	repetitions
-						parameter_tree(obis(0x81, 0x48, 0x31, 0x32, 0x02, 0x01), make_value(repetitions)),
+						parameter_tree(OBIS_CODE(81, 48, 31, 32, 02, 01), make_value(repetitions)),
 
 						//	SSL
-						parameter_tree(obis(0x00, 0x80, 0x80, 0x00, 0x03, 0xFF), make_value(ssl)),
+						parameter_tree(OBIS_CODE(00, 80, 80, 00, 03, FF), make_value(ssl)),
 
 						//	certificates (none)
-						empty_tree(obis(0x00, 0x80, 0x80, 0x00, 0x04, 0xFF))
+						empty_tree(OBIS_CODE(00, 80, 80, 00, 04, FF))
 
-			}))));
+						}))));
 
 		}
 
@@ -1126,31 +963,156 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "sml.get.proc.sensor.property " << cyng::io::to_str(frame));
 
-			//	ServerId: 05 00 15 3B 02 29 7E 
-			//	ServerId: 01 E6 1E 13 09 00 16 3C 07 
-			//	81 81 C7 86 00 FF                Not set
-			//	   81 81 C7 82 04 FF             _______<_ (01 E6 1E 13 09 00 16 3C 07 )
-			//	   81 81 C7 82 02 FF              ()
-			//	   81 81 C7 82 03 FF             GWF (47 57 46 )
-			//	   81 00 60 05 00 00             _ (00 )
-			//	   81 81 C7 86 01 FF             0 (30 )
-			//	   81 81 C7 86 02 FF             26000 (32 36 30 30 30 )
-			//	   01 00 00 09 0B 00             1528100055 (timestamp)
-			//	   81 81 C7 82 05 FF             ___________5}_w_ (18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03 )
-			//	   81 81 C7 86 03 FF              ()
-			//	   81 81 61 3C 01 FF             Not set
-			//	   81 81 61 3C 02 FF             Not set
+			config_db_.access([&](const cyng::store::table* tbl) {
 
-			const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-			const cyng::buffer_t	public_key{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 };
-			cyng::buffer_t server_id;
-			server_id = cyng::value_cast(frame.at(3), server_id);
-			const cyng::buffer_t status{ 0x00 };
+				CYNG_LOG_INFO(logger_, tbl->size() << " devices");
+				auto rec = tbl->lookup(cyng::table::key_generator(frame.at(3)));
+				if (rec.empty())
+				{
+					sml_gen_.empty(frame.at(1)
+						, frame.at(3)	//	server id
+						, OBIS_CODE_ROOT_SENSOR_PROPERTY);
+				}
+				else
+				{
+					sml_gen_.get_proc_sensor_property(frame.at(1)
+						, frame.at(3)	//	server id
+						, rec);
+				}
+
+			}, cyng::store::read_access("devices"));
+
+			//const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+			//const cyng::buffer_t	public_key{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 };
+			//cyng::buffer_t server_id;
+			//server_id = cyng::value_cast(frame.at(3), server_id);
+			//const cyng::buffer_t status{ 0x00 };
 
 			//
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
+			//sml_gen_.append_msg(message(frame.at(1)	//	trx
+			//	, 2 //, ++group_no_	//	group
+			//	, 0 //	abort code
+			//	, BODY_GET_PROC_PARAMETER_RESPONSE
+
+			//	//
+			//	//	generate get process parameter response
+			//	//
+			//	, get_proc_parameter_response(frame.at(3)	//	server id  
+			//		, OBIS_CODE_ROOT_SENSOR_PROPERTY	//	path entry - 81 81 C7 86 00 FF
+			//		, child_list_tree(OBIS_CODE_ROOT_SENSOR_PROPERTY, {
+
+			//			//	repeat server id
+			//			parameter_tree(OBIS_CODE_SERVER_ID, make_value(server_id)),
+
+			//			//	Geräteklasse
+			//			parameter_tree(OBIS_CODE_DEVICE_CLASS, make_value()),
+
+			//			//	Manufacturer
+			//			parameter_tree(OBIS_DATA_MANUFACTURER, make_value("solosTec")),
+
+			//			//	Statuswort [octet string]
+			//			parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(status)),
+
+			//			//	Bitmaske zur Definition von Bits, deren Änderung zu einem Eintrag im Betriebslogbuch zum Datenspiegel führt
+			//			parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(static_cast<std::uint8_t>(0x0))),
+
+			//			//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
+			//			parameter_tree(OBIS_CODE_AVERAGE_TIME_MS, make_value(static_cast<std::uint16_t>(1234))),
+
+			//			//	aktuelle UTC-Zeit
+			//			parameter_tree(OBIS_CURRENT_UTC, make_value(now)),
+
+			//			//	public key
+			//			parameter_tree(OBIS_DATA_PUBLIC_KEY, make_value(public_key)),
+
+			//			//	AES Schlüssel für wireless M-Bus
+			//			empty_tree(OBIS_DATA_AES_KEY),
+
+			//			parameter_tree(OBIS_DATA_USER_NAME, make_value("user")),
+			//			parameter_tree(OBIS_DATA_USER_PWD, make_value("pwd"))
+
+			//}))));
+		}
+
+		void kernel::sml_get_proc_data_collector(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.get.proc.data.collector " << cyng::io::to_str(frame));
+
+			//	### Message ###
+			//	76                                                SML_Message(Sequence): 
+			//	  81063138303631393139343334353337383434352D32    transactionId: 180619194345378445-2
+			//	  6201                                            groupNo: 1
+			//	  6200                                            abortOnError: 0
+			//	  72                                              messageBody(Choice): 
+			//		630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
+			//		73                                            SML_GetProcParameter_Res(Sequence): 
+			//		  0A01E61E130900163C07                        serverId: 01 E6 1E 13 09 00 16 3C 07 
+			//		  71                                          parameterTreePath(SequenceOf): 
+			//			078181C78620FF                            path_Entry: ____ _
+			//		  73                                          parameterTree(Sequence): 
+			//			078181C78620FF                            parameterName: ____ _
+			//			01                                        parameterValue: not set
+			//			71                                        child_List(SequenceOf): 
+			//			  73                                      tree_Entry(Sequence): 
+			//				078181C7862001                        parameterName: 81 81 C7 86 20 01 
+			//				01                                    parameterValue: not set
+			//				75                                    child_List(SequenceOf): 
+			//				  73                                  tree_Entry(Sequence): 
+			//					078181C78621FF                    parameterName: ____!_
+			//					72                                parameterValue(Choice): 
+			//					  6201                            parameterValue: 1 => smlValue (0x01)
+			//					  4201                            smlValue: True
+			//					01                                child_List: not set
+			//				  73                                  tree_Entry(Sequence): 
+			//					078181C78622FF                    parameterName: ____"_
+			//					72                                parameterValue(Choice): 
+			//					  6201                            parameterValue: 1 => smlValue (0x01)
+			//					  6264                            smlValue: 100
+			//					01                                child_List: not set
+			//				  73                                  tree_Entry(Sequence): 
+			//					078181C78781FF                    parameterName: ______
+			//					72                                parameterValue(Choice): 
+			//					  6201                            parameterValue: 1 => smlValue (0x01)
+			//					  6200                            smlValue: 0
+			//					01                                child_List: not set
+			//				  73                                  tree_Entry(Sequence): 
+			//					078181C78A83FF                    parameterName: ______
+			//					72                                parameterValue(Choice): 
+			//					  6201                            parameterValue: 1 => smlValue (0x01)
+			//					  078181C78611FF                  smlValue: 81 81 C7 86 11 FF 
+			//					01                                child_List: not set
+			//				  73                                  tree_Entry(Sequence): 
+			//					078181C78A23FF                    parameterName: ____#_
+			//					01                                parameterValue: not set
+			//					71                                child_List(SequenceOf): 
+			//					  73                              tree_Entry(Sequence): 
+			//						078181C78A2301                parameterName: 81 81 C7 8A 23 01 
+			//						72                            parameterValue(Choice): 
+			//						  6201                        parameterValue: 1 => smlValue (0x01)
+			//						  070800010000FF              smlValue: 08 00 01 00 00 FF 
+			//						01                            child_List: not set
+			//	  63CBE4                                          crc16: 52196
+			//	  00                                              endOfSmlMsg: 00 
+
+			//	ClientId: 05 00 15 3B 02 29 7E 
+			//	ServerId: 01 E6 1E 13 09 00 16 3C 07 
+			//	81 81 C7 86 20 FF                Not set
+			//	   81 81 C7 86 20 01             Not set
+			//		  81 81 C7 86 21 FF          True (54 72 75 65 )	//	active
+			//		  81 81 C7 86 22 FF          100 (31 30 30 )		//	Einträge
+			//		  81 81 C7 87 81 FF          0 (30 )				//	Registerperiode
+			//		  81 81 C7 8A 83 FF          ______ (81 81 C7 86 11 FF )	//	OBIS
+			//		  81 81 C7 8A 23 FF          Not set
+			//			 81 81 C7 8A 23 01       ______ (08 00 01 00 00 FF )	Liste von Einträgen z.B. Zählerstand Wasser
+
+			//
+			//	Comes up when clicked "Datenspiegel"
+			//
+
 			sml_gen_.append_msg(message(frame.at(1)	//	trx
 				, 2 //, ++group_no_	//	group
 				, 0 //	abort code
@@ -1160,40 +1122,214 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(frame.at(3)	//	server id  
-					, OBIS_CODE_ROOT_SENSOR_PROPERTY	//	path entry - 81 81 C7 86 00 FF
-					, child_list_tree(OBIS_CODE_ROOT_SENSOR_PROPERTY, {
+					, OBIS_CODE_ROOT_DATA_COLLECTOR	//	path entry - 81 81 C7 86 20 FF 
+					, child_list_tree(OBIS_CODE_ROOT_DATA_COLLECTOR, {
 
-						//	repeat server id
-						parameter_tree(OBIS_CODE_SERVER_ID, make_value(server_id)),
+						//	1. entry
+						child_list_tree(OBIS_CODE(81, 81, C7, 86, 20, 01),{
+							parameter_tree(OBIS_CODE(81, 81, C7, 86, 21, FF), make_value(true)),	//	active
+							parameter_tree(OBIS_CODE(81, 81, C7, 86, 22, FF), make_value(100)),		//	Einträge
+							parameter_tree(OBIS_CODE(81, 81, C7, 87, 81, FF), make_value(0)),		//	Registerperiode
+							//	15 min period
+							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_CODE(81, 81, C7, 86, 11, FF))),
+							//	Liste von Einträgen z.B. 08 00 01 00 00 FF := Zählerstand Wasser
+							child_list_tree(OBIS_CODE(81, 81, C7, 8A, 23, FF),{
+								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 23, 01), make_value(OBIS_CODE(08, 00, 01, 00, 00, FF))),
+								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 23, 02), make_value(OBIS_CODE(08, 00, 01, 02, 00, FF)))
+								})
+							}),
 
-						//	Geräteklasse
-						parameter_tree(OBIS_CODE_DEVICE_CLASS, make_value()),
+						}))));
 
-						//	Manufacturer
-						parameter_tree(OBIS_DATA_MANUFACTURER, make_value("solosTec")),
+		}
 
-						//	Statuswort [octet string]
-						parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(status)),
+		void kernel::sml_get_proc_1107_if(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.get.proc.1107.if " << cyng::io::to_str(frame));
+			//
+			//	ToDo: implement
+			//	Comes up when clicked "Datenspiegel"
+			//
+			sml_gen_.empty(frame.at(1)
+				, frame.at(3)	//	server id is gateway MAC
+				, OBIS_CODE_ROOT_1107_IF);
 
-						//	Bitmaske zur Definition von Bits, deren Änderung zu einem Eintrag im Betriebslogbuch zum Datenspiegel führt
-						parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(static_cast<std::uint8_t>(0x0))),
+		}
 
-						//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
-						parameter_tree(OBIS_CODE_AVERAGE_TIME_MS, make_value(static_cast<std::uint16_t>(1234))),
+		void kernel::sml_get_proc_0080800000FF(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.get.proc.0080800000FF " << cyng::io::to_str(frame));
 
-						//	aktuelle UTC-Zeit
-						parameter_tree(OBIS_CURRENT_UTC, make_value(now)),
+			//	### Message ###
+			//	76                                                SML_Message(Sequence): 
+			//	  81063138303730393139313535353730303436312D32    transactionId: 180709191555700461-2
+			//	  6201                                            groupNo: 1
+			//	  6200                                            abortOnError: 0
+			//	  72                                              messageBody(Choice): 
+			//	    630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
+			//	    73                                            SML_GetProcParameter_Res(Sequence): 
+			//	      080500153B021774                            serverId: 05 00 15 3B 02 17 74 
+			//	      71                                          parameterTreePath(SequenceOf): 
+			//	        070080800000FF                            path_Entry: 00 80 80 00 00 FF 
+			//	      73                                          parameterTree(Sequence): 
+			//	        070080800000FF                            parameterName: 00 80 80 00 00 FF 
+			//	        01                                        parameterValue: not set
+			//	        71                                        child_List(SequenceOf): 
+			//	          73                                      tree_Entry(Sequence): 
+			//	            070080800001FF                        parameterName: 00 80 80 00 01 FF 
+			//	            72                                    parameterValue(Choice): 
+			//	              6201                                parameterValue: 1 => smlValue (0x01)
+			//	              5500000000                          smlValue: 0
+			//	            01                                    child_List: not set
+			//	  6305AD                                          crc16: 1453
+			//	  00                                              endOfSmlMsg: 00 
 
-						//	public key
-						parameter_tree(OBIS_DATA_PUBLIC_KEY, make_value(public_key)),
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
 
-						//	AES Schlüssel für wireless M-Bus
-						empty_tree(OBIS_DATA_AES_KEY),
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(frame.at(3)	//	server id  
+					, OBIS_CODE(00, 80, 80, 00, 00, FF)	//	path entry - 00 80 80 00 00 FF
+					, child_list_tree(OBIS_CODE(00, 80, 80, 00, 00, FF), {
 
-						parameter_tree(OBIS_DATA_USER_NAME, make_value("user")),
-						parameter_tree(OBIS_DATA_USER_PWD, make_value("pwd"))
+							parameter_tree(OBIS_CODE(00, 80, 80, 00, 01, FF), make_value(0))
 
-			}))));
+					}))));
+
+		}
+
+		void kernel::sml_get_proc_push_ops(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.get.proc.push.ops " << cyng::io::to_str(frame));
+
+			//	### Message ###
+			//	76                                                SML_Message(Sequence): 
+			//	  81063138303730393139313535353730303333322D32    transactionId: 180709191555700332-2
+			//	  6201                                            groupNo: 1
+			//	  6200                                            abortOnError: 0
+			//	  72                                              messageBody(Choice): 
+			//	    630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
+			//	    73                                            SML_GetProcParameter_Res(Sequence): 
+			//	      0A01A815709448030102                        serverId: 01 A8 15 70 94 48 03 01 02 
+			//	      71                                          parameterTreePath(SequenceOf): 
+			//	        078181C78A01FF                            path_Entry: 81 81 C7 8A 01 FF 
+			//	      73                                          parameterTree(Sequence): 
+			//	        078181C78A01FF                            parameterName: 81 81 C7 8A 01 FF 
+			//	        01                                        parameterValue: not set
+			//	        71                                        child_List(SequenceOf): 
+			//	          73                                      tree_Entry(Sequence): 
+			//	            078181C78A0101                        parameterName: 81 81 C7 8A 01 01 
+			//	            01                                    parameterValue: not set
+			//	            75                                    child_List(SequenceOf): 
+			//	              73                                  tree_Entry(Sequence): 
+			//	                078181C78A02FF                    parameterName: 81 81 C7 8A 02 FF 
+			//	                72                                parameterValue(Choice): 
+			//	                  6201                            parameterValue: 1 => smlValue (0x01)
+			//	                  630384                          smlValue: 900
+			//	                01                                child_List: not set
+			//	              73                                  tree_Entry(Sequence): 
+			//	                078181C78A03FF                    parameterName: 81 81 C7 8A 03 FF 
+			//	                72                                parameterValue(Choice): 
+			//	                  6201                            parameterValue: 1 => smlValue (0x01)
+			//	                  620C                            smlValue: 12
+			//	                01                                child_List: not set
+			//	              73                                  tree_Entry(Sequence): 
+			//	                078181C78A04FF                    parameterName: 81 81 C7 8A 04 FF 
+			//	                72                                parameterValue(Choice): 
+			//	                  6201                            parameterValue: 1 => smlValue (0x01)
+			//	                  078181C78A42FF                  smlValue: ____B_
+			//	                73                                child_List(SequenceOf): 
+			//	                  73                              tree_Entry(Sequence): 
+			//	                    078181C78A81FF                parameterName: ______
+			//	                    72                            parameterValue(Choice): 
+			//	                      6201                        parameterValue: 1 => smlValue (0x01)
+			//	                      0A01A815709448030102        smlValue: 01 A8 15 70 94 48 03 01 02 
+			//	                    01                            child_List: not set
+			//	                  73                              tree_Entry(Sequence): 
+			//	                    078181C78A83FF                parameterName: ______
+			//	                    72                            parameterValue(Choice): 
+			//	                      6201                        parameterValue: 1 => smlValue (0x01)
+			//	                      078181C78611FF              smlValue: 81 81 C7 86 11 FF 
+			//	                    01                            child_List: not set
+			//	                  73                              tree_Entry(Sequence): 
+			//	                    078181C78A82FF                parameterName: ______
+			//	                    01                            parameterValue: not set
+			//	                    01                            child_List: not set
+			//	              73                                  tree_Entry(Sequence): 
+			//	                078147170700FF                    parameterName: 81 47 17 07 00 FF 
+			//	                72                                parameterValue(Choice): 
+			//	                  6201                            parameterValue: 1 => smlValue (0x01)
+			//	                  094461746153696E6B              smlValue: DataSink
+			//	                01                                child_List: not set
+			//	              73                                  tree_Entry(Sequence): 
+			//	                078149000010FF                    parameterName: 81 49 00 00 10 FF 
+			//	                72                                parameterValue(Choice): 
+			//	                  6201                            parameterValue: 1 => smlValue (0x01)
+			//	                  078181C78A21FF                  smlValue: ____!_
+			//	                01                                child_List: not set
+			//	  63526F                                          crc16: 21103
+			//	  00                                              endOfSmlMsg: 00 
+
+			//	ServerId: 05 00 15 3B 02 17 74 
+			//	ServerId: 01 A8 15 70 94 48 03 01 02 
+			//	81 81 C7 8A 01 FF                Not set
+			//	   81 81 C7 8A 01 01             Not set
+			//		  81 81 C7 8A 02 FF          900 (39 30 30 )
+			//		  81 81 C7 8A 03 FF          12 (31 32 )
+			//		  81 81 C7 8A 04 FF          ____B_ (81 81 C7 8A 42 FF )
+			//			 81 81 C7 8A 81 FF       ___p_H___ (01 A8 15 70 94 48 03 01 02 )
+			//			 81 81 C7 8A 83 FF       ______ (81 81 C7 86 11 FF )
+			//			 81 81 C7 8A 82 FF       Not set
+			//		  81 47 17 07 00 FF          DataSink (44 61 74 61 53 69 6E 6B )
+			//		  81 49 00 00 10 FF          ____!_ (81 81 C7 8A 21 FF )
+
+
+			sml_gen_.append_msg(message(frame.at(1)	//	trx
+				, 2 //, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(frame.at(3)	//	server id  
+					, OBIS_PUSH_OPERATIONS	//	path entry - 81 81 C7 86 20 FF 
+					, child_list_tree(OBIS_PUSH_OPERATIONS, {
+
+						//	1. entry
+						child_list_tree(OBIS_CODE(81, 81, C7, 8A, 01, 01), {
+							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 02, FF), make_value(900u)),	//	intervall (sec.) [uint16]
+							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 03, FF), make_value(12u)),		//	intervall (sec.) [uint8]
+							//	7.3.1.25 Liste möglicher Push-Quellen 
+							//	push source: 
+							//	* 81 81 C7 8A 42 FF == profile
+							//	* 81 81 C7 8A 43 FF == Installationsparameter
+							//	* 81 81 C7 8A 44 FF == list of visible sensors/actors
+							tree(OBIS_CODE(81, 81, C7, 8A, 04, FF)
+							, make_value(OBIS_CODE(81, 81, C7, 8A, 42, FF))
+							, {
+								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 81, FF), make_value(frame.at(3))),
+								//	15 min period (load profile)
+								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_CODE(81, 81, C7, 86, 11, FF))),
+								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 82, FF), make_value())
+							}),
+							parameter_tree(OBIS_CODE(81, 47, 17, 07, 00, FF), make_value("data.sink.sml")),		//	Targetname
+							//	push service: 
+							//	* 81 81 C7 8A 21 FF == IP-T
+							//	* 81 81 C7 8A 22 FF == SML client address
+							//	* 81 81 C7 8A 23 FF == KNX ID 
+							parameter_tree(OBIS_CODE(81, 49, 00, 00, 10, FF), make_value(OBIS_CODE(81, 81, C7, 8A, 21, FF)))
+
+						} )
+					} ))));
+
 		}
 
 	}	//	sml

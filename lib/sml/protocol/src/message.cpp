@@ -157,5 +157,24 @@ namespace node
 				, cyng::make_object(tpl) });
 		}
 
+		cyng::tuple_t tree(obis code, cyng::tuple_t param, cyng::tuple_t list)
+		{
+			return cyng::tuple_t({ cyng::make_object(code.to_buffer())
+				, cyng::make_object(param)
+				, cyng::make_object(list) });
+		}
+
+		cyng::tuple_t tree(obis code, cyng::tuple_t param, std::initializer_list<cyng::tuple_t> list)
+		{
+			cyng::tuple_t tpl;
+			std::for_each(list.begin(), list.end(), [&tpl](cyng::tuple_t const& e) {
+				tpl.push_back(cyng::make_object(e));
+			});
+
+			return cyng::tuple_t({ cyng::make_object(code.to_buffer())
+				, cyng::make_object(param)
+				, cyng::make_object(tpl) });
+		}
+
 	}
 }

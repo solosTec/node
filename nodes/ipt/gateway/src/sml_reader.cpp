@@ -1,9 +1,9 @@
 /*
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 Sylko Olzscher
- *
- */
+* The MIT License (MIT)
+*
+* Copyright (c) 2018 Sylko Olzscher
+*
+*/
 
 #include "sml_reader.h"
 #include <smf/sml/obis_db.h>
@@ -575,6 +575,46 @@ namespace node
 						, ro_.get_value("password"));
 
 				}
+				else if (path.at(0) == OBIS_CODE_ROOT_DATA_COLLECTOR)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.data.collector"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE_ROOT_1107_IF)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.1107.if"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId") // gateway MAC
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_CODE(00, 80, 80, 00, 00, FF))
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.0080800000FF"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId") // gateway MAC
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else if (path.at(0) == OBIS_PUSH_OPERATIONS)
+				{
+					return prg << cyng::generate_invoke_unwinded("sml.get.proc.push.ops"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId") // gateway MAC
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
 
 			}
 			return prg << cyng::generate_invoke_unwinded("sml.get.proc.parameter.request"
@@ -849,7 +889,7 @@ namespace node
 				ro_.set_value("actTime", cyng::make_object(tp));
 			}
 			else if (code == OBIS_SERIAL_NR)
-			{ 
+			{
 				cyng::buffer_t buffer;
 				buffer = cyng::value_cast(obj, buffer);
 				std::reverse(buffer.begin(), buffer.end());

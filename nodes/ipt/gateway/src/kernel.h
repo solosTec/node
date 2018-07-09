@@ -1,33 +1,37 @@
 /*
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 Sylko Olzscher
- *
- */
+* The MIT License (MIT)
+*
+* Copyright (c) 2018 Sylko Olzscher
+*
+*/
 
 #ifndef NODE_SML_KERNEL_H
 #define NODE_SML_KERNEL_H
 
 
 #include <smf/sml/defs.h>
+#include <smf/sml/status.h>
 #include "sml_reader.h"
 #include <smf/sml/protocol/generator.h>
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
+#include <cyng/store/db.h>
 
 namespace node
 {
 	namespace sml
 	{
 		/**
-		 * Provide core functions of an SML gateway
-		 */
+		* Provide core functions of an SML gateway
+		*/
 		class kernel
 		{
 		public:
 			kernel(cyng::logging::log_ptr
 				, cyng::controller&
-				, bool 
+				, status&
+				, cyng::store::db& config_db
+				, bool
 				, std::string account
 				, std::string pwd
 				, std::string manufacturer
@@ -35,8 +39,8 @@ namespace node
 				, cyng::mac48 mac);
 
 			/**
-			 * reset kernel
-			 */
+			* reset kernel
+			*/
 			void reset();
 
 		private:
@@ -61,9 +65,24 @@ namespace node
 			void sml_get_proc_ipt_state(cyng::context& ctx);
 			void sml_get_proc_ipt_param(cyng::context& ctx);
 			void sml_get_proc_sensor_property(cyng::context& ctx);
+			void sml_get_proc_data_collector(cyng::context& ctx);
+			void sml_get_proc_1107_if(cyng::context& ctx);
+			void sml_get_proc_0080800000FF(cyng::context& ctx);
+			void sml_get_proc_push_ops(cyng::context& ctx);
+
+		public:
+			/**
+			* Global status word
+			*/
+			status&	status_word_;
 
 		private:
 			cyng::logging::log_ptr logger_;
+
+			/**
+			* configuration db
+			*/
+			cyng::store::db& config_db_;
 
 			const bool server_mode_;
 			const std::string account_;
@@ -77,18 +96,13 @@ namespace node
 			const cyng::buffer_t server_id_;
 
 			/**
-			 * read SML tree and generate commands
-			 */
+			* read SML tree and generate commands
+			*/
 			sml_reader reader_;
 
 			/**
-			 * Global status word
-			 */
-			std::uint64_t	status_;
-
-			/**
-			 * buffer for current SML message
-			 */
+			* buffer for current SML message
+			*/
 			res_generator sml_gen_;
 
 		};

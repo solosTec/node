@@ -14,6 +14,7 @@
 #include <smf/sml/obis_db.h>
 #include <cyng/vm/generator.h>
 #include <cyng/chrono.h>
+#include <cyng/value_cast.hpp>
 #include <sstream>
 #include <iomanip>
 
@@ -191,6 +192,21 @@ namespace node
 			));
 		}
 
+		std::size_t res_generator::empty(cyng::object trx, cyng::object server_id, obis path)
+		{
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id
+					, path	//	path entry
+					, parameter_tree(path, empty_tree(path)))));
+		}
+
 		std::size_t res_generator::get_proc_parameter_status_word(cyng::object trx
 			, cyng::object server_id
 			, std::uint64_t status)
@@ -202,9 +218,10 @@ namespace node
 
 				//
 				//	generate get process parameter response
+				//const static obis	DEFINE_OBIS_CODE(81, 00, 60, 05, 00, 00, CLASS_OP_LOG_STATUS_WORD);
 				//
 				, get_proc_parameter_response(server_id
-					, OBIS_CODE(81, 00, 60, 05, 00, 00)	//	path entry
+					, OBIS_CLASS_OP_LOG_STATUS_WORD	//	path entry
 					, parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(status)))));
 		}
 
@@ -262,6 +279,305 @@ namespace node
 							parameter_tree(OBIS_CODE(81, 81, c7, 82, 0a, 02), make_value(serial))
 						})
 					}))));
+
+		}
+
+		std::size_t res_generator::get_proc_mem_usage(cyng::object trx
+			, cyng::object server_id
+			, std::uint8_t mirror
+			, std::uint8_t tmp)
+		{
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id	//	server id
+					, OBIS_CODE_ROOT_MEMORY_USAGE		//	path entry
+
+					//
+					//	generate get process parameter response
+					//	2 uint8 values 
+					//
+					, child_list_tree(OBIS_CODE_ROOT_MEMORY_USAGE, {
+
+						parameter_tree(OBIS_CODE(00, 80, 80, 00, 11, FF), make_value(mirror)),	//	mirror
+						parameter_tree(OBIS_CODE(00, 80, 80, 00, 12, FF), make_value(tmp))	// tmp
+			}))));
+
+		}
+
+		std::size_t res_generator::get_proc_device_time(cyng::object trx
+			, cyng::object server_id
+			, std::chrono::system_clock::time_point now
+			, std::int32_t tz
+			, bool sync_active)
+		{
+
+			//76                                                SML_Message(Sequence): 
+			//  81063137303531323136353635313836333431352D33    transactionId: 170512165651863415-3
+			//  6202                                            groupNo: 2
+			//  6200                                            abortOnError: 0
+			//  72                                              messageBody(Choice): 
+			//	630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
+			//	73                                            SML_GetProcParameter_Res(Sequence): 
+			//	  080500153B01EC46                            serverId: 05 00 15 3B 01 EC 46 
+			//	  71                                          parameterTreePath(SequenceOf): 
+			//		078181C78810FF                            path_Entry: 81 81 C7 88 10 FF 
+			//	  73                                          parameterTree(Sequence): 
+			//		078181C78810FF                            parameterName: 81 81 C7 88 10 FF 
+			//		01                                        parameterValue: not set
+			//		74                                        child_List(SequenceOf): 
+			//		  73                                      tree_Entry(Sequence): 
+			//			07010000090B00                        parameterName: 01 00 00 09 0B 00 
+			//			72                                    parameterValue(Choice): 
+			//			  6204                                parameterValue: 4 => smlTime (0x04)
+			//			  72                                  smlTime(Choice): 
+			//				6202                              smlTime: 2 => timestamp (0x02)
+			//				655915CD3C                        timestamp: 1494601020
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			070000600800FF                        parameterName: 00 00 60 08 00 FF 
+			//			72                                    parameterValue(Choice): 
+			//			  6204                                parameterValue: 4 => smlTime (0x04)
+			//			  72                                  smlTime(Choice): 
+			//				6201                              smlTime: 1 => secIndex (0x01)
+			//				6505E5765F                        secIndex: 98924127
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			07810000090B01                        parameterName: 81 00 00 09 0B 01 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  550000003C                          smlValue: 60
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			07810000090B02                        parameterName: 81 00 00 09 0B 02 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  4200                                smlValue: False
+			//			01                                    child_List: not set
+			//  633752                                          crc16: 14162
+			//  00                                              endOfSmlMsg: 00 
+
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id	//	server id
+					, OBIS_CODE_ROOT_DEVICE_TIME		//	path entry
+
+					//
+					//	generate get process parameter response
+					//	2 uint8 values 
+					//
+					, child_list_tree(OBIS_CODE_ROOT_DEVICE_TIME, {
+
+						parameter_tree(OBIS_CURRENT_UTC, make_value(now)),	//	timestamp (01 00 00 09 0B 00 )
+						parameter_tree(OBIS_CODE(00, 00, 60, 08, 00, FF), make_sec_index_value(now)),
+						parameter_tree(OBIS_CODE(81, 00, 00, 09, 0B, 01), make_value(tz)),
+						parameter_tree(OBIS_CODE(81, 00, 00, 09, 0B, 02), make_value(sync_active))
+			}))));
+		}
+
+		std::size_t res_generator::get_proc_active_devices(cyng::object trx
+			, cyng::object server_id
+			, const cyng::store::table* tbl)
+		{
+			//	1.list: 81, 81, 11, 06, 01, FF
+			//	2.list: 81, 81, 11, 06, 02, FF
+			//	3.list: 81, 81, 11, 06, 03, FF
+			cyng::tuple_t list;	// list of lists
+			cyng::tuple_t tpl;	// current list
+			
+			const cyng::buffer_t tmp;
+			tbl->loop([&](cyng::table::record const& rec)->bool {
+
+				if (cyng::value_cast(rec["active"], false)) {
+
+					tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x11, 0x06, 0x01, tpl.size() + 1), {
+						parameter_tree(OBIS_CODE(81, 81, C7, 82, 04, FF), make_value(cyng::value_cast(rec["serverID"], tmp))),
+						parameter_tree(OBIS_CODE(81, 81, C7, 82, 02, FF), make_value(cyng::value_cast<std::string>(rec["class"], ""))),
+						//	timestamp (01 00 00 09 0B 00 )
+						parameter_tree(OBIS_CURRENT_UTC, make_value(cyng::value_cast(rec["lastSeen"], std::chrono::system_clock::now())))
+					})));
+
+					//
+					//	start new list
+					//
+					if (tpl.size() == 0xFE)
+					{
+						list.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x11, 0x06, list.size() + 1, 0xFF), tpl)));
+						tpl.clear();
+					}
+					BOOST_ASSERT_MSG(list.size() < 0xFA, "active device list to large");
+				}
+
+				//continue
+				return true;
+			});
+
+			//
+			//	append last pending list
+			//
+			list.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x11, 0x06, list.size() + 1, 0xFF), tpl)));
+
+
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id	//	server id
+					, OBIS_CODE_ROOT_ACTIVE_DEVICES		//	path entry
+
+					//
+					//	generate get process parameter response
+					//
+					, child_list_tree(OBIS_CODE_ROOT_ACTIVE_DEVICES, list)
+					//, child_list_tree(OBIS_CODE_ROOT_ACTIVE_DEVICES, {
+					//	child_list_tree(OBIS_CODE_LIST_1_ACTIVE_DEVICES, tpl)
+					//}
+			)));
+		}
+
+		std::size_t res_generator::get_proc_visible_devices(cyng::object trx
+			, cyng::object server_id
+			, const cyng::store::table* tbl)
+		{
+			//	1. list: 81, 81, 10, 06, 01, FF
+			//	2. list: 81, 81, 10, 06, 02, FF
+			//	3. list: 81, 81, 10, 06, 03, FF
+			cyng::tuple_t list;	// list of lists
+			cyng::tuple_t tpl;	// current list
+
+			const cyng::buffer_t tmp;
+			tbl->loop([&](cyng::table::record const& rec)->bool {
+
+				if (cyng::value_cast(rec["visible"], false)) {
+
+					tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x10, 0x06, 0x01, tpl.size() + 1), {
+						parameter_tree(OBIS_CODE(81, 81, C7, 82, 04, FF), make_value(cyng::value_cast(rec["serverID"], tmp))),
+						parameter_tree(OBIS_CODE(81, 81, C7, 82, 02, FF), make_value(cyng::value_cast<std::string>(rec["class"], ""))),
+						//	timestamp (01 00 00 09 0B 00 )
+						parameter_tree(OBIS_CURRENT_UTC, make_value(cyng::value_cast(rec["lastSeen"], std::chrono::system_clock::now())))
+						})));
+
+					//
+					//	start new list
+					//
+					if (tpl.size() == 0xFE)
+					{
+						list.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x10, 0x06, list.size() + 1, 0xFF), tpl)));
+						tpl.clear();
+					}
+					BOOST_ASSERT_MSG(list.size() < 0xFA, "visible device list to large");
+				}
+
+				//continue
+				return true;
+			});
+
+			//
+			//	append last pending list
+			//
+			list.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x10, 0x06, list.size() + 1, 0xFF), tpl)));
+
+
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id	//	server id
+					, OBIS_CODE_ROOT_VISIBLE_DEVICES		//	path entry
+
+					//
+					//	generate get process parameter response
+					//
+					, child_list_tree(OBIS_CODE_ROOT_VISIBLE_DEVICES, list)
+				)));
+		}
+
+		std::size_t res_generator::get_proc_sensor_property(cyng::object trx
+			, cyng::object server_id
+			, const cyng::table::record& rec)
+		{
+			//	ServerId: 05 00 15 3B 02 29 7E 
+			//	ServerId: 01 E6 1E 13 09 00 16 3C 07 
+			//	81 81 C7 86 00 FF                Not set
+			//	   81 81 C7 82 04 FF             _______<_ (01 E6 1E 13 09 00 16 3C 07 )
+			//	   81 81 C7 82 02 FF              ()
+			//	   81 81 C7 82 03 FF             GWF (47 57 46 )
+			//	   81 00 60 05 00 00             _ (00 )
+			//	   81 81 C7 86 01 FF             0 (30 )
+			//	   81 81 C7 86 02 FF             26000 (32 36 30 30 30 )
+			//	   01 00 00 09 0B 00             1528100055 (timestamp)
+			//	   81 81 C7 82 05 FF             ___________5}_w_ (18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03 )
+			//	   81 81 C7 86 03 FF              ()
+			//	   81 81 61 3C 01 FF             Not set
+			//	   81 81 61 3C 02 FF             Not set
+
+			const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+			const cyng::buffer_t	public_key{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 };
+			cyng::buffer_t tmp;
+			const cyng::buffer_t status{ 0x00 };
+
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id	//	server id  
+					, OBIS_CODE_ROOT_SENSOR_PROPERTY	//	path entry - 81 81 C7 86 00 FF
+					, child_list_tree(OBIS_CODE_ROOT_SENSOR_PROPERTY, {
+
+						//	repeat server id
+						parameter_tree(OBIS_CODE_SERVER_ID, make_value(cyng::value_cast(server_id, tmp))),
+
+						//	Geräteklasse
+						parameter_tree(OBIS_CODE_DEVICE_CLASS, make_value()),
+
+						//	Manufacturer
+						parameter_tree(OBIS_DATA_MANUFACTURER, make_value("solosTec")),
+
+						//	Statuswort [octet string]
+						parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(status)),
+
+						//	Bitmaske zur Definition von Bits, deren Änderung zu einem Eintrag im Betriebslogbuch zum Datenspiegel führt
+						parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(static_cast<std::uint8_t>(0x0))),
+
+						//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
+						parameter_tree(OBIS_CODE_AVERAGE_TIME_MS, make_value(static_cast<std::uint16_t>(1234))),
+
+						//	aktuelle UTC-Zeit
+						parameter_tree(OBIS_CURRENT_UTC, make_value(now)),
+
+						//	public key
+						parameter_tree(OBIS_DATA_PUBLIC_KEY, make_value(public_key)),
+
+						//	AES Schlüssel für wireless M-Bus
+						empty_tree(OBIS_DATA_AES_KEY),
+
+						parameter_tree(OBIS_DATA_USER_NAME, make_value("user")),
+						parameter_tree(OBIS_DATA_USER_PWD, make_value("pwd"))
+
+			}))));
 
 		}
 

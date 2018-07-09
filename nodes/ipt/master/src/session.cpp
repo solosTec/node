@@ -51,7 +51,6 @@ namespace node
 				CYNG_LOG_INFO(logger_, prg.size() << " ipt instructions received");
 				CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
 				vm_.async_run(std::move(prg));
-				//vm_.run(std::move(prg));
 			}, sk)
 			, task_db_()
 			, gate_keeper_(cyng::async::start_task_sync<gatekeeper>(mux_

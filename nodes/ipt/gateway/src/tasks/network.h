@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IPT_STORE_TASK_NETWORK_H
 #define NODE_IPT_STORE_TASK_NETWORK_H
@@ -11,6 +11,7 @@
 #include <smf/ipt/bus.h>
 #include <smf/ipt/config.h>
 #include <smf/sml/protocol/parser.h>
+#include <smf/sml/status.h>
 #include "../kernel.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -35,6 +36,8 @@ namespace node
 		public:
 			network(cyng::async::base_task* bt
 				, cyng::logging::log_ptr
+				, node::sml::status& status_word
+				, cyng::store::db& config_db
 				, master_config_t const& cfg
 				, std::string account
 				, std::string pwd
