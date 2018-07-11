@@ -90,40 +90,56 @@ namespace node
 				//	read configuration file
 				//
 				cyng::object config = cyng::json::read_file(json_path_);
-
 				if (config)
 				{
-					//
-					//	initialize logger
-					//
-#if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("gateway", true);
-#else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "gateway");
-#endif
-
-					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
-					CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
-
 					//
 					//	start application
 					//
 					cyng::vector_t vec;
 					vec = cyng::value_cast(config, vec);
-					BOOST_ASSERT_MSG(!vec.empty(), "invalid configuration");
-					shutdown = vec.empty()
-						? true
-						: start(mux, logger, vec[0]);
 
-					//
-					//	print uptime
-					//
-					const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-					CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+					if (vec.empty())
+					{
+						std::cerr
+							<< "use option -D to generate a configuration file"
+							<< std::endl;
+						shutdown = true;
+					}
+					else
+					{
+						//
+						//	initialize logger
+						//
+#if BOOST_OS_LINUX
+						auto logger = cyng::logging::make_sys_logger("ipt:gateway", true);
+#else
+						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
+						auto dom = cyng::make_reader(vec[0]);
+						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
+
+						auto logger = (console)
+							? cyng::logging::make_console_logger(mux.get_io_service(), "ipt:gateway")
+							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "ipt-gateway.log"))
+							;
+#endif
+
+						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
+						CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
+
+						//
+						//	start 
+						//
+						shutdown = start(mux, logger, vec[0]);
+
+						//
+						//	print uptime
+						//
+						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
+						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+					}
 				}
 				else
 				{
-					// 					CYNG_LOG_FATAL(logger, "no configuration data");
 					std::cout
 						<< "use option -D to generate a configuration file"
 						<< std::endl;
@@ -365,9 +381,9 @@ namespace node
 		CYNG_LOG_INFO(logger, "mac: " << mac);
 
 		/**
-		* Global status word
-		* 459266:dec == ‭70202‬:hex == ‭01110000001000000010‬:bin
-		*/
+		 * Global status word
+		 * 459266:dec == ‭70202‬:hex == ‭01110000001000000010‬:bin
+		 */
 		sml::status status_word;
 #ifdef _DEBUG
 		status_word.set_mbus_if_available(true);
@@ -375,8 +391,8 @@ namespace node
 
 
 		/**
-		* global data cache
-		*/
+		 * global data cache
+		 */
 		cyng::store::db config_db;
 		init_config(logger, config_db, tag, r.first);
 
@@ -563,7 +579,7 @@ namespace node
 					, 0ull	//	status
 					, cyng::buffer_t{ 0, 0 }	//	mask
 					, 26000ul	//	interval
-					, cyng::buffer_t{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 }	//	pubKey
+					, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
 					, cyng::buffer_t{}	//	aes
 					, "user"
 					, "pwd")
@@ -571,7 +587,7 @@ namespace node
 				, tag);
 
 			config.insert("devices"
-				, cyng::table::key_generator(cyng::buffer_t{ 0x01, (char)0xA8, 0x15, 0x74, (char)0x31, 0x45, 0x05, (char)0x01, (char)0x02 })
+				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }))
 				, cyng::table::data_generator(std::chrono::system_clock::now()
 					, "---"
 					, true	//	visible
@@ -580,7 +596,7 @@ namespace node
 					, 0ull	//	status
 					, cyng::buffer_t{ 0, 0 }	//	mask
 					, 26000ul	//	interval
-					, cyng::buffer_t{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 }	//	pubKey
+					, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
 					, cyng::buffer_t{}	//	aes
 					, "user"
 					, "pwd")
@@ -588,7 +604,7 @@ namespace node
 				, tag);
 
 			config.insert("devices"
-				, cyng::table::key_generator(cyng::buffer_t{ 0x01, (char)0xE6, (char)0x1E, 0x74, (char)0x31, 0x45, 0x04, (char)0x01, (char)0x02 })
+				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02 }))
 				, cyng::table::data_generator(std::chrono::system_clock::now()
 					, "---"
 					, true	//	visible
@@ -597,7 +613,7 @@ namespace node
 					, 0ull	//	status
 					, cyng::buffer_t{ 0, 0 }	//	mask
 					, 26000ul	//	interval
-					, cyng::buffer_t{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 }	//	pubKey
+					, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
 					, cyng::buffer_t{}	//	aes
 					, "user"
 					, "pwd")
@@ -605,15 +621,17 @@ namespace node
 				, tag);
 		}
 
-		if (!config.create_table(cyng::table::make_meta_table<1, 5>("push.ops",
-			{ "serverID"	//	server ID
+		if (!config.create_table(cyng::table::make_meta_table<1, 6>("push.ops",
+			{ "pk"			//	primary key
+			, "serverID"	//	server ID
 			, "interval"	//	seconds
 			, "delay"		//	seconds
 			, "target"		//	target name
 			, "source"		//	push source (profile, installation parameters, list of visible sensors/actors)
 			, "profile"		//	"Lastgang"
 			},
-			{ cyng::TC_BUFFER		//	server ID
+			{ cyng::TC_UUID			//	pk
+			, cyng::TC_BUFFER		//	server ID
 			, cyng::TC_UINT32		//	interval [seconds]
 			, cyng::TC_UINT32		//	delay [seconds]
 			, cyng::TC_STRING		//	target
@@ -621,7 +639,8 @@ namespace node
 			, cyng::TC_UINT8		//	profile
 
 			},
-			{ 9
+			{ 36
+			, 9
 			, 0		//	interval [seconds]
 			, 0		//	delay
 			, 64	//	target
@@ -631,6 +650,32 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
 		}
+		else
+		{
+			boost::uuids::random_generator rgen;
 
+			//	insert demo push.ops
+			config.insert("push.ops"
+				, cyng::table::key_generator(rgen())
+				, cyng::table::data_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 })
+					, 900u
+					, 4u	//	delay
+					, "data.sink-1.sml"
+					, 1		//	source
+					, 1)	//	profile
+				, 1	//	generation
+				, tag);
+
+			config.insert("push.ops"
+				, cyng::table::key_generator(rgen())
+				, cyng::table::data_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 })
+					, 1800u
+					, 12u	//	delay
+					, "data.sink-2.sml"
+					, 1		//	source
+					, 3)	//	profile
+				, 1	//	generation
+				, tag);
+		}
 	}
 }

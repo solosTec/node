@@ -5,13 +5,13 @@
  *
  */
 
-#include <NODE_project_info.h>
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/protocol/message.h>
 #include <smf/sml/protocol/serializer.h>
 #include <smf/sml/protocol/value.hpp>
 #include <smf/sml/crc16.h>
 #include <smf/sml/obis_db.h>
+#include <NODE_project_info.h>
 #include <cyng/vm/generator.h>
 #include <cyng/chrono.h>
 #include <cyng/value_cast.hpp>
@@ -578,6 +578,82 @@ namespace node
 						parameter_tree(OBIS_DATA_USER_PWD, make_value("pwd"))
 
 			}))));
+
+		}
+
+		std::size_t res_generator::get_proc_push_ops(cyng::object trx
+			, cyng::object server_id
+			, const cyng::store::table* tbl)
+		{
+			//	example:
+			//	ServerId: 05 00 15 3B 02 17 74 
+			//	ServerId: 01 A8 15 70 94 48 03 01 02 
+			//	81 81 C7 8A 01 FF                Not set
+			//	   81 81 C7 8A 01 [nn]           Not set
+			//		  81 81 C7 8A 02 FF          900 (39 30 30 )
+			//		  81 81 C7 8A 03 FF          12 (31 32 )
+			//		  81 81 C7 8A 04 FF          ____B_ (81 81 C7 8A 42 FF )
+			//			 81 81 C7 8A 81 FF       ___p_H___ (01 A8 15 70 94 48 03 01 02 )
+			//			 81 81 C7 8A 83 FF       ______ (81 81 C7 86 11 FF )
+			//			 81 81 C7 8A 82 FF       Not set
+			//		  81 47 17 07 00 FF          DataSink (44 61 74 61 53 69 6E 6B )
+			//		  81 49 00 00 10 FF          ____!_ (81 81 C7 8A 21 FF )
+
+			//	1. list: 81 81 C7 8A 01 01
+			//	2. list: 81 81 C7 8A 01 02
+			//	3. list: 81 81 C7 8A 01 03
+			cyng::tuple_t tpl;	// list 
+
+			//
+			//	generate list of push targets
+			//
+			tbl->loop([&](cyng::table::record const& rec)->bool {
+
+				tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0xC7, 0x8A, 0x01, tpl.size() + 1), {
+
+					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 02, FF), make_value(rec["interval"])),		//	intervall (sec.) [uint16]
+					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 03, FF), make_value(rec["delay"])),		//	intervall (sec.) [uint8]
+					//	7.3.1.25 Liste möglicher Push-Quellen 
+					//	push source: 
+					//	* 81 81 C7 8A 42 FF == profile
+					//	* 81 81 C7 8A 43 FF == Installationsparameter
+					//	* 81 81 C7 8A 44 FF == list of visible sensors/actors
+					tree(OBIS_CODE(81, 81, C7, 8A, 04, FF)
+					, make_value(OBIS_CODE(81, 81, C7, 8A, 42, FF))
+					, {
+						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 81, FF), make_value(rec["serverID"])),
+						//	15 min period (load profile)
+						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_PROFILE_15_MINUTE)),
+						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 82, FF), make_value())
+					}),
+					parameter_tree(OBIS_CODE(81, 47, 17, 07, 00, FF), make_value(rec["target"])),		//	Targetname
+					//	push service: 
+					//	* 81 81 C7 8A 21 FF == IP-T
+					//	* 81 81 C7 8A 22 FF == SML client address
+					//	* 81 81 C7 8A 23 FF == KNX ID 
+					parameter_tree(OBIS_CODE(81, 49, 00, 00, 10, FF), make_value(OBIS_CODE(81, 81, C7, 8A, 21, FF)))
+
+					})));
+
+				return true;	//continue
+			});
+
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id	//	server id
+					, OBIS_PUSH_OPERATIONS		//	path entry
+
+					//
+					//	generate get process parameter response
+					//
+					, child_list_tree(OBIS_PUSH_OPERATIONS, tpl)
+				)));
 
 		}
 

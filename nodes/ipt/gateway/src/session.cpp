@@ -25,14 +25,14 @@ namespace node
 			, std::string manufacturer
 			, std::string model
 			, cyng::mac48 mac)
-			: mux_(mux)
+		: mux_(mux)
 			, logger_(logger)
 			, vm_(mux.get_io_service(), boost::uuids::random_generator()())
 			, parser_([this](cyng::vector_t&& prg) {
-			CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
-			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
-			vm_.async_run(std::move(prg));
-		}, false, false)
+				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
+				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+				vm_.async_run(std::move(prg));
+			}, false, false)
 			, core_(logger_, vm_, status_word, config_db, true, account, pwd, manufacturer, model, mac)
 		{
 			//

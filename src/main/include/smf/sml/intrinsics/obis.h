@@ -15,6 +15,7 @@
 #include <smf/sml/defs.h>
 #include <array>
 #include <cstdint>
+#include <algorithm>
 #include <boost/config.hpp>
 
 namespace node
@@ -40,15 +41,31 @@ namespace node
 			bool less(obis const&) const;
 			bool is_matching(obis const&) const;
 			bool is_matching(std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t) const;
-			bool is_matching(std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t) const;
 
+			/**
+			 * Test if the first 5 specified bytes are matching.
+			 * 
+			 * @return a pair consisting of an value of the last element and a bool denoting whether the pattern is matching.
+			 */
+			std::pair<std::uint8_t, bool> is_matching(std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t) const;
+
+			/**
+			 * partial match
+			 */
+			bool match(std::initializer_list<std::uint8_t> il) const;
+
+			/**
+			 * assignment
+			 */
 			obis& operator=(obis const&);
 
-			/*
+			/**
 			 *	@return 6
 			 */
-			static std::size_t size();	
-			//BOOST_CONSTEXPR std::size_t size();	
+			//BOOST_CONSTEXPR
+			constexpr std::size_t size() const {
+				return std::tuple_size< data_type >::value;
+			}
 
 			/**
 			 *	@return value group A
@@ -117,15 +134,15 @@ namespace node
 	 	bool operator> (const obis&, const obis&);
 	 	bool operator<= (const obis&, const obis&);
 	 	bool operator>= (const obis&, const obis&);
-	// 
-	// 	// global swap()
-	// 	void swap(obis&, obis&);
-
+	 
+	 	// global swap()
+	 	void swap(obis&, obis&);
 
 		//
 		//	define an OBIS path
 		//
 		using obis_path = std::vector<obis>;
+
 
 	}	//	sml
 }	//	node

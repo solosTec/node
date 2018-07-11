@@ -49,8 +49,8 @@ namespace node
 					//
 					//	expect something like:
 					//	<PROT:1;VERS:1.0;TELNB:96110845-2;MNAME:95298073>
+					//	TELNB ist the login name (96110845-2)
 					//
-					//stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 					stream_state_ = STATE_LOGIN;
 				}
 				else 
@@ -64,48 +64,11 @@ namespace node
 			 */
 			case STATE_LOGIN:
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
-				//if (c == '>')
-				//{
-
-					//	start iMega parser
-					//login credentials;
-					//const bool r = m2m::cu::parse(inp_buffer_, credentials);
-
-					//{
-					//	pyrx::call_frame cf(code_);
-					//	code_
-					//		<< pyrx::numeric_factory(credentials.prot_)
-					//		<< pyrx::version_factory(credentials.version_)
-					//		<< pyrx::string_factory(credentials.module_)
-					//		<< pyrx::string_factory(credentials.meter_)
-					//		<< pyrx::codes::invoke("cu.login")
-					//		;
-					//}
-					//if (cb_)	cb_(code_);
-
-					//	execute instructions
-					//if (r && cb_)	
-					//{
-					//	cb_(code_);
-					//	stream_state_ = STATE_STREAM_MODE;
-					//}
-					//else 
-					//{
-					//	stream_state_ = STATE_ERROR;
-					//}
-
-					//	clear buffer
-					//input_.clear();
-				//}
-				//else 
-				//{
-				//	input_.put(c);
-				//}
 				break;
 
 			/*
-			*	data mode
-			*/
+			 *	data mode
+			 */
 			case STATE_STREAM_MODE:
 				if (c == '<')	
 				{
@@ -118,8 +81,8 @@ namespace node
 				break;
 
 			/*
-			*	watchdog mode <ALIVE>
-			*/
+			 *	watchdog mode <ALIVE>
+			 */
 			case STATE_ALIVE_A:
 				if (c == 'A')	
 				{
@@ -235,14 +198,6 @@ namespace node
 					cb_(cyng::generate_invoke("imega.req.transmit.data", cyng::code::IDENT, buffer));
 				}
 			}
-			//code_
-			//	<< pyrx::codes::ESBA
-			//	<< pyrx::buffer_factory(inp_buffer_)
-			//	<< pyrx::codes::invoke("context.dataTransfer")
-			//	<< pyrx::codes::REBA
-			//	;
-			//if (cb_)	cb_(code_);
-			//inp_buffer_.clear();
 		}
 
 		parser::state_visitor::state_visitor(parser& p, char c)

@@ -34,7 +34,7 @@ namespace node
 			, std::string pwd, std::string manufacturer
 			, std::string model
 			, cyng::mac48 mac)
-			: status_word_(status_word)
+		: status_word_(status_word)
 			, logger_(logger)
 			, config_db_(config_db)
 			, server_mode_(server_mode)
@@ -83,6 +83,10 @@ namespace node
 			vm.register_function("sml.get.proc.1107.if", 6, std::bind(&kernel::sml_get_proc_1107_if, this, std::placeholders::_1));
 			vm.register_function("sml.get.proc.0080800000FF", 6, std::bind(&kernel::sml_get_proc_0080800000FF, this, std::placeholders::_1));
 			vm.register_function("sml.get.proc.push.ops", 6, std::bind(&kernel::sml_get_proc_push_ops, this, std::placeholders::_1));
+
+			vm.register_function("sml.set.proc.push.interval", 7, std::bind(&kernel::sml_set_proc_push_interval, this, std::placeholders::_1));
+			vm.register_function("sml.set.proc.push.delay", 7, std::bind(&kernel::sml_set_proc_push_delay, this, std::placeholders::_1));
+			vm.register_function("sml.set.proc.push.name", 7, std::bind(&kernel::sml_set_proc_push_name, this, std::placeholders::_1));
 
 		}
 
@@ -1291,44 +1295,139 @@ namespace node
 			//		  81 49 00 00 10 FF          ____!_ (81 81 C7 8A 21 FF )
 
 
-			sml_gen_.append_msg(message(frame.at(1)	//	trx
-				, 2 //, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+			config_db_.access([&](const cyng::store::table* tbl) {
 
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id  
-					, OBIS_PUSH_OPERATIONS	//	path entry - 81 81 C7 86 20 FF 
-					, child_list_tree(OBIS_PUSH_OPERATIONS, {
+				CYNG_LOG_INFO(logger_, tbl->size() << " push.ops");
+				sml_gen_.get_proc_push_ops(frame.at(1)
+					, frame.at(3)	//	server id
+					, tbl);
 
-						//	1. entry
-						child_list_tree(OBIS_CODE(81, 81, C7, 8A, 01, 01), {
-							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 02, FF), make_value(900u)),	//	intervall (sec.) [uint16]
-							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 03, FF), make_value(12u)),		//	intervall (sec.) [uint8]
-							//	7.3.1.25 Liste möglicher Push-Quellen 
-							//	push source: 
-							//	* 81 81 C7 8A 42 FF == profile
-							//	* 81 81 C7 8A 43 FF == Installationsparameter
-							//	* 81 81 C7 8A 44 FF == list of visible sensors/actors
-							tree(OBIS_CODE(81, 81, C7, 8A, 04, FF)
-							, make_value(OBIS_CODE(81, 81, C7, 8A, 42, FF))
-							, {
-								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 81, FF), make_value(frame.at(3))),
-								//	15 min period (load profile)
-								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_CODE(81, 81, C7, 86, 11, FF))),
-								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 82, FF), make_value())
-							}),
-							parameter_tree(OBIS_CODE(81, 47, 17, 07, 00, FF), make_value("data.sink.sml")),		//	Targetname
-							//	push service: 
-							//	* 81 81 C7 8A 21 FF == IP-T
-							//	* 81 81 C7 8A 22 FF == SML client address
-							//	* 81 81 C7 8A 23 FF == KNX ID 
-							parameter_tree(OBIS_CODE(81, 49, 00, 00, 10, FF), make_value(OBIS_CODE(81, 81, C7, 8A, 21, FF)))
+			}, cyng::store::read_access("push.ops"));
 
-						} )
-					} ))));
+
+			//sml_gen_.append_msg(message(frame.at(1)	//	trx
+			//	, 2 //, ++group_no_	//	group
+			//	, 0 //	abort code
+			//	, BODY_GET_PROC_PARAMETER_RESPONSE
+
+			//	//
+			//	//	generate get process parameter response
+			//	//
+			//	, get_proc_parameter_response(frame.at(3)	//	server id  
+			//		, OBIS_PUSH_OPERATIONS	//	path entry - 81 81 C7 86 20 FF 
+			//		, child_list_tree(OBIS_PUSH_OPERATIONS, {
+
+			//			//	1. entry
+			//			child_list_tree(OBIS_CODE(81, 81, C7, 8A, 01, 01), {
+			//				parameter_tree(OBIS_CODE(81, 81, C7, 8A, 02, FF), make_value(900u)),	//	intervall (sec.) [uint16]
+			//				parameter_tree(OBIS_CODE(81, 81, C7, 8A, 03, FF), make_value(12u)),		//	intervall (sec.) [uint8]
+			//				//	7.3.1.25 Liste möglicher Push-Quellen 
+			//				//	push source: 
+			//				//	* 81 81 C7 8A 42 FF == profile
+			//				//	* 81 81 C7 8A 43 FF == Installationsparameter
+			//				//	* 81 81 C7 8A 44 FF == list of visible sensors/actors
+			//				tree(OBIS_CODE(81, 81, C7, 8A, 04, FF)
+			//				, make_value(OBIS_CODE(81, 81, C7, 8A, 42, FF))
+			//				, {
+			//					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 81, FF), make_value(frame.at(3))),
+			//					//	15 min period (load profile)
+			//					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_PROFILE_15_MINUTE)),
+			//					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 82, FF), make_value())
+			//				}),
+			//				parameter_tree(OBIS_CODE(81, 47, 17, 07, 00, FF), make_value("data.sink-1.sml")),		//	Targetname
+			//				//	push service: 
+			//				//	* 81 81 C7 8A 21 FF == IP-T
+			//				//	* 81 81 C7 8A 22 FF == SML client address
+			//				//	* 81 81 C7 8A 23 FF == KNX ID 
+			//				parameter_tree(OBIS_CODE(81, 49, 00, 00, 10, FF), make_value(OBIS_CODE(81, 81, C7, 8A, 21, FF)))
+
+			//			} ),
+
+			//			//	2. entry
+			//			child_list_tree(OBIS_CODE(81, 81, C7, 8A, 01, 02), {
+			//				parameter_tree(OBIS_CODE(81, 81, C7, 8A, 02, FF), make_value(1800u)),	//	intervall (sec.) [uint16]
+			//				parameter_tree(OBIS_CODE(81, 81, C7, 8A, 03, FF), make_value(3u)),		//	intervall (sec.) [uint8]
+			//				//	7.3.1.25 Liste möglicher Push-Quellen 
+			//				//	push source: 
+			//				//	* 81 81 C7 8A 42 FF == profile
+			//				//	* 81 81 C7 8A 43 FF == Installationsparameter
+			//				//	* 81 81 C7 8A 44 FF == list of visible sensors/actors
+			//				tree(OBIS_CODE(81, 81, C7, 8A, 04, FF)
+			//				, make_value(OBIS_CODE(81, 81, C7, 8A, 42, FF))
+			//				, {
+			//					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 81, FF), make_value(frame.at(3))),
+			//					//	15 min period (load profile)
+			//					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_PROFILE_60_MINUTE)),
+			//					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 82, FF), make_value())
+			//				}),
+			//				parameter_tree(OBIS_CODE(81, 47, 17, 07, 00, FF), make_value("data.sink-2.sml")),		//	Targetname
+			//				//	push service: 
+			//				//	* 81 81 C7 8A 21 FF == IP-T
+			//				//	* 81 81 C7 8A 22 FF == SML client address
+			//				//	* 81 81 C7 8A 23 FF == KNX ID 
+			//				parameter_tree(OBIS_CODE(81, 49, 00, 00, 10, FF), make_value(OBIS_CODE(81, 81, C7, 8A, 21, FF)))
+
+			//			} )
+			//		} ))));
+		}
+
+		void kernel::sml_set_proc_push_interval(cyng::context& ctx)
+		{
+			//	[a72a7054-f089-4df2-a592-3983935ba7df,180711174520423322-2,1,01A815743145050102,operator,operator,03c0]
+			//
+			//	* pk
+			//	* transaction id
+			//	* push index
+			//	* server ID
+			//	* username
+			//	* password
+			//	* push interval in seconds
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.set.proc.push.interval " << cyng::io::to_str(frame));
+
+		}
+
+		void kernel::sml_set_proc_push_delay(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.set.proc.push.delay " << cyng::io::to_str(frame));
+
+		}
+
+		void kernel::sml_set_proc_push_name(cyng::context& ctx)
+		{
+			//	[b5b5fe15-d43f-4d2a-953e-1e2e1d153d89,180711180023633812-3,2,01A815743145050102,operator,operator,new-target-name]
+			//
+			//	* pk
+			//	* transaction id
+			//	* [uint8] push index
+			//	* server ID
+			//	* username
+			//	* password
+			//	* [string] push target name
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.set.proc.push.name " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::uint8_t,		//	[2] push index
+				cyng::buffer_t,		//	[3] server ID
+				std::string,		//	[4] username
+				std::string,		//	[5] password
+				std::string			//	[6] target name
+			>(frame);
+
+			config_db_.access([&](cyng::store::table* tbl) {
+
+				CYNG_LOG_INFO(logger_, tbl->size() << " push.ops");
+				cyng::table::record rec = tbl->find_first(cyng::param_t("serverID", frame.at(3)));
+				if (!rec.empty()) {
+					tbl->modify(rec.key(), cyng::param_t("target", frame.at(6)), std::get<0>(tpl));
+				}
+
+
+			}, cyng::store::write_access("push.ops"));
 
 		}
 

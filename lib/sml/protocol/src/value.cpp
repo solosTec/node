@@ -56,7 +56,6 @@ namespace node
 			}
 			cyng::tuple_t factory_policy<std::chrono::system_clock::time_point>::create(std::chrono::system_clock::time_point v)
 			{
-				//return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), std::chrono::system_clock::to_time_t(v));
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), make_timestamp(v));
 			}
 			cyng::tuple_t factory_policy<cyng::buffer_t>::create(cyng::buffer_t&& v)
@@ -91,6 +90,11 @@ namespace node
 				//	convert to buffer_t
 				return factory_policy<cyng::buffer_t>::create(v.to_buffer());
 			}
+			cyng::tuple_t factory_policy<const obis&>::create(obis const& v)
+			{
+				return factory_policy<cyng::buffer_t>::create(v.to_buffer());
+			}
+
 			cyng::tuple_t factory_policy<cyng::object>::create(cyng::object const& obj)
 			{
 				switch (obj.get_class().tag()) {
@@ -109,6 +113,9 @@ namespace node
 					return factory_policy<std::string>::create(cyng::value_cast<std::string>(obj, ""));
 				case cyng::TC_TIME_POINT:
 					return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), obj);
+				case cyng::TC_SECOND:	//	convert to [uint]
+					//return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), cyng::make_object(900));
+					return factory_policy<std::int64_t>::create(cyng::value_cast(obj, std::chrono::seconds(900)).count());
 				default:
 					break;
 				}

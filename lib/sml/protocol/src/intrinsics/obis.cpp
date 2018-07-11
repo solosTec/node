@@ -14,9 +14,9 @@ namespace node
 	namespace sml
 	{
 		obis::obis()
-		: value_()
+			: value_{0}
 		{
-			value_.fill(0);
+			//value_.fill(0);
 		}
 
 		obis::obis(octet_type const& buffer)
@@ -94,9 +94,17 @@ namespace node
 				&& value_[3] == d);
 		}
 
-		bool obis::is_matching(std::uint8_t a, std::uint8_t b, std::uint8_t c, std::uint8_t d, std::uint8_t e) const
+		std::pair<std::uint8_t, bool> obis::is_matching(std::uint8_t a, std::uint8_t b, std::uint8_t c, std::uint8_t d, std::uint8_t e) const
 		{
-			return is_matching(a, b, c, d) && (value_[4] == e);
+			return std::make_pair(value_[5], is_matching(a, b, c, d) && (value_[4] == e));
+		}
+
+		bool obis::match(std::initializer_list<std::uint8_t> il) const
+		{
+			return (il.size() > size())
+				? false
+				: std::mismatch(il.begin(), il.end(), value_.begin()).first == il.end()
+				;
 		}
 
 		obis& obis::operator=(obis const& other)	
@@ -227,11 +235,6 @@ namespace node
 			return get_medium() < UNIT_RESERVED;
 		}
 
-		std::size_t obis::size()	
-		{
-			return std::tuple_size< data_type >::value;
-		}
-
 		octet_type obis::to_buffer() const
 		{
 			return octet_type(value_.begin(), value_.end());
@@ -271,7 +274,9 @@ namespace node
 			return !(lhs.less(rhs));
 		}
 
-
+		void swap(obis& a, obis& b) {
+			a.swap(b);
+		}
 
 	}	//	sml
 }	//	node

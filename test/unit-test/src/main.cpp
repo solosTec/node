@@ -39,6 +39,7 @@ BOOST_AUTO_TEST_SUITE_END()	//	IPT
 #include "test-sml-001.h"
 #include "test-sml-002.h"
 #include "test-sml-003.h"
+#include "test-sml-004.h"
 
 BOOST_AUTO_TEST_SUITE(SML)
 BOOST_AUTO_TEST_CASE(sml_001)
@@ -55,6 +56,11 @@ BOOST_AUTO_TEST_CASE(sml_003)
 {
 	using namespace node;
 	BOOST_CHECK(test_sml_003());
+}
+BOOST_AUTO_TEST_CASE(sml_004)
+{
+	using namespace node;
+	BOOST_CHECK(test_sml_004());
 }
 BOOST_AUTO_TEST_SUITE_END()	//	SML
 

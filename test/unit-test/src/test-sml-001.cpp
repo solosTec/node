@@ -10,19 +10,11 @@
 #include <boost/test/unit_test.hpp>
 #include <smf/sml/protocol/parser.h>
 #include <cyng/io/serializer.h>
-//#include <boost/random.hpp>
  
 namespace node 
 {
 	bool test_sml_001()
 	{
-		//boost::random::mt19937 rng;
-		//boost::random::uniform_int_distribution<std::uint32_t> distribution;
-
-		//for (std::size_t idx = 0; idx < 100; idx++)
-		//{
-		//	std::cout << std::hex << distribution(rng) << ' ';
-		//}
 
 		sml::parser p([](cyng::vector_t&& prg) {
 			cyng::vector_t r = std::move(prg);

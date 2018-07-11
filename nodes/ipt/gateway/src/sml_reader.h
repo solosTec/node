@@ -67,16 +67,22 @@ namespace node
 			cyng::vector_t read_get_profile_list_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_get_proc_parameter_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_get_proc_parameter_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t read_set_proc_parameter_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_attention_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			void read_time(std::string const&, cyng::object);
+			cyng::vector_t read_set_proc_parameter_request_tree(std::vector<obis> path
+				, std::size_t index
+				, cyng::tuple_t::const_iterator pos
+				, cyng::tuple_t::const_iterator end);
+
+			cyng::object read_time(std::string const&, cyng::object);
 			std::vector<obis> read_param_tree_path(cyng::object);
 			obis read_obis(cyng::object);
 			std::uint8_t read_unit(std::string const&, cyng::object);
 			std::int8_t read_scaler(cyng::object);
 			std::string read_string(std::string const&, cyng::object);
 			void read_value(obis, std::int8_t, std::uint8_t, cyng::object);
-			void read_parameter(obis, cyng::object);
+			cyng::attr_t read_parameter(obis, cyng::object);
 			std::string read_server_id(cyng::object);
 			std::string read_client_id(cyng::object);
 

@@ -103,6 +103,7 @@ namespace node
 
 		enum sml_proc_par_value : std::uint8_t
 		{
+			PROC_PAR_UNDEF = 0,
 			PROC_PAR_VALUE = 1,
 			PROC_PAR_PERIODENTRY = 2,
 			PROC_PAR_TUPELENTRY = 3,

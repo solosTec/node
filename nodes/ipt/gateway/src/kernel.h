@@ -70,6 +70,10 @@ namespace node
 			void sml_get_proc_0080800000FF(cyng::context& ctx);
 			void sml_get_proc_push_ops(cyng::context& ctx);
 
+			void sml_set_proc_push_interval(cyng::context& ctx);
+			void sml_set_proc_push_delay(cyng::context& ctx);
+			void sml_set_proc_push_name(cyng::context& ctx);
+
 		public:
 			/**
 			* Global status word

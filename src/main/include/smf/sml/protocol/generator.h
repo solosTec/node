@@ -207,6 +207,11 @@ namespace node
 			std::size_t get_proc_sensor_property(cyng::object trx
 				, cyng::object server_id
 				, const cyng::table::record&);
+
+			std::size_t get_proc_push_ops(cyng::object trx
+				, cyng::object server_id
+				, const cyng::store::table*);
+
 		};
 
 	}
