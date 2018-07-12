@@ -35,7 +35,7 @@ namespace node
 			, cyng::param_map_t const& options
 			, cyng::param_map_t const& bag
 			, std::chrono::seconds timeout);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

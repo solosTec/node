@@ -28,9 +28,11 @@ namespace node
 		<< "> is running");
 	}
 
-	void storage_xml::run()
+	cyng::continuation storage_xml::run()
 	{	
 		CYNG_LOG_INFO(logger_, "storage_xml is running");
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void storage_xml::stop()

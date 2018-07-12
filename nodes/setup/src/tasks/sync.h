@@ -38,7 +38,7 @@ namespace node
 			, std::size_t tsk
 			, std::string const&
 			, cyng::store::db&);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

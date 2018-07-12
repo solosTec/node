@@ -39,7 +39,7 @@ namespace node
 
 	}
 
-	void sync::run()
+	cyng::continuation sync::run()
 	{	
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -47,7 +47,7 @@ namespace node
 			<< base_.get_class_name()
 			<< "> run "
 			<< table_);
-
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void sync::stop()

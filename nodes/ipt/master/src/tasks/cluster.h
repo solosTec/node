@@ -34,7 +34,7 @@ namespace node
 			, ipt::scramble_key const& sk
 			, uint16_t watchdog
 			, int timeout);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

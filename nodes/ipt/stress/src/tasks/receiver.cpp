@@ -44,7 +44,7 @@ namespace node
 
 		}
 
-		void receiver::run()
+		cyng::continuation receiver::run()
 		{
 			if (bus_->is_online())
 			{
@@ -75,6 +75,8 @@ namespace node
 					bus_->vm_.async_run(ipt_req_login_public());
 				}
 			}
+
+			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		void receiver::stop()

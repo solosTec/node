@@ -34,7 +34,7 @@ namespace node
 			, int timeout
 			, bool auto_answer
 			, std::chrono::milliseconds guard_time);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

@@ -55,9 +55,11 @@ namespace node
 		}
 	}
 
-	void storage_db::run()
+	cyng::continuation storage_db::run()
 	{	
 		CYNG_LOG_INFO(logger_, "storage_db is running");
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void storage_db::stop()

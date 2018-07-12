@@ -32,10 +32,13 @@ namespace node
 
 	}
 
-	void storage_abl::run()
+	cyng::continuation storage_abl::run()
 	{
 		CYNG_LOG_INFO(logger_, "storage_abl is running");
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
+
 
 	void storage_abl::stop()
 	{

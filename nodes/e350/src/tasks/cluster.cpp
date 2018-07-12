@@ -41,7 +41,7 @@ namespace node
 
 	}
 
-	void cluster::run()
+	cyng::continuation cluster::run()
 	{	
 		BOOST_ASSERT_MSG(!bus_->vm_.is_halted(), "cluster bus is halted");
 
@@ -58,6 +58,7 @@ namespace node
 			<< ':'
 			<< config_[master_].service_);
 
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void cluster::stop()

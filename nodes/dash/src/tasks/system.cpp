@@ -40,7 +40,7 @@ namespace node
 
 	}
 
-	void system::run()
+	cyng::continuation system::run()
 	{	
 		const auto load = cyng::sys::get_total_cpu_load();
 		//CYNG_LOG_DEBUG(logger_, "CPU load " 
@@ -53,6 +53,8 @@ namespace node
 		//	measure CPU load every 4 seconds
 		//
 		base_.suspend(std::chrono::seconds(4));
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void system::stop()

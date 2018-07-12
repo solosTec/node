@@ -31,7 +31,7 @@ namespace node
 			<< " is running");
 	}
 
-	void watchdog::run()
+	cyng::continuation watchdog::run()
 	{	
 		//
 		//	send watchdogs
@@ -42,6 +42,8 @@ namespace node
 		//	start monitor
 		//
 		base_.suspend(monitor_);
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void watchdog::stop()

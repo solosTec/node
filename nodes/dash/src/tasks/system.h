@@ -30,7 +30,7 @@ namespace node
 			, cyng::logging::log_ptr
 			, cyng::store::db&
 			, boost::uuids::uuid);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

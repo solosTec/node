@@ -68,7 +68,7 @@ namespace node
 
 		}
 
-		void network::run()
+		cyng::continuation network::run()
 		{
 			if (bus_->is_online())
 			{
@@ -103,6 +103,8 @@ namespace node
 					bus_->vm_.async_run(gen::ipt_req_login_public(config_, master_));
 				}
 			}
+
+			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		void network::stop()

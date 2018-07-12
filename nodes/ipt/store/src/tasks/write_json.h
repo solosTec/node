@@ -28,7 +28,7 @@ namespace node
 			, std::string 
 			, std::string
 			, std::string);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

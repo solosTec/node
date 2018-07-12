@@ -30,7 +30,7 @@ namespace node
 			, cyng::controller&
 			, boost::uuids::uuid tag
 			, std::chrono::seconds timeout);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

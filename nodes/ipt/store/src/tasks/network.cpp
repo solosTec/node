@@ -51,7 +51,7 @@ namespace node
 			bus_->vm_.register_function("net.insert.rel", 3, std::bind(&network::insert_rel, this, std::placeholders::_1));
 		}
 
-		void network::run()
+		cyng::continuation network::run()
 		{
 			if (bus_->is_online())
 			{
@@ -81,6 +81,8 @@ namespace node
 					bus_->vm_.async_run(ipt_req_login_public());
 				}
 			}
+
+			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		void network::stop()

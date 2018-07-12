@@ -44,7 +44,7 @@ namespace node
 				, std::string manufacturer
 				, std::string model
 				, cyng::mac48 mac);
-			void run();
+			cyng::continuation run();
 			void stop();
 
 			/**

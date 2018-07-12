@@ -49,9 +49,11 @@ namespace node
 
 	}
 
-	void write_abl::run()
+	cyng::continuation write_abl::run()
 	{
 		CYNG_LOG_INFO(logger_, "write_abl is running");
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void write_abl::stop()

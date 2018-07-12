@@ -35,7 +35,7 @@ namespace node
 				, cyng::logging::log_ptr
 				, master_config_t const& cfg
 				, std::size_t tsk_sender);
-			void run();
+			cyng::continuation run();
 			void stop();
 
 			/**

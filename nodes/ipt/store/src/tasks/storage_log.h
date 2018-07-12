@@ -27,7 +27,7 @@ namespace node
 		storage_log(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, cyng::param_map_t);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

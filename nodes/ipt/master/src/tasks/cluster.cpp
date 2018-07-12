@@ -45,7 +45,7 @@ namespace node
 
 	}
 
-	void cluster::run()
+	cyng::continuation cluster::run()
 	{	
 		if (!bus_->is_online())
 		{
@@ -55,6 +55,8 @@ namespace node
 		{
 			CYNG_LOG_DEBUG(logger_, "cluster bus is online");
 		}
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void cluster::stop()

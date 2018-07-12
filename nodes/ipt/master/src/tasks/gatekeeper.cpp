@@ -37,12 +37,14 @@ namespace node
 
 	}
 
-	void gatekeeper::run()
+	cyng::continuation gatekeeper::run()
 	{	
 		//
 		//	start monitor
 		//
 		base_.suspend(timeout_);
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void gatekeeper::stop()

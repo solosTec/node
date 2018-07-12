@@ -61,7 +61,7 @@ namespace node
 		}
 	}
 
-	void storage_db::run()
+	cyng::continuation storage_db::run()
 	{
 		BOOST_ASSERT(pool_.get_pool_size() != 0);
 		if (!hit_list_.empty())
@@ -94,6 +94,8 @@ namespace node
 
 		}
 		base_.suspend(std::chrono::seconds(30));
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void storage_db::stop()

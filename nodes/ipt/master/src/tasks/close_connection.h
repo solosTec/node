@@ -35,7 +35,7 @@ namespace node
 			, cyng::param_map_t const& options
 			, cyng::param_map_t const& bag
 			, std::chrono::seconds timeout);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**
@@ -44,8 +44,6 @@ namespace node
 		 * sucessful cluster login
 		 */
 		cyng::continuation process(ipt::response_type);
-
-	private:
 
 	private:
 		cyng::async::base_task& base_;
@@ -59,6 +57,7 @@ namespace node
 		const cyng::param_map_t bag_;
 		const std::chrono::seconds timeout_;
 		ipt::response_type response_;
+		bool is_waiting_;
 	};
 	
 }

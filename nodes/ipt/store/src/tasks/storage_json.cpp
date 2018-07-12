@@ -37,9 +37,11 @@ namespace node
 
 	}
 
-	void storage_json::run()
+	cyng::continuation storage_json::run()
 	{
 		CYNG_LOG_INFO(logger_, "storage_json is running");
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void storage_json::stop()

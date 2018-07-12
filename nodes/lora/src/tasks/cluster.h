@@ -37,7 +37,7 @@ namespace node
 			, std::string const& doc_root
 			, std::vector<std::string> const& sub_protocols
 			, boost::asio::ssl::context& ctx);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

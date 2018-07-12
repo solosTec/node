@@ -34,7 +34,7 @@ namespace node
 				, std::vector<std::size_t> const&
 				, master_config_t const& cfg
 				, std::map<std::string, std::string> const& targets);
-			void run();
+			cyng::continuation run();
 			void stop();
 
 			/**

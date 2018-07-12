@@ -32,7 +32,7 @@ namespace node
 			, std::string const& address
 			, std::string const& service
 			, int timeout);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

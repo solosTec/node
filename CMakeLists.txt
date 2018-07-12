@@ -413,7 +413,10 @@ include (lib/sml/protocol/lib.cmake)
 add_library(smf_protocol_sml ${GLOBAL_LIBRARY_TYPE} ${sml_protocol_lib})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	target_link_libraries(smf_protocol_sml cyng_vm)
+else()
+	target_link_libraries(smf_protocol_sml cyng_table cyng_store)
 endif()
+
 
 #
 #	sml bus library (client)

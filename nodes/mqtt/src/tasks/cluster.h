@@ -28,7 +28,7 @@ namespace node
 		cluster(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, cluster_config_t const& cfg);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

@@ -28,7 +28,7 @@ namespace node
 			, std::string root_dir
 			, std::string prefix
 			, std::string suffix);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

@@ -32,7 +32,7 @@ namespace node
 			, cyng::store::db& cache
 			, std::size_t
 			, cluster_config_t const& cfg);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

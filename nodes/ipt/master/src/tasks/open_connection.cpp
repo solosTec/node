@@ -47,7 +47,7 @@ namespace node
 
 	}
 
-	void open_connection::run()
+	cyng::continuation open_connection::run()
 	{	
 		//
 		//	* forward connection open request to device
@@ -68,6 +68,8 @@ namespace node
 		//	start monitor
 		//
 		base_.suspend(timeout_);
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void open_connection::stop()

@@ -35,7 +35,7 @@ namespace node
 
 	}
 
-	void cluster::run()
+	cyng::continuation cluster::run()
 	{	
 		//CYNG_LOG_INFO(logger_, "connect to redundancy [ "
 		//<< master_
@@ -56,6 +56,8 @@ namespace node
 			<< config_[master_].host_
 			<< ':'
 			<< config_[master_].service_);
+
+		return cyng::continuation::TASK_CONTINUE;
 
 	}
 

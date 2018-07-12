@@ -41,7 +41,7 @@ namespace node
 			<< "> initialized");
 	}
 
-	void storage_xml::run()
+	cyng::continuation storage_xml::run()
 	{
 		if (!hit_list_.empty())
 		{
@@ -73,6 +73,8 @@ namespace node
 
 		}
 		base_.suspend(std::chrono::seconds(16));
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void storage_xml::stop()

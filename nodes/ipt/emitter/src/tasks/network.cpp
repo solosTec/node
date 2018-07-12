@@ -43,7 +43,7 @@ namespace node
 
 		}
 
-		void network::run()
+		cyng::continuation network::run()
 		{
 			if (bus_->is_online())
 			{
@@ -56,11 +56,6 @@ namespace node
 			else
 			{
 				//
-				//	set default sk
-				//
-				//bus_->vm_.async_run(cyng::generate_invoke("ipt.set.sk.def", config_[master_].sk_));
-
-				//
 				//	login request
 				//
 				if (config_[master_].scrambled_)
@@ -72,6 +67,8 @@ namespace node
 					bus_->vm_.async_run(ipt_req_login_public());
 				}
 			}
+
+			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		void network::stop()

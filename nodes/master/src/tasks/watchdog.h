@@ -29,7 +29,7 @@ namespace node
 			, cyng::store::db&
 			, cyng::object obj
 			, std::chrono::seconds monitor);
-		void run();
+		cyng::continuation run();
 		void stop();
 
 		/**

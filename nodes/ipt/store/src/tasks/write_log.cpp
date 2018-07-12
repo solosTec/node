@@ -45,9 +45,11 @@ namespace node
 
 	}
 
-	void write_log::run()
+	cyng::continuation write_log::run()
 	{
 		CYNG_LOG_INFO(logger_, "write_log is running");
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void write_log::stop()

@@ -43,9 +43,11 @@ namespace node
 
 	}
 
-	void storage_binary::run()
+	cyng::continuation storage_binary::run()
 	{
 		CYNG_LOG_INFO(logger_, "storage_binary is running");
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void storage_binary::stop()

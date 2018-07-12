@@ -49,9 +49,11 @@ namespace node
 
 	}
 
-	void write_json::run()
+	cyng::continuation write_json::run()
 	{
 		CYNG_LOG_INFO(logger_, "write_json is running");
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void write_json::stop()

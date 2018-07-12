@@ -68,7 +68,7 @@ namespace node
 		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 	}
 
-	void cluster::run()
+	cyng::continuation cluster::run()
 	{	
 		//
 		//	disconnect all sync tasks from cache
@@ -89,6 +89,7 @@ namespace node
 			<< ':'
 			<< config_[master_].service_);
 
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void cluster::stop()

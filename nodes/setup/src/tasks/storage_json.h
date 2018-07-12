@@ -28,7 +28,7 @@ namespace node
 			, cyng::logging::log_ptr
 			, cyng::store::db& cache
 			, cyng::param_map_t);
-		void run();
+		cyng::continuation run();
 		void stop();
 		cyng::continuation process(int i, std::string name);
 
