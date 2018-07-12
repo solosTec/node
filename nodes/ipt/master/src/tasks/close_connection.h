@@ -57,6 +57,7 @@ namespace node
 		const cyng::param_map_t bag_;
 		const std::chrono::seconds timeout_;
 		ipt::response_type response_;
+		const std::chrono::system_clock::time_point start_;
 		bool is_waiting_;
 	};
 	

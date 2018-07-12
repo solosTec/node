@@ -29,6 +29,7 @@ namespace node
 			void transfer_data(cyng::context& ctx);
 
 			void print_msg(cyng::context& ctx, const char*);
+			void print_text(cyng::context& ctx);
 
 			void req_login_public(cyng::context& ctx);
 			void req_login_scrambled(cyng::context& ctx);

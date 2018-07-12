@@ -135,7 +135,7 @@ namespace node
 			/**
 			 * gatekeeper task
 			 */
-			std::size_t gate_keeper_;
+			const std::size_t gate_keeper_;
 
 			/**
 			 * contains state of local connections

@@ -9,7 +9,7 @@
 #include "session.h"
 //#include "tasks/open_connection.h"
 //#include "tasks/close_connection.h"
-//#include "tasks/gatekeeper.h"
+#include "tasks/gatekeeper.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <cyng/vm/domain/log_domain.h>
@@ -44,11 +44,11 @@ namespace node
 				CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
 				vm_.async_run(std::move(prg));
 			}, guard_time)
-			//, gate_keeper_(cyng::async::start_task_sync<gatekeeper>(mux_
-			//	, logger_
-			//	, vm_
-			//	, tag
-			//	, timeout_).first)
+			, gate_keeper_(cyng::async::start_task_sync<gatekeeper>(mux_
+				, logger_
+				, vm_
+				, tag
+				, timeout_).first)
 			, connect_state_()
 		{
 			//
@@ -231,6 +231,8 @@ namespace node
 			//UNKNOWN = 0x7fff,	//!<	unknown command
 			//vm_.register_function("ipt.unknown.cmd", 3, std::bind(&session::ipt_unknown_cmd, this, std::placeholders::_1));
 
+			vm_.register_function("modem.req.info", 1, std::bind(&session::modem_req_info, this, std::placeholders::_1));
+
 		}
 
 		session::~session()
@@ -269,9 +271,80 @@ namespace node
 				bool					//	[1] new state
 			>(frame);
 
-			connect_state_.connected_local_ = std::get<1>(tpl);
+			//	true == local
+			connect_state_.set_connected(std::get<1>(tpl));
 		}
 
+		void session::modem_req_info(cyng::context& ctx)
+		{
+			//	[de17d93c-ce2e-4d93-bdbc-e38643b934e0,00000009]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "modem.req.info " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] remote tag
+				std::uint32_t			//	[1] code
+			>(frame);
+
+			switch (std::get<1>(tpl))
+			{
+			case 0:	
+				ctx.attach(cyng::generate_invoke("print.text", cyng::invoke("ip.tcp.socket.ep.local")));
+				break;
+			case 1:
+				ctx.attach(cyng::generate_invoke("print.text", cyng::invoke("ip.tcp.socket.ep.remote")));
+				break;
+			case 2:
+				ctx.attach(cyng::generate_invoke("print.text", std::chrono::system_clock::now()));
+				break;
+			case 3:
+				ctx.attach(cyng::generate_invoke("print.text", NODE_VERSION));
+				break;
+			case 4:
+				ctx.attach(cyng::generate_invoke("print.text", NODE_PLATFORM));
+				break;
+			case 5:
+				ctx.attach(cyng::generate_invoke("print.text", NODE_PROCESSOR));
+				break;
+			case 6:
+				ctx.attach(cyng::generate_invoke("print.text", NODE_SSL_VERSION));
+				break;
+			case 7:
+				ctx.attach(cyng::generate_invoke("print.text", NODE_BUILD_TYPE));
+				break;
+			case 8:
+				ctx.attach(cyng::generate_invoke("print.text", ctx.tag()));
+				break;
+			case 9:
+				ctx.attach(cyng::generate_invoke("print.text", bus_->vm_.tag()));
+				break;
+			case 10:
+				ctx.attach(cyng::generate_invoke("print.text", to_str(connect_state_)));
+				break;
+
+			default:
+				//ctx.attach("code.ERROR");
+				return;
+			}
+
+			ctx.attach(cyng::generate_invoke("print.ok"));
+			ctx.attach(cyng::generate_invoke("stream.flush"));
+
+		}
+
+		std::string session::to_str(connect_state const& cs)
+		{
+			switch (cs.state_)
+			{
+			case connect_state::NOT_CONNECTED_:	return "not-connected";
+			case connect_state::LOCAL_:	return "connected-local";
+			case connect_state::NON_LOCAL_: return "connected-non-local";
+
+			default:
+				break;
+			}
+			return "ERROR";
+		}
 
 		void session::modem_req_login(cyng::context& ctx)
 		{
@@ -321,7 +394,7 @@ namespace node
 			{
 				const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 
-				if (connect_state_.connected_local_)
+				if (connect_state_.is_local())
 				{
 					bus_->vm_.async_run(cyng::generate_invoke("server.transmit.data", tag, frame.at(1)));
 				}
@@ -388,6 +461,11 @@ namespace node
 				std::uint32_t,			//	[5] query
 				cyng::param_map_t		//	[6] bag
 			>(frame);
+
+			//
+			//	stop gatekeeper
+			//
+			mux_.post(gate_keeper_, 0, cyng::tuple_factory(std::get<2>(tpl)));
 
 			if (std::get<2>(tpl))
 			{
@@ -680,9 +758,6 @@ namespace node
 			//
 			auto dom = cyng::make_reader(std::get<3>(tpl));
 
-			cyng::param_map_t tmp;
-
-			ctx.attach(cyng::generate_invoke("print.ring"));
 			if (auto_answer_)
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward - auto answer", ctx.get_frame()));
@@ -698,7 +773,7 @@ namespace node
 				auto target = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
 				bus_->vm_.async_run(node::client_res_open_connection(target
 					, std::get<1>(tpl)
-					, true
+					, !connect_state_.is_connected()
 					, std::get<3>(tpl)
 					, std::get<4>(tpl)));
 
@@ -708,6 +783,7 @@ namespace node
 			else
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward - wait for ATA", ctx.get_frame()));
+				ctx.attach(cyng::generate_invoke("print.ring"));
 
 				//
 				//	ToDo: start task
@@ -726,7 +802,6 @@ namespace node
 
 				//CYNG_LOG_TRACE(logger_, "client.req.open.connection.forward - task #" << tsk);
 			}
-
 			ctx.attach(cyng::generate_invoke("stream.flush"));
 
 		}
@@ -809,7 +884,7 @@ namespace node
 				//
 				//	reset connection state
 				//
-				connect_state_.connected_local_ = false;
+				connect_state_.set_disconnected();
 
 			}
 			else
@@ -854,8 +929,8 @@ namespace node
 				//	dom reader
 				//
 				auto dom = cyng::make_reader(std::get<3>(tpl));
-				BOOST_ASSERT(!connect_state_.connected_local_);
-				connect_state_.connected_local_ = cyng::value_cast(dom.get("local-connect"), false);
+				BOOST_ASSERT(!connect_state_.is_connected());
+				connect_state_.set_connected(cyng::value_cast(dom.get("local-connect"), false));
 
 				//
 				//	update parser state
@@ -1047,12 +1122,31 @@ namespace node
 
 		}
 
-
-
-
+		//
+		//	implementation session state
+		//
 		session::connect_state::connect_state()
-			: connected_local_(false)
+			: state_(NOT_CONNECTED_)
 		{}
+
+		void session::connect_state::set_connected(bool b) {
+			state_ = b
+				? LOCAL_
+				: NON_LOCAL_
+				;
+		}
+
+		bool session::connect_state::is_local() const {
+			return state_ == LOCAL_;
+		}
+
+		void session::connect_state::set_disconnected() {
+			state_ = NOT_CONNECTED_;
+		}
+
+		bool session::connect_state::is_connected() const {
+			return state_ != NOT_CONNECTED_;
+		}
 
 	}
 }

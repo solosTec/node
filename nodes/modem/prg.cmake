@@ -37,6 +37,8 @@ set (node_modem_info
 set (node_modem_tasks
 	nodes/modem/src/tasks/cluster.h
 	nodes/modem/src/tasks/cluster.cpp
+	nodes/modem/src/tasks/gatekeeper.h
+	nodes/modem/src/tasks/gatekeeper.cpp
 )
 
 set (node_modem_res

@@ -25,8 +25,8 @@ namespace node
 		, vm_(vm)
 		, tag_(tag)
 		, timeout_(timeout)
-		, response_(ipt::ctrl_res_login_public_policy::ACCOUNT_LOCKED)
 		, start_(std::chrono::system_clock::now())
+		, success_(false)
 		, is_waiting_(false)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -68,7 +68,7 @@ namespace node
 
 	void gatekeeper::stop()
 	{
-		if (response_ == ipt::ctrl_res_login_public_policy::ACCOUNT_LOCKED)
+		if (!success_)
 		{
 			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
@@ -102,7 +102,7 @@ namespace node
 	}
 
 	//	slot 0
-	cyng::continuation gatekeeper::process(ipt::response_type res)
+	cyng::continuation gatekeeper::process(bool success)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -110,11 +110,11 @@ namespace node
 			<< base_.get_class_name()
 			<< "> "
 			<< tag_
-			<< " received response ["
-			<< ipt::ctrl_res_login_public_policy::get_response_name(res)
+			<< " login ["
+			<< (success ? "success" : "failed")
 			<< "]");
 
-		response_ = res;
+		success_ = success;
 		return cyng::continuation::TASK_STOP;
 	}
 

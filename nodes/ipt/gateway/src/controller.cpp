@@ -621,17 +621,19 @@ namespace node
 				, tag);
 		}
 
-		if (!config.create_table(cyng::table::make_meta_table<1, 6>("push.ops",
-			{ "pk"			//	primary key
-			, "serverID"	//	server ID
+		if (!config.create_table(cyng::table::make_meta_table<2, 5>("push.ops",
+			{ "serverID"	//	server ID
+			, "idx"			//	index
+			//	-- body
 			, "interval"	//	seconds
 			, "delay"		//	seconds
 			, "target"		//	target name
 			, "source"		//	push source (profile, installation parameters, list of visible sensors/actors)
 			, "profile"		//	"Lastgang"
 			},
-			{ cyng::TC_UUID			//	pk
-			, cyng::TC_BUFFER		//	server ID
+			{ cyng::TC_BUFFER		//	server ID
+			, cyng::TC_UINT8		//	index
+									//	-- body
 			, cyng::TC_UINT32		//	interval [seconds]
 			, cyng::TC_UINT32		//	delay [seconds]
 			, cyng::TC_STRING		//	target
@@ -639,8 +641,9 @@ namespace node
 			, cyng::TC_UINT8		//	profile
 
 			},
-			{ 36
-			, 9
+			{ 9		//	server ID
+			, 0		//	index
+					//	-- body
 			, 0		//	interval [seconds]
 			, 0		//	delay
 			, 64	//	target
@@ -656,22 +659,20 @@ namespace node
 
 			//	insert demo push.ops
 			config.insert("push.ops"
-				, cyng::table::key_generator(rgen())
-				, cyng::table::data_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 })
-					, 900u
+				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 2u)
+				, cyng::table::data_generator(900u
 					, 4u	//	delay
-					, "data.sink-1.sml"
+					, "data.sink-2.sml"
 					, 1		//	source
 					, 1)	//	profile
 				, 1	//	generation
 				, tag);
 
 			config.insert("push.ops"
-				, cyng::table::key_generator(rgen())
-				, cyng::table::data_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 })
-					, 1800u
+				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 3u)
+				, cyng::table::data_generator(1800u
 					, 12u	//	delay
-					, "data.sink-2.sml"
+					, "data.sink-3.sml"
 					, 1		//	source
 					, 3)	//	profile
 				, 1	//	generation

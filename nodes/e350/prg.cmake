@@ -37,6 +37,8 @@ set (node_e350_info
 set (node_e350_tasks
 	nodes/e350/src/tasks/cluster.h
 	nodes/e350/src/tasks/cluster.cpp
+	nodes/e350/src/tasks/gatekeeper.h
+	nodes/e350/src/tasks/gatekeeper.cpp
 )
 
 set (node_e350_res

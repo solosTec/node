@@ -77,6 +77,8 @@ namespace node
 			vm.register_function("print.ring", 0, std::bind(&serializer::print_msg, this, std::placeholders::_1, "RING"));
 			vm.register_function("print.connect", 0, std::bind(&serializer::print_msg, this, std::placeholders::_1, "CONNECT"));
 
+			vm.register_function("print.text", 0, std::bind(&serializer::print_text, this, std::placeholders::_1));
+
 			//
 			//	generated from master node (mostly)
 			//
@@ -192,6 +194,15 @@ namespace node
 			write(std::string(msg));
 			//	append <CR> <NL>
 			write(std::string("\r\n"));
+		}
+
+		void serializer::print_text(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			write(cyng::io::to_str(frame));
+			//	append <CR> <NL>
+			write(std::string("\r\n"));
+
 		}
 
 		void serializer::req_login_public(cyng::context& ctx)

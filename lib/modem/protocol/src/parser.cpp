@@ -243,6 +243,15 @@ namespace node
 						, cyng::code::IDENT));
 
 				}
+				else if (boost::algorithm::starts_with(inp, "I") || boost::algorithm::starts_with(inp, "i"))
+				{
+					//	ATI - informational output
+					boost::algorithm::erase_head(inp, 1);
+					p.cb_(cyng::generate_invoke("modem.req.info"
+						, cyng::code::IDENT
+						, static_cast<std::uint32_t>(std::stoul(inp))));
+
+				}
 				else
 				{
 					p.cb_(cyng::generate_invoke("log.msg.error", "unknown AT command", inp));

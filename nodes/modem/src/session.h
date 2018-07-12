@@ -27,9 +27,21 @@ namespace node
 
 			struct connect_state
 			{
+				enum state {
+					NOT_CONNECTED_,
+					LOCAL_,
+					NON_LOCAL_,
+
+				} state_;
+
 				connect_state();
-				bool connected_local_;
+				void set_connected(bool);
+				void set_disconnected();
+				bool is_local() const;
+				bool is_connected() const;
 			};
+
+			std::string to_str(connect_state const&);
 
 		public:
 			session(cyng::async::mux& mux
@@ -93,6 +105,8 @@ namespace node
 			void store_relation(cyng::context& ctx);
 			void update_connection_state(cyng::context& ctx);
 
+			void modem_req_info(cyng::context& ctx);
+
 		private:
 			cyng::async::mux& mux_;
 			cyng::logging::log_ptr logger_;
@@ -109,7 +123,7 @@ namespace node
 			/**
 			 * gatekeeper task
 			 */
-			std::size_t gate_keeper_;
+			const std::size_t gate_keeper_;
 
 			/**
 			 * contains state of local connections

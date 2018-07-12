@@ -70,7 +70,7 @@ namespace node
 		//	sign off from cluster
 		//
 		bus_->stop();
-		CYNG_LOG_INFO(logger_, "cluster is stopped");
+		CYNG_LOG_INFO(logger_, "cluster just left");
 	}
 
 	//	slot 0
@@ -94,6 +94,7 @@ namespace node
 		//
 		//	Connection to master lost
 		//
+		CYNG_LOG_WARNING(logger_, "lost connection to cluster");
 
 		//
 		//	stop server

@@ -36,6 +36,7 @@ namespace node
 		, bag_(bag)
 		, timeout_(timeout)
 		, response_(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED)
+		, start_(std::chrono::system_clock::now())
 		, is_waiting_(false)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -44,7 +45,8 @@ namespace node
 			<< base_.get_class_name()
 			<< "> is running in "
 			<< (shutdown_ ? "shutdown" : "normal")
-			<< " mode");
+			<< " mode until "
+			<< cyng::to_str(start_ + timeout_));
 	}
 
 	cyng::continuation close_connection::run()
@@ -83,11 +85,18 @@ namespace node
 
 		}
 
-		CYNG_LOG_INFO(logger_, "task #"
+		CYNG_LOG_WARNING(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> timeout");
+			<< "> timeout after "
+			<< cyng::to_str(std::chrono::system_clock::now() - start_));
+
+		//
+		//	close session
+		//
+		vm_.async_run(cyng::generate_invoke("ip.tcp.socket.shutdown"));
+		vm_.async_run(cyng::generate_invoke("ip.tcp.socket.close"));
 
 		//
 		//	stop this task

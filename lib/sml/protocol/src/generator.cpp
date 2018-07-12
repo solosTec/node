@@ -14,7 +14,8 @@
 #include <NODE_project_info.h>
 #include <cyng/vm/generator.h>
 #include <cyng/chrono.h>
-#include <cyng/value_cast.hpp>
+//#include <cyng/value_cast.hpp>
+#include <cyng/numeric_cast.hpp>
 #include <sstream>
 #include <iomanip>
 
@@ -609,7 +610,8 @@ namespace node
 			//
 			tbl->loop([&](cyng::table::record const& rec)->bool {
 
-				tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0xC7, 0x8A, 0x01, tpl.size() + 1), {
+				auto idx = cyng::numeric_cast<std::uint8_t>(rec["idx"], 1);
+				tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0xC7, 0x8A, 0x01, idx), {
 
 					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 02, FF), make_value(rec["interval"])),		//	intervall (sec.) [uint16]
 					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 03, FF), make_value(rec["delay"])),		//	intervall (sec.) [uint8]
@@ -635,7 +637,7 @@ namespace node
 
 					})));
 
-				return true;	//continue
+				return true;	//	continue
 			});
 
 			return append_msg(message(trx	//	trx

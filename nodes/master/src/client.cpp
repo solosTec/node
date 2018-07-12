@@ -1118,26 +1118,52 @@ namespace node
 				auto local_peer = cyng::object_cast<session>(rec["local"]);
 				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
 				auto remote_tag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
-				options["local-connect"] = cyng::make_object(local_peer->hash() == remote_peer->hash());
+				auto name = cyng::value_cast<std::string > (rec["name"], "");
 
-				if (local_peer->hash() == remote_peer->hash())
+				if (local_peer && remote_peer)
 				{
-					prg << cyng::unwinder(client_req_close_connection_forward(remote_tag
-						, tag
-						, false	//	no shutdown
+
+					//
+					//	there is no open connection to close
+					//
+
+					options["local-connect"] = cyng::make_object(false);
+					options["msg"] = cyng::make_object("[" + name + "] has no open connection to close");
+
+					prg << cyng::unwinder(client_res_close_connection_forward(tag
+						, seq
+						, false //	no success
 						, options
 						, bag));
+
+					insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
+						, "[" + name + "] has no open connection to close"
+						, tag);
+
 				}
 				else
 				{
-					//
-					//	forward connection close request in different VM
-					//
-					remote_peer->vm_.async_run(client_req_close_connection_forward(remote_tag
-						, tag
-						, false	//	no shutdown
-						, options
-						, bag));
+					options["local-connect"] = cyng::make_object(local_peer->hash() == remote_peer->hash());
+
+					if (local_peer->hash() == remote_peer->hash())
+					{
+						prg << cyng::unwinder(client_req_close_connection_forward(remote_tag
+							, tag
+							, false	//	no shutdown
+							, options
+							, bag));
+					}
+					else
+					{
+						//
+						//	forward connection close request in different VM
+						//
+						remote_peer->vm_.async_run(client_req_close_connection_forward(remote_tag
+							, tag
+							, false	//	no shutdown
+							, options
+							, bag));
+					}
 				}
 			}
 			else

@@ -1278,7 +1278,7 @@ namespace node
 			//
 			auto dom = cyng::make_reader(std::get<3>(tpl));
 
-			cyng::param_map_t tmp;
+			//cyng::param_map_t tmp;
 			const std::size_t tsk = cyng::async::start_task_sync<open_connection>(mux_
 				, logger_
 				, bus_

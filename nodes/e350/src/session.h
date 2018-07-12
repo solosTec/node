@@ -27,8 +27,18 @@ namespace node
 
 			struct connect_state
 			{
+				enum state {
+					NOT_CONNECTED_,
+					LOCAL_,
+					NON_LOCAL_,
+
+				} state_;
+
 				connect_state();
-				bool connected_local_;
+				void set_connected(bool);
+				void set_disconnected();
+				bool is_local() const;
+				bool is_connected() const;
 			};
 
 		public:

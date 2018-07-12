@@ -145,7 +145,7 @@ namespace node
 		//	sign off from cluster
 		//
         bus_->stop();
-		CYNG_LOG_INFO(logger_, "cluster is stopped");
+		CYNG_LOG_INFO(logger_, "cluster just left");
 	}
 
 	//	slot 0
