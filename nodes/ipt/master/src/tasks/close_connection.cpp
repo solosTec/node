@@ -51,6 +51,9 @@ namespace node
 	{	
 		if (!is_waiting_)
 		{
+			//
+			//	update task state
+			//
 			is_waiting_ = true;
 
 			//
@@ -79,6 +82,12 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 
 		}
+
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> timeout");
 
 		//
 		//	stop this task

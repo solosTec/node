@@ -38,6 +38,7 @@ namespace node
 		, bag_(bag)
 		, timeout_(timeout)
 		, response_(ipt::tp_res_open_connection_policy::UNREACHABLE)
+		, is_waiting_(false)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 		<< base_.get_id()
@@ -49,27 +50,43 @@ namespace node
 
 	cyng::continuation open_connection::run()
 	{	
-		//
-		//	* forward connection open request to device
-		//	* store sequence - task relation
-		//	* start timer to check connection setup
-		//
+		if (!is_waiting_)
+		{
+			//
+			//	update task state
+			//
+			is_waiting_ = true;
 
-		cyng::vector_t prg;
-		prg
-			<< cyng::generate_invoke_unwinded("req.open.connection", number_)
-			<< cyng::generate_invoke_unwinded("session.store.relation", cyng::invoke("ipt.push.seq"), base_.get_id())
-			<< cyng::generate_invoke_unwinded("stream.flush")
-			<< cyng::generate_invoke_unwinded("log.msg.info", "client.req.open.connection.forward", cyng::invoke("ipt.push.seq"), number_)
-			;
-		vm_.async_run(std::move(prg));
+			//
+			//	* forward connection open request to device
+			//	* store sequence - task relation
+			//	* start timer to check connection setup
+			//
 
-		//
-		//	start monitor
-		//
-		base_.suspend(timeout_);
+			cyng::vector_t prg;
+			prg
+				<< cyng::generate_invoke_unwinded("req.open.connection", number_)
+				<< cyng::generate_invoke_unwinded("session.store.relation", cyng::invoke("ipt.push.seq"), base_.get_id())
+				<< cyng::generate_invoke_unwinded("stream.flush")
+				<< cyng::generate_invoke_unwinded("log.msg.info", "client.req.open.connection.forward", cyng::invoke("ipt.push.seq"), number_)
+				;
+			vm_.async_run(std::move(prg));
 
-		return cyng::continuation::TASK_CONTINUE;
+			//
+			//	start monitor
+			//
+			base_.suspend(timeout_);
+
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> timeout");
+
+		return cyng::continuation::TASK_STOP;
 	}
 
 	void open_connection::stop()

@@ -46,8 +46,6 @@ namespace node
 		cyng::continuation process(ipt::response_type);
 
 	private:
-
-	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		bus::shared_type bus_;	//!< cluster bus
@@ -59,6 +57,7 @@ namespace node
 		const cyng::param_map_t bag_;
 		const std::chrono::seconds timeout_;
 		ipt::response_type response_;
+		bool is_waiting_;
 	};
 	
 }
