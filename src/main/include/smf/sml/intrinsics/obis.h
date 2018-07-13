@@ -63,7 +63,7 @@ namespace node
 			 *	@return 6
 			 */
 			//BOOST_CONSTEXPR
-			constexpr std::size_t size() const {
+			inline std::size_t size() const {
 				return std::tuple_size< data_type >::value;
 			}
 
