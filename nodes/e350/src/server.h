@@ -56,6 +56,11 @@ namespace node
 			void client_res_register_push_target(cyng::context&);
 			void client_res_open_connection(cyng::context&);
 			void client_req_open_connection_forward(cyng::context&);
+
+			/**
+			 * It's unlikely that this function will ever be called, since iMega devices don't
+			 * open any connections of their on their own.
+			 */
 			void client_res_open_connection_forward(cyng::context&);
 			void client_req_transmit_data_forward(cyng::context&);
 			void client_res_transfer_pushdata(cyng::context& ctx);

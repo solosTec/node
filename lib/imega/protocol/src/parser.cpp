@@ -156,8 +156,8 @@ namespace node
 				break;
 
 			/*
-			*	watchdog mode <ALIVE MNAME>
-			*/
+			 *	watchdog mode <ALIVE MNAME>
+			 */
 			case STATE_ALIVE:
 				//
 				//	This test is incomplete!
@@ -190,7 +190,7 @@ namespace node
 
 		void parser::post_processing()	
 		{
-			if (stream_state_ == STATE_STREAM_MODE /*&& !inp_buffer_.empty()*/)
+			if (stream_state_ == STATE_STREAM_MODE)
 			{
 				cyng::buffer_t buffer(std::istreambuf_iterator<char>(input_), {});
 				if (!buffer.empty())
@@ -240,7 +240,7 @@ namespace node
 					return STATE_STREAM_MODE;
 				}
 				//BOOST_ASSERT_MSG(parts.size() == 4, "login with wrong part size");
-				parser_.cb_(cyng::generate_invoke("log.msg.warning", "login with wrong part size", str));
+				parser_.cb_(cyng::generate_invoke("log.msg.error", "login with wrong part size", str));
 				return STATE_ERROR;
 			}
 			

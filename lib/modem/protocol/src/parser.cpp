@@ -151,6 +151,7 @@ namespace node
 					{
 						parser_.cb_(cyng::generate_invoke("print.ok"));
 						parser_.cb_(cyng::generate_invoke("stream.flush"));
+						parser_.cb_(cyng::generate_invoke("log.msg.debug", "switch parser in command mode"));
 						return STATE_COMMAND;
 					}
 					else

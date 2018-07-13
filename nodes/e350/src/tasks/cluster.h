@@ -50,8 +50,9 @@ namespace node
 		cyng::continuation process();
 
 	private:
-		//void db_insert(cyng::context& ctx);
-		//void task_resume(cyng::context& ctx);
+		void connect();
+		void reconfigure(cyng::context& ctx);
+		void reconfigure_impl();
 
 	private:
 		cyng::async::base_task& base_;

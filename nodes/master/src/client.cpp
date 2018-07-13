@@ -666,9 +666,10 @@ namespace node
 							auto callee_peer = cyng::object_cast<session>(rec["local"]);
 							BOOST_ASSERT(callee_peer != nullptr);
 
-							options["local-connect"] = cyng::make_object(caller_peer->hash() == callee_peer->hash());
+							const bool local_connect = caller_peer->hash() == callee_peer->hash();
+							options["local-connect"] = cyng::make_object(local_connect);
 
-							if (caller_peer->hash() == callee_peer->hash())
+							if (local_connect)
 							{
 								CYNG_LOG_TRACE(logger_, "connection between "
 									<< tag
@@ -914,12 +915,19 @@ namespace node
 				auto local_peer = cyng::object_cast<session>(rec["local"]);
 				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
 
+				//
+				//	get name of origin
+				//
+				auto local_name = cyng::value_cast<std::string>(rec["name"], "");
+
 				if (remote_peer && local_peer)
 				{
+
 					if (local_peer->hash() == remote_peer->hash())
 					{
+
 						CYNG_LOG_TRACE(logger_, "forward connection close request (local) to "
-							<< cyng::value_cast<std::string>(rec["name"], "")
+							<< local_name
 							<< ':'
 							<< tag);
 
@@ -937,7 +945,7 @@ namespace node
 					else
 					{
 						CYNG_LOG_TRACE(logger_, "forward connection close request (distinct) to "
-							<< cyng::value_cast<std::string>(rec["name"], "")
+							<< local_name
 							<< ':'
 							<< tag);
 
@@ -954,13 +962,23 @@ namespace node
 					//
 					//	remove connection record
 					//
-					connection_erase(tbl_connection, cyng::table::key_generator(tag, rec["rtag"]), tag);
+					if (!connection_erase(tbl_connection, cyng::table::key_generator(tag, rec["rtag"]), tag))
+					{
+						CYNG_LOG_ERROR(logger_, tag
+							<< "remove connection record "
+							<< local_name
+							<< ":"
+							<< tag
+							<< " <=> "
+							<< cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid())
+							<< " failed");
+					}
 				}
 				else
 				{
 					CYNG_LOG_ERROR(logger_, tag
 						<< "session ("
-						<< cyng::value_cast<std::string>(rec["name"], "")
+						<< local_name
 						<< ") has no remote peer - cannot forward connection close response");
 				}
 			}
@@ -1066,17 +1084,23 @@ namespace node
 				tbl_session->modify(rec_link.key(), cyng::param_factory("sx", static_cast<std::uint64_t>(sx + size)), tag);
 
 				//
-				//	generate connection table key
+				//	get record from connection table
 				//
 				cyng::table::record rec_conn = connection_lookup(tbl_connection, cyng::table::key_generator(tag, link));
-				//cyng::table::record rec_conn = tbl_connection->lookup(cyng::table::key_generator(tag, link));
 				if (!rec_conn.empty())
 				{
 					//
 					//	update connection throughput
 					//
-					std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_link["throughput"], 0u);
+					std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_conn["throughput"], 0u);
 					tbl_connection->modify(rec_conn.key(), cyng::param_factory("throughput", static_cast<std::uint64_t>(throughput + size)), tag);
+				}
+				else
+				{
+					CYNG_LOG_ERROR(logger_, "no connection record for "
+						<< cyng::value_cast<std::string>(rec["name"], "")
+						<< " <=> "
+						<< cyng::value_cast<std::string>(rec_link["name"], ""));
 				}
 			}
 			else
@@ -1122,27 +1146,6 @@ namespace node
 
 				if (local_peer && remote_peer)
 				{
-
-					//
-					//	there is no open connection to close
-					//
-
-					options["local-connect"] = cyng::make_object(false);
-					options["msg"] = cyng::make_object("[" + name + "] has no open connection to close");
-
-					prg << cyng::unwinder(client_res_close_connection_forward(tag
-						, seq
-						, false //	no success
-						, options
-						, bag));
-
-					insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
-						, "[" + name + "] has no open connection to close"
-						, tag);
-
-				}
-				else
-				{
 					options["local-connect"] = cyng::make_object(local_peer->hash() == remote_peer->hash());
 
 					if (local_peer->hash() == remote_peer->hash())
@@ -1164,6 +1167,26 @@ namespace node
 							, options
 							, bag));
 					}
+				}
+				else
+				{
+
+					//
+					//	there is no open connection to close
+					//
+
+					options["local-connect"] = cyng::make_object(false);
+					options["msg"] = cyng::make_object("[" + name + "] has no open connection to close");
+
+					prg << cyng::unwinder(client_res_close_connection_forward(tag
+						, seq
+						, false //	no success
+						, options
+						, bag));
+
+					insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
+						, "[" + name + "] has no open connection to close"
+						, tag);
 				}
 			}
 			else
@@ -1879,9 +1902,10 @@ namespace node
 
 						//
 						//	model names are hard coded
+						//	EMH-VMET, EMH-VSES
 						//
 						const std::string model = cyng::value_cast<std::string>(value, "");
-						if (boost::algorithm::starts_with(model, "EMH")
+						if (boost::algorithm::starts_with(model, "EMH-")	//	this excludes EMHcomBase
 							|| boost::algorithm::istarts_with(model, "variomuc")
 							|| boost::algorithm::equals(model, "ipt:gateway"))
 						{

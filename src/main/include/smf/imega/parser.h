@@ -46,7 +46,7 @@ namespace node
 				STATE_ALIVE_I,			//!<	probe <ALIVE> watchdog
 				STATE_ALIVE_V,			//!<	probe <ALIVE> watchdog
 				STATE_ALIVE_E,			//!<	probe <ALIVE> watchdog
-				STATE_ALIVE,			//!<	until >
+				STATE_ALIVE,			//!<	until '>'
 
 				STATE_LAST,
 			};
@@ -107,6 +107,7 @@ namespace node
 				});
 
 				post_processing();
+				input_.clear();
 				return std::distance(start, end);
 			}
 

@@ -36,27 +36,22 @@ namespace node
 		<< "> is running");
 
 		//
-		//	ToDo: implement request handler
+		//	implement request handler
 		//
-
+		bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1));
+		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 	}
 
 	cyng::continuation cluster::run()
 	{	
-		BOOST_ASSERT_MSG(!bus_->vm_.is_halted(), "cluster bus is halted");
-
-		bus_->vm_.async_run(bus_req_login(config_[master_].host_
-			, config_[master_].service_
-			, config_[master_].account_
-			, config_[master_].pwd_
-			, config_[master_].auto_config_
-			, config_[master_].group_
-			, "e350"));
-
-		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
-			<< config_[master_].host_
-			<< ':'
-			<< config_[master_].service_);
+		if (!bus_->is_online())
+		{
+			connect();
+		}
+		else
+		{
+			CYNG_LOG_DEBUG(logger_, "cluster bus is online");
+		}
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -78,7 +73,6 @@ namespace node
 	//	slot 0
 	cyng::continuation cluster::process(cyng::version const& v)
 	{
-		//std::cout << "simple::slot-0($" << base_.get_id() << ", v" << v.major() << "." << v.minor() << ")" << std::endl;
 		if (v < cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 		{
 			CYNG_LOG_WARNING(logger_, "insufficient cluster protocol version: "	<< v);
@@ -95,34 +89,78 @@ namespace node
 	cyng::continuation cluster::process()
 	{
 		//
+		//	Connection to master lost
+		//
+		CYNG_LOG_WARNING(logger_, "lost connection to cluster");
+
+		//
+		//	stop server
+		//
+		server_.close();
+
+		//
+		//	switch to other configuration
+		//
+		reconfigure_impl();
+
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	void cluster::connect()
+	{
+		BOOST_ASSERT_MSG(!bus_->vm_.is_halted(), "cluster bus is halted");
+		bus_->vm_.async_run(bus_req_login(config_[master_].host_
+			, config_[master_].service_
+			, config_[master_].account_
+			, config_[master_].pwd_
+			, config_[master_].auto_config_
+			, config_[master_].group_
+			, "iMega"));
+
+		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
+			<< config_[master_].host_
+			<< ':'
+			<< config_[master_].service_);
+
+	}
+
+	void cluster::reconfigure(cyng::context& ctx)
+	{
+		reconfigure_impl();
+	}
+
+
+	void cluster::reconfigure_impl()
+	{
+		//
 		//	switch to other master
 		//
 		if (config_.size() > 1)
-		{ 
+		{
 			master_++;
 			if (master_ == config_.size())
 			{
 				master_ = 0;
 			}
-			CYNG_LOG_INFO(logger_, "switch to redundancy " 
+			CYNG_LOG_INFO(logger_, "switch to redundancy "
 				<< config_[master_].host_
 				<< ':'
 				<< config_[master_].service_);
-
-			bus_->vm_.async_run(bus_req_login(config_[master_].host_
-				, config_[master_].service_
-				, config_[master_].account_
-				, config_[master_].pwd_
-				, config_[master_].auto_config_
-				, config_[master_].group_
-				, "e350"));
 
 		}
 		else
 		{
 			CYNG_LOG_ERROR(logger_, "cluster login failed - no other redundancy available");
 		}
-		return cyng::continuation::TASK_CONTINUE;
+
+		//
+		//	trigger reconnect 
+		//
+		CYNG_LOG_INFO(logger_, "reconnect to cluster in "
+			<< config_[master_].monitor_.count()
+			<< " seconds");
+		base_.suspend(config_[master_].monitor_);
+
 	}
 
 }

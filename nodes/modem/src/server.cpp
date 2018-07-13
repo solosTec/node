@@ -294,36 +294,6 @@ namespace node
 			}
 		}
 
-		//void server::req_stop_client(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-
-		//	//	[2,[1ca8529b-9b95-4a3a-ba2f-26c7280aa878],ac70b95e-76b9-463a-a961-bb02f70e86c8]
-		//	//
-		//	//	* bus sequence
-		//	//	* session key
-		//	//	* source
-
-		//	auto const tpl = cyng::tuple_cast<
-		//		std::uint64_t,			//	[0] sequence
-		//		cyng::vector_t,			//	[1] session key
-		//		boost::uuids::uuid		//	[2] source
-		//	>(frame);
-
-		//	//
-		//	//	slot [2] - stop session
-		//	//
-		//	if (std::get<1>(tpl).size() == 1)
-		//	{
-		//		CYNG_LOG_INFO(logger_, "bus.req.stop.client " << cyng::io::to_str(frame));
-		//		//mux_.post(task_, 2, cyng::tuple_factory(std::get<1>(tpl)[0]));
-		//	}
-		//	else
-		//	{
-		//		CYNG_LOG_ERROR(logger_, "bus.req.stop.client " << cyng::io::to_str(frame));
-		//	}
-		//}
-
 		void server::push_connection(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
@@ -569,12 +539,16 @@ namespace node
 			//
 			auto dom = cyng::make_reader(std::get<4>(tpl));
 			auto local_connect = cyng::value_cast(dom.get("local-connect"), false);
-			if (local_connect && success)
+			if (success && local_connect)
 			{
 				auto origin_tag = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
 				auto remote_tag = cyng::value_cast(dom.get("remote-tag"), boost::uuids::nil_uuid());
 				BOOST_ASSERT(origin_tag == std::get<0>(tpl));
 				BOOST_ASSERT(origin_tag != remote_tag);
+
+				//
+				//	create entry in local connection list
+				//
 				ctx.run(cyng::generate_invoke("log.msg.trace", "establish local connection", origin_tag, remote_tag));
 
 				//
@@ -585,12 +559,12 @@ namespace node
 				BOOST_ASSERT((connection_map_.size() % 2) == 0);
 
 				//
-				//	update connection state of remote session
+				//	update connection state of remote session.
 				//
 				cyng::vector_t prg;
 				prg
 					<< origin_tag
-					<< true
+					<< local_connect	//	"true" is the only logical value
 					;
 
 				propagate("session.update.connection.state", remote_tag, std::move(prg));

@@ -41,6 +41,8 @@ namespace node
 				bool is_connected() const;
 			};
 
+			std::string to_str(connect_state const&);
+
 		public:
 			session(cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
@@ -64,7 +66,7 @@ namespace node
 			//void ipt_req_open_push_channel(cyng::context& ctx);
 			//void ipt_req_close_push_channel(cyng::context& ctx);
 			void modem_req_open_connection(cyng::context& ctx);
-			void modem_req_close_connection(cyng::context& ctx);
+			//void modem_req_close_connection(cyng::context& ctx);
 			//void ipt_res_open_connection(cyng::context& ctx);
 			//void ipt_req_transfer_pushdata(cyng::context& ctx);
 			//void ipt_res_close_connection(cyng::context& ctx);

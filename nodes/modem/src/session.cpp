@@ -757,6 +757,7 @@ namespace node
 			//	dom reader (options)
 			//
 			auto dom = cyng::make_reader(std::get<3>(tpl));
+			auto local_connect = cyng::value_cast(dom.get("local-connect"), false);
 
 			if (auto_answer_)
 			{
@@ -778,6 +779,13 @@ namespace node
 					, std::get<4>(tpl)));
 
 				ctx.attach(cyng::generate_invoke("print.connect"));
+
+				//
+				//	update connection state.
+				//	It would be safe to set remote-connection since the server::client_res_open_connection_forward()
+				//	would set the valid value
+				//
+				connect_state_.set_connected(local_connect);
 
 			}
 			else

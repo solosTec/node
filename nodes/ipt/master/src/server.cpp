@@ -646,12 +646,16 @@ namespace node
 			//
 			auto dom = cyng::make_reader(std::get<4>(tpl));
 			auto local_connect = cyng::value_cast(dom.get("local-connect"), false);
-			if (local_connect && success)
+			if (success && local_connect)
 			{
 				auto origin_tag = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
 				auto remote_tag = cyng::value_cast(dom.get("remote-tag"), boost::uuids::nil_uuid());
 				BOOST_ASSERT(origin_tag == std::get<0>(tpl));
 				BOOST_ASSERT(origin_tag != remote_tag);
+
+				//
+				//	create antry in local connection list
+				//
 				ctx.run(cyng::generate_invoke("log.msg.trace", "establish local connection", origin_tag, remote_tag));
 
 				//
@@ -667,7 +671,7 @@ namespace node
 				cyng::vector_t prg;
 				prg
 					<< origin_tag
-					<< true
+					<< local_connect	//	"true" is the only logical value
 					;
 
 				propagate("session.update.connection.state", remote_tag, std::move(prg));
