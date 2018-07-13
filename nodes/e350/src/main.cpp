@@ -82,37 +82,39 @@ int main(int argc, char **argv)
 		::OutputDebugString(argv[idx]);
 	}
 #endif
-	boost::program_options::variables_map vm;
-	boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).run(), vm);
-	boost::program_options::notify(vm);
-	
-	if (vm.count("help")) 
-	{  
-		std::cout 
-		<< cmdline_options 
-		<< std::endl
-		;
-		return EXIT_SUCCESS;
-	}
-	
-	if (vm.count("version")) 
-	{  
-		return node::print_version_info(std::cout, "e350");
-	}
-	
-	if (vm.count("build")) 
-	{  
-		return node::print_build_info(std::cout);
-	}
 
-	if (vm["ip"].as< bool >())
-	{
-		//	show local IP adresses
-		return node::show_ip_address(std::cout);
-	}
+	boost::program_options::variables_map vm;
+    try
+    {
+
+        boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).run(), vm);
+        boost::program_options::notify(vm);
+
+        if (vm.count("help"))
+        {
+            std::cout
+            << cmdline_options
+            << std::endl
+            ;
+            return EXIT_SUCCESS;
+        }
+
+        if (vm.count("version"))
+        {
+            return node::print_version_info(std::cout, "e350");
+        }
+
+        if (vm.count("build"))
+        {
+            return node::print_build_info(std::cout);
+        }
+
+        if (vm["ip"].as< bool >())
+        {
+            //	show local IP adresses
+            return node::show_ip_address(std::cout);
+        }
 	
-	try
-	{
 		//	read parameters from config file
 		const std::string cfg = vm["config"].as< std::string >();
 		std::ifstream ifs(cfg);
@@ -165,7 +167,15 @@ int main(int argc, char **argv)
 		BOOST_ASSERT_MSG(pool_size != 0, "empty thread pool");
 		return ctrl.run(vm["console"].as< bool >());
 	}
-	catch (std::bad_cast const& e)
+    catch (boost::program_options::error const& err)   {
+        std::cerr
+            << "*** FATAL: "
+            << err.what()
+            << std::endl
+            ;
+        std::cout << generic << std::endl;
+    }
+    catch (std::bad_cast const& e)
 	{
 		std::cerr
 			<< "*** FATAL: "
