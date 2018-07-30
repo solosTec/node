@@ -17,8 +17,8 @@ namespace node
 	{
 		namespace gen
 		{
-			cyng::vector_t ipt_req_login_public(master_config_t const& config, std::size_t idx);
-			cyng::vector_t ipt_req_login_scrambled(master_config_t const& config, std::size_t idx);
+			cyng::vector_t ipt_req_login_public(master_record const& config);
+			cyng::vector_t ipt_req_login_scrambled(master_record const& config);
 		}
 	}
 }

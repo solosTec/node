@@ -107,10 +107,11 @@ namespace node
 			cyng::async::base_task& base_;
 			bus::shared_type bus_;
 			cyng::logging::log_ptr logger_;
-			const master_config_t	config_;
 
-
-			std::size_t master_;	//!< IP-T master
+			/**
+			 * managing redundant ipt master configurations
+			 */
+			const redundancy	config_;
 
 			/**
 			 * SML parser

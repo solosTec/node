@@ -5,8 +5,8 @@
 *
 */
 
-#ifndef NODE_IPT_STORE_TASK_STORAGE_BINARY_H
-#define NODE_IPT_STORE_TASK_STORAGE_BINARY_H
+#ifndef NODE_IPT_STORE_TASK_SML_JSON_CONSUMER_H
+#define NODE_IPT_STORE_TASK_SML_JSON_CONSUMER_H
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -16,15 +16,16 @@
 
 namespace node
 {
-	class storage_binary
+	class sml_json_consumer
 	{
 	public:
 		using msg_0 = std::tuple<std::uint32_t, std::uint32_t, std::string, std::string, cyng::buffer_t>;
 		using signatures_t = std::tuple<msg_0>;
 
 	public:
-		storage_binary(cyng::async::base_task* bt
+		sml_json_consumer(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
+			, std::size_t ntid	//	network task id
 			, std::string root_dir
 			, std::string prefix
 			, std::string suffix);
@@ -48,6 +49,8 @@ namespace node
 		const std::string root_dir_;
 		const std::string prefix_;
 		const std::string suffix_;
+		std::map<std::uint64_t, std::size_t>	lines_;
+
 	};
 }
 

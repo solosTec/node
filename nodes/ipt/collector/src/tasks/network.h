@@ -59,8 +59,10 @@ namespace node
 			bus::shared_type bus_;
 			cyng::logging::log_ptr logger_;
 			const std::size_t storage_tsk_;
-			const master_config_t	config_;
-			std::size_t master_;
+			/**
+			 * managing redundant ipt master configurations
+			 */
+			const redundancy	config_;
 
 		};
 	}

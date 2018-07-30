@@ -5,7 +5,7 @@
  *
  */
 
-#include "storage_db.h"
+#include "sml_to_db_consumer.h"
 #include <NODE_project_info.h>
 #include <cyng/async/task/base_task.h>
 #include <cyng/dom/reader.h>
@@ -26,15 +26,16 @@
 
 namespace node
 {
-	storage_db::storage_db(cyng::async::base_task* btp
+	sml_db_consumer::sml_db_consumer(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, std::size_t ntid	//	network task id
 		, cyng::param_map_t cfg)
 	: base_(*btp)
 		, logger_(logger)
 		, pool_(base_.mux_.get_io_service(), cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite")))
 		, schema_(cyng::value_cast<std::string>(cfg["db-schema"], NODE_SUFFIX))
 		, meta_map_(init_meta_map(schema_))
-		, lines_()
+		//, lines_()
 		, rng_()
 		, hit_list_()
 	{
@@ -61,44 +62,44 @@ namespace node
 		}
 	}
 
-	cyng::continuation storage_db::run()
+	cyng::continuation sml_db_consumer::run()
 	{
 		BOOST_ASSERT(pool_.get_pool_size() != 0);
-		if (!hit_list_.empty())
-		{
-			CYNG_LOG_INFO(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> stop "
-				<< hit_list_.size()
-				<< " processor(s)");
-			for (auto line : hit_list_)
-			{
-				//
-				//	call destructor
-				//
-				lines_.erase(line);
-			}
-			hit_list_.clear();
-		}
-		else
-		{
-			CYNG_LOG_TRACE(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> "
-				<< lines_.size()
-				<< " processor(s) online");
+		//if (!hit_list_.empty())
+		//{
+		//	CYNG_LOG_INFO(logger_, "task #"
+		//		<< base_.get_id()
+		//		<< " <"
+		//		<< base_.get_class_name()
+		//		<< "> stop "
+		//		<< hit_list_.size()
+		//		<< " processor(s)");
+		//	for (auto line : hit_list_)
+		//	{
+		//		//
+		//		//	call destructor
+		//		//
+		//		lines_.erase(line);
+		//	}
+		//	hit_list_.clear();
+		//}
+		//else
+		//{
+		//	CYNG_LOG_TRACE(logger_, "task #"
+		//		<< base_.get_id()
+		//		<< " <"
+		//		<< base_.get_class_name()
+		//		<< "> "
+		//		<< lines_.size()
+		//		<< " processor(s) online");
 
-		}
+		//}
 		base_.suspend(std::chrono::seconds(30));
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void storage_db::stop()
+	void sml_db_consumer::stop()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -107,7 +108,7 @@ namespace node
 			<< " stopped");
 	}
 
-	cyng::continuation storage_db::process(std::uint32_t channel
+	cyng::continuation sml_db_consumer::process(std::uint32_t channel
 		, std::uint32_t source
 		, std::string const& target
 		, std::string const& protocol
@@ -121,62 +122,62 @@ namespace node
 		//
 		//	select/create a SML processor task
 		//
-		const auto pos = lines_.find(line);
-		if (pos == lines_.end())
-		{
-			//
-			//	create new processor
-			//
-			auto res = lines_.emplace(std::piecewise_construct,
-				std::forward_as_tuple(line),
-				std::forward_as_tuple(base_.mux_.get_io_service()
-					, logger_
-					, rng_()
-					, channel
-					, source
-					, target
-					, pool_.get_session()
-					, schema_
-					, meta_map_));
+		//const auto pos = lines_.find(line);
+		//if (pos == lines_.end())
+		//{
+		//	//
+		//	//	create new processor
+		//	//
+		//	auto res = lines_.emplace(std::piecewise_construct,
+		//		std::forward_as_tuple(line),
+		//		std::forward_as_tuple(base_.mux_.get_io_service()
+		//			, logger_
+		//			, rng_()
+		//			, channel
+		//			, source
+		//			, target
+		//			, pool_.get_session()
+		//			, schema_
+		//			, meta_map_));
 
-			if (res.second)
-			{
-				res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_db::stop_writer, this, std::placeholders::_1));
-				res.first->second.parse(data);	//	sync
-				//res.first->second.vm_.async_run(cyng::generate_invoke("sml.parse", data));
-			}
-			else
-			{
-				CYNG_LOG_FATAL(logger_, "startup processor for line "
-					<< channel
-					<< ':'
-					<< source
-					<< ':'
-					<< target
-					<< " failed");
-			}
-		}
-		else
-		{
-			CYNG_LOG_TRACE(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> processing line "
-				<< std::dec
-				<< source
-				<< ':'
-				<< channel
-				<< " with processor "
-				<< pos->second.vm_.tag());
+		//	if (res.second)
+		//	{
+		//		res.first->second.vm_.register_function("stop.writer", 1, std::bind(&sml_db_consumer::stop_writer, this, std::placeholders::_1));
+		//		res.first->second.parse(data);	//	sync
+		//		//res.first->second.vm_.async_run(cyng::generate_invoke("sml.parse", data));
+		//	}
+		//	else
+		//	{
+		//		CYNG_LOG_FATAL(logger_, "startup processor for line "
+		//			<< channel
+		//			<< ':'
+		//			<< source
+		//			<< ':'
+		//			<< target
+		//			<< " failed");
+		//	}
+		//}
+		//else
+		//{
+		//	CYNG_LOG_TRACE(logger_, "task #"
+		//		<< base_.get_id()
+		//		<< " <"
+		//		<< base_.get_class_name()
+		//		<< "> processing line "
+		//		<< std::dec
+		//		<< source
+		//		<< ':'
+		//		<< channel
+		//		<< " with processor "
+		//		<< pos->second.vm_.tag());
 
-			pos->second.parse(data);
-		}
+		//	pos->second.parse(data);
+		//}
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	int storage_db::init_db(cyng::tuple_t tpl)
+	int sml_db_consumer::init_db(cyng::tuple_t tpl)
 	{
 		auto cfg = cyng::to_param_map(tpl);
 		auto schema = cyng::value_cast<std::string>(cfg["db-schema"], NODE_SUFFIX);
@@ -195,7 +196,7 @@ namespace node
 			//
 			std::cout << r.first << std::endl;
 
-			auto meta_map = storage_db::init_meta_map(schema);
+			auto meta_map = sml_db_consumer::init_meta_map(schema);
 			for (auto tbl : meta_map)
 			{
 				cyng::sql::command cmd(tbl.second, s.get_dialect());
@@ -211,34 +212,34 @@ namespace node
 		return EXIT_FAILURE;
 	}
 
-	void storage_db::stop_writer(cyng::context& ctx)
+	void sml_db_consumer::stop_writer(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
 
 		auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 
-		for (auto pos = lines_.begin(); pos != lines_.end(); ++pos)
-		{
-			if (pos->second.vm_.tag() == tag)
-			{
-				CYNG_LOG_INFO(logger_, "remove db processor " << tag);
+		//for (auto pos = lines_.begin(); pos != lines_.end(); ++pos)
+		//{
+		//	if (pos->second.vm_.tag() == tag)
+		//	{
+		//		CYNG_LOG_INFO(logger_, "remove db processor " << tag);
 
-				//
-				//	stop VM (async)
-				//
-				pos->second.stop();
+		//		//
+		//		//	stop VM (async)
+		//		//
+		//		pos->second.stop();
 
-				//
-				//	add to hitlist and remove later
-				//
-				hit_list_.push_back(pos->first);
-				return;
-			}
-		}
+		//		//
+		//		//	add to hitlist and remove later
+		//		//
+		//		hit_list_.push_back(pos->first);
+		//		return;
+		//	}
+		//}
 		CYNG_LOG_ERROR(logger_, "db processor " << tag << " not found");
 	}
 
-	cyng::table::mt_table storage_db::init_meta_map(std::string const& ver)
+	cyng::table::mt_table sml_db_consumer::init_meta_map(std::string const& ver)
 	{
 		//
 		//	SQL table schemes

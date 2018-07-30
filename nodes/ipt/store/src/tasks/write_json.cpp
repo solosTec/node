@@ -19,6 +19,7 @@ namespace node
 
 	write_json::write_json(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, std::size_t ntid	//	network task id
 		, std::string root_dir
 		, std::string root_name
 		, std::string endocing)

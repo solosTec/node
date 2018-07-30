@@ -14,6 +14,7 @@
 #include <cyng/vm/generator.h>
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/io/io_chrono.hpp>
 #include <boost/uuid/random_generator.hpp>
 
 namespace node
@@ -23,18 +24,18 @@ namespace node
 
 		network::network(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
-			, std::vector<std::size_t> const& tsks
 			, master_config_t const& cfg
 			, std::map<std::string, std::string> const& targets)
 		: base_(*btp)
 			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:store"))
 			, logger_(logger)
-			, tasks_(tsks)
 			, config_(cfg)
 			, targets_(targets)
-			, master_(0)
 			, seq_target_map_()
-			, channel_target_map_()
+			, channel_protocol_map_()
+			, sml_lines_()
+			, iec_lines_()
+			, rng_()
 		{
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -66,13 +67,13 @@ namespace node
 				//
 				//	reset parser and serializer
 				//
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_[master_].sk_));
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_[master_].sk_));
+				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_.get().sk_));
+				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_));
 
 				//
 				//	login request
 				//
-				if (config_[master_].scrambled_)
+				if (config_.get().scrambled_)
 				{
 					bus_->vm_.async_run(ipt_req_login_scrambled());
 				}
@@ -141,52 +142,215 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		cyng::continuation network::process(sequence_type seq, std::uint32_t channel, std::uint32_t source, cyng::buffer_t const& data)
+		cyng::continuation network::process(sequence_type seq
+			, std::uint32_t channel
+			, std::uint32_t source
+			, cyng::buffer_t const& data)
 		{
 			//
-			//	distribute to output tasks
+			//	check secondary data to get protocol type and start parser
+			//	if required
 			//
+			auto pos = channel_protocol_map_.find(channel);
+			if (pos != channel_protocol_map_.end()) {
 
-			auto pos = channel_target_map_.find(channel);
-			if (pos != channel_target_map_.end())
-			{
-				CYNG_LOG_TRACE(logger_, "distribute "
-					<< data.size()
-					<< " bytes from ["
-					<< pos->second.first
+				CYNG_LOG_TRACE(logger_, "channel "
+					<< channel
 					<< ':'
 					<< pos->second.second
-					<< "] to "
-					<< tasks_.size()
-					<< " task(s)");
+					<< " received "
+					<< data.size()
+					<< " bytes of protocol "
+					<< pos->second.first);
 
-				for (auto tsk : tasks_)
-				{
-					CYNG_LOG_DEBUG(logger_, "send "
-						<< data.size()
-						<< " bytes to task "
-						<< tsk);
-
-					//
-					//	distribute async
-					//
-					base_.mux_.post(tsk, 0, cyng::tuple_factory(channel, source, pos->second.first, pos->second.second, data));
-				}
+				distribute(channel, source, pos->second.first, pos->second.second, data);
 			}
-			else
-			{
+			else {
+
 				CYNG_LOG_ERROR(logger_, "channel "
 					<< channel
-					<< " has no target "
+					<< " has no protocol entry (channel_protocol_map) - "
 					<< data.size()
 					<< " bytes get lost");
-
 			}
 
 			//
 			//	continue task
 			//
 			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		void network::distribute(std::uint32_t channel
+			, std::uint32_t source
+			, std::string const& protocol
+			, std::string const& target
+			, cyng::buffer_t const& data)
+		{
+
+			if (boost::algorithm::starts_with(protocol, "SML:")) {
+
+				//
+				//	distribute raw SML data
+				//
+				distribute_raw(channel, source, "SML:RAW", target, data);
+
+				//
+				//	manage and distribute to SML parser instances
+				//
+				distribute_sml(channel, source, target, data);
+			}
+			else if (boost::algorithm::starts_with(protocol, "IEC:")) {
+
+				//
+				//	distribute raw IEC data
+				//
+				distribute_raw(channel, source, "IEC:RAW", target, data);
+
+				//
+				//	manage and distribute to IEC parser instances
+				//
+				distribute_iec(channel, source, target, data);
+			}
+			else {
+
+				CYNG_LOG_ERROR(logger_, "unknown protocol "
+					<< protocol
+					<< " from channel "
+					<< channel
+					<< ':'
+					<< target);
+			}
+
+			//
+			//	send raw data
+			//
+			distribute_raw_all(channel, source, protocol, target, data);
+		}
+
+		std::size_t network::distribute_sml(std::uint32_t channel
+			, std::uint32_t source
+			, std::string const& target
+			, cyng::buffer_t const& data)
+		{
+			auto line = build_line(channel, source);
+
+			auto pos = sml_lines_.find(line);
+			if (pos == sml_lines_.end()) {
+
+				//
+				//	create a new SML processor
+				//
+				auto tag = rng_();
+
+				CYNG_LOG_TRACE(logger_, "create SML processor " 
+					<< tag 
+					<< " for line " 
+					<< channel
+					<< ':'
+					<< source);
+
+				auto res = sml_lines_.emplace(std::piecewise_construct,
+					std::forward_as_tuple(line),
+					std::forward_as_tuple(base_.mux_.get_io_service()
+						, logger_
+						, tag
+						, channel
+						, source
+						, target
+						, base_.get_id()));
+				BOOST_ASSERT(res.second);
+				if (res.second)	res.first->second.parse(data);
+			}
+			else {
+
+				//
+				//	use existing SML processor
+				//
+				pos->second.parse(data);
+			}
+			return 0;
+		}
+
+		std::size_t network::distribute_iec(std::uint32_t channel
+			, std::uint32_t source
+			, std::string const& target
+			, cyng::buffer_t const& data)
+		{
+			auto line = build_line(channel, source);
+
+			auto pos = iec_lines_.find(line);
+			if (pos == iec_lines_.end()) {
+
+				//
+				//	create a new IEC processor
+				//
+				auto tag = rng_();
+
+				CYNG_LOG_TRACE(logger_, "create SML processor "
+					<< tag
+					<< " for line "
+					<< channel
+					<< ':'
+					<< source);
+
+				auto res = sml_lines_.emplace(std::piecewise_construct,
+					std::forward_as_tuple(line),
+					std::forward_as_tuple(base_.mux_.get_io_service()
+						, logger_
+						, tag
+						, channel
+						, source
+						, target
+						, base_.get_id()));
+				BOOST_ASSERT(res.second);
+				if (res.second)	res.first->second.parse(data);
+			}
+			else {
+
+				//
+				//	use existing IEC processor
+				//
+				pos->second.parse(data);
+			}
+			return 0;
+		}
+
+		std::size_t network::distribute_raw(std::uint32_t channel
+			, std::uint32_t source
+			, std::string protocol
+			, std::string const& target
+			, cyng::buffer_t const& data)
+		{
+			auto range = consumers_.equal_range(protocol);
+			for (auto pos = range.first; pos != range.second; ++pos) {
+
+				CYNG_LOG_TRACE(logger_, "send "
+					<< protocol
+					<< " data to task #"
+					<< pos->second);
+
+				base_.mux_.post(pos->second, 0, cyng::tuple_factory(channel, source, target, data));
+			}
+			return std::distance(range.first, range.second);
+		}
+
+		std::size_t network::distribute_raw_all(std::uint32_t channel
+			, std::uint32_t source
+			, std::string const& protocol
+			, std::string const& target
+			, cyng::buffer_t const& data)
+		{
+			auto range = consumers_.equal_range("ALL:RAW");
+			for (auto pos = range.first; pos != range.second; ++pos) {
+
+				CYNG_LOG_TRACE(logger_, "send raw data of protocol "
+					<< protocol
+					<< " to task #"
+					<< pos->second);
+
+				base_.mux_.post(pos->second, 0, cyng::tuple_factory(channel, source, protocol, target, data));
+			}
+			return std::distance(range.first, range.second);
 		}
 
 		//	slot [4] - register target response
@@ -204,16 +368,56 @@ namespace node
 
 						CYNG_LOG_INFO(logger_, "channel "
 							<< channel
-							<< " ==> "
+							<< " => "
 							<< pos->second
 							<< ':'
 							<< pos_target->second);
 
-						channel_target_map_.emplace(channel, std::make_pair(pos->second, pos_target->second));
+						//
+						//	channel => [protocol, target]
+						//
+						channel_protocol_map_.emplace(channel, std::make_pair(pos_target->second, pos->second));
 					}
 					seq_target_map_.erase(pos);
+
+					if (seq_target_map_.empty()) {
+						CYNG_LOG_INFO(logger_, "push target registration is complete");
+					}
+					else {
+						CYNG_LOG_TRACE(logger_, seq_target_map_.size()
+							<< " push target register request(s) are pending");
+					}
 				}
 			}
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(cyng::buffer_t const&)
+		{	//	no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type, bool, std::string const&)
+		{	//	no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type)
+		{	//	no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(std::string type, std::size_t tid)
+		{
+			consumers_.emplace(type, tid);
+			CYNG_LOG_INFO(logger_, "consumer task #"
+				<< tid
+				<< " registered as "
+				<< type);
 
 			//
 			//	continue task
@@ -241,17 +445,12 @@ namespace node
 			//
 			//	switch to other master
 			//
-			if (config_.size() > 1)
+			if (config_.next())
 			{
-				master_++;
-				if (master_ == config_.size())
-				{
-					master_ = 0;
-				}
 				CYNG_LOG_INFO(logger_, "switch to redundancy "
-					<< config_[master_].host_
+					<< config_.get().host_
 					<< ':'
-					<< config_[master_].service_);
+					<< config_.get().service_);
 
 			}
 			else
@@ -263,34 +462,29 @@ namespace node
 			//	trigger reconnect 
 			//
 			CYNG_LOG_INFO(logger_, "reconnect to network in "
-				<< config_[master_].monitor_.count()
-				<< " seconds");
-			base_.suspend(config_[master_].monitor_);
+				<< cyng::to_str(config_.get().monitor_));
 
+			base_.suspend(config_.get().monitor_);
 		}
 
 		cyng::vector_t network::ipt_req_login_public() const
 		{
-			CYNG_LOG_INFO(logger_, "send public login request [ "
-				<< master_
-				<< " ] "
-				<< config_[master_].host_
+			CYNG_LOG_INFO(logger_, "send public login request "
+				<< config_.get().host_
 				<< ':'
-				<< config_[master_].service_);
+				<< config_.get().service_);
 
-			return gen::ipt_req_login_public(config_, master_);
+			return gen::ipt_req_login_public(config_.get());
 		}
 
 		cyng::vector_t network::ipt_req_login_scrambled() const
 		{
-			CYNG_LOG_INFO(logger_, "send scrambled login request [ "
-				<< master_
-				<< " ] "
-				<< config_[master_].host_
+			CYNG_LOG_INFO(logger_, "send scrambled login request "
+				<< config_.get().host_
 				<< ':'
-				<< config_[master_].service_);
+				<< config_.get().service_);
 
-			return gen::ipt_req_login_scrambled(config_, master_);
+			return gen::ipt_req_login_scrambled(config_.get());
 
 		}
 
@@ -303,7 +497,7 @@ namespace node
 			else
 			{
 				seq_target_map_.clear();
-				channel_target_map_.clear();
+				seq_target_map_.clear();
 				for (auto target : targets_)
 				{
 					CYNG_LOG_INFO(logger_, "register target " << target.first << ':' << target.second);
@@ -316,7 +510,6 @@ namespace node
 
 					bus_->vm_.async_run(std::move(prg));
 				}
-
 			}
 		}
 
@@ -344,5 +537,14 @@ namespace node
 
 			seq_target_map_.emplace(std::get<0>(tpl), std::get<1>(tpl));
 		}
+
+		std::uint64_t build_line(std::uint32_t channel, std::uint32_t source)
+		{
+			//
+			//	create the line ID by combining source and channel into one 64 bit integer
+			//
+			return (((std::uint64_t)channel) << 32) | ((std::uint64_t)source);
+		}
+
 	}
 }

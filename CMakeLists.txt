@@ -52,7 +52,7 @@ message(STATUS "**     **    **   **    **   **    **   **          ")
 message(STATUS "**     **    **    ******    **    **   ****    *   ")  
 message(STATUS "**     ***   ***    ****      *****      *******    ")  
 message(STATUS "**      ***   ***              ***        *****     ")  
-message(STATUS "**   ")                                        
+message(STATUS "**")                                        
 
 
 #

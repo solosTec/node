@@ -20,8 +20,33 @@ namespace node
 {
 	namespace ipt
 	{
+		/**
+		 * Implementation of an IP-T client. 
+		 * The bus send messages to it's host to signal different IP-T events.
+		 * <ol>
+		 * <li>0 - successfull authorized</li>
+		 * <li>1 - connection to master lost</li>
+		 * <li>2 - incoming call (open connection request)</li>
+		 * <li>3 - push data received</li>
+		 * <li>4 - push target registered response</li>
+		 * <li>5 - data received</li>
+		 * <li>6 - push target deregistered response</li>
+		 * <li>7 - open connection closed</li>
+		 * </ol>
+		 */
 		class bus : public std::enable_shared_from_this<bus>
 		{
+			enum ipt_events : std::size_t  {
+				IPT_EVENT_AUTHORIZED,
+				IPT_EVENT_CONNECTION_TO_MASTER_LOST,
+				IPT_EVENT_INCOMING_CALL,
+				IPT_EVENT_PUSH_DATA_RECEIVED,
+				IPT_EVENT_PUSH_TARGET_REGISTERED,
+				IPT_EVENT_INCOMING_DATA,	//	transmit data
+				IPT_EVENT_PUSH_TARGET_DEREREGISTERED,
+				IPT_EVENT_CONNECTION_CLOSED,
+			};
+
 		public:
 			using shared_type = std::shared_ptr<bus>;
 

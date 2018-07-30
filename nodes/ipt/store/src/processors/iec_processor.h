@@ -5,33 +5,36 @@
  *
  */
 
-#ifndef NODE_IPT_STORE_XML_PROCESSOR_H
-#define NODE_IPT_STORE_XML_PROCESSOR_H
+#ifndef NODE_IPT_STORE_IEC_PROCESSOR_H
+#define NODE_IPT_STORE_IEC_PROCESSOR_H
 
-#include <smf/sml/protocol/parser.h>
-#include <smf/sml/exporter/xml_exporter.h>
+//#include <smf/sml/protocol/parser.h>
+//#include <smf/sml/exporter/xml_exporter.h>
 #include <cyng/log.h>
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/vm/controller.h>
 
 namespace node
 {
+	namespace iec
+	{
+		struct parser {};	//	dummy
+	}
+
 	class sml_xml_consumer;
-	class xml_processor
+	class iec_processor
 	{
 		friend sml_xml_consumer;
 
 	public:
-		xml_processor(cyng::io_service_t& ios
+		iec_processor(cyng::io_service_t& ios
 			, cyng::logging::log_ptr
 			, boost::uuids::uuid
-			, std::string root_dir
-			, std::string root_name
-			, std::string endocing
 			, std::uint32_t channel
 			, std::uint32_t source
-			, std::string target);
-		virtual ~xml_processor();
+			, std::string target
+			, std::size_t tid);
+		virtual ~iec_processor();
 		void stop();
 
 		/**
@@ -43,16 +46,14 @@ namespace node
 
 	private:
 		void init();
-		void sml_parse(cyng::context& ctx);
 		void sml_msg(cyng::context& ctx);
 		void sml_eom(cyng::context& ctx);
 
 	private:
 		cyng::logging::log_ptr logger_;
-		const boost::filesystem::path root_dir_;
 		cyng::controller vm_;
-		sml::parser parser_;
-		sml::xml_exporter exporter_;	// ("UTF-8", "SML");
+		const std::size_t tid_;
+		iec::parser parser_;
 	};
 }
 

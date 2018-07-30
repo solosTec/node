@@ -1,11 +1,11 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
-#include "storage_json.h"
+#include "sml_to_abl_consumer.h"
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -17,17 +17,13 @@
 namespace node
 {
 
-	storage_json::storage_json(cyng::async::base_task* btp
+	sml_abl_consumer::sml_abl_consumer(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, std::string root_dir
-		, std::string prefix
-		, std::string suffix)
+		, std::size_t ntid	//	network task id
+		, cyng::param_map_t cfg)
 	: base_(*btp)
 		, logger_(logger)
-		, root_dir_(root_dir)
-		, prefix_(prefix)
-		, suffix_(suffix)
-		, lines_()
+		//, lines_()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -37,14 +33,15 @@ namespace node
 
 	}
 
-	cyng::continuation storage_json::run()
+	cyng::continuation sml_abl_consumer::run()
 	{
-		CYNG_LOG_INFO(logger_, "storage_json is running");
+		CYNG_LOG_INFO(logger_, "sml_abl_consumer is running");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void storage_json::stop()
+
+	void sml_abl_consumer::stop()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -53,7 +50,7 @@ namespace node
 			<< " stopped");
 	}
 
-	cyng::continuation storage_json::process(std::uint32_t channel
+	cyng::continuation sml_abl_consumer::process(std::uint32_t channel
 		, std::uint32_t source
 		, std::string const& target
 		, std::string const& protocol
@@ -62,5 +59,4 @@ namespace node
 		const std::uint64_t line = (((std::uint64_t)channel) << 32) | ((std::uint64_t)source);
 		return cyng::continuation::TASK_CONTINUE;
 	}
-
 }

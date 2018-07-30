@@ -302,7 +302,7 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_ ||parser_.log_)
+				if (parser_.verbose_ || parser_.log_)
 				{
 					std::stringstream ss;
 					ss
@@ -859,16 +859,16 @@ namespace node
 
 			if (!stack_.empty())
 			{
-				cyng::vector_t prg;
-				prg
-					<< cyng::code::ESBA
-					<< cyng::make_object(stack_.top().values_)
-					<< counter_
-					<< cyng::invoke("sml.msg")
-					<< cyng::code::REBA
-					;
-				//result_.push_back(cyng::make_object(stack_.top().values_));
+				//
+				//	generate SML message
+				//
+				cyng::vector_t prg{ cyng::generate_invoke("sml.msg", stack_.top().values_, counter_) };
+
+				//
+				//	remove accumulated  values from stack
+				//
 				stack_.pop();
+
 				if (verbose_)
 				{
 					std::cerr 
@@ -880,8 +880,8 @@ namespace node
 				//
 				//	message complete
 				//
-				counter_++;
 				cb_(std::move(prg));
+				counter_++;
 			}
 		}
 
@@ -958,16 +958,7 @@ namespace node
 
 		void parser::finalize(std::uint16_t crc, std::uint8_t gap)
 		{
-			cyng::vector_t prg;
-			prg
-				<< cyng::code::ESBA
-				<< this->crc_
-				<< counter_
-				<< cyng::invoke("sml.eom")
-				<< cyng::code::REBA
-				;
-
-			cb_(std::move(prg));
+			cb_(cyng::generate_invoke("sml.eom", this->crc_, counter_));
 			counter_ = 0;
 			pos_ = 0;
 		}

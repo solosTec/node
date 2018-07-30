@@ -32,18 +32,20 @@ set (node_ipt_store_info
 set (node_ipt_store_tasks
 	nodes/ipt/store/src/tasks/network.h
 	nodes/ipt/store/src/tasks/network.cpp
-	nodes/ipt/store/src/tasks/storage_db.h
-	nodes/ipt/store/src/tasks/storage_db.cpp
-	nodes/ipt/store/src/tasks/storage_xml.h
-	nodes/ipt/store/src/tasks/storage_xml.cpp
-	nodes/ipt/store/src/tasks/storage_json.h
-	nodes/ipt/store/src/tasks/storage_json.cpp
-	nodes/ipt/store/src/tasks/storage_abl.h
-	nodes/ipt/store/src/tasks/storage_abl.cpp
-	nodes/ipt/store/src/tasks/storage_binary.h
-	nodes/ipt/store/src/tasks/storage_binary.cpp
-	nodes/ipt/store/src/tasks/storage_log.h
-	nodes/ipt/store/src/tasks/storage_log.cpp
+	nodes/ipt/store/src/tasks/sml_to_db_consumer.h
+	nodes/ipt/store/src/tasks/sml_to_db_consumer.cpp
+	nodes/ipt/store/src/tasks/sml_to_xml_consumer.h
+	nodes/ipt/store/src/tasks/sml_to_xml_consumer.cpp
+	nodes/ipt/store/src/tasks/sml_to_json_consumer.h
+	nodes/ipt/store/src/tasks/sml_to_json_consumer.cpp
+	nodes/ipt/store/src/tasks/sml_to_abl_consumer.h
+	nodes/ipt/store/src/tasks/sml_to_abl_consumer.cpp
+	nodes/ipt/store/src/tasks/sml_to_log_consumer.h
+	nodes/ipt/store/src/tasks/sml_to_log_consumer.cpp
+	nodes/ipt/store/src/tasks/sml_to_csv_consumer.h
+	nodes/ipt/store/src/tasks/sml_to_csv_consumer.cpp
+	nodes/ipt/store/src/tasks/binary_consumer.h
+	nodes/ipt/store/src/tasks/binary_consumer.cpp
 
 	nodes/ipt/store/src/tasks/write_json.h
 	nodes/ipt/store/src/tasks/write_json.cpp
@@ -54,10 +56,10 @@ set (node_ipt_store_tasks
 
 )
 set (node_ipt_store_processors
-	nodes/ipt/store/src/processors/xml_processor.h
-	nodes/ipt/store/src/processors/xml_processor.cpp
-	nodes/ipt/store/src/processors/db_processor.h
-	nodes/ipt/store/src/processors/db_processor.cpp
+	nodes/ipt/store/src/processors/sml_processor.h
+	nodes/ipt/store/src/processors/sml_processor.cpp
+	nodes/ipt/store/src/processors/iec_processor.h
+	nodes/ipt/store/src/processors/iec_processor.cpp
 )
 
 set (node_ipt_store_exporter

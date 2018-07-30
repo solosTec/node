@@ -117,7 +117,6 @@ namespace node
 						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
 
 					}
-
 				}
 				else
 				{

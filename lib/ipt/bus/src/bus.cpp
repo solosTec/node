@@ -97,7 +97,7 @@ namespace node
 			vm_.register_function("ipt.res.deregister.push.target", 4, std::bind(&bus::ipt_res_deregister_push_target, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.transmit.data", 1, std::bind(&bus::ipt_req_transmit_data, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.open.connection", 1, std::bind(&bus::ipt_req_open_connection, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.close.connection", 1, std::bind(&bus::ipt_req_close_connection, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.close.connection", 2, std::bind(&bus::ipt_req_close_connection, this, std::placeholders::_1));
 
 			vm_.register_function("ipt.req.protocol.version", 2, std::bind(&bus::ipt_req_protocol_version, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.software.version", 2, std::bind(&bus::ipt_req_software_version, this, std::placeholders::_1));
@@ -111,7 +111,7 @@ namespace node
 
 		void bus::start()
 		{
-			CYNG_LOG_TRACE(logger_, "start ipt network");
+			CYNG_LOG_TRACE(logger_, "start ipt client");
             state_ = STATE_INITIAL_;
             do_read();
 		}
@@ -201,7 +201,7 @@ namespace node
 					//
 					//	slot [1] - go offline
 					//
-					mux_.post(task_, 1, cyng::tuple_t());
+					mux_.post(task_, IPT_EVENT_CONNECTION_TO_MASTER_LOST, cyng::tuple_t());
 
 				}
 				else
@@ -236,11 +236,11 @@ namespace node
 
 			if (scrambled)
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.trace", "ipt.res.login.scrambled", res.get_response_name()));
+				ctx.attach(cyng::generate_invoke("log.msg.info", "ipt.res.login.scrambled", res.get_response_name()));
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.trace", "ipt.res.login.public", res.get_response_name()));
+				ctx.attach(cyng::generate_invoke("log.msg.info", "ipt.res.login.public", res.get_response_name()));
 			}
 
 			if (res.is_success())
@@ -251,7 +251,7 @@ namespace node
 				//
 				//	slot [0]
 				//
-				mux_.post(task_, 0, cyng::tuple_factory(watchdog_, redirect));
+				mux_.post(task_, IPT_EVENT_AUTHORIZED, cyng::tuple_factory(watchdog_, redirect));
 
 			}
 			else
@@ -263,7 +263,7 @@ namespace node
 				//
 				//	slot [1]
 				//
-				mux_.post(task_, 1, cyng::tuple_t());
+				mux_.post(task_, IPT_EVENT_CONNECTION_TO_MASTER_LOST, cyng::tuple_t());
 			}
 		}
 
@@ -276,7 +276,6 @@ namespace node
 			//	* result code
 			//	* channel
 			const cyng::vector_t frame = ctx.get_frame();
-			//vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.res.register.push.target", frame));
 
 			const response_type res = cyng::value_cast<response_type>(frame.at(2), 0);
 			if (ctrl_res_register_target_policy::is_success(res))
@@ -287,7 +286,9 @@ namespace node
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.register.push.target", ctrl_res_register_target_policy::get_response_name(res)));
 			}
-			mux_.post(task_, 4, cyng::tuple_factory(frame.at(1), ctrl_res_register_target_policy::is_success(res), frame.at(3)));
+			mux_.post(task_
+				, IPT_EVENT_PUSH_TARGET_REGISTERED
+				, cyng::tuple_factory(frame.at(1), ctrl_res_register_target_policy::is_success(res), frame.at(3)));
 		}
 
 		void bus::ipt_res_deregister_push_target(cyng::context& ctx)
@@ -302,7 +303,9 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.res.deregister.push.target", frame));
 			const response_type res = cyng::value_cast<response_type>(frame.at(2), 0);
-			mux_.post(task_, 6, cyng::tuple_factory(frame.at(1), ctrl_res_deregister_target_policy::is_success(res), frame.at(3)));
+			mux_.post(task_
+				, IPT_EVENT_PUSH_TARGET_DEREREGISTERED
+				, cyng::tuple_factory(frame.at(1), ctrl_res_deregister_target_policy::is_success(res), frame.at(3)));
 		}
 
 
@@ -311,7 +314,10 @@ namespace node
 			//	[0b5d8da4-ce8d-4c4f-bb02-9a9f173391d4,1B1B1B1B010101017681063...2007101633789000000001B1B1B1B1A034843]
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx.attach(cyng::generate_invoke("log.msg.trace", "ipt.req.transmit.data", frame));
-			mux_.post(task_, 5, cyng::tuple_factory(frame.at(1)));
+			BOOST_ASSERT_MSG(state_ != STATE_CONNECTED_, "no open connection");
+			mux_.post(task_
+				, IPT_EVENT_INCOMING_DATA
+				, cyng::tuple_factory(frame.at(1)));
 		}
 
 		void bus::ipt_req_open_connection(cyng::context& ctx)
@@ -329,16 +335,18 @@ namespace node
 			{
 			case STATE_AUTHORIZED_:
 				// forward to session
-				mux_.post(task_, 2, cyng::tuple_factory(frame.at(1), frame.at(2)));
+				mux_.post(task_
+					, IPT_EVENT_INCOMING_CALL
+					, cyng::tuple_factory(frame.at(1), frame.at(2)));
 				break;
 			case STATE_CONNECTED_:
 				//	busy
-				ctx.attach(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_open_connection_policy::BUSY)));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx	.attach(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_open_connection_policy::BUSY)))
+					.attach(cyng::generate_invoke("stream.flush"));
 				break;
 			default:
-				ctx.attach(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_open_connection_policy::DIALUP_FAILED)));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx	.attach(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_open_connection_policy::DIALUP_FAILED)))
+					.attach(cyng::generate_invoke("stream.flush"));
 				break;
 			}
 		}
@@ -360,7 +368,9 @@ namespace node
 			case STATE_CONNECTED_:
 				state_ = STATE_AUTHORIZED_;
 				//	accept closing
-				//mux_.send(task_, 7, cyng::tuple_factory(frame.at(1), frame.at(2)));
+				mux_.post(task_
+					, IPT_EVENT_CONNECTION_CLOSED
+					, cyng::tuple_factory(frame.at(1)));
 				break;
 			default:
 				break;
@@ -386,50 +396,49 @@ namespace node
 		void bus::ipt_req_software_version(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.software.version", frame));
-			ctx.attach(cyng::generate_invoke("res.software.version", frame.at(1), NODE_VERSION));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.software.version", frame))
+				.attach(cyng::generate_invoke("res.software.version", frame.at(1), NODE_VERSION))
+				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus::ipt_req_device_id(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.id", frame));
-			ctx.attach(cyng::generate_invoke("res.device.id", frame.at(1), model_));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.id", frame))
+				.attach(cyng::generate_invoke("res.device.id", frame.at(1), model_))
+				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus::ipt_req_net_stat(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.net.stat", frame));
-			ctx.attach(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_NETWORK_STATUS)));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.net.stat", frame))
+				.attach(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_NETWORK_STATUS)))
+				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus::ipt_req_ip_statistics(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.ip.statistics", frame));
-			ctx.attach(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_IP_STATISTICS)));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.ip.statistics", frame))
+				.attach(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_IP_STATISTICS)))
+				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus::ipt_req_dev_auth(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.auth", frame));
-			//ctx.attach(cyng::generate_invoke("res.device.auth", frame.at(1)));
-			ctx.attach(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_DEVICE_AUTHENTIFICATION)));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.auth", frame))
+				.attach(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_DEVICE_AUTHENTIFICATION)))
+				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus::ipt_req_dev_time(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.time", frame));
-			ctx.attach(cyng::generate_invoke("res.device.time", frame.at(1)));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.time", frame))
+				.attach(cyng::generate_invoke("res.device.time", frame.at(1)))
+				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus::ipt_req_transfer_pushdata(cyng::context& ctx)
@@ -471,8 +480,9 @@ namespace node
 			}
 #endif
 			// forward to session
-			mux_.post(task_, 3, cyng::tuple_factory(frame.at(1), frame.at(2), frame.at(3), frame.at(6)));
-
+			mux_.post(task_
+				, IPT_EVENT_PUSH_DATA_RECEIVED
+				, cyng::tuple_factory(frame.at(1), frame.at(2), frame.at(3), frame.at(6)));
 		}
 
 		bus::shared_type bus_factory(cyng::async::mux& mux

@@ -5,7 +5,7 @@
 *
 */
 
-#include "storage_abl.h"
+#include "sml_to_json_consumer.h"
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -17,11 +17,17 @@
 namespace node
 {
 
-	storage_abl::storage_abl(cyng::async::base_task* btp
+	sml_json_consumer::sml_json_consumer(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, cyng::param_map_t cfg)
+		, std::size_t ntid	//	network task id
+		, std::string root_dir
+		, std::string prefix
+		, std::string suffix)
 	: base_(*btp)
 		, logger_(logger)
+		, root_dir_(root_dir)
+		, prefix_(prefix)
+		, suffix_(suffix)
 		, lines_()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -32,15 +38,14 @@ namespace node
 
 	}
 
-	cyng::continuation storage_abl::run()
+	cyng::continuation sml_json_consumer::run()
 	{
-		CYNG_LOG_INFO(logger_, "storage_abl is running");
+		CYNG_LOG_INFO(logger_, "sml_json_consumer is running");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-
-	void storage_abl::stop()
+	void sml_json_consumer::stop()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -49,7 +54,7 @@ namespace node
 			<< " stopped");
 	}
 
-	cyng::continuation storage_abl::process(std::uint32_t channel
+	cyng::continuation sml_json_consumer::process(std::uint32_t channel
 		, std::uint32_t source
 		, std::string const& target
 		, std::string const& protocol
@@ -58,4 +63,5 @@ namespace node
 		const std::uint64_t line = (((std::uint64_t)channel) << 32) | ((std::uint64_t)source);
 		return cyng::continuation::TASK_CONTINUE;
 	}
+
 }

@@ -24,7 +24,8 @@ namespace node
 	public:
 		write_abl(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, std::string 
+			, std::size_t ntid	//	network task id
+			, std::string
 			, std::string
 			, std::string);
 		cyng::continuation run();
