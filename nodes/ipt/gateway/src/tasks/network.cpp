@@ -39,7 +39,6 @@ namespace node
 			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:gateway"))
 			, logger_(logger)
 			, config_(cfg)
-			, master_(0)
 			, parser_([this](cyng::vector_t&& prg) {
 				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
 #ifdef _DEBUG
@@ -88,19 +87,19 @@ namespace node
 				//
 				//	reset parser and serializer
 				//
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_[master_].sk_));
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_[master_].sk_));
+				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_.get().sk_));
+				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_));
 
 				//
 				//	login request
 				//
-				if (config_[master_].scrambled_)
+				if (config_.get().scrambled_)
 				{
-					bus_->vm_.async_run(gen::ipt_req_login_scrambled(config_, master_));
+					bus_->vm_.async_run(gen::ipt_req_login_scrambled(config_.get()));
 				}
 				else
 				{
-					bus_->vm_.async_run(gen::ipt_req_login_public(config_, master_));
+					bus_->vm_.async_run(gen::ipt_req_login_public(config_.get()));
 				}
 			}
 
@@ -267,17 +266,12 @@ namespace node
 			//
 			//	switch to other master
 			//
-			if (config_.size() > 1)
+			if (config_.next())
 			{
-				master_++;
-				if (master_ == config_.size())
-				{
-					master_ = 0;
-				}
 				CYNG_LOG_INFO(logger_, "switch to redundancy "
-					<< config_[master_].host_
+					<< config_.get().host_
 					<< ':'
-					<< config_[master_].service_);
+					<< config_.get().service_);
 
 			}
 			else
@@ -289,10 +283,9 @@ namespace node
 			//	trigger reconnect 
 			//
 			CYNG_LOG_INFO(logger_, "reconnect to network in "
-				<< config_[master_].monitor_.count()
-				<< " seconds");
-			base_.suspend(config_[master_].monitor_);
+				<< cyng::to_str(config_.get().monitor_));
 
+			base_.suspend(config_.get().monitor_);
 		}
 
 		void network::insert_rel(cyng::context& ctx)

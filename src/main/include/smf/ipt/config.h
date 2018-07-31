@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IPT_CONFIG_H
 #define NODE_IPT_CONFIG_H
@@ -36,10 +36,38 @@ namespace node
 		using master_config_t = std::vector<master_record>;
 
 		/**
-		 * Convinience function to read cluster configuration
+		 * Convinience function to read ipt master configuration
 		 */
 		master_config_t load_cluster_cfg(cyng::vector_t const& cfg);
 		master_record load_cluster_rec(cyng::tuple_t const& cfg);
+
+		/**
+		 * managing ipt master redundancy
+		 */
+		struct redundancy
+		{
+			redundancy(master_config_t const&);
+
+			/**
+			 * switch to next redundancy.
+			 *
+			 * @return true if other redundancy was available
+			 */
+			bool next() const;
+
+			/**
+			 * get current reduncancy
+			 */
+			master_record const& get() const;
+
+			const master_config_t config_;
+
+			/**
+			 * index of current ipt master configuration
+			 */
+			mutable std::size_t master_;
+			 
+		};
 	}
 }
 

@@ -5,7 +5,7 @@
 *
 */
 
-#include "storage_log.h"
+#include "sml_to_log_consumer.h"
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -17,8 +17,9 @@
 namespace node
 {
 
-	storage_log::storage_log(cyng::async::base_task* btp
+	sml_log_consumer::sml_log_consumer(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, std::size_t ntid	//	network task id
 		, cyng::param_map_t cfg)
 	: base_(*btp)
 		, logger_(logger)
@@ -32,14 +33,14 @@ namespace node
 
 	}
 
-	cyng::continuation storage_log::run()
+	cyng::continuation sml_log_consumer::run()
 	{
-		CYNG_LOG_INFO(logger_, "storage_log is running");
+		CYNG_LOG_INFO(logger_, "sml_log_consumer is running");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void storage_log::stop()
+	void sml_log_consumer::stop()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -48,7 +49,7 @@ namespace node
 			<< " stopped");
 	}
 
-	cyng::continuation storage_log::process(std::uint32_t channel
+	cyng::continuation sml_log_consumer::process(std::uint32_t channel
 		, std::uint32_t source
 		, std::string const& target
 		, std::string const& protocol
@@ -74,7 +75,7 @@ namespace node
 			{
 				auto res = lines_.emplace(std::piecewise_construct,
 					std::forward_as_tuple(line),
-					std::forward_as_tuple(std::bind(&storage_log::cb, this, channel, source, target, protocol, std::placeholders::_1)
+					std::forward_as_tuple(std::bind(&sml_log_consumer::cb, this, channel, source, target, protocol, std::placeholders::_1)
 						, false
 						, true));
 
@@ -91,7 +92,7 @@ namespace node
 
 				if (res.second)
 				{
-					//res.first->second.vm_.register_function("stop.writer", 1, std::bind(&storage_log::stop_writer, this, std::placeholders::_1));
+					//res.first->second.vm_.register_function("stop.writer", 1, std::bind(&sml_log_consumer::stop_writer, this, std::placeholders::_1));
 					res.first->second.read(data.begin(), data.end());
 				}
 				else
@@ -123,7 +124,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void storage_log::cb(std::uint32_t channel
+	void sml_log_consumer::cb(std::uint32_t channel
 		, std::uint32_t source
 		, std::string const& target
 		, std::string const& protocol

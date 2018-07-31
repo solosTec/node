@@ -114,7 +114,7 @@ namespace node
 
 			//	transport - connection close
 			//TP_REQ_CLOSE_CONNECTION = 0x9004,	//!<	request
-			vm_.register_function("ipt.req.close.connection", 0, std::bind(&session::ipt_req_close_connection, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.close.connection", 2, std::bind(&session::ipt_req_close_connection, this, std::placeholders::_1));
 			vm_.register_function("client.req.close.connection.forward", 6, std::bind(&session::client_req_close_connection_forward, this, std::placeholders::_1));
 			//TP_RES_CLOSE_CONNECTION = 0x1004,	//!<	response
 			vm_.register_function("ipt.res.close.connection", 0, std::bind(&session::ipt_res_close_connection, this, std::placeholders::_1));

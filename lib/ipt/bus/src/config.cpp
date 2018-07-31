@@ -63,5 +63,32 @@ namespace node
 			, scrambled_(scrambled)
 			, monitor_(monitor)
 		{}
+
+		redundancy::redundancy(master_config_t const& cfg)
+			: config_(cfg)
+			, master_(0)
+		{
+			BOOST_ASSERT(!config_.empty());
+		}
+
+		bool redundancy::next() const
+		{
+			if (!config_.empty())
+			{
+				master_++;
+				if (master_ == config_.size())
+				{
+					master_ = 0;
+				}
+				return true;
+			}
+			return false;
+		}
+
+		master_record const& redundancy::get() const
+		{
+			return config_.at(master_);
+		}
+
 	}
 }

@@ -5,10 +5,10 @@
  *
  */
 
-#ifndef NODE_IPT_STORE_TASK_STORAGE_DB_H
-#define NODE_IPT_STORE_TASK_STORAGE_DB_H
+#ifndef NODE_IPT_STORE_TASK_SML_DB_CONSUMER_H
+#define NODE_IPT_STORE_TASK_SML_DB_CONSUMER_H
 
-#include "../processors/db_processor.h"
+//#include "../processors/db_processor.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -20,15 +20,16 @@
 
 namespace node
 {
-	class storage_db
+	class sml_db_consumer
 	{
 	public:
 		using msg_0 = std::tuple<std::uint32_t, std::uint32_t, std::string, std::string, cyng::buffer_t>;
 		using signatures_t = std::tuple<msg_0>;
 
 	public:
-		storage_db(cyng::async::base_task* bt
+		sml_db_consumer(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
+			, std::size_t ntid	//	network task id
 			, cyng::param_map_t);
 		cyng::continuation run();
 		void stop();
@@ -59,7 +60,7 @@ namespace node
 		cyng::db::session_pool pool_;
 		const std::string schema_;
 		cyng::table::mt_table	meta_map_;
-		std::map<std::uint64_t, db_processor>	lines_;
+		//std::map<std::uint64_t, db_processor>	lines_;
 		boost::uuids::random_generator rng_;
 		std::list<std::uint64_t>	hit_list_;
 	};
