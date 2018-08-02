@@ -13,7 +13,8 @@
 #include <smf/sml/intrinsics/obis.h>
 #include <smf/sml/units.h>
 #include <smf/sml/intrinsics/obis.h>
-#include <cyng/vm/context.h>
+#include <cyng/db/session.h>
+#include <cyng/table/meta_interface.h>
 #include <cyng/intrinsics/sets.h>
 #include <cyng/object.h>
 #include <boost/uuid/random_generator.hpp>
@@ -24,7 +25,7 @@ namespace node
 	{
 		/**
 		 * walk down SML message body recursively, collect data
-		 * and create an XML document.
+		 * and write data into SQL database.
 		 */
 		class db_exporter
 		{
@@ -46,8 +47,9 @@ namespace node
 			};
 
 		public:
-			db_exporter();
-			db_exporter(std::uint32_t source
+			db_exporter(cyng::table::mt_table const&, std::string const& schema);
+			db_exporter(cyng::table::mt_table const&, std::string const& schema
+				, std::uint32_t source
 				, std::uint32_t channel
 				, std::string const& target);
 
@@ -57,18 +59,19 @@ namespace node
 			 */
 			void reset();
 
-			void read(cyng::context&, cyng::tuple_t const&, std::size_t idx);
+			//void read(cyng::context&, cyng::tuple_t const&, std::size_t idx);
+			void write(cyng::db::session, cyng::tuple_t const&, std::size_t idx);
 
 		private:
 			/**
 			 * read SML message.
 			 */
-			void read_msg(cyng::context&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator, std::size_t idx);
-			void read_body(cyng::context&, cyng::object, cyng::object);
+			void read_msg(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator, std::size_t idx);
+			void read_body(cyng::db::session, cyng::object, cyng::object);
 			void read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_get_profile_list_response(cyng::context&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_get_proc_parameter_response(cyng::context&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			void read_get_profile_list_response(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			void read_get_proc_parameter_response(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_attention_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
 			void read_time(std::string const&, cyng::object);
@@ -86,11 +89,41 @@ namespace node
 			std::string read_server_id(cyng::object);
 			std::string read_client_id(cyng::object);
 
-			void read_period_list(cyng::context&, std::vector<obis> const&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_period_entry(cyng::context&, std::vector<obis> const&, std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			void read_period_list(cyng::db::session, std::vector<obis> const&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			void read_period_entry(cyng::db::session, std::vector<obis> const&, std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_param_tree(std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
+			//
+			//	database functions
+			//
+			void store_meta(cyng::db::session sp
+				, boost::uuids::uuid pk
+				, std::string const& trx
+				, std::size_t idx
+				, cyng::object ro_ime
+				, cyng::object act_ime
+				, cyng::object val_time
+				, cyng::object client		//	gateway
+				, cyng::object client_id	//	gateway - formatted
+				, cyng::object server		//	server
+				, cyng::object server_id	//	server - formatted
+				, cyng::object status);
+
+			void store_data(cyng::db::session sp
+				, boost::uuids::uuid pk
+				, std::string const& trx
+				, std::size_t idx
+				, obis const& code
+				, std::uint8_t unit
+				, std::string unit_name
+				, std::string type_name	//	CYNG data type name
+				, std::int8_t scaler	//	scaler
+				, cyng::object raw		//	raw value
+				, cyng::object value);
+
 		private:
+			const cyng::table::mt_table& mt_;
+			const std::string schema_;
 			const std::uint32_t source_;
 			const std::uint32_t channel_;
 			const std::string target_;

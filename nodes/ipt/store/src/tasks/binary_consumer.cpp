@@ -9,6 +9,7 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_bytes.hpp>
 #include <cyng/value_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/chrono.h>
@@ -35,6 +36,7 @@ namespace node
 		, suffix_(suffix)
 		, period_(period)
 		, task_state_(TASK_STATE_INITIAL)
+		, total_bytes_(0)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -51,7 +53,6 @@ namespace node
 
 	cyng::continuation binary_consumer::run()
 	{
-		CYNG_LOG_INFO(logger_, "binary_consumer is running");
 		switch (task_state_) {
 		case TASK_STATE_INITIAL:
 			//
@@ -61,6 +62,9 @@ namespace node
 			task_state_ = TASK_STATE_REGISTERED;
 			break;
 		default:
+			//CYNG_LOG_INFO(logger_, base_.get_class_name()
+			//	<< " has processed "
+			//	<< cyng::bytes_to_str(total_bytes_));
 			break;
 		}
 		base_.suspend(period_);
@@ -139,6 +143,7 @@ namespace node
 				<< file);
 
 			of.write(data.data(), data.size());
+			total_bytes_ += data.size();
 		}
 		else
 		{
@@ -151,12 +156,16 @@ namespace node
 
 		}
 
+		CYNG_LOG_INFO(logger_, base_.get_class_name()
+			<< " has processed "
+			<< cyng::bytes_to_str(total_bytes_));
+
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void binary_consumer::register_consumer()
 	{
-		base_.mux_.post(ntid_, 8, cyng::tuple_factory("ALL:RAW", base_.get_id()));
+		base_.mux_.post(ntid_, 10, cyng::tuple_factory("ALL:RAW", base_.get_id()));
 	}
 
 }

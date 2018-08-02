@@ -21,6 +21,9 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
+#ifdef _DEBUG
+#include <cyng/io/hex_dump.hpp>
+#endif
 
 namespace node 
 {
@@ -1108,7 +1111,20 @@ namespace node
 				CYNG_LOG_ERROR(logger_, tag 
 					<< " ("
 					<< cyng::value_cast<std::string>(rec["name"], "")
-					<< ") has no remote peer - data transfer failed");
+					<< ") has no remote peer - "
+					<< size
+					<< " bytes get lost");
+
+#ifdef _DEBUG
+				const auto p = cyng::object_cast<cyng::buffer_t>(data);
+				if (p != nullptr)
+				{
+					std::stringstream ss;
+					cyng::io::hex_dump hd;
+					hd(ss, p->begin(), p->end());
+					CYNG_LOG_TRACE(logger_, ss.str());
+				}
+#endif
 			}
 
 		}	, cyng::store::write_access("*Session")

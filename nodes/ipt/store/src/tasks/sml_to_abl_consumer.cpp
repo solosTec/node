@@ -6,6 +6,7 @@
  */
 
 #include "sml_to_abl_consumer.h"
+#include <smf/sml/defs.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -23,7 +24,6 @@ namespace node
 		, cyng::param_map_t cfg)
 	: base_(*btp)
 		, logger_(logger)
-		//, lines_()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -50,13 +50,46 @@ namespace node
 			<< " stopped");
 	}
 
-	cyng::continuation sml_abl_consumer::process(std::uint32_t channel
-		, std::uint32_t source
-		, std::string const& target
-		, std::string const& protocol
-		, cyng::buffer_t const& data)
+	cyng::continuation sml_abl_consumer::process(std::uint64_t line
+		, std::string target)
 	{
-		const std::uint64_t line = (((std::uint64_t)channel) << 32) | ((std::uint64_t)source);
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< " create line "
+			<< line
+			<< ':'
+			<< target);
 		return cyng::continuation::TASK_CONTINUE;
 	}
+
+	cyng::continuation sml_abl_consumer::process(std::uint64_t line
+		, std::uint16_t code
+		, std::size_t idx
+		, cyng::tuple_t msg)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< " line "
+			<< line
+			<< " received #"
+			<< idx
+			<< sml::messages::name(code));
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	cyng::continuation sml_abl_consumer::process(std::uint64_t line, std::size_t idx, std::uint16_t crc)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< " close line "
+			<< line);
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
 }

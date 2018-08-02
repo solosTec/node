@@ -9,6 +9,9 @@
 #include <cyng/vm/generator.h>
 #include <iostream>
 #include <ios>
+#ifdef __DEBUG
+#include <cyng/io/hex_dump.hpp>
+#endif
 
 namespace node 
 {
@@ -235,6 +238,7 @@ namespace node
 					//	next command
 					//
 					header_.reset();
+					input_.clear();
 				}
 				break;
 			default:
@@ -445,6 +449,18 @@ namespace node
 			parser_.input_.put(c_);
 			if (req.pos_ == size(parser_.header_))
 			{
+#ifdef __DEBUG
+				//	get content of buffer
+				boost::asio::const_buffer cbuffer(*parser_.stream_buffer_.data().begin());
+				const char* p = boost::asio::buffer_cast<const char*>(cbuffer);
+				const std::size_t size = boost::asio::buffer_size(cbuffer);
+
+				std::stringstream ss;
+				cyng::io::hex_dump hd;
+				hd(ss, p, p + size);
+				parser_.code_ << cyng::generate_invoke_unwinded("log.msg.trace", "dump pushdata", size, ss.str());
+#endif
+
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.transfer.pushdata"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
@@ -455,6 +471,13 @@ namespace node
 					, parser_.f_read_data);	//	size + data
 				return STATE_STREAM;
 			}
+#ifdef __DEBUG
+			else
+			{
+				parser_.code_ << cyng::generate_invoke_unwinded("log.msg.trace", "dump pushdata", req.pos_, +c_);
+
+			}
+#endif
 			return STATE_DATA;
 		}
 		parser::state parser::state_visitor::operator()(tp_res_pushdata_transfer& res) const

@@ -21,11 +21,6 @@ namespace node
 {
 	namespace ipt
 	{
-		/**
-		 * Combine two 32-bit integers into one 64-bit integer
-		 */
-		std::uint64_t build_line(std::uint32_t channel, std::uint32_t source);
-
 		class network
 		{
 		public:
@@ -37,8 +32,12 @@ namespace node
 			using msg_5 = std::tuple<cyng::buffer_t>;
 			using msg_6 = std::tuple<sequence_type, bool, std::string>;
 			using msg_7 = std::tuple<sequence_type>;
-			using msg_8 = std::tuple<std::string, std::size_t>;
-			using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8>;
+			using msg_8 = std::tuple<sequence_type, response_type, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t>;
+			using msg_9 = std::tuple<sequence_type, response_type, std::uint32_t>;
+
+			using msg_10 = std::tuple<std::string, std::size_t>;
+			using msg_11 = std::tuple<std::string, std::uint64_t, boost::uuids::uuid>;
+			using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8, msg_9, msg_10, msg_11>;
 
 		public:
 			network(cyng::async::base_task* bt
@@ -107,12 +106,49 @@ namespace node
 			/**
 			 * @brief slot [8]
 			 *
+			 * open push channel response
+			 * @param seq ipt sequence
+			 * @param res channel open response
+			 * @param channel channel id
+			 * @param source source id
+			 * @param status channel status
+			 * @param count number of targets reached
+			 */
+			cyng::continuation process(sequence_type seq
+				, response_type res
+				, std::uint32_t channel
+				, std::uint32_t source
+				, std::uint16_t status
+				, std::size_t count);
+
+			/**
+			 * @brief slot [9]
+			 *
+			 * register consumer.
+			 * open push channel response
+			 * @param seq ipt sequence
+			 * @param res channel open response
+			 * @param channel channel id
+			 */
+			cyng::continuation process(sequence_type seq
+				, response_type res
+				, std::uint32_t channel);
+
+			/**
+			 * @brief slot [10]
+			 *
 			 * register consumer.
 			 * @param type consumer type
 			 * @param tid task id
 			 */
 			cyng::continuation process(std::string type, std::size_t tid);
 
+			/**
+			 * @brief slot [11]
+			 *
+			 * remove line
+			 */
+			cyng::continuation process(std::string, std::uint64_t line, boost::uuids::uuid tag);
 
 		private:
 			void task_resume(cyng::context& ctx);
@@ -158,6 +194,11 @@ namespace node
 				, std::uint32_t source
 				, std::string const& target
 				, cyng::buffer_t const& data);
+
+			/**
+			 * @return vector with all consumers of the specified protocol
+			 */
+			std::vector<std::size_t> get_consumer(std::string protocol);
 
 		private:
 			cyng::async::base_task& base_;

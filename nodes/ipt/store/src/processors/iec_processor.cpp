@@ -6,30 +6,38 @@
  */
 
 #include "iec_processor.h"
+#include <smf/ipt/bus.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/io/hex_dump.hpp>
+#include <cyng/io/io_bytes.hpp>
 #include <cyng/vm/generator.h>
 #include <cyng/vm/domain/log_domain.h>
 
 #include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node
 {
 
-	iec_processor::iec_processor(cyng::io_service_t& ios
+	iec_processor::iec_processor(cyng::async::mux& m
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid tag
 		, std::uint32_t channel
 		, std::uint32_t source
 		, std::string target
-		, std::size_t tid)
+		, std::size_t tid
+		, std::vector<std::size_t> const& consumers)
 	: logger_(logger)
-		, vm_(ios, tag)
+		, vm_(m.get_io_service(), tag)
+		, mux_(m)
 		, tid_(tid)
+		, consumers_(consumers)
+		, line_(ipt::build_line(channel, source))
 		, parser_()
+		, total_bytes_(0)
 		//, parser_([this, channel, source, target](cyng::vector_t&& prg) {
 
 		//	CYNG_LOG_DEBUG(logger_, "IEC processor "
@@ -52,27 +60,38 @@ namespace node
 
 		//}, false, false)	//	not verbose, no log instructions
 	{
-		init();
+		init(channel, source, target);
 	}
 
-	void iec_processor::init()
+	void iec_processor::init(std::uint32_t channel
+		, std::uint32_t source
+		, std::string target)
 	{
 		//
 		//	vm_.run() could assert since there is a small chance that the VM controller detects
 		//	running_in_this_thread()
 		//
-		vm_.register_function("sml.msg", 1, std::bind(&iec_processor::sml_msg, this, std::placeholders::_1));
-		vm_.register_function("sml.eom", 1, std::bind(&iec_processor::sml_eom, this, std::placeholders::_1));
+		//vm_.register_function("sml.msg", 1, std::bind(&iec_processor::sml_msg, this, std::placeholders::_1));
+		//vm_.register_function("sml.eom", 1, std::bind(&iec_processor::sml_eom, this, std::placeholders::_1));
 
 		//
 		//	register logger domain
 		//
 		cyng::register_logger(logger_, vm_);
+
+		//
+		//	initial message to create a new line
+		//
+		for (auto tid : consumers_) {
+			mux_.post(tid, 0, cyng::tuple_factory(line_, target));
+		}
 	}
 
 	iec_processor::~iec_processor()
 	{
-		CYNG_LOG_TRACE(logger_, "~iec_processor()");
+		CYNG_LOG_TRACE(logger_, "iec_processor(~"
+			<< line_
+			<< ")");
 	}
 
 	void iec_processor::stop()
@@ -85,16 +104,40 @@ namespace node
 			//
 			//	halt VM
 			//
+			//
+			//	halt VM
+			//
+			const auto tag = vm_.tag();
 			vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
-			CYNG_LOG_INFO(logger_, "IEC processor stopped");
+
+			CYNG_LOG_INFO(logger_, "IEC processor "
+				<< line_
+				<< ':'
+				<< vm_.tag()
+				<< " stopped");
+
+			//
+			//	send shutdown message to remove this line
+			//
+			mux_.post(tid_, 11, cyng::tuple_factory("SML", line_, tag));
+
+			//
+			//	From here on, the behavior is undefined.
+			//
+
 		});
 	}
 
 	void iec_processor::parse(cyng::buffer_t const& data)
 	{
-		CYNG_LOG_INFO(logger_, "IEC processor processing "
-			<< data.size()
-			<< " bytes");
+		//CYNG_LOG_INFO(logger_, "IEC processor processing "
+		//	<< data.size()
+		//	<< " bytes");
+
+		total_bytes_ += data.size();
+
+		CYNG_LOG_TRACE(logger_, cyng::bytes_to_str(total_bytes_)
+			<< " IEC data processed");
 
 		//cyng::io::hex_dump hd;
 		//std::stringstream ss;

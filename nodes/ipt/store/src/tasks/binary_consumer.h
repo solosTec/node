@@ -12,7 +12,6 @@
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
 #include <cyng/intrinsics/buffer.h>
-#include <map>
 
 namespace node
 {
@@ -59,6 +58,7 @@ namespace node
 			TASK_STATE_INITIAL,
 			TASK_STATE_REGISTERED,
 		} task_state_;
+		std::size_t total_bytes_;
 	};
 }
 

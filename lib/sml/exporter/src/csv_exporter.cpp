@@ -5,7 +5,7 @@
  *
  */
 
-#include <smf/sml/exporter/db_exporter.h>
+#include <smf/sml/exporter/csv_exporter.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/srv_id_io.h>
@@ -17,57 +17,78 @@
 #include <cyng/io/serializer.h>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/intrinsics/traits/tag_names.hpp>
-#include <cyng/sql.h>
-#include <cyng/db/interface_statement.h>
 #include <cyng/factory.h>
 
 #include <boost/uuid/nil_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node
 {
 	namespace sml
 	{
 
-		db_exporter::db_exporter(cyng::table::mt_table const& mt, std::string const& schema)
-			: mt_(mt)
-			, schema_(schema)
+		csv_exporter::csv_exporter(boost::filesystem::path root_dir
+			, std::string prefix
+			, std::string suffix
+			, bool header)
+		: root_dir_(root_dir)
+			, prefix_(prefix)
+			, suffix_(suffix)
+			, header_(header)
 			, source_(0)
 			, channel_(0)
 			, target_()
 			, rgn_()
 			, ro_(rgn_())
+			, ofstream_()
 		{
 			reset();
 		}
 
-		db_exporter::db_exporter(cyng::table::mt_table const& mt
-			, std::string const& schema
+		csv_exporter::csv_exporter(boost::filesystem::path root_dir
+			, std::string prefix
+			, std::string suffix
+			, bool header
 			, std::uint32_t source
 			, std::uint32_t channel
 			, std::string const& target)
-		: mt_(mt)
-			, schema_(schema)
+		: root_dir_(root_dir)
+			, prefix_(prefix)
+			, suffix_(suffix)
+			, header_(header)
 			, source_(source)
 			, channel_(channel)
 			, target_(target)
 			, rgn_()
 			, ro_(rgn_())
+			, ofstream_()
 		{
 			reset();
 		}
 
+		csv_exporter::~csv_exporter()
+		{
+		}
 
-		void db_exporter::reset()
+		void csv_exporter::reset()
 		{
 			ro_.reset(rgn_(), 0);
 		}
 
-		void db_exporter::write(cyng::db::session sp, cyng::tuple_t const& msg, std::size_t idx)
+		void csv_exporter::write_header()
 		{
-			read_msg(sp, msg.begin(), msg.end(), idx);
+			ofstream_
+				<< "pk;idx;obis;value;unit"
+				<< std::endl
+				;
 		}
 
-		void db_exporter::read_msg(cyng::db::session sp, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end, std::size_t idx)
+		void csv_exporter::write(cyng::tuple_t const& msg, std::size_t idx)
+		{
+			read_msg(msg.begin(), msg.end(), idx);
+		}
+
+		void csv_exporter::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end, std::size_t idx)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
@@ -103,7 +124,7 @@ namespace node
 			if (choice.size() == 2)
 			{
 				ro_.set_value("code", choice.front());
-				read_body(sp, choice.front(), choice.back());
+				read_body(choice.front(), choice.back());
 			}
 
 			//
@@ -112,7 +133,7 @@ namespace node
 			ro_.set_value("crc16", *pos);
 		}
 
-		void db_exporter::read_body(cyng::db::session sp, cyng::object type, cyng::object body)
+		void csv_exporter::read_body(cyng::object type, cyng::object body)
 		{
 			auto code = cyng::value_cast<std::uint16_t>(type, 0);
 			//node.append_attribute("type").set_value(messages::name(code));
@@ -125,6 +146,7 @@ namespace node
 			case BODY_OPEN_REQUEST:
 				read_public_open_request(tpl.begin(), tpl.end());
 				break;
+
 			case BODY_OPEN_RESPONSE:
 
 				//
@@ -133,11 +155,13 @@ namespace node
 				ro_.set_value("roTime", cyng::make_now());
 				read_public_open_response(tpl.begin(), tpl.end());
 				break;
+
 			case BODY_CLOSE_REQUEST:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_CLOSE_RESPONSE:
 				//cyng::xml::write(node.append_child("data"), body);
+				if (ofstream_.is_open())	ofstream_.close();
 				break;
 			case BODY_GET_PROFILE_PACK_REQUEST:
 				//cyng::xml::write(node.append_child("data"), body);
@@ -149,13 +173,13 @@ namespace node
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_GET_PROFILE_LIST_RESPONSE:
-				read_get_profile_list_response(sp, tpl.begin(), tpl.end());
+				read_get_profile_list_response(tpl.begin(), tpl.end());
 				break;
 			case BODY_GET_PROC_PARAMETER_REQUEST:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_GET_PROC_PARAMETER_RESPONSE:
-				read_get_proc_parameter_response(sp, tpl.begin(), tpl.end());
+				read_get_proc_parameter_response(tpl.begin(), tpl.end());
 				break;
 			case BODY_SET_PROC_PARAMETER_REQUEST:
 				//cyng::xml::write(node, body);
@@ -178,16 +202,12 @@ namespace node
 			}
 		}
 
-		void db_exporter::read_public_open_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		void csv_exporter::read_public_open_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 7, "Public Open Request");
 
-			//
-			//	reset context
-			//
-			reset();
-			
+		
 			//	codepage "ISO 8859-15"
 			ro_.set_value("codepage", *pos++);
 
@@ -223,22 +243,20 @@ namespace node
 
 		}
 
-		void db_exporter::read_public_open_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		void csv_exporter::read_public_open_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 6, "Public Open Response");
 
-			//
-			//	reset context
-			//
-			reset();
-			
+	
 			//	codepage "ISO 8859-15"
 			ro_.set_value("codepage", *pos++);
 
 			//
 			//	clientId (MAC)
 			//	Typically 7 bytes to identify gateway/MUC
+			//	"client", "clientId"
+			//
 			read_client_id(*pos++);
 
 			//
@@ -248,6 +266,7 @@ namespace node
 
 			//
 			//	serverId
+			//	"server", "serverId"
 			//
 			read_server_id(*pos++);
 
@@ -261,10 +280,20 @@ namespace node
 
 		}
 
-		void db_exporter::read_get_profile_list_response(cyng::db::session sp, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		void csv_exporter::read_get_profile_list_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
+
+			std::string server_id;
+			server_id = cyng::value_cast(ro_.get_value("serverId"), server_id);
+
+			ofstream_.open((root_dir_ / get_filename(prefix_ + server_id, suffix_, source_, channel_, target_)).string());
+
+			if (header_) {
+				header_ = false;
+				write_header();
+			}
 
 			//
 			//	serverId
@@ -301,7 +330,7 @@ namespace node
 			//	the we store the entries in TSMLPeriodEntry.
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(*pos++, tpl);
-			read_period_list(sp, path, tpl.begin(), tpl.end());
+			read_period_list(path, tpl.begin(), tpl.end());
 
 			//	rawdata
 			ro_.set_value("rawData", *pos++);
@@ -309,19 +338,7 @@ namespace node
 			//	periodSignature
 			ro_.set_value("signature", *pos++);
 
-			store_meta(sp
-				, ro_.pk_
-				, ro_.trx_
-				, ro_.idx_
-				, ro_.get_value("roTime")
-				, ro_.get_value("actTime")
-				, ro_.get_value("valTime")
-				, ro_.get_value("client")	//	gateway
-				, ro_.get_value("clientId")	//	gateway - formatted
-				, ro_.get_value("server")	//	server
-				, ro_.get_value("serverId")	//	server - formatted
-				, ro_.get_value("status"));
-			//ctx.attach(cyng::generate_invoke("db.insert.meta"
+			//store_meta(sp
 			//	, ro_.pk_
 			//	, ro_.trx_
 			//	, ro_.idx_
@@ -332,14 +349,11 @@ namespace node
 			//	, ro_.get_value("clientId")	//	gateway - formatted
 			//	, ro_.get_value("server")	//	server
 			//	, ro_.get_value("serverId")	//	server - formatted
-			//	, ro_.get_value("status")
-			//	, source_
-			//	, channel_
-			//	, target_));
+			//	, ro_.get_value("status"));
 
 		}
 
-		void db_exporter::read_get_proc_parameter_response(cyng::db::session sp, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		void csv_exporter::read_get_proc_parameter_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "Get Proc Parameter Response");
@@ -363,7 +377,7 @@ namespace node
 
 		}
 
-		void db_exporter::read_attention_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		void csv_exporter::read_attention_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 4, "Attention Response");
@@ -392,7 +406,7 @@ namespace node
 
 		}
 
-		void db_exporter::read_param_tree(std::size_t depth
+		void csv_exporter::read_param_tree(std::size_t depth
 			, cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)
 		{
@@ -423,8 +437,7 @@ namespace node
 			}
 		}
 
-		void db_exporter::read_period_list(cyng::db::session sp
-			, std::vector<obis> const& path
+		void csv_exporter::read_period_list(std::vector<obis> const& path
 			, cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)
 		{
@@ -440,14 +453,13 @@ namespace node
 			{
 				cyng::tuple_t tpl;
 				tpl = cyng::value_cast(*pos++, tpl);
-				read_period_entry(sp, path, counter, tpl.begin(), tpl.end());
+				read_period_entry(path, counter, tpl.begin(), tpl.end());
 				++counter;
 
 			}
 		}
 
-		void db_exporter::read_period_entry(cyng::db::session sp
-			, std::vector<obis> const& path
+		void csv_exporter::read_period_entry(std::vector<obis> const& path
 			, std::size_t index
 			, cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)
@@ -480,33 +492,48 @@ namespace node
 			//
 			ro_.set_value("signature", *pos++);
 
-			store_data(sp
-				, ro_.pk_
-				, ro_.trx_
-				, ro_.idx_
-				, code	//	.to_buffer()
-				, unit
-				, get_unit_name(unit)
-				, cyng::traits::get_type_name(type_tag)	//	CYNG data type name
-				, scaler	//	scaler
-				, ro_.get_value("raw")	//	raw value
-				, ro_.get_value("value"));	//	formatted value
-
-			//ctx.attach(cyng::generate_invoke("db.insert.data"
+			//store_meta(sp
 			//	, ro_.pk_
 			//	, ro_.trx_
 			//	, ro_.idx_
-			//	, code.to_buffer()
+			//	, ro_.get_value("roTime")
+			//	, ro_.get_value("actTime")
+			//	, ro_.get_value("valTime")
+			//	, ro_.get_value("client")	//	gateway
+			//	, ro_.get_value("clientId")	//	gateway - formatted
+			//	, ro_.get_value("server")	//	server
+			//	, ro_.get_value("serverId")	//	server - formatted
+			//	, ro_.get_value("status"));
+
+			//store_data(sp
+			//	, ro_.pk_
+			//	, ro_.trx_
+			//	, ro_.idx_
+			//	, code	//	.to_buffer()
 			//	, unit
 			//	, get_unit_name(unit)
 			//	, cyng::traits::get_type_name(type_tag)	//	CYNG data type name
 			//	, scaler	//	scaler
 			//	, ro_.get_value("raw")	//	raw value
-			//	, ro_.get_value("value")));	//	formatted value
+			//	, ro_.get_value("value"));	//	formatted value
+
+
+			ofstream_
+				<< ro_.pk_
+				<< ";"
+				<< ro_.trx_
+				<< ";"
+				<< code
+				<< ";"
+				<< cyng::io::to_str(ro_.get_value("value"))
+				<< ";"
+				<< get_unit_name(unit)
+				<< std::endl
+				;
 		}
 
 
-		void db_exporter::read_time(std::string const& name, cyng::object obj)
+		void csv_exporter::read_time(std::string const& name, cyng::object obj)
 		{
 			cyng::tuple_t choice;
 			choice = cyng::value_cast(obj, choice);
@@ -532,7 +559,7 @@ namespace node
 
 		}
 
-		std::vector<obis> db_exporter::read_param_tree_path(cyng::object obj)
+		std::vector<obis> csv_exporter::read_param_tree_path(cyng::object obj)
 		{
 			std::vector<obis> result;
 
@@ -548,7 +575,7 @@ namespace node
 			return result;
 		}
 
-		obis db_exporter::read_obis(cyng::object obj)
+		obis csv_exporter::read_obis(cyng::object obj)
 		{
 			cyng::buffer_t tmp;
 			tmp = cyng::value_cast(obj, tmp);
@@ -556,16 +583,14 @@ namespace node
 			return obis(tmp);
 		}
 
-		std::uint8_t db_exporter::read_unit(std::string const& name, cyng::object obj)
+		std::uint8_t csv_exporter::read_unit(std::string const& name, cyng::object obj)
 		{
 			std::uint8_t unit = cyng::value_cast<std::uint8_t>(obj, 0);
-			//node.append_attribute("type").set_value(get_unit_name(unit));
-			//node.append_child(pugi::node_pcdata).set_value(std::to_string(+unit).c_str());
 			ro_.set_value(name, obj);
 			return unit;
 		}
 
-		std::string db_exporter::read_string(std::string const& name, cyng::object obj)
+		std::string csv_exporter::read_string(std::string const& name, cyng::object obj)
 		{
 			cyng::buffer_t buffer;
 			buffer = cyng::value_cast(obj, buffer);
@@ -574,7 +599,7 @@ namespace node
 			return str;
 		}
 
-		std::string db_exporter::read_server_id(cyng::object obj)
+		std::string csv_exporter::read_server_id(cyng::object obj)
 		{
 			cyng::buffer_t buffer;
 			buffer = cyng::value_cast(obj, buffer);
@@ -584,7 +609,7 @@ namespace node
 			return str;
 		}
 
-		std::string db_exporter::read_client_id(cyng::object obj)
+		std::string csv_exporter::read_client_id(cyng::object obj)
 		{
 			cyng::buffer_t buffer;
 			buffer = cyng::value_cast(obj, buffer);
@@ -594,13 +619,12 @@ namespace node
 			return str;
 		}
 
-		std::int8_t db_exporter::read_scaler(cyng::object obj)
+		std::int8_t csv_exporter::read_scaler(cyng::object obj)
 		{
-// 			return cyng::value_cast<std::int8_t>(obj, 0);
  			return cyng::numeric_cast<std::int8_t>(obj, 0);
 		}
 
-		std::size_t db_exporter::read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj)
+		std::size_t csv_exporter::read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj)
 		{
 			//
 			//	write value
@@ -715,7 +739,7 @@ namespace node
 			return type_tag;
 		}
 
-		void db_exporter::read_parameter(obis code, cyng::object obj)
+		void csv_exporter::read_parameter(obis code, cyng::object obj)
 		{
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(obj, tpl);
@@ -758,170 +782,14 @@ namespace node
 				//cyng::xml::write(node, obj);
 			}
 		}
-
-		void db_exporter::store_meta(cyng::db::session sp
-			, boost::uuids::uuid pk
-			, std::string const& trx
-			, std::size_t idx
-			, cyng::object obj_ro_time
-			, cyng::object obj_act_time
-			, cyng::object obj_val_time
-			, cyng::object obj_client		//	gateway
-			, cyng::object obj_client_id	//	gateway - formatted
-			, cyng::object obj_server		//	server
-			, cyng::object obj_server_id	//	server - formatted
-			, cyng::object obj_status)
-		{
-
-			cyng::sql::command cmd(mt_.find("TSMLMeta")->second, sp.get_dialect());
-			cmd.insert();
-			auto sql = cmd.to_str();
-			auto stmt = sp.create_statement();
-			std::pair<int, bool> r = stmt->prepare(sql);
-			BOOST_ASSERT(r.first == 12);	//	12 parameters to bind (for both supprted schemas)
-			BOOST_ASSERT(r.second);
-
-			if (boost::algorithm::equals(schema_, "v4.0"))
-			{
-				//
-				//	examples:
-				//
-				//	sqlite> select * from TSMLMeta where roTime > julianday('2018-07-01');
-				//	ident|trxID|midx|roTime|actTime|valTime|gateway|server|meter|status|source|channel
-				//	91e54897-68aa-477b-97ae-efe459c192be|618732131|1|2458300.51030093|2458300.51070602|63122537|0500153b025459|01-2d2c-40800078-1c-04|78008040|0|949333985|581869302
-				//	fa6f80d6-2a18-4873-ae15-407629529757|535249935|1|2458300.51025463|2458300.51070602|81491646|0500153b02499e|01-a815-76007904-01-02|04790076|131712|545404204|581869302
-				//	5e45f89d-9a36-4f9b-8e79-8fdd617ace8f|65331623|1|2458300.50975694|2458300.51070602|41419967|0500153b023b36|02-d81c-05252359-ff-02|59232505|0|-1579004998|581869302
-				//	a21ee414-8442-4b5b-bab0-2a815a034e73|510800075|1|2458300.50994213|2458300.51070602|55253893|0500153b025182|01-a815-77007904-01-02|04790077|131712|-372047867|581869302
-				//	1df825d4-93f7-4518-b493-030b150ea3fa|439163211|1|2458300.51001157|2458300.51070602|92472720|0500153b024974|01-a815-46007904-01-02|04790046|131712|-1946129057|581869302
-				//	c664ca3b-4dbf-4473-a847-f404118ce3fc|612380399|1|2458300.51028935|2458300.51070602|89139036|0500153b024996|01-a815-73007904-01-02|04790073|131714|-133711905|581869302
-				//	5d2f7607-21b4-4a0b-835e-055118d8feb9|523186555|3|2458300.51025463|2458300.51070602|81442784|0500153b024998|01-a815-75007904-01-02|04790075|131712|-30574576|581869302
-				//	90202d0f-46df-4f4e-9327-cd77ef96d0bb|51786655|4|2458300.51037037|2458300.51070602|44248573|0500153b024952|01-a815-65957202-01-02|02729565|640|418932835|581869302
-				//	f29ff3f0-f570-43a5-93f2-933838e42d1f|514196843|4|2458300.51011574|2458300.51070602|79963528|0500153b024972|01-a815-44007904-01-02|04790044|131778|537655879|581869302
-				//	601a7c18-ee9a-4957-8d06-d255b6b42ca2|533395235|1|2458300.51017361|2458300.51070602|48450161|0500153b026d31|02-d81c-05252350-ff-02|50232505|0|-150802599|581869302
-				//	b70815c1-74e9-4881-b9d8-00db2f9a7fe6|49606703|4|2458300.51018519|2458300.51070602|44489752|0500153b026d35|01-a815-78957202-01-02|02729578|640|1323567403|581869302
-
-				cyng::buffer_t server, client;
-				server = cyng::value_cast(obj_server, server);
-				client = cyng::value_cast(obj_client, client);
-
-				stmt->push(cyng::make_object(pk), 0)	//	ident
-					.push(cyng::make_object(trx), 16)	//	trxID
-					.push(cyng::make_object(idx), 0)	//	midx
-					.push(obj_ro_time, 0)	//	roTime
-					.push(obj_act_time, 0)	//	actTime
-					.push(obj_val_time, 0)	//	valTime
-					.push(cyng::make_object(cyng::io::to_hex(client)), 0)	//	gateway/client
-																			//	clientId from_server_id
-					.push(cyng::make_object(sml::from_server_id(server)), 0)	//	server
-																				//	serverId
-					.push(cyng::make_object(sml::get_serial(server)), 0)	//	meter
-					.push(obj_status, 0)	//	status
-					.push(cyng::make_object(source_), 0)	//	source
-					.push(cyng::make_object(channel_), 0)	//	channel
-					;
-			}
-			else
-			{
-				//
-				//	examples:
-				//
-				//	pk|trxID|msgIdx|roTime|actTime|valTime|gateway|server|status|source|channel|target
-				//	0bf4bfff-6a83-411d-ab60-1e98fc232fd2|51207|1|2458299.33280093|2458301.43333333|98573619|00:15:3b:02:29:7e|01-e61e-13090016-3c-07|0|-1324790809|-1649078317|water@solostec
-
-				//	bind parameters
-				stmt->push(cyng::make_object(pk), 0)	//	pk
-					.push(cyng::make_object(trx), 16)	//	trxID
-					.push(cyng::make_object(idx), 0)	//	msgIdx
-					.push(obj_ro_time, 0)	//	roTime
-					.push(obj_act_time, 0)	//	actTime
-					.push(obj_val_time, 0)	//	valTime
-											//	client
-					.push(obj_client_id, 0)	//	gateway
-											//	server
-					.push(obj_server_id, 0)	//	server
-					.push(obj_status, 0)	//	status
-					.push(cyng::make_object(source_), 0)	//	source
-					.push(cyng::make_object(channel_), 0)	//	channel
-					.push(cyng::make_object(target_), 32)	//	target
-					;
-			}
-
-			if (!stmt->execute())
-			{
-				//CYNG_LOG_ERROR(logger_, sql << " failed");
-
-			}
-			stmt->clear();
-		}
-
-		void db_exporter::store_data(cyng::db::session sp
-				, boost::uuids::uuid pk
-				, std::string const& trx
-				, std::size_t idx
-				, obis const& code
-				, std::uint8_t unit
-				, std::string unit_name
-				, std::string type_name	//	CYNG data type name
-				, std::int8_t scaler	//	scaler
-				, cyng::object raw		//	raw value
-				, cyng::object value)
-		{
-			cyng::sql::command cmd(mt_.find("TSMLData")->second, sp.get_dialect());
-			cmd.insert();
-			auto sql = cmd.to_str();
-			//CYNG_LOG_INFO(logger_, "db.insert.data " << sql);
-			auto stmt = sp.create_statement();
-			std::pair<int, bool> r = stmt->prepare(sql);
-			BOOST_ASSERT(r.first == 8);	//	11 parameters to bind
-			BOOST_ASSERT(r.second);
-
-			//cyng::buffer_t tmp = cyng::value_cast(frame.at(3), tmp);
-
-			if (boost::algorithm::equals(schema_, "v4.0"))
-			{
-				//sml::obis code(cyng::value_cast(frame.at(3), tmp));
-				stmt->push(cyng::make_object(pk), 36)	//	pk
-					.push(cyng::make_object(sml::to_string(code)), 24)	//	OBIS
-					.push(cyng::make_object(unit), 0)	//	unitCode
-					.push(cyng::make_object(unit_name), 0)	//	unitName
-					.push(cyng::make_object(type_name), 0)	//	SML data type
-					.push(cyng::make_object(scaler), 0)	//	scaler
-					.push(raw, 0)	//	value
-					.push(value, 512)	//	result
-					;
-			}
-			else
-			{
-				stmt->push(cyng::make_object(pk), 36)	//	pk
-					.push(cyng::make_object(cyng::io::to_hex(code.to_buffer())), 24)	//	OBIS
-					.push(cyng::make_object(unit), 0)	//	unitCode
-					.push(cyng::make_object(unit_name), 0)	//	unitName
-					.push(cyng::make_object(type_name), 0)	//	SML data type
-					.push(cyng::make_object(scaler), 0)	//	scaler
-					.push(raw, 0)	//	value
-					.push(value, 512)	//	result
-					;
-
-			}
-
-			if (!stmt->execute())
-			{
-				//CYNG_LOG_ERROR(logger_, sql << " failed with the following data set: " << cyng::io::to_str(frame));
-
-			}
-			stmt->clear();
-
-		}
-
-
-		db_exporter::readout::readout(boost::uuids::uuid pk)
+		csv_exporter::readout::readout(boost::uuids::uuid pk)
 			: pk_(pk)
 			, idx_(0)
 			, trx_()
 			, values_()
 		{}
 
-		void db_exporter::readout::reset(boost::uuids::uuid pk, std::size_t idx)
+		void csv_exporter::readout::reset(boost::uuids::uuid pk, std::size_t idx)
 		{
 			pk_ = pk;
 			idx_ = idx;
@@ -929,31 +797,72 @@ namespace node
 			values_.clear();
 		}
 
-		db_exporter::readout& db_exporter::readout::set_trx(cyng::buffer_t const& buffer)
+		csv_exporter::readout& csv_exporter::readout::set_trx(cyng::buffer_t const& buffer)
 		{
 			trx_ = cyng::io::to_ascii(buffer);
 			return *this;
 		}
 
-		db_exporter::readout& db_exporter::readout::set_index(std::size_t idx)
+		csv_exporter::readout& csv_exporter::readout::set_index(std::size_t idx)
 		{
 			idx_ = idx;
 			return *this;
 		}
 
-		db_exporter::readout& db_exporter::readout::set_value(std::string const& name, cyng::object value)
+		csv_exporter::readout& csv_exporter::readout::set_value(std::string const& name, cyng::object value)
 		{
 			values_[name] = value;
 			return *this;
 		}
 
-		cyng::object db_exporter::readout::get_value(std::string const& name) const
+		cyng::object csv_exporter::readout::get_value(std::string const& name) const
 		{
 			auto pos = values_.find(name);
 			return (pos != values_.end())
 				? pos->second
 				: cyng::make_object()
 				;
+		}
+
+
+		boost::filesystem::path get_filename(std::string prefix
+			, std::string suffix
+			, std::uint32_t source
+			, std::uint32_t channel
+			, std::string const& target)
+		{
+			auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			std::tm time = cyng::chrono::convert_utc(tt);
+
+			std::stringstream ss;
+			ss
+				<< prefix
+				<< '-'
+				<< std::hex
+				<< std::setfill('0')
+				<< std::setw(4)
+				<< channel
+				<< '-'
+				<< std::setw(4)
+				<< source
+				<< '-'
+				<< std::dec
+				<< cyng::chrono::year(time)
+				<< std::setw(2)
+				<< cyng::chrono::month(time)
+				<< std::setw(2)
+				<< 'T'
+				<< cyng::chrono::day(time)
+				<< std::setw(2)
+				<< cyng::chrono::hour(time)
+				<< std::setw(2)
+				<< cyng::chrono::minute(time)
+				<< '-'
+				<< target
+				<< '.'
+				<< suffix
+				;
+			return ss.str();
 		}
 
 

@@ -46,14 +46,6 @@ set (node_ipt_store_tasks
 	nodes/ipt/store/src/tasks/sml_to_csv_consumer.cpp
 	nodes/ipt/store/src/tasks/binary_consumer.h
 	nodes/ipt/store/src/tasks/binary_consumer.cpp
-
-	nodes/ipt/store/src/tasks/write_json.h
-	nodes/ipt/store/src/tasks/write_json.cpp
-	nodes/ipt/store/src/tasks/write_abl.h
-	nodes/ipt/store/src/tasks/write_abl.cpp
-	nodes/ipt/store/src/tasks/write_log.h
-	nodes/ipt/store/src/tasks/write_log.cpp
-
 )
 set (node_ipt_store_processors
 	nodes/ipt/store/src/processors/sml_processor.h
@@ -68,6 +60,8 @@ set (node_ipt_store_exporter
 	lib/sml/exporter/src/xml_exporter.cpp
 	src/main/include/smf/sml/exporter/db_exporter.h
 	lib/sml/exporter/src/db_exporter.cpp
+	src/main/include/smf/sml/exporter/csv_exporter.h
+	lib/sml/exporter/src/csv_exporter.cpp
 
 )
 	
