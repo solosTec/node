@@ -13,6 +13,8 @@
 #include <smf/sml/protocol/parser.h>
 #include <smf/sml/status.h>
 #include "../kernel.h"
+#include "../executor.h"
+
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -31,13 +33,18 @@ namespace node
 			using msg_4 = std::tuple<sequence_type, bool, std::uint32_t>;
 			using msg_5 = std::tuple<cyng::buffer_t>;
 			using msg_6 = std::tuple<sequence_type, bool, std::string>;
-			using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6>;
+			using msg_7 = std::tuple<sequence_type>;
+			using msg_8 = std::tuple<sequence_type, response_type, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t>;
+			using msg_9 = std::tuple<sequence_type, response_type, std::uint32_t>;
+
+			using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8, msg_9>;
 
 		public:
 			network(cyng::async::base_task* bt
 				, cyng::logging::log_ptr
 				, node::sml::status& status_word
 				, cyng::store::db& config_db
+				, boost::uuids::uuid tag
 				, master_config_t const& cfg
 				, std::string account
 				, std::string pwd
@@ -96,6 +103,44 @@ namespace node
 			 */
 			cyng::continuation process(sequence_type, bool, std::string const&);
 
+			/**
+			 * @brief slot [7]
+			 *
+			 * open connection closed
+			 */
+			cyng::continuation process(sequence_type);
+
+			/**
+			 * @brief slot [8]
+			 *
+			 * open push channel response
+			 * @param seq ipt sequence
+			 * @param res channel open response
+			 * @param channel channel id
+			 * @param source source id
+			 * @param status channel status
+			 * @param count number of targets reached
+			 */
+			cyng::continuation process(sequence_type seq
+				, response_type res
+				, std::uint32_t channel
+				, std::uint32_t source
+				, std::uint16_t status
+				, std::size_t count);
+
+			/**
+			 * @brief slot [9]
+			 *
+			 * register consumer.
+			 * open push channel response
+			 * @param seq ipt sequence
+			 * @param res channel open response
+			 * @param channel channel id
+			 */
+			cyng::continuation process(sequence_type seq
+				, response_type res
+				, std::uint32_t channel);
+
 		private:
 			void task_resume(cyng::context& ctx);
 			void reconfigure(cyng::context& ctx);
@@ -122,6 +167,11 @@ namespace node
 			 * Provide core functions of an SML gateway
 			 */
 			node::sml::kernel core_;
+
+			/**
+			 * Apply changed configurations
+			 */
+			sml::executor exec_;
 
 			/**
 			 * maintain relation between sequence and registered target

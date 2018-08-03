@@ -23,11 +23,11 @@ namespace node
 	, config_(cfg)
 	, master_(0)
 	{
-		CYNG_LOG_INFO(logger_, "task #"
-		<< base_.get_id()
-		<< " <"
-		<< base_.get_class_name()
-		<< "> is running");
+		CYNG_LOG_INFO(logger_, "initialize task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< ">");
 
 		//
 		//	ToDo: implement request handler

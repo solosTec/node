@@ -51,6 +51,7 @@ namespace node
 		, cyng::logging::log_ptr
 		, sml::status&
 		, cyng::store::db&
+		, boost::uuids::uuid tag
 		, cyng::vector_t const& cfg
 		, std::string account
 		, std::string pwd
@@ -404,6 +405,7 @@ namespace node
 			, logger
 			, status_word
 			, config_db
+			, tag
 			, cyng::value_cast(dom.get("ipt"), tmp)
 			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
@@ -489,6 +491,7 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, sml::status& status
 		, cyng::store::db& config_db
+		, boost::uuids::uuid tag
 		, cyng::vector_t const& cfg
 		, std::string account
 		, std::string pwd
@@ -503,6 +506,7 @@ namespace node
 			, logger
 			, status
 			, config_db
+			, tag
 			, ipt::load_cluster_cfg(cfg)
 			, account
 			, pwd
@@ -566,62 +570,7 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
 		}
-		else
-		{
-			//	insert demo device
-			config.insert("devices"
-				, cyng::table::key_generator(sml::to_gateway_srv_id(mac))
-				, cyng::table::data_generator(std::chrono::system_clock::now()
-					, "---"
-					, true	//	visible
-					, true	//	active
-					, "demo entry"
-					, 0ull	//	status
-					, cyng::buffer_t{ 0, 0 }	//	mask
-					, 26000ul	//	interval
-					, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-					, cyng::buffer_t{}	//	aes
-					, "user"
-					, "pwd")
-				, 1	//	generation
-				, tag);
-
-			config.insert("devices"
-				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }))
-				, cyng::table::data_generator(std::chrono::system_clock::now()
-					, "---"
-					, true	//	visible
-					, true	//	active
-					, "01 A8 15 74 31 45 05 01 02"
-					, 0ull	//	status
-					, cyng::buffer_t{ 0, 0 }	//	mask
-					, 26000ul	//	interval
-					, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-					, cyng::buffer_t{}	//	aes
-					, "user"
-					, "pwd")
-				, 1	//	generation
-				, tag);
-
-			config.insert("devices"
-				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02 }))
-				, cyng::table::data_generator(std::chrono::system_clock::now()
-					, "---"
-					, true	//	visible
-					, false	//	active
-					, "01 E6 1E 74 31 45 05 01 02"
-					, 0ull	//	status
-					, cyng::buffer_t{ 0, 0 }	//	mask
-					, 26000ul	//	interval
-					, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-					, cyng::buffer_t{}	//	aes
-					, "user"
-					, "pwd")
-				, 1	//	generation
-				, tag);
-		}
-
-		if (!config.create_table(cyng::table::make_meta_table<2, 5>("push.ops",
+		if (!config.create_table(cyng::table::make_meta_table<2, 6>("push.ops",
 			{ "serverID"	//	server ID
 			, "idx"			//	index
 			//	-- body
@@ -630,6 +579,8 @@ namespace node
 			, "target"		//	target name
 			, "source"		//	push source (profile, installation parameters, list of visible sensors/actors)
 			, "profile"		//	"Lastgang"
+			, "task"		//	associated task id
+
 			},
 			{ cyng::TC_BUFFER		//	server ID
 			, cyng::TC_UINT8		//	index
@@ -639,6 +590,7 @@ namespace node
 			, cyng::TC_STRING		//	target
 			, cyng::TC_UINT8		//	source
 			, cyng::TC_UINT8		//	profile
+			, cyng::TC_UINT64		//	task
 
 			},
 			{ 9		//	server ID
@@ -649,34 +601,10 @@ namespace node
 			, 64	//	target
 			, 0		//	source
 			, 0		//	profile
+			, 0		//	task id
 			})))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
-		}
-		else
-		{
-			boost::uuids::random_generator rgen;
-
-			//	insert demo push.ops
-			config.insert("push.ops"
-				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 2u)
-				, cyng::table::data_generator(900u
-					, 4u	//	delay
-					, "data.sink-2.sml"
-					, 1		//	source
-					, 1)	//	profile
-				, 1	//	generation
-				, tag);
-
-			config.insert("push.ops"
-				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 3u)
-				, cyng::table::data_generator(1800u
-					, 12u	//	delay
-					, "data.sink-3.sml"
-					, 1		//	source
-					, 3)	//	profile
-				, 1	//	generation
-				, tag);
 		}
 	}
 }

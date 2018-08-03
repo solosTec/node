@@ -20,7 +20,6 @@
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/vm/generator.h>
-//#include <cyng/intrinsics/buffer.h>
 
 
 namespace node 
@@ -48,11 +47,11 @@ namespace node
 				, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:test"))
 				, logger_(logger)
 			{
-				CYNG_LOG_INFO(logger_, "task #"
+				CYNG_LOG_INFO(logger_, "initialize task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> is running");
+					<< ">");
 			}
 
 			cyng::continuation run()

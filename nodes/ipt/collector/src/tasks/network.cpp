@@ -27,11 +27,11 @@ namespace node
 			, storage_tsk_(0)	//	ToDo
 			, config_(cfg)
 		{
-			CYNG_LOG_INFO(logger_, "task #"
+			CYNG_LOG_INFO(logger_, "initialize task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> is running");
+				<< ">");
 
 			//
 			//	request handler
@@ -54,11 +54,6 @@ namespace node
 			else
 			{
 				//
-				//	set default sk
-				//
-				//bus_->vm_.async_run(cyng::generate_invoke("ipt.set.sk.def", config_.get().sk_));
-
-				//
 				//	login request
 				//
 				if (config_.get().scrambled_)
@@ -71,6 +66,53 @@ namespace node
 				}
 			}
 
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type, std::string const& number)
+		{	//	slot [2] - no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t const&)
+		{	//	slot [3] - no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type, bool, std::uint32_t)
+		{	//	slot [4] - no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(cyng::buffer_t const&)
+		{	//	slot [5] - no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type, bool, std::string const&)
+		{	//	slot [6] - no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type)
+		{	//	slot [7] - no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type seq
+			, response_type res
+			, std::uint32_t channel
+			, std::uint32_t source
+			, std::uint16_t status
+			, std::size_t count)
+		{	//	slot [8] - no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type seq
+			, response_type res
+			, std::uint32_t channel)
+		{	//	slot [9] no implementation
 			return cyng::continuation::TASK_CONTINUE;
 		}
 

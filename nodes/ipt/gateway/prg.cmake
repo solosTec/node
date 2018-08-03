@@ -6,13 +6,14 @@ set (node_ipt_gateway_cpp
 	nodes/ipt/gateway/src/main.cpp	
 	nodes/ipt/gateway/src/controller.cpp
 	nodes/ipt/gateway/src/kernel.cpp
+	nodes/ipt/gateway/src/executor.cpp
 )
 
 set (node_ipt_gateway_h
 
 	nodes/ipt/gateway/src/controller.h
 	nodes/ipt/gateway/src/kernel.h
-
+	nodes/ipt/gateway/src/executor.h
 )
 
 set (node_ipt_gateway_info
@@ -35,6 +36,8 @@ set (node_ipt_gateway_tasks
 
 	nodes/ipt/gateway/src/tasks/network.h
 	nodes/ipt/gateway/src/tasks/network.cpp
+	nodes/ipt/gateway/src/tasks/push_ops.h
+	nodes/ipt/gateway/src/tasks/push_ops.cpp
 
 )
 	

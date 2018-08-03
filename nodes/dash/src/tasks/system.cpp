@@ -27,11 +27,11 @@ namespace node
 		, cache_(db)
 		, tag_(tag)
 	{
-		CYNG_LOG_INFO(logger_, "task #"
-		<< base_.get_id()
-		<< " <"
-		<< base_.get_class_name()
-		<< "> is running");
+		CYNG_LOG_INFO(logger_, "initialize task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< ">");
 
         //
         //	set initial value

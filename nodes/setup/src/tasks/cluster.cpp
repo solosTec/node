@@ -30,11 +30,11 @@ namespace node
 	, master_(0)
 	, cache_(cache)
 	{
-		CYNG_LOG_INFO(logger_, "task #"
-		<< base_.get_id()
-		<< " <"
-		<< base_.get_class_name()
-		<< "> is running");
+		CYNG_LOG_INFO(logger_, "initialize task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< ">");
 
 		//
 		//	init cache

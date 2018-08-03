@@ -36,11 +36,11 @@ namespace node
 			, sub_protocols)
 		, processor_(logger, btp->mux_.get_io_service(), tag, bus_)
 	{
-		CYNG_LOG_INFO(logger_, "task #"
-		<< base_.get_id()
-		<< " <"
-		<< base_.get_class_name()
-		<< "> is running");
+		CYNG_LOG_INFO(logger_, "initialize task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< ">");
 
 		//
 		//	implement request handler

@@ -29,11 +29,11 @@ namespace node
 		, server_(btp->mux_, logger_, bus_, timeout)
 		, master_(0)
 	{
-		CYNG_LOG_INFO(logger_, "task #"
-		<< base_.get_id()
-		<< " <"
-		<< base_.get_class_name()
-		<< "> is running");
+		CYNG_LOG_INFO(logger_, "initialize task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< ">");
 
 		//
 		//	implement request handler
