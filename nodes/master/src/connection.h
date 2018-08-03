@@ -79,7 +79,7 @@ namespace node
 		/**
 		 * Buffer for incoming data.
 		 */
-		std::array<char, NODE_PREFERRED_BUFFER_SIZE> buffer_;
+		std::array<char, NODE::PREFERRED_BUFFER_SIZE> buffer_;
 		
 		/**
 		 * Implements the session logic

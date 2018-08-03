@@ -187,7 +187,7 @@ namespace node
 			, cyng::buffer_t const& data)
 		{
 
-			if (boost::algorithm::starts_with(protocol, "SML:")) {
+			if (boost::algorithm::equals(protocol, "SML")) {
 
 				//
 				//	distribute raw SML data
@@ -199,7 +199,7 @@ namespace node
 				//
 				distribute_sml(channel, source, target, data);
 			}
-			else if (boost::algorithm::starts_with(protocol, "IEC:")) {
+			else if (boost::algorithm::equals(protocol, "IEC")) {
 
 				//
 				//	distribute raw IEC data
@@ -238,6 +238,11 @@ namespace node
 			if (pos == sml_lines_.end()) {
 
 				//
+				//	get all SML consumer
+				//	
+				auto consumers = get_consumer("SML:");
+
+				//
 				//	create a new SML processor
 				//
 				auto tag = rng_();
@@ -247,17 +252,21 @@ namespace node
 					<< " for line " 
 					<< channel
 					<< ':'
-					<< source);
+					<< source 
+					<< " with "
+					<< consumers.size()
+					<< " consumer(s)");
 
 				auto res = sml_lines_.emplace(std::piecewise_construct,
 					std::forward_as_tuple(line),
-					std::forward_as_tuple(base_.mux_.get_io_service()
+					std::forward_as_tuple(base_.mux_
 						, logger_
 						, tag
 						, channel
 						, source
 						, target
-						, base_.get_id()));
+						, base_.get_id()
+						, consumers));
 				BOOST_ASSERT(res.second);
 				if (res.second)	res.first->second.parse(data);
 			}
@@ -282,26 +291,35 @@ namespace node
 			if (pos == iec_lines_.end()) {
 
 				//
+				//	get all IEC consumer
+				//	
+				auto consumers = get_consumer("IEC:");
+
+				//
 				//	create a new IEC processor
 				//
 				auto tag = rng_();
 
-				CYNG_LOG_TRACE(logger_, "create SML processor "
+				CYNG_LOG_TRACE(logger_, "create IEC processor "
 					<< tag
 					<< " for line "
 					<< channel
 					<< ':'
-					<< source);
+					<< source
+					<< " with "
+					<< consumers.size()
+					<< " consumer(s)");
 
-				auto res = sml_lines_.emplace(std::piecewise_construct,
+				auto res = iec_lines_.emplace(std::piecewise_construct,
 					std::forward_as_tuple(line),
-					std::forward_as_tuple(base_.mux_.get_io_service()
+					std::forward_as_tuple(base_.mux_
 						, logger_
 						, tag
 						, channel
 						, source
 						, target
-						, base_.get_id()));
+						, base_.get_id()
+						, consumers));
 				BOOST_ASSERT(res.second);
 				if (res.second)	res.first->second.parse(data);
 			}
@@ -411,6 +429,18 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
+		cyng::continuation network::process(sequence_type, response_type, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t)
+		{	//	no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type seq
+			, response_type res
+			, std::uint32_t channel)
+		{	//	no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
 		cyng::continuation network::process(std::string type, std::size_t tid)
 		{
 			consumers_.emplace(type, tid);
@@ -418,6 +448,44 @@ namespace node
 				<< tid
 				<< " registered as "
 				<< type);
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(std::string protocol, std::uint64_t line, boost::uuids::uuid tag)
+		{
+
+			CYNG_LOG_INFO(logger_, "remove "
+				<< protocol
+				<< " line "
+				<< line
+				<< "@"
+				<< tag);
+
+			if (boost::algorithm::equals("SML", protocol)) {
+
+				auto size = sml_lines_.erase(line);
+				CYNG_LOG_TRACE(logger_, sml_lines_.size()
+					<< " active SML line(s)");
+
+			}
+			else if (boost::algorithm::equals("IEC", protocol)) {
+
+				auto size = iec_lines_.erase(line);
+				CYNG_LOG_TRACE(logger_, sml_lines_.size()
+					<< " active IEC line(s)");
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "unknown protocol "
+					<< protocol
+					<< " line "
+					<< line
+					<< "@"
+					<< tag);
+			}
 
 			//
 			//	continue task
@@ -538,13 +606,17 @@ namespace node
 			seq_target_map_.emplace(std::get<0>(tpl), std::get<1>(tpl));
 		}
 
-		std::uint64_t build_line(std::uint32_t channel, std::uint32_t source)
+		std::vector<std::size_t> network::get_consumer(std::string protocol)
 		{
-			//
-			//	create the line ID by combining source and channel into one 64 bit integer
-			//
-			return (((std::uint64_t)channel) << 32) | ((std::uint64_t)source);
-		}
+			std::vector<std::size_t> consumer;
 
+			for (auto const& c : consumers_) {
+				if (boost::algorithm::starts_with(c.first, protocol)) {
+					consumer.push_back(c.second);
+				}
+			}
+
+			return consumer;
+		}
 	}
 }

@@ -6,6 +6,7 @@
  */
 
 #include "sml_to_xml_consumer.h"
+#include <smf/sml/defs.h>
 #include <cyng/async/task/base_task.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -23,7 +24,7 @@ namespace node
 	sml_xml_consumer::sml_xml_consumer(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, std::size_t ntid	//	network task id
-		, std::string root_dir
+		, boost::filesystem::path root_dir
 		, std::string root_name
 		, std::string endocing
 		, std::chrono::seconds period)
@@ -32,12 +33,10 @@ namespace node
 		, ntid_(ntid)
 		, root_dir_(root_dir)
 		, root_name_(root_name)
-		, endocing_(endocing)
+		, endcoding_(endocing)
 		, period_(period)
-		//, lines_()
-		, rng_()
-		, hit_list_()
 		, task_state_(TASK_STATE_INITIAL)
+		, lines_()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -50,6 +49,18 @@ namespace node
 	{
 		switch (task_state_) {
 		case TASK_STATE_INITIAL:
+			if (!boost::filesystem::exists(root_dir_)) {
+
+				CYNG_LOG_FATAL(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> out path "
+					<< root_dir_
+					<< " does not exists");
+
+				return cyng::continuation::TASK_STOP;
+			}
 			//
 			//	register as SML:XML consumer 
 			//
@@ -57,35 +68,10 @@ namespace node
 			task_state_ = TASK_STATE_REGISTERED;
 			break;
 		default:
-			//if (!hit_list_.empty())
-			//{
-			//	CYNG_LOG_INFO(logger_, "task #"
-			//		<< base_.get_id()
-			//		<< " <"
-			//		<< base_.get_class_name()
-			//		<< "> stop "
-			//		<< hit_list_.size()
-			//		<< " processor(s)");
-			//	for (auto line : hit_list_)
-			//	{
-			//		//
-			//		//	call destructor
-			//		//
-			//		lines_.erase(line);
-			//	}
-			//	hit_list_.clear();
-			//}
-			//else
-			//{
-			//	CYNG_LOG_TRACE(logger_, "task #"
-			//		<< base_.get_id()
-			//		<< " <"
-			//		<< base_.get_class_name()
-			//		<< "> "
-			//		<< lines_.size()
-			//		<< " processor(s) online");
-
-			//}
+			//CYNG_LOG_TRACE(logger_, base_.get_class_name()
+			//	<< " processed "
+			//	<< msg_counter_
+			//	<< " messages");
 			break;
 		}
 
@@ -95,6 +81,11 @@ namespace node
 
 	void sml_xml_consumer::stop()
 	{
+		//
+		//	remove all open lines
+		//
+		lines_.clear();
+
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -102,106 +93,142 @@ namespace node
 			<< " stopped");
 	}
 
-	cyng::continuation sml_xml_consumer::process(std::uint32_t channel
-		, std::uint32_t source
-		, std::string const& target
-		, std::string const& protocol
-		, cyng::buffer_t const& data)
+	cyng::continuation sml_xml_consumer::process(std::uint64_t line
+		, std::string target)
 	{
-		//
-		//	create the line ID by combining source and channel into one 64 bit integer
-		//
-		const std::uint64_t line = (((std::uint64_t)channel) << 32) | ((std::uint64_t)source);
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< " create line "
+			<< line
+			<< ':'
+			<< target);
 
-		//
-		//	select/create a SML processor
-		//
-		//const auto pos = lines_.find(line);
-		//if (pos == lines_.end())
-		//{
-		//	//
-		//	//	create new processor
-		//	//
-		//	auto res = lines_.emplace(std::piecewise_construct,
-		//		std::forward_as_tuple(line),
-		//		std::forward_as_tuple(base_.mux_.get_io_service()
-		//			, logger_
-		//			, rng_()
-		//			, root_dir_
-		//			, root_name_
-		//			, endocing_
-		//			, channel
-		//			, source
-		//			, target));
+		lines_.emplace(std::piecewise_construct,
+			std::forward_as_tuple(line),
+			std::forward_as_tuple(endcoding_
+				, root_name_
+				, (std::uint32_t)((line & 0xFFFFFFFF00000000LL) >> 32)
+				, (std::uint32_t)(line & 0xFFFFFFFFLL)
+				, target));
 
-		//	if (res.second)
-		//	{
-		//		//
-		//		//	This is a workaround for problems with nested strands
-		//		//
-		//		res.first->second.vm_.register_function("stop.writer", 1, std::bind(&sml_xml_consumer::stop_writer, this, std::placeholders::_1));
-		//		res.first->second.parse(data);
-		//	}
-		//	else
-		//	{
-		//		CYNG_LOG_FATAL(logger_, "startup processor for line "
-		//			<< channel
-		//			<< ':'
-		//			<< source
-		//			<< ':'
-		//			<< target
-		//			<< " failed");
-		//	}
-		//}
-		//else
-		//{
-		//	CYNG_LOG_TRACE(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> processing line "
-		//		<< std::dec
-		//		<< source
-		//		<< ':'
-		//		<< channel
-		//		<< " with processor "
-		//		<< pos->second.vm_.tag());
-
-		//	pos->second.parse(data);
-		//}
+		CYNG_LOG_TRACE(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> has "
+			<< lines_.size()
+			<< " active lines");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void sml_xml_consumer::stop_writer(cyng::context& ctx)
+	cyng::continuation sml_xml_consumer::process(std::uint64_t line
+		, std::uint16_t code
+		, std::size_t idx
+		, cyng::tuple_t msg)
 	{
-		const cyng::vector_t frame = ctx.get_frame();
-		auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< " line "
+			<< line
+			<< " received #"
+			<< idx
+			<< ':'
+			<< sml::messages::name(code));
 
-		//for (auto pos = lines_.begin(); pos != lines_.end(); ++pos)
-		//{
-		//	if (pos->second.vm_.tag() == tag)
-		//	{
-		//		CYNG_LOG_INFO(logger_, "remove xml processor " << tag);
+		auto pos = lines_.find(line);
+		if (pos != lines_.end()) {
+	
+			pos->second.read(msg, idx);
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< " line "
+				<< line
+				<< " not found");
+		}
 
-		//		//
-		//		//	stop VM (async)
-		//		//
-		//		pos->second.stop();
+		return cyng::continuation::TASK_CONTINUE;
+	}
 
-		//		//
-		//		//	add to hitlist and remove later
-		//		//
-		//		hit_list_.push_back(pos->first);
-		//		return;
-		//	}
-		//}
-		CYNG_LOG_ERROR(logger_, "xml processor " << tag << " not found");
+	cyng::continuation sml_xml_consumer::process(std::uint64_t line, std::size_t idx, std::uint16_t crc)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< " close line "
+			<< line);
+
+		auto pos = lines_.find(line);
+		if (pos != lines_.end()) {
+
+			auto filename = root_dir_ / pos->second.get_filename();
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< " write "
+				<< line
+				<< " => "
+				<< filename);
+
+			try {
+				//
+				//	write XML file
+				//
+				pos->second.write(filename);
+			}
+			catch (std::exception const& ex) {
+
+				CYNG_LOG_ERROR(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< " line "
+					<< line
+					<< " error: "
+					<< ex.what());
+			}
+
+			//
+			//	remove this line
+			//
+			lines_.erase(pos);
+		}
+		else {
+
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< " line "
+				<< line
+				<< " not found");
+		}
+
+		CYNG_LOG_TRACE(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> has "
+			<< lines_.size()
+			<< " active lines");
+
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	void sml_xml_consumer::register_consumer()
 	{
-		base_.mux_.post(ntid_, 8, cyng::tuple_factory("SML:XML", base_.get_id()));
+		base_.mux_.post(ntid_, 10, cyng::tuple_factory("SML:XML", base_.get_id()));
 	}
 
 }

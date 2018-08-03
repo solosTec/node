@@ -82,8 +82,8 @@ namespace node
 
 		private:
 			/**
-			* The XML document
-			*/
+			 * The XML document
+			 */
 			pugi::xml_document doc_;
 			pugi::xml_node root_;
 

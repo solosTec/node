@@ -101,8 +101,12 @@ namespace node
 			cyng::async::base_task& base_;
 			bus::shared_type bus_;
 			cyng::logging::log_ptr logger_;
-			const master_config_t	config_;
-			std::size_t master_;
+
+			/**
+			 * managing redundant ipt master configurations
+			 */
+			const redundancy	config_;
+
 			enum {
 				TASK_STATE_INITIAL_,
 				TASK_STATE_AUTHORIZED_,

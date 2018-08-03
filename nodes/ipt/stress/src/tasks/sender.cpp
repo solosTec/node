@@ -26,7 +26,6 @@ namespace node
 			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:stress:sender"))
 			, logger_(logger)
 			, config_(cfg)
-			, master_(0)
 			, task_state_(TASK_STATE_INITIAL_)
 			, rnd_device_()
 			, mersenne_engine_(rnd_device_())
@@ -67,13 +66,13 @@ namespace node
 				}
 				else
 				{
-					base_.suspend(config_[master_].monitor_);
+					base_.suspend(config_.get().monitor_);
 					CYNG_LOG_INFO(logger_, "task #"
 						<< base_.get_id()
 						<< " <"
 						<< base_.get_class_name()
 						<< "> has monitor with "
-						<< config_[master_].monitor_.count()
+						<< config_.get().monitor_.count()
 						<< " seconds(s)");
 				}
 
@@ -99,13 +98,13 @@ namespace node
 				//
 				//	reset parser and serializer
 				//
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_[master_].sk_));
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_[master_].sk_));
+				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_.get().sk_));
+				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_));
 
 				//
 				//	login request
 				//
-				if (config_[master_].scrambled_)
+				if (config_.get().scrambled_)
 				{
 					bus_->vm_.async_run(ipt_req_login_scrambled());
 				}
@@ -149,7 +148,7 @@ namespace node
 					<< " <"
 					<< base_.get_class_name()
 					<< "> has monitor with "
-					<< config_[master_].monitor_.count()
+					<< config_.get().monitor_.count()
 					<< " seconds(s)");
 			}
 
@@ -192,7 +191,7 @@ namespace node
 
 		cyng::continuation sender::process(cyng::buffer_t const& data)
 		{
-			CYNG_LOG_TRACE(logger_, config_[master_].account_
+			CYNG_LOG_TRACE(logger_, config_.get().account_
 				<< " received "
 				<< std::string(data.begin(), data.end()))
 				;
@@ -237,17 +236,12 @@ namespace node
 			//
 			//	switch to other master
 			//
-			if (config_.size() > 1)
+			if (config_.next())
 			{
-				master_++;
-				if (master_ == config_.size())
-				{
-					master_ = 0;
-				}
 				CYNG_LOG_INFO(logger_, "switch to redundancy "
-					<< config_[master_].host_
+					<< config_.get().host_
 					<< ':'
-					<< config_[master_].service_);
+					<< config_.get().service_);
 
 			}
 			else
@@ -259,38 +253,33 @@ namespace node
 			//	trigger reconnect 
 			//
 			CYNG_LOG_INFO(logger_, "reconnect to network in "
-				<< config_[master_].monitor_.count()
-				<< " seconds");
-			base_.suspend(config_[master_].monitor_);
+				<< cyng::to_str(config_.get().monitor_));
 
+			base_.suspend(config_.get().monitor_);
 		}
 
 		cyng::vector_t sender::ipt_req_login_public() const
 		{
-			CYNG_LOG_INFO(logger_, "send public login request [ "
-				<< master_
-				<< " ] "
-				<< config_[master_].account_
+			CYNG_LOG_INFO(logger_, "send public login request "
+				<< config_.get().account_
 				<< '@'
-				<< config_[master_].host_
+				<< config_.get().host_
 				<< ':'
-				<< config_[master_].service_);
+				<< config_.get().service_);
 
-			return gen::ipt_req_login_public(config_, master_);
+			return gen::ipt_req_login_public(config_.get());
 		}
 
 		cyng::vector_t sender::ipt_req_login_scrambled() const
 		{
-			CYNG_LOG_INFO(logger_, "send scrambled login request [ "
-				<< master_
-				<< " ] "
-				<< config_[master_].account_
+			CYNG_LOG_INFO(logger_, "send scrambled login request "
+				<< config_.get().account_
 				<< '@'
-				<< config_[master_].host_
+				<< config_.get().host_
 				<< ':'
-				<< config_[master_].service_);
+				<< config_.get().service_);
 
-			return gen::ipt_req_login_scrambled(config_, master_);
+			return gen::ipt_req_login_scrambled(config_.get());
 		}
 
 		void sender::res_open_connection(cyng::context& ctx)

@@ -26,7 +26,7 @@ namespace node
 				//const char* p = boost::asio::buffer_cast<const char*>(cbuffer);
 				//const std::size_t size = boost::asio::buffer_size(cbuffer);
 
-				//cyy::io::hex_dump hd;
+				//cyng::io::hex_dump hd;
 				//hd(std::cerr, p, p + size);
 #endif
 

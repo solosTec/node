@@ -95,6 +95,9 @@ namespace node
 
 			vm_.register_function("ipt.res.register.push.target", 4, std::bind(&bus::ipt_res_register_push_target, this, std::placeholders::_1));
 			vm_.register_function("ipt.res.deregister.push.target", 4, std::bind(&bus::ipt_res_deregister_push_target, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.open.push.channel", 8, std::bind(&bus::ipt_res_open_channel, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.close.push.channel", 4, std::bind(&bus::ipt_res_close_channel, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.transfer.pushdata", 0, std::bind(&bus::ipt_res_transfer_push_data, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.transmit.data", 1, std::bind(&bus::ipt_req_transmit_data, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.open.connection", 1, std::bind(&bus::ipt_req_open_connection, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.close.connection", 2, std::bind(&bus::ipt_req_close_connection, this, std::placeholders::_1));
@@ -308,6 +311,57 @@ namespace node
 				, cyng::tuple_factory(frame.at(1), ctrl_res_deregister_target_policy::is_success(res), frame.at(3)));
 		}
 
+		void bus::ipt_res_open_channel(cyng::context& ctx)
+		{
+			//
+			//	* session tag
+			//	* seq
+			//	* response
+			//	* channel
+			//	* source
+			//	* packet size
+			//	* window size
+			//	* status
+			//	* target count
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+
+			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.res.open.push.channel"
+				, frame.at(3)
+				, frame.at(4)));
+
+
+			// forward to session
+			mux_.post(task_
+				, IPT_EVENT_PUSH_CHANNEL_OPEN
+				, cyng::tuple_factory(frame.at(1), frame.at(2), frame.at(3), frame.at(4), frame.at(5), frame.at(8)));
+		}
+
+		void bus::ipt_res_close_channel(cyng::context& ctx)
+		{
+			//
+			//	* session tag
+			//	* seq
+			//	* response
+			//	* channel
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+
+			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.res.close.push.channel"
+				, frame.at(3)));
+
+
+			// forward to session
+			mux_.post(task_
+				, IPT_EVENT_PUSH_CHANNEL_CLOSED
+				, cyng::tuple_factory(frame.at(1), frame.at(2), frame.at(3)));
+		}
+
+		void bus::ipt_res_transfer_push_data(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			ctx.attach(cyng::generate_invoke("log.msg.trace", "ipt.res.transfer.pushdata", frame));
+		}
 
 		void bus::ipt_req_transmit_data(cyng::context& ctx)
 		{
@@ -494,5 +548,14 @@ namespace node
 		{
 			return std::make_shared<bus>(mux, logger, tag, sk, tsk, model);
 		}
+
+		std::uint64_t build_line(std::uint32_t channel, std::uint32_t source)
+		{
+			//
+			//	create the line ID by combining source and channel into one 64 bit integer
+			//
+			return (((std::uint64_t)channel) << 32) | ((std::uint64_t)source);
+		}
+
 	}
 }

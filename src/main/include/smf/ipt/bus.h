@@ -45,6 +45,8 @@ namespace node
 				IPT_EVENT_INCOMING_DATA,	//	transmit data
 				IPT_EVENT_PUSH_TARGET_DEREREGISTERED,
 				IPT_EVENT_CONNECTION_CLOSED,
+				IPT_EVENT_PUSH_CHANNEL_OPEN,
+				IPT_EVENT_PUSH_CHANNEL_CLOSED,
 			};
 
 		public:
@@ -84,6 +86,9 @@ namespace node
 			void ipt_res_login(cyng::context& ctx, bool scrambled);
 			void ipt_res_register_push_target(cyng::context& ctx);
 			void ipt_res_deregister_push_target(cyng::context& ctx);
+			void ipt_res_open_channel(cyng::context& ctx);
+			void ipt_res_close_channel(cyng::context& ctx);
+			void ipt_res_transfer_push_data(cyng::context& ctx);
 			void ipt_req_transmit_data(cyng::context& ctx);
 			void ipt_req_open_connection(cyng::context& ctx);
 			void ipt_req_close_connection(cyng::context& ctx);
@@ -113,7 +118,7 @@ namespace node
 			/**
 			 * Buffer for incoming data.
 			 */
-			std::array<char, NODE_PREFERRED_BUFFER_SIZE> buffer_;
+			std::array<char, NODE::PREFERRED_BUFFER_SIZE> buffer_;
 
 			cyng::async::mux& mux_;
 
@@ -170,6 +175,12 @@ namespace node
 			, scramble_key const& sk
 			, std::size_t tsk
 			, std::string const& model);
+
+		/**
+		 * Combine two 32-bit integers into one 64-bit integer
+		 */
+		std::uint64_t build_line(std::uint32_t channel, std::uint32_t source);
+
 	}
 }
 

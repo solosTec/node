@@ -92,9 +92,11 @@ namespace node
 			cyng::async::base_task& base_;
 			bus::shared_type bus_;
 			cyng::logging::log_ptr logger_;
-			const master_config_t	config_;
+			/**
+			 * managing redundant ipt master configurations
+			 */
+			const redundancy	config_;
 			const std::size_t tsk_sender_;
-			std::size_t master_;
 
 			// First create an instance of an engine.
 			std::random_device rnd_device_;

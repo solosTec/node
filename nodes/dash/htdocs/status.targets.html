@@ -193,7 +193,7 @@
                     }
                     else if (obj.cmd == 'delete') {
                         table_target.row(function (idx, data, node) {
-                            if (data[0] == obj.key) {
+                            if ((obj.key.length == 1) && (data[5] == obj.key[0])) {
                                 return true;
                             }
                             return false;
@@ -201,11 +201,11 @@
                     }
                     else if (obj.cmd == 'modify') {
                         table_target.row(function (idx, data, node) {
-                            if (data[0] == obj.key) {
+                            if ((obj.key.length == 1) && (data[5] == obj.key[0])) {
                                 var r = table_target.row(node);
                                 var d = r.data();
                                 if (obj.value.px != null) {
-                                    d[6] = obj.value.px;
+                                    d[4] = obj.value.px;
                                 }
                                 r.data(d);
                                 return true;    //  record found

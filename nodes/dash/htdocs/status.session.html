@@ -230,7 +230,7 @@
                         }
                         else if (obj.cmd == 'delete') {
                             table_ses.row(function (idx, data, node) {
-                                if (data[0] == obj.key) {
+                                if ((obj.key.length == 1) && (data[0] == obj.key[0])) {
                                     return true;
                                 }
                                 return false;
