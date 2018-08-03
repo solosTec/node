@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2017 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2017 Sylko Olzscher
+ *
+ */
 
 
 #include "server.h"
@@ -23,7 +23,7 @@ namespace node
 		, std::string manufacturer
 		, std::string model
 		, cyng::mac48 mac)
-		: mux_(mux)
+	: mux_(mux)
 		, logger_(logger)
 		, status_word_(status_word)
 		, config_db_(config_db)

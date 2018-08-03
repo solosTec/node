@@ -30,11 +30,11 @@ namespace node
 			, rnd_device_()
 			, mersenne_engine_(rnd_device_())
 		{
-			CYNG_LOG_INFO(logger_, "task #"
+			CYNG_LOG_INFO(logger_, "initialize task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> is running");
+				<< ">");
 
 			//
 			//	request handler

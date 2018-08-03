@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IPT_GATEWAY_SERVER_H
 #define NODE_IPT_GATEWAY_SERVER_H
@@ -84,7 +84,6 @@ namespace node
 #if (BOOST_VERSION < 106600)
 		boost::asio::ip::tcp::socket socket_;
 #endif
-
 
 	};
 }

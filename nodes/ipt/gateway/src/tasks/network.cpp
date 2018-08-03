@@ -29,6 +29,7 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, node::sml::status& status_word
 			, cyng::store::db& config_db
+			, boost::uuids::uuid tag
 			, master_config_t const& cfg
 			, std::string account
 			, std::string pwd
@@ -47,14 +48,15 @@ namespace node
 				bus_->vm_.async_run(std::move(prg));
 			}, false, false)
 			, core_(logger_, bus_->vm_, status_word, config_db, false, account, pwd, manufacturer, model, mac)
+			, exec_(logger, btp->mux_, config_db, bus_, tag, mac)
 			, seq_target_map_()
 			, channel_target_map_()
 		{
-			CYNG_LOG_INFO(logger_, "task #"
+			CYNG_LOG_INFO(logger_, "initialize task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> is running");
+				<< ">");
 
 			//
 			//	request handler
@@ -65,17 +67,13 @@ namespace node
 
 			bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
+
 		}
 
 		cyng::continuation network::run()
 		{
 			if (bus_->is_online())
 			{
-				//
-				//	deregister target
-				//
-				//bus_->vm_.async_run(cyng::generate_invoke("req.deregister.push.target", "DEMO"));
-
 				//
 				//	send watchdog response - without request
 				//
@@ -122,8 +120,8 @@ namespace node
 			if (watchdog != 0)
 			{
 				CYNG_LOG_INFO(logger_, "start watchdog: " << watchdog << " minutes");
-				//base_.suspend(std::chrono::minutes(watchdog));
-				base_.suspend(std::chrono::seconds(watchdog));
+				base_.suspend(std::chrono::minutes(watchdog));
+				//base_.suspend(std::chrono::seconds(watchdog));
 			}
 
 			//
@@ -246,6 +244,23 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
+		cyng::continuation network::process(sequence_type)
+		{	//	no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type, response_type, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t)
+		{	//	no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(sequence_type seq
+			, response_type res
+			, std::uint32_t channel)
+		{	//	no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
 		void network::task_resume(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
@@ -324,5 +339,6 @@ namespace node
 			bus_->vm_.async_run(std::move(prg));
 
 		}
+
 	}
 }

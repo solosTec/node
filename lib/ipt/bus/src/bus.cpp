@@ -15,6 +15,7 @@
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
 #include <boost/uuid/nil_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
 #include <fstream>
@@ -124,24 +125,32 @@ namespace node
             //
             //  update state
             //
-			BOOST_ASSERT_MSG(state_ != STATE_SHUTDOWN_, "already in shutdown state");
-            state_ = STATE_SHUTDOWN_;
+			if (state_ != STATE_SHUTDOWN_)
+			{
+				state_ = STATE_SHUTDOWN_;
 
-			//
-			//  close socket
-			//
-			boost::system::error_code ec;
-			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-			socket_.close(ec);
-			
-			//
-            //  no more callbacks
-            //
-			auto self(this->shared_from_this());
-			vm_.access([self](cyng::vm& vm) {
-				vm.run(cyng::generate_invoke("log.msg.info", "fast shutdown"));
-				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
-			});
+				//
+				//  close socket
+				//
+				boost::system::error_code ec;
+				socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+				socket_.close(ec);
+
+				//
+				//  no more callbacks
+				//
+				auto self(this->shared_from_this());
+				vm_.access([self](cyng::vm& vm) {
+					vm.run(cyng::generate_invoke("log.msg.info", "fast shutdown"));
+					vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
+				});
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "ipt bus "
+				<< vm_.tag()
+				<< " already in shutdown mode");
+			}
         }
 
 		bool bus::is_online() const
