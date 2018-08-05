@@ -16,6 +16,7 @@
 #include <cyng/table/meta.hpp>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>
+#include <cyng/factory/set_factory.h>
 #include <cyng/dom/reader.h>
 #include <cyng/sys/memory.h>
 #include <cyng/json.h>
@@ -362,7 +363,7 @@ namespace node
 				else
 				{
 					std::get<2>(tpl).push_back(dev_rec["name"]);
-					std::get<2>(tpl).push_back(dev_rec["id"]);
+					std::get<2>(tpl).push_back(dev_rec["serverId"]);
 					std::get<2>(tpl).push_back(dev_rec["vFirmware"]);
 				}
 				std::get<2>(tpl).push_back(cyng::make_object(!ses_rec.empty()));
@@ -503,7 +504,7 @@ namespace node
 				else
 				{
 					std::get<2>(tpl).push_back(dev_rec["name"]);
-					std::get<2>(tpl).push_back(dev_rec["id"]);
+					std::get<2>(tpl).push_back(dev_rec["serverId"]);
 					std::get<2>(tpl).push_back(dev_rec["vFirmware"]);
 				}
 				std::get<2>(tpl).push_back(cyng::make_object(!ses_rec.empty()));	//	add on/offline flag
@@ -1218,11 +1219,29 @@ namespace node
 					for (auto p : tpl)
 					{
 						cyng::param_t param;
-						ctx.attach(bus_req_db_modify("TGateway"
-							, key
-							, cyng::value_cast(p, param)
-							, 0
-							, ctx.tag()));
+						param = cyng::value_cast(p, param);
+
+						if (boost::algorithm::equals(param.first, "serverId")) {
+							//
+							//	to uppercase
+							//
+							std::string server_id;
+							server_id = cyng::value_cast(param.second, server_id);
+							boost::algorithm::to_upper(server_id);
+							ctx.attach(bus_req_db_modify("TGateway"
+								, key
+								, cyng::param_factory("serverId", server_id)
+								, 0
+								, ctx.tag()));
+
+						}
+						else {
+							ctx.attach(bus_req_db_modify("TGateway"
+								, key
+								, cyng::value_cast(p, param)
+								, 0
+								, ctx.tag()));
+						}
 					}
 				}
 				catch (std::exception const& ex) {
@@ -1893,7 +1912,7 @@ namespace node
 		}
 
 		if (!cache_.create_table(cyng::table::make_meta_table<1, 15>("TGateway", { "pk"	//	primary key
-			, "id"	//	(1) Server-ID (i.e. 0500153B02517E)
+			, "serverId"	//	(1) Server-ID (i.e. 0500153B02517E)
 			, "manufacturer"	//	(2) manufacturer (i.e. EMH)
 			, "made"	//	(4) production date
 			, "factoryNr"	//	(6) fabrik nummer (i.e. 06441734)

@@ -156,10 +156,25 @@ namespace node
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 
-					, cyng::param_factory("server", cyng::tuple_factory(
-						cyng::param_factory("address", "0.0.0.0"),
-						cyng::param_factory("service", "1883")	//	port 8883 for SSL encrypion
+					, cyng::param_factory("csv", cyng::tuple_factory(
+						cyng::param_factory("root-dir", (pwd / "csv").string()),
+						cyng::param_factory("prefix", "smf"),
+						cyng::param_factory("suffix", "csv"),
+						cyng::param_factory("header", true),
+						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)),
+						cyng::param_factory("period", 16)	//	seconds
 					))
+
+					, cyng::param_factory("DB", cyng::tuple_factory(
+						cyng::param_factory("type", "SQLite"),
+						cyng::param_factory("file-name", (pwd / "store.database").string()),
+						cyng::param_factory("busy-timeout", 12),		//	seconds
+						cyng::param_factory("watchdog", 30),	//	for database connection
+						cyng::param_factory("pool-size", 1),	//	no pooling for SQLite
+						cyng::param_factory("db-schema", NODE_SUFFIX),		//	use "v4.0" for compatibility to version 4.x
+						cyng::param_factory("period", 12)	//	seconds
+					))
+
 					, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "7701"),
@@ -169,6 +184,7 @@ namespace node
 						cyng::param_factory("monitor", monitor_dist(rng_)),	//	seconds
 						cyng::param_factory("group", 0)	//	customer ID
 					) }))
+
 				)
 				});
 
