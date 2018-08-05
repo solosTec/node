@@ -37,7 +37,7 @@ namespace node
 			//
 			//	request handler
 			//
-			bus_->vm_.register_function("network.task.resume", 4, std::bind(&network::task_resume, this, std::placeholders::_1));
+			//bus_->vm_.register_function("network.task.resume", 4, std::bind(&network::task_resume, this, std::placeholders::_1));
 			bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&network::reconfigure, this, std::placeholders::_1));
 
 		}
@@ -164,15 +164,15 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		void network::task_resume(cyng::context& ctx)
-		{
-			const cyng::vector_t frame = ctx.get_frame();
-			//	[1,0,TDevice,3]
-			CYNG_LOG_TRACE(logger_, "resume task - " << cyng::io::to_str(frame));
-			std::size_t tsk = cyng::value_cast<std::size_t>(frame.at(0), 0);
-			std::size_t slot = cyng::value_cast<std::size_t>(frame.at(1), 0);
-			base_.mux_.post(tsk, slot, cyng::tuple_t{ frame.at(2), frame.at(3) });
-		}
+		//void network::task_resume(cyng::context& ctx)
+		//{
+		//	const cyng::vector_t frame = ctx.get_frame();
+		//	//	[1,0,TDevice,3]
+		//	CYNG_LOG_TRACE(logger_, "resume task - " << cyng::io::to_str(frame));
+		//	std::size_t tsk = cyng::value_cast<std::size_t>(frame.at(0), 0);
+		//	std::size_t slot = cyng::value_cast<std::size_t>(frame.at(1), 0);
+		//	base_.mux_.post(tsk, slot, cyng::tuple_t{ frame.at(2), frame.at(3) });
+		//}
 
 		void network::reconfigure(cyng::context& ctx)
 		{

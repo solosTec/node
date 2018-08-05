@@ -55,6 +55,9 @@ namespace node
 				//
 				//	calculate next timepoint
 				//
+#ifdef _DEBUG
+				push();
+#endif
 				set_tp();
 				break;
 			default:
@@ -87,9 +90,51 @@ namespace node
 		}
 
 		//	slot 0
-		cyng::continuation push_ops::process()
+		cyng::continuation push_ops::process(bool success
+			, std::uint32_t channel
+			, std::uint32_t source
+			, std::uint16_t status
+			, std::size_t count
+			, std::string target)
 		{
+			if (success) {
 
+				CYNG_LOG_TRACE(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> push channel "
+					<< target
+					<< " is open");
+
+				//
+				//	push data
+				//
+
+				CYNG_LOG_TRACE(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> close push channel "
+					<< channel
+					<< ':'
+					<< source);
+				//
+				//	close push channel
+				//
+				bus_->vm_.async_run(cyng::generate_invoke("req.close.push.channel", channel));
+
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> open push channel "
+					<< target
+					<< " failed");
+
+			}
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
@@ -159,7 +204,12 @@ namespace node
 					<< "> open channel "
 					<< target);
 
-				bus_->vm_.async_run(cyng::generate_invoke("req.open.push.channel", target, "", "", "", "", 0));
+				bus_->vm_
+					.async_run(cyng::generate_invoke("req.open.push.channel", target, "", "", "", "", 0))
+					.async_run(cyng::generate_invoke("bus.store.rel.channel.open", cyng::invoke("ipt.push.seq"), base_.get_id(), target))
+					.async_run(cyng::generate_invoke("stream.flush", target))
+					.async_run(cyng::generate_invoke("log.msg.info", "req.open.push.channel", cyng::invoke("ipt.push.seq")))
+					;
 
 			}, cyng::store::read_access("push.ops"));
 

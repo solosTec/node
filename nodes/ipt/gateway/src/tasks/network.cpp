@@ -49,8 +49,7 @@ namespace node
 			}, false, false)
 			, core_(logger_, bus_->vm_, status_word, config_db, false, account, pwd, manufacturer, model, mac)
 			, exec_(logger, btp->mux_, config_db, bus_, tag, mac)
-			, seq_target_map_()
-			, channel_target_map_()
+			, seq_open_channel_map_()
 		{
 			CYNG_LOG_INFO(logger_, "initialize task #"
 				<< base_.get_id()
@@ -61,9 +60,8 @@ namespace node
 			//
 			//	request handler
 			//
-			bus_->vm_.register_function("network.task.resume", 4, std::bind(&network::task_resume, this, std::placeholders::_1));
 			bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&network::reconfigure, this, std::placeholders::_1));
-			bus_->vm_.register_function("net.insert.rel", 1, std::bind(&network::insert_rel, this, std::placeholders::_1));
+			bus_->vm_.register_function("bus.store.rel.channel.open", 3, std::bind(&network::insert_seq_open_channel_rel, this, std::placeholders::_1));
 
 			bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
@@ -184,35 +182,8 @@ namespace node
 
 		//	slot [4] - register target response
 		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
-		{
-			if (success)
-			{
-				auto pos = seq_target_map_.find(seq);
-				if (pos != seq_target_map_.end())
-				{
-					CYNG_LOG_INFO(logger_, "channel "
-						<< channel
-						<< " ==> "
-						<< pos->second);
-
-					channel_target_map_.emplace(channel, pos->second);
-					seq_target_map_.erase(pos);
-
-					//cyng::vector_t prg;
-					//prg
-					//	<< cyng::generate_invoke_unwinded("req.deregister.push.target", "DEMO")
-					//	//<< cyng::generate_invoke_unwinded("net.remove.rel", cyng::invoke("ipt.push.seq"), "DEMO")
-					//	<< cyng::generate_invoke_unwinded("stream.flush")
-					//	;
-
-					//bus_->vm_.async_run(std::move(prg));
-
-				}
-			}
-
-			//
-			//	continue task
-			//
+		{	//	no implementation
+			BOOST_ASSERT_MSG(false, "[register target response] not implemented");
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
@@ -249,8 +220,37 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		cyng::continuation network::process(sequence_type, response_type, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t)
-		{	//	no implementation
+		cyng::continuation network::process(sequence_type seq
+			, response_type res
+			, std::uint32_t channel
+			, std::uint32_t source
+			, std::uint16_t status
+			, std::size_t count)
+		{	
+			auto pos = seq_open_channel_map_.find(seq);
+			if (pos != seq_open_channel_map_.end()) {
+
+
+				auto r = make_tp_res_open_push_channel(seq, res);
+				CYNG_LOG_INFO(logger_, "open push channel response "
+					<< channel
+					<< ':'
+					<< source
+					<< ':'
+					<< r.get_response_name());
+
+				base_.mux_.post(pos->second.first, 0, cyng::tuple_factory(r.is_success(), channel, source, status, count, pos->second.second));
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "open push channel response "
+					<< channel
+					<< ':'
+					<< source
+					<< '@'
+					<< seq
+					<< " not found");
+			}
+
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
@@ -261,15 +261,15 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		void network::task_resume(cyng::context& ctx)
-		{
-			const cyng::vector_t frame = ctx.get_frame();
-			//	[1,0,TDevice,3]
-			CYNG_LOG_TRACE(logger_, "resume task - " << cyng::io::to_str(frame));
-			std::size_t tsk = cyng::value_cast<std::size_t>(frame.at(0), 0);
-			std::size_t slot = cyng::value_cast<std::size_t>(frame.at(1), 0);
-			base_.mux_.post(tsk, slot, cyng::tuple_t{ frame.at(2), frame.at(3) });
-		}
+		//void network::task_resume(cyng::context& ctx)
+		//{
+		//	const cyng::vector_t frame = ctx.get_frame();
+		//	//	[1,0,TDevice,3]
+		//	CYNG_LOG_TRACE(logger_, "resume task - " << cyng::io::to_str(frame));
+		//	std::size_t tsk = cyng::value_cast<std::size_t>(frame.at(0), 0);
+		//	std::size_t slot = cyng::value_cast<std::size_t>(frame.at(1), 0);
+		//	base_.mux_.post(tsk, slot, cyng::tuple_t{ frame.at(2), frame.at(3) });
+		//}
 
 		void network::reconfigure(cyng::context& ctx)
 		{
@@ -303,41 +303,48 @@ namespace node
 			base_.suspend(config_.get().monitor_);
 		}
 
-		void network::insert_rel(cyng::context& ctx)
+		//void network::insert_seq_register_target_rel(cyng::context& ctx)
+		//{
+		//	//	[5,power@solostec]
+		//	//
+		//	//	* ipt sequence
+		//	//	* target name
+		//	const cyng::vector_t frame = ctx.get_frame();
+
+		//	auto const tpl = cyng::tuple_cast<
+		//		sequence_type,		//	[0] ipt seq
+		//		std::string			//	[1] target
+		//	>(frame);
+
+		//	CYNG_LOG_TRACE(logger_, "ipt sequence "
+		//		<< +std::get<0>(tpl)
+		//		<< " ==> "
+		//		<< std::get<1>(tpl));
+
+		//	seq_target_map_.emplace(std::get<0>(tpl), std::get<1>(tpl));
+		//}
+
+		void network::insert_seq_open_channel_rel(cyng::context& ctx)
 		{
-			//	[5,power@solostec]
-			//
-			//	* ipt sequence
-			//	* target name
 			const cyng::vector_t frame = ctx.get_frame();
 
 			auto const tpl = cyng::tuple_cast<
 				sequence_type,		//	[0] ipt seq
-				std::string			//	[1] target
+				std::size_t,		//	[1] task id
+				std::string			//	[2] target name
 			>(frame);
 
 			CYNG_LOG_TRACE(logger_, "ipt sequence "
 				<< +std::get<0>(tpl)
 				<< " ==> "
-				<< std::get<1>(tpl));
+				<< std::get<1>(tpl)
+				<< ':'
+				<< std::get<2>(tpl));
 
-			seq_target_map_.emplace(std::get<0>(tpl), std::get<1>(tpl));
-		}
-
-		void network::register_targets()
-		{
-			seq_target_map_.clear();
-			channel_target_map_.clear();
-			CYNG_LOG_INFO(logger_, "register target DEMO" );
-			cyng::vector_t prg;
-			prg
-				<< cyng::generate_invoke_unwinded("req.register.push.target", "DEMO", static_cast<std::uint16_t>(0xffff), static_cast<std::uint8_t>(1))
-				<< cyng::generate_invoke_unwinded("net.insert.rel", cyng::invoke("ipt.push.seq"), "DEMO")
-				<< cyng::generate_invoke_unwinded("stream.flush")
+			seq_open_channel_map_.emplace(std::piecewise_construct
+				, std::forward_as_tuple(std::get<0>(tpl))
+				, std::forward_as_tuple(std::get<1>(tpl), std::get<2>(tpl)))
 				;
-
-			bus_->vm_.async_run(std::move(prg));
-
 		}
 
 	}

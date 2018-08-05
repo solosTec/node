@@ -21,7 +21,7 @@ namespace node
 		class push_ops
 		{
 		public:
-			using msg_0 = std::tuple<>;
+			using msg_0 = std::tuple<bool, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t, std::string>;
 			using signatures_t = std::tuple<msg_0>;
 
 		public:
@@ -37,9 +37,14 @@ namespace node
 			/**
 			 * @brief slot [0]
 			 *
-			 * sucessful network login
+			 * open push channel response
 			 */
-			cyng::continuation process();
+			cyng::continuation process(bool success
+				, std::uint32_t channel
+				, std::uint32_t source
+				, std::uint16_t status
+				, std::size_t count
+				, std::string target);
 
 
 		private:

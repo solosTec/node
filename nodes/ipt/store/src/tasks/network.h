@@ -151,7 +151,7 @@ namespace node
 			cyng::continuation process(std::string, std::uint64_t line, boost::uuids::uuid tag);
 
 		private:
-			void task_resume(cyng::context& ctx);
+			//void task_resume(cyng::context& ctx);
 			void reconfigure(cyng::context& ctx);
 			void reconfigure_impl();
 

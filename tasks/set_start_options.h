@@ -5,8 +5,8 @@
  * 
  */ 
 
-#ifndef NODE_SET_NODE_START_OPTIONS_H
-#define NODE_SET_NODE_START_OPTIONS_H
+#ifndef NODE_SET_TASK_START_OPTIONS_H
+#define NODE_SET_TASK_START_OPTIONS_H
 
 #include <ostream>
 #include <boost/program_options.hpp>

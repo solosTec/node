@@ -5,10 +5,10 @@
  *
  */
 
-#include "../../print_build_info.h"
+#include "../../../nodes/print_build_info.h"
 #include "../../print_version_info.h"
-#include "../../set_start_options.h"
-#include "../../show_ip_address.h"
+#include "../../../nodes/set_start_options.h"
+#include "../../../nodes/show_ip_address.h"
 #if BOOST_OS_WINDOWS
 #include <boost/asio.hpp>
 #endif
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 		("help,h", "print usage message")
 		("version,v", "print version string")
 		("build,b", "last built timestamp and platform")
-		("config,C", boost::program_options::value<std::string>(&config_file)->default_value(node::get_cfg_name("mqtt")), "specify the configuration file")
+		("config,C", boost::program_options::value<std::string>(&config_file)->default_value(node::get_cfg_name("csv")), "specify the configuration file")
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
@@ -55,11 +55,11 @@ int main(int argc, char **argv)
 #endif
 	
 	//
-	//	MQTTnode options
+	//	CSV task options
 	//
-	boost::program_options::options_description node_options("mqtt");
+	boost::program_options::options_description node_options("csv");
 	node::set_start_options(node_options
-		, "mqtt"
+		, "csv"
 		, json_path
 		, pool_size
 #if BOOST_OS_LINUX
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 	
 	if (vm.count("version")) 
 	{  
-		return node::print_version_info(std::cout, "mqtt");
+		return node::print_version_info(std::cout, "csv");
 	}
 	
 	if (vm.count("build")) 

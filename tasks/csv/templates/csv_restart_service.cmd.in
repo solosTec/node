@@ -1,12 +1,12 @@
 REM
 REM	This file is part of the "@PROJECT_NAME@" project.
 REM	This file is generated automatically. Do not edit.
-REM delete mqtt service
+REM restart csv service
 REM	created : ${${PROJECT_NAME}_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo delete service node_mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo restart service node_csv_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc stop node_mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}
-sc delete node_mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc stop node_csv_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc start node_csv_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on

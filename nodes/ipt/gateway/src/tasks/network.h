@@ -142,11 +142,9 @@ namespace node
 				, std::uint32_t channel);
 
 		private:
-			void task_resume(cyng::context& ctx);
 			void reconfigure(cyng::context& ctx);
-			void insert_rel(cyng::context& ctx);
+			void insert_seq_open_channel_rel(cyng::context& ctx);
 			void reconfigure_impl();
-			void register_targets();
 
 		private:
 			cyng::async::base_task& base_;
@@ -174,10 +172,9 @@ namespace node
 			sml::executor exec_;
 
 			/**
-			 * maintain relation between sequence and registered target
+			 * maintain relation between sequence and open push channel request
 			 */
-			std::map<sequence_type, std::string>	seq_target_map_;
-			std::map<std::uint32_t, std::string>	channel_target_map_;
+			std::map<sequence_type, std::pair<std::size_t, std::string>>	seq_open_channel_map_;
 
 		};
 	}

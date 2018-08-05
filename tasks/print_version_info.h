@@ -1,12 +1,12 @@
 /*
  * The MIT License (MIT)
  * 
- * Copyright (c) 2017 Sylko Olzscher 
+ * Copyright (c) 2018 Sylko Olzscher 
  * 
  */ 
 
-#ifndef NODE_PRINT_NODE_VERSION_INFO_H
-#define NODE_PRINT_NODE_VERSION_INFO_H
+#ifndef NODE_PRINT_TASK_VERSION_INFO_H
+#define NODE_PRINT_TASK_VERSION_INFO_H
 
 #include  <ostream>
 namespace node 
