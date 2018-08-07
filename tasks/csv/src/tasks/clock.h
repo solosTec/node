@@ -5,19 +5,20 @@
  *
  */
 
-#ifndef NODE_CSV_TASK_CLUSTER_H
-#define NODE_CSV_TASK_CLUSTER_H
+#ifndef NODE_CSV_TASK_CLOCK_H
+#define NODE_CSV_TASK_CLOCK_H
 
-#include <smf/cluster/bus.h>
-#include <smf/cluster/config.h>
+//#include <smf/cluster/bus.h>
+//#include <smf/cluster/config.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
+#include <cyng/intrinsics/version.h>
 
 namespace node
 {
 
-	class cluster
+	class clock
 	{
 	public:
 		using msg_0 = std::tuple<cyng::version>;
@@ -25,10 +26,10 @@ namespace node
 		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
-		cluster(cyng::async::base_task* bt
+		clock(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, cluster_config_t const& cfg
-			, std::size_t storage_tsk);
+			, std::size_t tsk_db
+			, std::chrono::minutes offset);
 		cyng::continuation run();
 		void stop();
 
@@ -47,11 +48,25 @@ namespace node
 		cyng::continuation process();
 
 	private:
+		std::chrono::system_clock::time_point calculate_trigger_tp();
+		void generate_last_period();
+		void generate_current_period();
+
+	private:
 		cyng::async::base_task& base_;
-		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-		const cluster_redundancy config_;
-		const std::size_t storage_tsk_;
+		const std::size_t tsk_db_;
+		const std::chrono::minutes offset_;
+
+		/**
+		 * task state
+		 */
+		enum {
+			TASK_STATE_INITIAL_,
+			TASK_STATE_RUNNING_,
+		} state_;
+
+		std::chrono::system_clock::time_point next_trigger_tp_;
 
 	};	
 }

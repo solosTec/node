@@ -41,11 +41,11 @@ namespace node
 		, task_state_(TASK_STATE_INITIAL)
 		, lines_()
 	{
-		CYNG_LOG_INFO(logger_, "task #"
+		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> established");
+			<< ">");
 
 		if (!boost::algorithm::equals(schema_, NODE_SUFFIX))
 		{

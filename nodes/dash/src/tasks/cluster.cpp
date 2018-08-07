@@ -40,7 +40,6 @@ namespace node
 		, config_(cfg_cls)
 		, cache_()
 		, server_(logger, btp->mux_.get_io_service(), ep, doc_root, bus_, cache_)
-		, master_(0)
         , sys_tsk_(cyng::async::NO_TASK)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
@@ -146,7 +145,12 @@ namespace node
 		//	sign off from cluster
 		//
         bus_->stop();
-		CYNG_LOG_INFO(logger_, "cluster just left");
+
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> stopped - leaving cluster");
 	}
 
 	//	slot 0
@@ -242,18 +246,18 @@ namespace node
 	void cluster::connect()
 	{
 		BOOST_ASSERT_MSG(!bus_->vm_.is_halted(), "cluster bus is halted");
-		bus_->vm_.async_run(bus_req_login(config_[master_].host_
-			, config_[master_].service_
-			, config_[master_].account_
-			, config_[master_].pwd_
-			, config_[master_].auto_config_
-			, config_[master_].group_
+		bus_->vm_.async_run(bus_req_login(config_.get().host_
+			, config_.get().service_
+			, config_.get().account_
+			, config_.get().pwd_
+			, config_.get().auto_config_
+			, config_.get().group_
 			, "dash"));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent to " 
-			<< config_[master_].host_
+			<< config_.get().host_
 			<< ':'
-			<< config_[master_].service_);
+			<< config_.get().service_);
 
 	}
 
@@ -268,18 +272,12 @@ namespace node
 		//
 		//	switch to other master
 		//
-		if (config_.size() > 1)
+		if (config_.next())
 		{
-			master_++;
-			if (master_ == config_.size())
-			{
-				master_ = 0;
-			}
 			CYNG_LOG_INFO(logger_, "switch to redundancy "
-				<< config_[master_].host_
+				<< config_.get().host_
 				<< ':'
-				<< config_[master_].service_);
-
+				<< config_.get().service_);
 		}
 		else
 		{
@@ -290,9 +288,9 @@ namespace node
 		//	trigger reconnect 
 		//
 		CYNG_LOG_INFO(logger_, "reconnect to cluster in "
-			<< config_[master_].monitor_.count()
+			<< config_.get().monitor_.count()
 			<< " seconds");
-		base_.suspend(config_[master_].monitor_);
+		base_.suspend(config_.get().monitor_);
 
 	}
 

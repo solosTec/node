@@ -37,12 +37,11 @@ namespace node
 		, period_(period)
 		, task_state_(TASK_STATE_INITIAL)
 	{
-		CYNG_LOG_INFO(logger_, "task #"
+		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> established");
-
+			<< ">");
 	}
 
 	cyng::continuation sml_csv_consumer::run()

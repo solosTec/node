@@ -123,7 +123,7 @@ namespace node
 		 */
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-		const cluster_config_t	config_;
+		const cluster_redundancy config_;
 
 		/**
 		 * global data cache
@@ -134,11 +134,6 @@ namespace node
 		 * the HTTP server
 		 */
 		http::server	server_;
-
-		/**
-		 * current master node
-		 */
-		std::size_t master_;
 
 		/**
 		 * system task

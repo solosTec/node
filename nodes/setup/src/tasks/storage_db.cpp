@@ -37,11 +37,11 @@ namespace node
 		, meta_map_(init_meta_map())
 		, cache_(cache)
 	{
-		CYNG_LOG_INFO(logger_, "task #"
-		<< base_.get_id()
-		<< " <"
-		<< base_.get_class_name()
-		<< "> established");
+		CYNG_LOG_INFO(logger_, "initialize task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< ">");
 
 		if (!pool_.start(cfg))
 		{
@@ -222,17 +222,6 @@ namespace node
 						stmt->push(data.at(col.pos_ - 1), col.width_);
 					}
 				});
-				//.push(cyng::make_object(gen), 0)	//	generation
-					//.push(data.at(0), 128)	//	name
-					//.push(data.at(1), 16)	//	password
-					//.push(data.at(2), 128)	//	
-					//.push(data.at(3), 512)
-					//.push(data.at(4), 64)
-					//.push(data.at(5), 64)	//	firmware
-					//.push(data.at(6), 0)	//	enabled
-					//.push(data.at(7), 0)	//	creationTime
-					//.push(data.at(8), 0)	//	query
-					//;
 				if (!stmt->execute())
 				{
 					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);

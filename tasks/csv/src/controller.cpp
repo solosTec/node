@@ -7,12 +7,14 @@
 
 #include "controller.h"
 #include "tasks/cluster.h"
+#include "tasks/storage_db.h"
 #include <NODE_project_info.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/async/signal_handler.h>
 #include <cyng/factory/set_factory.h>
+#include <cyng/set_cast.h>
 #include <cyng/io/serializer.h>
 #include <cyng/json.h>
 #include <cyng/dom/reader.h>
@@ -34,7 +36,15 @@ namespace node
 	//
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	void join_cluster(cyng::async::mux&, cyng::logging::log_ptr, cyng::vector_t const&);
+	void join_cluster(cyng::async::mux&
+		, cyng::logging::log_ptr
+		, cyng::vector_t const& cfg_cluster
+		, std::size_t);
+	std::size_t connect_data_store(cyng::async::mux&
+		, cyng::logging::log_ptr
+		, cyng::tuple_t cfg_db
+		, cyng::tuple_t const& cfg_trigger
+		, cyng::tuple_t const& cfg_csv);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -155,6 +165,13 @@ namespace node
 					, cyng::param_factory("tag", rgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
+					, cyng::param_factory("load-config", "local")	//	options are local, master, mixed
+
+					, cyng::param_factory("trigger", cyng::tuple_factory(
+						cyng::param_factory("offset", 7),	//	minutes after midnight
+						cyng::param_factory("frame", 3),	//	time frame in minutes
+						cyng::param_factory("format", "SML")	//	supported formats are "SML" and "IEC"
+					))
 
 					, cyng::param_factory("csv", cyng::tuple_factory(
 						cyng::param_factory("root-dir", (pwd / "csv").string()),
@@ -288,10 +305,24 @@ namespace node
 #endif
 
 		//
+		//	storage manager task
+		//	Open database session only when needed (from task clock)
+		//
+		cyng::tuple_t tpl;
+		std::size_t storage_task = connect_data_store(mux
+			, logger
+			, cyng::value_cast(dom.get("DB"), tpl)
+			, cyng::value_cast(dom.get("trigger"), tpl)
+			, cyng::value_cast(dom.get("csv"), tpl));
+
+		//
 		//	connect to cluster
 		//
-		cyng::vector_t tmp;
-		join_cluster(mux, logger, cyng::value_cast(dom.get("cluster"), tmp));
+		cyng::vector_t vec;
+		join_cluster(mux
+			, logger
+			, cyng::value_cast(dom.get("cluster"), vec)
+			, storage_task);
 
 		//
 		//	wait for system signals
@@ -302,7 +333,6 @@ namespace node
 		//	close acceptor
 		//
 		CYNG_LOG_INFO(logger, "close acceptor");
-		//srv.close();
 
 		//
 		//	stop all connections
@@ -344,14 +374,32 @@ namespace node
 
 	void join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cyng::vector_t const& cfg)
+		, cyng::vector_t const& cfg_cluster
+		, std::size_t storage_tsk)
 	{
-		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg.size());
+		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cluster.size());
 
 		cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
-			, load_cluster_cfg(cfg));
+			, load_cluster_cfg(cfg_cluster)
+			, storage_tsk);
 
+	}
+
+	std::size_t connect_data_store(cyng::async::mux& mux
+		, cyng::logging::log_ptr logger
+		, cyng::tuple_t cfg_db
+		, cyng::tuple_t const& cfg_trigger
+		, cyng::tuple_t const& cfg_csv)
+	{
+		CYNG_LOG_INFO(logger, "connect to configuration database");
+
+		return cyng::async::start_task_delayed<storage_db>(mux
+			, std::chrono::seconds(1)
+			, logger
+			, cyng::to_param_map(cfg_db)
+			, cyng::to_param_map(cfg_trigger)
+			, cyng::to_param_map(cfg_csv)).first;
 	}
 }

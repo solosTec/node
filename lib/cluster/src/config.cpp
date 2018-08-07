@@ -65,4 +65,31 @@ namespace node
 		, group_(group)
 	{}
 
+	cluster_redundancy::cluster_redundancy(cluster_config_t const& cfg)
+		: config_(cfg)
+		, master_(0)
+	{
+		BOOST_ASSERT(!config_.empty());
+	}
+
+	bool cluster_redundancy::next() const
+	{
+		if (!config_.empty())
+		{
+			master_++;
+			if (master_ == config_.size())
+			{
+				master_ = 0;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	cluster_record const& cluster_redundancy::get() const
+	{
+		return config_.at(master_);
+	}
+
+
 }

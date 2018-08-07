@@ -21,7 +21,6 @@ namespace node
 	, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 	, logger_(logger)
 	, config_(cfg)
-	, master_(0)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -37,25 +36,18 @@ namespace node
 
 	cyng::continuation cluster::run()
 	{	
-		//CYNG_LOG_INFO(logger_, "connect to redundancy [ "
-		//<< master_
-		//<< " ] "
-		//<< config_[master_].host_
-		//<< ':'
-		//<< config_[master_].service_);
-
-		bus_->vm_.async_run(bus_req_login(config_[master_].host_
-			, config_[master_].service_
-			, config_[master_].account_
-			, config_[master_].pwd_
-			, config_[master_].auto_config_
-			, config_[master_].group_
+		bus_->vm_.async_run(bus_req_login(config_.get().host_
+			, config_.get().service_
+			, config_.get().account_
+			, config_.get().pwd_
+			, config_.get().auto_config_
+			, config_.get().group_
 			, "mqtt"));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
-			<< config_[master_].host_
+			<< config_.get().host_
 			<< ':'
-			<< config_[master_].service_);
+			<< config_.get().service_);
 
 		return cyng::continuation::TASK_CONTINUE;
 
@@ -64,7 +56,12 @@ namespace node
 	void cluster::stop()
 	{
         bus_->stop();
-		CYNG_LOG_INFO(logger_, "cluster just left");
+
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> stopped - leaving cluster");
 	}
 
 	//	slot 0
@@ -84,24 +81,19 @@ namespace node
 		//
 		//	switch to other master
 		//
-		if (config_.size() > 1)
+		if (config_.next())
 		{ 
-			master_++;
-			if (master_ == config_.size())
-			{
-				master_ = 0;
-			}
 			CYNG_LOG_INFO(logger_, "switch to redundancy " 
-				<< config_[master_].host_
+				<< config_.get().host_
 				<< ':'
-				<< config_[master_].service_);
+				<< config_.get().service_);
 
-			bus_->vm_.async_run(bus_req_login(config_[master_].host_
-				, config_[master_].service_
-				, config_[master_].account_
-				, config_[master_].pwd_
-				, config_[master_].auto_config_
-				, config_[master_].group_
+			bus_->vm_.async_run(bus_req_login(config_.get().host_
+				, config_.get().service_
+				, config_.get().account_
+				, config_.get().pwd_
+				, config_.get().auto_config_
+				, config_.get().group_
 				, "mqtt"));
 
 		}

@@ -51,12 +51,6 @@ namespace node
 			void set_tp();
 			void push();
 
-			//void task_resume(cyng::context& ctx);
-			//void reconfigure(cyng::context& ctx);
-			//void insert_rel(cyng::context& ctx);
-			//void reconfigure_impl();
-			//void register_targets();
-
 		private:
 			cyng::async::base_task& base_;
 

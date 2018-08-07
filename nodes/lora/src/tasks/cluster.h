@@ -64,8 +64,7 @@ namespace node
 		cyng::async::base_task& base_;
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-		const cluster_config_t	config_;
-		std::size_t master_;
+		const cluster_redundancy config_;
 		https::server	server_;
 		processor processor_;
 	};

@@ -61,11 +61,10 @@ namespace node
 		cyng::async::base_task& base_;
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-		const cluster_config_t	config_;
+		const cluster_redundancy	config_;
 		const std::string ipt_address_;
 		const std::string ipt_service_;
 		ipt::server	server_;
-		std::size_t master_;
 	};
 	
 }

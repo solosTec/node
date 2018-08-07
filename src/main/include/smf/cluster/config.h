@@ -39,6 +39,34 @@ namespace node
 	cluster_config_t load_cluster_cfg(cyng::vector_t const& cfg);
 	cluster_record load_cluster_rec(cyng::tuple_t const& cfg);
 
+	/**
+	 * managing cluster master redundancy
+	 */
+	struct cluster_redundancy
+	{
+		cluster_redundancy(cluster_config_t const&);
+
+		/**
+		 * switch to next redundancy.
+		 *
+		 * @return true if other redundancy was available
+		 */
+		bool next() const;
+
+		/**
+		 * get current reduncancy
+		 */
+		cluster_record const& get() const;
+
+		const cluster_config_t config_;
+
+		/**
+		* index of current ipt master configuration
+		*/
+		mutable std::size_t master_;
+
+	};
+
 }
 
 #endif
