@@ -128,6 +128,11 @@ namespace node
 			// Handle the case where the file doesn't exist
 			if (ec == boost::system::errc::no_such_file_or_directory)
 			{
+				//
+				//	ToDo: handle synthetic downloads
+				//
+
+
 				return send(not_found(req.target()));
 			}
 

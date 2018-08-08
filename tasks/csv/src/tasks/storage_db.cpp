@@ -18,7 +18,7 @@
 #include <cyng/db/sql_table.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/set_cast.h>
-#include <cyng/sql.h>
+//#include <cyng/sql.h>
 #include <cyng/sql/dsl/binary_expr.hpp>
 #include <cyng/sql/dsl/list_expr.hpp>
 #include <cyng/sql/dsl/operators.hpp>
@@ -124,47 +124,6 @@ namespace node
 
 		}
 
-		//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk;
-		//	201
-		//	pk|trxID|msgIdx|roTime|actTime|valTime|gateway|server|status|source|channel|target|pk|OBIS|unitCode|unitName|dataType|scaler|val|result
-		//	43a2a6bb-f45f-48e3-a2b7-74762f1752c1|41091175|1|2458330.95813657|2458330.97916667|118162556|00:15:3b:02:17:74|01-e61e-29436587-bf-03|0|0|0|Gas2|43a2a6bb-f45f-48e3-a2b7-74762f1752c1|0000616100ff|255|counter|u8|0|0|0
-
-		//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk where actTime > julianday('2018-08-01') AND actTime < julianday('2018-08-02') order by actTime;
-
-
-		//auto pos = meta_map_.find(TSMLMeta);
-		//if (pos != meta_map_.end())
-		//{
-		//	auto s = pool_.get_session();
-		//	cyng::table::meta_table_ptr meta = (*pos).second;
-		//	cyng::sql::command cmd(meta, s.get_dialect());
-		//	cmd.select().all();
-		//	std::string sql = cmd.to_str();
-		//	CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
-
-		//	auto stmt = s.create_statement();
-		//	stmt->prepare(sql);
-
-		//	//
-		//	//	lookup cache
-		//	//
-		//	//
-		//	//	cache complete
-		//	//	tell sync to synchronise the cache with master
-		//	//
-		//	base_.mux_.post(sync_tsk, 0, cyng::tuple_factory(name, 0));
-		//}
-		//else
-		//{
-		//	CYNG_LOG_FATAL(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> unknown table "
-		//		<< name);
-		//	base_.mux_.post(sync_tsk, 0, cyng::tuple_factory(name, 0));
-		//}
-
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
@@ -183,91 +142,289 @@ namespace node
 			auto s = pool_.get_session();
 			cyng::table::meta_table_ptr meta = (*pos).second;
 			cyng::sql::command cmd(meta, s.get_dialect());
-			cmd.select()[cyng::sql::column(8)].where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end)).group_by(cyng::sql::column(8));
-			std::string sql = cmd.to_str();
-			CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
-
 			auto stmt = s.create_statement();
-			std::pair<int, bool> r = stmt->prepare(sql);
-			std::vector<std::string> server_ids;
-			BOOST_ASSERT(r.second);
-			if (r.second) {
-				while (auto res = stmt->get_result()) {
+
+			//
+			//	get all server ID in this time frame
+			//
+			std::vector<std::string> server_ids = get_server_ids(start, end, cmd, stmt);
+			for (auto id : server_ids) {
+
+				//
+				//	get all used OBIS codes from this server in this time frame
+				//
+				std::vector<std::string> obis_codes = get_obis_codes(start, end, id, cmd, stmt);
+
+				//
+				//	open output file
+				//
+				auto file = open_file(start, end, id, obis_codes);
+
+				collect_data(file, start, end, cmd, stmt, id, obis_codes);
+				file.close();
+			}
+
+			stmt->close();
+		}
+	}
+
+	void storage_db::collect_data(std::ofstream& file
+		, std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end
+		, cyng::sql::command& cmd
+		, cyng::db::statement_ptr stmt
+		, std::string const& id
+		, std::vector<std::string> const& obis_code)
+	{
+		//
+		//	get join result
+		//
+		//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday('2018-08-06 00:00:00')) AND (actTime < julianday('2018-08-07 00:00:00')) AND server = '01-e61e-13090016-3c-07') ORDER BY trxID
+		//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) ORDER BY trxID
+		auto sql = "select TSMLMeta.pk, trxID, msgIdx, datetime(roTime), datetime(actTime), valTime, gateway, server, status, source, channel, target, OBIS, unitCode, unitName, dataType, scaler, val, result FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) ORDER BY actTime";
+		auto r = stmt->prepare(sql);
+		if (r.second) {
+			stmt->push(cyng::make_object(start), 0)
+				.push(cyng::make_object(end), 0)
+				.push(cyng::make_object(id), 23)
+				;
+
+			//
+			//	map to collect results
+			//
+			std::map<std::string, std::pair<std::string, std::string>>	value_map;
+
+			//
+			//	running tansaction
+			//
+			std::string trx;
+			while (auto res = stmt->get_result()) {
+				//	pk|trxID|msgIdx|roTime|actTime|valTime|gateway|server|status|source|channel|target|pk|OBIS|unitCode|unitName|dataType|scaler|val|result
+				//	43a2a6bb-f45f-48e3-a2b7-74762f1752c1|41091175|1|2458330.95813657|2458330.97916667|118162556|00:15:3b:02:17:74|01-e61e-29436587-bf-03|0|0|0|Gas2|43a2a6bb-f45f-48e3-a2b7-74762f1752c1|0000616100ff|255|counter|u8|0|0|0
+
+				//
+				//	detect new lines in CSV file by changed trx
+				//
+				auto new_trx = cyng::value_cast<std::string>(res->get(2, cyng::TC_STRING, 0), "TRX");
+				auto ro_time = cyng::value_cast(res->get(4, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
+				auto act_time = cyng::value_cast(res->get(5, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
+				auto code = cyng::value_cast<std::string>(res->get(13, cyng::TC_STRING, 24), "OBIS");
+				auto result = cyng::value_cast<std::string>(res->get(19, cyng::TC_STRING, 512), "result");
+				auto unit = cyng::value_cast<std::string>(res->get(15, cyng::TC_STRING, 512), "unitName");
+				CYNG_LOG_TRACE(logger_, id
+					<< ", "
+					<< new_trx
+					<< ", "
+					//<< cyng::to_str(ro_time)
+					//<< ", "
+					<< cyng::to_str(act_time)
+					<< ", "
+					<< code
+					<< ", "
+					<< result
+					<< ", "
+					<< unit
+				);
+
+
+				//
+				//	detect new line
+				//
+				if (trx != new_trx) {
 
 					//
-					//	convert SQL result
+					//	start a new line except for the first value
 					//
-					server_ids.push_back(cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 23), "server"));
-					CYNG_LOG_TRACE(logger_, server_ids.back());
-				}
+					if (!trx.empty()) {
 
-				//
-				//	close result set
-				//
-				stmt->close();
-
-				//
-				//	get join result
-				//
-				//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday('2018-08-06 00:00:00')) AND (actTime < julianday('2018-08-07 00:00:00')) AND server = '01-e61e-13090016-3c-07') ORDER BY trxID
-				//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) ORDER BY trxID
-				sql = "select TSMLMeta.pk, trxID, msgIdx, datetime(roTime), datetime(actTime), valTime, gateway, server, status, source, channel, target, OBIS, unitCode, unitName, dataType, scaler, val, result FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) ORDER BY actTime";
-				r = stmt->prepare(sql);
-				BOOST_ASSERT(r.second);
-				for (auto id : server_ids) {
-					if (r.second) {
-						stmt->push(cyng::make_object(start), 0)
-							.push(cyng::make_object(end), 0)
-							.push(cyng::make_object(id), 23)
-							;
-						while (auto res = stmt->get_result()) {
-							//	pk|trxID|msgIdx|roTime|actTime|valTime|gateway|server|status|source|channel|target|pk|OBIS|unitCode|unitName|dataType|scaler|val|result
-							//	43a2a6bb-f45f-48e3-a2b7-74762f1752c1|41091175|1|2458330.95813657|2458330.97916667|118162556|00:15:3b:02:17:74|01-e61e-29436587-bf-03|0|0|0|Gas2|43a2a6bb-f45f-48e3-a2b7-74762f1752c1|0000616100ff|255|counter|u8|0|0|0
-
-							auto trx = cyng::value_cast<std::string>(res->get(2, cyng::TC_STRING, 0), "TRX");
-							auto ro_time = cyng::value_cast(res->get(4, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
-							auto act_time = cyng::value_cast(res->get(5, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
-							CYNG_LOG_TRACE(logger_, id
-								<< ", "
-								<< trx
-								<< ", "
-								//<< cyng::to_str(ro_time)
-								//<< ", "
-								<< cyng::to_str(act_time)
-								<< ", "
-								<< cyng::value_cast<std::string>(res->get(13, cyng::TC_STRING, 24), "OBIS")
-								<< ", "
-								<< cyng::value_cast<std::string>(res->get(19, cyng::TC_STRING, 512), "result"));
-
-							//generate_csv_file(id
-							//	, cyng::value_cast<std::string>(res->get(13, cyng::TC_STRING, 24), "OBIS")
-							//	, cyng::value_cast<std::string>(res->get(19, cyng::TC_STRING, 512));
+						//
+						//	append values
+						//
+						for (auto const& code : obis_code) {
+							file << ';';
+							auto pos = value_map.find(code);
+							if (pos != value_map.end()) {
+								file << pos->second.first;
+							}
 						}
-					}
-					else {
-						CYNG_LOG_ERROR(logger_, "prepare failed with: " << sql);
+
+						//
+						//	add new line
+						//
+						file << std::endl;
+
 					}
 
 					//
-					//	read for next query
+					//	clear value map
 					//
-					stmt->clear();
+					value_map.clear();
+
+
+					//
+					//	new transaction
+					//
+					trx = new_trx;
+
+					//
+					//	write first values
+					//
+					file
+						<< id
+						<< ';'
+						<< cyng::to_str(act_time)
+						<< ';'
+						<< trx
+						;
+
 				}
-				stmt->close();
-			}
-			else {
-				CYNG_LOG_ERROR(logger_, "prepare failed with: " << sql);
+
+				value_map.emplace(code, std::make_pair(result, unit));
 
 			}
+
+			//
+			//	append values
+			//
+			for (auto const& code : obis_code) {
+				file << ';';
+				auto pos = value_map.find(code);
+				if (pos != value_map.end()) {
+					file << pos->second.first;
+				}
+			}
+
+			//
+			//	add new line
+			//
+			file << std::endl;
+
+			//
+			//	read for next query
+			//
+			stmt->clear();
+
 		}
-		else
-		{
-			CYNG_LOG_FATAL(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> TSMLMeta is an unknown table");
+		else {
+			CYNG_LOG_ERROR(logger_, "prepare failed with: " << sql);
 		}
+	}
+
+
+	std::vector<std::string> storage_db::get_server_ids(std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end
+		, cyng::sql::command& cmd
+		, cyng::db::statement_ptr stmt)
+	{
+		//
+		//	example:
+		//	SELECT server FROM TSMLMeta WHERE ((actTime > julianday('2018-08-08 00:00:00')) AND (actTime < julianday('2018-08-09 00:00:00'))) GROUP BY server
+		//
+		cmd.select()[cyng::sql::column(8)].where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end)).group_by(cyng::sql::column(8));
+		std::string sql = cmd.to_str();
+		CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
+
+		std::pair<int, bool> r = stmt->prepare(sql);
+		std::vector<std::string> result;
+		BOOST_ASSERT(r.second);
+		if (r.second) {
+			while (auto res = stmt->get_result()) {
+
+				//
+				//	convert SQL result
+				//
+				result.push_back(cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 23), "server"));
+				CYNG_LOG_TRACE(logger_, result.back());
+			}
+
+			//
+			//	close result set
+			//
+			stmt->close();
+		}
+		return result;
+	}
+
+	std::vector<std::string> storage_db::get_obis_codes(std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end
+		, std::string const& id
+		, cyng::sql::command& cmd
+		, cyng::db::statement_ptr stmt)
+	{
+		//
+		//	example:
+		//	SELECT TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) GROUP BY TSMLData.OBIS;
+
+		//
+		cmd.select()[cyng::sql::column(8)].where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end)).group_by(cyng::sql::column(8));
+		std::string sql = "SELECT TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) GROUP BY TSMLData.OBIS";
+		CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
+
+		std::pair<int, bool> r = stmt->prepare(sql);
+		std::vector<std::string> result;
+		BOOST_ASSERT(r.second);
+		if (r.second) {
+
+			stmt->push(cyng::make_object(start), 0)
+				.push(cyng::make_object(end), 0)
+				.push(cyng::make_object(id), 23);
+
+			while (auto res = stmt->get_result()) {
+
+				//
+				//	convert SQL result
+				//
+				result.push_back(cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 23), "TSMLData.OBIS"));
+				CYNG_LOG_TRACE(logger_, result.back());
+			}
+
+			//
+			//	close result set
+			//
+			stmt->clear();
+		}
+		return result;
+	}
+
+	std::ofstream storage_db::open_file(std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end
+		, std::string const& id
+		, std::vector<std::string> const& codes)
+	{
+		auto tt_start = std::chrono::system_clock::to_time_t(start);
+		std::tm time_start = cyng::chrono::convert_utc(tt_start);
+
+		auto tt_end = std::chrono::system_clock::to_time_t(end);
+		std::tm time_end = cyng::chrono::convert_utc(tt_end);
+
+		std::stringstream ss;
+		ss
+			<< std::setfill('0')
+			<< id
+			<< '_'
+			<< cyng::chrono::year(time_start)
+			<< '-'
+			<< std::setw(2)
+			<< cyng::chrono::month(time_start)
+			<< '-'
+			<< std::setw(2)
+			<< cyng::chrono::day(time_start)
+			<< '-'
+			<< std::setw(2)
+			<< cyng::chrono::month(time_end)
+			<< '-'
+			<< std::setw(2)
+			<< cyng::chrono::day(time_end)
+			<< ".csv"
+			;
+		CYNG_LOG_TRACE(logger_, "open "<< ss.str());
+		std::ofstream f(ss.str());
+		f << "server;time;trx;";
+		for (auto const& c : codes) {
+			f << c << ';';
+		}
+		f << std::endl;
+		return f;
 	}
 
 	cyng::table::mt_table storage_db::init_meta_map(std::string const& ver)

@@ -114,32 +114,6 @@ namespace node
 			 */
 			void write_header();
 
-			//
-			//	database functions
-			//
-			//void store_meta(boost::uuids::uuid pk
-			//	, std::string const& trx
-			//	, std::size_t idx
-			//	, cyng::object ro_ime
-			//	, cyng::object act_ime
-			//	, cyng::object val_time
-			//	, cyng::object client		//	gateway
-			//	, cyng::object client_id	//	gateway - formatted
-			//	, cyng::object server		//	server
-			//	, cyng::object server_id	//	server - formatted
-			//	, cyng::object status);
-
-			//void store_data(boost::uuids::uuid pk
-			//	, std::string const& trx
-			//	, std::size_t idx
-			//	, obis const& code
-			//	, std::uint8_t unit
-			//	, std::string unit_name
-			//	, std::string type_name	//	CYNG data type name
-			//	, std::int8_t scaler	//	scaler
-			//	, cyng::object raw		//	raw value
-			//	, cyng::object value);
-
 		private:
 			const boost::filesystem::path root_dir_;
 			const std::string prefix_;

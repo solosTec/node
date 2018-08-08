@@ -13,6 +13,7 @@
 #include <cyng/async/policy.h>
 #include <cyng/db/session_pool.h>
 #include <cyng/table/meta_interface.h>
+#include <cyng/sql.h>
 
 namespace node
 {
@@ -49,6 +50,29 @@ namespace node
 		void generate_csv_files(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, std::chrono::minutes interval);
+
+		std::vector<std::string> get_server_ids(std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end
+			, cyng::sql::command&
+			, cyng::db::statement_ptr);
+		
+		std::vector<std::string> get_obis_codes(std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end
+			, std::string const& id
+			, cyng::sql::command&
+			, cyng::db::statement_ptr);
+
+		std::ofstream open_file(std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end
+			, std::string const& id
+			, std::vector<std::string> const&);
+
+		void collect_data(std::ofstream&, std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end
+			, cyng::sql::command&
+			, cyng::db::statement_ptr
+			, std::string const& id
+			, std::vector<std::string> const& obis_code);
 
 
 	private:
