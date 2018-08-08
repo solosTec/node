@@ -17,12 +17,12 @@ namespace node
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, cluster_config_t const& cfg
-		, std::size_t storage_tsk)
+		, std::size_t clock_tsk)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 		, logger_(logger)
 		, config_(cfg)
-		, storage_tsk_(storage_tsk)
+		, clock_tsk_(clock_tsk)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

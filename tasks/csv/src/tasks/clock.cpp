@@ -10,17 +10,18 @@
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/async/task/base_task.h>
 #include <cyng/factory/set_factory.h>
+#include <cyng/dom/algorithm.h>
 
 namespace node
 {
 	clock::clock(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, std::size_t tsk_db
-		, std::chrono::minutes offset)
+		, cyng::param_map_t cfg_trigger)
 	: base_(*btp)
 		, logger_(logger)
 		, tsk_db_(tsk_db)
-		, offset_(offset)
+		, offset_(cyng::find_value(cfg_trigger, "offset", 7))
 		, state_(TASK_STATE_INITIAL_)
 		//
 		//	calculate trigger time

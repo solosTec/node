@@ -28,7 +28,7 @@ namespace node
 		cluster(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, cluster_config_t const& cfg
-			, std::size_t storage_tsk);
+			, std::size_t clock_tsk);
 		cyng::continuation run();
 		void stop();
 
@@ -51,7 +51,7 @@ namespace node
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
 		const cluster_redundancy config_;
-		const std::size_t storage_tsk_;
+		const std::size_t clock_tsk_;
 
 	};	
 }

@@ -33,69 +33,27 @@ namespace node
 	storage_db::storage_db(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, cyng::param_map_t cfg_db
-		, cyng::param_map_t cfg_trigger
 		, cyng::param_map_t cfg_csv)
 	: base_(*btp)
 		, logger_(logger)
 		, pool_(base_.mux_.get_io_service(), cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg_db["type"], "SQLite")))
-		, cfg_trigger_(cfg_trigger)
+		, cfg_db_(cfg_db)
 		, cfg_csv_(cfg_csv)
 		, schema_(cyng::value_cast<std::string>(cfg_db["db-schema"], NODE_SUFFIX))
 		, meta_map_(init_meta_map(schema_))
-		, state_(TASK_STATE_INITIAL_)
-		, clock_tsk_(cyng::async::NO_TASK)
+		, state_(TASK_STATE_WAITING_)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
 			<< ">");
-
-		if (!pool_.start(cfg_db))
-		{
-			CYNG_LOG_FATAL(logger_, "to start DB connection pool failed");
-		}
-		else
-		{
-			CYNG_LOG_INFO(logger_, "DB connection pool is running with "
-				<< pool_.get_pool_size() 
-				<< " connection(s)");
-		}
 	}
 
 	cyng::continuation storage_db::run()
 	{	
 		switch (state_) {
-		case TASK_STATE_INITIAL_:
-
-			//
-			//	check db session pool
-			//
-			if (pool_.get_pool_size() == 0) {
-
-				CYNG_LOG_FATAL(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> empty connection pool");
-
-				return cyng::continuation::TASK_STOP;
-			}
-
-			//
-			//	update task state
-			//
-			state_ = TASK_STATE_OPEN_;
-
-			//
-			//	start clock
-			//
-			clock_tsk_ = cyng::async::start_task_delayed<clock>(base_.mux_
-				, std::chrono::seconds(2)
-				, logger_
-				, base_.get_id()
-				, std::chrono::minutes(cyng::find_value(cfg_trigger_, "offset", 7))).first;
-
+		case TASK_STATE_WAITING_:
 			break;
 		default:
 			CYNG_LOG_INFO(logger_, "storage_db is running");
@@ -107,6 +65,12 @@ namespace node
 
 	void storage_db::stop()
 	{
+		if (state_ == TASK_STATE_OPEN_) {
+			//
+			//	b.t.w. this should never happens
+			//
+			pool_.stop();
+		}
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -131,85 +95,33 @@ namespace node
 			<< " stepsize "
 			<< cyng::to_str(interval));
 
-		//
-		//	get all available meters in the specified time range
-		//
-		//	SELECT server FROM TSMLMeta WHERE ((actTime > julianday('2018-08-06 00:00:00')) AND (actTime < julianday('2018-08-07 00:00:00'))) GROUP BY server;
-
-		auto pos = meta_map_.find("TSMLMeta");
-		if (pos != meta_map_.end())
+		if (!pool_.start(cfg_db_))
 		{
-			auto s = pool_.get_session();
-			cyng::table::meta_table_ptr meta = (*pos).second;
-			cyng::sql::command cmd(meta, s.get_dialect());
-			cmd.select()[cyng::sql::column(8)].where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end)).group_by(cyng::sql::column(8));
-			std::string sql = cmd.to_str();
-			CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
-
-			auto stmt = s.create_statement();
-			std::pair<int, bool> r = stmt->prepare(sql);
-			std::vector<std::string> server_ids;
-			BOOST_ASSERT(r.second);
-			if (r.second) {
-				while (auto res = stmt->get_result()) {
-
-					//
-					//	convert SQL result to record
-					//
-					server_ids.push_back(cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 23), "server"));
-					CYNG_LOG_TRACE(logger_, server_ids.back());
-
-				}
-			}
-			else {
-
-			}
-
-			stmt->close();
-
-			//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday('2018-08-06 00:00:00')) AND (actTime < julianday('2018-08-07 00:00:00')) AND server = '01-e61e-13090016-3c-07') ORDER BY trxID
-			//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) ORDER BY trxID
-			sql = "select TSMLMeta.pk, trxID, msgIdx, datetime(roTime), datetime(actTime), valTime, gateway, server, status, source, channel, target, OBIS, unitCode, unitName, dataType, scaler, val, result FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) ORDER BY actTime";
-			r = stmt->prepare(sql);
-			BOOST_ASSERT(r.second);
-			for (auto id : server_ids) {
-				if (r.second) {
-					stmt->push(cyng::make_object(start), 0)
-						.push(cyng::make_object(end), 0)
-						.push(cyng::make_object(id), 23)
-						;
-					while (auto res = stmt->get_result()) {
-						//	pk|trxID|msgIdx|roTime|actTime|valTime|gateway|server|status|source|channel|target|pk|OBIS|unitCode|unitName|dataType|scaler|val|result
-						//	43a2a6bb-f45f-48e3-a2b7-74762f1752c1|41091175|1|2458330.95813657|2458330.97916667|118162556|00:15:3b:02:17:74|01-e61e-29436587-bf-03|0|0|0|Gas2|43a2a6bb-f45f-48e3-a2b7-74762f1752c1|0000616100ff|255|counter|u8|0|0|0
-
-						auto trx = cyng::value_cast<std::string>(res->get(2, cyng::TC_STRING, 0), "TRX");
-						auto ro_time = cyng::value_cast(res->get(4, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
-						auto act_time = cyng::value_cast(res->get(5, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
-						CYNG_LOG_TRACE(logger_, id
-							<< ", "
-							<< trx
-							<< ", "
-							//<< cyng::to_str(ro_time)
-							//<< ", "
-							<< cyng::to_str(act_time)
-							<< ", "
-							<< cyng::value_cast<std::string>(res->get(13, cyng::TC_STRING, 24), "OBIS")
-							<< ", "
-							<< cyng::value_cast<std::string>(res->get(19, cyng::TC_STRING, 512), "result")
-						);
-					}
-				}
-				stmt->clear();
-			}
-			stmt->close();
+			CYNG_LOG_FATAL(logger_, "to start DB connection pool failed");
+			return cyng::continuation::TASK_YIELD;
 		}
 		else
 		{
-			CYNG_LOG_FATAL(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> unknown table TSMLMeta");
+			CYNG_LOG_INFO(logger_, "DB connection pool is running with "
+				<< pool_.get_pool_size() 
+				<< " connection(s)");
+
+			//
+			//	update task state
+			//
+			state_ = TASK_STATE_OPEN_;
+
+			//
+			//	generate CSV files
+			//
+			generate_csv_files(start, end, interval);
+
+			//
+			//	update task state
+			//
+			pool_.stop();
+			state_ = TASK_STATE_WAITING_;
+
 		}
 
 		//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk;
@@ -256,6 +168,107 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
+	void storage_db::generate_csv_files(std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end
+		, std::chrono::minutes interval)
+	{
+		//
+		//	get all available meters in the specified time range
+		//
+		//	SELECT server FROM TSMLMeta WHERE ((actTime > julianday('2018-08-06 00:00:00')) AND (actTime < julianday('2018-08-07 00:00:00'))) GROUP BY server;
+
+		auto pos = meta_map_.find("TSMLMeta");
+		if (pos != meta_map_.end())
+		{
+			auto s = pool_.get_session();
+			cyng::table::meta_table_ptr meta = (*pos).second;
+			cyng::sql::command cmd(meta, s.get_dialect());
+			cmd.select()[cyng::sql::column(8)].where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end)).group_by(cyng::sql::column(8));
+			std::string sql = cmd.to_str();
+			CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
+
+			auto stmt = s.create_statement();
+			std::pair<int, bool> r = stmt->prepare(sql);
+			std::vector<std::string> server_ids;
+			BOOST_ASSERT(r.second);
+			if (r.second) {
+				while (auto res = stmt->get_result()) {
+
+					//
+					//	convert SQL result
+					//
+					server_ids.push_back(cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 23), "server"));
+					CYNG_LOG_TRACE(logger_, server_ids.back());
+				}
+
+				//
+				//	close result set
+				//
+				stmt->close();
+
+				//
+				//	get join result
+				//
+				//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday('2018-08-06 00:00:00')) AND (actTime < julianday('2018-08-07 00:00:00')) AND server = '01-e61e-13090016-3c-07') ORDER BY trxID
+				//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) ORDER BY trxID
+				sql = "select TSMLMeta.pk, trxID, msgIdx, datetime(roTime), datetime(actTime), valTime, gateway, server, status, source, channel, target, OBIS, unitCode, unitName, dataType, scaler, val, result FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) ORDER BY actTime";
+				r = stmt->prepare(sql);
+				BOOST_ASSERT(r.second);
+				for (auto id : server_ids) {
+					if (r.second) {
+						stmt->push(cyng::make_object(start), 0)
+							.push(cyng::make_object(end), 0)
+							.push(cyng::make_object(id), 23)
+							;
+						while (auto res = stmt->get_result()) {
+							//	pk|trxID|msgIdx|roTime|actTime|valTime|gateway|server|status|source|channel|target|pk|OBIS|unitCode|unitName|dataType|scaler|val|result
+							//	43a2a6bb-f45f-48e3-a2b7-74762f1752c1|41091175|1|2458330.95813657|2458330.97916667|118162556|00:15:3b:02:17:74|01-e61e-29436587-bf-03|0|0|0|Gas2|43a2a6bb-f45f-48e3-a2b7-74762f1752c1|0000616100ff|255|counter|u8|0|0|0
+
+							auto trx = cyng::value_cast<std::string>(res->get(2, cyng::TC_STRING, 0), "TRX");
+							auto ro_time = cyng::value_cast(res->get(4, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
+							auto act_time = cyng::value_cast(res->get(5, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
+							CYNG_LOG_TRACE(logger_, id
+								<< ", "
+								<< trx
+								<< ", "
+								//<< cyng::to_str(ro_time)
+								//<< ", "
+								<< cyng::to_str(act_time)
+								<< ", "
+								<< cyng::value_cast<std::string>(res->get(13, cyng::TC_STRING, 24), "OBIS")
+								<< ", "
+								<< cyng::value_cast<std::string>(res->get(19, cyng::TC_STRING, 512), "result"));
+
+							//generate_csv_file(id
+							//	, cyng::value_cast<std::string>(res->get(13, cyng::TC_STRING, 24), "OBIS")
+							//	, cyng::value_cast<std::string>(res->get(19, cyng::TC_STRING, 512));
+						}
+					}
+					else {
+						CYNG_LOG_ERROR(logger_, "prepare failed with: " << sql);
+					}
+
+					//
+					//	read for next query
+					//
+					stmt->clear();
+				}
+				stmt->close();
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "prepare failed with: " << sql);
+
+			}
+		}
+		else
+		{
+			CYNG_LOG_FATAL(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> TSMLMeta is an unknown table");
+		}
+	}
 
 	cyng::table::mt_table storage_db::init_meta_map(std::string const& ver)
 	{

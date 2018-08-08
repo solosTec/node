@@ -29,7 +29,7 @@ namespace node
 		clock(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, std::size_t tsk_db
-			, std::chrono::minutes offset);
+			, cyng::param_map_t cfg_trigger);
 		cyng::continuation run();
 		void stop();
 

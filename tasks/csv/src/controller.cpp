@@ -8,6 +8,7 @@
 #include "controller.h"
 #include "tasks/cluster.h"
 #include "tasks/storage_db.h"
+#include "tasks/clock.h"
 #include <NODE_project_info.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -45,6 +46,10 @@ namespace node
 		, cyng::tuple_t cfg_db
 		, cyng::tuple_t const& cfg_trigger
 		, cyng::tuple_t const& cfg_csv);
+	std::size_t start_clock(cyng::async::mux&
+		, cyng::logging::log_ptr
+		, cyng::tuple_t const& cfg_trigger
+		, std::size_t storage_task);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -315,6 +320,11 @@ namespace node
 			, cyng::value_cast(dom.get("trigger"), tpl)
 			, cyng::value_cast(dom.get("csv"), tpl));
 
+		std::size_t clock_task = start_clock(mux
+			, logger
+			, cyng::value_cast(dom.get("trigger"), tpl)
+			, storage_task);
+
 		//
 		//	connect to cluster
 		//
@@ -322,7 +332,7 @@ namespace node
 		join_cluster(mux
 			, logger
 			, cyng::value_cast(dom.get("cluster"), vec)
-			, storage_task);
+			, clock_task);
 
 		//
 		//	wait for system signals
@@ -396,10 +406,24 @@ namespace node
 		CYNG_LOG_INFO(logger, "connect to configuration database");
 
 		return cyng::async::start_task_delayed<storage_db>(mux
-			, std::chrono::seconds(1)
+			, std::chrono::seconds(2)
 			, logger
 			, cyng::to_param_map(cfg_db)
-			, cyng::to_param_map(cfg_trigger)
 			, cyng::to_param_map(cfg_csv)).first;
 	}
+
+	std::size_t start_clock(cyng::async::mux& mux
+		, cyng::logging::log_ptr logger
+		, cyng::tuple_t const& cfg_trigger
+		, std::size_t storage_task)
+	{
+		CYNG_LOG_INFO(logger, "start clock");
+
+		return cyng::async::start_task_delayed<clock>(mux
+			, std::chrono::seconds(3)
+			, logger
+			, storage_task
+			, cyng::to_param_map(cfg_trigger)).first;
+	}
+
 }
