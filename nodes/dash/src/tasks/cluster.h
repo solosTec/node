@@ -71,10 +71,16 @@ namespace node
 		void db_req_modify_by_param(cyng::context& ctx);
 
 		void ws_read(cyng::context& ctx);
+		void http_upload_start(cyng::context& ctx);
 		void http_upload_data(cyng::context& ctx);
 		void http_upload_var(cyng::context& ctx);
 		void http_upload_progress(cyng::context& ctx);
 		void http_upload_complete(cyng::context& ctx);
+		//void http_moved(cyng::context& ctx);
+
+		void cfg_download_devices(cyng::context& ctx);
+		void cfg_download_gateways(cyng::context& ctx);
+		void cfg_download_messages(cyng::context& ctx);
 
 		void sync_table(std::string const&);
 
@@ -114,6 +120,8 @@ namespace node
 
 		void display_loading_icon(boost::uuids::uuid tag, bool, std::string const&);
 
+		void trigger_download(boost::uuids::uuid tag, std::string table);
+
 	private:
 		cyng::async::base_task& base_;
 		boost::uuids::random_generator rgn_;
@@ -139,6 +147,11 @@ namespace node
 		 * system task
 		 */
         std::size_t sys_tsk_;
+
+		/**
+		 * form values
+		 */
+		std::map<boost::uuids::uuid, std::map<std::string, std::string>>	form_data_;
 	};
 	
 }

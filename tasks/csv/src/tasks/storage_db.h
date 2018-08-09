@@ -8,6 +8,7 @@
 #ifndef NODE_CSV_TASK_STORAGE_DB_H
 #define NODE_CSV_TASK_STORAGE_DB_H
 
+#include <smf/cluster/bus.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -28,6 +29,7 @@ namespace node
 	public:
 		storage_db(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
+			, bus::shared_type bus
 			, cyng::param_map_t
 			, cyng::param_map_t);
 		cyng::continuation run();
@@ -78,6 +80,7 @@ namespace node
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
+		bus::shared_type bus_;
 		cyng::db::session_pool pool_;
 		const cyng::param_map_t cfg_db_;
 		const cyng::param_map_t cfg_csv_;

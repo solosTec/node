@@ -36,34 +36,39 @@ namespace node
 			 * Add the specified connection to the manager and start it.
 			 * Called by server.
 			 */
-			void start(session_ptr);
+			void start(cyng::object);
 
 			/**
 			 * Upgrade a session to a websocket
 			 * Called by session.
 			 */
-			websocket_session const* upgrade(session_ptr c);
+			websocket_session const* upgrade(session*);
 
-			/// Stop the specified connection.
-			void stop(session_ptr c);
+			/**
+			 * Stop the specified HTTP session.
+			 */
+			bool stop(session*);
 
 			/**
 			 * Stop the specified websocket
 			 */
 			bool stop(websocket_session const*);
 
-			/// Stop all connections.
+			/**
+			 * stop all HTTP sessions and Web-Sockets
+			 */
 			void stop_all();
 
 			/**
 			 * deliver a message to a websocket
 			 */
-			//void run_on_ws(boost::uuids::uuid tag, cyng::vector_t&& prg);
 			bool send_msg(boost::uuids::uuid tag, std::string const&);
 
 			bool add_channel(boost::uuids::uuid tag, std::string const& channel);
-			//void process_event(std::string const& channel, cyng::vector_t&&);
 			void process_event(std::string const& channel, std::string const&);
+
+			void send_moved(boost::uuids::uuid tag, std::string const& target);
+			void trigger_download(boost::uuids::uuid tag, std::string const& filename);
 
 		private:
 			/**
@@ -75,8 +80,14 @@ namespace node
 		private:
 			cyng::logging::log_ptr logger_;
 
-			/// The managed connections.
-			std::set<session_ptr> connections_;
+			/**
+			 * Running HTTP/1.x sessions
+			 */
+			std::map<boost::uuids::uuid, cyng::object>	sessions_;
+
+			/**
+			 * Websockets
+			 */
 			std::map<boost::uuids::uuid, cyng::object>	ws_;
 
 			/**

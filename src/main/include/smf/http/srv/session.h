@@ -9,9 +9,8 @@
 #define NODE_LIB_HTTP_SRV_SESSION_H
 
 #include <cyng/log.h>
-#include <cyng/store/db.h>
+//#include <cyng/store/db.h>
 #include <smf/cluster/bus.h>
-//#include <cyng/vm/controller.h>
 #include <memory>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -22,7 +21,7 @@ namespace node
 	namespace http
 	{
 		class connection_manager;
-		class session : public std::enable_shared_from_this<session>
+		class session //: public std::enable_shared_from_this<session>
 		{
 			friend class connection_manager;
 
@@ -81,7 +80,8 @@ namespace node
 									self_.strand_,
 									std::bind(
 										&session::on_write,
-										self_.shared_from_this(),
+										&self_,
+										//self_.shared_from_this(),
 										std::placeholders::_1,
 										msg_.need_eof())));
 						}
@@ -106,9 +106,10 @@ namespace node
 				, boost::asio::ip::tcp::socket socket
 				, std::string const& doc_root
 				, node::bus::shared_type
-				, cyng::store::db&
 				, boost::uuids::uuid);
 			virtual ~session();
+
+			boost::uuids::uuid tag() const noexcept;
 
 			// Start the asynchronous operation
 			void run();
@@ -121,6 +122,30 @@ namespace node
 			void on_write(boost::system::error_code ec, bool close);
 			void do_close();
 
+			void send_moved(std::string const& location);
+			void trigger_download(std::string const& filename);
+
+		private:
+			void handle_request(boost::beast::http::request<boost::beast::http::string_body>&&);
+			boost::beast::http::response<boost::beast::http::string_body> send_bad_request(std::uint32_t version
+				, bool
+				, std::string const& why);
+			boost::beast::http::response<boost::beast::http::string_body> send_not_found(std::uint32_t version
+				, bool
+				, std::string target);
+			boost::beast::http::response<boost::beast::http::string_body> send_server_error(std::uint32_t version
+				, bool
+				, boost::system::error_code ec);
+			boost::beast::http::response<boost::beast::http::empty_body> send_head(std::uint32_t version
+				, bool
+				, std::string const& path
+				, std::uint64_t);
+			boost::beast::http::response<boost::beast::http::file_body> send_get(std::uint32_t version
+				, bool
+				, boost::beast::http::file_body::value_type&&
+				, std::string const& path
+				, std::uint64_t size);
+
 		private:
 			boost::asio::ip::tcp::socket socket_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
@@ -131,8 +156,6 @@ namespace node
 			std::string const& doc_root_;
 			bus::shared_type bus_;
 			const boost::uuids::uuid tag_;
-			cyng::store::db& cache_;
-			//cyng::controller vm_;	//!< http session
 			boost::beast::http::request<boost::beast::http::string_body> req_;
 			queue queue_;
             bool shutdown_;
@@ -142,8 +165,65 @@ namespace node
 		* sessions are managed by the session manager as
 		* shared pointers
 		*/
-		using session_ptr = std::shared_ptr<session>;
+		//using session_ptr = std::shared_ptr<session>;
+
+		cyng::object make_http_session(cyng::logging::log_ptr
+			, connection_manager& cm
+			, boost::asio::ip::tcp::socket&& socket
+			, std::string const& doc_root
+			, bus::shared_type
+			, boost::uuids::uuid);
+
+
 	}
+}
+
+#include <cyng/intrinsics/traits.hpp>
+
+namespace cyng
+{
+	namespace traits
+	{
+		template <>
+		struct type_tag<node::http::session>
+		{
+			using type = node::http::session;
+			using tag = std::integral_constant<std::size_t, PREDEF_SESSION>;
+#if defined(CYNG_LEGACY_MODE_ON)
+			const static char name[];
+#else
+			constexpr static char name[] = "http";
+#endif
+		};
+
+		template <>
+		struct reverse_type < PREDEF_SESSION >
+		{
+			using type = node::http::session;
+		};
+	}
+
+}
+
+namespace std
+{
+	template<>
+	struct hash<node::http::session>
+	{
+		size_t operator()(node::http::session const& t) const noexcept;
+	};
+
+	template<>
+	struct equal_to<node::http::session>
+	{
+		//	pre C++17
+		using result_type = bool;
+		using first_argument_type = node::http::session;
+		using second_argument_type = node::http::session;
+
+		bool operator()(node::http::session const& t1, node::http::session const& t2) const noexcept;
+	};
+
 }
 
 #endif

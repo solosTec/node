@@ -82,7 +82,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Devices</h5>
-                    <form id="smf-upload-config-device" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
+                    <form id="smf-upload-config-device" method="post" action="/api/download/config/device" enctype="multipart/form-data" class="form-horizontal">
                         <div class="form-group">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="smf-upload-config-device-version" id="smf-upload-config-device-v31" value="v3.2">
@@ -97,21 +97,17 @@
                                 <label class="form-check-label" for="smf-upload-config-device-v5">version 5.0</label>
                             </div>
                         </div>
-<!--                        <button type="submit" class="btn btn-primary">&#8681; Download</button>-->
-                        <a href="/download/devices/XML" download="devices.xml">
-                            <input type="button" class="btn btn-primary" value="&#8681; Download" />
-                        </a>
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.download.devices" />
+                        <button type="submit" class="btn btn-primary">&#8681; Download</button>
                     </form>
                 </div>
             </div>
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Gateways</h5>
-                    <form id="smf-upload-config-gw" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
-<!--                        <button type="submit" class="btn btn-primary">&#8681; Download</button>-->
-                        <a href="/download/gateways/XML" download="gateways.xml">
-                            <input type="button" class="btn btn-primary" value="&#8681; Download" />
-                        </a>
+                    <form id="smf-upload-config-gw" method="post" action="config.download.html" enctype="multipart/form-data" class="form-horizontal">
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.download.gateways" />
+                        <button type="submit" class="btn btn-primary">&#8681; Download</button>
                     </form>
                 </div>
             </div>
@@ -120,10 +116,8 @@
                 <div class="card-body">
                     <h5 class="card-title">Meters</h5>
                     <form id="smf-upload-config-meters" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
-<!--                        <button type="submit" class="btn btn-primary">&#8681; Download</button>-->
-                        <a href="/download/meters/XML" download="meters.xml">
-                            <input type="button" class="btn btn-primary" value="&#8681; Download" />
-                        </a>
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.download.meters" />
+                        <button type="submit" class="btn btn-primary">&#8681; Download</button>
                     </form>
                 </div>
             </div>
@@ -152,10 +146,8 @@
                                 <label class="form-check-label" for="smf-upload-config-LoRa-v5">SigFox</label>
                             </div>
                         </div>
-                        <!--<button type="submit" class="btn btn-primary">&#8681; Download</button>-->
-                        <a href="/download/LoRa/XML" download="LoRa.xml" filename="hallo">
-                            <input type="button" class="btn btn-primary" value="&#8681; Download" />
-                        </a>
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.download.LoRa" />
+                        <button type="submit" class="btn btn-primary">&#8681; Download</button>
                     </form>
                 </div>
             </div>
@@ -164,10 +156,8 @@
                 <div class="card-body">
                     <h5 class="card-title">User</h5>
                     <form id="smf-upload-config-user" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
-                        <!--<button type="submit" class="btn btn-primary">&#8681; Download</button>-->
-                        <a href="/download/users/XML" download="users.xml">
-                            <input type="button" class="btn btn-primary" value="&#8681; Download" />
-                        </a>
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.download.users" />
+                        <button type="submit" class="btn btn-primary">&#8681; Download</button>
                     </form>
                 </div>
             </div>
@@ -176,9 +166,8 @@
                 <div class="card-body">
                     <h5 class="card-title">Messages</h5>
                     <form id="smf-upload-config-msg" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
-                        <a href="/download/messages/XML" download="messages.xml">
-                            <input type="button" class="btn btn-primary" value="&#8681; Download" />
-                        </a>
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.download.messages" />
+                        <button type="submit" class="btn btn-primary">&#8681; Download</button>
                     </form>
                 </div>
             </div>

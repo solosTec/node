@@ -8,6 +8,7 @@
 #include "storage_db.h"
 #include "clock.h"
 #include <NODE_project_info.h>
+#include <smf/cluster/generator.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -32,10 +33,12 @@ namespace node
 {
 	storage_db::storage_db(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, bus::shared_type bus
 		, cyng::param_map_t cfg_db
 		, cyng::param_map_t cfg_csv)
 	: base_(*btp)
 		, logger_(logger)
+		, bus_(bus)
 		, pool_(base_.mux_.get_io_service(), cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg_db["type"], "SQLite")))
 		, cfg_db_(cfg_db)
 		, cfg_csv_(cfg_csv)
@@ -97,7 +100,16 @@ namespace node
 
 		if (!pool_.start(cfg_db_))
 		{
-			CYNG_LOG_FATAL(logger_, "to start DB connection pool failed");
+			std::stringstream ss;
+			ss
+				<< "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> failed to open connection pool"
+				;
+			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_FATAL, ss.str()));
+			CYNG_LOG_FATAL(logger_, ss.str());
 			return cyng::continuation::TASK_YIELD;
 		}
 		else
@@ -105,6 +117,18 @@ namespace node
 			CYNG_LOG_INFO(logger_, "DB connection pool is running with "
 				<< pool_.get_pool_size() 
 				<< " connection(s)");
+
+			std::stringstream ss;
+			ss
+				<< "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> connection pool is running with "
+				<< pool_.get_pool_size()
+				<< " connection(s)"
+				;
+			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_DEBUG, ss.str()));
 
 			//
 			//	update task state

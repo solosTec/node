@@ -18,7 +18,7 @@ namespace node
 	{
 		connection_manager::connection_manager(cyng::logging::log_ptr logger, bus::shared_type bus)
 			: logger_(logger)
-			, connections_()
+			, sessions_()
 			, ws_()
 			, listener_()
 			, mutex_()
@@ -26,18 +26,21 @@ namespace node
 			bus->vm_.register_function("ws.push", 1, std::bind(&connection_manager::push_ws, this, std::placeholders::_1));
 		}
 
-		void connection_manager::start(session_ptr sp)
+		void connection_manager::start(cyng::object so)
 		{
 			//
 			//	unique lock
 			//
 			cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_);
 
-			connections_.insert(sp);
-			sp->run();
+			auto sp = cyng::object_cast<session>(so);
+			if (sp != nullptr) {
+				sessions_.emplace(sp->tag(), so);
+				const_cast<session*>(sp)->run();
+			}
 		}
 
-		websocket_session const* connection_manager::upgrade(session_ptr sp)
+		websocket_session const* connection_manager::upgrade(session* sp)
 		{
 			//
 			//	unique lock
@@ -57,8 +60,7 @@ namespace node
 			//
 			//	remove HTTP session
 			//
-			connections_.erase(sp);
-			sp.reset();
+			sessions_.erase(sp->tag());
 
 			return (res.second)
 				? cyng::object_cast<websocket_session>(res.first->second)
@@ -66,15 +68,19 @@ namespace node
 				;
 		}
 
-		void connection_manager::stop(session_ptr sp)
+		bool connection_manager::stop(session* sp)
 		{
 			//
 			//	unique lock
 			//
 			cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_);
 
-			connections_.erase(sp);
+
+			//connections_.erase(sp);
 			sp->do_close();
+
+			return sessions_.erase(sp->tag()) != 0;
+
 		}
 
 		bool connection_manager::stop(websocket_session const* wsp)
@@ -90,12 +96,10 @@ namespace node
 			//
 			for (auto pos = listener_.begin(); pos != listener_.end(); )
 			{
-				if (cyng::object_cast<websocket_session>(pos->second)->tag() == wsp->tag())
-				{
+				if (cyng::object_cast<websocket_session>(pos->second)->tag() == wsp->tag()) {
 					pos = listener_.erase(pos);
 				}
-				else
-				{
+				else {
 					++pos;
 				}
 			}
@@ -110,43 +114,33 @@ namespace node
 			//
 			cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_);
 
-			CYNG_LOG_INFO(logger_, "stop " << connections_.size() << " sessions");
-			for (auto sp : connections_)
+			CYNG_LOG_INFO(logger_, "stop " << sessions_.size() << " sessions");
+			for (auto s : sessions_)
 			{
-				sp->do_close();
+				auto ptr = cyng::object_cast<session>(s.second);
+				if (ptr)
+				{
+					const_cast<session*>(ptr)->do_close();
+				}
 			}
+
 			CYNG_LOG_INFO(logger_, "stop " << ws_.size() << " websockets");
-            for (auto & wssp : ws_)
+            for (auto & ws : ws_)
 			{
-                auto ptr = cyng::object_cast<websocket_session>(wssp.second);
+                auto ptr = cyng::object_cast<websocket_session>(ws.second);
                 if (ptr)
                 {
                     const_cast<websocket_session*>(ptr)->do_shutdown();
                 }
 			}
-			connections_.clear();
+
+			//
+			//	clear all maps
+			//
+			sessions_.clear();
 			ws_.clear();
 			listener_.clear();
 		}
-
-		//void connection_manager::run_on_ws(boost::uuids::uuid tag, cyng::vector_t&& prg)
-		//{
-		//	//
-		//	//	shared lock 
-		//	//
-		//	cyng::async::shared_lock<cyng::async::shared_mutex> lock(mutex_);
-
-		//	auto pos = ws_.find(tag);
-		//	if (pos != ws_.end())
-		//	{
-		//		auto ptr = cyng::object_cast<websocket_session>(pos->second);
-		//		if (ptr)
-		//		{
-		//			const_cast<websocket_session*>(ptr)->run(std::move(prg));
-		//		}
-		//	}
-		//	
-		//}
 
 		bool connection_manager::send_msg(boost::uuids::uuid tag, std::string const& msg)
 		{
@@ -186,29 +180,6 @@ namespace node
 			return false;
 		}
 
-		//void connection_manager::process_event(std::string const& channel, cyng::vector_t&& prg)
-		//{
-		//	//
-		//	//	shared lock 
-		//	//
-		//	cyng::async::shared_lock<cyng::async::shared_mutex> lock(mutex_);
-		//	auto range = listener_.equal_range(channel);
-		//	for (auto pos = range.first; pos != range.second; ++pos)
-		//	{
-		//		auto ptr = cyng::object_cast<websocket_session>(pos->second);
-  //              if (ptr)
-  //              {
-  //                  //
-  //                  //  websocket works asynch internally
-  //                  //
-  //                  const_cast<websocket_session*>(ptr)->run(cyng::vector_t(prg));
-  //              }
-  //              else
-  //              {
-  //                  CYNG_LOG_ERROR(logger_, "ws of channel " << channel << " is NULL");
-  //              }
-		//	}
-		//}
 		void connection_manager::process_event(std::string const& channel, std::string const& msg)
 		{
 			//
@@ -219,17 +190,39 @@ namespace node
 			for (auto pos = range.first; pos != range.second; ++pos)
 			{
 				auto ptr = cyng::object_cast<websocket_session>(pos->second);
-				if (ptr)
-				{
+				if (ptr) {
 					//
 					//  websocket works asynch internally
 					//
-					//const_cast<websocket_session*>(ptr)->run(cyng::vector_t(prg));
 					const_cast<websocket_session*>(ptr)->send_msg(msg);
 				}
 				else
 				{
 					CYNG_LOG_ERROR(logger_, "ws of channel " << channel << " is NULL");
+				}
+			}
+		}
+
+		void connection_manager::send_moved(boost::uuids::uuid tag, std::string const& location)
+		{
+			cyng::async::shared_lock<cyng::async::shared_mutex> lock(mutex_);
+			auto pos = sessions_.find(tag);
+			if (pos != sessions_.end()) {
+				auto ptr = cyng::object_cast<session>(pos->second);
+				if (ptr != nullptr) {
+					const_cast<session*>(ptr)->send_moved(location);
+				}
+			}
+		}
+
+		void connection_manager::trigger_download(boost::uuids::uuid tag, std::string const& filename)
+		{
+			cyng::async::shared_lock<cyng::async::shared_mutex> lock(mutex_);
+			auto pos = sessions_.find(tag);
+			if (pos != sessions_.end()) {
+				auto ptr = cyng::object_cast<session>(pos->second);
+				if (ptr != nullptr) {
+					const_cast<session*>(ptr)->trigger_download(filename);
 				}
 			}
 		}

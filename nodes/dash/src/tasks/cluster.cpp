@@ -20,6 +20,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/sys/memory.h>
 #include <cyng/json.h>
+#include <cyng/xml.h>
 
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/string_generator.hpp>
@@ -41,6 +42,7 @@ namespace node
 		, cache_()
 		, server_(logger, btp->mux_.get_io_service(), ep, doc_root, bus_, cache_)
         , sys_tsk_(cyng::async::NO_TASK)
+		, form_data_()
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -82,10 +84,16 @@ namespace node
 		//
 		bus_->vm_.register_function("ws.read", 3, std::bind(&cluster::ws_read, this, std::placeholders::_1));
 
+		bus_->vm_.register_function("http.upload.start", 2, std::bind(&cluster::http_upload_start, this, std::placeholders::_1));
 		bus_->vm_.register_function("http.upload.data", 5, std::bind(&cluster::http_upload_data, this, std::placeholders::_1));
 		bus_->vm_.register_function("http.upload.var", 3, std::bind(&cluster::http_upload_var, this, std::placeholders::_1));
 		bus_->vm_.register_function("http.upload.progress", 4, std::bind(&cluster::http_upload_progress, this, std::placeholders::_1));
 		bus_->vm_.register_function("http.upload.complete", 4, std::bind(&cluster::http_upload_complete, this, std::placeholders::_1));
+		//bus_->vm_.register_function("http.send.moved", 2, std::bind(&cluster::http_moved, this, std::placeholders::_1));
+
+		bus_->vm_.register_function("cfg.download.devices", 2, std::bind(&cluster::cfg_download_devices, this, std::placeholders::_1));
+		bus_->vm_.register_function("cfg.download.gateways", 2, std::bind(&cluster::cfg_download_gateways, this, std::placeholders::_1));
+		bus_->vm_.register_function("cfg.download.messages", 2, std::bind(&cluster::cfg_download_messages, this, std::placeholders::_1));
 
 		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
@@ -862,6 +870,30 @@ namespace node
 
 	}
 
+	void cluster::http_upload_start(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			std::uint32_t,		//	[1] HTTP version
+			std::string,		//	[2] target
+			std::uint32_t		//	[3] payload size
+		>(frame);
+
+		CYNG_LOG_TRACE(logger_, "http.upload.start - "
+			<< std::get<0>(tpl)
+			<< ", "
+			<< std::get<2>(tpl)
+			<< ", payload size: "
+			<< std::get<3>(tpl));
+
+		form_data_.erase(std::get<0>(tpl));
+		auto r = form_data_.emplace(std::get<0>(tpl), std::map<std::string, std::string>());
+		if (r.second) {
+			r.first->second.emplace("target", std::get<2>(tpl));
+		}
+
+	}
 
 	void cluster::http_upload_data(cyng::context& ctx)
 	{
@@ -911,7 +943,29 @@ namespace node
 	{
 		//	[5910f652-95ce-4d94-b60f-6ff4a26730ba,smf-upload-config-device-version,v5.0]
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "http.upload.var - " << cyng::io::to_str(frame));
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			std::string,		//	[1] variable name
+			std::string			//	[2] value
+		>(frame);
+
+
+		auto pos = form_data_.find(std::get<0>(tpl));
+		if (pos != form_data_.end()) {
+			CYNG_LOG_TRACE(logger_, "http.upload.var - "
+				<< std::get<0>(tpl)
+				<< " - "
+				<< std::get<1>(tpl)
+				<< " = "
+				<< std::get<2>(tpl));
+			pos->second.emplace(std::get<1>(tpl), std::get<2>(tpl));
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "http.upload.var - session "
+				<< std::get<0>(tpl)
+				<< " not found");
+		}
+
 	}
 
 	void cluster::http_upload_progress(cyng::context& ctx)
@@ -923,18 +977,11 @@ namespace node
 		//	* content size
 		//	* progress in %
 		//	
-		const cyng::vector_t frame = ctx.get_frame();
-		//CYNG_LOG_TRACE(logger_, "http.upload.progress - " << cyng::io::to_str(frame));
-		CYNG_LOG_TRACE(logger_, "http.upload.progress - " << cyng::value_cast<std::uint32_t>(frame.at(3), 0) << "%");
-
 #ifdef __DEBUG
-		std::stringstream ss;
-		ss 
-			<< "http.upload.progress: " 
-			<< cyng::value_cast<std::uint32_t>(frame.at(3), 0) 
-			<< "%";
-		ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_TRACE, ss.str()));
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "http.upload.progress - " << cyng::value_cast<std::uint32_t>(frame.at(3), 0) << "%");
 #endif
+
 	}
 
 	void cluster::http_upload_complete(cyng::context& ctx)
@@ -956,13 +1003,153 @@ namespace node
 			std::string			//	[3] target
 		>(frame);
 
+		//
+		//	post a system message
+		//
+		auto pos = form_data_.find(std::get<0>(tpl));
+		auto count = (pos != form_data_.end())
+			? pos->second.size()
+			: 0
+			;
 		std::stringstream ss;
 		ss
 			<< "upload "
 			<< std::get<2>(tpl)
 			<< " bytes to "
-			<< std::get<3>(tpl);
-		ctx.attach(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_INFO : cyng::logging::severity::LEVEL_WARNING), ss.str()));
+			<< std::get<3>(tpl)
+			<< " with "
+			<< count
+			<< " variable(s)"
+			;
+		ctx.attach(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_TRACE : cyng::logging::severity::LEVEL_WARNING), ss.str()));
+
+		//
+		//	start procedure
+		//
+		bool found;
+		if (pos != form_data_.end()) {
+			auto idx = pos->second.find("smf-procedure");
+			if (idx != pos->second.end()) {
+
+				CYNG_LOG_TRACE(logger_, "run "
+					<< std::get<0>(tpl)
+					<< " - "
+					<< idx->second);
+
+				cyng::param_map_t params;
+				for (auto const& v : pos->second) {
+					params.insert(cyng::param_factory(v.first, v.second));
+				}
+				bus_->vm_.async_run(cyng::generate_invoke(idx->second, std::get<0>(tpl), params));
+				found = true;
+			}
+		}
+
+		//
+		//	cleanup form data
+		//
+		form_data_.erase(std::get<0>(tpl));
+
+		//
+		//	consider to send a 302 - Object moved response
+		//
+		if (!found) {
+			server_.send_moved(std::get<0>(tpl), std::get<3>(tpl));
+		}
+	}
+
+	void cluster::cfg_download_devices(cyng::context& ctx)
+	{
+		//
+		//	example
+		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.download.devices - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		trigger_download(std::get<0>(tpl), "TDevice");
+
+	}
+
+	void cluster::cfg_download_gateways(cyng::context& ctx)
+	{
+		//
+		//	example
+		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.download.gateways - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		trigger_download(std::get<0>(tpl), "TGateway");
+
+	}
+	
+	void cluster::cfg_download_messages(cyng::context& ctx)
+	{
+		//
+		//	example
+		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.download.messages - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		trigger_download(std::get<0>(tpl), "*SysMsg");
+
+	}
+
+	void cluster::trigger_download(boost::uuids::uuid tag, std::string table)
+	{
+		//
+		//	generate XML download file
+		//
+		pugi::xml_document doc_;
+		auto declarationNode = doc_.append_child(pugi::node_declaration);
+		declarationNode.append_attribute("version") = "1.0";
+		declarationNode.append_attribute("encoding") = "UTF-8";
+		declarationNode.append_attribute("standalone") = "yes";
+
+		pugi::xml_node root = doc_.append_child(table.c_str());
+		root.append_attribute("xmlns:xsi") = "w3.org/2001/XMLSchema-instance";
+		cache_.access([&](cyng::store::table const* tbl) {
+
+			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+				//
+				//	write record
+				//
+				cyng::xml::write(root.append_child("record"), rec.convert());
+
+				//	continue
+				return true;
+			});
+			BOOST_ASSERT(counter == 0);
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
+
+		}, cyng::store::read_access(table));
+
+		auto out = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.xml");
+		doc_.save_file(out.c_str(), PUGIXML_TEXT("  "));
+
+		//
+		//	trigger download
+		//
+		server_.trigger_download(tag, out.string());
+
 	}
 
 	void cluster::ws_read(cyng::context& ctx)

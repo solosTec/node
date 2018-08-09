@@ -7,8 +7,6 @@
 
 #include "controller.h"
 #include "tasks/cluster.h"
-#include "tasks/storage_db.h"
-#include "tasks/clock.h"
 #include <NODE_project_info.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -40,16 +38,17 @@ namespace node
 	void join_cluster(cyng::async::mux&
 		, cyng::logging::log_ptr
 		, cyng::vector_t const& cfg_cluster
-		, std::size_t);
-	std::size_t connect_data_store(cyng::async::mux&
-		, cyng::logging::log_ptr
 		, cyng::tuple_t cfg_db
-		, cyng::tuple_t const& cfg_trigger
-		, cyng::tuple_t const& cfg_csv);
-	std::size_t start_clock(cyng::async::mux&
-		, cyng::logging::log_ptr
-		, cyng::tuple_t const& cfg_trigger
-		, std::size_t storage_task);
+		, cyng::tuple_t const& cfg_csv
+		, cyng::tuple_t const& cfg_trigger);
+	//std::size_t connect_data_store(cyng::async::mux&
+	//	, cyng::logging::log_ptr
+	//	, cyng::tuple_t cfg_db
+	//	, cyng::tuple_t const& cfg_csv);
+	//std::size_t start_clock(cyng::async::mux&
+	//	, cyng::logging::log_ptr
+	//	, cyng::tuple_t const& cfg_trigger
+	//	, std::size_t storage_task);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -314,16 +313,15 @@ namespace node
 		//	Open database session only when needed (from task clock)
 		//
 		cyng::tuple_t tpl;
-		std::size_t storage_task = connect_data_store(mux
-			, logger
-			, cyng::value_cast(dom.get("DB"), tpl)
-			, cyng::value_cast(dom.get("trigger"), tpl)
-			, cyng::value_cast(dom.get("csv"), tpl));
+		//std::size_t storage_task = connect_data_store(mux
+		//	, logger
+		//	, cyng::value_cast(dom.get("DB"), tpl)
+		//	, cyng::value_cast(dom.get("csv"), tpl));
 
-		std::size_t clock_task = start_clock(mux
-			, logger
-			, cyng::value_cast(dom.get("trigger"), tpl)
-			, storage_task);
+		//std::size_t clock_task = start_clock(mux
+		//	, logger
+		//	, cyng::value_cast(dom.get("trigger"), tpl)
+		//	, storage_task);
 
 		//
 		//	connect to cluster
@@ -332,7 +330,9 @@ namespace node
 		join_cluster(mux
 			, logger
 			, cyng::value_cast(dom.get("cluster"), vec)
-			, clock_task);
+			, cyng::value_cast(dom.get("DB"), tpl)
+			, cyng::value_cast(dom.get("csv"), tpl)
+			, cyng::value_cast(dom.get("trigger"), tpl));
 
 		//
 		//	wait for system signals
@@ -385,7 +385,9 @@ namespace node
 	void join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, cyng::vector_t const& cfg_cluster
-		, std::size_t storage_tsk)
+		, cyng::tuple_t cfg_db
+		, cyng::tuple_t const& cfg_csv
+		, cyng::tuple_t const& cfg_trigger)
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cluster.size());
 
@@ -393,37 +395,8 @@ namespace node
 			, std::chrono::seconds(1)
 			, logger
 			, load_cluster_cfg(cfg_cluster)
-			, storage_tsk);
-
-	}
-
-	std::size_t connect_data_store(cyng::async::mux& mux
-		, cyng::logging::log_ptr logger
-		, cyng::tuple_t cfg_db
-		, cyng::tuple_t const& cfg_trigger
-		, cyng::tuple_t const& cfg_csv)
-	{
-		CYNG_LOG_INFO(logger, "connect to configuration database");
-
-		return cyng::async::start_task_delayed<storage_db>(mux
-			, std::chrono::seconds(2)
-			, logger
 			, cyng::to_param_map(cfg_db)
-			, cyng::to_param_map(cfg_csv)).first;
+			, cyng::to_param_map(cfg_csv)
+			, cyng::to_param_map(cfg_trigger));
 	}
-
-	std::size_t start_clock(cyng::async::mux& mux
-		, cyng::logging::log_ptr logger
-		, cyng::tuple_t const& cfg_trigger
-		, std::size_t storage_task)
-	{
-		CYNG_LOG_INFO(logger, "start clock");
-
-		return cyng::async::start_task_delayed<clock>(mux
-			, std::chrono::seconds(3)
-			, logger
-			, storage_task
-			, cyng::to_param_map(cfg_trigger)).first;
-	}
-
 }

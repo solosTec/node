@@ -80,19 +80,6 @@ namespace node
 			{
 				progress_ = progress;
 
-				//
-				//	producing too much output garbage
-				//
-#ifdef _DEBUG
-			//CYNG_LOG_TRACE(logger_, "upload "
-			//	<< upload_size_
-			//	<< " / "
-			//	<< content_size_
-			//	<< " = "
-			//	<< progress_
-			//	<< "% " );
-#endif
-
 				cb_(cyng::generate_invoke("http.upload.progress"
 					, tag_
 					, upload_size_

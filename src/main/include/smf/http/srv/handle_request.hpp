@@ -13,6 +13,7 @@
 #include <smf/http/srv/mime_type.h>
 #include <smf/http/srv/parser/multi_part.h>
 #include <cyng/log.h>
+#include <cyng/vm/generator.h>
 
 namespace node
 {
@@ -190,21 +191,40 @@ namespace node
 				, tag);
 
 
-			for (char c : req.body())
-			{ 
+			vm(cyng::generate_invoke("http.upload.start"
+				, tag
+				, req.version()
+				, std::string(target.begin(), target.end())
+				, payload_size));
+
+			for (char c : req.body()) {
 				mpp.parse(c);
 			}
 			
 			//
 			//	consider to send a 302 - Object moved response
 			//
-			boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::ok, req.version() };
-			res.set(boost::beast::http::field::server, NODE::version_string);
-			res.body() = std::string("");
-			res.prepare_payload();
-			//res.content_length(body.size());
-			res.keep_alive(req.keep_alive());
-			return send(std::move(res));
+			//boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::ok, req.version() };
+			//res.set(boost::beast::http::field::server, NODE::version_string);
+			//res.body() = std::string("");
+			//res.prepare_payload();
+			////res.content_length(body.size());
+			//res.keep_alive(req.keep_alive());
+
+			//req.version();
+			//boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::ok, req.version() };
+			//res.set(boost::beast::http::field::server, NODE::version_string);
+			//res.set(boost::beast::http::field::content_description, "File Transfer");
+			//res.set(boost::beast::http::field::content_type, "application/octet-stream");
+			//res.set(boost::beast::http::field::content_type, "application/force-download");
+			//res.set(boost::beast::http::field::content_disposition, "attachment; filename='demo.xml'");
+			//res.set(boost::beast::http::field::expires, 0);
+			//res.set(boost::beast::http::field::cache_control, "must-revalidate, post-check=0, pre-check=0");
+			//res.body() = std::string("<xml>hello, world!</xml>");
+			//res.prepare_payload();
+
+			//return send(std::move(res));
+			return;
 		}
 		return send(std::move(req));
 	}

@@ -134,13 +134,20 @@ namespace node
 				CYNG_LOG_TRACE(logger_, "accept: " << socket_.remote_endpoint());
 
 				// Create the http_session and run it
-				connection_manager_.start(std::make_shared<session>(logger_
+				//connection_manager_.start(std::make_shared<session>(logger_
+				//	, connection_manager_
+				//	, std::move(socket_)
+				//	, doc_root_
+				//	, bus_
+				//	, cache_
+				//	, rgn_()));
+				connection_manager_.start(make_http_session(logger_
 					, connection_manager_
 					, std::move(socket_)
 					, doc_root_
 					, bus_
-					, cache_
 					, rgn_()));
+
 
 				// Accept another connection
 				do_accept();
@@ -186,6 +193,16 @@ namespace node
 		void server::process_event(std::string const& channel, std::string const& msg)
 		{
 			connection_manager_.process_event(channel, msg);
+		}
+
+		void server::send_moved(boost::uuids::uuid tag, std::string const& location)
+		{
+			connection_manager_.send_moved(tag, location);
+		}
+
+		void server::trigger_download(boost::uuids::uuid tag, std::string const& filename)
+		{
+			connection_manager_.trigger_download(tag, filename);
 		}
 
 	}
