@@ -232,7 +232,7 @@ namespace node
 		//
 		//	The session tables uses the same tag as the remote client session
 		//	
-		if (!db.create_table(cyng::table::make_meta_table<1, 12>("*Session", { "tag"	//	client session - primary key [uuid]
+		if (!db.create_table(cyng::table::make_meta_table<1, 12>("_Session", { "tag"	//	client session - primary key [uuid]
 			, "local"	//	[object] local peer object (hold session reference)
 			, "remote"	//	[object] remote peer object (if session connected)
 			, "peer"	//	[uuid] remote peer
@@ -252,7 +252,7 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table *Session");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 9>("*Target", { "channel"	//	[uint32] - target id: primary key
+		if (!db.create_table(cyng::table::make_meta_table<1, 9>("_Target", { "channel"	//	[uint32] - target id: primary key
 			, "tag"		//	[uuid] owner session
 			, "peer"	//	[uuid] peer of owner
 			, "name"	//	[string] target name
@@ -296,7 +296,7 @@ namespace node
 		//
 		//	All dial-up connections. Leased Lines have to be incorporated.
 		//
-		if (!db.create_table(cyng::table::make_meta_table<2, 7>("*Connection",
+		if (!db.create_table(cyng::table::make_meta_table<2, 7>("_Connection",
 			{ "first"		//	[uuid] primary key 
 			, "second"		//	[uuid] primary key 
 			, "aName"		//	[string] caller
@@ -316,7 +316,7 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table *Connection");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 8>("*Cluster", 
+		if (!db.create_table(cyng::table::make_meta_table<1, 8>("_Cluster", 
 			{ "tag"			//	[uuid] client session - primary key 
 			, "class"		//	[string] node class
 			, "loginTime"	//	last login time
@@ -343,7 +343,7 @@ namespace node
 		}
 		else
 		{
-			db.insert("*Cluster"
+			db.insert("_Cluster"
 				, cyng::table::key_generator(tag)
 				, cyng::table::data_generator("master"
 					, std::chrono::system_clock::now()
@@ -358,7 +358,7 @@ namespace node
 
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 1>("*Config", { "name"	//	parameter name
+		if (!db.create_table(cyng::table::make_meta_table<1, 1>("_Config", { "name"	//	parameter name
 			, "value"	//	parameter value
 			},
 			{ cyng::TC_STRING, cyng::TC_STRING },
@@ -373,32 +373,32 @@ namespace node
 			const bool connection_superseed = is_connection_superseed(global_config);
 			const bool generate_time_series = is_generate_time_series(global_config);
 
-			db.insert("*Config", cyng::table::key_generator("startup"), cyng::table::data_generator(std::chrono::system_clock::now()), 1, tag);
-			db.insert("*Config", cyng::table::key_generator("master-tag"), cyng::table::data_generator(tag), 1, tag);
-			db.insert("*Config", cyng::table::key_generator("connection-auto-login"), cyng::table::data_generator(connection_auto_login), 1, tag);
-			db.insert("*Config", cyng::table::key_generator("connection-auto-enabled"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
-			db.insert("*Config", cyng::table::key_generator("connection-superseed"), cyng::table::data_generator(connection_superseed), 1, tag);
-			db.insert("*Config", cyng::table::key_generator("generate-time-series"), cyng::table::data_generator(generate_time_series), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("startup"), cyng::table::data_generator(std::chrono::system_clock::now()), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("master-tag"), cyng::table::data_generator(tag), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("connection-auto-login"), cyng::table::data_generator(connection_auto_login), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("connection-auto-enabled"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("connection-superseed"), cyng::table::data_generator(connection_superseed), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("generate-time-series"), cyng::table::data_generator(generate_time_series), 1, tag);
 
-			db.insert("*Config", cyng::table::key_generator("connection-auto-login-default"), cyng::table::data_generator(connection_auto_login), 1, tag);
-			db.insert("*Config", cyng::table::key_generator("connection-auto-enabled-default"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
-			db.insert("*Config", cyng::table::key_generator("connection-superseed-default"), cyng::table::data_generator(connection_superseed), 1, tag);
-			db.insert("*Config", cyng::table::key_generator("generate-time-series-default"), cyng::table::data_generator(generate_time_series), 1, tag);
-			db.insert("*Config", cyng::table::key_generator("generate-time-series-dir"), cyng::table::data_generator(stat_dir.string()), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("connection-auto-login-default"), cyng::table::data_generator(connection_auto_login), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("connection-auto-enabled-default"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("connection-superseed-default"), cyng::table::data_generator(connection_superseed), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("generate-time-series-default"), cyng::table::data_generator(generate_time_series), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("generate-time-series-dir"), cyng::table::data_generator(stat_dir.string()), 1, tag);
 			
 
 			//	get hostname
 			boost::system::error_code ec;
 			const auto host_name = boost::asio::ip::host_name(ec);
 			if (!ec) {
-				db.insert("*Config", cyng::table::key_generator("host-name"), cyng::table::data_generator(host_name), 1, tag);
+				db.insert("_Config", cyng::table::key_generator("host-name"), cyng::table::data_generator(host_name), 1, tag);
 			}
 			else {
-				db.insert("*Config", cyng::table::key_generator("host-name"), cyng::table::data_generator(ec.message()), 1, tag);
+				db.insert("_Config", cyng::table::key_generator("host-name"), cyng::table::data_generator(ec.message()), 1, tag);
 			}
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 3>("*SysMsg", { "id"	//	message number
+		if (!db.create_table(cyng::table::make_meta_table<1, 3>("_SysMsg", { "id"	//	message number
 			, "ts"	//	timestamp
 			, "severity"	
 			, "msg"	//	message text
@@ -440,7 +440,7 @@ namespace node
 	{
 		db.access([&](cyng::store::table* tbl)->void {
 			insert_msg(tbl, level, msg, tag);
-		}, cyng::store::write_access("*SysMsg"));
+		}, cyng::store::write_access("_SysMsg"));
 
 	}
 

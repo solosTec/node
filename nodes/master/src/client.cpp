@@ -243,8 +243,8 @@ namespace node
 				}
 			}
 		}	, cyng::store::read_access("TDevice")
-			, cyng::store::write_access("*Session")
-			, cyng::store::write_access("*Cluster"));
+			, cyng::store::write_access("_Session")
+			, cyng::store::write_access("_Cluster"));
 
 		if (!found)
 		{
@@ -550,10 +550,10 @@ namespace node
 
 			}
 
-		}	, cyng::store::write_access("*Session")
-			, cyng::store::write_access("*Target")
-			, cyng::store::write_access("*Cluster")
-			, cyng::store::write_access("*Connection"));
+		}	, cyng::store::write_access("_Session")
+			, cyng::store::write_access("_Target")
+			, cyng::store::write_access("_Cluster")
+			, cyng::store::write_access("_Connection"));
 
 		if (req)
 		{
@@ -720,7 +720,7 @@ namespace node
 			});
 
 		}	, cyng::store::read_access("TDevice")
-			, cyng::store::write_access("*Session"));
+			, cyng::store::write_access("_Session"));
 
 		if (!success)
 		{
@@ -878,8 +878,8 @@ namespace node
 					<< " failed");
 			}
 
-		}	, cyng::store::write_access("*Session")
-			, cyng::store::write_access("*Connection"));
+		}	, cyng::store::write_access("_Session")
+			, cyng::store::write_access("_Connection"));
 
 		return prg;
 	}
@@ -992,8 +992,8 @@ namespace node
 					<< ") not found - cannot forward connection close response");
 			}
 
-		}	, cyng::store::write_access("*Session")
-			, cyng::store::write_access("*Connection"));
+		}	, cyng::store::write_access("_Session")
+			, cyng::store::write_access("_Connection"));
 
 		return prg;
 	}
@@ -1127,8 +1127,8 @@ namespace node
 #endif
 			}
 
-		}	, cyng::store::write_access("*Session")
-			, cyng::store::write_access("*Connection"));
+		}	, cyng::store::write_access("_Session")
+			, cyng::store::write_access("_Connection"));
 
 		return prg;
 	}
@@ -1211,7 +1211,7 @@ namespace node
 				CYNG_LOG_ERROR(logger_, "no session record: " << tag);
 			}
 
-		}, cyng::store::write_access("*Session"));
+		}, cyng::store::write_access("_Session"));
 
 		return prg;
 	}
@@ -1373,10 +1373,10 @@ namespace node
 				, options
 				, bag));
 
-		}	, cyng::store::read_access("*Target")
+		}	, cyng::store::read_access("_Target")
 			, cyng::store::write_access("*Channel")
-			, cyng::store::read_access("*Session")
-			, cyng::store::write_access("*SysMsg")
+			, cyng::store::read_access("_Session")
+			, cyng::store::write_access("_SysMsg")
 			, cyng::store::read_access("TDevice"));
 
 
@@ -1642,7 +1642,7 @@ namespace node
 					std::uint64_t px = cyng::value_cast<std::uint64_t>(rec["px"], 0);
 					tbl_session->modify(rec.key(), cyng::param_factory("px", static_cast<std::uint64_t>(px + size)), tag);
 				}
-			}, cyng::store::write_access("*Session"));
+			}, cyng::store::write_access("_Session"));
 
 			//
 			//	update px value of targets
@@ -1658,7 +1658,7 @@ namespace node
 						tbl_target->modify(rec.key(), cyng::param_factory("px", static_cast<std::uint64_t>(px + size)), tag);
 					}
 				}
-			}, cyng::store::write_access("*Target"));
+			}, cyng::store::write_access("_Target"));
 		}
 		prg << cyng::unwinder(client_res_transfer_pushdata(tag
 			, seq
@@ -1793,8 +1793,8 @@ namespace node
 					<< " not found");
 			}
 
-		}	, cyng::store::read_access("*Session")
-			, cyng::store::write_access("*Target"));
+		}	, cyng::store::read_access("_Session")
+			, cyng::store::write_access("_Target"));
 
 		options["response-code"] = cyng::make_object<std::uint8_t>(success
 			? ipt::ctrl_res_register_target_policy::OK
@@ -1860,8 +1860,8 @@ namespace node
 					<< tag
 					<< " not found");
 			}
-		}	, cyng::store::read_access("*Session")
-			, cyng::store::write_access("*Target"));
+		}	, cyng::store::read_access("_Session")
+			, cyng::store::write_access("_Target"));
 
 		options["response-code"] = cyng::make_object<std::uint8_t>(success
 			? ipt::ctrl_res_deregister_target_policy::OK
@@ -1969,7 +1969,7 @@ namespace node
 						, tag));
 
 				}
-			}	, cyng::store::read_access("*Session")
+			}	, cyng::store::read_access("_Session")
 				, cyng::store::write_access("TDevice")
 				, cyng::store::write_access("TGateway"));
 

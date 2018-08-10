@@ -163,7 +163,7 @@ namespace node
 				<< " removed "
 				<< count
 				<< " targets");
-		}, cyng::store::write_access("*Target"));
+		}, cyng::store::write_access("_Target"));
 
 		//
 		//	remove affected channels.
@@ -258,8 +258,8 @@ namespace node
 			//ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", pks.size()));
 			cyng::erase(tbl_session, pks, ctx.tag());
 
-		}	, cyng::store::write_access("*Session")
-			, cyng::store::write_access("*Connection")
+		}	, cyng::store::write_access("_Session")
+			, cyng::store::write_access("_Connection")
 			, cyng::store::read_access("TDevice"));
 
 		//
@@ -289,7 +289,7 @@ namespace node
 			tbl_cluster->modify(cyng::table::key_generator(mtag_), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
 			
 
-		} , cyng::store::write_access("*Cluster"));
+		} , cyng::store::write_access("_Cluster"));
 
 		//
 		//	emit a system message
@@ -543,7 +543,7 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "bus.req.stop.client not found " << cyng::io::to_str(frame));
 
 			}
-		}, cyng::store::read_access("*Session"));
+		}, cyng::store::read_access("_Session"));
 	}
 
 	void session::bus_req_reboot_client(cyng::context& ctx)
@@ -616,7 +616,7 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "bus.req.reboot.client not found " << cyng::io::to_str(frame));
 
 			}
-		}	, cyng::store::read_access("*Session")
+		}	, cyng::store::read_access("_Session")
 			, cyng::store::read_access("TGateway"));
 	}
 
@@ -660,7 +660,7 @@ namespace node
 			tbl_cluster->modify(cyng::table::key_generator(mtag_), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
 
 
-		}, cyng::store::write_access("*Cluster"));
+		}, cyng::store::write_access("_Cluster"));
 
 		//
 		//	build message strings
@@ -749,7 +749,7 @@ namespace node
 		auto ping = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - std::get<2>(tpl));
 		CYNG_LOG_INFO(logger_, "bus.res.watchdog - ping time " << ping.count() << " microsec");
 
-		db_.modify("*Cluster"
+		db_.modify("_Cluster"
 			, cyng::table::key_generator(ctx.tag())
 			, cyng::param_factory("ping", ping)
 			, ctx.tag());
@@ -910,7 +910,7 @@ namespace node
 			//	send response
 			vm_.async_run(bus_res_db_modify(tbl->meta().get_name(), key, attr, gen));
 			
-			if (boost::algorithm::equals(tbl->meta().get_name(), "*Config"))
+			if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
 			{
 				if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "connection-auto-login"))
 				{
@@ -1409,8 +1409,8 @@ namespace node
 				const std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_conn["throughput"], 0u);
 				tbl_connection->modify(rec_conn.key(), cyng::param_factory("throughput", static_cast<std::uint64_t>(throughput + std::get<3>(tpl))), std::get<2>(tpl));
 			}
-		}	, cyng::store::write_access("*Session")
-			, cyng::store::write_access("*Connection"));
+		}	, cyng::store::write_access("_Session")
+			, cyng::store::write_access("_Connection"));
 
 	}
 	
@@ -1528,7 +1528,7 @@ namespace node
 				//	continue
 				return true;
 			});
-		}, cyng::store::read_access("*Cluster"));
+		}, cyng::store::read_access("_Cluster"));
 
 		ctx.attach(node::bus_res_push_data(std::get<0>(tpl)	//	seq
 			, std::get<1>(tpl)

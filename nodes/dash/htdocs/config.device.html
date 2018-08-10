@@ -234,7 +234,6 @@
             connection.onopen = function () {
                 //  subscribe system status
                 connection.send(JSON.stringify({ cmd: "subscribe", channel: "config.device", push: true }));
-                //connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.device.count", push: true }));
             };
 
             connection.onclose = function (event) {

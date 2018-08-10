@@ -36,7 +36,7 @@ namespace node
         //
         //	set initial value
         //
-        cache_.insert("*Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, tag);
+        cache_.insert("_Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, tag);
 
 	}
 
@@ -47,7 +47,7 @@ namespace node
 		//	<< load 
 		//	<< "%");
 
-		cache_.modify("*Config", cyng::table::key_generator("cpu:load"), cyng::param_factory("value", load), tag_);
+		cache_.modify("_Config", cyng::table::key_generator("cpu:load"), cyng::param_factory("value", load), tag_);
 
 		//
 		//	measure CPU load every 4 seconds
