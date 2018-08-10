@@ -78,8 +78,7 @@ namespace node
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
 		const std::size_t storage_tsk_;
-		const cluster_config_t	config_;
-		std::size_t master_;
+		const cluster_redundancy config_;
 
 		/**
 		 * global data cache

@@ -54,7 +54,7 @@
                         <a class="dropdown-item" href="status.session.html">Sessions</a>
                         <a class="dropdown-item" href="status.targets.html">Targets</a>
                         <a class="dropdown-item" href="status.connections.html">Connections</a>
-                        <!--                        <a class="dropdown-item" href="status.user.html">User</a>-->
+                        <a class="dropdown-item" href="config.download.html">Download</a>
                     </div>
                 </li>
 
@@ -257,9 +257,9 @@
                         //  
                         // {"cmd": "insert", "channel": "config.gateway", "rec": 
                         //  {"key": {"pk":"d28cd24a-980d-46fc-b5ac-8c445415adbf"}, 
-                        //  "data": {"factoryNr":"06441734","id":"0500153B02517E","ifData":"00:01:02:03:04:06","ifService":"00:01:02:03:04:05","made":"2018-06-06 13:24:51.38650500","manufacturer":"EMH","mbus":"mbus","model":"MODEL","name":"NAME","online":false,"pwdDef":"secret","pwdRoot":"secret","userName":"operator","userPwd":"operator","vFirmware":"FIRMWARE"}, "gen": 94}}
+                        //  "data": {"factoryNr":"06441734","serverID":"0500153B02517E","ifData":"00:01:02:03:04:06","ifService":"00:01:02:03:04:05","made":"2018-06-06 13:24:51.38650500","manufacturer":"EMH","mbus":"mbus","model":"MODEL","name":"NAME","online":false,"pwdDef":"secret","pwdRoot":"secret","userName":"operator","userPwd":"operator","vFirmware":"FIRMWARE"}, "gen": 94}}
                         //
-                        var server = $('<div/>').text(obj.rec.data.id).html();
+                        var server = $('<div/>').text(obj.rec.data.serverId).html();
                         var manufacturer = $('<div/>').text(obj.rec.data.manufacturer).html();
                         var name = $('<div/>').text(obj.rec.data.name).html();
                         var model = $('<div/>').text(obj.rec.data.model).html();
@@ -292,8 +292,8 @@
                                 if (obj.value.online != null) {
                                     d[8] = obj.value.online;
                                 }
-                                else if (obj.value.id != null) {
-                                    d[1] = obj.value.id;
+                                else if (obj.value.serverId != null) {
+                                    d[1] = obj.value.serverId;
                                 }
                                 else if (obj.value.manufacturer != null) {
                                     d[2] = obj.value.manufacturer;
@@ -338,7 +338,7 @@
                     cmd: "modify", channel: "config.gateway", rec: {
                         key: [$('#smf-form-gw-tag').val()],
                         data: {
-                            id: $('#smf-form-gw-server').val(),
+                            serverId: $('#smf-form-gw-server').val(),
                             manufacturer: $('#smf-form-gw-manufacturer').val(),
                             userName: $('#smf-form-gw-user').val(),
                             userPwd: $('#smf-form-gw-pwd').val()

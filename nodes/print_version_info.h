@@ -5,8 +5,8 @@
  * 
  */ 
 
-#ifndef NODE_PRINT_VERSION_INFO_H
-#define NODE_PRINT_VERSION_INFO_H
+#ifndef NODE_PRINT_NODE_VERSION_INFO_H
+#define NODE_PRINT_NODE_VERSION_INFO_H
 
 #include  <ostream>
 namespace node 

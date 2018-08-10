@@ -12,6 +12,7 @@
 #include <smf/sml/status.h>
 #include "sml_reader.h"
 #include "kernel.h"
+//#include <smf/ipt/defs.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
@@ -44,19 +45,28 @@ namespace node
 			std::size_t hash() const noexcept;
 
 		private:
+			//void store_relation(cyng::context& ctx);
+
+		private:
 			cyng::async::mux& mux_;
 			cyng::logging::log_ptr logger_;
 			cyng::controller vm_;
 
 			/**
-			* SML parser
-			*/
+			 * SML parser
+			 */
 			parser 	parser_;
 
 			/**
-			* Provide core functions of an SML gateway
-			*/
+			 * Provide core functions of an SML gateway
+			 */
 			node::sml::kernel core_;
+
+			/**
+			 * bookkeeping of ip-t sequence to task relation
+			 */
+			//std::map<node::ipt::sequence_type, std::size_t>	task_db_;
+
 		};
 
 		cyng::object make_session(cyng::async::mux& mux

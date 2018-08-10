@@ -83,7 +83,7 @@ namespace node
 		//	(11) W-Mbus ID (i.e. A815408943050131)
 		//	(12) source (UUID) - usefull to detect multiple configuration uploads
 		if (!db.create_table(cyng::table::make_meta_table<1, 11>("TGateway", { "pk"	//	primary key
-				, "id"	//	(1) Server-ID (i.e. 0500153B02517E)
+				, "serverId"	//	(1) Server-ID (i.e. 0500153B02517E)
 				, "manufacturer"	//	(2) manufacturer (i.e. EMH)
 				, "made"	//	(3) production date
 				, "factoryNr"	//	(4) fabrik nummer (i.e. 06441734)

@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 #endif
 	
 	//
-	//	IP-T node options
+	//	MQTTnode options
 	//
 	boost::program_options::options_description node_options("mqtt");
 	node::set_start_options(node_options

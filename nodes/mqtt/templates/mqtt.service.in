@@ -1,10 +1,10 @@
 [Unit]
-Description=modem server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_PATCH_LEVEL} (project ${PROJECT_NAME})
+Description=mqtt server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_PATCH_LEVEL} (project ${PROJECT_NAME})
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/opt/node/modem -C/opt/node/modem_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
+ExecStart=/opt/node/mqtt -C/opt/node/mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
 Restart=always
 RestartSec=12
 

@@ -12,6 +12,7 @@
 #include <cyng/vm/domain/log_domain.h>
 #include <boost/assert.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/functional/hash.hpp>
 
 namespace node
 {
@@ -106,7 +107,6 @@ namespace node
 							std::bind(
 								&websocket_session::on_ping,
 								this,
-								//shared_from_this(),
 								std::placeholders::_1)));
 				}
 				else
@@ -427,13 +427,11 @@ namespace std
 {
 	size_t hash<node::http::websocket_session>::operator()(node::http::websocket_session const& t) const noexcept
 	{
-		return 0;
-		//return std::hash<std::string>{}(t.meta().get_name());
+		return boost::hash<boost::uuids::uuid>()(t.tag());
 	}
 
 	bool equal_to<node::http::websocket_session>::operator()(node::http::websocket_session const& t1, node::http::websocket_session const& t2) const noexcept
 	{
-		return false;
-		//return t1.meta().get_name() == t2.meta().get_name();
+		return t1.tag() == t2.tag();
 	}
 }

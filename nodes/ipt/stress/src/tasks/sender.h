@@ -88,7 +88,7 @@ namespace node
 			cyng::continuation process(std::string const&);
 
 		private:
-			void task_resume(cyng::context& ctx);
+			//void task_resume(cyng::context& ctx);
 			void reconfigure(cyng::context& ctx);
 			void reconfigure_impl();
 

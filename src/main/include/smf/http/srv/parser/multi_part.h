@@ -52,9 +52,17 @@ namespace node
 			/**
 			 * Put next available character into state machine
 			 *
-			 * @return next lexer state.
+			 * @return true if complete
 			 */
 			bool parse(char c);
+
+			template < typename I >
+			void parse(I start, I end)
+			{
+				std::for_each(start, end, [this](char c) {
+					this->parse(c);
+				});
+			}
 
 			/**
 			 * Start new upload/form

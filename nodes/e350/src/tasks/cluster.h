@@ -58,12 +58,10 @@ namespace node
 		cyng::async::base_task& base_;
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-		const cluster_config_t	config_;
+		const cluster_redundancy config_;
 		const std::string address_;
 		const std::string service_;
 		imega::server	server_;
-		std::size_t master_;
-
 	};
 	
 }

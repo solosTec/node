@@ -76,7 +76,6 @@ namespace node
 					, config_db_
 					, bus_
 					, key
-					//, cyng::table::record(table->meta_ptr(), key, body, gen)
 					, rgn_());
 				if (r.second) {
 					CYNG_LOG_INFO(logger_, "push.ops task #" << r.first << " started");
@@ -204,7 +203,7 @@ namespace node
 				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 2u)
 				, cyng::table::data_generator(static_cast<std::uint32_t>(900u)	//	15 min
 					, static_cast<std::uint32_t>(4u)	//	delay
-					, "data.sink-2.sml"
+					, "power@solostec"
 					, static_cast<std::uint8_t>(1u)		//	source
 					, static_cast<std::uint8_t>(1u)		//	profile
 					, 0)
@@ -215,7 +214,7 @@ namespace node
 				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 3u)
 				, cyng::table::data_generator(static_cast<std::uint32_t>(1800u)	//	30 min
 					, static_cast<std::uint32_t>(12u)	//	delay
-					, "data.sink-3.sml"
+					, "water@solostec"
 					, static_cast<std::uint8_t>(1u)		//	source
 					, static_cast<std::uint8_t>(3u)		//	profile
 					, 0)
