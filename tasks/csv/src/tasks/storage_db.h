@@ -22,26 +22,35 @@ namespace node
 	{
 	public:
 		using msg_0 = std::tuple<std::chrono::system_clock::time_point
-			, std::chrono::system_clock::time_point
-			, std::chrono::minutes>;
-		using signatures_t = std::tuple<msg_0>;
+			, std::chrono::hours>;
+		using msg_1 = std::tuple<std::chrono::system_clock::time_point
+			, std::int32_t>;
+		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
 		storage_db(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, bus::shared_type bus
 			, cyng::param_map_t
+			, cyng::param_map_t
 			, cyng::param_map_t);
 		cyng::continuation run();
 		void stop();
 
 		/**
-		 * slot [0] - generate CSV file
+		 * slot [0] - generate CSV file (daily)
 		 */
 		cyng::continuation process(std::chrono::system_clock::time_point start
-			, std::chrono::system_clock::time_point end
-			, std::chrono::minutes interval);
+			, std::chrono::hours interval);
 
+		/**
+		 * slot [1] - generate CSV file (monthly)
+		 * 
+		 * @param end last timepoint for this months to report for
+		 * @param days number of days in the specified month
+		 */
+		cyng::continuation process(std::chrono::system_clock::time_point end
+			, std::int32_t days);
 
 		/**
 		 * static method to create tables.
@@ -49,9 +58,11 @@ namespace node
 		static cyng::table::mt_table init_meta_map(std::string const&);
 
 	private:
-		void generate_csv_files(std::chrono::system_clock::time_point start
-			, std::chrono::system_clock::time_point end
-			, std::chrono::minutes interval);
+		void generate_csv_files_daily(std::chrono::system_clock::time_point start
+			, std::chrono::hours interval);
+
+		void generate_csv_files_monthly(std::chrono::system_clock::time_point start
+			, std::int32_t days);
 
 		std::vector<std::string> get_server_ids(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
@@ -64,18 +75,34 @@ namespace node
 			, cyng::sql::command&
 			, cyng::db::statement_ptr);
 
-		std::ofstream open_file(std::chrono::system_clock::time_point start
+
+		std::ofstream open_file_daily(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, std::string const& id
 			, std::vector<std::string> const&);
 
-		void collect_data(std::ofstream&, std::chrono::system_clock::time_point start
+		std::ofstream open_file_monthly(std::chrono::system_clock::time_point end);
+
+		void collect_data_daily(std::ofstream&
+			, std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, cyng::sql::command&
 			, cyng::db::statement_ptr
 			, std::string const& id
 			, std::vector<std::string> const& obis_code);
 
+		void collect_data_monthly(std::ofstream&
+			, std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end
+			, cyng::sql::command&
+			, cyng::db::statement_ptr
+			, std::string server
+			, std::string code);
+
+		std::vector<std::pair<std::string, std::string>> get_unique_server_obis_combinations(std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end
+			, cyng::sql::command& cmd
+			, cyng::db::statement_ptr stmt);
 
 	private:
 		cyng::async::base_task& base_;
@@ -83,7 +110,8 @@ namespace node
 		bus::shared_type bus_;
 		cyng::db::session_pool pool_;
 		const cyng::param_map_t cfg_db_;
-		const cyng::param_map_t cfg_csv_;
+		const cyng::param_map_t cfg_clock_day_;
+		const cyng::param_map_t cfg_clock_month_;
 
 		const std::string schema_;
 		cyng::table::mt_table	meta_map_;

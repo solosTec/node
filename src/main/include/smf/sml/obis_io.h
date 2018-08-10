@@ -43,6 +43,11 @@ namespace node
 		 */
 		std::string to_hex(obis_path const&);
 
+		/**
+		 * Try to convert a textual OBIS representation into an valid
+		 * OBIS code.
+		 */
+		obis to_obis(std::string const&);
 
 	}	//	sml
 }	//	node

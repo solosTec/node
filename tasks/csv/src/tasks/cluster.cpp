@@ -7,7 +7,8 @@
 
 #include "cluster.h"
 #include "storage_db.h"
-#include "clock.h"
+#include "clock_daily.h"
+#include "clock_monthly.h"
 
 #include <smf/cluster/generator.h>
 #include <cyng/async/task/task_builder.hpp>
@@ -21,16 +22,19 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cluster_config_t const& cfg_cluster
 		, cyng::param_map_t const& cfg_db
-		, cyng::param_map_t const& cfg_csv
+		, cyng::param_map_t const& cfg_clock_day
+		, cyng::param_map_t const& cfg_clock_month
 		, cyng::param_map_t const& cfg_trigger)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 		, logger_(logger)
 		, cfg_cluster_(cfg_cluster)
 		, cfg_db_(cfg_db)
-		, cfg_csv_(cfg_csv)
+		, cfg_clock_day_(cfg_clock_day)
+		, cfg_clock_month_(cfg_clock_month)
 		, cfg_trigger_(cfg_trigger)
-		, clock_tsk_(cyng::async::NO_TASK)
+		, clock_daily_tsk_(cyng::async::NO_TASK)
+		, clock_monthly_tsk_(cyng::async::NO_TASK)
 		, storage_task_(cyng::async::NO_TASK)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
@@ -128,11 +132,18 @@ namespace node
 			, logger_
 			, bus_
 			, cfg_db_
-			, cfg_csv_).first;
+			, cfg_clock_day_
+			, cfg_clock_month_).first;
 
-		CYNG_LOG_INFO(logger_, "start clock");
+		CYNG_LOG_INFO(logger_, "start clocks");
 
-		clock_tsk_ = cyng::async::start_task_delayed<clock>(base_.mux_
+		clock_daily_tsk_ = cyng::async::start_task_delayed<clock_daily>(base_.mux_
+			, std::chrono::seconds(3)
+			, logger_
+			, storage_task_
+			, cfg_trigger_).first;
+
+		clock_monthly_tsk_ = cyng::async::start_task_delayed<clock_monthly>(base_.mux_
 			, std::chrono::seconds(3)
 			, logger_
 			, storage_task_
@@ -141,20 +152,34 @@ namespace node
 
 	void cluster::stop_sub_tasks()
 	{
-		CYNG_LOG_INFO(logger_, "start clock");
+		CYNG_LOG_INFO(logger_, "stop the clocks");
 
-		if (clock_tsk_ != cyng::async::NO_TASK) {
+		if (clock_daily_tsk_ != cyng::async::NO_TASK) {
 
 			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> stop clock #"
-				<< clock_tsk_);
+				<< clock_daily_tsk_);
 
-			base_.mux_.stop(clock_tsk_);
-			clock_tsk_ = cyng::async::NO_TASK;
+			base_.mux_.stop(clock_daily_tsk_);
+			clock_daily_tsk_ = cyng::async::NO_TASK;
 		}
+
+		if (clock_monthly_tsk_ != cyng::async::NO_TASK) {
+
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> stop clock #"
+				<< clock_monthly_tsk_);
+
+			base_.mux_.stop(clock_monthly_tsk_);
+			clock_monthly_tsk_ = cyng::async::NO_TASK;
+		}
+
 		if (storage_task_ != cyng::async::NO_TASK) {
 
 			CYNG_LOG_WARNING(logger_, "task #"
@@ -166,7 +191,5 @@ namespace node
 			base_.mux_.stop(storage_task_);
 			storage_task_ = cyng::async::NO_TASK;
 		}
-
 	}
-
 }

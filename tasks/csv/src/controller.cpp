@@ -39,16 +39,9 @@ namespace node
 		, cyng::logging::log_ptr
 		, cyng::vector_t const& cfg_cluster
 		, cyng::tuple_t cfg_db
-		, cyng::tuple_t const& cfg_csv
+		, cyng::tuple_t const& cfg_clock_day
+		, cyng::tuple_t const& cfg_clock_month
 		, cyng::tuple_t const& cfg_trigger);
-	//std::size_t connect_data_store(cyng::async::mux&
-	//	, cyng::logging::log_ptr
-	//	, cyng::tuple_t cfg_db
-	//	, cyng::tuple_t const& cfg_csv);
-	//std::size_t start_clock(cyng::async::mux&
-	//	, cyng::logging::log_ptr
-	//	, cyng::tuple_t const& cfg_trigger
-	//	, std::size_t storage_task);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -81,36 +74,52 @@ namespace node
 				//	read configuration file
 				//
 				cyng::object config = cyng::json::read_file(json_path_);
-
 				if (config)
 				{
-					//
-					//	initialize logger
-					//
-#if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("csv", true);
-#else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "csv");
-#endif
-
-					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
-					CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
-
 					//
 					//	start application
 					//
 					cyng::vector_t vec;
 					vec = cyng::value_cast(config, vec);
-					BOOST_ASSERT_MSG(!vec.empty(), "invalid configuration");
-					shutdown = vec.empty()
-						? true
-						: start(mux, logger, vec[0]);
 
-					//
-					//	print uptime
-					//
-					const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-					CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+					if (vec.empty()) {
+						std::cerr
+							<< "use option -D to generate a configuration file"
+							<< std::endl;
+						shutdown = true;
+					}
+					else {
+
+						//
+						//	initialize logger
+						//
+#if BOOST_OS_LINUX
+						auto logger = cyng::logging::make_sys_logger("task:csv", true);
+#else
+						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
+						auto dom = cyng::make_reader(vec[0]);
+						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
+
+						auto logger = (console)
+							? cyng::logging::make_console_logger(mux.get_io_service(), "task:csv")
+							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "task-csv.log"))
+							;
+#endif
+
+						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
+						CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
+
+						//
+						//	start
+						//
+						shutdown = start(mux, logger, vec[0]);
+
+						//
+						//	print uptime
+						//
+						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
+						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+					}
 				}
 				else
 				{
@@ -177,13 +186,20 @@ namespace node
 						cyng::param_factory("format", "SML")	//	supported formats are "SML" and "IEC"
 					))
 
-					, cyng::param_factory("csv", cyng::tuple_factory(
+					, cyng::param_factory("clock-daily", cyng::tuple_factory(
 						cyng::param_factory("root-dir", (pwd / "csv").string()),
-						cyng::param_factory("prefix", "smf"),
-						cyng::param_factory("suffix", "csv"),
+						cyng::param_factory("prefix", "smf-day"),
+						cyng::param_factory("suffix", ".csv"),
 						cyng::param_factory("header", true),
-						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)),
-						cyng::param_factory("period", 16)	//	seconds
+						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
+					))
+
+					, cyng::param_factory("clock-monthly", cyng::tuple_factory(
+						cyng::param_factory("root-dir", (pwd / "csv").string()),
+						cyng::param_factory("prefix", "smf-month"),
+						cyng::param_factory("suffix", ".csv"),
+						cyng::param_factory("header", true),
+						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 					))
 
 					, cyng::param_factory("DB", cyng::tuple_factory(
@@ -313,15 +329,6 @@ namespace node
 		//	Open database session only when needed (from task clock)
 		//
 		cyng::tuple_t tpl;
-		//std::size_t storage_task = connect_data_store(mux
-		//	, logger
-		//	, cyng::value_cast(dom.get("DB"), tpl)
-		//	, cyng::value_cast(dom.get("csv"), tpl));
-
-		//std::size_t clock_task = start_clock(mux
-		//	, logger
-		//	, cyng::value_cast(dom.get("trigger"), tpl)
-		//	, storage_task);
 
 		//
 		//	connect to cluster
@@ -331,7 +338,8 @@ namespace node
 			, logger
 			, cyng::value_cast(dom.get("cluster"), vec)
 			, cyng::value_cast(dom.get("DB"), tpl)
-			, cyng::value_cast(dom.get("csv"), tpl)
+			, cyng::value_cast(dom.get("clock-daily"), tpl)
+			, cyng::value_cast(dom.get("clock-monthly"), tpl)
 			, cyng::value_cast(dom.get("trigger"), tpl));
 
 		//
@@ -386,7 +394,8 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cyng::vector_t const& cfg_cluster
 		, cyng::tuple_t cfg_db
-		, cyng::tuple_t const& cfg_csv
+		, cyng::tuple_t const& cfg_clock_day
+		, cyng::tuple_t const& cfg_clock_month
 		, cyng::tuple_t const& cfg_trigger)
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cluster.size());
@@ -396,7 +405,8 @@ namespace node
 			, logger
 			, load_cluster_cfg(cfg_cluster)
 			, cyng::to_param_map(cfg_db)
-			, cyng::to_param_map(cfg_csv)
+			, cyng::to_param_map(cfg_clock_day)
+			, cyng::to_param_map(cfg_clock_month)
 			, cyng::to_param_map(cfg_trigger));
 	}
 }

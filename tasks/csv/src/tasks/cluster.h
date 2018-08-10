@@ -29,7 +29,8 @@ namespace node
 			, cyng::logging::log_ptr
 			, cluster_config_t const& cfg_cluster
 			, cyng::param_map_t const& cfg_db
-			, cyng::param_map_t const& cfg_csv
+			, cyng::param_map_t const& cfg_clock_day
+			, cyng::param_map_t const& cfg_clock_month
 			, cyng::param_map_t const& cfg_trigger);
 		cyng::continuation run();
 		void stop();
@@ -59,9 +60,10 @@ namespace node
 		cyng::logging::log_ptr logger_;
 		const cluster_redundancy cfg_cluster_;
 		const cyng::param_map_t cfg_db_;
-		const cyng::param_map_t cfg_csv_;
+		const cyng::param_map_t cfg_clock_day_;
+		const cyng::param_map_t cfg_clock_month_;
 		const cyng::param_map_t cfg_trigger_;
-		std::size_t clock_tsk_, storage_task_;
+		std::size_t clock_daily_tsk_, clock_monthly_tsk_, storage_task_;
 
 	};	
 }

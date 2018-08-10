@@ -752,6 +752,27 @@ endif(WIN32)
 target_link_libraries(setup ${setup_link_libs})
 
 #
+# task: csv
+#
+include (tasks/csv/prg.cmake)
+add_executable(csv ${task_csv})
+
+# libraries to link
+set(csv_link_libs cyng_core cyng_io cyng_async cyng_log cyng_parser cyng_json cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_sys smf_protocol_sml smf_cluster)
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	list(APPEND csv_link_libs "${Boost_LIBRARIES}")
+    if (UNIX)
+        list(APPEND csv_link_libs pthread dl)
+    endif()
+endif()
+if(WIN32)
+	list(APPEND csv_link_libs odbc32.lib lib_sqlite3)
+else()
+	list(APPEND csv_link_libs ${SQLite3_LIBRARY})
+endif(WIN32)
+target_link_libraries(csv ${csv_link_libs})
+
+#
 # test unit using Boost.Test
 # BOOST_TEST_DYN_LINK is required to build a main() function
 # cmake -DNODE_BUILD_TEST:bool=ON ..
@@ -787,25 +808,6 @@ endif()
 target_link_libraries(unit_test ${unittest_link_libs})
 endif()
 
-#
-# task: csv
-#
-include (tasks/csv/prg.cmake)
-add_executable(csv ${task_csv})
-# libraries to link
-set(csv_link_libs cyng_core cyng_io cyng_async cyng_log cyng_parser cyng_json cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_sys smf_cluster)
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND csv_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND csv_link_libs pthread dl)
-    endif()
-endif()
-if(WIN32)
-	list(APPEND csv_link_libs odbc32.lib lib_sqlite3)
-else()
-	list(APPEND csv_link_libs ${SQLite3_LIBRARY})
-endif(WIN32)
-target_link_libraries(csv ${setup_link_libs})
 
 #
 #   Generate configuration files

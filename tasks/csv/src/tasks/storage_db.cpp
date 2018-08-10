@@ -6,9 +6,12 @@
  */
 
 #include "storage_db.h"
-#include "clock.h"
+#include "clock_daily.h"
+#include "clock_monthly.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
+#include <smf/sml/obis_io.h>
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -19,7 +22,6 @@
 #include <cyng/db/sql_table.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/set_cast.h>
-//#include <cyng/sql.h>
 #include <cyng/sql/dsl/binary_expr.hpp>
 #include <cyng/sql/dsl/list_expr.hpp>
 #include <cyng/sql/dsl/operators.hpp>
@@ -35,13 +37,15 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, bus::shared_type bus
 		, cyng::param_map_t cfg_db
-		, cyng::param_map_t cfg_csv)
+		, cyng::param_map_t cfg_clock_day
+		, cyng::param_map_t cfg_clock_month)
 	: base_(*btp)
 		, logger_(logger)
 		, bus_(bus)
 		, pool_(base_.mux_.get_io_service(), cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg_db["type"], "SQLite")))
 		, cfg_db_(cfg_db)
-		, cfg_csv_(cfg_csv)
+		, cfg_clock_day_(cfg_clock_day)
+		, cfg_clock_month_(cfg_clock_month)
 		, schema_(cyng::value_cast<std::string>(cfg_db["db-schema"], NODE_SUFFIX))
 		, meta_map_(init_meta_map(schema_))
 		, state_(TASK_STATE_WAITING_)
@@ -82,21 +86,18 @@ namespace node
 
 	}
 
-	//	slot 0 - merge
+	//	slot 0 - create 1 daily CSV
 	cyng::continuation storage_db::process(std::chrono::system_clock::time_point start
-		, std::chrono::system_clock::time_point end
-		, std::chrono::minutes interval)
+		, std::chrono::hours interval)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> generate CSV file from "
+			<< "> generate daily CSV file from "
 			<< cyng::to_str(start)
 			<< " to "
-			<< cyng::to_str(end)
-			<< " stepsize "
-			<< cyng::to_str(interval));
+			<< cyng::to_str(start + interval));
 
 		if (!pool_.start(cfg_db_))
 		{
@@ -138,7 +139,7 @@ namespace node
 			//
 			//	generate CSV files
 			//
-			generate_csv_files(start, end, interval);
+			generate_csv_files_daily(start, interval);
 
 			//
 			//	update task state
@@ -151,9 +152,74 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void storage_db::generate_csv_files(std::chrono::system_clock::time_point start
-		, std::chrono::system_clock::time_point end
-		, std::chrono::minutes interval)
+	cyng::continuation storage_db::process(std::chrono::system_clock::time_point end
+		, std::int32_t days)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> generate monthly CSV file until "
+			<< cyng::to_str(end)
+			<< " with "
+			<< days
+			<< " days");
+
+		if (!pool_.start(cfg_db_))
+		{
+			std::stringstream ss;
+			ss
+				<< "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> failed to open connection pool"
+				;
+			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_FATAL, ss.str()));
+			CYNG_LOG_FATAL(logger_, ss.str());
+			return cyng::continuation::TASK_YIELD;
+		}
+		else
+		{
+			CYNG_LOG_INFO(logger_, "DB connection pool is running with "
+				<< pool_.get_pool_size()
+				<< " connection(s)");
+
+			std::stringstream ss;
+			ss
+				<< "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> connection pool is running with "
+				<< pool_.get_pool_size()
+				<< " connection(s)"
+				;
+
+			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_DEBUG, ss.str()));
+
+			//
+			//	update task state
+			//
+			state_ = TASK_STATE_OPEN_;
+
+			//
+			//	generate CSV files
+			//
+			generate_csv_files_monthly(end, (days < 29) ? 29 : days);
+
+			//
+			//	update task state
+			//
+			pool_.stop();
+			state_ = TASK_STATE_WAITING_;
+
+		}
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	void storage_db::generate_csv_files_daily(std::chrono::system_clock::time_point start
+		, std::chrono::hours interval)
 	{
 		//
 		//	get all available meters in the specified time range
@@ -163,6 +229,11 @@ namespace node
 		auto pos = meta_map_.find("TSMLMeta");
 		if (pos != meta_map_.end())
 		{
+			//
+			//	calculate end timepoint of interval
+			//
+			auto end = start + interval;
+
 			auto s = pool_.get_session();
 			cyng::table::meta_table_ptr meta = (*pos).second;
 			cyng::sql::command cmd(meta, s.get_dialect());
@@ -182,9 +253,9 @@ namespace node
 				//
 				//	open output file
 				//
-				auto file = open_file(start, end, id, obis_codes);
+				auto file = open_file_daily(start, end, id, obis_codes);
 
-				collect_data(file, start, end, cmd, stmt, id, obis_codes);
+				collect_data_daily(file, start, end, cmd, stmt, id, obis_codes);
 				file.close();
 			}
 
@@ -192,7 +263,169 @@ namespace node
 		}
 	}
 
-	void storage_db::collect_data(std::ofstream& file
+	void storage_db::generate_csv_files_monthly(std::chrono::system_clock::time_point end
+		, std::int32_t days)
+	{
+		auto pos = meta_map_.find("TSMLMeta");
+		if (pos != meta_map_.end())
+		{
+			//
+			//	calculate end timepoint of interval
+			//
+			//auto end = start + std::chrono::hours(days * 24);
+
+			auto s = pool_.get_session();
+			cyng::table::meta_table_ptr meta = (*pos).second;
+			cyng::sql::command cmd(meta, s.get_dialect());
+			auto stmt = s.create_statement();
+
+
+			//
+			//	get all unique server/OBIS combinations in this time frame
+			//
+			auto start = end - std::chrono::hours(days * 24);
+#ifdef __DEBUG
+			std::vector<std::pair<std::string, std::string>> combinations = get_unique_server_obis_combinations(std::chrono::system_clock::now() - std::chrono::hours(24 * 30)
+				, std::chrono::system_clock::now(), cmd, stmt);
+#else
+			std::vector<std::pair<std::string, std::string>> combinations = get_unique_server_obis_combinations(start, end, cmd, stmt);
+#endif
+
+			//
+			//	open output file
+			//
+			auto file = open_file_monthly(end);
+			for (auto cond : combinations) {
+
+				//
+				//	query all combinations
+				//
+#ifdef __DEBUG
+				collect_data_monthly(file
+					, std::chrono::system_clock::now() - std::chrono::hours(24 * 30)
+					, std::chrono::system_clock::now()
+					, cmd, stmt, cond.first, cond.second);
+#else
+				collect_data_monthly(file, start, end, cmd, stmt, cond.first, cond.second);
+#endif
+
+			}
+
+			file.close();
+			stmt->close();
+		}
+	}
+
+	std::vector<std::pair<std::string, std::string>> storage_db::get_unique_server_obis_combinations(std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end
+		, cyng::sql::command& cmd
+		, cyng::db::statement_ptr stmt)
+	{
+		std::vector<std::pair<std::string, std::string>> result;
+
+		//	SELECT TSMLMeta.server, TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE (actTime > julianday('2018-08-01') AND actTime < julianday('2018-08-10')) GROUP BY TSMLData.OBIS ORDER BY TSMLMeta.server
+		std::string sql = "SELECT TSMLMeta.server, TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE (actTime > julianday(?) AND actTime < julianday(?)) GROUP BY TSMLData.OBIS ORDER BY TSMLMeta.server";
+		auto r = stmt->prepare(sql);
+		if (r.second) {
+
+			stmt->push(cyng::make_object(start), 0);
+			stmt->push(cyng::make_object(end), 0);
+
+			//
+			//	query
+			//
+			while (auto res = stmt->get_result()) {
+				auto server = cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 0), "server");
+				auto code = cyng::value_cast<std::string>(res->get(2, cyng::TC_STRING, 0), "OBIS");
+
+				CYNG_LOG_INFO(logger_, server
+					<< ", "
+					<< code	);
+
+				result.push_back(std::make_pair(server, code));
+			}
+
+			//
+			//	read for next query
+			//
+			stmt->clear();
+
+		}
+		return result;
+	}
+
+	void storage_db::collect_data_monthly(std::ofstream& file
+		, std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end
+		, cyng::sql::command& cmd
+		, cyng::db::statement_ptr stmt
+		, std::string server
+		, std::string code)
+	{
+		//	SELECT datetime(TSMLMeta.actTime), TSMLMeta.server, TSMLData.OBIS, TSMLData.result FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE (actTime > julianday('2018-08-01') AND actTime < julianday('2018-08-10')) ORDER BY TSMLMeta.actTime;
+		std::string sql = "SELECT TSMLMeta.server, TSMLData.OBIS, TSMLData.result, TSMLMeta.actTime FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?) AND actTime < julianday(?)) AND TSMLMeta.server = ? and TSMLData.OBIS = ?) ORDER BY TSMLMeta.actTime DESC";
+		auto r = stmt->prepare(sql);
+		if (r.second) {
+
+			stmt->push(cyng::make_object(start), 0);
+			stmt->push(cyng::make_object(end), 0);
+			stmt->push(cyng::make_object(server), 0);
+			stmt->push(cyng::make_object(code), 0);
+
+			auto res = stmt->get_result();
+			if (res) {
+				auto server = cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 0), "server");
+				auto code = cyng::value_cast<std::string>(res->get(2, cyng::TC_STRING, 0), "OBIS");
+				auto result = cyng::value_cast<std::string>(res->get(3, cyng::TC_STRING, 0), "result");
+				auto act_time = cyng::value_cast(res->get(4, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
+
+				CYNG_LOG_INFO(logger_, server
+					<< ", "
+					<< code
+					<< ", "
+					<< result);
+
+				//
+				//	convert OBIS format
+				//
+				node::sml::obis native_code = node::sml::to_obis(code);
+				if (native_code.is_nil()) {
+
+					file
+						<< server
+						<< ';'
+						<< code
+						<< ';'
+						<< result
+						<< ';'
+						<< cyng::to_str(act_time)
+						<< std::endl
+						;
+				}
+				else {
+
+					file
+						<< server
+						<< ';'
+						<< node::sml::to_string(native_code)
+						<< ';'
+						<< result
+						<< ';'
+						<< cyng::to_str(act_time)
+						<< std::endl
+						;
+
+				}
+
+			}
+			//
+			//	read for next query
+			//
+			stmt->clear();
+		}
+	}
+
+	void storage_db::collect_data_daily(std::ofstream& file
 		, std::chrono::system_clock::time_point start
 		, std::chrono::system_clock::time_point end
 		, cyng::sql::command& cmd
@@ -247,8 +480,7 @@ namespace node
 					<< ", "
 					<< result
 					<< ", "
-					<< unit
-				);
+					<< unit	);
 
 
 				//
@@ -379,8 +611,6 @@ namespace node
 		//	example:
 		//	SELECT TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) GROUP BY TSMLData.OBIS;
 
-		//
-		cmd.select()[cyng::sql::column(8)].where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end)).group_by(cyng::sql::column(8));
 		std::string sql = "SELECT TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) GROUP BY TSMLData.OBIS";
 		CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
 
@@ -410,7 +640,7 @@ namespace node
 		return result;
 	}
 
-	std::ofstream storage_db::open_file(std::chrono::system_clock::time_point start
+	std::ofstream storage_db::open_file_daily(std::chrono::system_clock::time_point start
 		, std::chrono::system_clock::time_point end
 		, std::string const& id
 		, std::vector<std::string> const& codes)
@@ -421,8 +651,14 @@ namespace node
 		auto tt_end = std::chrono::system_clock::to_time_t(end);
 		std::tm time_end = cyng::chrono::convert_utc(tt_end);
 
+		boost::filesystem::path root_dir = cyng::find_value<std::string>(cfg_clock_day_, "root-dir", ".");
+		auto prefix = cyng::find_value<std::string>(cfg_clock_day_, "prefix", "smf-day-");
+		auto suffix = cyng::find_value<std::string>(cfg_clock_day_, "suffix", "csv");
+		auto header = cyng::find_value(cfg_clock_day_, "header", true);
+
 		std::stringstream ss;
 		ss
+			<< prefix
 			<< std::setfill('0')
 			<< id
 			<< '_'
@@ -439,15 +675,60 @@ namespace node
 			<< '-'
 			<< std::setw(2)
 			<< cyng::chrono::day(time_end)
-			<< ".csv"
+			<< '.'
+			<< suffix	//	.csv
 			;
-		CYNG_LOG_TRACE(logger_, "open "<< ss.str());
-		std::ofstream f(ss.str());
-		f << "server;time;trx;";
-		for (auto const& c : codes) {
-			f << c << ';';
+		CYNG_LOG_INFO(logger_, "open "<< root_dir / ss.str());
+		std::ofstream f((root_dir / ss.str()).string());
+
+		//
+		//	optional header
+		//
+		if (header) {
+			f << "server;time;trx;";
+			for (auto const& c : codes) {
+				f << c << ';';
+			}
+			f << std::endl;
 		}
-		f << std::endl;
+		return f;
+	}
+
+	std::ofstream storage_db::open_file_monthly(std::chrono::system_clock::time_point end)
+	{
+		auto tt_end = std::chrono::system_clock::to_time_t(end);
+		std::tm time_end = cyng::chrono::convert_utc(tt_end);
+
+		boost::filesystem::path root_dir = cyng::find_value<std::string>(cfg_clock_month_, "root-dir", ".");
+		auto prefix = cyng::find_value<std::string>(cfg_clock_month_, "prefix", "smf-month-");
+		auto suffix = cyng::find_value<std::string>(cfg_clock_month_, "suffix", "csv");
+		auto header = cyng::find_value(cfg_clock_month_, "header", true);
+
+		std::stringstream ss;
+		ss
+			<< prefix
+			<< std::setfill('0')
+			<< '_'
+			<< cyng::chrono::year(time_end)
+			<< '-'
+			<< std::setw(2)
+			<< cyng::chrono::month(time_end)
+			<< '.'
+			<< suffix	//	.csv
+			;
+
+		CYNG_LOG_INFO(logger_, "open " << root_dir / ss.str());
+		std::ofstream f((root_dir / ss.str()).string());
+
+		//
+		//	optional header
+		//
+		if (header) {
+			f 
+				<< "ZaehlerNr;Obis;Stand;Datum"
+				<< std::endl
+				;
+		}
 		return f;
 	}
 

@@ -34,8 +34,10 @@ set (task_csv_tasks
 	tasks/csv/src/tasks/cluster.cpp
 	tasks/csv/src/tasks/storage_db.h
 	tasks/csv/src/tasks/storage_db.cpp
-	tasks/csv/src/tasks/clock.h
-	tasks/csv/src/tasks/clock.cpp
+	tasks/csv/src/tasks/clock_daily.h
+	tasks/csv/src/tasks/clock_daily.cpp
+	tasks/csv/src/tasks/clock_monthly.h
+	tasks/csv/src/tasks/clock_monthly.cpp
 )
 	
 if(WIN32)

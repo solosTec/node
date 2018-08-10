@@ -5,11 +5,9 @@
  *
  */
 
-#ifndef NODE_CSV_TASK_CLOCK_H
-#define NODE_CSV_TASK_CLOCK_H
+#ifndef NODE_CSV_TASK_CLOCK_MONTHLY_H
+#define NODE_CSV_TASK_CLOCK_MONTHLY_H
 
-//#include <smf/cluster/bus.h>
-//#include <smf/cluster/config.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -18,15 +16,14 @@
 namespace node
 {
 
-	class clock
+	class clock_monthly
 	{
 	public:
-		using msg_0 = std::tuple<cyng::version>;
-		using msg_1 = std::tuple<>;
-		using signatures_t = std::tuple<msg_0, msg_1>;
+		using msg_0 = std::tuple<>;
+		using signatures_t = std::tuple<msg_0>;
 
 	public:
-		clock(cyng::async::base_task* bt
+		clock_monthly(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, std::size_t tsk_db
 			, cyng::param_map_t cfg_trigger);
@@ -36,14 +33,7 @@ namespace node
 		/**
 		 * @brief slot [0]
 		 *
-		 * sucessful cluster login
-		 */
-		cyng::continuation process(cyng::version const&);
-
-		/**
-		 * @brief slot [1]
-		 *
-		 * reconnect
+		 * unused
 		 */
 		cyng::continuation process();
 
