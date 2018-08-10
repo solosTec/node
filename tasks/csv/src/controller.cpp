@@ -22,7 +22,7 @@
 #include <cyng/scm/service.hpp>
 #endif
 #if BOOST_OS_LINUX
-#include "../../write_pid.h"
+#include "../../../nodes/write_pid.h"
 #endif
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/random_generator.hpp>

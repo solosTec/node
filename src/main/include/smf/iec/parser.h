@@ -43,7 +43,7 @@ namespace node
 				});
 
 				post_processing();
-				input_.clear();
+// 				input_.clear();
 				return std::distance(start, end);
 			}
 
