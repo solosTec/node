@@ -123,7 +123,7 @@ namespace node
 			void do_close();
 
 			void send_moved(std::string const& location);
-			void trigger_download(std::string const& filename);
+			void trigger_download(std::string const& filename, std::string const& attachment);
 
 		private:
 			void handle_request(boost::beast::http::request<boost::beast::http::string_body>&&);

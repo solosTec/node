@@ -53,7 +53,7 @@ namespace node
 			void process_event(std::string const& channel, std::string const&);
 
 			void send_moved(boost::uuids::uuid, std::string const&);
-			void trigger_download(boost::uuids::uuid tag, std::string const& filename);
+			void trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment);
 
 		private:
 			void on_accept(boost::system::error_code ec);

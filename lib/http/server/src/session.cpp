@@ -24,7 +24,6 @@ namespace node
 			, boost::asio::ip::tcp::socket socket
 			, std::string const& doc_root
 			, node::bus::shared_type bus
-			//, cyng::store::db& cache
 			, boost::uuids::uuid tag)
 		: socket_(std::move(socket))
 			, strand_(socket_.get_executor())
@@ -34,7 +33,6 @@ namespace node
 			, connection_manager_(cm)
 			, doc_root_(doc_root)
 			, bus_(bus)
-			//, cache_(cache)
 			, tag_(tag)
 			, queue_(*this)
             , shutdown_(false)
@@ -43,6 +41,9 @@ namespace node
 		session::~session()
 		{
 			//std::cerr << "session::~session()" << std::endl;
+			CYNG_LOG_DEBUG(logger_, "~session("
+				<< tag()
+				<< ")");
 		}
 
 		boost::uuids::uuid session::tag() const noexcept
@@ -172,13 +173,18 @@ namespace node
 			// See if it is a WebSocket Upgrade
 			if (boost::beast::websocket::is_upgrade(req_))
 			{
-				CYNG_LOG_TRACE(logger_, "update session " << socket_.remote_endpoint() << " to websocket");
+				CYNG_LOG_TRACE(logger_, "update session " 
+					<< tag()
+					<< " to websocket"
+					<< socket_.remote_endpoint());
 
 				// Create a WebSocket websocket_session by transferring the socket
-				auto ptr = connection_manager_.upgrade(this);
-				const_cast<websocket_session*>(ptr)->do_accept(std::move(req_));
-				timer_.cancel();
-				return;
+				auto res = connection_manager_.upgrade(this);
+				if (res.first != nullptr) {
+					const_cast<websocket_session*>(res.first)->do_accept(std::move(req_));
+					timer_.cancel();
+					return;
+				}
 			}
 
 			// Send the response
@@ -473,7 +479,7 @@ namespace node
 			queue_(std::move(res));
 		}
 
-		void session::trigger_download(std::string const& path)
+		void session::trigger_download(std::string const& path, std::string const& attachment)
 		{
 
 			boost::beast::error_code ec;
@@ -501,16 +507,13 @@ namespace node
 			res.content_length(size);
 
 
-			//boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::ok, 11 };
 			res.set(boost::beast::http::field::server, NODE::version_string);
 			res.set(boost::beast::http::field::content_description, "File Transfer");
 			res.set(boost::beast::http::field::content_type, "application/octet-stream");
 			res.set(boost::beast::http::field::content_type, "application/force-download");
-			res.set(boost::beast::http::field::content_disposition, "attachment; filename='devices.xml'");
+			res.set(boost::beast::http::field::content_disposition, "attachment; filename='" + attachment + "'");
 			res.set(boost::beast::http::field::expires, 0);
 			res.set(boost::beast::http::field::cache_control, "must-revalidate, post-check=0, pre-check=0");
-			//res.body() = std::string("<xml>hello, world!</xml>");
-			//res.prepare_payload();
 
 			queue_(std::move(res));
 		}

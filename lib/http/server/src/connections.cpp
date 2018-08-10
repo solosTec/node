@@ -40,46 +40,64 @@ namespace node
 			}
 		}
 
-		websocket_session const* connection_manager::upgrade(session* sp)
+		std::pair<websocket_session const*, cyng::object> connection_manager::upgrade(session* sp)
 		{
 			//
 			//	unique lock
 			//
 			cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_);
-
-			//
-			//	create new websocket
-			//
-			auto res = ws_.emplace(sp->tag_
-				, make_websocket(sp->logger_
-					, *this
-					, std::move(sp->socket_)
-					, sp->bus_
-					, sp->tag_));	//	share same tag
 
 			//
 			//	remove HTTP session
 			//
-			sessions_.erase(sp->tag());
+			auto pos = sessions_.find(sp->tag());
+			if (pos != sessions_.end()) {
 
-			return (res.second)
-				? cyng::object_cast<websocket_session>(res.first->second)
-				: nullptr
-				;
+				//
+				//	Hold a session reference,
+				//	otherwise the session pointer gets invalid.
+				//
+				auto obj = pos->second;
+				sessions_.erase(pos);
+				BOOST_ASSERT(cyng::object_cast<session>(obj) == sp);
+
+				//
+				//	create new websocket
+				//
+				auto res = ws_.emplace(sp->tag_
+					, make_websocket(sp->logger_
+						, *this
+						, std::move(sp->socket_)
+						, sp->bus_
+						, sp->tag_));	//	share same tag
+
+				return std::make_pair((res.second)
+					? cyng::object_cast<websocket_session>(res.first->second)
+					: nullptr, obj);
+			}
+			return std::make_pair(nullptr, cyng::make_object());
 		}
 
-		bool connection_manager::stop(session* sp)
+		cyng::object connection_manager::stop(session* sp)
 		{
 			//
 			//	unique lock
 			//
 			cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_);
 
+			auto pos = sessions_.find(sp->tag());
+			if (pos != sessions_.end()) {
 
-			//connections_.erase(sp);
-			sp->do_close();
+				//
+				//	get a session reference
+				//
+				auto obj = pos->second;
+				sp->do_close();
+				BOOST_ASSERT(cyng::object_cast<session>(obj) == sp);
+				return obj;
+			}
 
-			return sessions_.erase(sp->tag()) != 0;
+			return cyng::make_object();
 
 		}
 
@@ -215,14 +233,14 @@ namespace node
 			}
 		}
 
-		void connection_manager::trigger_download(boost::uuids::uuid tag, std::string const& filename)
+		void connection_manager::trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment)
 		{
 			cyng::async::shared_lock<cyng::async::shared_mutex> lock(mutex_);
 			auto pos = sessions_.find(tag);
 			if (pos != sessions_.end()) {
 				auto ptr = cyng::object_cast<session>(pos->second);
 				if (ptr != nullptr) {
-					const_cast<session*>(ptr)->trigger_download(filename);
+					const_cast<session*>(ptr)->trigger_download(filename, attachment);
 				}
 			}
 		}

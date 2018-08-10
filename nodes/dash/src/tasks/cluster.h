@@ -81,6 +81,7 @@ namespace node
 		void cfg_download_devices(cyng::context& ctx);
 		void cfg_download_gateways(cyng::context& ctx);
 		void cfg_download_messages(cyng::context& ctx);
+		void cfg_download_LoRa(cyng::context& ctx);
 
 		void sync_table(std::string const&);
 
@@ -96,6 +97,8 @@ namespace node
 		void subscribe_table_session_count(std::string const&, boost::uuids::uuid);
 		void subscribe_table_target_count(std::string const&, boost::uuids::uuid);
 		void subscribe_table_connection_count(std::string const&, boost::uuids::uuid);
+		void subscribe_table_msg_count(std::string const&, boost::uuids::uuid);
+		void subscribe_table_LoRa_count(std::string const&, boost::uuids::uuid);
 
 		void update_channel(std::string const&, std::size_t);
 
@@ -120,7 +123,7 @@ namespace node
 
 		void display_loading_icon(boost::uuids::uuid tag, bool, std::string const&);
 
-		void trigger_download(boost::uuids::uuid tag, std::string table);
+		void trigger_download(boost::uuids::uuid tag, std::string table, std::string filename);
 
 	private:
 		cyng::async::base_task& base_;

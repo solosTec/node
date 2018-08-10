@@ -42,12 +42,14 @@ namespace node
 			 * Upgrade a session to a websocket
 			 * Called by session.
 			 */
-			websocket_session const* upgrade(session*);
+			std::pair<websocket_session const*, cyng::object> upgrade(session*);
 
 			/**
 			 * Stop the specified HTTP session.
+			 *
+			 * @return the session object
 			 */
-			bool stop(session*);
+			cyng::object stop(session*);
 
 			/**
 			 * Stop the specified websocket
@@ -68,7 +70,7 @@ namespace node
 			void process_event(std::string const& channel, std::string const&);
 
 			void send_moved(boost::uuids::uuid tag, std::string const& target);
-			void trigger_download(boost::uuids::uuid tag, std::string const& filename);
+			void trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment);
 
 		private:
 			/**

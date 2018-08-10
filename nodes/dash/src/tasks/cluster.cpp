@@ -94,6 +94,7 @@ namespace node
 		bus_->vm_.register_function("cfg.download.devices", 2, std::bind(&cluster::cfg_download_devices, this, std::placeholders::_1));
 		bus_->vm_.register_function("cfg.download.gateways", 2, std::bind(&cluster::cfg_download_gateways, this, std::placeholders::_1));
 		bus_->vm_.register_function("cfg.download.messages", 2, std::bind(&cluster::cfg_download_messages, this, std::placeholders::_1));
+		bus_->vm_.register_function("cfg.download.LoRa", 2, std::bind(&cluster::cfg_download_LoRa, this, std::placeholders::_1));
 
 		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
@@ -1072,7 +1073,7 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		trigger_download(std::get<0>(tpl), "TDevice");
+		trigger_download(std::get<0>(tpl), "TDevice", "device.xml");
 
 	}
 
@@ -1090,7 +1091,7 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		trigger_download(std::get<0>(tpl), "TGateway");
+		trigger_download(std::get<0>(tpl), "TGateway", "gateway.xml");
 
 	}
 	
@@ -1108,11 +1109,24 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		trigger_download(std::get<0>(tpl), "*SysMsg");
+		trigger_download(std::get<0>(tpl), "*SysMsg", "messages.xml");
 
 	}
 
-	void cluster::trigger_download(boost::uuids::uuid tag, std::string table)
+	void cluster::cfg_download_LoRa(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.download.LoRa - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		trigger_download(std::get<0>(tpl), "TLoRaDevice", "LoRa.xml");
+	}
+
+	void cluster::trigger_download(boost::uuids::uuid tag, std::string table, std::string filename)
 	{
 		//
 		//	generate XML download file
@@ -1148,7 +1162,7 @@ namespace node
 		//
 		//	trigger download
 		//
-		server_.trigger_download(tag, out.string());
+		server_.trigger_download(tag, out.string(), filename);
 
 	}
 
@@ -1235,10 +1249,17 @@ namespace node
 			{
 				subscribe_table_connection_count(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}
+			else if (boost::algorithm::starts_with(channel, "table.msg.count"))
+			{
+				subscribe_table_msg_count(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+			}
+			else if (boost::algorithm::starts_with(channel, "table.LoRa.count"))
+			{
+				subscribe_table_LoRa_count(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
+			}
 			else if (boost::algorithm::starts_with(channel, "monitor.msg"))
 			{
 				subscribe("*SysMsg", channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
-				//subscribe_monitor_msg(channel, cyng::value_cast(frame.at(0), boost::uuids::nil_uuid()));
 			}		
 			else
 			{
@@ -1685,6 +1706,20 @@ namespace node
 		update_channel(channel, size);
 	}
 
+	void cluster::subscribe_table_msg_count(std::string const& channel, boost::uuids::uuid tag)
+	{
+		server_.add_channel(tag, channel);
+		const auto size = cache_.size("*SysMsg");
+		update_channel(channel, size);
+	}
+
+	void cluster::subscribe_table_LoRa_count(std::string const& channel, boost::uuids::uuid tag)
+	{
+		server_.add_channel(tag, channel);
+		const auto size = cache_.size("TLoRaDevice");
+		update_channel(channel, size);
+	}
+
 	void cluster::update_channel(std::string const& channel, std::size_t size)
 	{
 		auto tpl = cyng::tuple_factory(
@@ -1740,7 +1775,7 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("config.lora", msg);
 
-			update_channel("table.lora.count", tbl->size());
+			update_channel("table.LoRa.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "*Session"))
 		{
@@ -1809,6 +1844,9 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			server_.process_event("monitor.msg", msg);
+
+			update_channel("table.msg.count", tbl->size());
+
 		}
 		else
 		{

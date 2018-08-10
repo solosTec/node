@@ -200,9 +200,9 @@ namespace node
 			connection_manager_.send_moved(tag, location);
 		}
 
-		void server::trigger_download(boost::uuids::uuid tag, std::string const& filename)
+		void server::trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment)
 		{
-			connection_manager_.trigger_download(tag, filename);
+			connection_manager_.trigger_download(tag, filename, attachment);
 		}
 
 	}
