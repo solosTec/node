@@ -9,7 +9,6 @@
 #define NODE_LIB_HTTP_SRV_SESSION_H
 
 #include <cyng/log.h>
-//#include <cyng/store/db.h>
 #include <smf/cluster/bus.h>
 #include <memory>
 #include <boost/beast/core.hpp>
@@ -112,11 +111,11 @@ namespace node
 			boost::uuids::uuid tag() const noexcept;
 
 			// Start the asynchronous operation
-			void run();
+			void run(cyng::object);
 			void do_read();
 
 			// Called when the timer expires.
-			void on_timer(boost::system::error_code ec);
+			void on_timer(boost::system::error_code ec, cyng::object);
 
 			void on_read(boost::system::error_code ec);
 			void on_write(boost::system::error_code ec, bool close);

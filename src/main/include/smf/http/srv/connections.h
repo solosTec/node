@@ -42,7 +42,7 @@ namespace node
 			 * Upgrade a session to a websocket
 			 * Called by session.
 			 */
-			std::pair<websocket_session const*, cyng::object> upgrade(session*);
+			std::pair<cyng::object, cyng::object> upgrade(session*);
 
 			/**
 			 * Stop the specified HTTP session.

@@ -38,8 +38,10 @@ namespace node
 
 			// Start the asynchronous operation
 			template<class Body, class Allocator>
-			void do_accept(boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req)
+			void do_accept(boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req, cyng::object obj)
 			{
+				BOOST_ASSERT(cyng::object_cast<websocket_session>(obj) == this);
+
 				// Set the control callback. This will be called
 				// on every incoming ping, pong, and close frame.
 				//
@@ -65,10 +67,10 @@ namespace node
 #endif
 				// Run the timer. The timer is operated
 				// continuously, this simplifies the code.
-				on_timer({});
+				on_timer(boost::system::error_code{}, obj);
 
 				// Set the timer
-				//timer_.expires_after(std::chrono::seconds(15));
+				timer_.expires_after(std::chrono::seconds(15));
 
 				//
 				//	check subprotocols
@@ -145,7 +147,7 @@ namespace node
 			/**
 			 * Called when the timer expires.
 			 */
-			void on_timer(boost::system::error_code ec);
+			void on_timer(boost::system::error_code ec, cyng::object obj);
 
 			//void ws_send_json(cyng::context& ctx);
 

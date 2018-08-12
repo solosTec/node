@@ -52,8 +52,10 @@ namespace node
 		}
 
 		// Start the asynchronous operation
-		void session::run()
+		void session::run(cyng::object obj)
 		{
+			BOOST_ASSERT(cyng::object_cast<session>(obj) == this);
+
 			// Make sure we run on the strand
 			if (!strand_.running_in_this_thread())
 				return boost::asio::post(
@@ -61,13 +63,13 @@ namespace node
 						strand_,
 						std::bind(
 							&session::run,
-							this
-							//shared_from_this()
+							this,
+							obj
 						)));
 
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
-			on_timer({});
+			on_timer(boost::system::error_code{}, obj);
 
 			do_read();
 		}
@@ -98,19 +100,21 @@ namespace node
 		}
 
 		// Called when the timer expires.
-		void session::on_timer(boost::system::error_code ec)
+		void session::on_timer(boost::system::error_code ec, cyng::object obj)
 		{
-            //
+			BOOST_ASSERT(cyng::object_cast<session>(obj) == this);
+
+			//
             //  no activities during shutdown
             //
             if (shutdown_)  return;
-#if BOOST_OS_LINUX
-            //
-            //  timer is currently not working on linux.
-            //  further investigation requires
-            //
-            return;
-#endif
+//#if BOOST_OS_LINUX
+//            //
+//            //  timer is currently not working on linux.
+//            //  further investigation requires
+//            //
+//            return;
+//#endif
 
             if (ec && ec != boost::asio::error::operation_aborted)
 			{
@@ -141,11 +145,7 @@ namespace node
 				timer_.async_wait(
 					boost::asio::bind_executor(
 						strand_,
-						std::bind(
-							&session::on_timer,
-							this,
-							//shared_from_this(),
-							std::placeholders::_1)));
+						std::bind(&session::on_timer, this, std::placeholders::_1, obj)));
 			}
 		}
 
@@ -191,12 +191,15 @@ namespace node
 
 				// Create a WebSocket websocket_session by transferring the socket
 				auto res = connection_manager_.upgrade(this);
-				if (res.first != nullptr) {
-					const_cast<websocket_session*>(res.first)->do_accept(std::move(req_));
-                    //
-                    //  ToDo: increase lifetime of session until times is canceled
-                    //
-                    timer_.cancel();    //  undefined behaviour because session object is already invalid!
+				if (!res.second.is_null()) {
+					//
+					//  There is an object bound to the timer that increases the lifetime of session until times is canceled
+					//
+					timer_.cancel();
+					auto ws_ptr =cyng::object_cast<websocket_session>(res.second);
+					if (ws_ptr != nullptr) {
+						const_cast<websocket_session*>(ws_ptr)->do_accept(std::move(req_), res.second);
+					}
 					return;
 				}
 			}

@@ -74,8 +74,10 @@ namespace node
 		}
 
 		// Called when the timer expires.
-		void websocket_session::on_timer(boost::system::error_code ec)
+		void websocket_session::on_timer(boost::system::error_code ec, cyng::object obj)
 		{
+			BOOST_ASSERT(cyng::object_cast<websocket_session>(obj) == this);
+
             //
             //  no activities after shutdown
             //
@@ -114,26 +116,25 @@ namespace node
 					// The timer expired while trying to handshake,
 					// or we sent a ping and it never completed or
 					// we never got back a control frame, so close.
-					std::cerr << ec << std::endl;
+					//std::cerr << ec << std::endl;
                     CYNG_LOG_WARNING(logger_, "ws - incomplete ping");
-                    do_close();
-                    connection_manager_.stop(this);
+                    //do_close();
+                    //connection_manager_.stop(this);
 
                     // Closing the socket cancels all outstanding operations. They
 					// will complete with boost::asio::error::operation_aborted
-					//connection_manager_.stop(this);
-					//do_close();
-					//ws_.next_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-					//ws_.next_layer().close(ec);
+					ws_.next_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+					ws_.next_layer().close(ec);
 					return;
 				}
 			}
 
 			// Wait on the timer
-			//timer_.async_wait(boost::asio::bind_executor(strand_,
-			//	std::bind(&websocket_session::on_timer
-			//		, this
-			//		, std::placeholders::_1)));
+			timer_.async_wait(boost::asio::bind_executor(strand_,
+				std::bind(&websocket_session::on_timer
+					, this
+					, std::placeholders::_1
+					, obj)));
 		}
 
 		// Called to indicate activity from the remote peer
@@ -148,7 +149,7 @@ namespace node
 			ping_state_ = 0;
 
 			// Set the timer
-//			timer_.expires_after(std::chrono::seconds(15));
+			timer_.expires_after(std::chrono::seconds(15));
 		}
 
 		// Called after a ping is sent.

@@ -36,11 +36,11 @@ namespace node
 			auto sp = cyng::object_cast<session>(so);
 			if (sp != nullptr) {
 				sessions_.emplace(sp->tag(), so);
-				const_cast<session*>(sp)->run();
+				const_cast<session*>(sp)->run(so);
 			}
 		}
 
-		std::pair<websocket_session const*, cyng::object> connection_manager::upgrade(session* sp)
+		std::pair<cyng::object, cyng::object> connection_manager::upgrade(session* sp)
 		{
 			//
 			//	unique lock
@@ -57,25 +57,23 @@ namespace node
 				//	Hold a session reference,
 				//	otherwise the session pointer gets invalid.
 				//
-				auto obj = pos->second;
+				auto sobj = pos->second;
 				sessions_.erase(pos);
-				BOOST_ASSERT(cyng::object_cast<session>(obj) == sp);
+				BOOST_ASSERT(cyng::object_cast<session>(sobj) == sp);
 
 				//
 				//	create new websocket
 				//
-				auto res = ws_.emplace(sp->tag_
-					, make_websocket(sp->logger_
-						, *this
-						, std::move(sp->socket_)
-						, sp->bus_
-						, sp->tag_));	//	share same tag
+				auto wobj = make_websocket(sp->logger_
+					, *this
+					, std::move(sp->socket_)
+					, sp->bus_
+					, sp->tag_);
+				auto res = ws_.emplace(sp->tag_, wobj);	//	share same tag
 
-				return std::make_pair((res.second)
-					? cyng::object_cast<websocket_session>(res.first->second)
-					: nullptr, obj);
+				return std::make_pair(sobj, wobj);
 			}
-			return std::make_pair(nullptr, cyng::make_object());
+			return std::make_pair(cyng::make_object(), cyng::make_object());
 		}
 
 		cyng::object connection_manager::stop(session* sp)
