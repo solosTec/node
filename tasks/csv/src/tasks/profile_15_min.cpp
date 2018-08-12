@@ -5,7 +5,7 @@
  *
  */
 
-#include "clock_daily.h"
+#include "profile_15_min.h"
 #include <cyng/chrono.h>
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/async/task/base_task.h>
@@ -14,7 +14,7 @@
 
 namespace node
 {
-	clock_daily::clock_daily(cyng::async::base_task* btp
+	profile_15_min::profile_15_min(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, std::size_t tsk_db
 		, cyng::param_map_t cfg_trigger)
@@ -36,7 +36,7 @@ namespace node
 			<< cyng::to_str(next_trigger_tp_+ offset_));
 	}
 
-	cyng::continuation clock_daily::run()
+	cyng::continuation profile_15_min::run()
 	{	
 		switch (state_) {
 		case TASK_STATE_INITIAL_:
@@ -69,7 +69,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void clock_daily::stop()
+	void profile_15_min::stop()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -78,12 +78,12 @@ namespace node
 			<< "> stopped");
 	}
 
-	cyng::continuation clock_daily::process()
+	cyng::continuation profile_15_min::process()
 	{	//	unused
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	std::chrono::system_clock::time_point clock_daily::calculate_trigger_tp()
+	std::chrono::system_clock::time_point profile_15_min::calculate_trigger_tp()
 	{
 		std::tm tmp = cyng::chrono::make_utc_tm(std::chrono::system_clock::now());
 
@@ -98,7 +98,7 @@ namespace node
 
 	}
 
-	void clock_daily::generate_last_period()
+	void profile_15_min::generate_last_period()
 	{
 		//
 		//	start time of previous period
@@ -108,7 +108,7 @@ namespace node
 		
 	}
 
-	void clock_daily::generate_current_period()
+	void profile_15_min::generate_current_period()
 	{
 		base_.mux_.post(tsk_db_, 0, cyng::tuple_factory(next_trigger_tp_, std::chrono::hours(24)));
 

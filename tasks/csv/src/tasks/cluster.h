@@ -63,7 +63,7 @@ namespace node
 		const cyng::param_map_t cfg_clock_day_;
 		const cyng::param_map_t cfg_clock_month_;
 		const cyng::param_map_t cfg_trigger_;
-		std::size_t clock_daily_tsk_, clock_monthly_tsk_, storage_task_;
+		std::size_t profile_15_min_tsk_, profile_24_h_tsk_, storage_task_;
 
 	};	
 }

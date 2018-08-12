@@ -34,10 +34,10 @@ set (task_csv_tasks
 	tasks/csv/src/tasks/cluster.cpp
 	tasks/csv/src/tasks/storage_db.h
 	tasks/csv/src/tasks/storage_db.cpp
-	tasks/csv/src/tasks/clock_daily.h
-	tasks/csv/src/tasks/clock_daily.cpp
-	tasks/csv/src/tasks/clock_monthly.h
-	tasks/csv/src/tasks/clock_monthly.cpp
+	tasks/csv/src/tasks/profile_15_min.h
+	tasks/csv/src/tasks/profile_15_min.cpp
+	tasks/csv/src/tasks/profile_24_h.h
+	tasks/csv/src/tasks/profile_24_h.cpp
 )
 	
 if(WIN32)
@@ -60,7 +60,6 @@ endif()
 
 
 source_group("tasks" FILES ${task_csv_tasks})
-#source_group("resources" FILES ${task_csv_res})
 source_group("service" FILES ${task_csv_service})
 source_group("info" FILES ${task_csv_info})
 

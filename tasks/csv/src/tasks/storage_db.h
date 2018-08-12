@@ -38,13 +38,13 @@ namespace node
 		void stop();
 
 		/**
-		 * slot [0] - generate CSV file (daily)
+		 * slot [0] - generate CSV file (15 min profile)
 		 */
 		cyng::continuation process(std::chrono::system_clock::time_point start
 			, std::chrono::hours interval);
 
 		/**
-		 * slot [1] - generate CSV file (monthly)
+		 * slot [1] - generate CSV file (24 h profile)
 		 * 
 		 * @param end last timepoint for this months to report for
 		 * @param days number of days in the specified month
@@ -64,11 +64,17 @@ namespace node
 		void generate_csv_files_monthly(std::chrono::system_clock::time_point start
 			, std::int32_t days);
 
+		/**
+		 * Get servers IDs for 15 min profile (8181c78611ff)
+		 */
 		std::vector<std::string> get_server_ids(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, cyng::sql::command&
 			, cyng::db::statement_ptr);
 		
+		/**
+		 * get OBIS codes that are used for the specified time range and used for 15 min profile (8181c78611ff)
+		 */
 		std::vector<std::string> get_obis_codes(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, std::string const& id
@@ -76,14 +82,14 @@ namespace node
 			, cyng::db::statement_ptr);
 
 
-		std::ofstream open_file_daily(std::chrono::system_clock::time_point start
+		std::ofstream open_file_15_min_profile(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, std::string const& id
 			, std::vector<std::string> const&);
 
-		std::ofstream open_file_monthly(std::chrono::system_clock::time_point end);
+		std::ofstream open_file_24_h_profile(std::chrono::system_clock::time_point end);
 
-		void collect_data_daily(std::ofstream&
+		void collect_data_15_min_profile(std::ofstream&
 			, std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, cyng::sql::command&
@@ -91,7 +97,7 @@ namespace node
 			, std::string const& id
 			, std::vector<std::string> const& obis_code);
 
-		void collect_data_monthly(std::ofstream&
+		void collect_data_24_h_profile(std::ofstream&
 			, std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, cyng::sql::command&
@@ -99,6 +105,9 @@ namespace node
 			, std::string server
 			, std::string code);
 
+		/**
+		 * Collect unique server/OBIS combinations for 24 h profile
+		 */
 		std::vector<std::pair<std::string, std::string>> get_unique_server_obis_combinations(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, cyng::sql::command& cmd

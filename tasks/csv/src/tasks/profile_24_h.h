@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_CSV_TASK_CLOCK_DAILY_H
-#define NODE_CSV_TASK_CLOCK_DAILY_H
+#ifndef NODE_CSV_TASK_PROFILE_24_H_H
+#define NODE_CSV_TASK_PROFILE_24_H_H
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -16,14 +16,14 @@
 namespace node
 {
 
-	class clock_daily
+	class profile_24_h
 	{
 	public:
 		using msg_0 = std::tuple<>;
 		using signatures_t = std::tuple<msg_0>;
 
 	public:
-		clock_daily(cyng::async::base_task* bt
+		profile_24_h(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, std::size_t tsk_db
 			, cyng::param_map_t cfg_trigger);
@@ -36,7 +36,6 @@ namespace node
 		 * unused
 		 */
 		cyng::continuation process();
-
 
 	private:
 		std::chrono::system_clock::time_point calculate_trigger_tp();

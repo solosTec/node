@@ -310,7 +310,7 @@ namespace node
 		{
 			auto dom = cyng::make_reader(vec[0]);
 			cyng::tuple_t tpl;
-			return sml_db_consumer::init_db(cyng::value_cast(dom.get("DB"), tpl));
+			return sml_db_consumer::init_db(cyng::value_cast(dom.get("SML:DB"), tpl));
 		}
 		return EXIT_FAILURE;
 	}

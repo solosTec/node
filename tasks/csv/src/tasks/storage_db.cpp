@@ -6,8 +6,8 @@
  */
 
 #include "storage_db.h"
-#include "clock_daily.h"
-#include "clock_monthly.h"
+#include "profile_15_min.h"
+#include "profile_24_h.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <smf/sml/obis_io.h>
@@ -196,7 +196,7 @@ namespace node
 				<< " connection(s)"
 				;
 
-			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_DEBUG, ss.str()));
+			//bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_DEBUG, ss.str()));
 
 			//
 			//	update task state
@@ -224,16 +224,18 @@ namespace node
 		//
 		//	get all available meters in the specified time range
 		//
-		//	SELECT server FROM TSMLMeta WHERE ((actTime > julianday('2018-08-06 00:00:00')) AND (actTime < julianday('2018-08-07 00:00:00'))) GROUP BY server;
 
 		auto pos = meta_map_.find("TSMLMeta");
 		if (pos != meta_map_.end())
 		{
 			//
-			//	calculate end timepoint of interval
+			//	open connection to database
 			//
 			auto end = start + interval;
 
+			//
+			//	prepare meta data and query statements
+			//
 			auto s = pool_.get_session();
 			cyng::table::meta_table_ptr meta = (*pos).second;
 			cyng::sql::command cmd(meta, s.get_dialect());
@@ -253,9 +255,9 @@ namespace node
 				//
 				//	open output file
 				//
-				auto file = open_file_daily(start, end, id, obis_codes);
+				auto file = open_file_15_min_profile(start, end, id, obis_codes);
 
-				collect_data_daily(file, start, end, cmd, stmt, id, obis_codes);
+				collect_data_15_min_profile(file, start, end, cmd, stmt, id, obis_codes);
 				file.close();
 			}
 
@@ -270,11 +272,13 @@ namespace node
 		if (pos != meta_map_.end())
 		{
 			//
-			//	calculate end timepoint of interval
+			//	open connection to database
 			//
-			//auto end = start + std::chrono::hours(days * 24);
-
 			auto s = pool_.get_session();
+
+			//
+			//	prepare meta data and query statements
+			//
 			cyng::table::meta_table_ptr meta = (*pos).second;
 			cyng::sql::command cmd(meta, s.get_dialect());
 			auto stmt = s.create_statement();
@@ -294,19 +298,19 @@ namespace node
 			//
 			//	open output file
 			//
-			auto file = open_file_monthly(end);
+			auto file = open_file_24_h_profile(end);
 			for (auto cond : combinations) {
 
 				//
 				//	query all combinations
 				//
 #ifdef __DEBUG
-				collect_data_monthly(file
+				collect_data_24_h_profile(file
 					, std::chrono::system_clock::now() - std::chrono::hours(24 * 30)
 					, std::chrono::system_clock::now()
 					, cmd, stmt, cond.first, cond.second);
 #else
-				collect_data_monthly(file, start, end, cmd, stmt, cond.first, cond.second);
+				collect_data_24_h_profile(file, start, end, cmd, stmt, cond.first, cond.second);
 #endif
 
 			}
@@ -323,8 +327,8 @@ namespace node
 	{
 		std::vector<std::pair<std::string, std::string>> result;
 
-		//	SELECT TSMLMeta.server, TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE (actTime > julianday('2018-08-01') AND actTime < julianday('2018-08-10')) GROUP BY TSMLData.OBIS ORDER BY TSMLMeta.server
-		std::string sql = "SELECT TSMLMeta.server, TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE (actTime > julianday(?) AND actTime < julianday(?)) GROUP BY TSMLData.OBIS ORDER BY TSMLMeta.server";
+		//	SELECT TSMLMeta.server, TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE (actTime > julianday('2018-06-30') AND actTime < julianday('2018-07-31') AND TSMLMeta.profile = '8181c78613ff') GROUP BY TSMLData.OBIS ORDER BY TSMLMeta.server
+		std::string sql = "SELECT TSMLMeta.server, TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE (actTime > julianday(?) AND actTime < julianday(?) AND TSMLMeta.profile = '8181c78613ff') GROUP BY TSMLData.OBIS ORDER BY TSMLMeta.server";
 		auto r = stmt->prepare(sql);
 		if (r.second) {
 
@@ -338,7 +342,7 @@ namespace node
 				auto server = cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 0), "server");
 				auto code = cyng::value_cast<std::string>(res->get(2, cyng::TC_STRING, 0), "OBIS");
 
-				CYNG_LOG_INFO(logger_, server
+				CYNG_LOG_TRACE(logger_, server
 					<< ", "
 					<< code	);
 
@@ -350,11 +354,18 @@ namespace node
 			//
 			stmt->clear();
 
+
+			CYNG_LOG_INFO(logger_, result.size()
+				<< " unique server/OBIS cobinations found in the range from "
+				<< cyng::to_str(start)
+				<< " until "
+				<< cyng::to_str(end));
+
 		}
 		return result;
 	}
 
-	void storage_db::collect_data_monthly(std::ofstream& file
+	void storage_db::collect_data_24_h_profile(std::ofstream& file
 		, std::chrono::system_clock::time_point start
 		, std::chrono::system_clock::time_point end
 		, cyng::sql::command& cmd
@@ -362,8 +373,8 @@ namespace node
 		, std::string server
 		, std::string code)
 	{
-		//	SELECT datetime(TSMLMeta.actTime), TSMLMeta.server, TSMLData.OBIS, TSMLData.result FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE (actTime > julianday('2018-08-01') AND actTime < julianday('2018-08-10')) ORDER BY TSMLMeta.actTime;
-		std::string sql = "SELECT TSMLMeta.server, TSMLData.OBIS, TSMLData.result, TSMLMeta.actTime FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?) AND actTime < julianday(?)) AND TSMLMeta.server = ? and TSMLData.OBIS = ?) ORDER BY TSMLMeta.actTime DESC";
+		//	SELECT datetime(TSMLMeta.actTime), TSMLMeta.server, TSMLData.OBIS, TSMLData.result FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE (actTime > julianday('2018-08-01') AND actTime < julianday('2018-08-10') AND TSMLMeta.profile = '8181c78613ff') ORDER BY TSMLMeta.actTime;
+		std::string sql = "SELECT TSMLMeta.server, TSMLData.OBIS, TSMLData.result, TSMLMeta.actTime FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?) AND actTime < julianday(?)) AND TSMLMeta.server = ? and TSMLData.OBIS = ? AND TSMLMeta.profile = '8181c78613ff') ORDER BY TSMLMeta.actTime DESC";
 		auto r = stmt->prepare(sql);
 		if (r.second) {
 
@@ -379,7 +390,7 @@ namespace node
 				auto result = cyng::value_cast<std::string>(res->get(3, cyng::TC_STRING, 0), "result");
 				auto act_time = cyng::value_cast(res->get(4, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
 
-				CYNG_LOG_INFO(logger_, server
+				CYNG_LOG_TRACE(logger_, server
 					<< ", "
 					<< code
 					<< ", "
@@ -425,7 +436,7 @@ namespace node
 		}
 	}
 
-	void storage_db::collect_data_daily(std::ofstream& file
+	void storage_db::collect_data_15_min_profile(std::ofstream& file
 		, std::chrono::system_clock::time_point start
 		, std::chrono::system_clock::time_point end
 		, cyng::sql::command& cmd
@@ -436,9 +447,9 @@ namespace node
 		//
 		//	get join result
 		//
-		//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday('2018-08-06 00:00:00')) AND (actTime < julianday('2018-08-07 00:00:00')) AND server = '01-e61e-13090016-3c-07') ORDER BY trxID
+		//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday('2018-08-06 00:00:00')) AND (actTime < julianday('2018-08-07 00:00:00')) AND TSMLMeta.server = '01-e61e-13090016-3c-07' AND TSMLMeta.profile = '8181c78611ff') ORDER BY trxID
 		//	select * from TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) ORDER BY trxID
-		auto sql = "select TSMLMeta.pk, trxID, msgIdx, datetime(roTime), datetime(actTime), valTime, gateway, server, status, source, channel, target, OBIS, unitCode, unitName, dataType, scaler, val, result FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) ORDER BY actTime";
+		auto sql = "select TSMLMeta.pk, trxID, msgIdx, datetime(roTime), datetime(actTime), valTime, gateway, server, status, source, channel, target, OBIS, unitCode, unitName, dataType, scaler, val, result FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND TSMLMeta.server = ? AND TSMLMeta.profile = '8181c78611ff') ORDER BY actTime";
 		auto r = stmt->prepare(sql);
 		if (r.second) {
 			stmt->push(cyng::make_object(start), 0)
@@ -576,7 +587,10 @@ namespace node
 		//	example:
 		//	SELECT server FROM TSMLMeta WHERE ((actTime > julianday('2018-08-08 00:00:00')) AND (actTime < julianday('2018-08-09 00:00:00'))) GROUP BY server
 		//
-		cmd.select()[cyng::sql::column(8)].where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end)).group_by(cyng::sql::column(8));
+		cmd.select()[cyng::sql::column(8)]
+			.where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end) && cyng::sql::column(13) == cyng::sql::make_constant("8181c78611ff"))
+			.group_by(cyng::sql::column(8));
+
 		std::string sql = cmd.to_str();
 		CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
 
@@ -609,9 +623,9 @@ namespace node
 	{
 		//
 		//	example:
-		//	SELECT TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) GROUP BY TSMLData.OBIS;
+		//	SELECT TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ? AND profile = '8181c78611ff') GROUP BY TSMLData.OBIS;
 
-		std::string sql = "SELECT TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ?) GROUP BY TSMLData.OBIS";
+		std::string sql = "SELECT TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ? AND profile = '8181c78611ff') GROUP BY TSMLData.OBIS";
 		CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
 
 		std::pair<int, bool> r = stmt->prepare(sql);
@@ -640,7 +654,7 @@ namespace node
 		return result;
 	}
 
-	std::ofstream storage_db::open_file_daily(std::chrono::system_clock::time_point start
+	std::ofstream storage_db::open_file_15_min_profile(std::chrono::system_clock::time_point start
 		, std::chrono::system_clock::time_point end
 		, std::string const& id
 		, std::vector<std::string> const& codes)
@@ -694,7 +708,7 @@ namespace node
 		return f;
 	}
 
-	std::ofstream storage_db::open_file_monthly(std::chrono::system_clock::time_point end)
+	std::ofstream storage_db::open_file_24_h_profile(std::chrono::system_clock::time_point end)
 	{
 		auto tt_end = std::chrono::system_clock::to_time_t(end);
 		std::tm time_end = cyng::chrono::convert_utc(tt_end);
@@ -814,10 +828,10 @@ namespace node
 			//	msgIdx - message index
 			//	status - M-Bus status
 			//
-			meta_map.emplace("TSMLMeta", cyng::table::make_meta_table<1, 11>("TSMLMeta",
-				{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target" },
-				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING },
-				{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32 }));
+			meta_map.emplace("TSMLMeta", cyng::table::make_meta_table<1, 12>("TSMLMeta",
+				{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target", "profile" },
+				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING },
+				{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32, 24 }));
 
 			//
 			//	unitCode - physical unit

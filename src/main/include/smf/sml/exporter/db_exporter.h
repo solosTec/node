@@ -107,7 +107,8 @@ namespace node
 				, cyng::object client_id	//	gateway - formatted
 				, cyng::object server		//	server
 				, cyng::object server_id	//	server - formatted
-				, cyng::object status);
+				, cyng::object status
+				, obis profile);
 
 			void store_data(cyng::db::session sp
 				, boost::uuids::uuid pk

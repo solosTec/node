@@ -370,10 +370,10 @@ namespace node
 			//	msgIdx - message index
 			//	status - M-Bus status
 			//
-			meta_map.emplace("TSMLMeta", cyng::table::make_meta_table<1, 11>("TSMLMeta",
-				{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target" },
-				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING },
-				{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32 }));
+			meta_map.emplace("TSMLMeta", cyng::table::make_meta_table<1, 12>("TSMLMeta",
+				{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target", "profile" },
+				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING },
+				{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32, 24 }));
 
 			//
 			//	unitCode - physical unit

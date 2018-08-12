@@ -320,7 +320,8 @@ namespace node
 				, ro_.get_value("clientId")	//	gateway - formatted
 				, ro_.get_value("server")	//	server
 				, ro_.get_value("serverId")	//	server - formatted
-				, ro_.get_value("status"));
+				, ro_.get_value("status")
+				, path.empty() ? obis() : path.front());
 			//ctx.attach(cyng::generate_invoke("db.insert.meta"
 			//	, ro_.pk_
 			//	, ro_.trx_
@@ -770,7 +771,8 @@ namespace node
 			, cyng::object obj_client_id	//	gateway - formatted
 			, cyng::object obj_server		//	server
 			, cyng::object obj_server_id	//	server - formatted
-			, cyng::object obj_status)
+			, cyng::object obj_status
+			, obis profile)
 		{
 
 			cyng::sql::command cmd(mt_.find("TSMLMeta")->second, sp.get_dialect());
@@ -778,7 +780,6 @@ namespace node
 			auto sql = cmd.to_str();
 			auto stmt = sp.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);
-			BOOST_ASSERT(r.first == 12);	//	12 parameters to bind (for both supprted schemas)
 			BOOST_ASSERT(r.second);
 
 			if (boost::algorithm::equals(schema_, "v4.0"))
@@ -843,6 +844,7 @@ namespace node
 					.push(cyng::make_object(source_), 0)	//	source
 					.push(cyng::make_object(channel_), 0)	//	channel
 					.push(cyng::make_object(target_), 32)	//	target
+					.push(cyng::make_object(cyng::io::to_hex(profile.to_buffer())), 24)	//	OBIS
 					;
 			}
 

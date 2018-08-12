@@ -7,8 +7,8 @@
 
 #include "cluster.h"
 #include "storage_db.h"
-#include "clock_daily.h"
-#include "clock_monthly.h"
+#include "profile_15_min.h"
+#include "profile_24_h.h"
 
 #include <smf/cluster/generator.h>
 #include <cyng/async/task/task_builder.hpp>
@@ -33,8 +33,8 @@ namespace node
 		, cfg_clock_day_(cfg_clock_day)
 		, cfg_clock_month_(cfg_clock_month)
 		, cfg_trigger_(cfg_trigger)
-		, clock_daily_tsk_(cyng::async::NO_TASK)
-		, clock_monthly_tsk_(cyng::async::NO_TASK)
+		, profile_15_min_tsk_(cyng::async::NO_TASK)
+		, profile_24_h_tsk_(cyng::async::NO_TASK)
 		, storage_task_(cyng::async::NO_TASK)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
@@ -137,13 +137,13 @@ namespace node
 
 		CYNG_LOG_INFO(logger_, "start clocks");
 
-		clock_daily_tsk_ = cyng::async::start_task_delayed<clock_daily>(base_.mux_
-			, std::chrono::seconds(3)
-			, logger_
-			, storage_task_
-			, cfg_trigger_).first;
+		//profile_15_min_tsk_ = cyng::async::start_task_delayed<profile_15_min>(base_.mux_
+		//	, std::chrono::seconds(3)
+		//	, logger_
+		//	, storage_task_
+		//	, cfg_trigger_).first;
 
-		clock_monthly_tsk_ = cyng::async::start_task_delayed<clock_monthly>(base_.mux_
+		profile_24_h_tsk_ = cyng::async::start_task_delayed<profile_24_h>(base_.mux_
 			, std::chrono::seconds(3)
 			, logger_
 			, storage_task_
@@ -154,30 +154,30 @@ namespace node
 	{
 		CYNG_LOG_INFO(logger_, "stop the clocks");
 
-		if (clock_daily_tsk_ != cyng::async::NO_TASK) {
+		if (profile_15_min_tsk_ != cyng::async::NO_TASK) {
 
 			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> stop clock #"
-				<< clock_daily_tsk_);
+				<< profile_15_min_tsk_);
 
-			base_.mux_.stop(clock_daily_tsk_);
-			clock_daily_tsk_ = cyng::async::NO_TASK;
+			base_.mux_.stop(profile_15_min_tsk_);
+			profile_15_min_tsk_ = cyng::async::NO_TASK;
 		}
 
-		if (clock_monthly_tsk_ != cyng::async::NO_TASK) {
+		if (profile_24_h_tsk_ != cyng::async::NO_TASK) {
 
 			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> stop clock #"
-				<< clock_monthly_tsk_);
+				<< profile_24_h_tsk_);
 
-			base_.mux_.stop(clock_monthly_tsk_);
-			clock_monthly_tsk_ = cyng::async::NO_TASK;
+			base_.mux_.stop(profile_24_h_tsk_);
+			profile_24_h_tsk_ = cyng::async::NO_TASK;
 		}
 
 		if (storage_task_ != cyng::async::NO_TASK) {

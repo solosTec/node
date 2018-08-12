@@ -5,7 +5,7 @@
  *
  */
 
-#include "clock_monthly.h"
+#include "profile_24_h.h"
 #include <cyng/chrono.h>
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/async/task/base_task.h>
@@ -14,7 +14,7 @@
 
 namespace node
 {
-	clock_monthly::clock_monthly(cyng::async::base_task* btp
+	profile_24_h::profile_24_h(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, std::size_t tsk_db
 		, cyng::param_map_t cfg_trigger)
@@ -36,7 +36,7 @@ namespace node
 			<< cyng::to_str(next_trigger_tp_+ offset_));
 	}
 
-	cyng::continuation clock_monthly::run()
+	cyng::continuation profile_24_h::run()
 	{	
 		switch (state_) {
 		case TASK_STATE_INITIAL_:
@@ -56,7 +56,7 @@ namespace node
 			//
 			//	trigger generation of current period
 			//
-			//generate_current_period();
+			generate_current_period();
 			next_trigger_tp_ += std::chrono::hours(24);
 			break;
 		}
@@ -69,7 +69,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void clock_monthly::stop()
+	void profile_24_h::stop()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -79,12 +79,12 @@ namespace node
 	}
 
 	//	slot 0
-	cyng::continuation clock_monthly::process()
+	cyng::continuation profile_24_h::process()
 	{	//	unused
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	std::chrono::system_clock::time_point clock_monthly::calculate_trigger_tp()
+	std::chrono::system_clock::time_point profile_24_h::calculate_trigger_tp()
 	{
 		std::tm tmp = cyng::chrono::make_utc_tm(std::chrono::system_clock::now());
 
@@ -98,13 +98,13 @@ namespace node
 			;
 	}
 
-	void clock_monthly::generate_last_period()
+	void profile_24_h::generate_last_period()
 	{
 		std::tm tmp = cyng::chrono::make_utc_tm(next_trigger_tp_);
-		if (tmp.tm_mday < 12) {
+		if (tmp.tm_mday < 4) {
 
 			//
-			//	generate a file for the last month during the first 10 days of the new month
+			//	generate a file for the last month during the first 3 days of the new month
 			//
 
 			//
@@ -117,7 +117,9 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> generate report for last month with "
+				<< "> generate report for last month ["
+				<< cyng::chrono::month(tmp)
+				<< "] with "
 				<< d.count()
 				<< " days" );
 
@@ -126,7 +128,7 @@ namespace node
 		}
 	}
 
-	void clock_monthly::generate_current_period()
+	void profile_24_h::generate_current_period()
 	{
 		auto d = cyng::chrono::days_of_month(next_trigger_tp_);
 
