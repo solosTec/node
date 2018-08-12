@@ -104,6 +104,13 @@ namespace node
             //  no activities during shutdown
             //
             if (shutdown_)  return;
+#if BOOST_OS_LINUX
+            //
+            //  timer is currently not working on linux.
+            //  further investigation requires
+            //
+            return;
+#endif
 
             if (ec && ec != boost::asio::error::operation_aborted)
 			{
@@ -125,7 +132,11 @@ namespace node
 
 			if (socket_.is_open())
 			{
-				CYNG_LOG_TRACE(logger_, "session timer started " << socket_.remote_endpoint());
+                boost::system::error_code ec;
+                auto rep = socket_.remote_endpoint(ec);
+                if (!ec) {
+                    CYNG_LOG_TRACE(logger_, "session timer started " << rep);
+                }
 				// Wait on the timer
 				timer_.async_wait(
 					boost::asio::bind_executor(
@@ -182,7 +193,10 @@ namespace node
 				auto res = connection_manager_.upgrade(this);
 				if (res.first != nullptr) {
 					const_cast<websocket_session*>(res.first)->do_accept(std::move(req_));
-					timer_.cancel();
+                    //
+                    //  ToDo: increase lifetime of session until times is canceled
+                    //
+                    timer_.cancel();    //  undefined behaviour because session object is already invalid!
 					return;
 				}
 			}

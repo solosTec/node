@@ -134,13 +134,6 @@ namespace node
 				CYNG_LOG_TRACE(logger_, "accept: " << socket_.remote_endpoint());
 
 				// Create the http_session and run it
-				//connection_manager_.start(std::make_shared<session>(logger_
-				//	, connection_manager_
-				//	, std::move(socket_)
-				//	, doc_root_
-				//	, bus_
-				//	, cache_
-				//	, rgn_()));
 				connection_manager_.start(make_http_session(logger_
 					, connection_manager_
 					, std::move(socket_)

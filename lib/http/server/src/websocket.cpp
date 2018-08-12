@@ -268,7 +268,12 @@ namespace node
 
 			if (ec)
 			{
-				CYNG_LOG_ERROR(logger_, "ws read: " << ec << " - " << ec.message());
+                CYNG_LOG_ERROR(logger_, "ws read "
+                    << tag()
+                    << ": "
+                    << ec
+                    << " - "
+                    << ec.message());
                 do_close();
                 connection_manager_.stop(this);
 				return;
