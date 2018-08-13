@@ -11,6 +11,7 @@
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <smf/sml/obis_io.h>
+#include <smf/sml/srv_id_io.h>
 
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
@@ -403,7 +404,7 @@ namespace node
 				if (native_code.is_nil()) {
 
 					file
-						<< server
+						<< sml::get_serial(server)
 						<< ';'
 						<< code
 						<< ';'
@@ -416,7 +417,7 @@ namespace node
 				else {
 
 					file
-						<< server
+						<< sml::get_serial(server)
 						<< ';'
 						<< node::sml::to_string(native_code)
 						<< ';'
@@ -537,7 +538,9 @@ namespace node
 					//	write first values
 					//
 					file
-						<< id
+						<< sml::get_serial(id)
+						<< ';'
+						<< sml::get_serial(id)
 						<< ';'
 						<< cyng::to_str(act_time)
 						<< ';'
@@ -699,7 +702,7 @@ namespace node
 		//	optional header
 		//
 		if (header) {
-			f << "server;time;trx;";
+			f << "server;meter;time;trx;";
 			for (auto const& c : codes) {
 				f << c << ';';
 			}

@@ -41,6 +41,46 @@ namespace node
 			return ((buffer.size() == 7) && (buffer.at(0) == MAC_ADDRESS));
 		}
 
+		bool is_mbus(std::string const& str)
+		{
+			//example: 02-e61e-03197715-3c-07
+			const auto size = str.size();
+			if (size == 22 
+				&& (str.at(2) == '-')
+				&& (str.at(7) == '-')
+				&& (str.at(16) == '-')
+				&& (str.at(19) == '-')) {
+
+				//
+				//	only hex values allowed
+				//
+				return std::all_of(str.begin(), str.end(), [](char c) {
+					return ((c >= '0') && (c <= '9'))
+						|| ((c >= 'a') && (c <= 'f'))
+						|| ((c >= 'A') && (c <= 'F'))
+						|| ((c == '-'))
+						;
+				});
+			}
+			return false;
+		}
+
+		bool is_serial(std::string const& str)
+		{
+			//	example: 05823740
+			const auto size = str.size();
+			if (size == 8) {
+
+				//
+				//	only decimal values allowed
+				//
+				return std::all_of(str.begin(), str.end(), [](char c) {
+					return ((c >= '0') && (c <= '9'));
+				});
+			}
+			return false;
+		}
+
 		void serialize_server_id(std::ostream& os, cyng::buffer_t const& buffer)
 		{
 			//	store and reset stream state
@@ -176,6 +216,25 @@ namespace node
 			}
 
 			return "00000000";
+		}
+
+		std::string get_serial(std::string const& str)
+		{
+			if (is_mbus(str))
+			{
+				//example: 02-e61e-03197715-3c-07
+				return str.substr(14, 2)
+					+ str.substr(12, 2)
+					+ str.substr(10, 2)
+					+ str.substr(8, 2)
+					;
+			}
+			else if (is_serial(str))
+			{
+				return str;
+			}
+
+			return str;
 		}
 
 		cyng::buffer_t to_gateway_srv_id(cyng::mac48 mac)

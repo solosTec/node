@@ -186,17 +186,17 @@ namespace node
 						cyng::param_factory("format", "SML")	//	supported formats are "SML" and "IEC"
 					))
 
-					, cyng::param_factory("clock-daily", cyng::tuple_factory(
+					, cyng::param_factory("profile-15min", cyng::tuple_factory(
 						cyng::param_factory("root-dir", (pwd / "csv").string()),
-						cyng::param_factory("prefix", "smf-day"),
+						cyng::param_factory("prefix", "smf-report-15min"),
                         cyng::param_factory("suffix", "csv"),
 						cyng::param_factory("header", true),
 						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 					))
 
-					, cyng::param_factory("clock-monthly", cyng::tuple_factory(
+					, cyng::param_factory("profile-24h", cyng::tuple_factory(
 						cyng::param_factory("root-dir", (pwd / "csv").string()),
-						cyng::param_factory("prefix", "smf-month"),
+						cyng::param_factory("prefix", "smf-report-24h"),
                         cyng::param_factory("suffix", "csv"),
 						cyng::param_factory("header", true),
 						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
@@ -338,8 +338,8 @@ namespace node
 			, logger
 			, cyng::value_cast(dom.get("cluster"), vec)
 			, cyng::value_cast(dom.get("DB"), tpl)
-			, cyng::value_cast(dom.get("clock-daily"), tpl)
-			, cyng::value_cast(dom.get("clock-monthly"), tpl)
+			, cyng::value_cast(dom.get("profile-15min"), tpl)
+			, cyng::value_cast(dom.get("profile-24h"), tpl)
 			, cyng::value_cast(dom.get("trigger"), tpl));
 
 		//
