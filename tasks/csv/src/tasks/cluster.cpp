@@ -137,14 +137,14 @@ namespace node
 
 		CYNG_LOG_INFO(logger_, "start clocks");
 
-		//profile_15_min_tsk_ = cyng::async::start_task_delayed<profile_15_min>(base_.mux_
-		//	, std::chrono::seconds(3)
-		//	, logger_
-		//	, storage_task_
-		//	, cfg_trigger_).first;
+        profile_15_min_tsk_ = cyng::async::start_task_delayed<profile_15_min>(base_.mux_
+            , std::chrono::seconds(3)
+            , logger_
+            , storage_task_
+            , cfg_trigger_).first;
 
 		profile_24_h_tsk_ = cyng::async::start_task_delayed<profile_24_h>(base_.mux_
-			, std::chrono::seconds(3)
+            , std::chrono::seconds(4)
 			, logger_
 			, storage_task_
 			, cfg_trigger_).first;

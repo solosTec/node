@@ -189,7 +189,7 @@ namespace node
 					, cyng::param_factory("clock-daily", cyng::tuple_factory(
 						cyng::param_factory("root-dir", (pwd / "csv").string()),
 						cyng::param_factory("prefix", "smf-day"),
-						cyng::param_factory("suffix", ".csv"),
+                        cyng::param_factory("suffix", "csv"),
 						cyng::param_factory("header", true),
 						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 					))
@@ -197,7 +197,7 @@ namespace node
 					, cyng::param_factory("clock-monthly", cyng::tuple_factory(
 						cyng::param_factory("root-dir", (pwd / "csv").string()),
 						cyng::param_factory("prefix", "smf-month"),
-						cyng::param_factory("suffix", ".csv"),
+                        cyng::param_factory("suffix", "csv"),
 						cyng::param_factory("header", true),
 						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 					))

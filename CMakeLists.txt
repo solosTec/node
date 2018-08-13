@@ -938,6 +938,16 @@ if(UNIX)
 		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup.service.in"
 		  "${PROJECT_BINARY_DIR}/node-setup.service")
 	  
+      # csv
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.linux.cgf.in"
+            "${PROJECT_BINARY_DIR}/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.service.in"
+            "${PROJECT_BINARY_DIR}/task-csv.service")
+
+
 else()
 
 
@@ -1161,6 +1171,23 @@ else()
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/setup_restart_service.cmd")
+
+      # csv
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.windows.cgf.in"
+            "${PROJECT_BINARY_DIR}/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv_create_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/csv_create_service.cmd")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv_delete_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/csv_delete_service.cmd")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv_restart_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/csv_restart_service.cmd")
 
 endif(UNIX)
 

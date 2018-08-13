@@ -1,10 +1,10 @@
 [Unit]
-Description=csv server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_PATCH_LEVEL} (project ${PROJECT_NAME})
+Description=csv task v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_PATCH_LEVEL} (project ${PROJECT_NAME})
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/opt/task/csv -C/opt/node/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
+ExecStart=/opt/node/csv -C/opt/node/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
 Restart=always
 RestartSec=12
 

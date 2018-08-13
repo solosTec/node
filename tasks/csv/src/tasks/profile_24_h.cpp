@@ -119,13 +119,37 @@ namespace node
 				<< base_.get_class_name()
 				<< "> generate report for last month ["
 				<< cyng::chrono::month(tmp)
-				<< "] with "
-				<< d.count()
+                << "] over the last "
+                << d.count()
 				<< " days" );
 
-			base_.mux_.post(tsk_db_, 1, cyng::tuple_factory(tp, static_cast<std::int32_t>(d.count())));
+            base_.mux_.post(tsk_db_, 1, cyng::tuple_factory(tp, static_cast<std::int32_t>(d.count())));
 
 		}
+        else {
+
+            //
+            //	generate a file for the running month
+            //
+
+            //
+            //	get current day
+            //
+            auto tp = std::chrono::system_clock::now();
+
+            CYNG_LOG_INFO(logger_, "task #"
+                << base_.get_id()
+                << " <"
+                << base_.get_class_name()
+                << "> generate report for this month ["
+                << cyng::chrono::month(tmp)
+                << "] over the last "
+                << tmp.tm_mday
+                << " days" );
+
+            base_.mux_.post(tsk_db_, 1, cyng::tuple_factory(tp, static_cast<std::int32_t>(tmp.tm_mday)));
+
+        }
 	}
 
 	void profile_24_h::generate_current_period()
