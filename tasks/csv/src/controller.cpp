@@ -188,7 +188,7 @@ namespace node
 
 					, cyng::param_factory("profile-15min", cyng::tuple_factory(
 						cyng::param_factory("root-dir", (pwd / "csv").string()),
-						cyng::param_factory("prefix", "smf-report-15min"),
+						cyng::param_factory("prefix", "smf-report-15min-"),
                         cyng::param_factory("suffix", "csv"),
 						cyng::param_factory("header", true),
 						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
