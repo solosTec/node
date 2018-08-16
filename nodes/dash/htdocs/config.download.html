@@ -36,8 +36,8 @@
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="config.device.html">Devices</a>
                         <a class="dropdown-item" href="config.gateway.html">Gateway</a>
-                        <a class="dropdown-item" href="config.meter.html">Meter</a>
-                        <a class="dropdown-item" href="config.user.html">User</a>
+                        <!--<a class="dropdown-item" href="config.meter.html">Meter</a>-->
+                        <!--<a class="dropdown-item" href="config.user.html">User</a>-->
                         <a class="dropdown-item" href="config.system.html">System</a>
                         <a class="dropdown-item" href="config.upload.html">Upload</a>
                         <a class="dropdown-item active" href="config.download.html">Download</a>
@@ -87,7 +87,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Devices</h5>
-                    <form id="smf-download-config-device" method="post" action="/api/download/config/device" enctype="multipart/form-data" class="form-horizontal">
+                    <form id="smf-download-config-device" method="post" action="config.download.html" enctype="multipart/form-data" class="form-horizontal">
                         <div class="form-group">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="smf-download-config-device-version" id="smf-download-config-device-v31" value="v3.2">
@@ -127,7 +127,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Meters</h5>
-                    <form id="smf-download-config-meters" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
+                    <form id="smf-download-config-meters" method="post" action="config.download.html" enctype="multipart/form-data" class="form-horizontal">
                         <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.download.meters" />
                         <button type="submit" class="btn btn-primary" id="smf-download-config-meter-button">&#8681; Download</button>
                     </form>
@@ -146,7 +146,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">LoRa</h5>
-                    <form id="smf-download-config-LoRa" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
+                    <form id="smf-download-config-LoRa" method="post" action="config.download.html" enctype="multipart/form-data" class="form-horizontal">
                         <div class="form-group">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="smf-download-config-LoRa-version" id="smf-download-config-LoRa-v31" value="v3.2">
@@ -173,7 +173,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">User</h5>
-                    <form id="smf-download-config-user" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
+                    <form id="smf-download-config-user" method="post" action="config.download.html" enctype="multipart/form-data" class="form-horizontal">
                         <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.download.users" />
                         <button type="submit" class="btn btn-primary" id="smf-download-config-user-button" disabled>&#8681; Download</button>
                     </form>
@@ -186,7 +186,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Messages</h5>
-                    <form id="smf-download-config-msg" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
+                    <form id="smf-download-config-msg" method="post" action="config.download.html" enctype="multipart/form-data" class="form-horizontal">
                         <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.download.messages" />
                         <button type="submit" class="btn btn-primary">&#8681; Download</button>
                     </form>

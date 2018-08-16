@@ -21,6 +21,7 @@
 #include <cyng/sys/memory.h>
 #include <cyng/json.h>
 #include <cyng/xml.h>
+#include <cyng/parser/chrono_parser.h>
 
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/string_generator.hpp>
@@ -95,6 +96,11 @@ namespace node
 		bus_->vm_.register_function("cfg.download.gateways", 2, std::bind(&cluster::cfg_download_gateways, this, std::placeholders::_1));
 		bus_->vm_.register_function("cfg.download.messages", 2, std::bind(&cluster::cfg_download_messages, this, std::placeholders::_1));
 		bus_->vm_.register_function("cfg.download.LoRa", 2, std::bind(&cluster::cfg_download_LoRa, this, std::placeholders::_1));
+
+		bus_->vm_.register_function("cfg.upload.devices", 2, std::bind(&cluster::cfg_upload_devices, this, std::placeholders::_1));
+		bus_->vm_.register_function("cfg.upload.gateways", 2, std::bind(&cluster::cfg_upload_gateways, this, std::placeholders::_1));
+		bus_->vm_.register_function("cfg.upload.meter", 2, std::bind(&cluster::cfg_upload_meter, this, std::placeholders::_1));
+		
 
 		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
@@ -871,6 +877,31 @@ namespace node
 
 	}
 
+	void cluster::read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc)
+	{
+		std::size_t counter{ 0 };
+		pugi::xpath_node_set data = doc.select_nodes("TDevice/record");
+		auto meta = cache_.meta("TDevice");
+		for (pugi::xpath_node_set::const_iterator it = data.begin(); it != data.end(); ++it)
+		{
+			counter++;
+			pugi::xml_node node = it->node();
+
+			auto rec = cyng::xml::read(node, meta);
+
+			CYNG_LOG_TRACE(logger_, "session "
+				<< ctx.tag()
+				<< " - insert device #"
+				<< counter
+				<< " "
+				<< cyng::value_cast(rec["pk"], boost::uuids::nil_uuid())
+				<< " - "
+				<< cyng::value_cast<std::string>(rec["name"], ""));
+
+			ctx.attach(bus_req_db_insert("TDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+		}
+	}
+
 	void cluster::http_upload_start(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
@@ -907,36 +938,55 @@ namespace node
 		//	* content
 		//	
 		const cyng::vector_t frame = ctx.get_frame();
-		//CYNG_LOG_TRACE(logger_, "http.upload.data - " << cyng::io::to_str(frame));
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			std::string,		//	[1] variable name
+			std::string,		//	[2] file name
+			std::string		//	[3] mime type
+			//cyng::buffer_t		//	[4] data (skipped to save memory)
+		>(frame);
+
 		CYNG_LOG_TRACE(logger_, "http.upload.data - " 
 			<< cyng::value_cast<std::string>(frame.at(2), "no file name specified")
 			<< " - "
 			<< cyng::value_cast<std::string>(frame.at(3), "no mime type specified"));
 
-		//
-		//	get pointer to XML data
-		//
-		auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(4));
-		if (ptr != nullptr)
-		{
-			//	create empty XML document
-			pugi::xml_document doc;
-			const pugi::xml_parse_result result = doc.load_buffer(ptr->data(), ptr->size());
-			if (!result)
-			{
-				std::stringstream ss;
-				ss
-					<< "XML parser error: "
-					<< result.description()
-					<< ", character pos= "
-					<< result.offset
-					;
-				ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+		auto pos = form_data_.find(std::get<0>(tpl));
+		if (pos != form_data_.end()) {
+			CYNG_LOG_TRACE(logger_, "http.upload.data - "
+				<< std::get<0>(tpl)
+				<< ", "
+				<< std::get<1>(tpl)
+				<< ", "
+				<< std::get<2>(tpl)
+				<< ", mime type: "
+				<< std::get<3>(tpl));
+
+			//
+			//	write temporary file
+			//
+			auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("smf-dash-%%%%-%%%%-%%%%-%%%%.tmp");
+			auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(4));
+			std::ofstream of(p.string());
+			if (of.is_open() && ptr != nullptr) {
+				CYNG_LOG_DEBUG(logger_, "http.upload.data - write "
+					<< ptr->size()
+					<< " bytes into file "
+					<< p);
+				of.write(ptr->data(), ptr->size());
+				of.close();
 			}
-			else
-			{
-				read_device_configuration_3_2(ctx, doc);
+			else {
+				CYNG_LOG_FATAL(logger_, "http.upload.data - cannot open "
+					<< p);
 			}
+			pos->second.emplace(std::get<1>(tpl), p.string());
+			pos->second.emplace(std::get<2>(tpl), std::get<3>(tpl));
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "http.upload.data - session "
+				<< std::get<0>(tpl)
+				<< " not found");
 		}
 	}
 
@@ -1014,7 +1064,7 @@ namespace node
 			;
 		std::stringstream ss;
 		ss
-			<< "upload "
+			<< "upload/download "
 			<< std::get<2>(tpl)
 			<< " bytes to "
 			<< std::get<3>(tpl)
@@ -1027,15 +1077,15 @@ namespace node
 		//
 		//	start procedure
 		//
-		bool found;
+		bool found = false;
 		if (pos != form_data_.end()) {
 			auto idx = pos->second.find("smf-procedure");
 			if (idx != pos->second.end()) {
 
-				CYNG_LOG_TRACE(logger_, "run "
-					<< std::get<0>(tpl)
-					<< " - "
-					<< idx->second);
+				CYNG_LOG_INFO(logger_, "run proc "
+					<< idx->second
+					<< ":"
+					<< std::get<0>(tpl));
 
 				cyng::param_map_t params;
 				for (auto const& v : pos->second) {
@@ -1125,6 +1175,131 @@ namespace node
 
 		trigger_download(std::get<0>(tpl), "TLoRaDevice", "LoRa.xml");
 	}
+
+	void cluster::cfg_upload_devices(cyng::context& ctx)
+	{
+		//	
+		//	[181f86c7-23e5-4e01-a4d9-f6c9855962bf,
+		//	%(
+		//		("devConf_0":text/xml),
+		//		("devices.xml":C:\\Users\\Pyrx\\AppData\\Local\\Temp\\smf-dash-ea2e-1fe1-6628-93ff.tmp),
+		//		("smf-procedure":cfg.upload.devices),
+		//		("smf-upload-config-device-version":v5.0),
+		//		("target":/upload/config/device/)
+		//	)]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.upload.device - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		auto file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "dev-conf-0"), "");
+		auto version = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "smf-upload-config-device-version"), "v0.5");
+
+		//
+		//	get pointer to XML data
+		//
+		pugi::xml_document doc;
+		const pugi::xml_parse_result result = doc.load_file(file_name.c_str());
+		if (result) {
+
+			if (boost::algorithm::equals(version, "v3.2")) {
+				read_device_configuration_3_2(ctx, doc);
+			}
+			else {
+				read_device_configuration_5_x(ctx, doc);
+			}
+		}
+		else {
+			std::stringstream ss;
+			ss
+				<< "XML ["
+				<< file_name
+				<< "] parsed with errors: ["
+				<< result.description()
+				<< "]\n"
+				<< "Error offset: "
+				<< result.offset
+				;
+
+			ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+		}
+
+
+	}
+
+	void cluster::cfg_upload_gateways(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.upload.gateways - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		auto file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "gw-conf-0"), "");
+
+		//
+		//	get pointer to XML data
+		//
+		pugi::xml_document doc;
+		const pugi::xml_parse_result result = doc.load_file(file_name.c_str());
+		if (result) {
+
+			std::size_t counter{ 0 };
+			pugi::xpath_node_set data = doc.select_nodes("TGateway/record");
+			auto meta = cache_.meta("TGateway");
+			for (pugi::xpath_node_set::const_iterator it = data.begin(); it != data.end(); ++it)
+			{
+				counter++;
+				pugi::xml_node node = it->node();
+
+				auto rec = cyng::xml::read(node, meta);
+
+				CYNG_LOG_TRACE(logger_, "session "
+					<< ctx.tag()
+					<< " - insert gateway #"
+					<< counter
+					<< " "
+					<< cyng::value_cast(rec["pk"], boost::uuids::nil_uuid())
+					<< " - "
+					<< cyng::value_cast<std::string>(rec["name"], ""));
+
+				ctx.attach(bus_req_db_insert("TGateway", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+			}
+
+		}
+		else {
+			std::stringstream ss;
+			ss
+				<< "XML ["
+				<< file_name
+				<< "] parsed with errors: ["
+				<< result.description()
+				<< "]\n"
+				<< "Error offset: "
+				<< result.offset
+				;
+
+			ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+		}
+	}
+
+	void cluster::cfg_upload_meter(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.upload.meter - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+	}
+
 
 	void cluster::trigger_download(boost::uuids::uuid tag, std::string table, std::string filename)
 	{

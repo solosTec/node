@@ -83,6 +83,10 @@ namespace node
 		void cfg_download_messages(cyng::context& ctx);
 		void cfg_download_LoRa(cyng::context& ctx);
 
+		void cfg_upload_devices(cyng::context& ctx);
+		void cfg_upload_gateways(cyng::context& ctx);
+		void cfg_upload_meter(cyng::context& ctx);
+
 		void sync_table(std::string const&);
 
 		void update_sys_cpu_usage_total(std::string const&, http::websocket_session* wss);
@@ -120,6 +124,7 @@ namespace node
 
 		void read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc);
 		void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc);
+		void read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc);
 
 		void display_loading_icon(boost::uuids::uuid tag, bool, std::string const&);
 

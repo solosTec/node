@@ -436,7 +436,7 @@ namespace node
 				<< " successful authorized");
 
 			//
-			//	register additional request handler
+			//	register additional request handler for database access
 			//
 			cyng::register_store(this->db_, ctx);
 

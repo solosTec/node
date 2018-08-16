@@ -66,6 +66,11 @@
                     </div>
                 </li>
             </ul>
+            <span id="ws-activity-text" class="navbar-text">
+                connection state
+            </span>
+            <span>&nbsp;</span>
+            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="10" stroke="red" stroke-width="0" fill="grey" /></svg></span>
         </div>
     </nav>
     <div class="jumbotron jumbotron-fluid">
@@ -84,7 +89,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Devices</h5>
-                    <form id="smf-upload-config-device" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
+                    <form id="smf-upload-config-device" method="post" action="config.upload.html" enctype="multipart/form-data" class="form-horizontal">
                         <div class="form-group">
                             <label for="smf-upload-config-device-file" id="smf-upload-config-device-header">Select a device configuration file<span id="xxx"></span></label>
                             <input type="file" class="form-control-file" id="smf-upload-config-device-file" accept=".xml, application/xml" multiple>
@@ -104,23 +109,51 @@
                                 <label class="form-check-label" for="smf-upload-config-device-v5">version 5.0</label>
                             </div>
                         </div>
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.upload.devices" />
                         <button type="submit" class="btn btn-primary">&#8682; Upload</button>
                     </form>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted"><span id="ws-table-device-count"></span> devices configured</small>
                 </div>
             </div>
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Gateways</h5>
+                    <form id="smf-upload-config-gw" method="post" action="config.upload.html" enctype="multipart/form-data" class="form-horizontal">
+                        <div class="form-group">
+                            <label for="smf-upload-config-gw-file" id="smf-upload-config-gw-header">Select a gateway configuration file<span id="xxx"></span></label>
+                            <input type="file" class="form-control-file" id="smf-upload-config-gw-file" accept=".xml, application/xml" multiple>
+                        </div>
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.upload.gateways" />
+                        <button type="submit" class="btn btn-primary" id="smf-upload-config-gw-button">&#8682; Upload</button>
+                    </form>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted"><span id="ws-table-gateway-count"></span> gateways available</small>
                 </div>
             </div>
-        </div>
-        <br/>
-        <div class="card-deck">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Meters</h5>
+                    <form id="smf-upload-config-meter" method="post" action="config.upload.html" enctype="multipart/form-data" class="form-horizontal">
+                        <div class="form-group">
+                            <label for="smf-upload-config-meter-file" id="smf-upload-config-meter-header">Select a meter configuration file<span id="xxx"></span></label>
+                            <input type="file" class="form-control-file" id="smf-upload-meter-device-file" accept=".xml, application/xml" multiple>
+                        </div>
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.upload.meter" />
+                        <button type="submit" class="btn btn-primary" id="smf-upload-config-meter-button">&#8682; Upload</button>
+                    </form>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted"><span id="ws-table-meter-count"></span> meters configured</small>
                 </div>
             </div>
+        </div>
+
+        <br />
+
+        <div class="card-deck">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">LoRa</h5>
@@ -144,12 +177,31 @@
                                 <label class="form-check-label" for="smf-upload-config-LoRa-v5">SigFox</label>
                             </div>
                         </div>
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.upload.meters" />
                         <button type="submit" class="btn btn-primary">&#8679; Upload</button>
                     </form>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted"><span id="ws-table-LoRa-count"></span> devices configured</small>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <!--user-->
+                    <h5 class="card-title">&nbsp;</h5>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <!--metering data-->
+                    <h5 class="card-title">&nbsp;</h5>
                 </div>
             </div>
         </div>
     </div>
+
+    <br />
+
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
     <!--<script type="text/javascript" src="popper.min.js"></script>-->
@@ -184,7 +236,18 @@
 
             //var version = data.find(x => x.name === 'deviceConfigVersion').value;
             //uploadConfigFiles(data, files, "devConf_", '/upload/config/device/' + version);
-            uploadConfigFiles(data, files, "devConf_", '/upload/config/device/');
+            uploadConfigFiles(data, files, "dev-conf-", '/upload/config/device/');
+
+        });
+
+        $('#smf-upload-config-gw').submit(function (event) {
+            event.preventDefault();
+            console.log('upload: ' + $('#smf-upload-config-gw').serialize());
+            //console.log('upload ' + event.target.baseURI);
+            var data = $('#smf-upload-config-gw').serializeArray();
+            var files = this['smf-upload-config-gw-file'].files;
+            console.log("Handler for .submit() called with " + data.length + ' param(s) and ' + files.length + ' file(s)');
+            uploadConfigFiles(data, files, "gw-conf-", '/upload/config/gw/');
 
         });
 
@@ -241,13 +304,131 @@
 
                 $("#progressbar").val(percentage);
                 if (percentage >= 100) {
-                    // process completed  
+                    // process completed
                 }
             }
         }
 
 
     </script>
+
+    <script>
+
+        var connection;
+        var totalIO = 0;
+
+        $(document).ready(function () {
+            console.log('document ready');
+            $('#ws-activity-text').html('connecting to ' + location.host + '...');
+            connection = new WebSocket('ws://' + location.host + '/smf/api/download/v0.1', ['SMF']);
+
+            connection.onopen = function () {
+                $('#ws-activity-text').html('connected with ' + location.host);
+                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
+                //  subscribe system status
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.device.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.gateway.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.meter.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.msg.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.LoRa.count", push: true }));
+            };
+
+            connection.onclose = function (event) {
+                $('#ws-activity-symbol').show();
+                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
+                if (event.code == 1006) {
+                    $('#ws-activity-text').html('connection lost - press reload');
+                }
+                else {
+                    $('#ws-activity-text').html('error ' + event.code);
+                }
+            };
+
+            connection.onerror = function (error) {
+                console.log('ws error');
+                $('#ws-activity-text').html('ws error');
+            };
+
+            //  {"cmd": "update", "channel": "table.device.count", "value": 77}
+            connection.onmessage = function (e) {
+                //$('#ws-activity-symbol').show();
+                //console.log('incoming data: ' + e.data);
+                totalIO += e.data.length;
+                var obj = JSON.parse(e.data);
+                if (obj.cmd != null) {
+                    if (obj.cmd == 'update') {
+                        if (obj.channel != null) {
+                            if (obj.channel == 'table.device.count') {
+                                $('#ws-table-device-count').text(obj.value);
+                                if (obj.value == 0) {
+                                    $('#smf-download-config-device-button').prop("disabled", true);
+                                }
+                                else {
+                                    $('#smf-download-config-device-button').prop("disabled", false);
+                                }
+                            }
+                            else if (obj.channel == 'table.gateway.count') {
+                                $('#ws-table-gateway-count').text(obj.value);
+                                if (obj.value == 0) {
+                                    $('#smf-download-config-gateway-button').prop("disabled", true);
+                                }
+                                else {
+                                    $('#smf-download-config-gateway-button').prop("disabled", false);
+                                }
+                            }
+                            else if (obj.channel == 'table.meter.count') {
+                                $('#ws-table-meter-count').text(obj.value);
+                                if (obj.value == 0) {
+                                    $('#smf-download-config-meter-button').prop("disabled", true);
+                                }
+                                else {
+                                    $('#smf-download-config-meter-button').prop("disabled", false);
+                                }
+                            }
+                            else if (obj.channel == 'table.msg.count') {
+                                $('#ws-table-msg-count').text(obj.value);
+                            }
+                            else if (obj.channel == 'table.LoRa.count') {
+                                $('#ws-table-LoRa-count').text(obj.value);
+                                if (obj.value == 0) {
+                                    $('#smf-download-config-LoRa-button').prop("disabled", true);
+                                }
+                                else {
+                                    $('#smf-download-config-LoRa-button').prop("disabled", false);
+                                }
+                            }
+                        }
+                    }
+                    else if (obj.cmd == 'load') {
+                        if (obj.show != null && obj.show) {
+                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });
+                            $('#ws-activity-symbol').show();
+                        }
+                        else {
+                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
+                            $('#ws-activity-symbol').fadeOut();
+                        }
+                    }
+                }
+                $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
+            };
+        });
+    </script>
+
+    <script>
+            const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            function format_bytes(x) {
+
+                let l = 0, n = parseInt(x, 10) || 0;
+                while (n >= 1024 && ++l) {
+                    n = n / 1024;
+                }
+
+                if (n == 0) return '-';
+                return (n.toFixed(l < 1 ? 0 : 1) + ' ' + units[l]);
+            }
+    </script>
+
 
 </body>
 </html>
