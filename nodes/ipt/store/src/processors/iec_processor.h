@@ -8,6 +8,7 @@
 #ifndef NODE_IPT_STORE_IEC_PROCESSOR_H
 #define NODE_IPT_STORE_IEC_PROCESSOR_H
 
+#include <smf/iec/parser.h>
 #include <cyng/log.h>
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/vm/controller.h>
@@ -15,15 +16,10 @@
 
 namespace node
 {
-	namespace iec
-	{
-		struct parser {};	//	dummy
-	}
-
-	class sml_xml_consumer;
+	//class iec_xml_consumer;
 	class iec_processor
 	{
-		friend sml_xml_consumer;
+		//friend iec_xml_consumer;
 
 	public:
 		iec_processor(cyng::async::mux& m

@@ -42,6 +42,14 @@ namespace node
 		 * @see http://dlms.com/documents/Excerpt_BB11.pdf chapter 7.11.1
 		 */
 
+		//
+		//	Value group C 
+		//
+		constexpr std::uint8_t _C = 96;	//	General service entries (C)
+		constexpr std::uint8_t _F = 97;	//	General error messages (F)
+		constexpr std::uint8_t _L = 98;	//	General list objects (L)
+		constexpr std::uint8_t _P = 99;	//	Abstract data profiles (P)
+
 	}	//	iec
 
 

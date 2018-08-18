@@ -107,7 +107,9 @@ namespace node
 				//
 				//	open push channel
 				//
-				bus_->vm_.async_run(cyng::generate_invoke("req.open.push.channel", "water@solostec", "", "", "", "", 0));
+				//bus_->vm_.async_run(cyng::generate_invoke("req.open.push.channel", "water@solostec", "", "", "", "", 0));
+				bus_->vm_.async_run(cyng::generate_invoke("req.open.push.channel", "LZQJ", "", "", "", "", 0));
+				
 				bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
 				return cyng::continuation::TASK_CONTINUE;
 			}
@@ -203,7 +205,9 @@ namespace node
 				//	send data
 				//
 				//std::ifstream file("C:\\projects\\workplace\\node\\Debug\\sml\\smf-a541f58-cea267c-2018080T21645-SML-water@solostec.bin", std::ios::binary | std::ios::app);
-				std::ifstream file("C:\\projects\\workplace\\node\\Debug\\sml\\smf-d918cce4-65d7aa73-2018080T121715-SML-water@solostec.bin", std::ios::binary | std::ios::app);
+				//std::ifstream file("C:\\projects\\workplace\\node\\Debug\\sml\\smf-d918cce4-65d7aa73-2018080T121715-SML-water@solostec.bin", std::ios::binary | std::ios::app);
+				std::ifstream file("C:\\projects\\workplace\\node\\Debug\\sml\\smf-b3c1e378-1957aa1e-2018080T171813-IEC-LZQJ.bin", std::ios::binary | std::ios::app);
+				
 				if (file.is_open())
 				{
 					//	dont skip whitepsaces

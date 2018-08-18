@@ -46,6 +46,8 @@ set (node_ipt_store_tasks
 	nodes/ipt/store/src/tasks/sml_to_csv_consumer.cpp
 	nodes/ipt/store/src/tasks/binary_consumer.h
 	nodes/ipt/store/src/tasks/binary_consumer.cpp
+	nodes/ipt/store/src/tasks/iec_to_db_consumer.h
+	nodes/ipt/store/src/tasks/iec_to_db_consumer.cpp
 )
 set (node_ipt_store_processors
 	nodes/ipt/store/src/processors/sml_processor.h

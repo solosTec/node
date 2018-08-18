@@ -30,14 +30,14 @@ namespace node
 			, tl_()
 			, offset_(0)
 			, stream_state_(STATE_START)
-			, parser_state_()
+			, parser_state_(sml_start())
 			, crc_(crc_init())
 			, crc_on_(true)
 			, counter_(0)
 			, stack_()
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
-			parser_state_ = sml_start();
+			//parser_state_ = sml_start();
 		}
 
 		parser::~parser()

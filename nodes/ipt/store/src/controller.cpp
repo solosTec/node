@@ -14,6 +14,7 @@
 #include "tasks/sml_to_json_consumer.h"
 #include "tasks/sml_to_log_consumer.h"
 #include "tasks/sml_to_csv_consumer.h"
+#include "tasks/iec_to_db_consumer.h"
 #include "tasks/network.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -310,7 +311,8 @@ namespace node
 		{
 			auto dom = cyng::make_reader(vec[0]);
 			cyng::tuple_t tpl;
-			return sml_db_consumer::init_db(cyng::value_cast(dom.get("SML:DB"), tpl));
+			return sml_db_consumer::init_db(cyng::value_cast(dom.get("SML:DB"), tpl))
+				&& iec_db_consumer::init_db(cyng::value_cast(dom.get("IEC:DB"), tpl));
 		}
 		return EXIT_FAILURE;
 	}
@@ -496,11 +498,23 @@ namespace node
 		{
 			if (boost::algorithm::iequals(config_type, "SML:DB"))
 			{
-				CYNG_LOG_INFO(logger, "connect to configuration database");
+				CYNG_LOG_INFO(logger, "start database adapter for SML protocol");
 
 				tpl = cyng::value_cast(dom.get(config_type), tpl);
 
 				tsks.push_back(cyng::async::start_task_delayed<sml_db_consumer>(mux
+					, std::chrono::seconds(1)
+					, logger
+					, ntid
+					, cyng::to_param_map(tpl)).first);
+			}
+			else if (boost::algorithm::iequals(config_type, "IEC:DB"))
+			{
+				CYNG_LOG_INFO(logger, "start database adapter for IEC 62056-21 protocol (readout mode)");
+
+				tpl = cyng::value_cast(dom.get(config_type), tpl);
+
+				tsks.push_back(cyng::async::start_task_delayed<iec_db_consumer>(mux
 					, std::chrono::seconds(1)
 					, logger
 					, ntid

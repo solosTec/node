@@ -58,10 +58,8 @@ namespace node
 				STATE_EOM
 			};
 
-			struct sml_start {
-			};
-			struct sml_length {
-			};
+			struct sml_start {};
+			struct sml_length {};
 			struct sml_string 
 			{
 				sml_string(std::size_t size);
@@ -298,6 +296,9 @@ namespace node
 			 */
 			std::size_t		offset_;
 
+			/**
+			 * global parser state
+			 */
 			state	stream_state_;
 			parser_state_t	parser_state_;
 

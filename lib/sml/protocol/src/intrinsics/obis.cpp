@@ -59,6 +59,10 @@ namespace node
 			value_.swap(other.value_);
 		}
 
+		void obis::clear()
+		{
+			*this = obis();
+		}
 
 		bool obis::equal(obis const& other) const	
 		{

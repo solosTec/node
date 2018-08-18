@@ -46,9 +46,7 @@ namespace node
 			//
 			//	request handler
 			//
-			//bus_->vm_.register_function("network.task.resume", 4, std::bind(&network::task_resume, this, std::placeholders::_1));
 			bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&network::reconfigure, this, std::placeholders::_1));
-
 			bus_->vm_.register_function("net.insert.rel", 3, std::bind(&network::insert_rel, this, std::placeholders::_1));
 		}
 

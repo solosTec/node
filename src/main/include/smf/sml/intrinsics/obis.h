@@ -36,6 +36,11 @@ namespace node
 
 			void swap(obis&);
 
+			/**
+			 * Set all values to zero
+			 */
+			void clear();
+
 			//	comparison
 			bool equal(obis const&) const;
 			bool less(obis const&) const;

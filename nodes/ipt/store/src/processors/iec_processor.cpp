@@ -36,29 +36,28 @@ namespace node
 		, tid_(tid)
 		, consumers_(consumers)
 		, line_(ipt::build_line(channel, source))
-		, parser_()
+		, parser_([this, channel, source, target](cyng::vector_t&& prg) {
+
+			CYNG_LOG_DEBUG(logger_, "IEC processor "
+				<< channel
+				<< ':'
+				<< source
+				<< ':'
+				<< target
+				<< " - "
+				<< prg.size()
+				<< " instructions");
+
+			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+			std::cerr << cyng::io::to_str(prg) << std::endl;
+
+			//
+			//	execute programm
+			//
+			vm_.async_run(std::move(prg));
+
+		}, true)	//	not verbose
 		, total_bytes_(0)
-		//, parser_([this, channel, source, target](cyng::vector_t&& prg) {
-
-		//	CYNG_LOG_DEBUG(logger_, "IEC processor "
-		//		<< channel
-		//		<< ':'
-		//		<< source
-		//		<< ':'
-		//		<< target
-		//		<< " - "
-		//		<< prg.size()
-		//		<< " instructions");
-
-		//	//CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
-		//	//std::cerr << cyng::io::to_str(prg) << std::endl;
-
-		//	//
-		//	//	execute programm
-		//	//
-		//	vm_.async_run(std::move(prg));
-
-		//}, false, false)	//	not verbose, no log instructions
 	{
 		init(channel, source, target);
 	}
@@ -139,13 +138,13 @@ namespace node
 		CYNG_LOG_TRACE(logger_, cyng::bytes_to_str(total_bytes_)
 			<< " IEC data processed");
 
-		//cyng::io::hex_dump hd;
-		//std::stringstream ss;
-		//hd(ss, data.begin(), data.end());
-		//CYNG_LOG_TRACE(logger_, "iec_processor dump \n" << ss.str());
+		cyng::io::hex_dump hd;
+		std::stringstream ss;
+		hd(ss, data.begin(), data.end());
+		CYNG_LOG_TRACE(logger_, "iec_processor dump \n" << ss.str());
 
 
-		//parser_.read(data.begin(), data.end());
+		parser_.read(data.begin(), data.end());
 	}
 
 	void iec_processor::sml_msg(cyng::context& ctx)
