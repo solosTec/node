@@ -23,8 +23,8 @@ namespace node
 	{
 	public:
 		using msg_0 = std::tuple<std::uint64_t, std::string>;
-		using msg_1 = std::tuple<std::uint64_t, std::uint16_t, std::size_t, cyng::tuple_t>;
-		using msg_2 = std::tuple<std::uint64_t, std::size_t, std::uint16_t>;
+		using msg_1 = std::tuple<std::uint64_t, boost::uuids::uuid, cyng::buffer_t, std::string, std::string, std::string/*, std::size_t*/ >;
+		using msg_2 = std::tuple<std::uint64_t, boost::uuids::uuid, std::string, bool, std::size_t>;
 		using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
 
 	public:
@@ -47,17 +47,21 @@ namespace node
 		 *
 		 * receive push data
 		 */
-		cyng::continuation process(std::uint64_t line
-			, std::uint16_t code
-			, std::size_t idx
-			, cyng::tuple_t msg);
+		cyng::continuation process(std::uint64_t
+			, boost::uuids::uuid
+			, cyng::buffer_t const&
+			, std::string const&
+			, std::string const&
+			, std::string const&
+			//, std::size_t
+		);
 
 		/**
 		 * @brief slot [2]
 		 *
 		 * close line
 		 */
-		cyng::continuation process(std::uint64_t line, std::size_t idx, std::uint16_t crc);
+		cyng::continuation process(std::uint64_t line, boost::uuids::uuid, std::string, bool bcc, std::size_t);
 
 		/**
 		 * static method to create tables.

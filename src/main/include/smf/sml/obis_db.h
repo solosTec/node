@@ -25,6 +25,28 @@ namespace node
 	{
 
 		//
+		//	general
+		//
+		const static obis	DEFINE_OBIS_CODE(00, 00, 00, 00, 00, FF, METER_ADDRESS);
+		const static obis	DEFINE_OBIS_CODE(00, 00, 00, 00, 01, FF, IDENTITY_NR_1);
+		const static obis	DEFINE_OBIS_CODE(00, 00, 00, 00, 02, FF, IDENTITY_NR_2);
+		const static obis	DEFINE_OBIS_CODE(00, 00, 00, 00, 03, FF, IDENTITY_NR_3);
+		const static obis	DEFINE_OBIS_CODE(00, 00, 00, 01, 00, FF, RESET_COUNTER);
+
+		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 01, 00, FF, SERIAL_NR);	//	Serial number I (assigned by the manufacturer).
+		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 01, 01, FF, SERIAL_NR_SECOND);	//	Serial number II (assigned by the manufacturer).
+		const static obis	DEFINE_OBIS_CODE(00, 00, 61, 61, 00, FF, MBUS_STATE);   //	Status according to EN13757-3
+
+																					//	Identifikationsnummer 1.1 - comes as unsigned int with 3 bytes (this is the server ID)
+		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 00, FF, SERVER_ID_1_1);
+		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 01, FF, SERVER_ID_1_2);		//	Identifikationsnummer 1.2
+		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 02, FF, SERVER_ID_1_3);		//	Identifikationsnummer 1.3
+		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 03, FF, SERVER_ID_1_4);		//	Identifikationsnummer 1.4
+		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 09, FF, DEVICE_ID);	//	encode profiles
+
+		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 09, 0B, 00, CURRENT_UTC);	//	readout time in UTC
+
+		//
 		//	Lastgänge (profiles)
 		//	The OBIS code to encode profiles is 81 81 C7 8A 83 FF
 		//
@@ -101,24 +123,9 @@ namespace node
 		const static obis	OBIS_CODE_IF_SyM2(0x81, 0x05, 0x0D, 0x07, 0x00, 0xFF);	//	Erweiterungsschnittstelle:
 		const static obis	DEFINE_OBIS_CODE(81, 00, 00, 09, 0B, 00, ACT_SENSOR_TIME);	//	actSensorTime - time delivered from sensor 
 
-		const static obis	OBIS_CLASS_OP_LOG(0x81, 0x81, 0xC7, 0x89, 0xE1, 0xFF);
-		const static obis	OBIS_CLASS_EVENT(0x81, 0x81, 0xC7, 0x89, 0xE2, 0xFF);	//	Ereignis (uint32)
-		const static obis	OBIS_CLASS_STATUS(0x00, 0x80, 0x80, 0x11, 0xA0, 0xFF);	//	see: 2.2.1.3 Status der Aktoren (Kontakte)
-
-		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 01, 00, FF, SERIAL_NR);	//	Serial number I (assigned by the manufacturer).
-		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 01, 01, FF, SERIAL_NR_SECOND);	//	Serial number II (assigned by the manufacturer).
-		const static obis	DEFINE_OBIS_CODE(00, 00, 61, 61, 00, FF, MBUS_STATE);   //	Status according to EN13757-3
-
-		//	Identifikationsnummer 1.1 - comes as unsigned int with 3 bytes (this is the server ID)
-		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 00, FF, SERVER_ID_1_1);
-		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 01, FF, SERVER_ID_1_2);		//	Identifikationsnummer 1.2
-		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 02, FF, SERVER_ID_1_3);		//	Identifikationsnummer 1.3
-		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 03, FF, SERVER_ID_1_4);		//	Identifikationsnummer 1.4
-		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 09, FF, DEVICE_ID);	//	encode profiles
-
-		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 09, 0B, 00, CURRENT_UTC);	//	readout time in UTC
-		//const static obis	OBIS_CLASS_TIMESTAMP_UTC(0x01, 0x00, 0x00, 0x09, 0x0B, 0x00);	//	timestamp UTC - SML_Time (Zeitsynchronisation per NTPZugriff erfolgt)
-
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 89, E1, FF, CLASS_OP_LOG);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 89, E2, FF, CLASS_EVENT);	//	Ereignis (uint32)
+		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 11, A0, FF, CLASS_STATUS);	//	see: 2.2.1.3 Status der Aktoren (Kontakte)
 
 		//	Spannung - voltage
 		//	Strom - current
@@ -181,9 +188,9 @@ namespace node
 		 */
 		const static obis	DEFINE_OBIS_CODE(81, 00, 60, 05, 00, 00, CLASS_OP_LOG_STATUS_WORD);	
 		const static obis	DEFINE_OBIS_CODE(81, 04, 2B, 07, 00, 00, CLASS_OP_LOG_FIELD_STRENGTH);
-		const static obis	OBIS_CLASS_OP_LOG_CELL(0x81, 0x04, 0x1A, 0x07, 0x00, 0x00);	//	aktuelle Zelleninformation (uint16)
-		const static obis	OBIS_CLASS_OP_LOG_AREA_CODE(0x81, 0x04, 0x17, 0x07, 0x00, 0x00);	//	aktueller Location - oder Areacode(uint16)
-		const static obis	OBIS_CLASS_OP_LOG_PROVIDER(0x81, 0x04, 0x0D, 0x06, 0x00, 0x00);	//	aktueller Provider-Identifier(uint32)
+		const static obis	DEFINE_OBIS_CODE(81, 04, 1A, 07, 00, 00, CLASS_OP_LOG_CELL);	//	aktuelle Zelleninformation (uint16)
+		const static obis	DEFINE_OBIS_CODE(81, 04, 17, 07, 00, 00, CLASS_OP_LOG_AREA_CODE);	//	aktueller Location - oder Areacode(uint16)
+		const static obis	DEFINE_OBIS_CODE(81, 04, 0D, 06, 00, 00, CLASS_OP_LOG_PROVIDER);	//	aktueller Provider-Identifier(uint32)
 
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 10, 00, 01, CLASS_OP_LSM_STATUS);	//	LSM status
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 11, 10, FF, CLASS_OP_LSM_ACTOR_ID);	//	ServerID des Aktors (uint16)
@@ -204,26 +211,26 @@ namespace node
 		//
 		//	attention codes
 		//
-		const static obis	OBIS_ATTENTION_UNKNOWN_ERROR(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x00);
-		const static obis	OBIS_ATTENTION_UNKNOWN_SML_ID(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x01);
-		const static obis	OBIS_ATTENTION_NOT_AUTHORIZED(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x02);
-		const static obis	OBIS_ATTENTION_NO_SERVER_ID(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x03);
-		const static obis	OBIS_ATTENTION_NO_REQ_FIELD(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x04);
-		const static obis	OBIS_ATTENTION_CANNOT_WRITE(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x05);
-		const static obis	OBIS_ATTENTION_CANNOT_READ(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x06);
-		const static obis	OBIS_ATTENTION_COMM_ERROR(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x07);
-		const static obis	OBIS_ATTENTION_PARSER_ERROR(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x08);
-		const static obis	OBIS_ATTENTION_OUT_OF_RANGE(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x09);
-		const static obis	OBIS_ATTENTION_NOT_EXECUTED(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0A);
-		const static obis	OBIS_ATTENTION_INVALID_CRC(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0B);
-		const static obis	OBIS_ATTENTION_NO_BROADCAST(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0C);
-		const static obis	OBIS_ATTENTION_UNEXPECTED_MSG(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0D);
-		const static obis	OBIS_ATTENTION_UNKNOWN_OBIS_CODE(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0E);
-		const static obis	OBIS_ATTENTION_UNSUPPORTED_DATA_TYPE(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0F);
-		const static obis	OBIS_ATTENTION_ELEMENT_NOT_OPTIONAL(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x10);
-		const static obis	OBIS_ATTENTION_NO_ENTRIES(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x11);
-		const static obis	OBIS_ATTENTION_OK(0x81, 0x81, 0xC7, 0xC7, 0xFD, 0x00);
-		const static obis	OBIS_ATTENTION_JOB_IS_RUNNINNG(0x81, 0x81, 0xC7, 0xC7, 0xFD, 0x01);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 00, ATTENTION_UNKNOWN_ERROR);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 01, ATTENTION_UNKNOWN_SML_ID);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 02, ATTENTION_NOT_AUTHORIZED);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 03, ATTENTION_NO_SERVER_ID);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 04, ATTENTION_NO_REQ_FIELD);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 05, ATTENTION_CANNOT_WRITE);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 06, ATTENTION_CANNOT_READ);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 07, ATTENTION_COMM_ERROR);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 08, ATTENTION_PARSER_ERROR);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 09, ATTENTION_OUT_OF_RANGE);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 0A, ATTENTION_NOT_EXECUTED);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 0B, ATTENTION_INVALID_CRC);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 0C, ATTENTION_NO_BROADCAST);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 0D, ATTENTION_UNEXPECTED_MSG);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 0E, ATTENTION_UNKNOWN_OBIS_CODE);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 0F, ATTENTION_UNSUPPORTED_DATA_TYPE);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 10, ATTENTION_ELEMENT_NOT_OPTIONAL);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 11, ATTENTION_NO_ENTRIES);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FD, 00, ATTENTION_OK);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FD, 01, ATTENTION_JOB_IS_RUNNINNG);
 
 		/**
 		 * @return a short description of the OBIS code if available

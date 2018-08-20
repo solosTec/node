@@ -7,6 +7,7 @@
 
 #include "iec_to_db_consumer.h"
 #include <smf/iec/defs.h>
+#include <smf/sml/obis_io.h>
 #include <NODE_project_info.h>
 #include <cyng/async/task/base_task.h>
 #include <cyng/dom/reader.h>
@@ -152,9 +153,13 @@ namespace node
 	}
 
 	cyng::continuation iec_db_consumer::process(std::uint64_t line
-		, std::uint16_t code
-		, std::size_t idx
-		, cyng::tuple_t msg)
+		, boost::uuids::uuid pk
+		, cyng::buffer_t const& code
+		, std::string const& value
+		, std::string const& unit
+		, std::string const& status
+		//, std::size_t idx	//	message index
+	)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -163,9 +168,10 @@ namespace node
 			<< " line "
 			<< line
 			<< " received #"
-			<< idx
+			//<< idx
 			<< ':'
-			<< sml::messages::name(code));
+			<< sml::obis(code)
+		);
 
 		auto pos = lines_.find(line);
 		if (pos != lines_.end()) {
@@ -174,7 +180,7 @@ namespace node
 				//
 				//	write to DB
 				//
-				pos->second.write(pool_.get_session(), msg, idx);
+				//pos->second.write(pool_.get_session(), msg, idx);
 			}
 			catch (std::exception const& ex) {
 
@@ -202,7 +208,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	cyng::continuation iec_db_consumer::process(std::uint64_t line, std::size_t idx, std::uint16_t crc)
+	cyng::continuation iec_db_consumer::process(std::uint64_t line, boost::uuids::uuid pk, std::string meter, bool bcc, std::size_t size)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

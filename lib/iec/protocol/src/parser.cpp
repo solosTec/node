@@ -7,6 +7,7 @@
 #include <smf/iec/parser.h>
 #include <smf/iec/defs.h>
 #include <smf/sml/obis_io.h>
+#include <smf/sml/parser/obis_parser.h>
 
 #include <cyng/vm/generator.h>
 #include <boost/algorithm/string.hpp>
@@ -21,11 +22,17 @@ namespace node
 		parser::parser(parser_callback cb, bool verbose)
 			: cb_(cb)
 			, verbose_(verbose)
-			, code_()
 			, bcc_(0)
+			, bcc_flag_(false)
 			, state_(STATE_START)
 			, parser_state_(iec_start())
+			, value_()
+			, unit_()
+			, status_()
 			, id_()
+			, counter_(0)
+			, rgn_()
+			, pk_(rgn_())
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
 		}
@@ -35,24 +42,20 @@ namespace node
 
 		void parser::put(char c)
 		{
+			if (bcc_flag_) {
+				update_bcc(c);
+			}
+
+			if (state_ == STATE_START) {
+				cb_(cyng::generate_invoke("iec.data.start", pk_));
+			}
+
 			auto prev_state = state_;
 			state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 			if (state_ != prev_state) {
 				switch (state_) {
-				case STATE_ADDRESS_A:
-					parser_state_ = iec_address_a();
-					break;
-				case STATE_ADDRESS_D:
-					parser_state_ = iec_address_d();
-					break;
-				case STATE_ADDRESS_E:
-					parser_state_ = iec_address_e();
-					break;
-				case STATE_ADDRESS_F:
-					parser_state_ = iec_address_f();
-					break;
-				case STATE_CHOICE:
-					parser_state_ = iec_choice();
+				case STATE_OBIS:
+					parser_state_ = iec_obis();
 					break;
 				case STATE_VALUE:
 					parser_state_ = iec_value();
@@ -60,11 +63,32 @@ namespace node
 				case STATE_DATA_LINE:
 					parser_state_ = iec_data_line();
 					break;
-				case STATE_NO_VALUE:
-					parser_state_ = iec_no_value();
+				case STATE_CHOICE_VALUE:
+					parser_state_ = iec_choice_value();
+					break;
+				case STATE_CHOICE_STATUS:
+					parser_state_ = iec_choice_status();
 					break;
 				case STATE_UNIT:
 					parser_state_ = iec_unit();
+					break;
+				case STATE_DATA_BLOCK:
+					parser_state_ = iec_data_block();
+					break;
+				case STATE_DATA_SET:
+					parser_state_ = iec_data_set();
+					break;
+				case STATE_ETX:
+					parser_state_ = iec_etx();
+					break;
+				case STATE_BCC:
+					parser_state_ = iec_bcc();
+					break;
+				case STATE_START:
+					parser_state_ = iec_start();
+					break;
+				case STATE_STATUS:
+					parser_state_ = iec_status();
 					break;
 				default:
 					break;
@@ -73,13 +97,77 @@ namespace node
 		}
 
 
-		void parser::post_processing()	
+		//void parser::post_processing()	
+		//{}
+
+		void parser::clear()
 		{
+			id_.clear();
+			value_.clear();
+			unit_.clear();
+			status_.clear();
+			pk_ = rgn_();
 		}
 
 		void parser::update_bcc(char c)
 		{
 			bcc_ ^= c;
+		}
+
+		void parser::test_bcc(char c)
+		{
+			if (verbose_) {
+				if (bcc_ == c) {
+					std::cerr
+						<< "IEC - BBC is OK "
+						<< std::endl;
+				}
+				else {
+					std::cerr
+						<< "IEC - invalid BCC "
+						<< +bcc_
+						<< "/"
+						<< +c
+						<< std::endl;
+				}
+			}
+		}
+
+
+		void parser::set_id(std::string const& val)
+		{
+			//
+			//	parse OBIS code
+			//
+			std::pair<node::sml::obis, bool> r = node::sml::parse_obis(val);
+			if (r.second) {
+				this->id_ = r.first;
+				if (verbose_) {
+					std::cerr
+						<< "IEC: OBIS "
+						<< this->id_
+						<< std::endl;
+				}
+			}
+			else if (verbose_) {
+				std::cerr
+					<< "IEC: parsing OBIS code "
+					<< val
+					<< " failed"
+					<< std::endl;
+
+			}
+		}
+
+		void parser::set_status(std::string const& val)
+		{
+			//
+			//	possible formats are:
+			//	* 1180802160000
+			//	* 10-02-01 00:15
+			//
+			BOOST_ASSERT_MSG(val.size() > 12, "status with invalid length");
+			status_ = val;
 		}
 
 		void parser::set_value_group(std::size_t idx, std::uint8_t v)
@@ -91,19 +179,26 @@ namespace node
 
 		void parser::set_value(std::string const& val)
 		{
-			value_ = val;
-			if (verbose_) {
-				std::cerr
-					<< "IEC: "
-					<< node::sml::to_string(id_)
-					<< " = "
-					<< value_
-					<< std::endl;
+			
+			if (val.size() > 12 && (val.find('*') == std::string::npos)) {
+				set_status(val);
+			}
+			else {
+				value_ = val;
+				if (verbose_) {
+					std::cerr
+						<< "IEC: "
+						<< node::sml::to_string(id_)
+						<< " = "
+						<< value_
+						<< std::endl;
+				}
 			}
 		}
 
 		void parser::set_unit(std::string const& val)
 		{
+			unit_ = val;
 			if (verbose_) {
 				std::cerr
 					<< "IEC: unit = "
@@ -122,152 +217,46 @@ namespace node
 		parser::state parser::state_visitor::operator()(iec_start& s) const
 		{
 			if (c_ == STX) {
-				this->parser_.id_.clear();
-				return STATE_ADDRESS_A;
+				this->parser_.clear();
+				this->parser_.bcc_flag_ = true;
+				return STATE_OBIS;
 			}
 			return STATE_ERROR;
 		}
 
-		parser::state parser::state_visitor::operator()(iec_address_a& s) const
+		parser::state parser::state_visitor::operator()(iec_obis& s) const
 		{
-			this->parser_.update_bcc(this->c_);
-
 			//	fields A, B, E, F are optional
 			//	fields C & D are mandatory
 			switch (this->c_) {
-			case '0':	//	Abstract objects
-				this->parser_.id_ = node::sml::obis(0, 0, 0, 0, 0, 0);
-				return STATE_CHOICE;
-			case '1':	//	Electricity related objects
-				this->parser_.id_ = node::sml::obis(1, 0, 0, 0, 0, 0);
-				return STATE_CHOICE;
-			case '4':	//	Heat cost allocator related objects
-				this->parser_.id_ = node::sml::obis(4, 0, 0, 0, 0, 0);
-				return STATE_CHOICE;
-			case '5':	//	Cooling related objects
-				this->parser_.id_ = node::sml::obis(5, 0, 0, 0, 0, 0);
-				return STATE_CHOICE;
-			case '6':	//	Heat related objects
-				this->parser_.id_ = node::sml::obis(6, 0, 0, 0, 0, 0);
-				return STATE_CHOICE;
-			case '7':	//	Gas related objects
-				this->parser_.id_ = node::sml::obis(7, 0, 0, 0, 0, 0);
-				return STATE_CHOICE;
-			case '8':	//	Cold water related objects
-				this->parser_.id_ = node::sml::obis(8, 0, 0, 0, 0, 0);
-				return STATE_CHOICE;
-			case '9':	//	Hot water related objects
-				this->parser_.id_ = node::sml::obis(9, 0, 0, 0, 0, 0);
-				return STATE_CHOICE;
-			case 'C':	//	General service entries
-				this->parser_.id_ = node::sml::obis(0, 0, _C, 0, 0, 0);
-				return STATE_CHOICE;
-			case 'F':	//	General error message
-				this->parser_.id_ = node::sml::obis(0, 0, _F, 0, 0, 0);
-				return STATE_CHOICE;
-			case 'L':	//	General list objects
-				this->parser_.id_ = node::sml::obis(0, 0, _L, 0, 0, 0);
-				return STATE_CHOICE;
-			case 'P':	//	Abstract data profile
-				this->parser_.id_ = node::sml::obis(0, 0, _P, 0, 0, 0);
-				return STATE_CHOICE;
 			case '(':
+				//
+				//	parse OBIS code
+				//
+				this->parser_.set_id(s.value_);
 				return STATE_VALUE;
+			case CR:
+				return STATE_OBIS;
+			case '!':	
+				//
+				//	produce code
+				//
+				this->parser_.cb_(cyng::generate_invoke("iec.data.eof", this->parser_.pk_, this->parser_.counter_));
+				this->parser_.counter_ = 0;
+				return STATE_DATA_BLOCK;
 			default:
+				s.value_ += this->c_;
 				break;
 			}
 			return STATE_ERROR;
-		}
-
-
-		parser::state parser::state_visitor::operator()(iec_address_d& s) const
-		{
-			this->parser_.update_bcc(this->c_);
-
-			switch (this->c_) {
-			case 'F':	//	General error message
-				this->parser_.set_value_group(3, _F);
-				return STATE_ADDRESS_E;
-			case '.':
-				this->parser_.set_value_group(3, std::stoul(s.value_));
-				return STATE_ADDRESS_E;
-			default:
-				s.value_ += this->c_;
-				break;
-			}
-			return STATE_ADDRESS_D;
-		}
-
-		parser::state parser::state_visitor::operator()(iec_address_e& s) const
-		{
-			this->parser_.update_bcc(this->c_);
-
-			switch (this->c_) {
-			case '*':
-			case '&':
-				this->parser_.set_value_group(4, std::stoul(s.value_));
-				return STATE_ADDRESS_F;
-			case '(':
-				if (!s.value_.empty()) {
-					this->parser_.set_value_group(4, std::stoul(s.value_));
-				}
-				this->parser_.set_value_group(5, 0xFF);
-				return STATE_VALUE;
-			case CR:
-				this->parser_.set_value_group(4, std::stoul(s.value_));
-				return STATE_ADDRESS_A;
-			default:
-				s.value_ += this->c_;
-				break;
-			}
-			return STATE_ADDRESS_E;
-		}
-
-		parser::state parser::state_visitor::operator()(iec_address_f& s) const
-		{
-			this->parser_.update_bcc(this->c_);
-
-			switch (this->c_) {
-			case '(':
-				this->parser_.set_value_group(5, std::stoul(s.value_));
-				return STATE_VALUE;
-			case CR:
-				this->parser_.set_value_group(5, std::stoul(s.value_));
-				return STATE_ADDRESS_A;
-			default:
-				s.value_ += this->c_;
-				break;
-			}
-			return STATE_ADDRESS_F;
-		}
-
-		parser::state parser::state_visitor::operator()(iec_choice& s) const
-		{
-			this->parser_.update_bcc(this->c_);
-
-			switch (this->c_) {
-			case '-':	return STATE_ADDRESS_B;
-			case '.':	
-				if (this->parser_.id_.get_indicator() < 96) {
-					//	move element from index 0 to index 2
-					this->parser_.set_value_group(2, this->parser_.id_.get_medium());
-					this->parser_.set_value_group(0, 0);
-				}
-				return STATE_ADDRESS_D;
-			default:
-				break;
-			}
-			return STATE_START;
 		}
 
 		parser::state parser::state_visitor::operator()(iec_value& s) const
 		{
-			this->parser_.update_bcc(this->c_);
-
 			switch (this->c_) {
 			case ')':
 				this->parser_.set_value(s.value_);
-				return STATE_NO_VALUE;
+				return STATE_CHOICE_VALUE;
 			case '*':
 				this->parser_.set_value(s.value_);
 				return STATE_UNIT;
@@ -279,11 +268,10 @@ namespace node
 			return STATE_VALUE;
 		}
 
-		parser::state parser::state_visitor::operator()(iec_no_value& s) const
+		parser::state parser::state_visitor::operator()(iec_choice_value& s) const
 		{
 			switch (this->c_) {
-			case '(':	return STATE_NEW_VALUE;
-			case '!':	return STATE_DATA_BLOCK;
+			case '(':	return STATE_STATUS;
 			case CR:	return STATE_DATA_LINE;
 			default:
 				break;
@@ -291,26 +279,90 @@ namespace node
 			return STATE_START;
 		}
 
-		parser::state parser::state_visitor::operator()(iec_data_line& s) const
+		parser::state parser::state_visitor::operator()(iec_choice_status& s) const
 		{
-			return (this->c_ == LF)
-				? STATE_ADDRESS_A
+			return (this->c_ == CR)
+				? STATE_DATA_LINE
 				: STATE_ERROR
 				;
+		}
+
+		parser::state parser::state_visitor::operator()(iec_status& s) const
+		{
+			if (this->c_ == ')') {
+				//
+				//	set status
+				//
+				this->parser_.set_status(s.value_);
+				return STATE_CHOICE_STATUS;
+			}
+			s.value_ += this->c_;
+			return STATE_STATUS;
+		}
+
+		parser::state parser::state_visitor::operator()(iec_data_line& s) const
+		{
+			if (this->c_ == LF) {
+
+				//
+				//	produce code
+				//
+				this->parser_.cb_(cyng::generate_invoke("iec.data.line"
+					, this->parser_.pk_
+					, this->parser_.id_.to_buffer()
+					, this->parser_.value_
+					, this->parser_.unit_
+					, this->parser_.status_
+					, this->parser_.counter_));
+				++this->parser_.counter_;
+				this->parser_.clear();
+				return STATE_OBIS;
+			}
+			return STATE_ERROR;
 		}
 
 		parser::state parser::state_visitor::operator()(iec_unit& s) const
 		{
 			if (this->c_ == ')') {
 				this->parser_.set_unit(s.value_);
-				return STATE_NO_VALUE;
+				return STATE_CHOICE_VALUE;
 			}
 			s.value_ += this->c_;
 			return STATE_UNIT;
 		}
 
-		parser::state parser::state_visitor::operator()(iec_eof& s) const
+		parser::state parser::state_visitor::operator()(iec_data_block& s) const
 		{
+			return (this->c_ == CR)
+				? STATE_DATA_SET
+				: STATE_ERROR
+				;
+		}
+
+		parser::state parser::state_visitor::operator()(iec_data_set&) const
+		{
+			return (this->c_ == LF)
+				? STATE_ETX
+				: STATE_ERROR
+				;
+		}
+
+		parser::state parser::state_visitor::operator()(iec_etx&) const
+		{
+			this->parser_.cb_(cyng::generate_invoke("iec.data.bcc", this->parser_.pk_, (this->c_ == ETX)));
+
+			if (this->c_ == ETX) {
+
+				//	ETX is part of BCC
+				this->parser_.bcc_flag_ = false;
+				return STATE_BCC;
+			}
+			return STATE_ERROR;
+		}
+
+		parser::state parser::state_visitor::operator()(iec_bcc&) const
+		{
+			this->parser_.test_bcc(this->c_);
 			return STATE_START;
 		}
 	}

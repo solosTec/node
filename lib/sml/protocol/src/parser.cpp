@@ -52,7 +52,6 @@ namespace node
 			crc_on_ = true;
 		}
 
-
 		void parser::put(char c)
 		{
 			//	update crc

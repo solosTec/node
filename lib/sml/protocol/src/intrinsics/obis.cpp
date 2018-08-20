@@ -196,6 +196,45 @@ namespace node
 			return value_[2];
 		}
 
+		const char* obis::get_indicator_name() const
+		{
+			switch (get_indicator()) {
+			case 0:	return "General purpose COSEM objects";
+			case 1: return "Instances of IC Clock";
+			case 2: return "Instances of IC 'Modem configuration' and related IC-s";
+			case 10: return "Instances of IC Script table";
+			case 11: return "Instances of IC Special days table";
+			case 12: return "Instances of IC Schedule";
+			case 13: return "Instances of IC Activity calendar";
+			case 14: return "Instances of IC Register activation";
+			case 15: return "Instances of IC Single action schedule";
+			case 16: return "Instances of IC 'Register monitor', 'Parameter monitor'";
+			case 17: return "Instances of IC Limiter";
+			case 20: return "Instances of IC IEC local port setup";
+			case 21: return "Standard readout definitions";
+			case 22: return "Instances of IC IEC HDLC setup";
+			case 23: return "Instances of IC IEC twisted pair (1) setup";
+			case 24: return "COSEM objects related to M-Bus";
+			case 25: return "Instances of IC 'TCP-UDP setup', 'IPv4 setup', 'IPv6 setup', 'MAC address setup', 'PPP setup', 'GPRS modem setup', 'SMTP setup', 'GSM diagnostic', 'FTP setup', 'Push setup'";
+			case 26: return "COSEM objects for data exchange using S - FSK PLC";
+			case 27: return "COSEM objects for ISO/IEC 8802 - 2 LLC layer setup";
+			case 28: return "COSEM objects for data exchange using narrow - band OFDM PLC for PRIME networks";
+			case 29: return "COSEM objects for data exchange using narrow - band OFDM PLC for G3-PLC networks";
+			case 30: return "COSEM objects for data exchange using ZigBee®";
+			case 31: return "Instances of IC 'Wireless Mode Q'";
+			case 40: return "Instances of IC 'Association SN/LN'";
+			case 41: return "Instances of IC 'SAP assignment'";
+			case 42: return "COSEM logical device name";
+			case 43: return "Instances of IC 'Security setup'";
+			case 44: return "Instances of IC 'Image transfer'";
+			case 65: return "Instances of IC 'Utility tables'";
+			case 67: return "Instances of 'Sensor manager'";
+			default:
+				break;
+			}
+			return "reserved";
+		}
+
 		std::uint32_t obis::get_mode() const 
 		{
 			return value_[3];

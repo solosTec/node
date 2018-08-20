@@ -44,8 +44,11 @@ namespace node
 		void init(std::uint32_t channel
 			, std::uint32_t source
 			, std::string target);
-		void sml_msg(cyng::context& ctx);
-		void sml_eom(cyng::context& ctx);
+
+		void iec_data_start(cyng::context& ctx);
+		void iec_bcc(cyng::context& ctx);
+		void iec_data_line(cyng::context& ctx);
+		void iec_data_eof(cyng::context& ctx);
 
 	private:
 		cyng::logging::log_ptr logger_;
@@ -56,6 +59,8 @@ namespace node
 		const std::uint64_t line_;
 		iec::parser parser_;
 		std::size_t total_bytes_;
+		std::string meter_id_;
+		bool bcc_;
 	};
 }
 

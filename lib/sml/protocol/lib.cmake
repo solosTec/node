@@ -41,7 +41,15 @@ set (sml_generator
 	lib/sml/protocol/src/value.cpp
 )
 
+set (sml_parser
+	src/main/include/smf/sml/parser/obis_parser.h
+
+	lib/sml/protocol/src/parser/obis_parser.cpp
+	lib/sml/protocol/src/parser/obis_parser.hpp
+)
+
 source_group("generator" FILES ${sml_generator})
+source_group("parser" FILES ${sml_parser})
 
 
 # define the main program
@@ -49,5 +57,6 @@ set (sml_protocol_lib
   ${sml_protocol_cpp}
   ${sml_protocol_h}
   ${sml_generator}
+  ${sml_parser}
 )
 

@@ -129,7 +129,8 @@ namespace node
 		parser_.read(data.begin(), data.end());
 
 		CYNG_LOG_TRACE(logger_, cyng::bytes_to_str(data.size())
-			<< " SML data processed" );
+			<< " bytes SML data processed #"
+			<< line_);
 
 	}
 

@@ -89,6 +89,7 @@ namespace node
 			 *	@return value group C
 			 */
 			std::uint32_t get_indicator() const;
+			const char* get_indicator_name() const;
 
 			/**
 			 *	@return value group D

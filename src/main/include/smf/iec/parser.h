@@ -14,6 +14,7 @@
 
 #include <chrono>
 #include <boost/assert.hpp>
+#include <boost/uuid/random_generator.hpp>
 
 namespace node	
 {
@@ -21,7 +22,7 @@ namespace node
 	{
 
 		/**
-		 *	IEC 62056-21 parser.
+		 *	IEC 62056-21 parser (readout mode).
 		 */
 		class parser
 		{
@@ -42,58 +43,54 @@ namespace node
 				STATE_STX,			//!< after STX
 				STATE_DATA_BLOCK,	//!< data block
 				STATE_DATA_LINE,
-				//STATE_DATA_SET,
-				STATE_ADDRESS_A,
-				STATE_ADDRESS_B,
-				STATE_ADDRESS_C,
-				STATE_ADDRESS_D,
-				STATE_ADDRESS_E,
-				STATE_ADDRESS_F,
-				STATE_CHOICE,
+				STATE_DATA_SET,
+				STATE_OBIS,			//!< ID
+				STATE_CHOICE_VALUE,
+				STATE_CHOICE_STATUS,
 				STATE_VALUE,
-				STATE_NO_VALUE,	//!< new;old value
-				STATE_NEW_VALUE,	//!< new;old value
-				STATE_OLD_VALUE,	//!< new;old value
+				STATE_STATUS,	//!< new;old status
+				//STATE_NEW_STATUS,	//!< new;old status
+				//STATE_OLD_STATUS,	//!< new;old status
 				STATE_UNIT,
 				STATE_ETX,
 				STATE_BCC,	//!< XOR of all characters after STX and before ETX
-				STATE_EOF	//!> after !
+				//STATE_EOF	//!> after !
 			};
 
 			struct iec_start {};
-			struct iec_address_a {};
-			struct iec_address_d {
-				std::string value_;
-			};
-			struct iec_address_e {
-				std::string value_;
-			};
-			struct iec_address_f {
+			struct iec_obis {
 				std::string value_;
 			};
 			struct iec_value {
 				std::string value_;
 			};
-			struct iec_choice {};
-			struct iec_no_value {};
+			struct iec_choice_value {};
+			struct iec_choice_status {};
 			struct iec_new_value {};
 			struct iec_data_line {};
 			struct iec_unit {
 				std::string value_;
 			};
-			struct iec_eof {};
+			struct iec_data_block {};
+			struct iec_data_set {};
+			struct iec_etx {};
+			struct iec_bcc {};
+			struct iec_status {
+				std::string value_;
+			};
 
 			using parser_state_t = boost::variant<iec_start,
-				iec_address_a,
-				iec_address_d,
-				iec_address_e,
-				iec_address_f,
-				iec_choice,
+				iec_obis,
 				iec_value,
-				iec_no_value,
+				iec_choice_value,
+				iec_choice_status,
 				iec_data_line,
 				iec_unit,
-				iec_eof
+				iec_data_block,
+				iec_data_set,
+				iec_etx,
+				iec_bcc,
+				iec_status
 			>;
 
 			//
@@ -104,16 +101,17 @@ namespace node
 				state_visitor(parser&, char c);
 
 				state operator()(iec_start&) const;
-				state operator()(iec_address_a&) const;
-				state operator()(iec_address_d&) const;
-				state operator()(iec_address_e&) const;
-				state operator()(iec_address_f&) const;
-				state operator()(iec_choice&) const;
+				state operator()(iec_obis&) const;
 				state operator()(iec_value&) const;
-				state operator()(iec_no_value&) const;
+				state operator()(iec_choice_value&) const;
+				state operator()(iec_choice_status&) const;
 				state operator()(iec_data_line&) const;
 				state operator()(iec_unit&) const;
-				state operator()(iec_eof&) const;
+				state operator()(iec_data_block&) const;
+				state operator()(iec_data_set&) const;
+				state operator()(iec_etx&) const;
+				state operator()(iec_bcc&) const;
+				state operator()(iec_status&) const;
 
 				parser& parser_;
 				const char c_;
@@ -133,8 +131,7 @@ namespace node
 					this->put(c);
 				});
 
-				post_processing();
-// 				input_.clear();
+				//post_processing();
 				return std::distance(start, end);
 			}
 
@@ -148,12 +145,20 @@ namespace node
 			 * Probe if parsing is completed and
 			 * inform listener.
 			 */
-			void post_processing();
+			//void post_processing();
+
+			/**
+			 * reset all values
+			 */
+			void clear();
 
 			void update_bcc(char);
+			void test_bcc(char);
 			void set_value_group(std::size_t, std::uint8_t);
 			void set_value(std::string const&);
 			void set_unit(std::string const&);
+			void set_id(std::string const&);
+			void set_status(std::string const&);
 
 		private:
 			/**
@@ -163,12 +168,8 @@ namespace node
 
 			const bool verbose_;
 
-			/**
-			 * instruction buffer
-			 */
-			cyng::vector_t	code_;
-
 			char bcc_;	//!< XOR of all characters after STX and before ETX
+			bool bcc_flag_;
 
 			/**
 			 * global parser state
@@ -177,14 +178,26 @@ namespace node
 			parser_state_t	parser_state_;
 
 			/**
-			 * address
+			 * value, unit_, status
 			 */
-			node::sml::obis	id_;
+			std::string value_, unit_, status_;
 
 			/**
-			 * value
+			 * current OBIS code
 			 */
-			std::string value_;
+			node::sml::obis id_;
+
+			/**
+			 * data counter
+			 */
+			std::size_t counter_;
+
+			/**
+			 * generate unique key for data sets
+			 */
+			boost::uuids::random_generator rgn_;
+
+			boost::uuids::uuid pk_;
 
 		};
 	}
