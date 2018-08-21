@@ -89,7 +89,7 @@ namespace node
 		case TASK_STATE_DB_OK:
 
 			//
-			//	register as SML:XML consumer 
+			//	register as IEC:DB consumer 
 			//
 			register_consumer();
 			task_state_ = TASK_STATE_REGISTERED;
@@ -155,10 +155,8 @@ namespace node
 	cyng::continuation iec_db_consumer::process(std::uint64_t line
 		, boost::uuids::uuid pk
 		, cyng::buffer_t const& code
-		, std::string const& value
-		, std::string const& unit
-		, std::string const& status
-		//, std::size_t idx	//	message index
+		, std::size_t idx	//	message index
+		, cyng::param_map_t params
 	)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -168,11 +166,10 @@ namespace node
 			<< " line "
 			<< line
 			<< " received #"
-			//<< idx
+			<< idx
 			<< ':'
 			<< sml::obis(code)
 		);
-
 		auto pos = lines_.find(line);
 		if (pos != lines_.end()) {
 
@@ -180,7 +177,10 @@ namespace node
 				//
 				//	write to DB
 				//
-				//pos->second.write(pool_.get_session(), msg, idx);
+				const std::string value = cyng::value_cast<std::string>(params.at("value"), "");
+				const std::string unit = cyng::value_cast<std::string>(params.at("unit"), "");
+				const std::string status = cyng::value_cast<std::string>(params.at("status"), "");
+				pos->second.write(pool_.get_session(), pk, idx, code, value, unit, status);
 			}
 			catch (std::exception const& ex) {
 
@@ -223,7 +223,6 @@ namespace node
 			//
 			//	write to DB
 			//
-			//pos->second.write(filename);
 			//pos->second.write(pool_.get_session());
 
 			//
@@ -305,19 +304,35 @@ namespace node
 		//	msgIdx - message index
 		//	status - M-Bus status
 		//
-		meta_map.emplace("TIECMeta", cyng::table::make_meta_table<1, 12>("TIECMeta",
-			{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target", "profile" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING },
-			{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32, 24 }));
+		meta_map.emplace("TIECMeta", cyng::table::make_meta_table<1, 11>("TIECMeta",
+			{ "pk", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target", "profile" },
+			{ cyng::TC_UUID, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING },
+			{ 36, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32, 24 }));
 
 		//
 		//	unitCode - physical unit
 		//	unitName - descriptiv
 		//	
-		meta_map.emplace("TIECData", cyng::table::make_meta_table<2, 6>("TIECMeta",
-			{ "pk", "OBIS", "unitCode", "unitName", "dataType", "scaler", "val", "result" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT8, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_INT32, cyng::TC_INT64, cyng::TC_STRING },
-			{ 36, 24, 0, 64, 16, 0, 0, 512 }));
+		meta_map.emplace("TIECData", cyng::table::make_meta_table<2, 4>("TIECData",
+			{ "pk"		//	join to TIECMeta
+			, "idx"		//	message index
+			, "OBIS"	//	OBIS code
+			, "val"		//	value
+			, "unit"	//	physical unit
+			, "status" },
+			{ cyng::TC_UUID			//	pk
+			, cyng::TC_UINT32		//	idx
+			, cyng::TC_STRING		//	OBIS
+			, cyng::TC_STRING		//	val
+			, cyng::TC_STRING		//	unir
+			, cyng::TC_STRING },	//	status
+			{ 36	//	pk
+			, 0		//	idx
+			, 24	//	OBIS
+			, 64	//	val
+			, 16	//	unit
+			, 24	//	status
+			}));
 
 		return meta_map;
 	}

@@ -8,7 +8,7 @@
 #ifndef NODE_IPT_STORE_TASK_SML_CSV_CONSUMER_H
 #define NODE_IPT_STORE_TASK_SML_CSV_CONSUMER_H
 
-#include <smf/sml/exporter/csv_exporter.h>
+#include <smf/sml/exporter/csv_sml_exporter.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>

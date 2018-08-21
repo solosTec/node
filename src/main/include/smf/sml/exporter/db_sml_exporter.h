@@ -1,18 +1,16 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
-#ifndef NODE_SML_EXPORTER_DB_H
-#define NODE_SML_EXPORTER_DB_H
-
+#ifndef NODE_SML_EXPORTER_DB_SML_H
+#define NODE_SML_EXPORTER_DB_SML_H
 
 #include <smf/sml/defs.h>
 #include <smf/sml/intrinsics/obis.h>
 #include <smf/sml/units.h>
-#include <smf/sml/intrinsics/obis.h>
 #include <cyng/db/session.h>
 #include <cyng/table/meta_interface.h>
 #include <cyng/intrinsics/sets.h>
@@ -59,7 +57,6 @@ namespace node
 			 */
 			void reset();
 
-			//void read(cyng::context&, cyng::tuple_t const&, std::size_t idx);
 			void write(cyng::db::session, cyng::tuple_t const&, std::size_t idx);
 
 		private:

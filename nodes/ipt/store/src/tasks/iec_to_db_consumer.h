@@ -8,7 +8,7 @@
 #ifndef NODE_IPT_STORE_TASK_IEC_DB_CONSUMER_H
 #define NODE_IPT_STORE_TASK_IEC_DB_CONSUMER_H
 
-#include <smf/sml/exporter/db_exporter.h>
+#include <smf/sml/exporter/db_iec_exporter.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -23,7 +23,7 @@ namespace node
 	{
 	public:
 		using msg_0 = std::tuple<std::uint64_t, std::string>;
-		using msg_1 = std::tuple<std::uint64_t, boost::uuids::uuid, cyng::buffer_t, std::string, std::string, std::string/*, std::size_t*/ >;
+		using msg_1 = std::tuple<std::uint64_t, boost::uuids::uuid, cyng::buffer_t, std::size_t, cyng::param_map_t >;
 		using msg_2 = std::tuple<std::uint64_t, boost::uuids::uuid, std::string, bool, std::size_t>;
 		using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
 
@@ -50,10 +50,8 @@ namespace node
 		cyng::continuation process(std::uint64_t
 			, boost::uuids::uuid
 			, cyng::buffer_t const&
-			, std::string const&
-			, std::string const&
-			, std::string const&
-			//, std::size_t
+			, std::size_t
+			, cyng::param_map_t
 		);
 
 		/**
@@ -85,7 +83,7 @@ namespace node
 			TASK_STATE_DB_OK,
 			TASK_STATE_REGISTERED,
 		} task_state_;
-		std::unordered_map<std::uint64_t, sml::db_exporter>	lines_;
+		std::unordered_map<std::uint64_t, iec::db_exporter>	lines_;
 	};
 }
 

@@ -226,14 +226,17 @@ namespace node
 		//
 		//	post data to all consumers
 		//
+		cyng::param_map_t params;
+		params["value"] = frame.at(2);
+		params["unit"] = frame.at(3);
+		params["status"] = frame.at(4);
+
 		for (auto tid : consumers_) {
 			mux_.post(tid, 1, cyng::tuple_factory(line_
 				, std::get<0>(tpl)	//	[uuid] pk
 				, std::get<1>(tpl)	//	[buffer_t] OBIS
-				, std::get<2>(tpl)	//	[string] value
-				, std::get<3>(tpl)	//	[string] unit
-				, std::get<4>(tpl)	//	[string] status
-				//, std::get<5>(tpl)	//	[size_t] index
+				, std::get<5>(tpl)	//	[size_t] index
+				, params
 			));
 		}
 

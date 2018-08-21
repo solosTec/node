@@ -215,12 +215,6 @@ namespace node
 		if (pos != lines_.end()) {
 
 			//
-			//	write to DB
-			//
-			//pos->second.write(filename);
-			//pos->second.write(pool_.get_session());
-
-			//
 			//	remove this line
 			//
 			lines_.erase(pos);

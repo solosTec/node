@@ -58,12 +58,14 @@ set (node_ipt_store_processors
 
 set (node_ipt_store_exporter
 
-	src/main/include/smf/sml/exporter/xml_exporter.h
-	lib/sml/exporter/src/xml_exporter.cpp
-	src/main/include/smf/sml/exporter/db_exporter.h
-	lib/sml/exporter/src/db_exporter.cpp
-	src/main/include/smf/sml/exporter/csv_exporter.h
-	lib/sml/exporter/src/csv_exporter.cpp
+	src/main/include/smf/sml/exporter/xml_sml_exporter.h
+	lib/sml/exporter/src/xml_sml_exporter.cpp
+	src/main/include/smf/sml/exporter/db_sml_exporter.h
+	lib/sml/exporter/src/db_sml_exporter.cpp
+	src/main/include/smf/sml/exporter/csv_sml_exporter.h
+	lib/sml/exporter/src/csv_sml_exporter.cpp
+	src/main/include/smf/sml/exporter/db_iec_exporter.h
+	lib/sml/exporter/src/db_iec_exporter.cpp
 
 )
 	

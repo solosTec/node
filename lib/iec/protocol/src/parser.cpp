@@ -106,7 +106,13 @@ namespace node
 			value_.clear();
 			unit_.clear();
 			status_.clear();
+		}
+
+		void parser::reset()
+		{
+			counter_ = 0;
 			pk_ = rgn_();
+			clear();
 		}
 
 		void parser::update_bcc(char c)
@@ -166,7 +172,7 @@ namespace node
 			//	* 1180802160000
 			//	* 10-02-01 00:15
 			//
-			BOOST_ASSERT_MSG(val.size() > 12, "status with invalid length");
+			//BOOST_ASSERT_MSG(val.size() > 12, "status with invalid length");
 			status_ = val;
 		}
 
@@ -180,8 +186,9 @@ namespace node
 		void parser::set_value(std::string const& val)
 		{
 			
-			if (val.size() > 12 && (val.find('*') == std::string::npos)) {
-				set_status(val);
+			//if (val.size() > 12 && (val.find('*') == std::string::npos)) {
+			if (val.find('.') == std::string::npos) {
+					set_status(val);
 			}
 			else {
 				value_ = val;
@@ -242,7 +249,7 @@ namespace node
 				//	produce code
 				//
 				this->parser_.cb_(cyng::generate_invoke("iec.data.eof", this->parser_.pk_, this->parser_.counter_));
-				this->parser_.counter_ = 0;
+				this->parser_.reset();
 				return STATE_DATA_BLOCK;
 			default:
 				s.value_ += this->c_;

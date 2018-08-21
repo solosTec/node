@@ -11,7 +11,7 @@
 #include <smf/sml/protocol/parser.h>
 #include <smf/sml/protocol/serializer.h>
 #include <smf/sml/protocol/value.hpp>
-#include <smf/sml/exporter/xml_exporter.h>
+#include <smf/sml/exporter/xml_sml_exporter.h>
 
 #include <cyng/io/serializer.h>
 #include <cyng/factory.h>

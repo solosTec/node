@@ -32,10 +32,10 @@ set (unit_test_h
 
 set (sml_exporter
 
-	src/main/include/smf/sml/exporter/xml_exporter.h
-	lib/sml/exporter/src/xml_exporter.cpp
-	src/main/include/smf/sml/exporter/db_exporter.h
-	lib/sml/exporter/src/db_exporter.cpp
+	src/main/include/smf/sml/exporter/xml_sml_exporter.h
+	lib/sml/exporter/src/xml_sml_exporter.cpp
+	src/main/include/smf/sml/exporter/db_sml_exporter.h
+	lib/sml/exporter/src/db_sml_exporter.cpp
 #	lib/sml/exporter/src/abl.cpp
 #	lib/sml/exporter/src/json.cpp
 #	lib/sml/exporter/src/db.cpp

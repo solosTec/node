@@ -152,6 +152,12 @@ namespace node
 			 */
 			void clear();
 
+			/**
+			 * reset parser
+			 */
+			void reset();
+
+
 			void update_bcc(char);
 			void test_bcc(char);
 			void set_value_group(std::size_t, std::uint8_t);

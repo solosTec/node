@@ -8,7 +8,7 @@
 #ifndef NODE_IPT_STORE_TASK_SML_XML_CONSUMER_H
 #define NODE_IPT_STORE_TASK_SML_XML_CONSUMER_H
 
-#include <smf/sml/exporter/xml_exporter.h>
+#include <smf/sml/exporter/xml_sml_exporter.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>

@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_SML_EXPORTER_CSV_H
-#define NODE_SML_EXPORTER_CSV_H
+#ifndef NODE_SML_EXPORTER_CSV_SML_H
+#define NODE_SML_EXPORTER_CSV_SML_H
 
 
 #include <smf/sml/defs.h>

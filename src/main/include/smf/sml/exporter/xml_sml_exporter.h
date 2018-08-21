@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_SML_EXPORTER_XML_H
-#define NODE_SML_EXPORTER_XML_H
+#ifndef NODE_SML_EXPORTER_XML_SML_H
+#define NODE_SML_EXPORTER_XML_SML_H
 
 
 #include <smf/sml/defs.h>
