@@ -30,6 +30,7 @@ namespace node
 				, cyng::logging::log_ptr logger
 				, status& status_word
 				, cyng::store::db& config_db
+				, node::ipt::master_config_t const& cfg
 				, std::string const& account
 				, std::string const& pwd
 				, std::string manufacturer
@@ -45,7 +46,6 @@ namespace node
 			std::size_t hash() const noexcept;
 
 		private:
-			//void store_relation(cyng::context& ctx);
 
 		private:
 			cyng::async::mux& mux_;
@@ -73,6 +73,7 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, status& status_word
 			, cyng::store::db& config_db
+			, node::ipt::master_config_t const& cfg
 			, std::string const& account
 			, std::string const& pwd
 			, std::string manufacturer

@@ -47,7 +47,17 @@ namespace node
 #endif
 				bus_->vm_.async_run(std::move(prg));
 			}, false, false)
-			, core_(logger_, bus_->vm_, status_word, config_db, false, account, pwd, manufacturer, model, mac)
+			, core_(logger_
+				, bus_->vm_
+				, status_word
+				, config_db
+				, cfg
+				, false	//	client mode
+				, account
+				, pwd
+				, manufacturer
+				, model
+				, mac)
 			, exec_(logger, btp->mux_, config_db, bus_, tag, mac)
 			, seq_open_channel_map_()
 		{

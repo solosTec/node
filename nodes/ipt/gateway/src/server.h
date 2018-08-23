@@ -9,6 +9,7 @@
 #define NODE_IPT_GATEWAY_SERVER_H
 
 #include <smf/sml/status.h>
+#include <smf/ipt/config.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/intrinsics/mac.h>
@@ -25,7 +26,8 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, sml::status& status_word
 			, cyng::store::db& config_db
-			, boost::uuids::uuid
+			, boost::uuids::uuid tag
+			, ipt::master_config_t const& cfg
 			, std::string account
 			, std::string pwd
 			, std::string manufacturer
@@ -48,24 +50,25 @@ namespace node
 
 	private:
 		/*
-		* task manager and running I/O context
-		*/
+		 * task manager and running I/O context
+		 */
 		cyng::async::mux& mux_;
 
 		/**
-		* The logger
-		*/
+		 * The logger
+		 */
 		cyng::logging::log_ptr logger_;
 
 		/**
-		* Global status word
-		*/
+		 * Global status word
+		 */
 		sml::status&	status_word_;
 
 		/**
-		* configuration db
-		*/
+		 * configuration db
+		 */
 		cyng::store::db& config_db_;
+		const ipt::master_config_t& cfg_;
 
 		//	credentials
 		const std::string account_;

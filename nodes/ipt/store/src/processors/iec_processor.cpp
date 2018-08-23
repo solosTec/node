@@ -63,6 +63,7 @@ namespace node
 		}, false)	//	not verbose
 		, total_bytes_(0)
 		, meter_id_()
+		, status_()
 		, bcc_(false)
 	{
 		init(channel, source, target);
@@ -219,8 +220,13 @@ namespace node
 			<< std::get<4>(tpl));
 
 		if (sml::obis(std::get<1>(tpl)) == sml::OBIS_METER_ADDRESS) {
-			meter_id_ = std::get<2>(tpl);
+			meter_id_ = std::get<4>(tpl);
 			CYNG_LOG_TRACE(logger_, "meter ID is " << meter_id_);
+		}
+		else if (sml::obis(std::get<1>(tpl)) == sml::OBIS_MBUS_STATE) {
+			//0-0:97.97.0*255
+			status_ = std::get<4>(tpl);
+			CYNG_LOG_TRACE(logger_, "status is " << status_);
 		}
 
 		//
@@ -259,7 +265,7 @@ namespace node
 		//	post data to all consumers
 		//
 		for (auto tid : consumers_) {
-			mux_.post(tid, 2, cyng::tuple_factory(line_, std::get<0>(tpl), meter_id_, bcc_, std::get<1>(tpl)));
+			mux_.post(tid, 2, cyng::tuple_factory(line_, std::get<0>(tpl), meter_id_, status_, bcc_, std::get<1>(tpl)));
 		}
 
 		//

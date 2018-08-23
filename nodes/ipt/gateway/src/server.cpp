@@ -18,6 +18,7 @@ namespace node
 		, sml::status& status_word
 		, cyng::store::db& config_db
 		, boost::uuids::uuid tag
+		, ipt::master_config_t const& cfg
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
@@ -27,6 +28,7 @@ namespace node
 		, logger_(logger)
 		, status_word_(status_word)
 		, config_db_(config_db)
+		, cfg_(cfg)
 		, account_(account)
 		, pwd_(pwd)
 		, manufacturer_(manufacturer)
@@ -85,6 +87,7 @@ namespace node
 					, logger_
 					, status_word_
 					, config_db_
+					, cfg_
 					, account_
 					, pwd_
 					, manufacturer_

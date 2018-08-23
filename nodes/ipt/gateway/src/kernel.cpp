@@ -29,6 +29,7 @@ namespace node
 			, cyng::controller& vm
 			, status& status_word
 			, cyng::store::db& config_db
+			, node::ipt::master_config_t const& cfg
 			, bool server_mode
 			, std::string account
 			, std::string pwd, std::string manufacturer
@@ -37,6 +38,7 @@ namespace node
 		: status_word_(status_word)
 			, logger_(logger)
 			, config_db_(config_db)
+			, cfg_ipt_(cfg)
 			, server_mode_(server_mode)
 			, account_(account)
 			, pwd_(pwd)
@@ -87,6 +89,11 @@ namespace node
 			vm.register_function("sml.set.proc.push.interval", 7, std::bind(&kernel::sml_set_proc_push_interval, this, std::placeholders::_1));
 			vm.register_function("sml.set.proc.push.delay", 7, std::bind(&kernel::sml_set_proc_push_delay, this, std::placeholders::_1));
 			vm.register_function("sml.set.proc.push.name", 7, std::bind(&kernel::sml_set_proc_push_name, this, std::placeholders::_1));
+
+			vm.register_function("sml.set.proc.ipt.param.address", 4, std::bind(&kernel::sml_set_proc_ipt_param_address, this, std::placeholders::_1));
+			vm.register_function("sml.set.proc.ipt.param.port.target", 4, std::bind(&kernel::sml_set_proc_ipt_param_port_target, this, std::placeholders::_1));
+			vm.register_function("sml.set.proc.ipt.param.user", 4, std::bind(&kernel::sml_set_proc_ipt_param_user, this, std::placeholders::_1));
+			vm.register_function("sml.set.proc.ipt.param.pwd", 4, std::bind(&kernel::sml_set_proc_ipt_param_pwd, this, std::placeholders::_1));
 
 		}
 
@@ -758,7 +765,7 @@ namespace node
 						parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 00), make_value(ip_address)),
 						parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 00), make_value(target_port)),
 						parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 00), make_value(source_port))
-						}))));
+					}))));
 		}
 
 		void kernel::sml_get_proc_ipt_param(cyng::context& ctx)
@@ -775,181 +782,83 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "sml.get.proc.ipt.param " << cyng::io::to_str(frame));
 
-			//76                                                SML_Message(Sequence): 
-			//  81063137303531313136303831363537393537312D32    transactionId: 170511160816579571-2
-			//  6201                                            groupNo: 1
-			//  6200                                            abortOnError: 0
-			//  72                                              messageBody(Choice): 
-			//	630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
-			//	73                                            SML_GetProcParameter_Res(Sequence): 
-			//	  080500153B01EC46                            serverId: 05 00 15 3B 01 EC 46 
-			//	  71                                          parameterTreePath(SequenceOf): 
-			//		0781490D0700FF                            path_Entry: 81 49 0D 07 00 FF 
-			//	  73                                          parameterTree(Sequence): 
-			//		0781490D0700FF                            parameterName: 81 49 0D 07 00 FF 
-			//		01                                        parameterValue: not set
-			//		76                                        child_List(SequenceOf): 
-			//		  73                                      tree_Entry(Sequence): 
-			//			0781490D070001                        parameterName: 81 49 0D 07 00 01 
-			//			01                                    parameterValue: not set
-			//			75                                    child_List(SequenceOf): 
-			//			  73                                  tree_Entry(Sequence): 
-			//				07814917070001                    parameterName: 81 49 17 07 00 01 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  652A96A8C0                      smlValue: 714516672
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				0781491A070001                    parameterName: 81 49 1A 07 00 01 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  6368EF                          smlValue: 26863
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				07814919070001                    parameterName: 81 49 19 07 00 01 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  6200                            smlValue: 0
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				078149633C0101                    parameterName: 81 49 63 3C 01 01 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  094C534D5465737432              smlValue: LSMTest2
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				078149633C0201                    parameterName: 81 49 63 3C 02 01 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  094C534D5465737432              smlValue: LSMTest2
-			//				01                                child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			0781490D070002                        parameterName: 81 49 0D 07 00 02 
-			//			01                                    parameterValue: not set
-			//			75                                    child_List(SequenceOf): 
-			//			  73                                  tree_Entry(Sequence): 
-			//				07814917070002                    parameterName: 81 49 17 07 00 02 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  65B596A8C0                      smlValue: 3046549696
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				0781491A070002                    parameterName: 81 49 1A 07 00 02 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  6368F0                          smlValue: 26864
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				07814919070002                    parameterName: 81 49 19 07 00 02 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  6200                            smlValue: 0
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				078149633C0102                    parameterName: 81 49 63 3C 01 02 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  094C534D5465737432              smlValue: LSMTest2
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				078149633C0202                    parameterName: 81 49 63 3C 02 02 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  094C534D5465737432              smlValue: LSMTest2
-			//				01                                child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			07814827320601                        parameterName: 81 48 27 32 06 01 
-			//			72                                    parameterValue(Choice): 
-			//			  6201                                parameterValue: 1 => smlValue (0x01)
-			//			  6201                                smlValue: 1
-			//			01                                    child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			07814831320201                        parameterName: 81 48 31 32 02 01 
-			//			72                                    parameterValue(Choice): 
-			//			  6201                                parameterValue: 1 => smlValue (0x01)
-			//			  6278                                smlValue: 120
-			//			01                                    child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			070080800003FF                        parameterName: 00 80 80 00 03 FF 
-			//			72                                    parameterValue(Choice): 
-			//			  6201                                parameterValue: 1 => smlValue (0x01)
-			//			  4200                                smlValue: False
-			//			01                                    child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			070080800004FF                        parameterName: 00 80 80 00 04 FF 
-			//			01                                    parameterValue: not set
-			//			01                                    child_List: not set
-			//  63915D                                          crc16: 37213
-			//  00                                              endOfSmlMsg: 00 
+			//config_db_.access([&](const cyng::store::table* tbl) {
 
-			const std::uint32_t ip_address_primary_master = 714516672;	//	192.168.150.42
-			const std::uint16_t target_port_primary_master = 26862
-				, source_port_primary_master = 0;
-			//const std::string user_pm = config_[0].account_
-			//	, pwd_pm = config_[0].pwd_;
-			const std::string user_pm = "user-1"
-				, pwd_pm = "pwd-1";
+			//	CYNG_LOG_INFO(logger_, tbl->size() << " config.ipt records");
+			//	sml_gen_.get_proc_ipt_params(frame.at(1)
+			//		, frame.at(3)	//	server id
+			//		, tbl);
 
-			const std::uint32_t ip_address_secondary_master = 3046549696;	//	192.168.150.181
-			const std::uint16_t target_port_secondary_master = 26863
-				, source_port_seccondary_master = 0;
-			//const std::string user_sm = config_[1].account_
-			//	, pwd_sm = config_[1].pwd_;
-			const std::string user_sm = "user-2"
-				, pwd_sm = "pwd-2";
+			//}, cyng::store::read_access("config.ipt"));
 
-			//const std::uint16_t wait_time = bus_->get_watchdog();	//	minutes
-			const std::uint16_t wait_time = 12;	//	minutes
-			const std::uint16_t repetitions = 120;	//	counter
-			const bool ssl = false;
+			sml_gen_.get_proc_ipt_params(frame.at(1)
+				, frame.at(3)	//	server id
+				, cfg_ipt_);
 
-			//
-			//	linearize and set CRC16
-			//	append to current SML message
-			//
-			sml_gen_.append_msg(message(frame.at(1)	//	trx
-				, 2 //, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
 
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(frame.at(3)	//	server id  
-					, OBIS_CODE_ROOT_IPT_PARAM	//	path entry - 81 49 0D 07 00 FF 
-					, child_list_tree(OBIS_CODE_ROOT_IPT_PARAM, {
+			//const std::uint32_t ip_address_primary_master = 714516672;	//	192.168.150.42
+			//const std::uint16_t target_port_primary_master = 26862
+			//	, source_port_primary_master = 0;
+			//const std::string user_pm = "user-1"
+			//	, pwd_pm = "pwd-1";
 
-						//	primary master
-						child_list_tree(OBIS_CODE(81, 49, 0D, 07, 00, 01),{
-							parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 01), make_value(ip_address_primary_master)),
-							parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 01), make_value(target_port_primary_master)),
-							parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 01), make_value(source_port_primary_master)),
-							parameter_tree(OBIS_CODE(81, 49, 63, 3C, 01, 01), make_value(user_pm)),
-							parameter_tree(OBIS_CODE(81, 49, 63, 3C, 02, 01), make_value(pwd_pm))
-							}),
+			//const std::uint32_t ip_address_secondary_master = 3046549696;	//	192.168.150.181
+			//const std::uint16_t target_port_secondary_master = 26863
+			//	, source_port_seccondary_master = 0;
+			//const std::string user_sm = "user-2"
+			//	, pwd_sm = "pwd-2";
 
-						//	secondary master
-						child_list_tree(OBIS_CODE(81, 49, 0D, 07, 00, 02),{
-							parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 02), make_value(ip_address_secondary_master)),
-							parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 02), make_value(target_port_secondary_master)),
-							parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 02), make_value(source_port_seccondary_master)),
-							parameter_tree(OBIS_CODE(81, 49, 63, 3C, 01, 02), make_value(user_sm)),
-							parameter_tree(OBIS_CODE(81, 49, 63, 3C, 02, 02), make_value(pwd_sm))
-							}),
+			//const std::uint16_t wait_time = 12;	//	minutes
+			//const std::uint16_t repetitions = 120;	//	counter
+			//const bool ssl = false;
 
-						//	waiting time (Wartezeit)
-						parameter_tree(OBIS_CODE(81, 48, 27, 32, 06, 01), make_value(wait_time)),
+			////
+			////	linearize and set CRC16
+			////	append to current SML message
+			////
+			//sml_gen_.append_msg(message(frame.at(1)	//	trx
+			//	, 2 //, ++group_no_	//	group
+			//	, 0 //	abort code
+			//	, BODY_GET_PROC_PARAMETER_RESPONSE
 
-						//	repetitions
-						parameter_tree(OBIS_CODE(81, 48, 31, 32, 02, 01), make_value(repetitions)),
+			//	//
+			//	//	generate get process parameter response
+			//	//
+			//	, get_proc_parameter_response(frame.at(3)	//	server id  
+			//		, OBIS_CODE_ROOT_IPT_PARAM	//	path entry - 81 49 0D 07 00 FF 
+			//		, child_list_tree(OBIS_CODE_ROOT_IPT_PARAM, {
 
-						//	SSL
-						parameter_tree(OBIS_CODE(00, 80, 80, 00, 03, FF), make_value(ssl)),
+			//			//	primary master
+			//			child_list_tree(OBIS_CODE(81, 49, 0D, 07, 00, 01),{
+			//				parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 01), make_value(ip_address_primary_master)),
+			//				parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 01), make_value(target_port_primary_master)),
+			//				parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 01), make_value(source_port_primary_master)),
+			//				parameter_tree(OBIS_CODE(81, 49, 63, 3C, 01, 01), make_value(user_pm)),
+			//				parameter_tree(OBIS_CODE(81, 49, 63, 3C, 02, 01), make_value(pwd_pm))
+			//				}),
 
-						//	certificates (none)
-						empty_tree(OBIS_CODE(00, 80, 80, 00, 04, FF))
+			//			//	secondary master
+			//			child_list_tree(OBIS_CODE(81, 49, 0D, 07, 00, 02),{
+			//				parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 02), make_value(ip_address_secondary_master)),
+			//				parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 02), make_value(target_port_secondary_master)),
+			//				parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 02), make_value(source_port_seccondary_master)),
+			//				parameter_tree(OBIS_CODE(81, 49, 63, 3C, 01, 02), make_value(user_sm)),
+			//				parameter_tree(OBIS_CODE(81, 49, 63, 3C, 02, 02), make_value(pwd_sm))
+			//				}),
 
-						}))));
+			//			//	waiting time (Wartezeit)
+			//			parameter_tree(OBIS_CODE(81, 48, 27, 32, 06, 01), make_value(wait_time)),
+
+			//			//	repetitions
+			//			parameter_tree(OBIS_CODE(81, 48, 31, 32, 02, 01), make_value(repetitions)),
+
+			//			//	SSL
+			//			parameter_tree(OBIS_CODE(00, 80, 80, 00, 03, FF), make_value(ssl)),
+
+			//			//	certificates (none)
+			//			empty_tree(OBIS_CODE(00, 80, 80, 00, 04, FF))
+
+			//			}))));
 
 		}
 
@@ -1428,8 +1337,112 @@ namespace node
 
 
 			}, cyng::store::write_access("push.ops"));
-
 		}
+
+		void kernel::sml_set_proc_ipt_param_address(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			//CYNG_LOG_TRACE(logger_, "sml.set.proc.ipt.param.address " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,			//	[0] pk
+				std::string,				//	[1] trx
+				std::uint8_t,				//	[2] record index (0..1)
+				boost::asio::ip::address	//	[3] address
+			>(frame);
+
+			const auto idx = std::get<2>(tpl);
+			if (idx < cfg_ipt_.size()) {
+
+				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.address["
+					<< +idx
+					<< "] "
+					<< cfg_ipt_.at(idx).host_
+					<< " => "
+					<< std::get<3>(tpl).to_string());
+
+				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_).at(idx).host_) = std::get<3>(tpl).to_string();
+			}
+		}
+
+		void kernel::sml_set_proc_ipt_param_port_target(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			//CYNG_LOG_TRACE(logger_, "sml.set.proc.ipt.param.port.target " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::uint8_t,		//	[2] record index (1..2)
+				std::uint16_t		//	[3] port
+			>(frame);
+
+			const auto idx = std::get<2>(tpl);
+			if (idx < cfg_ipt_.size()) {
+
+				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.port.target["
+					<< +idx
+					<< "] "
+					<< cfg_ipt_.at(idx).service_
+					<< " => "
+					<< std::get<3>(tpl));
+
+				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_).at(idx).service_) = std::to_string(std::get<3>(tpl));
+			}
+		}
+
+		void kernel::sml_set_proc_ipt_param_user(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			//CYNG_LOG_TRACE(logger_, "sml.set.proc.ipt.param.user " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::uint8_t,		//	[2] record index (1..2)
+				std::string			//	[3] user
+			>(frame);
+
+			const auto idx = std::get<2>(tpl);
+			if (idx < cfg_ipt_.size()) {
+
+				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.user["
+					<< +idx
+					<< "] "
+					<< cfg_ipt_.at(idx).account_
+					<< " => "
+					<< std::get<3>(tpl));
+
+				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_).at(idx).account_) = std::get<3>(tpl);
+			}
+		}
+
+		void kernel::sml_set_proc_ipt_param_pwd(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			//CYNG_LOG_TRACE(logger_, "sml.set.proc.ipt.param.pwd " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::uint8_t,		//	[2] record index (1..2)
+				std::string			//	[3] pwd
+			>(frame);
+
+			const auto idx = std::get<2>(tpl);
+			if (idx < cfg_ipt_.size()) {
+
+				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.pwd["
+					<< +idx
+					<< "] "
+					<< cfg_ipt_.at(idx).pwd_
+					<< " => "
+					<< std::get<3>(tpl));
+
+				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_).at(idx).pwd_) = std::get<3>(tpl);
+			}
+		}
+
 
 	}	//	sml
 }

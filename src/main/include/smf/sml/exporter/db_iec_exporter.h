@@ -40,12 +40,20 @@ namespace node
 			 */
 			void reset();
 
-			void write(cyng::db::session, boost::uuids::uuid pk
+			void write_data(cyng::db::session
+				, boost::uuids::uuid pk
 				, std::size_t idx
 				, cyng::buffer_t const& code
 				, std::string const& value
 				, std::string const& unit
 				, std::string const& status);
+
+			void write_meta(cyng::db::session
+				, boost::uuids::uuid pk
+				, std::string const& meter
+				, std::string const& status
+				, bool bcc
+				, std::size_t size);
 
 		private:
 

@@ -10,6 +10,7 @@
 #include <sstream>
 #include <random>
 #include <algorithm>
+#include <boost/io/ios_state.hpp>
 
 namespace node
 {
@@ -31,7 +32,6 @@ namespace node
 		{
 			value_.swap(other.value_);
 		}
-
 
 		bool scramble_key::equal(scramble_key const& other) const	
 		{
@@ -62,6 +62,9 @@ namespace node
 
 		std::ostream& scramble_key::dump(std::ostream& os) const	
 		{
+			//	store and reset stream state
+			boost::io::ios_flags_saver  ifs(os);
+
 			if (os.good())
 			{
 				os
@@ -75,10 +78,6 @@ namespace node
 						<< int(ii)
 						;
 				}
-				//	reset format
-				os
-					<< std::dec
-					;
 			}
 			return os;
 		}

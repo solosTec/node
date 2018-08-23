@@ -10,6 +10,7 @@
 
 #include <smf/sml/defs.h>
 #include <smf/sml/intrinsics/obis.h>
+#include <smf/ipt/config.h>
 #include <cyng/intrinsics/sets.h>
 #include <cyng/intrinsics/mac.h>
 #include <cyng/store/table.h>
@@ -211,6 +212,10 @@ namespace node
 			std::size_t get_proc_push_ops(cyng::object trx
 				, cyng::object server_id
 				, const cyng::store::table*);
+
+			std::size_t get_proc_ipt_params(cyng::object trx
+				, cyng::object server_id
+				, node::ipt::master_config_t const& cfg);
 
 		};
 

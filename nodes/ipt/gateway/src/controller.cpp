@@ -52,7 +52,7 @@ namespace node
 		, sml::status&
 		, cyng::store::db&
 		, boost::uuids::uuid tag
-		, cyng::vector_t const& cfg
+		, ipt::master_config_t const& cfg
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
@@ -390,6 +390,12 @@ namespace node
 		status_word.set_mbus_if_available(true);
 #endif
 
+		//
+		//	get IP-T configuration
+		//
+		cyng::vector_t vec;
+		vec = cyng::value_cast(dom.get("ipt"), vec);
+		auto cfg_ipt = ipt::load_cluster_cfg(vec);
 
 		/**
 		 * global data cache
@@ -406,7 +412,7 @@ namespace node
 			, status_word
 			, config_db
 			, tag
-			, cyng::value_cast(dom.get("ipt"), tmp)
+			, cfg_ipt
 			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
 			, manufacturer
@@ -421,6 +427,7 @@ namespace node
 			, status_word
 			, config_db
 			, tag
+			, cfg_ipt
 			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
 			, manufacturer
@@ -492,7 +499,7 @@ namespace node
 		, sml::status& status
 		, cyng::store::db& config_db
 		, boost::uuids::uuid tag
-		, cyng::vector_t const& cfg
+		, ipt::master_config_t const& cfg
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
@@ -507,7 +514,7 @@ namespace node
 			, status
 			, config_db
 			, tag
-			, ipt::load_cluster_cfg(cfg)
+			, cfg
 			, account
 			, pwd
 			, manufacturer
@@ -570,6 +577,7 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
 		}
+
 		if (!config.create_table(cyng::table::make_meta_table<2, 6>("push.ops",
 			{ "serverID"	//	server ID
 			, "idx"			//	index
@@ -606,5 +614,72 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
 		}
+
+		//if (!config.create_table(cyng::table::make_meta_table<1, 7>("config.ipt",
+		//	{ "idx"			//	index
+		//					//	-- body
+		//	, "address"		//	numerical form
+		//	, "portTarget"	//	outgoing
+		//	, "portSource"	//	incoming
+		//	, "scrambled"	//	bool
+		//	, "sk"			//	scrambled key (0102030405060708090001020304050607080900010203040506070809000001)
+		//	, "user"		//	username
+		//	, "pwd"			//	password
+
+		//	},
+		//	{ cyng::TC_UINT8		//	index (original only 2 entries supported)
+		//							//	-- body
+		//	, cyng::TC_IP_ADDRESS	//	IP-T master
+		//	, cyng::TC_UINT16		//	port (target)
+		//	, cyng::TC_UINT16		//	port (source)
+		//	, cyng::TC_BOOL			//	scrambled
+		//	, cyng::TC_STRING		//	sk
+		//	, cyng::TC_STRING		//	user
+		//	, cyng::TC_STRING		//	pwd
+
+		//	},
+		//	{ 0		//	index
+		//			//	-- body
+		//	, 16	//	address
+		//	, 0		//	portTarget
+		//	, 0		//	portSource
+		//	, 0		//	scrambled
+		//	, 64	//	sk
+		//	, 64	//	user
+		//	, 64	//	pwd
+		//	})))
+		//{
+		//	CYNG_LOG_FATAL(logger, "cannot create table config.ipt");
+		//}
+		//else
+		//{
+		//	auto cfg = ipt::load_cluster_cfg(ipt_cfg);
+		//	std::uint8_t idx{ 0 };
+		//	for (auto const& rec : cfg) {
+
+		//		try {
+		//			auto address = boost::asio::ip::make_address(rec.host_);
+		//			std::uint16_t port = std::stoul(rec.service_);
+
+		//			config.insert("config.ipt"
+		//				, cyng::table::key_generator(idx)
+		//				, cyng::table::data_generator(address	//	numerical form
+		//					, port	//	port
+		//					, 0u
+		//					, rec.scrambled_
+		//					, rec.sk_.str()
+		//					, rec.account_
+		//					, rec.pwd_)
+		//				, 1	//	generation
+		//				, tag);
+
+		//			++idx;
+		//		}
+		//		catch (std::exception const& ex) {
+		//			CYNG_LOG_FATAL(logger, ex.what() << " #" << +idx);
+		//		}
+		//	}
+		//}
+
 	}
 }

@@ -60,6 +60,7 @@ namespace node
 		iec::parser parser_;
 		std::size_t total_bytes_;
 		std::string meter_id_;
+		std::string status_;
 		bool bcc_;
 	};
 }

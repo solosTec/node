@@ -11,8 +11,10 @@
 
 #include <smf/sml/defs.h>
 #include <smf/sml/status.h>
+#include <smf/ipt/config.h>
 #include "sml_reader.h"
 #include <smf/sml/protocol/generator.h>
+
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
 #include <cyng/store/db.h>
@@ -31,6 +33,7 @@ namespace node
 				, cyng::controller&
 				, status&
 				, cyng::store::db& config_db
+				, node::ipt::master_config_t const& cfg
 				, bool
 				, std::string account
 				, std::string pwd
@@ -74,6 +77,11 @@ namespace node
 			void sml_set_proc_push_delay(cyng::context& ctx);
 			void sml_set_proc_push_name(cyng::context& ctx);
 
+			void sml_set_proc_ipt_param_address(cyng::context& ctx);
+			void sml_set_proc_ipt_param_port_target(cyng::context& ctx);
+			void sml_set_proc_ipt_param_user(cyng::context& ctx);
+			void sml_set_proc_ipt_param_pwd(cyng::context& ctx);
+
 		public:
 			/**
 			* Global status word
@@ -87,6 +95,7 @@ namespace node
 			* configuration db
 			*/
 			cyng::store::db& config_db_;
+			node::ipt::master_config_t const& cfg_ipt_;
 
 			const bool server_mode_;
 			const std::string account_;

@@ -14,8 +14,8 @@
 #include <NODE_project_info.h>
 #include <cyng/vm/generator.h>
 #include <cyng/chrono.h>
-//#include <cyng/value_cast.hpp>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/io/swap.h>
 #include <sstream>
 #include <iomanip>
 
@@ -655,6 +655,207 @@ namespace node
 					//	generate get process parameter response
 					//
 					, child_list_tree(OBIS_PUSH_OPERATIONS, tpl)
+				)));
+
+		}
+
+		std::size_t res_generator::get_proc_ipt_params(cyng::object trx
+			, cyng::object server_id
+			, node::ipt::master_config_t const& cfg)
+		{
+			//76                                                SML_Message(Sequence): 
+			//  81063137303531313136303831363537393537312D32    transactionId: 170511160816579571-2
+			//  6201                                            groupNo: 1
+			//  6200                                            abortOnError: 0
+			//  72                                              messageBody(Choice): 
+			//	630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
+			//	73                                            SML_GetProcParameter_Res(Sequence): 
+			//	  080500153B01EC46                            serverId: 05 00 15 3B 01 EC 46 
+			//	  71                                          parameterTreePath(SequenceOf): 
+			//		0781490D0700FF                            path_Entry: 81 49 0D 07 00 FF 
+			//	  73                                          parameterTree(Sequence): 
+			//		0781490D0700FF                            parameterName: 81 49 0D 07 00 FF 
+			//		01                                        parameterValue: not set
+			//		76                                        child_List(SequenceOf): 
+			//		  73                                      tree_Entry(Sequence): 
+			//			0781490D070001                        parameterName: 81 49 0D 07 00 01 
+			//			01                                    parameterValue: not set
+			//			75                                    child_List(SequenceOf): 
+			//			  73                                  tree_Entry(Sequence): 
+			//				07814917070001                    parameterName: 81 49 17 07 00 01 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  652A96A8C0                      smlValue: 714516672
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				0781491A070001                    parameterName: 81 49 1A 07 00 01 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  6368EF                          smlValue: 26863
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				07814919070001                    parameterName: 81 49 19 07 00 01 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  6200                            smlValue: 0
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				078149633C0101                    parameterName: 81 49 63 3C 01 01 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  094C534D5465737432              smlValue: LSMTest2
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				078149633C0201                    parameterName: 81 49 63 3C 02 01 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  094C534D5465737432              smlValue: LSMTest2
+			//				01                                child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			0781490D070002                        parameterName: 81 49 0D 07 00 02 
+			//			01                                    parameterValue: not set
+			//			75                                    child_List(SequenceOf): 
+			//			  73                                  tree_Entry(Sequence): 
+			//				07814917070002                    parameterName: 81 49 17 07 00 02 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  65B596A8C0                      smlValue: 3046549696
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				0781491A070002                    parameterName: 81 49 1A 07 00 02 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  6368F0                          smlValue: 26864
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				07814919070002                    parameterName: 81 49 19 07 00 02 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  6200                            smlValue: 0
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				078149633C0102                    parameterName: 81 49 63 3C 01 02 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  094C534D5465737432              smlValue: LSMTest2
+			//				01                                child_List: not set
+			//			  73                                  tree_Entry(Sequence): 
+			//				078149633C0202                    parameterName: 81 49 63 3C 02 02 
+			//				72                                parameterValue(Choice): 
+			//				  6201                            parameterValue: 1 => smlValue (0x01)
+			//				  094C534D5465737432              smlValue: LSMTest2
+			//				01                                child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			07814827320601                        parameterName: 81 48 27 32 06 01 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  6201                                smlValue: 1
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			07814831320201                        parameterName: 81 48 31 32 02 01 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  6278                                smlValue: 120
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			070080800003FF                        parameterName: 00 80 80 00 03 FF 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  4200                                smlValue: False
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			070080800004FF                        parameterName: 00 80 80 00 04 FF 
+			//			01                                    parameterValue: not set
+			//			01                                    child_List: not set
+			//  63915D                                          crc16: 37213
+			//  00                                              endOfSmlMsg: 00 
+
+
+			cyng::tuple_t tpl;	// list 
+
+			//
+			//	generate list of IP-T parameters (2x)
+			//
+			std::uint8_t idx{ 1 };
+			for (auto const& rec : cfg) {
+
+				try {
+					boost::system::error_code ec;
+					auto address = boost::asio::ip::make_address(rec.host_, ec);
+					std::uint32_t numeric_address = cyng::swap_num(address.to_v4().to_uint());	//	network ordering
+
+					std::uint16_t port = std::stoul(rec.service_);
+
+					tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), {
+
+
+						parameter_tree(obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(numeric_address)),
+						parameter_tree(obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx), make_value(port)),
+						parameter_tree(obis(0x81, 0x49, 0x19, 0x07, 0x00, idx), make_value(0u)),
+						parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx), make_value(rec.account_)),
+						parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx), make_value(rec.pwd_))
+
+						})));
+
+					++idx;
+				}
+				catch (std::exception const& ex) {
+
+				}
+			}
+			//tbl->loop([&](cyng::table::record const& rec)->bool {
+
+			//	auto idx = cyng::numeric_cast<std::uint8_t>(rec["idx"], 0);
+			//	auto address = cyng::value_cast(rec["address"], boost::asio::ip::address());
+			//	std::uint32_t numeric_address = cyng::swap_num(address.to_v4().to_uint());	//	network ordering
+
+			//	tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx + 1), {
+
+
+			//		parameter_tree(obis(0x81, 0x49, 0x17, 0x07, 0x00, idx + 1), make_value(numeric_address)),
+			//		parameter_tree(obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx + 1), make_value(rec["portTarget"])),
+			//		parameter_tree(obis(0x81, 0x49, 0x19, 0x07, 0x00, idx + 1), make_value(rec["portSource"])),
+			//		parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx + 1), make_value(rec["user"])),
+			//		parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx + 1), make_value(rec["pwd"]))
+
+			//	})));
+
+			//	return true;	//	continue
+
+			//});
+
+			const std::uint16_t wait_time = 12;	//	minutes
+			const std::uint16_t repetitions = 120;	//	counter
+			const bool ssl = false;
+
+
+			//	waiting time (Wartezeit)
+			tpl.push_back(cyng::make_object(parameter_tree(OBIS_CODE(81, 48, 27, 32, 06, 01), make_value(wait_time))));
+
+			//	repetitions
+			tpl.push_back(cyng::make_object(parameter_tree(OBIS_CODE(81, 48, 31, 32, 02, 01), make_value(repetitions))));
+
+			//	SSL
+			tpl.push_back(cyng::make_object(parameter_tree(OBIS_CODE(00, 80, 80, 00, 03, FF), make_value(ssl))));
+
+			//	certificates (none)
+			tpl.push_back(cyng::make_object(empty_tree(OBIS_CODE(00, 80, 80, 00, 04, FF))));
+
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id	//	server id
+					, OBIS_CODE_ROOT_IPT_PARAM		//	path entry
+
+					//
+					//	generate get process parameter response
+					//
+					, child_list_tree(OBIS_CODE_ROOT_IPT_PARAM, tpl)
 				)));
 
 		}

@@ -19,6 +19,7 @@
 #include <cyng/xml.h>
 #include <cyng/factory.h>
 #include <cyng/vm/generator.h>
+#include <cyng/io/swap.h>
 
 #include <boost/uuid/nil_generator.hpp>
 
@@ -697,47 +698,156 @@ namespace node
 				//	example: push delay
 				//	81 81 c7 8a 01 ff => 81 81 c7 8a 01 [01] => 81 81 c7 8a 03 ff
 				//	std::cout << to_hex(path) << std::endl;
-				if ((path.size() == 3) && (path.front() == OBIS_PUSH_OPERATIONS)) {
-					auto r = path.at(1).is_matching(0x81, 0x81, 0xc7, 0x8a, 0x01);
-					if (r.second) {
-						if (path.at(2) == OBIS_CODE(81, 81, c7, 8a, 02, ff)) {
+				if (OBIS_PUSH_OPERATIONS == path.front()) {
 
-							
-							prg << cyng::generate_invoke_unwinded("sml.set.proc.push.interval"
-								, ro_.pk_
-								, ro_.trx_
-								, r.first
-								, ro_.get_value("serverId")
-								, ro_.get_value("userName")
-								, ro_.get_value("password")
-								, std::chrono::seconds(cyng::numeric_cast<std::int64_t>(attr.second, 900)));
+					BOOST_ASSERT_MSG(path.size() == 3, "OBIS_PUSH_OPERATIONS param tree too short");
 
+					if (path.size() > 2) {
+						auto r = path.at(1).is_matching(0x81, 0x81, 0xc7, 0x8a, 0x01);
+						if (r.second) {
+							if (path.at(2) == OBIS_CODE(81, 81, c7, 8a, 02, ff)) {
+
+
+								prg << cyng::generate_invoke_unwinded("sml.set.proc.push.interval"
+									, ro_.pk_
+									, ro_.trx_
+									, r.first
+									, ro_.get_value("serverId")
+									, ro_.get_value("userName")
+									, ro_.get_value("password")
+									, std::chrono::seconds(cyng::numeric_cast<std::int64_t>(attr.second, 900)));
+
+							}
+							else if (path.at(2) == OBIS_CODE(81, 81, c7, 8a, 03, ff)) {
+
+								prg << cyng::generate_invoke_unwinded("sml.set.proc.push.delay"
+									, ro_.pk_
+									, ro_.trx_
+									, r.first
+									, ro_.get_value("serverId")
+									, ro_.get_value("userName")
+									, ro_.get_value("password")
+									, std::chrono::seconds(cyng::numeric_cast<std::int64_t>(attr.second, 0)));
+
+							}
+							else if (path.at(2) == OBIS_CODE(81, 47, 17, 07, 00, FF)) {
+
+								cyng::buffer_t tmp;
+								tmp = cyng::value_cast(attr.second, tmp);
+
+								prg << cyng::generate_invoke_unwinded("sml.set.proc.push.name"
+									, ro_.pk_
+									, ro_.trx_
+									, r.first
+									, ro_.get_value("serverId")
+									, ro_.get_value("userName")
+									, ro_.get_value("password")
+									, std::string(tmp.begin(), tmp.end()));
+
+							}
 						}
-						else if (path.at(2) == OBIS_CODE(81, 81, c7, 8a, 03, ff)) {
+					}
+					else {
+						//	param tree too short
+					}
+				}
+				else if (OBIS_CODE_ROOT_IPT_PARAM == path.front()) {
+					BOOST_ASSERT_MSG(path.size() == 3, "OBIS_CODE_ROOT_IPT_PARAM param tree too short");
+					if (path.size() > 2) {
+						auto r = path.at(1).is_matching(0x81, 0x49, 0x0D, 0x07, 0x00);
+						if (r.second) {
+							BOOST_ASSERT(r.first != 0);
 
-							prg << cyng::generate_invoke_unwinded("sml.set.proc.push.delay"
-								, ro_.pk_
-								, ro_.trx_
-								, r.first
-								, ro_.get_value("serverId")
-								, ro_.get_value("userName")
-								, ro_.get_value("password")
-								, std::chrono::seconds(cyng::numeric_cast<std::int64_t>(attr.second, 0)));
+							//
+							//	set IP-T host address
+							//
+							auto m = path.at(2).is_matching(0x81, 0x49, 0x17, 0x07, 0x00);
+							if (m.second) {
 
-						}
-						else if (path.at(2) == OBIS_CODE(81, 47, 17, 07, 00, FF)) {
+								BOOST_ASSERT(r.first == m.first);
+								BOOST_ASSERT(m.first != 0);
+								--m.first;
 
-							cyng::buffer_t tmp;
-							tmp = cyng::value_cast(attr.second, tmp);
+								//	remove host byte ordering
+								auto num = cyng::swap_num(cyng::numeric_cast<std::uint32_t>(attr.second, 0u));
+								boost::asio::ip::address address = boost::asio::ip::make_address_v4(num);
+								prg << cyng::generate_invoke_unwinded("sml.set.proc.ipt.param.address"
+									, ro_.pk_
+									, ro_.trx_
+									, m.first
+									, address);
 
-							prg << cyng::generate_invoke_unwinded("sml.set.proc.push.name"
-								, ro_.pk_
-								, ro_.trx_
-								, r.first
-								, ro_.get_value("serverId")
-								, ro_.get_value("userName")
-								, ro_.get_value("password")
-								, std::string(tmp.begin(), tmp.end()));
+							}
+
+							//
+							//	set IP-T target port
+							//
+							m = path.at(2).is_matching(0x81, 0x49, 0x1A, 0x07, 0x00);
+							if (m.second) {
+
+								BOOST_ASSERT(r.first == m.first);
+								BOOST_ASSERT(m.first != 0);
+								--m.first;
+
+								//
+								//	set IP-T target port
+								//
+								auto port = cyng::numeric_cast<std::uint16_t>(attr.second, 0u);
+								prg << cyng::generate_invoke_unwinded("sml.set.proc.ipt.param.port.target"
+									, ro_.pk_
+									, ro_.trx_
+									, m.first
+									, port);
+
+							}
+
+							//
+							//	set IP-T user name
+							//
+							m = path.at(2).is_matching(0x81, 0x49, 0x63, 0x3C, 0x01);
+							if (m.second) {
+
+								BOOST_ASSERT(r.first == m.first);
+								BOOST_ASSERT(m.first != 0);
+								--m.first;
+
+								//
+								//	set IP-T user name
+								//
+								cyng::buffer_t tmp;
+								tmp = cyng::value_cast(attr.second, tmp);
+
+								prg << cyng::generate_invoke_unwinded("sml.set.proc.ipt.param.user"
+									, ro_.pk_
+									, ro_.trx_
+									, m.first
+									, std::string(tmp.begin(), tmp.end()));
+
+							}
+
+							//
+							//	set IP-T password
+							//
+							m = path.at(2).is_matching(0x81, 0x49, 0x63, 0x3C, 0x02);
+							if (m.second) {
+
+								BOOST_ASSERT(r.first == m.first);
+								BOOST_ASSERT(m.first != 0);
+								--m.first;
+
+								//
+								//	set IP-T password
+								//
+								cyng::buffer_t tmp;
+								tmp = cyng::value_cast(attr.second, tmp);
+
+								prg << cyng::generate_invoke_unwinded("sml.set.proc.ipt.param.pwd"
+									, ro_.pk_
+									, ro_.trx_
+									, m.first
+									, std::string(tmp.begin(), tmp.end()));
+
+							}
 
 						}
 					}

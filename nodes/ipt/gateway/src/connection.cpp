@@ -24,6 +24,7 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, status& status_word
 			, cyng::store::db& config_db
+			, node::ipt::master_config_t const& cfg
 			, std::string const& account
 			, std::string const& pwd
 			, std::string manufacturer
@@ -32,7 +33,7 @@ namespace node
 			: socket_(std::move(socket))
 			, logger_(logger)
 			, buffer_()
-			, session_(make_session(mux, logger, status_word, config_db, account, pwd, manufacturer, model, mac))
+			, session_(make_session(mux, logger, status_word, config_db, cfg, account, pwd, manufacturer, model, mac))
 			, serializer_(socket_, this->get_session()->vm_)
 		{
 			//
