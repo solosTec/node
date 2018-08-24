@@ -36,6 +36,7 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 01, 00, FF, SERIAL_NR);	//	Serial number I (assigned by the manufacturer).
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 01, 01, FF, SERIAL_NR_SECOND);	//	Serial number II (assigned by the manufacturer).
 		const static obis	DEFINE_OBIS_CODE(00, 00, 61, 61, 00, FF, MBUS_STATE);   //	Status according to EN13757-3
+		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 08, 00, FF, CONFIG_OVERVIEW);   //	
 
 																					//	Identifikationsnummer 1.1 - comes as unsigned int with 3 bytes (this is the server ID)
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 00, FF, SERVER_ID_1_1);
@@ -125,6 +126,7 @@ namespace node
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 89, E1, FF, CLASS_OP_LOG);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 89, E2, FF, CLASS_EVENT);	//	Ereignis (uint32)
+		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 11, 00, FF, ACTUATORS);	//	list of actuators
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 11, A0, FF, CLASS_STATUS);	//	see: 2.2.1.3 Status der Aktoren (Kontakte)
 
 		//	Spannung - voltage

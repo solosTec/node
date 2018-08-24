@@ -58,6 +58,7 @@ namespace node
 				, vm_
 				, tag
 				, timeout_).first)
+			, tsk_close_connection_(cyng::async::NO_TASK)
 			, connect_state_()
 #ifdef SMF_IO_LOG
 			, log_counter_(0)
@@ -266,7 +267,17 @@ namespace node
 		{}
 
 		void session::stop(cyng::object obj)
-		{
+		{	
+			//
+			//	stop task if still running
+			//
+			if (cyng::async::NO_TASK != tsk_close_connection_) {
+				mux_.post(tsk_close_connection_, 0, cyng::tuple_t{});
+			}
+
+			//
+			//	gracefull shutdown
+			//
 			vm_.access([obj](cyng::vm& vm) {
 				vm.run(cyng::generate_invoke("log.msg.info", "fast shutdown"));
 				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
@@ -1328,7 +1339,7 @@ namespace node
 			auto dom = cyng::make_reader(std::get<4>(tpl));
 
 			cyng::param_map_t tmp;
-			const std::size_t tsk = cyng::async::start_task_sync<close_connection>(mux_
+			tsk_close_connection_ = cyng::async::start_task_sync<close_connection>(mux_
 				, logger_
 				, bus_
 				, vm_
@@ -1339,7 +1350,7 @@ namespace node
 				, std::get<5>(tpl)	//	bag
 				, timeout_).first;
 
-			CYNG_LOG_TRACE(logger_, "client.req.close.connection.forward - task #" << tsk);
+			CYNG_LOG_TRACE(logger_, "client.req.close.connection.forward - task #" << tsk_close_connection_);
 
 		}
 
@@ -1690,6 +1701,8 @@ namespace node
 				//	remove entry
 				//
 				task_db_.erase(pos);
+				BOOST_ASSERT_MSG(tsk_close_connection_ == tsk, "wrongclose connection task id");
+				tsk_close_connection_ = cyng::async::NO_TASK;
 			}
 			else
 			{

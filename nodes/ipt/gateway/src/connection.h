@@ -43,6 +43,7 @@ namespace node
 				, std::string const& pwd
 				, std::string manufacturer
 				, std::string model
+				, std::uint32_t serial
 				, cyng::mac48 mac);
 
 			/**

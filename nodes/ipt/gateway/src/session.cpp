@@ -26,6 +26,7 @@ namespace node
 			, std::string const& pwd
 			, std::string manufacturer
 			, std::string model
+			, std::uint32_t serial
 			, cyng::mac48 mac)
 		: mux_(mux)
 			, logger_(logger)
@@ -45,6 +46,7 @@ namespace node
 				, pwd
 				, manufacturer
 				, model
+				, serial
 				, mac)
 		{
 			//
@@ -74,9 +76,10 @@ namespace node
 			, std::string const& pwd
 			, std::string manufacturer
 			, std::string model
+			, std::uint32_t serial
 			, cyng::mac48 mac)
 		{
-			return cyng::make_object<session>(mux, logger, status_word, config_db, cfg, account, pwd, manufacturer, model, mac);
+			return cyng::make_object<session>(mux, logger, status_word, config_db, cfg, account, pwd, manufacturer, model, serial, mac);
 		}
 
 	}

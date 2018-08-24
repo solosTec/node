@@ -32,6 +32,7 @@ namespace node
 			, std::string pwd
 			, std::string manufacturer
 			, std::string model
+			, std::uint32_t serial
 			, cyng::mac48);
 
 		/**
@@ -79,6 +80,7 @@ namespace node
 		//
 		const std::string manufacturer_;
 		const std::string model_;
+		const std::uint32_t serial_;
 		const cyng::mac48 server_id_;
 
 		/// Acceptor used to listen for incoming connections.

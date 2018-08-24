@@ -35,6 +35,7 @@ namespace node
 			, std::string pwd
 			, std::string manufacturer
 			, std::string model
+			, std::uint32_t serial
 			, cyng::mac48 mac)
 		: base_(*btp)
 			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:gateway"))
@@ -57,6 +58,7 @@ namespace node
 				, pwd
 				, manufacturer
 				, model
+				, serial
 				, mac)
 			, exec_(logger, btp->mux_, config_db, bus_, tag, mac)
 			, seq_open_channel_map_()
@@ -271,16 +273,6 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		//void network::task_resume(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	//	[1,0,TDevice,3]
-		//	CYNG_LOG_TRACE(logger_, "resume task - " << cyng::io::to_str(frame));
-		//	std::size_t tsk = cyng::value_cast<std::size_t>(frame.at(0), 0);
-		//	std::size_t slot = cyng::value_cast<std::size_t>(frame.at(1), 0);
-		//	base_.mux_.post(tsk, slot, cyng::tuple_t{ frame.at(2), frame.at(3) });
-		//}
-
 		void network::reconfigure(cyng::context& ctx)
 		{
 			reconfigure_impl();
@@ -312,27 +304,6 @@ namespace node
 
 			base_.suspend(config_.get().monitor_);
 		}
-
-		//void network::insert_seq_register_target_rel(cyng::context& ctx)
-		//{
-		//	//	[5,power@solostec]
-		//	//
-		//	//	* ipt sequence
-		//	//	* target name
-		//	const cyng::vector_t frame = ctx.get_frame();
-
-		//	auto const tpl = cyng::tuple_cast<
-		//		sequence_type,		//	[0] ipt seq
-		//		std::string			//	[1] target
-		//	>(frame);
-
-		//	CYNG_LOG_TRACE(logger_, "ipt sequence "
-		//		<< +std::get<0>(tpl)
-		//		<< " ==> "
-		//		<< std::get<1>(tpl));
-
-		//	seq_target_map_.emplace(std::get<0>(tpl), std::get<1>(tpl));
-		//}
 
 		void network::insert_seq_open_channel_rel(cyng::context& ctx)
 		{

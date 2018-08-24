@@ -138,6 +138,11 @@ namespace node
 			const std::size_t gate_keeper_;
 
 			/**
+			 * close connection task ID
+			 */
+			std::size_t tsk_close_connection_;
+
+			/**
 			 * contains state of local connections
 			 */
 			connect_state	connect_state_;

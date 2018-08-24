@@ -93,7 +93,7 @@ namespace node
 			/**
 			 * @return status word
 			 */
-			operator std::uint64_t() const;
+			operator std::uint32_t() const;
 
 			void set_fatal_error(bool);
 			void set_authorized(bool);
@@ -109,7 +109,7 @@ namespace node
 			void remove(status_bits);
 
 		private:
-			std::uint64_t	word_;
+			std::uint32_t	word_;
 		};
 
 	}	//	sml

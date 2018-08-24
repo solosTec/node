@@ -8,6 +8,7 @@
 #include <smf/sml/intrinsics/obis.h>
 #include <smf/sml/units.h>
 #include <boost/assert.hpp>
+#include <boost/functional/hash.hpp>
 
 namespace node
 {
@@ -283,6 +284,15 @@ namespace node
 			return octet_type(value_.begin(), value_.end());
 		}
 
+		std::size_t obis::hash() const
+		{
+			std::size_t seed = 0;
+			for (auto c : value_) {
+				boost::hash_combine(seed, c);
+			}
+			return seed;
+		}
+
 		//
 		//	global operations
 		//
@@ -325,4 +335,15 @@ namespace node
 }	//	node
 
 
+namespace std
+{
+	size_t hash<node::sml::obis>::operator()(node::sml::obis const& code) const noexcept
+	{
+		return code.hash();
+	}
 
+	bool equal_to<node::sml::obis>::operator()(node::sml::obis const& c1, node::sml::obis const& c2) const noexcept
+	{
+		return c1.equal(c2);
+	}
+}

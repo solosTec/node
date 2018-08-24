@@ -11,6 +11,7 @@
 #include <random>
 #include <algorithm>
 #include <boost/io/ios_state.hpp>
+#include <boost/functional/hash.hpp>
 
 namespace node
 {
@@ -175,4 +176,21 @@ namespace cyng
 		const char type_tag<node::ipt::scramble_key>::name[] = "sk";
 #endif
 	}	// traits	
+}
+
+namespace std
+{
+	size_t hash<node::ipt::scramble_key>::operator()(node::ipt::scramble_key const& sk) const noexcept
+	{
+		std::size_t seed = 0;
+		for (auto c : sk.key()) {
+			boost::hash_combine(seed, c);
+		}
+		return seed;
+	}
+
+	bool equal_to<node::ipt::scramble_key>::operator()(node::ipt::scramble_key const& sk1, node::ipt::scramble_key const& sk2) const noexcept
+	{
+		return sk1.key() == sk2.key();
+	}
 }

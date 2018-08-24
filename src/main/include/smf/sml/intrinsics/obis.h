@@ -8,14 +8,11 @@
 #ifndef NODE_SML_INTRINSICS_OBIS_H
 #define NODE_SML_INTRINSICS_OBIS_H
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1200)
-#pragma once
-#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
-
 #include <smf/sml/defs.h>
 #include <array>
 #include <cstdint>
 #include <algorithm>
+#include <functional>	//	hash
 #include <boost/config.hpp>
 
 namespace node
@@ -123,11 +120,16 @@ namespace node
 			 */
 			bool is_physical_unit() const;
 
-			/*
+			/**
 			 *	Create a buffer containing all 6 bytes of
 			 *	the OBIS value.
 			 */
 			octet_type to_buffer() const;
+
+			/**
+			 * Calculate a hash value of 64 bits
+			 */
+			std::size_t hash() const;
 
 		private:
 			data_type	value_;
@@ -152,5 +154,24 @@ namespace node
 
 	}	//	sml
 }	//	node
+
+namespace std
+{
+	template<>
+	struct hash<node::sml::obis>
+	{
+		size_t operator()(node::sml::obis const& sk) const noexcept;
+	};
+
+	template<>
+	struct equal_to<node::sml::obis>
+	{
+		using result_type = bool;
+		using first_argument_type = node::sml::obis;
+		using second_argument_type = node::sml::obis;
+
+		bool operator()(node::sml::obis const& t1, node::sml::obis const& t2) const noexcept;
+	};
+}
 
 #endif	//	NODE_SML_INTRINSICS_OBIS_H

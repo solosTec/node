@@ -171,7 +171,7 @@ namespace node
 			 */
 			std::size_t get_proc_parameter_status_word(cyng::object trx
 				, cyng::object server_id
-				, std::uint64_t);
+				, std::uint32_t);
 
 			/**
 			 * OBIS_CODE_ROOT_DEVICE_IDENT - 81 81 C7 82 01 FF
@@ -181,7 +181,7 @@ namespace node
 				, std::string const& manufacturer
 				, cyng::buffer_t const& server_id2
 				, std::string const& model_code
-				, std::string const& serial);
+				, std::uint32_t serial);
 
 			/**
 			 * OBIS_CODE_ROOT_MEMORY_USAGE - 00 80 80 00 10 FF
@@ -217,6 +217,16 @@ namespace node
 				, cyng::object server_id
 				, node::ipt::master_config_t const& cfg);
 
+			std::size_t get_proc_0080800000FF(cyng::object trx
+				, cyng::object server_id
+				, std::uint32_t);
+
+			std::size_t get_proc_990000000004(cyng::object trx
+				, cyng::object server_id
+				, std::string const&);
+
+			std::size_t get_proc_actuators(cyng::object trx
+				, cyng::object server_id);
 		};
 
 	}

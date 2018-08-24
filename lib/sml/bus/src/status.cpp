@@ -39,9 +39,10 @@ namespace node
 			word_ = 0u;
 			word_ |= STATUS_BIT_ON;
 			word_ |= STATUS_BIT_RESET_BY_WATCHDOG;	
+			word_ |= STATUS_BIT_EXT_IF_AVAILABLE;
 		}
 
-		status::operator std::uint64_t() const
+		status::operator std::uint32_t() const
 		{
 			return word_;
 		}

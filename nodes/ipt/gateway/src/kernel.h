@@ -39,6 +39,7 @@ namespace node
 				, std::string pwd
 				, std::string manufacturer
 				, std::string model
+				, std::uint32_t serial
 				, cyng::mac48 mac);
 
 			/**
@@ -55,23 +56,11 @@ namespace node
 			void sml_public_open_request(cyng::context& ctx);
 			void sml_public_close_request(cyng::context& ctx);
 			void sml_get_proc_parameter_request(cyng::context& ctx);
-			void sml_get_proc_status_word(cyng::context& ctx);
-			void sml_get_proc_device_id(cyng::context& ctx);
-			void sml_get_proc_mem_usage(cyng::context& ctx);
-			void sml_get_proc_lan_if(cyng::context& ctx);
-			void sml_get_proc_lan_config(cyng::context& ctx);
-			void sml_get_proc_ntp_config(cyng::context& ctx);
-			void sml_get_proc_device_time(cyng::context& ctx);
-			void sml_get_proc_active_devices(cyng::context& ctx);
-			void sml_get_proc_visible_devices(cyng::context& ctx);
-			void sml_get_proc_device_info(cyng::context& ctx);
-			void sml_get_proc_ipt_state(cyng::context& ctx);
-			void sml_get_proc_ipt_param(cyng::context& ctx);
-			void sml_get_proc_sensor_property(cyng::context& ctx);
-			void sml_get_proc_data_collector(cyng::context& ctx);
-			void sml_get_proc_1107_if(cyng::context& ctx);
-			void sml_get_proc_0080800000FF(cyng::context& ctx);
-			void sml_get_proc_push_ops(cyng::context& ctx);
+			void sml_get_proc_ntp_config(cyng::object trx, cyng::object server);
+			//void sml_get_proc_device_time(cyng::context& ctx);
+			void sml_get_proc_ipt_state(cyng::object trx, cyng::object server);
+			void sml_get_proc_data_collector(cyng::object trx, cyng::object server);
+			//void sml_get_proc_0080800000FF(cyng::object trx, cyng::object server);
 
 			void sml_set_proc_push_interval(cyng::context& ctx);
 			void sml_set_proc_push_delay(cyng::context& ctx);
@@ -106,6 +95,7 @@ namespace node
 			//
 			const std::string manufacturer_;
 			const std::string model_;
+			const std::uint32_t serial_;
 			const cyng::buffer_t server_id_;
 
 			/**
@@ -114,8 +104,8 @@ namespace node
 			sml_reader reader_;
 
 			/**
-			* buffer for current SML message
-			*/
+			 * buffer for current SML message
+			 */
 			res_generator sml_gen_;
 
 		};

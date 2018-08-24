@@ -23,6 +23,7 @@ namespace node
 		, std::string pwd
 		, std::string manufacturer
 		, std::string model
+		, std::uint32_t serial
 		, cyng::mac48 mac)
 	: mux_(mux)
 		, logger_(logger)
@@ -33,6 +34,7 @@ namespace node
 		, pwd_(pwd)
 		, manufacturer_(manufacturer)
 		, model_(model)
+		, serial_(serial)
 		, server_id_(mac)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
@@ -92,6 +94,7 @@ namespace node
 					, pwd_
 					, manufacturer_
 					, model_
+					, serial_
 					, server_id_)->start();
 
 				do_accept();
