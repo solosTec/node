@@ -15,7 +15,6 @@
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/intrinsics/mac.h>
 #include <ostream>
-//#include <boost/uuid/uuid.hpp>
 
 namespace node
 {

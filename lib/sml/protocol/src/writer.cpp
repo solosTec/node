@@ -118,17 +118,7 @@ namespace node
 			{
 				//	only 3 bytes required
 				os.put(0x64);	//	TL field
-
-				union {
-					std::uint32_t u32_;
-					char ca_[sizeof(std::uint32_t)];
-				} u;
-				u.u32_ = cyng::swap_num(v);
-
-				//	write the last 3 bytes to stream
-				os.put(u.ca_[1]);
-				os.put(u.ca_[2]);
-				os.put(u.ca_[3]);
+				cyng::io::write_binary<std::uint32_t, 3, 1>(os, cyng::swap_num(v));
 			}
 			else
 			{
@@ -148,60 +138,21 @@ namespace node
 			{
 				//	only 5 bytes required
 				os.put(0x66);	//	TL field
-
-				union {
-					std::uint64_t u64_;
-					char ca_[sizeof(std::uint64_t)];
-				} u;
-				u.u64_ = cyng::swap_num(v);
-
-				//	write the last 5 bytes to stream
-				os.put(u.ca_[3]);
-				os.put(u.ca_[4]);
-				os.put(u.ca_[5]);
-				os.put(u.ca_[6]);
-				os.put(u.ca_[7]);
+				cyng::io::write_binary<std::uint64_t, 5, 3>(os, cyng::swap_num(v));
 
 			}
 			else if (v < std::numeric_limits<std::uint64_t>::max() / 0x1000)
 			{
 				//	only 6 bytes required
 				os.put(0x67);	//	TL field
-
-				union {
-					std::uint64_t u64_;
-					char ca_[sizeof(std::uint64_t)];
-				} u;
-				u.u64_ = cyng::swap_num(v);
-
-				//	write the last 6 bytes to stream
-				os.put(u.ca_[2]);
-				os.put(u.ca_[3]);
-				os.put(u.ca_[4]);
-				os.put(u.ca_[5]);
-				os.put(u.ca_[6]);
-				os.put(u.ca_[7]);
+				cyng::io::write_binary<std::uint64_t, 6, 2>(os, cyng::swap_num(v));
 
 			}
 			else if (v < std::numeric_limits<std::uint64_t>::max() / 0x100)
 			{
 				//	only 7 bytes required
 				os.put(0x68);	//	TL field
-
-				union {
-					std::uint64_t u64_;
-					char ca_[sizeof(std::uint64_t)];
-				} u;
-				u.u64_ = cyng::swap_num(v);
-
-				//	write the last 7 bytes to stream
-				os.put(u.ca_[1]);
-				os.put(u.ca_[2]);
-				os.put(u.ca_[3]);
-				os.put(u.ca_[4]);
-				os.put(u.ca_[5]);
-				os.put(u.ca_[6]);
-				os.put(u.ca_[7]);
+				cyng::io::write_binary<std::uint64_t, 7, 1>(os, cyng::swap_num(v));
 
 			}
 			else
@@ -243,17 +194,7 @@ namespace node
 			else if (v > -0xFFFFFF && v < 0xFFFFFF)
 			{
 				os.put(0x54);	//	TL field
-
-				union {
-					std::int32_t i32_;
-					char ca_[sizeof(std::int32_t)];
-				} u;
-				u.i32_ = cyng::swap_num(v);
-
-				//	write the last 3 bytes to stream
-				os.put(u.ca_[1]);
-				os.put(u.ca_[2]);
-				os.put(u.ca_[3]);
+				cyng::io::write_binary<std::int32_t, 3, 1>(os, cyng::swap_num(v));
 
 			}
 			else

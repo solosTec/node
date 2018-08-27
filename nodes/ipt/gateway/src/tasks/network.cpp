@@ -6,6 +6,7 @@
  */
 
 #include "network.h"
+#include <smf/ipt/bus.h>
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/generator.h>
 #include <smf/sml/protocol/serializer.h>
@@ -60,7 +61,7 @@ namespace node
 				, model
 				, serial
 				, mac)
-			, exec_(logger, btp->mux_, config_db, bus_, tag, mac)
+			, exec_(logger, btp->mux_, status_word, config_db, bus_, tag, mac)
 			, seq_open_channel_map_()
 		{
 			CYNG_LOG_INFO(logger_, "initialize task #"
@@ -101,14 +102,9 @@ namespace node
 				//
 				//	login request
 				//
-				if (config_.get().scrambled_)
-				{
-					bus_->vm_.async_run(gen::ipt_req_login_scrambled(config_.get()));
-				}
-				else
-				{
-					bus_->vm_.async_run(gen::ipt_req_login_public(config_.get()));
-				}
+				bus_->vm_.async_run((config_.get().scrambled_)
+					? gen::ipt_req_login_scrambled(config_.get())
+					: gen::ipt_req_login_public(config_.get()));
 			}
 
 			return cyng::continuation::TASK_CONTINUE;
@@ -131,7 +127,6 @@ namespace node
 			{
 				CYNG_LOG_INFO(logger_, "start watchdog: " << watchdog << " minutes");
 				base_.suspend(std::chrono::minutes(watchdog));
-				//base_.suspend(std::chrono::seconds(watchdog));
 			}
 
 			//
@@ -327,6 +322,31 @@ namespace node
 				, std::forward_as_tuple(std::get<1>(tpl), std::get<2>(tpl)))
 				;
 		}
+
+	}
+}
+
+#include <cyng/async/task/task.hpp>
+
+namespace cyng {
+	namespace async {
+
+		//
+		//	initialize static slot names
+		//
+		template <>
+		std::map<std::string, std::size_t> cyng::async::task<node::ipt::network>::slot_names_({ 
+			{ "evt-authorized", node::ipt::bus::IPT_EVENT_AUTHORIZED },
+			{ "evt-offline", node::ipt::bus::IPT_EVENT_CONNECTION_TO_MASTER_LOST },
+			{ "evt-connection-open", node::ipt::bus::IPT_EVENT_INCOMING_CALL },
+			{ "evt-push-data", node::ipt::bus::IPT_EVENT_PUSH_DATA_RECEIVED },
+			{ "evt-target-registered", node::ipt::bus::IPT_EVENT_PUSH_TARGET_REGISTERED },
+			{ "evt-link-data", node::ipt::bus::IPT_EVENT_INCOMING_DATA },
+			{ "evt-target-deregistered", node::ipt::bus::IPT_EVENT_PUSH_TARGET_DEREREGISTERED },
+			{ "evt-connection-closed", node::ipt::bus::IPT_EVENT_CONNECTION_CLOSED },
+			{ "evt-channel-open", node::ipt::bus::IPT_EVENT_PUSH_CHANNEL_OPEN },
+			{ "evt-channel-closed", node::ipt::bus::IPT_EVENT_PUSH_CHANNEL_CLOSED }
+		});
 
 	}
 }

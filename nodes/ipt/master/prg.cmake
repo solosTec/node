@@ -44,6 +44,12 @@ set (node_ipt_master_tasks
 	nodes/ipt/master/src/tasks/close_connection.cpp
 	nodes/ipt/master/src/tasks/gatekeeper.h
 	nodes/ipt/master/src/tasks/gatekeeper.cpp
+	nodes/ipt/master/src/tasks/reboot.h
+	nodes/ipt/master/src/tasks/reboot.cpp
+	nodes/ipt/master/src/tasks/query_srv_active.h
+	nodes/ipt/master/src/tasks/query_srv_active.cpp
+	nodes/ipt/master/src/tasks/query_srv_visible.h
+	nodes/ipt/master/src/tasks/query_srv_visible.cpp
 )
 
 set (node_ipt_master_res

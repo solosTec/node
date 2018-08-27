@@ -21,12 +21,14 @@ namespace node
 
 		executor::executor(cyng::logging::log_ptr logger
 			, cyng::async::mux& mux
+			, status& status_word
 			, cyng::store::db& config_db
 			, node::ipt::bus::shared_type bus
 			, boost::uuids::uuid tag
 			, cyng::mac48 mac)
 		: logger_(logger)
 			, mux_(mux)
+			, status_word_(status_word)
 			, config_db_(config_db)
 			, bus_(bus)
 			, rgn_()
@@ -73,6 +75,7 @@ namespace node
 				const auto r = cyng::async::start_task_delayed<ipt::push_ops>(mux_
 					, std::chrono::seconds(10)
 					, logger_
+					, status_word_
 					, config_db_
 					, bus_
 					, key

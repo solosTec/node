@@ -128,6 +128,18 @@ namespace node
 		, boost::uuids::uuid source);
 
 	/**
+	 * Request a list of visible meters/servers
+	 */
+	cyng::vector_t bus_req_query_srv_visible(cyng::vector_t const&
+		, boost::uuids::uuid source);
+
+	/**
+	 * Request a list of active meters/servers
+	 */
+	cyng::vector_t bus_req_query_srv_active(cyng::vector_t const&
+		, boost::uuids::uuid source);
+
+	/**
 	 * data bus
 	 */
 	cyng::vector_t bus_req_push_data(std::string const& class_name
@@ -173,6 +185,9 @@ namespace node
 
 	cyng::vector_t client_req_reboot(boost::uuids::uuid tag, cyng::buffer_t const&, std::string const&, std::string const&);
 	//cyng::vector_t client_res_reboot(boost::uuids::uuid tag, std::uint64_t seq, bool success);
+
+	cyng::vector_t client_req_query_srv_visible(boost::uuids::uuid tag, std::uint64_t seq, cyng::buffer_t const&, std::string const&, std::string const&);
+	cyng::vector_t client_req_query_srv_active(boost::uuids::uuid tag, std::uint64_t seq, cyng::buffer_t const&, std::string const&, std::string const&);
 
 	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
 		, std::string const& target

@@ -100,6 +100,16 @@
                         </tr>
                     </thead>
                 </table>
+                <div class="collapse" id="smf-form-gw-collapse-srv-visible">
+                    <div class="card card-body">
+                        Visible Meters
+                    </div>
+                </div>
+                <div class="collapse" id="smf-form-gw-collapse-srv-active">
+                    <div class="card card-body">
+                        Active Meters
+                    </div>
+                </div>
             </div>
             <div class="col-md-3">
                 <form class="form-horizontal" id="smf-form-gw">
@@ -138,6 +148,15 @@
                         <div class="form-group">
                             <a id="smf-form-gw-reboot" href="#" class="btn btn-warning col-md-4 disabled">Reboot</a>
                             <label class="control-label" for="smf-form-gw-reboot">Reboot Device</label>
+                        </div>
+                        <hr />
+                        <div class="form-group">
+                            <a id="smf-form-gw-srv-visible" class="btn btn-primary disabled" data-toggle="collapse" href="#smf-form-gw-collapse-srv-visible" role="button" aria-expanded="false" aria-controls="smf-form-gw-collapse-srv-visible">
+                                Visible Meters
+                            </a>
+                            <a id="smf-form-gw-srv-active" class="btn btn-primary disabled" data-toggle="collapse" href="#smf-form-gw-collapse-srv-active" role="button" aria-expanded="false" aria-controls="smf-form-gw-collapse-srv-active">
+                                Active Meters
+                            </a>
                         </div>
 
                     </fieldset>
@@ -217,9 +236,13 @@
                 //  online state
                 if (rowData[8]) {
                     $('#smf-form-gw-reboot').removeClass('disabled');
+                    $('#smf-form-gw-srv-visible').removeClass('disabled');
+                    $('#smf-form-gw-srv-active').removeClass('disabled');
                 }
                 else {
                     $('#smf-form-gw-reboot').addClass('disabled');
+                    $('#smf-form-gw-srv-visible').addClass('disabled');
+                    $('#smf-form-gw-srv-active').addClass('disabled');
                 }
 
             });
@@ -254,9 +277,9 @@
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
                     if (obj.cmd == 'insert') {
-                        //  
-                        // {"cmd": "insert", "channel": "config.gateway", "rec": 
-                        //  {"key": {"pk":"d28cd24a-980d-46fc-b5ac-8c445415adbf"}, 
+                        //
+                        // {"cmd": "insert", "channel": "config.gateway", "rec":
+                        //  {"key": {"pk":"d28cd24a-980d-46fc-b5ac-8c445415adbf"},
                         //  "data": {"factoryNr":"06441734","serverID":"0500153B02517E","ifData":"00:01:02:03:04:06","ifService":"00:01:02:03:04:05","made":"2018-06-06 13:24:51.38650500","manufacturer":"EMH","mbus":"mbus","model":"MODEL","name":"NAME","online":false,"pwdDef":"secret","pwdRoot":"secret","userName":"operator","userPwd":"operator","vFirmware":"FIRMWARE"}, "gen": 94}}
                         //
                         var server = $('<div/>').text(obj.rec.data.serverId).html();
@@ -277,6 +300,9 @@
                                 $('#smf-form-gw-update').addClass('disabled');
                                 $('#smf-form-gw-delete').addClass('disabled');
                                 $('#smf-form-gw-reboot').addClass('disabled');
+                                $('#smf-form-gw-srv-visible').addClass('disabled');
+                                $('#smf-form-gw-srv-active').addClass('disabled');
+
                                 return true;
                             }
                             return false;
@@ -356,11 +382,28 @@
                 }));
             });
 
+            $('#smf-form-gw-srv-visible').on("click", function (event) {
+                event.preventDefault();
+                console.log('query:srv:visible: ' + $('#smf-form-gw').serialize());
+
+                connection.send(JSON.stringify({
+                    cmd: "query:srv:visible", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                }));
+            });
+            
+            $('#smf-form-gw-srv-active').on("click", function (event) {
+                event.preventDefault();
+                console.log('query:srv:active: ' + $('#smf-form-gw').serialize());
+
+                connection.send(JSON.stringify({
+                    cmd: "query:srv:active", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                }));
+            });
         });
 
-    </script>
+        </script>
 
-    <script>
+        <script>
             const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
             function format_bytes(x) {
 
@@ -372,7 +415,7 @@
                 if (n == 0) return '-';
                 return (n.toFixed(l < 1 ? 0 : 1) + ' ' + units[l]);
             }
-    </script>
+        </script>
 
 </body>
 </html >

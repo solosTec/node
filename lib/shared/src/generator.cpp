@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #include <smf/cluster/generator.h>
 #include <cyng/chrono.h>
@@ -235,6 +235,25 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_req_query_srv_visible(cyng::vector_t const& key
+		, boost::uuids::uuid source)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.req.query.srv.visible", cyng::invoke("bus.seq.next"), key, source))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_req_query_srv_active(cyng::vector_t const& key
+		, boost::uuids::uuid source)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.req.query.srv.active", cyng::invoke("bus.seq.next"), key, source))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
 
 	cyng::vector_t bus_req_push_data(std::string const& class_name
 		, std::string const& channel_name
@@ -359,6 +378,24 @@ namespace node
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
 			, cyng::generate_invoke_remote_unwinded("client.req.reboot", tag, cyng::code::IDENT, cyng::invoke("bus.seq.next"), server, name, pwd))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t client_req_query_srv_visible(boost::uuids::uuid tag, std::uint64_t seq, cyng::buffer_t const& server, std::string const& name, std::string const& pwd)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("client.req.query.srv.visible", tag, cyng::code::IDENT, seq, server, name, pwd))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t client_req_query_srv_active(boost::uuids::uuid tag, std::uint64_t seq, cyng::buffer_t const& server, std::string const& name, std::string const& pwd)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("client.req.query.srv.active", tag, cyng::code::IDENT, seq, server, name, pwd))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}

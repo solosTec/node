@@ -5,42 +5,42 @@
 *
 */
 
-#include "gatekeeper.h"
-#include <smf/cluster/generator.h>
-#include <cyng/async/task/task_builder.hpp>
-#include <cyng/io/serializer.h>
+#include "query_srv_visible.h"
+#include <smf/sml/srv_id_io.h>
+#include <smf/sml/protocol/generator.h>
 #include <cyng/vm/generator.h>
-#include <cyng/factory/chrono_factory.h>
-#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
-	gatekeeper::gatekeeper(cyng::async::base_task* btp
+	query_srv_visible::query_srv_visible(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, bus::shared_type bus
 		, cyng::controller& vm
-		, boost::uuids::uuid tag
-		, std::chrono::seconds timeout)
+		, boost::uuids::uuid tag_remote
+		, std::uint64_t seq_cluster		//	cluster seq
+		, cyng::buffer_t const& server_id	//	server id
+		, std::string user
+		, std::string pwd
+		, boost::uuids::uuid tag_ctx)
 	: base_(*btp)
 		, logger_(logger)
 		, vm_(vm)
-		, tag_(tag)
-		, timeout_(timeout)
-		, response_(ipt::ctrl_res_login_public_policy::ACCOUNT_LOCKED)
+		, tag_remote_(tag_remote)
+		, server_id_(server_id)
+		, user_(user)
+		, pwd_(pwd)
 		, start_(std::chrono::system_clock::now())
 		, is_waiting_(false)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
-		<< base_.get_id()
-		<< " <"
-		<< base_.get_class_name()
-		<< "> is running: "
-		<< tag_
-		<< " until "
-		<< cyng::to_str(start_ + timeout_));
-
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> is running: "
+			<< sml::from_server_id(server_id));
 	}
 
-	cyng::continuation gatekeeper::run()
+	cyng::continuation query_srv_visible::run()
 	{	
 		if (!is_waiting_)
 		{
@@ -52,7 +52,7 @@ namespace node
 			//
 			//	start monitor
 			//
-			base_.suspend(timeout_);
+			//base_.suspend(timeout_);
 
 			return cyng::continuation::TASK_CONTINUE;
 		}
@@ -67,7 +67,7 @@ namespace node
 	}
 
 	//	slot 1
-	cyng::continuation gatekeeper::process()
+	cyng::continuation query_srv_visible::process()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -78,30 +78,12 @@ namespace node
 		//
 		//	session already stopped
 		//
-		response_ = ipt::ctrl_res_login_public_policy::GENERAL_ERROR;
 		return cyng::continuation::TASK_STOP;
 	}
 
 
-	void gatekeeper::stop()
+	void query_srv_visible::stop()
 	{
-		if (response_ == ipt::ctrl_res_login_public_policy::ACCOUNT_LOCKED)
-		{
-			CYNG_LOG_WARNING(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> stop "
-				<< tag_);
-
-			//
-			//	no login response received - stop client
-			//	Could crash if session is alreafy closed.
-			//
-			vm_.async_run(cyng::generate_invoke("ip.tcp.socket.shutdown"));
-			vm_.async_run(cyng::generate_invoke("ip.tcp.socket.close"));
-
-		}
 
 		//
 		//	terminate task
@@ -112,7 +94,7 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> is stopped: "
-			<< tag_
+			<< sml::from_server_id(server_id_)
 			<< " after "
 			<< uptime.count()
 			<< " milliseconds");
@@ -120,19 +102,17 @@ namespace node
 	}
 
 	//	slot 0
-	cyng::continuation gatekeeper::process(ipt::response_type res)
+	cyng::continuation query_srv_visible::process(ipt::response_type res)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
 			<< "> "
-			<< tag_
+			<< sml::from_server_id(server_id_)
 			<< " received response ["
-			<< ipt::ctrl_res_login_public_policy::get_response_name(res)
 			<< "]");
 
-		response_ = res;
 		return cyng::continuation::TASK_STOP;
 	}
 
@@ -147,7 +127,7 @@ namespace cyng {
 		//	initialize static slot names
 		//
 		template <>
-		std::map<std::string, std::size_t> cyng::async::task<node::gatekeeper>::slot_names_({ { "shutdown", 1 } });
+		std::map<std::string, std::size_t> cyng::async::task<node::query_srv_visible>::slot_names_({ { "shutdown", 1 } });
 
 	}
 }

@@ -1715,6 +1715,50 @@ namespace node
 			{
 				CYNG_LOG_WARNING(logger_, "ws.read - unknown reboot channel [" << channel << "]");
 			}
+		}
+		else if (boost::algorithm::equals(cmd, "query:srv:visible"))
+		{
+			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+			CYNG_LOG_TRACE(logger_, "ws.read - query:srv:visible channel [" << channel << "]");
+			if (boost::algorithm::starts_with(channel, "config.gateway"))
+			{
+				cyng::vector_t vec;
+				vec = cyng::value_cast(reader.get("key"), vec);
+				CYNG_LOG_INFO(logger_, "query:srv:visible " << cyng::io::to_str(vec));
+
+				const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+				CYNG_LOG_DEBUG(logger_, "TGateway key [" << str << "]");
+				auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+
+				ctx.attach(bus_req_query_srv_visible(key, ctx.tag()));
+
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "ws.read - unknown query:srv:visible channel [" << channel << "]");
+			}
+		}
+		else if (boost::algorithm::equals(cmd, "query:srv:active"))
+		{
+			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+			CYNG_LOG_TRACE(logger_, "ws.read - query:srv:active channel [" << channel << "]");
+			if (boost::algorithm::starts_with(channel, "config.gateway"))
+			{
+				cyng::vector_t vec;
+				vec = cyng::value_cast(reader.get("key"), vec);
+				CYNG_LOG_INFO(logger_, "query:srv:active " << cyng::io::to_str(vec));
+
+				const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+				CYNG_LOG_DEBUG(logger_, "TGateway key [" << str << "]");
+				auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+
+				ctx.attach(bus_req_query_srv_active(key, ctx.tag()));
+
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "ws.read - unknown query:srv:active channel [" << channel << "]");
+			}
 
 		}
 		else

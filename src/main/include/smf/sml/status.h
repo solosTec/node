@@ -103,6 +103,18 @@ namespace node
 			void set_ext_if_available(bool);
 			void set_mbus_if_available(bool);
 
+			/**
+			 * convinience function for:
+			 *
+			 * @code
+			 ! is_set(STATUS_BIT_AUTHORIZED_IPT);
+			 * @endcode
+			 *
+			 * @return true if online and successful authorized at IP-T master
+			 */
+			bool is_authorized() const;
+
+
 		private:
 			bool is_set(status_bits) const;
 			void set(status_bits);

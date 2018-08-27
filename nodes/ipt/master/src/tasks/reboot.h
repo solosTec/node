@@ -1,12 +1,12 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
-#ifndef NODE_IP_MASTER_TASK_OPEN_CONNECTION_H
-#define NODE_IP_MASTER_TASK_OPEN_CONNECTION_H
+#ifndef NODE_IP_MASTER_TASK_REBOOT_H
+#define NODE_IP_MASTER_TASK_REBOOT_H
 
 #include <smf/cluster/bus.h>
 #include <smf/ipt/defs.h>
@@ -14,11 +14,10 @@
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller.h>
 
-
 namespace node
 {
 
-	class open_connection
+	class reboot
 	{
 	public:
 		using msg_0 = std::tuple<ipt::response_type>;
@@ -26,16 +25,16 @@ namespace node
 		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
-		open_connection(cyng::async::base_task* bt
+		reboot(cyng::async::base_task* btp
 			, cyng::logging::log_ptr
 			, bus::shared_type bus
 			, cyng::controller& vm
-			, boost::uuids::uuid tag
-			, std::size_t seq
-			, std::string number
-			, cyng::param_map_t const& options
-			, cyng::param_map_t const& bag
-			, std::chrono::seconds timeout);
+			, boost::uuids::uuid tag_remote
+			, std::uint64_t seq_cluster		//	cluster seq
+			, cyng::buffer_t const& server	//	server id
+			, std::string user
+			, std::string pwd
+			, boost::uuids::uuid tag_ctx);
 		cyng::continuation run();
 		void stop();
 
@@ -54,17 +53,15 @@ namespace node
 		cyng::continuation process();
 
 	private:
+		void send_reboot_cmd();
+
+	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
-		bus::shared_type bus_;	//!< cluster bus
-		cyng::controller& vm_;	//!< ipt device
-		const boost::uuids::uuid tag_;	//!< origin session tag to address response
-		const std::size_t seq_;
-		const std::string number_;
-		const cyng::param_map_t options_;
-		const cyng::param_map_t bag_;
-		const std::chrono::seconds timeout_;
-		ipt::response_type response_;
+		cyng::controller& vm_;
+		const boost::uuids::uuid tag_remote_;
+		const cyng::buffer_t server_id_;
+		const std::string user_, pwd_;
 		const std::chrono::system_clock::time_point start_;
 		bool is_waiting_;
 	};

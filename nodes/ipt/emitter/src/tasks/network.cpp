@@ -228,3 +228,28 @@ namespace node
 
 	}
 }
+
+#include <cyng/async/task/task.hpp>
+
+namespace cyng {
+	namespace async {
+
+		//
+		//	initialize static slot names
+		//
+		template <>
+		std::map<std::string, std::size_t> cyng::async::task<node::ipt::network>::slot_names_({
+			{ "evt-authorized", node::ipt::bus::IPT_EVENT_AUTHORIZED },
+			{ "evt-offline", node::ipt::bus::IPT_EVENT_CONNECTION_TO_MASTER_LOST },
+			{ "evt-connection-open", node::ipt::bus::IPT_EVENT_INCOMING_CALL },
+			{ "evt-push-data", node::ipt::bus::IPT_EVENT_PUSH_DATA_RECEIVED },
+			{ "evt-target-registered", node::ipt::bus::IPT_EVENT_PUSH_TARGET_REGISTERED },
+			{ "evt-link-data", node::ipt::bus::IPT_EVENT_INCOMING_DATA },
+			{ "evt-target-deregistered", node::ipt::bus::IPT_EVENT_PUSH_TARGET_DEREREGISTERED },
+			{ "evt-connection-closed", node::ipt::bus::IPT_EVENT_CONNECTION_CLOSED },
+			{ "evt-channel-open", node::ipt::bus::IPT_EVENT_PUSH_CHANNEL_OPEN },
+			{ "evt-channel-closed", node::ipt::bus::IPT_EVENT_PUSH_CHANNEL_CLOSED }
+		});
+
+	}
+}

@@ -17,12 +17,14 @@ namespace node
 	{
 		push_ops::push_ops(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
+			, node::sml::status& status_word
 			, cyng::store::db& config_db
 			, node::ipt::bus::shared_type bus
 			, cyng::table::key_type const& key
 			, boost::uuids::uuid tag)
 		: base_(*btp)
 			, logger_(logger)
+			, status_word_(status_word)
 			, config_db_(config_db)
 			, bus_(bus)
 			, key_(key)
@@ -185,35 +187,41 @@ namespace node
 				}
 
 			}	, cyng::store::read_access("push.ops"));
-
-
 		}
 
 		void push_ops::push()
 		{
-			config_db_.access([&](cyng::store::table const* tbl) {
+			if (status_word_.is_authorized()) {
+				config_db_.access([&](cyng::store::table const* tbl) {
 
-				auto rec = tbl->lookup(this->key_);
-				const auto target(cyng::value_cast<std::string>(rec["target"], ""));
+					auto rec = tbl->lookup(this->key_);
+					const auto target(cyng::value_cast<std::string>(rec["target"], ""));
 
-				CYNG_LOG_INFO(logger_, "task #"
-					<< base_.get_id()
+					CYNG_LOG_INFO(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> open channel "
+						<< target);
+
+					bus_->vm_
+						.async_run(cyng::generate_invoke("req.open.push.channel", target, "", "", "", "", 0))
+						.async_run(cyng::generate_invoke("bus.store.rel.channel.open", cyng::invoke("ipt.push.seq"), base_.get_id(), target))
+						.async_run(cyng::generate_invoke("stream.flush", target))
+						.async_run(cyng::generate_invoke("log.msg.info", "req.open.push.channel", cyng::invoke("ipt.push.seq")))
+						;
+
+				}, cyng::store::read_access("push.ops"));
+			}
+			else {
+
+				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> open channel "
-					<< target);
+					<< "> is offline");
 
-				bus_->vm_
-					.async_run(cyng::generate_invoke("req.open.push.channel", target, "", "", "", "", 0))
-					.async_run(cyng::generate_invoke("bus.store.rel.channel.open", cyng::invoke("ipt.push.seq"), base_.get_id(), target))
-					.async_run(cyng::generate_invoke("stream.flush", target))
-					.async_run(cyng::generate_invoke("log.msg.info", "req.open.push.channel", cyng::invoke("ipt.push.seq")))
-					;
-
-			}, cyng::store::read_access("push.ops"));
-
-
+			}
 		}
 
 	}

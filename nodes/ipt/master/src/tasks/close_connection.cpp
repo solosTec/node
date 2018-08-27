@@ -8,7 +8,7 @@
 #include "close_connection.h"
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
-#include <cyng/async/task/task_builder.hpp>
+#include <cyng/async/task/base_task.h>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
 #include <boost/uuid/random_generator.hpp>
@@ -145,7 +145,7 @@ namespace node
 		return cyng::continuation::TASK_STOP;
 	}
 
-	//	slot 2
+	//	slot 1
 	cyng::continuation close_connection::process()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -158,4 +158,19 @@ namespace node
 		return cyng::continuation::TASK_STOP;
 	}
 
+
+}
+
+#include <cyng/async/task/task.hpp>
+
+namespace cyng {
+	namespace async {
+
+		//
+		//	initialize static slot names
+		//
+		template <>
+		std::map<std::string, std::size_t> cyng::async::task<node::close_connection>::slot_names_({ { "shutdown", 1 } });
+
+	}
 }

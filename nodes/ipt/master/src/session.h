@@ -112,6 +112,8 @@ namespace node
 			void store_relation(cyng::context& ctx);
 			void update_connection_state(cyng::context& ctx);
 			void client_req_reboot(cyng::context& ctx);
+			void client_req_query_srv_visible(cyng::context& ctx);
+			void client_req_query_srv_active(cyng::context& ctx);
 
 		private:
 			cyng::async::mux& mux_;
@@ -136,11 +138,6 @@ namespace node
 			 * gatekeeper task
 			 */
 			const std::size_t gate_keeper_;
-
-			/**
-			 * close connection task ID
-			 */
-			std::size_t tsk_close_connection_;
 
 			/**
 			 * contains state of local connections

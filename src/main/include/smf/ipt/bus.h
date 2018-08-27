@@ -36,6 +36,7 @@ namespace node
 		 */
 		class bus : public std::enable_shared_from_this<bus>
 		{
+		public:
 			enum ipt_events : std::size_t  {
 				IPT_EVENT_AUTHORIZED,
 				IPT_EVENT_CONNECTION_TO_MASTER_LOST,

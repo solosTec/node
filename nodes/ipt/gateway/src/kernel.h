@@ -73,16 +73,16 @@ namespace node
 
 		public:
 			/**
-			* Global status word
-			*/
+			 * global state
+			 */
 			status&	status_word_;
 
 		private:
 			cyng::logging::log_ptr logger_;
 
 			/**
-			* configuration db
-			*/
+			 * configuration db
+			 */
 			cyng::store::db& config_db_;
 			node::ipt::master_config_t const& cfg_ipt_;
 
