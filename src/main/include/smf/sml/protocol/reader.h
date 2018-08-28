@@ -1,12 +1,12 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
-#ifndef NODE_SML_EXPORTER_DB_H
-#define NODE_SML_EXPORTER_DB_H
+#ifndef NODE_LIB_READER_H
+#define NODE_LIB_READER_H
 
 
 #include <smf/sml/defs.h>
@@ -26,7 +26,7 @@ namespace node
 		 * walk down SML message body recursively, collect data
 		 * and create an XML document.
 		 */
-		class sml_reader
+		class reader
 		{
 			struct readout
 			{
@@ -37,6 +37,7 @@ namespace node
 				readout& set_trx(cyng::buffer_t const&);
 				readout& set_index(std::size_t);
 				readout& set_value(std::string const&, cyng::object);
+				readout& set_value(obis, cyng::object);
 				cyng::object get_value(std::string const&) const;
 
 				boost::uuids::uuid pk_;
@@ -46,7 +47,7 @@ namespace node
 			};
 
 		public:
-			sml_reader();
+			reader();
 
 			/**
 			 * reset exporter
@@ -54,6 +55,9 @@ namespace node
 			void reset();
 
 			cyng::vector_t read(cyng::tuple_t const&, std::size_t idx);
+
+			cyng::vector_t read_choice(cyng::tuple_t const&);
+			void set_trx(cyng::buffer_t const&);
 
 		private:
 			/**
@@ -64,6 +68,7 @@ namespace node
 			cyng::vector_t read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_public_close_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t read_public_close_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_get_profile_list_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_get_proc_parameter_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_get_proc_parameter_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
@@ -71,8 +76,15 @@ namespace node
 			cyng::vector_t read_attention_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
 			cyng::vector_t read_set_proc_parameter_request_tree(std::vector<obis> path
-				, std::size_t index
+				, std::size_t depth
 				, cyng::tuple_t::const_iterator pos
+				, cyng::tuple_t::const_iterator end);
+
+			cyng::vector_t read_get_proc_parameter_response(std::vector<obis> path
+				, std::size_t depth
+				, cyng::tuple_t::const_iterator pos
+				, cyng::tuple_t::const_iterator end);
+			void read_get_proc_single_parameter(cyng::tuple_t::const_iterator pos
 				, cyng::tuple_t::const_iterator end);
 
 			cyng::object read_time(std::string const&, cyng::object);
@@ -82,7 +94,7 @@ namespace node
 			std::int8_t read_scaler(cyng::object);
 			std::string read_string(std::string const&, cyng::object);
 			void read_value(obis, std::int8_t, std::uint8_t, cyng::object);
-			cyng::attr_t read_parameter(obis, cyng::object);
+			cyng::attr_t read_parameter(cyng::object);
 			std::string read_server_id(cyng::object);
 			std::string read_client_id(cyng::object);
 

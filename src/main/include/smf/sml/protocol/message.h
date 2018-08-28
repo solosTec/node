@@ -72,6 +72,16 @@ namespace node
 
 		/**
 		 * @param server_id
+		 * @param code parameter tree path
+		 * @param params parameter tree
+		 */
+		cyng::tuple_t get_proc_parameter_request(cyng::object server_id
+			, std::string const& username
+			, std::string const& password
+			, obis code);
+
+		/**
+		 * @param server_id
 		 * @param username
 		 * @param password
 		 * @param code parameter tree path

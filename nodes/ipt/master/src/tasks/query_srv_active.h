@@ -10,6 +10,7 @@
 
 #include <smf/cluster/bus.h>
 #include <smf/ipt/defs.h>
+#include <smf/sml/protocol/parser.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller.h>
@@ -21,9 +22,11 @@ namespace node
 	class query_srv_active
 	{
 	public:
-		using msg_0 = std::tuple<ipt::response_type>;
+		using msg_0 = std::tuple<boost::uuids::uuid>;
 		using msg_1 = std::tuple<>;
-		using signatures_t = std::tuple<msg_0, msg_1>;
+		using msg_2 = std::tuple<cyng::buffer_t>;
+		using msg_3 = std::tuple<cyng::buffer_t, std::uint8_t, std::uint8_t, cyng::tuple_t, std::uint16_t>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3>;
 
 	public:
 		query_srv_active(cyng::async::base_task* btp
@@ -35,6 +38,7 @@ namespace node
 			, cyng::buffer_t const& server	//	server id
 			, std::string user
 			, std::string pwd
+			, std::chrono::seconds timeout
 			, boost::uuids::uuid tag_ctx);
 		cyng::continuation run();
 		void stop();
@@ -44,7 +48,7 @@ namespace node
 		 *
 		 * sucessful cluster login
 		 */
-		cyng::continuation process(ipt::response_type);
+		cyng::continuation process(boost::uuids::uuid);
 
 		/**
 		 * @brief slot [1]
@@ -53,6 +57,23 @@ namespace node
 		 */
 		cyng::continuation process();
 
+		/**
+		 * @brief slot [2]
+		 *
+		 * get response (SML)
+		 */
+		cyng::continuation process(cyng::buffer_t const&);
+
+		/**
+		 * @brief slot [3]
+		 *
+		 * get SML tree
+		 */
+		cyng::continuation process(cyng::buffer_t trx, std::uint8_t, std::uint8_t, cyng::tuple_t msg, std::uint16_t crc);
+
+	private:
+		void send_query_cmd();
+
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
@@ -60,7 +81,10 @@ namespace node
 		const boost::uuids::uuid tag_remote_;
 		const cyng::buffer_t server_id_;
 		const std::string user_, pwd_;
+		const std::chrono::seconds timeout_;
+		const boost::uuids::uuid tag_ctx_;
 		const std::chrono::system_clock::time_point start_;
+		sml::parser parser_;
 		bool is_waiting_;
 	};
 	

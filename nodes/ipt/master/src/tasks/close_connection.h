@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IP_MASTER_TASK_CLOSE_CONNECTION_H
 #define NODE_IP_MASTER_TASK_CLOSE_CONNECTION_H

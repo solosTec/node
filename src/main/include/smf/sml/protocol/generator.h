@@ -139,6 +139,20 @@ namespace node
 				, std::string const& username
 				, std::string const& password);
 
+			/**
+			 * get list of visible servers/meters - 81 81 10 06 FF FF
+			 */
+			std::size_t get_proc_parameter_srv_visible(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password);
+
+			/**
+			 * get list of active servers/meters - 81 81 11 06 FF FF
+			 */
+			std::size_t get_proc_parameter_srv_active(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password);
+
 		private:
 			trx	trx_;
 		};

@@ -28,8 +28,47 @@ namespace node
 			struct connect_state
 			{
 				connect_state();
-				bool connected_local_;
+
+				enum {
+					STATE_OFFLINE,	//	no connection at all
+					STATE_LOCAL,	//	open connection to party on the same node
+					STATE_REMOTE,	//	open connection to party on different node
+					STATE_TASK		//	data stream linked to task
+				} state_;
+
+				/**
+				 * active task
+				 */
+				std::size_t tsk_;
+
+				/**
+				 * open a local/remote connection
+				 */
+				void open_connection(bool);
+
+				/**
+				 * send data to a task
+				 */
+				void open_connection(std::size_t);
+
+				/**
+				 * Close any kind of connection
+				 */
+				void close_connection();
+
+				/**
+				 * @return true if state is not OFFLINE
+				 */
+				bool is_connected() const;
+
+				/**
+				 * stream connection state as text
+				 */
+				friend std::ostream& operator<<(std::ostream& os, connect_state const& cs);
+
 			};
+
+			friend std::ostream& operator<<(std::ostream& os, session::connect_state const& cs);
 
 		public:
 			session(cyng::async::mux& mux
@@ -111,9 +150,19 @@ namespace node
 
 			void store_relation(cyng::context& ctx);
 			void update_connection_state(cyng::context& ctx);
+			void redirect(cyng::context& ctx);
 			void client_req_reboot(cyng::context& ctx);
 			void client_req_query_srv_visible(cyng::context& ctx);
 			void client_req_query_srv_active(cyng::context& ctx);
+
+			//
+			//	SML data
+			//
+			void sml_msg(cyng::context& ctx);
+			void sml_eom(cyng::context& ctx);
+			void sml_public_open_response(cyng::context& ctx);
+			void sml_public_close_response(cyng::context& ctx);
+			void sml_get_proc_param_srv_visible(cyng::context& ctx);
 
 		private:
 			cyng::async::mux& mux_;
@@ -148,6 +197,7 @@ namespace node
 			std::size_t log_counter_;
 #endif
 		};
+
 	}
 }
 

@@ -49,8 +49,8 @@ set (node_ipt_gateway_server
 	nodes/ipt/gateway/src/session.cpp
 	nodes/ipt/gateway/src/server.h
 	nodes/ipt/gateway/src/server.cpp
-	nodes/ipt/gateway/src/sml_reader.h
-	nodes/ipt/gateway/src/sml_reader.cpp
+#	nodes/ipt/gateway/src/sml_reader.h
+#	nodes/ipt/gateway/src/sml_reader.cpp
 
 )
 

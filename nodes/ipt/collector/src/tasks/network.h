@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IPT_COLLECTOR_TASK_NETWORK_H
 #define NODE_IPT_COLLECTOR_TASK_NETWORK_H

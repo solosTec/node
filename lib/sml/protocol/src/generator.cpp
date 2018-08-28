@@ -93,7 +93,7 @@ namespace node
 		{
 			BOOST_ASSERT_MSG(msg_.empty(), "pending SML data");
 			return append_msg(message(cyng::make_object(*trx_)	//	trx
-				, 0	//	group
+				, group_no_++	//	group
 				, 0 // abort code
 				, BODY_OPEN_REQUEST
 
@@ -115,7 +115,7 @@ namespace node
 		{
 			++trx_;
 			return append_msg(message(cyng::make_object(*trx_)
-				, 0	//	group
+				, 0	//	group is 0 for CLOSE REQUEST
 				, 0 //	abort code
 				, BODY_CLOSE_REQUEST
 
@@ -133,9 +133,9 @@ namespace node
 		{
 			++trx_;
 			return append_msg(message(cyng::make_object(*trx_)
-				, 0	//	group
+				, group_no_++	//	group
 				, 0 //	abort code
-				, BODY_SET_PROC_PARAMETER_REQUEST
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600
 
 				//
 				//	generate public open response
@@ -145,6 +145,49 @@ namespace node
 					, password
 					, OBIS_CODE_REBOOT
 					, empty_tree(OBIS_CODE_REBOOT))
+				)
+			);
+		}
+
+		std::size_t req_generator::get_proc_parameter_srv_visible(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password)
+		{
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
+
+				//
+				//	generate sequence
+				//
+				, get_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, OBIS_CODE_ROOT_VISIBLE_DEVICES)
+				)
+			);
+
+		}
+
+		std::size_t req_generator::get_proc_parameter_srv_active(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password)
+		{
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
+
+				//
+				//	generate public open response
+				//
+				, get_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, OBIS_CODE_ROOT_ACTIVE_DEVICES)
 				)
 			);
 		}
@@ -161,7 +204,7 @@ namespace node
 			BOOST_ASSERT_MSG(msg_.empty(), "pending SML data");
 
 			return append_msg(message(trx	//	trx
-				, 0	//	group
+				, group_no_++	//	group
 				, 0 // abort code
 				, BODY_OPEN_RESPONSE
 
@@ -181,7 +224,7 @@ namespace node
 		std::size_t res_generator::public_close(cyng::object trx)
 		{
 			return append_msg(message(trx
-				, 0	//	group
+				, 0	//	group is 0 for CLOSE RESPONSE
 				, 0 //	abort code
 				, BODY_CLOSE_RESPONSE
 

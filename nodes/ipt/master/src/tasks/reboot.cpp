@@ -1,14 +1,18 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #include "reboot.h"
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/protocol/generator.h>
 #include <cyng/vm/generator.h>
+#ifdef SMF_IO_LOG
+#include <cyng/io/hex_dump.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#endif
 
 namespace node
 {
@@ -139,28 +143,37 @@ namespace node
 		sml_gen.public_open(cyng::mac48(), server_id_, user_, pwd_);
 		sml_gen.set_proc_parameter_restart(server_id_, user_, pwd_);
 		sml_gen.public_close();
-		//cyng::buffer_t msg = sml_gen.boxing();
+		cyng::buffer_t msg = sml_gen.boxing();
 
 #ifdef SMF_IO_LOG
 		cyng::io::hex_dump hd;
 		hd(std::cerr, msg.begin(), msg.end());
 #endif
 
-		//	[0000]  1b 1b 1b 1b 01 01 01 01  76 0a 33 34 35 36 34 35  ........ v.345645
-		//	[0010]  30 2d 31 62 00 62 00 72  63 01 00 77 01 07 00 00  0-1b.b.r c..w....
-		//	[0020]  00 00 00 00 0f 32 30 31  38 30 36 30 38 31 36 30  .....201 80608160
-		//	[0030]  32 34 39 01 09 6f 70 65  72 61 74 6f 72 09 6f 70  249..ope rator.op
-		//	[0040]  65 72 61 74 6f 72 01 63  8c ad 00 76 0a 33 34 35  erator.c ...v.345
-		//	[0050]  36 34 35 30 2d 32 62 00  62 00 72 63 06 00 75 01  6450-2b. b.rc..u.
-		//	[0060]  09 6f 70 65 72 61 74 6f  72 09 6f 70 65 72 61 74  .operato r.operat
-		//	[0070]  6f 72 71 07 81 81 c7 83  82 01 73 07 81 81 c7 83  orq..... ..s.....
-		//	[0080]  82 01 01 01 63 7f cc 00  76 0a 33 34 35 36 34 35  ....c... v.345645
-		//	[0090]  30 2d 33 62 00 62 00 72  63 02 00 71 01 63 05 32  0-3b.b.r c..q.c.2
-		//	[00a0]  00 00 00 00 1b 1b 1b 1b  1a 03 c0 ea              ........ ....
+		//  [0010]  38 2d 31 62 00 62 00 72  63 01 00 77 01 07 00 00  8-1b.b.r c..w....
+		//  [0020]  00 00 00 00 0f 32 30 31  38 30 38 32 37 32 31 32  .....201 80827212
+		//  [0030]  35 34 35 08 05 00 15 3b  02 51 7e 09 6f 70 65 72  545....; .Q~.oper
+		//  [0040]  61 74 6f 72 09 6f 70 65  72 61 74 6f 72 01 63 bb  ator.ope rator.c.
+		//  [0050]  c5 00 76 0a 34 38 31 32  37 32 38 2d 32 62 01 62  ..v.4812 728-2b.b
+		//  [0060]  00 72 63 06 00 75 08 05  00 15 3b 02 51 7e 09 6f  .rc..u.. ..;.Q~.o
+		//  [0070]  70 65 72 61 74 6f 72 09  6f 70 65 72 61 74 6f 72  perator. operator
+		//  [0080]  71 07 81 81 c7 83 82 01  73 07 81 81 c7 83 82 01  q....... s.......
+		//  [0090]  01 01 63 c0 c4 00 76 0a  34 38 31 32 37 32 38 2d  ..c...v. 4812728-
+		//  [00a0]  33 62 00 62 00 72 63 02  00 71 01 63 e6 3b 00 00  3b.b.rc. .q.c.;..
+		//  [00b0]  1b 1b 1b 1b 1a 01 a8 c1                           ........
 
-		vm_	.async_run(cyng::generate_invoke("ipt.transfer.data", sml_gen.boxing()))
+		vm_	.async_run(cyng::generate_invoke("ipt.transfer.data", std::move(msg)))
 			.async_run(cyng::generate_invoke("stream.flush"));
 
+		//
+		//	send attention codes as response
+		//
+		//[2018-08-27 21:25:45.14689820] INFO  17580 -- session.e951c3e7-b792-4e62-b965-5a885c4b67ba - [ipt connection received,70,bytes]
+		//[2018-08-27 21:25:45.14873530] TRACE  2908 -- e951c3e7-b792-4e62-b965-5a885c4b67ba: [op:ESBA,op:IDENT,1B1B1B1B01010101760A343831323732382D3162006200726301017601070000000000000F3230313830383237323132353435080500153B02517E0162016361DC00,ipt.req.transmit.data,op:INVOKE,op:REBA]
+		//[2018-08-27 21:25:45.14974420] TRACE 11248 -- write debug log ipt-rx-e951c3e7-b792-4e62-b965-5a885c4b67ba-0001.log
+		//[2018-08-27 21:25:45.19014000] INFO  11248 -- session.e951c3e7-b792-4e62-b965-5a885c4b67ba - [ipt connection received,118,bytes]
+		//[2018-08-27 21:25:45.19024840] INFO   2908 -- 6 ipt instructions received
+		//[2018-08-27 21:25:45.19026500] TRACE  2908 -- e951c3e7-b792-4e62-b965-5a885c4b67ba: [op:ESBA,op:IDENT,760A343831323732382D32620162007263FF0174080500153B02517E078181C7C7FE038206756E61626C6520746F2066696E6420726563697069656E7420666F7220726571756573740163FD6D00760A343831323732382D3362006200726302017101633A61000000001B1B1B1B1A033C16,ipt.req.transmit.data,op:INVOKE,op:REBA]
 	}
 
 }

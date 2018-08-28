@@ -347,6 +347,9 @@ namespace node
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
 
+		//
+		//	Boost gateway records with additional data from the TDevice table
+		//
 		if (boost::algorithm::equals(std::get<0>(tpl), "TGateway"))
 		{
 			//
@@ -367,21 +370,19 @@ namespace node
 				//	set firmware
 				//	set online state
 				//
-				if (dev_rec.empty())
-				{
-					std::get<2>(tpl).push_back(cyng::make_object("-"));
-					std::get<2>(tpl).push_back(cyng::make_object("-"));
-					std::get<2>(tpl).push_back(cyng::make_object("-"));
-				}
-				else
+				if (!dev_rec.empty())
 				{
 					std::get<2>(tpl).push_back(dev_rec["name"]);
 					std::get<2>(tpl).push_back(dev_rec["serverId"]);
 					std::get<2>(tpl).push_back(dev_rec["vFirmware"]);
+					std::get<2>(tpl).push_back(cyng::make_object(!ses_rec.empty()));
 				}
-				std::get<2>(tpl).push_back(cyng::make_object(!ses_rec.empty()));
-
-
+				else
+				{
+					CYNG_LOG_WARNING(logger_, "res.subscribe - gateway"
+						<< cyng::io::to_str(std::get<1>(tpl))
+						<< " has no associated device");
+				}
 			}	, cyng::store::read_access("TDevice")
 				, cyng::store::read_access("_Session"));
 

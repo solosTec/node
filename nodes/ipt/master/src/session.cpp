@@ -11,11 +11,12 @@
 #include "tasks/close_connection.h"
 #include "tasks/gatekeeper.h"
 #include "tasks/reboot.h"
+#include "tasks/query_srv_visible.h"
+#include "tasks/query_srv_active.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/scramble_key_io.hpp>
-//#include <smf/sml/protocol/generator.h>
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/store_domain.h>
 #include <cyng/io/serializer.h>
@@ -72,9 +73,16 @@ namespace node
 
 			vm_.register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1));
 			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
+			vm_.register_function("session.redirect", 1, std::bind(&session::redirect, this, std::placeholders::_1));
 			vm_.register_function("client.req.reboot", 5, std::bind(&session::client_req_reboot, this, std::placeholders::_1));
 			vm_.register_function("client.req.query.srv.visible", 5, std::bind(&session::client_req_query_srv_visible, this, std::placeholders::_1));
 			vm_.register_function("client.req.query.srv.active", 5, std::bind(&session::client_req_query_srv_active, this, std::placeholders::_1));
+
+			vm_.register_function("sml.msg", 2, std::bind(&session::sml_msg, this, std::placeholders::_1));
+			vm_.register_function("sml.eom", 2, std::bind(&session::sml_eom, this, std::placeholders::_1));
+			vm_.register_function("sml.public.open.response", 6, std::bind(&session::sml_public_open_response, this, std::placeholders::_1));
+			vm_.register_function("sml.public.close.response", 3, std::bind(&session::sml_public_close_response, this, std::placeholders::_1));
+			vm_.register_function("sml.get.proc.param.srv.visible", 9, std::bind(&session::sml_get_proc_param_srv_visible, this, std::placeholders::_1));
 
 			//
 			//	register request handler
@@ -336,13 +344,46 @@ namespace node
 		void session::update_connection_state(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "session.update.connection.state " << cyng::io::to_str(frame));
 			auto const tpl = cyng::tuple_cast<
 				boost::uuids::uuid,		//	[0] remote tag
 				bool					//	[1] new state
 			>(frame);
 
-			connect_state_.connected_local_ = std::get<1>(tpl);
+			connect_state_.open_connection(std::get<1>(tpl));
+			CYNG_LOG_INFO(logger_, "session.update.connection.state " 
+				<< std::get<1>(tpl)
+				<< ": "
+				<< connect_state_);
+		}
+
+		void session::redirect(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+
+			if (!connect_state_.is_connected()) {
+
+				auto tsk = cyng::value_cast<std::size_t>(frame.at(0), cyng::async::NO_TASK);
+				connect_state_.open_connection(tsk);
+				CYNG_LOG_INFO(logger_, "session.redirect "
+					<< ctx.tag()
+					<< ": "
+					<< connect_state_);
+
+				mux_.post(tsk, 0, cyng::tuple_factory(ctx.tag()));
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "session.redirect "
+					<< ctx.tag()
+					<< " - session is busy: "
+					<< connect_state_);
+			}
+
+			//connect_state_.open_connection(std::get<1>(tpl));
+			//CYNG_LOG_INFO(logger_, "session.update.connection.state "
+			//	<< std::get<1>(tpl)
+			//	<< ": "
+			//	<< connect_state_);
+
 		}
 
 		void session::client_req_reboot(cyng::context& ctx)
@@ -385,6 +426,19 @@ namespace node
 				std::string				//	[4] pwd
 			>(frame);
 
+			const std::size_t tsk = cyng::async::start_task_sync<query_srv_visible>(mux_
+				, logger_
+				, bus_
+				, vm_
+				, std::get<0>(tpl)	//	remote tag
+				, std::get<1>(tpl)	//	cluster seq
+				, std::get<2>(tpl)	//	server ID
+				, std::get<3>(tpl)	//	name
+				, std::get<4>(tpl)	//	password
+				, timeout_
+				, ctx.tag()).first;	//	ctx tag
+
+			CYNG_LOG_TRACE(logger_, "client.req.query.srv.visible - task #" << tsk);
 		}
 
 		void session::client_req_query_srv_active(cyng::context& ctx)
@@ -398,6 +452,20 @@ namespace node
 				std::string,			//	[3] name
 				std::string				//	[4] pwd
 			>(frame);
+
+			const std::size_t tsk = cyng::async::start_task_sync<query_srv_active>(mux_
+				, logger_
+				, bus_
+				, vm_
+				, std::get<0>(tpl)	//	remote tag
+				, std::get<1>(tpl)	//	cluster seq
+				, std::get<2>(tpl)	//	server ID
+				, std::get<3>(tpl)	//	name
+				, std::get<4>(tpl)	//	password
+				, timeout_
+				, ctx.tag()).first;	//	ctx tag
+
+			CYNG_LOG_TRACE(logger_, "client.req.query.srv.active - task #" << tsk);
 		}
 
 		void session::ipt_req_login_public(cyng::context& ctx)
@@ -670,12 +738,18 @@ namespace node
 					of.close();
 				}
 #endif
+				CYNG_LOG_DEBUG(logger_, "transmit data in connection state " << connect_state_);
 
-				if (connect_state_.connected_local_)
-				{
+				//
+				//	data destination depends on connection state
+				//
+				switch (connect_state_.state_) {
+
+				case connect_state::STATE_LOCAL:
 					bus_->vm_.async_run(cyng::generate_invoke("server.transmit.data", tag, frame.at(1)));
-				}
-				else
+					break;
+
+				case connect_state::STATE_REMOTE:
 				{
 					cyng::param_map_t bag;
 					bag["tp-layer"] = cyng::make_object("ipt");
@@ -684,6 +758,16 @@ namespace node
 						, bag
 						, frame.at(1)));
 				}
+					break;
+				case connect_state::STATE_TASK:
+					//	send data to task
+					mux_.post(connect_state_.tsk_, 2, cyng::tuple_factory(frame.at(1)));
+					break;
+
+				default:
+					break;
+				}
+
 			}
 			else
 			{
@@ -1399,7 +1483,7 @@ namespace node
 				//
 				//	reset connection state
 				//
-				connect_state_.connected_local_ = false;
+				connect_state_.close_connection();
 			}
 			else
 			{
@@ -1450,8 +1534,8 @@ namespace node
 				//	hides outer variable dom
 				//
 				auto dom = cyng::make_reader(std::get<3>(tpl));
-				BOOST_ASSERT_MSG(!connect_state_.connected_local_, "already connected");
-				connect_state_.connected_local_ = cyng::value_cast(dom.get("local-connect"), false);
+				BOOST_ASSERT_MSG(!connect_state_.is_connected(), "already connected");
+				connect_state_.open_connection(cyng::value_cast(dom.get("local-connect"), false));
 			}
 			else
 			{
@@ -1756,9 +1840,181 @@ namespace node
 			}
 		}
 
+		void session::sml_msg(cyng::context& ctx)
+		{
+			//
+			//	1. tuple containing the SML data tree
+			//	2. message index
+			//
+
+			const cyng::vector_t frame = ctx.get_frame();
+
+			//
+			//	print sml message number
+			//
+			const std::size_t idx = cyng::value_cast<std::size_t>(frame.at(1), 0);
+			CYNG_LOG_INFO(logger_, "SML processor sml.msg #"
+				<< idx);
+
+			//
+			//	get message body
+			//
+			cyng::tuple_t msg;
+			msg = cyng::value_cast(frame.at(0), msg);
+
+			CYNG_LOG_DEBUG(logger_, "SML message " 
+				<< cyng::io::to_str(msg));
+
+			if (connect_state_.state_ == connect_state::STATE_TASK) {
+				mux_.post(connect_state_.tsk_, 3, std::move(msg));
+				//mux_.post(connect_state_.tsk_, 3, cyng::tuple_factory(idx, msg));
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "sml.msg #"
+					<< idx
+					<< " - session in wrong state: "
+					<< connect_state_);
+
+			}
+
+		}
+
+		void session::sml_eom(cyng::context& ctx)
+		{
+			//	[5213,3]
+			//
+			//	* CRC
+			//	* message counter
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.eom " 
+				<< connect_state_
+				<< " - "
+				<< cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				std::uint16_t,	//	[0] CRC
+				std::size_t		//	[1] message index
+			>(frame);
+
+			if (connect_state_.state_ == connect_state::STATE_TASK) {
+				mux_.post(connect_state_.tsk_, 1, cyng::tuple_t{});
+				connect_state_.close_connection();
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "sml.eom - session in wrong state: "
+					<< connect_state_
+					<< " - "
+					<< cyng::io::to_str(frame));
+
+			}
+		}
+
+		void session::sml_public_open_response(cyng::context& ctx)
+		{
+			//	 [6f5fade9-5364-4c7c-b8e3-cb74f16361d8,,0,000000000000,0500153B0223B3,20180828184625]
+			//
+			//	* [uuid] pk
+			//	* [buffer] trx
+			//	* [size_t] idx
+			//	* clientId
+			//	* serverId
+			//	* reqFileId
+
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.public.open.response "
+				<< connect_state_
+				<< " - "
+				<< cyng::io::to_str(frame));
+
+		}
+
+		void session::sml_public_close_response(cyng::context& ctx)
+		{
+			//	 [d937611f-1d91-41c0-84e7-52f0f6ab36bc,,0]
+			//
+			//	* [uuid] pk
+			//	* [buffer] trx
+			//	* [size_t] idx
+
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.public.close.response "
+				<< connect_state_
+				<< " - "
+				<< cyng::io::to_str(frame));
+		}
+
+		void session::sml_get_proc_param_srv_visible(cyng::context& ctx)
+		{
+			//	[916a8e4a-d11f-4d21-a393-ed132c485670,1654296-2,0,0500153B0223B3,00000001,0000000b,01A815743145040102,2D2D2D,2018-08-28 11:58:53.00000000]
+			//
+			//	* [uuid] pk
+			//	* [buffer] trx
+			//	* [size_t] idx
+			//	* server id
+			//	* element nr
+			//	* list nr
+			//	* meter ID
+			//	* device class (always "---")
+			//	* [timetsamp] UTC/last status message
+
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "sml.get.proc.param.srv.visible "
+				<< connect_state_
+				<< " - "
+				<< cyng::io::to_str(frame));
+		}
+
 		session::connect_state::connect_state()
-			: connected_local_(false)
+			: state_(STATE_OFFLINE)
+			, tsk_(cyng::async::NO_TASK)
 		{}
+
+		void session::connect_state::open_connection(bool b)
+		{
+			state_ = b
+				? STATE_LOCAL
+				: STATE_REMOTE
+				;
+		}
+
+		void session::connect_state::open_connection(std::size_t tsk)
+		{
+			state_ = STATE_TASK;
+			tsk_ = tsk;
+		}
+
+		void session::connect_state::close_connection()
+		{
+			state_ = STATE_OFFLINE;
+			tsk_ = 0u;
+		}
+
+		bool session::connect_state::is_connected() const
+		{
+			return state_ != STATE_OFFLINE;
+		}
+
+		std::ostream& operator<<(std::ostream& os, session::connect_state const& cs)
+		{
+			switch (cs.state_) {
+			case session::connect_state::STATE_OFFLINE:
+				os << "offline";
+				break;
+			case session::connect_state::STATE_LOCAL:
+				os << "local";
+				break;
+			case session::connect_state::STATE_REMOTE:
+				os << "remote";
+				break;
+			case session::connect_state::STATE_TASK:
+				os << "task #" << cs.tsk_;
+				break;
+			default:
+				break;
+			}
+			return os;
+		}
 
 	}
 }

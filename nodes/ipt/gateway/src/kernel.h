@@ -12,7 +12,7 @@
 #include <smf/sml/defs.h>
 #include <smf/sml/status.h>
 #include <smf/ipt/config.h>
-#include "sml_reader.h"
+#include <smf/sml/protocol/reader.h>
 #include <smf/sml/protocol/generator.h>
 
 #include <cyng/log.h>
@@ -24,8 +24,8 @@ namespace node
 	namespace sml
 	{
 		/**
-		* Provide core functions of an SML gateway
-		*/
+		 * Provide core functions of an SML gateway
+		 */
 		class kernel
 		{
 		public:
@@ -55,6 +55,7 @@ namespace node
 
 			void sml_public_open_request(cyng::context& ctx);
 			void sml_public_close_request(cyng::context& ctx);
+			void sml_public_close_response(cyng::context& ctx);
 			void sml_get_proc_parameter_request(cyng::context& ctx);
 			void sml_get_proc_ntp_config(cyng::object trx, cyng::object server);
 			//void sml_get_proc_device_time(cyng::context& ctx);
@@ -99,9 +100,9 @@ namespace node
 			const cyng::buffer_t server_id_;
 
 			/**
-			* read SML tree and generate commands
-			*/
-			sml_reader reader_;
+			 * read SML tree and generate commands
+			 */
+			reader reader_;
 
 			/**
 			 * buffer for current SML message

@@ -65,6 +65,7 @@ namespace node
 			//
 			vm.register_function("sml.public.open.request", 8, std::bind(&kernel::sml_public_open_request, this, std::placeholders::_1));
 			vm.register_function("sml.public.close.request", 3, std::bind(&kernel::sml_public_close_request, this, std::placeholders::_1));
+			vm.register_function("sml.public.close.response", 3, std::bind(&kernel::sml_public_close_response, this, std::placeholders::_1));
 
 			vm.register_function("sml.get.proc.parameter.request", 8, std::bind(&kernel::sml_get_proc_parameter_request, this, std::placeholders::_1));
 
@@ -216,7 +217,7 @@ namespace node
 			//	* transaction id
 			//	* SML message id
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "sml.public.close.request " << cyng::io::to_str(frame));
+			CYNG_LOG_DEBUG(logger_, "sml.public.close.request " << cyng::io::to_str(frame));
 
 			auto const tpl = cyng::tuple_cast<
 				boost::uuids::uuid,	//	[0] pk
@@ -236,6 +237,26 @@ namespace node
 			//	append to current SML message
 			//
 			sml_gen_.public_close(frame.at(1));
+		}
+
+		void kernel::sml_public_close_response(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_DEBUG(logger_, "sml.public.close.response " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::size_t			//	[2] msg id
+			>(frame);
+
+			//	sml.public.close.response - trx: 180523152649286995-4, msg id:
+			CYNG_LOG_INFO(logger_, "sml.public.close.response - trx: "
+				<< std::get<1>(tpl)
+				<< ", msg id: "
+				<< std::get<2>(tpl))
+				;
+
 		}
 
 		void kernel::sml_get_proc_parameter_request(cyng::context& ctx)

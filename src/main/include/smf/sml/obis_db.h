@@ -54,6 +54,7 @@ namespace node
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 03, FF, DATA_MANUFACTURER);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 05, FF, DATA_PUBLIC_KEY);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 81, FF, DATA_IP_ADDRESS);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 03, FF, DATA_AES_KEY);
 		const static obis	DEFINE_OBIS_CODE(81, 81, 61, 3C, 01, FF, DATA_USER_NAME);
 		const static obis	DEFINE_OBIS_CODE(81, 81, 61, 3C, 02, FF, DATA_USER_PWD);
@@ -216,7 +217,7 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 00, ATTENTION_UNKNOWN_ERROR);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 01, ATTENTION_UNKNOWN_SML_ID);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 02, ATTENTION_NOT_AUTHORIZED);
-		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 03, ATTENTION_NO_SERVER_ID);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 03, ATTENTION_NO_SERVER_ID);	//	unable to find recipient for request
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 04, ATTENTION_NO_REQ_FIELD);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 05, ATTENTION_CANNOT_WRITE);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 06, ATTENTION_CANNOT_READ);

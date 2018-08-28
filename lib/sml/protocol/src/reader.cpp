@@ -1,11 +1,11 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
-#include "sml_reader.h"
+#include <smf/sml/protocol/reader.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/srv_id_io.h>
@@ -19,6 +19,7 @@
 #include <cyng/xml.h>
 #include <cyng/factory.h>
 #include <cyng/vm/generator.h>
+#include <cyng/vm/manip.h>
 #include <cyng/io/swap.h>
 
 #include <boost/uuid/nil_generator.hpp>
@@ -28,24 +29,24 @@ namespace node
 	namespace sml
 	{
 
-		sml_reader::sml_reader()
+		reader::reader()
 			: rgn_()
 			, ro_(rgn_())
 		{
 			reset();
 		}
 
-		void sml_reader::reset()
+		void reader::reset()
 		{
 			ro_.reset(rgn_(), 0);
 		}
 
-		cyng::vector_t sml_reader::read(cyng::tuple_t const& msg, std::size_t idx)
+		cyng::vector_t reader::read(cyng::tuple_t const& msg, std::size_t idx)
 		{
 			return read_msg(msg.begin(), msg.end(), idx);
 		}
 
-		cyng::vector_t sml_reader::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end, std::size_t idx)
+		cyng::vector_t reader::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end, std::size_t idx)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
@@ -89,12 +90,13 @@ namespace node
 			//
 			cyng::tuple_t choice;
 			choice = cyng::value_cast(*pos++, choice);
-			BOOST_ASSERT_MSG(choice.size() == 2, "CHOICE");
-			if (choice.size() == 2)
-			{
-				ro_.set_value("code", choice.front());
-				prg << cyng::unwinder(read_body(choice.front(), choice.back()));
-			}
+			prg << cyng::unwinder(read_choice(choice));
+			//BOOST_ASSERT_MSG(choice.size() == 2, "CHOICE");
+			//if (choice.size() == 2)
+			//{
+			//	ro_.set_value("code", choice.front());
+			//	prg << cyng::unwinder(read_body(choice.front(), choice.back()));
+			//}
 
 			//
 			//	(6) CRC16
@@ -104,7 +106,23 @@ namespace node
 			return prg;
 		}
 
-		cyng::vector_t sml_reader::read_body(cyng::object type, cyng::object body)
+		void reader::set_trx(cyng::buffer_t const& trx)
+		{
+			ro_.set_trx(trx);
+		}
+
+		cyng::vector_t reader::read_choice(cyng::tuple_t const& choice)
+		{
+			BOOST_ASSERT_MSG(choice.size() == 2, "CHOICE");
+			if (choice.size() == 2)
+			{
+				ro_.set_value("code", choice.front());
+				return read_body(choice.front(), choice.back());
+			}
+			return cyng::vector_t();
+		}
+
+		cyng::vector_t reader::read_body(cyng::object type, cyng::object body)
 		{
 			auto code = cyng::value_cast<std::uint16_t>(type, 0);
 
@@ -120,8 +138,7 @@ namespace node
 			case BODY_CLOSE_REQUEST:
 				return read_public_close_request(tpl.begin(), tpl.end());
 			case BODY_CLOSE_RESPONSE:
-				//cyng::xml::write(node.append_child("data"), body);
-				break;
+				return read_public_close_response(tpl.begin(), tpl.end());
 			case BODY_GET_PROFILE_PACK_REQUEST:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
@@ -160,7 +177,7 @@ namespace node
 				, code);
 		}
 
-		cyng::vector_t sml_reader::read_public_open_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t reader::read_public_open_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 7, "Public Open Request");
@@ -202,8 +219,7 @@ namespace node
 			//
 			//	instruction vector
 			//
-			cyng::vector_t prg;
-			return prg << cyng::generate_invoke_unwinded("sml.public.open.request"
+			return cyng::generate_invoke("sml.public.open.request"
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
@@ -215,7 +231,7 @@ namespace node
 
 		}
 
-		cyng::vector_t sml_reader::read_public_open_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t reader::read_public_open_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 6, "Public Open Response");
@@ -246,24 +262,42 @@ namespace node
 			//	sml-Version: default = 1
 			ro_.set_value("SMLVersion", *pos++);
 
-			return cyng::vector_t();
+			return cyng::generate_invoke("sml.public.open.response"
+				, ro_.pk_
+				, ro_.trx_
+				, ro_.idx_
+				, ro_.get_value("clientId")
+				, ro_.get_value("serverId")
+				, ro_.get_value("reqFileId"));
 		}
 
-		cyng::vector_t sml_reader::read_public_close_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t reader::read_public_close_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 1, "Public Close Request");
 
 			ro_.set_value("globalSignature", *pos++);
 
-			cyng::vector_t prg;
-			return prg << cyng::generate_invoke_unwinded("sml.public.close.request"
+			return cyng::generate_invoke("sml.public.close.request"
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_);
 		}
 
-		cyng::vector_t sml_reader::read_get_profile_list_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t reader::read_public_close_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		{
+			std::size_t count = std::distance(pos, end);
+			BOOST_ASSERT_MSG(count == 1, "Public Close Response");
+
+			ro_.set_value("globalSignature", *pos++);
+
+			return cyng::generate_invoke("sml.public.close.response"
+				, ro_.pk_
+				, ro_.trx_
+				, ro_.idx_);
+		}
+
+		cyng::vector_t reader::read_get_profile_list_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
@@ -311,8 +345,7 @@ namespace node
 			//	periodSignature
 			ro_.set_value("signature", *pos++);
 
-			cyng::vector_t prg;
-			return prg << cyng::generate_invoke_unwinded("db.insert.meta"
+			return cyng::generate_invoke("db.insert.meta"
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
@@ -325,7 +358,7 @@ namespace node
 
 		}
 
-		cyng::vector_t sml_reader::read_get_proc_parameter_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t reader::read_get_proc_parameter_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "Get Proc Parameter Response");
@@ -339,18 +372,126 @@ namespace node
 			//	parameterTreePath (OBIS)
 			//
 			std::vector<obis> path = read_param_tree_path(*pos++);
+			BOOST_ASSERT(path.size() == 1);
 
 			//
 			//	parameterTree
 			//
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(*pos++, tpl);
-			read_param_tree(0, tpl.begin(), tpl.end());
 
-			return cyng::vector_t();
+			//
+			//	this is a parameter tree
+			//	read_param_tree(0, tpl.begin(), tpl.end());
+			//
+			return read_get_proc_parameter_response(path, 0, tpl.begin(), tpl.end());
 		}
 
-		cyng::vector_t sml_reader::read_get_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t reader::read_get_proc_parameter_response(std::vector<obis> path
+			, std::size_t depth
+			, cyng::tuple_t::const_iterator pos
+			, cyng::tuple_t::const_iterator end)
+		{
+			std::size_t count = std::distance(pos, end);
+			BOOST_ASSERT_MSG(count == 3, "SML Tree");
+
+			//
+			//	1. parameterName Octet String,
+			//
+			obis code = read_obis(*pos++);
+			if (code == path.back()) {
+				//	root
+				std::cout << "root: " << code << std::endl;
+				BOOST_ASSERT(depth == 0);
+			}
+			else {
+				path.push_back(code);
+			}
+
+			//
+			//	2. parameterValue SML_ProcParValue OPTIONAL,
+			//
+			auto attr = read_parameter(*pos++);
+
+			//
+			//	program vector
+			//
+			cyng::vector_t prg;
+
+			if (path.size() == 3 && path.back().is_matching(0x81, 0x81, 0x10, 0x06)) {
+
+				cyng::tuple_t tpl;
+				tpl = cyng::value_cast(*pos++, tpl);
+
+				//
+				//	collect meter info
+				//	* 81 81 C7 82 04 FF: server ID
+				//	* 81 81 C7 82 02 FF: --- (device class)
+				//	* 01 00 00 09 0B 00: timestamp
+				//
+				for (auto const child : tpl)
+				{
+					cyng::tuple_t tmp;
+					tmp = cyng::value_cast(child, tmp);
+					read_get_proc_single_parameter(tmp.begin(), tmp.end());
+
+					prg << cyng::generate_invoke_unwinded("sml.get.proc.param.srv.visible"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, path.back().get_quantities()	//	4 - element of list number
+						, path.back().get_storage()		//	5 - list number
+						, ro_.get_value("81 81 c7 82 04 ff")	//	meter ID
+						, ro_.get_value("81 81 c7 82 02 ff")	//	device class
+						, ro_.get_value("01 00 00 09 0b 00"));	//	UTC
+				}			
+			}
+			else
+			{
+				//
+				//	3. child_List List_of_SML_Tree OPTIONAL
+				//
+				cyng::tuple_t tpl;
+				tpl = cyng::value_cast(*pos++, tpl);
+				++depth;
+				for (auto const child : tpl)
+				{
+					cyng::tuple_t tmp;
+					tmp = cyng::value_cast(child, tmp);
+
+					prg << cyng::unwinder(read_get_proc_parameter_response(path, depth, tmp.begin(), tmp.end()));
+				}
+			}
+			return prg;
+		}
+
+		void reader::read_get_proc_single_parameter(cyng::tuple_t::const_iterator pos
+			, cyng::tuple_t::const_iterator end)
+		{
+			std::size_t count = std::distance(pos, end);
+			BOOST_ASSERT_MSG(count == 3, "SML Tree");
+
+			//
+			//	1. parameterName Octet String,
+			//
+			obis code = read_obis(*pos++);
+
+			//
+			//	2. parameterValue SML_ProcParValue OPTIONAL,
+			//
+			auto attr = read_parameter(*pos++);
+			ro_.set_value(code, attr.second);
+
+			//std::cerr
+			//	<< to_hex(code)
+			//	<< " = "
+			//	//<< cyng::io::to_str(attr.second)
+			//	<< std::endl;
+
+		}
+
+		cyng::vector_t reader::read_get_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Get Profile List Request");
@@ -380,11 +521,9 @@ namespace node
 			//
 			//	*pos
 
-			cyng::vector_t prg;
-
 			if (path.size() == 1)
 			{
-				return prg << cyng::generate_invoke_unwinded("sml.get.proc.parameter.request"
+				return cyng::generate_invoke("sml.get.proc.parameter.request"
 					, ro_.pk_
 					, ro_.trx_
 					, ro_.idx_
@@ -395,18 +534,19 @@ namespace node
 					, *pos);
 
 			}
-			return prg << cyng::generate_invoke_unwinded("sml.get.proc.parameter.request"
+
+			return cyng::generate_invoke("sml.get.proc.parameter.request"
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
 				, ro_.get_value("serverId")
 				, ro_.get_value("userName")
 				, ro_.get_value("password")
-				, to_hex(path.at(0))
+				, to_hex(path.at(0))	//	ToDo: send complete path
 				, *pos);	//	attribute
 		}
 
-		cyng::vector_t sml_reader::read_set_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t reader::read_set_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Set Proc Parameter Request");
@@ -444,7 +584,7 @@ namespace node
 
 		}
 
-		cyng::vector_t sml_reader::read_set_proc_parameter_request_tree(std::vector<obis> path
+		cyng::vector_t reader::read_set_proc_parameter_request_tree(std::vector<obis> path
 			, std::size_t depth
 			, cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)
@@ -470,7 +610,7 @@ namespace node
 			//
 			//	2. parameterValue SML_ProcParValue OPTIONAL,
 			//
-			auto attr = read_parameter(code, *pos++);
+			auto attr = read_parameter(*pos++);
 			if (attr.first != PROC_PAR_UNDEF) {
 				//	example: push delay
 				//	81 81 c7 8a 01 ff => 81 81 c7 8a 01 [01] => 81 81 c7 8a 03 ff
@@ -625,7 +765,6 @@ namespace node
 									, std::string(tmp.begin(), tmp.end()));
 
 							}
-
 						}
 					}
 				}
@@ -651,7 +790,7 @@ namespace node
 			return prg;
 		}
 
-		cyng::vector_t sml_reader::read_attention_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		cyng::vector_t reader::read_attention_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 4, "Attention Response");
@@ -678,10 +817,16 @@ namespace node
 			tpl = cyng::value_cast(*pos++, tpl);
 			read_param_tree(0, tpl.begin(), tpl.end());
 
-			return cyng::vector_t();
+			return cyng::generate_invoke("sml.attention.msg"
+				, ro_.pk_
+				, ro_.trx_
+				, ro_.idx_
+				, ro_.get_value("serverId")
+				, code.to_buffer()
+				, ro_.get_value("attentionMsg"));
 		}
 
-		void sml_reader::read_param_tree(std::size_t depth
+		void reader::read_param_tree(std::size_t depth
 			, cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)
 		{
@@ -696,7 +841,7 @@ namespace node
 			//
 			//	2. parameterValue SML_ProcParValue OPTIONAL,
 			//
-			read_parameter(code, *pos++);
+			auto attr = read_parameter(*pos++);
 
 			//
 			//	3. child_List List_of_SML_Tree OPTIONAL
@@ -713,7 +858,7 @@ namespace node
 			}
 		}
 
-		void sml_reader::read_period_list(std::vector<obis> const& path
+		void reader::read_period_list(std::vector<obis> const& path
 			, cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)
 		{
@@ -735,7 +880,7 @@ namespace node
 			}
 		}
 
-		void sml_reader::read_period_entry(std::vector<obis> const& path
+		void reader::read_period_entry(std::vector<obis> const& path
 			, std::size_t index
 			, cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)
@@ -771,7 +916,7 @@ namespace node
 		}
 
 
-		cyng::object sml_reader::read_time(std::string const& name, cyng::object obj)
+		cyng::object reader::read_time(std::string const& name, cyng::object obj)
 		{
 			cyng::tuple_t choice;
 			choice = cyng::value_cast(obj, choice);
@@ -798,7 +943,7 @@ namespace node
 			return cyng::make_object();
 		}
 
-		std::vector<obis> sml_reader::read_param_tree_path(cyng::object obj)
+		std::vector<obis> reader::read_param_tree_path(cyng::object obj)
 		{
 			std::vector<obis> result;
 
@@ -814,7 +959,7 @@ namespace node
 			return result;
 		}
 
-		obis sml_reader::read_obis(cyng::object obj)
+		obis reader::read_obis(cyng::object obj)
 		{
 			cyng::buffer_t tmp;
 			tmp = cyng::value_cast(obj, tmp);
@@ -831,7 +976,7 @@ namespace node
 			return code;
 		}
 
-		std::uint8_t sml_reader::read_unit(std::string const& name, cyng::object obj)
+		std::uint8_t reader::read_unit(std::string const& name, cyng::object obj)
 		{
 			std::uint8_t unit = cyng::value_cast<std::uint8_t>(obj, 0);
 			//node.append_attribute("type").set_value(get_unit_name(unit));
@@ -840,7 +985,7 @@ namespace node
 			return unit;
 		}
 
-		std::string sml_reader::read_string(std::string const& name, cyng::object obj)
+		std::string reader::read_string(std::string const& name, cyng::object obj)
 		{
 			cyng::buffer_t buffer;
 			buffer = cyng::value_cast(obj, buffer);
@@ -849,7 +994,7 @@ namespace node
 			return str;
 		}
 
-		std::string sml_reader::read_server_id(cyng::object obj)
+		std::string reader::read_server_id(cyng::object obj)
 		{
 			cyng::buffer_t buffer;
 			buffer = cyng::value_cast(obj, buffer);
@@ -858,7 +1003,7 @@ namespace node
 			return from_server_id(buffer);
 		}
 
-		std::string sml_reader::read_client_id(cyng::object obj)
+		std::string reader::read_client_id(cyng::object obj)
 		{
 			cyng::buffer_t buffer;
 			buffer = cyng::value_cast(obj, buffer);
@@ -868,14 +1013,14 @@ namespace node
 			return from_server_id(buffer);
 		}
 
-		std::int8_t sml_reader::read_scaler(cyng::object obj)
+		std::int8_t reader::read_scaler(cyng::object obj)
 		{
 			std::int8_t scaler = cyng::value_cast<std::int8_t>(obj, 0);
 			//node.append_child(pugi::node_pcdata).set_value(std::to_string(+scaler).c_str());
 			return scaler;
 		}
 
-		void sml_reader::read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj)
+		void reader::read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj)
 		{
 			//
 			//	write value
@@ -955,7 +1100,7 @@ namespace node
 			}
 		}
 
-		cyng::attr_t sml_reader::read_parameter(obis code, cyng::object obj)
+		cyng::attr_t reader::read_parameter(cyng::object obj)
 		{
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(obj, tpl);
@@ -975,14 +1120,14 @@ namespace node
 			return cyng::attr_t(PROC_PAR_UNDEF, cyng::make_object());
 		}
 
-		sml_reader::readout::readout(boost::uuids::uuid pk)
+		reader::readout::readout(boost::uuids::uuid pk)
 			: pk_(pk)
 			, idx_(0)
 			, trx_()
 			, values_()
 		{}
 
-		void sml_reader::readout::reset(boost::uuids::uuid pk, std::size_t idx)
+		void reader::readout::reset(boost::uuids::uuid pk, std::size_t idx)
 		{
 			pk_ = pk;
 			idx_ = idx;
@@ -990,25 +1135,31 @@ namespace node
 			values_.clear();
 		}
 
-		sml_reader::readout& sml_reader::readout::set_trx(cyng::buffer_t const& buffer)
+		reader::readout& reader::readout::set_trx(cyng::buffer_t const& buffer)
 		{
 			trx_ = cyng::io::to_ascii(buffer);
 			return *this;
 		}
 
-		sml_reader::readout& sml_reader::readout::set_index(std::size_t idx)
+		reader::readout& reader::readout::set_index(std::size_t idx)
 		{
 			idx_ = idx;
 			return *this;
 		}
 
-		sml_reader::readout& sml_reader::readout::set_value(std::string const& name, cyng::object value)
+		reader::readout& reader::readout::set_value(std::string const& name, cyng::object obj)
 		{
-			values_[name] = value;
+			values_[name] = obj;
 			return *this;
 		}
 
-		cyng::object sml_reader::readout::get_value(std::string const& name) const
+		reader::readout& reader::readout::set_value(obis code, cyng::object obj)
+		{
+			values_[to_hex(code)] = obj;
+			return *this;
+		}
+
+		cyng::object reader::readout::get_value(std::string const& name) const
 		{
 			auto pos = values_.find(name);
 			return (pos != values_.end())

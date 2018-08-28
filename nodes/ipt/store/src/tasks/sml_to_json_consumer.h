@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IPT_STORE_TASK_SML_JSON_CONSUMER_H
 #define NODE_IPT_STORE_TASK_SML_JSON_CONSUMER_H

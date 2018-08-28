@@ -671,7 +671,7 @@ namespace node
 				BOOST_ASSERT(origin_tag != remote_tag);
 
 				//
-				//	create antry in local connection list
+				//	create entry in local connection list
 				//
 				ctx.run(cyng::generate_invoke("log.msg.trace", "establish local connection", origin_tag, remote_tag));
 
@@ -685,6 +685,7 @@ namespace node
 				//
 				//	update connection state of remote session
 				//
+				BOOST_ASSERT(local_connect);
 				cyng::vector_t prg;
 				prg
 					<< origin_tag

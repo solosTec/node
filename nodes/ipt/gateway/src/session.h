@@ -1,16 +1,16 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IPT_GATEWAY_SESSION_H
 #define NODE_IPT_GATEWAY_SESSION_H
 
 #include <smf/sml/protocol/parser.h>
 #include <smf/sml/status.h>
-#include "sml_reader.h"
+#include <smf/sml/protocol/reader.h>
 #include "kernel.h"
 #include <cyng/async/mux.h>
 #include <cyng/log.h>

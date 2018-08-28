@@ -8,6 +8,7 @@ set (sml_protocol_cpp
 	lib/sml/protocol/src/scaler.cpp
 	lib/sml/protocol/src/writer.hpp
 	lib/sml/protocol/src/writer.cpp
+	lib/sml/protocol/src/reader.cpp
 	lib/sml/protocol/src/intrinsics/obis.cpp
 	lib/sml/protocol/src/mbus_defs.cpp
 	lib/sml/protocol/src/obis_db.cpp
@@ -29,6 +30,7 @@ set (sml_protocol_h
 
 set (sml_generator
 	src/main/include/smf/sml/protocol/parser.h
+	src/main/include/smf/sml/protocol/reader.h
 	src/main/include/smf/sml/protocol/serializer.h
 	src/main/include/smf/sml/protocol/message.h
 	src/main/include/smf/sml/protocol/generator.h
