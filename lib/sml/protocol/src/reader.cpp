@@ -418,34 +418,62 @@ namespace node
 			//
 			cyng::vector_t prg;
 
-			if (path.size() == 3 && path.back().is_matching(0x81, 0x81, 0x10, 0x06)) {
+			if (path.size() == 3) {
 
-				cyng::tuple_t tpl;
-				tpl = cyng::value_cast(*pos++, tpl);
+				if (path.back().is_matching(0x81, 0x81, 0x10, 0x06)) {
+					cyng::tuple_t tpl;
+					tpl = cyng::value_cast(*pos++, tpl);
 
-				//
-				//	collect meter info
-				//	* 81 81 C7 82 04 FF: server ID
-				//	* 81 81 C7 82 02 FF: --- (device class)
-				//	* 01 00 00 09 0B 00: timestamp
-				//
-				for (auto const child : tpl)
-				{
-					cyng::tuple_t tmp;
-					tmp = cyng::value_cast(child, tmp);
-					read_get_proc_single_parameter(tmp.begin(), tmp.end());
+					//
+					//	collect meter info
+					//	* 81 81 C7 82 04 FF: server ID
+					//	* 81 81 C7 82 02 FF: --- (device class)
+					//	* 01 00 00 09 0B 00: timestamp
+					//
+					for (auto const child : tpl)
+					{
+						cyng::tuple_t tmp;
+						tmp = cyng::value_cast(child, tmp);
+						read_get_proc_single_parameter(tmp.begin(), tmp.end());
 
+					}
 					prg << cyng::generate_invoke_unwinded("sml.get.proc.param.srv.visible"
 						, ro_.pk_
 						, ro_.trx_
 						, ro_.idx_
 						, ro_.get_value("serverId")
-						, path.back().get_quantities()	//	4 - element of list number
-						, path.back().get_storage()		//	5 - list number
+						, path.back().get_number()	//	4/5 
 						, ro_.get_value("81 81 c7 82 04 ff")	//	meter ID
 						, ro_.get_value("81 81 c7 82 02 ff")	//	device class
 						, ro_.get_value("01 00 00 09 0b 00"));	//	UTC
-				}			
+				}
+				else if (path.back().is_matching(0x81, 0x81, 0x11, 0x06)) {
+					cyng::tuple_t tpl;
+					tpl = cyng::value_cast(*pos++, tpl);
+
+					//
+					//	collect meter info
+					//	* 81 81 C7 82 04 FF: server ID
+					//	* 81 81 C7 82 02 FF: --- (device class)
+					//	* 01 00 00 09 0B 00: timestamp
+					//
+					for (auto const child : tpl)
+					{
+						cyng::tuple_t tmp;
+						tmp = cyng::value_cast(child, tmp);
+						read_get_proc_single_parameter(tmp.begin(), tmp.end());
+
+					}
+					prg << cyng::generate_invoke_unwinded("sml.get.proc.param.srv.active"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, path.back().get_number()	//	4/5 
+						, ro_.get_value("81 81 c7 82 04 ff")	//	meter ID
+						, ro_.get_value("81 81 c7 82 02 ff")	//	device class
+						, ro_.get_value("01 00 00 09 0b 00"));	//	UTC
+				}
 			}
 			else
 			{

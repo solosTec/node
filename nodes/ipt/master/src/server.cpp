@@ -60,8 +60,8 @@ namespace node
 			bus_->vm_.register_function("client.res.close", 3, std::bind(&server::client_res_close_impl, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.req.close", 4, std::bind(&server::client_req_close_impl, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.req.reboot", 6, std::bind(&server::client_req_reboot, this, std::placeholders::_1));
-			bus_->vm_.register_function("client.req.query.srv.visible", 6, std::bind(&server::client_req_query_srv_visible, this, std::placeholders::_1));
-			bus_->vm_.register_function("client.req.query.srv.active", 6, std::bind(&server::client_req_query_srv_active, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.req.query.srv.visible", 8, std::bind(&server::client_req_query_srv_visible, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.req.query.srv.active", 8, std::bind(&server::client_req_query_srv_active, this, std::placeholders::_1));
 
 			bus_->vm_.register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1));
@@ -321,36 +321,6 @@ namespace node
 
 			}
 		}
-
-		//void server::req_stop_client(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-
-		//	//	[2,[1ca8529b-9b95-4a3a-ba2f-26c7280aa878],ac70b95e-76b9-463a-a961-bb02f70e86c8]
-		//	//
-		//	//	* bus sequence
-		//	//	* session key
-		//	//	* source
-
-		//	auto const tpl = cyng::tuple_cast<
-		//		std::uint64_t,			//	[0] sequence
-		//		cyng::vector_t,			//	[1] session key
-		//		boost::uuids::uuid		//	[2] source
-		//	>(frame);
-
-		//	//
-		//	//	slot [2] - stop session
-		//	//
-		//	if (std::get<1>(tpl).size() == 1)
-		//	{
-		//		CYNG_LOG_INFO(logger_, "bus.req.stop.client " << cyng::io::to_str(frame));
-		//		//mux_.post(task_, 2, cyng::tuple_factory(std::get<1>(tpl)[0]));
-		//	}
-		//	else
-		//	{
-		//		CYNG_LOG_ERROR(logger_, "bus.req.stop.client " << cyng::io::to_str(frame));
-		//	}
-		//}
 
 		void server::push_connection(cyng::context& ctx)
 		{

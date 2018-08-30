@@ -27,7 +27,7 @@ namespace node
 
 			struct connect_state
 			{
-				connect_state();
+				connect_state(session*);
 
 				enum {
 					STATE_OFFLINE,	//	no connection at all
@@ -35,6 +35,11 @@ namespace node
 					STATE_REMOTE,	//	open connection to party on different node
 					STATE_TASK		//	data stream linked to task
 				} state_;
+
+				/**
+				 * Reference to outer session object
+				 */
+				session& sr_;
 
 				/**
 				 * active task
@@ -65,6 +70,16 @@ namespace node
 				 * stream connection state as text
 				 */
 				friend std::ostream& operator<<(std::ostream& os, connect_state const& cs);
+
+				//
+				//	SML data
+				//
+				void sml_msg(cyng::context& ctx);
+				void sml_eom(cyng::context& ctx);
+				void sml_public_open_response(cyng::context& ctx);
+				void sml_public_close_response(cyng::context& ctx);
+				void sml_get_proc_param_srv_visible(cyng::context& ctx);
+				void sml_get_proc_param_srv_active(cyng::context& ctx);
 
 			};
 
@@ -158,11 +173,6 @@ namespace node
 			//
 			//	SML data
 			//
-			void sml_msg(cyng::context& ctx);
-			void sml_eom(cyng::context& ctx);
-			void sml_public_open_response(cyng::context& ctx);
-			void sml_public_close_response(cyng::context& ctx);
-			void sml_get_proc_param_srv_visible(cyng::context& ctx);
 
 		private:
 			cyng::async::mux& mux_;

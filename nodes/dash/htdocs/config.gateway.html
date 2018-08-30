@@ -15,6 +15,7 @@
             padding-top: 2px;
             padding-bottom: 2px;
         }
+        .collapsing { background-color: yellow; }
     </style>
 </head>
 <body>
@@ -100,17 +101,24 @@
                         </tr>
                     </thead>
                 </table>
-                <div class="collapse" id="smf-form-gw-collapse-srv-visible">
-                    <div class="card card-body">
-                        Visible Meters
+
+                <hr />
+                <div class="card-columns">
+                    <div class="collapse" id="smf-form-gw-collapse-srv-visible">
+                        <div class="card">
+                            <div class="card-header">Visible Meters</div>
+                            <div class="card-body"><ul class="list-group" id="smf-form-gw-collapse-srv-visible-list"></ul></div>
+                        </div>
                     </div>
-                </div>
-                <div class="collapse" id="smf-form-gw-collapse-srv-active">
-                    <div class="card card-body">
-                        Active Meters
+                    <div class="collapse" id="smf-form-gw-collapse-srv-active">
+                        <div class="card collapse" id="smf-form-gw-collapse-srv-active">
+                            <div class="card-header">Active Meters</div>
+                            <div class="card-body"><ul class="list-group" id="smf-form-gw-collapse-srv-active-list"></ul></div>
+                        </div>
                     </div>
                 </div>
             </div>
+
             <div class="col-md-3">
                 <form class="form-horizontal" id="smf-form-gw">
                     <fieldset>
@@ -150,19 +158,20 @@
                             <label class="control-label" for="smf-form-gw-reboot">Reboot Device</label>
                         </div>
                         <hr />
-                        <div class="form-group">
-                            <a id="smf-form-gw-srv-visible" class="btn btn-primary disabled" data-toggle="collapse" href="#smf-form-gw-collapse-srv-visible" role="button" aria-expanded="false" aria-controls="smf-form-gw-collapse-srv-visible">
-                                Visible Meters
-                            </a>
-                            <a id="smf-form-gw-srv-active" class="btn btn-primary disabled" data-toggle="collapse" href="#smf-form-gw-collapse-srv-active" role="button" aria-expanded="false" aria-controls="smf-form-gw-collapse-srv-active">
-                                Active Meters
-                            </a>
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-visible" name="smf-form-gw-srv-visible">Request and display visible meters
+                            </label>
                         </div>
-
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-active" name="smf-form-gw-srv-active">Request and display active meters
+                            </label>
+                        </div>
                     </fieldset>
                 </form>
             </div>
-        </div>
+        </div>  <!--row-->
     </div>
 
     <!-- JavaScript -->
@@ -245,6 +254,21 @@
                     $('#smf-form-gw-srv-active').addClass('disabled');
                 }
 
+                if ($('#smf-form-gw-srv-visible').is(":checked") && rowData[8]) {
+                    $('#smf-form-gw-collapse-srv-visible ul').empty();
+                    $('#smf-form-gw-collapse-srv-visible .card-header').text('Visible meters to ' + rowData[1]);
+                    connection.send(JSON.stringify({
+                        cmd: "query:srv:visible", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                    }));
+                }
+                if ($('#smf-form-gw-srv-active').is(":checked") && rowData[8]) {
+                    $('#smf-form-gw-collapse-srv-active ul').empty();
+                    $('#smf-form-gw-collapse-srv-active .card-header').text('Active meters to ' + rowData[1]);
+                    connection.send(JSON.stringify({
+                        cmd: "query:srv:active", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                    }));
+                }
+
             });
 
             $('#ws-activity-text').html('connecting to ' + location.host + '...');
@@ -273,74 +297,99 @@
             connection.onmessage = function (e) {
                 $('#ws-activity-symbol').show();
                 console.log('incoming data: ' + e.data);
+                //  {"cmd": "insert", "channel": "config.gateway", "rec": {"key": {"pk":"54c15b9e-858a-431c-9c2c-8b654c7d7651"}, "data": {"factoryNr":"factory-nr","gen":2,"ifData":"00:01:02:03:04:06","ifService":"00:01:02:03:04:05","made":"2018-08-06 14:10:01.00000000","manufacturer":"EMH","mbus":"mbus","model":null,"name":"LSMTest2","online":true,"pwdDef":"user","pwdRoot":"pwd","serverId":"0500153B01EC46","userName":"operator","userPwd":"operator","vFirmware":"VARIOMUC-ETHERNET-1.407_14232___11X022a"}}}
                 totalIO += e.data.length;
                 var obj = JSON.parse(e.data);
-                if (obj.cmd != null) {
-                    if (obj.cmd == 'insert') {
-                        //
-                        // {"cmd": "insert", "channel": "config.gateway", "rec":
-                        //  {"key": {"pk":"d28cd24a-980d-46fc-b5ac-8c445415adbf"},
-                        //  "data": {"factoryNr":"06441734","serverID":"0500153B02517E","ifData":"00:01:02:03:04:06","ifService":"00:01:02:03:04:05","made":"2018-06-06 13:24:51.38650500","manufacturer":"EMH","mbus":"mbus","model":"MODEL","name":"NAME","online":false,"pwdDef":"secret","pwdRoot":"secret","userName":"operator","userPwd":"operator","vFirmware":"FIRMWARE"}, "gen": 94}}
-                        //
-                        var server = $('<div/>').text(obj.rec.data.serverId).html();
-                        var manufacturer = $('<div/>').text(obj.rec.data.manufacturer).html();
-                        var name = $('<div/>').text(obj.rec.data.name).html();
-                        var model = $('<div/>').text(obj.rec.data.model).html();
-                        var firmware = $('<div/>').text(obj.rec.data.vFirmware).html();
-                        var userName = $('<div/>').text(obj.rec.data.userName).html();
-                        var userPwd = $('<div/>').text(obj.rec.data.userPwd).html();
-                        var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, name, model, firmware, userName, userPwd, obj.rec.data.online]).draw().node();
+                if (obj.cmd != null && obj.channel != null) {
+                    if (obj.channel == 'config.gateway') {
+                        if (obj.cmd == 'insert') {
+                            //
+                            // {"cmd": "insert", "channel": "config.gateway", "rec":
+                            //  {"key": {"pk":"d28cd24a-980d-46fc-b5ac-8c445415adbf"},
+                            //  "data": {"factoryNr":"06441734","serverID":"0500153B02517E","ifData":"00:01:02:03:04:06","ifService":"00:01:02:03:04:05","made":"2018-06-06 13:24:51.38650500","manufacturer":"EMH","mbus":"mbus","model":"MODEL","name":"NAME","online":false,"pwdDef":"secret","pwdRoot":"secret","userName":"operator","userPwd":"operator","vFirmware":"FIRMWARE"}, "gen": 94}}
+                            //
+                            var server = $('<div/>').text(obj.rec.data.serverId).html();
+                            var manufacturer = $('<div/>').text(obj.rec.data.manufacturer).html();
+                            var name = $('<div/>').text(obj.rec.data.name).html();
+                            var model = $('<div/>').text(obj.rec.data.model).html();
+                            var firmware = $('<div/>').text(obj.rec.data.vFirmware).html();
+                            var userName = $('<div/>').text(obj.rec.data.userName).html();
+                            var userPwd = $('<div/>').text(obj.rec.data.userPwd).html();
+                            var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, name, model, firmware, userName, userPwd, obj.rec.data.online]).draw().node();
 
-                    }
-                    else if (obj.cmd == 'delete') {
-                        //  {"cmd": "delete", "channel": "config.gateway", "key": ["28754043-1f38-4318-a95e-dd9965e80895"]}
-                        table_gw.row(function (idx, data, node) {
-                            if (data[0] == obj.key) {
-                                $('#smf-form-gw-delete-name').text("Device");
-                                $('#smf-form-gw-update').addClass('disabled');
-                                $('#smf-form-gw-delete').addClass('disabled');
-                                $('#smf-form-gw-reboot').addClass('disabled');
-                                $('#smf-form-gw-srv-visible').addClass('disabled');
-                                $('#smf-form-gw-srv-active').addClass('disabled');
+                        }
+                        else if (obj.cmd == 'delete') {
+                            //  {"cmd": "delete", "channel": "config.gateway", "key": ["28754043-1f38-4318-a95e-dd9965e80895"]}
+                            table_gw.row(function (idx, data, node) {
+                                if (data[0] == obj.key) {
+                                    $('#smf-form-gw-delete-name').text("Device");
+                                    $('#smf-form-gw-update').addClass('disabled');
+                                    $('#smf-form-gw-delete').addClass('disabled');
+                                    $('#smf-form-gw-reboot').addClass('disabled');
+                                    $('#smf-form-gw-srv-visible').addClass('disabled');
+                                    $('#smf-form-gw-srv-active').addClass('disabled');
 
-                                return true;
-                            }
-                            return false;
-                        }).remove().draw(false);
+                                    return true;
+                                }
+                                return false;
+                            }).remove().draw(false);
+                        }
+                        else if (obj.cmd == 'modify') {
+                            //  {"cmd": "modify", "channel": "config.gateway", "key": ["dca135f3-ff2b-4bf7-8371-a9904c74522b"], "value": {"online":true}}
+                            //  {"cmd": "modify", "channel": "config.gateway", "key": ["a584c1cc-7ae1-455b-99d1-de0f9483520d"], "value": {"online":false}}
+                            table_gw.row(function (idx, data, node) {
+                                if (data[0] == obj.key) {
+                                    var r = table_gw.row(node);
+                                    var d = r.data();
+                                    if (obj.value.online != null) {
+                                        d[8] = obj.value.online;
+                                    }
+                                    else if (obj.value.serverId != null) {
+                                        d[1] = obj.value.serverId;
+                                    }
+                                    else if (obj.value.manufacturer != null) {
+                                        d[2] = obj.value.manufacturer;
+                                    }
+                                    else if (obj.value.userName != null) {
+                                        d[6] = obj.value.userName;
+                                    }
+                                    else if (obj.value.userPwd != null) {
+                                        d[7] = obj.value.userPwd;
+                                    }
+                                    r.data(d);
+                                    $('#smf-form-gw-delete').addClass('disabled');
+                                    return true;
+                                }
+                                return false;
+                            });
+                        }
+                        else if (obj.cmd == 'clear') {
+                            table_gw.clear().draw(false);
+                        }
                     }
-                    else if (obj.cmd == 'modify') {
-                        //  {"cmd": "modify", "channel": "config.gateway", "key": ["dca135f3-ff2b-4bf7-8371-a9904c74522b"], "value": {"online":true}}
-                        //  {"cmd": "modify", "channel": "config.gateway", "key": ["a584c1cc-7ae1-455b-99d1-de0f9483520d"], "value": {"online":false}}
-                        table_gw.row(function (idx, data, node) {
-                            if (data[0] == obj.key) {
-                                var r = table_gw.row(node);
-                                var d = r.data();
-                                if (obj.value.online != null) {
-                                    d[8] = obj.value.online;
-                                }
-                                else if (obj.value.serverId != null) {
-                                    d[1] = obj.value.serverId;
-                                }
-                                else if (obj.value.manufacturer != null) {
-                                    d[2] = obj.value.manufacturer;
-                                }
-                                else if (obj.value.userName != null) {
-                                    d[6] = obj.value.userName;
-                                }
-                                else if (obj.value.userPwd != null) {
-                                    d[7] = obj.value.userPwd;
-                                }
-                                r.data(d);
-                                $('#smf-form-gw-delete').addClass('disabled');
-                                return true;
-                            }
-                            return false;
-                        });
+                    else if (obj.channel == 'status.gateway.visible') {
+                        if (obj.cmd == 'append') {
+                            $('#smf-form-gw-collapse-srv-visible ul').append('<li class="list-group-item">#'
+                                + obj.rec.nr
+                                + ' '
+                                + obj.rec.meter
+                                + ' ('
+                                + obj.rec.tp
+                                + ')</li>');
+                        }
                     }
-                    else if (obj.cmd == 'clear') {
-                        table_gw.clear().draw(false);
+                    else if (obj.channel == 'status.gateway.active') {
+                        if (obj.cmd == 'append') {
+                            $('#smf-form-gw-collapse-srv-active ul').append('<li class="list-group-item">#'
+                                + obj.rec.nr
+                                + ' '
+                                + obj.rec.meter
+                                + ' ('
+                                + obj.rec.tp
+                                + ')</li>');
+                        }
                     }
-              }
+                }
                 $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
                 $('#ws-activity-symbol').fadeOut();
             };
@@ -382,28 +431,28 @@
                 }));
             });
 
-            $('#smf-form-gw-srv-visible').on("click", function (event) {
-                event.preventDefault();
-                console.log('query:srv:visible: ' + $('#smf-form-gw').serialize());
-
-                connection.send(JSON.stringify({
-                    cmd: "query:srv:visible", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
-                }));
+            $('#smf-form-gw-srv-visible').change(function () {
+                if (this.checked) {
+                    $('#smf-form-gw-collapse-srv-visible').removeClass("collapse");
+                }
+                else {
+                    $('#smf-form-gw-collapse-srv-visible').addClass("collapse");
+                }
             });
-            
-            $('#smf-form-gw-srv-active').on("click", function (event) {
-                event.preventDefault();
-                console.log('query:srv:active: ' + $('#smf-form-gw').serialize());
 
-                connection.send(JSON.stringify({
-                    cmd: "query:srv:active", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
-                }));
+            $('#smf-form-gw-srv-active').change(function () {
+                if (this.checked) {
+                    $('#smf-form-gw-collapse-srv-active').removeClass("collapse");
+                }
+                else {
+                    $('#smf-form-gw-collapse-srv-active').addClass("collapse");
+                }
             });
         });
 
-        </script>
+    </script>
 
-        <script>
+    <script>
             const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
             function format_bytes(x) {
 
@@ -415,7 +464,7 @@
                 if (n == 0) return '-';
                 return (n.toFixed(l < 1 ? 0 : 1) + ' ' + units[l]);
             }
-        </script>
+    </script>
 
 </body>
-</html >
+</html>

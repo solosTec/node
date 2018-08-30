@@ -106,6 +106,11 @@ namespace node
 			std::uint32_t get_storage() const;
 
 			/**
+			 * @return a combination of the last tweo values (group E and F)
+			 */
+			std::uint16_t get_number() const;
+
+			/**
 			 *	@return true if OBIS code has no global definition.
 			 */
 			bool is_private() const;

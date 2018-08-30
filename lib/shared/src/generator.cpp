@@ -236,21 +236,55 @@ namespace node
 	}
 
 	cyng::vector_t bus_req_query_srv_visible(cyng::vector_t const& key
-		, boost::uuids::uuid source)
+		, boost::uuids::uuid source	
+		, boost::uuids::uuid tag_ws)
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("bus.req.query.srv.visible", cyng::invoke("bus.seq.next"), key, source))
+			, cyng::generate_invoke_remote_unwinded("bus.req.query.srv.visible", cyng::invoke("bus.seq.next"), key, source, tag_ws))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_res_query_srv_visible(boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, std::uint16_t nr
+		, std::string srv
+		, std::string meter
+		, std::string dclass
+		, std::chrono::system_clock::time_point st)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.res.query.srv.visible", source, seq, tag_ws, nr, srv, meter, dclass, st))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}
 
 	cyng::vector_t bus_req_query_srv_active(cyng::vector_t const& key
-		, boost::uuids::uuid source)
+		, boost::uuids::uuid source
+		, boost::uuids::uuid tag_ws)
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("bus.req.query.srv.active", cyng::invoke("bus.seq.next"), key, source))
+			, cyng::generate_invoke_remote_unwinded("bus.req.query.srv.active", cyng::invoke("bus.seq.next"), key, source, tag_ws))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_res_query_srv_active(boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, std::uint16_t nr
+		, std::string srv
+		, std::string meter
+		, std::string dclass
+		, std::chrono::system_clock::time_point st)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.res.query.srv.active", source, seq, tag_ws, nr, srv, meter, dclass, st))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}
@@ -373,7 +407,10 @@ namespace node
 			;
 	}
 
-	cyng::vector_t client_req_reboot(boost::uuids::uuid tag, cyng::buffer_t const& server, std::string const& name, std::string const& pwd)
+	cyng::vector_t client_req_reboot(boost::uuids::uuid tag
+		, cyng::buffer_t const& server
+		, std::string const& name
+		, std::string const& pwd)
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
@@ -382,20 +419,32 @@ namespace node
 			;
 	}
 
-	cyng::vector_t client_req_query_srv_visible(boost::uuids::uuid tag, std::uint64_t seq, cyng::buffer_t const& server, std::string const& name, std::string const& pwd)
+	cyng::vector_t client_req_query_srv_visible(boost::uuids::uuid tag
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, cyng::buffer_t const& server
+		, std::string const& name
+		, std::string const& pwd)
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("client.req.query.srv.visible", tag, cyng::code::IDENT, seq, server, name, pwd))
+			, cyng::generate_invoke_remote_unwinded("client.req.query.srv.visible", tag, source, cyng::code::IDENT, seq, tag_ws, server, name, pwd))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}
 
-	cyng::vector_t client_req_query_srv_active(boost::uuids::uuid tag, std::uint64_t seq, cyng::buffer_t const& server, std::string const& name, std::string const& pwd)
+	cyng::vector_t client_req_query_srv_active(boost::uuids::uuid tag
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, cyng::buffer_t const& server
+		, std::string const& name
+		, std::string const& pwd)
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("client.req.query.srv.active", tag, cyng::code::IDENT, seq, server, name, pwd))
+			, cyng::generate_invoke_remote_unwinded("client.req.query.srv.active", tag, source, cyng::code::IDENT, seq, tag_ws, server, name, pwd))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}

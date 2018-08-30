@@ -8,6 +8,7 @@ set (node_ipt_master_cpp
 	nodes/ipt/master/src/connection.cpp
 	nodes/ipt/master/src/server.cpp
 	nodes/ipt/master/src/session.cpp
+	nodes/ipt/master/src/session_state.cpp
 )
 
 set (node_ipt_master_h
@@ -16,7 +17,7 @@ set (node_ipt_master_h
 	nodes/ipt/master/src/connection.h
 	nodes/ipt/master/src/server.h
 	nodes/ipt/master/src/session.h
-
+#	nodes/ipt/master/src/session_state.h
 )
 
 set (node_ipt_master_info
