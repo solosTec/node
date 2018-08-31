@@ -1,0 +1,12 @@
+[Unit]
+Description=IEC 62056 server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_PATCH_LEVEL} (project ${PROJECT_NAME})
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/node/iec_62056 -C/opt/node/iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
+Restart=always
+RestartSec=12
+
+[Install]
+WantedBy=multi-user.target

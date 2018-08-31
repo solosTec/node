@@ -732,6 +732,21 @@ endif()
 target_link_libraries(mqtt ${mqtt_link_libs})
 
 #
+# iec_62056
+#
+include (nodes/iec-62056/prg.cmake)
+add_executable(iec_62056 ${node_iec_62056})
+# libraries to link
+set(iec_62056_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_sys cyng_domain cyng_table smf_cluster)
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	list(APPEND iec_62056_link_libs "${Boost_LIBRARIES}")
+    if (UNIX)
+        list(APPEND iec_62056_link_libs pthread)
+    endif()
+endif()
+target_link_libraries(iec_62056 ${iec_62056_link_libs})
+
+#
 # setup
 #
 include (nodes/setup/prg.cmake)
