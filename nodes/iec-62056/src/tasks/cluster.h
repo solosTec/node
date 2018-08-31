@@ -5,14 +5,11 @@
  *
  */
 
-#ifndef NODE_LORA_TASK_CLUSTER_H
-#define NODE_LORA_TASK_CLUSTER_H
-
-#include "../processor.h"
+#ifndef NODE_IEC_62056_TASK_CLUSTER_H
+#define NODE_IEC_62056_TASK_CLUSTER_H
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
-#include <smf/https/srv/server.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -33,10 +30,7 @@ namespace node
 			, cyng::logging::log_ptr
 			, boost::uuids::uuid tag
 			, cluster_config_t const& cfg
-			, boost::asio::ip::tcp::endpoint ep
-			, std::string const& doc_root
-			, std::vector<std::string> const& sub_protocols
-			, boost::asio::ssl::context& ctx);
+			, boost::asio::ip::tcp::endpoint ep);
 		cyng::continuation run();
 		void stop();
 
@@ -65,8 +59,6 @@ namespace node
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
 		const cluster_redundancy config_;
-		https::server	server_;
-		processor processor_;
 	};
 	
 }
