@@ -205,6 +205,16 @@ namespace node
 
 		void parser::set_unit(std::string const& val)
 		{
+			//
+			//	possible values are (see IEC 60027-1):
+			//	* V - volts
+			//	* A - amperes
+			//	* VA - apparent power (Scheinleistung)
+			//	* W - active power (Wirkleistung)
+			//	* var - reactive power (Blindleistung)
+			//	* J - energy
+			//	* Wh - dissipative energy
+			//
 			unit_ = val;
 			if (verbose_) {
 				std::cerr

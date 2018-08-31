@@ -8,6 +8,7 @@ set (node_ipt_master_cpp
 	nodes/ipt/master/src/connection.cpp
 	nodes/ipt/master/src/server.cpp
 	nodes/ipt/master/src/session.cpp
+	nodes/ipt/master/src/session_state.cpp
 )
 
 set (node_ipt_master_h
@@ -16,7 +17,7 @@ set (node_ipt_master_h
 	nodes/ipt/master/src/connection.h
 	nodes/ipt/master/src/server.h
 	nodes/ipt/master/src/session.h
-
+#	nodes/ipt/master/src/session_state.h
 )
 
 set (node_ipt_master_info
@@ -44,6 +45,14 @@ set (node_ipt_master_tasks
 	nodes/ipt/master/src/tasks/close_connection.cpp
 	nodes/ipt/master/src/tasks/gatekeeper.h
 	nodes/ipt/master/src/tasks/gatekeeper.cpp
+	nodes/ipt/master/src/tasks/reboot.h
+	nodes/ipt/master/src/tasks/reboot.cpp
+	nodes/ipt/master/src/tasks/query_srv_active.h
+	nodes/ipt/master/src/tasks/query_srv_active.cpp
+	nodes/ipt/master/src/tasks/query_srv_visible.h
+	nodes/ipt/master/src/tasks/query_srv_visible.cpp
+	nodes/ipt/master/src/tasks/query_firmware.h
+	nodes/ipt/master/src/tasks/query_firmware.cpp
 )
 
 set (node_ipt_master_res

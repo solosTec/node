@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_DASH_TASK_CLUSTER_H
 #define NODE_DASH_TASK_CLUSTER_H
@@ -86,6 +86,10 @@ namespace node
 		void cfg_upload_devices(cyng::context& ctx);
 		void cfg_upload_gateways(cyng::context& ctx);
 		void cfg_upload_meter(cyng::context& ctx);
+
+		void res_query_srv_visible(cyng::context& ctx);
+		void res_query_srv_active(cyng::context& ctx);
+		void res_query_firmware(cyng::context& ctx);
 
 		void sync_table(std::string const&);
 

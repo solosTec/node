@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #include "controller.h"
 #include "server.h"
@@ -52,11 +52,12 @@ namespace node
 		, sml::status&
 		, cyng::store::db&
 		, boost::uuids::uuid tag
-		, cyng::vector_t const& cfg
+		, ipt::master_config_t const& cfg
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
 		, std::string model
+		, std::uint32_t serial
 		, cyng::mac48);
 	void init_config(cyng::logging::log_ptr logger, cyng::store::db&, boost::uuids::uuid, cyng::mac48);
 
@@ -183,15 +184,21 @@ namespace node
 			//
 			const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 			const boost::filesystem::path pwd = boost::filesystem::current_path();
+
+			//
+			//	random UUID
+			//
 			boost::uuids::random_generator rgen;
 
 			//
+			//	random uint32
 			//	reconnect to master on different times
 			//
-			boost::random::mt19937 rng_;
-			rng_.seed(std::time(0));
+			boost::random::mt19937 int_rng;
+			int_rng.seed(std::time(0));
 			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
 
+			
 			//
 			//	get adapter data
 			//
@@ -208,8 +215,8 @@ namespace node
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("log-pushdata", false)	//	log file for each channel
 
-																	//	on this address the gateway acts as a server
-																	//	configuration interface
+					//	on this address the gateway acts as a server
+					//	configuration interface
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "7259"),
@@ -222,7 +229,7 @@ namespace node
 					, cyng::param_factory("hardware", cyng::tuple_factory(
 						cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF)
 						cyng::param_factory("model", "virtual.gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
-						cyng::param_factory("serial", rgen()),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
+						cyng::param_factory("serial", int_rng()),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
 						cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF) MUC-LAN/DSL
 						cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ...)
 					))
@@ -235,7 +242,7 @@ namespace node
 							cyng::param_factory("pwd", "to-define"),
 							cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 							cyng::param_factory("scrambled", true),
-							cyng::param_factory("monitor", monitor_dist(rng_))),	//	seconds
+							cyng::param_factory("monitor", monitor_dist(int_rng))),	//	seconds
 						cyng::tuple_factory(
 							cyng::param_factory("host", "127.0.0.1"),
 							cyng::param_factory("service", "26863"),
@@ -243,7 +250,7 @@ namespace node
 							cyng::param_factory("pwd", "to-define"),
 							cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 							cyng::param_factory("scrambled", false),
-							cyng::param_factory("monitor", monitor_dist(rng_)))
+							cyng::param_factory("monitor", monitor_dist(int_rng)))
 						}))
 					//, cyng::param_factory("targets", cyng::vector_factory({ "data.sink.1", "data.sink.2" }))	//	list of targets
 				)
@@ -336,8 +343,18 @@ namespace node
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
 		auto dom = cyng::make_reader(cfg);
 
+		//
+		//	random UUID
+		//
 		boost::uuids::random_generator rgen;
 		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
+
+		//
+		//	random uint32
+		//
+		boost::random::mt19937 int_rng;
+		int_rng.seed(std::time(0));
+		boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
 
 		//
 		//	apply severity threshold
@@ -364,9 +381,17 @@ namespace node
 		//
 		const std::string manufacturer = cyng::value_cast<std::string>(dom["hardware"].get("manufacturer"), "solosTec");
 		const std::string model = cyng::value_cast<std::string>(dom["hardware"].get("model"), "Gateway");
-		const auto serial = cyng::value_cast(dom["hardware"].get("serial"), rgen());
+
+		//
+		//	serial number = 32 bit unsigned
+		//
+		const auto serial = cyng::value_cast(dom["hardware"].get("serial"), int_rng());
+
 		const std::string dev_class = cyng::value_cast<std::string>(dom["hardware"].get("class"), "129-129:199.130.83*255");
 
+		//
+		//	05 + MAC = server ID
+		//
 		std::string rnd_mac_str;
 		using cyng::io::operator<<;
 		std::stringstream ss;
@@ -376,9 +401,11 @@ namespace node
 
 		std::pair<cyng::mac48, bool > r = cyng::parse_mac48(mac);
 
+
 		CYNG_LOG_INFO(logger, "manufacturer: " << manufacturer);
 		CYNG_LOG_INFO(logger, "model: " << model);
 		CYNG_LOG_INFO(logger, "dev_class: " << dev_class);
+		CYNG_LOG_INFO(logger, "serial: " << serial);
 		CYNG_LOG_INFO(logger, "mac: " << mac);
 
 		/**
@@ -390,6 +417,12 @@ namespace node
 		status_word.set_mbus_if_available(true);
 #endif
 
+		//
+		//	get IP-T configuration
+		//
+		cyng::vector_t vec;
+		vec = cyng::value_cast(dom.get("ipt"), vec);
+		auto cfg_ipt = ipt::load_cluster_cfg(vec);
 
 		/**
 		 * global data cache
@@ -406,11 +439,12 @@ namespace node
 			, status_word
 			, config_db
 			, tag
-			, cyng::value_cast(dom.get("ipt"), tmp)
+			, cfg_ipt
 			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
 			, manufacturer
 			, model
+			, serial
 			, r.first);
 
 		//
@@ -421,10 +455,12 @@ namespace node
 			, status_word
 			, config_db
 			, tag
+			, cfg_ipt
 			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
 			, manufacturer
 			, model
+			, serial
 			, r.first);
 
 		//
@@ -492,11 +528,12 @@ namespace node
 		, sml::status& status
 		, cyng::store::db& config_db
 		, boost::uuids::uuid tag
-		, cyng::vector_t const& cfg
+		, ipt::master_config_t const& cfg
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
 		, std::string model
+		, std::uint32_t serial
 		, cyng::mac48 mac)
 	{
 		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg.size());
@@ -507,11 +544,12 @@ namespace node
 			, status
 			, config_db
 			, tag
-			, ipt::load_cluster_cfg(cfg)
+			, cfg
 			, account
 			, pwd
 			, manufacturer
 			, model
+			, serial
 			, mac);
 
 	}
@@ -570,6 +608,7 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
 		}
+
 		if (!config.create_table(cyng::table::make_meta_table<2, 6>("push.ops",
 			{ "serverID"	//	server ID
 			, "idx"			//	index
@@ -606,5 +645,72 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
 		}
+
+		//if (!config.create_table(cyng::table::make_meta_table<1, 7>("config.ipt",
+		//	{ "idx"			//	index
+		//					//	-- body
+		//	, "address"		//	numerical form
+		//	, "portTarget"	//	outgoing
+		//	, "portSource"	//	incoming
+		//	, "scrambled"	//	bool
+		//	, "sk"			//	scrambled key (0102030405060708090001020304050607080900010203040506070809000001)
+		//	, "user"		//	username
+		//	, "pwd"			//	password
+
+		//	},
+		//	{ cyng::TC_UINT8		//	index (original only 2 entries supported)
+		//							//	-- body
+		//	, cyng::TC_IP_ADDRESS	//	IP-T master
+		//	, cyng::TC_UINT16		//	port (target)
+		//	, cyng::TC_UINT16		//	port (source)
+		//	, cyng::TC_BOOL			//	scrambled
+		//	, cyng::TC_STRING		//	sk
+		//	, cyng::TC_STRING		//	user
+		//	, cyng::TC_STRING		//	pwd
+
+		//	},
+		//	{ 0		//	index
+		//			//	-- body
+		//	, 16	//	address
+		//	, 0		//	portTarget
+		//	, 0		//	portSource
+		//	, 0		//	scrambled
+		//	, 64	//	sk
+		//	, 64	//	user
+		//	, 64	//	pwd
+		//	})))
+		//{
+		//	CYNG_LOG_FATAL(logger, "cannot create table config.ipt");
+		//}
+		//else
+		//{
+		//	auto cfg = ipt::load_cluster_cfg(ipt_cfg);
+		//	std::uint8_t idx{ 0 };
+		//	for (auto const& rec : cfg) {
+
+		//		try {
+		//			auto address = boost::asio::ip::make_address(rec.host_);
+		//			std::uint16_t port = std::stoul(rec.service_);
+
+		//			config.insert("config.ipt"
+		//				, cyng::table::key_generator(idx)
+		//				, cyng::table::data_generator(address	//	numerical form
+		//					, port	//	port
+		//					, 0u
+		//					, rec.scrambled_
+		//					, rec.sk_.str()
+		//					, rec.account_
+		//					, rec.pwd_)
+		//				, 1	//	generation
+		//				, tag);
+
+		//			++idx;
+		//		}
+		//		catch (std::exception const& ex) {
+		//			CYNG_LOG_FATAL(logger, ex.what() << " #" << +idx);
+		//		}
+		//	}
+		//}
+
 	}
 }

@@ -1,18 +1,17 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IPT_GATEWAY_SESSION_H
 #define NODE_IPT_GATEWAY_SESSION_H
 
 #include <smf/sml/protocol/parser.h>
 #include <smf/sml/status.h>
-#include "sml_reader.h"
+#include <smf/sml/protocol/reader.h>
 #include "kernel.h"
-//#include <smf/ipt/defs.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
@@ -30,22 +29,22 @@ namespace node
 				, cyng::logging::log_ptr logger
 				, status& status_word
 				, cyng::store::db& config_db
+				, node::ipt::master_config_t const& cfg
 				, std::string const& account
 				, std::string const& pwd
 				, std::string manufacturer
 				, std::string model
+				, std::uint32_t serial
 				, cyng::mac48 mac);
 
 			session(session const&) = delete;
 			session& operator=(session const&) = delete;
 
 			/**
-			* @return session specific hash based in internal tag
-			*/
+			 * @return session specific hash based in internal tag
+			 */
 			std::size_t hash() const noexcept;
 
-		private:
-			//void store_relation(cyng::context& ctx);
 
 		private:
 			cyng::async::mux& mux_;
@@ -62,21 +61,18 @@ namespace node
 			 */
 			node::sml::kernel core_;
 
-			/**
-			 * bookkeeping of ip-t sequence to task relation
-			 */
-			//std::map<node::ipt::sequence_type, std::size_t>	task_db_;
-
 		};
 
 		cyng::object make_session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, status& status_word
 			, cyng::store::db& config_db
+			, node::ipt::master_config_t const& cfg
 			, std::string const& account
 			, std::string const& pwd
 			, std::string manufacturer
 			, std::string model
+			, std::uint32_t serial
 			, cyng::mac48 mac);
 
 	}

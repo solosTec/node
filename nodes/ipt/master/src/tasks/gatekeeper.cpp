@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #include "gatekeeper.h"
 #include <smf/cluster/generator.h>
@@ -66,6 +66,23 @@ namespace node
 		return cyng::continuation::TASK_STOP;
 	}
 
+	//	slot 1
+	cyng::continuation gatekeeper::process()
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> session closed");
+
+		//
+		//	session already stopped
+		//
+		response_ = ipt::ctrl_res_login_public_policy::GENERAL_ERROR;
+		return cyng::continuation::TASK_STOP;
+	}
+
+
 	void gatekeeper::stop()
 	{
 		if (response_ == ipt::ctrl_res_login_public_policy::ACCOUNT_LOCKED)
@@ -79,6 +96,7 @@ namespace node
 
 			//
 			//	no login response received - stop client
+			//	Could crash if session is alreafy closed.
 			//
 			vm_.async_run(cyng::generate_invoke("ip.tcp.socket.shutdown"));
 			vm_.async_run(cyng::generate_invoke("ip.tcp.socket.close"));
@@ -118,4 +136,18 @@ namespace node
 		return cyng::continuation::TASK_STOP;
 	}
 
+}
+
+#include <cyng/async/task/task.hpp>
+
+namespace cyng {
+	namespace async {
+
+		//
+		//	initialize static slot names
+		//
+		template <>
+		std::map<std::string, std::size_t> cyng::async::task<node::gatekeeper>::slot_names_({ { "shutdown", 1 } });
+
+	}
 }

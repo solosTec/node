@@ -24,7 +24,7 @@ namespace node
 	public:
 		using msg_0 = std::tuple<std::uint64_t, std::string>;
 		using msg_1 = std::tuple<std::uint64_t, boost::uuids::uuid, cyng::buffer_t, std::size_t, cyng::param_map_t >;
-		using msg_2 = std::tuple<std::uint64_t, boost::uuids::uuid, std::string, bool, std::size_t>;
+		using msg_2 = std::tuple<std::uint64_t, boost::uuids::uuid, std::string, std::string, bool, std::size_t>;
 		using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
 
 	public:
@@ -59,7 +59,12 @@ namespace node
 		 *
 		 * close line
 		 */
-		cyng::continuation process(std::uint64_t line, boost::uuids::uuid, std::string, bool bcc, std::size_t);
+		cyng::continuation process(std::uint64_t line
+			, boost::uuids::uuid
+			, std::string meter
+			, std::string status
+			, bool bcc
+			, std::size_t);
 
 		/**
 		 * static method to create tables.
@@ -77,6 +82,8 @@ namespace node
 		cyng::db::session_pool pool_;
 		const std::string schema_;
 		const std::chrono::seconds period_;
+		const bool ignore_null_;	//!< don't store values equal to null
+		std::size_t total_count_, skipped_count_;
 		cyng::table::mt_table	meta_map_;
 		enum task_state {
 			TASK_STATE_INITIAL,

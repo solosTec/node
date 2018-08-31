@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #include <smf/ipt/bus.h>
 #include <smf/ipt/scramble_key_io.hpp>
@@ -257,8 +257,15 @@ namespace node
 
 			if (res.is_success())
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.info", "successful authorized"));
+				//
+				//	update bus state
+				//
 				state_ = STATE_AUTHORIZED_;
+
+				ctx.attach(cyng::generate_invoke("log.msg.info"
+					, "successful authorized"
+					, socket_.local_endpoint()
+					, socket_.remote_endpoint()));
 
 				//
 				//	slot [0]

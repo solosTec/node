@@ -15,6 +15,7 @@
             padding-top: 2px;
             padding-bottom: 2px;
         }
+        .collapsing { background-color: yellow; }
     </style>
 </head>
 <body>
@@ -100,7 +101,30 @@
                         </tr>
                     </thead>
                 </table>
+
+                <hr />
+                <div class="card-deck"> <!--deck-->
+                    <div class="collapse" id="smf-form-gw-collapse-srv-visible">
+                        <div class="card">
+                            <div class="card-header">Visible Meters</div>
+                            <div class="card-body"><ul class="list-group"></ul></div>
+                        </div>
+                    </div>
+                    <div class="collapse" id="smf-form-gw-collapse-srv-active">
+                        <div class="card collapse">
+                            <div class="card-header">Active Meters</div>
+                            <div class="card-body"><ul class="list-group"></ul></div>
+                        </div>
+                    </div>
+                    <div class="collapse" id="smf-form-gw-collapse-firmware">
+                        <div class="card collapse">
+                            <div class="card-header">Firmware</div>
+                            <div class="card-body"><ul class="list-group"></ul></div>
+                        </div>
+                    </div>
+                </div>
             </div>
+
             <div class="col-md-3">
                 <form class="form-horizontal" id="smf-form-gw">
                     <fieldset>
@@ -139,11 +163,26 @@
                             <a id="smf-form-gw-reboot" href="#" class="btn btn-warning col-md-4 disabled">Reboot</a>
                             <label class="control-label" for="smf-form-gw-reboot">Reboot Device</label>
                         </div>
-
+                        <hr />
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-visible" name="smf-form-gw-srv-visible">Request and display visible meters
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-active" name="smf-form-gw-srv-active">Request and display active meters
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-firmware" name="smf-form-gw-firmware">Get a firmware list
+                            </label>
+                        </div>
                     </fieldset>
                 </form>
             </div>
-        </div>
+        </div>  <!--row-->
     </div>
 
     <!-- JavaScript -->
@@ -163,7 +202,7 @@
 
         //  globals
         var table_gw;
-        var connection;
+        var _ws = null;
         var totalIO = 0;
 
         var tbl_config = {
@@ -217,113 +256,229 @@
                 //  online state
                 if (rowData[8]) {
                     $('#smf-form-gw-reboot').removeClass('disabled');
+                    $('#smf-form-gw-srv-visible').removeClass('disabled');
+                    $('#smf-form-gw-srv-active').removeClass('disabled');
                 }
                 else {
                     $('#smf-form-gw-reboot').addClass('disabled');
+                    $('#smf-form-gw-srv-visible').addClass('disabled');
+                    $('#smf-form-gw-srv-active').addClass('disabled');
+                }
+
+                if ($('#smf-form-gw-srv-visible').is(":checked") && rowData[8]) {
+                    $('#smf-form-gw-collapse-srv-visible ul').empty();
+                    $('#smf-form-gw-collapse-srv-visible .card-header').text('Visible meters to ' + rowData[1]);
+                    _ws.send(JSON.stringify({
+                        cmd: "query:srv:visible", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                    }));
+                }
+                if ($('#smf-form-gw-srv-active').is(":checked") && rowData[8]) {
+                    $('#smf-form-gw-collapse-srv-active ul').empty();
+                    $('#smf-form-gw-collapse-srv-active .card-header').text('Active meters to ' + rowData[1]);
+                    _ws.send(JSON.stringify({
+                        cmd: "query:srv:active", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                    }));
+                }
+                if ($('#smf-form-gw-firmware').is(":checked") && rowData[8]) {
+                    $('#smf-form-gw-collapse-firmware ul').empty();
+                    $('#smf-form-gw-collapse-firmware .card-header').text('Firmware overview ' + rowData[1]);
+                    _ws.send(JSON.stringify({
+                        cmd: "query:firmware", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                    }));
                 }
 
             });
 
-            $('#ws-activity-text').html('connecting to ' + location.host + '...');
-            connection = new WebSocket('ws://' + location.host + '/smf/api/gw/v0.1', ['SMF']);
-            connection.onopen = function () {
-                //  subscribe system status
-                connection.send(JSON.stringify({ cmd: "subscribe", channel: "config.gateway", push: true }));
-            };
+            function start_ws() {
+                //  try connect
+                $('#ws-activity-text').html('connecting to ' + location.host + '...');
+                _ws = new WebSocket('ws://' + location.host + '/smf/api/gw/v0.1', ['SMF']);
 
-            connection.onclose = function (event) {
-                $('#ws-activity-symbol').show();
-                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
-                if (event.code == 1006) {
-                    $('#ws-activity-text').html('connection lost - press reload');
-                }
-                else {
-                    $('#ws-activity-text').html('error ' + event.code);
-                }
-            };
+                _ws.onopen = function () {
+                    console.log('ws open');
+                    //  clear table in case of reconnect
+                    table_gw.clear().draw(false);
+                    //  subscribe system status
+                    _ws.send(JSON.stringify({ cmd: "subscribe", channel: "config.gateway", push: true }));
+                };
 
-            connection.onerror = function (error) {
-                console.log('ws error');
-                $('#ws-activity-text').html('ws error');
-            };
-
-            connection.onmessage = function (e) {
-                $('#ws-activity-symbol').show();
-                console.log('incoming data: ' + e.data);
-                totalIO += e.data.length;
-                var obj = JSON.parse(e.data);
-                if (obj.cmd != null) {
-                    if (obj.cmd == 'insert') {
-                        //  
-                        // {"cmd": "insert", "channel": "config.gateway", "rec": 
-                        //  {"key": {"pk":"d28cd24a-980d-46fc-b5ac-8c445415adbf"}, 
-                        //  "data": {"factoryNr":"06441734","serverID":"0500153B02517E","ifData":"00:01:02:03:04:06","ifService":"00:01:02:03:04:05","made":"2018-06-06 13:24:51.38650500","manufacturer":"EMH","mbus":"mbus","model":"MODEL","name":"NAME","online":false,"pwdDef":"secret","pwdRoot":"secret","userName":"operator","userPwd":"operator","vFirmware":"FIRMWARE"}, "gen": 94}}
-                        //
-                        var server = $('<div/>').text(obj.rec.data.serverId).html();
-                        var manufacturer = $('<div/>').text(obj.rec.data.manufacturer).html();
-                        var name = $('<div/>').text(obj.rec.data.name).html();
-                        var model = $('<div/>').text(obj.rec.data.model).html();
-                        var firmware = $('<div/>').text(obj.rec.data.vFirmware).html();
-                        var userName = $('<div/>').text(obj.rec.data.userName).html();
-                        var userPwd = $('<div/>').text(obj.rec.data.userPwd).html();
-                        var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, name, model, firmware, userName, userPwd, obj.rec.data.online]).draw().node();
-
+                _ws.onclose = function (event) {
+                    $('#ws-activity-symbol').show();
+                    $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
+                    if (event.code == 1006) {
+                        $('#ws-activity-text').html('_ws lost - press reload');
                     }
-                    else if (obj.cmd == 'delete') {
-                        //  {"cmd": "delete", "channel": "config.gateway", "key": ["28754043-1f38-4318-a95e-dd9965e80895"]}
-                        table_gw.row(function (idx, data, node) {
-                            if (data[0] == obj.key) {
-                                $('#smf-form-gw-delete-name').text("Device");
-                                $('#smf-form-gw-update').addClass('disabled');
-                                $('#smf-form-gw-delete').addClass('disabled');
-                                $('#smf-form-gw-reboot').addClass('disabled');
-                                return true;
+                    else {
+                        $('#ws-activity-text').html('error ' + event.code);
+                    }
+                    check_ws();
+                };
+
+                _ws.onerror = function (error) {
+                    console.log('ws error');
+                    $('#ws-activity-text').html('ws error');
+                };
+
+                _ws.onmessage = function (e) {
+                    $('#ws-activity-symbol').show();
+                    console.log('incoming data: ' + e.data);
+                    totalIO += e.data.length;
+                    var obj = JSON.parse(e.data);
+                    if (obj.cmd != null && obj.channel != null) {
+                        if (obj.channel == 'config.gateway') {
+                            if (obj.cmd == 'insert') {
+                                //
+                                // {"cmd": "insert", "channel": "config.gateway", "rec":
+                                //  {"key": {"pk":"d28cd24a-980d-46fc-b5ac-8c445415adbf"},
+                                //  "data": {"factoryNr":"06441734","serverID":"0500153B02517E","ifData":"00:01:02:03:04:06","ifService":"00:01:02:03:04:05","made":"2018-06-06 13:24:51.38650500","manufacturer":"EMH","mbus":"mbus","model":"MODEL","name":"NAME","online":false,"pwdDef":"secret","pwdRoot":"secret","userName":"operator","userPwd":"operator","vFirmware":"FIRMWARE"}, "gen": 94}}
+                                //
+                                var server = $('<div/>').text(obj.rec.data.serverId).html();
+                                var manufacturer = $('<div/>').text(obj.rec.data.manufacturer).html();
+                                var name = $('<div/>').text(obj.rec.data.name).html();
+                                var model = $('<div/>').text(obj.rec.data.model).html();
+                                var firmware = $('<div/>').text(obj.rec.data.vFirmware).html();
+                                var userName = $('<div/>').text(obj.rec.data.userName).html();
+                                var userPwd = $('<div/>').text(obj.rec.data.userPwd).html();
+                                var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, name, model, firmware, userName, userPwd, obj.rec.data.online]).draw().node();
+
                             }
-                            return false;
-                        }).remove().draw(false);
-                    }
-                    else if (obj.cmd == 'modify') {
-                        //  {"cmd": "modify", "channel": "config.gateway", "key": ["dca135f3-ff2b-4bf7-8371-a9904c74522b"], "value": {"online":true}}
-                        //  {"cmd": "modify", "channel": "config.gateway", "key": ["a584c1cc-7ae1-455b-99d1-de0f9483520d"], "value": {"online":false}}
-                        table_gw.row(function (idx, data, node) {
-                            if (data[0] == obj.key) {
-                                var r = table_gw.row(node);
-                                var d = r.data();
-                                if (obj.value.online != null) {
-                                    d[8] = obj.value.online;
-                                }
-                                else if (obj.value.serverId != null) {
-                                    d[1] = obj.value.serverId;
-                                }
-                                else if (obj.value.manufacturer != null) {
-                                    d[2] = obj.value.manufacturer;
-                                }
-                                else if (obj.value.userName != null) {
-                                    d[6] = obj.value.userName;
-                                }
-                                else if (obj.value.userPwd != null) {
-                                    d[7] = obj.value.userPwd;
-                                }
-                                r.data(d);
-                                $('#smf-form-gw-delete').addClass('disabled');
-                                return true;
+                            else if (obj.cmd == 'delete') {
+                                //  {"cmd": "delete", "channel": "config.gateway", "key": ["28754043-1f38-4318-a95e-dd9965e80895"]}
+                                table_gw.row(function (idx, data, node) {
+                                    if (data[0] == obj.key) {
+                                        $('#smf-form-gw-delete-name').text("Device");
+                                        $('#smf-form-gw-update').addClass('disabled');
+                                        $('#smf-form-gw-delete').addClass('disabled');
+                                        $('#smf-form-gw-reboot').addClass('disabled');
+                                        $('#smf-form-gw-srv-visible').addClass('disabled');
+                                        $('#smf-form-gw-srv-active').addClass('disabled');
+
+                                        return true;
+                                    }
+                                    return false;
+                                }).remove().draw(false);
                             }
-                            return false;
-                        });
+                            else if (obj.cmd == 'modify') {
+                                //  {"cmd": "modify", "channel": "config.gateway", "key": ["dca135f3-ff2b-4bf7-8371-a9904c74522b"], "value": {"online":true}}
+                                //  {"cmd": "modify", "channel": "config.gateway", "key": ["a584c1cc-7ae1-455b-99d1-de0f9483520d"], "value": {"online":false}}
+                                table_gw.row(function (idx, data, node) {
+                                    if (data[0] == obj.key) {
+                                        var r = table_gw.row(node);
+                                        var d = r.data();
+                                        if (obj.value.online != null) {
+                                            d[8] = obj.value.online;
+                                        }
+                                        else if (obj.value.serverId != null) {
+                                            d[1] = obj.value.serverId;
+                                        }
+                                        else if (obj.value.manufacturer != null) {
+                                            d[2] = obj.value.manufacturer;
+                                        }
+                                        else if (obj.value.userName != null) {
+                                            d[6] = obj.value.userName;
+                                        }
+                                        else if (obj.value.userPwd != null) {
+                                            d[7] = obj.value.userPwd;
+                                        }
+                                        r.data(d);
+                                        $('#smf-form-gw-delete').addClass('disabled');
+                                        return true;
+                                    }
+                                    return false;
+                                });
+                            }
+                            else if (obj.cmd == 'clear') {
+                                table_gw.clear().draw(false);
+                            }
+                        }
+                        else if (obj.channel == 'status.gateway.visible') {
+                            if (obj.cmd == 'append') {
+                                if (obj.rec.type == 0) {
+                                    $('#smf-form-gw-collapse-srv-visible ul').append('<li class="list-group-item list-group-item-success">#'
+                                        + obj.rec.nr
+                                        + ' '
+                                        + obj.rec.meter
+                                        + ' ('
+                                        + obj.rec.tp
+                                        + ')</li>');
+                                }
+                                else {
+                                    $('#smf-form-gw-collapse-srv-visible ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                        + obj.rec.nr
+                                        + ' '
+                                        + obj.rec.meter
+                                        + ' ('
+                                        + obj.rec.tp
+                                        + ')</li>');
+                                }
+                            }
+                        }
+                        else if (obj.channel == 'status.gateway.active') {
+                            if (obj.cmd == 'append') {
+                                if (obj.rec.type == 0) {
+                                    $('#smf-form-gw-collapse-srv-active ul').append('<li class="list-group-item list-group-item-success">#'
+                                    + obj.rec.nr
+                                    + ' '
+                                    + obj.rec.meter
+                                    + ' ('
+                                    + obj.rec.tp
+                                    + ')</li>');
+                                }
+                                else {
+                                    $('#smf-form-gw-collapse-srv-active ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                    + obj.rec.nr
+                                    + ' '
+                                    + obj.rec.meter
+                                    + ' ('
+                                    + obj.rec.tp
+                                    + ')</li>');
+                                }
+                            }
+                        }
+                        else if (obj.channel == 'status.gateway.firmware') {
+                            if (obj.cmd == 'append') {
+                                //  {"nr": 0, "srv": "00:15:3b:02:29:7e", "section": "CURRENT VERSION", "version": "VSES-1.13_1133000038X025d", "active": true}
+                                if (obj.rec.active) {
+                                    $('#smf-form-gw-collapse-firmware ul').append('<li class="list-group-item list-group-item-success">#'
+                                        + obj.rec.nr
+                                        + ' '
+                                        + obj.rec.section
+                                        + ': '
+                                        + obj.rec.version
+                                        + '</li>');
+                                }
+                                else {
+                                    $('#smf-form-gw-collapse-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                        + obj.rec.nr
+                                        + ' '
+                                        + obj.rec.section
+                                        + ': '
+                                        + obj.rec.version
+                                        + '</li>');
+                                }
+                            }
+                        }
                     }
-                    else if (obj.cmd == 'clear') {
-                        table_gw.clear().draw(false);
-                    }
-              }
-                $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
-                $('#ws-activity-symbol').fadeOut();
-            };
+                    $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
+                    $('#ws-activity-symbol').fadeOut();
+                };
+            }
+
+            function check_ws() {
+                if (!_ws || _ws.readyState == 3) {
+                    start_ws();
+                }
+            }
+
+            start_ws();
+
+            setInterval(check_ws, 5000);
 
             $('#smf-form-gw-delete').on("click", function (event) {
                 event.preventDefault();
                 var key = $('#smf-form-gw-tag').val();
                 console.log($(this).text() + ' ' + key);
-                connection.send(JSON.stringify({
+                _ws.send(JSON.stringify({
                     cmd: 'delete', channel: 'config.gateway', key: {
                         tag: [key]
                     }
@@ -334,7 +489,7 @@
                 event.preventDefault();
                 console.log('update: ' + $('#smf-form-gw').serialize());
 
-                connection.send(JSON.stringify({
+                _ws.send(JSON.stringify({
                     cmd: "modify", channel: "config.gateway", rec: {
                         key: [$('#smf-form-gw-tag').val()],
                         data: {
@@ -351,12 +506,40 @@
                 event.preventDefault();
                 console.log('reboot: ' + $('#smf-form-gw').serialize());
 
-                connection.send(JSON.stringify({
+                _ws.send(JSON.stringify({
                     cmd: "reboot", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
                 }));
             });
 
+            $('#smf-form-gw-srv-visible').change(function () {
+                if (this.checked) {
+                    $('#smf-form-gw-collapse-srv-visible').removeClass("collapse");
+                }
+                else {
+                    $('#smf-form-gw-collapse-srv-visible').addClass("collapse");
+                }
+            });
+
+            $('#smf-form-gw-srv-active').change(function () {
+                if (this.checked) {
+                    $('#smf-form-gw-collapse-srv-active').removeClass("collapse");
+                }
+                else {
+                    $('#smf-form-gw-collapse-srv-active').addClass("collapse");
+                }
+            });
+
+            $('#smf-form-gw-firmware').change(function () {
+                if (this.checked) {
+                    $('#smf-form-gw-collapse-firmware').removeClass("collapse");
+                }
+                else {
+                    $('#smf-form-gw-collapse-firmware').addClass("collapse");
+                }
+            });
+
         });
+
 
     </script>
 
@@ -375,4 +558,4 @@
     </script>
 
 </body>
-</html >
+</html>

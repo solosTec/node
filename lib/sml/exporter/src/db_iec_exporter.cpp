@@ -8,7 +8,6 @@
 #include <smf/sml/exporter/db_iec_exporter.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
-//#include <smf/sml/srv_id_io.h>
 #include <smf/sml/units.h>
 #include <smf/sml/scaler.h>
 
@@ -58,7 +57,7 @@ namespace node
 		{
 		}
 
-		void db_exporter::write(cyng::db::session sp
+		void db_exporter::write_data(cyng::db::session sp
 			, boost::uuids::uuid pk
 			, std::size_t idx
 			, cyng::buffer_t const& buffer
@@ -104,6 +103,43 @@ namespace node
 
 		}
 
+		void db_exporter::write_meta(cyng::db::session sp
+			, boost::uuids::uuid pk
+			, std::string const& meter
+			, std::string const& status
+			, bool bcc
+			, std::size_t size)
+		{
+			cyng::sql::command cmd(mt_.find("TIECMeta")->second, sp.get_dialect());
+			cmd.insert();
+			auto sql = cmd.to_str();
+			//CYNG_LOG_INFO(logger_, "db.insert.data " << sql);
+			auto stmt = sp.create_statement();
+			std::pair<int, bool> r = stmt->prepare(sql);
+			//BOOST_ASSERT(r.first == 6);	//	11 parameters to bind
+			BOOST_ASSERT(r.second);
+
+
+			stmt->push(cyng::make_object(pk), 36)		//	pk
+				.push(cyng::make_now(), 0)				//	roTime
+				.push(cyng::make_object(meter), 8)		//	meter
+				.push(cyng::make_object(status), 8)		//	status
+				.push(cyng::make_object(bcc), 0)		//	bcc
+				.push(cyng::make_object(size), 0)		//	size
+				.push(cyng::make_object(source_), 0)	//	source
+				.push(cyng::make_object(channel_), 0)	//	channel
+				.push(cyng::make_object(target_), 32)	//	target
+				;
+
+
+			if (!stmt->execute())
+			{
+				//CYNG_LOG_ERROR(logger_, sql << " failed with the following data set: " << cyng::io::to_str(frame));
+
+			}
+			stmt->clear();
+
+		}
 
 	}	//	iec
 }

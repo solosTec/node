@@ -208,6 +208,16 @@ namespace node
 					cyng::param_factory("db-schema", NODE_SUFFIX),		//	use "v4.0" for compatibility to version 4.x
 					cyng::param_factory("period", 12)	//	seconds
 				))
+				, cyng::param_factory("IEC:DB", cyng::tuple_factory(
+					cyng::param_factory("type", "SQLite"),
+					cyng::param_factory("file-name", (pwd / "store.database").string()),
+					cyng::param_factory("busy-timeout", 12),		//	seconds
+					cyng::param_factory("watchdog", 30),	//	for database connection
+					cyng::param_factory("pool-size", 1),	//	no pooling for SQLite
+					cyng::param_factory("db-schema", NODE_SUFFIX),
+					cyng::param_factory("period", 12),	//	seconds
+					cyng::param_factory("ignore-null", false)	//	don't write values equal 0
+				))
 				, cyng::param_factory("SML:XML", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "xml").string()),
 					cyng::param_factory("root-name", "SML"),

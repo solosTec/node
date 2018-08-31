@@ -8,6 +8,9 @@
 #include <smf/sml/intrinsics/obis.h>
 #include <smf/sml/units.h>
 #include <boost/assert.hpp>
+#include <boost/functional/hash.hpp>
+
+#pragma pack(1)
 
 namespace node
 {
@@ -250,6 +253,23 @@ namespace node
 			return value_[5];
 		}
 
+		std::uint16_t obis::get_number() const
+		{
+			union {
+				std::uint8_t val_[2];
+				std::uint16_t num_;
+			} u;
+
+			//
+			//	map values
+			//
+			u.val_[0] = value_[5];
+			u.val_[1] = value_[4] - 1;
+
+			return u.num_;
+		}
+
+
 		bool obis::is_private() const 
 		{
 			return 	(get_medium() >= 0x80 && get_medium() <= 0xC7)
@@ -281,6 +301,15 @@ namespace node
 		octet_type obis::to_buffer() const
 		{
 			return octet_type(value_.begin(), value_.end());
+		}
+
+		std::size_t obis::hash() const
+		{
+			std::size_t seed = 0;
+			for (auto c : value_) {
+				boost::hash_combine(seed, c);
+			}
+			return seed;
 		}
 
 		//
@@ -324,5 +353,17 @@ namespace node
 	}	//	sml
 }	//	node
 
+#pragma pack()
 
+namespace std
+{
+	size_t hash<node::sml::obis>::operator()(node::sml::obis const& code) const noexcept
+	{
+		return code.hash();
+	}
 
+	bool equal_to<node::sml::obis>::operator()(node::sml::obis const& c1, node::sml::obis const& c2) const noexcept
+	{
+		return c1.equal(c2);
+	}
+}

@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IPT_GATEWAY_CONNECTION_H
 #define NODE_IPT_GATEWAY_CONNECTION_H
@@ -11,6 +11,8 @@
 #include <NODE_project_info.h>
 #include <smf/sml/bus/serializer.h>
 #include <smf/sml/status.h>
+#include <smf/ipt/config.h>
+
 #include <cyng/object.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
@@ -36,10 +38,12 @@ namespace node
 				, cyng::logging::log_ptr logger
 				, status& status_word
 				, cyng::store::db& config_db
+				, node::ipt::master_config_t const& cfg
 				, std::string const& account
 				, std::string const& pwd
 				, std::string manufacturer
 				, std::string model
+				, std::uint32_t serial
 				, cyng::mac48 mac);
 
 			/**

@@ -10,6 +10,7 @@
 
 
 #include <smf/sml/defs.h>
+#include <smf/sml/status.h>
 #include <smf/ipt/bus.h>
 #include <cyng/intrinsics/mac.h>
 #include <cyng/log.h>
@@ -29,6 +30,7 @@ namespace node
 		public:
 			executor(cyng::logging::log_ptr
 				, cyng::async::mux& mux
+				, status&
 				, cyng::store::db& config_db
 				, node::ipt::bus::shared_type bus
 				, boost::uuids::uuid tag
@@ -54,6 +56,11 @@ namespace node
 		private:
 			cyng::logging::log_ptr logger_;
 			cyng::async::mux& mux_;
+
+			/**
+			 * global state
+			 */
+			status& status_word_;
 
 			/**
 			 * configuration db

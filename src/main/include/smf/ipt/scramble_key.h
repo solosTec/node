@@ -9,6 +9,7 @@
 #define NODE_IPT_SCRAMBLE_KEY_H
 
 #include <array>
+#include <functional>	//	hash
 
 namespace node
 {
@@ -93,12 +94,9 @@ namespace std
 	template<>
 	struct hash<node::ipt::scramble_key>
 	{
-		inline size_t operator()(node::ipt::scramble_key const& t) const noexcept
-		{
-			//return std::hash<std::string>{}(t.meta().get_name());
-			return 1;
-		}
+		size_t operator()(node::ipt::scramble_key const& sk) const noexcept;
 	};
+
 	template<>
 	struct equal_to<node::ipt::scramble_key>
 	{
@@ -106,10 +104,7 @@ namespace std
 		using first_argument_type = node::ipt::scramble_key;
 		using second_argument_type = node::ipt::scramble_key;
 
-		inline bool operator()(node::ipt::scramble_key const& t1, node::ipt::scramble_key const& t2) const noexcept
-		{
-			return t1.key() == t2.key();
-		}
+		bool operator()(node::ipt::scramble_key const& t1, node::ipt::scramble_key const& t2) const noexcept;
 	};
 }
 

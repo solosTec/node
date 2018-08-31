@@ -156,7 +156,7 @@ namespace node
 		, std::size_t idx
 		, cyng::tuple_t msg)
 	{
-		CYNG_LOG_INFO(logger_, "task #"
+		CYNG_LOG_TRACE(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()

@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IP_MASTER_TASK_GATEKEEPER_H
 #define NODE_IP_MASTER_TASK_GATEKEEPER_H
@@ -22,7 +22,8 @@ namespace node
 	{
 	public:
 		using msg_0 = std::tuple<ipt::response_type>;
-		using signatures_t = std::tuple<msg_0>;
+		using msg_1 = std::tuple<>;
+		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
 		gatekeeper(cyng::async::base_task* bt
@@ -39,6 +40,13 @@ namespace node
 		 * sucessful cluster login
 		 */
 		cyng::continuation process(ipt::response_type);
+
+		/**
+		 * @brief slot [1]
+		 *
+		 * session closed
+		 */
+		cyng::continuation process();
 
 	private:
 		cyng::async::base_task& base_;

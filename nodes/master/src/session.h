@@ -77,7 +77,15 @@ namespace node
 		void bus_start_watchdog(cyng::context& ctx);
 		void res_watchdog(cyng::context& ctx);
 		void bus_req_stop_client_impl(cyng::context& ctx);
+
 		void bus_req_reboot_client(cyng::context& ctx);
+		void bus_req_query_srv_visible(cyng::context& ctx);
+		void bus_res_query_srv_visible(cyng::context& ctx);
+		void bus_req_query_srv_active(cyng::context& ctx);
+		void bus_res_query_srv_active(cyng::context& ctx);
+		void bus_req_query_firmware(cyng::context& ctx);
+		void bus_res_query_firmware(cyng::context& ctx);
+
 		void cleanup(cyng::context& ctx);
 		void bus_insert_msg(cyng::context& ctx);
 		void bus_req_push_data(cyng::context& ctx);
@@ -116,6 +124,10 @@ namespace node
 			, boost::uuids::uuid);
 
 		void stop_cb(cyng::vm&, cyng::object);
+
+		std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> find_peer(cyng::table::key_type const& key_session
+			, const cyng::store::table* tbl_session
+			, const cyng::store::table* tbl_gw);
 
 	private:
 		cyng::async::mux& mux_;

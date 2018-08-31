@@ -18,19 +18,23 @@ namespace node
 		, sml::status& status_word
 		, cyng::store::db& config_db
 		, boost::uuids::uuid tag
+		, ipt::master_config_t const& cfg
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
 		, std::string model
+		, std::uint32_t serial
 		, cyng::mac48 mac)
 	: mux_(mux)
 		, logger_(logger)
 		, status_word_(status_word)
 		, config_db_(config_db)
+		, cfg_(cfg)
 		, account_(account)
 		, pwd_(pwd)
 		, manufacturer_(manufacturer)
 		, model_(model)
+		, serial_(serial)
 		, server_id_(mac)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
@@ -85,10 +89,12 @@ namespace node
 					, logger_
 					, status_word_
 					, config_db_
+					, cfg_
 					, account_
 					, pwd_
 					, manufacturer_
 					, model_
+					, serial_
 					, server_id_)->start();
 
 				do_accept();

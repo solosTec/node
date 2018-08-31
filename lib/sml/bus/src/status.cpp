@@ -37,11 +37,14 @@ namespace node
 			//	reset status word
 			//
 			word_ = 0u;
-			word_ |= STATUS_BIT_ON;
+			word_ |= STATUS_BIT_ON;	//!< bit 1 is always ON
 			word_ |= STATUS_BIT_RESET_BY_WATCHDOG;	
+			word_ |= STATUS_BIT_IP_ADDRESS_AVAILABLE;	//!< 1 if NOT available
+			word_ |= STATUS_BIT_EXT_IF_AVAILABLE;	//!< 1 if NOT available
+			word_ |= STATUS_BIT_AUTHORIZED_IPT;	//!< 1 if NOT authorized
 		}
 
-		status::operator std::uint64_t() const
+		status::operator std::uint32_t() const
 		{
 			return word_;
 		}
@@ -82,6 +85,11 @@ namespace node
 		void status::set_mbus_if_available(bool b)
 		{
 			b ? set(STATUS_BIT_MBUS_IF_AVAILABLE) : remove(STATUS_BIT_MBUS_IF_AVAILABLE);
+		}
+
+		bool status::is_authorized() const
+		{
+			return !is_set(STATUS_BIT_AUTHORIZED_IPT);
 		}
 
 		bool status::is_set(status_bits e) const

@@ -65,6 +65,28 @@ namespace node
 				, params);
 		}
 
+		cyng::tuple_t get_proc_parameter_request(cyng::object server_id
+			, std::string const& username
+			, std::string const& password
+			, obis code)
+		{
+			//
+			//	5 elements:
+			//
+			//	* server ID
+			//	* username
+			//	* password
+			//	* parameter tree (OBIS)
+			//	* attribute (not set = 01)
+			//
+			return cyng::tuple_factory(server_id
+				, username
+				, password
+				, cyng::tuple_factory(code.to_buffer())	//	path entry
+				, cyng::make_object());
+
+		}
+
 		cyng::tuple_t set_proc_parameter_request(cyng::object server_id
 			, std::string const& username
 			, std::string const& password

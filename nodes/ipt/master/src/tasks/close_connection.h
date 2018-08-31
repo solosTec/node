@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_IP_MASTER_TASK_CLOSE_CONNECTION_H
 #define NODE_IP_MASTER_TASK_CLOSE_CONNECTION_H
@@ -22,7 +22,8 @@ namespace node
 	{
 	public:
 		using msg_0 = std::tuple<ipt::response_type>;
-		using signatures_t = std::tuple<msg_0>;
+		using msg_1 = std::tuple<>;
+		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
 		close_connection(cyng::async::base_task* bt
@@ -45,12 +46,19 @@ namespace node
 		 */
 		cyng::continuation process(ipt::response_type);
 
+		/**
+		 * @brief slot [1]
+		 *
+		 * session closed
+		 */
+		cyng::continuation process();
+
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		bus::shared_type bus_;	//!< cluster bus
 		cyng::controller& vm_;	//!< ipt device
-		const bool shutdown_;	//!< sender is in shutdown mode 
+		bool shutdown_;	//!< sender is in shutdown mode 
 		const boost::uuids::uuid tag_;	//!< remote session tag to address response
 		const std::size_t seq_;
 		const cyng::param_map_t options_;

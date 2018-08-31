@@ -91,6 +91,7 @@ namespace node
 
 		//
 		//	close session
+		//	could crash if session is already gone
 		//
 		vm_.async_run(cyng::generate_invoke("ip.tcp.socket.shutdown"));
 		vm_.async_run(cyng::generate_invoke("ip.tcp.socket.close"));
@@ -159,4 +160,30 @@ namespace node
 		return cyng::continuation::TASK_STOP;
 	}
 
+	//	slot 1
+	cyng::continuation open_connection::process()
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> session closed");
+
+		return cyng::continuation::TASK_STOP;
+	}
+
+}
+
+#include <cyng/async/task/task.hpp>
+
+namespace cyng {
+	namespace async {
+
+		//
+		//	initialize static slot names
+		//
+		template <>
+		std::map<std::string, std::size_t> cyng::async::task<node::open_connection>::slot_names_({ { "shutdown", 1 } });
+
+	}
 }

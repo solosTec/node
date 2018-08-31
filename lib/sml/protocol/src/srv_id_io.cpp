@@ -41,6 +41,15 @@ namespace node
 			return ((buffer.size() == 7) && (buffer.at(0) == MAC_ADDRESS));
 		}
 
+		std::uint32_t get_srv_type(cyng::buffer_t const& buffer)
+		{
+			if (is_mbus(buffer))	return SRV_MBUS;
+			if (is_serial(buffer))	return SRV_SERIAL;
+			if (is_gateway(buffer))	return SRV_GW;
+
+			return SRV_OTHER;
+		}
+
 		bool is_mbus(std::string const& str)
 		{
 			//example: 02-e61e-03197715-3c-07

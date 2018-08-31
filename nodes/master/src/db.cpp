@@ -85,7 +85,7 @@ namespace node
 		if (!db.create_table(cyng::table::make_meta_table<1, 11>("TGateway", { "pk"	//	primary key
 				, "serverId"	//	(1) Server-ID (i.e. 0500153B02517E)
 				, "manufacturer"	//	(2) manufacturer (i.e. EMH)
-				, "made"	//	(3) production date
+				, "made"		//	(3) production date
 				, "factoryNr"	//	(4) fabrik nummer (i.e. 06441734)
 				, "ifService"	//	(5) MAC of service interface
 				, "ifData"		//	(6) MAC of data interface

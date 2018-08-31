@@ -38,6 +38,9 @@ namespace node
 		, pool_(base_.mux_.get_io_service(), cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite")))
 		, schema_(cyng::value_cast<std::string>(cfg["db-schema"], NODE_SUFFIX))
 		, period_(cyng::value_cast(cfg["period"], 12))
+		, ignore_null_(cyng::value_cast(cfg["ignore-null"], false))
+		, total_count_(0)
+		, skipped_count_(0)
 		, meta_map_(init_meta_map(schema_))
 		, task_state_(TASK_STATE_INITIAL)
 		, lines_()
@@ -47,11 +50,6 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< ">");
-
-		if (!boost::algorithm::equals(schema_, NODE_SUFFIX))
-		{
-			CYNG_LOG_WARNING(logger_, "use non-standard db schema " << schema_);
-		}
 
 		if (!boost::algorithm::equals(schema_, NODE_SUFFIX))
 		{
@@ -159,7 +157,7 @@ namespace node
 		, cyng::param_map_t params
 	)
 	{
-		CYNG_LOG_INFO(logger_, "task #"
+		CYNG_LOG_TRACE(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
@@ -175,12 +173,40 @@ namespace node
 
 			try {
 				//
-				//	write to DB
+				//	write IEC data to DB
 				//
 				const std::string value = cyng::value_cast<std::string>(params.at("value"), "");
 				const std::string unit = cyng::value_cast<std::string>(params.at("unit"), "");
 				const std::string status = cyng::value_cast<std::string>(params.at("status"), "");
-				pos->second.write(pool_.get_session(), pk, idx, code, value, unit, status);
+
+				//
+				//	test values for 0
+				//
+				++total_count_;
+				if (status.empty()
+					&& (value.find_first_not_of("0.", 0) == std::string::npos) 
+					&& ignore_null_) {
+
+					++skipped_count_;
+
+					CYNG_LOG_WARNING(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< " line "
+						<< line
+						<< " skip null value #"
+						<< idx
+						<< " "
+						<< sml::obis(code)
+						<< " rate: "
+						<< ((skipped_count_ * 100) / total_count_)
+						<< '%');
+
+				}
+				else {
+					pos->second.write_data(pool_.get_session(), pk, idx, code, value, unit, status);
+				}
 			}
 			catch (std::exception const& ex) {
 
@@ -208,7 +234,12 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	cyng::continuation iec_db_consumer::process(std::uint64_t line, boost::uuids::uuid pk, std::string meter, bool bcc, std::size_t size)
+	cyng::continuation iec_db_consumer::process(std::uint64_t line
+		, boost::uuids::uuid pk
+		, std::string meter
+		, std::string status
+		, bool bcc
+		, std::size_t size)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -221,9 +252,9 @@ namespace node
 		if (pos != lines_.end()) {
 
 			//
-			//	write to DB
+			//	write IEC meta data to DB
 			//
-			//pos->second.write(pool_.get_session());
+			pos->second.write_meta(pool_.get_session(), pk, meter, status, bcc, size);
 
 			//
 			//	remove this line
@@ -304,10 +335,37 @@ namespace node
 		//	msgIdx - message index
 		//	status - M-Bus status
 		//
-		meta_map.emplace("TIECMeta", cyng::table::make_meta_table<1, 11>("TIECMeta",
-			{ "pk", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target", "profile" },
-			{ cyng::TC_UUID, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING },
-			{ 36, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32, 24 }));
+		meta_map.emplace("TIECMeta", cyng::table::make_meta_table<1, 8>("TIECMeta",
+			{ "pk"
+			, "roTime"
+			, "meter"
+			, "status"
+			, "bcc"
+			, "size"
+			, "source"
+			, "channel"
+			, "target"
+			},
+			{ cyng::TC_UUID	//	pk
+			, cyng::TC_TIME_POINT	//	roTime
+			, cyng::TC_STRING	//	meter
+			, cyng::TC_STRING	//	status
+			, cyng::TC_BOOL		//	bcc
+			, cyng::TC_UINT64	//	size
+			, cyng::TC_UINT32	//	source
+			, cyng::TC_UINT32	//	channel
+			, cyng::TC_STRING	//	target
+			},
+			{ 36	//	pk
+			, 0		//	roTime
+			, 8		//	meter
+			, 8		//	status
+			, 0		//	bcc
+			, 0		//	size
+			, 0		//	source
+			, 0		//	channel
+			, 32	//	target
+			}));
 
 		//
 		//	unitCode - physical unit

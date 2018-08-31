@@ -1,9 +1,9 @@
 /*
-* The MIT License (MIT)
-*
-* Copyright (c) 2018 Sylko Olzscher
-*
-*/
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Sylko Olzscher
+ *
+ */
 
 #ifndef NODE_CLUSTER_GENERATOR_H
 #define NODE_CLUSTER_GENERATOR_H
@@ -128,6 +128,87 @@ namespace node
 		, boost::uuids::uuid source);
 
 	/**
+	 * Request a list of visible meters/servers
+	 * 
+	 * @param key key for TGateway table
+	 * @param source source tag
+	 */
+	cyng::vector_t bus_req_query_srv_visible(cyng::vector_t const&
+		, boost::uuids::uuid source
+		, boost::uuids::uuid tag_ws);
+
+	/**
+	 * Response for bus.req.query.srv.visible
+	 *
+	 * @param source source tag
+	 * @param srv server id
+	 * @param nr list number
+	 * @param meter meter id
+	 * @param st last status message
+	 */
+	cyng::vector_t bus_res_query_srv_visible(boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, std::uint16_t nr
+		, std::string srv
+		, std::string meter
+		, std::string dclass
+		, std::chrono::system_clock::time_point st
+		, std::uint32_t srv_type);
+
+	/**
+	 * Request a list of active meters/servers
+	 */
+	cyng::vector_t bus_req_query_srv_active(cyng::vector_t const&
+		, boost::uuids::uuid source
+		, boost::uuids::uuid tag_ws);
+
+	/**
+	 * Request a list available firmware versions
+	 */
+	cyng::vector_t bus_req_query_firmware(cyng::vector_t const&
+		, boost::uuids::uuid source
+		, boost::uuids::uuid tag_ws);
+
+	/**
+	 * Response for bus.req.query.srv.active
+	 *
+	 * @param source source tag
+	 * @param srv server id
+	 * @param nr list number
+	 * @param meter meter id
+	 * @param st last status message
+	 */
+	cyng::vector_t bus_res_query_srv_active(boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, std::uint16_t nr
+		, std::string srv
+		, std::string meter
+		, std::string dclass
+		, std::chrono::system_clock::time_point st
+		, std::uint32_t srv_type);
+
+	/**
+	 * Response for bus.req.query.firmware
+	 *
+	 * @param source source tag
+	 * @param srv server id
+	 * @param nr list number
+	 * @param section firmware name/section
+	 * @param version manufacturer-specific version
+	 * @param active true/false
+	 */
+	cyng::vector_t bus_res_query_firmware(boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, std::uint32_t nr
+		, std::string srv
+		, std::string section
+		, std::string version
+		, bool active);
+
+	/**
 	 * data bus
 	 */
 	cyng::vector_t bus_req_push_data(std::string const& class_name
@@ -173,6 +254,60 @@ namespace node
 
 	cyng::vector_t client_req_reboot(boost::uuids::uuid tag, cyng::buffer_t const&, std::string const&, std::string const&);
 	//cyng::vector_t client_res_reboot(boost::uuids::uuid tag, std::uint64_t seq, bool success);
+
+	/**
+	 * Query a list of all visible devices/servers/meters
+	 * 
+	 * @param tag target session
+	 * @param source source session
+	 * @param seq cluster sequence
+	 * @param server server id
+	 * @param user login name / account
+	 * @param pwd password
+	 */
+	cyng::vector_t client_req_query_srv_visible(boost::uuids::uuid tag
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, cyng::buffer_t const& server
+		, std::string const& user
+		, std::string const& pwd);
+
+	/**
+	 * Query a list of all active devices/servers/meters
+	 * 
+	 * @param tag target session
+	 * @param source source session
+	 * @param seq cluster sequence
+	 * @param server server id
+	 * @param user login name / account
+	 * @param pwd password
+	 */
+	cyng::vector_t client_req_query_srv_active(boost::uuids::uuid tag
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, cyng::buffer_t const& server
+		, std::string const& user
+		, std::string const& pwd);
+
+	/**
+	 * Query a list available firmware versions
+	 * 
+	 * @param tag target session
+	 * @param source source session
+	 * @param seq cluster sequence
+	 * @param server server id
+	 * @param user login name / account
+	 * @param pwd password
+	 */
+	cyng::vector_t client_req_query_firmware(boost::uuids::uuid tag
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, cyng::buffer_t const& server
+		, std::string const& user
+		, std::string const& pwd);
 
 	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
 		, std::string const& target

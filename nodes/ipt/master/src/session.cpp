@@ -10,11 +10,14 @@
 #include "tasks/open_connection.h"
 #include "tasks/close_connection.h"
 #include "tasks/gatekeeper.h"
+#include "tasks/reboot.h"
+#include "tasks/query_srv_visible.h"
+#include "tasks/query_srv_active.h"
+#include "tasks/query_firmware.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/scramble_key_io.hpp>
-#include <smf/sml/protocol/generator.h>
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/store_domain.h>
 #include <cyng/io/serializer.h>
@@ -58,7 +61,7 @@ namespace node
 				, vm_
 				, tag
 				, timeout_).first)
-			, connect_state_()
+			, connect_state_(this)
 #ifdef SMF_IO_LOG
 			, log_counter_(0)
 #endif
@@ -71,7 +74,20 @@ namespace node
 
 			vm_.register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1));
 			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
+			vm_.register_function("session.redirect", 1, std::bind(&session::redirect, this, std::placeholders::_1));
 			vm_.register_function("client.req.reboot", 5, std::bind(&session::client_req_reboot, this, std::placeholders::_1));
+			vm_.register_function("client.req.query.srv.visible", 7, std::bind(&session::client_req_query_srv_visible, this, std::placeholders::_1));
+			vm_.register_function("client.req.query.srv.active", 7, std::bind(&session::client_req_query_srv_active, this, std::placeholders::_1));
+			vm_.register_function("client.req.query.firmware", 7, std::bind(&session::client_req_query_firmware, this, std::placeholders::_1));
+
+			vm_.register_function("sml.msg", 2, std::bind(&connect_state::sml_msg, &connect_state_, std::placeholders::_1));
+			vm_.register_function("sml.eom", 2, std::bind(&connect_state::sml_eom, &connect_state_, std::placeholders::_1));
+			vm_.register_function("sml.public.open.response", 6, std::bind(&connect_state::sml_public_open_response, &connect_state_, std::placeholders::_1));
+			vm_.register_function("sml.public.close.response", 3, std::bind(&connect_state::sml_public_close_response, &connect_state_, std::placeholders::_1));
+			vm_.register_function("sml.get.proc.param.srv.visible", 8, std::bind(&connect_state::sml_get_proc_param_srv_visible, &connect_state_, std::placeholders::_1));
+			vm_.register_function("sml.get.proc.param.srv.active", 8, std::bind(&connect_state::sml_get_proc_param_srv_active, &connect_state_, std::placeholders::_1));
+			vm_.register_function("sml.get.proc.param.firmware", 8, std::bind(&connect_state::sml_get_proc_param_firmware, &connect_state_, std::placeholders::_1));
+			vm_.register_function("sml.get.proc.param.simple", 6, std::bind(&connect_state::sml_get_proc_param_simple, &connect_state_, std::placeholders::_1));
 
 			//
 			//	register request handler
@@ -266,7 +282,15 @@ namespace node
 		{}
 
 		void session::stop(cyng::object obj)
-		{
+		{	
+			//
+			//	stop tasks that are still running
+			//
+			mux_.post("shutdown", cyng::tuple_t{});
+
+			//
+			//	gracefull shutdown
+			//
 			vm_.access([obj](cyng::vm& vm) {
 				vm.run(cyng::generate_invoke("log.msg.info", "fast shutdown"));
 				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
@@ -325,13 +349,46 @@ namespace node
 		void session::update_connection_state(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "session.update.connection.state " << cyng::io::to_str(frame));
 			auto const tpl = cyng::tuple_cast<
 				boost::uuids::uuid,		//	[0] remote tag
 				bool					//	[1] new state
 			>(frame);
 
-			connect_state_.connected_local_ = std::get<1>(tpl);
+			connect_state_.open_connection(std::get<1>(tpl));
+			CYNG_LOG_INFO(logger_, "session.update.connection.state " 
+				<< std::get<1>(tpl)
+				<< ": "
+				<< connect_state_);
+		}
+
+		void session::redirect(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+
+			if (!connect_state_.is_connected()) {
+
+				auto tsk = cyng::value_cast<std::size_t>(frame.at(0), cyng::async::NO_TASK);
+				connect_state_.open_connection(tsk);
+				CYNG_LOG_INFO(logger_, "session.redirect "
+					<< ctx.tag()
+					<< ": "
+					<< connect_state_);
+
+				mux_.post(tsk, 0, cyng::tuple_factory(ctx.tag()));
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "session.redirect "
+					<< ctx.tag()
+					<< " - session is busy: "
+					<< connect_state_);
+			}
+
+			//connect_state_.open_connection(std::get<1>(tpl));
+			//CYNG_LOG_INFO(logger_, "session.update.connection.state "
+			//	<< std::get<1>(tpl)
+			//	<< ": "
+			//	<< connect_state_);
+
 		}
 
 		void session::client_req_reboot(cyng::context& ctx)
@@ -347,35 +404,109 @@ namespace node
 				std::string				//	[4] pwd
 			>(frame);
 
-			//
-			//	send 81 81 C7 83 82 01 
-			//
-			node::sml::req_generator sml_gen;
-			sml_gen.public_open(cyng::mac48(), std::get<2>(tpl), std::get<3>(tpl), std::get<4>(tpl));
-			sml_gen.set_proc_parameter_restart(std::get<2>(tpl), std::get<3>(tpl), std::get<4>(tpl));
-			sml_gen.public_close();
-			cyng::buffer_t msg = sml_gen.boxing();
+			const std::size_t tsk = cyng::async::start_task_sync<reboot>(mux_
+				, logger_
+				, bus_
+				, vm_
+				, std::get<0>(tpl)	//	remote tag
+				, std::get<1>(tpl)	//	cluster seq
+				, std::get<2>(tpl)	//	server ID
+				, std::get<3>(tpl)	//	name
+				, std::get<4>(tpl)	//	password
+				, ctx.tag()).first;	//	ctx tag
 
-#ifdef SMF_IO_LOG
-			cyng::io::hex_dump hd;
-			hd(std::cerr, msg.begin(), msg.end());
-#endif
+			CYNG_LOG_TRACE(logger_, "client.req.reboot - task #" << tsk);
 
-			//	[0000]  1b 1b 1b 1b 01 01 01 01  76 0a 33 34 35 36 34 35  ........ v.345645
-			//	[0010]  30 2d 31 62 00 62 00 72  63 01 00 77 01 07 00 00  0-1b.b.r c..w....
-			//	[0020]  00 00 00 00 0f 32 30 31  38 30 36 30 38 31 36 30  .....201 80608160
-			//	[0030]  32 34 39 01 09 6f 70 65  72 61 74 6f 72 09 6f 70  249..ope rator.op
-			//	[0040]  65 72 61 74 6f 72 01 63  8c ad 00 76 0a 33 34 35  erator.c ...v.345
-			//	[0050]  36 34 35 30 2d 32 62 00  62 00 72 63 06 00 75 01  6450-2b. b.rc..u.
-			//	[0060]  09 6f 70 65 72 61 74 6f  72 09 6f 70 65 72 61 74  .operato r.operat
-			//	[0070]  6f 72 71 07 81 81 c7 83  82 01 73 07 81 81 c7 83  orq..... ..s.....
-			//	[0080]  82 01 01 01 63 7f cc 00  76 0a 33 34 35 36 34 35  ....c... v.345645
-			//	[0090]  30 2d 33 62 00 62 00 72  63 02 00 71 01 63 05 32  0-3b.b.r c..q.c.2
-			//	[00a0]  00 00 00 00 1b 1b 1b 1b  1a 03 c0 ea              ........ ....
+		}
 
-			ctx	.attach(cyng::generate_invoke("ipt.transfer.data", msg))
-				.attach(cyng::generate_invoke("stream.flush"));
+		void session::client_req_query_srv_visible(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "client.req.query.srv.visible " << cyng::io::to_str(frame));
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] source tag
+				boost::uuids::uuid,		//	[1] remote tag
+				std::uint64_t,			//	[2] cluster seq
+				boost::uuids::uuid,		//	[3] ws tag
+				cyng::buffer_t,			//	[4] server id
+				std::string,			//	[5] name
+				std::string				//	[6] pwd
+			>(frame);
 
+			const std::size_t tsk = cyng::async::start_task_sync<query_srv_visible>(mux_
+				, logger_
+				, bus_
+				, vm_
+				, std::get<0>(tpl)	//	remote tag
+				, std::get<2>(tpl)	//	cluster seq
+				, std::get<3>(tpl)	//	ws tag
+				, std::get<4>(tpl)	//	server ID
+				, std::get<5>(tpl)	//	name
+				, std::get<6>(tpl)	//	password
+				, timeout_
+				, ctx.tag()).first;	//	ctx tag
+
+			CYNG_LOG_TRACE(logger_, "client.req.query.srv.visible - task #" << tsk);
+		}
+
+		void session::client_req_query_srv_active(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "client.req.query.srv.active " << cyng::io::to_str(frame));
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] source tag
+				boost::uuids::uuid,		//	[1] remote tag
+				std::uint64_t,			//	[2] cluster seq
+				boost::uuids::uuid,		//	[1] ws tag
+				cyng::buffer_t,			//	[3] server id
+				std::string,			//	[4] name
+				std::string				//	[5] pwd
+			>(frame);
+
+			const std::size_t tsk = cyng::async::start_task_sync<query_srv_active>(mux_
+				, logger_
+				, bus_
+				, vm_
+				, std::get<0>(tpl)	//	remote tag
+				, std::get<2>(tpl)	//	cluster seq
+				, std::get<3>(tpl)	//	ws tag
+				, std::get<4>(tpl)	//	server ID
+				, std::get<5>(tpl)	//	name
+				, std::get<6>(tpl)	//	password
+				, timeout_
+				, ctx.tag()).first;	//	ctx tag
+
+			CYNG_LOG_TRACE(logger_, "client.req.query.srv.active - task #" << tsk);
+		}
+
+		void session::client_req_query_firmware(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "client.req.query.firmware " << cyng::io::to_str(frame));
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] source tag
+				boost::uuids::uuid,		//	[1] remote tag
+				std::uint64_t,			//	[2] cluster seq
+				boost::uuids::uuid,		//	[1] ws tag
+				cyng::buffer_t,			//	[3] server id
+				std::string,			//	[4] name
+				std::string				//	[5] pwd
+			>(frame);
+
+			const std::size_t tsk = cyng::async::start_task_sync<query_firmware>(mux_
+				, logger_
+				, bus_
+				, vm_
+				, std::get<0>(tpl)	//	remote tag
+				, std::get<2>(tpl)	//	cluster seq
+				, std::get<3>(tpl)	//	ws tag
+				, std::get<4>(tpl)	//	server ID
+				, std::get<5>(tpl)	//	name
+				, std::get<6>(tpl)	//	password
+				, timeout_
+				, ctx.tag()).first;	//	ctx tag
+
+			CYNG_LOG_TRACE(logger_, "client.req.query.firmware - task #" << tsk);
 		}
 
 		void session::ipt_req_login_public(cyng::context& ctx)
@@ -648,12 +779,18 @@ namespace node
 					of.close();
 				}
 #endif
+				CYNG_LOG_DEBUG(logger_, "transmit data in connection state " << connect_state_);
 
-				if (connect_state_.connected_local_)
-				{
+				//
+				//	data destination depends on connection state
+				//
+				switch (connect_state_.state_) {
+
+				case connect_state::STATE_LOCAL:
 					bus_->vm_.async_run(cyng::generate_invoke("server.transmit.data", tag, frame.at(1)));
-				}
-				else
+					break;
+
+				case connect_state::STATE_REMOTE:
 				{
 					cyng::param_map_t bag;
 					bag["tp-layer"] = cyng::make_object("ipt");
@@ -662,6 +799,16 @@ namespace node
 						, bag
 						, frame.at(1)));
 				}
+					break;
+				case connect_state::STATE_TASK:
+					//	send data to task
+					mux_.post(connect_state_.tsk_, 2, cyng::tuple_factory(frame.at(1)));
+					break;
+
+				default:
+					break;
+				}
+
 			}
 			else
 			{
@@ -936,6 +1083,7 @@ namespace node
 			//	stop gatekeeper
 			//
 			mux_.post(gate_keeper_, 0, cyng::tuple_factory(res));
+			//mux_.send<gatekeeper, 0>(cyng::tuple_factory(res));
 
 			const std::string security = cyng::value_cast<std::string>(dom.get("security"), "undef");
 			if (boost::algorithm::equals(security, "scrambled"))
@@ -1328,7 +1476,7 @@ namespace node
 			auto dom = cyng::make_reader(std::get<4>(tpl));
 
 			cyng::param_map_t tmp;
-			const std::size_t tsk = cyng::async::start_task_sync<close_connection>(mux_
+			auto tsk = cyng::async::start_task_sync<close_connection>(mux_
 				, logger_
 				, bus_
 				, vm_
@@ -1376,7 +1524,7 @@ namespace node
 				//
 				//	reset connection state
 				//
-				connect_state_.connected_local_ = false;
+				connect_state_.close_connection();
 			}
 			else
 			{
@@ -1427,8 +1575,8 @@ namespace node
 				//	hides outer variable dom
 				//
 				auto dom = cyng::make_reader(std::get<3>(tpl));
-				BOOST_ASSERT_MSG(!connect_state_.connected_local_, "already connected");
-				connect_state_.connected_local_ = cyng::value_cast(dom.get("local-connect"), false);
+				BOOST_ASSERT_MSG(!connect_state_.is_connected(), "already connected");
+				connect_state_.open_connection(cyng::value_cast(dom.get("local-connect"), false));
 			}
 			else
 			{
@@ -1733,9 +1881,7 @@ namespace node
 			}
 		}
 
-		session::connect_state::connect_state()
-			: connected_local_(false)
-		{}
+
 
 	}
 }

@@ -7,9 +7,8 @@
 
 #include <boost/asio.hpp>
 #include "show_ip_address.h"
-// #include <NODE_project_info.h>
-// #include <boost/config.hpp>
-// #include <boost/version.hpp>
+#include <cyng/sys/mac.h>
+#include <cyng/io/serializer.h>
 
 namespace node 
 {
@@ -38,6 +37,19 @@ namespace node
 					<< std::endl
 					;
 			}
+
+			auto macs = cyng::sys::retrieve_mac48();
+			if (!macs.empty())
+			{
+				std::cout << macs.size() << " physical address(es)" << std::endl;
+				for (auto const& m : macs) {
+					using cyng::io::operator<<;
+					std::cout
+						<< m
+						<< std::endl;
+				}
+			}
+
 			return EXIT_SUCCESS;
 		}
 		catch (std::exception const& ex)

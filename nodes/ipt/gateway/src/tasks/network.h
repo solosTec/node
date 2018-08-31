@@ -50,6 +50,7 @@ namespace node
 				, std::string pwd
 				, std::string manufacturer
 				, std::string model
+				, std::uint32_t serial
 				, cyng::mac48 mac);
 			cyng::continuation run();
 			void stop();
