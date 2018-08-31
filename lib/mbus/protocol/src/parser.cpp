@@ -49,7 +49,7 @@ namespace node
 			switch (stream_state_)
 			{
 			case STATE_START:
-				switch (c) {
+                switch (static_cast<unsigned char>(c)) {
 				case 0xE5:
 					//	ack
 					break;

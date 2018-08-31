@@ -6,9 +6,7 @@
  */
 
 #include "network.h"
-//#include "sync.h"
 #include <smf/ipt/generator.h>
-#include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
 #include <boost/uuid/random_generator.hpp>

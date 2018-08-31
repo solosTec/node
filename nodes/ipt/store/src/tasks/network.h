@@ -248,4 +248,15 @@ namespace node
 	}
 }
 
+namespace cyng {
+	namespace async {
+
+		//
+		//	initialize static slot names
+		//
+		template <>
+		std::map<std::string, std::size_t> cyng::async::task<node::ipt::network>::slot_names_;
+    }
+}
+
 #endif
