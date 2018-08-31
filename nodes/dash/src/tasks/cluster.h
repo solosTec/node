@@ -89,6 +89,7 @@ namespace node
 
 		void res_query_srv_visible(cyng::context& ctx);
 		void res_query_srv_active(cyng::context& ctx);
+		void res_query_firmware(cyng::context& ctx);
 
 		void sync_table(std::string const&);
 

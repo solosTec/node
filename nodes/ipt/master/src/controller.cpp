@@ -183,7 +183,7 @@ namespace node
 					cyng::param_factory("service", "26862"),
 					cyng::param_factory("sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 					cyng::param_factory("watchdog", 30),	//	for IP-T connection
-					cyng::param_factory("timeout", 12)		//	connection timeout
+					cyng::param_factory("timeout", 5)		//	connection timeout in seconds
 				))
 				, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
 					cyng::param_factory("host", "127.0.0.1"),

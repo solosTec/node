@@ -236,6 +236,8 @@ namespace node
 			<< " - "
 			<< sml::from_server_id(meter));
 
+		//std::uint32_t sml::get_srv_type(meter);
+
 		BOOST_ASSERT(server_id_ == srv);
 		bus_->vm_.async_run(bus_res_query_srv_active(tag_remote_
 			, seq_cluster_
@@ -244,7 +246,8 @@ namespace node
 			, sml::from_server_id(srv)
 			, sml::from_server_id(meter)
 			, std::string(dclass.begin(), dclass.end())
-			, st));
+			, st
+			, sml::get_srv_type(meter)));
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

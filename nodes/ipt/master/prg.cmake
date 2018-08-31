@@ -51,6 +51,8 @@ set (node_ipt_master_tasks
 	nodes/ipt/master/src/tasks/query_srv_active.cpp
 	nodes/ipt/master/src/tasks/query_srv_visible.h
 	nodes/ipt/master/src/tasks/query_srv_visible.cpp
+	nodes/ipt/master/src/tasks/query_firmware.h
+	nodes/ipt/master/src/tasks/query_firmware.cpp
 )
 
 set (node_ipt_master_res

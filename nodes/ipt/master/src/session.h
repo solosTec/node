@@ -80,6 +80,8 @@ namespace node
 				void sml_public_close_response(cyng::context& ctx);
 				void sml_get_proc_param_srv_visible(cyng::context& ctx);
 				void sml_get_proc_param_srv_active(cyng::context& ctx);
+				void sml_get_proc_param_firmware(cyng::context& ctx);
+				void sml_get_proc_param_simple(cyng::context& ctx);
 
 			};
 
@@ -169,10 +171,7 @@ namespace node
 			void client_req_reboot(cyng::context& ctx);
 			void client_req_query_srv_visible(cyng::context& ctx);
 			void client_req_query_srv_active(cyng::context& ctx);
-
-			//
-			//	SML data
-			//
+			void client_req_query_firmware(cyng::context& ctx);
 
 		private:
 			cyng::async::mux& mux_;

@@ -13,6 +13,7 @@
 #include "tasks/reboot.h"
 #include "tasks/query_srv_visible.h"
 #include "tasks/query_srv_active.h"
+#include "tasks/query_firmware.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
@@ -77,6 +78,7 @@ namespace node
 			vm_.register_function("client.req.reboot", 5, std::bind(&session::client_req_reboot, this, std::placeholders::_1));
 			vm_.register_function("client.req.query.srv.visible", 7, std::bind(&session::client_req_query_srv_visible, this, std::placeholders::_1));
 			vm_.register_function("client.req.query.srv.active", 7, std::bind(&session::client_req_query_srv_active, this, std::placeholders::_1));
+			vm_.register_function("client.req.query.firmware", 7, std::bind(&session::client_req_query_firmware, this, std::placeholders::_1));
 
 			vm_.register_function("sml.msg", 2, std::bind(&connect_state::sml_msg, &connect_state_, std::placeholders::_1));
 			vm_.register_function("sml.eom", 2, std::bind(&connect_state::sml_eom, &connect_state_, std::placeholders::_1));
@@ -84,6 +86,8 @@ namespace node
 			vm_.register_function("sml.public.close.response", 3, std::bind(&connect_state::sml_public_close_response, &connect_state_, std::placeholders::_1));
 			vm_.register_function("sml.get.proc.param.srv.visible", 8, std::bind(&connect_state::sml_get_proc_param_srv_visible, &connect_state_, std::placeholders::_1));
 			vm_.register_function("sml.get.proc.param.srv.active", 8, std::bind(&connect_state::sml_get_proc_param_srv_active, &connect_state_, std::placeholders::_1));
+			vm_.register_function("sml.get.proc.param.firmware", 8, std::bind(&connect_state::sml_get_proc_param_firmware, &connect_state_, std::placeholders::_1));
+			vm_.register_function("sml.get.proc.param.simple", 6, std::bind(&connect_state::sml_get_proc_param_simple, &connect_state_, std::placeholders::_1));
 
 			//
 			//	register request handler
@@ -473,6 +477,36 @@ namespace node
 				, ctx.tag()).first;	//	ctx tag
 
 			CYNG_LOG_TRACE(logger_, "client.req.query.srv.active - task #" << tsk);
+		}
+
+		void session::client_req_query_firmware(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "client.req.query.firmware " << cyng::io::to_str(frame));
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] source tag
+				boost::uuids::uuid,		//	[1] remote tag
+				std::uint64_t,			//	[2] cluster seq
+				boost::uuids::uuid,		//	[1] ws tag
+				cyng::buffer_t,			//	[3] server id
+				std::string,			//	[4] name
+				std::string				//	[5] pwd
+			>(frame);
+
+			const std::size_t tsk = cyng::async::start_task_sync<query_firmware>(mux_
+				, logger_
+				, bus_
+				, vm_
+				, std::get<0>(tpl)	//	remote tag
+				, std::get<2>(tpl)	//	cluster seq
+				, std::get<3>(tpl)	//	ws tag
+				, std::get<4>(tpl)	//	server ID
+				, std::get<5>(tpl)	//	name
+				, std::get<6>(tpl)	//	password
+				, timeout_
+				, ctx.tag()).first;	//	ctx tag
+
+			CYNG_LOG_TRACE(logger_, "client.req.query.firmware - task #" << tsk);
 		}
 
 		void session::ipt_req_login_public(cyng::context& ctx)

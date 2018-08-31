@@ -14,6 +14,7 @@
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
+#include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/xml.h>
@@ -401,7 +402,7 @@ namespace node
 			obis code = read_obis(*pos++);
 			if (code == path.back()) {
 				//	root
-				std::cout << "root: " << code << std::endl;
+				//std::cout << "root: " << code << std::endl;
 				BOOST_ASSERT(depth == 0);
 			}
 			else {
@@ -418,80 +419,319 @@ namespace node
 			//
 			cyng::vector_t prg;
 
-			if (path.size() == 3) {
-
-				if (path.back().is_matching(0x81, 0x81, 0x10, 0x06)) {
-					cyng::tuple_t tpl;
-					tpl = cyng::value_cast(*pos++, tpl);
-
-					//
-					//	collect meter info
-					//	* 81 81 C7 82 04 FF: server ID
-					//	* 81 81 C7 82 02 FF: --- (device class)
-					//	* 01 00 00 09 0B 00: timestamp
-					//
-					for (auto const child : tpl)
-					{
-						cyng::tuple_t tmp;
-						tmp = cyng::value_cast(child, tmp);
-						read_get_proc_single_parameter(tmp.begin(), tmp.end());
-
-					}
-					prg << cyng::generate_invoke_unwinded("sml.get.proc.param.srv.visible"
-						, ro_.pk_
-						, ro_.trx_
-						, ro_.idx_
-						, ro_.get_value("serverId")
-						, path.back().get_number()	//	4/5 
-						, ro_.get_value("81 81 c7 82 04 ff")	//	meter ID
-						, ro_.get_value("81 81 c7 82 02 ff")	//	device class
-						, ro_.get_value("01 00 00 09 0b 00"));	//	UTC
-				}
-				else if (path.back().is_matching(0x81, 0x81, 0x11, 0x06)) {
-					cyng::tuple_t tpl;
-					tpl = cyng::value_cast(*pos++, tpl);
-
-					//
-					//	collect meter info
-					//	* 81 81 C7 82 04 FF: server ID
-					//	* 81 81 C7 82 02 FF: --- (device class)
-					//	* 01 00 00 09 0B 00: timestamp
-					//
-					for (auto const child : tpl)
-					{
-						cyng::tuple_t tmp;
-						tmp = cyng::value_cast(child, tmp);
-						read_get_proc_single_parameter(tmp.begin(), tmp.end());
-
-					}
-					prg << cyng::generate_invoke_unwinded("sml.get.proc.param.srv.active"
-						, ro_.pk_
-						, ro_.trx_
-						, ro_.idx_
-						, ro_.get_value("serverId")
-						, path.back().get_number()	//	4/5 
-						, ro_.get_value("81 81 c7 82 04 ff")	//	meter ID
-						, ro_.get_value("81 81 c7 82 02 ff")	//	device class
-						, ro_.get_value("01 00 00 09 0b 00"));	//	UTC
-				}
-			}
-			else
-			{
-				//
-				//	3. child_List List_of_SML_Tree OPTIONAL
-				//
-				cyng::tuple_t tpl;
-				tpl = cyng::value_cast(*pos++, tpl);
-				++depth;
-				for (auto const child : tpl)
+			switch (path.size()) {
+			case 2:
+				if (path.front() == OBIS_CODE_ROOT_DEVICE_IDENT)
 				{
-					cyng::tuple_t tmp;
-					tmp = cyng::value_cast(child, tmp);
+					if (path.back() == OBIS_CODE_DEVICE_CLASS) {
+						//
+						//	device class
+						//	CODE_ROOT_DEVICE_IDENT (81, 81, C7, 82, 01, FF)
+						//		CODE_DEVICE_CLASS (81, 81, C7, 82, 02, FF)
+						//
+#ifdef _DEBUG
+						//std::cout << "OBIS_CODE_DEVICE_CLASS: " << cyng::io::to_str(attr.second) << std::endl;
+#endif
+						return cyng::generate_invoke("sml.get.proc.param.simple"
+							, ro_.pk_
+							, ro_.trx_
+							, ro_.idx_
+							, ro_.get_value("serverId")
+							, path.back().to_buffer()
+							, attr.second);	//	value
 
-					prg << cyng::unwinder(read_get_proc_parameter_response(path, depth, tmp.begin(), tmp.end()));
+					}
+					else if (path.back() == OBIS_DATA_MANUFACTURER) {
+						//
+						//	device class
+						//
+#ifdef _DEBUG
+						//std::cout << "OBIS_DATA_MANUFACTURER: " << cyng::io::to_str(attr.second) << std::endl;
+#endif
+						return cyng::generate_invoke("sml.get.proc.param.simple"
+							, ro_.pk_
+							, ro_.trx_
+							, ro_.idx_
+							, ro_.get_value("serverId")
+							, path.back().to_buffer()
+							, attr.second);	//	value
+					}
+					else if (path.back() == OBIS_CODE_SERVER_ID) {
+						//
+						//	server ID (81 81 C7 82 04 FF)
+						//
+#ifdef _DEBUG
+						//std::cout << "OBIS_CODE_SERVER_ID: " << cyng::io::to_str(attr.second) << std::endl;
+#endif
+						return cyng::generate_invoke("sml.get.proc.param.simple"
+							, ro_.pk_
+							, ro_.trx_
+							, ro_.idx_
+							, ro_.get_value("serverId")
+							, path.back().to_buffer()
+							, attr.second);	//	value
+					}
 				}
+				break;
+			case 3:
+				if ((path.front() == OBIS_CODE_ROOT_VISIBLE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x10, 0x06)) {
+
+					//
+					//	collect meter info
+					//	* 81 81 C7 82 04 FF: server ID
+					//	* 81 81 C7 82 02 FF: --- (device class)
+					//	* 01 00 00 09 0B 00: timestamp
+					//
+					read_get_proc_multiple_parameters(*pos++);
+					return cyng::generate_invoke("sml.get.proc.param.srv.visible"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, path.back().get_number()	//	4/5 
+						, ro_.get_value("81 81 c7 82 04 ff")	//	meter ID
+						, ro_.get_value("81 81 c7 82 02 ff")	//	device class
+						, ro_.get_value("01 00 00 09 0b 00"));	//	UTC
+				}
+				else if ((path.front() == OBIS_CODE_ROOT_ACTIVE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x11, 0x06)) {
+					cyng::tuple_t tpl;
+					tpl = cyng::value_cast(*pos++, tpl);
+
+					//
+					//	collect meter info
+					//	* 81 81 C7 82 04 FF: server ID
+					//	* 81 81 C7 82 02 FF: --- (device class)
+					//	* 01 00 00 09 0B 00: timestamp
+					//
+					for (auto const child : tpl)
+					{
+						cyng::tuple_t tmp;
+						tmp = cyng::value_cast(child, tmp);
+						read_get_proc_single_parameter(tmp.begin(), tmp.end());
+
+					}
+					return cyng::generate_invoke("sml.get.proc.param.srv.active"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, path.back().get_number()	//	4/5 
+						, ro_.get_value("81 81 c7 82 04 ff")	//	meter ID
+						, ro_.get_value("81 81 c7 82 02 ff")	//	device class
+						, ro_.get_value("01 00 00 09 0b 00"));	//	UTC
+				}
+				else if ((path.front() == OBIS_CODE_ROOT_DEVICE_IDENT) && path.back().is_matching(0x81, 0x81, 0xc7, 0x82, 0x07).second) {
+
+					//	* 81, 81, c7, 82, 08, ff:	CURRENT_VERSION/KERNEL
+					//	* 81, 81, 00, 02, 00, 00:	VERSION
+					//	* 81, 81, c7, 82, 0e, ff:	activated/deactivates
+					read_get_proc_multiple_parameters(*pos++);
+
+#ifdef _DEBUG
+					//std::cout << "81 81 c7 82 08 ff: " << cyng::io::to_str(ro_.get_value("81 81 c7 82 08 ff")) << std::endl;
+					//std::cout << "81 81 00 02 00 00: " << cyng::io::to_str(ro_.get_value("81 81 00 02 00 00")) << std::endl;
+					//std::cout << "81 81 c7 82 0e ff: " << cyng::io::to_str(ro_.get_value("81 81 c7 82 0e ff")) << std::endl;
+#endif
+
+					return cyng::generate_invoke("sml.get.proc.param.firmware"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, path.back().get_storage()	//	[5] as u32
+						, ro_.get_value("81 81 c7 82 08 ff")	//	firmware name/section
+						, ro_.get_value("81 81 00 02 00 00")	//	version
+						, ro_.get_value("81 81 c7 82 0e ff"));	//	active/inavtive
+
+				}
+
+				break;
+			default:
+				break;
+			}
+
+			//
+			//	3. child_List List_of_SML_Tree OPTIONAL
+			//
+			return read_tree_list(path, *pos++, ++depth);
+
+
+
+
+
+//			if (path.size() == 2) {
+//				if (path.front() == OBIS_CODE_ROOT_DEVICE_IDENT)
+//				{
+//					if (path.back() == OBIS_CODE_DEVICE_CLASS) {
+//						//
+//						//	device class
+//						//	CODE_ROOT_DEVICE_IDENT (81, 81, C7, 82, 01, FF)
+//						//		CODE_DEVICE_CLASS (81, 81, C7, 82, 02, FF)
+//						//
+//#ifdef _DEBUG
+//						//std::cout << "OBIS_CODE_DEVICE_CLASS: " << cyng::io::to_str(attr.second) << std::endl;
+//#endif
+//						prg << cyng::generate_invoke_unwinded("sml.get.proc.param.simple"
+//							, ro_.pk_
+//							, ro_.trx_
+//							, ro_.idx_
+//							, ro_.get_value("serverId")
+//							, path.back().to_buffer()
+//							, attr.second);	//	value
+//
+//					}
+//					else if (path.back() == OBIS_DATA_MANUFACTURER) {
+//						//
+//						//	device class
+//						//
+//#ifdef _DEBUG
+//						//std::cout << "OBIS_DATA_MANUFACTURER: " << cyng::io::to_str(attr.second) << std::endl;
+//#endif
+//						prg << cyng::generate_invoke_unwinded("sml.get.proc.param.simple"
+//							, ro_.pk_
+//							, ro_.trx_
+//							, ro_.idx_
+//							, ro_.get_value("serverId")
+//							, path.back().to_buffer()
+//							, attr.second);	//	value
+//					}
+//					else if (path.back() == OBIS_CODE_SERVER_ID) {
+//						//
+//						//	server ID (81 81 C7 82 04 FF)
+//						//
+//#ifdef _DEBUG
+//						//std::cout << "OBIS_CODE_SERVER_ID: " << cyng::io::to_str(attr.second) << std::endl;
+//#endif
+//						prg << cyng::generate_invoke_unwinded("sml.get.proc.param.simple"
+//							, ro_.pk_
+//							, ro_.trx_
+//							, ro_.idx_
+//							, ro_.get_value("serverId")
+//							, path.back().to_buffer()
+//							, attr.second);	//	value
+//					}
+//				}
+//				else {
+//					prg << cyng::unwinder(read_tree_list(path, *pos++, ++depth));
+//				}
+//			}
+//			else if (path.size() == 3) {
+//
+//				if ((path.front() == OBIS_CODE_ROOT_VISIBLE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x10, 0x06)) {
+//
+//					//
+//					//	collect meter info
+//					//	* 81 81 C7 82 04 FF: server ID
+//					//	* 81 81 C7 82 02 FF: --- (device class)
+//					//	* 01 00 00 09 0B 00: timestamp
+//					//
+//					read_get_proc_multiple_parameters(*pos++);
+//					prg << cyng::generate_invoke_unwinded("sml.get.proc.param.srv.visible"
+//						, ro_.pk_
+//						, ro_.trx_
+//						, ro_.idx_
+//						, ro_.get_value("serverId")
+//						, path.back().get_number()	//	4/5 
+//						, ro_.get_value("81 81 c7 82 04 ff")	//	meter ID
+//						, ro_.get_value("81 81 c7 82 02 ff")	//	device class
+//						, ro_.get_value("01 00 00 09 0b 00"));	//	UTC
+//				}
+//				else if ((path.front() == OBIS_CODE_ROOT_ACTIVE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x11, 0x06)) {
+//					cyng::tuple_t tpl;
+//					tpl = cyng::value_cast(*pos++, tpl);
+//
+//					//
+//					//	collect meter info
+//					//	* 81 81 C7 82 04 FF: server ID
+//					//	* 81 81 C7 82 02 FF: --- (device class)
+//					//	* 01 00 00 09 0B 00: timestamp
+//					//
+//					for (auto const child : tpl)
+//					{
+//						cyng::tuple_t tmp;
+//						tmp = cyng::value_cast(child, tmp);
+//						read_get_proc_single_parameter(tmp.begin(), tmp.end());
+//
+//					}
+//					prg << cyng::generate_invoke_unwinded("sml.get.proc.param.srv.active"
+//						, ro_.pk_
+//						, ro_.trx_
+//						, ro_.idx_
+//						, ro_.get_value("serverId")
+//						, path.back().get_number()	//	4/5 
+//						, ro_.get_value("81 81 c7 82 04 ff")	//	meter ID
+//						, ro_.get_value("81 81 c7 82 02 ff")	//	device class
+//						, ro_.get_value("01 00 00 09 0b 00"));	//	UTC
+//				}
+//				else if ((path.front() == OBIS_CODE_ROOT_DEVICE_IDENT) && path.back().is_matching(0x81, 0x81, 0xc7, 0x82, 0x07).second) {
+//
+//					//	* 81, 81, c7, 82, 08, ff:	CURRENT_VERSION/KERNEL
+//					//	* 81, 81, 00, 02, 00, 00:	VERSION
+//					//	* 81, 81, c7, 82, 0e, ff:	activated/deactivates
+//					read_get_proc_multiple_parameters(*pos++);
+//
+//#ifdef _DEBUG
+//					//std::cout << "81 81 c7 82 08 ff: " << cyng::io::to_str(ro_.get_value("81 81 c7 82 08 ff")) << std::endl;
+//					//std::cout << "81 81 00 02 00 00: " << cyng::io::to_str(ro_.get_value("81 81 00 02 00 00")) << std::endl;
+//					//std::cout << "81 81 c7 82 0e ff: " << cyng::io::to_str(ro_.get_value("81 81 c7 82 0e ff")) << std::endl;
+//#endif
+//
+//					prg << cyng::generate_invoke_unwinded("sml.get.proc.param.firmware"
+//						, ro_.pk_
+//						, ro_.trx_
+//						, ro_.idx_
+//						, ro_.get_value("serverId")
+//						, path.back().get_storage()	//	[5] as u32
+//						, ro_.get_value("81 81 c7 82 08 ff")	//	firmware name/section
+//						, ro_.get_value("81 81 00 02 00 00")	//	version
+//						, ro_.get_value("81 81 c7 82 0e ff"));	//	active/inavtive
+//
+//				}
+//				else {
+//					prg << cyng::unwinder(read_tree_list(path, *pos++, ++depth));
+//				}
+//			}
+//			else
+//			{
+//				//
+//				//	3. child_List List_of_SML_Tree OPTIONAL
+//				//
+//				prg << cyng::unwinder(read_tree_list(path, *pos++, ++depth));
+//			}
+			//return prg;
+		}
+
+		cyng::vector_t reader::read_tree_list(std::vector<obis> path, cyng::object obj, std::size_t depth)
+		{
+			cyng::vector_t prg;
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(obj, tpl);
+			for (auto const child : tpl)
+			{
+				cyng::tuple_t tmp;
+				tmp = cyng::value_cast(child, tmp);
+
+				prg << cyng::unwinder(read_get_proc_parameter_response(path, depth, tmp.begin(), tmp.end()));
 			}
 			return prg;
+		}
+
+		void reader::read_get_proc_multiple_parameters(cyng::object obj)
+		{
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(obj, tpl);
+			for (auto const child : tpl)
+			{
+				read_get_proc_single_parameter(child);
+			}
+
+		}
+
+		void reader::read_get_proc_single_parameter(cyng::object obj)
+		{
+			cyng::tuple_t tmp;
+			tmp = cyng::value_cast(obj, tmp);
+			read_get_proc_single_parameter(tmp.begin(), tmp.end());
 		}
 
 		void reader::read_get_proc_single_parameter(cyng::tuple_t::const_iterator pos

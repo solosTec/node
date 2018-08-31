@@ -22,6 +22,7 @@
 #include <cyng/json.h>
 #include <cyng/xml.h>
 #include <cyng/parser/chrono_parser.h>
+#include <cyng/io/io_chrono.hpp>
 
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/string_generator.hpp>
@@ -101,8 +102,9 @@ namespace node
 		bus_->vm_.register_function("cfg.upload.gateways", 2, std::bind(&cluster::cfg_upload_gateways, this, std::placeholders::_1));
 		bus_->vm_.register_function("cfg.upload.meter", 2, std::bind(&cluster::cfg_upload_meter, this, std::placeholders::_1));
 		
-		bus_->vm_.register_function("bus.res.query.srv.visible", 8, std::bind(&cluster::res_query_srv_visible, this, std::placeholders::_1));
-		bus_->vm_.register_function("bus.res.query.srv.active", 8, std::bind(&cluster::res_query_srv_active, this, std::placeholders::_1));
+		bus_->vm_.register_function("bus.res.query.srv.visible", 9, std::bind(&cluster::res_query_srv_visible, this, std::placeholders::_1));
+		bus_->vm_.register_function("bus.res.query.srv.active", 9, std::bind(&cluster::res_query_srv_active, this, std::placeholders::_1));
+		bus_->vm_.register_function("bus.res.query.firmware", 8, std::bind(&cluster::res_query_firmware, this, std::placeholders::_1));
 
 		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
@@ -1321,8 +1323,18 @@ namespace node
 			std::string,			//	[4] server id (key)
 			std::string,			//	[5] meter
 			std::string,			//	[6] device class
-			std::chrono::system_clock::time_point			//	[7] last status update
+			std::chrono::system_clock::time_point,	//	[7] last status update
+			std::uint32_t			//	[8] server type
 		>(frame);
+
+		//
+		//	reformatting timestamp
+		//
+		auto stp = (cyng::chrono::same_day(std::get<7>(data), std::chrono::system_clock::now()))
+			? cyng::ts_to_str(cyng::chrono::duration_of_day(std::get<7>(data)))
+			: cyng::date_to_str(std::get<7>(data))
+			;
+
 
 		auto tpl = cyng::tuple_factory(
 			cyng::param_factory("cmd", std::string("append")),
@@ -1332,7 +1344,8 @@ namespace node
 				cyng::param_factory("srv", std::get<4>(data)),
 				cyng::param_factory("meter", std::get<5>(data)),
 				cyng::param_factory("class", std::get<6>(data)),
-				cyng::param_factory("tp", std::get<7>(data))
+				cyng::param_factory("tp", stp),
+				cyng::param_factory("type", std::get<8>(data))
 			)));
 
 		auto msg = cyng::json::to_string(tpl);
@@ -1353,8 +1366,17 @@ namespace node
 			std::string,			//	[4] server id (key)
 			std::string,			//	[5] meter
 			std::string,			//	[6] device class
-			std::chrono::system_clock::time_point			//	[7] last status update
+			std::chrono::system_clock::time_point,	//	[7] last status update
+			std::uint32_t			//	[8] server type
 		>(frame);
+
+		//
+		//	reformatting timestamp
+		//
+		auto stp = (cyng::chrono::same_day(std::get<7>(data), std::chrono::system_clock::now()))
+			? cyng::ts_to_str(cyng::chrono::duration_of_day(std::get<7>(data)))
+			: cyng::date_to_str(std::get<7>(data))
+			;
 
 		auto tpl = cyng::tuple_factory(
 			cyng::param_factory("cmd", std::string("append")),
@@ -1364,7 +1386,8 @@ namespace node
 				cyng::param_factory("srv", std::get<4>(data)),
 				cyng::param_factory("meter", std::get<5>(data)),
 				cyng::param_factory("class", std::get<6>(data)),
-				cyng::param_factory("tp", std::get<7>(data))
+				cyng::param_factory("tp", stp),
+				cyng::param_factory("type", std::get<8>(data))
 			)));
 
 		auto msg = cyng::json::to_string(tpl);
@@ -1372,6 +1395,37 @@ namespace node
 
 	}
 
+	void cluster::res_query_firmware(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "bus.res.query.firmware - " << cyng::io::to_str(frame));
+
+		auto const data = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] source
+			std::uint64_t,			//	[1] sequence
+			boost::uuids::uuid,		//	[2] websocket tag
+			std::uint32_t,			//	[3] list number
+			std::string,			//	[4] server id (key)
+			std::string,			//	[5] section
+			std::string,			//	[6] version
+			bool					//	[7] active
+		>(frame);
+
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("append")),
+			cyng::param_factory("channel", "status.gateway.firmware"),
+			cyng::param_factory("rec", cyng::tuple_factory(
+				cyng::param_factory("nr", std::get<3>(data)),
+				cyng::param_factory("srv", std::get<4>(data)),
+				cyng::param_factory("section", std::get<5>(data)),
+				cyng::param_factory("version", std::get<6>(data)),
+				cyng::param_factory("active", std::get<7>(data))
+			)));
+
+		auto msg = cyng::json::to_string(tpl);
+		server_.send_msg(std::get<2>(data), msg);
+
+	}
 
 	void cluster::trigger_download(boost::uuids::uuid tag, std::string table, std::string filename)
 	{
@@ -1840,7 +1894,28 @@ namespace node
 			{
 				CYNG_LOG_WARNING(logger_, "ws.read - unknown query:srv:active channel [" << channel << "]");
 			}
+		}
+		else if (boost::algorithm::equals(cmd, "query:firmware"))
+		{
+			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+			CYNG_LOG_TRACE(logger_, "ws.read - query:firmware channel [" << channel << "]");
+			if (boost::algorithm::starts_with(channel, "config.gateway"))
+			{
+				cyng::vector_t vec;
+				vec = cyng::value_cast(reader.get("key"), vec);
+				CYNG_LOG_INFO(logger_, "query:firmware " << cyng::io::to_str(vec));
 
+				const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+				CYNG_LOG_DEBUG(logger_, "TGateway key [" << str << "]");
+				auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+
+				ctx.attach(bus_req_query_firmware(key, ctx.tag(), tag_ws));
+
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "ws.read - unknown query:firmware channel [" << channel << "]");
+			}
 		}
 		else
 		{

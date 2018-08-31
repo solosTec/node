@@ -153,6 +153,13 @@ namespace node
 				, std::string const& username
 				, std::string const& password);
 
+			/**
+			 * get list of available firmware versions - 81 81 C7 82 FF (CODE_ROOT_DEVICE_IDENT)
+			 */
+			std::size_t get_proc_parameter_firmware(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password);
+
 		private:
 			trx	trx_;
 		};

@@ -254,6 +254,47 @@ namespace node
 			}
 		}
 
+		void session::connect_state::sml_get_proc_param_firmware(cyng::context& ctx)
+		{
+			//	[63b54276-1872-484a-b282-1de45d045f58,7027958-2,0,0500153B0223B3,000c,01E61E29436587BF03,2D2D2D,2018-08-29 17:59:22.00000000]
+			//
+			//	* [uuid] pk
+			//	* [string] trx
+			//	* [size_t] idx
+			//	* [buffer] server id
+			//	* [u8] number
+			//	* [buffer] firmware name/section
+			//	* [buffer] version
+			//	* [bool] active/inactive
+
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(sr_.logger_, "sml.get.proc.param.firmware "
+				<< *this
+				<< " - "
+				<< cyng::io::to_str(frame));
+
+			if (state_ == STATE_TASK) {
+				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ frame.at(3), frame.at(4), frame.at(5), frame.at(6), frame.at(7) });
+			}
+			else {
+				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.param.firmware - session in wrong state: "
+					<< *this
+					<< " - "
+					<< cyng::io::to_str(frame));
+
+			}
+		}
+
+		void session::connect_state::sml_get_proc_param_simple(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(sr_.logger_, "sml.get.proc.param.simple "
+				<< *this
+				<< " - "
+				<< cyng::io::to_str(frame));
+
+		}
+
 
 	}
 }

@@ -153,12 +153,20 @@ namespace node
 		, std::string srv
 		, std::string meter
 		, std::string dclass
-		, std::chrono::system_clock::time_point st);
+		, std::chrono::system_clock::time_point st
+		, std::uint32_t srv_type);
 
 	/**
 	 * Request a list of active meters/servers
 	 */
 	cyng::vector_t bus_req_query_srv_active(cyng::vector_t const&
+		, boost::uuids::uuid source
+		, boost::uuids::uuid tag_ws);
+
+	/**
+	 * Request a list available firmware versions
+	 */
+	cyng::vector_t bus_req_query_firmware(cyng::vector_t const&
 		, boost::uuids::uuid source
 		, boost::uuids::uuid tag_ws);
 
@@ -178,7 +186,27 @@ namespace node
 		, std::string srv
 		, std::string meter
 		, std::string dclass
-		, std::chrono::system_clock::time_point st);
+		, std::chrono::system_clock::time_point st
+		, std::uint32_t srv_type);
+
+	/**
+	 * Response for bus.req.query.firmware
+	 *
+	 * @param source source tag
+	 * @param srv server id
+	 * @param nr list number
+	 * @param section firmware name/section
+	 * @param version manufacturer-specific version
+	 * @param active true/false
+	 */
+	cyng::vector_t bus_res_query_firmware(boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, std::uint32_t nr
+		, std::string srv
+		, std::string section
+		, std::string version
+		, bool active);
 
 	/**
 	 * data bus
@@ -256,6 +284,24 @@ namespace node
 	 * @param pwd password
 	 */
 	cyng::vector_t client_req_query_srv_active(boost::uuids::uuid tag
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, cyng::buffer_t const& server
+		, std::string const& user
+		, std::string const& pwd);
+
+	/**
+	 * Query a list available firmware versions
+	 * 
+	 * @param tag target session
+	 * @param source source session
+	 * @param seq cluster sequence
+	 * @param server server id
+	 * @param user login name / account
+	 * @param pwd password
+	 */
+	cyng::vector_t client_req_query_firmware(boost::uuids::uuid tag
 		, boost::uuids::uuid source
 		, std::uint64_t seq
 		, boost::uuids::uuid tag_ws

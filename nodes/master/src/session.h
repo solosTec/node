@@ -83,6 +83,8 @@ namespace node
 		void bus_res_query_srv_visible(cyng::context& ctx);
 		void bus_req_query_srv_active(cyng::context& ctx);
 		void bus_res_query_srv_active(cyng::context& ctx);
+		void bus_req_query_firmware(cyng::context& ctx);
+		void bus_res_query_firmware(cyng::context& ctx);
 
 		void cleanup(cyng::context& ctx);
 		void bus_insert_msg(cyng::context& ctx);

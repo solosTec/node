@@ -24,6 +24,18 @@ namespace node
 		bool is_serial(cyng::buffer_t const&);
 		bool is_gateway(cyng::buffer_t const&);
 
+		enum srv_type : std::uint32_t {
+			SRV_MBUS,
+			SRV_SERIAL,
+			SRV_GW,
+			SRV_OTHER
+		};
+
+		/**
+		 * @return server type a compact enum
+		 */
+		std::uint32_t get_srv_type(cyng::buffer_t const&);
+
 		/**
 		 * example: 02-e61e-03197715-3c-07
 		 */

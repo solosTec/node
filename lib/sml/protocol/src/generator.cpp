@@ -192,6 +192,27 @@ namespace node
 			);
 		}
 
+		std::size_t req_generator::get_proc_parameter_firmware(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password)
+		{
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
+
+				//
+				//	generate public open response
+				//
+				, get_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, OBIS_CODE_ROOT_DEVICE_IDENT)
+				)
+			);
+		}
+
 		res_generator::res_generator()
 			: generator()
 		{}
@@ -366,12 +387,12 @@ namespace node
 					, child_list_tree(OBIS_CODE_ROOT_DEVICE_IDENT, {
 
 						//	device class (81 81 C7 82 53 FF == MUC-LAN/DSL)
-						parameter_tree(OBIS_CODE(81, 81, c7, 82, 02, ff), make_value(OBIS_CODE(81, 81, C7, 82, 53, FF))),
-						parameter_tree(OBIS_CODE(81, 81, c7, 82, 03, ff), make_value(manufacturer)),	// manufacturer
-						parameter_tree(OBIS_CODE(81, 81, c7, 82, 04, ff), make_value(server_id2)),	// server id
+						parameter_tree(OBIS_CODE_DEVICE_CLASS, make_value(OBIS_CODE(81, 81, C7, 82, 53, FF))),
+						parameter_tree(OBIS_DATA_MANUFACTURER, make_value(manufacturer)),	// manufacturer
+						parameter_tree(OBIS_CODE_SERVER_ID, make_value(server_id2)),	// server id
 
 						//	firmware
-						child_list_tree(OBIS_CODE(81, 81, c7, 82, 06, ff), {
+						child_list_tree(OBIS_CODE_ROOT_FIRMWARE, {
 							//	section 1
 							child_list_tree(OBIS_CODE(81, 81, c7, 82, 07, 01), {
 									parameter_tree(OBIS_CODE(81, 81, c7, 82, 08, ff), make_value("CURRENT_VERSION")),
