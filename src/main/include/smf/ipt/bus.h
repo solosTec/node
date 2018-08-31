@@ -24,7 +24,7 @@ namespace node
 		 * Implementation of an IP-T client. 
 		 * The bus send messages to it's host to signal different IP-T events.
 		 * <ol>
-		 * <li>0 - successfull authorized</li>
+		 * <li>0 - successful authorized</li>
 		 * <li>1 - connection to master lost</li>
 		 * <li>2 - incoming call (open connection request)</li>
 		 * <li>3 - push data received</li>

@@ -218,7 +218,7 @@ namespace node
 				enum Response : response_type
 				{
 					DIALUP_FAILED,		//!<	Connection establishment failed
-					DIALUP_SUCCESS,		//!<	Connection successfully established
+					DIALUP_SUCCESS,		//!<	Connection successfuly established
 					BUSY,				//!<	The line is busy
 					NO_MASTER,			//!<	No connection to master
 					UNREACHABLE,		//!<	Remote station unreachable

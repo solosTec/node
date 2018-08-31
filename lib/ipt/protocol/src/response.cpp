@@ -238,7 +238,7 @@ namespace node
 				case GENERAL_ERROR:
 					return "unassigned login error (GENERAL_ERROR)";
 				case SUCCESS:
-					return "successfull login (SUCCESS)";
+					return "successful login (SUCCESS)";
 				case UNKNOWN_ACCOUNT:
 					return "unknown account name (UNKNOWN_ACCOUNT)";
 				case WRONG_PASSWORD:
@@ -291,7 +291,7 @@ namespace node
 			//	case GENERAL_ERROR:
 			//		return "logout error (GENERAL_ERROR)";
 			//	case NORMAL:
-			//		return "successfull logout (SUCCESS)";
+			//		return "successful logout (SUCCESS)";
 			//	default:
 			//		break;
 			//	}
@@ -314,7 +314,7 @@ namespace node
 				case LOGOUT_ERROR:
 					return "logout error (LOGOUT_ERROR)";
 				case NORMAL:
-					return "successfull logout (SUCCESS)";
+					return "successful logout (SUCCESS)";
 				default:
 					break;
 				}
