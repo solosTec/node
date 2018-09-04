@@ -25,6 +25,7 @@
 
 #include <boost/uuid/nil_generator.hpp>
 
+
 namespace node
 {
 	namespace sml
@@ -818,38 +819,38 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Set Proc Parameter Request");
+            if (count != 5) return cyng::vector_t{};
+            
+            //
+            //	serverId
+            //
+            read_server_id(*pos++);
 
-			//
-			//	serverId
-			//
-			read_server_id(*pos++);
+            //
+            //	username
+            //
+            read_string("userName", *pos++);
 
-			//
-			//	username
-			//
-			read_string("userName", *pos++);
+            //
+            //	password
+            //
+            read_string("password", *pos++);
 
-			//
-			//	password
-			//
-			read_string("password", *pos++);
+            //
+            //	parameterTreePath == parameter address
+            //
+            std::vector<obis> path = read_param_tree_path(*pos++);
 
-			//
-			//	parameterTreePath == parameter address
-			//
-			std::vector<obis> path = read_param_tree_path(*pos++);
+            //
+            //	parameterTree
+            //
+            cyng::tuple_t tpl;
+            tpl = cyng::value_cast(*pos++, tpl);
 
-			//
-			//	parameterTree
-			//
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(*pos++, tpl);
-
-			//
-			//	recursiv call to an parameter tree - similiar to read_param_tree()
-			//
-			return read_set_proc_parameter_request_tree(path, 0, tpl.begin(), tpl.end());
-
+            //
+            //	recursiv call to an parameter tree - similiar to read_param_tree()
+            //
+            return read_set_proc_parameter_request_tree(path, 0, tpl.begin(), tpl.end());
 		}
 
 		cyng::vector_t reader::read_set_proc_parameter_request_tree(std::vector<obis> path
@@ -861,6 +862,7 @@ namespace node
 
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "SML Tree");
+            if (count != 3) return cyng::vector_t{};
 
 			//
 			//	1. parameterName Octet String,
@@ -1054,7 +1056,6 @@ namespace node
 				//
 				prg << cyng::unwinder(read_set_proc_parameter_request_tree(path, depth, tmp.begin(), tmp.end()));
 			}
-
 			return prg;
 		}
 
@@ -1062,6 +1063,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 4, "Attention Response");
+            if (count != 4) return cyng::vector_t{};
 
 			//
 			//	serverId
@@ -1100,6 +1102,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "SML Tree");
+            if (count != 3) return;
 
 			//
 			//	1. parameterName Octet String,
@@ -1155,6 +1158,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Period Entry");
+            if (count != 5) return;
 
 			//
 			//	object name

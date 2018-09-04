@@ -10,6 +10,7 @@
 #include <smf/sml/srv_id_io.h>
 
 #include <cyng/async/task/task_builder.hpp>
+#include <cyng/intrinsics/buffer.h>
 
 #include <boost/uuid/random_generator.hpp>
 #include <boost/algorithm/string.hpp>
@@ -223,7 +224,6 @@ namespace node
 					, 0)
 				, 1	//	generation
 				, tag);
-
 		}
 
 

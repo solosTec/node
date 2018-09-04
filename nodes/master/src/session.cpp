@@ -26,6 +26,7 @@
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/predef.h>
 
 namespace node 
 {
@@ -635,18 +636,27 @@ namespace node
 		//
 		db_.access([&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
 
+#if _MSVC || (__GNUC__ > 6)
 			//
-			//	C++17 feature
+			//	C++17 feature: structured binding
 			//
 			//	peer - 
 			//	tag - target session tag
-			auto[peer, rec, server, tag] = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
-
+			auto [peer, rec, server, tag] = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
 			if (peer != nullptr) {
 				const auto name = cyng::value_cast<std::string>(rec["userName"], "");
 				const auto pwd = cyng::value_cast<std::string>(rec["userPwd"], "");
 				peer->vm_.async_run(client_req_reboot(std::get<2>(tpl), server, name, pwd));
 			}
+#else
+			auto res = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
+			if (std::get<0>(res) != nullptr) {
+				const auto name = cyng::value_cast<std::string>(std::get<1>(res)["userName"], "");
+				const auto pwd = cyng::value_cast<std::string>(std::get<1>(res)["userPwd"], "");
+				std::get<0>(res)->vm_.async_run(client_req_reboot(std::get<2>(tpl), std::get<2>(res), name, pwd));
+			}
+#endif
+
 
 		}, cyng::store::read_access("_Session")
 			, cyng::store::read_access("TGateway"));
@@ -680,6 +690,8 @@ namespace node
 		//
 		db_.access([&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
 
+#if _MSVC || (__GNUC__ > 6)
+			
 			//
 			//	C++17 feature
 			//
@@ -696,6 +708,22 @@ namespace node
 					, name
 					, pwd));
 			}
+#else
+		auto res = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
+		if (std::get<0>(res) != nullptr) {
+			
+			const auto name = cyng::value_cast<std::string>(std::get<1>(res)["userName"], "");
+			const auto pwd = cyng::value_cast<std::string>(std::get<1>(res)["userPwd"], "");
+			
+			std::get<0>(res)->vm_.async_run(node::client_req_query_srv_visible(std::get<3>(res)	//	(ipt) session tag
+			, ctx.tag()			//	source peer
+			, std::get<0>(tpl)	//	cluster sequence
+			, std::get<3>(tpl)	//	ws tag
+			, std::get<2>(res)
+			, name
+			, pwd));
+		}
+#endif
 
 		}	, cyng::store::read_access("_Session")
 			, cyng::store::read_access("TGateway"));
@@ -729,21 +757,37 @@ namespace node
 		//
 		db_.access([&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
 
+#if _MSVC || (__GNUC__ > 6)
+			
 			//
 			//	C++17 feature
 			//
 			auto[peer, rec, server, tag] = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
-
 			if (peer != nullptr) {
 				const auto name = cyng::value_cast<std::string>(rec["userName"], "");
 				const auto pwd = cyng::value_cast<std::string>(rec["userPwd"], "");
 				peer->vm_.async_run(node::client_req_query_srv_active(tag
-					, ctx.tag()			//	source peer
-					, std::get<0>(tpl)	//	cluster sequence
-					, std::get<3>(tpl)	//	ws tag
-					, server
-					, name
-					, pwd));
+				, ctx.tag()			//	source peer
+				, std::get<0>(tpl)	//	cluster sequence
+				, std::get<3>(tpl)	//	ws tag
+				, server
+				, name
+				, pwd));
+#else
+			auto res = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
+			if (std::get<0>(res) != nullptr) {
+				const auto name = cyng::value_cast<std::string>(std::get<1>(res)["userName"], "");
+				const auto pwd = cyng::value_cast<std::string>(std::get<1>(res)["userPwd"], "");
+				std::get<0>(res)->vm_.async_run(node::client_req_query_srv_active(std::get<3>(res)
+				, ctx.tag()			//	source peer
+				, std::get<0>(tpl)	//	cluster sequence
+				, std::get<3>(tpl)	//	ws tag
+				, std::get<2>(res)
+				, name
+				, pwd));
+				
+#endif
+			
 			}
 
 		}	, cyng::store::read_access("_Session")
@@ -778,22 +822,37 @@ namespace node
 		//
 		db_.access([&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
 
+#if _MSVC || (__GNUC__ > 6)			
 			//
 			//	C++17 feature
 			//
 			auto[peer, rec, server, tag] = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
-
 			if (peer != nullptr) {
 				const auto name = cyng::value_cast<std::string>(rec["userName"], "");
 				const auto pwd = cyng::value_cast<std::string>(rec["userPwd"], "");
 				peer->vm_.async_run(node::client_req_query_firmware(tag
-					, ctx.tag()			//	source peer
-					, std::get<0>(tpl)	//	cluster sequence
-					, std::get<3>(tpl)	//	ws tag
-					, server
-					, name
-					, pwd));
+				, ctx.tag()			//	source peer
+				, std::get<0>(tpl)	//	cluster sequence
+				, std::get<3>(tpl)	//	ws tag
+				, server
+				, name
+				, pwd));
 			}
+#else
+			auto res = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
+			if (std::get<0>(res) != nullptr) {
+				const auto name = cyng::value_cast<std::string>(std::get<1>(res)["userName"], "");
+				const auto pwd = cyng::value_cast<std::string>(std::get<1>(res)["userPwd"], "");
+				std::get<0>(res)->vm_.async_run(node::client_req_query_firmware(std::get<3>(res)
+				, ctx.tag()			//	source peer
+				, std::get<0>(tpl)	//	cluster sequence
+				, std::get<3>(tpl)	//	ws tag
+				, std::get<2>(res)
+				, name
+				, pwd));
+			}
+#endif
+			
 
 		}, cyng::store::read_access("_Session")
 			, cyng::store::read_access("TGateway"));

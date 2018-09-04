@@ -24,6 +24,7 @@
 #include <cyng/table/meta.hpp>
 
 #include <boost/uuid/random_generator.hpp>
+#include <boost/core/ignore_unused.hpp>
 
 namespace node
 {
@@ -197,6 +198,7 @@ namespace node
 
 			auto stmt = s.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);
+            boost::ignore_unused(r);    //  for release versions
 
 			//
 			//	test 
@@ -435,6 +437,7 @@ namespace node
 			std::pair<int, bool> r = stmt->prepare(sql);
 			BOOST_ASSERT(r.second);
 			BOOST_ASSERT(r.first == key.size());
+            boost::ignore_unused(r);    //  for release versions
 
 			//stmt->push(key.at(0), 36);
 			for (int idx = 0; idx < key.size(); ++idx)
@@ -488,6 +491,7 @@ namespace node
 						std::pair<int, bool> r = stmt->prepare(sql);
 						BOOST_ASSERT(r.first == 11);	//	11 parameters to bind
 						BOOST_ASSERT(r.second);
+                        boost::ignore_unused(r);    //  for release versions
 
 						//	bind parameters
 						stmt->push(cyng::make_object(boost::uuids::random_generator()()), 0)
