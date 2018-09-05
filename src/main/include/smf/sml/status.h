@@ -66,13 +66,17 @@ namespace node
 		 *	8	1 if fatal error was detected
 		 *	9	1 if restart was triggered by watchdog reset
 		 *	10	0 if IP address is available (DHCP)
-		 *	11	0 if ethernet link / GSM network is available
+			 - PSTN: Link with peer established
+			 - GSM: Link with peer established
+			 - GPRS: authorized on GPRS service
+			 - LAN/DSL: IP address from DHCP or PPPoE available
+		 *	11	0 if ethernet link / WAN / GSM network is available
 		 *	12	always 0 (logged in GSM network)
 		 *	13	0 if authorized on IP-T server
 		 *	14	1 in case of out of memory
-		 *	15	always 0
+		 *	15	reserved - always 0
 		 *	16	1 if Service interface is available (Kundenschnittstelle)
-		 *	17	1 if extension interface is available (Erweiterungs-Schnittstelle)
+		 *	17	1 if extension interface is available (Ethernet Erweiterungs-Schnittstelle)
 		 *	18	1 if Wireless M-Bus interface is available
 		 *	19	1 if PLC is available
 		 *	20-31	always 0

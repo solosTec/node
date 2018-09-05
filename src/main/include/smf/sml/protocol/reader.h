@@ -69,6 +69,7 @@ namespace node
 			cyng::vector_t read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_public_close_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_public_close_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t read_get_profile_list_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_get_profile_list_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_get_proc_parameter_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_get_proc_parameter_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);

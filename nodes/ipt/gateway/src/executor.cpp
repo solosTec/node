@@ -224,6 +224,28 @@ namespace node
 					, 0)
 				, 1	//	generation
 				, tag);
+
+
+			//
+			//	startup
+			//
+			config_db_.insert("op.log"
+				, cyng::table::key_generator(0UL)
+				, cyng::table::data_generator(std::chrono::system_clock::now()
+					, static_cast<std::uint32_t>(900u)	//	reg period - 15 min
+					, std::chrono::system_clock::now()	//	val time
+					, static_cast<std::uint64_t>(0x070202)	//	status
+					//, static_cast<std::uint64_t>(status_word_.operator std::uint32_t())	//	status
+					, static_cast<std::uint32_t>(0x800008)	//	event
+					, cyng::make_buffer({ 0x81, 0x46, 0x00, 0x00, 0x02, 0xFF })
+					, std::chrono::system_clock::now()	//	val time
+					, cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02 })
+					, "power@solostec"
+					, static_cast<std::uint8_t>(1u))		//	push_nr
+				, 1	//	generation
+				, tag);
+
+
 		}
 
 

@@ -13,6 +13,7 @@
 #include <cyng/intrinsics/sets.h>
 #include <ostream>
 #include <initializer_list>
+#include <chrono>
 
 namespace node
 {
@@ -93,6 +94,24 @@ namespace node
 			, obis code
 			, cyng::tuple_t params);
 
+		cyng::tuple_t get_profile_list_request(cyng::object server_id
+			, std::string const& username
+			, std::string const& password
+			, bool with_raw_data
+			, std::chrono::system_clock::time_point begin_time
+			, std::chrono::system_clock::time_point end_time
+			, obis code //	tree path
+			, cyng::tuple_t& obj_list
+			, cyng::tuple_t& details);
+
+		cyng::tuple_t get_profile_list_response(cyng::object server_id
+			, std::chrono::system_clock::time_point act_time
+			, std::uint32_t reg_period
+			, obis code //	tree path
+			, std::chrono::system_clock::time_point val_time
+			, std::uint64_t status
+			, cyng::tuple_t&& data);
+
 		/**
 		 * Add SML trailer and tail
 		 */
@@ -110,6 +129,10 @@ namespace node
 		cyng::tuple_t tree(obis code, cyng::tuple_t param, cyng::tuple_t list);
 		cyng::tuple_t tree(obis code, cyng::tuple_t param, std::initializer_list<cyng::tuple_t> list);
 
+		cyng::object period_entry(obis
+			, std::uint8_t unit
+			, std::int8_t scaler
+			, cyng::object value);
 	}
 }
 #endif
