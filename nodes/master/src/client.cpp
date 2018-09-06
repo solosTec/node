@@ -2071,7 +2071,7 @@ namespace node
 
 	cyng::table::key_list_t get_targets_by_peer(cyng::store::table const* tbl_target, boost::uuids::uuid tag)
 	{
-		static boost::hash<boost::uuids::uuid> uuid_hasher;
+// 		static boost::hash<boost::uuids::uuid> uuid_hasher;
 
 		//
 		//	get all registered targets of the specified peer

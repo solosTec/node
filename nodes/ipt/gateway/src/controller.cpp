@@ -33,12 +33,13 @@
 #if BOOST_OS_LINUX
 #include "../../../write_pid.h"
 #endif
+#include <fstream>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <fstream>
+#include <boost/core/ignore_unused.hpp>
 
 namespace node
 {
@@ -370,6 +371,7 @@ namespace node
 		//  control push data logging
 		//
 		const auto log_pushdata = cyng::value_cast(dom.get("log-pushdata"), false);
+		boost::ignore_unused(log_pushdata);
 
 		//
 		//	get configuration type
