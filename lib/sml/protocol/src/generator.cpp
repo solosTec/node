@@ -16,6 +16,7 @@
 #include <cyng/chrono.h>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/io/swap.h>
+#include <cyng/sys/info.h>
 #include <sstream>
 #include <iomanip>
 
@@ -367,6 +368,8 @@ namespace node
 				<< serial
 				;
 			const std::string serial_str = ss.str();
+			
+			const auto os_name = cyng::sys::get_os_name();
 
 			return append_msg(message(trx	//	trx
 				, ++group_no_	//	group
@@ -402,7 +405,8 @@ namespace node
 							//	section 2
 							child_list_tree(OBIS_CODE(81, 81, c7, 82, 07, 02),	{
 									parameter_tree(OBIS_CODE(81, 81, c7, 82, 08, ff), make_value("KERNEL")),
-									parameter_tree(OBIS_CODE(81, 81, 00, 02, 00, 00), make_value(NODE_PLATFORM)),
+									parameter_tree(OBIS_CODE(81, 81, 00, 02, 00, 00), make_value(os_name)),
+// 									parameter_tree(OBIS_CODE(81, 81, 00, 02, 00, 00), make_value(NODE_PLATFORM)),
 									parameter_tree(OBIS_CODE(81, 81, c7, 82, 0e, ff), make_value(true)) 	//	activated
 								})
 

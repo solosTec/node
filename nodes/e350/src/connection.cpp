@@ -12,6 +12,7 @@
 #include <cyng/io/hex_dump.hpp>
 #endif
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/core/ignore_unused.hpp>
 
 namespace node 
 {
@@ -86,6 +87,8 @@ namespace node
 					//	buffer contains the unscrambled input
 					//
 					const auto buffer = session_.parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
+					boost::ignore_unused(buffer);	//	release version
+					
 #ifdef SMF_IO_DEBUG
 					cyng::io::hex_dump hd;
 					std::stringstream ss;

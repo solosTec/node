@@ -680,7 +680,10 @@ namespace node
 				//
 				parser_.code_ << cyng::code::ESBA;
 
-				for (auto idx = 0; idx < size; ++idx)
+				//
+				//	AAA Style: https://herbsutter.com/2013/08/12/gotw-94-solution-aaa-style-almost-always-auto/
+				//
+				for (auto idx = decltype(size){0}; idx < size; ++idx)
 				{
 					parser_.code_
 						<< parser_.f_read_string	//	target name

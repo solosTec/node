@@ -301,12 +301,13 @@ endif()
 
 #
 #	setup cyng library
-#	assume parallel installation
+#	assume parallel installation - that is both projects share the same parent directory.
 #
 include_directories("${PROJECT_SOURCE_DIR}/../cyng/src/main/include")
 if (UNIX)
 	if (${PROJECT_NAME}_CROSS_COMPILE)
-		get_filename_component(cyng_LIBRARY_DIRS "$ENV{HOME}/development/tools/arm-bcm2708/arm-rpi-4.9.3-linux-gnueabihf/arm-linux-gnueabihf/sysroot/" REALPATH)
+		get_filename_component(cyng_LIBRARY_DIRS "${PROJECT_SOURCE_DIR}/../cyng/cross" REALPATH)
+#		get_filename_component(cyng_LIBRARY_DIRS "$ENV{HOME}/pi/sysroot/" REALPATH)
  		get_filename_component(cyng_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../cyng" REALPATH)
 		message(STATUS "** Cross Compile         : ${cyng_SOURCE_DIR}/cross")
 		include_directories("${cyng_SOURCE_DIR}/cross")

@@ -71,6 +71,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
+			if (count != 5)	return;
 
 			//
 			//	reset readout context
@@ -182,7 +183,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 7, "Public Open Request");
-
+			if (count != 7)	return;
+			
 			//
 			//	reset context
 			//
@@ -227,7 +229,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 6, "Public Open Response");
-
+			if (count != 6)	return;
+			
 			//
 			//	reset context
 			//
@@ -265,7 +268,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
-
+			if (count != 9)	return;
+			
 			//
 			//	serverId
 			//
@@ -344,7 +348,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "Get Proc Parameter Response");
-
+			if (count != 3)	return;
+			
 			//
 			//	serverId
 			//
@@ -368,6 +373,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 4, "Attention Response");
+			if (count != 4)	return;
 
 			//
 			//	serverId
@@ -378,6 +384,7 @@ namespace node
 			//	attentionNo (OBIS)
 			//
 			obis code = read_obis(*pos++);
+			boost::ignore_unused(code);
 
 			//
 			//	attentionMsg
@@ -399,7 +406,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "SML Tree");
-
+			if (count != 3)	return;
+			
 			//
 			//	1. parameterName Octet String,
 			//
@@ -430,8 +438,7 @@ namespace node
 			, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
-			//const std::string str_count = std::to_string(count);
-			//node.append_attribute("size").set_value(str_count.c_str());
+			boost::ignore_unused(count);
 
 			//
 			//	list of tuples (period entry)
@@ -455,6 +462,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Period Entry");
+			if (count != 5)	return;
 
 			//
 			//	object name
@@ -781,6 +789,7 @@ namespace node
 			auto stmt = sp.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);
 			BOOST_ASSERT(r.second);
+			boost::ignore_unused(r);	//	release version
 
 			if (boost::algorithm::equals(schema_, "v4.0"))
 			{
@@ -876,8 +885,8 @@ namespace node
 			std::pair<int, bool> r = stmt->prepare(sql);
 			BOOST_ASSERT(r.first == 8);	//	11 parameters to bind
 			BOOST_ASSERT(r.second);
-
-			//cyng::buffer_t tmp = cyng::value_cast(frame.at(3), tmp);
+			boost::ignore_unused(r);	//	release version
+			
 
 			if (boost::algorithm::equals(schema_, "v4.0"))
 			{

@@ -136,14 +136,16 @@ namespace node
 		boost::uuids::uuid mtag_;	// master tag
 		cyng::store::db& db_;
 		cyng::controller vm_;
-		const std::string account_;
-		const std::string pwd_;
-		const std::chrono::seconds cluster_monitor_;
-
+		
 		/**
 		 * Parser for binary cyng data stream (from cluster members)
 		 */
 		cyng::parser 	parser_;
+		
+		const std::string account_;
+		const std::string pwd_;
+		const std::chrono::seconds cluster_monitor_;
+
 
 		/**
 		 * cluster bus sequence
