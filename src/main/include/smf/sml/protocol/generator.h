@@ -226,6 +226,10 @@ namespace node
 				, cyng::object server_id
 				, const cyng::store::table*);
 
+			/**
+			 * 81 81 C7 86 00 FF
+			 * Deliver an overview of the system configuration and state.
+			 */
 			std::size_t get_proc_sensor_property(cyng::object trx
 				, cyng::object server_id
 				, const cyng::table::record&);
@@ -248,6 +252,28 @@ namespace node
 
 			std::size_t get_proc_actuators(cyng::object trx
 				, cyng::object server_id);
+
+			/**
+			 * Operation log data
+			 */
+			std::size_t get_profile_op_log(cyng::object trx
+				, cyng::object client_id
+				, std::chrono::system_clock::time_point act_time
+				, std::uint32_t reg_period
+				, std::chrono::system_clock::time_point val_time
+				, std::uint64_t status
+				, std::uint32_t evt
+				, obis peer_address
+				, std::chrono::system_clock::time_point tp
+				, cyng::buffer_t const& server_id
+				, std::string const& target
+				, std::uint8_t push_nr);
+
+			std::size_t get_profile_op_logs(cyng::object trx
+				, cyng::object client_id
+				, std::chrono::system_clock::time_point start_time
+				, std::chrono::system_clock::time_point end_time
+				, const cyng::store::table*);
 		};
 
 	}

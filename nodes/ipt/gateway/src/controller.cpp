@@ -648,71 +648,50 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
 		}
 
-		//if (!config.create_table(cyng::table::make_meta_table<1, 7>("config.ipt",
-		//	{ "idx"			//	index
-		//					//	-- body
-		//	, "address"		//	numerical form
-		//	, "portTarget"	//	outgoing
-		//	, "portSource"	//	incoming
-		//	, "scrambled"	//	bool
-		//	, "sk"			//	scrambled key (0102030405060708090001020304050607080900010203040506070809000001)
-		//	, "user"		//	username
-		//	, "pwd"			//	password
+		if (!config.create_table(cyng::table::make_meta_table<1, 10>("op.log",
+			{ "idx"			//	index
+							//	-- body
+			, "actTime"		//	actual time
+			, "regPeriod"	//	register period
+			, "valTime"		//	val time
+			, "status"		//	status word
+			, "event"		//	event code
+			, "peer"		//	peer address
+			, "utc"			//	UTC time
+			, "serverId"	//	server ID (meter)
+			, "target"		//	target name
+			, "pushNr"		//	operation number
+			},
+			{ cyng::TC_UINT64		//	index 
+									//	-- body
+			, cyng::TC_TIME_POINT	//	actTime
+			, cyng::TC_UINT32		//	regPeriod
+			, cyng::TC_TIME_POINT	//	valTime
+			, cyng::TC_UINT64		//	status
+			, cyng::TC_UINT32		//	event
+			, cyng::TC_BUFFER		//	peer_address
+			, cyng::TC_TIME_POINT	//	UTC time
+			, cyng::TC_BUFFER		//	serverId
+			, cyng::TC_STRING		//	target
+			, cyng::TC_UINT8		//	push_nr
 
-		//	},
-		//	{ cyng::TC_UINT8		//	index (original only 2 entries supported)
-		//							//	-- body
-		//	, cyng::TC_IP_ADDRESS	//	IP-T master
-		//	, cyng::TC_UINT16		//	port (target)
-		//	, cyng::TC_UINT16		//	port (source)
-		//	, cyng::TC_BOOL			//	scrambled
-		//	, cyng::TC_STRING		//	sk
-		//	, cyng::TC_STRING		//	user
-		//	, cyng::TC_STRING		//	pwd
-
-		//	},
-		//	{ 0		//	index
-		//			//	-- body
-		//	, 16	//	address
-		//	, 0		//	portTarget
-		//	, 0		//	portSource
-		//	, 0		//	scrambled
-		//	, 64	//	sk
-		//	, 64	//	user
-		//	, 64	//	pwd
-		//	})))
-		//{
-		//	CYNG_LOG_FATAL(logger, "cannot create table config.ipt");
-		//}
-		//else
-		//{
-		//	auto cfg = ipt::load_cluster_cfg(ipt_cfg);
-		//	std::uint8_t idx{ 0 };
-		//	for (auto const& rec : cfg) {
-
-		//		try {
-		//			auto address = boost::asio::ip::make_address(rec.host_);
-		//			std::uint16_t port = std::stoul(rec.service_);
-
-		//			config.insert("config.ipt"
-		//				, cyng::table::key_generator(idx)
-		//				, cyng::table::data_generator(address	//	numerical form
-		//					, port	//	port
-		//					, 0u
-		//					, rec.scrambled_
-		//					, rec.sk_.str()
-		//					, rec.account_
-		//					, rec.pwd_)
-		//				, 1	//	generation
-		//				, tag);
-
-		//			++idx;
-		//		}
-		//		catch (std::exception const& ex) {
-		//			CYNG_LOG_FATAL(logger, ex.what() << " #" << +idx);
-		//		}
-		//	}
-		//}
+			},
+			{ 0		//	index
+					//	-- body
+			, 0		//	actTime
+			, 0		//	regPeriod
+			, 0		//	valTime
+			, 0		//	status
+			, 0		//	event
+			, 13	//	peer_address
+			, 0		//	utc
+			, 23	//	serverId
+			, 64	//	target
+			, 0		//	push_nr
+			})))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table op.log");
+		}
 
 	}
 }

@@ -624,6 +624,10 @@ namespace node
 			, cyng::object server_id
 			, const cyng::store::table* tbl)
 		{
+
+			BOOST_ASSERT(tbl != nullptr);
+			BOOST_ASSERT(tbl->meta().get_name() == "devices");
+
 			//	1. list: 81, 81, 10, 06, 01, FF
 			//	2. list: 81, 81, 10, 06, 02, FF
 			//	3. list: 81, 81, 10, 06, 03, FF
@@ -755,6 +759,10 @@ namespace node
 			, cyng::object server_id
 			, const cyng::store::table* tbl)
 		{
+
+			BOOST_ASSERT(tbl != nullptr);
+			BOOST_ASSERT(tbl->meta().get_name() == "push.ops");
+
 			//	example:
 			//	ServerId: 05 00 15 3B 02 17 74 
 			//	ServerId: 01 A8 15 70 94 48 03 01 02 
@@ -1107,6 +1115,144 @@ namespace node
 					}))));
 
 		}
+
+		std::size_t res_generator::get_profile_op_log(cyng::object trx
+			, cyng::object client_id
+			, std::chrono::system_clock::time_point act_time
+			, std::uint32_t reg_period
+			, std::chrono::system_clock::time_point val_time
+			, std::uint64_t status
+			, std::uint32_t evt
+			, obis peer_address
+			, std::chrono::system_clock::time_point tp
+			, cyng::buffer_t const& server_id
+			, std::string const& target
+			, std::uint8_t push_nr)
+		{
+			//tp.time_since_epoch().count();
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROFILE_LIST_RESPONSE	//	0x0401
+
+				//
+				//	generate get process parameter response
+				//
+				, get_profile_list_response(client_id
+					, act_time
+					, reg_period
+					, OBIS_CLASS_OP_LOG	//	path entry: 81 81 C7 89 E1 FF
+					, val_time
+					, status
+					, cyng::tuple_t{
+
+						//	81 81 C7 89 E2 FF - OBIS_CLASS_EVENT
+						//  62FF                                    unit: 255
+						//  5200                                    scaler: 0
+						//  64800008                                value: 8388616
+						period_entry(OBIS_CLASS_EVENT, 0xFF, 0, cyng::make_object(evt)),
+
+						//	81 81 00 00 00 FF - CODE_PEER_ADDRESS
+						//  62FF                                    unit: 255
+						//  5200                                    scaler: 0
+						//  078146000002FF                          value: 81 46 00 00 02 FF 
+						period_entry(OBIS_CODE_PEER_ADDRESS, 0xFF, 0, cyng::make_object(peer_address.to_buffer())),
+
+						//  0781042B070000                          objName: 81 04 2B 07 00 00 
+						//  62FE                                    unit: 254
+						//  5200                                    scaler: 0
+						//  5500000000                              value: 0
+						period_entry(OBIS_CLASS_OP_LOG_FIELD_STRENGTH, 0xFE, 0, cyng::make_object(0u)),
+
+						//  81 04 1A 07 00 00                       objName: CLASS_OP_LOG_CELL
+						//  62FF                                    unit: 255
+						//  5200                                    scaler: 0
+						//  6200                                    value: 0
+						period_entry(OBIS_CLASS_OP_LOG_CELL, 0xFF, 0, cyng::make_object(0u)),
+
+						//  81 04 17 07 00 00                       objName:  CLASS_OP_LOG_AREA_CODE
+						//  62FF                                    unit: 255
+						//  5200                                    scaler: 0
+						//  6200                                    value: 0
+						period_entry(OBIS_CLASS_OP_LOG_AREA_CODE, 0xFF, 0, cyng::make_object(0u)),
+
+						//  81 04 0D 06 00 00                       objName: CLASS_OP_LOG_PROVIDER
+						//  62FF                                    unit: 255
+						//  5200                                    scaler: 0
+						//  6200                                    value: 0
+						period_entry(OBIS_CLASS_OP_LOG_PROVIDER, 0xFF, 0, cyng::make_object(0u)),
+
+						//  01 00 00 09 0B 00                       objName:  CURRENT_UTC
+						//  6207                                    unit: 7
+						//  5200                                    scaler: 0
+						//  655B8E3F04                              value: 1536048900
+						period_entry(OBIS_CURRENT_UTC, 0x07, 0, cyng::make_object(tp.time_since_epoch().count())),
+						//period_entry(OBIS_CURRENT_UTC, 0x07, 0, cyng::make_object(1536048900UL)),
+
+						//  81 81 C7 82 04 FF                       objName:  CODE_SERVER_ID
+						//  62FF                                    unit: 255
+						//  5200                                    scaler: 0
+						//  0A01A815743145040102                    value: 01 A8 15 74 31 45 04 01 02 
+						period_entry(OBIS_CODE_SERVER_ID, 0xFF, 0, cyng::make_object(server_id)),
+
+						//  81 47 17 07 00 FF                       objName:  CODE_PUSH_TARGET
+						//  62FF                                    unit: 255
+						//  5200                                    scaler: 0
+						//  0F706F77657240736F6C6F73746563          value: power@solostec
+						period_entry(OBIS_CODE_PUSH_TARGET, 0xFF, 0, cyng::make_object(target)),
+
+						//  81 81 C7 8A 01 FF                       objName:  PUSH_OPERATIONS
+						//  62FF                                    unit: 255
+						//  5200                                    scaler: 0
+						//  6201                                    value: 1
+						period_entry(OBIS_PUSH_OPERATIONS, 0xFF, 0, cyng::make_object(push_nr))
+
+				})));
+
+     
+		}
+
+		std::size_t res_generator::get_profile_op_logs(cyng::object trx
+			, cyng::object client_id
+			, std::chrono::system_clock::time_point start_time
+			, std::chrono::system_clock::time_point end_time
+			, const cyng::store::table* tbl)
+		{
+			BOOST_ASSERT(tbl != nullptr);
+			BOOST_ASSERT(tbl->meta().get_name() == "op.log");
+
+			tbl->loop([&](cyng::table::record const& rec) {
+
+				//	[2018-09-05 14:00:34.04194950,00000384,2018-09-05 14:00:34.04194950,00062602,00800008,8146000002FF,2018-09-05 14:00:34.04194580,01A815743145040102,power@solostec,1]
+
+				cyng::buffer_t peer;
+				peer = cyng::value_cast(rec["peer"], peer);
+
+				cyng::buffer_t server;
+				server = cyng::value_cast(rec["serverId"], server);
+
+				get_profile_op_log(trx
+					, client_id
+					, cyng::value_cast(rec["actTime"], std::chrono::system_clock::now()) //	act_time
+					, cyng::value_cast<std::uint32_t>(rec["regPeriod"], 900u) //	reg_period
+					, cyng::value_cast(rec["valTime"], std::chrono::system_clock::now())
+					, cyng::value_cast<std::uint64_t>(rec["status"], 0u) //	status
+					, cyng::value_cast<std::uint32_t>(rec["event"], 0u) //	evt
+					, obis(peer) //	peer_address
+					, cyng::value_cast(rec["utc"], std::chrono::system_clock::now())
+					, server
+					, cyng::value_cast<std::string>(rec["target"], "")
+					, cyng::value_cast<std::uint8_t>(rec["pushNr"], 1u));
+
+				//
+				//	continue
+				//
+				return true;
+			});
+
+			return 0;
+		}
+
 
 		trx::trx()
 			: rng_()

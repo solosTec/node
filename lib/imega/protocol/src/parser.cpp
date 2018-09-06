@@ -35,7 +35,7 @@ namespace node
 			//
 			//	save previous state
 			//
-			state prev_state = stream_state_;
+// 			state prev_state = stream_state_;
 
 			switch (stream_state_)
 			{
