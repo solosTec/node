@@ -110,9 +110,12 @@ namespace node
 					<< " is open");
 
 				//
-				//	push data
+				//	ToDo: push data
 				//
 
+				//
+				//	close push channel
+				//
 				CYNG_LOG_TRACE(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
@@ -121,9 +124,6 @@ namespace node
 					<< channel
 					<< ':'
 					<< source);
-				//
-				//	close push channel
-				//
 				bus_->vm_.async_run(cyng::generate_invoke("req.close.push.channel", channel));
 
 			}

@@ -8,6 +8,8 @@
 #include "executor.h"
 #include "tasks/push_ops.h"
 #include <smf/sml/srv_id_io.h>
+#include <smf/sml/event.h>
+#include <smf/sml/obis_db.h>
 
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/intrinsics/buffer.h>
@@ -34,6 +36,8 @@ namespace node
 			, bus_(bus)
 			, rgn_()
 		{
+			BOOST_ASSERT(bus_->vm_.tag() != tag);
+
 			subscribe("devices");
 			subscribe("push.ops");
 
@@ -41,6 +45,32 @@ namespace node
 			init_db(tag, mac);
 #endif
 		}
+
+		void executor::ipt_access(bool success, std::string address)
+		{
+			//
+			//	auto key
+			//
+			auto pk = config_db_.size("op.log");
+
+			config_db_.insert("op.log"
+				, cyng::table::key_generator(pk)
+				, cyng::table::data_generator(std::chrono::system_clock::now()
+					, static_cast<std::uint32_t>(900u)	//	reg period - 15 min
+					, std::chrono::system_clock::now()	//	val time
+					, status_word_.operator std::uint64_t()	//	status
+					, (success ? evt_ipt_connect() : evt_ipt_disconnect())	//	event: 1232076810/1232076814
+					, OBIS_CODE_PEER_ADDRESS_WANGSM.to_buffer()	//	81 81 00 00 00 13
+					, std::chrono::system_clock::now()	//	val time
+					, cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02 })
+					, address
+					, static_cast<std::uint8_t>(0u))		//	push_nr
+				, 1	//	generation
+				, bus_->vm_.tag());
+
+
+		}
+
 
 		void executor::subscribe(std::string const& table)
 		{

@@ -290,7 +290,7 @@ namespace node
 
 			if (OBIS_CLASS_OP_LOG_STATUS_WORD == code)
 			{
-				std::uint32_t status = status_word_.operator std::uint32_t();
+				std::uint64_t status = status_word_.operator std::uint64_t();
 				CYNG_LOG_DEBUG(logger_, "status word: " << status);
 
 				sml_gen_.get_proc_parameter_status_word(frame.at(1)

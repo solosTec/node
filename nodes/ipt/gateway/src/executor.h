@@ -36,6 +36,11 @@ namespace node
 				, boost::uuids::uuid tag
 				, cyng::mac48 mac);
 
+			/**
+			 * Generate op log entry
+			 */
+			void ipt_access(bool, std::string);
+
 		private:
 			void subscribe(std::string const& name);
 			void init_db(boost::uuids::uuid tag, cyng::mac48 mac);

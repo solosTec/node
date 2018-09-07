@@ -1129,7 +1129,9 @@ namespace node
 			, std::string const& target
 			, std::uint8_t push_nr)
 		{
-			//tp.time_since_epoch().count();
+			//	seconds since epoch
+			std::uint64_t sec = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
+
 			return append_msg(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
@@ -1186,8 +1188,8 @@ namespace node
 						//  6207                                    unit: 7
 						//  5200                                    scaler: 0
 						//  655B8E3F04                              value: 1536048900
-						period_entry(OBIS_CURRENT_UTC, 0x07, 0, cyng::make_object(tp.time_since_epoch().count())),
-						//period_entry(OBIS_CURRENT_UTC, 0x07, 0, cyng::make_object(1536048900UL)),
+						period_entry(OBIS_CURRENT_UTC, 0x07, 0, cyng::make_object(sec)),
+						//period_entry(OBIS_CURRENT_UTC, 0x07, 0, cyng::make_object(1536048900ULL)),
 
 						//  81 81 C7 82 04 FF                       objName:  CODE_SERVER_ID
 						//  62FF                                    unit: 255

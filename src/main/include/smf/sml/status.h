@@ -81,6 +81,10 @@ namespace node
 		 *	19	1 if PLC is available
 		 *	20-31	always 0
 		 *	32	1 if time base is unsure
+
+		 * 0x72202 = ‭0111 0010 0010 0000 0010‬	- not authorized on IP-T master
+		 * 0x70202 = ‭0111 0000 0010 0000 0010‬	- authorized on IP-T master
+		 * 0x62602 = ‭0111 0010 0110 0000 0010‬
 		 */
 		class status
 		{
@@ -97,7 +101,7 @@ namespace node
 			/**
 			 * @return status word
 			 */
-			operator std::uint32_t() const;
+			operator std::uint64_t() const;
 
 			void set_fatal_error(bool);
 			void set_authorized(bool);
@@ -125,7 +129,7 @@ namespace node
 			void remove(status_bits);
 
 		private:
-			std::uint32_t	word_;
+			std::uint64_t	word_;
 		};
 
 	}	//	sml

@@ -106,11 +106,13 @@ namespace node
 		//const static obis	DEFINE_OBIS_CODE(81, 04, 00, 06, 10, FF, CODE_ROOT_WAN_PARAM);	//	see: 7.3.1.6 Datenstruktur zum Lesen/Setzen der WAN Parameter 
 		const static obis	DEFINE_OBIS_CODE(81, 04, 02, 07, 00, FF, CODE_ROOT_GSM);	//	see: Datenstruktur zum Lesen/Setzen der GSM Parameter 
 		const static obis	DEFINE_OBIS_CODE(81, 04, 0D, 07, 00, FF, CODE_ROOT_GPRS_PARAM);	//	see: Datenstruktur zum Lesen / Setzen der Provider-abhängigen GPRS-Parameter 
+		const static obis	DEFINE_OBIS_CODE(81, 46, 00, 00, 02, FF, CODE_ADDRESSED_PROFILE);
 		const static obis	DEFINE_OBIS_CODE(81, 47, 17, 07, 00, FF, CODE_PUSH_TARGET);	//	push target name
 		const static obis	DEFINE_OBIS_CODE(81, 48, 0D, 06, 00, FF, CODE_ROOT_LAN_DSL);	//	see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter
 		const static obis	DEFINE_OBIS_CODE(81, 49, 0D, 06, 00, FF, CODE_ROOT_IPT_STATE);	//	see: 7.3.1.8 Datenstruktur zur Abfrage des IPT Status 
 		const static obis	DEFINE_OBIS_CODE(81, 49, 0D, 07, 00, FF, CODE_ROOT_IPT_PARAM);	//	see: 7.3.1.9 Datenstruktur zur Lesen/Setzen der IPT Parameter 
 
+		const static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, 13, CODE_PEER_ADDRESS_WANGSM);	//	peer address: WAN/GSM
 		const static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, FF, CODE_PEER_ADDRESS);	//	unit is 255
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, 01, 16, FF, FF, CODE_ROOT_NEW_DEVICES);	//	new active devices

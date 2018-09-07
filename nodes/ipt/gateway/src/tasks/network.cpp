@@ -123,16 +123,25 @@ namespace node
 		//	slot 0
 		cyng::continuation network::process(std::uint16_t watchdog, std::string redirect)
 		{
+			//
+			//	authorization successful
+			//	update status word
+			//
+			core_.status_word_.set_authorized(true);
+
+			//
+			//	op log entry
+			//
+			exec_.ipt_access(true, config_.get_address());
+
+			//
+			//	watchdog
+			//
 			if (watchdog != 0)
 			{
 				CYNG_LOG_INFO(logger_, "start watchdog: " << watchdog << " minutes");
 				base_.suspend(std::chrono::minutes(watchdog));
 			}
-
-			//
-			//	update status word
-			//
-			core_.status_word_.set_authorized(true);
 
 			return cyng::continuation::TASK_CONTINUE;
 		}
@@ -143,6 +152,11 @@ namespace node
 			//	update status word
 			//
 			core_.status_word_.set_authorized(false);
+
+			//
+			//	op log entry
+			//
+			exec_.ipt_access(false, config_.get_address());
 
 			//
 			//	switch to other configuration
