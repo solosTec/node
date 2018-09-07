@@ -8,6 +8,7 @@
 #include <boost/asio.hpp>
 #include "show_ip_address.h"
 #include <cyng/sys/mac.h>
+#include <cyng/sys/info.h>
 #include <cyng/io/serializer.h>
 
 namespace node 
@@ -19,7 +20,11 @@ namespace node
 			<< "host name: "
 			<< host
 			<< std::endl
+			<< "effective OS: "
+			<< cyng::sys::get_os_name()
+			<< std::endl
 			;
+
 
 		try
 		{

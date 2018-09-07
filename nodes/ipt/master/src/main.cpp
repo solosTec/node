@@ -11,10 +11,12 @@
 #include "../../../show_ip_address.h"
 #if BOOST_OS_WINDOWS
 #include <boost/asio.hpp>
+//#pragma comment(linker, "\"/manifestdependency:type='Win32' name='smf.ipt' version='6.0.0.0' processorArchitecture='X86' publicKeyToken='0000000000000000' language='*'\"")
 #endif
 #include "controller.h"
 #include <boost/filesystem.hpp>
 #include <iostream>
+
 
 /**
  * main entry point.

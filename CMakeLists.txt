@@ -1069,6 +1069,10 @@ else()
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/gateway_restart_service.cmd")
 
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.rc.in"
+		  "${PROJECT_BINARY_DIR}/gateway.rc")
+
 	# ipt master
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt.windows.cgf.in"
@@ -1085,6 +1089,10 @@ else()
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/ipt_restart_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt.rc.in"
+		  "${PROJECT_BINARY_DIR}/ipt.rc")
 
 	# ipt store
 	configure_file (
@@ -1136,6 +1144,10 @@ else()
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/master_restart_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master.rc.in"
+		  "${PROJECT_BINARY_DIR}/master.rc")
 
 	# modem
 	configure_file (

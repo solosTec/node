@@ -63,6 +63,14 @@ if(WIN32)
 		nodes/ipt/gateway/templates/gateway.windows.cgf.in
 	)
  
+	set (node_ipt_gateway_manifest
+		nodes/ipt/gateway/templates/gateway.exe.manifest
+	)
+
+	set (node_ipt_gateway_res
+		${CMAKE_CURRENT_BINARY_DIR}/gateway.rc 
+	)
+
 else()
 
 	set (node_ipt_gateway_service
@@ -87,6 +95,13 @@ set (node_ipt_gateway
   ${node_ipt_gateway_info}
   ${node_ipt_gateway_server}
 )
+
+if(WIN32)
+	source_group("manifest" FILES ${node_ipt_gateway_manifest})
+	list(APPEND node_ipt_gateway ${node_ipt_gateway_manifest})
+	source_group("resources" FILES ${node_ipt_gateway_res})
+	list(APPEND node_ipt_gateway ${node_ipt_gateway_res})
+endif()
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 	set (node_ipt_gateway_xml

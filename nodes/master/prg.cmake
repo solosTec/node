@@ -43,9 +43,6 @@ set (node_master_tasks
 	nodes/master/src/tasks/watchdog.cpp	
 )
 
-set (node_master_res
-)
-
 set (node_master_shared
 
 	src/main/include/smf/cluster/generator.h
@@ -61,6 +58,14 @@ if(WIN32)
 		nodes/master/templates/master_delete_service.cmd.in
 		nodes/master/templates/master_restart_service.cmd.in
 		nodes/master/templates/master.windows.cgf.in
+	)
+
+	set (node_master_manifest
+		nodes/master/templates/master.exe.manifest
+	)
+
+	set (node_master_res
+		${CMAKE_CURRENT_BINARY_DIR}/master.rc 
 	)
  
 else()
@@ -90,3 +95,9 @@ set (node_master
   ${node_master_shared}
 )
 
+if(WIN32)
+	source_group("manifest" FILES ${node_master_manifest})
+	list(APPEND node_master ${node_master_manifest})
+	source_group("resources" FILES ${node_master_res})
+	list(APPEND node_master ${node_master_res})
+endif()

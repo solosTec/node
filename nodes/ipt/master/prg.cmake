@@ -17,7 +17,6 @@ set (node_ipt_master_h
 	nodes/ipt/master/src/connection.h
 	nodes/ipt/master/src/server.h
 	nodes/ipt/master/src/session.h
-#	nodes/ipt/master/src/session_state.h
 )
 
 set (node_ipt_master_info
@@ -54,9 +53,6 @@ set (node_ipt_master_tasks
 	nodes/ipt/master/src/tasks/query_firmware.h
 	nodes/ipt/master/src/tasks/query_firmware.cpp
 )
-
-set (node_ipt_master_res
-)
 	
 if(WIN32)
 
@@ -66,6 +62,15 @@ if(WIN32)
 		nodes/ipt/master/templates/ipt_restart_service.cmd.in
 		nodes/ipt/master/templates/ipt.windows.cgf.in
 	)
+
+	set (node_ipt_master_manifest
+		nodes/ipt/master/templates/ipt.exe.manifest
+	)
+
+	set (node_ipt_master_res
+		${CMAKE_CURRENT_BINARY_DIR}/ipt.rc 
+	)
+
  
 else()
 
@@ -77,7 +82,6 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_ipt_master_tasks})
-source_group("resources" FILES ${node_ipt_master_res})
 source_group("service" FILES ${node_ipt_master_service})
 source_group("info" FILES ${node_ipt_master_info})
 
@@ -92,3 +96,9 @@ set (node_ipt_master
   ${node_ipt_master_info}
 )
 
+if(WIN32)
+	source_group("manifest" FILES ${node_ipt_master_manifest})
+	list(APPEND node_ipt_master ${node_ipt_master_manifest})
+	source_group("resources" FILES ${node_ipt_master_res})
+	list(APPEND node_ipt_master ${node_ipt_master_res})
+endif()
