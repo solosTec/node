@@ -5,7 +5,6 @@
  *
  */
 
-// #include <project_info.h>
 #include "../../../print_build_info.h"
 #include "../../../print_version_info.h"
 #include "../../../set_start_options.h"

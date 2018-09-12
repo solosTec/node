@@ -116,6 +116,13 @@ set (${PROJECT_NAME}_SALT_STRING 	${__RND_VALUE_SALT})
 string(RANDOM LENGTH 8 ALPHABET "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" __RND_VALUE_PWD)
 set (${PROJECT_NAME}_PWD 	"${__RND_VALUE_PWD}")
 
+#
+# manage unit test: CYNG_BUILD_TEST
+# default is OFF
+#
+if(NOT DEFINED ${PROJECT_NAME}_BUILD_TEST)
+	set(${PROJECT_NAME}_BUILD_TEST OFF CACHE BOOL "build unit test")
+endif()
 
 #
 #	setup C++ compiler
