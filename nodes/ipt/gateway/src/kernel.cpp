@@ -68,6 +68,7 @@ namespace node
 			vm.register_function("sml.public.close.response", 3, std::bind(&kernel::sml_public_close_response, this, std::placeholders::_1));
 
 			vm.register_function("sml.get.proc.parameter.request", 8, std::bind(&kernel::sml_get_proc_parameter_request, this, std::placeholders::_1));
+			vm.register_function("sml.get.profile.list.request", 10, std::bind(&kernel::sml_get_profile_list_request, this, std::placeholders::_1));
 
 			vm.register_function("sml.set.proc.push.interval", 7, std::bind(&kernel::sml_set_proc_push_interval, this, std::placeholders::_1));
 			vm.register_function("sml.set.proc.push.delay", 7, std::bind(&kernel::sml_set_proc_push_delay, this, std::placeholders::_1));
@@ -289,7 +290,7 @@ namespace node
 
 			if (OBIS_CLASS_OP_LOG_STATUS_WORD == code)
 			{
-				std::uint32_t status = status_word_.operator std::uint32_t();
+				std::uint64_t status = status_word_.operator std::uint64_t();
 				CYNG_LOG_DEBUG(logger_, "status word: " << status);
 
 				sml_gen_.get_proc_parameter_status_word(frame.at(1)
@@ -527,7 +528,68 @@ namespace node
 				CYNG_LOG_ERROR(logger_, "sml.get.proc.parameter.request - unknown OBIS code " << to_string(code));
 
 			}
+		}
 
+
+		void kernel::sml_get_profile_list_request(cyng::context& ctx) 
+		{
+			//	[7068ce46-00b2-4f73-b3fa-72c3c965354c,180905155846820378-2,1,005056C00008,0500FFB00BCAAE,operator,operator,2018-09-04 13:58:41.00000000,2018-09-05 13:58:41.00000000,8181C789E1FF]
+			//	
+			//	* pk
+			//	* transaction id
+			//	* SML message id
+			//	* client ID
+			//	* server ID
+			//	* username
+			//	* password
+			//	* start time
+			//	* end time
+			//	* OBIS (requested parameter)
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, "sml.get.profile.list.request " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::size_t,		//	[2] msg id
+				cyng::buffer_t,		//	[3] client id
+				cyng::buffer_t,		//	[4] server id
+				std::string,		//	[5] user
+				std::string,		//	[6] password
+				std::chrono::system_clock::time_point,		//	[7] start time
+				std::chrono::system_clock::time_point,		//	[8] end time
+				cyng::buffer_t		//	[9] path (OBIS)
+			>(frame);
+
+			obis code(std::get<9>(tpl));
+
+			if (OBIS_CLASS_OP_LOG == code) 	{
+
+				//
+				//	send operation logs
+				//
+
+				config_db_.access([&](cyng::store::table* tbl) {
+
+					CYNG_LOG_INFO(logger_, "send " << tbl->size() << " op.log(s)");
+
+					sml_gen_.get_profile_op_logs(frame.at(1)
+						, frame.at(3)	//	server id
+						, std::get<7>(tpl)
+						, std::get<8>(tpl)
+						, tbl);
+
+					//tbl->loop([&](cyng::table::record const& rec) {
+
+					//	//	[2018-09-05 14:00:34.04194950,00000384,2018-09-05 14:00:34.04194950,00062602,00800008,8146000002FF,2018-09-05 14:00:34.04194580,01A815743145040102,power@solostec,1]
+					//	CYNG_LOG_TRACE(logger_, "sml.get.profile.list.request " << cyng::io::to_str(rec.data()));
+
+					//	return true;
+					//});
+
+				}, cyng::store::write_access("op.log"));
+
+			}
 		}
 
 		void kernel::sml_get_proc_ntp_config(cyng::object trx, cyng::object server)

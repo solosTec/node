@@ -66,17 +66,25 @@ namespace node
 		 *	8	1 if fatal error was detected
 		 *	9	1 if restart was triggered by watchdog reset
 		 *	10	0 if IP address is available (DHCP)
-		 *	11	0 if ethernet link / GSM network is available
+			 - PSTN: Link with peer established
+			 - GSM: Link with peer established
+			 - GPRS: authorized on GPRS service
+			 - LAN/DSL: IP address from DHCP or PPPoE available
+		 *	11	0 if ethernet link / WAN / GSM network is available
 		 *	12	always 0 (logged in GSM network)
 		 *	13	0 if authorized on IP-T server
 		 *	14	1 in case of out of memory
-		 *	15	always 0
+		 *	15	reserved - always 0
 		 *	16	1 if Service interface is available (Kundenschnittstelle)
-		 *	17	1 if extension interface is available (Erweiterungs-Schnittstelle)
+		 *	17	1 if extension interface is available (Ethernet Erweiterungs-Schnittstelle)
 		 *	18	1 if Wireless M-Bus interface is available
 		 *	19	1 if PLC is available
 		 *	20-31	always 0
 		 *	32	1 if time base is unsure
+
+		 * 0x72202 = ‭0111 0010 0010 0000 0010‬	- not authorized on IP-T master
+		 * 0x70202 = ‭0111 0000 0010 0000 0010‬	- authorized on IP-T master
+		 * 0x62602 = ‭0111 0010 0110 0000 0010‬
 		 */
 		class status
 		{
@@ -93,7 +101,7 @@ namespace node
 			/**
 			 * @return status word
 			 */
-			operator std::uint32_t() const;
+			operator std::uint64_t() const;
 
 			void set_fatal_error(bool);
 			void set_authorized(bool);
@@ -121,7 +129,7 @@ namespace node
 			void remove(status_bits);
 
 		private:
-			std::uint32_t	word_;
+			std::uint64_t	word_;
 		};
 
 	}	//	sml

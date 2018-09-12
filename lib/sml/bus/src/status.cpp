@@ -39,31 +39,31 @@ namespace node
 			word_ = 0u;
 			word_ |= STATUS_BIT_ON;	//!< bit 1 is always ON
 			word_ |= STATUS_BIT_RESET_BY_WATCHDOG;	
-			word_ |= STATUS_BIT_IP_ADDRESS_AVAILABLE;	//!< 1 if NOT available
+			//word_ |= STATUS_BIT_IP_ADDRESS_AVAILABLE;	//!< 1 if NOT available
 			word_ |= STATUS_BIT_EXT_IF_AVAILABLE;	//!< 1 if NOT available
 			word_ |= STATUS_BIT_AUTHORIZED_IPT;	//!< 1 if NOT authorized
 		}
 
-		status::operator std::uint32_t() const
+		status::operator std::uint64_t() const
 		{
 			return word_;
 		}
 
 		void status::set_fatal_error(bool b)
 		{
-			b ? set(STATUS_BIT_FATAL_ERROR) : remove(STATUS_BIT_FATAL_ERROR);
+			(b) ? set(STATUS_BIT_FATAL_ERROR) : remove(STATUS_BIT_FATAL_ERROR);
 		}
 
 		void status::set_authorized(bool b)
 		{
 			//	0 if authorized
-			b ? remove(STATUS_BIT_AUTHORIZED_IPT) : set(STATUS_BIT_AUTHORIZED_IPT);
+			(b) ? remove(STATUS_BIT_AUTHORIZED_IPT) : set(STATUS_BIT_AUTHORIZED_IPT);
 		}
 
 		void status::set_ip_address_available(bool b)
 		{
 			//	0 if IP address is available (DHCP)
-			b ? remove(STATUS_BIT_IP_ADDRESS_AVAILABLE) : set(STATUS_BIT_IP_ADDRESS_AVAILABLE);
+			(b) ? remove(STATUS_BIT_IP_ADDRESS_AVAILABLE) : set(STATUS_BIT_IP_ADDRESS_AVAILABLE);
 		}
 
 		void status::set_ethernet_link_available(bool b)
@@ -74,17 +74,17 @@ namespace node
 
 		void status::set_service_if_available(bool b)
 		{
-			b ? set(STATUS_BIT_SERVICE_IF_AVAILABLE) : remove(STATUS_BIT_SERVICE_IF_AVAILABLE);
+			(b) ? set(STATUS_BIT_SERVICE_IF_AVAILABLE) : remove(STATUS_BIT_SERVICE_IF_AVAILABLE);
 		}
 
 		void status::set_ext_if_available(bool b)
 		{
-			b ? set(STATUS_BIT_EXT_IF_AVAILABLE) : remove(STATUS_BIT_EXT_IF_AVAILABLE);
+			(b) ? set(STATUS_BIT_EXT_IF_AVAILABLE) : remove(STATUS_BIT_EXT_IF_AVAILABLE);
 		}
 
 		void status::set_mbus_if_available(bool b)
 		{
-			b ? set(STATUS_BIT_MBUS_IF_AVAILABLE) : remove(STATUS_BIT_MBUS_IF_AVAILABLE);
+			(b) ? set(STATUS_BIT_MBUS_IF_AVAILABLE) : remove(STATUS_BIT_MBUS_IF_AVAILABLE);
 		}
 
 		bool status::is_authorized() const

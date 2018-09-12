@@ -41,11 +41,29 @@ namespace node
 			return ((buffer.size() == 7) && (buffer.at(0) == MAC_ADDRESS));
 		}
 
+		bool is_dke_1(cyng::buffer_t const& buffer)
+		{
+			return (buffer.size() == 10) 
+				&& (buffer.at(0) == '0') 
+				&& (buffer.at(1) == '6');
+		}
+
+		bool is_dke_2(cyng::buffer_t const& buffer)
+		{
+			return (buffer.size() == 10)
+				&& (buffer.at(0) == '0')
+				&& (buffer.at(1) == '9');
+		}
+
 		std::uint32_t get_srv_type(cyng::buffer_t const& buffer)
 		{
 			if (is_mbus(buffer))	return SRV_MBUS;
 			if (is_serial(buffer))	return SRV_SERIAL;
 			if (is_gateway(buffer))	return SRV_GW;
+			if (buffer.size() == 10 && buffer.at(1) == '3')	return SRV_BCD;
+			if (buffer.size() == 8 && buffer.at(2) == '4')	return SRV_EON;
+			if (is_dke_1(buffer))	return SRV_DKE_1;
+			if (is_dke_2(buffer))	return SRV_DKE_2;
 
 			return SRV_OTHER;
 		}
@@ -55,6 +73,8 @@ namespace node
 			//example: 02-e61e-03197715-3c-07
 			const auto size = str.size();
 			if (size == 22 
+				&& (str.at(0) == '0')
+				&& ((str.at(1) == '1') || (str.at(1) == '2'))
 				&& (str.at(2) == '-')
 				&& (str.at(7) == '-')
 				&& (str.at(16) == '-')

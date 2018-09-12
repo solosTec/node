@@ -504,6 +504,7 @@ namespace node
 			//	bag reader
 			//
 			auto dom = cyng::make_reader(std::get<6>(tpl));
+			boost::ignore_unused(dom);
 
 			//
 			//	stop gatekeeper
@@ -696,7 +697,8 @@ namespace node
 			//	dom reader
 			//
 			auto dom = cyng::make_reader(frame);
-
+			boost::ignore_unused(dom);
+			
 			//const sequence_type seq = cyng::value_cast<sequence_type>(dom[5].get("seq"), 0);
 			//const response_type res = cyng::value_cast<response_type>(dom[4].get("response-code"), 0);
 			//const std::uint32_t channel = cyng::value_cast<std::uint32_t>(dom.get(3), 0);	
@@ -1121,7 +1123,8 @@ namespace node
 			//	dom reader
 			//
 			auto dom = cyng::make_reader(frame);
-
+			boost::ignore_unused(dom);
+			
 			//const sequence_type seq = cyng::value_cast<sequence_type>(dom[4].get("seq"), 0);
 			//const response_type res = cyng::value_cast<response_type>(dom[3].get("response-code"), 0);
 

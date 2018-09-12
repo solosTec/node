@@ -23,11 +23,19 @@ namespace node
 		bool is_mbus(cyng::buffer_t const&);
 		bool is_serial(cyng::buffer_t const&);
 		bool is_gateway(cyng::buffer_t const&);
+		bool is_dke_1(cyng::buffer_t const&);
+		bool is_dke_2(cyng::buffer_t const&);
 
 		enum srv_type : std::uint32_t {
 			SRV_MBUS,
 			SRV_SERIAL,
 			SRV_GW,
+			SRV_BCD,	//	Rhrin-Energie
+			SRV_EON,	//	e-on
+			SRV_DKE_1,	//	E DIN 43863-5:2010-02
+			SRV_IMEI,	//	IMEI
+			SRV_RWE,	//	RWE
+			SRV_DKE_2,	//	E DIN 43863-5:2010-07
 			SRV_OTHER
 		};
 

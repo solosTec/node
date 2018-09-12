@@ -15,6 +15,7 @@
 #endif
 #include <cyng/tuple_cast.hpp>
 #include <boost/predef.h>
+#include <boost/core/ignore_unused.hpp>
 
 namespace node
 {
@@ -255,11 +256,13 @@ namespace node
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			const std::uint32_t channel = cyng::value_cast<std::uint32_t>(frame.at(0), 0);
+            boost::ignore_unused(channel);
 		}
 
 		void serializer::res_close_push_channel(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_transfer_push_data(cyng::context& ctx)
@@ -273,24 +276,32 @@ namespace node
 			cyng::buffer_t data;
 			data = cyng::value_cast<cyng::buffer_t>(frame.at(4), data);
 			const std::uint32_t size = data.size();
+            
+            boost::ignore_unused(channel);
+            boost::ignore_unused(source);
+            boost::ignore_unused(status);
+            boost::ignore_unused(block);
+            boost::ignore_unused(size);
 
 		}
 
 		void serializer::res_transfer_push_data(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_open_connection(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			const std::string number = cyng::value_cast<std::string>(frame.at(0), "");
-
+            boost::ignore_unused(number);
 		}
 
 		void serializer::res_open_connection(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_close_connection(cyng::context& ctx)
@@ -300,6 +311,7 @@ namespace node
 		void serializer::res_close_connection(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_protocol_version(cyng::context& ctx)
@@ -309,6 +321,7 @@ namespace node
 		void serializer::res_protocol_version(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_software_version(cyng::context& ctx)
@@ -318,6 +331,7 @@ namespace node
 		void serializer::res_software_version(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_device_id(cyng::context& ctx)
@@ -327,6 +341,7 @@ namespace node
 		void serializer::res_device_id(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_network_status(cyng::context& ctx)
@@ -336,6 +351,7 @@ namespace node
 		void serializer::res_network_status(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_ip_statistics(cyng::context& ctx)
@@ -345,6 +361,7 @@ namespace node
 		void serializer::res_ip_statistics(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_device_auth(cyng::context& ctx)
@@ -354,6 +371,7 @@ namespace node
 		void serializer::res_device_auth(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_device_time(cyng::context& ctx)
@@ -363,6 +381,7 @@ namespace node
 		void serializer::res_device_time(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_push_target_namelist(cyng::context& ctx)
@@ -395,6 +414,10 @@ namespace node
 			const std::uint16_t hop_counter = cyng::value_cast<std::uint16_t >(frame.at(2), 0);
 			const std::uint32_t channel = cyng::value_cast<std::uint32_t >(frame.at(3), 0);
 
+            boost::ignore_unused(ipt_link);
+            boost::ignore_unused(traceroute_idx);
+            boost::ignore_unused(hop_counter);
+            boost::ignore_unused(channel);
 
 		}
 
@@ -429,22 +452,30 @@ namespace node
 			const std::string target = cyng::value_cast<std::string >(frame.at(0), "");
 			const std::uint16_t p_size = cyng::value_cast<std::uint16_t >(frame.at(1), 0xffff);
 			const std::uint8_t w_size = cyng::value_cast<std::uint8_t >(frame.at(2), 1);
+            
+            boost::ignore_unused(target);
+            boost::ignore_unused(p_size);
+            boost::ignore_unused(w_size);
+            
 		}
 
 		void serializer::res_register_push_target(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_deregister_push_target(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			const std::string target = cyng::value_cast<std::string >(frame.at(0), "");
+            boost::ignore_unused(target);
 		}
 
 		void serializer::res_deregister_push_target(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 		void serializer::req_multi_ctrl_public_login(cyng::context& ctx)
@@ -460,6 +491,7 @@ namespace node
 		void serializer::res_unknown_command(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
+            boost::ignore_unused(frame);
 		}
 
 
@@ -484,7 +516,5 @@ namespace node
 		{
 			ostream_.put(c);
 		}
-
-
 	}
 }

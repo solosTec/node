@@ -90,5 +90,10 @@ namespace node
 			return config_.at(master_);
 		}
 
+		std::string redundancy::get_address() const
+		{
+			return get().host_ + ":" + get().service_;
+		}
+
 	}
 }

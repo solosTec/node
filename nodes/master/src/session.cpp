@@ -26,6 +26,7 @@
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/predef.h>
 
 namespace node 
 {
@@ -95,6 +96,7 @@ namespace node
 		vm_.register_function("client.req.close", 4, std::bind(&session::client_req_close, this, std::placeholders::_1));
 		vm_.register_function("client.res.close", 4, std::bind(&session::client_res_close, this, std::placeholders::_1));
 		vm_.register_function("client.req.open.push.channel", 10, std::bind(&session::client_req_open_push_channel, this, std::placeholders::_1));
+		vm_.register_function("client.res.open.push.channel", 9, std::bind(&session::client_res_open_push_channel, this, std::placeholders::_1));
 		vm_.register_function("client.req.close.push.channel", 5, std::bind(&session::client_req_close_push_channel, this, std::placeholders::_1));
 		vm_.register_function("client.req.register.push.target", 5, std::bind(&session::client_req_register_push_target, this, std::placeholders::_1));
 		vm_.register_function("client.req.deregister.push.target", 5, std::bind(&session::client_req_deregister_push_target, this, std::placeholders::_1));
@@ -103,6 +105,7 @@ namespace node
 		vm_.register_function("client.req.close.connection", 5, std::bind(&session::client_req_close_connection, this, std::placeholders::_1));
 		vm_.register_function("client.res.close.connection", 6, std::bind(&session::client_res_close_connection, this, std::placeholders::_1));
 		vm_.register_function("client.req.transfer.pushdata", 6, std::bind(&session::client_req_transfer_pushdata, this, std::placeholders::_1));
+		
 
 		vm_.register_function("client.req.transmit.data", 5, std::bind(&session::client_req_transmit_data, this, std::placeholders::_1));
 		vm_.register_function("client.inc.throughput", 3, std::bind(&session::client_inc_throughput, this, std::placeholders::_1));
@@ -635,18 +638,27 @@ namespace node
 		//
 		db_.access([&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
 
+#if _MSVC || (__GNUC__ > 6)
 			//
-			//	C++17 feature
+			//	C++17 feature: structured binding
 			//
 			//	peer - 
 			//	tag - target session tag
-			auto[peer, rec, server, tag] = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
-
+			auto [peer, rec, server, tag] = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
 			if (peer != nullptr) {
 				const auto name = cyng::value_cast<std::string>(rec["userName"], "");
 				const auto pwd = cyng::value_cast<std::string>(rec["userPwd"], "");
 				peer->vm_.async_run(client_req_reboot(std::get<2>(tpl), server, name, pwd));
 			}
+#else
+			auto res = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
+			if (std::get<0>(res) != nullptr) {
+				const auto name = cyng::value_cast<std::string>(std::get<1>(res)["userName"], "");
+				const auto pwd = cyng::value_cast<std::string>(std::get<1>(res)["userPwd"], "");
+				std::get<0>(res)->vm_.async_run(client_req_reboot(std::get<2>(tpl), std::get<2>(res), name, pwd));
+			}
+#endif
+
 
 		}, cyng::store::read_access("_Session")
 			, cyng::store::read_access("TGateway"));
@@ -680,6 +692,8 @@ namespace node
 		//
 		db_.access([&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
 
+#if _MSVC || (__GNUC__ > 6)
+			
 			//
 			//	C++17 feature
 			//
@@ -696,6 +710,22 @@ namespace node
 					, name
 					, pwd));
 			}
+#else
+		auto res = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
+		if (std::get<0>(res) != nullptr) {
+			
+			const auto name = cyng::value_cast<std::string>(std::get<1>(res)["userName"], "");
+			const auto pwd = cyng::value_cast<std::string>(std::get<1>(res)["userPwd"], "");
+			
+			std::get<0>(res)->vm_.async_run(node::client_req_query_srv_visible(std::get<3>(res)	//	(ipt) session tag
+			, ctx.tag()			//	source peer
+			, std::get<0>(tpl)	//	cluster sequence
+			, std::get<3>(tpl)	//	ws tag
+			, std::get<2>(res)
+			, name
+			, pwd));
+		}
+#endif
 
 		}	, cyng::store::read_access("_Session")
 			, cyng::store::read_access("TGateway"));
@@ -729,21 +759,37 @@ namespace node
 		//
 		db_.access([&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
 
+#if _MSVC || (__GNUC__ > 6)
+			
 			//
 			//	C++17 feature
 			//
 			auto[peer, rec, server, tag] = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
-
 			if (peer != nullptr) {
 				const auto name = cyng::value_cast<std::string>(rec["userName"], "");
 				const auto pwd = cyng::value_cast<std::string>(rec["userPwd"], "");
 				peer->vm_.async_run(node::client_req_query_srv_active(tag
-					, ctx.tag()			//	source peer
-					, std::get<0>(tpl)	//	cluster sequence
-					, std::get<3>(tpl)	//	ws tag
-					, server
-					, name
-					, pwd));
+				, ctx.tag()			//	source peer
+				, std::get<0>(tpl)	//	cluster sequence
+				, std::get<3>(tpl)	//	ws tag
+				, server
+				, name
+				, pwd));
+#else
+			auto res = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
+			if (std::get<0>(res) != nullptr) {
+				const auto name = cyng::value_cast<std::string>(std::get<1>(res)["userName"], "");
+				const auto pwd = cyng::value_cast<std::string>(std::get<1>(res)["userPwd"], "");
+				std::get<0>(res)->vm_.async_run(node::client_req_query_srv_active(std::get<3>(res)
+				, ctx.tag()			//	source peer
+				, std::get<0>(tpl)	//	cluster sequence
+				, std::get<3>(tpl)	//	ws tag
+				, std::get<2>(res)
+				, name
+				, pwd));
+				
+#endif
+			
 			}
 
 		}	, cyng::store::read_access("_Session")
@@ -778,22 +824,37 @@ namespace node
 		//
 		db_.access([&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
 
+#if _MSVC || (__GNUC__ > 6)			
 			//
 			//	C++17 feature
 			//
 			auto[peer, rec, server, tag] = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
-
 			if (peer != nullptr) {
 				const auto name = cyng::value_cast<std::string>(rec["userName"], "");
 				const auto pwd = cyng::value_cast<std::string>(rec["userPwd"], "");
 				peer->vm_.async_run(node::client_req_query_firmware(tag
-					, ctx.tag()			//	source peer
-					, std::get<0>(tpl)	//	cluster sequence
-					, std::get<3>(tpl)	//	ws tag
-					, server
-					, name
-					, pwd));
+				, ctx.tag()			//	source peer
+				, std::get<0>(tpl)	//	cluster sequence
+				, std::get<3>(tpl)	//	ws tag
+				, server
+				, name
+				, pwd));
 			}
+#else
+			auto res = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
+			if (std::get<0>(res) != nullptr) {
+				const auto name = cyng::value_cast<std::string>(std::get<1>(res)["userName"], "");
+				const auto pwd = cyng::value_cast<std::string>(std::get<1>(res)["userPwd"], "");
+				std::get<0>(res)->vm_.async_run(node::client_req_query_firmware(std::get<3>(res)
+				, ctx.tag()			//	source peer
+				, std::get<0>(tpl)	//	cluster sequence
+				, std::get<3>(tpl)	//	ws tag
+				, std::get<2>(res)
+				, name
+				, pwd));
+			}
+#endif
+			
 
 		}, cyng::store::read_access("_Session")
 			, cyng::store::read_access("TGateway"));
@@ -1429,6 +1490,34 @@ namespace node
 			, std::get<8>(tpl)
 			, std::get<9>(tpl)
 			, ctx.tag()));
+	}
+
+	void session::client_res_open_push_channel(cyng::context& ctx)
+	{
+		//	 [5e065593-d587-4b1b-a5c0-e79bd0fb2eb0,ee82b721-1411-46f5-8df7-7c797842e4f3,0,false,00000000,00000000,00000000,%(),%(("seq":1),("tp-layer":ipt))]
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_WARNING(logger_, "client.res.open.push.channel " << cyng::io::to_str(frame));
+
+		//
+		//	There is a bug in the EMH VSM to respond to connection close request with an "open channel response".
+		//	So this message can be partly ignored.
+		//	Additionally the VSM don't send a connection open request the first time after a connection was cleared from
+		//	the remote side.
+		//
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] tag
+			boost::uuids::uuid,		//	[1] peer
+			std::uint64_t,			//	[2] cluster sequence
+			bool,					//	[3] success flag
+			std::uint32_t,			//	[4] channel
+			std::uint32_t,			//	[5] source
+			std::uint32_t,			//	[6] count
+			cyng::param_map_t,		//	[7] options
+			cyng::param_map_t		//	[8] bag
+		>(frame);
+
+		boost::ignore_unused(tpl);
 	}
 
 	void session::client_req_close_push_channel(cyng::context& ctx)

@@ -100,6 +100,48 @@ namespace node
 				, params);
 		}
 
+		cyng::tuple_t get_profile_list_request(cyng::object server_id
+			, std::string const& username
+			, std::string const& password
+			, bool with_raw_data
+			, std::chrono::system_clock::time_point begin_time
+			, std::chrono::system_clock::time_point end_time
+			, obis code //	tree path
+			, cyng::tuple_t& obj_list
+			, cyng::tuple_t& details)
+		{
+			return cyng::tuple_factory(server_id
+				, username
+				, password
+				, with_raw_data
+				, begin_time
+				, end_time
+				, cyng::tuple_factory(code.to_buffer())	//	path entry
+				, obj_list
+				, details);
+		}
+
+		cyng::tuple_t get_profile_list_response(cyng::object server_id
+			, std::chrono::system_clock::time_point act_time
+			, std::uint32_t reg_period
+			, obis code //	tree path
+			, std::chrono::system_clock::time_point val_time
+			, std::uint64_t status
+			, cyng::tuple_t&& data)
+		{
+			return cyng::tuple_factory(server_id
+				, act_time
+				, reg_period
+				, cyng::tuple_factory(code.to_buffer())	//	path entry
+				, val_time
+				, status
+				, std::move(data)
+				, cyng::null()		//	rawdata
+				, cyng::null());	//	signature
+
+		}
+
+
 		cyng::buffer_t boxing(std::vector<cyng::buffer_t> const& inp)
 		{
 			//
@@ -196,6 +238,18 @@ namespace node
 			return cyng::tuple_t({ cyng::make_object(code.to_buffer())
 				, cyng::make_object(param)
 				, cyng::make_object(tpl) });
+		}
+
+		cyng::object period_entry(obis code
+			, std::uint8_t unit
+			, std::int8_t scaler
+			, cyng::object value)
+		{
+			return cyng::make_object(cyng::tuple_factory(code.to_buffer()
+				, unit
+				, scaler
+				, value
+				, cyng::null()));	//	signature
 		}
 
 	}

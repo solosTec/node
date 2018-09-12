@@ -54,7 +54,8 @@ namespace node
 
 		private:
 			cyng::async::base_task& base_;
-
+			cyng::logging::log_ptr logger_;
+			
 			/**
 			 * global state
 			 */
@@ -70,7 +71,6 @@ namespace node
 			 */
 			bus::shared_type bus_;
 
-			cyng::logging::log_ptr logger_;
 			cyng::table::key_type key_;
 
 			const boost::uuids::uuid tag_;

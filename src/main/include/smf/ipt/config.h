@@ -60,6 +60,14 @@ namespace node
 			 */
 			master_record const& get() const;
 
+			/**
+			 * Sythesize a string with format: host ':' service
+			 */
+			std::string get_address() const;
+
+			/**
+			 * config data
+			 */
 			const master_config_t config_;
 
 			/**

@@ -13,7 +13,7 @@
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller.h>
-
+#include <boost/predef.h>	//	requires Boost 1.55
 
 namespace node
 {
@@ -71,6 +71,7 @@ namespace node
 	
 }
 
+#if BOOST_COMP_GNUC
 namespace cyng {
 	namespace async {
 
@@ -81,5 +82,6 @@ namespace cyng {
 		std::map<std::string, std::size_t> cyng::async::task<node::close_connection>::slot_names_;
     }
 }
+#endif
 
 #endif

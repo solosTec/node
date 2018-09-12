@@ -8,7 +8,6 @@
 #include "print_build_info.h"
 #include <NODE_project_info.h>
 #include <CYNG_project_info.h>
-//#include <cyng/io/io_chrono.hpp>
 #include <boost/config.hpp>
 #include <boost/version.hpp>
 #include <boost/asio/version.hpp>

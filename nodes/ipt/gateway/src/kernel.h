@@ -57,6 +57,7 @@ namespace node
 			void sml_public_close_request(cyng::context& ctx);
 			void sml_public_close_response(cyng::context& ctx);
 			void sml_get_proc_parameter_request(cyng::context& ctx);
+			void sml_get_profile_list_request(cyng::context& ctx);
 			void sml_get_proc_ntp_config(cyng::object trx, cyng::object server);
 			//void sml_get_proc_device_time(cyng::context& ctx);
 			void sml_get_proc_ipt_state(cyng::object trx, cyng::object server);

@@ -40,7 +40,7 @@ namespace node
 
         connection::~connection()
         {
-			CYNG_LOG_DEBUG(logger_, "deconstruct connection(" << tag_ << ')');
+			//CYNG_LOG_DEBUG(logger_, "deconstruct connection(" << tag_ << ')');
 			BOOST_ASSERT_MSG(session_.vm_.is_halted(), "session not in HALT state");
         }
 

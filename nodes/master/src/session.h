@@ -97,6 +97,7 @@ namespace node
 		void client_res_close(cyng::context& ctx);
 
 		void client_req_open_push_channel(cyng::context& ctx);
+		void client_res_open_push_channel(cyng::context& ctx);
 		void client_req_close_push_channel(cyng::context& ctx);
 		void client_req_register_push_target(cyng::context& ctx);
 		void client_req_deregister_push_target(cyng::context& ctx);
@@ -135,14 +136,16 @@ namespace node
 		boost::uuids::uuid mtag_;	// master tag
 		cyng::store::db& db_;
 		cyng::controller vm_;
-		const std::string account_;
-		const std::string pwd_;
-		const std::chrono::seconds cluster_monitor_;
-
+		
 		/**
 		 * Parser for binary cyng data stream (from cluster members)
 		 */
 		cyng::parser 	parser_;
+		
+		const std::string account_;
+		const std::string pwd_;
+		const std::chrono::seconds cluster_monitor_;
+
 
 		/**
 		 * cluster bus sequence
