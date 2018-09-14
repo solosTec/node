@@ -5,9 +5,8 @@
  * 
  */ 
 #include <smf/mbus/variable_data_block.h>
-// #include <smf/mbus/defs.h>
-// #include <cyng/vm/generator.h>
- #include <iostream>
+#include <cyng/factory.h>
+#include <iostream>
 // #include <sstream>
 // #include <ios>
 // #include <iomanip>
@@ -22,6 +21,10 @@ namespace node
 	, tariff_(0)
 	, sub_unit_(0)
 	, scaler_(0)
+	, unit_(mbus::UNDEFINED_)
+	, dt_flag_date_(false)
+	, dt_flag_time_(false)
+	, value_()
 	{}
 	
 	std::size_t variable_data_block::decode(cyng::buffer_t const& data, std::size_t offset, std::size_t size)
@@ -59,6 +62,11 @@ namespace node
 		//
 		offset = decode_vif(data, offset);
 		
+		//
+		//	get data
+		//
+		offset = decode_data(data, offset);
+		
 		return offset;
 	}
 	
@@ -74,6 +82,205 @@ namespace node
 		
 		return offset;
 	}
+	
+	std::size_t variable_data_block::decode_data(cyng::buffer_t const& data, std::size_t offset)
+	{
+        switch (length_) {
+        case 0x00:
+        case 0x08: 
+			//	no data - selection for readout request
+			value_.clear();
+            break;
+        case 0x01:
+			//	i8
+			value_ = cyng::make_object(data.at(offset++));
+            break;
+        case 0x02:
+			//	i16
+            if (dt_flag_date_) {
+                int day = (0x1f) & data.at(offset);
+                int year1 = ((0xe0) & data.at(offset++)) >> 5;
+                int month = (0x0f) & data.at(offset);
+                int year2 = ((0xf0) & data.at(offset++)) >> 1;
+                int year = (2000 + year1 + year2);
+
+//                 Calendar calendar = Calendar.getInstance();
+// 
+//                 calendar.set(year, month - 1, day, 0, 0, 0);
+// 
+//                 dataValue = calendar.getTime();
+//                 dataValueType = DataValueType.DATE;
+            }
+            else {
+				value_ = cyng::make_object((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8));
+
+//                 dataValue = Long.valueOf((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8));
+//                 dataValueType = DataValueType.LONG;
+            }
+            break;
+        case 0x03:
+			//	i24
+            if ((data.at(offset + 2) & 0x80) == 0x80) {
+                // negative
+				value_ = cyng::make_object((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8) | ((data.at(offset++) & 0xff) << 16) | 0xff << 24);
+//                 dataValue = Long.valueOf(
+//                         (data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8) | ((data.at(offset++) & 0xff) << 16) | 0xff << 24);
+            }
+            else {
+				value_ = cyng::make_object((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8) | ((data.at(offset++) & 0xff) << 16));
+//                 dataValue = Long
+//                         .valueOf((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8) | ((data.at(offset++) & 0xff) << 16));
+            }
+//             dataValueType = DataValueType.LONG;
+            break;
+        case 0x04:
+			//	i32
+            if (dt_flag_time_) {
+                int min = (data.at(offset++) & 0x3f);
+                int hour = (data.at(offset) & 0x1f);
+                int yearh = (0x60 & data.at(offset++)) >> 5;
+                int day = (data.at(offset) & 0x1f);
+                int year1 = (0xe0 & data.at(offset++)) >> 5;
+                int mon = (data.at(offset) & 0x0f);
+                int year2 = (0xf0 & data.at(offset++)) >> 1;
+
+                if (yearh == 0) {
+                    yearh = 1;
+                }
+
+                int year = 1900 + 100 * yearh + year1 + year2;
+
+//                 Calendar calendar = Calendar.getInstance();
+// 
+//                 calendar.set(year, mon - 1, day, hour, min, 0);
+// 
+//                 dataValue = calendar.getTime();
+//                 dataValueType = DataValueType.DATE;
+            }
+            else {
+				value_ = cyng::make_object((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8)
+                        | ((data.at(offset++) & 0xff) << 16) | ((data.at(offset++) & 0xff) << 24));
+//                 dataValue = Long.valueOf((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8)
+//                         | ((data.at(offset++) & 0xff) << 16) | ((data.at(offset++) & 0xff) << 24));
+//                 dataValueType = DataValueType.LONG;
+            }
+            break;
+        case 0x05:
+			//	f32
+			offset += 4;
+			value_ = cyng::make_object(0.0f);
+//             Float doubleDatavalue = ByteBuffer.wrap(buffer, i, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+//             i += 4;
+//             dataValue = Double.valueOf(doubleDatavalue);
+//             dataValueType = DataValueType.DOUBLE;
+            break;
+        case 0x06:
+			//	i48
+            if ((data.at(offset + 5) & 0x80) == 0x80) {
+                // negative
+				value_ = cyng::make_object((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8) | ((data.at(offset++) & 0xff) << 16)
+                                | ((data.at(offset++) & 0xff) << 24) | (((long) data.at(offset++) & 0xff) << 32)
+                                | (((long) data.at(offset++) & 0xff) << 40) | (0xffl << 48) | (0xffl << 56));
+//                 dataValue = Long
+//                         .valueOf((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8) | ((data.at(offset++) & 0xff) << 16)
+//                                 | ((data.at(offset++) & 0xff) << 24) | (((long) data.at(offset++) & 0xff) << 32)
+//                                 | (((long) data.at(offset++) & 0xff) << 40) | (0xffl << 48) | (0xffl << 56));
+            }
+            else {
+				value_ = cyng::make_object((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8)
+                        | ((data.at(offset++) & 0xff) << 16) | ((data.at(offset++) & 0xff) << 24)
+                        | (((long) data.at(offset++) & 0xff) << 32) | (((long) data.at(offset++) & 0xff) << 40));
+//                 dataValue = Long.valueOf((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8)
+//                         | ((data.at(offset++) & 0xff) << 16) | ((data.at(offset++) & 0xff) << 24)
+//                         | (((long) data.at(offset++) & 0xff) << 32) | (((long) data.at(offset++) & 0xff) << 40));
+            }
+//             dataValueType = DataValueType.LONG;
+            break;
+        case 0x07:
+			//	i64
+			value_ = cyng::make_object((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8) | ((data.at(offset++) & 0xff) << 16)
+                    | ((data.at(offset++) & 0xff) << 24) | (((long) data.at(offset++) & 0xff) << 32)
+                    | (((long) data.at(offset++) & 0xff) << 40) | (((long) data.at(offset++) & 0xff) << 48)
+                    | (((long) data.at(offset++) & 0xff) << 56));
+//             dataValue = Long.valueOf((data.at(offset++) & 0xff) | ((data.at(offset++) & 0xff) << 8) | ((data.at(offset++) & 0xff) << 16)
+//                     | ((data.at(offset++) & 0xff) << 24) | (((long) data.at(offset++) & 0xff) << 32)
+//                     | (((long) data.at(offset++) & 0xff) << 40) | (((long) data.at(offset++) & 0xff) << 48)
+//                     | (((long) data.at(offset++) & 0xff) << 56));
+//             dataValueType = DataValueType.LONG;
+            break;
+        case 0x09:
+            offset = set_BCD(data, offset, 1);
+            break;
+        case 0x0a:
+            offset = set_BCD(data, offset, 2);
+            break;
+        case 0x0b:
+            offset = set_BCD(data, offset, 3);
+            break;
+        case 0x0c:
+            offset = set_BCD(data, offset, 4);
+            break;
+        case 0x0e:
+            offset = set_BCD(data, offset, 6);
+            break;
+        case 0x0d:
+		{
+            int variableLength = data.at(offset++) & 0xff;
+            int dataLength0x0d;
+
+            if (variableLength < 0xc0) {
+                dataLength0x0d = variableLength;
+            }
+            else if ((variableLength >= 0xc0) && (variableLength <= 0xc9)) {
+                dataLength0x0d = 2 * (variableLength - 0xc0);
+            }
+            else if ((variableLength >= 0xd0) && (variableLength <= 0xd9)) {
+                dataLength0x0d = 2 * (variableLength - 0xd0);
+            }
+            else if ((variableLength >= 0xe0) && (variableLength <= 0xef)) {
+                dataLength0x0d = variableLength - 0xe0;
+            }
+            else if (variableLength == 0xf8) {
+                dataLength0x0d = 4;
+            }
+            else {
+				std::cerr << "Unsupported LVAR Field: " << variableLength << std::endl;
+				BOOST_ASSERT_MSG(false, "Unsupported LVAR Field");
+            }
+
+            // TODO check this:
+            // if (variableLength >= 0xc0) {
+            // throw new DecodingException("Variable length (LVAR) field >= 0xc0: " + variableLength);
+            // }
+
+//             byte[] rawData = new byte[dataLength0x0d];
+// 
+//             for (int j = 0; j < dataLength0x0d; j++) {
+//                 rawData[j] = buffer[i + dataLength0x0d - 1 - j];
+//             }
+            offset += dataLength0x0d;
+
+//             dataValue = new String(rawData);
+//             dataValueType = DataValueType.STRING;
+		}
+            break;
+        default:
+			std::cerr << "Unknown Data Field in DIF: " << +length_ << std::endl;
+			BOOST_ASSERT_MSG(false, "Unknown Data Field in DIF");
+			break;
+        }
+		
+		return offset;
+	}
+	
+    std::size_t variable_data_block::set_BCD(cyng::buffer_t const& data, std::size_t offset, std::size_t range) 
+	{
+		cyng::buffer_t(data.data(), data.data() + range);
+		value_ = cyng::make_object(cyng::buffer_t());
+//         dataValue = new Bcd(Arrays.copyOfRange(buffer, offset, offset + range));
+//         dataValueType = DataValueType.BCD;
+        return offset + range;
+    }
 	
 	std::size_t variable_data_block::decode_vif(cyng::buffer_t const& data, std::size_t offset)
 	{
@@ -230,13 +437,13 @@ namespace node
                 // E110 00
 //                 description = Description.TEMPERATURE_DIFFERENCE;
                 scaler_ = (vif & 0x03) - 3;
-                unit = DlmsUnit.KELVIN;
+                unit_ = mbus::KELVIN;
             }
             else {
                 // E110 01
 //                 description = Description.EXTERNAL_TEMPERATURE;
                 scaler_ = (vif & 0x03) - 3;
-                unit = DlmsUnit.DEGREE_CELSIUS;
+                unit_ = mbus::DEGREE_CELSIUS;
             }
         }
         else {
@@ -245,7 +452,7 @@ namespace node
                 // E110 10
 //                 description = Description.PRESSURE;
                 scaler_ = (vif & 0x03) - 3;
-                unit = DlmsUnit.BAR;
+                unit_ = mbus::BAR;
             }
             else {
                 // E110 11
@@ -254,12 +461,12 @@ namespace node
                     if ((vif & 0x01) == 0) {
                         // E110 1100
 //                         description = Description.DATE;
-                        dateTypeG = true;
+                        dt_flag_date_ = true;
                     }
                     else {
                         // E110 1101
 //                         description = Description.DATE_TIME;
-                        dateTypeF = true;
+                        dt_flag_time_ = true;
                     }
                 }
                 else {
@@ -267,7 +474,7 @@ namespace node
                     if ((vif & 0x01) == 0) {
                         // E110 1110
 //                         description = Description.HCA;
-                        unit = DlmsUnit.RESERVED;
+                        unit_ = mbus::UNIT_RESERVED;
                     }
                     else {
 //                         description = Description.NOT_SUPPORTED;
@@ -288,13 +495,15 @@ namespace node
                 // E100 0
 //                 description = Description.VOLUME_FLOW_EXT;
                 scaler_ = (vif & 0x07) - 7;
-                unit = DlmsUnit.CUBIC_METRE_PER_MINUTE;
+//                 unit_ = mbus::CUBIC_METRE_PER_MINUTE;
+                unit_ = mbus::CUBIC_METRE_PER_HOUR;
             }
             else {
                 // E100 1
 //                 description = Description.VOLUME_FLOW_EXT;
                 scaler_ = (vif & 0x07) - 9;
-                unit = DlmsUnit.CUBIC_METRE_PER_SECOND;
+//                 unit_ = mbus::CUBIC_METRE_PER_SECOND;
+                unit_ = mbus::CUBIC_METRE_PER_HOUR;
             }
         }
         else {
@@ -303,7 +512,7 @@ namespace node
                 // E101 0
 //                 description = Description.MASS_FLOW;
                 scaler_ = (vif & 0x07) - 3;
-                unit = DlmsUnit.KILOGRAM_PER_HOUR;
+                unit_ = mbus::KILOGRAM_PER_HOUR;
             }
             else {
                 // E101 1
@@ -311,13 +520,13 @@ namespace node
                     // E101 10
 //                     description = Description.FLOW_TEMPERATURE;
                     scaler_ = (vif & 0x03) - 3;
-                    unit = DlmsUnit.DEGREE_CELSIUS;
+                    unit_ = mbus::DEGREE_CELSIUS;
                 }
                 else {
                     // E101 11
 //                     description = Description.RETURN_TEMPERATURE;
                     scaler_ = (vif & 0x03) - 3;
-                    unit = DlmsUnit.DEGREE_CELSIUS;
+                    unit_ = mbus::DEGREE_CELSIUS;
                 }
             }
         }
@@ -355,7 +564,7 @@ namespace node
                 // E010 1
 //                 description = Description.POWER;
                 scaler_ = (vif & 0x07) - 3;
-                unit = DlmsUnit.WATT;
+                unit_ = mbus::WATT;
             }
         }
         else {
@@ -364,13 +573,13 @@ namespace node
                 // E011 0
 //                 description = Description.POWER;
                 scaler_ = vif & 0x07;
-                unit = DlmsUnit.JOULE_PER_HOUR;
+                unit_ = mbus::JOULE_PER_HOUR;
             }
             else {
                 // E011 1
 //                 description = Description.VOLUME_FLOW;
                 scaler_ = (vif & 0x07) - 6;
-                unit = DlmsUnit.CUBIC_METRE_PER_HOUR;
+                unit_ = mbus::CUBIC_METRE_PER_HOUR;
             }
         }
     }
@@ -384,13 +593,13 @@ namespace node
                 // E000 0
 //                 description = Description.ENERGY;
                 scaler_ = (vif & 0x07) - 3;
-                unit = DlmsUnit.WATT_HOUR;
+                unit_ = mbus::WATT_HOUR;
             }
             else {
                 // E000 1
 //                 description = Description.ENERGY;
                 scaler_ = vif & 0x07;
-                unit = DlmsUnit.JOULE;
+                unit_ = mbus::JOULE;
             }
         }
         else {
@@ -399,13 +608,13 @@ namespace node
                 // E001 0
 //                 description = Description.VOLUME;
                 scaler_ = (vif & 0x07) - 6;
-                unit = DlmsUnit.CUBIC_METRE;
+                unit_ = mbus::CUBIC_METRE;
             }
             else {
                 // E001 1
 //                 description = Description.MASS;
                 scaler_ = (vif & 0x07) - 3;
-                unit = DlmsUnit.KILOGRAM;
+                unit_ = mbus::KILOGRAM;
             }
         }
     }
@@ -414,18 +623,18 @@ namespace node
 	{
         if ((vif & 0x02) == 0) {
             if ((vif & 0x01) == 0) {
-                unit = DlmsUnit.SECOND;
+                unit_ = mbus::SECOND;
             }
             else {
-                unit = DlmsUnit.MIN;
+                unit_ = mbus::MIN;
             }
         }
         else {
             if ((vif & 0x01) == 0) {
-                unit = DlmsUnit.HOUR;
+                unit_ = mbus::HOUR;
             }
             else {
-                unit = DlmsUnit.DAY;
+                unit_ = mbus::DAY;
             }
         }
     }
@@ -514,18 +723,18 @@ namespace node
 //         }
 //         else if ((vif & 0x7f) == 0x28) { // E010 1000
 //             description = Description.STORAGE_INTERVALL;
-//             unit = DlmsUnit.MONTH;
+//             unit_ = mbus::MONTH;
 //         }
 //         else if ((vif & 0x7f) == 0x29) { // E010 1001
 //             description = Description.STORAGE_INTERVALL;
-//             unit = DlmsUnit.YEAR;
+//             unit_ = mbus::YEAR;
 //         }
 //         else if ((vif & 0x7f) == 0x2a) { // E010 1010
 //             description = Description.OPERATOR_SPECIFIC_DATA;
 //         }
 //         else if ((vif & 0x7f) == 0x2b) { // E010 1011
 //             description = Description.TIME_POINT;
-//             unit = DlmsUnit.SECOND;
+//             unit_ = mbus::SECOND;
 //         }
 //         else if ((vif & 0x7c) == 0x2c) { // E010 11nn
 //             description = Description.DURATION_LAST_READOUT;
@@ -547,21 +756,21 @@ namespace node
 //         }
 //         else if ((vif & 0x7f) == 0x38) { // E011 1000
 //             description = Description.TARIF_PERIOD;
-//             unit = DlmsUnit.MONTH;
+//             unit_ = mbus::MONTH;
 //         }
 //         else if ((vif & 0x7f) == 0x39) { // E011 1001
 //             description = Description.TARIF_PERIOD;
-//             unit = DlmsUnit.YEAR;
+//             unit_ = mbus::YEAR;
 //         }
 //         else if ((vif & 0x70) == 0x40) { // E100 0000
 //             description = Description.VOLTAGE;
 //             scaler_ = (vif & 0x0f) - 9;
-//             unit = DlmsUnit.VOLT;
+//             unit_ = mbus::VOLT;
 //         }
 //         else if ((vif & 0x70) == 0x50) { // E101 0000
 //             description = Description.CURRENT;
 //             scaler_ = (vif & 0x0f) - 12;
-//             unit = DlmsUnit.AMPERE;
+//             unit_ = mbus::AMPERE;
 //         }
 //         else if ((vif & 0x7f) == 0x60) { // E110 0000
 //             description = Description.RESET_COUNTER;
@@ -609,7 +818,7 @@ namespace node
 //         }
 //         else if ((vif & 0x7f) == 0x74) { // E111 0100
 //             description = Description.REMAINING_BATTERY_LIFE_TIME;
-//             unit = DlmsUnit.DAY;
+//             unit_ = mbus::DAY;
 //         }
 //         else if ((vif & 0x7f) == 0x75) { // E111 0101
 //             description = Description.NUMBER_STOPS;

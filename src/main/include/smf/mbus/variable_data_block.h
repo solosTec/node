@@ -9,8 +9,9 @@
 
 
 #include <smf/mbus/defs.h>
-// #include <cyng/intrinsics/sets.h>
+#include <smf/mbus/units.h>
 #include <cyng/intrinsics/buffer.h>
+#include <cyng/object.h>
 // 
 // #include <boost/asio.hpp>
 // #include <boost/variant.hpp>
@@ -42,6 +43,9 @@ namespace node
 	private:
 		std::size_t finalize_dib(cyng::buffer_t const&, std::size_t offset);
 		std::size_t decode_vif(cyng::buffer_t const&, std::size_t offset);
+		std::size_t decode_data(cyng::buffer_t const&, std::size_t offset);
+		std::size_t set_BCD(cyng::buffer_t const& data, std::size_t offset, std::size_t range);
+		
 		void decode_main_vif(std::uint8_t);
 		void decode_main_ext_vif(std::uint8_t vif);
 		
@@ -62,6 +66,9 @@ namespace node
 		std::uint32_t tariff_;	//!< max value 0x100000000
 		std::uint16_t sub_unit_;	//	max value 0x10000
 		std::int8_t scaler_;
+		mbus::unit_code	unit_;
+		bool dt_flag_date_, dt_flag_time_;
+		cyng::object value_;
 	};
 	
 }	//	node
