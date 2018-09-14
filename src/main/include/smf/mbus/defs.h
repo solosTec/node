@@ -66,6 +66,21 @@ namespace node
 		constexpr std::uint8_t FRAME_CONTROL_START = 0x68;
 		constexpr std::uint8_t FRAME_LONG_START = 0x68;
 		constexpr std::uint8_t FRAME_STOP = 0x16;
+
+		//
+		//	packet types
+		//
+		constexpr std::uint8_t CTRL_FIELD_SP_UD = 0x08;	//	
+		constexpr std::uint8_t CTRL_FIELD_SND_NKE = 0x40;	//	
+		constexpr std::uint8_t CTRL_FIELD_SND_NR = 0x44;	//	Send spontaneous/periodical application data without request  (S1 mode)
+		constexpr std::uint8_t CTRL_FIELD_REQ_UD1 = 0x5A;	//	Request User Data
+		constexpr std::uint8_t CTRL_FIELD_REQ_UD2 = 0x5B;	//	Request User Data
+		constexpr std::uint8_t CTRL_FIELD_SND_UD = 0x53;	//	
+		//constexpr std::uint8_t CTRL_FIELD_IR = 0x00;		//	Send manually initiated installation data – Send installation request
+		//constexpr std::uint8_t CTRL_FIELD_ACC_NR = 0x00;	//	No data – Provides opportunity to access the meter between two application transmissions
+		//constexpr std::uint8_t CTRL_FIELD_ACC_DMD = 0x00;	//	Access demand to master in order to request new importat application data – Alerts
+		//constexpr std::uint8_t CTRL_FIELD_ACC = 0x00;		//	Acknowledge the reception 
+		//constexpr std::uint8_t CTRL_FIELD_RSP_UD = 0x00;	//	Response of application data after a request from master
 	}
 
 }	//	node

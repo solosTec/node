@@ -17,12 +17,17 @@
 #include <functional>
 #include <stack>
 #include <type_traits>
+#include <array>
+#ifdef _DEBUG
+#include <set>
+#endif
 
 namespace node 
 {
 	namespace mbus
 	{
 		/**
+		 * Parser for wired m-bus communication.
 		 *
 		 * Packet formats:
 		 *
@@ -82,48 +87,18 @@ namespace node
 				STATE_START,
 				STATE_FRAME_SHORT,
 				STATE_FRAME,
-				//STATE_CONTROL_START,
-				//STATE_LONG_START,
-				//STATE_STOP,
 			};
 
 			struct base {
 				std::size_t pos_;
 				std::uint8_t checksum_;
 				bool ok_;	//	checksum ok
-				base() 
-					: pos_(0) 
+				base()
+					: pos_(0)
 					, checksum_(0)
 					, ok_(false)
 				{}
 			};
-			//struct frame {
-
-			//	std::uint8_t start1;
-			//	std::uint8_t length1;
-			//	std::uint8_t length2;
-			//	std::uint8_t start2;
-			//	std::uint8_t control;
-			//	std::uint8_t address;
-			//	std::uint8_t control_information;
-			//	// variable data field
-			//	std::uint8_t checksum;
-			//	std::uint8_t stop;
-
-			//	std::uint8_t   data[FRAME_DATA_LENGTH];
-			//	size_t data_size;
-
-			//	int type;
-			//	time_t timestamp;
-
-			//};
-
-			//struct command : base
-			//{
-			//	char overlay_[FRAME_DATA_LENGTH];
-
-			//	command() {}
-			//};
 
 			struct ack : base {
 				ack() : base() {}
@@ -242,7 +217,9 @@ namespace node
 			 */
 			std::iostream			input_;
 
-
+			/**
+			 * global parser state
+			 */
 			state	stream_state_;
 			parser_state_t	parser_state_;
 
@@ -258,6 +235,205 @@ namespace node
 			//std::function<std::uint64_t()> f_read_uint64;
 			//std::function<cyng::buffer_t()> f_read_data;
 
+		};
+
+	}
+
+	namespace wmbus
+	{
+		/**
+ 		 * Parser for wireless m-bus communication.
+		 *
+		 * Packet formats:
+		 *
+		 * byte1: length (without this byte and CRC)
+		 * byte2: control field
+		 * 
+		 * When in S1 mode:
+		 *
+		 * byte3-4: manufacturer ID
+		 * byte5-10: address 
+		 *	-> 4 bytes: device ID
+		 *	-> 1 byte: version
+		 *	-> 1 byte: device type
+		 */
+		class parser
+		{
+		public:
+			using parser_callback = std::function<void(cyng::vector_t&&)>;
+
+		private:
+			/**
+			 * This enum stores the global state
+			 * of the parser. For each state there
+			 * are different helper variables mostly
+			 * declared in the private section of this class.
+			 */
+			enum state
+			{
+				STATE_ERROR,
+				STATE_LENGTH,	//	first byte contains length
+				STATE_CTRL_FIELD,
+				STATE_MANUFACTURER,
+				STATE_DEV_ID,
+				STATE_DEV_VERSION,
+				STATE_DEV_TYPE,
+				STATE_FRAME_TYPE,
+				STATE_FRAME_DATA,
+			};
+
+			struct error {
+			};
+
+			template <std::size_t N>
+			struct base {
+				std::size_t pos_;
+				std::array<char, N> data_;
+				base()
+					: pos_(0)
+					, data_{0}
+				{}
+
+			};
+			struct manufacturer : base<2> {};
+			struct dev_version {
+				union {
+					struct {
+						std::uint8_t type_ : 2;
+						std::uint8_t ver_ : 6;
+					} internal_;
+					char c_;
+				} u_;
+			};
+			struct dev_id : base<4> {};
+
+			struct frame_data {
+				std::size_t size_;
+				cyng::buffer_t data_;
+				frame_data(std::size_t size);
+				void decode_main_vif(std::uint8_t);
+				void decode_E0(std::uint8_t);
+				void decode_E1(std::uint8_t);
+				void decode_E10(std::uint8_t);
+				void decode_E11(std::uint8_t);
+				void decode_E00(std::uint8_t);
+				void decode_E110(std::uint8_t);
+				void decode_E111(std::uint8_t);
+				void decode_01(std::uint8_t);
+			};
+
+			using parser_state_t = boost::variant<error
+				, manufacturer
+				, dev_version
+				, dev_id
+				, frame_data>;
+
+			//
+			//	signals
+			//
+			struct state_visitor : boost::static_visitor<state>
+			{
+				state_visitor(parser&, char c);
+				state operator()(error&) const;
+				state operator()(manufacturer&) const;
+				state operator()(dev_version&) const;
+				state operator()(dev_id&) const;
+				state operator()(frame_data&) const;
+
+				parser& parser_;
+				const char c_;
+			};
+
+		public:
+			/**
+			 * @param cb this function is called, when parsing is complete
+			 */
+			parser(parser_callback cb);
+
+			/**
+			 * The destructor is required since the unique_ptr
+			 * uses an incomplete type.
+			 */
+			virtual ~parser();
+
+			/**
+			 * parse the specified range
+			 */
+			template < typename I >
+			void read(I start, I end)
+			{
+				std::for_each(start, end, [this](char c)
+				{
+					//
+					//	parse
+					//
+					this->put(c);
+				});
+
+				post_processing();
+			}
+
+			/**
+			 * Reset parser (default scramble key)
+			 */
+			void reset();
+
+		private:
+
+			/**
+			 * read a single byte and update
+			 * parser state.
+			 * Implements the state machine
+			 */
+			char put(char);
+
+			/**
+			 * Probe if parsing is completed and
+			 * inform listener.
+			 */
+			void post_processing();
+
+		private:
+			/**
+			 * call this method if parsing is complete
+			 */
+			parser_callback	cb_;
+
+			/**
+			 * instruction buffer
+			 */
+			cyng::vector_t	code_;
+
+			/**
+			 *	input stream buffer
+			 */
+			boost::asio::streambuf	stream_buffer_;
+
+			/**
+			 *	input stream
+			 */
+			std::iostream			input_;
+
+			/**
+			 * stream state
+			 */
+			state	stream_state_;
+			parser_state_t	parser_state_;
+
+			/**
+			 * packet size without CCR
+			 */
+			std::size_t	packet_size_;
+
+			std::string manufacturer_;
+			std::uint8_t version_;
+			std::uint8_t media_;
+			std::uint32_t dev_id_;
+			std::uint8_t frame_type_;
+
+#ifdef _DEBUG
+			std::set<std::uint32_t>	meter_set_;
+#endif
 		};
 	}
 }	//	node
