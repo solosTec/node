@@ -237,11 +237,9 @@ namespace node
 				BOOST_ASSERT_MSG(c == 0x44, "unknown control field");
 				stream_state_ = STATE_MANUFACTURER;
 				parser_state_ = manufacturer();
-				//--packet_size_;
 				break;
 			case STATE_MANUFACTURER:
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
-				//--packet_size_;
 				if (stream_state_ == STATE_DEV_ID) {
 					parser_state_ = dev_id();
 				}
@@ -251,23 +249,17 @@ namespace node
 				if (stream_state_ == STATE_DEV_VERSION) {
 					parser_state_ = dev_version();
 				}
-				//--packet_size_;
 				break;
 			case STATE_DEV_VERSION:
-				//--packet_size_;
-				//version_ = boost::numeric_cast<std::uint8_t>(c);
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
-				//stream_state_ = STATE_DEV_TYPE;
 				break;
 			case STATE_DEV_TYPE:
-				//--packet_size_;
 				media_ = boost::numeric_cast<std::uint8_t>(c);
 				stream_state_ = STATE_FRAME_TYPE;
 				break;
 			case STATE_FRAME_TYPE:
 				//	0x72, 0x78 or 0x7A expected
 				BOOST_ASSERT(c == 0x72 || c == 0x78 || c == 0x7A || c == 0x7F);
-				//--packet_size_;
 				frame_type_ = boost::numeric_cast<std::uint8_t>(c);
 				stream_state_ = STATE_FRAME_DATA;
 				parser_state_ = frame_data(packet_size_);
@@ -346,7 +338,9 @@ namespace node
 				//	write this value as decimal value
 				//
 				ss >> std::setbase(10) >> this->parser_.dev_id_;
+#ifdef _DEBUG
 				this->parser_.meter_set_.emplace(this->parser_.dev_id_);
+#endif
 				return STATE_DEV_VERSION;
 			}
 			return STATE_DEV_ID;

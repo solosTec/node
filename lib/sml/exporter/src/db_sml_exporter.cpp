@@ -22,6 +22,7 @@
 #include <cyng/factory.h>
 
 #include <boost/uuid/nil_generator.hpp>
+#include <boost/core/ignore_unused.hpp>
 
 namespace node
 {
