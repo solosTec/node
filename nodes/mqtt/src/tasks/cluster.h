@@ -46,6 +46,11 @@ namespace node
 		cyng::continuation process();
 
 	private:
+		void connect();
+		void reconfigure(cyng::context& ctx);
+		void reconfigure_impl();
+
+	private:
 		cyng::async::base_task& base_;
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
