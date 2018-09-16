@@ -68,10 +68,12 @@ namespace node
 		constexpr std::uint8_t FRAME_STOP = 0x16;
 
 		//
-		//	packet types
+		//	C-Fields
+		//	see https://oms-group.org/fileadmin/files/download4all/specification/Vol2/4.1.2/OMS-Spec_Vol2_Primary_v412.pdf
 		//
 		constexpr std::uint8_t CTRL_FIELD_SP_UD = 0x08;	//	
 		constexpr std::uint8_t CTRL_FIELD_SND_NKE = 0x40;	//	
+		constexpr std::uint8_t CTRL_FIELD_SND_UD2 = 0x43;	//	Send command with subsequent response (Send User Data - 2nd message type)
 		constexpr std::uint8_t CTRL_FIELD_SND_NR = 0x44;	//	Send spontaneous/periodical application data without request  (S1 mode)
 		constexpr std::uint8_t CTRL_FIELD_REQ_UD1 = 0x5A;	//	Request User Data
 		constexpr std::uint8_t CTRL_FIELD_REQ_UD2 = 0x5B;	//	Request User Data

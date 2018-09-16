@@ -31,3 +31,4 @@
 *.out
 *.app
 /.vs
+/test/unit-test/src/samples/mbus-005.bin
