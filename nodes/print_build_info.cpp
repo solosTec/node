@@ -20,8 +20,10 @@
 //  depends on the time it was build. We have to tell GCC that is no
 //  problem so far.
 //
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdate-time"
+#endif
 
 namespace node 
 {
@@ -115,4 +117,6 @@ namespace node
 	}
 }
 
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
