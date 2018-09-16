@@ -146,7 +146,7 @@ namespace node
 			boost::uuids::random_generator rgen;
 
 			boost::random::mt19937 rng_;
-			rng_.seed(std::time(0));
+            rng_.seed(std::time(nullptr));
 			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
 
 			const auto conf = cyng::vector_factory({
@@ -158,8 +158,9 @@ namespace node
 
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
-						cyng::param_factory("service", "1883")	//	port 8883 for SSL encrypion
-					))
+                        cyng::param_factory("service", "1883"),	//	without encryption
+                        cyng::param_factory("ssl", "8883")	//	port 8883 for SSL encrypion
+                    ))
 					, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "7701"),

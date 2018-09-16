@@ -15,6 +15,14 @@
 #include <ctime>
 #include <chrono>
 
+//
+//  Because of the macros __DATE__ and __TIME__ the binary
+//  depends on the time it was build. We have to tell GCC that is no
+//  problem so far.
+//
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdate-time"
+
 namespace node 
 {
 	int print_build_info(std::ostream& os)
@@ -107,3 +115,4 @@ namespace node
 	}
 }
 
+#pragma GCC diagnostic pop

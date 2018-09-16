@@ -42,7 +42,7 @@ namespace node
 		, distribution_(std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max())
 		, uuid_gen_()
 	{
-		rng_.seed(std::time(0));
+        rng_.seed(std::time(nullptr));
 	}
 
 	bool client::set_connection_auto_login(cyng::object obj)

@@ -5,11 +5,13 @@ set (node_mqtt_cpp
 
 	nodes/mqtt/src/main.cpp	
 	nodes/mqtt/src/controller.cpp
+	nodes/mqtt/src/server.cpp
 )
 
 set (node_mqtt_h
 
 	nodes/mqtt/src/controller.h
+	nodes/mqtt/src/server.h
 )
 
 set (node_mqtt_info

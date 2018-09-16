@@ -45,7 +45,9 @@ namespace node
 			void close();
 
 		private:
-			/// Perform an asynchronous accept operation.
+            /**
+             * Perform an asynchronous accept operation.
+             */
 			void do_accept();
 
 			void insert_connection(cyng::context&);
