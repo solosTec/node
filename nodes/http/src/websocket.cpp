@@ -181,7 +181,7 @@ namespace node
 		//	{"cmd": "subscribe", "channel": "sys.cpu.load", "timer": true}
 		
 		bool sys_cpu_load = false;
-		bool io_mail_out = false;
+// 		bool io_mail_out = false;
 		if (cyng::value_cast<std::string>(reader.get("cmd"), "") == "update")
 		{
 			CYNG_LOG_INFO(logger_, "subscribe " << cyng::value_cast<std::string>(reader.get("channel"), ""));
@@ -193,7 +193,7 @@ namespace node
 		{
 			//	{("name":Sylko Olzscher),("email":CmdPirx@gmail.com),("msg":the message)}
 			CYNG_LOG_INFO(logger_, "send " << cyng::io::to_str(reader.get("contact")));
-			io_mail_out = cyng::value_cast<std::string>(reader.get("channel"), "") == "io.mail.out";
+// 			io_mail_out = cyng::value_cast<std::string>(reader.get("channel"), "") == "io.mail.out";
 			
 
 			const std::string customer = cyng::io::to_str(reader["contact"].get("name"));
@@ -241,7 +241,7 @@ namespace node
 		{
 			//	{("name":Sylko Olzscher),("email":CmdPirx@gmail.com),("msg":the message)}
 			CYNG_LOG_INFO(logger_, "store " << cyng::io::to_str(reader.get("contact")));
-			io_mail_out = cyng::value_cast<std::string>(reader.get("channel"), "") == "io.mail.out";
+// 			io_mail_out = cyng::value_cast<std::string>(reader.get("channel"), "") == "io.mail.out";
 			
 
 			const std::string customer = cyng::io::to_str(reader["contact"].get("name"));

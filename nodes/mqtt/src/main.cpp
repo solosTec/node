@@ -15,6 +15,7 @@
 #include "controller.h"
 #include <boost/filesystem.hpp>
 #include <iostream>
+#include <boost/core/ignore_unused.hpp>
 
 /**
  * main entry point.
@@ -52,6 +53,7 @@ int main(int argc, char **argv)
 	struct rlimit rl;
 	int rc = ::getrlimit(RLIMIT_NOFILE, &rl);
 	BOOST_ASSERT_MSG(rc == 0, "getrlimit() failed");
+	boost::ignore_unused(rc);	//	release version
 #endif
 	
 	//

@@ -20,6 +20,8 @@
 #include <cyng/factory.h>
 #include <cyng/chrono.h>
 
+#include <boost/core/ignore_unused.hpp>
+
 namespace node
 {
 	namespace sml	
@@ -138,7 +140,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
-
+			boost::ignore_unused(count);	//	release version
+			
 			auto msg = root_.append_child("msg");
 			msg.append_attribute("idx").set_value(idx);
 
@@ -244,7 +247,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 7, "Public Open Request");
-
+			boost::ignore_unused(count);	//	release version
+			
 			//	codepage "ISO 8859-15"
 			cyng::xml::write(node.append_child("codepage"), *pos++);
 
@@ -284,7 +288,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 6, "Public Open Response");
-
+			boost::ignore_unused(count);	//	release version
+			
 			//	codepage "ISO 8859-15"
 			cyng::xml::write(node.append_child("codepage"), *pos++);
 
@@ -317,7 +322,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
-
+			boost::ignore_unused(count);	//	release version
+			
 			//
 			//	serverId
 			//
@@ -367,7 +373,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "Get Proc Parameter Response");
-
+			boost::ignore_unused(count);	//	release version
+			
 			//
 			//	serverId
 			//
@@ -391,7 +398,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 4, "Attention Response");
-
+			boost::ignore_unused(count);	//	release version
+			
 			//
 			//	serverId
 			//
@@ -401,7 +409,8 @@ namespace node
 			//	attentionNo (OBIS)
 			//
 			obis code = read_obis(node.append_child("msg"), *pos++);
-
+			boost::ignore_unused(code);	//	release version
+			
 			//
 			//	attentionMsg
 			//
@@ -423,6 +432,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "SML Tree");
+ 			boost::ignore_unused(count);	//	release version
 
 			//
 			//	1. parameterName Octet String,
@@ -480,7 +490,8 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Period Entry");
-
+			boost::ignore_unused(count);	//	release version
+			
 			node.append_attribute("idx").set_value(index);
 
 			//

@@ -480,6 +480,7 @@ namespace node
 				auto code = cyng::value_cast<std::string>(res->get(13, cyng::TC_STRING, 24), "OBIS");
 				auto result = cyng::value_cast<std::string>(res->get(19, cyng::TC_STRING, 512), "result");
 				auto unit = cyng::value_cast<std::string>(res->get(15, cyng::TC_STRING, 512), "unitName");
+				boost::ignore_unused(ro_time);	//	release version
 				CYNG_LOG_TRACE(logger_, id
 					<< ", "
 					<< new_trx

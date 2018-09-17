@@ -1453,6 +1453,7 @@ namespace node
 				return true;
 			});
 			BOOST_ASSERT(counter == 0);
+			boost::ignore_unused(counter);	//	release version
 			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
 
 		}, cyng::store::read_access(table));
@@ -2025,6 +2026,7 @@ namespace node
 				return true;
 			});
 			BOOST_ASSERT(counter == 0);
+			boost::ignore_unused(counter);	//	release version
 			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
 
 			display_loading_icon(tag, false, channel);

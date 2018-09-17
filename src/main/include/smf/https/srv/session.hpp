@@ -129,12 +129,12 @@ namespace node
 				, std::vector<std::string> const& sub_protocols)
 			: logger_(logger)
 				, cb_(cb)
-				, doc_root_(doc_root)
-				, sub_protocols_(sub_protocols)
-				, queue_(*this)
 				, timer_(ioc, (std::chrono::steady_clock::time_point::max)())
 				, strand_(ioc.get_executor())
 				, buffer_(std::move(buffer))
+				, doc_root_(doc_root)
+				, sub_protocols_(sub_protocols)
+				, queue_(*this)
 			{}
 
 			virtual ~session()

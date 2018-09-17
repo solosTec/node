@@ -70,6 +70,7 @@ namespace node
 					, sp->bus_
 					, sp->tag_);
 				auto res = ws_.emplace(sp->tag_, wobj);	//	share same tag
+				boost::ignore_unused(res);
 
 				return std::make_pair(sobj, wobj);
 			}

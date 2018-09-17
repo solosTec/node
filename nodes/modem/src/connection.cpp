@@ -12,6 +12,7 @@
 #include <cyng/io/hex_dump.hpp>
 #endif
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/core/ignore_unused.hpp>
 
 namespace node 
 {
@@ -92,6 +93,8 @@ namespace node
 					std::stringstream ss;
 					hd(ss, buffer.begin(), buffer.end());
 					CYNG_LOG_TRACE(logger_, "modem input dump \n" << ss.str());
+#else
+					boost::ignore_unused(buffer);	//	release version					
 #endif
 
 					do_read();

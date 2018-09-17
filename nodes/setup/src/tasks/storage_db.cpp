@@ -440,7 +440,7 @@ namespace node
             boost::ignore_unused(r);    //  for release versions
 
 			//stmt->push(key.at(0), 36);
-			for (int idx = 0; idx < key.size(); ++idx)
+			for (int idx = decltype(key.size()){0}; idx < key.size(); ++idx)
 			{
 				stmt->push(key.at(idx), 0);
 			}
