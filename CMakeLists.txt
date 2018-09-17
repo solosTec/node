@@ -730,6 +730,7 @@ target_link_libraries(modem ${modem_link_libs})
 include (nodes/mqtt/prg.cmake)
 add_executable(mqtt ${node_mqtt})
 target_compile_options(mqtt PRIVATE "-DMQTT_NO_TLS")
+target_include_directories(mqtt PRIVATE "${PROJECT_SOURCE_DIR}/3party")
 # libraries to link
 set(mqtt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_sys cyng_domain cyng_table smf_cluster)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")

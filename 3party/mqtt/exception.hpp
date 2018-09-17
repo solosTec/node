@@ -12,7 +12,7 @@
 
 #include <boost/system/error_code.hpp>
 
-#include <smf/mqtt/utf8encoded_strings.hpp>
+#include <mqtt/utf8encoded_strings.hpp>
 
 namespace mqtt {
 

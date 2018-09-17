@@ -9,7 +9,7 @@
 
 #include <boost/asio.hpp>
 
-#include <smf/mqtt/utility.hpp>
+#include <mqtt/utility.hpp>
 
 namespace mqtt {
 

@@ -27,14 +27,14 @@
 #include <boost/asio/ssl.hpp>
 #endif // !defined(MQTT_NO_TLS)
 
-#include <smf/mqtt/tcp_endpoint.hpp>
+#include <mqtt/tcp_endpoint.hpp>
 
 #if defined(MQTT_USE_WS)
-#include <smf/mqtt/ws_endpoint.hpp>
+#include <mqtt/ws_endpoint.hpp>
 #endif // defined(MQTT_USE_WS)
 
-#include <smf/mqtt/endpoint.hpp>
-#include <smf/mqtt/null_strand.hpp>
+#include <mqtt/endpoint.hpp>
+#include <mqtt/null_strand.hpp>
 
 namespace mqtt {
 

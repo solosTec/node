@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include <smf/mqtt/qos.hpp>
+#include <mqtt/qos.hpp>
 
 namespace mqtt {
 

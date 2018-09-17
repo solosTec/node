@@ -8,7 +8,7 @@
 #define MQTT_REMAINING_LENGTH_HPP
 
 #include <string>
-#include <smf/mqtt/exception.hpp>
+#include <mqtt/exception.hpp>
 
 namespace mqtt {
 

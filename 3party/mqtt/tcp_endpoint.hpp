@@ -13,7 +13,7 @@
 #include <boost/asio/ssl.hpp>
 #endif // !defined(MQTT_NO_TLS)
 
-#include <smf/mqtt/utility.hpp>
+#include <mqtt/utility.hpp>
 
 namespace mqtt {
 

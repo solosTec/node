@@ -7,7 +7,7 @@
 #if !defined(MQTT_FIXED_HEADER_HPP)
 #define MQTT_FIXED_HEADER_HPP
 
-#include <smf/mqtt/control_packet_type.hpp>
+#include <mqtt/control_packet_type.hpp>
 
 namespace mqtt {
 

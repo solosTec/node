@@ -7,7 +7,7 @@
 #if !defined(MQTT_UTF8ENCODED_STRINGS_HPP)
 #define MQTT_UTF8ENCODED_STRINGS_HPP
 
-#include <smf/mqtt/utility.hpp>
+#include <mqtt/utility.hpp>
 
 namespace mqtt {
 

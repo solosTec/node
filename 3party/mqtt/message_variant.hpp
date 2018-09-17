@@ -7,8 +7,8 @@
 #if !defined(MQTT_VARIANT_MESSAGE_HPP)
 #define MQTT_VARIANT_MESSAGE_HPP
 
-#include <smf/mqtt/message.hpp>
-#include <smf/mqtt/variant.hpp>
+#include <mqtt/message.hpp>
+#include <mqtt/variant.hpp>
 
 namespace mqtt {
 

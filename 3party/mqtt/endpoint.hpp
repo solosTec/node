@@ -30,24 +30,24 @@
 #include <boost/system/error_code.hpp>
 #include <boost/assert.hpp>
 
-#include <smf/mqtt/fixed_header.hpp>
-#include <smf/mqtt/remaining_length.hpp>
-#include <smf/mqtt/utf8encoded_strings.hpp>
-#include <smf/mqtt/connect_flags.hpp>
-#include <smf/mqtt/encoded_length.hpp>
-#include <smf/mqtt/will.hpp>
-#include <smf/mqtt/session_present.hpp>
-#include <smf/mqtt/qos.hpp>
-#include <smf/mqtt/publish.hpp>
-#include <smf/mqtt/connect_return_code.hpp>
-#include <smf/mqtt/exception.hpp>
-#include <smf/mqtt/tcp_endpoint.hpp>
-#include <smf/mqtt/unique_scope_guard.hpp>
-#include <smf/mqtt/shared_scope_guard.hpp>
-#include <smf/mqtt/message_variant.hpp>
+#include <mqtt/fixed_header.hpp>
+#include <mqtt/remaining_length.hpp>
+#include <mqtt/utf8encoded_strings.hpp>
+#include <mqtt/connect_flags.hpp>
+#include <mqtt/encoded_length.hpp>
+#include <mqtt/will.hpp>
+#include <mqtt/session_present.hpp>
+#include <mqtt/qos.hpp>
+#include <mqtt/publish.hpp>
+#include <mqtt/connect_return_code.hpp>
+#include <mqtt/exception.hpp>
+#include <mqtt/tcp_endpoint.hpp>
+#include <mqtt/unique_scope_guard.hpp>
+#include <mqtt/shared_scope_guard.hpp>
+#include <mqtt/message_variant.hpp>
 
 #if defined(MQTT_USE_WS)
-#include <smf/mqtt/ws_endpoint.hpp>
+#include <mqtt/ws_endpoint.hpp>
 #endif // defined(MQTT_USE_WS)
 
 namespace mqtt {

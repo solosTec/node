@@ -16,17 +16,17 @@
 #include <boost/optional.hpp>
 #include <boost/container/static_vector.hpp>
 
-#include <smf/mqtt/two_byte_util.hpp>
-#include <smf/mqtt/fixed_header.hpp>
-#include <smf/mqtt/remaining_length.hpp>
-#include <smf/mqtt/qos.hpp>
-#include <smf/mqtt/const_buffer_util.hpp>
-#include <smf/mqtt/will.hpp>
-#include <smf/mqtt/connect_flags.hpp>
-#include <smf/mqtt/publish.hpp>
-#include <smf/mqtt/utility.hpp>
-#include <smf/mqtt/exception.hpp>
-#include <smf/mqtt/utf8encoded_strings.hpp>
+#include <mqtt/two_byte_util.hpp>
+#include <mqtt/fixed_header.hpp>
+#include <mqtt/remaining_length.hpp>
+#include <mqtt/qos.hpp>
+#include <mqtt/const_buffer_util.hpp>
+#include <mqtt/will.hpp>
+#include <mqtt/connect_flags.hpp>
+#include <mqtt/publish.hpp>
+#include <mqtt/utility.hpp>
+#include <mqtt/exception.hpp>
+#include <mqtt/utf8encoded_strings.hpp>
 
 namespace mqtt {
 
