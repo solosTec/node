@@ -87,20 +87,30 @@ namespace node
 	{
 		if (response_ == ipt::ctrl_res_login_public_policy::ACCOUNT_LOCKED)
 		{
-			CYNG_LOG_WARNING(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> stop "
-				<< tag_);
-
 			//
 			//	no login response received - stop client
-			//	Could crash if session is alreafy closed.
+			//	Could crash if session is already closed.
 			//
-			vm_.async_run(cyng::generate_invoke("ip.tcp.socket.shutdown"));
-			vm_.async_run(cyng::generate_invoke("ip.tcp.socket.close"));
+			if (!vm_.is_halted()) {
 
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> stop "
+					<< tag_);
+
+				vm_.async_run(cyng::generate_invoke("ip.tcp.socket.shutdown"));
+				vm_.async_run(cyng::generate_invoke("ip.tcp.socket.close"));
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> stop (session already halted) "
+					<< tag_);
+			}
 		}
 
 		//

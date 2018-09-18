@@ -156,7 +156,8 @@ namespace node
 				break;
 
 			/*
-			 *	watchdog mode <ALIVE MNAME>
+			 *	watchdog mode: <ALIVE MNAME>
+			 *	MNAME is optional and mostly not part of the <ALIVE> watchdog.
 			 */
 			case STATE_ALIVE:
 				//

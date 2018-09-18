@@ -84,15 +84,16 @@ namespace node
 					session_.vm_.async_run(cyng::generate_invoke("log.msg.info", "imega connection received", bytes_transferred, "bytes"));
 
 					//
-					//	buffer contains the unscrambled input
+					//	size == parsed bytes
 					//
-					const auto buffer = session_.parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
-					boost::ignore_unused(buffer);	//	release version
-					
+					const auto size = session_.parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
+					BOOST_ASSERT(size == bytes_transferred);
+					boost::ignore_unused(size);	//	release version
+
 #ifdef SMF_IO_DEBUG
 					cyng::io::hex_dump hd;
 					std::stringstream ss;
-					hd(ss, buffer.begin(), buffer.end());
+					hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
 					CYNG_LOG_TRACE(logger_, "imega input dump \n" << ss.str());
 #endif
 

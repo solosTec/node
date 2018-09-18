@@ -85,7 +85,7 @@ namespace node
 
 			//	transport - connection open
 			//TP_REQ_OPEN_CONNECTION = 0x9003,	//!<	request
-			vm_.register_function("modem.req.open.connection", 2, std::bind(&session::modem_req_open_connection, this, std::placeholders::_1));
+			vm_.register_function("imega.req.open.connection", 2, std::bind(&session::imega_req_open_connection, this, std::placeholders::_1));
 			vm_.register_function("client.req.open.connection.forward", 5, std::bind(&session::client_req_open_connection_forward, this, std::placeholders::_1));
 			//TP_RES_OPEN_CONNECTION = 0x1003,	//!<	response
 			//vm_.register_function("ipt.res.open.connection", 3, std::bind(&session::ipt_res_open_connection, this, std::placeholders::_1));
@@ -94,7 +94,7 @@ namespace node
 
 			//	transport - connection close
 			//TP_REQ_CLOSE_CONNECTION = 0x9004,	//!<	request
-			//vm_.register_function("modem.req.close.connection", 1, std::bind(&session::modem_req_close_connection, this, std::placeholders::_1));
+			//vm_.register_function("imega.req.close.connection", 1, std::bind(&session::imega_req_close_connection, this, std::placeholders::_1));
 			vm_.register_function("client.req.close.connection.forward", 6, std::bind(&session::client_req_close_connection_forward, this, std::placeholders::_1));
 			//TP_RES_CLOSE_CONNECTION = 0x1004,	//!<	response
 			//vm_.register_function("ipt.res.close.connection", 0, std::bind(&session::ipt_res_close_connection, this, std::placeholders::_1));
@@ -340,7 +340,7 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "modem.req.transmit.data", "no master", frame));
+				ctx.attach(cyng::generate_invoke("log.msg.warning", "imega.req.transmit.data", "no master", frame));
 			}
 		}
 
@@ -515,22 +515,22 @@ namespace node
 
 		}
 
-		void session::modem_req_open_connection(cyng::context& ctx)
+		void session::imega_req_open_connection(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			if (bus_->is_online())
 			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "modem.req.open.connection", frame));
+				ctx.run(cyng::generate_invoke("log.msg.info", "imega.req.open.connection", frame));
 
 				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("modem");
+				bag["tp-layer"] = cyng::make_object("iMega");
 				bus_->vm_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(1), "")	//	number
 					, bag));
 			}
             else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "modem.req.open.connection", frame));
+				ctx.attach(cyng::generate_invoke("log.msg.error", "imega.req.open.connection", frame));
 			}
 		}
 
@@ -597,7 +597,7 @@ namespace node
 			//
 			//	[5ef23385-4b75-4ed7-997b-a84f7f3e63c0,4,false,
 			//	%(("local-connect":true),("local-peer":bdc31cf8-e18e-4d95-ad31-ad821661e857),("origin-tag":5afa7628-caa3-484d-b1de-a4730b53a656)),
-			//	%(("tp-layer":modem))]
+			//	%(("tp-layer":iMega))]
 			//
 			//	* peer
 			//	* cluster bus sequence
@@ -649,7 +649,7 @@ namespace node
 			//
 			//	[b985e67c-38e2-4850-b584-242c75a5036c,3,true,
 			//	%(("local-connect":true),("local-peer":bdc31cf8-e18e-4d95-ad31-ad821661e857),("origin-tag":1f5ba15e-d0fa-402d-a808-3f7ce0df8bd5)),
-			//	%(("tp-layer":modem))]
+			//	%(("tp-layer":iMega))]
 			//
 
 			auto const tpl = cyng::tuple_cast<
