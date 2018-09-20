@@ -27,6 +27,7 @@
 #include <cyng/sys/mac.h>
 #include <cyng/store/db.h>
 #include <cyng/table/meta.hpp>
+#include <cyng/crypto/rnd.h>
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
 #endif
@@ -195,10 +196,16 @@ namespace node
 			//	random uint32
 			//	reconnect to master on different times
 			//
-			boost::random::mt19937 int_rng;
-            int_rng.seed(std::time(nullptr));
-			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
+			cyng::crypto::rnd_num rnd_monitor(10, 60);
 
+			//
+			//	generate a random serial number with a length of
+			//	8 characters
+			//
+			auto rnd_sn = cyng::crypto::make_rnd_num();
+			std::stringstream sn_ss(rnd_sn(8));
+			std::uint32_t sn{ 0 };
+			sn_ss >> sn;
 			
 			//
 			//	get adapter data
@@ -230,7 +237,7 @@ namespace node
 					, cyng::param_factory("hardware", cyng::tuple_factory(
 						cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF)
 						cyng::param_factory("model", "virtual.gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
-						cyng::param_factory("serial", int_rng()),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
+						cyng::param_factory("serial", sn),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
 						cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF) MUC-LAN/DSL
 						cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ...)
 					))
@@ -243,7 +250,7 @@ namespace node
 							cyng::param_factory("pwd", "to-define"),
 							cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 							cyng::param_factory("scrambled", true),
-							cyng::param_factory("monitor", monitor_dist(int_rng))),	//	seconds
+							cyng::param_factory("monitor", rnd_monitor())),	//	seconds
 						cyng::tuple_factory(
 							cyng::param_factory("host", "127.0.0.1"),
 							cyng::param_factory("service", "26863"),
@@ -251,9 +258,8 @@ namespace node
 							cyng::param_factory("pwd", "to-define"),
 							cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 							cyng::param_factory("scrambled", false),
-							cyng::param_factory("monitor", monitor_dist(int_rng)))
+							cyng::param_factory("monitor", rnd_monitor()))
 						}))
-					//, cyng::param_factory("targets", cyng::vector_factory({ "data.sink.1", "data.sink.2" }))	//	list of targets
 				)
 				});
 

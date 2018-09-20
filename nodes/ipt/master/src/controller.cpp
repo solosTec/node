@@ -18,6 +18,7 @@
 #include <cyng/json.h>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
+#include <cyng/crypto/rnd.h>
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
 #endif
@@ -167,9 +168,7 @@ namespace node
 			//
 			//	reconnect to master on different times
 			//
-			boost::random::mt19937 rng_;
-            rng_.seed(std::time(nullptr));
-			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
+			cyng::crypto::rnd_num rnd_monitor(10, 60);
 
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
@@ -191,7 +190,7 @@ namespace node
 					cyng::param_factory("account", "root"),
 					cyng::param_factory("pwd", NODE_PWD),
 					cyng::param_factory("salt", NODE_SALT),
-					cyng::param_factory("monitor", monitor_dist(rng_)),	//	seconds
+					cyng::param_factory("monitor", rnd_num()),	//	seconds
 					cyng::param_factory("auto-config", false),	//	client security
 					cyng::param_factory("group", 0)	//	customer ID
 				) }))
