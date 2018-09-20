@@ -115,12 +115,16 @@ namespace node
 
 				if (!ec) 
 				{
-					CYNG_LOG_TRACE(logger_, "accept " << socket.remote_endpoint());
+					auto tag = rnd_();
+
+					CYNG_LOG_TRACE(logger_, "accept "
+						<< socket.remote_endpoint()
+						<< " - "
+						<< tag);
 
 					//
 					//	create new connection/session
 					//
-					auto tag = rnd_();
 					auto conn = make_connection(std::move(socket)
 						, mux_
 						, logger_

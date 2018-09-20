@@ -17,6 +17,7 @@
 #include <cyng/json.h>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
+#include <cyng/crypto/rnd.h>
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
 #endif
@@ -162,23 +163,32 @@ namespace node
 			//
 			const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 			const boost::filesystem::path pwd = boost::filesystem::current_path();
-			boost::uuids::random_generator rgen;
+			boost::uuids::random_generator uidgen;
 
+			//
+			//	generate a random number
+			//
 			boost::random::mt19937 rng_;
             rng_.seed(std::time(nullptr));
 			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
 
+			//
+			//	generate a random string
+			//
+
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
                     , cyng::param_factory("log-level", "INFO")
-					, cyng::param_factory("tag", rgen())
+					, cyng::param_factory("tag", uidgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
-						cyng::param_factory("service", "6000"),
-						cyng::param_factory("timeout", 12)		//	connection timeout
+						cyng::param_factory("service", "5200"),
+						cyng::param_factory("timeout", 12),		//	connection timeout
+						cyng::param_factory("use-global-pwd", true),
+						cyng::param_factory("global-pwd", "5200")
 					))
 					, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
@@ -279,8 +289,8 @@ namespace node
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
 		auto dom = cyng::make_reader(cfg);
 
-		boost::uuids::random_generator rgen;
-		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
+		boost::uuids::random_generator uuidgen;
+		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uuidgen());
 
 		//
 		//	apply severity threshold

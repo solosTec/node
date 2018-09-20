@@ -98,8 +98,13 @@ namespace node
 
 			if ( !ec ) 
 			{
-				CYNG_LOG_TRACE(logger_, "accept " << socket.remote_endpoint());
-				
+				const auto tag = rgn_();
+
+				CYNG_LOG_TRACE(logger_, "accept "
+					<< socket.remote_endpoint()
+					<< " - "
+					<< tag);
+
 				//
 				//	There is no connection manager or list of open connections. 
 				//	Connections are managed by there own and are controlled
@@ -113,7 +118,7 @@ namespace node
 					, db_
 					, account_
 					, pwd_
-					, rgn_()
+					, tag
 					, monitor_ // cluster watchdog
 					, global_configuration_
 					, stat_dir_)->start();

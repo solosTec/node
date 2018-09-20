@@ -131,7 +131,12 @@ namespace node
 			}
 			else
 			{
-				CYNG_LOG_TRACE(logger_, "accept: " << socket_.remote_endpoint());
+				const auto tag = rgn_();
+
+				CYNG_LOG_TRACE(logger_, "accept "
+					<< socket_.remote_endpoint()
+					<< " - "
+					<< tag);
 
 				// Create the http_session and run it
 				connection_manager_.start(make_http_session(logger_
@@ -139,7 +144,7 @@ namespace node
 					, std::move(socket_)
 					, doc_root_
 					, bus_
-					, rgn_()));
+					, tag));
 
 
 				// Accept another connection

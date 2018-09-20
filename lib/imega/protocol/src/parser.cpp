@@ -179,6 +179,9 @@ namespace node
 					}
 				}
 
+				//	response without a request
+				cb_(cyng::generate_invoke("imega.res.watchdog", cyng::code::IDENT, wd_size_));
+
 				break;
 
 			default:

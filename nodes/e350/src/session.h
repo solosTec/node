@@ -71,7 +71,7 @@ namespace node
 			//void ipt_req_transfer_pushdata(cyng::context& ctx);
 			//void ipt_res_close_connection(cyng::context& ctx);
 			void imega_req_transmit_data(cyng::context& ctx);
-			//void ipt_res_watchdog(cyng::context& ctx);
+			void imega_res_watchdog(cyng::context& ctx);
 
 			//void ipt_res_protocol_version(cyng::context& ctx);
 			//void ipt_res_software_version(cyng::context& ctx);

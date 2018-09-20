@@ -151,7 +151,7 @@ namespace node
 			//
 			const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 			const boost::filesystem::path pwd = boost::filesystem::current_path();
-			boost::uuids::random_generator rgen;
+			boost::uuids::random_generator uidgen;
 			
 			//
             //  to send emails from cgp see https://cloud.google.com/compute/docs/tutorials/sending-mail/
@@ -160,7 +160,7 @@ namespace node
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 					, cyng::param_factory("log-level", "INFO")
-					, cyng::param_factory("tag", rgen())
+					, cyng::param_factory("tag", uidgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 					, cyng::param_factory("favicon", "")

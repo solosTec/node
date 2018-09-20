@@ -230,7 +230,7 @@ namespace node
 				, 1	//	generation
 				, tag);
 
-			boost::uuids::random_generator rgen;
+			boost::uuids::random_generator uidgen;
 
 			//	insert demo push.ops
 			config_db_.insert("push.ops"

@@ -189,7 +189,7 @@ namespace node
 			//
 			//	random UUID
 			//
-			boost::uuids::random_generator rgen;
+			boost::uuids::random_generator uidgen;
 
 			//
 			//	random uint32
@@ -212,7 +212,7 @@ namespace node
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 				, cyng::param_factory("log-level", "INFO")
-					, cyng::param_factory("tag", rgen())
+					, cyng::param_factory("tag", uidgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("log-pushdata", false)	//	log file for each channel
 
@@ -347,8 +347,8 @@ namespace node
 		//
 		//	random UUID
 		//
-		boost::uuids::random_generator rgen;
-		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
+		boost::uuids::random_generator uidgen;
+		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
 
 		//
 		//	random uint32

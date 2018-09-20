@@ -195,7 +195,7 @@ namespace node
 			//	control - watchdog
 			//CTRL_REQ_WATCHDOG = 0xC008,	//!<	request
 			//CTRL_RES_WATCHDOG = 0x4008,	//!<	response
-			//vm_.register_function("ipt.res.watchdog", 0, std::bind(&session::ipt_res_watchdog, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.watchdog", 1, std::bind(&session::imega_res_watchdog, this, std::placeholders::_1));
 
 			//	control - multi public login request
 			//MULTI_CTRL_REQ_LOGIN_PUBLIC = 0xC009,	//!<	request
@@ -513,6 +513,12 @@ namespace node
 
 			CYNG_LOG_ERROR(logger_, "client.res.register.push.target - not supported");
 
+		}
+
+		void session::imega_res_watchdog(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			ctx.attach(cyng::generate_invoke("log.msg.info", "imega.res.watchdog", frame));
 		}
 
 		void session::imega_req_open_connection(cyng::context& ctx)

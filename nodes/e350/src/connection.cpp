@@ -81,7 +81,7 @@ namespace node
 				if (!ec)
 				{
 					//CYNG_LOG_TRACE(logger_, "imega connection received " << bytes_transferred << " bytes");
-					session_.vm_.async_run(cyng::generate_invoke("log.msg.info", "imega connection received", bytes_transferred, "bytes"));
+					session_.vm_.async_run(cyng::generate_invoke("log.msg.trace", "imega connection received", bytes_transferred, "bytes"));
 
 					//
 					//	size == parsed bytes

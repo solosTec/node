@@ -187,12 +187,12 @@ namespace node
 			//
 			const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 			const boost::filesystem::path pwd = boost::filesystem::current_path();
-			boost::uuids::random_generator rgen;
+			boost::uuids::random_generator uidgen;
 
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 				, cyng::param_factory("log-level", "INFO")
-				, cyng::param_factory("tag", rgen())
+				, cyng::param_factory("tag", uidgen())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
 				, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 				
@@ -397,8 +397,8 @@ namespace node
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
 		auto dom = cyng::make_reader(cfg);
 
-		boost::uuids::random_generator rgen;
-		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), rgen());
+		boost::uuids::random_generator uidgen;
+		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
 
 		//
 		//	apply severity threshold
