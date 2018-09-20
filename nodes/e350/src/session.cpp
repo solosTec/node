@@ -296,11 +296,11 @@ namespace node
 				bag["time"] = cyng::make_now();
 				bag["imega-protocol"] = frame.at(1);
 				bag["imega-version"] = frame.at(2);
-				bag["imega-meter"] = frame.at(4);
+				bag["imega-module"] = frame.at(3); //	"TELNB" - modulname
 
 				bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::string>(frame.at(3), "")
-					, cyng::value_cast<std::string>(frame.at(3), "")
+					, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
+					, "SWIBIPT"	//	fixed password
 					, "plain" //	login scheme
 					, bag));
 

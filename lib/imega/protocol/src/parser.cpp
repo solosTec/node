@@ -229,8 +229,8 @@ namespace node
 				{
 					const int protocol = cmd.read_protocol(parts.at(0));
 					const cyng::version ver = cmd.read_version(parts.at(1));
-					const std::string name = cmd.read_string(parts.at(2), "TELNB");
-					const std::string meter = cmd.read_string(parts.at(3), "MNAME");
+					const std::string name = cmd.read_string(parts.at(2), "TELNB");  //	modulname
+					const std::string meter = cmd.read_string(parts.at(3), "MNAME"); // meter ID
 					parser_.cb_(cyng::generate_invoke("imega.req.login.public"
 						, cyng::code::IDENT
 						, protocol
