@@ -4,10 +4,10 @@
  *
  * To rebuild or modify this file with the latest versions of the included
  * software please visit:
- *   https://datatables.net/download/#bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.2/cr-1.5.0/fc-3.2.5/fh-3.1.4/kt-2.4.0/r-2.2.2/sl-1.2.6
+ *   https://datatables.net/download/#bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.2/cr-1.5.0/fc-3.2.5/fh-3.1.4/kt-2.4.0/r-2.2.2/sc-1.5.0/sl-1.2.6
  *
  * Included libraries:
- *   Bootstrap 4 4.1.1, jQuery 3 3.3.1, DataTables 1.10.18, Buttons 1.5.2, ColReorder 1.5.0, FixedColumns 3.2.5, FixedHeader 3.1.4, KeyTable 2.4.0, Responsive 2.2.2, Select 1.2.6
+ *   Bootstrap 4 4.1.1, jQuery 3 3.3.1, DataTables 1.10.18, Buttons 1.5.2, ColReorder 1.5.0, FixedColumns 3.2.5, FixedHeader 3.1.4, KeyTable 2.4.0, Responsive 2.2.2, Scroller 1.5.0, Select 1.2.6
  */
 
 /*!
@@ -9701,6 +9701,32 @@ div.dtr-modal div.dtr-modal-background {
 }
 div.dtr-bs-modal table.table tr:first-child td {
   border-top: none;
+}
+
+
+div.DTS {
+  display: block !important;
+}
+div.DTS tbody th,
+div.DTS tbody td {
+  white-space: nowrap;
+}
+div.DTS div.DTS_Loading {
+  z-index: 1;
+}
+div.DTS div.dataTables_scrollBody {
+  background: repeating-linear-gradient(45deg, #edeeff, #edeeff 10px, white 10px, white 20px);
+}
+div.DTS div.dataTables_scrollBody table {
+  z-index: 2;
+}
+div.DTS div.dataTables_paginate,
+div.DTS div.dataTables_length {
+  display: none;
+}
+
+div.DTS div.dataTables_scrollBody table {
+  background-color: white;
 }
 
 

@@ -131,6 +131,7 @@ namespace node
 		void read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc);
 
 		void display_loading_icon(boost::uuids::uuid tag, bool, std::string const&);
+		void display_loading_level(boost::uuids::uuid tag, std::size_t, std::string const&);
 
 		void trigger_download(boost::uuids::uuid tag, std::string table, std::string filename);
 

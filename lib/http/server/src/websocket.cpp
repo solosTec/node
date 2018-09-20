@@ -394,8 +394,8 @@ namespace node
             if (ws_.is_open())
 			{
 			    CYNG_LOG_TRACE(logger_, "ws.send.json: " << msg);
+				//ws_.lowest_layer().wait(boost::asio::ip::tcp::socket::wait_write);
 			    ws_.write(boost::asio::buffer(msg));
-			    //CYNG_LOG_TRACE(logger_, "...ws.send.json");
 				return true;
 			}
 		    CYNG_LOG_WARNING(logger_, "ws.send.json - closed " << msg);

@@ -321,7 +321,7 @@
 
                 _ws.onmessage = function (e) {
                     $('#ws-activity-symbol').show();
-                    console.log('incoming data: ' + e.data);
+                    //console.log('incoming data: ' + e.data);
                     totalIO += e.data.length;
                     var obj = JSON.parse(e.data);
                     if (obj.cmd != null && obj.channel != null) {

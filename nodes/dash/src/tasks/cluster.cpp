@@ -2009,7 +2009,20 @@ namespace node
 		//
 		cache_.access([&](cyng::store::table const* tbl) {
 
+			//
+			//	inform client that data upload is starting
+			//
 			display_loading_icon(tag, true, channel);
+
+			//
+			//	get total record size
+			//
+			auto size = tbl->size();
+			std::size_t percent{ 0 }, idx{ 0 };
+
+			//
+			//	upload data
+			//
 			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
 
 				CYNG_LOG_TRACE(logger_, "ws.read - insert " << table << cyng::io::to_str(rec.key()));
@@ -2022,13 +2035,31 @@ namespace node
 				auto msg = cyng::json::to_string(tpl);
 				server_.send_msg(tag, msg);
 
-				//	continue
-				return true;
+				++idx;
+
+				//
+				//	calculate charge status in percent
+				//
+				const auto prev_percent = percent;
+				percent = (100u * idx) / size;
+
+				if (prev_percent != percent) {
+					display_loading_level(tag, percent, channel);
+					//
+					//	give GUI a change to refresh
+					//
+					std::this_thread::sleep_for(std::chrono::milliseconds(120));
+				}
+
+				return true;	//	continue
 			});
 			BOOST_ASSERT(counter == 0);
 			boost::ignore_unused(counter);	//	release version
 			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
 
+			//
+			//	inform client that data upload is finished
+			//
 			display_loading_icon(tag, false, channel);
 		}, cyng::store::read_access(table));
 	}
@@ -2039,6 +2070,14 @@ namespace node
 			, cyng::json::to_string(cyng::tuple_factory(cyng::param_factory("cmd", std::string("load"))
 				, cyng::param_factory("channel", channel)
 				, cyng::param_factory("show", b))));
+	}
+
+	void cluster::display_loading_level(boost::uuids::uuid tag, std::size_t level, std::string const& channel)
+	{
+		server_.send_msg(tag
+			, cyng::json::to_string(cyng::tuple_factory(cyng::param_factory("cmd", std::string("load"))
+				, cyng::param_factory("channel", channel)
+				, cyng::param_factory("level", level))));
 	}
 
 	void cluster::subscribe_table_device_count(std::string const& channel, boost::uuids::uuid tag)
