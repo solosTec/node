@@ -25,11 +25,15 @@ namespace node
 		server::server(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
-			, int timeout)
+			, int timeout
+			, bool use_global_pwd
+			, std::string const& global_pwd)
 		: mux_(mux)
 			, logger_(logger)
 			, bus_(bus)
 			, timeout_(timeout)
+			, use_global_pwd_(use_global_pwd)
+			, global_pwd_(global_pwd)
 			, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
             , socket_(mux_.get_io_service())
@@ -126,7 +130,9 @@ namespace node
 						, logger_
 						, bus_
 						, tag
-						, timeout_);
+						, timeout_
+						, use_global_pwd_
+						, global_pwd_);
 
 					//
 					//	bus is synchronizing access to client_map_

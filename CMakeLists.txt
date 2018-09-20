@@ -562,7 +562,7 @@ target_link_libraries(dash ${dashboard_link_libs})
 include (nodes/e350/prg.cmake)
 add_executable(e350 ${node_e350})
 # libraries to link
-set(e350_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys smf_cluster smf_protocol_imega)
+set(e350_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_crypto smf_cluster smf_protocol_imega)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND e350_link_libs "${Boost_LIBRARIES}")
     if (UNIX)

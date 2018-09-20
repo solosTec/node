@@ -48,7 +48,9 @@ namespace node
 				, cyng::logging::log_ptr logger
 				, bus::shared_type
 				, boost::uuids::uuid tag
-				, std::chrono::seconds);
+				, std::chrono::seconds
+				, bool use_global_pwd
+				, std::string const& global_pwd);
 
 			session(session const&) = delete;
 			session& operator=(session const&) = delete;
@@ -118,6 +120,9 @@ namespace node
 			 * gatekeeper task
 			 */
 			std::size_t gate_keeper_;
+
+			const bool use_global_pwd_;
+			const std::string global_pwd_;
 
 			/**
 			 * contains state of local connections

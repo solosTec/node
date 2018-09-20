@@ -23,12 +23,14 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
 			, boost::uuids::uuid tag
-			, std::chrono::seconds const& timeout)
+			, std::chrono::seconds const& timeout
+			, bool use_global_pwd
+			, std::string const& global_pwd)
 		: socket_(std::move(socket))
 			, logger_(logger)
 			, tag_(tag)
 			, buffer_()
-			, session_(mux, logger, bus, tag, timeout)
+			, session_(mux, logger, bus, tag, timeout, use_global_pwd, global_pwd)
 			, serializer_(socket_, session_.vm_)
             , shutdown_(false)
 		{
@@ -118,14 +120,18 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
 			, boost::uuids::uuid tag
-			, std::chrono::seconds const& timeout)
+			, std::chrono::seconds const& timeout
+			, bool use_global_pwd
+			, std::string const& global_pwd)
 		{
 			return cyng::make_object<connection>(std::move(socket)
 				, mux
 				, logger 
 				, bus
 				, tag 
-				, timeout);
+				, timeout
+				, use_global_pwd
+				, global_pwd);
 
 		}
 

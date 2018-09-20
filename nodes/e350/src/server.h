@@ -29,7 +29,9 @@ namespace node
 			server(cyng::async::mux&
 				, cyng::logging::log_ptr logger
 				, bus::shared_type
-				, int timeout);
+				, int timeout
+				, bool use_global_pwd
+				, std::string const& global_pwd);
 
 			/**
 			 * start listening
@@ -97,8 +99,8 @@ namespace node
 
 			 //	configuration
 			 const std::chrono::seconds timeout_;
-			 //const bool auto_answer_;
-			 //const std::chrono::milliseconds guard_time_;
+			 const bool use_global_pwd_;
+			 const std::string global_pwd_;
 
 			/// Acceptor used to listen for incoming connections.
 			boost::asio::ip::tcp::acceptor acceptor_;

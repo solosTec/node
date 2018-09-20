@@ -168,13 +168,12 @@ namespace node
 			//
 			//	generate a random number
 			//
-			boost::random::mt19937 rng_;
-            rng_.seed(std::time(nullptr));
-			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
+			cyng::crypto::rnd_num rnd_monitor(10, 60);
 
 			//
 			//	generate a random string
 			//
+			auto rnd_str = cyng::crypto::make_rnd_alnum();
 
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
@@ -188,7 +187,7 @@ namespace node
 						cyng::param_factory("service", "5200"),
 						cyng::param_factory("timeout", 12),		//	connection timeout
 						cyng::param_factory("use-global-pwd", true),
-						cyng::param_factory("global-pwd", "5200")
+						cyng::param_factory("global-pwd", rnd_str.next(8))	//	8 characters
 					))
 					, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
@@ -196,7 +195,7 @@ namespace node
 						cyng::param_factory("account", "root"),
 						cyng::param_factory("pwd", NODE_PWD),
 						cyng::param_factory("salt", NODE_SALT),
-						cyng::param_factory("monitor", monitor_dist(rng_)),	//	seconds
+						cyng::param_factory("monitor", rnd_monitor.next()),	//	seconds
 						cyng::param_factory("group", 0)	//	customer ID
 					) }))
 				)
@@ -356,13 +355,21 @@ namespace node
 
 		auto dom = cyng::make_reader(cfg_srv);
 
+		//
+		//	generate a random string
+		//
+		auto rnd_str = cyng::crypto::make_rnd_alnum();
+
 		cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
 			, load_cluster_cfg(cfg_cluster)
 			, cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0")
 			, cyng::value_cast<std::string>(dom.get("service"), "6000")
-			, cyng::value_cast<int>(dom.get("timeout"), 12)	);
+			, cyng::value_cast<int>(dom.get("timeout"), 12)	
+			, cyng::value_cast(dom.get("use-global-pwd"), false)
+			, cyng::value_cast(dom.get("global-pwd"), rnd_str(8))
+			);
 
 	}
 

@@ -28,7 +28,9 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
 			, boost::uuids::uuid tag
-			, std::chrono::seconds timeout)
+			, std::chrono::seconds timeout
+			, bool use_global_pwd
+			, std::string const& global_pwd)
 		: mux_(mux)
 			, logger_(logger)
 			, bus_(bus)
@@ -43,6 +45,8 @@ namespace node
 				, vm_
 				, tag
 				, timeout).first)
+			, use_global_pwd_(use_global_pwd)
+			, global_pwd_(global_pwd)
 			, connect_state_()
 		{
 			//
@@ -298,11 +302,22 @@ namespace node
 				bag["imega-version"] = frame.at(2);
 				bag["imega-module"] = frame.at(3); //	"TELNB" - modulname
 
-				bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
-					, "SWIBIPT"	//	fixed password
-					, "plain" //	login scheme
-					, bag));
+				if (use_global_pwd_) {
+					bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+						, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
+						, global_pwd_	//	fixed password
+						, "plain" //	login scheme
+						, bag));
+
+				}
+				else {
+					bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+						, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
+						, cyng::value_cast<std::string>(frame.at(4), "")	//	as username and password
+						, "plain" //	login scheme
+						, bag));
+
+				}
 
 			}
 			else

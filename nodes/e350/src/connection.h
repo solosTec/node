@@ -40,7 +40,9 @@ namespace node
 				, cyng::logging::log_ptr logger
 				, bus::shared_type
 				, boost::uuids::uuid
-				, std::chrono::seconds const& timeout);
+				, std::chrono::seconds const& timeout
+				, bool use_global_pwd
+				, std::string const& global_pwd);
 
             virtual ~connection();
 
@@ -111,7 +113,9 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, bus::shared_type
 			, boost::uuids::uuid
-			, std::chrono::seconds const& timeout);
+			, std::chrono::seconds const& timeout
+			, bool use_global_pwd
+			, std::string const& global_pwd);
 
 	}
 }
