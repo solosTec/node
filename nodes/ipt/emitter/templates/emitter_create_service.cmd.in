@@ -9,4 +9,9 @@ echo create service node_emitter_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
 sc create node_emitter_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\solosTec\SMF\emitter.exe --config=\"$ENV{ProgramFiles}\solosTec\SMF\emitter_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF emitter server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
 sc description node_emitter_v${${PROJECT_NAME}_VERSION_MAJOR} "IP-T Emitter server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+REM
+REM Add a dependency to IP-T master service.
+REM Modify or remove this dependency if IP-T master is running on a different node.
+REM
+sc config node_emitter_v${${PROJECT_NAME}_VERSION_MAJOR} depend= node_ipt_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on
