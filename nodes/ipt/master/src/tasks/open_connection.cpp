@@ -45,7 +45,7 @@ namespace node
 		<< base_.get_id()
 		<< " <"
 		<< base_.get_class_name()
-		<< "> is runninguntil "
+		<< "> is running until "
 		<< cyng::to_str(start_ + timeout_));
 
 	}
@@ -65,14 +65,11 @@ namespace node
 			//	* start timer to check connection setup
 			//
 
-			cyng::vector_t prg;
-			prg
-				<< cyng::generate_invoke_unwinded("req.open.connection", number_)
-				<< cyng::generate_invoke_unwinded("session.store.relation", cyng::invoke("ipt.push.seq"), base_.get_id())
-				<< cyng::generate_invoke_unwinded("stream.flush")
-				<< cyng::generate_invoke_unwinded("log.msg.info", "client.req.open.connection.forward", cyng::invoke("ipt.push.seq"), number_)
+			vm_	.async_run(cyng::generate_invoke("req.open.connection", number_))
+				.async_run(cyng::generate_invoke("session.store.relation", cyng::invoke("ipt.seq.push"), base_.get_id()))
+				.async_run(cyng::generate_invoke("stream.flush"))
+				.async_run(cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward", cyng::invoke("ipt.seq.push"), number_))
 				;
-			vm_.async_run(std::move(prg));
 
 			//
 			//	start monitor
@@ -82,20 +79,31 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		CYNG_LOG_WARNING(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> timeout after "
-			<< cyng::to_str(std::chrono::system_clock::now() - start_));
+		if (!vm_.is_halted()) {
 
-		//
-		//	close session
-		//	could crash if session is already gone
-		//
-		vm_.async_run(cyng::generate_invoke("ip.tcp.socket.shutdown"));
-		vm_.async_run(cyng::generate_invoke("ip.tcp.socket.close"));
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> timeout after "
+				<< cyng::to_str(std::chrono::system_clock::now() - start_));
 
+			//
+			//	close session
+			//	could crash if session is already gone
+			//
+			vm_.async_run(cyng::generate_invoke("ip.tcp.socket.shutdown"));
+			vm_.async_run(cyng::generate_invoke("ip.tcp.socket.close"));
+		}
+		else {
+
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> stop (session already halted) "
+				<< tag_);
+		}
 
 		return cyng::continuation::TASK_STOP;
 	}
@@ -128,11 +136,13 @@ namespace node
 		//
 		//	send response to cluster master
 		//
-		bus_->vm_.async_run(client_res_open_connection(tag_
-			, seq_
-			, ipt::tp_res_open_connection_policy::is_success(response_)
-			, options_
-			, bag_));
+		if (bus_->is_online()) {
+			bus_->vm_.async_run(client_res_open_connection(tag_
+				, seq_
+				, ipt::tp_res_open_connection_policy::is_success(response_)
+				, options_
+				, bag_));
+		}
 
 		//
 		//	terminate task

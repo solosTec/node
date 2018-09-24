@@ -76,12 +76,25 @@ namespace node
 			ctx.push(cyng::make_object(this->seq_));
 		});
 
+		//
+		//	push last bus sequence number on stack
+		//
+		vm_.register_function("bus.seq.push", 0, [this](cyng::context& ctx) {
+			ctx.push(cyng::make_object(this->seq_));
+		});
+
+
 		vm_.register_function("bus.res.watchdog", 3, std::bind(&session::res_watchdog, this, std::placeholders::_1));
 
 		//
 		//	session shutdown - initiated by connection
 		//
 		vm_.register_function("session.cleanup", 2, std::bind(&session::cleanup, this, std::placeholders::_1));
+
+		//
+		//	write statistics
+		//
+		vm_.register_function("session.write.stat", 5, std::bind(&client::write_statistics, &client_, std::placeholders::_1));
 
 		//
 		//	register request handler
@@ -91,6 +104,7 @@ namespace node
 		vm_.register_function("bus.req.reboot.client", 3, std::bind(&session::bus_req_reboot_client, this, std::placeholders::_1));
 		vm_.register_function("bus.insert.msg", 2, std::bind(&session::bus_insert_msg, this, std::placeholders::_1));
 		vm_.register_function("bus.req.push.data", 7, std::bind(&session::bus_req_push_data, this, std::placeholders::_1));
+		vm_.register_function("bus.store.req.connection.close", 3, std::bind(&session::bus_store_req_connection_close, this, std::placeholders::_1));
 
 		vm_.register_function("client.req.login", 8, std::bind(&session::client_req_login, this, std::placeholders::_1));
 		vm_.register_function("client.req.close", 4, std::bind(&session::client_req_close, this, std::placeholders::_1));
@@ -231,7 +245,7 @@ namespace node
 							options["local-peer"] = cyng::make_object(tag);		//	and this peer
 							options["local-connect"] = cyng::make_object(true);
 							//	shutdown mode
-							remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, true, options, cyng::param_map_t()));
+							remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, 0u, true, options, cyng::param_map_t()));
 						}
 
 						//
@@ -243,12 +257,7 @@ namespace node
 					//
 					//	generate statistics
 					//	
-					std::ofstream stat_stream;
-					if (client_.is_generate_time_series())
-					{
-						client_.open_stat(stat_stream, account);
-						write_stat(stat_stream, vm_.tag(), "shutdown", "node");
-					}
+					if (client_.is_generate_time_series()) vm_.async_run(write_stat(vm_.tag(), account, "shutdown", "node"));
 				}
 
 				//	continue
@@ -660,7 +669,7 @@ namespace node
 #endif
 
 
-		}, cyng::store::read_access("_Session")
+		}	, cyng::store::read_access("_Session")
 			, cyng::store::read_access("TGateway"));
 	}
 
@@ -856,7 +865,7 @@ namespace node
 #endif
 			
 
-		}, cyng::store::read_access("_Session")
+		}	, cyng::store::read_access("_Session")
 			, cyng::store::read_access("TGateway"));
 	}
 
@@ -1315,6 +1324,32 @@ namespace node
 				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "generate-time-series"))
 				{
 					client_.set_generate_time_series(attr.second);
+
+					//
+					//	write a line	
+					//
+#ifdef 0
+					//
+					//	doesn't work this way - this is the wrong peer (dash) and that's why
+					//	it's generating the wrong file name: smf-dash-... instead of smf-ipt-...
+					//
+					const bool b = client_.is_generate_time_series();
+					db_.access([&](cyng::store::table const* tbl_session)->void {
+
+						const auto size = tbl_session->size();
+						tbl_session->loop([&](cyng::table::record const& rec) -> bool {
+							const auto tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+							const auto name = cyng::value_cast<std::string>(rec["name"], "");
+							if (b) {
+								vm_.async_run(write_stat(tag, name, "start recording...", size));
+							}
+							else {
+								vm_.async_run(write_stat(tag, name, "...stop recording", size));
+							}
+							return true;
+						});
+					}, cyng::store::read_access("_Session"));
+#endif
 				}
 			}
 		}
@@ -1377,14 +1412,15 @@ namespace node
 			cyng::param_map_t		//	[6] bag
 		>(frame);
 
-		ctx.attach(client_.req_login(std::get<0>(tpl)
+		client_.req_login(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
 			, std::get<4>(tpl)
 			, std::get<5>(tpl)
 			, std::get<6>(tpl)
-			, frame.at(7)));
+			, frame.at(7));
 	}
 
 	void session::client_req_close(cyng::context& ctx)
@@ -1406,11 +1442,12 @@ namespace node
 			int						//	[3] error code
 		>(frame);
 
-		ctx.attach(client_.req_close(std::get<0>(tpl)
+		client_.req_close(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, ctx.tag()
-			, true));	//	request
+			, true);	//	request
 
 	}
 
@@ -1435,11 +1472,12 @@ namespace node
 		if (std::get<3>(tpl))
 		{
 			CYNG_LOG_INFO(logger_, "client.req.close " << cyng::io::to_str(frame));
-			ctx.attach(client_.req_close(std::get<0>(tpl)
+			client_.req_close(ctx
+				, std::get<0>(tpl)
 				, std::get<1>(tpl)
 				, std::get<2>(tpl)
 				, ctx.tag()
-				, false));	//	resonse
+				, false);	//	resonse
 		}
 		else
 		{
@@ -1479,7 +1517,8 @@ namespace node
 			cyng::param_map_t		//	[9] bag
 		>(frame);
 
-		ctx.attach(client_.req_open_push_channel(std::get<0>(tpl)
+		client_.req_open_push_channel(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
@@ -1489,7 +1528,7 @@ namespace node
 			, std::get<7>(tpl)
 			, std::get<8>(tpl)
 			, std::get<9>(tpl)
-			, ctx.tag()));
+			, ctx.tag());
 	}
 
 	void session::client_res_open_push_channel(cyng::context& ctx)
@@ -1540,12 +1579,12 @@ namespace node
 			cyng::param_map_t		//	[4] bag
 		>(frame);
 
-		ctx.attach(client_.req_close_push_channel(std::get<0>(tpl)
+		client_.req_close_push_channel(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
-			, std::get<4>(tpl)));
-
+			, std::get<4>(tpl));
 	}
 
 	void session::client_req_register_push_target(cyng::context& ctx)
@@ -1569,13 +1608,13 @@ namespace node
 			cyng::param_map_t		//	[4] bag
 		>(frame);
 
-		ctx.attach(client_.req_register_push_target(std::get<0>(tpl)
+		client_.req_register_push_target(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
 			, std::get<4>(tpl)
-			, ctx.tag()));
-
+			, ctx.tag());
 	}
 
 	void session::client_req_deregister_push_target(cyng::context& ctx)
@@ -1599,13 +1638,13 @@ namespace node
 			cyng::param_map_t		//	[4] bag
 		>(frame);
 
-		ctx.attach(client_.req_deregister_push_target(std::get<0>(tpl)
+		client_.req_deregister_push_target(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
 			, std::get<4>(tpl)
-			, ctx.tag()));
-
+			, ctx.tag());
 	}
 
 	void session::client_req_open_connection(cyng::context& ctx)
@@ -1630,12 +1669,13 @@ namespace node
 			cyng::param_map_t		//	[4] bag
 		>(frame);
 
-		ctx.attach(client_.req_open_connection(std::get<0>(tpl)
+		client_.req_open_connection(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
 			, std::get<4>(tpl)
-			, frame.at(5)));
+			, frame.at(5));
 	}
 
 	void session::client_res_open_connection(cyng::context& ctx)
@@ -1662,12 +1702,13 @@ namespace node
 			cyng::param_map_t		//	[5] bag
 		>(frame);
 
-		ctx.attach(client_.res_open_connection(std::get<0>(tpl)
+		client_.res_open_connection(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
 			, std::get<4>(tpl)
-			, std::get<5>(tpl)));
+			, std::get<5>(tpl));
 
 	}
 
@@ -1688,17 +1729,19 @@ namespace node
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] origin client tag
 			boost::uuids::uuid,		//	[1] peer tag
-			bool,					//	[2] shutdown (unused)
+			bool,					//	[2] shutdown
 			std::uint64_t,			//	[3] sequence number
 			cyng::param_map_t		//	[4] bag
 		>(frame);
 
 		ctx.run(cyng::generate_invoke("log.msg.info", "client.req.close.connection", frame));
 
-		ctx.attach(client_.req_close_connection(std::get<0>(tpl)
+		client_.req_close_connection(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
+			, std::get<2>(tpl)	//	shutdown mode
 			, std::get<3>(tpl)
-			, std::get<4>(tpl)));
+			, std::get<4>(tpl));
 
 	}
 
@@ -1724,14 +1767,13 @@ namespace node
 			cyng::param_map_t		//	[5] bag
 		>(frame);
 
-		//BOOST_ASSERT_MSG(false, "client.res.close.connection not implemented yet");
-
-		ctx.attach(client_.res_close_connection(std::get<0>(tpl)
+		client_.res_close_connection(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
 			, std::get<4>(tpl)
-			, std::get<5>(tpl)));
+			, std::get<5>(tpl));
 
 	}
 
@@ -1758,13 +1800,14 @@ namespace node
 			cyng::param_map_t		//	[5] bag
 		>(frame);
 
-		ctx.attach(client_.req_transfer_pushdata(std::get<0>(tpl)
+		client_.req_transfer_pushdata(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
 			, std::get<4>(tpl)
 			, std::get<5>(tpl)
-			, frame.at(6)));
+			, frame.at(6));
 
 	}
 
@@ -1784,11 +1827,12 @@ namespace node
 			cyng::param_map_t		//	[3] bag
 		>(frame);
 
-		ctx.attach(client_.req_transmit_data(std::get<0>(tpl)
+		client_.req_transmit_data(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
-			, frame.at(4)));
+			, frame.at(4));
 	}
 
 	void session::client_inc_throughput(cyng::context& ctx)
@@ -1850,12 +1894,13 @@ namespace node
 			cyng::param_map_t		//	[4] bag
 		>(frame);
 
-		ctx.attach(client_.update_attr(std::get<0>(tpl)
+		client_.update_attr(ctx
+			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
 			, frame.at(5)
-			, std::get<4>(tpl)));
+			, std::get<4>(tpl));
 	}
 
 	void session::bus_insert_msg(cyng::context& ctx)
@@ -1949,6 +1994,25 @@ namespace node
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, counter));
+	}
+
+	void session::bus_store_req_connection_close(cyng::context& ctx)
+	{
+		//	[207,a19ac4fe-a228-4cff-ae3d-0b357ea86756,%(("origin-tag":f5e1dde3-29c8-409e-93d9-d78bd6fce103),("seq":1),("start":2018-09-24 14:42:30.79470100),("tp-layer":ipt))]]
+		const cyng::vector_t frame = ctx.get_frame();
+		//ctx.run(cyng::generate_invoke("log.msg.trace", "bus.store.req.connection.close", frame));
+
+		auto const tpl = cyng::tuple_cast<
+			std::uint64_t,		//	[0] sequence number
+			boost::uuids::uuid,	//	[1] remote tag
+			cyng::param_map_t	//	[2] bag
+		>(frame);
+
+		//
+		//	ToDo: implement a watchdog for pending close requests
+		//
+		CYNG_LOG_INFO(logger_, "bus.store.req.connection.close " << std::get<0>(tpl) << " => " << cyng::to_str(std::get<2>(tpl)));
+
 	}
 
 	cyng::object make_session(cyng::async::mux& mux

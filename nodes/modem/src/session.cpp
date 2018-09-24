@@ -880,21 +880,22 @@ namespace node
 			auto const tpl = cyng::tuple_cast<
 				boost::uuids::uuid,		//	[0] peer
 				std::uint64_t,			//	[1] cluster sequence
-				bool,					//	[2] shutdown flag
+				bool,					//	[2] success flag from remote session
 				cyng::param_map_t,		//	[3] options
 				cyng::param_map_t		//	[4] bag
 			>(frame);
+
+			auto dom = cyng::make_reader(std::get<4>(tpl));
+			const auto start = cyng::value_cast(dom.get("start"), std::chrono::system_clock::now());
+			auto lag = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
+
+			CYNG_LOG_TRACE(logger_, "client.req.close.connection.forward - cluster lag: " << lag.count() << " millisec");
 
 			if (std::get<2>(tpl))
 			{
 				ctx.run(cyng::generate_invoke("log.msg.trace", "client.res.close.connection.forward", frame));
 				ctx.attach(cyng::generate_invoke("print.ok"));
 				ctx.attach(cyng::generate_invoke("stream.flush"));
-
-				//
-				//	reset connection state
-				//
-				connect_state_.set_disconnected();
 
 			}
 			else
@@ -903,6 +904,11 @@ namespace node
 				ctx.attach(cyng::generate_invoke("print.error"));
 				ctx.attach(cyng::generate_invoke("stream.flush"));
 			}
+
+			//
+			//	reset connection state
+			//
+			connect_state_.set_disconnected();
 		}
 
 		void session::client_res_open_connection_forward(cyng::context& ctx)
@@ -1090,12 +1096,9 @@ namespace node
 			{
 				ctx.run(cyng::generate_invoke("log.msg.info", "modem.req.close.connection", frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("modem");
-				bag["origin-tag"] = cyng::make_object(ctx.tag());		//	send response to this session
 				bus_->vm_.async_run(node::client_req_close_connection(ctx.tag()
 					, false //	no shutdown
-					, bag));
+					, cyng::param_map_factory("tp-layer", "modem")("origin-tag", ctx.tag())("start", std::chrono::system_clock::now())));
 			}
 			else
 			{

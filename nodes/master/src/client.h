@@ -12,6 +12,7 @@
 #include <cyng/log.h>
 #include <cyng/store/db.h>
 #include <cyng/table/key.hpp>
+#include <cyng/vm/context.h>
 #include <atomic>
 #include <boost/random.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -41,122 +42,151 @@ namespace node
 		client(client const&) = delete;
 		client& operator=(client const&) = delete;
 
-		cyng::vector_t req_login(boost::uuids::uuid,		//	[0] remote client tag
-			boost::uuids::uuid,		//	[1] peer tag
-			std::uint64_t,			//	[2] sequence number
-			std::string,			//	[3] name
-			std::string,			//	[4] pwd/credential
-			std::string,			//	[5] authorization scheme
-			cyng::param_map_t const&,		//	[6] bag)
-			cyng::object session);
+		void req_login(cyng::context& ctx
+			, boost::uuids::uuid	//	[0] remote client tag
+			, boost::uuids::uuid	//	[1] peer tag
+			, std::uint64_t			//	[2] sequence number
+			, std::string			//	[3] name
+			, std::string			//	[4] pwd/credential
+			, std::string			//	[5] authorization scheme
+			, cyng::param_map_t const&		//	[6] bag)
+			, cyng::object session);
 
-		cyng::vector_t req_close(boost::uuids::uuid		//	[0] remote client tag
+		void req_close(cyng::context& ctx
+			, boost::uuids::uuid		//	[0] remote client tag
 			, boost::uuids::uuid	//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
 			, boost::uuids::uuid self
-			, bool );
+			, bool);
 
-		cyng::vector_t req_open_connection(boost::uuids::uuid	//	[0] remote client tag
+		void req_open_connection(cyng::context& ctx
+			, boost::uuids::uuid	//	[0] remote client tag
 			, boost::uuids::uuid	//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
 			, std::string			//	[3] number
 			, cyng::param_map_t const&		//	[4] bag)
 			, cyng::object self);
 
-		cyng::vector_t res_open_connection(boost::uuids::uuid,		//	[0] origin client tag
-			boost::uuids::uuid,		//	[1] peer tag
-			std::uint64_t,			//	[2] sequence number
-			bool,					//	[3] success
-			cyng::param_map_t const&,		//	[4] options
-			cyng::param_map_t const&);		//	[5] bag);
-
-		cyng::vector_t res_close_connection(boost::uuids::uuid,		//	[0] origin client tag
-			boost::uuids::uuid,		//	[1] peer tag
-			std::uint64_t,			//	[2] sequence number
-			bool,					//	[3] success
-			cyng::param_map_t const&,		//	[4] options
-			cyng::param_map_t const&);		//	[5] bag
-
-		cyng::vector_t req_transmit_data(boost::uuids::uuid,		//	[0] origin client tag
-			boost::uuids::uuid,		//	[1] peer tag
-			std::uint64_t,			//	[2] sequence number
-			cyng::param_map_t const&,		//	[5] bag
-			cyng::object);	//	data
-
-		cyng::vector_t req_close_connection(boost::uuids::uuid	//	[0] remote client tag
+		void res_open_connection(cyng::context& ctx
+			, boost::uuids::uuid		//	[0] origin client tag
 			, boost::uuids::uuid	//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
-			, cyng::param_map_t const&);		//	[3] bag)
+			, bool					//	[3] success
+			, cyng::param_map_t const&		//	[4] options
+			, cyng::param_map_t const&);		//	[5] bag);
 
-		cyng::vector_t req_open_push_channel(boost::uuids::uuid,		//	[0] remote client tag
-			boost::uuids::uuid,		//	[1] peer tag
-			std::uint64_t,			//	[2] sequence number
-			std::string,			//	[3] target name
-			std::string,			//	[4] device name
-			std::string,			//	[5] device number
-			std::string,			//	[6] device software version
-			std::string,			//	[7] device id
-			std::chrono::seconds,	//	[8] timeout
-			cyng::param_map_t const&,		//	[9] bag
-			boost::uuids::uuid);	//	[10] local session tag
+		void res_close_connection(cyng::context& ctx
+			, boost::uuids::uuid	//	[0] origin client tag
+			, boost::uuids::uuid	//	[1] peer tag
+			, std::uint64_t			//	[2] sequence number
+			, bool					//	[3] success
+			, cyng::param_map_t const&		//	[4] options
+			, cyng::param_map_t const&);		//	[5] bag
 
-		cyng::vector_t req_close_push_channel(boost::uuids::uuid tag,
-			boost::uuids::uuid peer,
-			std::uint64_t seq,			//	[2] sequence number
-			std::uint32_t channel,		//	[3] channel id
-			cyng::param_map_t const& bag);
+		void req_transmit_data(cyng::context& ctx
+			, boost::uuids::uuid		//	[0] origin client tag
+			, boost::uuids::uuid		//	[1] peer tag
+			, std::uint64_t			//	[2] sequence number
+			, cyng::param_map_t const&		//	[5] bag
+			, cyng::object);	//	data
 
-		cyng::vector_t req_transfer_pushdata(boost::uuids::uuid,		//	[0] origin client tag
-			boost::uuids::uuid,		//	[1] peer tag
-			std::uint64_t,			//	[2] sequence number
-			std::uint32_t,			//	[3] channel
-			std::uint32_t,			//	[4] source
-			cyng::param_map_t const&,		//	[5] bag
-			cyng::object);			//	data
+		void req_close_connection(cyng::context& ctx
+			, boost::uuids::uuid	//	[0] remote client tag
+			, boost::uuids::uuid	//	[1] peer tag
+			, bool shutdown			//	[2] shutdown mode
+			, std::uint64_t			//	[3] sequence number
+			, cyng::param_map_t const&);		//	[4] bag)
 
-		cyng::vector_t req_register_push_target(boost::uuids::uuid,		//	[0] remote client tag
-			boost::uuids::uuid,		//	[1] remote peer tag
-			std::uint64_t,			//	[2] sequence number
-			std::string,			//	[3] target name
-			cyng::param_map_t const&,
-			boost::uuids::uuid);	//	[5] local session tag
+		void req_open_push_channel(cyng::context& ctx
+			, boost::uuids::uuid		//	[0] remote client tag
+			, boost::uuids::uuid		//	[1] peer tag
+			, std::uint64_t			//	[2] sequence number
+			, std::string			//	[3] target name
+			, std::string			//	[4] device name
+			, std::string			//	[5] device number
+			, std::string			//	[6] device software version
+			, std::string			//	[7] device id
+			, std::chrono::seconds	//	[8] timeout
+			, cyng::param_map_t const&		//	[9] bag
+			, boost::uuids::uuid);	//	[10] local session tag
 
-		cyng::vector_t req_deregister_push_target(boost::uuids::uuid,		//	[0] remote client tag
-			boost::uuids::uuid,		//	[1] remote peer tag
-			std::uint64_t,			//	[2] sequence number
-			std::string,			//	[3] target name
-			cyng::param_map_t const&,
-			boost::uuids::uuid);	//	[5] local session tag
+		void req_close_push_channel(cyng::context& ctx
+			, boost::uuids::uuid tag
+			, boost::uuids::uuid peer
+			, std::uint64_t seq			//	[2] sequence number
+			, std::uint32_t channel		//	[3] channel id
+			, cyng::param_map_t const& bag);
 
-		cyng::vector_t update_attr(boost::uuids::uuid,		//	[0] origin client tag
-			boost::uuids::uuid,		//	[1] peer tag
-			std::uint64_t,			//	[2] sequence number
-			std::string,			//	[3] name
-			cyng::object,			//	[4] value
-			cyng::param_map_t);
+		void req_transfer_pushdata(cyng::context& ctx
+			, boost::uuids::uuid		//	[0] origin client tag
+			, boost::uuids::uuid		//	[1] peer tag
+			, std::uint64_t			//	[2] sequence number
+			, std::uint32_t			//	[3] channel
+			, std::uint32_t			//	[4] source
+			, cyng::param_map_t const&		//	[5] bag
+			, cyng::object);			//	data
+
+		void req_register_push_target(cyng::context& ctx
+			, boost::uuids::uuid		//	[0] remote client tag
+			, boost::uuids::uuid		//	[1] remote peer tag
+			, std::uint64_t			//	[2] sequence number
+			, std::string			//	[3] target name
+			, cyng::param_map_t const&
+			, boost::uuids::uuid);	//	[5] local session tag
+
+		void req_deregister_push_target(cyng::context& ctx
+			, boost::uuids::uuid	//	[0] remote client tag
+			, boost::uuids::uuid	//	[1] remote peer tag
+			, std::uint64_t			//	[2] sequence number
+			, std::string			//	[3] target name
+			, cyng::param_map_t const&
+			, boost::uuids::uuid);	//	[5] local session tag
+
+		void update_attr(cyng::context& ctx
+			, boost::uuids::uuid	//	[0] origin client tag
+			, boost::uuids::uuid	//	[1] peer tag
+			, std::uint64_t			//	[2] sequence number
+			, std::string			//	[3] name
+			, cyng::object			//	[4] value
+			, cyng::param_map_t);
 
 		bool set_connection_auto_login(cyng::object);
 		bool set_connection_auto_enabled(cyng::object);
 		bool set_connection_superseed(cyng::object);
+
+		/**
+		 * Turn generating time series on or off
+		 *
+		 * @return previous value
+		 */
 		bool set_generate_time_series(cyng::object);
 
+		/**
+		 * @return true if generating time series is on.
+		 */
 		bool is_generate_time_series() const;
 
 		void set_class(std::string const&);
 		bool open_stat(std::ofstream&, std::string const& account);
 
-	private:
-		cyng::vector_t req_open_push_channel_empty(boost::uuids::uuid tag,
-			std::uint64_t seq, 
-			cyng::param_map_t const& bag);
+		/**
+		 * write session statistics
+		 */
+		void write_statistics(cyng::context& ctx);
 
-		bool check_auth_state(cyng::vector_t&, cyng::store::table*, boost::uuids::uuid);
-		bool check_online_state(cyng::vector_t&, cyng::store::table*, std::string const&);
-		std::tuple<bool, bool, boost::uuids::uuid, std::uint32_t> test_credential(cyng::vector_t&, const cyng::store::table*, std::string const&, std::string const&);
+	private:
+		void req_open_push_channel_empty(cyng::context& ctx
+			, boost::uuids::uuid tag
+			, std::uint64_t seq
+			, cyng::param_map_t const& bag);
+
+		bool check_auth_state(cyng::store::table*, boost::uuids::uuid);
+		bool check_online_state(cyng::context& ctx, cyng::store::table*, std::string const&);
+		std::tuple<bool, bool, boost::uuids::uuid, std::uint32_t> test_credential(cyng::context& ctx, const cyng::store::table*, std::string const&, std::string const&);
 
 		cyng::table::key_list_t get_clients_by_peer(const cyng::store::table* tbl_session, boost::uuids::uuid);
 
-		bool create_channel(cyng::vector_t& prg
+		bool create_channel(cyng::context& ctx
 			, cyng::store::table* tbl_channel
 			, const cyng::store::table* tbl_session
 			, cyng::store::table* tbl_msg
@@ -188,10 +218,16 @@ namespace node
 
 	};
 
-	bool write_stat(std::ofstream&, boost::uuids::uuid, std::string const&, const char*);
-	bool write_stat(std::ofstream&, boost::uuids::uuid, std::string const&, bool value);
-	bool write_stat(std::ofstream&, boost::uuids::uuid, std::string const&, std::size_t value);
-
+	template <typename T>
+	cyng::vector_t write_stat(boost::uuids::uuid tag, std::string const& account, std::string const& evt, T&& value)
+	{
+		return cyng::generate_invoke("session.write.stat"
+			, std::chrono::system_clock::now()
+			, tag
+			, account
+			, evt
+			, cyng::make_object(std::forward<T>(value)));
+	}
 }
 
 

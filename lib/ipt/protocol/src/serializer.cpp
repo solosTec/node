@@ -72,7 +72,7 @@ namespace node
 			//
 			//	push last ipt sequece number on stack
 			//
-			vm.register_function("ipt.push.seq", 0, std::bind(&serializer::push_seq, this, std::placeholders::_1));
+			vm.register_function("ipt.seq.push", 0, std::bind(&serializer::push_seq, this, std::placeholders::_1));
 
 			//
 			//	transfer data

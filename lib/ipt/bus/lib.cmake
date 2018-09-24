@@ -15,13 +15,19 @@ set (ipt_bus_h
 	src/main/include/smf/ipt/config.h
 )
 
+set (ipt_bus_tasks
+	lib/ipt/bus/src/tasks/open_connection.h
+	lib/ipt/bus/src/tasks/open_connection.cpp
+	lib/ipt/bus/src/tasks/close_connection.h
+	lib/ipt/bus/src/tasks/close_connection.cpp
+)
 
-#source_group("shared" FILES ${ipt_shared})
+source_group("tasks" FILES ${ipt_bus_tasks})
 
 # define the main program
 set (ipt_bus_lib
   ${ipt_bus_cpp}
   ${ipt_bus_h}
-#  ${ipt_shared}
+  ${ipt_bus_tasks}
 )
 

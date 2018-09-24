@@ -63,7 +63,14 @@ namespace node
 			++this->seq_;
 			ctx.push(cyng::make_object(this->seq_));
 		});
-		vm_.async_run(cyng::generate_invoke("log.msg.trace", "bus.seq.next() is registered"));
+
+		//
+		//	push last bus sequence number on stack
+		//
+		vm_.register_function("bus.seq.push", 0, [this](cyng::context& ctx) {
+			ctx.push(cyng::make_object(this->seq_));
+		});
+
 
 		//
 		//	register bus request handler

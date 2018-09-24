@@ -570,7 +570,7 @@ namespace node
 					cyng::vector_t prg;
 					prg
 						<< cyng::generate_invoke_unwinded("req.register.push.target", target.first, static_cast<std::uint16_t>(0xffff), static_cast<std::uint8_t>(1))
-						<< cyng::generate_invoke_unwinded("net.insert.rel", cyng::invoke("ipt.push.seq"),  target.first, target.second)
+						<< cyng::generate_invoke_unwinded("net.insert.rel", cyng::invoke("ipt.seq.push"),  target.first, target.second)
 						<< cyng::generate_invoke_unwinded("stream.flush")
 						;
 

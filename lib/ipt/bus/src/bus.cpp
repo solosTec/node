@@ -14,12 +14,15 @@
 #include <cyng/value_cast.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/async/task/task_builder.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
 #include <fstream>
 #endif
+#include "tasks/open_connection.h"
+#include "tasks/close_connection.h"
 
 namespace node
 {
@@ -43,6 +46,7 @@ namespace node
 			, model_(model)
 			, watchdog_(0)
 			, state_(STATE_INITIAL_)
+			, task_db_()
 		{
 			//
 			//	register logger domain
@@ -101,7 +105,9 @@ namespace node
 			vm_.register_function("ipt.res.transfer.pushdata", 0, std::bind(&bus::ipt_res_transfer_push_data, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.transmit.data", 1, std::bind(&bus::ipt_req_transmit_data, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.open.connection", 1, std::bind(&bus::ipt_req_open_connection, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.open.connection", 2, std::bind(&bus::ipt_res_open_connection, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.close.connection", 2, std::bind(&bus::ipt_req_close_connection, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.close.connection", 3, std::bind(&bus::ipt_res_close_connection, this, std::placeholders::_1));
 
 			vm_.register_function("ipt.req.protocol.version", 2, std::bind(&bus::ipt_req_protocol_version, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.software.version", 2, std::bind(&bus::ipt_req_software_version, this, std::placeholders::_1));
@@ -111,6 +117,14 @@ namespace node
 			vm_.register_function("ipt.req.dev.auth", 2, std::bind(&bus::ipt_req_dev_auth, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.dev.time", 2, std::bind(&bus::ipt_req_dev_time, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.transfer.pushdata", 7, std::bind(&bus::ipt_req_transfer_pushdata, this, std::placeholders::_1));
+
+			vm_.register_function("bus.store.relation", 2, std::bind(&bus::store_relation, this, std::placeholders::_1));
+
+			//
+			//	statistical data
+			//
+			vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+
 		}
 
 		void bus::start()
@@ -207,7 +221,7 @@ namespace node
 				}
 				else if (ec != boost::asio::error::operation_aborted)
 				{
-					CYNG_LOG_WARNING(logger_, "read <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
+					CYNG_LOG_WARNING(logger_, vm_.tag() << " lost connection <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
 					state_ = STATE_ERROR_;
 
 					//
@@ -305,6 +319,12 @@ namespace node
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.register.push.target", ctrl_res_register_target_policy::get_response_name(res)));
 			}
+
+			//
+			//	* [u8] seq
+			//	* [bool] success
+			//	* [u32] channel
+			//
 			mux_.post(task_
 				, IPT_EVENT_PUSH_TARGET_REGISTERED
 				, cyng::tuple_factory(frame.at(1), ctrl_res_register_target_policy::is_success(res), frame.at(3)));
@@ -322,6 +342,12 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			vm_.async_run(cyng::generate_invoke("log.msg.debug", "ipt.res.deregister.push.target", frame));
 			const response_type res = cyng::value_cast<response_type>(frame.at(2), 0);
+
+			//
+			//	* [u8] seq
+			//	* [bool] success
+			//	* [string] target
+			//
 			mux_.post(task_
 				, IPT_EVENT_PUSH_TARGET_DEREREGISTERED
 				, cyng::tuple_factory(frame.at(1), ctrl_res_deregister_target_policy::is_success(res), frame.at(3)));
@@ -341,16 +367,29 @@ namespace node
 			//	* target count
 			//
 			const cyng::vector_t frame = ctx.get_frame();
-
+			const response_type res = cyng::value_cast<response_type>(frame.at(2), 0);
+			
 			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.res.open.push.channel"
 				, frame.at(3)
-				, frame.at(4)));
+				, frame.at(4)
+				, tp_res_open_push_channel_policy::get_response_name(res)));
 
-
-			// forward to session
+			//
+			//	* [u8] seq
+			//	* [u8] res
+			//	* [u32] channel
+			//	* [u32] source
+			//	* [u16] packet size
+			//	* [size] target count
+			//	
 			mux_.post(task_
 				, IPT_EVENT_PUSH_CHANNEL_OPEN
-				, cyng::tuple_factory(frame.at(1), frame.at(2), frame.at(3), frame.at(4), frame.at(5), frame.at(8)));
+				, cyng::tuple_factory(frame.at(1)
+					, tp_res_open_push_channel_policy::is_success(res)
+					, frame.at(3)
+					, frame.at(4)
+					, frame.at(5)
+					, frame.at(8)));
 		}
 
 		void bus::ipt_res_close_channel(cyng::context& ctx)
@@ -362,15 +401,26 @@ namespace node
 			//	* channel
 			//
 			const cyng::vector_t frame = ctx.get_frame();
+			const response_type res = cyng::value_cast<response_type>(frame.at(2), 0);
 
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.res.close.push.channel"
-				, frame.at(3)));
+			ctx.attach(cyng::generate_invoke("log.msg.debug"
+				, "ipt.res.close.push.channel"
+				, frame.at(3)
+				, tp_res_close_push_channel_policy::get_response_name(res)));
 
 
-			// forward to session
+			// 
+			//	* [u8] seq
+			//	* [bool] success
+			//	* [u32] channel
+			//	* [string] response name
+			//	
 			mux_.post(task_
 				, IPT_EVENT_PUSH_CHANNEL_CLOSED
-				, cyng::tuple_factory(frame.at(1), frame.at(2), frame.at(3)));
+				, cyng::tuple_factory(frame.at(1)
+					, tp_res_close_push_channel_policy::is_success(res)
+					, frame.at(3)
+					, tp_res_close_push_channel_policy::get_response_name(res)));
 		}
 
 		void bus::ipt_res_transfer_push_data(cyng::context& ctx)
@@ -383,8 +433,16 @@ namespace node
 		{
 			//	[0b5d8da4-ce8d-4c4f-bb02-9a9f173391d4,1B1B1B1B010101017681063...2007101633789000000001B1B1B1B1A034843]
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.trace", "ipt.req.transmit.data", frame));
-			BOOST_ASSERT_MSG(state_ != STATE_CONNECTED_, "no open connection");
+
+			auto bp = cyng::object_cast<cyng::buffer_t>(frame.at(1));
+			BOOST_ASSERT_MSG(bp != nullptr, "no data");
+			if (state_ != STATE_CONNECTED_) {
+				ctx.attach(cyng::generate_invoke("log.msg.warning", "ipt.req.transmit.data - wrong state", get_state()));
+			}
+			else {
+				ctx.attach(cyng::generate_invoke("log.msg.trace", "ipt.req.transmit.data", bp->size()));
+			}
+
 			mux_.post(task_
 				, IPT_EVENT_INCOMING_DATA
 				, cyng::tuple_factory(frame.at(1)));
@@ -399,12 +457,15 @@ namespace node
 			//	* number
 			//
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.open.connection", frame));
+			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.open.connection", frame, get_state()));
 
 			switch (state_)
 			{
 			case STATE_AUTHORIZED_:
-				// forward to session
+				//
+				//	[u8] seq
+				//	[string] number
+				//
 				mux_.post(task_
 					, IPT_EVENT_INCOMING_CALL
 					, cyng::tuple_factory(frame.at(1), frame.at(2)));
@@ -421,6 +482,71 @@ namespace node
 			}
 		}
 
+		void bus::ipt_res_open_connection(cyng::context& ctx)
+		{
+			//	[32c4de22-b9ce-4f72-8680-5c047fb6698d,1,1]
+			//
+			//	* session tag
+			//	* [u8] ipt sequence 
+			//	* [u8] responce
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] session tag
+				sequence_type,			//	[1] ipt seq
+				response_type			//	[2] ipt response
+			>(frame);
+
+			const auto r = tp_res_open_connection_policy::is_success(std::get<2>(tpl));
+			const auto msg = tp_res_open_connection_policy::get_response_name(std::get<2>(tpl));
+
+			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.res.open.connection", msg));
+
+			auto pos = task_db_.find(std::get<1>(tpl));
+			if (pos != task_db_.end())
+			{
+				const auto tsk = pos->second;
+				ctx.attach(cyng::generate_invoke("log.msg.trace", "stop task", tsk));
+				mux_.post(tsk, 0, cyng::tuple_factory(r));
+
+				//
+				//	remove entry
+				//
+				task_db_.erase(pos);
+			}
+			else
+			{
+				ctx.attach(cyng::generate_invoke("log.msg.warning", "empty sequence/task relation", std::get<1>(tpl)));
+			}
+
+			switch (state_)
+			{
+			case STATE_WAIT_FOR_OPEN_RESPONSE_:
+				//
+				//	update task state
+				//
+				state_ = STATE_CONNECTED_;
+
+				// 
+				//	* [u8] seq
+				//	* [bool] success flag
+				//	
+				mux_.post(task_
+					, IPT_EVENT_CONNECTION_OPEN
+					, cyng::tuple_factory(frame.at(1), r));
+
+				break;
+			case STATE_CONNECTED_:
+				ctx.attach(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection already connected", frame));
+				break;
+			default:
+				ctx.attach(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection in wrong state", get_state()));
+				break;
+			}
+
+		}
+
 		void bus::ipt_req_close_connection(cyng::context& ctx)
 		{
 			//	[4e645b8d-4eda-46a5-84b4-c1fa182e8247,9]
@@ -429,30 +555,99 @@ namespace node
 			//	* ipt sequence 
 			//
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.close.connection", frame));
 
 			switch (state_)
 			{
 			case STATE_AUTHORIZED_:
+				ctx.attach(cyng::generate_invoke("log.msg.warning", "received ipt.req.close.connection - not connected", frame));
 				break;
 			case STATE_CONNECTED_:
+				ctx.attach(cyng::generate_invoke("log.msg.debug", "received ipt.req.close.connection", frame));
+
+				//
+				//	update connection state
+				//	no action from client required
+				//
 				state_ = STATE_AUTHORIZED_;
-				//	accept closing
-				mux_.post(task_
-					, IPT_EVENT_CONNECTION_CLOSED
-					, cyng::tuple_factory(frame.at(1)));
+
+				{
+					const auto seq = cyng::value_cast<sequence_type>(frame.at(1), 0u);
+
+					//
+					//	search for origin task
+					//
+					const auto pos = task_db_.find(seq);
+					const auto origin = (pos != task_db_.end())
+						? pos->second
+						: cyng::async::NO_TASK
+						;
+
+					//	
+					//	* [u8] seq
+					//
+					mux_.post(task_
+						, IPT_EVENT_CONNECTION_CLOSED
+						, cyng::tuple_factory(frame.at(1)
+							, true		//	request
+							, origin));
+				}
 				break;
 			default:
+				ctx.attach(cyng::generate_invoke("log.msg.error", "received ipt.req.close.connection - invalid state", get_state()));
 				break;
 			}
 
 			//
-			//	accept request in every case
+			//	accept request in every case - send response
 			//
 			ctx	.attach(cyng::generate_invoke("res.close.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED)))
 				.attach(cyng::generate_invoke("stream.flush"));
 
 		}
+
+		void bus::ipt_res_close_connection(cyng::context& ctx)
+		{
+			//
+			//	* [uuid] session tag
+			//	* [u8] seq
+			//	* [u8] response
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.res.close.connection", frame));
+
+			if (STATE_WAIT_FOR_CLOSE_RESPONSE_ == state_) {
+
+				//
+				//	update bus state
+				//
+				state_ = STATE_AUTHORIZED_;
+
+				//
+				//	get sequence
+				//
+				const auto seq = cyng::value_cast<sequence_type>(frame.at(1), 0u);
+
+				//
+				//	search for origin task
+				//
+				const auto pos = task_db_.find(seq);
+				const auto origin = (pos != task_db_.end())
+					? pos->second
+					: cyng::async::NO_TASK
+					;
+
+				mux_.post(task_
+					, IPT_EVENT_CONNECTION_CLOSED
+					, cyng::tuple_factory(frame.at(1)
+					, false		//	response
+					, origin));
+			}
+			else {
+				//	error
+				CYNG_LOG_WARNING(logger_, "received a connection close response but didn't wait for one: " << get_state());
+			}
+		}
+
 
 		void bus::ipt_req_protocol_version(cyng::context& ctx)
 		{
@@ -523,7 +718,6 @@ namespace node
 			//	* block
 			//	* data
 			const cyng::vector_t frame = ctx.get_frame();
-			//ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.transfer.pushdata", frame));
 			auto const tpl = cyng::tuple_cast<
 				boost::uuids::uuid,		//	[0] session tag
 				sequence_type,			//	[1] ipt seq
@@ -549,11 +743,101 @@ namespace node
 				of.write(std::get<6>(tpl).data(), std::get<6>(tpl).size());
 			}
 #endif
-			// forward to session
+			// 
+			//	* [u8] seq
+			//	* [u32] channel
+			//	* [u32] source
+			//	* [buffer] data
+			//
 			mux_.post(task_
 				, IPT_EVENT_PUSH_DATA_RECEIVED
 				, cyng::tuple_factory(frame.at(1), frame.at(2), frame.at(3), frame.at(6)));
 		}
+
+		void bus::req_connection_open(std::string const& number, std::chrono::seconds d)
+		{
+			if (state_ == STATE_AUTHORIZED_) {
+				state_ = STATE_WAIT_FOR_OPEN_RESPONSE_;
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, vm_.tag() << " try to open connection but is not authorized: " << get_state());
+			}
+
+			//
+			//	start monitor tasks
+			//
+			cyng::async::start_task_sync<open_connection>(mux_, logger_, vm_, number, d);
+		}
+
+		void bus::req_connection_close(std::chrono::seconds d)
+		{
+			if (state_ == STATE_CONNECTED_) {
+				state_ = STATE_WAIT_FOR_CLOSE_RESPONSE_;
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, vm_.tag() << " try to close connection but is not connected: " << get_state());
+			}
+
+			//
+			//	start monitor tasks
+			//
+			cyng::async::start_task_sync<close_connection>(mux_, logger_, vm_, d);
+		}
+
+		void bus::res_connection_open(sequence_type seq, bool accept)
+		{
+			const response_type res = (accept)
+				? ipt::tp_res_open_connection_policy::DIALUP_SUCCESS
+				: ipt::tp_res_open_connection_policy::DIALUP_FAILED
+				;
+
+			if (accept && (state_ == STATE_AUTHORIZED_)) {
+				//
+				//	update task state
+				//
+				state_ = STATE_CONNECTED_;
+			}
+
+			vm_	.async_run(cyng::generate_invoke("res.open.connection", seq, res))
+				.async_run(cyng::generate_invoke("stream.flush"));
+
+		}
+
+		void bus::store_relation(cyng::context& ctx)
+		{
+			//	[1,2]
+			//
+			//	* ipt sequence number
+			//	* task id
+			//	
+			const cyng::vector_t frame = ctx.get_frame();
+			auto const tpl = cyng::tuple_cast<
+				sequence_type,		//	[0] ipt seq
+				std::size_t			//	[1] task id
+			>(frame);
+			CYNG_LOG_INFO(logger_, "bus.store.relation " << +std::get<0>(tpl) << " => #" << std::get<1>(tpl));
+
+			//
+			//	store seq => task relation
+			//
+			task_db_.emplace(std::get<0>(tpl), std::get<1>(tpl));
+		}
+
+		std::string bus::get_state() const
+		{
+			switch (state_) {
+			case STATE_INITIAL_:	return "INITIAL";
+			case STATE_AUTHORIZED_:	return "AUTHORIZED";
+			case STATE_CONNECTED_:	return "CONNECTED";
+			case STATE_WAIT_FOR_OPEN_RESPONSE_:	return "WAIT_FOR_OPEN_RESPONSE";
+			case STATE_WAIT_FOR_CLOSE_RESPONSE_:	return "WAIT_FOR_CLOSE_RESPONSE";
+			case STATE_SHUTDOWN_:	return "SHUTDOWN";
+			default:
+				break;
+			}
+			return "ERROR";
+		}
+
 
 		bus::shared_type bus_factory(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger

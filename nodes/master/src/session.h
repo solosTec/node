@@ -90,6 +90,8 @@ namespace node
 		void bus_insert_msg(cyng::context& ctx);
 		void bus_req_push_data(cyng::context& ctx);
 
+		void bus_store_req_connection_close(cyng::context& ctx);
+
 		cyng::vector_t reply(std::chrono::system_clock::time_point, bool);
 
 		void client_req_login(cyng::context& ctx);

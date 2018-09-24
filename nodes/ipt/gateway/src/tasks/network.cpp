@@ -120,7 +120,7 @@ namespace node
 				<< "> is stopped");
 		}
 
-		//	slot 0
+		//	slot [0] 0x4001/0x4002: response login
 		cyng::continuation network::process(std::uint16_t watchdog, std::string redirect)
 		{
 			//
@@ -146,6 +146,7 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
+		//	slot 1
 		cyng::continuation network::process()
 		{
 			//
@@ -169,7 +170,71 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		//	slot [2]
+		//	slot [2] 0x4005: push target registered response
+		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
+		{	//	no implementation
+			BOOST_ASSERT_MSG(false, "[register target response] not implemented");
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [3] 0x4006: push target deregistered response
+		cyng::continuation network::process(sequence_type seq, bool success, std::string const& target)
+		{
+			CYNG_LOG_INFO(logger_, "target "
+				<< target
+				<< " deregistered");
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [4] 0x1000: push channel open response
+		cyng::continuation network::process(sequence_type seq
+			, bool success
+			, std::uint32_t channel
+			, std::uint32_t source
+			, std::uint16_t status
+			, std::size_t count)
+		{
+			auto pos = seq_open_channel_map_.find(seq);
+			if (pos != seq_open_channel_map_.end()) {
+
+
+				//auto r = make_tp_res_open_push_channel(seq, res);
+				//CYNG_LOG_INFO(logger_, "open push channel response "
+				//	<< channel
+				//	<< ':'
+				//	<< source
+				//	<< ':'
+				//	<< r.get_response_name());
+
+				base_.mux_.post(pos->second.first, 0, cyng::tuple_factory(success, channel, source, status, count, pos->second.second));
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "open push channel response "
+					<< channel
+					<< ':'
+					<< source
+					<< '@'
+					<< seq
+					<< " not found");
+			}
+
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [5] 0x1001: push channel close response
+		cyng::continuation network::process(sequence_type seq
+			, bool success
+			, std::uint32_t channel
+			, std::string msg)
+		{	//	no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [6] 0x9003: connection open request 
 		cyng::continuation network::process(sequence_type seq, std::string const& number)
 		{
 			CYNG_LOG_TRACE(logger_, "incoming call " << +seq << ':' << number);
@@ -188,12 +253,33 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
+		//	slot [7] 0x1003: connection open response
+		cyng::continuation network::process(sequence_type seq, bool success)
+		{	//	no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [8] 0x9004: connection close request
+		cyng::continuation network::process(sequence_type, bool req, std::size_t origin)
+		{	//	no implementation
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [9] 0x9002: push data transfer request
 		cyng::continuation network::process(sequence_type seq, std::uint32_t channel, std::uint32_t source, cyng::buffer_t const& data)
 		{
-			//
-			//	distribute to output tasks
-			//
-
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< config_.get().account_
+				<< " received "
+				<< data.size()
+				<< " bytes push data from "
+				<< channel
+				<< '.'
+				<< source);
 
 			//
 			//	continue task
@@ -201,14 +287,7 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		//	slot [4] - register target response
-		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
-		{	//	no implementation
-			BOOST_ASSERT_MSG(false, "[register target response] not implemented");
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		//	slot [5]
+		//	slot [10] transmit data(if connected)
 		cyng::continuation network::process(cyng::buffer_t const& data)
 		{
 			CYNG_LOG_TRACE(logger_, "incoming SML data " << data.size() << " bytes");
@@ -224,63 +303,7 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		cyng::continuation network::process(sequence_type seq, bool success, std::string const& target)
-		{
-			CYNG_LOG_INFO(logger_, "target "
-				<< target
-				<< " deregistered");
 
-			//
-			//	continue task
-			//
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(sequence_type)
-		{	//	no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(sequence_type seq
-			, response_type res
-			, std::uint32_t channel
-			, std::uint32_t source
-			, std::uint16_t status
-			, std::size_t count)
-		{	
-			auto pos = seq_open_channel_map_.find(seq);
-			if (pos != seq_open_channel_map_.end()) {
-
-
-				auto r = make_tp_res_open_push_channel(seq, res);
-				CYNG_LOG_INFO(logger_, "open push channel response "
-					<< channel
-					<< ':'
-					<< source
-					<< ':'
-					<< r.get_response_name());
-
-				base_.mux_.post(pos->second.first, 0, cyng::tuple_factory(r.is_success(), channel, source, status, count, pos->second.second));
-			}
-			else {
-				CYNG_LOG_ERROR(logger_, "open push channel response "
-					<< channel
-					<< ':'
-					<< source
-					<< '@'
-					<< seq
-					<< " not found");
-			}
-
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(sequence_type seq
-			, response_type res
-			, std::uint32_t channel)
-		{	//	no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
 
 		void network::reconfigure(cyng::context& ctx)
 		{

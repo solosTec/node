@@ -90,6 +90,7 @@ namespace node
 				vm_.async_run(cyng::generate_invoke("ip.tcp.socket.close"));
 			}
 			else {
+
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"

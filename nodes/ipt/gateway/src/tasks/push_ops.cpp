@@ -206,9 +206,9 @@ namespace node
 
 					bus_->vm_
 						.async_run(cyng::generate_invoke("req.open.push.channel", target, "", "", "", "", 0))
-						.async_run(cyng::generate_invoke("bus.store.rel.channel.open", cyng::invoke("ipt.push.seq"), base_.get_id(), target))
+						.async_run(cyng::generate_invoke("bus.store.rel.channel.open", cyng::invoke("ipt.seq.push"), base_.get_id(), target))
 						.async_run(cyng::generate_invoke("stream.flush", target))
-						.async_run(cyng::generate_invoke("log.msg.info", "req.open.push.channel", cyng::invoke("ipt.push.seq")))
+						.async_run(cyng::generate_invoke("log.msg.info", "req.open.push.channel", cyng::invoke("ipt.seq.push")))
 						;
 
 				}, cyng::store::read_access("push.ops"));

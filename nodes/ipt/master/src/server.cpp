@@ -78,6 +78,10 @@ namespace node
 			bus_->vm_.register_function("client.req.close.connection.forward", 7, std::bind(&server::client_req_close_connection_forward, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.res.close.connection.forward", 6, std::bind(&server::client_res_close_connection_forward, this, std::placeholders::_1));
 
+			//
+			//	statistical data
+			//
+			bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 		}
 
 		void server::run(std::string const& address, std::string const& service)

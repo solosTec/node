@@ -15,6 +15,7 @@
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
 #include <array>
+#include <chrono>
 
 namespace node
 {
@@ -32,22 +33,32 @@ namespace node
 		 * <li>5 - data received</li>
 		 * <li>6 - push target deregistered response</li>
 		 * <li>7 - open connection closed</li>
+		 * <li>8 - open push channel</li>
+		 * <li>9 - push channel closed</li>
+		 * <li>10 - connection open response</li>
 		 * </ol>
 		 */
 		class bus : public std::enable_shared_from_this<bus>
 		{
 		public:
 			enum ipt_events : std::size_t  {
-				IPT_EVENT_AUTHORIZED,
-				IPT_EVENT_CONNECTION_TO_MASTER_LOST,
-				IPT_EVENT_INCOMING_CALL,
-				IPT_EVENT_PUSH_DATA_RECEIVED,
-				IPT_EVENT_PUSH_TARGET_REGISTERED,
-				IPT_EVENT_INCOMING_DATA,	//	transmit data
-				IPT_EVENT_PUSH_TARGET_DEREREGISTERED,
-				IPT_EVENT_CONNECTION_CLOSED,
-				IPT_EVENT_PUSH_CHANNEL_OPEN,
-				IPT_EVENT_PUSH_CHANNEL_CLOSED,
+
+				//	control layer
+				IPT_EVENT_AUTHORIZED,	//	 [0] 0x4001/0x4002: response login
+				IPT_EVENT_CONNECTION_TO_MASTER_LOST, //	[1]
+
+				IPT_EVENT_PUSH_TARGET_REGISTERED,		//	[2] 0x4005: push target registered response
+				IPT_EVENT_PUSH_TARGET_DEREREGISTERED,	//	[3] 0x4006: push target deregistered response
+
+				//	transport layer
+				IPT_EVENT_PUSH_CHANNEL_OPEN,	//	[4] 0x1000: push channel open response
+				IPT_EVENT_PUSH_CHANNEL_CLOSED,	//	[5] 0x1001: push channel close response
+				IPT_EVENT_INCOMING_CALL,		//	[6] 0x9003: connection open request 
+				IPT_EVENT_CONNECTION_OPEN,		//	[7] 0x1003: connection open response
+				IPT_EVENT_CONNECTION_CLOSED,	//	[8] 0x9004/0x1004: connection close request/response
+				IPT_EVENT_PUSH_DATA_RECEIVED,	//	[9] 0x9002: push data transfer request
+
+				IPT_EVENT_INCOMING_DATA,	//	[10] transmit data (if connected)
 			};
 
 		public:
@@ -81,6 +92,30 @@ namespace node
 			boost::asio::ip::tcp::endpoint local_endpoint() const;
 			boost::asio::ip::tcp::endpoint remote_endpoint() const;
 
+			/**
+			 * send connection open request and starts a monitor tasks
+			 * to detect timeouts.
+			 */
+			void req_connection_open(std::string const& number, std::chrono::seconds d);
+
+			/**
+			 * send connection close request and starts a monitor tasks
+			 * to detect timeouts.
+			 */
+			void req_connection_close(std::chrono::seconds d);
+
+			/**
+			 * send connection open response.
+			 * @param seq ipt sequence
+			 * @param accept true if request is accepted
+			 */
+			void res_connection_open(sequence_type seq, bool accept);
+
+			/**
+			 * @return a textual description of the bus/connection state
+			 */
+			std::string get_state() const;
+
 		private:
 			void do_read();
 
@@ -92,7 +127,9 @@ namespace node
 			void ipt_res_transfer_push_data(cyng::context& ctx);
 			void ipt_req_transmit_data(cyng::context& ctx);
 			void ipt_req_open_connection(cyng::context& ctx);
+			void ipt_res_open_connection(cyng::context& ctx);
 			void ipt_req_close_connection(cyng::context& ctx);
+			void ipt_res_close_connection(cyng::context& ctx);
 
 			void ipt_req_protocol_version(cyng::context& ctx);
 			void ipt_req_software_version(cyng::context& ctx);
@@ -103,6 +140,8 @@ namespace node
 			void ipt_req_dev_time(cyng::context& ctx);
 
 			void ipt_req_transfer_pushdata(cyng::context& ctx);
+
+			void store_relation(cyng::context& ctx);
 
 		public:
 			/**
@@ -162,8 +201,15 @@ namespace node
 				STATE_INITIAL_,
 				STATE_AUTHORIZED_,
 				STATE_CONNECTED_,
+				STATE_WAIT_FOR_OPEN_RESPONSE_,
+				STATE_WAIT_FOR_CLOSE_RESPONSE_,
 				STATE_SHUTDOWN_,
 			} state_;
+
+			/**
+			 * bookkeeping of ip-t sequence to task relation
+			 */
+			std::map<sequence_type, std::size_t>	task_db_;
 
 		};
 

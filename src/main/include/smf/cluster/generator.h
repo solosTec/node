@@ -382,7 +382,7 @@ namespace node
 
 	cyng::vector_t client_req_close_connection(boost::uuids::uuid tag
 		, bool shutdown
-		, cyng::param_map_t const& bag);
+		, cyng::param_map_t&& bag);
 
 	cyng::vector_t client_res_close_connection_forward(boost::uuids::uuid tag
 		, std::uint64_t seq
@@ -395,6 +395,7 @@ namespace node
 	 */
 	cyng::vector_t client_req_close_connection_forward(boost::uuids::uuid rtag
 		, boost::uuids::uuid origin_tag
+		, std::uint64_t seq
 		, bool shutdown
 		, cyng::param_map_t const& options
 		, cyng::param_map_t const& bag);

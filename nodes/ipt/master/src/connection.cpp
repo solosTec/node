@@ -81,8 +81,7 @@ namespace node
 			{
 				if (!ec)
 				{
-					//CYNG_LOG_TRACE(logger_, "ipt connection received " << bytes_transferred << " bytes");
-					session_.vm_.async_run(cyng::generate_invoke("log.msg.info", "ipt connection received", bytes_transferred, "bytes"));
+					session_.vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt connection received", bytes_transferred, "bytes"));
 
 					//
 					//	buffer contains the unscrambled input
@@ -99,8 +98,6 @@ namespace node
 				}
 				else if (ec != boost::asio::error::operation_aborted)
 				{
-					//CYNG_LOG_WARNING(logger_, "ipt connection closed <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
-
 					//
 					//	device/party closed connection or network shutdown
 					//

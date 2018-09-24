@@ -107,7 +107,7 @@
 
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
-    <script type="text/javascript" src="popper.min.js"></script>
+    <!--<script type="text/javascript" src="popper.min.js"></script>-->
 
     <script>
 
@@ -119,6 +119,11 @@
         };
         var renderBytes = function (data, type, full, meta) {
             if (type == "display") {
+                var diff = new Date(Date.now() - full[8]);
+                var sec = diff.getSeconds();
+                if (sec > 0) {
+                    return format_bytes(data) + " - " + Number((data / sec)).toFixed(2) + "B/sec";
+                }
                 return format_bytes(data);
             }
             return data;

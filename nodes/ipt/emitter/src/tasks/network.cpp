@@ -74,7 +74,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "network is stopped");
 		}
 
-		//	slot 0
+		//	slot [0] 0x4001/0x4002: response login
 		cyng::continuation network::process(std::uint16_t watchdog, std::string redirect)
 		{
 			if (watchdog != 0)
@@ -82,26 +82,11 @@ namespace node
 				CYNG_LOG_INFO(logger_, "start watchdog: " << watchdog << " minutes");
 				base_.suspend(std::chrono::minutes(watchdog));
 			}
-			//std::cout << "simple::slot-0($" << base_.get_id() << ", v" << v.major() << "." << v.minor() << ")" << std::endl;
-			//if (v < cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
-			//{
-			//	CYNG_LOG_WARNING(logger_, "insufficient network protocol version: " << v);
-			//}
-
-			//
-			//	start data synchronisation
-			//
-			//cyng::async::start_task_delayed<sync>(base_.mux_
-			//	, std::chrono::seconds(1)
-			//	, logger_
-			//	, bus_
-			//	, storage_tsk_
-			//	, "TDevice"
-			//	, cache_);
 
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
+		//	slot 1
 		cyng::continuation network::process()
 		{
 			//
@@ -115,62 +100,104 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		cyng::continuation network::process(sequence_type, std::string const& number)
-		{	//	slot [2] - no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t const&)
-		{	//	slot [3] - no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(sequence_type, bool, std::uint32_t)
-		{	//	slot [4] - no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(cyng::buffer_t const&)
-		{	//	slot [5] - no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(sequence_type, bool, std::string const&)
-		{	//	slot [6] - no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(sequence_type)
-		{	//	slot [7] - no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
+		//	slot [2] 0x4005: push target registered response
 		cyng::continuation network::process(sequence_type seq
-			, response_type res
+			, bool success
+			, std::uint32_t channel)
+		{
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< config_.get().account_
+				<< " push target registered #"
+				<< channel);
+
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [3] 0x4006: push target deregistered response
+		cyng::continuation network::process(sequence_type, bool, std::string const&)
+		{
+			return cyng::continuation::TASK_CONTINUE;
+
+		}
+
+		//	slot [4] 0x1000: push channel open response
+		cyng::continuation network::process(sequence_type seq
+			, bool success
 			, std::uint32_t channel
 			, std::uint32_t source
 			, std::uint16_t status
 			, std::size_t count)
-		{	//	slot [8] - no implementation
+		{
+
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		cyng::continuation network::process(sequence_type seq
-			, response_type res
-			, std::uint32_t channel)
-		{	//	slot [9] no implementation
+		//	slot [5] 0x1001: push channel close response
+		cyng::continuation network::process(sequence_type, bool, std::uint32_t, std::string res)
+		{
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		//void network::task_resume(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	//	[1,0,TDevice,3]
-		//	CYNG_LOG_TRACE(logger_, "resume task - " << cyng::io::to_str(frame));
-		//	std::size_t tsk = cyng::value_cast<std::size_t>(frame.at(0), 0);
-		//	std::size_t slot = cyng::value_cast<std::size_t>(frame.at(1), 0);
-		//	base_.mux_.post(tsk, slot, cyng::tuple_t{ frame.at(2), frame.at(3) });
-		//}
+		//	slot [6] 0x9003: connection open request 
+		cyng::continuation network::process(sequence_type seq, std::string const& number)
+		{
+			CYNG_LOG_TRACE(logger_, config_.get().account_
+				<< " incoming call " << +seq << ':' << number);
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		/**
+ 		 * @brief slot [7] 0x1003: connection open response
+		 *
+		 * @param seq ipt sequence
+		 * @param success true if connection open request was accepted
+		 */
+		cyng::continuation network::process(sequence_type seq, bool success)
+		{
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [8] 0x9004: connection close request
+		cyng::continuation network::process(sequence_type)
+		{
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< config_.get().account_
+				<< " received connection close request");
+
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [9] 0x9002: push data transfer request
+		cyng::continuation network::process(sequence_type, std::uint32_t channel, std::uint32_t source, cyng::buffer_t const& data)
+		{
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< config_.get().account_
+				<< " received "
+				<< data.size()
+				<< " bytes push data from "
+				<< channel
+				<< '.'
+				<< source);
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [10] transmit data(if connected)
+		cyng::continuation network::process(cyng::buffer_t const& data)
+		{
+			return cyng::continuation::TASK_CONTINUE;
+		}
 
 		void network::reconfigure(cyng::context& ctx)
 		{
