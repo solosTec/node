@@ -94,7 +94,7 @@ namespace node
 		//
 		//	write statistics
 		//
-		vm_.register_function("session.write.stat", 5, std::bind(&client::write_statistics, &client_, std::placeholders::_1));
+		//vm_.register_function("session.write.stat", 5, std::bind(&client::write_statistics, &client_, std::placeholders::_1));
 
 		//
 		//	register request handler
@@ -104,7 +104,7 @@ namespace node
 		vm_.register_function("bus.req.reboot.client", 3, std::bind(&session::bus_req_reboot_client, this, std::placeholders::_1));
 		vm_.register_function("bus.insert.msg", 2, std::bind(&session::bus_insert_msg, this, std::placeholders::_1));
 		vm_.register_function("bus.req.push.data", 7, std::bind(&session::bus_req_push_data, this, std::placeholders::_1));
-		vm_.register_function("bus.store.req.connection.close", 3, std::bind(&session::bus_store_req_connection_close, this, std::placeholders::_1));
+		//vm_.register_function("bus.store.req.connection.close", 3, std::bind(&session::bus_store_req_connection_close, this, std::placeholders::_1));
 
 		vm_.register_function("client.req.login", 8, std::bind(&session::client_req_login, this, std::placeholders::_1));
 		vm_.register_function("client.req.close", 4, std::bind(&session::client_req_close, this, std::placeholders::_1));
@@ -153,9 +153,13 @@ namespace node
 	{
 		BOOST_ASSERT(this->vm_.tag() == ctx.tag());
 
+		//
+		//	session is being closed.
+		//	no further VM calls allowed!
+		//
+
 		//	 [<!259:session>,asio.misc:2]
 		const cyng::vector_t frame = ctx.get_frame();
-		//ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", frame));
 		CYNG_LOG_WARNING(logger_, "cluster member "
 			<< ctx.tag()
 			<< " lost");
@@ -240,12 +244,14 @@ namespace node
 							ctx.attach(cyng::generate_invoke("log.msg.warning"
 								, "close distinct connection to "
 								, rtag));
-							cyng::param_map_t options;
-							options["origin-tag"] = cyng::make_object(tag);		//	send no response to this session
-							options["local-peer"] = cyng::make_object(tag);		//	and this peer
-							options["local-connect"] = cyng::make_object(true);
+
 							//	shutdown mode
-							remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, 0u, true, options, cyng::param_map_t()));
+							remote_peer->vm_.async_run(client_req_close_connection_forward(rtag
+								, tag
+								, 0u	//	no sequence number
+								, true	//	shutdown mode
+								, cyng::param_map_t()
+								, cyng::param_map_factory("origin-tag", tag)("local-peer", ctx.tag())("local-connect", true)));
 						}
 
 						//
@@ -254,11 +260,14 @@ namespace node
 						connection_erase(tbl_connection, cyng::table::key_generator(tag, rtag), tag);
 					}
 
-					//
-					//	generate statistics
-					//	
-					if (client_.is_generate_time_series()) vm_.async_run(write_stat(vm_.tag(), account, "shutdown", "node"));
 				}
+
+				//
+				//	generate statistics
+				//	There is an error in ec serialization/deserialization
+				//	
+				auto ec = cyng::value_cast(frame.at(1), boost::system::error_code());
+				client_.write_stat(tag, account, "shutdown node", ec.message());
 
 				//	continue
 				return true;
@@ -1328,28 +1337,23 @@ namespace node
 					//
 					//	write a line	
 					//
-#ifdef 0
 					//
-					//	doesn't work this way - this is the wrong peer (dash) and that's why
-					//	it's generating the wrong file name: smf-dash-... instead of smf-ipt-...
-					//
-					const bool b = client_.is_generate_time_series();
-					db_.access([&](cyng::store::table const* tbl_session)->void {
+					if (client_.is_generate_time_series()) {
+						db_.access([&](cyng::store::table const* tbl_session)->void {
 
-						const auto size = tbl_session->size();
-						tbl_session->loop([&](cyng::table::record const& rec) -> bool {
-							const auto tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
-							const auto name = cyng::value_cast<std::string>(rec["name"], "");
-							if (b) {
-								vm_.async_run(write_stat(tag, name, "start recording...", size));
-							}
-							else {
-								vm_.async_run(write_stat(tag, name, "...stop recording", size));
-							}
-							return true;
-						});
-					}, cyng::store::read_access("_Session"));
-#endif
+							const auto size = tbl_session->size();
+							tbl_session->loop([&](cyng::table::record const& rec) -> bool {
+								const auto tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+								const auto name = cyng::value_cast<std::string>(rec["name"], "");
+								auto local_peer = cyng::object_cast<session>(rec["local"]);
+
+								if (local_peer != nullptr) {
+									const_cast<session*>(local_peer)->client_.write_stat(tag, name, "start recording...", size);
+								}
+								return true;
+							});
+						}, cyng::store::read_access("_Session"));
+					}
 				}
 			}
 		}
@@ -1994,25 +1998,6 @@ namespace node
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, counter));
-	}
-
-	void session::bus_store_req_connection_close(cyng::context& ctx)
-	{
-		//	[207,a19ac4fe-a228-4cff-ae3d-0b357ea86756,%(("origin-tag":f5e1dde3-29c8-409e-93d9-d78bd6fce103),("seq":1),("start":2018-09-24 14:42:30.79470100),("tp-layer":ipt))]]
-		const cyng::vector_t frame = ctx.get_frame();
-		//ctx.run(cyng::generate_invoke("log.msg.trace", "bus.store.req.connection.close", frame));
-
-		auto const tpl = cyng::tuple_cast<
-			std::uint64_t,		//	[0] sequence number
-			boost::uuids::uuid,	//	[1] remote tag
-			cyng::param_map_t	//	[2] bag
-		>(frame);
-
-		//
-		//	ToDo: implement a watchdog for pending close requests
-		//
-		CYNG_LOG_INFO(logger_, "bus.store.req.connection.close " << std::get<0>(tpl) << " => " << cyng::to_str(std::get<2>(tpl)));
-
 	}
 
 	cyng::object make_session(cyng::async::mux& mux

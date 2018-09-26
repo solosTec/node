@@ -13,6 +13,7 @@
 #include <cyng/store/db.h>
 #include <cyng/table/key.hpp>
 #include <cyng/vm/context.h>
+#include <cyng/io/serializer.h>
 #include <atomic>
 #include <boost/random.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -169,10 +170,51 @@ namespace node
 		void set_class(std::string const&);
 		bool open_stat(std::ofstream&, std::string const& account);
 
-		/**
-		 * write session statistics
-		 */
-		void write_statistics(cyng::context& ctx);
+		template <typename T>
+		void write_stat(boost::uuids::uuid tag, std::string const& account, std::string const& evt, T&& value)
+		{
+			if (is_generate_time_series())
+			{
+
+				std::ofstream of;
+				if (open_stat(of, account))
+				{
+
+					//
+					//	want to use stream operator from namespace cyng
+					// 	cyng::operator<<(os, rec.tp_);
+					//
+					using cyng::operator<<;
+					of
+						<< std::chrono::system_clock::now()
+						<< ';'
+						<< tag
+						<< ';'
+						<< '"'
+						<< evt
+						<< '"'
+						<< ';'
+						<< value
+						<< std::endl
+						;
+				}
+				else {
+					//
+					//	want to use stream operator from namespace cyng
+					// 	cyng::operator<<(os, rec.tp_);
+					//
+					using cyng::operator<<;
+					//CYNG_LOG_TRACE(logger_, "session.write.stat "
+					//	<< tag
+					//	<< ';'
+					//	<< '"'
+					//	<< evt
+					//	<< '"'
+					//	<< ';'
+					//	<< value);
+				}
+			}
+		}
 
 	private:
 		void req_open_push_channel_empty(cyng::context& ctx
@@ -218,16 +260,6 @@ namespace node
 
 	};
 
-	template <typename T>
-	cyng::vector_t write_stat(boost::uuids::uuid tag, std::string const& account, std::string const& evt, T&& value)
-	{
-		return cyng::generate_invoke("session.write.stat"
-			, std::chrono::system_clock::now()
-			, tag
-			, account
-			, evt
-			, cyng::make_object(std::forward<T>(value)));
-	}
 }
 
 

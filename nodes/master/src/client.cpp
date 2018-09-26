@@ -15,7 +15,6 @@
 #include <cyng/value_cast.hpp>
 #include <cyng/object_cast.hpp>
 #include <cyng/dom/reader.h>
-#include <cyng/io/serializer.h>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -96,49 +95,6 @@ namespace node
 		}
 
 		return of.is_open();
-	}
-
-	void client::write_statistics(cyng::context& ctx)
-	{
-		//
-		//
-		//	* [ts] timestamp
-		//	* [uuid] session tag
-		//	* [string] device/account
-		//	* [string] event
-		//	* [object] data
-		//	
-
-		const cyng::vector_t frame = ctx.get_frame();
-
-		const auto ts = cyng::value_cast(frame.at(0), std::chrono::system_clock::now());
-		const auto tag = cyng::value_cast(frame.at(1), boost::uuids::nil_uuid());
-		const auto account = cyng::value_cast<std::string>(frame.at(2), "account");
-		const auto evt = cyng::value_cast<std::string>(frame.at(3), "");
-
-		std::ofstream of;
-		if (open_stat(of, account))
-		{
-			//
-			//	want to use stream operator from namespace cyng
-			// 	cyng::operator<<(os, rec.tp_);
-			//
-			using cyng::operator<<;
-
-			of
-				<< ts
-				<< ';'
-				<< tag
-				<< ';'
-				<< '"'
-				<< evt
-				<< '"'
-				<< ';'
-				<< cyng::io::to_str(frame.at(4))
-				<< std::endl
-				;
-			CYNG_LOG_TRACE(logger_, "session.write.stat " << cyng::io::to_str(frame));
-		}
 	}
 
 	void client::req_login(cyng::context& ctx, 
@@ -223,7 +179,7 @@ namespace node
 							//
 							//	write statistics
 							//
-							if (is_generate_time_series())	ctx.attach(write_stat(tag, account, "login", "OK"));
+							write_stat(tag, account, "login", "OK");
 
 							//
 							//	update cluster table
@@ -253,7 +209,7 @@ namespace node
 							//
 							//	write statistics
 							//
-							if (is_generate_time_series())	ctx.attach(write_stat(tag, account, "login", "internal error"));
+							write_stat(tag, account, "login", "internal error");
 
 						}
 					}
@@ -273,7 +229,7 @@ namespace node
 					//
 					//	write statistics
 					//
-					if (is_generate_time_series())	ctx.attach(write_stat(tag, account, "login", "already online"));
+					write_stat(tag, account, "login", "already online");
 
 				}
 			}
@@ -493,22 +449,22 @@ namespace node
 					//
 					auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
 
-					cyng::param_map_t options;
-					options["origin-tag"] = cyng::make_object(tag);	//	send response to this session
-					options["local-peer"] = cyng::make_object(peer);	//	and this peer
-					options["local-connect"] = cyng::make_object(local_peer->hash() == remote_peer->hash());
+					//
+					//	simulate a bag
+					//
+					cyng::param_map_t bag = cyng::param_map_factory("origin-tag", tag)("local-peer", peer)("local-connect", cyng::make_object(local_peer->hash() == remote_peer->hash()));
 
 					if (local_peer->hash() == remote_peer->hash())
 					{
 						ctx.attach(cyng::generate_invoke("log.msg.warning"
 							, "close local connection to "
 							, rtag));
-						ctx.attach(client_req_close_connection_forward(rtag, tag, seq, true, options, cyng::param_map_t()));
+						ctx.attach(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_t(), bag));
 
 						//
 						//	write stats
 						//
-						if (is_generate_time_series())	ctx.attach(write_stat(rtag, account, "close connection", "local"));
+						write_stat(rtag, account, "close connection", "local");
 
 					}
 					else
@@ -516,9 +472,9 @@ namespace node
 						ctx.attach(cyng::generate_invoke("log.msg.warning"
 							, "close distinct connection to "
 							, rtag));
-						remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, seq, true, options, cyng::param_map_t()));
+						remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_t(), bag));
 
-						if (is_generate_time_series())	ctx.attach(write_stat(rtag, account, "close connection", "remote"));
+						write_stat(rtag, account, "close connection", "remote");
 					}
 
 					//
@@ -542,7 +498,7 @@ namespace node
 					, "removed"));
 
 				if (count_targets != 0u) {
-					if (is_generate_time_series())	ctx.attach(write_stat(tag, account, "remove targets", count_targets));
+					write_stat(tag, account, "remove targets", count_targets);
 				}
 
 				//
@@ -559,7 +515,7 @@ namespace node
 
 				const auto now = std::chrono::system_clock::now();
 				auto uptime = std::chrono::duration_cast<std::chrono::seconds>(now - cyng::value_cast(rec["loginTime"], now));
-				if (is_generate_time_series())	ctx.attach(write_stat(tag, account, "offline", uptime));
+				write_stat(tag, account, "offline", uptime);
 
 				//
 				//	update cluster table
@@ -668,13 +624,13 @@ namespace node
 						CYNG_LOG_WARNING(logger_, "matching device "
 							<< dev_tag
 							<< ':'
-							<< callee);
+							<< callee
 							<< " is not enabled");
 
 						//
 						//	write statistics
 						//
-						if (is_generate_time_series())	ctx.attach(write_stat(tag, account, "dialup " + dev_number, "disabled"));
+						write_stat(tag, account, "dialup " + dev_number, "disabled");
 
 						//
 						//	abort loop
@@ -751,8 +707,8 @@ namespace node
 							//	write statistics
 							//
 							if (is_generate_time_series()) {
-								ctx.attach(write_stat(tag, account, "dialup", dev_number.c_str()));
-								ctx.attach(write_stat(tag, callee, "called by", account.c_str()));
+								write_stat(tag, account, "dialup", dev_number.c_str());
+								write_stat(tag, callee, "called by", account.c_str());
 							}
 
 							success = true;
@@ -885,7 +841,7 @@ namespace node
 					//
 					//	write statistics
 					//
-					if (is_generate_time_series()) ctx.attach(write_stat(tag, account, "answer from " + callee, "OK"));
+					write_stat(tag, account, "answer from " + callee, "OK");
 
 				}
 				else
@@ -893,7 +849,7 @@ namespace node
 					//
 					//	write statistics
 					//
-					if (is_generate_time_series()) ctx.attach(write_stat(tag, account, "answer from " + callee, "failed"));
+					write_stat(tag, account, "answer from " + callee, "failed");
 				}
 
 				if (local)
@@ -1363,7 +1319,7 @@ namespace node
 				//
 				//	write statistics
 				//
-				if (is_generate_time_series()) ctx.attach(write_stat(tag, account, "no target", name.c_str()));
+				write_stat(tag, account, "no target", name.c_str());
 
 			}
 
@@ -1397,7 +1353,7 @@ namespace node
 					//
 					//	write statistics
 					//
-					if (is_generate_time_series()) ctx.attach(write_stat(tag, account, "open push channel", name.c_str()));
+					write_stat(tag, account, "open push channel", name.c_str());
 				}
 
 			}

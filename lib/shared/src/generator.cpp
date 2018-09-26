@@ -772,7 +772,7 @@ namespace node
 				, shutdown
 				, options
 				, bag))
-			<< cyng::generate_invoke_unwinded("bus.store.req.connection.close", seq, rtag, bag)
+			//<< cyng::generate_invoke_unwinded("bus.store.req.connection.close", seq, rtag, bag)
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}

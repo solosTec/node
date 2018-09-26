@@ -52,21 +52,20 @@ namespace node
 			, watchdog_(watchdog)
 			, timeout_(timeout)
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_INFO(logger_, prg.size() << " ipt instructions received");
+				CYNG_LOG_TRACE(logger_, prg.size() << " ipt instructions received");
 				CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
 				vm_.async_run(std::move(prg));
 			}, sk)
 			, task_db_()
-			, gate_keeper_(cyng::async::start_task_sync<gatekeeper>(mux_
+			, connect_state_(this, cyng::async::start_task_sync<gatekeeper>(mux_
 				, logger_
 				, vm_
 				, tag
 				, timeout_).first)
-			, connect_state_(this)
 #ifdef SMF_IO_LOG
 			, log_counter_(0)
 #endif
-			{
+		{
 			//
 			//	register logger domain
 			//
@@ -303,6 +302,11 @@ namespace node
 
 		void session::stop(boost::system::error_code ec)
 		{
+			//
+			//	There could be a running gatekeeper
+			//
+			connect_state_.stop();
+
 			//
 			//	device/party closed connection or network shutdown
 			//
@@ -1068,21 +1072,17 @@ namespace node
 				cyng::param_map_t		//	[7] bag
 			>(frame);
 
-			const response_type res = std::get<2>(tpl)
-				? ctrl_res_login_public_policy::SUCCESS
-				: ctrl_res_login_public_policy::UNKNOWN_ACCOUNT
-				;
+			//
+			//	update session login state
+			//	and stop gatekeeper
+			//
+			const response_type res = connect_state_.set_authorized(std::get<2>(tpl));
 
 			//
 			//	bag reader
 			//
 			auto dom = cyng::make_reader(std::get<6>(tpl));
 
-			//
-			//	stop gatekeeper
-			//
-			mux_.post(gate_keeper_, 0, cyng::tuple_factory(res));
-			//mux_.send<gatekeeper, 0>(cyng::tuple_factory(res));
 
 			const std::string security = cyng::value_cast<std::string>(dom.get("security"), "undef");
 			if (boost::algorithm::equals(security, "scrambled"))
@@ -1096,7 +1096,7 @@ namespace node
 			ctx.attach(cyng::generate_invoke("stream.flush"));
 
 			//	success
-			if (std::get<2>(tpl))
+			if (connect_state_.is_authorized())
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.info"
 					, "send login response"
@@ -1156,7 +1156,6 @@ namespace node
 				ctx.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"));
 				ctx.attach(cyng::generate_invoke("ip.tcp.socket.close"));
 			}
-
 		}
 
 		void session::client_res_open_push_channel(cyng::context& ctx)

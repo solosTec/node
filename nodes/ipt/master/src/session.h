@@ -27,13 +27,15 @@ namespace node
 
 			struct connect_state
 			{
-				connect_state(session*);
+				connect_state(session*, std::size_t);
 
 				enum {
-					STATE_OFFLINE,	//	no connection at all
-					STATE_LOCAL,	//	open connection to party on the same node
-					STATE_REMOTE,	//	open connection to party on different node
-					STATE_TASK		//	data stream linked to task
+					STATE_START,		//	start or error state after failed login
+					STATE_AUTHORIZED,	//	after successful login
+					STATE_OFFLINE,		//	no connection at all
+					STATE_LOCAL,		//	open connection to party on the same node
+					STATE_REMOTE,		//	open connection to party on different node
+					STATE_TASK			//	data stream linked to task
 				} state_;
 
 				/**
@@ -45,6 +47,11 @@ namespace node
 				 * active task
 				 */
 				std::size_t tsk_;
+
+				/**
+				 * Update state to authorized
+				 */
+				response_type set_authorized(bool b);
 
 				/**
 				 * open a local/remote connection
@@ -62,9 +69,19 @@ namespace node
 				void close_connection();
 
 				/**
-				 * @return true if state is not OFFLINE
+				 * Stop gatekeeper if running
+				 */
+				void stop();
+
+				/**
+				 * @return true if state is not START, AUTHORIZED or OFFLINE
 				 */
 				bool is_connected() const;
+
+				/**
+				 * @return true if state is not START.
+				 */
+				bool is_authorized() const;
 
 				/**
 				 * stream connection state as text
@@ -191,11 +208,6 @@ namespace node
 			 * bookkeeping of ip-t sequence to task relation
 			 */
 			std::map<sequence_type, std::size_t>	task_db_;
-
-			/**
-			 * gatekeeper task
-			 */
-			const std::size_t gate_keeper_;
 
 			/**
 			 * contains state of local connections

@@ -7,20 +7,44 @@
 
 
 #include "session.h"
+#include <smf/ipt/response.hpp>
+
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/factory/set_factory.h>
 #include <cyng/set_cast.h>
+#include <boost/assert.hpp>
 
 namespace node 
 {
 	namespace ipt
 	{
-		session::connect_state::connect_state(session* sp)
-			: state_(STATE_OFFLINE)
+		session::connect_state::connect_state(session* sp, std::size_t tsk)
+			: state_(STATE_START)
 			, sr_(*sp)
-			, tsk_(cyng::async::NO_TASK)
+			, tsk_(tsk)
 		{}
+
+		response_type session::connect_state::set_authorized(bool b)
+		{
+			BOOST_ASSERT(state_ == STATE_START);
+
+			const response_type res = b
+				? ctrl_res_login_public_policy::SUCCESS
+				: ctrl_res_login_public_policy::UNKNOWN_ACCOUNT
+				;
+
+			//
+			//	stop gatekeeper
+			//
+			sr_.mux_.post(tsk_, 0, cyng::tuple_factory(res));
+
+			if (b) {
+				state_ = STATE_AUTHORIZED;
+			}
+
+			return res;
+		}
 
 		void session::connect_state::open_connection(bool b)
 		{
@@ -42,9 +66,29 @@ namespace node
 			tsk_ = 0u;
 		}
 
+		void session::connect_state::stop()
+		{
+			if (!is_authorized()) {
+
+				BOOST_ASSERT(STATE_AUTHORIZED == state_);
+				state_ = STATE_START;
+
+				CYNG_LOG_INFO(sr_.logger_, "stop gatekeeper #"
+					<< tsk_);
+
+				const response_type res = ctrl_res_login_public_policy::GENERAL_ERROR;
+				sr_.mux_.post(tsk_, 0, cyng::tuple_factory(res));
+			}
+		}
+
+		bool session::connect_state::is_authorized() const
+		{
+			return STATE_START != state_;
+		}
+
 		bool session::connect_state::is_connected() const
 		{
-			return state_ != STATE_OFFLINE;
+			return state_ > STATE_OFFLINE;
 		}
 
 		std::ostream& operator<<(std::ostream& os, session::connect_state const& cs)
