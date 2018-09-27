@@ -39,7 +39,7 @@ namespace node
 			, std::uint32_t serial
 			, cyng::mac48 mac)
 		: base_(*btp)
-			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:gateway"))
+			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:gateway", 1u))
 			, logger_(logger)
 			, config_(cfg)
 			, parser_([this](cyng::vector_t&& prg) {

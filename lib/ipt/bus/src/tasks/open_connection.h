@@ -26,7 +26,8 @@ namespace node
 			, cyng::logging::log_ptr
 			, cyng::controller& vm
 			, std::string const&
-			, std::chrono::seconds timeout);
+			, std::chrono::seconds timeout
+			, std::size_t retries);
 		cyng::continuation run();
 		void stop();
 
@@ -43,7 +44,7 @@ namespace node
 		cyng::controller& vm_;	//!< ipt device
 		const std::string number_;
 		const std::chrono::seconds timeout_;
-		bool is_waiting_;	//!< task state
+		std::size_t retries_;
 	};
 	
 }

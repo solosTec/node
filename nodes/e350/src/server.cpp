@@ -71,34 +71,50 @@ namespace node
 			bus_->vm_.register_function("client.req.close.connection.forward", 6, std::bind(&server::client_req_close_connection_forward, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.res.close.connection.forward", 6, std::bind(&server::client_res_close_connection_forward, this, std::placeholders::_1));
 
+			//
+			//	statistical data
+			//
+			bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+
+
 		}
 
 		void server::run(std::string const& address, std::string const& service)
 		{
-			//CYNG_LOG_TRACE(logger_, "listen " 
-			//	<< address
-			//	<< ':'
-			//	<< service);
+			CYNG_LOG_TRACE(logger_, "resolve address " 
+				<< address
+				<< ':'
+				<< service);
 
 			// Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
 			boost::asio::ip::tcp::resolver resolver(mux_.get_io_service());
+			try {
 #if (BOOST_VERSION >= 106600)
-			boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(address, service).begin();
+				boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(address, service).begin();
 #else
-			boost::asio::ip::tcp::resolver::query query(address, service);
-			boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
+				boost::asio::ip::tcp::resolver::query query(address, service);
+				boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
 #endif
-			acceptor_.open(endpoint.protocol());
-			acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-			acceptor_.bind(endpoint);
-			acceptor_.listen();
+				acceptor_.open(endpoint.protocol());
+				acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+				acceptor_.bind(endpoint);
+				acceptor_.listen();
 
-			CYNG_LOG_INFO(logger_, "listen "
-				<< endpoint.address().to_string()
-				<< ':'
-				<< endpoint.port());
+				CYNG_LOG_INFO(logger_, "listen "
+					<< endpoint.address().to_string()
+					<< ':'
+					<< endpoint.port());
 
-			do_accept();
+				do_accept();
+			}
+			catch (std::exception const& ex) {
+				CYNG_LOG_FATAL(logger_, "resolve address "
+					<< address
+					<< ':'
+					<< service
+					<< " failed: "
+					<< ex.what());
+			}
 		}
 
 		void server::do_accept()
@@ -108,8 +124,9 @@ namespace node
 				[this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
 				// Check whether the server was stopped by a signal before this
 				// completion handler had a chance to run.
-				if (!acceptor_.is_open()) 
-				{
+				if (!acceptor_.is_open()) {
+
+					CYNG_LOG_WARNING(logger_, "acceptor is closed");
 					return;
 				}
 
@@ -144,6 +161,10 @@ namespace node
 					//	continue accepting
 					//
 					do_accept();
+				}
+				else {
+					CYNG_LOG_ERROR(logger_, "accept failed: "
+						<< ec.message());
 				}
 
 			});

@@ -98,11 +98,12 @@ namespace node
 				remote_tag_ = cyng::value_cast(frame.at(1), boost::uuids::nil_uuid());
 				remote_version_ = cyng::value_cast(frame.at(2), remote_version_);
 				lag_ = std::chrono::duration_cast<std::chrono::microseconds>( std::chrono::system_clock::now() - cyng::value_cast(frame.at(3), std::chrono::system_clock::now()));
-				CYNG_LOG_TRACE(logger_, "lag " << lag_.count() << " microsec");
+				CYNG_LOG_TRACE(logger_, "lag: " << lag_.count() << " microsec");
 
 				//
 				//	slot [0]
 				//
+				CYNG_LOG_TRACE(logger_, "send cluster login response to task #" << task_);
 				mux_.post(task_, 0, cyng::tuple_factory(remote_version_));
 
 			}

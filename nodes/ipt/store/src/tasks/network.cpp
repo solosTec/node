@@ -27,7 +27,7 @@ namespace node
 			, master_config_t const& cfg
 			, std::map<std::string, std::string> const& targets)
 		: base_(*btp)
-			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:store"))
+			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:store", 1u))
 			, logger_(logger)
 			, config_(cfg)
 			, targets_(targets)

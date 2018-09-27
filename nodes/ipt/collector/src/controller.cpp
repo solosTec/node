@@ -176,12 +176,14 @@ namespace node
 						cyng::param_factory("service", "33001"),
  						cyng::param_factory("account", "collector-33001"),
  						cyng::param_factory("pwd", "to-define"),
+						cyng::param_factory("connection-open-retries", 1),	//	be carefull! value one is highly recommended
 						cyng::param_factory("tag", uidgen())),
 					cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "33002"),
  						cyng::param_factory("account", "collector-33002"),
  						cyng::param_factory("pwd", "to-define"),
+						cyng::param_factory("connection-open-retries", 1),	//	be carefull! value one is highly recommended
 						cyng::param_factory("tag", uidgen()))
 					}))
 				)

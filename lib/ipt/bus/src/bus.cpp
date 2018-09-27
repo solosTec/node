@@ -28,7 +28,13 @@ namespace node
 {
 	namespace ipt
 	{
-		bus::bus(cyng::async::mux& mux, cyng::logging::log_ptr logger, boost::uuids::uuid tag, scramble_key const& sk, std::size_t tsk, std::string const& model)
+		bus::bus(cyng::async::mux& mux
+			, cyng::logging::log_ptr logger
+			, boost::uuids::uuid tag
+			, scramble_key const& sk
+			, std::size_t tsk
+			, std::string const& model
+			, std::size_t retries)
 		: vm_(mux.get_io_service(), tag)
 			, socket_(mux.get_io_service())
 			, buffer_()
@@ -44,6 +50,7 @@ namespace node
 			}, sk)
 			, serializer_(socket_, vm_, sk)
 			, model_(model)
+			, retries_((retries == 0) ? 1 : retries)
 			, watchdog_(0)
 			, state_(STATE_INITIAL_)
 			, task_db_()
@@ -764,9 +771,9 @@ namespace node
 			}
 
 			//
-			//	start monitor tasks
+			//	start monitor tasks with 1 retry
 			//
-			cyng::async::start_task_sync<open_connection>(mux_, logger_, vm_, number, d);
+			cyng::async::start_task_sync<open_connection>(mux_, logger_, vm_, number, d, retries_);
 		}
 
 		void bus::req_connection_close(std::chrono::seconds d)
@@ -844,9 +851,10 @@ namespace node
 			, boost::uuids::uuid tag
 			, scramble_key const& sk
 			, std::size_t tsk
-			, std::string const& model)
+			, std::string const& model
+			, std::size_t retries)
 		{
-			return std::make_shared<bus>(mux, logger, tag, sk, tsk, model);
+			return std::make_shared<bus>(mux, logger, tag, sk, tsk, model, retries);
 		}
 
 		std::uint64_t build_line(std::uint32_t channel, std::uint32_t source)

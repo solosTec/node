@@ -48,7 +48,8 @@ namespace node
 		, std::string const& prefix
 		, int packet_size_min
 		, int packet_size_max
-		, int delay);
+		, int delay
+		, int retries);
 
 	void start_receiver(cyng::async::mux&
 		, cyng::logging::log_ptr
@@ -58,7 +59,8 @@ namespace node
 		, int rec_limit
 		, int packet_size_min
 		, int packet_size_max
-		, int delay);
+		, int delay
+		, int retries);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 		: pool_size_(pool_size)
@@ -208,8 +210,8 @@ namespace node
 						cyng::param_factory("size-min", 512),	//	minimal packet size
 						cyng::param_factory("size-max", 1024),	//	maximal packet size
 						cyng::param_factory("delay", 200),	//	delay between send operations in milliseconds
-						cyng::param_factory("receiver-limit", 0x10000)	//	cut connection after receiving that much data
-						//cyng::param_factory("data-type", "random")	//	random, linear
+						cyng::param_factory("receiver-limit", 0x10000),	//	cut connection after receiving that much data
+						cyng::param_factory("connection-open-retries", 1)	//	be carefull! value one is highly recommended
 						)
 					)
 				)
@@ -387,6 +389,7 @@ namespace node
 		BOOST_ASSERT_MSG(packet_size_min <= packet_size_max, "invalid packet size range");
 
 		const auto delay = cyng::value_cast<int>(dom.get("delay"), 400);
+		const auto retries = cyng::value_cast<int>(dom.get("connection-open-retries"), 1);
 		
 
 		const ipt::master_config_t cfg = ipt::load_cluster_cfg(cfg_ipt);
@@ -395,13 +398,13 @@ namespace node
 		if (boost::algorithm::equals("both", mode)) {
 			const auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
 			CYNG_LOG_INFO(logger, "boot up " << count * 2 << " tasks");
-			auto vec = start_sender(mux, logger, cfg, count, prefix_sender, packet_size_min, packet_size_max, delay);
-			start_receiver(mux, logger, cfg, vec, prefix_receiver, rec_limit, packet_size_min, packet_size_max, delay);
+			auto vec = start_sender(mux, logger, cfg, count, prefix_sender, packet_size_min, packet_size_max, delay, retries);
+			start_receiver(mux, logger, cfg, vec, prefix_receiver, rec_limit, packet_size_min, packet_size_max, delay, retries);
 		}
 		else if (boost::algorithm::equals("sender", mode)) {
 			const auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
 			CYNG_LOG_INFO(logger, "boot up " << count << " sender tasks");
-			start_sender(mux, logger, cfg, count, prefix_sender, packet_size_min, packet_size_max, delay);
+			start_sender(mux, logger, cfg, count, prefix_sender, packet_size_min, packet_size_max, delay, retries);
 		}
 		else if (boost::algorithm::equals("receiver", mode)) {
 			const auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
@@ -422,7 +425,8 @@ namespace node
 		, std::string const& prefix
 		, int packet_size_min
 		, int packet_size_max
-		, int delay)
+		, int delay
+		, int retries)
 	{
 		std::vector<std::size_t> vec;
 		vec.reserve(count);
@@ -452,7 +456,8 @@ namespace node
 				, cfg
 				, boost::numeric_cast<std::size_t>((packet_size_min < 1) ? 1 : packet_size_min)
 				, boost::numeric_cast<std::size_t>((packet_size_max < packet_size_min) ? packet_size_min : packet_size_min)
-				, std::chrono::milliseconds(delay));
+				, std::chrono::milliseconds(delay)
+				, boost::numeric_cast<std::size_t>((retries < 1) ? 1 : retries));
 
 			if (!r.second) {
 				CYNG_LOG_FATAL(logger, "could not start IP-T sender #" << idx);
@@ -472,7 +477,8 @@ namespace node
 		, std::string const& prefix
 		, int rec_limit, int packet_size_min
 		, int packet_size_max
-		, int delay)
+		, int delay
+		, int retries)
 	{
 		std::stringstream ss;
 		ss.fill('0');
@@ -501,7 +507,8 @@ namespace node
 				, boost::numeric_cast<std::size_t>((rec_limit < 1) ? 1 : rec_limit)
 				, boost::numeric_cast<std::size_t>((packet_size_min < 1) ? 1 : packet_size_min)
 				, boost::numeric_cast<std::size_t>((packet_size_max < packet_size_min) ? packet_size_min : packet_size_min)
-				, std::chrono::milliseconds(delay));
+				, std::chrono::milliseconds(delay)
+				, boost::numeric_cast<std::size_t>((retries < 1) ? 1 : retries));
 
 			if (!r.second) {
 				CYNG_LOG_FATAL(logger, "could not start IP-T receiver #" << idx);

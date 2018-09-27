@@ -70,7 +70,8 @@ namespace node
 				, boost::uuids::uuid tag
 				, scramble_key const&
 				, std::size_t tsk
-				, std::string const& model);
+				, std::string const& model
+				, std::size_t retries);
 
 			bus(bus const&) = delete;
 			bus& operator=(bus const&) = delete;
@@ -188,6 +189,11 @@ namespace node
 			 */
 			const std::string model_;
 
+			/**
+			 * connection open retries
+			 */
+			const std::size_t retries_;
+
 			/** 
 			 * watchdog in minutes
 			 */
@@ -221,7 +227,8 @@ namespace node
 			, boost::uuids::uuid tag
 			, scramble_key const& sk
 			, std::size_t tsk
-			, std::string const& model);
+			, std::string const& model
+			, std::size_t retries);
 
 		/**
 		 * Combine two 32-bit integers into one 64-bit integer

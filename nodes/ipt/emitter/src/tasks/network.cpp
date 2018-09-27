@@ -20,7 +20,7 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, master_config_t const& cfg)
 		: base_(*btp)
-			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:emitter"))
+			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:emitter", 1u))
 			, logger_(logger)
 			, storage_tsk_(0)	//	ToDo
 			, config_(cfg)

@@ -125,6 +125,11 @@ namespace node
 		vm_.register_function("client.inc.throughput", 3, std::bind(&session::client_inc_throughput, this, std::placeholders::_1));
 
 		vm_.register_function("client.update.attr", 6, std::bind(&session::client_update_attr, this, std::placeholders::_1));
+
+		//
+		//	statistical data
+		//
+		vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 	}
 
 

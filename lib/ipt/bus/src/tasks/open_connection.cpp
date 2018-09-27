@@ -15,13 +15,15 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cyng::controller& vm
 		, std::string const& number
-		, std::chrono::seconds timeout)
+		, std::chrono::seconds timeout
+		, std::size_t retries)
 	: base_(*btp)
 		, logger_(logger)
 		, vm_(vm)
 		, number_(number)
 		, timeout_(timeout)
-		, is_waiting_(false)
+		, retries_(retries)
+		//, is_waiting_(false)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -34,12 +36,20 @@ namespace node
 
 	cyng::continuation open_connection::run()
 	{	
-		if (!is_waiting_) {
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> "
+			<< retries_
+			<< " are left over");
+
+		if (retries_-- > 0) {
 
 			//
 			//	update task state
 			//
-			is_waiting_ = true;
+			//is_waiting_ = true;
 
 			//
 			//	* forward connection open request to device
@@ -107,7 +117,7 @@ namespace node
 
 }
 
-#include <cyng/async/task/task.hpp>
+//#include <cyng/async/task/task.hpp>
 
 //namespace cyng {
 //	namespace async {

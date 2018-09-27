@@ -353,7 +353,7 @@ namespace node
 				std::size_t			//	[1] task id
 			>(frame);
 
-			CYNG_LOG_INFO(logger_, "session.store.relation " 
+			CYNG_LOG_TRACE(logger_, "session.store.relation " 
 				<< +std::get<0>(tpl)
 				<< " => #"
 				<< std::get<1>(tpl));

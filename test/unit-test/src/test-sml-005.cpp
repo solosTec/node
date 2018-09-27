@@ -44,7 +44,7 @@ namespace node
 		public:
 			client(cyng::async::base_task* btp, cyng::logging::log_ptr logger)
 				: base_(*btp)
-				, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:test"))
+				, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:test", 1u))
 				, logger_(logger)
 			{
 				CYNG_LOG_INFO(logger_, "initialize task #"

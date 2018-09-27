@@ -64,7 +64,8 @@ namespace node
 				, master_config_t const& cfg
 				, std::size_t packet_size_min
 				, std::size_t packet_size_max
-				, std::chrono::milliseconds);
+				, std::chrono::milliseconds
+				, std::size_t retries);
 			cyng::continuation run();
 			void stop();
 

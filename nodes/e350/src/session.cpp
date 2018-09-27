@@ -231,8 +231,10 @@ namespace node
 
 			
 			//
-			//	ToDo: start maintenance task
+			//	statistical data
 			//
+			vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+
 		}
 
 		session::~session()
@@ -244,12 +246,12 @@ namespace node
 			//vm_.halt();
 			vm_.access([this, ec](cyng::vm& vm) {
 
+				bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", vm.tag(), cyng::invoke("push.connection"), ec));
+
 				//
 				//	halt VM
 				//
 				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
-
-				bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", vm.tag(), cyng::invoke("push.connection"), ec));
 
 			});
 		}
@@ -311,6 +313,9 @@ namespace node
 
 				}
 				else {
+
+					CYNG_LOG_INFO(logger_, "use login credentials: " << cyng::io::to_str(frame));
+
 					bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 						, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
 						, cyng::value_cast<std::string>(frame.at(4), "")	//	as username and password

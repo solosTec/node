@@ -24,9 +24,10 @@ namespace node
 			, master_config_t const& cfg
 			, std::size_t packet_size_min
 			, std::size_t packet_size_max
-			, std::chrono::milliseconds delay)
+			, std::chrono::milliseconds delay
+			, std::size_t retries)
 		: base_(*btp)
-			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:stress:sender"))
+			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:stress:sender", retries))
 			, logger_(logger)
 			, config_(cfg)
 			, packet_size_min_(packet_size_min)
