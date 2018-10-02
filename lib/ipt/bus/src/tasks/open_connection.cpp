@@ -8,6 +8,7 @@
 #include "open_connection.h"
 #include <smf/ipt/response.hpp>
 #include <cyng/vm/generator.h>
+#include <cyng/intrinsics/op.h>
 
 namespace node
 {
@@ -80,7 +81,11 @@ namespace node
 			<< "> timeout");
 
 		vm_.async_run(cyng::generate_invoke("ipt.res.open.connection"
-			, cyng::IDENT
+#if defined(CYNG_LEGACY_MODE_ON)
+            , cyng::IDENT
+#else
+            , cyng::code::IDENT
+#endif
 			, ipt::sequence_type(0)
 			, ipt::response_type(ipt::tp_res_open_connection_policy::UNREACHABLE)));
 
@@ -112,6 +117,7 @@ namespace node
 			<< vm_.tag()
 			<< " received response");
 
+        boost::ignore_unused(success);
 		return cyng::continuation::TASK_STOP;
 	}
 

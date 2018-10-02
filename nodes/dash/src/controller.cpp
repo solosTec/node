@@ -189,7 +189,7 @@ namespace node
 						cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
 						cyng::param_factory("tls-pwd", "test"),
 						cyng::param_factory("tls-certificate-chain", "demo.cert"),
-						cyng::param_factory("tls-private-kay", "priv.key"),
+                        cyng::param_factory("tls-private-key", "priv.key"),
 						cyng::param_factory("tls-dh", "demo.dh"),	//	diffie-hellman
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /

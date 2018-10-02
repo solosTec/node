@@ -91,6 +91,7 @@ namespace node
 						//
 #if BOOST_OS_LINUX
 						auto logger = cyng::logging::make_sys_logger("e350", true);
+                        boost::ignore_unused(console);
 #else
 						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 						auto dom = cyng::make_reader(vec[0]);

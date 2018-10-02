@@ -68,8 +68,12 @@ namespace node
 			<< "> timeout");
 
 		vm_.async_run(cyng::generate_invoke("ipt.res.close.connection"
-			, cyng::IDENT
-			, ipt::sequence_type(0)
+#if defined(CYNG_LEGACY_MODE_ON)
+            , cyng::IDENT
+#else
+            , cyng::code::IDENT
+#endif
+            , ipt::sequence_type(0)
 			, ipt::response_type(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED)));
 
 		return cyng::continuation::TASK_STOP;
@@ -100,6 +104,7 @@ namespace node
 			<< vm_.tag()
 			<< " received response");
 
+        boost::ignore_unused(success);
 		return cyng::continuation::TASK_STOP;
 	}
 
