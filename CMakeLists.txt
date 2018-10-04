@@ -117,7 +117,7 @@ string(RANDOM LENGTH 8 ALPHABET "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijk
 set (${PROJECT_NAME}_PWD 	"${__RND_VALUE_PWD}")
 
 #
-# manage unit test: CYNG_BUILD_TEST
+# manage unit test: NODE_BUILD_TEST
 # default is OFF
 #
 if(NOT DEFINED ${PROJECT_NAME}_BUILD_TEST)
@@ -310,7 +310,9 @@ endif()
 #	setup cyng library
 #	assume parallel installation - that is both projects share the same parent directory.
 #
-include_directories("${PROJECT_SOURCE_DIR}/../cyng/src/main/include")
+get_filename_component(cyng_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../cyng/src/main/include" REALPATH)
+include_directories("${cyng_INCLUDE_DIR}")
+message(STATUS "** CYNG Include path     : ${cyng_INCLUDE_DIR}")
 if (UNIX)
 	if (${PROJECT_NAME}_CROSS_COMPILE)
 		get_filename_component(cyng_LIBRARY_DIRS "${PROJECT_SOURCE_DIR}/../cyng/cross" REALPATH)
@@ -344,7 +346,8 @@ endif()
 #
 #	Use CMake modules from CYNG project
 #
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/../cyng/src/modules/")
+get_filename_component(cyng_MODULE_PATH "${PROJECT_SOURCE_DIR}/../cyng/src/modules/" REALPATH)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${cyng_MODULE_PATH}")
 message(STATUS "** CMake modules         : ${CMAKE_MODULE_PATH}")
 
 #
@@ -418,7 +421,7 @@ endif()
 include (lib/sml/protocol/lib.cmake)
 add_library(smf_protocol_sml ${GLOBAL_LIBRARY_TYPE} ${sml_protocol_lib})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	target_link_libraries(smf_protocol_sml cyng_vm)
+	target_link_libraries(smf_protocol_sml cyng_vm cyng_sys)
 else()
 	target_link_libraries(smf_protocol_sml cyng_table cyng_store)
 endif()
@@ -577,7 +580,7 @@ target_link_libraries(dashs ${dashsboard_link_libs})
 include (nodes/e350/prg.cmake)
 add_executable(e350 ${node_e350})
 # libraries to link
-set(e350_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_crypto smf_cluster smf_protocol_imega)
+set(e350_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_rnd smf_cluster smf_protocol_imega)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND e350_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -622,7 +625,7 @@ target_link_libraries(emitter ${emitter_link_libs})
 include (nodes/ipt/gateway/prg.cmake)
 add_executable(gateway ${node_ipt_gateway})
 # libraries to link
-set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_store cyng_table cyng_domain cyng_sys cyng_crypto smf_protocol_ipt smf_bus_ipt smf_bus_sml)
+set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_store cyng_table cyng_domain cyng_sys cyng_rnd smf_protocol_ipt smf_bus_ipt smf_bus_sml)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND gateway_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -643,7 +646,7 @@ target_link_libraries(gateway ${gateway_link_libs})
 include (nodes/ipt/master/prg.cmake)
 add_executable(ipt ${node_ipt_master})
 # libraries to link
-set(ipt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys smf_cluster smf_protocol_ipt smf_protocol_sml)
+set(ipt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_rnd smf_cluster smf_protocol_ipt smf_protocol_sml)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND ipt_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -663,7 +666,7 @@ set(store_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser 
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND store_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND store_link_libs pthread dl)
+        list(APPEND store_link_libs pthread ${CMAKE_DL_LIBS})
     endif()
 endif()
 if(WIN32)
@@ -781,7 +784,7 @@ set(setup_link_libs cyng_core cyng_io cyng_async cyng_log cyng_parser cyng_json 
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND setup_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND setup_link_libs pthread dl)
+        list(APPEND setup_link_libs pthread ${CMAKE_DL_LIBS})
     endif()
 endif()
 if(WIN32)
@@ -802,7 +805,7 @@ set(csv_link_libs cyng_core cyng_io cyng_async cyng_log cyng_parser cyng_json cy
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND csv_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND csv_link_libs pthread dl)
+        list(APPEND csv_link_libs pthread ${CMAKE_DL_LIBS})
     endif()
 endif()
 if(WIN32)
@@ -834,17 +837,16 @@ if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 endif()
 
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-#	list(APPEND unittest_link_libs "${Boost_LIBRARIES} ${OPENSSL_LIBRARIES}")
-	list(APPEND unittest_link_libs ${Boost_LIBRARIES})
+	list(APPEND unittest_link_libs ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES})
 else()
 	if(WIN32)
 		list(APPEND unittest_link_libs odbc32.lib lib_sqlite3)
 	else()
-        list(APPEND unittest_link_libs pthread ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${OPENSSL_LIBRARIES} ${SQLite3_LIBRARY})
+        list(APPEND unittest_link_libs pthread ${CMAKE_DL_LIBS} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${SQLite3_LIBRARY})
     endif()
 endif()
 
-#message(STATUS "** link unit-test        : ${unittest_link_libs}")
+message(STATUS "** link unit-test        : ${unittest_link_libs}")
 target_link_libraries(unit_test ${unittest_link_libs})
 endif()
 

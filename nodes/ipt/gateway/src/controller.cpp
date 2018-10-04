@@ -27,7 +27,7 @@
 #include <cyng/sys/mac.h>
 #include <cyng/store/db.h>
 #include <cyng/table/meta.hpp>
-#include <cyng/crypto/rnd.h>
+#include <cyng/rnd.h>
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
 #endif

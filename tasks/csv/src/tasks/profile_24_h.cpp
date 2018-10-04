@@ -108,7 +108,9 @@ namespace node
 			//
 
 			//
-			//	calculate last day of last month
+            //	calculate last day of previous month:
+            //  * tmp is 3. oct 7:00
+            //  * tp is (3. oct 7:00) - (3*24h) => (30. sep 7:00)
 			//
 			auto tp = next_trigger_tp_ - std::chrono::hours(tmp.tm_mday * 24);
 			auto d = cyng::chrono::days_of_month(tp);

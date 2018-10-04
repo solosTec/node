@@ -1,6 +1,6 @@
 [Unit]
 Description=setup server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_PATCH_LEVEL} (project ${PROJECT_NAME})
-After=network.target
+After=node-master.service
 
 [Service]
 Type=simple

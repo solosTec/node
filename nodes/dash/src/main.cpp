@@ -72,20 +72,20 @@ int main(int argc, char **argv)
 	//
 	//	certificate
 	//
-	boost::program_options::options_description node_x509("X509 Certificate");
-	node_x509.add_options()
+//	boost::program_options::options_description node_x509("X509 Certificate");
+//	node_x509.add_options()
 
-		("x509.C", boost::program_options::value<std::string>()->default_value("CH"), "Country")
-		("x509.L", boost::program_options::value<std::string>()->default_value("Lucerne"), "City")
-		("x509.O", boost::program_options::value<std::string>()->default_value("solosTec"), "Organisation")
-		("x509.CN", boost::program_options::value<std::string>()->default_value("Lucerne"), "Common Name")
-		;
+//		("x509.C", boost::program_options::value<std::string>()->default_value("CH"), "Country")
+//		("x509.L", boost::program_options::value<std::string>()->default_value("Lucerne"), "City")
+//		("x509.O", boost::program_options::value<std::string>()->default_value("solosTec"), "Organisation")
+//		("x509.CN", boost::program_options::value<std::string>()->default_value("Lucerne"), "Common Name")
+//		;
 
     //
     //	all you can grab from the command line
     //
     boost::program_options::options_description cmdline_options;
-    cmdline_options.add(generic).add(node_options).add(node_x509);
+    cmdline_options.add(generic).add(node_options);  //.add(node_x509);
 
     //
     //	read all data
@@ -157,22 +157,10 @@ int main(int argc, char **argv)
 			return ctrl.create_config();
 		}
 
-		if (vm["init"].as< bool >())
-		{
-			//	initialize database
-// 			return ctrl.init_db();
-		}
-
 		if (vm["ip"].as< bool >())
 		{
 			//	show local IP adresses
 			return node::show_ip_address(std::cout);
-		}
-
-		if (vm["show"].as< bool >())
-		{
-			//	show configuration
-// 			return ctrl.show_config();
 		}
 
 #if BOOST_OS_WINDOWS

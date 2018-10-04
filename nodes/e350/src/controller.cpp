@@ -17,7 +17,7 @@
 #include <cyng/json.h>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
-#include <cyng/crypto/rnd.h>
+#include <cyng/rnd.h>
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
 #endif

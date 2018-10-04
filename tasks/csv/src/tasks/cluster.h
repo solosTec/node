@@ -50,7 +50,10 @@ namespace node
 		cyng::continuation process();
 
 	private:
-		void start_sub_tasks();
+        void connect();
+        void reconfigure(cyng::context& ctx);
+        void reconfigure_impl();
+        void start_sub_tasks();
 		void stop_sub_tasks();
 
 
@@ -58,7 +61,7 @@ namespace node
 		cyng::async::base_task& base_;
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-		const cluster_redundancy cfg_cluster_;
+        const cluster_redundancy config_;
 		const cyng::param_map_t cfg_db_;
 		const cyng::param_map_t cfg_clock_day_;
 		const cyng::param_map_t cfg_clock_month_;

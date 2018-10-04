@@ -357,7 +357,7 @@ namespace node
 
 
 			CYNG_LOG_INFO(logger_, result.size()
-				<< " unique server/OBIS cobinations found in the range from "
+                << " unique server/OBIS combinations found in the range from "
 				<< cyng::to_str(start)
 				<< " until "
 				<< cyng::to_str(end));
@@ -697,19 +697,27 @@ namespace node
 			<< suffix	//	.csv
 			;
 		CYNG_LOG_INFO(logger_, "open "<< root_dir / ss.str());
-		std::ofstream f((root_dir / ss.str()).string());
+        auto path = root_dir / ss.str();
+        std::ofstream ofs(path.string());
+        if (ofs.is_open()) {
 
-		//
-		//	optional header
-		//
-		if (header) {
-			f << "server;meter;time;trx;";
-			for (auto const& c : codes) {
-				f << c << ';';
-			}
-			f << std::endl;
-		}
-		return f;
+            bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_DEBUG, "update " + path.string()));
+
+            //
+            //	optional header
+            //
+            if (header) {
+                ofs << "server;meter;time;trx;";
+                for (auto const& c : codes) {
+                    ofs << c << ';';
+                }
+                ofs << std::endl;
+            }
+        }
+        else {
+            bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_ERROR, "cannot open " + path.string()));
+        }
+        return ofs;
 	}
 
 	std::ofstream storage_db::open_file_24_h_profile(std::chrono::system_clock::time_point end)
@@ -736,18 +744,26 @@ namespace node
 			;
 
 		CYNG_LOG_INFO(logger_, "open " << root_dir / ss.str());
-		std::ofstream f((root_dir / ss.str()).string());
+        auto path = root_dir / ss.str();
+        std::ofstream ofs(path.string());
+        if (ofs.is_open()) {
 
-		//
-		//	optional header
-		//
-		if (header) {
-			f 
-				<< "ZaehlerNr;Obis;Stand;Datum"
-				<< std::endl
-				;
-		}
-		return f;
+            bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_DEBUG, "update " + path.string()));
+
+            //
+            //	optional header
+            //
+            if (header) {
+                ofs
+                    << "ZaehlerNr;Obis;Stand;Datum"
+                    << std::endl
+                    ;
+            }
+        }
+        else {
+            bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_ERROR, "cannot open " + path.string()));
+        }
+        return ofs;
 	}
 
 	cyng::table::mt_table storage_db::init_meta_map(std::string const& ver)
