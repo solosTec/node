@@ -13,19 +13,16 @@ namespace node
 	namespace https
 	{
 		server::server(cyng::logging::log_ptr logger
-			, server_callback_t cb
+			//, server_callback_t cb
 			, boost::asio::io_context& ioc
 			, boost::asio::ssl::context& ctx
 			, boost::asio::ip::tcp::endpoint endpoint
-			, std::string const& doc_root
-			, std::vector<std::string> const& sub_protocols)
+			, std::string const& doc_root)
 		: logger_(logger)
-			, cb_(cb)
 			, ctx_(ctx)
 			, acceptor_(ioc)
 			, socket_(ioc)
 			, doc_root_(doc_root)
-			, sub_protocols_(sub_protocols)
 			, is_listening_(false)
 			, shutdown_complete_()
 			, mutex_()
@@ -112,12 +109,12 @@ namespace node
 				CYNG_LOG_TRACE(logger_, "accept: " << socket_.remote_endpoint());
 
 				// Create the session and run it
-				std::make_shared<detector>(logger_
-					, cb_
-					, std::move(socket_)
-					, ctx_
-					, doc_root_
-					, sub_protocols_)->run();
+				//std::make_shared<detector>(logger_
+				//	, cb_
+				//	, std::move(socket_)
+				//	, ctx_
+				//	, doc_root_
+				//	, sub_protocols_)->run();
 
 				// Accept another connection
 				do_accept();

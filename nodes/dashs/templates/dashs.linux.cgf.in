@@ -1,0 +1,8 @@
+#
+#	startup configuration for dash node
+#	created : ${${PROJECT_NAME}_NOW_UTC}
+#	platform: @CMAKE_SYSTEM@
+#
+[setup]
+json = /etc/opt/node/dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
+pool-size = ${${PROJECT_NAME}_POOL_SIZE}

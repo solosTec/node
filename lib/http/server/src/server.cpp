@@ -19,9 +19,9 @@ namespace node
 			, std::string const& doc_root
 			, node::bus::shared_type bus
 			, cyng::store::db& cache)
-		: acceptor_(ioc)
+		: logger_(logger)
+			, acceptor_(ioc)
 			, socket_(ioc)
-			, logger_(logger)
 			, doc_root_(doc_root)
 			, bus_(bus)
 			, cache_(cache)

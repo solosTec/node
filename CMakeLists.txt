@@ -542,7 +542,7 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 endif()
 
 #
-# dashboard
+# dashboard (HTTP)
 #
 include (nodes/dash/prg.cmake)
 add_executable(dash ${node_dash})
@@ -555,6 +555,21 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
     endif()
 endif()
 target_link_libraries(dash ${dashboard_link_libs})
+
+#
+# dashboard (HTTPS)
+#
+include (nodes/dashs/prg.cmake)
+add_executable(dashs ${node_dashs})
+# libraries to link
+set(dashsboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml smf_cluster smf_https_srv ${OPENSSL_LIBRARIES})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	list(APPEND dashsboard_link_libs "${Boost_LIBRARIES}")
+    if (UNIX)
+        list(APPEND dashsboard_link_libs pthread)
+    endif()
+endif()
+target_link_libraries(dashs ${dashsboard_link_libs})
 
 #
 # e350
@@ -863,6 +878,15 @@ if(UNIX)
 		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash.service.in"
 		  "${PROJECT_BINARY_DIR}/node-dash.service")
 
+	# dashs
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs.linux.cgf.in"
+		  "${PROJECT_BINARY_DIR}/dashs_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs.service.in"
+		  "${PROJECT_BINARY_DIR}/node-dashs.service")
+
 	# e355
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350.linux.cgf.in"
@@ -1009,6 +1033,23 @@ else()
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/dash_restart_service.cmd")
+
+	# dashs
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs.windows.cgf.in"
+		  "${PROJECT_BINARY_DIR}/dashs_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/dashs_create_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/dashs_delete_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/dashs_restart_service.cmd")
 
 	# e355
 	configure_file (

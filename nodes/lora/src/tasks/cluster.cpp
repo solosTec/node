@@ -16,23 +16,20 @@ namespace node
 {
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, boost::asio::ssl::context& ctx
 		, boost::uuids::uuid tag
 		, cluster_config_t const& cfg
 		, boost::asio::ip::tcp::endpoint ep
-		, std::string const& doc_root
-		, std::vector<std::string> const& sub_protocols
-		, boost::asio::ssl::context& ctx)
+		, std::string const& doc_root)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 		, logger_(logger)
 		, config_(cfg)
 		, server_(logger
-			, std::bind(&cluster::session_callback, this, std::placeholders::_1, std::placeholders::_2)
 			, btp->mux_.get_io_service()
 			, ctx
 			, ep
-			, doc_root
-			, sub_protocols)
+			, doc_root)
 		, processor_(logger, btp->mux_.get_io_service(), tag, bus_)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"

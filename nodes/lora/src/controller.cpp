@@ -40,6 +40,7 @@ namespace node
 	bool wait(cyng::logging::log_ptr logger);
 	std::size_t join_cluster(cyng::async::mux&, cyng::logging::log_ptr, boost::uuids::uuid, cyng::vector_t const&, cyng::tuple_t const&);
 	void load_server_certificate(boost::asio::ssl::context& ctx
+		, cyng::logging::log_ptr logger
 		, std::string const& pwd
 		, std::string const& dh
 		, std::string const&  private_key
@@ -169,7 +170,6 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8443"),
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
-						cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
 						cyng::param_factory("tls-pwd", "test"),
 						cyng::param_factory("tls-certificate-chain", "demo.cert"),
 						cyng::param_factory("tls-private-kay", "priv.key"),
@@ -420,11 +420,6 @@ namespace node
 		auto dh = cyng::value_cast<std::string>(dom.get("tls-dh"), "dh.pem");
 
 		//
-		//	get subprotocols
-		//
-		const auto sub_protocols = cyng::vector_cast<std::string>(dom.get("sub-protocols"), "");
-
-		//
 		//	get user credentials
 		//
 		auth_dirs ad;
@@ -433,24 +428,22 @@ namespace node
 		CYNG_LOG_INFO(logger, "document root: " << doc_root);
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
-		CYNG_LOG_INFO(logger, sub_protocols.size() << " subprotocols");
 		CYNG_LOG_INFO(logger, ad.size() << " user credentials");
 
 		// The SSL context is required, and holds certificates
 		static boost::asio::ssl::context ctx{ boost::asio::ssl::context::sslv23 };
 
 		// This holds the self-signed certificate used by the server
-		load_server_certificate(ctx, pwd, dh, private_key, certificate_chain);
+		load_server_certificate(ctx, logger, pwd, dh, private_key, certificate_chain);
 
 		auto r = cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
+			, ctx
 			, tag
 			, load_cluster_cfg(cfg_cls)
 			, boost::asio::ip::tcp::endpoint{ host, port }
-			, doc_root
-			, sub_protocols
-			, ctx);
+			, doc_root);
 
 		if (r.second)	return r.first;
 
@@ -468,84 +461,22 @@ namespace node
 		accompanying the Beast certificate for more details.
 	 */
 	void load_server_certificate(boost::asio::ssl::context& ctx
+		, cyng::logging::log_ptr logger
 		, std::string const& pwd
 		, std::string const& dh
 		, std::string const& private_key
 		, std::string const& certificate_chain)
 	{
-		/*
-		The certificate was generated from CMD.EXE on Windows 10 using:
-
-		winpty openssl dhparam -out dh.pem 2048
-		winpty openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 10000 -out cert.pem -subj "//C=CH\ST=LU\L=Lucerne\O=solosTec\CN=www.solostec.com"
-		*/
-
-		//std::string const cert =
-		//	"-----BEGIN CERTIFICATE-----\n"
-		//	"MIIC1jCCAb6gAwIBAgIJAIA++QcqOgT5MA0GCSqGSIb3DQEBCwUAMAAwHhcNMTgw\n"
-		//	"MjI4MDAwNjM2WhcNNDUwNzE2MDAwNjM2WjAAMIIBIjANBgkqhkiG9w0BAQEFAAOC\n"
-		//	"AQ8AMIIBCgKCAQEArcSoBvNg6iNLfryyeanjeM8akBMLxJPM69Ar3K+gtacuvsvc\n"
-		//	"JyPaZ0+HXYZyXZ4dI8/AuVZID6ESKq5HxNYtzuHuH7oFNm0Yd7nlM/nJdyA78vBb\n"
-		//	"12htq8Me4rg01AaIYrxczwm9GHFl4qy/CHpHJ6TA7mIaa6qXtcoFOMQh1yKDcsQi\n"
-		//	"Cn2E6r9N/lwsTorr+HRqsnaeLyLekhWlYxInWCGXe8o8un7vhNXWnDno/0RIUID5\n"
-		//	"rOKtDBZrFbngurxpDdcMgvnig4SHoaa8sq5ul+xc9x4SVRecWPtNCDvA/K+4jgkm\n"
-		//	"93RByScCQ7m2ROeE1LpNwDCHUH10emb7WdKcUQIDAQABo1MwUTAdBgNVHQ4EFgQU\n"
-		//	"Bi2HmS31plRxUZTJcW2WvtircKowHwYDVR0jBBgwFoAUBi2HmS31plRxUZTJcW2W\n"
-		//	"vtircKowDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAeQAA1ZDv\n"
-		//	"S/Tsozk3FsITgU+/+KuxKBza3dYsS1psWqTnYb2HsxSoZUoho3RxA4BHDtJJ299I\n"
-		//	"yG8xyb9NSrSOBoEjoWL8z8X7INf6ipLYtjG1Bcmalkc53TlYkR6nuE8dPvqb9N4R\n"
-		//	"5Pq2IOWF2zFssIW06MncfuRo2ERFZcK4bmEz1/AaIlcPlilAHb7ciCf0tRokUafn\n"
-		//	"gyPoHFxKOjslCTBT/WmY72VrS10Ypk0DqcE7IcgT/wYfY64Kn69jsiHmwlm4dqTw\n"
-		//	"7bz9ob96UrCOMzlDj23vvuuyGKkUdzXYDob2VwqrqjNpuB/+cMElEE6w8i3OQ2Cj\n"
-		//	"KvnMBplhJIP+IA==\n"
-		//	"-----END CERTIFICATE-----\n";
-
-		//std::string const key =
-		//	"-----BEGIN PRIVATE KEY-----\n"
-		//	"MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCtxKgG82DqI0t+\n"
-		//	"vLJ5qeN4zxqQEwvEk8zr0Cvcr6C1py6+y9wnI9pnT4ddhnJdnh0jz8C5VkgPoRIq\n"
-		//	"rkfE1i3O4e4fugU2bRh3ueUz+cl3IDvy8FvXaG2rwx7iuDTUBohivFzPCb0YcWXi\n"
-		//	"rL8IekcnpMDuYhprqpe1ygU4xCHXIoNyxCIKfYTqv03+XCxOiuv4dGqydp4vIt6S\n"
-		//	"FaVjEidYIZd7yjy6fu+E1dacOej/REhQgPms4q0MFmsVueC6vGkN1wyC+eKDhIeh\n"
-		//	"pryyrm6X7Fz3HhJVF5xY+00IO8D8r7iOCSb3dEHJJwJDubZE54TUuk3AMIdQfXR6\n"
-		//	"ZvtZ0pxRAgMBAAECggEBAIsPiSRe2t0lN8KKAg5pTdgdbXWFOHKtkV3Z73AhwOv+\n"
-		//	"ieM4w8sy3xK0S3EmKhoPceR52xK3IN4ZGa+8X0T/3hLlLaqINKm0rtMJmop4yKij\n"
-		//	"zDYD8ou1T6cYdHwdzHEtdTIG6gLqGUEZZt77PbnsGUt5hsh/DAPDtrtNm9Ys56QA\n"
-		//	"8jUb0wLPpgf5qRXoDo9VUf9Y0+OSlW6ojjwWm1+Bc6AADdM3KZ4hbQLq84gqOXs9\n"
-		//	"eETM//k3p+Qfx+6rWjx4d7Y4UgDAx/b9JHy21KLiNi0I7klmu9PehXMBQBpsWT3w\n"
-		//	"jLZB5x7uNsjTjTf8BFDrwLmhKRcRxo0QrrWeND7M400CgYEA1VP1iPqixOqvzGFN\n"
-		//	"PDZKdjt3AoOo/eH6avT5IOfDdnBzu7yL9nsoKetKEVf3iODdgtaYgW8FnkxK9hu3\n"
-		//	"iJXzItZR4lOwM4U5bypJAD+6n1LGN/l7otmOBFnRtixgmCfsv2z0x7dX+uO5as1f\n"
-		//	"YsK3LrXazynUOA53d9hELdp16EMCgYEA0IbuThg47pPkQSGUe6Tc3Sz2rLx18lZQ\n"
-		//	"pyy5c/Vij7nQFex8hOynEMlvT7vPDk8XQWgOeGWT/dtSK681orQhp+J7LosPDE6J\n"
-		//	"1IvUxS7IjsoSMtx8mw7pT5ewaP4XDW1WLLu8HB8IzDvHP3BBUtrTH5i9jrQkFLqs\n"
-		//	"eR6yl2PqOdsCgYEAjk4xrqyzQ/TiTM5jvVTiGzjTzOOTKblDWXINdnvkke+15HiE\n"
-		//	"TWoegsgoYqVxxOdsHMmWdlFfSBfQsZgPuJd+17BsczQsiFHI3HUyuW3JylpnTBOq\n"
-		//	"/BlweUqJcKLt1NJdRd0i9M9Da2PZ3nsdtD38ALbjPerDXJmZ7GJiKMxgdw0CgYAb\n"
-		//	"oLT0Hdt1KJ0GUBenJhmpKCrqifGqkOsQqylLBsjvN/Qs429AAUbFP5sC2mQ9hhcT\n"
-		//	"sGCybOrlqGhDp2wYyXroDma5rOzqeYFjar9e/KrP2E/+8x2DQb+BrxxNXNTbD5Bq\n"
-		//	"TtlGdIoq3QSyEAJnotx0BD2hKZbaND1jssCAtFk1HwKBgCCv/6OYrWCEe0GE6QGY\n"
-		//	"+vqzOF2jojlx681bj3qn37+j1WYDD38aTk2UjdDsYegJFqgHBlj/+vMLs+XiStTK\n"
-		//	"gVJXyEMIJuZn4gxeiH5v8l3iQiaGvJCwkUIveYXrj0ca7AwT9JBPKkid+PDAgPXh\n"
-		//	"btU9uQ/qzH2kDyaZg4FGTTY5\n"
-		//	"-----END PRIVATE KEY-----\n";
-
-		//std::string const dh =
-		//	"-----BEGIN DH PARAMETERS-----\n"
-		//	"MIIBCAKCAQEA9VTzDc1fJLRTnNMyF04ka323hlMg5mENKUZwQJkmPTyFas9XlMNW\n"
-		//	"ZUFlQR2lMK2qCLb5ijqI5GGiOu+RMu2NpDKtj7Puwhys3Kg6NhyNGOgx+p2mTNX8\n"
-		//	"rBgbs1GAOuImrbV03H/JhsVV6kVO5yySPc0A4o7PxPYkOORqI1Uaujf0xeGAQS5W\n"
-		//	"cnlhXrxj5bVhKjo6lc+YWBAWjw2P4K0BlVvisV2MIvh0p2XA9Y4GvlICmRiOtJbS\n"
-		//	"5vwprVwf697etoEqQy2x++ggmJo5F+MIuEZ4TRX5e++xbeeFx5SUO/HIySWM7e9L\n"
-		//	"UvTUfvTrEETqPkQda0tBd4uA4H2lg7pwkwIBAg==\n"
-		//	"-----END DH PARAMETERS-----\n";
-
+		//
+		//	generate files with:
+		//	openssl dhparam -out dh.pem 2048
+		//	openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 10000 -out cert.pem -subj "//C=CH\ST=LU\L=Lucerne\O=solosTec\CN=www.example.com"
+		//
 		ctx.set_password_callback(
 			[&pwd](std::size_t,
 				boost::asio::ssl::context_base::password_purpose)
 		{
 			return pwd;
-			//return "test";
 		});
 
 		ctx.set_options(
@@ -553,19 +484,14 @@ namespace node
 			boost::asio::ssl::context::no_sslv2 |
 			boost::asio::ssl::context::single_dh_use);
 
-		//ctx.use_certificate_chain(
-		//	boost::asio::buffer(cert.data(), cert.size()));
-
-		//ctx.use_private_key(
-		//	boost::asio::buffer(key.data(), key.size()),
-		//	boost::asio::ssl::context::file_format::pem);
-
-		//ctx.use_tmp_dh(
-		//	boost::asio::buffer(dh.data(), dh.size()));
-
-		ctx.use_certificate_chain_file(certificate_chain);
-		ctx.use_private_key_file(private_key, boost::asio::ssl::context::pem);
-		ctx.use_tmp_dh_file(dh);
+		try {
+			ctx.use_certificate_chain_file(certificate_chain);
+			ctx.use_private_key_file(private_key, boost::asio::ssl::context::pem);
+			ctx.use_tmp_dh_file(dh);
+		}
+		catch (std::exception const& ex) {
+			CYNG_LOG_FATAL(logger, ex.what());
+		}
 	}
 
 }

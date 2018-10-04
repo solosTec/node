@@ -8,6 +8,7 @@
 #include "../../print_build_info.h"
 #include "../../print_version_info.h"
 #include "../../set_start_options.h"
+#include "../../show_ip_address.h"
 #if BOOST_OS_WINDOWS
 #include <boost/asio.hpp>
 #endif
@@ -40,7 +41,7 @@ int main(int argc, char **argv)
 	//	json, XML
 	("default,D", boost::program_options::value<std::string>()->default_value("")->implicit_value("json"), "generate a default configuration and exit. options are json and XML")
 	("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
-    ("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
+    //("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
 	("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
     ;
@@ -165,7 +166,7 @@ int main(int argc, char **argv)
 		if (vm["ip"].as< bool >())
 		{
 			//	show local IP adresses
-// 			return ctrl.show_ip();
+			return node::show_ip_address(std::cout);
 		}
 
 		if (vm["show"].as< bool >())

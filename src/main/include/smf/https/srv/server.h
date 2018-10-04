@@ -16,26 +16,17 @@ namespace node
 {
 	namespace https
 	{
-		//class connection_manager
-		//{
-		//public:
-		//	connection_manager();
-
-		//private:
-		//	std::map<boost::uuids::uuid, cyng::object>	connections_;
-		//};
-
-		// Accepts incoming connections and launches the sessions
+		/**
+		 * Accepts incoming HTTPS connections and launches the sessions
+		 */
 		class server
 		{
 		public:
 			server(cyng::logging::log_ptr
-				, server_callback_t cb
 				, boost::asio::io_context& ioc
 				, boost::asio::ssl::context& ctx
 				, boost::asio::ip::tcp::endpoint endpoint
-				, std::string const& doc_root
-				, std::vector<std::string> const&);
+				, std::string const& doc_root);
 
 			// Start accepting incoming connections
 			bool run();
@@ -51,12 +42,10 @@ namespace node
 
 		private:
 			cyng::logging::log_ptr logger_;
-			server_callback_t cb_;
 			boost::asio::ssl::context& ctx_;
 			boost::asio::ip::tcp::acceptor acceptor_;
 			boost::asio::ip::tcp::socket socket_;
 			const std::string doc_root_;
-			const std::vector<std::string>	sub_protocols_;
 
 			/**
 			 *	set to true when the server is listening for new connections

@@ -1,13 +1,14 @@
 /*
  * The MIT License (MIT)
  * 
- * Copyright (c) 2017 Sylko Olzscher 
+ * Copyright (c) 2018 Sylko Olzscher 
  * 
  */ 
 
 #include "controller.h"
 #include "tasks/cluster.h"
 #include <NODE_project_info.h>
+//#include <smf/https/srv/auth.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -37,6 +38,12 @@ namespace node
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
 	void join_cluster(cyng::async::mux&, cyng::logging::log_ptr, cyng::vector_t const&, cyng::tuple_t const&);
+	bool load_server_certificate(boost::asio::ssl::context& ctx
+		, cyng::logging::log_ptr
+		, std::string const& tls_pwd
+		, std::string const& tls_certificate_chain
+		, std::string const& tls_private_key
+		, std::string const& tls_dh);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -92,15 +99,15 @@ namespace node
 						//	initialize logger
 						//
 #if BOOST_OS_LINUX
-						auto logger = cyng::logging::make_sys_logger("dash", true);
+						auto logger = cyng::logging::make_sys_logger("dashs", true);
 #else
 						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 						auto dom = cyng::make_reader(vec[0]);
 						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
 
 						auto logger = (console)
-							? cyng::logging::make_console_logger(mux.get_io_service(), "dash")
-							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "smf-dash.log"))
+							? cyng::logging::make_console_logger(mux.get_io_service(), "dashs")
+							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "smf-dashs.log"))
 							;
 #endif
 
@@ -182,13 +189,13 @@ namespace node
 
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
-						cyng::param_factory("service", "8080"),
+						cyng::param_factory("service", "8443"),	//	default is 443
 						cyng::param_factory("document-root", (pwd / "nodes" / "dash" / "htdocs").string()),
 						cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
-						//cyng::param_factory("tls-pwd", "test"),
-						//cyng::param_factory("tls-certificate-chain", "demo.cert"),
-      //                  cyng::param_factory("tls-private-key", "priv.key"),
-						//cyng::param_factory("tls-dh", "demo.dh"),	//	diffie-hellman
+						cyng::param_factory("tls-pwd", "test"),
+						cyng::param_factory("tls-certificate-chain", "demo.cert"),
+                        cyng::param_factory("tls-private-key", "priv.key"),
+						cyng::param_factory("tls-dh", "demo.dh"),	//	diffie-hellman
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
 							//	authType:
@@ -249,6 +256,36 @@ namespace node
 		}
 		return EXIT_FAILURE;
 	}
+
+	//int controller::generate_x509(std::string const& c
+	//	, std::string const& l
+	//	, std::string const& o
+	//	, std::string const& cn)
+	//{
+	//	//::OPENSSL_init_ssl(0, NULL);
+
+	//	cyng::crypto::EVP_KEY_ptr pkey(cyng::crypto::generate_key(), ::EVP_PKEY_free);
+	//	if (!pkey)
+	//	{
+	//		return EXIT_FAILURE;
+	//	}
+	//	cyng::crypto::X509_ptr x509(cyng::crypto::generate_x509(pkey.get()
+	//		, 31536000L
+	//		, c.c_str()
+	//		//, l.c_str()
+	//		, o.c_str()
+	//		, cn.c_str()), ::X509_free);
+	//	if (!x509)
+	//	{
+	//		return EXIT_FAILURE;
+	//	}
+
+	//	std::cout << "Writing key and certificate to disk..." << std::endl;
+	//	bool ret = cyng::crypto::write_to_disk(pkey.get(), x509.get());
+	//	return (ret)
+	//		? EXIT_SUCCESS
+	//		: EXIT_FAILURE;
+	//}
 
 #if BOOST_OS_WINDOWS
 	int controller::run_as_service(controller&& ctrl, std::string const& srv_name)
@@ -399,26 +436,77 @@ namespace node
 		//
 		//	get subprotocols
 		//
-		const auto sub_protocols = cyng::vector_cast<std::string>(dom.get("sub-protocols"), "");
-
-		//auth_dirs ad;
-		//init(dom[0]["http"].get("auth"), ad);
-
+		//const auto sub_protocols = cyng::vector_cast<std::string>(dom.get("sub-protocols"), "");
 
 		CYNG_LOG_INFO(logger, "document root: " << doc_root);
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
-		CYNG_LOG_INFO(logger, sub_protocols.size() << " subprotocols");
+
+		//
+		// The SSL context is required, and holds certificates
+		//
+		boost::asio::ssl::context ctx{ boost::asio::ssl::context::sslv23 };
+
+		static auto tls_pwd = cyng::value_cast<std::string>(dom.get("tls-pwd"), "test");
+		auto tls_certificate_chain = cyng::value_cast<std::string>(dom.get("tls-certificate-chain"), "demo.cert");
+		auto tls_private_key = cyng::value_cast<std::string>(dom.get("tls-private-key"), "priv.key");
+		auto tls_dh = cyng::value_cast<std::string>(dom.get("tls-dh"), "demo.dh");
+
+		//
+		// This holds the self-signed certificate used by the server
+		//
+		if (load_server_certificate(ctx, logger, tls_pwd, tls_certificate_chain, tls_private_key, tls_dh)) {
 
 
-		cyng::async::start_task_delayed<cluster>(mux
-			, std::chrono::seconds(1)
-			, logger
-			, load_cluster_cfg(cfg_cls)
-			, boost::asio::ip::tcp::endpoint{ host, port }
+			cyng::async::start_task_delayed<cluster>(mux
+				, std::chrono::seconds(1)
+				, logger
+				, ctx
+				, load_cluster_cfg(cfg_cls)
+				, boost::asio::ip::tcp::endpoint{ host, port }
 			, doc_root);
+		}
+		else {
+			CYNG_LOG_FATAL(logger, "loading server certificates failed");
+		}
 
 	}
 
+	bool load_server_certificate(boost::asio::ssl::context& ctx
+		, cyng::logging::log_ptr logger
+		, std::string const& tls_pwd
+		, std::string const& tls_certificate_chain
+		, std::string const& tls_private_key
+		, std::string const& tls_dh)
+	{
+
+		//
+		//	generate files with:
+		//	openssl dhparam -out dh.pem 2048
+		//	openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 10000 -out cert.pem -subj "//C=CH\ST=LU\L=Lucerne\O=solosTec\CN=www.example.com"
+		//
+
+
+		ctx.set_password_callback([&tls_pwd](std::size_t, boost::asio::ssl::context_base::password_purpose)	{
+			return tls_pwd;
+		});
+
+		ctx.set_options(
+			boost::asio::ssl::context::default_workarounds |
+			boost::asio::ssl::context::no_sslv2 |
+			boost::asio::ssl::context::single_dh_use);
+
+		try {
+			ctx.use_certificate_chain_file(tls_certificate_chain);
+			ctx.use_private_key_file(tls_private_key, boost::asio::ssl::context::pem);
+			ctx.use_tmp_dh_file(tls_dh);
+		}
+		catch (std::exception const& ex) {
+			CYNG_LOG_FATAL(logger, ex.what());
+			return false;
+
+		}
+		return true;
+	}
 
 }

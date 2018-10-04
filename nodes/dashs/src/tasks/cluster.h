@@ -5,22 +5,24 @@
  *
  */
 
-#ifndef NODE_LORA_TASK_CLUSTER_H
-#define NODE_LORA_TASK_CLUSTER_H
-
-#include "../processor.h"
+#ifndef NODE_DASH_TASK_CLUSTER_H
+#define NODE_DASH_TASK_CLUSTER_H
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
 #include <smf/https/srv/server.h>
-
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
+#include <cyng/store/db.h>
+#include <boost/uuid/random_generator.hpp>
+#include <pugixml.hpp>
 
 namespace node
 {
-
+	/**
+	 * Manage connection to SMF cluster
+	 */
 	class cluster
 	{
 	public:
@@ -32,9 +34,8 @@ namespace node
 		cluster(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, boost::asio::ssl::context& ctx
-			, boost::uuids::uuid tag
-			, cluster_config_t const& cfg
-			, boost::asio::ip::tcp::endpoint ep
+			, cluster_config_t const& cfg_cls
+			, boost::asio::ip::tcp::endpoint
 			, std::string const& doc_root);
 		cyng::continuation run();
 		void stop();
@@ -57,15 +58,49 @@ namespace node
 		void connect();
 		void reconfigure(cyng::context& ctx);
 		void reconfigure_impl();
-		void session_callback(boost::uuids::uuid, cyng::vector_t&&);
+
+		void sync_table(std::string const&);
+		void create_cache();
+		//void subscribe_cache();
+		void res_subscribe(cyng::context& ctx);
+		void db_res_insert(cyng::context& ctx);
+		void db_res_remove(cyng::context& ctx);
+		void db_res_modify_by_attr(cyng::context& ctx);
+		void db_res_modify_by_param(cyng::context& ctx);
+		void db_req_insert(cyng::context& ctx);
+		void db_req_remove(cyng::context& ctx);
+		void db_req_modify_by_param(cyng::context& ctx);
+
+		void start_sys_task();
+		void stop_sys_task();
+
 
 	private:
 		cyng::async::base_task& base_;
+		boost::uuids::random_generator uidgen_;
+
+		/**
+		 * communication bus to master
+		 */
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
 		const cluster_redundancy config_;
+
+		/**
+		 * global data cache
+		 */
+		cyng::store::db cache_;
+
+		/**
+		 * the HTTP server
+		 */
 		https::server	server_;
-		processor processor_;
+
+		/**
+		 * system task
+		 */
+        std::size_t sys_tsk_;
+
 	};
 	
 }

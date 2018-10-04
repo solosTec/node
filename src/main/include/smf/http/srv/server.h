@@ -24,6 +24,9 @@ namespace node
 {
 	namespace http
 	{
+		/**
+		 * Accepts incoming HTTP connections and launches the sessions
+		 */
 		class server
 		{
 		public:
@@ -46,7 +49,6 @@ namespace node
 			/**
 			 * send data to websocket
 			 */
-			//void run_on_ws(boost::uuids::uuid, cyng::vector_t&&);
 			bool send_msg(boost::uuids::uuid, std::string const&);
 
 			void add_channel(boost::uuids::uuid tag, std::string const& channel);
@@ -60,9 +62,9 @@ namespace node
             bool bind(boost::asio::ip::tcp::endpoint, std::size_t);
 
 		private:
+			cyng::logging::log_ptr logger_;
 			boost::asio::ip::tcp::acceptor acceptor_;
 			boost::asio::ip::tcp::socket socket_;
-			cyng::logging::log_ptr logger_;
 			std::string const& doc_root_;
 			bus::shared_type bus_;
 			cyng::store::db& cache_;

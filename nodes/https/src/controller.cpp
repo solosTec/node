@@ -170,9 +170,8 @@ namespace node
 					, cyng::param_factory("mime-config", (pwd / "mime.xml").string())
 					, cyng::param_factory("https", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
-						cyng::param_factory("service", "8080"),
+						cyng::param_factory("service", "8443"),	//	default is 443
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
-						cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
 							//	authType:
@@ -239,11 +238,6 @@ namespace node
 		const auto service = cyng::io::to_str(dom[0]["https"].get("service"));
 		const auto port = static_cast<unsigned short>(std::stoi(service));
  		
-		//
-		//	get subprotocols
-		//
-		const auto sub_protocols = cyng::vector_cast<std::string>(dom[0]["https"].get("sub-protocols"), "");
-
  		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
 
 		// The SSL context is required, and holds certificates
@@ -257,12 +251,11 @@ namespace node
 		
 		// Create and launch a listening port
 		auto srv = std::make_shared<https::server>(logger
-			, std::bind(&session_callback, std::placeholders::_1, std::placeholders::_2)
+			//, std::bind(&session_callback, std::placeholders::_1, std::placeholders::_2)
 			, scheduler.get_io_service()
 			, ctx
 			, boost::asio::ip::tcp::endpoint{address, port}
-			, doc_root
-			, sub_protocols);
+			, doc_root);
 
 		if (srv->run())
 		{
@@ -270,22 +263,13 @@ namespace node
 			//	wait for system signals
 			//
 			const bool shutdown = wait(logger);
-			
-		
-//  		std::cerr << "STOP" << std::endl;
-		
+					
 			//
 			//	close acceptor
 			//
 			CYNG_LOG_INFO(logger, "close acceptor");
 			srv->close();
-			
-			
-// 			//
-// 			//	stop all connections
-// 			//
-// 			CYNG_LOG_INFO(logger, "stop all connections");			
-			
+						
 			return shutdown;
 		}
 		
