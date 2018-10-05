@@ -8,6 +8,8 @@
 #include <smf/ipt/bus.h>
 #include <smf/ipt/scramble_key_io.hpp>
 #include <smf/ipt/response.hpp>
+#include <smf/ipt/generator.h>
+
 #include <NODE_project_info.h>
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/asio_domain.h>
@@ -761,6 +763,43 @@ namespace node
 				, cyng::tuple_factory(frame.at(1), frame.at(2), frame.at(3), frame.at(6)));
 		}
 
+		bool bus::req_login(master_record const& rec)
+		{
+			if (STATE_ERROR_ == state_) {
+				//	reset error state
+				CYNG_LOG_WARNING(logger_, vm_.tag() << " reset error state: " << get_state());
+				state_ = STATE_INITIAL_;
+			}
+			if (STATE_INITIAL_ != state_) {
+				CYNG_LOG_WARNING(logger_, vm_.tag() << " already authorized: " << get_state());
+				return false;
+			}
+			if (rec.scrambled_) {
+				CYNG_LOG_INFO(logger_, vm_.tag() 
+					<< " send scrambled login request: " 
+					<< rec.account_
+					<< '@'
+					<< rec.host_
+					<< ':'
+					<< rec.service_);
+
+				vm_.async_run(ipt::gen::ipt_req_login_scrambled(rec));
+			}
+			else {
+
+				CYNG_LOG_INFO(logger_, vm_.tag()
+					<< " send public login request: "
+					<< rec.account_
+					<< '@'
+					<< rec.host_
+					<< ':'
+					<< rec.service_);
+
+				vm_.async_run(ipt::gen::ipt_req_login_public(rec));
+			}
+			return true;
+		}
+
 		void bus::req_connection_open(std::string const& number, std::chrono::seconds d)
 		{
 			if (state_ == STATE_AUTHORIZED_) {
@@ -771,7 +810,7 @@ namespace node
 			}
 
 			//
-			//	start monitor tasks with 1 retry
+			//	start monitor tasks with N retries
 			//
 			cyng::async::start_task_sync<open_connection>(mux_, logger_, vm_, number, d, retries_);
 		}

@@ -175,9 +175,6 @@ namespace node
 			void reconfigure(cyng::context& ctx);
 			void reconfigure_impl();
 
-			cyng::vector_t ipt_req_login_public() const;
-			cyng::vector_t ipt_req_login_scrambled() const;
-
 			void send_data();
 
 		private:

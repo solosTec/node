@@ -39,6 +39,8 @@ namespace node
 		{
 			CYNG_LOG_INFO(logger_, "initialize task #"
 				<< base_.get_id()
+				<< ':'
+				<< bus_->vm_.tag()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> "
@@ -128,14 +130,7 @@ namespace node
 				//
 				//	login request
 				//
-				if (config_.get().scrambled_)
-				{
-					bus_->vm_.async_run(ipt_req_login_scrambled());
-				}
-				else
-				{
-					bus_->vm_.async_run(ipt_req_login_public());
-				}
+				bus_->req_login(config_.get());
 			}
 
 			return cyng::continuation::TASK_CONTINUE;
@@ -375,29 +370,29 @@ namespace node
 			base_.suspend(config_.get().monitor_);
 		}
 
-		cyng::vector_t sender::ipt_req_login_public() const
-		{
-			CYNG_LOG_INFO(logger_, "send public login request "
-				<< config_.get().account_
-				<< '@'
-				<< config_.get().host_
-				<< ':'
-				<< config_.get().service_);
+		//cyng::vector_t sender::ipt_req_login_public() const
+		//{
+		//	CYNG_LOG_INFO(logger_, "send public login request "
+		//		<< config_.get().account_
+		//		<< '@'
+		//		<< config_.get().host_
+		//		<< ':'
+		//		<< config_.get().service_);
 
-			return gen::ipt_req_login_public(config_.get());
-		}
+		//	return gen::ipt_req_login_public(config_.get());
+		//}
 
-		cyng::vector_t sender::ipt_req_login_scrambled() const
-		{
-			CYNG_LOG_INFO(logger_, "send scrambled login request "
-				<< config_.get().account_
-				<< '@'
-				<< config_.get().host_
-				<< ':'
-				<< config_.get().service_);
+		//cyng::vector_t sender::ipt_req_login_scrambled() const
+		//{
+		//	CYNG_LOG_INFO(logger_, "send scrambled login request "
+		//		<< config_.get().account_
+		//		<< '@'
+		//		<< config_.get().host_
+		//		<< ':'
+		//		<< config_.get().service_);
 
-			return gen::ipt_req_login_scrambled(config_.get());
-		}
+		//	return gen::ipt_req_login_scrambled(config_.get());
+		//}
 
 		void sender::send_data()
 		{

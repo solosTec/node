@@ -10,6 +10,7 @@
 
 #include <NODE_project_info.h>
 #include <smf/ipt/parser.h>
+#include <smf/ipt/config.h>
 #include <smf/ipt/serializer.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
@@ -92,6 +93,14 @@ namespace node
 
 			boost::asio::ip::tcp::endpoint local_endpoint() const;
 			boost::asio::ip::tcp::endpoint remote_endpoint() const;
+
+			/**
+			 * Send a login request (public/scrambled)
+			 * 
+			 * @return true if bus/session is not authorized yet and login request
+			 * was emitted.
+			 */
+			bool req_login(master_record const&);
 
 			/**
 			 * send connection open request and starts a monitor tasks

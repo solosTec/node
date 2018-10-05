@@ -170,9 +170,6 @@ namespace node
 			void reconfigure(cyng::context& ctx);
 			void reconfigure_impl();
 
-			cyng::vector_t ipt_req_login_public() const;
-			cyng::vector_t ipt_req_login_scrambled() const;
-
 		private:
 			cyng::async::base_task& base_;
 			bus::shared_type bus_;

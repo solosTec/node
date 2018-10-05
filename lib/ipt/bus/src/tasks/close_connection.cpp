@@ -23,6 +23,8 @@ namespace node
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
+			<< ':'
+			<< vm_.tag()
 			<< " <"
 			<< base_.get_class_name()
 			<< "> is waiting for "
@@ -63,6 +65,8 @@ namespace node
 
 		CYNG_LOG_WARNING(logger_, "task #"
 			<< base_.get_id()
+			<< ':'
+			<< vm_.tag()
 			<< " <"
 			<< base_.get_class_name()
 			<< "> timeout");

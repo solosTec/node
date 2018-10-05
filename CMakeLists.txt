@@ -21,19 +21,23 @@ cmake_minimum_required (VERSION 3.5)
 #     ***   ***    ****      *****      *******  
 #      ***   ***              ***        *****   
 #                                                      
-# set project name
-project(NODE)
-
-# Add a version number
-set (${PROJECT_NAME}_VERSION_MAJOR 0)
-set (${PROJECT_NAME}_VERSION_MINOR 6)
-
+# get timestamp and build a patch level from the year and
+# the day of the year. This is a unique number to distinguish
+# different builds
 string(TIMESTAMP THIS_YEAR "%Y")
-set (${PROJECT_NAME}_COPYRIGHT_YEAR ${THIS_YEAR})
-
 # Patch level as year + day of the year
 string(TIMESTAMP PATCH_LEVEL "%j")	# day of the year
-math(EXPR ${PROJECT_NAME}_PATCH_LEVEL "(${THIS_YEAR} * 1000) + ${PATCH_LEVEL}")
+math(EXPR PATCH_LEVEL "(${THIS_YEAR} * 1000) + ${PATCH_LEVEL}")
+
+#
+# set project name/properties
+#
+project(NODE 
+	VERSION 0.6.${PATCH_LEVEL}.1
+	LANGUAGES CXX)
+
+
+set (${PROJECT_NAME}_COPYRIGHT_YEAR ${THIS_YEAR})
 
 
 message(STATUS "**                                                  ") 
@@ -78,7 +82,7 @@ message(STATUS "** Compiler        : ${CMAKE_CXX_COMPILER_ID} v${CMAKE_CXX_COMPI
 message(STATUS "** Timestamp       : ${${PROJECT_NAME}_NOW_UTC}")
 message(STATUS "** CPU Cores       : ${${PROJECT_NAME}_CPU_COUNT}")
 message(STATUS "** Pool Size       : ${${PROJECT_NAME}_POOL_SIZE}")
-message(STATUS "** Patchlevel      : ${${PROJECT_NAME}_PATCH_LEVEL}")
+message(STATUS "** Patchlevel      : ${PROJECT_VERSION_PATCH}")
 if(UNIX)
 # has no meaning on VS
 # set default cmake build type to RelWithDebInfo (None Debug Release RelWithDebInfo MinSizeRel)
@@ -239,7 +243,7 @@ elseif(WIN32)
 	endif()
 endif(UNIX)
 
-set(Boost_ADDITIONAL_VERSIONS "1.65.0" "1.66.0" "1.67.0")
+set(Boost_ADDITIONAL_VERSIONS "1.65.0" "1.66.0" "1.67.0" "1.68.0")
 message(STATUS "** Search Boost    : ${Boost_ADDITIONAL_VERSIONS}")
 find_package(Boost 1.66 REQUIRED COMPONENTS thread system date_time filesystem program_options random unit_test_framework regex)
 
@@ -332,10 +336,11 @@ else()
 	#
 	#	$(ConfigurationName) is a variable used by the MS build system
 	#
- 	get_filename_component(cyng_LIBRARY_DIRS "${PROJECT_BINARY_DIR}/../cyng" REALPATH)
- 	get_filename_component(cyng_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../cyng" REALPATH)
- 	get_filename_component(cyng_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../cyng/src/main/include" REALPATH)
-	set(cyng_INCLUDE_DIRS "${cyng_LIBRARY_DIRS}" ${cyng_INCLUDE_DIR})
+	message(STATUS "** PROJECT_BINARY_DIR    : ${PROJECT_BINARY_DIR}")
+ 	get_filename_component(cyng_LIBRARY_DIRS "${PROJECT_BINARY_DIR}/../../cyng/build" ABSOLUTE)
+ 	get_filename_component(cyng_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../cyng" ABSOLUTE)
+ 	get_filename_component(cyng_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../cyng/src/main/include" ABSOLUTE)
+	set(cyng_INCLUDE_DIRS ${cyng_INCLUDE_DIR} "${cyng_LIBRARY_DIRS}")
 	include_directories(${cyng_INCLUDE_DIRS})
 	link_directories(${cyng_LIBRARY_DIRS}/$(ConfigurationName))
 
