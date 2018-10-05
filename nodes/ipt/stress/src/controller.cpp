@@ -73,6 +73,7 @@ namespace node
 		//	to calculate uptime
 		//
 		const std::chrono::system_clock::time_point tp_start = std::chrono::system_clock::now();
+
 		//
 		//	controller loop
 		//
@@ -97,32 +98,54 @@ namespace node
 				if (config)
 				{
 					//
-					//	initialize logger
-					//
-#if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("ipt:stress", true);
-#else
-					auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "ipt:stress");
-#endif
-
-					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
-					CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
-
-					//
 					//	start application
 					//
 					cyng::vector_t vec;
 					vec = cyng::value_cast(config, vec);
-					BOOST_ASSERT_MSG(!vec.empty(), "invalid configuration");
-					shutdown = vec.empty()
-						? true
-						: start(mux, logger, vec[0]);
 
-					//
-					//	print uptime
-					//
-					const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-					CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+					if (vec.empty()) {
+						std::cerr
+							<< "use option -D to generate a configuration file"
+							<< std::endl;
+						shutdown = true;
+					}
+					else
+					{
+						//
+						//	initialize logger
+						//
+#if BOOST_OS_LINUX
+						auto logger = cyng::logging::make_sys_logger("ipt:stress", true);
+#else
+						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
+						auto dom = cyng::make_reader(vec[0]);
+						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
+
+						auto logger = (console)
+							? cyng::logging::make_console_logger(mux.get_io_service(), "ipt:stress")
+							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "ipt-stress.log"))
+							;
+#ifdef _DEBUG
+						if (!console) {
+							std::cout << "log file see: " << (log_dir / "ipt-stress.log") << std::endl;
+						}
+#endif
+#endif
+
+						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
+						CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
+
+						//
+						//	start application
+						//
+						shutdown = start(mux, logger, vec[0]);
+
+						//
+						//	print uptime
+						//
+						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
+						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+					}
 				}
 				else
 				{

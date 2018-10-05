@@ -634,26 +634,52 @@ namespace node
 				//
 				//	get sequence
 				//
-				const auto seq = cyng::value_cast<sequence_type>(frame.at(1), 0u);
+				auto const tpl = cyng::tuple_cast<
+					boost::uuids::uuid,		//	[0] session tag
+					sequence_type,			//	[1] ipt seq
+					response_type			//	[2] ipt response
+				>(frame);
+
+				const auto seq = std::get<1>(tpl);
+				const auto r = tp_res_close_connection_policy::is_success(std::get<2>(tpl));
 
 				//
 				//	search for origin task
 				//
-				const auto pos = task_db_.find(seq);
-				const auto origin = (pos != task_db_.end())
-					? pos->second
-					: cyng::async::NO_TASK
-					;
+				auto pos = task_db_.find(seq);
+				if (pos != task_db_.end()) {
 
-				mux_.post(task_
-					, IPT_EVENT_CONNECTION_CLOSED
-					, cyng::tuple_factory(frame.at(1)
-					, false		//	response
-					, origin));
+					//	origin task
+					const auto tsk = pos->second;
+
+					//
+					//	stop task
+					//
+					CYNG_LOG_INFO(logger_, ctx.tag() << " stop task #" << tsk);
+					mux_.post(tsk, 0, cyng::tuple_factory(r));
+
+					//
+					//	forward connection close response to client
+					//
+					mux_.post(task_
+						, IPT_EVENT_CONNECTION_CLOSED
+						, cyng::tuple_factory(frame.at(1)
+							, false		//	response
+							, tsk));
+
+					//
+					//	remove entry
+					//
+					task_db_.erase(pos);
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, ctx.tag() << " no entry in task db for seq " << +seq);
+
+				}
 			}
 			else {
 				//	error
-				CYNG_LOG_WARNING(logger_, "received a connection close response but didn't wait for one: " << get_state());
+				CYNG_LOG_WARNING(logger_, ctx.tag() << " received a connection close response but didn't wait for one: " << get_state());
 			}
 		}
 

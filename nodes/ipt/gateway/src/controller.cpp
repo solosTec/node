@@ -125,6 +125,11 @@ namespace node
 							? cyng::logging::make_console_logger(mux.get_io_service(), "ipt:gateway")
 							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "ipt-gateway.log"))
 							;
+#ifdef _DEBUG
+						if (!console) {
+							std::cout << "log file see: " << (log_dir / "ipt-gateway.log") << std::endl;
+						}
+#endif
 #endif
 
 						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));

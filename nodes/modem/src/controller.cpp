@@ -89,16 +89,21 @@ namespace node
 						//	initialize logger
 						//
 #if BOOST_OS_LINUX
-						auto logger = cyng::logging::make_sys_logger("modem", true);
+						auto logger = cyng::logging::make_sys_logger("smf:modem", true);
 #else
 						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 						auto dom = cyng::make_reader(vec[0]);
 						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
 
 						auto logger = (console)
-							? cyng::logging::make_console_logger(mux.get_io_service(), "modem")
-							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "modem.log"))
+							? cyng::logging::make_console_logger(mux.get_io_service(), "smf:modem")
+							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "smf:modem.log"))
 							;
+#ifdef _DEBUG
+						if (!console) {
+							std::cout << "log file see: " << (log_dir / "smf:modem.log") << std::endl;
+						}
+#endif
 #endif
 
 						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
