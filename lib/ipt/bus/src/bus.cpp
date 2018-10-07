@@ -178,7 +178,7 @@ namespace node
 
 		bool bus::is_online() const
 		{
-			return state_ == STATE_AUTHORIZED_;
+			return state_ >= STATE_AUTHORIZED_;
 		}
 
 		bool bus::has_watchdog() const
@@ -241,9 +241,11 @@ namespace node
 				}
 				else
 				{
+					CYNG_LOG_WARNING(logger_, vm_.tag() << " lost connection intentially <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
 					//
 					//	The connection was closed intentionally.
 					//
+					state_ = STATE_INITIAL_;
 				}
 			});
 
@@ -679,7 +681,9 @@ namespace node
 			}
 			else {
 				//	error
-				CYNG_LOG_WARNING(logger_, ctx.tag() << " received a connection close response but didn't wait for one: " << get_state());
+				CYNG_LOG_WARNING(logger_, ctx.tag() 
+					<< " received a connection close response but didn't wait for one: " 
+					<< get_state());
 			}
 		}
 
@@ -797,7 +801,11 @@ namespace node
 				state_ = STATE_INITIAL_;
 			}
 			if (STATE_INITIAL_ != state_) {
-				CYNG_LOG_WARNING(logger_, vm_.tag() << " already authorized: " << get_state());
+				CYNG_LOG_WARNING(logger_, rec.account_ 
+					<< '@' 
+					<< vm_.tag() 
+					<< " already authorized: " 
+					<< get_state());
 				return false;
 			}
 			if (rec.scrambled_) {
