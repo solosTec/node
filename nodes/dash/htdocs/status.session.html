@@ -80,6 +80,9 @@
     <div class="jumbotron jumbotron-fluid">
         <div class="container">
             <h1 class="display-4">All subscribers that are online</h1>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="ws-activity-level">0%</div>
+            </div>
         </div>
     </div>
 
@@ -121,200 +124,210 @@
                 </form>
             </div>
         </div>
+     </div>
 
-        <!-- JavaScript -->
-        <script type="text/javascript" src="DataTables/datatables.min.js"></script>
-        <!--<script type="text/javascript" src="popper.min.js"></script>-->
+    <!-- JavaScript -->
+    <script type="text/javascript" src="DataTables/datatables.min.js"></script>
+    <!--<script type="text/javascript" src="popper.min.js"></script>-->
 
-        <script>
+    <script>
 
-            var renderDate = function (data, type, full, meta) {
-                if (type == "display") {
-                    return data.toLocaleString();
+        var renderDate = function (data, type, full, meta) {
+            if (type == "display") {
+                return data.toLocaleString();
+            }
+            return data;
+        };
+        var renderUTC = function (data, type, full, meta) {
+            if (type == "display") {
+                return ('00' + data.getUTCHours()).slice(-2) + ":" + ('00' + data.getUTCMinutes()).slice(-2) + ":" + ('00' + data.getUTCSeconds()).slice(-2);
+            }
+            return data;
+        };
+        var renderBytes = function (data, type, full, meta) {
+            if (type == "display") {
+                return format_bytes(data);
+            }
+            return data;
+        };
+
+        //  globals
+        var table_ses;
+        var connection;
+        var totalIO = 0;
+
+        var tbl_config = {
+            paging: true,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            pageLength: 25,
+            ordering: true,
+            info: true,
+            //scrollY: "100%",
+            autoWidth: false,
+            deferRender: false,
+            processing: true,
+            searching: true,
+            select: true,
+            colReorder: true,
+            columnDefs: [
+                { targets: 'sml-col-ses-pk', visible: false, name: 'ses-pk' },
+                { targets: 'sml-col-ses-name', visible: true, name: 'ses-name' },
+                { targets: 'sml-col-ses-source', visible: true, name: 'ses-source', className: 'text-right' },
+                { targets: 'sml-col-ses-layer', visible: true, name: 'ses-layer' },
+                { targets: 'sml-col-ses-rx', visible: true, name: 'ses-rx', className: 'text-right', render: renderBytes },
+                { targets: 'sml-col-ses-sx', visible: true, name: 'ses-sx', className: 'text-right', render: renderBytes },
+                { targets: 'sml-col-ses-px', visible: true, name: 'ses-px', className: 'text-right', render: renderBytes },
+                { targets: 'sml-col-ses-login', visible: true, name: 'ses-login', render: renderDate },
+                { targets: 'sml-col-ses-last', visible: true, name: 'ses-last', render: renderUTC }
+            ]
+        };
+
+        $(document).ready(function () {
+            console.log('document ready');
+            table_ses = $('#smf-table-session').DataTable(tbl_config);
+
+            table_ses.on('select', function (e, datatable, type, indexes) {
+                var rowData = datatable.rows(indexes).data().toArray()[0];
+                var rows = table_ses.rows(indexes).data();
+                console.log("select: " + rows.toArray() + ", length:" + rowData.length);
+                $('#smf-form-legend-ses').text("{" + rowData[0] + "}");
+                $('#smf-form-ses-pk').val(rowData[0]);
+                $('#smf-form-ses-stop-name').text(rowData[1]);
+                //  enable submit button
+                $('#smf-form-ses-stop').removeClass('disabled');
+            });
+
+            $('#ws-activity-text').html('connecting to ' + location.host + '...');
+            connection = new WebSocket('ws://' + location.host + '/smf/api/session/v0.1', ['SMF']);
+            connection.onopen = function () {
+                //  subscribe system status
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "status.session", push: true }));
+            };
+
+            connection.onclose = function (event) {
+                $('#ws-activity-symbol').show();
+                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
+                $('#ws-activity-level').text("out of sync").removeClass('bg-success').addClass('bg-warning');
+                if (event.code == 1006) {
+                    $('#ws-activity-text').html('connection lost - press reload');
                 }
-                return data;
-            };
-            var renderUTC = function (data, type, full, meta) {
-                if (type == "display") {
-                    return ('00' + data.getUTCHours()).slice(-2) + ":" + ('00' + data.getUTCMinutes()).slice(-2) + ":" + ('00' + data.getUTCSeconds()).slice(-2);
+                else {
+                    $('#ws-activity-text').html('error ' + event.code);
                 }
-                return data;
-            };
-            var renderBytes = function (data, type, full, meta) {
-                if (type == "display") {
-                    return format_bytes(data);
-                }
-                return data;
             };
 
-            //  globals
-            var table_ses;
-            var connection;
-            var totalIO = 0;
-
-            var tbl_config = {
-                paging: true,
-                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
-                pageLength: 25,
-                ordering: true,
-                info: true,
-                //scrollY: "100%",
-                autoWidth: false,
-                deferRender: false,
-                processing: true,
-                searching: true,
-                select: true,
-                colReorder: true,
-                columnDefs: [
-                    { targets: 'sml-col-ses-pk', visible: false, name: 'ses-pk' },
-                    { targets: 'sml-col-ses-name', visible: true, name: 'ses-name' },
-                    { targets: 'sml-col-ses-source', visible: true, name: 'ses-source', className: 'text-right' },
-                    { targets: 'sml-col-ses-layer', visible: true, name: 'ses-layer' },
-                    { targets: 'sml-col-ses-rx', visible: true, name: 'ses-rx', className: 'text-right', render: renderBytes },
-                    { targets: 'sml-col-ses-sx', visible: true, name: 'ses-sx', className: 'text-right', render: renderBytes },
-                    { targets: 'sml-col-ses-px', visible: true, name: 'ses-px', className: 'text-right', render: renderBytes },
-                    { targets: 'sml-col-ses-login', visible: true, name: 'ses-login', render: renderDate },
-                    { targets: 'sml-col-ses-last', visible: true, name: 'ses-last', render: renderUTC }
-                ]
+            connection.onerror = function (error) {
+                console.log('ws error');
+                $('#ws-activity-text').html('ws error');
             };
 
-            $(document).ready(function () {
-                console.log('document ready');
-                table_ses = $('#smf-table-session').DataTable(tbl_config);
-
-                table_ses.on('select', function (e, datatable, type, indexes) {
-                    var rowData = datatable.rows(indexes).data().toArray()[0];
-                    var rows = table_ses.rows(indexes).data();
-                    console.log("select: " + rows.toArray() + ", length:" + rowData.length);
-                    $('#smf-form-legend-ses').text("{" + rowData[0] + "}");
-                    $('#smf-form-ses-pk').val(rowData[0]);
-                    $('#smf-form-ses-stop-name').text(rowData[1]);
-                    //  enable submit button
-                    $('#smf-form-ses-stop').removeClass('disabled');
-                });
-
-                $('#ws-activity-text').html('connecting to ' + location.host + '...');
-                connection = new WebSocket('ws://' + location.host + '/smf/api/session/v0.1', ['SMF']);
-                connection.onopen = function () {
-                    //  subscribe system status
-                    connection.send(JSON.stringify({ cmd: "subscribe", channel: "status.session", push: true }));
-                };
-
-                connection.onclose = function (event) {
-                    $('#ws-activity-symbol').show();
-                    $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
-                    if (event.code == 1006) {
-                        $('#ws-activity-text').html('connection lost - press reload');
+            connection.onmessage = function (e) {
+                //console.log('incoming data: ' + e.data);
+                totalIO += e.data.length;
+                var obj = JSON.parse(e.data);
+                if (obj.cmd != null) {
+                    if (obj.cmd == 'insert') {
+                        //  don't display HTML codes
+                        var name = $('<div/>').text(obj.rec.data.name).html();
+                        var layer = $('<div/>').text(obj.rec.data.layer).html();
+                        var login = new Date(obj.rec.data.loginTime);
+                        var last = new Date();
+                        var rowNode = table_ses.row.add([obj.rec.key.tag, name, obj.rec.data.source, layer, obj.rec.data.rx, obj.rec.data.sx, obj.rec.data.px, login, last]).draw().node();
                     }
-                    else {
-                        $('#ws-activity-text').html('error ' + event.code);
+                    else if (obj.cmd == 'delete') {
+                        table_ses.row(function (idx, data, node) {
+                            if ((obj.key.length == 1) && (data[0] == obj.key[0])) {
+                                return true;
+                            }
+                            return false;
+                        }).remove().draw(false);
                     }
-                };
-
-                connection.onerror = function (error) {
-                    console.log('ws error');
-                    $('#ws-activity-text').html('ws error');
-                };
-
-                connection.onmessage = function (e) {
-                    //console.log('incoming data: ' + e.data);
-                    totalIO += e.data.length;
-                    var obj = JSON.parse(e.data);
-                    if (obj.cmd != null) {
-                        if (obj.cmd == 'insert') {
-                            //  don't display HTML codes
-                            var name = $('<div/>').text(obj.rec.data.name).html();
-                            var layer = $('<div/>').text(obj.rec.data.layer).html();
-                            var login = new Date(obj.rec.data.loginTime);
-                            var last = new Date();
-                            var rowNode = table_ses.row.add([obj.rec.key.tag, name, obj.rec.data.source, layer, obj.rec.data.rx, obj.rec.data.sx, obj.rec.data.px, login, last]).draw().node();
-                        }
-                        else if (obj.cmd == 'delete') {
-                            table_ses.row(function (idx, data, node) {
-                                if ((obj.key.length == 1) && (data[0] == obj.key[0])) {
-                                    return true;
+                    else if (obj.cmd == 'modify') {
+                        table_ses.row(function (idx, data, node) {
+                            if (data[0] == obj.key) {
+                                var r = table_ses.row(node);
+                                var d = r.data();
+                                if (obj.value.rx != null) {
+                                    d[4] = obj.value.rx;
                                 }
-                                return false;
-                            }).remove().draw(false);
-                        }
-                        else if (obj.cmd == 'modify') {
-                            table_ses.row(function (idx, data, node) {
-                                if (data[0] == obj.key) {
-                                    var r = table_ses.row(node);
-                                    var d = r.data();
-                                    if (obj.value.rx != null) {
-                                        d[4] = obj.value.rx;
-                                    }
-                                    else if (obj.value.sx != null) {
-                                        d[5] = obj.value.sx;
-                                    }
-                                    else if (obj.value.px != null) {
-                                        d[6] = obj.value.px;
-                                    }
-                                    d[8] = new Date();
-                                    r.data(d);
-                                    return true;    //  record found
+                                else if (obj.value.sx != null) {
+                                    d[5] = obj.value.sx;
                                 }
-                                return false;
-                            });
-                        }
-                        else if (obj.cmd == 'clear') {
-                            table_ses.clear().draw(false);
-                        }
-                        else if (obj.cmd == 'load') {
-                            if (obj.show != null && obj.show) {
+                                else if (obj.value.px != null) {
+                                    d[6] = obj.value.px;
+                                }
+                                d[8] = new Date();
+                                r.data(d);
+                                return true;    //  record found
+                            }
+                            return false;
+                        });
+                    }
+                    else if (obj.cmd == 'clear') {
+                        table_ses.clear().draw(false);
+                    }
+                    else if (obj.cmd == 'load') {
+                        if (obj.show != null) {
+                            if (obj.show) {
                                 $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });
                                 $('#ws-activity-symbol').show();
+                                $('#ws-activity-level').css("width", "0%").text("0%").removeClass('bg-warning').addClass('bg-info');
                             }
                             else {
                                 $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
                                 $('#ws-activity-symbol').fadeOut();
+                                $('#ws-activity-level').css("width", "100%").text("synchronized").removeClass('bg-info').addClass('bg-success');
                             }
                         }
+                        else if (obj.level != null) {
+                            console.log('progess: ' + obj.level + "%");
+                            $('#ws-activity-level').css("width", obj.level + "%").attr("aria-valuenow", obj.level).text(obj.level + "%");
+                        }
                     }
-                    $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
-                };
-
-                $('#smf-form-ses-stop').on("click", function (event) {
-                    event.preventDefault();
-                    var pk = $('#smf-form-ses-pk').val();
-                    console.log($(this).text() + ' ' + pk);
-                    connection.send(JSON.stringify({
-                        cmd: 'stop',
-                        channel: 'status.session',
-                        key: [pk]
-                    }));
-                    $('#smf-form-ses-stop').addClass('disabled');
-                });
-
-                $('#smf-table-session tbody').on('click', 'tr', function () {
-                    //console.log("select: single " + this.outerText);
-                    if ($(this).hasClass('selected')) {
-                        $(this).removeClass('selected');
-                    }
-                    else {
-                        table_ses.$('tr.selected').removeClass('selected');
-                        $(this).addClass('selected');
-                    }
-                });
-
-            }); //  document ready
-
-        </script>
-
-        <script>
-            const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-            function format_bytes(x) {
-
-                let l = 0, n = parseInt(x, 10) || 0;
-                while (n >= 1024 && ++l) {
-                    n = n / 1024;
                 }
+                $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
+            };
 
-                if (n == 0) return '-';
-                return (n.toFixed(l < 1 ? 0 : 1) + ' ' + units[l]);
+            $('#smf-form-ses-stop').on("click", function (event) {
+                event.preventDefault();
+                var pk = $('#smf-form-ses-pk').val();
+                console.log($(this).text() + ' ' + pk);
+                connection.send(JSON.stringify({
+                    cmd: 'stop',
+                    channel: 'status.session',
+                    key: [pk]
+                }));
+                $('#smf-form-ses-stop').addClass('disabled');
+            });
+
+            $('#smf-table-session tbody').on('click', 'tr', function () {
+                //console.log("select: single " + this.outerText);
+                if ($(this).hasClass('selected')) {
+                    $(this).removeClass('selected');
+                }
+                else {
+                    table_ses.$('tr.selected').removeClass('selected');
+                    $(this).addClass('selected');
+                }
+            });
+
+        }); //  document ready
+
+    </script>
+
+    <script>
+        const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        function format_bytes(x) {
+
+            let l = 0, n = parseInt(x, 10) || 0;
+            while (n >= 1024 && ++l) {
+                n = n / 1024;
             }
-        </script>
+
+            if (n == 0) return '-';
+            return (n.toFixed(l < 1 ? 0 : 1) + ' ' + units[l]);
+        }
+    </script>
 
 </body>
 </html>
