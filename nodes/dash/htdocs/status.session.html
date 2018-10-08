@@ -153,8 +153,9 @@
 
         //  globals
         var table_ses;
-        var connection;
+        //var connection;
         var totalIO = 0;
+        var _ws = null;
 
         var tbl_config = {
             paging: true,
@@ -183,7 +184,7 @@
         };
 
         $(document).ready(function () {
-            console.log('document ready');
+            //console.log('document ready');
             table_ses = $('#smf-table-session').DataTable(tbl_config);
 
             table_ses.on('select', function (e, datatable, type, indexes) {
@@ -197,102 +198,118 @@
                 $('#smf-form-ses-stop').removeClass('disabled');
             });
 
-            $('#ws-activity-text').html('connecting to ' + location.host + '...');
-            connection = new WebSocket('ws://' + location.host + '/smf/api/session/v0.1', ['SMF']);
-            connection.onopen = function () {
-                //  subscribe system status
-                connection.send(JSON.stringify({ cmd: "subscribe", channel: "status.session", push: true }));
-            };
+            function start_ws() {
 
-            connection.onclose = function (event) {
-                $('#ws-activity-symbol').show();
-                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
-                $('#ws-activity-level').text("out of sync").removeClass('bg-success').addClass('bg-warning');
-                if (event.code == 1006) {
-                    $('#ws-activity-text').html('connection lost - press reload');
-                }
-                else {
-                    $('#ws-activity-text').html('error ' + event.code);
-                }
-            };
+                $('#ws-activity-text').html('connecting to ' + location.host + '...');
+                _ws = new WebSocket('ws://' + location.host + '/smf/api/session/v0.1', ['SMF']);
+                _ws.onopen = function () {
+                    //  clear table in case of reconnect
+                    table_ses.clear().draw(false);
+                    //  subscribe system status
+                    _ws.send(JSON.stringify({ cmd: "subscribe", channel: "status.session", push: true }));
+                };
 
-            connection.onerror = function (error) {
-                console.log('ws error');
-                $('#ws-activity-text').html('ws error');
-            };
+                _ws.onclose = function (event) {
+                    $('#ws-activity-symbol').show();
+                    $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
+                    $('#ws-activity-level').text("out of sync").removeClass('bg-success').addClass('bg-warning');
+                    if (event.code == 1006) {
+                        $('#ws-activity-text').html('connection lost - press reload');
+                    }
+                    else {
+                        $('#ws-activity-text').html('error ' + event.code);
+                    }
+                };
 
-            connection.onmessage = function (e) {
-                //console.log('incoming data: ' + e.data);
-                totalIO += e.data.length;
-                var obj = JSON.parse(e.data);
-                if (obj.cmd != null) {
-                    if (obj.cmd == 'insert') {
-                        //  don't display HTML codes
-                        var name = $('<div/>').text(obj.rec.data.name).html();
-                        var layer = $('<div/>').text(obj.rec.data.layer).html();
-                        var login = new Date(obj.rec.data.loginTime);
-                        var last = new Date();
-                        var rowNode = table_ses.row.add([obj.rec.key.tag, name, obj.rec.data.source, layer, obj.rec.data.rx, obj.rec.data.sx, obj.rec.data.px, login, last]).draw().node();
-                    }
-                    else if (obj.cmd == 'delete') {
-                        table_ses.row(function (idx, data, node) {
-                            if ((obj.key.length == 1) && (data[0] == obj.key[0])) {
-                                return true;
-                            }
-                            return false;
-                        }).remove().draw(false);
-                    }
-                    else if (obj.cmd == 'modify') {
-                        table_ses.row(function (idx, data, node) {
-                            if (data[0] == obj.key) {
-                                var r = table_ses.row(node);
-                                var d = r.data();
-                                if (obj.value.rx != null) {
-                                    d[4] = obj.value.rx;
+                _ws.onerror = function (error) {
+                    console.log('ws error');
+                    $('#ws-activity-text').html('ws error');
+                };
+
+                _ws.onmessage = function (e) {
+                    //console.log('incoming data: ' + e.data);
+                    //$('#ws-activity-symbol').show();
+                    totalIO += e.data.length;
+                    var obj = JSON.parse(e.data);
+                    if (obj.cmd != null) {
+                        if (obj.cmd == 'insert') {
+                            //  don't display HTML codes
+                            var name = $('<div/>').text(obj.rec.data.name).html();
+                            var layer = $('<div/>').text(obj.rec.data.layer).html();
+                            var login = new Date(obj.rec.data.loginTime);
+                            var last = new Date();
+                            var rowNode = table_ses.row.add([obj.rec.key.tag, name, obj.rec.data.source, layer, obj.rec.data.rx, obj.rec.data.sx, obj.rec.data.px, login, last]).draw().node();
+                        }
+                        else if (obj.cmd == 'delete') {
+                            table_ses.row(function (idx, data, node) {
+                                if ((obj.key.length == 1) && (data[0] == obj.key[0])) {
+                                    return true;
                                 }
-                                else if (obj.value.sx != null) {
-                                    d[5] = obj.value.sx;
+                                return false;
+                            }).remove().draw(false);
+                        }
+                        else if (obj.cmd == 'modify') {
+                            table_ses.row(function (idx, data, node) {
+                                if (data[0] == obj.key) {
+                                    var r = table_ses.row(node);
+                                    var d = r.data();
+                                    if (obj.value.rx != null) {
+                                        d[4] = obj.value.rx;
+                                    }
+                                    else if (obj.value.sx != null) {
+                                        d[5] = obj.value.sx;
+                                    }
+                                    else if (obj.value.px != null) {
+                                        d[6] = obj.value.px;
+                                    }
+                                    d[8] = new Date();
+                                    r.data(d);
+                                    return true;    //  record found
                                 }
-                                else if (obj.value.px != null) {
-                                    d[6] = obj.value.px;
+                                return false;
+                            });
+                        }
+                        else if (obj.cmd == 'clear') {
+                            table_ses.clear().draw(false);
+                        }
+                        else if (obj.cmd == 'load') {
+                            if (obj.show != null) {
+                                if (obj.show) {
+                                    $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });
+                                    $('#ws-activity-symbol').show();
+                                    $('#ws-activity-level').css("width", "0%").text("0%").removeClass('bg-warning').addClass('bg-info');
                                 }
-                                d[8] = new Date();
-                                r.data(d);
-                                return true;    //  record found
+                                else {
+                                    $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
+                                    $('#ws-activity-symbol').fadeOut();
+                                    $('#ws-activity-level').css("width", "100%").text("synchronized").removeClass('bg-info').addClass('bg-success');
+                                }
                             }
-                            return false;
-                        });
-                    }
-                    else if (obj.cmd == 'clear') {
-                        table_ses.clear().draw(false);
-                    }
-                    else if (obj.cmd == 'load') {
-                        if (obj.show != null) {
-                            if (obj.show) {
-                                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });
-                                $('#ws-activity-symbol').show();
-                                $('#ws-activity-level').css("width", "0%").text("0%").removeClass('bg-warning').addClass('bg-info');
-                            }
-                            else {
-                                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
-                                $('#ws-activity-symbol').fadeOut();
-                                $('#ws-activity-level').css("width", "100%").text("synchronized").removeClass('bg-info').addClass('bg-success');
+                            else if (obj.level != null) {
+                                console.log('progess: ' + obj.level + "%");
+                                $('#ws-activity-level').css("width", obj.level + "%").attr("aria-valuenow", obj.level).text(obj.level + "%");
                             }
                         }
-                        else if (obj.level != null) {
-                            console.log('progess: ' + obj.level + "%");
-                            $('#ws-activity-level').css("width", obj.level + "%").attr("aria-valuenow", obj.level).text(obj.level + "%");
-                        }
                     }
+                    $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
+                    //$('#ws-activity-symbol').fadeOut();
+                };
+            }
+
+            function check_ws() {
+                if (!_ws || _ws.readyState == 3) {
+                    start_ws();
                 }
-                $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
-            };
+            }
+
+            start_ws();
+            setInterval(check_ws, 5000);
 
             $('#smf-form-ses-stop').on("click", function (event) {
                 event.preventDefault();
                 var pk = $('#smf-form-ses-pk').val();
                 console.log($(this).text() + ' ' + pk);
-                connection.send(JSON.stringify({
+                _ws.send(JSON.stringify({
                     cmd: 'stop',
                     channel: 'status.session',
                     key: [pk]
@@ -310,6 +327,7 @@
                     $(this).addClass('selected');
                 }
             });
+
 
         }); //  document ready
 

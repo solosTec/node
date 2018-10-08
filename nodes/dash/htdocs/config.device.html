@@ -203,7 +203,7 @@
         };
 
         $(document).ready(function () {
-            console.log('document ready');
+            //console.log('document ready');
             table_dev = $('#smf-table-device').DataTable(tbl_config);
 
             table_dev.on('select', function (e, datatable, type, indexes) {
@@ -242,7 +242,6 @@
                 _ws.onclose = function (event) {
                     $('#ws-activity-symbol').show();
                     $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
-                    $('#ws-activity-text').html('connection to ' + location.host + ' lost');
                     $('#ws-activity-level').text("out of sync").removeClass('bg-success').addClass('bg-warning');
                     if (event.code == 1006) {
                         $('#ws-activity-text').html('connection lost - press reload');
@@ -364,7 +363,6 @@
             }
 
             start_ws();
-
             setInterval(check_ws, 5000);
 
             $('#smf-form-dev-update').on("click", function (event) {
