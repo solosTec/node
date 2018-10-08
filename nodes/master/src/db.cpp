@@ -23,7 +23,8 @@ namespace node
 		, boost::uuids::uuid tag
 		, boost::asio::ip::tcp::endpoint ep
 		, std::uint64_t global_config
-		, boost::filesystem::path stat_dir)
+		, boost::filesystem::path stat_dir
+		, std::uint64_t max_messages)
 	{
 		CYNG_LOG_INFO(logger, "initialize database as node " << tag);
 
@@ -384,8 +385,10 @@ namespace node
 			db.insert("_Config", cyng::table::key_generator("connection-auto-enabled-default"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("connection-superseed-default"), cyng::table::data_generator(connection_superseed), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("generate-time-series-default"), cyng::table::data_generator(generate_time_series), 1, tag);
+
 			db.insert("_Config", cyng::table::key_generator("generate-time-series-dir"), cyng::table::data_generator(stat_dir.string()), 1, tag);
-			
+			db.insert("_Config", cyng::table::key_generator("max-messages"), cyng::table::data_generator(max_messages), 1, tag);
+
 
 			//	get hostname
 			boost::system::error_code ec;
@@ -406,7 +409,7 @@ namespace node
 			{ cyng::TC_UINT64, cyng::TC_TIME_POINT, cyng::TC_UINT8, cyng::TC_STRING },
 			{ 0, 0, 0, 128 })))
 		{
-			CYNG_LOG_FATAL(logger, "cannot create table *SysMsg");
+			CYNG_LOG_FATAL(logger, "cannot create table _SysMsg");
 		}
 		else
 		{
@@ -438,25 +441,56 @@ namespace node
 		, std::string const& msg
 		, boost::uuids::uuid tag)
 	{
-		db.access([&](cyng::store::table* tbl)->void {
-			insert_msg(tbl, level, msg, tag);
-		}, cyng::store::write_access("_SysMsg"));
+		db.access([&](cyng::store::table* tbl, cyng::store::table const* tbl_cfg)->void {
+			auto rec = tbl_cfg->lookup(cyng::table::key_generator("max-messages"));
+			const std::uint64_t max_messages = (!rec.empty())
+				? cyng::value_cast<std::uint64_t>(rec["value"], 1000u)
+				: 1000u
+				;
+
+			insert_msg(tbl, level, msg, tag, max_messages);
+		}	, cyng::store::write_access("_SysMsg")
+			, cyng::store::read_access("_Config"));
 
 	}
 
 	void insert_msg(cyng::store::table* tbl
 		, cyng::logging::severity level
 		, std::string const& msg
-		, boost::uuids::uuid tag)
+		, boost::uuids::uuid tag
+		, std::uint64_t max_messages)
 	{
-		tbl->insert(cyng::table::key_generator(static_cast<std::uint64_t>(tbl->size()))
-			, cyng::table::data_generator(std::chrono::system_clock::now()
-			, static_cast<std::uint8_t>(level), msg)
-			, 1, tag);
 
-		if (tbl->size() > 1000)
+		//
+		//	upper limit is 1000 messages
+		//
+		if (tbl->size() > max_messages)
 		{
-			tbl->clear(tag);
+			auto max_rec = tbl->max_record();
+			if (!max_rec.empty()) {
+
+				//	get next message id
+				auto next_idx = cyng::value_cast<std::uint64_t>(max_rec["id"], 0u);
+
+				tbl->insert(cyng::table::key_generator(++next_idx)
+					, cyng::table::data_generator(std::chrono::system_clock::now()
+						, static_cast<std::uint8_t>(level), msg)
+					, 1, tag);
+			}
+
+			//
+			//	remove oldest message (message with the lowest id)
+			//
+			auto min_rec = tbl->min_record();
+			if (!min_rec.empty()) {
+				tbl->erase(min_rec.key(), tag);
+			}
+		}
+		else {
+			tbl->insert(cyng::table::key_generator(static_cast<std::uint64_t>(tbl->size()))
+				, cyng::table::data_generator(std::chrono::system_clock::now()
+					, static_cast<std::uint8_t>(level), msg)
+				, 1, tag);
 		}
 	}
 

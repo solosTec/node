@@ -167,6 +167,18 @@ namespace std
 			return s1.hash() == s2.hash();
 		}
 	};
+	template<>
+	struct less<node::https::plain_session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::https::plain_session;
+		using second_argument_type = node::https::plain_session;
+
+		inline bool operator()(node::https::plain_session const& s1, node::https::plain_session const& s2) const noexcept
+		{
+			return s1.hash() < s2.hash();
+		}
+	};
 
 	template<>
 	struct hash<node::https::ssl_session>
@@ -186,6 +198,18 @@ namespace std
 		inline bool operator()(node::https::ssl_session const& s1, node::https::ssl_session const& s2) const noexcept
 		{
 			return s1.hash() == s2.hash();
+		}
+	};
+	template<>
+	struct less<node::https::ssl_session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::https::ssl_session;
+		using second_argument_type = node::https::ssl_session;
+
+		inline bool operator()(node::https::ssl_session const& s1, node::https::ssl_session const& s2) const noexcept
+		{
+			return s1.hash() < s2.hash();
 		}
 	};
 

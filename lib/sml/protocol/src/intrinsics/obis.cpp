@@ -366,4 +366,10 @@ namespace std
 	{
 		return c1.equal(c2);
 	}
+
+	bool less<node::sml::obis>::operator()(node::sml::obis const& c1, node::sml::obis const& c2) const noexcept
+	{
+		return c1.less(c2);
+	}
+
 }

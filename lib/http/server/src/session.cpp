@@ -603,4 +603,10 @@ namespace std
 	{
 		return t1.tag() == t2.tag();
 	}
+
+	bool less<node::http::session>::operator()(node::http::session const& t1, node::http::session const& t2) const noexcept
+	{
+		return t1.tag() < t2.tag();
+	}
+
 }

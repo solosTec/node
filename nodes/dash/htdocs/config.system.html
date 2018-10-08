@@ -116,7 +116,21 @@
                 </div>
             </div>
             <div class="card">
-                <!--<img class="card-img-top" src="images/config-supersede.svg" alt="Card image cap">-->
+                <div class="card-body">
+                    <h5 class="card-title">Messages</h5>
+                    <p>Maximum number of messages to be displayed.</p>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">default = <span id="smf-config-system-max-messages">?</span></small>
+                </div>
+            </div>
+
+        </div>
+
+        <br>
+
+        <div class="card-deck">
+            <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Generate Time-Series</h5>
                     <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-time-series-data" value=""> Write statistics into <span id="smf-config-system-time-series-dir" style="font-style: italic;">dir</span>. (It may have a performance impact.)</label>
@@ -126,8 +140,6 @@
                 </div>
             </div>
         </div>
-        <br>
-
     </div>
 
     <!-- JavaScript -->
@@ -210,6 +222,10 @@
                         else if (obj.rec.key.name == "generate-time-series-dir") {
                             console.log('generate-time-series-dir: ' + obj.rec.data.value);
                             $("#smf-config-system-time-series-dir").text(obj.rec.data.value);
+                        }
+                        else if (obj.rec.key.name == "max-messages") {
+                            console.log('max-messages": ' + obj.rec.data.value);
+                            $("#smf-config-system-max-messages").text(obj.rec.data.value);
                         }
                     }
                     else if (obj.cmd == 'delete') {

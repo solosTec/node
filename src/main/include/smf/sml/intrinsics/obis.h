@@ -177,6 +177,17 @@ namespace std
 
 		bool operator()(node::sml::obis const& t1, node::sml::obis const& t2) const noexcept;
 	};
+
+	template<>
+	struct less<node::sml::obis>
+	{
+		using result_type = bool;
+		using first_argument_type = node::sml::obis;
+		using second_argument_type = node::sml::obis;
+
+		bool operator()(node::sml::obis const& t1, node::sml::obis const& t2) const noexcept;
+	};
+
 }
 
 #endif	//	NODE_SML_INTRINSICS_OBIS_H

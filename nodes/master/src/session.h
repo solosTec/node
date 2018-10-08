@@ -238,6 +238,19 @@ namespace std
 			return s1.hash() == s2.hash();
 		}
 	};
+	template<>
+	struct less<node::session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::session;
+		using second_argument_type = node::session;
+
+		inline bool operator()(node::session const& s1, node::session const& s2) const noexcept
+		{
+			return s1.hash() < s2.hash();
+		}
+	};
+
 }
 
 

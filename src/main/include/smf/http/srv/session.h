@@ -223,6 +223,17 @@ namespace std
 		bool operator()(node::http::session const& t1, node::http::session const& t2) const noexcept;
 	};
 
+	template<>
+	struct less<node::http::session>
+	{
+		//	pre C++17
+		using result_type = bool;
+		using first_argument_type = node::http::session;
+		using second_argument_type = node::http::session;
+
+		bool operator()(node::http::session const& t1, node::http::session const& t2) const noexcept;
+	};
+
 }
 
 #endif

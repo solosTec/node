@@ -108,4 +108,9 @@ namespace std
 		return s1.hash() == s2.hash();
 	}
 
+	bool less<node::sml::session>::operator()(node::sml::session const& s1, node::sml::session const& s2) const noexcept
+	{
+		return s1.hash() < s2.hash();
+	}
+
 }

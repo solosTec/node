@@ -221,5 +221,16 @@ namespace std
 		bool operator()(node::http::websocket_session const& t1, node::http::websocket_session const& t2) const noexcept;
 	};
 
+	template<>
+	struct less<node::http::websocket_session>
+	{
+		//	pre C++17
+		using result_type = bool;
+		using first_argument_type = node::http::websocket_session;
+		using second_argument_type = node::http::websocket_session;
+
+		bool operator()(node::http::websocket_session const& t1, node::http::websocket_session const& t2) const noexcept;
+	};
+
 }
 #endif

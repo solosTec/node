@@ -179,7 +179,8 @@ namespace node
 						cyng::param_factory("auto-enabled", true),
 						cyng::param_factory("supersede", true),
 						cyng::param_factory("generate-time-series", false),
-						cyng::param_factory("stat-dir", tmp.string())	//	store statistics
+						cyng::param_factory("stat-dir", tmp.string()),	//	store statistics
+						cyng::param_factory("max-messages", 1000)
 						//cyng::param_factory("auto-gw", true)	//	insert gateways automatically
 					))
 					, cyng::param_factory("cluster", cyng::tuple_factory(

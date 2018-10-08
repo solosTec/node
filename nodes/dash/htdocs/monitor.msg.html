@@ -195,7 +195,7 @@
 
             //  {"cmd": "insert", "channel": "monitor.msg", "rec": {"key": {"id":0}, "data": {"msg":"startup","severity":3,"ts":"2018-03-20 18:05:24.71590930"}, "gen": 1}}
             connection.onmessage = function (e) {
-                //console.log('incoming data: ' + e.data);
+                console.log('incoming data: ' + e.data);
                 totalIO += e.data.length;
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
@@ -215,6 +215,14 @@
                         else if (obj.rec.data.severity == 6) {
                             $(rowNode).css('color', 'OrangeRed');
                         }
+                    }
+                    else if (obj.cmd == 'delete') {
+                        table_msg.row(function (idx, data, node) {
+                            if ((obj.key.length == 1) && (data[0] == obj.key[0])) {
+                                return true;
+                            }
+                            return false;
+                        }).remove().draw(false);
                     }
                     else if (obj.cmd == 'clear') {
                         table_msg.clear().draw(false);

@@ -1288,7 +1288,8 @@ namespace node
 				insert_msg(tbl_msg
 					, cyng::logging::severity::LEVEL_INFO
 					, "open push channel - device [" + account + "] is not enabled"
-					, tag);
+					, tag
+					, 1000u);
 
 				return;
 			}
@@ -1314,7 +1315,8 @@ namespace node
 				insert_msg(tbl_msg
 					, cyng::logging::severity::LEVEL_WARNING
 					, "no target [" + name + "] registered"
-					, tag);
+					, tag
+					, 1000u);
 
 				//
 				//	write statistics
@@ -1436,7 +1438,8 @@ namespace node
 				insert_msg(tbl_msg
 					, cyng::logging::severity::LEVEL_WARNING
 					, "open push channel - [" + name + "] failed"
-					, tag);
+					, tag
+					, 1000u);
 
 			}
 		}
@@ -1449,7 +1452,8 @@ namespace node
 			insert_msg(tbl_msg
 				, cyng::logging::severity::LEVEL_WARNING
 				, "open push channel - no target [" + name + "] session"
-				, tag);
+				, tag
+				, 1000u);
 
 		}
 		return false;

@@ -191,6 +191,18 @@ namespace std
 	};
 
 	template<>
+	struct less<node::https::plain_websocket>
+	{
+		using result_type = bool;
+		using first_argument_type = node::https::plain_websocket;
+		using second_argument_type = node::https::plain_websocket;
+
+		inline bool operator()(node::https::plain_websocket const& s1, node::https::plain_websocket const& s2) const noexcept
+		{
+			return s1.hash() < s2.hash();
+		}
+	};
+	template<>
 	struct hash<node::https::ssl_websocket>
 	{
 		inline size_t operator()(node::https::ssl_websocket const& s) const noexcept
@@ -208,6 +220,18 @@ namespace std
 		inline bool operator()(node::https::ssl_websocket const& s1, node::https::ssl_websocket const& s2) const noexcept
 		{
 			return s1.hash() == s2.hash();
+		}
+	};
+	template<>
+	struct less<node::https::ssl_websocket>
+	{
+		using result_type = bool;
+		using first_argument_type = node::https::ssl_websocket;
+		using second_argument_type = node::https::ssl_websocket;
+
+		inline bool operator()(node::https::ssl_websocket const& s1, node::https::ssl_websocket const& s2) const noexcept
+		{
+			return s1.hash() < s2.hash();
 		}
 	};
 

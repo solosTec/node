@@ -440,4 +440,10 @@ namespace std
 	{
 		return t1.tag() == t2.tag();
 	}
+
+	bool less<node::http::websocket_session>::operator()(node::http::websocket_session const& t1, node::http::websocket_session const& t2) const noexcept
+	{
+		return t1.tag() < t2.tag();
+	}
+
 }

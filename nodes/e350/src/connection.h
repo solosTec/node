@@ -170,6 +170,19 @@ namespace std
 			return conn1.hash() == conn2.hash();
 		}
 	};
+	template<>
+	struct less<node::imega::connection>
+	{
+		using result_type = bool;
+		using first_argument_type = node::imega::connection;
+		using second_argument_type = node::imega::connection;
+
+		inline bool operator()(node::imega::connection const& conn1, node::imega::connection const& conn2) const noexcept
+		{
+			return conn1.hash() < conn2.hash();
+		}
+	};
+
 }
 
 #endif

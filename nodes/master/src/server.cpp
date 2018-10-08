@@ -28,6 +28,7 @@ namespace node
 		, monitor_(monitor)
 		, global_configuration_(0)
 		, stat_dir_()
+		, max_messages_(1000u)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
 		, socket_(io_ctx_)
@@ -53,6 +54,9 @@ namespace node
 		const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 		stat_dir_ = cyng::value_cast(dom.get("stat-dir"), tmp.string());
 		CYNG_LOG_INFO(logger_, "store statistics data at " << stat_dir_);
+
+		max_messages_ = cyng::value_cast<std::uint64_t>(dom.get("ax-messages"), max_messages_);
+		CYNG_LOG_INFO(logger_, "store max. " << max_messages_ << " messages");
 
 	}
 	
@@ -86,7 +90,8 @@ namespace node
 				, tag_
 				, acceptor_.local_endpoint()
 				, global_configuration_.load()
-				, stat_dir_);
+				, stat_dir_
+				, max_messages_);
 
 			do_accept();
 		}

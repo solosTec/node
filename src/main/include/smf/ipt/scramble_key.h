@@ -106,6 +106,17 @@ namespace std
 
 		bool operator()(node::ipt::scramble_key const& t1, node::ipt::scramble_key const& t2) const noexcept;
 	};
+
+	template<>
+	struct less<node::ipt::scramble_key>
+	{
+		using result_type = bool;
+		using first_argument_type = node::ipt::scramble_key;
+		using second_argument_type = node::ipt::scramble_key;
+
+		bool operator()(node::ipt::scramble_key const& t1, node::ipt::scramble_key const& t2) const noexcept;
+	};
+
 }
 
 #endif	//	NODE_IPT_SCRAMBLE_KEY_H

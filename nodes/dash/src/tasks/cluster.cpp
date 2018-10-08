@@ -2346,6 +2346,16 @@ namespace node
 
 			update_channel("table.cluster.count", tbl->size());
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("delete")),
+				cyng::param_factory("channel", "monitor.msg"),
+				cyng::param_factory("key", key));
+
+			auto msg = cyng::json::to_string(tpl);
+			server_.process_event("monitor.msg", msg);
+		}
 		else
 		{
 			CYNG_LOG_ERROR(logger_, "sig.del - unknown table "

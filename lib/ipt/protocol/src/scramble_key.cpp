@@ -193,4 +193,9 @@ namespace std
 	{
 		return sk1.key() == sk2.key();
 	}
+
+	bool less<node::ipt::scramble_key>::operator()(node::ipt::scramble_key const& sk1, node::ipt::scramble_key const& sk2) const noexcept
+	{
+		return sk1.key() < sk2.key();
+	}
 }

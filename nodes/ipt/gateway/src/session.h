@@ -123,6 +123,15 @@ namespace std
 
 		bool operator()(node::sml::session const& s1, node::sml::session const& s2) const noexcept;
 	};
+	template<>
+	struct less<node::sml::session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::sml::session;
+		using second_argument_type = node::sml::session;
+
+		bool operator()(node::sml::session const& s1, node::sml::session const& s2) const noexcept;
+	};
 }
 
 

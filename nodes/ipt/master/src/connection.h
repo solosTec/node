@@ -170,6 +170,19 @@ namespace std
 			return conn1.hash() == conn2.hash();
 		}
 	};
+	template<>
+	struct less<node::ipt::connection>
+	{
+		using result_type = bool;
+		using first_argument_type = node::ipt::connection;
+		using second_argument_type = node::ipt::connection;
+
+		inline bool operator()(node::ipt::connection const& conn1, node::ipt::connection const& conn2) const noexcept
+		{
+			return conn1.hash() < conn2.hash();
+		}
+	};
+
 }
 
 #endif
