@@ -34,7 +34,7 @@ math(EXPR PATCH_LEVEL "(${THIS_YEAR} * 1000) + ${PATCH_LEVEL}")
 #
 project(NODE 
 	VERSION 0.6.${PATCH_LEVEL}.1
-	LANGUAGES CXX)
+	LANGUAGES CXX C)
 
 
 set (${PROJECT_NAME}_COPYRIGHT_YEAR ${THIS_YEAR})
@@ -131,7 +131,7 @@ endif()
 #
 #	setup C++ compiler
 #
-if (CMAKE_COMPILER_IS_GNUCC)
+if (CMAKE_COMPILER_IS_GNUCXX)
 
 	#
 	# gnu C++
