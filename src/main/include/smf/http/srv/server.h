@@ -88,7 +88,7 @@ namespace node
 			/**
 			 * generate unique session tags
 			 */
-			boost::uuids::random_generator rgn_;
+			boost::uuids::random_generator uidgen_;
 
 		};
 	}

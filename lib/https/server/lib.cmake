@@ -11,6 +11,7 @@ set (https_srv_cpp
 	lib/https/server/src/mime_type.cpp
 	lib/https/server/src/detect_ssl.hpp
 	lib/https/server/src/auth.cpp
+	lib/https/server/src/connections.cpp
 )
 
 set (https_srv_h
@@ -26,6 +27,7 @@ set (https_srv_h
 	src/main/include/smf/https/srv/mime_type.h
 	src/main/include/smf/https/srv/ssl_stream.hpp
 	src/main/include/smf/https/srv/auth.h
+	src/main/include/smf/https/srv/connections.h
 )
 
 

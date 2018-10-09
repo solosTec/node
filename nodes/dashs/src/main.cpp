@@ -42,7 +42,6 @@ int main(int argc, char **argv)
 	//	json, XML
 	("default,D", boost::program_options::value<std::string>()->default_value("")->implicit_value("json"), "generate a default configuration and exit. options are json and XML")
 	("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
-    //("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
 	("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
     ;
@@ -73,20 +72,20 @@ int main(int argc, char **argv)
 	//
 	//	certificate
 	//
-	boost::program_options::options_description node_x509("X509 Certificate");
-	node_x509.add_options()
+	//boost::program_options::options_description node_x509("X509 Certificate");
+	//node_x509.add_options()
 
-		("x509.C", boost::program_options::value<std::string>()->default_value("CH"), "Country")
-		("x509.L", boost::program_options::value<std::string>()->default_value("Lucerne"), "City")
-		("x509.O", boost::program_options::value<std::string>()->default_value("solosTec"), "Organisation")
-		("x509.CN", boost::program_options::value<std::string>()->default_value("Lucerne"), "Common Name")
-		;
+	//	("x509.C", boost::program_options::value<std::string>()->default_value("CH"), "Country")
+	//	("x509.L", boost::program_options::value<std::string>()->default_value("Lucerne"), "City")
+	//	("x509.O", boost::program_options::value<std::string>()->default_value("solosTec"), "Organisation")
+	//	("x509.CN", boost::program_options::value<std::string>()->default_value("Lucerne"), "Common Name")
+	//	;
 
     //
     //	all you can grab from the command line
     //
     boost::program_options::options_description cmdline_options;
-    cmdline_options.add(generic).add(node_options).add(node_x509);
+	cmdline_options.add(generic).add(node_options); // .add(node_x509);
 
     //
     //	read all data
@@ -162,12 +161,6 @@ int main(int argc, char **argv)
 		{
 			//	show local IP adresses
 			return node::show_ip_address(std::cout);
-		}
-
-		if (vm["show"].as< bool >())
-		{
-			//	show configuration
-// 			return ctrl.show_config();
 		}
 
 #if BOOST_OS_WINDOWS

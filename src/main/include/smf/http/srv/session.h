@@ -181,6 +181,9 @@ namespace node
 
 namespace cyng
 {
+	//
+	//	make the session object compatible with the cyng object system
+	//
 	namespace traits
 	{
 		template <>
@@ -201,7 +204,6 @@ namespace cyng
 			using type = node::http::session;
 		};
 	}
-
 }
 
 namespace std

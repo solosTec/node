@@ -161,7 +161,7 @@ namespace node
 			// Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
 			{
-				CYNG_LOG_WARNING(logger_, "session aborted - read");
+				CYNG_LOG_WARNING(logger_, tag() << " - timer aborted session");
 				connection_manager_.stop(this);
 				return;
 			}

@@ -29,7 +29,7 @@ namespace node
 			, is_listening_(false)
 			, shutdown_complete_()
 			, mutex_()
-			, rgn_()
+			, uidgen_()
 		{
 			boost::system::error_code ec;
 
@@ -131,7 +131,7 @@ namespace node
 			}
 			else
 			{
-				const auto tag = rgn_();
+				const auto tag = uidgen_();
 
 				CYNG_LOG_TRACE(logger_, "accept "
 					<< socket_.remote_endpoint()

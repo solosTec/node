@@ -12,22 +12,26 @@
 #include <boost/beast/http.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/logic/tribool.hpp>
-#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
 	namespace https
 	{
-		// Handles an boost::beast::http server connection
+		//	forward declaration(s):
+		class connections;
+
+		/**
+		 * Handles an boost::beast::http server connection
+		 */
 		class detector : public std::enable_shared_from_this<detector>
 		{
 		public:
 			detector(cyng::logging::log_ptr
-				, server_callback_t cb
+				, connections&
+				, boost::uuids::uuid tag
 				, boost::asio::ip::tcp::socket socket
 				, boost::asio::ssl::context& ctx
-				, std::string const& doc_root
-				, std::vector<std::string> const&);
+				, std::string const& doc_root);
 
 			// Launch the detector
 			void run();
@@ -37,18 +41,13 @@ namespace node
 
 		private:
 			cyng::logging::log_ptr logger_;
-			server_callback_t cb_;
+			connections& connection_manager_;
+			const boost::uuids::uuid tag_;
 			boost::asio::ip::tcp::socket socket_;
 			boost::asio::ssl::context& ctx_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 			std::string const& doc_root_;
-			std::vector<std::string> const&	sub_protocols_;
 			boost::beast::flat_buffer buffer_;
-
-			/**
-			 * Generate unique session tags
-			 */
-			boost::uuids::random_generator rgn_;
 
 		};
 	}

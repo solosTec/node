@@ -556,6 +556,17 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
     endif()
 endif()
 
+include (nodes/assl/prg.cmake)
+add_executable(assl ${node_assl})
+target_link_libraries(assl ${OPENSSL_LIBRARIES})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+    if (UNIX)
+        target_link_libraries(assl ${Boost_LIBRARIES} pthread)
+    else()
+        target_link_libraries(assl ${Boost_LIBRARIES})
+    endif()
+endif()
+
 #
 # dashboard (HTTP)
 #

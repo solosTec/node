@@ -13,7 +13,6 @@ namespace node
 	namespace https
 	{
 		server::server(cyng::logging::log_ptr logger
-			//, server_callback_t cb
 			, boost::asio::io_context& ioc
 			, boost::asio::ssl::context& ctx
 			, boost::asio::ip::tcp::endpoint endpoint
@@ -22,7 +21,7 @@ namespace node
 			, ctx_(ctx)
 			, acceptor_(ioc)
 			, socket_(ioc)
-			, doc_root_(doc_root)
+			, connection_manager_(logger, doc_root)
 			, is_listening_(false)
 			, shutdown_complete_()
 			, mutex_()
@@ -31,32 +30,28 @@ namespace node
 
 			// Open the acceptor
 			acceptor_.open(endpoint.protocol(), ec);
-			if (ec)
-			{
+			if (ec)	{
 				CYNG_LOG_FATAL(logger_, "open: " << ec.message());
 				return;
 			}
 
 			// Allow address reuse
 			acceptor_.set_option(boost::asio::socket_base::reuse_address(true));
-			if (ec)
-			{
+			if (ec)	{
 				CYNG_LOG_FATAL(logger_, "allow address reuse: " << ec.message());
 				return;
 			}
 
 			// Bind to the server address
 			acceptor_.bind(endpoint, ec);
-			if (ec)
-			{
+			if (ec)	{
 				CYNG_LOG_FATAL(logger_, "bind: " << ec.message());
 				return;
 			}
 
 			// Start listening for connections
 			acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
-			if (ec)
-			{
+			if (ec)	{
 				CYNG_LOG_FATAL(logger_, "listen: " << ec.message());
 				return;
 			}
@@ -79,19 +74,13 @@ namespace node
 
 		void server::do_accept()
 		{
-			acceptor_.async_accept(
-				socket_,
-				std::bind(
-					&server::on_accept,
-					this,
-					std::placeholders::_1));
+			acceptor_.async_accept(socket_, std::bind(&server::on_accept, this, std::placeholders::_1));
 		}
 
 		void server::on_accept(boost::system::error_code ec)
 		{
-			if (ec)
-			{
-				CYNG_LOG_WARNING(logger_, "accept: " << ec.message());
+			if (ec)	{
+				CYNG_LOG_ERROR(logger_, "accept: " << ec.message());
 
 				//
 				//	remove listener flag
@@ -106,15 +95,13 @@ namespace node
 			}
 			else
 			{
-				CYNG_LOG_TRACE(logger_, "accept: " << socket_.remote_endpoint());
 
-				// Create the session and run it
-				//std::make_shared<detector>(logger_
-				//	, cb_
-				//	, std::move(socket_)
-				//	, ctx_
-				//	, doc_root_
-				//	, sub_protocols_)->run();
+				CYNG_LOG_TRACE(logger_, "accept "
+					<< socket_.remote_endpoint());
+
+				//	Create the session and run it
+
+				connection_manager_.create_session(std::move(socket_), ctx_);
 
 				// Accept another connection
 				do_accept();

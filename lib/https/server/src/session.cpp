@@ -7,18 +7,20 @@
 
 #include <smf/https/srv/session.h>
 #include <smf/https/srv/handle_request.hpp>
+#include <smf/https/srv/connections.h>
+
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node
 {
 	namespace https
 	{
 		plain_session::plain_session(cyng::logging::log_ptr logger
-			, session_callback_t cb
+			, boost::uuids::uuid tag
 			, boost::asio::ip::tcp::socket socket
 			, boost::beast::flat_buffer buffer
-			, std::string const& doc_root
-			, std::vector<std::string> const& sub_protocols)
-		: session<plain_session>(logger, cb, socket.get_executor().context(), std::move(buffer), doc_root, sub_protocols)
+			, std::string const& doc_root)
+		: session<plain_session>(logger, tag, socket.get_executor().context(), std::move(buffer), doc_root)
 			, socket_(std::move(socket))
 			, strand_(socket_.get_executor())
 		{}
@@ -41,7 +43,10 @@ namespace node
 		// Start the asynchronous operation
 		void plain_session::run(cyng::object obj)
 		{
-			cb_(cyng::generate_invoke("https.launch.session.plain", obj, socket_.remote_endpoint()));
+			//
+			//	ToDo: substitute cb_
+			//
+			//cb_(cyng::generate_invoke("https.launch.session.plain", obj, socket_.remote_endpoint()));
 
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
@@ -56,7 +61,10 @@ namespace node
 			boost::system::error_code ec;
 			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
 
-			cb_(cyng::generate_invoke("https.eof.session.plain", obj));
+			//
+			//	ToDo: substitute cb_
+			//
+			//cb_(cyng::generate_invoke("https.eof.session.plain", obj));
 			// At this point the connection is closed gracefully
 		}
 
@@ -70,13 +78,12 @@ namespace node
 		}
 
 		ssl_session::ssl_session(cyng::logging::log_ptr logger
-			, session_callback_t cb
+			, boost::uuids::uuid tag
 			, boost::asio::ip::tcp::socket socket
 			, boost::asio::ssl::context& ctx
 			, boost::beast::flat_buffer buffer
-			, std::string const& doc_root
-			, std::vector<std::string> const& sub_protocols)
-		: session<ssl_session>(logger, cb, socket.get_executor().context(), std::move(buffer), doc_root, sub_protocols)
+			, std::string const& doc_root)
+		: session<ssl_session>(logger, tag, socket.get_executor().context(), std::move(buffer), doc_root)
 			, stream_(std::move(socket), ctx)
 			, strand_(stream_.get_executor())
 		{}
@@ -101,7 +108,10 @@ namespace node
 		// Start the asynchronous operation
 		void ssl_session::run(cyng::object obj)
 		{
-			cb_(cyng::generate_invoke("https.launch.session.ssl", obj, stream_.lowest_layer().remote_endpoint()));
+			//
+			//	ToDo: substitute cb_
+			//
+			//cb_(cyng::generate_invoke("https.launch.session.ssl", obj, stream_.lowest_layer().remote_endpoint()));
 
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
@@ -121,8 +131,7 @@ namespace node
 					std::bind(
 						&ssl_session::on_handshake,
 						this, 
-						//shared_from_this(),
-						obj,
+						obj,	//	hold reference
 						std::placeholders::_1,
 						std::placeholders::_2)));
 		}
@@ -132,8 +141,8 @@ namespace node
 			, std::size_t bytes_used)
 		{
 			// Happens when the handshake times out
-			if (ec == boost::asio::error::operation_aborted)
-			{
+			if (ec == boost::asio::error::operation_aborted)	{
+				CYNG_LOG_ERROR(logger_, "handshake timeout ");
 				return;
 			}
 
@@ -166,7 +175,11 @@ namespace node
 						obj,
 						std::placeholders::_1)));
 
-			cb_(cyng::generate_invoke("https.eof.session.ssl", obj));
+			//
+			//	ToDo: substitute cb_
+			//
+			CYNG_LOG_WARNING(logger_, tag() << " - SSL shutdown");
+			//cb_(cyng::generate_invoke("https.eof.session.ssl", obj));
 
 		}
 
@@ -175,16 +188,21 @@ namespace node
 			// Happens when the shutdown times out
 			if (ec == boost::asio::error::operation_aborted)
 			{
+				CYNG_LOG_WARNING(logger_, tag() << " - SSL shutdown timeout");
 				return;
 			}
 
 			if (ec)
 			{
 				//return fail(ec, "shutdown");
+				CYNG_LOG_WARNING(logger_, tag() << " - SSL shutdown failed");
 				return;
 			}
 
-			cb_(cyng::generate_invoke("https.on.shutdown.session.ssl", obj));
+			//
+			//	ToDo: substitute cb_
+			//
+			//cb_(cyng::generate_invoke("https.on.shutdown.session.ssl", obj));
 			// At this point the connection is closed gracefully
 		}
 
@@ -216,6 +234,39 @@ namespace cyng
 		const char type_tag<node::https::ssl_session>::name[] = "ssl-session";
 #endif
 	}	// traits	
+}
+
+namespace std
+{
+	size_t hash<node::https::plain_session>::operator()(node::https::plain_session const& s) const noexcept
+	{
+		return s.hash();
+	}
+
+	bool equal_to<node::https::plain_session>::operator()(node::https::plain_session const& s1, node::https::plain_session const& s2) const noexcept
+	{
+		return s1.hash() == s2.hash();
+	}
+
+	bool less<node::https::plain_session>::operator()(node::https::plain_session const& s1, node::https::plain_session const& s2) const noexcept
+	{
+		return s1.hash() < s2.hash();
+	}
+
+	size_t hash<node::https::ssl_session>::operator()(node::https::ssl_session const& s) const noexcept
+	{
+		return s.hash();
+	}
+
+	bool equal_to<node::https::ssl_session>::operator()(node::https::ssl_session const& s1, node::https::ssl_session const& s2) const noexcept
+	{
+		return s1.hash() == s2.hash();
+	}
+
+	bool less<node::https::ssl_session>::operator()(node::https::ssl_session const& s1, node::https::ssl_session const& s2) const noexcept
+	{
+		return s1.hash() < s2.hash();
+	}
 
 }
 

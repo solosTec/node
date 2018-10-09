@@ -9,6 +9,7 @@
 #define NODE_LIB_HTTPS_SRV_SERVER_H
 
 #include <smf/https/srv/https.h>
+#include <smf/https/srv/connections.h>
 #include <cyng/compatibility/async.h>
 #include <atomic>
 
@@ -45,7 +46,11 @@ namespace node
 			boost::asio::ssl::context& ctx_;
 			boost::asio::ip::tcp::acceptor acceptor_;
 			boost::asio::ip::tcp::socket socket_;
-			const std::string doc_root_;
+
+			/**
+			 * The connection manager which owns all live connections.
+			 */
+			connections connection_manager_;
 
 			/**
 			 *	set to true when the server is listening for new connections
