@@ -16,12 +16,14 @@ namespace node
 			, boost::asio::io_context& ioc
 			, boost::asio::ssl::context& ctx
 			, boost::asio::ip::tcp::endpoint endpoint
-			, std::string const& doc_root)
+			, std::string const& doc_root
+			, std::set<boost::asio::ip::address> const& blacklist)
 		: logger_(logger)
 			, ctx_(ctx)
 			, acceptor_(ioc)
 			, socket_(ioc)
 			, connection_manager_(logger, doc_root)
+			, blacklist_(blacklist)
 			, is_listening_(false)
 			, shutdown_complete_()
 			, mutex_()
@@ -95,13 +97,23 @@ namespace node
 			}
 			else
 			{
+				//	since C++20 use contains()
+				auto pos = blacklist_.find(socket_.remote_endpoint().address());
+				if (pos != blacklist_.end()) {
 
-				CYNG_LOG_TRACE(logger_, "accept "
-					<< socket_.remote_endpoint());
+					CYNG_LOG_WARNING(logger_, "address "
+						<< socket_.remote_endpoint()
+						<< " is blacklisted");
+					socket_.close();
+				}
+				else {
+					CYNG_LOG_TRACE(logger_, "accept "
+						<< socket_.remote_endpoint());
 
-				//	Create the session and run it
+					//	Create the session and run it
 
-				connection_manager_.create_session(std::move(socket_), ctx_);
+					connection_manager_.create_session(std::move(socket_), ctx_);
+				}
 
 				// Accept another connection
 				do_accept();

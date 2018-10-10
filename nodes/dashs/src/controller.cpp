@@ -200,7 +200,7 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8443"),	//	default is 443
 						cyng::param_factory("document-root", (pwd / "nodes" / "dash" / "htdocs").string()),
-						cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
+						//cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
 						cyng::param_factory("tls-pwd", "test"),
 						cyng::param_factory("tls-certificate-chain", "demo.cert"),
                         cyng::param_factory("tls-private-key", "priv.key"),
@@ -462,9 +462,21 @@ namespace node
 		CYNG_LOG_INFO(logger, "service: " << service);
 
 		//
-		// The SSL context is required, and holds certificates
+		//	get blacklisted addresses
 		//
-		//boost::asio::ssl::context ctx{ boost::asio::ssl::context::sslv23 };
+		const auto blacklist_str = cyng::vector_cast<std::string>(dom.get("blacklist"), "");
+		CYNG_LOG_INFO(logger, blacklist_str.size() << " adresses are blacklisted");
+		std::set<boost::asio::ip::address>	blacklist;
+		for (auto const& a : blacklist_str) {
+			auto r = blacklist.insert(boost::asio::ip::make_address(a));
+			if (r.second) {
+				CYNG_LOG_TRACE(logger, *r.first);
+			}
+			else {
+				CYNG_LOG_WARNING(logger, "cannot insert " << a);
+			}
+		}
+
 
 		static auto tls_pwd = cyng::value_cast<std::string>(dom.get("tls-pwd"), "test");
 		auto tls_certificate_chain = cyng::value_cast<std::string>(dom.get("tls-certificate-chain"), "demo.cert");
@@ -483,7 +495,8 @@ namespace node
 				, ctx
 				, load_cluster_cfg(cfg_cls)
 				, boost::asio::ip::tcp::endpoint{ host, port }
-			, doc_root);
+				, doc_root
+				, blacklist);
 		}
 		else {
 			CYNG_LOG_FATAL(logger, "loading server certificates failed");

@@ -338,12 +338,16 @@ namespace node
 		write_pid(log_dir, tag);
 #endif
 
+
 		//
 		//	connect to cluster
 		//
 		cyng::vector_t tmp_vec;
 		cyng::tuple_t tmp_tpl;
-		join_cluster(mux, logger, cyng::value_cast(dom.get("cluster"), tmp_vec), cyng::value_cast(dom.get("server"), tmp_tpl));
+		join_cluster(mux
+			, logger
+			, cyng::value_cast(dom.get("cluster"), tmp_vec)
+			, cyng::value_cast(dom.get("server"), tmp_tpl));
 
 		//
 		//	wait for system signals
@@ -404,7 +408,7 @@ namespace node
 		//
 		//	get subprotocols
 		//
-		const auto sub_protocols = cyng::vector_cast<std::string>(dom.get("sub-protocols"), "");
+		//const auto sub_protocols = cyng::vector_cast<std::string>(dom.get("sub-protocols"), "");
 
 		//auth_dirs ad;
 		//init(dom[0]["http"].get("auth"), ad);
@@ -413,7 +417,23 @@ namespace node
 		CYNG_LOG_INFO(logger, "document root: " << doc_root);
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
-		CYNG_LOG_INFO(logger, sub_protocols.size() << " subprotocols");
+		//CYNG_LOG_INFO(logger, sub_protocols.size() << " subprotocols");
+
+		//
+		//	get blacklisted addresses
+		//
+		const auto blacklist_str = cyng::vector_cast<std::string>(dom.get("blacklist"), "");
+		CYNG_LOG_INFO(logger, blacklist_str.size() << " adresses are blacklisted");
+		std::set<boost::asio::ip::address>	blacklist;
+		for (auto const& a : blacklist_str) {
+			auto r = blacklist.insert(boost::asio::ip::make_address(a));
+			if (r.second) {
+				CYNG_LOG_TRACE(logger, *r.first);
+			}
+			else {
+				CYNG_LOG_WARNING(logger, "cannot insert " << a);
+			}
+		}
 
 
 		cyng::async::start_task_delayed<cluster>(mux
@@ -421,7 +441,8 @@ namespace node
 			, logger
 			, load_cluster_cfg(cfg_cls)
 			, boost::asio::ip::tcp::endpoint{ host, port }
-			, doc_root);
+			, doc_root
+			, blacklist);
 
 	}
 

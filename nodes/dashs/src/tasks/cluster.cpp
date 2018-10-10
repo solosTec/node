@@ -36,16 +36,16 @@ namespace node
 		, boost::asio::ssl::context& ctx
 		, cluster_config_t const& cfg_cls
 		, boost::asio::ip::tcp::endpoint ep
-		, std::string const& doc_root)
+		, std::string const& doc_root
+		, std::set<boost::asio::ip::address> const& blacklist)
 	: base_(*btp)
 		, uidgen_()
 		, bus_(bus_factory(btp->mux_, logger, uidgen_(), btp->get_id()))
 		, logger_(logger)
 		, config_(cfg_cls)
 		, cache_()
-		, server_(logger, btp->mux_.get_io_service(), ctx, ep, doc_root/*, bus_, cache_*/)
+		, server_(logger, btp->mux_.get_io_service(), ctx, ep, doc_root, blacklist/*, bus_, cache_*/)
         , sys_tsk_(cyng::async::NO_TASK)
-		//, form_data_()
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

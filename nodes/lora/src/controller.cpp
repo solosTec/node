@@ -453,6 +453,22 @@ namespace node
 		CYNG_LOG_INFO(logger, "service: " << service);
 		CYNG_LOG_INFO(logger, ad.size() << " user credentials");
 
+		//
+		//	get blacklisted addresses
+		//
+		const auto blacklist_str = cyng::vector_cast<std::string>(dom.get("blacklist"), "");
+		CYNG_LOG_INFO(logger, blacklist_str.size() << " adresses are blacklisted");
+		std::set<boost::asio::ip::address>	blacklist;
+		for (auto const& a : blacklist_str) {
+			auto r = blacklist.insert(boost::asio::ip::make_address(a));
+			if (r.second) {
+				CYNG_LOG_TRACE(logger, *r.first);
+			}
+			else {
+				CYNG_LOG_WARNING(logger, "cannot insert " << a);
+			}
+		}
+
 		// The SSL context is required, and holds certificates
 		static boost::asio::ssl::context ctx{ boost::asio::ssl::context::sslv23 };
 
@@ -466,7 +482,8 @@ namespace node
 			, tag
 			, load_cluster_cfg(cfg_cls)
 			, boost::asio::ip::tcp::endpoint{ host, port }
-			, doc_root);
+			, doc_root
+			, blacklist);
 
 		if (r.second)	return r.first;
 

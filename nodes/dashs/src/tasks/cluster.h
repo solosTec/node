@@ -36,7 +36,8 @@ namespace node
 			, boost::asio::ssl::context& ctx
 			, cluster_config_t const& cfg_cls
 			, boost::asio::ip::tcp::endpoint
-			, std::string const& doc_root);
+			, std::string const& doc_root
+			, std::set<boost::asio::ip::address> const&);
 		cyng::continuation run();
 		void stop();
 

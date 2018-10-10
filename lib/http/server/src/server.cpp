@@ -17,12 +17,14 @@ namespace node
 			, boost::asio::io_context& ioc
 			, boost::asio::ip::tcp::endpoint endpoint
 			, std::string const& doc_root
+			, std::set<boost::asio::ip::address> const& blacklist
 			, node::bus::shared_type bus
 			, cyng::store::db& cache)
 		: logger_(logger)
 			, acceptor_(ioc)
 			, socket_(ioc)
 			, doc_root_(doc_root)
+			, blacklist_(blacklist)
 			, bus_(bus)
 			, cache_(cache)
 			, connection_manager_(logger, bus)
@@ -131,21 +133,33 @@ namespace node
 			}
 			else
 			{
-				const auto tag = uidgen_();
+				//	since C++20 use contains()
+				auto pos = blacklist_.find(socket_.remote_endpoint().address());
+				if (pos != blacklist_.end()) {
 
-				CYNG_LOG_TRACE(logger_, "accept "
-					<< socket_.remote_endpoint()
-					<< " - "
-					<< tag);
+					CYNG_LOG_WARNING(logger_, "address "
+						<< socket_.remote_endpoint()
+						<< " is blacklisted");
+					socket_.close();
+				}
+				else {
 
-				// Create the http_session and run it
-				connection_manager_.start(make_http_session(logger_
-					, connection_manager_
-					, std::move(socket_)
-					, doc_root_
-					, bus_
-					, tag));
+					const auto tag = uidgen_();
 
+					CYNG_LOG_TRACE(logger_, "accept "
+						<< socket_.remote_endpoint()
+						<< " - "
+						<< tag);
+
+					// Create the http_session and run it
+					connection_manager_.start(make_http_session(logger_
+						, connection_manager_
+						, std::move(socket_)
+						, doc_root_
+						, bus_
+						, tag));
+
+				}
 
 				// Accept another connection
 				do_accept();

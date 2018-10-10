@@ -34,6 +34,7 @@ namespace node
 				, boost::asio::io_context& ioc
 				, boost::asio::ip::tcp::endpoint endpoint
 				, std::string const& doc_root
+				, std::set<boost::asio::ip::address> const& blacklist
 				, node::bus::shared_type
 				, cyng::store::db&);
 
@@ -66,6 +67,7 @@ namespace node
 			boost::asio::ip::tcp::acceptor acceptor_;
 			boost::asio::ip::tcp::socket socket_;
 			std::string const& doc_root_;
+			const std::set<boost::asio::ip::address> blacklist_;
 			bus::shared_type bus_;
 			cyng::store::db& cache_;
 

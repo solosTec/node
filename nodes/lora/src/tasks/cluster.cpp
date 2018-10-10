@@ -20,7 +20,8 @@ namespace node
 		, boost::uuids::uuid tag
 		, cluster_config_t const& cfg
 		, boost::asio::ip::tcp::endpoint ep
-		, std::string const& doc_root)
+		, std::string const& doc_root
+		, std::set<boost::asio::ip::address> const& blacklist)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 		, logger_(logger)
@@ -29,7 +30,8 @@ namespace node
 			, btp->mux_.get_io_service()
 			, ctx
 			, ep
-			, doc_root)
+			, doc_root
+			, blacklist)
 		, processor_(logger, btp->mux_.get_io_service(), tag, bus_)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"

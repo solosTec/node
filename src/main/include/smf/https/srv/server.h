@@ -27,7 +27,8 @@ namespace node
 				, boost::asio::io_context& ioc
 				, boost::asio::ssl::context& ctx
 				, boost::asio::ip::tcp::endpoint endpoint
-				, std::string const& doc_root);
+				, std::string const& doc_root
+				, std::set<boost::asio::ip::address> const& blacklist);
 
 			// Start accepting incoming connections
 			bool run();
@@ -51,6 +52,11 @@ namespace node
 			 * The connection manager which owns all live connections.
 			 */
 			connections connection_manager_;
+
+			/**
+			* all blacklisted addresses
+			 */
+			const std::set<boost::asio::ip::address>	blacklist_;
 
 			/**
 			 *	set to true when the server is listening for new connections

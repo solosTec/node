@@ -35,14 +35,15 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cluster_config_t const& cfg_cls
 		, boost::asio::ip::tcp::endpoint ep
-		, std::string const& doc_root)
+		, std::string const& doc_root
+		, std::set<boost::asio::ip::address> const& blacklist)
 	: base_(*btp)
 		, rgn_()
 		, bus_(bus_factory(btp->mux_, logger, rgn_(), btp->get_id()))
 		, logger_(logger)
 		, config_(cfg_cls)
 		, cache_()
-		, server_(logger, btp->mux_.get_io_service(), ep, doc_root, bus_, cache_)
+		, server_(logger, btp->mux_.get_io_service(), ep, doc_root, blacklist, bus_, cache_)
         , sys_tsk_(cyng::async::NO_TASK)
 		, form_data_()
 	{
