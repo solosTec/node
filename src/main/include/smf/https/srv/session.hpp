@@ -8,7 +8,12 @@
 #ifndef NODE_LIB_HTTPS_SRV_SESSION_HPP
 #define NODE_LIB_HTTPS_SRV_SESSION_HPP
 
+#include <smf/https/srv/connections.h>
 #include <smf/https/srv/websocket.h>
+#include <smf/http/srv/path_cat.h>
+#include <smf/http/srv/parser/multi_part.h>
+#include <smf/http/srv/mime_type.h>
+
 #include <cyng/object.h>
 #include <boost/beast/http.hpp>
 
@@ -122,11 +127,13 @@ namespace node
 		public:
 			// Construct the session
 			session(cyng::logging::log_ptr logger
+				, connections& cm
 				, boost::uuids::uuid tag
 				, boost::asio::io_context& ioc
 				, boost::beast::flat_buffer buffer
 				, std::string const& doc_root)
 			: logger_(logger)
+				, connection_manager_(cm)
 				, tag_(tag)
 				, timer_(ioc, (std::chrono::steady_clock::time_point::max)())
 				, strand_(ioc.get_executor())
@@ -223,22 +230,27 @@ namespace node
 					//
 					//	ToDo: substitute cb_
 					//
+					connection_manager_.upgrade(tag(), derived().release_stream(), std::move(req_));
 					//cb_(cyng::generate_invoke("https.upgrade", obj));
+					//connection_manager_.create_wsocket(derived().release_stream(), std::move(req_));
 					//return make_websocket_session(logger_
 					//	//, cb_
 					//	, derived().release_stream()
 					//	, std::move(req_));
 				}
+				else
+				{
 
-				// Send the response
-				//
-				//	ToDo: substitute cb_
-				//
-				handle_request(obj, std::move(req_));
+					// Send the response
+					//
+					//	ToDo: substitute cb_
+					//
+					handle_request(obj, std::move(req_));
 
-				// If we aren't at the queue limit, try to pipeline another request
-				if (!queue_.is_full())	{
-					do_read(obj);
+					// If we aren't at the queue limit, try to pipeline another request
+					if (!queue_.is_full()) {
+						do_read(obj);
+					}
 				}
 			}
 
@@ -278,6 +290,17 @@ namespace node
 			{
 				static std::hash<decltype(this)>	hasher;
 				return hasher(this);
+			}
+
+			void temporary_redirect(cyng::object obj, std::string const& location)
+			{
+				boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::temporary_redirect, 11 };
+				res.set(boost::beast::http::field::server, NODE::version_string);
+				res.set(boost::beast::http::field::location, location);
+				res.body() = std::string("");
+				res.prepare_payload();
+				queue_(obj, std::move(res));
+
 			}
 
 		private:
@@ -366,6 +389,40 @@ namespace node
 				}
 				else if (req.method() == boost::beast::http::verb::post)
 				{
+					auto target = req.target();	//	/upload/config/device/
+					CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
+
+					boost::beast::string_view content_type = req[boost::beast::http::field::content_type];
+					CYNG_LOG_INFO(logger_, "content type " << content_type);
+#ifdef _DEBUG
+					CYNG_LOG_DEBUG(logger_, "payload \n" << req.body());
+#endif
+					//
+					//	payload parser
+					//
+					std::uint32_t payload_size = *req.payload_size();
+					node::http::multi_part_parser mpp([&](cyng::vector_t&& prg) {
+						//bus_->vm_.async_run(std::move(prg));
+					}	, logger_
+						, payload_size
+						, target
+						, tag_);
+
+					//
+					//	open new upload sequence
+					//
+					//bus_->vm_.async_run(cyng::generate_invoke("http.upload.start"
+					//	, tag_
+					//	, req.version()
+					//	, std::string(target.begin(), target.end())
+					//	, payload_size));
+
+					//
+					//	parse payload and generate program sequences
+					//
+					mpp.parse(req.body().begin(), req.body().end());
+
+
 				}
 				return queue_(obj, std::move(req));
 			}
@@ -445,6 +502,7 @@ namespace node
 
 		protected:
 			cyng::logging::log_ptr logger_;
+			connections& connection_manager_;
 			const boost::uuids::uuid tag_;
 			boost::asio::steady_timer timer_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;

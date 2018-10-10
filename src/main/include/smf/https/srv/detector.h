@@ -28,10 +28,8 @@ namespace node
 		public:
 			detector(cyng::logging::log_ptr
 				, connections&
-				, boost::uuids::uuid tag
 				, boost::asio::ip::tcp::socket socket
-				, boost::asio::ssl::context& ctx
-				, std::string const& doc_root);
+				, boost::asio::ssl::context& ctx);
 
 			// Launch the detector
 			void run();
@@ -42,11 +40,9 @@ namespace node
 		private:
 			cyng::logging::log_ptr logger_;
 			connections& connection_manager_;
-			const boost::uuids::uuid tag_;
 			boost::asio::ip::tcp::socket socket_;
 			boost::asio::ssl::context& ctx_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
-			std::string const& doc_root_;
 			boost::beast::flat_buffer buffer_;
 
 		};

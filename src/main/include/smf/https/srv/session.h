@@ -10,7 +10,6 @@
 
 #include <smf/https/srv/session.hpp>
 #include <smf/https/srv/ssl_stream.hpp>
-//#include <smf/https/srv/connections.h>
 #include <cyng/object.h>
 
 namespace node
@@ -29,6 +28,7 @@ namespace node
 		public:
 			// Create the http_session
 			plain_session(cyng::logging::log_ptr logger
+				, connections&
 				, boost::uuids::uuid
 				, boost::asio::ip::tcp::socket socket
 				, boost::beast::flat_buffer buffer
@@ -60,6 +60,7 @@ namespace node
 		public:
 			// Create the session
 			ssl_session(cyng::logging::log_ptr logger
+				, connections&
 				, boost::uuids::uuid
 				, boost::asio::ip::tcp::socket socket
 				, boost::asio::ssl::context& ctx
@@ -69,10 +70,10 @@ namespace node
 			virtual ~ssl_session();
 
 			// Called by the base class
-			ssl_stream<boost::asio::ip::tcp::socket>& stream();
+			boost::beast::ssl_stream<boost::asio::ip::tcp::socket>& stream();
 
 			// Called by the base class
-			ssl_stream<boost::asio::ip::tcp::socket> release_stream();
+			boost::beast::ssl_stream<boost::asio::ip::tcp::socket> release_stream();
 
 			/**
 			 * Start the asynchronous operation
@@ -86,23 +87,12 @@ namespace node
 			void on_shutdown(cyng::object obj, boost::system::error_code ec);
 
 		private:
-			ssl_stream<boost::asio::ip::tcp::socket> stream_;
+			boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 			bool eof_ = false;
 
 		};
 
-		cyng::object make_plain_session(cyng::logging::log_ptr
-			, connections& cm
-			, boost::asio::ip::tcp::socket&& socket
-			, std::string const& doc_root
-			, boost::uuids::uuid);
-
-		cyng::object make_ssl_session(cyng::logging::log_ptr
-			, connections& cm
-			, boost::asio::ip::tcp::socket&& socket
-			, std::string const& doc_root
-			, boost::uuids::uuid);
 	}
 }
 

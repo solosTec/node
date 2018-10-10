@@ -30,10 +30,30 @@ set (https_srv_h
 	src/main/include/smf/https/srv/connections.h
 )
 
+set (http_parser 
+	lib/http/server/src/parser/multi_part.cpp
+	lib/http/server/src/parser/content_parser.hpp
+	lib/http/server/src/parser/content_parser.cpp
+
+	src/main/include/smf/http/srv/parser/multi_part.h
+	src/main/include/smf/http/srv/parser/content_type.hpp
+	src/main/include/smf/http/srv/parser/content_disposition.hpp
+	src/main/include/smf/http/srv/parser/content_parser.h
+)
+
+set (http_shared
+	src/main/include/smf/http/srv/cm_interface.h
+)
+
+source_group("parser" FILES ${http_parser})
+source_group("shared" FILES ${http_shared})
+
 
 # define the main program
 set (https_srv_lib
   ${https_srv_cpp}
   ${https_srv_h}
+  ${http_parser}
+  ${http_shared}
 )
 

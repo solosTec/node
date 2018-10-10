@@ -66,6 +66,11 @@ namespace node
 			}
 		}
 		
+		connection_manager_interface& server::get_cm()
+		{
+			return connection_manager_;
+		}
+
         bool server::bind(boost::asio::ip::tcp::endpoint ep, std::size_t retries)
 		{
 			boost::system::error_code ec;
@@ -192,10 +197,10 @@ namespace node
 			}
 		}
 
-		bool server::send_msg(boost::uuids::uuid tag, std::string const& msg)
-		{
-			return connection_manager_.send_msg(tag, msg);
-		}
+		//bool server::send_msg(boost::uuids::uuid tag, std::string const& msg)
+		//{
+		//	return connection_manager_.ws_msg(tag, msg);
+		//}
 
 		void server::add_channel(boost::uuids::uuid tag, std::string const& channel)
 		{
@@ -204,12 +209,12 @@ namespace node
 
 		void server::process_event(std::string const& channel, std::string const& msg)
 		{
-			connection_manager_.process_event(channel, msg);
+			connection_manager_.push_event(channel, msg);
 		}
 
 		void server::send_moved(boost::uuids::uuid tag, std::string const& location)
 		{
-			connection_manager_.send_moved(tag, location);
+			connection_manager_.http_moved(tag, location);
 		}
 
 		void server::trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment)

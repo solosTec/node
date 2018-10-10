@@ -7,6 +7,7 @@
 
 #include "cluster.h"
 #include "system.h"
+#include "../../../dash_shared/src/sync_db.h"
 #include <smf/cluster/generator.h>
 
 #include <cyng/async/task/task_builder.hpp>
@@ -44,7 +45,8 @@ namespace node
 		, config_(cfg_cls)
 		, cache_()
 		, server_(logger, btp->mux_.get_io_service(), ep, doc_root, blacklist, bus_, cache_)
-        , sys_tsk_(cyng::async::NO_TASK)
+		, dispatcher_(logger, server_.get_cm())
+		, sys_tsk_(cyng::async::NO_TASK)
 		, form_data_()
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
@@ -56,8 +58,13 @@ namespace node
 		//
 		//	init cache
 		//
-		create_cache();
-		subscribe_cache();
+		create_cache(logger_, cache_);
+		//subscribe_cache();
+
+		//
+		//	subscribe to database
+		//
+		dispatcher_.subscribe(cache_);
 
 		//
 		//	implement request handler
@@ -240,17 +247,7 @@ namespace node
 		//
 		//	tell server to discard all data
 		//
-		cache_.clear("TDevice", bus_->vm_.tag());
-		cache_.clear("TGateway", bus_->vm_.tag());
-		cache_.clear("TMeter", bus_->vm_.tag());
-		cache_.clear("_Session", bus_->vm_.tag());
-		cache_.clear("_Target", bus_->vm_.tag());
-		cache_.clear("_Connection", bus_->vm_.tag());
-		cache_.clear("_Cluster", bus_->vm_.tag());
-		cache_.clear("_Config", bus_->vm_.tag());
-		cache_.insert("_Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, bus_->vm_.tag());
-
-		//cache_.clear("_SysMsg", bus_->vm_.tag());
+		clear_cache(cache_, bus_->vm_.tag());
 
 		//
 		//	switch to other configuration
@@ -1350,7 +1347,7 @@ namespace node
 			)));
 
 		auto msg = cyng::json::to_string(tpl);
-		server_.send_msg(std::get<2>(data), msg);
+		server_.get_cm().ws_msg(std::get<2>(data), msg);
 
 	}
 
@@ -1392,7 +1389,7 @@ namespace node
 			)));
 
 		auto msg = cyng::json::to_string(tpl);
-		server_.send_msg(std::get<2>(data), msg);
+		server_.get_cm().ws_msg(std::get<2>(data), msg);
 
 	}
 
@@ -1424,7 +1421,7 @@ namespace node
 			)));
 
 		auto msg = cyng::json::to_string(tpl);
-		server_.send_msg(std::get<2>(data), msg);
+		server_.get_cm().ws_msg(std::get<2>(data), msg);
 
 	}
 
@@ -2034,7 +2031,7 @@ namespace node
 					cyng::param_factory("rec", rec.convert()));
 
 				auto msg = cyng::json::to_string(tpl);
-				server_.send_msg(tag, msg);
+				server_.get_cm().ws_msg(tag, msg);
 
 				++idx;
 
@@ -2067,7 +2064,7 @@ namespace node
 
 	void cluster::display_loading_icon(boost::uuids::uuid tag, bool b, std::string const& channel)
 	{
-		server_.send_msg(tag
+		server_.get_cm().ws_msg(tag
 			, cyng::json::to_string(cyng::tuple_factory(cyng::param_factory("cmd", std::string("load"))
 				, cyng::param_factory("channel", channel)
 				, cyng::param_factory("show", b))));
@@ -2075,7 +2072,7 @@ namespace node
 
 	void cluster::display_loading_level(boost::uuids::uuid tag, std::size_t level, std::string const& channel)
 	{
-		server_.send_msg(tag
+		server_.get_cm().ws_msg(tag
 			, cyng::json::to_string(cyng::tuple_factory(cyng::param_factory("cmd", std::string("load"))
 				, cyng::param_factory("channel", channel)
 				, cyng::param_factory("level", level))));
@@ -2085,750 +2082,55 @@ namespace node
 	{
 		server_.add_channel(tag, channel);
 		const auto size = cache_.size("TDevice");
-		update_channel(channel, size);
+		dispatcher_.update_channel(channel, size);
 	}
 
 	void cluster::subscribe_table_gateway_count(std::string const& channel, boost::uuids::uuid tag)
 	{
 		server_.add_channel(tag, channel);
 		const auto size = cache_.size("TGateway");
-		update_channel(channel, size);
+		dispatcher_.update_channel(channel, size);
 	}
 
 	void cluster::subscribe_table_meter_count(std::string const& channel, boost::uuids::uuid tag)
 	{
 		server_.add_channel(tag, channel);
 		const auto size = cache_.size("TMeter");
-		update_channel(channel, size);
+		dispatcher_.update_channel(channel, size);
 	}
 
 	void cluster::subscribe_table_session_count(std::string const& channel, boost::uuids::uuid tag)
 	{
 		server_.add_channel(tag, channel);
 		const auto size = cache_.size("_Session");
-		update_channel(channel, size);
+		dispatcher_.update_channel(channel, size);
 	}
 
 	void cluster::subscribe_table_target_count(std::string const& channel, boost::uuids::uuid tag)
 	{
 		server_.add_channel(tag, channel);
 		const auto size = cache_.size("_Target");
-		update_channel(channel, size);
+		dispatcher_.update_channel(channel, size);
 	}
 
 	void cluster::subscribe_table_connection_count(std::string const& channel, boost::uuids::uuid tag)
 	{
 		server_.add_channel(tag, channel);
 		const auto size = cache_.size("_Connection");
-		update_channel(channel, size);
+		dispatcher_.update_channel(channel, size);
 	}
 
 	void cluster::subscribe_table_msg_count(std::string const& channel, boost::uuids::uuid tag)
 	{
 		server_.add_channel(tag, channel);
 		const auto size = cache_.size("_SysMsg");
-		update_channel(channel, size);
+		dispatcher_.update_channel(channel, size);
 	}
 
 	void cluster::subscribe_table_LoRa_count(std::string const& channel, boost::uuids::uuid tag)
 	{
 		server_.add_channel(tag, channel);
 		const auto size = cache_.size("TLoRaDevice");
-		update_channel(channel, size);
+		dispatcher_.update_channel(channel, size);
 	}
-
-	void cluster::update_channel(std::string const& channel, std::size_t size)
-	{
-		auto tpl = cyng::tuple_factory(
-			cyng::param_factory("cmd", std::string("update")),
-			cyng::param_factory("channel", channel),
-			cyng::param_factory("value", size));
-
-		auto msg = cyng::json::to_string(tpl);
-		server_.process_event(channel, msg);
-	}
-
-	void cluster::sig_ins(cyng::store::table const* tbl
-		, cyng::table::key_type const& key
-		, cyng::table::data_type const& data
-		, std::uint64_t gen
-		, boost::uuids::uuid source)
-	{
-		cyng::table::record rec(tbl->meta_ptr(), key, data, gen);
-
-		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "config.device"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("config.device", msg);
-
-			update_channel("table.device.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
-		{ 
-			//	data: {"cmd": "insert", "channel": "config.device", "rec": {"key": {"pk":"0b5c2a64-5c48-48f1-883b-e5be3a3b1e3d"}, "data": {"creationTime":"2018-02-04 15:31:34.00000000","descr":"comment #55","enabled":true,"id":"ID","msisdn":"1055","name":"device-55","pwd":"crypto","query":6,"vFirmware":"v55"}, "gen": 55}}
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "config.gateway"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("config.gateway", msg);
-
-			update_channel("table.gateway.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
-		{
-			//	
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "config.lora"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("config.lora", msg);
-
-			update_channel("table.LoRa.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "status.session"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.session", msg);
-
-			update_channel("table.session.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Target"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "status.target"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.target", msg);
-
-			update_channel("table.target.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Connection"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "status.connection"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.connection", msg);
-
-			update_channel("table.connection.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Cluster"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "status.cluster"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.cluster", msg);
-
-			update_channel("table.cluster.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "config.sys"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("config.sys", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "monitor.msg"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("monitor.msg", msg);
-
-			update_channel("table.msg.count", tbl->size());
-
-		}
-		else
-		{
-			CYNG_LOG_WARNING(logger_, "sig.ins - unknown table "
-				<< tbl->meta().get_name());
-		}
-	}
-
-	void cluster::sig_del(cyng::store::table const* tbl, cyng::table::key_type const& key, boost::uuids::uuid source)
-	{
-		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "config.device"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("config.device", msg);
-
-			update_channel("table.device.count", tbl->size());
-
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "config.gateway"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("config.gateway", msg);
-			update_channel("table.gateway.count", tbl->size());
-
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "status.session"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.session", msg);
-
-			update_channel("table.session.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Target"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "status.target"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.target", msg);
-
-			update_channel("table.target.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Connection"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "status.connection"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.connection", msg);
-
-			update_channel("table.connection.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Cluster"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "status.cluster"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.cluster", msg);
-
-			update_channel("table.cluster.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "monitor.msg"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("monitor.msg", msg);
-		}
-		else
-		{
-			CYNG_LOG_ERROR(logger_, "sig.del - unknown table "
-				<< tbl->meta().get_name());
-		}
-	}
-
-	void cluster::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
-	{
-		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "config.device"));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("config.device", msg);
-
-			update_channel("table.device.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "config.gateway"));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("config.gateway", msg);
-			update_channel("table.gateway.count", tbl->size());
-
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "status.session"));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.session", msg);
-
-			update_channel("table.session.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Target"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "status.target"));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.target", msg);
-
-			update_channel("table.target.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Connection"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "status.connection"));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.connection", msg);
-
-			update_channel("table.connection.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Cluster"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "status.cluster"));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.cluster", msg);
-
-			update_channel("table.cluster.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "monitor.msg"));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("monitor.msg", msg);
-
-		}
-		else
-		{
-			CYNG_LOG_ERROR(logger_, "sig.clr - unknown table "
-				<< tbl->meta().get_name());
-		}
-	}
-
-	void cluster::sig_mod(cyng::store::table const* tbl
-		, cyng::table::key_type const& key
-		, cyng::attr_t const& attr
-		, std::uint64_t gen
-		, boost::uuids::uuid source)
-	{
-		//	to much noise
-		//CYNG_LOG_DEBUG(logger_, "sig.mod - "
-		//	<< tbl->meta().get_name());
-
-		//
-		//	convert attribute to parameter (as map)
-		//
-		auto pm = tbl->meta().to_param_map(attr);
-
-		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "config.device"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", pm));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("config.device", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "config.gateway"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", pm));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("config.gateway", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "status.session"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", pm));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.session", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Target"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "status.target"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", pm));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.target", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Connection"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "status.connection"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", pm));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.connection", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Cluster"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "status.cluster"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", pm));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("status.cluster", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
-		{ 
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "config.system"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", pm));
-
-			auto msg = cyng::json::to_string(tpl);
-			server_.process_event("config.system", msg);
-		}
-		else
-		{
-			CYNG_LOG_WARNING(logger_, "sig.mode - unknown table "
-				<< tbl->meta().get_name());
-
-		}
-	}
-
-	void cluster::create_cache()
-	{
-		CYNG_LOG_TRACE(logger_, "create cache tables");
-
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 9>("TDevice",
-			{ "pk", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
-			{ 36, 128, 16, 128, 512, 64, 64, 0, 0, 0 })))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table TDevice");
-		}
-
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 15>("TGateway", { "pk"	//	primary key
-			, "serverId"	//	(1) Server-ID (i.e. 0500153B02517E)
-			, "manufacturer"	//	(2) manufacturer (i.e. EMH)
-			, "made"	//	(4) production date
-			, "factoryNr"	//	(6) fabrik nummer (i.e. 06441734)
-			, "ifService"	//	(7) MAC of service interface
-			, "ifData"	//	(8) MAC od data interface
-			, "pwdDef"	//	(9) Default PW
-			, "pwdRoot"	//	(10) root PW
-			, "mbus"	//	(11) W-Mbus ID (i.e. A815408943050131)
-			, "userName"	//	(12)
-			, "userPwd"	//	(13)
-			, "name"	//	IP-T/device name
-			, "model"	//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
-			, "vFirmware"	//	(5) firmwareversion (i.e. 11600000)
-			, "online"	//	(14)
-			},
-			{ cyng::TC_UUID		//	pk
-			, cyng::TC_STRING	//	server id
-			, cyng::TC_STRING	//	manufacturer
-			, cyng::TC_TIME_POINT	//	production data
-			, cyng::TC_STRING	//	Fabriknummer/serial number (i.e. 06441734)
-			, cyng::TC_MAC48	//	MAC of service interface
-			, cyng::TC_MAC48	//	MAC od data interface
-			, cyng::TC_STRING	//	Default PW
-			, cyng::TC_STRING	//	root PW
-			, cyng::TC_STRING	//	W-Mbus ID (i.e. A815408943050131)
-			, cyng::TC_STRING	//	operator
-			, cyng::TC_STRING	//	operator
-			//	--- dynamic part:
-			, cyng::TC_STRING	//	IP-T/device name
-			, cyng::TC_STRING	//	model
-			, cyng::TC_STRING	//	firmware
-			, cyng::TC_BOOL		//	on/offline
-			},
-			{ 36		//	pk
-			, 23	//	server id
-			, 64	//	manufacturer
-			, 0		//	production date
-			, 8		//	serial
-			, 18	//	MAC
-			, 18	//	MAC
-			, 32	//	PW
-			, 32	//	PW
-			, 16	//	M-Bus
-			, 32	//	PW
-			, 32	//	PW
-			, 128	//	IP-T/device name
-			, 64	//	model
-			, 64	//	firmware
-			, 0		//	bool online/offline
-			})))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table TGateway");
-		}
-
-		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices
-		//	DevEUI - 64 bit end-device identifier, EUI-64 (unique)
-		//	DevAddr - 32 bit device address (non-unique)
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 7>("TLoRaDevice",
-			{ "pk"
-			, "DevEUI"
-			, "AESKey"		// 256 Bit
-			, "driver"
-			, "activation"	//	OTAA/ABP
-			, "DevAddr"		//	32 bit device address (non-unique)
-			, "AppEUI"		//	64 bit application identifier, EUI-64 (unique)
-			, "GatewayEUI"	//	64 bit gateway identifier, EUI-64 (unique)
-			},
-			{ cyng::TC_UUID
-			, cyng::TC_MAC64	//	DevEUI
-			, cyng::TC_STRING	//	AESKey
-			, cyng::TC_STRING	//	driver
-			, cyng::TC_BOOL		//	activation
-			, cyng::TC_UINT32	//	DevAddr
-			, cyng::TC_MAC64	//	AppEUI
-			, cyng::TC_MAC64	//	GatewayEUI
-			},
-			{ 36, 0, 64, 32, 0, 0, 0, 0 })))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table TLoRaDevice");
-		}
-
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 9>("TMeter", { "pk"
-			, "ident"	//	ident nummer (i.e. 1EMH0006441734)
-			, "manufacturer"
-			, "factoryNr"	//	fabrik nummer (i.e. 06441734)
-			, "age"	//	production data
-			, "vParam"	//	parametrierversion (i.e. 16A098828.pse)
-			, "vFirmware"	//	firmwareversion (i.e. 11600000)
-			, "item"	//	 artikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
-			, "class"	//	Metrological Class: A, B, C, Q3/Q1, ...
-			, "source"	//	source client (UUID)
-			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UUID },
-			{ 36, 64, 64, 8, 0, 64, 64, 128, 8, 36 })))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table TMeter");
-		}
-
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 12>("_Session", { "tag"	//	client session - primary key [uuid]
-			, "local"	//	[object] local peer object (hold session reference)
-			, "remote"	//	[object] remote peer object (if session connected)
-			, "peer"	//	[uuid] remote peer
-			, "device"	//	[uuid] - owner of the session
-			, "name"	//	[string] - account
-			, "source"	//	[uint32] - ipt source id (unique)
-			, "loginTime"	//	last login time
-			, "rtag"	//	[uuid] client session if connected
-			, "layer"	//	[string] protocol layer
-			, "rx"		//	[uint64] received bytes (from device)
-			, "sx"		//	[uint64] sent bytes (to device)
-			, "px"		//	[uint64] sent push data (to push target)
-			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT64, cyng::TC_UINT64, cyng::TC_UINT64 },
-			{ 36, 0, 0, 36, 36, 64, 0, 0, 36, 16, 0, 0, 0 })))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table *Session");
-		}
-
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 9>("_Target", { "channel"	//	name - primary key
-			, "tag"		//	[uuid] owner session - primary key 
-			, "peer"	//	[uuid] peer of owner
-			, "name"	//	[uint32] - target id
-			, "device"	//	[uuid] - owner of target
-			, "account"	//	[string] - name of target owner
-			, "pSize"	//	[uint16] - packet size
-			, "wSize"	//	[uint8] - window size
-			, "regTime"	//	registration time
-			, "px"		//	incoming data
-			},
-			{ cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT16, cyng::TC_UINT8, cyng::TC_TIME_POINT, cyng::TC_UINT64 },
-			{ 0, 36, 36, 64, 36, 64, 0, 0, 0, 0 })))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table *Target");
-		}
-
-		if (!cache_.create_table(cyng::table::make_meta_table<2, 7>("_Connection",
-			{ "first"		//	[uuid] primary key 
-			, "second"		//	[uuid] primary key 
-			, "aName"		//	[string] caller
-			, "bName"		//	[string] callee
-			, "local"		//	[bool] true if local connection
-			, "aLayer"		//	[string] protocol layer of caller
-			, "bLayer"		//	[string] protocol layer of callee
-			, "throughput"	//	[uint64] data throughput
-			, "start"		//	[tp] start time
-			},
-			{
-				cyng::TC_UUID, cyng::TC_UUID,
-				cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT64, cyng::TC_TIME_POINT
-			},
-			{ 0, 0, 128, 128, 0, 16, 16, 0, 0 })))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table *Connection");
-		}
-
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 8>("_Cluster", { "tag"	//	client session - primary key [uuid]
-			, "class"
-			, "loginTime"	//	last login time
-			, "version"
-			, "clients"	//	client counter
-			, "ping"	//	ping time
-			, "ep"		//	remote endpoint
-			, "pid"		//	process id
-			, "self"	//	"session" - surrogate
-			},
-			{ cyng::TC_UUID			//	tag (pk)
-			, cyng::TC_STRING		//	class
-			, cyng::TC_TIME_POINT	//	loginTime
-			, cyng::TC_VERSION		//	version
-			, cyng::TC_UINT64		//	clients
-			, cyng::TC_MICRO_SECOND		//	ping
-			, cyng::TC_IP_TCP_ENDPOINT	//	ep
-			, cyng::TC_INT64	//	pid
-			, cyng::TC_STRING	//	self == "session"
-			},
-			{ 36, 0, 32, 0, 0, 0, 0, 0, 0 })))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table *Cluster");
-		}
-
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 1>("_Config", { "name"	//	parameter name
-			, "value"	//	parameter value
-			},
-			{ cyng::TC_STRING, cyng::TC_STRING },
-			{ 64, 128 })))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table *Config");
-		}
-		else
-		{
-			//
-			//	set initial value
-			//
-            //cache_.insert("_Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, bus_->vm_.tag());
-		}
-
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 3>("_SysMsg", { "id"	//	message number
-			, "ts"	//	timestamp
-			, "severity"
-			, "msg"	//	message text
-			},
-			{ cyng::TC_UINT64, cyng::TC_TIME_POINT, cyng::TC_UINT8, cyng::TC_STRING },
-			{ 0, 0, 0, 128 })))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table *SysMsg");
-		}
-
-		CYNG_LOG_INFO(logger_, cache_.size() << " tables created");
-
-	}
-
-	void cluster::subscribe_cache()
-	{
-		cache_.get_listener("TDevice"
-			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		cache_.get_listener("TGateway"
-			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		cache_.get_listener("TLoRaDevice"
-			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		cache_.get_listener("TMeter"
-			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		cache_.get_listener("_Session"
-			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		cache_.get_listener("_Target"
-			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		cache_.get_listener("_Connection"
-			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		cache_.get_listener("_Cluster"
-			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		cache_.get_listener("_Config"
-			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		cache_.get_listener("_SysMsg"
-			, std::bind(&cluster::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&cluster::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&cluster::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&cluster::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-
-		CYNG_LOG_INFO(logger_, "cache has " << cache_.num_all_slots() << " connected slots");
-		
-	}
-
 }

@@ -11,6 +11,7 @@
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
 #include <smf/http/srv/server.h>
+#include "../../../dash_shared/src/dispatcher.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -60,8 +61,7 @@ namespace node
 		void reconfigure(cyng::context& ctx);
 		void reconfigure_impl();
 
-		void create_cache();
-		void subscribe_cache();
+		//void subscribe_cache();
 		void res_subscribe(cyng::context& ctx);
 		void db_res_insert(cyng::context& ctx);
 		void db_res_remove(cyng::context& ctx);
@@ -109,20 +109,20 @@ namespace node
 		void subscribe_table_msg_count(std::string const&, boost::uuids::uuid);
 		void subscribe_table_LoRa_count(std::string const&, boost::uuids::uuid);
 
-		void update_channel(std::string const&, std::size_t);
+		//void update_channel(std::string const&, std::size_t);
 
-		void sig_ins(cyng::store::table const*
-			, cyng::table::key_type const&
-			, cyng::table::data_type const&
-			, std::uint64_t
-			, boost::uuids::uuid);
-		void sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid);
-		void sig_clr(cyng::store::table const*, boost::uuids::uuid);
-		void sig_mod(cyng::store::table const*
-			, cyng::table::key_type const&
-			, cyng::attr_t const&
-			, std::uint64_t
-			, boost::uuids::uuid);
+		//void sig_ins(cyng::store::table const*
+		//	, cyng::table::key_type const&
+		//	, cyng::table::data_type const&
+		//	, std::uint64_t
+		//	, boost::uuids::uuid);
+		//void sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid);
+		//void sig_clr(cyng::store::table const*, boost::uuids::uuid);
+		//void sig_mod(cyng::store::table const*
+		//	, cyng::table::key_type const&
+		//	, cyng::attr_t const&
+		//	, std::uint64_t
+		//	, boost::uuids::uuid);
 
         void start_sys_task();
         void stop_sys_task();
@@ -156,6 +156,11 @@ namespace node
 		 * the HTTP server
 		 */
 		http::server	server_;
+
+		/**
+		 * data dispatcher
+		 */
+		dispatcher dispatcher_;
 
 		/**
 		 * system task

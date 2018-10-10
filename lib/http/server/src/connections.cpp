@@ -159,7 +159,7 @@ namespace node
 			listener_.clear();
 		}
 
-		bool connection_manager::send_msg(boost::uuids::uuid tag, std::string const& msg)
+		bool connection_manager::ws_msg(boost::uuids::uuid tag, std::string const& msg)
 		{
 			//
 			//	shared lock 
@@ -197,7 +197,7 @@ namespace node
 			return false;
 		}
 
-		void connection_manager::process_event(std::string const& channel, std::string const& msg)
+		void connection_manager::push_event(std::string const& channel, std::string const& msg)
 		{
 			//
 			//	shared lock 
@@ -220,7 +220,7 @@ namespace node
 			}
 		}
 
-		void connection_manager::send_moved(boost::uuids::uuid tag, std::string const& location)
+		bool connection_manager::http_moved(boost::uuids::uuid tag, std::string const& location)
 		{
 			cyng::async::shared_lock<cyng::async::shared_mutex> lock(mutex_);
 			auto pos = sessions_.find(tag);
@@ -228,8 +228,10 @@ namespace node
 				auto ptr = cyng::object_cast<session>(pos->second);
 				if (ptr != nullptr) {
 					const_cast<session*>(ptr)->send_moved(location);
+					return true;
 				}
 			}
+			return false;
 		}
 
 		void connection_manager::trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment)

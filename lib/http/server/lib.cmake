@@ -33,12 +33,18 @@ set (http_parser
 	src/main/include/smf/http/srv/parser/content_parser.h
 )
 
+set (http_shared
+	src/main/include/smf/http/srv/cm_interface.h
+)
+
 source_group("parser" FILES ${http_parser})
+source_group("shared" FILES ${http_shared})
 
 # define the main program
 set (http_srv_lib
   ${http_srv_cpp}
   ${http_srv_h}
   ${http_parser}
+  ${http_shared}
 )
 

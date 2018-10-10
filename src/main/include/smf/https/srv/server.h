@@ -11,6 +11,7 @@
 #include <smf/https/srv/https.h>
 #include <smf/https/srv/connections.h>
 #include <cyng/compatibility/async.h>
+#include <cyng/vm/controller_fwd.h>
 #include <atomic>
 
 namespace node
@@ -28,7 +29,8 @@ namespace node
 				, boost::asio::ssl::context& ctx
 				, boost::asio::ip::tcp::endpoint endpoint
 				, std::string const& doc_root
-				, std::set<boost::asio::ip::address> const& blacklist);
+				, std::set<boost::asio::ip::address> const& blacklist
+				, cyng::controller& vm);
 
 			// Start accepting incoming connections
 			bool run();
@@ -38,6 +40,11 @@ namespace node
 			 * Close acceptor
 			 */
 			void close();
+
+			/**
+			 * access connection manager
+			 */
+			connection_manager_interface& get_cm();
 
 		private:
 			void on_accept(boost::system::error_code ec);

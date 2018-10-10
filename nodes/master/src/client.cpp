@@ -292,7 +292,7 @@ namespace node
 			if (wrong_pwd)
 			{
 				insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
-					, "login of " + account + " failed because of an incorrect password"
+					, "login of " + account + " failed (cause: incorrect password)"
 					, tag);
 
 			}

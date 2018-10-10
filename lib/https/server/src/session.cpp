@@ -9,6 +9,9 @@
 #include <smf/https/srv/handle_request.hpp>
 #include <smf/https/srv/connections.h>
 
+#include <cyng/vm/controller.h>
+#include <cyng/vm/generator.h>
+
 #include <boost/uuid/uuid_io.hpp>
 
 namespace node
@@ -16,11 +19,12 @@ namespace node
 	namespace https
 	{
 		plain_session::plain_session(cyng::logging::log_ptr logger
+			, connections& cm
 			, boost::uuids::uuid tag
 			, boost::asio::ip::tcp::socket socket
 			, boost::beast::flat_buffer buffer
 			, std::string const& doc_root)
-		: session<plain_session>(logger, tag, socket.get_executor().context(), std::move(buffer), doc_root)
+		: session<plain_session>(logger, cm, tag, socket.get_executor().context(), std::move(buffer), doc_root)
 			, socket_(std::move(socket))
 			, strand_(socket_.get_executor())
 		{}
@@ -44,14 +48,14 @@ namespace node
 		void plain_session::run(cyng::object obj)
 		{
 			//
-			//	ToDo: substitute cb_
+			//	substitute cb_
 			//
-			//cb_(cyng::generate_invoke("https.launch.session.plain", obj, socket_.remote_endpoint()));
+			this->connection_manager_.vm().async_run(cyng::generate_invoke("http.session.launch", tag(), false, stream().lowest_layer().remote_endpoint()));
 
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
 			//on_timer({});
-			on_timer(obj, boost::system::error_code());
+			on_timer(obj, boost::system::error_code{});
 			do_read(obj);
 		}
 
@@ -62,8 +66,9 @@ namespace node
 			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
 
 			//
-			//	ToDo: substitute cb_
+			//	substitute cb_
 			//
+			this->connection_manager_.vm().async_run(cyng::generate_invoke("http.session.eof", tag(), false));
 			//cb_(cyng::generate_invoke("https.eof.session.plain", obj));
 			// At this point the connection is closed gracefully
 		}
@@ -78,12 +83,13 @@ namespace node
 		}
 
 		ssl_session::ssl_session(cyng::logging::log_ptr logger
+			, connections& cm
 			, boost::uuids::uuid tag
 			, boost::asio::ip::tcp::socket socket
 			, boost::asio::ssl::context& ctx
 			, boost::beast::flat_buffer buffer
 			, std::string const& doc_root)
-		: session<ssl_session>(logger, tag, socket.get_executor().context(), std::move(buffer), doc_root)
+		: session<ssl_session>(logger, cm, tag, socket.get_executor().context(), std::move(buffer), doc_root)
 			, stream_(std::move(socket), ctx)
 			, strand_(stream_.get_executor())
 		{}
@@ -94,13 +100,13 @@ namespace node
 		}
 
 		// Called by the base class
-		ssl_stream<boost::asio::ip::tcp::socket>& ssl_session::stream()
+		boost::beast::ssl_stream<boost::asio::ip::tcp::socket>& ssl_session::stream()
 		{
 			return stream_;
 		}
 
 		// Called by the base class
-		ssl_stream<boost::asio::ip::tcp::socket> ssl_session::release_stream()
+		boost::beast::ssl_stream<boost::asio::ip::tcp::socket> ssl_session::release_stream()
 		{
 			return std::move(stream_);
 		}
@@ -111,12 +117,12 @@ namespace node
 			//
 			//	ToDo: substitute cb_
 			//
-			//cb_(cyng::generate_invoke("https.launch.session.ssl", obj, stream_.lowest_layer().remote_endpoint()));
+			this->connection_manager_.vm().async_run(cyng::generate_invoke("http.session.launch", tag(), true, stream().lowest_layer().remote_endpoint()));
 
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
 			//on_timer({});
-			on_timer(obj, boost::system::error_code());
+			on_timer(obj, boost::system::error_code{});
 
 			// Set the timer
 			timer_.expires_after(std::chrono::seconds(15));

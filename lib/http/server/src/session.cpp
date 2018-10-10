@@ -313,7 +313,7 @@ namespace node
 				//	payload parser
 				//
 				std::uint32_t payload_size = *req.payload_size();
-				http::multi_part_parser mpp([&](cyng::vector_t&& prg) {
+				multi_part_parser mpp([&](cyng::vector_t&& prg) {
 					bus_->vm_.async_run(std::move(prg));
 				}	, logger_
 					, payload_size

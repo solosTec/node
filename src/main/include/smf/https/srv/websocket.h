@@ -16,34 +16,34 @@ namespace node
 	namespace https
 	{
 		// Handles a plain WebSocket connection
-		class plain_websocket
-			: public websocket_session<plain_websocket>
-			, public std::enable_shared_from_this<plain_websocket>
+		class plain_websocket : public websocket_session<plain_websocket>
+			//, public std::enable_shared_from_this<plain_websocket>
 		{
 		public:
 			// Create the session
 			explicit plain_websocket(cyng::logging::log_ptr logger
-				, session_callback_t cb
-				, boost::asio::ip::tcp::socket socket
-				, std::vector<std::string> const& sub_protocols);
+				, connections&
+				, boost::uuids::uuid
+				, boost::asio::ip::tcp::socket socket);
 
 			// Called by the base class
 			boost::beast::websocket::stream<boost::asio::ip::tcp::socket>& ws();
 
 			// Start the asynchronous operation
 			template<class Body, class Allocator>
-			void run(boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req)
+			void run(cyng::object obj, boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req)
 			{
 				// Run the timer. The timer is operated
 				// continuously, this simplifies the code.
-				on_timer({});
+				//on_timer({});
+				on_timer(obj, boost::system::error_code{});
 
 				// Accept the WebSocket upgrade request
-				do_accept(std::move(req));
+				do_accept(obj, std::move(req));
 			}
 
-			void do_timeout();
-			void on_close(boost::system::error_code ec);
+			void do_timeout(cyng::object obj);
+			void on_close(cyng::object obj, boost::system::error_code ec);
 
 		private:
 			boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
@@ -51,71 +51,44 @@ namespace node
 		};
 
 		// Handles an SSL WebSocket connection
-		class ssl_websocket
-			: public websocket_session<ssl_websocket>
-			, public std::enable_shared_from_this<ssl_websocket>
+		class ssl_websocket : public websocket_session<ssl_websocket>
+			//, public std::enable_shared_from_this<ssl_websocket>
 		{
 		public:
 			// Create the http_session
 			explicit ssl_websocket(cyng::logging::log_ptr logger
-				, session_callback_t cb
-				, ssl_stream<boost::asio::ip::tcp::socket> stream
-				, std::vector<std::string> const& sub_protocols);
+				, connections&
+				, boost::uuids::uuid
+				, boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream);
 
 			// Called by the base class
-			boost::beast::websocket::stream<ssl_stream<boost::asio::ip::tcp::socket>>& ws();
+			boost::beast::websocket::stream<boost::beast::ssl_stream<boost::asio::ip::tcp::socket>>& ws();
 
 			// Start the asynchronous operation
 			template<class Body, class Allocator>
-			void run(boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req)
+			void run(cyng::object obj, boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req)
 			{
 				// Run the timer. The timer is operated
 				// continuously, this simplifies the code.
-				on_timer({});
+				//on_timer({});
+				on_timer(obj, boost::system::error_code{});
 
 				// Accept the WebSocket upgrade request
-				do_accept(std::move(req));
+				do_accept(obj, std::move(req));
 			}
 
-			void do_eof();
-			void do_timeout();
+			void do_eof(cyng::object obj);
+			void do_timeout(cyng::object obj);
 
 		private:
-			void on_shutdown(boost::system::error_code ec);
+			void on_shutdown(cyng::object obj, boost::system::error_code ec);
 
 		private:
-			boost::beast::websocket::stream<ssl_stream<boost::asio::ip::tcp::socket>> ws_;
+			boost::beast::websocket::stream<boost::beast::ssl_stream<boost::asio::ip::tcp::socket>> ws_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 			bool eof_ = false;
 
 		};
-
-		template<class Body, class Allocator>
-		void make_websocket_session(cyng::logging::log_ptr logger
-			, session_callback_t cb
-			, boost::asio::ip::tcp::socket socket
-			, boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req
-			, std::vector<std::string> const& sub_protocols)
-		{
-			std::make_shared<plain_websocket>(logger
-				, cb
-				, std::move(socket)
-				, sub_protocols)->run(std::move(req));
-		}
-
-		template<class Body, class Allocator>
-		void make_websocket_session(cyng::logging::log_ptr logger
-			, session_callback_t cb
-			, ssl_stream<boost::asio::ip::tcp::socket> stream
-			, boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req
-			, std::vector<std::string> const& sub_protocols)
-		{
-			std::make_shared<ssl_websocket>(logger
-				, cb
-				, std::move(stream)
-				, sub_protocols)->run(std::move(req));
-		}
-
 	}
 }
 
@@ -165,17 +138,14 @@ namespace cyng
 }
 
 #include <functional>
-#include <boost/functional/hash.hpp>
+//#include <boost/functional/hash.hpp>
 
 namespace std
 {
 	template<>
 	struct hash<node::https::plain_websocket>
 	{
-		inline size_t operator()(node::https::plain_websocket const& s) const noexcept
-		{
-			return s.hash();
-		}
+		size_t operator()(node::https::plain_websocket const& s) const noexcept;
 	};
 	template<>
 	struct equal_to<node::https::plain_websocket>
@@ -184,10 +154,7 @@ namespace std
 		using first_argument_type = node::https::plain_websocket;
 		using second_argument_type = node::https::plain_websocket;
 
-		inline bool operator()(node::https::plain_websocket const& s1, node::https::plain_websocket const& s2) const noexcept
-		{
-			return s1.hash() == s2.hash();
-		}
+		bool operator()(node::https::plain_websocket const& s1, node::https::plain_websocket const& s2) const noexcept;
 	};
 
 	template<>
@@ -197,18 +164,12 @@ namespace std
 		using first_argument_type = node::https::plain_websocket;
 		using second_argument_type = node::https::plain_websocket;
 
-		inline bool operator()(node::https::plain_websocket const& s1, node::https::plain_websocket const& s2) const noexcept
-		{
-			return s1.hash() < s2.hash();
-		}
+		bool operator()(node::https::plain_websocket const& s1, node::https::plain_websocket const& s2) const noexcept;
 	};
 	template<>
 	struct hash<node::https::ssl_websocket>
 	{
-		inline size_t operator()(node::https::ssl_websocket const& s) const noexcept
-		{
-			return s.hash();
-		}
+		size_t operator()(node::https::ssl_websocket const& s) const noexcept;
 	};
 	template<>
 	struct equal_to<node::https::ssl_websocket>
@@ -217,10 +178,7 @@ namespace std
 		using first_argument_type = node::https::ssl_websocket;
 		using second_argument_type = node::https::ssl_websocket;
 
-		inline bool operator()(node::https::ssl_websocket const& s1, node::https::ssl_websocket const& s2) const noexcept
-		{
-			return s1.hash() == s2.hash();
-		}
+		bool operator()(node::https::ssl_websocket const& s1, node::https::ssl_websocket const& s2) const noexcept;
 	};
 	template<>
 	struct less<node::https::ssl_websocket>
@@ -229,10 +187,7 @@ namespace std
 		using first_argument_type = node::https::ssl_websocket;
 		using second_argument_type = node::https::ssl_websocket;
 
-		inline bool operator()(node::https::ssl_websocket const& s1, node::https::ssl_websocket const& s2) const noexcept
-		{
-			return s1.hash() < s2.hash();
-		}
+		bool operator()(node::https::ssl_websocket const& s1, node::https::ssl_websocket const& s2) const noexcept;
 	};
 
 }

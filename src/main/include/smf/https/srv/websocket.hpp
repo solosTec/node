@@ -9,11 +9,16 @@
 #define NODE_LIB_HTTPS_SRV_WEBSOCKET_HPP
 
 #include <smf/https/srv/https.h>
+#include <smf/https/srv/connections.h>
 #include <NODE_project_info.h>
+
 #include <cyng/vm/generator.h>
 #include <cyng/json.h>
+
 #include <boost/beast/websocket.hpp>
+#include <boost/beast/experimental/core/ssl_stream.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node
 {
@@ -35,20 +40,25 @@ namespace node
 		public:
 			// Construct the session
 			explicit websocket_session(cyng::logging::log_ptr logger
-				, session_callback_t cb
-				, boost::asio::io_context& ioc
-				, std::vector<std::string> const& sub_protocols)
+				, connections& cm
+				, boost::uuids::uuid tag
+				, boost::asio::io_context& ioc)
 			: logger_(logger)
-				, cb_(cb)
-				, sub_protocols_(sub_protocols)
+				, connection_manager_(cm)
+				, tag_(tag)
+				, sub_protocols_{"SMF", "LoRa"}
 				, strand_(ioc.get_executor())
 				, timer_(ioc, (std::chrono::steady_clock::time_point::max)())
+			{}
+
+			boost::uuids::uuid tag() const
 			{
+				return tag_;
 			}
 
 			// Start the asynchronous operation
 			template<class Body, class Allocator>
-			void do_accept(boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req)
+			void do_accept(cyng::object obj, boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req)
 			{
 				// Set the control callback. This will be called
 				// on every incoming ping, pong, and close frame.
@@ -62,8 +72,10 @@ namespace node
 				// Set the timer
 				timer_.expires_after(std::chrono::seconds(15));
 
+				//
 				// Accept the websocket handshake
-				derived().ws().async_accept_ex(req, [&req, this](boost::beast::websocket::response_type& res) {
+				//
+				derived().ws().async_accept_ex(req, [&req, this, obj](boost::beast::websocket::response_type& res) {
 
 					//
 					//	user agent, subprotocol
@@ -89,34 +101,33 @@ namespace node
 				}, boost::asio::bind_executor(strand_,
 					std::bind(&websocket_session::on_accept
 						, this
+						, obj //	reference
 						, std::placeholders::_1)));
 
 			}
 
-			void on_accept(boost::system::error_code ec)
+			void on_accept(cyng::object obj, boost::system::error_code ec)
 			{
 				// Happens when the timer closes the socket
-				if (ec == boost::asio::error::operation_aborted)
-				{
+				if (ec == boost::asio::error::operation_aborted)	{
 					return;
 				}
 
-				if (ec)
-				{
-					CYNG_LOG_FATAL(logger_, "accept: " << ec.message());
+				if (ec)	{
+					CYNG_LOG_FATAL(logger_, "ws " << tag() << " accept: " << ec.message());
 					return;
 				}
 
 				// Read a message
-				do_read();
+				do_read(obj);
 			}
 
 			// Called when the timer expires.
-			void on_timer(boost::system::error_code ec)
+			void on_timer(cyng::object obj, boost::system::error_code ec)
 			{
 				if (ec && ec != boost::asio::error::operation_aborted)
 				{
-					CYNG_LOG_FATAL(logger_, "timer: " << ec.message());
+					CYNG_LOG_FATAL(logger_, "ws " << tag() << " timer: " << ec.message());
 					return;
 				}
 
@@ -139,7 +150,9 @@ namespace node
 								strand_,
 								std::bind(
 									&websocket_session::on_ping,
-									derived().shared_from_this(),
+									//derived().shared_from_this(),
+									&derived(),
+									obj,	//	reference
 									std::placeholders::_1)));
 					}
 					else
@@ -148,7 +161,7 @@ namespace node
 						// or we sent a ping and it never completed or
 						// we never got back a control frame, so close.
 
-						derived().do_timeout();
+						derived().do_timeout(obj);
 						return;
 					}
 				}
@@ -159,7 +172,9 @@ namespace node
 						strand_,
 						std::bind(
 							&websocket_session::on_timer,
-							derived().shared_from_this(),
+							//derived().shared_from_this(),
+							&derived(),
+							obj,	//	reference
 							std::placeholders::_1)));
 			}
 
@@ -174,7 +189,7 @@ namespace node
 			}
 
 			// Called after a ping is sent.
-			void on_ping(boost::system::error_code ec)
+			void on_ping(cyng::object obj, boost::system::error_code ec)
 			{
 				// Happens when the timer closes the socket
 				if (ec == boost::asio::error::operation_aborted)
@@ -184,7 +199,7 @@ namespace node
 
 				if (ec)
 				{
-					CYNG_LOG_FATAL(logger_, "ping: " << ec.message());
+					CYNG_LOG_FATAL(logger_, "ws " << tag() << " ping: " << ec.message());
 					//return fail(ec, "ping");
 					return;
 				}
@@ -212,7 +227,7 @@ namespace node
 				activity();
 			}
 
-			void do_read()
+			void do_read(cyng::object obj)
 			{
 				// Read a message into our buffer
 				derived().ws().async_read(
@@ -221,15 +236,19 @@ namespace node
 						strand_,
 						std::bind(
 							&websocket_session::on_read,
-							derived().shared_from_this(),
+							//derived().shared_from_this(),
+							&derived(),
+							obj,	//	reference
 							std::placeholders::_1,
 							std::placeholders::_2)));
 			}
 
-			void on_read(boost::system::error_code ec, std::size_t bytes_transferred)
+			void on_read(cyng::object obj, boost::system::error_code ec, std::size_t bytes_transferred)
 			{
 				boost::ignore_unused(bytes_transferred);
-				CYNG_LOG_TRACE(logger_, "received " 
+				CYNG_LOG_TRACE(logger_, "ws "
+					<< tag_ 
+					<< " received " 
 					<< bytes_transferred
 					<< " bytes websocket data" );
 
@@ -242,13 +261,16 @@ namespace node
 				// This indicates that the websocket_session was closed
 				if (ec == boost::beast::websocket::error::closed)
 				{
-					cb_(cyng::generate_invoke("ws.closed", ec));
+					//
+					//	ToDo: substitute cb_
+					//
+					//cb_(cyng::generate_invoke("ws.closed", ec));
 					return;
 				}
 
 				if (ec)
 				{
-					CYNG_LOG_FATAL(logger_, "read: " << ec.message());
+					CYNG_LOG_FATAL(logger_, "ws " << tag() << " read: " << ec.message());
 					return;
 				}
 
@@ -258,24 +280,14 @@ namespace node
 				std::stringstream msg;
 				msg << boost::beast::buffers(buffer_.data());
 				const std::string str = msg.str();
-				CYNG_LOG_TRACE(logger_, "ws read - " << str);
+				CYNG_LOG_TRACE(logger_, "ws " << tag() << " read - " << str);
 
 				//
 				//	expect JSON
+				//	ToDo: substitude cb_
 				//
-				cb_(cyng::generate_invoke("ws.read", cyng::json::read(str)));
-
-				// Echo the message
-				//derived().ws().text(derived().ws().got_text());
-				//derived().ws().async_write(
-				//	buffer_.data(),
-				//	boost::asio::bind_executor(
-				//		strand_,
-				//		std::bind(
-				//			&websocket_session::on_write,
-				//			derived().shared_from_this(),
-				//			std::placeholders::_1,
-				//			std::placeholders::_2)));
+				connection_manager_.vm().async_run(cyng::generate_invoke("ws.read", tag(), cyng::json::read(str)));
+				//cb_(cyng::generate_invoke("ws.read", cyng::json::read(str)));
 
 				//
 				// Clear buffer
@@ -288,7 +300,7 @@ namespace node
 				//
 				//	continue reading
 				//
-				do_read();
+				do_read(obj);
 			}
 
 			void on_write(boost::system::error_code ec, std::size_t bytes_transferred)
@@ -303,7 +315,7 @@ namespace node
 
 				if (ec)
 				{
-					CYNG_LOG_FATAL(logger_, "write: " << ec.message());
+					CYNG_LOG_FATAL(logger_, "ws " << tag() << " write: " << ec.message());
 					//return fail(ec, "write");
 					return;
 				}
@@ -322,6 +334,22 @@ namespace node
 			{
 				static std::hash<decltype(this)>	hasher;
 				return hasher(this);
+			}
+
+			/**
+			 * Write the specified message sync
+			 */
+			bool write(std::string const& msg)
+			{
+
+				if (derived().ws().is_open())
+				{
+					CYNG_LOG_TRACE(logger_, "ws " << tag() << " write: " << msg);
+					derived().ws().write(boost::asio::buffer(msg));
+					return true;
+				}
+				CYNG_LOG_WARNING(logger_, "ws " << tag() << " write (closed): " << msg);
+				return false;
 			}
 
 		private:
@@ -349,8 +377,9 @@ namespace node
 
 		protected:
 			cyng::logging::log_ptr logger_;
-			session_callback_t cb_;
-			std::vector<std::string> const& sub_protocols_;
+			connections& connection_manager_;
+			const boost::uuids::uuid tag_;
+			const std::vector<std::string> sub_protocols_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 			boost::asio::steady_timer timer_;
 

@@ -7,9 +7,10 @@
 #ifndef NODE_HTTP_CONNECTIONS_H
 #define NODE_HTTP_CONNECTIONS_H
 
-#include <cyng/compatibility/io_service.h>
+#include <smf/http/srv/cm_interface.h>
 #include <smf/http/srv/session.h>
 #include <smf/http/srv/websocket.h>
+#include <cyng/compatibility/io_service.h>
 #include <cyng/compatibility/async.h>
 #include <cyng/object.h>
 #include <set>
@@ -19,7 +20,7 @@ namespace node
 {
 	namespace http
 	{
-		class connection_manager
+		class connection_manager : public connection_manager_interface
 		{
 			friend class websocket_session;
 
@@ -64,12 +65,23 @@ namespace node
 			/**
 			 * deliver a message to a websocket
 			 */
-			bool send_msg(boost::uuids::uuid tag, std::string const&);
+			virtual bool ws_msg(boost::uuids::uuid tag, std::string const&) override;
 
-			bool add_channel(boost::uuids::uuid tag, std::string const& channel);
-			void process_event(std::string const& channel, std::string const&);
+			/**
+			 * Send HTTP 302 moved response
+			 */
+			bool http_moved(boost::uuids::uuid tag, std::string const& target);
 
-			void send_moved(boost::uuids::uuid tag, std::string const& target);
+			/**
+			 * A channel is a named data source dhat cann be subsribed by web-sockets
+			 */
+			virtual bool add_channel(boost::uuids::uuid tag, std::string const& channel) override;
+
+			/**
+			 * Push data to all subscribers of the specified channel
+			 */
+			virtual void push_event(std::string const& channel, std::string const&) override;
+
 			void trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment);
 
 		private:

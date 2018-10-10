@@ -17,12 +17,13 @@ namespace node
 			, boost::asio::ssl::context& ctx
 			, boost::asio::ip::tcp::endpoint endpoint
 			, std::string const& doc_root
-			, std::set<boost::asio::ip::address> const& blacklist)
+			, std::set<boost::asio::ip::address> const& blacklist
+			, cyng::controller& vm)
 		: logger_(logger)
 			, ctx_(ctx)
 			, acceptor_(ioc)
 			, socket_(ioc)
-			, connection_manager_(logger, doc_root)
+			, connection_manager_(logger, vm, doc_root)
 			, blacklist_(blacklist)
 			, is_listening_(false)
 			, shutdown_complete_()
@@ -57,6 +58,11 @@ namespace node
 				CYNG_LOG_FATAL(logger_, "listen: " << ec.message());
 				return;
 			}
+		}
+
+		connection_manager_interface& server::get_cm()
+		{
+			return connection_manager_;
 		}
 
 		// Start accepting incoming connections

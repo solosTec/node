@@ -20,6 +20,13 @@ set (node_dashs_tasks
 	nodes/dashs/src/tasks/system.cpp
 )
 
+set (node_dashs_shared
+	nodes/dash_shared/src/sync_db.h
+	nodes/dash_shared/src/sync_db.cpp
+	nodes/dash_shared/src/dispatcher.h
+	nodes/dash_shared/src/dispatcher.cpp
+)
+
 #
 #	same as for dash (HTTP)
 #
@@ -68,7 +75,7 @@ if(WIN32)
 else()
 
 	set (node_dashs_service
-		nodes/dashs/templates/dashs.service.in
+		nodes/dash/templates/dashs.service.in
 		nodes/dashs/templates/dashs.linux.cgf.in
 	)
 
@@ -78,6 +85,7 @@ source_group("tasks" FILES ${node_dashs_tasks})
 source_group("resources" FILES ${node_dashs_res})
 source_group("service" FILES ${node_dashs_service})
 source_group("info" FILES ${node_dashs_info})
+source_group("shared" FILES ${node_dashs_shared})
 
 
 # define the main program
@@ -88,6 +96,7 @@ set (node_dashs
   ${node_dashs_res}
   ${node_dashs_service}
   ${node_dashs_info}
+  ${node_dashs_shared}
 )
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)

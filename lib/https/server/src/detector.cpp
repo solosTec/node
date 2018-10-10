@@ -21,17 +21,13 @@ namespace node
 	{
 		detector::detector(cyng::logging::log_ptr logger
 			, connections& cm
-			, boost::uuids::uuid tag
 			, boost::asio::ip::tcp::socket socket
-			, boost::asio::ssl::context& ctx
-			, std::string const& doc_root)
+			, boost::asio::ssl::context& ctx)
 		: logger_(logger)
 			, connection_manager_(cm)
-			, tag_(tag)
 			, socket_(std::move(socket))
 			, ctx_(ctx)
 			, strand_(socket_.get_executor())
-			, doc_root_(doc_root)
 			, buffer_()
 		{}
 
@@ -60,32 +56,22 @@ namespace node
 			if (result)	{
 
 				// Launch SSL session
-				CYNG_LOG_DEBUG(logger_, "launch SSL session " << tag_);
+				CYNG_LOG_DEBUG(logger_, "launch SSL session " << socket_.remote_endpoint());
 
-				auto obj = cyng::make_object<ssl_session>(logger_
-					, tag_
-					, std::move(socket_)
+				connection_manager_.add_ssl_session(std::move(socket_)
 					, ctx_
-					, std::move(buffer_)
-					, doc_root_);
+					, std::move(buffer_));
 
-				connection_manager_.add_ssl_session(obj);
 				return;
 			}
 
 			//
 			// Launch plain session
 			//
-			CYNG_LOG_DEBUG(logger_, "launch plain session" << tag_);
+			CYNG_LOG_DEBUG(logger_, "launch plain session" << socket_.remote_endpoint());
 
-			//cb_(cyng::generate_invoke("https.launch.session.plain", socket_.remote_endpoint()));
-			auto obj = cyng::make_object<plain_session>(logger_
-				, tag_
-				, std::move(socket_)
-				, std::move(buffer_)
-				, doc_root_);
-
-			connection_manager_.add_plain_session(obj);
+			connection_manager_.add_plain_session(std::move(socket_)
+				, std::move(buffer_));
 
 		}
 

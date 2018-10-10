@@ -10,6 +10,7 @@
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
+#include "../../../dash_shared/src/dispatcher.h"
 #include <smf/https/srv/server.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -61,7 +62,6 @@ namespace node
 		void reconfigure_impl();
 
 		void sync_table(std::string const&);
-		void create_cache();
 		//void subscribe_cache();
 		void res_subscribe(cyng::context& ctx);
 		void db_res_insert(cyng::context& ctx);
@@ -71,6 +71,8 @@ namespace node
 		void db_req_insert(cyng::context& ctx);
 		void db_req_remove(cyng::context& ctx);
 		void db_req_modify_by_param(cyng::context& ctx);
+
+		void ws_read(cyng::context& ctx);
 
 		void start_sys_task();
 		void stop_sys_task();
@@ -93,9 +95,14 @@ namespace node
 		cyng::store::db cache_;
 
 		/**
-		 * the HTTP server
+		 * the HTTPs server
 		 */
 		https::server	server_;
+
+		/**
+		 * data dispatcher
+		 */
+		dispatcher dispatcher_;
 
 		/**
 		 * system task

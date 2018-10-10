@@ -15,6 +15,7 @@
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/stream.hpp>
+#include <boost/beast/experimental/core/ssl_stream.hpp>
 #include <cstddef>
 #include <memory>
 #include <type_traits>
