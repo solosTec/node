@@ -513,59 +513,73 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         target_link_libraries(smf_https_srv cyng_crypto cyng_io cyng_vm)
 endif()
 
+if(${PROJECT_NAME}_BUILD_TEST)
 #
+# This program is only for testing puposes
 # generic HTTP server
 #
-include (nodes/http/prg.cmake)
-add_executable(http ${node_http})
-# libraries to link 
-set(http_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys ${OPENSSL_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND http_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND http_link_libs pthread)
-    endif()
+	include (nodes/http/prg.cmake)
+	add_executable(http ${node_http})
+	# libraries to link 
+	set(http_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys ${OPENSSL_LIBRARIES})
+	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+		list(APPEND http_link_libs "${Boost_LIBRARIES}")
+		if (UNIX)
+			list(APPEND http_link_libs pthread)
+		endif()
+	endif()
+	target_link_libraries(http ${http_link_libs})
 endif()
-target_link_libraries(http ${http_link_libs})
-	
+
+if(${PROJECT_NAME}_BUILD_TEST)
 #
+# This program is only for testing puposes
 # generic HTTPS server
 #
-include (nodes/https/prg.cmake)
-add_executable(https ${node_https})
-# libraries to link 
-set(https_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_crypto cyng_sys cyng_vm smf_https_srv ${OPENSSL_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND https_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND https_link_libs pthread)
-    endif()
+	include (nodes/https/prg.cmake)
+	add_executable(https ${node_https})
+	# libraries to link 
+	set(https_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_crypto cyng_sys cyng_vm smf_https_srv ${OPENSSL_LIBRARIES})
+	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+		list(APPEND https_link_libs "${Boost_LIBRARIES}")
+		if (UNIX)
+			list(APPEND https_link_libs pthread)
+		endif()
+	endif()
+	target_link_libraries(https ${https_link_libs})
 endif()
-target_link_libraries(https ${https_link_libs})
 
+
+if(${PROJECT_NAME}_BUILD_TEST)
 #
+# This program is only for testing purposes
 # https://raw.githubusercontent.com/boostorg/beast/develop/example/advanced/server/advanced_server.cpp
 #
-include (nodes/as/prg.cmake)
-add_executable(as ${node_as})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-    if (UNIX)
-        target_link_libraries(as ${Boost_LIBRARIES} pthread)
-    else()
-        target_link_libraries(as ${Boost_LIBRARIES})
-    endif()
+	include (nodes/as/prg.cmake)
+	add_executable(as ${node_as})
+	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+		if (UNIX)
+			target_link_libraries(as ${Boost_LIBRARIES} pthread)
+		else()
+			target_link_libraries(as ${Boost_LIBRARIES})
+		endif()
+	endif()
 endif()
 
-include (nodes/assl/prg.cmake)
-add_executable(assl ${node_assl})
-target_link_libraries(assl ${OPENSSL_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-    if (UNIX)
-        target_link_libraries(assl ${Boost_LIBRARIES} pthread)
-    else()
-        target_link_libraries(assl ${Boost_LIBRARIES})
-    endif()
-endif()
+if(${PROJECT_NAME}_BUILD_TEST)
+#
+# This program is only for testing purposes
+	include (nodes/assl/prg.cmake)
+	add_executable(assl ${node_assl})
+	target_link_libraries(assl ${OPENSSL_LIBRARIES})
+	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+		if (UNIX)
+			target_link_libraries(assl ${Boost_LIBRARIES} pthread)
+		else()
+			target_link_libraries(assl ${Boost_LIBRARIES})
+		endif()
+	endif()
+#endif
 
 #
 # dashboard (HTTP)
@@ -699,25 +713,28 @@ else()
 endif(WIN32)
 target_link_libraries(store ${store_link_libs})
 	
+if(${PROJECT_NAME}_BUILD_TEST)
 #
+# This program is only for testing purposes
 # IP-T stress
 #
-include (nodes/ipt/stress/prg.cmake)
-add_executable(stress ${node_ipt_stress})
-# libraries to link
-set(stress_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_xml cyng_sys smf_protocol_ipt smf_bus_ipt smf_protocol_sml)
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND stress_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND stress_link_libs pthread)
-    endif()
+	include (nodes/ipt/stress/prg.cmake)
+	add_executable(stress ${node_ipt_stress})
+	# libraries to link
+	set(stress_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_xml cyng_sys smf_protocol_ipt smf_bus_ipt smf_protocol_sml)
+	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+		list(APPEND stress_link_libs "${Boost_LIBRARIES}")
+		if (UNIX)
+			list(APPEND stress_link_libs pthread)
+		endif()
+	endif()
+	if(WIN32)
+		list(APPEND stress_link_libs odbc32.lib lib_sqlite3)
+	else()
+		list(APPEND stress_link_libs ${SQLite3_LIBRARY})
+	endif(WIN32)
+	target_link_libraries(stress ${stress_link_libs})
 endif()
-if(WIN32)
-	list(APPEND stress_link_libs odbc32.lib lib_sqlite3)
-else()
-	list(APPEND stress_link_libs ${SQLite3_LIBRARY})
-endif(WIN32)
-target_link_libraries(stress ${stress_link_libs})
 
 #
 # LoRa
@@ -845,32 +862,32 @@ target_link_libraries(csv ${csv_link_libs})
 #
 
 if(${PROJECT_NAME}_BUILD_TEST)
-include (test/unit-test/unit-test.cmake)
-add_executable(unit_test ${unit_test})
-	
-# BOOST_TEST_DYN_LINK is required to build a main() function
-set_property(
-	TARGET unit_test
-	PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
+	include (test/unit-test/unit-test.cmake)
+	add_executable(unit_test ${unit_test})
+		
+	# BOOST_TEST_DYN_LINK is required to build a main() function
+	set_property(
+		TARGET unit_test
+		PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
 
-set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_mbus)
+	set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_mbus)
 
-if (${PROJECT_NAME}_PUGIXML_INSTALLED)
-	list(APPEND unittest_link_libs cyng_xml)
-endif()
+	if (${PROJECT_NAME}_PUGIXML_INSTALLED)
+		list(APPEND unittest_link_libs cyng_xml)
+	endif()
 
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND unittest_link_libs ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES})
-else()
-	if(WIN32)
-		list(APPEND unittest_link_libs odbc32.lib lib_sqlite3)
+	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+		list(APPEND unittest_link_libs ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES})
 	else()
-        list(APPEND unittest_link_libs pthread ${CMAKE_DL_LIBS} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${SQLite3_LIBRARY})
-    endif()
-endif()
+		if(WIN32)
+			list(APPEND unittest_link_libs odbc32.lib lib_sqlite3)
+		else()
+			list(APPEND unittest_link_libs pthread ${CMAKE_DL_LIBS} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${SQLite3_LIBRARY})
+		endif()
+	endif()
 
-message(STATUS "** link unit-test        : ${unittest_link_libs}")
-target_link_libraries(unit_test ${unittest_link_libs})
+	message(STATUS "** link unit-test        : ${unittest_link_libs}")
+	target_link_libraries(unit_test ${unittest_link_libs})
 endif()
 
 

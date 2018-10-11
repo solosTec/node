@@ -20,11 +20,13 @@
 #include <cyng/value_cast.hpp>
 #include <cyng/compatibility/io_service.h>
 #include <cyng/vector_cast.hpp>
+#include <cyng/vm/controller.h>
 
 #include <fstream>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/nil_generator.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/assert.hpp>
 
@@ -191,7 +193,13 @@ namespace node
 								cyng::param_factory("name", "auth@example.com"),
 								cyng::param_factory("pwd", "secret")
 							)}
-						)),
+						)),	//	auth
+						//185.244.25.187
+						cyng::param_factory("blacklist", cyng::vector_factory({
+							//	https://bl.isx.fr/raw
+							cyng::make_address("185.244.25.187"),	//	KV Solutions B.V. scans for "login.cgi"
+							cyng::make_address("139.219.100.104")	//	ISP Microsoft (China) Co. Ltd. - 2018-07-31T21:14
+						})),	//	blacklist
 						cyng::param_factory("redirect", cyng::vector_factory({
 							cyng::param_factory("/", "/index.html")
 						}))
@@ -249,13 +257,32 @@ namespace node
 		auto const address = cyng::make_address(host);
 		BOOST_ASSERT_MSG(scheduler.is_running(), "scheduler not running");
 		
+		//
+		//	get blacklisted addresses
+		//
+		const auto blacklist_str = cyng::vector_cast<std::string>(dom.get("blacklist"), "");
+		CYNG_LOG_INFO(logger, blacklist_str.size() << " adresses are blacklisted");
+		std::set<boost::asio::ip::address>	blacklist;
+		for (auto const& a : blacklist_str) {
+			auto r = blacklist.insert(boost::asio::ip::make_address(a));
+			if (r.second) {
+				CYNG_LOG_TRACE(logger, *r.first);
+			}
+			else {
+				CYNG_LOG_WARNING(logger, "cannot insert " << a);
+			}
+		}
+		
+		cyng::controller vm(scheduler.get_io_service(), boost::uuids::nil_uuid(), std::cout, std::cerr);
+		
 		// Create and launch a listening port
 		auto srv = std::make_shared<https::server>(logger
-			//, std::bind(&session_callback, std::placeholders::_1, std::placeholders::_2)
 			, scheduler.get_io_service()
 			, ctx
 			, boost::asio::ip::tcp::endpoint{address, port}
-			, doc_root);
+			, doc_root
+			, blacklist
+			, vm);
 
 		if (srv->run())
 		{

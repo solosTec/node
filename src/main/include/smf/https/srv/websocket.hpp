@@ -13,6 +13,7 @@
 #include <NODE_project_info.h>
 
 #include <cyng/vm/generator.h>
+#include <cyng/vm/controller.h>
 #include <cyng/json.h>
 
 #include <boost/beast/websocket.hpp>

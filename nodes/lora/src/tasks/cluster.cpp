@@ -31,7 +31,8 @@ namespace node
 			, ctx
 			, ep
 			, doc_root
-			, blacklist)
+			, blacklist
+			, bus_->vm_)
 		, processor_(logger, btp->mux_.get_io_service(), tag, bus_)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"

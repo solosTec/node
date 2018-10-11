@@ -75,7 +75,7 @@ if(WIN32)
 else()
 
 	set (node_dashs_service
-		nodes/dash/templates/dashs.service.in
+		nodes/dashs/templates/dashs.service.in
 		nodes/dashs/templates/dashs.linux.cgf.in
 	)
 

@@ -6,7 +6,7 @@
  */
 
 #include "sml_to_csv_consumer.h"
-#include "message_ids.h"
+#include "../message_ids.h"
 #include <smf/sml/defs.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
