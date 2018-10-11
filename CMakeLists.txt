@@ -579,7 +579,7 @@ if(${PROJECT_NAME}_BUILD_TEST)
 			target_link_libraries(assl ${Boost_LIBRARIES})
 		endif()
 	endif()
-#endif
+endif()
 
 #
 # dashboard (HTTP)
