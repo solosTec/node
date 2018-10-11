@@ -57,7 +57,7 @@ namespace node
 		{
 		}
 
-		void db_exporter::write_data(cyng::db::session sp
+		bool db_exporter::write_data(cyng::db::session sp
 			, boost::uuids::uuid pk
 			, std::size_t idx
 			, cyng::buffer_t const& buffer
@@ -94,16 +94,12 @@ namespace node
 				;
 
 
-			if (!stmt->execute())
-			{
-				//CYNG_LOG_ERROR(logger_, sql << " failed with the following data set: " << cyng::io::to_str(frame));
-
-			}
+			const bool b = stmt->execute();
 			stmt->clear();
-
+			return b;
 		}
 
-		void db_exporter::write_meta(cyng::db::session sp
+		bool  db_exporter::write_meta(cyng::db::session sp
 			, boost::uuids::uuid pk
 			, std::string const& meter
 			, std::string const& status
@@ -132,13 +128,9 @@ namespace node
 				;
 
 
-			if (!stmt->execute())
-			{
-				//CYNG_LOG_ERROR(logger_, sql << " failed with the following data set: " << cyng::io::to_str(frame));
-
-			}
+			const bool b = stmt->execute();
 			stmt->clear();
-
+			return b;
 		}
 
 	}	//	iec

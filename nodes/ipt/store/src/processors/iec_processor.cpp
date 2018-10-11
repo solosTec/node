@@ -6,6 +6,7 @@
  */
 
 #include "iec_processor.h"
+#include "../message_ids.h"
 #include <smf/ipt/bus.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/obis_db.h>
@@ -92,7 +93,7 @@ namespace node
 		//	initial message to create a new line
 		//
 		for (auto tid : consumers_) {
-			mux_.post(tid, 0, cyng::tuple_factory(line_, target));
+			mux_.post(tid, CONSUMER_CREATE_LINE, cyng::tuple_factory(line_, target));
 		}
 	}
 
@@ -113,9 +114,6 @@ namespace node
 			//
 			//	halt VM
 			//
-			//
-			//	halt VM
-			//
 			const auto tag = vm_.tag();
 			vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
 
@@ -128,7 +126,7 @@ namespace node
 			//
 			//	send shutdown message to remove this line
 			//
-			mux_.post(tid_, 11, cyng::tuple_factory("IEC", line_, tag));
+			mux_.post(tid_, STORE_EVENT_REMOVE_CONSUMER, cyng::tuple_factory("IEC", line_, tag));
 
 			//
 			//	From here on, the behavior is undefined.
@@ -238,7 +236,7 @@ namespace node
 		params["status"] = frame.at(4);
 
 		for (auto tid : consumers_) {
-			mux_.post(tid, 1, cyng::tuple_factory(line_
+			mux_.post(tid, CONSUMER_PUSH_DATA, cyng::tuple_factory(line_
 				, std::get<0>(tpl)	//	[uuid] pk
 				, std::get<1>(tpl)	//	[buffer_t] OBIS
 				, std::get<5>(tpl)	//	[size_t] index
@@ -262,10 +260,10 @@ namespace node
 		>(frame);
 
 		//
-		//	post data to all consumers
+		//	close all consumers
 		//
 		for (auto tid : consumers_) {
-			mux_.post(tid, 2, cyng::tuple_factory(line_, std::get<0>(tpl), meter_id_, status_, bcc_, std::get<1>(tpl)));
+			mux_.post(tid, CONSUMER_REMOVE_LINE, cyng::tuple_factory(line_, std::get<0>(tpl), meter_id_, status_, bcc_, std::get<1>(tpl)));
 		}
 
 		//

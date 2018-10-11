@@ -29,17 +29,39 @@ namespace node
 		class client
 		{
 		public:
-			using msg_0 = std::tuple<std::uint16_t, std::string>;
-			using msg_1 = std::tuple<>;
-			using msg_2 = std::tuple<sequence_type, std::string>;
-			using msg_3 = std::tuple<sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t>;
-			using msg_4 = std::tuple<sequence_type, bool, std::uint32_t>;
-			using msg_5 = std::tuple<cyng::buffer_t>;
-			using msg_6 = std::tuple<sequence_type, bool, std::string>;
-			using msg_7 = std::tuple<sequence_type>;
-			using msg_8 = std::tuple<sequence_type, response_type, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t>;
-			using msg_9 = std::tuple<sequence_type, response_type, std::uint32_t>;
-			using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8, msg_9>;
+			//	 [0] 0x4001/0x4002: response login
+			using msg_00 = std::tuple<std::uint16_t, std::string>;
+			using msg_01 = std::tuple<>;
+
+			//	[2] 0x4005: push target registered response
+			using msg_02 = std::tuple<sequence_type, bool, std::uint32_t>;
+
+			//	[3] 0x4006: push target deregistered response
+			using msg_03 = std::tuple<sequence_type, bool, std::string>;
+
+			//	[4] 0x1000: push channel open response
+			using msg_04 = std::tuple<sequence_type, bool, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t>;
+
+			//	[5] 0x1001: push channel close response
+			using msg_05 = std::tuple<sequence_type, bool, std::uint32_t, std::string>;
+
+			//	[6] 0x9003: connection open request 
+			using msg_06 = std::tuple<sequence_type, std::string>;
+
+			//	[7] 0x1003: connection open response
+			using msg_07 = std::tuple<sequence_type, bool>;
+
+			//	[8] 0x9004: connection close request
+			using msg_08 = std::tuple<sequence_type, bool, std::size_t>;
+
+			//	[9] 0x9002: push data transfer request
+			using msg_09 = std::tuple<sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t>;
+
+			//	[10] transmit data(if connected)
+			using msg_10 = std::tuple<cyng::buffer_t>;
+
+			using signatures_t = std::tuple<msg_00, msg_01, msg_02, msg_03, msg_04, msg_05, msg_06, msg_07, msg_08, msg_09, msg_10>;
+
 
 		public:
 			client(cyng::async::base_task* btp, cyng::logging::log_ptr logger)
@@ -92,10 +114,10 @@ namespace node
 			}
 
 			/**
-			* @brief slot [0]
-			*
-			* sucessful network login
-			*/
+			 * @brief slot [0] 0x4001/0x4002: response login
+			 *
+			 * sucessful network login
+			 */
 			cyng::continuation process(std::uint16_t watchdog, std::string redirect)
 			{
 				if (watchdog != 0)
@@ -115,144 +137,175 @@ namespace node
 			}
 
 			/**
-			* @brief slot [1]
-			*
-			* reconnect
-			*/
+			 * @brief slot [1]
+			 *
+			 * connection lost / reconnect
+			 */
 			cyng::continuation process()
 			{
+				CYNG_LOG_WARNING(logger_, "connection to ipt master lost");
 				return cyng::continuation::TASK_CONTINUE;
 			}
 
 			/**
-			* @brief slot [2]
-			*
-			* incoming call
-			*/
-			cyng::continuation process(sequence_type, std::string const& number)
-			{
-				return cyng::continuation::TASK_CONTINUE;
-			}
-
-			/**
-			* @brief slot [3]
-			*
-			* push data
-			*/
-			cyng::continuation process(sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t const&)
-			{
-				return cyng::continuation::TASK_CONTINUE;
-			}
-
-			/**
-			* @brief slot [4]
-			*
-			* register target response
-			*/
+			 * @brief slot [2] 0x4005: push target registered response
+			 *
+			 * register target response
+			 */
 			cyng::continuation process(sequence_type, bool, std::uint32_t)
 			{
+				CYNG_LOG_INFO(logger_, "cpush target registered response");
 				return cyng::continuation::TASK_CONTINUE;
 			}
 
 			/**
-			* @brief slot [5]
-			*
-			* incoming data
-			*/
-			cyng::continuation process(cyng::buffer_t const&)
-			{
-				return cyng::continuation::TASK_CONTINUE;
-			}
-
-			/**
-			* @brief slot [6]
-			*
-			* push target deregistered
-			*/
+			 * @brief slot [3] 0x4006: push target deregistered response
+			 *
+			 * deregister target response
+			 */
 			cyng::continuation process(sequence_type, bool, std::string const&)
 			{
+				CYNG_LOG_INFO(logger_, "cpush target deregistered response");
 				return cyng::continuation::TASK_CONTINUE;
 			}
 
 			/**
-			* @brief slot [7]
-			*
-			* open connection closed
-			*/
-			cyng::continuation process(sequence_type)
-			{
-				return cyng::continuation::TASK_CONTINUE;
-			}
-
-			/**
-			 * @brief slot [8]
+			 * @brief slot [4] 0x1000: push channel open response
 			 *
 			 * open push channel response
-			 * @param type consumer type
-			 * @param tid task id
+			 * @param seq ipt sequence
+			 * @param success success flag
+			 * @param channel channel id
+			 * @param source source id
+			 * @param status channel status
+			 * @param count number of targets reached
 			 */
-			cyng::continuation process(sequence_type seq, response_type res, std::uint32_t channel, std::uint32_t source, std::uint16_t status, std::size_t count)
-			{	
-				const auto r = make_tp_res_open_push_channel(seq, res);
+			cyng::continuation process(sequence_type seq, bool success, std::uint32_t channel, std::uint32_t source, std::uint16_t status, std::size_t count)
+			{
 				CYNG_LOG_INFO(logger_, "ipt.res.open.push.channel: "
 					<< channel
 					<< ':'
 					<< source
 					<< ':'
-					<< r.get_response_name());
+					<< (success ? " success" : " failed"));
 
-				//
-				//	send data
-				//
-				//std::ifstream file("C:\\projects\\workplace\\node\\Debug\\sml\\smf-a541f58-cea267c-2018080T21645-SML-water@solostec.bin", std::ios::binary | std::ios::app);
-				//std::ifstream file("C:\\projects\\workplace\\node\\Debug\\sml\\smf-d918cce4-65d7aa73-2018080T121715-SML-water@solostec.bin", std::ios::binary | std::ios::app);
-				//std::ifstream file("C:\\projects\\workplace\\node\\Debug\\sml\\smf-b3c1e378-1957aa1e-2018080T171813-IEC-LZQJ.bin", std::ios::binary | std::ios::app);
-				std::ifstream file("C:\\projects\\workplace\\node\\Debug\\sml\\smf-f5e0e04f-8bd1a8b5-2018080T201923-IEC-LZQJ.bin", std::ios::binary | std::ios::app);
-				
-				if (file.is_open())
-				{
-					//	dont skip whitepsaces
-					file >> std::noskipws;
-					cyng::buffer_t data;	
-					data.insert(data.begin(), std::istream_iterator<char>(file), std::istream_iterator<char>());
+				if (success) {
 
-					bus_->vm_.async_run(cyng::generate_invoke("req.transfer.push.data"
-						, channel
-						, source
-						, std::uint8_t(0xC1)	//	status
-						, std::uint8_t(0)	//	block
-						, data));
+					const std::string file_name = "C:\\projects\\workplace\\node\\Debug\\sml\\smf-f5e0e04f-8bd1a8b5-2018080T201923-IEC-LZQJ.bin";
+					CYNG_LOG_INFO(logger_, "push data of file " << file_name);
+
+					//
+					//	send data
+					//
+					//std::ifstream file("C:\\projects\\workplace\\node\\Debug\\sml\\smf-a541f58-cea267c-2018080T21645-SML-water@solostec.bin", std::ios::binary | std::ios::app);
+					//std::ifstream file("C:\\projects\\workplace\\node\\Debug\\sml\\smf-d918cce4-65d7aa73-2018080T121715-SML-water@solostec.bin", std::ios::binary | std::ios::app);
+					//std::ifstream file("C:\\projects\\workplace\\node\\Debug\\sml\\smf-b3c1e378-1957aa1e-2018080T171813-IEC-LZQJ.bin", std::ios::binary | std::ios::app);
+					std::ifstream file(file_name, std::ios::binary | std::ios::app);
+
+					if (file.is_open())
+					{
+						//	dont skip whitepsaces
+						file >> std::noskipws;
+						cyng::buffer_t data;
+						data.insert(data.begin(), std::istream_iterator<char>(file), std::istream_iterator<char>());
+
+						bus_->vm_.async_run(cyng::generate_invoke("req.transfer.push.data"
+							, channel
+							, source
+							, std::uint8_t(0xC1)	//	status
+							, std::uint8_t(0)	//	block
+							, data));
+						bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+					}
+
+					//
+					//	close channel
+					//
+					bus_->vm_.async_run(cyng::generate_invoke("req.close.push.channel", channel));
 					bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+
 				}
-
-				//
-				//	close channel
-				//
-				bus_->vm_.async_run(cyng::generate_invoke("req.close.push.channel", channel));
-				bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
-
-				return (r.is_success())
+				return (success)
 					? cyng::continuation::TASK_CONTINUE
 					: cyng::continuation::TASK_STOP
 					;
 			}
 
 			/**
-			 * @brief slot [9]
+			 * @brief slot [5] 0x1001: push channel close response
 			 *
 			 * register consumer.
 			 * open push channel response
 			 * @param seq ipt sequence
-			 * @param res channel open response
+			 * @param bool success flag
 			 * @param channel channel id
+			 * @param res response name
 			 */
 			cyng::continuation process(sequence_type seq
-				, response_type res
-				, std::uint32_t channel)
+				, bool success
+				, std::uint32_t channel
+				, std::string res)
 			{
+				CYNG_LOG_INFO(logger_, "push channel close response");
 				return cyng::continuation::TASK_CONTINUE;
 			}
 
+			/**
+			 * @brief slot [6] 0x9003: connection open request 
+			 *
+			 * incoming call
+			 */
+			cyng::continuation process(sequence_type, std::string const& number)
+			{
+				CYNG_LOG_INFO(logger_, "connection open request ");
+				return cyng::continuation::TASK_CONTINUE;
+			}
+
+			/**
+			 * @brief slot [7] 0x1003: connection open response
+			 *
+			 * @param seq ipt sequence
+			 * @param success true if connection open request was accepted
+			 */
+			cyng::continuation process(sequence_type seq, bool success)
+			{
+				CYNG_LOG_INFO(logger_, "connection open response ");
+				return cyng::continuation::TASK_CONTINUE;
+			}
+
+			/**
+			 * @brief slot [8] 0x9004/0x1004: connection close request/response
+			 *
+			 * open connection closed
+			 */
+			cyng::continuation process(sequence_type, bool, std::size_t)
+			{
+				CYNG_LOG_INFO(logger_, "connection close request/response");
+				return cyng::continuation::TASK_CONTINUE;
+			}
+
+			/**
+			 * @brief slot [9] 0x9002: push data transfer request
+			 *
+			 * push data
+			 */
+			cyng::continuation process(sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t const&)
+			{
+				CYNG_LOG_INFO(logger_, "push data transfer request");
+				return cyng::continuation::TASK_CONTINUE;
+			}
+
+
+			/**
+			 * @brief slot [10] transmit data (if connected)
+			 *
+			 * receive data
+			 */
+			cyng::continuation process(cyng::buffer_t const&)
+			{
+				CYNG_LOG_INFO(logger_, "transmit data");
+				return cyng::continuation::TASK_CONTINUE;
+			}
 
 		private:
 			cyng::async::base_task& base_;

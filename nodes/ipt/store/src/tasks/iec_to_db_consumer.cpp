@@ -6,6 +6,7 @@
  */
 
 #include "iec_to_db_consumer.h"
+#include "../message_ids.h"
 #include <smf/iec/defs.h>
 #include <smf/sml/obis_io.h>
 #include <NODE_project_info.h>
@@ -193,7 +194,7 @@ namespace node
 						<< base_.get_id()
 						<< " <"
 						<< base_.get_class_name()
-						<< " line "
+						<< "> line "
 						<< line
 						<< " skip null value #"
 						<< idx
@@ -205,7 +206,17 @@ namespace node
 
 				}
 				else {
-					pos->second.write_data(pool_.get_session(), pk, idx, code, value, unit, status);
+					if (!pos->second.write_data(pool_.get_session(), pk, idx, code, value, unit, status)) {
+
+						CYNG_LOG_ERROR(logger_, "task #"
+							<< base_.get_id()
+							<< " <"
+							<< base_.get_class_name()
+							<< "> line "
+							<< line
+							<< " db data write error:" 
+							<< pk);
+					}
 				}
 			}
 			catch (std::exception const& ex) {
@@ -214,7 +225,7 @@ namespace node
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< " line "
+					<< "> line "
 					<< line
 					<< " error: "
 					<< ex.what());
@@ -226,7 +237,7 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< " line "
+				<< "> line "
 				<< line
 				<< " not found");
 		}
@@ -254,7 +265,17 @@ namespace node
 			//
 			//	write IEC meta data to DB
 			//
-			pos->second.write_meta(pool_.get_session(), pk, meter, status, bcc, size);
+			if (!pos->second.write_meta(pool_.get_session(), pk, meter, status, bcc, size)) {
+
+				CYNG_LOG_ERROR(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> line "
+					<< line
+					<< " db meta write error: "
+					<< meter);
+			}
 
 			//
 			//	remove this line
@@ -320,7 +341,7 @@ namespace node
 
 	void iec_db_consumer::register_consumer()
 	{
-		base_.mux_.post(ntid_, 10, cyng::tuple_factory("IEC:DB", base_.get_id()));
+		base_.mux_.post(ntid_, STORE_EVENT_REGISTER_CONSUMER, cyng::tuple_factory("IEC:DB", base_.get_id()));
 	}
 
 	cyng::table::mt_table iec_db_consumer::init_meta_map(std::string const& ver)

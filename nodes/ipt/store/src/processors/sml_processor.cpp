@@ -6,6 +6,7 @@
  */
 
 #include "sml_processor.h"
+#include "../message_ids.h"
 #include <smf/ipt/bus.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -82,7 +83,7 @@ namespace node
 		//	initial message to create a new line
 		//
 		for (auto tid : consumers_) {
-			mux_.post(tid, 0, cyng::tuple_factory(line_, target));
+			mux_.post(tid, CONSUMER_CREATE_LINE, cyng::tuple_factory(line_, target));
 		}
 	}
 
@@ -115,7 +116,7 @@ namespace node
 			//
 			//	send shutdown message to remove this line
 			//
-			mux_.post(tid_, 11, cyng::tuple_factory("SML", line_, tag));
+			mux_.post(tid_, STORE_EVENT_REMOVE_CONSUMER, cyng::tuple_factory("SML", line_, tag));
 
 			//
 			//	From here on, the behavior is undefined.
@@ -177,7 +178,7 @@ namespace node
 		//	post data to all consumers
 		//
 		for (auto tid : consumers_) {
-			mux_.post(tid, 1, cyng::tuple_factory(line_, code, idx, msg));
+			mux_.post(tid, CONSUMER_PUSH_DATA, cyng::tuple_factory(line_, code, idx, msg));
 		}
 	}
 
@@ -202,7 +203,7 @@ namespace node
 		//
 		if (shutdown_) {
 			for (auto tid : consumers_) {
-				mux_.post(tid, 2, cyng::tuple_factory(line_, std::get<1>(tpl), std::get<0>(tpl)));
+				mux_.post(tid, CONSUMER_REMOVE_LINE, cyng::tuple_factory(line_, std::get<1>(tpl), std::get<0>(tpl)));
 			}
 
 			//

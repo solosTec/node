@@ -265,11 +265,11 @@ namespace node
 
 		}
 
-		void db_exporter::read_get_profile_list_response(cyng::db::session sp, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		bool db_exporter::read_get_profile_list_response(cyng::db::session sp, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
-			if (count != 9)	return;
+			if (count != 9)	return false;
 			
 			//
 			//	serverId
@@ -314,7 +314,7 @@ namespace node
 			//	periodSignature
 			ro_.set_value("signature", *pos++);
 
-			store_meta(sp
+			return store_meta(sp
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
@@ -327,22 +327,6 @@ namespace node
 				, ro_.get_value("serverId")	//	server - formatted
 				, ro_.get_value("status")
 				, path.empty() ? obis() : path.front());
-			//ctx.attach(cyng::generate_invoke("db.insert.meta"
-			//	, ro_.pk_
-			//	, ro_.trx_
-			//	, ro_.idx_
-			//	, ro_.get_value("roTime")
-			//	, ro_.get_value("actTime")
-			//	, ro_.get_value("valTime")
-			//	, ro_.get_value("client")	//	gateway
-			//	, ro_.get_value("clientId")	//	gateway - formatted
-			//	, ro_.get_value("server")	//	server
-			//	, ro_.get_value("serverId")	//	server - formatted
-			//	, ro_.get_value("status")
-			//	, source_
-			//	, channel_
-			//	, target_));
-
 		}
 
 		void db_exporter::read_get_proc_parameter_response(cyng::db::session sp, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
@@ -455,7 +439,7 @@ namespace node
 			}
 		}
 
-		void db_exporter::read_period_entry(cyng::db::session sp
+		bool db_exporter::read_period_entry(cyng::db::session sp
 			, std::vector<obis> const& path
 			, std::size_t index
 			, cyng::tuple_t::const_iterator pos
@@ -463,7 +447,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Period Entry");
-			if (count != 5)	return;
+			if (count != 5)	return false;
 
 			//
 			//	object name
@@ -490,7 +474,7 @@ namespace node
 			//
 			ro_.set_value("signature", *pos++);
 
-			store_data(sp
+			return store_data(sp
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
@@ -501,18 +485,6 @@ namespace node
 				, scaler	//	scaler
 				, ro_.get_value("raw")	//	raw value
 				, ro_.get_value("value"));	//	formatted value
-
-			//ctx.attach(cyng::generate_invoke("db.insert.data"
-			//	, ro_.pk_
-			//	, ro_.trx_
-			//	, ro_.idx_
-			//	, code.to_buffer()
-			//	, unit
-			//	, get_unit_name(unit)
-			//	, cyng::traits::get_type_name(type_tag)	//	CYNG data type name
-			//	, scaler	//	scaler
-			//	, ro_.get_value("raw")	//	raw value
-			//	, ro_.get_value("value")));	//	formatted value
 		}
 
 
@@ -769,7 +741,7 @@ namespace node
 			}
 		}
 
-		void db_exporter::store_meta(cyng::db::session sp
+		bool db_exporter::store_meta(cyng::db::session sp
 			, boost::uuids::uuid pk
 			, std::string const& trx
 			, std::size_t idx
@@ -858,15 +830,12 @@ namespace node
 					;
 			}
 
-			if (!stmt->execute())
-			{
-				//CYNG_LOG_ERROR(logger_, sql << " failed");
-
-			}
+			const bool b = stmt->execute();
 			stmt->clear();
+			return b;
 		}
 
-		void db_exporter::store_data(cyng::db::session sp
+		bool db_exporter::store_data(cyng::db::session sp
 				, boost::uuids::uuid pk
 				, std::string const& trx
 				, std::size_t idx
@@ -916,12 +885,9 @@ namespace node
 
 			}
 
-			if (!stmt->execute())
-			{
-				//CYNG_LOG_ERROR(logger_, sql << " failed with the following data set: " << cyng::io::to_str(frame));
-
-			}
+			const bool b = stmt->execute();
 			stmt->clear();
+			return b;
 
 		}
 

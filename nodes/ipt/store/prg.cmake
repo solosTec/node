@@ -10,6 +10,7 @@ set (node_ipt_store_cpp
 set (node_ipt_store_h
 
 	nodes/ipt/store/src/controller.h
+	nodes/ipt/store/src/message_ids.h
 
 )
 

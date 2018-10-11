@@ -29,6 +29,7 @@ namespace node
 		 */
 		void update_channel(std::string const& channel, std::size_t size);
 
+		void subscribe_channel(boost::uuids::uuid tag, std::string const& channel);
 
 	private:
 		void sig_ins(cyng::store::table const*

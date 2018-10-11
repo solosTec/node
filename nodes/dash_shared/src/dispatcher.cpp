@@ -485,4 +485,80 @@ namespace node
 		connection_manager_.push_event(channel, msg);
 	}
 
+	void dispatcher::subscribe_channel(boost::uuids::uuid tag, std::string const& channel)
+	{
+		//if (boost::algorithm::starts_with(channel, "config.device"))
+		//{
+		//	subscribe("TDevice", channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "config.gateway"))
+		//{
+		//	subscribe("TGateway", channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "config.lora"))
+		//{
+		//	subscribe("TLoRaDevice", channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "config.system"))
+		//{
+		//	subscribe("_Config", channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "status.session"))
+		//{
+		//	subscribe("_Session", channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "status.target"))
+		//{
+		//	subscribe("_Target", channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "status.connection"))
+		//{
+		//	subscribe("_Connection", channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "status.cluster"))
+		//{
+		//	subscribe("_Cluster", channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "table.device.count"))
+		//{
+		//	subscribe_table_device_count(channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "table.gateway.count"))
+		//{
+		//	subscribe_table_gateway_count(channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "table.meter.count"))
+		//{
+		//	subscribe_table_meter_count(channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "table.session.count"))
+		//{
+		//	subscribe_table_session_count(channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "table.target.count"))
+		//{
+		//	subscribe_table_target_count(channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "table.connection.count"))
+		//{
+		//	subscribe_table_connection_count(channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "table.msg.count"))
+		//{
+		//	subscribe_table_msg_count(channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "table.LoRa.count"))
+		//{
+		//	subscribe_table_LoRa_count(channel, tag);
+		//}
+		//else if (boost::algorithm::starts_with(channel, "monitor.msg"))
+		//{
+		//	subscribe("_SysMsg", channel, tag);
+		//}
+		//else
+		//{
+		//	CYNG_LOG_WARNING(logger_, "ws.read - unknown subscribe channel [" << channel << "]");
+		//}
+	}
+
 }

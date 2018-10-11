@@ -7,6 +7,8 @@
 
 #include "sync_db.h"
 #include <cyng/table/meta.hpp>
+#include <cyng/io/serializer.h>
+#include <boost/algorithm/string.hpp>
 
 namespace node 
 {
@@ -250,4 +252,255 @@ namespace node
 		db.insert("_Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, tag);
 		//cache_.clear("_SysMsg", bus_->vm_.tag());
 	}
+
+	void res_subscribe(cyng::logging::log_ptr logger
+		, cyng::store::db& db
+		, std::string const& table		//	[0] table name
+		, cyng::table::key_type key		//	[1] table key
+		, cyng::table::data_type data	//	[2] record
+		, std::uint64_t	gen				//	[3] generation
+		, boost::uuids::uuid origin		//	[4] origin session id
+		, std::size_t tsk)
+	{
+		//
+		//	Boost gateway records with additional data from the TDevice table
+		//
+		if (boost::algorithm::equals(table, "TGateway"))
+		{
+			//
+			//	Additional values for TGateway
+			//
+			db.access([&](const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
+
+				//
+				//	Gateway and Device table share the same table key
+				//	look for a session of this device
+				//
+				auto dev_rec = tbl_dev->lookup(key);
+				auto ses_rec = tbl_ses->find_first(cyng::param_t("device", key.at(0)));
+
+				//
+				//	set device name
+				//	set model
+				//	set firmware
+				//	set online state
+				//
+				if (!dev_rec.empty())
+				{
+					data.push_back(dev_rec["name"]);
+					data.push_back(dev_rec["serverId"]);
+					data.push_back(dev_rec["vFirmware"]);
+					data.push_back(cyng::make_object(!ses_rec.empty()));
+				}
+				else
+				{
+					CYNG_LOG_WARNING(logger, "res.subscribe - gateway"
+						<< cyng::io::to_str(key)
+						<< " has no associated device");
+				}
+			},	cyng::store::read_access("TDevice")
+				, cyng::store::read_access("_Session"));
+
+		}
+
+		if (!db.insert(table	//	table name
+			, key	//	table key
+			, data	//	table data
+			, gen	//	generation
+			, origin))
+		{
+			CYNG_LOG_WARNING(logger, "res.subscribe failed "
+				<< table		// table name
+				<< " - "
+				<< cyng::io::to_str(key));
+		}
+		else
+		{
+			if (boost::algorithm::equals(table, "_Session"))
+			{
+				//
+				//	mark gateways as online
+				//
+				db.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+
+					//
+					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
+					//	Gateway and Device table share the same table key
+					//
+					auto rec = tbl_ses->lookup(key);
+					if (!rec.empty())
+					{
+						//	set online state
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", true), origin);
+					}
+				}	, cyng::store::write_access("TGateway")
+					, cyng::store::read_access("_Session"));
+			}
+		}
+	}
+
+	void db_res_insert(cyng::logging::log_ptr logger
+		, cyng::store::db& db
+		, std::string const& table		//	[0] table name
+		, cyng::table::key_type key		//	[1] table key
+		, cyng::table::data_type data	//	[2] record
+		, std::uint64_t	gen
+		, boost::uuids::uuid origin)
+	{
+		cyng::table::record rec(db.meta(table), key, data, gen);
+
+		if (!db.insert(table
+			, key
+			, data
+			, gen
+			, origin))	//	self
+		{
+			CYNG_LOG_WARNING(logger, "db.res.insert failed "
+				<< table		// table name
+				<< " - "
+				<< cyng::io::to_str(key));
+		}
+	}
+
+	void db_req_insert(cyng::logging::log_ptr logger
+		, cyng::store::db& db
+		, std::string const& table		//	[0] table name
+		, cyng::table::key_type key		//	[1] table key
+		, cyng::table::data_type data	//	[2] record
+		, std::uint64_t	gen
+		, boost::uuids::uuid origin)
+	{
+		//cyng::table::record rec(cache_.meta(table), key, data, gen);
+
+		if (boost::algorithm::equals(table, "TGateway"))
+		{
+			db.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
+
+				//
+				//	search session with this device/GW tag
+				//
+				auto dev_rec = tbl_dev->lookup(key);
+
+				//
+				//	set device name
+				//	set model
+				//	set firmware
+				//	set online state
+				//
+				if (!dev_rec.empty())
+				{
+					data.push_back(dev_rec["name"]);
+					data.push_back(dev_rec["serverId"]);
+					data.push_back(dev_rec["vFirmware"]);
+
+					//
+					//	get online state
+					//
+					auto ses_rec = tbl_ses->find_first(cyng::param_t("device", key.at(0)));
+					data.push_back(cyng::make_object(!ses_rec.empty()));	//	add on/offline flag
+
+					if (!tbl_gw->insert(key, data, gen, origin))
+					{
+
+						CYNG_LOG_WARNING(logger, "db.req.insert failed "
+							<< table		// table name
+							<< " - "
+							<< cyng::io::to_str(key));
+
+					}
+				}
+				else {
+					CYNG_LOG_WARNING(logger, "gateway "
+						<< cyng::io::to_str(key)
+						<< " has no associated device");
+				}
+			}, cyng::store::write_access("TGateway")
+				, cyng::store::read_access("TDevice")
+				, cyng::store::read_access("_Session"));
+		}
+		else if (!db.insert(table
+			, key
+			, data
+			, gen
+			, origin))
+		{
+			CYNG_LOG_WARNING(logger, "db.req.insert failed "
+				<< table		// table name
+				<< " - "
+				<< cyng::io::to_str(key));
+		}
+		else
+		{
+			if (boost::algorithm::equals(table, "_Session"))
+			{
+				db.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+
+					//
+					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
+					//	Gateway and Device table share the same table key
+					//
+					auto rec = tbl_ses->lookup(key);
+					if (!rec.empty())
+					{
+						//	set online state
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", true), origin);
+					}
+				}	, cyng::store::write_access("TGateway")
+					, cyng::store::read_access("_Session"));
+			}
+		}
+	}
+
+	void db_req_remove(cyng::logging::log_ptr logger
+		, cyng::store::db& db
+		, std::string const& table		//	[0] table name
+		, cyng::table::key_type	key		//	[1] table key
+		, boost::uuids::uuid origin)
+	{
+		//
+		//	we have to query session data before session will be removed
+		//
+		if (boost::algorithm::equals(table, "_Session"))
+		{
+			db.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+
+				//
+				//	Gateway and Device table share the same table key
+				//
+				auto rec = tbl_ses->lookup(key);
+				if (!rec.empty())
+				{
+					//	set online state
+					tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", false), origin);
+				}
+			}, cyng::store::write_access("TGateway")
+				, cyng::store::read_access("_Session"));
+		}
+
+		if (!db.erase(table, key, origin))
+		{
+			CYNG_LOG_WARNING(logger, "db.req.remove failed "
+				<< table		// table name
+				<< " - "
+				<< cyng::io::to_str(key));
+
+		}
+	}
+
+	void db_res_remove(cyng::logging::log_ptr logger
+		, cyng::store::db& db
+		, std::string const& table		//	[0] table name
+		, cyng::table::key_type	key		//	[1] table key
+		, boost::uuids::uuid origin)
+	{
+		if (!db.erase(table, key, origin))
+		{
+			CYNG_LOG_WARNING(logger, "db.res.remove failed "
+				<< table		// table name
+				<< " - "
+				<< cyng::io::to_str(key));
+		}
+
+	}
+
 }

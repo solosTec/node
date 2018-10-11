@@ -40,7 +40,7 @@ namespace node
 			 */
 			void reset();
 
-			void write_data(cyng::db::session
+			bool write_data(cyng::db::session
 				, boost::uuids::uuid pk
 				, std::size_t idx
 				, cyng::buffer_t const& code
@@ -48,43 +48,12 @@ namespace node
 				, std::string const& unit
 				, std::string const& status);
 
-			void write_meta(cyng::db::session
+			bool write_meta(cyng::db::session
 				, boost::uuids::uuid pk
 				, std::string const& meter
 				, std::string const& status
 				, bool bcc
 				, std::size_t size);
-
-		private:
-
-			//
-			//	database functions
-			//
-			//void store_meta(cyng::db::session sp
-			//	, boost::uuids::uuid pk
-			//	, std::string const& trx
-			//	, std::size_t idx
-			//	, cyng::object ro_ime
-			//	, cyng::object act_ime
-			//	, cyng::object val_time
-			//	, cyng::object client		//	gateway
-			//	, cyng::object client_id	//	gateway - formatted
-			//	, cyng::object server		//	server
-			//	, cyng::object server_id	//	server - formatted
-			//	, cyng::object status
-			//	, obis profile);
-
-			//void store_data(cyng::db::session sp
-			//	, boost::uuids::uuid pk
-			//	, std::string const& trx
-			//	, std::size_t idx
-			//	, obis const& code
-			//	, std::uint8_t unit
-			//	, std::string unit_name
-			//	, std::string type_name	//	CYNG data type name
-			//	, std::int8_t scaler	//	scaler
-			//	, cyng::object raw		//	raw value
-			//	, cyng::object value);
 
 		private:
 			const cyng::table::mt_table& mt_;

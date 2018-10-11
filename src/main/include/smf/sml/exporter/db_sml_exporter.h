@@ -67,7 +67,7 @@ namespace node
 			void read_body(cyng::db::session, cyng::object, cyng::object);
 			void read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_get_profile_list_response(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			bool read_get_profile_list_response(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_get_proc_parameter_response(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_attention_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
@@ -87,13 +87,13 @@ namespace node
 			std::string read_client_id(cyng::object);
 
 			void read_period_list(cyng::db::session, std::vector<obis> const&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_period_entry(cyng::db::session, std::vector<obis> const&, std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			bool read_period_entry(cyng::db::session, std::vector<obis> const&, std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_param_tree(std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
 			//
 			//	database functions
 			//
-			void store_meta(cyng::db::session sp
+			bool store_meta(cyng::db::session sp
 				, boost::uuids::uuid pk
 				, std::string const& trx
 				, std::size_t idx
@@ -107,7 +107,7 @@ namespace node
 				, cyng::object status
 				, obis profile);
 
-			void store_data(cyng::db::session sp
+			bool store_data(cyng::db::session sp
 				, boost::uuids::uuid pk
 				, std::string const& trx
 				, std::size_t idx

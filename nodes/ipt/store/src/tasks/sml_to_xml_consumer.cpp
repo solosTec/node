@@ -6,6 +6,7 @@
  */
 
 #include "sml_to_xml_consumer.h"
+#include "message_ids.h"
 #include <smf/sml/defs.h>
 #include <cyng/async/task/base_task.h>
 #include <cyng/dom/reader.h>
@@ -61,6 +62,7 @@ namespace node
 
 				return cyng::continuation::TASK_STOP;
 			}
+
 			//
 			//	register as SML:XML consumer 
 			//
@@ -228,7 +230,7 @@ namespace node
 
 	void sml_xml_consumer::register_consumer()
 	{
-		base_.mux_.post(ntid_, 10, cyng::tuple_factory("SML:XML", base_.get_id()));
+		base_.mux_.post(ntid_, STORE_EVENT_REGISTER_CONSUMER, cyng::tuple_factory("SML:XML", base_.get_id()));
 	}
 
 }

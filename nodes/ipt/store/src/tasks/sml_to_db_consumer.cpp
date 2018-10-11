@@ -6,6 +6,7 @@
  */
 
 #include "sml_to_db_consumer.h"
+#include "../message_ids.h"
 #include <smf/sml/defs.h>
 #include <NODE_project_info.h>
 #include <cyng/async/task/base_task.h>
@@ -278,7 +279,7 @@ namespace node
 
 	void sml_db_consumer::register_consumer()
 	{
-		base_.mux_.post(ntid_, 10, cyng::tuple_factory("SML:DB", base_.get_id()));
+		base_.mux_.post(ntid_, STORE_EVENT_REGISTER_CONSUMER, cyng::tuple_factory("SML:DB", base_.get_id()));
 	}
 
 	cyng::table::mt_table sml_db_consumer::init_meta_map(std::string const& ver)

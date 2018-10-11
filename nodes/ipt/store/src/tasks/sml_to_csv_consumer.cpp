@@ -6,6 +6,7 @@
  */
 
 #include "sml_to_csv_consumer.h"
+#include "message_ids.h"
 #include <smf/sml/defs.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
@@ -201,7 +202,7 @@ namespace node
 
 	void sml_csv_consumer::register_consumer()
 	{
-		base_.mux_.post(ntid_, 10, cyng::tuple_factory("SML:CSV", base_.get_id()));
+		base_.mux_.post(ntid_, STORE_EVENT_REGISTER_CONSUMER, cyng::tuple_factory("SML:CSV", base_.get_id()));
 	}
 
 }

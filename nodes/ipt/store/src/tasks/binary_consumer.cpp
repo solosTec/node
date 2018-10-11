@@ -6,6 +6,7 @@
  */
 
 #include "binary_consumer.h"
+#include "message_ids.h"
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -165,7 +166,7 @@ namespace node
 
 	void binary_consumer::register_consumer()
 	{
-		base_.mux_.post(ntid_, 10, cyng::tuple_factory("ALL:RAW", base_.get_id()));
+		base_.mux_.post(ntid_, STORE_EVENT_REGISTER_CONSUMER, cyng::tuple_factory("ALL:RAW", base_.get_id()));
 	}
 
 }

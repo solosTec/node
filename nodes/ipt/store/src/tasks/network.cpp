@@ -71,14 +71,7 @@ namespace node
 				//
 				//	login request
 				//
-				if (config_.get().scrambled_)
-				{
-					bus_->vm_.async_run(ipt_req_login_scrambled());
-				}
-				else
-				{
-					bus_->vm_.async_run(ipt_req_login_public());
-				}
+				bus_->req_login(config_.get());
 			}
 
 			return cyng::continuation::TASK_CONTINUE;
@@ -94,7 +87,7 @@ namespace node
 				<< "> is stopped");
 		}
 
-		//	slot 0
+		//	slot [0] 0x4001/0x4002: response login
 		cyng::continuation network::process(std::uint16_t watchdog, std::string redirect)
 		{
 			if (watchdog != 0)
@@ -111,6 +104,7 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
+		//	slot [1] - connection lost / reconnect
 		cyng::continuation network::process()
 		{
 			//
@@ -124,6 +118,74 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
+		//	slot [2] - 0x4005: push target registered response
+		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
+		{
+			if (success)
+			{
+				auto pos = seq_target_map_.find(seq);
+				if (pos != seq_target_map_.end())
+				{
+					auto pos_target = targets_.find(pos->second);
+					if (pos_target != targets_.end())
+					{
+						BOOST_ASSERT(pos->second == pos_target->first);
+
+						CYNG_LOG_INFO(logger_, "channel "
+							<< channel
+							<< " => "
+							<< pos->second
+							<< ':'
+							<< pos_target->second);
+
+						//
+						//	channel => [protocol, target]
+						//
+						channel_protocol_map_.emplace(channel, std::make_pair(pos_target->second, pos->second));
+					}
+					seq_target_map_.erase(pos);
+
+					if (seq_target_map_.empty()) {
+						CYNG_LOG_INFO(logger_, "push target registration is complete");
+					}
+					else {
+						CYNG_LOG_TRACE(logger_, seq_target_map_.size()
+							<< " push target register request(s) are pending");
+					}
+				}
+			}
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	@brief slot [3] - 0x4006: push target deregistered response
+		cyng::continuation network::process(sequence_type, bool, std::string const&)
+		{	//	no implementation
+			CYNG_LOG_WARNING(logger_, "push target deregistered response not implemented");
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [4] - 0x1000: push channel open response
+		cyng::continuation network::process(sequence_type, bool, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t)
+		{	//	no implementation
+			CYNG_LOG_WARNING(logger_, "push channel open response not implemented");
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [5] - 0x1001: push channel close response
+		cyng::continuation network::process(sequence_type seq
+			, bool success
+			, std::uint32_t channel
+			, std::string res)
+		{
+			CYNG_LOG_WARNING(logger_, "push channel close response not implemented");
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [6] - 0x9003: connection open request 
 		cyng::continuation network::process(sequence_type seq, std::string const& number)
 		{
 			CYNG_LOG_TRACE(logger_, "incoming call " << +seq << ':' << number);
@@ -140,6 +202,22 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
+		//	slot [7] - 0x1003: connection open response
+		cyng::continuation network::process(sequence_type seq, bool success)
+		{
+			CYNG_LOG_WARNING(logger_, "connection open response not implemented");
+			return cyng::continuation::TASK_CONTINUE;
+
+		}
+
+		//	slot [8] - 0x9004/0x1004: connection close request/response
+		cyng::continuation network::process(sequence_type, bool, std::size_t)
+		{	//	no implementation
+			CYNG_LOG_WARNING(logger_, "connection close request/response not implemented");
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [9] - 0x9002: push data transfer request
 		cyng::continuation network::process(sequence_type seq
 			, std::uint32_t channel
 			, std::uint32_t source
@@ -170,6 +248,67 @@ namespace node
 					<< " has no protocol entry (channel_protocol_map) - "
 					<< data.size()
 					<< " bytes get lost");
+			}
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [10] - transmit data (if connected)
+		cyng::continuation network::process(cyng::buffer_t const& data)
+		{	//	no implementation
+			CYNG_LOG_WARNING(logger_, "transmit data not implemented - "
+				<< data.size()
+				<< " bytes received");
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		cyng::continuation network::process(std::string type, std::size_t tid)
+		{
+			consumers_.emplace(type, tid);
+			CYNG_LOG_INFO(logger_, "consumer task #"
+				<< tid
+				<< " registered as "
+				<< type);
+
+			//
+			//	continue task
+			//
+			return cyng::continuation::TASK_CONTINUE;
+		}
+
+		//	slot [12] - remove line
+		cyng::continuation network::process(std::string protocol, std::uint64_t line, boost::uuids::uuid tag)
+		{
+
+			CYNG_LOG_INFO(logger_, "remove "
+				<< protocol
+				<< " line "
+				<< line
+				<< "@"
+				<< tag);
+
+			if (boost::algorithm::equals("SML", protocol)) {
+
+				auto size = sml_lines_.erase(line);
+				CYNG_LOG_TRACE(logger_, sml_lines_.size()
+					<< " active SML line(s)");
+
+			}
+			else if (boost::algorithm::equals("IEC", protocol)) {
+
+				auto size = iec_lines_.erase(line);
+				CYNG_LOG_TRACE(logger_, sml_lines_.size()
+					<< " active IEC line(s)");
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "unknown protocol "
+					<< protocol
+					<< " line "
+					<< "@"
+					<< tag);
 			}
 
 			//
@@ -345,6 +484,9 @@ namespace node
 					<< " data to task #"
 					<< pos->second);
 
+				//
+				//	slot [0] ????
+				//
 				base_.mux_.post(pos->second, 0, cyng::tuple_factory(channel, source, target, data));
 			}
 			return std::distance(range.first, range.second);
@@ -368,138 +510,6 @@ namespace node
 			}
 			return std::distance(range.first, range.second);
 		}
-
-		//	slot [4] - register target response
-		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
-		{
-			if (success)
-			{
-				auto pos = seq_target_map_.find(seq);
-				if (pos != seq_target_map_.end())
-				{
-					auto pos_target = targets_.find(pos->second);
-					if (pos_target != targets_.end())
-					{
-						BOOST_ASSERT(pos->second == pos_target->first);
-
-						CYNG_LOG_INFO(logger_, "channel "
-							<< channel
-							<< " => "
-							<< pos->second
-							<< ':'
-							<< pos_target->second);
-
-						//
-						//	channel => [protocol, target]
-						//
-						channel_protocol_map_.emplace(channel, std::make_pair(pos_target->second, pos->second));
-					}
-					seq_target_map_.erase(pos);
-
-					if (seq_target_map_.empty()) {
-						CYNG_LOG_INFO(logger_, "push target registration is complete");
-					}
-					else {
-						CYNG_LOG_TRACE(logger_, seq_target_map_.size()
-							<< " push target register request(s) are pending");
-					}
-				}
-			}
-
-			//
-			//	continue task
-			//
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(cyng::buffer_t const&)
-		{	//	no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(sequence_type, bool, std::string const&)
-		{	//	no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(sequence_type)
-		{	//	no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(sequence_type, response_type, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t)
-		{	//	no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(sequence_type seq
-			, response_type res
-			, std::uint32_t channel)
-		{	//	no implementation
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(std::string type, std::size_t tid)
-		{
-			consumers_.emplace(type, tid);
-			CYNG_LOG_INFO(logger_, "consumer task #"
-				<< tid
-				<< " registered as "
-				<< type);
-
-			//
-			//	continue task
-			//
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		cyng::continuation network::process(std::string protocol, std::uint64_t line, boost::uuids::uuid tag)
-		{
-
-			CYNG_LOG_INFO(logger_, "remove "
-				<< protocol
-				<< " line "
-				<< line
-				<< "@"
-				<< tag);
-
-			if (boost::algorithm::equals("SML", protocol)) {
-
-				auto size = sml_lines_.erase(line);
-				CYNG_LOG_TRACE(logger_, sml_lines_.size()
-					<< " active SML line(s)");
-
-			}
-			else if (boost::algorithm::equals("IEC", protocol)) {
-
-				auto size = iec_lines_.erase(line);
-				CYNG_LOG_TRACE(logger_, sml_lines_.size()
-					<< " active IEC line(s)");
-			}
-			else {
-				CYNG_LOG_ERROR(logger_, "unknown protocol "
-					<< protocol
-					<< " line "
-					<< line
-					<< "@"
-					<< tag);
-			}
-
-			//
-			//	continue task
-			//
-			return cyng::continuation::TASK_CONTINUE;
-		}
-
-		//void network::task_resume(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	//	[1,0,TDevice,3]
-		//	CYNG_LOG_TRACE(logger_, "resume task - " << cyng::io::to_str(frame));
-		//	std::size_t tsk = cyng::value_cast<std::size_t>(frame.at(0), 0);
-		//	std::size_t slot = cyng::value_cast<std::size_t>(frame.at(1), 0);
-		//	base_.mux_.post(tsk, slot, cyng::tuple_t{ frame.at(2), frame.at(3) });
-		//}
 
 		void network::reconfigure(cyng::context& ctx)
 		{
@@ -531,27 +541,6 @@ namespace node
 				<< cyng::to_str(config_.get().monitor_));
 
 			base_.suspend(config_.get().monitor_);
-		}
-
-		cyng::vector_t network::ipt_req_login_public() const
-		{
-			CYNG_LOG_INFO(logger_, "send public login request "
-				<< config_.get().host_
-				<< ':'
-				<< config_.get().service_);
-
-			return gen::ipt_req_login_public(config_.get());
-		}
-
-		cyng::vector_t network::ipt_req_login_scrambled() const
-		{
-			CYNG_LOG_INFO(logger_, "send scrambled login request "
-				<< config_.get().host_
-				<< ':'
-				<< config_.get().service_);
-
-			return gen::ipt_req_login_scrambled(config_.get());
-
 		}
 
 		void network::register_targets()

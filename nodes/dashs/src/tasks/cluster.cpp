@@ -327,81 +327,15 @@ namespace node
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
 
-		//
-		//	Boost gateway records with additional data from the TDevice table
-		//
-		if (boost::algorithm::equals(std::get<0>(tpl), "TGateway"))
-		{
-			//
-			//	Additional values for TGateway
-			//
-			cache_.access([&](const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
+		node::res_subscribe(logger_
+			, cache_
+			, std::get<0>(tpl)	//	[0] table name
+			, std::get<1>(tpl)	//	[1] table key
+			, std::get<2>(tpl)	//	[2] record
+			, std::get<3>(tpl)	//	[3] generation
+			, std::get<4>(tpl)	//	[4] origin session id
+			, std::get<5>(tpl));
 
-				//
-				//	Gateway and Device table share the same table key
-				//	look for a session of this device
-				//
-				auto dev_rec = tbl_dev->lookup(std::get<1>(tpl));
-				auto ses_rec = tbl_ses->find_first(cyng::param_t("device", std::get<1>(tpl).at(0)));
-
-				//
-				//	set device name
-				//	set model
-				//	set firmware
-				//	set online state
-				//
-				if (!dev_rec.empty())
-				{
-					std::get<2>(tpl).push_back(dev_rec["name"]);
-					std::get<2>(tpl).push_back(dev_rec["serverId"]);
-					std::get<2>(tpl).push_back(dev_rec["vFirmware"]);
-					std::get<2>(tpl).push_back(cyng::make_object(!ses_rec.empty()));
-				}
-				else
-				{
-					CYNG_LOG_WARNING(logger_, "res.subscribe - gateway"
-						<< cyng::io::to_str(std::get<1>(tpl))
-						<< " has no associated device");
-				}
-			}	, cyng::store::read_access("TDevice")
-				, cyng::store::read_access("_Session"));
-
-		}
-
-		if (!cache_.insert(std::get<0>(tpl)	//	table name
-			, std::get<1>(tpl)	//	table key
-			, std::get<2>(tpl)	//	table data
-			, std::get<3>(tpl)	//	generation
-			, std::get<4>(tpl)))
-		{
-			CYNG_LOG_WARNING(logger_, "res.subscribe failed "
-				<< std::get<0>(tpl)		// table name
-				<< " - "
-				<< cyng::io::to_str(std::get<1>(tpl)));
-		}
-		else
-		{
-			if (boost::algorithm::equals(std::get<0>(tpl), "_Session"))
-			{
-				//
-				//	mark gateways as online
-				//
-				cache_.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
-
-					//
-					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
-					//	Gateway and Device table share the same table key
-					//
-					auto rec = tbl_ses->lookup(std::get<1>(tpl));
-					if (!rec.empty())
-					{
-						//	set online state
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", true), std::get<4>(tpl));
-					}
-				}	, cyng::store::write_access("TGateway")
-					, cyng::store::read_access("_Session"));
-			}
-		}
 	}
 
 	void cluster::db_res_insert(cyng::context& ctx)
@@ -429,19 +363,14 @@ namespace node
 		//
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
-		cyng::table::record rec(cache_.meta(std::get<0>(tpl)), std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl));
 
-		if (!cache_.insert(std::get<0>(tpl)
-			, std::get<1>(tpl)
-			, std::get<2>(tpl)
-			, std::get<3>(tpl)
-			, ctx.tag()))	//	self
-		{
-			CYNG_LOG_WARNING(logger_, "db.res.insert failed "
-				<< std::get<0>(tpl)		// table name
-				<< " - "
-				<< cyng::io::to_str(std::get<1>(tpl)));
-		}
+		node::db_res_insert(logger_
+			, cache_
+			, std::get<0>(tpl)		//	[0] table name
+			, std::get<1>(tpl)		//	[1] table key
+			, std::get<2>(tpl)		//	[2] record
+			, std::get<3>(tpl)		//	[3] generation
+			, ctx.tag());
 
 	}
 
@@ -471,85 +400,14 @@ namespace node
 		//
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
-		cyng::table::record rec(cache_.meta(std::get<0>(tpl)), std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl));
 
-		if (boost::algorithm::equals(std::get<0>(tpl), "TGateway"))
-		{
-			cache_.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
-
-				//
-				//	search session with this device/GW tag
-				//
-				auto dev_rec = tbl_dev->lookup(std::get<1>(tpl));
-
-				//
-				//	set device name
-				//	set model
-				//	set firmware
-				//	set online state
-				//
-				if (!dev_rec.empty())
-				{
-					std::get<2>(tpl).push_back(dev_rec["name"]);
-					std::get<2>(tpl).push_back(dev_rec["serverId"]);
-					std::get<2>(tpl).push_back(dev_rec["vFirmware"]);
-
-					//
-					//	get online state
-					//
-					auto ses_rec = tbl_ses->find_first(cyng::param_t("device", std::get<1>(tpl).at(0)));
-					std::get<2>(tpl).push_back(cyng::make_object(!ses_rec.empty()));	//	add on/offline flag
-
-					if (!tbl_gw->insert(std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl), std::get<4>(tpl)))
-					{
-
-						CYNG_LOG_WARNING(logger_, "db.req.insert failed "
-							<< std::get<0>(tpl)		// table name
-							<< " - "
-							<< cyng::io::to_str(std::get<1>(tpl)));
-
-					}
-				}
-				else {
-					CYNG_LOG_WARNING(logger_, "gateway "
-						<< cyng::io::to_str(std::get<1>(tpl))
-						<< " has no associated device" );
-				}
-			}	, cyng::store::write_access("TGateway")
-				, cyng::store::read_access("TDevice")
-				, cyng::store::read_access("_Session"));
-		}
-		else if (!cache_.insert(std::get<0>(tpl)
-			, std::get<1>(tpl)
-			, std::get<2>(tpl)
-			, std::get<3>(tpl)
-			, std::get<4>(tpl)))
-		{
-			CYNG_LOG_WARNING(logger_, "db.req.insert failed "
-				<< std::get<0>(tpl)		// table name
-				<< " - "
-				<< cyng::io::to_str(std::get<1>(tpl)));
-		}
-		else 
-		{
-			if (boost::algorithm::equals(std::get<0>(tpl), "_Session"))
-			{
-				cache_.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
-
-					//
-					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
-					//	Gateway and Device table share the same table key
-					//
-					auto rec = tbl_ses->lookup(std::get<1>(tpl));
-					if (!rec.empty())
-					{
-						//	set online state
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", true), std::get<4>(tpl));
-					}
-				}	, cyng::store::write_access("TGateway")
-					, cyng::store::read_access("_Session"));
-			}
-		}
+		node::db_req_insert(logger_
+			, cache_
+			, std::get<0>(tpl)		//	[0] table name
+			, std::get<1>(tpl)		//	[1] table key
+			, std::get<2>(tpl)		//	[2] record
+			, std::get<3>(tpl)		//	[3] generation
+			, std::get<4>(tpl));
 	}
 
 	void cluster::db_req_remove(cyng::context& ctx)
@@ -575,35 +433,14 @@ namespace node
 		//	
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 
-		//
-		//	we have to query session data before session will be removed
-		//
-		if (boost::algorithm::equals(std::get<0>(tpl), "_Session"))
-		{
-			cache_.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+		node::db_req_remove(logger_
+			, cache_
+			, std::get<0>(tpl)		//	[0] table name
+			, std::get<1>(tpl)		//	[1] table key
+			, std::get<2>(tpl));	//	[2] source
 
-				//
-				//	Gateway and Device table share the same table key
-				//
-				auto rec = tbl_ses->lookup(std::get<1>(tpl));
-				if (!rec.empty())
-				{
-					//	set online state
-					tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", false), std::get<2>(tpl));
-				}
-			}	, cyng::store::write_access("TGateway")
-				, cyng::store::read_access("_Session"));
-		}
-
-		if (!cache_.erase(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl)))
-		{
-			CYNG_LOG_WARNING(logger_, "db.req.remove failed "
-				<< std::get<0>(tpl)		// table name
-				<< " - "
-				<< cyng::io::to_str(std::get<1>(tpl)));
-
-		}
 	}
+
 	void cluster::db_res_remove(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
@@ -625,13 +462,11 @@ namespace node
 		//	
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 
-		if (!cache_.erase(std::get<0>(tpl), std::get<1>(tpl), ctx.tag()))
-		{
-			CYNG_LOG_WARNING(logger_, "db.res.remove failed "
-				<< std::get<0>(tpl)		// table name
-				<< " - "
-				<< cyng::io::to_str(std::get<1>(tpl)));
-		}
+		node::db_res_remove(logger_
+			, cache_
+			, std::get<0>(tpl)		//	[0] table name
+			, std::get<1>(tpl)		//	[1] table key
+			, ctx.tag());			//	[2] source
 	}
 
 	void cluster::db_res_modify_by_attr(cyng::context& ctx)
@@ -731,13 +566,33 @@ namespace node
 
 	void cluster::ws_read(cyng::context& ctx)
 	{
-		//	[1adb06d2-bfbf-4b00-a7b1-80b49ba48f79,<!261:ws>,{("cmd":subscribe),("channel":status.session),("push":true)}]
+		//	[1adb06d2-bfbf-4b00-a7b1-80b49ba48f79,{("cmd":subscribe),("channel":status.session),("push":true)}]
 		//	
 		//	* session tag
 		//	* json object
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_TRACE(logger_, "ws.read - " << cyng::io::to_str(frame));
 
+		//
+		//	get session tag of websocket
+		//
+		auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+
+		//
+		//	reader for JSON data
+		//
+		auto reader = cyng::make_reader(frame.at(2));
+		const std::string cmd = cyng::value_cast<std::string>(reader.get("cmd"), "");
+
+		if (boost::algorithm::equals(cmd, "subscribe")) {
+
+			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+			CYNG_LOG_TRACE(logger_, "ws.read - subscribe channel [" << channel << "]");
+
+			dispatcher_.subscribe_channel(tag, channel);
+		}
+
+		//dispatcher_
 	}
 
 
