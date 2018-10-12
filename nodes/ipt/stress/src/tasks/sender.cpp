@@ -66,32 +66,15 @@ namespace node
 		{
 			if (is_online())
 			{
-				if (has_watchdog())
-				{
-					//
-					//	send watchdog response - without request
-					//
-					vm_.async_run(cyng::generate_invoke("res.watchdog", static_cast<std::uint8_t>(0)));
-					base_.suspend(std::chrono::minutes(get_watchdog()));
-					CYNG_LOG_INFO(logger_, "task #"
-						<< base_.get_id()
-						<< " <"
-						<< base_.get_class_name()
-						<< "> has watchdog with "
-						<< get_watchdog()
-						<< " minute(s)");
-				}
-				else
-				{
-					base_.suspend(config_.get().monitor_);
-					CYNG_LOG_INFO(logger_, "task #"
-						<< base_.get_id()
-						<< " <"
-						<< base_.get_class_name()
-						<< "> has monitor with "
-						<< config_.get().monitor_.count()
-						<< " seconds(s)");
-				}
+				base_.suspend(config_.get().monitor_);
+
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> has monitor with "
+					<< config_.get().monitor_.count()
+					<< " seconds(s)");
 
 				if (task_state_ == TASK_STATE_CONNECTED_)
 				{
@@ -133,8 +116,8 @@ namespace node
 				//
 				//	reset parser and serializer
 				//
-				vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_.get().sk_));
-				vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_));
+				vm_.async_run({ cyng::generate_invoke("ipt.reset.parser", config_.get().sk_)
+					, cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_) });
 
 				//
 				//	login request
@@ -180,27 +163,18 @@ namespace node
 				<< config_.get().account_
 				<< " successful authorized");
 
-			if (watchdog != 0)
-			{
-				CYNG_LOG_INFO(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> start watchdog with "
-					<< watchdog
-					<< " minute(s)");
-				base_.suspend(std::chrono::minutes(watchdog));
-			}
-			else
-			{
-				CYNG_LOG_INFO(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> has monitor with "
-					<< config_.get().monitor_.count()
-					<< " seconds(s)");
-			}
+			//
+			//	re/start monitor
+			//
+			base_.suspend(config_.get().monitor_);
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> has monitor with "
+				<< config_.get().monitor_.count()
+				<< " seconds(s)");
 
 			//
 			//	authorized

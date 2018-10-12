@@ -61,42 +61,26 @@ namespace node
 		{
 			if (is_online())	{
 
-				if (has_watchdog())
-				{
-					//
-					//	send watchdog response - without request
-					//
-					base_.suspend(std::chrono::minutes(get_watchdog()));
-					vm_.async_run(cyng::generate_invoke("res.watchdog", static_cast<std::uint8_t>(0)));
-					vm_.async_run(cyng::generate_invoke("stream.flush"));
+				//
+				//	re/start monitor
+				//
+				base_.suspend(config_.get().monitor_);
 
-					CYNG_LOG_INFO(logger_, "task #"
-						<< base_.get_id()
-						<< " <"
-						<< base_.get_class_name()
-						<< "> has watchdog with "
-						<< get_watchdog()
-						<< " minute(s)");
-				}
-				else
-				{
-					base_.suspend(config_.get().monitor_);
-					CYNG_LOG_INFO(logger_, "task #"
-						<< base_.get_id()
-						<< " <"
-						<< base_.get_class_name()
-						<< "> has monitor with "
-						<< config_.get().monitor_.count()
-						<< " seconds(s)");
-				}
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> has monitor with "
+					<< config_.get().monitor_.count()
+					<< " seconds(s)");
 			}
 			else
 			{
 				//
 				//	reset parser and serializer
 				//
-				vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_.get().sk_));
-				vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_));
+				vm_.async_run({ cyng::generate_invoke("ipt.reset.parser", config_.get().sk_)
+					, cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_) });
 
 				//
 				//	login request
@@ -131,12 +115,6 @@ namespace node
 		//	slot [0] 0x4001/0x4002: response login
 		void network::on_login_response(std::uint16_t watchdog, std::string redirect)
 		{
-			if (watchdog != 0)
-			{
-				CYNG_LOG_INFO(logger_, "start watchdog: " << watchdog << " minutes");
-				base_.suspend(std::chrono::minutes(watchdog));
-			}
-
 			//
 			//	register targets
 			//

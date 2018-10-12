@@ -137,10 +137,6 @@ namespace node
 			vm_.register_function("bus.store.relation", 2, std::bind(&bus::store_relation, this, std::placeholders::_1));
 			vm_.register_function("bus.remove.relation", 1, std::bind(&bus::remove_relation, this, std::placeholders::_1));
 
-			//vm_.register_function("open.connection.timeout", 2, std::bind(&bus::open_connection_timeout, this, std::placeholders::_1));
-			//vm_.register_function("close.connection.timeout", 2, std::bind(&bus::close_connection_timeout, this, std::placeholders::_1));
-			//vm_.register_function("register.push.target.timeout", 2, std::bind(&bus::register_push_target_timeout, this, std::placeholders::_1));
-
 			//
 			//	statistical data
 			//
@@ -264,6 +260,7 @@ namespace node
 					//
 					//	slot [1] - go offline
 					//
+					mux_.stop("node::watchdog");
 					on_logout();
 				}
 				else
@@ -295,6 +292,10 @@ namespace node
 			//	same for public and scrambled
 			//
 			const auto res = make_login_response(cyng::value_cast(frame.at(1), response_type(0)));
+
+			//
+			//	update watchdog
+			//
 			watchdog_ = cyng::value_cast(frame.at(2), std::uint16_t(23));
 			const std::string redirect = cyng::value_cast<std::string>(frame.at(3), "");
 
@@ -322,11 +323,13 @@ namespace node
 				//	Only successful logins will be posted. In case of failure the on_logout()
 				//	event will be called.
 				//
-				if (watchdog_ != 0) {
+				if (has_watchdog()) {
 
 					//
-					//	ToDo: start watchdog task
+					//	start watchdog task
 					//
+					cyng::async::start_task_sync<watchdog>(mux_, logger_, vm_, watchdog_);
+
 				}
 				on_login_response(watchdog_, redirect);
 			}

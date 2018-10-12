@@ -26,47 +26,16 @@ namespace node
 {
 	namespace ipt
 	{
-		class client
+		class client : public bus
 		{
 		public:
-			//	 [0] 0x4001/0x4002: response login
-			using msg_00 = std::tuple<std::uint16_t, std::string>;
-			using msg_01 = std::tuple<>;
-
-			//	[2] 0x4005: push target registered response
-			using msg_02 = std::tuple<sequence_type, bool, std::uint32_t, std::string>;
-
-			//	[3] 0x4006: push target deregistered response
-			using msg_03 = std::tuple<sequence_type, bool, std::string>;
-
-			//	[4] 0x1000: push channel open response
-			using msg_04 = std::tuple<sequence_type, bool, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t>;
-
-			//	[5] 0x1001: push channel close response
-			using msg_05 = std::tuple<sequence_type, bool, std::uint32_t, std::string>;
-
-			//	[6] 0x9003: connection open request 
-			using msg_06 = std::tuple<sequence_type, std::string>;
-
-			//	[7] 0x1003: connection open response
-			using msg_07 = std::tuple<sequence_type, bool>;
-
-			//	[8] 0x9004: connection close request
-			using msg_08 = std::tuple<sequence_type, bool, std::size_t>;
-
-			//	[9] 0x9002: push data transfer request
-			using msg_09 = std::tuple<sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t>;
-
-			//	[10] transmit data(if connected)
-			using msg_10 = std::tuple<cyng::buffer_t>;
-
-			using signatures_t = std::tuple<msg_00, msg_01, msg_02, msg_03, msg_04, msg_05, msg_06, msg_07, msg_08, msg_09, msg_10>;
+			using signatures_t = std::tuple<>;
 
 
 		public:
 			client(cyng::async::base_task* btp, cyng::logging::log_ptr logger)
-				: base_(*btp)
-				, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:test", 1u))
+				: bus(logger, btp->mux_, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, "ipt:test", 1u)
+				, base_(*btp)
 				, logger_(logger)
 			{
 				CYNG_LOG_INFO(logger_, "initialize task #"
@@ -78,34 +47,41 @@ namespace node
 
 			cyng::continuation run()
 			{
-				if (bus_->is_online())
+				if (is_online())
 				{
 					//
-					//	send watchdog response - without request
+					//	re/start monitor
 					//
-					bus_->vm_.async_run(cyng::generate_invoke("res.watchdog", static_cast<std::uint8_t>(0)));
-					bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+					//base_.suspend(config_.get().monitor_);
 				}
 				else
 				{
 					//
 					//	reset parser and serializer
 					//
-					bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.parser", scramble_key(scramble_key::default_scramble_key_)));
-					bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", scramble_key(scramble_key::default_scramble_key_)));
+					vm_.async_run({ cyng::generate_invoke("ipt.reset.parser", scramble_key(scramble_key::default_scramble_key_))
+						, cyng::generate_invoke("ipt.reset.serializer", scramble_key(scramble_key::default_scramble_key_)) });
 
 					//
 					//	login request
 					//
 					master_record cfg("localhost", "26862", "User", "Pass", scramble_key::default_scramble_key_, false, 0);
-					bus_->vm_.async_run(gen::ipt_req_login_public(cfg));
+					vm_.async_run(gen::ipt_req_login_public(cfg));
 					//bus_->vm_.async_run(gen::ipt_req_login_scrambled(cfg));
 				}
 				return cyng::continuation::TASK_CONTINUE;
 			}
 			void stop()
 			{
-				bus_->stop();
+				bus::stop();
+				while (!vm_.is_halted()) {
+					CYNG_LOG_INFO(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> continue gracefull shutdown");
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				}
 				CYNG_LOG_INFO(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
@@ -118,22 +94,14 @@ namespace node
 			 *
 			 * sucessful network login
 			 */
-			cyng::continuation process(std::uint16_t watchdog, std::string redirect)
+			virtual void on_login_response(std::uint16_t watchdog, std::string redirect) override
 			{
-				if (watchdog != 0)
-				{
-					CYNG_LOG_INFO(logger_, "start watchdog: " << watchdog << " minutes");
-					base_.suspend(std::chrono::minutes(watchdog));
-				}
-
 				//
 				//	open push channel
 				//
 				//bus_->vm_.async_run(cyng::generate_invoke("req.open.push.channel", "water@solostec", "", "", "", "", 0));
-				bus_->vm_.async_run(cyng::generate_invoke("req.open.push.channel", "LZQJ", "", "", "", "", 0));
-				
-				bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
-				return cyng::continuation::TASK_CONTINUE;
+				vm_.async_run(cyng::generate_invoke("req.open.push.channel", "LZQJ", "", "", "", "", 0));
+				vm_.async_run(cyng::generate_invoke("stream.flush"));
 			}
 
 			/**
@@ -141,10 +109,9 @@ namespace node
 			 *
 			 * connection lost / reconnect
 			 */
-			cyng::continuation process()
+			virtual void on_logout() override
 			{
 				CYNG_LOG_WARNING(logger_, "connection to ipt master lost");
-				return cyng::continuation::TASK_CONTINUE;
 			}
 
 			/**
@@ -157,10 +124,9 @@ namespace node
 			 * @param channel channel id
 			 * @param target target name (empty when if request not triggered by bus::req_register_push_target())
 			 */
-			cyng::continuation process(sequence_type, bool, std::uint32_t, std::string target)
+			virtual void on_res_register_target(sequence_type, bool, std::uint32_t, std::string target) override
 			{
 				CYNG_LOG_INFO(logger_, "cpush target registered response");
-				return cyng::continuation::TASK_CONTINUE;
 			}
 
 			/**
@@ -168,10 +134,9 @@ namespace node
 			 *
 			 * deregister target response
 			 */
-			cyng::continuation process(sequence_type, bool, std::string const&)
+			virtual void on_res_deregister_target(sequence_type, bool, std::string const&) override
 			{
-				CYNG_LOG_INFO(logger_, "cpush target deregistered response");
-				return cyng::continuation::TASK_CONTINUE;
+				CYNG_LOG_INFO(logger_, "push target deregistered response");
 			}
 
 			/**
@@ -185,7 +150,7 @@ namespace node
 			 * @param status channel status
 			 * @param count number of targets reached
 			 */
-			cyng::continuation process(sequence_type seq, bool success, std::uint32_t channel, std::uint32_t source, std::uint16_t status, std::size_t count)
+			virtual void on_res_open_push_channel(sequence_type seq, bool success, std::uint32_t channel, std::uint32_t source, std::uint16_t status, std::size_t count) override
 			{
 				CYNG_LOG_INFO(logger_, "ipt.res.open.push.channel: "
 					<< channel
@@ -214,26 +179,26 @@ namespace node
 						cyng::buffer_t data;
 						data.insert(data.begin(), std::istream_iterator<char>(file), std::istream_iterator<char>());
 
-						bus_->vm_.async_run(cyng::generate_invoke("req.transfer.push.data"
+						vm_.async_run(cyng::generate_invoke("req.transfer.push.data"
 							, channel
 							, source
 							, std::uint8_t(0xC1)	//	status
 							, std::uint8_t(0)	//	block
 							, data));
-						bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+						vm_.async_run(cyng::generate_invoke("stream.flush"));
 					}
 
 					//
 					//	close channel
 					//
-					bus_->vm_.async_run(cyng::generate_invoke("req.close.push.channel", channel));
-					bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+					vm_.async_run(cyng::generate_invoke("req.close.push.channel", channel));
+					vm_.async_run(cyng::generate_invoke("stream.flush"));
 
 				}
-				return (success)
-					? cyng::continuation::TASK_CONTINUE
-					: cyng::continuation::TASK_STOP
-					;
+				//return (success)
+				//	? cyng::continuation::TASK_CONTINUE
+				//	: cyng::continuation::TASK_STOP
+				//	;
 			}
 
 			/**
@@ -246,13 +211,11 @@ namespace node
 			 * @param channel channel id
 			 * @param res response name
 			 */
-			cyng::continuation process(sequence_type seq
+			virtual void on_res_close_push_channel(sequence_type seq
 				, bool success
-				, std::uint32_t channel
-				, std::string res)
+				, std::uint32_t channel) override
 			{
 				CYNG_LOG_INFO(logger_, "push channel close response");
-				return cyng::continuation::TASK_CONTINUE;
 			}
 
 			/**
@@ -260,10 +223,10 @@ namespace node
 			 *
 			 * incoming call
 			 */
-			cyng::continuation process(sequence_type, std::string const& number)
+			virtual bool on_req_open_connection(sequence_type, std::string const& number) override
 			{
 				CYNG_LOG_INFO(logger_, "connection open request ");
-				return cyng::continuation::TASK_CONTINUE;
+				return false;
 			}
 
 			/**
@@ -272,10 +235,10 @@ namespace node
 			 * @param seq ipt sequence
 			 * @param success true if connection open request was accepted
 			 */
-			cyng::continuation process(sequence_type seq, bool success)
+			virtual cyng::buffer_t on_res_open_connection(sequence_type seq, bool success) override
 			{
 				CYNG_LOG_INFO(logger_, "connection open response ");
-				return cyng::continuation::TASK_CONTINUE;
+				return cyng::buffer_t();
 			}
 
 			/**
@@ -283,21 +246,19 @@ namespace node
 			 *
 			 * open connection closed
 			 */
-			cyng::continuation process(sequence_type, bool, std::size_t)
-			{
-				CYNG_LOG_INFO(logger_, "connection close request/response");
-				return cyng::continuation::TASK_CONTINUE;
-			}
+			virtual void on_req_close_connection(sequence_type) override
+			{}
+			virtual void on_res_close_connection(sequence_type) override
+			{}
 
 			/**
 			 * @brief slot [9] 0x9002: push data transfer request
 			 *
 			 * push data
 			 */
-			cyng::continuation process(sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t const&)
+			virtual void on_req_transfer_push_data(sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t const&) override
 			{
 				CYNG_LOG_INFO(logger_, "push data transfer request");
-				return cyng::continuation::TASK_CONTINUE;
 			}
 
 
@@ -306,15 +267,14 @@ namespace node
 			 *
 			 * receive data
 			 */
-			cyng::continuation process(cyng::buffer_t const&)
+			virtual cyng::buffer_t on_transmit_data(cyng::buffer_t const&) override
 			{
 				CYNG_LOG_INFO(logger_, "transmit data");
-				return cyng::continuation::TASK_CONTINUE;
+				return cyng::buffer_t();
 			}
 
 		private:
 			cyng::async::base_task& base_;
-			bus::shared_type bus_;
 			cyng::logging::log_ptr logger_;
 		};
 	}

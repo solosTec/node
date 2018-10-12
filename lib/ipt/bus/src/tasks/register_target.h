@@ -9,7 +9,6 @@
 #define NODE_IPT_BUS_TASK_REGISTER_TARGET_H
 
 #include <smf/ipt/bus.h>
-//#include <smf/ipt/defs.h>
 
 namespace node
 {

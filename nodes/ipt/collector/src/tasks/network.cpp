@@ -52,10 +52,9 @@ namespace node
 			if (is_online())
 			{
 				//
-				//	send watchdog response - without request
+				//	re/start monitor
 				//
-				vm_.async_run({ cyng::generate_invoke("res.watchdog", static_cast<std::uint8_t>(0))
-					, cyng::generate_invoke("stream.flush") });
+				base_.suspend(config_.get().monitor_);
 			}
 			else
 			{
@@ -71,11 +70,11 @@ namespace node
 		//	slot [0] 0x4001/0x4002: response login
 		void network::on_login_response(std::uint16_t watchdog, std::string redirect)
 		{
-			if (watchdog != 0)
-			{
-				CYNG_LOG_INFO(logger_, "start watchdog: " << watchdog << " minutes");
-				base_.suspend(std::chrono::minutes(watchdog));
-			}
+			//if (watchdog != 0)
+			//{
+			//	CYNG_LOG_INFO(logger_, "start watchdog: " << watchdog << " minutes");
+			//	base_.suspend(std::chrono::minutes(watchdog));
+			//}
 		}
 
 		//	slot [1] - connection lost / reconnect

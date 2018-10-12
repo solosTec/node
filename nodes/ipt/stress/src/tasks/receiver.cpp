@@ -69,19 +69,17 @@ namespace node
 			if (is_online())
 			{
 				//
-				//	send watchdog response - without request
+				//	re/start monitor
 				//
-				vm_.async_run(cyng::generate_invoke("res.watchdog", static_cast<std::uint8_t>(0)));
-				vm_.async_run(cyng::generate_invoke("stream.flush"));
-
+				base_.suspend(config_.get().monitor_);
 			}
 			else
 			{
 				//
 				//	reset parser and serializer
 				//
-				vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_.get().sk_));
-				vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_));
+				vm_.async_run({ cyng::generate_invoke("ipt.reset.parser", config_.get().sk_)
+					, cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_) });
 
 				//
 				//	login request
@@ -123,12 +121,6 @@ namespace node
 				<< "> "
 				<< config_.get().account_
 				<< " successful authorized");
-
-			if (watchdog != 0)
-			{
-				CYNG_LOG_INFO(logger_, "start watchdog: " << watchdog << " minutes");
-				base_.suspend(std::chrono::minutes(watchdog));
-			}
 
 			//
 			//	waiting for connection open request
