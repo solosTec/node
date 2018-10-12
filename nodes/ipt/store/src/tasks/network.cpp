@@ -21,17 +21,20 @@ namespace node
 {
 	namespace ipt
 	{
-
 		network::network(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
-			, master_config_t const& cfg
+			, redundancy const& cfg
 			, std::map<std::string, std::string> const& targets)
 		: base_(*btp)
-			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:store", 1u))
+			, bus(logger
+				, btp->mux_
+				, boost::uuids::random_generator()()
+				, cfg.get().sk_
+				, "ipt:store"
+				, 1u)
 			, logger_(logger)
 			, config_(cfg)
 			, targets_(targets)
-			, seq_target_map_()
 			, channel_protocol_map_()
 			, sml_lines_()
 			, iec_lines_()
@@ -46,32 +49,59 @@ namespace node
 			//
 			//	request handler
 			//
-			bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&network::reconfigure, this, std::placeholders::_1));
-			bus_->vm_.register_function("net.insert.rel", 3, std::bind(&network::insert_rel, this, std::placeholders::_1));
+			vm_.register_function("bus.reconfigure", 1, std::bind(&network::reconfigure, this, std::placeholders::_1));
+
+			//
+			//	statistics
+			//
+			vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 		}
 
 		cyng::continuation network::run()
 		{
-			if (bus_->is_online())
-			{
-				//
-				//	send watchdog response - without request
-				//
-				bus_->vm_.async_run(cyng::generate_invoke("res.watchdog", static_cast<std::uint8_t>(0)));
-				bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+			if (is_online())	{
+
+				if (has_watchdog())
+				{
+					//
+					//	send watchdog response - without request
+					//
+					base_.suspend(std::chrono::minutes(get_watchdog()));
+					vm_.async_run(cyng::generate_invoke("res.watchdog", static_cast<std::uint8_t>(0)));
+					vm_.async_run(cyng::generate_invoke("stream.flush"));
+
+					CYNG_LOG_INFO(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> has watchdog with "
+						<< get_watchdog()
+						<< " minute(s)");
+				}
+				else
+				{
+					base_.suspend(config_.get().monitor_);
+					CYNG_LOG_INFO(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> has monitor with "
+						<< config_.get().monitor_.count()
+						<< " seconds(s)");
+				}
 			}
 			else
 			{
 				//
 				//	reset parser and serializer
 				//
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_.get().sk_));
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_));
+				vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_.get().sk_));
+				vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_));
 
 				//
 				//	login request
 				//
-				bus_->req_login(config_.get());
+				req_login(config_.get());
 			}
 
 			return cyng::continuation::TASK_CONTINUE;
@@ -79,7 +109,18 @@ namespace node
 
 		void network::stop()
 		{
-			bus_->stop();
+			//
+			//	call base class
+			//
+			bus::stop();
+			while (!vm_.is_halted()) {
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> continue gracefull shutdown");
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			}
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
@@ -88,7 +129,7 @@ namespace node
 		}
 
 		//	slot [0] 0x4001/0x4002: response login
-		cyng::continuation network::process(std::uint16_t watchdog, std::string redirect)
+		void network::on_login_response(std::uint16_t watchdog, std::string redirect)
 		{
 			if (watchdog != 0)
 			{
@@ -100,125 +141,100 @@ namespace node
 			//	register targets
 			//
 			register_targets();
-
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		//	slot [1] - connection lost / reconnect
-		cyng::continuation network::process()
+		void network::on_logout()
 		{
 			//
 			//	switch to other configuration
 			//
 			reconfigure_impl();
-
-			//
-			//	continue task
-			//
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		//	slot [2] - 0x4005: push target registered response
-		cyng::continuation network::process(sequence_type seq, bool success, std::uint32_t channel)
+		void network::on_res_register_target(sequence_type seq
+			, bool success
+			, std::uint32_t channel
+			, std::string target)
 		{
 			if (success)
 			{
-				auto pos = seq_target_map_.find(seq);
-				if (pos != seq_target_map_.end())
-				{
-					auto pos_target = targets_.find(pos->second);
-					if (pos_target != targets_.end())
-					{
-						BOOST_ASSERT(pos->second == pos_target->first);
+				auto pos = targets_.find(target);
+				if (pos != targets_.end()) {
 
-						CYNG_LOG_INFO(logger_, "channel "
-							<< channel
-							<< " => "
-							<< pos->second
-							<< ':'
-							<< pos_target->second);
+					CYNG_LOG_INFO(logger_, "channel "
+						<< channel
+						<< " => "
+						<< target
+						<< ':'
+						<< pos->second);
 
-						//
-						//	channel => [protocol, target]
-						//
-						channel_protocol_map_.emplace(channel, std::make_pair(pos_target->second, pos->second));
-					}
-					seq_target_map_.erase(pos);
+					//
+					//	channel => [protocol, target]
+					//
+					BOOST_ASSERT(!target.empty());
+					channel_protocol_map_.emplace(channel, std::make_pair(pos->second, target));
 
-					if (seq_target_map_.empty()) {
-						CYNG_LOG_INFO(logger_, "push target registration is complete");
-					}
-					else {
-						CYNG_LOG_TRACE(logger_, seq_target_map_.size()
-							<< " push target register request(s) are pending");
-					}
 				}
 			}
-
-			//
-			//	continue task
-			//
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		//	@brief slot [3] - 0x4006: push target deregistered response
-		cyng::continuation network::process(sequence_type, bool, std::string const&)
+		void network::on_res_deregister_target(sequence_type, bool, std::string const&)
 		{	//	no implementation
 			CYNG_LOG_WARNING(logger_, "push target deregistered response not implemented");
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		//	slot [4] - 0x1000: push channel open response
-		cyng::continuation network::process(sequence_type, bool, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t)
+		void network::on_res_open_push_channel(sequence_type
+			, bool
+			, std::uint32_t
+			, std::uint32_t
+			, std::uint16_t
+			, std::size_t)
 		{	//	no implementation
 			CYNG_LOG_WARNING(logger_, "push channel open response not implemented");
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		//	slot [5] - 0x1001: push channel close response
-		cyng::continuation network::process(sequence_type seq
+		void network::on_res_close_push_channel(sequence_type seq
 			, bool success
-			, std::uint32_t channel
-			, std::string res)
-		{
+			, std::uint32_t channel)
+		{	//	no implementation
 			CYNG_LOG_WARNING(logger_, "push channel close response not implemented");
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		//	slot [6] - 0x9003: connection open request 
-		cyng::continuation network::process(sequence_type seq, std::string const& number)
+		bool network::on_req_open_connection(sequence_type seq, std::string const& number)
 		{
 			CYNG_LOG_TRACE(logger_, "incoming call " << +seq << ':' << number);
 
 			//
 			//	don't accept incoming calls
 			//
-			bus_->vm_.async_run(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(ipt::tp_res_open_connection_policy::BUSY)));
-			bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
-
-			//
-			//	continue task
-			//
-			return cyng::continuation::TASK_CONTINUE;
+			return false;
 		}
 
 		//	slot [7] - 0x1003: connection open response
-		cyng::continuation network::process(sequence_type seq, bool success)
-		{
+		cyng::buffer_t network::on_res_open_connection(sequence_type seq, bool success)
+		{	//	no implementation
 			CYNG_LOG_WARNING(logger_, "connection open response not implemented");
-			return cyng::continuation::TASK_CONTINUE;
-
+			return cyng::buffer_t();	//	no data
 		}
 
 		//	slot [8] - 0x9004/0x1004: connection close request/response
-		cyng::continuation network::process(sequence_type, bool, std::size_t)
+		void network::on_req_close_connection(sequence_type)
 		{	//	no implementation
 			CYNG_LOG_WARNING(logger_, "connection close request/response not implemented");
-			return cyng::continuation::TASK_CONTINUE;
+		}
+		void network::on_res_close_connection(sequence_type)
+		{	//	no implementation
+			CYNG_LOG_WARNING(logger_, "connection close request/response not implemented");
 		}
 
 		//	slot [9] - 0x9002: push data transfer request
-		cyng::continuation network::process(sequence_type seq
+		void network::on_req_transfer_push_data(sequence_type seq
 			, std::uint32_t channel
 			, std::uint32_t source
 			, cyng::buffer_t const& data)
@@ -249,20 +265,15 @@ namespace node
 					<< data.size()
 					<< " bytes get lost");
 			}
-
-			//
-			//	continue task
-			//
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		//	slot [10] - transmit data (if connected)
-		cyng::continuation network::process(cyng::buffer_t const& data)
+		cyng::buffer_t network::on_transmit_data(cyng::buffer_t const& data)
 		{	//	no implementation
 			CYNG_LOG_WARNING(logger_, "transmit data not implemented - "
 				<< data.size()
 				<< " bytes received");
-			return cyng::continuation::TASK_CONTINUE;
+			return cyng::buffer_t();
 		}
 
 		cyng::continuation network::process(std::string type, std::size_t tid)
@@ -551,47 +562,45 @@ namespace node
 			}
 			else
 			{
-				seq_target_map_.clear();
-				seq_target_map_.clear();
 				for (auto target : targets_)
 				{
 					CYNG_LOG_INFO(logger_, "register target " << target.first << ':' << target.second);
-					cyng::vector_t prg;
-					prg
-						<< cyng::generate_invoke_unwinded("req.register.push.target", target.first, static_cast<std::uint16_t>(0xffff), static_cast<std::uint8_t>(1))
-						<< cyng::generate_invoke_unwinded("net.insert.rel", cyng::invoke("ipt.seq.push"),  target.first, target.second)
-						<< cyng::generate_invoke_unwinded("stream.flush")
-						;
 
-					bus_->vm_.async_run(std::move(prg));
+					//
+					//	safe to call since no VM calls involved
+					//
+					req_register_push_target(target.first
+						, std::numeric_limits<std::uint16_t>::max()	//	0xffff
+						, static_cast<std::uint8_t>(1)
+						, std::chrono::seconds(12));
 				}
 			}
 		}
 
-		void network::insert_rel(cyng::context& ctx)
-		{
-			//	[5,power@solostec]
-			//
-			//	* ipt sequence
-			//	* target name
-			//	* protocol layer
-			const cyng::vector_t frame = ctx.get_frame();
+		//void network::insert_rel(cyng::context& ctx)
+		//{
+		//	//	[5,power@solostec]
+		//	//
+		//	//	* ipt sequence
+		//	//	* target name
+		//	//	* protocol layer
+		//	const cyng::vector_t frame = ctx.get_frame();
 
-			auto const tpl = cyng::tuple_cast<
-				sequence_type,		//	[0] ipt seq
-				std::string,		//	[1] target
-				std::string			//	[2] protocol
-			>(frame);
+		//	auto const tpl = cyng::tuple_cast<
+		//		sequence_type,		//	[0] ipt seq
+		//		std::string,		//	[1] target
+		//		std::string			//	[2] protocol
+		//	>(frame);
 
-			CYNG_LOG_TRACE(logger_, "ipt sequence " 
-				<< +std::get<0>(tpl)
-				<< " ==> "
-				<< std::get<1>(tpl)
-				<< ':'
-				<< std::get<2>(tpl));
+		//	CYNG_LOG_TRACE(logger_, "ipt sequence " 
+		//		<< +std::get<0>(tpl)
+		//		<< " ==> "
+		//		<< std::get<1>(tpl)
+		//		<< ':'
+		//		<< std::get<2>(tpl));
 
-			seq_target_map_.emplace(std::get<0>(tpl), std::get<1>(tpl));
-		}
+		//	seq_target_map_.emplace(std::get<0>(tpl), std::get<1>(tpl));
+		//}
 
 		std::vector<std::size_t> network::get_consumer(std::string protocol)
 		{
@@ -608,27 +617,4 @@ namespace node
 	}
 }
 
-#include <cyng/async/task/task.hpp>
 
-namespace cyng {
-	namespace async {
-
-		//
-		//	initialize static slot names
-		//
-		template <>
-		std::map<std::string, std::size_t> cyng::async::task<node::ipt::network>::slot_names_({
-			{ "evt-authorized", node::ipt::bus::IPT_EVENT_AUTHORIZED },
-			{ "evt-offline", node::ipt::bus::IPT_EVENT_CONNECTION_TO_MASTER_LOST },
-			{ "evt-connection-open", node::ipt::bus::IPT_EVENT_INCOMING_CALL },
-			{ "evt-push-data", node::ipt::bus::IPT_EVENT_PUSH_DATA_RECEIVED },
-			{ "evt-target-registered", node::ipt::bus::IPT_EVENT_PUSH_TARGET_REGISTERED },
-			{ "evt-link-data", node::ipt::bus::IPT_EVENT_INCOMING_DATA },
-			{ "evt-target-deregistered", node::ipt::bus::IPT_EVENT_PUSH_TARGET_DEREREGISTERED },
-			{ "evt-connection-closed", node::ipt::bus::IPT_EVENT_CONNECTION_CLOSED },
-			{ "evt-channel-open", node::ipt::bus::IPT_EVENT_PUSH_CHANNEL_OPEN },
-			{ "evt-channel-closed", node::ipt::bus::IPT_EVENT_PUSH_CHANNEL_CLOSED }
-		});
-
-	}
-}

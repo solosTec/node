@@ -29,7 +29,7 @@ namespace node
 				, cyng::logging::log_ptr
 				, node::sml::status& status_word
 				, cyng::store::db& config_db
-				, node::ipt::bus::shared_type bus
+				, cyng::controller& vm
 				, cyng::table::key_type const&
 				, boost::uuids::uuid tag);
 			cyng::continuation run();
@@ -69,7 +69,7 @@ namespace node
 			/**
 			 * ipt bus
 			 */
-			bus::shared_type bus_;
+			cyng::controller& vm_;
 
 			cyng::table::key_type key_;
 

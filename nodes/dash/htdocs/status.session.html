@@ -150,6 +150,12 @@
             }
             return data;
         };
+        var renderSource = function (data, type, full, meta) {
+            if (type == "display") {
+                return data.toString().padStart(10, '0');
+            }
+            return data;
+        };
 
         //  globals
         var table_ses;
@@ -173,7 +179,7 @@
             columnDefs: [
                 { targets: 'sml-col-ses-pk', visible: false, name: 'ses-pk' },
                 { targets: 'sml-col-ses-name', visible: true, name: 'ses-name' },
-                { targets: 'sml-col-ses-source', visible: true, name: 'ses-source', className: 'text-right' },
+                { targets: 'sml-col-ses-source', visible: true, name: 'ses-source', className: 'text-right', render: renderSource },
                 { targets: 'sml-col-ses-layer', visible: true, name: 'ses-layer' },
                 { targets: 'sml-col-ses-rx', visible: true, name: 'ses-rx', className: 'text-right', render: renderBytes },
                 { targets: 'sml-col-ses-sx', visible: true, name: 'ses-sx', className: 'text-right', render: renderBytes },

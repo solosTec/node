@@ -23,7 +23,7 @@ namespace node
 			const std::string service_;
 			const std::string account_;
 			const std::string pwd_;
-			const scramble_key	sk_;
+			const scramble_key	sk_;	//!< default scramble key
 			const bool scrambled_;
 			const std::chrono::seconds monitor_;
 			master_record();
@@ -47,6 +47,7 @@ namespace node
 		struct redundancy
 		{
 			redundancy(master_config_t const&);
+			redundancy(redundancy const&);
 
 			/**
 			 * switch to next redundancy.

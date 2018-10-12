@@ -32,7 +32,7 @@ namespace node
 				, cyng::async::mux& mux
 				, status&
 				, cyng::store::db& config_db
-				, node::ipt::bus::shared_type bus
+				, cyng::controller& vm
 				, boost::uuids::uuid tag
 				, cyng::mac48 mac);
 
@@ -73,9 +73,9 @@ namespace node
 			cyng::store::db& config_db_;
 
 			/**
-			 * ipt bus
+			 * execution engine
 			 */
-			node::ipt::bus::shared_type bus_;
+			cyng::controller& vm_;
 
 			/**
 			 * table subscriptions

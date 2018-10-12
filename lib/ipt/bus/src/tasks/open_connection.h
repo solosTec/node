@@ -8,9 +8,7 @@
 #ifndef NODE_IPT_BUS_TASK_OPEN_CONNECTION_H
 #define NODE_IPT_BUS_TASK_OPEN_CONNECTION_H
 
-#include <cyng/log.h>
-#include <cyng/async/mux.h>
-#include <cyng/vm/controller.h>
+#include <smf/ipt/bus.h>
 
 namespace node
 {
@@ -18,8 +16,9 @@ namespace node
 	class open_connection
 	{
 	public:
-		using msg_0 = std::tuple<bool>;
-		using signatures_t = std::tuple<msg_0>;
+		using msg_0 = std::tuple<ipt::sequence_type, bool>;
+		using msg_1 = std::tuple<ipt::sequence_type>;
+		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
 		open_connection(cyng::async::base_task* bt
@@ -27,7 +26,8 @@ namespace node
 			, cyng::controller& vm
 			, std::string const&
 			, std::chrono::seconds timeout
-			, std::size_t retries);
+			, std::size_t retries
+			, ipt::bus_interface&);
 		cyng::continuation run();
 		void stop();
 
@@ -36,7 +36,14 @@ namespace node
 		 *
 		 * connection open response
 		 */
-		cyng::continuation process(bool);
+		cyng::continuation process(ipt::sequence_type, bool);
+
+		/**
+		 * @brief slot [1]
+		 *
+		 * update sequence
+		 */
+		cyng::continuation process(ipt::sequence_type);
 
 	private:
 		cyng::async::base_task& base_;
@@ -45,21 +52,10 @@ namespace node
 		const std::string number_;
 		const std::chrono::seconds timeout_;
 		std::size_t retries_;
+		ipt::bus_interface& bus_;
+		ipt::sequence_type seq_;
 	};
 	
 }
-
-//#if BOOST_COMP_GNUC
-//namespace cyng {
-//	namespace async {
-//
-//		//
-//		//	initialize static slot names
-//		//
-//		template <>
-//		std::map<std::string, std::size_t> cyng::async::task<node::open_connection>::slot_names_;
-//    }
-//}
-//#endif
 
 #endif

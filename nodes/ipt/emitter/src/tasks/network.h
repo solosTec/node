@@ -18,46 +18,15 @@ namespace node
 {
 	namespace ipt
 	{
-		class network
+		class network : public bus
 		{
 		public:
-			//	 [0] 0x4001/0x4002: response login
-			using msg_00 = std::tuple<std::uint16_t, std::string>;
-			using msg_01 = std::tuple<>;
-
-			//	[2] 0x4005: push target registered response
-			using msg_02 = std::tuple<sequence_type, bool, std::uint32_t>;
-
-			//	[3] 0x4006: push target deregistered response
-			using msg_03 = std::tuple<sequence_type, bool, std::string>;
-
-			//	[4] 0x1000: push channel open response
-			using msg_04 = std::tuple<sequence_type, bool, std::uint32_t, std::uint32_t, std::uint16_t, std::size_t>;
-
-			//	[5] 0x1001: push channel close response
-			using msg_05 = std::tuple<sequence_type, bool, std::uint32_t, std::string>;
-
-			//	[6] 0x9003: connection open request 
-			using msg_06 = std::tuple<sequence_type, std::string>;
-
-			//	[7] 0x1003: connection open response
-			using msg_07 = std::tuple<sequence_type, bool>;
-
-			//	[8] 0x9004: connection close request
-			using msg_08 = std::tuple<sequence_type>;
-
-			//	[9] 0x9002: push data transfer request
-			using msg_09 = std::tuple<sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t>;
-
-			//	[10] transmit data(if connected)
-			using msg_10 = std::tuple<cyng::buffer_t>;
-
-			using signatures_t = std::tuple<msg_00, msg_01, msg_02, msg_03, msg_04, msg_05, msg_06, msg_07, msg_08, msg_09, msg_10>;
+			using signatures_t = std::tuple<>;
 
 		public:
 			network(cyng::async::base_task* bt
 				, cyng::logging::log_ptr
-				, master_config_t const& cfg);
+				, redundancy const& cfg);
 			cyng::continuation run();
 			void stop();
 
@@ -65,34 +34,46 @@ namespace node
 			 * @brief slot [0] 0x4001/0x4002: response login
 			 *
 			 * sucessful network login
+			 *
+			 * @param watchdog watchdog timer in minutes
+			 * @param redirect URL to reconnect
 			 */
-			cyng::continuation process(std::uint16_t, std::string);
+			virtual void on_login_response(std::uint16_t, std::string) override;
 
 			/**
 			 * @brief slot [1]
 			 *
 			 * connection lost / reconnect
 			 */
-			cyng::continuation process();
+			virtual void on_logout() override;
 
 			/**
-			 * @brief slot [2] 0x4005: push target registered response
+			 * @brief slot [2] - 0x4005: push target registered response
 			 *
 			 * register target response
+			 *
+			 * @param seq ipt sequence
+			 * @param success success flag
+			 * @param channel channel id
+			 * @param target target name (empty when if request not triggered by bus::req_register_push_target())
 			 */
-			cyng::continuation process(sequence_type, bool, std::uint32_t);
+			virtual void on_res_register_target(sequence_type seq
+				, bool success
+				, std::uint32_t channel
+				, std::string target) override;
 
 			/**
-			 * @brief slot [3] 0x4006: push target deregistered response
+			 * @brief slot [3] - 0x4006: push target deregistered response
 			 *
 			 * deregister target response
 			 */
-			cyng::continuation process(sequence_type, bool, std::string const&);
+			virtual void on_res_deregister_target(sequence_type, bool, std::string const&) override;
 
 			/**
-			 * @brief slot [4] 0x1000: push channel open response
+			 * @brief slot [4] - 0x1000: push channel open response
 			 *
 			 * open push channel response
+			 * 
 			 * @param seq ipt sequence
 			 * @param success success flag
 			 * @param channel channel id
@@ -100,15 +81,15 @@ namespace node
 			 * @param status channel status
 			 * @param count number of targets reached
 			 */
-			cyng::continuation process(sequence_type seq
+			virtual void on_res_open_push_channel(sequence_type seq
 				, bool success
 				, std::uint32_t channel
 				, std::uint32_t source
 				, std::uint16_t status
-				, std::size_t count);
+				, std::size_t count) override;
 
 			/**
-			 * @brief slot [5] 0x1001: push channel close response
+			 * @brief slot [5] - 0x1001: push channel close response
 			 *
 			 * register consumer.
 			 * open push channel response
@@ -117,60 +98,55 @@ namespace node
 			 * @param channel channel id
 			 * @param res response name
 			 */
-			cyng::continuation process(sequence_type seq
+			virtual void on_res_close_push_channel(sequence_type seq
 				, bool success
-				, std::uint32_t channel
-				, std::string res);
+				, std::uint32_t channel) override;
 
 			/**
-			 * @brief slot [6] 0x9003: connection open request 
+			 * @brief slot [6] - 0x9003: connection open request 
 			 *
 			 * incoming call
+			 *
+			 * @return true if request is accepted - otherwise false
 			 */
-			cyng::continuation process(sequence_type, std::string const& number);
+			virtual bool on_req_open_connection(sequence_type, std::string const& number) override;
 
 			/**
-			 * @brief slot [7] 0x1003: connection open response
+			 * @brief slot [7] - 0x1003: connection open response
 			 *
 			 * @param seq ipt sequence
 			 * @param success true if connection open request was accepted
 			 */
-			cyng::continuation process(sequence_type seq, bool success);
+			virtual cyng::buffer_t on_res_open_connection(sequence_type seq, bool success) override;
 
 			/**
-			 * @brief slot [8] 0x9004: connection close request
+			 * @brief slot [8] - 0x9004/0x1004: connection close request/response
 			 *
 			 * open connection closed
 			 */
-			cyng::continuation process(sequence_type);
+			virtual void on_req_close_connection(sequence_type) override;
+			virtual void on_res_close_connection(sequence_type) override;
 
 			/**
-			 * @brief slot [9] 0x9002: push data transfer request
+			 * @brief slot [9] - 0x9002: push data transfer request
 			 *
 			 * push data
 			 */
-			cyng::continuation process(sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t const&);
+			virtual void on_req_transfer_push_data(sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t const&) override;
 
 			/**
-			 * @brief slot [10] transmit data (if connected)
+			 * @brief slot [10] - transmit data (if connected)
 			 *
-			 * receive data
+			 * incoming data
 			 */
-			cyng::continuation process(cyng::buffer_t const&);
-
-
+			virtual cyng::buffer_t on_transmit_data(cyng::buffer_t const&) override;
 
 		private:
-			//void task_resume(cyng::context& ctx);
 			void reconfigure(cyng::context& ctx);
 			void reconfigure_impl();
 
-			cyng::vector_t ipt_req_login_public() const;
-			cyng::vector_t ipt_req_login_scrambled() const;
-
 		private:
 			cyng::async::base_task& base_;
-			bus::shared_type bus_;
 			cyng::logging::log_ptr logger_;
 			const std::size_t storage_tsk_;
 			/**
@@ -181,18 +157,5 @@ namespace node
 		};
 	}
 }
-
-#if BOOST_COMP_GNUC
-namespace cyng {
-	namespace async {
-
-		//
-		//	initialize static slot names
-		//
-		template <>
-		std::map<std::string, std::size_t> cyng::async::task<node::ipt::network>::slot_names_;
-    }
-}
-#endif
 
 #endif

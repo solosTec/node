@@ -5,25 +5,29 @@
  *
  */
 
-#ifndef NODE_IPT_BUS_TASK_CLOSE_CONNECTION_H
-#define NODE_IPT_BUS_TASK_CLOSE_CONNECTION_H
+#ifndef NODE_IPT_BUS_TASK_REGISTER_TARGET_H
+#define NODE_IPT_BUS_TASK_REGISTER_TARGET_H
 
 #include <smf/ipt/bus.h>
+//#include <smf/ipt/defs.h>
 
 namespace node
 {
 
-	class close_connection
+	class register_target
 	{
 	public:
-		using msg_0 = std::tuple<ipt::sequence_type, bool>;
+		using msg_0 = std::tuple<ipt::sequence_type, bool, std::uint32_t>;
 		using msg_1 = std::tuple<ipt::sequence_type>;
 		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
-		close_connection(cyng::async::base_task* bt
+		register_target(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, cyng::controller& vm
+			, std::string const& name
+			, std::uint16_t packet_size
+			, std::uint8_t window_size
 			, std::chrono::seconds timeout
 			, ipt::bus_interface& bus);
 		cyng::continuation run();
@@ -32,9 +36,15 @@ namespace node
 		/**
 		 * @brief slot [0]
 		 *
-		 * connection open response
+		 * push target register response
+		 *
+		 * @param seq ipt sequence
+		 * @param success success flag
+		 * @param channe ipt channel
 		 */
-		cyng::continuation process(ipt::sequence_type, bool);
+		cyng::continuation process(ipt::sequence_type seq
+			, bool success
+			, std::uint32_t channel);
 
 		/**
 		 * @brief slot [1]
@@ -47,6 +57,9 @@ namespace node
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		cyng::controller& vm_;	//!< ipt device
+		const std::string name_;
+		const std::uint16_t packet_size_;
+		const std::uint8_t window_size_;
 		const std::chrono::seconds timeout_;
 		bool is_waiting_;	//!< task state
 		ipt::bus_interface& bus_;

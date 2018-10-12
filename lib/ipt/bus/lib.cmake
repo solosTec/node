@@ -20,6 +20,10 @@ set (ipt_bus_tasks
 	lib/ipt/bus/src/tasks/open_connection.cpp
 	lib/ipt/bus/src/tasks/close_connection.h
 	lib/ipt/bus/src/tasks/close_connection.cpp
+	lib/ipt/bus/src/tasks/register_target.h
+	lib/ipt/bus/src/tasks/register_target.cpp
+	lib/ipt/bus/src/tasks/watchdog.h
+	lib/ipt/bus/src/tasks/watchdog.cpp
 )
 
 source_group("tasks" FILES ${ipt_bus_tasks})

@@ -34,7 +34,7 @@ namespace node
 			using msg_01 = std::tuple<>;
 
 			//	[2] 0x4005: push target registered response
-			using msg_02 = std::tuple<sequence_type, bool, std::uint32_t>;
+			using msg_02 = std::tuple<sequence_type, bool, std::uint32_t, std::string>;
 
 			//	[3] 0x4006: push target deregistered response
 			using msg_03 = std::tuple<sequence_type, bool, std::string>;
@@ -151,8 +151,13 @@ namespace node
 			 * @brief slot [2] 0x4005: push target registered response
 			 *
 			 * register target response
+			 *
+			 * @param seq ipt sequence
+			 * @param success success flag
+			 * @param channel channel id
+			 * @param target target name (empty when if request not triggered by bus::req_register_push_target())
 			 */
-			cyng::continuation process(sequence_type, bool, std::uint32_t)
+			cyng::continuation process(sequence_type, bool, std::uint32_t, std::string target)
 			{
 				CYNG_LOG_INFO(logger_, "cpush target registered response");
 				return cyng::continuation::TASK_CONTINUE;

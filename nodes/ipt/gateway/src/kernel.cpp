@@ -31,7 +31,7 @@ namespace node
 			, cyng::controller& vm
 			, status& status_word
 			, cyng::store::db& config_db
-			, node::ipt::master_config_t const& cfg
+			, node::ipt::redundancy const& cfg
 			, bool server_mode
 			, std::string account
 			, std::string pwd, std::string manufacturer
@@ -955,16 +955,16 @@ namespace node
 			>(frame);
 
 			const auto idx = std::get<2>(tpl);
-			if (idx < cfg_ipt_.size()) {
+			if (idx < cfg_ipt_.config_.size()) {
 
 				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.address["
 					<< +idx
 					<< "] "
-					<< cfg_ipt_.at(idx).host_
+					<< cfg_ipt_.config_.at(idx).host_
 					<< " => "
 					<< std::get<3>(tpl).to_string());
 
-				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_).at(idx).host_) = std::get<3>(tpl).to_string();
+				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_.config_).at(idx).host_) = std::get<3>(tpl).to_string();
 			}
 		}
 
@@ -981,16 +981,16 @@ namespace node
 			>(frame);
 
 			const auto idx = std::get<2>(tpl);
-			if (idx < cfg_ipt_.size()) {
+			if (idx < cfg_ipt_.config_.size()) {
 
 				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.port.target["
 					<< +idx
 					<< "] "
-					<< cfg_ipt_.at(idx).service_
+					<< cfg_ipt_.config_.at(idx).service_
 					<< " => "
 					<< std::get<3>(tpl));
 
-				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_).at(idx).service_) = std::to_string(std::get<3>(tpl));
+				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_.config_).at(idx).service_) = std::to_string(std::get<3>(tpl));
 			}
 		}
 
@@ -1007,16 +1007,16 @@ namespace node
 			>(frame);
 
 			const auto idx = std::get<2>(tpl);
-			if (idx < cfg_ipt_.size()) {
+			if (idx < cfg_ipt_.config_.size()) {
 
 				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.user["
 					<< +idx
 					<< "] "
-					<< cfg_ipt_.at(idx).account_
+					<< cfg_ipt_.config_.at(idx).account_
 					<< " => "
 					<< std::get<3>(tpl));
 
-				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_).at(idx).account_) = std::get<3>(tpl);
+				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_.config_).at(idx).account_) = std::get<3>(tpl);
 			}
 		}
 
@@ -1033,16 +1033,16 @@ namespace node
 			>(frame);
 
 			const auto idx = std::get<2>(tpl);
-			if (idx < cfg_ipt_.size()) {
+			if (idx < cfg_ipt_.config_.size()) {
 
 				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.pwd["
 					<< +idx
 					<< "] "
-					<< cfg_ipt_.at(idx).pwd_
+					<< cfg_ipt_.config_.at(idx).pwd_
 					<< " => "
 					<< std::get<3>(tpl));
 
-				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_).at(idx).pwd_) = std::get<3>(tpl);
+				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_.config_).at(idx).pwd_) = std::get<3>(tpl);
 			}
 		}
 

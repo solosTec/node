@@ -26,17 +26,17 @@ namespace node
 			, cyng::async::mux& mux
 			, status& status_word
 			, cyng::store::db& config_db
-			, node::ipt::bus::shared_type bus
+			, cyng::controller& vm
 			, boost::uuids::uuid tag
 			, cyng::mac48 mac)
 		: logger_(logger)
 			, mux_(mux)
 			, status_word_(status_word)
 			, config_db_(config_db)
-			, bus_(bus)
+			, vm_(vm)
 			, rgn_()
 		{
-			BOOST_ASSERT(bus_->vm_.tag() != tag);
+			BOOST_ASSERT(vm_.tag() != tag);
 
 			subscribe("devices");
 			subscribe("push.ops");
@@ -66,7 +66,7 @@ namespace node
 					, address
 					, static_cast<std::uint8_t>(0u))		//	push_nr
 				, 1	//	generation
-				, bus_->vm_.tag());
+				, vm_.tag());
 
 
 		}
@@ -108,7 +108,7 @@ namespace node
 					, logger_
 					, status_word_
 					, config_db_
-					, bus_
+					, vm_
 					, key
 					, rgn_());
 				if (r.second) {

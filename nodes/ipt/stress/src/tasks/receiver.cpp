@@ -19,7 +19,7 @@ namespace node
 	{
 		receiver::receiver(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
-			, master_config_t const& cfg
+			, redundancy const& cfg
 			, std::size_t tsk_sender
 			, std::size_t rec_limit
 			, std::size_t packet_size_min
@@ -27,7 +27,12 @@ namespace node
 			, std::chrono::milliseconds delay
 			, std::size_t retries)
 		: base_(*btp)
-			, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, btp->get_id(), "ipt:stress:receiver", retries))
+			, bus(logger
+				, btp->mux_
+				, boost::uuids::random_generator()()
+				, cfg.get().sk_
+				, "ipt:stress:receiver"
+				, retries)
 			, logger_(logger)
 			, config_(cfg)
 			, tsk_sender_(tsk_sender)
@@ -42,7 +47,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "initialize task #"
 				<< base_.get_id()
 				<< ':'
-				<< bus_->vm_.tag()
+				<< vm_.tag()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> "
@@ -51,19 +56,23 @@ namespace node
 			//
 			//	request handler
 			//
-			bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&receiver::reconfigure, this, std::placeholders::_1));
+			vm_.register_function("bus.reconfigure", 1, std::bind(&receiver::reconfigure, this, std::placeholders::_1));
 
+			//
+			//	statistics
+			//
+			vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 		}
 
 		cyng::continuation receiver::run()
 		{
-			if (bus_->is_online())
+			if (is_online())
 			{
 				//
 				//	send watchdog response - without request
 				//
-				bus_->vm_.async_run(cyng::generate_invoke("res.watchdog", static_cast<std::uint8_t>(0)));
-				bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+				vm_.async_run(cyng::generate_invoke("res.watchdog", static_cast<std::uint8_t>(0)));
+				vm_.async_run(cyng::generate_invoke("stream.flush"));
 
 			}
 			else
@@ -71,13 +80,13 @@ namespace node
 				//
 				//	reset parser and serializer
 				//
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_.get().sk_));
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_));
+				vm_.async_run(cyng::generate_invoke("ipt.reset.parser", config_.get().sk_));
+				vm_.async_run(cyng::generate_invoke("ipt.reset.serializer", config_.get().sk_));
 
 				//
 				//	login request
 				//
-				bus_->req_login(config_.get());
+				req_login(config_.get());
 			}
 
 			return cyng::continuation::TASK_CONTINUE;
@@ -85,7 +94,15 @@ namespace node
 
 		void receiver::stop()
 		{
-			bus_->stop();
+			bus::stop();
+			while (!vm_.is_halted()) {
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> continue gracefull shutdown");
+				std::this_thread::sleep_for(delay_);
+			}
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
@@ -94,7 +111,7 @@ namespace node
 		}
 
 		//	slot [0] 0x4001/0x4002: response login
-		cyng::continuation receiver::process(std::uint16_t watchdog, std::string redirect)
+		void receiver::on_login_response(std::uint16_t watchdog, std::string redirect)
 		{
 			//
 			//	authorization successful
@@ -118,30 +135,26 @@ namespace node
 			//	trigger sender (account is equal to number)
 			//
 			CYNG_LOG_INFO(logger_, "trigger #: " << tsk_sender_ << " to open connection");
-			base_.mux_.post(tsk_sender_, 11u, cyng::tuple_factory(config_.get().account_));
+			base_.mux_.post(tsk_sender_, 0u, cyng::tuple_factory(config_.get().account_));
 
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		//	slot 1
-		cyng::continuation receiver::process()
+		//	slot [1] - connection lost / reconnect
+		void receiver::on_logout()
 		{
 			//
 			//	switch to other configuration
 			//
 			reconfigure_impl();
 
-			//
-			//	continue task
-			//
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
 
 		//	slot [2] 0x4005: push target registered response
-		cyng::continuation receiver::process(sequence_type seq
+		void receiver::on_res_register_target(sequence_type seq
 			, bool success
-			, std::uint32_t channel)
+			, std::uint32_t channel
+			, std::string target)
 		{
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -152,56 +165,52 @@ namespace node
 				<< " push target registered #"
 				<< channel);
 
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		//	slot [3] 0x4006: push target deregistered response
-		cyng::continuation receiver::process(sequence_type, bool, std::string const&)
-		{
-			return cyng::continuation::TASK_CONTINUE;
-
+		void receiver::on_res_deregister_target(sequence_type, bool, std::string const&)
+		{	//	no implementation
+			CYNG_LOG_WARNING(logger_, "push target deregistered response not implemented");
 		}
 
 		//	slot [4] 0x1000: push channel open response
-		cyng::continuation receiver::process(sequence_type seq
+		void receiver::on_res_open_push_channel(sequence_type seq
 			, bool success
 			, std::uint32_t channel
 			, std::uint32_t source
 			, std::uint16_t status
 			, std::size_t count)
-		{
-
-			return cyng::continuation::TASK_CONTINUE;
+		{	//	no implementation
+			CYNG_LOG_WARNING(logger_, "push channel open response not implemented");
 		}
 
 		//	slot [5] 0x1001: push channel close response
-		cyng::continuation receiver::process(sequence_type, bool, std::uint32_t, std::string res)
-		{
-			return cyng::continuation::TASK_CONTINUE;
+		void receiver::on_res_close_push_channel(sequence_type, bool, std::uint32_t)
+		{	//	no implementation
+			CYNG_LOG_WARNING(logger_, "push channel close response not implemented");
 		}
 
 		//	slot [6] 0x9003: connection open request 
-		cyng::continuation receiver::process(sequence_type seq, std::string const& number)
+		bool receiver::on_req_open_connection(sequence_type seq, std::string const& number)
 		{
 			CYNG_LOG_TRACE(logger_, config_.get().account_
 				<< " incoming call " << +seq << ':' << number);
 
 			//
-			//	accept incoming calls
+			//	accept incoming call
 			//
-			bus_->res_connection_open(seq, true);
-
-			return cyng::continuation::TASK_CONTINUE;
+			return true;
 		}
 
 		//	slot [7] 0x1003: connection open response
-		cyng::continuation receiver::process(sequence_type seq, bool success)
-		{
-			return cyng::continuation::TASK_CONTINUE;
+		cyng::buffer_t receiver::on_res_open_connection(sequence_type seq, bool success)
+		{	//	no implementation
+			CYNG_LOG_WARNING(logger_, "connection open response not implemented");
+			return cyng::buffer_t();	//	no data
 		}
 
 		//	slot [8] 0x9004: connection close request
-		cyng::continuation receiver::process(sequence_type, bool req, std::size_t origin)
+		void receiver::on_req_close_connection(sequence_type)
 		{
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -209,24 +218,29 @@ namespace node
 				<< base_.get_class_name()
 				<< "> "
 				<< config_.get().account_
-				<< " received connection close "
-				<< (req ? "request" : "response")
-				<< " #"
-				<< origin);
+				<< " received connection close request");
+		}
+
+		void receiver::on_res_close_connection(sequence_type)
+		{
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< config_.get().account_
+				<< " received connection close response");
 
 			//
 			//	trigger new open connection
 			//
-			if (!req) {
-				CYNG_LOG_INFO(logger_, "trigger #: " << tsk_sender_ << " to re-open connection");
-				base_.mux_.post(tsk_sender_, 11u, cyng::tuple_factory(config_.get().account_));
-			}
+			CYNG_LOG_INFO(logger_, "trigger #: " << tsk_sender_ << " to re-open connection");
+			base_.mux_.post(tsk_sender_, 0u, cyng::tuple_factory(config_.get().account_));
 
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		//	slot [9] 0x9002: push data transfer request
-		cyng::continuation receiver::process(sequence_type, std::uint32_t channel, std::uint32_t source, cyng::buffer_t const& data)
+		void receiver::on_req_transfer_push_data(sequence_type, std::uint32_t channel, std::uint32_t source, cyng::buffer_t const& data)
 		{
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -240,11 +254,10 @@ namespace node
 				<< channel
 				<< '.'
 				<< source);
-			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		//	slot [10] transmit data(if connected)
-		cyng::continuation receiver::process(cyng::buffer_t const& data)
+		cyng::buffer_t receiver::on_transmit_data(cyng::buffer_t const& data)
 		{
 			total_bytes_received_ += data.size();
 
@@ -275,29 +288,25 @@ namespace node
 				//
 				//	close connection
 				//
-				bus_->req_connection_close(std::chrono::seconds(12));
+				req_connection_close(std::chrono::seconds(21));
 				total_bytes_received_ = 0u;
-
-			}
-			else {
-				//
-				//	buffer size
-				//
-				std::uniform_int_distribution<int> dist_buffer_size(packet_size_min_, packet_size_max_);
-				cyng::buffer_t buffer(dist_buffer_size(rnd_device_));
-
-				//
-				//	fill buffer
-				//
-				std::uniform_int_distribution<int> dist(std::numeric_limits<char>::min(), std::numeric_limits<char>::max());
-				auto gen = std::bind(dist, mersenne_engine_);
-				std::generate(begin(buffer), end(buffer), gen);
-
-				bus_->vm_.async_run(cyng::generate_invoke("ipt.transfer.data", buffer));
-				bus_->vm_.async_run(cyng::generate_invoke("stream.flush"));
+				return cyng::buffer_t();
 			}
 
-			return cyng::continuation::TASK_CONTINUE;
+			//
+			//	buffer size
+			//
+			std::uniform_int_distribution<int> dist_buffer_size(packet_size_min_, packet_size_max_);
+			cyng::buffer_t buffer(dist_buffer_size(rnd_device_));
+
+			//
+			//	fill buffer
+			//
+			std::uniform_int_distribution<int> dist(std::numeric_limits<char>::min(), std::numeric_limits<char>::max());
+			auto gen = std::bind(dist, mersenne_engine_);
+			std::generate(begin(buffer), end(buffer), gen);
+
+			return buffer;
 		}
 
 		void receiver::reconfigure(cyng::context& ctx)

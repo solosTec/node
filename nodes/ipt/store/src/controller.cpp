@@ -665,9 +665,10 @@ namespace node
 			CYNG_LOG_TRACE(logger, "target " << pos.first->first << ':' << pos.first->second);
 		}
 
+		BOOST_ASSERT(!cfg.empty());
 		return cyng::async::start_task_detached<ipt::network>(mux
 			, logger
-			, ipt::load_cluster_cfg(cfg)
+			, ipt::redundancy(ipt::load_cluster_cfg(cfg))
 			, target_list);
 
 	}

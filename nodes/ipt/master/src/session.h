@@ -183,6 +183,7 @@ namespace node
 			void client_res_open_connection(cyng::context& ctx);
 
 			void store_relation(cyng::context& ctx);
+			void remove_relation(cyng::context& ctx);
 			void update_connection_state(cyng::context& ctx);
 			void redirect(cyng::context& ctx);
 			void client_req_reboot(cyng::context& ctx);

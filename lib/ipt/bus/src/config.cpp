@@ -71,6 +71,12 @@ namespace node
 			BOOST_ASSERT(!config_.empty());
 		}
 
+		redundancy::redundancy(redundancy const& other)
+			: config_(other.config_)
+			, master_(other.master_)
+		{}
+
+
 		bool redundancy::next() const
 		{
 			if (!config_.empty())

@@ -86,8 +86,7 @@ namespace node
 					<< "> stop "
 					<< tag_);
 
-				vm_.async_run(cyng::generate_invoke("ip.tcp.socket.shutdown"));
-				vm_.async_run(cyng::generate_invoke("ip.tcp.socket.close"));
+				vm_.async_run({ cyng::generate_invoke("ip.tcp.socket.shutdown"), cyng::generate_invoke("ip.tcp.socket.close") });
 			}
 			else {
 

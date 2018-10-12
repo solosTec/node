@@ -73,6 +73,8 @@ namespace node
 			vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
 			vm_.register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1));
+			vm_.register_function("session.remove.relation", 1, std::bind(&session::remove_relation, this, std::placeholders::_1));
+
 			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
 			vm_.register_function("session.redirect", 1, std::bind(&session::redirect, this, std::placeholders::_1));
 			vm_.register_function("client.req.reboot", 5, std::bind(&session::client_req_reboot, this, std::placeholders::_1));
@@ -288,7 +290,22 @@ namespace node
 			//
 			//	stop tasks that are still running
 			//
-			mux_.post("shutdown", cyng::tuple_t{});
+			//mux_.post("shutdown", cyng::tuple_t{});
+			//
+			//	stop all runing tasks
+			//
+			mux_.size([this](std::size_t size) {
+				CYNG_LOG_INFO(logger_, "ipt "
+					<< vm_.tag()
+					<< " stops "
+					<< task_db_.size()
+					<< '/'
+					<< size
+					<< " task(s)");
+			});
+			for (auto const& tsk : task_db_) {
+				mux_.stop(tsk.second);
+			}
 
 			//
 			//	gracefull shutdown
@@ -353,13 +370,57 @@ namespace node
 				std::size_t			//	[1] task id
 			>(frame);
 
-			CYNG_LOG_TRACE(logger_, "session.store.relation " 
-				<< +std::get<0>(tpl)
-				<< " => #"
-				<< std::get<1>(tpl));
+			if (task_db_.find(std::get<0>(tpl)) != task_db_.end()) {
+
+				CYNG_LOG_WARNING(logger_, "session.store.relation - slot "
+					<< +std::get<0>(tpl)
+					<< " already occupied with #"
+					<< std::get<1>(tpl)
+					<< '/'
+					<< task_db_.size());
+			}
 
 			task_db_.emplace(std::get<0>(tpl), std::get<1>(tpl));
+
+			CYNG_LOG_INFO(logger_, "session.store.relation "
+				<< +std::get<0>(tpl)
+				<< " => #"
+				<< std::get<1>(tpl)
+				<< '/'
+				<< task_db_.size());
+
+			//
+			//	update ipt sequence
+			//
+			//mux_.post(std::get<1>(tpl), 2u, cyng::tuple_factory(std::get<0>(tpl)));
+
 		}
+
+		void session::remove_relation(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			auto const tpl = cyng::tuple_cast<
+				std::size_t			//	[0] task id
+			>(frame);
+
+			for (auto pos = task_db_.begin(); pos != task_db_.end(); ++pos) {
+				if (pos->second == std::get<0>(tpl)) {
+
+					CYNG_LOG_DEBUG(logger_, "session.remove.relation "
+						<< +pos->first
+						<< " => #"
+						<< pos->second);
+
+					//
+					//	remove from task db
+					//
+					task_db_.erase(pos);
+
+					break;
+				}
+			}
+		}
+
 
 		void session::update_connection_state(cyng::context& ctx)
 		{
@@ -1829,8 +1890,12 @@ namespace node
 			if (pos != task_db_.end())
 			{
 				const auto tsk = pos->second;
-                ctx.attach(cyng::generate_invoke("log.msg.trace", "stop task", tsk));
-				mux_.post(tsk, 0, cyng::tuple_factory(res));
+				CYNG_LOG_DEBUG(logger_, "ipt.res.open.connection "
+					<< +pos->first
+					<< " => #"
+					<< tsk);
+
+				mux_.post(tsk, 0u, cyng::tuple_factory(res));
 
 				//
 				//	remove entry
@@ -1839,7 +1904,7 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "empty sequence/task relation", seq));
+				ctx.attach(cyng::generate_invoke("log.msg.error", "ipt.res.open.connection - empty sequence/task relation", seq));
 			}
 		}
 

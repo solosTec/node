@@ -5,20 +5,28 @@
  *
  */
 
-#include "close_connection.h"
+#include "register_target.h"
 #include <smf/ipt/response.hpp>
+#include <smf/ipt/bus.h>
 #include <cyng/vm/generator.h>
+#include <cyng/intrinsics/op.h>
 
 namespace node
 {
-	close_connection::close_connection(cyng::async::base_task* btp
+	register_target::register_target(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, cyng::controller& vm
+		, std::string const& name
+		, std::uint16_t packet_size
+		, std::uint8_t window_size
 		, std::chrono::seconds timeout
 		, ipt::bus_interface& bus)
 	: base_(*btp)
 		, logger_(logger)
 		, vm_(vm)
+		, name_(name)
+		, packet_size_(packet_size)
+		, window_size_(window_size)
 		, timeout_(timeout)
 		, is_waiting_(false)
 		, bus_(bus)
@@ -34,7 +42,7 @@ namespace node
 			<< cyng::to_str(timeout_));
 	}
 
-	cyng::continuation close_connection::run()
+	cyng::continuation register_target::run()
 	{	
 		if (!is_waiting_) {
 
@@ -47,17 +55,18 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> sends close connection request");
+				<< "> register target "
+				<< name_);
 
 			//
-			//	* forward connection open request to device
+			//	* forward register target request to device
 			//	* store sequence - task relation
 			//	* start timer to check connection setup
 			//
-			vm_.async_run({ cyng::generate_invoke("req.close.connection")
+			vm_.async_run({ cyng::generate_invoke("req.register.push.target", name_, packet_size_, window_size_)
 				, cyng::generate_invoke("bus.store.relation", cyng::invoke("ipt.seq.push"), base_.get_id())
 				, cyng::generate_invoke("stream.flush")
-				, cyng::generate_invoke("log.msg.info", "send req.close.connection", cyng::invoke("ipt.seq.push")) });
+				, cyng::generate_invoke("log.msg.info", "send req.register.push.target", cyng::invoke("ipt.seq.push"), name_) });
 
 			//
 			//	start monitor
@@ -76,16 +85,17 @@ namespace node
 			<< vm_.tag()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> timeout");
+			<< "> timeout - "
+			<< name_);
 
-		// 
+		//
 		//	push event to client
 		//
-		//	* [u8] seq
-		//	* [bool] success flag
-		//	
 		BOOST_ASSERT(seq_ != 0u);
-		bus_.on_res_close_connection(seq_);
+		bus_.on_res_register_target(seq_
+			, false
+			, 0
+			, name_);
 
 		//
 		//	remove from task db
@@ -95,7 +105,7 @@ namespace node
 		return cyng::continuation::TASK_STOP;
 	}
 
-	void close_connection::stop()
+	void register_target::stop()
 	{
 
 		//
@@ -110,7 +120,7 @@ namespace node
 	}
 
 	//	slot 0
-	cyng::continuation close_connection::process(ipt::sequence_type seq, bool success)
+	cyng::continuation register_target::process(ipt::sequence_type seq, bool success, std::uint32_t channel)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -118,19 +128,25 @@ namespace node
 			<< base_.get_class_name()
 			<< "> bus "
 			<< vm_.tag()
-			<< " received response");
+			<< " received response: "
+			<< name_
+			<< ':'
+			<< channel);
 
 		//
-		//	call client event
+		//	push event to client
 		//
 		BOOST_ASSERT(seq == seq_);
-		bus_.on_res_close_connection(seq);
+		bus_.on_res_register_target(seq
+			, success
+			, channel
+			, name_);
 
 		return cyng::continuation::TASK_STOP;
 	}
 
 	//	slot 1
-	cyng::continuation close_connection::process(ipt::sequence_type seq)
+	cyng::continuation register_target::process(ipt::sequence_type seq)
 	{
 		BOOST_ASSERT(seq_ == 0u);
 		BOOST_ASSERT(seq != 0u);
@@ -139,4 +155,3 @@ namespace node
 	}
 
 }
-

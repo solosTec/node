@@ -121,6 +121,12 @@
             }
             return data;
         };
+        var renderChannel = function (data, type, full, meta) {
+            if (type == "display") {
+                return data.toString().padStart(10, '0');
+            }
+            return data;
+        };
 
         //  globals
         var table_target;
@@ -146,7 +152,7 @@
                 { targets: 'sml-col-target-device', visible: false, name: 'target-device' },
                 { targets: 'sml-col-target-account', visible: true, name: 'target-account' },
                 { targets: 'sml-col-target-px', visible: true, name: 'target-px', className: 'text-right', render: renderBytes },
-                { targets: 'sml-col-target-channel', visible: true, name: 'target-channel', className: 'text-right' },
+                { targets: 'sml-col-target-channel', visible: true, name: 'target-channel', className: 'text-right', render: renderChannel },
                 { targets: 'sml-col-target-reg', visible: true, name: 'ses-reg', render: renderDate }
             ]
         };

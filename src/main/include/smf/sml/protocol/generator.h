@@ -240,7 +240,7 @@ namespace node
 
 			std::size_t get_proc_ipt_params(cyng::object trx
 				, cyng::object server_id
-				, node::ipt::master_config_t const& cfg);
+				, node::ipt::redundancy const& cfg);
 
 			std::size_t get_proc_0080800000FF(cyng::object trx
 				, cyng::object server_id

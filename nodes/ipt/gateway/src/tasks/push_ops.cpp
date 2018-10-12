@@ -19,14 +19,14 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, node::sml::status& status_word
 			, cyng::store::db& config_db
-			, node::ipt::bus::shared_type bus
+			, cyng::controller& vm
 			, cyng::table::key_type const& key
 			, boost::uuids::uuid tag)
 		: base_(*btp)
 			, logger_(logger)
 			, status_word_(status_word)
 			, config_db_(config_db)
-			, bus_(bus)
+			, vm_(vm)
 			, key_(key)
 			, tag_(tag)
 			, state_(TASK_STATE_INITIAL_)
@@ -83,7 +83,7 @@ namespace node
 
 		void push_ops::stop()
 		{
-			bus_->stop();
+			//bus_->stop();
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
@@ -124,7 +124,7 @@ namespace node
 					<< channel
 					<< ':'
 					<< source);
-				bus_->vm_.async_run(cyng::generate_invoke("req.close.push.channel", channel));
+				vm_.async_run(cyng::generate_invoke("req.close.push.channel", channel));
 
 			}
 			else {
@@ -204,7 +204,7 @@ namespace node
 						<< "> open channel "
 						<< target);
 
-					bus_->vm_
+					vm_
 						.async_run(cyng::generate_invoke("req.open.push.channel", target, "", "", "", "", 0))
 						.async_run(cyng::generate_invoke("bus.store.rel.channel.open", cyng::invoke("ipt.seq.push"), base_.get_id(), target))
 						.async_run(cyng::generate_invoke("stream.flush", target))
@@ -223,6 +223,5 @@ namespace node
 
 			}
 		}
-
 	}
 }

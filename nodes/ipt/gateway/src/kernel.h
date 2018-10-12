@@ -33,7 +33,7 @@ namespace node
 				, cyng::controller&
 				, status&
 				, cyng::store::db& config_db
-				, node::ipt::master_config_t const& cfg
+				, node::ipt::redundancy const& cfg
 				, bool
 				, std::string account
 				, std::string pwd
@@ -86,7 +86,7 @@ namespace node
 			 * configuration db
 			 */
 			cyng::store::db& config_db_;
-			node::ipt::master_config_t const& cfg_ipt_;
+			node::ipt::redundancy cfg_ipt_;
 
 			const bool server_mode_;
 			const std::string account_;

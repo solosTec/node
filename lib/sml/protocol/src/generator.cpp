@@ -838,7 +838,7 @@ namespace node
 
 		std::size_t res_generator::get_proc_ipt_params(cyng::object trx
 			, cyng::object server_id
-			, node::ipt::master_config_t const& cfg)
+			, node::ipt::redundancy const& cfg)
 		{
 			//76                                                SML_Message(Sequence): 
 			//  81063137303531313136303831363537393537312D32    transactionId: 170511160816579571-2
@@ -954,7 +954,7 @@ namespace node
 			//	generate list of IP-T parameters (2x)
 			//
 			std::uint8_t idx{ 1 };
-			for (auto const& rec : cfg) {
+			for (auto const& rec : cfg.config_) {
 
 				try {
 					boost::system::error_code ec;

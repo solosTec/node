@@ -476,9 +476,9 @@ namespace node
 			auto r = cyng::async::start_task_delayed<ipt::sender>(mux
 				, std::chrono::milliseconds(idx + 1)
 				, logger
-				, cfg
+				, ipt::redundancy(cfg)
 				, boost::numeric_cast<std::size_t>((packet_size_min < 1) ? 1 : packet_size_min)
-				, boost::numeric_cast<std::size_t>((packet_size_max < packet_size_min) ? packet_size_min : packet_size_min)
+				, boost::numeric_cast<std::size_t>((packet_size_max < packet_size_min) ? packet_size_min : packet_size_max)
 				, std::chrono::milliseconds(delay)
 				, boost::numeric_cast<std::size_t>((retries < 1) ? 1 : retries));
 
@@ -523,13 +523,13 @@ namespace node
 			});
 
 			auto r = cyng::async::start_task_delayed<ipt::receiver>(mux
-				, std::chrono::milliseconds((idx + 1) * 10)
+				, std::chrono::seconds((idx + 1) * 10)
 				, logger
 				, cfg
 				, st.at(idx)
 				, boost::numeric_cast<std::size_t>((rec_limit < 1) ? 1 : rec_limit)
 				, boost::numeric_cast<std::size_t>((packet_size_min < 1) ? 1 : packet_size_min)
-				, boost::numeric_cast<std::size_t>((packet_size_max < packet_size_min) ? packet_size_min : packet_size_min)
+				, boost::numeric_cast<std::size_t>((packet_size_max < packet_size_min) ? packet_size_min : packet_size_max)
 				, std::chrono::milliseconds(delay)
 				, boost::numeric_cast<std::size_t>((retries < 1) ? 1 : retries));
 

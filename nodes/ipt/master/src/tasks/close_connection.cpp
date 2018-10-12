@@ -35,7 +35,7 @@ namespace node
 		, options_(options)
 		, bag_(bag)
 		, timeout_(timeout)
-		, response_(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED)
+		//, response_(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED)
 		, start_(std::chrono::system_clock::now())
 		, is_waiting_(false)
 	{
@@ -65,17 +65,16 @@ namespace node
 			//
 
 			//	prepare IP-T command: close connection request
-			vm_.async_run(cyng::generate_invoke("req.close.connection"))
+			vm_.async_run({ cyng::generate_invoke("req.close.connection")
 
 				//	tie IP-T sequence with this task id
-				.async_run(cyng::generate_invoke("session.store.relation", cyng::invoke("ipt.seq.push"), base_.get_id()))
+				, cyng::generate_invoke("session.store.relation", cyng::invoke("ipt.seq.push"), base_.get_id())
 
 				//	send IP-T request
-				.async_run(cyng::generate_invoke("stream.flush"))
+				, cyng::generate_invoke("stream.flush")
 
 				//	logging
-				.async_run(cyng::generate_invoke("log.msg.info", "client.req.close.connection.forward", cyng::invoke("ipt.seq.push"), timeout_))
-				;
+				, cyng::generate_invoke("log.msg.info", "client.req.close.connection.forward", cyng::invoke("ipt.seq.push"), timeout_) });
 
 			//
 			//	start monitor
@@ -85,21 +84,22 @@ namespace node
 
 		}
 
-		if (!vm_.is_halted()) {
+		CYNG_LOG_WARNING(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> timeout after "
+			<< cyng::to_str(std::chrono::system_clock::now() - start_));
 
-			CYNG_LOG_WARNING(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> timeout after "
-				<< cyng::to_str(std::chrono::system_clock::now() - start_));
+		if (!vm_.is_halted()) {
 
 			//
 			//	close session
 			//	could crash if session is already gone
 			//
-			vm_.async_run(cyng::generate_invoke("ip.tcp.socket.shutdown"));
-			vm_.async_run(cyng::generate_invoke("ip.tcp.socket.close"));
+			vm_.async_run({ cyng::generate_invoke("session.remove.relation", base_.get_id())
+				, cyng::generate_invoke("ip.tcp.socket.shutdown")
+				, cyng::generate_invoke("ip.tcp.socket.close") });
 		}
 		else {
 
@@ -109,6 +109,22 @@ namespace node
 				<< base_.get_class_name()
 				<< "> stop (session already halted) "
 				<< tag_);
+		}
+
+		if (!shutdown_ && bus_->is_online())
+		{
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> send response timeout to origin "
+				<< tag_);
+
+			bus_->vm_.async_run(client_res_close_connection(tag_
+				, seq_
+				, false
+				, options_
+				, bag_));
 		}
 
 		//
@@ -123,23 +139,23 @@ namespace node
 		//	answer pending close request and
 		//	send response to cluster master
 		//
-		if (!shutdown_ && bus_->is_online())
-		{
-			CYNG_LOG_TRACE(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> send response "
-				<< ipt::tp_res_close_connection_policy::get_response_name(response_)
-				<< " to origin "
-				<< tag_);
+		//if (!shutdown_ && bus_->is_online())
+		//{
+		//	CYNG_LOG_TRACE(logger_, "task #"
+		//		<< base_.get_id()
+		//		<< " <"
+		//		<< base_.get_class_name()
+		//		<< "> send response "
+		//		<< ipt::tp_res_close_connection_policy::get_response_name(response_)
+		//		<< " to origin "
+		//		<< tag_);
 
-			bus_->vm_.async_run(client_res_close_connection(tag_
-				, seq_
-				, ipt::tp_res_close_connection_policy::is_success(response_)
-				, options_
-				, bag_));
-		}
+		//	bus_->vm_.async_run(client_res_close_connection(tag_
+		//		, seq_
+		//		, ipt::tp_res_close_connection_policy::is_success(response_)
+		//		, options_
+		//		, bag_));
+		//}
 
 		//
 		//	terminate task
@@ -163,36 +179,23 @@ namespace node
 			<< ipt::tp_res_close_connection_policy::get_response_name(res)
 			<< "]");
 
-		response_ = res;
+		if (!shutdown_ && bus_->is_online())
+		{
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> send response timeout to origin "
+				<< tag_);
+
+			bus_->vm_.async_run(client_res_close_connection(tag_
+				, seq_
+				, ipt::tp_res_close_connection_policy::is_success(res)
+				, options_
+				, bag_));
+		}
+
 		return cyng::continuation::TASK_STOP;
 	}
-
-	//	slot 1
-	cyng::continuation close_connection::process()
-	{
-		CYNG_LOG_INFO(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> session closed");
-
-		shutdown_ = true;
-		return cyng::continuation::TASK_STOP;
-	}
-
-
 }
 
-#include <cyng/async/task/task.hpp>
-
-namespace cyng {
-	namespace async {
-
-		//
-		//	initialize static slot names
-		//
-		template <>
-		std::map<std::string, std::size_t> cyng::async::task<node::close_connection>::slot_names_({ { "shutdown", 1 } });
-
-	}
-}
