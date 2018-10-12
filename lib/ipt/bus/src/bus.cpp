@@ -682,6 +682,7 @@ namespace node
 			if (pos != task_db_.end())
 			{
 				const auto tsk = pos->second;
+				BOOST_ASSERT(std::get<1>(tpl) == pos->first);
 
 				CYNG_LOG_DEBUG(logger_, "ipt.res.open.connection "
 					<< +pos->first
@@ -699,7 +700,7 @@ namespace node
 					//
 					//	post to task <open_response>
 					//
-					mux_.post(tsk, 0, cyng::tuple_factory(std::get<2>(tpl), success));
+					mux_.post(tsk, 0, cyng::tuple_factory(std::get<1>(tpl), success));
 
 					break;
 				case STATE_CONNECTED_:
