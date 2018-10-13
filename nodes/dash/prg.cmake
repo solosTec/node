@@ -70,6 +70,15 @@ if(WIN32)
 		nodes/dash/templates/dash.windows.cgf.in
 	)
  
+ 	set (node_dash_manifest
+		nodes/dash/templates/dash.exe.manifest
+	)
+
+ 	set (node_dash_res
+		${CMAKE_CURRENT_BINARY_DIR}/dash.rc 
+		src/main/resources/logo.ico
+	)
+
 else()
 
 	set (node_dash_service
@@ -105,4 +114,11 @@ if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 	list(APPEND node_dash ${node_dash_xml})
 	source_group("XML" FILES ${node_dash_xml})
 
+endif()
+
+if(WIN32)
+	source_group("manifest" FILES ${node_dash_manifest})
+	list(APPEND node_dash ${node_dash_manifest})
+	source_group("resources" FILES ${node_dash_res})
+	list(APPEND node_dash ${node_dash_res})
 endif()

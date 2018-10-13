@@ -17,7 +17,7 @@
   </compatibility>
 
   <assemblyIdentity type="win32" name="ipt.exe" version="0.6.0.0"></assemblyIdentity>
-  <description>HELLO</description>
+  <description>SMF IP-T master</description>
 
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>

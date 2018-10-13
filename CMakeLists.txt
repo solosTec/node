@@ -1076,6 +1076,10 @@ else()
 		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/dash_restart_service.cmd")
 
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash.rc.in"
+		  "${PROJECT_BINARY_DIR}/dash.rc")
+
 	# dashs
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs.windows.cgf.in"
@@ -1093,6 +1097,10 @@ else()
 		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/dashs_restart_service.cmd")
 
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs.rc.in"
+		  "${PROJECT_BINARY_DIR}/dashs.rc")
+
 	# e355
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350.windows.cgf.in"
@@ -1109,6 +1117,10 @@ else()
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/e350_restart_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350.rc.in"
+		  "${PROJECT_BINARY_DIR}/e350.rc")
 
 	# ipt collector 
 	configure_file (
@@ -1203,6 +1215,10 @@ else()
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/store_restart_service.cmd")
 
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store.rc.in"
+		  "${PROJECT_BINARY_DIR}/store.rc")
+
 	# lora
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora.windows.cgf.in"
@@ -1292,6 +1308,10 @@ else()
 		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/setup_restart_service.cmd")
 
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup.rc.in"
+		  "${PROJECT_BINARY_DIR}/setup.rc")
+
       # csv
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.windows.cgf.in"
@@ -1308,6 +1328,10 @@ else()
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv_restart_service.cmd.in"
             "${PROJECT_BINARY_DIR}/csv_restart_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.rc.in"
+		  "${PROJECT_BINARY_DIR}/csv.rc")
 
 endif(UNIX)
 

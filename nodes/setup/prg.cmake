@@ -55,6 +55,15 @@ if(WIN32)
 		nodes/setup/templates/setup.windows.cgf.in
 	)
  
+ 	set (node_setup_manifest
+		nodes/setup/templates/setup.exe.manifest
+	)
+
+ 	set (node_setup_res
+		${CMAKE_CURRENT_BINARY_DIR}/setup.rc 
+		src/main/resources/logo.ico
+	)
+
 else()
 
 	set (node_setup_service
@@ -88,4 +97,11 @@ if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 	list(APPEND node_setup ${node_setup_xml})
 	source_group("XML" FILES ${node_setup_xml})
 
+endif()
+
+if(WIN32)
+	source_group("manifest" FILES ${node_setup_manifest})
+	list(APPEND node_setup ${node_e350_manifest})
+	source_group("resources" FILES ${node_setup_res})
+	list(APPEND node_setup ${node_setup_res})
 endif()

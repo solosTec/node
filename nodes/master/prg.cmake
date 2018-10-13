@@ -66,7 +66,9 @@ if(WIN32)
 
 	set (node_master_res
 		${CMAKE_CURRENT_BINARY_DIR}/master.rc 
+		src/main/resources/logo.ico
 	)
+
  
 else()
 
@@ -78,7 +80,6 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_master_tasks})
-source_group("resources" FILES ${node_master_res})
 source_group("service" FILES ${node_master_service})
 source_group("info" FILES ${node_master_info})
 source_group("shared" FILES ${node_master_shared})

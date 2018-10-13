@@ -71,7 +71,16 @@ if(WIN32)
 		nodes/dashs/templates/dashs_restart_service.cmd.in
 		nodes/dashs/templates/dashs.windows.cgf.in
 	)
- 
+
+ 	set (node_dashs_manifest
+		nodes/dashs/templates/dashs.exe.manifest
+	)
+
+ 	set (node_dashs_res
+		${CMAKE_CURRENT_BINARY_DIR}/dashs.rc 
+		src/main/resources/logo.ico
+	)
+
 else()
 
 	set (node_dashs_service
@@ -82,7 +91,6 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_dashs_tasks})
-source_group("resources" FILES ${node_dashs_res})
 source_group("service" FILES ${node_dashs_service})
 source_group("info" FILES ${node_dashs_info})
 source_group("shared" FILES ${node_dashs_shared})
@@ -107,4 +115,11 @@ if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 	list(APPEND node_dashs ${node_dashs_xml})
 	source_group("XML" FILES ${node_dashs_xml})
 
+endif()
+
+if(WIN32)
+	source_group("manifest" FILES ${node_dashs_manifest})
+	list(APPEND node_dashs ${node_dashs_manifest})
+	source_group("resources" FILES ${node_dashs_res})
+	list(APPEND node_dashs ${node_dashs_res})
 endif()

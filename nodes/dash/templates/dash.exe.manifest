@@ -16,8 +16,8 @@
     </application>
   </compatibility>
 
-  <assemblyIdentity type="win32" name="gateway.exe" version="0.6.0.0"></assemblyIdentity>
-  <description>SMF IP-T gateway</description>
+  <assemblyIdentity type="win32" name="dash.exe" version="0.6.0.0"></assemblyIdentity>
+  <description>SMF dashboard (HTTP server)</description>
 
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>

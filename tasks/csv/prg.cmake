@@ -49,6 +49,15 @@ if(WIN32)
 		tasks/csv/templates/csv.windows.cgf.in
 	)
  
+ 	set (task_csv_manifest
+		tasks/csv/templates/csv.exe.manifest
+	)
+
+ 	set (task_csv_res
+		${CMAKE_CURRENT_BINARY_DIR}/csv.rc 
+		src/main/resources/logo.ico
+	)
+
 else()
 
 	set (task_csv_service
@@ -73,3 +82,9 @@ set (task_csv
   ${task_csv_service}
 )
 
+if(WIN32)
+	source_group("manifest" FILES ${task_csv_manifest})
+	list(APPEND task_csv ${task_csv_manifest})
+	source_group("resources" FILES ${task_csv_res})
+	list(APPEND task_csv ${task_csv_res})
+endif()

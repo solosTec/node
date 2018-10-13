@@ -52,7 +52,16 @@ if(WIN32)
 		nodes/e350/templates/e350_restart_service.cmd.in
 		nodes/e350/templates/e350.windows.cgf.in
 	)
- 
+
+ 	set (node_e350_manifest
+		nodes/e350/templates/e350.exe.manifest
+	)
+
+ 	set (node_e350_res
+		${CMAKE_CURRENT_BINARY_DIR}/e350.rc 
+		src/main/resources/logo.ico
+	)
+
 else()
 
 	set (node_e350_service
@@ -78,3 +87,9 @@ set (node_e350
   ${node_e350_service}
 )
 
+if(WIN32)
+	source_group("manifest" FILES ${node_e350_manifest})
+	list(APPEND node_e350 ${node_e350_manifest})
+	source_group("resources" FILES ${node_e350_res})
+	list(APPEND node_e350 ${node_e350_res})
+endif()

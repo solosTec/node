@@ -79,6 +79,15 @@ if(WIN32)
 		nodes/ipt/store/templates/store.windows.cgf.in
 	)
  
+ 	set (node_ipt_store_manifest
+		nodes/ipt/store/templates/store.exe.manifest
+	)
+
+ 	set (node_ipt_store_res
+		${CMAKE_CURRENT_BINARY_DIR}/store.rc 
+		src/main/resources/logo.ico
+	)
+
 else()
 
 	set (node_ipt_store_service
@@ -114,4 +123,11 @@ if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 	list(APPEND node_ipt_store ${node_ipt_store_xml})
 	source_group("XML" FILES ${node_ipt_store_xml})
 
+endif()
+
+if(WIN32)
+	source_group("manifest" FILES ${node_ipt_store_manifest})
+	list(APPEND node_ipt_store ${node_ipt_store_manifest})
+	source_group("resources" FILES ${node_ipt_store_res})
+	list(APPEND node_ipt_store ${node_ipt_store_res})
 endif()
