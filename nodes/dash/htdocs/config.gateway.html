@@ -653,37 +653,6 @@
                 }));
             });
 
-            //  toggle tabs
-            //$('#smf-gw-tab a').on('click', function (e) {
-            //    e.preventDefault()
-            //    $(this).tab('show')
-            //    //alert(e.target.id);
-            //    //alert("on/offline " + $('#smf-form-gw-online').val());
-            //    //  test online status
-            //    if (e.target.id == 'smf-gw-tab-config') {
-
-            //    }
-            //    else if (e.target.id == 'smf-gw-tab-status-word') {
-
-            //    }
-            //    else if (e.target.id == 'smf-gw-tab-srv-visible') {
-            //        if ($('#smf-form-gw-online').val()) {
-            //            _ws.send(JSON.stringify({
-            //                cmd: "query:srv:visible", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
-            //            }));
-            //        }
-            //    }
-            //    else if (e.target.id == 'smf-gw-tab-srv-active') {
-
-            //    }
-            //    else if (e.target.id == 'smf-gw-tab-firmware') {
-
-            //    }
-            //    else {
-            //        alert("unknown request " + e.target.id);
-            //    }
-            //});
-
             $('#smf-form-gw-status-word').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-status-word').removeClass('disabled');

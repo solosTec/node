@@ -80,11 +80,6 @@ namespace node
 		void cfg_upload_gateways(cyng::context& ctx);
 		void cfg_upload_meter(cyng::context& ctx);
 
-		//void res_query_srv_visible(cyng::context& ctx);
-		//void res_query_srv_active(cyng::context& ctx);
-		//void res_query_firmware(cyng::context& ctx);
-
-
 		void sync_table(std::string const&);
 
 		void update_sys_cpu_usage_total(std::string const&, http::websocket_session* wss);

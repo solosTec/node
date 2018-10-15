@@ -479,51 +479,6 @@ namespace node
 			;
 	}
 
-	//cyng::vector_t client_req_query_srv_visible(boost::uuids::uuid tag
-	//	, boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, cyng::buffer_t const& server
-	//	, std::string const& name
-	//	, std::string const& pwd)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("client.req.query.srv.visible", tag, source, cyng::code::IDENT, seq, tag_ws, server, name, pwd))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
-	//cyng::vector_t client_req_query_srv_active(boost::uuids::uuid tag
-	//	, boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, cyng::buffer_t const& server
-	//	, std::string const& name
-	//	, std::string const& pwd)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("client.req.query.srv.active", tag, source, cyng::code::IDENT, seq, tag_ws, server, name, pwd))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
-	//cyng::vector_t client_req_query_firmware(boost::uuids::uuid tag
-	//	, boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, cyng::buffer_t const& server
-	//	, std::string const& name
-	//	, std::string const& pwd)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("client.req.query.firmware", tag, source, cyng::code::IDENT, seq, tag_ws, server, name, pwd))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
 	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
 		, std::string const& target
 		, std::string const& device

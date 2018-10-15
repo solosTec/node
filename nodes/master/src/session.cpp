@@ -92,11 +92,6 @@ namespace node
 		vm_.register_function("session.cleanup", 2, std::bind(&session::cleanup, this, std::placeholders::_1));
 
 		//
-		//	write statistics
-		//
-		//vm_.register_function("session.write.stat", 5, std::bind(&client::write_statistics, &client_, std::placeholders::_1));
-
-		//
 		//	register request handler
 		//
 		vm_.register_function("bus.req.login", 11, std::bind(&session::bus_req_login, this, std::placeholders::_1));
