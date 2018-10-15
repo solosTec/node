@@ -91,6 +91,7 @@ namespace node
 				//
 				//	SML data
 				//
+				void register_this(cyng::controller&);
 				void sml_msg(cyng::context& ctx);
 				void sml_eom(cyng::context& ctx);
 				void sml_public_open_response(cyng::context& ctx);
@@ -99,6 +100,7 @@ namespace node
 				void sml_get_proc_param_srv_active(cyng::context& ctx);
 				void sml_get_proc_param_firmware(cyng::context& ctx);
 				void sml_get_proc_param_simple(cyng::context& ctx);
+				void sml_get_proc_status_word(cyng::context& ctx);
 
 			};
 
@@ -187,9 +189,10 @@ namespace node
 			void update_connection_state(cyng::context& ctx);
 			void redirect(cyng::context& ctx);
 			void client_req_reboot(cyng::context& ctx);
-			void client_req_query_srv_visible(cyng::context& ctx);
-			void client_req_query_srv_active(cyng::context& ctx);
-			void client_req_query_firmware(cyng::context& ctx);
+			void client_req_query_gateway(cyng::context& ctx);
+			//void client_req_query_srv_visible(cyng::context& ctx);
+			//void client_req_query_srv_active(cyng::context& ctx);
+			//void client_req_query_firmware(cyng::context& ctx);
 
 		private:
 			cyng::async::mux& mux_;

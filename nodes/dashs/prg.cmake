@@ -25,12 +25,14 @@ set (node_dashs_shared
 	nodes/dash_shared/src/sync_db.cpp
 	nodes/dash_shared/src/dispatcher.h
 	nodes/dash_shared/src/dispatcher.cpp
+	nodes/dash_shared/src/forwarder.h
+	nodes/dash_shared/src/forwarder.cpp
 )
 
 #
 #	same as for dash (HTTP)
 #
-set (node_dashs_res
+set (node_dashs_assets
 	nodes/dash/htdocs/index.html
 	nodes/dash/htdocs/config.system.html
 	nodes/dash/htdocs/config.device.html
@@ -72,13 +74,10 @@ if(WIN32)
 		nodes/dashs/templates/dashs.windows.cgf.in
 	)
 
- 	set (node_dashs_manifest
-		nodes/dashs/templates/dashs.exe.manifest
-	)
-
  	set (node_dashs_res
 		${CMAKE_CURRENT_BINARY_DIR}/dashs.rc 
 		src/main/resources/logo.ico
+		nodes/dashs/templates/dashs.exe.manifest
 	)
 
 else()
@@ -91,6 +90,7 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_dashs_tasks})
+source_group("assets" FILES ${node_dashs_assets})
 source_group("service" FILES ${node_dashs_service})
 source_group("info" FILES ${node_dashs_info})
 source_group("shared" FILES ${node_dashs_shared})
@@ -101,7 +101,7 @@ set (node_dashs
   ${node_dashs_cpp}
   ${node_dashs_h}
   ${node_dashs_tasks}
-  ${node_dashs_res}
+  ${node_dashs_assets}
   ${node_dashs_service}
   ${node_dashs_info}
   ${node_dashs_shared}
@@ -118,8 +118,6 @@ if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 endif()
 
 if(WIN32)
-	source_group("manifest" FILES ${node_dashs_manifest})
-	list(APPEND node_dashs ${node_dashs_manifest})
 	source_group("resources" FILES ${node_dashs_res})
 	list(APPEND node_dashs ${node_dashs_res})
 endif()

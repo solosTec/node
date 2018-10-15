@@ -11,6 +11,7 @@
 #include <smf/http/srv/cm_interface.h>
 #include <cyng/log.h>
 #include <cyng/store/db.h>
+#include <cyng/vm/controller.h>
 
 namespace node 
 {
@@ -18,6 +19,8 @@ namespace node
 	{
 	public:
 		dispatcher(cyng::logging::log_ptr, connection_manager_interface&);
+
+		void register_this(cyng::controller&);
 
 		/**
 		 *	subscribe to database
@@ -29,7 +32,10 @@ namespace node
 		 */
 		void update_channel(std::string const& channel, std::size_t size);
 
-		void subscribe_channel(boost::uuids::uuid tag, std::string const& channel);
+		/** 
+		 * Subscribe a table and start initial upload
+		 */
+		void subscribe_channel(cyng::store::db&, std::string const& channel, boost::uuids::uuid tag);
 
 	private:
 		void sig_ins(cyng::store::table const*
@@ -44,6 +50,26 @@ namespace node
 			, cyng::attr_t const&
 			, std::uint64_t
 			, boost::uuids::uuid);
+
+		void subscribe(cyng::store::db&, std::string table, std::string const& channel, boost::uuids::uuid tag);
+		void display_loading_icon(boost::uuids::uuid tag, bool, std::string const&);
+		void display_loading_level(boost::uuids::uuid tag, std::size_t, std::string const&);
+
+		void subscribe_table_device_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		void subscribe_table_gateway_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		void subscribe_table_meter_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		void subscribe_table_session_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		void subscribe_table_target_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		void subscribe_table_connection_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		void subscribe_table_msg_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		void subscribe_table_LoRa_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+
+		void store_relation(cyng::context& ctx);
+
+		void res_query_status_word(cyng::context& ctx);
+		void res_query_srv_visible(cyng::context& ctx);
+		void res_query_srv_active(cyng::context& ctx);
+		void res_query_firmware(cyng::context& ctx);
 
 	private:
 		cyng::logging::log_ptr logger_;

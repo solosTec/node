@@ -253,6 +253,11 @@ namespace node
 						, static_cast<std::uint32_t>(std::stoul(inp))));
 
 				}
+				else if (boost::algorithm::starts_with(inp, "O") || boost::algorithm::starts_with(inp, "o"))
+				{
+					//	return to stream mode
+					return STATE_STREAM;
+				}
 				else
 				{
 					p.cb_(cyng::generate_invoke("log.msg.error", "unknown AT command", inp));

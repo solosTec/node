@@ -5,11 +5,12 @@
  *
  */
 
-#include "query_firmware.h"
+#include "query_gateway.h"
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/protocol/reader.h>
 #include <smf/cluster/generator.h>
+#include <smf/sml/status.h>
 
 #include <cyng/vm/generator.h>
 #include <cyng/io/io_bytes.hpp>
@@ -20,12 +21,13 @@
 
 namespace node
 {
-	query_firmware::query_firmware(cyng::async::base_task* btp
+	query_gateway::query_gateway(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, bus::shared_type bus
 		, cyng::controller& vm
 		, boost::uuids::uuid tag_remote
 		, std::uint64_t seq_cluster		//	cluster seq
+		, std::vector<std::string> params
 		, boost::uuids::uuid tag_ws
 		, cyng::buffer_t const& server_id	//	server id
 		, std::string user
@@ -38,6 +40,7 @@ namespace node
 		, vm_(vm)
 		, tag_remote_(tag_remote)
 		, seq_cluster_(seq_cluster)
+		, params_(params)
 		, tag_ws_(tag_ws)
 		, server_id_(server_id)
 		, user_(user)
@@ -67,9 +70,10 @@ namespace node
 			<< base_.get_class_name()
 			<< "> is running: "
 			<< sml::from_server_id(server_id));
+
 	}
 
-	cyng::continuation query_firmware::run()
+	cyng::continuation query_gateway::run()
 	{	
 		if (is_waiting_)
 		{
@@ -103,8 +107,8 @@ namespace node
 		return cyng::continuation::TASK_STOP;
 	}
 
-	//	slot 0 - acknowledge
-	cyng::continuation query_firmware::process(boost::uuids::uuid tag)
+	//	slot 0 - ack
+	cyng::continuation query_gateway::process(boost::uuids::uuid tag)
 	{
 		//
 		//	update task state
@@ -120,7 +124,7 @@ namespace node
 		BOOST_ASSERT(tag == tag_ctx_);
 
 		//
-		//	next step: send command
+		//	next step: send command(s)
 		//
 		send_query_cmd();
 
@@ -130,8 +134,27 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
+
+	void query_gateway::stop()
+	{
+		//
+		//	terminate task
+		//
+		auto uptime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_);
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> is stopped: "
+			<< sml::from_server_id(server_id_)
+			<< " after "
+			<< uptime.count()
+			<< " milliseconds");
+
+	}
+
 	//	slot 1 - EOM
-	cyng::continuation query_firmware::process(std::uint16_t crc, std::size_t midx)
+	cyng::continuation query_gateway::process(std::uint16_t crc, std::size_t midx)
 	{
 		CYNG_LOG_TRACE(logger_, "task #"
 			<< base_.get_id()
@@ -145,7 +168,8 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	cyng::continuation query_firmware::process(cyng::buffer_t const& data)
+	//	slot 2 - receive data
+	cyng::continuation query_gateway::process(cyng::buffer_t const& data)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -170,7 +194,7 @@ namespace node
 	}
 
 	//	-- slot[3]
-	cyng::continuation query_firmware::process(cyng::buffer_t trx, std::uint8_t, std::uint8_t, cyng::tuple_t msg, std::uint16_t crc)
+	cyng::continuation query_gateway::process(cyng::buffer_t trx, std::uint8_t, std::uint8_t, cyng::tuple_t msg, std::uint16_t crc)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -187,7 +211,7 @@ namespace node
 	}
 
 	//	-- slot[4]
-	cyng::continuation query_firmware::process(boost::uuids::uuid pk, cyng::buffer_t trx, std::size_t)
+	cyng::continuation query_gateway::process(boost::uuids::uuid pk, cyng::buffer_t trx, std::size_t)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -200,7 +224,80 @@ namespace node
 	}
 
 	//	-- slot[5]
-	cyng::continuation query_firmware::process(cyng::buffer_t const& srv
+	cyng::continuation query_gateway::process(cyng::buffer_t const& srv
+		, std::uint32_t status)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> sml.get.proc.status.word - "
+			<< status);
+
+		sml::status word;
+		word.reset(status);
+
+		//
+		//	create status word to convert into attribute map
+		//
+		bus_->vm_.async_run(bus_res_query_status_word(tag_remote_
+			, seq_cluster_
+			, tag_ws_
+			, sml::from_server_id(srv)
+			, sml::to_attr_map(word)));
+
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	-- slot[6]
+	cyng::continuation query_gateway::process(bool active
+		, cyng::buffer_t const& srv
+		, std::uint16_t nr
+		, cyng::buffer_t const& meter
+		, cyng::buffer_t const& dclass
+		, std::chrono::system_clock::time_point st)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> #"
+			<< nr
+			<< " - "
+			<< sml::from_server_id(meter));
+
+		//std::uint32_t sml::get_srv_type(meter);
+
+		BOOST_ASSERT(server_id_ == srv);
+		if (active) {
+			bus_->vm_.async_run(bus_res_query_srv_active(tag_remote_
+				, seq_cluster_
+				, tag_ws_
+				, nr
+				, sml::from_server_id(srv)
+				, sml::from_server_id(meter)
+				, std::string(dclass.begin(), dclass.end())
+				, st
+				, sml::get_srv_type(meter)));
+
+		}
+		else {
+			bus_->vm_.async_run(bus_res_query_srv_visible(tag_remote_
+				, seq_cluster_
+				, tag_ws_
+				, nr
+				, sml::from_server_id(srv)
+				, sml::from_server_id(meter)
+				, std::string(dclass.begin(), dclass.end())
+				, st
+				, sml::get_srv_type(meter)));
+		}
+
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	-- slot[5]
+	cyng::continuation query_gateway::process(cyng::buffer_t const& srv
 		, std::uint32_t nr
 		, cyng::buffer_t const& section
 		, cyng::buffer_t const& version
@@ -228,34 +325,61 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-
-	void query_firmware::stop()
+	void query_gateway::send_query_cmd()
 	{
-		//
-		//	terminate task
-		//
-		auto uptime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_);
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> is stopped: "
-			<< sml::from_server_id(server_id_)
-			<< " after "
-			<< uptime.count()
-			<< " milliseconds");
+			<< "> send "
+			<< params_.size()
+			<< " parameter request(s)");
+		
 
-	}
-
-	void query_firmware::send_query_cmd()
-	{
 		//
-		//	send 81 81 C7 82 01 FF	//	CODE_ROOT_DEVICE_IDENT
-		//	send 81 00 60 05 00 00	//	status word (CLASS_OP_LOG_STATUS_WORD)
+		//	generate public open request
 		//
 		node::sml::req_generator sml_gen;
 		sml_gen.public_open(cyng::mac48(), server_id_, user_, pwd_);
-		sml_gen.get_proc_parameter_firmware(server_id_, user_, pwd_);
+
+		//
+		//	generate get process parameter requests
+		//
+		for (auto const& p : params_) {
+
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> query parameter "
+				<< p);
+
+			if (boost::algorithm::equals("status:word", p)) {
+				sml_gen.get_proc_status_word(server_id_, user_, pwd_);
+			}
+			else if (boost::algorithm::equals("srv:visible", p)) {
+				sml_gen.get_proc_parameter_srv_visible(server_id_, user_, pwd_);
+			}
+			else if (boost::algorithm::equals("srv:active", p)) {
+				//	send 81 81 11 06 FF FF
+				sml_gen.get_proc_parameter_srv_active(server_id_, user_, pwd_);
+			}
+			else if (boost::algorithm::equals("firmware", p)) {
+				sml_gen.get_proc_parameter_firmware(server_id_, user_, pwd_);
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> unknown parameter "
+					<< p);
+			}
+		}
+
+		//
+		//	generate close request
+		//
 		sml_gen.public_close();
 		cyng::buffer_t msg = sml_gen.boxing();
 
@@ -271,11 +395,13 @@ namespace node
 		hd(std::cerr, msg.begin(), msg.end());
 #endif
 
-		vm_	.async_run(cyng::generate_invoke("ipt.transfer.data", std::move(msg)))
-			.async_run(cyng::generate_invoke("stream.flush"));
-
+		//
+		//	send to gateway
+		//
+		vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", std::move(msg)), cyng::generate_invoke("stream.flush") });
 
 	}
+
 
 }
 
@@ -288,7 +414,7 @@ namespace cyng {
 		//	initialize static slot names
 		//
 		template <>
-		std::map<std::string, std::size_t> cyng::async::task<node::query_firmware>::slot_names_({ 
+		std::map<std::string, std::size_t> cyng::async::task<node::query_gateway>::slot_names_({ 
 			{ "ack", 0 },
 			{ "shutdown", 1 }
 		});

@@ -47,12 +47,8 @@ namespace node
 			 */
 			void close();
 
-			/**
-			 * send data to websocket
-			 */
-			//bool send_msg(boost::uuids::uuid, std::string const&);
 
-			void add_channel(boost::uuids::uuid tag, std::string const& channel);
+			//void add_channel(boost::uuids::uuid tag, std::string const& channel);
 			void process_event(std::string const& channel, std::string const&);
 
 			void send_moved(boost::uuids::uuid, std::string const&);

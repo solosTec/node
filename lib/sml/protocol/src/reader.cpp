@@ -498,6 +498,18 @@ namespace node
 			cyng::vector_t prg;
 
 			switch (path.size()) {
+			case 1:
+				if (path.front() == OBIS_CLASS_OP_LOG_STATUS_WORD) {
+					//	generate status word
+					return cyng::generate_invoke("sml.get.proc.status.word"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, OBIS_CLASS_OP_LOG_STATUS_WORD.to_buffer()	//	same as path.front()
+						, attr.second);	//	[u32] value
+				}
+				break;
 			case 2:
 				if (path.front() == OBIS_CODE_ROOT_DEVICE_IDENT)
 				{

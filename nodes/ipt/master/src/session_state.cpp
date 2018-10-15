@@ -13,6 +13,7 @@
 #include <cyng/tuple_cast.hpp>
 #include <cyng/factory/set_factory.h>
 #include <cyng/set_cast.h>
+#include <cyng/numeric_cast.hpp>
 #include <boost/assert.hpp>
 
 namespace node 
@@ -110,6 +111,20 @@ namespace node
 				break;
 			}
 			return os;
+		}
+
+		void session::connect_state::register_this(cyng::controller& vm)
+		{
+			vm.register_function("sml.msg", 2, std::bind(&connect_state::sml_msg, this, std::placeholders::_1));
+			vm.register_function("sml.eom", 2, std::bind(&connect_state::sml_eom, this, std::placeholders::_1));
+			vm.register_function("sml.public.open.response", 6, std::bind(&connect_state::sml_public_open_response, this, std::placeholders::_1));
+			vm.register_function("sml.public.close.response", 3, std::bind(&connect_state::sml_public_close_response, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.param.srv.visible", 8, std::bind(&connect_state::sml_get_proc_param_srv_visible, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.param.srv.active", 8, std::bind(&connect_state::sml_get_proc_param_srv_active, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.param.firmware", 8, std::bind(&connect_state::sml_get_proc_param_firmware, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.param.simple", 6, std::bind(&connect_state::sml_get_proc_param_simple, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.status.word", 6, std::bind(&connect_state::sml_get_proc_status_word, this, std::placeholders::_1));
+
 		}
 
 		void session::connect_state::sml_msg(cyng::context& ctx)
@@ -236,6 +251,40 @@ namespace node
 
 		}
 
+		void session::connect_state::sml_get_proc_status_word(cyng::context& ctx)
+		{
+			//	[b1913f62-6cb3-4586-ad43-24b20f0e7d7e,3616596-2,0,0500153B02297E,810060050000,cc070202]
+			//
+			//	* [uuid] pk
+			//	* [string] trx
+			//	* [size_t] idx
+			//	* [buffer] server id
+			//	* [buffer] OBIS code (81 00 60 05 00 00)
+			//	* [u32] status word
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(sr_.logger_, "sml.get.proc.status.word "
+				<< *this
+				<< " - "
+				<< cyng::io::to_str(frame)
+				<< " - "
+				<< frame.at(5).get_class().type_name()
+				<< " - "
+				<< cyng::numeric_cast<std::uint32_t>(frame.at(5), 0u));		
+
+			if (state_ == STATE_TASK) {
+				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ 
+					frame.at(3),	//	server ID
+					frame.at(5)		//	status word
+					});
+			}
+			else {
+				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.status.word - session in wrong state: "
+					<< *this
+					<< " - "
+					<< cyng::io::to_str(frame));
+			}
+		}
+
 		void session::connect_state::sml_get_proc_param_srv_visible(cyng::context& ctx)
 		{
 			//	[63b54276-1872-484a-b282-1de45d045f58,7027958-2,0,0500153B0223B3,000c,01E61E29436587BF03,2D2D2D,2018-08-29 17:59:22.00000000]
@@ -256,7 +305,14 @@ namespace node
 			//	<< cyng::io::to_str(frame));
 
 			if (state_ == STATE_TASK) {
-				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ frame.at(3), frame.at(4), frame.at(5), frame.at(6), frame.at(7) });
+				sr_.mux_.post(tsk_, 6, cyng::tuple_t{ 
+					cyng::make_object(false),	//	false => visible
+					frame.at(3),	//	server ID
+					frame.at(4),	//	number
+					frame.at(5),	//	meter ID
+					frame.at(6),	//	device class
+					frame.at(7)		//	timestamp
+					});
 			}
 			else {
 				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.param.srv.visible - session in wrong state: "
@@ -287,14 +343,20 @@ namespace node
 			//	<< cyng::io::to_str(frame));
 
 			if (state_ == STATE_TASK) {
-				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ frame.at(3), frame.at(4), frame.at(5), frame.at(6), frame.at(7) });
+				sr_.mux_.post(tsk_, 6, cyng::tuple_t{
+					cyng::make_object(true),	//	true => active
+					frame.at(3),	//	server ID
+					frame.at(4),	//	number
+					frame.at(5),	//	meter ID
+					frame.at(6),	//	device class
+					frame.at(7)		//	timestamp
+					});
 			}
 			else {
 				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.param.srv.active - session in wrong state: "
 					<< *this
 					<< " - "
 					<< cyng::io::to_str(frame));
-
 			}
 		}
 
@@ -318,14 +380,13 @@ namespace node
 				<< cyng::io::to_str(frame));
 
 			if (state_ == STATE_TASK) {
-				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ frame.at(3), frame.at(4), frame.at(5), frame.at(6), frame.at(7) });
+				sr_.mux_.post(tsk_, 7, cyng::tuple_t{ frame.at(3), frame.at(4), frame.at(5), frame.at(6), frame.at(7) });
 			}
 			else {
 				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.param.firmware - session in wrong state: "
 					<< *this
 					<< " - "
 					<< cyng::io::to_str(frame));
-
 			}
 		}
 
@@ -336,7 +397,6 @@ namespace node
 				<< *this
 				<< " - "
 				<< cyng::io::to_str(frame));
-
 		}
 
 

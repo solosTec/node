@@ -7,7 +7,11 @@
 
 #include "dispatcher.h"
 #include <cyng/json.h>
+#include <cyng/io/serializer.h>
+#include <cyng/tuple_cast.hpp>
+
 #include <boost/algorithm/string.hpp>
+#include <boost/core/ignore_unused.hpp>
 
 namespace node 
 {
@@ -15,6 +19,172 @@ namespace node
 		: logger_(logger)
 		, connection_manager_(cm)
 	{}
+
+	void dispatcher::register_this(cyng::controller& vm)
+	{
+		vm.register_function("store.relation", 2, std::bind(&dispatcher::store_relation, this, std::placeholders::_1));
+
+		vm.register_function("bus.res.query.status.word", 5, std::bind(&dispatcher::res_query_status_word, this, std::placeholders::_1));
+		vm.register_function("bus.res.query.srv.visible", 9, std::bind(&dispatcher::res_query_srv_visible, this, std::placeholders::_1));
+		vm.register_function("bus.res.query.srv.active", 9, std::bind(&dispatcher::res_query_srv_active, this, std::placeholders::_1));
+		vm.register_function("bus.res.query.firmware", 8, std::bind(&dispatcher::res_query_firmware, this, std::placeholders::_1));
+	}
+
+	void dispatcher::store_relation(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "store.relation - " << cyng::io::to_str(frame));
+		//	cluster seq => ws tag
+	}
+
+	void dispatcher::res_query_status_word(cyng::context& ctx)
+	{
+		//	 [3cb44588-3075-4086-b684-57a4bab6e26c,2,a5d83e14-dc3e-4105-95d0-034c3b69b991,00:ff:b0:0b:ca:ae,cc070202]
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "bus.res.query.status.word - " << cyng::io::to_str(frame));
+
+		auto const data = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] source
+			std::uint64_t,			//	[1] sequence
+			boost::uuids::uuid,		//	[2] websocket tag
+			std::string,			//	[3] server id (key)
+			cyng::attr_map_t		//	[4] status word
+		>(frame);
+
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("update")),
+			cyng::param_factory("channel", "status.gateway.word"),
+			cyng::param_factory("rec", cyng::tuple_factory(
+				cyng::param_factory("srv", std::get<3>(data)),
+				cyng::param_factory("word", std::get<4>(data))
+			)));
+
+		//	{"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
+		auto msg = cyng::json::to_string(tpl);
+		//CYNG_LOG_TRACE(logger_, "bus.res.query.status.word - " << msg);
+		connection_manager_.ws_msg(std::get<2>(data), msg);
+
+	}
+
+	void dispatcher::res_query_srv_visible(cyng::context& ctx)
+	{
+		//	[d6529e83-fa7f-469d-8681-798501842252,1,637c19e7-b20d-462f-afbf-81fdbb064c82,0005,00:15:3b:02:29:7e,01-e61e-29436587-bf-03,---,2018-08-30 09:37:13.00000000]
+		//	[ea0a8415-65a1-47d0-8572-3f417cb6b408,3,b7ee88d9-e839-4ee7-bbe4-ca12f2ecf246,0003,00:15:3b:02:29:7e,01-e61e-13090016-3c-07,---,2018-10-15 14:41:11.00000000,00000000]
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "bus.res.query.srv.visible - " << cyng::io::to_str(frame));
+
+		auto const data = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] source
+			std::uint64_t,			//	[1] sequence
+			boost::uuids::uuid,		//	[2] websocket tag
+			std::uint16_t,			//	[3] list number
+			std::string,			//	[4] server id (key)
+			std::string,			//	[5] meter
+			std::string,			//	[6] device class
+			std::chrono::system_clock::time_point,	//	[7] last status update
+			std::uint32_t			//	[8] server type
+		>(frame);
+
+		//
+		//	reformatting timestamp
+		//
+		auto stp = (cyng::chrono::same_day(std::get<7>(data), std::chrono::system_clock::now()))
+			? cyng::ts_to_str(cyng::chrono::duration_of_day(std::get<7>(data)))
+			: cyng::date_to_str(std::get<7>(data))
+			;
+
+
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("append")),
+			cyng::param_factory("channel", "status.gateway.visible"),
+			cyng::param_factory("rec", cyng::tuple_factory(
+				cyng::param_factory("nr", std::get<3>(data)),
+				cyng::param_factory("srv", std::get<4>(data)),
+				cyng::param_factory("meter", std::get<5>(data)),
+				cyng::param_factory("class", std::get<6>(data)),
+				cyng::param_factory("tp", stp),
+				cyng::param_factory("type", std::get<8>(data))
+			)));
+
+		auto msg = cyng::json::to_string(tpl);
+		connection_manager_.ws_msg(std::get<2>(data), msg);
+
+	}
+
+	void dispatcher::res_query_srv_active(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "bus.res.query.srv.active - " << cyng::io::to_str(frame));
+
+		auto const data = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] source
+			std::uint64_t,			//	[1] sequence
+			boost::uuids::uuid,		//	[2] websocket tag
+			std::uint16_t,			//	[3] list number
+			std::string,			//	[4] server id (key)
+			std::string,			//	[5] meter
+			std::string,			//	[6] device class
+			std::chrono::system_clock::time_point,	//	[7] last status update
+			std::uint32_t			//	[8] server type
+		>(frame);
+
+		//
+		//	reformatting timestamp
+		//
+		auto stp = (cyng::chrono::same_day(std::get<7>(data), std::chrono::system_clock::now()))
+			? cyng::ts_to_str(cyng::chrono::duration_of_day(std::get<7>(data)))
+			: cyng::date_to_str(std::get<7>(data))
+			;
+
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("append")),
+			cyng::param_factory("channel", "status.gateway.active"),
+			cyng::param_factory("rec", cyng::tuple_factory(
+				cyng::param_factory("nr", std::get<3>(data)),
+				cyng::param_factory("srv", std::get<4>(data)),
+				cyng::param_factory("meter", std::get<5>(data)),
+				cyng::param_factory("class", std::get<6>(data)),
+				cyng::param_factory("tp", stp),
+				cyng::param_factory("type", std::get<8>(data))
+			)));
+
+		auto msg = cyng::json::to_string(tpl);
+		connection_manager_.ws_msg(std::get<2>(data), msg);
+
+	}
+
+
+	void dispatcher::res_query_firmware(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "bus.res.query.firmware - " << cyng::io::to_str(frame));
+
+		auto const data = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] source
+			std::uint64_t,			//	[1] sequence
+			boost::uuids::uuid,		//	[2] websocket tag
+			std::uint32_t,			//	[3] list number
+			std::string,			//	[4] server id (key)
+			std::string,			//	[5] section
+			std::string,			//	[6] version
+			bool					//	[7] active
+		>(frame);
+
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("append")),
+			cyng::param_factory("channel", "status.gateway.firmware"),
+			cyng::param_factory("rec", cyng::tuple_factory(
+				cyng::param_factory("nr", std::get<3>(data)),
+				cyng::param_factory("srv", std::get<4>(data)),
+				cyng::param_factory("section", std::get<5>(data)),
+				cyng::param_factory("version", std::get<6>(data)),
+				cyng::param_factory("active", std::get<7>(data))
+			)));
+
+		auto msg = cyng::json::to_string(tpl);
+		connection_manager_.ws_msg(std::get<2>(data), msg);
+
+	}
 
 	void dispatcher::subscribe(cyng::store::db& db)
 	{
@@ -485,80 +655,219 @@ namespace node
 		connection_manager_.push_event(channel, msg);
 	}
 
-	void dispatcher::subscribe_channel(boost::uuids::uuid tag, std::string const& channel)
+	void dispatcher::subscribe_channel(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
 	{
-		//if (boost::algorithm::starts_with(channel, "config.device"))
-		//{
-		//	subscribe("TDevice", channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "config.gateway"))
-		//{
-		//	subscribe("TGateway", channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "config.lora"))
-		//{
-		//	subscribe("TLoRaDevice", channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "config.system"))
-		//{
-		//	subscribe("_Config", channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "status.session"))
-		//{
-		//	subscribe("_Session", channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "status.target"))
-		//{
-		//	subscribe("_Target", channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "status.connection"))
-		//{
-		//	subscribe("_Connection", channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "status.cluster"))
-		//{
-		//	subscribe("_Cluster", channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "table.device.count"))
-		//{
-		//	subscribe_table_device_count(channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "table.gateway.count"))
-		//{
-		//	subscribe_table_gateway_count(channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "table.meter.count"))
-		//{
-		//	subscribe_table_meter_count(channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "table.session.count"))
-		//{
-		//	subscribe_table_session_count(channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "table.target.count"))
-		//{
-		//	subscribe_table_target_count(channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "table.connection.count"))
-		//{
-		//	subscribe_table_connection_count(channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "table.msg.count"))
-		//{
-		//	subscribe_table_msg_count(channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "table.LoRa.count"))
-		//{
-		//	subscribe_table_LoRa_count(channel, tag);
-		//}
-		//else if (boost::algorithm::starts_with(channel, "monitor.msg"))
-		//{
-		//	subscribe("_SysMsg", channel, tag);
-		//}
-		//else
-		//{
-		//	CYNG_LOG_WARNING(logger_, "ws.read - unknown subscribe channel [" << channel << "]");
-		//}
+		if (boost::algorithm::starts_with(channel, "config.device"))
+		{
+			subscribe(db, "TDevice", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "config.gateway"))
+		{
+			subscribe(db, "TGateway", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "config.lora"))
+		{
+			subscribe(db, "TLoRaDevice", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "config.system"))
+		{
+			subscribe(db, "_Config", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "status.session"))
+		{
+			subscribe(db, "_Session", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "status.target"))
+		{
+			subscribe(db, "_Target", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "status.connection"))
+		{
+			subscribe(db, "_Connection", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "status.cluster"))
+		{
+			subscribe(db, "_Cluster", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "table.device.count"))
+		{
+			subscribe_table_device_count(db, channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "table.gateway.count"))
+		{
+			subscribe_table_gateway_count(db, channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "table.meter.count"))
+		{
+			subscribe_table_meter_count(db, channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "table.session.count"))
+		{
+			subscribe_table_session_count(db, channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "table.target.count"))
+		{
+			subscribe_table_target_count(db, channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "table.connection.count"))
+		{
+			subscribe_table_connection_count(db, channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "table.msg.count"))
+		{
+			subscribe_table_msg_count(db, channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "table.LoRa.count"))
+		{
+			subscribe_table_LoRa_count(db, channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "monitor.msg"))
+		{
+			subscribe(db, "_SysMsg", channel, tag);
+		}
+		else
+		{
+			CYNG_LOG_WARNING(logger_, "ws.read - unknown subscribe channel [" << channel << "]");
+		}
+	}
+
+	void dispatcher::subscribe(cyng::store::db& db, std::string table, std::string const& channel, boost::uuids::uuid tag)
+	{
+		//
+		//	install channel
+		//
+		connection_manager_.add_channel(tag, channel);
+
+		//
+		//	send initial data set of device table
+		//
+		db.access([&](cyng::store::table const* tbl) {
+
+			//
+			//	inform client that data upload is starting
+			//
+			display_loading_icon(tag, true, channel);
+
+			//
+			//	get total record size
+			//
+			auto size{ tbl->size() };
+			std::size_t percent{ 0 }, idx{ 0 };
+
+			//
+			//	upload data
+			//
+			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+				CYNG_LOG_TRACE(logger_, "ws.read - insert " << table << cyng::io::to_str(rec.key()));
+
+				auto tpl = cyng::tuple_factory(
+					cyng::param_factory("cmd", std::string("insert")),
+					cyng::param_factory("channel", channel),
+					cyng::param_factory("rec", rec.convert()));
+
+				auto msg = cyng::json::to_string(tpl);
+				connection_manager_.ws_msg(tag, msg);
+
+				++idx;
+
+				//
+				//	calculate charge status in percent
+				//
+				const auto prev_percent = percent;
+				percent = (100u * idx) / size;
+
+				if (prev_percent != percent) {
+					display_loading_level(tag, percent, channel);
+					//
+					//	give GUI a change to refresh
+					//
+					std::this_thread::sleep_for(std::chrono::milliseconds(120));
+				}
+
+				return true;	//	continue
+			});
+			BOOST_ASSERT(counter == 0);
+			boost::ignore_unused(counter);	//	release version
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
+
+			//
+			//	inform client that data upload is finished
+			//
+			display_loading_icon(tag, false, channel);
+		}, cyng::store::read_access(table));
+	}
+
+	void dispatcher::subscribe_table_device_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		connection_manager_.add_channel(tag, channel);
+		const auto size = db.size("TDevice");
+		update_channel(channel, size);
+	}
+
+	void dispatcher::subscribe_table_gateway_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		connection_manager_.add_channel(tag, channel);
+		const auto size = db.size("TGateway");
+		update_channel(channel, size);
+	}
+
+	void dispatcher::subscribe_table_meter_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		connection_manager_.add_channel(tag, channel);
+		const auto size = db.size("TMeter");
+		update_channel(channel, size);
+	}
+
+	void dispatcher::subscribe_table_session_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		connection_manager_.add_channel(tag, channel);
+		const auto size = db.size("_Session");
+		update_channel(channel, size);
+	}
+
+	void dispatcher::subscribe_table_target_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		connection_manager_.add_channel(tag, channel);
+		const auto size = db.size("_Target");
+		update_channel(channel, size);
+	}
+
+	void dispatcher::subscribe_table_connection_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		connection_manager_.add_channel(tag, channel);
+		const auto size = db.size("_Connection");
+		update_channel(channel, size);
+	}
+
+	void dispatcher::subscribe_table_msg_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		connection_manager_.add_channel(tag, channel);
+		const auto size = db.size("_SysMsg");
+		update_channel(channel, size);
+	}
+
+	void dispatcher::subscribe_table_LoRa_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		connection_manager_.add_channel(tag, channel);
+		const auto size = db.size("TLoRaDevice");
+		update_channel(channel, size);
+	}
+
+	void dispatcher::display_loading_icon(boost::uuids::uuid tag, bool b, std::string const& channel)
+	{
+		connection_manager_.ws_msg(tag
+			, cyng::json::to_string(cyng::tuple_factory(cyng::param_factory("cmd", std::string("load"))
+				, cyng::param_factory("channel", channel)
+				, cyng::param_factory("show", b))));
+	}
+
+	void dispatcher::display_loading_level(boost::uuids::uuid tag, std::size_t level, std::string const& channel)
+	{
+		connection_manager_.ws_msg(tag
+			, cyng::json::to_string(cyng::tuple_factory(cyng::param_factory("cmd", std::string("load"))
+				, cyng::param_factory("channel", channel)
+				, cyng::param_factory("level", level))));
 	}
 
 }

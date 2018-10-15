@@ -10,6 +10,7 @@
 
 
 #include <cstdint>
+#include <cyng/intrinsics/sets.h>
 
 namespace node
 {
@@ -82,9 +83,9 @@ namespace node
 		 *	20-31	always 0
 		 *	32	1 if time base is unsure
 
-		 * 0x72202 = ‭0111 0010 0010 0000 0010‬	- not authorized on IP-T master
-		 * 0x70202 = ‭0111 0000 0010 0000 0010‬	- authorized on IP-T master
-		 * 0x62602 = ‭0111 0010 0110 0000 0010‬
+		 * 0x72202 = ‭0111 00[1]0 0010 0000 0010‬	- not authorized on IP-T master
+		 * 0x70202 = ‭0111 00[0]0 0010 0000 0010‬	- authorized on IP-T master
+		 * 0x62602 = ‭0111 00[1]0 0110 0000 0010‬
 		 */
 		class status
 		{
@@ -97,6 +98,7 @@ namespace node
 			 * reset kernel
 			 */
 			void reset();
+			void reset(std::uint32_t);
 
 			/**
 			 * @return status word
@@ -122,6 +124,41 @@ namespace node
 			 */
 			bool is_authorized() const;
 
+			/**
+			 * @return true if STATUS_BIT_FATAL_ERROR bit is set
+			 */
+			bool is_fatal_error() const;
+
+			/**
+			 * @return true if STATUS_BIT_OUT_OF_MEMORY bit is set
+			 */
+			bool is_out_of_memory() const;
+
+			/**
+			 * @return true if STATUS_BIT_SERVICE_IF_AVAILABLE bit is set
+			 */
+			bool is_service_if_available() const;
+
+			/**
+			 * @return true if STATUS_BIT_EXT_IF_AVAILABLE bit is set
+			 */
+			bool is_ext_if_available() const;
+
+			/**
+			 * @return true if STATUS_BIT_MBUS_IF_AVAILABLE bit is set
+			 */
+			bool is_mbus_available() const;
+
+			/**
+			 * @return true if STATUS_BIT_PLC_AVAILABLE bit is set
+			 */
+			bool is_plc_available() const;
+
+			/**
+			 * @return true if STATUS_BIT_NO_TIMEBASE bit is set
+			 */
+			bool is_timebase_uncertain() const;
+
 
 		private:
 			bool is_set(status_bits) const;
@@ -131,6 +168,12 @@ namespace node
 		private:
 			std::uint64_t	word_;
 		};
+
+		/**
+		 * Convert status bit map into an attribute map
+		 * with enum status_bits as index.
+		 */
+		cyng::attr_map_t to_attr_map(status const&);
 
 	}	//	sml
 }

@@ -15,7 +15,10 @@
             padding-top: 2px;
             padding-bottom: 2px;
         }
-        .collapsing { background-color: yellow; }
+
+        .collapsing {
+            background-color: yellow;
+        }
     </style>
 </head>
 <body>
@@ -84,105 +87,133 @@
     </div>
 
     <div class="container-fluid">
-        <div class="row">
-            <div class="table-responsive col-md-9">
-                <table id="smf-table-gw" class="table table-condensed table-striped table-bordered" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th class="sml-col-gw-pk">UUID</th>
-                            <th class="sml-col-gw-server">Server ID</th>
-                            <th class="sml-col-gw-manufacturer">Manufacturer</th>
-                            <th class="sml-col-gw-name">Name</th>
-                            <th class="sml-col-gw-id">Model</th>
-                            <th class="sml-col-gw-fw">Firmware</th>
-                            <th class="sml-col-gw-user">User</th>
-                            <th class="sml-col-gw-pwd">Password</th>
-                            <th class="sml-col-gw-online" style="width:10px">&#11156;</th>
-                        </tr>
-                    </thead>
-                </table>
+        <table id="smf-table-gw" class="table table-condensed table-striped table-bordered" cellspacing="0">
+            <thead>
+                <tr>
+                    <th class="sml-col-gw-pk">UUID</th>
+                    <th class="sml-col-gw-server">Server ID</th>
+                    <th class="sml-col-gw-manufacturer">Manufacturer</th>
+                    <th class="sml-col-gw-name">Name</th>
+                    <th class="sml-col-gw-id">Model</th>
+                    <th class="sml-col-gw-fw">Firmware</th>
+                    <th class="sml-col-gw-user">User</th>
+                    <th class="sml-col-gw-pwd">Password</th>
+                    <th class="sml-col-gw-online" style="width:10px">&#11156;</th>
+                </tr>
+            </thead>
+        </table>
 
-                <hr />
-                <div class="card-deck"> <!--deck-->
-                    <div class="collapse" id="smf-form-gw-collapse-srv-visible">
-                        <div class="card">
-                            <div class="card-header">Visible Meters</div>
-                            <div class="card-body"><ul class="list-group"></ul></div>
-                        </div>
+        <hr />
+        <!--                <ul class="nav nav-pills" role="tablist">-->
+        <ul class="nav nav-tabs" role="tablist" id="smf-gw-tab" >
+            <li class="nav-item">
+                <a class="nav-link active" id="smf-gw-tab-config" data-toggle="tab" href="#smf-gw-config" aria-selected="true">Configuration</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled" id="smf-gw-tab-status-word" data-toggle="tab" href="#smf-gw-status-word" aria-selected="false">Status</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled" id="smf-gw-tab-srv-visible" data-toggle="tab" href="#smf-gw-srv-visible" aria-selected="false">Visible Meters</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled" id="smf-gw-tab-srv-active" data-toggle="tab" href="#smf-gw-srv-active" aria-selected="false">Active Meters</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled"  id="smf-gw-tab-firmware" data-toggle="tab" href="#smf-gw-firmware" aria-selected="false">Firmware</a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div id="smf-gw-config" class="container-fluid tab-pane fade show active" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-10">
+                        <form id="smf-form-gw">
+                            <input type="hidden" id="smf-form-gw-tag" name="smf-form-gw-tag" />
+                            <input type="hidden" id="smf-form-gw-online" name="smf-form-gw-online" />
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label class="control-label" for="smf-form-gw-server">Server ID (14 hex. characters)</label>
+                                    <input id="smf-form-gw-server" name="smf-form-gw-server" type="text" placeholder="<Server ID>" class="form-control input-md" required>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label class="control-label" for="smf-form-gw-manufacturer">Manufacturer</label>
+                                    <input id="smf-form-gw-manufacturer" name="smf-form-gw-manufacturer" type="text" placeholder="<Manufacturer>" class="form-control input-md">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label class="control-label" for="smf-form-gw-user">User</label>
+                                    <input id="smf-form-gw-user" name="smf-form-gw-user" type="text" placeholder="<User>" class="form-control input-md">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label class="control-label" for="smf-form-gw-pwd">Password</label>
+                                    <input id="smf-form-gw-pwd" name="smf-form-gw-pwd" type="text" placeholder="<Password>" class="form-control input-md">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <a id="smf-form-gw-update" href="#" class="btn btn-info col-md-4 disabled">Update</a>
+                                    <label class="control-label" for="smf-form-gw-update">Commit Changes</label>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <a id="smf-form-gw-delete" href="#" class="btn btn-danger col-md-4 disabled">Delete</a>
+                                    <label class="control-label" for="smf-form-gw-delete">Remove <span id="smf-form-gw-delete-name">Device</span></label>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <a id="smf-form-gw-reboot" href="#" class="btn btn-warning col-md-4 disabled">Reboot</a>
+                                    <label class="control-label" for="smf-form-gw-reboot">Reboot Device</label>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <!-- SPACE -->
+                                </div>
+                            </div>
+                        </form>
                     </div>
-                    <div class="collapse" id="smf-form-gw-collapse-srv-active">
-                        <div class="card collapse">
-                            <div class="card-header">Active Meters</div>
-                            <div class="card-body"><ul class="list-group"></ul></div>
-                        </div>
-                    </div>
-                    <div class="collapse" id="smf-form-gw-collapse-firmware">
-                        <div class="card collapse">
-                            <div class="card-header">Firmware</div>
-                            <div class="card-body"><ul class="list-group"></ul></div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-status-word" name="smf-form-gw-status-word">
+                                <label class="form-check-label" for="smf-form-gw-status-word">Request status word</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-visible" name="smf-form-gw-srv-visible">
+                                <label class="form-check-label" for="smf-form-gw-srv-visible">Display visible meters</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-active" name="smf-form-gw-srv-active">
+                                <label class="form-check-label" for="smf-form-gw-srv-active">Display active meters</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-firmware" name="smf-form-gw-firmware">
+                                <label class="form-check-label" for="smf-form-gw-firmware">Get a firmware list</label>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="col-md-3">
-                <form class="form-horizontal" id="smf-form-gw">
-                    <fieldset>
-                        <legend id="smf-form-legend-gw" class="small">No gateway selected</legend>
-                        <input type="hidden" id="smf-form-gw-tag" name="smf-form-gw-tag" />
-                        <input type="hidden" id="smf-form-gw-serial" name="smf-form-gw-serial" />
-                        <input type="hidden" id="smf-form-gw-if-data" name="smf-form-gw-if-data" />
-                        <input type="hidden" id="smf-form-gw-if-config" name="smf-form-gw-if-config" />
-                        <div class="form-group">
-                            <label class="control-label" for="smf-form-gw-server">Server ID</label>
-                            <input id="smf-form-gw-server" name="smf-form-gw-server" type="text" placeholder="<Server ID>" class="form-control input-md">
-                        </div>
-                        <div class="form-group">
-                            <label class="control-label" for="smf-form-gw-manufacturer">Manufacturer</label>
-                            <input id="smf-form-gw-manufacturer" name="smf-form-gw-manufacturer" type="text" placeholder="<Manufacturer>" class="form-control input-md">
-                        </div>
-                        <div class="form-group">
-                            <label class="control-label" for="smf-form-gw-user">User</label>
-                            <input id="smf-form-gw-user" name="smf-form-gw-user" type="text" placeholder="<User>" class="form-control input-md">
-                        </div>
-                        <div class="form-group">
-                            <label class="control-label" for="smf-form-gw-pwd">Password</label>
-                            <input id="smf-form-gw-pwd" name="smf-form-gw-pwd" type="text" placeholder="<Password>" class="form-control input-md">
-                        </div>
-
-                        <div class="form-group">
-                            <a id="smf-form-gw-update" href="#" class="btn btn-info col-md-4 disabled">Update</a>
-                            <label class="control-label" for="smf-form-gw-update">Commit Changes</label>
-                        </div>
-                        <div class="form-group">
-                            <a id="smf-form-gw-delete" href="#" class="btn btn-danger col-md-4 disabled">Delete</a>
-                            <label class="control-label" for="smf-form-gw-delete">Remove <span id="smf-form-gw-delete-name">Device</span></label>
-                        </div>
-                        <hr />
-                        <div class="form-group">
-                            <a id="smf-form-gw-reboot" href="#" class="btn btn-warning col-md-4 disabled">Reboot</a>
-                            <label class="control-label" for="smf-form-gw-reboot">Reboot Device</label>
-                        </div>
-                        <hr />
-                        <div class="form-check">
-                            <label class="form-check-label">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-visible" name="smf-form-gw-srv-visible">Request and display visible meters
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <label class="form-check-label">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-active" name="smf-form-gw-srv-active">Request and display active meters
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <label class="form-check-label">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-firmware" name="smf-form-gw-firmware">Get a firmware list
-                            </label>
-                        </div>
-                    </fieldset>
-                </form>
+            <div id="smf-gw-status-word" class="container-fluid tab-pane fade" role="tabpanel">
+                <h4>Status word</h4>
+                <ul class="list-group"></ul>
+                <br>
             </div>
-        </div>  <!--row-->
+            <div id="smf-gw-srv-visible" class="container-fluid tab-pane fade" role="tabpanel">
+                <h4></h4>
+                <ul class="list-group"></ul>
+                <br>
+            </div>
+            <div id="smf-gw-srv-active" class="container-fluid tab-pane fade" role="tabpanel">
+                <h4></h4>
+                <ul class="list-group"></ul>
+                <br>
+            </div>
+            <div id="smf-gw-firmware" class="container-fluid tab-pane fade" role="tabpanel">
+                <h4></h4>
+                <ul class="list-group"></ul>
+                <br>
+            </div>
+        </div>
     </div>
 
     <!-- JavaScript -->
@@ -247,6 +278,7 @@
 
                 $('#smf-form-gw-user').val(rowData[6]);
                 $('#smf-form-gw-pwd').val(rowData[7]);
+                $('#smf-form-gw-online').val(rowData[8]);    //  online
 
                 //  enable submit button
                 $('#smf-form-gw-update').removeClass('disabled');
@@ -256,37 +288,71 @@
                 //  online state
                 if (rowData[8]) {
                     $('#smf-form-gw-reboot').removeClass('disabled');
-                    $('#smf-form-gw-srv-visible').removeClass('disabled');
-                    $('#smf-form-gw-srv-active').removeClass('disabled');
+                    $('#smf-form-gw-status-word').removeAttr('disabled');
+                    $('#smf-form-gw-srv-visible').removeAttr("disabled");
+                    $('#smf-form-gw-srv-active').removeAttr('disabled');
+                    $('#smf-form-gw-firmware').removeAttr('disabled');
                 }
                 else {
                     $('#smf-form-gw-reboot').addClass('disabled');
-                    $('#smf-form-gw-srv-visible').addClass('disabled');
-                    $('#smf-form-gw-srv-active').addClass('disabled');
+                    $('#smf-form-gw-status-word').attr("disabled", "disabled");
+                    $('#smf-form-gw-srv-visible').attr("disabled", "disabled");
+                    $('#smf-form-gw-srv-active').attr("disabled", "disabled");
+                    $('#smf-form-gw-firmware').attr("disabled", "disabled");
                 }
 
-                if ($('#smf-form-gw-srv-visible').is(":checked") && rowData[8]) {
-                    $('#smf-form-gw-collapse-srv-visible ul').empty();
-                    $('#smf-form-gw-collapse-srv-visible .card-header').text('Visible meters to ' + rowData[1]);
-                    _ws.send(JSON.stringify({
-                        cmd: "query:srv:visible", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
-                    }));
-                }
-                if ($('#smf-form-gw-srv-active').is(":checked") && rowData[8]) {
-                    $('#smf-form-gw-collapse-srv-active ul').empty();
-                    $('#smf-form-gw-collapse-srv-active .card-header').text('Active meters to ' + rowData[1]);
-                    _ws.send(JSON.stringify({
-                        cmd: "query:srv:active", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
-                    }));
-                }
-                if ($('#smf-form-gw-firmware').is(":checked") && rowData[8]) {
-                    $('#smf-form-gw-collapse-firmware ul').empty();
-                    $('#smf-form-gw-collapse-firmware .card-header').text('Firmware overview ' + rowData[1]);
-                    _ws.send(JSON.stringify({
-                        cmd: "query:firmware", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
-                    }));
-                }
+                $('#smf-form-gw-online').val(rowData[8]);    //  online
+                //  gateway is online
+                if (rowData[8]) {
 
+                    //$('#smf-nav-item-gw-config').removeClass('disabled');
+
+                    //
+                    //  build a vector with all data to request from gateway
+                    //
+                    var gw_req_vec = [];
+
+                    if ($('#smf-form-gw-status-word').is(":checked")) {
+                        $('#smf-gw-status-word ul').empty();
+                        $('#smf-gw-status-word h4').text('Status of ' + rowData[1]);
+                        gw_req_vec.push("status:word");
+                    }
+                    if ($('#smf-form-gw-srv-visible').is(":checked") && rowData[8]) {
+                        $('#smf-gw-srv-visible ul').empty();
+                        $('#smf-gw-srv-visible h4').text('Visible meters of ' + rowData[1]);
+                        gw_req_vec.push("srv:visible");
+                        //_ws.send(JSON.stringify({
+                        //    cmd: "query:srv:visible", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                        //}));
+                    }
+                    if ($('#smf-form-gw-srv-active').is(":checked") && rowData[8]) {
+                        $('#smf-gw-srv-active ul').empty();
+                        $('#smf-gw-srv-active h4').text('Active meters of ' + rowData[1]);
+                        gw_req_vec.push("srv:active");
+                        //_ws.send(JSON.stringify({
+                        //    cmd: "query:srv:active", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                        //}));
+                    }
+                    if ($('#smf-form-gw-firmware').is(":checked") && rowData[8]) {
+                        $('#smf-gw-firmware ul').empty();
+                        $('#smf-gw-firmware h4').text('Firmware overview ' + rowData[1]);
+                        gw_req_vec.push("firmware");
+                        //_ws.send(JSON.stringify({
+                        //    cmd: "query:firmware", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                        //}));
+                    }
+
+                    if (gw_req_vec.length > 0) {
+                        _ws.send(JSON.stringify({
+                            cmd: "query:gateway", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()], params: gw_req_vec
+                        }));
+                    }
+                }
+                else {
+                    //  seems not to work
+                    //$('#smf-nav-item-gw-config').addClass('disabled');
+                    //$('#smf-nav-item-gw-config').hide();
+                }
             });
 
             function start_ws() {
@@ -321,7 +387,7 @@
 
                 _ws.onmessage = function (e) {
                     $('#ws-activity-symbol').show();
-                    //console.log('incoming data: ' + e.data);
+                    console.log('incoming data: ' + e.data);
                     totalIO += e.data.length;
                     var obj = JSON.parse(e.data);
                     if (obj.cmd != null && obj.channel != null) {
@@ -350,8 +416,8 @@
                                         $('#smf-form-gw-update').addClass('disabled');
                                         $('#smf-form-gw-delete').addClass('disabled');
                                         $('#smf-form-gw-reboot').addClass('disabled');
-                                        $('#smf-form-gw-srv-visible').addClass('disabled');
-                                        $('#smf-form-gw-srv-active').addClass('disabled');
+                                        //$('#smf-form-gw-srv-visible').addClass('disabled');
+                                        //$('#smf-form-gw-srv-active').addClass('disabled');
 
                                         return true;
                                     }
@@ -391,10 +457,86 @@
                                 table_gw.clear().draw(false);
                             }
                         }
+                        else if (obj.channel == 'status.gateway.word') {
+                            //  {"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
+                            if (obj.cmd == 'update') {
+                                for (var prop in obj.rec.word) {
+                                    console.log("word." + prop + " = " + obj.rec.word[prop]);
+                                    switch (prop) {
+                                        case "256":
+                                            if (obj.rec.word[prop]) {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">fatal error</li>');
+                                            }
+                                            else {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no error</li>');
+                                            }
+                                            break;
+                                        case "8192":
+                                            if (obj.rec.word[prop]) {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">online</li>');
+                                            }
+                                            else {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">offline</li>');
+                                            }
+                                            break;
+                                        case "16384":
+                                            if (obj.rec.word[prop]) {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">out of memory</li>');
+                                            }
+                                            else {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no memory shortage</li>');
+                                            }
+                                            break;
+                                        case "65536":
+                                            if (obj.rec.word[prop]) {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">customer interface available</li>');
+                                            }
+                                            else {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no customer interface</li>');
+                                            }
+                                            break;
+                                        case "131072":
+                                            if (obj.rec.word[prop]) {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">extension interface available</li>');
+                                            }
+                                            else {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no extension interface</li>');
+                                            }
+                                            break;
+                                        case "262144":
+                                            if (obj.rec.word[prop]) {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">wireless M-bus</li>');
+                                            }
+                                            else {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no wireless M-bus available</li>');
+                                            }
+                                            break;
+                                        case "524288":
+                                            if (obj.rec.word[prop]) {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">PLC interface available</li>');
+                                            }
+                                            else {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no PLC interface</li>');
+                                            }
+                                            break;
+                                        case "4294967296":
+                                            if (obj.rec.word[prop]) {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-warning">uncertain timebase</li>');
+                                            }
+                                            else {
+                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">NTP is running</li>');
+                                            }
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                            }
+                        }
                         else if (obj.channel == 'status.gateway.visible') {
                             if (obj.cmd == 'append') {
                                 if (obj.rec.type == 0) {
-                                    $('#smf-form-gw-collapse-srv-visible ul').append('<li class="list-group-item list-group-item-success">#'
+                                    $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-success">#'
                                         + obj.rec.nr
                                         + ' '
                                         + obj.rec.meter
@@ -403,7 +545,7 @@
                                         + ')</li>');
                                 }
                                 else {
-                                    $('#smf-form-gw-collapse-srv-visible ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                    $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-secondary">#'
                                         + obj.rec.nr
                                         + ' '
                                         + obj.rec.meter
@@ -416,7 +558,7 @@
                         else if (obj.channel == 'status.gateway.active') {
                             if (obj.cmd == 'append') {
                                 if (obj.rec.type == 0) {
-                                    $('#smf-form-gw-collapse-srv-active ul').append('<li class="list-group-item list-group-item-success">#'
+                                    $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-success">#'
                                     + obj.rec.nr
                                     + ' '
                                     + obj.rec.meter
@@ -425,7 +567,7 @@
                                     + ')</li>');
                                 }
                                 else {
-                                    $('#smf-form-gw-collapse-srv-active ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                    $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-secondary">#'
                                     + obj.rec.nr
                                     + ' '
                                     + obj.rec.meter
@@ -439,7 +581,7 @@
                             if (obj.cmd == 'append') {
                                 //  {"nr": 0, "srv": "00:15:3b:02:29:7e", "section": "CURRENT VERSION", "version": "VSES-1.13_1133000038X025d", "active": true}
                                 if (obj.rec.active) {
-                                    $('#smf-form-gw-collapse-firmware ul').append('<li class="list-group-item list-group-item-success">#'
+                                    $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-success">#'
                                         + obj.rec.nr
                                         + ' '
                                         + obj.rec.section
@@ -448,7 +590,7 @@
                                         + '</li>');
                                 }
                                 else {
-                                    $('#smf-form-gw-collapse-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                    $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
                                         + obj.rec.nr
                                         + ' '
                                         + obj.rec.section
@@ -511,30 +653,70 @@
                 }));
             });
 
-            $('#smf-form-gw-srv-visible').change(function () {
+            //  toggle tabs
+            //$('#smf-gw-tab a').on('click', function (e) {
+            //    e.preventDefault()
+            //    $(this).tab('show')
+            //    //alert(e.target.id);
+            //    //alert("on/offline " + $('#smf-form-gw-online').val());
+            //    //  test online status
+            //    if (e.target.id == 'smf-gw-tab-config') {
+
+            //    }
+            //    else if (e.target.id == 'smf-gw-tab-status-word') {
+
+            //    }
+            //    else if (e.target.id == 'smf-gw-tab-srv-visible') {
+            //        if ($('#smf-form-gw-online').val()) {
+            //            _ws.send(JSON.stringify({
+            //                cmd: "query:srv:visible", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+            //            }));
+            //        }
+            //    }
+            //    else if (e.target.id == 'smf-gw-tab-srv-active') {
+
+            //    }
+            //    else if (e.target.id == 'smf-gw-tab-firmware') {
+
+            //    }
+            //    else {
+            //        alert("unknown request " + e.target.id);
+            //    }
+            //});
+
+            $('#smf-form-gw-status-word').change(function () {
                 if (this.checked) {
-                    $('#smf-form-gw-collapse-srv-visible').removeClass("collapse");
+                    $('#smf-gw-tab-status-word').removeClass('disabled');
                 }
                 else {
-                    $('#smf-form-gw-collapse-srv-visible').addClass("collapse");
+                    $('#smf-gw-tab-status-word').addClass('disabled');
+                }
+            });
+
+            $('#smf-form-gw-srv-visible').change(function () {
+                if (this.checked) {
+                    $('#smf-gw-tab-srv-visible').removeClass('disabled');
+                }
+                else {
+                    $('#smf-gw-tab-srv-visible').addClass('disabled');
                 }
             });
 
             $('#smf-form-gw-srv-active').change(function () {
                 if (this.checked) {
-                    $('#smf-form-gw-collapse-srv-active').removeClass("collapse");
+                    $('#smf-gw-tab-srv-active').removeClass('disabled');
                 }
                 else {
-                    $('#smf-form-gw-collapse-srv-active').addClass("collapse");
+                    $('#smf-gw-tab-srv-active').addClass('disabled');
                 }
             });
 
             $('#smf-form-gw-firmware').change(function () {
                 if (this.checked) {
-                    $('#smf-form-gw-collapse-firmware').removeClass("collapse");
+                    $('#smf-gw-tab-firmware').removeClass('disabled');
                 }
                 else {
-                    $('#smf-form-gw-collapse-firmware').addClass("collapse");
+                    $('#smf-gw-tab-firmware').addClass('disabled');
                 }
             });
 

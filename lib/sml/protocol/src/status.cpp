@@ -6,6 +6,7 @@
  */
 
 #include <smf/sml/status.h>
+#include <cyng/factory/set_factory.h>
 
 namespace node
 {
@@ -42,6 +43,11 @@ namespace node
 			//word_ |= STATUS_BIT_IP_ADDRESS_AVAILABLE;	//!< 1 if NOT available
 			word_ |= STATUS_BIT_EXT_IF_AVAILABLE;	//!< 1 if NOT available
 			word_ |= STATUS_BIT_AUTHORIZED_IPT;	//!< 1 if NOT authorized
+		}
+
+		void status::reset(std::uint32_t word)
+		{
+			word_ = word;
 		}
 
 		status::operator std::uint64_t() const
@@ -92,6 +98,41 @@ namespace node
 			return !is_set(STATUS_BIT_AUTHORIZED_IPT);
 		}
 
+		bool status::is_fatal_error() const
+		{
+			return is_set(STATUS_BIT_FATAL_ERROR);
+		}
+
+		bool status::is_out_of_memory() const
+		{
+			return is_set(STATUS_BIT_OUT_OF_MEMORY);
+		}
+
+		bool status::is_service_if_available() const
+		{
+			return is_set(STATUS_BIT_SERVICE_IF_AVAILABLE);
+		}
+
+		bool status::is_ext_if_available() const 
+		{
+			return is_set(STATUS_BIT_EXT_IF_AVAILABLE);
+		}
+
+		bool status::is_mbus_available() const
+		{
+			return is_set(STATUS_BIT_MBUS_IF_AVAILABLE);
+		}
+
+		bool status::is_plc_available() const
+		{
+			return is_set(STATUS_BIT_PLC_AVAILABLE);
+		}
+
+		bool status::is_timebase_uncertain() const
+		{
+			return is_set(STATUS_BIT_NO_TIMEBASE);
+		}
+
 		bool status::is_set(status_bits e) const
 		{
 			return (word_ & e) == e;
@@ -105,6 +146,20 @@ namespace node
 		void status::remove(status_bits e)
 		{
 			word_ &= ~e;
+		}
+
+		cyng::attr_map_t to_attr_map(status const& word)
+		{
+			return cyng::attr_map_factory
+			(sml::STATUS_BIT_AUTHORIZED_IPT, word.is_authorized())
+				(sml::STATUS_BIT_FATAL_ERROR, word.is_fatal_error())
+				(sml::STATUS_BIT_OUT_OF_MEMORY, word.is_out_of_memory())
+				(sml::STATUS_BIT_SERVICE_IF_AVAILABLE, word.is_service_if_available())
+				(sml::STATUS_BIT_EXT_IF_AVAILABLE, word.is_ext_if_available())
+				(sml::STATUS_BIT_MBUS_IF_AVAILABLE, word.is_mbus_available())
+				(sml::STATUS_BIT_PLC_AVAILABLE, word.is_plc_available())
+				(sml::STATUS_BIT_NO_TIMEBASE, word.is_timebase_uncertain())
+				;
 		}
 
 	}	//	sml

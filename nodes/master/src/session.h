@@ -79,11 +79,11 @@ namespace node
 		void bus_req_stop_client_impl(cyng::context& ctx);
 
 		void bus_req_reboot_client(cyng::context& ctx);
-		void bus_req_query_srv_visible(cyng::context& ctx);
+		void bus_req_query_gateway(cyng::context& ctx);
+
+		void bus_res_query_status_word(cyng::context& ctx);
 		void bus_res_query_srv_visible(cyng::context& ctx);
-		void bus_req_query_srv_active(cyng::context& ctx);
 		void bus_res_query_srv_active(cyng::context& ctx);
-		void bus_req_query_firmware(cyng::context& ctx);
 		void bus_res_query_firmware(cyng::context& ctx);
 
 		void cleanup(cyng::context& ctx);

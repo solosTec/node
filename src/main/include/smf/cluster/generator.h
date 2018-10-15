@@ -128,14 +128,29 @@ namespace node
 		, boost::uuids::uuid source);
 
 	/**
-	 * Request a list of visible meters/servers
+	 * Send a process parameter request to an gateway
 	 * 
 	 * @param key key for TGateway table
 	 * @param source source tag
+	 * @param vec vector of parameter requests
+	 * @param tag_ws websocket session tag
 	 */
-	cyng::vector_t bus_req_query_srv_visible(cyng::vector_t const&
+	cyng::vector_t bus_req_query_gateway(cyng::vector_t const&
 		, boost::uuids::uuid source
+		, cyng::vector_t vec	//	params
 		, boost::uuids::uuid tag_ws);
+
+	/**
+	 * Response for bus.req.query.status.word
+	 *
+	 * @param source source tag
+	 * @param srv server id
+	 */
+	cyng::vector_t bus_res_query_status_word(boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, std::string srv
+		, cyng::attr_map_t const&);
 
 	/**
 	 * Response for bus.req.query.srv.visible
@@ -156,19 +171,6 @@ namespace node
 		, std::chrono::system_clock::time_point st
 		, std::uint32_t srv_type);
 
-	/**
-	 * Request a list of active meters/servers
-	 */
-	cyng::vector_t bus_req_query_srv_active(cyng::vector_t const&
-		, boost::uuids::uuid source
-		, boost::uuids::uuid tag_ws);
-
-	/**
-	 * Request a list available firmware versions
-	 */
-	cyng::vector_t bus_req_query_firmware(cyng::vector_t const&
-		, boost::uuids::uuid source
-		, boost::uuids::uuid tag_ws);
 
 	/**
 	 * Response for bus.req.query.srv.active
@@ -256,6 +258,26 @@ namespace node
 	//cyng::vector_t client_res_reboot(boost::uuids::uuid tag, std::uint64_t seq, bool success);
 
 	/**
+	 * Send process parameter request
+	 * 
+	 * @param tag target session
+	 * @param source source session
+	 * @param seq cluster sequence
+	 * @param vec parameters
+	 * @param server server id
+	 * @param user login name / account
+	 * @param pwd password
+	 */
+	cyng::vector_t client_req_query_gateway(boost::uuids::uuid tag
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, cyng::vector_t vec
+		, boost::uuids::uuid tag_ws
+		, cyng::buffer_t const& server
+		, std::string const& user
+		, std::string const& pwd);
+
+	/**
 	 * Query a list of all visible devices/servers/meters
 	 * 
 	 * @param tag target session
@@ -265,13 +287,13 @@ namespace node
 	 * @param user login name / account
 	 * @param pwd password
 	 */
-	cyng::vector_t client_req_query_srv_visible(boost::uuids::uuid tag
-		, boost::uuids::uuid source
-		, std::uint64_t seq
-		, boost::uuids::uuid tag_ws
-		, cyng::buffer_t const& server
-		, std::string const& user
-		, std::string const& pwd);
+	//cyng::vector_t client_req_query_srv_visible(boost::uuids::uuid tag
+	//	, boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, boost::uuids::uuid tag_ws
+	//	, cyng::buffer_t const& server
+	//	, std::string const& user
+	//	, std::string const& pwd);
 
 	/**
 	 * Query a list of all active devices/servers/meters
@@ -283,13 +305,13 @@ namespace node
 	 * @param user login name / account
 	 * @param pwd password
 	 */
-	cyng::vector_t client_req_query_srv_active(boost::uuids::uuid tag
-		, boost::uuids::uuid source
-		, std::uint64_t seq
-		, boost::uuids::uuid tag_ws
-		, cyng::buffer_t const& server
-		, std::string const& user
-		, std::string const& pwd);
+	//cyng::vector_t client_req_query_srv_active(boost::uuids::uuid tag
+	//	, boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, boost::uuids::uuid tag_ws
+	//	, cyng::buffer_t const& server
+	//	, std::string const& user
+	//	, std::string const& pwd);
 
 	/**
 	 * Query a list available firmware versions
@@ -301,13 +323,13 @@ namespace node
 	 * @param user login name / account
 	 * @param pwd password
 	 */
-	cyng::vector_t client_req_query_firmware(boost::uuids::uuid tag
-		, boost::uuids::uuid source
-		, std::uint64_t seq
-		, boost::uuids::uuid tag_ws
-		, cyng::buffer_t const& server
-		, std::string const& user
-		, std::string const& pwd);
+	//cyng::vector_t client_req_query_firmware(boost::uuids::uuid tag
+	//	, boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, boost::uuids::uuid tag_ws
+	//	, cyng::buffer_t const& server
+	//	, std::string const& user
+	//	, std::string const& pwd);
 
 	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
 		, std::string const& target

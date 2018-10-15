@@ -214,6 +214,27 @@ namespace node
 			);
 		}
 
+		std::size_t req_generator::get_proc_status_word(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password)
+		{
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
+
+				//
+				//	generate public open response
+				//
+				, get_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, OBIS_CLASS_OP_LOG_STATUS_WORD)
+				)
+			);
+		}
+
 		res_generator::res_generator()
 			: generator()
 		{}

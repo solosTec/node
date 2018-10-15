@@ -7,7 +7,7 @@
 
 #include "cluster.h"
 #include "system.h"
-#include "../../../dash_shared/src/sync_db.h"
+#include "../../../dash_shared/src/forwarder.h"
 
 #include <smf/cluster/generator.h>
 
@@ -48,6 +48,7 @@ namespace node
 		, cache_()
 		, server_(logger, btp->mux_.get_io_service(), ctx, ep, doc_root, blacklist, bus_->vm_)
 		, dispatcher_(logger, server_.get_cm())
+		, db_sync_(logger, cache_)
         , sys_tsk_(cyng::async::NO_TASK)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
@@ -65,6 +66,7 @@ namespace node
 		//	subscribe to database
 		//
 		dispatcher_.subscribe(cache_);
+		dispatcher_.register_this(bus_->vm_);
 
 		//
 		//	implement request handler
@@ -81,13 +83,7 @@ namespace node
 			CYNG_LOG_TRACE(logger_, "db.trx.commit");
 		});
 		bus_->vm_.register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1));
-		bus_->vm_.register_function("db.res.insert", 4, std::bind(&cluster::db_res_insert, this, std::placeholders::_1));
-		bus_->vm_.register_function("db.res.remove", 2, std::bind(&cluster::db_res_remove, this, std::placeholders::_1));
-		bus_->vm_.register_function("db.res.modify.by.attr", 3, std::bind(&cluster::db_res_modify_by_attr, this, std::placeholders::_1));
-		bus_->vm_.register_function("db.res.modify.by.param", 3, std::bind(&cluster::db_res_modify_by_param, this, std::placeholders::_1));
-		bus_->vm_.register_function("db.req.insert", 4, std::bind(&cluster::db_req_insert, this, std::placeholders::_1));
-		bus_->vm_.register_function("db.req.remove", 3, std::bind(&cluster::db_req_remove, this, std::placeholders::_1));
-		bus_->vm_.register_function("db.req.modify.by.param", 5, std::bind(&cluster::db_req_modify_by_param, this, std::placeholders::_1));
+		db_sync_.register_this(bus_->vm_);
 
 		bus_->vm_.register_function("http.session.launch", 0, [this](cyng::context& ctx) {
 			CYNG_LOG_TRACE(logger_, "http.session.launch!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -338,235 +334,11 @@ namespace node
 
 	}
 
-	void cluster::db_res_insert(cyng::context& ctx)
-	{
-		const cyng::vector_t frame = ctx.get_frame();
-		//
-		//	[TDevice,[32f1a373-83c9-4f24-8fac-b13103bc7466],[00000006,2018-03-11 18:35:33.61302590,true,,,comment #10,1010000,secret,device-10000],0]
-		//
-		//	* table name
-		//	* record key
-		//	* record data
-		//	* generation
-		//	
-		CYNG_LOG_TRACE(logger_, "db.res.insert - " << cyng::io::to_str(frame));
-
-		auto tpl = cyng::tuple_cast<
-			std::string,			//	[0] table name
-			cyng::table::key_type,	//	[1] table key
-			cyng::table::data_type,	//	[2] record
-			std::uint64_t			//	[3] generation
-		>(frame);
-
-		//
-		//	assemble a record
-		//
-		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
-		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
-
-		node::db_res_insert(logger_
-			, cache_
-			, std::get<0>(tpl)		//	[0] table name
-			, std::get<1>(tpl)		//	[1] table key
-			, std::get<2>(tpl)		//	[2] record
-			, std::get<3>(tpl)		//	[3] generation
-			, ctx.tag());
-
-	}
-
-	void cluster::db_req_insert(cyng::context& ctx)
-	{
-		const cyng::vector_t frame = ctx.get_frame();
-		//
-		//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
-		//
-		//	* table name
-		//	* record key
-		//	* record data
-		//	* generation
-		//	
-		CYNG_LOG_TRACE(logger_, "db.req.insert - " << cyng::io::to_str(frame));
-
-		auto tpl = cyng::tuple_cast<
-			std::string,			//	[0] table name
-			cyng::table::key_type,	//	[1] table key
-			cyng::table::data_type,	//	[2] record
-			std::uint64_t,			//	[3] generation
-			boost::uuids::uuid		//	[4] source
-		>(frame);
-
-		//
-		//	assemble a record
-		//
-		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
-		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
-
-		node::db_req_insert(logger_
-			, cache_
-			, std::get<0>(tpl)		//	[0] table name
-			, std::get<1>(tpl)		//	[1] table key
-			, std::get<2>(tpl)		//	[2] record
-			, std::get<3>(tpl)		//	[3] generation
-			, std::get<4>(tpl));
-	}
-
-	void cluster::db_req_remove(cyng::context& ctx)
-	{
-		const cyng::vector_t frame = ctx.get_frame();
-		//
-		//	[*Session,[e72bc048-cb37-4a86-b156-d07f22608476]]
-		//
-		//	* table name
-		//	* record key
-		//	* source
-		//	
-		CYNG_LOG_TRACE(logger_, "db.req.remove - " << cyng::io::to_str(frame));
-
-		auto tpl = cyng::tuple_cast<
-			std::string,			//	[0] table name
-			cyng::table::key_type,	//	[1] table key
-			boost::uuids::uuid		//	[2] source
-		>(frame);
-
-		//
-		//	reordering table key
-		//	
-		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
-
-		node::db_req_remove(logger_
-			, cache_
-			, std::get<0>(tpl)		//	[0] table name
-			, std::get<1>(tpl)		//	[1] table key
-			, std::get<2>(tpl));	//	[2] source
-
-	}
-
-	void cluster::db_res_remove(cyng::context& ctx)
-	{
-		const cyng::vector_t frame = ctx.get_frame();
-		//
-		//	[TDevice,[def8e1ef-4a67-49ff-84a9-fda31509dd8e]]
-		//
-		//	* table name
-		//	* record key
-		//	
-		CYNG_LOG_TRACE(logger_, "db.res.remove - " << cyng::io::to_str(frame));
-
-		auto tpl = cyng::tuple_cast<
-			std::string,			//	[0] table name
-			cyng::table::key_type	//	[1] table key
-		>(frame);
-
-		//
-		//	reordering table key
-		//	
-		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
-
-		node::db_res_remove(logger_
-			, cache_
-			, std::get<0>(tpl)		//	[0] table name
-			, std::get<1>(tpl)		//	[1] table key
-			, ctx.tag());			//	[2] source
-	}
-
-	void cluster::db_res_modify_by_attr(cyng::context& ctx)
-	{
-		//	[TDevice,[0950f361-7800-4d80-b3bc-c6689f159439],(1:secret)]
-		//
-		//	* table name
-		//	* record key
-		//	* attr [column,value]
-		//	
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "db.res.modify.by.attr - " << cyng::io::to_str(frame));
-
-		auto tpl = cyng::tuple_cast<
-			std::string,			//	[0] table name
-			cyng::table::key_type,	//	[1] table key
-			cyng::attr_t			//	[2] attribute
-		>(frame);
-
-		//
-		//	reordering table key
-		//	
-		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
-
-		if (!cache_.modify(std::get<0>(tpl), std::get<1>(tpl), std::move(std::get<2>(tpl)), ctx.tag()))
-		{
-			CYNG_LOG_WARNING(logger_, "db.res.modify.by.attr failed "
-				<< std::get<0>(tpl)		// table name
-				<< " - "
-				<< cyng::io::to_str(std::get<1>(tpl)));
-		}
-	}
-
-	void cluster::db_res_modify_by_param(cyng::context& ctx)
-	{
-		//	
-		//
-		//	* table name
-		//	* record key
-		//	* param [column,value]
-		//	
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "db.res.modify.by.param - " << cyng::io::to_str(frame));
-
-		auto tpl = cyng::tuple_cast<
-			std::string,			//	[0] table name
-			cyng::table::key_type,	//	[1] table key
-			cyng::param_t			//	[2] parameter
-		>(frame);
-
-		if (!cache_.modify(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl), ctx.tag()))
-		{
-			CYNG_LOG_WARNING(logger_, "db.res.modify.by.param failed "
-				<< std::get<0>(tpl)		// table name
-				<< " - "
-				<< cyng::io::to_str(std::get<1>(tpl)));
-		}
-	}
-
-	void cluster::db_req_modify_by_param(cyng::context& ctx)
-	{
-		//	
-		//	[*Session,[35d1d76d-56c3-4df7-b1ff-b7ad374d2e8f],("rx":33344),327,35d1d76d-56c3-4df7-b1ff-b7ad374d2e8f]
-		//	[*Cluster,[1e4527b3-6479-4b2c-854b-e4793f40d864],("ping":00:00:0.003736),4,1e4527b3-6479-4b2c-854b-e4793f40d864]
-		//
-		//	* table name
-		//	* record key
-		//	* param [column,value]
-		//	* generation
-		//	* source
-		//	
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "db.req.modify.by.param - " << cyng::io::to_str(frame));
-
-		auto tpl = cyng::tuple_cast<
-			std::string,			//	[0] table name
-			cyng::table::key_type,	//	[1] table key
-			cyng::param_t,			//	[2] parameter
-			std::uint64_t,			//	[3] generation
-			boost::uuids::uuid		//	[4] source
-		>(frame);
-
-		//
-		//	reordering table key
-		//	
-		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
-
-		if (!cache_.modify(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl), std::get<4>(tpl)))
-		{
-			CYNG_LOG_WARNING(logger_, "db.req.modify.by.param failed "
-				<< std::get<0>(tpl)		// table name
-				<< " - "
-				<< cyng::io::to_str(std::get<1>(tpl)));
-		}
-	}
-
 
 	void cluster::ws_read(cyng::context& ctx)
 	{
 		//	[1adb06d2-bfbf-4b00-a7b1-80b49ba48f79,{("cmd":subscribe),("channel":status.session),("push":true)}]
+		//	[e9a5fa77-edfc-46b7-8b85-ea4252bfba73,{("cmd":subscribe),("channel":table.connection.count),("push":true)}]
 		//	
 		//	* session tag
 		//	* json object
@@ -581,7 +353,7 @@ namespace node
 		//
 		//	reader for JSON data
 		//
-		auto reader = cyng::make_reader(frame.at(2));
+		auto reader = cyng::make_reader(frame.at(1));
 		const std::string cmd = cyng::value_cast<std::string>(reader.get("cmd"), "");
 
 		if (boost::algorithm::equals(cmd, "subscribe")) {
@@ -589,10 +361,51 @@ namespace node
 			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
 			CYNG_LOG_TRACE(logger_, "ws.read - subscribe channel [" << channel << "]");
 
-			dispatcher_.subscribe_channel(tag, channel);
+			dispatcher_.subscribe_channel(cache_, channel, tag);
+		}
+		else if (boost::algorithm::equals(cmd, "insert"))
+		{
+			node::fwd_insert(logger_
+				, ctx
+				, reader
+				, uidgen_());
+		}
+		else if (boost::algorithm::equals(cmd, "delete"))
+		{
+			node::fwd_delete(logger_
+				, ctx
+				, reader);
+		}
+		else if (boost::algorithm::equals(cmd, "modify"))
+		{
+			node::fwd_modify(logger_
+				, ctx
+				, reader);
+		}
+		else if (boost::algorithm::equals(cmd, "stop"))
+		{
+			node::fwd_stop(logger_
+				, ctx
+				, reader);
+		}
+		else if (boost::algorithm::equals(cmd, "reboot"))
+		{
+			node::fwd_reboot(logger_
+				, ctx
+				, reader);
+		}
+		else if (boost::algorithm::equals(cmd, "query:gateway"))
+		{
+			node::fwd_query_gateway(logger_
+				, ctx
+				, tag
+				, reader);
+		}
+		else
+		{
+			CYNG_LOG_WARNING(logger_, "ws.read - unknown command " << cmd);
 		}
 
-		//dispatcher_
 	}
 
 

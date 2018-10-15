@@ -160,6 +160,12 @@ namespace node
 				, std::string const& username
 				, std::string const& password);
 
+			/**
+			 * get status word - 81 00 60 05 00 00 (CLASS_OP_LOG_STATUS_WORD)
+			 */
+			std::size_t get_proc_status_word(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password);
 		private:
 			trx	trx_;
 		};

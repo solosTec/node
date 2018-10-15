@@ -12,6 +12,7 @@
 #include <smf/cluster/config.h>
 #include <smf/http/srv/server.h>
 #include "../../../dash_shared/src/dispatcher.h"
+#include "../../../dash_shared/src/sync_db.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -61,15 +62,7 @@ namespace node
 		void reconfigure(cyng::context& ctx);
 		void reconfigure_impl();
 
-		//void subscribe_cache();
 		void res_subscribe(cyng::context& ctx);
-		void db_res_insert(cyng::context& ctx);
-		void db_res_remove(cyng::context& ctx);
-		void db_res_modify_by_attr(cyng::context& ctx);
-		void db_res_modify_by_param(cyng::context& ctx);
-		void db_req_insert(cyng::context& ctx);
-		void db_req_remove(cyng::context& ctx);
-		void db_req_modify_by_param(cyng::context& ctx);
 
 		void ws_read(cyng::context& ctx);
 		void http_upload_start(cyng::context& ctx);
@@ -77,7 +70,6 @@ namespace node
 		void http_upload_var(cyng::context& ctx);
 		void http_upload_progress(cyng::context& ctx);
 		void http_upload_complete(cyng::context& ctx);
-		//void http_moved(cyng::context& ctx);
 
 		void cfg_download_devices(cyng::context& ctx);
 		void cfg_download_gateways(cyng::context& ctx);
@@ -88,9 +80,10 @@ namespace node
 		void cfg_upload_gateways(cyng::context& ctx);
 		void cfg_upload_meter(cyng::context& ctx);
 
-		void res_query_srv_visible(cyng::context& ctx);
-		void res_query_srv_active(cyng::context& ctx);
-		void res_query_firmware(cyng::context& ctx);
+		//void res_query_srv_visible(cyng::context& ctx);
+		//void res_query_srv_active(cyng::context& ctx);
+		//void res_query_firmware(cyng::context& ctx);
+
 
 		void sync_table(std::string const&);
 
@@ -99,31 +92,6 @@ namespace node
 		void update_sys_mem_virtual_total(std::string const&, http::websocket_session* wss);
 		void update_sys_mem_virtual_used(std::string const&, http::websocket_session* wss);
 
-		void subscribe(std::string table, std::string const&, boost::uuids::uuid);
-		void subscribe_table_device_count(std::string const&, boost::uuids::uuid);
-		void subscribe_table_gateway_count(std::string const&, boost::uuids::uuid);
-		void subscribe_table_meter_count(std::string const&, boost::uuids::uuid);
-		void subscribe_table_session_count(std::string const&, boost::uuids::uuid);
-		void subscribe_table_target_count(std::string const&, boost::uuids::uuid);
-		void subscribe_table_connection_count(std::string const&, boost::uuids::uuid);
-		void subscribe_table_msg_count(std::string const&, boost::uuids::uuid);
-		void subscribe_table_LoRa_count(std::string const&, boost::uuids::uuid);
-
-		//void update_channel(std::string const&, std::size_t);
-
-		//void sig_ins(cyng::store::table const*
-		//	, cyng::table::key_type const&
-		//	, cyng::table::data_type const&
-		//	, std::uint64_t
-		//	, boost::uuids::uuid);
-		//void sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid);
-		//void sig_clr(cyng::store::table const*, boost::uuids::uuid);
-		//void sig_mod(cyng::store::table const*
-		//	, cyng::table::key_type const&
-		//	, cyng::attr_t const&
-		//	, std::uint64_t
-		//	, boost::uuids::uuid);
-
         void start_sys_task();
         void stop_sys_task();
 
@@ -131,14 +99,11 @@ namespace node
 		void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc);
 		void read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc);
 
-		void display_loading_icon(boost::uuids::uuid tag, bool, std::string const&);
-		void display_loading_level(boost::uuids::uuid tag, std::size_t, std::string const&);
-
 		void trigger_download(boost::uuids::uuid tag, std::string table, std::string filename);
 
 	private:
 		cyng::async::base_task& base_;
-		boost::uuids::random_generator rgn_;
+		boost::uuids::random_generator uidgen_;
 
 		/**
 		 * communication bus to master
@@ -161,6 +126,11 @@ namespace node
 		 * data dispatcher
 		 */
 		dispatcher dispatcher_;
+
+		/**
+		 * data synchronizer
+		 */
+		db_sync db_sync_;
 
 		/**
 		 * system task

@@ -197,16 +197,6 @@ namespace node
 			}
 		}
 
-		//bool server::send_msg(boost::uuids::uuid tag, std::string const& msg)
-		//{
-		//	return connection_manager_.ws_msg(tag, msg);
-		//}
-
-		void server::add_channel(boost::uuids::uuid tag, std::string const& channel)
-		{
-			connection_manager_.add_channel(tag, channel);
-		}
-
 		void server::process_event(std::string const& channel, std::string const& msg)
 		{
 			connection_manager_.push_event(channel, msg);
