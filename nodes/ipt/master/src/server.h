@@ -51,7 +51,7 @@ namespace node
 			void do_accept();
 
 			void insert_connection(cyng::context&);
-			void close_connection(cyng::context&);
+			//void close_connection(cyng::context&);
 
 			/**
 			 * @return true if entry was found
@@ -64,9 +64,6 @@ namespace node
 			void client_req_close_impl(cyng::context&);
 			void client_req_reboot(cyng::context&);
 			void client_req_query_gateway(cyng::context&);
-			//void client_req_query_srv_visible(cyng::context&);
-			//void client_req_query_srv_active(cyng::context&);
-			//void client_req_firmware(cyng::context&);
 			void client_res_open_push_channel(cyng::context&);
 			void client_res_register_push_target(cyng::context&);
 			void client_res_deregister_push_target(cyng::context& ctx);
@@ -89,6 +86,14 @@ namespace node
 			void push_connection(cyng::context& ctx);
 			void push_ep_local(cyng::context& ctx);
 			void push_ep_remote(cyng::context& ctx);
+
+			/**
+			 * Remove a connection/client from connection list.
+			 * 
+			 * @param stop if true the connection stop() method 
+			 *	will be called.
+			 */
+			bool remove_client(boost::uuids::uuid tag, bool stop);
 
 		private:
 			/*

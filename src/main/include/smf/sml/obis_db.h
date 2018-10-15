@@ -247,6 +247,11 @@ namespace node
 		const char* get_name(obis const&);
 
 		/**
+		 * @return a short description of the OBIS code if available
+		 */
+		const char* get_attention_name(obis const&);
+
+		/**
 		 * @return name of teh LSM event
 		 */
 		const char* get_LSM_event_name(std::uint32_t);

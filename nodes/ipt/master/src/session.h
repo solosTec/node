@@ -101,6 +101,7 @@ namespace node
 				void sml_get_proc_param_firmware(cyng::context& ctx);
 				void sml_get_proc_param_simple(cyng::context& ctx);
 				void sml_get_proc_status_word(cyng::context& ctx);
+				void sml_attention_msg(cyng::context& ctx);
 
 			};
 
@@ -120,7 +121,17 @@ namespace node
 
 			virtual ~session();
 
+			/**
+			 * A request to close this session was propagated through the cluster
+			 * until it reached the IP-T master. The IP-T master located the session in
+			 * the session map and called this stop() method directly.
+			 */
 			void stop(cyng::object);
+
+			/**
+			 * The connection detected a disconnect and calls the stop method
+			 * with the received error code.
+			 */
 			void stop(boost::system::error_code ec);
 
 		private:
@@ -165,7 +176,6 @@ namespace node
 
 			void ipt_unknown_cmd(cyng::context& ctx);
 
-			//void client_res_login(std::uint64_t, bool, std::string msg);
 			void client_res_login(cyng::context& ctx);
 			void client_res_open_push_channel(cyng::context& ctx);
 			void client_res_close_push_channel(cyng::context& ctx);
@@ -190,9 +200,6 @@ namespace node
 			void redirect(cyng::context& ctx);
 			void client_req_reboot(cyng::context& ctx);
 			void client_req_query_gateway(cyng::context& ctx);
-			//void client_req_query_srv_visible(cyng::context& ctx);
-			//void client_req_query_srv_active(cyng::context& ctx);
-			//void client_req_query_firmware(cyng::context& ctx);
 
 		private:
 			cyng::async::mux& mux_;

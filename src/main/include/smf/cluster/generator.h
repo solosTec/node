@@ -125,7 +125,8 @@ namespace node
 	 * Reboot a client
 	 */
 	cyng::vector_t bus_req_reboot_client(cyng::vector_t const&
-		, boost::uuids::uuid source);
+		, boost::uuids::uuid source
+		, boost::uuids::uuid tag_ws);
 
 	/**
 	 * Send a process parameter request to an gateway
@@ -211,6 +212,16 @@ namespace node
 		, bool active);
 
 	/**
+	 * Send back attention codes
+	 */
+	cyng::vector_t bus_res_attention_code(boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, std::string srv
+		, cyng::buffer_t code
+		, std::string msg);
+
+	/**
 	 * data bus
 	 */
 	cyng::vector_t bus_req_push_data(std::string const& class_name
@@ -254,8 +265,24 @@ namespace node
 	cyng::vector_t client_req_close(boost::uuids::uuid tag, int);
 	cyng::vector_t client_res_close(boost::uuids::uuid tag, std::uint64_t seq, bool success);
 
-	cyng::vector_t client_req_reboot(boost::uuids::uuid tag, cyng::buffer_t const&, std::string const&, std::string const&);
-	//cyng::vector_t client_res_reboot(boost::uuids::uuid tag, std::uint64_t seq, bool success);
+	/**
+	 * Send reboot request
+	 *
+	 * @param tag target session
+	 * @param source source session
+	 * @param seq cluster sequence
+	 * @param tag_ws ws tag
+	 * @param server server id
+	 * @param user login name / account
+	 * @param pwd password
+	 */
+	cyng::vector_t client_req_reboot(boost::uuids::uuid tag
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, cyng::buffer_t const& server
+		, std::string const& user
+		, std::string const& pwd);
 
 	/**
 	 * Send process parameter request

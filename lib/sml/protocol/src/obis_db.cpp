@@ -124,32 +124,75 @@ namespace node
 			else if (code == OBIS_CLASS_OP_LSM_JOB)						return "LSM-job-name";
 			else if (code == OBIS_CLASS_OP_LSM_POSITION)				return "LSM-position";
 
-			//																					//
-			//																					//	attention codes
-			//																					//
-			//const static obis	OBIS_ATTENTION_UNKNOWN_ERROR(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x00);
-			//const static obis	OBIS_ATTENTION_UNKNOWN_SML_ID(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x01);
-			//const static obis	OBIS_ATTENTION_NOT_AUTHORIZED(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x02);
-			//const static obis	OBIS_ATTENTION_NO_SERVER_ID(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x03);
-			//const static obis	OBIS_ATTENTION_NO_REQ_FIELD(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x04);
-			//const static obis	OBIS_ATTENTION_CANNOT_WRITE(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x05);
-			//const static obis	OBIS_ATTENTION_CANNOT_READ(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x06);
-			//const static obis	OBIS_ATTENTION_COMM_ERROR(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x07);
-			//const static obis	OBIS_ATTENTION_PARSER_ERROR(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x08);
-			//const static obis	OBIS_ATTENTION_OUT_OF_RANGE(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x09);
-			//const static obis	OBIS_ATTENTION_NOT_EXECUTED(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0A);
-			//const static obis	OBIS_ATTENTION_INVALID_CRC(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0B);
-			//const static obis	OBIS_ATTENTION_NO_BROADCAST(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0C);
-			//const static obis	OBIS_ATTENTION_UNEXPECTED_MSG(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0D);
-			//const static obis	OBIS_ATTENTION_UNKNOWN_OBIS_CODE(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0E);
-			//const static obis	OBIS_ATTENTION_UNSUPPORTED_DATA_TYPE(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x0F);
-			//const static obis	OBIS_ATTENTION_ELEMENT_NOT_OPTIONAL(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x10);
-			//const static obis	OBIS_ATTENTION_NO_ENTRIES(0x81, 0x81, 0xC7, 0xC7, 0xFE, 0x11);
-			//const static obis	OBIS_ATTENTION_OK(0x81, 0x81, 0xC7, 0xC7, 0xFD, 0x00);
-			//const static obis	OBIS_ATTENTION_JOB_IS_RUNNINNG(0x81, 0x81, 0xC7, 0xC7, 0xFD, 0x01);
+			//
+			//	attention codes
+			//
+			return get_attention_name(code);
+		}
 
+		const char* get_attention_name(obis const& code)
+		{
+			if (OBIS_ATTENTION_UNKNOWN_ERROR == code) {
+				return "UNKNOWN ERROR";
+			}
+			else if (OBIS_ATTENTION_UNKNOWN_SML_ID == code) {
+				return "UNKNOWN SML ID";
+			}
+			else if (OBIS_ATTENTION_NOT_AUTHORIZED == code) {
+				return "NOT AUTHORIZED";
+			}
+			else if (OBIS_ATTENTION_NO_SERVER_ID == code) {
+				return "NO SERVER ID";
+			}
+			else if (OBIS_ATTENTION_NO_REQ_FIELD == code) {
+				return "NO REQ FIELD";
+			}
+			else if (OBIS_ATTENTION_CANNOT_WRITE == code) {
+				return "CANNOT WRITE";
+			}
+			else if (OBIS_ATTENTION_CANNOT_READ == code) {
+				return "CANNOT READ";
+			}
+			else if (OBIS_ATTENTION_COMM_ERROR == code) {
+				return "COMM ERROR";
+			}
+			else if (OBIS_ATTENTION_PARSER_ERROR == code) {
+				return "PARSER ERROR";
+			}
+			else if (OBIS_ATTENTION_OUT_OF_RANGE == code) {
+				return "OUT OF RANGE";
+			}
+			else if (OBIS_ATTENTION_NOT_EXECUTED == code) {
+				return "NOT EXECUTED";
+			}
+			else if (OBIS_ATTENTION_INVALID_CRC == code) {
+				return "INVALID CRC";
+			}
+			else if (OBIS_ATTENTION_NO_BROADCAST == code) {
+				return "NO BROADCAST";
+			}
+			else if (OBIS_ATTENTION_UNEXPECTED_MSG == code) {
+				return "UNEXPECTED MSG";
+			}
+			else if (OBIS_ATTENTION_UNKNOWN_OBIS_CODE == code) {
+				return "UNKNOWN OBIS CODE";
+			}
+			else if (OBIS_ATTENTION_UNSUPPORTED_DATA_TYPE == code) {
+				return "UNSUPPORTED DATA TYPE";
+			}
+			else if (OBIS_ATTENTION_ELEMENT_NOT_OPTIONAL == code) {
+				return "NOT OPTIONAL";
+			}
+			else if (OBIS_ATTENTION_NO_ENTRIES == code) {
+				return "NO ENTRIES";
+			}
+			else if (OBIS_ATTENTION_OK == code) {
+				return "OK";
+			}
+			else if (OBIS_ATTENTION_JOB_IS_RUNNINNG == code) {
+				return "JOB IS RUNNINNG";
+			}
 			return "no-entry";
-
 		}
 
 		const char* get_LSM_event_name(std::uint32_t evt)

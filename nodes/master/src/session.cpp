@@ -96,7 +96,7 @@ namespace node
 		//
 		vm_.register_function("bus.req.login", 11, std::bind(&session::bus_req_login, this, std::placeholders::_1));
 		vm_.register_function("bus.req.stop.client", 3, std::bind(&session::bus_req_stop_client_impl, this, std::placeholders::_1));
-		vm_.register_function("bus.req.reboot.client", 3, std::bind(&session::bus_req_reboot_client, this, std::placeholders::_1));
+		vm_.register_function("bus.req.reboot.client", 4, std::bind(&session::bus_req_reboot_client, this, std::placeholders::_1));
 		vm_.register_function("bus.insert.msg", 2, std::bind(&session::bus_insert_msg, this, std::placeholders::_1));
 		vm_.register_function("bus.req.push.data", 7, std::bind(&session::bus_req_push_data, this, std::placeholders::_1));
 
@@ -472,6 +472,7 @@ namespace node
 			ctx.attach(cyng::register_function("bus.res.query.srv.visible", 8, std::bind(&session::bus_res_query_srv_visible, this, std::placeholders::_1)));
 			ctx.attach(cyng::register_function("bus.res.query.srv.active", 8, std::bind(&session::bus_res_query_srv_active, this, std::placeholders::_1)));
 			ctx.attach(cyng::register_function("bus.res.query.firmware", 8, std::bind(&session::bus_res_query_firmware, this, std::placeholders::_1)));
+			ctx.attach(cyng::register_function("bus.res.attention.code", 6, std::bind(&session::bus_res_attention_code, this, std::placeholders::_1)));
 
 			//
 			//	set node class and group id
@@ -639,11 +640,13 @@ namespace node
 		//	* bus sequence
 		//	* session key
 		//	* source
+		//	* ws tag
 
 		auto const tpl = cyng::tuple_cast<
 			std::uint64_t,			//	[0] sequence
 			cyng::table::key_type,	//	[1] session key
-			boost::uuids::uuid		//	[2] source
+			boost::uuids::uuid,		//	[2] source
+			boost::uuids::uuid		//	[3] ws tag
 		>(frame);
 
 		//
@@ -655,7 +658,7 @@ namespace node
 		//
 		db_.access([&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
 
-#if _MSVC || (__GNUC__ > 6)
+#if _MSC_VER || (__GNUC__ > 6)
 			//
 			//	C++17 feature: structured binding
 			//
@@ -665,14 +668,26 @@ namespace node
 			if (peer != nullptr) {
 				const auto name = cyng::value_cast<std::string>(rec["userName"], "");
 				const auto pwd = cyng::value_cast<std::string>(rec["userPwd"], "");
-				peer->vm_.async_run(client_req_reboot(std::get<2>(tpl), server, name, pwd));
+				peer->vm_.async_run(client_req_reboot(tag	//	ipt session tag
+					, ctx.tag()			//	source peer
+					, std::get<0>(tpl)	//	cluster sequence
+					, std::get<3>(tpl)	//	ws tag
+					, server			//	server
+					, name
+					, pwd));
 			}
 #else
 			auto res = find_peer(std::get<1>(tpl), tbl_session, tbl_gw);
 			if (std::get<0>(res) != nullptr) {
 				const auto name = cyng::value_cast<std::string>(std::get<1>(res)["userName"], "");
 				const auto pwd = cyng::value_cast<std::string>(std::get<1>(res)["userPwd"], "");
-				std::get<0>(res)->vm_.async_run(client_req_reboot(std::get<2>(tpl), std::get<2>(res), name, pwd));
+				std::get<0>(res)->vm_.async_run(client_req_reboot(std::get<3>(res)	//	ipt session tag
+					, ctx.tag()			//	source peer
+					, std::get<0>(tpl)	//	cluster sequence
+					, std::get<4>(tpl)	//	ws tag
+					, std::get<2>(res)	//	server
+					, name
+					, pwd));
 			}
 #endif
 
@@ -725,7 +740,7 @@ namespace node
 					, std::get<0>(tpl)	//	cluster sequence
 					, std::get<3>(tpl)	//	requests
 					, std::get<4>(tpl)	//	ws tag
-					, server
+					, server			//	server
 					, name
 					, pwd));
 #else
@@ -937,6 +952,35 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "bus.res.query.srv.active - peer not found " << std::get<0>(tpl));
 			}
 		}, cyng::store::read_access("_Cluster"));
+	}
+
+	void session::bus_res_attention_code(cyng::context& ctx)
+	{
+		//	[f83e12c6-b22c-4775-ad83-b180d3d2a8e0,38,4ac545a0-2b60-41b4-9d32-81eacec5bd94,00:15:3b:02:29:7e,8181C7C7FD00]
+		//
+		//	* [uuid] source
+		//	* [u64] cluster seq
+		//	* [uuid] ws tag
+		//	* [string] server id
+		//	* [buffer] attention code
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, "bus.res.attention.code " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] source
+			std::uint64_t,			//	[1] sequence
+			boost::uuids::uuid,		//	[2] ws tag
+			std::string,			//	[3] server id
+			cyng::buffer_t,			//	[4] attention code (OBIS)
+			std::string				//	[5] msg
+		>(frame);
+
+		insert_msg(db_
+			, cyng::logging::severity::LEVEL_INFO
+			, ("attention message " + std::get<5>(tpl))
+			, std::get<0>(tpl));
+
 	}
 
 	void session::bus_start_watchdog(cyng::context& ctx)

@@ -50,7 +50,7 @@ namespace node
 			bus_->vm_.register_function("push.ep.local", 1, std::bind(&server::push_ep_local, this, std::placeholders::_1));
 			bus_->vm_.register_function("push.ep.remote", 1, std::bind(&server::push_ep_remote, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.insert.connection", 2, std::bind(&server::insert_connection, this, std::placeholders::_1));
-			bus_->vm_.register_function("server.close.connection", 3, std::bind(&server::close_connection, this, std::placeholders::_1));
+			//bus_->vm_.register_function("server.close.connection", 3, std::bind(&server::close_connection, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1));
 
 			//
@@ -59,11 +59,8 @@ namespace node
 			bus_->vm_.register_function("client.res.login", 7, std::bind(&server::client_res_login, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.res.close", 3, std::bind(&server::client_res_close_impl, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.req.close", 4, std::bind(&server::client_req_close_impl, this, std::placeholders::_1));
-			bus_->vm_.register_function("client.req.reboot", 6, std::bind(&server::client_req_reboot, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.req.reboot", 8, std::bind(&server::client_req_reboot, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.req.query.gateway", 9, std::bind(&server::client_req_query_gateway, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.req.query.srv.visible", 8, std::bind(&server::client_req_query_srv_visible, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.req.query.srv.active", 8, std::bind(&server::client_req_query_srv_active, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.req.query.firmware", 8, std::bind(&server::client_req_firmware, this, std::placeholders::_1));
 
 			bus_->vm_.register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1));
@@ -130,36 +127,46 @@ namespace node
 				[this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
 				// Check whether the server was stopped by a signal before this
 				// completion handler had a chance to run.
-				if (!acceptor_.is_open()) 
-				{
+				if (!acceptor_.is_open()) {
 					return;
 				}
 
-				if (!ec) 
-				{
-					const auto tag = rnd_();
+				if (!ec)	{
 
-					CYNG_LOG_TRACE(logger_, "accept "
-						<< socket.remote_endpoint()
-						<< " - "
-						<< tag);
+					if (bus_->is_online()) {
 
-					//
-					//	create new connection/session
-					//
-					auto conn = make_connection(std::move(socket)
-						, mux_
-						, logger_
-						, bus_
-						, tag
-						, sk_
-						, watchdog_
-						, timeout_);
+						const auto tag = rnd_();
 
-					//
-					//	bus is synchronizing access to client_map_
-					//
-					bus_->vm_.async_run(cyng::generate_invoke("server.insert.connection", tag, conn));
+						CYNG_LOG_TRACE(logger_, "accept "
+							<< socket.remote_endpoint()
+							<< " - "
+							<< tag);
+
+						//
+						//	create new connection/session
+						//
+						auto conn = make_connection(std::move(socket)
+							, mux_
+							, logger_
+							, bus_
+							, tag
+							, sk_
+							, watchdog_
+							, timeout_);
+
+						//
+						//	bus is synchronizing access to client_map_
+						//
+						bus_->vm_.async_run(cyng::generate_invoke("server.insert.connection", tag, conn));
+					}
+					else {
+
+						CYNG_LOG_WARNING(logger_, "do not accept incoming IP-T connection from "
+							<< socket.remote_endpoint()
+							<< " because there is no access to SMF cluster");
+
+						socket.close(ec);
+					}
 
 					//
 					//
@@ -242,35 +249,6 @@ namespace node
 			}
 		}
 
-		//	"server.close.connection"
-		void server::close_connection(cyng::context& ctx)
-		{
-			BOOST_ASSERT(bus_->vm_.tag() == ctx.tag());
-
-			//	[d1d7f8ef-fa12-4cf7-84ad-2e87bd73f19e,<!261:ipt::connection>,system:10054]
-			//
-			//	* client tag
-			//	* connection object
-			//	* error code
-			//
-			const cyng::vector_t frame = ctx.get_frame();
-			//CYNG_LOG_TRACE(logger_, "server.close.connection " << cyng::io::to_str(frame));
-			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-			auto ec = cyng::value_cast(frame.at(2), boost::system::error_code());
-
-			//
-			//	tell master to remove this client session
-			//
-			ctx.attach(client_req_close(tag, ec.value()));
-
-			//
-			//	If session is in an connection a "client.req.close.connection.forward" command
-			//	will be send to remote party.
-			//
-			//	Master will send a "client.res.close"
-			//
-		}
-
 		bool server::clear_connection_map(boost::uuids::uuid tag)
 		{
 			auto pos = connection_map_.find(tag);
@@ -282,7 +260,6 @@ namespace node
 					<< tag
 					<< " <==> "
 					<< receiver);
-
 
 				//
 				//	remove both entries
@@ -307,7 +284,6 @@ namespace node
 			//	* sender
 			//	* data
 			//
-			//ctx.attach(cyng::generate_invoke("log.msg.debug", "server.transmit.data", frame));
 			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 			auto pos = connection_map_.find(tag);
 			if (pos != connection_map_.end())
@@ -442,27 +418,37 @@ namespace node
 			ctx.attach(cyng::generate_invoke("log.msg.info", "client.res.close", frame));
 
 			const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-			if (client_map_.erase(tag) != 0)
-			{
-				CYNG_LOG_INFO(logger_, "connection "
-					<< tag
-					<< " removed from session pool");
 
-				//
-				//	clean up connection_map_
-				//
-				clear_connection_map(tag);
-			}
-			else
-			{
+			if (!remove_client(tag, false)) {
 				ctx.attach(cyng::generate_invoke("log.msg.error", "client.res.close - failed", frame));
 			}
+		}
+
+		bool server::remove_client(boost::uuids::uuid tag, bool stop)
+		{
+			auto pos = client_map_.find(tag);
+			if (pos != client_map_.end())
+			{
+				auto cp = cyng::object_cast<connection>(pos->second);
+				if (stop && (cp != nullptr))	{
+					const_cast<connection*>(cp)->stop(pos->second);
+				}
+
+				//
+				//	remove from client list
+				//
+				client_map_.erase(pos);
+				clear_connection_map(tag);
+
+				return true;
+			}
+			return false;
 		}
 
 		void server::client_req_close_impl(cyng::context& ctx)
 		{
 			//
-			//	Master requests to close a specific session. Typical reason is a login with an account
+			//	SMF master requests to close a specific session. Typical reason is a login with an account
 			//	that is already online. In supersede mode the running session will be canceled in favor  
 			//	the new session.
 			//
@@ -474,31 +460,20 @@ namespace node
 			//	* cluster sequence
 			//
 			const cyng::vector_t frame = ctx.get_frame();
-			const auto seq = cyng::value_cast<std::uint64_t>(frame.at(2), 0u);
 			const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-			auto pos = client_map_.find(tag);
-			if (pos != client_map_.end())
-			{
-				auto cp = cyng::object_cast<connection>(pos->second);
-				if (cp != nullptr)
-				{
-					ctx.attach(cyng::generate_invoke("log.msg.trace", "client.req.close", frame));
-					const_cast<connection*>(cp)->stop(pos->second);
-				}
+			const auto seq = cyng::value_cast<std::uint64_t>(frame.at(2), 0u);
 
-				//
-				//	remove from client list
-				//
-				client_map_.erase(pos);
-				clear_connection_map(tag);
-
+			//
+			//	Remove connection/client from connection list and call stop()
+			//	method
+			//
+			if (remove_client(tag, true)) {
 				//
 				//	acknowledge that session was closed
 				//
 				ctx.attach(client_res_close(tag, seq, true));
 			}
-			else
-			{
+			else {
 				ctx.attach(cyng::generate_invoke("log.msg.error", "client.req.close - failed", frame));
 				ctx.attach(client_res_close(tag, seq, false));
 			}
@@ -523,27 +498,6 @@ namespace node
 			propagate("client.req.query.gateway", ctx.get_frame());
 		}
 
-		//void server::client_req_query_srv_visible(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	CYNG_LOG_TRACE(logger_, "client.req.query.srv.visible " << cyng::io::to_str(frame));
-		//	propagate("client.req.query.srv.visible", ctx.get_frame());
-		//}
-
-		//void server::client_req_query_srv_active(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	CYNG_LOG_TRACE(logger_, "client.req.query.srv.active " << cyng::io::to_str(frame));
-		//	propagate("client.req.query.srv.active", ctx.get_frame());
-		//}
-
-		//void server::client_req_firmware(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	CYNG_LOG_TRACE(logger_, "client.req.query.firmware " << cyng::io::to_str(frame));
-		//	propagate("client.req.query.firmware", ctx.get_frame());
-		//}
-
 		void server::propagate(std::string fun, cyng::vector_t const& msg)
 		{
 			if (!msg.empty())
@@ -557,8 +511,7 @@ namespace node
 				//
 				propagate(fun, tag, cyng::vector_t(++pos, msg.end()));
 			}
-			else
-			{
+			else	{
 				CYNG_LOG_FATAL(logger_, "empty function "
 					<< fun);
 			}

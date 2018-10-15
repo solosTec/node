@@ -130,31 +130,41 @@ namespace node
 					return;
 				}
 
-				if (!ec) 
-				{
-					const auto tag = rnd_();
+				if (!ec) {
 
-					CYNG_LOG_TRACE(logger_, "accept " 
-						<< socket.remote_endpoint()
-						<< " - "
-						<< tag);
+					if (bus_->is_online()) {
+						const auto tag = rnd_();
 
-					//
-					//	create new connection/session
-					//
-					auto conn = make_connection(std::move(socket)
-						, mux_
-						, logger_
-						, bus_
-						, tag
-						, timeout_
-						, use_global_pwd_
-						, global_pwd_);
+						CYNG_LOG_TRACE(logger_, "accept "
+							<< socket.remote_endpoint()
+							<< " - "
+							<< tag);
 
-					//
-					//	bus is synchronizing access to client_map_
-					//
-					bus_->vm_.async_run(cyng::generate_invoke("server.insert.connection", tag, conn));
+						//
+						//	create new connection/session
+						//
+						auto conn = make_connection(std::move(socket)
+							, mux_
+							, logger_
+							, bus_
+							, tag
+							, timeout_
+							, use_global_pwd_
+							, global_pwd_);
+
+						//
+						//	bus is synchronizing access to client_map_
+						//
+						bus_->vm_.async_run(cyng::generate_invoke("server.insert.connection", tag, conn));
+					}
+					else {
+
+						CYNG_LOG_WARNING(logger_, "do not accept incoming iMega connection from "
+							<< socket.remote_endpoint()
+							<< " because there is no access to SMF cluster");
+
+						socket.close(ec);
+					}
 
 					//
 					//

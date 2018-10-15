@@ -1033,7 +1033,9 @@ namespace node
 			//
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(*pos++, tpl);
-			read_param_tree(0, tpl.begin(), tpl.end());
+			if (tpl.size() == 3) {
+				read_param_tree(0, tpl.begin(), tpl.end());
+			}
 
 			return cyng::generate_invoke("sml.attention.msg"
 				, ro_.pk_

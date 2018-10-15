@@ -124,6 +124,7 @@ namespace node
 			vm.register_function("sml.get.proc.param.firmware", 8, std::bind(&connect_state::sml_get_proc_param_firmware, this, std::placeholders::_1));
 			vm.register_function("sml.get.proc.param.simple", 6, std::bind(&connect_state::sml_get_proc_param_simple, this, std::placeholders::_1));
 			vm.register_function("sml.get.proc.status.word", 6, std::bind(&connect_state::sml_get_proc_status_word, this, std::placeholders::_1));
+			vm.register_function("sml.attention.msg", 6, std::bind(&connect_state::sml_attention_msg, this, std::placeholders::_1));
 
 		}
 
@@ -149,8 +150,10 @@ namespace node
 			cyng::tuple_t msg;
 			msg = cyng::value_cast(frame.at(0), msg);
 
-			//CYNG_LOG_DEBUG(logger_, "SML message "
-			//	<< cyng::io::to_str(msg));
+			CYNG_LOG_DEBUG(sr_.logger_, "SML message to #"
+				<< tsk_
+				<< " - "
+				<< cyng::io::to_str(msg));
 
 			if (state_ == STATE_TASK) {
 				sr_.mux_.post(tsk_, 3, std::move(msg));
@@ -397,6 +400,26 @@ namespace node
 				<< *this
 				<< " - "
 				<< cyng::io::to_str(frame));
+		}
+
+		void session::connect_state::sml_attention_msg(cyng::context& ctx)
+		{
+			//	[7020aae0-7cbe-46a0-aaf6-3aa4b037a35e,9858052-2,0,0500153B02297E,8181C7C7FD00,null]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_WARNING(sr_.logger_, "sml.attention.msg "
+				<< *this
+				<< " - "
+				<< cyng::io::to_str(frame));
+
+			if (state_ == STATE_TASK) {
+				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ frame.at(3), frame.at(4) });
+			}
+			else {
+				CYNG_LOG_ERROR(sr_.logger_, "sml.attention.msg - session in wrong state: "
+					<< *this
+					<< " - "
+					<< cyng::io::to_str(frame));
+			}
 		}
 
 

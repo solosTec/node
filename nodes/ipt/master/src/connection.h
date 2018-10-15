@@ -52,6 +52,9 @@ namespace node
 			void start();
 
 			/**
+			 * A request to close this session was propagated through the cluster
+			 * until it reached the IP-T master. The IP-T master located the connection in
+			 * the connection map and called this stop() method directly.
 			 * Stop all asynchronous operations associated with the connection.
 			 */
 			void stop(cyng::object);

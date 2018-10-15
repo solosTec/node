@@ -257,6 +257,7 @@ namespace node
 
 	void fwd_reboot(cyng::logging::log_ptr logger
 		, cyng::context& ctx
+		, boost::uuids::uuid tag_ws
 		, cyng::reader<cyng::object> const& reader)
 	{
 		const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
@@ -267,13 +268,15 @@ namespace node
 			cyng::vector_t vec;
 			vec = cyng::value_cast(reader.get("key"), vec);
 			CYNG_LOG_INFO(logger, "reboot gateway " << cyng::io::to_str(vec));
+			BOOST_ASSERT_MSG(!vec.empty(), "TGateway key is empty");
 
-			const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-			CYNG_LOG_DEBUG(logger, "TGateway key [" << str << "]");
-			auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+			if (!vec.empty()) {
+				const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+				CYNG_LOG_DEBUG(logger, "TGateway key [" << str << "]");
+				auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
 
-			ctx.attach(bus_req_reboot_client(key, ctx.tag()));
-
+				ctx.attach(bus_req_reboot_client(key, ctx.tag(), tag_ws));
+			}
 		}
 		else
 		{

@@ -392,6 +392,7 @@ namespace node
 		{
 			node::fwd_reboot(logger_
 				, ctx
+				, tag
 				, reader);
 		}
 		else if (boost::algorithm::equals(cmd, "query:gateway"))

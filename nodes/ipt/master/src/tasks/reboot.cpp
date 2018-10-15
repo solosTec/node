@@ -7,8 +7,14 @@
 
 #include "reboot.h"
 #include <smf/sml/srv_id_io.h>
+#include <smf/sml/obis_io.h>
+#include <smf/sml/obis_db.h>
 #include <smf/sml/protocol/generator.h>
+#include <smf/sml/protocol/reader.h>
+#include <smf/cluster/generator.h>
+
 #include <cyng/vm/generator.h>
+#include <cyng/io/io_bytes.hpp>
 #ifdef SMF_IO_LOG
 #include <cyng/io/hex_dump.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -22,19 +28,40 @@ namespace node
 		, cyng::controller& vm
 		, boost::uuids::uuid tag_remote
 		, std::uint64_t seq_cluster		//	cluster seq
+		, boost::uuids::uuid tag_ws
 		, cyng::buffer_t const& server_id	//	server id
 		, std::string user
 		, std::string pwd
+		, std::chrono::seconds timeout
 		, boost::uuids::uuid tag_ctx)
 	: base_(*btp)
 		, logger_(logger)
+		, bus_(bus)
 		, vm_(vm)
 		, tag_remote_(tag_remote)
+		, seq_cluster_(seq_cluster)
+		, tag_ws_(tag_ws)
 		, server_id_(server_id)
 		, user_(user)
 		, pwd_(pwd)
+		, timeout_(timeout)
+		, tag_ctx_(tag_ctx)
 		, start_(std::chrono::system_clock::now())
-		, is_waiting_(false)
+		, parser_([this](cyng::vector_t&& prg) {
+
+			CYNG_LOG_DEBUG(logger_, "sml processor - "
+				<< prg.size()
+				<< " instructions");
+
+			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+
+			//
+			//	execute programm
+			//
+			vm_.async_run(std::move(prg));
+
+		}, false, false)	//	not verbose, no log instructions
+		, is_waiting_(true)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -46,17 +73,18 @@ namespace node
 
 	cyng::continuation reboot::run()
 	{	
-		if (!is_waiting_)
+		if (is_waiting_)
 		{
 			//
-			//	update task state
+			//	waiting for an opportunity to open a connection. If session is ready
+			//	is signals OK on slot 0
 			//
-			is_waiting_ = true;
+			vm_.async_run(cyng::generate_invoke("session.redirect", base_.get_id()));
 
 			//
-			//	send reboot sequence
+			//	start monitor
 			//
-			send_reboot_cmd();
+			base_.suspend(timeout_);
 
 			return cyng::continuation::TASK_CONTINUE;
 		}
@@ -70,22 +98,127 @@ namespace node
 		return cyng::continuation::TASK_STOP;
 	}
 
-	//	slot 1
-	cyng::continuation reboot::process()
+	//	slot 0 - ack
+	cyng::continuation reboot::process(boost::uuids::uuid tag)
+	{
+		//
+		//	update task state
+		//
+		is_waiting_ = false;
+
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> send reboot command");
+
+		BOOST_ASSERT(tag == tag_ctx_);
+
+		//
+		//	send reboot sequence
+		//
+		send_reboot_cmd();
+
+		//
+		//	read SML data
+		//
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	slot 1 - EOM
+	cyng::continuation reboot::process(std::uint16_t crc, std::size_t midx)
+	{
+		CYNG_LOG_TRACE(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> "
+			<< sml::from_server_id(server_id_)
+			<< " EOM #"
+			<< midx);
+
+		return cyng::continuation::TASK_CONTINUE;
+		//return cyng::continuation::TASK_STOP;
+	}
+
+	//	slot 2 - receive data
+	cyng::continuation reboot::process(cyng::buffer_t const& data)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> session closed");
+			<< "> received "
+			<< cyng::bytes_to_str(data.size()));
 
 		//
-		//	session already stopped
+		//	parse SML data stream
 		//
-		//response_ = ipt::ctrl_res_login_public_policy::GENERAL_ERROR;
+		parser_.read(data.begin(), data.end());
+
+		//
+		//	update data throughput (incoming)
+		//
+		bus_->vm_.async_run(client_inc_throughput(tag_ctx_
+			, tag_remote_
+			, data.size()));
+
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	-- slot[3]
+	cyng::continuation reboot::process(cyng::buffer_t trx, std::uint8_t, std::uint8_t, cyng::tuple_t msg, std::uint16_t crc)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> sml.msg "
+			<< std::string(trx.begin(), trx.end()));
+
+		sml::reader reader;
+		reader.set_trx(trx);
+		vm_.async_run(reader.read_choice(msg));
+
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	-- slot[4]
+	cyng::continuation reboot::process(boost::uuids::uuid pk, cyng::buffer_t trx, std::size_t)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> sml.public.close.response "
+			<< std::string(trx.begin(), trx.end()));
+
 		return cyng::continuation::TASK_STOP;
 	}
 
+	//	-- slot[5]
+	cyng::continuation reboot::process(cyng::buffer_t srv, cyng::buffer_t msg)
+	{
+		//	00:15:3b:02:29:7e, code: 81 81 c7 c7 fd 00
+		sml::obis code(msg);
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> sml.attention.msg "
+			<< sml::from_server_id(srv)
+			<< " attention code: "
+			<< sml::get_attention_name(code));
+
+		bus_->vm_.async_run(node::bus_res_attention_code(tag_remote_
+			, seq_cluster_
+			, tag_ws_
+			, sml::from_server_id(srv)
+			, msg
+			, sml::get_attention_name(code)));
+
+		return cyng::continuation::TASK_STOP;
+	}
 
 	void reboot::stop()
 	{
@@ -102,24 +235,6 @@ namespace node
 			<< " after "
 			<< uptime.count()
 			<< " milliseconds");
-
-	}
-
-	//	slot 0
-	cyng::continuation reboot::process(ipt::response_type res)
-	{
-		CYNG_LOG_INFO(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> "
-			<< tag_remote_
-			//<< " received response ["
-			//<< ipt::ctrl_res_login_public_policy::get_response_name(res)
-			<< "]");
-
-		//response_ = res;
-		return cyng::continuation::TASK_STOP;
 	}
 
 	void reboot::send_reboot_cmd()
@@ -162,8 +277,15 @@ namespace node
 		//  [00a0]  33 62 00 62 00 72 63 02  00 71 01 63 e6 3b 00 00  3b.b.rc. .q.c.;..
 		//  [00b0]  1b 1b 1b 1b 1a 01 a8 c1                           ........
 
-		vm_	.async_run(cyng::generate_invoke("ipt.transfer.data", std::move(msg)))
-			.async_run(cyng::generate_invoke("stream.flush"));
+		//
+		//	update data throughput (outgoing)
+		//
+		bus_->vm_.async_run(client_inc_throughput(tag_remote_
+			, tag_ctx_
+			, msg.size()));
+
+		vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", std::move(msg))
+			, cyng::generate_invoke("stream.flush") });
 
 		//
 		//	send attention codes as response

@@ -134,25 +134,6 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-
-	void query_gateway::stop()
-	{
-		//
-		//	terminate task
-		//
-		auto uptime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_);
-		CYNG_LOG_INFO(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> is stopped: "
-			<< sml::from_server_id(server_id_)
-			<< " after "
-			<< uptime.count()
-			<< " milliseconds");
-
-	}
-
 	//	slot 1 - EOM
 	cyng::continuation query_gateway::process(std::uint16_t crc, std::size_t midx)
 	{
@@ -265,8 +246,6 @@ namespace node
 			<< nr
 			<< " - "
 			<< sml::from_server_id(meter));
-
-		//std::uint32_t sml::get_srv_type(meter);
 
 		BOOST_ASSERT(server_id_ == srv);
 		if (active) {
@@ -398,11 +377,27 @@ namespace node
 		//
 		//	send to gateway
 		//
-		vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", std::move(msg)), cyng::generate_invoke("stream.flush") });
+		vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", std::move(msg))
+			, cyng::generate_invoke("stream.flush") });
 
 	}
 
-
+	void query_gateway::stop()
+	{
+		//
+		//	terminate task
+		//
+		auto uptime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_);
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> is stopped: "
+			<< sml::from_server_id(server_id_)
+			<< " after "
+			<< uptime.count()
+			<< " milliseconds");
+	}
 }
 
 #include <cyng/async/task/task.hpp>

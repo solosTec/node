@@ -483,6 +483,17 @@ namespace node
 			update_channel("table.gateway.count", tbl->size());
 
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "TMeter"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("clear")),
+				cyng::param_factory("channel", "config.meter"));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("config.meter", msg);
+			update_channel("table.meter.count", tbl->size());
+
+		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
 		{
 			auto tpl = cyng::tuple_factory(
@@ -536,6 +547,10 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("monitor.msg", msg);
 
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
+		{
+			//	ToDo: Are there listener of table _Config?
 		}
 		else
 		{

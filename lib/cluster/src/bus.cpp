@@ -173,7 +173,7 @@ namespace node
         //
 		auto self(this->shared_from_this());
 		vm_.access([self](cyng::vm& vm) {
-			vm.run(cyng::generate_invoke("log.msg.info", "fast shutdown"));
+			vm.run(cyng::generate_invoke("log.msg.info", "cluster bus shutdown"));
 			vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
 		});
     }

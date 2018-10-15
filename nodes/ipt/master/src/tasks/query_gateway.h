@@ -53,7 +53,7 @@ namespace node
 		/**
 		 * @brief slot [0]
 		 *
-		 * sucessful cluster login
+		 * ack - connected to gateway
 		 */
 		cyng::continuation process(boost::uuids::uuid);
 

@@ -18,9 +18,7 @@ namespace node
 	{
 		obis::obis()
 			: value_{0}
-		{
-			//value_.fill(0);
-		}
+		{}
 
 		obis::obis(octet_type const& buffer)
 		: value_()

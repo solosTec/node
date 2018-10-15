@@ -39,6 +39,7 @@ namespace node
 	 */
 	void fwd_reboot(cyng::logging::log_ptr
 		, cyng::context& ctx
+		, boost::uuids::uuid tag_ws
 		, cyng::reader<cyng::object> const&);
 
 	/**

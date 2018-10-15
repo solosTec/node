@@ -69,7 +69,7 @@ namespace node
 			close();
 			
 			//
-            //  no more callbacks
+            //  obj holds a reference to delay the call of the destructor
             //
             session_.stop(obj);
 		}

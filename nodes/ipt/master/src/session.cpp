@@ -11,9 +11,6 @@
 #include "tasks/close_connection.h"
 #include "tasks/gatekeeper.h"
 #include "tasks/reboot.h"
-//#include "tasks/query_srv_visible.h"
-//#include "tasks/query_srv_active.h"
-//#include "tasks/query_firmware.h"
 #include "tasks/query_gateway.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
@@ -79,11 +76,8 @@ namespace node
 
 			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
 			vm_.register_function("session.redirect", 1, std::bind(&session::redirect, this, std::placeholders::_1));
-			vm_.register_function("client.req.reboot", 5, std::bind(&session::client_req_reboot, this, std::placeholders::_1));
+			vm_.register_function("client.req.reboot", 7, std::bind(&session::client_req_reboot, this, std::placeholders::_1));
 			vm_.register_function("client.req.query.gateway", 8, std::bind(&session::client_req_query_gateway, this, std::placeholders::_1));
-			//vm_.register_function("client.req.query.srv.visible", 7, std::bind(&session::client_req_query_srv_visible, this, std::placeholders::_1));
-			//vm_.register_function("client.req.query.srv.active", 7, std::bind(&session::client_req_query_srv_active, this, std::placeholders::_1));
-			//vm_.register_function("client.req.query.firmware", 7, std::bind(&session::client_req_query_firmware, this, std::placeholders::_1));
 
 			//
 			//	register SML callbacks
@@ -287,21 +281,22 @@ namespace node
 		void session::stop(cyng::object obj)
 		{	
 			//
-			//	stop tasks that are still running
+			//	There could be a running gatekeeper
 			//
-			//mux_.post("shutdown", cyng::tuple_t{});
+			connect_state_.stop();
+
 			//
-			//	stop all runing tasks
+			//	stop all running tasks
 			//
-			mux_.size([this](std::size_t size) {
-				CYNG_LOG_INFO(logger_, "ipt "
-					<< vm_.tag()
-					<< " stops "
-					<< task_db_.size()
-					<< '/'
-					<< size
-					<< " task(s)");
-			});
+			//mux_.size([this](std::size_t size) {
+			//	CYNG_LOG_INFO(logger_, "ipt "
+			//		<< vm_.tag()
+			//		<< " stops "
+			//		<< task_db_.size()
+			//		<< '/'
+			//		<< size
+			//		<< " task(s)");
+			//});
 			for (auto const& tsk : task_db_) {
 				mux_.stop(tsk.second);
 			}
@@ -310,49 +305,62 @@ namespace node
 			//	gracefull shutdown
 			//
 			vm_.access([obj](cyng::vm& vm) {
-				vm.run(cyng::generate_invoke("log.msg.info", "fast shutdown"));
+				vm.run(cyng::generate_invoke("log.msg.info", "forced shutdown"));
 				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
 			});
-
+			
 		}
 
 		void session::stop(boost::system::error_code ec)
 		{
+			CYNG_LOG_WARNING(logger_, "ipt session "
+				<< vm_.tag()
+				<< " closed <"
+				<< ec
+				<< ':'
+				<< ec.value()
+				<< ':'
+				<< ec.message()
+				<< '>');
+
 			//
 			//	There could be a running gatekeeper
 			//
 			connect_state_.stop();
 
 			//
+			//	stop all tasks
+			//
+			for (auto const& tsk : task_db_) {
+				mux_.stop(tsk.second);
+			}
+
+			//
+			//	gracefull shutdown
 			//	device/party closed connection or network shutdown
 			//
-			vm_.access([this, ec](cyng::vm& vm) {
-
-				//
-				//	halt VM
-				//
+			vm_.access([this](cyng::vm& vm) {
+				vm.run(cyng::generate_invoke("log.msg.info", "gracefull shutdown"));
 				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
-
-				//
-				//	tell server to remove this session
-				//
-				bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", vm_.tag(), cyng::invoke("push.connection"), ec));
-
-				CYNG_LOG_WARNING(logger_, "ipt session "
-					<< vm_.tag()
-					<< " closed <"
-					<< ec
-					<< ':'
-					<< ec.value()
-					<< ':'
-					<< ec.message()
-					<< '>');
 			});
 
 			//
-			//	force context switch
+			//	wait for pending operations
 			//
-			std::this_thread::yield();
+			while (!vm_.is_halted()) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				CYNG_LOG_WARNING(logger_, "ipt "
+					<< vm_.tag()
+					<< " waiting for pending operations");
+			}
+
+			//
+			//	Tell SMF master to remove this session by calling "client.req.close". 
+			//	SMF master will send a "client.res.close" to the IP-T server which will
+			//	remove this session from the connection_map_ which will eventual call
+			//	the desctructor of this session object.
+			//
+			bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
 
 		}
 
@@ -465,11 +473,13 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "client.req.reboot " << cyng::io::to_str(frame));
 			auto const tpl = cyng::tuple_cast<
-				boost::uuids::uuid,		//	[0] remote tag
-				std::uint64_t,			//	[1] cluster seq
-				cyng::buffer_t,			//	[2] server id
-				std::string,			//	[3] name
-				std::string				//	[4] pwd
+				boost::uuids::uuid,		//	[0] source tag
+				boost::uuids::uuid,		//	[1] remote tag
+				std::uint64_t,			//	[2] cluster seq
+				boost::uuids::uuid,		//	[3] ws tag
+				cyng::buffer_t,			//	[4] server id
+				std::string,			//	[5] name
+				std::string				//	[6] pwd
 			>(frame);
 
 			const std::size_t tsk = cyng::async::start_task_sync<reboot>(mux_
@@ -477,10 +487,12 @@ namespace node
 				, bus_
 				, vm_
 				, std::get<0>(tpl)	//	remote tag
-				, std::get<1>(tpl)	//	cluster seq
-				, std::get<2>(tpl)	//	server ID
-				, std::get<3>(tpl)	//	name
-				, std::get<4>(tpl)	//	password
+				, std::get<2>(tpl)	//	cluster seq
+				, std::get<3>(tpl)	//	ws tag
+				, std::get<4>(tpl)	//	server ID
+				, std::get<5>(tpl)	//	name
+				, std::get<6>(tpl)	//	password
+				, timeout_
 				, ctx.tag()).first;	//	ctx tag
 
 			CYNG_LOG_TRACE(logger_, "client.req.reboot - task #" << tsk);
