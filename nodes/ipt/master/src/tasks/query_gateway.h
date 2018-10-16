@@ -149,7 +149,7 @@ namespace cyng {
 		//	initialize static slot names
 		//
 		template <>
-		std::map<std::string, std::size_t> cyng::async::task<node::query_srv_active>::slot_names_;
+		std::map<std::string, std::size_t> cyng::async::task<node::query_gateway>::slot_names_;
     }
 }
 #endif

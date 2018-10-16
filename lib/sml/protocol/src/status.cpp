@@ -151,7 +151,7 @@ namespace node
 		cyng::attr_map_t to_attr_map(status const& word)
 		{
 			return cyng::attr_map_factory
-			(sml::STATUS_BIT_AUTHORIZED_IPT, word.is_authorized())
+                (sml::STATUS_BIT_AUTHORIZED_IPT, word.is_authorized())
 				(sml::STATUS_BIT_FATAL_ERROR, word.is_fatal_error())
 				(sml::STATUS_BIT_OUT_OF_MEMORY, word.is_out_of_memory())
 				(sml::STATUS_BIT_SERVICE_IF_AVAILABLE, word.is_service_if_available())
