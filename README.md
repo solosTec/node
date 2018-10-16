@@ -9,6 +9,7 @@
   * ipt 
   * store 
   * dash
+  * e350/iMega
 * Linux (64 bit) are supported
 * Windows 7 (64 bit) or higher are supported.
 * Crosscompiling for Raspberry 3 is supported
@@ -21,35 +22,54 @@
 
 To build the SMF first install the [CYNG](https://github.com/solosTec/cyng) library, then run:
 
+### on Linux ###
 
 ```
 #!shell
 
 git clone https://github.com/solosTec/node.git
-mkdir build
-cd build
-cmake ..
+mkdir build && cd build
+cmake -DNODE_BUILD_TEST:bool=ON ..
 make -j4 all
 sudo make install
 
 ```
 
-## License ##
-
-SMF is free software under the terms of the [MIT License](https://github.com/solosTec/node/blob/master/LICENSE).
-
-
-## Build Boost on Linux ##
-
-Some hints to build Boost since the SMF requires the latest Boost version 1.66.0:
+It is recommended to use the latest boost library version. It is best to create them by hand.
+Some hints to build Boost on Linux:
 
 * Download the latest [version](https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.bz2)
-* wget -c https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.bz2
-* For unicode support install ICU: (sudo apt install libicu-dev). 
-* tar -xvjf boost_1_68_0.tar.bz2
-* cd boost_1_68_0/
-* ./bootstrap.sh --prefix=install --with-toolset=gcc --with-icu
-* Build the library with ./b2 --architecture=x86 --address-model=64 install -j 4. Depending on your machine this may take some time. 
+* For unicode support install ICU: (sudo apt install libicu-dev) and call bootstrap with option --with-icu
+* Build the library with b2. Depending on your machine this may take some time. Choose option -j depending on the CPU count.
 * Instruct CMake to use the path to the Boost library specified with the --prefix option
 * Make sure to update your linker configuration to find this path. To make changes permanent add a .conf file below /etc/ld.so.conf.d/.
 
+
+```
+
+wget -c https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.bz2
+tar -xvjf boost_1_68_0.tar.bz2
+cd boost_1_68_0/
+./bootstrap.sh --prefix=install --with-toolset=gcc
+./b2 --architecture=x86 --address-model=64 install -j2
+
+```
+
+### on Windows ###
+
+
+```
+
+git clone https://github.com/solosTec/node.git
+mkdir build 
+cd build
+cmake -DNODE_BUILD_TEST:bool=ON -G "Visual Studio 15 2017" -A x64 ..
+
+```
+
+Open _NODE.sln_ with Visual Studio.
+
+
+## License ##
+
+SMF is free software under the terms of the [MIT License](https://github.com/solosTec/node/blob/master/LICENSE).
