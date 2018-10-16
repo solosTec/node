@@ -60,13 +60,10 @@ if(WIN32)
 		nodes/master/templates/master.windows.cgf.in
 	)
 
-	set (node_master_manifest
-		nodes/master/templates/master.exe.manifest
-	)
-
 	set (node_master_res
 		${CMAKE_CURRENT_BINARY_DIR}/master.rc 
 		src/main/resources/logo.ico
+		nodes/master/templates/master.exe.manifest
 	)
 
  
@@ -97,8 +94,6 @@ set (node_master
 )
 
 if(WIN32)
-	source_group("manifest" FILES ${node_master_manifest})
-	list(APPEND node_master ${node_master_manifest})
 	source_group("resources" FILES ${node_master_res})
 	list(APPEND node_master ${node_master_res})
 endif()

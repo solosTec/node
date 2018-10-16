@@ -5,8 +5,8 @@ REM delete dash service
 REM	created : ${${PROJECT_NAME}_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo delete service node_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo delete service node_dashs_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc stop node_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
-sc delete node_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc stop node_dashs_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc delete node_dashs_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on

@@ -40,9 +40,6 @@ set (node_e350_tasks
 	nodes/e350/src/tasks/gatekeeper.h
 	nodes/e350/src/tasks/gatekeeper.cpp
 )
-
-set (node_e350_res
-)
 	
 if(WIN32)
 
@@ -53,13 +50,10 @@ if(WIN32)
 		nodes/e350/templates/e350.windows.cgf.in
 	)
 
- 	set (node_e350_manifest
-		nodes/e350/templates/e350.exe.manifest
-	)
-
  	set (node_e350_res
 		${CMAKE_CURRENT_BINARY_DIR}/e350.rc 
 		src/main/resources/logo.ico
+		nodes/e350/templates/e350.exe.manifest
 	)
 
 else()
@@ -72,7 +66,6 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_e350_tasks})
-source_group("resources" FILES ${node_e350_res})
 source_group("service" FILES ${node_e350_service})
 source_group("info" FILES ${node_e350_info})
 
@@ -88,8 +81,6 @@ set (node_e350
 )
 
 if(WIN32)
-	source_group("manifest" FILES ${node_e350_manifest})
-	list(APPEND node_e350 ${node_e350_manifest})
 	source_group("resources" FILES ${node_e350_res})
 	list(APPEND node_e350 ${node_e350_res})
 endif()
