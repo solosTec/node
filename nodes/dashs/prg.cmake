@@ -27,6 +27,8 @@ set (node_dashs_shared
 	nodes/dash_shared/src/dispatcher.cpp
 	nodes/dash_shared/src/forwarder.h
 	nodes/dash_shared/src/forwarder.cpp
+	nodes/dash_shared/src/form_data.h
+	nodes/dash_shared/src/form_data.cpp
 )
 
 #

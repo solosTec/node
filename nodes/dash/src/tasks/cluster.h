@@ -13,6 +13,7 @@
 #include <smf/http/srv/server.h>
 #include "../../../dash_shared/src/dispatcher.h"
 #include "../../../dash_shared/src/sync_db.h"
+#include "../../../dash_shared/src/form_data.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -65,11 +66,6 @@ namespace node
 		void res_subscribe(cyng::context& ctx);
 
 		void ws_read(cyng::context& ctx);
-		void http_upload_start(cyng::context& ctx);
-		void http_upload_data(cyng::context& ctx);
-		void http_upload_var(cyng::context& ctx);
-		void http_upload_progress(cyng::context& ctx);
-		void http_upload_complete(cyng::context& ctx);
 
 		void cfg_download_devices(cyng::context& ctx);
 		void cfg_download_gateways(cyng::context& ctx);
@@ -128,14 +124,15 @@ namespace node
 		db_sync db_sync_;
 
 		/**
+		 * handle form data
+		 */
+		form_data form_data_;
+
+		/**
 		 * system task
 		 */
         std::size_t sys_tsk_;
 
-		/**
-		 * form values
-		 */
-		std::map<boost::uuids::uuid, std::map<std::string, std::string>>	form_data_;
 	};
 	
 }

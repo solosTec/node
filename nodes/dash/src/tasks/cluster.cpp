@@ -47,8 +47,8 @@ namespace node
 		, server_(logger, btp->mux_.get_io_service(), ep, doc_root, blacklist, bus_, cache_)
 		, dispatcher_(logger, server_.get_cm())
 		, db_sync_(logger, cache_)
+		, form_data_(logger)
 		, sys_tsk_(cyng::async::NO_TASK)
-		, form_data_()
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -66,6 +66,11 @@ namespace node
 		//
 		dispatcher_.subscribe(cache_);
 		dispatcher_.register_this(bus_->vm_);
+
+		//
+		//	handle form data
+		//
+		form_data_.register_this(bus_->vm_);
 
 		//
 		//	implement request handler
@@ -89,12 +94,11 @@ namespace node
 		//
 		bus_->vm_.register_function("ws.read", 3, std::bind(&cluster::ws_read, this, std::placeholders::_1));
 
-		bus_->vm_.register_function("http.upload.start", 2, std::bind(&cluster::http_upload_start, this, std::placeholders::_1));
-		bus_->vm_.register_function("http.upload.data", 5, std::bind(&cluster::http_upload_data, this, std::placeholders::_1));
-		bus_->vm_.register_function("http.upload.var", 3, std::bind(&cluster::http_upload_var, this, std::placeholders::_1));
-		bus_->vm_.register_function("http.upload.progress", 4, std::bind(&cluster::http_upload_progress, this, std::placeholders::_1));
-		bus_->vm_.register_function("http.upload.complete", 4, std::bind(&cluster::http_upload_complete, this, std::placeholders::_1));
-		//bus_->vm_.register_function("http.send.moved", 2, std::bind(&cluster::http_moved, this, std::placeholders::_1));
+		//bus_->vm_.register_function("http.upload.start", 2, std::bind(&cluster::http_upload_start, this, std::placeholders::_1));
+		//bus_->vm_.register_function("http.upload.data", 5, std::bind(&cluster::http_upload_data, this, std::placeholders::_1));
+		//bus_->vm_.register_function("http.upload.var", 3, std::bind(&cluster::http_upload_var, this, std::placeholders::_1));
+		//bus_->vm_.register_function("http.upload.progress", 4, std::bind(&cluster::http_upload_progress, this, std::placeholders::_1));
+		//bus_->vm_.register_function("http.upload.complete", 4, std::bind(&cluster::http_upload_complete, this, std::placeholders::_1));
 
 		bus_->vm_.register_function("cfg.download.devices", 2, std::bind(&cluster::cfg_download_devices, this, std::placeholders::_1));
 		bus_->vm_.register_function("cfg.download.gateways", 2, std::bind(&cluster::cfg_download_gateways, this, std::placeholders::_1));
@@ -105,12 +109,6 @@ namespace node
 		bus_->vm_.register_function("cfg.upload.gateways", 2, std::bind(&cluster::cfg_upload_gateways, this, std::placeholders::_1));
 		bus_->vm_.register_function("cfg.upload.meter", 2, std::bind(&cluster::cfg_upload_meter, this, std::placeholders::_1));
 		
-		//bus_->vm_.register_function("bus.res.query.status.word", 0, std::bind(&cluster::res_query_status_word, this, std::placeholders::_1));
-		//bus_->vm_.register_function("bus.res.query.srv.visible", 9, std::bind(&cluster::res_query_srv_visible, this, std::placeholders::_1));
-		//bus_->vm_.register_function("bus.res.query.srv.active", 9, std::bind(&cluster::res_query_srv_active, this, std::placeholders::_1));
-		//bus_->vm_.register_function("bus.res.query.firmware", 8, std::bind(&cluster::res_query_firmware, this, std::placeholders::_1));
-
-
 		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
 	}
@@ -513,213 +511,6 @@ namespace node
 				<< cyng::value_cast<std::string>(rec["name"], ""));
 
 			ctx.attach(bus_req_db_insert("TDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
-		}
-	}
-
-	void cluster::http_upload_start(cyng::context& ctx)
-	{
-		const cyng::vector_t frame = ctx.get_frame();
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			std::uint32_t,		//	[1] HTTP version
-			std::string,		//	[2] target
-			std::uint32_t		//	[3] payload size
-		>(frame);
-
-		CYNG_LOG_TRACE(logger_, "http.upload.start - "
-			<< std::get<0>(tpl)
-			<< ", "
-			<< std::get<2>(tpl)
-			<< ", payload size: "
-			<< std::get<3>(tpl));
-
-		form_data_.erase(std::get<0>(tpl));
-		auto r = form_data_.emplace(std::get<0>(tpl), std::map<std::string, std::string>());
-		if (r.second) {
-			r.first->second.emplace("target", std::get<2>(tpl));
-		}
-
-	}
-
-	void cluster::http_upload_data(cyng::context& ctx)
-	{
-		//	http.upload.data - [ecf139d4-184e-441d-a857-9d02eb58148b,devConf_0,device_localhost.xml,text/xml,3C3F786D6C2....]
-		//
-		//	* session tag
-		//	* variable name
-		//	* file name
-		//	* mime type
-		//	* content
-		//	
-		const cyng::vector_t frame = ctx.get_frame();
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			std::string,		//	[1] variable name
-			std::string,		//	[2] file name
-			std::string		//	[3] mime type
-			//cyng::buffer_t		//	[4] data (skipped to save memory)
-		>(frame);
-
-		CYNG_LOG_TRACE(logger_, "http.upload.data - " 
-			<< cyng::value_cast<std::string>(frame.at(2), "no file name specified")
-			<< " - "
-			<< cyng::value_cast<std::string>(frame.at(3), "no mime type specified"));
-
-		auto pos = form_data_.find(std::get<0>(tpl));
-		if (pos != form_data_.end()) {
-			CYNG_LOG_TRACE(logger_, "http.upload.data - "
-				<< std::get<0>(tpl)
-				<< ", "
-				<< std::get<1>(tpl)
-				<< ", "
-				<< std::get<2>(tpl)
-				<< ", mime type: "
-				<< std::get<3>(tpl));
-
-			//
-			//	write temporary file
-			//
-			auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("smf-dash-%%%%-%%%%-%%%%-%%%%.tmp");
-			auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(4));
-			std::ofstream of(p.string());
-			if (of.is_open() && ptr != nullptr) {
-				CYNG_LOG_DEBUG(logger_, "http.upload.data - write "
-					<< ptr->size()
-					<< " bytes into file "
-					<< p);
-				of.write(ptr->data(), ptr->size());
-				of.close();
-			}
-			else {
-				CYNG_LOG_FATAL(logger_, "http.upload.data - cannot open "
-					<< p);
-			}
-			pos->second.emplace(std::get<1>(tpl), p.string());
-			pos->second.emplace(std::get<2>(tpl), std::get<3>(tpl));
-		}
-		else {
-			CYNG_LOG_WARNING(logger_, "http.upload.data - session "
-				<< std::get<0>(tpl)
-				<< " not found");
-		}
-	}
-
-	void cluster::http_upload_var(cyng::context& ctx)
-	{
-		//	[5910f652-95ce-4d94-b60f-6ff4a26730ba,smf-upload-config-device-version,v5.0]
-		const cyng::vector_t frame = ctx.get_frame();
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			std::string,		//	[1] variable name
-			std::string			//	[2] value
-		>(frame);
-
-
-		auto pos = form_data_.find(std::get<0>(tpl));
-		if (pos != form_data_.end()) {
-			CYNG_LOG_TRACE(logger_, "http.upload.var - "
-				<< std::get<0>(tpl)
-				<< " - "
-				<< std::get<1>(tpl)
-				<< " = "
-				<< std::get<2>(tpl));
-			pos->second.emplace(std::get<1>(tpl), std::get<2>(tpl));
-		}
-		else {
-			CYNG_LOG_WARNING(logger_, "http.upload.var - session "
-				<< std::get<0>(tpl)
-				<< " not found");
-		}
-
-	}
-
-	void cluster::http_upload_progress(cyng::context& ctx)
-	{
-		//	[ecf139d4-184e-441d-a857-9d02eb58148b,0000a84c,0000a84c,00000064]
-		//
-		//	* session tag
-		//	* upload size
-		//	* content size
-		//	* progress in %
-		//	
-#ifdef __DEBUG
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "http.upload.progress - " << cyng::value_cast<std::uint32_t>(frame.at(3), 0) << "%");
-#endif
-
-	}
-
-	void cluster::http_upload_complete(cyng::context& ctx)
-	{
-		//	[300dc453-d52d-40c0-843c-e8fd7495ff0e,true,0000a84a,/upload/config/device/]
-		//
-		//	* session tag
-		//	* success flag
-		//	* total size in bytes
-		//	* target path
-		//
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "http.upload.complete - " << cyng::io::to_str(frame));
-
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			bool,				//	[1] success
-			std::uint32_t,		//	[2] size in bytes
-			std::string			//	[3] target
-		>(frame);
-
-		//
-		//	post a system message
-		//
-		auto pos = form_data_.find(std::get<0>(tpl));
-		auto count = (pos != form_data_.end())
-			? pos->second.size()
-			: 0
-			;
-		std::stringstream ss;
-		ss
-			<< "upload/download "
-			<< std::get<2>(tpl)
-			<< " bytes to "
-			<< std::get<3>(tpl)
-			<< " with "
-			<< count
-			<< " variable(s)"
-			;
-		ctx.attach(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_TRACE : cyng::logging::severity::LEVEL_WARNING), ss.str()));
-
-		//
-		//	start procedure
-		//
-		bool found = false;
-		if (pos != form_data_.end()) {
-			auto idx = pos->second.find("smf-procedure");
-			if (idx != pos->second.end()) {
-
-				CYNG_LOG_INFO(logger_, "run proc "
-					<< idx->second
-					<< ":"
-					<< std::get<0>(tpl));
-
-				cyng::param_map_t params;
-				for (auto const& v : pos->second) {
-					params.insert(cyng::param_factory(v.first, v.second));
-				}
-				bus_->vm_.async_run(cyng::generate_invoke(idx->second, std::get<0>(tpl), params));
-				found = true;
-			}
-		}
-
-		//
-		//	cleanup form data
-		//
-		form_data_.erase(std::get<0>(tpl));
-
-		//
-		//	consider to send a 302 - Object moved response
-		//
-		if (!found) {
-			server_.send_moved(std::get<0>(tpl), std::get<3>(tpl));
 		}
 	}
 

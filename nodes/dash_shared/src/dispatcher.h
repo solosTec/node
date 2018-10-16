@@ -71,10 +71,14 @@ namespace node
 		void res_query_srv_active(cyng::context& ctx);
 		void res_query_firmware(cyng::context& ctx);
 
+		void http_move(cyng::context& ctx);
+
 	private:
 		cyng::logging::log_ptr logger_;
 		connection_manager_interface & connection_manager_;
+
 	};
 }
 
 #endif
+ 

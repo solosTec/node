@@ -49,7 +49,8 @@ namespace node
 		, server_(logger, btp->mux_.get_io_service(), ctx, ep, doc_root, blacklist, bus_->vm_)
 		, dispatcher_(logger, server_.get_cm())
 		, db_sync_(logger, cache_)
-        , sys_tsk_(cyng::async::NO_TASK)
+		, form_data_(logger)
+		, sys_tsk_(cyng::async::NO_TASK)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -67,6 +68,11 @@ namespace node
 		//
 		dispatcher_.subscribe(cache_);
 		dispatcher_.register_this(bus_->vm_);
+
+		//
+		//	handle form data
+		//
+		form_data_.register_this(bus_->vm_);
 
 		//
 		//	implement request handler

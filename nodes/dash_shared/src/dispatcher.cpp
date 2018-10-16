@@ -28,6 +28,9 @@ namespace node
 		vm.register_function("bus.res.query.srv.visible", 9, std::bind(&dispatcher::res_query_srv_visible, this, std::placeholders::_1));
 		vm.register_function("bus.res.query.srv.active", 9, std::bind(&dispatcher::res_query_srv_active, this, std::placeholders::_1));
 		vm.register_function("bus.res.query.firmware", 8, std::bind(&dispatcher::res_query_firmware, this, std::placeholders::_1));
+
+		vm.register_function("http.move", 2, std::bind(&dispatcher::http_move, this, std::placeholders::_1));
+
 	}
 
 	void dispatcher::store_relation(cyng::context& ctx)
@@ -883,6 +886,20 @@ namespace node
 			, cyng::json::to_string(cyng::tuple_factory(cyng::param_factory("cmd", std::string("load"))
 				, cyng::param_factory("channel", channel)
 				, cyng::param_factory("level", level))));
+	}
+
+	void dispatcher::http_move(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "http.move - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] source
+			std::string			//	[1] target
+		>(frame);
+
+		//	send 302 - Object moved response
+		connection_manager_.http_moved(std::get<0>(tpl), std::get<1>(tpl));
 	}
 
 }
