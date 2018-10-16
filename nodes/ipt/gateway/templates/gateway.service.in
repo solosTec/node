@@ -5,7 +5,7 @@ After=network.target node-ipt.service
 
 [Service]
 Type=simple
-ExecStart=/opt/node/http -C/opt/node/http_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
+ExecStart=/opt/smf/http -C/opt/smf/http_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
 Restart=always
 RestartSec=12
 

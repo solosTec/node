@@ -5,7 +5,7 @@ After=network.target node-ipt.service
 
 [Service]
 Type=simple
-ExecStart=/opt/node/store -C/opt/node/store_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
+ExecStart=/opt/smf/store -C/opt/smf/store_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
 Restart=always
 RestartSec=12
 
