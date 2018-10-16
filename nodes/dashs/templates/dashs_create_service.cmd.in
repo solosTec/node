@@ -7,7 +7,7 @@ REM	platform: @CMAKE_SYSTEM@
 REM
 echo create service node_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create node_dash_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\solosTec\SMF\dash.exe --config=\"$ENV{ProgramFiles}\solosTec\SMF\dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF dash server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc create node_dash_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\dash.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF dash server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
 sc description node_dash_v${${PROJECT_NAME}_VERSION_MAJOR} "Dash Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
 REM
 REM Add a dependency to SMF master service.

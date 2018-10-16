@@ -7,6 +7,6 @@ REM	platform: @CMAKE_SYSTEM@
 REM
 echo create service node_https_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create node_https_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\node\https.exe --config=\"$ENV{ProgramFiles}\node\https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "https server v${${PROJECT_NAME}_VERSION_MAJOR}" type= share start= auto 
+sc create node_https_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\node\https.exe --config=\"$ENV{ProgramW6432}\node\https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "https server v${${PROJECT_NAME}_VERSION_MAJOR}" type= share start= auto 
 sc description node_https_v${${PROJECT_NAME}_VERSION_MAJOR} "HTTPS server v${${PROJECT_NAME}_VERSION_MAJOR} (SMF Cluster node)"
 @echo on

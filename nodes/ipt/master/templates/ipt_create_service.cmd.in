@@ -7,7 +7,7 @@ REM	platform: @CMAKE_SYSTEM@
 REM
 echo create service node_ipt_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create node_ipt_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramFiles}\solosTec\SMF\ipt.exe --config=\"$ENV{ProgramFiles}\solosTec\SMF\ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF IP-T server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc create node_ipt_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\ipt.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF IP-T server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
 sc description node_ipt_v${${PROJECT_NAME}_VERSION_MAJOR} "IP-T Master Server v${${PROJECT_NAME}_VERSION_MAJOR} (SMF Cluster node)"
 REM
 REM Add a dependency to SMF master service.
