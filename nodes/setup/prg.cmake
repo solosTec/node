@@ -43,9 +43,6 @@ set (node_setup_tasks
 	nodes/setup/src/tasks/sync.cpp
 )
 
-set (node_setup_res
-)
-	
 if(WIN32)
 
 	set (node_setup_service
@@ -55,13 +52,10 @@ if(WIN32)
 		nodes/setup/templates/setup.windows.cgf.in
 	)
  
- 	set (node_setup_manifest
-		nodes/setup/templates/setup.exe.manifest
-	)
-
  	set (node_setup_res
 		${CMAKE_CURRENT_BINARY_DIR}/setup.rc 
 		src/main/resources/logo.ico
+		nodes/setup/templates/setup.exe.manifest
 	)
 
 else()
@@ -74,7 +68,6 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_setup_tasks})
-source_group("resources" FILES ${node_setup_res})
 source_group("service" FILES ${node_setup_service})
 source_group("info" FILES ${node_setup_info})
 
@@ -84,7 +77,6 @@ set (node_setup
   ${node_setup_cpp}
   ${node_setup_h}
   ${node_setup_tasks}
-  ${node_setup_res}
   ${node_setup_service}
   ${node_setup_info}
 )
@@ -100,8 +92,6 @@ if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 endif()
 
 if(WIN32)
-	source_group("manifest" FILES ${node_setup_manifest})
-	list(APPEND node_setup ${node_e350_manifest})
 	source_group("resources" FILES ${node_setup_res})
 	list(APPEND node_setup ${node_setup_res})
 endif()

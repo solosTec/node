@@ -1,10 +1,11 @@
 [Unit]
 Description=ipt server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
-After=network.target
+Wants=node-master.service
+After=network.target node-master.service
 
 [Service]
 Type=simple
-ExecStart=/opt/node/ipt -C/opt/node/ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
+ExecStart=/opt/smf/ipt -C/opt/smf/ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
 Restart=always
 RestartSec=12
 

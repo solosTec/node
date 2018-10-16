@@ -1,10 +1,11 @@
 [Unit]
 Description=setup server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
-After=node-master.service
+Wants=node-master.service
+After=network.target node-master.service
 
 [Service]
 Type=simple
-ExecStart=/opt/node/setup -C/opt/node/setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
+ExecStart=/opt/smf/setup -C/opt/smf/setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
 Restart=always
 RestartSec=12
 

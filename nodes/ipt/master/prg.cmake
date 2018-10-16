@@ -48,12 +48,6 @@ set (node_ipt_master_tasks
 	nodes/ipt/master/src/tasks/reboot.cpp
 	nodes/ipt/master/src/tasks/query_gateway.h
 	nodes/ipt/master/src/tasks/query_gateway.cpp
-#	nodes/ipt/master/src/tasks/query_srv_active.h
-#	nodes/ipt/master/src/tasks/query_srv_active.cpp
-#	nodes/ipt/master/src/tasks/query_srv_visible.h
-#	nodes/ipt/master/src/tasks/query_srv_visible.cpp
-#	nodes/ipt/master/src/tasks/query_firmware.h
-#	nodes/ipt/master/src/tasks/query_firmware.cpp
 )
 	
 if(WIN32)
@@ -65,12 +59,10 @@ if(WIN32)
 		nodes/ipt/master/templates/ipt.windows.cgf.in
 	)
 
-	set (node_ipt_master_manifest
-		nodes/ipt/master/templates/ipt.exe.manifest
-	)
-
 	set (node_ipt_master_res
 		${CMAKE_CURRENT_BINARY_DIR}/ipt.rc 
+		src/main/resources/logo.ico
+		nodes/ipt/master/templates/ipt.exe.manifest
 	)
 
  
@@ -99,8 +91,6 @@ set (node_ipt_master
 )
 
 if(WIN32)
-	source_group("manifest" FILES ${node_ipt_master_manifest})
-	list(APPEND node_ipt_master ${node_ipt_master_manifest})
 	source_group("resources" FILES ${node_ipt_master_res})
 	list(APPEND node_ipt_master ${node_ipt_master_res})
 endif()

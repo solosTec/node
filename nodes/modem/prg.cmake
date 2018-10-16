@@ -40,9 +40,6 @@ set (node_modem_tasks
 	nodes/modem/src/tasks/gatekeeper.h
 	nodes/modem/src/tasks/gatekeeper.cpp
 )
-
-set (node_modem_res
-)
 	
 if(WIN32)
 
@@ -63,7 +60,7 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_modem_tasks})
-source_group("resources" FILES ${node_modem_res})
+#source_group("resources" FILES ${node_modem_res})
 source_group("service" FILES ${node_modem_service})
 source_group("info" FILES ${node_modem_info})
 
@@ -73,7 +70,7 @@ set (node_modem
   ${node_modem_cpp}
   ${node_modem_h}
   ${node_modem_tasks}
-  ${node_modem_res}
+#  ${node_modem_res}
   ${node_modem_service}
   ${node_modem_info}
 )
