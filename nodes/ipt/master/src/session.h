@@ -153,7 +153,8 @@ namespace node
 			void ipt_req_open_connection(cyng::context& ctx);
 			void ipt_req_close_connection(cyng::context& ctx);
 			void ipt_res_open_connection(cyng::context& ctx);
-			void ipt_req_transfer_pushdata(cyng::context& ctx);
+			void ipt_req_transfer_pushdata(cyng::context& ctx);	//!< 0x9002
+			void ipt_res_transfer_pushdata(cyng::context& ctx);	//!< 0x1002
 			void ipt_res_close_connection(cyng::context& ctx);
 			void ipt_req_transmit_data(cyng::context& ctx);
 			void ipt_req_watchdog(cyng::context& ctx);

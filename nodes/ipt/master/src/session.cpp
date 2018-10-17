@@ -51,7 +51,7 @@ namespace node
 			, watchdog_(watchdog)
 			, timeout_(timeout)
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_TRACE(logger_, prg.size() << " ipt instructions received");
+				CYNG_LOG_DEBUG(logger_, prg.size() << " ipt instructions received");
 				CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
 				vm_.async_run(std::move(prg));
 			}, sk)
@@ -112,6 +112,7 @@ namespace node
 			vm_.register_function("client.req.transfer.pushdata.forward", 6, std::bind(&session::client_req_transfer_pushdata_forward, this, std::placeholders::_1));
 
 			//TP_RES_PUSHDATA_TRANSFER = 0x1002,	//!<	response
+			vm_.register_function("ipt.res.transfer.pushdata", 7, std::bind(&session::ipt_res_transfer_pushdata, this, std::placeholders::_1));
 			vm_.register_function("client.res.transfer.pushdata", 6, std::bind(&session::client_res_transfer_pushdata, this, std::placeholders::_1));
 
 			//	transport - connection open
@@ -288,15 +289,6 @@ namespace node
 			//
 			//	stop all running tasks
 			//
-			//mux_.size([this](std::size_t size) {
-			//	CYNG_LOG_INFO(logger_, "ipt "
-			//		<< vm_.tag()
-			//		<< " stops "
-			//		<< task_db_.size()
-			//		<< '/'
-			//		<< size
-			//		<< " task(s)");
-			//});
 			for (auto const& tsk : task_db_) {
 				mux_.stop(tsk.second);
 			}
@@ -717,16 +709,27 @@ namespace node
 		void session::ipt_res_logout(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "ipt.res.logout - deprecated " << cyng::io::to_str(frame));
+			CYNG_LOG_WARNING(logger_, "ipt.res.logout - deprecated " << cyng::io::to_str(frame));
 
 			//
-			//	close session
+			//	stop all tasks
 			//
-			ctx	.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"))
-				.attach(cyng::generate_invoke("ip.tcp.socket.close"));
+			for (auto const& tsk : task_db_) {
+				mux_.stop(tsk.second);
+			}
 
-			stop(boost::system::error_code(boost::asio::error::operation_aborted));
+			//
+			//	nothing more to do. Variosafe manager will close connection anyway
+			//
 
+			//
+			//	Tell SMF master to remove this session by calling "client.req.close". 
+			//	SMF master will send a "client.res.close" to the IP-T server which will
+			//	remove this session from the connection_map_ which will eventual call
+			//	the desctructor of this session object.
+			//
+			//boost::system::error_code ec(boost::asio::error::operation_aborted);
+			//bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
 		}
 
 		void session::ipt_req_open_push_channel(cyng::context& ctx)
@@ -982,7 +985,7 @@ namespace node
 		{
 			//	[0696ccad-af35-4e13-a4b8-e2f0f273e9e5,3]
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.watchdog", frame));
+			ctx.attach(cyng::generate_invoke("log.msg.info", "ipt.req.watchdog", frame));
 			ctx.attach(cyng::generate_invoke("res.watchdog", frame.at(1)));
 			ctx.attach(cyng::generate_invoke("stream.flush"));	
 		}
@@ -2047,12 +2050,57 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "ipt.req.transfer.pushdata", frame));
-				ctx.attach(cyng::generate_invoke("res.close.connection", frame.at(1), static_cast<response_type>(tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN)));
+				ctx.attach(cyng::generate_invoke("log.msg.error", "ipt.req.transfer.pushdata - offline", frame));
+				ctx.attach(cyng::generate_invoke("res.transfer.push.data"
+					, frame.at(1)	//	seq
+					, static_cast<response_type>(tp_res_pushdata_transfer_policy::UNREACHABLE)
+					, frame.at(2)	//	channel
+					, frame.at(3)	//	source
+					, frame.at(4)	//	status
+					, frame.at(5)	//	block
+				));
 				ctx.attach(cyng::generate_invoke("stream.flush"));
 			}
 		}
 
+		void session::ipt_res_transfer_pushdata(cyng::context& ctx)
+		{
+			//	* session tag
+			//	* ipt sequence
+			//	* channel
+			//	* source
+			//	* status
+			//	* block
+
+			const cyng::vector_t frame = ctx.get_frame();
+
+			if (bus_->is_online())
+			{
+				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.res.transfer.pushdata", frame));
+
+				cyng::param_map_t bag;
+				bag["tp-layer"] = cyng::make_object("ipt");
+				bag["seq"] = frame.at(1);
+				bag["status"] = frame.at(4);
+				bag["block"] = frame.at(5);
+
+				//
+				//	master generates response already
+				//
+
+				//bus_->vm_.async_run(node::client_res_transfer_pushdata(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				//	, cyng::value_cast<std::uint32_t>(frame.at(2), 0)
+				//	, cyng::value_cast<std::uint32_t>(frame.at(3), 0)
+				//	, frame.at(6)
+				//	, bag));
+			}
+			else
+			{
+				ctx.attach(cyng::generate_invoke("log.msg.warning - offline", "ipt.res.transfer.pushdata", frame));
+				ctx.attach(cyng::generate_invoke("stream.flush"));
+			}
+
+		}
 
 
 	}
