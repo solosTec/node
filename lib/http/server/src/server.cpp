@@ -7,6 +7,7 @@
 
 #include <smf/http/srv/server.h>
 #include <smf/http/srv/session.h>
+#include <smf/cluster/generator.h>
 
 namespace node
 {
@@ -146,6 +147,15 @@ namespace node
 						<< socket_.remote_endpoint()
 						<< " is blacklisted");
 					socket_.close();
+					
+					
+					std::stringstream ss;
+					ss
+						<< "access from blacklisted address: "
+						<< *pos
+						;
+					bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+					
 				}
 				else {
 

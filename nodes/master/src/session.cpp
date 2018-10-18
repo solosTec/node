@@ -978,7 +978,7 @@ namespace node
 
 		insert_msg(db_
 			, cyng::logging::severity::LEVEL_INFO
-			, ("attention message " + std::get<5>(tpl))
+			, ("attention message from " + std::get<3>(tpl) + ": " + std::get<5>(tpl))
 			, std::get<0>(tpl));
 
 	}

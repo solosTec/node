@@ -7,6 +7,8 @@
 
 #include <smf/https/srv/server.h>
 #include <smf/https/srv/detector.h>
+#include <smf/cluster/generator.h>
+#include <cyng/vm/controller.h>
 
 namespace node
 {
@@ -111,6 +113,14 @@ namespace node
 						<< socket_.remote_endpoint()
 						<< " is blacklisted");
 					socket_.close();
+					
+					std::stringstream ss;
+					ss
+					 << "access from blacklisted address: "
+					 << *pos
+					 ;
+					connection_manager_.vm().async_run(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+					
 				}
 				else {
 					CYNG_LOG_TRACE(logger_, "accept "

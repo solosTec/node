@@ -27,7 +27,6 @@ namespace node
 			, std::chrono::seconds const& timeout)
 		: socket_(std::move(socket))
 			, logger_(logger)
-			, tag_(tag)
 			, buffer_()
 			, session_(mux, logger, bus, tag, sk, watchdog, timeout)
 			, serializer_(socket_, session_.vm_, sk)
