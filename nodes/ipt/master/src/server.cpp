@@ -42,6 +42,8 @@ namespace node
 			, rnd_()
 			, client_map_()
 			, connection_map_()
+			//, shutdown_complete_()
+			//, mutex_()
 		{
 			//
 			//	connection management
@@ -50,7 +52,7 @@ namespace node
 			bus_->vm_.register_function("push.ep.local", 1, std::bind(&server::push_ep_local, this, std::placeholders::_1));
 			bus_->vm_.register_function("push.ep.remote", 1, std::bind(&server::push_ep_remote, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.insert.connection", 2, std::bind(&server::insert_connection, this, std::placeholders::_1));
-			//bus_->vm_.register_function("server.close.connection", 3, std::bind(&server::close_connection, this, std::placeholders::_1));
+			//bus_->vm_.register_function("server.remove.connection", 3, std::bind(&server::remove_connection, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1));
 
 			//
@@ -248,6 +250,19 @@ namespace node
 				ctx.attach(cyng::generate_invoke("log.msg.error", "server.insert.connection - failed", frame));
 			}
 		}
+
+		//void server::remove_connection(cyng::context& ctx)
+		//{
+		//	BOOST_ASSERT(bus_->vm_.tag() == ctx.tag());
+
+		//	//	[a95f46e9-eccd-4b47-b02c-17d5172218af]
+		//	const cyng::vector_t frame = ctx.get_frame();
+
+		//	const auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+		//	if (!clear_connection_map(tag)) {
+		//		ctx.attach(cyng::generate_invoke("log.msg.error", "server.remove.connection - failed", tag));
+		//	}
+		//}
 
 		bool server::clear_connection_map(boost::uuids::uuid tag)
 		{

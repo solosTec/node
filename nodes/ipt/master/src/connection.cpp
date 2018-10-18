@@ -61,7 +61,7 @@ namespace node
 
 		void connection::stop(cyng::object obj)
 		{
-            CYNG_LOG_DEBUG(logger_, "shutdown connection(" << tag_ << ')');
+            CYNG_LOG_DEBUG(logger_, "shutdown connection(" << session_.vm_.tag() << ')');
 
 			//
 			//  close socket

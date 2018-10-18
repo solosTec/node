@@ -91,8 +91,6 @@ namespace node
 			 */
 			cyng::logging::log_ptr logger_;
 
-			const boost::uuids::uuid tag_;
-
 			/**
 			 * Buffer for incoming data.
 			 */

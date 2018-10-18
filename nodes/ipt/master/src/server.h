@@ -13,6 +13,7 @@
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/store/db.h>
+//#include <cyng/compatibility/async.h>
 #include <unordered_map>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -51,7 +52,7 @@ namespace node
 			void do_accept();
 
 			void insert_connection(cyng::context&);
-			//void close_connection(cyng::context&);
+			//void remove_connection(cyng::context&);
 
 			/**
 			 * @return true if entry was found
@@ -136,6 +137,13 @@ namespace node
 			 * Contains all local connections.
 			 */
 			std::map<boost::uuids::uuid, boost::uuids::uuid> connection_map_;
+
+			/**
+			 *	Synchronisation objects for proper shutdown
+			 */
+			//cyng::async::condition_variable shutdown_complete_;
+			//cyng::async::mutex mutex_;
+
 		};
 	}
 }
