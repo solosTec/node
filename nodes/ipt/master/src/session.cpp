@@ -431,8 +431,9 @@ namespace node
 
 			connect_state_.open_connection(std::get<1>(tpl));
 			CYNG_LOG_INFO(logger_, "session.update.connection.state " 
-				<< std::get<1>(tpl)
-				<< ": "
+				<< ctx.tag()
+				//<< std::get<0>(tpl)
+				<< " -> "
 				<< connect_state_);
 		}
 
@@ -872,6 +873,9 @@ namespace node
 				const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 				BOOST_ASSERT(tag == ctx.tag());
 
+				auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(1));
+				BOOST_ASSERT(ptr != nullptr);
+
 #ifdef SMF_IO_LOG
 				std::stringstream ss;
 				ss
@@ -896,7 +900,6 @@ namespace node
 					of.close();
 				}
 #endif
-				CYNG_LOG_DEBUG(logger_, "transmit data in connection state " << connect_state_);
 
 				//
 				//	data destination depends on connection state
@@ -904,23 +907,44 @@ namespace node
 				switch (connect_state_.state_) {
 
 				case connect_state::STATE_LOCAL:
+					CYNG_LOG_DEBUG(logger_, tag
+						<< " transmit "
+						<< ptr->size()
+						<< " bytes to local session");
 					bus_->vm_.async_run(cyng::generate_invoke("server.transmit.data", tag, frame.at(1)));
 					break;
 
 				case connect_state::STATE_REMOTE:
+					CYNG_LOG_DEBUG(logger_, tag
+						<< " transmit "
+						<< ptr->size()
+						<< " bytes to remote session");
 					bus_->vm_.async_run(client_req_transmit_data(tag
 						, cyng::param_map_factory("tp-layer", "ipt")("start", std::chrono::system_clock::now())
 						, frame.at(1)));
 					break;
 				case connect_state::STATE_TASK:
 					//	send data to task
+					CYNG_LOG_DEBUG(logger_, tag
+						<< " transmit "
+						<< ptr->size()
+						<< " bytes to task #"
+						<< connect_state_.tsk_);
 					mux_.post(connect_state_.tsk_, 2, cyng::tuple_factory(frame.at(1)));
 					break;
 
 				default:
+					CYNG_LOG_WARNING(logger_, tag 
+						<< " transmit "
+						<< ptr->size()
+						<< " bytes in connection state " 
+						<< connect_state_);
+					//
+					//	try to transfer to a local connection
+					//
+					bus_->vm_.async_run(cyng::generate_invoke("server.transmit.data", tag, frame.at(1)));
 					break;
 				}
-
 			}
 			else
 			{
@@ -1696,10 +1720,14 @@ namespace node
 			auto lag = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
 
 			if (lag > timeout_) {
-				CYNG_LOG_WARNING(logger_, "client.res.open.connection.forward - high cluster lag: " << lag.count() << " millisec");
+				CYNG_LOG_WARNING(logger_, "client.res.open.connection.forward "
+					<< connect_state_
+					<< " - high cluster lag: " << lag.count() << " millisec");
 			}
 			else {
-				CYNG_LOG_TRACE(logger_, "client.res.open.connection.forward - cluster lag: " << lag.count() << " millisec");
+				CYNG_LOG_TRACE(logger_, "client.res.open.connection.forward "
+					<< connect_state_
+					<< " - cluster lag: " << lag.count() << " millisec");
 			}
 
 			if (success)
@@ -1713,7 +1741,13 @@ namespace node
 					//	hides outer variable dom
 					//
 					auto dom = cyng::make_reader(std::get<3>(tpl));
-					connect_state_.open_connection(cyng::value_cast(dom.get("local-connect"), false));
+					const auto local = cyng::value_cast(dom.get("local-connect"), false);
+
+					CYNG_LOG_TRACE(logger_, ctx.tag()
+						<< " set connection state to "
+						<< (local ? "local" : "remote"));
+
+					connect_state_.open_connection(local);
 
 					ctx.attach(cyng::generate_invoke("log.msg.info", "client.res.open.connection.forward", ctx.get_frame()))
 						.attach(cyng::generate_invoke("res.open.connection", seq, static_cast<response_type>(tp_res_open_connection_policy::DIALUP_SUCCESS)));
@@ -2035,6 +2069,9 @@ namespace node
 
 			if (bus_->is_online())
 			{
+				//
+				//	ToDo: log less data
+				//
 				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.transfer.pushdata", frame));
 
 				cyng::param_map_t bag;

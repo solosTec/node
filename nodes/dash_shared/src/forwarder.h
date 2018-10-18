@@ -11,6 +11,9 @@
 #include <cyng/log.h>
 #include <cyng/vm/context.h>
 #include <cyng/dom/reader.h>
+#include <cyng/vm/controller.h>
+#include <cyng/store/db.h>
+#include <pugixml.hpp>
 
 namespace node 
 {
@@ -49,6 +52,31 @@ namespace node
 		, cyng::context& ctx
 		, boost::uuids::uuid tag_ws
 		, cyng::reader<cyng::object> const&);
+
+	class forward
+	{
+	public:
+		forward(cyng::logging::log_ptr, cyng::store::db& db);
+
+		/**
+		 * register provided functions
+		 */
+		void register_this(cyng::controller&);
+	private:
+
+		void cfg_upload_devices(cyng::context& ctx);
+		void cfg_upload_gateways(cyng::context& ctx);
+		void cfg_upload_meter(cyng::context& ctx);
+
+		void read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc);
+		void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc);
+		void read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc);
+
+	private:
+		cyng::logging::log_ptr logger_;
+		cyng::store::db& db_;
+
+	};
 }
 
 #endif

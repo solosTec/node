@@ -57,7 +57,9 @@ namespace node
 			/**
 			 * @return true if entry was found
 			 */
-			bool clear_connection_map(boost::uuids::uuid);
+			bool clear_connection_map_impl(boost::uuids::uuid);
+			void clear_connection_map(cyng::context& ctx);
+
 			void transmit_data(cyng::context& ctx);	//!< transmit data locally
 
 			void client_res_login(cyng::context&);
@@ -85,8 +87,8 @@ namespace node
 			 * create a reference of this object on stack.
 			 */
 			void push_connection(cyng::context& ctx);
-			void push_ep_local(cyng::context& ctx);
-			void push_ep_remote(cyng::context& ctx);
+			//void push_ep_local(cyng::context& ctx);
+			//void push_ep_remote(cyng::context& ctx);
 
 			/**
 			 * Remove a connection/client from connection list.

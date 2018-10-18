@@ -13,6 +13,7 @@
 #include <smf/http/srv/server.h>
 #include "../../../dash_shared/src/dispatcher.h"
 #include "../../../dash_shared/src/sync_db.h"
+#include "../../../dash_shared/src/forwarder.h"
 #include "../../../dash_shared/src/form_data.h"
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -72,9 +73,9 @@ namespace node
 		void cfg_download_messages(cyng::context& ctx);
 		void cfg_download_LoRa(cyng::context& ctx);
 
-		void cfg_upload_devices(cyng::context& ctx);
-		void cfg_upload_gateways(cyng::context& ctx);
-		void cfg_upload_meter(cyng::context& ctx);
+		//void cfg_upload_devices(cyng::context& ctx);
+		//void cfg_upload_gateways(cyng::context& ctx);
+		//void cfg_upload_meter(cyng::context& ctx);
 
 		void sync_table(std::string const&);
 
@@ -86,9 +87,9 @@ namespace node
         void start_sys_task();
         void stop_sys_task();
 
-		void read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc);
-		void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc);
-		void read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc);
+		//void read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc);
+		//void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc);
+		//void read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc);
 
 		void trigger_download(boost::uuids::uuid tag, std::string table, std::string filename);
 
@@ -122,6 +123,11 @@ namespace node
 		 * data synchronizer
 		 */
 		db_sync db_sync_;
+
+		/**
+		 * data forward data changes to SMF master
+		 */
+		forward forward_;
 
 		/**
 		 * handle form data

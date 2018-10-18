@@ -7,7 +7,6 @@
 
 #include "cluster.h"
 #include "system.h"
-#include "../../../dash_shared/src/forwarder.h"
 
 #include <smf/cluster/generator.h>
 
@@ -49,6 +48,7 @@ namespace node
 		, server_(logger, btp->mux_.get_io_service(), ctx, ep, doc_root, blacklist, bus_->vm_)
 		, dispatcher_(logger, server_.get_cm())
 		, db_sync_(logger, cache_)
+		, forward_(logger, cache_)
 		, form_data_(logger)
 		, sys_tsk_(cyng::async::NO_TASK)
 	{
@@ -90,6 +90,8 @@ namespace node
 		});
 		bus_->vm_.register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1));
 		db_sync_.register_this(bus_->vm_);
+
+		forward_.register_this(bus_->vm_);
 
 		bus_->vm_.register_function("http.session.launch", 0, [this](cyng::context& ctx) {
 			CYNG_LOG_TRACE(logger_, "http.session.launch!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");

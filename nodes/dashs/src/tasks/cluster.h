@@ -12,6 +12,7 @@
 #include <smf/cluster/config.h>
 #include "../../../dash_shared/src/dispatcher.h"
 #include "../../../dash_shared/src/sync_db.h"
+#include "../../../dash_shared/src/forwarder.h"
 #include "../../../dash_shared/src/form_data.h"
 #include <smf/https/srv/server.h>
 #include <cyng/log.h>
@@ -102,6 +103,11 @@ namespace node
 		 * data synchronizer
 		 */
 		db_sync db_sync_;
+
+		/**
+		 * data forward data changes to SMF master
+		 */
+		forward forward_;
 
 		/**
 		 * handle form data

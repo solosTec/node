@@ -10,6 +10,7 @@
 #include <smf/ipt/response.hpp>
 #include <cyng/async/task/base_task.h>
 #include <cyng/io/serializer.h>
+#include <cyng/dom/reader.h>
 #include <cyng/vm/generator.h>
 #include <boost/uuid/random_generator.hpp>
 
@@ -35,7 +36,7 @@ namespace node
 		, options_(options)
 		, bag_(bag)
 		, timeout_(timeout)
-		//, response_(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED)
+		, local_connect_(cyng::value_cast(cyng::make_reader(options_).get("local-connect"), false))
 		, start_(std::chrono::system_clock::now())
 		, is_waiting_(false)
 	{
@@ -84,6 +85,9 @@ namespace node
 
 		}
 
+		//
+		//	timeout
+		//
 		CYNG_LOG_WARNING(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -120,9 +124,17 @@ namespace node
 				<< "> send response timeout to origin "
 				<< tag_);
 
+			if (local_connect_) {
+				//
+				//	remove from connection_map_
+				//
+				bus_->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", tag_));
+			}
+
+			//	send "client.res.close.connection" to SMF master
 			bus_->vm_.async_run(client_res_close_connection(tag_
 				, seq_
-				, false
+				, false	//	failed
 				, options_
 				, bag_));
 		}
@@ -135,28 +147,6 @@ namespace node
 
 	void close_connection::stop()
 	{
-		//
-		//	answer pending close request and
-		//	send response to cluster master
-		//
-		//if (!shutdown_ && bus_->is_online())
-		//{
-		//	CYNG_LOG_TRACE(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> send response "
-		//		<< ipt::tp_res_close_connection_policy::get_response_name(response_)
-		//		<< " to origin "
-		//		<< tag_);
-
-		//	bus_->vm_.async_run(client_res_close_connection(tag_
-		//		, seq_
-		//		, ipt::tp_res_close_connection_policy::is_success(response_)
-		//		, options_
-		//		, bag_));
-		//}
-
 		//
 		//	terminate task
 		//
@@ -188,6 +178,14 @@ namespace node
 				<< "> send response timeout to origin "
 				<< tag_);
 
+			if (local_connect_) {
+				//
+				//	remove from connection_map_
+				//
+				bus_->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", tag_));
+			}
+
+			//	send "client.res.close.connection" to SMF master
 			bus_->vm_.async_run(client_res_close_connection(tag_
 				, seq_
 				, ipt::tp_res_close_connection_policy::is_success(res)

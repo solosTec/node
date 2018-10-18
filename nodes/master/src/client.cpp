@@ -1179,6 +1179,7 @@ namespace node
 				{
 					options["local-connect"] = cyng::make_object(local_peer->hash() == remote_peer->hash());
 
+					//	"client.req.close.connection.forward"
 					if (local_peer->hash() == remote_peer->hash())
 					{
 						ctx.attach(client_req_close_connection_forward(remote_tag
@@ -1205,12 +1206,14 @@ namespace node
 				{
 
 					//
-					//	there is no open connection to close
+					//	There is no open connection to close.
+					//	Send response with error code.
 					//
 
 					options["local-connect"] = cyng::make_object(false);
 					options["msg"] = cyng::make_object("[" + name + "] has no open connection to close");
 
+					//	"client.res.close.connection.forward"
 					ctx.attach(client_res_close_connection_forward(tag
 						, seq
 						, false //	no success
