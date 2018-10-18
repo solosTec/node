@@ -227,7 +227,7 @@ namespace node
 				, cyng::param_factory("stress", cyng::tuple_factory(
 						//cyng::param_factory("config", (pwd / "ipt-stress.xml").string()),
 						cyng::param_factory("max-count", 4),	//	x 2
-						cyng::param_factory("mode", "both"),	//	both, sender, receiver
+						cyng::param_factory("mode", "same"),	//	same, distinct
 						cyng::param_factory("prefix-sender", "sender"),
 						cyng::param_factory("prefix-receiver", "receiver"),
 						cyng::param_factory("size-min", 512),	//	minimal packet size
@@ -415,27 +415,48 @@ namespace node
 		const auto retries = cyng::value_cast<int>(dom.get("connection-open-retries"), 1);
 		
 
-		const ipt::master_config_t cfg = ipt::load_cluster_cfg(cfg_ipt);
-		BOOST_ASSERT_MSG(!cfg.empty(), "no IP-T configuration available");
-
-		if (boost::algorithm::equals("both", mode)) {
+		if (boost::algorithm::equals("same", mode)) {
 			const auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
 			CYNG_LOG_INFO(logger, "boot up " << count * 2 << " tasks");
+
+			const ipt::master_config_t cfg = ipt::load_cluster_cfg(cfg_ipt);
+			BOOST_ASSERT_MSG(!cfg.empty(), "no IP-T configuration available");
+
+			//
+			//	connecting to the same IP-T master
+			//
 			auto vec = start_sender(mux, logger, cfg, count, prefix_sender, packet_size_min, packet_size_max, delay, retries);
 			start_receiver(mux, logger, cfg, vec, prefix_receiver, rec_limit, packet_size_min, packet_size_max, delay, retries);
 		}
-		else if (boost::algorithm::equals("sender", mode)) {
+		else if (boost::algorithm::equals("distinct", mode)) {
 			const auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
 			CYNG_LOG_INFO(logger, "boot up " << count << " sender tasks");
-			start_sender(mux, logger, cfg, count, prefix_sender, packet_size_min, packet_size_max, delay, retries);
-		}
-		else if (boost::algorithm::equals("receiver", mode)) {
-			const auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
-			CYNG_LOG_INFO(logger, "boot up " << count << " receiver tasks");
-			//start_receiver(mux, logger, cfg, count, prefix_receiver);
+
+			//	std::vector<master_record>
+			const ipt::master_config_t cfg = ipt::load_cluster_cfg(cfg_ipt);
+			BOOST_ASSERT_MSG(cfg.size() > 1, "more IP-T configurations required");
+
+			//
+			//	build alternate configurations
+			//
+			ipt::master_config_t cfg_sender, cfg_receiver;
+			for (std::size_t idx = 0; idx < cfg.size(); ++idx) {
+				if ((idx % 2) == 0) {
+					cfg_sender.push_back(cfg.at(idx));
+				}
+				else {
+					cfg_receiver.push_back(cfg.at(idx));
+				}
+			}
+
+			//
+			//	connecting to different IP-T masters
+			//
+			auto vec = start_sender(mux, logger, cfg_sender, count, prefix_sender, packet_size_min, packet_size_max, delay, retries);
+			start_receiver(mux, logger, cfg_receiver, vec, prefix_receiver, rec_limit, packet_size_min, packet_size_max, delay, retries);
 		}
 		else {
-			CYNG_LOG_ERROR(logger, "unknown mode " << mode);
+			CYNG_LOG_ERROR(logger, "unknown mode " << mode << " - use [same|distinct]");
 		}
 
 
@@ -526,7 +547,8 @@ namespace node
 				, std::chrono::seconds((idx + 1) * 10)
 				, logger
 				, cfg
-				, st.at(idx)
+				, st
+				, idx
 				, boost::numeric_cast<std::size_t>((rec_limit < 1) ? 1 : rec_limit)
 				, boost::numeric_cast<std::size_t>((packet_size_min < 1) ? 1 : packet_size_min)
 				, boost::numeric_cast<std::size_t>((packet_size_max < packet_size_min) ? packet_size_min : packet_size_max)

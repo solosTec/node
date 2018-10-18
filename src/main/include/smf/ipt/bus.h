@@ -17,6 +17,7 @@
 #include <cyng/vm/controller.h>
 #include <array>
 #include <chrono>
+#include <atomic>
 
 namespace node
 {
@@ -157,27 +158,6 @@ namespace node
 		class bus : public bus_interface //	std::enable_shared_from_this<bus>
 		{
 		public:
-			//enum ipt_events : std::size_t  {
-
-			//	//	control layer
-			//	IPT_EVENT_AUTHORIZED,	//	 [0] 0x4001/0x4002: response login
-			//	IPT_EVENT_CONNECTION_TO_MASTER_LOST, //	[1]
-
-			//	IPT_EVENT_PUSH_TARGET_REGISTERED,		//	[2] 0x4005: push target registered response
-			//	IPT_EVENT_PUSH_TARGET_DEREREGISTERED,	//	[3] 0x4006: push target deregistered response
-
-			//	//	transport layer
-			//	IPT_EVENT_PUSH_CHANNEL_OPEN,	//	[4] 0x1000: push channel open response
-			//	IPT_EVENT_PUSH_CHANNEL_CLOSED,	//	[5] 0x1001: push channel close response
-			//	IPT_EVENT_INCOMING_CALL,		//	[6] 0x9003: connection open request 
-			//	IPT_EVENT_CONNECTION_OPEN,		//	[7] 0x1003: connection open response
-			//	IPT_EVENT_CONNECTION_CLOSED,	//	[8] 0x9004/0x1004: connection close request/response
-			//	IPT_EVENT_PUSH_DATA_RECEIVED,	//	[9] 0x9002: push data transfer request
-
-			//	IPT_EVENT_INCOMING_DATA,		//	[10] transmit data (if connected)
-			//};
-
-		public:
 			using shared_type = std::shared_ptr<bus>;
 
 		public:
@@ -198,6 +178,7 @@ namespace node
 			 * @return true if online with master
 			 */
 			bool is_online() const;
+			bool is_connected() const;
 
 			/**
 			 * @return true if watchdog is requested
@@ -338,7 +319,7 @@ namespace node
 			/**
 			 * session state
 			 */
-			enum {
+			enum state {
 				STATE_ERROR_,
 				STATE_INITIAL_,
 				STATE_AUTHORIZED_,
@@ -347,13 +328,18 @@ namespace node
 				STATE_WAIT_FOR_CLOSE_RESPONSE_,
 				STATE_SHUTDOWN_,
 				STATE_HALTED_
-			} state_;
+			};
+			std::atomic<state>	state_;
 
 			/**
 			 * bookkeeping of ip-t sequence to task relation
 			 */
 			std::map<sequence_type, std::size_t>	task_db_;
 
+			/**
+			 * Check if transition to new state is valid.
+			 */
+			bool transition(state evt);
 		};
 
 		/**

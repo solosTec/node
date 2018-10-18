@@ -281,8 +281,8 @@ namespace node
 			else
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.warning"
-					, account
-					, "not found"));
+					, "bus.req.login failed"
+					, account));
 
 			}
 
@@ -354,6 +354,17 @@ namespace node
 			//	continue loop
 			return !found;
 		});
+
+#ifdef _DEBUG
+		if (!found) {
+			tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+				const auto rec_account = cyng::value_cast<std::string>(rec["name"], "");
+				CYNG_LOG_DEBUG(logger_, "lookup: " << account << " - " << rec_account);
+				return !boost::algorithm::equals(pwd, rec_account);
+			});
+		}
+#endif
 
 		return std::make_tuple(found, wrong_pwd, dev_tag, query);
 	}

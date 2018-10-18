@@ -20,6 +20,7 @@ namespace node
 		receiver::receiver(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
 			, redundancy const& cfg
+			, std::vector<std::size_t> const& tsk_vec
 			, std::size_t tsk_sender
 			, std::size_t rec_limit
 			, std::size_t packet_size_min
@@ -35,6 +36,7 @@ namespace node
 				, retries)
 			, logger_(logger)
 			, config_(cfg)
+			, tsk_vec_(tsk_vec)
 			, tsk_sender_(tsk_sender)
 			, rec_limit_(rec_limit)
 			, packet_size_min_(packet_size_min)
@@ -68,6 +70,24 @@ namespace node
 		{
 			if (is_online())
 			{
+				if (!is_connected()) {
+
+					//
+					//	trigger new open connection
+					//
+					CYNG_LOG_INFO(logger_, "trigger #" << tsk_vec_[tsk_sender_] << " to re-open connection");
+					base_.mux_.post(tsk_vec_[tsk_sender_], 0u, cyng::tuple_factory(config_.get().account_));
+
+					//
+					//	calculate next target
+					//
+					tsk_sender_ = next_tsk();
+					//if (tsk_sender_ >= tsk_vec_.size()) {
+					//	tsk_sender_ = 0u;
+					//}
+
+				}
+
 				//
 				//	re/start monitor
 				//
@@ -122,12 +142,23 @@ namespace node
 				<< config_.get().account_
 				<< " successful authorized");
 
+
+			//
+			//	re/start monitor
+			//
+			base_.suspend(config_.get().monitor_);
+
+			//
+			//	calculate next target
+			//
+			tsk_sender_ = next_tsk();
+
 			//
 			//	waiting for connection open request
 			//	trigger sender (account is equal to number)
 			//
-			CYNG_LOG_INFO(logger_, "trigger #: " << tsk_sender_ << " to open connection");
-			base_.mux_.post(tsk_sender_, 0u, cyng::tuple_factory(config_.get().account_));
+			CYNG_LOG_INFO(logger_, "trigger #: " << tsk_vec_[tsk_sender_] << " to open connection");
+			base_.mux_.post(tsk_vec_[tsk_sender_], 0u, cyng::tuple_factory(config_.get().account_));
 
 		}
 
@@ -226,8 +257,13 @@ namespace node
 			//
 			//	trigger new open connection
 			//
-			CYNG_LOG_INFO(logger_, "trigger #: " << tsk_sender_ << " to re-open connection");
-			base_.mux_.post(tsk_sender_, 0u, cyng::tuple_factory(config_.get().account_));
+			CYNG_LOG_INFO(logger_, "trigger #: " << tsk_vec_[tsk_sender_] << " to re-open connection");
+			base_.mux_.post(tsk_vec_[tsk_sender_], 0u, cyng::tuple_factory(config_.get().account_));
+
+			//
+			//	calculate next target
+			//
+			tsk_sender_ = next_tsk();
 
 		}
 
@@ -299,6 +335,18 @@ namespace node
 			std::generate(begin(buffer), end(buffer), gen);
 
 			return buffer;
+		}
+
+		std::size_t receiver::next_tsk()
+		{
+			std::uniform_int_distribution<int> dist(0, tsk_vec_.size() - 1);
+			const std::size_t tsk = dist(rnd_device_);
+			if (tsk == tsk_sender_) {
+				CYNG_LOG_WARNING(logger_, "same task #"	<< tsk);
+
+			}
+			BOOST_ASSERT(tsk < tsk_vec_.size());
+			return tsk;
 		}
 
 		void receiver::reconfigure(cyng::context& ctx)

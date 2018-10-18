@@ -38,7 +38,6 @@ namespace node
 			, packet_size_min_(packet_size_min)
 			, packet_size_max_(packet_size_max)
 			, delay_(delay)
-			, task_state_(TASK_STATE_INITIAL_)
 			, rnd_device_()
 			, mersenne_engine_(rnd_device_())
 		{
@@ -72,11 +71,13 @@ namespace node
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> has monitor with "
+					<< "> "
+					<< get_state()
+					<< " has monitor with "
 					<< config_.get().monitor_.count()
 					<< " seconds(s)");
 
-				if (task_state_ == TASK_STATE_CONNECTED_)
+				if (this->is_connected())
 				{
 					std::uniform_int_distribution<int> dist_buffer_size(512, 1024);
 					cyng::buffer_t buffer(dist_buffer_size(rnd_device_));
@@ -95,7 +96,7 @@ namespace node
 					auto gen = std::bind(dist, mersenne_engine_);
 
 					std::generate(begin(buffer), end(buffer), gen);
-					vm_.async_run(cyng::generate_invoke("ipt.transfer.data", buffer));
+					vm_.async_run({cyng::generate_invoke("ipt.transfer.data", buffer), cyng::generate_invoke("stream.flush")});
 				}
 				else
 				{
@@ -106,10 +107,7 @@ namespace node
 						<< "> "
 						<< config_.get().account_
 						<< " is not connected");
-
 				}
-
-				vm_.async_run(cyng::generate_invoke("stream.flush"));
 			}
 			else
 			{
@@ -179,8 +177,6 @@ namespace node
 			//
 			//	authorized
 			//
-			BOOST_ASSERT_MSG(task_state_ == TASK_STATE_INITIAL_, "wrong task state");
-			task_state_ = TASK_STATE_AUTHORIZED_;
 		}
 
 		//	slot [1] - connection lost / reconnect
@@ -320,11 +316,14 @@ namespace node
 			//
 			//	open connection to receiver
 			//
-			CYNG_LOG_INFO(logger_, "*** open connection to: " << number);
-			return (req_connection_open(number, std::chrono::seconds(12)))
-				? cyng::continuation::TASK_CONTINUE
-				: cyng::continuation::TASK_STOP
-				;
+			if (!req_connection_open(number, std::chrono::seconds(12))) {
+				CYNG_LOG_WARNING(logger_, "cannot connect to: " << number);
+			}
+			else {
+				CYNG_LOG_INFO(logger_, "*** open connection to: " << number);
+			}
+
+			return cyng::continuation::TASK_CONTINUE;
 		}
 
 		void sender::reconfigure(cyng::context& ctx)
@@ -334,8 +333,6 @@ namespace node
 
 		void sender::reconfigure_impl()
 		{
-			task_state_ = TASK_STATE_INITIAL_;
-
 			//
 			//	switch to other master
 			//

@@ -29,6 +29,7 @@ namespace node
 			receiver(cyng::async::base_task* bt
 				, cyng::logging::log_ptr
 				, redundancy const& cfg
+				, std::vector<std::size_t> const&
 				, std::size_t tsk_sender
 				, std::size_t rec_limit
 				, std::size_t packet_size_min
@@ -148,9 +149,11 @@ namespace node
 			 * incoming data
 			 */
 			virtual cyng::buffer_t on_transmit_data(cyng::buffer_t const&) override;
+
 		private:
 			void reconfigure(cyng::context& ctx);
 			void reconfigure_impl();
+			std::size_t next_tsk();
 
 		private:
 			cyng::async::base_task& base_;
@@ -160,7 +163,8 @@ namespace node
 			 * managing redundant ipt master configurations
 			 */
 			const redundancy	config_;
-			const std::size_t tsk_sender_;
+			const std::vector<std::size_t> tsk_vec_;
+			std::size_t tsk_sender_;
 			const std::size_t rec_limit_;
 			const std::size_t packet_size_min_;
 			const std::size_t packet_size_max_;

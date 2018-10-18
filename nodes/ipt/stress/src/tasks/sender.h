@@ -172,12 +172,6 @@ namespace node
 			const std::size_t packet_size_max_;
 			const std::chrono::milliseconds	delay_;
 
-			enum {
-				TASK_STATE_INITIAL_,
-				TASK_STATE_AUTHORIZED_,
-				TASK_STATE_CONNECTED_,
-			} task_state_;
-
 			// First create an instance of an engine.
 			std::random_device rnd_device_;
 			// Specify the engine and distribution.

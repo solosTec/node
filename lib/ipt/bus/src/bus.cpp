@@ -147,7 +147,7 @@ namespace node
 		void bus::start()
 		{
 			CYNG_LOG_TRACE(logger_, "start ipt client");
-            state_ = STATE_INITIAL_;
+			transition(STATE_INITIAL_);
             do_read();
 		}
 
@@ -156,8 +156,7 @@ namespace node
             //
             //  update state
             //
-			if (state_ != STATE_SHUTDOWN_)
-			{
+			if (transition(STATE_SHUTDOWN_))	{
 				state_ = STATE_SHUTDOWN_;
 
 				//
@@ -202,7 +201,21 @@ namespace node
 
 		bool bus::is_online() const
 		{
-			return state_ >= STATE_AUTHORIZED_;
+			switch (state_.load()) {
+			case STATE_AUTHORIZED_:
+			case STATE_CONNECTED_:
+			case STATE_WAIT_FOR_OPEN_RESPONSE_:
+			case STATE_WAIT_FOR_CLOSE_RESPONSE_:
+				return true;
+			default:
+				break;
+			}
+			return false;
+		}
+
+		bool bus::is_connected() const
+		{
+			return STATE_CONNECTED_ == state_.load();
 		}
 
 		bool bus::has_watchdog() const
@@ -230,7 +243,7 @@ namespace node
             //
             //  do nothing during shutdown
             //
-            if (state_ == STATE_SHUTDOWN_)  return;
+            if (STATE_SHUTDOWN_ == state_.load())  return;
 
 			//auto self(shared_from_this());
 			BOOST_ASSERT(socket_.is_open());
@@ -579,7 +592,7 @@ namespace node
 
 			auto bp = cyng::object_cast<cyng::buffer_t>(frame.at(1));
 			BOOST_ASSERT_MSG(bp != nullptr, "no data");
-			if (state_ != STATE_CONNECTED_) {
+			if (STATE_CONNECTED_ != state_) {
 				ctx.attach(cyng::generate_invoke("log.msg.warning", "ipt.req.transmit.data - wrong state", get_state()));
 			}
 			else {
@@ -613,7 +626,7 @@ namespace node
 
 			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.open.connection", frame, get_state()));
 
-			switch (state_)
+			switch (state_.load())
 			{
 			case STATE_AUTHORIZED_:
 				//
@@ -625,7 +638,7 @@ namespace node
 					//
 					//	update internal state
 					//
-					state_ = STATE_CONNECTED_;
+					transition(STATE_CONNECTED_);
 
 					//
 					//	accept calls
@@ -689,13 +702,14 @@ namespace node
 					<< " => #"
 					<< tsk);
 
-				switch (state_)
+				switch (state_.load())
 				{
 				case STATE_WAIT_FOR_OPEN_RESPONSE_:
+
 					//
 					//	update task state
 					//
-					state_ = STATE_CONNECTED_;
+					transition(STATE_CONNECTED_);
 
 					//
 					//	post to task <open_response>
@@ -737,7 +751,7 @@ namespace node
 			//
 			const cyng::vector_t frame = ctx.get_frame();
 
-			switch (state_)
+			switch (state_.load())
 			{
 			case STATE_AUTHORIZED_:
 				ctx.attach(cyng::generate_invoke("log.msg.warning", "received ipt.req.close.connection - not connected", frame));
@@ -749,9 +763,7 @@ namespace node
 				//	update connection state
 				//	no action from client required
 				//
-				state_ = STATE_AUTHORIZED_;
-
-				{
+				if (transition(STATE_AUTHORIZED_))	{
 					const auto seq = cyng::value_cast<sequence_type>(frame.at(1), 0u);
 
 					//	
@@ -759,6 +771,10 @@ namespace node
 					//
 					on_req_close_connection(seq);
 				}
+				break;
+			case STATE_WAIT_FOR_CLOSE_RESPONSE_:
+				ctx.attach(cyng::generate_invoke("log.msg.error", "received ipt.req.close.connection - invalid state", get_state()));
+				state_ = STATE_AUTHORIZED_;	//	try to fix this 
 				break;
 			default:
 				ctx.attach(cyng::generate_invoke("log.msg.error", "received ipt.req.close.connection - invalid state", get_state()));
@@ -768,7 +784,9 @@ namespace node
 			//
 			//	accept request in every case - send response
 			//
-			ctx	.attach(cyng::generate_invoke("res.close.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED)))
+			ctx	.attach(cyng::generate_invoke("res.close.connection"
+					, frame.at(1)	//	ip-t seq
+					, static_cast<std::uint8_t>(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED)))	//	OK
 				.attach(cyng::generate_invoke("stream.flush"));
 
 		}
@@ -809,7 +827,7 @@ namespace node
 					//
 					//	update bus state
 					//
-					state_ = STATE_AUTHORIZED_;
+					transition(STATE_AUTHORIZED_);
 
 				}
 				else {
@@ -949,12 +967,7 @@ namespace node
 
 		bool bus::req_login(master_record const& rec)
 		{
-			if (STATE_ERROR_ == state_) {
-				//	reset error state
-				CYNG_LOG_WARNING(logger_, vm_.tag() << " reset error state: " << get_state());
-				state_ = STATE_INITIAL_;
-			}
-			if (STATE_INITIAL_ != state_) {
+			if (!transition(STATE_INITIAL_)) {
 				CYNG_LOG_WARNING(logger_, rec.account_ 
 					<< '@' 
 					<< vm_.tag() 
@@ -962,6 +975,7 @@ namespace node
 					<< get_state());
 				return false;
 			}
+
 			if (rec.scrambled_) {
 				CYNG_LOG_INFO(logger_, vm_.tag() 
 					<< " send scrambled login request: " 
@@ -990,12 +1004,10 @@ namespace node
 
 		bool bus::req_connection_open(std::string const& number, std::chrono::seconds d)
 		{
-			if (state_ == STATE_AUTHORIZED_) {
-
-				//
-				//	update state
-				//
-				state_ = STATE_WAIT_FOR_OPEN_RESPONSE_;
+			//
+			//	update state
+			//
+			if (transition(STATE_WAIT_FOR_OPEN_RESPONSE_)) {
 
 				//
 				//	start monitor tasks with N retries
@@ -1010,12 +1022,10 @@ namespace node
 
 		bool bus::req_connection_close(std::chrono::seconds d)
 		{
-			if (state_ == STATE_CONNECTED_) {
-
-				//
-				//	update state
-				//
-				state_ = STATE_WAIT_FOR_CLOSE_RESPONSE_;
+			//
+			//	update state
+			//
+			if (transition(STATE_WAIT_FOR_CLOSE_RESPONSE_)) {
 
 				//
 				//	start monitor tasks
@@ -1036,7 +1046,7 @@ namespace node
 				: ipt::tp_res_open_connection_policy::DIALUP_FAILED
 				;
 
-			if (accept && (state_ == STATE_AUTHORIZED_)) {
+			if (accept && (STATE_AUTHORIZED_ == state_)) {
 				//
 				//	update task state
 				//
@@ -1146,6 +1156,71 @@ namespace node
 				break;
 			}
 			return "ERROR";
+		}
+
+		bool bus::transition(state evt)
+		{
+			switch (evt) {
+
+			case STATE_INITIAL_:
+				switch (state_) {
+				case STATE_INITIAL_:
+				case STATE_ERROR_:
+					state_.exchange(evt);
+					return true;
+				default:
+					break;
+				}
+				return false;
+
+			case STATE_SHUTDOWN_:
+				if (STATE_SHUTDOWN_ != state_) {
+					state_.exchange(evt);
+					return true;
+				}
+				return false;
+
+			case STATE_CONNECTED_:
+				switch (state_) {
+				case STATE_AUTHORIZED_:
+				case STATE_WAIT_FOR_OPEN_RESPONSE_:
+					state_.exchange(evt);
+					return true;
+				default:
+					break;
+				}
+				return false;
+
+			case STATE_AUTHORIZED_:
+				switch (state_) {
+				case STATE_CONNECTED_:
+				case STATE_WAIT_FOR_CLOSE_RESPONSE_:
+					state_.exchange(evt);
+					return true;
+				default:
+					break;
+				}
+				return false;
+
+			case STATE_WAIT_FOR_OPEN_RESPONSE_:
+				if (STATE_AUTHORIZED_ == state_) {
+					state_.exchange(evt);
+					return true;
+				}
+				return false;
+
+			case STATE_WAIT_FOR_CLOSE_RESPONSE_:
+				if (STATE_CONNECTED_ == state_) {
+					state_.exchange(evt);
+					return true;
+				}
+				return false;
+
+			default:
+				state_.exchange(evt);
+				break;
+			}
+			return true;
 		}
 
 		std::uint64_t build_line(std::uint32_t channel, std::uint32_t source)
