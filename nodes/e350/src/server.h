@@ -47,7 +47,7 @@ namespace node
 			/// Perform an asynchronous accept operation.
 			void do_accept();
 
-			void insert_connection(cyng::context&);
+			void insert_client(cyng::context&);
 			void close_connection(cyng::context&);
 			void transmit_data(cyng::context& ctx);	//!< transmit data locally
 

@@ -41,7 +41,7 @@ namespace node
 		, state_(STATE_INITIAL_)
 		, remote_tag_(boost::uuids::nil_uuid())
 		, remote_version_(0, 0)
-		, lag_(std::chrono::microseconds::max())
+		//, lag_(std::chrono::microseconds::max())
 		, seq_(0)
 	{
 		//
@@ -89,16 +89,17 @@ namespace node
 			//std::cerr << cyng::io::to_str(frame.at(2)) << std::endl;
 			//std::cerr << cyng::io::to_str(frame.at(3)) << std::endl;
 			//std::cerr << cyng::io::to_str(frame.at(4)) << std::endl;
-			CYNG_LOG_INFO(logger_, "login response " << cyng::io::to_str(frame));
+			CYNG_LOG_TRACE(logger_, "login response " << cyng::io::to_str(frame));
 
 			if (cyng::value_cast(frame.at(0), false))
 			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "successful logged on to cluster"));
 				state_ = STATE_AUTHORIZED_;
 				remote_tag_ = cyng::value_cast(frame.at(1), boost::uuids::nil_uuid());
 				remote_version_ = cyng::value_cast(frame.at(2), remote_version_);
-				lag_ = std::chrono::duration_cast<std::chrono::microseconds>( std::chrono::system_clock::now() - cyng::value_cast(frame.at(3), std::chrono::system_clock::now()));
-				CYNG_LOG_TRACE(logger_, "lag: " << lag_.count() << " microsec");
+				ctx.run(cyng::generate_invoke("log.msg.info", "successful cluster login", remote_tag_, remote_version_));
+
+				auto lag = std::chrono::system_clock::now() - cyng::value_cast(frame.at(3), std::chrono::system_clock::now());
+				CYNG_LOG_TRACE(logger_, "cluster login lag: " << cyng::to_str(lag));
 
 				//
 				//	slot [0]
@@ -147,7 +148,7 @@ namespace node
 
 	void bus::start()
 	{
-		CYNG_LOG_TRACE(logger_, "start cluster bus");
+		//CYNG_LOG_TRACE(logger_, "start cluster bus");
         state_ = STATE_INITIAL_;
 		do_read();
 	}
@@ -212,7 +213,7 @@ namespace node
 				state_ = STATE_ERROR_;
 				remote_tag_ = boost::uuids::nil_uuid();
 				remote_version_ = cyng::version(0, 0);
-				lag_ = std::chrono::microseconds::max();
+				//lag_ = std::chrono::microseconds::max();
 
 				//
 				//	slot [1] - go offline

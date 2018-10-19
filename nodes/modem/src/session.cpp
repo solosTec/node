@@ -7,8 +7,6 @@
 
 
 #include "session.h"
-//#include "tasks/open_connection.h"
-//#include "tasks/close_connection.h"
 #include "tasks/gatekeeper.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>

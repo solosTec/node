@@ -279,46 +279,89 @@ namespace node
 		session::~session()
 		{}
 
-		void session::stop(cyng::object obj)
-		{	
-			//
-			//	There could be a running gatekeeper
-			//
-			connect_state_.stop();
+		//void session::stop(cyng::object obj)
+		//{	
+		//	//
+		//	//	There could be a running gatekeeper
+		//	//
+		//	connect_state_.stop();
+
+		//	//
+		//	//	stop all running tasks
+		//	//
+		//	for (auto const& tsk : task_db_) {
+		//		mux_.stop(tsk.second);
+		//	}
+
+		//	//
+		//	//	gracefull shutdown
+		//	//
+		//	vm_.access([obj](cyng::vm& vm) {
+		//		vm.run(cyng::generate_invoke("log.msg.info", "forced shutdown"));
+		//		vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
+		//	});
+		//	
+		//}
+
+		void session::stop_req(int code)
+		{
+			shutdown();
 
 			//
-			//	stop all running tasks
+			//	wait for pending operations
 			//
-			for (auto const& tsk : task_db_) {
-				mux_.stop(tsk.second);
-			}
+			wait();
 
 			//
-			//	gracefull shutdown
+			//	Tell SMF master to remove this session by calling "client.req.close". 
+			//	SMF master will send a "client.res.close" to the IP-T server which will
+			//	remove this session from the connection_map_ which will eventual call
+			//	the desctructor of this session object.
 			//
-			vm_.access([obj](cyng::vm& vm) {
-				vm.run(cyng::generate_invoke("log.msg.info", "forced shutdown"));
-				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
-			});
-			
+			bus_->vm_.async_run(client_req_close(vm_.tag(), code));
 		}
 
-		void session::stop(boost::system::error_code ec)
+		void session::stop_res()
 		{
-			CYNG_LOG_WARNING(logger_, "ipt session "
-				<< vm_.tag()
-				<< " closed <"
-				<< ec
-				<< ':'
-				<< ec.value()
-				<< ':'
-				<< ec.message()
-				<< '>');
+			shutdown();
 
+			//
+			//	wait for pending operations
+			//
+			wait();
+
+			//
+			//	remove from connection map - call destructor
+			//
+			bus_->vm_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
+		}
+
+
+		void session::wait()
+		{
+			while (!vm_.is_halted()) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				CYNG_LOG_WARNING(logger_, "ipt "
+					<< vm_.tag()
+					<< " waiting for pending operations");
+			}
+
+		}
+
+		void session::shutdown()
+		{
 			//
 			//	There could be a running gatekeeper
 			//
 			connect_state_.stop();
+
+			//
+			//	clear connection map
+			//
+			if (connect_state_.is_connected()) {
+
+				bus_->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", vm_.tag()));
+			}
 
 			//
 			//	stop all tasks
@@ -335,25 +378,6 @@ namespace node
 				vm.run(cyng::generate_invoke("log.msg.info", "gracefull shutdown"));
 				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
 			});
-
-			//
-			//	wait for pending operations
-			//
-			while (!vm_.is_halted()) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				CYNG_LOG_WARNING(logger_, "ipt "
-					<< vm_.tag()
-					<< " waiting for pending operations");
-			}
-
-			//
-			//	Tell SMF master to remove this session by calling "client.req.close". 
-			//	SMF master will send a "client.res.close" to the IP-T server which will
-			//	remove this session from the connection_map_ which will eventual call
-			//	the desctructor of this session object.
-			//
-			bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
-
 		}
 
 		void session::store_relation(cyng::context& ctx)
@@ -432,7 +456,6 @@ namespace node
 			connect_state_.open_connection(std::get<1>(tpl));
 			CYNG_LOG_INFO(logger_, "session.update.connection.state " 
 				<< ctx.tag()
-				//<< std::get<0>(tpl)
 				<< " -> "
 				<< connect_state_);
 		}
@@ -713,24 +736,10 @@ namespace node
 			CYNG_LOG_WARNING(logger_, "ipt.res.logout - deprecated " << cyng::io::to_str(frame));
 
 			//
-			//	stop all tasks
+			//	Nothing more to do. Variosafe manager will close connection anyway.
+			//	But we can tell the server to close the IP connection intentionally
 			//
-			for (auto const& tsk : task_db_) {
-				mux_.stop(tsk.second);
-			}
-
-			//
-			//	nothing more to do. Variosafe manager will close connection anyway
-			//
-
-			//
-			//	Tell SMF master to remove this session by calling "client.req.close". 
-			//	SMF master will send a "client.res.close" to the IP-T server which will
-			//	remove this session from the connection_map_ which will eventual call
-			//	the desctructor of this session object.
-			//
-			//boost::system::error_code ec(boost::asio::error::operation_aborted);
-			//bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
+			//bus_->vm_.async_run(cyng::generate_invoke("server.close.client", vm_.tag()));
 		}
 
 		void session::ipt_req_open_push_channel(cyng::context& ctx)

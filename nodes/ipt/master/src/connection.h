@@ -57,7 +57,7 @@ namespace node
 			 * the connection map and called this stop() method directly.
 			 * Stop all asynchronous operations associated with the connection.
 			 */
-			void stop(cyng::object);
+			//void stop(cyng::object);
 
 			/**
 			 * Close TCP/IP connection
@@ -109,7 +109,7 @@ namespace node
 
 		};
 
-		cyng::object make_connection(boost::asio::ip::tcp::socket&&
+		cyng::object make_client(boost::asio::ip::tcp::socket&&
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, bus::shared_type

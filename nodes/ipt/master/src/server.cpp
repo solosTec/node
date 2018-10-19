@@ -42,17 +42,20 @@ namespace node
 			, rnd_()
 			, client_map_()
 			, connection_map_()
-			//, shutdown_complete_()
-			//, mutex_()
+			, cv_acceptor_closed_()
+			, cv_sessions_closed_()
+			, mutex_()
 		{
 			//
 			//	connection management
 			//
 			bus_->vm_.register_function("push.connection", 1, std::bind(&server::push_connection, this, std::placeholders::_1));
-			bus_->vm_.register_function("server.insert.connection", 2, std::bind(&server::insert_connection, this, std::placeholders::_1));
-			//bus_->vm_.register_function("server.remove.connection", 3, std::bind(&server::remove_connection, this, std::placeholders::_1));
-			bus_->vm_.register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.insert.client", 2, std::bind(&server::insert_client, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.remove.client", 1, std::bind(&server::remove_client, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.close.client", 2, std::bind(&server::close_client, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.shutdown.clients", 0, std::bind(&server::shutdown_clients, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.clear.connection.map", 1, std::bind(&server::clear_connection_map, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1));
 
 
 			//
@@ -122,116 +125,170 @@ namespace node
 			}
 		}
 
+		void server::create_client(boost::asio::ip::tcp::socket socket)
+		{
+			if (bus_->is_online()) {
+
+				const auto tag = rnd_();
+
+				CYNG_LOG_TRACE(logger_, "accept "
+					<< socket.remote_endpoint()
+					<< " - "
+					<< tag);
+
+				//
+				//	create new connection/session
+				//
+				auto client = make_client(std::move(socket)
+					, mux_
+					, logger_
+					, bus_
+					, tag
+					, sk_
+					, watchdog_
+					, timeout_);
+
+				//
+				//	bus is synchronizing access to client_map_
+				//
+				bus_->vm_.async_run(cyng::generate_invoke("server.insert.client", tag, client));
+			}
+			else {
+
+				CYNG_LOG_WARNING(logger_, "do not accept incoming IP-T connection from "
+					<< socket.remote_endpoint()
+					<< " because there is no access to SMF cluster");
+
+				boost::system::error_code ec;
+				socket.close(ec);
+			}
+		}
+
 		void server::do_accept()
 		{
-#if (BOOST_VERSION >= 106600)
-			acceptor_.async_accept(
-				[this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
-				// Check whether the server was stopped by a signal before this
-				// completion handler had a chance to run.
-				if (!acceptor_.is_open()) {
-					return;
-				}
+			static_assert(BOOST_VERSION >= 106600, "boost library 1.66 or higher required");
+			acceptor_.async_accept([this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
 
 				if (!ec)	{
 
-					if (bus_->is_online()) {
-
-						const auto tag = rnd_();
-
-						CYNG_LOG_TRACE(logger_, "accept "
-							<< socket.remote_endpoint()
-							<< " - "
-							<< tag);
-
-						//
-						//	create new connection/session
-						//
-						auto conn = make_connection(std::move(socket)
-							, mux_
-							, logger_
-							, bus_
-							, tag
-							, sk_
-							, watchdog_
-							, timeout_);
-
-						//
-						//	bus is synchronizing access to client_map_
-						//
-						bus_->vm_.async_run(cyng::generate_invoke("server.insert.connection", tag, conn));
-					}
-					else {
-
-						CYNG_LOG_WARNING(logger_, "do not accept incoming IP-T connection from "
-							<< socket.remote_endpoint()
-							<< " because there is no access to SMF cluster");
-
-						socket.close(ec);
-					}
+					//
+					//	create a new session and insert into client_map_
+					//
+					create_client(std::move(socket));
 
 					//
 					//
 					//	continue accepting
 					//
-					do_accept();
+					if (acceptor_.is_open()) {
+						do_accept();
+					}
+				}
+				else {
+
+					//	 system:995 - The I/O operation has been aborted because of either a thread exit or an application request
+					CYNG_LOG_WARNING(logger_, "accept: "
+						<< ec
+						<< " - "
+						<< ec.message());
+
+					//
+					//	notify
+					//
+					cyng::async::lock_guard<cyng::async::mutex> lk(mutex_);
+					cv_acceptor_closed_.notify_all();
 				}
 
 			});
-#else
-			acceptor_.async_accept(socket_, [=](boost::system::error_code const& ec) {
-				// Check whether the server was stopped by a signal before this
-				// completion handler had a chance to run.
-				if (acceptor_.is_open() && !ec) {
-
-					CYNG_LOG_TRACE(logger_, "accept " << socket_.remote_endpoint());
-					//
-					//	There is no connection manager or list of open connections. 
-					//	Connections are managed by there own and are controlled
-					//	by a maintenance task.
-					//
-					//std::make_shared<connection>(std::move(socket), mux_, logger_, db_)->start();
-					do_accept();
-				}
-
-				else 
-				{
-					//on_error(ec);
-					//	shutdown server
-				}
-
-			});
-#endif
-
 		}
 
 		void server::close()
 		{
-            //
-            //	close acceptor
-            //
-            CYNG_LOG_INFO(logger_, "close acceptor");
+			//
+			//	close acceptor
+			//	no more incoming connections
+			//
+			close_acceptor();
 
-            // The server is stopped by cancelling all outstanding asynchronous
-			// operations. Once all operations have finished the io_context::run()
-			// call will exit.
-			acceptor_.close();
+			//
+			//	close existing connection
+			//
+			close_clients();
+		}
 
-            //
-            // close all clients
-            //
-            CYNG_LOG_INFO(logger_, "close "
-                << client_map_.size()
-                << " ipt client(s)");
+		void server::close_clients()
+		{
+			CYNG_LOG_INFO(logger_, "close clients");
 
-            for(auto& conn : client_map_)
-            {
-                const_cast<connection*>(cyng::object_cast<connection>(conn.second))->stop(conn.second);
-            }
+			//
+			// close all clients
+			//
+			cyng::async::unique_lock<cyng::async::mutex> lock(mutex_);
+			bus_->vm_.async_run(cyng::generate_invoke("server.shutdown.clients"));
+
+			//
+			//	wait for pending ipt connections
+			//
+			CYNG_LOG_TRACE(logger_, "server is waiting for clients shutdown");
+			cv_sessions_closed_.wait(lock, [this] {
+				return client_map_.empty();
+			});
+			CYNG_LOG_INFO(logger_, "server shutdown complete");
 
 		}
 
-		void server::insert_connection(cyng::context& ctx)
+		void server::close_acceptor()
+		{
+			CYNG_LOG_INFO(logger_, "close acceptor");
+
+			// The server is stopped by cancelling all outstanding asynchronous
+			// operations. Once all operations have finished the io_context::run()
+			// call will exit.
+			cyng::async::unique_lock<cyng::async::mutex> lock(mutex_);
+			acceptor_.cancel();
+			acceptor_.close();
+
+			//
+			//	wait for cancellation of accept operation
+			//
+			CYNG_LOG_TRACE(logger_, "server is waiting for acceptor cancellation");
+			cv_acceptor_closed_.wait(lock, [this] {
+				return !acceptor_.is_open();
+			});
+
+			//
+			//	no more incoming connections
+			//
+			CYNG_LOG_INFO(logger_, "acceptor cancellation complete");
+		}
+
+		void server::shutdown_clients(cyng::context& ctx)
+		{
+			CYNG_LOG_INFO(logger_, "close "
+				<< client_map_.size()
+				<< " ipt client(s)");
+
+			if (!client_map_.empty()) {
+				for(auto& conn : client_map_)     {
+
+					//
+					//	close sockets
+					//
+					const_cast<connection*>(cyng::object_cast<connection>(conn.second))->close();
+				}
+			}
+			else {
+
+				//
+				//	notify
+				//
+				cyng::async::lock_guard<cyng::async::mutex> lk(mutex_);
+				cv_sessions_closed_.notify_all();
+			}
+		}
+
+
+		void server::insert_client(cyng::context& ctx)
 		{
 			BOOST_ASSERT(bus_->vm_.tag() == ctx.tag());
 
@@ -239,30 +296,43 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 
 			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-			auto r = client_map_.emplace(tag, frame.at(1));
-			if (r.second)
-			{
-				ctx.attach(cyng::generate_invoke("log.msg.trace", "server.insert.connection", frame));
-				const_cast<connection*>(cyng::object_cast<connection>((*r.first).second))->start();
-			}
-			else
-			{
+			if (!insert_client_impl(tag, frame.at(1))) {
 				ctx.attach(cyng::generate_invoke("log.msg.error", "server.insert.connection - failed", frame));
 			}
 		}
 
-		//void server::remove_connection(cyng::context& ctx)
-		//{
-		//	BOOST_ASSERT(bus_->vm_.tag() == ctx.tag());
+		bool server::insert_client_impl(boost::uuids::uuid tag, cyng::object obj)
+		{
+			auto r = client_map_.emplace(tag, obj);
+			if (r.second) {
 
-		//	//	[a95f46e9-eccd-4b47-b02c-17d5172218af]
-		//	const cyng::vector_t frame = ctx.get_frame();
+				//
+				//	start new IP-T session
+				//
+				const_cast<connection*>(cyng::object_cast<connection>((*r.first).second))->start();
 
-		//	const auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-		//	if (!clear_connection_map_impl(tag)) {
-		//		ctx.attach(cyng::generate_invoke("log.msg.error", "server.remove.connection - failed", tag));
-		//	}
-		//}
+				CYNG_LOG_TRACE(logger_, client_map_.size()
+					<< " ipt sessions open with "
+					<< (connection_map_.size() / 2)
+					<< " connections");
+
+				return true;
+			}
+			return false;
+		}
+
+		void server::remove_client(cyng::context& ctx)
+		{
+			BOOST_ASSERT(bus_->vm_.tag() == ctx.tag());
+
+			//	[a95f46e9-eccd-4b47-b02c-17d5172218af]
+			const cyng::vector_t frame = ctx.get_frame();
+
+			const auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+			if (!remove_client_impl(tag)) {
+				ctx.attach(cyng::generate_invoke("log.msg.error", "server.remove.client - failed", tag));
+			}
+		}
 
 		void server::clear_connection_map(cyng::context& ctx)
 		{
@@ -278,12 +348,13 @@ namespace node
 			{
 				auto receiver = pos->second;
 
-				CYNG_LOG_INFO(logger_, "clean up local connection map "
-					<< connection_map_.size()
-					<< ": "
+				CYNG_LOG_INFO(logger_, "remove "
 					<< tag
 					<< " <==> "
-					<< receiver);
+					<< receiver
+					<< " from (local) connection map with "
+					<< connection_map_.size()
+					<< " entries");
 
 				//
 				//	remove both entries
@@ -371,57 +442,6 @@ namespace node
 			}
 		}
 
-		//void server::push_ep_local(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-		//	auto pos = client_map_.find(tag);
-		//	if (pos != client_map_.end())
-		//	{
-		//		auto ep = const_cast<connection*>(cyng::object_cast<connection>(pos->second))->socket_.local_endpoint();
-		//		CYNG_LOG_TRACE(logger_, "push.ep.local "
-		//			<< tag
-		//			<< ": "
-		//			<< ep
-		//			<< " on stack");
-
-		//		ctx.push(cyng::make_object(ep));
-		//	}
-		//	else
-		//	{
-		//		CYNG_LOG_FATAL(logger_, "push.ep.local "
-		//			<< tag
-		//			<< " not found");
-		//		ctx.push(cyng::make_object());
-		//	}
-		//}
-
-		//void server::push_ep_remote(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-		//	auto pos = client_map_.find(tag);
-		//	if (pos != client_map_.end())
-		//	{
-		//		auto ep = const_cast<connection*>(cyng::object_cast<connection>(pos->second))->socket_.remote_endpoint();
-		//		CYNG_LOG_TRACE(logger_, "push.ep.remote "
-		//			<< tag
-		//			<< ": "
-		//			<< ep
-		//			<< " on stack");
-
-		//		ctx.push(cyng::make_object(ep));
-		//	}
-		//	else
-		//	{
-		//		CYNG_LOG_FATAL(logger_, "push.ep.remote "
-		//			<< tag
-		//			<< " not found");
-		//		ctx.push(cyng::make_object());
-		//	}
-		//}
-
-
 		void server::client_res_login(cyng::context& ctx)
 		{
 			//	[068544fb-9513-4cbe-9007-c9dd9892aff6,d03ff1a5-838a-4d71-91a1-fc8880b157a6,17,true,OK,%(("tp-layer":ipt))]
@@ -451,28 +471,67 @@ namespace node
 
 			const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 
-			if (!remove_client(tag, false)) {
+			if (!remove_client_impl(tag)) {
 				ctx.attach(cyng::generate_invoke("log.msg.error", "client.res.close - failed", frame));
 			}
 		}
 
-		bool server::remove_client(boost::uuids::uuid tag, bool stop)
+		bool server::remove_client_impl(boost::uuids::uuid tag)
 		{
 			auto pos = client_map_.find(tag);
 			if (pos != client_map_.end())
 			{
-				auto cp = cyng::object_cast<connection>(pos->second);
-				if (stop && (cp != nullptr))	{
-					const_cast<connection*>(cp)->stop(pos->second);
-				}
-
 				//
 				//	remove from client list
 				//
 				client_map_.erase(pos);
 				clear_connection_map_impl(tag);
 
+				CYNG_LOG_TRACE(logger_, client_map_.size()
+					<< " ipt sessions open with "
+					<< (connection_map_.size() / 2)
+					<< " connections");
+
+				//
+				//	shutdown mode
+				//
+				if (!acceptor_.is_open() && client_map_.empty()) {
+
+					CYNG_LOG_DEBUG(logger_, "send <empty-client-map> signal");
+
+					cyng::async::lock_guard<cyng::async::mutex> lk(mutex_);
+					cv_sessions_closed_.notify_all();
+				}
+
 				return true;
+			}
+			return false;
+		}
+
+		void server::close_client(cyng::context& ctx)
+		{
+			BOOST_ASSERT(bus_->vm_.tag() == ctx.tag());
+
+			//	[a95f46e9-eccd-4b47-b02c-17d5172218af]
+			const cyng::vector_t frame = ctx.get_frame();
+
+			const auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+			if (!close_client_impl(tag)) {
+				ctx.attach(cyng::generate_invoke("log.msg.error", "server.close.client - failed", tag));
+			}
+		}
+
+		bool server::close_client_impl(boost::uuids::uuid tag)
+		{
+			auto pos = client_map_.find(tag);
+			if (pos != client_map_.end())
+			{
+				auto cp = cyng::object_cast<connection>(pos->second);
+				//	close IP socket intentionally
+				if (cp != nullptr) {
+					const_cast<connection*>(cp)->close();
+					return true;
+				}
 			}
 			return false;
 		}
@@ -499,7 +558,7 @@ namespace node
 			//	Remove connection/client from connection list and call stop()
 			//	method
 			//
-			if (remove_client(tag, true)) {
+			if (close_client_impl(tag)) {
 				//
 				//	acknowledge that session was closed
 				//

@@ -50,27 +50,19 @@ namespace node
 
 		void connection::close()
 		{
-			//
-			//  close socket
-			//
-			boost::system::error_code ec;
-			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-			socket_.close(ec);
-		}
+			if (socket_.is_open()) {
 
-		void connection::stop(cyng::object obj)
-		{
-            CYNG_LOG_DEBUG(logger_, "shutdown connection(" << session_.vm_.tag() << ')');
+				//
+				//  close socket
+				//
+				CYNG_LOG_DEBUG(logger_, session_.vm_.tag() 
+					<< " close socket " 
+					<< socket_.remote_endpoint());
 
-			//
-			//  close socket
-			//
-			close();
-			
-			//
-            //  obj holds a reference to delay the call of the destructor
-            //
-            session_.stop(obj);
+				boost::system::error_code ec;
+				socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+				socket_.close(ec);
+			}
 		}
 
 		void connection::do_read()
@@ -95,12 +87,24 @@ namespace node
 
 					do_read();
 				}
+
+
 				else if (ec != boost::asio::error::operation_aborted)
 				{
 					//
 					//	device/party closed connection or network shutdown
 					//
-					session_.stop(ec);
+					CYNG_LOG_WARNING(logger_, "ipt connection "
+						<< session_.vm_.tag()
+						<< " closed: " 
+						<< ec 
+						<< ':' 
+						<< ec.value() 
+						<< " [" 
+						<< ec.message() 
+						<< ']');
+
+					session_.stop_req(ec.value());
 				}
 				else
 				{
@@ -108,7 +112,16 @@ namespace node
 					//	The session was closed intentionally.
 					//	At this point nothing more is to do. Service is going down and all session have to be stopped fast.
 					//
-					CYNG_LOG_WARNING(logger_, "ipt connection closed intentionally: " << ec << ':' << ec.value() << ':' << ec.message() << '>');
+					CYNG_LOG_WARNING(logger_, "ipt connection "
+						<< session_.vm_.tag()
+						<< " closed intentionally: "
+						<< ec
+						<< ':'
+						<< ec.value()
+						<< " ["
+						<< ec.message()
+						<< ']');
+					session_.stop_res();
 
 				}
 			});
@@ -119,7 +132,7 @@ namespace node
 			return session_.vm_.hash();
 		}
 
-		cyng::object make_connection(boost::asio::ip::tcp::socket&& socket
+		cyng::object make_client(boost::asio::ip::tcp::socket&& socket
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus

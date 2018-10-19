@@ -13,6 +13,7 @@
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
+#include <cyng/compatibility/async.h>
 
 namespace node 
 {
@@ -126,15 +127,27 @@ namespace node
 			 * until it reached the IP-T master. The IP-T master located the session in
 			 * the session map and called this stop() method directly.
 			 */
-			void stop(cyng::object);
+			//void stop(cyng::object);
 
+
+		private:
 			/**
 			 * The connection detected a disconnect and calls the stop method
 			 * with the received error code.
 			 */
-			void stop(boost::system::error_code ec);
+			void stop_req(int ec);
+			void stop_res();
 
-		private:
+			/**
+			 * stop running tasks and halt VM
+			 */
+			void shutdown();
+
+			/**
+			 * wait for VM and remove from client map
+			 */
+			void wait();
+
 			void ipt_req_login_public(cyng::context& ctx);
 			void ipt_req_login_scrambled(cyng::context& ctx);
 			void ipt_req_logout(cyng::context& ctx);

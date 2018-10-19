@@ -36,7 +36,6 @@ namespace node
 			, cyng::async::mux& mux
 			, boost::uuids::uuid tag
 			, scramble_key const& sk
-			//, std::size_t tsk
 			, std::string const& model
 			, std::size_t retries)
 		: logger_(logger)

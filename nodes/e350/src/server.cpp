@@ -48,7 +48,7 @@ namespace node
 			bus_->vm_.register_function("push.connection", 1, std::bind(&server::push_connection, this, std::placeholders::_1));
 			bus_->vm_.register_function("push.ep.local", 1, std::bind(&server::push_ep_local, this, std::placeholders::_1));
 			bus_->vm_.register_function("push.ep.remote", 1, std::bind(&server::push_ep_remote, this, std::placeholders::_1));
-			bus_->vm_.register_function("server.insert.connection", 2, std::bind(&server::insert_connection, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.insert.client", 2, std::bind(&server::insert_client, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1));
@@ -155,7 +155,7 @@ namespace node
 						//
 						//	bus is synchronizing access to client_map_
 						//
-						bus_->vm_.async_run(cyng::generate_invoke("server.insert.connection", tag, conn));
+						bus_->vm_.async_run(cyng::generate_invoke("server.insert.client", tag, conn));
 					}
 					else {
 
@@ -231,7 +231,7 @@ namespace node
 
 		}
 
-		void server::insert_connection(cyng::context& ctx)
+		void server::insert_client(cyng::context& ctx)
 		{
 			BOOST_ASSERT(bus_->vm_.tag() == ctx.tag());
 
@@ -242,7 +242,7 @@ namespace node
 			auto r = client_map_.emplace(tag, frame.at(1));
 			if (r.second)
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.trace", "server.insert.connection", frame));
+				ctx.attach(cyng::generate_invoke("log.msg.trace", "server.insert.client", frame));
 				const_cast<connection*>(cyng::object_cast<connection>((*r.first).second))->start();
 			}
 			else

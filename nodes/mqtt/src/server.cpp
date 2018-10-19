@@ -74,7 +74,7 @@ namespace node
 //				//
 //				//	bus is synchronizing access to client_map_
 //				//
-//				bus_->vm_.async_run(cyng::generate_invoke("server.insert.connection", tag, conn));
+//				bus_->vm_.async_run(cyng::generate_invoke("server.insert.client", tag, conn));
 				
 				//
 				//	set connection callbacks

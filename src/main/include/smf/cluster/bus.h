@@ -95,7 +95,6 @@ namespace node
 		 */
 		boost::uuids::uuid remote_tag_;
 		cyng::version	remote_version_;
-		std::chrono::microseconds lag_;
 		std::uint64_t seq_;
 	};
 

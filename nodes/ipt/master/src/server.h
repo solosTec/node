@@ -13,7 +13,7 @@
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/store/db.h>
-//#include <cyng/compatibility/async.h>
+#include <cyng/compatibility/async.h>
 #include <unordered_map>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -50,15 +50,17 @@ namespace node
              * Perform an asynchronous accept operation.
              */
 			void do_accept();
+			void create_client(boost::asio::ip::tcp::socket socket);
 
-			void insert_connection(cyng::context&);
-			//void remove_connection(cyng::context&);
+
 
 			/**
 			 * @return true if entry was found
 			 */
 			bool clear_connection_map_impl(boost::uuids::uuid);
 			void clear_connection_map(cyng::context& ctx);
+
+			void shutdown_clients(cyng::context& ctx);
 
 			void transmit_data(cyng::context& ctx);	//!< transmit data locally
 
@@ -87,16 +89,24 @@ namespace node
 			 * create a reference of this object on stack.
 			 */
 			void push_connection(cyng::context& ctx);
-			//void push_ep_local(cyng::context& ctx);
-			//void push_ep_remote(cyng::context& ctx);
 
 			/**
 			 * Remove a connection/client from connection list.
-			 * 
-			 * @param stop if true the connection stop() method 
-			 *	will be called.
 			 */
-			bool remove_client(boost::uuids::uuid tag, bool stop);
+			void remove_client(cyng::context&);
+			bool remove_client_impl(boost::uuids::uuid tag);
+
+			void close_client(cyng::context&);
+			bool close_client_impl(boost::uuids::uuid tag);
+
+			/**
+			 * insert IP-T sessions
+			 */
+			void insert_client(cyng::context&);
+			bool insert_client_impl(boost::uuids::uuid tag, cyng::object obj);
+
+			void close_acceptor();
+			void close_clients();
 
 		private:
 			/*
@@ -143,8 +153,8 @@ namespace node
 			/**
 			 *	Synchronisation objects for proper shutdown
 			 */
-			//cyng::async::condition_variable shutdown_complete_;
-			//cyng::async::mutex mutex_;
+			cyng::async::condition_variable cv_acceptor_closed_, cv_sessions_closed_;
+			cyng::async::mutex mutex_;
 
 		};
 	}
