@@ -158,9 +158,13 @@ namespace node
 
 
 		private:
+			/** 
+			 * Callback when resolving IP adress failed (no IP connect)
+			 */
 			void reconfigure(cyng::context& ctx);
-			void insert_seq_open_channel_rel(cyng::context& ctx);
+
 			void reconfigure_impl();
+			void insert_seq_open_channel_rel(cyng::context& ctx);
 
 		private:
 			cyng::async::base_task& base_;

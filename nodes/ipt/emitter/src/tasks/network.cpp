@@ -196,6 +196,8 @@ namespace node
 
 		void network::reconfigure(cyng::context& ctx)
 		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_WARNING(logger_, "bus.reconfigure " << cyng::io::to_str(frame));
 			reconfigure_impl();
 		}
 
@@ -206,7 +208,11 @@ namespace node
 			//
 			if (config_.next())
 			{
-				CYNG_LOG_INFO(logger_, "switch to redundancy "
+				CYNG_LOG_INFO(logger_, "switch to redundancy ["
+					<< config_.master_
+					<< '/'
+					<< config_.config_.size()
+					<< "] "
 					<< config_.get().host_
 					<< ':'
 					<< config_.get().service_);

@@ -27,22 +27,18 @@ namespace node
 			, status& status_word
 			, cyng::store::db& config_db
 			, cyng::controller& vm
-			, boost::uuids::uuid tag
 			, cyng::mac48 mac)
 		: logger_(logger)
 			, mux_(mux)
 			, status_word_(status_word)
 			, config_db_(config_db)
 			, vm_(vm)
-			, rgn_()
 		{
-			BOOST_ASSERT(vm_.tag() != tag);
-
 			subscribe("devices");
 			subscribe("push.ops");
 
 #ifdef _DEBUG
-			init_db(tag, mac);
+			init_db(vm_.tag(), mac);
 #endif
 		}
 
@@ -110,7 +106,7 @@ namespace node
 					, config_db_
 					, vm_
 					, key
-					, rgn_());
+					, vm_.tag());
 				if (r.second) {
 					CYNG_LOG_INFO(logger_, "push.ops task #" << r.first << " started");
 

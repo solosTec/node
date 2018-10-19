@@ -16,7 +16,7 @@
 #include <cyng/log.h>
 #include <cyng/store/db.h>
 #include <cyng/async/mux.h>
-#include <boost/uuid/random_generator.hpp>
+//#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
@@ -33,7 +33,6 @@ namespace node
 				, status&
 				, cyng::store::db& config_db
 				, cyng::controller& vm
-				, boost::uuids::uuid tag
 				, cyng::mac48 mac);
 
 			/**
@@ -82,7 +81,8 @@ namespace node
 			 */
 			cyng::store::subscriptions_t	subscriptions_;
 
-			boost::uuids::random_generator rgn_;
+			//const boost::uuids::uuid tag_;	//!< source tag
+			//boost::uuids::random_generator	uidgen_;
 
 		};
 

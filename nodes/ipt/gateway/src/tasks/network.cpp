@@ -40,7 +40,7 @@ namespace node
 			, cyng::mac48 mac)
 		: bus(logger
 			, btp->mux_
-			, boost::uuids::random_generator()()
+			, tag	//, boost::uuids::random_generator()()
 			, cfg.get().sk_
 			, "ipt:gateway"
 			, 1u)
@@ -66,7 +66,7 @@ namespace node
 				, model
 				, serial
 				, mac)
-			, exec_(logger, btp->mux_, status_word, config_db, vm_, tag, mac)
+			, exec_(logger, btp->mux_, status_word, config_db, vm_, mac)
 			, seq_open_channel_map_()
 		{
 			CYNG_LOG_INFO(logger_, "initialize task #"
@@ -291,7 +291,7 @@ namespace node
 		void network::reconfigure(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "bus.reconfigure " << cyng::io::to_str(frame));
+			CYNG_LOG_WARNING(logger_, "bus.reconfigure " << cyng::io::to_str(frame));
 			reconfigure_impl();
 		}
 
@@ -302,7 +302,11 @@ namespace node
 			//
 			if (config_.next())
 			{
-				CYNG_LOG_INFO(logger_, "switch to redundancy "
+				CYNG_LOG_INFO(logger_, "switch to redundancy ["
+					<< config_.master_
+					<< '/'
+					<< config_.config_.size()
+					<< "] "
 					<< config_.get().host_
 					<< ':'
 					<< config_.get().service_);
