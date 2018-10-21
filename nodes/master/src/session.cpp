@@ -684,7 +684,7 @@ namespace node
 				std::get<0>(res)->vm_.async_run(client_req_reboot(std::get<3>(res)	//	ipt session tag
 					, ctx.tag()			//	source peer
 					, std::get<0>(tpl)	//	cluster sequence
-					, std::get<4>(tpl)	//	ws tag
+					, std::get<3>(tpl)	//	ws tag
 					, std::get<2>(res)	//	server
 					, name
 					, pwd));

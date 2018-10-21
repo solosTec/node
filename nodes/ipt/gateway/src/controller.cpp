@@ -201,7 +201,7 @@ namespace node
 			//	random uint32
 			//	reconnect to master on different times
 			//
-			cyng::crypto::rnd_num rnd_monitor(10, 60);
+			cyng::crypto::rnd_num<int> rnd_monitor(10, 60);
 
 			//
 			//	generate a random serial number with a length of

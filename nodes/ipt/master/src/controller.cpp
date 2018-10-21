@@ -173,7 +173,7 @@ namespace node
 			//
 			//	reconnect to master on different times
 			//
-			cyng::crypto::rnd_num rnd_monitor(10, 60);
+			cyng::crypto::rnd_num<int> rnd_monitor(10, 60);
 
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())

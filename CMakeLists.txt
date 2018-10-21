@@ -142,19 +142,24 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 	# C++14 since 6.1
 	# C++17 since 7.0 (?)
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "4.8.1")
-		add_definitions(-std=c++98)	
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98") 
 		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_ON)
 		message(STATUS "** C++ support     : C++98")
+	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "5.5")
+	# crosscompile OECP with gcc 5.4.0 
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
+		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_ON)
+		message(STATUS "** C++ support     : C++11")
 	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "6.1")
-		add_definitions(-std=c++11)	
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_ON)
 		message(STATUS "** C++ support     : C++11")
 	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "7.0")
-		add_definitions(-std=c++17)	
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") 
 		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_OFF)
 		message(STATUS "** C++ support     : C++17")
 	else()
-		add_definitions(-std=c++17)	
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") 
 		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_OFF)
 		message(STATUS "** C++ support     : C++17")
 	endif()
@@ -185,8 +190,9 @@ elseif(MSVC)
 	set(GLOBAL_LIBRARY_TYPE STATIC)
 
 	#	This is Windows 7 (and rules out windows vista)
-	set(CMAKE_CXX_FLAGS "-D_WIN32_WINNT=0x0601 -D_SCL_SECURE_NO_WARNINGS -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE")	
-	add_definitions(/EHsc /bigobj /MP /std:c++latest)
+	add_definitions("-D_WIN32_WINNT=0x0601 -D_SCL_SECURE_NO_WARNINGS -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /bigobj /MP /std:c++latest") 
+	
 	
 	#
 	# help CMake to find OpenSSL
@@ -228,31 +234,33 @@ function(windows_boost_fix BOOST_VER)
 
 endfunction()
 
-if(UNIX)
-    if(EXISTS "$ENV{HOME}/projects/boost_1_68_0/install")
-        set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_68_0/install" CACHE PATH "BOOST_ROOT")
-        set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_68_0/install/lib" CACHE PATH "BOOST_LIBRARYDIR")
-        message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
-    elseif(EXISTS "$ENV{HOME}/projects/boost_1_67_0/install")
-        set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_67_0/install" CACHE PATH "BOOST_ROOT")
-        set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_67_0/install/lib" CACHE PATH "BOOST_LIBRARYDIR")
-        message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
-    elseif(EXISTS "$ENV{HOME}/projects/boost_1_66_0/install")
-        set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_66_0/install" CACHE PATH "BOOST_ROOT")
-        set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_66_0/install/lib" CACHE PATH "BOOST_LIBRARYDIR")
-        message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
-    endif()
-elseif(WIN32)
-    if(EXISTS "C:/local/boost_1_68_0")
-        windows_boost_fix("1_68")
-    elseif(EXISTS "C:/local/boost_1_67_0")
-        windows_boost_fix("1_67")
-	endif()
-endif(UNIX)
+if(NOT ${PROJECT_NAME}_CROSS_COMPILE)
+    if(UNIX)
+        if(EXISTS "$ENV{HOME}/projects/boost_1_68_0/install")
+            set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_68_0/install" CACHE PATH "BOOST_ROOT")
+            set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_68_0/install/lib" CACHE PATH "BOOST_LIBRARYDIR")
+            message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
+        elseif(EXISTS "$ENV{HOME}/projects/boost_1_67_0/install")
+            set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_67_0/install" CACHE PATH "BOOST_ROOT")
+            set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_67_0/install/lib" CACHE PATH "BOOST_LIBRARYDIR")
+            message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
+        elseif(EXISTS "$ENV{HOME}/projects/boost_1_66_0/install")
+            set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_66_0/install" CACHE PATH "BOOST_ROOT")
+            set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_66_0/install/lib" CACHE PATH "BOOST_LIBRARYDIR")
+            message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
+        endif()
+    elseif(WIN32)
+        if(EXISTS "C:/local/boost_1_68_0")
+            windows_boost_fix("1_68")
+        elseif(EXISTS "C:/local/boost_1_67_0")
+            windows_boost_fix("1_67")
+        endif()
+    endif(UNIX)
+endif()
 
 set(Boost_ADDITIONAL_VERSIONS "1.65.0" "1.66.0" "1.67.0" "1.68.0")
 message(STATUS "** Search Boost    : ${Boost_ADDITIONAL_VERSIONS}")
-find_package(Boost 1.66 REQUIRED COMPONENTS thread system date_time filesystem program_options random unit_test_framework regex)
+find_package(Boost 1.66 REQUIRED COMPONENTS thread system filesystem program_options random unit_test_framework)
 
 if(Boost_FOUND)
 
@@ -294,73 +302,87 @@ endif(Boost_FOUND)
 #
 #	setup SSL library
 #
-message(STATUS "** Search openSSL   : ${OPENSSL_ROOT_DIR}")
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0)
-	find_package(OpenSSL 1.0.2 REQUIRED)
-else()
-	find_package(OpenSSL 1.0.1 REQUIRED)
+if(NOT DEFINED ${PROJECT_NAME}_SSL_SUPPORT)
+	set(${PROJECT_NAME}_SSL_SUPPORT ON CACHE BOOL "SSL support")
 endif()
-if(OPENSSL_FOUND)
 
-#	message(STATUS "** openSSL Found         : ${OPENSSL_FOUND}")
-	message(STATUS "** openSSL Version       : ${OPENSSL_VERSION}")
-	message(STATUS "** openSSL Include       : ${OPENSSL_INCLUDE_DIR}")
-	message(STATUS "** openSSL crypto library: ${OPENSSL_CRYPTO_LIBRARY}")
-	message(STATUS "** openSSL SSL library   : ${OPENSSL_SSL_LIBRARY}")
-	message(STATUS "** openSSL Libraries     : ${OPENSSL_LIBRARIES}")
- 
- 	include_directories(${OPENSSL_INCLUDE_DIR})
- 	link_directories(${OPENSSL_LIBRARIES})
-        set(${PROJECT_NAME}_SSL_VERSION ${OPENSSL_VERSION})
-#
+if(${PROJECT_NAME}_SSL_SUPPORT)
+
+    message(STATUS "** Search openSSL   : ${OPENSSL_ROOT_DIR}")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0)
+        find_package(OpenSSL 1.0.2 REQUIRED)
+    else()
+        find_package(OpenSSL 1.0.1 REQUIRED)
+    endif()
+    if(OPENSSL_FOUND)
+
+        add_definitions(-D${PROJECT_NAME}_SSL_INSTALLED)
+        
+    #	message(STATUS "** openSSL Found         : ${OPENSSL_FOUND}")
+        message(STATUS "** openSSL Version       : ${OPENSSL_VERSION}")
+        message(STATUS "** openSSL Include       : ${OPENSSL_INCLUDE_DIR}")
+        message(STATUS "** openSSL crypto library: ${OPENSSL_CRYPTO_LIBRARY}")
+        message(STATUS "** openSSL SSL library   : ${OPENSSL_SSL_LIBRARY}")
+        message(STATUS "** openSSL Libraries     : ${OPENSSL_LIBRARIES}")
+    
+        include_directories(${OPENSSL_INCLUDE_DIR})
+        link_directories(${OPENSSL_LIBRARIES})
+            set(${PROJECT_NAME}_SSL_VERSION ${OPENSSL_VERSION})
+    #
+    else()
+            set(${PROJECT_NAME}_SSL_VERSION "unknown")
+    endif()
+    
 else()
-        set(${PROJECT_NAME}_SSL_VERSION "unknown")
+
+    message(WARNING "** no SSL support")
+    
 endif()
 
 #
 #	setup cyng library
+#   -DCYNG_ROOT:path=...
 #	assume parallel installation - that is both projects share the same parent directory.
 #
-get_filename_component(cyng_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../cyng/src/main/include" REALPATH)
-include_directories("${cyng_INCLUDE_DIR}")
-message(STATUS "** CYNG Include path     : ${cyng_INCLUDE_DIR}")
+if(NOT CYNG_ROOT)
+    set(CYNG_ROOT "${PROJECT_SOURCE_DIR}/../cyng" CACHE PATH "CYNG_ROOT")
+	message(STATUS "** Set CYNG_ROOT: ${CYNG_ROOT}")
+endif()
+
+get_filename_component(CYNG_INCLUDE_DIR "${CYNG_ROOT}/src/main/include" REALPATH)
+include_directories("${CYNG_INCLUDE_DIR}")
+message(STATUS "** CYNG include path : ${CYNG_INCLUDE_DIR}")
+
+#
+#	setup cyng build directory
+#   -DCYNG_BUILD:path=...
+#	assume parallel installation - that is both projects share the same parent directory.
+#
+if (NOT CYNG_BUILD)
+    set(CYNG_BUILD "${CYNG_ROOT}/build" CACHE PATH "CYNG_BUILD")
+	message(STATUS "** Set CYNG_BUILD: ${CYNG_BUILD}")
+endif()
+
+get_filename_component(CYNG_LIBRARY_DIR ${CYNG_BUILD} REALPATH)
+include_directories(${CYNG_LIBRARY_DIR})
+
 if (UNIX)
-	if (${PROJECT_NAME}_CROSS_COMPILE)
-		get_filename_component(cyng_LIBRARY_DIRS "${PROJECT_SOURCE_DIR}/../cyng/cross" REALPATH)
-#		get_filename_component(cyng_LIBRARY_DIRS "$ENV{HOME}/pi/sysroot/" REALPATH)
- 		get_filename_component(cyng_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../cyng" REALPATH)
-		message(STATUS "** Cross Compile         : ${cyng_SOURCE_DIR}/cross")
-		include_directories("${cyng_SOURCE_DIR}/cross")
-		link_directories("${cyng_SOURCE_DIR}/cross")
-	else()
-		get_filename_component(cyng_LIBRARY_DIRS "${PROJECT_SOURCE_DIR}/../cyng/build" REALPATH)
- 		get_filename_component(cyng_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../cyng" REALPATH)
-		include_directories("${cyng_SOURCE_DIR}/build")
-		link_directories(${cyng_LIBRARY_DIRS})
- 	endif()
-	message(STATUS "** CYNG Libraries        : ${cyng_LIBRARY_DIRS}")
+    link_directories(${CYNG_LIBRARY_DIR})
+    message(STATUS "** CYNG Libraries   : ${CYNG_LIBRARY_DIR}")
 else()
 	#
 	#	$(ConfigurationName) is a variable used by the MS build system
 	#
-	message(STATUS "** PROJECT_BINARY_DIR    : ${PROJECT_BINARY_DIR}")
- 	get_filename_component(cyng_LIBRARY_DIRS "${PROJECT_BINARY_DIR}/../../cyng/build" ABSOLUTE)
- 	get_filename_component(cyng_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../cyng" ABSOLUTE)
- 	get_filename_component(cyng_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../cyng/src/main/include" ABSOLUTE)
-	set(cyng_INCLUDE_DIRS ${cyng_INCLUDE_DIR} "${cyng_LIBRARY_DIRS}")
-	include_directories(${cyng_INCLUDE_DIRS})
-	link_directories(${cyng_LIBRARY_DIRS}/$(ConfigurationName))
-
-	message(STATUS "** CYNG Include Paths    : ${cyng_INCLUDE_DIRS}")
-	message(STATUS "** CYNG Library Paths    : ${cyng_LIBRARY_DIRS}/$(ConfigurationName)")
+	link_directories(${CYNG_LIBRARY_DIR}/$(ConfigurationName))
+    message(STATUS "** CYNG Libraries    : ${CYNG_LIBRARY_DIR}")
 endif()
 
 #
 #	Use CMake modules from CYNG project
 #
-get_filename_component(cyng_MODULE_PATH "${PROJECT_SOURCE_DIR}/../cyng/src/modules/" REALPATH)
+get_filename_component(cyng_MODULE_PATH "${CYNG_ROOT}/src/modules/" REALPATH)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${cyng_MODULE_PATH}")
-message(STATUS "** CMake modules         : ${CMAKE_MODULE_PATH}")
+message(STATUS "** CMake modules     : ${CMAKE_MODULE_PATH}")
 
 #
 # libpugixml-dev (v1.8)
@@ -368,11 +390,9 @@ message(STATUS "** CMake modules         : ${CMAKE_MODULE_PATH}")
 #
 # Included as 3party software
 #
-set(PUGIXML_INCLUDE_DIR "${cyng_SOURCE_DIR}/3party/pugixml-190")
-message(STATUS "** PugiXML Include       : ${PUGIXML_INCLUDE_DIR}")
-#message(STATUS "** PugiXML Library       : ${PUGIXML_LIBRARY}")
-set(${PROJECT_NAME}_PUGIXML_INSTALLED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D${PROJECT_NAME}_PUGIXML_INSTALLED" )
+set(PUGIXML_INCLUDE_DIR "${CYNG_ROOT}/3party/pugixml-190")
+message(STATUS "** PugiXML Include   : ${PUGIXML_INCLUDE_DIR}")
+add_definitions(-D${PROJECT_NAME}_PUGIXML_INSTALLED)
 include_directories(${PUGIXML_INCLUDE_DIR})
 
 #
@@ -515,7 +535,7 @@ else()
 	target_link_libraries(smf_https_srv smf_cluster)
 endif()
 
-if(${PROJECT_NAME}_BUILD_TEST)
+if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 #
 # This program is only for testing puposes
 # generic HTTP server
@@ -533,7 +553,7 @@ if(${PROJECT_NAME}_BUILD_TEST)
 	target_link_libraries(http ${http_link_libs})
 endif()
 
-if(${PROJECT_NAME}_BUILD_TEST)
+if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 #
 # This program is only for testing puposes
 # generic HTTPS server
@@ -568,7 +588,7 @@ if(${PROJECT_NAME}_BUILD_TEST)
 	endif()
 endif()
 
-if(${PROJECT_NAME}_BUILD_TEST)
+if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 #
 # This program is only for testing purposes
 	include (nodes/assl/prg.cmake)
@@ -586,32 +606,36 @@ endif()
 #
 # dashboard (HTTP)
 #
-include (nodes/dash/prg.cmake)
-add_executable(dash ${node_dash})
-# libraries to link
-set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml smf_cluster smf_http_srv ${OPENSSL_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND dashboard_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND dashboard_link_libs pthread)
+if(${PROJECT_NAME}_SSL_SUPPORT)
+    include (nodes/dash/prg.cmake)
+    add_executable(dash ${node_dash})
+    # libraries to link
+    set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml smf_cluster smf_http_srv ${OPENSSL_LIBRARIES})
+    if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+        list(APPEND dashboard_link_libs "${Boost_LIBRARIES}")
+        if (UNIX)
+            list(APPEND dashboard_link_libs pthread)
+        endif()
     endif()
+    target_link_libraries(dash ${dashboard_link_libs})
 endif()
-target_link_libraries(dash ${dashboard_link_libs})
 
 #
 # dashboard (HTTPS)
 #
-include (nodes/dashs/prg.cmake)
-add_executable(dashs ${node_dashs})
-# libraries to link
-set(dashsboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml smf_cluster smf_https_srv ${OPENSSL_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND dashsboard_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND dashsboard_link_libs pthread)
+if(${PROJECT_NAME}_SSL_SUPPORT)
+    include (nodes/dashs/prg.cmake)
+    add_executable(dashs ${node_dashs})
+    # libraries to link
+    set(dashsboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml smf_cluster smf_https_srv ${OPENSSL_LIBRARIES})
+    if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+        list(APPEND dashsboard_link_libs "${Boost_LIBRARIES}")
+        if (UNIX)
+            list(APPEND dashsboard_link_libs pthread)
+        endif()
     endif()
+    target_link_libraries(dashs ${dashsboard_link_libs})
 endif()
-target_link_libraries(dashs ${dashsboard_link_libs})
 
 #
 # e350
@@ -741,17 +765,19 @@ endif()
 #
 # LoRa
 #
-include (nodes/lora/prg.cmake)
-add_executable(lora ${node_lora})
-# libraries to link
-set(lora_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_crypto smf_cluster smf_https_srv smf_lora smf_protocol_sml ${OPENSSL_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND lora_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND lora_link_libs pthread)
+if(${PROJECT_NAME}_SSL_SUPPORT)
+    include (nodes/lora/prg.cmake)
+    add_executable(lora ${node_lora})
+    # libraries to link
+    set(lora_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_crypto smf_cluster smf_https_srv smf_lora smf_protocol_sml ${OPENSSL_LIBRARIES})
+    if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+        list(APPEND lora_link_libs "${Boost_LIBRARIES}")
+        if (UNIX)
+            list(APPEND lora_link_libs pthread)
+        endif()
     endif()
+    target_link_libraries(lora ${lora_link_libs})
 endif()
-target_link_libraries(lora ${lora_link_libs})
 
 #
 # master
@@ -863,7 +889,7 @@ target_link_libraries(csv ${csv_link_libs})
 # cmake -DNODE_BUILD_TEST:bool=ON ..
 #
 
-if(${PROJECT_NAME}_BUILD_TEST)
+if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 	include (test/unit-test/unit-test.cmake)
 	add_executable(unit_test ${unit_test})
 		

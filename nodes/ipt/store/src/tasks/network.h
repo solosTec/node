@@ -26,7 +26,7 @@ namespace node
 		public:
 
 			//	[11] register data consumer
-			using msg_11 = std::tuple<std::string, std::uint64_t>;
+			using msg_11 = std::tuple<std::string, std::size_t>;
 
 			//	[12] remove data consumer
 			using msg_12 = std::tuple<std::string, std::uint64_t, boost::uuids::uuid>;
@@ -155,9 +155,9 @@ namespace node
 			/**
 			 * @brief slot [11]
 			 *
-			 * add line
+			 * add consumer
 			 */
-			cyng::continuation process(std::string, std::uint64_t line);
+			cyng::continuation process(std::string, std::size_t tid);
 
 			/**
 			 * @brief slot [12]
