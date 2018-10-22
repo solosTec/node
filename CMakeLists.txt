@@ -365,10 +365,11 @@ endif()
 
 get_filename_component(CYNG_LIBRARY_DIR ${CYNG_BUILD} REALPATH)
 include_directories(${CYNG_LIBRARY_DIR})
+message(STATUS "** CYNG include path : ${CYNG_LIBRARY_DIR}")
 
 if (UNIX)
     link_directories(${CYNG_LIBRARY_DIR})
-    message(STATUS "** CYNG Libraries   : ${CYNG_LIBRARY_DIR}")
+    message(STATUS "** CYNG Libraries    : ${CYNG_LIBRARY_DIR}")
 else()
 	#
 	#	$(ConfigurationName) is a variable used by the MS build system
