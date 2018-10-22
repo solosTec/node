@@ -13,7 +13,7 @@
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
 #include <cyng/intrinsics/buffer.h>
-#include <map>
+#include <unordered_map>
 
 namespace node
 {

@@ -11,6 +11,7 @@
 #include <smf/https/srv/websocket.h>
 #include <cyng/object_cast.hpp>
 #include <cyng/vm/controller.h>
+#include <cyng/compatibility/async.h>
 
 namespace node
 {
@@ -92,7 +93,7 @@ namespace node
 				//	lock HTTP_PLAIN and SOCKET_PLAIN 
 				//
 				{
-					std::lock(mutex_[HTTP_PLAIN], mutex_[SOCKET_PLAIN]);
+					cyng::async::lock(mutex_[HTTP_PLAIN], mutex_[SOCKET_PLAIN]);
 					cyng::async::lock_guard<cyng::async::shared_mutex> lk1(mutex_[HTTP_PLAIN], cyng::async::adopt_lock);
 					cyng::async::lock_guard<cyng::async::shared_mutex> lk2(mutex_[SOCKET_PLAIN], cyng::async::adopt_lock);
 
@@ -119,7 +120,7 @@ namespace node
 				//	lock HTTP_SSL and SOCKET_SSL 
 				//
 				{
-					std::lock(mutex_[HTTP_SSL], mutex_[SOCKET_SSL]);
+					cyng::async::lock(mutex_[HTTP_SSL], mutex_[SOCKET_SSL]);
 					cyng::async::lock_guard<cyng::async::shared_mutex> lk1(mutex_[HTTP_SSL], cyng::async::adopt_lock);
 					cyng::async::lock_guard<cyng::async::shared_mutex> lk2(mutex_[SOCKET_SSL], cyng::async::adopt_lock);
 
@@ -190,7 +191,7 @@ namespace node
 			//
 			//	lock both web-socket container
 			//
-			std::lock(mutex_[SOCKET_PLAIN], mutex_[SOCKET_SSL]);
+			cyng::async::lock(mutex_[SOCKET_PLAIN], mutex_[SOCKET_SSL]);
 			cyng::async::lock_guard<cyng::async::shared_mutex> lk1(mutex_[SOCKET_PLAIN], cyng::async::adopt_lock);
 			cyng::async::lock_guard<cyng::async::shared_mutex> lk2(mutex_[SOCKET_SSL], cyng::async::adopt_lock);
 
@@ -215,7 +216,7 @@ namespace node
 			//
 			//	lock both http container
 			//
-			std::lock(mutex_[HTTP_PLAIN], mutex_[HTTP_SSL]);
+			cyng::async::lock(mutex_[HTTP_PLAIN], mutex_[HTTP_SSL]);
 			cyng::async::lock_guard<cyng::async::shared_mutex> lk1(mutex_[HTTP_PLAIN], cyng::async::adopt_lock);
 			cyng::async::lock_guard<cyng::async::shared_mutex> lk2(mutex_[HTTP_SSL], cyng::async::adopt_lock);
 
@@ -238,7 +239,7 @@ namespace node
 			//
 			//	lock both web-socket container
 			//
-			std::lock(mutex_[SOCKET_PLAIN], mutex_[SOCKET_SSL]);
+			cyng::async::lock(mutex_[SOCKET_PLAIN], mutex_[SOCKET_SSL]);
 			cyng::async::lock_guard<cyng::async::shared_mutex> lk1(mutex_[SOCKET_PLAIN], cyng::async::adopt_lock);
 			cyng::async::lock_guard<cyng::async::shared_mutex> lk2(mutex_[SOCKET_SSL], cyng::async::adopt_lock);
 
@@ -270,7 +271,7 @@ namespace node
 			//
 			//	lock both web-socket container
 			//
-			std::lock(mutex_[SOCKET_PLAIN], mutex_[SOCKET_SSL]);
+			cyng::async::lock(mutex_[SOCKET_PLAIN], mutex_[SOCKET_SSL]);
 			cyng::async::lock_guard<cyng::async::shared_mutex> lk1(mutex_[SOCKET_PLAIN], cyng::async::adopt_lock);
 			cyng::async::lock_guard<cyng::async::shared_mutex> lk2(mutex_[SOCKET_SSL], cyng::async::adopt_lock);
 
