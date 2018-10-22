@@ -190,8 +190,8 @@ elseif(MSVC)
 	set(GLOBAL_LIBRARY_TYPE STATIC)
 
 	#	This is Windows 7 (and rules out windows vista)
-	add_definitions("-D_WIN32_WINNT=0x0601 -D_SCL_SECURE_NO_WARNINGS -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /bigobj /MP /std:c++latest") 
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /bigobj /std:c++latest /MP")	
+	add_definitions(-D_WIN32_WINNT=0x0601 -D_SCL_SECURE_NO_WARNINGS -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
 	
 	
 	#
@@ -769,7 +769,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
     include (nodes/lora/prg.cmake)
     add_executable(lora ${node_lora})
     # libraries to link
-    set(lora_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_crypto smf_cluster smf_https_srv smf_lora smf_protocol_sml ${OPENSSL_LIBRARIES})
+    set(lora_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_crypto cyng_xml smf_cluster smf_https_srv smf_lora smf_protocol_sml ${OPENSSL_LIBRARIES})
     if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND lora_link_libs "${Boost_LIBRARIES}")
         if (UNIX)
