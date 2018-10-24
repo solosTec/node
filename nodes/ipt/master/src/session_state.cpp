@@ -71,7 +71,7 @@ namespace node
 		{
 			if (!is_authorized()) {
 
-				BOOST_ASSERT(STATE_AUTHORIZED == state_);
+				BOOST_ASSERT((STATE_AUTHORIZED == state_) || (STATE_START == state_));
 				state_ = STATE_START;
 
 				CYNG_LOG_INFO(sr_.logger_, "stop gatekeeper #"
