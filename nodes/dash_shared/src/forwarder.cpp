@@ -75,7 +75,10 @@ namespace node
 				ctx.attach(bus_req_db_remove("TDevice", key, ctx.tag()));
 			}
 			catch (std::exception const& ex) {
-				CYNG_LOG_ERROR(logger, "ws.read - delete channel [" << channel << "] failed");
+				CYNG_LOG_ERROR(logger, "ws.read - delete channel [" 
+					<< channel 
+					<< "] failed: "
+					<< ex.what());
 			}
 		}
 		else if (boost::algorithm::starts_with(channel, "config.gateway"))
@@ -94,7 +97,10 @@ namespace node
 				ctx.attach(bus_req_db_remove("TGateway", key, ctx.tag()));
 			}
 			catch (std::exception const& ex) {
-				CYNG_LOG_ERROR(logger, "ws.read - delete channel [" << channel << "] failed");
+				CYNG_LOG_ERROR(logger, "ws.read - delete channel [" 
+					<< channel 
+					<< "] failed: "
+					<< ex.what());
 			}
 		}
 		else
@@ -138,7 +144,10 @@ namespace node
 				}
 			}
 			catch (std::exception const& ex) {
-				CYNG_LOG_ERROR(logger, "ws.read - modify channel [" << channel << "] failed");
+				CYNG_LOG_ERROR(logger, "ws.read - modify channel [" 
+					<< channel << 
+					"] failed:"
+					<< ex.what());
 			}
 		}
 		else if (boost::algorithm::starts_with(channel, "config.gateway"))
@@ -188,7 +197,10 @@ namespace node
 				}
 			}
 			catch (std::exception const& ex) {
-				CYNG_LOG_ERROR(logger, "ws.read - modify channel [" << channel << "] failed");
+				CYNG_LOG_ERROR(logger, "ws.read - modify channel [" 
+					<< channel 
+					<< "] failed: "
+					<< ex.what());
 			}
 		}
 		else if (boost::algorithm::starts_with(channel, "config.system"))
@@ -249,9 +261,11 @@ namespace node
 
 			}
 			catch (std::exception const& ex) {
-				CYNG_LOG_ERROR(logger, "ws.read - modify channel [" << channel << "] failed");
+				CYNG_LOG_ERROR(logger, "ws.read - modify channel [" 
+					<< channel << 
+					"] failed: "
+					<< ex.what());
 			}
-
 		}
 		else
 		{
