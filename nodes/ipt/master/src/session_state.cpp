@@ -124,6 +124,7 @@ namespace node
 			vm.register_function("sml.get.proc.param.firmware", 8, std::bind(&connect_state::sml_get_proc_param_firmware, this, std::placeholders::_1));
 			vm.register_function("sml.get.proc.param.simple", 6, std::bind(&connect_state::sml_get_proc_param_simple, this, std::placeholders::_1));
 			vm.register_function("sml.get.proc.status.word", 6, std::bind(&connect_state::sml_get_proc_status_word, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.param.memory", 7, std::bind(&connect_state::sml_get_proc_param_memory, this, std::placeholders::_1));
 			vm.register_function("sml.attention.msg", 6, std::bind(&connect_state::sml_attention_msg, this, std::placeholders::_1));
 
 		}
@@ -278,6 +279,42 @@ namespace node
 				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ 
 					frame.at(3),	//	server ID
 					frame.at(5)		//	status word
+					});
+			}
+			else {
+				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.status.word - session in wrong state: "
+					<< *this
+					<< " - "
+					<< cyng::io::to_str(frame));
+			}
+		}
+
+		void session::connect_state::sml_get_proc_param_memory(cyng::context& ctx)
+		{
+			//	[eef2de9e-775a-4819-95f2-665b95da1078,9030605-2,0,0500153B01EC46,0080800010FF,14,0]
+			//	
+			//	* [uuid] pk
+			//	* [string] trx
+			//	* [size_t] idx
+			//	* [buffer] server id
+			//	* [buffer] OBIS code (81 00 60 05 00 00)
+			//	* [u8] mirror
+			//	* [u8] tmp
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(sr_.logger_, "sml.get.proc.param.memory "
+				<< *this
+				<< " - "
+				<< cyng::io::to_str(frame)
+				<< " - "
+				<< frame.at(5).get_class().type_name()
+				<< " - "
+				<< cyng::numeric_cast<std::uint32_t>(frame.at(5), 0u));
+
+			if (state_ == STATE_TASK) {
+				sr_.mux_.post(tsk_, 8, cyng::tuple_t{
+					frame.at(3),	//	server ID
+					frame.at(5),	//	mirror
+					frame.at(6)		//	tmp
 					});
 			}
 			else {

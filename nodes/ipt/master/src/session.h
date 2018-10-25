@@ -102,6 +102,7 @@ namespace node
 				void sml_get_proc_param_firmware(cyng::context& ctx);
 				void sml_get_proc_param_simple(cyng::context& ctx);
 				void sml_get_proc_status_word(cyng::context& ctx);
+				void sml_get_proc_param_memory(cyng::context& ctx);
 				void sml_attention_msg(cyng::context& ctx);
 
 			};

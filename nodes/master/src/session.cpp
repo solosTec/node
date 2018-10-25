@@ -472,6 +472,7 @@ namespace node
 			ctx.attach(cyng::register_function("bus.res.query.srv.visible", 8, std::bind(&session::bus_res_query_srv_visible, this, std::placeholders::_1)));
 			ctx.attach(cyng::register_function("bus.res.query.srv.active", 8, std::bind(&session::bus_res_query_srv_active, this, std::placeholders::_1)));
 			ctx.attach(cyng::register_function("bus.res.query.firmware", 8, std::bind(&session::bus_res_query_firmware, this, std::placeholders::_1)));
+			ctx.attach(cyng::register_function("bus.res.query.memory", 6, std::bind(&session::bus_res_query_memory, this, std::placeholders::_1)));
 			ctx.attach(cyng::register_function("bus.res.attention.code", 6, std::bind(&session::bus_res_attention_code, this, std::placeholders::_1)));
 
 			//
@@ -949,7 +950,54 @@ namespace node
 				}
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "bus.res.query.srv.active - peer not found " << std::get<0>(tpl));
+				CYNG_LOG_WARNING(logger_, "bus.res.query.firmware - peer not found " << std::get<0>(tpl));
+			}
+		}, cyng::store::read_access("_Cluster"));
+	}
+
+	void session::bus_res_query_memory(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, "bus.res.query.memory " << cyng::io::to_str(frame));
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] source
+			std::uint64_t,			//	[1] sequence
+			boost::uuids::uuid,		//	[2] websocket tag
+			std::string,			//	[3] server id (key)
+			std::uint8_t,			//	[4] mirror
+			std::uint8_t			//	[5] tmp
+		>(frame);
+
+
+		db_.access([&](const cyng::store::table* tbl_cluster)->void {
+			auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<0>(tpl)));
+			if (!rec.empty()) {
+				auto peer = cyng::object_cast<session>(rec["self"]);
+				if (peer != nullptr) {
+
+					CYNG_LOG_INFO(logger_, "bus.res.query.memory - send to peer "
+						<< cyng::value_cast<std::string>(rec["class"], "")
+						<< '@'
+						<< peer->vm_.tag()
+						<< " - "
+						<< std::get<4>(tpl)
+						<< "% - "
+						<< std::get<5>(tpl)
+						<< "%");
+
+					//
+					//	forward data
+					//
+					peer->vm_.async_run(node::bus_res_query_memory(std::get<0>(tpl)
+						, std::get<1>(tpl)	//	sequence
+						, std::get<2>(tpl)		//	websocket tag
+						, std::get<3>(tpl)		//	server id
+						, std::get<4>(tpl)		//	mirror
+						, std::get<5>(tpl)));		//	tmp
+				}
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "bus.res.query.memory - peer not found " << std::get<0>(tpl));
 			}
 		}, cyng::store::read_access("_Cluster"));
 	}

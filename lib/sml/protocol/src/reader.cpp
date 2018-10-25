@@ -509,6 +509,18 @@ namespace node
 						, OBIS_CLASS_OP_LOG_STATUS_WORD.to_buffer()	//	same as path.front()
 						, attr.second);	//	[u32] value
 				}
+				else if (path.front() == OBIS_CODE_ROOT_MEMORY_USAGE) {
+					//	get memory usage
+					read_get_proc_multiple_parameters(*pos++);
+					return cyng::generate_invoke("sml.get.proc.param.memory"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, ro_.get_value("serverId")
+						, OBIS_CODE_ROOT_MEMORY_USAGE.to_buffer()	//	same as path.front()
+						, ro_.get_value("00 80 80 00 11 ff")	//	mirror
+						, ro_.get_value("00 80 80 00 12 ff"));	//	tmp
+				}
 				break;
 			case 2:
 				if (path.front() == OBIS_CODE_ROOT_DEVICE_IDENT)

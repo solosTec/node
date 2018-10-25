@@ -166,6 +166,14 @@ namespace node
 			std::size_t get_proc_status_word(cyng::buffer_t const& server_id
 				, std::string const& username
 				, std::string const& password);
+
+			/**
+			 * get list of available firmware versions - 81 81 C7 82 FF (CODE_ROOT_MEMORY_USAGE)
+			 */
+			std::size_t get_proc_parameter_memory(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password);
+
 		private:
 			trx	trx_;
 		};

@@ -28,6 +28,7 @@ namespace node
 		vm.register_function("bus.res.query.srv.visible", 9, std::bind(&dispatcher::res_query_srv_visible, this, std::placeholders::_1));
 		vm.register_function("bus.res.query.srv.active", 9, std::bind(&dispatcher::res_query_srv_active, this, std::placeholders::_1));
 		vm.register_function("bus.res.query.firmware", 8, std::bind(&dispatcher::res_query_firmware, this, std::placeholders::_1));
+		vm.register_function("bus.res.query.memory", 6, std::bind(&dispatcher::res_query_memory, this, std::placeholders::_1));
 
 		vm.register_function("http.move", 2, std::bind(&dispatcher::http_move, this, std::placeholders::_1));
 
@@ -186,7 +187,33 @@ namespace node
 
 		auto msg = cyng::json::to_string(tpl);
 		connection_manager_.ws_msg(std::get<2>(data), msg);
+	}
 
+	void dispatcher::res_query_memory(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "bus.res.query.memory - " << cyng::io::to_str(frame));
+
+		auto const data = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] source
+			std::uint64_t,			//	[1] sequence
+			boost::uuids::uuid,		//	[2] websocket tag
+			std::string,			//	[3] server id (key)
+			std::uint8_t,			//	[4] mirror
+			std::uint8_t			//	[5] tmp
+		>(frame);
+
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("append")),
+			cyng::param_factory("channel", "status.gateway.memory"),
+			cyng::param_factory("rec", cyng::tuple_factory(
+				cyng::param_factory("srv", std::get<3>(data)),
+				cyng::param_factory("mirror", std::get<4>(data)),
+				cyng::param_factory("tmp", std::get<5>(data))
+			)));
+
+		auto msg = cyng::json::to_string(tpl);
+		connection_manager_.ws_msg(std::get<2>(data), msg);
 	}
 
 	void dispatcher::subscribe(cyng::store::db& db)

@@ -62,7 +62,8 @@ namespace node
 			vm_.async_run(std::move(prg));
 
 		}, false, false)	//	not verbose, no log instructions
-		, is_waiting_(true)
+		//, is_waiting_(true)
+		, wait_counter_(12)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -75,8 +76,10 @@ namespace node
 
 	cyng::continuation query_gateway::run()
 	{	
-		if (is_waiting_)
+		if (wait_counter_ > 0u)
 		{
+			wait_counter_--;
+
 			//
 			//	waiting for an opportunity to open a connection. If session is ready
 			//	is signals OK on slot 0
@@ -88,6 +91,8 @@ namespace node
 				<< " <"
 				<< base_.get_class_name()
 				<< "> waiting for "
+				<< wait_counter_
+				<< " x "
 				<< cyng::to_str(timeout_));
 
 			//
@@ -113,7 +118,7 @@ namespace node
 		//
 		//	update task state
 		//
-		is_waiting_ = false;
+		wait_counter_ = 0u;
 
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -304,6 +309,33 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
+	//	-- slot[7]
+	cyng::continuation query_gateway::process(cyng::buffer_t const& srv
+		, std::uint8_t mirror
+		, std::uint8_t tmp)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> "
+			<< +mirror
+			<< "% - "
+			<< +tmp
+			<< "%");
+
+		BOOST_ASSERT(server_id_ == srv);
+		bus_->vm_.async_run(node::bus_res_query_memory(tag_remote_
+			, seq_cluster_
+			, tag_ws_
+			, sml::from_server_id(srv)
+			, mirror
+			, tmp));
+
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+
 	void query_gateway::send_query_cmd()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -345,6 +377,9 @@ namespace node
 			}
 			else if (boost::algorithm::equals("firmware", p)) {
 				sml_gen.get_proc_parameter_firmware(server_id_, user_, pwd_);
+			}
+			else if (boost::algorithm::equals("memory", p)) {
+				sml_gen.get_proc_parameter_memory(server_id_, user_, pwd_);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"

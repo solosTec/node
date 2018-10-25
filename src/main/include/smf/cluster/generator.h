@@ -205,11 +205,26 @@ namespace node
 	cyng::vector_t bus_res_query_firmware(boost::uuids::uuid source
 		, std::uint64_t seq
 		, boost::uuids::uuid tag_ws
-		, std::uint32_t nr
+		, std::uint16_t nr
 		, std::string srv
 		, std::string section
 		, std::string version
 		, bool active);
+
+	/**
+	 * Response for bus.req.query.memory
+	 *
+	 * @param source source tag
+	 * @param srv server id
+	 * @param mirror usage of mirror memory in %
+	 * @param mirror usage of temp memory in %
+	 */
+	cyng::vector_t bus_res_query_memory(boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, std::string srv
+		, std::uint8_t mirror
+		, std::uint8_t tmp);
 
 	/**
 	 * Send back attention codes

@@ -30,8 +30,9 @@ namespace node
 		using msg_5 = std::tuple<cyng::buffer_t, std::uint32_t>;
 		using msg_6 = std::tuple<bool, cyng::buffer_t, std::uint16_t, cyng::buffer_t, cyng::buffer_t, std::chrono::system_clock::time_point>;
 		using msg_7 = std::tuple<cyng::buffer_t, std::uint32_t, cyng::buffer_t, cyng::buffer_t, bool>;
+		using msg_8 = std::tuple <cyng::buffer_t, std::uint8_t, std::uint8_t>;
 
-		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8>;
 
 	public:
 		query_gateway(cyng::async::base_task* btp
@@ -117,6 +118,15 @@ namespace node
 			, cyng::buffer_t const&
 			, bool);
 
+		/**
+		 * @brief slot [8]
+		 *
+		 * sml.get.proc.param.memory
+		 */
+		cyng::continuation process(cyng::buffer_t const&
+			, std::uint8_t
+			, std::uint8_t);
+
 	private:
 		void send_query_cmd();
 
@@ -135,7 +145,7 @@ namespace node
 		const boost::uuids::uuid tag_ctx_;
 		const std::chrono::system_clock::time_point start_;
 		sml::parser parser_;
-		bool is_waiting_;
+		std::size_t wait_counter_;
 	};
 
 

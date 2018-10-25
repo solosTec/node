@@ -19,6 +19,7 @@
 #include <cyng/sys/info.h>
 #include <sstream>
 #include <iomanip>
+#include <boost/core/ignore_unused.hpp>
 
 namespace node
 {
@@ -183,7 +184,7 @@ namespace node
 				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
 
 				//
-				//	generate public open response
+				//	generate public open request
 				//
 				, get_proc_parameter_request(cyng::make_object(server_id)
 					, username
@@ -204,7 +205,7 @@ namespace node
 				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
 
 				//
-				//	generate public open response
+				//	generate public open request
 				//
 				, get_proc_parameter_request(cyng::make_object(server_id)
 					, username
@@ -225,12 +226,33 @@ namespace node
 				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
 
 				//
-				//	generate public open response
+				//	generate public open request
 				//
 				, get_proc_parameter_request(cyng::make_object(server_id)
 					, username
 					, password
 					, OBIS_CLASS_OP_LOG_STATUS_WORD)
+				)
+			);
+		}
+
+		std::size_t req_generator::get_proc_parameter_memory(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password)
+		{
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
+
+				//
+				//	generate public open request
+				//
+				, get_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, OBIS_CODE_ROOT_MEMORY_USAGE)
 				)
 			);
 		}
@@ -998,7 +1020,15 @@ namespace node
 					++idx;
 				}
 				catch (std::exception const& ex) {
-
+#ifdef _DEBUG
+					std::cerr
+						<< "***error: "
+						<< ex.what()
+						<< std::endl
+						;
+#else 
+					boost::ignore_unused(ex);
+#endif
 				}
 			}
 

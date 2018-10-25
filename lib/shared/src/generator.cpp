@@ -321,7 +321,7 @@ namespace node
 	cyng::vector_t bus_res_query_firmware(boost::uuids::uuid source
 		, std::uint64_t seq
 		, boost::uuids::uuid tag_ws
-		, std::uint32_t nr
+		, std::uint16_t nr
 		, std::string srv
 		, std::string section
 		, std::string version
@@ -333,6 +333,21 @@ namespace node
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}
+
+	cyng::vector_t bus_res_query_memory(boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid tag_ws
+		, std::string srv
+		, std::uint8_t mirror
+		, std::uint8_t tmp)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.res.query.memory", source, seq, tag_ws, srv, mirror, tmp))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
 
 	cyng::vector_t bus_res_attention_code(boost::uuids::uuid source
 		, std::uint64_t seq
