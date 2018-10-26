@@ -10,6 +10,7 @@
 #include "../../../print_version_info.h"
 #include "../../../set_start_options.h"
 #include "../../../show_ip_address.h"
+#include "../../../show_fs_drives.h"
 #if BOOST_OS_WINDOWS
 #include <boost/asio.hpp>
 #endif
@@ -40,6 +41,7 @@ int main(int argc, char **argv)
 		//("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
+		("fs,F", boost::program_options::bool_switch()->default_value(false), "show available drives")
 		("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
@@ -113,6 +115,12 @@ int main(int argc, char **argv)
             //	show local IP adresses
             return node::show_ip_address(std::cout);
         }
+
+		if (vm["fs"].as< bool >())
+		{
+			//	show available drives
+			return node::show_fs_drives(std::cout);
+		}
 
 		//	read parameters from config file
 		const std::string cfg = vm["config"].as< std::string >();

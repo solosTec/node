@@ -445,6 +445,14 @@ namespace node
 		, std::string platform
 		, boost::process::pid_t pid)
 	{
+		//
+		//	ToDo: check for duplicate tags
+		//	Note: this requires to extend _Cluster table with the original tag
+		//
+		//db_.access([&](const cyng::store::table* tbl_cfg)->void {
+		//	tbl_cfg->exist(cyng::table::key_generator(tag));
+		//}, cyng::store::read_access("_Config"));
+
 		if ((account == account_) && (pwd == pwd_))
 		{
 			CYNG_LOG_INFO(logger_, "cluster member "
@@ -1061,14 +1069,19 @@ namespace node
 				, cyng::table::data_generator(frame.at(0), frame.at(1), frame.at(2), 0u, frame.at(3), frame.at(5), frame.at(6), frame.at(4))
 				, 0u, ctx.tag()))
 			{
-				CYNG_LOG_ERROR(logger_, "bus.start.watchdog - Cluster table insert failed" << cyng::io::to_str(frame));
+				//
+				//	duplicate session tags
+				//
+				CYNG_LOG_FATAL(logger_, "bus.start.watchdog - Cluster table insert failed" << cyng::io::to_str(frame));
 
 			}
+			else {
 
-			//
-			//	update master record
-			//
-			tbl_cluster->modify(cyng::table::key_generator(mtag_), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
+				//
+				//	update master record
+				//
+				tbl_cluster->modify(cyng::table::key_generator(mtag_), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
+			}
 
 
 		}, cyng::store::write_access("_Cluster"));

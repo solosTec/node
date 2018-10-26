@@ -21,12 +21,14 @@ set (node_setup_info
 	nodes/print_version_info.h
 	nodes/set_start_options.h
 	nodes/show_ip_address.h
+	nodes/show_fs_drives.h
 	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
+	nodes/show_fs_drives.cpp
 	nodes/write_pid.cpp
 )
 

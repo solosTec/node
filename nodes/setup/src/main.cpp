@@ -9,6 +9,7 @@
 #include "../../print_version_info.h"
 #include "../../set_start_options.h"
 #include "../../show_ip_address.h"
+#include "../../show_fs_drives.h"
 #if BOOST_OS_WINDOWS
 #define NOMINMAX
 #include <boost/asio.hpp>
@@ -44,7 +45,8 @@ int main(int argc, char **argv)
 		//("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
 		("init,I", boost::program_options::value<std::size_t>()->default_value(std::numeric_limits<std::size_t>::max())->implicit_value(std::numeric_limits<std::size_t>::min()), "initialize database and exit. generate optional test configuration")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
-		("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
+		("fs,F", boost::program_options::bool_switch()->default_value(false), "show available drives")
+		//("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
 		;
@@ -117,6 +119,12 @@ int main(int argc, char **argv)
             //	show local IP adresses
             return node::show_ip_address(std::cout);
         }
+
+		if (vm["fs"].as< bool >())
+		{
+			//	show available drives
+			return node::show_fs_drives(std::cout);
+		}
 
 		//	read parameters from config file
 		const std::string cfg = vm["config"].as< std::string >();
