@@ -106,7 +106,7 @@ namespace node
 			std::uint32_t get_storage() const;
 
 			/**
-			 * @return a combination of the last tweo values (group E and F)
+			 * @return a combination of the last two values (group E and F)
 			 */
 			std::uint16_t get_number() const;
 
@@ -135,6 +135,11 @@ namespace node
 			 * Calculate a hash value of 64 bits
 			 */
 			std::size_t hash() const;
+
+			/**
+			 *	Fill the first 6 bytes from a u64 value with the OBIS groups
+			 */
+			std::uint64_t to_uint64() const;
 
 		private:
 			data_type	value_;

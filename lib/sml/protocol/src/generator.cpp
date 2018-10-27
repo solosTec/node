@@ -1109,7 +1109,6 @@ namespace node
 						parameter_tree(OBIS_CODE(99, 00, 00, 00, 00, 04), make_value(value))
 
 				}))));
-
 		}
 
 		std::size_t res_generator::get_proc_actuators(cyng::object trx
@@ -1306,6 +1305,64 @@ namespace node
 			return 0;
 		}
 
+		std::size_t res_generator::get_proc_w_mbus_status(cyng::object trx
+			, cyng::object server_id
+			, std::string const& manufacturer	// manufacturer of w-mbus adapter
+			, cyng::buffer_t const&	id	//	adapter id (EN 13757-3/4)
+			, std::string const& firmware	//	firmware version of adapter
+			, std::string const& hardware)	//	hardware version of adapter);
+		{
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id
+					, OBIS_CODE_ROOT_W_MBUS_STATUS	//	path entry - 81 06 0F 06 00 FF
+					, child_list_tree(OBIS_CODE_ROOT_W_MBUS_STATUS, {
+
+						parameter_tree(OBIS_W_MBUS_ADAPTER_MANUFACTURER, make_value(manufacturer)),
+						parameter_tree(OBIS_W_MBUS_ADAPTER_ID, make_value(id)),
+						parameter_tree(OBIS_W_MBUS_FIRMWARE, make_value(firmware)),
+						parameter_tree(OBIS_W_BUS_HARDWARE, make_value(hardware))
+
+			}))));
+		}
+
+		std::size_t res_generator::get_proc_w_mbus_if(cyng::object trx
+			, cyng::object server_id
+			, std::uint8_t protocol	// radio protocol
+			, std::uint8_t s_mode	// duration in seconds
+			, std::uint8_t t_mode	// duration in seconds
+			, std::uint32_t reboot	//	duration in seconds
+			, std::uint8_t power	//	transmision power (transmission_power)
+			, bool install_mode
+		{
+
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id
+					, OBIS_CODE_IF_wMBUS	//	path entry - 81 06 19 07 00 FF
+					, child_list_tree(OBIS_CODE_IF_wMBUS, {
+
+						parameter_tree(OBIS_CODE(81, 06, 19, 07, 01, FF), make_value(protocol)),
+						parameter_tree(OBIS_CODE(81, 06, 19, 07, 02, FF), make_value((s_mode == 0) ? 30 : s_mode)),
+						parameter_tree(OBIS_CODE(81, 06, 19, 07, 03, FF), make_value((t_mode == 0) ? 20 : t_mode)),
+						parameter_tree(OBIS_CODE(81, 06, 27, 32, 03, 01), make_value(reboot)),
+						parameter_tree(OBIS_CODE(81, 06, 19, 07, 04, FF), make_value(power)),
+						parameter_tree(OBIS_CODE(81, 06, 19, 07, 11, FF), make_value(install_mode))
+
+			}))));
+		}
 
 		trx::trx()
 			: rng_()

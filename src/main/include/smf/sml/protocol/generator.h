@@ -288,6 +288,34 @@ namespace node
 				, std::chrono::system_clock::time_point start_time
 				, std::chrono::system_clock::time_point end_time
 				, const cyng::store::table*);
+
+			std::size_t get_proc_w_mbus_status(cyng::object trx
+				, cyng::object client_id
+				, std::string const&	// manufacturer of w-mbus adapter
+				, cyng::buffer_t const&	//	adapter id (EN 13757-3/4)
+				, std::string const&	//	firmware version of adapter
+				, std::string const&);	//	hardware version of adapter);
+
+			/**
+			 * @param protocol node::mbus::radio_protocol
+			 * @param s_mode Zeitdauer, die fortlaufend im SMode empfangen wird (der Parameter 
+			 *	wird nur benötigt, falls vorstehend die Variante 2 ==  S/T - Automatik gewählt ist).
+			 * @param t_mode Zeitdauer, die fortlaufend im TMode empfangen wird (der Parameter 
+			 *	wird nur benötigt, falls vorstehend die Variante 2 ==  S/T - Automatik gewählt ist).
+			 * @param reboot Periode, anzugeben in Sekunden, nach deren Ablauf das W-MBUS-Modem 
+			 *	im MUC-C neu initialisiert werden soll. Bei 0 ist der automatische Reboot inaktiv. 
+			 * @param power transmision power
+			 * @param timeout Maximales Inter Message Timeout in Sekunden 
+			 */
+			std::size_t get_proc_w_mbus_if(cyng::object trx
+				, cyng::object client_id
+				, std::uint8_t protocol	// radio protocol
+				, std::uint8_t s_mode	// duration in seconds
+				, std::uint8_t t_mode	// duration in seconds
+				, std::uint32_t reboot	//	duration in seconds
+				, std::uint8_t power	//	transmision power (transmission_power)
+				, bool	//	installation mode
+			);
 		};
 
 	}

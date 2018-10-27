@@ -106,6 +106,8 @@ namespace node
 		//const static obis	DEFINE_OBIS_CODE(81, 04, 00, 06, 10, FF, CODE_ROOT_WAN_PARAM);	//	see: 7.3.1.6 Datenstruktur zum Lesen/Setzen der WAN Parameter 
 		const static obis	DEFINE_OBIS_CODE(81, 04, 02, 07, 00, FF, CODE_ROOT_GSM);	//	see: Datenstruktur zum Lesen/Setzen der GSM Parameter 
 		const static obis	DEFINE_OBIS_CODE(81, 04, 0D, 07, 00, FF, CODE_ROOT_GPRS_PARAM);	//	see: Datenstruktur zum Lesen / Setzen der Provider-abhängigen GPRS-Parameter 
+
+		const static obis	DEFINE_OBIS_CODE(81, 06, 0F, 06, 00, FF, CODE_ROOT_W_MBUS_STATUS);	//	see: 7.3.1.23 Datenstruktur zum Lesen des W-MBUS-Status 
 		const static obis	DEFINE_OBIS_CODE(81, 46, 00, 00, 02, FF, CODE_ADDRESSED_PROFILE);
 		const static obis	DEFINE_OBIS_CODE(81, 47, 17, 07, 00, FF, CODE_PUSH_TARGET);	//	push target name
 		const static obis	DEFINE_OBIS_CODE(81, 48, 0D, 06, 00, FF, CODE_ROOT_LAN_DSL);	//	see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter
@@ -139,18 +141,27 @@ namespace node
 		//	Interfaces
 		//
 		const static obis	DEFINE_OBIS_CODE(81, 48, 17, 07, 00, FF, CODE_IF_LAN_DSL);	// see: 7.3.1.18 Datenstruktur zum Lesen / Setzen der LAN/DSL-Parameter
-		const static obis	OBIS_CODE_IF_GSM(0x81, 0x04, 0x02, 0x07, 0x00, 0xFF);
-		const static obis	OBIS_CODE_IF_GPRS(0x81, 0x04, 0x0D, 0x07, 0x00, 0xFF);
-		const static obis	OBIS_CODE_IF_USER(0x81, 0x02, 0x00, 0x07, 0x00, 0xFF);	//	Endkundenschnittstelle:
-		const static obis	OBIS_CODE_IF_IPT(0x81, 0x49, 0x0D, 0x07, 0x00, 0xFF);
-		const static obis	OBIS_CODE_IF_EDL(0x81, 0x05, 0x0D, 0x07, 0x00, 0xFF);		//	M-Bus EDL
-		const static obis	OBIS_CODE_IF_wMBUS(0x81, 0x06, 0x19, 0x07, 0x00, 0xFF);	//	Wireless M-BUS:
-		const static obis	OBIS_CODE_IF_PLC(0x81, 0x04, 0x18, 0x07, 0x00, 0xFF);
-		const static obis	OBIS_CODE_IF_SyM2(0x81, 0x05, 0x0D, 0x07, 0x00, 0xFF);	//	Erweiterungsschnittstelle:
+		const static obis	DEFINE_OBIS_CODE(81, 04, 02, 07, 00, FF, CODE_IF_GSM);
+		const static obis	DEFINE_OBIS_CODE(81, 04, 0D, 07, 00, FF, CODE_IF_GPRS);
+		const static obis	DEFINE_OBIS_CODE(81, 02, 00, 07, 00, FF, CODE_IF_USER);	//	Endkundenschnittstelle:
+		const static obis	DEFINE_OBIS_CODE(81, 49, 0D, 07, 00, FF, CODE_IF_IPT);
+		const static obis	DEFINE_OBIS_CODE(81, 05, 0D, 07, 00, FF, CODE_IF_EDL);		//	M-Bus EDL
+		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 00, FF, CODE_IF_wMBUS);	//	Wireless M-BUS:
+		const static obis	DEFINE_OBIS_CODE(81, 04, 18, 07, 00, FF, CODE_IF_PLC);
+		const static obis	DEFINE_OBIS_CODE(81, 05, 0D, 07, 00, FF, CODE_IF_SyM2);	//	Erweiterungsschnittstelle:
 		const static obis	DEFINE_OBIS_CODE(81, 00, 00, 09, 0B, 00, ACT_SENSOR_TIME);	//	actSensorTime - time delivered from sensor 
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 89, E1, FF, CLASS_OP_LOG);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 89, E2, FF, CLASS_EVENT);	//	Ereignis (uint32)
+
+		//
+		//	wMBus - 81 06 0F 06 00 FF
+		//	7.3.1.23 Datenstruktur zum Lesen des W-MBUS-Status 
+		//
+		const static obis	DEFINE_OBIS_CODE(81, 06, 00, 00, 01, 00, W_MBUS_ADAPTER_MANUFACTURER);
+		const static obis	DEFINE_OBIS_CODE(81, 06, 00, 00, 03, 00, W_MBUS_ADAPTER_ID);
+		const static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 00, 00, W_MBUS_FIRMWARE);
+		const static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 03, FF, W_BUS_HARDWARE);
 
 		//	Spannung - voltage
 		//	Strom - current

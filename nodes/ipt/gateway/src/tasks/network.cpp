@@ -6,7 +6,6 @@
  */
 
 #include "network.h"
-#include <smf/ipt/bus.h>
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/generator.h>
 #include <smf/sml/protocol/serializer.h>

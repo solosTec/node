@@ -83,6 +83,24 @@ namespace node
 		//constexpr std::uint8_t CTRL_FIELD_ACC_DMD = 0x00;	//	Access demand to master in order to request new importat application data – Alerts
 		//constexpr std::uint8_t CTRL_FIELD_ACC = 0x00;		//	Acknowledge the reception 
 		//constexpr std::uint8_t CTRL_FIELD_RSP_UD = 0x00;	//	Response of application data after a request from master
+
+		//
+		//	81 06 19 07 04 FF - transmision power
+		//
+		enum transmission_power : std::uint8_t {
+			BASIC = 0,	//	defaukt
+			LOW = 1,	
+			AVERAGE = 2,	//	medium
+			STRONG = 3,		//	high
+		};
+
+		enum radio_protocol : std::uint8_t {
+			T_MODE = 0,
+			S_MODE = 1,
+			ALTERNATING = 2,
+			PARALLEL = 3,
+			RESERVED
+		};
 	}
 
 }	//	node

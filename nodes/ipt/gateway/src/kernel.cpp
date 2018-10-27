@@ -11,6 +11,7 @@
 #include <smf/sml/obis_db.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_io.h>
+#include <smf/mbus/defs.h>
 
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
@@ -271,7 +272,7 @@ namespace node
 			//	* server ID
 			//	* username
 			//	* password
-			//	* OBIS (requested parameter)
+			//	* OBIS (parameterTreePath)
 			//	* attribute (should be null)
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_TRACE(logger_, "sml.get.proc.parameter.request " << cyng::io::to_str(frame));
@@ -385,6 +386,29 @@ namespace node
 				sml_gen_.empty(frame.at(1)
 					, frame.at(3)	//	server id
 					, OBIS_CODE_ROOT_GPRS_PARAM);
+			}
+			else if (OBIS_CODE_ROOT_W_MBUS_STATUS == code)
+			{
+				sml_gen_.get_proc_w_mbus_status(frame.at(1)
+					, frame.at(3)	//	server id
+					//, "RC1180-MBUS3"	// manufacturer of w-mbus adapter
+					, "solos::Tec"	// manufacturer of w-mbus adapter
+					, cyng::make_buffer({ 0xA8, 0x15, 0x34, 0x83, 0x40, 0x04, 0x01, 0x31 })	//	adapter id (EN 13757-3/4)
+					, NODE_VERSION	//	firmware version of adapter
+					, "2.00"	//	hardware version of adapter
+				);
+			}
+			else if (OBIS_CODE_IF_wMBUS == code)
+			{
+				sml_gen_.get_proc_w_mbus_if(frame.at(1)
+					, frame.at(3)	//	server id
+					, node::mbus::ALTERNATING	//	protocol
+					, 30	// duration in seconds
+					, 20	// duration in seconds
+					, 86399	//	duration in seconds
+					, node::mbus::STRONG	//	transmision power (transmission_power)
+					, true
+				);
 			}
 			else if (OBIS_CODE_ROOT_LAN_DSL == code)
 			{

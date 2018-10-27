@@ -48,6 +48,7 @@ namespace node
 			else if (code == OBIS_CODE_ROOT_IPT_STATE)			return "root-IPT-state";
 			else if (code == OBIS_CODE_ROOT_IPT_PARAM)			return "root-IPT-param";
 			else if (code == OBIS_CODE_ROOT_GPRS_PARAM)			return "root-GPRS";
+			else if (OBIS_CODE_ROOT_W_MBUS_STATUS == code)		return "root-sMBus-status";
 			else if (code == OBIS_CODE_ROOT_LAN_DSL)			return "root-LAN";
 			else if (code == OBIS_CODE_ROOT_MEMORY_USAGE)		return "root-memory-usage";
 			else if (code == OBIS_CODE_ROOT_DEVICE_TIME)		return "root-device-time";
@@ -60,15 +61,20 @@ namespace node
 			else if (code == OBIS_CODE_ROOT_DATA_COLLECTOR)		return "root-data-prop";
 			
 
-			//const static obis	OBIS_CODE_IF_LAN_DSL(0x81, 0x48, 0x17, 0x07, 0x00, 0xFF);	// see: 7.3.1.18 Datenstruktur zum Lesen / Setzen der LAN/DSL-Parameter
-			//const static obis	OBIS_CODE_IF_GSM(0x81, 0x04, 0x02, 0x07, 0x00, 0xFF);
-			//const static obis	OBIS_CODE_IF_GPRS(0x81, 0x04, 0x0D, 0x07, 0x00, 0xFF);
-			//const static obis	OBIS_CODE_IF_USER(0x81, 0x02, 0x00, 0x07, 0x00, 0xFF);	//	Endkundenschnittstelle:
-			//const static obis	OBIS_CODE_IF_IPT(0x81, 0x49, 0x0D, 0x07, 0x00, 0xFF);
-			//const static obis	OBIS_CODE_IF_EDL(0x81, 0x05, 0x0D, 0x07, 0x00, 0xFF);		//	M-Bus EDL
-			//const static obis	OBIS_CODE_IF_wMBUS(0x81, 0x06, 0x19, 0x07, 0x00, 0xFF);	//	Wireless M-BUS:
-			//const static obis	OBIS_CODE_IF_PLC(0x81, 0x04, 0x18, 0x07, 0x00, 0xFF);
-			//const static obis	OBIS_CODE_IF_SyM2(0x81, 0x05, 0x0D, 0x07, 0x00, 0xFF);	//	Erweiterungsschnittstelle:
+			else if (OBIS_CODE_IF_LAN_DSL == code)	return "IF_LAN_DSL";
+			else if (OBIS_CODE_IF_GSM == code)		return "IF_GSM";
+			else if (OBIS_CODE_IF_GPRS == code)		return "IF_GPRS";
+			else if (OBIS_CODE_IF_USER == code)		return "IF_USER";
+			else if (OBIS_CODE_IF_IPT == code)		return "IF_IPT";
+			else if (OBIS_CODE_IF_EDL == code)		return "IF_EDL";
+			else if (OBIS_CODE_IF_wMBUS == code)	return "IF_wMBUS";
+			else if (OBIS_CODE_IF_PLC == code)		return "IF_PLC";
+			else if (OBIS_CODE_IF_SyM2 == code)		return "IF_SyM2";
+
+			else if (OBIS_W_MBUS_ADAPTER_MANUFACTURER == code)		return "W_MBUS_ADAPTER_MANUFACTURER";
+			else if (OBIS_W_MBUS_ADAPTER_ID == code)				return "W_MBUS_ADAPTER_ID";
+			else if (OBIS_W_MBUS_FIRMWARE == code)					return "W_MBUS_FIRMWARE";
+			else if (OBIS_W_BUS_HARDWARE == code)					return "W_BUS_HARDWARE";
 
 			else if (code == OBIS_CLASS_OP_LOG)		return "class-operation-log";
 			else if (code == OBIS_CLASS_EVENT)		return "class-event";

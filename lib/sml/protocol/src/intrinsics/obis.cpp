@@ -310,6 +310,12 @@ namespace node
 			return seed;
 		}
 
+		std::uint64_t obis::to_uint64() const
+		{
+			static_assert(sizeof(std::uint64_t) > sizeof(data_type), "invalid cast");
+			return *reinterpret_cast<std::uint64_t const*>(value_.data());
+		}
+
 		//
 		//	global operations
 		//
