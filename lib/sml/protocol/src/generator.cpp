@@ -1339,7 +1339,7 @@ namespace node
 			, std::uint8_t t_mode	// duration in seconds
 			, std::uint32_t reboot	//	duration in seconds
 			, std::uint8_t power	//	transmision power (transmission_power)
-			, bool install_mode
+			, bool install_mode)
 		{
 
 			return append_msg(message(trx	//	trx
