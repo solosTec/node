@@ -197,6 +197,7 @@ namespace node
 		sync_table("_Config");
 		cache_.clear("_SysMsg", bus_->vm_.tag());
 		sync_table("_SysMsg");
+		sync_table("_CSV");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

@@ -17,11 +17,15 @@ namespace node
 	profile_24_h::profile_24_h(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, std::size_t tsk_db
-		, cyng::param_map_t cfg_trigger)
+		, std::chrono::minutes offset
+		, std::chrono::minutes frame
+		, std::string format)
 	: base_(*btp)
 		, logger_(logger)
 		, tsk_db_(tsk_db)
-		, offset_(cyng::find_value(cfg_trigger, "offset", 8))
+		, offset_(offset)
+		, frame_(frame)
+		, format_(format)
 		, state_(TASK_STATE_INITIAL_)
 		//
 		//	calculate trigger time

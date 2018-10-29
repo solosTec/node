@@ -14,25 +14,28 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
-#include <boost/uuid/random_generator.hpp>
+#include <cyng/dom/algorithm.h>
 
 namespace node
 {
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid tag
 		, cluster_config_t const& cfg_cluster
 		, cyng::param_map_t const& cfg_db
 		, cyng::param_map_t const& cfg_clock_day
 		, cyng::param_map_t const& cfg_clock_month
 		, cyng::param_map_t const& cfg_trigger)
 	: base_(*btp)
-		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
+		, bus_(bus_factory(btp->mux_, logger, tag, btp->get_id()))
 		, logger_(logger)
         , config_(cfg_cluster)
 		, cfg_db_(cfg_db)
 		, cfg_clock_day_(cfg_clock_day)
 		, cfg_clock_month_(cfg_clock_month)
-		, cfg_trigger_(cfg_trigger)
+		, offset_(cyng::find_value(cfg_trigger, "offset", 7))
+		, frame_(cyng::find_value(cfg_trigger, "frame", 7))
+		, format_(cyng::find_value<std::string>(cfg_trigger, "format", "SML"))
 		, profile_15_min_tsk_(cyng::async::NO_TASK)
 		, profile_24_h_tsk_(cyng::async::NO_TASK)
 		, storage_task_(cyng::async::NO_TASK)
@@ -90,6 +93,11 @@ namespace node
 		//	start clocks and storage tasks
 		//
 		start_sub_tasks();
+
+		//
+		//	insert instance into table _CSV
+		//
+		insert_tbl_record();
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -177,13 +185,17 @@ namespace node
             , std::chrono::seconds(3)
             , logger_
             , storage_task_
-            , cfg_trigger_).first;
+            , offset_
+			, frame_
+			, format_).first;
 
 		profile_24_h_tsk_ = cyng::async::start_task_delayed<profile_24_h>(base_.mux_
             , std::chrono::seconds(4)
 			, logger_
 			, storage_task_
-			, cfg_trigger_).first;
+			, offset_
+			, frame_
+			, format_).first;
 	}
 
 	void cluster::stop_sub_tasks()
@@ -228,4 +240,20 @@ namespace node
 			storage_task_ = cyng::async::NO_TASK;
 		}
 	}
+
+	void cluster::insert_tbl_record()
+	{
+		//
+		//	create entry in table _CSV
+		//
+		bus_->vm_.async_run(bus_req_db_insert("_CSV"
+			, cyng::table::key_generator(bus_->vm_.tag())
+			, cyng::table::data_generator(format_
+				, "local"
+				, offset_
+				, frame_)
+			, 1	//	generation
+			, bus_->vm_.tag()));
+	}
+
 }

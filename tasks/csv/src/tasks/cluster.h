@@ -27,6 +27,7 @@ namespace node
 	public:
 		cluster(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
+			, boost::uuids::uuid tag
 			, cluster_config_t const& cfg_cluster
 			, cyng::param_map_t const& cfg_db
 			, cyng::param_map_t const& cfg_clock_day
@@ -56,6 +57,7 @@ namespace node
         void start_sub_tasks();
 		void stop_sub_tasks();
 
+		void insert_tbl_record();
 
 	private:
 		cyng::async::base_task& base_;
@@ -65,7 +67,10 @@ namespace node
 		const cyng::param_map_t cfg_db_;
 		const cyng::param_map_t cfg_clock_day_;
 		const cyng::param_map_t cfg_clock_month_;
-		const cyng::param_map_t cfg_trigger_;
+		const std::chrono::minutes offset_;
+		const std::chrono::minutes frame_;
+		const std::string format_;
+
 		std::size_t profile_15_min_tsk_, profile_24_h_tsk_, storage_task_;
 
 	};	

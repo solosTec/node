@@ -26,7 +26,10 @@ namespace node
 		profile_15_min(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, std::size_t tsk_db
-			, cyng::param_map_t cfg_trigger);
+			, std::chrono::minutes offset
+			, std::chrono::minutes frame
+			, std::string format);
+
 		cyng::continuation run();
 		void stop();
 
@@ -48,6 +51,8 @@ namespace node
 		cyng::logging::log_ptr logger_;
 		const std::size_t tsk_db_;
 		const std::chrono::minutes offset_;
+		const std::chrono::minutes frame_;
+		const std::string format_;
 
 		/**
 		 * task state

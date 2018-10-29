@@ -269,6 +269,11 @@ namespace node
 			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		db.get_listener("_CSV"
+			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 
 		CYNG_LOG_INFO(logger_, "db has " << db.num_all_slots() << " connected slots");
 
@@ -391,6 +396,19 @@ namespace node
 			update_channel("table.msg.count", tbl->size());
 
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("insert")),
+				cyng::param_factory("channel", "task.csv"),
+				cyng::param_factory("rec", rec.convert()));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("task.csv", msg);
+
+			update_channel("table.csv.count", tbl->size());
+
+		}
 		else
 		{
 			CYNG_LOG_WARNING(logger_, "sig.ins - unknown table "
@@ -482,6 +500,16 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("monitor.msg", msg);
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("delete")),
+				cyng::param_factory("channel", "task.csv"),
+				cyng::param_factory("key", key));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("task.csv", msg);
 		}
 		else
 		{
@@ -582,6 +610,15 @@ namespace node
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
 		{
 			//	ToDo: Are there listener of table _Config?
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("clear")),
+				cyng::param_factory("channel", "task.csv"));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("task.csv", msg);
 		}
 		else
 		{
@@ -770,6 +807,10 @@ namespace node
 		else if (boost::algorithm::starts_with(channel, "monitor.msg"))
 		{
 			subscribe(db, "_SysMsg", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "task.csv"))
+		{
+			subscribe(db, "_CSV", channel, tag);
 		}
 		else
 		{

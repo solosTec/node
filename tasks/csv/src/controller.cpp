@@ -37,6 +37,7 @@ namespace node
 	bool wait(cyng::logging::log_ptr logger);
 	void join_cluster(cyng::async::mux&
 		, cyng::logging::log_ptr
+		, boost::uuids::uuid
 		, cyng::vector_t const& cfg_cluster
 		, cyng::tuple_t cfg_db
 		, cyng::tuple_t const& cfg_clock_day
@@ -193,7 +194,7 @@ namespace node
 
 					, cyng::param_factory("profile-15min", cyng::tuple_factory(
 						cyng::param_factory("root-dir", (pwd / "csv").string()),
-						cyng::param_factory("prefix", "smf-report-15min-"),
+						cyng::param_factory("prefix", "smf-15min-report-"),
                         cyng::param_factory("suffix", "csv"),
 						cyng::param_factory("header", true),
 						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
@@ -201,7 +202,7 @@ namespace node
 
 					, cyng::param_factory("profile-24h", cyng::tuple_factory(
 						cyng::param_factory("root-dir", (pwd / "csv").string()),
-						cyng::param_factory("prefix", "smf-report-24h"),
+						cyng::param_factory("prefix", "smf-24h-report-"),
                         cyng::param_factory("suffix", "csv"),
 						cyng::param_factory("header", true),
 						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
@@ -341,6 +342,7 @@ namespace node
 		cyng::vector_t vec;
 		join_cluster(mux
 			, logger
+			, tag
 			, cyng::value_cast(dom.get("cluster"), vec)
 			, cyng::value_cast(dom.get("DB"), tpl)
 			, cyng::value_cast(dom.get("profile-15min"), tpl)
@@ -397,6 +399,7 @@ namespace node
 
 	void join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid tag
 		, cyng::vector_t const& cfg_cluster
 		, cyng::tuple_t cfg_db
 		, cyng::tuple_t const& cfg_clock_day
@@ -408,6 +411,7 @@ namespace node
 		cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
+			, tag
 			, load_cluster_cfg(cfg_cluster)
 			, cyng::to_param_map(cfg_db)
 			, cyng::to_param_map(cfg_clock_day)

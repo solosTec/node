@@ -37,13 +37,13 @@
                     <a class="nav-link" href="index.html">Home <span class="sr-only">(current)</span></a>
                 </li>
 
-                <li class="nav-item dropdown active">
+                <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Configuration
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="config.device.html">Devices</a>
-                        <a class="dropdown-item active" href="config.gateway.html">Gateway</a>
+                        <a class="dropdown-item" href="config.gateway.html">Gateway</a>
                         <a class="dropdown-item" href="config.lora.html">LoRa</a>
                         <a class="dropdown-item" href="config.upload.html">Upload</a>
                         <a class="dropdown-item" href="config.system.html">System</a>
@@ -72,6 +72,16 @@
                     </div>
                 </li>
 
+                <li class="nav-item dropdown active">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Tasks
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item active" href="csv.task.html">CSV</a>
+                        <!--<a class="dropdown-item" href="gap.task.html">Gap Detection</a>-->
+                    </div>
+                </li>
+
             </ul>
             <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey" /></svg></span>
             <span id="ws-activity-text" class="navbar-text">
@@ -82,7 +92,7 @@
     </nav>
     <div class="jumbotron jumbotron-fluid">
         <div class="container">
-            <h1 class="display-4">Gateway Management</h1>
+            <h1 class="display-4">Generate CSV reports</h1>
             <div class="progress">
                 <div class="progress-bar" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="ws-activity-level">0%</div>
             </div>
@@ -90,89 +100,67 @@
     </div>
 
     <div class="container-fluid">
-        <table id="smf-table-gw" class="table table-condensed table-striped table-bordered" cellspacing="0">
+        <table id="smf-table-csv" class="table table-condensed table-striped table-bordered" cellspacing="0">
             <thead>
                 <tr>
-                    <th class="sml-col-gw-pk">UUID</th>
-                    <th class="sml-col-gw-server">Server ID</th>
-                    <th class="sml-col-gw-manufacturer">Manufacturer</th>
-                    <th class="sml-col-gw-name">Name</th>
-                    <th class="sml-col-gw-id">Model</th>
-                    <th class="sml-col-gw-fw">Firmware</th>
-                    <th class="sml-col-gw-user">User</th>
-                    <th class="sml-col-gw-pwd">Password</th>
-                    <th class="sml-col-gw-online" style="width:10px">&#11156;</th>
+                    <th class="sml-col-csv-pk">UUID</th>
+                    <th class="sml-col-csv-config">Configuration</th>
+                    <th class="sml-col-csv-format">Format</th>
+                    <th class="sml-col-csv-offset">Offset</th>
+                    <th class="sml-col-csv-frame">Frame</th>
                 </tr>
             </thead>
         </table>
 
         <hr />
         <!--                <ul class="nav nav-pills" role="tablist">-->
-        <ul class="nav nav-tabs" role="tablist" id="smf-gw-tab">
+        <ul class="nav nav-tabs" role="tablist" id="smf-csv-tab">
             <li class="nav-item">
-                <a class="nav-link active" id="smf-gw-tab-config" data-toggle="tab" href="#smf-gw-config" aria-selected="true">Configuration</a>
+                <a class="nav-link active" id="smf-csv-tab-config" data-toggle="tab" href="#smf-csv-config" aria-selected="true">Configuration</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-status-word" data-toggle="tab" href="#smf-gw-status-word" aria-selected="false">Status</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-srv-visible" data-toggle="tab" href="#smf-gw-srv-visible" aria-selected="false">Visible Meters</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-srv-active" data-toggle="tab" href="#smf-gw-srv-active" aria-selected="false">Active Meters</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-firmware" data-toggle="tab" href="#smf-gw-firmware" aria-selected="false">Firmware</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-memory" data-toggle="tab" href="#smf-gw-memory" aria-selected="false">Memory</a>
-            </li>
-            <!--<li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-w-mbus" data-toggle="tab" href="#smf-gw-w-mbus" aria-selected="false">wM-Bus</a>
-            </li>-->
         </ul>
 
         <div class="tab-content">
-            <div id="smf-gw-config" class="container-fluid tab-pane fade show active" role="tabpanel">
+            <div id="smf-csv-config" class="container-fluid tab-pane fade show active" role="tabpanel">
                 <div class="row">
                     <div class="col-md-10">
                         <form id="smf-form-gw">
-                            <input type="hidden" id="smf-form-gw-tag" name="smf-form-gw-tag" />
-                            <input type="hidden" id="smf-form-gw-online" name="smf-form-gw-online" />
+                            <input type="hidden" id="smf-form-csv-tag" name="smf-form-csv-tag" />
+                            <input type="hidden" id="smf-form-csv-online" name="smf-form-csv-online" />
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label class="control-label" for="smf-form-gw-server">Server ID (14 hex. characters)</label>
-                                    <input id="smf-form-gw-server" name="smf-form-gw-server" type="text" placeholder="<Server ID>" class="form-control input-md" required>
+                                    <label class="control-label" for="smf-form-csv-server">Server ID (14 hex. characters)</label>
+                                    <input id="smf-form-csv-server" name="smf-form-csv-server" type="text" placeholder="<Server ID>" class="form-control input-md" required>
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label class="control-label" for="smf-form-gw-manufacturer">Manufacturer</label>
-                                    <input id="smf-form-gw-manufacturer" name="smf-form-gw-manufacturer" type="text" placeholder="<Manufacturer>" class="form-control input-md">
+                                    <label class="control-label" for="smf-form-csv-manufacturer">Manufacturer</label>
+                                    <input id="smf-form-csv-manufacturer" name="smf-form-csv-manufacturer" type="text" placeholder="<Manufacturer>" class="form-control input-md">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label class="control-label" for="smf-form-gw-user">User</label>
-                                    <input id="smf-form-gw-user" name="smf-form-gw-user" type="text" placeholder="<User>" class="form-control input-md">
+                                    <label class="control-label" for="smf-form-csv-user">User</label>
+                                    <input id="smf-form-csv-user" name="smf-form-csv-user" type="text" placeholder="<User>" class="form-control input-md">
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label class="control-label" for="smf-form-gw-pwd">Password</label>
-                                    <input id="smf-form-gw-pwd" name="smf-form-gw-pwd" type="text" placeholder="<Password>" class="form-control input-md">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <a id="smf-form-gw-update" href="#" class="btn btn-info col-md-4 disabled">Update</a>
-                                    <label class="control-label" for="smf-form-gw-update">Commit Changes</label>
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <a id="smf-form-gw-delete" href="#" class="btn btn-danger col-md-4 disabled">Delete</a>
-                                    <label class="control-label" for="smf-form-gw-delete">Remove <span id="smf-form-gw-delete-name">Device</span></label>
+                                    <label class="control-label" for="smf-form-csv-pwd">Password</label>
+                                    <input id="smf-form-csv-pwd" name="smf-form-csv-pwd" type="text" placeholder="<Password>" class="form-control input-md">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <a id="smf-form-gw-reboot" href="#" class="btn btn-warning col-md-4 disabled">Reboot</a>
-                                    <label class="control-label" for="smf-form-gw-reboot">Reboot Device</label>
+                                    <a id="smf-form-csv-update" href="#" class="btn btn-info col-md-4 disabled">Update</a>
+                                    <label class="control-label" for="smf-form-csv-update">Commit Changes</label>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <a id="smf-form-csv-delete" href="#" class="btn btn-danger col-md-4 disabled">Delete</a>
+                                    <label class="control-label" for="smf-form-csv-delete">Remove <span id="smf-form-csv-delete-name">Device</span></label>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <a id="smf-form-csv-reboot" href="#" class="btn btn-warning col-md-4 disabled">Reboot</a>
+                                    <label class="control-label" for="smf-form-csv-reboot">Reboot Device</label>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <!-- SPACE -->
@@ -184,68 +172,68 @@
                         <div class="form-group">
                             <p>Note: No other IP-T connection can be active during the execution of the requests below.</p>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-status-word" name="smf-form-gw-status-word">
-                                <label class="form-check-label" for="smf-form-gw-status-word">Request status word</label>
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-csv-status-word" name="smf-form-csv-status-word">
+                                <label class="form-check-label" for="smf-form-csv-status-word">Request status word</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-visible" name="smf-form-gw-srv-visible">
-                                <label class="form-check-label" for="smf-form-gw-srv-visible">Display visible meters</label>
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-csv-srv-visible" name="smf-form-csv-srv-visible">
+                                <label class="form-check-label" for="smf-form-csv-srv-visible">Display visible meters</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-active" name="smf-form-gw-srv-active">
-                                <label class="form-check-label" for="smf-form-gw-srv-active">Display active meters</label>
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-csv-srv-active" name="smf-form-csv-srv-active">
+                                <label class="form-check-label" for="smf-form-csv-srv-active">Display active meters</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-firmware" name="smf-form-gw-firmware">
-                                <label class="form-check-label" for="smf-form-gw-firmware">Get a firmware list</label>
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-csv-firmware" name="smf-form-csv-firmware">
+                                <label class="form-check-label" for="smf-form-csv-firmware">Get a firmware list</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-memory" name="smf-form-gw-memory">
-                                <label class="form-check-label" for="smf-form-gw-memory">Get memory usage</label>
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-csv-memory" name="smf-form-csv-memory">
+                                <label class="form-check-label" for="smf-form-csv-memory">Get memory usage</label>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div id="smf-gw-status-word" class="container-fluid tab-pane fade" role="tabpanel">
+            <div id="smf-csv-status-word" class="container-fluid tab-pane fade" role="tabpanel">
                 <h4>Status word</h4>
                 <ul class="list-group"></ul>
                 <br>
             </div>
-            <div id="smf-gw-srv-visible" class="container-fluid tab-pane fade" role="tabpanel">
+            <div id="smf-csv-srv-visible" class="container-fluid tab-pane fade" role="tabpanel">
                 <h4></h4>
                 <ul class="list-group"></ul>
                 <br>
             </div>
-            <div id="smf-gw-srv-active" class="container-fluid tab-pane fade" role="tabpanel">
+            <div id="smf-csv-srv-active" class="container-fluid tab-pane fade" role="tabpanel">
                 <h4></h4>
                 <ul class="list-group"></ul>
                 <br>
             </div>
-            <div id="smf-gw-firmware" class="container-fluid tab-pane fade" role="tabpanel">
+            <div id="smf-csv-firmware" class="container-fluid tab-pane fade" role="tabpanel">
                 <h4></h4>
                 <ul class="list-group"></ul>
                 <br>
             </div>
-            <div id="smf-gw-memory" class="container-fluid tab-pane fade" role="tabpanel">
+            <div id="smf-csv-memory" class="container-fluid tab-pane fade" role="tabpanel">
                 <h4></h4>
                 <div class="card-deck">
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">Memory (mirror)</h5>
                             <div class="progress">
-                                <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-gw-memory_progress-1">0%</div>
+                                <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-csv-memory_progress-1">0%</div>
                             </div>
                         </div>
                         <div class="card-footer">
-                            <small class="text-muted"><span id="smf-gw-memory-1">wait...</span>%</small>
+                            <small class="text-muted"><span id="smf-csv-memory-1">wait...</span>%</small>
                         </div>
                     </div>
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">Memory (temp)</h5>
                             <div class="progress">
-                                <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-gw-memory_progress-2">0%</div>
+                                <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-csv-memory_progress-2">0%</div>
                             </div>
                             <!--<div id="mem-progress-2"
                                  data-percentage="20"
@@ -258,7 +246,7 @@
                             </div>-->
                         </div>
                         <div class="card-footer">
-                            <small class="text-muted"><span id="smf-gw-memory-2">wait...</span>%</small>
+                            <small class="text-muted"><span id="smf-csv-memory-2">wait...</span>%</small>
                         </div>
                     </div>
                 </div>
@@ -284,7 +272,7 @@
         };
 
         //  globals
-        var table_gw;
+        var table_csv;
         var _ws = null;
         var totalIO = 0;
 
@@ -301,121 +289,117 @@
             select: true,
             //colReorder: true,
             columnDefs: [
-                { targets: 'sml-col-gw-pk', visible: false, name: 'gw-pk' },
-                { targets: 'sml-col-gw-server', visible: true, name: 'gw-server' },
-                { targets: 'sml-col-gw-manufacturer', visible: true, name: 'gw-manufacturer' },
-                { targets: 'sml-col-gw-name', visible: true, name: 'gw-name' },
-                { targets: 'sml-col-gw-id', visible: true, name: 'gw-id' },
-                { targets: 'sml-col-gw-fw', visible: true, name: 'gw-fw' },
-                { targets: 'sml-col-gw-user', visible: true, name: 'gw-user' },
-                { targets: 'sml-col-gw-pwd', visible: true, name: 'gw-pwd' },
-                { targets: 'sml-col-gw-online', visible: true, name: 'gw-online', render: renderOnlineState }
+                { targets: 'sml-col-csv-pk', visible: true, name: 'csv-pk' },
+                { targets: 'sml-col-csv-format', visible: true, name: 'csv-format' },
+                { targets: 'sml-col-csv-config', visible: true, name: 'csv-config' },
+                { targets: 'sml-col-csv-offset', visible: true, name: 'csv-offset' },
+                { targets: 'sml-col-csv-frame', visible: false, name: 'csv-frame' }
             ]
         };
 
         $(document).ready(function () {
             console.log('document ready');
-            table_gw = $('#smf-table-gw').DataTable(tbl_config);
+            table_csv = $('#smf-table-csv').DataTable(tbl_config);
 
-            table_gw.on('select', function (e, datatable, type, indexes) {
+            table_csv.on('select', function (e, datatable, type, indexes) {
 
                 //  select: a584c1cc-7ae1-455b-99d1-de0f9483520d,05000000000000,solosTec,gateway,ipt:gateway,0.5.2018155,operator,operator,false, length:9
                 var rowData = datatable.rows(indexes).data().toArray()[0];
-                var rows = table_gw.rows(indexes).data();
+                var rows = table_csv.rows(indexes).data();
                 console.log("select: " + rows.toArray() + ", length:" + rowData.length);
                 $('#smf-form-legend-gw').text("{" + rowData[0] + "}");
-                $('#smf-form-gw-tag').val(rowData[0]);
-                $('#smf-form-gw-server').val(rowData[1]);
-                $('#smf-form-gw-manufacturer').val(rowData[2]);
+                $('#smf-form-csv-tag').val(rowData[0]);
+                $('#smf-form-csv-server').val(rowData[1]);
+                $('#smf-form-csv-manufacturer').val(rowData[2]);
 
-                $('#smf-form-gw-user').val(rowData[6]);
-                $('#smf-form-gw-pwd').val(rowData[7]);
-                $('#smf-form-gw-online').val(rowData[8]);    //  online
+                $('#smf-form-csv-user').val(rowData[6]);
+                $('#smf-form-csv-pwd').val(rowData[7]);
+                $('#smf-form-csv-online').val(rowData[8]);    //  online
 
                 //  enable submit button
-                $('#smf-form-gw-update').removeClass('disabled');
-                $('#smf-form-gw-delete').removeClass('disabled');
-                $('#smf-form-gw-delete-name').html('<abbr title=' + rowData[0] + ' class="font-italic">' + rowData[3] + '</abbr>');
+                $('#smf-form-csv-update').removeClass('disabled');
+                $('#smf-form-csv-delete').removeClass('disabled');
+                $('#smf-form-csv-delete-name').html('<abbr title=' + rowData[0] + ' class="font-italic">' + rowData[3] + '</abbr>');
 
                 //  online state
                 if (rowData[8]) {
-                    $('#smf-form-gw-reboot').removeClass('disabled');
-                    $('#smf-form-gw-status-word').removeAttr('disabled');
-                    $('#smf-form-gw-srv-visible').removeAttr("disabled");
-                    $('#smf-form-gw-srv-active').removeAttr('disabled');
-                    $('#smf-form-gw-firmware').removeAttr('disabled');
-                    $('#smf-form-gw-memory').removeAttr('disabled');
+                    $('#smf-form-csv-reboot').removeClass('disabled');
+                    $('#smf-form-csv-status-word').removeAttr('disabled');
+                    $('#smf-form-csv-srv-visible').removeAttr("disabled");
+                    $('#smf-form-csv-srv-active').removeAttr('disabled');
+                    $('#smf-form-csv-firmware').removeAttr('disabled');
+                    $('#smf-form-csv-memory').removeAttr('disabled');
                 }
                 else {
-                    $('#smf-form-gw-reboot').addClass('disabled');
-                    $('#smf-form-gw-status-word').attr("disabled", "disabled");
-                    $('#smf-form-gw-srv-visible').attr("disabled", "disabled");
-                    $('#smf-form-gw-srv-active').attr("disabled", "disabled");
-                    $('#smf-form-gw-firmware').attr("disabled", "disabled");
-                    $('#smf-form-gw-memory').attr("disabled", "disabled");
+                    $('#smf-form-csv-reboot').addClass('disabled');
+                    $('#smf-form-csv-status-word').attr("disabled", "disabled");
+                    $('#smf-form-csv-srv-visible').attr("disabled", "disabled");
+                    $('#smf-form-csv-srv-active').attr("disabled", "disabled");
+                    $('#smf-form-csv-firmware').attr("disabled", "disabled");
+                    $('#smf-form-csv-memory').attr("disabled", "disabled");
                 }
 
-                $('#smf-form-gw-online').val(rowData[8]);    //  online
+                $('#smf-form-csv-online').val(rowData[8]);    //  online
                 //  gateway is online
                 if (rowData[8]) {
 
-                    //$('#smf-nav-item-gw-config').removeClass('disabled');
+                    //$('#smf-nav-item-csv-config').removeClass('disabled');
 
                     //
                     //  build a vector with all data to request from gateway
                     //
                     var gw_req_vec = [];
 
-                    if ($('#smf-form-gw-status-word').is(":checked")) {
-                        $('#smf-gw-status-word ul').empty();
-                        $('#smf-gw-status-word h4').text('Status of ' + rowData[1]);
+                    if ($('#smf-form-csv-status-word').is(":checked")) {
+                        $('#smf-csv-status-word ul').empty();
+                        $('#smf-csv-status-word h4').text('Status of ' + rowData[1]);
                         gw_req_vec.push("status:word");
                     }
-                    if ($('#smf-form-gw-srv-visible').is(":checked") && rowData[8]) {
-                        $('#smf-gw-srv-visible ul').empty();
-                        $('#smf-gw-srv-visible h4').text('Visible meters of ' + rowData[1]);
+                    if ($('#smf-form-csv-srv-visible').is(":checked") && rowData[8]) {
+                        $('#smf-csv-srv-visible ul').empty();
+                        $('#smf-csv-srv-visible h4').text('Visible meters of ' + rowData[1]);
                         gw_req_vec.push("srv:visible");
                     }
-                    if ($('#smf-form-gw-srv-active').is(":checked") && rowData[8]) {
-                        $('#smf-gw-srv-active ul').empty();
-                        $('#smf-gw-srv-active h4').text('Active meters of ' + rowData[1]);
+                    if ($('#smf-form-csv-srv-active').is(":checked") && rowData[8]) {
+                        $('#smf-csv-srv-active ul').empty();
+                        $('#smf-csv-srv-active h4').text('Active meters of ' + rowData[1]);
                         gw_req_vec.push("srv:active");
                     }
-                    if ($('#smf-form-gw-firmware').is(":checked") && rowData[8]) {
-                        $('#smf-gw-firmware ul').empty();
-                        $('#smf-gw-firmware h4').text('Firmware overview ' + rowData[1]);
+                    if ($('#smf-form-csv-firmware').is(":checked") && rowData[8]) {
+                        $('#smf-csv-firmware ul').empty();
+                        $('#smf-csv-firmware h4').text('Firmware overview ' + rowData[1]);
                         gw_req_vec.push("firmware");
                     }
-                    if ($('#smf-form-gw-memory').is(":checked") && rowData[8]) {
-                        $('#smf-gw-memory ul').empty();
-                        $('#smf-gw-memory h4').text('Memory usage ' + rowData[1]);
+                    if ($('#smf-form-csv-memory').is(":checked") && rowData[8]) {
+                        $('#smf-csv-memory ul').empty();
+                        $('#smf-csv-memory h4').text('Memory usage ' + rowData[1]);
                         gw_req_vec.push("memory");
                     }
 
                     if (gw_req_vec.length > 0) {
                         _ws.send(JSON.stringify({
-                            cmd: "query:gateway", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()], params: gw_req_vec
+                            cmd: "query:gateway", channel: "config.gateway", key: [$('#smf-form-csv-tag').val()], params: gw_req_vec
                         }));
                     }
                 }
                 else {
                     //  seems not to work
-                    //$('#smf-nav-item-gw-config').addClass('disabled');
-                    //$('#smf-nav-item-gw-config').hide();
+                    //$('#smf-nav-item-csv-config').addClass('disabled');
+                    //$('#smf-nav-item-csv-config').hide();
                 }
             });
 
             function start_ws() {
                 //  try connect
                 $('#ws-activity-text').html('connecting to ' + location.host + '...');
-                _ws = new WebSocket('ws://' + location.host + '/smf/api/gw/v0.1', ['SMF']);
+                _ws = new WebSocket('ws://' + location.host + '/smf/api/csv/v0.1', ['SMF']);
 
                 _ws.onopen = function () {
                     console.log('ws open');
                     //  clear table in case of reconnect
-                    table_gw.clear().draw(false);
+                    table_csv.clear().draw(false);
                     //  subscribe system status
-                    _ws.send(JSON.stringify({ cmd: "subscribe", channel: "config.gateway", push: true }));
+                    _ws.send(JSON.stringify({ cmd: "subscribe", channel: "task.csv", push: true }));
                 };
 
                 _ws.onclose = function (event) {
@@ -442,33 +426,28 @@
                     totalIO += e.data.length;
                     var obj = JSON.parse(e.data);
                     if (obj.cmd != null && obj.channel != null) {
-                        if (obj.channel == 'config.gateway') {
+                        if (obj.channel == 'task.csv') {
                             if (obj.cmd == 'insert') {
                                 //
-                                // {"cmd": "insert", "channel": "config.gateway", "rec":
-                                //  {"key": {"pk":"d28cd24a-980d-46fc-b5ac-8c445415adbf"},
-                                //  "data": {"factoryNr":"06441734","serverID":"0500153B02517E","ifData":"00:01:02:03:04:06","ifService":"00:01:02:03:04:05","made":"2018-06-06 13:24:51.38650500","manufacturer":"EMH","mbus":"mbus","model":"MODEL","name":"NAME","online":false,"pwdDef":"secret","pwdRoot":"secret","userName":"operator","userPwd":"operator","vFirmware":"FIRMWARE"}, "gen": 94}}
+                                // {"cmd": "insert", "channel": "task.csv", "rec": {"key": {"tag":"71b2b5d3-bca6-44d0-980c-1a2733fc3b79"}, "data": {"config":"local","format":"SML","frame":"00:03:0.000000","gen":1,"offset":"00:07:0.000000"}
                                 //
-                                var server = $('<div/>').text(obj.rec.data.serverId).html();
-                                var manufacturer = $('<div/>').text(obj.rec.data.manufacturer).html();
-                                var name = $('<div/>').text(obj.rec.data.name).html();
-                                var model = $('<div/>').text(obj.rec.data.model).html();
-                                var firmware = $('<div/>').text(obj.rec.data.vFirmware).html();
-                                var userName = $('<div/>').text(obj.rec.data.userName).html();
-                                var userPwd = $('<div/>').text(obj.rec.data.userPwd).html();
-                                var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, name, model, firmware, userName, userPwd, obj.rec.data.online]).draw().node();
+                                var config = $('<div/>').text(obj.rec.data.config).html();
+                                var format = $('<div/>').text(obj.rec.data.format).html();
+                                var offset = $('<div/>').text(obj.rec.data.offset).html();
+                                var frame = $('<div/>').text(obj.rec.data.frame).html();
+                                var rowNode = table_csv.row.add([obj.rec.key.tag, config, format, offset, frame]).draw().node();
 
                             }
                             else if (obj.cmd == 'delete') {
                                 //  {"cmd": "delete", "channel": "config.gateway", "key": ["28754043-1f38-4318-a95e-dd9965e80895"]}
-                                table_gw.row(function (idx, data, node) {
+                                table_csv.row(function (idx, data, node) {
                                     if (data[0] == obj.key) {
-                                        $('#smf-form-gw-delete-name').text("Device");
-                                        $('#smf-form-gw-update').addClass('disabled');
-                                        $('#smf-form-gw-delete').addClass('disabled');
-                                        $('#smf-form-gw-reboot').addClass('disabled');
-                                        //$('#smf-form-gw-srv-visible').addClass('disabled');
-                                        //$('#smf-form-gw-srv-active').addClass('disabled');
+                                        $('#smf-form-csv-delete-name').text("Device");
+                                        $('#smf-form-csv-update').addClass('disabled');
+                                        $('#smf-form-csv-delete').addClass('disabled');
+                                        $('#smf-form-csv-reboot').addClass('disabled');
+                                        //$('#smf-form-csv-srv-visible').addClass('disabled');
+                                        //$('#smf-form-csv-srv-active').addClass('disabled');
 
                                         return true;
                                     }
@@ -478,9 +457,9 @@
                             else if (obj.cmd == 'modify') {
                                 //  {"cmd": "modify", "channel": "config.gateway", "key": ["dca135f3-ff2b-4bf7-8371-a9904c74522b"], "value": {"online":true}}
                                 //  {"cmd": "modify", "channel": "config.gateway", "key": ["a584c1cc-7ae1-455b-99d1-de0f9483520d"], "value": {"online":false}}
-                                table_gw.row(function (idx, data, node) {
+                                table_csv.row(function (idx, data, node) {
                                     if (data[0] == obj.key) {
-                                        var r = table_gw.row(node);
+                                        var r = table_csv.row(node);
                                         var d = r.data();
                                         if (obj.value.online != null) {
                                             d[8] = obj.value.online;
@@ -498,14 +477,14 @@
                                             d[7] = obj.value.userPwd;
                                         }
                                         r.data(d);
-                                        $('#smf-form-gw-delete').addClass('disabled');
+                                        $('#smf-form-csv-delete').addClass('disabled');
                                         return true;
                                     }
                                     return false;
                                 });
                             }
                             else if (obj.cmd == 'clear') {
-                                table_gw.clear().draw(false);
+                                table_csv.clear().draw(false);
                             }
                             else if (obj.cmd == 'load') {
                                 //  load status
@@ -519,7 +498,7 @@
                                         $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
                                         $('#ws-activity-symbol').fadeOut();
                                         $('#ws-activity-level').css("width", "100%").text("synchronized").removeClass('bg-info').addClass('bg-success');
-                                        table_gw.order([3, 'asc']).draw();
+                                        table_csv.order([3, 'asc']).draw();
                                     }
                                 }
                                 else if (obj.level != null) {
@@ -536,66 +515,66 @@
                                     switch (prop) {
                                         case "256":
                                             if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">fatal error</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-danger">fatal error</li>');
                                             }
                                             else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no error</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-secondary">no error</li>');
                                             }
                                             break;
                                         case "8192":
                                             if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">online</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-success">online</li>');
                                             }
                                             else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">offline</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-secondary">offline</li>');
                                             }
                                             break;
                                         case "16384":
                                             if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">out of memory</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-danger">out of memory</li>');
                                             }
                                             else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no memory shortage</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-secondary">no memory shortage</li>');
                                             }
                                             break;
                                         case "65536":
                                             if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">customer interface available</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-success">customer interface available</li>');
                                             }
                                             else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no customer interface</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-secondary">no customer interface</li>');
                                             }
                                             break;
                                         case "131072":
                                             if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">extension interface available</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-success">extension interface available</li>');
                                             }
                                             else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no extension interface</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-secondary">no extension interface</li>');
                                             }
                                             break;
                                         case "262144":
                                             if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">wireless M-bus</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-success">wireless M-bus</li>');
                                             }
                                             else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no wireless M-bus available</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-secondary">no wireless M-bus available</li>');
                                             }
                                             break;
                                         case "524288":
                                             if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">PLC interface available</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-success">PLC interface available</li>');
                                             }
                                             else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no PLC interface</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-secondary">no PLC interface</li>');
                                             }
                                             break;
                                         case "4294967296":
                                             if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-warning">uncertain timebase</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-warning">uncertain timebase</li>');
                                             }
                                             else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">NTP is running</li>');
+                                                $('#smf-csv-status-word ul').append('<li class="list-group-item list-group-item-success">NTP is running</li>');
                                             }
                                             break;
                                         default:
@@ -607,7 +586,7 @@
                         else if (obj.channel == 'status.gateway.visible') {
                             if (obj.cmd == 'append') {
                                 if (obj.rec.type == 0) {
-                                    $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-success">#'
+                                    $('#smf-csv-srv-visible ul').append('<li class="list-group-item list-group-item-success">#'
                                         + obj.rec.nr
                                         + ' '
                                         + obj.rec.meter
@@ -616,7 +595,7 @@
                                         + ')</li>');
                                 }
                                 else {
-                                    $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                    $('#smf-csv-srv-visible ul').append('<li class="list-group-item list-group-item-secondary">#'
                                         + obj.rec.nr
                                         + ' '
                                         + obj.rec.meter
@@ -629,7 +608,7 @@
                         else if (obj.channel == 'status.gateway.active') {
                             if (obj.cmd == 'append') {
                                 if (obj.rec.type == 0) {
-                                    $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-success">#'
+                                    $('#smf-csv-srv-active ul').append('<li class="list-group-item list-group-item-success">#'
                                     + obj.rec.nr
                                     + ' '
                                     + obj.rec.meter
@@ -638,7 +617,7 @@
                                     + ')</li>');
                                 }
                                 else {
-                                    $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                    $('#smf-csv-srv-active ul').append('<li class="list-group-item list-group-item-secondary">#'
                                     + obj.rec.nr
                                     + ' '
                                     + obj.rec.meter
@@ -652,7 +631,7 @@
                             if (obj.cmd == 'append') {
                                 //  {"nr": 0, "srv": "00:15:3b:02:29:7e", "section": "CURRENT VERSION", "version": "VSES-1.13_1133000038X025d", "active": true}
                                 if (obj.rec.active) {
-                                    $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-success">#'
+                                    $('#smf-csv-firmware ul').append('<li class="list-group-item list-group-item-success">#'
                                         + obj.rec.nr
                                         + ' '
                                         + obj.rec.section
@@ -661,7 +640,7 @@
                                         + '</li>');
                                 }
                                 else {
-                                    $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                    $('#smf-csv-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
                                         + obj.rec.nr
                                         + ' '
                                         + obj.rec.section
@@ -672,17 +651,17 @@
                             }
                         }
                         else if (obj.channel == 'status.gateway.memory') {
-                            $('#smf-gw-memory-1').text(obj.rec.mirror);
-                            $('#smf-gw-memory-2').text(obj.rec.tmp);
-                            $('#smf-gw-memory_progress-1').css("width", obj.rec.mirror + "%").attr("aria-valuenow", obj.rec.mirror).text(obj.rec.mirror + "%");
-                            $('#smf-gw-memory_progress-2').css("width", obj.rec.tmp + "%").attr("aria-valuenow", obj.rec.tmp).text(obj.rec.tmp + "%");
+                            $('#smf-csv-memory-1').text(obj.rec.mirror);
+                            $('#smf-csv-memory-2').text(obj.rec.tmp);
+                            $('#smf-csv-memory_progress-1').css("width", obj.rec.mirror + "%").attr("aria-valuenow", obj.rec.mirror).text(obj.rec.mirror + "%");
+                            $('#smf-csv-memory_progress-2').css("width", obj.rec.tmp + "%").attr("aria-valuenow", obj.rec.tmp).text(obj.rec.tmp + "%");
                             if (obj.rec.mirror > 60) {
-                                $('#smf-gw-memory_progress-1').removeClass('bg-success');
-                                $('#smf-gw-memory_progress-1').addClass('bg-warning');
+                                $('#smf-csv-memory_progress-1').removeClass('bg-success');
+                                $('#smf-csv-memory_progress-1').addClass('bg-warning');
                             }
                             else {
-                                $('#smf-gw-memory_progress-1').removeClass('bg-warning');
-                                $('#smf-gw-memory_progress-1').addClass('bg-success');
+                                $('#smf-csv-memory_progress-1').removeClass('bg-warning');
+                                $('#smf-csv-memory_progress-1').addClass('bg-success');
                             }
                         }
                     }
@@ -701,9 +680,9 @@
 
             setInterval(check_ws, 5000);
 
-            $('#smf-form-gw-delete').on("click", function (event) {
+            $('#smf-form-csv-delete').on("click", function (event) {
                 event.preventDefault();
-                var key = $('#smf-form-gw-tag').val();
+                var key = $('#smf-form-csv-tag').val();
                 console.log($(this).text() + ' ' + key);
                 _ws.send(JSON.stringify({
                     cmd: 'delete', channel: 'config.gateway', key: {
@@ -712,74 +691,74 @@
                 }));
             });
 
-            $('#smf-form-gw-update').on("click", function (event) {
+            $('#smf-form-csv-update').on("click", function (event) {
                 event.preventDefault();
                 console.log('update: ' + $('#smf-form-gw').serialize());
 
                 _ws.send(JSON.stringify({
                     cmd: "modify", channel: "config.gateway", rec: {
-                        key: [$('#smf-form-gw-tag').val()],
+                        key: [$('#smf-form-csv-tag').val()],
                         data: {
-                            serverId: $('#smf-form-gw-server').val(),
-                            manufacturer: $('#smf-form-gw-manufacturer').val(),
-                            userName: $('#smf-form-gw-user').val(),
-                            userPwd: $('#smf-form-gw-pwd').val()
+                            serverId: $('#smf-form-csv-server').val(),
+                            manufacturer: $('#smf-form-csv-manufacturer').val(),
+                            userName: $('#smf-form-csv-user').val(),
+                            userPwd: $('#smf-form-csv-pwd').val()
                         }
                     }
                 }));
             });
 
-            $('#smf-form-gw-reboot').on("click", function (event) {
+            $('#smf-form-csv-reboot').on("click", function (event) {
                 event.preventDefault();
                 console.log('reboot: ' + $('#smf-form-gw').serialize());
 
                 _ws.send(JSON.stringify({
-                    cmd: "reboot", channel: "config.gateway", key: [$('#smf-form-gw-tag').val()]
+                    cmd: "reboot", channel: "config.gateway", key: [$('#smf-form-csv-tag').val()]
                 }));
             });
 
-            $('#smf-form-gw-status-word').change(function () {
+            $('#smf-form-csv-status-word').change(function () {
                 if (this.checked) {
-                    $('#smf-gw-tab-status-word').removeClass('disabled');
+                    $('#smf-csv-tab-status-word').removeClass('disabled');
                 }
                 else {
-                    $('#smf-gw-tab-status-word').addClass('disabled');
+                    $('#smf-csv-tab-status-word').addClass('disabled');
                 }
             });
 
-            $('#smf-form-gw-srv-visible').change(function () {
+            $('#smf-form-csv-srv-visible').change(function () {
                 if (this.checked) {
-                    $('#smf-gw-tab-srv-visible').removeClass('disabled');
+                    $('#smf-csv-tab-srv-visible').removeClass('disabled');
                 }
                 else {
-                    $('#smf-gw-tab-srv-visible').addClass('disabled');
+                    $('#smf-csv-tab-srv-visible').addClass('disabled');
                 }
             });
 
-            $('#smf-form-gw-srv-active').change(function () {
+            $('#smf-form-csv-srv-active').change(function () {
                 if (this.checked) {
-                    $('#smf-gw-tab-srv-active').removeClass('disabled');
+                    $('#smf-csv-tab-srv-active').removeClass('disabled');
                 }
                 else {
-                    $('#smf-gw-tab-srv-active').addClass('disabled');
+                    $('#smf-csv-tab-srv-active').addClass('disabled');
                 }
             });
 
-            $('#smf-form-gw-firmware').change(function () {
+            $('#smf-form-csv-firmware').change(function () {
                 if (this.checked) {
-                    $('#smf-gw-tab-firmware').removeClass('disabled');
+                    $('#smf-csv-tab-firmware').removeClass('disabled');
                 }
                 else {
-                    $('#smf-gw-tab-firmware').addClass('disabled');
+                    $('#smf-csv-tab-firmware').addClass('disabled');
                 }
             });
 
-            $('#smf-form-gw-memory').change(function () {
+            $('#smf-form-csv-memory').change(function () {
                 if (this.checked) {
-                    $('#smf-gw-tab-memory').removeClass('disabled');
+                    $('#smf-csv-tab-memory').removeClass('disabled');
                 }
                 else {
-                    $('#smf-gw-tab-memory').addClass('disabled');
+                    $('#smf-csv-tab-memory').addClass('disabled');
                 }
             });
 

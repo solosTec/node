@@ -8,7 +8,7 @@
 #include "controller.h"
 #include "tasks/cluster.h"
 #include <NODE_project_info.h>
-#include <smf/https/srv/auth.h>
+#include <smf/http/srv/auth.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>

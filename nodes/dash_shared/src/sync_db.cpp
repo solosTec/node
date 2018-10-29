@@ -235,9 +235,28 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table *SysMsg");
 		}
 
+		if (!db.create_table(cyng::table::make_meta_table<1, 4>("_CSV",
+			{ "tag"			//	[uuid] client session - primary key 
+			, "format"		//	[string] SMF/IEC
+			, "config"		//	[string] local, master, mixed
+			, "offset"		//	[u32] minutes after midnight
+			, "frame"		//	[u32] time frame in minutes
+			},
+			{ cyng::TC_UUID			//	tag
+			, cyng::TC_STRING		//	format
+			, cyng::TC_STRING		//	config
+			, cyng::TC_MINUTE		//	offset
+			, cyng::TC_MINUTE		//	frame
+			},
+			{ 36, 16, 16, 0, 0 })))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table _CSV");
+		}
+
+		//
+		//	all tables created
+		//
 		CYNG_LOG_INFO(logger, db.size() << " tables created");
-
-
 	}
 
 	void clear_cache(cyng::store::db& db, boost::uuids::uuid tag)
@@ -648,7 +667,9 @@ namespace node
 						CYNG_LOG_WARNING(logger, "db.req.insert failed "
 							<< table		// table name
 							<< " - "
-							<< cyng::io::to_str(key));
+							<< cyng::io::to_str(key)
+							<< " => "
+							<< cyng::io::to_str(data));
 
 					}
 				}
@@ -670,7 +691,9 @@ namespace node
 			CYNG_LOG_WARNING(logger, "db.req.insert failed "
 				<< table		// table name
 				<< " - "
-				<< cyng::io::to_str(key));
+				<< cyng::io::to_str(key)
+				<< " => "
+				<< cyng::io::to_str(data));
 		}
 		else
 		{

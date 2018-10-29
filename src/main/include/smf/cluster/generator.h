@@ -35,6 +35,7 @@ namespace node
 
 	/** 
 	 * similiar to db.insert() but contains more information
+	 * The task ID is optional.
 	 */
 	cyng::vector_t bus_res_subscribe(std::string const&
 		, cyng::vector_t const&
@@ -45,7 +46,6 @@ namespace node
 
 	/**
 	 * database operations
-	 * The task ID is optional.
 	 */
 	cyng::vector_t bus_req_db_insert(std::string const&
 		, cyng::vector_t const&
