@@ -8,54 +8,75 @@
 #define NODE_HTTP_CONNECTIONS_H
 
 #include <smf/http/srv/cm_interface.h>
-#include <smf/http/srv/session.h>
-#include <smf/http/srv/websocket.h>
+#ifdef NODE_SSL_INSTALLED
+#include <smf/http/srv/auth.h>
+#endif
+
 #include <cyng/compatibility/io_service.h>
 #include <cyng/compatibility/async.h>
+#include <cyng/log.h>
 #include <cyng/object.h>
-#include <set>
+#include <cyng/vm/controller_fwd.h>
+
 #include <map>
+#include <array>
+
+#include <boost/uuid/random_generator.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
 
 namespace node 
 {
 	namespace http
 	{
-		class connection_manager : public connection_manager_interface
+		class connections : public connection_manager_interface
 		{
-			friend class websocket_session;
+			using container_t = std::map<boost::uuids::uuid, cyng::object>;
 
 		public:
-			connection_manager(const connection_manager&) = delete;
-			connection_manager& operator=(const connection_manager&) = delete;
+			connections(const connections&) = delete;
+			connections& operator=(const connections&) = delete;
 
 			/**
 			 * Construct a connection manager.
 			 */
-			connection_manager(cyng::logging::log_ptr, bus::shared_type);
+			connections(cyng::logging::log_ptr
+				, cyng::controller& vm
+				, std::string const& doc_root
+#ifdef NODE_SSL_INSTALLED
+				, auth_dirs const& ad
+#endif
+			);
+
+			/**
+			 * Provide access to vm controller
+			 */
+			cyng::controller& vm();
 
 			/**
 			 * Add the specified connection to the manager and start it.
 			 * Called by server.
 			 */
-			void start(cyng::object);
+			void create_session(boost::asio::ip::tcp::socket socket);
 
 			/**
-			 * Upgrade a session to a websocket
-			 * Called by session.
+			 * Upgrade a plain HTTP session to web-socket 
 			 */
-			std::pair<cyng::object, cyng::object> upgrade(session*);
+			void upgrade(boost::uuids::uuid
+				, boost::asio::ip::tcp::socket socket
+				, boost::beast::http::request<boost::beast::http::string_body> req);
 
 			/**
 			 * Stop the specified HTTP session.
 			 *
 			 * @return the session object
 			 */
-			cyng::object stop(session*);
+			cyng::object stop_session(boost::uuids::uuid);
 
 			/**
 			 * Stop the specified websocket
 			 */
-			bool stop(websocket_session const*);
+			cyng::object stop_ws(boost::uuids::uuid);
 
 			/**
 			 * stop all HTTP sessions and Web-Sockets
@@ -84,32 +105,53 @@ namespace node
 
 			void trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment);
 
+
 		private:
-			/**
-			 * put a websocket object on stack
-			 */
-			void push_ws(cyng::context& ctx);
-			cyng::object get_ws(boost::uuids::uuid) const;
+			enum session_type {
+				HTTP_PLAIN,
+				SOCKET_PLAIN,
+				SESSION_TYPES,
+				NO_SESSION	//	no session found
+			};
 
 		private:
 			cyng::logging::log_ptr logger_;
 
 			/**
-			 * Running HTTP/1.x sessions
+			 * execution engine
 			 */
-			std::map<boost::uuids::uuid, cyng::object>	sessions_;
+			cyng::controller& vm_;
 
 			/**
-			 * Websockets
+			 * document root
 			 */
-			std::map<boost::uuids::uuid, cyng::object>	ws_;
+			const std::string doc_root_;
+
+#ifdef NODE_SSL_INSTALLED
+			const auth_dirs auth_dirs_;
+#endif
 
 			/**
-			 * channel list
+			 * Generate unique session tags
+			 */
+			boost::uuids::random_generator uidgen_;
+
+			/**
+			 * Running HTTPs/1.x sessions and web-sockets
+			 */
+			std::array<container_t, SESSION_TYPES> sessions_;
+
+			/**
+			 * Mutex for session containers
+			 */
+			mutable std::array<cyng::async::shared_mutex, SESSION_TYPES> mutex_;
+
+			/** @brief channel list
+			 *
+			 * Each channel can be subscribed by a multitude of channels
 			 */
 			std::multimap<std::string, cyng::object>	listener_;
 
-			mutable cyng::async::shared_mutex mutex_;
 
 		};
 	}

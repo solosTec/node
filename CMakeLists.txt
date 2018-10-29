@@ -528,12 +528,14 @@ add_library(smf_http_srv ${GLOBAL_LIBRARY_TYPE} ${http_srv_lib})
 #
 # https server library
 #
-include (lib/https/server/lib.cmake)
-add_library(smf_https_srv ${GLOBAL_LIBRARY_TYPE} ${https_srv_lib})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-   target_link_libraries(smf_https_srv cyng_crypto cyng_io cyng_vm smf_cluster)
-else()
-	target_link_libraries(smf_https_srv smf_cluster)
+if(${PROJECT_NAME}_SSL_SUPPORT)
+	include (lib/https/server/lib.cmake)
+	add_library(smf_https_srv ${GLOBAL_LIBRARY_TYPE} ${https_srv_lib})
+	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	   target_link_libraries(smf_https_srv cyng_crypto cyng_io cyng_vm smf_cluster)
+	else()
+		target_link_libraries(smf_https_srv cyng_crypto smf_cluster)
+	endif()
 endif()
 
 if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
@@ -544,7 +546,7 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 	include (nodes/http/prg.cmake)
 	add_executable(http ${node_http})
 	# libraries to link 
-	set(http_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys ${OPENSSL_LIBRARIES})
+	set(http_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys ${OPENSSL_LIBRARIES} smf_http_srv)
 	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 		list(APPEND http_link_libs "${Boost_LIBRARIES}")
 		if (UNIX)
@@ -612,6 +614,12 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
     add_executable(dash ${node_dash})
     # libraries to link
     set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml smf_cluster smf_http_srv ${OPENSSL_LIBRARIES})
+
+	message(STATUS "** dash auth support : ${${PROJECT_NAME}_SSL_SUPPORT}")
+	if(${PROJECT_NAME}_SSL_SUPPORT)
+		list(APPEND dashboard_link_libs cyng_crypto)
+	endif()
+
     if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND dashboard_link_libs "${Boost_LIBRARIES}")
         if (UNIX)

@@ -23,8 +23,9 @@ namespace node
 			, boost::uuids::uuid tag
 			, boost::asio::ip::tcp::socket socket
 			, boost::beast::flat_buffer buffer
-			, std::string const& doc_root)
-		: session<plain_session>(logger, cm, tag, socket.get_executor().context(), std::move(buffer), doc_root)
+			, std::string const& doc_root
+			, auth_dirs const& ad)
+		: session<plain_session>(logger, cm, tag, socket.get_executor().context(), std::move(buffer), doc_root, ad)
 			, socket_(std::move(socket))
 			, strand_(socket_.get_executor())
 		{}
@@ -68,7 +69,7 @@ namespace node
 			//
 			//	substitute cb_
 			//
-			this->connection_manager_.vm().async_run(cyng::generate_invoke("http.session.eof", tag(), false));
+			//this->connection_manager_.vm().async_run(cyng::generate_invoke("http.session.eof", tag(), false));
 			//cb_(cyng::generate_invoke("https.eof.session.plain", obj));
 			// At this point the connection is closed gracefully
 		}
@@ -88,8 +89,9 @@ namespace node
 			, boost::asio::ip::tcp::socket socket
 			, boost::asio::ssl::context& ctx
 			, boost::beast::flat_buffer buffer
-			, std::string const& doc_root)
-		: session<ssl_session>(logger, cm, tag, socket.get_executor().context(), std::move(buffer), doc_root)
+			, std::string const& doc_root
+			, auth_dirs const& ad)
+		: session<ssl_session>(logger, cm, tag, socket.get_executor().context(), std::move(buffer), doc_root, ad)
 			, stream_(std::move(socket), ctx)
 			, strand_(stream_.get_executor())
 		{}
@@ -195,6 +197,7 @@ namespace node
 			if (ec == boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, tag() << " - SSL shutdown timeout");
+				connection_manager_.stop_session(tag());
 				return;
 			}
 
@@ -202,6 +205,7 @@ namespace node
 			{
 				//return fail(ec, "shutdown");
 				CYNG_LOG_WARNING(logger_, tag() << " - SSL shutdown failed");
+				connection_manager_.stop_session(tag());
 				return;
 			}
 
@@ -209,6 +213,7 @@ namespace node
 			//	ToDo: substitute cb_
 			//
 			//cb_(cyng::generate_invoke("https.on.shutdown.session.ssl", obj));
+			connection_manager_.stop_session(tag());
 			// At this point the connection is closed gracefully
 		}
 

@@ -8,9 +8,14 @@
 #ifndef NODE_LIB_HTTP_SRV_SESSION_H
 #define NODE_LIB_HTTP_SRV_SESSION_H
 
+#ifdef NODE_SSL_INSTALLED
+#include <smf/http/srv/auth.h>
+#endif
+
 #include <cyng/log.h>
-#include <smf/cluster/bus.h>
+
 #include <memory>
+
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/asio.hpp>
@@ -19,10 +24,12 @@ namespace node
 {
 	namespace http
 	{
-		class connection_manager;
-		class session //: public std::enable_shared_from_this<session>
+		//	forward declaration(s):
+		class connections;
+
+		class session
 		{
-			friend class connection_manager;
+			//friend class connections;
 
 			// This queue is used for HTTP pipelining.
 			class queue
@@ -101,11 +108,14 @@ namespace node
 		public:
 			// Take ownership of the socket
 			explicit session(cyng::logging::log_ptr
-				, connection_manager& cm
+				, connections& cm
+				, boost::uuids::uuid
 				, boost::asio::ip::tcp::socket socket
 				, std::string const& doc_root
-				, node::bus::shared_type
-				, boost::uuids::uuid);
+#ifdef NODE_SSL_INSTALLED
+				, auth_dirs const& ad
+#endif
+			);
 			virtual ~session();
 
 			boost::uuids::uuid tag() const noexcept;
@@ -144,40 +154,36 @@ namespace node
 				, boost::beast::http::file_body::value_type&&
 				, std::string const& path
 				, std::uint64_t size);
+#ifdef NODE_SSL_INSTALLED
+			boost::beast::http::response<boost::beast::http::string_body> session::send_not_authorized(std::uint32_t version
+				, bool keep_alive
+				, std::string target
+				, std::string type
+				, std::string realm);
+#endif
+
 
 		private:
+			cyng::logging::log_ptr logger_;
+			const boost::uuids::uuid tag_;
+			const std::string doc_root_;
+#ifdef NODE_SSL_INSTALLED
+			const auth_dirs& auth_dirs_;
+#endif
 			boost::asio::ip::tcp::socket socket_;
+			connections& connection_manager_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 			boost::asio::steady_timer timer_;
 			boost::beast::flat_buffer buffer_;
-			cyng::logging::log_ptr logger_;
-			connection_manager& connection_manager_;
-			std::string const& doc_root_;
-			bus::shared_type bus_;
-			const boost::uuids::uuid tag_;
 			boost::beast::http::request<boost::beast::http::string_body> req_;
 			queue queue_;
             bool shutdown_;
 		};
-
-		/**
-		* sessions are managed by the session manager as
-		* shared pointers
-		*/
-		//using session_ptr = std::shared_ptr<session>;
-
-		cyng::object make_http_session(cyng::logging::log_ptr
-			, connection_manager& cm
-			, boost::asio::ip::tcp::socket&& socket
-			, std::string const& doc_root
-			, bus::shared_type
-			, boost::uuids::uuid);
-
-
 	}
 }
 
 #include <cyng/intrinsics/traits.hpp>
+#include <cyng/intrinsics/traits/tag.hpp>
 
 namespace cyng
 {
@@ -194,7 +200,7 @@ namespace cyng
 #if defined(CYNG_LEGACY_MODE_ON)
 			const static char name[];
 #else
-			constexpr static char name[] = "http";
+			constexpr static char name[] = "plain-session";
 #endif
 		};
 

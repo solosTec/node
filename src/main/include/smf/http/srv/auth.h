@@ -4,13 +4,12 @@
  * Copyright (c) 2018 Sylko Olzscher 
  * 
  */ 
-#ifndef NODE_HTTPS_AUTH_H
-#define NODE_HTTPS_AUTH_H
+#ifndef NODE_HTTP_AUTH_H
+#define NODE_HTTP_AUTH_H
 
 #include <cyng/object.h>
 #include <map>
 #include <string>
-// #include <boost/filesystem.hpp>
 #include <boost/utility/string_view.hpp>
 
 namespace node 

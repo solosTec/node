@@ -8,8 +8,9 @@
 #ifndef NODE_LIB_HTTPS_SRV_SERVER_H
 #define NODE_LIB_HTTPS_SRV_SERVER_H
 
-#include <smf/https/srv/https.h>
-#include <smf/https/srv/connections.h>
+//#include <smf/https/srv/https.h>
+#include "connections.h"
+#include <smf/http/srv/auth.h>
 #include <cyng/compatibility/async.h>
 #include <cyng/vm/controller_fwd.h>
 #include <atomic>
@@ -29,6 +30,7 @@ namespace node
 				, boost::asio::ssl::context& ctx
 				, boost::asio::ip::tcp::endpoint endpoint
 				, std::string const& doc_root
+				, auth_dirs const& ad
 				, std::set<boost::asio::ip::address> const& blacklist
 				, cyng::controller& vm);
 

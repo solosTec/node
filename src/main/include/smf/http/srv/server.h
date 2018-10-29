@@ -9,8 +9,9 @@
 #define NODE_LIB_HTTP_SRV_SERVER_H
 
 #include "connections.h"
-#include <cyng/store/db.h>
-#include <smf/cluster/bus.h>
+#ifdef NODE_SSL_INSTALLED
+#include <smf/http/srv/auth.h>
+#endif
 
 #include <cyng/log.h>
 #include <cyng/compatibility/async.h>
@@ -34,9 +35,11 @@ namespace node
 				, boost::asio::io_context& ioc
 				, boost::asio::ip::tcp::endpoint endpoint
 				, std::string const& doc_root
+#ifdef NODE_SSL_INSTALLED
+				, auth_dirs const& ad
+#endif
 				, std::set<boost::asio::ip::address> const& blacklist
-				, node::bus::shared_type
-				, cyng::store::db&);
+				, cyng::controller& vm);
 
 			// Start accepting incoming connections
 			bool run();
@@ -67,15 +70,13 @@ namespace node
 			cyng::logging::log_ptr logger_;
 			boost::asio::ip::tcp::acceptor acceptor_;
 			boost::asio::ip::tcp::socket socket_;
-			std::string const& doc_root_;
 			const std::set<boost::asio::ip::address> blacklist_;
-			bus::shared_type bus_;
-			cyng::store::db& cache_;
+			//bus::shared_type bus_;
 
 			/**
 			 * The connection manager which owns all live connections.
 			 */
-			connection_manager connection_manager_;
+			connections connection_manager_;
 
 			/**
 			 *	set to true when the server is listening for new connections

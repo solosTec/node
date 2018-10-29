@@ -8,9 +8,12 @@
 #define NODE_HTTP_HANDLE_REQUEST_H
 
 #include <NODE_project_info.h>
-#include "path_cat.h"
-#include "mime_type.h"
-#include "auth.h"
+//#include "path_cat.h"
+#include <smf/http/srv/path_cat.h>
+#include <smf/http/srv/mime_type.h>
+#include <smf/http/srv/auth.h>
+ //#include "mime_type.h"
+ //#include "auth.h"
 #include <cyng/compatibility/io_service.h>
 #include <cyng/log.h>
 #include <boost/beast/http.hpp>

@@ -195,13 +195,14 @@ namespace node
 				// Happens when the timer closes the socket
 				if (ec == boost::asio::error::operation_aborted)
 				{
+					connection_manager_.stop_ws(tag());
 					return;
 				}
 
 				if (ec)
 				{
 					CYNG_LOG_FATAL(logger_, "ws " << tag() << " ping: " << ec.message());
-					//return fail(ec, "ping");
+					connection_manager_.stop_ws(tag());
 					return;
 				}
 
@@ -256,6 +257,7 @@ namespace node
 				// Happens when the timer closes the socket
 				if (ec == boost::asio::error::operation_aborted)
 				{
+					connection_manager_.stop_ws(tag());
 					return;
 				}
 
@@ -266,12 +268,14 @@ namespace node
 					//	ToDo: substitute cb_
 					//
 					//cb_(cyng::generate_invoke("ws.closed", ec));
+					connection_manager_.stop_ws(tag());
 					return;
 				}
 
 				if (ec)
 				{
 					CYNG_LOG_FATAL(logger_, "ws " << tag() << " read: " << ec.message());
+					connection_manager_.stop_ws(tag());
 					return;
 				}
 
@@ -285,10 +289,8 @@ namespace node
 
 				//
 				//	expect JSON
-				//	ToDo: substitude cb_
 				//
 				connection_manager_.vm().async_run(cyng::generate_invoke("ws.read", tag(), cyng::json::read(str)));
-				//cb_(cyng::generate_invoke("ws.read", cyng::json::read(str)));
 
 				//
 				// Clear buffer
@@ -317,7 +319,7 @@ namespace node
 				if (ec)
 				{
 					CYNG_LOG_FATAL(logger_, "ws " << tag() << " write: " << ec.message());
-					//return fail(ec, "write");
+					connection_manager_.stop_ws(tag());
 					return;
 				}
 

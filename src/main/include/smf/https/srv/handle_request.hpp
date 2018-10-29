@@ -10,8 +10,8 @@
 
 #include <NODE_project_info.h>
 #include <smf/https/srv/https.h>
-#include <smf/https/srv/path_cat.h>
-#include <smf/https/srv/mime_type.h>
+#include <smf/http/srv/path_cat.h>
+#include <smf/http/srv/mime_type.h>
 #include <cyng/object.h>
 #include <boost/beast/http.hpp>
 

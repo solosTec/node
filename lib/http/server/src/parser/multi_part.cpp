@@ -17,7 +17,7 @@ namespace node
 	{
 		multi_part_parser::multi_part_parser(std::function<void(cyng::vector_t&&)> cb
 			, cyng::logging::log_ptr logger
-			, std::uint32_t& content_size
+			, std::uint64_t& content_size
 			, boost::beast::string_view target
 			, boost::uuids::uuid tag)
 		: state_(chunk_init_)

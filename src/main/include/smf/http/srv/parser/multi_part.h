@@ -45,7 +45,7 @@ namespace node
 		public:
 			multi_part_parser(std::function<void(cyng::vector_t&&)> cb
 				, cyng::logging::log_ptr
-				, std::uint32_t&
+				, std::uint64_t&
 				, boost::beast::string_view target
 				, boost::uuids::uuid tag);
 
@@ -125,7 +125,7 @@ namespace node
 			/**
 			 * Specified content size
 			 */
-			std::uint32_t&	content_size_;
+			std::uint64_t&	content_size_;
 
 			/**
 			 * Contains all HTTP header data

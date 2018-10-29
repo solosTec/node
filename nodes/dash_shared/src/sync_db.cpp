@@ -290,7 +290,7 @@ namespace node
 				if (!dev_rec.empty())
 				{
 					data.push_back(dev_rec["name"]);
-					data.push_back(dev_rec["serverId"]);
+					data.push_back(dev_rec["id"]);
 					data.push_back(dev_rec["vFirmware"]);
 					data.push_back(cyng::make_object(!ses_rec.empty()));
 				}

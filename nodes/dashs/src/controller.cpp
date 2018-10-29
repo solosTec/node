@@ -8,7 +8,7 @@
 #include "controller.h"
 #include "tasks/cluster.h"
 #include <NODE_project_info.h>
-//#include <smf/https/srv/auth.h>
+#include <smf/http/srv/auth.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -452,14 +452,18 @@ namespace node
 		auto const host = cyng::make_address(address);
 		const auto port = static_cast<unsigned short>(std::stoi(service));
 
-		//
-		//	get subprotocols
-		//
-		//const auto sub_protocols = cyng::vector_cast<std::string>(dom.get("sub-protocols"), "");
-
 		CYNG_LOG_INFO(logger, "document root: " << doc_root);
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
+
+		//
+		//	get user credentials
+		//
+		auth_dirs ad;
+		init(dom.get("auth"), ad);
+		for (auto const& dir : ad) {
+			CYNG_LOG_INFO(logger, "restricted access to [" << dir.first << "]");
+		}
 
 		//
 		//	get blacklisted addresses
@@ -496,6 +500,7 @@ namespace node
 				, load_cluster_cfg(cfg_cls)
 				, boost::asio::ip::tcp::endpoint{ host, port }
 				, doc_root
+				, ad
 				, blacklist);
 		}
 		else {

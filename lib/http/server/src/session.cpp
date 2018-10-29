@@ -5,14 +5,19 @@
  *
  */
 
+#include <smf/http/srv/connections.h>
 #include <smf/http/srv/session.h>
 #include <smf/http/srv/websocket.h>
 #include <smf/http/srv/handle_request.hpp>
 #include <smf/http/srv/connections.h>
 #include <smf/http/srv/parser/multi_part.h>
+
 #include <cyng/vm/generator.h>
+#include <cyng/vm/controller.h>
+
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/beast/http.hpp>
 
 namespace node
 {
@@ -20,20 +25,25 @@ namespace node
 	namespace http
 	{
 		session::session(cyng::logging::log_ptr logger
-			, connection_manager& cm
+			, connections& cm
+			, boost::uuids::uuid tag
 			, boost::asio::ip::tcp::socket socket
 			, std::string const& doc_root
-			, node::bus::shared_type bus
-			, boost::uuids::uuid tag)
-		: socket_(std::move(socket))
+#ifdef NODE_SSL_INSTALLED
+			, auth_dirs const& ad
+#endif
+			)
+		: logger_(logger)
+			, tag_(tag)
+			, doc_root_(doc_root)
+#ifdef NODE_SSL_INSTALLED
+			, auth_dirs_(ad)
+#endif
+			, socket_(std::move(socket))
+			, connection_manager_(cm)
 			, strand_(socket_.get_executor())
 			, timer_(socket_.get_executor().context(), (std::chrono::steady_clock::time_point::max)())
 			, buffer_()
-			, logger_(logger)
-			, connection_manager_(cm)
-			, doc_root_(doc_root)
-			, bus_(bus)
-			, tag_(tag)
 			, queue_(*this)
             , shutdown_(false)
 		{}
@@ -66,6 +76,8 @@ namespace node
 							this,
 							obj
 						)));
+
+			connection_manager_.vm().async_run(cyng::generate_invoke("http.session.launch", tag(), false, socket_.remote_endpoint()));
 
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
@@ -162,7 +174,7 @@ namespace node
 			if (ec == boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, tag() << " - timer aborted session");
-				connection_manager_.stop(this);
+				connection_manager_.stop_session(tag());
 				return;
 			}
 
@@ -170,14 +182,14 @@ namespace node
 			if (ec == boost::beast::http::error::end_of_stream)
 			{
 				CYNG_LOG_TRACE(logger_, "session closed - read");
-				connection_manager_.stop(this);	//	do_close()
+				connection_manager_.stop_session(tag());
 				return;
 			}
 
 			if (ec)
 			{
 				CYNG_LOG_ERROR(logger_, "read error: " << ec.message());
-				connection_manager_.stop(this);
+				connection_manager_.stop_session(tag());
 				return;
 			}
 
@@ -190,18 +202,13 @@ namespace node
 					<< socket_.remote_endpoint());
 
 				// Create a WebSocket websocket_session by transferring the socket
-				auto res = connection_manager_.upgrade(this);
-				if (!res.second.is_null()) {
-					//
-					//  There is an object bound to the timer that increases the lifetime of session until times is canceled
-					//
-					timer_.cancel();
-					auto ws_ptr =cyng::object_cast<websocket_session>(res.second);
-					if (ws_ptr != nullptr) {
-						const_cast<websocket_session*>(ws_ptr)->do_accept(std::move(req_), res.second);
-					}
-					return;
-				}
+				connection_manager_.upgrade(tag(), std::move(socket_), std::move(req_));
+
+				//
+				//  There is an object bound to the timer that increases the lifetime of session until times is canceled
+				//
+				timer_.cancel();
+				return;
 			}
 
 			// Send the response
@@ -244,9 +251,69 @@ namespace node
 				req.method() == boost::beast::http::verb::head)
 			{
 
+				//
+				//	test authorization
+				//
+#ifdef NODE_SSL_INSTALLED
+				for (auto const& ad : auth_dirs_) {
+					if (boost::algorithm::starts_with(req.target(), ad.first)) {
+
+						//
+						//	Test auth token
+						//
+						auto pos = req.find("Authorization");
+						if (pos == req.end()) {
+
+							//
+							//	authorization required
+							//
+							CYNG_LOG_WARNING(logger_, "authorization required: "
+								<< ad.first
+								<< " / "
+								<< req.target());
+
+							//
+							//	send auth request
+							//
+							return queue_(send_not_authorized(req.version()
+								, req.keep_alive()
+								, req.target().to_string()
+								, ad.second.type_ 
+								, ad.second.realm_));
+						}
+						else {
+
+							//
+							//	authorized
+							//	Basic c29sOm1lbGlzc2E=
+							//
+							if (authorization_test(pos->value(), ad.second)) {
+								CYNG_LOG_DEBUG(logger_, "authorized with "
+									<< pos->value());
+							}
+							else {
+								CYNG_LOG_WARNING(logger_, "authorization failed "
+									<< pos->value());
+								//
+								//	send auth request
+								//
+								return queue_(send_not_authorized(req.version()
+									, req.keep_alive()
+									, req.target().to_string()
+									, ad.second.type_
+									, ad.second.realm_));
+
+							}
+						}
+						break;
+					}
+				}
+#endif
+
 				// Build the path to the requested file
 				std::string path = path_cat(doc_root_, req.target());
-				if (req.target().back() == '/')
+				if (boost::filesystem::is_directory(path))
+				//if (req.target().back() == '/')
 				{
 					path.append("index.html");
 				}
@@ -301,7 +368,6 @@ namespace node
 			else if (req.method() == boost::beast::http::verb::post)
 			{
 				auto target = req.target();	//	/upload/config/device/
-				CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
 
 				boost::beast::string_view content_type = req[boost::beast::http::field::content_type];
 				CYNG_LOG_INFO(logger_, "content type " << content_type);
@@ -312,27 +378,36 @@ namespace node
 				//
 				//	payload parser
 				//
-				std::uint32_t payload_size = *req.payload_size();
-				multi_part_parser mpp([&](cyng::vector_t&& prg) {
-					bus_->vm_.async_run(std::move(prg));
-				}	, logger_
-					, payload_size
-					, target
-					, tag_);
+				if (req.payload_size()) {
+					CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
+					std::uint64_t payload_size = *req.payload_size();
+					multi_part_parser mpp([&](cyng::vector_t&& prg) {
 
-				//
-				//	open new upload sequence
-				//
-				bus_->vm_.async_run(cyng::generate_invoke("http.upload.start"
-					, tag_
-					, req.version()
-					, std::string(target.begin(), target.end())
-					, payload_size));
+						//	ToDo:
+						//vm_.async_run(std::move(prg));
 
-				//
-				//	parse payload and generate program sequences
-				//
-				mpp.parse(req.body().begin(), req.body().end());
+					}, logger_
+						, payload_size
+						, target
+						, tag_);
+
+					//
+					//	open new upload sequence
+					//
+					//bus_->vm_.async_run(cyng::generate_invoke("http.upload.start"
+					//	, tag_
+					//	, req.version()
+					//	, std::string(target.begin(), target.end())
+					//	, payload_size));
+
+					//
+					//	parse payload and generate program sequences
+					//
+					mpp.parse(req.body().begin(), req.body().end());
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, "no payload for " << target);
+				}
 
 				return;
 			}
@@ -413,6 +488,39 @@ namespace node
 			return res;
 		}
 
+#ifdef NODE_SSL_INSTALLED
+		boost::beast::http::response<boost::beast::http::string_body> session::send_not_authorized(std::uint32_t version
+			, bool keep_alive
+			, std::string target
+			, std::string type
+			, std::string realm)
+		{
+			CYNG_LOG_WARNING(logger_, "401 - unauthorized: " << target);
+
+			std::string body =
+				"<!DOCTYPE html>\n"
+				"<html lang=en>\n"
+				"\t<head>\n"
+				"\t\t<title>not authorized</title>\n"
+				"\t</head>\n"
+				"\t<body style=\"font-family:'Courier New', Arial, sans-serif\">\n"
+				"\t\t<h1>&#x1F6AB; " + target + "</h1>\n"
+				"\t</body>\n"
+				"</html>\n"
+				;
+
+			boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::unauthorized, version };
+			res.set(boost::beast::http::field::server, NODE::version_string);
+			res.set(boost::beast::http::field::content_type, "text/html");
+			res.set(boost::beast::http::field::www_authenticate, "Basic realm=\"" + realm + "\"");
+			res.keep_alive(keep_alive);
+			res.body() = body;
+			res.prepare_payload();
+			return res;
+		}
+#endif
+
+
 		void session::on_write(boost::system::error_code ec, bool close)
 		{
             //
@@ -424,14 +532,14 @@ namespace node
 			if (ec == boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, "session aborted - write");
-				connection_manager_.stop(this);
+				connection_manager_.stop_session(tag());
 				return;
 			}
 
 			if (ec)
 			{
 				CYNG_LOG_ERROR(logger_, "write error: " << ec.message());
-				connection_manager_.stop(this);
+				connection_manager_.stop_session(tag());
 				return;
 			}
 
@@ -440,7 +548,7 @@ namespace node
 				// This means we should close the connection, usually because
 				// the response indicated the "Connection: close" semantic.
 				//return do_close();
-				connection_manager_.stop(this);
+				connection_manager_.stop_session(tag());
 				return;
 			}
 
@@ -562,21 +670,21 @@ namespace node
 			return items_.size() >= limit;
 		}
 
-		cyng::object make_http_session(cyng::logging::log_ptr logger
-			, connection_manager& cm
-			, boost::asio::ip::tcp::socket&& socket
-			, std::string const& doc_root
-			, bus::shared_type bus
-			, boost::uuids::uuid tag) {
+		//cyng::object make_http_session(cyng::logging::log_ptr logger
+		//	, connection_manager& cm
+		//	, boost::asio::ip::tcp::socket&& socket
+		//	, std::string const& doc_root
+		//	, bus::shared_type bus
+		//	, boost::uuids::uuid tag) {
 
-			return cyng::make_object<session>(logger
-				, cm
-				, std::move(socket)
-				, doc_root
-				, bus
-				, tag);
+		//	return cyng::make_object<session>(logger
+		//		, cm
+		//		, std::move(socket)
+		//		, doc_root
+		//		, bus
+		//		, tag);
 
-		}
+		//}
 
 	}
 }
@@ -587,7 +695,7 @@ namespace cyng
 	{
 
 #if defined(CYNG_LEGACY_MODE_ON)
-		const char type_tag<node::http::session>::name[] = "http";
+		const char type_tag<node::http::session>::name[] = "plain-session";
 #endif
 	}	// traits	
 }

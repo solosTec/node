@@ -8,7 +8,9 @@
 #include "controller.h"
 #include "tasks/cluster.h"
 #include <NODE_project_info.h>
-
+#ifdef NODE_SSL_INSTALLED
+#include <smf/http/srv/auth.h>
+#endif
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>
@@ -115,7 +117,7 @@ namespace node
 						//
 						//	start
 						//
-						shutdown = start(mux, logger, vec[0]);
+						shutdown = start(mux, logger, vec.at(0));
 
 						//
 						//	print uptime
@@ -189,11 +191,7 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8080"),
 						cyng::param_factory("document-root", (pwd / "nodes" / "dash" / "htdocs").string()),
-						cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
-						//cyng::param_factory("tls-pwd", "test"),
-						//cyng::param_factory("tls-certificate-chain", "demo.cert"),
-      //                  cyng::param_factory("tls-private-key", "priv.key"),
-						//cyng::param_factory("tls-dh", "demo.dh"),	//	diffie-hellman
+#ifdef NODE_SSL_INSTALLED
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
 							//	authType:
@@ -214,6 +212,9 @@ namespace node
 								cyng::param_factory("pwd", "secret")
 							) }
 						)),	//	auth
+#else
+						cyng::param_factory("auth-support", false),
+#endif
 						//185.244.25.187
 						cyng::param_factory("blacklist", cyng::vector_factory({
 							//	https://bl.isx.fr/raw
@@ -405,19 +406,20 @@ namespace node
 		auto const host = cyng::make_address(address);
 		const auto port = static_cast<unsigned short>(std::stoi(service));
 
-		//
-		//	get subprotocols
-		//
-		//const auto sub_protocols = cyng::vector_cast<std::string>(dom.get("sub-protocols"), "");
-
-		//auth_dirs ad;
-		//init(dom[0]["http"].get("auth"), ad);
-
-
 		CYNG_LOG_INFO(logger, "document root: " << doc_root);
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
-		//CYNG_LOG_INFO(logger, sub_protocols.size() << " subprotocols");
+
+#ifdef NODE_SSL_INSTALLED
+		//
+		//	get user credentials
+		//
+		auth_dirs ad;
+		init(dom.get("auth"), ad);
+		for (auto const& dir : ad) {
+			CYNG_LOG_INFO(logger, "restricted access to [" << dir.first << "]");
+		}
+#endif
 
 		//
 		//	get blacklisted addresses
@@ -442,6 +444,9 @@ namespace node
 			, load_cluster_cfg(cfg_cls)
 			, boost::asio::ip::tcp::endpoint{ host, port }
 			, doc_root
+#ifdef NODE_SSL_INSTALLED
+			, ad
+#endif
 			, blacklist);
 
 	}

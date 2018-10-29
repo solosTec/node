@@ -37,7 +37,6 @@ namespace node
 	//
 	bool start(cyng::async::scheduler&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	void session_callback(boost::uuids::uuid tag, cyng::vector_t&& prg);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -74,31 +73,42 @@ namespace node
 				
 				if (config)
 				{
-					//
-					//	initialize logger
-					//
+					cyng::vector_t vec;
+					vec = cyng::value_cast(config, vec);
+
+					if (vec.empty())
+					{
+						std::cerr
+							<< "use option -D to generate a configuration file"
+							<< std::endl;
+						shutdown = true;
+					}
+					else
+					{
+						//
+						//	initialize logger
+						//
 #if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("HTTPS", true);
-// 					auto logger = cyng::logging::make_console_logger(ioc, "HTTPS");
+						auto logger = cyng::logging::make_sys_logger("HTTPS", true);
+						// 					auto logger = cyng::logging::make_console_logger(ioc, "HTTPS");
 #else
-					auto logger = cyng::logging::make_console_logger(scheduler.get_io_service(), "HTTPS");
+						auto logger = cyng::logging::make_console_logger(scheduler.get_io_service(), "HTTPS");
 #endif
-				
-					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
-					CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
 
-					//
-					//	start application
-					//
-					cyng::vector_t tmp;
-					shutdown = start(scheduler, logger, config);
-					
-					//
-					//	print uptime
-					//
-					const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-		 			CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
+						CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
 
+						//
+						//	start application
+						//
+						shutdown = start(scheduler, logger, vec.at(0));
+
+						//
+						//	print uptime
+						//
+						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
+						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+					}
 				}
 				else 
 				{
@@ -204,24 +214,6 @@ namespace node
 							cyng::param_factory("/", "/index.html")
 						}))
 					))
-					//, cyng::param_factory("mail", cyng::tuple_factory(
-					//	cyng::param_factory("host", "smtp.gmail.com"),
-					//	cyng::param_factory("port", 465),
- 				//		cyng::param_factory("auth", cyng::tuple_factory(
- 				//			cyng::param_factory("name", "auth@example.com"),
- 				//			cyng::param_factory("pwd", "secret"),
- 				//			cyng::param_factory("method", "START_TLS")
- 				//		)),
- 				//		cyng::param_factory("sender", cyng::tuple_factory(
- 				//			cyng::param_factory("name", "sender"),
- 				//			cyng::param_factory("address", "sender@example.com")
- 				//		)),
- 				//		cyng::param_factory("recipients", cyng::vector_factory({
-					//		cyng::tuple_factory(
-					//			cyng::param_factory("name", "recipient"),
-					//			cyng::param_factory("address", "recipient@example.com"))}
-					//	))
-					//))
 				)
 			});
 			
@@ -241,9 +233,9 @@ namespace node
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found" );	
 		auto dom = cyng::make_reader(cfg);
 		
- 		const auto doc_root = cyng::io::to_str(dom[0]["https"].get("document-root"));
-		const auto host = cyng::io::to_str(dom[0]["https"].get("address"));
-		const auto service = cyng::io::to_str(dom[0]["https"].get("service"));
+ 		const auto doc_root = cyng::io::to_str(dom["https"].get("document-root"));
+		const auto host = cyng::io::to_str(dom["https"].get("address"));
+		const auto service = cyng::io::to_str(dom["https"].get("service"));
 		const auto port = static_cast<unsigned short>(std::stoi(service));
  		
  		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
@@ -257,6 +249,15 @@ namespace node
 		auto const address = cyng::make_address(host);
 		BOOST_ASSERT_MSG(scheduler.is_running(), "scheduler not running");
 		
+		//
+		//	get user credentials
+		//
+		auth_dirs ad;
+		init(dom["https"].get("auth"), ad);
+		for (auto const& dir : ad) {
+			CYNG_LOG_INFO(logger, "restricted access to [" << dir.first << "]");
+		}
+
 		//
 		//	get blacklisted addresses
 		//
@@ -281,6 +282,7 @@ namespace node
 			, ctx
 			, boost::asio::ip::tcp::endpoint{address, port}
 			, doc_root
+			, ad
 			, blacklist
 			, vm);
 
@@ -330,12 +332,4 @@ namespace node
 		}
 		return shutdown;
 	}
-
-	void session_callback(boost::uuids::uuid tag, cyng::vector_t&& prg)
-	{
-		std::cout << "received " << prg.size() << " HTTP(s) instructions from " << tag;
-		std::cout << "session callback: " << cyng::io::to_str(prg);
-
-	}
-
 }

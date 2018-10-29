@@ -9,6 +9,7 @@
 #include <cyng/json.h>
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/sys/memory.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/core/ignore_unused.hpp>
@@ -774,6 +775,102 @@ namespace node
 		{
 			CYNG_LOG_WARNING(logger_, "ws.read - unknown subscribe channel [" << channel << "]");
 		}
+	}
+
+	void dispatcher::pull(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		if (boost::algorithm::starts_with(channel, "sys.cpu.usage.total"))
+		{
+			update_sys_cpu_usage_total(db, channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "sys.cpu.count"))
+		{
+			update_sys_cpu_count(channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "sys.mem.virtual.total"))
+		{
+			update_sys_mem_virtual_total(channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "sys.mem.virtual.used"))
+		{
+			update_sys_mem_virtual_used(channel, tag);
+		}
+		else
+		{
+			CYNG_LOG_WARNING(logger_, "ws.read - unknown update channel [" << channel << "]");
+		}
+	}
+
+	void dispatcher::update_sys_cpu_usage_total(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		db.access([&](cyng::store::table* tbl) {
+			const auto rec = tbl->lookup(cyng::table::key_generator("cpu:load"));
+			if (!rec.empty())
+			{
+
+				CYNG_LOG_WARNING(logger_, cyng::io::to_str(rec["value"]));
+				//
+				//	Total CPU load of the system in %
+				//
+				auto tpl = cyng::tuple_factory(
+					cyng::param_factory("cmd", std::string("update")),
+					cyng::param_factory("channel", channel),
+					cyng::param_t("value", rec["value"]));
+
+				auto msg = cyng::json::to_string(tpl);
+				connection_manager_.ws_msg(tag, msg);
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "record cpu:load not found");
+			}
+		}, cyng::store::write_access("_Config"));
+	}
+
+	void dispatcher::update_sys_cpu_count(std::string const& channel, boost::uuids::uuid tag)
+	{
+		//
+		//	CPU count
+		//
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("update")),
+			cyng::param_factory("channel", channel),
+			cyng::param_factory("value", std::thread::hardware_concurrency()));
+
+		auto msg = cyng::json::to_string(tpl);
+
+		connection_manager_.ws_msg(tag, msg);
+
+	}
+
+	void dispatcher::update_sys_mem_virtual_total(std::string const& channel, boost::uuids::uuid tag)
+	{
+		//
+		//	total virtual memory in bytes
+		//
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("update")),
+			cyng::param_factory("channel", channel),
+			cyng::param_factory("value", cyng::sys::get_total_virtual_memory()));
+
+		auto msg = cyng::json::to_string(tpl);
+
+		connection_manager_.ws_msg(tag, msg);
+	}
+
+	void dispatcher::update_sys_mem_virtual_used(std::string const& channel, boost::uuids::uuid tag)
+	{
+		//
+		//	used virtual memory in bytes
+		//
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("update")),
+			cyng::param_factory("channel", channel),
+			cyng::param_factory("value", cyng::sys::get_used_virtual_memory()));
+
+		auto msg = cyng::json::to_string(tpl);
+
+		connection_manager_.ws_msg(tag, msg);
 	}
 
 	void dispatcher::subscribe(cyng::store::db& db, std::string table, std::string const& channel, boost::uuids::uuid tag)

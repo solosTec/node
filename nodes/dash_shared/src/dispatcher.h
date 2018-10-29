@@ -37,6 +37,11 @@ namespace node
 		 */
 		void subscribe_channel(cyng::store::db&, std::string const& channel, boost::uuids::uuid tag);
 
+		/**
+		 * Update request from ws
+		 */
+		void pull(cyng::store::db&, std::string const& channel, boost::uuids::uuid tag);
+
 	private:
 		void sig_ins(cyng::store::table const*
 			, cyng::table::key_type const&
@@ -65,6 +70,11 @@ namespace node
 		void subscribe_table_LoRa_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
 
 		void store_relation(cyng::context& ctx);
+
+		void update_sys_cpu_usage_total(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		void update_sys_cpu_count(std::string const&, boost::uuids::uuid);
+		void update_sys_mem_virtual_total(std::string const&, boost::uuids::uuid);
+		void update_sys_mem_virtual_used(std::string const&, boost::uuids::uuid);
 
 		void res_query_status_word(cyng::context& ctx);
 		void res_query_srv_visible(cyng::context& ctx);

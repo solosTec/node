@@ -79,8 +79,12 @@ namespace node
 		<< ")"
 		<< std::endl
 
-        << "SSL/TSL       : v"
+#ifdef NODE_SSL_INSTALLED
+		<< "SSL/TSL       : v"
         << NODE_SSL_VERSION
+#else
+		<< "SSL/TSL       : not supported"
+#endif
         << std::endl
 
 		<< "build type    : "

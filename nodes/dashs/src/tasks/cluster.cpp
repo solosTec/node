@@ -38,6 +38,7 @@ namespace node
 		, cluster_config_t const& cfg_cls
 		, boost::asio::ip::tcp::endpoint ep
 		, std::string const& doc_root
+		, auth_dirs const& ad
 		, std::set<boost::asio::ip::address> const& blacklist)
 	: base_(*btp)
 		, uidgen_()
@@ -45,7 +46,7 @@ namespace node
 		, logger_(logger)
 		, config_(cfg_cls)
 		, cache_()
-		, server_(logger, btp->mux_.get_io_service(), ctx, ep, doc_root, blacklist, bus_->vm_)
+		, server_(logger, btp->mux_.get_io_service(), ctx, ep, doc_root, ad, blacklist, bus_->vm_)
 		, dispatcher_(logger, server_.get_cm())
 		, db_sync_(logger, cache_)
 		, forward_(logger, cache_)
@@ -93,8 +94,10 @@ namespace node
 
 		forward_.register_this(bus_->vm_);
 
-		bus_->vm_.register_function("http.session.launch", 0, [this](cyng::context& ctx) {
-			CYNG_LOG_TRACE(logger_, "http.session.launch!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		bus_->vm_.register_function("http.session.launch", 3, [this](cyng::context& ctx) {
+			//	[849a5b98-429c-431e-911d-18a467a818ca,false,127.0.0.1:61383]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "http.session.launch " << cyng::io::to_str(frame));
 		});
 
 		bus_->vm_.register_function("ws.read", 2, std::bind(&cluster::ws_read, this, std::placeholders::_1));
@@ -370,6 +373,12 @@ namespace node
 			CYNG_LOG_TRACE(logger_, "ws.read - subscribe channel [" << channel << "]");
 
 			dispatcher_.subscribe_channel(cache_, channel, tag);
+		}
+		else if (boost::algorithm::equals(cmd, "update"))
+		{
+			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+			CYNG_LOG_TRACE(logger_, "ws.read - pull channel [" << channel << "]");
+			dispatcher_.pull(cache_, channel, tag);
 		}
 		else if (boost::algorithm::equals(cmd, "insert"))
 		{

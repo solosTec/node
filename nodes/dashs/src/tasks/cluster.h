@@ -41,6 +41,7 @@ namespace node
 			, cluster_config_t const& cfg_cls
 			, boost::asio::ip::tcp::endpoint
 			, std::string const& doc_root
+			, auth_dirs const& ad
 			, std::set<boost::asio::ip::address> const&);
 		cyng::continuation run();
 		void stop();

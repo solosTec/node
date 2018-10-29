@@ -32,7 +32,8 @@ namespace node
 				, boost::uuids::uuid
 				, boost::asio::ip::tcp::socket socket
 				, boost::beast::flat_buffer buffer
-				, std::string const& doc_root);
+				, std::string const& doc_root
+				, auth_dirs const& ad);
 
 			virtual ~plain_session();
 
@@ -65,7 +66,8 @@ namespace node
 				, boost::asio::ip::tcp::socket socket
 				, boost::asio::ssl::context& ctx
 				, boost::beast::flat_buffer buffer
-				, std::string const& doc_root);
+				, std::string const& doc_root
+				, auth_dirs const& ad);
 
 			virtual ~ssl_session();
 

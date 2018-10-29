@@ -9,9 +9,9 @@ set (node_http_cpp
  	nodes/http/src/session.cpp
  	nodes/http/src/websocket.cpp
  	nodes/http/src/handle_request.hpp
- 	nodes/http/src/path_cat.cpp
- 	nodes/http/src/mime_type.cpp
- 	nodes/http/src/auth.cpp
+# 	nodes/http/src/path_cat.cpp
+# 	nodes/http/src/mime_type.cpp
+# 	nodes/http/src/auth.cpp
  	nodes/http/src/mail_config.cpp
  	nodes/http/src/main.cpp
 #  	nodes/http/src/advanced_server.cpp
@@ -25,10 +25,10 @@ set (node_http_h
 	nodes/http/src/connections.h
 	nodes/http/src/session.h
 	nodes/http/src/websocket.h
-	nodes/http/src/auth.h
+#	nodes/http/src/auth.h
 	nodes/http/src/mail_config.h
-	nodes/http/src/path_cat.h
-	nodes/http/src/mime_type.h
+#	nodes/http/src/path_cat.h
+#	nodes/http/src/mime_type.h
 
 )
 

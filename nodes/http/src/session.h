@@ -11,7 +11,8 @@
 #include <boost/beast/core.hpp>
 #include "websocket.h"
 #include "mail_config.h"
-#include "auth.h"
+//#include "auth.h"
+#include <smf/http/srv/auth.h>
 #include <memory>
 #include <cyng/log.h>
 

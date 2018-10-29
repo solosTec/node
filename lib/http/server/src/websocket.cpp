@@ -19,9 +19,8 @@ namespace node
 	namespace http
 	{
 		websocket_session::websocket_session(cyng::logging::log_ptr logger
-			, connection_manager& cm
+			, connections& cm
 			, boost::asio::ip::tcp::socket&& socket
-			, bus::shared_type bus
 			, boost::uuids::uuid tag)
 		: ws_(std::move(socket))
 			, strand_(ws_.get_executor())
@@ -29,18 +28,12 @@ namespace node
 			, buffer_()
 			, logger_(logger)
 			, connection_manager_(cm)
-			, bus_(bus)
 			, tag_(tag)
 #if (BOOST_BEAST_VERSION < 167)
 			, ping_cb_()
 #endif
             , shutdown_(false)
-		{
-			//vm_.register_function("ws.send.json", 1, std::bind(&websocket_session::ws_send_json, this, std::placeholders::_1));
-            
-            //cyng::register_logger(logger_, vm_);
-            //vm_.run(cyng::generate_invoke("log.msg.info", "log domain is running"));
-		}
+		{}
 
 		websocket_session::~websocket_session()
 		{
@@ -58,12 +51,14 @@ namespace node
 			if (ec == boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, "ws aborted - read");
+				connection_manager_.stop_ws(tag());
 				return;
 			}
 
 			if (ec)
 			{
 				CYNG_LOG_ERROR(logger_, "ws read error: " << ec << " - " << ec.message());
+				connection_manager_.stop_ws(tag());
 				return;
 			}
 
@@ -86,6 +81,7 @@ namespace node
             if (ec && ec != boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, "ws timer aborted - read");
+				connection_manager_.stop_ws(tag());
 				return;
 			}
 
@@ -118,13 +114,12 @@ namespace node
 					// we never got back a control frame, so close.
 					//std::cerr << ec << std::endl;
                     CYNG_LOG_WARNING(logger_, "ws - incomplete ping");
-                    //do_close();
-                    //connection_manager_.stop(this);
+					connection_manager_.stop_ws(tag());
 
                     // Closing the socket cancels all outstanding operations. They
 					// will complete with boost::asio::error::operation_aborted
-					ws_.next_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-					ws_.next_layer().close(ec);
+					//ws_.next_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+					//ws_.next_layer().close(ec);
 					return;
 				}
 			}
@@ -164,12 +159,14 @@ namespace node
 			if (ec == boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, "ws aborted - ping");
+				connection_manager_.stop_ws(tag());
 				return;
 			}
 
 			if (ec)
 			{
 				CYNG_LOG_ERROR(logger_, "ping: " << ec << " - " << ec.message());
+				connection_manager_.stop_ws(tag());
 				return;
 			}
 
@@ -254,7 +251,7 @@ namespace node
 			{
 				CYNG_LOG_WARNING(logger_, "ws aborted - read");
 				do_close();
-				connection_manager_.stop(this);
+				connection_manager_.stop_ws(tag());
 				return;
 			}
 
@@ -263,7 +260,7 @@ namespace node
 			{
 				CYNG_LOG_WARNING(logger_, "ws closed - read");
 				do_close();
-				connection_manager_.stop(this);
+				connection_manager_.stop_ws(tag());
 				return;
 			}
 
@@ -276,7 +273,7 @@ namespace node
                     << " - "
                     << ec.message());
                 do_close();
-                connection_manager_.stop(this);
+				connection_manager_.stop_ws(tag());
 				return;
 			}
 
@@ -286,12 +283,13 @@ namespace node
 			std::stringstream msg;
 			msg << boost::beast::buffers(buffer_.data());
 			const std::string str = msg.str();
-			CYNG_LOG_TRACE(logger_, "ws read - " << str);
+			CYNG_LOG_TRACE(logger_, "ws " << tag() << " read - " << str);
 
 			//
 			//	execute on bus VM
 			//
-			bus_->vm_.async_run(cyng::generate_invoke("ws.read", tag_, cyng::invoke("ws.push"), cyng::json::read(str)));
+			//bus_->vm_.async_run(cyng::generate_invoke("ws.read", tag_, cyng::invoke("ws.push"), cyng::json::read(str)));
+			connection_manager_.vm().async_run(cyng::generate_invoke("ws.read", tag(), cyng::json::read(str)));
 
 			// Clear buffer
 			ws_.text();
@@ -317,7 +315,7 @@ namespace node
 			{
 				CYNG_LOG_WARNING(logger_, "ws aborted - write");
 				do_close();
-				connection_manager_.stop(this);
+				connection_manager_.stop_ws(tag());
 				return;
 			}
 
@@ -325,7 +323,7 @@ namespace node
 			{
 				CYNG_LOG_ERROR(logger_, "ws write: " << ec << " - " << ec.message());
 				do_close();
-				connection_manager_.stop(this);
+				connection_manager_.stop_ws(tag());
 				return;
 			}
 
@@ -381,7 +379,6 @@ namespace node
             {
                 CYNG_LOG_WARNING(logger_, "ws::do_shutdown(" << tag_ << ")");
             }
-
         }
 
 		bool websocket_session::send_msg(std::string const& msg)
@@ -401,20 +398,6 @@ namespace node
 		    CYNG_LOG_WARNING(logger_, "ws.send.json - closed " << msg);
 			return false;
 		}
-
-
-		cyng::object make_websocket(cyng::logging::log_ptr logger
-			, connection_manager& cm
-			, boost::asio::ip::tcp::socket&& socket
-			, bus::shared_type bus
-			, boost::uuids::uuid tag)
-		{
-			return cyng::make_object<websocket_session>(logger
-				, cm
-				, std::move(socket)
-				, bus
-				, tag);
-		}
 	}
 }
 
@@ -424,7 +407,7 @@ namespace cyng
 	{
 
 #if defined(CYNG_LEGACY_MODE_ON)
-		const char type_tag<node::http::websocket_session>::name[] = "ws";
+		const char type_tag<node::http::websocket_session>::name[] = "plain-websocket";
 #endif
 	}	// traits	
 }

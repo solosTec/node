@@ -8,7 +8,8 @@
 #include "controller.h"
 #include "listener.h"
 #include "mail_config.h"
-#include "auth.h"
+//#include "auth.h"
+#include <smf/http/srv/auth.h>
 #include <cyng/log.h>
 #include <cyng/async/scheduler.h>
 #include <cyng/async/signal_handler.h>

@@ -8,6 +8,8 @@
 #define NODE_HTTPS_CONNECTIONS_H
 
 #include <smf/http/srv/cm_interface.h>
+#include <smf/http/srv/auth.h>
+
 #include <cyng/compatibility/io_service.h>
 #include <cyng/compatibility/async.h>
 #include <cyng/log.h>
@@ -33,21 +35,53 @@ namespace node
 		public:
 			connections(cyng::logging::log_ptr
 				, cyng::controller& vm
-				, std::string const& doc_root);
+				, std::string const& doc_root
+				, auth_dirs const& ad);
 
+			/**
+			 * Provide access to vm controller
+			 */
+			cyng::controller& vm();
+
+			/**
+			 * Create a session and test for SSL/TSL
+			 */
 			void create_session(boost::asio::ip::tcp::socket socket
 				, boost::asio::ssl::context& ctx);
 
 			void add_ssl_session(boost::asio::ip::tcp::socket, boost::asio::ssl::context&, boost::beast::flat_buffer);
 			void add_plain_session(boost::asio::ip::tcp::socket, boost::beast::flat_buffer);
 
-			void upgrade(boost::uuids::uuid, boost::asio::ip::tcp::socket socket, boost::beast::http::request<boost::beast::http::string_body> req);
-			void upgrade(boost::uuids::uuid, boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream, boost::beast::http::request<boost::beast::http::string_body> req);
+			/**
+			 * Upgrade a plain HTTP session to web-socket
+			 */
+			void upgrade(boost::uuids::uuid
+				, boost::asio::ip::tcp::socket socket
+				, boost::beast::http::request<boost::beast::http::string_body> req);
 
 			/**
-			 * Provide access to vm controller
+			 * Upgrade a secured HTTP session to web-socket
 			 */
-			cyng::controller& vm();
+			void upgrade(boost::uuids::uuid
+				, boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream
+				, boost::beast::http::request<boost::beast::http::string_body> req);
+
+			/**
+			 * Stop the specified HTTP session.
+			 *
+			 * @return the session object
+			 */
+			cyng::object stop_session(boost::uuids::uuid);
+
+			/**
+			 * Stop the specified websocket
+			 */
+			cyng::object stop_ws(boost::uuids::uuid);
+
+			/**
+			 * stop all HTTP sessions and Web-Sockets
+			 */
+			void stop_all();
 
 			/**
 			 * deliver a message to a websocket
@@ -101,20 +135,20 @@ namespace node
 			 * document root
 			 */
 			const std::string doc_root_;
+			const auth_dirs auth_dirs_;
 
 			/**
 			 * Generate unique session tags
 			 */
 			boost::uuids::random_generator uidgen_;
 
-
 			/**
-			 * Running HTTP/1.x sessions
+			 * Running HTTPs/1.x sessions and web-sockets
 			 */
 			std::array<container_t, SESSION_TYPES> sessions_;
 
 			/**
-			 * Running web-sockets
+			 * Mutex for session containers
 			 */
 			mutable std::array<cyng::async::shared_mutex, SESSION_TYPES> mutex_;
 

@@ -1,11 +1,11 @@
 /*
  * The MIT License (MIT)
  * 
- * Copyright (c) 2017 Sylko Olzscher 
+ * Copyright (c) 2018 Sylko Olzscher 
  * 
  */ 
 
-#include "auth.h"
+#include <smf/http/srv/auth.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
@@ -18,7 +18,6 @@ namespace node
 {
 	void init(cyng::object obj, auth_dirs& result)
 	{
-// 		std::cout << std::endl << "auth configuration: " << cyng::io::to_str(obj) << std::endl;
 		cyng::vector_t cfg;
 		cfg = cyng::value_cast(obj, cfg);
 		for (auto d : cfg)
@@ -40,7 +39,6 @@ namespace node
 		for (auto dir : ad)
 		{
 			boost::string_view cmp(dir.first.c_str(), dir.first.size());
-// 			std::cout << "compare: " << path << " <> " << cmp << std::endl;
  			if (boost::algorithm::starts_with(path, cmp))	return std::make_pair(dir.second, true);
 		}
 		return std::make_pair(auth(), false);
@@ -50,13 +48,8 @@ namespace node
 	{
 		std::vector<boost::string_view> parts = cyng::split(value, "\t ");
 		BOOST_ASSERT_MSG(parts.size() == 2, "invalid authorization field");
-// 		std::cout << "[=] " << value << std::endl;
-// 		std::cout << "[0] " << parts.at(0) << std::endl;
-// 		std::cout << "[1] " << parts.at(1) << std::endl;
-// 		std::cout << "[!] " << ident.basic_credentials() << std::endl;
 		if (parts.size() == 2 && (parts.at(0) == "Basic"))
 		{
-// 			std::cout << cyng::crypto::base64_decode(parts[1].data(), parts[1].size()) << std::endl;
 			return ident.basic_credentials() == parts.at(1);
 		}
 		return false;

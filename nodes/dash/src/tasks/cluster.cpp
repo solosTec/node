@@ -18,7 +18,6 @@
 #include <cyng/set_cast.h>
 #include <cyng/factory/set_factory.h>
 #include <cyng/dom/reader.h>
-#include <cyng/sys/memory.h>
 #include <cyng/json.h>
 #include <cyng/xml.h>
 #include <cyng/parser/chrono_parser.h>
@@ -36,14 +35,25 @@ namespace node
 		, cluster_config_t const& cfg_cls
 		, boost::asio::ip::tcp::endpoint ep
 		, std::string const& doc_root
-		, std::set<boost::asio::ip::address> const& blacklist)
+#ifdef NODE_SSL_INSTALLED
+		, auth_dirs const& ad
+#endif
+		, std::set<boost::asio::ip::address> const& blacklist
+		)
 	: base_(*btp)
 		, uidgen_()
 		, bus_(bus_factory(btp->mux_, logger, uidgen_(), btp->get_id()))
 		, logger_(logger)
 		, config_(cfg_cls)
 		, cache_()
-		, server_(logger, btp->mux_.get_io_service(), ep, doc_root, blacklist, bus_, cache_)
+		, server_(logger
+			, btp->mux_.get_io_service()
+			, ep, doc_root
+#ifdef NODE_SSL_INSTALLED
+			, ad
+#endif
+			, blacklist
+			, bus_->vm_)
 		, dispatcher_(logger, server_.get_cm())
 		, db_sync_(logger, cache_)
 		, forward_(logger, cache_)
@@ -91,10 +101,16 @@ namespace node
 
 		forward_.register_this(bus_->vm_);
 
+		bus_->vm_.register_function("http.session.launch", 3, [this](cyng::context& ctx) {
+			//	[849a5b98-429c-431e-911d-18a467a818ca,false,127.0.0.1:61383]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "http.session.launch " << cyng::io::to_str(frame));
+		});
+
 		//
 		//	input from HTTP session / ws
 		//
-		bus_->vm_.register_function("ws.read", 3, std::bind(&cluster::ws_read, this, std::placeholders::_1));
+		bus_->vm_.register_function("ws.read", 2, std::bind(&cluster::ws_read, this, std::placeholders::_1));
 
 		bus_->vm_.register_function("cfg.download.devices", 2, std::bind(&cluster::cfg_download_devices, this, std::placeholders::_1));
 		bus_->vm_.register_function("cfg.download.gateways", 2, std::bind(&cluster::cfg_download_gateways, this, std::placeholders::_1));
@@ -463,23 +479,12 @@ namespace node
 
 	void cluster::ws_read(cyng::context& ctx)
 	{
-		//	[1adb06d2-bfbf-4b00-a7b1-80b49ba48f79,<!261:ws>,{("cmd":subscribe),("channel":status.session),("push":true)}]
+		//	[1adb06d2-bfbf-4b00-a7b1-80b49ba48f79,{("cmd":subscribe),("channel":status.session),("push":true)}]
 		//	
 		//	* session tag
 		//	* ws object
 		//	* json object
 		const cyng::vector_t frame = ctx.get_frame();
-
-		auto wsp = cyng::object_cast<http::websocket_session>(frame.at(1));
-		if (!wsp)
-		{
-			CYNG_LOG_FATAL(logger_, "ws.read - no websocket: " << cyng::io::to_str(frame));
-			return;
-		}
-		else
-		{
-			CYNG_LOG_TRACE(logger_, "ws.read - " << cyng::io::to_str(frame));
-		}
 
 		//
 		//	get session tag of websocket
@@ -489,7 +494,7 @@ namespace node
 		//
 		//	reader for JSON data
 		//
-		auto reader = cyng::make_reader(frame.at(2));
+		auto reader = cyng::make_reader(frame.at(1));
 		const std::string cmd = cyng::value_cast<std::string>(reader.get("cmd"), "");
 
 		if (boost::algorithm::equals(cmd, "subscribe"))
@@ -507,26 +512,7 @@ namespace node
 		{
 			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
 			CYNG_LOG_TRACE(logger_, "ws.read - pull channel [" << channel << "]");
-			if (boost::algorithm::starts_with(channel, "sys.cpu.usage.total"))
-			{				
-				update_sys_cpu_usage_total(channel, const_cast<http::websocket_session*>(wsp));
-			}
-			else if (boost::algorithm::starts_with(channel, "sys.cpu.count"))
-			{
-				update_sys_cpu_count(channel, const_cast<http::websocket_session*>(wsp));
-			}
-			else if (boost::algorithm::starts_with(channel, "sys.mem.virtual.total"))
-			{
-				update_sys_mem_virtual_total(channel, const_cast<http::websocket_session*>(wsp));
-			}
-			else if (boost::algorithm::starts_with(channel, "sys.mem.virtual.used"))
-			{
-				update_sys_mem_virtual_used(channel, const_cast<http::websocket_session*>(wsp));
-			}
-			else
-			{
-				CYNG_LOG_WARNING(logger_, "ws.read - unknown update channel [" << channel << "]");
-			}
+			dispatcher_.pull(cache_, channel, tag_ws);
 		}
 		else if (boost::algorithm::equals(cmd, "insert"))
 		{
@@ -572,78 +558,4 @@ namespace node
 			CYNG_LOG_WARNING(logger_, "ws.read - unknown command " << cmd);
 		}
 	}
-
-	void cluster::update_sys_cpu_usage_total(std::string const& channel, http::websocket_session* wss)
-	{
-		cache_.access([&](cyng::store::table* tbl) {
-			const auto rec = tbl->lookup(cyng::table::key_generator("cpu:load"));
-			if (!rec.empty())
-			{
-				
-				CYNG_LOG_WARNING(logger_, cyng::io::to_str(rec["value"]));
-				//
-				//	Total CPU load of the system in %
-				//
-				auto tpl = cyng::tuple_factory(
-					cyng::param_factory("cmd", std::string("update")),
-					cyng::param_factory("channel", channel),
-					cyng::param_t("value", rec["value"]));
-
-				auto msg = cyng::json::to_string(tpl);
-
-				if (wss)	wss->send_msg(msg);
-			}
-			else
-			{
-				CYNG_LOG_WARNING(logger_, "record cpu:load not found");
-			}
-		}, cyng::store::write_access("_Config"));
-	}
-
-	void cluster::update_sys_cpu_count(std::string const& channel, http::websocket_session* wss)
-	{
-		//
-		//	CPU count
-		//
-		auto tpl = cyng::tuple_factory(
-			cyng::param_factory("cmd", std::string("update")),
-			cyng::param_factory("channel", channel),
-			cyng::param_factory("value", std::thread::hardware_concurrency()));
-
-		auto msg = cyng::json::to_string(tpl);
-
-		if (wss)	wss->send_msg(msg);
-	}
-
-
-	void cluster::update_sys_mem_virtual_total(std::string const& channel, http::websocket_session* wss)
-	{
-		//
-		//	total virtual memory in bytes
-		//
-		auto tpl = cyng::tuple_factory(
-			cyng::param_factory("cmd", std::string("update")),
-			cyng::param_factory("channel", channel),
-			cyng::param_factory("value", cyng::sys::get_total_virtual_memory()));
-
-		auto msg = cyng::json::to_string(tpl);
-
-		if (wss)	wss->send_msg(msg);
-	}
-
-	void cluster::update_sys_mem_virtual_used(std::string const& channel, http::websocket_session* wss)
-	{
-		//
-		//	used virtual memory in bytes
-		//
-		auto tpl = cyng::tuple_factory(
-			cyng::param_factory("cmd", std::string("update")),
-			cyng::param_factory("channel", channel),
-			cyng::param_factory("value", cyng::sys::get_used_virtual_memory()));
-
-		auto msg = cyng::json::to_string(tpl);
-
-		if (wss)	wss->send_msg(msg);
-	}
-
 }

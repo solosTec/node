@@ -41,7 +41,11 @@ namespace node
 			, cluster_config_t const& cfg_cls
 			, boost::asio::ip::tcp::endpoint
 			, std::string const& doc_root
-			, std::set<boost::asio::ip::address> const&);
+#ifdef NODE_SSL_INSTALLED
+			, auth_dirs const& ad
+#endif
+			, std::set<boost::asio::ip::address> const&
+		);
 		cyng::continuation run();
 		void stop();
 
@@ -73,23 +77,10 @@ namespace node
 		void cfg_download_messages(cyng::context& ctx);
 		void cfg_download_LoRa(cyng::context& ctx);
 
-		//void cfg_upload_devices(cyng::context& ctx);
-		//void cfg_upload_gateways(cyng::context& ctx);
-		//void cfg_upload_meter(cyng::context& ctx);
-
 		void sync_table(std::string const&);
-
-		void update_sys_cpu_usage_total(std::string const&, http::websocket_session* wss);
-		void update_sys_cpu_count(std::string const&, http::websocket_session* wss);
-		void update_sys_mem_virtual_total(std::string const&, http::websocket_session* wss);
-		void update_sys_mem_virtual_used(std::string const&, http::websocket_session* wss);
 
         void start_sys_task();
         void stop_sys_task();
-
-		//void read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc);
-		//void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc);
-		//void read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc);
 
 		void trigger_download(boost::uuids::uuid tag, std::string table, std::string filename);
 

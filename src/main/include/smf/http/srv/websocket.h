@@ -8,25 +8,27 @@
 #ifndef NODE_LIB_HTTP_SRV_WEBSOCKET_H
 #define NODE_LIB_HTTP_SRV_WEBSOCKET_H
 
-#include <smf/cluster/bus.h>
+#include <NODE_project_info.h>
+
 #include <cyng/log.h>
+
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/uuid/uuid.hpp>
 
 namespace node
 {
 	namespace http
 	{
-		class connection_manager;
+		class connections;
 		class websocket_session
 		{
 		public:
 			// Take ownership of the socket
 			explicit websocket_session(cyng::logging::log_ptr
-				, connection_manager& cm
+				, connections& cm
 				, boost::asio::ip::tcp::socket&& socket
-				, bus::shared_type
 				, boost::uuids::uuid);
 
 			virtual  ~websocket_session();
@@ -157,8 +159,7 @@ namespace node
 			boost::asio::steady_timer timer_;
 			boost::beast::multi_buffer buffer_;
 			cyng::logging::log_ptr logger_;
-			connection_manager& connection_manager_;
-			bus::shared_type bus_;
+			connections& connection_manager_;
 			boost::uuids::uuid tag_;
 			char ping_state_ = 0;
 #if (BOOST_BEAST_VERSION < 167)
@@ -167,15 +168,11 @@ namespace node
             bool shutdown_;
 		};
 
-		cyng::object make_websocket(cyng::logging::log_ptr
-			, connection_manager& cm
-			, boost::asio::ip::tcp::socket&& socket
-			, bus::shared_type
-			, boost::uuids::uuid);
 	}
 }
 
 #include <cyng/intrinsics/traits.hpp>
+#include <cyng/intrinsics/traits/tag.hpp>
 
 namespace cyng
 {
@@ -189,7 +186,7 @@ namespace cyng
 #if defined(CYNG_LEGACY_MODE_ON)
 			const static char name[];
 #else
-			constexpr static char name[] = "ws";
+			constexpr static char name[] = "plain-websocket";
 #endif
 		};
 

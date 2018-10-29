@@ -19,13 +19,14 @@ namespace node
 			, boost::asio::ssl::context& ctx
 			, boost::asio::ip::tcp::endpoint endpoint
 			, std::string const& doc_root
+			, auth_dirs const& ad
 			, std::set<boost::asio::ip::address> const& blacklist
 			, cyng::controller& vm)
 		: logger_(logger)
 			, ctx_(ctx)
 			, acceptor_(ioc)
 			, socket_(ioc)
-			, connection_manager_(logger, vm, doc_root)
+			, connection_manager_(logger, vm, doc_root, ad)
 			, blacklist_(blacklist)
 			, is_listening_(false)
 			, shutdown_complete_()
@@ -127,7 +128,6 @@ namespace node
 						<< socket_.remote_endpoint());
 
 					//	Create the session and run it
-
 					connection_manager_.create_session(std::move(socket_), ctx_);
 				}
 
@@ -161,9 +161,8 @@ namespace node
 			//
 			//	stop all connections
 			//
-			//CYNG_LOG_INFO(logger_, "stop all connections");
-			//connection_manager_.stop_all();
-
+			CYNG_LOG_INFO(logger_, "stop all connections");
+			connection_manager_.stop_all();
 		}
 
 

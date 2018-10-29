@@ -10,7 +10,8 @@
 #include <cyng/compatibility/io_service.h>
 #include "connections.h"
 #include "mail_config.h"
-#include "auth.h"
+//#include "auth.h"
+#include <smf/http/srv/auth.h>
 #include <cyng/log.h>
 #include <cyng/compatibility/async.h>
 #include <memory>

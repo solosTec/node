@@ -9,6 +9,10 @@
 #include <smf/http/srv/session.h>
 #include <smf/cluster/generator.h>
 
+#include <cyng/vm/controller.h>
+
+#include <boost/uuid/uuid_io.hpp>
+
 namespace node
 {
 	namespace http
@@ -18,17 +22,22 @@ namespace node
 			, boost::asio::io_context& ioc
 			, boost::asio::ip::tcp::endpoint endpoint
 			, std::string const& doc_root
+#ifdef NODE_SSL_INSTALLED
+			, auth_dirs const& ad
+#endif
 			, std::set<boost::asio::ip::address> const& blacklist
-			, node::bus::shared_type bus
-			, cyng::store::db& cache)
+			, cyng::controller& vm)
 		: logger_(logger)
 			, acceptor_(ioc)
 			, socket_(ioc)
-			, doc_root_(doc_root)
 			, blacklist_(blacklist)
-			, bus_(bus)
-			, cache_(cache)
-			, connection_manager_(logger, bus)
+			, connection_manager_(logger
+				, vm
+				, doc_root
+#ifdef NODE_SSL_INSTALLED
+				, ad
+#endif
+			)
 			, is_listening_(false)
 			, shutdown_complete_()
 			, mutex_()
@@ -154,7 +163,8 @@ namespace node
 						<< "access from blacklisted address: "
 						<< *pos
 						;
-					bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+					connection_manager_.vm().async_run(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+					//bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
 					
 				}
 				else {
@@ -167,12 +177,13 @@ namespace node
 						<< tag);
 
 					// Create the http_session and run it
-					connection_manager_.start(make_http_session(logger_
-						, connection_manager_
-						, std::move(socket_)
-						, doc_root_
-						, bus_
-						, tag));
+					connection_manager_.create_session(std::move(socket_));
+					//connection_manager_.start(make_http_session(logger_
+					//	, connection_manager_
+					//	, std::move(socket_)
+					//	//, doc_root_
+					//	//, bus_
+					//	, tag));
 
 				}
 

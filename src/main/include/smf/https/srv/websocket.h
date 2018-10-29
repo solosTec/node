@@ -17,7 +17,6 @@ namespace node
 	{
 		// Handles a plain WebSocket connection
 		class plain_websocket : public websocket_session<plain_websocket>
-			//, public std::enable_shared_from_this<plain_websocket>
 		{
 		public:
 			// Create the session
@@ -52,7 +51,6 @@ namespace node
 
 		// Handles an SSL WebSocket connection
 		class ssl_websocket : public websocket_session<ssl_websocket>
-			//, public std::enable_shared_from_this<ssl_websocket>
 		{
 		public:
 			// Create the http_session

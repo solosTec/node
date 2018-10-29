@@ -13,6 +13,7 @@
 #include <smf/http/srv/path_cat.h>
 #include <smf/http/srv/parser/multi_part.h>
 #include <smf/http/srv/mime_type.h>
+#include <smf/http/srv/auth.h>
 
 #include <cyng/object.h>
 #include <boost/beast/http.hpp>
@@ -131,7 +132,8 @@ namespace node
 				, boost::uuids::uuid tag
 				, boost::asio::io_context& ioc
 				, boost::beast::flat_buffer buffer
-				, std::string const& doc_root)
+				, std::string const& doc_root
+				, auth_dirs const& ad)
 			: logger_(logger)
 				, connection_manager_(cm)
 				, tag_(tag)
@@ -139,6 +141,7 @@ namespace node
 				, strand_(ioc.get_executor())
 				, buffer_(std::move(buffer))
 				, doc_root_(doc_root)
+				, auth_dirs_(ad)
 				, queue_(*this)
 			{}
 
@@ -207,6 +210,7 @@ namespace node
 				// Happens when the timer closes the socket
 				if (ec == boost::asio::error::operation_aborted)	{
 					CYNG_LOG_WARNING(logger_, tag() << " - timer aborted session");
+					connection_manager_.stop_session(tag());
 					return;
 				}
 
@@ -218,7 +222,7 @@ namespace node
 
 				if (ec)	{
 					CYNG_LOG_ERROR(logger_, tag() << " - read: " << ec.message());
-					//connection_manager_.stop(this);
+					connection_manager_.stop_session(tag());
 					return;
 				}
 
@@ -227,16 +231,12 @@ namespace node
 				{
 					// Transfer the stream to a new WebSocket session
 					CYNG_LOG_TRACE(logger_, tag() << " -> upgrade");
+
 					//
-					//	ToDo: substitute cb_
+					//	upgrade
 					//
 					connection_manager_.upgrade(tag(), derived().release_stream(), std::move(req_));
-					//cb_(cyng::generate_invoke("https.upgrade", obj));
-					//connection_manager_.create_wsocket(derived().release_stream(), std::move(req_));
-					//return make_websocket_session(logger_
-					//	//, cb_
-					//	, derived().release_stream()
-					//	, std::move(req_));
+					timer_.cancel();
 				}
 				else
 				{
@@ -259,12 +259,14 @@ namespace node
 				// Happens when the timer closes the socket
 				if (ec == boost::asio::error::operation_aborted)
 				{
+					connection_manager_.stop_session(tag());
 					return;
 				}
 
 				if (ec)
 				{
 					CYNG_LOG_FATAL(logger_, "write: " << ec.message());
+					connection_manager_.stop_session(tag());
 					return;
 				}
 
@@ -332,9 +334,68 @@ namespace node
 				if (req.method() == boost::beast::http::verb::get ||
 					req.method() == boost::beast::http::verb::head)
 				{
+
+					//
+					//	test authorization
+					//
+					for (auto const& ad : auth_dirs_) {
+						if (boost::algorithm::starts_with(req.target(), ad.first)) {
+
+							//
+							//	Test auth token
+							//
+							auto pos = req.find("Authorization");
+							if (pos == req.end()) {
+
+								//
+								//	authorization required
+								//
+								CYNG_LOG_WARNING(logger_, "authorization required: "
+									<< ad.first
+									<< " / "
+									<< req.target());
+
+								//
+								//	send auth request
+								//
+								return queue_(obj, send_not_authorized(req.version()
+									, req.keep_alive()
+									, req.target().to_string()
+									, ad.second.type_
+									, ad.second.realm_));
+							}
+							else {
+
+								//
+								//	authorized
+								//	Basic c29sOm1lbGlzc2E=
+								//
+								if (authorization_test(pos->value(), ad.second)) {
+									CYNG_LOG_DEBUG(logger_, "authorized with "
+										<< pos->value());
+								}
+								else {
+									CYNG_LOG_WARNING(logger_, "authorization failed "
+										<< pos->value());
+									//
+									//	send auth request
+									//
+									return queue_(obj, send_not_authorized(req.version()
+										, req.keep_alive()
+										, req.target().to_string()
+										, ad.second.type_
+										, ad.second.realm_));
+
+								}
+							}
+							break;
+						}
+					}
+
 					// Build the path to the requested file
 					std::string path = path_cat(doc_root_, req.target());
-					if (req.target().back() == '/')
+					if (boost::filesystem::is_directory(path))
+					//if (req.target().back() == '/')
 					{
 						path.append("index.html");
 					}
@@ -390,7 +451,6 @@ namespace node
 				else if (req.method() == boost::beast::http::verb::post)
 				{
 					auto target = req.target();	//	/upload/config/device/
-					CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
 
 					boost::beast::string_view content_type = req[boost::beast::http::field::content_type];
 					CYNG_LOG_INFO(logger_, "content type " << content_type);
@@ -400,29 +460,23 @@ namespace node
 					//
 					//	payload parser
 					//
-					std::uint32_t payload_size = *req.payload_size();
-					node::http::multi_part_parser mpp([&](cyng::vector_t&& prg) {
-						//bus_->vm_.async_run(std::move(prg));
-					}	, logger_
-						, payload_size
-						, target
-						, tag_);
+					if (req.payload_size()) {
 
-					//
-					//	open new upload sequence
-					//
-					//bus_->vm_.async_run(cyng::generate_invoke("http.upload.start"
-					//	, tag_
-					//	, req.version()
-					//	, std::string(target.begin(), target.end())
-					//	, payload_size));
+						CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
+						std::uint64_t payload_size = *req.payload_size();
+						node::http::multi_part_parser mpp([&](cyng::vector_t&& prg) {
+							//bus_->vm_.async_run(std::move(prg));
+						}	, logger_
+							, payload_size
+							, target
+							, tag_);
 
-					//
-					//	parse payload and generate program sequences
-					//
-					mpp.parse(req.body().begin(), req.body().end());
+						//
+						//	parse payload and generate program sequences
+						//
+						mpp.parse(req.body().begin(), req.body().end());
 
-
+					}
 				}
 				return queue_(obj, std::move(req));
 			}
@@ -500,6 +554,36 @@ namespace node
 
 			}
 
+			boost::beast::http::response<boost::beast::http::string_body> send_not_authorized(std::uint32_t version
+				, bool keep_alive
+				, std::string target
+				, std::string type
+				, std::string realm)
+			{
+				CYNG_LOG_WARNING(logger_, "401 - unauthorized: " << target);
+
+				std::string body =
+					"<!DOCTYPE html>\n"
+					"<html lang=en>\n"
+					"\t<head>\n"
+					"\t\t<title>not authorized</title>\n"
+					"\t</head>\n"
+					"\t<body style=\"font-family:'Courier New', Arial, sans-serif\">\n"
+					"\t\t<h1>&#x1F6AB; " + target + "</h1>\n"
+					"\t</body>\n"
+					"</html>\n"
+					;
+
+				boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::unauthorized, version };
+				res.set(boost::beast::http::field::server, NODE::version_string);
+				res.set(boost::beast::http::field::content_type, "text/html");
+				res.set(boost::beast::http::field::www_authenticate, "Basic realm=\"" + realm + "\"");
+				res.keep_alive(keep_alive);
+				res.body() = body;
+				res.prepare_payload();
+				return res;
+			}
+
 		protected:
 			cyng::logging::log_ptr logger_;
 			connections& connection_manager_;
@@ -509,7 +593,8 @@ namespace node
 			boost::beast::flat_buffer buffer_;
 
 		private:
-			std::string const& doc_root_;
+			const std::string doc_root_;
+			const auth_dirs& auth_dirs_;
 			boost::beast::http::request<boost::beast::http::string_body> req_;
 			queue queue_;
 

@@ -19,10 +19,12 @@ namespace node
 	{
 		connections::connections(cyng::logging::log_ptr logger
 			, cyng::controller& vm
-			, std::string const& doc_root)
+			, std::string const& doc_root
+			, auth_dirs const& ad)
 		: logger_(logger)
 			, vm_(vm)
 			, doc_root_(doc_root)
+			, auth_dirs_(ad)
 			, uidgen_()
 			, sessions_()
 			, mutex_()
@@ -52,7 +54,8 @@ namespace node
 				, std::move(socket)
 				, ctx
 				, std::move(buffer)
-				, doc_root_);
+				, doc_root_
+				, auth_dirs_);
 
 			auto sp = const_cast<ssl_session*>(cyng::object_cast<ssl_session>(obj));
 			BOOST_ASSERT(sp != nullptr);
@@ -69,7 +72,8 @@ namespace node
 				, uidgen_()
 				, std::move(socket)
 				, std::move(buffer)
-				, doc_root_);
+				, doc_root_
+				, auth_dirs_);
 
 			auto sp = const_cast<plain_session*>(cyng::object_cast<plain_session>(obj));
 			BOOST_ASSERT(sp != nullptr);
@@ -79,7 +83,9 @@ namespace node
 			}
 		}
 
-		void connections::upgrade(boost::uuids::uuid tag, boost::asio::ip::tcp::socket socket, boost::beast::http::request<boost::beast::http::string_body> req)
+		void connections::upgrade(boost::uuids::uuid tag
+			, boost::asio::ip::tcp::socket socket
+			, boost::beast::http::request<boost::beast::http::string_body> req)
 		{
 			//	plain websocket
 			auto obj = create_wsocket(tag, std::move(socket));
@@ -182,6 +188,191 @@ namespace node
 			return std::make_pair(cyng::make_object(), NO_SESSION);
 		}
 
+		cyng::object connections::stop_session(boost::uuids::uuid tag)
+		{
+			//
+			//	unique lock: HTTP_PLAIN
+			//
+			{
+				cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[HTTP_PLAIN]);
+				auto pos = sessions_[HTTP_PLAIN].find(tag);
+				if (pos != sessions_[HTTP_PLAIN].end()) {
+					//
+					//	get a session reference
+					//
+					CYNG_LOG_INFO(logger_, "remove HTTP_PLAIN " << tag);
+					auto obj = pos->second;
+					const_cast<plain_session*>(cyng::object_cast<plain_session>(obj))->do_eof(obj);
+					sessions_[HTTP_PLAIN].erase(pos);
+					return obj;
+				}
+			}
+
+			//
+			//	unique lock: HTTP_SSL
+			//
+			{
+				cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[HTTP_SSL]);
+
+				auto pos = sessions_[HTTP_SSL].find(tag);
+				if (pos != sessions_[HTTP_SSL].end()) {
+					CYNG_LOG_INFO(logger_, "remove HTTP_SSL " << tag);
+					auto obj = pos->second;
+					const_cast<ssl_session*>(cyng::object_cast<ssl_session>(obj))->do_eof(obj);
+					sessions_[HTTP_SSL].erase(pos);
+					return obj;
+				}
+			}
+
+			return cyng::make_object();
+		}
+
+		cyng::object connections::stop_ws(boost::uuids::uuid tag)
+		{
+			//
+			//	unique lock: SOCKET_PLAIN
+			//
+			{
+				cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[SOCKET_PLAIN]);
+
+				//
+				//	Clean up listener list
+				//	Remove all listener with the same tag as *wsp.
+				//
+				for (auto pos = listener_plain_.begin(); pos != listener_plain_.end(); )
+				{
+					if (cyng::object_cast<plain_websocket>(pos->second)->tag() == tag) {
+						pos = listener_plain_.erase(pos);
+					}
+					else {
+						++pos;
+					}
+				}
+
+				//
+				//	remove from ws-session list
+				//
+				auto pos = sessions_[SOCKET_PLAIN].find(tag);
+				if (pos != sessions_[SOCKET_PLAIN].end()) {
+
+					//
+					//	get a session reference
+					//
+					auto obj = pos->second;
+					//const_cast<plain_websocket*>(cyng::object_cast<plain_websocket>(obj))->do_eof(obj);
+
+					sessions_[SOCKET_PLAIN].erase(pos);
+					return obj;
+				}
+			}
+
+			//
+			//	unique lock: SOCKET_SSL
+			//
+			{
+				cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[SOCKET_SSL]);
+
+				//
+				//	Clean up listener list
+				//	Remove all listener with the same tag as *wsp.
+				//
+				for (auto pos = listener_ssl_.begin(); pos != listener_ssl_.end(); )
+				{
+					if (cyng::object_cast<ssl_websocket>(pos->second)->tag() == tag) {
+						pos = listener_ssl_.erase(pos);
+					}
+					else {
+						++pos;
+					}
+				}
+
+				//
+				//	remove from ws-session list
+				//
+				auto pos = sessions_[SOCKET_SSL].find(tag);
+				if (pos != sessions_[SOCKET_SSL].end()) {
+
+					//
+					//	get a session reference
+					//
+					auto obj = pos->second;
+					//const_cast<ssl_websocket*>(cyng::object_cast<ssl_websocket>(obj))->do_close();
+
+					sessions_[SOCKET_SSL].erase(pos);
+					return obj;
+				}
+			}
+
+			return cyng::make_object();
+		}
+
+		void connections::stop_all()
+		{
+			{
+				//
+				//	unique lock: HTTP_PLAIN
+				//
+				cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[HTTP_PLAIN]);
+
+				CYNG_LOG_INFO(logger_, "stop " << sessions_[HTTP_PLAIN].size() << " HTTP_PLAIN sessions");
+				for (auto s : sessions_[HTTP_PLAIN])
+				{
+					auto ptr = cyng::object_cast<plain_session>(s.second);
+					if (ptr)	const_cast<plain_session*>(ptr)->do_eof(s.second);
+				}
+			}
+			{
+				//
+				//	unique lock: HTTP_SSL
+				//
+				cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[HTTP_SSL]);
+
+				CYNG_LOG_INFO(logger_, "stop " << sessions_[HTTP_SSL].size() << " HTTP_SSL sessions");
+				for (auto s : sessions_[HTTP_SSL])
+				{
+					auto ptr = cyng::object_cast<ssl_session>(s.second);
+					if (ptr)	const_cast<ssl_session*>(ptr)->do_eof(s.second);
+				}
+			}
+
+			{
+				//
+				//	unique lock: SOCKET_PLAIN
+				//
+				cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[SOCKET_PLAIN]);
+
+				CYNG_LOG_INFO(logger_, "stop " << sessions_[SOCKET_PLAIN].size() << " SOCKET_PLAIN websockets");
+				for (auto & ws : sessions_[SOCKET_PLAIN])
+				{
+					auto ptr = cyng::object_cast<plain_websocket>(ws.second);
+					//if (ptr)	const_cast<plain_websocket*>(ptr)->do_shutdown();
+				}
+			}
+			{
+				//
+				//	unique lock: SOCKET_SSL
+				//
+				cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[SOCKET_SSL]);
+
+				CYNG_LOG_INFO(logger_, "stop " << sessions_[SOCKET_SSL].size() << " SOCKET_SSL websockets");
+				for (auto & ws : sessions_[SOCKET_SSL])
+				{
+					auto ptr = cyng::object_cast<ssl_websocket>(ws.second);
+					//if (ptr)	const_cast<plain_websocket*>(ptr)->do_shutdown();
+				}
+			}
+
+			//
+			//	clear all maps
+			//
+			sessions_[HTTP_PLAIN].clear();
+			sessions_[HTTP_SSL].clear();
+			sessions_[SOCKET_PLAIN].clear();
+			sessions_[SOCKET_SSL].clear();
+			listener_plain_.clear();
+			listener_ssl_.clear();
+		}
+
 		//
 		//	connection manager interface
 		//
@@ -269,6 +460,7 @@ namespace node
 		void connections::push_event(std::string const& channel, std::string const& msg)
 		{
 			//
+			//	same lock as used for web-socket container
 			//	lock both web-socket container
 			//
 			cyng::async::lock(mutex_[SOCKET_PLAIN], mutex_[SOCKET_SSL]);
@@ -280,6 +472,10 @@ namespace node
 			{
 				auto wp = const_cast<plain_websocket*>(cyng::object_cast<plain_websocket>(pos->second));
 				if (wp)	wp->write(msg);
+				else {
+					CYNG_LOG_ERROR(logger_, "plain_websocket of channel " << channel << " is NULL");
+					pos = listener_plain_.erase(pos);
+				}
 			}
 
 			range = listener_ssl_.equal_range(channel);
@@ -287,6 +483,10 @@ namespace node
 			{
 				auto wp = const_cast<ssl_websocket*>(cyng::object_cast<ssl_websocket>(pos->second));
 				if (wp)	wp->write(msg);
+				else {
+					CYNG_LOG_ERROR(logger_, "ssl_websocket of channel " << channel << " is NULL");
+					pos = listener_plain_.erase(pos);
+				}
 			}
 		}
 
