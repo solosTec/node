@@ -9,6 +9,7 @@
 #define NODE_LORA_TASK_CLUSTER_H
 
 #include "../processor.h"
+#include <smf/http/srv/auth.h>
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
@@ -36,6 +37,7 @@ namespace node
 			, cluster_config_t const& cfg
 			, boost::asio::ip::tcp::endpoint ep
 			, std::string const& doc_root
+			, auth_dirs const& ad
 			, std::set<boost::asio::ip::address> const&);
 		cyng::continuation run();
 		void stop();

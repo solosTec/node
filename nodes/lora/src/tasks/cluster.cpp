@@ -21,6 +21,7 @@ namespace node
 		, cluster_config_t const& cfg
 		, boost::asio::ip::tcp::endpoint ep
 		, std::string const& doc_root
+		, auth_dirs const& ad
 		, std::set<boost::asio::ip::address> const& blacklist)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
@@ -31,6 +32,7 @@ namespace node
 			, ctx
 			, ep
 			, doc_root
+			, ad
 			, blacklist
 			, bus_->vm_)
 		, processor_(logger, btp->mux_.get_io_service(), tag, bus_)

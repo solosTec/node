@@ -442,16 +442,19 @@ namespace node
 		auto private_key = cyng::value_cast<std::string>(dom.get("tls-private-kay"), "key.pem");
 		auto dh = cyng::value_cast<std::string>(dom.get("tls-dh"), "dh.pem");
 
+		CYNG_LOG_INFO(logger, "document root: " << doc_root);
+		CYNG_LOG_INFO(logger, "address: " << address);
+		CYNG_LOG_INFO(logger, "service: " << service);
+
 		//
 		//	get user credentials
 		//
 		auth_dirs ad;
 		init(dom.get("auth"), ad);
-
-		CYNG_LOG_INFO(logger, "document root: " << doc_root);
-		CYNG_LOG_INFO(logger, "address: " << address);
-		CYNG_LOG_INFO(logger, "service: " << service);
-		CYNG_LOG_INFO(logger, ad.size() << " user credentials");
+		//CYNG_LOG_INFO(logger, ad.size() << " user credentials");
+		for (auto const& dir : ad) {
+			CYNG_LOG_INFO(logger, "restricted access to [" << dir.first << "]");
+		}
 
 		//
 		//	get blacklisted addresses
@@ -483,6 +486,7 @@ namespace node
 			, load_cluster_cfg(cfg_cls)
 			, boost::asio::ip::tcp::endpoint{ host, port }
 			, doc_root
+			, ad
 			, blacklist);
 
 		if (r.second)	return r.first;
