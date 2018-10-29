@@ -11,6 +11,7 @@
 #include <NODE_project_info.h>
 
 #include <cyng/log.h>
+#include <cyng/object.h>
 
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/steady_timer.hpp>

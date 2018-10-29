@@ -155,7 +155,7 @@ namespace node
 				, std::string const& path
 				, std::uint64_t size);
 #ifdef NODE_SSL_INSTALLED
-			boost::beast::http::response<boost::beast::http::string_body> session::send_not_authorized(std::uint32_t version
+			boost::beast::http::response<boost::beast::http::string_body> send_not_authorized(std::uint32_t version
 				, bool keep_alive
 				, std::string target
 				, std::string type
