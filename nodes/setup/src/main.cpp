@@ -163,12 +163,6 @@ int main(int argc, char **argv)
  			return ctrl.init_db(conf_count);
 		}
 
-		if (vm["show"].as< bool >())
-		{
-			//	show configuration
-// 			return ctrl.show_config();
-		}
-
 #if BOOST_OS_WINDOWS
 		if (vm["service.enabled"].as< bool >())
 		{
