@@ -236,7 +236,7 @@ namespace node
 		if (!db.create_table(cyng::table::make_meta_table<1, 12>("_Session", { "tag"	//	client session - primary key [uuid]
 			, "local"	//	[object] local peer object (hold session reference)
 			, "remote"	//	[object] remote peer object (if session connected)
-			, "peer"	//	[uuid] remote peer
+			, "peer"	//	[uuid] cluster tag - peer
 			, "device"	//	[uuid] - owner of the session <TDevice>
 			, "name"	//	[string] - account
 			, "source"	//	[uint32] - ipt source id (unique)
@@ -255,7 +255,7 @@ namespace node
 
 		if (!db.create_table(cyng::table::make_meta_table<1, 9>("_Target", { "channel"	//	[uint32] - target id: primary key
 			, "tag"		//	[uuid] owner session
-			, "peer"	//	[uuid] peer of owner
+			, "peer"	//	[uuid] cluster tag - peer
 			, "name"	//	[string] target name
 			, "device"	//	[uuid] - owner of target
 			, "account"	//	[string] - name of target owner

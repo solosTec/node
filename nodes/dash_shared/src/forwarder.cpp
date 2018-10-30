@@ -68,10 +68,10 @@ namespace node
 				cyng::vector_t vec;
 				vec = cyng::value_cast(reader["key"].get("tag"), vec);
 				BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
-				const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");
-				auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
-
+				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+				//CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");
+				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+				auto key = cyng::table::key_generator(vec.at(0));
 				ctx.attach(bus_req_db_remove("TDevice", key, ctx.tag()));
 			}
 			catch (std::exception const& ex) {
@@ -90,10 +90,10 @@ namespace node
 				cyng::vector_t vec;
 				vec = cyng::value_cast(reader["key"].get("tag"), vec);
 				BOOST_ASSERT_MSG(vec.size() == 1, "TGateway key has wrong size");
-				const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				CYNG_LOG_DEBUG(logger, "TGateway key [" << str << "]");
-				auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
-
+				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+				//CYNG_LOG_DEBUG(logger, "TGateway key [" << str << "]");
+				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+				auto key = cyng::table::key_generator(vec.at(0));
 				ctx.attach(bus_req_db_remove("TGateway", key, ctx.tag()));
 			}
 			catch (std::exception const& ex) {
@@ -127,9 +127,10 @@ namespace node
 				vec = cyng::value_cast(reader["rec"].get("key"), vec);
 				BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
 
-				const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");
-				auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+				//CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");
+				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+				auto key = cyng::table::key_generator(vec.at(0));
 
 				cyng::tuple_t tpl;
 				tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
@@ -162,9 +163,10 @@ namespace node
 				vec = cyng::value_cast(reader["rec"].get("key"), vec);
 				BOOST_ASSERT_MSG(vec.size() == 1, "TGateway key has wrong size");
 
-				const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				CYNG_LOG_DEBUG(logger, "TGateway key [" << str << "]");
-				auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+				//CYNG_LOG_DEBUG(logger, "TGateway key [" << str << "]");
+				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+				auto key = cyng::table::key_generator(vec.at(0));
 
 				cyng::tuple_t tpl;
 				tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
@@ -253,10 +255,10 @@ namespace node
 				vec = cyng::value_cast(reader.get("key"), vec);
 				BOOST_ASSERT_MSG(vec.size() == 1, "*Session key has wrong size");
 
-				const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				CYNG_LOG_DEBUG(logger, "*Session key [" << str << "]");
-				auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
-
+				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+				//CYNG_LOG_DEBUG(logger, "*Session key [" << str << "]");
+				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+				auto key = cyng::table::key_generator(vec.at(0));
 				ctx.attach(bus_req_stop_client(key, ctx.tag()));
 
 			}
@@ -289,10 +291,7 @@ namespace node
 			BOOST_ASSERT_MSG(!vec.empty(), "TGateway key is empty");
 
 			if (!vec.empty()) {
-				const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				CYNG_LOG_DEBUG(logger, "TGateway key [" << str << "]");
-				auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
-
+				auto key = cyng::table::key_generator(vec.at(0));
 				ctx.attach(bus_req_reboot_client(key, ctx.tag(), tag_ws));
 			}
 		}
@@ -317,9 +316,7 @@ namespace node
 
 			BOOST_ASSERT_MSG(!vec.empty(), "TGateway key is empty");
 			if (!vec.empty()) {
-				const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				CYNG_LOG_DEBUG(logger, "TGateway key [" << str << "]");
-				auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+				auto key = cyng::table::key_generator(vec.at(0));
 
 #ifdef _DEBUG
 				auto params = cyng::vector_cast<std::string>(reader.get("params"), "");

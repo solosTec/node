@@ -14,18 +14,8 @@
 
 #include <cyng/tuple_cast.hpp>
 #include <cyng/parser/buffer_parser.h>
- //#include <cyng/value_cast.hpp>
-//#include <cyng/object_cast.hpp>
-//#include <cyng/dom/reader.h>
 
 #include <boost/uuid/nil_generator.hpp>
-//#include <boost/uuid/uuid_io.hpp>
-//#include <boost/algorithm/string/predicate.hpp>
-//#include <boost/assert.hpp>
-//#include <boost/functional/hash.hpp>
-//#ifdef _DEBUG
-//#include <cyng/io/hex_dump.hpp>
-//#endif
 
 namespace node 
 {
@@ -159,7 +149,7 @@ namespace node
 				const auto name = cyng::value_cast<std::string>(rec["userName"], "");
 				const auto pwd = cyng::value_cast<std::string>(rec["userPwd"], "");
 				peer->vm_.async_run(node::client_req_query_gateway(tag	//	ipt session tag
-					, ctx.tag()			//	source peer
+					, std::get<2>(tpl)	//	source peer
 					, std::get<0>(tpl)	//	cluster sequence
 					, std::get<3>(tpl)	//	requests
 					, std::get<4>(tpl)	//	ws tag
@@ -172,7 +162,7 @@ namespace node
 				const auto name = cyng::value_cast<std::string>(std::get<1>(res)["userName"], "");
 				const auto pwd = cyng::value_cast<std::string>(std::get<1>(res)["userPwd"], "");
 				std::get<0>(res)->vm_.async_run(node::client_req_query_gateway(std::get<3>(res)
-					, ctx.tag()			//	source peer
+					, std::get<2>(tpl)	//	source peer
 					, std::get<0>(tpl)	//	cluster sequence
 					, std::get<3>(tpl)	//	requests
 					, std::get<4>(tpl)	//	ws tag

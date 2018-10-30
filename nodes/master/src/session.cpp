@@ -13,9 +13,11 @@
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
+
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/store_domain.h>
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_chrono.hpp>
 #include <cyng/value_cast.hpp>
 #include <cyng/object_cast.hpp>
 #include <cyng/tuple_cast.hpp>
@@ -271,17 +273,27 @@ namespace node
 			//
 			//	get node class
 			//
-			const auto key = cyng::table::key_generator(ctx.tag());
+			const auto key = cyng::table::key_generator(cluster_tag_);
 			const auto rec = tbl_cluster->lookup(key);
 			if (!rec.empty())
 			{
+				//
+				//	get node class
+				//
 				node_class = cyng::value_cast<std::string>(rec["class"], "");
+
+				CYNG_LOG_INFO(logger_, "cluster member "
+					<< node_class
+					<< '@'
+					<< cluster_tag_
+					<< " will be removed");
+
+				//
+				//	remove from cluster table
+				//
+				tbl_cluster->erase(key, ctx.tag());
 			}
 
-			//
-			//	remove from cluster table
-			//
-			tbl_cluster->erase(key, ctx.tag());
 
 			//
 			//	update master record
@@ -594,7 +606,7 @@ namespace node
 			//
 			//	insert into cluster table
 			//
-			if (!tbl_cluster->insert(cyng::table::key_generator(ctx.tag())	//	cluster_tag_
+			if (!tbl_cluster->insert(cyng::table::key_generator(cluster_tag_)	//	ctx.tag()
 				, cyng::table::data_generator(frame.at(0), frame.at(1), frame.at(2), 0u, frame.at(3), frame.at(5), frame.at(6), frame.at(4))
 				, 0u, ctx.tag()))
 			{
@@ -611,7 +623,6 @@ namespace node
 				//
 				tbl_cluster->modify(cyng::table::key_generator(mtag_), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
 			}
-
 
 		}, cyng::store::write_access("_Cluster"));
 
@@ -700,10 +711,13 @@ namespace node
 		//	calculate ping time
 		//
 		auto ping = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - std::get<2>(tpl));
-		CYNG_LOG_INFO(logger_, "bus.res.watchdog - ping time " << ping.count() << " microsec");
+		CYNG_LOG_INFO(logger_, "bus.res.watchdog "
+			<< std::get<0>(tpl)
+			<< " - ping time " 
+			<< cyng::to_str(ping));
 
 		db_.modify("_Cluster"
-			, cyng::table::key_generator(ctx.tag())
+			, cyng::table::key_generator(std::get<0>(tpl))
 			, cyng::param_factory("ping", ping)
 			, ctx.tag());
 	}

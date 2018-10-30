@@ -48,7 +48,7 @@ namespace node
 		//
 		//	initialize random generator
 		//
-        rng_.seed(std::time(nullptr));
+        rng_.seed(static_cast<std::uint32_t>(std::time(nullptr)));
 	}
 
 	void client::register_this(cyng::context& ctx)
@@ -160,9 +160,10 @@ namespace node
 			, std::get<6>(tpl)
 			, frame.at(7));
 	}
+
 	void client::req_login_impl(cyng::context& ctx,
 		boost::uuids::uuid tag,
-		boost::uuids::uuid peer,
+		boost::uuids::uuid cluster_tag,	//	peer
 		std::uint64_t seq,
 		std::string account,
 		std::string pwd,
@@ -216,12 +217,12 @@ namespace node
 						auto dom = cyng::make_reader(bag);
 
 						if (tbl_session->insert(cyng::table::key_generator(tag)
-							, cyng::table::data_generator(self
-								, cyng::make_object()
-								, peer
-								, dev_tag
-								, account
-								, distribution_(rng_)
+							, cyng::table::data_generator(self	//	local
+								, cyng::make_object()			//	remote
+								, cluster_tag					//	peer
+								, dev_tag						//	device
+								, account						//	name
+								, distribution_(rng_)			//	source id
 								, std::chrono::system_clock::now()
 								, boost::uuids::nil_uuid()
 								, cyng::value_cast<std::string>(dom.get("tp-layer"), "tcp/ip")
@@ -247,9 +248,9 @@ namespace node
 							//
 							//	update cluster table
 							//
-							auto tag_cluster = cyng::object_cast<session>(self)->vm_.tag();
-							auto key_cluster = cyng::table::key_generator(tag_cluster);
-							auto list = get_clients_by_peer(tbl_session, tag_cluster);
+							//auto tag_cluster = cyng::object_cast<session>(self)->vm_.tag();
+							auto key_cluster = cyng::table::key_generator(cluster_tag);
+							auto list = get_clients_by_peer(tbl_session, cluster_tag);
 							tbl_cluster->modify(key_cluster, cyng::param_factory("clients", static_cast<std::uint64_t>(list.size())), tag);
 
 						}
@@ -491,7 +492,7 @@ namespace node
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] remote client tag
-			boost::uuids::uuid,		//	[1] peer tag
+			boost::uuids::uuid,		//	[1] cluster tag - peer
 			std::uint64_t,			//	[2] sequence number
 			int						//	[3] error code
 		>(frame);
@@ -524,7 +525,7 @@ namespace node
 
 		if (std::get<3>(tpl))
 		{
-			CYNG_LOG_INFO(logger_, "client.req.close " << cyng::io::to_str(frame));
+			CYNG_LOG_INFO(logger_, "client.res.close " << cyng::io::to_str(frame));
 			close_impl(ctx
 				, std::get<0>(tpl)
 				, std::get<1>(tpl)
@@ -534,7 +535,7 @@ namespace node
 		}
 		else
 		{
-			CYNG_LOG_WARNING(logger_, "client.req.close "
+			CYNG_LOG_WARNING(logger_, "client.res.close "
 				<< cyng::io::to_str(frame)
 				<< " failed");
 		}
@@ -542,7 +543,7 @@ namespace node
 
 	void client::close_impl(cyng::context& ctx
 		, boost::uuids::uuid tag
-		, boost::uuids::uuid peer
+		, boost::uuids::uuid cluster_tag
 		, std::uint64_t seq
 		, boost::uuids::uuid self
 		, bool req)
@@ -557,7 +558,8 @@ namespace node
 			, cyng::store::table* tbl_connection)->void {
 
 			//
-			//	generate table keys
+			//	generate table key for
+			//	* session table: _Session
 			//
 			auto key = cyng::table::key_generator(tag);
 
@@ -589,7 +591,9 @@ namespace node
 					//
 					//	simulate a bag
 					//
-					cyng::param_map_t bag = cyng::param_map_factory("origin-tag", tag)("local-peer", peer)("local-connect", cyng::make_object(local_peer->hash() == remote_peer->hash()));
+					cyng::param_map_t bag = cyng::param_map_factory("origin-tag", tag)
+						("local-peer", cluster_tag)
+						("local-connect", cyng::make_object(local_peer->hash() == remote_peer->hash()));
 
 					if (local_peer->hash() == remote_peer->hash())
 					{
@@ -657,8 +661,8 @@ namespace node
 				//
 				//	update cluster table
 				//
-				auto list = get_clients_by_peer(tbl_session, self);
-				auto key_cluster = cyng::table::key_generator(self);
+				auto list = get_clients_by_peer(tbl_session, cluster_tag);
+				auto key_cluster = cyng::table::key_generator(cluster_tag);
 				tbl_cluster->modify(key_cluster, cyng::param_factory("clients", static_cast<std::uint64_t>(list.size())), tag);
 			}
 			else
@@ -667,7 +671,6 @@ namespace node
 					, "client session"
 					, tag
 					, "not found"));
-
 			}
 
 		}	, cyng::store::write_access("_Session")
@@ -1708,7 +1711,7 @@ namespace node
 				, !r.first.empty()	//	success
 				, channel			//	channel
 				, source_channel	//	source
-				, r.first.size()	//	count
+				, static_cast<std::uint32_t>(r.first.size())	//	count
 				, options
 				, bag));
 
@@ -2531,7 +2534,7 @@ namespace node
 		cyng::table::key_list_t pks;
 		tbl_session->loop([&](cyng::table::record const& rec) -> bool {
 
-			if (tag == cyng::object_cast<session>(rec["local"])->vm_.tag())
+			if (tag == cyng::value_cast(rec["peer"], boost::uuids::nil_uuid()))
 			{
 				pks.push_back(rec.key());
 			}
