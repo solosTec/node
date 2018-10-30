@@ -9,6 +9,7 @@
 #define NODE_MASTER_SESSION_H
 
 #include "client.h"
+#include "cluster.h"
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/store/db.h>
@@ -20,12 +21,12 @@
 namespace node 
 {
 	class connection;
-	class client;
 	class watchdog;
 	class session
 	{
 		friend class connection;
 		friend class client;
+		friend class cluster;
 		friend class watchdog;
 
 	public:
@@ -78,40 +79,12 @@ namespace node
 		void res_watchdog(cyng::context& ctx);
 		void bus_req_stop_client_impl(cyng::context& ctx);
 
-		void bus_req_reboot_client(cyng::context& ctx);
-		void bus_req_query_gateway(cyng::context& ctx);
-
-		void bus_res_query_status_word(cyng::context& ctx);
-		void bus_res_query_srv_visible(cyng::context& ctx);
-		void bus_res_query_srv_active(cyng::context& ctx);
-		void bus_res_query_firmware(cyng::context& ctx);
-		void bus_res_query_memory(cyng::context& ctx);
-		void bus_res_attention_code(cyng::context& ctx);
 
 		void cleanup(cyng::context& ctx);
 		void bus_insert_msg(cyng::context& ctx);
 		void bus_req_push_data(cyng::context& ctx);
 
 		cyng::vector_t reply(std::chrono::system_clock::time_point, bool);
-
-		void client_req_login(cyng::context& ctx);
-		void client_req_close(cyng::context& ctx);
-		void client_res_close(cyng::context& ctx);
-
-		void client_req_open_push_channel(cyng::context& ctx);
-		void client_res_open_push_channel(cyng::context& ctx);
-		void client_req_close_push_channel(cyng::context& ctx);
-		void client_req_register_push_target(cyng::context& ctx);
-		void client_req_deregister_push_target(cyng::context& ctx);
-		void client_req_open_connection(cyng::context& ctx);
-		void client_res_open_connection(cyng::context& ctx);
-		void client_req_close_connection(cyng::context& ctx);
-		void client_res_close_connection(cyng::context& ctx);
-		void client_req_transfer_pushdata(cyng::context& ctx);
-
-		void client_req_transmit_data(cyng::context& ctx);
-		void client_inc_throughput(cyng::context& ctx);
-		void client_update_attr(cyng::context& ctx);
 
 		void sig_ins(cyng::store::table const*
 			, cyng::table::key_type const&
@@ -128,9 +101,6 @@ namespace node
 
 		void stop_cb(cyng::vm&, cyng::object);
 
-		std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> find_peer(cyng::table::key_type const& key_session
-			, const cyng::store::table* tbl_session
-			, const cyng::store::table* tbl_gw);
 
 	private:
 		cyng::async::mux& mux_;
@@ -158,6 +128,11 @@ namespace node
 		 * separate implementation of client logic
 		 */
 		client	client_;
+
+		/**
+		 * separate implementation of cluster logic
+		 */
+		cluster	cluster_;
 
 		/**
 		 * table subscriptions

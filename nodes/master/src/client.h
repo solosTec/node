@@ -43,7 +43,16 @@ namespace node
 		client(client const&) = delete;
 		client& operator=(client const&) = delete;
 
-		void req_login(cyng::context& ctx
+		/**
+		 * register VM callbacks
+		 */
+		void register_this(cyng::context& ctx);
+
+		/**
+		 * Received a login request from a device
+		 */
+		void req_login(cyng::context& ctx);
+		void req_login_impl(cyng::context& ctx
 			, boost::uuids::uuid	//	[0] remote client tag
 			, boost::uuids::uuid	//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
@@ -53,14 +62,20 @@ namespace node
 			, cyng::param_map_t const&		//	[6] bag)
 			, cyng::object session);
 
-		void req_close(cyng::context& ctx
-			, boost::uuids::uuid		//	[0] remote client tag
+		/**
+		 * Received a request to close terminate a device session
+		 */
+		void req_close(cyng::context& ctx);
+		void res_close(cyng::context& ctx);
+		void close_impl(cyng::context& ctx
+			, boost::uuids::uuid	//	[0] remote client tag
 			, boost::uuids::uuid	//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
 			, boost::uuids::uuid self
 			, bool);
 
-		void req_open_connection(cyng::context& ctx
+		void req_open_connection(cyng::context& ctx);
+		void req_open_connection_impl(cyng::context& ctx
 			, boost::uuids::uuid	//	[0] remote client tag
 			, boost::uuids::uuid	//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
@@ -68,7 +83,8 @@ namespace node
 			, cyng::param_map_t const&		//	[4] bag)
 			, cyng::object self);
 
-		void res_open_connection(cyng::context& ctx
+		void res_open_connection(cyng::context& ctx);
+		void res_open_connection_impl(cyng::context& ctx
 			, boost::uuids::uuid		//	[0] origin client tag
 			, boost::uuids::uuid	//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
@@ -76,7 +92,8 @@ namespace node
 			, cyng::param_map_t const&		//	[4] options
 			, cyng::param_map_t const&);		//	[5] bag);
 
-		void res_close_connection(cyng::context& ctx
+		void res_close_connection(cyng::context& ctx);
+		void res_close_connection_impl(cyng::context& ctx
 			, boost::uuids::uuid	//	[0] origin client tag
 			, boost::uuids::uuid	//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
@@ -84,21 +101,24 @@ namespace node
 			, cyng::param_map_t const&		//	[4] options
 			, cyng::param_map_t const&);		//	[5] bag
 
-		void req_transmit_data(cyng::context& ctx
+		void req_transmit_data(cyng::context& ctx);
+		void req_transmit_data_impl(cyng::context& ctx
 			, boost::uuids::uuid		//	[0] origin client tag
 			, boost::uuids::uuid		//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
 			, cyng::param_map_t const&		//	[5] bag
 			, cyng::object);	//	data
 
-		void req_close_connection(cyng::context& ctx
+		void req_close_connection(cyng::context& ctx);
+		void req_close_connection_impl(cyng::context& ctx
 			, boost::uuids::uuid	//	[0] remote client tag
 			, boost::uuids::uuid	//	[1] peer tag
 			, bool shutdown			//	[2] shutdown mode
 			, std::uint64_t			//	[3] sequence number
 			, cyng::param_map_t const&);		//	[4] bag)
 
-		void req_open_push_channel(cyng::context& ctx
+		void req_open_push_channel(cyng::context& ctx);
+		void req_open_push_channel_impl(cyng::context& ctx
 			, boost::uuids::uuid		//	[0] remote client tag
 			, boost::uuids::uuid		//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
@@ -108,17 +128,20 @@ namespace node
 			, std::string			//	[6] device software version
 			, std::string			//	[7] device id
 			, std::chrono::seconds	//	[8] timeout
-			, cyng::param_map_t const&		//	[9] bag
-			, boost::uuids::uuid);	//	[10] local session tag
+			, cyng::param_map_t const&);		//	[9] bag
 
-		void req_close_push_channel(cyng::context& ctx
+		void res_open_push_channel(cyng::context& ctx);
+
+		void req_close_push_channel(cyng::context& ctx);
+		void req_close_push_channel_impl(cyng::context& ctx
 			, boost::uuids::uuid tag
 			, boost::uuids::uuid peer
 			, std::uint64_t seq			//	[2] sequence number
 			, std::uint32_t channel		//	[3] channel id
 			, cyng::param_map_t const& bag);
 
-		void req_transfer_pushdata(cyng::context& ctx
+		void req_transfer_pushdata(cyng::context& ctx);
+		void req_transfer_pushdata_impl(cyng::context& ctx
 			, boost::uuids::uuid		//	[0] origin client tag
 			, boost::uuids::uuid		//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
@@ -127,7 +150,8 @@ namespace node
 			, cyng::param_map_t const&		//	[5] bag
 			, cyng::object);			//	data
 
-		void req_register_push_target(cyng::context& ctx
+		void req_register_push_target(cyng::context& ctx);
+		void req_register_push_target_impl(cyng::context& ctx
 			, boost::uuids::uuid		//	[0] remote client tag
 			, boost::uuids::uuid		//	[1] remote peer tag
 			, std::uint64_t			//	[2] sequence number
@@ -135,7 +159,8 @@ namespace node
 			, cyng::param_map_t const&
 			, boost::uuids::uuid);	//	[5] local session tag
 
-		void req_deregister_push_target(cyng::context& ctx
+		void req_deregister_push_target(cyng::context& ctx);
+		void req_deregister_push_target_impl(cyng::context& ctx
 			, boost::uuids::uuid	//	[0] remote client tag
 			, boost::uuids::uuid	//	[1] remote peer tag
 			, std::uint64_t			//	[2] sequence number
@@ -143,13 +168,16 @@ namespace node
 			, cyng::param_map_t const&
 			, boost::uuids::uuid);	//	[5] local session tag
 
-		void update_attr(cyng::context& ctx
+		void update_attr(cyng::context& ctx);
+		void update_attr_impl(cyng::context& ctx
 			, boost::uuids::uuid	//	[0] origin client tag
 			, boost::uuids::uuid	//	[1] peer tag
 			, std::uint64_t			//	[2] sequence number
 			, std::string			//	[3] name
 			, cyng::object			//	[4] value
 			, cyng::param_map_t);
+
+		void inc_throughput(cyng::context& ctx);
 
 		bool set_connection_auto_login(cyng::object);
 		bool set_connection_auto_enabled(cyng::object);

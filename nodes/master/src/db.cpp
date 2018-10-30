@@ -267,14 +267,14 @@ namespace node
 			{ cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT16, cyng::TC_UINT8, cyng::TC_TIME_POINT, cyng::TC_UINT64 },
 			{ 0, 36, 36, 64, 36, 64, 0, 0, 0, 0 })))
 		{
-			CYNG_LOG_FATAL(logger, "cannot create table *Target");
+			CYNG_LOG_FATAL(logger, "cannot create table _Target");
 		}
 
 		//
 		//	ack-time: the time interval (in seconds) in which a Push Data Transfer Response is expected
 		//	after the transmission of the last character of a Push Data Transfer Request.
 		//
-		if (!db.create_table(cyng::table::make_meta_table<3, 6>("*Channel", 
+		if (!db.create_table(cyng::table::make_meta_table<3, 6>("_Channel", 
 			{ "channel"		//	[uint32] primary key 
 			, "source"		//	[uint32] primary key 
 			, "target"		//	[uint32] primary key 
@@ -291,7 +291,7 @@ namespace node
 			},
 			{ 0, 0, 0, 0, 0, 0, 0, 0, 0 })))
 		{
-			CYNG_LOG_FATAL(logger, "cannot create table *Channel");
+			CYNG_LOG_FATAL(logger, "cannot create table _Channel");
 		}
 
 		//
@@ -314,7 +314,7 @@ namespace node
 			},
 			{ 0, 0, 128, 128, 0, 16, 16, 0, 0 })))
 		{
-			CYNG_LOG_FATAL(logger, "cannot create table *Connection");
+			CYNG_LOG_FATAL(logger, "cannot create table _Connection");
 		}
 
 		if (!db.create_table(cyng::table::make_meta_table<1, 8>("_Cluster", 
