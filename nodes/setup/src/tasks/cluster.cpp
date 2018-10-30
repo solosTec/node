@@ -13,17 +13,17 @@
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
 #include <cyng/table/meta.hpp>
-#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid cluster_tag
 		, cyng::store::db& cache
 		, std::size_t tsk
 		, cluster_config_t const& cfg)
 	: base_(*btp)
-	, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
+	, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
 	, logger_(logger)
 	, storage_tsk_(tsk)
 	, config_(cfg)

@@ -29,6 +29,7 @@ namespace node
 	public:
 		cluster(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
+			, boost::uuids::uuid cluster_tag
 			, cyng::store::db& cache
 			, std::size_t
 			, cluster_config_t const& cfg);

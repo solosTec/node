@@ -32,6 +32,7 @@ namespace node
 {
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid cluster_tag
 		, cluster_config_t const& cfg_cls
 		, boost::asio::ip::tcp::endpoint ep
 		, std::string const& doc_root
@@ -42,7 +43,7 @@ namespace node
 		)
 	: base_(*btp)
 		, uidgen_()
-		, bus_(bus_factory(btp->mux_, logger, uidgen_(), btp->get_id()))
+		, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
 		, logger_(logger)
 		, config_(cfg_cls)
 		, cache_()

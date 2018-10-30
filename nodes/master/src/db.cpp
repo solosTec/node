@@ -318,7 +318,7 @@ namespace node
 		}
 
 		if (!db.create_table(cyng::table::make_meta_table<1, 8>("_Cluster", 
-			{ "tag"			//	[uuid] client session - primary key 
+			{ "tag"			//	[uuid] cluster tag - primary key 
 			, "class"		//	[string] node class
 			, "loginTime"	//	last login time
 			, "version"
@@ -328,7 +328,7 @@ namespace node
 			, "pid"		//	process id
 			, "self"	//	[object] session instance
 			},
-			{ cyng::TC_UUID			//	tag
+			{ cyng::TC_UUID			//	cluster tag
 			, cyng::TC_STRING		//	class
 			, cyng::TC_TIME_POINT	//	loginTime
 			, cyng::TC_VERSION		//	version

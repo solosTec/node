@@ -42,7 +42,12 @@ namespace node
 	//
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	void join_cluster(cyng::async::mux&, cyng::logging::log_ptr, cyng::store::db&, std::size_t, cyng::vector_t const&);
+	void join_cluster(cyng::async::mux&
+		, cyng::logging::log_ptr
+		, boost::uuids::uuid cluster_tag
+		, cyng::store::db&
+		, std::size_t
+		, cyng::vector_t const&);
 	std::size_t connect_data_store(cyng::async::mux&, cyng::logging::log_ptr, cyng::store::db&, std::string, cyng::tuple_t);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
@@ -258,7 +263,7 @@ namespace node
 		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator uidgen;
-		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		const auto cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
 
 		//
 		//	apply severity threshold
@@ -267,7 +272,7 @@ namespace node
 
 #if BOOST_OS_LINUX
         const boost::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
-		write_pid(log_dir, tag);
+		write_pid(log_dir, cluster_tag);
 #endif
 
 		//
@@ -291,7 +296,12 @@ namespace node
 		//	connect to cluster
 		//
 		cyng::vector_t tmp;
-		join_cluster(mux, logger, cache_, storage_task, cyng::value_cast(dom.get("cluster"), tmp));
+		join_cluster(mux
+			, logger
+			, cluster_tag
+			, cache_
+			, storage_task
+			, cyng::value_cast(dom.get("cluster"), tmp));
 
 		//
 		//	wait for system signals
@@ -409,6 +419,7 @@ namespace node
 
 	void join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid cluster_tag
 		, cyng::store::db& cache
 		, std::size_t tsk
 		, cyng::vector_t const& cfg)
@@ -418,6 +429,7 @@ namespace node
 		cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
+			, cluster_tag
 			, cache
 			, tsk
 			, load_cluster_cfg(cfg));

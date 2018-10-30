@@ -38,6 +38,7 @@ namespace node
 	public:
 		cluster(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
+			, boost::uuids::uuid cluster_tag
 			, cluster_config_t const& cfg_cls
 			, boost::asio::ip::tcp::endpoint
 			, std::string const& doc_root

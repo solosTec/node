@@ -148,6 +148,13 @@ namespace node
 		 * group id
 		 */
 		std::uint32_t group_;
+
+		/**
+		 * Cluster tag of this session.
+		 * This tag is unique for each node.
+		 */
+		boost::uuids::uuid cluster_tag_;
+
 	};
 
 	cyng::object make_session(cyng::async::mux& mux

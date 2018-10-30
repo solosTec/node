@@ -356,7 +356,7 @@ namespace node
 		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator uidgen;
-		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		const auto cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
 
 		//
 		//	apply severity threshold
@@ -365,7 +365,7 @@ namespace node
 
 #if BOOST_OS_LINUX
         const boost::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
-        write_pid(log_dir, tag);
+        write_pid(log_dir, cluster_tag);
 #endif
 
 		//
@@ -373,7 +373,11 @@ namespace node
 		//
 		cyng::vector_t tmp_vec;
 		cyng::tuple_t tmp_tpl;
-		const auto tsk = join_cluster(mux, logger, tag, cyng::value_cast(dom.get("cluster"), tmp_vec), cyng::value_cast(dom.get("server"), tmp_tpl));
+		const auto tsk = join_cluster(mux
+			, logger
+			, cluster_tag
+			, cyng::value_cast(dom.get("cluster"), tmp_vec)
+			, cyng::value_cast(dom.get("server"), tmp_tpl));
 
 		//
 		//	wait for system signals
@@ -421,7 +425,7 @@ namespace node
 
 	std::size_t join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, boost::uuids::uuid tag
+		, boost::uuids::uuid cluster_tag
 		, cyng::vector_t const& cfg_cls
 		, cyng::tuple_t const& cfg_srv)
 	{
@@ -482,7 +486,7 @@ namespace node
 			, std::chrono::seconds(1)
 			, logger
 			, ctx
-			, tag
+			, cluster_tag
 			, load_cluster_cfg(cfg_cls)
 			, boost::asio::ip::tcp::endpoint{ host, port }
 			, doc_root

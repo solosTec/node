@@ -61,6 +61,7 @@ namespace node
 		, subscriptions_()
 		, tsk_watchdog_(cyng::async::NO_TASK)
 		, group_(0)
+		, cluster_tag_(boost::uuids::nil_uuid())
 	{
 		//
 		//	register logger domain
@@ -341,7 +342,7 @@ namespace node
 			auto const tpl = cyng::tuple_cast<
 				std::string,			//	[0] account
 				std::string,			//	[1] password
-				boost::uuids::uuid,		//	[2] session tag
+				boost::uuids::uuid,		//	[2] cluster tag
 				std::string,			//	[3] class
 				cyng::version,			//	[4] version
 				std::chrono::minutes,	//	[5] delta
@@ -414,7 +415,7 @@ namespace node
 		, cyng::version ver
 		, std::string const& account
 		, std::string const& pwd
-		, boost::uuids::uuid tag
+		, boost::uuids::uuid cluster_tag
 		, std::string const& node_class	
 		, std::chrono::minutes delta
 		, std::chrono::system_clock::time_point ts
@@ -435,7 +436,8 @@ namespace node
 		if ((account == account_) && (pwd == pwd_))
 		{
 			CYNG_LOG_INFO(logger_, "cluster member "
-				<< ctx.tag()
+				<< cluster_tag
+				//<< ctx.tag()
 				<< " - "
 				<< node_class
 				<< '@'
@@ -445,6 +447,7 @@ namespace node
 			//
 			//	register additional request handler for database access
 			//
+
 			cyng::register_store(this->db_, ctx);
 
 			//
@@ -469,6 +472,7 @@ namespace node
 			//
 			group_ = group;
 			client_.set_class(node_class);
+			cluster_tag_ = cluster_tag;
 
 			//
 			//	insert into cluster table
@@ -590,7 +594,7 @@ namespace node
 			//
 			//	insert into cluster table
 			//
-			if (!tbl_cluster->insert(cyng::table::key_generator(ctx.tag())
+			if (!tbl_cluster->insert(cyng::table::key_generator(ctx.tag())	//	cluster_tag_
 				, cyng::table::data_generator(frame.at(0), frame.at(1), frame.at(2), 0u, frame.at(3), frame.at(5), frame.at(6), frame.at(4))
 				, 0u, ctx.tag()))
 			{

@@ -10,12 +10,12 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
-#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid cluster_tag
 		, cluster_config_t const& cfg
 		, std::string const& address
 		, std::string const& service
@@ -23,7 +23,7 @@ namespace node
 		, bool use_global_pwd
 		, std::string global_pwd)
 	: base_(*btp)
-		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
+		, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
 		, logger_(logger)
 		, config_(cfg)
 		, address_(address)

@@ -34,7 +34,11 @@ namespace node
 	//
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	void join_cluster(cyng::async::mux&, cyng::logging::log_ptr, cyng::vector_t const&, cyng::tuple_t const&);
+	void join_cluster(cyng::async::mux&
+		, cyng::logging::log_ptr
+		, boost::uuids::uuid cluster_tag
+		, cyng::vector_t const&
+		, cyng::tuple_t const&);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -289,7 +293,7 @@ namespace node
 		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator uidgen;
-		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		const auto cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
 
 		//
 		//	apply severity threshold
@@ -298,7 +302,7 @@ namespace node
 
 #if BOOST_OS_LINUX
         const boost::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
-        write_pid(log_dir, tag);
+        write_pid(log_dir, cluster_tag);
 #endif
 
 		//
@@ -306,7 +310,11 @@ namespace node
 		//
 		cyng::vector_t tmp_vec;
 		cyng::tuple_t tmp_tpl;
-		join_cluster(mux, logger, cyng::value_cast(dom.get("cluster"), tmp_vec), cyng::value_cast(dom.get("server"), tmp_tpl));
+		join_cluster(mux
+			, logger
+			, cluster_tag
+			, cyng::value_cast(dom.get("cluster"), tmp_vec)
+			, cyng::value_cast(dom.get("server"), tmp_tpl));
 
 		//
 		//	wait for system signals
@@ -348,6 +356,7 @@ namespace node
 
 	void join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid cluster_tag
 		, cyng::vector_t const& cfg_cluster
 		, cyng::tuple_t const& cfg_srv)
 	{
@@ -359,6 +368,7 @@ namespace node
 		cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
+			, cluster_tag
 			, load_cluster_cfg(cfg_cluster)
 			, cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0")
 			, cyng::value_cast<std::string>(dom.get("service"), "9000")

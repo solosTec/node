@@ -292,7 +292,9 @@ namespace node
 		//	connect to cluster
 		//
 		cyng::vector_t tmp;
-		join_network(mux, logger, cyng::value_cast(dom.get("ipt"), tmp));
+		join_network(mux
+			, logger
+			, cyng::value_cast(dom.get("ipt"), tmp));
 
 		//
 		//	wait for system signals

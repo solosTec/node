@@ -20,14 +20,14 @@ namespace node
 {
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, boost::uuids::uuid tag
+		, boost::uuids::uuid cluster_tag
 		, cluster_config_t const& cfg_cluster
 		, cyng::param_map_t const& cfg_db
 		, cyng::param_map_t const& cfg_clock_day
 		, cyng::param_map_t const& cfg_clock_month
 		, cyng::param_map_t const& cfg_trigger)
 	: base_(*btp)
-		, bus_(bus_factory(btp->mux_, logger, tag, btp->get_id()))
+		, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
 		, logger_(logger)
         , config_(cfg_cluster)
 		, cfg_db_(cfg_db)

@@ -367,7 +367,7 @@ namespace node
 		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator uidgen;
-		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		const auto cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
 
 		//
 		//	apply severity threshold
@@ -376,7 +376,7 @@ namespace node
 
 #if BOOST_OS_LINUX
 		const boost::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
-		write_pid(log_dir, tag);
+		write_pid(log_dir, cluster_tag);
 #endif
 
 		//

@@ -318,7 +318,7 @@ namespace node
 		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator uidgen;
-		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		const auto cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
 
 		//
 		//	apply severity threshold
@@ -342,7 +342,7 @@ namespace node
 		cyng::vector_t vec;
 		join_cluster(mux
 			, logger
-			, tag
+			, cluster_tag
 			, cyng::value_cast(dom.get("cluster"), vec)
 			, cyng::value_cast(dom.get("DB"), tpl)
 			, cyng::value_cast(dom.get("profile-15min"), tpl)
