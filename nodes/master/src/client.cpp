@@ -597,8 +597,13 @@ namespace node
 
 					if (local_peer->hash() == remote_peer->hash())
 					{
+						//
+						//	local
+						//
 						ctx.attach(cyng::generate_invoke("log.msg.warning"
-							, "close local connection to "
+							, "forward (local) connection close request from"
+							, tag
+							, " ==> "
 							, rtag));
 						ctx.attach(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_t(), bag));
 
@@ -610,8 +615,13 @@ namespace node
 					}
 					else
 					{
+						//
+						//	remote
+						//
 						ctx.attach(cyng::generate_invoke("log.msg.warning"
-							, "close distinct connection to "
+							, "forward (distinct) connection close request from"
+							, tag
+							, " ==> "
 							, rtag));
 						remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_t(), bag));
 
@@ -828,6 +838,7 @@ namespace node
 							//	forward connection open request
 							//
 							auto remote_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+							BOOST_ASSERT_MSG(tag != remote_tag, "connection close request with same client tags");
 
 							auto callee_peer = cyng::object_cast<session>(rec["local"]);
 							BOOST_ASSERT(callee_peer != nullptr);
@@ -837,13 +848,10 @@ namespace node
 
 							if (local_connect)
 							{
-								CYNG_LOG_TRACE(logger_, "connection between "
+								CYNG_LOG_TRACE(logger_, "forward (local) connection open request from"
 									<< tag
-									<< " and "
-									<< callee
-									<< ':'
-									<< remote_tag
-									<< " is local");
+									<< " ==> "
+									<< remote_tag);
 
 								//
 								//	forward connection open request in same VM
@@ -856,13 +864,10 @@ namespace node
 							}
 							else
 							{
-								CYNG_LOG_TRACE(logger_, "connection between "
+								CYNG_LOG_TRACE(logger_, "forward (distinct) connection open request from"
 									<< tag
-									<< " and "
-									<< callee
-									<< ':'
-									<< remote_tag
-									<< " is distinct");
+									<< " ==> "
+									<< remote_tag);
 
 								//
 								//	forward connection open request in different VM
@@ -1468,6 +1473,7 @@ namespace node
 				auto remote_tag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
 				auto name = cyng::value_cast<std::string > (rec["name"], "");
 
+				BOOST_ASSERT_MSG(tag != remote_tag, "connection close request with same client tags");
 				if (local_peer && remote_peer)
 				{
 					options["local-connect"] = cyng::make_object(local_peer->hash() == remote_peer->hash());
@@ -1475,6 +1481,11 @@ namespace node
 					//	"client.req.close.connection.forward"
 					if (local_peer->hash() == remote_peer->hash())
 					{
+						CYNG_LOG_TRACE(logger_, "forward (local) connection close request from"
+							<< tag
+							<< " ==> "
+							<< remote_tag);
+
 						ctx.attach(client_req_close_connection_forward(remote_tag
 							, tag
 							, seq
@@ -1487,6 +1498,11 @@ namespace node
 						//
 						//	forward connection close request in different VM
 						//
+						CYNG_LOG_TRACE(logger_, "forward (distinnct) connection close request from"
+							<< tag
+							<< " ==> "
+							<< remote_tag);
+
 						remote_peer->vm_.async_run(client_req_close_connection_forward(remote_tag
 							, tag
 							, seq

@@ -61,6 +61,7 @@ namespace node
 				, vm_
 				, tag
 				, timeout_).first)
+			, pending_(false)
 #ifdef SMF_IO_LOG
 			, log_counter_(0)
 #endif
@@ -71,8 +72,16 @@ namespace node
 			cyng::register_logger(logger_, vm_);
 			vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
-			vm_.register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1));
+			vm_.register_function("session.store.relation", 3, std::bind(&session::store_relation, this, std::placeholders::_1));
 			vm_.register_function("session.remove.relation", 1, std::bind(&session::remove_relation, this, std::placeholders::_1));
+			vm_.register_function("session.state.pending", 0, [&](cyng::context&) {
+				//
+				//	set session state => PENDING
+				//
+				BOOST_ASSERT(!pending_);
+				pending_ = true;
+				CYNG_LOG_DEBUG(logger_, "session.state.pending ON");
+			});
 
 			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
 			vm_.register_function("session.redirect", 1, std::bind(&session::redirect, this, std::placeholders::_1));
@@ -279,30 +288,6 @@ namespace node
 		session::~session()
 		{}
 
-		//void session::stop(cyng::object obj)
-		//{	
-		//	//
-		//	//	There could be a running gatekeeper
-		//	//
-		//	connect_state_.stop();
-
-		//	//
-		//	//	stop all running tasks
-		//	//
-		//	for (auto const& tsk : task_db_) {
-		//		mux_.stop(tsk.second);
-		//	}
-
-		//	//
-		//	//	gracefull shutdown
-		//	//
-		//	vm_.access([obj](cyng::vm& vm) {
-		//		vm.run(cyng::generate_invoke("log.msg.info", "forced shutdown"));
-		//		vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
-		//	});
-		//	
-		//}
-
 		void session::stop_req(int code)
 		{
 			shutdown();
@@ -314,15 +299,20 @@ namespace node
 
 			//
 			//	Tell SMF master to remove this session by calling "client.req.close". 
-			//	SMF master will send a "client.res.close" to the IP-T server which will
+			//	SMF master will send a "client.req.close" to the IP-T server which will
 			//	remove this session from the connection_map_ which will eventual call
 			//	the desctructor of this session object.
 			//
+			CYNG_LOG_TRACE(logger_, "send \"client.req.close\" request from session "
+				<< vm_.tag());
 			bus_->vm_.async_run(client_req_close(vm_.tag(), code));
 		}
 
 		void session::stop_res()
 		{
+			//
+			//	stop all tasks and halt VM
+			//
 			shutdown();
 
 			//
@@ -330,22 +320,31 @@ namespace node
 			//
 			wait();
 
-			//
-			//	remove from connection map - call destructor
-			//
-			bus_->vm_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
+			if (pending_) {
+				//
+				//	tell master to close *this* client
+				//
+				boost::system::error_code ec(boost::asio::error::operation_aborted);
+				bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
+			}
+			else {
+				//
+				//	remove from connection map - call destructor
+				//	server::remove_client();
+				//
+				bus_->vm_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
+			}
 		}
-
 
 		void session::wait()
 		{
-			while (!vm_.is_halted()) {
+			std::size_t counter{ 12 };
+			while (!vm_.is_halted() && (counter-- != 0)) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				CYNG_LOG_WARNING(logger_, "ipt "
 					<< vm_.tag()
 					<< " waiting for pending operations");
 			}
-
 		}
 
 		void session::shutdown()
@@ -367,7 +366,7 @@ namespace node
 			//	stop all tasks
 			//
 			for (auto const& tsk : task_db_) {
-				mux_.stop(tsk.second);
+				mux_.stop(tsk.second.first);
 			}
 
 			//
@@ -382,15 +381,17 @@ namespace node
 
 		void session::store_relation(cyng::context& ctx)
 		{
-			//	[1,2]
+			//	[1,2,0]
 			//
 			//	* ipt sequence number
 			//	* task id
+			//	* channel
 			//	
 			const cyng::vector_t frame = ctx.get_frame();
 			auto const tpl = cyng::tuple_cast<
 				sequence_type,		//	[0] ipt sequence
-				std::size_t			//	[1] task id
+				std::size_t,		//	[1] task id
+				std::size_t			//	[2] channel
 			>(frame);
 
 			if (task_db_.find(std::get<0>(tpl)) != task_db_.end()) {
@@ -402,21 +403,21 @@ namespace node
 					<< '/'
 					<< task_db_.size());
 			}
+			else {
 
-			task_db_.emplace(std::get<0>(tpl), std::get<1>(tpl));
+				task_db_.emplace(std::piecewise_construct
+					, std::forward_as_tuple(std::get<0>(tpl))
+					, std::forward_as_tuple(std::get<1>(tpl), std::get<2>(tpl)));
 
-			CYNG_LOG_INFO(logger_, "session.store.relation "
-				<< +std::get<0>(tpl)
-				<< " => #"
-				<< std::get<1>(tpl)
-				<< '/'
-				<< task_db_.size());
-
-			//
-			//	update ipt sequence
-			//
-			//mux_.post(std::get<1>(tpl), 2u, cyng::tuple_factory(std::get<0>(tpl)));
-
+				CYNG_LOG_INFO(logger_, "session.store.relation "
+					<< +std::get<0>(tpl)
+					<< " => #"
+					<< std::get<1>(tpl)
+					<< ':'
+					<< std::get<2>(tpl)
+					<< '/'
+					<< task_db_.size());
+			}
 		}
 
 		void session::remove_relation(cyng::context& ctx)
@@ -427,12 +428,14 @@ namespace node
 			>(frame);
 
 			for (auto pos = task_db_.begin(); pos != task_db_.end(); ++pos) {
-				if (pos->second == std::get<0>(tpl)) {
+				if (pos->second.first == std::get<0>(tpl)) {
 
 					CYNG_LOG_DEBUG(logger_, "session.remove.relation "
 						<< +pos->first
 						<< " => #"
-						<< pos->second);
+						<< pos->second.first
+						<< ':'
+						<< pos->second.second);
 
 					//
 					//	remove from task db
@@ -1594,6 +1597,7 @@ namespace node
 			//
 			//	* [uuid] peer (cluster bus)
 			//	* [u64] cluster bus sequence
+			//	* [uuid] origin/remote tag
 			//	* [bool] shutdown mode
 			//	* [pmap] options
 			//	* [pmap] bag
@@ -1601,7 +1605,7 @@ namespace node
 			auto const tpl = cyng::tuple_cast<
 				boost::uuids::uuid,		//	[0] peer
 				std::uint64_t,			//	[1] cluster sequence
-				boost::uuids::uuid,		//	[2] origin-tag
+				boost::uuids::uuid,		//	[2] origin-tag - compare to "origin-tag"
 				bool,					//	[3] shutdown flag
 				cyng::param_map_t,		//	[4] options
 				cyng::param_map_t		//	[5] bag
@@ -1980,13 +1984,16 @@ namespace node
 			auto pos = task_db_.find(seq);
 			if (pos != task_db_.end())
 			{
-				const auto tsk = pos->second;
+				const auto tsk = pos->second.first;
+				const auto slot = pos->second.second;
 				CYNG_LOG_DEBUG(logger_, "ipt.res.open.connection "
 					<< +pos->first
 					<< " => #"
-					<< tsk);
+					<< tsk
+					<< ':'
+					<< slot);
 
-				mux_.post(tsk, 0u, cyng::tuple_factory(res));
+				mux_.post(tsk, slot, cyng::tuple_factory(res));
 
 				//
 				//	remove entry
@@ -2030,11 +2037,14 @@ namespace node
 				CYNG_LOG_INFO(logger_, "stop task "
 					<< +pos->first
 					<< " => #"
-					<< pos->second);
+					<< pos->second.first
+					<< ':'
+					<< pos->second.second);
 
-				const auto tsk = pos->second;
+				const auto tsk = pos->second.first;
+				const auto slot = pos->second.second;
 				CYNG_LOG_TRACE(logger_, "stop close connection task #" << tsk);
-				mux_.post(tsk, 0, cyng::tuple_factory(std::get<2>(tpl)));
+				mux_.post(tsk, slot, cyng::tuple_factory(std::get<2>(tpl)));
 
 				//
 				//	remove entry

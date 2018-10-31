@@ -51,7 +51,11 @@ namespace node
 		bus::shared_type bus_;	//!< cluster bus
 		cyng::controller& vm_;	//!< ipt device
 		bool shutdown_;	//!< sender is in shutdown mode 
-		const boost::uuids::uuid tag_;	//!< remote session tag to address response
+		/**
+		 * Remote session tag to address response.
+		 * Not to bw confused with *this* session tag (vm_.tag())
+		 */
+		const boost::uuids::uuid tag_origin_;	
 		const std::size_t seq_;
 		const cyng::param_map_t options_;
 		const cyng::param_map_t bag_;

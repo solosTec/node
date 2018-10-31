@@ -123,14 +123,6 @@ namespace node
 
 			virtual ~session();
 
-			/**
-			 * A request to close this session was propagated through the cluster
-			 * until it reached the IP-T master. The IP-T master located the session in
-			 * the session map and called this stop() method directly.
-			 */
-			//void stop(cyng::object);
-
-
 		private:
 			/**
 			 * The connection detected a disconnect and calls the stop method
@@ -232,13 +224,19 @@ namespace node
 
 			/**
 			 * bookkeeping of ip-t sequence to task relation
+			 * ipt seq => <task id / channel>
 			 */
-			std::map<sequence_type, std::size_t>	task_db_;
+			std::map<sequence_type, std::pair<std::size_t, std::size_t>>	task_db_;
 
 			/**
 			 * contains state of local connections
 			 */
 			connect_state	connect_state_;
+
+			/**
+			 * session is in shutdown mode
+			 */
+			bool pending_;
 
 #ifdef SMF_IO_LOG
 			std::size_t log_counter_;
