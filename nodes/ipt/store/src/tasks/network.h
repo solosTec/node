@@ -36,6 +36,8 @@ namespace node
 		public:
 			network(cyng::async::base_task* bt
 				, cyng::logging::log_ptr
+				, boost::uuids::uuid tag
+				, bool log_pushdata
 				, redundancy const& cfg
 				, std::map<std::string, std::string> const& targets);
 			cyng::continuation run();
@@ -210,9 +212,22 @@ namespace node
 			 */
 			std::vector<std::size_t> get_consumer(std::string protocol);
 
+			/**
+			 * write all incoming push data into separate files
+			 */
+			void log_push_data(std::uint32_t source
+				, std::uint32_t target
+				, std::string const&
+				, cyng::buffer_t const& data);
+
 		private:
 			cyng::async::base_task& base_;
 			cyng::logging::log_ptr logger_;
+
+			/**
+			 * write all incoming push data into separate files
+			 */
+			const bool log_pushdata_;
 
 			/**
 			 * managing redundant ipt master configurations
@@ -220,20 +235,10 @@ namespace node
 			const redundancy	config_;
 
 			/**
-			 * IP-T client
-			 */
-			//bus::shared_type bus_;
-
-			/**
 			 * target/protocol relation
 			 * target => protocol
 			 */
 			const std::map<std::string, std::string> targets_;
-
-			/**
-			 * maintain relation between sequence and registered target
-			 */
-			//std::map<sequence_type, std::string>	seq_target_map_;
 
 			/**
 			 * maintain relation between channel and protocol
@@ -256,7 +261,7 @@ namespace node
 			/**
 			 * produce random UUIDs for parser VMs
 			 */
-			boost::uuids::random_generator rng_;
+			boost::uuids::random_generator uidgen_;
 
 		};
 	}

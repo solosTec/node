@@ -15,7 +15,6 @@
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/io/io_chrono.hpp>
-#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
@@ -23,22 +22,25 @@ namespace node
 	{
 		network::network(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
+			, boost::uuids::uuid tag
+			, bool log_pushdata
 			, redundancy const& cfg
 			, std::map<std::string, std::string> const& targets)
 		: base_(*btp)
 			, bus(logger
 				, btp->mux_
-				, boost::uuids::random_generator()()
+				, tag
 				, cfg.get().sk_
 				, "ipt:store"
-				, 1u)
+				, 1u)	//	1 retry
 			, logger_(logger)
+			, log_pushdata_(log_pushdata)
 			, config_(cfg)
 			, targets_(targets)
 			, channel_protocol_map_()
 			, sml_lines_()
 			, iec_lines_()
-			, rng_()
+			, uidgen_()
 		{
 			CYNG_LOG_INFO(logger_, "initialize task #"
 				<< base_.get_id()
@@ -234,6 +236,8 @@ namespace node
 					<< pos->second.first);
 
 				distribute(channel, source, pos->second.first, pos->second.second, data);
+
+				if (log_pushdata_)	log_push_data(channel, source, pos->second.second, data);
 			}
 			else {
 
@@ -371,7 +375,7 @@ namespace node
 				//
 				//	create a new SML processor
 				//
-				auto tag = rng_();
+				auto tag = uidgen_();
 
 				CYNG_LOG_TRACE(logger_, "create SML processor " 
 					<< tag 
@@ -424,7 +428,7 @@ namespace node
 				//
 				//	create a new IEC processor
 				//
-				auto tag = rng_();
+				auto tag = uidgen_();
 
 				CYNG_LOG_TRACE(logger_, "create IEC processor "
 					<< tag
@@ -561,31 +565,6 @@ namespace node
 			}
 		}
 
-		//void network::insert_rel(cyng::context& ctx)
-		//{
-		//	//	[5,power@solostec]
-		//	//
-		//	//	* ipt sequence
-		//	//	* target name
-		//	//	* protocol layer
-		//	const cyng::vector_t frame = ctx.get_frame();
-
-		//	auto const tpl = cyng::tuple_cast<
-		//		sequence_type,		//	[0] ipt seq
-		//		std::string,		//	[1] target
-		//		std::string			//	[2] protocol
-		//	>(frame);
-
-		//	CYNG_LOG_TRACE(logger_, "ipt sequence " 
-		//		<< +std::get<0>(tpl)
-		//		<< " ==> "
-		//		<< std::get<1>(tpl)
-		//		<< ':'
-		//		<< std::get<2>(tpl));
-
-		//	seq_target_map_.emplace(std::get<0>(tpl), std::get<1>(tpl));
-		//}
-
 		std::vector<std::size_t> network::get_consumer(std::string protocol)
 		{
 			std::vector<std::size_t> consumer;
@@ -597,6 +576,34 @@ namespace node
 			}
 
 			return consumer;
+		}
+
+		void network::log_push_data(std::uint32_t source
+			, std::uint32_t target
+			, std::string const& name
+			, cyng::buffer_t const& data)
+		{
+
+			std::stringstream ss;
+			ss
+				<< std::hex
+				<< std::setfill('0')
+				<< std::setw(4)
+				<< source 
+				<< '-'
+				<< std::setw(4)
+				<< target
+				<< '-'
+				<< target
+				<< ".bin"
+				;
+
+			const boost::filesystem::path tmp = boost::filesystem::temp_directory_path() / ss.str();
+			std::ofstream of(tmp.string(), std::ios::out | std::ios::binary | std::ios::app);
+			if (of.is_open())	{
+				of.write(data.data(), data.size());
+			}
+
 		}
 	}
 }

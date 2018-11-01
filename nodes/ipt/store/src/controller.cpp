@@ -51,7 +51,12 @@ namespace node
 	/**
 	 * start ipt client
 	 */
-	std::size_t join_network(cyng::async::mux&, cyng::logging::log_ptr, cyng::vector_t const&, cyng::param_map_t);
+	std::size_t join_network(cyng::async::mux&
+		, cyng::logging::log_ptr
+		, boost::uuids::uuid tag
+		, bool log_pushdata
+		, cyng::vector_t const&
+		, cyng::param_map_t);
 
 	/**
 	 * start all data consumer tasks
@@ -421,6 +426,8 @@ namespace node
 		cyng::vector_t tmp;
 		auto ntid = join_network(mux
 			, logger
+			, tag
+			, log_pushdata
 			, cyng::value_cast(dom.get("ipt"), tmp)
 			, cyng::to_param_map(cyng::value_cast(dom.get("targets"), tmp)));
 
@@ -650,6 +657,8 @@ namespace node
 	 */
 	std::size_t join_network(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid tag
+		, bool log_pushdata
 		, cyng::vector_t const& cfg
 		, cyng::param_map_t targets)
 	{
@@ -668,6 +677,8 @@ namespace node
 		BOOST_ASSERT(!cfg.empty());
 		return cyng::async::start_task_detached<ipt::network>(mux
 			, logger
+			, tag
+			, log_pushdata
 			, ipt::redundancy(ipt::load_cluster_cfg(cfg))
 			, target_list);
 
