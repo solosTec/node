@@ -102,29 +102,29 @@ namespace node
 		ss
 			<< prefix_
 			<< '-'
-			<< std::hex
 			<< std::setfill('0') 
-			<< std::setw(4)
-			<< channel
 			<< '-'
-			<< std::setw(4)
-			<< source
+			<< protocol
 			<< '-'
 			<< std::dec
 			<< cyng::chrono::year(time)
 			<< std::setw(2)
 			<< cyng::chrono::month(time)
-			<< std::setw(2)
 			<< 'T'
+			<< std::setw(2)
 			<< cyng::chrono::day(time)
 			<< std::setw(2)
 			<< cyng::chrono::hour(time)
 			<< std::setw(2)
 			<< cyng::chrono::minute(time)
 			<< '-'
-			<< protocol
-			<< '-'
 			<< target
+			<< std::hex
+			<< std::setw(4)
+			<< channel
+			<< '-'
+			<< std::setw(4)
+			<< source
 			<< '.'
 			<< suffix_
 			;

@@ -327,7 +327,7 @@ namespace node
 
 #if BOOST_OS_LINUX
         const boost::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
-        write_pid(log_dir, tag);
+		write_pid(log_dir, cluster_tag);
 #endif
 
 		//

@@ -524,6 +524,13 @@ add_library(smf_lora ${GLOBAL_LIBRARY_TYPE} ${lora_payload_lib})
 #
 include (lib/http/server/lib.cmake)
 add_library(smf_http_srv ${GLOBAL_LIBRARY_TYPE} ${http_srv_lib})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	if(${PROJECT_NAME}_SSL_SUPPORT)
+		target_link_libraries(smf_http_srv cyng_vm cyng_crypto smf_cluster)
+	else()
+		target_link_libraries(smf_http_srv cyng_vm smf_cluster)
+	endif()
+endif()
 
 #
 # https server library
