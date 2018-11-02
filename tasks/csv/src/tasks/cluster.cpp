@@ -97,7 +97,7 @@ namespace node
 		//
 		//	insert instance into table _CSV
 		//
-		insert_tbl_record();
+		make_public();
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -241,7 +241,7 @@ namespace node
 		}
 	}
 
-	void cluster::insert_tbl_record()
+	void cluster::make_public()
 	{
 		//
 		//	create entry in table _CSV
@@ -251,7 +251,11 @@ namespace node
 			, cyng::table::data_generator(format_
 				, "local"
 				, offset_
-				, frame_)
+				, frame_
+				, std::chrono::system_clock::now()
+				, std::chrono::system_clock::now()
+				, 0u
+				, 0u)
 			, 1	//	generation
 			, bus_->vm_.tag()));
 	}

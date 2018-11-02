@@ -108,6 +108,10 @@
                     <th class="sml-col-csv-format">Format</th>
                     <th class="sml-col-csv-offset">Offset</th>
                     <th class="sml-col-csv-frame">Frame</th>
+                    <th class="sml-col-csv-15min">15 min Start</th>
+                    <th class="sml-col-csv-24h">24 h Start</th>
+                    <th class="sml-col-csv-srvCount">Server Count</th>
+                    <th class="sml-col-csv-combinations">Combinations</th>
                 </tr>
             </thead>
         </table>
@@ -261,12 +265,15 @@
     <!--<script type="text/javascript" src="popper.min.js"></script>-->
 
     <script>
-        var renderOnlineState = function (data, type, full, meta) {
+        var renderDate = function (data, type, full, meta) {
             if (type == "display") {
-                if (!data) {
-                    return "<div style='width: 10px; border: 10px #ccc solid;'></div>";
-                }
-                return "<div style='width: 10px; border: 10px green solid; border-radius: 50%;'></div>";
+                return data.toLocaleString();
+            }
+            return data;
+        };
+        var renderUTC = function (data, type, full, meta) {
+            if (type == "display") {
+                return ('00' + data.getUTCHours()).slice(-2) + ":" + ('00' + data.getUTCMinutes()).slice(-2) + ":" + ('00' + data.getUTCSeconds()).slice(-2);
             }
             return data;
         };
@@ -289,11 +296,15 @@
             select: true,
             //colReorder: true,
             columnDefs: [
-                { targets: 'sml-col-csv-pk', visible: true, name: 'csv-pk' },
+                { targets: 'sml-col-csv-pk', visible: false, name: 'csv-pk' },
                 { targets: 'sml-col-csv-format', visible: true, name: 'csv-format' },
                 { targets: 'sml-col-csv-config', visible: true, name: 'csv-config' },
                 { targets: 'sml-col-csv-offset', visible: true, name: 'csv-offset' },
-                { targets: 'sml-col-csv-frame', visible: false, name: 'csv-frame' }
+                { targets: 'sml-col-csv-frame', visible: true, name: 'csv-frame' },
+                { targets: 'sml-col-csv-15min', visible: true, name: 'csv-15min', render: renderDate },
+                { targets: 'sml-col-csv-24h', visible: true, name: 'csv-24h', render: renderDate },
+                { targets: 'sml-col-csv-srvCount', visible: true, name: 'csv-srvCount' },
+                { targets: 'sml-col-csv-combinations', visible: true, name: 'csv-combinations' },
             ]
         };
 
@@ -435,7 +446,11 @@
                                 var format = $('<div/>').text(obj.rec.data.format).html();
                                 var offset = $('<div/>').text(obj.rec.data.offset).html();
                                 var frame = $('<div/>').text(obj.rec.data.frame).html();
-                                var rowNode = table_csv.row.add([obj.rec.key.tag, config, format, offset, frame]).draw().node();
+                                var start15min = new Date(obj.rec.data.start15min.substring(0, 19));
+                                var start24h = new Date(obj.rec.data.start24h.substring(0, 19));
+                                var srvCount = $('<div/>').text(obj.rec.data.srvCount).html();
+                                var combinations = $('<div/>').text(obj.rec.data.combinations).html();
+                                var rowNode = table_csv.row.add([obj.rec.key.tag, config, format, offset, frame, start15min, start24h, srvCount, combinations]).draw().node();
 
                             }
                             else if (obj.cmd == 'delete') {
@@ -455,26 +470,23 @@
                                 }).remove().draw(false);
                             }
                             else if (obj.cmd == 'modify') {
-                                //  {"cmd": "modify", "channel": "config.gateway", "key": ["dca135f3-ff2b-4bf7-8371-a9904c74522b"], "value": {"online":true}}
-                                //  {"cmd": "modify", "channel": "config.gateway", "key": ["a584c1cc-7ae1-455b-99d1-de0f9483520d"], "value": {"online":false}}
+                                //  {"cmd": "modify", "channel": "task.csv", "key": ["534034ff-515b-43de-b5b0-24616f1c3e6a"], "value": {"combinations":13}}
+                                //  {"cmd": "modify", "channel": "task.csv", "key": ["534034ff-515b-43de-b5b0-24616f1c3e6a"], "value": {"start15min":"2018-11-01 00:00:00.00000000"}}
                                 table_csv.row(function (idx, data, node) {
                                     if (data[0] == obj.key) {
                                         var r = table_csv.row(node);
                                         var d = r.data();
-                                        if (obj.value.online != null) {
-                                            d[8] = obj.value.online;
+                                        if (obj.value.start15min != null) {
+                                            d[5] = new Date(obj.value.start15min.substring(0, 19));
                                         }
-                                        else if (obj.value.serverId != null) {
-                                            d[1] = obj.value.serverId;
+                                        else if (obj.value.start24h != null) {
+                                            d[6] = new Date(obj.value.start24h.substring(0, 19));
                                         }
-                                        else if (obj.value.manufacturer != null) {
-                                            d[2] = obj.value.manufacturer;
+                                        else if (obj.value.srvCount != null) {
+                                            d[7] = obj.value.srvCount;
                                         }
-                                        else if (obj.value.userName != null) {
-                                            d[6] = obj.value.userName;
-                                        }
-                                        else if (obj.value.userPwd != null) {
-                                            d[7] = obj.value.userPwd;
+                                        else if (obj.value.combinations != null) {
+                                            d[8] = obj.value.combinations;
                                         }
                                         r.data(d);
                                         $('#smf-form-csv-delete').addClass('disabled');

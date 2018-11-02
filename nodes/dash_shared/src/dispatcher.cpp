@@ -719,6 +719,17 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("config.system", msg);
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("modify")),
+				cyng::param_factory("channel", "task.csv"),
+				cyng::param_factory("key", key),
+				cyng::param_factory("value", pm));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("task.csv", msg);
+		}
 		else
 		{
 			CYNG_LOG_WARNING(logger_, "sig.mode - unknown table "

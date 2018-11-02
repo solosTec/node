@@ -246,6 +246,24 @@ namespace node
 			//	get all server ID in this time frame
 			//
 			std::vector<std::string> server_ids = get_server_ids(start, end, cmd, stmt);
+
+			//
+			// update _CSV table
+			//
+			auto key = cyng::table::key_generator(bus_->vm_.tag());
+
+			bus_->vm_.async_run(bus_req_db_modify("_CSV"
+				, cyng::table::key_generator(bus_->vm_.tag())	//	key
+				, cyng::param_factory("start15min", start)
+				, 0
+				, bus_->vm_.tag()));
+
+			bus_->vm_.async_run(bus_req_db_modify("_CSV"
+				, cyng::table::key_generator(bus_->vm_.tag())	//	key
+				, cyng::param_factory("srvCount", server_ids.size())
+				, 0
+				, bus_->vm_.tag()));
+
 			for (auto id : server_ids) {
 
 				//
@@ -295,6 +313,23 @@ namespace node
 #else
 			std::vector<std::pair<std::string, std::string>> combinations = get_unique_server_obis_combinations(start, end, cmd, stmt);
 #endif
+
+			//
+			// update _CSV table
+			//
+			auto key = cyng::table::key_generator(bus_->vm_.tag());
+
+			bus_->vm_.async_run(bus_req_db_modify("_CSV"
+				, cyng::table::key_generator(bus_->vm_.tag())	//	key
+				, cyng::param_factory("start24h", start)
+				, 0
+				, bus_->vm_.tag()));
+
+			bus_->vm_.async_run(bus_req_db_modify("_CSV"
+				, cyng::table::key_generator(bus_->vm_.tag())	//	key
+				, cyng::param_factory("combinations", combinations.size())
+				, 0
+				, bus_->vm_.tag()));
 
 			//
 			//	open output file

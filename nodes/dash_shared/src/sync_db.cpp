@@ -235,20 +235,28 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table *SysMsg");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 4>("_CSV",
+		if (!db.create_table(cyng::table::make_meta_table<1, 8>("_CSV",
 			{ "tag"			//	[uuid] client session - primary key 
 			, "format"		//	[string] SMF/IEC
 			, "config"		//	[string] local, master, mixed
 			, "offset"		//	[u32] minutes after midnight
 			, "frame"		//	[u32] time frame in minutes
+			, "start15min"	//	[ts] start time of 15 min report
+			, "start24h"	//	[ts] start time of 24h report
+			, "srvCount"	//	[size] number of servers with 15 min push
+			, "combinations"	//	[size] number of unique server/OBIS combinations
 			},
 			{ cyng::TC_UUID			//	tag
 			, cyng::TC_STRING		//	format
 			, cyng::TC_STRING		//	config
 			, cyng::TC_MINUTE		//	offset
 			, cyng::TC_MINUTE		//	frame
+			, cyng::TC_TIME_POINT	//	15minStart
+			, cyng::TC_TIME_POINT	//	24hStart
+			, cyng::TC_UINT64		//	srvCount
+			, cyng::TC_UINT64		//	combinations
 			},
-			{ 36, 16, 16, 0, 0 })))
+			{ 36, 16, 16, 0, 0, 0, 0, 0, 0 })))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _CSV");
 		}

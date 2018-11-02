@@ -57,7 +57,7 @@ namespace node
         void start_sub_tasks();
 		void stop_sub_tasks();
 
-		void insert_tbl_record();
+		void make_public();
 
 	private:
 		cyng::async::base_task& base_;

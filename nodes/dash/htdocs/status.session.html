@@ -242,7 +242,7 @@
                             //  don't display HTML codes
                             var name = $('<div/>').text(obj.rec.data.name).html();
                             var layer = $('<div/>').text(obj.rec.data.layer).html();
-                            var login = new Date(obj.rec.data.loginTime);
+                            var login = new Date(obj.rec.data.loginTime.substring(0, 19));
                             var last = new Date();
                             var rowNode = table_ses.row.add([obj.rec.key.tag, name, obj.rec.data.source, layer, obj.rec.data.rx, obj.rec.data.sx, obj.rec.data.px, login, last]).draw().node();
                         }

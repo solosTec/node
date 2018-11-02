@@ -187,7 +187,6 @@ namespace node
 							, cyng::param_factory("serverId", server_id)
 							, 0
 							, ctx.tag()));
-
 					}
 					else {
 						ctx.attach(bus_req_db_modify("TGateway"

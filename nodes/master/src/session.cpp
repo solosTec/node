@@ -268,7 +268,7 @@ namespace node
 		//	cluster table
 		//
 		std::string node_class;
-		db_.access([&](cyng::store::table* tbl_cluster)->void {
+		db_.access([&](cyng::store::table* tbl_cluster, cyng::store::table* tbl_csv)->void {
 
 			//
 			//	get node class
@@ -299,9 +299,21 @@ namespace node
 			//	update master record
 			//
 			tbl_cluster->modify(cyng::table::key_generator(mtag_), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
+
+			//
+			//	check CSV table
+			//
+			if (boost::algorithm::equals(node_class, "csv")) {
+
+				//
+				//	remove from CSV table (same key)
+				//
+				tbl_csv->erase(key, ctx.tag());
+			}
 			
 
-		} , cyng::store::write_access("_Cluster"));
+		}	, cyng::store::write_access("_Cluster")
+			, cyng::store::write_access("_CSV"));
 
 		//
 		//	emit a system message
