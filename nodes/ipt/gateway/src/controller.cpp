@@ -365,7 +365,7 @@ namespace node
 		//	random uint32
 		//
 		boost::random::mt19937 int_rng;
-        int_rng.seed(std::time(nullptr));
+        int_rng.seed(static_cast<std::uint32_t>(std::time(nullptr)));
 		boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
 
 		//

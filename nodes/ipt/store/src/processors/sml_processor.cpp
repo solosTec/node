@@ -40,25 +40,26 @@ namespace node
 		, line_(ipt::build_line(channel, source))
 		, parser_([this, channel, source, target](cyng::vector_t&& prg) {
 
-			CYNG_LOG_DEBUG(logger_, "sml processor "
-				<< channel
-				<< ':'
-				<< source
-				<< ':'
-				<< target
-				<< " - "
-				<< prg.size()
-				<< " instructions");
+			//CYNG_LOG_DEBUG(logger_, "sml processor "
+			//	<< channel
+			//	<< ':'
+			//	<< source
+			//	<< ':'
+			//	<< target
+			//	<< " - "
+			//	<< prg.size()
+			//	<< " instructions");
 
-			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+			//CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 
 			//
 			//	execute programm
 			//
 			vm_.async_run(std::move(prg));
 
-		}, false, false)	//	not verbose, no log instructions
+		}, false, true)	//	not verbose, no log instructions
 		, shutdown_(false)
+		, last_activity_(std::chrono::system_clock::now())
 	{
 		init(channel, source, target);
 	}
@@ -73,6 +74,7 @@ namespace node
 		//
 		vm_.register_function("sml.msg", 2, std::bind(&sml_processor::sml_msg, this, std::placeholders::_1));
 		vm_.register_function("sml.eom", 2, std::bind(&sml_processor::sml_eom, this, std::placeholders::_1));
+		vm_.register_function("sml.log", 1, std::bind(&sml_processor::sml_log, this, std::placeholders::_1));
 
 		//
 		//	register logger domain
@@ -80,7 +82,13 @@ namespace node
 		cyng::register_logger(logger_, vm_);
 
 		//
-		//	initial message to create a new line
+		//	statistics
+		//
+		vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+
+		//
+		//	Initial message to create a new line.
+		//	Consumers manage there own list of lines.
 		//
 		for (auto tid : consumers_) {
 			mux_.post(tid, CONSUMER_CREATE_LINE, cyng::tuple_factory(line_, target));
@@ -99,29 +107,38 @@ namespace node
 		//
 		//	halt VM
 		//
-		vm_.access([this](cyng::vm& vm) {
+		vm_.halt();
 
-			//
-			//	halt VM
-			//
-			const auto tag = vm_.tag();
-			vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
+		//
+		//	wait for VM
+		//
+		const auto tag = vm_.tag();
+		if (vm_.wait(12, std::chrono::milliseconds(10))) {
 
 			CYNG_LOG_INFO(logger_, "SML processor "
 				<< line_
 				<< ':'
-				<< vm_.tag()
+				<< tag
 				<< " stopped");
 
 			//
 			//	send shutdown message to remove this line
 			//
-			mux_.post(tid_, STORE_EVENT_REMOVE_CONSUMER, cyng::tuple_factory("SML", line_, tag));
+			mux_.post(tid_, STORE_EVENT_REMOVE_PROCESSOR, cyng::tuple_factory("SML", line_, tag));
 
 			//
 			//	From here on, the behavior is undefined.
 			//
-		});
+
+		}
+		else {
+
+			CYNG_LOG_ERROR(logger_, "SML processor "
+				<< line_
+				<< ':'
+				<< tag
+				<< " couldn't be stopped");
+		}
 	}
 
 
@@ -163,16 +180,21 @@ namespace node
 		auto code = get_msg_type(msg);
 		shutdown_ = sml::BODY_CLOSE_RESPONSE == code;
 
-		//CYNG_LOG_TRACE(logger_, "SML message " 
-		//	<< sml::messages::name(code)
-		//	<< ": "
-		//	<< cyng::io::to_str(msg));
+		if (shutdown_) {
 
-		CYNG_LOG_INFO(logger_, "post "
-			<< sml::messages::name(code)
-			<< " to "
-			<< consumers_.size()
-			<< " consumer(s)");
+			CYNG_LOG_INFO(logger_, "post "
+				<< sml::messages::name(code)
+				<< " to "
+				<< consumers_.size()
+				<< " consumer(s) - shutdown mode");
+		}
+		else {
+			CYNG_LOG_TRACE(logger_, "post "
+				<< sml::messages::name(code)
+				<< " to "
+				<< consumers_.size()
+				<< " consumer(s)");
+		}
 
 		//
 		//	post data to all consumers
@@ -180,6 +202,11 @@ namespace node
 		for (auto tid : consumers_) {
 			mux_.post(tid, CONSUMER_PUSH_DATA, cyng::tuple_factory(line_, code, idx, msg));
 		}
+
+		//
+		//	update activity marker
+		//
+		last_activity_ = std::chrono::system_clock::now();
 	}
 
 
@@ -203,12 +230,36 @@ namespace node
 		//
 		if (shutdown_) {
 			for (auto tid : consumers_) {
-				mux_.post(tid, CONSUMER_REMOVE_LINE, cyng::tuple_factory(line_, std::get<1>(tpl), std::get<0>(tpl)));
+				mux_.post(tid, CONSUMER_EOM, cyng::tuple_factory(line_, std::get<1>(tpl), std::get<0>(tpl)));
 			}
+		}
+	}
+
+	void sml_processor::sml_log(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, "sml.log " << cyng::io::to_str(frame));
+	}
+
+	void sml_processor::test_activity()
+	{
+		auto delta = std::chrono::system_clock::now() - last_activity_;	
+		if (shutdown_ || (delta > std::chrono::minutes(1))) {
+
+			CYNG_LOG_INFO(logger_, "inactivity detected "
+				<< cyng::to_str(delta)
+				<< " - disconnect " 
+				<< consumers_.size()
+				<< " data consumers");
 
 			//
-			//	stop VM
+			//	signal end of push data
 			//
+			for (auto tid : consumers_) {
+				mux_.post(tid, CONSUMER_REMOVE_LINE, cyng::tuple_factory(line_));
+			}
+				
+			//	stop VM
 			stop();
 		}
 	}
@@ -234,5 +285,6 @@ namespace node
 
 		return sml::BODY_UNKNOWN;
 	}
+
 
 }

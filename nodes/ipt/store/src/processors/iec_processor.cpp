@@ -109,30 +109,37 @@ namespace node
 		//
 		//	halt VM
 		//
-		vm_.access([this](cyng::vm& vm) {
+		vm_.halt();
 
-			//
-			//	halt VM
-			//
-			const auto tag = vm_.tag();
-			vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
+		//
+		//	wait for VM
+		//
+		const auto tag = vm_.tag();
+		if (vm_.wait(12, std::chrono::milliseconds(10))) {
 
 			CYNG_LOG_INFO(logger_, "IEC processor "
 				<< line_
 				<< ':'
-				<< vm_.tag()
+				<< tag
 				<< " stopped");
-
 			//
 			//	send shutdown message to remove this line
 			//
-			mux_.post(tid_, STORE_EVENT_REMOVE_CONSUMER, cyng::tuple_factory("IEC", line_, tag));
+			mux_.post(tid_, STORE_EVENT_REMOVE_PROCESSOR, cyng::tuple_factory("IEC", line_, tag));
 
 			//
 			//	From here on, the behavior is undefined.
 			//
 
-		});
+		}
+		else {
+
+			CYNG_LOG_ERROR(logger_, "IEC processor "
+				<< line_
+				<< ':'
+				<< tag
+				<< " couldn't be stopped");
+		}
 	}
 
 	void iec_processor::parse(cyng::buffer_t const& data)

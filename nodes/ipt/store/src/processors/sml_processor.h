@@ -16,11 +16,8 @@
 
 namespace node
 {
-	class sml_xml_consumer;
 	class sml_processor
 	{
-		friend sml_xml_consumer;
-
 	public:
 		sml_processor(cyng::async::mux& 
 			, cyng::logging::log_ptr
@@ -39,6 +36,11 @@ namespace node
 		 */
 		void parse(cyng::buffer_t const&);
 
+		/**
+		 * test activity and remove line if no longer active
+		 */
+		void test_activity();
+
 	private:
 		void stop();
 		void init(std::uint32_t channel
@@ -46,6 +48,7 @@ namespace node
 			, std::string target);
 		void sml_msg(cyng::context& ctx);
 		void sml_eom(cyng::context& ctx);
+		void sml_log(cyng::context& ctx);
 
 	private:
 		cyng::logging::log_ptr logger_;
@@ -56,6 +59,7 @@ namespace node
 		const std::uint64_t line_;
 		sml::parser parser_;
 		bool shutdown_;
+		std::chrono::system_clock::time_point last_activity_;
 	};
 
 	/**

@@ -20,12 +20,17 @@
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/vm/generator.h>
+#include <cyng/io/serializer.h>
 
 
 namespace node 
 {
 	namespace ipt
 	{
+		/**
+		 * Login as IP-T client, opens a push channel and push content of a (hard coded) file.
+		 * Change parameter in the test code to address different push targets and deliver the requested content.
+		 */
 		class client : public bus
 		{
 		public:
@@ -43,6 +48,12 @@ namespace node
 					<< " <"
 					<< base_.get_class_name()
 					<< ">");
+
+				//
+				//	request handler
+				//
+				vm_.register_function("bus.reconfigure", 1, std::bind(&client::reconfigure, this, std::placeholders::_1));
+
 			}
 
 			cyng::continuation run()
@@ -100,7 +111,8 @@ namespace node
 				//	open push channel
 				//
 				//bus_->vm_.async_run(cyng::generate_invoke("req.open.push.channel", "water@solostec", "", "", "", "", 0));
-				vm_.async_run(cyng::generate_invoke("req.open.push.channel", "LZQJ", "", "", "", "", 0));
+				//vm_.async_run(cyng::generate_invoke("req.open.push.channel", "LZQJ", "", "", "", "", 0));
+				vm_.async_run(cyng::generate_invoke("req.open.push.channel", "data-store", "", "", "", "", 0));
 				vm_.async_run(cyng::generate_invoke("stream.flush"));
 			}
 
@@ -161,7 +173,9 @@ namespace node
 
 				if (success) {
 
-					const std::string file_name = "C:\\projects\\workplace\\node\\Debug\\sml\\smf-f5e0e04f-8bd1a8b5-2018080T201923-IEC-LZQJ.bin";
+					//const std::string file_name = "C:\\projects\\workplace\\node\\Debug\\sml\\smf-f5e0e04f-8bd1a8b5-2018080T201923-IEC-LZQJ.bin";
+					const std::string file_name = "D:\\installations\\Tägerwilen\\debug\\smf-26ed3332-84767607-2018100T10108-SML-pushTBT.bin";
+				
 					CYNG_LOG_INFO(logger_, "push data of file " << file_name);
 
 					//
@@ -271,6 +285,27 @@ namespace node
 			{
 				CYNG_LOG_INFO(logger_, "transmit data");
 				return cyng::buffer_t();
+			}
+
+			void reconfigure(cyng::context& ctx)
+			{
+				const cyng::vector_t frame = ctx.get_frame();
+				CYNG_LOG_WARNING(logger_, "bus.reconfigure " << cyng::io::to_str(frame));
+				reconfigure_impl();
+			}
+
+			void reconfigure_impl()
+			{
+				//
+				//	switch to other master
+				//
+				//"localhost", "26862", "User", "Pass"
+				CYNG_LOG_ERROR(logger_, "network login failed - no other redundancy available");
+
+				//
+				//	trigger reconnect 
+				//
+				base_.suspend(std::chrono::seconds(10));
 			}
 
 		private:

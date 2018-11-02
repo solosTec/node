@@ -85,6 +85,7 @@ namespace node
 					: pos_(pos)
 				{
 					BOOST_ASSERT(pos_ <= sizeof(T));
+					std::fill(std::begin(u_.a_), std::end(u_.a_), 0);
 				}
 				bool push(char c)
 				{

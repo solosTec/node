@@ -273,6 +273,7 @@ namespace node
 		{
 			if (s.push(c_))
 			{
+				//	emit() is the same as push() but with optional logging
 				parser_.emit(std::move(s.octet_));
 				return STATE_START;
 			}
@@ -292,6 +293,27 @@ namespace node
 
 		parser::state parser::state_visitor::operator()(sml_bool& s) const
 		{
+			if (parser_.verbose_ || parser_.log_)
+			{
+				std::stringstream ss;
+				ss
+					<< parser_.prefix()
+					<< "BOOL "
+					<< std::boolalpha
+					<< (c_ != 0)
+					;
+				if (parser_.verbose_)
+				{
+					std::cerr
+						<< ss.rdbuf()
+						<< std::endl;
+				}
+				if (parser_.log_)
+				{
+					parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
+				}
+			}
+
 			//	anything but zero is true
 			parser_.push(cyng::make_object<bool>(c_ != 0));
 			return STATE_START;
@@ -718,8 +740,8 @@ namespace node
 						<< " @"
 						<< parser_.pos_
 						;
-					parser_.cb_(cyng::generate_invoke("log.msg.debug", ss.str()));
 
+					parser_.cb_(cyng::generate_invoke("log.msg.debug", ss.str()));
 				}
 
 				parser_.crc_on_ = true;
@@ -913,6 +935,30 @@ namespace node
 					<< " bytes\t"
 					<< ss.str()
 				;
+			}
+			if (verbose_ || log_)
+			{
+				std::stringstream ss;
+				ss
+					<< prefix()
+					<< "STRING: "
+					<< tl_.length_
+					<< " bytes\t"
+					;
+
+				cyng::io::hex_dump hd(8);
+				hd(ss, octet.data(), octet.data() + octet.size());
+
+				if (verbose_)
+				{
+					std::cerr
+						<< ss.rdbuf()
+						<< std::endl;
+				}
+				if (log_)
+				{
+					cb_(cyng::generate_invoke("sml.log", ss.str()));
+				}
 			}
 
 			push(cyng::make_object(std::move(octet)));

@@ -76,20 +76,12 @@ namespace node
 			ss
 				<< root_name_
 				<< '-'
-				<< std::hex
 				<< std::setfill('0')
-				<< std::setw(4)
-				<< channel_
-				<< '-'
-				<< std::setw(4)
-				<< source_
-				<< '-'
-				<< std::dec
 				<< cyng::chrono::year(time)
 				<< std::setw(2)
 				<< cyng::chrono::month(time)
-				<< std::setw(2)
 				<< 'T'
+				<< std::setw(2)
 				<< cyng::chrono::day(time)
 				<< std::setw(2)
 				<< cyng::chrono::hour(time)
@@ -97,6 +89,13 @@ namespace node
 				<< cyng::chrono::minute(time)
 				<< '-'
 				<< target_
+				<< '-'
+				<< std::hex
+				<< std::setw(4)
+				<< channel_
+				<< '-'
+				<< std::setw(4)
+				<< source_
 				<< ".xml"
 				;
 			return ss.str();
@@ -498,6 +497,10 @@ namespace node
 			//	object name
 			//
 			obis code = read_obis(node, *pos++);
+			//if (code == OBIS_CODE(01, 00, 01, 08, 00, ff)) {
+			//	std::string msg("things get interesting here");
+			//	//	scaler = 0, value = 2746916 expected
+			//}
 
 			//
 			//	unit (see sml_unit_enum)
@@ -574,7 +577,7 @@ namespace node
 			const std::string name_hex = to_hex(code);
 
 			auto child = node.append_child("profile");
-			if (code == obis(0x00, 0x80, 0x80, 0x11, 0x10, 0xFF))
+			if (OBIS_CODE(00, 80, 80, 11, 10, FF) == code)
 			{
 				child.append_attribute("gotIt").set_value("ActorID");
 			}

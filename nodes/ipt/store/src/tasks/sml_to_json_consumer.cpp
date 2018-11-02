@@ -87,7 +87,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	cyng::continuation sml_json_consumer::process(std::uint64_t line, std::size_t idx, std::uint16_t crc)
+	cyng::continuation sml_json_consumer::process(std::uint64_t line)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -95,6 +95,12 @@ namespace node
 			<< base_.get_class_name()
 			<< " close line "
 			<< line);
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	EOM
+	cyng::continuation sml_json_consumer::process(std::uint64_t line, std::size_t idx, std::uint16_t crc)
+	{
 		return cyng::continuation::TASK_CONTINUE;
 	}
 

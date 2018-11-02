@@ -72,9 +72,15 @@ namespace node
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> has monitor with "
-					<< config_.get().monitor_.count()
-					<< " seconds(s)");
+					<< "> test line activity with a "
+					<< cyng::to_str(config_.get().monitor_)
+					<< " period");
+
+				//
+				//	test for inactive lines
+				//
+				test_line_activity();
+
 			}
 			else
 			{
@@ -99,19 +105,20 @@ namespace node
 			//	call base class
 			//
 			bus::stop();
-			while (!vm_.is_halted()) {
+			if (vm_.wait(2, std::chrono::milliseconds(100))) {
 				CYNG_LOG_INFO(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> continue gracefull shutdown");
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+					<< "> is stopped");
 			}
-			CYNG_LOG_INFO(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> is stopped");
+			else {
+				CYNG_LOG_ERROR(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> VM didn't stop");
+			}
 		}
 
 		//	slot [0] 0x4001/0x4002: response login
@@ -121,6 +128,11 @@ namespace node
 			//	register targets
 			//
 			register_targets();
+
+			//
+			//	re/start monitor
+			//
+			base_.suspend(config_.get().monitor_);
 		}
 
 		//	slot [1] - connection lost / reconnect
@@ -258,13 +270,17 @@ namespace node
 			return cyng::buffer_t();
 		}
 
+		//	 slot [0] - message from costumer to register
 		cyng::continuation network::process(std::string type, std::size_t tid)
 		{
 			consumers_.emplace(type, tid);
+
 			CYNG_LOG_INFO(logger_, "consumer task #"
 				<< tid
 				<< " registered as "
-				<< type);
+				<< type
+				<< " - "
+				<< consumers_.count(type));
 
 			//
 			//	continue task
@@ -272,7 +288,7 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		//	slot [12] - remove line
+		//	slot [1] - remove processor
 		cyng::continuation network::process(std::string protocol, std::uint64_t line, boost::uuids::uuid tag)
 		{
 
@@ -478,7 +494,7 @@ namespace node
 					<< pos->second);
 
 				//
-				//	slot [0] ????
+				//	slot [0] 
 				//
 				base_.mux_.post(pos->second, 0, cyng::tuple_factory(channel, source, target, data));
 			}
@@ -583,7 +599,6 @@ namespace node
 			, std::string const& name
 			, cyng::buffer_t const& data)
 		{
-
 			std::stringstream ss;
 			ss
 				<< std::hex
@@ -603,8 +618,27 @@ namespace node
 			if (of.is_open())	{
 				of.write(data.data(), data.size());
 			}
-
 		}
+
+		void network::test_line_activity()
+		{
+			test_line_activity_SML();
+			test_line_activity_IEC();
+		}
+
+		void network::test_line_activity_SML()
+		{
+			//std::map<std::uint64_t, sml_processor>	sml_lines_;
+			for (auto& p : sml_lines_) {
+				p.second.test_activity();
+			}
+		}
+
+		void network::test_line_activity_IEC()
+		{
+			//	IEC works differently
+		}
+
 	}
 }
 

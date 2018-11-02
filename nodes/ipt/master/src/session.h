@@ -136,11 +136,6 @@ namespace node
 			 */
 			void shutdown();
 
-			/**
-			 * wait for VM and remove from client map
-			 */
-			void wait();
-
 			void ipt_req_login_public(cyng::context& ctx);
 			void ipt_req_login_scrambled(cyng::context& ctx);
 			void ipt_req_logout(cyng::context& ctx);

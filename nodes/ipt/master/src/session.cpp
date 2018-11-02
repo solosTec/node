@@ -295,7 +295,7 @@ namespace node
 			//
 			//	wait for pending operations
 			//
-			wait();
+			vm_.wait(12, std::chrono::milliseconds(100));
 
 			//
 			//	Tell SMF master to remove this session by calling "client.req.close". 
@@ -318,7 +318,7 @@ namespace node
 			//
 			//	wait for pending operations
 			//
-			wait();
+			vm_.wait(12, std::chrono::milliseconds(100));
 
 			if (pending_) {
 				//
@@ -333,17 +333,6 @@ namespace node
 				//	server::remove_client();
 				//
 				bus_->vm_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
-			}
-		}
-
-		void session::wait()
-		{
-			std::size_t counter{ 12 };
-			while (!vm_.is_halted() && (counter-- != 0)) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				CYNG_LOG_WARNING(logger_, "ipt "
-					<< vm_.tag()
-					<< " waiting for pending operations");
 			}
 		}
 

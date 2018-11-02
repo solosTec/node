@@ -25,13 +25,13 @@ namespace node
 		{
 		public:
 
-			//	[11] register data consumer
-			using msg_11 = std::tuple<std::string, std::size_t>;
+			//	[0] register data consumer
+			using msg_0 = std::tuple<std::string, std::size_t>;
 
-			//	[12] remove data consumer
-			using msg_12 = std::tuple<std::string, std::uint64_t, boost::uuids::uuid>;
+			//	[1] remove data consumer
+			using msg_1 = std::tuple<std::string, std::uint64_t, boost::uuids::uuid>;
 
-			using signatures_t = std::tuple<msg_11, msg_12>;
+			using signatures_t = std::tuple<msg_0, msg_1>;
 
 		public:
 			network(cyng::async::base_task* bt
@@ -44,7 +44,7 @@ namespace node
 			void stop();
 
 			/**
-			 * @brief slot [0] 0x4001/0x4002: response login
+			 * @brief event 0x4001/0x4002: response login
 			 *
 			 * sucessful network login
 			 *
@@ -54,14 +54,14 @@ namespace node
 			virtual void on_login_response(std::uint16_t, std::string) override;
 
 			/**
-			 * @brief slot [1]
+			 * @brief event IP-T connection lost
 			 *
 			 * connection lost / reconnect
 			 */
 			virtual void on_logout() override;
 
 			/**
-			 * @brief slot [2] - 0x4005: push target registered response
+			 * @brief event 0x4005: push target registered response
 			 *
 			 * register target response
 			 *
@@ -76,14 +76,14 @@ namespace node
 				, std::string target) override;
 
 			/**
-			 * @brief slot [3] - 0x4006: push target deregistered response
+			 * @brief event 0x4006: push target deregistered response
 			 *
 			 * deregister target response
 			 */
 			virtual void on_res_deregister_target(sequence_type, bool, std::string const&) override;
 
 			/**
-			 * @brief slot [4] - 0x1000: push channel open response
+			 * @brief event 0x1000: push channel open response
 			 *
 			 * open push channel response
 			 * 
@@ -102,7 +102,7 @@ namespace node
 				, std::size_t count) override;
 
 			/**
-			 * @brief slot [5] - 0x1001: push channel close response
+			 * @brief event 0x1001: push channel close response
 			 *
 			 * register consumer.
 			 * open push channel response
@@ -116,7 +116,7 @@ namespace node
 				, std::uint32_t channel) override;
 
 			/**
-			 * @brief slot [6] - 0x9003: connection open request 
+			 * @brief event 0x9003: connection open request 
 			 *
 			 * incoming call
 			 *
@@ -125,7 +125,7 @@ namespace node
 			virtual bool on_req_open_connection(sequence_type, std::string const& number) override;
 
 			/**
-			 * @brief slot [7] - 0x1003: connection open response
+			 * @brief event 0x1003: connection open response
 			 *
 			 * @param seq ipt sequence
 			 * @param success true if connection open request was accepted
@@ -133,7 +133,7 @@ namespace node
 			virtual cyng::buffer_t on_res_open_connection(sequence_type seq, bool success) override;
 
 			/**
-			 * @brief slot [8] - 0x9004/0x1004: connection close request/response
+			 * @brief event 0x9004/0x1004: connection close request/response
 			 *
 			 * open connection closed
 			 */
@@ -141,28 +141,28 @@ namespace node
 			virtual void on_res_close_connection(sequence_type) override;
 
 			/**
-			 * @brief slot [9] - 0x9002: push data transfer request
+			 * @brief event 0x9002: push data transfer request
 			 *
 			 * push data
 			 */
 			virtual void on_req_transfer_push_data(sequence_type, std::uint32_t, std::uint32_t, cyng::buffer_t const&) override;
 
 			/**
-			 * @brief slot [10] - transmit data (if connected)
+			 * @brief event transmit data (if connected)
 			 *
 			 * incoming data
 			 */
 			virtual cyng::buffer_t on_transmit_data(cyng::buffer_t const&) override;
 
 			/**
-			 * @brief slot [11]
+			 * @brief slot [0] - message from costumer to register (STORE_EVENT_REGISTER_CONSUMER)
 			 *
 			 * add consumer
 			 */
 			cyng::continuation process(std::string, std::size_t tid);
 
 			/**
-			 * @brief slot [12]
+			 * @brief slot [1] - remove processor (STORE_EVENT_REMOVE_PROCESSOR)
 			 *
 			 * remove line
 			 */
@@ -219,6 +219,10 @@ namespace node
 				, std::uint32_t target
 				, std::string const&
 				, cyng::buffer_t const& data);
+
+			void test_line_activity();
+			void test_line_activity_SML();
+			void test_line_activity_IEC();
 
 		private:
 			cyng::async::base_task& base_;
