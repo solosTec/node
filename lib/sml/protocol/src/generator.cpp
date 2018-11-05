@@ -151,29 +151,8 @@ namespace node
 			);
 		}
 
-		std::size_t req_generator::get_proc_parameter_srv_visible(cyng::buffer_t const& server_id
-			, std::string const& username
-			, std::string const& password)
-		{
-			++trx_;
-			return append_msg(message(cyng::make_object(*trx_)
-				, group_no_++	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
-
-				//
-				//	generate sequence
-				//
-				, get_proc_parameter_request(cyng::make_object(server_id)
-					, username
-					, password
-					, OBIS_CODE_ROOT_VISIBLE_DEVICES)
-				)
-			);
-
-		}
-
-		std::size_t req_generator::get_proc_parameter_srv_active(cyng::buffer_t const& server_id
+		std::size_t req_generator::get_proc_parameter(cyng::buffer_t const& server_id
+			, obis code
 			, std::string const& username
 			, std::string const& password)
 		{
@@ -189,72 +168,59 @@ namespace node
 				, get_proc_parameter_request(cyng::make_object(server_id)
 					, username
 					, password
-					, OBIS_CODE_ROOT_ACTIVE_DEVICES)
+					, code)
 				)
 			);
 		}
 
-		std::size_t req_generator::get_proc_parameter_firmware(cyng::buffer_t const& server_id
+
+		std::size_t req_generator::get_proc_parameter_srv_visible(cyng::buffer_t const& srv
 			, std::string const& username
 			, std::string const& password)
 		{
-			++trx_;
-			return append_msg(message(cyng::make_object(*trx_)
-				, group_no_++	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
-
-				//
-				//	generate public open request
-				//
-				, get_proc_parameter_request(cyng::make_object(server_id)
-					, username
-					, password
-					, OBIS_CODE_ROOT_DEVICE_IDENT)
-				)
-			);
+			return get_proc_parameter(srv, OBIS_CODE_ROOT_VISIBLE_DEVICES, username, password);
 		}
 
-		std::size_t req_generator::get_proc_status_word(cyng::buffer_t const& server_id
+		std::size_t req_generator::get_proc_parameter_srv_active(cyng::buffer_t const& srv
 			, std::string const& username
 			, std::string const& password)
 		{
-			++trx_;
-			return append_msg(message(cyng::make_object(*trx_)
-				, group_no_++	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
-
-				//
-				//	generate public open request
-				//
-				, get_proc_parameter_request(cyng::make_object(server_id)
-					, username
-					, password
-					, OBIS_CLASS_OP_LOG_STATUS_WORD)
-				)
-			);
+			return get_proc_parameter(srv, OBIS_CODE_ROOT_ACTIVE_DEVICES, username, password);
 		}
 
-		std::size_t req_generator::get_proc_parameter_memory(cyng::buffer_t const& server_id
+		std::size_t req_generator::get_proc_parameter_firmware(cyng::buffer_t const& srv
 			, std::string const& username
 			, std::string const& password)
 		{
-			++trx_;
-			return append_msg(message(cyng::make_object(*trx_)
-				, group_no_++	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
+			return get_proc_parameter(srv, OBIS_CODE_ROOT_DEVICE_IDENT, username, password);
+		}
 
-				//
-				//	generate public open request
-				//
-				, get_proc_parameter_request(cyng::make_object(server_id)
-					, username
-					, password
-					, OBIS_CODE_ROOT_MEMORY_USAGE)
-				)
-			);
+		std::size_t req_generator::get_proc_status_word(cyng::buffer_t const& srv
+			, std::string const& username
+			, std::string const& password)
+		{
+			return get_proc_parameter(srv, OBIS_CLASS_OP_LOG_STATUS_WORD, username, password);
+		}
+
+		std::size_t req_generator::get_proc_parameter_memory(cyng::buffer_t const& srv
+			, std::string const& username
+			, std::string const& password)
+		{
+			return get_proc_parameter(srv, OBIS_CODE_ROOT_MEMORY_USAGE, username, password);
+		}
+
+		std::size_t req_generator::get_proc_parameter_wireless_mbus_status(cyng::buffer_t const& srv
+			, std::string const& username
+			, std::string const& password)
+		{
+			return get_proc_parameter(srv, OBIS_CODE_ROOT_W_MBUS_STATUS, username, password);
+		}
+
+		std::size_t req_generator::get_proc_parameter_wireless_mbus_config(cyng::buffer_t const& srv
+			, std::string const& username
+			, std::string const& password)
+		{
+			return get_proc_parameter(srv, OBIS_CODE_IF_wMBUS, username, password);
 		}
 
 		res_generator::res_generator()
@@ -1327,7 +1293,7 @@ namespace node
 						parameter_tree(OBIS_W_MBUS_ADAPTER_MANUFACTURER, make_value(manufacturer)),
 						parameter_tree(OBIS_W_MBUS_ADAPTER_ID, make_value(id)),
 						parameter_tree(OBIS_W_MBUS_FIRMWARE, make_value(firmware)),
-						parameter_tree(OBIS_W_BUS_HARDWARE, make_value(hardware))
+						parameter_tree(OBIS_W_MBUS_HARDWARE, make_value(hardware))
 
 			}))));
 		}
@@ -1354,12 +1320,12 @@ namespace node
 					, OBIS_CODE_IF_wMBUS	//	path entry - 81 06 19 07 00 FF
 					, child_list_tree(OBIS_CODE_IF_wMBUS, {
 
-						parameter_tree(OBIS_CODE(81, 06, 19, 07, 01, FF), make_value(protocol)),
-						parameter_tree(OBIS_CODE(81, 06, 19, 07, 02, FF), make_value((s_mode == 0) ? 30 : s_mode)),
-						parameter_tree(OBIS_CODE(81, 06, 19, 07, 03, FF), make_value((t_mode == 0) ? 20 : t_mode)),
-						parameter_tree(OBIS_CODE(81, 06, 27, 32, 03, 01), make_value(reboot)),
-						parameter_tree(OBIS_CODE(81, 06, 19, 07, 04, FF), make_value(power)),
-						parameter_tree(OBIS_CODE(81, 06, 19, 07, 11, FF), make_value(install_mode))
+						parameter_tree(OBIS_W_MBUS_PROTOCOL, make_value(protocol)),
+						parameter_tree(OBIS_W_MBUS_S_MODE, make_value((s_mode == 0) ? 30 : s_mode)),
+						parameter_tree(OBIS_W_MBUS_T_MODE, make_value((t_mode == 0) ? 20 : t_mode)),
+						parameter_tree(OBIS_W_MBUS_REBOOT, make_value(reboot)),
+						parameter_tree(OBIS_W_MBUS_POWER, make_value(power)),
+						parameter_tree(OBIS_W_MBUS_INSTALL_MODE, make_value(install_mode))
 
 			}))));
 		}

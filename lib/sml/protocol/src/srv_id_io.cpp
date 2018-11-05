@@ -24,6 +24,21 @@ namespace node
 				&& (buffer.at(0) == MBUS_WIRELESS || buffer.at(0) == MBUS_WIRED));
 		}
 
+		bool is_w_mbus(cyng::buffer_t const& buffer)
+		{
+			//	Each meter (or radio module connected to the meter) has a unique 8 byte ID or address. 
+			//	The address consists of 
+			//	* a Manufacturer ID (2 Bytes), 
+			//	* a serial number (4 Bytes), 
+			//	* the device type (e.g. water meter) (1 Byte) and 
+			//	* the version of the meter (product revision). (1 Bytes)
+			if (buffer.size() == 8)
+			{
+				return (buffer.at(6) >= 0x00) && (buffer.at(6) <= 0x0F);
+			}
+			return false;
+		}
+
 		bool is_serial(cyng::buffer_t const& buffer)
 		{
 			if (buffer.size() == 8)

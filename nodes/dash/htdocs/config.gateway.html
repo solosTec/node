@@ -128,9 +128,10 @@
             <li class="nav-item">
                 <a class="nav-link disabled" id="smf-gw-tab-memory" data-toggle="tab" href="#smf-gw-memory" aria-selected="false">Memory</a>
             </li>
-            <!--<li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-w-mbus" data-toggle="tab" href="#smf-gw-w-mbus" aria-selected="false">wM-Bus</a>
-            </li>-->
+            <!--wireless-mbus-->
+            <li class="nav-item">
+                <a class="nav-link disabled" id="smf-gw-tab-wireless-mbus" data-toggle="tab" href="#smf-gw-wireless-mbus" aria-selected="false">wireless M-Bus</a>
+            </li>
         </ul>
 
         <div class="tab-content">
@@ -204,6 +205,10 @@
                                 <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-memory" name="smf-form-gw-memory">
                                 <label class="form-check-label" for="smf-form-gw-memory">Get memory usage</label>
                             </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-wireless-mbus" name="smf-form-gw-wireless-mbus">
+                                <label class="form-check-label" for="smf-form-gw-wireless-mbus">Wireless M-Bus</label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -249,20 +254,101 @@
                                 <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-gw-memory_progress-2">0%</div>
                             </div>
                             <!--<div id="mem-progress-2"
-                                 data-percentage="20"
-                                 data-track-width="42"
-                                 data-track-colour="555555"
-                                 data-fill-colour="00C0FF"
-                                 data-text-colour="00C0FF"
-                                 data-stroke-colour="FFFFFF"
-                                 data-stroke-spacing="4">
-                            </div>-->
+                         data-percentage="20"
+                         data-track-width="42"
+                         data-track-colour="555555"
+                         data-fill-colour="00C0FF"
+                         data-text-colour="00C0FF"
+                         data-stroke-colour="FFFFFF"
+                         data-stroke-spacing="4">
+                    </div>-->
                         </div>
                         <div class="card-footer">
                             <small class="text-muted"><span id="smf-gw-memory-2">wait...</span>%</small>
                         </div>
                     </div>
                 </div>
+                <br>
+            </div>
+            <div id="smf-gw-wireless-mbus" class="container-fluid tab-pane fade" role="tabpanel">
+                <h4>w-MBus</h4>
+                <form>
+                    <div class="form-group row">
+                        <label for="smf-gw-wmbus-type" class="col-2 col-form-label">Adapter Type</label>
+                        <div class="col-4">
+                            <input id="smf-gw-wmbus-type" name="smf-gw-wmbus-type" placeholder="Manufacturer" type="text" class="form-control here" readonly>
+                        </div>
+                        <label for="smf-gw-wmbus-adapter" class="col-2 col-form-label">Adapter ID</label>
+                        <div class="col-4">
+                            <input id="smf-gw-wmbus-adapter" name="smf-gw-wmbus-adapter" placeholder="Adapter ID" type="text" class="form-control here" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="smf-gw-wmbus-firmware" class="col-2 col-form-label">Firmware</label>
+                        <div class="col-4">
+                            <input id="smf-gw-wmbus-firmware" name="smf-gw-wmbus-firmware" placeholder="Firmware Version" type="text" class="form-control here" readonly>
+                        </div>
+                        <label for="smf-gw-wmbus-hardware" class="col-2 col-form-label">Hardware</label>
+                        <div class="col-4">
+                            <input id="smf-gw-wmbus-hardware" name="smf-gw-wmbus-hardware" placeholder="Hardware Version" type="text" class="form-control here" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="select" class="col-2 col-form-label">Transmission Power</label>
+                        <div class="col-4">
+                            <select id="smf-gw-wmbus-power" name="smf-gw-wmbus-power" class="custom-select" required="required" aria-describedby="selectHelpBlock">
+                                <option value="0" selected>Basic</option>
+                                <option value="1">Low</option>
+                                <option value="2">Average</option>
+                                <option value="3">Strong</option>
+                            </select>
+                            <!--<span id="selectHelpBlock" class="form-text text-muted">Transmission Power</span>-->
+                        </div>
+                        <label for="smf-gw-wmbus-reboot" class="col-2 col-form-label">Automatic Reboot</label>
+                        <div class="col-4">
+                            <div class="input-group">
+                                <!--<div class="input-group-addon">Seconds</div>-->
+                                <input id="smf-gw-wmbus-reboot" name="smf-gw-wmbus-reboot" placeholder="Automatic Reboot in Seconds" type="number" class="form-control here">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-2">Protocol</label>
+                        <div class="col-4">
+                            <div class="form-check form-check-inline">
+                                <input name="smf-gw-wmbus-protocol" id="smf-gw-wmbus-protocol-tmode" type="radio" class="form-check-input" value="0">
+                                <label class="form-check-label" for="smf-gw-wmbus-protocol-tmode">T-Mode</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input name="smf-gw-wmbus-protocol" is="smf-gw-wmbus-protocol-smode" type="radio" class="form-check-input" value="1">
+                                <label class="form-check-label" for="smf-gw-wmbus-protocol-smode">S-Mode</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input name="smf-gw-wmbus-protocol" id="smf-gw-wmbus-protocol-alternate" type="radio" class="form-check-input" value="2">
+                                <label class="form-check-label" for="smf-gw-wmbus-protocol-alternate">Alternating</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input name="smf-gw-wmbus-protocol" id="smf-gw-wmbus-protocol-parallel" type="radio" class="form-check-input" value="3">
+                                <label class="form-check-label" for="smf-gw-wmbus-protocol-parallel">Parallel</label>
+                            </div>
+                        </div>
+                    <!--</div>
+                    <div class="form-group row">-->
+                        <label class="col-2">Install Mode</label>
+                        <div class="col-4">
+                            <div class="form-check form-check-inline">
+                                <input name="smf-gw-wmbus-install" id="smf-gw-wmbus-install" type="checkbox" class="form-check-input">
+                                <label class="form-check-label" for="smf-gw-wmbus-install">Active</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="offset-2 col-10">
+                            <button name="submit" type="submit" class="btn btn-primary" disabled>Submit</button>
+                        </div>
+                    </div>
+                </form>
                 <br>
             </div>
         </div>
@@ -346,6 +432,7 @@
                     $('#smf-form-gw-srv-active').removeAttr('disabled');
                     $('#smf-form-gw-firmware').removeAttr('disabled');
                     $('#smf-form-gw-memory').removeAttr('disabled');
+                    $('#smf-form-gw-wireless-mbus').removeAttr('disabled');
                 }
                 else {
                     $('#smf-form-gw-reboot').addClass('disabled');
@@ -354,6 +441,7 @@
                     $('#smf-form-gw-srv-active').attr("disabled", "disabled");
                     $('#smf-form-gw-firmware').attr("disabled", "disabled");
                     $('#smf-form-gw-memory').attr("disabled", "disabled");
+                    $('#smf-form-gw-wireless-mbus').attr("disabled", "disabled");
                 }
 
                 $('#smf-form-gw-online').val(rowData[8]);    //  online
@@ -391,6 +479,12 @@
                         $('#smf-gw-memory ul').empty();
                         $('#smf-gw-memory h4').text('Memory usage ' + rowData[1]);
                         gw_req_vec.push("memory");
+                    }
+                    if ($('#smf-form-gw-wireless-mbus').is(":checked") && rowData[8]) {
+                        $('#smf-gw-memory ul').empty();
+                        $('#smf-gw-memory h4').text('wireless M-Bus data ' + rowData[1]);
+                        gw_req_vec.push("w-mbus-status");
+                        gw_req_vec.push("w-mbus-config");
                     }
 
                     if (gw_req_vec.length > 0) {
@@ -529,155 +623,138 @@
                                 }
                             }
                         }
-                        else if (obj.channel == 'status.gateway.word') {
+                        else if (obj.channel == 'op-log-status-word') {
                             //  {"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
+                            //  {"cmd": "update", "channel": "op-log-status-word", "rec": {"srv": "00:15:3b:02:17:74", "values": {"word":{"STATUS_BIT_AUTHORIZED_IPT":false,"STATUS_BIT_EXT_IF_AVAILABLE":true,"STATUS_BIT_FATAL_ERROR":false,"STATUS_BIT_MBUS_IF_AVAILABLE":false,"STATUS_BIT_NO_TIMEBASE":false,"STATUS_BIT_OUT_OF_MEMORY":false,"STATUS_BIT_PLC_AVAILABLE":false,"STATUS_BIT_SERVICE_IF_AVAILABLE":false}}}}
                             if (obj.cmd == 'update') {
-                                for (var prop in obj.rec.word) {
-                                    console.log("word." + prop + " = " + obj.rec.word[prop]);
-                                    switch (prop) {
-                                        case "256":
-                                            if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">fatal error</li>');
-                                            }
-                                            else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no error</li>');
-                                            }
-                                            break;
-                                        case "8192":
-                                            if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">online</li>');
-                                            }
-                                            else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">offline</li>');
-                                            }
-                                            break;
-                                        case "16384":
-                                            if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">out of memory</li>');
-                                            }
-                                            else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no memory shortage</li>');
-                                            }
-                                            break;
-                                        case "65536":
-                                            if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">customer interface available</li>');
-                                            }
-                                            else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no customer interface</li>');
-                                            }
-                                            break;
-                                        case "131072":
-                                            if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">extension interface available</li>');
-                                            }
-                                            else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no extension interface</li>');
-                                            }
-                                            break;
-                                        case "262144":
-                                            if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">wireless M-bus</li>');
-                                            }
-                                            else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no wireless M-bus available</li>');
-                                            }
-                                            break;
-                                        case "524288":
-                                            if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">PLC interface available</li>');
-                                            }
-                                            else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no PLC interface</li>');
-                                            }
-                                            break;
-                                        case "4294967296":
-                                            if (obj.rec.word[prop]) {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-warning">uncertain timebase</li>');
-                                            }
-                                            else {
-                                                $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">NTP is running</li>');
-                                            }
-                                            break;
-                                        default:
-                                            break;
-                                    }
+                                //console.log("word." + prop + " = " + obj.rec.word[prop]);
+                                if (obj.rec.values.word.FATAL_ERROR) {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">fatal error</li>');
+                                }
+                                else {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no error</li>');
+                                }
+                                if (obj.rec.values.word.AUTHORIZED_IPT) {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">online</li>');
+                                }
+                                else {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">offline</li>');
+                                }
+                                
+                                if (obj.rec.values.word.OUT_OF_MEMORY)   {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">out of memory</li>');
+                                }
+                                else {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no memory shortage</li>');
+                                }
+                                if (obj.rec.values.word.SERVICE_IF_AVAILABLE)    {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">customer interface available</li>');
+                                }
+                                else {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no customer interface</li>');
+                                }
+                                if (obj.rec.values.word.EXT_IF_AVAILABLE)    {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">extension interface available</li>');
+                                }
+                                else {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no extension interface</li>');
+                                }
+                                if (obj.rec.values.word.MBUS_IF_AVAILABLE)    {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">wireless M-bus</li>');
+                                }
+                                else {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no wireless M-bus available</li>');
+                                }
+                                if (obj.rec.values.word.PLC_AVAILABLE)    {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">PLC interface available</li>');
+                                }
+                                else {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no PLC interface</li>');
+                                }
+                                if (obj.rec.values.word.NO_TIMEBASE) {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-warning">uncertain timebase</li>');
+                                }
+                                else {
+                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">NTP is running</li>');
                                 }
                             }
                         }
-                        else if (obj.channel == 'status.gateway.visible') {
-                            if (obj.cmd == 'append') {
-                                if (obj.rec.type == 0) {
+                        else if (obj.channel == 'root-visible-devices') {
+                            //  {"cmd": "update", "channel": "root-visible-devices", "rec": {"srv": "00:15:3b:02:17:74", "values": {"class":"---","meter":"000000000000","number":"1","timestamp":"2018-11-04 20:34:28.00000000","type":9}}}
+                            if (obj.cmd == 'update') {
+                                if (obj.rec.values.type == 0) {
                                     $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-success">#'
-                                        + obj.rec.nr
+                                        + obj.rec.values.number
                                         + ' '
-                                        + obj.rec.meter
+                                        + obj.rec.values.meter
                                         + ' ('
-                                        + obj.rec.tp
+                                        + obj.rec.values.timestamp
                                         + ')</li>');
                                 }
                                 else {
                                     $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-secondary">#'
-                                        + obj.rec.nr
+                                        + obj.rec.values.number
                                         + ' '
-                                        + obj.rec.meter
+                                        + obj.rec.values.meter
                                         + ' ('
-                                        + obj.rec.tp
+                                        + obj.rec.values.timestamp
                                         + ')</li>');
                                 }
                             }
                         }
-                        else if (obj.channel == 'status.gateway.active') {
-                            if (obj.cmd == 'append') {
-                                if (obj.rec.type == 0) {
+                        else if (obj.channel == 'root-active-devices') {
+                            //  {"cmd": "update", "channel": "root-active-devices", "rec": {"srv": "00:15:3b:01:ec:46", "values": {"class":"---","meter":"01-fa30-6dd7fae0-01-02","number":"10","timestamp":"2016-08-03 09:26:06.00000000","type":0}}}
+                            if (obj.cmd == 'update') {
+                                if (obj.rec.values.type == 0) {
                                     $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-success">#'
-                                    + obj.rec.nr
+                                    + obj.rec.values.number
                                     + ' '
-                                    + obj.rec.meter
+                                    + obj.rec.values.meter
                                     + ' ('
-                                    + obj.rec.tp
+                                    + obj.rec.values.timestamp
                                     + ')</li>');
                                 }
                                 else {
                                     $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-secondary">#'
-                                    + obj.rec.nr
+                                    + obj.rec.values.number
                                     + ' '
-                                    + obj.rec.meter
+                                    + obj.rec.values.meter
                                     + ' ('
-                                    + obj.rec.tp
+                                    + obj.rec.values.timestamp
                                     + ')</li>');
                                 }
                             }
                         }
-                        else if (obj.channel == 'status.gateway.firmware') {
-                            if (obj.cmd == 'append') {
-                                //  {"nr": 0, "srv": "00:15:3b:02:29:7e", "section": "CURRENT VERSION", "version": "VSES-1.13_1133000038X025d", "active": true}
-                                if (obj.rec.active) {
+                        else if (obj.channel == 'root-device-id') {
+                            //  {"cmd": "update", "channel": "root-device-id", "rec": {"srv": "00:15:3b:02:17:74", "values": {"active":true,"firmware":"KERNEL","number":5,"version":"2.6.20.7 (#1 Fri Mar 30 12:25:42 CEST 2012)"}}}
+                            if (obj.cmd == 'update') {
+                                if (obj.rec.values.active) {
                                     $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-success">#'
-                                        + obj.rec.nr
+                                        + obj.rec.values.number
                                         + ' '
-                                        + obj.rec.section
+                                        + obj.rec.values.firware
                                         + ': '
-                                        + obj.rec.version
+                                        + obj.rec.values.version
                                         + '</li>');
                                 }
                                 else {
                                     $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
-                                        + obj.rec.nr
+                                        + obj.rec.values.number
                                         + ' '
-                                        + obj.rec.section
+                                        + obj.rec.values.firware
                                         + ': '
-                                        + obj.rec.version
+                                        + obj.rec.values.version
                                         + '</li>');
                                 }
                             }
                         }
-                        else if (obj.channel == 'status.gateway.memory') {
-                            $('#smf-gw-memory-1').text(obj.rec.mirror);
-                            $('#smf-gw-memory-2').text(obj.rec.tmp);
-                            $('#smf-gw-memory_progress-1').css("width", obj.rec.mirror + "%").attr("aria-valuenow", obj.rec.mirror).text(obj.rec.mirror + "%");
-                            $('#smf-gw-memory_progress-2').css("width", obj.rec.tmp + "%").attr("aria-valuenow", obj.rec.tmp).text(obj.rec.tmp + "%");
-                            if (obj.rec.mirror > 60) {
+                        else if (obj.channel == 'root-memory-usage') {
+                            //{"cmd": "update", "channel": "root-memory-usage", "rec": {"srv": "00:15:3b:02:17:74", "values": {"memory.mirror":22,"memory.tmp":0}}}
+                            $('#smf-gw-memory-1').text(obj.rec.values.mirror);
+                            $('#smf-gw-memory-2').text(obj.rec.values.tmp);
+                            $('#smf-gw-memory_progress-1').css("width", obj.rec.values.mirror + "%").attr("aria-valuenow", obj.rec.values.mirror).text(obj.rec.values.mirror + "%");
+                            $('#smf-gw-memory_progress-2').css("width", obj.rec.values.tmp + "%").attr("aria-valuenow", obj.rec.values.tmp).text(obj.rec.values.tmp + "%");
+                            if (obj.rec.values.mirror > 60) {
                                 $('#smf-gw-memory_progress-1').removeClass('bg-success');
                                 $('#smf-gw-memory_progress-1').addClass('bg-warning');
                             }
@@ -685,6 +762,29 @@
                                 $('#smf-gw-memory_progress-1').removeClass('bg-warning');
                                 $('#smf-gw-memory_progress-1').addClass('bg-success');
                             }
+                        }
+                        else if (obj.channel == 'root-wMBus-status') {
+                            // {"cmd": "update", "channel": "root-wMBus-status", "rec": {"srv": "00:ff:b0:0b:ca:ae", "values": {"firmware":"0.6.2018309","hardware":"2.00","id":"a815348340040131","manufacturer":"solos::Tec"}}}
+                            $('#smf-gw-wmbus-type').val(obj.rec.values.manufacturer);
+                            $('#smf-gw-wmbus-adapter').val(obj.rec.values.id);
+                            $('#smf-gw-wmbus-firmware').val(obj.rec.values.firmware);
+                            $('#smf-gw-wmbus-hardware').val(obj.rec.values.hardware);
+
+                        }
+                        else if (obj.channel == 'IF_wMBUS') {
+                            // {"cmd": "update", "channel": "IF_wMBUS", "rec": {"srv": "00:15:3b:02:23:b3", "values": {"installMode":0,"power":0,"protocol":0,"reboot":86400,"s-mode":30,"t-mode":20}}}
+                            $('#smf-gw-wmbus-power').val(obj.rec.values.power);
+                            $('#smf-gw-wmbus-reboot').val(obj.rec.values.reboot);
+                            switch (obj.rec.values.protocol) {
+                                case 0: $('#smf-gw-wmbus-protocol-tmode').prop("checked", true); break;
+                                case 1: $('#smf-gw-wmbus-protocol-smode').prop("checked", true); break;
+                                case 2: $('#smf-gw-wmbus-protocol-alternate').prop("checked", true); break;
+                                case 3: $('#smf-gw-wmbus-protocol-parallel').prop("checked", true); break;
+                                default: break;
+                            }
+                            $('#smf-gw-wmbus-install').prop("checked", obj.rec.values.installMode != 0);
+                            //$('#smf-gw-wmbus-install').prop("checked", true);
+
                         }
                     }
                     $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
@@ -781,6 +881,15 @@
                 }
                 else {
                     $('#smf-gw-tab-memory').addClass('disabled');
+                }
+            });
+
+            $('#smf-form-gw-wireless-mbus').change(function () {
+                if (this.checked) {
+                    $('#smf-gw-tab-wireless-mbus').removeClass('disabled');
+                }
+                else {
+                    $('#smf-gw-tab-wireless-mbus').addClass('disabled');
                 }
             });
 

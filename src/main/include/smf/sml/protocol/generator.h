@@ -140,6 +140,14 @@ namespace node
 				, std::string const& password);
 
 			/**
+			 * Simple root query
+			 */
+			std::size_t get_proc_parameter(cyng::buffer_t const& server_id
+				, obis
+				, std::string const& username
+				, std::string const& password);
+
+			/**
 			 * get list of visible servers/meters - 81 81 10 06 FF FF
 			 */
 			std::size_t get_proc_parameter_srv_visible(cyng::buffer_t const& server_id
@@ -168,9 +176,23 @@ namespace node
 				, std::string const& password);
 
 			/**
-			 * get list of available firmware versions - 81 81 C7 82 FF (CODE_ROOT_MEMORY_USAGE)
+			 * get list of available memory - 81 81 C7 82 FF (CODE_ROOT_MEMORY_USAGE)
 			 */
 			std::size_t get_proc_parameter_memory(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password);
+
+			/**
+			 * get current wireless M-Bus data - 81 06 0F 06 00 FF (CODE_ROOT_W_MBUS_STATUS)
+			 */
+			std::size_t get_proc_parameter_wireless_mbus_status(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password);
+
+			/**
+			 * get current wireless M-Bus interface - 81 06 19 07 00 FF (OBIS_CODE_IF_wMBUS)
+			 */
+			std::size_t get_proc_parameter_wireless_mbus_config(cyng::buffer_t const& server_id
 				, std::string const& username
 				, std::string const& password);
 

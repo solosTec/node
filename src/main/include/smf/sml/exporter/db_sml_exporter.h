@@ -9,8 +9,8 @@
 #define NODE_SML_EXPORTER_DB_SML_H
 
 #include <smf/sml/defs.h>
-#include <smf/sml/intrinsics/obis.h>
 #include <smf/sml/units.h>
+#include <smf/sml/protocol/readout.h>
 #include <cyng/db/session.h>
 #include <cyng/table/meta_interface.h>
 #include <cyng/intrinsics/sets.h>
@@ -27,22 +27,6 @@ namespace node
 		 */
 		class db_exporter
 		{
-			struct readout
-			{
-				readout(boost::uuids::uuid);
-
-				void reset(boost::uuids::uuid, std::size_t);
-
-				readout& set_trx(cyng::buffer_t const&);
-				readout& set_index(std::size_t);
-				readout& set_value(std::string const&, cyng::object);
-				cyng::object get_value(std::string const&) const;
-
-				boost::uuids::uuid pk_;
-				std::size_t idx_;	//!< message index
-				std::string trx_;
-				cyng::param_map_t values_;
-			};
 
 		public:
 			db_exporter(cyng::table::mt_table const&, std::string const& schema);
@@ -100,10 +84,10 @@ namespace node
 				, cyng::object ro_ime
 				, cyng::object act_ime
 				, cyng::object val_time
-				, cyng::object client		//	gateway
-				, cyng::object client_id	//	gateway - formatted
-				, cyng::object server		//	server
-				, cyng::object server_id	//	server - formatted
+				//, cyng::object client		//	gateway
+				, cyng::buffer_t const& client_id	//	gateway - formatted
+				//, cyng::object server		//	server
+				, cyng::buffer_t const& server_id	//	server - formatted
 				, cyng::object status
 				, obis profile);
 

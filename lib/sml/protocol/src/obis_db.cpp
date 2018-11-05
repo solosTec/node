@@ -19,18 +19,18 @@ namespace node
 
 		const char* get_name(obis const& code)
 		{
-			if (code == OBIS_DATA_MANUFACTURER)			return "manufacturer";
-			else if (code == OBIS_DATA_PUBLIC_KEY)		return "public-key";
-			else if (code == OBIS_PROFILE_1_MINUTE)		return "1min";
-			else if (code == OBIS_PROFILE_15_MINUTE)	return "15min";
-			else if (code == OBIS_PROFILE_60_MINUTE)	return "1h";
-			else if (code == OBIS_PROFILE_24_HOUR)		return "1d";
-			else if (code == OBIS_PROFILE_LAST_2_HOURS)	return "last-2h";
-			else if (code == OBIS_PROFILE_LAST_WEEK)	return "last-week";
-			else if (code == OBIS_PROFILE_1_MONTH)		return "1month";
-			else if (code == OBIS_PROFILE_1_YEAR)		return "1y";
-			else if (code == OBIS_PROFILE_INITIAL)		return "initial";
-			else if (code == OBIS_PROFILE)				return "encode-profile";
+			if (OBIS_DATA_MANUFACTURER == code)			return "manufacturer";
+			else if (OBIS_DATA_PUBLIC_KEY == code)		return "public-key";
+			else if (OBIS_PROFILE_1_MINUTE == code)		return "profile-1min";
+			else if (OBIS_PROFILE_15_MINUTE == code)	return "profile-15min";
+			else if (OBIS_PROFILE_60_MINUTE  == code)	return "profile-1h";
+			else if (OBIS_PROFILE_24_HOUR  == code)		return "profile-1d";
+			else if (OBIS_PROFILE_LAST_2_HOURS  == code)	return "profile-last-2h";
+			else if (OBIS_PROFILE_LAST_WEEK  == code)	return "profile-last-week";
+			else if (OBIS_PROFILE_1_MONTH  == code)		return "profile-1month";
+			else if (OBIS_PROFILE_1_YEAR  == code)		return "profile-1y";
+			else if (OBIS_PROFILE_INITIAL  == code)		return "profile-initial";
+			else if (OBIS_PROFILE  == code)				return "encode-profile";
 
 			//
 			//	root elements
@@ -38,7 +38,10 @@ namespace node
 			else if (code == OBIS_CODE_ROOT_NTP)				return "root-NTP";
 			else if (code == OBIS_CODE_ROOT_DEVICE_IDENT)		return "root-device-id";
 			else if (code == OBIS_CODE_DEVICE_CLASS)			return "device-class";
-			else if (code == OBIS_CODE_SERVER_ID)		return "server-id-visible";
+			else if (code == OBIS_CODE_SERVER_ID)				return "server-id-visible";
+			else if (OBIS_CODE_ROOT_FIRMWARE == code)			return "root-firmware";
+			else if (OBIS_CODE_DEVICE_KERNEL == code)			return "device-kernel";
+			else if (OBIS_CODE_DEVICE_ACTIVATED == code)		return "device-activated";
 			else if (code == OBIS_CODE_ROOT_ACCESS_RIGHTS)		return "root-auth";
 			else if (code == OBIS_CODE_ROOT_CUSTOM_INTERFACE)	return "root-custom-interface";
 			else if (code == OBIS_CODE_ROOT_CUSTOM_PARAM)		return "root-custom-param";
@@ -47,10 +50,15 @@ namespace node
 			else if (code == OBIS_CODE_ROOT_GSM)				return "root-GSM";
 			else if (code == OBIS_CODE_ROOT_IPT_STATE)			return "root-IPT-state";
 			else if (code == OBIS_CODE_ROOT_IPT_PARAM)			return "root-IPT-param";
+			else if (OBIS_CODE_PEER_ADDRESS_WANGSM == code)		return "peer-address-wangsm";
+			else if (OBIS_CODE_PEER_ADDRESS == code)			return "peer-address";
+			else if (OBIS_CODE_VERSION == code)					return "version";
 			else if (code == OBIS_CODE_ROOT_GPRS_PARAM)			return "root-GPRS";
-			else if (OBIS_CODE_ROOT_W_MBUS_STATUS == code)		return "root-sMBus-status";
+			else if (OBIS_CODE_ROOT_W_MBUS_STATUS == code)		return "root-wMBus-status";
 			else if (code == OBIS_CODE_ROOT_LAN_DSL)			return "root-LAN";
 			else if (code == OBIS_CODE_ROOT_MEMORY_USAGE)		return "root-memory-usage";
+			else if (OBIS_CODE_ROOT_MEMORY_MIRROR == code)		return "memory-mirror";
+			else if (OBIS_CODE_ROOT_MEMORY_TMP == code)			return "memory-tmp";
 			else if (code == OBIS_CODE_ROOT_DEVICE_TIME)		return "root-device-time";
 			else if (code == OBIS_CODE_ROOT_ACTIVE_DEVICES)		return "root-active-devices";
 			else if (code == OBIS_CODE_ROOT_NEW_DEVICES)		return "root-new-devices";
@@ -74,7 +82,7 @@ namespace node
 			else if (OBIS_W_MBUS_ADAPTER_MANUFACTURER == code)		return "W_MBUS_ADAPTER_MANUFACTURER";
 			else if (OBIS_W_MBUS_ADAPTER_ID == code)				return "W_MBUS_ADAPTER_ID";
 			else if (OBIS_W_MBUS_FIRMWARE == code)					return "W_MBUS_FIRMWARE";
-			else if (OBIS_W_BUS_HARDWARE == code)					return "W_BUS_HARDWARE";
+			else if (OBIS_W_MBUS_HARDWARE == code)					return "W_MBUS_HARDWARE";
 
 			else if (code == OBIS_CLASS_OP_LOG)		return "class-operation-log";
 			else if (code == OBIS_CLASS_EVENT)		return "class-event";
@@ -109,12 +117,11 @@ namespace node
 			//																							/**
 			//																							*	Statuswort (per Schreiben ist das Rücksetzen ausgewählter Statusbits) Unsigned64
 			//																							*/
-			//const static obis	OBIS_CLASS_OP_LOG_STATUS_WORD(0x81, 0x00, 0x60, 0x05, 0x00, 0x00);
-			//const static obis	OBIS_CLASS_OP_LOG_FIELD_STRENGTH(0x81, 0x04, 0x2B, 0x07, 0x00, 0x00);
-			//const static obis	OBIS_CLASS_OP_LOG_CELL(0x81, 0x04, 0x1A, 0x07, 0x00, 0x00);	//	aktuelle Zelleninformation (uint16)
-			//const static obis	OBIS_CLASS_OP_LOG_AREA_CODE(0x81, 0x04, 0x17, 0x07, 0x00, 0x00);	//	aktueller Location - oder Areacode(uint16)
-			//const static obis	OBIS_CLASS_OP_LOG_PROVIDER(0x81, 0x04, 0x0D, 0x06, 0x00, 0x00);	//	aktueller Provider-Identifier(uint32)
-			//const static obis	OBIS_CURRENT_UTC(0x01, 0x00, 0x00, 0x09, 0x0B, 0x00);	//	timestamp UTC - SML_Time (Zeitsynchronisation per NTPZugriff erfolgt)
+			else if (OBIS_CLASS_OP_LOG_STATUS_WORD == code)			return "op-log-status-word";
+			else if (OBIS_CLASS_OP_LOG_FIELD_STRENGTH == code)		return "op-log-field-strength";
+			else if (OBIS_CLASS_OP_LOG_CELL == code)				return "op-log-cell-code";
+			else if (OBIS_CLASS_OP_LOG_AREA_CODE == code)			return "op-log-area-code";
+			else if (OBIS_CLASS_OP_LOG_PROVIDER == code)			return "op-log-provider";
 
 			else if (code == OBIS_CLASS_OP_LSM_STATUS)					return "LSM-status";
 			else if (code == OBIS_CLASS_OP_LSM_ACTOR_ID)				return "LSM-actor-id";

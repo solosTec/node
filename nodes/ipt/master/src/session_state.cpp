@@ -8,12 +8,15 @@
 
 #include "session.h"
 #include <smf/ipt/response.hpp>
+#include <smf/sml/status.h>
+#include <smf/sml/srv_id_io.h>
 
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/factory/set_factory.h>
 #include <cyng/set_cast.h>
 #include <cyng/numeric_cast.hpp>
+
 #include <boost/assert.hpp>
 
 namespace node 
@@ -125,6 +128,8 @@ namespace node
 			vm.register_function("sml.get.proc.param.simple", 6, std::bind(&connect_state::sml_get_proc_param_simple, this, std::placeholders::_1));
 			vm.register_function("sml.get.proc.status.word", 6, std::bind(&connect_state::sml_get_proc_status_word, this, std::placeholders::_1));
 			vm.register_function("sml.get.proc.param.memory", 7, std::bind(&connect_state::sml_get_proc_param_memory, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.param.wmbus.status", 9, std::bind(&connect_state::sml_get_proc_param_wmbus_status, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.param.wmbus.config", 11, std::bind(&connect_state::sml_get_proc_param_wmbus_config, this, std::placeholders::_1));
 			vm.register_function("sml.attention.msg", 6, std::bind(&connect_state::sml_attention_msg, this, std::placeholders::_1));
 
 		}
@@ -266,6 +271,7 @@ namespace node
 			//	* [buffer] OBIS code (81 00 60 05 00 00)
 			//	* [u32] status word
 			const cyng::vector_t frame = ctx.get_frame();
+			const auto word = cyng::numeric_cast<std::uint32_t>(frame.at(5), 0u);
 			CYNG_LOG_TRACE(sr_.logger_, "sml.get.proc.status.word "
 				<< *this
 				<< " - "
@@ -273,13 +279,20 @@ namespace node
 				<< " - "
 				<< frame.at(5).get_class().type_name()
 				<< " - "
-				<< cyng::numeric_cast<std::uint32_t>(frame.at(5), 0u));		
+				<< word);
+
+			node::sml::status stat;
+			stat.reset();
 
 			if (state_ == STATE_TASK) {
 				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ 
+					frame.at(1),	//	trx
+					frame.at(2),	//	idx
 					frame.at(3),	//	server ID
-					frame.at(5)		//	status word
-					});
+					frame.at(4),	//	OBIS code
+									//	status word
+					cyng::param_map_factory("word", node::sml::to_param_map(stat))()
+				});
 			}
 			else {
 				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.status.word - session in wrong state: "
@@ -311,11 +324,14 @@ namespace node
 				<< cyng::numeric_cast<std::uint32_t>(frame.at(5), 0u));
 
 			if (state_ == STATE_TASK) {
-				sr_.mux_.post(tsk_, 8, cyng::tuple_t{
+				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ 
+					frame.at(1),	//	trx
+					frame.at(2),	//	idx
 					frame.at(3),	//	server ID
-					frame.at(5),	//	mirror
-					frame.at(6)		//	tmp
-					});
+					frame.at(4),	//	OBIS code
+									//	status word
+					cyng::param_map_factory("mirror", frame.at(5))("tmp", frame.at(6))()
+				});
 			}
 			else {
 				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.status.word - session in wrong state: "
@@ -333,6 +349,7 @@ namespace node
 			//	* [string] trx
 			//	* [size_t] idx
 			//	* [buffer] server id
+			//	* [buffer] OBIS code
 			//	* [u16] number
 			//	* [buffer] meter ID
 			//	* [buffer] device class (always "---")
@@ -345,14 +362,23 @@ namespace node
 			//	<< cyng::io::to_str(frame));
 
 			if (state_ == STATE_TASK) {
-				sr_.mux_.post(tsk_, 6, cyng::tuple_t{ 
-					cyng::make_object(false),	//	false => visible
+
+				cyng::buffer_t meter;
+				meter = cyng::value_cast(frame.at(6), meter);
+
+				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ 
+					frame.at(1),	//	trx
+					frame.at(2),	//	idx
 					frame.at(3),	//	server ID
-					frame.at(4),	//	number
-					frame.at(5),	//	meter ID
-					frame.at(6),	//	device class
-					frame.at(7)		//	timestamp
-					});
+					frame.at(4),	//	OBIS code
+									//	visible device
+					cyng::param_map_factory("number", frame.at(5))
+					("meter", node::sml::from_server_id(meter))
+					("class", frame.at(7))
+					("timestamp", frame.at(8))
+					("type", node::sml::get_srv_type(meter))
+					()
+				});
 			}
 			else {
 				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.param.srv.visible - session in wrong state: "
@@ -383,14 +409,23 @@ namespace node
 			//	<< cyng::io::to_str(frame));
 
 			if (state_ == STATE_TASK) {
-				sr_.mux_.post(tsk_, 6, cyng::tuple_t{
-					cyng::make_object(true),	//	true => active
+
+				cyng::buffer_t meter;
+				meter = cyng::value_cast(frame.at(6), meter);
+
+				sr_.mux_.post(tsk_, 5, cyng::tuple_t{
+					frame.at(1),	//	trx
+					frame.at(2),	//	idx
 					frame.at(3),	//	server ID
-					frame.at(4),	//	number
-					frame.at(5),	//	meter ID
-					frame.at(6),	//	device class
-					frame.at(7)		//	timestamp
-					});
+					frame.at(4),	//	OBIS code
+									//	visible device
+					cyng::param_map_factory("number", frame.at(5))
+					("meter", node::sml::from_server_id(meter))
+					("class", frame.at(7))
+					("timestamp", frame.at(8))
+					("type", node::sml::get_srv_type(meter))
+					()
+				});
 			}
 			else {
 				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.param.srv.active - session in wrong state: "
@@ -420,7 +455,94 @@ namespace node
 				<< cyng::io::to_str(frame));
 
 			if (state_ == STATE_TASK) {
-				sr_.mux_.post(tsk_, 7, cyng::tuple_t{ frame.at(3), frame.at(4), frame.at(5), frame.at(6), frame.at(7) });
+				//sr_.mux_.post(tsk_, 7, cyng::tuple_t{ frame.at(3), frame.at(4), frame.at(5), frame.at(6), frame.at(7) });
+				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ 
+					frame.at(1),	//	trx
+					frame.at(2),	//	idx
+					frame.at(3),	//	server ID
+					frame.at(4),	//	OBIS code
+									//	firmware
+					cyng::param_map_factory("number", frame.at(5))
+					("firmware", frame.at(6))
+					("version", frame.at(7))
+					("active", frame.at(8))
+					()
+				});
+			}
+			else {
+				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.param.firmware - session in wrong state: "
+					<< *this
+					<< " - "
+					<< cyng::io::to_str(frame));
+			}
+		}
+
+		void session::connect_state::sml_get_proc_param_wmbus_status(cyng::context& ctx)
+		{
+			//	 [c5870024-e64c-43dd-aac4-3f3209a291b9,7228963-2,0,0500153B021774,81060F0600FF,RC1180-MBUS3,A815919638040131,332E3038,322E3030]
+			//
+			//	* [uuid] pk
+			//	* [string] trx
+			//	* [size_t] idx
+			//	* [buffer] server id
+			//	* [buffer] OBIS
+			//	* [string] manufacturer
+			//	* [buffer] device ID
+			//	* [string] firmware version
+			//	* [string] hardware version
+			//
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(sr_.logger_, "sml.get.proc.param.wmbus.status "
+				<< *this
+				<< " - "
+				<< cyng::io::to_str(frame));
+
+			if (state_ == STATE_TASK) {
+				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ 
+					frame.at(1),	//	trx
+					frame.at(2),	//	idx
+					frame.at(3),	//	server ID
+					frame.at(4),	//	OBIS code
+									//	firmware
+					cyng::param_map_factory("manufacturer", frame.at(5))
+					("id", frame.at(6))
+					("firmware", frame.at(7))
+					("hardware", frame.at(8))
+					()
+				});
+			}
+			else {
+				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.param.firmware - session in wrong state: "
+					<< *this
+					<< " - "
+					<< cyng::io::to_str(frame));
+			}
+		}
+
+		void session::connect_state::sml_get_proc_param_wmbus_config(cyng::context& ctx)
+		{
+			//	[0cbb85fa-7c66-4f5f-891e-9a409c054137,1701175-3,0,0500153B01EC46,8106190700FF,0,1e,14,00015180,0,null]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(sr_.logger_, "sml.get.proc.param.wmbus.config "
+				<< *this
+				<< " - "
+				<< cyng::io::to_str(frame));
+
+			if (state_ == STATE_TASK) {
+				sr_.mux_.post(tsk_, 5, cyng::tuple_t{
+					frame.at(1),	//	trx
+					frame.at(2),	//	idx
+					frame.at(3),	//	server ID
+					frame.at(4),	//	OBIS code
+									//	wireless M-Bus configuration
+					cyng::param_map_factory("protocol", frame.at(5))
+					("sMode", cyng::numeric_cast<std::uint16_t>(frame.at(6), 0))
+					("tMode", cyng::numeric_cast<std::uint16_t>(frame.at(7), 0))
+					("reboot", frame.at(8))
+					("power", frame.at(9))
+					("installMode", frame.at(9))
+					()
+					});
 			}
 			else {
 				CYNG_LOG_ERROR(sr_.logger_, "sml.get.proc.param.firmware - session in wrong state: "

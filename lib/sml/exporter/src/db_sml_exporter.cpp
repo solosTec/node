@@ -321,10 +321,10 @@ namespace node
 				, ro_.get_value("roTime")
 				, ro_.get_value("actTime")
 				, ro_.get_value("valTime")
-				, ro_.get_value("client")	//	gateway
-				, ro_.get_value("clientId")	//	gateway - formatted
-				, ro_.get_value("server")	//	server
-				, ro_.get_value("serverId")	//	server - formatted
+				//, ro_.get_value("client")	//	gateway
+				, ro_.client_id_	//	gateway - formatted (00:15:3b:02:29:7e)
+				//, ro_.get_value("server")	//	server
+				, ro_.server_id_	//	server - formatted
 				, ro_.get_value("status")
 				, path.empty() ? obis() : path.front());
 		}
@@ -558,22 +558,14 @@ namespace node
 
 		std::string db_exporter::read_server_id(cyng::object obj)
 		{
-			cyng::buffer_t buffer;
-			buffer = cyng::value_cast(obj, buffer);
-			ro_.set_value("server", cyng::make_object(buffer));
-			const auto str = from_server_id(buffer);
-			ro_.set_value("serverId", cyng::make_object(str));
-			return str;
+			ro_.server_id_ = cyng::value_cast(obj, ro_.server_id_);
+			return from_server_id(ro_.server_id_);
 		}
 
 		std::string db_exporter::read_client_id(cyng::object obj)
 		{
-			cyng::buffer_t buffer;
-			buffer = cyng::value_cast(obj, buffer);
-			ro_.set_value("client", cyng::make_object(buffer));
-			const auto str = from_server_id(buffer);
-			ro_.set_value("clientId", cyng::make_object(str));
-			return str;
+			ro_.client_id_ = cyng::value_cast(obj, ro_.client_id_);
+			return from_server_id(ro_.client_id_);
 		}
 
 		std::int8_t db_exporter::read_scaler(cyng::object obj)
@@ -748,10 +740,8 @@ namespace node
 			, cyng::object obj_ro_time
 			, cyng::object obj_act_time
 			, cyng::object obj_val_time
-			, cyng::object obj_client		//	gateway
-			, cyng::object obj_client_id	//	gateway - formatted
-			, cyng::object obj_server		//	server
-			, cyng::object obj_server_id	//	server - formatted
+			, cyng::buffer_t const& client_id	//	gateway - formatted
+			, cyng::buffer_t const& server_id	//	server - formatted
 			, cyng::object obj_status
 			, obis profile)
 		{
@@ -783,9 +773,9 @@ namespace node
 				//	601a7c18-ee9a-4957-8d06-d255b6b42ca2|533395235|1|2458300.51017361|2458300.51070602|48450161|0500153b026d31|02-d81c-05252350-ff-02|50232505|0|-150802599|581869302
 				//	b70815c1-74e9-4881-b9d8-00db2f9a7fe6|49606703|4|2458300.51018519|2458300.51070602|44489752|0500153b026d35|01-a815-78957202-01-02|02729578|640|1323567403|581869302
 
-				cyng::buffer_t server, client;
-				server = cyng::value_cast(obj_server, server);
-				client = cyng::value_cast(obj_client, client);
+				//cyng::buffer_t server, client;
+				//server = cyng::value_cast(obj_server, server);
+				//client = cyng::value_cast(obj_client, client);
 
 				stmt->push(cyng::make_object(pk), 0)	//	ident
 					.push(cyng::make_object(trx), 16)	//	trxID
@@ -793,11 +783,11 @@ namespace node
 					.push(obj_ro_time, 0)	//	roTime
 					.push(obj_act_time, 0)	//	actTime
 					.push(obj_val_time, 0)	//	valTime
-					.push(cyng::make_object(cyng::io::to_hex(client)), 0)	//	gateway/client
+					.push(cyng::make_object(cyng::io::to_hex(client_id)), 0)	//	gateway/client
 																			//	clientId from_server_id
-					.push(cyng::make_object(sml::from_server_id(server)), 0)	//	server
+					.push(cyng::make_object(sml::from_server_id(server_id)), 0)	//	server
 																				//	serverId
-					.push(cyng::make_object(sml::get_serial(server)), 0)	//	meter
+					.push(cyng::make_object(sml::get_serial(server_id)), 0)	//	meter
 					.push(obj_status, 0)	//	status
 					.push(cyng::make_object(source_), 0)	//	source
 					.push(cyng::make_object(channel_), 0)	//	channel
@@ -811,6 +801,9 @@ namespace node
 				//	pk|trxID|msgIdx|roTime|actTime|valTime|gateway|server|status|source|channel|target
 				//	0bf4bfff-6a83-411d-ab60-1e98fc232fd2|51207|1|2458299.33280093|2458301.43333333|98573619|00:15:3b:02:29:7e|01-e61e-13090016-3c-07|0|-1324790809|-1649078317|water@solostec
 
+				auto obj_client = cyng::make_object(from_server_id(client_id));
+				auto obj_server = cyng::make_object(from_server_id(server_id));
+
 				//	bind parameters
 				stmt->push(cyng::make_object(pk), 0)	//	pk
 					.push(cyng::make_object(trx), 16)	//	trxID
@@ -819,9 +812,9 @@ namespace node
 					.push(obj_act_time, 0)	//	actTime
 					.push(obj_val_time, 0)	//	valTime
 											//	client
-					.push(obj_client_id, 0)	//	gateway
+					.push(obj_client, 0)	//	gateway
 											//	server
-					.push(obj_server_id, 0)	//	server
+					.push(obj_server, 0)	//	server
 					.push(obj_status, 0)	//	status
 					.push(cyng::make_object(source_), 0)	//	source
 					.push(cyng::make_object(channel_), 0)	//	channel
@@ -891,48 +884,6 @@ namespace node
 
 		}
 
-
-		db_exporter::readout::readout(boost::uuids::uuid pk)
-			: pk_(pk)
-			, idx_(0)
-			, trx_()
-			, values_()
-		{}
-
-		void db_exporter::readout::reset(boost::uuids::uuid pk, std::size_t idx)
-		{
-			pk_ = pk;
-			idx_ = idx;
-			trx_.clear();
-			values_.clear();
-		}
-
-		db_exporter::readout& db_exporter::readout::set_trx(cyng::buffer_t const& buffer)
-		{
-			trx_ = cyng::io::to_ascii(buffer);
-			return *this;
-		}
-
-		db_exporter::readout& db_exporter::readout::set_index(std::size_t idx)
-		{
-			idx_ = idx;
-			return *this;
-		}
-
-		db_exporter::readout& db_exporter::readout::set_value(std::string const& name, cyng::object value)
-		{
-			values_[name] = value;
-			return *this;
-		}
-
-		cyng::object db_exporter::readout::get_value(std::string const& name) const
-		{
-			auto pos = values_.find(name);
-			return (pos != values_.end())
-				? pos->second
-				: cyng::make_object()
-				;
-		}
 
 
 	}	//	sml

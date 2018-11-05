@@ -21,6 +21,7 @@ namespace node
 	namespace sml
 	{
 		bool is_mbus(cyng::buffer_t const&);
+		bool is_w_mbus(cyng::buffer_t const&);
 		bool is_serial(cyng::buffer_t const&);
 		bool is_gateway(cyng::buffer_t const&);
 		bool is_dke_1(cyng::buffer_t const&);
@@ -36,6 +37,7 @@ namespace node
 			SRV_IMEI,	//	IMEI
 			SRV_RWE,	//	RWE
 			SRV_DKE_2,	//	E DIN 43863-5:2010-07
+			SRV_W_MBUS,	//	wireless M-Bus
 			SRV_OTHER
 		};
 

@@ -11,12 +11,7 @@
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/store/db.h>
-//#include <cyng/table/key.hpp>
 #include <cyng/vm/context.h>
-//#include <cyng/io/serializer.h>
-//#include <atomic>
-//#include <boost/random.hpp>
-//#include <boost/uuid/random_generator.hpp>
 
 namespace node 
 {
@@ -41,11 +36,12 @@ namespace node
 	private:
 		void bus_req_reboot_client(cyng::context& ctx);
 		void bus_req_query_gateway(cyng::context& ctx);
-		void bus_res_query_status_word(cyng::context& ctx);
-		void bus_res_query_srv_visible(cyng::context& ctx);
-		void bus_res_query_srv_active(cyng::context& ctx);
-		void bus_res_query_firmware(cyng::context& ctx);
-		void bus_res_query_memory(cyng::context& ctx);
+		void bus_res_query_gateway(cyng::context& ctx);
+		//void bus_res_query_srv_visible(cyng::context& ctx);
+		//void bus_res_query_srv_active(cyng::context& ctx);
+		//void bus_res_query_firmware(cyng::context& ctx);
+		//void bus_res_query_memory(cyng::context& ctx);
+		//void bus_res_query_wmbus_status(cyng::context& ctx);
 		void bus_res_attention_code(cyng::context& ctx);
 
 		std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> find_peer(cyng::table::key_type const& key_session

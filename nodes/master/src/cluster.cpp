@@ -32,12 +32,14 @@ namespace node
 	{
 		ctx.attach(cyng::register_function("bus.req.reboot.client", 4, std::bind(&cluster::bus_req_reboot_client, this, std::placeholders::_1)));
 		ctx.attach(cyng::register_function("bus.req.query.gateway", 5, std::bind(&cluster::bus_req_query_gateway, this, std::placeholders::_1)));
+		ctx.attach(cyng::register_function("bus.res.query.gateway", 6, std::bind(&cluster::bus_res_query_gateway, this, std::placeholders::_1)));
 
-		ctx.attach(cyng::register_function("bus.res.query.status.word", 5, std::bind(&cluster::bus_res_query_status_word, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("bus.res.query.srv.visible", 8, std::bind(&cluster::bus_res_query_srv_visible, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("bus.res.query.srv.active", 8, std::bind(&cluster::bus_res_query_srv_active, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("bus.res.query.firmware", 8, std::bind(&cluster::bus_res_query_firmware, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("bus.res.query.memory", 6, std::bind(&cluster::bus_res_query_memory, this, std::placeholders::_1)));
+		//ctx.attach(cyng::register_function("bus.res.query.status.word", 5, std::bind(&cluster::bus_res_query_status_word, this, std::placeholders::_1)));
+		//ctx.attach(cyng::register_function("bus.res.query.srv.visible", 8, std::bind(&cluster::bus_res_query_srv_visible, this, std::placeholders::_1)));
+		//ctx.attach(cyng::register_function("bus.res.query.srv.active", 8, std::bind(&cluster::bus_res_query_srv_active, this, std::placeholders::_1)));
+		//ctx.attach(cyng::register_function("bus.res.query.firmware", 8, std::bind(&cluster::bus_res_query_firmware, this, std::placeholders::_1)));
+		//ctx.attach(cyng::register_function("bus.res.query.memory", 6, std::bind(&cluster::bus_res_query_memory, this, std::placeholders::_1)));
+		//ctx.attach(cyng::register_function("bus.res.query.wmbus.status", 0, std::bind(&cluster::bus_res_query_wmbus_status, this, std::placeholders::_1)));
 		ctx.attach(cyng::register_function("bus.res.attention.code", 6, std::bind(&cluster::bus_res_attention_code, this, std::placeholders::_1)));
 
 	}
@@ -178,18 +180,28 @@ namespace node
 				, cyng::store::read_access("TGateway"));
 		}
 
-	void cluster::bus_res_query_status_word(cyng::context& ctx)
+	void cluster::bus_res_query_gateway(cyng::context& ctx)
 	{
-		//	[6771b00a-caa2-47d3-aeb2-0f13920d034e,3,438eb8b2-907f-4269-ae2d-ab04175de38f,00:ff:b0:0b:ca:ae,#((256:false),(8192:true),(16384:false),(65536:true),(131072:true),(262144:true),(524288:false),(4294967296:false))]
+		//	[9e3dda5d-7c0b-4a8d-b25d-eea3a113a856,16,0fc100f8-0f1d-4c36-a131-6351bcf467d7,00:15:3b:02:29:80,op-log-status-word,%(("status.word":00072202))]
+		//	[9e3dda5d-7c0b-4a8d-b25d-eea3a113a856,17,0fc100f8-0f1d-4c36-a131-6351bcf467d7,00:15:3b:01:ec:46,root-device-id,%(("active":false),("firmware":INSTALLATION [1]),("number":00000004),("version":VARIOMUC-ETHERNET-1.406_14132___18X022e))]
+		//
+		//	* source
+		//	* bus sequence
+		//	* tag_ws
+		//	* server id
+		//	* OBIS name
+		//	* parameters
+		//
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "bus.res.query.status.word " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, "bus.res.query.gateway " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] source
 			std::uint64_t,			//	[1] sequence
 			boost::uuids::uuid,		//	[2] websocket tag
 			std::string,			//	[3] server id (key)
-			cyng::attr_map_t		//	[4] status word
+			std::string,			//	[4] OBIS name
+			cyng::param_map_t		//	[5] params
 		>(frame);
 
 		db_.access([&](const cyng::store::table* tbl_cluster)->void {
@@ -199,7 +211,7 @@ namespace node
 				auto peer = cyng::object_cast<session>(rec["self"]);
 				if (peer != nullptr) {
 
-					CYNG_LOG_INFO(logger_, "bus.res.query.status.word - send to peer "
+					CYNG_LOG_INFO(logger_, "bus.res.query.gateway - send to peer "
 						<< cyng::value_cast<std::string>(rec["class"], "")
 						<< '@'
 						<< peer->vm_.tag());
@@ -207,212 +219,221 @@ namespace node
 					//
 					//	forward data
 					//
-					peer->vm_.async_run(node::bus_res_query_status_word(std::get<0>(tpl)
+					peer->vm_.async_run(node::bus_res_query_gateway(std::get<0>(tpl)
 						, std::get<1>(tpl)		//	sequence
 						, std::get<2>(tpl)		//	websocket tag
 						, std::get<3>(tpl)		//	server id
-						, std::get<4>(tpl)));	//	status word
+						, std::get<4>(tpl)		//	OBIS name
+						, std::get<5>(tpl)));	//	params
 				}
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "bus.res.query.status.word - peer not found " << std::get<0>(tpl));
+				CYNG_LOG_WARNING(logger_, "bus.res.query.gateway - peer not found " << std::get<0>(tpl));
 			}
 		}, cyng::store::read_access("_Cluster"));
 	}
 
-	void cluster::bus_res_query_srv_visible(cyng::context& ctx)
-	{
-		//	[6b9c001a-4390-40b5-9abc-25c6180cc8b9,21,00:15:3b:02:29:7e,0005,01-e61e-29436587-bf-03,---,2018-08-29 19:26:29.00000000]
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "bus.res.query.srv.visible " << cyng::io::to_str(frame));
+	//void cluster::bus_res_query_srv_visible(cyng::context& ctx)
+	//{
+	//	//	[6b9c001a-4390-40b5-9abc-25c6180cc8b9,21,00:15:3b:02:29:7e,0005,01-e61e-29436587-bf-03,---,2018-08-29 19:26:29.00000000]
+	//	const cyng::vector_t frame = ctx.get_frame();
+	//	CYNG_LOG_INFO(logger_, "bus.res.query.srv.visible " << cyng::io::to_str(frame));
 
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,		//	[0] source
-			std::uint64_t,			//	[1] sequence
-			boost::uuids::uuid,		//	[2] websocket tag
-			std::uint16_t,			//	[3] list number
-			std::string,			//	[4] server id (key)
-			std::string,			//	[5] meter
-			std::string,			//	[6] device class
-			std::chrono::system_clock::time_point,	//	[7] last status update
-			std::uint32_t			//	[8] server type
-		>(frame);
-
-
-		db_.access([&](const cyng::store::table* tbl_cluster)->void {
-
-			auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<0>(tpl)));
-			if (!rec.empty()) {
-				auto peer = cyng::object_cast<session>(rec["self"]);
-				if (peer != nullptr) {
-
-					CYNG_LOG_INFO(logger_, "bus.res.query.srv.visible - send to peer "
-						<< cyng::value_cast<std::string>(rec["class"], "")
-						<< '@'
-						<< peer->vm_.tag());
-
-					//
-					//	forward data
-					//
-					peer->vm_.async_run(node::bus_res_query_srv_visible(std::get<0>(tpl)
-						, std::get<1>(tpl)		//	sequence
-						, std::get<2>(tpl)		//	websocket tag
-						, std::get<3>(tpl)		//	list number
-						, std::get<4>(tpl)		//	server id
-						, std::get<5>(tpl)		//	meter
-						, std::get<6>(tpl)		//	device class
-						, std::get<7>(tpl)		//	last status update
-						, std::get<8>(tpl)));
-				}
-			}
-			else {
-				CYNG_LOG_WARNING(logger_, "bus.res.query.srv.visible - peer not found " << std::get<0>(tpl));
-			}
-		}, cyng::store::read_access("_Cluster"));
-	}
-
-	void cluster::bus_res_query_srv_active(cyng::context& ctx)
-	{
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "bus.res.query.srv.active " << cyng::io::to_str(frame));
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,		//	[0] source
-			std::uint64_t,			//	[1] sequence
-			boost::uuids::uuid,		//	[2] websocket tag
-			std::uint16_t,			//	[3] list number
-			std::string,			//	[4] server id (key)
-			std::string,			//	[5] meter
-			std::string,			//	[6] device class
-			std::chrono::system_clock::time_point,	//	[7] last status update
-			std::uint32_t			//	[8] server type
-		>(frame);
+	//	auto const tpl = cyng::tuple_cast<
+	//		boost::uuids::uuid,		//	[0] source
+	//		std::uint64_t,			//	[1] sequence
+	//		boost::uuids::uuid,		//	[2] websocket tag
+	//		std::uint16_t,			//	[3] list number
+	//		std::string,			//	[4] server id (key)
+	//		std::string,			//	[5] meter
+	//		std::string,			//	[6] device class
+	//		std::chrono::system_clock::time_point,	//	[7] last status update
+	//		std::uint32_t			//	[8] server type
+	//	>(frame);
 
 
-		db_.access([&](const cyng::store::table* tbl_cluster)->void {
-			auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<0>(tpl)));
-			if (!rec.empty()) {
-				auto peer = cyng::object_cast<session>(rec["self"]);
-				if (peer != nullptr) {
+	//	db_.access([&](const cyng::store::table* tbl_cluster)->void {
 
-					CYNG_LOG_INFO(logger_, "bus.res.query.srv.active - send to peer "
-						<< cyng::value_cast<std::string>(rec["class"], "")
-						<< '@'
-						<< peer->vm_.tag());
+	//		auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<0>(tpl)));
+	//		if (!rec.empty()) {
+	//			auto peer = cyng::object_cast<session>(rec["self"]);
+	//			if (peer != nullptr) {
 
-					//
-					//	forward data
-					//
-					peer->vm_.async_run(node::bus_res_query_srv_active(std::get<0>(tpl)
-						, std::get<1>(tpl)	//	sequence
-						, std::get<2>(tpl)		//	websocket tag
-						, std::get<3>(tpl)		//	list number
-						, std::get<4>(tpl)		//	server id
-						, std::get<5>(tpl)		//	meter
-						, std::get<6>(tpl)		//	device class
-						, std::get<7>(tpl)		//	last status update
-						, std::get<8>(tpl)));
-				}
-			}
-			else {
-				CYNG_LOG_WARNING(logger_, "bus.res.query.srv.active - peer not found " << std::get<0>(tpl));
-			}
-		}, cyng::store::read_access("_Cluster"));
-	}
+	//				CYNG_LOG_INFO(logger_, "bus.res.query.srv.visible - send to peer "
+	//					<< cyng::value_cast<std::string>(rec["class"], "")
+	//					<< '@'
+	//					<< peer->vm_.tag());
 
-	void cluster::bus_res_query_firmware(cyng::context& ctx)
-	{
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "bus.res.query.firmware " << cyng::io::to_str(frame));
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,		//	[0] source
-			std::uint64_t,			//	[1] sequence
-			boost::uuids::uuid,		//	[2] websocket tag
-			std::uint32_t,			//	[3] list number
-			std::string,			//	[4] server id (key)
-			std::string,			//	[5] section
-			std::string,			//	[6] version
-			bool					//	[7] active/inactive
-		>(frame);
+	//				//
+	//				//	forward data
+	//				//
+	//				peer->vm_.async_run(node::bus_res_query_srv_visible(std::get<0>(tpl)
+	//					, std::get<1>(tpl)		//	sequence
+	//					, std::get<2>(tpl)		//	websocket tag
+	//					, std::get<3>(tpl)		//	list number
+	//					, std::get<4>(tpl)		//	server id
+	//					, std::get<5>(tpl)		//	meter
+	//					, std::get<6>(tpl)		//	device class
+	//					, std::get<7>(tpl)		//	last status update
+	//					, std::get<8>(tpl)));
+	//			}
+	//		}
+	//		else {
+	//			CYNG_LOG_WARNING(logger_, "bus.res.query.srv.visible - peer not found " << std::get<0>(tpl));
+	//		}
+	//	}, cyng::store::read_access("_Cluster"));
+	//}
 
-
-		db_.access([&](const cyng::store::table* tbl_cluster)->void {
-			auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<0>(tpl)));
-			if (!rec.empty()) {
-				auto peer = cyng::object_cast<session>(rec["self"]);
-				if (peer != nullptr) {
-
-					CYNG_LOG_INFO(logger_, "bus.res.query.firmware - send to peer "
-						<< cyng::value_cast<std::string>(rec["class"], "")
-						<< '@'
-						<< peer->vm_.tag()
-						<< " - "
-						<< std::get<6>(tpl));
-
-					//
-					//	forward data
-					//
-					peer->vm_.async_run(node::bus_res_query_firmware(std::get<0>(tpl)
-						, std::get<1>(tpl)	//	sequence
-						, std::get<2>(tpl)		//	websocket tag
-						, std::get<3>(tpl)		//	list number
-						, std::get<4>(tpl)		//	server id
-						, std::get<5>(tpl)		//	section
-						, std::get<6>(tpl)		//	version
-						, std::get<7>(tpl)));	//	active/inactive
-				}
-			}
-			else {
-				CYNG_LOG_WARNING(logger_, "bus.res.query.firmware - peer not found " << std::get<0>(tpl));
-			}
-		}, cyng::store::read_access("_Cluster"));
-	}
-
-	void cluster::bus_res_query_memory(cyng::context& ctx)
-	{
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "bus.res.query.memory " << cyng::io::to_str(frame));
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,		//	[0] source
-			std::uint64_t,			//	[1] sequence
-			boost::uuids::uuid,		//	[2] websocket tag
-			std::string,			//	[3] server id (key)
-			std::uint8_t,			//	[4] mirror
-			std::uint8_t			//	[5] tmp
-		>(frame);
+	//void cluster::bus_res_query_srv_active(cyng::context& ctx)
+	//{
+	//	const cyng::vector_t frame = ctx.get_frame();
+	//	CYNG_LOG_INFO(logger_, "bus.res.query.srv.active " << cyng::io::to_str(frame));
+	//	auto const tpl = cyng::tuple_cast<
+	//		boost::uuids::uuid,		//	[0] source
+	//		std::uint64_t,			//	[1] sequence
+	//		boost::uuids::uuid,		//	[2] websocket tag
+	//		std::uint16_t,			//	[3] list number
+	//		std::string,			//	[4] server id (key)
+	//		std::string,			//	[5] meter
+	//		std::string,			//	[6] device class
+	//		std::chrono::system_clock::time_point,	//	[7] last status update
+	//		std::uint32_t			//	[8] server type
+	//	>(frame);
 
 
-		db_.access([&](const cyng::store::table* tbl_cluster)->void {
-			auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<0>(tpl)));
-			if (!rec.empty()) {
-				auto peer = cyng::object_cast<session>(rec["self"]);
-				if (peer != nullptr) {
+	//	db_.access([&](const cyng::store::table* tbl_cluster)->void {
+	//		auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<0>(tpl)));
+	//		if (!rec.empty()) {
+	//			auto peer = cyng::object_cast<session>(rec["self"]);
+	//			if (peer != nullptr) {
 
-					CYNG_LOG_INFO(logger_, "bus.res.query.memory - send to peer "
-						<< cyng::value_cast<std::string>(rec["class"], "")
-						<< '@'
-						<< peer->vm_.tag()
-						<< " - "
-						<< std::get<4>(tpl)
-						<< "% - "
-						<< std::get<5>(tpl)
-						<< "%");
+	//				CYNG_LOG_INFO(logger_, "bus.res.query.srv.active - send to peer "
+	//					<< cyng::value_cast<std::string>(rec["class"], "")
+	//					<< '@'
+	//					<< peer->vm_.tag());
 
-					//
-					//	forward data
-					//
-					peer->vm_.async_run(node::bus_res_query_memory(std::get<0>(tpl)
-						, std::get<1>(tpl)	//	sequence
-						, std::get<2>(tpl)		//	websocket tag
-						, std::get<3>(tpl)		//	server id
-						, std::get<4>(tpl)		//	mirror
-						, std::get<5>(tpl)));		//	tmp
-				}
-			}
-			else {
-				CYNG_LOG_WARNING(logger_, "bus.res.query.memory - peer not found " << std::get<0>(tpl));
-			}
-		}, cyng::store::read_access("_Cluster"));
-	}
+	//				//
+	//				//	forward data
+	//				//
+	//				peer->vm_.async_run(node::bus_res_query_srv_active(std::get<0>(tpl)
+	//					, std::get<1>(tpl)	//	sequence
+	//					, std::get<2>(tpl)		//	websocket tag
+	//					, std::get<3>(tpl)		//	list number
+	//					, std::get<4>(tpl)		//	server id
+	//					, std::get<5>(tpl)		//	meter
+	//					, std::get<6>(tpl)		//	device class
+	//					, std::get<7>(tpl)		//	last status update
+	//					, std::get<8>(tpl)));
+	//			}
+	//		}
+	//		else {
+	//			CYNG_LOG_WARNING(logger_, "bus.res.query.srv.active - peer not found " << std::get<0>(tpl));
+	//		}
+	//	}, cyng::store::read_access("_Cluster"));
+	//}
+
+	//void cluster::bus_res_query_firmware(cyng::context& ctx)
+	//{
+	//	const cyng::vector_t frame = ctx.get_frame();
+	//	CYNG_LOG_INFO(logger_, "bus.res.query.firmware " << cyng::io::to_str(frame));
+	//	auto const tpl = cyng::tuple_cast<
+	//		boost::uuids::uuid,		//	[0] source
+	//		std::uint64_t,			//	[1] sequence
+	//		boost::uuids::uuid,		//	[2] websocket tag
+	//		std::uint32_t,			//	[3] list number
+	//		std::string,			//	[4] server id (key)
+	//		std::string,			//	[5] section
+	//		std::string,			//	[6] version
+	//		bool					//	[7] active/inactive
+	//	>(frame);
+
+
+	//	db_.access([&](const cyng::store::table* tbl_cluster)->void {
+	//		auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<0>(tpl)));
+	//		if (!rec.empty()) {
+	//			auto peer = cyng::object_cast<session>(rec["self"]);
+	//			if (peer != nullptr) {
+
+	//				CYNG_LOG_INFO(logger_, "bus.res.query.firmware - send to peer "
+	//					<< cyng::value_cast<std::string>(rec["class"], "")
+	//					<< '@'
+	//					<< peer->vm_.tag()
+	//					<< " - "
+	//					<< std::get<6>(tpl));
+
+	//				//
+	//				//	forward data
+	//				//
+	//				peer->vm_.async_run(node::bus_res_query_firmware(std::get<0>(tpl)
+	//					, std::get<1>(tpl)	//	sequence
+	//					, std::get<2>(tpl)		//	websocket tag
+	//					, std::get<3>(tpl)		//	list number
+	//					, std::get<4>(tpl)		//	server id
+	//					, std::get<5>(tpl)		//	section
+	//					, std::get<6>(tpl)		//	version
+	//					, std::get<7>(tpl)));	//	active/inactive
+	//			}
+	//		}
+	//		else {
+	//			CYNG_LOG_WARNING(logger_, "bus.res.query.firmware - peer not found " << std::get<0>(tpl));
+	//		}
+	//	}, cyng::store::read_access("_Cluster"));
+	//}
+
+	//void cluster::bus_res_query_memory(cyng::context& ctx)
+	//{
+	//	const cyng::vector_t frame = ctx.get_frame();
+	//	CYNG_LOG_INFO(logger_, "bus.res.query.memory " << cyng::io::to_str(frame));
+	//	auto const tpl = cyng::tuple_cast<
+	//		boost::uuids::uuid,		//	[0] source
+	//		std::uint64_t,			//	[1] sequence
+	//		boost::uuids::uuid,		//	[2] websocket tag
+	//		std::string,			//	[3] server id (key)
+	//		std::uint8_t,			//	[4] mirror
+	//		std::uint8_t			//	[5] tmp
+	//	>(frame);
+
+
+	//	db_.access([&](const cyng::store::table* tbl_cluster)->void {
+	//		auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<0>(tpl)));
+	//		if (!rec.empty()) {
+	//			auto peer = cyng::object_cast<session>(rec["self"]);
+	//			if (peer != nullptr) {
+
+	//				CYNG_LOG_INFO(logger_, "bus.res.query.memory - send to peer "
+	//					<< cyng::value_cast<std::string>(rec["class"], "")
+	//					<< '@'
+	//					<< peer->vm_.tag()
+	//					<< " - "
+	//					<< std::get<4>(tpl)
+	//					<< "% - "
+	//					<< std::get<5>(tpl)
+	//					<< "%");
+
+	//				//
+	//				//	forward data
+	//				//
+	//				peer->vm_.async_run(node::bus_res_query_memory(std::get<0>(tpl)
+	//					, std::get<1>(tpl)	//	sequence
+	//					, std::get<2>(tpl)		//	websocket tag
+	//					, std::get<3>(tpl)		//	server id
+	//					, std::get<4>(tpl)		//	mirror
+	//					, std::get<5>(tpl)));		//	tmp
+	//			}
+	//		}
+	//		else {
+	//			CYNG_LOG_WARNING(logger_, "bus.res.query.memory - peer not found " << std::get<0>(tpl));
+	//		}
+	//	}, cyng::store::read_access("_Cluster"));
+	//}
+
+	//void cluster::bus_res_query_wmbus_status(cyng::context& ctx)
+	//{
+	//	//	[9e3dda5d-7c0b-4a8d-b25d-eea3a113a856,4,0fc100f8-0f1d-4c36-a131-6351bcf467d7,00:ff:b0:0b:ca:ae,solos::Tec,a8 15 34 83 40 04 01 31,0.6.2018305,2.00]
+	//	const cyng::vector_t frame = ctx.get_frame();
+	//	CYNG_LOG_INFO(logger_, "bus.res.query.wmbus.status " << cyng::io::to_str(frame));
+
+	//}
 
 	void cluster::bus_res_attention_code(cyng::context& ctx)
 	{

@@ -11,9 +11,12 @@
 #include <smf/sml/protocol/reader.h>
 #include <smf/cluster/generator.h>
 #include <smf/sml/status.h>
+#include <smf/sml/obis_db.h>
 
 #include <cyng/vm/generator.h>
 #include <cyng/io/io_bytes.hpp>
+#include <cyng/io/io_buffer.h>
+
 #ifdef SMF_IO_LOG
 #include <cyng/io/hex_dump.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -210,131 +213,191 @@ namespace node
 	}
 
 	//	-- slot[5]
-	cyng::continuation query_gateway::process(cyng::buffer_t const& srv
-		, std::uint32_t status)
+	cyng::continuation query_gateway::process(std::string trx,
+		std::size_t idx,
+		std::string server_id,
+		cyng::buffer_t code,
+		cyng::param_map_t params)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> sml.get.proc.status.word - "
-			<< status);
+			<< "> response #"
+			<< seq_cluster_
+			<< " from "
+			<< server_id);
 
-		sml::status word;
-		word.reset(status);
-
-		//
-		//	create status word to convert into attribute map
-		//
-		bus_->vm_.async_run(bus_res_query_status_word(tag_remote_
+		bus_->vm_.async_run(bus_res_query_gateway(tag_remote_
 			, seq_cluster_
 			, tag_ws_
-			, sml::from_server_id(srv)
-			, sml::to_attr_map(word)));
+			, server_id
+			, sml::get_name(code)
+			, params));
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
+
+	//cyng::continuation query_gateway::process(cyng::buffer_t const& srv
+	//	, std::uint32_t status)
+	//{
+	//	CYNG_LOG_INFO(logger_, "task #"
+	//		<< base_.get_id()
+	//		<< " <"
+	//		<< base_.get_class_name()
+	//		<< "> sml.get.proc.status.word - "
+	//		<< status);
+
+	//	sml::status word;
+	//	word.reset(status);
+
+	//	//
+	//	//	create status word to convert into attribute map
+	//	//
+	//	bus_->vm_.async_run(bus_res_query_status_word(tag_remote_
+	//		, seq_cluster_
+	//		, tag_ws_
+	//		, sml::from_server_id(srv)
+	//		, sml::to_attr_map(word)));
+
+	//	return cyng::continuation::TASK_CONTINUE;
+	//}
 
 	//	-- slot[6]
-	cyng::continuation query_gateway::process(bool active
-		, cyng::buffer_t const& srv
-		, std::uint16_t nr
-		, cyng::buffer_t const& meter
-		, cyng::buffer_t const& dclass
-		, std::chrono::system_clock::time_point st)
-	{
-		CYNG_LOG_INFO(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> #"
-			<< nr
-			<< " - "
-			<< sml::from_server_id(meter));
+	//cyng::continuation query_gateway::process(bool active
+	//	, cyng::buffer_t const& srv
+	//	, std::uint16_t nr
+	//	, cyng::buffer_t const& meter
+	//	, cyng::buffer_t const& dclass
+	//	, std::chrono::system_clock::time_point st)
+	//{
+	//	CYNG_LOG_INFO(logger_, "task #"
+	//		<< base_.get_id()
+	//		<< " <"
+	//		<< base_.get_class_name()
+	//		<< "> #"
+	//		<< nr
+	//		<< " - "
+	//		<< sml::from_server_id(meter));
 
-		BOOST_ASSERT(server_id_ == srv);
-		if (active) {
-			bus_->vm_.async_run(bus_res_query_srv_active(tag_remote_
-				, seq_cluster_
-				, tag_ws_
-				, nr
-				, sml::from_server_id(srv)
-				, sml::from_server_id(meter)
-				, std::string(dclass.begin(), dclass.end())
-				, st
-				, sml::get_srv_type(meter)));
+	//	BOOST_ASSERT(server_id_ == srv);
+	//	if (active) {
+	//		bus_->vm_.async_run(bus_res_query_srv_active(tag_remote_
+	//			, seq_cluster_
+	//			, tag_ws_
+	//			, nr
+	//			, sml::from_server_id(srv)
+	//			, sml::from_server_id(meter)
+	//			, std::string(dclass.begin(), dclass.end())
+	//			, st
+	//			, sml::get_srv_type(meter)));
 
-		}
-		else {
-			bus_->vm_.async_run(bus_res_query_srv_visible(tag_remote_
-				, seq_cluster_
-				, tag_ws_
-				, nr
-				, sml::from_server_id(srv)
-				, sml::from_server_id(meter)
-				, std::string(dclass.begin(), dclass.end())
-				, st
-				, sml::get_srv_type(meter)));
-		}
+	//	}
+	//	else {
+	//		bus_->vm_.async_run(bus_res_query_srv_visible(tag_remote_
+	//			, seq_cluster_
+	//			, tag_ws_
+	//			, nr
+	//			, sml::from_server_id(srv)
+	//			, sml::from_server_id(meter)
+	//			, std::string(dclass.begin(), dclass.end())
+	//			, st
+	//			, sml::get_srv_type(meter)));
+	//	}
 
-		return cyng::continuation::TASK_CONTINUE;
-	}
+	//	return cyng::continuation::TASK_CONTINUE;
+	//}
 
 	//	-- slot[5]
-	cyng::continuation query_gateway::process(cyng::buffer_t const& srv
-		, std::uint32_t nr
-		, cyng::buffer_t const& section
-		, cyng::buffer_t const& version
-		, bool active)
-	{
-		CYNG_LOG_INFO(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> #"
-			<< +nr
-			<< " - "
-			<< std::string(version.begin(), version.end()));
+	//cyng::continuation query_gateway::process(cyng::buffer_t const& srv
+	//	, std::uint32_t nr
+	//	, cyng::buffer_t const& section
+	//	, cyng::buffer_t const& version
+	//	, bool active)
+	//{
+	//	CYNG_LOG_INFO(logger_, "task #"
+	//		<< base_.get_id()
+	//		<< " <"
+	//		<< base_.get_class_name()
+	//		<< "> #"
+	//		<< +nr
+	//		<< " - "
+	//		<< std::string(version.begin(), version.end()));
 
-		BOOST_ASSERT(server_id_ == srv);
-		bus_->vm_.async_run(node::bus_res_query_firmware(tag_remote_
-			, seq_cluster_
-			, tag_ws_
-			, nr
-			, sml::from_server_id(srv)
-			, std::string(section.begin(), section.end())
-			, std::string(version.begin(), version.end())
-			, active));
+	//	BOOST_ASSERT(server_id_ == srv);
+	//	bus_->vm_.async_run(node::bus_res_query_firmware(tag_remote_
+	//		, seq_cluster_
+	//		, tag_ws_
+	//		, nr
+	//		, sml::from_server_id(srv)
+	//		, std::string(section.begin(), section.end())
+	//		, std::string(version.begin(), version.end())
+	//		, active));
 
-		return cyng::continuation::TASK_CONTINUE;
-	}
+	//	return cyng::continuation::TASK_CONTINUE;
+	//}
 
-	//	-- slot[7]
-	cyng::continuation query_gateway::process(cyng::buffer_t const& srv
-		, std::uint8_t mirror
-		, std::uint8_t tmp)
-	{
-		CYNG_LOG_INFO(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> "
-			<< +mirror
-			<< "% - "
-			<< +tmp
-			<< "%");
+	//	-- slot[8] - memory
+	//cyng::continuation query_gateway::process(cyng::buffer_t const& srv
+	//	, std::uint8_t mirror
+	//	, std::uint8_t tmp)
+	//{
+	//	CYNG_LOG_INFO(logger_, "task #"
+	//		<< base_.get_id()
+	//		<< " <"
+	//		<< base_.get_class_name()
+	//		<< "> "
+	//		<< +mirror
+	//		<< "% - "
+	//		<< +tmp
+	//		<< "%");
 
-		BOOST_ASSERT(server_id_ == srv);
-		bus_->vm_.async_run(node::bus_res_query_memory(tag_remote_
-			, seq_cluster_
-			, tag_ws_
-			, sml::from_server_id(srv)
-			, mirror
-			, tmp));
+	//	BOOST_ASSERT(server_id_ == srv);
+	//	bus_->vm_.async_run(node::bus_res_query_memory(tag_remote_
+	//		, seq_cluster_
+	//		, tag_ws_
+	//		, sml::from_server_id(srv)
+	//		, mirror
+	//		, tmp));
 
-		return cyng::continuation::TASK_CONTINUE;
-	}
+	//	return cyng::continuation::TASK_CONTINUE;
+	//}
 
+	//	-- slot[9] - wmBus
+	//cyng::continuation query_gateway::process(cyng::buffer_t const& srv
+	//	, std::string manufacturer
+	//	, cyng::buffer_t const& dev_id
+	//	, std::string firmware
+	//	, std::string hardware)
+	//{
+	//	const auto id = cyng::io::to_hex(dev_id, ' ');
+
+	//	CYNG_LOG_INFO(logger_, "task #"
+	//		<< base_.get_id()
+	//		<< " <"
+	//		<< base_.get_class_name()
+	//		<< "> "
+	//		<< sml::from_server_id(srv)
+	//		<< " wM-Bus: "
+	//		<< manufacturer
+	//		<< ", "
+	//		<< id
+	//		<< ", "
+	//		<< firmware
+	//		<< ", "
+	//		<< hardware);
+
+	//	bus_->vm_.async_run(node::bus_res_query_w_mbus_status(tag_remote_
+	//		, seq_cluster_
+	//		, tag_ws_
+	//		, sml::from_server_id(srv)
+	//		, manufacturer
+	//		, id
+	//		, firmware
+	//		, hardware));
+
+	//	return cyng::continuation::TASK_CONTINUE;
+	//}
 
 	void query_gateway::send_query_cmd()
 	{
@@ -380,6 +443,12 @@ namespace node
 			}
 			else if (boost::algorithm::equals("memory", p)) {
 				sml_gen.get_proc_parameter_memory(server_id_, user_, pwd_);
+			}
+			else if (boost::algorithm::equals("w-mbus-status", p)) {
+				sml_gen.get_proc_parameter_wireless_mbus_status(server_id_, user_, pwd_);
+			}
+			else if (boost::algorithm::equals("w-mbus-config", p)) {
+				sml_gen.get_proc_parameter_wireless_mbus_config(server_id_, user_, pwd_);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"

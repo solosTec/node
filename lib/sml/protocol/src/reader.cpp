@@ -226,8 +226,8 @@ namespace node
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
-				, ro_.get_value("clientId")
-				, ro_.get_value("serverId")
+				, ro_.client_id_
+				, ro_.server_id_
 				, ro_.get_value("reqFileId")
 				, ro_.get_value("userName")
 				, ro_.get_value("password"));
@@ -270,8 +270,8 @@ namespace node
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
-				, ro_.get_value("clientId")
-				, ro_.get_value("serverId")
+				, ro_.client_id_
+				, ro_.server_id_
 				, ro_.get_value("reqFileId"));
 		}
 
@@ -359,8 +359,8 @@ namespace node
 				, ro_.get_value("roTime")
 				, ro_.get_value("actTime")
 				, ro_.get_value("valTime")
-				, ro_.get_value("clientId")
-				, ro_.get_value("serverId")
+				, ro_.client_id_
+				, ro_.server_id_
 				, ro_.get_value("status"));
 
 		}
@@ -423,8 +423,8 @@ namespace node
 					, ro_.pk_
 					, ro_.trx_
 					, ro_.idx_
-					, ro_.get_value("clientId")
-					, ro_.get_value("serverId")
+					, ro_.client_id_
+					, ro_.server_id_
 					, ro_.get_value("userName")
 					, ro_.get_value("password")
 					, ro_.get_value("beginTime")
@@ -501,13 +501,15 @@ namespace node
 			case 1:
 				if (path.front() == OBIS_CLASS_OP_LOG_STATUS_WORD) {
 					//	generate status word
+
+					//to_param_map
 					return cyng::generate_invoke("sml.get.proc.status.word"
 						, ro_.pk_
 						, ro_.trx_
 						, ro_.idx_
-						, ro_.get_value("serverId")
+						, from_server_id(ro_.server_id_)
 						, OBIS_CLASS_OP_LOG_STATUS_WORD.to_buffer()	//	same as path.front()
-						, attr.second);	//	[u32] value
+						, cyng::value_cast<std::uint32_t>(attr.second, 0u));	//	[u32] value
 				}
 				else if (path.front() == OBIS_CODE_ROOT_MEMORY_USAGE) {
 					//	get memory usage
@@ -516,10 +518,42 @@ namespace node
 						, ro_.pk_
 						, ro_.trx_
 						, ro_.idx_
-						, ro_.get_value("serverId")
+						, from_server_id(ro_.server_id_)
 						, OBIS_CODE_ROOT_MEMORY_USAGE.to_buffer()	//	same as path.front()
-						, ro_.get_value("00 80 80 00 11 ff")	//	mirror
-						, ro_.get_value("00 80 80 00 12 ff"));	//	tmp
+						, ro_.get_value(OBIS_CODE_ROOT_MEMORY_MIRROR)	//	mirror
+						, ro_.get_value(OBIS_CODE_ROOT_MEMORY_TMP));	//	tmp
+				}
+				else if (path.front() == OBIS_CODE_ROOT_W_MBUS_STATUS) {
+					//	get memory usage
+					read_get_proc_multiple_parameters(*pos++);
+					return cyng::generate_invoke("sml.get.proc.param.wmbus.status"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, from_server_id(ro_.server_id_)
+						, OBIS_CODE_ROOT_W_MBUS_STATUS.to_buffer()	//	same as path.front()
+						, ro_.get_string(OBIS_W_MBUS_ADAPTER_MANUFACTURER)	//	Manufacturer (RC1180-MBUS3)
+						, ro_.get_value(OBIS_W_MBUS_ADAPTER_ID)	//	Adapter ID (A8 15 34 83 40 04 01 31)
+						, ro_.get_string(OBIS_W_MBUS_FIRMWARE)	//	firmware version (3.08)
+						, ro_.get_string(OBIS_W_MBUS_HARDWARE)	//	hardware version (2.00)
+					);
+				}
+				else if (path.front() == OBIS_CODE_IF_wMBUS) {
+					//	get memory usage
+					read_get_proc_multiple_parameters(*pos++);
+					return cyng::generate_invoke("sml.get.proc.param.wmbus.config"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, from_server_id(ro_.server_id_)
+						, OBIS_CODE_IF_wMBUS.to_buffer()	//	same as path.front()
+						, ro_.get_value(OBIS_W_MBUS_PROTOCOL)	//	protocol
+						, ro_.get_value(OBIS_W_MBUS_S_MODE)	//	S2 mode in seconds (30)
+						, ro_.get_value(OBIS_W_MBUS_T_MODE)	//	T2 mode in seconds (20)
+						, ro_.get_value(OBIS_W_MBUS_REBOOT)	//	automatic reboot in seconds (86400)
+						, ro_.get_value(OBIS_W_MBUS_POWER)	//	0
+						, ro_.get_value(OBIS_W_MBUS_INSTALL_MODE)	//	installation mode (true)
+					);
 				}
 				break;
 			case 2:
@@ -538,7 +572,7 @@ namespace node
 							, ro_.pk_
 							, ro_.trx_
 							, ro_.idx_
-							, ro_.get_value("serverId")
+							, ro_.server_id_
 							, path.back().to_buffer()
 							, attr.second);	//	value
 
@@ -554,7 +588,7 @@ namespace node
 							, ro_.pk_
 							, ro_.trx_
 							, ro_.idx_
-							, ro_.get_value("serverId")
+							, ro_.server_id_
 							, path.back().to_buffer()
 							, attr.second);	//	value
 					}
@@ -569,7 +603,7 @@ namespace node
 							, ro_.pk_
 							, ro_.trx_
 							, ro_.idx_
-							, ro_.get_value("serverId")
+							, ro_.server_id_
 							, path.back().to_buffer()
 							, attr.second);	//	value
 					}
@@ -585,15 +619,20 @@ namespace node
 					//	* 01 00 00 09 0B 00: timestamp
 					//
 					read_get_proc_multiple_parameters(*pos++);
+
+					cyng::buffer_t meter;
+					meter = cyng::value_cast(ro_.get_value(OBIS_CODE_SERVER_ID), meter);
+
 					return cyng::generate_invoke("sml.get.proc.param.srv.visible"
 						, ro_.pk_
 						, ro_.trx_
 						, ro_.idx_
-						, ro_.get_value("serverId")
+						, from_server_id(ro_.server_id_)
+						, OBIS_CODE_ROOT_VISIBLE_DEVICES.to_buffer()
 						, path.back().get_number()	//	4/5 
-						, ro_.get_value("81 81 c7 82 04 ff")	//	meter ID
-						, ro_.get_value("81 81 c7 82 02 ff")	//	device class
-						, ro_.get_value("01 00 00 09 0b 00"));	//	UTC
+						, ro_.get_value(OBIS_CODE_SERVER_ID)	//	meter ID
+						, ro_.get_string(OBIS_CODE_DEVICE_CLASS)	//	device class
+						, ro_.get_value(OBIS_CURRENT_UTC));	//	UTC
 				}
 				else if ((path.front() == OBIS_CODE_ROOT_ACTIVE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x11, 0x06)) {
 					cyng::tuple_t tpl;
@@ -616,17 +655,18 @@ namespace node
 						, ro_.pk_
 						, ro_.trx_
 						, ro_.idx_
-						, ro_.get_value("serverId")
+						, from_server_id(ro_.server_id_)
+						, OBIS_CODE_ROOT_ACTIVE_DEVICES.to_buffer()
 						, path.back().get_number()	//	4/5 
-						, ro_.get_value("81 81 c7 82 04 ff")	//	meter ID
-						, ro_.get_value("81 81 c7 82 02 ff")	//	device class
-						, ro_.get_value("01 00 00 09 0b 00"));	//	UTC
+						, ro_.get_value(OBIS_CODE_SERVER_ID)	//	meter ID
+						, ro_.get_string(OBIS_CODE_DEVICE_CLASS)	//	device class
+						, ro_.get_value(OBIS_CURRENT_UTC));	//	UTC
 				}
 				else if ((path.front() == OBIS_CODE_ROOT_DEVICE_IDENT) && path.back().is_matching(0x81, 0x81, 0xc7, 0x82, 0x07).second) {
 
 					//	* 81, 81, c7, 82, 08, ff:	CURRENT_VERSION/KERNEL
 					//	* 81, 81, 00, 02, 00, 00:	VERSION
-					//	* 81, 81, c7, 82, 0e, ff:	activated/deactivates
+					//	* 81, 81, c7, 82, 0e, ff:	activated/deactivated
 					read_get_proc_multiple_parameters(*pos++);
 
 #ifdef _DEBUG
@@ -639,11 +679,12 @@ namespace node
 						, ro_.pk_
 						, ro_.trx_
 						, ro_.idx_
-						, ro_.get_value("serverId")
+						, from_server_id(ro_.server_id_)
+						, OBIS_CODE_ROOT_DEVICE_IDENT.to_buffer()
 						, path.back().get_storage()	//	[5] as u32
-						, ro_.get_value("81 81 c7 82 08 ff")	//	firmware name/section
-						, ro_.get_value("81 81 00 02 00 00")	//	version
-						, ro_.get_value("81 81 c7 82 0e ff"));	//	active/inavtive
+						, ro_.get_string(OBIS_CODE_DEVICE_KERNEL)	//	firmware name/section
+						, ro_.get_string(OBIS_CODE_VERSION)	//	version
+						, ro_.get_value(OBIS_CODE_DEVICE_ACTIVATED));	//	active/inactive
 
 				}
 
@@ -756,7 +797,7 @@ namespace node
 					, ro_.pk_
 					, ro_.trx_
 					, ro_.idx_
-					, ro_.get_value("serverId")
+					, ro_.server_id_
 					, ro_.get_value("userName")
 					, ro_.get_value("password")
 					, path.at(0).to_buffer()
@@ -768,7 +809,7 @@ namespace node
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
-				, ro_.get_value("serverId")
+				, ro_.server_id_
 				, ro_.get_value("userName")
 				, ro_.get_value("password")
 				, to_hex(path.at(0))	//	ToDo: send complete path
@@ -859,7 +900,7 @@ namespace node
 									, ro_.pk_
 									, ro_.trx_
 									, r.first
-									, ro_.get_value("serverId")
+									, ro_.server_id_
 									, ro_.get_value("userName")
 									, ro_.get_value("password")
 									, std::chrono::seconds(cyng::numeric_cast<std::int64_t>(attr.second, 900)));
@@ -871,7 +912,7 @@ namespace node
 									, ro_.pk_
 									, ro_.trx_
 									, r.first
-									, ro_.get_value("serverId")
+									, ro_.server_id_
 									, ro_.get_value("userName")
 									, ro_.get_value("password")
 									, std::chrono::seconds(cyng::numeric_cast<std::int64_t>(attr.second, 0)));
@@ -886,7 +927,7 @@ namespace node
 									, ro_.pk_
 									, ro_.trx_
 									, r.first
-									, ro_.get_value("serverId")
+									, ro_.server_id_
 									, ro_.get_value("userName")
 									, ro_.get_value("password")
 									, std::string(tmp.begin(), tmp.end()));
@@ -1053,7 +1094,7 @@ namespace node
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
-				, ro_.get_value("serverId")
+				, ro_.server_id_
 				, code.to_buffer()
 				, ro_.get_value("attentionMsg"));
 		}
@@ -1230,21 +1271,14 @@ namespace node
 
 		std::string reader::read_server_id(cyng::object obj)
 		{
-			cyng::buffer_t buffer;
-			buffer = cyng::value_cast(obj, buffer);
-			//const auto str = from_server_id(buffer);
-			ro_.set_value("serverId", cyng::make_object(buffer));
-			return from_server_id(buffer);
+			ro_.server_id_ = cyng::value_cast(obj, ro_.server_id_);
+			return from_server_id(ro_.server_id_);
 		}
 
 		std::string reader::read_client_id(cyng::object obj)
 		{
-			cyng::buffer_t buffer;
-			buffer = cyng::value_cast(obj, buffer);
-			//const auto str = from_server_id(buffer);
-			//ro_.set_value("clientId", cyng::make_object(str));
-			ro_.set_value("clientId", cyng::make_object(buffer));
-			return from_server_id(buffer);
+			ro_.client_id_ = cyng::value_cast(obj, ro_.client_id_);
+			return from_server_id(ro_.client_id_);
 		}
 
 		std::int8_t reader::read_scaler(cyng::object obj)
@@ -1353,56 +1387,6 @@ namespace node
 			}
 			return cyng::attr_t(PROC_PAR_UNDEF, cyng::make_object());
 		}
-
-		reader::readout::readout(boost::uuids::uuid pk)
-			: pk_(pk)
-			, idx_(0)
-			, trx_()
-			, values_()
-		{}
-
-		void reader::readout::reset(boost::uuids::uuid pk, std::size_t idx)
-		{
-			pk_ = pk;
-			idx_ = idx;
-			trx_.clear();
-			values_.clear();
-		}
-
-		reader::readout& reader::readout::set_trx(cyng::buffer_t const& buffer)
-		{
-			trx_ = cyng::io::to_ascii(buffer);
-			return *this;
-		}
-
-		reader::readout& reader::readout::set_index(std::size_t idx)
-		{
-			idx_ = idx;
-			return *this;
-		}
-
-		reader::readout& reader::readout::set_value(std::string const& name, cyng::object obj)
-		{
-			values_[name] = obj;
-			return *this;
-		}
-
-		reader::readout& reader::readout::set_value(obis code, cyng::object obj)
-		{
-			values_[to_hex(code)] = obj;
-			return *this;
-		}
-
-		cyng::object reader::readout::get_value(std::string const& name) const
-		{
-			auto pos = values_.find(name);
-			return (pos != values_.end())
-				? pos->second
-				: cyng::make_object()
-				;
-		}
-
-
 	}	//	sml
 }
 

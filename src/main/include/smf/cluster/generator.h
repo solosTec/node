@@ -142,39 +142,20 @@ namespace node
 		, boost::uuids::uuid tag_ws);
 
 	/**
-	 * Response for bus.req.query.status.word
+	 * Response for bus_req_query_gateway()
 	 *
 	 * @param source source tag
 	 * @param srv server id
 	 */
-	cyng::vector_t bus_res_query_status_word(boost::uuids::uuid source
+	cyng::vector_t bus_res_query_gateway(boost::uuids::uuid source
 		, std::uint64_t seq
 		, boost::uuids::uuid tag_ws
 		, std::string srv
-		, cyng::attr_map_t const&);
+		, std::string code
+		, cyng::param_map_t const&);
 
 	/**
-	 * Response for bus.req.query.srv.visible
-	 *
-	 * @param source source tag
-	 * @param srv server id
-	 * @param nr list number
-	 * @param meter meter id
-	 * @param st last status message
-	 */
-	cyng::vector_t bus_res_query_srv_visible(boost::uuids::uuid source
-		, std::uint64_t seq
-		, boost::uuids::uuid tag_ws
-		, std::uint16_t nr
-		, std::string srv
-		, std::string meter
-		, std::string dclass
-		, std::chrono::system_clock::time_point st
-		, std::uint32_t srv_type);
-
-
-	/**
-	 * Response for bus.req.query.srv.active
+	 * Response for get_proc_parameter_srv_visible()
 	 *
 	 * @param source source tag
 	 * @param srv server id
@@ -182,18 +163,38 @@ namespace node
 	 * @param meter meter id
 	 * @param st last status message
 	 */
-	cyng::vector_t bus_res_query_srv_active(boost::uuids::uuid source
-		, std::uint64_t seq
-		, boost::uuids::uuid tag_ws
-		, std::uint16_t nr
-		, std::string srv
-		, std::string meter
-		, std::string dclass
-		, std::chrono::system_clock::time_point st
-		, std::uint32_t srv_type);
+	//cyng::vector_t bus_res_query_srv_visible(boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, boost::uuids::uuid tag_ws
+	//	, std::uint16_t nr
+	//	, std::string srv
+	//	, std::string meter
+	//	, std::string dclass
+	//	, std::chrono::system_clock::time_point st
+	//	, std::uint32_t srv_type);
+
 
 	/**
-	 * Response for bus.req.query.firmware
+	 * Response for get_proc_parameter_srv_active()
+	 *
+	 * @param source source tag
+	 * @param srv server id
+	 * @param nr list number
+	 * @param meter meter id
+	 * @param st last status message
+	 */
+	//cyng::vector_t bus_res_query_srv_active(boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, boost::uuids::uuid tag_ws
+	//	, std::uint16_t nr
+	//	, std::string srv
+	//	, std::string meter
+	//	, std::string dclass
+	//	, std::chrono::system_clock::time_point st
+	//	, std::uint32_t srv_type);
+
+	/**
+	 * Response for get_proc_parameter_firmware()
 	 *
 	 * @param source source tag
 	 * @param srv server id
@@ -202,29 +203,44 @@ namespace node
 	 * @param version manufacturer-specific version
 	 * @param active true/false
 	 */
-	cyng::vector_t bus_res_query_firmware(boost::uuids::uuid source
-		, std::uint64_t seq
-		, boost::uuids::uuid tag_ws
-		, std::uint16_t nr
-		, std::string srv
-		, std::string section
-		, std::string version
-		, bool active);
+	//cyng::vector_t bus_res_query_firmware(boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, boost::uuids::uuid tag_ws
+	//	, std::uint16_t nr
+	//	, std::string srv
+	//	, std::string section
+	//	, std::string version
+	//	, bool active);
 
 	/**
-	 * Response for bus.req.query.memory
+	 * Response for get_proc_parameter_memory()
 	 *
 	 * @param source source tag
 	 * @param srv server id
 	 * @param mirror usage of mirror memory in %
 	 * @param mirror usage of temp memory in %
 	 */
-	cyng::vector_t bus_res_query_memory(boost::uuids::uuid source
-		, std::uint64_t seq
-		, boost::uuids::uuid tag_ws
-		, std::string srv
-		, std::uint8_t mirror
-		, std::uint8_t tmp);
+	//cyng::vector_t bus_res_query_memory(boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, boost::uuids::uuid tag_ws
+	//	, std::string srv
+	//	, std::uint8_t mirror
+	//	, std::uint8_t tmp);
+
+	/**
+	 * Response for get_proc_parameter_wireless_mbus_status()
+	 *
+	 * @param source source tag
+	 * @param srv server id
+	 */
+	//cyng::vector_t bus_res_query_w_mbus_status(boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, boost::uuids::uuid tag_ws
+	//	, std::string srv
+	//	, std::string manufacturer
+	//	, std::string dev_id
+	//	, std::string firmware
+	//	, std::string hardware);
 
 	/**
 	 * Send back attention codes

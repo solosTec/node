@@ -99,6 +99,8 @@ namespace node
 		//	root elements
 		//
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 00, 10, FF, CODE_ROOT_MEMORY_USAGE);	//	request memory usage
+		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 00, 11, FF, CODE_ROOT_MEMORY_MIRROR);	
+		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 00, 12, FF, CODE_ROOT_MEMORY_TMP);
 
 		const static obis	DEFINE_OBIS_CODE(81, 02, 00, 07, 00, FF, CODE_ROOT_CUSTOM_INTERFACE);	//	see: 7.3.1.3 Datenstruktur zum Lesen / Setzen der Parameter für die Kundenschnittstelle
 		const static obis	DEFINE_OBIS_CODE(81, 02, 00, 07, 10, FF, CODE_ROOT_CUSTOM_PARAM);	//	see: 7.3.1.4 Datenstruktur für dynamischen Eigenschaften der Endkundenschnittstelle 
@@ -117,6 +119,8 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, 13, CODE_PEER_ADDRESS_WANGSM);	//	peer address: WAN/GSM
 		const static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, FF, CODE_PEER_ADDRESS);	//	unit is 255
 
+		const static obis	DEFINE_OBIS_CODE(81, 81, 00, 02, 00, 00, CODE_VERSION);
+
 		const static obis	DEFINE_OBIS_CODE(81, 81, 01, 16, FF, FF, CODE_ROOT_NEW_DEVICES);	//	new active devices
 		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 26, FF, FF, CODE_ROOT_INVISIBLE_DEVICES);	//	not longer visible devices
 		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 06, FF, FF, CODE_ROOT_VISIBLE_DEVICES);	//	visible devices (Liste der sichtbaren Sensoren)
@@ -129,6 +133,11 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 02, FF, CODE_DEVICE_CLASS);	//	Geräteklasse 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 04, FF, CODE_SERVER_ID);	//	Server ID der sichtbaren Komponenten
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 06, FF, CODE_ROOT_FIRMWARE);	//	Firmware
+
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 08, FF, CODE_DEVICE_KERNEL);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 0E, FF, CODE_DEVICE_ACTIVATED);
+		
+
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 00, FF, CODE_ROOT_SENSOR_PROPERTY);	//	properties of data sensor/actor (Eigenschaften eines Datenspiegels)
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 01, FF, CODE_ROOT_NTP);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 10, FF, CODE_ROOT_DEVICE_TIME);	//	device time
@@ -161,7 +170,18 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 06, 00, 00, 01, 00, W_MBUS_ADAPTER_MANUFACTURER);
 		const static obis	DEFINE_OBIS_CODE(81, 06, 00, 00, 03, 00, W_MBUS_ADAPTER_ID);
 		const static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 00, 00, W_MBUS_FIRMWARE);
-		const static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 03, FF, W_BUS_HARDWARE);
+		const static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 03, FF, W_MBUS_HARDWARE);
+
+		//
+		//	Wireless M-BUS config
+		//	81 06 19 07 00 FF, CODE_IF_wMBUS
+		//
+		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 01, FF, W_MBUS_PROTOCOL);
+		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 02, FF, W_MBUS_S_MODE);
+		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 03, FF, W_MBUS_T_MODE);
+		const static obis	DEFINE_OBIS_CODE(81, 06, 27, 32, 03, 01, W_MBUS_REBOOT);
+		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 04, FF, W_MBUS_POWER);
+		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 11, FF, W_MBUS_INSTALL_MODE);
 
 		//	Spannung - voltage
 		//	Strom - current

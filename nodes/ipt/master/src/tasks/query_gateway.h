@@ -27,12 +27,22 @@ namespace node
 		using msg_2 = std::tuple<cyng::buffer_t>;
 		using msg_3 = std::tuple<cyng::buffer_t, std::uint8_t, std::uint8_t, cyng::tuple_t, std::uint16_t>;
 		using msg_4 = std::tuple<boost::uuids::uuid, cyng::buffer_t, std::size_t>;
-		using msg_5 = std::tuple<cyng::buffer_t, std::uint32_t>;
-		using msg_6 = std::tuple<bool, cyng::buffer_t, std::uint16_t, cyng::buffer_t, cyng::buffer_t, std::chrono::system_clock::time_point>;
-		using msg_7 = std::tuple<cyng::buffer_t, std::uint32_t, cyng::buffer_t, cyng::buffer_t, bool>;
-		using msg_8 = std::tuple <cyng::buffer_t, std::uint8_t, std::uint8_t>;
 
-		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8>;
+		using msg_5 = std::tuple<
+			std::string,	//	trx
+			std::size_t,	//	idx
+			std::string,	//	server ID
+			cyng::buffer_t,	//	root (obis code)
+			cyng::param_map_t	//	params
+		>;
+
+		//using msg_5 = std::tuple<cyng::buffer_t, std::uint32_t>;
+		//using msg_6 = std::tuple<bool, cyng::buffer_t, std::uint16_t, cyng::buffer_t, cyng::buffer_t, std::chrono::system_clock::time_point>;
+		//using msg_7 = std::tuple<cyng::buffer_t, std::uint32_t, cyng::buffer_t, cyng::buffer_t, bool>;
+		//using msg_8 = std::tuple <cyng::buffer_t, std::uint8_t, std::uint8_t>;
+		//using msg_9 = std::tuple < cyng::buffer_t, std::string, cyng::buffer_t, std::string, std::string>;
+
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5>;
 
 	public:
 		query_gateway(cyng::async::base_task* btp
@@ -89,10 +99,15 @@ namespace node
 		/**
 		 * @brief slot [5]
 		 *
-		 * sml.get.proc.status.word
+		 * bus_res_query_gateway()
 		 */
-		cyng::continuation process(cyng::buffer_t const&
-			, std::uint32_t);
+		cyng::continuation process(std::string trx,
+			std::size_t idx,
+			std::string serverID,
+			cyng::buffer_t code,
+			cyng::param_map_t params);
+		//cyng::continuation process(cyng::buffer_t const&
+		//	, std::uint32_t);
 
 		/**
 		 * @brief slot [6]
@@ -100,33 +115,53 @@ namespace node
 		 * sml.get.proc.param.srv.visible
 		 * sml.get.proc.param.srv.active
 		 */
-		cyng::continuation process(bool
-			, cyng::buffer_t const&
-			, std::uint16_t
-			, cyng::buffer_t const&
-			, cyng::buffer_t const&
-			, std::chrono::system_clock::time_point);
+		//cyng::continuation process(bool
+		//	, cyng::buffer_t const&
+		//	, std::uint16_t
+		//	, cyng::buffer_t const&
+		//	, cyng::buffer_t const&
+		//	, std::chrono::system_clock::time_point);
 
 		/**
 		 * @brief slot [7]
 		 *
 		 * sml.get.proc.param.firmware
 		 */
-		cyng::continuation process(cyng::buffer_t const&
-			, std::uint32_t
-			, cyng::buffer_t const&
-			, cyng::buffer_t const&
-			, bool);
+		//cyng::continuation process(cyng::buffer_t const&
+		//	, std::uint32_t
+		//	, cyng::buffer_t const&
+		//	, cyng::buffer_t const&
+		//	, bool);
 
 		/**
 		 * @brief slot [8]
 		 *
 		 * sml.get.proc.param.memory
 		 */
-		cyng::continuation process(cyng::buffer_t const&
-			, std::uint8_t
-			, std::uint8_t);
+		//cyng::continuation process(cyng::buffer_t const&
+		//	, std::uint8_t
+		//	, std::uint8_t);
 
+		/**
+		 * @brief slot [9]
+		 * [c5870024-e64c-43dd-aac4-3f3209a291b9,7228963-2,0,0500153B021774,81060F0600FF,RC1180-MBUS3,A815919638040131,332E3038,322E3030]
+		 *
+		 * sml.get.proc.param.wmbus.status
+		 */
+		//cyng::continuation process(cyng::buffer_t const& srv_id
+		//	, std::string manufacturer
+		//	, cyng::buffer_t const& dev_id
+		//	, std::string firmware
+		//	, std::string hardware);
+
+		/**
+		 * @brief slot [10]
+		 *
+		 * sml.get.proc.param.wmbus.config
+		 */
+		//cyng::continuation process(cyng::buffer_t const&
+		//	, std::uint8_t
+		//	, std::uint8_t);
 	private:
 		void send_query_cmd();
 

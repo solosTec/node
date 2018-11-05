@@ -174,6 +174,7 @@ namespace node
 		 * with enum status_bits as index.
 		 */
 		cyng::attr_map_t to_attr_map(status const&);
+		cyng::param_map_t to_param_map(status const&);
 
 	}	//	sml
 }

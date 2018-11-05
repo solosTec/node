@@ -10,9 +10,8 @@
 
 
 #include <smf/sml/defs.h>
-#include <smf/sml/intrinsics/obis.h>
 #include <smf/sml/units.h>
-#include <smf/sml/intrinsics/obis.h>
+#include <smf/sml/protocol/readout.h>
 #include <cyng/intrinsics/sets.h>
 #include <cyng/object.h>
 #include <fstream>
@@ -39,23 +38,6 @@ namespace node
 		 */
 		class csv_exporter
 		{
-			struct readout
-			{
-				readout(boost::uuids::uuid);
-
-				void reset(boost::uuids::uuid, std::size_t);
-
-				readout& set_trx(cyng::buffer_t const&);
-				readout& set_index(std::size_t);
-				readout& set_value(std::string const&, cyng::object);
-				cyng::object get_value(std::string const&) const;
-
-				boost::uuids::uuid pk_;
-				std::size_t idx_;	//!< message index
-				std::string trx_;
-				cyng::param_map_t values_;
-			};
-
 		public:
 			csv_exporter(boost::filesystem::path root_dir
 				, std::string prefix

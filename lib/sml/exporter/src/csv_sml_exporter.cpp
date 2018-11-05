@@ -285,8 +285,7 @@ namespace node
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
 
-			std::string server_id;
-			server_id = cyng::value_cast(ro_.get_value("serverId"), server_id);
+			const std::string server_id = cyng::io::to_hex(ro_.server_id_);
 
 			ofstream_.open((root_dir_ / get_filename(prefix_ + server_id, suffix_, source_, channel_, target_)).string());
 
@@ -337,20 +336,6 @@ namespace node
 
 			//	periodSignature
 			ro_.set_value("signature", *pos++);
-
-			//store_meta(sp
-			//	, ro_.pk_
-			//	, ro_.trx_
-			//	, ro_.idx_
-			//	, ro_.get_value("roTime")
-			//	, ro_.get_value("actTime")
-			//	, ro_.get_value("valTime")
-			//	, ro_.get_value("client")	//	gateway
-			//	, ro_.get_value("clientId")	//	gateway - formatted
-			//	, ro_.get_value("server")	//	server
-			//	, ro_.get_value("serverId")	//	server - formatted
-			//	, ro_.get_value("status"));
-
 		}
 
 		void csv_exporter::read_get_proc_parameter_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
@@ -500,9 +485,9 @@ namespace node
 			//	, ro_.get_value("actTime")
 			//	, ro_.get_value("valTime")
 			//	, ro_.get_value("client")	//	gateway
-			//	, ro_.get_value("clientId")	//	gateway - formatted
+			//	, ro_.client_id	//	gateway - formatted
 			//	, ro_.get_value("server")	//	server
-			//	, ro_.get_value("serverId")	//	server - formatted
+			//	, ro_.server_id	//	server - formatted
 			//	, ro_.get_value("status"));
 
 			//store_data(sp
@@ -601,22 +586,26 @@ namespace node
 
 		std::string csv_exporter::read_server_id(cyng::object obj)
 		{
-			cyng::buffer_t buffer;
-			buffer = cyng::value_cast(obj, buffer);
-			ro_.set_value("server", cyng::make_object(buffer));
-			const auto str = from_server_id(buffer);
-			ro_.set_value("serverId", cyng::make_object(str));
-			return str;
+			ro_.server_id_ = cyng::value_cast(obj, ro_.server_id_);
+			return from_server_id(ro_.server_id_);
+			//cyng::buffer_t buffer;
+			//buffer = cyng::value_cast(obj, buffer);
+			//ro_.set_value("server", cyng::make_object(buffer));
+			//const auto str = from_server_id(buffer);
+			//ro_.set_value("serverId", cyng::make_object(str));
+			//return str;
 		}
 
 		std::string csv_exporter::read_client_id(cyng::object obj)
 		{
-			cyng::buffer_t buffer;
-			buffer = cyng::value_cast(obj, buffer);
-			ro_.set_value("client", cyng::make_object(buffer));
-			const auto str = from_server_id(buffer);
-			ro_.set_value("clientId", cyng::make_object(str));
-			return str;
+			ro_.client_id_ = cyng::value_cast(obj, ro_.client_id_);
+			return from_server_id(ro_.client_id_);
+			//cyng::buffer_t buffer;
+			//buffer = cyng::value_cast(obj, buffer);
+			//ro_.set_value("client", cyng::make_object(buffer));
+			//const auto str = from_server_id(buffer);
+			//ro_.set_value("clientId", cyng::make_object(str));
+			//return str;
 		}
 
 		std::int8_t csv_exporter::read_scaler(cyng::object obj)
@@ -782,48 +771,6 @@ namespace node
 				//cyng::xml::write(node, obj);
 			}
 		}
-		csv_exporter::readout::readout(boost::uuids::uuid pk)
-			: pk_(pk)
-			, idx_(0)
-			, trx_()
-			, values_()
-		{}
-
-		void csv_exporter::readout::reset(boost::uuids::uuid pk, std::size_t idx)
-		{
-			pk_ = pk;
-			idx_ = idx;
-			trx_.clear();
-			values_.clear();
-		}
-
-		csv_exporter::readout& csv_exporter::readout::set_trx(cyng::buffer_t const& buffer)
-		{
-			trx_ = cyng::io::to_ascii(buffer);
-			return *this;
-		}
-
-		csv_exporter::readout& csv_exporter::readout::set_index(std::size_t idx)
-		{
-			idx_ = idx;
-			return *this;
-		}
-
-		csv_exporter::readout& csv_exporter::readout::set_value(std::string const& name, cyng::object value)
-		{
-			values_[name] = value;
-			return *this;
-		}
-
-		cyng::object csv_exporter::readout::get_value(std::string const& name) const
-		{
-			auto pos = values_.find(name);
-			return (pos != values_.end())
-				? pos->second
-				: cyng::make_object()
-				;
-		}
-
 
 		boost::filesystem::path get_filename(std::string prefix
 			, std::string suffix
@@ -836,29 +783,29 @@ namespace node
 
 			std::stringstream ss;
 			ss
+				<< std::setfill('0')
 				<< prefix
 				<< '-'
-				<< std::hex
-				<< std::setfill('0')
-				<< std::setw(4)
-				<< channel
-				<< '-'
-				<< std::setw(4)
-				<< source
+				<< target
 				<< '-'
 				<< std::dec
 				<< cyng::chrono::year(time)
 				<< std::setw(2)
 				<< cyng::chrono::month(time)
-				<< std::setw(2)
 				<< 'T'
+				<< std::setw(2)
 				<< cyng::chrono::day(time)
 				<< std::setw(2)
 				<< cyng::chrono::hour(time)
 				<< std::setw(2)
 				<< cyng::chrono::minute(time)
 				<< '-'
-				<< target
+				<< std::hex
+				<< std::setw(4)
+				<< channel
+				<< '-'
+				<< std::setw(4)
+				<< source
 				<< '.'
 				<< suffix
 				;

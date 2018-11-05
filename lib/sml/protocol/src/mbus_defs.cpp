@@ -203,7 +203,7 @@ namespace node
 			case 3: return "gas";
 			case 4: return "heat (return)";  //  (Wärme-Rücklauf)
 			case 5: return "steam";
-			case 6: return "water (hot)";
+			case 6: return "water (warm)";	//	(30°C-90°C)
 			case 7: return "water";
 			case 8: return "heat cost allocator";
 			case 9: return "compressed air";
@@ -212,11 +212,16 @@ namespace node
 			case 0xC:   return "water (hot - mode 2)";  // (Wärme-Vorlauf)
 			case 0xD:   return "water (cold - mode 2)";
 			case 0xE:   return "heat cost allocator (mode 2)";	//	bus
-			case 0xF:   return "reserved";
+			case 0xF:   return "unknown";
+			case 0x15:	return "water (hot)";	//	 (>=90°C)
+			case 0x16:	return "water (cold)";
+			case 0x17:	return "water (dual)";	//	Dual register (hot/cold) Water meter 
+			case 0x18:	return "pressure";
+			case 0x19:	return "A/D converter";
 			default:
 				break;
 			}
-			return std::to_string(m);
+			return "reserved";
 		}
 		
 

@@ -162,6 +162,20 @@ namespace node
 				;
 		}
 
+		cyng::param_map_t to_param_map(status const& word)
+		{
+			return cyng::param_map_factory
+				("AUTHORIZED_IPT", word.is_authorized())
+				("FATAL_ERROR", word.is_fatal_error())
+				("OUT_OF_MEMORY", word.is_out_of_memory())
+				("SERVICE_IF_AVAILABLE", word.is_service_if_available())
+				("EXT_IF_AVAILABLE", word.is_ext_if_available())
+				("MBUS_IF_AVAILABLE", word.is_mbus_available())
+				("PLC_AVAILABLE", word.is_plc_available())
+				("NO_TIMEBASE", word.is_timebase_uncertain())
+				;
+		}
+
 	}	//	sml
 }
 
