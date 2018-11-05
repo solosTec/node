@@ -446,8 +446,8 @@ namespace node
 			, "frame"		//	[u32] time frame in minutes
 			, "start15min"	//	[ts] start time of 15 min report
 			, "start24h"	//	[ts] start time of 24h report
-			, "srvCount"	//	[size] number of servers with 15 min push
-			, "combinations"	//	[size] number of unique server/OBIS combinations
+			, "srvCount15min"	//	[size] number of servers with 15 min push
+			, "srvCount24h"		//	[size] number of servers with 24 h push
 			},
 			{ cyng::TC_UUID			//	tag
 			, cyng::TC_STRING		//	format

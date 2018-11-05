@@ -11,12 +11,14 @@
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <smf/sml/obis_io.h>
+#include <smf/sml/obis_db.h>
 #include <smf/sml/srv_id_io.h>
 
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
 #include <cyng/io/io_chrono.hpp>
+#include <cyng/io/io_buffer.h>
 #include <cyng/db/connection_types.h>
 #include <cyng/db/session.h>
 #include <cyng/db/interface_session.h>
@@ -244,8 +246,22 @@ namespace node
 
 			//
 			//	get all server ID in this time frame
+			//	OBIS_PROFILE_15_MINUTE - 81 81 C7 86 11 FF
 			//
-			std::vector<std::string> server_ids = get_server_ids(start, end, cmd, stmt);
+			const auto profile_15_min = cyng::io::to_hex(sml::OBIS_PROFILE_15_MINUTE.to_buffer());
+			std::vector<std::string> server_ids = get_server_ids(start, end, profile_15_min, cmd, stmt);
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> 15min profile from "
+				<< cyng::to_str(start)
+				<< " to "
+				<< cyng::to_str(end)
+				<< " has "
+				<< server_ids.size()
+				<< " unique server IDs");
 
 			//
 			// update _CSV table
@@ -260,16 +276,16 @@ namespace node
 
 			bus_->vm_.async_run(bus_req_db_modify("_CSV"
 				, cyng::table::key_generator(bus_->vm_.tag())	//	key
-				, cyng::param_factory("srvCount", server_ids.size())
+				, cyng::param_factory("srvCount15min", server_ids.size())
 				, 0
 				, bus_->vm_.tag()));
 
 			for (auto id : server_ids) {
 
 				//
-				//	get all used OBIS codes from this server in this time frame
+				//	get all unique OBIS codes for this server of this profile in this time range
 				//
-				std::vector<std::string> obis_codes = get_obis_codes(start, end, id, cmd, stmt);
+				auto obis_codes = get_obis_codes(start, end, profile_15_min, id, cmd, stmt);
 
 				//
 				//	open output file
@@ -307,12 +323,33 @@ namespace node
 			//	get all unique server/OBIS combinations in this time frame
 			//
 			auto start = end - std::chrono::hours(days * 24);
-#ifdef __DEBUG
-			std::vector<std::pair<std::string, std::string>> combinations = get_unique_server_obis_combinations(std::chrono::system_clock::now() - std::chrono::hours(24 * 30)
-				, std::chrono::system_clock::now(), cmd, stmt);
-#else
-			std::vector<std::pair<std::string, std::string>> combinations = get_unique_server_obis_combinations(start, end, cmd, stmt);
-#endif
+
+			//
+			//	get all server ID in this time frame
+			//	OBIS_PROFILE_24_HOUR - 81 81 C7 86 13 FF
+			//
+			const auto profile_24_h = cyng::io::to_hex(sml::OBIS_PROFILE_24_HOUR.to_buffer());
+			std::vector<std::string> server_ids = get_server_ids(start, end, profile_24_h, cmd, stmt);
+
+//#ifdef __DEBUG
+//			std::vector<std::pair<std::string, std::string>> combinations = get_unique_server_obis_combinations(std::chrono::system_clock::now() - std::chrono::hours(24 * 30)
+//				, std::chrono::system_clock::now(), cmd, stmt);
+//#else
+//			std::vector<std::pair<std::string, std::string>> combinations = get_unique_server_obis_combinations(start, end, cmd, stmt);
+//#endif
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> 24h profile from "
+				<< cyng::to_str(start)
+				<< " to "
+				<< cyng::to_str(end)
+				<< " has "
+				<< server_ids.size()
+				<< " unique server IDs");
+
 
 			//
 			// update _CSV table
@@ -327,7 +364,7 @@ namespace node
 
 			bus_->vm_.async_run(bus_req_db_modify("_CSV"
 				, cyng::table::key_generator(bus_->vm_.tag())	//	key
-				, cyng::param_factory("combinations", combinations.size())
+				, cyng::param_factory("srvCount24h", server_ids.size())
 				, 0
 				, bus_->vm_.tag()));
 
@@ -335,21 +372,49 @@ namespace node
 			//	open output file
 			//
 			auto file = open_file_24_h_profile(end);
-			for (auto cond : combinations) {
+			for (auto id : server_ids) {
 
 				//
-				//	query all combinations
+				//	get all unique OBIS codes for this server of this profile in this time range
 				//
-#ifdef __DEBUG
-				collect_data_24_h_profile(file
-					, std::chrono::system_clock::now() - std::chrono::hours(24 * 30)
-					, std::chrono::system_clock::now()
-					, cmd, stmt, cond.first, cond.second);
-#else
-				collect_data_24_h_profile(file, start, end, cmd, stmt, cond.first, cond.second);
-#endif
+				auto obis_codes = get_obis_codes(start, end, profile_24_h, id, cmd, stmt);
 
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> 24h - server "
+					<< id
+					<< " has "
+					<< obis_codes.size()
+					<< " unique OBIS codes");
+
+				for (auto const& code : obis_codes) {
+
+					collect_data_24_h_profile(file
+						, start
+						, end
+						, cmd
+						, stmt
+						, id	//	server
+						, code);
+				}
 			}
+//			for (auto cond : combinations) {
+//
+//				//
+//				//	query all combinations
+//				//
+//#ifdef __DEBUG
+//				collect_data_24_h_profile(file
+//					, std::chrono::system_clock::now() - std::chrono::hours(24 * 30)
+//					, std::chrono::system_clock::now()
+//					, cmd, stmt, cond.first, cond.second);
+//#else
+//				collect_data_24_h_profile(file, start, end, cmd, stmt, cond.first, cond.second);
+//#endif
+//
+//			}
 
 			file.close();
 			stmt->close();
@@ -478,7 +543,7 @@ namespace node
 		, cyng::sql::command& cmd
 		, cyng::db::statement_ptr stmt
 		, std::string const& id
-		, std::vector<std::string> const& obis_code)
+		, std::set<std::string> const& obis_code)
 	{
 		//
 		//	get join result
@@ -619,6 +684,7 @@ namespace node
 
 	std::vector<std::string> storage_db::get_server_ids(std::chrono::system_clock::time_point start
 		, std::chrono::system_clock::time_point end
+		, std::string profile
 		, cyng::sql::command& cmd
 		, cyng::db::statement_ptr stmt)
 	{
@@ -627,7 +693,7 @@ namespace node
 		//	SELECT server FROM TSMLMeta WHERE ((actTime > julianday('2018-08-08 00:00:00')) AND (actTime < julianday('2018-08-09 00:00:00'))) GROUP BY server
 		//
 		cmd.select()[cyng::sql::column(8)]
-			.where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end) && cyng::sql::column(13) == cyng::sql::make_constant("8181c78611ff"))
+			.where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end) && cyng::sql::column(13) == cyng::sql::make_constant(profile))
 			.group_by(cyng::sql::column(8));
 
 		std::string sql = cmd.to_str();
@@ -654,8 +720,9 @@ namespace node
 		return result;
 	}
 
-	std::vector<std::string> storage_db::get_obis_codes(std::chrono::system_clock::time_point start
+	std::set<std::string> storage_db::get_obis_codes(std::chrono::system_clock::time_point start
 		, std::chrono::system_clock::time_point end
+		, std::string profile
 		, std::string const& id
 		, cyng::sql::command& cmd
 		, cyng::db::statement_ptr stmt)
@@ -664,11 +731,12 @@ namespace node
 		//	example:
 		//	SELECT TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ? AND profile = '8181c78611ff') GROUP BY TSMLData.OBIS;
 
-		std::string sql = "SELECT TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ? AND profile = '8181c78611ff') GROUP BY TSMLData.OBIS";
+		std::string sql = "SELECT TSMLData.OBIS FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk "
+			"WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND server = ? AND profile = '" + profile + "') GROUP BY TSMLData.OBIS";
 		CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
 
 		std::pair<int, bool> r = stmt->prepare(sql);
-		std::vector<std::string> result;
+		std::set<std::string> result;
 		BOOST_ASSERT(r.second);
 		if (r.second) {
 
@@ -681,8 +749,9 @@ namespace node
 				//
 				//	convert SQL result
 				//
-				result.push_back(cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 23), "TSMLData.OBIS"));
-				CYNG_LOG_TRACE(logger_, result.back());
+				auto pos = result.insert(cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 23), "TSMLData.OBIS"));
+				//result.push_back(cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 23), "TSMLData.OBIS"));
+				if (pos.second)	CYNG_LOG_TRACE(logger_, *pos.first);
 			}
 
 			//
@@ -696,7 +765,7 @@ namespace node
 	std::ofstream storage_db::open_file_15_min_profile(std::chrono::system_clock::time_point start
 		, std::chrono::system_clock::time_point end
 		, std::string const& id
-		, std::vector<std::string> const& codes)
+		, std::set<std::string> const& codes)
 	{
 		auto tt_start = std::chrono::system_clock::to_time_t(start);
 		std::tm time_start = cyng::chrono::convert_utc(tt_start);

@@ -75,13 +75,9 @@ namespace node
 		void update_sys_cpu_count(std::string const&, boost::uuids::uuid);
 		void update_sys_mem_virtual_total(std::string const&, boost::uuids::uuid);
 		void update_sys_mem_virtual_used(std::string const&, boost::uuids::uuid);
+		void update_sys_mem_virtual_stat(std::string const&, boost::uuids::uuid);
 
 		void res_query_gateway(cyng::context& ctx);
-		//void res_query_status_word(cyng::context& ctx);
-		//void res_query_srv_visible(cyng::context& ctx);
-		//void res_query_srv_active(cyng::context& ctx);
-		//void res_query_firmware(cyng::context& ctx);
-		//void res_query_memory(cyng::context& ctx);
 
 		void http_move(cyng::context& ctx);
 

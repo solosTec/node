@@ -69,14 +69,16 @@ namespace node
 		 */
 		std::vector<std::string> get_server_ids(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
+			, std::string profile
 			, cyng::sql::command&
 			, cyng::db::statement_ptr);
 		
 		/**
 		 * get OBIS codes that are used for the specified time range and used for 15 min profile (8181c78611ff)
 		 */
-		std::vector<std::string> get_obis_codes(std::chrono::system_clock::time_point start
+		std::set<std::string> get_obis_codes(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
+			, std::string profile
 			, std::string const& id
 			, cyng::sql::command&
 			, cyng::db::statement_ptr);
@@ -85,7 +87,7 @@ namespace node
 		std::ofstream open_file_15_min_profile(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, std::string const& id
-			, std::vector<std::string> const&);
+			, std::set<std::string> const&);
 
 		std::ofstream open_file_24_h_profile(std::chrono::system_clock::time_point end);
 
@@ -95,7 +97,7 @@ namespace node
 			, cyng::sql::command&
 			, cyng::db::statement_ptr
 			, std::string const& id
-			, std::vector<std::string> const& obis_code);
+			, std::set<std::string> const& obis_code);
 
 		void collect_data_24_h_profile(std::ofstream&
 			, std::chrono::system_clock::time_point start
@@ -108,6 +110,9 @@ namespace node
 		/**
 		 * Collect unique server/OBIS combinations for 24 h profile
 		 */
+#ifdef _MSVC
+		__declspec(deprecated)
+#endif
 		std::vector<std::pair<std::string, std::string>> get_unique_server_obis_combinations(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, cyng::sql::command& cmd

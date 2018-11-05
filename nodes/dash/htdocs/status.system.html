@@ -109,7 +109,10 @@
                 <!--<img class="card-img-top" src="..." alt="Card image cap">-->
                 <div class="card-body">
                     <h5 class="card-title">Memory</h5>
-                    <p class="card-text">used virtual memory: <span id="ws-mem-load"></span></p>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="ws-mem-virtual-progress">0%</div>
+                    </div>
+                    <!--<p class="card-text">used virtual memory: <span id="ws-mem-load"></span></p>-->
                 </div>
                 <div class="card-footer">
                     <small class="text-muted"><span id="ws-mem-virtual-total"></span> virtual memory are available</small>
@@ -274,6 +277,12 @@
                             else if (obj.channel == 'sys.mem.virtual.total') {
                                 $('#ws-mem-virtual-total').html(format_bytes(obj.value));
                             }
+                            //  {"cmd": "update", "channel": "sys.mem.virtual.stat", "value": {"percent":34.919550616183272,"total":39400308736,"used":13758410752}}
+                            else if (obj.channel == 'sys.mem.virtual.stat') {
+                                $('#ws-mem-virtual-total').html(format_bytes(obj.value.total));
+                                //$('#ws-mem-load').html(format_bytes(obj.value.used));
+                                $('#ws-mem-virtual-progress').css("width", obj.value.percent + "%").attr("aria-valuenow", obj.value.percent).text(format_bytes(obj.value.used));
+                            }
                         }
                     }
                     else if (obj.cmd == 'insert') {
@@ -342,12 +351,19 @@
 
             function startSysTimer() {
                 $('#ws-activity-symbol').show();
-                var queryMem = JSON.stringify({ cmd: "update", channel: "sys.mem.virtual.used" });
-                connection.send(queryMem);
-                totalIO += queryMem.length;
+
+                //var queryMem = JSON.stringify({ cmd: "update", channel: "sys.mem.virtual.used" });
+                //connection.send(queryMem);
+                //totalIO += queryMem.length;
+
+                var queryStat = JSON.stringify({ cmd: "update", channel: "sys.mem.virtual.stat" });
+                connection.send(queryStat);
+                totalIO += queryStat.length;
+
                 var queryCPU = JSON.stringify({ cmd: "update", channel: "sys.cpu.usage.total" });
                 connection.send(queryCPU);
                 totalIO += queryCPU.length;
+
                 $('#ws-io-load').html(format_bytes(totalIO));
                 sysTimer = setTimeout(startSysTimer, 5000);
                 $('#ws-activity-text').html('running on ' + location.hostname);
