@@ -223,6 +223,21 @@ namespace node
 			return get_proc_parameter(srv, OBIS_CODE_IF_wMBUS, username, password);
 		}
 
+		std::size_t req_generator::get_proc_parameter_ipt_status(cyng::buffer_t const& srv
+			, std::string const& username
+			, std::string const& password)
+		{
+			return get_proc_parameter(srv, OBIS_CODE_ROOT_IPT_STATE, username, password);
+		}
+
+		std::size_t req_generator::get_proc_parameter_ipt_config(cyng::buffer_t const& srv
+			, std::string const& username
+			, std::string const& password)
+		{
+			return get_proc_parameter(srv, OBIS_CODE_ROOT_IPT_PARAM, username, password);
+		}
+
+
 		res_generator::res_generator()
 			: generator()
 		{}
@@ -580,7 +595,7 @@ namespace node
 
 				if (cyng::value_cast(rec["active"], false)) {
 
-					tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x11, 0x06, 0x01, tpl.size() + 1), {
+					tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x11, 0x06, 0x01, tpl.size() + 1), {
 						parameter_tree(OBIS_CODE(81, 81, C7, 82, 04, FF), make_value(cyng::value_cast(rec["serverID"], tmp))),
 						parameter_tree(OBIS_CODE(81, 81, C7, 82, 02, FF), make_value(cyng::value_cast<std::string>(rec["class"], ""))),
 						//	timestamp (01 00 00 09 0B 00 )
@@ -592,7 +607,7 @@ namespace node
 					//
 					if (tpl.size() == 0xFE)
 					{
-						list.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x11, 0x06, list.size() + 1, 0xFF), tpl)));
+						list.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x11, 0x06, list.size() + 1, 0xFF), tpl)));
 						tpl.clear();
 					}
 					BOOST_ASSERT_MSG(list.size() < 0xFA, "active device list to large");
@@ -605,7 +620,7 @@ namespace node
 			//
 			//	append last pending list
 			//
-			list.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x11, 0x06, list.size() + 1, 0xFF), tpl)));
+			list.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x11, 0x06, list.size() + 1, 0xFF), tpl)));
 
 
 			return append_msg(message(trx	//	trx
@@ -623,9 +638,6 @@ namespace node
 					//	generate get process parameter response
 					//
 					, child_list_tree(OBIS_CODE_ROOT_ACTIVE_DEVICES, list)
-					//, child_list_tree(OBIS_CODE_ROOT_ACTIVE_DEVICES, {
-					//	child_list_tree(OBIS_CODE_LIST_1_ACTIVE_DEVICES, tpl)
-					//}
 			)));
 		}
 
@@ -648,7 +660,7 @@ namespace node
 
 				if (cyng::value_cast(rec["visible"], false)) {
 
-					tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x10, 0x06, 0x01, tpl.size() + 1), {
+					tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x10, 0x06, 0x01, tpl.size() + 1), {
 						parameter_tree(OBIS_CODE(81, 81, C7, 82, 04, FF), make_value(cyng::value_cast(rec["serverID"], tmp))),
 						parameter_tree(OBIS_CODE(81, 81, C7, 82, 02, FF), make_value(cyng::value_cast<std::string>(rec["class"], ""))),
 						//	timestamp (01 00 00 09 0B 00 )
@@ -660,7 +672,7 @@ namespace node
 					//
 					if (tpl.size() == 0xFE)
 					{
-						list.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x10, 0x06, list.size() + 1, 0xFF), tpl)));
+						list.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x10, 0x06, list.size() + 1, 0xFF), tpl)));
 						tpl.clear();
 					}
 					BOOST_ASSERT_MSG(list.size() < 0xFA, "visible device list to large");
@@ -673,7 +685,7 @@ namespace node
 			//
 			//	append last pending list
 			//
-			list.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0x10, 0x06, list.size() + 1, 0xFF), tpl)));
+			list.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x10, 0x06, list.size() + 1, 0xFF), tpl)));
 
 
 			return append_msg(message(trx	//	trx

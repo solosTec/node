@@ -37,7 +37,6 @@ namespace node
 		, options_(options)
 		, bag_(bag)
 		, timeout_(timeout)
-		//, response_(ipt::tp_res_open_connection_policy::UNREACHABLE)
 		, start_(std::chrono::system_clock::now())
 		, is_waiting_(false)
 	{
@@ -88,32 +87,16 @@ namespace node
 		if (!vm_.is_halted()) {
 
 			//
-			//	close session
-			//	could crash if session is already gone
+			//	Safe way to intentionally close this session.
+			//	
+			//	* set session in shutdown state
+			//	* close socket
+			//	* update cluster master state and
+			//	* remove session from IP-T masters client_map
 			//
-			vm_.async_run({ cyng::generate_invoke("session.remove.relation", base_.get_id())
+			vm_.async_run({ cyng::generate_invoke("session.state.pending")
 				, cyng::generate_invoke("ip.tcp.socket.shutdown")
 				, cyng::generate_invoke("ip.tcp.socket.close") });
-		}
-		else {
-
-			CYNG_LOG_WARNING(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> stop (session already halted) "
-				<< tag_);
-		}
-
-		//
-		//	send response to cluster master
-		//
-		if (bus_->is_online()) {
-			bus_->vm_.async_run(client_res_open_connection(tag_
-				, seq_	//	cluster sequence
-				, false	//	no success
-				, options_
-				, bag_));
 		}
 
 		return cyng::continuation::TASK_STOP;
@@ -121,40 +104,6 @@ namespace node
 
 	void open_connection::stop()
 	{
-		//if (ipt::tp_res_open_connection_policy::is_success(response_))
-		//{
-		//	auto dom = cyng::make_reader(options_);
-		//	const auto local_connect = cyng::value_cast(dom.get("local-connect"), false);
-		//	if (local_connect)
-		//	{
-		//		auto origin_tag = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
-		//		auto remote_tag = cyng::value_cast(dom.get("remote-tag"), boost::uuids::nil_uuid());
-		//		BOOST_ASSERT(origin_tag == tag_);	//	this station got the call
-		//		BOOST_ASSERT(origin_tag != remote_tag);
-
-		//		CYNG_LOG_DEBUG(logger_, "task #"
-		//			<< base_.get_id()
-		//			<< " <"
-		//			<< base_.get_class_name()
-		//			<< "> prepare local connection "
-		//			<< origin_tag
-		//			<< " <==> "
-		//			<< remote_tag);
-
-		//	}
-		//}
-
-		//
-		//	send response to cluster master
-		//
-		//if (bus_->is_online()) {
-		//	bus_->vm_.async_run(client_res_open_connection(tag_
-		//		, seq_
-		//		, ipt::tp_res_open_connection_policy::is_success(response_)
-		//		, options_
-		//		, bag_));
-		//}
-
 		//
 		//	terminate task
 		//
@@ -162,7 +111,8 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> is stopped");
+			<< "> is stopped after "
+			<< cyng::to_str(std::chrono::system_clock::now() - start_));
 
 	}
 
@@ -177,7 +127,6 @@ namespace node
 			<< ipt::tp_res_open_connection_policy::get_response_name(res)
 			<< "]");
 
-		//response_ = res;
 		if (bus_->is_online()) {
 			bus_->vm_.async_run(client_res_open_connection(tag_
 				, seq_	//	cluster sequence

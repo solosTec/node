@@ -25,19 +25,17 @@ namespace node
 		, vm_(vm)
 		, tag_(tag)
 		, timeout_(timeout)
-		, response_(ipt::ctrl_res_login_public_policy::ACCOUNT_LOCKED)
 		, start_(std::chrono::system_clock::now())
 		, is_waiting_(false)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
-		<< base_.get_id()
-		<< " <"
-		<< base_.get_class_name()
-		<< "> is running: "
-		<< tag_
-		<< " until "
-		<< cyng::to_str(start_ + timeout_));
-
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> "
+			<< tag_
+			<< " is running until "
+			<< cyng::to_str(start_ + timeout_));
 	}
 
 	cyng::continuation gatekeeper::run()
@@ -61,7 +59,25 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> timeout");
+			<< "> "
+			<< tag_
+			<< " timeout");
+
+		if (!vm_.is_halted()) {
+
+			//
+			//	Safe way to intentionally close this session.
+			//	
+			//	* set session in shutdown state
+			//	* close socket
+			//	* update cluster master state and
+			//	* remove session from IP-T masters client_map
+			//
+			vm_.async_run({ cyng::generate_invoke("session.state.pending")
+				, cyng::generate_invoke("ip.tcp.socket.shutdown")
+				, cyng::generate_invoke("ip.tcp.socket.close") });
+
+		}
 
 		return cyng::continuation::TASK_STOP;
 	}
@@ -78,40 +94,13 @@ namespace node
 		//
 		//	session already stopped
 		//
-		response_ = ipt::ctrl_res_login_public_policy::GENERAL_ERROR;
+		//response_ = ipt::ctrl_res_login_public_policy::GENERAL_ERROR;
 		return cyng::continuation::TASK_STOP;
 	}
 
 
 	void gatekeeper::stop()
 	{
-		if (response_ == ipt::ctrl_res_login_public_policy::ACCOUNT_LOCKED)
-		{
-			//
-			//	no login response received - stop client
-			//	Could crash if session is already closed.
-			//
-			if (!vm_.is_halted()) {
-
-				CYNG_LOG_WARNING(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> stop "
-					<< tag_);
-
-				vm_.async_run({ cyng::generate_invoke("ip.tcp.socket.shutdown"), cyng::generate_invoke("ip.tcp.socket.close") });
-			}
-			else {
-				CYNG_LOG_WARNING(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> stop (session already halted) "
-					<< tag_);
-			}
-		}
-
 		//
 		//	terminate task
 		//
@@ -123,8 +112,9 @@ namespace node
 			<< "> is stopped: "
 			<< tag_
 			<< " after "
-			<< uptime.count()
-			<< " milliseconds");
+			<< cyng::to_str(uptime));
+			//<< uptime.count()
+			//<< " milliseconds");
 
 	}
 
@@ -141,7 +131,7 @@ namespace node
 			<< ipt::ctrl_res_login_public_policy::get_response_name(res)
 			<< "]");
 
-		response_ = res;
+		//response_ = res;
 		return cyng::continuation::TASK_STOP;
 	}
 

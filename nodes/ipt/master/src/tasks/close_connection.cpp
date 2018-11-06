@@ -112,15 +112,16 @@ namespace node
 		else
 		{
 			//
-			//	close session
-			//	could crash if session is already gone
-			//	cyng::generate_invoke("session.remove.relation", base_.get_id())
+			//	Safe way to intentionally close this session.
+			//	
+			//	* set session in shutdown state
+			//	* close socket
+			//	* update cluster master state and
+			//	* remove session from IP-T masters client_map
 			//
 			vm_.async_run({ cyng::generate_invoke("session.state.pending")
 				, cyng::generate_invoke("ip.tcp.socket.shutdown")
 				, cyng::generate_invoke("ip.tcp.socket.close") });
-
-
 		}
 
 		if (bus_->is_online())

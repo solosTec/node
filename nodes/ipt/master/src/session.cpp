@@ -295,17 +295,21 @@ namespace node
 			//
 			//	wait for pending operations
 			//
-			vm_.wait(12, std::chrono::milliseconds(100));
+			if (vm_.wait(12, std::chrono::milliseconds(100))) {
 
-			//
-			//	Tell SMF master to remove this session by calling "client.req.close". 
-			//	SMF master will send a "client.req.close" to the IP-T server which will
-			//	remove this session from the connection_map_ which will eventual call
-			//	the desctructor of this session object.
-			//
-			CYNG_LOG_TRACE(logger_, "send \"client.req.close\" request from session "
-				<< vm_.tag());
-			bus_->vm_.async_run(client_req_close(vm_.tag(), code));
+				//
+				//	Tell SMF master to remove this session by calling "client.req.close". 
+				//	SMF master will send a "client.req.close" to the IP-T server which will
+				//	remove this session from the connection_map_ which will eventual call
+				//	the desctructor of this session object.
+				//
+				CYNG_LOG_TRACE(logger_, "send \"client.req.close\" request from session "
+					<< vm_.tag());
+				bus_->vm_.async_run(client_req_close(vm_.tag(), code));
+			}
+			else {
+				CYNG_LOG_FATAL(logger_, "shutdown (req) failed " << vm_.tag());
+			}
 		}
 
 		void session::stop_res()
@@ -318,21 +322,26 @@ namespace node
 			//
 			//	wait for pending operations
 			//
-			vm_.wait(12, std::chrono::milliseconds(100));
+			if (vm_.wait(12, std::chrono::milliseconds(100)))
+			{
 
-			if (pending_) {
-				//
-				//	tell master to close *this* client
-				//
-				boost::system::error_code ec(boost::asio::error::operation_aborted);
-				bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
+				if (pending_) {
+					//
+					//	tell master to close *this* client
+					//
+					boost::system::error_code ec(boost::asio::error::operation_aborted);
+					bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
+				}
+				else {
+					//
+					//	remove from connection map - call destructor
+					//	server::remove_client();
+					//
+					bus_->vm_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
+				}
 			}
 			else {
-				//
-				//	remove from connection map - call destructor
-				//	server::remove_client();
-				//
-				bus_->vm_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
+				CYNG_LOG_FATAL(logger_, "shutdown (res) failed " << vm_.tag());
 			}
 		}
 
@@ -362,10 +371,7 @@ namespace node
 			//	gracefull shutdown
 			//	device/party closed connection or network shutdown
 			//
-			vm_.access([this](cyng::vm& vm) {
-				vm.run(cyng::generate_invoke("log.msg.info", "gracefull shutdown"));
-				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
-			});
+			vm_.halt();
 		}
 
 		void session::store_relation(cyng::context& ctx)

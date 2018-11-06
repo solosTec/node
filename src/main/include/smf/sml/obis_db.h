@@ -17,7 +17,7 @@
 	OBIS_##name (0x##p1, 0x##p2, 0x##p3, 0x##p4, 0x##p5, 0x##p6)
 
 #define OBIS_CODE(p1, p2, p3, p4, p5, p6)	\
-	node::sml::obis (0x##p1, 0x##p2, 0x##p3, 0x##p4, 0x##p5, 0x##p6)
+	node::sml::make_obis (0x##p1, 0x##p2, 0x##p3, 0x##p4, 0x##p5, 0x##p6)
 
 namespace node
 {
@@ -115,6 +115,11 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 48, 0D, 06, 00, FF, CODE_ROOT_LAN_DSL);	//	see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter
 		const static obis	DEFINE_OBIS_CODE(81, 49, 0D, 06, 00, FF, CODE_ROOT_IPT_STATE);	//	see: 7.3.1.8 Datenstruktur zur Abfrage des IPT Status 
 		const static obis	DEFINE_OBIS_CODE(81, 49, 0D, 07, 00, FF, CODE_ROOT_IPT_PARAM);	//	see: 7.3.1.9 Datenstruktur zur Lesen/Setzen der IPT Parameter 
+
+		//	ip-t status
+		const static obis	DEFINE_OBIS_CODE(81, 49, 17, 07, 00, 00, CODE_ROOT_IPT_STATE_ADDRESS);	//	IP adress
+		const static obis	DEFINE_OBIS_CODE(81, 49, 1A, 07, 00, 00, CODE_ROOT_IPT_STATE_PORT_LOCAL);	//	local port
+		const static obis	DEFINE_OBIS_CODE(81, 49, 19, 07, 00, 00, CODE_ROOT_IPT_STATE_PORT_REMOTE);	//	remote port
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, 13, CODE_PEER_ADDRESS_WANGSM);	//	peer address: WAN/GSM
 		const static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, FF, CODE_PEER_ADDRESS);	//	unit is 255

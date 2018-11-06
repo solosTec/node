@@ -555,6 +555,23 @@ namespace node
 						, ro_.get_value(OBIS_W_MBUS_INSTALL_MODE)	//	installation mode (true)
 					);
 				}
+				else if (path.front() == OBIS_CODE_ROOT_IPT_STATE) {
+					//	get IP-T status
+					read_get_proc_multiple_parameters(*pos++);
+					//	81 49 17 07 00 00 ip address
+					//	81 49 1A 07 00 00 local port
+					//	81 49 19 07 00 00 remote port
+					return cyng::generate_invoke("sml.get.proc.param.ipt.state"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, from_server_id(ro_.server_id_)
+						, OBIS_CODE_ROOT_IPT_STATE.to_buffer()	//	same as path.front()
+						, ro_.get_value(OBIS_CODE_ROOT_IPT_STATE_ADDRESS)	//	IP adress
+						, ro_.get_value(OBIS_CODE_ROOT_IPT_STATE_PORT_LOCAL)	//	local port
+						, ro_.get_value(OBIS_CODE_ROOT_IPT_STATE_PORT_REMOTE)	//	remote port
+					);
+				}
 				break;
 			case 2:
 				if (path.front() == OBIS_CODE_ROOT_DEVICE_IDENT)
@@ -608,6 +625,32 @@ namespace node
 							, attr.second);	//	value
 					}
 				}
+				else if (path.front() == OBIS_CODE_ROOT_IPT_PARAM) {
+					const auto r = path.back().is_matching(0x81, 0x49, 0x0D, 0x07, 0x00);
+					if (r.second) {
+#ifdef _DEBUG
+						std::cout << "OBIS_CODE_ROOT_IPT_PARAM: " << +r.first << std::endl;
+#endif
+						//	get IP-T params
+						read_get_proc_multiple_parameters(*pos++);
+						//	81 49 17 07 00 00 ip address
+						//	81 49 1A 07 00 00 local port
+						//	81 49 19 07 00 00 remote port
+						return cyng::generate_invoke("sml.get.proc.param.ipt.param"
+							, ro_.pk_
+							, ro_.trx_
+							, ro_.idx_
+							, from_server_id(ro_.server_id_)
+							, OBIS_CODE_ROOT_IPT_PARAM.to_buffer()	//	same as path.front()
+							, r.first
+							, ro_.get_value(make_obis(0x81, 0x49, 0x17, 0x07, 0x00, r.first))	//	IP adress
+							, ro_.get_value(make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, r.first))	//	local port
+							, ro_.get_value(make_obis(0x81, 0x49, 0x19, 0x07, 0x00, r.first))	//	remote port
+							, ro_.get_string(make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, r.first))	//	device name
+							, ro_.get_string(make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, r.first))	//	password
+						);
+					}
+				}
 				break;
 			case 3:
 				if ((path.front() == OBIS_CODE_ROOT_VISIBLE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x10, 0x06)) {
@@ -620,8 +663,8 @@ namespace node
 					//
 					read_get_proc_multiple_parameters(*pos++);
 
-					cyng::buffer_t meter;
-					meter = cyng::value_cast(ro_.get_value(OBIS_CODE_SERVER_ID), meter);
+					//cyng::buffer_t meter;
+					//meter = cyng::value_cast(ro_.get_value(OBIS_CODE_SERVER_ID), meter);
 
 					return cyng::generate_invoke("sml.get.proc.param.srv.visible"
 						, ro_.pk_
@@ -1094,7 +1137,7 @@ namespace node
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
-				, ro_.server_id_
+				, from_server_id(ro_.server_id_)
 				, code.to_buffer()
 				, ro_.get_value("attentionMsg"));
 		}

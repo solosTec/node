@@ -16,6 +16,7 @@
 #include <cyng/factory/set_factory.h>
 #include <cyng/set_cast.h>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/io/swap.h>
 
 #include <boost/assert.hpp>
 
@@ -130,6 +131,8 @@ namespace node
 			vm.register_function("sml.get.proc.param.memory", 7, std::bind(&connect_state::sml_get_proc_param_memory, this, std::placeholders::_1));
 			vm.register_function("sml.get.proc.param.wmbus.status", 9, std::bind(&connect_state::sml_get_proc_param_wmbus_status, this, std::placeholders::_1));
 			vm.register_function("sml.get.proc.param.wmbus.config", 11, std::bind(&connect_state::sml_get_proc_param_wmbus_config, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.param.ipt.state", 8, std::bind(&connect_state::sml_get_proc_param_ipt_status, this, std::placeholders::_1));
+			vm.register_function("sml.get.proc.param.ipt.param", 11, std::bind(&connect_state::sml_get_proc_param_ipt_param, this, std::placeholders::_1));
 			vm.register_function("sml.attention.msg", 6, std::bind(&connect_state::sml_attention_msg, this, std::placeholders::_1));
 
 		}
@@ -552,6 +555,61 @@ namespace node
 			}
 		}
 
+		void session::connect_state::sml_get_proc_param_ipt_status(cyng::context& ctx)
+		{
+			//	 [97197e6c-a8cb-496a-8749-6bf25867758f,1360299-2,0,00:15:3b:01:ec:46,81490D0600FF,1501a8c0,68ee,10c6]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(sr_.logger_, "sml.get.proc.param.ipt.status "
+				<< *this
+				<< " - "
+				<< cyng::io::to_str(frame));
+
+			//	boost::asio::ip::make_address_v4() expects host byte ordering - but SML delivers network ordering
+			const boost::asio::ip::address_v4::uint_type ia = cyng::value_cast<boost::asio::ip::address_v4::uint_type>(frame.at(5), 0u);
+			const boost::asio::ip::address address = boost::asio::ip::make_address_v4(cyng::swap_num(ia));
+
+			sr_.mux_.post(tsk_, 5, cyng::tuple_t{
+				frame.at(1),	//	trx
+				frame.at(2),	//	idx
+				frame.at(3),	//	server ID
+				frame.at(4),	//	OBIS code
+								//	current IP-T address parameters
+				cyng::param_map_factory("address", address)
+				("local", cyng::numeric_cast<std::uint16_t>(frame.at(6), 0))
+				("remote", cyng::numeric_cast<std::uint16_t>(frame.at(7), 0))
+				()
+				});
+		}
+
+		void session::connect_state::sml_get_proc_param_ipt_param(cyng::context& ctx)
+		{
+			//	 [1b2164c5-ee0f-44d4-a4eb-6f3a78e47767,0980651-3,0,00:15:3b:02:23:b3,81490D0700FF,2,1501a8c0,68ef,0,LSMTest4,LSMTest4]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(sr_.logger_, "sml.get.proc.param.ipt.param "
+				<< *this
+				<< " - "
+				<< cyng::io::to_str(frame));
+
+			//	boost::asio::ip::make_address_v4() expects host byte ordering - but SML delivers network ordering
+			const boost::asio::ip::address_v4::uint_type ia = cyng::value_cast<boost::asio::ip::address_v4::uint_type>(frame.at(6), 0u);
+			const boost::asio::ip::address address = boost::asio::ip::make_address_v4(cyng::swap_num(ia));
+
+			sr_.mux_.post(tsk_, 5, cyng::tuple_t{
+				frame.at(1),	//	trx
+				frame.at(2),	//	idx
+				frame.at(3),	//	server ID
+				frame.at(4),	//	OBIS code
+								//	IP-T configuration record
+				cyng::param_map_factory("idx", frame.at(5))
+				("address", address)
+				("local", cyng::numeric_cast<std::uint16_t>(frame.at(7), 0))
+				("remote", cyng::numeric_cast<std::uint16_t>(frame.at(8), 0))
+				("name", frame.at(9))
+				("pwd", frame.at(10))
+				()
+				});
+		}
+
 		void session::connect_state::sml_get_proc_param_simple(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
@@ -571,7 +629,7 @@ namespace node
 				<< cyng::io::to_str(frame));
 
 			if (state_ == STATE_TASK) {
-				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ frame.at(3), frame.at(4) });
+				sr_.mux_.post(tsk_, 6, cyng::tuple_t{ frame.at(3), frame.at(4) });
 			}
 			else {
 				CYNG_LOG_ERROR(sr_.logger_, "sml.attention.msg - session in wrong state: "

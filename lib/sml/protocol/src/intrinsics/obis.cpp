@@ -354,6 +354,21 @@ namespace node
 			a.swap(b);
 		}
 
+		obis make_obis(std::uint32_t a
+			, std::uint32_t b
+			, std::uint32_t c
+			, std::uint32_t d
+			, std::uint32_t e
+			, std::uint32_t f)
+		{
+			return obis(static_cast<std::uint8_t>(a & 0xFF)
+				, static_cast<std::uint8_t>(b & 0xFF)
+				, static_cast<std::uint8_t>(c & 0xFF)
+				, static_cast<std::uint8_t>(d & 0xFF)
+				, static_cast<std::uint8_t>(e & 0xFF)
+				, static_cast<std::uint8_t>(f & 0xFF));
+		}
+
 	}	//	sml
 }	//	node
 

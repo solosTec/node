@@ -36,13 +36,9 @@ namespace node
 			cyng::param_map_t	//	params
 		>;
 
-		//using msg_5 = std::tuple<cyng::buffer_t, std::uint32_t>;
-		//using msg_6 = std::tuple<bool, cyng::buffer_t, std::uint16_t, cyng::buffer_t, cyng::buffer_t, std::chrono::system_clock::time_point>;
-		//using msg_7 = std::tuple<cyng::buffer_t, std::uint32_t, cyng::buffer_t, cyng::buffer_t, bool>;
-		//using msg_8 = std::tuple <cyng::buffer_t, std::uint8_t, std::uint8_t>;
-		//using msg_9 = std::tuple < cyng::buffer_t, std::string, cyng::buffer_t, std::string, std::string>;
+		using msg_6 = std::tuple<std::string, cyng::buffer_t>;
 
-		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6>;
 
 	public:
 		query_gateway(cyng::async::base_task* btp
@@ -106,62 +102,15 @@ namespace node
 			std::string serverID,
 			cyng::buffer_t code,
 			cyng::param_map_t params);
-		//cyng::continuation process(cyng::buffer_t const&
-		//	, std::uint32_t);
 
 		/**
 		 * @brief slot [6]
 		 *
-		 * sml.get.proc.param.srv.visible
-		 * sml.get.proc.param.srv.active
+		 * attention code
 		 */
-		//cyng::continuation process(bool
-		//	, cyng::buffer_t const&
-		//	, std::uint16_t
-		//	, cyng::buffer_t const&
-		//	, cyng::buffer_t const&
-		//	, std::chrono::system_clock::time_point);
+		cyng::continuation process(std::string
+			, cyng::buffer_t const&);
 
-		/**
-		 * @brief slot [7]
-		 *
-		 * sml.get.proc.param.firmware
-		 */
-		//cyng::continuation process(cyng::buffer_t const&
-		//	, std::uint32_t
-		//	, cyng::buffer_t const&
-		//	, cyng::buffer_t const&
-		//	, bool);
-
-		/**
-		 * @brief slot [8]
-		 *
-		 * sml.get.proc.param.memory
-		 */
-		//cyng::continuation process(cyng::buffer_t const&
-		//	, std::uint8_t
-		//	, std::uint8_t);
-
-		/**
-		 * @brief slot [9]
-		 * [c5870024-e64c-43dd-aac4-3f3209a291b9,7228963-2,0,0500153B021774,81060F0600FF,RC1180-MBUS3,A815919638040131,332E3038,322E3030]
-		 *
-		 * sml.get.proc.param.wmbus.status
-		 */
-		//cyng::continuation process(cyng::buffer_t const& srv_id
-		//	, std::string manufacturer
-		//	, cyng::buffer_t const& dev_id
-		//	, std::string firmware
-		//	, std::string hardware);
-
-		/**
-		 * @brief slot [10]
-		 *
-		 * sml.get.proc.param.wmbus.config
-		 */
-		//cyng::continuation process(cyng::buffer_t const&
-		//	, std::uint8_t
-		//	, std::uint8_t);
 	private:
 		void send_query_cmd();
 

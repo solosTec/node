@@ -250,36 +250,6 @@ namespace node
 			;
 	}
 
-	//cyng::vector_t bus_res_query_status_word(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::string srv
-	//	, cyng::attr_map_t const& status)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("bus.res.query.status.word", source, seq, tag_ws, srv, status))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
-	//cyng::vector_t bus_res_query_srv_visible(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::uint16_t nr
-	//	, std::string srv
-	//	, std::string meter
-	//	, std::string dclass
-	//	, std::chrono::system_clock::time_point st
-	//	, std::uint32_t srv_type)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("bus.res.query.srv.visible", source, seq, tag_ws, nr, srv, meter, dclass, st, srv_type))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
 	cyng::vector_t bus_req_query_gateway(cyng::vector_t const& key
 		, boost::uuids::uuid source
 		, cyng::vector_t vec	//	params
@@ -292,91 +262,6 @@ namespace node
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}
-
-	//cyng::vector_t bus_req_query_srv_active(cyng::vector_t const& key
-	//	, boost::uuids::uuid source
-	//	, boost::uuids::uuid tag_ws)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("bus.req.query.srv.active", cyng::invoke("bus.seq.next"), key, source, tag_ws))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
-	//cyng::vector_t bus_req_query_firmware(cyng::vector_t const& key
-	//	, boost::uuids::uuid source
-	//	, boost::uuids::uuid tag_ws)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("bus.req.query.firmware", cyng::invoke("bus.seq.next"), key, source, tag_ws))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
-	//cyng::vector_t bus_res_query_srv_active(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::uint16_t nr
-	//	, std::string srv
-	//	, std::string meter
-	//	, std::string dclass
-	//	, std::chrono::system_clock::time_point st
-	//	, std::uint32_t srv_type)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("bus.res.query.srv.active", source, seq, tag_ws, nr, srv, meter, dclass, st, srv_type))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
-	//cyng::vector_t bus_res_query_firmware(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::uint16_t nr
-	//	, std::string srv
-	//	, std::string section
-	//	, std::string version
-	//	, bool active)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("bus.res.query.firmware", source, seq, tag_ws, nr, srv, section, version, active))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
-	//cyng::vector_t bus_res_query_memory(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::string srv
-	//	, std::uint8_t mirror
-	//	, std::uint8_t tmp)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("bus.res.query.memory", source, seq, tag_ws, srv, mirror, tmp))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
-	//cyng::vector_t bus_res_query_w_mbus_status(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::string srv
-	//	, std::string manufacturer
-	//	, std::string id
-	//	, std::string firmware
-	//	, std::string hardware)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("bus.res.query.wmbus.status", source, seq, tag_ws, srv, manufacturer, id, firmware, hardware))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
 
 	cyng::vector_t bus_res_attention_code(boost::uuids::uuid source
 		, std::uint64_t seq

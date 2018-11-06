@@ -196,6 +196,20 @@ namespace node
 				, std::string const& username
 				, std::string const& password);
 
+			/**
+			 * get current IP-T status - 81 49 0D 06 00 FF (OBIS_CODE_ROOT_IPT_STATE)
+			 */
+			std::size_t get_proc_parameter_ipt_status(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password);
+
+			/**
+			 * get current IP-T config - 81 49 0D 07 00 FF (CODE_ROOT_IPT_PARAM)
+			 */
+			std::size_t get_proc_parameter_ipt_config(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password);
+
 		private:
 			trx	trx_;
 		};

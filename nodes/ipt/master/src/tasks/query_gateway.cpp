@@ -238,166 +238,31 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	//cyng::continuation query_gateway::process(cyng::buffer_t const& srv
-	//	, std::uint32_t status)
-	//{
-	//	CYNG_LOG_INFO(logger_, "task #"
-	//		<< base_.get_id()
-	//		<< " <"
-	//		<< base_.get_class_name()
-	//		<< "> sml.get.proc.status.word - "
-	//		<< status);
+	cyng::continuation query_gateway::process(std::string srv
+		, cyng::buffer_t const& code)
+	{
+		sml::obis attention(code);
 
-	//	sml::status word;
-	//	word.reset(status);
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> response #"
+			<< seq_cluster_
+			<< " from "
+			<< srv
+			<< " attention code "
+			<< sml::get_attention_name(attention));
 
-	//	//
-	//	//	create status word to convert into attribute map
-	//	//
-	//	bus_->vm_.async_run(bus_res_query_status_word(tag_remote_
-	//		, seq_cluster_
-	//		, tag_ws_
-	//		, sml::from_server_id(srv)
-	//		, sml::to_attr_map(word)));
+		bus_->vm_.async_run(bus_res_attention_code(tag_remote_
+			, seq_cluster_
+			, tag_ws_
+			, srv
+			, code
+			, sml::get_attention_name(attention)));
 
-	//	return cyng::continuation::TASK_CONTINUE;
-	//}
-
-	//	-- slot[6]
-	//cyng::continuation query_gateway::process(bool active
-	//	, cyng::buffer_t const& srv
-	//	, std::uint16_t nr
-	//	, cyng::buffer_t const& meter
-	//	, cyng::buffer_t const& dclass
-	//	, std::chrono::system_clock::time_point st)
-	//{
-	//	CYNG_LOG_INFO(logger_, "task #"
-	//		<< base_.get_id()
-	//		<< " <"
-	//		<< base_.get_class_name()
-	//		<< "> #"
-	//		<< nr
-	//		<< " - "
-	//		<< sml::from_server_id(meter));
-
-	//	BOOST_ASSERT(server_id_ == srv);
-	//	if (active) {
-	//		bus_->vm_.async_run(bus_res_query_srv_active(tag_remote_
-	//			, seq_cluster_
-	//			, tag_ws_
-	//			, nr
-	//			, sml::from_server_id(srv)
-	//			, sml::from_server_id(meter)
-	//			, std::string(dclass.begin(), dclass.end())
-	//			, st
-	//			, sml::get_srv_type(meter)));
-
-	//	}
-	//	else {
-	//		bus_->vm_.async_run(bus_res_query_srv_visible(tag_remote_
-	//			, seq_cluster_
-	//			, tag_ws_
-	//			, nr
-	//			, sml::from_server_id(srv)
-	//			, sml::from_server_id(meter)
-	//			, std::string(dclass.begin(), dclass.end())
-	//			, st
-	//			, sml::get_srv_type(meter)));
-	//	}
-
-	//	return cyng::continuation::TASK_CONTINUE;
-	//}
-
-	//	-- slot[5]
-	//cyng::continuation query_gateway::process(cyng::buffer_t const& srv
-	//	, std::uint32_t nr
-	//	, cyng::buffer_t const& section
-	//	, cyng::buffer_t const& version
-	//	, bool active)
-	//{
-	//	CYNG_LOG_INFO(logger_, "task #"
-	//		<< base_.get_id()
-	//		<< " <"
-	//		<< base_.get_class_name()
-	//		<< "> #"
-	//		<< +nr
-	//		<< " - "
-	//		<< std::string(version.begin(), version.end()));
-
-	//	BOOST_ASSERT(server_id_ == srv);
-	//	bus_->vm_.async_run(node::bus_res_query_firmware(tag_remote_
-	//		, seq_cluster_
-	//		, tag_ws_
-	//		, nr
-	//		, sml::from_server_id(srv)
-	//		, std::string(section.begin(), section.end())
-	//		, std::string(version.begin(), version.end())
-	//		, active));
-
-	//	return cyng::continuation::TASK_CONTINUE;
-	//}
-
-	//	-- slot[8] - memory
-	//cyng::continuation query_gateway::process(cyng::buffer_t const& srv
-	//	, std::uint8_t mirror
-	//	, std::uint8_t tmp)
-	//{
-	//	CYNG_LOG_INFO(logger_, "task #"
-	//		<< base_.get_id()
-	//		<< " <"
-	//		<< base_.get_class_name()
-	//		<< "> "
-	//		<< +mirror
-	//		<< "% - "
-	//		<< +tmp
-	//		<< "%");
-
-	//	BOOST_ASSERT(server_id_ == srv);
-	//	bus_->vm_.async_run(node::bus_res_query_memory(tag_remote_
-	//		, seq_cluster_
-	//		, tag_ws_
-	//		, sml::from_server_id(srv)
-	//		, mirror
-	//		, tmp));
-
-	//	return cyng::continuation::TASK_CONTINUE;
-	//}
-
-	//	-- slot[9] - wmBus
-	//cyng::continuation query_gateway::process(cyng::buffer_t const& srv
-	//	, std::string manufacturer
-	//	, cyng::buffer_t const& dev_id
-	//	, std::string firmware
-	//	, std::string hardware)
-	//{
-	//	const auto id = cyng::io::to_hex(dev_id, ' ');
-
-	//	CYNG_LOG_INFO(logger_, "task #"
-	//		<< base_.get_id()
-	//		<< " <"
-	//		<< base_.get_class_name()
-	//		<< "> "
-	//		<< sml::from_server_id(srv)
-	//		<< " wM-Bus: "
-	//		<< manufacturer
-	//		<< ", "
-	//		<< id
-	//		<< ", "
-	//		<< firmware
-	//		<< ", "
-	//		<< hardware);
-
-	//	bus_->vm_.async_run(node::bus_res_query_w_mbus_status(tag_remote_
-	//		, seq_cluster_
-	//		, tag_ws_
-	//		, sml::from_server_id(srv)
-	//		, manufacturer
-	//		, id
-	//		, firmware
-	//		, hardware));
-
-	//	return cyng::continuation::TASK_CONTINUE;
-	//}
+		return cyng::continuation::TASK_CONTINUE;
+	}
 
 	void query_gateway::send_query_cmd()
 	{
@@ -449,6 +314,12 @@ namespace node
 			}
 			else if (boost::algorithm::equals("w-mbus-config", p)) {
 				sml_gen.get_proc_parameter_wireless_mbus_config(server_id_, user_, pwd_);
+			}
+			else if (boost::algorithm::equals("ipt-status", p)) {
+				sml_gen.get_proc_parameter_ipt_status(server_id_, user_, pwd_);
+			}
+			else if (boost::algorithm::equals("ipt-config", p)) {
+				sml_gen.get_proc_parameter_ipt_config(server_id_, user_, pwd_);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"

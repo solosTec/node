@@ -105,6 +105,8 @@ namespace node
 				void sml_get_proc_param_memory(cyng::context& ctx);
 				void sml_get_proc_param_wmbus_status(cyng::context& ctx);
 				void sml_get_proc_param_wmbus_config(cyng::context& ctx);
+				void sml_get_proc_param_ipt_status(cyng::context& ctx);
+				void sml_get_proc_param_ipt_param(cyng::context& ctx);
 				void sml_attention_msg(cyng::context& ctx);
 
 			};

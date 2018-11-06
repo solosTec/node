@@ -54,7 +54,7 @@ namespace node
 		cyng::controller& vm_;
 		const boost::uuids::uuid tag_;
 		const std::chrono::seconds timeout_;
-		ipt::response_type response_;
+		//ipt::response_type response_;
 		const std::chrono::system_clock::time_point start_;
 		bool is_waiting_;
 	};

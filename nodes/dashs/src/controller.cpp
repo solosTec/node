@@ -186,7 +186,7 @@ namespace node
 			//	reconnect to master on different times
 			//
 			boost::random::mt19937 rng_;
-            rng_.seed(std::time(nullptr));
+            rng_.seed(static_cast<std::uint32_t>(std::time(nullptr)));
 			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
 
 			const auto conf = cyng::vector_factory({

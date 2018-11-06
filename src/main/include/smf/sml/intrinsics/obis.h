@@ -156,6 +156,11 @@ namespace node
 	 	// global swap()
 	 	void swap(obis&, obis&);
 
+		/**
+		 * Generate an OBIS code
+		 */
+		obis make_obis(std::uint32_t, std::uint32_t, std::uint32_t, std::uint32_t, std::uint32_t, std::uint32_t);
+
 		//
 		//	define an OBIS path
 		//
