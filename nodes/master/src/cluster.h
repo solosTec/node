@@ -12,6 +12,7 @@
 #include <cyng/log.h>
 #include <cyng/store/db.h>
 #include <cyng/vm/context.h>
+#include <boost/uuid/random_generator.hpp>
 
 namespace node 
 {
@@ -49,6 +50,10 @@ namespace node
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
 
+		/**
+		 * generate meter tags
+		 */
+		boost::uuids::random_generator uidgen_;
 	};
 
 }

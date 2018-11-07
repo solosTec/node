@@ -34,7 +34,7 @@ namespace node
 		, socket_(io_ctx_)
 #endif
 		, db_()
-		, rgn_()
+		, uidgen_()
 	{
 		//
 		//	read session configuration
@@ -118,7 +118,7 @@ namespace node
 
 			if ( !ec ) 
 			{
-				const auto tag = rgn_();
+				const auto tag = uidgen_();
 
 				CYNG_LOG_TRACE(logger_, "accept "
 					<< socket.remote_endpoint()

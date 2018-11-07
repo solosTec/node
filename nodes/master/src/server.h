@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <atomic>
 #include <boost/version.hpp>
-#include <boost/uuid/uuid.hpp>
+//#include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
 
 namespace node 
@@ -82,7 +82,7 @@ namespace node
 		/**
 		 * generate session tags
 		 */
-		boost::uuids::random_generator rgn_;
+		boost::uuids::random_generator uidgen_;
 	};
 }
 

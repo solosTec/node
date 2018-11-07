@@ -355,6 +355,7 @@ namespace node
 			//
 			//	There could be a running gatekeeper
 			//
+			CYNG_LOG_TRACE(logger_, vm_.tag() << " stops connection manager " << connect_state_);
 			connect_state_.stop();
 
 			//
@@ -368,6 +369,7 @@ namespace node
 			//
 			//	stop all tasks
 			//
+			CYNG_LOG_TRACE(logger_, vm_.tag() << " stops " << task_db_.size() << " task(s)");
 			for (auto const& tsk : task_db_) {
 				mux_.stop(tsk.second.first);
 			}
@@ -375,12 +377,14 @@ namespace node
 			//
 			//	reset IP-T parser
 			//
+			CYNG_LOG_TRACE(logger_, vm_.tag() << " reset parser");
 			parser_.clear();
 
 			//
 			//	gracefull shutdown
 			//	device/party closed connection or network shutdown
 			//
+			CYNG_LOG_TRACE(logger_, vm_.tag() << " halt VM");
 			vm_.halt();
 		}
 

@@ -28,7 +28,7 @@ namespace node
 			, input_(&stream_buffer_)
 			, stream_state_(STATE_START)
 			, parser_state_()
-			, f_read_uint8(std::bind(std::bind(&parser::read_numeric<std::uint8_t>, this)))
+			, f_read_uint8(std::bind(&parser::read_numeric<std::uint8_t>, this))
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
 			parser_state_ = ack();

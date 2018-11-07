@@ -11,7 +11,6 @@
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
 #include <cyng/factory/chrono_factory.h>
-#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
@@ -80,25 +79,8 @@ namespace node
 #endif
 				, cyng::generate_invoke("ip.tcp.socket.shutdown")
 				, cyng::generate_invoke("ip.tcp.socket.close") });
-
 		}
 
-		return cyng::continuation::TASK_STOP;
-	}
-
-	//	slot 1
-	cyng::continuation gatekeeper::process()
-	{
-		CYNG_LOG_INFO(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> session closed");
-
-		//
-		//	session already stopped
-		//
-		//response_ = ipt::ctrl_res_login_public_policy::GENERAL_ERROR;
 		return cyng::continuation::TASK_STOP;
 	}
 
@@ -117,9 +99,6 @@ namespace node
 			<< tag_
 			<< " after "
 			<< cyng::to_str(uptime));
-			//<< uptime.count()
-			//<< " milliseconds");
-
 	}
 
 	//	slot 0
@@ -135,7 +114,21 @@ namespace node
 			<< ipt::ctrl_res_login_public_policy::get_response_name(res)
 			<< "]");
 
-		//response_ = res;
+		return cyng::continuation::TASK_STOP;
+	}
+
+	//	slot 1
+	cyng::continuation gatekeeper::process()
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> session closed");
+
+		//
+		//	session already stopped
+		//
 		return cyng::continuation::TASK_STOP;
 	}
 

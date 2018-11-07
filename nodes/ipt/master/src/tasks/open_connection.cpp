@@ -13,7 +13,6 @@
 #include <cyng/vm/generator.h>
 #include <cyng/dom/reader.h>
 #include <boost/uuid/nil_generator.hpp>
-#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {

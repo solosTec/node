@@ -25,8 +25,8 @@ namespace node
 	: mux_(mux)
 		, logger_(logger)
 		, db_(db)
-	{
-	}
+		, uidgen_()
+	{}
 
 	void cluster::register_this(cyng::context& ctx)
 	{
@@ -179,6 +179,8 @@ namespace node
 	{
 		//	[9e3dda5d-7c0b-4a8d-b25d-eea3a113a856,16,0fc100f8-0f1d-4c36-a131-6351bcf467d7,00:15:3b:02:29:80,op-log-status-word,%(("status.word":00072202))]
 		//	[9e3dda5d-7c0b-4a8d-b25d-eea3a113a856,17,0fc100f8-0f1d-4c36-a131-6351bcf467d7,00:15:3b:01:ec:46,root-device-id,%(("active":false),("firmware":INSTALLATION [1]),("number":00000004),("version":VARIOMUC-ETHERNET-1.406_14132___18X022e))]
+		//	[9e3dda5d-7c0b-4a8d-b25d-eea3a113a856,22,534af696-c4f4-4304-a5af-3b3bdb5779a9,00:15:3b:02:29:7e,root-active-devices,%(("class":---),("meter":0ad00001),("number":0005),("timestamp":2017-01-19 08:56:53.00000000),("type":0000000a))]
+		//	[9e3dda5d-7c0b-4a8d-b25d-eea3a113a856,22,534af696-c4f4-4304-a5af-3b3bdb5779a9,00:15:3b:02:29:7e,root-active-devices,%(("class":---),("meter":01-e61e-13090016-3c-07),("number":0009),("timestamp":2018-11-07 12:04:46.00000000),("type":00000000))]
 		//
 		//	* source
 		//	* bus sequence
@@ -199,6 +201,9 @@ namespace node
 			cyng::param_map_t		//	[5] params
 		>(frame);
 
+		//
+		//	routing back
+		//
 		db_.access([&](const cyng::store::table* tbl_cluster)->void {
 
 			auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<0>(tpl)));
@@ -226,6 +231,46 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "bus.res.query.gateway - peer not found " << std::get<0>(tpl));
 			}
 		}, cyng::store::read_access("_Cluster"));
+
+		//
+		//	update TMeter table (experimental)
+		//
+#ifdef _DEBUG
+		if (boost::algorithm::equals(std::get<4>(tpl), "root-active-devices")) {
+			//	%(("class":---),("meter":01-e61e-13090016-3c-07),("number":0009),("timestamp":2018-11-07 12:04:46.00000000),("type":00000000))
+			const auto meter = cyng::value_cast<std::string>(std::get<5>(tpl).at("meter"), "");
+			const auto class_name = cyng::value_cast<std::string>(std::get<5>(tpl).at("class"), "");
+			//	node::sml::srv_type
+			const auto type = cyng::value_cast<std::uint32_t>(std::get<5>(tpl).at("type"), 0u);
+			const auto age = cyng::value_cast(std::get<5>(tpl).at("timestamp"), std::chrono::system_clock::now());
+			CYNG_LOG_TRACE(logger_, "update TMeter " << meter);
+
+			db_.access([&](cyng::store::table* tbl_meter)->void {
+				bool found{ false };
+				tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
+
+					const auto rec_ident = cyng::value_cast<std::string>(rec["ident"], "");
+					if (boost::algorithm::equals(meter, rec_ident)) {
+						//	abort loop
+						found = true;
+					}
+
+					//	continue loop
+					return found;
+				});
+
+				if (!found) {
+					const auto tag = uidgen_();
+					CYNG_LOG_INFO(logger_, "insert TMeter " << tag << " : " << meter);
+					tbl_meter->insert(cyng::table::key_generator(tag)
+						, cyng::table::data_generator(meter, "", "", age, "", "", "", class_name, std::get<0>(tpl))
+					, 0
+					, std::get<0>(tpl));
+				}
+			}, cyng::store::write_access("TMeter"));
+		}
+#endif
+
 	}
 
 	void cluster::bus_req_modify_gateway(cyng::context& ctx)

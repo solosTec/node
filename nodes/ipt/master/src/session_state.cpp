@@ -99,6 +99,12 @@ namespace node
 		std::ostream& operator<<(std::ostream& os, session::connect_state const& cs)
 		{
 			switch (cs.state_) {
+			case session::connect_state::STATE_START:
+				os << "start";
+				break;
+			case session::connect_state::STATE_AUTHORIZED:
+				os << "authorized";
+				break;
 			case session::connect_state::STATE_OFFLINE:
 				os << "offline";
 				break;
@@ -112,6 +118,7 @@ namespace node
 				os << "task #" << cs.tsk_;
 				break;
 			default:
+				os << "ERROR";
 				break;
 			}
 			return os;
@@ -377,6 +384,7 @@ namespace node
 									//	visible device
 					cyng::param_map_factory("number", frame.at(5))
 					("meter", node::sml::from_server_id(meter))
+					("meterId", meter)
 					("class", frame.at(7))
 					("timestamp", frame.at(8))
 					("type", node::sml::get_srv_type(meter))

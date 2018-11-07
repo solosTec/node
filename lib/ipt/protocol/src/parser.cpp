@@ -31,16 +31,26 @@ namespace node
 			, stream_state_(STATE_HEAD)
 			, parser_state_()
 			, header_()
-			, f_read_string(std::bind(std::bind(&parser::read_string, this)))
-			, f_read_uint8(std::bind(std::bind(&parser::read_numeric<std::uint8_t>, this)))
-			, f_read_uint16(std::bind(std::bind(&parser::read_numeric<std::uint16_t>, this)))
-			, f_read_uint32(std::bind(std::bind(&parser::read_numeric<std::uint32_t>, this)))
-			, f_read_uint64(std::bind(std::bind(&parser::read_numeric<std::uint64_t>, this)))
-			, f_read_data(std::bind(std::bind(&parser::read_data, this)))
+			, f_read_string()
+			, f_read_uint8()
+			, f_read_uint16()
+			, f_read_uint32()
+			, f_read_uint64()
+			, f_read_data()
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
 			parser_state_ = command();
 			header_.reset(0);
+
+			//
+			//	better to use a valid this pointer
+			//
+			f_read_string = [&]()->std::string { return this->read_string(); };
+			f_read_uint8 = [&]()->std::uint8_t { return this->read_numeric<std::uint8_t>(); };
+			f_read_uint16 = [&]()->std::uint16_t { return this->read_numeric<std::uint16_t>(); };
+			f_read_uint32 = [&]()->std::uint32_t { return this->read_numeric<std::uint32_t>(); };
+			f_read_uint64 = [&]()->std::uint64_t { return this->read_numeric<std::uint64_t>(); };
+			f_read_data = [&]()->cyng::buffer_t { return this->read_data(); };
 		}
 
 		parser::~parser()
@@ -73,7 +83,7 @@ namespace node
 			//	clear function objects
 			//
 			cb_ = nullptr;
-			f_read_string = nullptr;
+			if (f_read_string)	f_read_string = nullptr;	//	crash!
 			f_read_uint8 = nullptr;
 			f_read_uint16 = nullptr;
 			f_read_uint32 = nullptr;

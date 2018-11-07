@@ -137,6 +137,14 @@ namespace node
 			<< " synchronized table "
 			<< table);
 
+		//
+		//	Tables are sync'd in the following order:
+		//
+		//	* TDevice
+		//	* TGateway
+		//	* TLoRaDevice
+		//	* TMeter
+		//
 		if (boost::algorithm::equals(table, "TDevice"))
 		{
 			sync_table("TGateway");
@@ -144,6 +152,10 @@ namespace node
 		else if (boost::algorithm::equals(table, "TGateway"))
 		{
 			sync_table("TLoRaDevice");
+		}
+		else if (boost::algorithm::equals(table, "TLoRaDevice"))
+		{
+			sync_table("TMeter");
 		}
 		else
 		{

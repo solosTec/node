@@ -472,8 +472,16 @@ namespace node
 
 			const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 
-			if (!remove_client_impl(tag)) {
-				ctx.attach(cyng::generate_invoke("log.msg.error", "client.res.close - failed", frame));
+			try {
+				if (!remove_client_impl(tag)) {
+					ctx.attach(cyng::generate_invoke("log.msg.error", "client.res.close - failed", frame));
+				}
+			}
+			catch (std::exception const& ex) {
+				CYNG_LOG_FATAL(logger_, "client.res.close "
+					<< tag
+					<< " failed: "
+					<< ex.what());
 			}
 		}
 
