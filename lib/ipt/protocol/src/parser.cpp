@@ -45,8 +45,7 @@ namespace node
 
 		parser::~parser()
 		{
-			//parser_callback pcb;
-			//if (cb_)	cb_.swap(pcb);
+			if (cb_)	cb_ = nullptr;
 		}
 
 		void parser::set_sk(scramble_key const& sk)
@@ -63,6 +62,24 @@ namespace node
 			scrambler_.reset();
 		}
 
+		void parser::clear()
+		{
+			stream_state_ = STATE_HEAD;
+			parser_state_ = command();
+			header_.reset(0);
+			scrambler_.reset();
+
+			//
+			//	clear function objects
+			//
+			cb_ = nullptr;
+			f_read_string = nullptr;
+			f_read_uint8 = nullptr;
+			f_read_uint16 = nullptr;
+			f_read_uint32 = nullptr;
+			f_read_uint64 = nullptr;
+			f_read_data = nullptr;
+		}
 
 		char parser::put(char c)
 		{

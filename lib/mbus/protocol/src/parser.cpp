@@ -36,8 +36,8 @@ namespace node
 
 		parser::~parser()
 		{
-            parser_callback pcb;
-            cb_.swap(pcb);
+			if (cb_)	cb_ = nullptr;
+			if (f_read_uint8)	f_read_uint8 = nullptr;
 		}
 
 

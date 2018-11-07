@@ -292,6 +292,9 @@ namespace node
 
 		void session::stop_req(int code)
 		{
+			//
+			//	stop all tasks and halt VM
+			//
 			shutdown();
 
 			//
@@ -368,6 +371,11 @@ namespace node
 			for (auto const& tsk : task_db_) {
 				mux_.stop(tsk.second.first);
 			}
+
+			//
+			//	reset IP-T parser
+			//
+			parser_.clear();
 
 			//
 			//	gracefull shutdown

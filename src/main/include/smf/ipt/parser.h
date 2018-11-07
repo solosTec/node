@@ -316,6 +316,12 @@ namespace node
 			 * Reset parser (default scramble key)
 			 */
 			void reset(scramble_key const&);
+
+			/**
+			 * Clear internal state and all function objects
+			 */
+			void clear();
+
 		private:
 			/**
 			 * read a single byte and update

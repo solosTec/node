@@ -37,11 +37,12 @@ namespace node
 			, stack_()
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
-			//parser_state_ = sml_start();
 		}
 
 		parser::~parser()
-		{}
+		{
+			if (cb_)	cb_ = nullptr;
+		}
 
 
 		void parser::reset()

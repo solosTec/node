@@ -38,7 +38,9 @@ namespace node
 		}
 
 		parser::~parser()
-		{}
+		{
+			if (cb_)	cb_ = nullptr;
+		}
 
 		void parser::put(char c)
 		{
