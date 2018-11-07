@@ -12,6 +12,7 @@
 #include "tasks/gatekeeper.h"
 #include "tasks/reboot.h"
 #include "tasks/query_gateway.h"
+#include "tasks/modify_gateway.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
@@ -87,6 +88,7 @@ namespace node
 			vm_.register_function("session.redirect", 1, std::bind(&session::redirect, this, std::placeholders::_1));
 			vm_.register_function("client.req.reboot", 7, std::bind(&session::client_req_reboot, this, std::placeholders::_1));
 			vm_.register_function("client.req.query.gateway", 8, std::bind(&session::client_req_query_gateway, this, std::placeholders::_1));
+			vm_.register_function("client.req.modify.gateway", 0, std::bind(&session::client_req_modify_gateway, this, std::placeholders::_1));
 
 			//
 			//	register SML callbacks
@@ -547,95 +549,38 @@ namespace node
 		}
 
 
-		//void session::client_req_query_srv_visible(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	CYNG_LOG_INFO(logger_, "client.req.query.srv.visible " << cyng::io::to_str(frame));
-		//	auto const tpl = cyng::tuple_cast<
-		//		boost::uuids::uuid,		//	[0] source tag
-		//		boost::uuids::uuid,		//	[1] remote tag
-		//		std::uint64_t,			//	[2] cluster seq
-		//		boost::uuids::uuid,		//	[3] ws tag
-		//		cyng::buffer_t,			//	[4] server id
-		//		std::string,			//	[5] name
-		//		std::string				//	[6] pwd
-		//	>(frame);
+		void session::client_req_modify_gateway(cyng::context& ctx)
+		{
+			//	[9e3dda5d-7c0b-4a8d-b25d-eea3a113a856,59591725-090d-4502-b9e7-c0c0def5c019,14,ipt,%(("serverId":0500153B01EC46),("smf-gw-ipt-host-1":192.168.1.21),("smf-gw-ipt-host-2":192.168.1.21),("smf-gw-ipt-local-1":68ee),("smf-gw-ipt-local-2":68ef),("smf-gw-ipt-name-1":LSMTest2),("smf-gw-ipt-name-2":LSMTest2),("smf-gw-ipt-pwd-1":LSMTest2),("smf-gw-ipt-pwd-2":LSMTest2),("smf-gw-ipt-remote-1":0),("smf-gw-ipt-remote-2":0)),0500153B01EC46,operator,operator]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "client.req.modify.gateway " << cyng::io::to_str(frame));
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] source tag
+				boost::uuids::uuid,		//	[1] remote tag
+				std::uint64_t,			//	[2] cluster seq
+				std::string,			//	[3] section
+				cyng::param_map_t,		//	[4] params
+				cyng::buffer_t,			//	[5] server ID
+				std::string,			//	[6] name
+				std::string				//	[7] pwd
+			>(frame);
 
-		//	const std::size_t tsk = cyng::async::start_task_sync<query_srv_visible>(mux_
-		//		, logger_
-		//		, bus_
-		//		, vm_
-		//		, std::get<0>(tpl)	//	remote tag
-		//		, std::get<2>(tpl)	//	cluster seq
-		//		, std::get<3>(tpl)	//	ws tag
-		//		, std::get<4>(tpl)	//	server ID
-		//		, std::get<5>(tpl)	//	name
-		//		, std::get<6>(tpl)	//	password
-		//		, timeout_
-		//		, ctx.tag()).first;	//	ctx tag
+			const std::size_t tsk = cyng::async::start_task_sync<modify_gateway>(mux_
+				, logger_
+				, bus_
+				, vm_
+				, std::get<0>(tpl)	//	remote tag
+				, std::get<2>(tpl)	//	cluster seq
+				, std::get<3>(tpl)	//	section
+				, std::get<4>(tpl)	//	params
+				, std::get<5>(tpl)	//	server ID
+				, std::get<6>(tpl)	//	name
+				, std::get<7>(tpl)	//	password
+				, timeout_
+				, ctx.tag()).first;	//	ctx tag
 
-		//	CYNG_LOG_TRACE(logger_, "client.req.query.srv.visible - task #" << tsk);
-		//}
-
-		//void session::client_req_query_srv_active(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	CYNG_LOG_INFO(logger_, "client.req.query.srv.active " << cyng::io::to_str(frame));
-		//	auto const tpl = cyng::tuple_cast<
-		//		boost::uuids::uuid,		//	[0] source tag
-		//		boost::uuids::uuid,		//	[1] remote tag
-		//		std::uint64_t,			//	[2] cluster seq
-		//		boost::uuids::uuid,		//	[1] ws tag
-		//		cyng::buffer_t,			//	[3] server id
-		//		std::string,			//	[4] name
-		//		std::string				//	[5] pwd
-		//	>(frame);
-
-		//	const std::size_t tsk = cyng::async::start_task_sync<query_srv_active>(mux_
-		//		, logger_
-		//		, bus_
-		//		, vm_
-		//		, std::get<0>(tpl)	//	remote tag
-		//		, std::get<2>(tpl)	//	cluster seq
-		//		, std::get<3>(tpl)	//	ws tag
-		//		, std::get<4>(tpl)	//	server ID
-		//		, std::get<5>(tpl)	//	name
-		//		, std::get<6>(tpl)	//	password
-		//		, timeout_
-		//		, ctx.tag()).first;	//	ctx tag
-
-		//	CYNG_LOG_TRACE(logger_, "client.req.query.srv.active - task #" << tsk);
-		//}
-
-		//void session::client_req_query_firmware(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	CYNG_LOG_INFO(logger_, "client.req.query.firmware " << cyng::io::to_str(frame));
-		//	auto const tpl = cyng::tuple_cast<
-		//		boost::uuids::uuid,		//	[0] source tag
-		//		boost::uuids::uuid,		//	[1] remote tag
-		//		std::uint64_t,			//	[2] cluster seq
-		//		boost::uuids::uuid,		//	[1] ws tag
-		//		cyng::buffer_t,			//	[3] server id
-		//		std::string,			//	[4] name
-		//		std::string				//	[5] pwd
-		//	>(frame);
-
-		//	const std::size_t tsk = cyng::async::start_task_sync<query_firmware>(mux_
-		//		, logger_
-		//		, bus_
-		//		, vm_
-		//		, std::get<0>(tpl)	//	remote tag
-		//		, std::get<2>(tpl)	//	cluster seq
-		//		, std::get<3>(tpl)	//	ws tag
-		//		, std::get<4>(tpl)	//	server ID
-		//		, std::get<5>(tpl)	//	name
-		//		, std::get<6>(tpl)	//	password
-		//		, timeout_
-		//		, ctx.tag()).first;	//	ctx tag
-
-		//	CYNG_LOG_TRACE(logger_, "client.req.query.firmware - task #" << tsk);
-		//}
+			CYNG_LOG_TRACE(logger_, "client.req.modify.gateway - task #" << tsk);
+		}
 
 		void session::ipt_req_login_public(cyng::context& ctx)
 		{

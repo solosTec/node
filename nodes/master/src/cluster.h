@@ -37,11 +37,7 @@ namespace node
 		void bus_req_reboot_client(cyng::context& ctx);
 		void bus_req_query_gateway(cyng::context& ctx);
 		void bus_res_query_gateway(cyng::context& ctx);
-		//void bus_res_query_srv_visible(cyng::context& ctx);
-		//void bus_res_query_srv_active(cyng::context& ctx);
-		//void bus_res_query_firmware(cyng::context& ctx);
-		//void bus_res_query_memory(cyng::context& ctx);
-		//void bus_res_query_wmbus_status(cyng::context& ctx);
+		void bus_req_modify_gateway(cyng::context& ctx);
 		void bus_res_attention_code(cyng::context& ctx);
 
 		std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> find_peer(cyng::table::key_type const& key_session

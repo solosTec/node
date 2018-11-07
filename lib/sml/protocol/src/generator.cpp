@@ -151,6 +151,137 @@ namespace node
 			);
 		}
 
+		std::size_t req_generator::set_proc_parameter_ipt_host(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password
+			, std::uint8_t idx
+			, boost::asio::ip::address address)
+		{
+			const obis_path tree_path({OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) });
+
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+
+				//
+				//	generate process parameter request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, tree_path
+					, parameter_tree(make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(address)))
+				)
+			);
+		}
+
+		std::size_t req_generator::set_proc_parameter_ipt_port_local(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password
+			, std::uint8_t idx
+			, std::uint16_t port)
+		{
+			const obis_path tree_path({OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx) });
+
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+
+				//
+				//	generate process parameter request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, tree_path
+					, parameter_tree(make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx), make_value(port)))
+				)
+			);
+		}
+
+		std::size_t req_generator::set_proc_parameter_ipt_port_remote(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password
+			, std::uint8_t idx
+			, std::uint16_t port)
+		{
+			const obis_path tree_path({OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx) });
+
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+
+				//
+				//	generate process parameter request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, tree_path
+					, parameter_tree(make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx), make_value(port)))
+				)
+			);
+		}
+
+		std::size_t req_generator::set_proc_parameter_ipt_user(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password
+			, std::uint8_t idx
+			, std::string const& str)
+		{
+			const obis_path tree_path({OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx) });
+
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+
+				//
+				//	generate process parameter request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, tree_path
+					, parameter_tree(make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx), make_value(str)))
+				)
+			);
+		}
+
+		std::size_t req_generator::set_proc_parameter_ipt_pwd(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password
+			, std::uint8_t idx
+			, std::string const& str)
+		{
+			const obis_path tree_path({OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx) });
+
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+
+				//
+				//	generate process parameter request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, tree_path
+					, parameter_tree(make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx), make_value(str)))
+				)
+			);
+		}
+
+
 		std::size_t req_generator::get_proc_parameter(cyng::buffer_t const& server_id
 			, obis code
 			, std::string const& username

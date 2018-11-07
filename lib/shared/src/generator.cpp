@@ -277,6 +277,19 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_req_modify_gateway(std::string section
+		, cyng::vector_t const& key
+		, boost::uuids::uuid source
+		, cyng::param_map_t	params)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.req.modify.gateway", cyng::invoke("bus.seq.next"), section, key, source, params))
+			//<< cyng::generate_invoke_unwinded("store.relation", cyng::invoke("bus.seq.push"), tag_ws)	//	store seq => ws relation
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
 	cyng::vector_t bus_req_push_data(std::string const& class_name
 		, std::string const& channel_name
 		, bool distribution	//	single, all
@@ -422,6 +435,22 @@ namespace node
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
 			, cyng::generate_invoke_remote_unwinded("client.req.query.gateway", tag, source, cyng::code::IDENT, seq, vec, tag_ws, server, user, pwd))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t client_req_modify_gateway(boost::uuids::uuid tag
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, std::string const& section
+		, cyng::param_map_t params
+		, cyng::buffer_t const& server
+		, std::string const& user
+		, std::string const& pwd)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("client.req.modify.gateway", tag, source, cyng::code::IDENT, seq, section, params, server, user, pwd))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}

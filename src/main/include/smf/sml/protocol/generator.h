@@ -140,6 +140,39 @@ namespace node
 				, std::string const& password);
 
 			/**
+			 * IP-T Host - 81 49 0D 07 00 FF
+			 */
+			std::size_t set_proc_parameter_ipt_host(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password
+				, std::uint8_t idx
+				, boost::asio::ip::address);
+
+			std::size_t set_proc_parameter_ipt_port_local(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password
+				, std::uint8_t idx
+				, std::uint16_t);
+
+			std::size_t set_proc_parameter_ipt_port_remote(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password
+				, std::uint8_t idx
+				, std::uint16_t);
+
+			std::size_t set_proc_parameter_ipt_user(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password
+				, std::uint8_t idx
+				, std::string const&);
+
+			std::size_t set_proc_parameter_ipt_pwd(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password
+				, std::uint8_t idx
+				, std::string const&);
+
+			/**
 			 * Simple root query
 			 */
 			std::size_t get_proc_parameter(cyng::buffer_t const& server_id

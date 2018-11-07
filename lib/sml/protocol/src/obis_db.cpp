@@ -73,7 +73,7 @@ namespace node
 			else if (OBIS_CODE_IF_GSM == code)		return "IF_GSM";
 			else if (OBIS_CODE_IF_GPRS == code)		return "IF_GPRS";
 			else if (OBIS_CODE_IF_USER == code)		return "IF_USER";
-			else if (OBIS_CODE_IF_IPT == code)		return "IF_IPT";
+			//else if (OBIS_CODE_IF_IPT == code)		return "IF_IPT";
 			else if (OBIS_CODE_IF_EDL == code)		return "IF_EDL";
 			else if (OBIS_CODE_IF_wMBUS == code)	return "IF_wMBUS";
 			else if (OBIS_CODE_IF_PLC == code)		return "IF_PLC";

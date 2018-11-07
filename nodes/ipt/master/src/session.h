@@ -206,6 +206,7 @@ namespace node
 			void redirect(cyng::context& ctx);
 			void client_req_reboot(cyng::context& ctx);
 			void client_req_query_gateway(cyng::context& ctx);
+			void client_req_modify_gateway(cyng::context& ctx);
 
 		private:
 			cyng::async::mux& mux_;

@@ -11,6 +11,7 @@
 #include <cyng/io/serializer.h>
 #include <cyng/vector_cast.hpp>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/parser/buffer_parser.h>
 #include <cyng/xml.h>
 
 #include <boost/algorithm/string.hpp>
@@ -162,38 +163,95 @@ namespace node
 				cyng::vector_t vec;
 				vec = cyng::value_cast(reader["rec"].get("key"), vec);
 				BOOST_ASSERT_MSG(vec.size() == 1, "TGateway key has wrong size");
-
-				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				//CYNG_LOG_DEBUG(logger, "TGateway key [" << str << "]");
-				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
 				auto key = cyng::table::key_generator(vec.at(0));
 
-				cyng::tuple_t tpl;
-				tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
-				for (auto p : tpl)
-				{
-					cyng::param_t param;
-					param = cyng::value_cast(p, param);
+				if (boost::algorithm::equals(channel, "config.gateway.ipt")) {
 
-					if (boost::algorithm::equals(param.first, "serverId")) {
-						//
-						//	to uppercase
-						//
-						std::string server_id;
-						server_id = cyng::value_cast(param.second, server_id);
-						boost::algorithm::to_upper(server_id);
-						ctx.attach(bus_req_db_modify("TGateway"
-							, key
-							, cyng::param_factory("serverId", server_id)
-							, 0
-							, ctx.tag()));
+					vec = cyng::value_cast(reader["rec"].get("data"), vec);
+					BOOST_ASSERT_MSG(vec.size() == 11, "TGateway with wrong data size");
+					cyng::param_map_t params;
+					for (std::size_t idx = 0; idx < vec.size(); ++idx) {
+						auto name = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("name"), "");
+
+						if (boost::algorithm::equals(name, "smf-form-gw-ipt-srv")) {
+
+							//
+							//	send server/gateway ID as buffer_t type
+							//
+							const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "00");
+							const auto r = cyng::parse_hex_string(inp);
+							if (r.second) {
+								params["serverId"] = cyng::make_object(r.first);
+							}
+							else {
+								//	error
+								CYNG_LOG_ERROR(logger, "parse ["
+									<< inp
+									<<"] failed");
+							}
+						}
+						else if (boost::algorithm::starts_with(name, "smf-gw-ipt-host-")) {
+
+							//
+							//	send host name as IP address
+							//
+							const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0.0.0.0");
+							const auto address = boost::asio::ip::make_address(inp);
+							params[name] = cyng::make_object(address);
+						}
+						else if (boost::algorithm::starts_with(name, "smf-gw-ipt-local-")) {
+
+							//
+							//	send port as u16 
+							//
+							const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0");
+							const std::uint16_t port = std::stoul(inp);
+							params[name] = cyng::make_object(port);
+						}
+						else if (boost::algorithm::starts_with(name, "smf-gw-ipt-remote-")) {
+
+							//
+							//	send port as u16 
+							//
+							const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0");
+							const std::uint16_t port = std::stoul(inp);
+							params[name] = cyng::make_object(port);
+						}
+						else {
+							params[name] = reader["rec"]["data"][idx].get("value");
+						}
 					}
-					else {
-						ctx.attach(bus_req_db_modify("TGateway"
-							, key
-							, cyng::value_cast(p, param)
-							, 0
-							, ctx.tag()));
+					ctx.attach(bus_req_modify_gateway("ipt", key, ctx.tag(), params));
+
+				}
+				else {
+					cyng::tuple_t tpl;
+					tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
+					for (auto p : tpl)
+					{
+						cyng::param_t param;
+						param = cyng::value_cast(p, param);
+
+						if (boost::algorithm::equals(param.first, "serverId")) {
+							//
+							//	to uppercase
+							//
+							std::string server_id;
+							server_id = cyng::value_cast(param.second, server_id);
+							boost::algorithm::to_upper(server_id);
+							ctx.attach(bus_req_db_modify("TGateway"
+								, key
+								, cyng::param_factory("serverId", server_id)
+								, 0
+								, ctx.tag()));
+						}
+						else {
+							ctx.attach(bus_req_db_modify("TGateway"
+								, key
+								, cyng::value_cast(p, param)
+								, 0
+								, ctx.tag()));
+						}
 					}
 				}
 			}

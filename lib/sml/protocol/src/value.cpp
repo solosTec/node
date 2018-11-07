@@ -7,6 +7,7 @@
 
 #include <smf/sml/protocol/value.hpp>
 #include <cyng/value_cast.hpp>
+#include <cyng/io/swap.h>
 
 namespace node
 {
@@ -94,6 +95,20 @@ namespace node
 			{
 				return factory_policy<cyng::buffer_t>::create(v.to_buffer());
 			}
+			cyng::tuple_t factory_policy<boost::asio::ip::address>::create(boost::asio::ip::address v)
+			{
+				if (v.is_v4()) {
+					const auto ia = v.to_v4().to_uint();
+					return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), cyng::swap_num(ia));
+				}
+				else if (v.is_v6()) {
+					//	serialize IPv6 addresses as buffer with 16 bytes
+					const auto ia = v.to_v6().to_bytes();
+					return factory_policy<cyng::buffer_t>::create(cyng::buffer_t(ia.begin(), ia.end()));
+				}
+				return cyng::tuple_t();
+			}
+
 
 			cyng::tuple_t factory_policy<cyng::object>::create(cyng::object const& obj)
 			{

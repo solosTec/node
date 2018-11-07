@@ -136,7 +136,7 @@
             </li>
         </ul>
 
-        <div class="tab-content">
+        <div class="tab-content bg-secondary">
             <div id="smf-gw-config" class="container-fluid tab-pane fade show active" role="tabpanel">
                 <div class="row">
                     <div class="col-md-10">
@@ -184,9 +184,9 @@
                             </div>
                         </form>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-2 bg-warning">
                         <div class="form-group">
-                            <p>Note: No other IP-T connection can be active during the execution of the requests below.</p>
+                            <p><span style="font-weight: bold">Note:</span> No other IP-T connection can be active during the execution of the requests below.</p>
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-status-word" name="smf-form-gw-status-word">
                                 <label class="form-check-label" for="smf-form-gw-status-word">Request status word</label>
@@ -213,7 +213,7 @@
                             </div>
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-ipt" name="smf-form-gw-ipt">
-                                <label class="form-check-label" for="smf-form-gw-wireless-ipt">IP-T</label>
+                                <label class="form-check-label" for="smf-form-gw-ipt">IP-T</label>
                             </div>
                         </div>
                     </div>
@@ -260,14 +260,14 @@
                                 <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-gw-memory_progress-2">0%</div>
                             </div>
                             <!--<div id="mem-progress-2"
-                                 data-percentage="20"
-                                 data-track-width="42"
-                                 data-track-colour="555555"
-                                 data-fill-colour="00C0FF"
-                                 data-text-colour="00C0FF"
-                                 data-stroke-colour="FFFFFF"
-                                 data-stroke-spacing="4">
-                            </div>-->
+                     data-percentage="20"
+                     data-track-width="42"
+                     data-track-colour="555555"
+                     data-fill-colour="00C0FF"
+                     data-text-colour="00C0FF"
+                     data-stroke-colour="FFFFFF"
+                     data-stroke-spacing="4">
+                </div>-->
                         </div>
                         <div class="card-footer">
                             <small class="text-muted"><span id="smf-gw-memory-2">wait...</span>%</small>
@@ -356,79 +356,93 @@
                 <br>
             </div>
             <div id="smf-gw-ipt" class="container-fluid tab-pane fade" role="tabpanel">
-                <h4>IP-T</h4>
-                <form>
-                    <div class="form-group row">
-                        <label for="smf-gw-ipt-host" class="col-md-1 col-form-label">Host</label>
-                        <div class="col-md-3">
+                <!--<h4>IP-T</h4>-->
+                <div class="row">
+                    <div class="col-md-9">
+                        <h5>IP-T Parameters</h5>
+                        <form id="smf-form-gw-ipt-param" style="padding:2em">
+                            <h5>Redundancy I</h5>
+                            <input type="hidden" id="smf-form-gw-ipt-srv" name="smf-form-gw-ipt-srv" />
+                            <div class="form-group row">
+                                <label for="smf-gw-ipt-host" class="col-md-1 col-form-label">Host</label>
+                                <div class="col-md-5">
+                                    <input id="smf-gw-ipt-host-1" name="smf-gw-ipt-host-1" placeholder="IP-T Master" type="text" class="form-control here">
+                                </div>
+                                <label for="smf-gw-ipt-local-1" class="col-md-1 col-form-label">Local Port</label>
+                                <div class="col-md-2">
+                                    <input id="smf-gw-ipt-local-1" name="smf-gw-ipt-local-1" placeholder="Local Port" type="number" class="form-control here">
+                                </div>
+                                <label for="smf-gw-ipt-remote-1" class="col-md-1 col-form-label">Remote Port</label>
+                                <div class="col-md-2">
+                                    <input id="smf-gw-ipt-remote-1" name="smf-gw-ipt-remote-1" placeholder="Remote Port" type="number" class="form-control here">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="smf-gw-ipt-name-1" class="col-md-1 col-form-label">Name</label>
+                                <div class="col-md-5">
+                                    <input id="smf-gw-ipt-name-1" name="smf-gw-ipt-name-1" placeholder="User Name" type="text" class="form-control here">
+                                </div>
+                                <label for="smf-gw-ipt-pwd-1" class="col-md-1 col-form-label">Password</label>
+                                <div class="col-md-5">
+                                    <input id="smf-gw-ipt-pwd-1" name="smf-gw-ipt-pwd-1" placeholder="Password" type="text" class="form-control here">
+                                </div>
+                            </div>
+                            <hr />
+                            <h5>Redundancy II</h5>
+                            <div class="form-group row">
+                                <label for="smf-gw-ipt-host" class="col-md-1 col-form-label">Host</label>
+                                <div class="col-md-5">
+                                    <input id="smf-gw-ipt-host-2" name="smf-gw-ipt-host-2" placeholder="IP-T Master" type="text" class="form-control here">
+                                </div>
+                                <label for="smf-gw-ipt-local-2" class="col-md-1 col-form-label">Local Port</label>
+                                <div class="col-md-2">
+                                    <input id="smf-gw-ipt-local-2" name="smf-gw-ipt-local-2" placeholder="Local Port" type="number" class="form-control here">
+                                </div>
+                                <label for="smf-gw-ipt-remote-2" class="col-md-1 col-form-label">Remote Port</label>
+                                <div class="col-md-2">
+                                    <input id="smf-gw-ipt-remote-2" name="smf-gw-ipt-remote-2" placeholder="Remote Port" type="number" class="form-control here">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="smf-gw-ipt-name-2" class="col-md-1 col-form-label">Name</label>
+                                <div class="col-md-5">
+                                    <input id="smf-gw-ipt-name-2" name="smf-gw-ipt-name-2" placeholder="User Name" type="text" class="form-control here">
+                                </div>
+                                <label for="smf-gw-ipt-pwd-2" class="col-md-1 col-form-label">Password</label>
+                                <div class="col-md-5">
+                                    <input id="smf-gw-ipt-pwd-2" name="smf-gw-ipt-pwd-2" placeholder="Password" type="text" class="form-control here">
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="offset-1 col-11">
+                                    <a id="smf-form-gw-ipt-submit" href="#" class="btn btn-primary">Submit</a>
+                                    <!--                                    <button name="submit" type="submit" class="btn btn-primary" disabled>Submit</button>-->
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-3 bg-warning">
+                        <h5>Current IP-T Configuration</h5>
+                        <p><span style="font-weight: bold">Note:</span> Changing the IP-T configuration can lead to the breakdown of the connection.</p>
+                        <div class="form-group">
+                            <label for="smf-gw-ipt-host" class="col-form-label">Host</label>
                             <input id="smf-gw-ipt-host" name="smf-gw-ipt-host" placeholder="IP-T Master" type="text" class="form-control here" readonly>
                         </div>
-                        <label for="smf-gw-ipt-local" class="col-md-1 col-form-label">Local Port</label>
-                        <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="smf-gw-ipt-local" class="col-form-label">Local Port</label>
                             <input id="smf-gw-ipt-local" name="smf-gw-ipt-local" placeholder="Local Port" type="number" class="form-control here" readonly>
                         </div>
-                        <label for="smf-gw-ipt-remote" class="col-md-1 col-form-label">Remote Port</label>
-                        <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="smf-gw-ipt-remote" class="col-form-label">Remote Port</label>
                             <input id="smf-gw-ipt-remote" name="smf-gw-ipt-remote" placeholder="Remote Port" type="number" class="form-control here" readonly>
                         </div>
                     </div>
-                    <div class="form-group row">
-                        <label for="smf-gw-ipt-host" class="col-md-1 col-form-label">Host</label>
-                        <div class="col-md-3">
-                            <input id="smf-gw-ipt-host-1" name="smf-gw-ipt-host-1" placeholder="IP-T Master" type="text" class="form-control here">
-                        </div>
-                        <label for="smf-gw-ipt-local-1" class="col-md-1 col-form-label">Local Port</label>
-                        <div class="col-md-3">
-                            <input id="smf-gw-ipt-local-1" name="smf-gw-ipt-local-1" placeholder="Local Port" type="number" class="form-control here">
-                        </div>
-                        <label for="smf-gw-ipt-remote-1" class="col-md-1 col-form-label">Remote Port</label>
-                        <div class="col-md-3">
-                            <input id="smf-gw-ipt-remote-1" name="smf-gw-ipt-remote-1" placeholder="Remote Port" type="number" class="form-control here">
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="smf-gw-ipt-name-1" class="col-md-2 col-form-label">Name</label>
-                        <div class="col-md-4">
-                            <input id="smf-gw-ipt-name-1" name="smf-gw-ipt-name-1" placeholder="User Name" type="text" class="form-control here">
-                        </div>
-                        <label for="smf-gw-ipt-pwd-1" class="col-md-2 col-form-label">Password</label>
-                        <div class="col-md-4">
-                            <input id="smf-gw-ipt-pwd-1" name="smf-gw-ipt-pwd-1" placeholder="Password" type="text" class="form-control here">
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="smf-gw-ipt-host" class="col-md-1 col-form-label">Host</label>
-                        <div class="col-md-3">
-                            <input id="smf-gw-ipt-host-2" name="smf-gw-ipt-host-2" placeholder="IP-T Master" type="text" class="form-control here" readonly>
-                        </div>
-                        <label for="smf-gw-ipt-local-2" class="col-md-1 col-form-label">Local Port</label>
-                        <div class="col-md-3">
-                            <input id="smf-gw-ipt-local-2" name="smf-gw-ipt-local-2" placeholder="Local Port" type="number" class="form-control here">
-                        </div>
-                        <label for="smf-gw-ipt-remote-2" class="col-md-1 col-form-label">Remote Port</label>
-                        <div class="col-md-3">
-                            <input id="smf-gw-ipt-remote-2" name="smf-gw-ipt-remote-2" placeholder="Remote Port" type="number" class="form-control here">
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="smf-gw-ipt-name-2" class="col-md-2 col-form-label">Name</label>
-                        <div class="col-md-4">
-                            <input id="smf-gw-ipt-name-2" name="smf-gw-ipt-name-2" placeholder="User Name" type="text" class="form-control here">
-                        </div>
-                        <label for="smf-gw-ipt-pwd-2" class="col-md-2 col-form-label">Password</label>
-                        <div class="col-md-4">
-                            <input id="smf-gw-ipt-pwd-2" name="smf-gw-ipt-pwd-2" placeholder="Password" type="text" class="form-control here">
-                        </div>
-                    </div>
-
-                    <div class="form-group row">
-                        <div class="offset-1 col-11">
-                            <button name="submit" type="submit" class="btn btn-primary" disabled>Submit</button>
-                        </div>
-                    </div>
-                </form>
+                </div>
+                <!--<br>-->
             </div>
         </div>
+        <br />
     </div>
 
     <!-- JavaScript -->
@@ -560,16 +574,21 @@
                         gw_req_vec.push("memory");
                     }
                     if ($('#smf-form-gw-wireless-mbus').is(":checked") && rowData[8]) {
-                        //$('#smf-gw-memory ul').empty();
                         $('#smf-gw-wireless-mbus h4').text('wireless M-Bus data ' + rowData[1]);
                         gw_req_vec.push("w-mbus-status");
                         gw_req_vec.push("w-mbus-config");
                     }
                     if ($('#smf-form-gw-ipt').is(":checked") && rowData[8]) {
-                        //$('#smf-gw-memory ul').empty();
                         $('#smf-gw-ipt h4').text('IP-T ' + rowData[1]);
+                        $('#smf-form-gw-ipt-srv').val(rowData[1]);  //  hidden variable
                         gw_req_vec.push("ipt-status");
                         gw_req_vec.push("ipt-config");
+                        $('#smf-gw-ipt-host').val("waiting...");
+                        $('#smf-gw-ipt-host-1').val("waiting...");
+                        $('#smf-gw-ipt-host-2').val("waiting...");
+                        $('#smf-gw-ipt-name').val("waiting...");
+                        $('#smf-gw-ipt-name-1').val("waiting...");
+                        $('#smf-gw-ipt-name-2').val("waiting...");
                     }
 
                     if (gw_req_vec.length > 0) {
@@ -879,6 +898,7 @@
                         }
                         else if (obj.channel == 'root-IPT-param') {
                             // {"cmd": "update", "channel": "root-IPT-param", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"address":"0.0.0.0","idx":1,"local":26862,"name":0,"pwd":0,"remote":0}}}
+                            //$('#smf-form-gw-ipt-srv').val(obj.rec.srv);
                             if (obj.rec.values.idx == 1) {
 
                                 $('#smf-gw-ipt-host-1').val(obj.rec.values.address);
@@ -949,6 +969,21 @@
                 }));
             });
 
+            $('#smf-form-gw-ipt-submit').on("click", function (event) {
+                event.preventDefault();
+                //  smf-gw-ipt-host-1=192.168.1.21&smf-gw-ipt-local-1=26862&smf-gw-ipt-remote-1=0&smf-gw-ipt-name-1=LSMTest5&smf-gw-ipt-pwd-1=LSMTest5&smf-gw-ipt-host-2=192.168.1.21&smf-gw-ipt-local-2=26863&smf-gw-ipt-remote-2=0&smf-gw-ipt-name-2=wretwert&smf-gw-ipt-pwd-2=LSMTest5
+                //console.log('modify ipt: ' + $('#smf-form-gw-ipt-param').serialize());
+                var formData = JSON.parse(JSON.stringify(jQuery('#smf-form-gw-ipt-param').serializeArray())) // store json object
+                //console.log('modify ipt: ' + formData);
+
+                _ws.send(JSON.stringify({
+                    cmd: "modify", channel: "config.gateway.ipt", rec: {
+                        key: [$('#smf-form-gw-tag').val()],
+                        data: formData
+                    }
+                }));
+            });
+
             $('#smf-form-gw-status-word').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-status-word').removeClass('disabled');
@@ -1006,6 +1041,7 @@
             $('#smf-form-gw-ipt').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-ipt').removeClass('disabled');
+                    //$('#smf-form-gw-ipt-srv').val(obj.rec.srv);
                 }
                 else {
                     $('#smf-gw-tab-ipt').addClass('disabled');

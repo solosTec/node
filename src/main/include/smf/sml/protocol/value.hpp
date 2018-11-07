@@ -153,6 +153,11 @@ namespace node
 			{
 				static cyng::tuple_t create(obis const& v);
 			};
+			template<>
+			struct factory_policy<boost::asio::ip::address>
+			{
+				static cyng::tuple_t create(boost::asio::ip::address v);
+			};
 
 			template<>
 			struct factory_policy<cyng::object>

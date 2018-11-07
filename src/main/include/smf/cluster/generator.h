@@ -112,7 +112,6 @@ namespace node
 
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
-
 	}
 
 	/**
@@ -155,94 +154,6 @@ namespace node
 		, cyng::param_map_t const&);
 
 	/**
-	 * Response for get_proc_parameter_srv_visible()
-	 *
-	 * @param source source tag
-	 * @param srv server id
-	 * @param nr list number
-	 * @param meter meter id
-	 * @param st last status message
-	 */
-	//cyng::vector_t bus_res_query_srv_visible(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::uint16_t nr
-	//	, std::string srv
-	//	, std::string meter
-	//	, std::string dclass
-	//	, std::chrono::system_clock::time_point st
-	//	, std::uint32_t srv_type);
-
-
-	/**
-	 * Response for get_proc_parameter_srv_active()
-	 *
-	 * @param source source tag
-	 * @param srv server id
-	 * @param nr list number
-	 * @param meter meter id
-	 * @param st last status message
-	 */
-	//cyng::vector_t bus_res_query_srv_active(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::uint16_t nr
-	//	, std::string srv
-	//	, std::string meter
-	//	, std::string dclass
-	//	, std::chrono::system_clock::time_point st
-	//	, std::uint32_t srv_type);
-
-	/**
-	 * Response for get_proc_parameter_firmware()
-	 *
-	 * @param source source tag
-	 * @param srv server id
-	 * @param nr list number
-	 * @param section firmware name/section
-	 * @param version manufacturer-specific version
-	 * @param active true/false
-	 */
-	//cyng::vector_t bus_res_query_firmware(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::uint16_t nr
-	//	, std::string srv
-	//	, std::string section
-	//	, std::string version
-	//	, bool active);
-
-	/**
-	 * Response for get_proc_parameter_memory()
-	 *
-	 * @param source source tag
-	 * @param srv server id
-	 * @param mirror usage of mirror memory in %
-	 * @param mirror usage of temp memory in %
-	 */
-	//cyng::vector_t bus_res_query_memory(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::string srv
-	//	, std::uint8_t mirror
-	//	, std::uint8_t tmp);
-
-	/**
-	 * Response for get_proc_parameter_wireless_mbus_status()
-	 *
-	 * @param source source tag
-	 * @param srv server id
-	 */
-	//cyng::vector_t bus_res_query_w_mbus_status(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::string srv
-	//	, std::string manufacturer
-	//	, std::string dev_id
-	//	, std::string firmware
-	//	, std::string hardware);
-
-	/**
 	 * Send back attention codes
 	 */
 	cyng::vector_t bus_res_attention_code(boost::uuids::uuid source
@@ -251,6 +162,19 @@ namespace node
 		, std::string srv
 		, cyng::buffer_t code
 		, std::string msg);
+
+	/**
+	 * Send a process parameter change request to an gateway
+	 *
+	 * @param section section to modify
+	 * @param key key for TGateway table
+	 * @param source source tag
+	 * @param params parameter list with named values
+	 */
+	cyng::vector_t bus_req_modify_gateway(std::string section
+		, cyng::vector_t const& key
+		, boost::uuids::uuid source
+		, cyng::param_map_t	params);
 
 	/**
 	 * data bus
@@ -335,6 +259,26 @@ namespace node
 		, std::string const& user
 		, std::string const& pwd);
 
+	/**
+	 * Send process parameter request
+	 *
+	 * @param tag target session
+	 * @param source source session
+	 * @param seq cluster sequence
+	 * @param section request type
+	 * @param params parameters
+	 * @param server server id
+	 * @param user login name / account
+	 * @param pwd password
+	 */
+	cyng::vector_t client_req_modify_gateway(boost::uuids::uuid tag
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, std::string const& section
+		, cyng::param_map_t params
+		, cyng::buffer_t const& server
+		, std::string const& user
+		, std::string const& pwd);
 
 	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
 		, std::string const& target

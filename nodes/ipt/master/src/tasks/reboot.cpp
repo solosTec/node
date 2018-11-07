@@ -197,7 +197,17 @@ namespace node
 	}
 
 	//	-- slot[5]
-	cyng::continuation reboot::process(cyng::buffer_t srv, cyng::buffer_t msg)
+	cyng::continuation reboot::process(std::string trx,
+		std::size_t idx,
+		std::string serverID,
+		cyng::buffer_t code,
+		cyng::param_map_t params)
+	{	//	unused
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	-- slot[6]
+	cyng::continuation reboot::process(std::string srv, cyng::buffer_t const& msg)
 	{
 		//	00:15:3b:02:29:7e, code: 81 81 c7 c7 fd 00
 		sml::obis code(msg);
@@ -206,14 +216,14 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> sml.attention.msg "
-			<< sml::from_server_id(srv)
+			<< srv
 			<< " attention code: "
 			<< sml::get_attention_name(code));
 
 		bus_->vm_.async_run(node::bus_res_attention_code(tag_remote_
 			, seq_cluster_
 			, tag_ws_
-			, sml::from_server_id(srv)
+			, srv
 			, msg
 			, sml::get_attention_name(code)));
 

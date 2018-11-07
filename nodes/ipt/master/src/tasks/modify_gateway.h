@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_IP_MASTER_TASK_REBOOT_H
-#define NODE_IP_MASTER_TASK_REBOOT_H
+#ifndef NODE_IP_MASTER_TASK_MODIFY_GATEWAY_H
+#define NODE_IP_MASTER_TASK_MODIFY_GATEWAY_H
 
 #include <smf/cluster/bus.h>
 #include <smf/ipt/defs.h>
@@ -19,14 +19,15 @@
 namespace node
 {
 
-	class reboot
+	class modify_gateway
 	{
 	public:
 		using msg_0 = std::tuple<boost::uuids::uuid>;
-		using msg_1 = std::tuple<std::uint16_t, std::size_t>;
+		using msg_1 = std::tuple<std::uint16_t, std::size_t>;	//	eom
 		using msg_2 = std::tuple<cyng::buffer_t>;
 		using msg_3 = std::tuple<cyng::buffer_t, std::uint8_t, std::uint8_t, cyng::tuple_t, std::uint16_t>;
 		using msg_4 = std::tuple<boost::uuids::uuid, cyng::buffer_t, std::size_t>;
+
 		using msg_5 = std::tuple<
 			std::string,	//	trx
 			std::size_t,	//	idx
@@ -34,17 +35,20 @@ namespace node
 			cyng::buffer_t,	//	root (obis code)
 			cyng::param_map_t	//	params
 		>;
+
 		using msg_6 = std::tuple<std::string, cyng::buffer_t>;
+
 		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6>;
 
 	public:
-		reboot(cyng::async::base_task* btp
+		modify_gateway(cyng::async::base_task* btp
 			, cyng::logging::log_ptr
 			, bus::shared_type bus
 			, cyng::controller& vm
 			, boost::uuids::uuid tag_remote
 			, std::uint64_t seq_cluster		//	cluster seq
-			, boost::uuids::uuid tag_ws
+			, std::string const& section
+			, cyng::param_map_t const& params
 			, cyng::buffer_t const& server	//	server id
 			, std::string user
 			, std::string pwd
@@ -63,7 +67,7 @@ namespace node
 		/**
 		 * @brief slot [1]
 		 *
-		 * session closed
+		 * session closed - eom
 		 */
 		cyng::continuation process(std::uint16_t, std::size_t);
 
@@ -108,7 +112,7 @@ namespace node
 			, cyng::buffer_t const&);
 
 	private:
-		void send_reboot_cmd();
+		void send_query_cmd();
 
 	private:
 		cyng::async::base_task& base_;
@@ -117,16 +121,19 @@ namespace node
 		cyng::controller& vm_;
 		const boost::uuids::uuid tag_remote_;
 		const std::uint64_t seq_cluster_;
-		const boost::uuids::uuid tag_ws_;
+		const std::string section_;
+		const cyng::param_map_t params_;
+		//const boost::uuids::uuid tag_ws_;
 		const cyng::buffer_t server_id_;
 		const std::string user_, pwd_;
 		const std::chrono::seconds timeout_;
 		const boost::uuids::uuid tag_ctx_;
 		const std::chrono::system_clock::time_point start_;
 		sml::parser parser_;
-		bool is_waiting_;
+		std::size_t wait_counter_;
 	};
-	
+
+
 }
 
 #if BOOST_COMP_GNUC
@@ -137,7 +144,7 @@ namespace cyng {
 		//	initialize static slot names
 		//
 		template <>
-		std::map<std::string, std::size_t> cyng::async::task<node::reboot>::slot_names_;
+		std::map<std::string, std::size_t> cyng::async::task<node::query_gateway>::slot_names_;
     }
 }
 #endif

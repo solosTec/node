@@ -100,6 +100,25 @@ namespace node
 				, params);
 		}
 
+		cyng::tuple_t set_proc_parameter_request(cyng::object server_id
+			, std::string const& username
+			, std::string const& password
+			, obis_path tree_path
+			, cyng::tuple_t params)
+		{
+			cyng::tuple_t seq;
+			for (auto const& code : tree_path) {
+				seq.push_back(cyng::make_object(code.to_buffer()));
+			}
+
+			return cyng::tuple_factory(server_id
+				, username
+				, password
+				, seq	//	path entry
+				, params);
+		}
+
+
 		cyng::tuple_t get_profile_list_request(cyng::object server_id
 			, std::string const& username
 			, std::string const& password

@@ -55,7 +55,9 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> is stopped");
+			<< "> "
+			<< cyng::object_cast<session>(session_obj_)->vm_.tag()
+			<< " is stopped");
 
 	}
 

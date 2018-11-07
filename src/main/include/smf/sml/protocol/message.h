@@ -94,6 +94,19 @@ namespace node
 			, obis code
 			, cyng::tuple_t params);
 
+		/**
+		 * @param server_id
+		 * @param username
+		 * @param password
+		 * @param tree_path parameter tree path
+		 * @param params parameter tree
+		 */
+		cyng::tuple_t set_proc_parameter_request(cyng::object server_id
+			, std::string const& username
+			, std::string const& password
+			, obis_path tree_path
+			, cyng::tuple_t params);
+
 		cyng::tuple_t get_profile_list_request(cyng::object server_id
 			, std::string const& username
 			, std::string const& password

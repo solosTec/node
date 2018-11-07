@@ -48,6 +48,8 @@ set (node_ipt_master_tasks
 	nodes/ipt/master/src/tasks/reboot.cpp
 	nodes/ipt/master/src/tasks/query_gateway.h
 	nodes/ipt/master/src/tasks/query_gateway.cpp
+	nodes/ipt/master/src/tasks/modify_gateway.h
+	nodes/ipt/master/src/tasks/modify_gateway.cpp
 )
 	
 if(WIN32)

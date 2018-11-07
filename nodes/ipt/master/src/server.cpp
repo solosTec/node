@@ -66,6 +66,7 @@ namespace node
 			bus_->vm_.register_function("client.req.close", 4, std::bind(&server::client_req_close_impl, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.req.reboot", 8, std::bind(&server::client_req_reboot, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.req.query.gateway", 9, std::bind(&server::client_req_query_gateway, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.req.modify.gateway", 0, std::bind(&server::client_req_modify_gateway, this, std::placeholders::_1));
 
 			bus_->vm_.register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1));
 			bus_->vm_.register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1));
@@ -587,6 +588,13 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_TRACE(logger_, "client.req.query.gateway " << cyng::io::to_str(frame));
 			propagate("client.req.query.gateway", ctx.get_frame());
+		}
+
+		void server::client_req_modify_gateway(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, "client.req.modify.gateway " << cyng::io::to_str(frame));
+			propagate("client.req.modify.gateway", ctx.get_frame());
 		}
 
 		void server::propagate(std::string fun, cyng::vector_t const& msg)
