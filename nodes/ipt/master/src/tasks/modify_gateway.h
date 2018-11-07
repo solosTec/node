@@ -18,7 +18,10 @@
 
 namespace node
 {
-
+	//	forward declaration(s)
+	namespace sml	{
+		class req_generator;
+	}
 	class modify_gateway
 	{
 	public:
@@ -112,7 +115,8 @@ namespace node
 			, cyng::buffer_t const&);
 
 	private:
-		void send_query_cmd();
+		void send_set_cmd();
+		void send_set_cmd_ipt(sml::req_generator&);
 
 	private:
 		cyng::async::base_task& base_;
@@ -144,7 +148,7 @@ namespace cyng {
 		//	initialize static slot names
 		//
 		template <>
-		std::map<std::string, std::size_t> cyng::async::task<node::query_gateway>::slot_names_;
+		std::map<std::string, std::size_t> cyng::async::task<node::modify_gateway>::slot_names_;
     }
 }
 #endif

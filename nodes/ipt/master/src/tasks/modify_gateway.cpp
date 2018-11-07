@@ -133,7 +133,7 @@ namespace node
 		//
 		//	next step: send command(s)
 		//
-		send_query_cmd();
+		send_set_cmd();
 
 		//
 		//	read SML data
@@ -263,7 +263,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void modify_gateway::send_query_cmd()
+	void modify_gateway::send_set_cmd()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -277,101 +277,14 @@ namespace node
 		//
 		//	generate public open request
 		//
-		node::sml::req_generator sml_gen;
+		sml::req_generator sml_gen;
 		sml_gen.public_open(cyng::mac48(), server_id_, user_, pwd_);
 
 		//
 		//	generate set process parameter requests
 		//
 		if (boost::algorithm::equals(section_, "ipt")) {
-			//	("smf-gw-ipt-host-1":192.168.1.21),("smf-gw-ipt-host-2":192.168.1.21),("smf-gw-ipt-local-1":68ee),("smf-gw-ipt-local-2":68ef),("smf-gw-ipt-name-1":LSMTest5),("smf-gw-ipt-name-2":werwer),("smf-gw-ipt-pwd-1":LSMTest5),("smf-gw-ipt-pwd-2":LSMTest5),("smf-gw-ipt-remote-1":0),("smf-gw-ipt-remote-2":0))]
-			for (auto const& p : params_) {
-
-				if (boost::algorithm::equals(p.first, "smf-gw-ipt-host-1")) {
-
-					boost::asio::ip::address address;
-					address = cyng::value_cast(p.second, address);
-					sml_gen.set_proc_parameter_ipt_host(server_id_
-						, user_
-						, pwd_
-						, 1
-						, address);
-
-				}
-				else if (boost::algorithm::equals(p.first, "smf-gw-ipt-host-2")) {
-					boost::asio::ip::address address;
-					address = cyng::value_cast(p.second, address);
-					sml_gen.set_proc_parameter_ipt_host(server_id_
-						, user_
-						, pwd_
-						, 2
-						, address);
-				}
-				else if (boost::algorithm::equals(p.first, "smf-gw-ipt-local-1")) {
-					auto port = cyng::value_cast<std::uint16_t>(p.second, 26862u);
-					sml_gen.set_proc_parameter_ipt_port_local(server_id_
-						, user_
-						, pwd_
-						, 1
-						, port);
-				}
-				else if (boost::algorithm::equals(p.first, "smf-gw-ipt-local-2")) {
-					auto port = cyng::value_cast<std::uint16_t>(p.second, 26862u);
-					sml_gen.set_proc_parameter_ipt_port_local(server_id_
-						, user_
-						, pwd_
-						, 2
-						, port);
-				}
-				else if (boost::algorithm::equals(p.first, "smf-gw-ipt-remote-1")) {
-					auto port = cyng::value_cast<std::uint16_t>(p.second, 26862u);
-					sml_gen.set_proc_parameter_ipt_port_remote(server_id_
-						, user_
-						, pwd_
-						, 1
-						, port);
-				}
-				else if (boost::algorithm::equals(p.first, "smf-gw-ipt-remote-2")) {
-					auto port = cyng::value_cast<std::uint16_t>(p.second, 26862u);
-					sml_gen.set_proc_parameter_ipt_port_remote(server_id_
-						, user_
-						, pwd_
-						, 2
-						, port);
-				}
-				else if (boost::algorithm::equals(p.first, "smf-gw-ipt-name-1")) {
-					auto str = cyng::value_cast<std::string>(p.second, "");
-					sml_gen.set_proc_parameter_ipt_user(server_id_
-						, user_
-						, pwd_
-						, 1
-						, str);
-				}
-				else if (boost::algorithm::equals(p.first, "smf-gw-ipt-name-2")) {
-					auto str = cyng::value_cast<std::string>(p.second, "");
-					sml_gen.set_proc_parameter_ipt_user(server_id_
-						, user_
-						, pwd_
-						, 2
-						, str);
-				}
-				else if (boost::algorithm::equals(p.first, "smf-gw-ipt-pwd-1")) {
-					auto str = cyng::value_cast<std::string>(p.second, "");
-					sml_gen.set_proc_parameter_ipt_pwd(server_id_
-						, user_
-						, pwd_
-						, 1
-						, str);
-				}
-				else if (boost::algorithm::equals(p.first, "smf-gw-ipt-pwd-2")) {
-					auto str = cyng::value_cast<std::string>(p.second, "");
-					sml_gen.set_proc_parameter_ipt_pwd(server_id_
-						, user_
-						, pwd_
-						, 2
-						, str);
-				}
-			}
+			send_set_cmd_ipt(sml_gen);
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "task #"
@@ -381,52 +294,6 @@ namespace node
 				<< "> section "
 				<< section_);
 		}
-		//for (auto const& p : params_) {
-
-		//	CYNG_LOG_TRACE(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> query parameter "
-		//		<< p);
-
-		//	if (boost::algorithm::equals("status:word", p)) {
-		//		sml_gen.get_proc_status_word(server_id_, user_, pwd_);
-		//	}
-		//	else if (boost::algorithm::equals("srv:visible", p)) {
-		//		sml_gen.get_proc_parameter_srv_visible(server_id_, user_, pwd_);
-		//	}
-		//	else if (boost::algorithm::equals("srv:active", p)) {
-		//		//	send 81 81 11 06 FF FF
-		//		sml_gen.get_proc_parameter_srv_active(server_id_, user_, pwd_);
-		//	}
-		//	else if (boost::algorithm::equals("firmware", p)) {
-		//		sml_gen.get_proc_parameter_firmware(server_id_, user_, pwd_);
-		//	}
-		//	else if (boost::algorithm::equals("memory", p)) {
-		//		sml_gen.get_proc_parameter_memory(server_id_, user_, pwd_);
-		//	}
-		//	else if (boost::algorithm::equals("w-mbus-status", p)) {
-		//		sml_gen.get_proc_parameter_wireless_mbus_status(server_id_, user_, pwd_);
-		//	}
-		//	else if (boost::algorithm::equals("w-mbus-config", p)) {
-		//		sml_gen.get_proc_parameter_wireless_mbus_config(server_id_, user_, pwd_);
-		//	}
-		//	else if (boost::algorithm::equals("ipt-status", p)) {
-		//		sml_gen.get_proc_parameter_ipt_status(server_id_, user_, pwd_);
-		//	}
-		//	else if (boost::algorithm::equals("ipt-config", p)) {
-		//		sml_gen.get_proc_parameter_ipt_config(server_id_, user_, pwd_);
-		//	}
-		//	else {
-		//		CYNG_LOG_WARNING(logger_, "task #"
-		//			<< base_.get_id()
-		//			<< " <"
-		//			<< base_.get_class_name()
-		//			<< "> unknown parameter "
-		//			<< p);
-		//	}
-		//}
 
 		//
 		//	generate close request
@@ -454,6 +321,98 @@ namespace node
 
 	}
 
+	void modify_gateway::send_set_cmd_ipt(sml::req_generator& sml_gen)
+	{
+		//	("smf-gw-ipt-host-1":192.168.1.21),("smf-gw-ipt-host-2":192.168.1.21),("smf-gw-ipt-local-1":68ee),("smf-gw-ipt-local-2":68ef),("smf-gw-ipt-name-1":LSMTest5),("smf-gw-ipt-name-2":werwer),("smf-gw-ipt-pwd-1":LSMTest5),("smf-gw-ipt-pwd-2":LSMTest5),("smf-gw-ipt-remote-1":0),("smf-gw-ipt-remote-2":0))]
+		for (auto const& p : params_) {
+			
+			if (boost::algorithm::equals(p.first, "smf-gw-ipt-host-1")) {
+				
+				boost::asio::ip::address address;
+				address = cyng::value_cast(p.second, address);
+				sml_gen.set_proc_parameter_ipt_host(server_id_
+				, user_
+				, pwd_
+				, 1
+				, address);
+				
+			}
+			else if (boost::algorithm::equals(p.first, "smf-gw-ipt-host-2")) {
+				boost::asio::ip::address address;
+				address = cyng::value_cast(p.second, address);
+				sml_gen.set_proc_parameter_ipt_host(server_id_
+				, user_
+				, pwd_
+				, 2
+				, address);
+			}
+			else if (boost::algorithm::equals(p.first, "smf-gw-ipt-local-1")) {
+				auto port = cyng::value_cast<std::uint16_t>(p.second, 26862u);
+				sml_gen.set_proc_parameter_ipt_port_local(server_id_
+				, user_
+				, pwd_
+				, 1
+				, port);
+			}
+			else if (boost::algorithm::equals(p.first, "smf-gw-ipt-local-2")) {
+				auto port = cyng::value_cast<std::uint16_t>(p.second, 26862u);
+				sml_gen.set_proc_parameter_ipt_port_local(server_id_
+				, user_
+				, pwd_
+				, 2
+				, port);
+			}
+			else if (boost::algorithm::equals(p.first, "smf-gw-ipt-remote-1")) {
+				auto port = cyng::value_cast<std::uint16_t>(p.second, 26862u);
+				sml_gen.set_proc_parameter_ipt_port_remote(server_id_
+				, user_
+				, pwd_
+				, 1
+				, port);
+			}
+			else if (boost::algorithm::equals(p.first, "smf-gw-ipt-remote-2")) {
+				auto port = cyng::value_cast<std::uint16_t>(p.second, 26862u);
+				sml_gen.set_proc_parameter_ipt_port_remote(server_id_
+				, user_
+				, pwd_
+				, 2
+				, port);
+			}
+			else if (boost::algorithm::equals(p.first, "smf-gw-ipt-name-1")) {
+				auto str = cyng::value_cast<std::string>(p.second, "");
+				sml_gen.set_proc_parameter_ipt_user(server_id_
+				, user_
+				, pwd_
+				, 1
+				, str);
+			}
+			else if (boost::algorithm::equals(p.first, "smf-gw-ipt-name-2")) {
+				auto str = cyng::value_cast<std::string>(p.second, "");
+				sml_gen.set_proc_parameter_ipt_user(server_id_
+				, user_
+				, pwd_
+				, 2
+				, str);
+			}
+			else if (boost::algorithm::equals(p.first, "smf-gw-ipt-pwd-1")) {
+				auto str = cyng::value_cast<std::string>(p.second, "");
+				sml_gen.set_proc_parameter_ipt_pwd(server_id_
+				, user_
+				, pwd_
+				, 1
+				, str);
+			}
+			else if (boost::algorithm::equals(p.first, "smf-gw-ipt-pwd-2")) {
+				auto str = cyng::value_cast<std::string>(p.second, "");
+				sml_gen.set_proc_parameter_ipt_pwd(server_id_
+				, user_
+				, pwd_
+				, 2
+				, str);
+			}
+		}
+	}
+	
 	void modify_gateway::stop()
 	{
 		//
