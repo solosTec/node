@@ -218,20 +218,20 @@ namespace node
 			}
 		}
 
-		void server::process_event(std::string const& channel, std::string const& msg)
-		{
-			connection_manager_.push_event(channel, msg);
-		}
+		//void server::process_event(std::string const& channel, std::string const& msg)
+		//{
+		//	connection_manager_.push_event(channel, msg);
+		//}
 
-		void server::send_moved(boost::uuids::uuid tag, std::string const& location)
-		{
-			connection_manager_.http_moved(tag, location);
-		}
+		//void server::send_moved(boost::uuids::uuid tag, std::string const& location)
+		//{
+		//	connection_manager_.http_moved(tag, location);
+		//}
 
-		void server::trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment)
-		{
-			connection_manager_.trigger_download(tag, filename, attachment);
-		}
+		//void server::trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment)
+		//{
+		//	connection_manager_.trigger_download(tag, filename, attachment);
+		//}
 
 	}
 }

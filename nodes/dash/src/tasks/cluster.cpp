@@ -57,7 +57,7 @@ namespace node
 			, bus_->vm_)
 		, dispatcher_(logger, server_.get_cm())
 		, db_sync_(logger, cache_)
-		, forward_(logger, cache_)
+		, forward_(logger, cache_, server_.get_cm())
 		, form_data_(logger)
 		, sys_tsk_(cyng::async::NO_TASK)
 	{
@@ -112,14 +112,8 @@ namespace node
 		//	input from HTTP session / ws
 		//
 		bus_->vm_.register_function("ws.read", 2, std::bind(&cluster::ws_read, this, std::placeholders::_1));
-
-		bus_->vm_.register_function("cfg.download.devices", 2, std::bind(&cluster::cfg_download_devices, this, std::placeholders::_1));
-		bus_->vm_.register_function("cfg.download.gateways", 2, std::bind(&cluster::cfg_download_gateways, this, std::placeholders::_1));
-		bus_->vm_.register_function("cfg.download.messages", 2, std::bind(&cluster::cfg_download_messages, this, std::placeholders::_1));
-		bus_->vm_.register_function("cfg.download.LoRa", 2, std::bind(&cluster::cfg_download_LoRa, this, std::placeholders::_1));
 		
 		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
-
 	}
 
     void cluster::start_sys_task()
@@ -364,116 +358,6 @@ namespace node
 			, std::get<5>(tpl));
 	}
 
-
-	void cluster::cfg_download_devices(cyng::context& ctx)
-	{
-		//
-		//	example
-		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
-		//
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "cfg.download.devices - " << cyng::io::to_str(frame));
-
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			cyng::param_map_t	//	[1] variables
-		>(frame);
-
-		trigger_download(std::get<0>(tpl), "TDevice", "device.xml");
-
-	}
-
-	void cluster::cfg_download_gateways(cyng::context& ctx)
-	{
-		//
-		//	example
-		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
-		//
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "cfg.download.gateways - " << cyng::io::to_str(frame));
-
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			cyng::param_map_t	//	[1] variables
-		>(frame);
-
-		trigger_download(std::get<0>(tpl), "TGateway", "gateway.xml");
-
-	}
-	
-	void cluster::cfg_download_messages(cyng::context& ctx)
-	{
-		//
-		//	example
-		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
-		//
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "cfg.download.messages - " << cyng::io::to_str(frame));
-
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			cyng::param_map_t	//	[1] variables
-		>(frame);
-
-		trigger_download(std::get<0>(tpl), "_SysMsg", "messages.xml");
-
-	}
-
-	void cluster::cfg_download_LoRa(cyng::context& ctx)
-	{
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "cfg.download.LoRa - " << cyng::io::to_str(frame));
-
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			cyng::param_map_t	//	[1] variables
-		>(frame);
-
-		trigger_download(std::get<0>(tpl), "TLoRaDevice", "LoRa.xml");
-	}
-
-
-
-	void cluster::trigger_download(boost::uuids::uuid tag, std::string table, std::string filename)
-	{
-		//
-		//	generate XML download file
-		//
-		pugi::xml_document doc_;
-		auto declarationNode = doc_.append_child(pugi::node_declaration);
-		declarationNode.append_attribute("version") = "1.0";
-		declarationNode.append_attribute("encoding") = "UTF-8";
-		declarationNode.append_attribute("standalone") = "yes";
-
-		pugi::xml_node root = doc_.append_child(table.c_str());
-		root.append_attribute("xmlns:xsi") = "w3.org/2001/XMLSchema-instance";
-		cache_.access([&](cyng::store::table const* tbl) {
-
-			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
-
-				//
-				//	write record
-				//
-				cyng::xml::write(root.append_child("record"), rec.convert());
-
-				//	continue
-				return true;
-			});
-			BOOST_ASSERT(counter == 0);
-			boost::ignore_unused(counter);	//	release version
-			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
-
-		}, cyng::store::read_access(table));
-
-		auto out = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.xml");
-		doc_.save_file(out.c_str(), PUGIXML_TEXT("  "));
-
-		//
-		//	trigger download
-		//
-		server_.trigger_download(tag, out.string(), filename);
-
-	}
 
 	void cluster::ws_read(cyng::context& ctx)
 	{

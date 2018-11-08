@@ -266,6 +266,7 @@ namespace node
 			const bool connection_auto_enabled = is_connection_auto_enabled(global_config);
 			const bool connection_superseed = is_connection_superseed(global_config);
 			const bool generate_time_series = is_generate_time_series(global_config);
+			const bool catch_meters = is_catch_meters(global_config);
 
 			db.insert("_Config", cyng::table::key_generator("startup"), cyng::table::data_generator(std::chrono::system_clock::now()), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("master-tag"), cyng::table::data_generator(tag), 1, tag);
@@ -273,11 +274,13 @@ namespace node
 			db.insert("_Config", cyng::table::key_generator("connection-auto-enabled"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("connection-superseed"), cyng::table::data_generator(connection_superseed), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("generate-time-series"), cyng::table::data_generator(generate_time_series), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("catch-meters"), cyng::table::data_generator(catch_meters), 1, tag);
 
 			db.insert("_Config", cyng::table::key_generator("connection-auto-login-default"), cyng::table::data_generator(connection_auto_login), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("connection-auto-enabled-default"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("connection-superseed-default"), cyng::table::data_generator(connection_superseed), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("generate-time-series-default"), cyng::table::data_generator(generate_time_series), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("catch-meters-default"), cyng::table::data_generator(catch_meters), 1, tag);
 
 			db.insert("_Config", cyng::table::key_generator("generate-time-series-dir"), cyng::table::data_generator(stat_dir.string()), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("max-messages"), cyng::table::data_generator(max_messages), 1, tag);
@@ -427,6 +430,10 @@ namespace node
 	{
 		return (cfg & SMF_GENERATE_TIME_SERIES) == SMF_GENERATE_TIME_SERIES;
 	}
+	bool is_catch_meters(std::uint64_t cfg)
+	{
+		return (cfg & SMF_GENERATE_CATCH_METERS) == SMF_GENERATE_CATCH_METERS;
+	}
 
 	bool set_connection_auto_login(std::atomic<std::uint64_t>& cfg, bool b)
 	{
@@ -454,6 +461,13 @@ namespace node
 		return is_generate_time_series(b
 			? cfg.fetch_or(SMF_GENERATE_TIME_SERIES)
 			: cfg.fetch_and(~SMF_GENERATE_TIME_SERIES));
+	}
+
+	bool set_catch_meters(std::atomic<std::uint64_t>& cfg, bool b)
+	{
+		return is_catch_meters(b
+			? cfg.fetch_or(SMF_GENERATE_CATCH_METERS)
+			: cfg.fetch_and(~SMF_GENERATE_CATCH_METERS));
 	}
 
 }

@@ -387,9 +387,13 @@ namespace node
 		}
 	}
 
-	forward::forward(cyng::logging::log_ptr logger, cyng::store::db& db)
-		: logger_(logger)
+	forward::forward(cyng::logging::log_ptr logger
+		, cyng::store::db& db
+		, connection_manager_interface& cm)
+	: logger_(logger)
 		, db_(db)
+		, connection_manager_(cm)
+		, uidgen_()
 	{}
 
 	void forward::register_this(cyng::controller& vm)
@@ -397,6 +401,13 @@ namespace node
 		vm.register_function("cfg.upload.devices", 2, std::bind(&forward::cfg_upload_devices, this, std::placeholders::_1));
 		vm.register_function("cfg.upload.gateways", 2, std::bind(&forward::cfg_upload_gateways, this, std::placeholders::_1));
 		vm.register_function("cfg.upload.meter", 2, std::bind(&forward::cfg_upload_meter, this, std::placeholders::_1));
+
+		vm.register_function("cfg.download.devices", 2, std::bind(&forward::cfg_download_devices, this, std::placeholders::_1));
+		vm.register_function("cfg.download.gateways", 2, std::bind(&forward::cfg_download_gateways, this, std::placeholders::_1));
+		vm.register_function("cfg.download.meters", 2, std::bind(&forward::cfg_download_meters, this, std::placeholders::_1));
+		vm.register_function("cfg.download.messages", 2, std::bind(&forward::cfg_download_messages, this, std::placeholders::_1));
+		vm.register_function("cfg.download.LoRa", 2, std::bind(&forward::cfg_download_LoRa, this, std::placeholders::_1));
+
 	}
 
 	void forward::cfg_upload_devices(cyng::context& ctx)
@@ -421,6 +432,7 @@ namespace node
 
 		auto file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "dev-conf-0"), "");
 		auto version = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "smf-upload-config-device-version"), "v0.5");
+		auto merge = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "smf-upload-config-device-merge"), "insert");
 
 		//
 		//	get pointer to XML data
@@ -430,10 +442,10 @@ namespace node
 		if (result) {
 
 			if (boost::algorithm::equals(version, "v3.2")) {
-				read_device_configuration_3_2(ctx, doc);
+				read_device_configuration_3_2(ctx, doc, boost::algorithm::equals(merge, "insert"));
 			}
 			else {
-				read_device_configuration_5_x(ctx, doc);
+				read_device_configuration_5_x(ctx, doc, boost::algorithm::equals(merge, "insert"));
 			}
 		}
 		else {
@@ -523,7 +535,7 @@ namespace node
 		>(frame);
 	}
 
-	void forward::read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc)
+	void forward::read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc, bool insert)
 	{
 		//
 		//	example line:
@@ -536,7 +548,11 @@ namespace node
 		{
 			counter++;
 			pugi::xml_node node = it->node();
-			const std::string pk = node.child_value();
+			const std::string pk_val = node.child_value();
+			const auto pk = (pk_val.size() == 36)
+				? boost::uuids::string_generator()(pk_val)
+				: uidgen_()
+				;
 
 			const std::string name = node.attribute("name").value();
 
@@ -550,21 +566,53 @@ namespace node
 			//
 			//	forward to process bus task
 			//
-			ctx.attach(bus_req_db_insert("TDevice"
-				//	generate new key
-				, cyng::table::key_generator(boost::uuids::string_generator()(pk))
-				//	build data vector
-				, cyng::table::data_generator(name
-					, node.attribute("pwd").value()
-					, node.attribute("number").value()
-					, node.attribute("description").value()
-					, std::string("")	//	model
-					, std::string("")	//	version
-					, node.attribute("enabled").as_bool()
-					, std::chrono::system_clock::now()
-					, node.attribute("query").as_uint())
-				, 0
-				, ctx.tag()));
+			if (insert) {
+
+				//
+				//	merge
+				//
+				ctx.attach(bus_req_db_insert("TDevice"
+					//	generate new key
+					, cyng::table::key_generator(pk)
+					//	build data vector
+					, cyng::table::data_generator(name
+						, node.attribute("pwd").value()
+						, node.attribute("number").value()
+						, node.attribute("description").value()
+						, std::string("")	//	model
+						, std::string("")	//	version
+						, node.attribute("enabled").as_bool()
+						, std::chrono::system_clock::now()
+						, node.attribute("query").as_uint())
+					, 0
+					, ctx.tag()));
+			}
+			else {
+
+				//
+				//	merge
+				//
+				ctx.attach(bus_req_db_modify("TDevice"
+					, cyng::table::key_generator(pk)
+					, cyng::param_factory("pwd", node.attribute("pwd").value())
+					, 0
+					, ctx.tag()));
+				ctx.attach(bus_req_db_modify("TDevice"
+					, cyng::table::key_generator(pk)
+					, cyng::param_factory("msisdn", node.attribute("number").value())
+					, 0
+					, ctx.tag()));
+				ctx.attach(bus_req_db_modify("TDevice"
+					, cyng::table::key_generator(pk)
+					, cyng::param_factory("descr", node.attribute("description").value())
+					, 0
+					, ctx.tag()));
+				ctx.attach(bus_req_db_modify("TDevice"
+					, cyng::table::key_generator(pk)
+					, cyng::param_factory("query", node.attribute("query").as_uint())
+					, 0
+					, ctx.tag()));
+			}
 		}
 
 		std::stringstream ss;
@@ -576,7 +624,7 @@ namespace node
 
 	}
 
-	void forward::read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc)
+	void forward::read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc, bool insert)
 	{
 		std::size_t counter{ 0 };
 		pugi::xpath_node_set data = doc.select_nodes("configuration/records/device");
@@ -657,7 +705,7 @@ namespace node
 
 	}
 
-	void forward::read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc)
+	void forward::read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc, bool insert)
 	{
 		std::size_t counter{ 0 };
 		pugi::xpath_node_set data = doc.select_nodes("TDevice/record");
@@ -681,5 +729,134 @@ namespace node
 			ctx.attach(bus_req_db_insert("TDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
 		}
 	}
+
+	void forward::cfg_download_devices(cyng::context& ctx)
+	{
+		//
+		//	example
+		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.download.devices - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		trigger_download(std::get<0>(tpl), "TDevice", "device.xml");
+
+	}
+
+	void forward::cfg_download_gateways(cyng::context& ctx)
+	{
+		//
+		//	example
+		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.download.gateways - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		trigger_download(std::get<0>(tpl), "TGateway", "gateway.xml");
+
+	}
+
+	void forward::cfg_download_meters(cyng::context& ctx)
+	{
+		//
+		//	example
+		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.download.meters - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		trigger_download(std::get<0>(tpl), "TMeter", "meter.xml");
+
+	}
+
+	void forward::cfg_download_messages(cyng::context& ctx)
+	{
+		//
+		//	example
+		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.download.messages - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		trigger_download(std::get<0>(tpl), "_SysMsg", "messages.xml");
+
+	}
+
+	void forward::cfg_download_LoRa(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "cfg.download.LoRa - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		trigger_download(std::get<0>(tpl), "TLoRaDevice", "LoRa.xml");
+	}
+
+
+
+	void forward::trigger_download(boost::uuids::uuid tag, std::string table, std::string filename)
+	{
+		//
+		//	generate XML download file
+		//
+		pugi::xml_document doc_;
+		auto declarationNode = doc_.append_child(pugi::node_declaration);
+		declarationNode.append_attribute("version") = "1.0";
+		declarationNode.append_attribute("encoding") = "UTF-8";
+		declarationNode.append_attribute("standalone") = "yes";
+
+		pugi::xml_node root = doc_.append_child(table.c_str());
+		root.append_attribute("xmlns:xsi") = "w3.org/2001/XMLSchema-instance";
+		db_.access([&](cyng::store::table const* tbl) {
+
+			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+				//
+				//	write record
+				//
+				cyng::xml::write(root.append_child("record"), rec.convert());
+
+				//	continue
+				return true;
+			});
+			BOOST_ASSERT(counter == 0);
+			boost::ignore_unused(counter);	//	release version
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
+
+		}, cyng::store::read_access(table));
+
+		auto out = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.xml");
+		doc_.save_file(out.c_str(), PUGIXML_TEXT("  "));
+
+		//
+		//	trigger download
+		//
+		connection_manager_.trigger_download(tag, out.string(), filename);
+
+	}
+
 
 }

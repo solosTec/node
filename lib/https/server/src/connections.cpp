@@ -490,6 +490,37 @@ namespace node
 			}
 		}
 
+		void connections::trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment)
+		{
+			//
+			//	lock both http container
+			//
+			cyng::async::lock(mutex_[HTTP_PLAIN], mutex_[HTTP_SSL]);
+			cyng::async::lock_guard<cyng::async::shared_mutex> lk1(mutex_[HTTP_PLAIN], cyng::async::adopt_lock);
+			cyng::async::lock_guard<cyng::async::shared_mutex> lk2(mutex_[HTTP_SSL], cyng::async::adopt_lock);
+
+			auto res = find_http(tag);
+			switch (res.second) {
+			case HTTP_PLAIN:
+				const_cast<plain_session*>(cyng::object_cast<plain_session>(res.first))->trigger_download(res.first, filename, attachment);
+				break;
+			case HTTP_SSL:
+				const_cast<ssl_session*>(cyng::object_cast<ssl_session>(res.first))->trigger_download(res.first, filename, attachment);
+				break;
+			default:
+				break;
+			}
+
+			//cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[HTTP_PLAIN]);
+			//auto pos = sessions_[HTTP_PLAIN].find(tag);
+			//if (pos != sessions_[HTTP_PLAIN].end()) {
+			//	auto ptr = cyng::object_cast<session>(pos->second);
+			//	if (ptr != nullptr) {
+			//		const_cast<session*>(ptr)->trigger_download(filename, attachment);
+			//	}
+			//}
+		}
+
 	}
 }
 

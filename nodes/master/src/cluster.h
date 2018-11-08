@@ -23,7 +23,8 @@ namespace node
 	public:
 		cluster(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, cyng::store::db&);
+			, cyng::store::db&
+			, std::atomic<std::uint64_t>& global_configuration);
 
 		cluster(cluster const&) = delete;
 		cluster& operator=(cluster const&) = delete;
@@ -49,6 +50,7 @@ namespace node
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
+		std::atomic<std::uint64_t>& global_configuration_;
 
 		/**
 		 * generate meter tags

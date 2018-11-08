@@ -22,10 +22,12 @@ namespace node
 {
 	cluster::cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cyng::store::db& db)
+		, cyng::store::db& db
+		, std::atomic<std::uint64_t>& global_configuration)
 	: mux_(mux)
 		, logger_(logger)
 		, db_(db)
+		, global_configuration_(global_configuration)
 		, uidgen_()
 	{}
 
@@ -244,7 +246,8 @@ namespace node
 			const auto type = cyng::find_value<std::uint32_t>(std::get<5>(tpl), "type", 0u);
 			const auto age = cyng::find_value(std::get<5>(tpl), "timestamp", std::chrono::system_clock::now());
 
-			if (type < 2) {
+			if (is_catch_meters(global_configuration_) && (type < 2))
+			{
 				CYNG_LOG_TRACE(logger_, "update TMeter " << ident);
 
 				db_.access([&](cyng::store::table* tbl_meter)->void {

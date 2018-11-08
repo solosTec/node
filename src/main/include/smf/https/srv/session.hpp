@@ -305,6 +305,46 @@ namespace node
 
 			}
 
+			void trigger_download(cyng::object obj, std::string const& path, std::string const& attachment)
+			{
+
+				boost::beast::error_code ec;
+				boost::beast::http::file_body::value_type body;
+				body.open(path.c_str(), boost::beast::file_mode::scan, ec);
+				if (ec == boost::system::errc::no_such_file_or_directory)
+				{
+					boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::not_found, 11 };
+					res.set(boost::beast::http::field::server, NODE::version_string);
+					res.set(boost::beast::http::field::content_type, "text/html");
+					res.keep_alive(true);
+					res.body() = "The resource '" + path + "' was not found.";
+					res.prepare_payload();
+
+					return queue_(obj, std::move(res));
+				}
+				// Cache the size since we need it after the move
+				auto const size = body.size();
+
+				boost::beast::http::response<boost::beast::http::file_body> res{
+					std::piecewise_construct,
+					std::make_tuple(std::move(body)),
+					std::make_tuple(boost::beast::http::status::ok, 11) };
+
+				res.content_length(size);
+
+
+				res.set(boost::beast::http::field::server, NODE::version_string);
+				res.set(boost::beast::http::field::content_description, "File Transfer");
+				res.set(boost::beast::http::field::content_type, "application/octet-stream");
+				res.set(boost::beast::http::field::content_type, "application/force-download");
+				res.set(boost::beast::http::field::content_disposition, "attachment; filename='" + attachment + "'");
+				res.set(boost::beast::http::field::expires, 0);
+				res.set(boost::beast::http::field::cache_control, "must-revalidate, post-check=0, pre-check=0");
+
+				queue_(obj, std::move(res));
+			}
+
+
 		private:
 			void handle_request(cyng::object obj, boost::beast::http::request<boost::beast::http::string_body>&& req)
 			{
@@ -465,11 +505,23 @@ namespace node
 						CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
 						std::uint64_t payload_size = *req.payload_size();
 						node::http::multi_part_parser mpp([&](cyng::vector_t&& prg) {
-							//bus_->vm_.async_run(std::move(prg));
+
+							//	executed by HTTP/s session
+							connection_manager_.vm().async_run(std::move(prg));
+
 						}	, logger_
 							, payload_size
 							, target
 							, tag_);
+
+						//
+						//	open new upload sequence
+						//
+						connection_manager_.vm().async_run(cyng::generate_invoke("http.upload.start"
+							, tag_
+							, req.version()
+							, std::string(target.begin(), target.end())
+							, payload_size));
 
 						//
 						//	parse payload and generate program sequences

@@ -97,6 +97,17 @@
 
                         <div class="form-group">
                             <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-upload-config-device-merge" id="smf-upload-config-device-insert" value="insert" checked>
+                                <label class="form-check-label" for="smf-upload-config-device-insert">Insert as new data</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-upload-config-device-merge" id="smf-upload-config-device-update" value="update">
+                                <label class="form-check-label" for="smf-upload-config-device-update">Update existing data</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="smf-upload-config-device-version" id="smf-upload-config-device-v31" value="v3.2">
                                 <label class="form-check-label" for="smf-upload-config-device-v31">Version 3.2</label>
                             </div>
@@ -106,9 +117,10 @@
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="smf-upload-config-device-version" id="smf-upload-config-device-v5" value="v5.0" checked>
-                                <label class="form-check-label" for="smf-upload-config-device-v5">version 5.0</label>
+                                <label class="form-check-label" for="smf-upload-config-device-v5">Version 5.0</label>
                             </div>
                         </div>
+
                         <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.upload.devices" />
                         <button type="submit" class="btn btn-primary">&#8682; Upload</button>
                     </form>
@@ -125,6 +137,18 @@
                             <label for="smf-upload-config-gw-file" id="smf-upload-config-gw-header">Select a gateway configuration file<span id="xxx"></span></label>
                             <input type="file" class="form-control-file" id="smf-upload-config-gw-file" accept=".xml, application/xml" multiple>
                         </div>
+
+                        <div class="form-group">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-upload-config-gw-merge" id="smf-upload-config-gw-insert" value="insert" checked>
+                                <label class="form-check-label" for="smf-upload-config-gw-insert">Insert as new data</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-upload-config-gw-merge" id="smf-upload-config-gw-update" value="update" disabled>
+                                <label class="form-check-label" for="smf-upload-config-gw-update">Update existing data</label>
+                            </div>
+                        </div>
+
                         <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.upload.gateways" />
                         <button type="submit" class="btn btn-primary" id="smf-upload-config-gw-button">&#8682; Upload</button>
                     </form>
@@ -139,7 +163,17 @@
                     <form id="smf-upload-config-meter" method="post" action="config.upload.html" enctype="multipart/form-data" class="form-horizontal">
                         <div class="form-group">
                             <label for="smf-upload-config-meter-file" id="smf-upload-config-meter-header">Select a meter configuration file<span id="xxx"></span></label>
-                            <input type="file" class="form-control-file" id="smf-upload-meter-device-file" accept=".xml, application/xml" multiple>
+                            <input type="file" class="form-control-file" id="smf-upload-config-meter-file" accept=".xml, application/xml" multiple>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-upload-config-meter-merge" id="smf-upload-config-meter-insert" value="insert" checked>
+                                <label class="form-check-label" for="smf-upload-config-meter-insert">Insert as new data</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-upload-config-meter-merge" id="smf-upload-config-meter-update" value="update" disabled>
+                                <label class="form-check-label" for="smf-upload-config-meter-update">Update existing data</label>
+                            </div>
                         </div>
                         <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.upload.meter" />
                         <button type="submit" class="btn btn-primary" id="smf-upload-config-meter-button">&#8682; Upload</button>
@@ -161,6 +195,17 @@
                         <div class="form-group">
                             <label for="smf-upload-config-LoRa-file" id="smf-upload-config-LoRa-header">Select a LoRa configuration file<span id="xxx"></span></label>
                             <input type="file" class="form-control-file" id="smf-upload-config-LoRa-file" accept=".xml, application/xml" multiple>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-upload-config-LoRa-merge" id="smf-upload-config-LoRa-insert" value="insert" checked>
+                                <label class="form-check-label" for="smf-upload-config-LoRa-insert">Insert as new data</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-upload-config-LoRa-merge" id="smf-upload-config-LoRa-update" value="update" disabled>
+                                <label class="form-check-label" for="smf-upload-config-LoRa-update">Update existing data</label>
+                            </div>
                         </div>
 
                         <div class="form-group">

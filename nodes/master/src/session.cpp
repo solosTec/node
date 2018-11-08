@@ -59,7 +59,7 @@ namespace node
 		, cluster_monitor_(monitor)
 		, seq_(0)
 		, client_(mux, logger, db, global_configuration, stat_dir)
-		, cluster_(mux, logger, db)
+		, cluster_(mux, logger, db, global_configuration)
 		, subscriptions_()
 		, tsk_watchdog_(cyng::async::NO_TASK)
 		, group_(0)
@@ -851,6 +851,10 @@ namespace node
 				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "connection-superseed"))
 				{
 					client_.set_connection_superseed(attr.second);
+				}
+				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "catch-meters"))
+				{
+					client_.set_catch_meters(attr.second);
 				}
 				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "generate-time-series"))
 				{

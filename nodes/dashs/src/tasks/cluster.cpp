@@ -49,7 +49,7 @@ namespace node
 		, server_(logger, btp->mux_.get_io_service(), ctx, ep, doc_root, ad, blacklist, bus_->vm_)
 		, dispatcher_(logger, server_.get_cm())
 		, db_sync_(logger, cache_)
-		, forward_(logger, cache_)
+		, forward_(logger, cache_, server_.get_cm())
 		, form_data_(logger)
 		, sys_tsk_(cyng::async::NO_TASK)
 	{

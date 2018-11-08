@@ -80,6 +80,11 @@ namespace node
 		return node::set_connection_superseed(global_configuration_, cyng::value_cast(obj, true));
 	}
 
+	bool client::set_catch_meters(cyng::object obj)
+	{
+		return node::set_catch_meters(global_configuration_, cyng::value_cast(obj, true));
+	}
+
 	bool client::set_generate_time_series(cyng::object obj)
 	{
 		return node::set_generate_time_series(global_configuration_, cyng::value_cast(obj, false));

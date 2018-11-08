@@ -14,6 +14,7 @@
 
 #include <cyng/vm/generator.h>
 #include <cyng/vm/controller.h>
+#include <cyng/io/serializer.h>
 
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/functional/hash.hpp>
@@ -383,8 +384,9 @@ namespace node
 					std::uint64_t payload_size = *req.payload_size();
 					multi_part_parser mpp([&](cyng::vector_t&& prg) {
 
-						//	ToDo:
-						//vm_.async_run(std::move(prg));
+						//	executed by HTTP session
+						CYNG_LOG_DEBUG(logger_, cyng::io::to_str(prg));
+						connection_manager_.vm().async_run(std::move(prg));
 
 					}, logger_
 						, payload_size
@@ -394,11 +396,11 @@ namespace node
 					//
 					//	open new upload sequence
 					//
-					//bus_->vm_.async_run(cyng::generate_invoke("http.upload.start"
-					//	, tag_
-					//	, req.version()
-					//	, std::string(target.begin(), target.end())
-					//	, payload_size));
+					connection_manager_.vm().async_run(cyng::generate_invoke("http.upload.start"
+							, tag_
+							, req.version()
+							, std::string(target.begin(), target.end())
+							, payload_size));
 
 					//
 					//	parse payload and generate program sequences

@@ -285,32 +285,6 @@ namespace node
 				}
 			}
 		}
-
-		//void connections::push_ws(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-		//	const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-
-		//	CYNG_LOG_TRACE(logger_, "push ws "
-		//		<< tag
-		//		<< " on stack");
-		//	ctx.push(get_ws(tag));
-		//}
-
-		//cyng::object connections::get_ws(boost::uuids::uuid tag) const
-		//{
-		//	//
-		//	//	shared lock 
-		//	//
-		//	cyng::async::shared_lock<cyng::async::shared_mutex> lock(mutex_);
-		//	auto pos = ws_.find(tag);
-		//	return (pos != ws_.end())
-		//		? pos->second
-		//		: cyng::make_object()
-		//		;
-		//}
-
-
 	}
 }
 

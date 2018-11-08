@@ -103,7 +103,10 @@ namespace node
 			 */
 			virtual void push_event(std::string const& channel, std::string const&) override;
 
-			void trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment);
+			/**
+			 * Push browser/client to start a download
+			 */
+			virtual void trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment) override;
 
 
 		private:

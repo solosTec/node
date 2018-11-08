@@ -141,6 +141,19 @@
                 </div>
             </div>
         </div>
+
+        <div class="card-deck">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Catch new Meters</h5>
+                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-catch-meters-data" value=""> Catch new meters during gateway configuration</label>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">default = <span id="smf-config-system-catch-meters-default">wait...</span></small>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- JavaScript -->
@@ -228,6 +241,14 @@
                             console.log('max-messages": ' + obj.rec.data.value);
                             $("#smf-config-system-max-messages").text(obj.rec.data.value);
                         }
+                        else if (obj.rec.key.name == "catch-meters") {
+                            console.log('catch-meters": ' + obj.rec.data.value);
+                            $("#smf-config-system-catch-meters-data").prop("checked", obj.rec.data.value);
+                        }
+                        else if (obj.rec.key.name == "catch-meters-default") {
+                            console.log('catch-meters-default": ' + obj.rec.data.value);
+                            $("#smf-config-system-catch-meters-default").text(obj.rec.data.value);
+                        }
                     }
                     else if (obj.cmd == 'delete') {
                     }
@@ -248,6 +269,10 @@
                         else if (obj.key[0] == 'generate-time-series') {
                             console.log('generate-time-series: ' + obj.value.value);
                             $("#smf-config-system-time-series-data").prop("checked", obj.value.value);
+                        }
+                        else if (obj.key[0] == 'catch-meters') {
+                            console.log('catch-meters: ' + obj.value.value);
+                            $("#smf-config-system-catch-meters-data").prop("checked", obj.value.value);
                         }
                     }
                     else if (obj.cmd == 'clear') {
@@ -310,6 +335,18 @@
                 }
             }));
         });
+
+        $('#smf-config-system-catch-meters-data').change(function (val) {
+            connection.send(JSON.stringify({
+                cmd: "modify", channel: "config.system", rec: {
+                    key: { name: "catch-meters" },
+                    data: {
+                        value: this.checked
+                    }
+                }
+            }));
+        });
+        
     </script>
 
     <script>
