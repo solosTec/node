@@ -29,16 +29,16 @@
                     <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
                 </li>
 
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown active">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Configuration
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="config.device.html">Devices</a>
                         <a class="dropdown-item" href="config.gateway.html">Gateway</a>
-                        <a class="dropdown-item" href="config.meter.html">Meter</a>
+                        <a class="dropdown-item active" href="config.meter.html">Meter</a>
                         <a class="dropdown-item" href="config.lora.html">LoRa</a>
-<!--                        <a class="dropdown-item" href="config.user.html">User</a>-->
+                        <!--                        <a class="dropdown-item" href="config.user.html">User</a>-->
                         <a class="dropdown-item" href="config.system.html">System</a>
                         <a class="dropdown-item" href="config.upload.html">Upload</a>
                         <a class="dropdown-item" href="config.download.html">Download</a>
@@ -76,21 +76,182 @@
     </nav>
     <div class="jumbotron jumbotron-fluid">
         <div class="container">
-            <h1 class="display-4">Your SMF dashboard</h1>
+            <h1 class="display-4">Meter Management</h1>
             <hr class="my-4">
-            <p class="lead">Start managing your SMF framework</p>
-        </div>
-    </div>
-    <div class="container-fluid">
-        <h1>My First Bootstrap Page</h1>
-        <p>This is some text.</p>
-        <div class="row">
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="ws-activity-level">0%</div>
+            </div>
         </div>
     </div>
 
+    <div class="container-fluid">
+        <table id="smf-table-gw" class="table table-condensed table-striped table-bordered" cellspacing="0">
+            <thead>
+                <tr>
+                    <th class="sml-col-gw-pk">UUID</th>
+                    <th class="sml-col-gw-ident">Ident</th>
+                    <th class="sml-col-gw-meter">Meter</th>
+                    <th class="sml-col-gw-maker">Manufacturer</th>
+                    <th class="sml-col-gw-tom">TOM</th>
+                    <th class="sml-col-gw-fw">Firmware</th>
+                    <th class="sml-col-gw-param">Parametrierung</th>
+                    <th class="sml-col-gw-fn">Factory Nr.</th>
+                    <th class="sml-col-gw-item">Item</th>
+                    <th class="sml-col-gw-class">Metrol. Class</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
-<!--    <script type="text/javascript" src="popper.min.js"></script>-->
 
+    <script>
+        //  globals
+        var table_meter;
+        var _ws = null;
+        var totalIO = 0;
+
+        var renderDate = function (data, type, full, meta) {
+            if (type == "display") {
+                return data.toDateString();
+            }
+            return data;
+        };
+
+        var tbl_config = {
+            paging: true,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            pageLength: 10,
+            ordering: true,
+            info: true,
+            autoWidth: false,
+            deferRender: false,
+            processing: true,
+            searching: true,
+            select: true,
+            //colReorder: true,
+            columnDefs: [
+                { targets: 'sml-col-gw-pk', visible: false, name: 'gw-pk' },
+                { targets: 'sml-col-gw-ident', visible: true, name: 'gw-ident' },
+                { targets: 'sml-col-gw-meter', visible: true, name: 'gw-meter' },
+                { targets: 'sml-col-gw-maker', visible: true, name: 'gw-maker' },
+                { targets: 'sml-col-gw-tom', visible: true, name: 'gw-tom', render: renderDate },
+                { targets: 'sml-col-gw-fw', visible: true, name: 'gw-fw' },
+                { targets: 'sml-col-gw-fn', visible: true, name: 'gw-fn' },
+                { targets: 'sml-col-gw-item', visible: true, name: 'gw-item' },
+                { targets: 'sml-col-gw-class', visible: true, name: 'gw-class' }
+            ]
+        };
+
+
+        $(document).ready(function () {
+            console.log('document ready');
+            table_meter = $('#smf-table-gw').DataTable(tbl_config);
+
+            table_meter.on('select', function (e, datatable, type, indexes) {
+
+                var rowData = datatable.rows(indexes).data().toArray()[0];
+                var rows = table_meter.rows(indexes).data();
+                console.log("select: " + rows.toArray() + ", length:" + rowData.length);
+            }); //  onSelect()
+
+            function start_ws() {
+                $('#ws-activity-text').html('connecting to ' + location.host + '...');
+                _ws = new WebSocket('ws://' + location.host + '/smf/api/meter/v0.1', ['SMF']);
+
+                _ws.onopen = function () {
+                    console.log('ws open ' + _ws.protocol);
+                    //  clear table in case of reconnect
+                    table_meter.clear().draw(false);
+                    //  subscribe meter configuration
+                    _ws.send(JSON.stringify({ cmd: "subscribe", channel: "config.meter", push: true }));
+                };
+
+                _ws.onclose = function (event) {
+                    $('#ws-activity-symbol').show();
+                    $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
+                    $('#ws-activity-level').text("out of sync").removeClass('bg-success').addClass('bg-warning');
+                    if (event.code == 1006) {
+                        $('#ws-activity-text').html('_ws lost - press reload');
+                    }
+                    else {
+                        $('#ws-activity-text').html('error ' + event.code);
+                    }
+                    check_ws();
+                };
+
+                _ws.onerror = function (error) {
+                    console.log('ws error');
+                    $('#ws-activity-text').html('ws error');
+                };
+
+                _ws.onmessage = function (e) {
+                    $('#ws-activity-symbol').show();
+                    console.log('incoming data: ' + e.data);
+                    totalIO += e.data.length;
+                    var obj = JSON.parse(e.data);
+                    if (obj.cmd != null && obj.channel != null) {
+                        if (obj.channel == 'config.meter') {
+                            if (obj.cmd == 'insert') {
+                                //  {"cmd": "insert", "channel": "config.meter", "rec": {"key": {"pk":"1011b316-b8b0-4612-9a9f-9debc87dbd4b"}, 
+                                //  "data": {"factoryNr":"","gen":0,"gw":"9e3dda5d-7c0b-4a8d-b25d-eea3a113a856","ident":"0ae00001","item":"","mClass":"---","maker":"","meter":"00000000","tom":"2018-11-08 07:47:05.00000000","vFirmare":"","vParam":""}}}
+                                var ident = $('<div/>').text(obj.rec.data.ident).html();
+                                var meter = $('<div/>').text(obj.rec.data.meter).html();
+                                var maker = $('<div/>').text(obj.rec.data.maker).html();
+                                var tom = new Date(obj.rec.data.tom.substring(0, 19));
+                                var firmware = $('<div/>').text(obj.rec.data.vFirmware).html();
+                                var vParam = $('<div/>').text(obj.rec.data.vParam).html();
+                                var factoryNr = $('<div/>').text(obj.rec.data.factoryNr).html();
+                                var vParam = $('<div/>').text(obj.rec.data.vParam).html();
+                                var item = $('<div/>').text(obj.rec.data.item).html();
+                                var mClass = $('<div/>').text(obj.rec.data.mClass).html();
+                                var rowNode = table_meter.row.add([obj.rec.key.pk, ident, meter, maker, tom, firmware, vParam, factoryNr, item, mClass]).draw().node();
+
+                            }
+                            else if (obj.cmd == 'delete') {
+
+                            }
+                            else if (obj.cmd == 'modify') {
+                            }
+                            else if (obj.cmd == 'clear') {
+
+                            }
+                            else if (obj.cmd == 'load') {
+                                //  load status
+                                if (obj.show != null) {
+                                    if (obj.show) {
+                                        $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });
+                                        $('#ws-activity-symbol').show();
+                                        $('#ws-activity-level').css("width", "0%").text("0%").removeClass('bg-warning').addClass('bg-info');
+                                    }
+                                    else {
+                                        $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
+                                        $('#ws-activity-symbol').fadeOut();
+                                        $('#ws-activity-level').css("width", "100%").text("synchronized").removeClass('bg-info').addClass('bg-success');
+                                        table_meter.order([2, 'asc']).draw();
+                                    }
+                                }
+                                else if (obj.level != null) {
+                                    console.log('progess: ' + obj.level + "%");
+                                    $('#ws-activity-level').css("width", obj.level + "%").attr("aria-valuenow", obj.level).text(obj.level + "%");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            function check_ws() {
+                if (!_ws || _ws.readyState == 3) {
+                    start_ws();
+                }
+            }
+
+            start_ws();
+            setInterval(check_ws, 5000);
+
+        }); //  document ready
+
+    </script>
 </body>
 </html>

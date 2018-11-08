@@ -431,7 +431,8 @@ namespace node
 					frame.at(4),	//	OBIS code
 									//	visible device
 					cyng::param_map_factory("number", frame.at(5))
-					("meter", node::sml::from_server_id(meter))
+					("ident", node::sml::from_server_id(meter))
+					("meter", node::sml::get_serial(meter))
 					("class", frame.at(7))
 					("timestamp", frame.at(8))
 					("type", node::sml::get_srv_type(meter))

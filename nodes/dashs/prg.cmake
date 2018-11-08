@@ -50,6 +50,12 @@ set (node_dashs_assets
 	nodes/dash/htdocs/monitor.msg.html
 )
 
+set (node_dashs_schemes
+
+	nodes/shared/db/db_schemes.h
+	nodes/shared/db/db_schemes.cpp
+)
+
 set (node_dashs_info
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
@@ -96,6 +102,7 @@ source_group("assets" FILES ${node_dashs_assets})
 source_group("service" FILES ${node_dashs_service})
 source_group("info" FILES ${node_dashs_info})
 source_group("shared" FILES ${node_dashs_shared})
+source_group("schemes" FILES ${node_dashs_schemes})
 
 
 # define the main program
@@ -107,6 +114,7 @@ set (node_dashs
   ${node_dashs_service}
   ${node_dashs_info}
   ${node_dashs_shared}
+  ${node_dashs_schemes}
 )
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)

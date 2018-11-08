@@ -14,6 +14,8 @@
 #include <cyng/table/key.hpp>
 #include <cyng/vm/context.h>
 #include <cyng/io/serializer.h>
+#include <cyng/rnd.h>
+
 #include <atomic>
 #include <boost/random.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -282,8 +284,10 @@ namespace node
 		 */
 		std::string node_class_;
 
-		boost::random::mt19937 rng_;
-		boost::random::uniform_int_distribution<std::uint32_t> distribution_;
+		/**
+		 * Generate random channel numbers
+		 */
+		cyng::crypto::rnd_num<std::uint32_t>	rng_;
 		boost::uuids::random_generator uuid_gen_;
 
 	};

@@ -41,15 +41,9 @@ namespace node
 		, global_configuration_(global_configuration)
 		, stat_dir_(stat_dir)
 		, node_class_("undefined")
-		, rng_()
-		, distribution_(std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max())
+		, rng_(std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max())
 		, uuid_gen_()
-	{
-		//
-		//	initialize random generator
-		//
-        rng_.seed(static_cast<std::uint32_t>(std::time(nullptr)));
-	}
+	{}
 
 	void client::register_this(cyng::context& ctx)
 	{
@@ -222,7 +216,7 @@ namespace node
 								, cluster_tag					//	peer
 								, dev_tag						//	device
 								, account						//	name
-								, distribution_(rng_)			//	source id
+								, rng_()			//	source id
 								, std::chrono::system_clock::now()
 								, boost::uuids::nil_uuid()
 								, cyng::value_cast<std::string>(dom.get("tp-layer"), "tcp/ip")
@@ -1684,7 +1678,7 @@ namespace node
 			//
 			//	new (random) channel id
 			//
-			const std::uint32_t channel = distribution_(rng_);
+			const std::uint32_t channel = rng_();
 
 			//
 			//	create push channels
@@ -2182,7 +2176,7 @@ namespace node
 		//
 		//	generate a random new target/channel id
 		//
-		const auto channel = distribution_(rng_);
+		const auto channel = rng_();
 		bool success{ false };
 		db_.access([&](const cyng::store::table* tbl_session, cyng::store::table* tbl_target)->void {
 

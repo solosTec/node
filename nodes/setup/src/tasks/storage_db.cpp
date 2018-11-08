@@ -257,6 +257,27 @@ namespace node
 				}
 				stmt->clear();
 			}
+			else if (boost::algorithm::equals(name, "TLoRaDevice"))
+			{
+				//	insert TLoRaDevice 
+				//	[f4f697c0-670f-4897-9500-adfc9bff60fb]
+				//	[0100:0302:0504:0706,1122334455667788990011223344556677889900112233445566778899001122,demo,true,100,0100:0302:0604:0807,0100:0302:0604:0807] - gen 8
+				stmt->push(key.at(0), 36)	//	pk
+					.push(cyng::make_object(gen), 0)	//	generation
+					.push(data.at(0), 19)	//	DevEUI
+					.push(data.at(1), 0)	//	AESKey
+					.push(data.at(2), 0)	//	driver
+					.push(data.at(3), 0)	//	activation
+					.push(data.at(4), 0)	//	DevAddr
+					.push(data.at(5), 0)	//	AppEUI
+					.push(data.at(6), 0)	//	GatewayEUI
+					;
+				if (!stmt->execute())
+				{
+					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+				}
+				stmt->clear();
+			}
 			else if (boost::algorithm::equals(name, "TLoraUplink"))
 			{
 				//	INSERT INTO TLoraUplink (pk, DevEUI, roTime, FPort, FCntUp, ADRbit, MType, FCntDn, payload, mic, LrrRSSI, LrrSNR, SpFact, SubBand, Channel, DevLrrCnt, Lrrid, CustomerID, LrrLAT, LrrLON) VALUES (?, ?, julianday(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -285,6 +306,28 @@ namespace node
 					.push(data.at(2), 16)	//	CustomerID
 					.push(data.at(1), 0)	//	LrrLAT
 					.push(data.at(0), 0)	//	LrrLON
+					;
+				if (!stmt->execute())
+				{
+					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+				}
+				stmt->clear();
+			}
+			else if (boost::algorithm::equals(name, "TMeter"))
+			{
+				//	insert TMeter 
+				stmt->push(key.at(0), 36)	//	pk
+					.push(cyng::make_object(gen), 0)	//	generation
+					.push(data.at(0), 24)	//	ident
+					.push(data.at(1), 8)	//	meter
+					.push(data.at(2), 64)	//	maker
+					.push(data.at(3), 0)	//	tom
+					.push(data.at(4), 64)	//	vFirmare
+					.push(data.at(5), 64)	//	vParam
+					.push(data.at(6), 32)	//	factoryNr
+					.push(data.at(7), 128)	//	item
+					.push(data.at(8), 8)	//	mClass
+					.push(data.at(9), 36)	//	gw
 					;
 				if (!stmt->execute())
 				{
@@ -614,10 +657,46 @@ namespace node
 		//	vFirmware: (i.e. 11600000)
 		//	item: artikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 		//	class: Metrological Class: A, B, C, Q3/Q1, ...
-		meta_map.emplace("TMeter", cyng::table::make_meta_table<1, 9>("TMeter",
-			{ "pk", "gen", "id", "manufacturer", "proddata", "vFirmare", "vParam", "factoryNr", "item", "class" },
-			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
-			{ 36, 0, 64, 64, 0, 64, 64, 8, 128, 8 }));
+		meta_map.emplace("TMeter", cyng::table::make_meta_table<1, 11>("TMeter",
+			{ "pk"
+			, "gen"			//	generation
+			, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+			, "meter"		//	meter number (i.e. 16000913) 4 bytes 
+			, "maker"		//	manufacturer
+			, "tom"			//	time of manufacture
+			, "vFirmare"	//	firmwareversion (i.e. 11600000)
+			, "vParam"		//	parametrierversion (i.e. 16A098828.pse)
+			, "factoryNr"	//	fabrik nummer (i.e. 06441734)
+			, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+			, "mClass"		//	Metrological Class: A, B, C, Q3/Q1, ...
+			, "gw"			//	optional gateway pk
+			},
+			{ cyng::TC_UUID			//	pk
+			, cyng::TC_UINT64		//	gen
+			, cyng::TC_STRING		//	ident
+			, cyng::TC_STRING		//	meter
+			, cyng::TC_STRING		//	maker
+			, cyng::TC_TIME_POINT	//	tom
+			, cyng::TC_STRING		//	vFirmare
+			, cyng::TC_STRING		//	vParam
+			, cyng::TC_STRING		//	factoryNr
+			, cyng::TC_STRING		//	item
+			, cyng::TC_STRING		//	mClass
+			, cyng::TC_UUID			//	gw
+			},
+			{ 36	//	pk
+			, 0		//	gen
+			, 24	//	ident
+			, 8		//	meter
+			, 64	//	maker
+			, 0		//	tom
+			, 64	//	vFirmare
+			, 64	//	vParam
+			, 32	//	factoryNr
+			, 128	//	item
+			, 8		//	mClass 
+			, 36	//	gw
+			}));
 
 		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices
 		//	DevEUI - 64 bit end-device identifier, EUI-64 (unique)

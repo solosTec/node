@@ -362,11 +362,10 @@ namespace node
 		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
 
 		//
-		//	random uint32
+		//	generate even distributed integers
+		//	reconnect to master on different times
 		//
-		boost::random::mt19937 int_rng;
-        int_rng.seed(static_cast<std::uint32_t>(std::time(nullptr)));
-		boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
+		cyng::crypto::rnd_num<int> rng(10, 120);
 
 		//
 		//	apply severity threshold
@@ -398,7 +397,7 @@ namespace node
 		//
 		//	serial number = 32 bit unsigned
 		//
-		const auto serial = cyng::value_cast(dom["hardware"].get("serial"), int_rng());
+		const auto serial = cyng::value_cast(dom["hardware"].get("serial"), rng());
 
 		const std::string dev_class = cyng::value_cast<std::string>(dom["hardware"].get("class"), "129-129:199.130.83*255");
 

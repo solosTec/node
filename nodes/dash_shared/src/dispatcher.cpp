@@ -161,6 +161,18 @@ namespace node
 
 			update_channel("table.gateway.count", tbl->size());
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "TMeter"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("insert")),
+				cyng::param_factory("channel", "config.meter"),
+				cyng::param_factory("rec", rec.convert()));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("config.meter", msg);
+
+			update_channel("table.meter.count", tbl->size());
+		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
 		{
 			//	
@@ -290,6 +302,18 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("config.gateway", msg);
 			update_channel("table.gateway.count", tbl->size());
+
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "TMeter"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("delete")),
+				cyng::param_factory("channel", "config.meter"),
+				cyng::param_factory("key", key));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("config.meter", msg);
+			update_channel("table.meter.count", tbl->size());
 
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
@@ -513,6 +537,17 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("config.gateway", msg);
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "TMeter"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("modify")),
+				cyng::param_factory("channel", "config.meter"),
+				cyng::param_factory("key", key),
+				cyng::param_factory("value", pm));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("config.meter", msg);
+		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
 		{
 			auto tpl = cyng::tuple_factory(
@@ -607,6 +642,10 @@ namespace node
 		else if (boost::algorithm::starts_with(channel, "config.gateway"))
 		{
 			subscribe(db, "TGateway", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "config.meter"))
+		{
+			subscribe(db, "TMeter", channel, tag);
 		}
 		else if (boost::algorithm::starts_with(channel, "config.lora"))
 		{

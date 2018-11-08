@@ -7,6 +7,7 @@
 
 
 #include "db.h"
+#include "../../shared/db/db_schemes.h"
 #include <NODE_project_info.h>
 #include <cyng/table/meta.hpp>
 #include <cyng/intrinsics/traits/tag.hpp>
@@ -42,31 +43,8 @@ namespace node
 		//	(8) [std::chrono::system_clock::time_stamp] created 
 		//	(9) [std::uint32] query
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 9>("TDevice",
-			{ "pk", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
-			{ cyng::TC_UUID		//	pk (36)
-			, cyng::TC_STRING	//	name (128)
-			, cyng::TC_STRING	//	pwd	(32)
-			, cyng::TC_STRING	//	msisdn (64)
-			, cyng::TC_STRING	//	description (512)
-			, cyng::TC_STRING	//	identifier (64)
-			, cyng::TC_STRING	//	vFirmware (64)
-			, cyng::TC_BOOL		//	enabled
-			, cyng::TC_TIME_POINT	//	creationTime
-			, cyng::TC_UINT32	//	query
-			},
-			{ 36, 128, 32, 64, 512, 64, 64, 0, 0, 0 })))
-		{
+		if (!create_table_device(db))	{
 			CYNG_LOG_FATAL(logger, "cannot create table TDevice");
-		}
-		else
-		{
-			//db.insert("TDevice"
-			//	, cyng::table::key_generator(tag)
-			//	, cyng::table::data_generator("master", "undefined", "0000", "synthetic test device", "smf", NODE_VERSION, true, std::chrono::system_clock::now(), 6u)
-			//	, 72
-			//	, tag);
-
 		}
 
 		//	(1) tag (UUID) - pk
@@ -145,35 +123,18 @@ namespace node
 		//	(10) root PW
 		//	(11) W-Mbus ID (i.e. A815408943050131)
 		//	(12) source (UUID) - usefull to detect multiple configuration uploads
-		if (!db.create_table(cyng::table::make_meta_table<1, 7>("TLoRaDevice", { "pk"	//	primary key
-			, "DevEUI"		//	(1) 64 bit end-device identifier, EUI-64 (unique)
-			, "AESKey"		//	(2)	256 bit
-			, "driver"		//	(3) production date
-			, "activation"	//	(4) fabrik nummer (i.e. 06441734)
-			, "DevAddr"		//	(5) MAC of service interface
-			, "AppEUI"		//	(6) MAC of data interface
-			, "GatewayEUI"		//	(7) Default PW
-			},
-			{ cyng::TC_UUID
-			, cyng::TC_MAC64	//	EUI-64 (unique)
-			, cyng::TC_STRING	//	AESKey
-			, cyng::TC_STRING	//	driver
-			, cyng::TC_BOOL		//	activation
-			, cyng::TC_UINT32	//	DevAddr
-			, cyng::TC_MAC64	//	AppEUI
-			, cyng::TC_MAC64	//	GatewayEUI
-			},
-			{ 36, 0, 64, 32, 0, 0, 0, 0 })))
+		if (!create_table_lora_device(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TLoRaDevice");
 		}
+#ifdef _DEBUG
 		else
 		{
 			db.insert("TLoRaDevice"
 				, cyng::table::key_generator(tag)
 				, cyng::table::data_generator(cyng::mac64(0, 1, 2, 3, 4, 5, 6, 7)
 					, "1122334455667788990011223344556677889900112233445566778899001122"
-					, "demo"
+					, "demo"	//	driver
 					, true	//	OTAA
 					, 0x64	//	DevAddr
 					, cyng::mac64(0, 1, 2, 3, 4, 6, 7, 8)
@@ -181,25 +142,32 @@ namespace node
 				, 8
 				, tag);
 		}
+#endif
 
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 9>("TMeter", { "pk"
-			, "ident"	//	ident nummer (i.e. 1EMH0006441734)
-			, "manufacturer"
-			, "factoryNr"	//	fabrik nummer (i.e. 06441734)
-			, "age"	//	production data
-			, "vParam"	//	parametrierversion (i.e. 16A098828.pse)
-			, "vFirmware"	//	firmwareversion (i.e. 11600000)
-			, "item"	//	 artikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
-			, "class"	//	Metrological Class: A, B, C, Q3/Q1, ...
-			, "source"	//	source client (UUID)
-			},
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UUID },
-			{ 36, 64, 64, 8, 0, 64, 64, 128, 8, 36 })))
+		if (!create_table_meter(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
 		}
-
+#ifdef _DEBUG
+		else
+		{
+			db.insert("TMeter"
+				, cyng::table::key_generator(tag)
+				, cyng::table::data_generator("01-e61e-13090016-3c-07"
+					, "16000913"
+					, "ACME"	//	manufacturer
+					, std::chrono::system_clock::now()
+					, "11600000"
+					, "16A098828.pse"
+					, "06441734"
+					, "NXT4-S20EW-6N00-4000-5020-E50/Q"
+					, "Q3"
+					, boost::uuids::nil_uuid())
+				, 5
+				, tag);
+		}
+#endif
 		//
 		//	TLL table - leased lines
 		//
@@ -208,15 +176,7 @@ namespace node
 		//	+-----------------
 		//	(3) description [std::string]
 		//	(4) creation-time [std::chrono::system_clock::time_stamp]
-
-		if (!db.create_table(cyng::table::make_meta_table<2, 3>("TLL",
-			{ "first"
-			, "second"
-			, "descr"
-			, "enabled"
-			, "creationTime" },
-			{ cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
-			{ 36, 36, 128, 0, 0 })))
+		if (!create_table_leased_line(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TLL");
 		}
@@ -233,39 +193,12 @@ namespace node
 		//
 		//	The session tables uses the same tag as the remote client session
 		//	
-		if (!db.create_table(cyng::table::make_meta_table<1, 12>("_Session", { "tag"	//	client session - primary key [uuid]
-			, "local"	//	[object] local peer object (hold session reference)
-			, "remote"	//	[object] remote peer object (if session connected)
-			, "peer"	//	[uuid] cluster tag - peer
-			, "device"	//	[uuid] - owner of the session <TDevice>
-			, "name"	//	[string] - account
-			, "source"	//	[uint32] - ipt source id (unique)
-			, "loginTime"	//	[tp] last login time
-			, "rtag"	//	[uuid] client session if connected
-			, "layer"	//	[string] protocol layer
-			, "rx"		//	[uint64] received bytes (from device)
-			, "sx"		//	[uint64] sent bytes (to device)
-			, "px"		//	[uint64] sent push data (to push target)
-			},
-			{ cyng::TC_UUID, cyng::traits::PREDEF_SESSION, cyng::traits::PREDEF_SESSION, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT64, cyng::TC_UINT64, cyng::TC_UINT64 },
-			{ 36, 0, 0, 36, 36, 64, 0, 0, 36, 16, 0, 0, 0 })))
+		if (!create_table_session(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table *Session");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 9>("_Target", { "channel"	//	[uint32] - target id: primary key
-			, "tag"		//	[uuid] owner session
-			, "peer"	//	[uuid] cluster tag - peer
-			, "name"	//	[string] target name
-			, "device"	//	[uuid] - owner of target
-			, "account"	//	[string] - name of target owner
-			, "pSize"	//	[uint16] - packet size
-			, "wSize"	//	[uint8] - window size
-			, "regTime"	//	[tp] registration time
-			, "px"		//	incoming data
-			},
-			{ cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT16, cyng::TC_UINT8, cyng::TC_TIME_POINT, cyng::TC_UINT64 },
-			{ 0, 36, 36, 64, 36, 64, 0, 0, 0, 0 })))
+		if (!create_table_target(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Target");
 		}
@@ -297,50 +230,14 @@ namespace node
 		//
 		//	All dial-up connections. Leased Lines have to be incorporated.
 		//
-		if (!db.create_table(cyng::table::make_meta_table<2, 7>("_Connection",
-			{ "first"		//	[uuid] primary key 
-			, "second"		//	[uuid] primary key 
-			, "aName"		//	[string] caller
-			, "bName"		//	[string] callee
-			, "local"		//	[bool] true if local connection
-			, "aLayer"		//	[string] protocol layer of caller
-			, "bLayer"		//	[string] protocol layer of callee
-			, "throughput"	//	[uint64] data throughput
-			, "start"		//	[tp] start time
-			},
-			{
-				cyng::TC_UUID, cyng::TC_UUID,
-				cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT64, cyng::TC_TIME_POINT
-			},
-			{ 0, 0, 128, 128, 0, 16, 16, 0, 0 })))
+		if (!create_table_connection(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Connection");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 8>("_Cluster", 
-			{ "tag"			//	[uuid] cluster tag - primary key 
-			, "class"		//	[string] node class
-			, "loginTime"	//	last login time
-			, "version"
-			, "clients"	//	client counter
-			, "ping"	//	ping time
-			, "ep"		//	remote endpoint
-			, "pid"		//	process id
-			, "self"	//	[object] session instance
-			},
-			{ cyng::TC_UUID			//	cluster tag
-			, cyng::TC_STRING		//	class
-			, cyng::TC_TIME_POINT	//	loginTime
-			, cyng::TC_VERSION		//	version
-			, cyng::TC_UINT64		//	clients (dynamic)
-			, cyng::TC_MICRO_SECOND	//	ping time (dynamic)
-			, cyng::TC_IP_TCP_ENDPOINT	//	ep
-			, cyng::TC_INT64		//	pid
-			, cyng::traits::PREDEF_SESSION	//	self
-			},
-			{ 36, 0, 32, 0, 0, 0, 0, 0, 0 })))
+		if (!create_table_cluster(db))
 		{
-			CYNG_LOG_FATAL(logger, "cannot create table _Config");
+			CYNG_LOG_FATAL(logger, "cannot create table _Cluster");
 		}
 		else
 		{
@@ -359,11 +256,7 @@ namespace node
 
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 1>("_Config", { "name"	//	parameter name
-			, "value"	//	parameter value
-			},
-			{ cyng::TC_STRING, cyng::TC_STRING },
-			{ 64, 128 })))
+		if (!create_table_config(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Config");
 		}
@@ -401,13 +294,7 @@ namespace node
 			}
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 3>("_SysMsg", { "id"	//	message number
-			, "ts"	//	timestamp
-			, "severity"	
-			, "msg"	//	message text
-			},
-			{ cyng::TC_UINT64, cyng::TC_TIME_POINT, cyng::TC_UINT8, cyng::TC_STRING },
-			{ 0, 0, 0, 128 })))
+		if (!create_table_sys_msg(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _SysMsg");
 		}
@@ -438,28 +325,7 @@ namespace node
 		//
 		//	CSV task
 		//
-		if (!db.create_table(cyng::table::make_meta_table<1, 8>("_CSV",
-			{ "tag"			//	[uuid] client session - primary key 
-			, "format"		//	[string] SMF/IEC
-			, "config"		//	[string] local, master, mixed
-			, "offset"		//	[u32] minutes after midnight
-			, "frame"		//	[u32] time frame in minutes
-			, "start15min"	//	[ts] start time of 15 min report
-			, "start24h"	//	[ts] start time of 24h report
-			, "srvCount15min"	//	[size] number of servers with 15 min push
-			, "srvCount24h"		//	[size] number of servers with 24 h push
-			},
-			{ cyng::TC_UUID			//	tag
-			, cyng::TC_STRING		//	format
-			, cyng::TC_STRING		//	config
-			, cyng::TC_MINUTE		//	offset
-			, cyng::TC_MINUTE		//	frame
-			, cyng::TC_TIME_POINT	//	15minStart
-			, cyng::TC_TIME_POINT	//	24hStart
-			, cyng::TC_UINT64		//	srvCount
-			, cyng::TC_UINT64		//	combinations
-			},
-			{ 36, 16, 16, 0, 0, 0, 0, 0, 0 })))
+		if (!create_table_csv(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _CSV");
 		}

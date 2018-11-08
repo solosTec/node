@@ -17,6 +17,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/async/task/task_builder.hpp>
+#include <cyng/rnd.h>
 #if BOOST_OS_LINUX
 #include "../../write_pid.h"
 #endif
@@ -173,11 +174,10 @@ namespace node
 			boost::uuids::random_generator uidgen;
 
 			//
+			//	generate even distributed integers
 			//	reconnect to master on different times
 			//
-			boost::random::mt19937 rng_;
-            rng_.seed(std::time(nullptr));
-			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
+			cyng::crypto::rnd_num<int> rng(10, 120);
 
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
@@ -199,7 +199,7 @@ namespace node
 						cyng::param_factory("account", "root"),
 						cyng::param_factory("pwd", NODE_PWD),
 						cyng::param_factory("salt", NODE_SALT),
-						cyng::param_factory("monitor", monitor_dist(rng_)),	//	seconds
+						cyng::param_factory("monitor", rng()),	//	seconds
 						cyng::param_factory("auto-config", false),	//	client security
 						cyng::param_factory("group", 0)	//	customer ID
 					) }))

@@ -84,11 +84,11 @@ namespace node
 			//
 			cb_ = nullptr;
 			if (f_read_string)	f_read_string = nullptr;	//	crash!
-			f_read_uint8 = nullptr;
-			f_read_uint16 = nullptr;
-			f_read_uint32 = nullptr;
-			f_read_uint64 = nullptr;
-			f_read_data = nullptr;
+			if (f_read_uint8)	f_read_uint8 = nullptr;
+			if (f_read_uint16)	f_read_uint16 = nullptr;
+			if (f_read_uint32)	f_read_uint32 = nullptr;
+			if (f_read_uint64)	f_read_uint64 = nullptr;
+			if (f_read_data)	f_read_data = nullptr;
 		}
 
 		char parser::put(char c)

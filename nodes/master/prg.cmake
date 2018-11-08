@@ -53,6 +53,13 @@ set (node_master_shared
 	lib/shared/src/serializer.cpp
 )
 
+
+set (node_master_schemes
+
+	nodes/shared/db/db_schemes.h
+	nodes/shared/db/db_schemes.cpp
+)
+
 if(WIN32)
 
 	set (node_master_service
@@ -82,6 +89,7 @@ source_group("tasks" FILES ${node_master_tasks})
 source_group("service" FILES ${node_master_service})
 source_group("info" FILES ${node_master_info})
 source_group("shared" FILES ${node_master_shared})
+source_group("schemes" FILES ${node_master_schemes})
 
 
 # define the main program
@@ -93,6 +101,7 @@ set (node_master
   ${node_master_service}
   ${node_master_info}
   ${node_master_shared}
+  ${node_master_schemes}
 )
 
 if(WIN32)

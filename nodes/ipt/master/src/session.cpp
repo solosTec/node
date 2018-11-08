@@ -377,8 +377,13 @@ namespace node
 			//
 			//	reset IP-T parser
 			//
-			CYNG_LOG_TRACE(logger_, vm_.tag() << " reset parser");
-			parser_.clear();
+			try {
+				CYNG_LOG_TRACE(logger_, vm_.tag() << " reset parser");
+				parser_.clear();
+			}
+			catch (std::exception const& ex) {
+				CYNG_LOG_FATAL(logger_, vm_.tag() << " reset parser failed: " << ex.what());
+			}
 
 			//
 			//	gracefull shutdown

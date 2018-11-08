@@ -45,6 +45,12 @@ set (node_setup_tasks
 	nodes/setup/src/tasks/sync.cpp
 )
 
+set (node_setup_schemes
+
+	nodes/shared/db/db_schemes.h
+	nodes/shared/db/db_schemes.cpp
+)
+
 if(WIN32)
 
 	set (node_setup_service
@@ -72,6 +78,7 @@ endif()
 source_group("tasks" FILES ${node_setup_tasks})
 source_group("service" FILES ${node_setup_service})
 source_group("info" FILES ${node_setup_info})
+source_group("schemes" FILES ${node_setup_schemes})
 
 
 # define the main program
@@ -81,6 +88,7 @@ set (node_setup
   ${node_setup_tasks}
   ${node_setup_service}
   ${node_setup_info}
+  ${node_setup_schemes}
 )
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)

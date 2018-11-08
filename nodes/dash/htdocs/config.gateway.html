@@ -44,6 +44,7 @@
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="config.device.html">Devices</a>
                         <a class="dropdown-item active" href="config.gateway.html">Gateway</a>
+                        <a class="dropdown-item" href="config.meter.html">Meter</a>
                         <a class="dropdown-item" href="config.lora.html">LoRa</a>
                         <a class="dropdown-item" href="config.system.html">System</a>
                         <a class="dropdown-item" href="config.upload.html">Upload</a>
@@ -59,7 +60,6 @@
                         <a class="dropdown-item" href="status.session.html">Sessions</a>
                         <a class="dropdown-item" href="status.targets.html">Targets</a>
                         <a class="dropdown-item" href="status.connections.html">Connections</a>
-                        <a class="dropdown-item" href="config.download.html">Download</a>
                     </div>
                 </li>
 
@@ -84,6 +84,7 @@
     <div class="jumbotron jumbotron-fluid">
         <div class="container">
             <h1 class="display-4">Gateway Management</h1>
+            <hr class="my-4">
             <div class="progress">
                 <div class="progress-bar" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="ws-activity-level">0%</div>
             </div>
@@ -469,7 +470,7 @@
         var tbl_config = {
             paging: true,
             lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
-            pageLength: 25,
+            pageLength: 10,
             ordering: true,
             info: true,
             autoWidth: false,
@@ -610,10 +611,10 @@
                 _ws = new WebSocket('ws://' + location.host + '/smf/api/gw/v0.1', ['SMF']);
 
                 _ws.onopen = function () {
-                    console.log('ws open');
+                    console.log('ws open' + _ws.protocol);
                     //  clear table in case of reconnect
                     table_gw.clear().draw(false);
-                    //  subscribe system status
+                    //  subscribe gateway configuration
                     _ws.send(JSON.stringify({ cmd: "subscribe", channel: "config.gateway", push: true }));
                 };
 

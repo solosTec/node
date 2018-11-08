@@ -8,6 +8,7 @@
 #include "cluster.h"
 #include "sync.h"
 #include "setup_defs.h"
+#include "../../../shared/db/db_schemes.h"
 #include <smf/cluster/generator.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
@@ -494,10 +495,7 @@ namespace node
 	{
 		CYNG_LOG_TRACE(logger_, "create cache tables");
 
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 9>("TDevice",
-			{ "pk", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
-			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
-			{ 36, 128, 16, 128, 512, 64, 64, 0, 0, 0 })))
+		if (!create_table_device(cache_))
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table TDevice");
 		}
@@ -533,28 +531,14 @@ namespace node
 			CYNG_LOG_FATAL(logger_, "cannot create table TGateway");
 		}
 
-		if (!cache_.create_table(cyng::table::make_meta_table<1, 7>("TLoRaDevice",
-			{ "pk"
-			, "DevEUI"
-			, "AESKey"		// 256 Bit
-			, "driver"
-			, "activation"	//	OTAA/ABP
-			, "DevAddr"		//	32 bit device address (non-unique)
-			, "AppEUI"		//	64 bit application identifier, EUI-64 (unique)
-			, "GatewayEUI"	//	64 bit gateway identifier, EUI-64 (unique)
-			},
-			{ cyng::TC_UUID
-			, cyng::TC_MAC64	//	DevEUI
-			, cyng::TC_STRING	//	AESKey
-			, cyng::TC_STRING	//	driver
-			, cyng::TC_BOOL		//	activation
-			, cyng::TC_UINT32	//	DevAddr
-			, cyng::TC_MAC64	//	AppEUI
-			, cyng::TC_MAC64	//	GatewayEUI
-			},
-			{ 36, 0, 64, 32, 0, 0, 0, 0 })))
+		if (!create_table_lora_device(cache_))
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table TLoRaDevice");
+		}
+
+		if (!create_table_meter(cache_))
+		{
+			CYNG_LOG_FATAL(logger_, "cannot create table TMeter");
 		}
 
 	}

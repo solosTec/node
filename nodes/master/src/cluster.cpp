@@ -14,6 +14,7 @@
 
 #include <cyng/tuple_cast.hpp>
 #include <cyng/parser/buffer_parser.h>
+#include <cyng/dom/algorithm.h>
 
 #include <boost/uuid/nil_generator.hpp>
 
@@ -235,42 +236,42 @@ namespace node
 		//
 		//	update TMeter table (experimental)
 		//
-#ifdef _DEBUG
 		if (boost::algorithm::equals(std::get<4>(tpl), "root-active-devices")) {
 			//	%(("class":---),("meter":01-e61e-13090016-3c-07),("number":0009),("timestamp":2018-11-07 12:04:46.00000000),("type":00000000))
-			const auto meter = cyng::value_cast<std::string>(std::get<5>(tpl).at("meter"), "");
-			const auto class_name = cyng::value_cast<std::string>(std::get<5>(tpl).at("class"), "");
-			//	node::sml::srv_type
-			const auto type = cyng::value_cast<std::uint32_t>(std::get<5>(tpl).at("type"), 0u);
-			const auto age = cyng::value_cast(std::get<5>(tpl).at("timestamp"), std::chrono::system_clock::now());
-			CYNG_LOG_TRACE(logger_, "update TMeter " << meter);
+			const auto ident = cyng::find_value<std::string>(std::get<5>(tpl), "ident", "");
+			const auto meter = cyng::find_value<std::string>(std::get<5>(tpl), "meter", "");
+			const auto class_name = cyng::find_value<std::string>(std::get<5>(tpl), "class", "A");
+			const auto type = cyng::find_value<std::uint32_t>(std::get<5>(tpl), "type", 0u);
+			const auto age = cyng::find_value(std::get<5>(tpl), "timestamp", std::chrono::system_clock::now());
 
-			db_.access([&](cyng::store::table* tbl_meter)->void {
-				bool found{ false };
-				tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
+			if (type < 2) {
+				CYNG_LOG_TRACE(logger_, "update TMeter " << ident);
 
-					const auto rec_ident = cyng::value_cast<std::string>(rec["ident"], "");
-					if (boost::algorithm::equals(meter, rec_ident)) {
-						//	abort loop
-						found = true;
+				db_.access([&](cyng::store::table* tbl_meter)->void {
+					bool found{ false };
+					tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
+
+						const auto rec_ident = cyng::value_cast<std::string>(rec["ident"], "");
+						if (boost::algorithm::equals(meter, rec_ident)) {
+							//	abort loop
+							found = true;
+						}
+
+						//	continue loop
+						return found;
+					});
+
+					if (!found) {
+						const auto tag = uidgen_();
+						CYNG_LOG_INFO(logger_, "insert TMeter " << tag << " : " << meter);
+						tbl_meter->insert(cyng::table::key_generator(tag)
+							, cyng::table::data_generator(ident, meter, "", age, "", "", "", "", class_name, std::get<0>(tpl))
+							, 0
+							, std::get<0>(tpl));
 					}
-
-					//	continue loop
-					return found;
-				});
-
-				if (!found) {
-					const auto tag = uidgen_();
-					CYNG_LOG_INFO(logger_, "insert TMeter " << tag << " : " << meter);
-					tbl_meter->insert(cyng::table::key_generator(tag)
-						, cyng::table::data_generator(meter, "", "", age, "", "", "", class_name, std::get<0>(tpl))
-					, 0
-					, std::get<0>(tpl));
-				}
-			}, cyng::store::write_access("TMeter"));
+				}, cyng::store::write_access("TMeter"));
+			}
 		}
-#endif
-
 	}
 
 	void cluster::bus_req_modify_gateway(cyng::context& ctx)

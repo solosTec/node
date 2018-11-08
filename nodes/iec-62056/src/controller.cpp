@@ -18,6 +18,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/vector_cast.hpp>
+#include <cyng/rnd.h>
 
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
@@ -170,9 +171,10 @@ namespace node
 			const boost::filesystem::path pwd = boost::filesystem::current_path();
 			boost::uuids::random_generator uidgen;
 
-			boost::random::mt19937 rng_;
-            rng_.seed(std::time(nullptr));
-			boost::random::uniform_int_distribution<int> monitor_dist(10, 120);
+			//
+			//	generate even distributed integers
+			//
+			cyng::crypto::rnd_num<int> rng(10, 120);
 
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
@@ -191,7 +193,7 @@ namespace node
 						cyng::param_factory("account", "root"),
 						cyng::param_factory("pwd", NODE_PWD),
 						cyng::param_factory("salt", NODE_SALT),
-						cyng::param_factory("monitor", monitor_dist(rng_)),	//	seconds
+						cyng::param_factory("monitor", rng()),	//	seconds
 						cyng::param_factory("group", 0)	//	customer ID
 					) }))
 				)

@@ -20,7 +20,7 @@ set (node_dash_tasks
 	nodes/dash/src/tasks/system.cpp
 )
 
-set (node_dashs_shared
+set (node_dash_shared
 	nodes/dash_shared/src/sync_db.h
 	nodes/dash_shared/src/sync_db.cpp
 	nodes/dash_shared/src/dispatcher.h
@@ -47,6 +47,12 @@ set (node_dash_assets
 	nodes/dash/htdocs/status.connections.html
 	nodes/dash/htdocs/monitor.msg.html
 	nodes/dash/htdocs/csv.task.html
+)
+
+set (node_dash_schemes
+
+	nodes/shared/db/db_schemes.h
+	nodes/shared/db/db_schemes.cpp
 )
 
 set (node_dash_info
@@ -94,7 +100,8 @@ source_group("tasks" FILES ${node_dash_tasks})
 source_group("assets" FILES ${node_dash_assets})
 source_group("service" FILES ${node_dash_service})
 source_group("info" FILES ${node_dash_info})
-source_group("shared" FILES ${node_dashs_shared})
+source_group("shared" FILES ${node_dash_shared})
+source_group("schemes" FILES ${node_dash_schemes})
 
 
 # define the main program
@@ -105,7 +112,8 @@ set (node_dash
   ${node_dash_assets}
   ${node_dash_service}
   ${node_dash_info}
-  ${node_dashs_shared}
+  ${node_dash_shared}
+  ${node_dash_schemes}
 )
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)
