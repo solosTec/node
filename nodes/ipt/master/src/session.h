@@ -132,8 +132,8 @@ namespace node
 			 * The connection detected a disconnect and calls the stop method
 			 * with the received error code.
 			 */
-			void stop_req(int ec);
-			void stop_res();
+			void stop_req(boost::system::error_code ec);
+			void stop_res(boost::system::error_code ec);
 
 			/**
 			 * stop running tasks and halt VM

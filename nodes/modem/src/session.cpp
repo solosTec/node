@@ -469,18 +469,18 @@ namespace node
 			{
 				ctx.attach(cyng::generate_invoke("log.msg.info"
 					, "login response"
-					, std::get<3>(tpl)	//	name
+					, std::get<3>(tpl)		//	name
 					, std::get<4>(tpl)));	//	msg
 				ctx.attach(cyng::generate_invoke("print.ok"));
 				ctx.attach(cyng::generate_invoke("stream.flush"));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
+				const cyng::param_map_t bag = cyng::param_map_factory("tp-layer", "ipt")("seq", frame.at(1));
+
 				bus_->vm_.async_run(client_update_attr(ctx.tag()
 					, "TDevice.vFirmware"
 					, cyng::make_object(NODE_VERSION)
 					, bag));
+
 				bus_->vm_.async_run(client_update_attr(ctx.tag()
 					, "TDevice.id"
 					, cyng::make_object("modem")

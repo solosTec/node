@@ -46,11 +46,8 @@ namespace node
 			//	connection management
 			//
 			bus_->vm_.register_function("push.connection", 1, std::bind(&server::push_connection, this, std::placeholders::_1));
-			bus_->vm_.register_function("push.ep.local", 1, std::bind(&server::push_ep_local, this, std::placeholders::_1));
-			bus_->vm_.register_function("push.ep.remote", 1, std::bind(&server::push_ep_remote, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.insert.client", 2, std::bind(&server::insert_client, this, std::placeholders::_1));
-			bus_->vm_.register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1));
-			bus_->vm_.register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1));
+			bus_->vm_.register_function("server.clear.connection.map", 1, std::bind(&server::clear_connection_map, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1));
 
 			//
@@ -252,29 +249,30 @@ namespace node
 		}
 
 		//	"server.close.connection"
-		void server::close_connection(cyng::context& ctx)
+		void server::clear_connection_map(cyng::context& ctx)
 		{
 			BOOST_ASSERT(bus_->vm_.tag() == ctx.tag());
 
-			//	[6ac8cc52-18ed-43f5-a86c-ef948f0d960f,system:10054]
+			//	[6ac8cc52-18ed-43f5-a86c-ef948f0d960f]
 			const cyng::vector_t frame = ctx.get_frame();
-			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-			auto ec = cyng::value_cast(frame.at(1), boost::system::error_code());
-			ctx.attach(node::client_req_close(tag, ec.value()));
+			const auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+			clear_connection_map_impl(tag);
+		}
 
-			//
-			//	clean up connection_map_
-			//
+		bool server::clear_connection_map_impl(boost::uuids::uuid tag)
+		{
 			auto pos = connection_map_.find(tag);
 			if (pos != connection_map_.end())
 			{
 				auto receiver = pos->second;
 
-				CYNG_LOG_INFO(logger_, "clean up local connection: "
+				CYNG_LOG_INFO(logger_, "remove "
 					<< tag
 					<< " <==> "
-					<< receiver);
-
+					<< receiver
+					<< " from (local) connection map with "
+					<< connection_map_.size()
+					<< " entries");
 
 				//
 				//	remove both entries
@@ -282,7 +280,12 @@ namespace node
 				connection_map_.erase(pos);
 				connection_map_.erase(receiver);
 
+				BOOST_ASSERT((connection_map_.size() % 2) == 0);
+
+				return true;
 			}
+
+			return false;
 		}
 
 		void server::transmit_data(cyng::context& ctx)
@@ -350,55 +353,55 @@ namespace node
 			}
 		}
 
-		void server::push_ep_local(cyng::context& ctx)
-		{
-			const cyng::vector_t frame = ctx.get_frame();
-			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-			auto pos = client_map_.find(tag);
-			if (pos != client_map_.end())
-			{
-				auto ep = const_cast<connection*>(cyng::object_cast<connection>(pos->second))->socket_.local_endpoint();
-				CYNG_LOG_TRACE(logger_, "push.ep.local "
-					<< tag
-					<< ": "
-					<< ep
-					<< " on stack");
+		//void server::push_ep_local(cyng::context& ctx)
+		//{
+		//	const cyng::vector_t frame = ctx.get_frame();
+		//	auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+		//	auto pos = client_map_.find(tag);
+		//	if (pos != client_map_.end())
+		//	{
+		//		auto ep = const_cast<connection*>(cyng::object_cast<connection>(pos->second))->socket_.local_endpoint();
+		//		CYNG_LOG_TRACE(logger_, "push.ep.local "
+		//			<< tag
+		//			<< ": "
+		//			<< ep
+		//			<< " on stack");
 
-				ctx.push(cyng::make_object(ep));
-			}
-			else
-			{
-				CYNG_LOG_FATAL(logger_, "push.ep.local "
-					<< tag
-					<< " not found");
-				ctx.push(cyng::make_object());
-			}
-		}
+		//		ctx.push(cyng::make_object(ep));
+		//	}
+		//	else
+		//	{
+		//		CYNG_LOG_FATAL(logger_, "push.ep.local "
+		//			<< tag
+		//			<< " not found");
+		//		ctx.push(cyng::make_object());
+		//	}
+		//}
 
-		void server::push_ep_remote(cyng::context& ctx)
-		{
-			const cyng::vector_t frame = ctx.get_frame();
-			auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
-			auto pos = client_map_.find(tag);
-			if (pos != client_map_.end())
-			{
-				auto ep = const_cast<connection*>(cyng::object_cast<connection>(pos->second))->socket_.remote_endpoint();
-				CYNG_LOG_TRACE(logger_, "push.ep.remote "
-					<< tag
-					<< ": "
-					<< ep
-					<< " on stack");
+		//void server::push_ep_remote(cyng::context& ctx)
+		//{
+		//	const cyng::vector_t frame = ctx.get_frame();
+		//	auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+		//	auto pos = client_map_.find(tag);
+		//	if (pos != client_map_.end())
+		//	{
+		//		auto ep = const_cast<connection*>(cyng::object_cast<connection>(pos->second))->socket_.remote_endpoint();
+		//		CYNG_LOG_TRACE(logger_, "push.ep.remote "
+		//			<< tag
+		//			<< ": "
+		//			<< ep
+		//			<< " on stack");
 
-				ctx.push(cyng::make_object(ep));
-			}
-			else
-			{
-				CYNG_LOG_FATAL(logger_, "push.ep.remote "
-					<< tag
-					<< " not found");
-				ctx.push(cyng::make_object());
-			}
-		}
+		//		ctx.push(cyng::make_object(ep));
+		//	}
+		//	else
+		//	{
+		//		CYNG_LOG_FATAL(logger_, "push.ep.remote "
+		//			<< tag
+		//			<< " not found");
+		//		ctx.push(cyng::make_object());
+		//	}
+		//}
 
 
 		void server::client_res_login(cyng::context& ctx)

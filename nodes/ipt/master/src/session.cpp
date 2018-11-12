@@ -290,7 +290,7 @@ namespace node
 		session::~session()
 		{}
 
-		void session::stop_req(int code)
+		void session::stop_req(boost::system::error_code ec)
 		{
 			//
 			//	stop all tasks and halt VM
@@ -310,14 +310,14 @@ namespace node
 				//
 				CYNG_LOG_TRACE(logger_, "send \"client.req.close\" request from session "
 					<< vm_.tag());
-				bus_->vm_.async_run(client_req_close(vm_.tag(), code));
+				bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
 			}
 			else {
 				CYNG_LOG_FATAL(logger_, "shutdown (req) failed " << vm_.tag());
 			}
 		}
 
-		void session::stop_res()
+		void session::stop_res(boost::system::error_code ec)
 		{
 			//
 			//	stop all tasks and halt VM
@@ -334,7 +334,6 @@ namespace node
 					//
 					//	tell master to close *this* client
 					//
-					boost::system::error_code ec(boost::asio::error::operation_aborted);
 					bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
 				}
 				else {

@@ -48,7 +48,8 @@ namespace node
 			void do_accept();
 
 			void insert_client(cyng::context&);
-			void close_connection(cyng::context&);
+			void clear_connection_map(cyng::context&);
+			bool server::clear_connection_map_impl(boost::uuids::uuid tag);
 			void transmit_data(cyng::context& ctx);	//!< transmit data locally
 
 			void client_res_login(cyng::context&);
@@ -78,8 +79,8 @@ namespace node
 			 * create a reference of this object on stack.
 			 */
 			void push_connection(cyng::context& ctx);
-			void push_ep_local(cyng::context& ctx);
-			void push_ep_remote(cyng::context& ctx);
+			//void push_ep_local(cyng::context& ctx);
+			//void push_ep_remote(cyng::context& ctx);
 
 		private:
 			/*

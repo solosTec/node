@@ -104,7 +104,7 @@ namespace node
 						<< ec.message() 
 						<< ']');
 
-					session_.stop_req(ec.value());
+					session_.stop_req(ec);
 				}
 				else
 				{
@@ -121,7 +121,7 @@ namespace node
 						<< " ["
 						<< ec.message()
 						<< ']');
-					session_.stop_res();
+					session_.stop_res(ec);
 
 				}
 			});

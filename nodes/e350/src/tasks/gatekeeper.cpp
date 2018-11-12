@@ -26,7 +26,6 @@ namespace node
 		, tag_(tag)
 		, timeout_(timeout)
 		, start_(std::chrono::system_clock::now())
-		, success_(false)
 		, is_waiting_(false)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -63,13 +62,8 @@ namespace node
 			<< base_.get_class_name()
 			<< "> timeout");
 
-		return cyng::continuation::TASK_STOP;
-	}
+		if (!vm_.is_halted()) {
 
-	void gatekeeper::stop()
-	{
-		if (!success_)
-		{
 			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
@@ -77,32 +71,33 @@ namespace node
 				<< "> stop "
 				<< tag_);
 
-			if (!vm_.is_halted()) {
-
-				CYNG_LOG_WARNING(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> stop "
-					<< tag_);
-
-				vm_.async_run({ cyng::generate_invoke("ip.tcp.socket.shutdown"), cyng::generate_invoke("ip.tcp.socket.close") });
-			}
-			else {
-
-				CYNG_LOG_WARNING(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> stop (session already halted) "
-					<< tag_);
-			}
+			//
+			//	Safe way to intentionally close this session.
+			//	
+			//	* set session in shutdown state
+			//	* close socket
+			//	* update cluster master state and
+			//	* remove session from IP-T masters client_map
+			//
+			vm_.async_run({ cyng::generate_invoke("session.state.pending")
+#ifdef _DEBUG
+				, cyng::generate_invoke("stream.serialize", "timeout")
+				, cyng::generate_invoke("stream.flush")
+#endif
+				, cyng::generate_invoke("ip.tcp.socket.shutdown")
+				, cyng::generate_invoke("ip.tcp.socket.close") });
 		}
 
+
+		return cyng::continuation::TASK_STOP;
+	}
+
+	void gatekeeper::stop()
+	{
 		//
 		//	terminate task
 		//
-		auto uptime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_);
+		const auto uptime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_);
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -110,8 +105,7 @@ namespace node
 			<< "> is stopped: "
 			<< tag_
 			<< " after "
-			<< uptime.count()
-			<< " milliseconds");
+			<< cyng::to_str(uptime));
 
 	}
 
@@ -128,7 +122,6 @@ namespace node
 			<< (success ? "success" : "failed")
 			<< "]");
 
-		success_ = success;
 		return cyng::continuation::TASK_STOP;
 	}
 

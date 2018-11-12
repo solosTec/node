@@ -57,7 +57,7 @@ namespace node
 
 			virtual ~session();
 
-			void stop(boost::system::error_code ec);
+			//void stop(boost::system::error_code ec);
 
 		private:
 
@@ -105,6 +105,14 @@ namespace node
 			void store_relation(cyng::context& ctx);
 			void update_connection_state(cyng::context& ctx);
 
+			void stop_req(boost::system::error_code ec);
+			void stop_res(boost::system::error_code ec);
+
+			/**
+			 * stop running tasks and halt VM
+			 */
+			void shutdown();
+
 		private:
 			cyng::async::mux& mux_;
 			cyng::logging::log_ptr logger_;
@@ -128,6 +136,12 @@ namespace node
 			 * contains state of local connections
 			 */
 			connect_state	connect_state_;
+
+			/**
+			 * session is in shutdown mode
+			 */
+			bool pending_;
+
 		};
 	}
 }

@@ -50,7 +50,6 @@ namespace node
 			bus_->vm_.register_function("push.ep.remote", 1, std::bind(&server::push_ep_remote, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.insert.client", 2, std::bind(&server::insert_connection, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1));
-			bus_->vm_.register_function("server.close.connection", 2, std::bind(&server::close_connection, this, std::placeholders::_1));
 			bus_->vm_.register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1));
 
 			//

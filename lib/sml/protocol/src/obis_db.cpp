@@ -197,7 +197,8 @@ namespace node
 				return "NOT OPTIONAL";
 			}
 			else if (OBIS_ATTENTION_NO_ENTRIES == code) {
-				return "NO ENTRIES";
+				//	requested profile has no entry
+				return "NO ENTRY";
 			}
 			else if (OBIS_ATTENTION_OK == code) {
 				return "OK";

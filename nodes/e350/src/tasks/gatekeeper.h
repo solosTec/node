@@ -45,7 +45,6 @@ namespace node
 		const boost::uuids::uuid tag_;
 		const std::chrono::seconds timeout_;
 		const std::chrono::system_clock::time_point start_;
-		bool success_;
 		bool is_waiting_;
 	};
 	

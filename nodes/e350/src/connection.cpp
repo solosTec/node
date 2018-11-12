@@ -56,17 +56,19 @@ namespace node
             CYNG_LOG_DEBUG(logger_, "shutdown connection(" << tag_ << ')');
             shutdown_ = true;
 
-			//
-			//  close socket
-			//
-			boost::system::error_code ec;
-			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-			socket_.close(ec);
+			if (socket_.is_open()) {
+				//
+				//  close socket
+				//
+				boost::system::error_code ec;
+				socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+				socket_.close(ec);
+			}
 			
 			//
             //  no more callbacks
             //
-            session_.stop(ec);
+            //session_.stop(ec);
 
 		}
 
@@ -101,12 +103,46 @@ namespace node
 
 					do_read();
 				}
+				else if (ec != boost::asio::error::operation_aborted)
+				{
+					//
+					//	device/party closed connection or network shutdown
+					//
+					CYNG_LOG_WARNING(logger_, "ipt connection "
+						<< session_.vm_.tag()
+						<< " closed: "
+						<< ec
+						<< ':'
+						<< ec.value()
+						<< " ["
+						<< ec.message()
+						<< ']');
+
+					session_.stop_req(ec);
+				}
 				else
 				{
-                    CYNG_LOG_WARNING(logger_, "imega connection closed <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
-                    session_.stop(ec);
-                    //session_.bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", tag_, cyng::invoke("push.connection"), ec));
+					//
+					//	The session was closed intentionally.
+					//	At this point nothing more is to do. Service is going down and all session have to be stopped fast.
+					//
+					CYNG_LOG_WARNING(logger_, "ipt connection "
+						<< session_.vm_.tag()
+						<< " closed intentionally: "
+						<< ec
+						<< ':'
+						<< ec.value()
+						<< " ["
+						<< ec.message()
+						<< ']');
+					session_.stop_res(ec);
+
 				}
+				//else
+				//{
+    //                CYNG_LOG_WARNING(logger_, "imega connection closed <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
+    //                session_.stop(ec);
+				//}
 			});
 		}
 

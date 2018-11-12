@@ -10,6 +10,7 @@
 #include "tasks/gatekeeper.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
+
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/store_domain.h>
 #include <cyng/io/serializer.h>
@@ -17,6 +18,8 @@
 #include <cyng/tuple_cast.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/async/task/task_builder.hpp>
+#include <cyng/factory/set_factory.h>
+
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/nil_generator.hpp>
 
@@ -48,6 +51,7 @@ namespace node
 			, use_global_pwd_(use_global_pwd)
 			, global_pwd_(global_pwd)
 			, connect_state_()
+			, pending_(false)
 		{
 			//
 			//	register logger domain
@@ -57,6 +61,14 @@ namespace node
 
 			vm_.register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1));
 			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
+			vm_.register_function("session.state.pending", 0, [&](cyng::context&) {
+				//
+				//	set session state => PENDING
+				//
+				BOOST_ASSERT(!pending_);
+				pending_ = true;
+				CYNG_LOG_DEBUG(logger_, "session.state.pending ON");
+			});
 
 			//
 			//	register request handler
@@ -240,20 +252,95 @@ namespace node
 		session::~session()
 		{}
 
-		void session::stop(boost::system::error_code ec)
+		void session::shutdown()
 		{
-			//parser_.stop():
-			//vm_.halt();
-			vm_.access([this, ec](cyng::vm& vm) {
+			//
+			//	There could be a running gatekeeper
+			//
+			CYNG_LOG_TRACE(logger_, vm_.tag() << " stops connection manager " << to_str(connect_state_));
+			connect_state_.set_connected(false);
 
-				bus_->vm_.async_run(cyng::generate_invoke("server.close.connection", vm.tag(), cyng::invoke("push.connection"), ec));
+			//
+			//	clear connection map
+			//
+			if (connect_state_.is_connected()) {
+
+				bus_->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", vm_.tag()));
+			}
+
+			//
+			//	stop all tasks
+			//
+
+			//
+			//	reset iMega parser
+			//
+
+			//
+			//	gracefull shutdown
+			//	device/party closed connection or network shutdown
+			//
+			CYNG_LOG_TRACE(logger_, vm_.tag() << " halt VM");
+			vm_.halt();
+		}
+
+		void session::stop_req(boost::system::error_code ec)
+		{
+			//
+			//	stop all tasks and halt VM
+			//
+			shutdown();
+
+			//
+			//	wait for pending operations
+			//
+			if (vm_.wait(12, std::chrono::milliseconds(100))) {
 
 				//
-				//	halt VM
+				//	Tell SMF master to remove this session by calling "client.req.close". 
+				//	SMF master will send a "client.req.close" to the IP-T server which will
+				//	remove this session from the connection_map_ which will eventual call
+				//	the desctructor of this session object.
 				//
-				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
+				CYNG_LOG_TRACE(logger_, "send \"client.req.close\" request from session "
+					<< vm_.tag());
+				bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
+			}
+			else {
+				CYNG_LOG_FATAL(logger_, "shutdown (req) failed " << vm_.tag());
+			}
+		}
 
-			});
+		void session::stop_res(boost::system::error_code ec)
+		{
+			//
+			//	stop all tasks and halt VM
+			//
+			shutdown();
+
+			//
+			//	wait for pending operations
+			//
+			if (vm_.wait(12, std::chrono::milliseconds(100)))
+			{
+
+				if (pending_) {
+					//
+					//	tell master to close *this* client
+					//
+					bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
+				}
+				else {
+					//
+					//	remove from connection map - call destructor
+					//	server::remove_client();
+					//
+					bus_->vm_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
+				}
+			}
+			else {
+				CYNG_LOG_FATAL(logger_, "shutdown (res) failed " << vm_.tag());
+			}
 		}
 
 		void session::store_relation(cyng::context& ctx)
@@ -296,13 +383,13 @@ namespace node
 			if (bus_->is_online())
 			{
 				//const std::string name = cyng::value_cast<std::string>(frame.at(0));
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("imega");
-				bag["security"] = cyng::make_object("public");
-				bag["time"] = cyng::make_now();
-				bag["imega-protocol"] = frame.at(1);
-				bag["imega-version"] = frame.at(2);
-				bag["imega-module"] = frame.at(3); //	"TELNB" - modulname
+				cyng::param_map_t bag = cyng::param_map_factory("tp-layer", "imega")
+					("security", "public")
+					("time", std::chrono::system_clock::now())
+					("imega-protocol", frame.at(1))
+					("imega-version", frame.at(2))
+					("imega-module", frame.at(3))	//	"TELNB" - modulname
+					;
 
 				if (use_global_pwd_) {
 					bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
@@ -310,7 +397,6 @@ namespace node
 						, global_pwd_	//	fixed password
 						, "plain" //	login scheme
 						, bag));
-
 				}
 				else {
 
@@ -424,9 +510,7 @@ namespace node
 					, std::get<3>(tpl)	//	name
 					, std::get<4>(tpl)));	//	msg
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
+				const cyng::param_map_t bag = cyng::param_map_factory("tp-layer", "ipt")("seq", frame.at(1));
 
 				bus_->vm_.async_run(client_update_attr(ctx.tag()
 					, "TDevice.vFirmware"
