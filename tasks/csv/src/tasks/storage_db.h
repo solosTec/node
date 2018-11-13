@@ -105,6 +105,14 @@ namespace node
 			, cyng::sql::command&
 			, cyng::db::statement_ptr
 			, std::string server
+			, std::set<std::string> const& codes);
+
+		void collect_data_24_h_profile(std::ofstream&
+			, std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end
+			//, cyng::sql::command&
+			, cyng::db::statement_ptr
+			, std::string server
 			, std::string code);
 
 		/**
@@ -117,6 +125,9 @@ namespace node
 			, std::chrono::system_clock::time_point end
 			, cyng::sql::command& cmd
 			, cyng::db::statement_ptr stmt);
+
+		void update_csv_15min(std::chrono::system_clock::time_point start, std::size_t size);
+		void update_csv_24h(std::chrono::system_clock::time_point start, std::size_t size);
 
 	private:
 		cyng::async::base_task& base_;

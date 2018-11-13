@@ -266,19 +266,8 @@ namespace node
 			//
 			// update _CSV table
 			//
-			auto key = cyng::table::key_generator(bus_->vm_.tag());
+			update_csv_15min(start, server_ids.size());
 
-			bus_->vm_.async_run(bus_req_db_modify("_CSV"
-				, cyng::table::key_generator(bus_->vm_.tag())	//	key
-				, cyng::param_factory("start15min", start)
-				, 0
-				, bus_->vm_.tag()));
-
-			bus_->vm_.async_run(bus_req_db_modify("_CSV"
-				, cyng::table::key_generator(bus_->vm_.tag())	//	key
-				, cyng::param_factory("srvCount15min", server_ids.size())
-				, 0
-				, bus_->vm_.tag()));
 
 			for (auto id : server_ids) {
 
@@ -354,19 +343,7 @@ namespace node
 			//
 			// update _CSV table
 			//
-			auto key = cyng::table::key_generator(bus_->vm_.tag());
-
-			bus_->vm_.async_run(bus_req_db_modify("_CSV"
-				, cyng::table::key_generator(bus_->vm_.tag())	//	key
-				, cyng::param_factory("start24h", start)
-				, 0
-				, bus_->vm_.tag()));
-
-			bus_->vm_.async_run(bus_req_db_modify("_CSV"
-				, cyng::table::key_generator(bus_->vm_.tag())	//	key
-				, cyng::param_factory("srvCount24h", server_ids.size())
-				, 0
-				, bus_->vm_.tag()));
+			update_csv_24h(start, server_ids.size());
 
 			//
 			//	open output file
@@ -389,32 +366,19 @@ namespace node
 					<< obis_codes.size()
 					<< " unique OBIS codes");
 
-				for (auto const& code : obis_codes) {
+				//	129-0:0.9.11*0 (81 00 00 09 0B 00) - OBIS_ACT_SENSOR_TIME contains UTC readout time
+				//	1-0:0.9.11*0 (01 00 00 09 0B 00) - OBIS_CURRENT_UTC
 
-					collect_data_24_h_profile(file
-						, start
-						, end
-						, cmd
-						, stmt
-						, id	//	server
-						, code);
-				}
+				//	query all OBIS codes
+				collect_data_24_h_profile(file
+					, start
+					, end
+					, cmd
+					, stmt
+					, id	//	server
+					, obis_codes);
+
 			}
-//			for (auto cond : combinations) {
-//
-//				//
-//				//	query all combinations
-//				//
-//#ifdef __DEBUG
-//				collect_data_24_h_profile(file
-//					, std::chrono::system_clock::now() - std::chrono::hours(24 * 30)
-//					, std::chrono::system_clock::now()
-//					, cmd, stmt, cond.first, cond.second);
-//#else
-//				collect_data_24_h_profile(file, start, end, cmd, stmt, cond.first, cond.second);
-//#endif
-//
-//			}
 
 			file.close();
 			stmt->close();
@@ -472,69 +436,92 @@ namespace node
 		, cyng::sql::command& cmd
 		, cyng::db::statement_ptr stmt
 		, std::string server
-		, std::string code)
+		, std::set<std::string> const& obis_codes)
 	{
 		//	SELECT datetime(TSMLMeta.actTime), TSMLMeta.server, TSMLData.OBIS, TSMLData.result FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE (actTime > julianday('2018-08-01') AND actTime < julianday('2018-08-10') AND TSMLMeta.profile = '8181c78613ff') ORDER BY TSMLMeta.actTime;
-		std::string sql = "SELECT TSMLMeta.server, TSMLData.OBIS, TSMLData.result, TSMLMeta.actTime FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?) AND actTime < julianday(?)) AND TSMLMeta.server = ? and TSMLData.OBIS = ? AND TSMLMeta.profile = '8181c78613ff') ORDER BY TSMLMeta.actTime DESC";
+		std::string sql = "SELECT TSMLData.result, datetime(TSMLMeta.roTime) FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?) AND actTime < julianday(?)) AND TSMLMeta.server = ? and TSMLData.OBIS = ? AND TSMLMeta.profile = '8181c78613ff') ORDER BY TSMLMeta.actTime DESC";
 		auto r = stmt->prepare(sql);
 		if (r.second) {
+			for (auto const& code : obis_codes) {
 
-			stmt->push(cyng::make_object(start), 0);
-			stmt->push(cyng::make_object(end), 0);
-			stmt->push(cyng::make_object(server), 0);
-			stmt->push(cyng::make_object(code), 0);
-
-			auto res = stmt->get_result();
-			if (res) {
-				auto server = cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 0), "server");
-				auto code = cyng::value_cast<std::string>(res->get(2, cyng::TC_STRING, 0), "OBIS");
-				auto result = cyng::value_cast<std::string>(res->get(3, cyng::TC_STRING, 0), "result");
-				auto act_time = cyng::value_cast(res->get(4, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
-
-				CYNG_LOG_TRACE(logger_, server
-					<< ", "
-					<< code
-					<< ", "
-					<< result);
-
-				//
-				//	convert OBIS format
-				//
-				node::sml::obis native_code = node::sml::to_obis(code);
-				if (native_code.is_nil()) {
-
-					file
-						<< sml::get_serial(server)
-						<< ';'
-						<< code
-						<< ';'
-						<< result
-						<< ';'
-						<< cyng::to_str(act_time)
-						<< std::endl
-						;
-				}
-				else {
-
-					file
-						<< sml::get_serial(server)
-						<< ';'
-						<< node::sml::to_string(native_code)
-						<< ';'
-						<< result
-						<< ';'
-						<< cyng::to_str(act_time)
-						<< std::endl
-						;
-
-				}
-
+				collect_data_24_h_profile(file
+					, start
+					, end
+					, stmt
+					, server
+					, code);
 			}
+
 			//
 			//	read for next query
 			//
 			stmt->clear();
 		}
+		else {
+			CYNG_LOG_FATAL(logger_, "prepare failed: "
+				<< sql);
+		}
+	}
+
+	void storage_db::collect_data_24_h_profile(std::ofstream& file
+		, std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end
+		, cyng::db::statement_ptr stmt
+		, std::string server
+		, std::string code)
+	{
+		stmt->push(cyng::make_object(start), 0);
+		stmt->push(cyng::make_object(end), 0);
+		stmt->push(cyng::make_object(server), 0);
+		stmt->push(cyng::make_object(code), 0);
+
+		auto res = stmt->get_result();
+		if (res) {
+			auto result = cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 0), "result");
+			auto ro_time = cyng::value_cast(res->get(2, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
+
+			CYNG_LOG_TRACE(logger_, server
+				<< ", "
+				<< code
+				<< ", "
+				<< result);
+
+			//
+			//	convert OBIS format
+			//
+			node::sml::obis native_code = node::sml::to_obis(code);
+			if (native_code.is_nil()) {
+
+				file
+					<< sml::get_serial(server)
+					<< ';'
+					<< code
+					<< ';'
+					<< result
+					<< ';'
+					<< cyng::to_str(ro_time)
+					<< std::endl
+					;
+			}
+			else {
+
+				file
+					<< sml::get_serial(server)
+					<< ';'
+					<< node::sml::to_string(native_code)
+					<< ';'
+					<< result
+					<< ';'
+					<< cyng::to_str(ro_time)
+					<< std::endl
+					;
+			}
+		}
+
+		//
+		//	read for next query
+		//
+		stmt->clear();
 	}
 
 	void storage_db::collect_data_15_min_profile(std::ofstream& file
@@ -868,6 +855,40 @@ namespace node
             bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_ERROR, "cannot open " + path.string()));
         }
         return ofs;
+	}
+
+	void storage_db::update_csv_15min(std::chrono::system_clock::time_point start, std::size_t size)
+	{
+		auto key = cyng::table::key_generator(bus_->vm_.tag());
+
+		bus_->vm_.async_run(bus_req_db_modify("_CSV"
+			, cyng::table::key_generator(bus_->vm_.tag())	//	key
+			, cyng::param_factory("start15min", start)
+			, 0
+			, bus_->vm_.tag()));
+
+		bus_->vm_.async_run(bus_req_db_modify("_CSV"
+			, cyng::table::key_generator(bus_->vm_.tag())	//	key
+			, cyng::param_factory("srvCount15min", size)
+			, 0
+			, bus_->vm_.tag()));
+	}
+
+	void storage_db::update_csv_24h(std::chrono::system_clock::time_point start, std::size_t size)
+	{
+		auto key = cyng::table::key_generator(bus_->vm_.tag());
+
+		bus_->vm_.async_run(bus_req_db_modify("_CSV"
+			, cyng::table::key_generator(bus_->vm_.tag())	//	key
+			, cyng::param_factory("start24h", start)
+			, 0
+			, bus_->vm_.tag()));
+
+		bus_->vm_.async_run(bus_req_db_modify("_CSV"
+			, cyng::table::key_generator(bus_->vm_.tag())	//	key
+			, cyng::param_factory("srvCount24h", size)
+			, 0
+			, bus_->vm_.tag()));
 	}
 
 	cyng::table::mt_table storage_db::init_meta_map(std::string const& ver)
