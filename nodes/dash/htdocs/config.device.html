@@ -227,6 +227,7 @@
                 $('#smf-form-dev-delete').removeClass('disabled');
                 $('#smf-form-dev-delete-name').html('<abbr title=' + rowData[0] + ' class="font-italic">' + rowData[1] + '</abbr>');
 
+                $("label[for='smf-form-dev-insert']").text("New Device");
             });
 
             function start_ws() {
@@ -432,6 +433,11 @@
                     table_dev.$('tr.selected').removeClass('selected');
                     $(this).addClass('selected');
                 }
+            });
+
+            $('#smf-form-dev-name').on("change paste keyup", function () {
+                //alert($(this).val());
+                $("label[for='smf-form-dev-insert']").text($(this).val());
             });
         });
 

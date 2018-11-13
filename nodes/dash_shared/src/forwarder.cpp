@@ -105,6 +105,28 @@ namespace node
 					<< ex.what());
 			}
 		}
+		else if (boost::algorithm::starts_with(channel, "config.meter"))
+		{
+			//
+			//	TDevice key is of type UUID
+			//
+			try {
+				cyng::vector_t vec;
+				vec = cyng::value_cast(reader["key"].get("tag"), vec);
+				BOOST_ASSERT_MSG(vec.size() == 1, "TMeter key has wrong size");
+				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+				//CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");
+				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+				auto key = cyng::table::key_generator(vec.at(0));
+				ctx.attach(bus_req_db_remove("TMeter", key, ctx.tag()));
+			}
+			catch (std::exception const& ex) {
+				CYNG_LOG_ERROR(logger, "ws.read - delete channel ["
+					<< channel
+					<< "] failed: "
+					<< ex.what());
+			}
+		}
 		else
 		{
 			CYNG_LOG_WARNING(logger, "ws.read - unknown delete channel [" << channel << "]");
@@ -288,6 +310,38 @@ namespace node
 
 			ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
 
+		}
+		else if (boost::algorithm::starts_with(channel, "config.meter"))
+		{
+			try {
+
+				cyng::vector_t vec;
+				vec = cyng::value_cast(reader["rec"].get("key"), vec);
+				BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
+
+				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
+				//CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");
+				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+				auto key = cyng::table::key_generator(vec.at(0));
+
+				cyng::tuple_t tpl;
+				tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
+				for (auto p : tpl)
+				{
+					cyng::param_t param;
+					ctx.attach(bus_req_db_modify("TMeter"
+						, key
+						, cyng::value_cast(p, param)
+						, 0
+						, ctx.tag()));
+				}
+			}
+			catch (std::exception const& ex) {
+				CYNG_LOG_ERROR(logger, "ws.read - modify channel ["
+					<< channel <<
+					"] failed:"
+					<< ex.what());
+			}
 		}
 		else
 		{

@@ -10,6 +10,12 @@
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
+    <style>
+        table.dataTable tbody > tr > td {
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+    </style>
     <!-- Custom styles for this template -->
     <!--<link href="dashboard.css" rel="stylesheet">-->
 </head>
@@ -85,22 +91,61 @@
     </div>
 
     <div class="container-fluid">
-        <table id="smf-table-gw" class="table table-condensed table-striped table-bordered" cellspacing="0">
+        <table id="smf-table-meter" class="table table-condensed table-striped table-bordered" cellspacing="0">
             <thead>
                 <tr>
-                    <th class="sml-col-gw-pk">UUID</th>
-                    <th class="sml-col-gw-ident">Ident</th>
-                    <th class="sml-col-gw-meter">Meter</th>
-                    <th class="sml-col-gw-maker">Manufacturer</th>
-                    <th class="sml-col-gw-tom">TOM</th>
-                    <th class="sml-col-gw-fw">Firmware</th>
-                    <th class="sml-col-gw-param">Parametrierung</th>
-                    <th class="sml-col-gw-fn">Factory Nr.</th>
-                    <th class="sml-col-gw-item">Item</th>
-                    <th class="sml-col-gw-class">Metrol. Class</th>
+                    <th class="sml-col-meter-pk">UUID</th>
+                    <th class="sml-col-meter-ident">Ident</th>
+                    <th class="sml-col-meter-meter">Meter</th>
+                    <th class="sml-col-meter-maker">Manufacturer</th>
+                    <th class="sml-col-meter-tom">TOM</th>
+                    <th class="sml-col-meter-fw">Firmware</th>
+                    <th class="sml-col-meter-param">Parametrierung</th>
+                    <th class="sml-col-meter-fn">Factory Nr.</th>
+                    <th class="sml-col-meter-item">Item</th>
+                    <th class="sml-col-meter-class">Metrol. Class</th>
                 </tr>
             </thead>
         </table>
+
+        <hr />
+        <ul class="nav nav-tabs" role="tablist" id="smf-meter-tab">
+            <li class="nav-item">
+                <a class="nav-link active" id="smf-meter-tab-config" data-toggle="tab" href="#smf-meter-config" aria-selected="true">Configuration</a>
+            </li>
+        </ul>
+
+        <div class="tab-content bg-secondary">
+            <div id="smf-meter-config" class="container-fluid tab-pane fade show active" role="tabpanel">
+                <form id="smf-form-meter" style="padding:2em">
+                    <input type="hidden" id="smf-form-meter-tag" name="smf-form-meter-tag" />
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-server">Ident</label>
+                            <input id="smf-form-meter-ident" name="smf-form-meter-ident" type="text" placeholder="<Ident>" class="form-control input-md" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-manufacturer">Manufacturer</label>
+                            <input id="smf-form-meter-manufacturer" name="smf-form-meter-manufacturer" type="text" placeholder="<Manufacturer>" class="form-control input-md">
+                        </div>
+                    </div>
+
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <a id="smf-form-meter-update" href="#" class="btn btn-info col-md-4">Update</a>
+                            <label class="control-label" for="smf-form-meter-update">&nbsp;Commit Changes</label>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <a id="smf-form-meter-delete" href="#" class="btn btn-danger col-md-4">Delete</a>
+                            <label class="control-label" for="smf-form-meter-delete">&nbsp;Remove <span id="smf-form-meter-delete-name">Meter</span></label>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
     </div>
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
@@ -131,28 +176,33 @@
             select: true,
             //colReorder: true,
             columnDefs: [
-                { targets: 'sml-col-gw-pk', visible: false, name: 'gw-pk' },
-                { targets: 'sml-col-gw-ident', visible: true, name: 'gw-ident' },
-                { targets: 'sml-col-gw-meter', visible: true, name: 'gw-meter' },
-                { targets: 'sml-col-gw-maker', visible: true, name: 'gw-maker' },
-                { targets: 'sml-col-gw-tom', visible: true, name: 'gw-tom', render: renderDate },
-                { targets: 'sml-col-gw-fw', visible: true, name: 'gw-fw' },
-                { targets: 'sml-col-gw-fn', visible: true, name: 'gw-fn' },
-                { targets: 'sml-col-gw-item', visible: true, name: 'gw-item' },
-                { targets: 'sml-col-gw-class', visible: true, name: 'gw-class' }
+                { targets: 'sml-col-meter-pk', visible: false, name: 'meter-pk' },
+                { targets: 'sml-col-meter-ident', visible: true, name: 'meter-ident' },
+                { targets: 'sml-col-meter-meter', visible: true, name: 'meter-meter' },
+                { targets: 'sml-col-meter-maker', visible: true, name: 'meter-maker' },
+                { targets: 'sml-col-meter-tom', visible: true, name: 'meter-tom', render: renderDate },
+                { targets: 'sml-col-meter-fw', visible: true, name: 'meter-fw' },
+                { targets: 'sml-col-meter-fn', visible: true, name: 'meter-fn' },
+                { targets: 'sml-col-meter-item', visible: true, name: 'meter-item' },
+                { targets: 'sml-col-meter-class', visible: true, name: 'meter-class' }
             ]
         };
 
 
         $(document).ready(function () {
             console.log('document ready');
-            table_meter = $('#smf-table-gw').DataTable(tbl_config);
+            table_meter = $('#smf-table-meter').DataTable(tbl_config);
 
             table_meter.on('select', function (e, datatable, type, indexes) {
 
                 var rowData = datatable.rows(indexes).data().toArray()[0];
                 var rows = table_meter.rows(indexes).data();
                 console.log("select: " + rows.toArray() + ", length:" + rowData.length);
+
+                $('#smf-form-meter-tag').val(rowData[0]);
+                $('#smf-form-meter-ident').val(rowData[1]);
+                $('#smf-form-meter-manufacturer').val(rowData[3]);
+
             }); //  onSelect()
 
             function start_ws() {
@@ -193,8 +243,6 @@
                     if (obj.cmd != null && obj.channel != null) {
                         if (obj.channel == 'config.meter') {
                             if (obj.cmd == 'insert') {
-                                //  {"cmd": "insert", "channel": "config.meter", "rec": {"key": {"pk":"1011b316-b8b0-4612-9a9f-9debc87dbd4b"}, 
-                                //  "data": {"factoryNr":"","gen":0,"gw":"9e3dda5d-7c0b-4a8d-b25d-eea3a113a856","ident":"0ae00001","item":"","mClass":"---","maker":"","meter":"00000000","tom":"2018-11-08 07:47:05.00000000","vFirmare":"","vParam":""}}}
                                 var ident = $('<div/>').text(obj.rec.data.ident).html();
                                 var meter = $('<div/>').text(obj.rec.data.meter).html();
                                 var maker = $('<div/>').text(obj.rec.data.maker).html();
@@ -206,12 +254,33 @@
                                 var item = $('<div/>').text(obj.rec.data.item).html();
                                 var mClass = $('<div/>').text(obj.rec.data.mClass).html();
                                 var rowNode = table_meter.row.add([obj.rec.key.pk, ident, meter, maker, tom, firmware, vParam, factoryNr, item, mClass]).draw().node();
-
                             }
                             else if (obj.cmd == 'delete') {
-
+                                //  {"cmd": "delete", "channel": "config.meter", "key": ["85c02cea-52fb-44bf-ade4-8a827e1bbc46"]}
+                                table_meter.row(function (idx, data, node) {
+                                    if (data[0] == obj.key) {
+                                        //$('#smf-form-dev-delete-name').text("Device");
+                                        //$('#smf-form-dev-update').addClass('disabled');
+                                        //$('#smf-form-dev-delete').addClass('disabled');
+                                        return true;
+                                    }
+                                    return false;
+                                }).remove().draw(false);
                             }
                             else if (obj.cmd == 'modify') {
+                                //  {"cmd": "modify", "channel": "config.meter", "key": ["ac2c54ca-0c39-4edf-aa70-1a409d2d9e08"], "value": {"maker":"asdasdasd"}}
+                                table_meter.row(function (idx, data, node) {
+                                    if (data[0] == obj.key) {
+                                        var r = table_meter.row(node);
+                                        var d = r.data();
+                                        if (obj.value.maker != null) {
+                                            d[3] = obj.value.maker;
+                                        }
+                                        r.data(d);
+                                        return true;
+                                    }
+                                    return false;
+                                });
                             }
                             else if (obj.cmd == 'clear') {
 
@@ -249,6 +318,32 @@
 
             start_ws();
             setInterval(check_ws, 5000);
+
+            $('#smf-form-meter-delete').on("click", function (event) {
+                event.preventDefault();
+                var key = $('#smf-form-meter-tag').val();
+                console.log($(this).text() + ' ' + key);
+                _ws.send(JSON.stringify({
+                    cmd: 'delete', channel: 'config.meter', key: {
+                        tag: [key]
+                    }
+                }));
+            });
+
+            $('#smf-form-meter-update').on("click", function (event) {
+                event.preventDefault();
+                console.log('update: ' + $('#smf-form-meter').serialize());
+
+                _ws.send(JSON.stringify({
+                    cmd: "modify", channel: "config.meter", rec: {
+                        key: [$('#smf-form-meter-tag').val()],
+                        data: {
+                            ident: $('#smf-form-meter-ident').val(),
+                            maker: $('#smf-form-meter-manufacturer').val()
+                        }
+                    }
+                }));
+            });
 
         }); //  document ready
 
