@@ -49,7 +49,7 @@ namespace node
 
 			void insert_client(cyng::context&);
 			void clear_connection_map(cyng::context&);
-			bool server::clear_connection_map_impl(boost::uuids::uuid tag);
+			bool clear_connection_map_impl(boost::uuids::uuid tag);
 			void transmit_data(cyng::context& ctx);	//!< transmit data locally
 
 			void client_res_login(cyng::context&);
