@@ -502,6 +502,15 @@ namespace node
 					<< cyng::to_str(ro_time)
 					<< std::endl
 					;
+
+				CYNG_LOG_DEBUG(logger_, sml::get_serial(server)
+					<< ';'
+					<< code
+					<< ';'
+					<< result
+					<< ';'
+					<< cyng::to_str(ro_time));
+
 			}
 			else {
 
@@ -515,6 +524,15 @@ namespace node
 					<< cyng::to_str(ro_time)
 					<< std::endl
 					;
+
+				CYNG_LOG_DEBUG(logger_, sml::get_serial(server)
+					<< ';'
+					<< node::sml::to_string(native_code)
+					<< ';'
+					<< result
+					<< ';'
+					<< cyng::to_str(ro_time));
+
 			}
 		}
 
