@@ -100,7 +100,7 @@
                     <th class="sml-col-meter-maker">Manufacturer</th>
                     <th class="sml-col-meter-tom">TOM</th>
                     <th class="sml-col-meter-fw">Firmware</th>
-                    <th class="sml-col-meter-param">Parametrierung</th>
+                    <th class="sml-col-meter-param">Parameterization</th>
                     <th class="sml-col-meter-fn">Factory Nr.</th>
                     <th class="sml-col-meter-item">Item</th>
                     <th class="sml-col-meter-class">Metrol. Class</th>
@@ -122,7 +122,7 @@
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label class="control-label" for="smf-form-meter-server">Ident</label>
+                            <label class="control-label" for="smf-form-meter-ident">Ident</label>
                             <input id="smf-form-meter-ident" name="smf-form-meter-ident" type="text" placeholder="<Ident>" class="form-control input-md" required>
                         </div>
                         <div class="form-group col-md-6">
@@ -131,6 +131,40 @@
                         </div>
                     </div>
 
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-fw">Firmware</label>
+                            <input id="smf-form-meter-fw" name="smf-form-meter-fw" type="text" placeholder="<Firmware Version>" class="form-control input-md">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-param">Parameterization</label>
+                            <input id="smf-form-meter-param" name="smf-form-meter-param" type="text" placeholder="<Parameterization>" class="form-control input-md">
+                        </div>
+                    </div>
+
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-factory-nr">Factory Number</label>
+                            <input id="smf-form-meter-factory-nr" name="smf-form-meter-factory-nr" type="text" placeholder="<Factory Number>" class="form-control input-md">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-item">Item</label>
+                            <input id="smf-form-meter-item" name="smf-form-meter-item" type="text" placeholder="<Item>" class="form-control input-md">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-class">Metrological Class</label>
+                            <input id="smf-form-meter-class" name="smf-form-meter-class" type="text" placeholder="<Metrological Class>" class="form-control input-md">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-tom">Time of Manufactoring</label>
+                            <input id="smf-form-meter-tom" name="smf-form-meter-tom" type="date" placeholder="<Time of Manufactoring>" class="form-control input-md" readonly>
+                        </div>
+                    </div>
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
@@ -202,7 +236,13 @@
                 $('#smf-form-meter-tag').val(rowData[0]);
                 $('#smf-form-meter-ident').val(rowData[1]);
                 $('#smf-form-meter-manufacturer').val(rowData[3]);
-
+                $('#smf-form-meter-tom').val(rowData[4].toISOString().substring(0, 10));
+                //$('#smf-form-meter-tom').val("2018-01-01");
+                $('#smf-form-meter-fw').val(rowData[5]);
+                $('#smf-form-meter-param').val(rowData[6]);
+                $('#smf-form-meter-factory-nr').val(rowData[7]);
+                $('#smf-form-meter-item').val(rowData[8]);
+                $('#smf-form-meter-class').val(rowData[9]);
             }); //  onSelect()
 
             function start_ws() {
@@ -276,6 +316,21 @@
                                         if (obj.value.maker != null) {
                                             d[3] = obj.value.maker;
                                         }
+                                        else if (obj.value.vFirmare != null) {
+                                            d[5] = obj.value.vFirmare;
+                                        }
+                                        else if (obj.value.vParam != null) {
+                                            d[6] = obj.value.vParam;
+                                        }
+                                        else if (obj.value.factoryNr != null) {
+                                            d[7] = obj.value.factoryNr;
+                                        }
+                                        else if (obj.value.item != null) {
+                                            d[8] = obj.value.item;
+                                        }
+                                        else if (obj.value.mClass != null) {
+                                            d[9] = obj.value.mClass;
+                                        }
                                         r.data(d);
                                         return true;
                                     }
@@ -339,7 +394,12 @@
                         key: [$('#smf-form-meter-tag').val()],
                         data: {
                             ident: $('#smf-form-meter-ident').val(),
-                            maker: $('#smf-form-meter-manufacturer').val()
+                            maker: $('#smf-form-meter-manufacturer').val(),
+                            vFirmare: $('#smf-form-meter-fw').val(),
+                            vParam: $('#smf-form-meter-param').val(),
+                            factoryNr: $('#smf-form-meter-factory-nr').val(),
+                            item: $('#smf-form-meter-item').val(),
+                            mClass: $('#smf-form-meter-class').val()
                         }
                     }
                 }));
