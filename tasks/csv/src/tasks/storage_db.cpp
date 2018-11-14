@@ -480,11 +480,11 @@ namespace node
 			auto result = cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 0), "result");
 			auto ro_time = cyng::value_cast(res->get(2, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
 
-			CYNG_LOG_TRACE(logger_, server
-				<< ", "
-				<< code
-				<< ", "
-				<< result);
+			//CYNG_LOG_TRACE(logger_, server
+			//	<< ", "
+			//	<< code
+			//	<< ", "
+			//	<< result);
 
 			//
 			//	convert OBIS format
@@ -503,7 +503,8 @@ namespace node
 					<< std::endl
 					;
 
-				CYNG_LOG_DEBUG(logger_, sml::get_serial(server)
+				CYNG_LOG_DEBUG(logger_, ">> "
+					<< sml::get_serial(server)
 					<< ';'
 					<< code
 					<< ';'
@@ -525,7 +526,8 @@ namespace node
 					<< std::endl
 					;
 
-				CYNG_LOG_DEBUG(logger_, sml::get_serial(server)
+				CYNG_LOG_DEBUG(logger_, ">> "
+					<< sml::get_serial(server)
 					<< ';'
 					<< node::sml::to_string(native_code)
 					<< ';'
@@ -534,6 +536,13 @@ namespace node
 					<< cyng::to_str(ro_time));
 
 			}
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "no result for "
+				<< server
+				<< ", "
+				<< code);
+
 		}
 
 		//
