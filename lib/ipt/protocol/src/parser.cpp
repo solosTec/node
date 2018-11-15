@@ -31,7 +31,7 @@ namespace node
 			, stream_state_(STATE_HEAD)
 			, parser_state_()
 			, header_()
-			, f_read_string()
+			//, f_read_string()
 			, f_read_uint8()
 			, f_read_uint16()
 			, f_read_uint32()
@@ -45,7 +45,7 @@ namespace node
 			//
 			//	better to use a valid this pointer
 			//
-			f_read_string = [&]()->std::string { return this->read_string(); };
+			//f_read_string = [&]()->std::string { return this->read_string(); };
 			f_read_uint8 = [&]()->std::uint8_t { return this->read_numeric<std::uint8_t>(); };
 			f_read_uint16 = [&]()->std::uint16_t { return this->read_numeric<std::uint16_t>(); };
 			f_read_uint32 = [&]()->std::uint32_t { return this->read_numeric<std::uint32_t>(); };
@@ -56,6 +56,12 @@ namespace node
 		parser::~parser()
 		{
 			if (cb_)	cb_ = nullptr;
+		}
+
+		std::function<std::string()> parser::get_read_string_f()
+		{
+			//return std::bind(&parser::read_string, this);
+			return [&]()->std::string { return this->read_string(); };
 		}
 
 		void parser::set_sk(scramble_key const& sk)
@@ -83,7 +89,7 @@ namespace node
 			//	clear function objects
 			//
 			cb_ = nullptr;
-			if (f_read_string)	f_read_string = nullptr;	//	crash!
+			//if (f_read_string)	f_read_string = nullptr;	//	crash!
 			if (f_read_uint8)	f_read_uint8 = nullptr;
 			if (f_read_uint16)	f_read_uint16 = nullptr;
 			if (f_read_uint32)	f_read_uint32 = nullptr;
@@ -407,11 +413,11 @@ namespace node
 				parser_.code_ << cyng::generate_invoke("ipt.req.open.push.channel"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_string	//	target name
-					, parser_.f_read_string	//	account
-					, parser_.f_read_string	//	number
-					, parser_.f_read_string	//	version
-					, parser_.f_read_string	//	device id
+					, parser_.get_read_string_f()	//	target name
+					, parser_.get_read_string_f()	//	account
+					, parser_.get_read_string_f()	//	number
+					, parser_.get_read_string_f()	//	version
+					, parser_.get_read_string_f()	//	device id
 					, parser_.f_read_uint16) //	time out
 					<< cyng::unwind_vec(10);
 
@@ -536,7 +542,7 @@ namespace node
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.open.connection"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_string);	//	number
+					, parser_.get_read_string_f());	//	number
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -594,7 +600,7 @@ namespace node
 				parser_.code_ << cyng::generate_invoke("ipt.res.software.version"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_string)
+					, parser_.get_read_string_f())
 					<< cyng::unwind_vec();
 				return STATE_STREAM;
 			}
@@ -610,7 +616,7 @@ namespace node
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.dev.id"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_string);
+					, parser_.get_read_string_f());
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -633,8 +639,8 @@ namespace node
 					, parser_.f_read_uint32	//	status_vector	status_[ 2 ];
 					, parser_.f_read_uint32	//	status_vector	status_[ 3 ];
 					, parser_.f_read_uint32	//	status_vector	status_[ 4 ];
-					, parser_.f_read_string  //	//	IMSI
-					, parser_.f_read_string);  //	//	IMEI
+					, parser_.get_read_string_f()  //	//	IMSI
+					, parser_.get_read_string_f());  //	//	IMEI
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -664,10 +670,10 @@ namespace node
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.dev.auth"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_string	//	account
-					, parser_.f_read_string		//	password
-					, parser_.f_read_string		//	number
-					, parser_.f_read_string);	//	description
+					, parser_.get_read_string_f()	//	account
+					, parser_.get_read_string_f()		//	password
+					, parser_.get_read_string_f()		//	number
+					, parser_.get_read_string_f());	//	description
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -713,11 +719,11 @@ namespace node
 				for (auto idx = decltype(size){0}; idx < size; ++idx)
 				{
 					parser_.code_
-						<< parser_.f_read_string	//	target name
-						<< parser_.f_read_string	//	device name
-						<< parser_.f_read_string	//	device number
-						<< parser_.f_read_string	//	software version
-						<< parser_.f_read_string	//	device id
+						<< parser_.get_read_string_f()	//	target name
+						<< parser_.get_read_string_f()	//	device name
+						<< parser_.get_read_string_f()	//	device number
+						<< parser_.get_read_string_f()	//	software version
+						<< parser_.get_read_string_f()	//	device id
 						<< parser_.f_read_uint8	//	transfer status
 						;
 				}
@@ -773,8 +779,8 @@ namespace node
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.req.login.public"
 					, cyng::code::IDENT
-					, parser_.f_read_string	//	name
-					, parser_.f_read_string)	//	password
+					, parser_.get_read_string_f()	//	name
+					, parser_.get_read_string_f())	//	password
 					<< cyng::unwind_vec();
 				return STATE_STREAM;
 			}
@@ -815,7 +821,7 @@ namespace node
 					, cyng::code::IDENT
 					, parser_.f_read_uint8	//	response
 					, parser_.f_read_uint16	//	watchdog
-					, parser_.f_read_string)//	redirect
+					, parser_.get_read_string_f())//	redirect
 					<< cyng::unwind_vec()
 					;	
 				return STATE_STREAM;
@@ -832,7 +838,7 @@ namespace node
 					, cyng::code::IDENT
 					, parser_.f_read_uint8	//	response
 					, parser_.f_read_uint16	//	watchdog
-					, parser_.f_read_string);	//	redirect
+					, parser_.get_read_string_f());	//	redirect
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -874,7 +880,7 @@ namespace node
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.register.push.target"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_string		//	target
+					, parser_.get_read_string_f()		//	target
 					, parser_.f_read_uint16		//	packet size
 					, parser_.f_read_uint8);	//	window size
 				return STATE_STREAM;
@@ -907,7 +913,7 @@ namespace node
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.deregister.push.target"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.f_read_string);	//target name
+					, parser_.get_read_string_f());	//target name
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -923,7 +929,7 @@ namespace node
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.f_read_uint8		//	response
-					, parser_.f_read_string);	//target name
+					, parser_.get_read_string_f());	//target name
 				return STATE_STREAM;
 			}
 			return STATE_DATA;

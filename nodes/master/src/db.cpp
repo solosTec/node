@@ -61,33 +61,7 @@ namespace node
 		//	(10) root PW
 		//	(11) W-Mbus ID (i.e. A815408943050131)
 		//	(12) source (UUID) - usefull to detect multiple configuration uploads
-		if (!db.create_table(cyng::table::make_meta_table<1, 11>("TGateway", { "pk"	//	primary key
-				, "serverId"	//	(1) Server-ID (i.e. 0500153B02517E)
-				, "manufacturer"	//	(2) manufacturer (i.e. EMH)
-				, "made"		//	(3) production date
-				, "factoryNr"	//	(4) fabrik nummer (i.e. 06441734)
-				, "ifService"	//	(5) MAC of service interface
-				, "ifData"		//	(6) MAC of data interface
-				, "pwdDef"		//	(7) Default PW
-				, "pwdRoot"		//	(8) root PW
-				, "mbus"		//	(9) W-Mbus ID (i.e. A815408943050131)
-				, "userName"	//	(10)
-				, "userPwd"		//	(11)
-			},
-			{ cyng::TC_UUID
-			, cyng::TC_STRING	//	server ID
-			, cyng::TC_STRING	//	manufacturer
-			, cyng::TC_TIME_POINT
-			, cyng::TC_MAC48
-			, cyng::TC_MAC48
-			, cyng::TC_STRING
-			, cyng::TC_STRING
-			, cyng::TC_STRING
-			, cyng::TC_STRING
-			, cyng::TC_STRING 
-			},
-			{ 36, 23, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 })))
-		{
+		if (!create_table_gateway(db)) {
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
 		}
 		else

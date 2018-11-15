@@ -98,6 +98,7 @@
                     <th class="sml-col-gw-pk">UUID</th>
                     <th class="sml-col-gw-server">Server ID</th>
                     <th class="sml-col-gw-manufacturer">Manufacturer</th>
+                    <th class="sml-col-gw-descr">Description</th>
                     <th class="sml-col-gw-name">Name</th>
                     <th class="sml-col-gw-id">Model</th>
                     <th class="sml-col-gw-fw">Firmware</th>
@@ -483,6 +484,7 @@
                 { targets: 'sml-col-gw-pk', visible: false, name: 'gw-pk' },
                 { targets: 'sml-col-gw-server', visible: true, name: 'gw-server' },
                 { targets: 'sml-col-gw-manufacturer', visible: true, name: 'gw-manufacturer' },
+                { targets: 'sml-col-gw-descr', visible: true, name: 'gw-descr' },
                 { targets: 'sml-col-gw-name', visible: true, name: 'gw-name' },
                 { targets: 'sml-col-gw-id', visible: true, name: 'gw-id' },
                 { targets: 'sml-col-gw-fw', visible: true, name: 'gw-fw' },
@@ -507,17 +509,17 @@
                 $('#smf-form-gw-server').val(rowData[1]);
                 $('#smf-form-gw-manufacturer').val(rowData[2]);
 
-                $('#smf-form-gw-user').val(rowData[6]);
-                $('#smf-form-gw-pwd').val(rowData[7]);
-                $('#smf-form-gw-online').val(rowData[8]);    //  online
+                $('#smf-form-gw-user').val(rowData[7]);
+                $('#smf-form-gw-pwd').val(rowData[8]);
+                $('#smf-form-gw-online').val(rowData[9]);    //  online
 
                 //  enable submit button
                 $('#smf-form-gw-update').removeClass('disabled');
                 $('#smf-form-gw-delete').removeClass('disabled');
-                $('#smf-form-gw-delete-name').html('<abbr title=' + rowData[0] + ' class="font-italic">' + rowData[3] + '</abbr>');
+                $('#smf-form-gw-delete-name').html('<abbr title=' + rowData[0] + ' class="font-italic">' + rowData[4] + '</abbr>');
 
                 //  online state
-                if (rowData[8]) {
+                if (rowData[9]) {
                     $('#smf-form-gw-reboot').removeClass('disabled');
                     $('#smf-form-gw-status-word').removeAttr('disabled');
                     $('#smf-form-gw-srv-visible').removeAttr("disabled");
@@ -538,9 +540,9 @@
                     $('#smf-form-gw-ipt').attr("disabled", "disabled");
                 }
 
-                $('#smf-form-gw-online').val(rowData[8]);    //  online
+                $('#smf-form-gw-online').val(rowData[9]);    //  online
                 //  gateway is online
-                if (rowData[8]) {
+                if (rowData[9]) {
 
                     //$('#smf-nav-item-gw-config').removeClass('disabled');
 
@@ -554,32 +556,32 @@
                         $('#smf-gw-status-word h4').text('Status of ' + rowData[1]);
                         gw_req_vec.push("status:word");
                     }
-                    if ($('#smf-form-gw-srv-visible').is(":checked") && rowData[8]) {
+                    if ($('#smf-form-gw-srv-visible').is(":checked") && rowData[9]) {
                         $('#smf-gw-srv-visible ul').empty();
                         $('#smf-gw-srv-visible h4').text('Visible meters of ' + rowData[1]);
                         gw_req_vec.push("srv:visible");
                     }
-                    if ($('#smf-form-gw-srv-active').is(":checked") && rowData[8]) {
+                    if ($('#smf-form-gw-srv-active').is(":checked") && rowData[9]) {
                         $('#smf-gw-srv-active ul').empty();
                         $('#smf-gw-srv-active h4').text('Active meters of ' + rowData[1]);
                         gw_req_vec.push("srv:active");
                     }
-                    if ($('#smf-form-gw-firmware').is(":checked") && rowData[8]) {
+                    if ($('#smf-form-gw-firmware').is(":checked") && rowData[9]) {
                         $('#smf-gw-firmware ul').empty();
                         $('#smf-gw-firmware h4').text('Firmware overview ' + rowData[1]);
                         gw_req_vec.push("firmware");
                     }
-                    if ($('#smf-form-gw-memory').is(":checked") && rowData[8]) {
+                    if ($('#smf-form-gw-memory').is(":checked") && rowData[9]) {
                         $('#smf-gw-memory ul').empty();
                         $('#smf-gw-memory h4').text('Memory usage ' + rowData[1]);
                         gw_req_vec.push("memory");
                     }
-                    if ($('#smf-form-gw-wireless-mbus').is(":checked") && rowData[8]) {
+                    if ($('#smf-form-gw-wireless-mbus').is(":checked") && rowData[9]) {
                         $('#smf-gw-wireless-mbus h4').text('wireless M-Bus data ' + rowData[1]);
                         gw_req_vec.push("w-mbus-status");
                         gw_req_vec.push("w-mbus-config");
                     }
-                    if ($('#smf-form-gw-ipt').is(":checked") && rowData[8]) {
+                    if ($('#smf-form-gw-ipt').is(":checked") && rowData[9]) {
                         $('#smf-gw-ipt h4').text('IP-T ' + rowData[1]);
                         $('#smf-form-gw-ipt-srv').val(rowData[1]);  //  hidden variable
                         gw_req_vec.push("ipt-status");
@@ -651,12 +653,13 @@
                                 //
                                 var server = $('<div/>').text(obj.rec.data.serverId).html();
                                 var manufacturer = $('<div/>').text(obj.rec.data.manufacturer).html();
+                                var descr = (obj.rec.data.descr != null) ? $('<div/>').text(obj.rec.data.descr).html() : "NO DESCR. AVAILABLE";
                                 var name = $('<div/>').text(obj.rec.data.name).html();
                                 var model = $('<div/>').text(obj.rec.data.model).html();
                                 var firmware = $('<div/>').text(obj.rec.data.vFirmware).html();
                                 var userName = $('<div/>').text(obj.rec.data.userName).html();
                                 var userPwd = $('<div/>').text(obj.rec.data.userPwd).html();
-                                var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, name, model, firmware, userName, userPwd, obj.rec.data.online]).draw().node();
+                                var rowNode = table_gw.row.add([obj.rec.key.pk, server, manufacturer, descr, name, model, firmware, userName, userPwd, obj.rec.data.online]).draw().node();
 
                             }
                             else if (obj.cmd == 'delete') {
@@ -678,12 +681,13 @@
                             else if (obj.cmd == 'modify') {
                                 //  {"cmd": "modify", "channel": "config.gateway", "key": ["dca135f3-ff2b-4bf7-8371-a9904c74522b"], "value": {"online":true}}
                                 //  {"cmd": "modify", "channel": "config.gateway", "key": ["a584c1cc-7ae1-455b-99d1-de0f9483520d"], "value": {"online":false}}
+                                //  {"cmd": "modify", "channel": "config.gateway", "key": ["95e1fd79-21ee-4d58-9dbf-db93f41e3946"], "value": {"descr":"jahsgdjhas"}}
                                 table_gw.row(function (idx, data, node) {
                                     if (data[0] == obj.key) {
                                         var r = table_gw.row(node);
                                         var d = r.data();
                                         if (obj.value.online != null) {
-                                            d[8] = obj.value.online;
+                                            d[9] = obj.value.online;
                                         }
                                         else if (obj.value.serverId != null) {
                                             d[1] = obj.value.serverId;
@@ -691,11 +695,17 @@
                                         else if (obj.value.manufacturer != null) {
                                             d[2] = obj.value.manufacturer;
                                         }
+                                        else if (obj.value.descr != null) {
+                                            d[3] = obj.value.descr;
+                                        }
+                                        else if (obj.value.name != null) {
+                                            d[4] = obj.value.name;
+                                        }
                                         else if (obj.value.userName != null) {
-                                            d[6] = obj.value.userName;
+                                            d[7] = obj.value.userName;
                                         }
                                         else if (obj.value.userPwd != null) {
-                                            d[7] = obj.value.userPwd;
+                                            d[8] = obj.value.userPwd;
                                         }
                                         r.data(d);
                                         $('#smf-form-gw-delete').addClass('disabled');

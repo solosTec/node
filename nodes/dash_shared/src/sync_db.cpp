@@ -23,7 +23,7 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table TDevice");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 15>("TGateway", { "pk"	//	primary key
+		if (!db.create_table(cyng::table::make_meta_table<1, 16>("TGateway", { "pk"	//	primary key
 			, "serverId"	//	(1) Server-ID (i.e. 0500153B02517E)
 			, "manufacturer"	//	(2) manufacturer (i.e. EMH)
 			, "made"	//	(4) production date
@@ -36,6 +36,7 @@ namespace node
 			, "userName"	//	(12)
 			, "userPwd"	//	(13)
 			, "name"	//	IP-T/device name
+			, "descr"	//	IP-T/device description
 			, "model"	//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
 			, "vFirmware"	//	(5) firmwareversion (i.e. 11600000)
 			, "online"	//	(14)
@@ -190,6 +191,7 @@ namespace node
 				if (!dev_rec.empty())
 				{
 					data.push_back(dev_rec["name"]);
+					data.push_back(dev_rec["descr"]);
 					data.push_back(dev_rec["id"]);
 					data.push_back(dev_rec["vFirmware"]);
 					data.push_back(cyng::make_object(!ses_rec.empty()));
@@ -533,7 +535,8 @@ namespace node
 				if (!dev_rec.empty())
 				{
 					data.push_back(dev_rec["name"]);
-					data.push_back(dev_rec["serverId"]);
+					data.push_back(dev_rec["descr"]);
+					data.push_back(dev_rec["id"]);
 					data.push_back(dev_rec["vFirmware"]);
 
 					//
@@ -559,7 +562,7 @@ namespace node
 						<< cyng::io::to_str(key)
 						<< " has no associated device");
 				}
-			}, cyng::store::write_access("TGateway")
+			}	, cyng::store::write_access("TGateway")
 				, cyng::store::read_access("TDevice")
 				, cyng::store::read_access("_Session"));
 		}
@@ -656,6 +659,27 @@ namespace node
 		, cyng::attr_t attr		//	[2] attribute
 		, boost::uuids::uuid origin)
 	{
+		//
+		//	distribute some changes to other tables too
+		//
+		if (boost::algorithm::equals(table, "TDevice")) {
+			switch (attr.first) {
+			case 0:
+				//	change name
+				db.modify("TGateway", key, cyng::param_factory("name", attr.second), origin);
+				break;
+			case 3:
+				//	change description
+				db.modify("TGateway", key, cyng::param_factory("descr", attr.second), origin);
+				break;
+			default:
+				break;
+			}
+		}
+
+		//
+		//	update cache
+		//
 		if (!db.modify(table, key, std::move(attr), origin))
 		{
 			CYNG_LOG_WARNING(logger, "db.res.modify.by.attr failed "

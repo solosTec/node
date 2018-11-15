@@ -219,7 +219,9 @@ namespace node
 
 		void server::close_clients()
 		{
-			CYNG_LOG_INFO(logger_, "close clients");
+			CYNG_LOG_INFO(logger_, "close "
+				<< client_map_.size()
+				<< " clients");
 
 			//
 			// close all clients
@@ -230,12 +232,23 @@ namespace node
 			//
 			//	wait for pending ipt connections
 			//
-			CYNG_LOG_TRACE(logger_, "server is waiting for clients shutdown");
-			cv_sessions_closed_.wait(lock, [this] {
+			CYNG_LOG_TRACE(logger_, "server is waiting for "
+				<< client_map_.size()
+				<< " clients to shutdown");
+			if (cv_sessions_closed_.wait_for(lock, timeout_, [this] {
 				return client_map_.empty();
-			});
-			CYNG_LOG_INFO(logger_, "server shutdown complete");
+			})) {
 
+				//
+				//	all clients stopped
+				//
+				CYNG_LOG_INFO(logger_, "server shutdown complete");
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "server shutdown timeout. "
+					<< client_map_.size()
+					<< " clients still running");
+			}
 		}
 
 		void server::close_acceptor()

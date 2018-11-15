@@ -27,6 +27,11 @@ namespace node
 	bool create_table_config(cyng::store::db&);
 	bool create_table_sys_msg(cyng::store::db&);
 	bool create_table_csv(cyng::store::db&);
+
+	/**
+	 * dash/s uses a different scheme
+	 */
+	bool create_table_gateway(cyng::store::db&);
 }
 
 #endif

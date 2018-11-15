@@ -15,6 +15,7 @@
 #include <cyng/tuple_cast.hpp>
 #include <cyng/parser/buffer_parser.h>
 #include <cyng/dom/algorithm.h>
+#include <cyng/io/io_buffer.h>
 
 #include <boost/uuid/nil_generator.hpp>
 
@@ -105,7 +106,7 @@ namespace node
 #endif
 
 
-		}, cyng::store::read_access("_Session")
+		}	, cyng::store::read_access("_Session")
 			, cyng::store::read_access("TGateway"));
 	}
 
@@ -235,10 +236,12 @@ namespace node
 			}
 		}, cyng::store::read_access("_Cluster"));
 
-		//
-		//	update TMeter table (experimental)
-		//
 		if (boost::algorithm::equals(std::get<4>(tpl), "root-active-devices")) {
+
+			//
+			//	update TMeter table
+			//
+
 			//	%(("class":---),("meter":01-e61e-13090016-3c-07),("number":0009),("timestamp":2018-11-07 12:04:46.00000000),("type":00000000))
 			const auto ident = cyng::find_value<std::string>(std::get<5>(tpl), "ident", "");
 			const auto meter = cyng::find_value<std::string>(std::get<5>(tpl), "meter", "");
@@ -274,6 +277,16 @@ namespace node
 					}
 				}, cyng::store::write_access("TMeter"));
 			}
+		}
+		else if (boost::algorithm::equals(std::get<4>(tpl), "root-wMBus-status")) {
+
+			//
+			//	update TGateway table
+			//
+			//	"id" contains the "mbus" ID
+			cyng::buffer_t tmp;
+			const auto id = cyng::find_value(std::get<5>(tpl), "id", tmp);
+			CYNG_LOG_INFO(logger_, "Update M-Bus ID: " << cyng::io::to_hex(id));
 		}
 	}
 

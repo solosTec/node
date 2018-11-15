@@ -365,6 +365,8 @@ namespace node
 				return v;
 			}
 
+			std::function<std::string()> get_read_string_f();
+
 		private:
 			/**
 			 * call this method if parsing is complete
@@ -406,7 +408,7 @@ namespace node
 			//	function objects instead of function results
 			//	in the argument list
 			//
-			std::function<std::string()> f_read_string;
+			//std::function<std::string()> f_read_string;
 			std::function<std::uint8_t()> f_read_uint8;
 			std::function<std::uint16_t()> f_read_uint16;
 			std::function<std::uint32_t()> f_read_uint32;
