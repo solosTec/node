@@ -7,8 +7,11 @@
 
 #include "sml_to_db_consumer.h"
 #include "../message_ids.h"
+#include "../../../../../nodes/shared/db/db_meta.h"
+
 #include <smf/sml/defs.h>
 #include <NODE_project_info.h>
+
 #include <cyng/async/task/base_task.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -372,19 +375,13 @@ namespace node
 			//	msgIdx - message index
 			//	status - M-Bus status
 			//
-			meta_map.emplace("TSMLMeta", cyng::table::make_meta_table<1, 12>("TSMLMeta",
-				{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target", "profile" },
-				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING },
-				{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32, 24 }));
+			meta_map.emplace("TSMLMeta", TSMLMeta());
 
 			//
 			//	unitCode - physical unit
 			//	unitName - descriptiv
 			//	
-			meta_map.emplace("TSMLData", cyng::table::make_meta_table<2, 6>("TSMLData",
-				{ "pk", "OBIS", "unitCode", "unitName", "dataType", "scaler", "val", "result" },
-				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT8, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_INT32, cyng::TC_INT64, cyng::TC_STRING },
-				{ 36, 24, 0, 64, 16, 0, 0, 512 }));
+			meta_map.emplace("TSMLData", TSMLData());
 		}
 		return meta_map;
 	}

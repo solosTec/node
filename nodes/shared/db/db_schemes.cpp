@@ -240,15 +240,17 @@ namespace node
 
 	bool create_table_csv(cyng::store::db& db)
 	{
-		return db.create_table(cyng::table::make_meta_table<1, 8>("_CSV",
+		return db.create_table(cyng::table::make_meta_table<1, 10>("_CSV",
 			{ "tag"			//	[uuid] client session - primary key 
-			, "format"		//	[string] SMF/IEC
+			, "format"		//	[string] SML/IEC
 			, "config"		//	[string] local, master, mixed
 			, "offset"		//	[u32] minutes after midnight
 			, "frame"		//	[u32] time frame in minutes
 			, "start15min"	//	[ts] start time of 15 min report
+			, "start60min"	//	[ts] start time of 60 min report
 			, "start24h"	//	[ts] start time of 24h report
 			, "srvCount15min"	//	[size] number of servers with 15 min push
+			, "srvCount60min"	//	[size] number of servers with 60 min push
 			, "srvCount24h"		//	[size] number of servers with 24 h push
 			},
 			{ cyng::TC_UUID			//	tag
@@ -257,9 +259,11 @@ namespace node
 			, cyng::TC_MINUTE		//	offset
 			, cyng::TC_MINUTE		//	frame
 			, cyng::TC_TIME_POINT	//	15minStart
+			, cyng::TC_TIME_POINT	//	60minStart
 			, cyng::TC_TIME_POINT	//	24hStart
-			, cyng::TC_UINT64		//	srvCount
-			, cyng::TC_UINT64		//	combinations
+			, cyng::TC_UINT64		//	srvCount15min
+			, cyng::TC_UINT64		//	srvCount60min
+			, cyng::TC_UINT64		//	srvCount24h
 			},
 			{ 36, 16, 16, 0, 0, 0, 0, 0, 0 }));
 	}

@@ -14,6 +14,12 @@ set (node_ipt_store_h
 
 )
 
+set (node_ipt_store_schemes
+
+	nodes/shared/db/db_meta.h
+	nodes/shared/db/db_meta.cpp
+)
+
 set (node_ipt_store_info
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
@@ -104,6 +110,7 @@ source_group("exporter" FILES ${node_ipt_store_exporter})
 source_group("service" FILES ${node_ipt_store_service})
 source_group("info" FILES ${node_ipt_store_info})
 source_group("processors" FILES ${node_ipt_store_processors})
+source_group("schemes" FILES ${node_ipt_store_schemes})
 
 
 # define the main program
@@ -115,6 +122,7 @@ set (node_ipt_store
   ${node_ipt_store_service}
   ${node_ipt_store_info}
   ${node_ipt_store_processors}
+  ${node_ipt_store_schemes}
 )
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)

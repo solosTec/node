@@ -129,7 +129,7 @@ namespace node
                 << d.count()
 				<< " days" );
 
-            base_.mux_.post(tsk_db_, 1, cyng::tuple_factory(tp, static_cast<std::int32_t>(d.count())));
+            base_.mux_.post(tsk_db_, 2, cyng::tuple_factory(tp, static_cast<std::int32_t>(d.count())));
 
 		}
         else {
@@ -153,7 +153,7 @@ namespace node
                 << tmp.tm_mday
                 << " days" );
 
-            base_.mux_.post(tsk_db_, 1, cyng::tuple_factory(tp, static_cast<std::int32_t>(tmp.tm_mday)));
+            base_.mux_.post(tsk_db_, 2, cyng::tuple_factory(tp, static_cast<std::int32_t>(tmp.tm_mday)));
 
         }
 	}
@@ -170,7 +170,7 @@ namespace node
 			<< d.count()
 			<< " days");
 
-		base_.mux_.post(tsk_db_, 1, cyng::tuple_factory(next_trigger_tp_, d.count()));
+		base_.mux_.post(tsk_db_, 2, cyng::tuple_factory(next_trigger_tp_, d.count()));
 
 	}
 

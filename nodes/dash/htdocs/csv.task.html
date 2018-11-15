@@ -109,9 +109,11 @@
                     <th class="sml-col-csv-format">Format</th>
                     <th class="sml-col-csv-offset">Offset</th>
                     <th class="sml-col-csv-frame">Frame</th>
-                    <th class="sml-col-csv-15min">Start (15min)</th>
-                    <th class="sml-col-csv-24h">Start (24h)</th>
+                    <th class="sml-col-csv-15min">Last run (15min)</th>
+                    <th class="sml-col-csv-15min">Last run (60min)</th>
+                    <th class="sml-col-csv-24h">Last run (24h)</th>
                     <th class="sml-col-csv-srvCount">Server Count (15min)</th>
+                    <th class="sml-col-csv-srvCount">Server Count (60min)</th>
                     <th class="sml-col-csv-combinations">Server Count (24h)</th>
                 </tr>
             </thead>
@@ -164,8 +166,10 @@
                 { targets: 'sml-col-csv-offset', visible: true, name: 'csv-offset' },
                 { targets: 'sml-col-csv-frame', visible: true, name: 'csv-frame' },
                 { targets: 'sml-col-csv-15min', visible: true, name: 'csv-15min', render: renderDate },
+                { targets: 'sml-col-csv-60min', visible: true, name: 'csv-60min', render: renderDate },
                 { targets: 'sml-col-csv-24h', visible: true, name: 'csv-24h', render: renderDate },
                 { targets: 'sml-col-csv-srvCount15min', visible: true, name: 'csv-srvCount15min' },
+                { targets: 'sml-col-csv-srvCount60min', visible: true, name: 'csv-srvCount60min' },
                 { targets: 'sml-col-csv-srvCount24h', visible: true, name: 'csv-srvCount24h' },
             ]
         };
@@ -229,20 +233,22 @@
                                 var offset = $('<div/>').text(obj.rec.data.offset).html();
                                 var frame = $('<div/>').text(obj.rec.data.frame).html();
                                 var start15min = new Date(obj.rec.data.start15min.substring(0, 19));
+                                var start60min = new Date(obj.rec.data.start60min.substring(0, 19));
                                 var start24h = new Date(obj.rec.data.start24h.substring(0, 19));
                                 var srvCount15min = $('<div/>').text(obj.rec.data.srvCount15min).html();
+                                var srvCount60min = $('<div/>').text(obj.rec.data.srvCount60min).html();
                                 var srvCount24h = $('<div/>').text(obj.rec.data.srvCount24h).html();
-                                var rowNode = table_csv.row.add([obj.rec.key.tag, config, format, offset, frame, start15min, start24h, srvCount15min, srvCount24h]).draw().node();
+                                var rowNode = table_csv.row.add([obj.rec.key.tag, config, format, offset, frame, start15min, start60min, start24h, srvCount15min, srvCount60min, srvCount24h]).draw().node();
 
                             }
                             else if (obj.cmd == 'delete') {
                                 //  {"cmd": "delete", "channel": "config.gateway", "key": ["28754043-1f38-4318-a95e-dd9965e80895"]}
                                 table_csv.row(function (idx, data, node) {
                                     if (data[0] == obj.key) {
-                                        $('#smf-form-csv-delete-name').text("Device");
-                                        $('#smf-form-csv-update').addClass('disabled');
-                                        $('#smf-form-csv-delete').addClass('disabled');
-                                        $('#smf-form-csv-reboot').addClass('disabled');
+                                        //$('#smf-form-csv-delete-name').text("Device");
+                                        //$('#smf-form-csv-update').addClass('disabled');
+                                        //$('#smf-form-csv-delete').addClass('disabled');
+                                        //$('#smf-form-csv-reboot').addClass('disabled');
                                         //$('#smf-form-csv-srv-visible').addClass('disabled');
                                         //$('#smf-form-csv-srv-active').addClass('disabled');
 
@@ -261,14 +267,20 @@
                                         if (obj.value.start15min != null) {
                                             d[5] = new Date(obj.value.start15min.substring(0, 19));
                                         }
-                                        else if (obj.value.start24h != null) {
+                                        else if (obj.value.start60min != null) {
                                             d[6] = new Date(obj.value.start24h.substring(0, 19));
                                         }
+                                        else if (obj.value.start24h != null) {
+                                            d[7] = new Date(obj.value.start24h.substring(0, 19));
+                                        }
                                         else if (obj.value.srvCount15min != null) {
-                                            d[7] = obj.value.srvCount15min;
+                                            d[8] = obj.value.srvCount15min;
+                                        }
+                                        else if (obj.value.srvCount60min != null) {
+                                            d[9] = obj.value.srvCount60min;
                                         }
                                         else if (obj.value.srvCount24h != null) {
-                                            d[8] = obj.value.srvCount24h;
+                                            d[10] = obj.value.srvCount24h;
                                         }
                                         r.data(d);
                                         $('#smf-form-csv-delete').addClass('disabled');

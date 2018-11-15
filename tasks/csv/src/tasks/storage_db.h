@@ -24,8 +24,10 @@ namespace node
 		using msg_0 = std::tuple<std::chrono::system_clock::time_point
 			, std::chrono::hours>;
 		using msg_1 = std::tuple<std::chrono::system_clock::time_point
+			, cyng::chrono::days>;
+		using msg_2 = std::tuple<std::chrono::system_clock::time_point
 			, std::int32_t>;
-		using signatures_t = std::tuple<msg_0, msg_1>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
 
 	public:
 		storage_db(cyng::async::base_task* bt
@@ -44,7 +46,13 @@ namespace node
 			, std::chrono::hours interval);
 
 		/**
-		 * slot [1] - generate CSV file (24 h profile)
+		 * slot [1] - generate CSV file (60 min profile)
+		 */
+		cyng::continuation process(std::chrono::system_clock::time_point start
+			, cyng::chrono::days interval);
+
+		/**
+		 * slot [2] - generate CSV file (24 h profile)
 		 * 
 		 * @param end last timepoint for this months to report for
 		 * @param days number of days in the specified month
@@ -58,10 +66,13 @@ namespace node
 		static cyng::table::mt_table init_meta_map(std::string const&);
 
 	private:
-		void generate_csv_files_daily(std::chrono::system_clock::time_point start
+		void generate_csv_15min(std::chrono::system_clock::time_point start
 			, std::chrono::hours interval);
 
-		void generate_csv_files_monthly(std::chrono::system_clock::time_point start
+		void generate_csv_60min(std::chrono::system_clock::time_point start
+			, cyng::chrono::days interval);
+
+		void generate_csv_24h(std::chrono::system_clock::time_point start
 			, std::int32_t days);
 
 		/**
@@ -127,6 +138,7 @@ namespace node
 			, cyng::db::statement_ptr stmt);
 
 		void update_csv_15min(std::chrono::system_clock::time_point start, std::size_t size);
+		void update_csv_60min(std::chrono::system_clock::time_point start, std::size_t size);
 		void update_csv_24h(std::chrono::system_clock::time_point start, std::size_t size);
 
 	private:

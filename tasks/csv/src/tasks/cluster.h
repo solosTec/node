@@ -71,7 +71,10 @@ namespace node
 		const std::chrono::minutes frame_;
 		const std::string format_;
 
-		std::size_t profile_15_min_tsk_, profile_24_h_tsk_, storage_task_;
+		std::size_t profile_15_min_tsk_
+			, profile_60_min_tsk_
+			, profile_24_h_tsk_
+			, storage_task_;
 
 	};	
 }

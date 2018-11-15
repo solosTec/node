@@ -7,7 +7,10 @@
 
 #include "storage_db.h"
 #include "profile_15_min.h"
+#include "profile_60_min.h"
 #include "profile_24_h.h"
+#include "../../../../nodes/shared/db/db_meta.h"
+
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <smf/sml/obis_io.h>
@@ -89,7 +92,7 @@ namespace node
 
 	}
 
-	//	slot 0 - create 1 daily CSV
+	//	slot [0] - generate CSV file (15 min profile)
 	cyng::continuation storage_db::process(std::chrono::system_clock::time_point start
 		, std::chrono::hours interval)
 	{
@@ -97,7 +100,7 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> generate daily CSV file from "
+			<< "> generate 15 min profile from "
 			<< cyng::to_str(start)
 			<< " to "
 			<< cyng::to_str(start + interval));
@@ -142,7 +145,7 @@ namespace node
 			//
 			//	generate CSV files
 			//
-			generate_csv_files_daily(start, interval);
+			generate_csv_15min(start, interval);
 
 			//
 			//	update task state
@@ -155,6 +158,70 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
+	//	slot [1] - generate CSV file (60 min profile)
+	cyng::continuation storage_db::process(std::chrono::system_clock::time_point start
+		, cyng::chrono::days interval)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> generate 60 min profile");
+
+		if (!pool_.start(cfg_db_))
+		{
+			std::stringstream ss;
+			ss
+				<< "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> failed to open connection pool"
+				;
+			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_FATAL, ss.str()));
+			CYNG_LOG_FATAL(logger_, ss.str());
+			return cyng::continuation::TASK_YIELD;
+		}
+		else
+		{
+			CYNG_LOG_INFO(logger_, "DB connection pool is running with "
+				<< pool_.get_pool_size()
+				<< " connection(s)");
+
+			std::stringstream ss;
+			ss
+				<< "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> connection pool is running with "
+				<< pool_.get_pool_size()
+				<< " connection(s)"
+				;
+			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_DEBUG, ss.str()));
+
+			//
+			//	update task state
+			//
+			state_ = TASK_STATE_OPEN_;
+
+			//
+			//	generate CSV files
+			//
+			generate_csv_60min(start, interval);
+
+			//
+			//	update task state
+			//
+			pool_.stop();
+			state_ = TASK_STATE_WAITING_;
+
+		}
+
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	slot [2] - generate CSV file (24 h profile)
 	cyng::continuation storage_db::process(std::chrono::system_clock::time_point end
 		, std::int32_t days)
 	{
@@ -162,7 +229,7 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> generate monthly CSV file until "
+			<< "> generate 24 h profile until "
 			<< cyng::to_str(end)
 			<< " with "
 			<< days
@@ -209,7 +276,7 @@ namespace node
 			//
 			//	generate CSV files
 			//
-			generate_csv_files_monthly(end, (days < 29) ? 29 : days);
+			generate_csv_24h(end, (days < 29) ? 29 : days);
 
 			//
 			//	update task state
@@ -221,7 +288,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void storage_db::generate_csv_files_daily(std::chrono::system_clock::time_point start
+	void storage_db::generate_csv_15min(std::chrono::system_clock::time_point start
 		, std::chrono::hours interval)
 	{
 		//
@@ -266,7 +333,7 @@ namespace node
 			//
 			// update _CSV table
 			//
-			update_csv_15min(start, server_ids.size());
+			update_csv_15min(std::chrono::system_clock::now(), server_ids.size());
 
 
 			for (auto id : server_ids) {
@@ -289,7 +356,67 @@ namespace node
 		}
 	}
 
-	void storage_db::generate_csv_files_monthly(std::chrono::system_clock::time_point end
+	void storage_db::generate_csv_60min(std::chrono::system_clock::time_point start
+		, cyng::chrono::days interval)
+	{
+		auto pos = meta_map_.find("TSMLMeta");
+		if (pos != meta_map_.end())
+		{
+			//
+			//	open connection to database
+			//
+			auto s = pool_.get_session();
+
+			//
+			//	prepare meta data and query statements
+			//
+			cyng::table::meta_table_ptr meta = (*pos).second;
+			cyng::sql::command cmd(meta, s.get_dialect());
+			auto stmt = s.create_statement();
+
+
+			//
+			//	get all unique server/OBIS combinations in this time frame
+			//
+			const auto end = std::chrono::system_clock::now();
+			auto start = end - interval;
+
+			//
+			//	get all server ID in this time frame
+			//	OBIS_PROFILE_24_HOUR - 81 81 C7 86 13 FF
+			//
+			const auto profile_60_min = cyng::io::to_hex(sml::OBIS_PROFILE_60_MINUTE.to_buffer());
+			std::vector<std::string> server_ids = get_server_ids(start, end, profile_60_min, cmd, stmt);
+
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> 60min profile from "
+				<< cyng::to_str(start)
+				<< " to "
+				<< cyng::to_str(end)
+				<< " has "
+				<< server_ids.size()
+				<< " unique server IDs");
+
+
+			//
+			// update _CSV table
+			//
+			update_csv_60min(std::chrono::system_clock::now(), server_ids.size());
+
+			//
+			//	no file will be generated (yet)
+			//
+
+			stmt->close();
+		}
+
+	}
+
+	void storage_db::generate_csv_24h(std::chrono::system_clock::time_point end
 		, std::int32_t days)
 	{
 		auto pos = meta_map_.find("TSMLMeta");
@@ -343,7 +470,7 @@ namespace node
 			//
 			// update _CSV table
 			//
-			update_csv_24h(start, server_ids.size());
+			update_csv_24h(std::chrono::system_clock::now(), server_ids.size());
 
 			//
 			//	open output file
@@ -901,6 +1028,23 @@ namespace node
 			, bus_->vm_.tag()));
 	}
 
+	void storage_db::update_csv_60min(std::chrono::system_clock::time_point start, std::size_t size)
+	{
+		auto key = cyng::table::key_generator(bus_->vm_.tag());
+
+		bus_->vm_.async_run(bus_req_db_modify("_CSV"
+			, cyng::table::key_generator(bus_->vm_.tag())	//	key
+			, cyng::param_factory("start60min", start)
+			, 0
+			, bus_->vm_.tag()));
+
+		bus_->vm_.async_run(bus_req_db_modify("_CSV"
+			, cyng::table::key_generator(bus_->vm_.tag())	//	key
+			, cyng::param_factory("srvCount60min", size)
+			, 0
+			, bus_->vm_.tag()));
+	}
+
 	void storage_db::update_csv_24h(std::chrono::system_clock::time_point start, std::size_t size)
 	{
 		auto key = cyng::table::key_generator(bus_->vm_.tag());
@@ -1000,19 +1144,13 @@ namespace node
 			//	msgIdx - message index
 			//	status - M-Bus status
 			//
-			meta_map.emplace("TSMLMeta", cyng::table::make_meta_table<1, 12>("TSMLMeta",
-				{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target", "profile" },
-				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING },
-				{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32, 24 }));
+			meta_map.emplace("TSMLMeta", TSMLMeta());
 
 			//
 			//	unitCode - physical unit
 			//	unitName - descriptiv
 			//	
-			meta_map.emplace("TSMLData", cyng::table::make_meta_table<2, 6>("TSMLData",
-				{ "pk", "OBIS", "unitCode", "unitName", "dataType", "scaler", "val", "result" },
-				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT8, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_INT32, cyng::TC_INT64, cyng::TC_STRING },
-				{ 36, 24, 0, 64, 16, 0, 0, 512 }));
+			meta_map.emplace("TSMLData", TSMLData());
 		}
 		return meta_map;
 	}

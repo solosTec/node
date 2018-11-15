@@ -12,6 +12,12 @@ set (task_csv_h
 	tasks/csv/src/controller.h
 )
 
+set (task_csv_schemes
+
+	nodes/shared/db/db_meta.h
+	nodes/shared/db/db_meta.cpp
+)
+
 set (task_csv_info
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
@@ -36,6 +42,8 @@ set (task_csv_tasks
 	tasks/csv/src/tasks/storage_db.cpp
 	tasks/csv/src/tasks/profile_15_min.h
 	tasks/csv/src/tasks/profile_15_min.cpp
+	tasks/csv/src/tasks/profile_60_min.h
+	tasks/csv/src/tasks/profile_60_min.cpp
 	tasks/csv/src/tasks/profile_24_h.h
 	tasks/csv/src/tasks/profile_24_h.cpp
 )
@@ -71,6 +79,7 @@ endif()
 source_group("tasks" FILES ${task_csv_tasks})
 source_group("service" FILES ${task_csv_service})
 source_group("info" FILES ${task_csv_info})
+source_group("schemes" FILES ${task_csv_schemes})
 
 
 # define the main program
@@ -80,6 +89,7 @@ set (task_csv
   ${task_csv_info}
   ${task_csv_tasks}
   ${task_csv_service}
+  ${task_csv_schemes}
 )
 
 if(WIN32)

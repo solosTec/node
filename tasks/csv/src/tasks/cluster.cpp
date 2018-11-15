@@ -8,6 +8,7 @@
 #include "cluster.h"
 #include "storage_db.h"
 #include "profile_15_min.h"
+#include "profile_60_min.h"
 #include "profile_24_h.h"
 
 #include <smf/cluster/generator.h>
@@ -37,6 +38,7 @@ namespace node
 		, frame_(cyng::find_value(cfg_trigger, "frame", 7))
 		, format_(cyng::find_value<std::string>(cfg_trigger, "format", "SML"))
 		, profile_15_min_tsk_(cyng::async::NO_TASK)
+		, profile_60_min_tsk_(cyng::async::NO_TASK)
 		, profile_24_h_tsk_(cyng::async::NO_TASK)
 		, storage_task_(cyng::async::NO_TASK)
 	{
@@ -189,8 +191,16 @@ namespace node
 			, frame_
 			, format_).first;
 
+		profile_60_min_tsk_ = cyng::async::start_task_delayed<profile_60_min>(base_.mux_
+			, std::chrono::seconds(4)
+			, logger_
+			, storage_task_
+			, offset_
+			, frame_
+			, format_).first;
+
 		profile_24_h_tsk_ = cyng::async::start_task_delayed<profile_24_h>(base_.mux_
-            , std::chrono::seconds(4)
+            , std::chrono::seconds(5)
 			, logger_
 			, storage_task_
 			, offset_
@@ -213,6 +223,19 @@ namespace node
 
 			base_.mux_.stop(profile_15_min_tsk_);
 			profile_15_min_tsk_ = cyng::async::NO_TASK;
+		}
+
+		if (profile_60_min_tsk_ != cyng::async::NO_TASK) {
+
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> stop clock #"
+				<< profile_60_min_tsk_);
+
+			base_.mux_.stop(profile_60_min_tsk_);
+			profile_60_min_tsk_ = cyng::async::NO_TASK;
 		}
 
 		if (profile_24_h_tsk_ != cyng::async::NO_TASK) {
@@ -249,11 +272,13 @@ namespace node
 		bus_->vm_.async_run(bus_req_db_insert("_CSV"
 			, cyng::table::key_generator(bus_->vm_.tag())
 			, cyng::table::data_generator(format_
-				, "local"
+				, "SML"
 				, offset_
 				, frame_
 				, std::chrono::system_clock::now()
 				, std::chrono::system_clock::now()
+				, std::chrono::system_clock::now()
+				, 0u
 				, 0u
 				, 0u)
 			, 1	//	generation
