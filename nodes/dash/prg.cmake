@@ -33,21 +33,21 @@ set (node_dash_shared
 
 
 set (node_dash_assets
-	nodes/dash/htdocs/index.html
-	nodes/dash/htdocs/config.system.html
-	nodes/dash/htdocs/config.device.html
-	nodes/dash/htdocs/config.gateway.html
-	nodes/dash/htdocs/config.lora.html
-	nodes/dash/htdocs/config.meter.html
-	nodes/dash/htdocs/config.upload.html
-	nodes/dash/htdocs/config.download.html
-	nodes/dash/htdocs/status.session.html
-	nodes/dash/htdocs/status.system.html
-	nodes/dash/htdocs/status.targets.html
-	nodes/dash/htdocs/status.connections.html
-	nodes/dash/htdocs/monitor.msg.html
-	nodes/dash/htdocs/csv.task.html
-	nodes/dash/htdocs/stat.task.html
+	nodes/dash_shared/htdocs/index.html
+	nodes/dash_shared/htdocs/config.system.html
+	nodes/dash_shared/htdocs/config.device.html
+	nodes/dash_shared/htdocs/config.gateway.html
+	nodes/dash_shared/htdocs/config.lora.html
+	nodes/dash_shared/htdocs/config.meter.html
+	nodes/dash_shared/htdocs/config.upload.html
+	nodes/dash_shared/htdocs/config.download.html
+	nodes/dash_shared/htdocs/status.session.html
+	nodes/dash_shared/htdocs/status.system.html
+	nodes/dash_shared/htdocs/status.targets.html
+	nodes/dash_shared/htdocs/status.connections.html
+	nodes/dash_shared/htdocs/monitor.msg.html
+	nodes/dash_shared/htdocs/csv.task.html
+	nodes/dash_shared/htdocs/stat.task.html
 )
 
 set (node_dash_schemes

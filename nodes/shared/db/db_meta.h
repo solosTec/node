@@ -15,6 +15,10 @@ namespace node
 	cyng::table::meta_table_ptr TSMLMeta();
 	cyng::table::meta_table_ptr TSMLData();
 
+	cyng::table::meta_table_ptr gw_devices();
+	cyng::table::meta_table_ptr gw_push_ops();
+	cyng::table::meta_table_ptr gw_op_log();
+
 }
 
 #endif

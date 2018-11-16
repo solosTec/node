@@ -36,6 +36,7 @@ namespace node
 				, cyng::store::db& config_db
 				, boost::uuids::uuid tag
 				, redundancy const& cfg
+				, cyng::tuple_t const& cfg_wmbus
 				, std::string account
 				, std::string pwd
 				, std::string manufacturer
@@ -174,6 +175,11 @@ namespace node
 			 * managing redundant ipt master configurations
 			 */
 			const redundancy	config_;
+
+			/**
+			 * wireless M-Bus configuration
+			 */
+			const cyng::tuple_t cfg_wmbus_;
 
 			/**
 			 * SML parser

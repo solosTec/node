@@ -199,7 +199,7 @@ namespace node
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8443"),	//	default is 443
-						cyng::param_factory("document-root", (pwd / "nodes" / "dash" / "htdocs").string()),
+						cyng::param_factory("document-root", (pwd / "nodes" / "dash_shared" / "htdocs").string()),
 						//cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
 						cyng::param_factory("tls-pwd", "test"),
 						cyng::param_factory("tls-certificate-chain", "demo.cert"),

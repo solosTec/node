@@ -16,6 +16,14 @@ set (node_ipt_gateway_h
 	nodes/ipt/gateway/src/executor.h
 )
 
+set (node_ipt_gateway_schemes
+
+	nodes/shared/db/db_schemes.h
+	nodes/shared/db/db_schemes.cpp
+	nodes/shared/db/db_meta.h
+	nodes/shared/db/db_meta.cpp
+)
+
 set (node_ipt_gateway_info
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
@@ -86,6 +94,7 @@ source_group("tasks" FILES ${node_ipt_gateway_tasks})
 source_group("service" FILES ${node_ipt_gateway_service})
 source_group("info" FILES ${node_ipt_gateway_info})
 source_group("server" FILES ${node_ipt_gateway_server})
+source_group("schemes" FILES ${node_ipt_gateway_schemes})
 
 
 # define the main program
@@ -96,6 +105,7 @@ set (node_ipt_gateway
   ${node_ipt_gateway_service}
   ${node_ipt_gateway_info}
   ${node_ipt_gateway_server}
+  ${node_ipt_gateway_schemes}
 )
 
 if(WIN32)

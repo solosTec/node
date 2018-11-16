@@ -31,6 +31,7 @@ namespace node
 			, cyng::store::db& config_db
 			, boost::uuids::uuid tag
 			, redundancy const& cfg
+			, cyng::tuple_t const& cfg_wmbus
 			, std::string account
 			, std::string pwd
 			, std::string manufacturer
@@ -46,6 +47,7 @@ namespace node
 			, base_(*btp)
 			, logger_(logger)
 			, config_(cfg)
+			, cfg_wmbus_(cfg_wmbus)
 			, parser_([this](cyng::vector_t&& prg) {
 				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
 #ifdef _DEBUG

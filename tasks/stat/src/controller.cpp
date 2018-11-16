@@ -96,19 +96,19 @@ namespace node
 						//	initialize logger
 						//
 #if BOOST_OS_LINUX
-						auto logger = cyng::logging::make_sys_logger("task:csv", true);
+						auto logger = cyng::logging::make_sys_logger("task:stat", true);
 #else
 						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 						auto dom = cyng::make_reader(vec[0]);
 						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
 
 						auto logger = (console)
-							? cyng::logging::make_console_logger(mux.get_io_service(), "task:csv")
-							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "task-csv.log"))
+							? cyng::logging::make_console_logger(mux.get_io_service(), "task:stat")
+							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "task-stat.log"))
 							;
 #ifdef _DEBUG
 						if (!console) {
-							std::cout << "log file see: " << (log_dir / "task-csv.log") << std::endl;
+							std::cout << "log file see: " << (log_dir / "task-stat.log") << std::endl;
 						}
 #endif
 #endif
@@ -271,22 +271,22 @@ namespace node
 		{
 		case ERROR_SERVICE_ALREADY_RUNNING:
 			//	An instance of the service is already running.
-			::OutputDebugString("An instance of the [csv] service is already running.");
+			::OutputDebugString("An instance of the [stat] service is already running.");
 			break;
 		case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
 			//
 			//	The service process could not connect to the service controller.
 			//	Typical error message, when running in console mode.
 			//
-			::OutputDebugString("***Error 1063: The [csv] service process could not connect to the service controller.");
+			::OutputDebugString("***Error 1063: The [stat] service process could not connect to the service controller.");
 			std::cerr
-				<< "***Error 1063: The [csv] service could not connect to the service controller."
+				<< "***Error 1063: The [stat] service could not connect to the service controller."
 				<< std::endl
 				;
 			break;
 		case ERROR_SERVICE_NOT_IN_EXE:
 			//	The executable program that this service is configured to run in does not implement the service.
-			::OutputDebugString("The [csv] service is configured to run in does not implement the service.");
+			::OutputDebugString("The [stat] service is configured to run in does not implement the service.");
 			break;
 		default:
 		{

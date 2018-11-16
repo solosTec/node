@@ -9,8 +9,10 @@
 #include "server.h"
 #include <NODE_project_info.h>
 #include "tasks/network.h"
+#include "../../../../nodes/shared/db/db_meta.h"
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/status.h>
+
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>
@@ -54,7 +56,8 @@ namespace node
 		, sml::status&
 		, cyng::store::db&
 		, boost::uuids::uuid tag
-		, ipt::master_config_t const& cfg
+		, ipt::master_config_t const& cfg_ipt
+		, cyng::tuple_t const& cfg_wmbus
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
@@ -247,6 +250,21 @@ namespace node
 						cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ...)
 					))
 
+					//	wireless M-Bus
+					//	stty -F /dev/ttyAPP0 raw
+					//	stty -F /dev/ttyAPP0  -echo -echoe -echok
+					//	stty -F /dev/ttyAPP0 115200 
+					//	cat /dev/ttyAPP0 | hexdump 
+					, cyng::param_factory("wMBus", cyng::tuple_factory(
+#if BOOST_OS_WINDOWS
+						cyng::param_factory("enabled", false),
+#else
+						cyng::param_factory("enabled", true),
+#endif
+						cyng::param_factory("input", "/dev/ttyAPP0"),
+						cyng::param_factory("speed", 115200)
+					))
+
 					, cyng::param_factory("ipt", cyng::vector_factory({
 						cyng::tuple_factory(
 							cyng::param_factory("host", "127.0.0.1"),
@@ -436,6 +454,12 @@ namespace node
 		vec = cyng::value_cast(dom.get("ipt"), vec);
 		auto cfg_ipt = ipt::load_cluster_cfg(vec);
 
+		//
+		//	get wMBus configuration
+		//
+		cyng::tuple_t cfg_wmbus;
+		cfg_wmbus = cyng::value_cast(dom.get("wMBus"), cfg_wmbus);
+
 		/**
 		 * global data cache
 		 */
@@ -452,6 +476,7 @@ namespace node
 			, config_db
 			, tag
 			, cfg_ipt
+			, cfg_wmbus
 			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
 			, manufacturer
@@ -540,7 +565,8 @@ namespace node
 		, sml::status& status
 		, cyng::store::db& config_db
 		, boost::uuids::uuid tag
-		, ipt::master_config_t const& cfg
+		, ipt::master_config_t const& cfg_ipt
+		, cyng::tuple_t const& cfg_wmbus
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
@@ -548,7 +574,7 @@ namespace node
 		, std::uint32_t serial
 		, cyng::mac48 mac)
 	{
-		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg.size());
+		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg_ipt.size());
 
 		cyng::async::start_task_delayed<ipt::network>(mux
 			, std::chrono::seconds(1)
@@ -556,7 +582,8 @@ namespace node
 			, status
 			, config_db
 			, tag
-			, cfg
+			, cfg_ipt
+			, cfg_wmbus
 			, account
 			, pwd
 			, manufacturer
@@ -570,138 +597,19 @@ namespace node
 	{
 		CYNG_LOG_TRACE(logger, "init configuration db");
 
-		if (!config.create_table(cyng::table::make_meta_table<1, 12>("devices",
-			{ "serverID"			//	server ID
-			, "lastSeen"	//	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
-			, "class"		//	device class (always "---" == 2D 2D 2D)
-			, "visible"
-			, "active"
-			, "descr"
-			//	---
-			, "status"	//	"Statusinformation: 00"
-			, "mask"	//	"Bitmaske: 00 00"
-			, "interval"	//	"Zeit zwischen zwei Datensätzen: 49000"
-							//	--- optional data
-			, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
-			, "aes"	//	AES-Schlüssel: "
-			, "user"
-			, "pwd"
-			},
-			{ cyng::TC_BUFFER		//	server ID
-			, cyng::TC_TIME_POINT	//	last seen
-			, cyng::TC_STRING		//	device class
-			, cyng::TC_BOOL			//	visible
-			, cyng::TC_BOOL			//	active
-			, cyng::TC_STRING		//	description
-
-			, cyng::TC_UINT64		//	status (81 00 60 05 00 00)
-			, cyng::TC_BUFFER		//	bit mask (81 81 C7 86 01 FF)
-			, cyng::TC_UINT32		//	interval (milliseconds)
-			, cyng::TC_BUFFER		//	pubKey
-			, cyng::TC_BUFFER		//	aes
-			, cyng::TC_STRING		//	user
-			, cyng::TC_STRING		//	pwd
-			},
-			{ 9
-			, 0
-			, 16	//	device class
-			, 0		//	visible
-			, 0		//	active
-			, 128	//	description
-
-			, 0		//	status
-			, 8		//	mask
-			, 0		//	interval
-			, 16	//	pubKey
-			, 32	//	aes
-			, 32	//	user
-			, 32	//	pwd
-			})))
+		if (!config.create_table(gw_devices()))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
 		}
 
-		if (!config.create_table(cyng::table::make_meta_table<2, 6>("push.ops",
-			{ "serverID"	//	server ID
-			, "idx"			//	index
-			//	-- body
-			, "interval"	//	seconds
-			, "delay"		//	seconds
-			, "target"		//	target name
-			, "source"		//	push source (profile, installation parameters, list of visible sensors/actors)
-			, "profile"		//	"Lastgang"
-			, "task"		//	associated task id
-
-			},
-			{ cyng::TC_BUFFER		//	server ID
-			, cyng::TC_UINT8		//	index
-									//	-- body
-			, cyng::TC_UINT32		//	interval [seconds]
-			, cyng::TC_UINT32		//	delay [seconds]
-			, cyng::TC_STRING		//	target
-			, cyng::TC_UINT8		//	source
-			, cyng::TC_UINT8		//	profile
-			, cyng::TC_UINT64		//	task
-
-			},
-			{ 9		//	server ID
-			, 0		//	index
-					//	-- body
-			, 0		//	interval [seconds]
-			, 0		//	delay
-			, 64	//	target
-			, 0		//	source
-			, 0		//	profile
-			, 0		//	task id
-			})))
+		if (!config.create_table(gw_push_ops()))
 		{
-			CYNG_LOG_FATAL(logger, "cannot create table devices");
+			CYNG_LOG_FATAL(logger, "cannot create table push.ops");
 		}
 
-		if (!config.create_table(cyng::table::make_meta_table<1, 10>("op.log",
-			{ "idx"			//	index
-							//	-- body
-			, "actTime"		//	actual time
-			, "regPeriod"	//	register period
-			, "valTime"		//	val time
-			, "status"		//	status word
-			, "event"		//	event code
-			, "peer"		//	peer address
-			, "utc"			//	UTC time
-			, "serverId"	//	server ID (meter)
-			, "target"		//	target name
-			, "pushNr"		//	operation number
-			},
-			{ cyng::TC_UINT64		//	index 
-									//	-- body
-			, cyng::TC_TIME_POINT	//	actTime
-			, cyng::TC_UINT32		//	regPeriod
-			, cyng::TC_TIME_POINT	//	valTime
-			, cyng::TC_UINT64		//	status
-			, cyng::TC_UINT32		//	event
-			, cyng::TC_BUFFER		//	peer_address
-			, cyng::TC_TIME_POINT	//	UTC time
-			, cyng::TC_BUFFER		//	serverId
-			, cyng::TC_STRING		//	target
-			, cyng::TC_UINT8		//	push_nr
-
-			},
-			{ 0		//	index
-					//	-- body
-			, 0		//	actTime
-			, 0		//	regPeriod
-			, 0		//	valTime
-			, 0		//	status
-			, 0		//	event
-			, 13	//	peer_address
-			, 0		//	utc
-			, 23	//	serverId
-			, 64	//	target
-			, 0		//	push_nr
-			})))
+		if (!config.create_table(gw_op_log()))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table op.log");
 		}
-
 	}
 }

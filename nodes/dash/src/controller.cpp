@@ -194,7 +194,7 @@ namespace node
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8080"),
-						cyng::param_factory("document-root", (pwd / "nodes" / "dash" / "htdocs").string()),
+						cyng::param_factory("document-root", (pwd / "nodes" / "dash_shared" / "htdocs").string()),
 #ifdef NODE_SSL_INSTALLED
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
