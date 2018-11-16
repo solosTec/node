@@ -3,6 +3,7 @@ set (ipt_bus_lib)
 
 set (ipt_bus_cpp
 
+	lib/ipt/bus/src/bus_interface.cpp
 	lib/ipt/bus/src/bus.cpp
 	lib/ipt/bus/src/generator.cpp
 	lib/ipt/bus/src/config.cpp
@@ -10,10 +11,16 @@ set (ipt_bus_cpp
 
 set (ipt_bus_h
 	src/main/include/smf/ipt/defs.h
+	src/main/include/smf/ipt/bus_interface.h
 	src/main/include/smf/ipt/bus.h
 	src/main/include/smf/ipt/generator.h
 	src/main/include/smf/ipt/config.h
 )
+
+if(${PROJECT_NAME}_SSL_SUPPORT)
+	list(APPEND ipt_bus_cpp lib/ipt/bus/src/bus_tls.cpp)
+	list(APPEND ipt_bus_h src/main/include/smf/ipt/bus_tls.h)
+endif()
 
 set (ipt_bus_tasks
 	lib/ipt/bus/src/tasks/open_connection.h

@@ -5,7 +5,7 @@
  *
  */
 
-#include <smf/ipt/bus.h>
+#include <smf/ipt/bus_tls.h>
 #include <smf/ipt/scramble_key_io.hpp>
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/generator.h>
@@ -32,7 +32,7 @@ namespace node
 {
 	namespace ipt
 	{
-		bus::bus(cyng::logging::log_ptr logger
+		bus_tls::bus_tls(cyng::logging::log_ptr logger
 			, cyng::async::mux& mux
 			, boost::uuids::uuid tag
 			, scramble_key const& sk
@@ -108,33 +108,33 @@ namespace node
 			//
 			//	login response
 			//
-			vm_.register_function("ipt.res.login.public", 4, std::bind(&bus::ipt_res_login, this, std::placeholders::_1, false));
-			vm_.register_function("ipt.res.login.scrambled", 4, std::bind(&bus::ipt_res_login, this, std::placeholders::_1, true));
+			vm_.register_function("ipt.res.login.public", 4, std::bind(&bus_tls::ipt_res_login, this, std::placeholders::_1, false));
+			vm_.register_function("ipt.res.login.scrambled", 4, std::bind(&bus_tls::ipt_res_login, this, std::placeholders::_1, true));
 
-			vm_.register_function("ipt.res.register.push.target", 4, std::bind(&bus::ipt_res_register_push_target, this, std::placeholders::_1));
-			vm_.register_function("ipt.res.deregister.push.target", 4, std::bind(&bus::ipt_res_deregister_push_target, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.register.push.target", 5, std::bind(&bus::ipt_req_register_push_target, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.deregister.push.target", 3, std::bind(&bus::ipt_req_deregister_push_target, this, std::placeholders::_1));
-			vm_.register_function("ipt.res.open.push.channel", 8, std::bind(&bus::ipt_res_open_channel, this, std::placeholders::_1));
-			vm_.register_function("ipt.res.close.push.channel", 4, std::bind(&bus::ipt_res_close_channel, this, std::placeholders::_1));
-			vm_.register_function("ipt.res.transfer.pushdata", 0, std::bind(&bus::ipt_res_transfer_push_data, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.transmit.data", 1, std::bind(&bus::ipt_req_transmit_data, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.open.connection", 1, std::bind(&bus::ipt_req_open_connection, this, std::placeholders::_1));
-			vm_.register_function("ipt.res.open.connection", 2, std::bind(&bus::ipt_res_open_connection, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.close.connection", 2, std::bind(&bus::ipt_req_close_connection, this, std::placeholders::_1));
-			vm_.register_function("ipt.res.close.connection", 3, std::bind(&bus::ipt_res_close_connection, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.register.push.target", 4, std::bind(&bus_tls::ipt_res_register_push_target, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.deregister.push.target", 4, std::bind(&bus_tls::ipt_res_deregister_push_target, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.register.push.target", 5, std::bind(&bus_tls::ipt_req_register_push_target, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.deregister.push.target", 3, std::bind(&bus_tls::ipt_req_deregister_push_target, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.open.push.channel", 8, std::bind(&bus_tls::ipt_res_open_channel, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.close.push.channel", 4, std::bind(&bus_tls::ipt_res_close_channel, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.transfer.pushdata", 0, std::bind(&bus_tls::ipt_res_transfer_push_data, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.transmit.data", 1, std::bind(&bus_tls::ipt_req_transmit_data, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.open.connection", 1, std::bind(&bus_tls::ipt_req_open_connection, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.open.connection", 2, std::bind(&bus_tls::ipt_res_open_connection, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.close.connection", 2, std::bind(&bus_tls::ipt_req_close_connection, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.close.connection", 3, std::bind(&bus_tls::ipt_res_close_connection, this, std::placeholders::_1));
 
-			vm_.register_function("ipt.req.protocol.version", 2, std::bind(&bus::ipt_req_protocol_version, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.software.version", 2, std::bind(&bus::ipt_req_software_version, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.device.id", 2, std::bind(&bus::ipt_req_device_id, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.net.stat", 2, std::bind(&bus::ipt_req_net_stat, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.ip.statistics", 2, std::bind(&bus::ipt_req_ip_statistics, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.dev.auth", 2, std::bind(&bus::ipt_req_dev_auth, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.dev.time", 2, std::bind(&bus::ipt_req_dev_time, this, std::placeholders::_1));
-			vm_.register_function("ipt.req.transfer.pushdata", 7, std::bind(&bus::ipt_req_transfer_pushdata, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.protocol.version", 2, std::bind(&bus_tls::ipt_req_protocol_version, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.software.version", 2, std::bind(&bus_tls::ipt_req_software_version, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.device.id", 2, std::bind(&bus_tls::ipt_req_device_id, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.net.stat", 2, std::bind(&bus_tls::ipt_req_net_stat, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.ip.statistics", 2, std::bind(&bus_tls::ipt_req_ip_statistics, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.dev.auth", 2, std::bind(&bus_tls::ipt_req_dev_auth, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.dev.time", 2, std::bind(&bus_tls::ipt_req_dev_time, this, std::placeholders::_1));
+			vm_.register_function("ipt.req.transfer.pushdata", 7, std::bind(&bus_tls::ipt_req_transfer_pushdata, this, std::placeholders::_1));
 
-			vm_.register_function("bus.store.relation", 2, std::bind(&bus::store_relation, this, std::placeholders::_1));
-			vm_.register_function("bus.remove.relation", 1, std::bind(&bus::remove_relation, this, std::placeholders::_1));
+			vm_.register_function("bus_tls.store.relation", 2, std::bind(&bus_tls::store_relation, this, std::placeholders::_1));
+			vm_.register_function("bus_tls.remove.relation", 1, std::bind(&bus_tls::remove_relation, this, std::placeholders::_1));
 
 			//
 			//	statistical data
@@ -143,14 +143,14 @@ namespace node
 
 		}
 
-		void bus::start()
+		void bus_tls::start()
 		{
 			CYNG_LOG_TRACE(logger_, "start ipt client");
 			transition(STATE_INITIAL_);
             do_read();
 		}
 
-        void bus::stop()
+        void bus_tls::stop()
         {
             //
             //  update state
@@ -162,7 +162,7 @@ namespace node
 				//	stop all runing tasks
 				//
 				mux_.size([this](std::size_t size) {
-					CYNG_LOG_INFO(logger_, "ipt bus "
+					CYNG_LOG_INFO(logger_, "ipt bus_tls "
 						<< vm_.tag()
 						<< " stops "
 						<< task_db_.size()
@@ -189,13 +189,13 @@ namespace node
 			}
 			else
 			{
-				CYNG_LOG_WARNING(logger_, "ipt bus "
+				CYNG_LOG_WARNING(logger_, "ipt bus_tls "
 				<< vm_.tag()
 				<< " already in shutdown mode");
 			}
         }
 
-		bool bus::is_online() const
+		bool bus_tls::is_online() const
 		{
 			switch (state_.load()) {
 			case STATE_AUTHORIZED_:
@@ -209,32 +209,32 @@ namespace node
 			return false;
 		}
 
-		bool bus::is_connected() const
+		bool bus_tls::is_connected() const
 		{
 			return STATE_CONNECTED_ == state_.load();
 		}
 
-		bool bus::has_watchdog() const
+		bool bus_tls::has_watchdog() const
 		{
 			return watchdog_ != 0u;
 		}
 
-		std::uint16_t bus::get_watchdog() const
+		std::uint16_t bus_tls::get_watchdog() const
 		{
 			return watchdog_;
 		}
 
-		boost::asio::ip::tcp::endpoint bus::local_endpoint() const
+		boost::asio::ip::tcp::endpoint bus_tls::local_endpoint() const
 		{
 			return socket_.local_endpoint();
 		}
 
-		boost::asio::ip::tcp::endpoint bus::remote_endpoint() const
+		boost::asio::ip::tcp::endpoint bus_tls::remote_endpoint() const
 		{
 			return socket_.remote_endpoint();
 		}
 
-		void bus::do_read()
+		void bus_tls::do_read()
 		{
             //
             //  do nothing during shutdown
@@ -284,7 +284,7 @@ namespace node
 
 		}
 
-		void bus::ipt_res_login(cyng::context& ctx, bool scrambled)
+		void bus_tls::ipt_res_login(cyng::context& ctx, bool scrambled)
 		{
 			BOOST_ASSERT(vm_.tag() == ctx.tag());
 
@@ -318,7 +318,7 @@ namespace node
 			if (res.is_success())
 			{
 				//
-				//	update bus state
+				//	update bus_tls state
 				//
 				state_ = STATE_AUTHORIZED_;
 
@@ -354,7 +354,7 @@ namespace node
 			}
 		}
 
-		void bus::ipt_res_register_push_target(cyng::context& ctx)
+		void bus_tls::ipt_res_register_push_target(cyng::context& ctx)
 		{
 			//	[79ba1da7-67b3-4c4f-9e1f-c217f5ea25a6,2,2,0]
 			//
@@ -405,7 +405,7 @@ namespace node
 			}
 		}
 
-		void bus::ipt_res_deregister_push_target(cyng::context& ctx)
+		void bus_tls::ipt_res_deregister_push_target(cyng::context& ctx)
 		{
 			//	[aab5764f-fc49-4bdf-ac6b-5abab1491846,2,1,power@solostec]
 			//
@@ -437,7 +437,7 @@ namespace node
 				, std::get<3>(tpl));
 		}
 
-		void bus::ipt_req_register_push_target(cyng::context& ctx)
+		void bus_tls::ipt_req_register_push_target(cyng::context& ctx)
 		{
 			//
 			//	* [uuid] session tag
@@ -463,7 +463,7 @@ namespace node
 			BOOST_ASSERT_MSG(false, "ipt.req.register.push.target");
 		}
 
-		void bus::ipt_req_deregister_push_target(cyng::context& ctx)
+		void bus_tls::ipt_req_deregister_push_target(cyng::context& ctx)
 		{
 			//
 			//	* [uuid] session tag
@@ -485,7 +485,7 @@ namespace node
 			BOOST_ASSERT_MSG(false, "ipt.req.deregister.push.target");
 		}
 
-		void bus::ipt_res_open_channel(cyng::context& ctx)
+		void bus_tls::ipt_res_open_channel(cyng::context& ctx)
 		{
 			//
 			//	* session tag
@@ -535,7 +535,7 @@ namespace node
 				, std::get<8>(tpl));
 		}
 
-		void bus::ipt_res_close_channel(cyng::context& ctx)
+		void bus_tls::ipt_res_close_channel(cyng::context& ctx)
 		{
 			//
 			//	* session tag
@@ -571,7 +571,7 @@ namespace node
 				, std::get<3>(tpl));
 		}
 
-		void bus::ipt_res_transfer_push_data(cyng::context& ctx)
+		void bus_tls::ipt_res_transfer_push_data(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx.attach(cyng::generate_invoke("log.msg.trace", "ipt.res.transfer.pushdata", frame));
@@ -581,7 +581,7 @@ namespace node
 			//
 		}
 
-		void bus::ipt_req_transmit_data(cyng::context& ctx)
+		void bus_tls::ipt_req_transmit_data(cyng::context& ctx)
 		{
 			//	[0b5d8da4-ce8d-4c4f-bb02-9a9f173391d4,1B1B1B1B010101017681063...2007101633789000000001B1B1B1B1A034843]
 			const cyng::vector_t frame = ctx.get_frame();
@@ -604,7 +604,7 @@ namespace node
 			}
 		}
 
-		void bus::ipt_req_open_connection(cyng::context& ctx)
+		void bus_tls::ipt_req_open_connection(cyng::context& ctx)
 		{
 			//	[ipt.req.open.connection,[ec2451b6-67df-4942-a801-9e13ec7a448c,1,1024]]
 			//
@@ -655,7 +655,7 @@ namespace node
 				ctx.attach(cyng::generate_invoke("stream.flush"));
 				break;
 			case STATE_CONNECTED_:
-				//	busy
+				//	bus_tlsy
 				ctx	.attach(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_open_connection_policy::BUSY)))
 					.attach(cyng::generate_invoke("stream.flush"));
 				break;
@@ -666,7 +666,7 @@ namespace node
 			}
 		}
 
-		void bus::ipt_res_open_connection(cyng::context& ctx)
+		void bus_tls::ipt_res_open_connection(cyng::context& ctx)
 		{
 			//	[32c4de22-b9ce-4f72-8680-5c047fb6698d,1,1]
 			//
@@ -738,7 +738,7 @@ namespace node
 			}
 		}
 
-		void bus::ipt_req_close_connection(cyng::context& ctx)
+		void bus_tls::ipt_req_close_connection(cyng::context& ctx)
 		{
 			//	[4e645b8d-4eda-46a5-84b4-c1fa182e8247,9]
 			//
@@ -787,7 +787,7 @@ namespace node
 
 		}
 
-		void bus::ipt_res_close_connection(cyng::context& ctx)
+		void bus_tls::ipt_res_close_connection(cyng::context& ctx)
 		{
 			//
 			//	* [uuid] session tag
@@ -821,7 +821,7 @@ namespace node
 				if (STATE_WAIT_FOR_CLOSE_RESPONSE_ == state_) {
 
 					//
-					//	update bus state
+					//	update bus_tls state
 					//
 					transition(STATE_AUTHORIZED_);
 
@@ -855,7 +855,7 @@ namespace node
 		}
 
 
-		void bus::ipt_req_protocol_version(cyng::context& ctx)
+		void bus_tls::ipt_req_protocol_version(cyng::context& ctx)
 		{
 			BOOST_ASSERT(vm_.tag() == ctx.tag());
 			const cyng::vector_t frame = ctx.get_frame();
@@ -864,7 +864,7 @@ namespace node
 				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
-		void bus::ipt_req_software_version(cyng::context& ctx)
+		void bus_tls::ipt_req_software_version(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.software.version", frame))
@@ -872,7 +872,7 @@ namespace node
 				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
-		void bus::ipt_req_device_id(cyng::context& ctx)
+		void bus_tls::ipt_req_device_id(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.id", frame))
@@ -880,7 +880,7 @@ namespace node
 				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
-		void bus::ipt_req_net_stat(cyng::context& ctx)
+		void bus_tls::ipt_req_net_stat(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.net.stat", frame))
@@ -888,7 +888,7 @@ namespace node
 				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
-		void bus::ipt_req_ip_statistics(cyng::context& ctx)
+		void bus_tls::ipt_req_ip_statistics(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.ip.statistics", frame))
@@ -896,7 +896,7 @@ namespace node
 				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
-		void bus::ipt_req_dev_auth(cyng::context& ctx)
+		void bus_tls::ipt_req_dev_auth(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.auth", frame))
@@ -904,7 +904,7 @@ namespace node
 				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
-		void bus::ipt_req_dev_time(cyng::context& ctx)
+		void bus_tls::ipt_req_dev_time(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.time", frame))
@@ -912,7 +912,7 @@ namespace node
 				.attach(cyng::generate_invoke("stream.flush"));
 		}
 
-		void bus::ipt_req_transfer_pushdata(cyng::context& ctx)
+		void bus_tls::ipt_req_transfer_pushdata(cyng::context& ctx)
 		{
 			//	[7aee3dff-c81b-414e-a5dc-4e3dbe4122f5,9,fb2a0137,a1e24bba,c1,0,1B1B1B1B010101017606363939373462006200726301017601080500153B0223B3063639393733080500153B0223B3010163C4F400]
 			//
@@ -961,7 +961,7 @@ namespace node
 				, std::get<6>(tpl));	//	data
 		}
 
-		bool bus::req_login(master_record const& rec)
+		bool bus_tls::req_login(master_record const& rec)
 		{
 			if (!transition(STATE_INITIAL_)) {
 				CYNG_LOG_WARNING(logger_, rec.account_ 
@@ -998,7 +998,7 @@ namespace node
 			return true;
 		}
 
-		bool bus::req_connection_open(std::string const& number, std::chrono::seconds d)
+		bool bus_tls::req_connection_open(std::string const& number, std::chrono::seconds d)
 		{
 			//
 			//	update state
@@ -1016,7 +1016,7 @@ namespace node
 			return false;
 		}
 
-		bool bus::req_connection_close(std::chrono::seconds d)
+		bool bus_tls::req_connection_close(std::chrono::seconds d)
 		{
 			//
 			//	update state
@@ -1035,7 +1035,7 @@ namespace node
 			return false;
 		}
 
-		void bus::res_connection_open(sequence_type seq, bool accept)
+		void bus_tls::res_connection_open(sequence_type seq, bool accept)
 		{
 			const response_type res = (accept)
 				? ipt::tp_res_open_connection_policy::DIALUP_SUCCESS
@@ -1054,7 +1054,7 @@ namespace node
 
 		}
 
-		void bus::req_register_push_target(std::string const& name
+		void bus_tls::req_register_push_target(std::string const& name
 			, std::uint16_t packet_size
 			, std::uint8_t window_size
 			, std::chrono::seconds d)
@@ -1072,7 +1072,7 @@ namespace node
 			}
 		}
 
-		void bus::store_relation(cyng::context& ctx)
+		void bus_tls::store_relation(cyng::context& ctx)
 		{
 			//	[1,2]
 			//
@@ -1087,7 +1087,7 @@ namespace node
 
 			if (task_db_.find(std::get<0>(tpl)) != task_db_.end()) {
 
-				CYNG_LOG_WARNING(logger_, "bus.store.relation - slot "
+				CYNG_LOG_WARNING(logger_, "bus_tls.store.relation - slot "
 					<< +std::get<0>(tpl)
 					<< " already occupied with #"
 					<< std::get<1>(tpl)
@@ -1100,7 +1100,7 @@ namespace node
 			//
 			task_db_.emplace(std::get<0>(tpl), std::get<1>(tpl));
 
-			CYNG_LOG_INFO(logger_, "bus.store.relation "
+			CYNG_LOG_INFO(logger_, "bus_tls.store.relation "
 				<< +std::get<0>(tpl)
 				<< " => #"
 				<< std::get<1>(tpl)
@@ -1113,7 +1113,7 @@ namespace node
 			mux_.post(std::get<1>(tpl), 1u, cyng::tuple_factory(std::get<0>(tpl)));
 		}
 
-		void bus::remove_relation(cyng::context& ctx)
+		void bus_tls::remove_relation(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
 			auto const tpl = cyng::tuple_cast<
@@ -1123,7 +1123,7 @@ namespace node
 			for (auto pos = task_db_.begin(); pos != task_db_.end(); ++pos) {
 				if (pos->second == std::get<0>(tpl)) {
 
-					CYNG_LOG_DEBUG(logger_, "bus.remove.relation "
+					CYNG_LOG_DEBUG(logger_, "bus_tls.remove.relation "
 						<< +pos->first
 						<< " => #"
 						<< pos->second);
@@ -1138,7 +1138,7 @@ namespace node
 			}
 		}
 
-		std::string bus::get_state() const
+		std::string bus_tls::get_state() const
 		{
 			switch (state_) {
 			case STATE_INITIAL_:	return "INITIAL";
@@ -1154,7 +1154,7 @@ namespace node
 			return "ERROR";
 		}
 
-		bool bus::transition(state evt)
+		bool bus_tls::transition(state evt)
 		{
 			switch (evt) {
 

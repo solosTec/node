@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_IPT_BUS_H
-#define NODE_IPT_BUS_H
+#ifndef NODE_IPT_BUS_TLS_H
+#define NODE_IPT_BUS_TLS_H
 
 #include <smf/ipt/bus_interface.h>
 #include <smf/ipt/scramble_key.h>
@@ -24,7 +24,7 @@ namespace node
 	{
 		/**
 		 * Implementation of an IP-T client. 
-		 * The bus send messages to it's host to signal different IP-T events.
+		 * The bus_tls send messages to it's host to signal different IP-T events.
 		 * <ol>
 		 * <li>0 - successful authorized</li>
 		 * <li>1 - connection to master lost</li>
@@ -39,18 +39,18 @@ namespace node
 		 * <li>10 - connection open response</li>
 		 * </ol>
 		 */
-		class bus : public bus_interface 
+		class bus_tls : public bus_interface 
 		{
 		public:
-			bus(cyng::logging::log_ptr logger
+			bus_tls(cyng::logging::log_ptr logger
 				, cyng::async::mux&
 				, boost::uuids::uuid tag
 				, scramble_key const&
 				, std::string const& model
 				, std::size_t retries);
 
-			bus(bus const&) = delete;
-			bus& operator=(bus const&) = delete;
+			bus_tls(bus_tls const&) = delete;
+			bus_tls& operator=(bus_tls const&) = delete;
 
 			void start();
             void stop();
@@ -73,7 +73,7 @@ namespace node
 			/**
 			 * Send a login request (public/scrambled)
 			 * 
-			 * @return true if bus/session is not authorized yet and login request
+			 * @return true if bus_tls/session is not authorized yet and login request
 			 * was emitted.
 			 */
 			bool req_login(master_record const&);
@@ -82,7 +82,7 @@ namespace node
 			 * send connection open request and starts a monitor tasks
 			 * to detect timeouts.
 			 *
-			 * @return false if bus is in authorized state
+			 * @return false if bus_tls is in authorized state
 			 */
 			bool req_connection_open(std::string const& number, std::chrono::seconds d);
 
@@ -90,7 +90,7 @@ namespace node
 			 * send connection close request and starts a monitor tasks
 			 * to detect timeouts.
 			 *
-			 * @return false if bus is not in connected state
+			 * @return false if bus_tls is not in connected state
 			 */
 			bool req_connection_close(std::chrono::seconds d);
 
@@ -110,7 +110,7 @@ namespace node
 				, std::chrono::seconds);
 
 			/**
-			 * @return a textual description of the bus/connection state
+			 * @return a textual description of the bus_tls/connection state
 			 */
 			std::string get_state() const;
 
@@ -222,6 +222,7 @@ namespace node
 			 */
 			bool transition(state evt);
 		};
+
 	}
 }
 
