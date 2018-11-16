@@ -33,7 +33,7 @@ math(EXPR PATCH_LEVEL "(${THIS_YEAR} * 1000) + ${PATCH_LEVEL}")
 # set project name/properties
 #
 project(NODE 
-	VERSION 0.6.${PATCH_LEVEL}.1
+	VERSION 0.7.${PATCH_LEVEL}.1
 	LANGUAGES CXX C)
 
 
@@ -900,6 +900,27 @@ endif(WIN32)
 target_link_libraries(csv ${csv_link_libs})
 
 #
+# task: stat
+#
+include (tasks/stat/prg.cmake)
+add_executable(stat ${task_stat})
+
+# libraries to link
+set(stat_link_libs cyng_core cyng_io cyng_async cyng_log cyng_parser cyng_json cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_sys smf_protocol_sml smf_cluster)
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	list(APPEND stat_link_libs "${Boost_LIBRARIES}")
+    if (UNIX)
+        list(APPEND stat_link_libs pthread ${CMAKE_DL_LIBS})
+    endif()
+endif()
+if(WIN32)
+	list(APPEND stat_link_libs odbc32.lib lib_sqlite3)
+else()
+	list(APPEND stat_link_libs ${SQLite3_LIBRARY})
+endif(WIN32)
+target_link_libraries(stat ${stat_link_libs})
+
+#
 # test unit using Boost.Test
 # BOOST_TEST_DYN_LINK is required to build a main() function
 # cmake -DNODE_BUILD_TEST:bool=ON ..
@@ -1082,6 +1103,14 @@ if(UNIX)
             "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.service.in"
             "${PROJECT_BINARY_DIR}/task-csv.service")
 
+      # stat
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.linux.cgf.in"
+            "${PROJECT_BINARY_DIR}/stat_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.service.in"
+            "${PROJECT_BINARY_DIR}/task-stat.service")
 
 else()
 
@@ -1376,6 +1405,27 @@ else()
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.rc.in"
 		  "${PROJECT_BINARY_DIR}/csv.rc")
+
+      # stat
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.windows.cgf.in"
+            "${PROJECT_BINARY_DIR}/stat_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_create_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/stat_create_service.cmd")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_delete_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/stat_delete_service.cmd")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_restart_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/stat_restart_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.rc.in"
+		  "${PROJECT_BINARY_DIR}/stat.rc")
 
 endif(UNIX)
 

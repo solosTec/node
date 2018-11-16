@@ -1,0 +1,12 @@
+REM
+REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is generated automatically. Do not edit.
+REM install stat service
+REM	created : ${${PROJECT_NAME}_NOW_UTC}
+REM	platform: @CMAKE_SYSTEM@
+REM
+echo create service node_stat_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo off
+sc create node_stat_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\stat.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\stat_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF stat server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description node_stat_v${${PROJECT_NAME}_VERSION_MAJOR} "stat Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+@echo on
