@@ -47,6 +47,7 @@ set (node_dash_assets
 	nodes/dash/htdocs/status.connections.html
 	nodes/dash/htdocs/monitor.msg.html
 	nodes/dash/htdocs/csv.task.html
+	nodes/dash/htdocs/stat.task.html
 )
 
 set (node_dash_schemes

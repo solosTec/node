@@ -48,6 +48,8 @@ set (node_dashs_assets
 	nodes/dash/htdocs/status.targets.html
 	nodes/dash/htdocs/status.connections.html
 	nodes/dash/htdocs/monitor.msg.html
+	nodes/dash/htdocs/csv.task.html
+	nodes/dash/htdocs/stat.task.html
 )
 
 set (node_dashs_schemes
