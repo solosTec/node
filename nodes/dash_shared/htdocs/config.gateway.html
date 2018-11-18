@@ -190,6 +190,11 @@
                         <div class="form-group">
                             <p><span style="font-weight: bold">Note:</span> No other IP-T connection can be active during the execution of the requests below.</p>
                             <div class="form-check">
+                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-select-all" name="smf-form-gw-select-all">
+                                <label class="form-check-label" for="smf-form-gw-select-all">Select all</label>
+                            </div>
+                            <hr />
+                            <div class="form-check">
                                 <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-status-word" name="smf-form-gw-status-word">
                                 <label class="form-check-label" for="smf-form-gw-status-word">Request status word</label>
                             </div>
@@ -580,6 +585,9 @@
                         $('#smf-gw-wireless-mbus h4').text('wireless M-Bus data ' + rowData[1]);
                         gw_req_vec.push("w-mbus-status");
                         gw_req_vec.push("w-mbus-config");
+                        $('#smf-gw-wmbus-type').val("waiting...");
+                        $('#smf-gw-wmbus-adapter').val("waiting...");
+                        $('#smf-gw-wmbus-hardware').val("waiting...");
                     }
                     if ($('#smf-form-gw-ipt').is(":checked") && rowData[9]) {
                         $('#smf-gw-ipt h4').text('IP-T ' + rowData[1]);
@@ -995,6 +1003,10 @@
                 }));
             });
 
+            $('#smf-form-gw-select-all').change(function () {
+                select_all_tabs(this.checked);
+            });
+
             $('#smf-form-gw-status-word').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-status-word').removeClass('disabled');
@@ -1068,6 +1080,16 @@
 
         }); //  document ready
 
+
+        function select_all_tabs(b) {
+            $('#smf-form-gw-status-word').prop("checked", b).change();
+            $('#smf-form-gw-srv-visible').prop("checked", b).change();
+            $('#smf-form-gw-srv-active').prop("checked", b).change();
+            $('#smf-form-gw-firmware').prop("checked", b).change();
+            $('#smf-form-gw-memory').prop("checked", b).change();
+            $('#smf-form-gw-wireless-mbus').prop("checked", b).change();
+            $('#smf-form-gw-ipt').prop("checked", b).change();
+        }
 
     </script>
 
