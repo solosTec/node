@@ -80,6 +80,8 @@ namespace node
 			vm.register_function("sml.set.proc.ipt.param.user", 4, std::bind(&kernel::sml_set_proc_ipt_param_user, this, std::placeholders::_1));
 			vm.register_function("sml.set.proc.ipt.param.pwd", 4, std::bind(&kernel::sml_set_proc_ipt_param_pwd, this, std::placeholders::_1));
 
+			vm.register_function("sml.get.list.request", 9, std::bind(&kernel::sml_get_list_request, this, std::placeholders::_1));
+
 		}
 
 		void kernel::reset()
@@ -287,7 +289,7 @@ namespace node
 				cyng::buffer_t		//	[6] path (OBIS)
 			>(frame);
 
-			obis code(std::get<6>(tpl));
+			const obis code(std::get<6>(tpl));
 
 			if (OBIS_CLASS_OP_LOG_STATUS_WORD == code)
 			{
@@ -558,6 +560,7 @@ namespace node
 		void kernel::sml_get_profile_list_request(cyng::context& ctx) 
 		{
 			//	[7068ce46-00b2-4f73-b3fa-72c3c965354c,180905155846820378-2,1,005056C00008,0500FFB00BCAAE,operator,operator,2018-09-04 13:58:41.00000000,2018-09-05 13:58:41.00000000,8181C789E1FF]
+			//	[cfdfbf83-b7f0-4b4e-94de-fcb196179fbb,181118193517779935-2,1,005056C00008,01A815743145050102,operator,operator,1970-01-01 00:00:00.00000000,2018-11-18 18:35:17.00000000,8181C78610FF]
 			//	
 			//	* pk
 			//	* transaction id
@@ -585,7 +588,7 @@ namespace node
 				cyng::buffer_t		//	[9] path (OBIS)
 			>(frame);
 
-			obis code(std::get<9>(tpl));
+			const obis code(std::get<9>(tpl));
 
 			if (OBIS_CLASS_OP_LOG == code) 	{
 
@@ -602,17 +605,23 @@ namespace node
 						, std::get<7>(tpl)
 						, std::get<8>(tpl)
 						, tbl);
-
-					//tbl->loop([&](cyng::table::record const& rec) {
-
-					//	//	[2018-09-05 14:00:34.04194950,00000384,2018-09-05 14:00:34.04194950,00062602,00800008,8146000002FF,2018-09-05 14:00:34.04194580,01A815743145040102,power@solostec,1]
-					//	CYNG_LOG_TRACE(logger_, "sml.get.profile.list.request " << cyng::io::to_str(rec.data()));
-
-					//	return true;
-					//});
-
 				}, cyng::store::write_access("op.log"));
 
+			}
+			else if (OBIS_PROFILE_1_MINUTE == code) {
+				CYNG_LOG_WARNING(logger_, "OBIS_PROFILE_1_MINUTE not implemented yet");
+			}
+			else if (OBIS_PROFILE_15_MINUTE == code) {
+				CYNG_LOG_WARNING(logger_, "OBIS_PROFILE_15_MINUTE not implemented yet");
+			}
+			else if (OBIS_PROFILE_60_MINUTE == code) {
+				CYNG_LOG_WARNING(logger_, "OBIS_PROFILE_60_MINUTE not implemented yet");
+			}
+			else if (OBIS_PROFILE_24_HOUR == code) {
+				CYNG_LOG_WARNING(logger_, "OBIS_PROFILE_24_HOUR not implemented yet");
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "sml.get.profile.list.request - unknown profile" << to_string(code));
 			}
 		}
 
@@ -1068,6 +1077,58 @@ namespace node
 
 				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_.config_).at(idx).pwd_) = std::get<3>(tpl);
 			}
+		}
+
+		void kernel::sml_get_list_request(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, "sml.get.list.request " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::size_t,		//	[2] msg id
+				cyng::buffer_t,		//	[3] client id
+				cyng::buffer_t,		//	[4] server id
+				std::string,		//	[5] reqFileId
+				std::string,		//	[6] user
+				std::string,		//	[7] password
+				cyng::buffer_t		//	[8] path (OBIS)
+			>(frame);
+
+			const obis code(std::get<8>(tpl));
+
+			cyng::tuple_t val_list;
+			val_list.push_back(list_entry_manufacturer("solosTec"));
+			val_list.push_back(list_entry(OBIS_CODE(08, 00, 01, 00, 00, FF)
+				, 0	//	status
+				, std::chrono::system_clock::now()
+				, 13
+				, -3
+				, cyng::make_object(758)));
+			//val_list.push_back(list_entry(OBIS_CODE(08, 00, 01, 02, 00, FF)
+			//	, cyng::make_object(0)	//	status
+			//	, cyng::make_object()
+			//	, cyng::make_object(13)
+			//	, cyng::make_object(-3)
+			//	, cyng::make_object(758)));
+
+			if (OBIS_LIST_CURRENT_DATA_RECORD == code) {
+				CYNG_LOG_TRACE(logger_, "sml.get.list.request - current data record");
+				sml_gen_.get_list(frame.at(1)	//	trx
+					, std::get<3>(tpl)	//	client id
+					, std::get<4>(tpl)	//	server id
+					, OBIS_LIST_CURRENT_DATA_RECORD
+					, make_timestamp(std::chrono::system_clock::now())
+					, make_timestamp(std::chrono::system_clock::now())
+					, val_list);
+
+			}
+			else {
+				CYNG_LOG_TRACE(logger_, "sml.get.list.request - " << get_name(code));
+
+			}
+
 		}
 
 

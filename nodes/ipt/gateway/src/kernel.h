@@ -73,6 +73,8 @@ namespace node
 			void sml_set_proc_ipt_param_user(cyng::context& ctx);
 			void sml_set_proc_ipt_param_pwd(cyng::context& ctx);
 
+			void sml_get_list_request(cyng::context& ctx);
+
 		public:
 			/**
 			 * global state

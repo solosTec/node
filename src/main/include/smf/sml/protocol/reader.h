@@ -57,6 +57,7 @@ namespace node
 			cyng::vector_t read_get_proc_parameter_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_get_proc_parameter_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_set_proc_parameter_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t read_get_list_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t read_attention_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
 			cyng::vector_t read_set_proc_parameter_request_tree(std::vector<obis> path

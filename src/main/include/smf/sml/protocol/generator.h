@@ -173,12 +173,21 @@ namespace node
 				, std::string const&);
 
 			/**
-			 * Simple root query
+			 * Simple root query - BODY_GET_PROC_PARAMETER_REQUEST (0x500)
 			 */
 			std::size_t get_proc_parameter(cyng::buffer_t const& server_id
 				, obis
 				, std::string const& username
 				, std::string const& password);
+
+			/**
+			 * List query - BODY_GET_LIST_REQUEST (0x700)
+			 */
+			std::size_t get_list(cyng::buffer_t const& client_id
+				, cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password
+				, obis);
 
 			/**
 			 * get list of visible servers/meters - 81 81 10 06 FF FF
@@ -240,6 +249,15 @@ namespace node
 			 * get current IP-T config - 81 49 0D 07 00 FF (CODE_ROOT_IPT_PARAM)
 			 */
 			std::size_t get_proc_parameter_ipt_config(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password);
+
+			/**
+			 * get last data record - 99 00 00 00 00 03 (CODE_LAST_DATA_RECORD)
+			 *  SML_GetList_Req
+			 */
+			std::size_t get_list_last_data_record(cyng::buffer_t const& client_id
+				, cyng::buffer_t const& server_id
 				, std::string const& username
 				, std::string const& password);
 
@@ -385,6 +403,18 @@ namespace node
 				, std::uint8_t power	//	transmision power (transmission_power)
 				, bool	//	installation mode
 			);
+
+			/**
+			 * generate act_sensor_time and act_gateway_time with make_timestamp()
+			 * or make_sec_index() from value.hpp
+			 */
+			std::size_t get_list(cyng::object trx
+				, cyng::buffer_t const& client_id
+				, cyng::buffer_t const& server_id
+				, obis list_name
+				, cyng::tuple_t act_sensor_time
+				, cyng::tuple_t act_gateway_time
+				, cyng::tuple_t val_list);
 		};
 
 	}

@@ -88,10 +88,14 @@ namespace node
 			else if (code == OBIS_CLASS_EVENT)		return "class-event";
 			else if (code == OBIS_CLASS_STATUS)		return "class-status";
 
-			else if (code == OBIS_ACT_SENSOR_TIME)		return "act-sensor-time";
-			else if (code == OBIS_SERIAL_NR)			return "serial-number-I";
-			else if (code == OBIS_SERIAL_NR_SECOND)		return "serial-number-II";
-			else if (code == OBIS_MBUS_STATE)			return "status-EN13757-3";
+			else if (OBIS_ACT_SENSOR_TIME == code)		return "act-sensor-time";
+			else if (OBIS_SERIAL_NR == code)			return "serial-number-I";
+			else if (OBIS_SERIAL_NR_SECOND == code)		return "serial-number-II";
+			else if (OBIS_POWER_OUTAGES == code)		return "power-outages";
+			else if (OBIS_MBUS_STATE == code)			return "status-EN13757-3";
+			else if (OBIS_DATE_TIME_PARAMETERISATION == code)	return "date-time-parameterisation";
+			else if (OBIS_CONFIG_OVERVIEW == code)		return "config-overview";
+			else if (OBIS_HARDWARE_TYPE == code)		return "hardware-type";
 
 			//	Identifikationsnummer 1.1 - comes as unsigned int with 3 bytes (this is the server ID)
 			else if (code == OBIS_SERVER_ID_1_1)		return "identifier-1-1";
@@ -99,6 +103,7 @@ namespace node
 			else if (code == OBIS_SERVER_ID_1_3)		return "identifier-1-3";
 			else if (code == OBIS_SERVER_ID_1_4)		return "identifier-1-4";
 			else if (code == OBIS_DEVICE_ID)			return "device-id";
+			else if (OBIS_SOFTWARE_ID == code)			return "software_id";
 
 			else if (code == OBIS_CURRENT_UTC)			return "readout-utc";
 
@@ -136,6 +141,8 @@ namespace node
 			else if (code == OBIS_CLASS_OP_LSM_PASSIVE_RULESET)			return "LSM-passive-ruleset";
 			else if (code == OBIS_CLASS_OP_LSM_JOB)						return "LSM-job-name";
 			else if (code == OBIS_CLASS_OP_LSM_POSITION)				return "LSM-position";
+
+			else if (OBIS_LIST_CURRENT_DATA_RECORD == code)			return "list-current-data-record";
 
 			//
 			//	attention codes

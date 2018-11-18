@@ -16,6 +16,7 @@
 #include <cyng/vm/generator.h>
 #include <cyng/io/io_bytes.hpp>
 #include <cyng/io/io_buffer.h>
+#include <cyng/sys/mac.h>
 
 #ifdef SMF_IO_LOG
 #include <cyng/io/hex_dump.hpp>
@@ -321,6 +322,18 @@ namespace node
 			else if (boost::algorithm::equals("ipt-config", p)) {
 				sml_gen.get_proc_parameter_ipt_config(server_id_, user_, pwd_);
 			}
+			else if (boost::algorithm::equals("last-data-record", p)) {
+				const auto mac_list = cyng::sys::retrieve_mac48();
+				const auto mac = (mac_list.empty()) ? cyng::generate_random_mac48() : mac_list.at(0);
+				CYNG_LOG_DEBUG(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> query last data record with MAC "
+					<< cyng::io::to_hex(mac.to_buffer(), ' '));
+
+				sml_gen.get_list_last_data_record(mac.to_buffer(), cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x13, 0x09, 0x00, 0x16, 0x3C, 0x07 }), user_, pwd_);
+			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
@@ -347,6 +360,13 @@ namespace node
 #ifdef SMF_IO_LOG
 		cyng::io::hex_dump hd;
 		hd(std::cerr, msg.begin(), msg.end());
+#else
+		CYNG_LOG_DEBUG(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> \n"
+			<< cyng::io::to_hex(msg, ' '))
 #endif
 
 		//

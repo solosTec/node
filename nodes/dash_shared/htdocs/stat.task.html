@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="SWF dashboard">
     <meta name="author" content="solos::Tec">
-    <title>smf :: config gateways</title>
+    <title>smf :: statistics</title>
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css" />
@@ -78,8 +78,8 @@
                         Tasks
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                        <a class="dropdown-item active" href="csv.task.html">CSV</a>
-                        <!--<a class="dropdown-item" href="gap.task.html">Gap Detection</a>-->
+                        <a class="dropdown-item" href="csv.task.html">CSV</a>
+                        <a class="dropdown-item active" href="stat.task.html">Statistics</a>
                     </div>
                 </li>
 
@@ -93,7 +93,7 @@
     </nav>
     <div class="jumbotron jumbotron-fluid">
         <div class="container">
-            <h1 class="display-4">Generate CSV reports</h1>
+            <h1 class="display-4">Statistics</h1>
             <div class="progress">
                 <div class="progress-bar" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="ws-activity-level">0%</div>
             </div>
@@ -101,20 +101,20 @@
     </div>
 
     <div class="container-fluid">
-        <table id="smf-table-csv" class="table table-condensed table-striped table-bordered" cellspacing="0">
+        <table id="smf-table-stat" class="table table-condensed table-striped table-bordered" cellspacing="0">
             <thead>
                 <tr>
-                    <th class="sml-col-csv-pk">UUID</th>
-                    <th class="sml-col-csv-config">Configuration</th>
-                    <th class="sml-col-csv-format">Format</th>
-                    <th class="sml-col-csv-offset">Offset</th>
-                    <th class="sml-col-csv-frame">Frame</th>
-                    <th class="sml-col-csv-15min">Last run (15min)</th>
-                    <th class="sml-col-csv-15min">Last run (60min)</th>
-                    <th class="sml-col-csv-24h">Last run (24h)</th>
-                    <th class="sml-col-csv-srvCount">Server Count (15min)</th>
-                    <th class="sml-col-csv-srvCount">Server Count (60min)</th>
-                    <th class="sml-col-csv-combinations">Server Count (24h)</th>
+                    <th class="sml-col-stat-pk">UUID</th>
+                    <th class="sml-col-stat-config">Configuration</th>
+                    <th class="sml-col-stat-format">Format</th>
+                    <th class="sml-col-stat-offset">Offset</th>
+                    <th class="sml-col-stat-frame">Frame</th>
+                    <th class="sml-col-stat-15min">Last run (15min)</th>
+                    <th class="sml-col-stat-15min">Last run (60min)</th>
+                    <th class="sml-col-stat-24h">Last run (24h)</th>
+                    <th class="sml-col-stat-srvCount">Server Count (15min)</th>
+                    <th class="sml-col-stat-srvCount">Server Count (60min)</th>
+                    <th class="sml-col-stat-combinations">Server Count (24h)</th>
                 </tr>
             </thead>
         </table>
@@ -143,7 +143,7 @@
         };
 
         //  globals
-        var table_csv;
+        var table_stat;
         var _ws = null;
         var totalIO = 0;
 
@@ -160,43 +160,43 @@
             select: true,
             //colReorder: true,
             columnDefs: [
-                { targets: 'sml-col-csv-pk', visible: false, name: 'csv-pk' },
-                { targets: 'sml-col-csv-format', visible: true, name: 'csv-format' },
-                { targets: 'sml-col-csv-config', visible: true, name: 'csv-config' },
-                { targets: 'sml-col-csv-offset', visible: true, name: 'csv-offset' },
-                { targets: 'sml-col-csv-frame', visible: true, name: 'csv-frame' },
-                { targets: 'sml-col-csv-15min', visible: true, name: 'csv-15min', render: renderDate },
-                { targets: 'sml-col-csv-60min', visible: true, name: 'csv-60min', render: renderDate },
-                { targets: 'sml-col-csv-24h', visible: true, name: 'csv-24h', render: renderDate },
-                { targets: 'sml-col-csv-srvCount15min', visible: true, name: 'csv-srvCount15min' },
-                { targets: 'sml-col-csv-srvCount60min', visible: true, name: 'csv-srvCount60min' },
-                { targets: 'sml-col-csv-srvCount24h', visible: true, name: 'csv-srvCount24h' },
+                { targets: 'sml-col-stat-pk', visible: false, name: 'stat-pk' },
+                { targets: 'sml-col-stat-format', visible: true, name: 'stat-format' },
+                { targets: 'sml-col-stat-config', visible: true, name: 'stat-config' },
+                { targets: 'sml-col-stat-offset', visible: true, name: 'stat-offset' },
+                { targets: 'sml-col-stat-frame', visible: true, name: 'stat-frame' },
+                { targets: 'sml-col-stat-15min', visible: true, name: 'stat-15min', render: renderDate },
+                { targets: 'sml-col-stat-60min', visible: true, name: 'stat-60min', render: renderDate },
+                { targets: 'sml-col-stat-24h', visible: true, name: 'stat-24h', render: renderDate },
+                { targets: 'sml-col-stat-srvCount15min', visible: true, name: 'stat-srvCount15min' },
+                { targets: 'sml-col-stat-srvCount60min', visible: true, name: 'stat-srvCount60min' },
+                { targets: 'sml-col-stat-srvCount24h', visible: true, name: 'stat-srvCount24h' },
             ]
         };
 
         $(document).ready(function () {
             console.log('document ready');
-            table_csv = $('#smf-table-csv').DataTable(tbl_config);
+            table_stat = $('#smf-table-stat').DataTable(tbl_config);
 
-            table_csv.on('select', function (e, datatable, type, indexes) {
+            table_stat.on('select', function (e, datatable, type, indexes) {
 
                 //  select: a584c1cc-7ae1-455b-99d1-de0f9483520d,05000000000000,solosTec,gateway,ipt:gateway,0.5.2018155,operator,operator,false, length:9
                 var rowData = datatable.rows(indexes).data().toArray()[0];
-                var rows = table_csv.rows(indexes).data();
+                var rows = table_stat.rows(indexes).data();
                 console.log("select: " + rows.toArray() + ", length:" + rowData.length);
             });
 
             function start_ws() {
                 //  try connect
                 $('#ws-activity-text').html('connecting to ' + location.host + '...');
-                _ws = new WebSocket('ws://' + location.host + '/smf/api/csv/v0.1', ['SMF']);
+                _ws = new WebSocket('ws://' + location.host + '/smf/api/stat/v0.1', ['SMF']);
 
                 _ws.onopen = function () {
                     console.log('ws open');
                     //  clear table in case of reconnect
-                    table_csv.clear().draw(false);
+                    table_stat.clear().draw(false);
                     //  subscribe system status
-                    _ws.send(JSON.stringify({ cmd: "subscribe", channel: "task.csv", push: true }));
+                    _ws.send(JSON.stringify({ cmd: "subscribe", channel: "task.stat", push: true }));
                 };
 
                 _ws.onclose = function (event) {
@@ -223,10 +223,10 @@
                     totalIO += e.data.length;
                     var obj = JSON.parse(e.data);
                     if (obj.cmd != null && obj.channel != null) {
-                        if (obj.channel == 'task.csv') {
+                        if (obj.channel == 'task.stat') {
                             if (obj.cmd == 'insert') {
                                 //
-                                // {"cmd": "insert", "channel": "task.csv", "rec": {"key": {"tag":"71b2b5d3-bca6-44d0-980c-1a2733fc3b79"}, "data": {"config":"local","format":"SML","frame":"00:03:0.000000","gen":1,"offset":"00:07:0.000000"}
+                                // {"cmd": "insert", "channel": "task.stat", "rec": {"key": {"tag":"71b2b5d3-bca6-44d0-980c-1a2733fc3b79"}, "data": {"config":"local","format":"SML","frame":"00:03:0.000000","gen":1,"offset":"00:07:0.000000"}
                                 //
                                 var config = $('<div/>').text(obj.rec.data.config).html();
                                 var format = $('<div/>').text(obj.rec.data.format).html();
@@ -238,19 +238,19 @@
                                 var srvCount15min = $('<div/>').text(obj.rec.data.srvCount15min).html();
                                 var srvCount60min = $('<div/>').text(obj.rec.data.srvCount60min).html();
                                 var srvCount24h = $('<div/>').text(obj.rec.data.srvCount24h).html();
-                                var rowNode = table_csv.row.add([obj.rec.key.tag, config, format, offset, frame, start15min, start60min, start24h, srvCount15min, srvCount60min, srvCount24h]).draw().node();
+                                var rowNode = table_stat.row.add([obj.rec.key.tag, config, format, offset, frame, start15min, start60min, start24h, srvCount15min, srvCount60min, srvCount24h]).draw().node();
 
                             }
                             else if (obj.cmd == 'delete') {
                                 //  {"cmd": "delete", "channel": "config.gateway", "key": ["28754043-1f38-4318-a95e-dd9965e80895"]}
-                                table_csv.row(function (idx, data, node) {
+                                table_stat.row(function (idx, data, node) {
                                     if (data[0] == obj.key) {
-                                        //$('#smf-form-csv-delete-name').text("Device");
-                                        //$('#smf-form-csv-update').addClass('disabled');
-                                        //$('#smf-form-csv-delete').addClass('disabled');
-                                        //$('#smf-form-csv-reboot').addClass('disabled');
-                                        //$('#smf-form-csv-srv-visible').addClass('disabled');
-                                        //$('#smf-form-csv-srv-active').addClass('disabled');
+                                        //$('#smf-form-stat-delete-name').text("Device");
+                                        //$('#smf-form-stat-update').addClass('disabled');
+                                        //$('#smf-form-stat-delete').addClass('disabled');
+                                        //$('#smf-form-stat-reboot').addClass('disabled');
+                                        //$('#smf-form-stat-srv-visible').addClass('disabled');
+                                        //$('#smf-form-stat-srv-active').addClass('disabled');
 
                                         return true;
                                     }
@@ -258,11 +258,11 @@
                                 }).remove().draw(false);
                             }
                             else if (obj.cmd == 'modify') {
-                                //  {"cmd": "modify", "channel": "task.csv", "key": ["534034ff-515b-43de-b5b0-24616f1c3e6a"], "value": {"combinations":13}}
-                                //  {"cmd": "modify", "channel": "task.csv", "key": ["534034ff-515b-43de-b5b0-24616f1c3e6a"], "value": {"start15min":"2018-11-01 00:00:00.00000000"}}
-                                table_csv.row(function (idx, data, node) {
+                                //  {"cmd": "modify", "channel": "task.stat", "key": ["534034ff-515b-43de-b5b0-24616f1c3e6a"], "value": {"combinations":13}}
+                                //  {"cmd": "modify", "channel": "task.stat", "key": ["534034ff-515b-43de-b5b0-24616f1c3e6a"], "value": {"start15min":"2018-11-01 00:00:00.00000000"}}
+                                table_stat.row(function (idx, data, node) {
                                     if (data[0] == obj.key) {
-                                        var r = table_csv.row(node);
+                                        var r = table_stat.row(node);
                                         var d = r.data();
                                         if (obj.value.start15min != null) {
                                             d[5] = new Date(obj.value.start15min.substring(0, 19));
@@ -283,14 +283,14 @@
                                             d[10] = obj.value.srvCount24h;
                                         }
                                         r.data(d);
-                                        $('#smf-form-csv-delete').addClass('disabled');
+                                        $('#smf-form-stat-delete').addClass('disabled');
                                         return true;
                                     }
                                     return false;
                                 });
                             }
                             else if (obj.cmd == 'clear') {
-                                table_csv.clear().draw(false);
+                                table_stat.clear().draw(false);
                             }
                             else if (obj.cmd == 'load') {
                                 //  load status
@@ -304,7 +304,7 @@
                                         $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
                                         $('#ws-activity-symbol').fadeOut();
                                         $('#ws-activity-level').css("width", "100%").text("synchronized").removeClass('bg-info').addClass('bg-success');
-                                        table_csv.order([3, 'asc']).draw();
+                                        table_stat.order([3, 'asc']).draw();
                                     }
                                 }
                                 else if (obj.level != null) {

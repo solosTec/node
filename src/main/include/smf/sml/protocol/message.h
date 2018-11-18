@@ -126,6 +126,25 @@ namespace node
 			, cyng::tuple_t&& data);
 
 		/**
+		 * @param client_id this is the MAC address of the inquirer (example:  00 50 56 C0 00 08)
+		 * @param server_id meter id (example: 01 E6 1E 13 09 00 16 3C 07)
+		 * @param code parameter tree path
+		 * @param params parameter tree
+		 */
+		cyng::tuple_t get_list_request(cyng::object client_id
+			, cyng::object server_id
+			, std::string const& username
+			, std::string const& password
+			, obis code);
+
+		cyng::tuple_t get_list_response(cyng::buffer_t const& client_id
+			, cyng::buffer_t const& server_id
+			, obis list_name
+			, cyng::tuple_t act_sensor_time
+			, cyng::tuple_t act_gateway_time
+			, cyng::tuple_t val_list);
+
+		/**
 		 * Add SML trailer and tail
 		 */
 		cyng::buffer_t boxing(std::vector<cyng::buffer_t> const&);
@@ -145,6 +164,31 @@ namespace node
 		cyng::object period_entry(obis
 			, std::uint8_t unit
 			, std::int8_t scaler
+			, cyng::object value);
+
+		/**
+		 * SML_ListEntry  - part of 5.1.15. SML_GetList.Res
+		 */
+		cyng::object list_entry(obis obj_name
+			, std::uint64_t status
+			, std::chrono::system_clock::time_point val_time
+			, std::uint8_t unit
+			, std::int8_t scaler
+			, cyng::object value);
+
+		/**
+		 * SML_ListEntry  - part of 5.1.15. SML_GetList.Res
+		 * 81, 81, C7, 82, 03, FF
+		 */
+		cyng::object list_entry_manufacturer(std::string);
+		/**
+		 * SML_ListEntry  - part of 5.1.15. SML_GetList.Res
+		 */
+		cyng::object list_entry(obis obj_name
+			, cyng::object status
+			, cyng::object val_time
+			, cyng::object unit
+			, cyng::object scaler
 			, cyng::object value);
 	}
 }

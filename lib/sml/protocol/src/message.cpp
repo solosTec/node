@@ -8,6 +8,7 @@
 #include <smf/sml/protocol/message.h>
 #include <smf/sml/protocol/value.hpp>
 #include <smf/sml/crc16.h>
+#include <smf/sml/obis_db.h>
 
 #include <cyng/factory.h>
 
@@ -157,9 +158,36 @@ namespace node
 				, std::move(data)
 				, cyng::null()		//	rawdata
 				, cyng::null());	//	signature
-
 		}
 
+		cyng::tuple_t get_list_request(cyng::object client_id
+			, cyng::object server_id
+			, std::string const& username
+			, std::string const& password
+			, obis code)
+		{
+			return cyng::tuple_factory(client_id
+				, server_id
+				, username
+				, password
+				, code.to_buffer());
+		}
+
+		cyng::tuple_t get_list_response(cyng::buffer_t const& client_id
+			, cyng::buffer_t const& server_id
+			, obis list_name
+			, cyng::tuple_t act_sensor_time
+			, cyng::tuple_t act_gateway_time
+			, cyng::tuple_t val_list)
+		{
+			return cyng::tuple_factory(client_id
+				, server_id
+				, list_name.to_buffer()
+				, act_sensor_time
+				, val_list
+				, cyng::null()	//	list signature
+				, act_gateway_time);
+		}
 
 		cyng::buffer_t boxing(std::vector<cyng::buffer_t> const& inp)
 		{
@@ -265,6 +293,48 @@ namespace node
 			, cyng::object value)
 		{
 			return cyng::make_object(cyng::tuple_factory(code.to_buffer()
+				, unit
+				, scaler
+				, value
+				, cyng::null()));	//	signature
+		}
+
+		cyng::object list_entry(obis code
+			, std::uint64_t status
+			, std::chrono::system_clock::time_point val_time
+			, std::uint8_t unit
+			, std::int8_t scaler
+			, cyng::object value)
+		{
+			return cyng::make_object(cyng::tuple_factory(code.to_buffer()
+				, status
+				, val_time
+				, unit
+				, scaler
+				, value
+				, cyng::null()));	//	signature
+		}
+		cyng::object list_entry_manufacturer(std::string manufacturer)
+		{
+			return cyng::make_object(cyng::tuple_factory(OBIS_DATA_MANUFACTURER.to_buffer()
+				, cyng::null()	//	status
+				, cyng::null()	//	val_time
+				, cyng::null()	//	unit
+				, cyng::null()	//	scaler
+				, manufacturer
+				, cyng::null()));	//	signature
+		}
+
+		cyng::object list_entry(obis code
+			, cyng::object status
+			, cyng::object val_time
+			, cyng::object unit
+			, cyng::object scaler
+			, cyng::object value)
+		{
+			return cyng::make_object(cyng::tuple_factory(code.to_buffer()
+				, status
+				, val_time
 				, unit
 				, scaler
 				, value

@@ -134,7 +134,7 @@
                 <a class="nav-link disabled" id="smf-gw-tab-wireless-mbus" data-toggle="tab" href="#smf-gw-wireless-mbus" aria-selected="false">wireless M-Bus</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-ipt" data-toggle="tab" href="#smf-gw-ipt" aria-selected="false">IP-T</a>
+                <a class="nav-link disabled" id="smf-gw-tab-ipt" data-toggle="tab" href="#smf-gw-ipt" aria-selected="false">IP-T parameters</a>
             </li>
         </ul>
 
@@ -262,14 +262,14 @@
                                 <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-gw-memory_progress-2">0%</div>
                             </div>
                             <!--<div id="mem-progress-2"
-                     data-percentage="20"
-                     data-track-width="42"
-                     data-track-colour="555555"
-                     data-fill-colour="00C0FF"
-                     data-text-colour="00C0FF"
-                     data-stroke-colour="FFFFFF"
-                     data-stroke-spacing="4">
-                </div>-->
+                         data-percentage="20"
+                         data-track-width="42"
+                         data-track-colour="555555"
+                         data-fill-colour="00C0FF"
+                         data-text-colour="00C0FF"
+                         data-stroke-colour="FFFFFF"
+                         data-stroke-spacing="4">
+                    </div>-->
                         </div>
                         <div class="card-footer">
                             <small class="text-muted"><span id="smf-gw-memory-2">wait...</span>%</small>
@@ -1052,7 +1052,6 @@
             $('#smf-form-gw-ipt').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-ipt').removeClass('disabled');
-                    //$('#smf-form-gw-ipt-srv').val(obj.rec.srv);
                 }
                 else {
                     $('#smf-gw-tab-ipt').addClass('disabled');

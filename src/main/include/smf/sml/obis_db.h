@@ -32,11 +32,15 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(00, 00, 00, 00, 02, FF, IDENTITY_NR_2);
 		const static obis	DEFINE_OBIS_CODE(00, 00, 00, 00, 03, FF, IDENTITY_NR_3);
 		const static obis	DEFINE_OBIS_CODE(00, 00, 00, 01, 00, FF, RESET_COUNTER);
+		const static obis	DEFINE_OBIS_CODE(00, 00, 01, 00, 00, FF, REAL_TIME_CLOCK);	//	current time
 
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 01, 00, FF, SERIAL_NR);	//	Serial number I (assigned by the manufacturer).
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 01, 01, FF, SERIAL_NR_SECOND);	//	Serial number II (assigned by the manufacturer).
-		const static obis	DEFINE_OBIS_CODE(00, 00, 61, 61, 00, FF, MBUS_STATE);   //	Status according to EN13757-3
+		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 02, 01, FF, DATE_TIME_PARAMETERISATION);	//	32 bit
+		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 07, 00, FF, POWER_OUTAGES);	//	Number of power failures 
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 08, 00, FF, CONFIG_OVERVIEW);   //	
+		const static obis	DEFINE_OBIS_CODE(00, 00, 60, F0, 0D, FF, HARDWARE_TYPE);   //	octet
+		const static obis	DEFINE_OBIS_CODE(00, 00, 61, 61, 00, FF, MBUS_STATE);   //	Status according to EN13757-3 (error register)
 
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 10, 00, 01, CLASS_OP_LSM_STATUS);	//	LSM status
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 11, 00, FF, ACTUATORS);	//	list of actuators
@@ -61,6 +65,7 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 02, FF, SERVER_ID_1_3);		//	Identifikationsnummer 1.3
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 03, FF, SERVER_ID_1_4);		//	Identifikationsnummer 1.4
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 09, FF, DEVICE_ID);	//	encode profiles
+		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 02, 00, FF, SOFTWARE_ID);	//	octet
 
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 09, 0B, 00, CURRENT_UTC);	//	readout time in UTC
 
@@ -276,6 +281,12 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 11, ATTENTION_NO_ENTRIES);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FD, 00, ATTENTION_OK);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FD, 01, ATTENTION_JOB_IS_RUNNINNG);
+
+		//
+		//	list types
+		//
+		const static obis	DEFINE_OBIS_CODE(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);
+
 
 		/**
 		 * @return a short description of the OBIS code if available

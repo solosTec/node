@@ -162,8 +162,7 @@ namespace node
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_GET_LIST_REQUEST:
-				//cyng::xml::write(node.append_child("data"), body);
-				break;
+				return read_get_list_request(tpl.begin(), tpl.end());
 			case BODY_GET_LIST_RESPONSE:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
@@ -1101,6 +1100,49 @@ namespace node
 				prg << cyng::unwinder(read_set_proc_parameter_request_tree(path, depth, tmp.begin(), tmp.end()));
 			}
 			return prg;
+		}
+
+		cyng::vector_t reader::read_get_list_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		{
+			std::size_t count = std::distance(pos, end);
+			BOOST_ASSERT_MSG(count == 5, "Get List Request");
+			if (count != 5) return cyng::vector_t{};
+
+			//
+			//	clientId - MAC address from caller
+			//
+			read_client_id(*pos++);
+
+			//
+			//	serverId - meter ID
+			//
+			read_server_id(*pos++);
+
+			//
+			//	username
+			//
+			read_string("userName", *pos++);
+
+			//
+			//	password
+			//
+			read_string("password", *pos++);
+
+			//
+			//	list name
+			//
+			obis code = read_obis(*pos++);
+
+			return cyng::generate_invoke("sml.get.list.request"
+				, ro_.pk_
+				, ro_.trx_
+				, ro_.idx_
+				, ro_.client_id_
+				, ro_.server_id_
+				, ro_.get_value("reqFileId")
+				, ro_.get_value("userName")
+				, ro_.get_value("password")
+				, code.to_buffer());
 		}
 
 		cyng::vector_t reader::read_attention_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)

@@ -294,7 +294,7 @@ namespace node
 				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
 
 				//
-				//	generate public open request
+				//	generate get process parameter request
 				//
 				, get_proc_parameter_request(cyng::make_object(server_id)
 					, username
@@ -304,6 +304,30 @@ namespace node
 			);
 		}
 
+		std::size_t req_generator::get_list(cyng::buffer_t const& client_id
+			, cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password
+			, obis code)
+		{
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_GET_LIST_REQUEST	//	0x700
+
+				//
+				//	generate get list request
+				//
+				, get_list_request(cyng::make_object(client_id)
+					, cyng::make_object(server_id)
+					, username
+					, password
+					, code)
+				)
+			);
+
+		}
 
 		std::size_t req_generator::get_proc_parameter_srv_visible(cyng::buffer_t const& srv
 			, std::string const& username
@@ -366,6 +390,14 @@ namespace node
 			, std::string const& password)
 		{
 			return get_proc_parameter(srv, OBIS_CODE_ROOT_IPT_PARAM, username, password);
+		}
+
+		std::size_t req_generator::get_list_last_data_record(cyng::buffer_t const& client_id
+			, cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password)
+		{
+			return get_list(client_id, server_id, username, password, OBIS_CODE(99, 00, 00, 00, 00, 03));
 		}
 
 
@@ -1450,7 +1482,6 @@ namespace node
 			, std::uint8_t power	//	transmision power (transmission_power)
 			, bool install_mode)
 		{
-
 			return append_msg(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
@@ -1472,6 +1503,31 @@ namespace node
 
 			}))));
 		}
+
+		std::size_t res_generator::get_list(cyng::object trx
+			, cyng::buffer_t const& client_id
+			, cyng::buffer_t const& server_id
+			, obis list_name
+			, cyng::tuple_t act_sensor_time
+			, cyng::tuple_t act_gateway_time
+			, cyng::tuple_t val_list)
+		{
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_LIST_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_list_response(client_id
+					, server_id
+					, list_name
+					, act_sensor_time
+					, act_gateway_time
+					, val_list)));
+		}
+
 
 		trx::trx()
 			: rng_()
