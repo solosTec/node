@@ -12,6 +12,7 @@
 #include <cyng/tuple_cast.hpp>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/uuid/nil_generator.hpp>
 
 namespace node 
 {
@@ -166,7 +167,7 @@ namespace node
 		, std::size_t tsk)
 	{
 		//
-		//	Boost gateway records with additional data from the TDevice table
+		//	Boost gateway records with additional data from TDevice and _Session table
 		//
 		if (boost::algorithm::equals(table, "TGateway"))
 		{
@@ -194,7 +195,13 @@ namespace node
 					data.push_back(dev_rec["descr"]);
 					data.push_back(dev_rec["id"]);
 					data.push_back(dev_rec["vFirmware"]);
-					data.push_back(cyng::make_object(!ses_rec.empty()));
+					if (ses_rec.empty()) {
+						data.push_back(cyng::make_object(0));
+					}
+					else {
+						const auto peer = cyng::value_cast(ses_rec["rtag"], boost::uuids::nil_uuid());
+						data.push_back(cyng::make_object(peer.is_nil() ? 1 : 2));
+					}
 				}
 				else
 				{
@@ -202,7 +209,7 @@ namespace node
 						<< cyng::io::to_str(key)
 						<< " has no associated device");
 				}
-			},	cyng::store::read_access("TDevice")
+			}	, cyng::store::read_access("TDevice")
 				, cyng::store::read_access("_Session"));
 
 		}
@@ -232,10 +239,13 @@ namespace node
 					//	Gateway and Device table share the same table key
 					//
 					auto rec = tbl_ses->lookup(key);
-					if (!rec.empty())
-					{
+					if (rec.empty())	{
 						//	set online state
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", true), origin);
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
+					}
+					else {
+						const auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", rtag.is_nil() ? 1 : 2), origin);
 					}
 				}	, cyng::store::write_access("TGateway")
 					, cyng::store::read_access("_Session"));
@@ -543,7 +553,13 @@ namespace node
 					//	get online state
 					//
 					auto ses_rec = tbl_ses->find_first(cyng::param_t("device", key.at(0)));
-					data.push_back(cyng::make_object(!ses_rec.empty()));	//	add on/offline flag
+					if (ses_rec.empty()) {
+						data.push_back(cyng::make_object(0));
+					}
+					else {
+						const auto rtag = cyng::value_cast(ses_rec["rtag"], boost::uuids::nil_uuid());
+						data.push_back(cyng::make_object(rtag.is_nil() ? 1 : 2));
+					}
 
 					if (!tbl_gw->insert(key, data, gen, origin))
 					{
@@ -590,10 +606,13 @@ namespace node
 					//	Gateway and Device table share the same table key
 					//
 					auto rec = tbl_ses->lookup(key);
-					if (!rec.empty())
-					{
+					if (rec.empty()) {
 						//	set online state
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", true), origin);
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
+					}
+					else {
+						const auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", rtag.is_nil() ? 1 : 2), origin);
 					}
 				}	, cyng::store::write_access("TGateway")
 					, cyng::store::read_access("_Session"));
@@ -621,9 +640,9 @@ namespace node
 				if (!rec.empty())
 				{
 					//	set online state
-					tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", false), origin);
+					tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
 				}
-			}, cyng::store::write_access("TGateway")
+			}	, cyng::store::write_access("TGateway")
 				, cyng::store::read_access("_Session"));
 		}
 
@@ -703,7 +722,6 @@ namespace node
 				<< " - "
 				<< cyng::io::to_str(key));
 		}
-
 	}
 
 	void db_req_modify_by_param(cyng::logging::log_ptr logger
@@ -714,6 +732,32 @@ namespace node
 		, std::uint64_t	gen			//	[3] generation
 		, boost::uuids::uuid origin)
 	{
+		if (boost::algorithm::equals(table, "_Session")) {
+			if (boost::algorithm::equals(param.first, "rtag")) {
+
+				const auto rtag = cyng::value_cast(param.second, boost::uuids::nil_uuid());
+
+				//
+				//	mark gateways as online
+				//
+				db.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+
+					//
+					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
+					//	Gateway and Device table share the same table key
+					//
+					auto rec = tbl_ses->lookup(key);
+					if (rec.empty()) {
+						//	set online state
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
+					}
+					else {
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", rtag.is_nil() ? 1 : 2), origin);
+					}
+				}	, cyng::store::write_access("TGateway")
+					, cyng::store::read_access("_Session"));
+			}
+		}
 		if (!db.modify(table, key, param, origin))
 		{
 			CYNG_LOG_WARNING(logger, "db.req.modify.by.param failed "

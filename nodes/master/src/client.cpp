@@ -585,7 +585,11 @@ namespace node
 					//
 					//	There is an open connection
 					//
-					auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+					const auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+					const auto rkey = cyng::table::key_generator(rtag);
+
+					BOOST_ASSERT(tag != rtag);
+					BOOST_ASSERT(!rtag.is_nil());
 
 					//
 					//	simulate a bag
@@ -631,6 +635,13 @@ namespace node
 					//	close open connection
 					//
 					connection_erase(tbl_connection, cyng::table::key_generator(tag, rtag), tag);
+
+					//
+					//	clean up remote session
+					//
+					tbl_session->modify(rkey, cyng::param_factory("rtag", boost::uuids::nil_uuid()), tag);
+					tbl_session->modify(rkey, cyng::param_factory("remote", cyng::null()), tag);
+
 				}
 
 				//
@@ -1164,6 +1175,7 @@ namespace node
 			auto dom = cyng::make_reader(bag);
 			auto tag = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
 			auto key = cyng::table::key_generator(tag);
+			BOOST_ASSERT(!tag.is_nil());
 
 			//
 			//	get session objects
@@ -1174,6 +1186,12 @@ namespace node
 			{
 				auto local_peer = cyng::object_cast<session>(rec["local"]);
 				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
+
+				const auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+				const auto rkey = cyng::table::key_generator(rtag);
+
+				BOOST_ASSERT(tag != rtag);
+				BOOST_ASSERT(!rtag.is_nil());
 
 				//
 				//	get name of origin
@@ -1222,7 +1240,7 @@ namespace node
 					//
 					//	remove connection record
 					//
-					if (!connection_erase(tbl_connection, cyng::table::key_generator(tag, rec["rtag"]), tag))
+					if (!connection_erase(tbl_connection, cyng::table::key_generator(tag, rtag), tag))
 					{
 						CYNG_LOG_ERROR(logger_, tag
 							<< "remove connection record "
@@ -1230,9 +1248,19 @@ namespace node
 							<< ":"
 							<< tag
 							<< " <=> "
-							<< cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid())
+							<< rtag
 							<< " failed");
 					}
+
+					//
+					//	cleanup "remote" attributes
+					//
+					tbl_session->modify(key, cyng::param_factory("rtag", boost::uuids::nil_uuid()), tag);
+					tbl_session->modify(key, cyng::param_factory("remote", cyng::null()), tag);
+
+					tbl_session->modify(rkey, cyng::param_factory("rtag", boost::uuids::nil_uuid()), tag);
+					tbl_session->modify(rkey, cyng::param_factory("remote", cyng::null()), tag);
+
 				}
 				else
 				{

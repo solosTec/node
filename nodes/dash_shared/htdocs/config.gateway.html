@@ -460,10 +460,15 @@
     <script>
         var renderOnlineState = function (data, type, full, meta) {
             if (type == "display") {
-                if (!data) {
-                    return "<div style='width: 10px; border: 10px #ccc solid;'></div>";
+                switch (data) {
+                    case 1:
+                        return "<div style='width: 10px; border: 10px green solid; border-radius: 50%;'></div>";
+                    case 2:
+                        return "<div style='width: 10px; border: 10px #ffc107 solid; border-radius: 50%;'></div>";
+                    default:
+                        break;
                 }
-                return "<div style='width: 10px; border: 10px green solid; border-radius: 50%;'></div>";
+                return "<div style='width: 10px; border: 10px #ccc solid;'></div>";
             }
             return data;
         };
@@ -849,13 +854,13 @@
                             }
                         }
                         else if (obj.channel == 'root-device-id') {
-                            //  {"cmd": "update", "channel": "root-device-id", "rec": {"srv": "00:15:3b:02:17:74", "values": {"active":true,"firmware":"KERNEL","number":5,"version":"2.6.20.7 (#1 Fri Mar 30 12:25:42 CEST 2012)"}}}
+                            //  {"cmd": "update", "channel": "root-device-id", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"active":false,"firmware":"FACTORY VERSION","number":2,"version":"VSES-1.11_11132000__X025b"}}}
                             if (obj.cmd == 'update') {
                                 if (obj.rec.values.active) {
                                     $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-success">#'
                                         + obj.rec.values.number
                                         + ' '
-                                        + obj.rec.values.firware
+                                        + obj.rec.values.firmware
                                         + ': '
                                         + obj.rec.values.version
                                         + '</li>');
@@ -864,7 +869,7 @@
                                     $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
                                         + obj.rec.values.number
                                         + ' '
-                                        + obj.rec.values.firware
+                                        + obj.rec.values.firmware
                                         + ': '
                                         + obj.rec.values.version
                                         + '</li>');
@@ -1010,6 +1015,12 @@
             $('#smf-form-gw-status-word').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-status-word').removeClass('disabled');
+                    var data = table_gw.rows({ selected: true }).data();
+                    if (data.length != 0) {
+                        _ws.send(JSON.stringify({
+                            cmd: "query:gateway", channel: "config.gateway", key: [data[0][0]], params: ["status:word"]
+                        }));
+                    }
                 }
                 else {
                     $('#smf-gw-tab-status-word').addClass('disabled');
@@ -1019,6 +1030,12 @@
             $('#smf-form-gw-srv-visible').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-srv-visible').removeClass('disabled');
+                    var data = table_gw.rows({ selected: true }).data();
+                    if (data.length != 0) {
+                        _ws.send(JSON.stringify({
+                            cmd: "query:gateway", channel: "config.gateway", key: [data[0][0]], params: ["srv:visible"]
+                        }));
+                    }
                 }
                 else {
                     $('#smf-gw-tab-srv-visible').addClass('disabled');
@@ -1028,6 +1045,12 @@
             $('#smf-form-gw-srv-active').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-srv-active').removeClass('disabled');
+                    var data = table_gw.rows({ selected: true }).data();
+                    if (data.length != 0) {
+                        _ws.send(JSON.stringify({
+                            cmd: "query:gateway", channel: "config.gateway", key: [data[0][0]], params: ["srv:active"]
+                        }));
+                    }
                 }
                 else {
                     $('#smf-gw-tab-srv-active').addClass('disabled');
@@ -1037,6 +1060,12 @@
             $('#smf-form-gw-firmware').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-firmware').removeClass('disabled');
+                    var data = table_gw.rows({ selected: true }).data();
+                    if (data.length != 0) {
+                        _ws.send(JSON.stringify({
+                            cmd: "query:gateway", channel: "config.gateway", key: [data[0][0]], params: ["firmware"]
+                        }));
+                    }
                 }
                 else {
                     $('#smf-gw-tab-firmware').addClass('disabled');
@@ -1046,6 +1075,12 @@
             $('#smf-form-gw-memory').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-memory').removeClass('disabled');
+                    var data = table_gw.rows({ selected: true }).data();
+                    if (data.length != 0) {
+                        _ws.send(JSON.stringify({
+                            cmd: "query:gateway", channel: "config.gateway", key: [data[0][0]], params: ["memory"]
+                        }));
+                    }
                 }
                 else {
                     $('#smf-gw-tab-memory').addClass('disabled');
@@ -1055,6 +1090,12 @@
             $('#smf-form-gw-wireless-mbus').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-wireless-mbus').removeClass('disabled');
+                    var data = table_gw.rows({ selected: true }).data();
+                    if (data.length != 0) {
+                        _ws.send(JSON.stringify({
+                            cmd: "query:gateway", channel: "config.gateway", key: [data[0][0]], params: ["w-mbus-status", "w-mbus-config"]
+                        }));
+                    }
                 }
                 else {
                     $('#smf-gw-tab-wireless-mbus').addClass('disabled');
@@ -1064,6 +1105,12 @@
             $('#smf-form-gw-ipt').change(function () {
                 if (this.checked) {
                     $('#smf-gw-tab-ipt').removeClass('disabled');
+                    var data = table_gw.rows({ selected: true }).data();
+                    if (data.length != 0) {
+                        _ws.send(JSON.stringify({
+                            cmd: "query:gateway", channel: "config.gateway", key: [data[0][0]], params: ["ipt-status", "ipt-config"]
+                        }));
+                    }
                 }
                 else {
                     $('#smf-gw-tab-ipt').addClass('disabled');
