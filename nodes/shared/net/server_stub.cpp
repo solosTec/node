@@ -514,12 +514,6 @@ namespace node
 		{
 			BOOST_ASSERT(tag == pos->first);
 			return close_connection(tag, pos->second);
-			//auto cp = cyng::object_cast<connection>(pos->second);
-			////	close IP socket intentionally
-			//if (cp != nullptr) {
-			//	const_cast<connection*>(cp)->close();
-			//	return true;
-			//}
 		}
 		return false;
 	}
@@ -565,6 +559,7 @@ namespace node
 			auto pos = msg.begin();
 			BOOST_ASSERT(pos != msg.end());
 			auto tag = cyng::value_cast(*pos, boost::uuids::nil_uuid());
+			BOOST_ASSERT_MSG(!tag.is_nil(), "invalid propagation protocol");
 
 			//
 			//	remove duplicate information
@@ -572,8 +567,7 @@ namespace node
 			propagate(fun, tag, cyng::vector_t(++pos, msg.end()));
 		}
 		else	{
-			CYNG_LOG_FATAL(logger_, "empty function "
-				<< fun);
+			CYNG_LOG_FATAL(logger_, "empty function " << fun);
 		}
 	}
 
@@ -726,13 +720,16 @@ namespace node
 				<< local_connect	//	"true" is the only logical value
 				;
 
+			//
+			//	manage local connections
+			//
 			propagate("session.update.connection.state", remote_tag, std::move(prg));
 		}
 
 		//
-		//	forward to session
+		//	forward to session: "client.res.open.connection.forward"
 		//
-		propagate("client.res.open.connection.forward", std::move(frame));
+		propagate(ctx.get_name(), std::move(frame));
 	}
 }
 

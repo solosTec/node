@@ -8,23 +8,20 @@
 #ifndef NODE_MODEM_SESSION_H
 #define NODE_MODEM_SESSION_H
 
-#include <smf/cluster/bus.h>
+//#include <smf/cluster/bus.h>
 #include <smf/modem/parser.h>
-#include <cyng/async/mux.h>
-#include <cyng/log.h>
-#include <cyng/vm/controller.h>
+#include <smf/modem/serializer.h>
+#include <smf/cluster/session_stub.h>
+//#include <cyng/async/mux.h>
+//#include <cyng/log.h>
+//#include <cyng/vm/controller.h>
 
 namespace node 
 {
 	namespace modem
 	{
-		class connection;
-		class server;
-		class session
+		class session : public session_stub
 		{
-			friend class connection;
-			friend class server;
-
 			struct connect_state
 			{
 				enum state {
@@ -44,7 +41,8 @@ namespace node
 			std::string to_str(connect_state const&);
 
 		public:
-			session(cyng::async::mux& mux
+			session(boost::asio::ip::tcp::socket&& socket
+				, cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
 				, bus::shared_type
 				, boost::uuids::uuid tag
@@ -57,7 +55,13 @@ namespace node
 
 			virtual ~session();
 
-			void stop();
+		protected:
+			/**
+			 * stop running tasks and halt VM
+			 */
+			virtual void shutdown();
+
+			virtual cyng::buffer_t parse(read_buffer_const_iterator, read_buffer_const_iterator) override;
 
 		private:
 
@@ -108,17 +112,17 @@ namespace node
 			void modem_req_info(cyng::context& ctx);
 
 		private:
-			cyng::async::mux& mux_;
-			cyng::logging::log_ptr logger_;
-			bus::shared_type bus_;	//!< cluster bus
-			cyng::controller vm_;	//!< modem device
-			const std::chrono::seconds timeout_;
 			const bool auto_answer_;
 
 			/**
 			 * modem parser
 			 */
 			parser 	parser_;
+
+			/**
+			 * modem serializer
+			 */
+			serializer 	serializer_;
 
 			/**
 			 * gatekeeper task
@@ -130,7 +134,81 @@ namespace node
 			 */
 			connect_state	connect_state_;
 		};
+
+		cyng::object make_session(boost::asio::ip::tcp::socket&& socket
+			, cyng::async::mux& mux
+			, cyng::logging::log_ptr logger
+			, bus::shared_type
+			, boost::uuids::uuid tag
+			, std::chrono::seconds const& timeout
+			, bool auto_answer
+			, std::chrono::milliseconds guard_time);
+
 	}
+}
+
+#include <cyng/intrinsics/traits.hpp>
+namespace cyng
+{
+	namespace traits
+	{
+		template <>
+		struct type_tag<node::modem::session>
+		{
+			using type = node::modem::session;
+			using tag = std::integral_constant<std::size_t, PREDEF_CONNECTION>;
+#if defined(CYNG_LEGACY_MODE_ON)
+			const static char name[];
+#else
+			constexpr static char name[] = "ipt:connection";
+#endif
+		};
+
+		template <>
+		struct reverse_type < PREDEF_CONNECTION >
+		{
+			using type = node::modem::session;
+		};
+	}
+}
+
+#include <functional>
+#include <boost/functional/hash.hpp>
+
+namespace std
+{
+	template<>
+	struct hash<node::modem::session>
+	{
+		inline size_t operator()(node::modem::session const& conn) const noexcept
+		{
+			return conn.hash();
+		}
+	};
+	template<>
+	struct equal_to<node::modem::session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::modem::session;
+		using second_argument_type = node::modem::session;
+
+		inline bool operator()(first_argument_type const& conn1, second_argument_type const& conn2) const noexcept
+		{
+			return conn1.hash() == conn2.hash();
+		}
+	};
+	template<>
+	struct less<node::modem::session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::modem::session;
+		using second_argument_type = node::modem::session;
+
+		inline bool operator()(first_argument_type const& conn1, second_argument_type const& conn2) const noexcept
+		{
+			return conn1.hash() < conn2.hash();
+		}
+	};
 }
 
 #endif

@@ -5,17 +5,21 @@ set (node_modem_cpp
 
 	nodes/modem/src/main.cpp	
 	nodes/modem/src/controller.cpp
+	nodes/shared/net/server_stub.cpp
+	nodes/shared/net/session_stub.cpp
 	nodes/modem/src/server.cpp
-	nodes/modem/src/connection.cpp
 	nodes/modem/src/session.cpp
+#	nodes/modem/src/connection.cpp
 )
 
 set (node_modem_h
 
 	nodes/modem/src/controller.h
+	src/main/include/smf/cluster/server_stub.h
 	nodes/modem/src/server.h
-	nodes/modem/src/connection.h
+	src/main/include/smf/cluster/session_stub.h
 	nodes/modem/src/session.h
+#	nodes/modem/src/connection.h
 )
 
 set (node_modem_info
@@ -37,8 +41,10 @@ set (node_modem_info
 set (node_modem_tasks
 	nodes/modem/src/tasks/cluster.h
 	nodes/modem/src/tasks/cluster.cpp
-	nodes/modem/src/tasks/gatekeeper.h
-	nodes/modem/src/tasks/gatekeeper.cpp
+#	nodes/modem/src/tasks/gatekeeper.h
+#	nodes/modem/src/tasks/gatekeeper.cpp
+	nodes/shared/tasks/gatekeeper.h
+	nodes/shared/tasks/gatekeeper.cpp
 )
 	
 if(WIN32)

@@ -18,7 +18,6 @@ set (node_e350_h
 	src/main/include/smf/cluster/server_stub.h
 	nodes/e350/src/server.h
 #	nodes/e350/src/connection.h
-#	src/main/include/smf/cluster/connection_stub.hpp
 	src/main/include/smf/cluster/session_stub.h
 	nodes/e350/src/session.h
 )
@@ -42,8 +41,6 @@ set (node_e350_info
 set (node_e350_tasks
 	nodes/e350/src/tasks/cluster.h
 	nodes/e350/src/tasks/cluster.cpp
-#	nodes/e350/src/tasks/gatekeeper.h
-#	nodes/e350/src/tasks/gatekeeper.cpp
 	nodes/shared/tasks/gatekeeper.h
 	nodes/shared/tasks/gatekeeper.cpp
 )

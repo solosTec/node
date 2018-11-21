@@ -250,9 +250,18 @@ namespace node
 				{
 					//	ATI - informational output
 					boost::algorithm::erase_head(inp, 1);
-					p.cb_(cyng::generate_invoke("modem.req.info"
-						, cyng::code::IDENT
-						, static_cast<std::uint32_t>(std::stoul(inp))));
+
+					try {
+						const auto info = std::stoul(inp);
+						p.cb_(cyng::generate_invoke("modem.req.info"
+							, cyng::code::IDENT
+							, static_cast<std::uint32_t>(info)));
+					}
+					catch (std::exception const& ex) {
+						p.cb_(cyng::generate_invoke("modem.req.info"
+							, cyng::code::IDENT
+							, static_cast<std::uint32_t>(0u)));
+					}
 
 				}
 				else if (boost::algorithm::starts_with(inp, "O") || boost::algorithm::starts_with(inp, "o"))

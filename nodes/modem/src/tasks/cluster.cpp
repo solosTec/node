@@ -28,7 +28,7 @@ namespace node
 		, config_(cfg_cluster)
 		, address_(address)
 		, service_(service)
-		, server_(btp->mux_, logger_, bus_, timeout, auto_answer, guard_time)
+		, server_(btp->mux_, logger_, bus_, std::chrono::seconds(timeout), auto_answer, guard_time)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

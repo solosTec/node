@@ -7,7 +7,7 @@
 
 
 #include "session.h"
-#include "tasks/gatekeeper.h"
+#include "../../shared/tasks/gatekeeper.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 #include <cyng/vm/domain/log_domain.h>
@@ -19,24 +19,23 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/nil_generator.hpp>
+#ifdef SMF_IO_DEBUG
+#include <cyng/io/hex_dump.hpp>
+#endif
 
 namespace node 
 {
 	namespace modem
 	{
-		session::session(cyng::async::mux& mux
+		session::session(boost::asio::ip::tcp::socket&& socket
+			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
 			, boost::uuids::uuid tag
 			, std::chrono::seconds const& timeout
 			, bool auto_answer
 			, std::chrono::milliseconds guard_time)
-		: mux_(mux)
-			, logger_(logger)
-			, bus_(bus)
-			, vm_(mux.get_io_service(), tag)
-			, timeout_(timeout)
-			, auto_answer_(auto_answer)
+		: session_stub(std::move(socket), mux, logger, bus, tag, timeout)
 			, parser_([this](cyng::vector_t&& prg) {
 				CYNG_LOG_INFO(logger_, prg.size() << " modem instructions received");
 				CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
@@ -46,15 +45,12 @@ namespace node
 				, logger_
 				, vm_
 				, tag
-				, timeout_).first)
+				, timeout
+				, cyng::generate_invoke("stream.serialize", cyng::make_buffer({ 't', 'i', 'm', 'e', 'o', 'u', 't', '\n' }))).first)
+			, serializer_(socket_, vm_)
+			, auto_answer_(auto_answer)
 			, connect_state_()
 		{
-			//
-			//	register logger domain
-			//
-			cyng::register_logger(logger_, vm_);
-			vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
-
 			vm_.register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1));
 			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
 
@@ -236,15 +232,60 @@ namespace node
 		session::~session()
 		{}
 
-		void session::stop()
+		cyng::buffer_t session::parse(read_buffer_const_iterator begin, read_buffer_const_iterator end)
 		{
-			vm_.access([](cyng::vm& vm) {
+			const auto bytes_transferred = std::distance(begin, end);
+			vm_.async_run(cyng::generate_invoke("log.msg.trace", "modem connection received", bytes_transferred, "bytes"));
 
-				//
-				//	halt VM
-				//
-				vm.run(cyng::vector_t{ cyng::make_object(cyng::code::HALT) });
-			});
+			//
+			//	size == parsed bytes
+			//
+			const auto size = parser_.read(begin, end);
+			BOOST_ASSERT(size == bytes_transferred);
+			boost::ignore_unused(size);	//	release version
+
+#ifdef SMF_IO_DEBUG
+			cyng::io::hex_dump hd;
+			std::stringstream ss;
+			hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
+			CYNG_LOG_TRACE(logger_, "imega input dump \n" << ss.str());
+#endif
+			return cyng::buffer_t(begin, end);
+		}
+
+		void session::shutdown()
+		{
+			//
+			//	There could be a running gatekeeper
+			//
+			CYNG_LOG_TRACE(logger_, vm_.tag() << " stops connection manager " << to_str(connect_state_));
+			connect_state_.set_connected(false);
+
+			//
+			//	clear connection map
+			//
+			if (connect_state_.is_connected()) {
+
+				bus_->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", vm_.tag()));
+			}
+
+			//
+			//	stop all tasks
+			//
+
+			//
+			//	reset AT parser
+			//
+
+			//
+			//	reset AT serializer
+			//
+
+			//
+			//	call baseclass
+			//
+			session_stub::shutdown();
+
 		}
 
 		void session::store_relation(cyng::context& ctx)
@@ -504,10 +545,6 @@ namespace node
 			auto dom = cyng::make_reader(std::get<6>(tpl));
 			boost::ignore_unused(dom);
 
-			//
-			//	stop gatekeeper
-			//
-			//mux_.send(gate_keeper_, 0, cyng::tuple_factory(res));
 
 			//const std::string security = cyng::value_cast<std::string>(dom.get("security"), "undef");
 			//if (boost::algorithm::equals(security, "scrambled"))
@@ -1160,8 +1197,37 @@ namespace node
 			return state_ != NOT_CONNECTED_;
 		}
 
+		cyng::object make_session(boost::asio::ip::tcp::socket&& socket
+			, cyng::async::mux& mux
+			, cyng::logging::log_ptr logger
+			, bus::shared_type bus
+			, boost::uuids::uuid tag
+			, std::chrono::seconds const& timeout
+			, bool auto_answer
+			, std::chrono::milliseconds guard_time)
+		{
+			return cyng::make_object<session>(std::move(socket)
+				, mux
+				, logger
+				, bus
+				, tag
+				, timeout
+				, auto_answer
+				, guard_time);
+
+		}
 	}
 }
 
 
+namespace cyng
+{
+	namespace traits
+	{
+
+#if defined(CYNG_LEGACY_MODE_ON)
+		const char type_tag<node::modem::session>::name[] = "modem::session";
+#endif
+	}	// traits	
+}
 

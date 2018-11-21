@@ -182,6 +182,11 @@ namespace node
 					<< ec.message()
 					<< ']');
 
+				//
+				//	master has to acknowledge that session is closed
+				//
+				pending_ = true;	
+				socket_.close(ec);
 				stop(ec);
 			}
 			else

@@ -38,9 +38,6 @@ namespace node
 
 		bool server::close_connection(boost::uuids::uuid tag, cyng::object obj)
 		{
-			//const_cast<connection*>(cyng::object_cast<connection>(conn.second))->close();
-			//using connection_t = connection_stub<session, serializer>;
-
 			const auto ptr = cyng::object_cast<session>(obj);
 			if (ptr != nullptr)	const_cast<session*>(ptr)->close();
 			return (ptr != nullptr);
@@ -48,18 +45,12 @@ namespace node
 
 		void server::start_client(cyng::object obj)
 		{
-			//const_cast<connection*>(cyng::object_cast<connection>((*r.first).second))->start();
-			//using connection_t = connection_stub<session, serializer>;
-
 			const auto ptr = cyng::object_cast<session>(obj);
 			if (ptr != nullptr)	const_cast<session*>(ptr)->start();
 		}
 
 		void server::propagate(cyng::object obj, cyng::vector_t&& prg)
 		{
-			//cyng::object_cast<connection>((*pos).second)->session_.vm_.async_run(std::move(prg));
-			//using connection_t = connection_stub<session, serializer>;
-
 			const auto ptr = cyng::object_cast<session>(obj);
 			if (ptr != nullptr) const_cast<session*>(ptr)->vm().async_run(std::move(prg));
 		}
