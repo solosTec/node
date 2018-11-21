@@ -43,6 +43,13 @@ namespace node
 		virtual void start_client(cyng::object) = 0;
 		virtual void propagate(cyng::object, cyng::vector_t&& msg) = 0;
 
+		/**
+		 * Generic method to propagate a function call.
+		 * Assumes that the first value of the program vector contains
+		 * a client tag.
+		 */
+		void client_propagate(cyng::context&);
+
 	private:
 		/**
 		 * Perform an asynchronous accept operation.
@@ -60,12 +67,6 @@ namespace node
 
 		void transmit_data(cyng::context& ctx);	//!< transmit data locally
 
-		/**
-		 * Generic method to propagate a function call. 
-		 * Assumes that the first value of the program vector contains 
-		 * a client tag.
-		 */
-		void client_propagate(cyng::context&);
 
 		void client_res_close_impl(cyng::context&);
 		void client_req_close_impl(cyng::context&);

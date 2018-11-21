@@ -75,10 +75,6 @@ namespace node
 			//	* remove session from IP-T masters client_map
 			//
 			vm_.async_run({ cyng::generate_invoke("session.state.pending")
-//#ifdef _DEBUG
-//				, cyng::generate_invoke("ipt.transfer.data", cyng::make_buffer({'t', 'i', 'm', 'e', 'o', 'u', 't', '\n' }))
-//				, cyng::generate_invoke("stream.flush")
-//#endif
 				, prg_
 				, cyng::generate_invoke("stream.flush")
 				, cyng::generate_invoke("ip.tcp.socket.shutdown")

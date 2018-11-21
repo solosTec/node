@@ -29,7 +29,7 @@ namespace node
 	, config_(cfg_cls)
 	, ipt_address_(address)
 	, ipt_service_(service)
-	, server_(btp->mux_, logger_, bus_, sk, watchdog, timeout)
+	, server_(btp->mux_, logger_, bus_, std::chrono::seconds(timeout), sk, watchdog)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

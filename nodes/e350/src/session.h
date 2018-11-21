@@ -51,6 +51,14 @@ namespace node
 
 			virtual ~session();
 
+		protected:
+			/**
+			 * stop running tasks and halt VM
+			 */
+			virtual void shutdown();
+
+			virtual cyng::buffer_t parse(read_buffer_const_iterator, read_buffer_const_iterator) override;
+
 		private:
 
 			void imega_req_login(cyng::context& ctx);
@@ -77,15 +85,8 @@ namespace node
 			void store_relation(cyng::context& ctx);
 			void update_connection_state(cyng::context& ctx);
 
-		protected:
-			/**
-			 * stop running tasks and halt VM
-			 */
-			virtual void shutdown();
 
-			virtual cyng::buffer_t parse(read_buffer_const_iterator, read_buffer_const_iterator) override;
-
-		public:
+		private:
 			/**
 			 * iMEGA parser
 			 */
@@ -97,7 +98,6 @@ namespace node
 			 */
 			serializer		serializer_;
 
-		private:
 			/**
 			 * gatekeeper task
 			 */

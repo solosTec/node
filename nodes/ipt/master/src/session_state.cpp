@@ -82,7 +82,8 @@ namespace node
 					<< tsk_);
 
 				const response_type res = ctrl_res_login_public_policy::GENERAL_ERROR;
-				sr_.mux_.post(tsk_, 0, cyng::tuple_factory(res));
+				//sr_.mux_.post(tsk_, 0, cyng::tuple_factory(res));
+				sr_.mux_.post(tsk_, 0, cyng::tuple_factory(ctrl_res_login_public_policy::is_success(res)));
 			}
 		}
 

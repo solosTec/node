@@ -5,7 +5,9 @@ set (node_ipt_master_cpp
 
 	nodes/ipt/master/src/main.cpp	
 	nodes/ipt/master/src/controller.cpp
-	nodes/ipt/master/src/connection.cpp
+	nodes/shared/net/server_stub.cpp
+	nodes/shared/net/session_stub.cpp
+#	nodes/ipt/master/src/connection.cpp
 	nodes/ipt/master/src/server.cpp
 	nodes/ipt/master/src/session.cpp
 	nodes/ipt/master/src/session_state.cpp
@@ -14,8 +16,10 @@ set (node_ipt_master_cpp
 set (node_ipt_master_h
 
 	nodes/ipt/master/src/controller.h
-	nodes/ipt/master/src/connection.h
+#	nodes/ipt/master/src/connection.h
+	src/main/include/smf/cluster/server_stub.h
 	nodes/ipt/master/src/server.h
+	src/main/include/smf/cluster/session_stub.h
 	nodes/ipt/master/src/session.h
 )
 
@@ -36,14 +40,16 @@ set (node_ipt_master_info
 )
 
 set (node_ipt_master_tasks
+	nodes/shared/tasks/gatekeeper.h
+	nodes/shared/tasks/gatekeeper.cpp
+#	nodes/ipt/master/src/tasks/gatekeeper.h
+#	nodes/ipt/master/src/tasks/gatekeeper.cpp
 	nodes/ipt/master/src/tasks/cluster.h
 	nodes/ipt/master/src/tasks/cluster.cpp
 	nodes/ipt/master/src/tasks/open_connection.h
 	nodes/ipt/master/src/tasks/open_connection.cpp
 	nodes/ipt/master/src/tasks/close_connection.h
 	nodes/ipt/master/src/tasks/close_connection.cpp
-	nodes/ipt/master/src/tasks/gatekeeper.h
-	nodes/ipt/master/src/tasks/gatekeeper.cpp
 	nodes/ipt/master/src/tasks/reboot.h
 	nodes/ipt/master/src/tasks/reboot.cpp
 	nodes/ipt/master/src/tasks/query_gateway.h

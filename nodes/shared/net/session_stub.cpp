@@ -19,7 +19,7 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, bus::shared_type bus
 		, boost::uuids::uuid tag
-		, std::chrono::seconds const& timeout)
+		, std::chrono::seconds timeout)
 	: socket_(std::move(socket))
 		, buffer_()
 		, pending_(false)
@@ -27,6 +27,7 @@ namespace node
 		, logger_(logger)
 		, bus_(bus)
 		, vm_(mux.get_io_service(), tag)
+		, timeout_(timeout)
 	{
 		//
 		//	register logger domain
@@ -210,6 +211,5 @@ namespace node
 			}
 		});
 	};
-
 }
 

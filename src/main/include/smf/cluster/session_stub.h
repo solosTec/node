@@ -66,13 +66,18 @@ namespace node
 		 */
 		cyng::controller vm_;	
 
+		/**
+		 * operational timeout
+		 */
+		const std::chrono::seconds timeout_;
+
 	public:
 		session_stub(boost::asio::ip::tcp::socket&& socket
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
 			, boost::uuids::uuid tag
-			, std::chrono::seconds const& timeout);
+			, std::chrono::seconds timeout);
 
 		session_stub(session_stub const&) = delete;
 		session_stub& operator=(session_stub const&) = delete;
@@ -111,82 +116,5 @@ namespace node
 	};
 }
 
-//namespace cyng
-//{
-//	namespace traits
-//	{
-//
-//#if defined(CYNG_LEGACY_MODE_ON)
-//		const char type_tag<node::ipt::connection>::name[] = "ipt::connection";
-//#endif
-//	}	// traits	
-//}
-
-
-#include <cyng/intrinsics/traits.hpp>
-//namespace cyng
-//{
-//	namespace traits
-//	{
-//		template <typename SESSION, typename SERIALIZER>
-//		struct type_tag<node::connection_stub<SESSION, SERIALIZER>>
-//		{
-//			using type = node::connection_stub<SESSION, SERIALIZER>;
-//			using tag = std::integral_constant<std::size_t, PREDEF_CONNECTION>;
-//#if defined(CYNG_LEGACY_MODE_ON)
-//			const static char name[];
-//#else
-//			constexpr static char name[] = "connection";
-//#endif
-//		};
-//
-//		template <>
-//		struct reverse_type < PREDEF_CONNECTION >
-//		{
-//			//using type = node::connection_stub<SESSION, SERIALIZER>;
-//			using type = void;
-//		};
-//	}
-//}
-
-#include <functional>
-#include <boost/functional/hash.hpp>
-
-//namespace std
-//{
-//	template<typename SESSION, typename SERIALIZER>
-//	struct hash<node::connection_stub<SESSION, SERIALIZER>>
-//	{
-//		using argument_type = node::connection_stub<SESSION, SERIALIZER>;
-//		inline size_t operator()(argument_type const& conn) const noexcept
-//		{
-//			return conn.hash();
-//		}
-//	};
-//	template<typename SESSION, typename SERIALIZER>
-//	struct equal_to<node::connection_stub<SESSION, SERIALIZER>>
-//	{
-//		using result_type = bool;
-//		using first_argument_type = node::connection_stub<SESSION, SERIALIZER>;
-//		using second_argument_type = node::connection_stub<SESSION, SERIALIZER>;
-//
-//		inline bool operator()(first_argument_type const& conn1, second_argument_type const& conn2) const noexcept
-//		{
-//			return conn1.hash() == conn2.hash();
-//		}
-//	};
-//	template<typename SESSION, typename SERIALIZER>
-//	struct less<node::connection_stub<SESSION, SERIALIZER>>
-//	{
-//		using result_type = bool;
-//		using first_argument_type = node::connection_stub<SESSION, SERIALIZER>;
-//		using second_argument_type = node::connection_stub<SESSION, SERIALIZER>;
-//
-//		inline bool operator()(first_argument_type const& conn1, second_argument_type const& conn2) const noexcept
-//		{
-//			return conn1.hash() < conn2.hash();
-//		}
-//	};
-//}
 
 #endif

@@ -8,24 +8,23 @@
 #ifndef NODE_IPT_MASTER_SESSION_H
 #define NODE_IPT_MASTER_SESSION_H
 
-#include <smf/cluster/bus.h>
 #include <smf/ipt/parser.h>
-#include <cyng/async/mux.h>
-#include <cyng/log.h>
-#include <cyng/vm/controller.h>
-#include <cyng/compatibility/async.h>
+#include <smf/ipt/serializer.h>
+#include <smf/cluster/session_stub.h>
+
+//#include <smf/cluster/bus.h>
+//#include <smf/ipt/parser.h>
+//#include <cyng/async/mux.h>
+//#include <cyng/log.h>
+//#include <cyng/vm/controller.h>
+//#include <cyng/compatibility/async.h>
 
 namespace node 
 {
 	namespace ipt
 	{
-		class connection;
-		class server;
-		class session
+		class session : public session_stub
 		{
-			friend class connection;
-			friend class server;
-
 			struct connect_state
 			{
 				connect_state(session*, std::size_t);
@@ -114,31 +113,40 @@ namespace node
 			friend std::ostream& operator<<(std::ostream& os, session::connect_state const& cs);
 
 		public:
-			session(cyng::async::mux& mux
+			session(boost::asio::ip::tcp::socket&& socket
+				, cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
-				, bus::shared_type
+				, bus::shared_type bus
 				, boost::uuids::uuid tag
+				, std::chrono::seconds timeout
 				, scramble_key const& sk
-				, std::uint16_t watchdog
-				, std::chrono::seconds const& timeout);
+				, std::uint16_t watchdog);
 
 			session(session const&) = delete;
 			session& operator=(session const&) = delete;
 
 			virtual ~session();
 
+		protected:
+			/**
+			 * stop running tasks and halt VM
+			 */
+			virtual void shutdown();
+
+			virtual cyng::buffer_t parse(read_buffer_const_iterator, read_buffer_const_iterator) override;
+
 		private:
 			/**
 			 * The connection detected a disconnect and calls the stop method
 			 * with the received error code.
 			 */
-			void stop_req(boost::system::error_code ec);
-			void stop_res(boost::system::error_code ec);
+			//void stop_req(boost::system::error_code ec);
+			//void stop_res(boost::system::error_code ec);
 
 			/**
 			 * stop running tasks and halt VM
 			 */
-			void shutdown();
+			//void shutdown();
 
 			void ipt_req_login_public(cyng::context& ctx);
 			void ipt_req_login_scrambled(cyng::context& ctx);
@@ -209,18 +217,24 @@ namespace node
 			void client_req_modify_gateway(cyng::context& ctx);
 
 		private:
-			cyng::async::mux& mux_;
-			cyng::logging::log_ptr logger_;
-			bus::shared_type bus_;	//!< cluster bus
-			cyng::controller vm_;	//!< ipt device
-			const scramble_key sk_;
-			const std::uint16_t watchdog_;
-			const std::chrono::seconds timeout_;
+			//cyng::async::mux& mux_;
+			//cyng::logging::log_ptr logger_;
+			//bus::shared_type bus_;	//!< cluster bus
+			//cyng::controller vm_;	//!< ipt device
+			//const std::chrono::seconds timeout_;
 
 			/**
 			 * ipt parser
 			 */
 			parser 	parser_;
+
+			/**
+			 * ipt serializer
+			 */
+			serializer		serializer_;
+
+			const scramble_key sk_;
+			const std::uint16_t watchdog_;
 
 			/**
 			 * bookkeeping of ip-t sequence to task relation
@@ -233,17 +247,86 @@ namespace node
 			 */
 			connect_state	connect_state_;
 
-			/**
-			 * session is in shutdown mode
-			 */
-			bool pending_;
 
 #ifdef SMF_IO_LOG
 			std::size_t log_counter_;
 #endif
 		};
 
+		cyng::object make_session(boost::asio::ip::tcp::socket&& socket
+			, cyng::async::mux& mux
+			, cyng::logging::log_ptr logger
+			, bus::shared_type bus
+			, boost::uuids::uuid tag
+			, std::chrono::seconds const& timeout
+			, scramble_key const& sk
+			, std::uint16_t watchdog);
+
 	}
+}
+
+#include <cyng/intrinsics/traits.hpp>
+namespace cyng
+{
+	namespace traits
+	{
+		template <>
+		struct type_tag<node::ipt::session>
+		{
+			using type = node::ipt::session;
+			using tag = std::integral_constant<std::size_t, PREDEF_CONNECTION>;
+#if defined(CYNG_LEGACY_MODE_ON)
+			const static char name[];
+#else
+			constexpr static char name[] = "ipt:session";
+#endif
+		};
+
+		template <>
+		struct reverse_type < PREDEF_CONNECTION >
+		{
+			using type = node::ipt::session;
+		};
+	}
+}
+
+#include <functional>
+#include <boost/functional/hash.hpp>
+
+namespace std
+{
+	template<>
+	struct hash<node::ipt::session>
+	{
+		inline size_t operator()(node::ipt::session const& conn) const noexcept
+		{
+			return conn.hash();
+		}
+	};
+	template<>
+	struct equal_to<node::ipt::session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::ipt::session;
+		using second_argument_type = node::ipt::session;
+
+		inline bool operator()(first_argument_type const& conn1, second_argument_type const& conn2) const noexcept
+		{
+			return conn1.hash() == conn2.hash();
+		}
+	};
+	template<>
+	struct less<node::ipt::session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::ipt::session;
+		using second_argument_type = node::ipt::session;
+
+		inline bool operator()(first_argument_type const& conn1, second_argument_type const& conn2) const noexcept
+		{
+			return conn1.hash() < conn2.hash();
+		}
+	};
 }
 
 #endif
