@@ -5,13 +5,12 @@
  *
  */
 
-#ifndef NODE_E350_TASK_GATEKEEPER_H
-#define NODE_E350_TASK_GATEKEEPER_H
+#ifndef NODE_IP_MASTER_TASK_GATEKEEPER_H
+#define NODE_IP_MASTER_TASK_GATEKEEPER_H
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller.h>
-
 
 namespace node
 {
@@ -20,14 +19,16 @@ namespace node
 	{
 	public:
 		using msg_0 = std::tuple<bool>;
-		using signatures_t = std::tuple<msg_0>;
+		using msg_1 = std::tuple<>;
+		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
 		gatekeeper(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, cyng::controller&
 			, boost::uuids::uuid tag
-			, std::chrono::seconds timeout);
+			, std::chrono::seconds timeout
+			, cyng::vector_t && prg);
 		cyng::continuation run();
 		void stop();
 
@@ -38,16 +39,37 @@ namespace node
 		 */
 		cyng::continuation process(bool);
 
+		/**
+		 * @brief slot [1]
+		 *
+		 * session closed
+		 */
+		cyng::continuation process();
+
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		cyng::controller& vm_;
 		const boost::uuids::uuid tag_;
 		const std::chrono::seconds timeout_;
+		cyng::vector_t prg_;
 		const std::chrono::system_clock::time_point start_;
 		bool is_waiting_;
 	};
 	
 }
+
+#if BOOST_COMP_GNUC
+namespace cyng {
+	namespace async {
+
+		//
+		//	initialize static slot names
+		//
+		template <>
+		std::map<std::string, std::size_t> cyng::async::task<node::gatekeeper>::slot_names_;
+    }
+}
+#endif
 
 #endif

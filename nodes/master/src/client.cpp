@@ -1325,116 +1325,129 @@ namespace node
 			auto caller_tag = cyng::table::key_generator(tag);
 
 			//
+			//	data size
+			//
+			const auto buffer_ptr = cyng::object_cast<cyng::buffer_t>(data);
+			BOOST_ASSERT_MSG(buffer_ptr != nullptr, "no data");
+			const std::size_t size = (buffer_ptr != nullptr) 
+				? cyng::object_cast<cyng::buffer_t>(data)->size()
+				: 0u
+				;
+
+			//
 			//	get session objects
 			//
 			cyng::table::record rec = tbl_session->lookup(cyng::table::key_generator(tag));
-			BOOST_ASSERT_MSG(!rec.empty(), "no session record");
+			if (!rec.empty()) {
 
-			//
-			//	data size
-			//
-			const std::size_t size = cyng::object_cast<cyng::buffer_t>(data)->size();
+				//
+				//	update rx
+				//	data from device
+				//
+				const std::uint64_t rx = cyng::value_cast<std::uint64_t>(rec["rx"], 0);
+				tbl_session->modify(rec.key(), cyng::param_factory("rx", static_cast<std::uint64_t>(rx + size)), tag);
 
-			//
-			//	update rx
-			//	data from device
-			//
-			const std::uint64_t rx = cyng::value_cast<std::uint64_t>(rec["rx"], 0);
-			tbl_session->modify(rec.key(), cyng::param_factory("rx", static_cast<std::uint64_t>(rx + size)), tag);
+				//
+				//	transfer data
+				//
+				boost::uuids::uuid link = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
 
-			//
-			//	transfer data
-			//
-			boost::uuids::uuid link = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+				auto local_peer = cyng::object_cast<session>(rec["local"]);
+				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
 
-			auto local_peer = cyng::object_cast<session>(rec["local"]);
-			auto remote_peer = cyng::object_cast<session>(rec["remote"]);
-
-			if (remote_peer && local_peer)
-			{
-				if (local_peer->hash() == remote_peer->hash())
+				if (remote_peer && local_peer)
 				{
-					CYNG_LOG_TRACE(logger_, "transmit local "
-						<< size
-						<< " bytes from "
-						<< tag
-						<< " => "
-						<< link);
+					if (local_peer->hash() == remote_peer->hash())
+					{
+						CYNG_LOG_TRACE(logger_, "transmit local "
+							<< size
+							<< " bytes from "
+							<< tag
+							<< " => "
+							<< link);
+						//
+						//	local connection
+						//
+						ctx.attach(client_req_transfer_data_forward(link
+							, seq
+							, bag
+							, data));
+					}
+					else
+					{
+						CYNG_LOG_TRACE(logger_, "transmit distinct "
+							<< size
+							<< " bytes from "
+							<< tag
+							<< " => "
+							<< link);
+
+						//
+						//	distinct connection
+						//
+						remote_peer->vm_.async_run(client_req_transfer_data_forward(link
+							, seq
+							, bag
+							, data));
+					}
+
 					//
-					//	local connection
+					//	update sx
+					//	data to device
 					//
-					ctx.attach(client_req_transfer_data_forward(link
-						, seq
-						, bag
-						, data));
+					cyng::table::record rec_link = tbl_session->lookup(cyng::table::key_generator(link));
+					std::uint64_t sx = cyng::value_cast<std::uint64_t>(rec_link["sx"], 0u);
+					tbl_session->modify(rec_link.key(), cyng::param_factory("sx", static_cast<std::uint64_t>(sx + size)), tag);
+
+					//
+					//	get record from connection table
+					//
+					cyng::table::record rec_conn = connection_lookup(tbl_connection, cyng::table::key_generator(tag, link));
+					if (!rec_conn.empty())
+					{
+						//
+						//	update connection throughput
+						//
+						std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_conn["throughput"], 0u);
+						tbl_connection->modify(rec_conn.key(), cyng::param_factory("throughput", static_cast<std::uint64_t>(throughput + size)), tag);
+					}
+					else
+					{
+						CYNG_LOG_ERROR(logger_, "no connection record for "
+							<< cyng::value_cast<std::string>(rec["name"], "")
+							<< " <=> "
+							<< cyng::value_cast<std::string>(rec_link["name"], ""));
+					}
 				}
 				else
 				{
-					CYNG_LOG_TRACE(logger_, "transmit distinct "
-						<< size
-						<< " bytes from "
-						<< tag
-						<< " => "
-						<< link);
-
-					//
-					//	distinct connection
-					//
-					remote_peer->vm_.async_run(client_req_transfer_data_forward(link
-						, seq
-						, bag
-						, data));
-				}
-
-				//
-				//	update sx
-				//	data to device
-				//
-				cyng::table::record rec_link = tbl_session->lookup(cyng::table::key_generator(link));
-				std::uint64_t sx = cyng::value_cast<std::uint64_t>(rec_link["sx"], 0u);
-				tbl_session->modify(rec_link.key(), cyng::param_factory("sx", static_cast<std::uint64_t>(sx + size)), tag);
-
-				//
-				//	get record from connection table
-				//
-				cyng::table::record rec_conn = connection_lookup(tbl_connection, cyng::table::key_generator(tag, link));
-				if (!rec_conn.empty())
-				{
-					//
-					//	update connection throughput
-					//
-					std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_conn["throughput"], 0u);
-					tbl_connection->modify(rec_conn.key(), cyng::param_factory("throughput", static_cast<std::uint64_t>(throughput + size)), tag);
-				}
-				else
-				{
-					CYNG_LOG_ERROR(logger_, "no connection record for "
+					CYNG_LOG_ERROR(logger_, tag
+						<< " ("
 						<< cyng::value_cast<std::string>(rec["name"], "")
-						<< " <=> "
-						<< cyng::value_cast<std::string>(rec_link["name"], ""));
+						<< ") has no remote peer - "
+						<< size
+						<< " bytes get lost");
+
+#ifdef _DEBUG
+					const auto p = cyng::object_cast<cyng::buffer_t>(data);
+					if (p != nullptr)
+					{
+						std::stringstream ss;
+						cyng::io::hex_dump hd;
+						hd(ss, p->begin(), p->end());
+						CYNG_LOG_TRACE(logger_, ss.str());
+					}
+#endif
 				}
 			}
-			else
-			{
-				CYNG_LOG_ERROR(logger_, tag 
-					<< " ("
-					<< cyng::value_cast<std::string>(rec["name"], "")
-					<< ") has no remote peer - "
+			else {
+				CYNG_LOG_ERROR(logger_, "client.req.transmit.data failed - session "
+					<< tag
+					<< " not found - "
 					<< size
 					<< " bytes get lost");
 
-#ifdef _DEBUG
-				const auto p = cyng::object_cast<cyng::buffer_t>(data);
-				if (p != nullptr)
-				{
-					std::stringstream ss;
-					cyng::io::hex_dump hd;
-					hd(ss, p->begin(), p->end());
-					CYNG_LOG_TRACE(logger_, ss.str());
-				}
-#endif
 			}
-
 		}	, cyng::store::write_access("_Session")
 			, cyng::store::write_access("_Connection"));
 	}

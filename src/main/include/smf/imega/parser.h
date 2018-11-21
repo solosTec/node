@@ -21,8 +21,10 @@ namespace node
 	namespace imega
 	{
 
-		/**
-		 *	iMEGA parser.
+		/** @brief iMEGA parser
+		 *	
+		 * iMega is predecessor of the infamous IP-T protocol developed and shipped by L&G. It is mostly
+		 * used to communicate over DLSM/COSEM.
 		 */
 		class parser
 		{

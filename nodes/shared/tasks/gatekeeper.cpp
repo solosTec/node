@@ -11,7 +11,6 @@
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
 #include <cyng/factory/chrono_factory.h>
-#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
@@ -19,24 +18,25 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cyng::controller& vm
 		, boost::uuids::uuid tag
-		, std::chrono::seconds timeout)
+		, std::chrono::seconds timeout
+		, cyng::vector_t && prg)
 	: base_(*btp)
 		, logger_(logger)
 		, vm_(vm)
 		, tag_(tag)
 		, timeout_(timeout)
+		, prg_(std::move(prg))
 		, start_(std::chrono::system_clock::now())
 		, is_waiting_(false)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
-		<< base_.get_id()
-		<< " <"
-		<< base_.get_class_name()
-		<< "> is running: "
-		<< tag_
-		<< " until "
-		<< cyng::to_str(start_ + timeout_));
-
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> "
+			<< tag_
+			<< " is running until "
+			<< cyng::to_str(start_ + timeout_));
 	}
 
 	cyng::continuation gatekeeper::run()
@@ -60,16 +60,11 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> timeout");
+			<< "> "
+			<< tag_
+			<< " timeout");
 
 		if (!vm_.is_halted()) {
-
-			CYNG_LOG_WARNING(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> stop "
-				<< tag_);
 
 			//
 			//	Safe way to intentionally close this session.
@@ -80,17 +75,19 @@ namespace node
 			//	* remove session from IP-T masters client_map
 			//
 			vm_.async_run({ cyng::generate_invoke("session.state.pending")
-#ifdef _DEBUG
-				, cyng::generate_invoke("stream.serialize", "timeout")
+//#ifdef _DEBUG
+//				, cyng::generate_invoke("ipt.transfer.data", cyng::make_buffer({'t', 'i', 'm', 'e', 'o', 'u', 't', '\n' }))
+//				, cyng::generate_invoke("stream.flush")
+//#endif
+				, prg_
 				, cyng::generate_invoke("stream.flush")
-#endif
 				, cyng::generate_invoke("ip.tcp.socket.shutdown")
 				, cyng::generate_invoke("ip.tcp.socket.close") });
 		}
 
-
 		return cyng::continuation::TASK_STOP;
 	}
+
 
 	void gatekeeper::stop()
 	{
@@ -106,7 +103,6 @@ namespace node
 			<< tag_
 			<< " after "
 			<< cyng::to_str(uptime));
-
 	}
 
 	//	slot 0
@@ -118,11 +114,40 @@ namespace node
 			<< base_.get_class_name()
 			<< "> "
 			<< tag_
-			<< " login ["
+			<< " received response ["
 			<< (success ? "success" : "failed")
 			<< "]");
 
 		return cyng::continuation::TASK_STOP;
 	}
 
+	//	slot 1
+	cyng::continuation gatekeeper::process()
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> session closed");
+
+		//
+		//	session already stopped
+		//
+		return cyng::continuation::TASK_STOP;
+	}
+
+}
+
+#include <cyng/async/task/task.hpp>
+
+namespace cyng {
+	namespace async {
+
+		//
+		//	initialize static slot names
+		//
+		template <>
+		std::map<std::string, std::size_t> cyng::async::task<node::gatekeeper>::slot_names_({ { "shutdown", 1 } });
+
+	}
 }

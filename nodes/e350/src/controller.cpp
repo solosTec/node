@@ -377,7 +377,7 @@ namespace node
 			, load_cluster_cfg(cfg_cluster)
 			, cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0")
 			, cyng::value_cast<std::string>(dom.get("service"), "6000")
-			, cyng::value_cast<int>(dom.get("timeout"), 12)	
+			, std::chrono::seconds(cyng::value_cast<int>(dom.get("timeout"), 12))
 			, cyng::value_cast(dom.get("use-global-pwd"), false)
 			, cyng::value_cast(dom.get("global-pwd"), rnd_str(8))
 			);

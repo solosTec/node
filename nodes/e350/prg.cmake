@@ -5,17 +5,22 @@ set (node_e350_cpp
 
 	nodes/e350/src/main.cpp	
 	nodes/e350/src/controller.cpp
+	nodes/shared/net/server_stub.cpp
+	nodes/shared/net/session_stub.cpp
 	nodes/e350/src/server.cpp
 	nodes/e350/src/session.cpp
-	nodes/e350/src/connection.cpp
+#	nodes/e350/src/connection.cpp
 )
 
 set (node_e350_h
 
 	nodes/e350/src/controller.h
+	src/main/include/smf/cluster/server_stub.h
 	nodes/e350/src/server.h
+#	nodes/e350/src/connection.h
+#	src/main/include/smf/cluster/connection_stub.hpp
+	src/main/include/smf/cluster/session_stub.h
 	nodes/e350/src/session.h
-	nodes/e350/src/connection.h
 )
 
 set (node_e350_info
@@ -37,8 +42,10 @@ set (node_e350_info
 set (node_e350_tasks
 	nodes/e350/src/tasks/cluster.h
 	nodes/e350/src/tasks/cluster.cpp
-	nodes/e350/src/tasks/gatekeeper.h
-	nodes/e350/src/tasks/gatekeeper.cpp
+#	nodes/e350/src/tasks/gatekeeper.h
+#	nodes/e350/src/tasks/gatekeeper.cpp
+	nodes/shared/tasks/gatekeeper.h
+	nodes/shared/tasks/gatekeeper.cpp
 )
 	
 if(WIN32)

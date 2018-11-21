@@ -32,7 +32,7 @@ namespace node
 			, cluster_config_t const& cfg
 			, std::string const& address
 			, std::string const& service
-			, int timeout
+			, std::chrono::seconds timeout
 			, bool
 			, std::string);
 		cyng::continuation run();

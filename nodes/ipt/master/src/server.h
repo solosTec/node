@@ -52,8 +52,6 @@ namespace node
 			void do_accept();
 			void create_client(boost::asio::ip::tcp::socket socket);
 
-
-
 			/**
 			 * @return true if entry was found
 			 */

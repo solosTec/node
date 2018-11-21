@@ -13,7 +13,7 @@ namespace node
 	namespace imega
 	{
 		/*
-		 *	cu parser
+		 *	iMega parser
 		 */
 		parser::parser(parser_callback cb)
 			: cb_(cb)
@@ -56,6 +56,7 @@ namespace node
 				else 
 				{
 					stream_state_ = STATE_ERROR;
+					cb_(cyng::generate_invoke("log.msg.error", "invalid login sequence", c));
 				}
 				break;
 
@@ -185,7 +186,9 @@ namespace node
 				break;
 
 			default:
-				BOOST_ASSERT_MSG(false, "illegal state");
+				cb_(cyng::generate_invoke("log.msg.error", "iMega parser in illegal state"));
+				//BOOST_ASSERT_MSG(false, "illegal state");
+				if (c == '<')	stream_state_ = STATE_LOGIN;
 				break;
 			}
 
@@ -256,9 +259,8 @@ namespace node
 		{
 			std::vector<std::string> pair;
 			boost::algorithm::split(pair, inp, boost::is_any_of(":"), boost::token_compress_on);
-			if (pair.size() == 2)
+			if (pair.size() == 2 && boost::algorithm::equals(exp, pair.at(0)))
 			{
-				BOOST_ASSERT_MSG(boost::algorithm::equals(exp, pair.at(0)), "invalid key");
 				return pair.at(1);
 			}
 			return std::string();
@@ -268,9 +270,9 @@ namespace node
 		{
 			std::vector<std::string> pair;
 			boost::algorithm::split(pair, inp, boost::is_any_of(":"), boost::token_compress_on);
-			if (pair.size() == 2)
+			if (pair.size() == 2 && boost::algorithm::equals("VERS", pair.at(0)))
 			{
-				BOOST_ASSERT_MSG(boost::algorithm::equals("VERS", pair.at(0)), "'VERS' expected");
+				//BOOST_ASSERT_MSG(boost::algorithm::equals("VERS", pair.at(0)), "'VERS' expected");
 				return cyng::version(::atof(pair.at(1).c_str()));
 			}
 			return cyng::version(0, 0);
@@ -280,9 +282,9 @@ namespace node
 		{
 			std::vector<std::string> pair;
 			boost::algorithm::split(pair, inp, boost::is_any_of(":"), boost::token_compress_on);
-			if (pair.size() == 2)
+			if (pair.size() == 2 && boost::algorithm::equals("PROT", pair.at(0)))
 			{
-				BOOST_ASSERT_MSG(boost::algorithm::equals("PROT", pair.at(0)), "'PROT' expected");
+				//BOOST_ASSERT_MSG(boost::algorithm::equals("PROT", pair.at(0)), "'PROT' expected");
 				return std::stoi(pair.at(1));
 			}
 			return 0;
@@ -291,7 +293,6 @@ namespace node
 		parser::state parser::state_visitor::operator()(stream& cmd) const
 		{
 			return STATE_LOGIN;
-
 		}
 
 		parser::state parser::state_visitor::operator()(alive& cmd) const

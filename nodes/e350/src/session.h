@@ -8,23 +8,16 @@
 #ifndef NODE_E350_SESSION_H
 #define NODE_E350_SESSION_H
 
-#include <smf/cluster/bus.h>
 #include <smf/imega/parser.h>
-#include <cyng/async/mux.h>
-#include <cyng/log.h>
-#include <cyng/vm/controller.h>
+#include <smf/imega/serializer.h>
+#include <smf/cluster/session_stub.h>
 
 namespace node 
 {
 	namespace imega
 	{
-		class connection;
-		class server;
-		class session
+		class session : public session_stub
 		{
-			friend class connection;
-			friend class server;
-
 			struct connect_state
 			{
 				enum state {
@@ -44,7 +37,8 @@ namespace node
 			std::string to_str(connect_state const&);
 
 		public:
-			session(cyng::async::mux& mux
+			session(boost::asio::ip::tcp::socket&& socket
+				, cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
 				, bus::shared_type
 				, boost::uuids::uuid tag
@@ -57,35 +51,13 @@ namespace node
 
 			virtual ~session();
 
-			//void stop(boost::system::error_code ec);
-
 		private:
 
 			void imega_req_login(cyng::context& ctx);
-			//void ipt_req_logout(cyng::context& ctx);
-			//void ipt_res_logout(cyng::context& ctx);
-
-			//void ipt_req_open_push_channel(cyng::context& ctx);
-			//void ipt_req_close_push_channel(cyng::context& ctx);
 			void imega_req_open_connection(cyng::context& ctx);
-			//void modem_req_close_connection(cyng::context& ctx);
-			//void ipt_res_open_connection(cyng::context& ctx);
-			//void ipt_req_transfer_pushdata(cyng::context& ctx);
-			//void ipt_res_close_connection(cyng::context& ctx);
 			void imega_req_transmit_data(cyng::context& ctx);
 			void imega_res_watchdog(cyng::context& ctx);
 
-			//void ipt_res_protocol_version(cyng::context& ctx);
-			//void ipt_res_software_version(cyng::context& ctx);
-			//void ipt_res_dev_id(cyng::context& ctx);
-			//void ipt_res_network_stat(cyng::context& ctx);
-			//void ipt_res_ip_statistics(cyng::context& ctx);
-			//void ipt_res_dev_auth(cyng::context& ctx);
-			//void ipt_res_dev_time(cyng::context& ctx);
-
-			//void ipt_unknown_cmd(cyng::context& ctx);
-
-			//void client_res_login(std::uint64_t, bool, std::string msg);
 			void client_res_login(cyng::context& ctx);
 			void client_res_open_push_channel(cyng::context& ctx);
 			void client_res_close_push_channel(cyng::context& ctx);
@@ -105,25 +77,27 @@ namespace node
 			void store_relation(cyng::context& ctx);
 			void update_connection_state(cyng::context& ctx);
 
-			void stop_req(boost::system::error_code ec);
-			void stop_res(boost::system::error_code ec);
-
+		protected:
 			/**
 			 * stop running tasks and halt VM
 			 */
-			void shutdown();
+			virtual void shutdown();
 
-		private:
-			cyng::async::mux& mux_;
-			cyng::logging::log_ptr logger_;
-			bus::shared_type bus_;	//!< cluster bus
-			cyng::controller vm_;	//!< iMEGA device
+			virtual cyng::buffer_t parse(read_buffer_const_iterator, read_buffer_const_iterator) override;
 
+		public:
 			/**
 			 * iMEGA parser
 			 */
 			parser 	parser_;
 
+			/**
+			 * wrapper class to serialize and send
+			 * data and code.
+			 */
+			serializer		serializer_;
+
+		private:
 			/**
 			 * gatekeeper task
 			 */
@@ -137,13 +111,81 @@ namespace node
 			 */
 			connect_state	connect_state_;
 
-			/**
-			 * session is in shutdown mode
-			 */
-			bool pending_;
+		};
 
+		cyng::object make_session(boost::asio::ip::tcp::socket&& socket
+			, cyng::async::mux& mux
+			, cyng::logging::log_ptr logger
+			, bus::shared_type
+			, boost::uuids::uuid tag
+			, std::chrono::seconds
+			, bool use_global_pwd
+			, std::string const& global_pwd);
+	}
+}
+
+#include <cyng/intrinsics/traits.hpp>
+namespace cyng
+{
+	namespace traits
+	{
+		template <>
+		struct type_tag<node::imega::session>
+		{
+			using type = node::imega::session;
+			using tag = std::integral_constant<std::size_t, PREDEF_CONNECTION>;
+#if defined(CYNG_LEGACY_MODE_ON)
+			const static char name[];
+#else
+			constexpr static char name[] = "ipt:connection";
+#endif
+		};
+
+		template <>
+		struct reverse_type < PREDEF_CONNECTION >
+		{
+			using type = node::imega::session;
 		};
 	}
+}
+
+#include <functional>
+#include <boost/functional/hash.hpp>
+
+namespace std
+{
+	template<>
+	struct hash<node::imega::session>
+	{
+		inline size_t operator()(node::imega::session const& conn) const noexcept
+		{
+			return conn.hash();
+		}
+	};
+	template<>
+	struct equal_to<node::imega::session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::imega::session;
+		using second_argument_type = node::imega::session;
+
+		inline bool operator()(first_argument_type const& conn1, second_argument_type const& conn2) const noexcept
+		{
+			return conn1.hash() == conn2.hash();
+		}
+	};
+	template<>
+	struct less<node::imega::session>
+	{
+		using result_type = bool;
+		using first_argument_type = node::imega::session;
+		using second_argument_type = node::imega::session;
+
+		inline bool operator()(first_argument_type const& conn1, second_argument_type const& conn2) const noexcept
+		{
+			return conn1.hash() < conn2.hash();
+		}
+	};
 }
 
 #endif

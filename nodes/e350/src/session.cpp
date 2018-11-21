@@ -7,12 +7,10 @@
 
 
 #include "session.h"
-#include "tasks/gatekeeper.h"
+#include "../../shared/tasks/gatekeeper.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 
-#include <cyng/vm/domain/log_domain.h>
-#include <cyng/vm/domain/store_domain.h>
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/tuple_cast.hpp>
@@ -20,24 +18,22 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/factory/set_factory.h>
 
-#include <boost/uuid/random_generator.hpp>
+//#include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/nil_generator.hpp>
 
 namespace node 
 {
 	namespace imega
 	{
-		session::session(cyng::async::mux& mux
+		session::session(boost::asio::ip::tcp::socket&& socket
+			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
 			, boost::uuids::uuid tag
 			, std::chrono::seconds timeout
 			, bool use_global_pwd
 			, std::string const& global_pwd)
-		: mux_(mux)
-			, logger_(logger)
-			, bus_(bus)
-			, vm_(mux.get_io_service(), tag)
+		: session_stub(std::move(socket), mux, logger, bus, tag, timeout)
 			, parser_([this](cyng::vector_t&& prg) {
 				CYNG_LOG_INFO(logger_, prg.size() << " imega instructions received");
 				CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
@@ -47,28 +43,16 @@ namespace node
 				, logger_
 				, vm_
 				, tag
-				, timeout).first)
+				, timeout
+				, cyng::generate_invoke("stream.serialize", cyng::make_buffer({ 't', 'i', 'm', 'e', 'o', 'u', 't', '\n' }))).first)
+			, serializer_(socket_, vm_)
 			, use_global_pwd_(use_global_pwd)
 			, global_pwd_(global_pwd)
 			, connect_state_()
-			, pending_(false)
 		{
-			//
-			//	register logger domain
-			//
-			cyng::register_logger(logger_, vm_);
-			vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
 			vm_.register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1));
 			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
-			vm_.register_function("session.state.pending", 0, [&](cyng::context&) {
-				//
-				//	set session state => PENDING
-				//
-				BOOST_ASSERT(!pending_);
-				pending_ = true;
-				CYNG_LOG_DEBUG(logger_, "session.state.pending ON");
-			});
 
 			//
 			//	register request handler
@@ -252,6 +236,27 @@ namespace node
 		session::~session()
 		{}
 
+		cyng::buffer_t session::parse(read_buffer_const_iterator begin, read_buffer_const_iterator end)
+		{
+			const auto bytes_transferred = std::distance(begin, end);
+			vm_.async_run(cyng::generate_invoke("log.msg.trace", "imega connection received", bytes_transferred, "bytes"));
+
+			//
+			//	size == parsed bytes
+			//
+			const auto size = parser_.read(begin, end);
+			BOOST_ASSERT(size == bytes_transferred);
+			boost::ignore_unused(size);	//	release version
+
+#ifdef SMF_IO_DEBUG
+			cyng::io::hex_dump hd;
+			std::stringstream ss;
+			hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
+			CYNG_LOG_TRACE(logger_, "imega input dump \n" << ss.str());
+#endif
+			return cyng::buffer_t(begin, end);
+		}
+
 		void session::shutdown()
 		{
 			//
@@ -277,70 +282,13 @@ namespace node
 			//
 
 			//
-			//	gracefull shutdown
-			//	device/party closed connection or network shutdown
+			//	reset iMega serializer
 			//
-			CYNG_LOG_TRACE(logger_, vm_.tag() << " halt VM");
-			vm_.halt();
-		}
-
-		void session::stop_req(boost::system::error_code ec)
-		{
-			//
-			//	stop all tasks and halt VM
-			//
-			shutdown();
 
 			//
-			//	wait for pending operations
+			//	call baseclass
 			//
-			if (vm_.wait(12, std::chrono::milliseconds(100))) {
-
-				//
-				//	Tell SMF master to remove this session by calling "client.req.close". 
-				//	SMF master will send a "client.req.close" to the IP-T server which will
-				//	remove this session from the connection_map_ which will eventual call
-				//	the desctructor of this session object.
-				//
-				CYNG_LOG_TRACE(logger_, "send \"client.req.close\" request from session "
-					<< vm_.tag());
-				bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
-			}
-			else {
-				CYNG_LOG_FATAL(logger_, "shutdown (req) failed " << vm_.tag());
-			}
-		}
-
-		void session::stop_res(boost::system::error_code ec)
-		{
-			//
-			//	stop all tasks and halt VM
-			//
-			shutdown();
-
-			//
-			//	wait for pending operations
-			//
-			if (vm_.wait(12, std::chrono::milliseconds(100)))
-			{
-
-				if (pending_) {
-					//
-					//	tell master to close *this* client
-					//
-					bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
-				}
-				else {
-					//
-					//	remove from connection map - call destructor
-					//	server::remove_client();
-					//
-					bus_->vm_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
-				}
-			}
-			else {
-				CYNG_LOG_FATAL(logger_, "shutdown (res) failed " << vm_.tag());
-			}
+			session_stub::shutdown();
 		}
 
 		void session::store_relation(cyng::context& ctx)
@@ -367,7 +315,6 @@ namespace node
 
 			connect_state_.set_connected(std::get<1>(tpl));
 		}
-
 
 		void session::imega_req_login(cyng::context& ctx)
 		{
@@ -966,8 +913,37 @@ namespace node
 			return state_ != NOT_CONNECTED_;
 		}
 
+		cyng::object make_session(boost::asio::ip::tcp::socket&& socket
+			, cyng::async::mux& mux
+			, cyng::logging::log_ptr logger
+			, bus::shared_type bus
+			, boost::uuids::uuid tag
+			, std::chrono::seconds timeout
+			, bool use_global_pwd
+			, std::string const& global_pwd)
+		{
+			return cyng::make_object<session>(std::move(socket)
+				, mux
+				, logger
+				, bus
+				, tag
+				, timeout
+				, use_global_pwd
+				, global_pwd);
+		}
+
 	}
 }
 
+namespace cyng
+{
+	namespace traits
+	{
+
+#if defined(CYNG_LEGACY_MODE_ON)
+		const char type_tag<node::imega::session>::name[] = "imega::session";
+#endif
+	}	// traits	
+}
 
 
