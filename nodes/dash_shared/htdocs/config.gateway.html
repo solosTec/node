@@ -110,38 +110,39 @@
         </table>
 
         <hr />
-        <!--                <ul class="nav nav-pills" role="tablist">-->
-        <ul class="nav nav-tabs" role="tablist" id="smf-gw-tab">
-            <li class="nav-item">
-                <a class="nav-link active" id="smf-gw-tab-config" data-toggle="tab" href="#smf-gw-config" aria-selected="true">Configuration</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-status-word" data-toggle="tab" href="#smf-gw-status-word" aria-selected="false">Status</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-srv-visible" data-toggle="tab" href="#smf-gw-srv-visible" aria-selected="false">Visible Meters</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-srv-active" data-toggle="tab" href="#smf-gw-srv-active" aria-selected="false">Active Meters</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-firmware" data-toggle="tab" href="#smf-gw-firmware" aria-selected="false">Firmware</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-memory" data-toggle="tab" href="#smf-gw-memory" aria-selected="false">Memory</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-wireless-mbus" data-toggle="tab" href="#smf-gw-wireless-mbus" aria-selected="false">wireless M-Bus</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" id="smf-gw-tab-ipt" data-toggle="tab" href="#smf-gw-ipt" aria-selected="false">IP-T parameters</a>
-            </li>
-        </ul>
 
-        <div class="tab-content bg-secondary">
-            <div id="smf-gw-config" class="container-fluid tab-pane fade show active" role="tabpanel">
-                <div class="row">
-                    <div class="col-md-10">
+        <div class="row">
+            <div class="col-10">
+                <!--                <ul class="nav nav-pills" role="tablist">-->
+                <ul class="nav nav-tabs" role="tablist" id="smf-gw-tab">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="smf-gw-tab-config" data-toggle="tab" href="#smf-gw-config" aria-selected="true">Configuration</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" id="smf-gw-tab-status-word" data-toggle="tab" href="#smf-gw-status-word" aria-selected="false">Status</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" id="smf-gw-tab-srv-visible" data-toggle="tab" href="#smf-gw-srv-visible" aria-selected="false">Visible Meters</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" id="smf-gw-tab-srv-active" data-toggle="tab" href="#smf-gw-srv-active" aria-selected="false">Active Meters</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" id="smf-gw-tab-firmware" data-toggle="tab" href="#smf-gw-firmware" aria-selected="false">Firmware</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" id="smf-gw-tab-memory" data-toggle="tab" href="#smf-gw-memory" aria-selected="false">Memory</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" id="smf-gw-tab-wireless-mbus" data-toggle="tab" href="#smf-gw-wireless-mbus" aria-selected="false">wireless M-Bus</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" id="smf-gw-tab-ipt" data-toggle="tab" href="#smf-gw-ipt" aria-selected="false">IP-T parameters</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content bg-secondary">
+                    <div id="smf-gw-config" class="container-fluid tab-pane fade show active" role="tabpanel">
                         <form id="smf-form-gw" style="padding:2em">
                             <input type="hidden" id="smf-form-gw-tag" name="smf-form-gw-tag" />
                             <input type="hidden" id="smf-form-gw-online" name="smf-form-gw-online" />
@@ -186,269 +187,271 @@
                             </div>
                         </form>
                     </div>
-                    <div class="col-md-2 bg-warning">
-                        <div class="form-group">
-                            <p><span style="font-weight: bold">Note:</span> No other IP-T connection can be active during the execution of the requests below.</p>
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-select-all" name="smf-form-gw-select-all">
-                                <label class="form-check-label" for="smf-form-gw-select-all">Select all</label>
-                            </div>
-                            <hr />
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-status-word" name="smf-form-gw-status-word">
-                                <label class="form-check-label" for="smf-form-gw-status-word">Request status word</label>
-                            </div>
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-visible" name="smf-form-gw-srv-visible">
-                                <label class="form-check-label" for="smf-form-gw-srv-visible">Display visible meters</label>
-                            </div>
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-active" name="smf-form-gw-srv-active">
-                                <label class="form-check-label" for="smf-form-gw-srv-active">Display active meters</label>
-                            </div>
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-firmware" name="smf-form-gw-firmware">
-                                <label class="form-check-label" for="smf-form-gw-firmware">Get a firmware list</label>
-                            </div>
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-memory" name="smf-form-gw-memory">
-                                <label class="form-check-label" for="smf-form-gw-memory">Get memory usage</label>
-                            </div>
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-wireless-mbus" name="smf-form-gw-wireless-mbus">
-                                <label class="form-check-label" for="smf-form-gw-wireless-mbus">Wireless M-Bus</label>
-                            </div>
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-ipt" name="smf-form-gw-ipt">
-                                <label class="form-check-label" for="smf-form-gw-ipt">IP-T</label>
-                            </div>
-                        </div>
+                    <div id="smf-gw-status-word" class="container-fluid tab-pane fade" role="tabpanel">
+                        <h4>Status word</h4>
+                        <ul class="list-group"></ul>
+                        <br>
                     </div>
-                </div>
-            </div>
-            <div id="smf-gw-status-word" class="container-fluid tab-pane fade" role="tabpanel">
-                <h4>Status word</h4>
-                <ul class="list-group"></ul>
-                <br>
-            </div>
-            <div id="smf-gw-srv-visible" class="container-fluid tab-pane fade" role="tabpanel">
-                <h4></h4>
-                <ul class="list-group"></ul>
-                <br>
-            </div>
-            <div id="smf-gw-srv-active" class="container-fluid tab-pane fade" role="tabpanel">
-                <h4></h4>
-                <ul class="list-group"></ul>
-                <br>
-            </div>
-            <div id="smf-gw-firmware" class="container-fluid tab-pane fade" role="tabpanel">
-                <h4></h4>
-                <ul class="list-group"></ul>
-                <br>
-            </div>
-            <div id="smf-gw-memory" class="container-fluid tab-pane fade" role="tabpanel">
-                <h4></h4>
-                <div class="card-deck">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Memory (mirror)</h5>
-                            <div class="progress">
-                                <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-gw-memory_progress-1">0%</div>
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <small class="text-muted"><span id="smf-gw-memory-1">wait...</span>%</small>
-                        </div>
+                    <div id="smf-gw-srv-visible" class="container-fluid tab-pane fade" role="tabpanel">
+                        <h4></h4>
+                        <ul class="list-group"></ul>
+                        <br>
                     </div>
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Memory (temp)</h5>
-                            <div class="progress">
-                                <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-gw-memory_progress-2">0%</div>
-                            </div>
-                            <!--<div id="mem-progress-2"
-                         data-percentage="20"
-                         data-track-width="42"
-                         data-track-colour="555555"
-                         data-fill-colour="00C0FF"
-                         data-text-colour="00C0FF"
-                         data-stroke-colour="FFFFFF"
-                         data-stroke-spacing="4">
-                    </div>-->
-                        </div>
-                        <div class="card-footer">
-                            <small class="text-muted"><span id="smf-gw-memory-2">wait...</span>%</small>
-                        </div>
+                    <div id="smf-gw-srv-active" class="container-fluid tab-pane fade" role="tabpanel">
+                        <h4></h4>
+                        <ul class="list-group"></ul>
+                        <br>
                     </div>
-                </div>
-                <br>
-            </div>
-            <div id="smf-gw-wireless-mbus" class="container-fluid tab-pane fade" role="tabpanel">
-                <h4>w-MBus</h4>
-                <form>
-                    <div class="form-group row">
-                        <label for="smf-gw-wmbus-type" class="col-md-2 col-form-label">Adapter Type</label>
-                        <div class="col-md-4">
-                            <input id="smf-gw-wmbus-type" name="smf-gw-wmbus-type" placeholder="Manufacturer" type="text" class="form-control here" readonly>
-                        </div>
-                        <label for="smf-gw-wmbus-adapter" class="col-md-2 col-form-label">Adapter ID</label>
-                        <div class="col-md-4">
-                            <input id="smf-gw-wmbus-adapter" name="smf-gw-wmbus-adapter" placeholder="Adapter ID" type="text" class="form-control here" readonly>
-                        </div>
+                    <div id="smf-gw-firmware" class="container-fluid tab-pane fade" role="tabpanel">
+                        <h4></h4>
+                        <ul class="list-group"></ul>
+                        <br>
                     </div>
-                    <div class="form-group row">
-                        <label for="smf-gw-wmbus-firmware" class="col-md-2 col-form-label">Firmware</label>
-                        <div class="col-md-4">
-                            <input id="smf-gw-wmbus-firmware" name="smf-gw-wmbus-firmware" placeholder="Firmware Version" type="text" class="form-control here" readonly>
+                    <div id="smf-gw-memory" class="container-fluid tab-pane fade" role="tabpanel">
+                        <h4></h4>
+                        <div class="card-deck">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Memory (mirror)</h5>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-gw-memory_progress-1">0%</div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <small class="text-muted"><span id="smf-gw-memory-1">wait...</span>%</small>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Memory (temp)</h5>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-gw-memory_progress-2">0%</div>
+                                    </div>
+                                    <!--<div id="mem-progress-2"
+                                         data-percentage="20"
+                                         data-track-width="42"
+                                         data-track-colour="555555"
+                                         data-fill-colour="00C0FF"
+                                         data-text-colour="00C0FF"
+                                         data-stroke-colour="FFFFFF"
+                                         data-stroke-spacing="4">
+                                    </div>-->
+                                </div>
+                                <div class="card-footer">
+                                    <small class="text-muted"><span id="smf-gw-memory-2">wait...</span>%</small>
+                                </div>
+                            </div>
                         </div>
-                        <label for="smf-gw-wmbus-hardware" class="col-md-2 col-form-label">Hardware</label>
-                        <div class="col-md-4">
-                            <input id="smf-gw-wmbus-hardware" name="smf-gw-wmbus-hardware" placeholder="Hardware Version" type="text" class="form-control here" readonly>
-                        </div>
+                        <br>
                     </div>
-                    <div class="form-group row">
-                        <label for="select" class="col-md-2 col-form-label">Transmission Power</label>
-                        <div class="col-md-4">
-                            <select id="smf-gw-wmbus-power" name="smf-gw-wmbus-power" class="custom-select" required="required" aria-describedby="selectHelpBlock">
-                                <option value="0" selected>Basic</option>
-                                <option value="1">Low</option>
-                                <option value="2">Average</option>
-                                <option value="3">Strong</option>
-                            </select>
-                            <!--<span id="selectHelpBlock" class="form-text text-muted">Transmission Power</span>-->
-                        </div>
-                        <label for="smf-gw-wmbus-reboot" class="col-md-2 col-form-label">Automatic Reboot</label>
-                        <div class="col-md-4">
-                            <div class="input-group">
-                                <!--<div class="input-group-addon">Seconds</div>-->
-                                <input id="smf-gw-wmbus-reboot" name="smf-gw-wmbus-reboot" placeholder="Automatic Reboot in Seconds" type="number" class="form-control here">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label class="col-md-2">Protocol</label>
-                        <div class="col-md-4">
-                            <div class="form-check form-check-inline">
-                                <input name="smf-gw-wmbus-protocol" id="smf-gw-wmbus-protocol-tmode" type="radio" class="form-check-input" value="0">
-                                <label class="form-check-label" for="smf-gw-wmbus-protocol-tmode">T-Mode</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input name="smf-gw-wmbus-protocol" is="smf-gw-wmbus-protocol-smode" type="radio" class="form-check-input" value="1">
-                                <label class="form-check-label" for="smf-gw-wmbus-protocol-smode">S-Mode</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input name="smf-gw-wmbus-protocol" id="smf-gw-wmbus-protocol-alternate" type="radio" class="form-check-input" value="2">
-                                <label class="form-check-label" for="smf-gw-wmbus-protocol-alternate">Alternating</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input name="smf-gw-wmbus-protocol" id="smf-gw-wmbus-protocol-parallel" type="radio" class="form-check-input" value="3">
-                                <label class="form-check-label" for="smf-gw-wmbus-protocol-parallel">Parallel</label>
-                            </div>
-                        </div>
-                        <label class="col-md-2">Install Mode</label>
-                        <div class="col-md-4">
-                            <div class="form-check form-check-inline">
-                                <input name="smf-gw-wmbus-install" id="smf-gw-wmbus-install" type="checkbox" class="form-check-input">
-                                <label class="form-check-label" for="smf-gw-wmbus-install">Active</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group row">
-                        <div class="offset-2 col-10">
-                            <button name="submit" type="submit" class="btn btn-primary" disabled>Submit</button>
-                        </div>
-                    </div>
-                </form>
-                <br>
-            </div>
-            <div id="smf-gw-ipt" class="container-fluid tab-pane fade" role="tabpanel">
-                <!--<h4>IP-T</h4>-->
-                <div class="row">
-                    <div class="col-md-9">
-                        <h5>IP-T Parameters</h5>
-                        <form id="smf-form-gw-ipt-param" style="padding:2em">
-                            <h5>Redundancy I</h5>
-                            <input type="hidden" id="smf-form-gw-ipt-srv" name="smf-form-gw-ipt-srv" />
+                    <div id="smf-gw-wireless-mbus" class="container-fluid tab-pane fade" role="tabpanel">
+                        <h4>w-MBus</h4>
+                        <form>
                             <div class="form-group row">
-                                <label for="smf-gw-ipt-host" class="col-md-1 col-form-label">Host</label>
-                                <div class="col-md-5">
-                                    <input id="smf-gw-ipt-host-1" name="smf-gw-ipt-host-1" placeholder="IP-T Master" type="text" class="form-control here">
+                                <label for="smf-gw-wmbus-type" class="col-md-2 col-form-label">Adapter Type</label>
+                                <div class="col-md-4">
+                                    <input id="smf-gw-wmbus-type" name="smf-gw-wmbus-type" placeholder="Manufacturer" type="text" class="form-control here" readonly>
                                 </div>
-                                <label for="smf-gw-ipt-local-1" class="col-md-1 col-form-label">Local Port</label>
-                                <div class="col-md-2">
-                                    <input id="smf-gw-ipt-local-1" name="smf-gw-ipt-local-1" placeholder="Local Port" type="number" class="form-control here">
-                                </div>
-                                <label for="smf-gw-ipt-remote-1" class="col-md-1 col-form-label">Remote Port</label>
-                                <div class="col-md-2">
-                                    <input id="smf-gw-ipt-remote-1" name="smf-gw-ipt-remote-1" placeholder="Remote Port" type="number" class="form-control here">
+                                <label for="smf-gw-wmbus-adapter" class="col-md-2 col-form-label">Adapter ID</label>
+                                <div class="col-md-4">
+                                    <input id="smf-gw-wmbus-adapter" name="smf-gw-wmbus-adapter" placeholder="Adapter ID" type="text" class="form-control here" readonly>
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label for="smf-gw-ipt-name-1" class="col-md-1 col-form-label">Name</label>
-                                <div class="col-md-5">
-                                    <input id="smf-gw-ipt-name-1" name="smf-gw-ipt-name-1" placeholder="User Name" type="text" class="form-control here">
+                                <label for="smf-gw-wmbus-firmware" class="col-md-2 col-form-label">Firmware</label>
+                                <div class="col-md-4">
+                                    <input id="smf-gw-wmbus-firmware" name="smf-gw-wmbus-firmware" placeholder="Firmware Version" type="text" class="form-control here" readonly>
                                 </div>
-                                <label for="smf-gw-ipt-pwd-1" class="col-md-1 col-form-label">Password</label>
-                                <div class="col-md-5">
-                                    <input id="smf-gw-ipt-pwd-1" name="smf-gw-ipt-pwd-1" placeholder="Password" type="text" class="form-control here">
-                                </div>
-                            </div>
-                            <hr />
-                            <h5>Redundancy II</h5>
-                            <div class="form-group row">
-                                <label for="smf-gw-ipt-host" class="col-md-1 col-form-label">Host</label>
-                                <div class="col-md-5">
-                                    <input id="smf-gw-ipt-host-2" name="smf-gw-ipt-host-2" placeholder="IP-T Master" type="text" class="form-control here">
-                                </div>
-                                <label for="smf-gw-ipt-local-2" class="col-md-1 col-form-label">Local Port</label>
-                                <div class="col-md-2">
-                                    <input id="smf-gw-ipt-local-2" name="smf-gw-ipt-local-2" placeholder="Local Port" type="number" class="form-control here">
-                                </div>
-                                <label for="smf-gw-ipt-remote-2" class="col-md-1 col-form-label">Remote Port</label>
-                                <div class="col-md-2">
-                                    <input id="smf-gw-ipt-remote-2" name="smf-gw-ipt-remote-2" placeholder="Remote Port" type="number" class="form-control here">
+                                <label for="smf-gw-wmbus-hardware" class="col-md-2 col-form-label">Hardware</label>
+                                <div class="col-md-4">
+                                    <input id="smf-gw-wmbus-hardware" name="smf-gw-wmbus-hardware" placeholder="Hardware Version" type="text" class="form-control here" readonly>
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label for="smf-gw-ipt-name-2" class="col-md-1 col-form-label">Name</label>
-                                <div class="col-md-5">
-                                    <input id="smf-gw-ipt-name-2" name="smf-gw-ipt-name-2" placeholder="User Name" type="text" class="form-control here">
+                                <label for="select" class="col-md-2 col-form-label">Transmission Power</label>
+                                <div class="col-md-4">
+                                    <select id="smf-gw-wmbus-power" name="smf-gw-wmbus-power" class="custom-select" required="required" aria-describedby="selectHelpBlock">
+                                        <option value="0" selected>Basic</option>
+                                        <option value="1">Low</option>
+                                        <option value="2">Average</option>
+                                        <option value="3">Strong</option>
+                                    </select>
+                                    <!--<span id="selectHelpBlock" class="form-text text-muted">Transmission Power</span>-->
                                 </div>
-                                <label for="smf-gw-ipt-pwd-2" class="col-md-1 col-form-label">Password</label>
-                                <div class="col-md-5">
-                                    <input id="smf-gw-ipt-pwd-2" name="smf-gw-ipt-pwd-2" placeholder="Password" type="text" class="form-control here">
+                                <label for="smf-gw-wmbus-reboot" class="col-md-2 col-form-label">Automatic Reboot</label>
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <!--<div class="input-group-addon">Seconds</div>-->
+                                        <input id="smf-gw-wmbus-reboot" name="smf-gw-wmbus-reboot" placeholder="Automatic Reboot in Seconds" type="number" class="form-control here">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-md-2">Protocol</label>
+                                <div class="col-md-4">
+                                    <div class="form-check form-check-inline">
+                                        <input name="smf-gw-wmbus-protocol" id="smf-gw-wmbus-protocol-tmode" type="radio" class="form-check-input" value="0">
+                                        <label class="form-check-label" for="smf-gw-wmbus-protocol-tmode">T-Mode</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input name="smf-gw-wmbus-protocol" is="smf-gw-wmbus-protocol-smode" type="radio" class="form-check-input" value="1">
+                                        <label class="form-check-label" for="smf-gw-wmbus-protocol-smode">S-Mode</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input name="smf-gw-wmbus-protocol" id="smf-gw-wmbus-protocol-alternate" type="radio" class="form-check-input" value="2">
+                                        <label class="form-check-label" for="smf-gw-wmbus-protocol-alternate">Alternating</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input name="smf-gw-wmbus-protocol" id="smf-gw-wmbus-protocol-parallel" type="radio" class="form-check-input" value="3">
+                                        <label class="form-check-label" for="smf-gw-wmbus-protocol-parallel">Parallel</label>
+                                    </div>
+                                </div>
+                                <label class="col-md-2">Install Mode</label>
+                                <div class="col-md-4">
+                                    <div class="form-check form-check-inline">
+                                        <input name="smf-gw-wmbus-install" id="smf-gw-wmbus-install" type="checkbox" class="form-check-input">
+                                        <label class="form-check-label" for="smf-gw-wmbus-install">Active</label>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="form-group row">
-                                <div class="offset-1 col-11">
-                                    <a id="smf-form-gw-ipt-submit" href="#" class="btn btn-primary">Submit</a>
-                                    <!--                                    <button name="submit" type="submit" class="btn btn-primary" disabled>Submit</button>-->
+                                <div class="offset-2 col-10">
+                                    <button name="submit" type="submit" class="btn btn-primary" disabled>Submit</button>
                                 </div>
                             </div>
                         </form>
+                        <br>
                     </div>
-                    <div class="col-md-3 bg-warning">
-                        <h5>Current IP-T Configuration</h5>
-                        <p><span style="font-weight: bold">Note:</span> Changing the IP-T configuration can lead to the breakdown of the connection.</p>
-                        <div class="form-group">
-                            <label for="smf-gw-ipt-host" class="col-form-label">Host</label>
-                            <input id="smf-gw-ipt-host" name="smf-gw-ipt-host" placeholder="IP-T Master" type="text" class="form-control here" readonly>
+                    <div id="smf-gw-ipt" class="container-fluid tab-pane fade" role="tabpanel">
+                        <!--<h4>IP-T</h4>-->
+                        <div class="row">
+                            <div class="col-md-9">
+                                <h5>IP-T Parameters</h5>
+                                <form id="smf-form-gw-ipt-param" style="padding:2em">
+                                    <h5>Redundancy I</h5>
+                                    <input type="hidden" id="smf-form-gw-ipt-srv" name="smf-form-gw-ipt-srv" />
+                                    <div class="form-group row">
+                                        <label for="smf-gw-ipt-host" class="col-md-1 col-form-label">Host</label>
+                                        <div class="col-md-5">
+                                            <input id="smf-gw-ipt-host-1" name="smf-gw-ipt-host-1" placeholder="IP-T Master" type="text" class="form-control here">
+                                        </div>
+                                        <label for="smf-gw-ipt-local-1" class="col-md-1 col-form-label">Local Port</label>
+                                        <div class="col-md-2">
+                                            <input id="smf-gw-ipt-local-1" name="smf-gw-ipt-local-1" placeholder="Local Port" type="number" class="form-control here">
+                                        </div>
+                                        <label for="smf-gw-ipt-remote-1" class="col-md-1 col-form-label">Remote Port</label>
+                                        <div class="col-md-2">
+                                            <input id="smf-gw-ipt-remote-1" name="smf-gw-ipt-remote-1" placeholder="Remote Port" type="number" class="form-control here">
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="smf-gw-ipt-name-1" class="col-md-1 col-form-label">Name</label>
+                                        <div class="col-md-5">
+                                            <input id="smf-gw-ipt-name-1" name="smf-gw-ipt-name-1" placeholder="User Name" type="text" class="form-control here">
+                                        </div>
+                                        <label for="smf-gw-ipt-pwd-1" class="col-md-1 col-form-label">Password</label>
+                                        <div class="col-md-5">
+                                            <input id="smf-gw-ipt-pwd-1" name="smf-gw-ipt-pwd-1" placeholder="Password" type="text" class="form-control here">
+                                        </div>
+                                    </div>
+                                    <hr />
+                                    <h5>Redundancy II</h5>
+                                    <div class="form-group row">
+                                        <label for="smf-gw-ipt-host" class="col-md-1 col-form-label">Host</label>
+                                        <div class="col-md-5">
+                                            <input id="smf-gw-ipt-host-2" name="smf-gw-ipt-host-2" placeholder="IP-T Master" type="text" class="form-control here">
+                                        </div>
+                                        <label for="smf-gw-ipt-local-2" class="col-md-1 col-form-label">Local Port</label>
+                                        <div class="col-md-2">
+                                            <input id="smf-gw-ipt-local-2" name="smf-gw-ipt-local-2" placeholder="Local Port" type="number" class="form-control here">
+                                        </div>
+                                        <label for="smf-gw-ipt-remote-2" class="col-md-1 col-form-label">Remote Port</label>
+                                        <div class="col-md-2">
+                                            <input id="smf-gw-ipt-remote-2" name="smf-gw-ipt-remote-2" placeholder="Remote Port" type="number" class="form-control here">
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="smf-gw-ipt-name-2" class="col-md-1 col-form-label">Name</label>
+                                        <div class="col-md-5">
+                                            <input id="smf-gw-ipt-name-2" name="smf-gw-ipt-name-2" placeholder="User Name" type="text" class="form-control here">
+                                        </div>
+                                        <label for="smf-gw-ipt-pwd-2" class="col-md-1 col-form-label">Password</label>
+                                        <div class="col-md-5">
+                                            <input id="smf-gw-ipt-pwd-2" name="smf-gw-ipt-pwd-2" placeholder="Password" type="text" class="form-control here">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group row">
+                                        <div class="offset-1 col-11">
+                                            <a id="smf-form-gw-ipt-submit" href="#" class="btn btn-primary">Submit</a>
+                                            <!--                                    <button name="submit" type="submit" class="btn btn-primary" disabled>Submit</button>-->
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="col-md-3 bg-warning">
+                                <h5>Current IP-T Configuration</h5>
+                                <p><span style="font-weight: bold">Note:</span> Changing the IP-T configuration can lead to the breakdown of the connection.</p>
+                                <div class="form-group">
+                                    <label for="smf-gw-ipt-host" class="col-form-label">Host</label>
+                                    <input id="smf-gw-ipt-host" name="smf-gw-ipt-host" placeholder="IP-T Master" type="text" class="form-control here" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="smf-gw-ipt-local" class="col-form-label">Local Port</label>
+                                    <input id="smf-gw-ipt-local" name="smf-gw-ipt-local" placeholder="Local Port" type="number" class="form-control here" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="smf-gw-ipt-remote" class="col-form-label">Remote Port</label>
+                                    <input id="smf-gw-ipt-remote" name="smf-gw-ipt-remote" placeholder="Remote Port" type="number" class="form-control here" readonly>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="smf-gw-ipt-local" class="col-form-label">Local Port</label>
-                            <input id="smf-gw-ipt-local" name="smf-gw-ipt-local" placeholder="Local Port" type="number" class="form-control here" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="smf-gw-ipt-remote" class="col-form-label">Remote Port</label>
-                            <input id="smf-gw-ipt-remote" name="smf-gw-ipt-remote" placeholder="Remote Port" type="number" class="form-control here" readonly>
-                        </div>
+                        <!--<br>-->
                     </div>
                 </div>
-                <!--<br>-->
             </div>
-        </div>
+            <div class="col-2 bg-warning">
+                <div class="form-group">
+                    <p><span style="font-weight: bold">Note:</span> No other IP-T connection can be active during the execution of the requests below.</p>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-select-all" name="smf-form-gw-select-all">
+                        <label class="form-check-label" for="smf-form-gw-select-all">Select all</label>
+                    </div>
+                    <hr />
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-status-word" name="smf-form-gw-status-word">
+                        <label class="form-check-label" for="smf-form-gw-status-word">Request status word</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-visible" name="smf-form-gw-srv-visible">
+                        <label class="form-check-label" for="smf-form-gw-srv-visible">Display visible meters</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-srv-active" name="smf-form-gw-srv-active">
+                        <label class="form-check-label" for="smf-form-gw-srv-active">Display active meters</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-firmware" name="smf-form-gw-firmware">
+                        <label class="form-check-label" for="smf-form-gw-firmware">Get a firmware list</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-memory" name="smf-form-gw-memory">
+                        <label class="form-check-label" for="smf-form-gw-memory">Get memory usage</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-wireless-mbus" name="smf-form-gw-wireless-mbus">
+                        <label class="form-check-label" for="smf-form-gw-wireless-mbus">Wireless M-Bus</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" value="" id="smf-form-gw-ipt" name="smf-form-gw-ipt">
+                        <label class="form-check-label" for="smf-form-gw-ipt">IP-T</label>
+                    </div>
+                </div>
+
+            </div>
+        </div>  <!--row-->
+
         <br />
     </div>
 
