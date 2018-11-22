@@ -149,7 +149,7 @@
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label class="control-label" for="smf-form-gw-server">Server ID (14 hex. characters)</label>
-                                    <input id="smf-form-gw-server" name="smf-form-gw-server" type="text" placeholder="<Server ID>" class="form-control input-md" required>
+                                    <input id="smf-form-gw-server" name="smf-form-gw-server" type="text" placeholder="<Server ID>" class="form-control input-md" maxlength="14" required>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label class="control-label" for="smf-form-gw-manufacturer">Manufacturer</label>
@@ -278,7 +278,7 @@
                                     </select>
                                     <!--<span id="selectHelpBlock" class="form-text text-muted">Transmission Power</span>-->
                                 </div>
-                                <label for="smf-gw-wmbus-reboot" class="col-md-2 col-form-label">Automatic Reboot</label>
+                                <label for="smf-gw-wmbus-reboot" class="col-md-2 col-form-label">Automatic Reboot (sec)</label>
                                 <div class="col-md-4">
                                     <div class="input-group">
                                         <!--<div class="input-group-addon">Seconds</div>-->
@@ -338,11 +338,11 @@
                                         </div>
                                         <label for="smf-gw-ipt-local-1" class="col-md-1 col-form-label">Local Port</label>
                                         <div class="col-md-2">
-                                            <input id="smf-gw-ipt-local-1" name="smf-gw-ipt-local-1" placeholder="Local Port" type="number" class="form-control here">
+                                            <input id="smf-gw-ipt-local-1" name="smf-gw-ipt-local-1" placeholder="Local Port" type="number" min="0" max="65536" class="form-control here">
                                         </div>
                                         <label for="smf-gw-ipt-remote-1" class="col-md-1 col-form-label">Remote Port</label>
                                         <div class="col-md-2">
-                                            <input id="smf-gw-ipt-remote-1" name="smf-gw-ipt-remote-1" placeholder="Remote Port" type="number" class="form-control here">
+                                            <input id="smf-gw-ipt-remote-1" name="smf-gw-ipt-remote-1" placeholder="Remote Port" type="number" min="0" max="65536" class="form-control here">
                                         </div>
                                     </div>
                                     <div class="form-group row">
@@ -364,11 +364,11 @@
                                         </div>
                                         <label for="smf-gw-ipt-local-2" class="col-md-1 col-form-label">Local Port</label>
                                         <div class="col-md-2">
-                                            <input id="smf-gw-ipt-local-2" name="smf-gw-ipt-local-2" placeholder="Local Port" type="number" class="form-control here">
+                                            <input id="smf-gw-ipt-local-2" name="smf-gw-ipt-local-2" placeholder="Local Port" type="number" min="0" max="65536" class="form-control here">
                                         </div>
                                         <label for="smf-gw-ipt-remote-2" class="col-md-1 col-form-label">Remote Port</label>
                                         <div class="col-md-2">
-                                            <input id="smf-gw-ipt-remote-2" name="smf-gw-ipt-remote-2" placeholder="Remote Port" type="number" class="form-control here">
+                                            <input id="smf-gw-ipt-remote-2" name="smf-gw-ipt-remote-2" placeholder="Remote Port" type="number" min="0" max="65536" class="form-control here">
                                         </div>
                                     </div>
                                     <div class="form-group row">
@@ -595,6 +595,7 @@
                         gw_req_vec.push("w-mbus-config");
                         $('#smf-gw-wmbus-type').val("waiting...");
                         $('#smf-gw-wmbus-adapter').val("waiting...");
+                        $('#smf-gw-wmbus-firmware').val("waiting...");
                         $('#smf-gw-wmbus-hardware').val("waiting...");
                     }
                     if ($('#smf-form-gw-ipt').is(":checked") && rowData[9]) {
