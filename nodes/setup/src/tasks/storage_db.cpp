@@ -210,9 +210,9 @@ namespace node
 			if (boost::algorithm::equals(name, "TDevice"))
 			{
 				//	[763ae055-449c-4783-b383-8fc8cd52f44f]
-				//	[2018-01-23 15:10:47.65306710,true,vroot-device-id,id,descr,number,name]
+				//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
 				//	bind parameters
-				//	INSERT INTO TDevice (pk, gen, name, pwd, number, descr, id, vroot-device-id, enabled, creationTime, query) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				//	INSERT INTO TDevice (pk, gen, name, pwd, number, descr, id, vFirmware, enabled, creationTime, query) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				stmt->push(key.at(0), 36);	//	pk
 				meta->loop_body([&](cyng::table::column&& col) {
 					if (col.pos_ == 0)
@@ -604,7 +604,7 @@ namespace node
 		//
 		std::map<std::string, cyng::table::meta_table_ptr> meta_map;
 		meta_map.emplace("TDevice", cyng::table::make_meta_table<1, 10>("TDevice",
-			{ "pk", "gen", "name", "pwd", "msisdn", "descr", "id", "vroot-device-id", "enabled", "creationTime", "query" },
+			{ "pk", "gen", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
 			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
 			{ 36, 0, 128, 16, 128, 512, 64, 64, 0, 0, 0 }));
 
