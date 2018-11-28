@@ -394,7 +394,7 @@ namespace node
 				, cyng::object client_id
 				, std::chrono::system_clock::time_point start_time
 				, std::chrono::system_clock::time_point end_time
-				, const cyng::store::table*);
+				, cyng::store::table const*);
 
 			std::size_t get_proc_w_mbus_status(cyng::object trx
 				, cyng::object client_id

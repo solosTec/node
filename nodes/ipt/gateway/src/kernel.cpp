@@ -596,7 +596,7 @@ namespace node
 				//	send operation logs
 				//
 
-				config_db_.access([&](cyng::store::table* tbl) {
+				config_db_.access([&](cyng::store::table const* tbl) {
 
 					CYNG_LOG_INFO(logger_, "send " << tbl->size() << " op.log(s)");
 
@@ -605,7 +605,7 @@ namespace node
 						, std::get<7>(tpl)
 						, std::get<8>(tpl)
 						, tbl);
-				}, cyng::store::write_access("op.log"));
+				}, cyng::store::read_access("op.log"));
 
 			}
 			else if (OBIS_PROFILE_1_MINUTE == code) {
