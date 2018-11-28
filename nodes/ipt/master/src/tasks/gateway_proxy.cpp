@@ -51,7 +51,7 @@ namespace node
 			//
 			vm_.async_run(std::move(prg));
 
-		}, false, false)	//	not verbose, no log instructions
+		}, true, false)	//	not verbose, no log instructions
 		//, wait_counter_(12)
 		, queue_()
 	{

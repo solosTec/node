@@ -9,6 +9,7 @@
 
 #include <cyng/vm/generator.h>
 #include <cyng/io/hex_dump.hpp>
+#include <cyng/io/serializer.h>
 
 #include <iostream>
 #include <ios>
@@ -819,10 +820,9 @@ namespace node
 				//
 				//	prepare new list
 				//
-				stack_.push(list(tl_.length_));
-				if (verbose_)
-				{
-					std::cerr
+				if (verbose_ || log_) {
+					std::stringstream ss;
+					ss
 						<< "open list with "
 						<< std::dec
 						<< stack_.size()
@@ -831,9 +831,29 @@ namespace node
 						<< " entries @"
 						<< std::hex
 						<< pos_
-						<< std::endl;
+// 						<< std::endl
+						;
+					
+					if (verbose_)
+					{
+						std::cerr
+							<< ss.str()
+							<< std::endl;
+					}
+					if (log_)
+					{
+						cb_(cyng::generate_invoke("sml.log", ss.str()));
+					}
 				}
-
+				if (tl_.length_ == 0) {
+					//
+					//	empty list as empty tuple
+					//
+					push(cyng::tuple_factory());
+				}
+				else {
+					stack_.push(list(tl_.length_));
+				}
 				return STATE_START;
 			default:
 			{
@@ -910,14 +930,24 @@ namespace node
 
 		void parser::emit_nil()
 		{
-			//prefix();
-			if (verbose_)
-			{
-				std::cerr 
+			if (verbose_ || log_) {
+				std::stringstream ss;
+				ss 
 					<< prefix() 
 					<< "[OPTIONAL]"
-					<< std::endl;
-				;
+					;
+				
+				if (verbose_)
+				{
+					std::cerr 
+						<< ss.str()
+						<< std::endl;
+					;
+				}
+				if (log_) 
+				{
+					cb_(cyng::generate_invoke("sml.log", ss.str()));
+				}
 			}
 			push(cyng::make_object());		
 		}
@@ -969,21 +999,49 @@ namespace node
 		{
 			if (!stack_.empty())
 			{
+				if (stack_.top().target_ < stack_.top().values_.size())	{
+					if (verbose_ || log_) {
+						std::stringstream ss;
+						ss
+						<< std::dec
+						<< "list ["
+						<< stack_.size()
+						<< "] is full with "
+						<< stack_.top().values_.size()
+						<< " entries - <"
+						<< cyng::io::to_str(obj)
+						<< "> exceeds expected size "
+						<< stack_.top().target_
+						;
+					}
+				}
+				
 				if (stack_.top().push(obj))
 				{
 					//
 					//	list is complete
 					//
 					auto values = stack_.top().values_;
-					if (verbose_)
-					{
-						std::cerr
+					if (verbose_ || log_) {
+						std::stringstream ss;
+						ss 
 							<< "reduce list ["
 							<< std::dec
 							<< stack_.size()
 							<< "] "
 							<< values.size()
-							<< std::endl;
+							;
+						
+						if (verbose_)
+						{
+							std::cerr
+								<< ss.str()
+								<< std::endl;
+						}
+						if (log_)
+						{
+							cb_(cyng::generate_invoke("sml.log", ss.str()));
+						}
 					}
 					stack_.pop();
 					//	recursive
