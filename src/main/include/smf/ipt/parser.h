@@ -365,7 +365,17 @@ namespace node
 				return v;
 			}
 
+			//
+			//	to prevent statement ordering we have to use
+			//	function objects instead of function results
+			//	in the argument list
+			//
 			std::function<std::string()> get_read_string_f();
+			std::function<std::uint8_t()> get_read_uint8_f();
+			std::function<std::uint16_t()> get_read_uint16_f();
+			std::function<std::uint32_t()> get_read_uint32_f();
+			std::function<std::uint64_t()> get_read_uint64_f();
+			std::function<cyng::buffer_t()> get_read_data_f();
 
 		private:
 			/**
@@ -402,18 +412,6 @@ namespace node
 			//	current header
 			//
 			header	header_;
-
-			//
-			//	to prevent statement ordering we have to use
-			//	function objects instead of function results
-			//	in the argument list
-			//
-			//std::function<std::string()> f_read_string;
-			std::function<std::uint8_t()> f_read_uint8;
-			std::function<std::uint16_t()> f_read_uint16;
-			std::function<std::uint32_t()> f_read_uint32;
-			std::function<std::uint64_t()> f_read_uint64;
-			std::function<cyng::buffer_t()> f_read_data;
 
 		};
 	}

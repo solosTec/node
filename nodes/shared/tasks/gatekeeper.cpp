@@ -95,9 +95,9 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> is stopped: "
+			<< "> "
 			<< tag_
-			<< " after "
+			<< " stopped after "
 			<< cyng::to_str(uptime));
 	}
 

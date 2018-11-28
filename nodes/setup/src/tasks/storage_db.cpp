@@ -210,9 +210,9 @@ namespace node
 			if (boost::algorithm::equals(name, "TDevice"))
 			{
 				//	[763ae055-449c-4783-b383-8fc8cd52f44f]
-				//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
+				//	[2018-01-23 15:10:47.65306710,true,vroot-device-id,id,descr,number,name]
 				//	bind parameters
-				//	INSERT INTO TDevice (pk, gen, name, pwd, number, descr, id, vFirmware, enabled, creationTime, query) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				//	INSERT INTO TDevice (pk, gen, name, pwd, number, descr, id, vroot-device-id, enabled, creationTime, query) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				stmt->push(key.at(0), 36);	//	pk
 				meta->loop_body([&](cyng::table::column&& col) {
 					if (col.pos_ == 0)
@@ -236,7 +236,7 @@ namespace node
 				//	[54c15b9e-858a-431c-9c2c-8b654c7d7651][05000000000000,EMH,EMH-VMET,2018-06-06 07:22:47.26852400,VARIOMUC-ETHERNET-1.407_14232___11X022a,factory-nr,00:01:02:03:04:05,00:01:02:03:04:06,user,pwd,mbus,operator,operator]
 
 				//meta_map.emplace("TGateway", cyng::table::make_meta_table<1, 14>("TGateway",
-				//	{ "pk", "gen", "serverId", "manufacturer", "model", "proddata", "vFirmare", "factoryNr", "ifService", "ifData", "pwdDef", "pwdRoot", "mbus", "userName", "userPwd" },
+				//	{ "pk", "gen", "serverId", "manufacturer", "model", "proddata", "vFirmware", "factoryNr", "ifService", "ifData", "pwdDef", "pwdRoot", "mbus", "userName", "userPwd" },
 				//	{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
 				//	{ 36, 0, 23, 64, 64, 0, 64, 8, 18, 18, 32, 32, 16, 32, 32 }));
 
@@ -322,7 +322,7 @@ namespace node
 					.push(data.at(1), 8)	//	meter
 					.push(data.at(2), 64)	//	maker
 					.push(data.at(3), 0)	//	tom
-					.push(data.at(4), 64)	//	vFirmare
+					.push(data.at(4), 64)	//	vFirmware
 					.push(data.at(5), 64)	//	vParam
 					.push(data.at(6), 32)	//	factoryNr
 					.push(data.at(7), 128)	//	item
@@ -604,7 +604,7 @@ namespace node
 		//
 		std::map<std::string, cyng::table::meta_table_ptr> meta_map;
 		meta_map.emplace("TDevice", cyng::table::make_meta_table<1, 10>("TDevice",
-			{ "pk", "gen", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
+			{ "pk", "gen", "name", "pwd", "msisdn", "descr", "id", "vroot-device-id", "enabled", "creationTime", "query" },
 			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
 			{ 36, 0, 128, 16, 128, 512, 64, 64, 0, 0, 0 }));
 
@@ -618,7 +618,7 @@ namespace node
 			{ cyng::TC_UINT32, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_STRING },
 			{ 0, 0, 256, 0, 64 }));
 
-		//	vFirmware: (i.e. MUC-ETHERNET-1.318_11332000)
+		//	vFirmware-id: (i.e. MUC-ETHERNET-1.318_11332000)
 		//	factoryNr: (i.e. 06441734)
 		//	mbus: W-Mbus ID (i.e. A815408943050131)
 		meta_map.emplace("TGateway", cyng::table::make_meta_table<1, 12>("TGateway",
@@ -664,7 +664,7 @@ namespace node
 			, "meter"		//	meter number (i.e. 16000913) 4 bytes 
 			, "maker"		//	manufacturer
 			, "tom"			//	time of manufacture
-			, "vFirmare"	//	firmwareversion (i.e. 11600000)
+			, "vFirmware"	//	firmware version (i.e. 11600000)
 			, "vParam"		//	parametrierversion (i.e. 16A098828.pse)
 			, "factoryNr"	//	fabrik nummer (i.e. 06441734)
 			, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
@@ -677,7 +677,7 @@ namespace node
 			, cyng::TC_STRING		//	meter
 			, cyng::TC_STRING		//	maker
 			, cyng::TC_TIME_POINT	//	tom
-			, cyng::TC_STRING		//	vFirmare
+			, cyng::TC_STRING		//	vFirmware
 			, cyng::TC_STRING		//	vParam
 			, cyng::TC_STRING		//	factoryNr
 			, cyng::TC_STRING		//	item
@@ -690,7 +690,7 @@ namespace node
 			, 8		//	meter
 			, 64	//	maker
 			, 0		//	tom
-			, 64	//	vFirmare
+			, 64	//	vFirmware
 			, 64	//	vParam
 			, 32	//	factoryNr
 			, 128	//	item

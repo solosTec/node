@@ -48,8 +48,8 @@ namespace node
 			else if (code == OBIS_CODE_ROOT_WAN)				return "root-WAN-state";
 			//else if (code == OBIS_CODE_ROOT_WAN_PARAM)			return "root-WAN-param";
 			else if (code == OBIS_CODE_ROOT_GSM)				return "root-GSM";
-			else if (code == OBIS_CODE_ROOT_IPT_STATE)			return "root-IPT-state";
-			else if (code == OBIS_CODE_ROOT_IPT_PARAM)			return "root-IPT-param";
+			else if (OBIS_CODE_ROOT_IPT_STATE == code)			return "root-ipt-state";
+			else if (OBIS_CODE_ROOT_IPT_PARAM == code)			return "root-ipt-param";
 			else if (OBIS_CODE_PEER_ADDRESS_WANGSM == code)		return "peer-address-wangsm";
 			else if (OBIS_CODE_PEER_ADDRESS == code)			return "peer-address";
 			else if (OBIS_CODE_VERSION == code)					return "version";

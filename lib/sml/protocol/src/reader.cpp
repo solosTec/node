@@ -724,7 +724,7 @@ namespace node
 						, from_server_id(ro_.server_id_)
 						, OBIS_CODE_ROOT_DEVICE_IDENT.to_buffer()
 						, path.back().get_storage()	//	[5] as u32
-						, ro_.get_string(OBIS_CODE_DEVICE_KERNEL)	//	firmware name/section
+						, ro_.get_string(OBIS_CODE_DEVICE_KERNEL)	//	root-device-id name/section
 						, ro_.get_string(OBIS_CODE_VERSION)	//	version
 						, ro_.get_value(OBIS_CODE_DEVICE_ACTIVATED));	//	active/inactive
 

@@ -20,7 +20,7 @@
     <!--<link href="dashboard.css" rel="stylesheet">-->
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg sticky-top navbar-dark bg-dark">
         <a class="navbar-brand" href="http://solostec.ch">
             <img src="images/logo.svg" width="30" height="30" class="d-inline-block align-top" alt="">
             solos::Tec
@@ -316,8 +316,8 @@
                                         if (obj.value.maker != null) {
                                             d[3] = obj.value.maker;
                                         }
-                                        else if (obj.value.vFirmare != null) {
-                                            d[5] = obj.value.vFirmare;
+                                        else if (obj.value.vFirmware != null) {
+                                            d[5] = obj.value.vFirmware;
                                         }
                                         else if (obj.value.vParam != null) {
                                             d[6] = obj.value.vParam;
@@ -395,7 +395,7 @@
                         data: {
                             ident: $('#smf-form-meter-ident').val(),
                             maker: $('#smf-form-meter-manufacturer').val(),
-                            vFirmare: $('#smf-form-meter-fw').val(),
+                            vFirmware: $('#smf-form-meter-fw').val(),
                             vParam: $('#smf-form-meter-param').val(),
                             factoryNr: $('#smf-form-meter-factory-nr').val(),
                             item: $('#smf-form-meter-item').val(),

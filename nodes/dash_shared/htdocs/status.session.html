@@ -18,7 +18,7 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg sticky-top navbar-dark bg-dark">
         <a class="navbar-brand" href="http://solostec.ch">
             <img src="images/logo.svg" width="30" height="30" class="d-inline-block align-top" alt="">
             solos::Tec
@@ -125,7 +125,7 @@
                 </form>
             </div>
         </div>
-     </div>
+    </div>
 
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
@@ -290,6 +290,7 @@
                                     $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
                                     $('#ws-activity-symbol').fadeOut();
                                     $('#ws-activity-level').css("width", "100%").text("synchronized").removeClass('bg-info').addClass('bg-success');
+                                    table_ses.order([1, 'asc']).draw();
                                 }
                             }
                             else if (obj.level != null) {

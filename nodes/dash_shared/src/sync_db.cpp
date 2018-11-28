@@ -39,7 +39,7 @@ namespace node
 			, "name"	//	IP-T/device name
 			, "descr"	//	IP-T/device description
 			, "model"	//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
-			, "vFirmware"	//	(5) firmwareversion (i.e. 11600000)
+			, "vFirmware"	//	(5) firmware version (i.e. 11600000)
 			, "online"	//	(14)
 			},
 			{ cyng::TC_UUID		//	pk
@@ -57,7 +57,7 @@ namespace node
 								//	--- dynamic part:
 			, cyng::TC_STRING	//	IP-T/device name
 			, cyng::TC_STRING	//	model
-			, cyng::TC_STRING	//	firmware
+			, cyng::TC_STRING	//	vFirmware
 			, cyng::TC_BOOL		//	on/offline
 			},
 			{ 36		//	pk
@@ -74,7 +74,7 @@ namespace node
 			, 32	//	PW
 			, 128	//	IP-T/device name
 			, 64	//	model
-			, 64	//	firmware
+			, 64	//	vFirmware
 			, 0		//	bool online/offline
 			})))
 		{
@@ -539,7 +539,7 @@ namespace node
 				//
 				//	set device name
 				//	set model
-				//	set firmware
+				//	set vFirmware
 				//	set online state
 				//
 				if (!dev_rec.empty())

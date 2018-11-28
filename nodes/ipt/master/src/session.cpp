@@ -10,28 +10,28 @@
 #include "tasks/open_connection.h"
 #include "tasks/close_connection.h"
 #include "../../../shared/tasks/gatekeeper.h"
-#include "tasks/reboot.h"
-#include "tasks/query_gateway.h"
-#include "tasks/modify_gateway.h"
+//#include "tasks/reboot.h"
+//#include "tasks/query_gateway.h"
+//#include "tasks/modify_gateway.h"
+#include "tasks/gateway_proxy.h"
 #include <NODE_project_info.h>
+
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/scramble_key_io.hpp>
-//#include <cyng/vm/domain/log_domain.h>
-//#include <cyng/vm/domain/store_domain.h>
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/vector_cast.hpp>
+#include <cyng/set_cast.h>
 #include <cyng/dom/reader.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/factory/set_factory.h>
-//#include <boost/uuid/random_generator.hpp>
-#include <boost/uuid/nil_generator.hpp>
 #ifdef SMF_IO_LOG
 #include <cyng/io/hex_dump.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #endif
+#include <boost/uuid/nil_generator.hpp>
 
 namespace node 
 {
@@ -60,25 +60,22 @@ namespace node
 				, cyng::generate_invoke("stream.serialize", cyng::make_buffer({ 't', 'i', 'm', 'e', 'o', 'u', 't', '\n' }))).first)
 			, sk_(sk)
 			, watchdog_(watchdog)
+			, proxy_tsk_(cyng::async::start_task_sync<gateway_proxy>(mux_, logger_, bus_, vm_, timeout).first)
 #ifdef SMF_IO_LOG
 			, log_counter_(0)
 #endif
 		{
-			//
-			//	register logger domain
-			//
-			//cyng::register_logger(logger_, vm_);
-			//vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
+
+			CYNG_LOG_DEBUG(logger_, vm_.tag()
+				<< " proxy task #"
+				<< proxy_tsk_);
 
 			vm_.register_function("session.store.relation", 3, std::bind(&session::store_relation, this, std::placeholders::_1));
 			vm_.register_function("session.remove.relation", 1, std::bind(&session::remove_relation, this, std::placeholders::_1));
 
 			vm_.register_function("session.update.connection.state", 2, std::bind(&session::update_connection_state, this, std::placeholders::_1));
 			vm_.register_function("session.redirect", 1, std::bind(&session::redirect, this, std::placeholders::_1));
-			vm_.register_function("client.req.reboot", 7, std::bind(&session::client_req_reboot, this, std::placeholders::_1));
-			vm_.register_function("client.req.query.gateway", 8, std::bind(&session::client_req_query_gateway, this, std::placeholders::_1));
-			vm_.register_function("client.req.modify.gateway", 8, std::bind(&session::client_req_modify_gateway, this, std::placeholders::_1));
-
+			vm_.register_function("client.req.gateway.proxy", 11, std::bind(&session::client_req_gateway_proxy, this, std::placeholders::_1));
 			//
 			//	register SML callbacks
 			//
@@ -450,103 +447,140 @@ namespace node
 			}
 		}
 
-		void session::client_req_reboot(cyng::context& ctx)
+		//void session::client_req_reboot(cyng::context& ctx)
+		//{
+		//	//	 [a661501f-d2bf-48ef-8d1c-898ef1614c3d,3,05000000000000,operator,operator]
+		//	const cyng::vector_t frame = ctx.get_frame();
+		//	CYNG_LOG_INFO(logger_, "client.req.reboot " << cyng::io::to_str(frame));
+		//	auto const tpl = cyng::tuple_cast<
+		//		boost::uuids::uuid,		//	[0] source tag
+		//		boost::uuids::uuid,		//	[1] remote tag
+		//		std::uint64_t,			//	[2] cluster seq
+		//		boost::uuids::uuid,		//	[3] ws tag
+		//		cyng::buffer_t,			//	[4] server id
+		//		std::string,			//	[5] name
+		//		std::string				//	[6] pwd
+		//	>(frame);
+
+		//	const std::size_t tsk = cyng::async::start_task_sync<reboot>(mux_
+		//		, logger_
+		//		, bus_
+		//		, vm_
+		//		, std::get<0>(tpl)	//	remote tag
+		//		, std::get<2>(tpl)	//	cluster seq
+		//		, std::get<3>(tpl)	//	ws tag
+		//		, std::get<4>(tpl)	//	server ID
+		//		, std::get<5>(tpl)	//	name
+		//		, std::get<6>(tpl)	//	password
+		//		, timeout_
+		//		, ctx.tag()).first;	//	ctx tag
+
+		//	CYNG_LOG_TRACE(logger_, "client.req.reboot - task #" << tsk);
+
+		//}
+
+
+		//void session::client_req_query_gateway(cyng::context& ctx)
+		//{
+		//	const cyng::vector_t frame = ctx.get_frame();
+		//	CYNG_LOG_INFO(logger_, "client.req.query.gateway " << cyng::io::to_str(frame));
+		//	auto const tpl = cyng::tuple_cast<
+		//		boost::uuids::uuid,		//	[0] source tag
+		//		boost::uuids::uuid,		//	[1] remote tag
+		//		std::uint64_t,			//	[2] cluster seq
+		//		cyng::vector_t,			//	[3] parameters
+		//		boost::uuids::uuid,		//	[4] ws tag
+		//		cyng::buffer_t,			//	[5] server id
+		//		std::string,			//	[6] name
+		//		std::string				//	[7] pwd
+		//	>(frame);
+
+		//	const std::size_t tsk = cyng::async::start_task_sync<query_gateway>(mux_
+		//		, logger_
+		//		, bus_
+		//		, vm_
+		//		, std::get<0>(tpl)	//	remote tag
+		//		, std::get<2>(tpl)	//	cluster seq
+		//		, cyng::vector_cast<std::string>(std::get<3>(tpl), "")	//	parameters
+		//		, std::get<4>(tpl)	//	ws tag
+		//		, std::get<5>(tpl)	//	server ID
+		//		, std::get<6>(tpl)	//	name
+		//		, std::get<7>(tpl)	//	password
+		//		, timeout_
+		//		, ctx.tag()).first;	//	ctx tag
+
+		//	CYNG_LOG_TRACE(logger_, "client.req.query.gateway - task #" << tsk);
+		//}
+
+
+		//void session::client_req_modify_gateway(cyng::context& ctx)
+		//{
+		//	//	[9e3dda5d-7c0b-4a8d-b25d-eea3a113a856,59591725-090d-4502-b9e7-c0c0def5c019,14,ipt,%(("serverId":0500153B01EC46),("smf-gw-ipt-host-1":192.168.1.21),("smf-gw-ipt-host-2":192.168.1.21),("smf-gw-ipt-local-1":68ee),("smf-gw-ipt-local-2":68ef),("smf-gw-ipt-name-1":LSMTest2),("smf-gw-ipt-name-2":LSMTest2),("smf-gw-ipt-pwd-1":LSMTest2),("smf-gw-ipt-pwd-2":LSMTest2),("smf-gw-ipt-remote-1":0),("smf-gw-ipt-remote-2":0)),0500153B01EC46,operator,operator]
+		//	const cyng::vector_t frame = ctx.get_frame();
+		//	CYNG_LOG_INFO(logger_, "client.req.modify.gateway " << cyng::io::to_str(frame));
+		//	auto const tpl = cyng::tuple_cast<
+		//		boost::uuids::uuid,		//	[0] source tag
+		//		boost::uuids::uuid,		//	[1] remote tag
+		//		std::uint64_t,			//	[2] cluster seq
+		//		std::string,			//	[3] section
+		//		cyng::param_map_t,		//	[4] params
+		//		cyng::buffer_t,			//	[5] server ID
+		//		std::string,			//	[6] name
+		//		std::string				//	[7] pwd
+		//	>(frame);
+
+		//	const std::size_t tsk = cyng::async::start_task_sync<modify_gateway>(mux_
+		//		, logger_
+		//		, bus_
+		//		, vm_
+		//		, std::get<0>(tpl)	//	remote tag
+		//		, std::get<2>(tpl)	//	cluster seq
+		//		, std::get<3>(tpl)	//	section
+		//		, std::get<4>(tpl)	//	params
+		//		, std::get<5>(tpl)	//	server ID
+		//		, std::get<6>(tpl)	//	name
+		//		, std::get<7>(tpl)	//	password
+		//		, timeout_
+		//		, ctx.tag()).first;	//	ctx tag
+
+		//	CYNG_LOG_TRACE(logger_, "client.req.modify.gateway - task #" << tsk);
+		//}
+
+		void session::client_req_gateway_proxy(cyng::context& ctx)
 		{
-			//	 [a661501f-d2bf-48ef-8d1c-898ef1614c3d,3,05000000000000,operator,operator]
+			//	[c469c819-8b75-4dd7-a7b2-d74e228488c7,9f773865-e4af-489a-8824-8f78a2311278,4,[df735c77-797f-4ce8-bb74-86280f9884a9],[{("section":[status:word,srv:visible,srv:active,firmware,memory,root-wMBus-status,IF_wMBUS,ipt-status,ipt-config])}],0500153B022980,operator,operator]
+			//	[c469c819-8b75-4dd7-a7b2-d74e228488c7,9f773865-e4af-489a-8824-8f78a2311278,5,[df735c77-797f-4ce8-bb74-86280f9884a9],[{("name":smf-form-gw-ipt-srv),("value":0500153B022980)},{("name":smf-gw-ipt-host-1),("value":waiting...)},{("name":smf-gw-ipt-local-1),("value":4)},{("name":smf-gw-ipt-remote-1),("value":3)},{("name":smf-gw-ipt-name-1),("value":waiting...)},{("name":smf-gw-ipt-pwd-1),("value":asdasd)},{("name":smf-gw-ipt-host-2),("value":waiting...)},{("name":smf-gw-ipt-local-2),("value":3)},{("name":smf-gw-ipt-remote-2),("value":3)},{("name":smf-gw-ipt-name-2),("value":holgär)},{("name":smf-gw-ipt-pwd-2),("value":asdasd)},{("section":[ipt])}],0500153B022980,operator,operator]
+			//
+			//	* [uuid] ident
+			//	* [uuid] source
+			//	* [u64] seq
+			//	* [vec] TGateway key
+			//	* [uuid] web-socket tag
+			//	* [str] channel
+			//	* [vec] sections
+			//	* [vec] parameter
+			//
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "client.req.reboot " << cyng::io::to_str(frame));
-			auto const tpl = cyng::tuple_cast<
-				boost::uuids::uuid,		//	[0] source tag
-				boost::uuids::uuid,		//	[1] remote tag
-				std::uint64_t,			//	[2] cluster seq
-				boost::uuids::uuid,		//	[3] ws tag
-				cyng::buffer_t,			//	[4] server id
-				std::string,			//	[5] name
-				std::string				//	[6] pwd
-			>(frame);
+			CYNG_LOG_INFO(logger_, "client.req.gateway.proxy " << cyng::io::to_str(frame));
 
-			const std::size_t tsk = cyng::async::start_task_sync<reboot>(mux_
-				, logger_
-				, bus_
-				, vm_
-				, std::get<0>(tpl)	//	remote tag
-				, std::get<2>(tpl)	//	cluster seq
-				, std::get<3>(tpl)	//	ws tag
-				, std::get<4>(tpl)	//	server ID
-				, std::get<5>(tpl)	//	name
-				, std::get<6>(tpl)	//	password
-				, timeout_
-				, ctx.tag()).first;	//	ctx tag
+			//auto const tpl = cyng::tuple_cast<
+			//	boost::uuids::uuid,		//	[0] ident tag
+			//	boost::uuids::uuid,		//	[1] source tag
+			//	std::uint64_t,			//	[2] cluster seq
+			//	cyng::vector_t,			//	[3] TGateway key
+			//	boost::uuids::uuid,		//	[4] ws tag
+			//	cyng::vector_t,			//	[5] sections
+			//	cyng::vector_t,			//	[6] parameters
+			//	cyng::buffer_t,			//	[7] server id
+			//	std::string,			//	[8] name
+			//	std::string				//	[9] pwd
+			//>(frame);
 
-			CYNG_LOG_TRACE(logger_, "client.req.reboot - task #" << tsk);
+			//
+			//	update proxy queue
+			//
+			mux_.post(proxy_tsk_, 7u, cyng::to_tuple(frame));
 
-		}
-
-
-		void session::client_req_query_gateway(cyng::context& ctx)
-		{
-			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "client.req.query.gateway " << cyng::io::to_str(frame));
-			auto const tpl = cyng::tuple_cast<
-				boost::uuids::uuid,		//	[0] source tag
-				boost::uuids::uuid,		//	[1] remote tag
-				std::uint64_t,			//	[2] cluster seq
-				cyng::vector_t,			//	[3] parameters
-				boost::uuids::uuid,		//	[4] ws tag
-				cyng::buffer_t,			//	[5] server id
-				std::string,			//	[6] name
-				std::string				//	[7] pwd
-			>(frame);
-
-			const std::size_t tsk = cyng::async::start_task_sync<query_gateway>(mux_
-				, logger_
-				, bus_
-				, vm_
-				, std::get<0>(tpl)	//	remote tag
-				, std::get<2>(tpl)	//	cluster seq
-				, cyng::vector_cast<std::string>(std::get<3>(tpl), "")	//	parameters
-				, std::get<4>(tpl)	//	ws tag
-				, std::get<5>(tpl)	//	server ID
-				, std::get<6>(tpl)	//	name
-				, std::get<7>(tpl)	//	password
-				, timeout_
-				, ctx.tag()).first;	//	ctx tag
-
-			CYNG_LOG_TRACE(logger_, "client.req.query.gateway - task #" << tsk);
-		}
-
-
-		void session::client_req_modify_gateway(cyng::context& ctx)
-		{
-			//	[9e3dda5d-7c0b-4a8d-b25d-eea3a113a856,59591725-090d-4502-b9e7-c0c0def5c019,14,ipt,%(("serverId":0500153B01EC46),("smf-gw-ipt-host-1":192.168.1.21),("smf-gw-ipt-host-2":192.168.1.21),("smf-gw-ipt-local-1":68ee),("smf-gw-ipt-local-2":68ef),("smf-gw-ipt-name-1":LSMTest2),("smf-gw-ipt-name-2":LSMTest2),("smf-gw-ipt-pwd-1":LSMTest2),("smf-gw-ipt-pwd-2":LSMTest2),("smf-gw-ipt-remote-1":0),("smf-gw-ipt-remote-2":0)),0500153B01EC46,operator,operator]
-			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "client.req.modify.gateway " << cyng::io::to_str(frame));
-			auto const tpl = cyng::tuple_cast<
-				boost::uuids::uuid,		//	[0] source tag
-				boost::uuids::uuid,		//	[1] remote tag
-				std::uint64_t,			//	[2] cluster seq
-				std::string,			//	[3] section
-				cyng::param_map_t,		//	[4] params
-				cyng::buffer_t,			//	[5] server ID
-				std::string,			//	[6] name
-				std::string				//	[7] pwd
-			>(frame);
-
-			const std::size_t tsk = cyng::async::start_task_sync<modify_gateway>(mux_
-				, logger_
-				, bus_
-				, vm_
-				, std::get<0>(tpl)	//	remote tag
-				, std::get<2>(tpl)	//	cluster seq
-				, std::get<3>(tpl)	//	section
-				, std::get<4>(tpl)	//	params
-				, std::get<5>(tpl)	//	server ID
-				, std::get<6>(tpl)	//	name
-				, std::get<7>(tpl)	//	password
-				, timeout_
-				, ctx.tag()).first;	//	ctx tag
-
-			CYNG_LOG_TRACE(logger_, "client.req.modify.gateway - task #" << tsk);
 		}
 
 		void session::ipt_req_login_public(cyng::context& ctx)

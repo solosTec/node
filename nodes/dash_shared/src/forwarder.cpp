@@ -188,93 +188,93 @@ namespace node
 				BOOST_ASSERT_MSG(vec.size() == 1, "TGateway key has wrong size");
 				auto key = cyng::table::key_generator(vec.at(0));
 
-				if (boost::algorithm::equals(channel, "config.gateway.ipt")) {
+		//		if (boost::algorithm::equals(channel, "config.gateway.ipt")) {
 
-					vec = cyng::value_cast(reader["rec"].get("data"), vec);
-					BOOST_ASSERT_MSG(vec.size() == 11, "TGateway with wrong data size");
-					cyng::param_map_t params;
-					for (std::size_t idx = 0; idx < vec.size(); ++idx) {
-						auto name = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("name"), "");
+		//			vec = cyng::value_cast(reader["rec"].get("data"), vec);
+		//			BOOST_ASSERT_MSG(vec.size() == 11, "TGateway with wrong data size");
+		//			cyng::param_map_t params;
+					//for (std::size_t idx = 0; idx < vec.size(); ++idx) {
+					//	auto name = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("name"), "");
 
-						if (boost::algorithm::equals(name, "smf-form-gw-ipt-srv")) {
+					//	if (boost::algorithm::equals(name, "smf-form-gw-ipt-srv")) {
 
-							//
-							//	send server/gateway ID as buffer_t type
-							//
-							const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "00");
-							const auto r = cyng::parse_hex_string(inp);
-							if (r.second) {
-								params["serverId"] = cyng::make_object(r.first);
-							}
-							else {
-								//	error
-								CYNG_LOG_ERROR(logger, "parse ["
-									<< inp
-									<<"] failed");
-							}
-						}
-						else if (boost::algorithm::starts_with(name, "smf-gw-ipt-host-")) {
+					//		//
+					//		//	send server/gateway ID as buffer_t type
+					//		//
+					//		const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "00");
+					//		const auto r = cyng::parse_hex_string(inp);
+					//		if (r.second) {
+					//			params["serverId"] = cyng::make_object(r.first);
+					//		}
+					//		else {
+					//			//	error
+					//			CYNG_LOG_ERROR(logger, "parse ["
+					//				<< inp
+					//				<<"] failed");
+					//		}
+					//	}
+					//	else if (boost::algorithm::starts_with(name, "smf-gw-ipt-host-")) {
 
-							//
-							//	send host name as IP address
-							//
-							const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0.0.0.0");
-							const auto address = boost::asio::ip::make_address(inp);
-							params[name] = cyng::make_object(address);
-						}
-						else if (boost::algorithm::starts_with(name, "smf-gw-ipt-local-")) {
+					//		//
+					//		//	send host name as IP address
+					//		//
+					//		const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0.0.0.0");
+					//		const auto address = boost::asio::ip::make_address(inp);
+					//		params[name] = cyng::make_object(address);
+					//	}
+					//	else if (boost::algorithm::starts_with(name, "smf-gw-ipt-local-")) {
 
-							//
-							//	send port as u16 
-							//
-							const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0");
-							const std::uint16_t port = std::stoul(inp);
-							params[name] = cyng::make_object(port);
-						}
-						else if (boost::algorithm::starts_with(name, "smf-gw-ipt-remote-")) {
+					//		//
+					//		//	send port as u16 
+					//		//
+					//		const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0");
+					//		const std::uint16_t port = std::stoul(inp);
+					//		params[name] = cyng::make_object(port);
+					//	}
+					//	else if (boost::algorithm::starts_with(name, "smf-gw-ipt-remote-")) {
 
-							//
-							//	send port as u16 
-							//
-							const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0");
-							const std::uint16_t port = std::stoul(inp);
-							params[name] = cyng::make_object(port);
-						}
-						else {
-							params[name] = reader["rec"]["data"][idx].get("value");
-						}
+					//		//
+					//		//	send port as u16 
+					//		//
+					//		const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0");
+					//		const std::uint16_t port = std::stoul(inp);
+					//		params[name] = cyng::make_object(port);
+					//	}
+					//	else {
+					//		params[name] = reader["rec"]["data"][idx].get("value");
+					//	}
+					//}
+				//	ctx.attach(bus_req_modify_gateway("ipt", key, ctx.tag(), params));
+
+				//}
+				//else {
+
+				cyng::tuple_t tpl;
+				tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
+				for (auto p : tpl)
+				{
+					cyng::param_t param;
+					param = cyng::value_cast(p, param);
+
+					if (boost::algorithm::equals(param.first, "serverId")) {
+						//
+						//	to uppercase
+						//
+						std::string server_id;
+						server_id = cyng::value_cast(param.second, server_id);
+						boost::algorithm::to_upper(server_id);
+						ctx.attach(bus_req_db_modify("TGateway"
+							, key
+							, cyng::param_factory("serverId", server_id)
+							, 0
+							, ctx.tag()));
 					}
-					ctx.attach(bus_req_modify_gateway("ipt", key, ctx.tag(), params));
-
-				}
-				else {
-					cyng::tuple_t tpl;
-					tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
-					for (auto p : tpl)
-					{
-						cyng::param_t param;
-						param = cyng::value_cast(p, param);
-
-						if (boost::algorithm::equals(param.first, "serverId")) {
-							//
-							//	to uppercase
-							//
-							std::string server_id;
-							server_id = cyng::value_cast(param.second, server_id);
-							boost::algorithm::to_upper(server_id);
-							ctx.attach(bus_req_db_modify("TGateway"
-								, key
-								, cyng::param_factory("serverId", server_id)
-								, 0
-								, ctx.tag()));
-						}
-						else {
-							ctx.attach(bus_req_db_modify("TGateway"
-								, key
-								, cyng::value_cast(p, param)
-								, 0
-								, ctx.tag()));
-						}
+					else {
+						ctx.attach(bus_req_db_modify("TGateway"
+							, key
+							, cyng::value_cast(p, param)
+							, 0
+							, ctx.tag()));
 					}
 				}
 			}
@@ -387,60 +387,87 @@ namespace node
 		}
 	}
 
-	void fwd_reboot(cyng::logging::log_ptr logger
+	void fwd_config_gateway(cyng::logging::log_ptr logger
 		, cyng::context& ctx
 		, boost::uuids::uuid tag_ws
+		, std::string const& channel
 		, cyng::reader<cyng::object> const& reader)
 	{
-		const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
-		CYNG_LOG_TRACE(logger, "ws.read - reboot channel [" << channel << "]");
-		if (boost::algorithm::starts_with(channel, "config.gateway"))
-		{
-			//	{"cmd":"reboot","channel":"config.gateway","key":["dca135f3-ff2b-4bf7-8371-a9904c74522b"]}
-			cyng::vector_t vec;
-			vec = cyng::value_cast(reader.get("key"), vec);
-			CYNG_LOG_INFO(logger, "reboot gateway " << cyng::io::to_str(vec));
-			BOOST_ASSERT_MSG(!vec.empty(), "TGateway key is empty");
+		//	{"cmd":"config:gateway","channel":"get.proc.param","key":["fce4fe15-0756-4ae4-91e7-28dee59f07e6"],"params":[{"section":["op-log-status-word","root-visible-devices","root-active-devices","root-device-id","memory","root-wMBus-status","IF_wMBUS","root-ipt-state","root-ipt-param"]}]}
+		//	{"cmd":"config:gateway","channel":"set.proc.param","key":["fce4fe15-0756-4ae4-91e7-28dee59f07e6"],"params":[{"name":"smf-form-gw-ipt-srv","value":"0500153B0223B3"},{"name":"smf-gw-ipt-host-1","value":"waiting..."},{"name":"smf-gw-ipt-local-1","value":""},{"name":"smf-gw-ipt-remote-1","value":""},{"name":"smf-gw-ipt-name-1","value":"waiting..."},{"name":"smf-gw-ipt-pwd-1","value":""},{"name":"smf-gw-ipt-host-2","value":"waiting..."},{"name":"smf-gw-ipt-local-2","value":""},{"name":"smf-gw-ipt-remote-2","value":""},{"name":"smf-gw-ipt-name-2","value":"waiting..."},{"name":"smf-gw-ipt-pwd-2","value":""},{"section":["ipt"]}]}
+		cyng::vector_t key;
+		key = cyng::value_cast(reader.get("key"), key);
+		CYNG_LOG_INFO(logger, "TGateway key" << cyng::io::to_str(key));
+		BOOST_ASSERT_MSG(!key.empty(), "TGateway key is empty");
+		if (!key.empty()) {
 
-			if (!vec.empty()) {
-				auto key = cyng::table::key_generator(vec.at(0));
-				ctx.attach(bus_req_reboot_client(key, ctx.tag(), tag_ws));
-			}
-		}
-		else
-		{
-			CYNG_LOG_WARNING(logger, "ws.read - unknown reboot channel [" << channel << "]");
+			cyng::vector_t vec;
+			ctx.attach(bus_req_gateway_proxy(key	//	key into TGateway and TDevice table
+				, tag_ws	//	web-socket tag
+				, channel
+				, cyng::value_cast(reader.get("section"), vec)
+				, cyng::value_cast(reader.get("params"), vec)));	//	parameters, requests, commands
+
 		}
 	}
 
-	void fwd_query_gateway(cyng::logging::log_ptr logger
-		, cyng::context& ctx
-		, boost::uuids::uuid tag_ws
-		, cyng::reader<cyng::object> const& reader)
-	{
-		const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
-		CYNG_LOG_TRACE(logger, "ws.read - query:gateway channel [" << channel << "]");
-		if (boost::algorithm::starts_with(channel, "config.gateway"))
-		{
-			cyng::vector_t vec;
-			vec = cyng::value_cast(reader.get("key"), vec);
-			CYNG_LOG_INFO(logger, "query:gateway " << cyng::io::to_str(vec));
+	//void fwd_reboot(cyng::logging::log_ptr logger
+	//	, cyng::context& ctx
+	//	, boost::uuids::uuid tag_ws
+	//	, cyng::reader<cyng::object> const& reader)
+	//{
+	//	const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+	//	CYNG_LOG_TRACE(logger, "ws.read - reboot channel [" << channel << "]");
+	//	if (boost::algorithm::starts_with(channel, "config.gateway"))
+	//	{
+	//		//	{"cmd":"reboot","channel":"config.gateway","key":["dca135f3-ff2b-4bf7-8371-a9904c74522b"]}
+	//		cyng::vector_t vec;
+	//		vec = cyng::value_cast(reader.get("key"), vec);
+	//		CYNG_LOG_INFO(logger, "reboot gateway " << cyng::io::to_str(vec));
+	//		BOOST_ASSERT_MSG(!vec.empty(), "TGateway key is empty");
 
-			BOOST_ASSERT_MSG(!vec.empty(), "TGateway key is empty");
-			if (!vec.empty()) {
-				auto key = cyng::table::key_generator(vec.at(0));
+	//		if (!vec.empty()) {
+	//			auto key = cyng::table::key_generator(vec.at(0));
+	//			ctx.attach(bus_req_reboot_client(key, ctx.tag(), tag_ws));
+	//		}
+	//	}
+	//	else
+	//	{
+	//		CYNG_LOG_WARNING(logger, "ws.read - unknown reboot channel [" << channel << "]");
+	//	}
+	//}
 
-#ifdef _DEBUG
-				auto params = cyng::vector_cast<std::string>(reader.get("params"), "");
-				for (auto const& p : params) {
-					CYNG_LOG_DEBUG(logger, p);
-
-				}
-#endif
-				ctx.attach(bus_req_query_gateway(key, ctx.tag(), cyng::value_cast(reader.get("params"), vec), tag_ws));
-			}
-		}
-	}
+//	void fwd_query_gateway(cyng::logging::log_ptr logger
+//		, cyng::context& ctx
+//		, boost::uuids::uuid tag_ws
+//		, cyng::reader<cyng::object> const& reader)
+//	{
+//		const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+//		CYNG_LOG_TRACE(logger, "ws.read - query:gateway channel [" << channel << "]");
+//		if (boost::algorithm::starts_with(channel, "config.gateway"))
+//		{
+//			cyng::vector_t key;
+//			key = cyng::value_cast(reader.get("key"), key);
+//			CYNG_LOG_INFO(logger, "query:gateway " << cyng::io::to_str(key));
+//
+//			BOOST_ASSERT_MSG(!key.empty(), "TGateway key is empty");
+//			if (!key.empty()) {
+//
+//#ifdef _DEBUG
+//				auto params = cyng::vector_cast<std::string>(reader.get("params"), "");
+//				for (auto const& p : params) {
+//					CYNG_LOG_DEBUG(logger, p);
+//
+//				}
+//#endif
+//				cyng::vector_t vec;
+//				ctx.attach(bus_req_query_gateway(key	//	key into TGateway and TDevice table
+//					, ctx.tag()	//	source tag
+//					, cyng::value_cast(reader.get("params"), vec)	//	parameters, requests, commands
+//					, tag_ws));	//	
+//			}
+//		}
+//	}
 
 	forward::forward(cyng::logging::log_ptr logger
 		, cyng::store::db& db
@@ -726,7 +753,7 @@ namespace node
 			//		, reader["device"].get_object("number")
 			//		, reader["device"].get_object("descr")
 			//		, reader["device"].get_object("id")	//	device ID
-			//		, reader["device"].get_object("ver")	//	firmware 
+			//		, reader["device"].get_object("ver")	//	root-device-id 
 			//		, reader["device"].get_object("enabled")
 			//		, reader["device"].get_object("age")
 

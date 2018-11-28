@@ -8,17 +8,7 @@
 
 #include "server.h"
 #include "session.h"
-//#include "connection.h"
 #include <smf/ipt/scramble_key_io.hpp>
-//#include <smf/cluster/generator.h>
-//#include <cyng/vm/generator.h>
-//#include <cyng/dom/reader.h>
-//#include <cyng/object_cast.hpp>
-//#include <cyng/tuple_cast.hpp>
-//#include <cyng/factory/set_factory.h>
-//#include <boost/uuid/nil_generator.hpp>
-//#include <boost/uuid/uuid_io.hpp>
-//#include <boost/algorithm/string/predicate.hpp>
 
 namespace node 
 {
@@ -31,57 +21,17 @@ namespace node
 			, scramble_key const& sk
 			, uint16_t watchdog)
 		: server_stub(mux, logger, bus, timeout)
-			//, logger_(logger)
-			//, bus_(bus)
 			, sk_(sk)
 			, watchdog_(watchdog)
-//			, timeout_(timeout)
-//			, acceptor_(mux.get_io_service())
-//#if (BOOST_VERSION < 106600)
-//            , socket_(mux_.get_io_service())
-//#endif
-//			, rnd_()
-//			, client_map_()
-//			, connection_map_()
-//			, cv_acceptor_closed_()
-//			, cv_sessions_closed_()
-//			, mutex_()
 		{
 			//
-			//	connection management
+			//	client responses
 			//
-			//bus_->vm_.register_function("push.connection", 1, std::bind(&server::push_connection, this, std::placeholders::_1));
-			//bus_->vm_.register_function("server.insert.client", 2, std::bind(&server::insert_client, this, std::placeholders::_1));
-			//bus_->vm_.register_function("server.remove.client", 1, std::bind(&server::remove_client, this, std::placeholders::_1));
-			//bus_->vm_.register_function("server.close.client", 2, std::bind(&server::close_client, this, std::placeholders::_1));
-			//bus_->vm_.register_function("server.shutdown.clients", 0, std::bind(&server::shutdown_clients, this, std::placeholders::_1));
-			//bus_->vm_.register_function("server.clear.connection.map", 1, std::bind(&server::clear_connection_map, this, std::placeholders::_1));
-			//bus_->vm_.register_function("server.transmit.data", 2, std::bind(&server::transmit_data, this, std::placeholders::_1));
+			//bus_->vm_.register_function("client.req.reboot", 8, [&](cyng::context& ctx) { this->server_stub::client_propagate(ctx); });
+			//bus_->vm_.register_function("client.req.query.gateway", 9, [&](cyng::context& ctx) { this->server_stub::client_propagate(ctx); });
+			//bus_->vm_.register_function("client.req.modify.gateway", 8, [&](cyng::context& ctx) { this->server_stub::client_propagate(ctx); });
 
-
-			////
-			////	client responses
-			////
-			//bus_->vm_.register_function("client.res.login", 7, std::bind(&server::client_res_login, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.res.close", 3, std::bind(&server::client_res_close_impl, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.req.close", 4, std::bind(&server::client_req_close_impl, this, std::placeholders::_1));
-			bus_->vm_.register_function("client.req.reboot", 8, [&](cyng::context& ctx) { this->server_stub::client_propagate(ctx); });
-			bus_->vm_.register_function("client.req.query.gateway", 9, [&](cyng::context& ctx) { this->server_stub::client_propagate(ctx); });
-			bus_->vm_.register_function("client.req.modify.gateway", 8, [&](cyng::context& ctx) { this->server_stub::client_propagate(ctx); });
-
-			//bus_->vm_.register_function("client.res.open.push.channel", 7, std::bind(&server::client_res_open_push_channel, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.res.register.push.target", 1, std::bind(&server::client_res_register_push_target, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.res.deregister.push.target", 6, std::bind(&server::client_res_deregister_push_target, this, std::placeholders::_1));
-
-			//bus_->vm_.register_function("client.res.open.connection", 6, std::bind(&server::client_res_open_connection, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.req.open.connection.forward", 6, std::bind(&server::client_req_open_connection_forward, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.res.open.connection.forward", 6, std::bind(&server::client_res_open_connection_forward, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.req.transmit.data.forward", 5, std::bind(&server::client_req_transmit_data_forward, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.res.transfer.pushdata", 7, std::bind(&server::client_res_transfer_pushdata, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.req.transfer.pushdata.forward", 7, std::bind(&server::client_req_transfer_pushdata_forward, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.res.close.push.channel", 6, std::bind(&server::client_res_close_push_channel, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.req.close.connection.forward", 7, std::bind(&server::client_req_close_connection_forward, this, std::placeholders::_1));
-			//bus_->vm_.register_function("client.res.close.connection.forward", 6, std::bind(&server::client_res_close_connection_forward, this, std::placeholders::_1));
+			bus_->vm_.register_function("client.req.gateway.proxy", 12, [&](cyng::context& ctx) { this->server_stub::client_propagate(ctx); });
 
 			//
 			//	statistical data

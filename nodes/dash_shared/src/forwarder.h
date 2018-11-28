@@ -40,20 +40,29 @@ namespace node
 		, cyng::reader<cyng::object> const&);
 
 	/**
-	 * reboot gateway
+	 * Communicate to IP-T proxy
 	 */
-	void fwd_reboot(cyng::logging::log_ptr
+	void fwd_config_gateway(cyng::logging::log_ptr
 		, cyng::context& ctx
 		, boost::uuids::uuid tag_ws
+		, std::string const& channel
 		, cyng::reader<cyng::object> const&);
+
+	/**
+	 * reboot gateway
+	 */
+	//void fwd_reboot(cyng::logging::log_ptr
+	//	, cyng::context& ctx
+	//	, boost::uuids::uuid tag_ws
+	//	, cyng::reader<cyng::object> const&);
 
 	/**
 	 * Send a process parameter request to an gateway
 	 */
-	void fwd_query_gateway(cyng::logging::log_ptr
-		, cyng::context& ctx
-		, boost::uuids::uuid tag_ws
-		, cyng::reader<cyng::object> const&);
+	//void fwd_query_gateway(cyng::logging::log_ptr
+	//	, cyng::context& ctx
+	//	, boost::uuids::uuid tag_ws
+	//	, cyng::reader<cyng::object> const&);
 
 	class forward
 	{

@@ -360,26 +360,27 @@ namespace node
 		//
 		//	get session tag of websocket
 		//
-		auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+		auto tag_ws = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 
 		//
 		//	reader for JSON data
 		//
 		auto reader = cyng::make_reader(frame.at(1));
 		const std::string cmd = cyng::value_cast<std::string>(reader.get("cmd"), "");
+		const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "generic");
 
 		if (boost::algorithm::equals(cmd, "subscribe")) {
 
 			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
 			CYNG_LOG_TRACE(logger_, "ws.read - subscribe channel [" << channel << "]");
 
-			dispatcher_.subscribe_channel(cache_, channel, tag);
+			dispatcher_.subscribe_channel(cache_, channel, tag_ws);
 		}
 		else if (boost::algorithm::equals(cmd, "update"))
 		{
 			const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
 			CYNG_LOG_TRACE(logger_, "ws.read - pull channel [" << channel << "]");
-			dispatcher_.pull(cache_, channel, tag);
+			dispatcher_.pull(cache_, channel, tag_ws);
 		}
 		else if (boost::algorithm::equals(cmd, "insert"))
 		{
@@ -406,18 +407,26 @@ namespace node
 				, ctx
 				, reader);
 		}
-		else if (boost::algorithm::equals(cmd, "reboot"))
+		//else if (boost::algorithm::equals(cmd, "reboot"))
+		//{
+		//	node::fwd_reboot(logger_
+		//		, ctx
+		//		, tag
+		//		, reader);
+		//}
+		//else if (boost::algorithm::equals(cmd, "query:gateway"))
+		//{
+		//	node::fwd_query_gateway(logger_
+		//		, ctx
+		//		, tag
+		//		, reader);
+		//}
+		else if (boost::algorithm::equals(cmd, "config:gateway"))
 		{
-			node::fwd_reboot(logger_
+			node::fwd_config_gateway(logger_
 				, ctx
-				, tag
-				, reader);
-		}
-		else if (boost::algorithm::equals(cmd, "query:gateway"))
-		{
-			node::fwd_query_gateway(logger_
-				, ctx
-				, tag
+				, tag_ws
+				, channel
 				, reader);
 		}
 		else

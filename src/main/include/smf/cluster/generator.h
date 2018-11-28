@@ -123,9 +123,9 @@ namespace node
 	/**
 	 * Reboot a client
 	 */
-	cyng::vector_t bus_req_reboot_client(cyng::vector_t const&
-		, boost::uuids::uuid source
-		, boost::uuids::uuid tag_ws);
+	//cyng::vector_t bus_req_reboot_client(cyng::vector_t const&
+	//	, boost::uuids::uuid source
+	//	, boost::uuids::uuid tag_ws);
 
 	/**
 	 * Send a process parameter request to an gateway
@@ -135,10 +135,40 @@ namespace node
 	 * @param vec vector of parameter requests
 	 * @param tag_ws websocket session tag
 	 */
-	cyng::vector_t bus_req_query_gateway(cyng::vector_t const&
+	//cyng::vector_t bus_req_query_gateway(cyng::vector_t const&
+	//	, boost::uuids::uuid source
+	//	, cyng::vector_t vec	//	params
+	//	, boost::uuids::uuid tag_ws);
+
+	/**
+	 * Send a process parameter request to an gateway
+	 *
+	 * @param key key for TGateway/TDevice table
+	 * @param tag_ws websocket session tag
+	 * @param channel channel name (get.proc.param, set.proc.param, ...)
+	 * @param vec vector of parameter requests
+	 */
+	cyng::vector_t bus_req_gateway_proxy(cyng::vector_t const& key
+		, boost::uuids::uuid tag_ws
+		, std::string channel
+		, cyng::vector_t sections
+		, cyng::vector_t params);
+
+	/**
+	 * Response for bus_req_gateway_proxy()
+	 *
+	 * @param source source tag
+	 * @param srv server id
+	 */
+	cyng::vector_t bus_res_gateway_proxy(boost::uuids::uuid ident
 		, boost::uuids::uuid source
-		, cyng::vector_t vec	//	params
-		, boost::uuids::uuid tag_ws);
+		, std::uint64_t seq
+		, cyng::vector_t key
+		, boost::uuids::uuid tag_ws
+		, std::string channel
+		, std::string srv
+		, std::string code
+		, cyng::param_map_t const&);
 
 	/**
 	 * Response for bus_req_query_gateway()
@@ -146,12 +176,12 @@ namespace node
 	 * @param source source tag
 	 * @param srv server id
 	 */
-	cyng::vector_t bus_res_query_gateway(boost::uuids::uuid source
-		, std::uint64_t seq
-		, boost::uuids::uuid tag_ws
-		, std::string srv
-		, std::string code
-		, cyng::param_map_t const&);
+	//cyng::vector_t bus_res_query_gateway(boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, boost::uuids::uuid tag_ws
+	//	, std::string srv
+	//	, std::string code
+	//	, cyng::param_map_t const&);
 
 	/**
 	 * Send back attention codes
@@ -231,13 +261,13 @@ namespace node
 	 * @param user login name / account
 	 * @param pwd password
 	 */
-	cyng::vector_t client_req_reboot(boost::uuids::uuid tag
-		, boost::uuids::uuid source
-		, std::uint64_t seq
-		, boost::uuids::uuid tag_ws
-		, cyng::buffer_t const& server
-		, std::string const& user
-		, std::string const& pwd);
+	//cyng::vector_t client_req_reboot(boost::uuids::uuid tag
+	//	, boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, boost::uuids::uuid tag_ws
+	//	, cyng::buffer_t const& server
+	//	, std::string const& user
+	//	, std::string const& pwd);
 
 	/**
 	 * Send process parameter request
@@ -250,14 +280,14 @@ namespace node
 	 * @param user login name / account
 	 * @param pwd password
 	 */
-	cyng::vector_t client_req_query_gateway(boost::uuids::uuid tag
-		, boost::uuids::uuid source
-		, std::uint64_t seq
-		, cyng::vector_t vec
-		, boost::uuids::uuid tag_ws
-		, cyng::buffer_t const& server
-		, std::string const& user
-		, std::string const& pwd);
+	//cyng::vector_t client_req_query_gateway(boost::uuids::uuid tag
+	//	, boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, cyng::vector_t vec
+	//	, boost::uuids::uuid tag_ws
+	//	, cyng::buffer_t const& server
+	//	, std::string const& user
+	//	, std::string const& pwd);
 
 	/**
 	 * Send process parameter request
@@ -271,11 +301,35 @@ namespace node
 	 * @param user login name / account
 	 * @param pwd password
 	 */
-	cyng::vector_t client_req_modify_gateway(boost::uuids::uuid tag
+	//cyng::vector_t client_req_modify_gateway(boost::uuids::uuid tag
+	//	, boost::uuids::uuid source
+	//	, std::uint64_t seq
+	//	, std::string const& section
+	//	, cyng::param_map_t params
+	//	, cyng::buffer_t const& server
+	//	, std::string const& user
+	//	, std::string const& pwd);
+
+	/**
+	 * Send a request to the IP-T proxy
+	 *
+	 * @param tag target (IP-T) session
+	 * @param source source session tag
+	 * @param seq cluster sequence
+	 * @param section request type
+	 * @param params parameters
+	 * @param server server id
+	 * @param user login name / account
+	 * @param pwd password
+	 */
+	cyng::vector_t client_req_gateway_proxy(boost::uuids::uuid tag
 		, boost::uuids::uuid source
 		, std::uint64_t seq
-		, std::string const& section
-		, cyng::param_map_t params
+		, cyng::vector_t key
+		, boost::uuids::uuid ws
+		, std::string const& channel
+		, cyng::vector_t sections
+		, cyng::vector_t params
 		, cyng::buffer_t const& server
 		, std::string const& user
 		, std::string const& pwd);

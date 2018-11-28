@@ -172,6 +172,26 @@ namespace node
 				, std::uint8_t idx
 				, std::string const&);
 
+			std::size_t set_proc_parameter_wmbus_install(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password
+				, bool);
+
+			std::size_t set_proc_parameter_wmbus_power(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password
+				, std::uint8_t);
+
+			std::size_t set_proc_parameter_wmbus_protocol(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password
+				, std::uint8_t);
+
+			std::size_t set_proc_parameter_wmbus_reboot(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password
+				, std::uint64_t);
+
 			/**
 			 * Simple root query - BODY_GET_PROC_PARAMETER_REQUEST (0x500)
 			 */

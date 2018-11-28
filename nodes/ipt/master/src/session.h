@@ -12,13 +12,6 @@
 #include <smf/ipt/serializer.h>
 #include <smf/cluster/session_stub.h>
 
-//#include <smf/cluster/bus.h>
-//#include <smf/ipt/parser.h>
-//#include <cyng/async/mux.h>
-//#include <cyng/log.h>
-//#include <cyng/vm/controller.h>
-//#include <cyng/compatibility/async.h>
-
 namespace node 
 {
 	namespace ipt
@@ -136,17 +129,6 @@ namespace node
 			virtual cyng::buffer_t parse(read_buffer_const_iterator, read_buffer_const_iterator) override;
 
 		private:
-			/**
-			 * The connection detected a disconnect and calls the stop method
-			 * with the received error code.
-			 */
-			//void stop_req(boost::system::error_code ec);
-			//void stop_res(boost::system::error_code ec);
-
-			/**
-			 * stop running tasks and halt VM
-			 */
-			//void shutdown();
 
 			void ipt_req_login_public(cyng::context& ctx);
 			void ipt_req_login_scrambled(cyng::context& ctx);
@@ -156,7 +138,7 @@ namespace node
 			void ipt_req_open_push_channel(cyng::context& ctx);
 
 			/**
-			 * Normally this function should not be used, because the open
+			 * Normally ipt_res_open_push_channel() should not be used, because the open
 			 * push channel request is answered by the IP-T master.
 			 * There is a bug in the VARIOSafe Manager to answer an open
 			 * connection request with an open push channel response.
@@ -212,16 +194,10 @@ namespace node
 			void remove_relation(cyng::context& ctx);
 			void update_connection_state(cyng::context& ctx);
 			void redirect(cyng::context& ctx);
-			void client_req_reboot(cyng::context& ctx);
-			void client_req_query_gateway(cyng::context& ctx);
-			void client_req_modify_gateway(cyng::context& ctx);
+
+			void client_req_gateway_proxy(cyng::context& ctx);
 
 		private:
-			//cyng::async::mux& mux_;
-			//cyng::logging::log_ptr logger_;
-			//bus::shared_type bus_;	//!< cluster bus
-			//cyng::controller vm_;	//!< ipt device
-			//const std::chrono::seconds timeout_;
 
 			/**
 			 * ipt parser
@@ -247,6 +223,10 @@ namespace node
 			 */
 			connect_state	connect_state_;
 
+			/**
+			 * proxy task
+			 */
+			const std::size_t proxy_tsk_;
 
 #ifdef SMF_IO_LOG
 			std::size_t log_counter_;

@@ -36,10 +36,14 @@ namespace node
 		void register_this(cyng::context& ctx);
 
 	private:
-		void bus_req_reboot_client(cyng::context& ctx);
-		void bus_req_query_gateway(cyng::context& ctx);
-		void bus_res_query_gateway(cyng::context& ctx);
-		void bus_req_modify_gateway(cyng::context& ctx);
+		//void bus_req_reboot_client(cyng::context& ctx);
+		//void bus_req_query_gateway(cyng::context& ctx);
+		//void bus_req_modify_gateway(cyng::context& ctx);
+
+		void bus_req_gateway_proxy(cyng::context& ctx);
+		void bus_res_gateway_proxy(cyng::context& ctx);
+
+		//void bus_res_query_gateway(cyng::context& ctx);
 		void bus_res_attention_code(cyng::context& ctx);
 
 		std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> find_peer(cyng::table::key_type const& key_session

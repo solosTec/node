@@ -282,6 +282,106 @@ namespace node
 		}
 
 
+		std::size_t req_generator::set_proc_parameter_wmbus_install(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password
+			, bool b)
+		{
+			const obis_path tree_path({ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_INSTALL_MODE });
+
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+
+				//
+				//	generate process parameter request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, tree_path
+					, parameter_tree(OBIS_W_MBUS_INSTALL_MODE, make_value(b)))
+				)
+			);
+		}
+
+		std::size_t req_generator::set_proc_parameter_wmbus_power(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password
+			, std::uint8_t val)
+		{
+			const obis_path tree_path({ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_POWER });
+
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+
+				//
+				//	generate process parameter request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, tree_path
+					, parameter_tree(OBIS_W_MBUS_POWER, make_value(val)))
+				)
+			);
+		}
+
+		std::size_t req_generator::set_proc_parameter_wmbus_protocol(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password
+			, std::uint8_t val)
+		{
+			const obis_path tree_path({ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_PROTOCOL });
+
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+
+				//
+				//	generate process parameter request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, tree_path
+					, parameter_tree(OBIS_W_MBUS_PROTOCOL, make_value(val)))
+				)
+			);
+		}
+
+		std::size_t req_generator::set_proc_parameter_wmbus_reboot(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password
+			, std::uint64_t val)
+		{
+			const obis_path tree_path({ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_REBOOT });
+
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+
+				//
+				//	generate process parameter request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, tree_path
+					, parameter_tree(OBIS_W_MBUS_REBOOT, make_value(val)))
+				)
+			);
+		}
+
 		std::size_t req_generator::get_proc_parameter(cyng::buffer_t const& server_id
 			, obis code
 			, std::string const& username

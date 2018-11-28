@@ -18,7 +18,7 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg sticky-top navbar-dark bg-dark">
         <a class="navbar-brand" href="http://solostec.ch">
             <img src="images/logo.svg" width="30" height="30" class="d-inline-block align-top" alt="">
             solos::Tec
@@ -253,9 +253,9 @@
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
                     if (obj.cmd == 'insert') {
-                        //  
-                        // {"cmd": "insert", "channel": "config.lora", "rec": 
-                        //  {"key": {"pk":"66b76c47-0ac2-45c4-bf3c-17f1c13f27d1"}, 
+                        //
+                        // {"cmd": "insert", "channel": "config.lora", "rec":
+                        //  {"key": {"pk":"66b76c47-0ac2-45c4-bf3c-17f1c13f27d1"},
                         //  "data": {"AESKey":"1122334455667788990011223344556677889900112233445566778899001122","AppEUI":"0100:0302:0604:0807","DevAddr":100,"DevEUI":"0100:0302:0504:0706","GatewayEUI":"0100:0302:0604:0807","activation":true,"driver":"demo"}, "gen": 8}}
                         //
                         var euid = $('<div/>').text(obj.rec.data.DevEUI).html();

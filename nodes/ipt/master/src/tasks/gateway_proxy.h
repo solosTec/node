@@ -5,22 +5,28 @@
  *
  */
 
-#ifndef NODE_IP_MASTER_TASK_QUERY_GATEWAY_H
-#define NODE_IP_MASTER_TASK_QUERY_GATEWAY_H
+#ifndef NODE_IP_MASTER_TASK_GATEWAY_PROXY_H
+#define NODE_IP_MASTER_TASK_GATEWAY_PROXY_H
 
+#include "../proxy_data.h"
 #include <smf/cluster/bus.h>
 #include <smf/ipt/defs.h>
 #include <smf/sml/protocol/parser.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller.h>
+#include <queue>
 #include <boost/predef.h>	//	requires Boost 1.55
 
 namespace node
 {
-
-	class query_gateway
+	namespace sml {
+		class req_generator;
+	}
+	class gateway_proxy
 	{
+		using proxy_queue = std::queue< ipt::proxy_data >;
+
 	public:
 		using msg_0 = std::tuple<boost::uuids::uuid>;
 		using msg_1 = std::tuple<std::uint16_t, std::size_t>;	//	eom
@@ -38,22 +44,28 @@ namespace node
 
 		using msg_6 = std::tuple<std::string, cyng::buffer_t>;
 
-		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6>;
+		using msg_7 = std::tuple <
+			boost::uuids::uuid,		//	[0] ident tag
+			boost::uuids::uuid,		//	[1] source tag
+			std::uint64_t,			//	[2] cluster seq
+			cyng::vector_t,			//	[3] TGateway key
+			boost::uuids::uuid,		//	[4] ws tag
+			std::string,			//	[5] channel
+			cyng::vector_t,			//	[5] sections
+			cyng::vector_t,			//	[6] parameters
+			cyng::buffer_t,			//	[7] server id
+			std::string,			//	[8] name
+			std::string				//	[9] pwd
+		>;
+
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7>;
 
 	public:
-		query_gateway(cyng::async::base_task* btp
+		gateway_proxy(cyng::async::base_task* btp
 			, cyng::logging::log_ptr
 			, bus::shared_type bus
 			, cyng::controller& vm
-			, boost::uuids::uuid tag_remote
-			, std::uint64_t seq_cluster		//	cluster seq
-			, std::vector<std::string> params
-			, boost::uuids::uuid tag_ws
-			, cyng::buffer_t const& server	//	server id
-			, std::string user
-			, std::string pwd
-			, std::chrono::seconds timeout
-			, boost::uuids::uuid tag_ctx);
+			, std::chrono::seconds timeout);
 		cyng::continuation run();
 		void stop();
 
@@ -111,25 +123,40 @@ namespace node
 		cyng::continuation process(std::string
 			, cyng::buffer_t const&);
 
+		/**
+		 * @brief slot [7]
+		 *
+		 * add new entry in work queue
+		 */
+		cyng::continuation process(boost::uuids::uuid,		//	[0] ident tag
+			boost::uuids::uuid,		//	[1] source tag
+			std::uint64_t,			//	[2] cluster seq
+			cyng::vector_t,			//	[3] TGateway key
+			boost::uuids::uuid,		//	[4] ws tag
+			std::string channel,	//	[5] channel
+			cyng::vector_t sections,	//	[6] sections
+			cyng::vector_t params,		//	[7] parameters
+			cyng::buffer_t srv,			//	[8] server id
+			std::string name,			//	[9] name
+			std::string	pwd				//	[10] pwd
+		);
 	private:
-		void send_query_cmd();
+		void execute_cmd();
+		void execute_cmd_get_proc_param();
+		void execute_cmd_set_proc_param();
+		void execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen);
+		void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen);
+		cyng::mac48 get_mac() const;
 
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		bus::shared_type bus_;
 		cyng::controller& vm_;
-		const boost::uuids::uuid tag_remote_;
-		const std::uint64_t seq_cluster_;
-		const std::vector<std::string> params_;
-		const boost::uuids::uuid tag_ws_;
-		const cyng::buffer_t server_id_;
-		const std::string user_, pwd_;
 		const std::chrono::seconds timeout_;
-		const boost::uuids::uuid tag_ctx_;
 		const std::chrono::system_clock::time_point start_;
 		sml::parser parser_;
-		std::size_t wait_counter_;
+		proxy_queue queue_;
 	};
 
 

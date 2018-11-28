@@ -77,7 +77,8 @@ namespace node
 		void update_sys_mem_virtual_used(std::string const&, boost::uuids::uuid);
 		void update_sys_mem_virtual_stat(std::string const&, boost::uuids::uuid);
 
-		void res_query_gateway(cyng::context& ctx);
+		//void res_query_gateway(cyng::context& ctx);
+		void res_gateway_proxy(cyng::context& ctx);
 
 		void http_move(cyng::context& ctx);
 

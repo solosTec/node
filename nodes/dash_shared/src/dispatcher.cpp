@@ -24,7 +24,8 @@ namespace node
 	void dispatcher::register_this(cyng::controller& vm)
 	{
 		vm.register_function("store.relation", 2, std::bind(&dispatcher::store_relation, this, std::placeholders::_1));
-		vm.register_function("bus.res.query.gateway", 6, std::bind(&dispatcher::res_query_gateway, this, std::placeholders::_1));
+		//vm.register_function("bus.res.query.gateway", 6, std::bind(&dispatcher::res_query_gateway, this, std::placeholders::_1));
+		vm.register_function("bus.res.gateway.proxy", 9, std::bind(&dispatcher::res_gateway_proxy, this, std::placeholders::_1));
 
 		vm.register_function("http.move", 2, std::bind(&dispatcher::http_move, this, std::placeholders::_1));
 	}
@@ -36,34 +37,82 @@ namespace node
 		//	cluster seq => ws tag
 	}
 
-	void dispatcher::res_query_gateway(cyng::context& ctx)
+	void dispatcher::res_gateway_proxy(cyng::context& ctx)
 	{
-		//	 [3cb44588-3075-4086-b684-57a4bab6e26c,2,a5d83e14-dc3e-4105-95d0-034c3b69b991,00:ff:b0:0b:ca:ae,cc070202]
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "bus.res.query.gateway - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, "bus.res.gateway.proxy - " << cyng::io::to_str(frame));
 
-		auto const data = cyng::tuple_cast<
-			boost::uuids::uuid,		//	[0] source
-			std::uint64_t,			//	[1] sequence
-			boost::uuids::uuid,		//	[2] websocket tag
-			std::string,			//	[3] server id (key)
-			std::string,			//	[4] OBIS name
-			cyng::param_map_t		//	[5] params
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] ident
+			boost::uuids::uuid,		//	[1] source
+			std::uint64_t,			//	[2] sequence
+			cyng::vector_t,			//	[3] gw key
+			boost::uuids::uuid,		//	[4] websocket tag
+			std::string,			//	[5] channel
+			std::string,			//	[6] server id
+			std::string,			//	[7] section / "OBIS code" as text
+			cyng::param_map_t		//	[8] params
 		>(frame);
 
-		auto tpl = cyng::tuple_factory(
-			cyng::param_factory("cmd", std::string("update")),
-			cyng::param_factory("channel", std::get<4>(data)),
-			cyng::param_factory("rec", cyng::tuple_factory(
-				cyng::param_factory("srv", std::get<3>(data)),
-				cyng::param_factory("values", std::get<5>(data))
-			)));
+		if (boost::algorithm::equals(std::get<7>(tpl), "op-log-status-word") || 
+			boost::algorithm::equals(std::get<7>(tpl), "root-visible-devices") ||
+			boost::algorithm::equals(std::get<7>(tpl), "root-active-devices") ||
+			boost::algorithm::equals(std::get<7>(tpl), "root-device-id") ||
+			boost::algorithm::equals(std::get<7>(tpl), "root-memory-usage") ||
+			boost::algorithm::equals(std::get<7>(tpl), "root-wMBus-status") ||
+			boost::algorithm::equals(std::get<7>(tpl), "IF_wMBUS") ||
+			boost::algorithm::equals(std::get<7>(tpl), "root-ipt-state") ||
+			boost::algorithm::equals(std::get<7>(tpl), "root-ipt-param"))
+		{
 
-		//	{"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
-		auto msg = cyng::json::to_string(tpl);
-		connection_manager_.ws_msg(std::get<2>(data), msg);
+			auto data = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("update")),
+				cyng::param_factory("channel", std::get<5>(tpl)),
+				cyng::param_factory("section", std::get<7>(tpl)),
+				cyng::param_factory("rec", cyng::tuple_factory(
+					cyng::param_factory("srv", std::get<6>(tpl)),
+					cyng::param_factory("values", std::get<8>(tpl))
+				)));
 
+			//	{"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
+			auto msg = cyng::json::to_string(data);
+			connection_manager_.ws_msg(std::get<4>(tpl), msg);
+
+			
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "bus.res.gateway.proxy - unknown section " << std::get<7>(tpl));
+		}
 	}
+
+	//void dispatcher::res_query_gateway(cyng::context& ctx)
+	//{
+	//	//	 [3cb44588-3075-4086-b684-57a4bab6e26c,2,a5d83e14-dc3e-4105-95d0-034c3b69b991,00:ff:b0:0b:ca:ae,cc070202]
+	//	const cyng::vector_t frame = ctx.get_frame();
+	//	CYNG_LOG_TRACE(logger_, "bus.res.query.gateway - " << cyng::io::to_str(frame));
+
+	//	auto const data = cyng::tuple_cast<
+	//		boost::uuids::uuid,		//	[0] source
+	//		std::uint64_t,			//	[1] sequence
+	//		boost::uuids::uuid,		//	[2] websocket tag
+	//		std::string,			//	[3] server id (key)
+	//		std::string,			//	[4] OBIS name
+	//		cyng::param_map_t		//	[5] params
+	//	>(frame);
+
+	//	auto tpl = cyng::tuple_factory(
+	//		cyng::param_factory("cmd", std::string("update")),
+	//		cyng::param_factory("channel", std::get<4>(data)),
+	//		cyng::param_factory("rec", cyng::tuple_factory(
+	//			cyng::param_factory("srv", std::get<3>(data)),
+	//			cyng::param_factory("values", std::get<5>(data))
+	//		)));
+
+	//	//	{"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
+	//	auto msg = cyng::json::to_string(tpl);
+	//	connection_manager_.ws_msg(std::get<2>(data), msg);
+
+	//}
 
 
 	void dispatcher::subscribe(cyng::store::db& db)
