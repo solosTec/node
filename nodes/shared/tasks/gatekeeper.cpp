@@ -17,15 +17,11 @@ namespace node
 	gatekeeper::gatekeeper(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, cyng::controller& vm
-		, boost::uuids::uuid tag
-		, std::chrono::seconds timeout
-		, cyng::vector_t && prg)
+		, std::chrono::seconds timeout)
 	: base_(*btp)
 		, logger_(logger)
 		, vm_(vm)
-		, tag_(tag)
 		, timeout_(timeout)
-		, prg_(std::move(prg))
 		, start_(std::chrono::system_clock::now())
 		, is_waiting_(false)
 	{
@@ -34,9 +30,19 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> "
-			<< tag_
+			<< vm_.tag()
 			<< " is running until "
 			<< cyng::to_str(start_ + timeout_));
+	}
+
+	gatekeeper::~gatekeeper()
+	{
+		CYNG_LOG_WARNING(logger_, "task #"
+			<< base_.get_id()
+			<< " <~"
+			<< base_.get_class_name()
+			<< "> "
+			<< vm_.tag());
 	}
 
 	cyng::continuation gatekeeper::run()
@@ -61,25 +67,20 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> "
-			<< tag_
+			<< vm_.tag()
 			<< " timeout");
 
-		if (!vm_.is_halted()) {
-
-			//
-			//	Safe way to intentionally close this session.
-			//	
-			//	* set session in shutdown state
-			//	* close socket
-			//	* update cluster master state and
-			//	* remove session from IP-T masters client_map
-			//
-			vm_.async_run({ cyng::generate_invoke("session.state.pending")
-				, prg_
-				, cyng::generate_invoke("stream.flush")
-				, cyng::generate_invoke("ip.tcp.socket.shutdown")
-				, cyng::generate_invoke("ip.tcp.socket.close") });
-		}
+		//
+		//	Safe way to intentionally close this session.
+		//	
+		//	* set session in shutdown state
+		//	* close socket
+		//	* update cluster master state and
+		//	* remove session from IP-T masters client_map
+		//
+		vm_.async_run({ cyng::generate_invoke("session.state.pending")
+			, cyng::generate_invoke("ip.tcp.socket.shutdown")
+			, cyng::generate_invoke("ip.tcp.socket.close") });
 
 		return cyng::continuation::TASK_STOP;
 	}
@@ -96,7 +97,7 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> "
-			<< tag_
+			<< vm_.tag()
 			<< " stopped after "
 			<< cyng::to_str(uptime));
 	}
@@ -109,7 +110,7 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> "
-			<< tag_
+			<< vm_.tag()
 			<< " received response ["
 			<< (success ? "success" : "failed")
 			<< "]");
@@ -124,7 +125,9 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> session closed");
+			<< "> "
+			<< vm_.tag()
+			<< " session closed");
 
 		//
 		//	session already stopped

@@ -10,9 +10,6 @@
 #include "tasks/open_connection.h"
 #include "tasks/close_connection.h"
 #include "../../../shared/tasks/gatekeeper.h"
-//#include "tasks/reboot.h"
-//#include "tasks/query_gateway.h"
-//#include "tasks/modify_gateway.h"
 #include "tasks/gateway_proxy.h"
 #include <NODE_project_info.h>
 
@@ -55,9 +52,7 @@ namespace node
 			, connect_state_(this, cyng::async::start_task_sync<gatekeeper>(mux_
 				, logger_
 				, vm_
-				, tag
-				, timeout
-				, cyng::generate_invoke("stream.serialize", cyng::make_buffer({ 't', 'i', 'm', 'e', 'o', 'u', 't', '\n' }))).first)
+				, timeout).first)
 			, sk_(sk)
 			, watchdog_(watchdog)
 			, proxy_tsk_(cyng::async::start_task_sync<gateway_proxy>(mux_, logger_, bus_, vm_, timeout).first)
@@ -280,7 +275,10 @@ namespace node
 		}
 
 		session::~session()
-		{}
+		{
+			//std::cerr << std::endl << "~session(" << vm_.tag() << ")" << std::endl;
+			CYNG_LOG_DEBUG(logger_, "~session(" << vm_.tag() << ")");
+		}
 
 		cyng::buffer_t session::parse(read_buffer_const_iterator begin, read_buffer_const_iterator end)
 		{
@@ -309,7 +307,7 @@ namespace node
 			//
 			//	There could be a running gatekeeper
 			//
-			CYNG_LOG_TRACE(logger_, vm_.tag() << " stops connection manager " << connect_state_);
+			CYNG_LOG_TRACE(logger_, vm_.tag() << " stop connection manager in state [" << connect_state_ << ']');
 			connect_state_.stop();
 
 			//
@@ -323,7 +321,10 @@ namespace node
 			//
 			//	stop all tasks
 			//
-			CYNG_LOG_TRACE(logger_, vm_.tag() << " stops " << task_db_.size() << " task(s)");
+			CYNG_LOG_TRACE(logger_, vm_.tag() << " stop proxy task #" << proxy_tsk_);
+			mux_.stop(proxy_tsk_);
+			
+			CYNG_LOG_TRACE(logger_, vm_.tag() << " stop " << task_db_.size() << " task(s)");
 			for (auto const& tsk : task_db_) {
 				mux_.stop(tsk.second.first);
 			}
@@ -407,7 +408,7 @@ namespace node
 					//
 					//	remove from task db
 					//
-					task_db_.erase(pos);
+					pos = task_db_.erase(pos);
 
 					break;
 				}

@@ -63,6 +63,16 @@ namespace node
 		, int delay
 		, int retries);
 
+	std::vector<std::size_t> start_sender_collision(cyng::async::mux&
+		, cyng::logging::log_ptr
+		, ipt::master_config_t const& cfg
+		, std::size_t count
+		, std::string const& prefix
+		, int packet_size_min
+		, int packet_size_max
+		, int delay
+		, int retries);
+
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 		: pool_size_(pool_size)
 		, json_path_(json_path)
@@ -226,7 +236,9 @@ namespace node
 				, cyng::param_factory("stress", cyng::tuple_factory(
 						//cyng::param_factory("config", (pwd / "ipt-stress.xml").string()),
 						cyng::param_factory("max-count", 4),	//	x 2
-						cyng::param_factory("mode", "same"),	//	same, distinct
+						cyng::param_factory("mode", "same"),	//	same, distinct, collision
+						cyng::param_factory("mode-2", "distinct"),	//	same, distinct, collision
+						cyng::param_factory("mode-3", "collision"),	//	same, distinct, collision
 						cyng::param_factory("prefix-sender", "sender"),
 						cyng::param_factory("prefix-receiver", "receiver"),
 						cyng::param_factory("size-min", 512),	//	minimal packet size
@@ -415,8 +427,9 @@ namespace node
 		
 
 		if (boost::algorithm::equals("same", mode)) {
+
 			const auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
-			CYNG_LOG_INFO(logger, "boot up " << count * 2 << " tasks");
+			CYNG_LOG_INFO(logger, "boot up " << count * 2 << " tasks in mode " << mode);
 
 			const ipt::master_config_t cfg = ipt::load_cluster_cfg(cfg_ipt);
 			BOOST_ASSERT_MSG(!cfg.empty(), "no IP-T configuration available");
@@ -428,8 +441,9 @@ namespace node
 			start_receiver(mux, logger, cfg, vec, prefix_receiver, rec_limit, packet_size_min, packet_size_max, delay, retries);
 		}
 		else if (boost::algorithm::equals("distinct", mode)) {
+
 			const auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
-			CYNG_LOG_INFO(logger, "boot up " << count << " sender tasks");
+			CYNG_LOG_INFO(logger, "boot up " << count << " sender tasks in mode " << mode);
 
 			//	std::vector<master_record>
 			const ipt::master_config_t cfg = ipt::load_cluster_cfg(cfg_ipt);
@@ -454,8 +468,22 @@ namespace node
 			auto vec = start_sender(mux, logger, cfg_sender, count, prefix_sender, packet_size_min, packet_size_max, delay, retries);
 			start_receiver(mux, logger, cfg_receiver, vec, prefix_receiver, rec_limit, packet_size_min, packet_size_max, delay, retries);
 		}
+		else if (boost::algorithm::equals("collision", mode)) {
+
+			const auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
+			CYNG_LOG_INFO(logger, "boot up " << count << " tasks in mode " << mode);
+
+			const ipt::master_config_t cfg = ipt::load_cluster_cfg(cfg_ipt);
+			BOOST_ASSERT_MSG(!cfg.empty(), "no IP-T configuration available");
+
+			//
+			//	connecting to the same IP-T master with the same credentials
+			//
+			auto vec = start_sender_collision(mux, logger, cfg, count, prefix_sender, packet_size_min, packet_size_max, delay, retries);
+			//start_receiver(mux, logger, cfg, vec, prefix_receiver, rec_limit, packet_size_min, packet_size_max, delay, retries);
+		}
 		else {
-			CYNG_LOG_ERROR(logger, "unknown mode " << mode << " - use [same|distinct]");
+			CYNG_LOG_ERROR(logger, "unknown mode " << mode << " - use [same|distinct|collision]");
 		}
 
 
@@ -558,6 +586,57 @@ namespace node
 				CYNG_LOG_FATAL(logger, "could not start IP-T receiver #" << idx);
 			}
 		}
+	}
+
+	std::vector<std::size_t> start_sender_collision(cyng::async::mux& mux
+		, cyng::logging::log_ptr logger
+		, ipt::master_config_t const& cfg
+		, std::size_t count
+		, std::string const& prefix
+		, int packet_size_min
+		, int packet_size_max
+		, int delay
+		, int retries)
+	{
+		std::vector<std::size_t> vec;
+		vec.reserve(count);
+
+		std::stringstream ss;
+		ss.fill('0');
+		ss
+			<< prefix
+			<< "-collision"
+			;
+		const auto name = ss.str();
+
+		for (std::size_t idx = 0u; idx < count; idx++)
+		{
+			//
+			//	prepare IP-T configuration
+			//
+			std::for_each(cfg.begin(), cfg.end(), [&](ipt::master_record const& rec) {
+				const_cast<std::string&>(rec.account_) = name;
+				const_cast<std::string&>(rec.pwd_) = name;
+			});
+
+			auto r = cyng::async::start_task_delayed<ipt::sender>(mux
+				, std::chrono::milliseconds(idx)
+				, logger
+				, ipt::redundancy(cfg)
+				, boost::numeric_cast<std::size_t>((packet_size_min < 1) ? 1 : packet_size_min)
+				, boost::numeric_cast<std::size_t>((packet_size_max < packet_size_min) ? packet_size_min : packet_size_max)
+				, std::chrono::milliseconds(delay)
+				, boost::numeric_cast<std::size_t>((retries < 1) ? 1 : retries));
+
+			if (!r.second) {
+				CYNG_LOG_FATAL(logger, "could not start IP-T sender #" << idx);
+			}
+			else {
+				vec.push_back(r.first);
+			}
+		}
+
+		return vec;
 	}
 
 }

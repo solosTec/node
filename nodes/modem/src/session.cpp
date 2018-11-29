@@ -44,9 +44,7 @@ namespace node
 			, gate_keeper_(cyng::async::start_task_sync<gatekeeper>(mux_
 				, logger_
 				, vm_
-				, tag
-				, timeout
-				, cyng::generate_invoke("stream.serialize", cyng::make_buffer({ 't', 'i', 'm', 'e', 'o', 'u', 't', '\n' }))).first)
+				, timeout).first)
 			, serializer_(socket_, vm_)
 			, auto_answer_(auto_answer)
 			, connect_state_()

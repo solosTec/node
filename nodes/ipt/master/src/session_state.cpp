@@ -67,6 +67,10 @@ namespace node
 
 		void session::connect_state::close_connection()
 		{
+			CYNG_LOG_INFO(sr_.logger_, "close connection "
+				<< *this
+				<< " -> STATE_OFFLINE");
+
 			state_ = STATE_OFFLINE;
 			tsk_ = 0u;
 		}
@@ -78,12 +82,15 @@ namespace node
 				BOOST_ASSERT((STATE_AUTHORIZED == state_) || (STATE_START == state_));
 				state_ = STATE_START;
 
-				CYNG_LOG_INFO(sr_.logger_, "stop gatekeeper #"
+				CYNG_LOG_INFO(sr_.logger_, sr_.vm().tag() 
+					<< " stop gatekeeper #"
 					<< tsk_);
 
-				const response_type res = ctrl_res_login_public_policy::GENERAL_ERROR;
-				//sr_.mux_.post(tsk_, 0, cyng::tuple_factory(res));
-				sr_.mux_.post(tsk_, 0, cyng::tuple_factory(ctrl_res_login_public_policy::is_success(res)));
+				//
+				//	stop gatekeeper
+				//
+				sr_.mux_.stop(tsk_);
+				//sr_.mux_.post(tsk_, 0, cyng::tuple_factory(false));
 			}
 		}
 
@@ -247,14 +254,14 @@ namespace node
 				<< " - "
 				<< cyng::io::to_str(frame));
 
-			auto const tpl = cyng::tuple_cast<
-				boost::uuids::uuid,	//	[0] pk
-				cyng::buffer_t,		//	[1] trx
-				std::size_t			//	[2] idx
-			>(frame);
+			//auto const tpl = cyng::tuple_cast<
+			//	boost::uuids::uuid,	//	[0] pk
+			//	cyng::buffer_t,		//	[1] trx
+			//	std::size_t			//	[2] idx
+			//>(frame);
 
 			if (state_ == STATE_TASK) {
-				//sr_.mux_.post(tsk_, 4, cyng::tuple_factory(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl)));
+
 				sr_.mux_.post(tsk_, 4, cyng::to_tuple(frame));
 				
 				//

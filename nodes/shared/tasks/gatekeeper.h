@@ -26,9 +26,8 @@ namespace node
 		gatekeeper(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, cyng::controller&
-			, boost::uuids::uuid tag
-			, std::chrono::seconds timeout
-			, cyng::vector_t && prg);
+			, std::chrono::seconds timeout);
+		~gatekeeper();
 		cyng::continuation run();
 		void stop();
 
@@ -50,9 +49,7 @@ namespace node
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		cyng::controller& vm_;
-		const boost::uuids::uuid tag_;
 		const std::chrono::seconds timeout_;
-		cyng::vector_t prg_;
 		const std::chrono::system_clock::time_point start_;
 		bool is_waiting_;
 	};

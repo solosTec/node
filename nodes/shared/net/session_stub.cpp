@@ -46,7 +46,7 @@ namespace node
 			//
 			BOOST_ASSERT(!pending_);
 			pending_ = true;
-			CYNG_LOG_DEBUG(logger_, "session.state.pending ON");
+			CYNG_LOG_DEBUG(logger_, vm_.tag() << " session.state.pending ON");
 		});
 	}
 
@@ -120,7 +120,7 @@ namespace node
 			}
 		}
 		else {
-			CYNG_LOG_FATAL(logger_, "shutdown (res) failed " << vm_.tag());
+			CYNG_LOG_FATAL(logger_, "VM " << vm_.tag() << " shutdown failed");
 		}
 	}
 

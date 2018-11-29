@@ -51,8 +51,7 @@ namespace node
 			//
 			vm_.async_run(std::move(prg));
 
-		}, true, false)	//	not verbose, no log instructions
-		//, wait_counter_(12)
+		}, false, false)	//	not verbose, no log instructions
 		, queue_()
 	{
 		CYNG_LOG_INFO(logger_, "task #"

@@ -83,20 +83,17 @@ namespace node
 			<< "> timeout after "
 			<< cyng::to_str(std::chrono::system_clock::now() - start_));
 
-		if (!vm_.is_halted()) {
-
-			//
-			//	Safe way to intentionally close this session.
-			//	
-			//	* set session in shutdown state
-			//	* close socket
-			//	* update cluster master state and
-			//	* remove session from IP-T masters client_map
-			//
-			vm_.async_run({ cyng::generate_invoke("session.state.pending")
-				, cyng::generate_invoke("ip.tcp.socket.shutdown")
-				, cyng::generate_invoke("ip.tcp.socket.close") });
-		}
+		//
+		//	Safe way to intentionally close this session.
+		//	
+		//	* set session in shutdown state
+		//	* close socket
+		//	* update cluster master state and
+		//	* remove session from IP-T masters client_map
+		//
+		vm_.async_run({ cyng::generate_invoke("session.state.pending")
+			, cyng::generate_invoke("ip.tcp.socket.shutdown")
+			, cyng::generate_invoke("ip.tcp.socket.close") });
 
 		return cyng::continuation::TASK_STOP;
 	}
