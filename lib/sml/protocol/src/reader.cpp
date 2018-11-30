@@ -632,9 +632,10 @@ namespace node
 #endif
 						//	get IP-T params
 						read_get_proc_multiple_parameters(*pos++);
-						//	81 49 17 07 00 00 ip address
-						//	81 49 1A 07 00 00 local port
-						//	81 49 19 07 00 00 remote port
+						//	81 49 17 07 00 NN ip address
+						//	81 49 17 07 00 NN hostname as string - optional
+						//	81 49 1A 07 00 NN local port
+						//	81 49 19 07 00 NN remote port
 						return cyng::generate_invoke("sml.get.proc.param.ipt.param"
 							, ro_.pk_
 							, ro_.trx_
@@ -642,7 +643,7 @@ namespace node
 							, from_server_id(ro_.server_id_)
 							, OBIS_CODE_ROOT_IPT_PARAM.to_buffer()	//	same as path.front()
 							, r.first
-							, ro_.get_value(make_obis(0x81, 0x49, 0x17, 0x07, 0x00, r.first))	//	IP adress
+							, ro_.get_value(make_obis(0x81, 0x49, 0x17, 0x07, 0x00, r.first))	//	IP adress / hostname
 							, ro_.get_value(make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, r.first))	//	local port
 							, ro_.get_value(make_obis(0x81, 0x49, 0x19, 0x07, 0x00, r.first))	//	remote port
 							, ro_.get_string(make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, r.first))	//	device name

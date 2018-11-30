@@ -411,64 +411,6 @@ namespace node
 		}
 	}
 
-	//void fwd_reboot(cyng::logging::log_ptr logger
-	//	, cyng::context& ctx
-	//	, boost::uuids::uuid tag_ws
-	//	, cyng::reader<cyng::object> const& reader)
-	//{
-	//	const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
-	//	CYNG_LOG_TRACE(logger, "ws.read - reboot channel [" << channel << "]");
-	//	if (boost::algorithm::starts_with(channel, "config.gateway"))
-	//	{
-	//		//	{"cmd":"reboot","channel":"config.gateway","key":["dca135f3-ff2b-4bf7-8371-a9904c74522b"]}
-	//		cyng::vector_t vec;
-	//		vec = cyng::value_cast(reader.get("key"), vec);
-	//		CYNG_LOG_INFO(logger, "reboot gateway " << cyng::io::to_str(vec));
-	//		BOOST_ASSERT_MSG(!vec.empty(), "TGateway key is empty");
-
-	//		if (!vec.empty()) {
-	//			auto key = cyng::table::key_generator(vec.at(0));
-	//			ctx.attach(bus_req_reboot_client(key, ctx.tag(), tag_ws));
-	//		}
-	//	}
-	//	else
-	//	{
-	//		CYNG_LOG_WARNING(logger, "ws.read - unknown reboot channel [" << channel << "]");
-	//	}
-	//}
-
-//	void fwd_query_gateway(cyng::logging::log_ptr logger
-//		, cyng::context& ctx
-//		, boost::uuids::uuid tag_ws
-//		, cyng::reader<cyng::object> const& reader)
-//	{
-//		const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
-//		CYNG_LOG_TRACE(logger, "ws.read - query:gateway channel [" << channel << "]");
-//		if (boost::algorithm::starts_with(channel, "config.gateway"))
-//		{
-//			cyng::vector_t key;
-//			key = cyng::value_cast(reader.get("key"), key);
-//			CYNG_LOG_INFO(logger, "query:gateway " << cyng::io::to_str(key));
-//
-//			BOOST_ASSERT_MSG(!key.empty(), "TGateway key is empty");
-//			if (!key.empty()) {
-//
-//#ifdef _DEBUG
-//				auto params = cyng::vector_cast<std::string>(reader.get("params"), "");
-//				for (auto const& p : params) {
-//					CYNG_LOG_DEBUG(logger, p);
-//
-//				}
-//#endif
-//				cyng::vector_t vec;
-//				ctx.attach(bus_req_query_gateway(key	//	key into TGateway and TDevice table
-//					, ctx.tag()	//	source tag
-//					, cyng::value_cast(reader.get("params"), vec)	//	parameters, requests, commands
-//					, tag_ws));	//	
-//			}
-//		}
-//	}
-
 	forward::forward(cyng::logging::log_ptr logger
 		, cyng::store::db& db
 		, connection_manager_interface& cm)

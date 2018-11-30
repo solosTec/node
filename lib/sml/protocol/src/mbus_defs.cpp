@@ -46,7 +46,7 @@ namespace node
 			return std::numeric_limits<std::uint16_t>::max();
 		}
 
-		std::string decode(std::uint16_t const& code)
+		std::string decode(std::uint16_t code)
 		{
 			std::string man;
 
@@ -63,11 +63,11 @@ namespace node
 
 		std::string decode(char c1, char c2)
 		{
-			const std::uint16_t code = static_cast<unsigned char>(c1)+(static_cast<unsigned char>(c2) << 8);
+			const std::uint16_t code = static_cast<unsigned char>(c1) + (static_cast<unsigned char>(c2) << 8);
 			return decode(code);
 		}
 
-		std::string get_manufacturer_name(std::uint16_t const& code)
+		std::string get_manufacturer_name(std::uint16_t code)
 		{
 			switch (code)
 			{
@@ -189,7 +189,7 @@ namespace node
 
 		std::string get_manufacturer_name(char c1, char c2)
 		{
-			const std::uint16_t code = static_cast<unsigned char>(c1)+(static_cast<unsigned char>(c2) << 8);
+			const std::uint16_t code = static_cast<unsigned char>(c1) + (static_cast<unsigned char>(c2) << 8);
 			return get_manufacturer_name(code);
 		}
 		

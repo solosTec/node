@@ -31,7 +31,7 @@ namespace node
 			SRV_MBUS,
 			SRV_SERIAL,
 			SRV_GW,
-			SRV_BCD,	//	Rhrin-Energie
+			SRV_BCD,	//	Rhein-Energie
 			SRV_EON,	//	e-on
 			SRV_DKE_1,	//	E DIN 43863-5:2010-02
 			SRV_IMEI,	//	IMEI
@@ -59,8 +59,17 @@ namespace node
 		void serialize_server_id(std::ostream& os, cyng::buffer_t const&);
 		std::string from_server_id(cyng::buffer_t const&);
 
+		/**
+		 * Extract serial number from M-Bus or other formats
+		 */
 		std::string get_serial(cyng::buffer_t const&);
 		std::string get_serial(std::string const&);
+
+		/**
+		 * Extract manufacturer code from M-Bus format.
+		 */
+		std::uint16_t get_manufacturer_code(std::string const&);
+		std::uint16_t get_manufacturer_code(cyng::buffer_t const&);
 
 		/**
 		 * Build a server ID for a gateway by inserting 0x05 in front 

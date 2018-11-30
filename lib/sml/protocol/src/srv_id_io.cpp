@@ -281,6 +281,32 @@ namespace node
 			return str;
 		}
 
+		std::uint16_t get_manufacturer_code(std::string const& str)
+		{
+			try {
+				if (is_mbus(str)) {
+					const auto hex = str.substr(3, 2);
+					return std::stoul(hex, nullptr, 16);
+				}
+			}
+			catch (std::exception const&) {
+				//	std::invalid_argument 
+				//	std::out_of_range
+			}
+			return 0u;
+		}
+
+		std::uint16_t get_manufacturer_code(cyng::buffer_t const& buffer)
+		{
+			if (is_mbus(buffer)) {
+				std::uint16_t code{ 0 };
+				code = buffer[1] & 0xFF;
+				code += static_cast<unsigned char>(buffer[2]) << 8;
+				return code;
+			}
+			return 0u;
+		}
+
 		cyng::buffer_t to_gateway_srv_id(cyng::mac48 mac)
 		{
 			cyng::buffer_t buffer(mac.to_buffer());

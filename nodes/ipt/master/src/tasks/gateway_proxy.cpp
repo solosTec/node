@@ -242,23 +242,23 @@ namespace node
 	{
 		sml::obis attention(code);
 
-		//CYNG_LOG_INFO(logger_, "task #"
-		//	<< base_.get_id()
-		//	<< " <"
-		//	<< base_.get_class_name()
-		//	<< "> response #"
-		//	<< seq_cluster_
-		//	<< " from "
-		//	<< srv
-		//	<< " attention code "
-		//	<< sml::get_attention_name(attention));
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> response #"
+			<< queue_.front().get_sequence()
+			<< " from "
+			<< srv
+			<< " attention code "
+			<< sml::get_attention_name(attention));
 
-		//bus_->vm_.async_run(bus_res_attention_code(tag_remote_
-		//	, seq_cluster_
-		//	, tag_ws_
-		//	, srv
-		//	, code
-		//	, sml::get_attention_name(attention)));
+		bus_->vm_.async_run(bus_res_attention_code(queue_.front().get_ident_tag()
+			, queue_.front().get_sequence()
+			, queue_.front().get_ws_tag()
+			, srv
+			, code
+			, sml::get_attention_name(attention)));
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -521,8 +521,9 @@ namespace node
 
 			if (boost::algorithm::equals(p.first, "smf-gw-ipt-host-1")) {
 
-				boost::asio::ip::address address;
-				address = cyng::value_cast(p.second, address);
+				//	send host name as it is - string
+				//boost::asio::ip::address address;
+				auto address = cyng::value_cast<std::string>(p.second, "0.0.0.0");
 				sml_gen.set_proc_parameter_ipt_host(queue_.front().get_srv()
 					, queue_.front().get_user()
 					, queue_.front().get_pwd()
@@ -531,8 +532,8 @@ namespace node
 
 			}
 			else if (boost::algorithm::equals(p.first, "smf-gw-ipt-host-2")) {
-				boost::asio::ip::address address;
-				address = cyng::value_cast(p.second, address);
+
+				auto address = cyng::value_cast<std::string>(p.second, "0.0.0.0");
 				sml_gen.set_proc_parameter_ipt_host(queue_.front().get_srv()
 					, queue_.front().get_user()
 					, queue_.front().get_pwd()

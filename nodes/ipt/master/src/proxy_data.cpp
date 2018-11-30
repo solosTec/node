@@ -85,20 +85,20 @@ namespace node
 						params.emplace("serverId", cyng::make_object("000000"));
 					}
 				}
-				else if (boost::algorithm::starts_with(name, "smf-gw-ipt-host-")) {
+				//else if (boost::algorithm::starts_with(name, "smf-gw-ipt-host-")) {
 
-					//
-					//	send host name as IP address
-					//
-					try {
-						const std::string inp = cyng::value_cast<std::string>(obj, "0.0.0.0");
-						const auto address = boost::asio::ip::make_address(inp);
-						params.emplace(name, cyng::make_object(address));
-					}
-					catch (std::runtime_error const&) {
-						params.emplace(name, cyng::make_object(boost::asio::ip::make_address("0.0.0.0")));
-					}
-				}
+				//	//
+				//	//	send host name as it is (string)
+				//	//
+				//	try {
+				//		const std::string inp = cyng::value_cast<std::string>(obj, "0.0.0.0");
+				//		const auto address = boost::asio::ip::make_address(inp);
+				//		params.emplace(name, cyng::make_object(address));
+				//	}
+				//	catch (std::runtime_error const&) {
+				//		params.emplace(name, cyng::make_object(boost::asio::ip::make_address("0.0.0.0")));
+				//	}
+				//}
 				else if (boost::algorithm::starts_with(name, "smf-gw-ipt-local-")) {
 
 					//

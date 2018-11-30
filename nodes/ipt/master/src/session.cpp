@@ -471,19 +471,6 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "client.req.gateway.proxy " << cyng::io::to_str(frame));
 
-			//auto const tpl = cyng::tuple_cast<
-			//	boost::uuids::uuid,		//	[0] ident tag
-			//	boost::uuids::uuid,		//	[1] source tag
-			//	std::uint64_t,			//	[2] cluster seq
-			//	cyng::vector_t,			//	[3] TGateway key
-			//	boost::uuids::uuid,		//	[4] ws tag
-			//	cyng::vector_t,			//	[5] sections
-			//	cyng::vector_t,			//	[6] parameters
-			//	cyng::buffer_t,			//	[7] server id
-			//	std::string,			//	[8] name
-			//	std::string				//	[9] pwd
-			//>(frame);
-
 			//
 			//	update proxy queue
 			//

@@ -27,7 +27,7 @@ namespace node
 		 *	@param code encoded manufacturer id (contains 2 bytes)
 		 *	@return string with manufacturer ID (consisting of 3 characters)
 		 */
-		std::string decode(std::uint16_t const&);
+		std::string decode(std::uint16_t);
 		std::string decode(char, char);
 
 		/**
@@ -36,7 +36,7 @@ namespace node
 		 *	@param code encoded manufacturer id (contains 2 bytes)
 		 *	@return string with manufacturer name
 		 */
-		std::string get_manufacturer_name(std::uint16_t const&);
+		std::string get_manufacturer_name(std::uint16_t&);
 		std::string get_manufacturer_name(char, char);		
 		
 		/**

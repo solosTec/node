@@ -796,7 +796,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 endif()
 
 #
-# master
+# cluster master
 #
 include (nodes/master/prg.cmake)
 add_executable(master ${node_master})

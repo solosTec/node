@@ -10,13 +10,14 @@
 #include <smf/ipt/response.hpp>
 #include <smf/sml/status.h>
 #include <smf/sml/srv_id_io.h>
+#include <smf/sml/ip_io.h>
+#include <smf/mbus/defs.h>
 
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/factory/set_factory.h>
 #include <cyng/set_cast.h>
 #include <cyng/numeric_cast.hpp>
-#include <cyng/io/swap.h>
 
 #include <boost/assert.hpp>
 
@@ -384,6 +385,13 @@ namespace node
 				cyng::buffer_t meter;
 				meter = cyng::value_cast(frame.at(6), meter);
 
+				auto const type = node::sml::get_srv_type(meter);
+				std::string maker;
+				if (type == sml::SRV_MBUS) {
+					auto const code = sml::get_manufacturer_code(meter);
+					maker = node::sml::decode(code);
+				}
+
 				sr_.mux_.post(tsk_, 5, cyng::tuple_t{ 
 					frame.at(1),	//	trx
 					frame.at(2),	//	idx
@@ -396,6 +404,7 @@ namespace node
 					("class", frame.at(7))
 					("timestamp", frame.at(8))
 					("type", node::sml::get_srv_type(meter))
+					("maker", maker)
 					()
 				});
 			}
@@ -432,6 +441,13 @@ namespace node
 				cyng::buffer_t meter;
 				meter = cyng::value_cast(frame.at(6), meter);
 
+				auto const type = node::sml::get_srv_type(meter);
+				std::string maker;
+				if (type == sml::SRV_MBUS) {
+					auto const code = sml::get_manufacturer_code(meter);
+					maker = node::sml::decode(code);
+				}
+
 				sr_.mux_.post(tsk_, 5, cyng::tuple_t{
 					frame.at(1),	//	trx
 					frame.at(2),	//	idx
@@ -439,11 +455,12 @@ namespace node
 					frame.at(4),	//	OBIS code
 									//	visible device
 					cyng::param_map_factory("number", frame.at(5))
-					("ident", node::sml::from_server_id(meter))
-					("meter", node::sml::get_serial(meter))
-					("class", frame.at(7))
-					("timestamp", frame.at(8))
-					("type", node::sml::get_srv_type(meter))
+						("ident", node::sml::from_server_id(meter))
+						("meter", node::sml::get_serial(meter))
+						("class", frame.at(7))
+						("timestamp", frame.at(8))
+						("type", node::sml::get_srv_type(meter))
+						("maker", maker)
 					()
 				});
 			}
@@ -582,8 +599,8 @@ namespace node
 				<< cyng::io::to_str(frame));
 
 			//	boost::asio::ip::make_address_v4() expects host byte ordering - but SML delivers network ordering
-			const boost::asio::ip::address_v4::uint_type ia = cyng::value_cast<boost::asio::ip::address_v4::uint_type>(frame.at(5), 0u);
-			const boost::asio::ip::address address = boost::asio::ip::make_address_v4(cyng::swap_num(ia));
+			//const boost::asio::ip::address_v4::uint_type ia = cyng::value_cast<boost::asio::ip::address_v4::uint_type>(frame.at(5), 0u);
+			//const boost::asio::ip::address address = boost::asio::ip::make_address_v4(cyng::swap_num(ia));
 
 			sr_.mux_.post(tsk_, 5, cyng::tuple_t{
 				frame.at(1),	//	trx
@@ -591,9 +608,10 @@ namespace node
 				frame.at(3),	//	server ID
 				frame.at(4),	//	OBIS code
 								//	current IP-T address parameters
-				cyng::param_map_factory("address", address)
-				("local", cyng::numeric_cast<std::uint16_t>(frame.at(6), 0))
-				("remote", cyng::numeric_cast<std::uint16_t>(frame.at(7), 0))
+				cyng::param_map_factory
+					("address", node::sml::to_ip_address_v4(frame.at(5)))
+					("local", cyng::numeric_cast<std::uint16_t>(frame.at(6), 0))
+					("remote", cyng::numeric_cast<std::uint16_t>(frame.at(7), 0))
 				()
 				});
 		}
@@ -608,8 +626,15 @@ namespace node
 				<< cyng::io::to_str(frame));
 
 			//	boost::asio::ip::make_address_v4() expects host byte ordering - but SML delivers network ordering
-			const boost::asio::ip::address_v4::uint_type ia = cyng::value_cast<boost::asio::ip::address_v4::uint_type>(frame.at(6), 0u);
-			const boost::asio::ip::address address = boost::asio::ip::make_address_v4(cyng::swap_num(ia));
+			//if (frame.at(6).get_class().is_integral()) {
+			//	const boost::asio::ip::address_v4::uint_type ia = cyng::value_cast<boost::asio::ip::address_v4::uint_type>(frame.at(6), 0u);
+			//	const boost::asio::ip::address address = boost::asio::ip::make_address_v4(cyng::swap_num(ia));
+			//}
+			//else {
+
+			//}
+			//node::sml::ip_address_to_str(frame.at(6));
+
 
 			sr_.mux_.post(tsk_, 5, cyng::tuple_t{
 				frame.at(1),	//	trx
@@ -618,7 +643,7 @@ namespace node
 				frame.at(4),	//	OBIS code
 								//	IP-T configuration record
 				cyng::param_map_factory("idx", frame.at(5))
-				("address", address)
+				("address", node::sml::ip_address_to_str(frame.at(6)))
 				("local", cyng::numeric_cast<std::uint16_t>(frame.at(7), 0))
 				("remote", cyng::numeric_cast<std::uint16_t>(frame.at(8), 0))
 				("name", frame.at(9))

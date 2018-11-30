@@ -66,6 +66,7 @@ namespace node
 		}
 		else
 		{
+#ifdef _DEBUG
 			db.insert("TGateway"
 				, cyng::table::key_generator(tag)
 				, cyng::table::data_generator("0500153B02517E"
@@ -81,6 +82,7 @@ namespace node
 					, "operator")
 				, 94
 				, tag);
+#endif
 		}
 
 		//	(1) tag (UUID) - pk
@@ -137,7 +139,7 @@ namespace node
 					, "06441734"
 					, "NXT4-S20EW-6N00-4000-5020-E50/Q"
 					, "Q3"
-					, boost::uuids::nil_uuid())
+					, tag)	//	reference to TGateway
 				, 5
 				, tag);
 		}

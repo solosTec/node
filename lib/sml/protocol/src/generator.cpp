@@ -155,7 +155,7 @@ namespace node
 			, std::string const& username
 			, std::string const& password
 			, std::uint8_t idx
-			, boost::asio::ip::address address)
+			, std::string const& address)
 		{
 			const obis_path tree_path({OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) });
 

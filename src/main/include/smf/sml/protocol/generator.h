@@ -146,7 +146,7 @@ namespace node
 				, std::string const& username
 				, std::string const& password
 				, std::uint8_t idx
-				, boost::asio::ip::address);
+				, std::string const& address);
 
 			std::size_t set_proc_parameter_ipt_port_local(cyng::buffer_t const& server_id
 				, std::string const& username
