@@ -33,7 +33,7 @@ math(EXPR PATCH_LEVEL "(${THIS_YEAR} * 1000) + ${PATCH_LEVEL}")
 # set project name/properties
 #
 project(NODE 
-	VERSION 0.7.${PATCH_LEVEL}.1
+	VERSION 0.6.${PATCH_LEVEL}.1
 	LANGUAGES CXX C)
 
 
@@ -212,7 +212,7 @@ endif()
 #
 
 #
-# BOOST_VER is "1_67" or "1_68"
+# BOOST_VER is "1_67", "1_68" or "1_69"
 #
 function(windows_boost_fix BOOST_VER)
   set(BOOST_ROOT "C:/local/boost_${BOOST_VER}_0" CACHE PATH "BOOST_ROOT")
@@ -236,7 +236,11 @@ endfunction()
 
 if(NOT ${PROJECT_NAME}_CROSS_COMPILE)
     if(UNIX)
-        if(EXISTS "$ENV{HOME}/projects/boost_1_68_0/install")
+        if(EXISTS "$ENV{HOME}/projects/boost_1_69_0")
+            set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_69_0" CACHE PATH "BOOST_ROOT")
+            set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_69_0/lib" CACHE PATH "BOOST_LIBRARYDIR")
+            message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
+        elseif(EXISTS "$ENV{HOME}/projects/boost_1_68_0/install")
             set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_68_0/install" CACHE PATH "BOOST_ROOT")
             set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_68_0/install/lib" CACHE PATH "BOOST_LIBRARYDIR")
             message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
@@ -250,7 +254,9 @@ if(NOT ${PROJECT_NAME}_CROSS_COMPILE)
             message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
         endif()
     elseif(WIN32)
-        if(EXISTS "C:/local/boost_1_68_0")
+        if(EXISTS "C:/local/boost_1_69_0")
+            windows_boost_fix("1_69")
+        elseif(EXISTS "C:/local/boost_1_68_0")
             windows_boost_fix("1_68")
         elseif(EXISTS "C:/local/boost_1_67_0")
             windows_boost_fix("1_67")
@@ -258,7 +264,7 @@ if(NOT ${PROJECT_NAME}_CROSS_COMPILE)
     endif(UNIX)
 endif()
 
-set(Boost_ADDITIONAL_VERSIONS "1.65.0" "1.66.0" "1.67.0" "1.68.0")
+set(Boost_ADDITIONAL_VERSIONS "1.65.0" "1.66.0" "1.67.0" "1.68.0" "1.69.0")
 message(STATUS "** Search Boost    : ${Boost_ADDITIONAL_VERSIONS}")
 find_package(Boost 1.66 REQUIRED COMPONENTS thread system filesystem program_options random unit_test_framework)
 
@@ -712,7 +718,7 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
     endif()
 endif()
 if(WIN32)
-	list(APPEND gateway_link_libs odbc32.lib)
+	list(APPEND gateway_link_libs odbc32.lib lib_sqlite3)
 else()
 	list(APPEND gateway_link_libs ${SQLite3_LIBRARY})
 endif(WIN32)
@@ -749,7 +755,7 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
     endif()
 endif()
 if(WIN32)
-	list(APPEND store_link_libs odbc32.lib cyng_sqlite3)
+	list(APPEND store_link_libs odbc32.lib lib_sqlite3)
 else()
 	list(APPEND store_link_libs ${SQLite3_LIBRARY})
 endif(WIN32)
@@ -770,11 +776,11 @@ if(${PROJECT_NAME}_BUILD_TEST)
 			list(APPEND stress_link_libs pthread)
 		endif()
 	endif()
-#	if(WIN32)
-#		list(APPEND stress_link_libs odbc32.lib cyng_sqlite3)
-#	else()
-#		list(APPEND stress_link_libs ${SQLite3_LIBRARY})
-#	endif(WIN32)
+	if(WIN32)
+		list(APPEND stress_link_libs odbc32.lib lib_sqlite3)
+	else()
+		list(APPEND stress_link_libs ${SQLite3_LIBRARY})
+	endif(WIN32)
 	target_link_libraries(stress ${stress_link_libs})
 endif()
 
@@ -796,7 +802,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 endif()
 
 #
-# cluster master
+# master
 #
 include (nodes/master/prg.cmake)
 add_executable(master ${node_master})
@@ -872,7 +878,7 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
     endif()
 endif()
 if(WIN32)
-	list(APPEND setup_link_libs odbc32.lib cyng_sqlite3)
+	list(APPEND setup_link_libs odbc32.lib lib_sqlite3)
 else()
 	list(APPEND setup_link_libs ${SQLite3_LIBRARY})
 endif(WIN32)
@@ -893,32 +899,11 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
     endif()
 endif()
 if(WIN32)
-	list(APPEND csv_link_libs odbc32.lib cyng_sqlite3)
+	list(APPEND csv_link_libs odbc32.lib lib_sqlite3)
 else()
 	list(APPEND csv_link_libs ${SQLite3_LIBRARY})
 endif(WIN32)
 target_link_libraries(csv ${csv_link_libs})
-
-#
-# task: stat
-#
-include (tasks/stat/prg.cmake)
-add_executable(stat ${task_stat})
-
-# libraries to link
-set(stat_link_libs cyng_core cyng_io cyng_async cyng_log cyng_parser cyng_json cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_sys smf_protocol_sml smf_cluster)
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND stat_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND stat_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-endif()
-if(WIN32)
-	list(APPEND stat_link_libs odbc32.lib cyng_sqlite3)
-else()
-	list(APPEND stat_link_libs ${SQLite3_LIBRARY})
-endif(WIN32)
-target_link_libraries(stat ${stat_link_libs})
 
 #
 # test unit using Boost.Test
@@ -945,7 +930,7 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 		list(APPEND unittest_link_libs ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES})
 	else()
 		if(WIN32)
-			list(APPEND unittest_link_libs odbc32.lib cyng_sqlite3)
+			list(APPEND unittest_link_libs odbc32.lib lib_sqlite3)
 		else()
 			list(APPEND unittest_link_libs pthread ${CMAKE_DL_LIBS} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${SQLite3_LIBRARY})
 		endif()
@@ -1103,14 +1088,6 @@ if(UNIX)
             "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.service.in"
             "${PROJECT_BINARY_DIR}/task-csv.service")
 
-      # stat
-      configure_file (
-            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.linux.cgf.in"
-            "${PROJECT_BINARY_DIR}/stat_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
-
-      configure_file (
-            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.service.in"
-            "${PROJECT_BINARY_DIR}/task-stat.service")
 
 else()
 
@@ -1405,27 +1382,6 @@ else()
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.rc.in"
 		  "${PROJECT_BINARY_DIR}/csv.rc")
-
-      # stat
-      configure_file (
-            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.windows.cgf.in"
-            "${PROJECT_BINARY_DIR}/stat_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
-
-      configure_file (
-            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_create_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/stat_create_service.cmd")
-
-      configure_file (
-            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_delete_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/stat_delete_service.cmd")
-
-      configure_file (
-            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_restart_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/stat_restart_service.cmd")
-
-	configure_file (
-		  "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.rc.in"
-		  "${PROJECT_BINARY_DIR}/stat.rc")
 
 endif(UNIX)
 
