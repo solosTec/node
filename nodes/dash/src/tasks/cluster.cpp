@@ -423,20 +423,6 @@ namespace node
 				, ctx
 				, reader);
 		}
-		//else if (boost::algorithm::equals(cmd, "reboot"))
-		//{
-		//	node::fwd_reboot(logger_
-		//		, ctx
-		//		, tag_ws
-		//		, reader);
-		//}
-		//else if (boost::algorithm::equals(cmd, "query:gateway"))
-		//{
-		//	node::fwd_query_gateway(logger_
-		//		, ctx
-		//		, tag_ws
-		//		, reader);
-		//}
 		else if (boost::algorithm::equals(cmd, "config:gateway"))
 		{
 			node::fwd_config_gateway(logger_

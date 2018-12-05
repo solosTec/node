@@ -40,8 +40,7 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> register target "
-			<< name_);
+			<< "> send response");
 
 		//
 		//	re/start monitor
@@ -51,7 +50,7 @@ namespace node
 		//
 		//	send watchdog
 		//
-		vm_.async_run({ cyng::generate_invoke("res.watchdog", static_cast<std::uint8_t>(0)), cyng::generate_invoke("stream.flush") });
+		vm_.async_run({ cyng::generate_invoke("res.watchdog", static_cast<ipt::sequence_type>(0u)), cyng::generate_invoke("stream.flush") });
 		return cyng::continuation::TASK_CONTINUE;
 	}
 

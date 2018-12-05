@@ -32,7 +32,7 @@ namespace node
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		cyng::controller& vm_;	//!< ipt device
-		const std::string name_;
+		//const std::string name_;
 		const std::uint16_t watchdog_;
 	};
 	

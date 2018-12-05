@@ -514,6 +514,7 @@ namespace node
 		//	* [bool] success flag
 		//
 		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, "client.res.close " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] remote client tag
@@ -522,22 +523,19 @@ namespace node
 			bool					//	[3] success flag
 		>(frame);
 
-		if (std::get<3>(tpl))
-		{
-			CYNG_LOG_INFO(logger_, "client.res.close " << cyng::io::to_str(frame));
-			close_impl(ctx
-				, std::get<0>(tpl)
-				, std::get<1>(tpl)
-				, std::get<2>(tpl)
-				, ctx.tag()
-				, false);	//	resonse
-		}
-		else
+		if (!std::get<3>(tpl))
 		{
 			CYNG_LOG_WARNING(logger_, "client.res.close "
 				<< cyng::io::to_str(frame)
 				<< " failed");
 		}
+
+		close_impl(ctx
+			, std::get<0>(tpl)
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, ctx.tag()
+			, false);	//	resonse
 	}
 
 	void client::close_impl(cyng::context& ctx

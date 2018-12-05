@@ -129,6 +129,10 @@ namespace node
 			virtual cyng::buffer_t parse(read_buffer_const_iterator, read_buffer_const_iterator) override;
 
 		private:
+			/**
+			 * signal activity to reset watchdog
+			 */
+			void activity();
 
 			void ipt_req_login_public(cyng::context& ctx);
 			void ipt_req_login_scrambled(cyng::context& ctx);
@@ -210,7 +214,7 @@ namespace node
 			serializer		serializer_;
 
 			const scramble_key sk_;
-			const std::uint16_t watchdog_;
+			const std::uint16_t watchdog_;	//!< minutes
 
 			/**
 			 * bookkeeping of ip-t sequence to task relation
@@ -227,6 +231,11 @@ namespace node
 			 * proxy task
 			 */
 			const std::size_t proxy_tsk_;
+
+			/**
+			 * watchdog task
+			 */
+			std::size_t watchdog_tsk_;
 
 #ifdef SMF_IO_LOG
 			std::size_t log_counter_;

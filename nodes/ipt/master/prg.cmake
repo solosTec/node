@@ -48,12 +48,8 @@ set (node_ipt_master_tasks
 	nodes/ipt/master/src/tasks/open_connection.cpp
 	nodes/ipt/master/src/tasks/close_connection.h
 	nodes/ipt/master/src/tasks/close_connection.cpp
-#	nodes/ipt/master/src/tasks/reboot.h
-#	nodes/ipt/master/src/tasks/reboot.cpp
-#	nodes/ipt/master/src/tasks/query_gateway.h
-#	nodes/ipt/master/src/tasks/query_gateway.cpp
-#	nodes/ipt/master/src/tasks/modify_gateway.h
-#	nodes/ipt/master/src/tasks/modify_gateway.cpp
+	nodes/ipt/master/src/tasks/watchdog.h
+	nodes/ipt/master/src/tasks/watchdog.cpp
 	nodes/ipt/master/src/tasks/gateway_proxy.h
 	nodes/ipt/master/src/tasks/gateway_proxy.cpp
 )

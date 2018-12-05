@@ -67,7 +67,7 @@ namespace node
 		server_.close();
 
 		//
-		//	sign off from cloud
+		//	sign off from cluster
 		//
         bus_->stop();
 

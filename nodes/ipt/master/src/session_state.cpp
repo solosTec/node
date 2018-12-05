@@ -43,7 +43,7 @@ namespace node
 			//
 			//	stop gatekeeper
 			//
-			sr_.mux_.post(tsk_, 0, cyng::tuple_factory(res));
+			sr_.mux_.post(tsk_, 0, cyng::tuple_factory(b));
 
 			if (b) {
 				state_ = STATE_AUTHORIZED;

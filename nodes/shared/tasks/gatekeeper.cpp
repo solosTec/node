@@ -37,7 +37,7 @@ namespace node
 
 	gatekeeper::~gatekeeper()
 	{
-		CYNG_LOG_WARNING(logger_, "task #"
+		CYNG_LOG_DEBUG(logger_, "task #"
 			<< base_.get_id()
 			<< " <~"
 			<< base_.get_class_name()

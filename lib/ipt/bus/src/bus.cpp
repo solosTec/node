@@ -53,7 +53,7 @@ namespace node
 			, serializer_(socket_, vm_, sk)
 			, model_(model)
 			, retries_((retries == 0) ? 1 : retries)
-			, watchdog_(0)
+			, watchdog_(0u)
 			, state_(STATE_INITIAL_)
 			, task_db_()
 		{

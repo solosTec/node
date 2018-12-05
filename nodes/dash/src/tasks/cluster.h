@@ -73,11 +73,6 @@ namespace node
 
 		void ws_read(cyng::context& ctx);
 
-		//void cfg_download_devices(cyng::context& ctx);
-		//void cfg_download_gateways(cyng::context& ctx);
-		//void cfg_download_messages(cyng::context& ctx);
-		//void cfg_download_LoRa(cyng::context& ctx);
-
 		void sync_table(std::string const&);
 
         void start_sys_task();
