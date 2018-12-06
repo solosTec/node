@@ -33,7 +33,7 @@ math(EXPR PATCH_LEVEL "(${THIS_YEAR} * 1000) + ${PATCH_LEVEL}")
 # set project name/properties
 #
 project(NODE 
-	VERSION 0.6.${PATCH_LEVEL}.1
+	VERSION 0.7.${PATCH_LEVEL}.1
 	LANGUAGES CXX C)
 
 
