@@ -27,13 +27,8 @@ namespace node
 	public:
 		open_connection(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, bus::shared_type bus
 			, cyng::controller& vm
-			, boost::uuids::uuid tag
-			, std::size_t seq
 			, std::string number
-			, cyng::param_map_t const& options
-			, cyng::param_map_t const& bag
 			, std::chrono::seconds timeout);
 		cyng::continuation run();
 		void stop();
@@ -48,13 +43,8 @@ namespace node
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
-		bus::shared_type bus_;	//!< cluster bus
 		cyng::controller& vm_;	//!< ipt device
-		const boost::uuids::uuid tag_;	//!< origin session tag to address response
-		const std::size_t seq_;
 		const std::string number_;
-		const cyng::param_map_t options_;
-		const cyng::param_map_t bag_;
 		const std::chrono::seconds timeout_;
 		const std::chrono::system_clock::time_point start_;
 		bool is_waiting_;

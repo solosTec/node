@@ -33,7 +33,7 @@ namespace node
 			, std::string const& address
 			, std::string const& service
 			, std::chrono::seconds timeout
-			, bool
+			, std::string pwd_policy
 			, std::string);
 		cyng::continuation run();
 		void stop();

@@ -16,10 +16,10 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
 			, std::chrono::seconds timeout
-			, bool use_global_pwd
+			, std::string pwd_policy
 			, std::string const& global_pwd)
 		: server_stub(mux, logger, bus, timeout)
-			, use_global_pwd_(use_global_pwd)
+			, pwd_policy_(pwd_policy)
 			, global_pwd_(global_pwd)
 		{}
 
@@ -32,7 +32,7 @@ namespace node
 				, bus_
 				, tag
 				, timeout_
-				, use_global_pwd_
+				, pwd_policy_
 				, global_pwd_);
 		}
 

@@ -90,7 +90,8 @@ namespace node
 		void start();
 
 		/**
-		 * close socket
+		 * close socket.
+		 * Same as "ip.tcp.socket.shutdown" and "ip.tcp.socket.close"
 		 */
 		void close();
 

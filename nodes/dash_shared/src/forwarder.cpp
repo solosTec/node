@@ -32,7 +32,7 @@ namespace node
 		CYNG_LOG_TRACE(logger, "ws.read - insert channel [" << channel << "]");
 		if (boost::algorithm::starts_with(channel, "config.device"))
 		{
-			ctx.attach(bus_req_db_insert("TDevice"
+			ctx.queue(bus_req_db_insert("TDevice"
 				//	generate new key
 				, cyng::table::key_generator(tag)
 				//	build data vector
@@ -74,7 +74,7 @@ namespace node
 				//CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");
 				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
 				auto key = cyng::table::key_generator(vec.at(0));
-				ctx.attach(bus_req_db_remove("TDevice", key, ctx.tag()));
+				ctx.queue(bus_req_db_remove("TDevice", key, ctx.tag()));
 			}
 			catch (std::exception const& ex) {
 				CYNG_LOG_ERROR(logger, "ws.read - delete channel [" 
@@ -96,7 +96,7 @@ namespace node
 				//CYNG_LOG_DEBUG(logger, "TGateway key [" << str << "]");
 				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
 				auto key = cyng::table::key_generator(vec.at(0));
-				ctx.attach(bus_req_db_remove("TGateway", key, ctx.tag()));
+				ctx.queue(bus_req_db_remove("TGateway", key, ctx.tag()));
 			}
 			catch (std::exception const& ex) {
 				CYNG_LOG_ERROR(logger, "ws.read - delete channel [" 
@@ -118,7 +118,7 @@ namespace node
 				//CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");
 				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
 				auto key = cyng::table::key_generator(vec.at(0));
-				ctx.attach(bus_req_db_remove("TMeter", key, ctx.tag()));
+				ctx.queue(bus_req_db_remove("TMeter", key, ctx.tag()));
 			}
 			catch (std::exception const& ex) {
 				CYNG_LOG_ERROR(logger, "ws.read - delete channel ["
@@ -161,7 +161,7 @@ namespace node
 				for (auto p : tpl)
 				{
 					cyng::param_t param;
-					ctx.attach(bus_req_db_modify("TDevice"
+					ctx.queue(bus_req_db_modify("TDevice"
 						, key
 						, cyng::value_cast(p, param)
 						, 0
@@ -244,7 +244,7 @@ namespace node
 					//		params[name] = reader["rec"]["data"][idx].get("value");
 					//	}
 					//}
-				//	ctx.attach(bus_req_modify_gateway("ipt", key, ctx.tag(), params));
+				//	ctx.queue(bus_req_modify_gateway("ipt", key, ctx.tag(), params));
 
 				//}
 				//else {
@@ -263,14 +263,14 @@ namespace node
 						std::string server_id;
 						server_id = cyng::value_cast(param.second, server_id);
 						boost::algorithm::to_upper(server_id);
-						ctx.attach(bus_req_db_modify("TGateway"
+						ctx.queue(bus_req_db_modify("TGateway"
 							, key
 							, cyng::param_factory("serverId", server_id)
 							, 0
 							, ctx.tag()));
 					}
 					else {
-						ctx.attach(bus_req_db_modify("TGateway"
+						ctx.queue(bus_req_db_modify("TGateway"
 							, key
 							, cyng::value_cast(p, param)
 							, 0
@@ -290,7 +290,7 @@ namespace node
 			//	{"cmd":"modify","channel":"config.system","rec":{"key":{"name":"connection-auto-login"},"data":{"value":true}}}
 			const std::string name = cyng::value_cast<std::string>(reader["rec"]["key"].get("name"), "?");
 			const cyng::object value = reader["rec"]["data"].get("value");
-			ctx.attach(bus_req_db_modify("_Config"
+			ctx.queue(bus_req_db_modify("_Config"
 				//	generate new key
 				, cyng::table::key_generator(reader["rec"]["key"].get("name"))
 				//	build parameter
@@ -308,7 +308,7 @@ namespace node
 				<< cyng::io::to_str(value)
 				;
 
-			ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+			ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
 
 		}
 		else if (boost::algorithm::starts_with(channel, "config.meter"))
@@ -329,7 +329,7 @@ namespace node
 				for (auto p : tpl)
 				{
 					cyng::param_t param;
-					ctx.attach(bus_req_db_modify("TMeter"
+					ctx.queue(bus_req_db_modify("TMeter"
 						, key
 						, cyng::value_cast(p, param)
 						, 0
@@ -371,7 +371,7 @@ namespace node
 				//CYNG_LOG_DEBUG(logger, "*Session key [" << str << "]");
 				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
 				auto key = cyng::table::key_generator(vec.at(0));
-				ctx.attach(bus_req_stop_client(key, ctx.tag()));
+				ctx.queue(bus_req_stop_client(key, ctx.tag()));
 
 			}
 			catch (std::exception const& ex) {
@@ -402,7 +402,7 @@ namespace node
 		if (!key.empty()) {
 
 			cyng::vector_t vec;
-			ctx.attach(bus_req_gateway_proxy(key	//	key into TGateway and TDevice table
+			ctx.queue(bus_req_gateway_proxy(key	//	key into TGateway and TDevice table
 				, tag_ws	//	web-socket tag
 				, channel
 				, cyng::value_cast(reader.get("section"), vec)
@@ -484,7 +484,7 @@ namespace node
 				<< result.offset
 				;
 
-			ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+			ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
 		}
 
 
@@ -528,7 +528,7 @@ namespace node
 					<< " - "
 					<< cyng::value_cast<std::string>(rec["name"], ""));
 
-				ctx.attach(bus_req_db_insert("TGateway", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+				ctx.queue(bus_req_db_insert("TGateway", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
 			}
 
 		}
@@ -544,7 +544,7 @@ namespace node
 				<< result.offset
 				;
 
-			ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+			ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
 		}
 	}
 
@@ -595,7 +595,7 @@ namespace node
 				//
 				//	merge
 				//
-				ctx.attach(bus_req_db_insert("TDevice"
+				ctx.queue(bus_req_db_insert("TDevice"
 					//	generate new key
 					, cyng::table::key_generator(pk)
 					//	build data vector
@@ -616,22 +616,22 @@ namespace node
 				//
 				//	merge
 				//
-				ctx.attach(bus_req_db_modify("TDevice"
+				ctx.queue(bus_req_db_modify("TDevice"
 					, cyng::table::key_generator(pk)
 					, cyng::param_factory("pwd", node.attribute("pwd").value())
 					, 0
 					, ctx.tag()));
-				ctx.attach(bus_req_db_modify("TDevice"
+				ctx.queue(bus_req_db_modify("TDevice"
 					, cyng::table::key_generator(pk)
 					, cyng::param_factory("msisdn", node.attribute("number").value())
 					, 0
 					, ctx.tag()));
-				ctx.attach(bus_req_db_modify("TDevice"
+				ctx.queue(bus_req_db_modify("TDevice"
 					, cyng::table::key_generator(pk)
 					, cyng::param_factory("descr", node.attribute("description").value())
 					, 0
 					, ctx.tag()));
-				ctx.attach(bus_req_db_modify("TDevice"
+				ctx.queue(bus_req_db_modify("TDevice"
 					, cyng::table::key_generator(pk)
 					, cyng::param_factory("query", node.attribute("query").as_uint())
 					, 0
@@ -644,7 +644,7 @@ namespace node
 			<< counter
 			<< " device records (v3.2) uploaded"
 			;
-		ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_INFO, ss.str()));
+		ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_INFO, ss.str()));
 
 	}
 
@@ -703,7 +703,7 @@ namespace node
 			//		, reader["device"].get_object("config")
 			//		, reader["device"].get_object("source")));
 
-			//ctx.attach(bus_req_db_insert("TDevice"
+			//ctx.queue(bus_req_db_insert("TDevice"
 			//	//	generate new key
 			//	, cyng::table::key_generator(boost::uuids::string_generator()(pk))
 			//	//	build data vector
@@ -725,7 +725,7 @@ namespace node
 			<< counter
 			<< " device records (v4.0) uploaded"
 			;
-		ctx.attach(bus_insert_msg(cyng::logging::severity::LEVEL_INFO, ss.str()));
+		ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_INFO, ss.str()));
 
 	}
 
@@ -750,7 +750,7 @@ namespace node
 				<< " - "
 				<< cyng::value_cast<std::string>(rec["name"], ""));
 
-			ctx.attach(bus_req_db_insert("TDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+			ctx.queue(bus_req_db_insert("TDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
 		}
 	}
 

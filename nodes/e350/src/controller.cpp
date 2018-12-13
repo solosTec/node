@@ -191,7 +191,8 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "5200"),
 						cyng::param_factory("timeout", 12),		//	connection timeout
-						cyng::param_factory("use-global-pwd", true),
+						//cyng::param_factory("use-global-pwd", true),
+						cyng::param_factory("pwd-policy", "global"),	// swibi/MNAME, sgsw/TELNB
 						cyng::param_factory("global-pwd", rnd_str.next(8))	//	8 characters
 					))
 					, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
@@ -378,7 +379,7 @@ namespace node
 			, cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0")
 			, cyng::value_cast<std::string>(dom.get("service"), "6000")
 			, std::chrono::seconds(cyng::value_cast<int>(dom.get("timeout"), 12))
-			, cyng::value_cast(dom.get("use-global-pwd"), false)
+			, cyng::value_cast<std::string>(dom.get("pwd-policy"), "global")
 			, cyng::value_cast(dom.get("global-pwd"), rnd_str(8))
 			);
 

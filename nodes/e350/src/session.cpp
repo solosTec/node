@@ -31,7 +31,7 @@ namespace node
 			, bus::shared_type bus
 			, boost::uuids::uuid tag
 			, std::chrono::seconds timeout
-			, bool use_global_pwd
+			, std::string pwd_policy
 			, std::string const& global_pwd)
 		: session_stub(std::move(socket), mux, logger, bus, tag, timeout)
 			, parser_([this](cyng::vector_t&& prg) {
@@ -44,7 +44,7 @@ namespace node
 				, vm_
 				, timeout).first)
 			, serializer_(socket_, vm_)
-			, use_global_pwd_(use_global_pwd)
+			, pwd_policy_(pwd_policy)
 			, global_pwd_(global_pwd)
 			, connect_state_()
 		{
@@ -336,15 +336,15 @@ namespace node
 					("imega-module", frame.at(3))	//	"TELNB" - modulname
 					;
 
-				if (use_global_pwd_) {
+				if (boost::algorithm::iequals(pwd_policy_, "global")) {
 					bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 						, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
 						, global_pwd_	//	fixed password
 						, "plain" //	login scheme
 						, bag));
 				}
-				else {
-
+				else if (boost::algorithm::iequals(pwd_policy_, "MNAME")) {
+					//	the swibi way
 					CYNG_LOG_INFO(logger_, "use login credentials: " << cyng::io::to_str(frame));
 
 					bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
@@ -352,8 +352,35 @@ namespace node
 						, cyng::value_cast<std::string>(frame.at(4), "")	//	as username and password
 						, "plain" //	login scheme
 						, bag));
-
 				}
+				else if (boost::algorithm::iequals(pwd_policy_, "TELNB")) {
+					//	the sgsw way
+					CYNG_LOG_INFO(logger_, "use TELNB as password: " << cyng::io::to_str(frame));
+
+					bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+						, cyng::value_cast<std::string>(frame.at(3), "")	//	"TELNB" as username and password
+						, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
+						, "plain" //	login scheme
+						, bag));
+				}
+				//if (use_global_pwd_) {
+				//	bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				//		, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
+				//		, global_pwd_	//	fixed password
+				//		, "plain" //	login scheme
+				//		, bag));
+				//}
+				//else {
+
+				//	CYNG_LOG_INFO(logger_, "use login credentials: " << cyng::io::to_str(frame));
+
+				//	bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				//		, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
+				//		, cyng::value_cast<std::string>(frame.at(4), "")	//	as username and password
+				//		, "plain" //	login scheme
+				//		, bag));
+
+				//}
 
 			}
 			else
@@ -391,7 +418,7 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "imega.req.transmit.data", "no master", frame));
+				ctx.queue(cyng::generate_invoke("log.msg.warning", "imega.req.transmit.data", "no master", frame));
 			}
 		}
 
@@ -411,8 +438,8 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx.run(cyng::generate_invoke("log.msg.info", "client.req.transmit.data.forward", frame));
 
-			ctx.attach(cyng::generate_invoke("imega.transfer.data", frame.at(3)));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx.queue(cyng::generate_invoke("imega.transfer.data", frame.at(3)));
+			ctx.queue(cyng::generate_invoke("stream.flush"));
 			
 		}
 
@@ -450,7 +477,7 @@ namespace node
 
 			if (std::get<2>(tpl))
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.info"
+				ctx.queue(cyng::generate_invoke("log.msg.info"
 					, "login response"
 					, std::get<3>(tpl)	//	name
 					, std::get<4>(tpl)));	//	msg
@@ -470,13 +497,13 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning"
+				ctx.queue(cyng::generate_invoke("log.msg.warning"
 					, "login response"
 					, std::get<3>(tpl)	//	name
 					, std::get<4>(tpl)));	//	msg
 
-				ctx.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"));
-				ctx.attach(cyng::generate_invoke("ip.tcp.socket.close"));			}
+				ctx.queue(cyng::generate_invoke("ip.tcp.socket.shutdown"));
+				ctx.queue(cyng::generate_invoke("ip.tcp.socket.close"));			}
 
 			//
 			//	bag reader
@@ -501,7 +528,7 @@ namespace node
 			//	* bag
 			//	
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "client.res.open.push.channel", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "client.res.open.push.channel", frame));
 
 			auto const tpl = cyng::tuple_cast<
 				//boost::uuids::uuid,		//	[0] tag
@@ -558,7 +585,7 @@ namespace node
 			//	* bag
 			//	
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.info", "ipt.res.register.push.target", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.info", "ipt.res.register.push.target", frame));
 
 			CYNG_LOG_ERROR(logger_, "client.res.register.push.target - not supported");
 
@@ -567,7 +594,7 @@ namespace node
 		void session::imega_res_watchdog(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.info", "imega.res.watchdog", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.info", "imega.res.watchdog", frame));
 		}
 
 		void session::imega_req_open_connection(cyng::context& ctx)
@@ -585,7 +612,7 @@ namespace node
 			}
             else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "imega.req.open.connection", frame));
+				ctx.queue(cyng::generate_invoke("log.msg.error", "imega.req.open.connection", frame));
 			}
 		}
 
@@ -622,7 +649,7 @@ namespace node
 			//
 			//	auto answer
 			//
-			ctx.attach(cyng::generate_invoke("log.msg.info"
+			ctx.queue(cyng::generate_invoke("log.msg.info"
 				, "client.req.open.connection.forward - "
 				, ctx.get_frame()
 				, to_str(connect_state_)));
@@ -758,7 +785,7 @@ namespace node
 
 			if (success)
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.info", "client.res.open.connection.forward", ctx.get_frame()));
+				ctx.queue(cyng::generate_invoke("log.msg.info", "client.res.open.connection.forward", ctx.get_frame()));
 
 				//
 				//	dom reader
@@ -770,7 +797,7 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.open.connection.forward", ctx.get_frame()));
+				ctx.queue(cyng::generate_invoke("log.msg.warning", "client.res.open.connection.forward", ctx.get_frame()));
 			}
 		}
 
@@ -830,7 +857,7 @@ namespace node
 				cyng::buffer_t			//	[7] data
 			>(frame);
 
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "client.req.transfer.pushdata.forward - channel"
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "client.req.transfer.pushdata.forward - channel"
 				, std::get<2>(tpl)
 				, "source"
 				, std::get<3>(tpl)
@@ -844,13 +871,13 @@ namespace node
 			auto status = cyng::value_cast<std::uint8_t>(dom.get("status"), 0);
 			auto block = cyng::value_cast<std::uint8_t>(dom.get("block"), 0);
 
-			ctx.attach(cyng::generate_invoke("req.transfer.push.data"
+			ctx.queue(cyng::generate_invoke("req.transfer.push.data"
 				, std::get<4>(tpl)	//	channel
 				, std::get<3>(tpl)	//	source
 				, status 
 				, block 
 				, std::get<6>(tpl)));	//	data
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx.queue(cyng::generate_invoke("stream.flush"));
 		}
 
 		void session::client_res_open_connection(cyng::context& ctx)
@@ -865,7 +892,7 @@ namespace node
 			//	* bag
 			//	
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.info", "client.res.open.connection", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.info", "client.res.open.connection", frame));
 
 			CYNG_LOG_ERROR(logger_, "client.res.open.connection - not supported");
 
@@ -917,7 +944,7 @@ namespace node
 			, bus::shared_type bus
 			, boost::uuids::uuid tag
 			, std::chrono::seconds timeout
-			, bool use_global_pwd
+			, std::string pwd_policy
 			, std::string const& global_pwd)
 		{
 			return cyng::make_object<session>(std::move(socket)
@@ -926,7 +953,7 @@ namespace node
 				, bus
 				, tag
 				, timeout
-				, use_global_pwd
+				, pwd_policy
 				, global_pwd);
 		}
 

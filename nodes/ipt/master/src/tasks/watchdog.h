@@ -37,9 +37,6 @@ namespace node
 		 */
 		cyng::continuation process();
 
-
-	private:
-
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;

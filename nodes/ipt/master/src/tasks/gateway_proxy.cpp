@@ -88,7 +88,7 @@ namespace node
 	}
 
 	//	slot 0 - ack
-	cyng::continuation gateway_proxy::process(boost::uuids::uuid tag)
+	cyng::continuation gateway_proxy::process()
 	{
 		if (!queue_.empty()) {
 
@@ -117,6 +117,10 @@ namespace node
 				<< " <"
 				<< base_.get_class_name()
 				<< "> got acknowledge but queue is empty");
+
+			//
+			//	ToDo: reset connection state to NOT-CONNECTED == authorized
+			//
 		}
 
 		//

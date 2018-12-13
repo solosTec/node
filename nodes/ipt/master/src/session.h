@@ -11,6 +11,8 @@
 #include <smf/ipt/parser.h>
 #include <smf/ipt/serializer.h>
 #include <smf/cluster/session_stub.h>
+#include "session_state.h"
+#include "proxy_comm.h"
 
 namespace node 
 {
@@ -18,92 +20,93 @@ namespace node
 	{
 		class session : public session_stub
 		{
-			struct connect_state
-			{
-				connect_state(session*, std::size_t);
+			friend class session_state;
+			//struct connect_state
+			//{
+			//	connect_state(session*, std::size_t);
 
-				enum {
-					STATE_START,		//	start or error state after failed login
-					STATE_AUTHORIZED,	//	after successful login
-					STATE_OFFLINE,		//	no connection at all
-					STATE_LOCAL,		//	open connection to party on the same node
-					STATE_REMOTE,		//	open connection to party on different node
-					STATE_TASK			//	data stream linked to task
-				} state_;
+			//	enum {
+			//		STATE_START,		//	start or error state after failed login
+			//		STATE_AUTHORIZED,	//	after successful login
+			//		STATE_OFFLINE,		//	no connection at all
+			//		STATE_LOCAL,		//	open connection to party on the same node
+			//		STATE_REMOTE,		//	open connection to party on different node
+			//		STATE_TASK			//	data stream linked to task
+			//	} state_;
 
-				/**
-				 * Reference to outer session object
-				 */
-				session& sr_;
+			//	/**
+			//	 * Reference to outer session object
+			//	 */
+			//	session& sr_;
 
-				/**
-				 * active task
-				 */
-				std::size_t tsk_;
+			//	/**
+			//	 * active task
+			//	 */
+			//	std::size_t tsk_;
 
-				/**
-				 * Update state to authorized
-				 */
-				response_type set_authorized(bool b);
+			//	/**
+			//	 * Update state to authorized
+			//	 */
+			//	response_type set_authorized(bool b);
 
-				/**
-				 * open a local/remote connection
-				 */
-				void open_connection(bool);
+			//	/**
+			//	 * open a local/remote connection
+			//	 */
+			//	void open_connection(bool);
 
-				/**
-				 * send data to a task
-				 */
-				void open_connection(std::size_t);
+			//	/**
+			//	 * send data to a task
+			//	 */
+			//	void open_connection(std::size_t);
 
-				/**
-				 * Close any kind of connection
-				 */
-				void close_connection();
+			//	/**
+			//	 * Close any kind of connection
+			//	 */
+			//	void close_connection();
 
-				/**
-				 * Stop gatekeeper if running
-				 */
-				void stop();
+			//	/**
+			//	 * Stop gatekeeper if running
+			//	 */
+			//	void stop();
 
-				/**
-				 * @return true if state is not START, AUTHORIZED or OFFLINE
-				 */
-				bool is_connected() const;
+			//	/**
+			//	 * @return true if state is not START, AUTHORIZED or OFFLINE
+			//	 */
+			//	bool is_connected() const;
 
-				/**
-				 * @return true if state is not START.
-				 */
-				bool is_authorized() const;
+			//	/**
+			//	 * @return true if state is not START.
+			//	 */
+			//	bool is_authorized() const;
 
-				/**
-				 * stream connection state as text
-				 */
-				friend std::ostream& operator<<(std::ostream& os, connect_state const& cs);
+			//	/**
+			//	 * stream connection state as text
+			//	 */
+			//	friend std::ostream& operator<<(std::ostream& os, connect_state const& cs);
 
-				//
-				//	SML data
-				//
-				void register_this(cyng::controller&);
-				void sml_msg(cyng::context& ctx);
-				void sml_eom(cyng::context& ctx);
-				void sml_public_open_response(cyng::context& ctx);
-				void sml_public_close_response(cyng::context& ctx);
-				void sml_get_proc_param_srv_visible(cyng::context& ctx);
-				void sml_get_proc_param_srv_active(cyng::context& ctx);
-				void sml_get_proc_param_firmware(cyng::context& ctx);
-				void sml_get_proc_param_simple(cyng::context& ctx);
-				void sml_get_proc_status_word(cyng::context& ctx);
-				void sml_get_proc_param_memory(cyng::context& ctx);
-				void sml_get_proc_param_wmbus_status(cyng::context& ctx);
-				void sml_get_proc_param_wmbus_config(cyng::context& ctx);
-				void sml_get_proc_param_ipt_status(cyng::context& ctx);
-				void sml_get_proc_param_ipt_param(cyng::context& ctx);
-				void sml_attention_msg(cyng::context& ctx);
+			//	//
+			//	//	SML data
+			//	//
+			//	void register_this(cyng::controller&);
+			//	void sml_msg(cyng::context& ctx);
+			//	void sml_eom(cyng::context& ctx);
+			//	void sml_public_open_response(cyng::context& ctx);
+			//	void sml_public_close_response(cyng::context& ctx);
+			//	void sml_get_proc_param_srv_visible(cyng::context& ctx);
+			//	void sml_get_proc_param_srv_active(cyng::context& ctx);
+			//	void sml_get_proc_param_firmware(cyng::context& ctx);
+			//	void sml_get_proc_param_simple(cyng::context& ctx);
+			//	void sml_get_proc_status_word(cyng::context& ctx);
+			//	void sml_get_proc_param_memory(cyng::context& ctx);
+			//	void sml_get_proc_param_wmbus_status(cyng::context& ctx);
+			//	void sml_get_proc_param_wmbus_config(cyng::context& ctx);
+			//	void sml_get_proc_param_ipt_status(cyng::context& ctx);
+			//	void sml_get_proc_param_ipt_param(cyng::context& ctx);
+			//	void sml_attention_msg(cyng::context& ctx);
 
-			};
+			//};
 
-			friend std::ostream& operator<<(std::ostream& os, session::connect_state const& cs);
+			//friend std::ostream& operator<<(std::ostream& os, session::connect_state const& cs);
 
 		public:
 			session(boost::asio::ip::tcp::socket&& socket
@@ -132,7 +135,7 @@ namespace node
 			/**
 			 * signal activity to reset watchdog
 			 */
-			void activity();
+			//void activity();
 
 			void ipt_req_login_public(cyng::context& ctx);
 			void ipt_req_login_scrambled(cyng::context& ctx);
@@ -196,8 +199,6 @@ namespace node
 
 			void store_relation(cyng::context& ctx);
 			void remove_relation(cyng::context& ctx);
-			void update_connection_state(cyng::context& ctx);
-			void redirect(cyng::context& ctx);
 
 			void client_req_gateway_proxy(cyng::context& ctx);
 
@@ -213,8 +214,10 @@ namespace node
 			 */
 			serializer		serializer_;
 
-			const scramble_key sk_;
-			const std::uint16_t watchdog_;	//!< minutes
+			/**
+			 * response timeout
+			 */
+			const std::chrono::seconds timeout_;
 
 			/**
 			 * bookkeeping of ip-t sequence to task relation
@@ -225,17 +228,12 @@ namespace node
 			/**
 			 * contains state of local connections
 			 */
-			connect_state	connect_state_;
+			session_state	state_;
 
 			/**
-			 * proxy task
+			 * SML communication
 			 */
-			const std::size_t proxy_tsk_;
-
-			/**
-			 * watchdog task
-			 */
-			std::size_t watchdog_tsk_;
+			proxy_comm	proxy_comm_;
 
 #ifdef SMF_IO_LOG
 			std::size_t log_counter_;

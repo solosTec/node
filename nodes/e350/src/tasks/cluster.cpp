@@ -20,7 +20,7 @@ namespace node
 		, std::string const& address
 		, std::string const& service
 		, std::chrono::seconds timeout
-		, bool use_global_pwd
+		, std::string pwd_policy
 		, std::string global_pwd)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
@@ -28,7 +28,7 @@ namespace node
 		, config_(cfg)
 		, address_(address)
 		, service_(service)
-		, server_(btp->mux_, logger_, bus_, timeout, use_global_pwd, global_pwd)
+		, server_(btp->mux_, logger_, bus_, timeout, pwd_policy, global_pwd)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

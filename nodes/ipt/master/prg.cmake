@@ -11,6 +11,7 @@ set (node_ipt_master_cpp
 	nodes/ipt/master/src/session.cpp
 	nodes/ipt/master/src/session_state.cpp
 	nodes/ipt/master/src/proxy_data.cpp
+	nodes/ipt/master/src/proxy_comm.cpp
 )
 
 set (node_ipt_master_h
@@ -20,7 +21,9 @@ set (node_ipt_master_h
 	nodes/ipt/master/src/server.h
 	src/main/include/smf/cluster/session_stub.h
 	nodes/ipt/master/src/session.h
+	nodes/ipt/master/src/session_state.h
 	nodes/ipt/master/src/proxy_data.h
+	nodes/ipt/master/src/proxy_comm.h
 )
 
 set (node_ipt_master_info

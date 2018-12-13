@@ -21,7 +21,7 @@ namespace node
 				, cyng::logging::log_ptr logger
 				, bus::shared_type
 				, std::chrono::seconds timeout
-				, bool use_global_pwd
+				, std::string pwd_policy
 				, std::string const& global_pwd);
 
 		protected:
@@ -32,8 +32,8 @@ namespace node
 
 		private:
 			 //	configuration
-			 const bool use_global_pwd_;
-			 const std::string global_pwd_;
+			 std::string const pwd_policy_;
+			 std::string const global_pwd_;
 		};
 	}
 }

@@ -28,7 +28,7 @@ namespace node
 		using proxy_queue = std::queue< ipt::proxy_data >;
 
 	public:
-		using msg_0 = std::tuple<boost::uuids::uuid>;
+		using msg_0 = std::tuple<>;
 		using msg_1 = std::tuple<std::uint16_t, std::size_t>;	//	eom
 		using msg_2 = std::tuple<cyng::buffer_t>;
 		using msg_3 = std::tuple<cyng::buffer_t, std::uint8_t, std::uint8_t, cyng::tuple_t, std::uint16_t>;
@@ -74,7 +74,7 @@ namespace node
 		 *
 		 * ack - connected to gateway
 		 */
-		cyng::continuation process(boost::uuids::uuid);
+		cyng::continuation process();
 
 		/**
 		 * @brief slot [1]

@@ -199,7 +199,7 @@ namespace node
 			<< count
 			<< " variable(s)"
 			;
-		ctx.attach(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_TRACE : cyng::logging::severity::LEVEL_WARNING), ss.str()));
+		ctx.queue(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_TRACE : cyng::logging::severity::LEVEL_WARNING), ss.str()));
 
 		//
 		//	start procedure
@@ -218,7 +218,7 @@ namespace node
 				for (auto const& v : pos->second) {
 					params.insert(cyng::param_factory(v.first, v.second));
 				}
-				ctx.attach(cyng::generate_invoke(idx->second, std::get<0>(tpl), params));
+				ctx.queue(cyng::generate_invoke(idx->second, std::get<0>(tpl), params));
 				found = true;
 			}
 		}
@@ -232,7 +232,7 @@ namespace node
 		//	consider to send a 302 - Object moved response
 		//
 		if (!found) {
-			ctx.attach(cyng::generate_invoke("http.move", std::get<0>(tpl), std::get<3>(tpl)));
+			ctx.queue(cyng::generate_invoke("http.move", std::get<0>(tpl), std::get<3>(tpl)));
 		}
 	}
 

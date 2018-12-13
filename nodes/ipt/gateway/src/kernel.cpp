@@ -115,7 +115,7 @@ namespace node
 			//
 			//	add generated instruction vector
 			//
-			ctx.attach(reader_.read(msg, idx));
+			ctx.queue(reader_.read(msg, idx));
 		}
 
 		void kernel::sml_eom(cyng::context& ctx)
@@ -149,16 +149,16 @@ namespace node
 			//
 			if (server_mode_)
 			{
-				ctx.attach(cyng::generate_invoke("stream.serialize", buf));
+				ctx.queue(cyng::generate_invoke("stream.serialize", buf));
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("ipt.transfer.data", buf));
+				ctx.queue(cyng::generate_invoke("ipt.transfer.data", buf));
 			}
 
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx.queue(cyng::generate_invoke("stream.flush"));
 
-			//ctx.attach(cyng::generate_invoke("ipt.transfer.data", buf)).attach(cyng::generate_invoke("stream.flush"));
+			//ctx.queue(cyng::generate_invoke("ipt.transfer.data", buf)).attach(cyng::generate_invoke("stream.flush"));
 			reset();
 		}
 

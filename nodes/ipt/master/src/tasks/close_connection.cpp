@@ -18,25 +18,25 @@ namespace node
 {
 	close_connection::close_connection(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, bus::shared_type bus
+		//, bus::shared_type bus
 		, cyng::controller& vm
-		, bool shutdown
-		, boost::uuids::uuid tag_origin
-		, std::size_t seq
-		, cyng::param_map_t const& options
-		, cyng::param_map_t const& bag
+		//, bool shutdown
+		//, boost::uuids::uuid tag_origin
+		//, std::size_t seq
+		//, cyng::param_map_t const& options
+		//, cyng::param_map_t const& bag
 		, std::chrono::seconds timeout)
 	: base_(*btp)
 		, logger_(logger)
-		, bus_(bus)
+		//, bus_(bus)
 		, vm_(vm)
-		, shutdown_(shutdown)
-		, tag_origin_(tag_origin)	//	origin tag
-		, seq_(seq)
-		, options_(options)
-		, bag_(bag)
+		//, shutdown_(shutdown)
+		//, tag_origin_(tag_origin)	//	origin tag
+		//, seq_(seq)
+		//, options_(options)
+		//, bag_(bag)
 		, timeout_(timeout)
-		, local_connect_(cyng::value_cast(cyng::make_reader(options_).get("local-connect"), false))
+		//, local_connect_(cyng::value_cast(cyng::make_reader(options_).get("local-connect"), false))
 		, start_(std::chrono::system_clock::now())
 		, is_waiting_(false)
 	{
@@ -46,9 +46,10 @@ namespace node
 			<< base_.get_class_name()
 			<< "> "
 			<< vm_.tag()
-			<< " is running in "
-			<< (shutdown_ ? "shutdown" : "operative")
-			<< " mode until "
+			//<< " is running in "
+			//<< (shutdown_ ? "shutdown" : "operative")
+			//<< " mode until "
+			<< " is running until "
 			<< cyng::to_str(start_ + timeout_));
 	}
 
@@ -124,41 +125,41 @@ namespace node
 				, cyng::generate_invoke("ip.tcp.socket.close") });
 		}
 
-		if (bus_->is_online())
-		{
-			if (!shutdown_)
-			{
-				CYNG_LOG_TRACE(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> send response timeout to origin "
-					<< tag_origin_);
+		//if (bus_->is_online())
+		//{
+		//	if (!shutdown_)
+		//	{
+		//		CYNG_LOG_TRACE(logger_, "task #"
+		//			<< base_.get_id()
+		//			<< " <"
+		//			<< base_.get_class_name()
+		//			<< "> send response timeout to origin "
+		//			<< tag_origin_);
 
-				if (local_connect_) {
+		//		if (local_connect_) {
 
-					//
-					//	remove from connection_map_
-					//
-					bus_->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", tag_origin_));
-				}
+		//			//
+		//			//	remove from connection_map_
+		//			//
+		//			bus_->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", tag_origin_));
+		//		}
 
 
-				//	send "client.res.close.connection" to SMF master
-				bus_->vm_.async_run(client_res_close_connection(tag_origin_
-					, seq_
-					, false	//	failed
-					, options_
-					, bag_));
-			}
-			else
-			{
-				//
-				//	tell master to close *this* client
-				//
-				//bus_->vm_.async_run(client_req_close(vm_.tag(), 0));
-			}
-		}
+		//		//	send "client.res.close.connection" to SMF master
+		//		bus_->vm_.async_run(client_res_close_connection(tag_origin_
+		//			, seq_
+		//			, false	//	failed
+		//			, options_
+		//			, bag_));
+		//	}
+		//	else
+		//	{
+		//		//
+		//		//	tell master to close *this* client
+		//		//
+		//		//bus_->vm_.async_run(client_req_close(vm_.tag(), 0));
+		//	}
+		//}
 
 		//
 		//	stop this task
@@ -190,29 +191,29 @@ namespace node
 			<< ipt::tp_res_close_connection_policy::get_response_name(res)
 			<< "]");
 
-		if (!shutdown_ && bus_->is_online())
-		{
-			CYNG_LOG_TRACE(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> send response timeout to origin "
-				<< tag_origin_);
+		//if (!shutdown_ && bus_->is_online())
+		//{
+		//	CYNG_LOG_TRACE(logger_, "task #"
+		//		<< base_.get_id()
+		//		<< " <"
+		//		<< base_.get_class_name()
+		//		<< "> send response timeout to origin "
+		//		<< tag_origin_);
 
-			if (local_connect_) {
-				//
-				//	remove from connection_map_
-				//
-				bus_->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", tag_origin_));
-			}
+		//	if (local_connect_) {
+		//		//
+		//		//	remove from connection_map_
+		//		//
+		//		bus_->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", tag_origin_));
+		//	}
 
-			//	send "client.res.close.connection" to SMF master
-			bus_->vm_.async_run(client_res_close_connection(tag_origin_
-				, seq_
-				, ipt::tp_res_close_connection_policy::is_success(res)
-				, options_
-				, bag_));
-		}
+		//	//	send "client.res.close.connection" to SMF master
+		//	bus_->vm_.async_run(client_res_close_connection(tag_origin_
+		//		, seq_
+		//		, ipt::tp_res_close_connection_policy::is_success(res)
+		//		, options_
+		//		, bag_));
+		//}
 
 		return cyng::continuation::TASK_STOP;
 	}

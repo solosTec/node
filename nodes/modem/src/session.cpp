@@ -326,46 +326,46 @@ namespace node
 			switch (std::get<1>(tpl))
 			{
 			case 0:	
-				ctx.attach(cyng::generate_invoke("print.text", cyng::invoke("ip.tcp.socket.ep.local")));
+				ctx.queue(cyng::generate_invoke("print.text", cyng::invoke("ip.tcp.socket.ep.local")));
 				break;
 			case 1:
-				ctx.attach(cyng::generate_invoke("print.text", cyng::invoke("ip.tcp.socket.ep.remote")));
+				ctx.queue(cyng::generate_invoke("print.text", cyng::invoke("ip.tcp.socket.ep.remote")));
 				break;
 			case 2:
-				ctx.attach(cyng::generate_invoke("print.text", std::chrono::system_clock::now()));
+				ctx.queue(cyng::generate_invoke("print.text", std::chrono::system_clock::now()));
 				break;
 			case 3:
-				ctx.attach(cyng::generate_invoke("print.text", NODE_VERSION));
+				ctx.queue(cyng::generate_invoke("print.text", NODE_VERSION));
 				break;
 			case 4:
-				ctx.attach(cyng::generate_invoke("print.text", NODE_PLATFORM));
+				ctx.queue(cyng::generate_invoke("print.text", NODE_PLATFORM));
 				break;
 			case 5:
-				ctx.attach(cyng::generate_invoke("print.text", NODE_PROCESSOR));
+				ctx.queue(cyng::generate_invoke("print.text", NODE_PROCESSOR));
 				break;
 			case 6:
-				ctx.attach(cyng::generate_invoke("print.text", NODE_SSL_VERSION));
+				ctx.queue(cyng::generate_invoke("print.text", NODE_SSL_VERSION));
 				break;
 			case 7:
-				ctx.attach(cyng::generate_invoke("print.text", NODE_BUILD_TYPE));
+				ctx.queue(cyng::generate_invoke("print.text", NODE_BUILD_TYPE));
 				break;
 			case 8:
-				ctx.attach(cyng::generate_invoke("print.text", ctx.tag()));
+				ctx.queue(cyng::generate_invoke("print.text", ctx.tag()));
 				break;
 			case 9:
-				ctx.attach(cyng::generate_invoke("print.text", bus_->vm_.tag()));
+				ctx.queue(cyng::generate_invoke("print.text", bus_->vm_.tag()));
 				break;
 			case 10:
-				ctx.attach(cyng::generate_invoke("print.text", to_str(connect_state_)));
+				ctx.queue(cyng::generate_invoke("print.text", to_str(connect_state_)));
 				break;
 
 			default:
-				//ctx.attach("code.ERROR");
+				//ctx.queue("code.ERROR");
 				return;
 			}
 
-			ctx.attach(cyng::generate_invoke("print.ok"));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx.queue(cyng::generate_invoke("print.ok"));
+			ctx.queue(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -414,8 +414,8 @@ namespace node
 				//
 				//	reject login - no master
 				//
-				ctx.attach(cyng::generate_invoke("print.error"));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx.queue(cyng::generate_invoke("print.error"));
+				ctx.queue(cyng::generate_invoke("stream.flush"));
 			}
 
 
@@ -447,7 +447,7 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "modem.req.transmit.data", "no master", frame));
+				ctx.queue(cyng::generate_invoke("log.msg.warning", "modem.req.transmit.data", "no master", frame));
 			}
 		}
 
@@ -467,8 +467,8 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx.run(cyng::generate_invoke("log.msg.info", "client.req.transmit.data.forward", frame));
 
-			ctx.attach(cyng::generate_invoke("modem.transfer.data", frame.at(3)));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx.queue(cyng::generate_invoke("modem.transfer.data", frame.at(3)));
+			ctx.queue(cyng::generate_invoke("stream.flush"));
 			
 		}
 
@@ -506,12 +506,12 @@ namespace node
 
 			if (std::get<2>(tpl))
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.info"
+				ctx.queue(cyng::generate_invoke("log.msg.info"
 					, "login response"
 					, std::get<3>(tpl)		//	name
 					, std::get<4>(tpl)));	//	msg
-				ctx.attach(cyng::generate_invoke("print.ok"));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx.queue(cyng::generate_invoke("print.ok"));
+				ctx.queue(cyng::generate_invoke("stream.flush"));
 
 				const cyng::param_map_t bag = cyng::param_map_factory("tp-layer", "ipt")("seq", frame.at(1));
 
@@ -528,14 +528,14 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning"
+				ctx.queue(cyng::generate_invoke("log.msg.warning"
 					, "login response"
 					, std::get<3>(tpl)	//	name
 					, std::get<4>(tpl)));	//	msg
-				ctx.attach(cyng::generate_invoke("print.error"));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
-				ctx.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"));
-				ctx.attach(cyng::generate_invoke("ip.tcp.socket.close"));			}
+				ctx.queue(cyng::generate_invoke("print.error"));
+				ctx.queue(cyng::generate_invoke("stream.flush"));
+				ctx.queue(cyng::generate_invoke("ip.tcp.socket.shutdown"));
+				ctx.queue(cyng::generate_invoke("ip.tcp.socket.close"));			}
 
 			//
 			//	bag reader
@@ -547,18 +547,18 @@ namespace node
 			//const std::string security = cyng::value_cast<std::string>(dom.get("security"), "undef");
 			//if (boost::algorithm::equals(security, "scrambled"))
 			//{
-			//	ctx.attach(cyng::generate_invoke("res.login.scrambled", res, watchdog_, ""));
+			//	ctx.queue(cyng::generate_invoke("res.login.scrambled", res, watchdog_, ""));
 			//}
 			//else
 			//{
-			//	ctx.attach(cyng::generate_invoke("res.login.public", res, watchdog_, ""));
+			//	ctx.queue(cyng::generate_invoke("res.login.public", res, watchdog_, ""));
 			//}
-			//ctx.attach(cyng::generate_invoke("stream.flush"));
+			//ctx.queue(cyng::generate_invoke("stream.flush"));
 
 			////	success
 			//if (std::get<2>(tpl))
 			//{
-			//	ctx.attach(cyng::generate_invoke("log.msg.info"
+			//	ctx.queue(cyng::generate_invoke("log.msg.info"
 			//		, "send login response"
 			//		, std::get<3>(tpl)	//	name
 			//		, std::get<4>(tpl)	//	msg
@@ -568,44 +568,44 @@ namespace node
 			//	const auto query = std::get<5>(tpl);
 			//	if ((query & QUERY_PROTOCOL_VERSION) == QUERY_PROTOCOL_VERSION)
 			//	{
-			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_PROTOCOL_VERSION"));
-			//		ctx.attach(cyng::generate_invoke("req.protocol.version"));
+			//		ctx.queue(cyng::generate_invoke("log.msg.debug", "QUERY_PROTOCOL_VERSION"));
+			//		ctx.queue(cyng::generate_invoke("req.protocol.version"));
 			//	}
 			//	if ((query & QUERY_FIRMWARE_VERSION) == QUERY_FIRMWARE_VERSION)
 			//	{
-			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_FIRMWARE_VERSION"));
-			//		ctx.attach(cyng::generate_invoke("req.software.version"));
+			//		ctx.queue(cyng::generate_invoke("log.msg.debug", "QUERY_FIRMWARE_VERSION"));
+			//		ctx.queue(cyng::generate_invoke("req.software.version"));
 			//	}
 			//	if ((query & QUERY_DEVICE_IDENTIFIER) == QUERY_DEVICE_IDENTIFIER)
 			//	{
-			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_IDENTIFIER"));
-			//		ctx.attach(cyng::generate_invoke("req.device.id"));
+			//		ctx.queue(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_IDENTIFIER"));
+			//		ctx.queue(cyng::generate_invoke("req.device.id"));
 			//	}
 			//	if ((query & QUERY_NETWORK_STATUS) == QUERY_NETWORK_STATUS)
 			//	{
-			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_NETWORK_STATUS"));
-			//		ctx.attach(cyng::generate_invoke("req.net.status"));
+			//		ctx.queue(cyng::generate_invoke("log.msg.debug", "QUERY_NETWORK_STATUS"));
+			//		ctx.queue(cyng::generate_invoke("req.net.status"));
 			//	}
 			//	if ((query & QUERY_IP_STATISTIC) == QUERY_IP_STATISTIC)
 			//	{
-			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_IP_STATISTIC"));
-			//		ctx.attach(cyng::generate_invoke("req.ip.statistics"));
+			//		ctx.queue(cyng::generate_invoke("log.msg.debug", "QUERY_IP_STATISTIC"));
+			//		ctx.queue(cyng::generate_invoke("req.ip.statistics"));
 			//	}
 			//	if ((query & QUERY_DEVICE_AUTHENTIFICATION) == QUERY_DEVICE_AUTHENTIFICATION)
 			//	{
-			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_AUTHENTIFICATION"));
-			//		ctx.attach(cyng::generate_invoke("req.device.auth"));
+			//		ctx.queue(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_AUTHENTIFICATION"));
+			//		ctx.queue(cyng::generate_invoke("req.device.auth"));
 			//	}
 			//	if ((query & QUERY_DEVICE_TIME) == QUERY_DEVICE_TIME)
 			//	{
-			//		ctx.attach(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_TIME"));
-			//		ctx.attach(cyng::generate_invoke("req.device.time"));
+			//		ctx.queue(cyng::generate_invoke("log.msg.debug", "QUERY_DEVICE_TIME"));
+			//		ctx.queue(cyng::generate_invoke("req.device.time"));
 			//	}
-			//	ctx.attach(cyng::generate_invoke("stream.flush"));
+			//	ctx.queue(cyng::generate_invoke("stream.flush"));
 			//}
 			//else
 			//{
-			//	ctx.attach(cyng::generate_invoke("log.msg.warning"
+			//	ctx.queue(cyng::generate_invoke("log.msg.warning"
    //                 , "received login response"
 			//		, std::get<3>(tpl)	//	name
 			//		, std::get<4>(tpl)));	//	msg
@@ -613,8 +613,8 @@ namespace node
 			//	//
 			//	//	close session
 			//	//
-			//	ctx.attach(cyng::generate_invoke("ip.tcp.socket.shutdown"));
-			//	ctx.attach(cyng::generate_invoke("ip.tcp.socket.close"));
+			//	ctx.queue(cyng::generate_invoke("ip.tcp.socket.shutdown"));
+			//	ctx.queue(cyng::generate_invoke("ip.tcp.socket.close"));
 			//}
 
 		}
@@ -635,7 +635,7 @@ namespace node
 			//	* bag
 			//	
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "client.res.open.push.channel", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "client.res.open.push.channel", frame));
 
 			auto const tpl = cyng::tuple_cast<
 				//boost::uuids::uuid,		//	[0] tag
@@ -668,8 +668,8 @@ namespace node
 			//const std::uint32_t source = std::get<4>(tpl);
 			//const std::uint32_t count = std::get<5>(tpl);
 
-			//ctx.attach(cyng::generate_invoke("res.open.push.channel", seq, res, channel, source, p_size, w_size, status, count));
-			//ctx.attach(cyng::generate_invoke("stream.flush"));
+			//ctx.queue(cyng::generate_invoke("res.open.push.channel", seq, res, channel, source, p_size, w_size, status, count));
+			//ctx.queue(cyng::generate_invoke("stream.flush"));
 		}
 
 		void session::client_res_close_push_channel(cyng::context& ctx)
@@ -706,7 +706,7 @@ namespace node
 			//	: ipt::tp_res_close_push_channel_policy::BROKEN
 			//	;
 
-			//ctx.attach(cyng::generate_invoke("res.close.push.channel", seq, res, std::get<3>(tpl)))
+			//ctx.queue(cyng::generate_invoke("res.close.push.channel", seq, res, std::get<3>(tpl)))
 			//	.attach(cyng::generate_invoke("stream.flush"));
 
 		}
@@ -724,7 +724,7 @@ namespace node
 			//	* bag
 			//	
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.info", "ipt.res.register.push.target", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.info", "ipt.res.register.push.target", frame));
 
 			//
 			//	dom reader
@@ -736,8 +736,8 @@ namespace node
 			//const response_type res = cyng::value_cast<response_type>(dom[4].get("response-code"), 0);
 			//const std::uint32_t channel = cyng::value_cast<std::uint32_t>(dom.get(3), 0);	
 
-			//ctx.attach(cyng::generate_invoke("res.register.push.target", seq, res, channel));
-			//ctx.attach(cyng::generate_invoke("stream.flush"));
+			//ctx.queue(cyng::generate_invoke("res.register.push.target", seq, res, channel));
+			//ctx.queue(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -756,9 +756,9 @@ namespace node
 			}
             else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "modem.req.open.connection", frame));
-				ctx.attach(cyng::generate_invoke("print.error"));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx.queue(cyng::generate_invoke("log.msg.error", "modem.req.open.connection", frame));
+				ctx.queue(cyng::generate_invoke("print.error"));
+				ctx.queue(cyng::generate_invoke("stream.flush"));
 			}
 		}
 
@@ -796,7 +796,7 @@ namespace node
 
 			if (auto_answer_)
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward - auto answer", ctx.get_frame()));
+				ctx.queue(cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward - auto answer", ctx.get_frame()));
 
 				//
 				//	update parser state
@@ -813,7 +813,7 @@ namespace node
 					, std::get<3>(tpl)
 					, std::get<4>(tpl)));
 
-				ctx.attach(cyng::generate_invoke("print.connect"));
+				ctx.queue(cyng::generate_invoke("print.connect"));
 
 				//
 				//	update connection state.
@@ -825,8 +825,8 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward - wait for ATA", ctx.get_frame()));
-				ctx.attach(cyng::generate_invoke("print.ring"));
+				ctx.queue(cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward - wait for ATA", ctx.get_frame()));
+				ctx.queue(cyng::generate_invoke("print.ring"));
 
 				//
 				//	ToDo: start task
@@ -845,7 +845,7 @@ namespace node
 
 				//CYNG_LOG_TRACE(logger_, "client.req.open.connection.forward - task #" << tsk);
 			}
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx.queue(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -878,8 +878,8 @@ namespace node
 			//
 			//	print NO CARRIER
 			//
-			ctx.attach(cyng::generate_invoke("print.no-carrier"));
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx.queue(cyng::generate_invoke("print.no-carrier"));
+			ctx.queue(cyng::generate_invoke("stream.flush"));
 
 			//
 			//	update parser state
@@ -927,15 +927,15 @@ namespace node
 			if (std::get<2>(tpl))
 			{
 				ctx.run(cyng::generate_invoke("log.msg.trace", "client.res.close.connection.forward", frame));
-				ctx.attach(cyng::generate_invoke("print.ok"));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx.queue(cyng::generate_invoke("print.ok"));
+				ctx.queue(cyng::generate_invoke("stream.flush"));
 
 			}
 			else
 			{
 				ctx.run(cyng::generate_invoke("log.msg.warning", "client.res.close.connection.forward", frame));
-				ctx.attach(cyng::generate_invoke("print.error"));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx.queue(cyng::generate_invoke("print.error"));
+				ctx.queue(cyng::generate_invoke("stream.flush"));
 			}
 
 			//
@@ -971,8 +971,8 @@ namespace node
 
 			if (success)
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.info", "client.res.open.connection.forward", ctx.get_frame()));
-				ctx.attach(cyng::generate_invoke("print.connect"));
+				ctx.queue(cyng::generate_invoke("log.msg.info", "client.res.open.connection.forward", ctx.get_frame()));
+				ctx.queue(cyng::generate_invoke("print.connect"));
 
 				//
 				//	dom reader
@@ -988,11 +988,11 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.open.connection.forward", ctx.get_frame()));
-				ctx.attach(cyng::generate_invoke("print.no-answer"));
+				ctx.queue(cyng::generate_invoke("log.msg.warning", "client.res.open.connection.forward", ctx.get_frame()));
+				ctx.queue(cyng::generate_invoke("print.no-answer"));
 			}
 
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx.queue(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -1043,7 +1043,7 @@ namespace node
 
 			//if (std::get<4>(tpl) != 0)
 			//{
-			//	ctx.attach(cyng::generate_invoke("log.msg.debug"
+			//	ctx.queue(cyng::generate_invoke("log.msg.debug"
 			//		, "client.res.transfer.pushdata - source"
 			//		, std::get<2>(tpl)
 			//		, "channel"
@@ -1054,10 +1054,10 @@ namespace node
 			//}
 			//else
 			//{
-			//	ctx.attach(cyng::generate_invoke("log.msg.warning", "client.res.transfer.pushdata - failed", frame));
+			//	ctx.queue(cyng::generate_invoke("log.msg.warning", "client.res.transfer.pushdata - failed", frame));
 			//}
 
-			//ctx.attach(cyng::generate_invoke("res.transfer.push.data"
+			//ctx.queue(cyng::generate_invoke("res.transfer.push.data"
 			//	, seq
 			//	, res
 			//	, std::get<2>(tpl)	//	source
@@ -1065,7 +1065,7 @@ namespace node
 			//	, status
 			//	, cyng::value_cast<std::uint8_t>(dom.get("block"), 0)
 			//));
-			//ctx.attach(cyng::generate_invoke("stream.flush"));
+			//ctx.queue(cyng::generate_invoke("stream.flush"));
 		}
 
 		void session::client_req_transfer_pushdata_forward(cyng::context& ctx)
@@ -1098,7 +1098,7 @@ namespace node
 				cyng::buffer_t			//	[7] data
 			>(frame);
 
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "client.req.transfer.pushdata.forward - channel"
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "client.req.transfer.pushdata.forward - channel"
 				, std::get<2>(tpl)
 				, "source"
 				, std::get<3>(tpl)
@@ -1112,13 +1112,13 @@ namespace node
 			auto status = cyng::value_cast<std::uint8_t>(dom.get("status"), 0);
 			auto block = cyng::value_cast<std::uint8_t>(dom.get("block"), 0);
 
-			ctx.attach(cyng::generate_invoke("req.transfer.push.data"
+			ctx.queue(cyng::generate_invoke("req.transfer.push.data"
 				, std::get<4>(tpl)	//	channel
 				, std::get<3>(tpl)	//	source
 				, status 
 				, block 
 				, std::get<6>(tpl)));	//	data
-			ctx.attach(cyng::generate_invoke("stream.flush"));
+			ctx.queue(cyng::generate_invoke("stream.flush"));
 		}
 
 		void session::modem_req_close_connection(cyng::context& ctx)
@@ -1135,9 +1135,9 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.error", "modem.req.close.connection - no master", frame));
-				ctx.attach(cyng::generate_invoke("print.error"));
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx.queue(cyng::generate_invoke("log.msg.error", "modem.req.close.connection - no master", frame));
+				ctx.queue(cyng::generate_invoke("print.error"));
+				ctx.queue(cyng::generate_invoke("stream.flush"));
 			}
 		}
 
@@ -1153,7 +1153,7 @@ namespace node
 			//	* bag
 			//	
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.info", "client.res.open.connection", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.info", "client.res.open.connection", frame));
 
 			//
 			//	dom reader
@@ -1164,8 +1164,8 @@ namespace node
 			//const sequence_type seq = cyng::value_cast<sequence_type>(dom[4].get("seq"), 0);
 			//const response_type res = cyng::value_cast<response_type>(dom[3].get("response-code"), 0);
 
-			//ctx.attach(cyng::generate_invoke("res.open.connection", seq, res));
-			//ctx.attach(cyng::generate_invoke("stream.flush"));
+			//ctx.queue(cyng::generate_invoke("res.open.connection", seq, res));
+			//ctx.queue(cyng::generate_invoke("stream.flush"));
 
 		}
 

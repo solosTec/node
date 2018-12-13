@@ -34,9 +34,9 @@ namespace node
 
 	void cluster::register_this(cyng::context& ctx)
 	{
-		ctx.attach(cyng::register_function("bus.req.gateway.proxy", 7, std::bind(&cluster::bus_req_gateway_proxy, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("bus.res.gateway.proxy", 9, std::bind(&cluster::bus_res_gateway_proxy, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("bus.res.attention.code", 6, std::bind(&cluster::bus_res_attention_code, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.req.gateway.proxy", 7, std::bind(&cluster::bus_req_gateway_proxy, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.res.gateway.proxy", 9, std::bind(&cluster::bus_res_gateway_proxy, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.res.attention.code", 6, std::bind(&cluster::bus_res_attention_code, this, std::placeholders::_1)));
 	}
 
 	void cluster::bus_req_gateway_proxy(cyng::context& ctx)

@@ -47,22 +47,22 @@ namespace node
 
 	void client::register_this(cyng::context& ctx)
 	{
-		ctx.attach(cyng::register_function("client.req.login", 8, std::bind(&client::req_login, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.req.close", 4, std::bind(&client::req_close, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.res.close", 4, std::bind(&client::res_close, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.req.open.push.channel", 10, std::bind(&client::req_open_push_channel, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.res.open.push.channel", 9, std::bind(&client::res_open_push_channel, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.req.close.push.channel", 5, std::bind(&client::req_close_push_channel, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.req.register.push.target", 5, std::bind(&client::req_register_push_target, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.req.deregister.push.target", 5, std::bind(&client::req_deregister_push_target, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.req.open.connection", 6, std::bind(&client::req_open_connection, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.res.open.connection", 4, std::bind(&client::res_open_connection, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.req.close.connection", 5, std::bind(&client::req_close_connection, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.res.close.connection", 6, std::bind(&client::res_close_connection, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.req.transfer.pushdata", 6, std::bind(&client::req_transfer_pushdata, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.req.transmit.data", 5, std::bind(&client::req_transmit_data, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.inc.throughput", 3, std::bind(&client::inc_throughput, this, std::placeholders::_1)));
-		ctx.attach(cyng::register_function("client.update.attr", 6, std::bind(&client::update_attr, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.req.login", 8, std::bind(&client::req_login, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.req.close", 4, std::bind(&client::req_close, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.res.close", 4, std::bind(&client::res_close, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.req.open.push.channel", 10, std::bind(&client::req_open_push_channel, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.res.open.push.channel", 9, std::bind(&client::res_open_push_channel, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.req.close.push.channel", 5, std::bind(&client::req_close_push_channel, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.req.register.push.target", 5, std::bind(&client::req_register_push_target, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.req.deregister.push.target", 5, std::bind(&client::req_deregister_push_target, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.req.open.connection", 6, std::bind(&client::req_open_connection, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.res.open.connection", 4, std::bind(&client::res_open_connection, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.req.close.connection", 5, std::bind(&client::req_close_connection, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.res.close.connection", 6, std::bind(&client::res_close_connection, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.req.transfer.pushdata", 6, std::bind(&client::req_transfer_pushdata, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.req.transmit.data", 5, std::bind(&client::req_transmit_data, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.inc.throughput", 3, std::bind(&client::inc_throughput, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.update.attr", 6, std::bind(&client::update_attr, this, std::placeholders::_1)));
 	}
 
 	bool client::set_connection_auto_login(cyng::object obj)
@@ -183,8 +183,8 @@ namespace node
 			const bool auth = check_auth_state(tbl_session, tag);
 			if (auth)
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "[" + account + "] already authorized", tag));
-				ctx.attach(client_res_login(tag
+				ctx.queue(cyng::generate_invoke("log.msg.warning", "[" + account + "] already authorized", tag));
+				ctx.queue(client_res_login(tag
 					, seq
 					, false
 					, account
@@ -229,7 +229,7 @@ namespace node
 							, 1
 							, tag))
 						{
-							ctx.attach(client_res_login(tag
+							ctx.queue(client_res_login(tag
 								, seq
 								, true
 								, account
@@ -237,7 +237,7 @@ namespace node
 								, query
 								, bag));
 
-							ctx.attach(cyng::generate_invoke("log.msg.info", "[" + account + "] has session tag", tag));
+							ctx.queue(cyng::generate_invoke("log.msg.info", "[" + account + "] has session tag", tag));
 
 							//
 							//	write statistics
@@ -255,7 +255,7 @@ namespace node
 						}
 						else
 						{
-							ctx.attach(client_res_login(tag
+							ctx.queue(client_res_login(tag
 								, seq
 								, false
 								, account
@@ -263,7 +263,7 @@ namespace node
 								, query
 								, bag));
 
-							ctx.attach(cyng::generate_invoke("log.msg.error"
+							ctx.queue(cyng::generate_invoke("log.msg.error"
 								, "cannot insert new session of account "
 								, account
 								, " with pk "
@@ -281,7 +281,7 @@ namespace node
 				{
 					found = true;
 
-					ctx.attach(client_res_login(tag
+					ctx.queue(client_res_login(tag
 						, seq
 						, false
 						, account
@@ -302,7 +302,7 @@ namespace node
 
 		if (!found)
 		{
-			ctx.attach(client_res_login(tag
+			ctx.queue(client_res_login(tag
 				, seq
 				, false
 				, account
@@ -329,21 +329,21 @@ namespace node
 					, 1
 					, tag))
 				{
-					ctx.attach(cyng::generate_invoke("log.msg.error"
+					ctx.queue(cyng::generate_invoke("log.msg.error"
 						, account
 						, "auto login failed"));
 
 				}
 				else
 				{
-					ctx.attach(cyng::generate_invoke("log.msg.warning"
+					ctx.queue(cyng::generate_invoke("log.msg.warning"
 						, account
 						, "auto login"));
 				}
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning"
+				ctx.queue(cyng::generate_invoke("log.msg.warning"
 					, "bus.req.login failed"
 					, account));
 
@@ -376,7 +376,7 @@ namespace node
 
 			if (boost::algorithm::equals(account, rec_account))
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.trace", "account match [", account, "] OK"));
+				ctx.queue(cyng::generate_invoke("log.msg.trace", "account match [", account, "] OK"));
 
 				//
 				//	matching name
@@ -385,7 +385,7 @@ namespace node
 				const auto rec_pwd = cyng::value_cast<std::string>(rec["pwd"], "");
 				if (boost::algorithm::equals(pwd, rec_pwd))
 				{
-					ctx.attach(cyng::generate_invoke("log.msg.info", "password match [", account, "] OK"));
+					ctx.queue(cyng::generate_invoke("log.msg.info", "password match [", account, "] OK"));
 
 					//
 					//	matching password
@@ -406,7 +406,7 @@ namespace node
 					//
 					wrong_pwd = true;
 
-					ctx.attach(cyng::generate_invoke("log.msg.warning"
+					ctx.queue(cyng::generate_invoke("log.msg.warning"
 						, "password does not match ["
 						, account
 						, pwd
@@ -460,12 +460,12 @@ namespace node
 					//
 					//	ToDo: probably not the same peer!
 					//
-					ctx.attach(client_req_close(rec_tag, 0));
-					ctx.attach(cyng::generate_invoke("log.msg.warning", account, rec_tag, "will be superseded"));
+					ctx.queue(client_req_close(rec_tag, 0));
+					ctx.queue(cyng::generate_invoke("log.msg.warning", account, rec_tag, "will be superseded"));
 				}
 				else
 				{
-					ctx.attach(cyng::generate_invoke("log.msg.warning", account, rec_tag, "already online"));
+					ctx.queue(cyng::generate_invoke("log.msg.warning", account, rec_tag, "already online"));
 
 				}
 			}
@@ -601,12 +601,12 @@ namespace node
 						//
 						//	local
 						//
-						ctx.attach(cyng::generate_invoke("log.msg.warning"
+						ctx.queue(cyng::generate_invoke("log.msg.warning"
 							, "forward (local) connection close request from"
 							, tag
 							, " ==> "
 							, rtag));
-						ctx.attach(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_t(), bag));
+						ctx.queue(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_t(), bag));
 
 						//
 						//	write stats
@@ -619,7 +619,7 @@ namespace node
 						//
 						//	remote
 						//
-						ctx.attach(cyng::generate_invoke("log.msg.warning"
+						ctx.queue(cyng::generate_invoke("log.msg.warning"
 							, "forward (distinct) connection close request from"
 							, tag
 							, " ==> "
@@ -650,7 +650,7 @@ namespace node
 				//	remove registered targets
 				//
 				const auto count_targets = remove_targets_by_tag(tbl_target, tag);
-				ctx.attach(cyng::generate_invoke("log.msg.info"
+				ctx.queue(cyng::generate_invoke("log.msg.info"
 					, count_targets
 					, "targets of session "
 					, tag
@@ -666,7 +666,7 @@ namespace node
 				//
 				success = tbl_session->erase(key, tag);
 
-				ctx.attach(cyng::generate_invoke("log.msg.info"
+				ctx.queue(cyng::generate_invoke("log.msg.info"
 					, "client session"
 					, tag
 					, account
@@ -685,7 +685,7 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning"
+				ctx.queue(cyng::generate_invoke("log.msg.warning"
 					, "client session"
 					, tag
 					, "not found"));
@@ -701,7 +701,7 @@ namespace node
 			//
 			//	send a response
 			//
-			ctx.attach(client_res_close(tag
+			ctx.queue(client_res_close(tag
 					, seq
 					, success));
 		}
@@ -864,7 +864,7 @@ namespace node
 								//
 								//	forward connection open request in same VM
 								//
-								ctx.attach(client_req_open_connection_forward(remote_tag
+								ctx.queue(client_req_open_connection_forward(remote_tag
 									, number
 									, options
 									, bag));
@@ -918,7 +918,7 @@ namespace node
 				<< number
 				<< " not found");
 
-			ctx.attach(client_res_open_connection_forward(tag
+			ctx.queue(client_res_open_connection_forward(tag
 				, seq
 				, success
 				, options
@@ -1081,7 +1081,7 @@ namespace node
 					//	forward to caller (origin)
 					//	same VM
 					//
-					ctx.attach(client_res_open_connection_forward(tag
+					ctx.queue(client_res_open_connection_forward(tag
 						, seq
 						, success
 						, options
@@ -1211,7 +1211,7 @@ namespace node
 						//	forward to caller (origin)
 						//	same VM
 						//
-						ctx.attach(client_res_close_connection_forward(tag
+						ctx.queue(client_res_close_connection_forward(tag
 							, seq
 							, success
 							, options
@@ -1366,7 +1366,7 @@ namespace node
 						//
 						//	local connection
 						//
-						ctx.attach(client_req_transfer_data_forward(link
+						ctx.queue(client_req_transfer_data_forward(link
 							, seq
 							, bag
 							, data));
@@ -1524,7 +1524,7 @@ namespace node
 							<< " ==> "
 							<< remote_tag);
 
-						ctx.attach(client_req_close_connection_forward(remote_tag
+						ctx.queue(client_req_close_connection_forward(remote_tag
 							, tag
 							, seq
 							, shutdown	//	no shutdown
@@ -1561,7 +1561,7 @@ namespace node
 					options["msg"] = cyng::make_object("[" + name + "] has no open connection to close");
 
 					//	"client.res.close.connection.forward"
-					ctx.attach(client_res_close_connection_forward(tag
+					ctx.queue(client_res_close_connection_forward(tag
 						, seq
 						, false //	no success
 						, options
@@ -1673,7 +1673,7 @@ namespace node
 			const bool enabled = !device_rec.empty() && cyng::value_cast(device_rec["enabled"], false);
 			if (!enabled)
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.warning"
+				ctx.queue(cyng::generate_invoke("log.msg.warning"
 					, "open push channel - device"
 					, account
 					, "is not enabled"));
@@ -1695,7 +1695,7 @@ namespace node
 				, tag
 				, name);
 
-			ctx.attach(cyng::generate_invoke("log.msg.trace"
+			ctx.queue(cyng::generate_invoke("log.msg.trace"
 				, r.first.size()
 				, "matching target(s) for"
 				, name));
@@ -1760,7 +1760,7 @@ namespace node
 			options["packet-size"] = cyng::make_object(r.second);
 			options["window-size"] = cyng::make_object<std::uint8_t>(1); //	always 1
 
-			ctx.attach(client_res_open_push_channel(tag
+			ctx.queue(client_res_open_push_channel(tag
 				, seq
 				, !r.first.empty()	//	success
 				, channel			//	channel
@@ -1815,7 +1815,7 @@ namespace node
 					, count)	//	target count
 				, 1, tag))
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.info"
+				ctx.queue(cyng::generate_invoke("log.msg.info"
 					, "open push channel"
 					, channel
 					, source_channel
@@ -1825,7 +1825,7 @@ namespace node
 			}
 			else
 			{
-				ctx.attach(cyng::generate_invoke("log.msg.error"
+				ctx.queue(cyng::generate_invoke("log.msg.error"
 					, "open push channel - failed"
 					, channel, source_channel, target));
 
@@ -1839,7 +1839,7 @@ namespace node
 		}
 		else
 		{
-			ctx.attach(cyng::generate_invoke("log.msg.warning"
+			ctx.queue(cyng::generate_invoke("log.msg.warning"
 				, "open push channel - no target session"
 				, target_session_tag));
 
@@ -1924,7 +1924,7 @@ namespace node
 				if (channel == cyng::value_cast<std::uint32_t>(rec["channel"], 0))
 				{ 
 					pks.push_back(rec.key());
-					ctx.attach(cyng::generate_invoke("log.msg.debug"
+					ctx.queue(cyng::generate_invoke("log.msg.debug"
 						, "req.close.push.channel"
 						, rec.key()));
 
@@ -1938,7 +1938,7 @@ namespace node
 		//
 		//	send response
 		//
-		ctx.attach(client_res_close_push_channel(tag
+		ctx.queue(client_res_close_push_channel(tag
 			, seq
 			, !pks.empty()	//	success
 			, channel		//	channel
@@ -2006,7 +2006,7 @@ namespace node
 				// [transfer.push.data,474ba8c4,e9d30005,[18f86863,a1e24bba,e7e1faee]]
 				// [transfer.push.data,474ba8c4,e9d30005,[474ba8c4,e9d30005,d5c31f79]]
 				// [transfer.push.data,474ba8c4,e9d30005,[8c16a625,2082352c,22ae9ef6]]
-				//ctx.attach(cyng::generate_invoke("log.msg.debug"
+				//ctx.queue(cyng::generate_invoke("log.msg.debug"
 				//	, "transfer.push.data"
 				//	, channel, source, rec.key()));
 
@@ -2037,7 +2037,7 @@ namespace node
 							<< "==> "
 							<< target_tag);
 
-						ctx.attach(client_req_transfer_pushdata_forward(target_tag
+						ctx.queue(client_req_transfer_pushdata_forward(target_tag
 							, channel
 							, source
 							, target
@@ -2141,7 +2141,7 @@ namespace node
 				}
 			}, cyng::store::write_access("_Target"));
 		}
-		ctx.attach(client_res_transfer_pushdata(tag
+		ctx.queue(client_res_transfer_pushdata(tag
 			, seq
 			, channel		//	channel
 			, source		//	source
@@ -2162,12 +2162,12 @@ namespace node
 		options["packet-size"] = cyng::make_object<std::uint16_t>(0);
 		options["window-size"] = cyng::make_object<std::uint8_t>(0);
 
-		ctx.attach(cyng::generate_invoke("log.msg.warning"
+		ctx.queue(cyng::generate_invoke("log.msg.warning"
 			, "client.req.open.push.channel"
 			, "target name is empty"));
 
 
-		ctx.attach(client_res_open_push_channel(tag
+		ctx.queue(client_res_open_push_channel(tag
 			, seq
 			, false
 			, 0		//	channel
@@ -2307,7 +2307,7 @@ namespace node
 			: ipt::ctrl_res_register_target_policy::GENERAL_ERROR);
 		options["target-name"] = cyng::make_object(target);
 
-		ctx.attach(client_res_register_push_target(tag
+		ctx.queue(client_res_register_push_target(tag
 			, seq
 			, success
 			, channel		//	channel
@@ -2404,7 +2404,7 @@ namespace node
 			? ipt::ctrl_res_deregister_target_policy::OK
 			: ipt::ctrl_res_deregister_target_policy::GENERAL_ERROR);
 
-		ctx.attach(client_res_deregister_push_target(tag
+		ctx.queue(client_res_deregister_push_target(tag
 			, seq
 			, success
 			, target		//	channel
@@ -2487,7 +2487,7 @@ namespace node
 		, cyng::object value
 		, cyng::param_map_t bag)
 	{
-		ctx.attach(cyng::generate_invoke("log.msg.debug"
+		ctx.queue(cyng::generate_invoke("log.msg.debug"
 			, "client.update.attr"
 			, name
 			, value));
@@ -2502,7 +2502,7 @@ namespace node
 					const boost::uuids::uuid dev_tag = cyng::value_cast(session_rec["device"], boost::uuids::nil_uuid());
 					const auto dev_pk = cyng::table::key_generator(dev_tag);
 
-					ctx.attach(cyng::generate_invoke("log.msg.info"
+					ctx.queue(cyng::generate_invoke("log.msg.info"
 						, "update device"
 						, dev_tag
 						, session_rec["name"]));
@@ -2565,7 +2565,7 @@ namespace node
 				}
 				else
 				{
-					ctx.attach(cyng::generate_invoke("log.msg.warning"
+					ctx.queue(cyng::generate_invoke("log.msg.warning"
 						, "client.update.attr - session not found "
 						, tag));
 
@@ -2577,7 +2577,7 @@ namespace node
 		}
 		else
 		{
-			ctx.attach(cyng::generate_invoke("log.msg.warning"
+			ctx.queue(cyng::generate_invoke("log.msg.warning"
 				, "client.update.attr - cannot handle "
 				, name));
 		}

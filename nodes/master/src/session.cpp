@@ -222,7 +222,7 @@ namespace node
 						if (local_peer->hash() != remote_peer->hash())
 						{
 
-							ctx.attach(cyng::generate_invoke("log.msg.warning"
+							ctx.queue(cyng::generate_invoke("log.msg.warning"
 								, "close distinct connection to "
 								, rtag));
 
@@ -257,7 +257,7 @@ namespace node
 			//
 			//	remove all session records
 			//
-			//ctx.attach(cyng::generate_invoke("log.msg.info", "session.cleanup", pks.size()));
+			//ctx.queue(cyng::generate_invoke("log.msg.info", "session.cleanup", pks.size()));
 			cyng::erase(tbl_session, pks, ctx.tag());
 
 		}	, cyng::store::write_access("_Session")
@@ -487,9 +487,9 @@ namespace node
 			//
 			//	subscribe/unsubscribe
 			//
-			ctx.attach(cyng::register_function("bus.req.subscribe", 3, std::bind(&session::bus_req_subscribe, this, std::placeholders::_1)));
-			ctx.attach(cyng::register_function("bus.req.unsubscribe", 2, std::bind(&session::bus_req_unsubscribe, this, std::placeholders::_1)));
-			ctx.attach(cyng::register_function("bus.start.watchdog", 7, std::bind(&session::bus_start_watchdog, this, std::placeholders::_1)));
+			ctx.queue(cyng::register_function("bus.req.subscribe", 3, std::bind(&session::bus_req_subscribe, this, std::placeholders::_1)));
+			ctx.queue(cyng::register_function("bus.req.unsubscribe", 2, std::bind(&session::bus_req_unsubscribe, this, std::placeholders::_1)));
+			ctx.queue(cyng::register_function("bus.start.watchdog", 7, std::bind(&session::bus_start_watchdog, this, std::placeholders::_1)));
 
 			//
 			//	set node class and group id
@@ -502,7 +502,7 @@ namespace node
 			//	insert into cluster table
 			//
 			std::chrono::microseconds ping = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - ts);
-			ctx.attach(cyng::generate_invoke("bus.start.watchdog"
+			ctx.queue(cyng::generate_invoke("bus.start.watchdog"
 				, node_class
 				, ts
 				, ver
@@ -514,7 +514,7 @@ namespace node
 			//
 			//	send reply
 			//
-			ctx.attach(reply(ts, true));
+			ctx.queue(reply(ts, true));
 
 		}
 		else
@@ -529,7 +529,7 @@ namespace node
 			//
 			//	send reply
 			//
-			ctx.attach(reply(ts, false));
+			ctx.queue(reply(ts, false));
 
 			//
 			//	emit system message
@@ -902,7 +902,7 @@ namespace node
 			std::size_t				//	[2] task id
 		>(frame);
 
-		ctx.attach(cyng::generate_invoke("log.msg.info", "bus.req.subscribe", std::get<0>(tpl), std::get<1>(tpl)));
+		ctx.queue(cyng::generate_invoke("log.msg.info", "bus.req.subscribe", std::get<0>(tpl), std::get<1>(tpl)));
 
 		db_.access([&](cyng::store::table const* tbl)->void {
 
@@ -1054,7 +1054,7 @@ namespace node
 			});
 		}, cyng::store::read_access("_Cluster"));
 
-		ctx.attach(node::bus_res_push_data(std::get<0>(tpl)	//	seq
+		ctx.queue(node::bus_res_push_data(std::get<0>(tpl)	//	seq
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, counter));

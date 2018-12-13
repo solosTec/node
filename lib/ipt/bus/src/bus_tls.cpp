@@ -309,10 +309,10 @@ namespace node
 			const std::string redirect = cyng::value_cast<std::string>(frame.at(3), "");
 
 			if (scrambled) {
-				ctx.attach(cyng::generate_invoke("log.msg.info", "ipt.res.login.scrambled", res.get_response_name()));
+				ctx.queue(cyng::generate_invoke("log.msg.info", "ipt.res.login.scrambled", res.get_response_name()));
 			}
 			else	{
-				ctx.attach(cyng::generate_invoke("log.msg.info", "ipt.res.login.public", res.get_response_name()));
+				ctx.queue(cyng::generate_invoke("log.msg.info", "ipt.res.login.public", res.get_response_name()));
 			}
 
 			if (res.is_success())
@@ -322,7 +322,7 @@ namespace node
 				//
 				state_ = STATE_AUTHORIZED_;
 
-				ctx.attach(cyng::generate_invoke("log.msg.info"
+				ctx.queue(cyng::generate_invoke("log.msg.info"
 					, "successful authorized"
 					, socket_.local_endpoint()
 					, socket_.remote_endpoint()));
@@ -345,7 +345,7 @@ namespace node
 			else	{
 				state_ = STATE_ERROR_;
 				watchdog_ = 0u;
-                ctx.attach(cyng::generate_invoke("log.msg.warning", "login failed"));
+                ctx.queue(cyng::generate_invoke("log.msg.warning", "login failed"));
 
 				//
 				//	slot [1]
@@ -425,7 +425,7 @@ namespace node
 
 			const response_type res = std::get<2>(tpl);
 
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.res.deregister.push.target", ctrl_res_deregister_target_policy::get_response_name(res)));
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "ipt.res.deregister.push.target", ctrl_res_deregister_target_policy::get_response_name(res)));
 
 			//
 			//	* [u8] seq
@@ -447,7 +447,7 @@ namespace node
 			//	* [u8] window size
 			//
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.register.push.target", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "ipt.req.register.push.target", frame));
 
 			//
 			//	get sequence
@@ -471,7 +471,7 @@ namespace node
 			//	* [string] target
 			//
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.deregister.push.target", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "ipt.req.deregister.push.target", frame));
 
 			//
 			//	get sequence
@@ -514,7 +514,7 @@ namespace node
 
 			const response_type res = std::get<2>(tpl);
 			
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.res.open.push.channel"
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "ipt.res.open.push.channel"
 				, frame.at(3)
 				, frame.at(4)
 				, tp_res_open_push_channel_policy::get_response_name(res)));
@@ -554,7 +554,7 @@ namespace node
 
 			const response_type res = std::get<2>(tpl);
 
-			ctx.attach(cyng::generate_invoke("log.msg.debug"
+			ctx.queue(cyng::generate_invoke("log.msg.debug"
 				, "ipt.res.close.push.channel"
 				, std::get<3>(tpl)
 				, tp_res_close_push_channel_policy::get_response_name(res)));
@@ -574,7 +574,7 @@ namespace node
 		void bus_tls::ipt_res_transfer_push_data(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.trace", "ipt.res.transfer.pushdata", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.trace", "ipt.res.transfer.pushdata", frame));
 
 			//
 			//	ToDo: forward to client
@@ -589,17 +589,17 @@ namespace node
 			auto bp = cyng::object_cast<cyng::buffer_t>(frame.at(1));
 			BOOST_ASSERT_MSG(bp != nullptr, "no data");
 			if (STATE_CONNECTED_ != state_) {
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "ipt.req.transmit.data - wrong state", get_state()));
+				ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.req.transmit.data - wrong state", get_state()));
 			}
 			else {
-				ctx.attach(cyng::generate_invoke("log.msg.trace", "ipt.req.transmit.data", bp->size()));
+				ctx.queue(cyng::generate_invoke("log.msg.trace", "ipt.req.transmit.data", bp->size()));
 			}
 
 			if (bp != nullptr) {
 				auto buffer = on_transmit_data(*bp);
 				if (!buffer.empty()) {
-					ctx.attach(cyng::generate_invoke("ipt.transfer.data", buffer));
-					ctx.attach(cyng::generate_invoke("stream.flush"));
+					ctx.queue(cyng::generate_invoke("ipt.transfer.data", buffer));
+					ctx.queue(cyng::generate_invoke("stream.flush"));
 				}
 			}
 		}
@@ -620,7 +620,7 @@ namespace node
 				std::string			//	[2] number
 			>(frame);
 
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.open.connection", frame, get_state()));
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "ipt.req.open.connection", frame, get_state()));
 
 			switch (state_.load())
 			{
@@ -639,7 +639,7 @@ namespace node
 					//
 					//	accept calls
 					//
-					ctx.attach(cyng::generate_invoke("res.open.connection"
+					ctx.queue(cyng::generate_invoke("res.open.connection"
 						, std::get<1>(tpl)
 						, static_cast<response_type>(ipt::tp_res_open_connection_policy::DIALUP_SUCCESS)));
 				}
@@ -648,20 +648,20 @@ namespace node
 					//
 					//	dismiss calls
 					//
-					ctx.attach(cyng::generate_invoke("res.open.connection"
+					ctx.queue(cyng::generate_invoke("res.open.connection"
 						, std::get<1>(tpl)
 						, static_cast<response_type>(ipt::tp_res_open_connection_policy::BUSY)));
 				}
-				ctx.attach(cyng::generate_invoke("stream.flush"));
+				ctx.queue(cyng::generate_invoke("stream.flush"));
 				break;
 			case STATE_CONNECTED_:
 				//	bus_tlsy
-				ctx	.attach(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_open_connection_policy::BUSY)))
-					.attach(cyng::generate_invoke("stream.flush"));
+				ctx	.queue(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_open_connection_policy::BUSY)))
+					.queue(cyng::generate_invoke("stream.flush"));
 				break;
 			default:
-				ctx	.attach(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_open_connection_policy::DIALUP_FAILED)))
-					.attach(cyng::generate_invoke("stream.flush"));
+				ctx	.queue(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<std::uint8_t>(ipt::tp_res_open_connection_policy::DIALUP_FAILED)))
+					.queue(cyng::generate_invoke("stream.flush"));
 				break;
 			}
 		}
@@ -685,7 +685,7 @@ namespace node
 			const auto success = tp_res_open_connection_policy::is_success(std::get<2>(tpl));
 			const auto msg = tp_res_open_connection_policy::get_response_name(std::get<2>(tpl));
 
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.res.open.connection", msg));
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "ipt.res.open.connection", msg));
 
 			auto pos = task_db_.find(std::get<1>(tpl));
 			if (pos != task_db_.end())
@@ -714,11 +714,11 @@ namespace node
 
 					break;
 				case STATE_CONNECTED_:
-					ctx.attach(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection already connected", frame));
+					ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection already connected", frame));
 					mux_.post(tsk, 0, cyng::tuple_factory(std::get<2>(tpl), false));
 					break;
 				default:
-					ctx.attach(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection in wrong state", get_state()));
+					ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection in wrong state", get_state()));
 					state_ = STATE_ERROR_;
 					mux_.post(tsk, 0, cyng::tuple_factory(std::get<2>(tpl), false));
 					break;
@@ -734,7 +734,7 @@ namespace node
 					? STATE_AUTHORIZED_
 					: STATE_ERROR_
 					;
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection: empty sequence/task relation (timeout)", +std::get<1>(tpl)));
+				ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection: empty sequence/task relation (timeout)", +std::get<1>(tpl)));
 			}
 		}
 
@@ -750,10 +750,10 @@ namespace node
 			switch (state_.load())
 			{
 			case STATE_AUTHORIZED_:
-				ctx.attach(cyng::generate_invoke("log.msg.warning", "received ipt.req.close.connection - not connected", frame));
+				ctx.queue(cyng::generate_invoke("log.msg.warning", "received ipt.req.close.connection - not connected", frame));
 				break;
 			case STATE_CONNECTED_:
-				ctx.attach(cyng::generate_invoke("log.msg.debug", "received ipt.req.close.connection", frame));
+				ctx.queue(cyng::generate_invoke("log.msg.debug", "received ipt.req.close.connection", frame));
 
 				//
 				//	update connection state
@@ -769,21 +769,21 @@ namespace node
 				}
 				break;
 			case STATE_WAIT_FOR_CLOSE_RESPONSE_:
-				ctx.attach(cyng::generate_invoke("log.msg.error", "received ipt.req.close.connection - invalid state", get_state()));
+				ctx.queue(cyng::generate_invoke("log.msg.error", "received ipt.req.close.connection - invalid state", get_state()));
 				state_ = STATE_AUTHORIZED_;	//	try to fix this 
 				break;
 			default:
-				ctx.attach(cyng::generate_invoke("log.msg.error", "received ipt.req.close.connection - invalid state", get_state()));
+				ctx.queue(cyng::generate_invoke("log.msg.error", "received ipt.req.close.connection - invalid state", get_state()));
 				break;
 			}
 
 			//
 			//	accept request in every case - send response
 			//
-			ctx	.attach(cyng::generate_invoke("res.close.connection"
+			ctx	.queue(cyng::generate_invoke("res.close.connection"
 					, frame.at(1)	//	ip-t seq
 					, static_cast<std::uint8_t>(ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED)))	//	OK
-				.attach(cyng::generate_invoke("stream.flush"));
+				.queue(cyng::generate_invoke("stream.flush"));
 
 		}
 
@@ -795,7 +795,7 @@ namespace node
 			//	* [u8] response
 			//
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.res.close.connection", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "ipt.res.close.connection", frame));
 
 			//
 			//	get sequence
@@ -859,57 +859,57 @@ namespace node
 		{
 			BOOST_ASSERT(vm_.tag() == ctx.tag());
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.protocol.version", frame))
-				.attach(cyng::generate_invoke("res.protocol.version", frame.at(1), static_cast<std::uint8_t>(1)))
-				.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.queue(cyng::generate_invoke("log.msg.debug", "ipt.req.protocol.version", frame))
+				.queue(cyng::generate_invoke("res.protocol.version", frame.at(1), static_cast<std::uint8_t>(1)))
+				.queue(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus_tls::ipt_req_software_version(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.software.version", frame))
-				.attach(cyng::generate_invoke("res.software.version", frame.at(1), NODE_VERSION))
-				.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.queue(cyng::generate_invoke("log.msg.debug", "ipt.req.software.version", frame))
+				.queue(cyng::generate_invoke("res.software.version", frame.at(1), NODE_VERSION))
+				.queue(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus_tls::ipt_req_device_id(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.id", frame))
-				.attach(cyng::generate_invoke("res.device.id", frame.at(1), model_))
-				.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.queue(cyng::generate_invoke("log.msg.debug", "ipt.req.device.id", frame))
+				.queue(cyng::generate_invoke("res.device.id", frame.at(1), model_))
+				.queue(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus_tls::ipt_req_net_stat(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.net.stat", frame))
-				.attach(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_NETWORK_STATUS)))
-				.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.queue(cyng::generate_invoke("log.msg.debug", "ipt.req.net.stat", frame))
+				.queue(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_NETWORK_STATUS)))
+				.queue(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus_tls::ipt_req_ip_statistics(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.ip.statistics", frame))
-				.attach(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_IP_STATISTICS)))
-				.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.queue(cyng::generate_invoke("log.msg.debug", "ipt.req.ip.statistics", frame))
+				.queue(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_IP_STATISTICS)))
+				.queue(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus_tls::ipt_req_dev_auth(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.auth", frame))
-				.attach(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_DEVICE_AUTHENTIFICATION)))
-				.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.queue(cyng::generate_invoke("log.msg.debug", "ipt.req.device.auth", frame))
+				.queue(cyng::generate_invoke("res.unknown.command", frame.at(1), static_cast<std::uint16_t>(code::APP_REQ_DEVICE_AUTHENTIFICATION)))
+				.queue(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus_tls::ipt_req_dev_time(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx	.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.device.time", frame))
-				.attach(cyng::generate_invoke("res.device.time", frame.at(1)))
-				.attach(cyng::generate_invoke("stream.flush"));
+			ctx	.queue(cyng::generate_invoke("log.msg.debug", "ipt.req.device.time", frame))
+				.queue(cyng::generate_invoke("res.device.time", frame.at(1)))
+				.queue(cyng::generate_invoke("stream.flush"));
 		}
 
 		void bus_tls::ipt_req_transfer_pushdata(cyng::context& ctx)
@@ -933,7 +933,7 @@ namespace node
 				std::uint8_t,			//	[5] block
 				cyng::buffer_t			//	[6] data
 			>(frame);
-			ctx.attach(cyng::generate_invoke("log.msg.debug", "ipt.req.transfer.pushdata"
+			ctx.queue(cyng::generate_invoke("log.msg.debug", "ipt.req.transfer.pushdata"
 				, std::get<2>(tpl)
 				, std::get<3>(tpl)
 				, std::get<6>(tpl).size()

@@ -262,7 +262,6 @@ namespace node
 				//	close sockets
 				//
 				close_connection(conn.first, conn.second);
-				//const_cast<connection*>(cyng::object_cast<connection>(conn.second))->close();
 			}
 		}
 		else {
@@ -285,7 +284,7 @@ namespace node
 
 		auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 		if (!insert_client_impl(tag, frame.at(1))) {
-			ctx.attach(cyng::generate_invoke("log.msg.error", "server.insert.connection - failed", frame));
+			ctx.queue(cyng::generate_invoke("log.msg.error", "server.insert.connection - failed", frame));
 		}
 	}
 
@@ -319,7 +318,7 @@ namespace node
 
 		const auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 		if (!remove_client_impl(tag)) {
-			ctx.attach(cyng::generate_invoke("log.msg.error", "server.remove.client - failed", tag));
+			ctx.queue(cyng::generate_invoke("log.msg.error", "server.remove.client - failed", tag));
 		}
 	}
 
@@ -388,7 +387,7 @@ namespace node
 			auto dp = cyng::object_cast<cyng::buffer_t>(frame.at(1));
 			if (dp != nullptr)
 			{
-				ctx.attach(client_inc_throughput(tag
+				ctx.queue(client_inc_throughput(tag
 					, receiver
 					, dp->size()));
 			}
@@ -445,13 +444,13 @@ namespace node
 		//	* sequence
 		//
 		const cyng::vector_t frame = ctx.get_frame();
-		ctx.attach(cyng::generate_invoke("log.msg.info", "client.res.close", frame));
+		ctx.queue(cyng::generate_invoke("log.msg.info", "client.res.close", frame));
 
 		const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 
 		try {
 			if (!remove_client_impl(tag)) {
-				ctx.attach(cyng::generate_invoke("log.msg.error", "client.res.close - failed", frame));
+				ctx.queue(cyng::generate_invoke("log.msg.error", "client.res.close - failed", frame));
 			}
 		}
 		catch (std::exception const& ex) {
@@ -503,7 +502,7 @@ namespace node
 
 		const auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 		if (!close_client_impl(tag)) {
-			ctx.attach(cyng::generate_invoke("log.msg.error", "server.close.client - failed", tag));
+			ctx.queue(cyng::generate_invoke("log.msg.error", "server.close.client - failed", tag));
 		}
 	}
 
@@ -544,11 +543,11 @@ namespace node
 			//
 			//	acknowledge that session was closed
 			//
-			ctx.attach(client_res_close(tag, seq, true));
+			ctx.queue(client_res_close(tag, seq, true));
 		}
 		else {
-			ctx.attach(cyng::generate_invoke("log.msg.error", "client.req.close - failed", frame));
-			ctx.attach(client_res_close(tag, seq, false));
+			ctx.queue(cyng::generate_invoke("log.msg.error", "client.req.close - failed", frame));
+			ctx.queue(client_res_close(tag, seq, false));
 		}
 	}
 
@@ -636,8 +635,8 @@ namespace node
 			boost::uuids::uuid,		//	[1] peer
 			std::uint64_t,			//	[2] cluster sequence
 			bool,					//	[3] success
-			cyng::param_map_t,		//	[4] options
-			cyng::param_map_t		//	[5] bag
+			cyng::param_map_t,		//	[4] master
+			cyng::param_map_t		//	[5] client
 		>(frame);
 
 
@@ -660,9 +659,9 @@ namespace node
 			//
 			CYNG_LOG_INFO(logger_, "server_stub "
 				<< ctx.tag()
-				<< " establish a local connection "
+				<< " establish a local connection ["
 				<< connection_map_.size()
-				<< ": "
+				<< "]: "
 				<< origin_tag
 				<< " <==> " 
 				<< remote_tag);
@@ -723,7 +722,7 @@ namespace node
 			//
 			//	manage local connections
 			//
-			propagate("session.update.connection.state", remote_tag, std::move(prg));
+			//propagate("session.update.connection.state", remote_tag, std::move(prg));
 		}
 
 		//

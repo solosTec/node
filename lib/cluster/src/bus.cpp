@@ -139,7 +139,7 @@ namespace node
 			//
 			//	send watchdog response
 			//
-			ctx.attach(bus_res_watchdog(std::get<1>(tpl), std::get<2>(tpl)));
+			ctx.queue(bus_res_watchdog(std::get<1>(tpl), std::get<2>(tpl)));
 		});
 
 		vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));

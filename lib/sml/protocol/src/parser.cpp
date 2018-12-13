@@ -796,7 +796,18 @@ namespace node
 				case 6: case 7: case 8: case 9:
 					return STATE_INT64;
 				default:
-					BOOST_ASSERT_MSG(false, "invalid integer length");
+					//BOOST_ASSERT_MSG(false, "invalid integer length");
+					{
+						std::stringstream ss;
+						ss
+							<< "invalid length for data type SML_INTEGER "
+							<< tl_.length_
+							<< " @"
+							<< std::hex
+							<< pos_
+							;
+						cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
+					}
 					break;
 				}
 				break;
@@ -812,7 +823,18 @@ namespace node
 				case 6: case 7: case 8: case 9:
 					return STATE_UINT64;
 				default:
-					BOOST_ASSERT_MSG(false, "invalid unsigned length");
+					//BOOST_ASSERT_MSG(false, "invalid unsigned length");
+					{
+						std::stringstream ss;
+						ss
+							<< "invalid length for data type SML_UNSIGNED "
+							<< tl_.length_
+							<< " @"
+							<< std::hex
+							<< pos_
+							;
+						cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
+					}
 					break;
 				}
 				break;

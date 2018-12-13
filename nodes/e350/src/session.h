@@ -43,7 +43,7 @@ namespace node
 				, bus::shared_type
 				, boost::uuids::uuid tag
 				, std::chrono::seconds
-				, bool use_global_pwd
+				, std::string pwd_policy
 				, std::string const& global_pwd);
 
 			session(session const&) = delete;
@@ -103,8 +103,8 @@ namespace node
 			 */
 			std::size_t gate_keeper_;
 
-			const bool use_global_pwd_;
-			const std::string global_pwd_;
+			std::string const pwd_policy_;
+			std::string const global_pwd_;
 
 			/**
 			 * contains state of local connections
@@ -119,7 +119,7 @@ namespace node
 			, bus::shared_type
 			, boost::uuids::uuid tag
 			, std::chrono::seconds
-			, bool use_global_pwd
+			, std::string pwd_policy
 			, std::string const& global_pwd);
 	}
 }

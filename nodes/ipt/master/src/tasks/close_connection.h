@@ -27,13 +27,13 @@ namespace node
 	public:
 		close_connection(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, bus::shared_type bus
+			//, bus::shared_type bus
 			, cyng::controller& vm
-			, bool shutdown
-			, boost::uuids::uuid tag
-			, std::size_t seq
-			, cyng::param_map_t const& options
-			, cyng::param_map_t const& bag
+			//, bool shutdown
+			//, boost::uuids::uuid tag
+			//, std::size_t seq
+			//, cyng::param_map_t const& options
+			//, cyng::param_map_t const& bag
 			, std::chrono::seconds timeout);
 		cyng::continuation run();
 		void stop();
@@ -48,19 +48,19 @@ namespace node
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
-		bus::shared_type bus_;	//!< cluster bus
+		//bus::shared_type bus_;	//!< cluster bus
 		cyng::controller& vm_;	//!< ipt device
-		bool shutdown_;	//!< sender is in shutdown mode 
+		//bool shutdown_;	//!< sender is in shutdown mode 
 		/**
 		 * Remote session tag to address response.
 		 * Not to bw confused with *this* session tag (vm_.tag())
 		 */
-		const boost::uuids::uuid tag_origin_;	
-		const std::size_t seq_;
-		const cyng::param_map_t options_;
-		const cyng::param_map_t bag_;
+		//const boost::uuids::uuid tag_origin_;	
+		//const std::size_t seq_;
+		//const cyng::param_map_t options_;
+		//const cyng::param_map_t bag_;
 		const std::chrono::seconds timeout_;
-		const bool local_connect_;
+		//const bool local_connect_;
 		const std::chrono::system_clock::time_point start_;
 		bool is_waiting_;
 	};

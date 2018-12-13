@@ -18,23 +18,13 @@ namespace node
 {
 	open_connection::open_connection(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, bus::shared_type bus
 		, cyng::controller& vm
-		, boost::uuids::uuid tag
-		, std::size_t seq
 		, std::string number
-		, cyng::param_map_t const& options
-		, cyng::param_map_t const& bag
 		, std::chrono::seconds timeout)
 	: base_(*btp)
 		, logger_(logger)
-		, bus_(bus)
 		, vm_(vm)
-		, tag_(tag)	//	origin tag
-		, seq_(seq)
 		, number_(number)
-		, options_(options)
-		, bag_(bag)
 		, timeout_(timeout)
 		, start_(std::chrono::system_clock::now())
 		, is_waiting_(false)
@@ -122,14 +112,6 @@ namespace node
 			<< "> received response ["
 			<< ipt::tp_res_open_connection_policy::get_response_name(res)
 			<< "]");
-
-		if (bus_->is_online()) {
-			bus_->vm_.async_run(client_res_open_connection(tag_
-				, seq_	//	cluster sequence
-				, ipt::tp_res_open_connection_policy::is_success(res)
-				, options_
-				, bag_));
-		}
 
 		return cyng::continuation::TASK_STOP;
 	}

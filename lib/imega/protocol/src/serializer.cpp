@@ -159,7 +159,7 @@ namespace node
 			write(data);
 
 #ifdef _DEBUG
-			ctx.attach(cyng::generate_invoke("log.msg.info", data.size(), "imega bytes transferred"));
+			ctx.queue(cyng::generate_invoke("log.msg.info", data.size(), "imega bytes transferred"));
 #endif
 		}
 
