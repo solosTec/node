@@ -268,7 +268,7 @@ namespace node
 			//
 			if (connect_state_.is_connected()) {
 
-				bus_->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", vm_.tag()));
+				bus_->vm_.async_run(cyng::generate_invoke("server.connection-map.clear", vm_.tag()));
 			}
 
 			//

@@ -1266,16 +1266,11 @@ namespace node
 			//
 
 			ctx.queue(state_.react(state::evt_client_req_open_connection(cyng::async::start_task_sync<open_connection>(mux_
-				, logger_
-				//, bus_
-				, vm_
+					, logger_
+					, vm_
+					, std::get<2>(tpl)	//	number
+					, timeout_)
 				//, cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid())
-				//, std::get<1>(tpl)	//	cluster bus sequence
-				, std::get<2>(tpl)	//	number
-				//, std::get<3>(tpl)	//	master
-				//, std::get<4>(tpl)	//	client
-				, timeout_)
-				, cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid())
 				, cyng::value_cast(dom.get("local-connect"), false)
 				, std::get<1>(tpl)	//	cluster bus sequence
 				, std::get<3>(tpl)	//	master

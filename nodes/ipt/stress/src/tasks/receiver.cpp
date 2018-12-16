@@ -82,9 +82,6 @@ namespace node
 					//	calculate next target
 					//
 					tsk_sender_ = next_tsk();
-					//if (tsk_sender_ >= tsk_vec_.size()) {
-					//	tsk_sender_ = 0u;
-					//}
 
 				}
 

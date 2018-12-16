@@ -932,10 +932,11 @@ namespace node
 
 				if (prev_percent != percent) {
 					display_loading_level(tag, percent, channel);
+
 					//
 					//	give GUI a change to refresh
 					//
-					std::this_thread::sleep_for(std::chrono::milliseconds(120));
+					std::this_thread::sleep_for(std::chrono::milliseconds(12));
 				}
 
 				return true;	//	continue

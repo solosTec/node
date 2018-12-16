@@ -41,7 +41,8 @@ namespace node
 		bus_->vm_.register_function("server.remove.client", 1, std::bind(&server_stub::remove_client, this, std::placeholders::_1));
 		bus_->vm_.register_function("server.close.client", 2, std::bind(&server_stub::close_client, this, std::placeholders::_1));
 		bus_->vm_.register_function("server.shutdown.clients", 0, std::bind(&server_stub::shutdown_clients, this, std::placeholders::_1));
-		bus_->vm_.register_function("server.clear.connection.map", 1, std::bind(&server_stub::clear_connection_map, this, std::placeholders::_1));
+		bus_->vm_.register_function("server.connection-map.clear", 1, std::bind(&server_stub::clear_connection_map, this, std::placeholders::_1));
+		bus_->vm_.register_function("server.connection-map.insert", 2, std::bind(&server_stub::insert_connection_map, this, std::placeholders::_1));
 		bus_->vm_.register_function("server.transmit.data", 2, std::bind(&server_stub::transmit_data, this, std::placeholders::_1));
 
 
@@ -358,6 +359,75 @@ namespace node
 		return false;
 	}
 
+	void server_stub::insert_connection_map(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] caller
+			boost::uuids::uuid		//	[1] callee
+		>(frame);
+
+		insert_connection_map_impl(ctx.tag(), std::get<0>(tpl), std::get<1>(tpl));
+	}
+
+	void server_stub::insert_connection_map_impl(boost::uuids::uuid stag, boost::uuids::uuid tag_1, boost::uuids::uuid tag_2)
+	{
+		//
+		//	create entry in local connection list
+		//
+		CYNG_LOG_INFO(logger_, "server_stub "
+			<< stag
+			<< " establish a local connection ["
+			<< connection_map_.size()
+			<< "]: "
+			<< tag_1
+			<< " <==> " 
+			<< tag_2);
+
+		//
+		//	insert both directions
+		//
+		auto pos = connection_map_.find(tag_1);
+		if (pos != connection_map_.end()) {
+			CYNG_LOG_WARNING(logger_, "server_stub "
+				<< stag
+				<< " has to remove "
+				<< tag_1
+				<< " from connection map");
+			auto idx = connection_map_.erase(pos);
+			connection_map_.emplace_hint(idx, tag_1, tag_2);
+		}
+		else {
+			connection_map_.emplace(tag_1, tag_2);
+		}
+
+		pos = connection_map_.find(tag_2);
+		if (pos != connection_map_.end()) {
+			CYNG_LOG_WARNING(logger_, "server_stub "
+				<< stag
+				<< " has to remove "
+				<< tag_2
+				<< " from connection map");
+			auto idx = connection_map_.erase(pos);
+			connection_map_.emplace_hint(idx, tag_2, tag_1);
+		}
+		else {
+			connection_map_.emplace(tag_2, tag_1);
+		}
+
+		//
+		//	serious condition
+		//
+		if ((connection_map_.size() % 2) != 0) {
+			CYNG_LOG_ERROR(logger_, "server_stub "
+				<< stag
+				<< " has uneven number of entries "
+				<< connection_map_.size());
+		}
+		BOOST_ASSERT((connection_map_.size() % 2) == 0);
+
+	}
+
 	void server_stub::transmit_data(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
@@ -617,113 +687,6 @@ namespace node
 	{
 		cyng::vector_t frame = ctx.get_frame();
 
-		//
-		//	[bff22fb4-f410-4239-83ae-40027fb2609e,f07f47e1-7f4d-4398-8fb5-ae1d8942a50e,16,true,
-		//	%(("device-name":LSMTest4),("local-connect":true),("local-peer":3d5994f1-60df-4410-b6ba-c2934f8bfd5e),("origin-tag":bff22fb4-f410-4239-83ae-40027fb2609e),("remote-peer":3d5994f1-60df-4410-b6ba-c2934f8bfd5e),("remote-tag":3f972487-e9a9-4e03-92d4-e2df8f6d30c5)),
-		//	%(("seq":1),("tp-layer":ipt))]
-		//
-		//	* session tag
-		//	* peer
-		//	* cluster sequence
-		//	* success
-		//	* options
-		//	* bag - original data
-		//ctx.run(cyng::generate_invoke("log.msg.trace", "client.res.open.connection.forward", frame));
-
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,		//	[0] tag
-			boost::uuids::uuid,		//	[1] peer
-			std::uint64_t,			//	[2] cluster sequence
-			bool,					//	[3] success
-			cyng::param_map_t,		//	[4] master
-			cyng::param_map_t		//	[5] client
-		>(frame);
-
-
-		const bool success = std::get<3>(tpl);
-
-		//
-		//	dom reader
-		//
-		auto dom = cyng::make_reader(std::get<4>(tpl));
-		auto local_connect = cyng::value_cast(dom.get("local-connect"), false);
-		if (success && local_connect)
-		{
-			auto origin_tag = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
-			auto remote_tag = cyng::value_cast(dom.get("remote-tag"), boost::uuids::nil_uuid());
-			BOOST_ASSERT(origin_tag == std::get<0>(tpl));
-			BOOST_ASSERT(origin_tag != remote_tag);
-
-			//
-			//	create entry in local connection list
-			//
-			CYNG_LOG_INFO(logger_, "server_stub "
-				<< ctx.tag()
-				<< " establish a local connection ["
-				<< connection_map_.size()
-				<< "]: "
-				<< origin_tag
-				<< " <==> " 
-				<< remote_tag);
-
-
-			//
-			//	insert both directions
-			//
-			auto pos = connection_map_.find(origin_tag);
-			if (pos != connection_map_.end()) {
-				CYNG_LOG_WARNING(logger_, "server_stub "
-					<< ctx.tag()
-					<< " has to remove "
-					<< origin_tag
-					<< " from connection map");
-				auto idx = connection_map_.erase(pos);
-				connection_map_.emplace_hint(idx, origin_tag, remote_tag);
-			}
-			else {
-				connection_map_.emplace(origin_tag, remote_tag);
-			}
-
-			pos = connection_map_.find(remote_tag);
-			if (pos != connection_map_.end()) {
-				CYNG_LOG_WARNING(logger_, "server_stub "
-					<< ctx.tag()
-					<< " has to remove "
-					<< remote_tag
-					<< " from connection map");
-				auto idx = connection_map_.erase(pos);
-				connection_map_.emplace_hint(idx, remote_tag, origin_tag);
-			}
-			else {
-				connection_map_.emplace(remote_tag, origin_tag);
-			}
-
-			//
-			//	serious condition
-			//
-			if ((connection_map_.size() % 2) != 0) {
-				CYNG_LOG_ERROR(logger_, "server_stub "
-					<< ctx.tag()
-					<< " has uneven number of entries "
-					<< connection_map_.size());
-			}
-			BOOST_ASSERT((connection_map_.size() % 2) == 0);
-
-			//
-			//	update connection state of remote session
-			//
-			BOOST_ASSERT(local_connect);
-			cyng::vector_t prg;
-			prg
-				<< origin_tag
-				<< local_connect	//	"true" is the only logical value
-				;
-
-			//
-			//	manage local connections
-			//
-			//propagate("session.update.connection.state", remote_tag, std::move(prg));
-		}
 
 		//
 		//	forward to session: "client.res.open.connection.forward"

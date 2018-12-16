@@ -103,24 +103,22 @@ namespace node
 		//
 		//	wait for pending operations
 		//
-		if (vm_.wait(12, std::chrono::milliseconds(100)))
-		{
-			if (pending_) {
-				//
-				//	tell master to close *this* client
-				//
-				bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
-			}
-			else {
-				//
-				//	remove from connection map - call destructor
-				//	server::remove_client();
-				//
-				bus_->vm_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
-			}
+		if (!vm_.wait(15, std::chrono::milliseconds(100)))	{
+			CYNG_LOG_FATAL(logger_, "VM " << vm_.tag() << " shutdown failed");
+		}
+
+		if (pending_) {
+			//
+			//	tell master to close *this* client
+			//
+			bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
 		}
 		else {
-			CYNG_LOG_FATAL(logger_, "VM " << vm_.tag() << " shutdown failed");
+			//
+			//	remove from connection map - call destructor
+			//	server::remove_client();
+			//
+			bus_->vm_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
 		}
 	}
 
@@ -143,7 +141,7 @@ namespace node
 		socket_.async_read_some(boost::asio::buffer(buffer_),
 			[this](boost::system::error_code ec, std::size_t bytes_transferred)
 		{
-			if (!ec)
+			if (!ec && !pending_)
 			{
 				//vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt connection received", bytes_transferred, "bytes"));
 				CYNG_LOG_TRACE(logger_, "session " 

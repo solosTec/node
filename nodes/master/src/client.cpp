@@ -606,7 +606,8 @@ namespace node
 							, tag
 							, " ==> "
 							, rtag));
-						ctx.queue(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_t(), bag));
+					
+						ctx.queue(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_factory("local-connect", true), bag));
 
 						//
 						//	write stats
@@ -624,7 +625,7 @@ namespace node
 							, tag
 							, " ==> "
 							, rtag));
-						remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_t(), bag));
+						remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_factory("local-connect", false), bag));
 
 						write_stat(rtag, account, "close connection", "remote");
 					}

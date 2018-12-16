@@ -186,13 +186,13 @@ namespace node
 			{
 				const std::size_t tsk_;
 				const bool success_;
-				const boost::uuids::uuid origin_tag_;
+				//const boost::uuids::uuid origin_tag_;
 				const bool local_;
 				const std::size_t seq_;
 				const cyng::param_map_t master_;	//	[3] master data
 				const cyng::param_map_t client_;	//	[4] client data
 				evt_client_req_open_connection(std::pair<std::size_t, bool>
-					, boost::uuids::uuid origin_tag
+					//, boost::uuids::uuid origin_tag
 					, bool local
 					, std::size_t seq
 					, cyng::param_map_t		//	master
@@ -403,11 +403,13 @@ namespace node
 			struct state_wait_for_open_response
 			{
 				state_wait_for_open_response();
-				void init(std::size_t, boost::uuids::uuid, bool, std::uint64_t, cyng::param_map_t, cyng::param_map_t);
+				void init(std::size_t, bool, std::uint64_t, cyng::param_map_t, cyng::param_map_t);
+				cyng::vector_t establish_local_connection() const;
+				boost::uuids::uuid get_origin_tag() const;
 				void reset();
 
 				std::size_t tsk_connection_open_;
-				boost::uuids::uuid tag_;	//!< original tag
+				//boost::uuids::uuid tag_;	//!< original tag
 				enum connection_type {
 					E_UNDEF,
 					E_LOCAL,
@@ -431,7 +433,7 @@ namespace node
 				bool shutdown_;
 				cyng::param_map_t master_params_;
 				cyng::param_map_t client_params_;
-				bool local_;	//	local connection
+				//bool local_;	//	local connection
 			};
 			struct state_connected_local
 			{

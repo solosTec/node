@@ -141,7 +141,7 @@ namespace node
 				//
 				//	clear connection map
 				//
-				sp_->bus_->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", sp_->vm_.tag()));
+				sp_->bus_->vm_.async_run(cyng::generate_invoke("server.connection-map.clear", sp_->vm_.tag()));
 
 				//
 				//	note: NO BREAK here - continue with AUTHORIZED state
@@ -236,65 +236,72 @@ namespace node
 			}
 #endif
 
-			if (sp_->bus_->is_online()) {
-
-				switch (state_) {
+			switch (state_) {
 				//case S_IDLE:
 				//case S_ERROR:
 				//case S_SHUTDOWN:
-				case S_AUTHORIZED:
-					CYNG_LOG_WARNING(sp_->logger_, sp_->vm().tag()
-						<< " transmit "
-						<< ptr->size()
-						<< " bytes in connection state authorized");
-					local_.transmit(sp_->bus_, sp_->vm().tag(), evt.obj_);
-					break;
+			case S_AUTHORIZED:
+				CYNG_LOG_WARNING(sp_->logger_, sp_->vm().tag()
+					<< " transmit "
+					<< ptr->size()
+					<< " bytes in connection state authorized");
+				local_.transmit(sp_->bus_, sp_->vm().tag(), evt.obj_);
+				break;
 
 				//case S_WAIT_FOR_OPEN_RESPONSE:
 				//case S_WAIT_FOR_CLOSE_RESPONSE:
 
-				case S_CONNECTED_LOCAL:
-					CYNG_LOG_DEBUG(sp_->logger_, sp_->vm().tag()
-						<< " transmit "
-						<< ptr->size()
-						<< " bytes to local session");
-					local_.transmit(sp_->bus_, sp_->vm().tag(), evt.obj_);
-					break;
+			case S_CONNECTED_LOCAL:
+				CYNG_LOG_DEBUG(sp_->logger_, sp_->vm().tag()
+					<< " transmit "
+					<< ptr->size()
+					<< " bytes to local session");
+				local_.transmit(sp_->bus_, sp_->vm().tag(), evt.obj_);
+				break;
 
-				case S_CONNECTED_REMOTE:
+			case S_CONNECTED_REMOTE:
 
+				if (sp_->bus_->is_online()) {
 					CYNG_LOG_DEBUG(sp_->logger_, sp_->vm().tag()
 						<< " transmit "
 						<< ptr->size()
 						<< " bytes to remote session");
 					remote_.transmit(sp_->bus_, sp_->vm().tag(), evt.obj_);
-					break;
-
-				case S_CONNECTED_TASK:
-					//	send data to task
-					CYNG_LOG_DEBUG(sp_->logger_, sp_->vm().tag()
-						<< " transmit "
-						<< ptr->size()
-						<< " bytes to task #"
-						<< task_.tsk_proxy_);
-					BOOST_ASSERT(task_.tsk_proxy_ == authorized_.tsk_proxy_);
-					task_.transmit(sp_->mux_, evt.obj_);
-					break;
-
-				default:
-					signal_wrong_state("evt_data");
-					break;
 				}
-			}
-			else {
+				else {
 
-				//
-				//	cannot deliver data
-				//
-				CYNG_LOG_WARNING(sp_->logger_, "ipt.req.transmit.data "
-					<< sp_->vm().tag()
-					<< " - no master");
+					//
+					//	cannot deliver data
+					//
+					CYNG_LOG_WARNING(sp_->logger_, "ipt.req.transmit.data "
+						<< sp_->vm().tag()
+						<< " - no master");
+				}
+				break;
+
+			case S_CONNECTED_TASK:
+				//	send data to task
+				CYNG_LOG_DEBUG(sp_->logger_, sp_->vm().tag()
+					<< " transmit "
+					<< ptr->size()
+					<< " bytes to task #"
+					<< task_.tsk_proxy_);
+				BOOST_ASSERT(task_.tsk_proxy_ == authorized_.tsk_proxy_);
+				task_.transmit(sp_->mux_, evt.obj_);
+				break;
+
+			default:
+				signal_wrong_state("evt_data");
+				CYNG_LOG_DEBUG(sp_->logger_, sp_->vm().tag()
+					<< " "
+					<< ptr->size()
+					<< " bytes get lost");
+				break;
 			}
+
+			//if (sp_->bus_->is_online()) {
+
+			//}
 
 			//
 			//	update watchdog timer
@@ -571,8 +578,7 @@ namespace node
 				//	update state
 				//
 				transit(S_WAIT_FOR_OPEN_RESPONSE);
-				wait_for_open_response_.init(evt.tsk_, evt.origin_tag_, evt.local_, evt.seq_, evt.master_, evt.client_);
-				//authorized_.tsk_connection_open_ = evt.tsk_;
+				wait_for_open_response_.init(evt.tsk_, /*evt.origin_tag_, */evt.local_, evt.seq_, evt.master_, evt.client_);
 			}
 
 			return prg;
@@ -758,7 +764,6 @@ namespace node
 			//	stop open connection task
 			//
 			BOOST_ASSERT(evt.tsk_ == wait_for_open_response_.tsk_connection_open_);
-			//authorized_.tsk_connection_open_ = cyng::async::NO_TASK;
 			sp_->mux_.post(evt.tsk_, evt.slot_, cyng::tuple_factory(evt.res_));
 
 			//
@@ -767,6 +772,7 @@ namespace node
 			if (ipt::tp_res_open_connection_policy::is_success(evt.res_)) {
 				switch (wait_for_open_response_.type_) {
 				case state::state_wait_for_open_response::E_LOCAL:
+					sp_->bus_->vm_.async_run(wait_for_open_response_.establish_local_connection());
 					transit(S_CONNECTED_LOCAL);
 					break;
 				case state::state_wait_for_open_response::E_REMOTE:
@@ -786,13 +792,16 @@ namespace node
 			}
 			
 			if (sp_->bus_->is_online()) {
-				sp_->bus_->vm_.async_run(client_res_open_connection(wait_for_open_response_.tag_
+				sp_->bus_->vm_.async_run(client_res_open_connection(wait_for_open_response_.get_origin_tag()
 					, wait_for_open_response_.seq_	//	cluster sequence
 					, ipt::tp_res_open_connection_policy::is_success(evt.res_)
 					, wait_for_open_response_.master_params_
 					, wait_for_open_response_.client_params_));
 			}
 
+			//
+			//	reset old state
+			//
 			wait_for_open_response_.reset();
 
 			//
@@ -854,11 +863,16 @@ namespace node
 			}
 
 			if (evt.success_) {
+
+				//
+				//	initialize next state
+				//
+				wait_for_close_response_.init(evt.tsk_, evt.tag_, evt.shutdown_, evt.seq_, evt.master_, evt.client_, state_ == S_CONNECTED_LOCAL);
+
 				//
 				//	update state
 				//
 				transit(S_WAIT_FOR_CLOSE_RESPONSE);
-				wait_for_close_response_.init(evt.tsk_, evt.tag_, evt.shutdown_, evt.seq_, evt.master_, evt.client_, state_ == S_CONNECTED_LOCAL);
 			}
 			else {
 				CYNG_LOG_FATAL(sp_->logger_, "cannot start close_connection");
@@ -1279,14 +1293,14 @@ namespace node
 			//	EVENT: incoming connection open request
 			//
 			evt_client_req_open_connection::evt_client_req_open_connection(std::pair<std::size_t, bool> r
-				, boost::uuids::uuid origin_tag
+				//, boost::uuids::uuid origin_tag
 				, bool local
 				, std::size_t seq
 				, cyng::param_map_t master
 				, cyng::param_map_t client)
 			: tsk_(r.first)
 				, success_(r.second)
-				, origin_tag_(origin_tag)
+				//, origin_tag_(origin_tag)
 				, local_(local)
 				, seq_(seq)
 				, master_(master)
@@ -1510,7 +1524,6 @@ namespace node
 			//
 			state_wait_for_open_response::state_wait_for_open_response()
 			: tsk_connection_open_(cyng::async::NO_TASK)
-				, tag_(boost::uuids::nil_uuid())
 				, type_(E_UNDEF)
 				, seq_(0u)
 				, master_params_()
@@ -1518,24 +1531,40 @@ namespace node
 			{}
 
 			void state_wait_for_open_response::init(std::size_t tsk
-				, boost::uuids::uuid tag
 				, bool local
 				, std::uint64_t seq
 				, cyng::param_map_t master
 				, cyng::param_map_t client)
 			{
 				tsk_connection_open_ = tsk;
-				tag_ = tag;
 				type_ = local ? E_LOCAL : E_REMOTE;
 				seq_ = seq;
 				master_params_ = master;
 				client_params_ = client;
 			}
 
+			cyng::vector_t state_wait_for_open_response::establish_local_connection() const
+			{
+				auto const dom = cyng::make_reader(master_params_);
+
+				auto const origin = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
+				auto const remote = cyng::value_cast(dom.get("remote-tag"), boost::uuids::nil_uuid());
+				BOOST_ASSERT(!origin.is_nil());
+				BOOST_ASSERT(!remote.is_nil());
+				BOOST_ASSERT(origin != remote);
+				return cyng::generate_invoke("server.connection-map.insert", origin, remote);
+			}
+
+			boost::uuids::uuid state_wait_for_open_response::get_origin_tag() const
+			{
+				auto const dom = cyng::make_reader(master_params_);
+				return cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
+			}
+
 			void state_wait_for_open_response::reset()
 			{
 				tsk_connection_open_ = cyng::async::NO_TASK;
-				tag_ = boost::uuids::nil_uuid();
+				//tag_ = boost::uuids::nil_uuid();
 				type_ = E_UNDEF;
 				seq_ = 0u;
 				master_params_.clear();
@@ -1552,7 +1581,7 @@ namespace node
 				, seq_(0u)
 				, master_params_()
 				, client_params_()
-				, local_(false)
+				//, local_(false)
 			{}
 
 			void state_wait_for_close_response::init(std::size_t tsk
@@ -1569,7 +1598,9 @@ namespace node
 				seq_ = seq;
 				master_params_ = master;
 				client_params_ = client;
-				local_ = local;
+
+				//	otherwise connection type is inconsistent
+				BOOST_ASSERT(is_connection_local() == local);
 			}
 
 			void state_wait_for_close_response::reset()
@@ -1580,7 +1611,6 @@ namespace node
 				seq_ = 0u;
 				master_params_.clear();
 				client_params_.clear();
-				local_ = false;
 			}
 
 			bool state_wait_for_close_response::is_connection_local() const
@@ -1595,13 +1625,10 @@ namespace node
 				{
 					if (is_connection_local()) {
 
-						//	otherwise connection type is inconsistent
-						BOOST_ASSERT(local_);
-
 						//
 						//	remove from connection_map_
 						//
-						bus->vm_.async_run(cyng::generate_invoke("server.clear.connection.map", tag_));
+						bus->vm_.async_run(cyng::generate_invoke("server.connection-map.clear", tag_));
 					}
 
 					//	send "client.res.close.connection" to SMF master

@@ -79,24 +79,24 @@ namespace node
 
 				if (this->is_connected())
 				{
-					std::uniform_int_distribution<int> dist_buffer_size(512, 1024);
-					cyng::buffer_t buffer(dist_buffer_size(rnd_device_));
+					//std::uniform_int_distribution<int> dist_buffer_size(512, 1024);
+					//cyng::buffer_t buffer(dist_buffer_size(rnd_device_));
 
-					CYNG_LOG_TRACE(logger_, "task #"
-						<< base_.get_id()
-						<< " <"
-						<< base_.get_class_name()
-						<< "> buffer size "
-						<< buffer.size());
+					//CYNG_LOG_TRACE(logger_, "task #"
+					//	<< base_.get_id()
+					//	<< " <"
+					//	<< base_.get_class_name()
+					//	<< "> buffer size "
+					//	<< buffer.size());
 
-					//
-					//	fill buffer
-					//
-					std::uniform_int_distribution<int> dist(std::numeric_limits<char>::min(), std::numeric_limits<char>::max());
-					auto gen = std::bind(dist, mersenne_engine_);
+					////
+					////	fill buffer
+					////
+					//std::uniform_int_distribution<int> dist(std::numeric_limits<char>::min(), std::numeric_limits<char>::max());
+					//auto gen = std::bind(dist, mersenne_engine_);
 
-					std::generate(begin(buffer), end(buffer), gen);
-					vm_.async_run({cyng::generate_invoke("ipt.transfer.data", buffer), cyng::generate_invoke("stream.flush")});
+					//std::generate(begin(buffer), end(buffer), gen);
+					vm_.async_run({cyng::generate_invoke("ipt.transfer.data", send_data()), cyng::generate_invoke("stream.flush")});
 				}
 				else
 				{
@@ -106,7 +106,7 @@ namespace node
 						<< base_.get_class_name()
 						<< "> "
 						<< config_.get().account_
-						<< " is not connected");
+						<< " is online but not connected");
 				}
 			}
 			else

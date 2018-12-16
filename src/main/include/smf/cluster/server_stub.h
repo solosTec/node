@@ -63,6 +63,9 @@ namespace node
 		bool clear_connection_map_impl(boost::uuids::uuid);
 		void clear_connection_map(cyng::context& ctx);
 
+		void insert_connection_map(cyng::context& ctx);
+		void insert_connection_map_impl(boost::uuids::uuid, boost::uuids::uuid, boost::uuids::uuid);
+
 		void shutdown_clients(cyng::context& ctx);
 
 		void transmit_data(cyng::context& ctx);	//!< transmit data locally
