@@ -6,7 +6,7 @@
  */ 
 #include <smf/ipt/parser.h>
 #include <smf/ipt/codes.h>
-#include <cyng/vm/generator.h>
+
 #include <iostream>
 #include <ios>
 #ifdef __DEBUG
@@ -150,42 +150,60 @@ namespace node
 					switch (header_.command_)
 					{
 					case code::TP_REQ_OPEN_PUSH_CHANNEL:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "TP_REQ_OPEN_PUSH_CHANNEL - not authorized yet");
+#endif
 						parser_state_ = tp_req_open_push_channel();
 						break;
 					case code::TP_RES_OPEN_PUSH_CHANNEL:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "TP_RES_OPEN_PUSH_CHANNEL - not authorized yet");
+#endif
 						parser_state_ = tp_res_open_push_channel();
 						break;
 					case code::TP_REQ_CLOSE_PUSH_CHANNEL:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "TP_REQ_CLOSE_PUSH_CHANNEL - not authorized yet");
+#endif
 						parser_state_ = tp_req_close_push_channel();
 						break;
 					case code::TP_RES_CLOSE_PUSH_CHANNEL:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "TP_RES_CLOSE_PUSH_CHANNEL - not authorized yet");
+#endif
 						parser_state_ = tp_res_close_push_channel();
 						break;
 					case code::TP_REQ_PUSHDATA_TRANSFER:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "TP_REQ_PUSHDATA_TRANSFER - not authorized yet");
+#endif
 						parser_state_ = tp_req_pushdata_transfer();
 						break;
 					case code::TP_RES_PUSHDATA_TRANSFER:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "TP_RES_PUSHDATA_TRANSFER - not authorized yet");
+#endif
 						parser_state_ = tp_res_pushdata_transfer();
 						break;
 					case code::TP_REQ_OPEN_CONNECTION:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "TP_REQ_OPEN_CONNECTION - not authorized yet");
+#endif
 						parser_state_ = tp_req_open_connection();
 						break;
 					case code::TP_RES_OPEN_CONNECTION:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "TP_RES_OPEN_CONNECTION - not authorized yet");
+#endif
 						parser_state_ = tp_res_open_connection();
 						break;
 					//case code::TP_REQ_CLOSE_CONNECTION:
 					//	parser_state_ = tp_req_close_connection();
 					//	break;
 					case code::TP_RES_CLOSE_CONNECTION:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "TP_RES_CLOSE_CONNECTION - not authorized yet");
+#endif
 						parser_state_ = tp_res_close_connection();
 						break;
 					//	open stream channel
@@ -201,87 +219,127 @@ namespace node
 					//TP_RES_STREAMDATA_TRANSFER = 0x1008,
 
 					case code::APP_RES_PROTOCOL_VERSION:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "APP_RES_PROTOCOL_VERSION - not authorized yet");
+#endif
 						parser_state_ = app_res_protocol_version();
 						break;
 					case code::APP_RES_SOFTWARE_VERSION:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "APP_RES_SOFTWARE_VERSION - not authorized yet");
+#endif
 						parser_state_ = app_res_software_version();
 						break;
 					case code::APP_RES_DEVICE_IDENTIFIER:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "APP_RES_DEVICE_IDENTIFIER - not authorized yet");
+#endif
 						parser_state_ = app_res_device_identifier();
 						break;
 					case code::APP_RES_NETWORK_STATUS:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "APP_RES_NETWORK_STATUS - not authorized yet");
+#endif
 						parser_state_ = app_res_network_status();
 						break;
 					case code::APP_RES_IP_STATISTICS:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "APP_RES_IP_STATISTICS - not authorized yet");
+#endif
 						parser_state_ = app_res_ip_statistics();
 						break;
 					case code::APP_RES_DEVICE_AUTHENTIFICATION:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "APP_RES_DEVICE_AUTHENTIFICATION - not authorized yet");
+#endif
 						parser_state_ = app_res_device_authentification();
 						break;
 					case code::APP_RES_DEVICE_TIME:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "APP_RES_DEVICE_TIME - not authorized yet");
+#endif
 						parser_state_ = app_res_device_time();
 						break;
 					case code::APP_RES_PUSH_TARGET_NAMELIST:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "APP_RES_PUSH_TARGET_NAMELIST - not authorized yet");
+#endif
 						parser_state_ = app_res_push_target_namelist();
 						break;
 					case code::APP_RES_PUSH_TARGET_ECHO:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "APP_RES_PUSH_TARGET_ECHO - not authorized yet");
+#endif
 						parser_state_ = app_res_push_target_echo();
 						break;
 					case code::APP_RES_TRACEROUTE:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "APP_RES_TRACEROUTE - not authorized yet");
+#endif
 						parser_state_ = app_res_traceroute();
 						break;
 
 					case code::CTRL_REQ_LOGIN_PUBLIC:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(!authorized_, "CTRL_RES_LOGIN_PUBLIC - already authorized");
+#endif
 						parser_state_ = ctrl_req_login_public();
 						break;
 					case code::CTRL_REQ_LOGIN_SCRAMBLED:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(!authorized_, "CTRL_RES_LOGIN_PUBLIC - already authorized");
+#endif
 						scrambler_ = def_sk_.key();
 						parser_state_ = ctrl_req_login_scrambled();
 						break;
 					case code::CTRL_RES_LOGIN_PUBLIC:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(!authorized_, "CTRL_RES_LOGIN_PUBLIC - already authorized");
+#endif
 						parser_state_ = ctrl_res_login_public();
 						break;
 					case code::CTRL_RES_LOGIN_SCRAMBLED:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(!authorized_, "CTRL_RES_LOGIN_PUBLIC - already authorized");
+#endif
 						parser_state_ = ctrl_res_login_scrambled();
 						break;
 
 					case code::CTRL_REQ_LOGOUT:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "CTRL_REQ_LOGOUT - not authorized yet");
+#endif
 						parser_state_ = ctrl_req_logout();
 						break;
 					case code::CTRL_RES_LOGOUT:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "CTRL_RES_LOGOUT - not authorized yet");
+#endif
 						parser_state_ = ctrl_res_logout();
 						break;
 
 					case code::CTRL_REQ_REGISTER_TARGET:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "CTRL_REQ_REGISTER_TARGET - not authorized yet");
+#endif
 						parser_state_ = ctrl_req_register_target();
 						break;
 					case code::CTRL_RES_REGISTER_TARGET:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "CTRL_RES_REGISTER_TARGET - not authorized yet");
+#endif
 						parser_state_ = ctrl_res_register_target();
 						break;
 					case code::CTRL_REQ_DEREGISTER_TARGET:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "CTRL_REQ_DEREGISTER_TARGET - not authorized yet");
+#endif
 						parser_state_ = ctrl_req_deregister_target();
 						break;
 					case code::CTRL_RES_DEREGISTER_TARGET:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "CTRL_RES_DEREGISTER_TARGET - not authorized yet");
+#endif
 						parser_state_ = ctrl_res_deregister_target();
 						break;
 
@@ -294,7 +352,9 @@ namespace node
 					//CTRL_RES_DEREGISTER_STREAM_SOURCE = 0x400C,
 
 					case code::UNKNOWN:
+#ifdef _DEBUG
 						BOOST_ASSERT_MSG(authorized_, "UNKNOWN - not authorized yet");
+#endif
 						parser_state_ = unknown_cmd();
 						break;
 
@@ -304,7 +364,9 @@ namespace node
 				}
 				else if (stream_state_ == STATE_STREAM)
 				{
+#ifdef _DEBUG
 					BOOST_ASSERT_MSG(authorized_, "STATE_STREAM - not authorized yet");
+#endif
 					cb_(std::move(code_));
 				}
 				break;
