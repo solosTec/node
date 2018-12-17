@@ -53,13 +53,21 @@ namespace node
 
 			struct base{
 				std::size_t pos_;
-				base() : pos_(0) {}				
+				base() : pos_(0) {}	
+				void reset();
 			};
 			struct command : base
 			{
 				char overlay_[HEADER_SIZE];
 
-				command() {}
+				command() 
+					: base()
+				{
+					BOOST_ASSERT(pos_ == 0);
+					reset();
+				}
+
+				void reset();
 			};
 			struct tp_req_open_push_channel : base {
 				tp_req_open_push_channel() {}
@@ -407,6 +415,14 @@ namespace node
 
 			state	stream_state_;
 			parser_state_t	parser_state_;
+
+#ifdef _DEBUG
+			/**
+			 * Additional parser state test: The first command has to be a login request/response.
+			 * After that no further logins are allowed.
+			 */
+			bool authorized_;
+#endif
 
 			//
 			//	current header

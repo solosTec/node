@@ -156,10 +156,15 @@ namespace node
 				const auto buf = parse(buffer_.cbegin(), buffer_.cbegin() + bytes_transferred);
 
 #ifdef SMF_IO_DEBUG
-				//cyng::io::hex_dump hd;
-				//std::stringstream ss;
-				//hd(ss, buf.cbegin(), buf.cbegin());
-				//CYNG_LOG_TRACE(logger_, "session input dump \n" << ss.str());
+				cyng::io::hex_dump hd;
+				std::stringstream ss;
+				if (buf.size() > 128) {
+					hd(ss, buf.cbegin(), buf.cbegin() + 128);
+				}
+				else {
+					hd(ss, buf.cbegin(), buf.cend());
+				}
+				CYNG_LOG_TRACE(logger_, "session " << vm().tag() << " input dump " << buf.size() << " bytes:\n" << ss.str());
 #endif
 
 				do_read();

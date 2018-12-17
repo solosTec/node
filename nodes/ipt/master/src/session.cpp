@@ -322,7 +322,7 @@ namespace node
 			cyng::io::hex_dump hd;
 			std::stringstream ss;
 			hd(ss, buffer.begin(), buffer.end());
-			CYNG_LOG_TRACE(logger_, "imega input dump \n" << ss.str());
+			CYNG_LOG_TRACE(logger_, "ipt input dump \n" << ss.str());
 #endif
 			return buffer;
 		}

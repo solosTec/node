@@ -30,6 +30,9 @@ namespace node
 			, scrambler_()
 			, stream_state_(STATE_HEAD)
 			, parser_state_()
+#ifdef _DEBUG
+			, authorized_(false)
+#endif
 			, header_()
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
@@ -85,6 +88,10 @@ namespace node
 			header_.reset(0);
 			def_sk_ = sk.key();
 			scrambler_.reset();
+
+#ifdef _DEBUG
+			authorized_ = false;
+#endif
 		}
 
 		void parser::clear()
@@ -97,13 +104,11 @@ namespace node
 			//
 			//	clear function objects
 			//
-			cb_ = nullptr;
-			//if (f_read_string)	f_read_string = nullptr;	//	crash!
-			//if (f_read_uint8)	f_read_uint8 = nullptr;
-			//if (f_read_uint16)	f_read_uint16 = nullptr;
-			//if (f_read_uint32)	f_read_uint32 = nullptr;
-			//if (f_read_uint64)	f_read_uint64 = nullptr;
-			//if (f_read_data)	f_read_data = nullptr;
+			if (cb_)	cb_ = nullptr;
+
+#ifdef _DEBUG
+			authorized_ = false;
+#endif
 		}
 
 		char parser::put(char c)
@@ -142,33 +147,42 @@ namespace node
 					switch (header_.command_)
 					{
 					case code::TP_REQ_OPEN_PUSH_CHANNEL:
+						BOOST_ASSERT_MSG(authorized_, "TP_REQ_OPEN_PUSH_CHANNEL - not authorized yet");
 						parser_state_ = tp_req_open_push_channel();
 						break;
 					case code::TP_RES_OPEN_PUSH_CHANNEL:
+						BOOST_ASSERT_MSG(authorized_, "TP_RES_OPEN_PUSH_CHANNEL - not authorized yet");
 						parser_state_ = tp_res_open_push_channel();
 						break;
 					case code::TP_REQ_CLOSE_PUSH_CHANNEL:
+						BOOST_ASSERT_MSG(authorized_, "TP_REQ_CLOSE_PUSH_CHANNEL - not authorized yet");
 						parser_state_ = tp_req_close_push_channel();
 						break;
 					case code::TP_RES_CLOSE_PUSH_CHANNEL:
+						BOOST_ASSERT_MSG(authorized_, "TP_RES_CLOSE_PUSH_CHANNEL - not authorized yet");
 						parser_state_ = tp_res_close_push_channel();
 						break;
 					case code::TP_REQ_PUSHDATA_TRANSFER:
+						BOOST_ASSERT_MSG(authorized_, "TP_REQ_PUSHDATA_TRANSFER - not authorized yet");
 						parser_state_ = tp_req_pushdata_transfer();
 						break;
 					case code::TP_RES_PUSHDATA_TRANSFER:
+						BOOST_ASSERT_MSG(authorized_, "TP_RES_PUSHDATA_TRANSFER - not authorized yet");
 						parser_state_ = tp_res_pushdata_transfer();
 						break;
 					case code::TP_REQ_OPEN_CONNECTION:
+						BOOST_ASSERT_MSG(authorized_, "TP_REQ_OPEN_CONNECTION - not authorized yet");
 						parser_state_ = tp_req_open_connection();
 						break;
 					case code::TP_RES_OPEN_CONNECTION:
+						BOOST_ASSERT_MSG(authorized_, "TP_RES_OPEN_CONNECTION - not authorized yet");
 						parser_state_ = tp_res_open_connection();
 						break;
 					//case code::TP_REQ_CLOSE_CONNECTION:
 					//	parser_state_ = tp_req_close_connection();
 					//	break;
 					case code::TP_RES_CLOSE_CONNECTION:
+						BOOST_ASSERT_MSG(authorized_, "TP_RES_CLOSE_CONNECTION - not authorized yet");
 						parser_state_ = tp_res_close_connection();
 						break;
 					//	open stream channel
@@ -184,67 +198,87 @@ namespace node
 					//TP_RES_STREAMDATA_TRANSFER = 0x1008,
 
 					case code::APP_RES_PROTOCOL_VERSION:
+						BOOST_ASSERT_MSG(authorized_, "APP_RES_PROTOCOL_VERSION - not authorized yet");
 						parser_state_ = app_res_protocol_version();
 						break;
 					case code::APP_RES_SOFTWARE_VERSION:
+						BOOST_ASSERT_MSG(authorized_, "APP_RES_SOFTWARE_VERSION - not authorized yet");
 						parser_state_ = app_res_software_version();
 						break;
 					case code::APP_RES_DEVICE_IDENTIFIER:
+						BOOST_ASSERT_MSG(authorized_, "APP_RES_DEVICE_IDENTIFIER - not authorized yet");
 						parser_state_ = app_res_device_identifier();
 						break;
 					case code::APP_RES_NETWORK_STATUS:
+						BOOST_ASSERT_MSG(authorized_, "APP_RES_NETWORK_STATUS - not authorized yet");
 						parser_state_ = app_res_network_status();
 						break;
 					case code::APP_RES_IP_STATISTICS:
+						BOOST_ASSERT_MSG(authorized_, "APP_RES_IP_STATISTICS - not authorized yet");
 						parser_state_ = app_res_ip_statistics();
 						break;
 					case code::APP_RES_DEVICE_AUTHENTIFICATION:
+						BOOST_ASSERT_MSG(authorized_, "APP_RES_DEVICE_AUTHENTIFICATION - not authorized yet");
 						parser_state_ = app_res_device_authentification();
 						break;
 					case code::APP_RES_DEVICE_TIME:
+						BOOST_ASSERT_MSG(authorized_, "APP_RES_DEVICE_TIME - not authorized yet");
 						parser_state_ = app_res_device_time();
 						break;
 					case code::APP_RES_PUSH_TARGET_NAMELIST:
+						BOOST_ASSERT_MSG(authorized_, "APP_RES_PUSH_TARGET_NAMELIST - not authorized yet");
 						parser_state_ = app_res_push_target_namelist();
 						break;
 					case code::APP_RES_PUSH_TARGET_ECHO:
+						BOOST_ASSERT_MSG(authorized_, "APP_RES_PUSH_TARGET_ECHO - not authorized yet");
 						parser_state_ = app_res_push_target_echo();
 						break;
 					case code::APP_RES_TRACEROUTE:
+						BOOST_ASSERT_MSG(authorized_, "APP_RES_TRACEROUTE - not authorized yet");
 						parser_state_ = app_res_traceroute();
 						break;
 
 					case code::CTRL_REQ_LOGIN_PUBLIC:
+						BOOST_ASSERT_MSG(!authorized_, "CTRL_RES_LOGIN_PUBLIC - already authorized");
 						parser_state_ = ctrl_req_login_public();
 						break;
 					case code::CTRL_REQ_LOGIN_SCRAMBLED:
+						BOOST_ASSERT_MSG(!authorized_, "CTRL_RES_LOGIN_PUBLIC - already authorized");
 						scrambler_ = def_sk_.key();
 						parser_state_ = ctrl_req_login_scrambled();
 						break;
 					case code::CTRL_RES_LOGIN_PUBLIC:
+						BOOST_ASSERT_MSG(!authorized_, "CTRL_RES_LOGIN_PUBLIC - already authorized");
 						parser_state_ = ctrl_res_login_public();
 						break;
 					case code::CTRL_RES_LOGIN_SCRAMBLED:
+						BOOST_ASSERT_MSG(!authorized_, "CTRL_RES_LOGIN_PUBLIC - already authorized");
 						parser_state_ = ctrl_res_login_scrambled();
 						break;
 
 					case code::CTRL_REQ_LOGOUT:
+						BOOST_ASSERT_MSG(authorized_, "CTRL_REQ_LOGOUT - not authorized yet");
 						parser_state_ = ctrl_req_logout();
 						break;
 					case code::CTRL_RES_LOGOUT:
+						BOOST_ASSERT_MSG(authorized_, "CTRL_RES_LOGOUT - not authorized yet");
 						parser_state_ = ctrl_res_logout();
 						break;
 
 					case code::CTRL_REQ_REGISTER_TARGET:
+						BOOST_ASSERT_MSG(authorized_, "CTRL_REQ_REGISTER_TARGET - not authorized yet");
 						parser_state_ = ctrl_req_register_target();
 						break;
 					case code::CTRL_RES_REGISTER_TARGET:
+						BOOST_ASSERT_MSG(authorized_, "CTRL_RES_REGISTER_TARGET - not authorized yet");
 						parser_state_ = ctrl_res_register_target();
 						break;
 					case code::CTRL_REQ_DEREGISTER_TARGET:
+						BOOST_ASSERT_MSG(authorized_, "CTRL_REQ_DEREGISTER_TARGET - not authorized yet");
 						parser_state_ = ctrl_req_deregister_target();
 						break;
 					case code::CTRL_RES_DEREGISTER_TARGET:
+						BOOST_ASSERT_MSG(authorized_, "CTRL_RES_DEREGISTER_TARGET - not authorized yet");
 						parser_state_ = ctrl_res_deregister_target();
 						break;
 
@@ -257,6 +291,7 @@ namespace node
 					//CTRL_RES_DEREGISTER_STREAM_SOURCE = 0x400C,
 
 					case code::UNKNOWN:
+						BOOST_ASSERT_MSG(authorized_, "UNKNOWN - not authorized yet");
 						parser_state_ = unknown_cmd();
 						break;
 
@@ -266,6 +301,7 @@ namespace node
 				}
 				else if (stream_state_ == STATE_STREAM)
 				{
+					BOOST_ASSERT_MSG(authorized_, "STATE_STREAM - not authorized yet");
 					cb_(std::move(code_));
 				}
 				break;
@@ -340,8 +376,10 @@ namespace node
 
 		parser::state parser::state_visitor::operator()(command& cmd) const
 		{
+			BOOST_ASSERT_MSG(cmd.pos_ < HEADER_SIZE, "cmd.pos_ out of range");
+
 			cmd.overlay_[cmd.pos_++] = c_;
-			if (cmd.pos_ == HEADER_SIZE)
+			if (cmd.pos_ >= HEADER_SIZE)
 			{
 				parser_.header_ = convert_to_header(std::begin(cmd.overlay_), std::end(cmd.overlay_));
 
@@ -405,9 +443,14 @@ namespace node
 					parser_.code_ << cyng::unwind<cyng::vector_t>(cyng::generate_invoke("ipt.res.watchdog", cyng::code::IDENT, parser_.header_.sequence_));
 					return STATE_STREAM;
 				default:
+					if (parser_.header_.length_ == 0) {
+						parser_.code_ << cyng::generate_invoke_unwinded("log.msg.fatal", "unknown IP-T command", parser_.header_.command_);
+						BOOST_ASSERT_MSG(false, "unknown IP-T command");
+					}
 					break;
 				}
 
+				cmd.reset();
 				return STATE_DATA;
 			}
 			return STATE_HEAD;
@@ -417,7 +460,7 @@ namespace node
 		{
 			req.pos_++;
 			parser_.input_.put(c_);
-			if (req.pos_ == size(parser_.header_))
+			if (req.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.req.open.push.channel"
 					, cyng::code::IDENT
@@ -430,6 +473,7 @@ namespace node
 					, parser_.get_read_uint16_f()) //	time out
 					<< cyng::unwind_vec(10);
 
+				req.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -438,7 +482,7 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.open.push.channel"
 					, cyng::code::IDENT
@@ -451,6 +495,8 @@ namespace node
 					, parser_.get_read_uint8_f()	//	status
 					, parser_.get_read_uint32_f())	//	target count
 					<< cyng::unwind_vec();
+
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -459,13 +505,15 @@ namespace node
 		{
 			req.pos_++;
 			parser_.input_.put(c_);
-			if (req.pos_ == size(parser_.header_))
+			if (req.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.req.close.push.channel"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.get_read_uint32_f())	//	channel id
 					<< cyng::unwind_vec();
+
+				req.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -489,7 +537,7 @@ namespace node
 		{
 			req.pos_++;
 			parser_.input_.put(c_);
-			if (req.pos_ == size(parser_.header_))
+			if (req.pos_ >= size(parser_.header_))
 			{
 #ifdef __DEBUG
 				//	get content of buffer
@@ -511,6 +559,8 @@ namespace node
 					, parser_.get_read_uint8_f()	//	status
 					, parser_.get_read_uint8_f()	//	block
 					, parser_.get_read_data_f());	//	size + data
+
+				req.reset();
 				return STATE_STREAM;
 			}
 #ifdef __DEBUG
@@ -527,7 +577,7 @@ namespace node
 
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.transfer.pushdata"
 					, cyng::code::IDENT
@@ -538,6 +588,8 @@ namespace node
 					, parser_.get_read_uint8_f()	//	status
 					, parser_.get_read_uint8_f())	//	block
 					<< cyng::unwind_vec();
+
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -546,12 +598,14 @@ namespace node
 		{
 			req.pos_++;
 			parser_.input_.put(c_);
-			if (req.pos_ == size(parser_.header_))
+			if (req.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.open.connection"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.get_read_string_f());	//	number
+
+				req.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -560,13 +614,14 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.open.connection"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.get_read_uint8_f())	//	response
 					<< cyng::unwind_vec();
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -575,12 +630,13 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.close.connection"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.get_read_uint8_f());	//	response
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -590,12 +646,13 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.protocol.version"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.get_read_uint8_f());
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -604,13 +661,14 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.software.version"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.get_read_string_f())
 					<< cyng::unwind_vec();
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -620,12 +678,13 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.dev.id"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.get_read_string_f());
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -634,7 +693,7 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				//
 				//	Note: no response code
@@ -650,6 +709,7 @@ namespace node
 					, parser_.get_read_uint32_f()	//	status_vector	status_[ 4 ];
 					, parser_.get_read_string_f()  //	//	IMSI
 					, parser_.get_read_string_f());  //	//	IMEI
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -658,7 +718,7 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.ip.statistics"
 					, cyng::code::IDENT
@@ -666,6 +726,7 @@ namespace node
 					, parser_.get_read_uint8_f()	//	response type
 					, parser_.get_read_uint64_f()		//	rx
 					, parser_.get_read_uint64_f());	//	tx
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -674,7 +735,7 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.dev.auth"
 					, cyng::code::IDENT
@@ -683,6 +744,7 @@ namespace node
 					, parser_.get_read_string_f()		//	password
 					, parser_.get_read_string_f()		//	number
 					, parser_.get_read_string_f());	//	description
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -691,12 +753,13 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.dev.time"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.get_read_uint32_f());	//	seconds since 1970
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -705,7 +768,7 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				//
 				//	response
@@ -743,6 +806,8 @@ namespace node
 					<< cyng::invoke("ipt.res.push.target.namelist")
 					<< cyng::code::REBA	//	close frame
 					;
+
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -751,7 +816,7 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_
 					<< cyng::generate_invoke_unwinded("ipt.res.push.target.echo"
@@ -759,6 +824,7 @@ namespace node
 						, parser_.get_read_uint32_f() //	push channel number
 						, parser_.get_read_data_f());	//	read push data
 
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -767,13 +833,14 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_
 					<< cyng::generate_invoke_unwinded("app.res.traceroute"
 						, cyng::code::IDENT
 						, parser_.get_read_uint16_f() //	traceroute index
 						, parser_.get_read_uint16_f()); //	hop counter
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -784,13 +851,18 @@ namespace node
 		{
 			req.pos_++;
 			parser_.input_.put(c_);
-			if (req.pos_ == size(parser_.header_))
+			if (req.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.req.login.public"
 					, cyng::code::IDENT
 					, parser_.get_read_string_f()	//	name
 					, parser_.get_read_string_f())	//	password
 					<< cyng::unwind_vec();
+
+#ifdef _DEBUG
+				parser_.authorized_ = true;
+#endif
+				req.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -799,7 +871,7 @@ namespace node
 		{
 			req.pos_++;
 			parser_.input_.put(c_);
-			if (req.pos_ == size(parser_.header_))
+			if (req.pos_ >= size(parser_.header_))
 			{
 				const auto name = parser_.read_string();
 				const auto pwd = parser_.read_string();
@@ -815,6 +887,10 @@ namespace node
 					<< cyng::unwind_vec()
 					;
 				
+#ifdef _DEBUG
+				parser_.authorized_ = true;
+#endif
+				req.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -824,7 +900,7 @@ namespace node
 
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke("ipt.res.login.public"
 					, cyng::code::IDENT
@@ -832,7 +908,12 @@ namespace node
 					, parser_.get_read_uint16_f()	//	watchdog
 					, parser_.get_read_string_f())//	redirect
 					<< cyng::unwind_vec()
-					;	
+					;
+
+#ifdef _DEBUG
+				parser_.authorized_ = true;
+#endif
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -841,13 +922,18 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.login.scrambled"
 					, cyng::code::IDENT
 					, parser_.get_read_uint8_f()	//	response
 					, parser_.get_read_uint16_f()	//	watchdog
 					, parser_.get_read_string_f());	//	redirect
+
+#ifdef _DEBUG
+				parser_.authorized_ = true;
+#endif
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -857,11 +943,13 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.logout"
 					, cyng::code::IDENT
 					, parser_.get_read_uint8_f());	//	reason
+
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -870,11 +958,13 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.logout"
 					, cyng::code::IDENT
 					, parser_.get_read_uint8_f());	//	response
+
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -884,14 +974,16 @@ namespace node
 		{
 			req.pos_++;
 			parser_.input_.put(c_);
-			if (req.pos_ == size(parser_.header_))
+			if (req.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.register.push.target"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.get_read_string_f()		//	target
-					, parser_.get_read_uint16_f()		//	packet size
+					, parser_.get_read_string_f()	//	target
+					, parser_.get_read_uint16_f()	//	packet size
 					, parser_.get_read_uint8_f());	//	window size
+
+				req.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -901,13 +993,15 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.register.push.target"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.get_read_uint8_f()		//	response
 					, parser_.get_read_uint32_f());	//	channel
+
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -917,12 +1011,14 @@ namespace node
 		{
 			req.pos_++;
 			parser_.input_.put(c_);
-			if (req.pos_ == size(parser_.header_))
+			if (req.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.deregister.push.target"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.get_read_string_f());	//target name
+
+				req.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -932,13 +1028,15 @@ namespace node
 		{
 			res.pos_++;
 			parser_.input_.put(c_);
-			if (res.pos_ == size(parser_.header_))
+			if (res.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.res.deregister.push.target"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
-					, parser_.get_read_uint8_f()		//	response
+					, parser_.get_read_uint8_f()	//	response
 					, parser_.get_read_string_f());	//target name
+
+				res.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
@@ -948,15 +1046,28 @@ namespace node
 		{
 			cmd.pos_++;
 			parser_.input_.put(c_);
-			if (cmd.pos_ == size(parser_.header_))
+			if (cmd.pos_ >= size(parser_.header_))
 			{
 				parser_.code_ << cyng::generate_invoke_unwinded("ipt.unknown.cmd"
 					, cyng::code::IDENT
 					, parser_.header_.sequence_
 					, parser_.get_read_uint16_f());		//	command code
+
+				cmd.reset();
 				return STATE_STREAM;
 			}
 			return STATE_DATA;
+		}
+
+		void parser::base::reset()
+		{
+			pos_ = 0;
+		}
+
+		void parser::command::reset()
+		{
+			base::reset();
+			std::fill(std::begin(overlay_), std::end(overlay_), 0);
 		}
 
 	}

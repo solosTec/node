@@ -177,11 +177,15 @@ namespace node
 			//
 			//	authorized
 			//
+			vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", send_data()), cyng::generate_invoke("stream.flush") });
+
 		}
 
 		//	slot [1] - connection lost / reconnect
 		void sender::on_logout()
 		{
+			BOOST_ASSERT_MSG(!this->is_connected(), "state error");
+
 			//
 			//	switch to other configuration
 			//
