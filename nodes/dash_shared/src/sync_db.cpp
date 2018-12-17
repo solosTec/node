@@ -60,7 +60,7 @@ namespace node
 			, cyng::TC_STRING	//	vFirmware
 			, cyng::TC_BOOL		//	on/offline
 			},
-			{ 36		//	pk
+			{ 36	//	pk
 			, 23	//	server id
 			, 64	//	manufacturer
 			, 0		//	production date
@@ -89,11 +89,53 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table TLoRaDevice");
 		}
 
-		if (!create_table_meter(db))
+// 		if (!create_table_meter(db))
+// 		{
+// 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
+// 		}
+		if (!db.create_table(cyng::table::make_meta_table<1, 11>("TMeter", { "pk"
+			, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+			, "meter"		//	meter number (i.e. 16000913) 4 bytes 
+			, "maker"		//	manufacturer
+			, "tom"			//	time of manufacture
+			, "vFirmare"	//	firmwareversion (i.e. 11600000)
+			, "vParam"		//	parametrierversion (i.e. 16A098828.pse)
+			, "factoryNr"	//	fabrik nummer (i.e. 06441734)
+			, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+			, "mClass"		//	Metrological Class: A, B, C, Q3/Q1, ...
+			, "gw"			//	optional gateway pk
+			, "serverId"	//	optional gateway server ID
+			},
+			{ cyng::TC_UUID
+			, cyng::TC_STRING		//	ident
+			, cyng::TC_STRING		//	meter
+			, cyng::TC_STRING		//	maker
+			, cyng::TC_TIME_POINT	//	tom
+			, cyng::TC_STRING		//	vFirmare
+			, cyng::TC_STRING		//	vParam
+			, cyng::TC_STRING		//	factoryNr
+			, cyng::TC_STRING		//	item
+			, cyng::TC_STRING		//	mClass
+			, cyng::TC_UUID			//	gw
+			, cyng::TC_STRING		//	serverID
+			},
+			{ 36
+			, 24	//	ident
+			, 8		//	meter
+			, 64	//	maker
+			, 0		//	tom
+			, 64	//	vFirmare
+			, 64	//	vParam
+			, 32	//	factoryNr
+			, 128	//	item
+			, 8		//	mClass 
+			, 36	//	gw
+			, 23 	//	serverId
+		})))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
 		}
-
+		
 		if (!create_table_session(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Session");
@@ -211,7 +253,43 @@ namespace node
 				}
 			}	, cyng::store::read_access("TDevice")
 				, cyng::store::read_access("_Session"));
-
+		}
+		
+		//
+		//	Boost meter records with additional data from TGateway
+		//
+		if (boost::algorithm::equals(table, "TMeter"))
+		{
+			//
+			//	Additional values for TGateway
+			//
+			db.access([&](const cyng::store::table* tbl_gw) {
+				
+				//
+				//	TMeter contains an optional reference to TGateway table
+				//
+				auto key = cyng::table::key_generator(data.at(10));
+				auto dev_gw = tbl_gw->lookup(key);
+				
+				//
+				//	set device name
+				//	set model
+				//	set firmware
+				//	set online state
+				//
+				if (!dev_gw.empty())
+				{
+					data.push_back(dev_gw["serverId"]);
+				}
+				else
+				{
+					data.push_back(cyng::make_object("05000000000000"));
+					
+					CYNG_LOG_WARNING(logger, "res.subscribe - meter"
+					<< cyng::io::to_str(key)
+					<< " has no associated gateway");
+				}
+			}, cyng::store::read_access("TGateway"));
 		}
 
 		if (!db.insert(table	//	table name

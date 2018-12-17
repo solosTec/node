@@ -85,36 +85,6 @@ namespace node
 		}
 	}
 
-	//void dispatcher::res_query_gateway(cyng::context& ctx)
-	//{
-	//	//	 [3cb44588-3075-4086-b684-57a4bab6e26c,2,a5d83e14-dc3e-4105-95d0-034c3b69b991,00:ff:b0:0b:ca:ae,cc070202]
-	//	const cyng::vector_t frame = ctx.get_frame();
-	//	CYNG_LOG_TRACE(logger_, "bus.res.query.gateway - " << cyng::io::to_str(frame));
-
-	//	auto const data = cyng::tuple_cast<
-	//		boost::uuids::uuid,		//	[0] source
-	//		std::uint64_t,			//	[1] sequence
-	//		boost::uuids::uuid,		//	[2] websocket tag
-	//		std::string,			//	[3] server id (key)
-	//		std::string,			//	[4] OBIS name
-	//		cyng::param_map_t		//	[5] params
-	//	>(frame);
-
-	//	auto tpl = cyng::tuple_factory(
-	//		cyng::param_factory("cmd", std::string("update")),
-	//		cyng::param_factory("channel", std::get<4>(data)),
-	//		cyng::param_factory("rec", cyng::tuple_factory(
-	//			cyng::param_factory("srv", std::get<3>(data)),
-	//			cyng::param_factory("values", std::get<5>(data))
-	//		)));
-
-	//	//	{"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
-	//	auto msg = cyng::json::to_string(tpl);
-	//	connection_manager_.ws_msg(std::get<2>(data), msg);
-
-	//}
-
-
 	void dispatcher::subscribe(cyng::store::db& db)
 	{
 		db.get_listener("TDevice"
