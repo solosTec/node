@@ -268,7 +268,7 @@ namespace node
 				//
 				//	TMeter contains an optional reference to TGateway table
 				//
-				auto key = cyng::table::key_generator(data.at(10));
+				auto key = cyng::table::key_generator(data.at(9));
 				auto dev_gw = tbl_gw->lookup(key);
 				
 				//

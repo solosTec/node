@@ -104,6 +104,8 @@
                     <th class="sml-col-meter-fn">Factory Nr.</th>
                     <th class="sml-col-meter-item">Item</th>
                     <th class="sml-col-meter-class">Metrol. Class</th>
+                    <th class="sml-col-meter-serverId">Server ID</th>
+                    <th class="sml-col-meter-gw-key">Gateway Key</th>
                 </tr>
             </thead>
         </table>
@@ -112,6 +114,9 @@
         <ul class="nav nav-tabs" role="tablist" id="smf-meter-tab">
             <li class="nav-item">
                 <a class="nav-link active" id="smf-meter-tab-config" data-toggle="tab" href="#smf-meter-config" aria-selected="true">Configuration</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="smf-meter-tab-gw" data-toggle="tab" href="#smf-meter-gw" aria-selected="true">Gateway</a>
             </li>
         </ul>
 
@@ -176,11 +181,27 @@
                             <label class="control-label" for="smf-form-meter-delete">&nbsp;Remove <span id="smf-form-meter-delete-name">Meter</span></label>
                         </div>
                     </div>
-
+                </form>
+                <br>
+            </div>
+            <div id="smf-meter-gw" class="container-fluid tab-pane fade show fade" role="tabpanel">
+                <h4>Gateway</h4>
+                <form id="smf-form-gw" style="padding:2em">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-serverId">Server ID</label>
+                            <input id="smf-form-meter-serverId" name="smf-form-meter-serverId" type="text" placeholder="<Server ID>" class="form-control input-md" readonly>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-gw-key">Gateway Key</label>
+                            <input id="smf-form-meter-gw-key" name="smf-form-meter-gw-key" type="text" placeholder="<Gateway Key>" class="form-control input-md" readonly>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
+
     <!-- JavaScript -->
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
 
@@ -218,7 +239,9 @@
                 { targets: 'sml-col-meter-fw', visible: true, name: 'meter-fw' },
                 { targets: 'sml-col-meter-fn', visible: true, name: 'meter-fn' },
                 { targets: 'sml-col-meter-item', visible: true, name: 'meter-item' },
-                { targets: 'sml-col-meter-class', visible: true, name: 'meter-class' }
+                { targets: 'sml-col-meter-class', visible: true, name: 'meter-class' },
+                { targets: 'sml-col-meter-serverId', visible: false, name: 'meter-serverId' },
+                { targets: 'sml-col-meter-gw-key', visible: false, name: 'meter-gw-key' }
             ]
         };
 
@@ -243,6 +266,10 @@
                 $('#smf-form-meter-factory-nr').val(rowData[7]);
                 $('#smf-form-meter-item').val(rowData[8]);
                 $('#smf-form-meter-class').val(rowData[9]);
+
+                $('#smf-form-meter-serverId').val(rowData[10]);
+                $('#smf-form-meter-gw-key').val(rowData[11]);
+
             }); //  onSelect()
 
             function start_ws() {
@@ -293,7 +320,9 @@
                                 var vParam = $('<div/>').text(obj.rec.data.vParam).html();
                                 var item = $('<div/>').text(obj.rec.data.item).html();
                                 var mClass = $('<div/>').text(obj.rec.data.mClass).html();
-                                var rowNode = table_meter.row.add([obj.rec.key.pk, ident, meter, maker, tom, firmware, vParam, factoryNr, item, mClass]).draw().node();
+                                var serverId = $('<div/>').text(obj.rec.data.serverId).html();
+                                var gw = $('<div/>').text(obj.rec.data.gw).html();
+                                var rowNode = table_meter.row.add([obj.rec.key.pk, ident, meter, maker, tom, firmware, vParam, factoryNr, item, mClass, serverId, gw]).draw().node();
                             }
                             else if (obj.cmd == 'delete') {
                                 //  {"cmd": "delete", "channel": "config.meter", "key": ["85c02cea-52fb-44bf-ade4-8a827e1bbc46"]}
@@ -330,6 +359,9 @@
                                         }
                                         else if (obj.value.mClass != null) {
                                             d[9] = obj.value.mClass;
+                                        }
+                                        else if (obj.value.serverId != null) {
+                                            d[10] = obj.value.serverId;
                                         }
                                         r.data(d);
                                         return true;
