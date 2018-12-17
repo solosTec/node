@@ -311,6 +311,12 @@ namespace node
 					buffer.push_back(this->put(scrambler_[c]));
 				});
 
+				if (read_counter_ == 0u && buffer.size() > 1) {
+					BOOST_ASSERT_MSG((buffer.at(0) == 0x01 || buffer.at(0) == 0x02), "IP-T login expected");
+					BOOST_ASSERT_MSG((buffer.at(1) == (char)0x40 || buffer.at(1) == (char)0xc0), "IP-T login expected");
+					code_ << cyng::generate_invoke_unwinded("log.msg.fatal", "IP-T login expected", buffer);
+				}
+
 				post_processing();
 				return buffer;
 			}
@@ -423,6 +429,10 @@ namespace node
 			 */
 			bool authorized_;
 #endif
+			/**
+			 * mainly used to detect the first call of the parser
+			 */
+			std::size_t read_counter_;
 
 			//
 			//	current header

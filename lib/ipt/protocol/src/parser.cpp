@@ -33,6 +33,7 @@ namespace node
 #ifdef _DEBUG
 			, authorized_(false)
 #endif
+			, read_counter_(0u)
 			, header_()
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
@@ -92,6 +93,7 @@ namespace node
 #ifdef _DEBUG
 			authorized_ = false;
 #endif
+			read_counter_ = 0u;
 		}
 
 		void parser::clear()
@@ -109,6 +111,7 @@ namespace node
 #ifdef _DEBUG
 			authorized_ = false;
 #endif
+			read_counter_ = 0u;
 		}
 
 		char parser::put(char c)
@@ -328,6 +331,14 @@ namespace node
 
 		void parser::post_processing()
 		{
+			//
+			//	increase read counter after the read().
+			//
+			++read_counter_;
+
+			//
+			//	detect data transfers
+			//
 			if (stream_state_ == STATE_STREAM)
 			{
 				//
