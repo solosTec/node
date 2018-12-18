@@ -332,19 +332,15 @@ namespace node
 				else if (boost::algorithm::equals(name, "TMeter"))
 				{
 					//	insert TMeter 
-					stmt->push(key.at(0), 36)	//	pk
-						.push(cyng::make_object(gen), 0)	//	generation
-						.push(data.at(0), 24)	//	ident
-						.push(data.at(1), 8)	//	meter
-						.push(data.at(2), 64)	//	maker
-						.push(data.at(3), 0)	//	tom
-						.push(data.at(4), 64)	//	vFirmware
-						.push(data.at(5), 64)	//	vParam
-						.push(data.at(6), 32)	//	factoryNr
-						.push(data.at(7), 128)	//	item
-						.push(data.at(8), 8)	//	mClass
-						.push(data.at(9), 36)	//	gw
-						;
+                    meta->loop_body([&](cyng::table::column&& col) {
+                        if (col.pos_ == 0) 	{
+                            stmt->push(cyng::make_object(gen), col.width_);
+                        }
+                        else {
+                            stmt->push(data.at(col.pos_ - 1), col.width_);
+                        }
+                    });
+
 					if (!stmt->execute())
 					{
 						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
