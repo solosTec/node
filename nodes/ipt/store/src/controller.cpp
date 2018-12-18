@@ -233,34 +233,34 @@ namespace node
 					cyng::param_factory("root-dir", (pwd / "json").string()),
 					cyng::param_factory("prefix", "smf"),
 					cyng::param_factory("suffix", "json"),
-					cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR).to_double()),
+					cyng::param_factory("version", NODE_SUFFIX),
 					cyng::param_factory("period", 16)	//	seconds
 				))
 				, cyng::param_factory("SML:ABL", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "abl").string()),
 					cyng::param_factory("prefix", "smf"),
 					cyng::param_factory("suffix", "abl"),
-					cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR).to_double())
+					cyng::param_factory("version", NODE_SUFFIX)
 				))
 				, cyng::param_factory("ALL:BIN", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "sml").string()),
 					cyng::param_factory("prefix", "smf"),
 					cyng::param_factory("suffix", "sml"),
-					cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR).to_double()),
+					cyng::param_factory("version", NODE_SUFFIX),
 					cyng::param_factory("period", 16)	//	seconds
 				))
 				, cyng::param_factory("SML:LOG", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "log").string()),
 					cyng::param_factory("prefix", "sml"),
 					cyng::param_factory("suffix", "log"),
-					cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR).to_double()),
+					cyng::param_factory("version", NODE_SUFFIX),
 					cyng::param_factory("period", 16)	//	seconds
 				))
 				, cyng::param_factory("IEC:LOG", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "log").string()),
 					cyng::param_factory("prefix", "iec"),
 					cyng::param_factory("suffix", "log"),
-					cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)),
+					cyng::param_factory("version", NODE_SUFFIX),
 					cyng::param_factory("period", 16)	//	seconds
 				))
 				, cyng::param_factory("SML:CSV", cyng::tuple_factory(
@@ -268,7 +268,7 @@ namespace node
 					cyng::param_factory("prefix", "smf"),
 					cyng::param_factory("suffix", "csv"),
 					cyng::param_factory("header", true),
-					cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)),
+					cyng::param_factory("version", NODE_SUFFIX),
 					cyng::param_factory("period", 16)	//	seconds
 				))
 				, cyng::param_factory("ipt", cyng::vector_factory({
@@ -584,6 +584,7 @@ namespace node
 				boost::filesystem::path root_dir = cyng::value_cast(dom[config_type].get("root-dir"), (pwd / "abl").string());
 				auto prefix = cyng::value_cast<std::string>(dom[config_type].get("prefix"), "sml");
 				auto suffix = cyng::value_cast<std::string>(dom[config_type].get("suffix"), "abl");
+				//auto version = cyng::value_cast<double>(dom[config_type].get("version"), 0.0);
 
 				tsks.push_back(cyng::async::start_task_delayed<sml_abl_consumer>(mux
 					, std::chrono::seconds(1)
@@ -625,7 +626,7 @@ namespace node
 			{
 				CYNG_LOG_INFO(logger, "start SML:CSV storage");
 
-				auto version = cyng::value_cast(dom[config_type].get("version"), cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR).to_double());
+				//auto version = cyng::value_cast(dom[config_type].get("version"), cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR).to_double());
 				boost::filesystem::path root_dir = cyng::value_cast(dom[config_type].get("root-dir"), (pwd / "csv").string());
 				auto prefix = cyng::value_cast<std::string>(dom[config_type].get("prefix"), "smf");
 				auto suffix = cyng::value_cast<std::string>(dom[config_type].get("suffix"), "csv");

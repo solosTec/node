@@ -177,177 +177,192 @@ namespace node
 			<< " - gen "
 			<< gen);
 
-		//
-		//	insert into SQL database
-		//
-		auto pos = meta_map_.find(name);
-		if (pos != meta_map_.end())
+		try
 		{
 			//
-			//	test consistency
+			//	insert into SQL database
 			//
-			BOOST_ASSERT_MSG(pos->second->check_key(key), "invalid key");
-			BOOST_ASSERT_MSG(pos->second->size() == (key.size() + data.size() + 1), "invalid key or data");
-
-			auto s = pool_.get_session();
-			cyng::table::meta_table_ptr meta = (*pos).second;
-			cyng::sql::command cmd(meta, s.get_dialect());
-			cmd.insert();
-			std::string sql = cmd.to_str();
-			//CYNG_LOG_TRACE(logger_, sql);	//	insert
-
-			auto stmt = s.create_statement();
-			std::pair<int, bool> r = stmt->prepare(sql);
-            boost::ignore_unused(r);    //  for release versions
-
-			//
-			//	test 
-			//
-			BOOST_ASSERT(r.second);
-			BOOST_ASSERT_MSG(r.first == pos->second->size(), "invalid key or data");
-
-
-			if (boost::algorithm::equals(name, "TDevice"))
+			auto pos = meta_map_.find(name);
+			if (pos != meta_map_.end())
 			{
-				//	[763ae055-449c-4783-b383-8fc8cd52f44f]
-				//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
-				//	bind parameters
-				//	INSERT INTO TDevice (pk, gen, name, pwd, number, descr, id, vFirmware, enabled, creationTime, query) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-				stmt->push(key.at(0), 36);	//	pk
-				meta->loop_body([&](cyng::table::column&& col) {
-					if (col.pos_ == 0)
+				//
+				//	test consistency
+				//
+				BOOST_ASSERT_MSG(pos->second->check_key(key), "invalid key");
+				BOOST_ASSERT_MSG(pos->second->size() == (key.size() + data.size() + 1), "invalid key or data");
+
+				auto s = pool_.get_session();
+				cyng::table::meta_table_ptr meta = (*pos).second;
+				cyng::sql::command cmd(meta, s.get_dialect());
+				cmd.insert();
+				std::string sql = cmd.to_str();
+				//CYNG_LOG_TRACE(logger_, sql);	//	insert
+
+				auto stmt = s.create_statement();
+				std::pair<int, bool> r = stmt->prepare(sql);
+				boost::ignore_unused(r);    //  for release versions
+
+				//
+				//	test 
+				//
+				BOOST_ASSERT(r.second);
+				BOOST_ASSERT_MSG(r.first == pos->second->size(), "invalid key or data");
+
+
+				if (boost::algorithm::equals(name, "TDevice"))
+				{
+					//	[763ae055-449c-4783-b383-8fc8cd52f44f]
+					//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
+					//	bind parameters
+					//	INSERT INTO TDevice (pk, gen, name, pwd, number, descr, id, vFirmware, enabled, creationTime, query) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+					stmt->push(key.at(0), 36);	//	pk
+					meta->loop_body([&](cyng::table::column&& col) {
+						if (col.pos_ == 0)
+						{
+							stmt->push(cyng::make_object(gen), col.width_);
+						}
+						else
+						{
+							stmt->push(data.at(col.pos_ - 1), col.width_);
+						}
+					});
+					if (!stmt->execute())
 					{
-						stmt->push(cyng::make_object(gen), col.width_);
+						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
 					}
-					else
-					{
-						stmt->push(data.at(col.pos_ - 1), col.width_);
-					}
-				});
-				if (!stmt->execute())
-				{
-					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
-				}
-				stmt->clear();
+					stmt->clear();
 
-			}
-			else if (boost::algorithm::equals(name, "TGateway"))
-			{
-				//	[54c15b9e-858a-431c-9c2c-8b654c7d7651][05000000000000,EMH,EMH-VMET,2018-06-06 07:22:47.26852400,VARIOMUC-ETHERNET-1.407_14232___11X022a,factory-nr,00:01:02:03:04:05,00:01:02:03:04:06,user,pwd,mbus,operator,operator]
+				}
+				else if (boost::algorithm::equals(name, "TGateway"))
+				{
+					//	[54c15b9e-858a-431c-9c2c-8b654c7d7651][05000000000000,EMH,EMH-VMET,2018-06-06 07:22:47.26852400,VARIOMUC-ETHERNET-1.407_14232___11X022a,factory-nr,00:01:02:03:04:05,00:01:02:03:04:06,user,pwd,mbus,operator,operator]
 
-				//meta_map.emplace("TGateway", cyng::table::make_meta_table<1, 14>("TGateway",
-				//	{ "pk", "gen", "serverId", "manufacturer", "model", "proddata", "vFirmware", "factoryNr", "ifService", "ifData", "pwdDef", "pwdRoot", "mbus", "userName", "userPwd" },
-				//	{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
-				//	{ 36, 0, 23, 64, 64, 0, 64, 8, 18, 18, 32, 32, 16, 32, 32 }));
+					//meta_map.emplace("TGateway", cyng::table::make_meta_table<1, 14>("TGateway",
+					//	{ "pk", "gen", "serverId", "manufacturer", "model", "proddata", "vFirmware", "factoryNr", "ifService", "ifData", "pwdDef", "pwdRoot", "mbus", "userName", "userPwd" },
+					//	{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
+					//	{ 36, 0, 23, 64, 64, 0, 64, 8, 18, 18, 32, 32, 16, 32, 32 }));
 
-				stmt->push(key.at(0), 36);	//	pk (same as TDevice)
-				meta->loop_body([&](cyng::table::column&& col) {
-					if (col.pos_ == 0)
+					stmt->push(key.at(0), 36);	//	pk (same as TDevice)
+					meta->loop_body([&](cyng::table::column&& col) {
+						if (col.pos_ == 0)
+						{
+							stmt->push(cyng::make_object(gen), col.width_);
+						}
+						else
+						{
+							stmt->push(data.at(col.pos_ - 1), col.width_);
+						}
+					});
+					if (!stmt->execute())
 					{
-						stmt->push(cyng::make_object(gen), col.width_);
+						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
 					}
-					else
+					stmt->clear();
+				}
+				else if (boost::algorithm::equals(name, "TLoRaDevice"))
+				{
+					//	insert TLoRaDevice 
+					//	[f4f697c0-670f-4897-9500-adfc9bff60fb]
+					//	[0100:0302:0504:0706,1122334455667788990011223344556677889900112233445566778899001122,demo,true,100,0100:0302:0604:0807,0100:0302:0604:0807] - gen 8
+					stmt->push(key.at(0), 36)	//	pk
+						.push(cyng::make_object(gen), 0)	//	generation
+						.push(data.at(0), 19)	//	DevEUI
+						.push(data.at(1), 0)	//	AESKey
+						.push(data.at(2), 0)	//	driver
+						.push(data.at(3), 0)	//	activation
+						.push(data.at(4), 0)	//	DevAddr
+						.push(data.at(5), 0)	//	AppEUI
+						.push(data.at(6), 0)	//	GatewayEUI
+						;
+					if (!stmt->execute())
 					{
-						stmt->push(data.at(col.pos_ - 1), col.width_);
+						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
 					}
-				});
-				if (!stmt->execute())
-				{
-					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+					stmt->clear();
 				}
-				stmt->clear();
-			}
-			else if (boost::algorithm::equals(name, "TLoRaDevice"))
-			{
-				//	insert TLoRaDevice 
-				//	[f4f697c0-670f-4897-9500-adfc9bff60fb]
-				//	[0100:0302:0504:0706,1122334455667788990011223344556677889900112233445566778899001122,demo,true,100,0100:0302:0604:0807,0100:0302:0604:0807] - gen 8
-				stmt->push(key.at(0), 36)	//	pk
-					.push(cyng::make_object(gen), 0)	//	generation
-					.push(data.at(0), 19)	//	DevEUI
-					.push(data.at(1), 0)	//	AESKey
-					.push(data.at(2), 0)	//	driver
-					.push(data.at(3), 0)	//	activation
-					.push(data.at(4), 0)	//	DevAddr
-					.push(data.at(5), 0)	//	AppEUI
-					.push(data.at(6), 0)	//	GatewayEUI
-					;
-				if (!stmt->execute())
+				else if (boost::algorithm::equals(name, "TLoraUplink"))
 				{
-					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+					//	INSERT INTO TLoraUplink (pk, DevEUI, roTime, FPort, FCntUp, ADRbit, MType, FCntDn, payload, mic, LrrRSSI, LrrSNR, SpFact, SubBand, Channel, DevLrrCnt, Lrrid, CustomerID, LrrLAT, LrrLON) VALUES (?, ?, julianday(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+					//	[96205c3e-3973-4db0-b07c-294e58596720][5,52,100000728,29000071,1,LC2,G1,12,7,-99,444eefd3,32332...3538,148,0,1,1,0001,2015-10-22 13:39:59.48900000,F03D291000001180]
+					BOOST_ASSERT(r.first == 21);	//	20 parameters to bind
+					BOOST_ASSERT_MSG(key.size() == 1, "wrong TLoraUplink key size");
+					BOOST_ASSERT_MSG(data.size() == 19, "wrong TLoraUplink data size");
+					stmt->push(key.at(0), 36)	//	pk
+						.push(cyng::make_object(gen), 0)	//	generation
+						.push(data.at(18), 19)	//	DevEUI
+						.push(data.at(17), 0)	//	roTime
+						.push(data.at(16), 0)	//	FPort
+						.push(data.at(15), 0)	//	FCntUp
+						.push(data.at(14), 0)	//	ADRbit
+						.push(data.at(13), 0)	//	MType
+						.push(data.at(12), 0)	//	FCntDn
+						.push(data.at(11), 40)	//	payload_hex
+						.push(data.at(10), 8)	//	mic_hex
+						.push(data.at(9), 0)	//	LrrRSSI
+						.push(data.at(8), 0)	//	LrrSNR
+						.push(data.at(7), 8)	//	SpFact
+						.push(data.at(6), 8)	//	SubBand
+						.push(data.at(5), 8)	//	Channel
+						.push(data.at(4), 0)	//	DevLrrCnt
+						.push(data.at(3), 8)	//	Lrrid
+						.push(data.at(2), 16)	//	CustomerID
+						.push(data.at(1), 0)	//	LrrLAT
+						.push(data.at(0), 0)	//	LrrLON
+						;
+					if (!stmt->execute())
+					{
+						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+					}
+					stmt->clear();
 				}
-				stmt->clear();
-			}
-			else if (boost::algorithm::equals(name, "TLoraUplink"))
-			{
-				//	INSERT INTO TLoraUplink (pk, DevEUI, roTime, FPort, FCntUp, ADRbit, MType, FCntDn, payload, mic, LrrRSSI, LrrSNR, SpFact, SubBand, Channel, DevLrrCnt, Lrrid, CustomerID, LrrLAT, LrrLON) VALUES (?, ?, julianday(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-				//	[96205c3e-3973-4db0-b07c-294e58596720][5,52,100000728,29000071,1,LC2,G1,12,7,-99,444eefd3,32332...3538,148,0,1,1,0001,2015-10-22 13:39:59.48900000,F03D291000001180]
-				BOOST_ASSERT(r.first == 21);	//	20 parameters to bind
-				BOOST_ASSERT_MSG(key.size() == 1, "wrong TLoraUplink key size");
-				BOOST_ASSERT_MSG(data.size() == 19, "wrong TLoraUplink data size");
-				stmt->push(key.at(0), 36)	//	pk
-					.push(cyng::make_object(gen), 0)	//	generation
-					.push(data.at(18), 19)	//	DevEUI
-					.push(data.at(17), 0)	//	roTime
-					.push(data.at(16), 0)	//	FPort
-					.push(data.at(15), 0)	//	FCntUp
-					.push(data.at(14), 0)	//	ADRbit
-					.push(data.at(13), 0)	//	MType
-					.push(data.at(12), 0)	//	FCntDn
-					.push(data.at(11), 40)	//	payload_hex
-					.push(data.at(10), 8)	//	mic_hex
-					.push(data.at(9), 0)	//	LrrRSSI
-					.push(data.at(8), 0)	//	LrrSNR
-					.push(data.at(7), 8)	//	SpFact
-					.push(data.at(6), 8)	//	SubBand
-					.push(data.at(5), 8)	//	Channel
-					.push(data.at(4), 0)	//	DevLrrCnt
-					.push(data.at(3), 8)	//	Lrrid
-					.push(data.at(2), 16)	//	CustomerID
-					.push(data.at(1), 0)	//	LrrLAT
-					.push(data.at(0), 0)	//	LrrLON
-					;
-				if (!stmt->execute())
+				else if (boost::algorithm::equals(name, "TMeter"))
 				{
-					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+					//	insert TMeter 
+					stmt->push(key.at(0), 36)	//	pk
+						.push(cyng::make_object(gen), 0)	//	generation
+						.push(data.at(0), 24)	//	ident
+						.push(data.at(1), 8)	//	meter
+						.push(data.at(2), 64)	//	maker
+						.push(data.at(3), 0)	//	tom
+						.push(data.at(4), 64)	//	vFirmware
+						.push(data.at(5), 64)	//	vParam
+						.push(data.at(6), 32)	//	factoryNr
+						.push(data.at(7), 128)	//	item
+						.push(data.at(8), 8)	//	mClass
+						.push(data.at(9), 36)	//	gw
+						;
+					if (!stmt->execute())
+					{
+						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+					}
+					else {
+						stmt->clear();
+					}
 				}
-				stmt->clear();
-			}
-			else if (boost::algorithm::equals(name, "TMeter"))
-			{
-				//	insert TMeter 
-				stmt->push(key.at(0), 36)	//	pk
-					.push(cyng::make_object(gen), 0)	//	generation
-					.push(data.at(0), 24)	//	ident
-					.push(data.at(1), 8)	//	meter
-					.push(data.at(2), 64)	//	maker
-					.push(data.at(3), 0)	//	tom
-					.push(data.at(4), 64)	//	vFirmware
-					.push(data.at(5), 64)	//	vParam
-					.push(data.at(6), 32)	//	factoryNr
-					.push(data.at(7), 128)	//	item
-					.push(data.at(8), 8)	//	mClass
-					.push(data.at(9), 36)	//	gw
-					;
-				if (!stmt->execute())
+				else
 				{
-					CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+					CYNG_LOG_ERROR(logger_, "unknown table " << name);	//	insert
 				}
-				stmt->clear();
 			}
 			else
 			{
-				CYNG_LOG_ERROR(logger_, "unknown table " << name);	//	insert
+				CYNG_LOG_FATAL(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> unknown table "
+					<< name);
 			}
 		}
-		else
-		{
+		catch (std::exception const& ex) {
 			CYNG_LOG_FATAL(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> unknown table "
-				<< name);
+				<< "> table "
+				<< name
+				<< " exception: "
+				<< ex.what());
 		}
 
 		return cyng::continuation::TASK_CONTINUE;
