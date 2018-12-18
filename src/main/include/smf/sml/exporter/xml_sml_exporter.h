@@ -44,7 +44,14 @@ namespace node
 			 */
 			void reset();
 
+			/**
+			 * read incoming input
+			 */
 			void read(cyng::tuple_t const&, std::size_t idx);
+
+			/**
+			 * Write XML file
+			 */
 			bool write(boost::filesystem::path const&);
 
 			/**

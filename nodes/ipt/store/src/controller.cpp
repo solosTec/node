@@ -28,6 +28,9 @@
 #include <cyng/value_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/vector_cast.hpp>
+#include <cyng/parser/version_parser.h>
+#include <cyng/rnd.h>
+
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
 #endif
@@ -194,6 +197,8 @@ namespace node
 			const boost::filesystem::path pwd = boost::filesystem::current_path();
 			boost::uuids::random_generator uidgen;
 
+			cyng::crypto::rnd_num<int> rng(10, 60);
+
 			const auto conf = cyng::vector_factory({
 				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 				, cyng::param_factory("log-level", "INFO")
@@ -211,7 +216,7 @@ namespace node
 					cyng::param_factory("watchdog", 30),	//	for database connection
 					cyng::param_factory("pool-size", 1),	//	no pooling for SQLite
 					cyng::param_factory("db-schema", NODE_SUFFIX),		//	use "v4.0" for compatibility to version 4.x
-					cyng::param_factory("period", 12)	//	seconds
+					cyng::param_factory("period", rng())	//	seconds
 				))
 				, cyng::param_factory("IEC:DB", cyng::tuple_factory(
 					cyng::param_factory("type", "SQLite"),
@@ -220,48 +225,49 @@ namespace node
 					cyng::param_factory("watchdog", 30),	//	for database connection
 					cyng::param_factory("pool-size", 1),	//	no pooling for SQLite
 					cyng::param_factory("db-schema", NODE_SUFFIX),
-					cyng::param_factory("period", 12),	//	seconds
+					cyng::param_factory("period", rng()),	//	seconds
 					cyng::param_factory("ignore-null", false)	//	don't write values equal 0
 				))
 				, cyng::param_factory("SML:XML", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "xml").string()),
 					cyng::param_factory("root-name", "SML"),
 					cyng::param_factory("endcoding", "UTF-8"),
-					cyng::param_factory("period", 16)	//	seconds
+					cyng::param_factory("period", rng())	//	seconds
 				))
 				, cyng::param_factory("SML:JSON", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "json").string()),
 					cyng::param_factory("prefix", "smf"),
 					cyng::param_factory("suffix", "json"),
 					cyng::param_factory("version", NODE_SUFFIX),
-					cyng::param_factory("period", 16)	//	seconds
+					cyng::param_factory("period", rng())	//	seconds
 				))
 				, cyng::param_factory("SML:ABL", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "abl").string()),
 					cyng::param_factory("prefix", "smf"),
 					cyng::param_factory("suffix", "abl"),
-					cyng::param_factory("version", NODE_SUFFIX)
+					cyng::param_factory("version", NODE_SUFFIX),
+					cyng::param_factory("period", rng())	//	seconds
 				))
 				, cyng::param_factory("ALL:BIN", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "sml").string()),
 					cyng::param_factory("prefix", "smf"),
 					cyng::param_factory("suffix", "sml"),
 					cyng::param_factory("version", NODE_SUFFIX),
-					cyng::param_factory("period", 16)	//	seconds
+					cyng::param_factory("period", rng())	//	seconds
 				))
 				, cyng::param_factory("SML:LOG", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "log").string()),
 					cyng::param_factory("prefix", "sml"),
 					cyng::param_factory("suffix", "log"),
 					cyng::param_factory("version", NODE_SUFFIX),
-					cyng::param_factory("period", 16)	//	seconds
+					cyng::param_factory("period", rng())	//	seconds
 				))
 				, cyng::param_factory("IEC:LOG", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "log").string()),
 					cyng::param_factory("prefix", "iec"),
 					cyng::param_factory("suffix", "log"),
 					cyng::param_factory("version", NODE_SUFFIX),
-					cyng::param_factory("period", 16)	//	seconds
+					cyng::param_factory("period", rng())	//	seconds
 				))
 				, cyng::param_factory("SML:CSV", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "csv").string()),
@@ -269,7 +275,7 @@ namespace node
 					cyng::param_factory("suffix", "csv"),
 					cyng::param_factory("header", true),
 					cyng::param_factory("version", NODE_SUFFIX),
-					cyng::param_factory("period", 16)	//	seconds
+					cyng::param_factory("period", rng())	//	seconds
 				))
 				, cyng::param_factory("ipt", cyng::vector_factory({
 					cyng::tuple_factory(
@@ -279,7 +285,7 @@ namespace node
 						cyng::param_factory("pwd", "to-define"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", true),
-						cyng::param_factory("monitor", 57)),	//	seconds
+						cyng::param_factory("monitor", rng())),	//	seconds
 					cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "26863"),
@@ -287,7 +293,7 @@ namespace node
 						cyng::param_factory("pwd", "to-define"),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", false),
-						cyng::param_factory("monitor", 57))
+						cyng::param_factory("monitor", rng()))
 					}))
 					, cyng::param_factory("targets", cyng::vector_factory({ 
 						cyng::param_factory("data.sink.sml", "SML"),
@@ -584,13 +590,19 @@ namespace node
 				boost::filesystem::path root_dir = cyng::value_cast(dom[config_type].get("root-dir"), (pwd / "abl").string());
 				auto prefix = cyng::value_cast<std::string>(dom[config_type].get("prefix"), "sml");
 				auto suffix = cyng::value_cast<std::string>(dom[config_type].get("suffix"), "abl");
-				//auto version = cyng::value_cast<double>(dom[config_type].get("version"), 0.0);
+				auto version = cyng::value_cast<std::string>(dom[config_type].get("version"), NODE_SUFFIX);
+				auto r = cyng::parse_ver(version);
+				auto period = cyng::value_cast(dom[config_type].get("period"), 16);	//	seconds
 
 				tsks.push_back(cyng::async::start_task_delayed<sml_abl_consumer>(mux
 					, std::chrono::seconds(1)
 					, logger
 					, ntid
-					, cyng::to_param_map(tpl)).first);
+					, root_dir
+					, prefix
+					, suffix
+					, std::chrono::seconds(period)
+					, r.second ? r.first : cyng::make_object<cyng::version>(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)).first);
 			}
 			else if (boost::algorithm::iequals(config_type, "ALL:BIN"))
 			{

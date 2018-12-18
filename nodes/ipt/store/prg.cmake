@@ -75,6 +75,8 @@ set (node_ipt_store_exporter
 	lib/sml/exporter/src/csv_sml_exporter.cpp
 	src/main/include/smf/sml/exporter/db_iec_exporter.h
 	lib/sml/exporter/src/db_iec_exporter.cpp
+	src/main/include/smf/sml/exporter/abl_sml_exporter.h
+	lib/sml/exporter/src/abl_sml_exporter.cpp
 
 )
 	

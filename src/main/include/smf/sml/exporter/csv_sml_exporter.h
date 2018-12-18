@@ -26,7 +26,7 @@ namespace node
 		 * To build a usefull filename constructor with source,
 		 * channel and target info is required,
 		 */
-		boost::filesystem::path get_filename(std::string prefix
+		boost::filesystem::path get_csv_filename(std::string prefix
 			, std::string suffix
 			, std::uint32_t source
 			, std::uint32_t channel

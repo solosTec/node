@@ -287,7 +287,7 @@ namespace node
 
 			const std::string server_id = cyng::io::to_hex(ro_.server_id_);
 
-			ofstream_.open((root_dir_ / get_filename(prefix_ + server_id, suffix_, source_, channel_, target_)).string());
+			ofstream_.open((root_dir_ / get_csv_filename(prefix_ + server_id, suffix_, source_, channel_, target_)).string());
 
 			if (header_) {
 				header_ = false;
@@ -772,7 +772,7 @@ namespace node
 			}
 		}
 
-		boost::filesystem::path get_filename(std::string prefix
+		boost::filesystem::path get_csv_filename(std::string prefix
 			, std::string suffix
 			, std::uint32_t source
 			, std::uint32_t channel

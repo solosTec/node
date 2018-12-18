@@ -314,9 +314,11 @@ namespace node
 				});
 
 				if (read_counter_ == 0u && buffer.size() > 1) {
-					BOOST_ASSERT_MSG((buffer.at(0) == 0x01 || buffer.at(0) == 0x02), "IP-T login expected");
-					BOOST_ASSERT_MSG((buffer.at(1) == (char)0x40 || buffer.at(1) == (char)0xc0), "IP-T login expected");
-					code_ << cyng::generate_invoke_unwinded("log.msg.fatal", "IP-T login expected", buffer);
+					BOOST_ASSERT_MSG((buffer.at(0) == 0x01 || buffer.at(0) == 0x02), "IP-T login expected (0)");
+					BOOST_ASSERT_MSG((buffer.at(1) == (char)0x40 || buffer.at(1) == (char)0xc0), "IP-T login expected (1)");
+					if (!((buffer.at(0) == 0x01 || buffer.at(0) == 0x02) && (buffer.at(1) == (char)0x40 || buffer.at(1) == (char)0xc0))) {
+						code_ << cyng::generate_invoke_unwinded("log.msg.fatal", "IP-T login expected", buffer);
+					}
 				}
 
 				post_processing();
