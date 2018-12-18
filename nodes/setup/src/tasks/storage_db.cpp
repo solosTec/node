@@ -334,6 +334,8 @@ namespace node
 					if (!stmt->execute())
 					{
 						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+						CYNG_LOG_TRACE(logger_, "pk: " << cyng::io::to_str(key));
+						CYNG_LOG_TRACE(logger_, "data: " << cyng::io::to_str(data));
 					}
 					else {
 						stmt->clear();
