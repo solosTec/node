@@ -217,20 +217,22 @@ namespace node
 					//	INSERT INTO TDevice (pk, gen, name, pwd, number, descr, id, vFirmware, enabled, creationTime, query) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 					stmt->push(key.at(0), 36);	//	pk
 					meta->loop_body([&](cyng::table::column&& col) {
-						if (col.pos_ == 0)
-						{
+						if (col.pos_ == 0) 	{
 							stmt->push(cyng::make_object(gen), col.width_);
 						}
-						else
-						{
+						else {
 							stmt->push(data.at(col.pos_ - 1), col.width_);
 						}
 					});
 					if (!stmt->execute())
 					{
 						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+						CYNG_LOG_TRACE(logger_, "pk [" << key.size() << "]: " << cyng::io::to_str(key));
+						CYNG_LOG_TRACE(logger_, "data [" << data.size() << "]: " << cyng::io::to_str(data));
 					}
-					stmt->clear();
+					else {
+						stmt->clear();
+					}
 
 				}
 				else if (boost::algorithm::equals(name, "TGateway"))
@@ -256,8 +258,12 @@ namespace node
 					if (!stmt->execute())
 					{
 						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+						CYNG_LOG_TRACE(logger_, "pk [" << key.size() << "]: " << cyng::io::to_str(key));
+						CYNG_LOG_TRACE(logger_, "data [" << data.size() << "]: " << cyng::io::to_str(data));
 					}
-					stmt->clear();
+					else {
+						stmt->clear();
+					}
 				}
 				else if (boost::algorithm::equals(name, "TLoRaDevice"))
 				{
@@ -277,8 +283,12 @@ namespace node
 					if (!stmt->execute())
 					{
 						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+						CYNG_LOG_TRACE(logger_, "pk [" << key.size() << "]: " << cyng::io::to_str(key));
+						CYNG_LOG_TRACE(logger_, "data [" << data.size() << "]: " << cyng::io::to_str(data));
 					}
-					stmt->clear();
+					else {
+						stmt->clear();
+					}
 				}
 				else if (boost::algorithm::equals(name, "TLoraUplink"))
 				{
@@ -312,8 +322,12 @@ namespace node
 					if (!stmt->execute())
 					{
 						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
+						CYNG_LOG_TRACE(logger_, "pk [" << key.size() << "]: " << cyng::io::to_str(key));
+						CYNG_LOG_TRACE(logger_, "data [" << data.size() << "]: " << cyng::io::to_str(data));
 					}
-					stmt->clear();
+					else {
+						stmt->clear();
+					}
 				}
 				else if (boost::algorithm::equals(name, "TMeter"))
 				{
@@ -334,8 +348,17 @@ namespace node
 					if (!stmt->execute())
 					{
 						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
-						CYNG_LOG_TRACE(logger_, "pk: " << cyng::io::to_str(key));
-						CYNG_LOG_TRACE(logger_, "data: " << cyng::io::to_str(data));
+						CYNG_LOG_TRACE(logger_, "pk [" << key.size() << "]: " << cyng::io::to_str(key));
+						std::size_t idx{ 0 };
+						for (auto const& obj : data) {
+							CYNG_LOG_TRACE(logger_, "data [" 
+								<< idx++ 
+								<< "] " 
+								<< obj.get_class().type_name()
+								<< ": "
+								<< cyng::io::to_str(obj))
+								;
+						}
 					}
 					else {
 						stmt->clear();
