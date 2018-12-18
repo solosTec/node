@@ -168,37 +168,8 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< " remove ABL "
+				<< " remove ABL line "
 				<< line);
-
-			//auto filename = root_dir_ / pos->second.get_filename();
-
-			//CYNG_LOG_INFO(logger_, "task #"
-			//	<< base_.get_id()
-			//	<< " <"
-			//	<< base_.get_class_name()
-			//	<< " write "
-			//	<< line
-			//	<< " => "
-			//	<< filename);
-
-			//try {
-			//	//
-			//	//	write ABL file
-			//	//
-			//	pos->second.write(filename);
-			//}
-			//catch (std::exception const& ex) {
-
-			//	CYNG_LOG_ERROR(logger_, "task #"
-			//		<< base_.get_id()
-			//		<< " <"
-			//		<< base_.get_class_name()
-			//		<< " line "
-			//		<< line
-			//		<< " error: "
-			//		<< ex.what());
-			//}
 
 			//
 			//	remove this line

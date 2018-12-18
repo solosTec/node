@@ -28,7 +28,7 @@ namespace node
 		 */
 		boost::filesystem::path get_abl_filename(std::string prefix
 			, std::string suffix
-			, std::uint32_t source
+			, std::string gw
 			, std::uint32_t channel
 			, std::string const& target);
 

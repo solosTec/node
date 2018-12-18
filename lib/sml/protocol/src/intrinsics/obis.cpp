@@ -293,7 +293,7 @@ namespace node
 
 		bool obis::is_physical_unit() const
 		{
-			return get_medium() < UNIT_RESERVED;
+			return (get_medium() < UNIT_RESERVED) && (get_medium() != 0);
 		}
 
 		octet_type obis::to_buffer() const

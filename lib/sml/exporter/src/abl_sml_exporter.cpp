@@ -283,7 +283,8 @@ namespace node
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
 
 			const std::string server_id = cyng::io::to_hex(ro_.server_id_);
-
+			const std::string gw_id = cyng::io::to_hex(ro_.client_id_);	//	gateway ID (e.g. 0500153b021774)
+			
 
 			//
 			//	serverId
@@ -316,7 +317,7 @@ namespace node
 			//
 			ro_.set_value("status", *pos++);
 
-			std::ofstream of((root_dir_ / get_abl_filename(prefix_ + server_id, suffix_, source_, channel_, target_)).string());
+			std::ofstream of((root_dir_ / get_abl_filename(prefix_ + server_id, suffix_, gw_id, channel_, target_)).string());
 			//ofstream_.open((root_dir_ / get_abl_filename(prefix_ + server_id, suffix_, source_, channel_, target_)).string());
 
 			if (of.is_open()) {
@@ -555,45 +556,6 @@ namespace node
 					<< std::endl
 					;
 			}
-
-			//store_meta(sp
-			//	, ro_.pk_
-			//	, ro_.trx_
-			//	, ro_.idx_
-			//	, ro_.get_value("roTime")
-			//	, ro_.get_value("actTime")
-			//	, ro_.get_value("valTime")
-			//	, ro_.get_value("client")	//	gateway
-			//	, ro_.client_id	//	gateway - formatted
-			//	, ro_.get_value("server")	//	server
-			//	, ro_.server_id	//	server - formatted
-			//	, ro_.get_value("status"));
-
-			//store_data(sp
-			//	, ro_.pk_
-			//	, ro_.trx_
-			//	, ro_.idx_
-			//	, code	//	.to_buffer()
-			//	, unit
-			//	, get_unit_name(unit)
-			//	, cyng::traits::get_type_name(type_tag)	//	CYNG data type name
-			//	, scaler	//	scaler
-			//	, ro_.get_value("raw")	//	raw value
-			//	, ro_.get_value("value"));	//	formatted value
-
-
-			//ofstream_
-			//	<< ro_.pk_
-			//	<< ";"
-			//	<< ro_.trx_
-			//	<< ";"
-			//	<< code
-			//	<< ";"
-			//	<< cyng::io::to_str(ro_.get_value("value"))
-			//	<< ";"
-			//	<< get_unit_name(unit)
-			//	<< std::endl
-			//	;
 		}
 
 
@@ -889,10 +851,13 @@ namespace node
 
 		boost::filesystem::path get_abl_filename(std::string prefix
 			, std::string suffix
-			, std::uint32_t source
+			, std::string gw
 			, std::uint32_t channel
 			, std::string const& target)
 		{
+			//	example: push_20181218T191428.0--0500153b018ee9--01-a815-90870704-01-02.abl
+			//	prefix datetime -- gateway ID -- server ID . suffix
+			
 			auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			std::tm time = cyng::chrono::convert_utc(tt);
 
@@ -915,12 +880,12 @@ namespace node
 				<< std::setw(2)
 				<< cyng::chrono::minute(time)
 				<< '-'
-				<< std::hex
-				<< std::setw(4)
-				<< channel
+				<< '-'
+				<< gw
+				<< '-'
 				<< '-'
 				<< std::setw(4)
-				<< source
+				<< channel
 				<< '.'
 				<< suffix
 				;
