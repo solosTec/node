@@ -261,7 +261,7 @@ namespace node
 		if (boost::algorithm::equals(table, "TMeter"))
 		{
 			//
-			//	Additional values for TGateway
+			//	Additional values for TMeter
 			//
 			db.access([&](const cyng::store::table* tbl_gw) {
 				
@@ -272,10 +272,7 @@ namespace node
 				auto dev_gw = tbl_gw->lookup(key);
 				
 				//
-				//	set device name
-				//	set model
-				//	set firmware
-				//	set online state
+				//	set serverId
 				//
 				if (!dev_gw.empty())
 				{
@@ -660,6 +657,51 @@ namespace node
 				, cyng::store::read_access("TDevice")
 				, cyng::store::read_access("_Session"));
 		}
+		else if (boost::algorithm::equals(table, "TMeter")) 
+		{
+			//
+			//	Additional values for TMeter
+			//
+			db.access([&](cyng::store::table* tbl_meter, cyng::store::table const* tbl_gw) {
+
+				//
+				//	TMeter contains an optional reference to TGateway table
+				//
+				auto key = cyng::table::key_generator(data.at(9));
+				auto dev_gw = tbl_gw->lookup(key);
+
+				//
+				//	set serverId
+				//
+				if (!dev_gw.empty())
+				{
+					data.push_back(dev_gw["serverId"]);
+				}
+				else
+				{
+					data.push_back(cyng::make_object("00000000000000"));
+
+					CYNG_LOG_WARNING(logger, "res.subscribe - meter"
+						<< cyng::io::to_str(key)
+						<< " has no associated gateway");
+				}
+
+				if (!tbl_meter->insert(key, data, gen, origin))
+				{
+
+					CYNG_LOG_WARNING(logger, "db.req.insert failed "
+						<< table		// table name
+						<< " - "
+						<< cyng::io::to_str(key)
+						<< " => "
+						<< cyng::io::to_str(data));
+
+				}
+
+			}	, cyng::store::write_access("TMeter")
+				, cyng::store::read_access("TGateway"));
+
+		}
 		else if (!db.insert(table
 			, key
 			, data
@@ -772,6 +814,11 @@ namespace node
 			default:
 				break;
 			}
+		}
+		else if (boost::algorithm::equals(table, "TGateway")) {
+			//
+			//	ToDo: distribute modified serverID to TMeter
+			//
 		}
 
 		//
