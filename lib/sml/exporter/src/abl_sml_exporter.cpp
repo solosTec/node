@@ -545,7 +545,7 @@ namespace node
 			//	Write physical data only.
 			//
 
-			if (of.is_open() && (code.get_medium() > 1)  && (code.get_medium() < 129)) {
+			if (of.is_open() && (code.get_medium() < 129)) {
 
 				of 
 					<< to_string(code)
