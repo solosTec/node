@@ -57,7 +57,7 @@ namespace node
 			//
 			vm_.async_run(std::move(prg));
 
-		}, false, true)	//	not verbose, no log instructions
+		}, false, false)	//	not verbose, no log instructions
 		, shutdown_(false)
 		, last_activity_(std::chrono::system_clock::now())
 	{
