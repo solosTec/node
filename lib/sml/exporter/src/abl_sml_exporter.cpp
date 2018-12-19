@@ -385,7 +385,8 @@ namespace node
 					of << cyng::io::to_str(*pos);
 				}
 				else {
-					of << 0;
+					//	random value
+					of << 191677488;
 				}
 				of
 					<< ')'
@@ -851,6 +852,7 @@ namespace node
 				<< cyng::chrono::minute(time)
 				<< std::setw(2)
 				<< cyng::chrono::second(time)
+				<< ".0"
 				<< '-'
 				<< '-'
 				<< gw
