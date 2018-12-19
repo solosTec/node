@@ -44,6 +44,7 @@ namespace node
 		, bus::shared_type bus
 		, cyng::param_map_t cfg_db
 		, cyng::param_map_t cfg_clock_day
+		, cyng::param_map_t cfg_clock_hour
 		, cyng::param_map_t cfg_clock_month)
 	: base_(*btp)
 		, logger_(logger)
@@ -51,6 +52,7 @@ namespace node
 		, pool_(base_.mux_.get_io_service(), cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg_db["type"], "SQLite")))
 		, cfg_db_(cfg_db)
 		, cfg_clock_day_(cfg_clock_day)
+		, cfg_clock_hour_(cfg_clock_hour)
 		, cfg_clock_month_(cfg_clock_month)
 		, schema_(cyng::value_cast<std::string>(cfg_db["db-schema"], NODE_SUFFIX))
 		, meta_map_(init_meta_map(schema_))

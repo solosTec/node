@@ -42,6 +42,7 @@ namespace node
 		, cyng::vector_t const& cfg_cluster
 		, cyng::tuple_t cfg_db
 		, cyng::tuple_t const& cfg_clock_day
+		, cyng::tuple_t const& cfg_clock_hour
 		, cyng::tuple_t const& cfg_clock_month
 		, cyng::tuple_t const& cfg_trigger);
 
@@ -202,6 +203,14 @@ namespace node
 						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 					))
 
+					, cyng::param_factory("profile-60min", cyng::tuple_factory(
+						cyng::param_factory("root-dir", (pwd / "csv").string()),
+						cyng::param_factory("prefix", "smf-60min-report-"),
+                        cyng::param_factory("suffix", "csv"),
+						cyng::param_factory("header", true),
+						cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
+					))
+					
 					, cyng::param_factory("profile-24h", cyng::tuple_factory(
 						cyng::param_factory("root-dir", (pwd / "csv").string()),
 						cyng::param_factory("prefix", "smf-24h-report-"),
@@ -348,6 +357,7 @@ namespace node
 			, cyng::value_cast(dom.get("cluster"), vec)
 			, cyng::value_cast(dom.get("DB"), tpl)
 			, cyng::value_cast(dom.get("profile-15min"), tpl)
+			, cyng::value_cast(dom.get("profile-60min"), tpl)
 			, cyng::value_cast(dom.get("profile-24h"), tpl)
 			, cyng::value_cast(dom.get("trigger"), tpl));
 
@@ -405,6 +415,7 @@ namespace node
 		, cyng::vector_t const& cfg_cluster
 		, cyng::tuple_t cfg_db
 		, cyng::tuple_t const& cfg_clock_day
+		, cyng::tuple_t const& cfg_clock_hour
 		, cyng::tuple_t const& cfg_clock_month
 		, cyng::tuple_t const& cfg_trigger)
 	{
@@ -417,6 +428,7 @@ namespace node
 			, load_cluster_cfg(cfg_cluster)
 			, cyng::to_param_map(cfg_db)
 			, cyng::to_param_map(cfg_clock_day)
+			, cyng::to_param_map(cfg_clock_hour)
 			, cyng::to_param_map(cfg_clock_month)
 			, cyng::to_param_map(cfg_trigger));
 	}

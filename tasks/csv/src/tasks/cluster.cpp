@@ -25,6 +25,7 @@ namespace node
 		, cluster_config_t const& cfg_cluster
 		, cyng::param_map_t const& cfg_db
 		, cyng::param_map_t const& cfg_clock_day
+		, cyng::param_map_t const& cfg_clock_hour
 		, cyng::param_map_t const& cfg_clock_month
 		, cyng::param_map_t const& cfg_trigger)
 	: base_(*btp)
@@ -33,6 +34,7 @@ namespace node
         , config_(cfg_cluster)
 		, cfg_db_(cfg_db)
 		, cfg_clock_day_(cfg_clock_day)
+		, cfg_clock_hour_(cfg_clock_hour)
 		, cfg_clock_month_(cfg_clock_month)
 		, offset_(cyng::find_value(cfg_trigger, "offset", 7))
 		, frame_(cyng::find_value(cfg_trigger, "frame", 7))
@@ -179,6 +181,7 @@ namespace node
 			, bus_
 			, cfg_db_
 			, cfg_clock_day_
+			, cfg_clock_hour_
 			, cfg_clock_month_).first;
 
 		CYNG_LOG_INFO(logger_, "start clocks");

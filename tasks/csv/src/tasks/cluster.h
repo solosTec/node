@@ -31,6 +31,7 @@ namespace node
 			, cluster_config_t const& cfg_cluster
 			, cyng::param_map_t const& cfg_db
 			, cyng::param_map_t const& cfg_clock_day
+			, cyng::param_map_t const& cfg_clock_hour
 			, cyng::param_map_t const& cfg_clock_month
 			, cyng::param_map_t const& cfg_trigger);
 		cyng::continuation run();
@@ -66,6 +67,7 @@ namespace node
         const cluster_redundancy config_;
 		const cyng::param_map_t cfg_db_;
 		const cyng::param_map_t cfg_clock_day_;
+		const cyng::param_map_t cfg_clock_hour_;
 		const cyng::param_map_t cfg_clock_month_;
 		const std::chrono::minutes offset_;
 		const std::chrono::minutes frame_;

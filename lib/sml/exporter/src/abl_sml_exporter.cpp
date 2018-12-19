@@ -386,7 +386,8 @@ namespace node
 				}
 				else {
 					//	random value
-					of << 191677488;
+// 					of << 191677488;
+					of << 0;
 				}
 				of
 					<< ')'

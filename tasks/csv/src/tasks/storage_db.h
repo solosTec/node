@@ -35,6 +35,7 @@ namespace node
 			, bus::shared_type bus
 			, cyng::param_map_t
 			, cyng::param_map_t
+			, cyng::param_map_t
 			, cyng::param_map_t);
 		cyng::continuation run();
 		void stop();
@@ -148,6 +149,7 @@ namespace node
 		cyng::db::session_pool pool_;
 		const cyng::param_map_t cfg_db_;
 		const cyng::param_map_t cfg_clock_day_;
+		const cyng::param_map_t cfg_clock_hour_;
 		const cyng::param_map_t cfg_clock_month_;
 
 		const std::string schema_;
