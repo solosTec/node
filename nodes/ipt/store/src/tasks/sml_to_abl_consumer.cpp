@@ -131,6 +131,7 @@ namespace node
 			<< line
 			<< " received #"
 			<< idx
+			<< ':'
 			<< sml::messages::name(code));
 
 		auto pos = lines_.find(line);

@@ -77,8 +77,8 @@ namespace node
 					//	login request
 					//
 					master_record cfg("localhost", "26862", "User", "Pass", scramble_key::default_scramble_key_, false, 0);
+					//master_record cfg("ebs.solostec.net", "26862", "SK-26-MUC", "hI12TOM3", scramble_key::default_scramble_key_, false, 0);	//	EBS test
 					vm_.async_run(gen::ipt_req_login_public(cfg));
-					//bus_->vm_.async_run(gen::ipt_req_login_scrambled(cfg));
 				}
 				return cyng::continuation::TASK_CONTINUE;
 			}
@@ -113,6 +113,7 @@ namespace node
 				//bus_->vm_.async_run(cyng::generate_invoke("req.open.push.channel", "water@solostec", "", "", "", "", 0));
 				//vm_.async_run(cyng::generate_invoke("req.open.push.channel", "LZQJ", "", "", "", "", 0));
 				vm_.async_run(cyng::generate_invoke("req.open.push.channel", "data-store", "", "", "", "", 0));
+				//vm_.async_run(cyng::generate_invoke("req.open.push.channel", "pushStore", "", "", "", "", 0));	//	EBS test
 				vm_.async_run(cyng::generate_invoke("stream.flush"));
 			}
 

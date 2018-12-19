@@ -804,46 +804,15 @@ namespace node
 
 		std::string get_manufacturer(cyng::buffer_t const& buffer)
 		{
+			if (is_mbus(buffer)) {
+				switch (buffer.back()) {
+				case 7:		return "/GWF6\\M07Coder";
+				case 8:		return "/GWF6\\M08Coder";
+				default:	return "/EMH6\\M01GWF-ED300L";
+				}
+			}
 			auto const srn = get_serial(buffer);
 
-			//if (boost::algorithm::equals(srn, "03685315"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685316"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685318"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685319"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685320"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685321"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685323"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685324"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685325"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685326"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685327"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685328"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685329"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685330"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685332"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685333"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03685334"))	return "/EMH6\M01GWF-ED300L";
-
-			//if (boost::algorithm::equals(srn, "03745997"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03745998"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03745999"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03746001"))	return "/EMH6\M01GWF-ED300L";
-
-			//if (boost::algorithm::equals(srn, "03852744"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "03852745"))	return "/EMH6\M01GWF-ED300L";
-
-			//if (boost::algorithm::equals(srn, "04078788"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "04078789"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "04078790"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "04078791"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "04078792"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "04078793"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "04078794"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "04078795"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "04078796"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "04078798"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "04078800"))	return "/EMH6\M01GWF-ED300L";
-			//if (boost::algorithm::equals(srn, "04078801"))	return "/EMH6\M01GWF-ED300L";
 
 			if (boost::algorithm::equals(srn, "15036627"))	return "/GWF6\\M07Coder";
 			if (boost::algorithm::equals(srn, "17001265"))	return "/GWF6\\M07Coder";
