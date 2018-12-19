@@ -58,7 +58,6 @@ namespace node
 			, target_(target)
 			, rgn_()
 			, ro_(rgn_())
-			//, ofstream_()
 		{
 			reset();
 		}
@@ -71,14 +70,6 @@ namespace node
 		{
 			ro_.reset(rgn_(), 0);
 		}
-
-		//void abl_exporter::write_header()
-		//{
-		//	ofstream_
-		//		<< "pk;idx;obis;value;unit"
-		//		<< std::endl
-		//		;
-		//}
 
 		void abl_exporter::read(cyng::tuple_t const& msg, std::size_t idx)
 		{
@@ -282,7 +273,7 @@ namespace node
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
 
-			const std::string server_id = cyng::io::to_hex(ro_.server_id_);
+			const std::string server_id = from_server_id(ro_.server_id_);
 			const std::string gw_id = cyng::io::to_hex(ro_.client_id_);	//	gateway ID (e.g. 0500153b021774)
 			
 
@@ -317,7 +308,7 @@ namespace node
 			//
 			ro_.set_value("status", *pos++);
 
-			std::ofstream of((root_dir_ / get_abl_filename(prefix_ + server_id, suffix_, gw_id, channel_, target_)).string());
+			std::ofstream of((root_dir_ / get_abl_filename(prefix_, suffix_, gw_id, server_id)).string());
 			//ofstream_.open((root_dir_ / get_abl_filename(prefix_ + server_id, suffix_, source_, channel_, target_)).string());
 
 			if (of.is_open()) {
@@ -365,7 +356,9 @@ namespace node
 					<< '\n'
 					<< get_manufacturer(ro_.server_id_)
 					<< '\n'
-					<< "0-0:96.1.0*255("
+					<< OBIS_SERIAL_NR
+					//<< "0-0:96.1.0*255("
+					<< '('
 					<< get_serial(ro_.server_id_)
 					<< ")"
 					<< '\n'
@@ -386,7 +379,15 @@ namespace node
 				of
 					<< "Raw"
 					<< '('
-					<< cyng::io::to_str(*pos)
+					;
+
+				if (!pos->is_null()) {
+					of << cyng::io::to_str(*pos);
+				}
+				else {
+					of << 0;
+				}
+				of
 					<< ')'
 					<< '\n'
 					<< '!'
@@ -544,7 +545,7 @@ namespace node
 			//	Write physical data only.
 			//
 
-			if (of.is_open() && code.is_physical_unit()) {
+			if (of.is_open() && (code.get_medium() > 1)  && (code.get_medium() < 129)) {
 
 				of 
 					<< to_string(code)
@@ -846,14 +847,17 @@ namespace node
 
 			if (boost::algorithm::equals(srn, "15036627"))	return "/GWF6\\M07Coder";
 			if (boost::algorithm::equals(srn, "17001265"))	return "/GWF6\\M07Coder";
+
+			if (boost::algorithm::equals(srn, "11522430"))	return "/GWF6\\M08Coder";
+			if (boost::algorithm::equals(srn, "11549631"))	return "/GWF6\\M08Coder";
+
 			return "/EMH6\\M01GWF-ED300L";
 		}
 
 		boost::filesystem::path get_abl_filename(std::string prefix
 			, std::string suffix
 			, std::string gw
-			, std::uint32_t channel
-			, std::string const& target)
+			, std::string server_id)
 		{
 			//	example: push_20181218T191428.0--0500153b018ee9--01-a815-90870704-01-02.abl
 			//	prefix datetime -- gateway ID -- server ID . suffix
@@ -865,27 +869,25 @@ namespace node
 			ss
 				<< std::setfill('0')
 				<< prefix
-				<< '-'
-				<< target
-				<< '-'
 				<< std::dec
 				<< cyng::chrono::year(time)
 				<< std::setw(2)
 				<< cyng::chrono::month(time)
-				<< 'T'
 				<< std::setw(2)
 				<< cyng::chrono::day(time)
+				<< 'T'
 				<< std::setw(2)
 				<< cyng::chrono::hour(time)
 				<< std::setw(2)
 				<< cyng::chrono::minute(time)
+				<< std::setw(2)
+				<< cyng::chrono::second(time)
 				<< '-'
 				<< '-'
 				<< gw
 				<< '-'
 				<< '-'
-				<< std::setw(4)
-				<< channel
+				<< server_id
 				<< '.'
 				<< suffix
 				;

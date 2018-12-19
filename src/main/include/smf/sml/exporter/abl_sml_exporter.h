@@ -29,8 +29,7 @@ namespace node
 		boost::filesystem::path get_abl_filename(std::string prefix
 			, std::string suffix
 			, std::string gw
-			, std::uint32_t channel
-			, std::string const& target);
+			, std::string server_id);
 
 		std::string get_manufacturer(cyng::buffer_t const&);
 

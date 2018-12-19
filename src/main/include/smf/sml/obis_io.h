@@ -15,6 +15,9 @@ namespace node
 {
 	namespace sml
 	{
+		/**
+		 * Decimal formatting: nnn-nnn:nnn.nnn.nnn*nnn 
+		 */
 		std::ostream& operator<<(std::ostream& os, obis const&);
 		
 		/**
