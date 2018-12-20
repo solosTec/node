@@ -339,7 +339,7 @@ namespace node
 					<< std::setw(2)
 					<< (cyng::chrono::year(act_utc) - 2000)
 					<< " UTC"
-					<< '\n'
+					<< "\r\n"	//	force windows format
 					<< "TIME = "	//11.13.38 UTC"
 					<< std::setw(2)
 					<< cyng::chrono::hour(act_utc)
