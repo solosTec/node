@@ -175,8 +175,9 @@ namespace node
 				if (success) {
 
 					//const std::string file_name = "C:\\projects\\workplace\\node\\Debug\\sml\\smf-f5e0e04f-8bd1a8b5-2018080T201923-IEC-LZQJ.bin";
-					const std::string file_name = "D:\\installations\\Tägerwilen\\debug\\smf-26ed3332-84767607-2018100T10108-SML-pushTBT.bin";
-				
+					//const std::string file_name = "D:\\installations\\Tägerwilen\\debug\\smf-26ed3332-84767607-2018100T10108-SML-pushTBT.bin";
+					const std::string file_name = "D:\\installations\\EBS\\debug\\smf--SML-201812T191303-pushStore49b04d0a-31a3a9c5.sml";
+
 					CYNG_LOG_INFO(logger_, "push data of file " << file_name);
 
 					//
