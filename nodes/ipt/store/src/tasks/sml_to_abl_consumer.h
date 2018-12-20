@@ -34,6 +34,7 @@ namespace node
 			, std::string prefix
 			, std::string suffix
 			, std::chrono::seconds 
+			, bool eol
 			, cyng::object);
 		cyng::continuation run();
 		void stop();
@@ -80,6 +81,7 @@ namespace node
 		const std::string prefix_;
 		const std::string suffix_;
 		const std::chrono::seconds period_;
+		const bool eol_;	//	true is DOS, otherwise UNIX
 		const cyng::version version_;
 
 		enum task_state {

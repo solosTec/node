@@ -10,6 +10,8 @@
 #include <cyng/chrono.h>
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/vm/generator.h>
+#include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
 
 namespace node
 {
@@ -112,6 +114,40 @@ namespace node
 				//
 				//	ToDo: push data
 				//
+				//
+				for (auto const& entry : boost::make_iterator_range(boost::filesystem::directory_iterator("D:\\installations\\EBS\\reimport"), {}))
+				{
+					//const std::string file_name = "D:\\installations\\EBS\\debug\\smf--SML-201812T191303-pushStore49b04d0a-31a3a9c5.sml";
+					const std::string file_name = entry.path().string();
+					std::ifstream file(file_name, std::ios::binary | std::ios::app);
+
+					if (file.is_open())
+					{
+						//	dont skip whitepsaces
+						file >> std::noskipws;
+						cyng::buffer_t data;
+						data.insert(data.begin(), std::istream_iterator<char>(file), std::istream_iterator<char>());
+
+						vm_.async_run(cyng::generate_invoke("req.transfer.push.data"
+							, channel
+							, source
+							, std::uint8_t(0xC1)	//	status
+							, std::uint8_t(0)	//	block
+							, data));
+						vm_.async_run(cyng::generate_invoke("stream.flush"));
+						file.close();
+
+						CYNG_LOG_WARNING(logger_, "task #"
+							<< base_.get_id()
+							<< " <"
+							<< base_.get_class_name()
+							<< "> remove "
+							<< entry.path());
+						boost::filesystem::remove(entry.path());
+
+						break;	//	one item at a time
+					}
+				}
 
 				//
 				//	close push channel

@@ -1109,6 +1109,31 @@ else()
 		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/http_restart_service.cmd")
 
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http.rc.in"
+		  "${PROJECT_BINARY_DIR}/http.rc")
+
+	# https
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https.windows.cgf.in"
+		  "${PROJECT_BINARY_DIR}/https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/https_create_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/https_delete_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/https_restart_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https.rc.in"
+		  "${PROJECT_BINARY_DIR}/https.rc")
+
 	# dash
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash.windows.cgf.in"

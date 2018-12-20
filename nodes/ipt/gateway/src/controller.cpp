@@ -601,88 +601,88 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
 		}
-		else {
-			//	insert demo device
-			config.insert("devices"
-			, cyng::table::key_generator(sml::to_gateway_srv_id(mac))
-			, cyng::table::data_generator(std::chrono::system_clock::now()
-			, "---"
-			, true	//	visible
-			, true	//	active
-			, "demo entry"
-			, 0ull	//	status
-			, cyng::buffer_t{ 0, 0 }	//	mask
-			, 26000ul	//	interval
-			, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-			, cyng::buffer_t{}	//	aes
-			, "user"
-			, "pwd")
-			, 1	//	generation
-			, tag);
-			
-			config.insert("devices"
-			, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }))
-			, cyng::table::data_generator(std::chrono::system_clock::now()
-			, "---"
-			, true	//	visible
-			, true	//	active
-			, "01 A8 15 74 31 45 05 01 02"
-			, 0ull	//	status
-			, cyng::buffer_t{ 0, 0 }	//	mask
-			, 26000ul	//	interval
-			, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-			, cyng::buffer_t{}	//	aes
-			, "user"
-			, "pwd")
-			, 1	//	generation
-			, tag);
-			
-			config.insert("devices"
-			, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02 }))
-			, cyng::table::data_generator(std::chrono::system_clock::now()
-			, "---"
-			, true	//	visible
-			, false	//	active
-			, "01 E6 1E 74 31 45 05 01 02"
-			, 0ull	//	status
-			, cyng::buffer_t{ 0, 0 }	//	mask
-			, 26000ul	//	interval
-			, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-			, cyng::buffer_t{}	//	aes
-			, "user"
-			, "pwd")
-			, 1	//	generation
-			, tag);			
-		}
+		//else {
+		//	//	insert demo device
+		//	config.insert("devices"
+		//	, cyng::table::key_generator(sml::to_gateway_srv_id(mac))
+		//	, cyng::table::data_generator(std::chrono::system_clock::now()
+		//	, "---"
+		//	, true	//	visible
+		//	, true	//	active
+		//	, "demo entry"
+		//	, 0ull	//	status
+		//	, cyng::buffer_t{ 0, 0 }	//	mask
+		//	, 26000ul	//	interval
+		//	, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
+		//	, cyng::buffer_t{}	//	aes
+		//	, "user"
+		//	, "pwd")
+		//	, 1	//	generation
+		//	, tag);
+		//	
+		//	config.insert("devices"
+		//	, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }))
+		//	, cyng::table::data_generator(std::chrono::system_clock::now()
+		//	, "---"
+		//	, true	//	visible
+		//	, true	//	active
+		//	, "01 A8 15 74 31 45 05 01 02"
+		//	, 0ull	//	status
+		//	, cyng::buffer_t{ 0, 0 }	//	mask
+		//	, 26000ul	//	interval
+		//	, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
+		//	, cyng::buffer_t{}	//	aes
+		//	, "user"
+		//	, "pwd")
+		//	, 1	//	generation
+		//	, tag);
+		//	
+		//	config.insert("devices"
+		//	, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02 }))
+		//	, cyng::table::data_generator(std::chrono::system_clock::now()
+		//	, "---"
+		//	, true	//	visible
+		//	, false	//	active
+		//	, "01 E6 1E 74 31 45 05 01 02"
+		//	, 0ull	//	status
+		//	, cyng::buffer_t{ 0, 0 }	//	mask
+		//	, 26000ul	//	interval
+		//	, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
+		//	, cyng::buffer_t{}	//	aes
+		//	, "user"
+		//	, "pwd")
+		//	, 1	//	generation
+		//	, tag);			
+		//}
 
 		if (!config.create_table(gw_push_ops()))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table push.ops");
 		}
-		else {
-			//	insert demo push.ops
-			config.insert("push.ops"
-			, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 2u)
-			, cyng::table::data_generator(static_cast<std::uint32_t>(900u)	//	15 min
-			, static_cast<std::uint32_t>(4u)	//	delay
-			, "power@solostec"
-			, static_cast<std::uint8_t>(1u)		//	source
-			, static_cast<std::uint8_t>(1u)		//	profile
-			, 0)
-			, 1	//	generation
-			, tag);
-			
-			config.insert("push.ops"
-			, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 3u)
-			, cyng::table::data_generator(static_cast<std::uint32_t>(1800u)	//	30 min
-			, static_cast<std::uint32_t>(12u)	//	delay
-			, "water@solostec"
-			, static_cast<std::uint8_t>(1u)		//	source
-			, static_cast<std::uint8_t>(3u)		//	profile
-			, 0)
-			, 1	//	generation
-			, tag);
-		}
+		//else {
+		//	//	insert demo push.ops
+		//	config.insert("push.ops"
+		//	, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 2u)
+		//	, cyng::table::data_generator(static_cast<std::uint32_t>(900u)	//	15 min
+		//	, static_cast<std::uint32_t>(4u)	//	delay
+		//	, "power@solostec"
+		//	, static_cast<std::uint8_t>(1u)		//	source
+		//	, static_cast<std::uint8_t>(1u)		//	profile
+		//	, 0)
+		//	, 1	//	generation
+		//	, tag);
+		//	
+		//	config.insert("push.ops"
+		//	, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 3u)
+		//	, cyng::table::data_generator(static_cast<std::uint32_t>(1800u)	//	30 min
+		//	, static_cast<std::uint32_t>(12u)	//	delay
+		//	, "water@solostec"
+		//	, static_cast<std::uint8_t>(1u)		//	source
+		//	, static_cast<std::uint8_t>(3u)		//	profile
+		//	, 0)
+		//	, 1	//	generation
+		//	, tag);
+		//}
 
 		if (!config.create_table(gw_op_log()))
 		{

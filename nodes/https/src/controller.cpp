@@ -8,7 +8,7 @@
 #include "controller.h"
 #include <NODE_project_info.h>
 #include <smf/https/srv/server.h>
-#include "server_certificate.hpp"
+//#include "server_certificate.hpp"
 #include <cyng/log.h>
 #include <cyng/async/scheduler.h>
 #include <cyng/async/signal_handler.h>
@@ -37,6 +37,12 @@ namespace node
 	//
 	bool start(cyng::async::scheduler&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
+	bool load_server_certificate(boost::asio::ssl::context& ctx
+		, cyng::logging::log_ptr
+		, std::string const& tls_pwd
+		, std::string const& tls_certificate_chain
+		, std::string const& tls_private_key
+		, std::string const& tls_dh);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -90,7 +96,7 @@ namespace node
 						//
 #if BOOST_OS_LINUX
 						auto logger = cyng::logging::make_sys_logger("HTTPS", true);
-						// 					auto logger = cyng::logging::make_console_logger(ioc, "HTTPS");
+						// 	auto logger = cyng::logging::make_console_logger(ioc, "HTTPS");
 #else
 						auto logger = cyng::logging::make_console_logger(scheduler.get_io_service(), "HTTPS");
 #endif
@@ -178,19 +184,23 @@ namespace node
 					, cyng::param_factory("tag", uidgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
-					, cyng::param_factory("favicon", "")
-					, cyng::param_factory("mime-config", (pwd / "mime.xml").string())
+					//, cyng::param_factory("favicon", "")
+					//, cyng::param_factory("mime-config", (pwd / "mime.xml").string())
 					, cyng::param_factory("https", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8443"),	//	default is 443
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
+						cyng::param_factory("tls-pwd", "test"),
+						cyng::param_factory("tls-certificate-chain", "demo.cert"),
+						cyng::param_factory("tls-private-key", "priv.key"),
+						cyng::param_factory("tls-dh", "demo.dh"),	//	diffie-hellman
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
 							//	authType:
 							//	user:
 							//	pwd:
 							cyng::tuple_factory(
-								cyng::param_factory("directory", "/cv"),
+								cyng::param_factory("directory", "/"),
 								cyng::param_factory("authType", "Basic"),
 								cyng::param_factory("realm", "Restricted Content"),
 								cyng::param_factory("name", "auth@example.com"),
@@ -240,11 +250,9 @@ namespace node
  		
  		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
 
-		// The SSL context is required, and holds certificates
-		boost::asio::ssl::context ctx{ boost::asio::ssl::context::sslv23 };
 
 		// This holds the self-signed certificate used by the server
-		load_server_certificate(ctx);
+		//load_server_certificate(ctx);
 
 		auto const address = cyng::make_address(host);
 		BOOST_ASSERT_MSG(scheduler.is_running(), "scheduler not running");
@@ -261,7 +269,7 @@ namespace node
 		//
 		//	get blacklisted addresses
 		//
-		const auto blacklist_str = cyng::vector_cast<std::string>(dom.get("blacklist"), "");
+		const auto blacklist_str = cyng::vector_cast<std::string>(dom["https"].get("blacklist"), "");
 		CYNG_LOG_INFO(logger, blacklist_str.size() << " adresses are blacklisted");
 		std::set<boost::asio::ip::address>	blacklist;
 		for (auto const& a : blacklist_str) {
@@ -274,34 +282,60 @@ namespace node
 			}
 		}
 		
-		cyng::controller vm(scheduler.get_io_service(), boost::uuids::nil_uuid(), std::cout, std::cerr);
-		
-		// Create and launch a listening port
-		auto srv = std::make_shared<https::server>(logger
-			, scheduler.get_io_service()
-			, ctx
-			, boost::asio::ip::tcp::endpoint{address, port}
-			, doc_root
-			, ad
-			, blacklist
-			, vm);
+		// The SSL context is required, and holds certificates
+		boost::asio::ssl::context ctx{ boost::asio::ssl::context::sslv23 };
 
-		if (srv->run())
-		{
+		//
+		//	get SSL configuration
+		//
+		auto tls_pwd = cyng::value_cast<std::string>(dom["https"].get("tls-pwd"), "test");
+		auto tls_certificate_chain = cyng::value_cast<std::string>(dom["https"].get("tls-certificate-chain"), "demo.cert");
+		auto tls_private_key = cyng::value_cast<std::string>(dom["https"].get("tls-private-key"), "priv.key");
+		auto tls_dh = cyng::value_cast<std::string>(dom["https"].get("tls-dh"), "demo.dh");
+
+		//
+		// This holds the self-signed certificate used by the server
+		//
+		if (load_server_certificate(ctx, logger, tls_pwd, tls_certificate_chain, tls_private_key, tls_dh)) {
+
 			//
-			//	wait for system signals
+			//	create VM controller
 			//
-			const bool shutdown = wait(logger);
-					
-			//
-			//	close acceptor
-			//
-			CYNG_LOG_INFO(logger, "close acceptor");
-			srv->close();
-						
-			return shutdown;
+			boost::uuids::random_generator uidgen;
+			cyng::controller vm(scheduler.get_io_service(), uidgen(), std::cout, std::cerr);
+
+			vm.register_function("http.session.launch", 3, [&](cyng::context& ctx) {
+				//	[849a5b98-429c-431e-911d-18a467a818ca,false,127.0.0.1:61383]
+				const cyng::vector_t frame = ctx.get_frame();
+				CYNG_LOG_INFO(logger, "http.session.launch " << cyng::io::to_str(frame));
+			});
+
+			// Create and launch a listening port
+			auto srv = std::make_shared<https::server>(logger
+				, scheduler.get_io_service()
+				, ctx
+				, boost::asio::ip::tcp::endpoint{ address, port }
+				, doc_root
+				, ad
+				, blacklist
+				, vm);
+
+			if (srv->run())
+			{
+				//
+				//	wait for system signals
+				//
+				const bool shutdown = wait(logger);
+
+				//
+				//	close acceptor
+				//
+				CYNG_LOG_INFO(logger, "close acceptor");
+				srv->close();
+
+				return shutdown;
+			}
 		}
-		
 		//
 		//	shutdown
 		//
@@ -332,4 +366,49 @@ namespace node
 		}
 		return shutdown;
 	}
+
+	bool load_server_certificate(boost::asio::ssl::context& ctx
+		, cyng::logging::log_ptr logger
+		, std::string const& tls_pwd
+		, std::string const& tls_certificate_chain
+		, std::string const& tls_private_key
+		, std::string const& tls_dh)
+	{
+
+		//
+		//	generate files with (see https://www.adfinis-sygroup.ch/blog/de/openssl-x509-certificates/):
+		//
+
+		//	openssl genrsa -out solostec.com.key 4096
+		//	openssl req -new -sha256 -key solostec.com.key -out solostec.com.csr
+		//	openssl req -new -sha256 -nodes -newkey rsa:4096 -keyout solostec.com.key -out solostec.com.csr
+		//	openssl req -x509 -sha256 -nodes -newkey rsa:4096 -keyout solostec.com.key -days 730 -out solostec.com.pem
+
+
+
+		ctx.set_password_callback([&tls_pwd](std::size_t, boost::asio::ssl::context_base::password_purpose) {
+			return "test";
+			//return tls_pwd;
+		});
+
+		ctx.set_options(
+			boost::asio::ssl::context::default_workarounds |
+			boost::asio::ssl::context::no_sslv2 |
+			//boost::asio::ssl::context::no_sslv3 |
+			boost::asio::ssl::context::single_dh_use);
+
+		try {
+			ctx.use_certificate_chain_file(tls_certificate_chain);
+			ctx.use_private_key_file(tls_private_key, boost::asio::ssl::context::pem);
+			ctx.use_tmp_dh_file(tls_dh);
+
+		}
+		catch (std::exception const& ex) {
+			CYNG_LOG_FATAL(logger, ex.what());
+			return false;
+
+		}
+		return true;
+	}
+
 }

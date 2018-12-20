@@ -70,31 +70,42 @@ namespace node
 				
 				if (config)
 				{
-					//
-					//	initialize logger
-					//
+					cyng::vector_t vec;
+					vec = cyng::value_cast(config, vec);
+
+					if (vec.empty())
+					{
+						std::cerr
+							<< "use option -D to generate a configuration file"
+							<< std::endl;
+						shutdown = true;
+					}
+					else
+					{
+						//
+						//	initialize logger
+						//
 #if BOOST_OS_LINUX
-					auto logger = cyng::logging::make_sys_logger("HTTP", true);
-// 					auto logger = cyng::logging::make_console_logger(ioc, "HTTP");
+						auto logger = cyng::logging::make_sys_logger("HTTP", true);
+						// 	auto logger = cyng::logging::make_console_logger(ioc, "HTTP");
 #else
-					auto logger = cyng::logging::make_console_logger(scheduler.get_io_service(), "HTTP");
+						auto logger = cyng::logging::make_console_logger(scheduler.get_io_service(), "HTTP");
 #endif
-				
-					CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
-					CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
 
-					//
-					//	start application
-					//
-					cyng::vector_t tmp;
-					shutdown = start(scheduler, logger, config);
-					
-					//
-					//	print uptime
-					//
-					const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-		 			CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
+						CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
 
+						//
+						//	start application
+						//
+						shutdown = start(scheduler, logger, vec.at(0));
+
+						//
+						//	print uptime
+						//
+						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
+						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+					}
 				}
 				else 
 				{
@@ -164,8 +175,6 @@ namespace node
 					, cyng::param_factory("tag", uidgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
-					, cyng::param_factory("favicon", "")
-					, cyng::param_factory("mime-config", (pwd / "mime.xml").string())
 					, cyng::param_factory("http", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8080"),
@@ -176,7 +185,7 @@ namespace node
 							//	user:
 							//	pwd:
 							cyng::tuple_factory(
-								cyng::param_factory("directory", "/cv"),
+								cyng::param_factory("directory", "/"),
 								cyng::param_factory("authType", "Basic"),
 								cyng::param_factory("realm", "Restricted Content"),
 								cyng::param_factory("name", "auth@example.com"),
@@ -230,20 +239,20 @@ namespace node
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found" );	
 		auto dom = cyng::make_reader(cfg);
 		
- 		const auto doc_root = cyng::io::to_str(dom[0]["http"].get("document-root"));
-		const auto host = cyng::io::to_str(dom[0]["http"].get("address"));
-		const auto service = cyng::io::to_str(dom[0]["http"].get("service"));
+ 		const auto doc_root = cyng::io::to_str(dom["http"].get("document-root"));
+		const auto host = cyng::io::to_str(dom["http"].get("address"));
+		const auto service = cyng::io::to_str(dom["http"].get("service"));
 		const auto port = static_cast<unsigned short>(std::stoi(service));
  		
  		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
 
 		mail_config mx;
-		init(dom[0].get("mail"), mx);
+		init(dom.get("mail"), mx);
 
 		CYNG_LOG_TRACE(logger, "mx: " << mx);	
 		
 		auth_dirs ad;
-		init(dom[0]["http"].get("auth"), ad);
+		init(dom["http"].get("auth"), ad);
 
 		
 		auto const address = cyng::make_address(host);

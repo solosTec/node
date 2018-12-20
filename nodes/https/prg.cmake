@@ -27,14 +27,7 @@ set (node_https_info
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
-)
-
-set (node_https_tasks
-)
-
-set (node_https_res
-)
-	
+)	
 
 if(WIN32)
 
@@ -45,6 +38,12 @@ if(WIN32)
 		nodes/https/templates/https.windows.cgf.in
 	)
  
+	set (node_https_res
+		${CMAKE_CURRENT_BINARY_DIR}/https.rc 
+		src/main/resources/logo.ico
+		nodes/https/templates/https.exe.manifest
+	)
+
 else()
 
 	set (node_https_service
@@ -54,19 +53,19 @@ else()
 
 endif()
 
-source_group("tasks" FILES ${node_https_tasks})
-source_group("resources" FILES ${node_https_res})
 source_group("service" FILES ${node_https_service})
-source_group("resources" FILES ${node_https_info})
+source_group("info" FILES ${node_https_info})
 
 
 # define the main program
 set (node_https
   ${node_https_cpp}
   ${node_https_h}
-  ${node_https_tasks}
-  ${node_https_res}
   ${node_https_service}
   ${node_https_info}
 )
 
+if(WIN32)
+	source_group("resources" FILES ${node_https_res})
+	list(APPEND node_https ${node_https_res})
+endif()

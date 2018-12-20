@@ -29,6 +29,7 @@ namespace node
 		, std::string prefix
 		, std::string suffix
 		, std::chrono::seconds period
+		, bool eol
 		, cyng::object obj)
 	: base_(*btp)
 		, logger_(logger)
@@ -37,6 +38,7 @@ namespace node
 		, prefix_(prefix)
 		, suffix_(suffix)
 		, period_(period)
+		, eol_(eol)
 		, version_(cyng::value_cast(obj, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)))
 		, task_state_(TASK_STATE_INITIAL)
 		, lines_()
@@ -111,6 +113,7 @@ namespace node
 			std::forward_as_tuple(root_dir_
 				, prefix_
 				, suffix_
+				, eol_
 				, (std::uint32_t)((line & 0xFFFFFFFF00000000LL) >> 32)
 				, (std::uint32_t)(line & 0xFFFFFFFFLL)
 				, target));

@@ -246,14 +246,15 @@ namespace node
 					cyng::param_factory("prefix", "smf"),
 					cyng::param_factory("suffix", "abl"),
 					cyng::param_factory("version", NODE_SUFFIX),
-					cyng::param_factory("period", rng())	//	seconds
+					cyng::param_factory("period", rng()),	//	seconds
+					cyng::param_factory("line-ending", "DOS")	//	DOS/UNIX
 				))
 				, cyng::param_factory("ALL:BIN", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "sml").string()),
 					cyng::param_factory("prefix", "smf"),
 					cyng::param_factory("suffix", "sml"),
 					cyng::param_factory("version", NODE_SUFFIX),
-					cyng::param_factory("period", rng())	//	seconds
+					cyng::param_factory("period", rng())
 				))
 				, cyng::param_factory("SML:LOG", cyng::tuple_factory(
 					cyng::param_factory("root-dir", (pwd / "log").string()),
@@ -593,6 +594,8 @@ namespace node
 				auto version = cyng::value_cast<std::string>(dom[config_type].get("version"), NODE_SUFFIX);
 				auto r = cyng::parse_ver(version);
 				auto period = cyng::value_cast(dom[config_type].get("period"), 16);	//	seconds
+				auto eol = cyng::value_cast<std::string>(dom[config_type].get("line-ending"), "DOS");
+				
 
 				tsks.push_back(cyng::async::start_task_delayed<sml_abl_consumer>(mux
 					, std::chrono::seconds(1)
@@ -602,6 +605,7 @@ namespace node
 					, prefix
 					, suffix
 					, std::chrono::seconds(period)
+					, boost::algorithm::equals(eol, "DOS")
 					, r.second ? r.first : cyng::make_object<cyng::version>(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)).first);
 			}
 			else if (boost::algorithm::iequals(config_type, "ALL:BIN"))

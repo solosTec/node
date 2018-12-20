@@ -30,16 +30,17 @@ namespace node
 
 		abl_exporter::abl_exporter(boost::filesystem::path root_dir
 			, std::string prefix
-			, std::string suffix)
+			, std::string suffix
+			, bool eol)
 		: root_dir_(root_dir)
 			, prefix_(prefix)
 			, suffix_(suffix)
+			, eol_(eol ? "\r\n" : "\n")
 			, source_(0)
 			, channel_(0)
 			, target_()
 			, rgn_()
 			, ro_(rgn_())
-			//, ofstream_()
 		{
 			reset();
 		}
@@ -47,12 +48,14 @@ namespace node
 		abl_exporter::abl_exporter(boost::filesystem::path root_dir
 			, std::string prefix
 			, std::string suffix
+			, bool eol
 			, std::uint32_t source
 			, std::uint32_t channel
 			, std::string const& target)
 		: root_dir_(root_dir)
 			, prefix_(prefix)
 			, suffix_(suffix)
+			, eol_(eol ? "\r\n" : "\n")
 			, source_(source)
 			, channel_(channel)
 			, target_(target)
@@ -308,7 +311,7 @@ namespace node
 			//
 			ro_.set_value("status", *pos++);
 
-			std::ofstream of((root_dir_ / get_abl_filename(prefix_, suffix_, gw_id, server_id)).string());
+			std::ofstream of((root_dir_ / get_abl_filename(prefix_, suffix_, gw_id, server_id)).string(), std::ios::app | std::ios::binary);
 			//ofstream_.open((root_dir_ / get_abl_filename(prefix_ + server_id, suffix_, source_, channel_, target_)).string());
 
 			if (of.is_open()) {
@@ -319,15 +322,15 @@ namespace node
 
 				of
 					<< "[HEADER]"
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
 					<< "PROT = 0"
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
 					<< "MAN1 = "
 					<< get_manufacturer(ro_.server_id_)
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
 					<< "ZNR1 = "	//03685319"
 					<< get_serial(ro_.server_id_)
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
 					<< "DATE = "	//18.12.18 UTC"
 					<< std::setfill('0')
 					<< std::setw(2)
@@ -339,7 +342,7 @@ namespace node
 					<< std::setw(2)
 					<< (cyng::chrono::year(act_utc) - 2000)
 					<< " UTC"
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
 					<< "TIME = "	//11.13.38 UTC"
 					<< std::setw(2)
 					<< cyng::chrono::hour(act_utc)
@@ -350,18 +353,17 @@ namespace node
 					<< std::setw(2)
 					<< cyng::chrono::second(act_utc)
 					<< " UTC"
-					<< "\r\n"	//	force windows format
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
+					<< eol_	//	force windows format
 					<< "[DATA]"
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
 					<< get_manufacturer(ro_.server_id_)
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
 					<< OBIS_SERIAL_NR
-					//<< "0-0:96.1.0*255("
 					<< '('
 					<< get_serial(ro_.server_id_)
 					<< ")"
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
 					;
 			}
 
@@ -391,9 +393,9 @@ namespace node
 				}
 				of
 					<< ')'
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
 					<< '!'
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
 					;
 			}
 
@@ -556,7 +558,7 @@ namespace node
 					<< '*'
 					<< get_unit_name(unit)
 					<< ')'
-					<< "\r\n"	//	force windows format
+					<< eol_	//	force windows format
 					<< std::flush
 					;
 			}

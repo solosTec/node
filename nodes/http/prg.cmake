@@ -9,13 +9,9 @@ set (node_http_cpp
  	nodes/http/src/session.cpp
  	nodes/http/src/websocket.cpp
  	nodes/http/src/handle_request.hpp
-# 	nodes/http/src/path_cat.cpp
-# 	nodes/http/src/mime_type.cpp
-# 	nodes/http/src/auth.cpp
  	nodes/http/src/mail_config.cpp
  	nodes/http/src/main.cpp
-#  	nodes/http/src/advanced_server.cpp
-	
+
 )
 
 set (node_http_h
@@ -25,10 +21,7 @@ set (node_http_h
 	nodes/http/src/connections.h
 	nodes/http/src/session.h
 	nodes/http/src/websocket.h
-#	nodes/http/src/auth.h
 	nodes/http/src/mail_config.h
-#	nodes/http/src/path_cat.h
-#	nodes/http/src/mime_type.h
 
 )
 
@@ -46,13 +39,6 @@ set (node_http_info
 	nodes/show_ip_address.cpp
 )
 
-set (node_http_tasks
-)
-
-set (node_http_res
-)
-	
-
 if(WIN32)
 
 	set (node_http_service
@@ -61,6 +47,13 @@ if(WIN32)
 		nodes/http/templates/http_restart_service.cmd.in
 		nodes/http/templates/http.windows.cgf.in
 	)
+
+	set (node_http_res
+		${CMAKE_CURRENT_BINARY_DIR}/http.rc 
+		src/main/resources/logo.ico
+		nodes/http/templates/http.exe.manifest
+	)
+
  
 else()
 
@@ -71,19 +64,19 @@ else()
 
 endif()
 
-source_group("tasks" FILES ${node_http_tasks})
-source_group("resources" FILES ${node_http_res})
 source_group("service" FILES ${node_http_service})
-source_group("resources" FILES ${node_http_info})
+source_group("info" FILES ${node_http_info})
 
 
 # define the main program
 set (node_http
   ${node_http_cpp}
   ${node_http_h}
-  ${node_http_tasks}
-  ${node_http_res}
   ${node_http_service}
   ${node_http_info}
 )
 
+if(WIN32)
+	source_group("resources" FILES ${node_http_res})
+	list(APPEND node_http ${node_http_res})
+endif()

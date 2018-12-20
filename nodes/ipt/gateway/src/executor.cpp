@@ -174,6 +174,7 @@ namespace node
 
 		void executor::init_db(boost::uuids::uuid tag, cyng::mac48 mac)
 		{
+#ifdef _DEBUG
 			//	insert demo device
 			config_db_.insert("devices"
 				, cyng::table::key_generator(sml::to_gateway_srv_id(mac))
@@ -233,25 +234,28 @@ namespace node
 				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 2u)
 				, cyng::table::data_generator(static_cast<std::uint32_t>(900u)	//	15 min
 					, static_cast<std::uint32_t>(4u)	//	delay
-					, "power@solostec"
+					//, "power@solostec"
+					, "pushStore"
 					, static_cast<std::uint8_t>(1u)		//	source
 					, static_cast<std::uint8_t>(1u)		//	profile
 					, 0)
 				, 1	//	generation
 				, tag);
 
-			config_db_.insert("push.ops"
-				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 3u)
-				, cyng::table::data_generator(static_cast<std::uint32_t>(1800u)	//	30 min
-					, static_cast<std::uint32_t>(12u)	//	delay
-					, "water@solostec"
-					, static_cast<std::uint8_t>(1u)		//	source
-					, static_cast<std::uint8_t>(3u)		//	profile
-					, 0)
-				, 1	//	generation
-				, tag);
+			//config_db_.insert("push.ops"
+			//	, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 3u)
+			//	, cyng::table::data_generator(static_cast<std::uint32_t>(1800u)	//	30 min
+			//		, static_cast<std::uint32_t>(12u)	//	delay
+			//		, "water@solostec"
+			//		, static_cast<std::uint8_t>(1u)		//	source
+			//		, static_cast<std::uint8_t>(3u)		//	profile
+			//		, 0)
+			//	, 1	//	generation
+			//	, tag);
 
+			CYNG_LOG_INFO(logger_, "table push.ops has " << config_db_.size("push.ops") << " entries");
 
+#endif
 			//
 			//	startup
 			//

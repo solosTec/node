@@ -78,7 +78,7 @@ else()
 	set (node_ipt_master_service
 		nodes/ipt/master/templates/ipt.service.in
 		nodes/ipt/master/templates/ipt.linux.cgf.in
-	)
+)
 
 endif()
 
@@ -92,7 +92,6 @@ set (node_ipt_master
   ${node_ipt_master_cpp}
   ${node_ipt_master_h}
   ${node_ipt_master_tasks}
-  ${node_ipt_master_res}
   ${node_ipt_master_service}
   ${node_ipt_master_info}
 )

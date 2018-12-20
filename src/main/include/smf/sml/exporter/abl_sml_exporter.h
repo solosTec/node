@@ -42,10 +42,12 @@ namespace node
 		public:
 			abl_exporter(boost::filesystem::path root_dir
 				, std::string prefix
-				, std::string suffix);
+				, std::string suffix
+				, bool);
 			abl_exporter(boost::filesystem::path root_dir
 				, std::string prefix
 				, std::string suffix
+				, bool
 				, std::uint32_t source
 				, std::uint32_t channel
 				, std::string const& target);
@@ -103,6 +105,7 @@ namespace node
 			const boost::filesystem::path root_dir_;
 			const std::string prefix_;
 			const std::string suffix_;
+			const std::string eol_;	//	true is DOS, otherwise UNIX
 			const std::uint32_t source_;
 			const std::uint32_t channel_;
 			const std::string target_;
