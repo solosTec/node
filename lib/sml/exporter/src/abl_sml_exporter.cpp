@@ -319,15 +319,15 @@ namespace node
 
 				of
 					<< "[HEADER]"
-					<< '\n'
+					<< "\r\n"	//	force windows format
 					<< "PROT = 0"
-					<< '\n'
+					<< "\r\n"	//	force windows format
 					<< "MAN1 = "
 					<< get_manufacturer(ro_.server_id_)
-					<< '\n'
+					<< "\r\n"	//	force windows format
 					<< "ZNR1 = "	//03685319"
 					<< get_serial(ro_.server_id_)
-					<< '\n'
+					<< "\r\n"	//	force windows format
 					<< "DATE = "	//18.12.18 UTC"
 					<< std::setfill('0')
 					<< std::setw(2)
@@ -350,18 +350,18 @@ namespace node
 					<< std::setw(2)
 					<< cyng::chrono::second(act_utc)
 					<< " UTC"
-					<< '\n'
-					<< '\n'
+					<< "\r\n"	//	force windows format
+					<< "\r\n"	//	force windows format
 					<< "[DATA]"
-					<< '\n'
+					<< "\r\n"	//	force windows format
 					<< get_manufacturer(ro_.server_id_)
-					<< '\n'
+					<< "\r\n"	//	force windows format
 					<< OBIS_SERIAL_NR
 					//<< "0-0:96.1.0*255("
 					<< '('
 					<< get_serial(ro_.server_id_)
 					<< ")"
-					<< '\n'
+					<< "\r\n"	//	force windows format
 					;
 			}
 
@@ -391,9 +391,9 @@ namespace node
 				}
 				of
 					<< ')'
-					<< '\n'
+					<< "\r\n"	//	force windows format
 					<< '!'
-					<< '\n'
+					<< "\r\n"	//	force windows format
 					;
 			}
 
@@ -547,7 +547,7 @@ namespace node
 			//	Write physical data only.
 			//
 
-			if (of.is_open() && (code.get_medium() < 129)) {
+			if (of.is_open() && (code.get_medium() < 129) && (code.get_storage() != 0)) {
 
 				of 
 					<< to_string(code)
@@ -556,7 +556,8 @@ namespace node
 					<< '*'
 					<< get_unit_name(unit)
 					<< ')'
-					<< std::endl
+					<< "\r\n"	//	force windows format
+					<< std::flush
 					;
 			}
 		}
