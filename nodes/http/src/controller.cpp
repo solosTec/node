@@ -178,7 +178,11 @@ namespace node
 					, cyng::param_factory("http", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8080"),
+#if BOOST_OS_LINUX
+						cyng::param_factory("document-root", "/var/www"),
+#else
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
+#endif
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
 							//	authType:

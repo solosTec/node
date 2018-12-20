@@ -184,12 +184,14 @@ namespace node
 					, cyng::param_factory("tag", uidgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
-					//, cyng::param_factory("favicon", "")
-					//, cyng::param_factory("mime-config", (pwd / "mime.xml").string())
 					, cyng::param_factory("https", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8443"),	//	default is 443
+#if BOOST_OS_LINUX
+						cyng::param_factory("document-root", "/var/www"),
+#else
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
+#endif
 						cyng::param_factory("tls-pwd", "test"),
 						cyng::param_factory("tls-certificate-chain", "demo.cert"),
 						cyng::param_factory("tls-private-key", "priv.key"),
