@@ -163,9 +163,7 @@ namespace node
 						<< "access from blacklisted address: "
 						<< *pos
 						;
-					connection_manager_.vm().async_run(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
-					//bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
-					
+					connection_manager_.vm().async_run(cyng::generate_invoke("log.msg.warning", ss.str()));					
 				}
 				else {
 
@@ -178,13 +176,6 @@ namespace node
 
 					// Create the http_session and run it
 					connection_manager_.create_session(std::move(socket_));
-					//connection_manager_.start(make_http_session(logger_
-					//	, connection_manager_
-					//	, std::move(socket_)
-					//	//, doc_root_
-					//	//, bus_
-					//	, tag));
-
 				}
 
 				// Accept another connection

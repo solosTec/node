@@ -8,12 +8,14 @@
 #ifndef NODE_LIB_HTTPS_SRV_SERVER_H
 #define NODE_LIB_HTTPS_SRV_SERVER_H
 
-//#include <smf/https/srv/https.h>
 #include "connections.h"
+
 #include <smf/http/srv/auth.h>
 #include <cyng/compatibility/async.h>
 #include <cyng/vm/controller_fwd.h>
+
 #include <atomic>
+#include <memory>
 
 namespace node
 {
@@ -22,7 +24,7 @@ namespace node
 		/**
 		 * Accepts incoming HTTPS connections and launches the sessions
 		 */
-		class server
+		class server : public std::enable_shared_from_this<server>
 		{
 		public:
 			server(cyng::logging::log_ptr
@@ -63,7 +65,7 @@ namespace node
 			connections connection_manager_;
 
 			/**
-			* all blacklisted addresses
+			 * all blacklisted addresses
 			 */
 			const std::set<boost::asio::ip::address>	blacklist_;
 

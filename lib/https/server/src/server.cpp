@@ -22,7 +22,8 @@ namespace node
 			, auth_dirs const& ad
 			, std::set<boost::asio::ip::address> const& blacklist
 			, cyng::controller& vm)
-		: logger_(logger)
+		: std::enable_shared_from_this<server>()
+			, logger_(logger)
 			, ctx_(ctx)
 			, acceptor_(ioc)
 			, socket_(ioc)
@@ -120,8 +121,8 @@ namespace node
 					 << "access from blacklisted address: "
 					 << *pos
 					 ;
-					connection_manager_.vm().async_run(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
-					
+					connection_manager_.vm().async_run(cyng::generate_invoke("log.msg.warning", ss.str()));
+
 				}
 				else {
 					CYNG_LOG_TRACE(logger_, "accept "
@@ -164,7 +165,5 @@ namespace node
 			CYNG_LOG_INFO(logger_, "stop all connections");
 			connection_manager_.stop_all();
 		}
-
-
 	}
 }

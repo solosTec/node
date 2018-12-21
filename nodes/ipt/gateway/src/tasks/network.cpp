@@ -222,8 +222,10 @@ namespace node
 		void network::on_res_close_push_channel(sequence_type seq
 			, bool success
 			, std::uint32_t channel)
-		{	//	no implementation
-			CYNG_LOG_WARNING(logger_, "push channel close response not implemented");
+		{
+			CYNG_LOG_INFO(logger_, "push channel "
+				<< channel
+				<< " close response received");
 		}
 
 		//	slot [6] 0x9003: connection open request 

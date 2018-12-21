@@ -549,14 +549,34 @@ namespace node
 			//	Write physical data only.
 			//
 
-			if (of.is_open() && (code.get_medium() < 129) && (code.get_storage() != 0)) {
+			if (of.is_open() 
+				&& (code.get_medium() < 129) 
+				&& (code.get_storage() != 0)
+				&& (code != OBIS_SERIAL_NR)
+				&& (code != OBIS_SERIAL_NR_SECOND)) {
 
-				of 
+				//	filter 
+				//	skip the following values
+				//	0-0:96.1.0*255 - 00 00 60 01 00 FF - manufacturer ID (OBIS_SERIAL_NR) - is explicitely written at start of file
+				//	0-0:96.1.1*255 - 00 00 60 01 01 FF - Seriennummer (OBIS_SERIAL_NR_SECOND)
+
+				of
 					<< to_string(code)
 					<< '('
 					<< cyng::value_cast<std::string>(ro_.get_value("value"), "0")
-					<< '*'
-					<< get_unit_name(unit)
+					;
+
+				//	7-1:3.0.0*255(58634.69*m3)
+				//	0-1:97.97.0*255(0)
+				if (unit != COUNT)
+				{
+					of
+						<< '*'
+						<< get_unit_name(unit)
+						;
+				}
+
+				of
 					<< ')'
 					<< eol_	//	force windows format
 					<< std::flush
@@ -811,6 +831,7 @@ namespace node
 		{
 			if (is_mbus(buffer)) {
 				switch (buffer.back()) {
+				case 3:		return "/GWF6\\M07Coder";
 				case 7:		return "/GWF6\\M07Coder";
 				case 8:		return "/GWF6\\M08Coder";
 				default:	return "/EMH6\\M01GWF-ED300L";

@@ -4,11 +4,12 @@ set (node_http)
 set (node_http_cpp
 
  	nodes/http/src/controller.cpp
- 	nodes/http/src/listener.cpp
-  	nodes/http/src/connections.cpp
- 	nodes/http/src/session.cpp
- 	nodes/http/src/websocket.cpp
- 	nodes/http/src/handle_request.hpp
+ 	nodes/http/src/logic.cpp
+# 	nodes/http/src/listener.cpp
+#  	nodes/http/src/connections.cpp
+# 	nodes/http/src/session.cpp
+# 	nodes/http/src/websocket.cpp
+# 	nodes/http/src/handle_request.hpp
  	nodes/http/src/mail_config.cpp
  	nodes/http/src/main.cpp
 
@@ -17,10 +18,11 @@ set (node_http_cpp
 set (node_http_h
 
 	nodes/http/src/controller.h
-	nodes/http/src/listener.h
-	nodes/http/src/connections.h
-	nodes/http/src/session.h
-	nodes/http/src/websocket.h
+	nodes/http/src/logic.h
+#	nodes/http/src/listener.h
+#	nodes/http/src/connections.h
+#	nodes/http/src/session.h
+#	nodes/http/src/websocket.h
 	nodes/http/src/mail_config.h
 
 )
@@ -47,13 +49,6 @@ if(WIN32)
 		nodes/http/templates/http_restart_service.cmd.in
 		nodes/http/templates/http.windows.cgf.in
 	)
-
-	set (node_http_res
-		${CMAKE_CURRENT_BINARY_DIR}/http.rc 
-		src/main/resources/logo.ico
-		nodes/http/templates/http.exe.manifest
-	)
-
  
 else()
 
@@ -77,6 +72,11 @@ set (node_http
 )
 
 if(WIN32)
+	set (node_http_res
+		${CMAKE_CURRENT_BINARY_DIR}/http.rc 
+		src/main/resources/logo.ico
+		nodes/http/templates/http.exe.manifest
+	)
 	source_group("resources" FILES ${node_http_res})
 	list(APPEND node_http ${node_http_res})
 endif()

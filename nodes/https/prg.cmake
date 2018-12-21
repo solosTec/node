@@ -4,7 +4,7 @@ set (node_https)
 set (node_https_cpp
 
  	nodes/https/src/controller.cpp
- 	nodes/https/src/server_certificate.hpp
+ 	nodes/https/src/logic.cpp
  	nodes/https/src/main.cpp
 
 )
@@ -12,6 +12,7 @@ set (node_https_cpp
 set (node_https_h
 
 	nodes/https/src/controller.h
+	nodes/https/src/logic.h
 
 )
 

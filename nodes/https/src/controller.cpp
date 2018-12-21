@@ -7,8 +7,8 @@
 
 #include "controller.h"
 #include <NODE_project_info.h>
-#include <smf/https/srv/server.h>
-//#include "server_certificate.hpp"
+#include "logic.h"
+
 #include <cyng/log.h>
 #include <cyng/async/scheduler.h>
 #include <cyng/async/signal_handler.h>
@@ -188,7 +188,7 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8443"),	//	default is 443
 #if BOOST_OS_LINUX
-						cyng::param_factory("document-root", "/var/www"),
+						cyng::param_factory("document-root", "/var/www/html"),
 #else
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
 #endif
@@ -225,6 +225,24 @@ namespace node
 						cyng::param_factory("redirect", cyng::vector_factory({
 							cyng::param_factory("/", "/index.html")
 						}))
+					))
+					, cyng::param_factory("mail", cyng::tuple_factory(
+						cyng::param_factory("host", "smtp.gmail.com"),
+						cyng::param_factory("port", 465),
+						cyng::param_factory("auth", cyng::tuple_factory(
+							cyng::param_factory("name", "auth@example.com"),
+							cyng::param_factory("pwd", "secret"),
+							cyng::param_factory("method", "START_TLS")
+						)),
+						cyng::param_factory("sender", cyng::tuple_factory(
+							cyng::param_factory("name", "sender"),
+							cyng::param_factory("address", "sender@example.com")
+						)),
+						cyng::param_factory("recipients", cyng::vector_factory({
+							cyng::tuple_factory(
+								cyng::param_factory("name", "recipient"),
+								cyng::param_factory("address", "recipient@example.com"))}
+						))
 					))
 				)
 			});
@@ -306,12 +324,6 @@ namespace node
 			boost::uuids::random_generator uidgen;
 			cyng::controller vm(scheduler.get_io_service(), uidgen(), std::cout, std::cerr);
 
-			vm.register_function("http.session.launch", 3, [&](cyng::context& ctx) {
-				//	[849a5b98-429c-431e-911d-18a467a818ca,false,127.0.0.1:61383]
-				const cyng::vector_t frame = ctx.get_frame();
-				CYNG_LOG_INFO(logger, "http.session.launch " << cyng::io::to_str(frame));
-			});
-
 			// Create and launch a listening port
 			auto srv = std::make_shared<https::server>(logger
 				, scheduler.get_io_service()
@@ -321,6 +333,11 @@ namespace node
 				, ad
 				, blacklist
 				, vm);
+
+			//
+			//	add logic
+			//
+			https::logic handler(*srv, vm, logger);
 
 			if (srv->run())
 			{

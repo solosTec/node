@@ -50,13 +50,6 @@ namespace node
 			 */
 			void close();
 
-
-			//void add_channel(boost::uuids::uuid tag, std::string const& channel);
-			//void process_event(std::string const& channel, std::string const&);
-
-			//void send_moved(boost::uuids::uuid, std::string const&);
-			//void trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment);
-
 			/**
 			 * access connection manager
 			 */
@@ -71,7 +64,6 @@ namespace node
 			boost::asio::ip::tcp::acceptor acceptor_;
 			boost::asio::ip::tcp::socket socket_;
 			const std::set<boost::asio::ip::address> blacklist_;
-			//bus::shared_type bus_;
 
 			/**
 			 * The connection manager which owns all live connections.

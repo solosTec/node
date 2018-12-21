@@ -261,14 +261,12 @@ namespace node
 			<< config_.get().host_
 			<< ':'
 			<< config_.get().service_);
-
 	}
 
 	void cluster::reconfigure(cyng::context& ctx)
 	{
 		reconfigure_impl();
 	}
-
 
 	void cluster::reconfigure_impl()
 	{
@@ -294,7 +292,6 @@ namespace node
 			<< config_.get().monitor_.count()
 			<< " seconds");
 		base_.suspend(config_.get().monitor_);
-
 	}
 
 	void cluster::res_subscribe(cyng::context& ctx)
@@ -343,9 +340,7 @@ namespace node
 			, std::get<3>(tpl)	//	[3] generation
 			, std::get<4>(tpl)	//	[4] origin session id
 			, std::get<5>(tpl));
-
 	}
-
 
 	void cluster::ws_read(cyng::context& ctx)
 	{
@@ -407,20 +402,6 @@ namespace node
 				, ctx
 				, reader);
 		}
-		//else if (boost::algorithm::equals(cmd, "reboot"))
-		//{
-		//	node::fwd_reboot(logger_
-		//		, ctx
-		//		, tag
-		//		, reader);
-		//}
-		//else if (boost::algorithm::equals(cmd, "query:gateway"))
-		//{
-		//	node::fwd_query_gateway(logger_
-		//		, ctx
-		//		, tag
-		//		, reader);
-		//}
 		else if (boost::algorithm::equals(cmd, "config:gateway"))
 		{
 			node::fwd_config_gateway(logger_
@@ -433,10 +414,5 @@ namespace node
 		{
 			CYNG_LOG_WARNING(logger_, "ws.read - unknown command " << cmd);
 		}
-
 	}
-
-
-
-
 }

@@ -6,10 +6,13 @@
  */ 
 
 #include "controller.h"
-#include "listener.h"
+#include <NODE_project_info.h>
 #include "mail_config.h"
-//#include "auth.h"
+#include "logic.h"
 #include <smf/http/srv/auth.h>
+#include <smf/http/srv/server.h>
+
+
 #include <cyng/log.h>
 #include <cyng/async/scheduler.h>
 #include <cyng/async/signal_handler.h>
@@ -19,7 +22,9 @@
 #include <cyng/dom/tree_walker.h>
 #include <cyng/json.h>
 #include <cyng/value_cast.hpp>
+#include <cyng/vector_cast.hpp>
 #include <cyng/compatibility/io_service.h>
+#include <cyng/vm/controller.h>
 
 #include <fstream>
 #include <boost/algorithm/string/predicate.hpp>
@@ -179,7 +184,7 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8080"),
 #if BOOST_OS_LINUX
-						cyng::param_factory("document-root", "/var/www"),
+						cyng::param_factory("document-root", "/var/www/html"),
 #else
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
 #endif
@@ -224,7 +229,8 @@ namespace node
 								cyng::param_factory("name", "recipient"),
 								cyng::param_factory("address", "recipient@example.com"))}
 						))
-					)))
+					))
+				)
 			});
 			
 			cyng::json::write(std::cout, cyng::make_object(conf));
@@ -260,16 +266,46 @@ namespace node
 
 		
 		auto const address = cyng::make_address(host);
+
+		//
+		//	get blacklisted addresses
+		//
+		const auto blacklist_str = cyng::vector_cast<std::string>(dom["http"].get("blacklist"), "");
+		CYNG_LOG_INFO(logger, blacklist_str.size() << " adresses are blacklisted");
+		std::set<boost::asio::ip::address>	blacklist;
+		for (auto const& a : blacklist_str) {
+			auto r = blacklist.insert(boost::asio::ip::make_address(a));
+			if (r.second) {
+				CYNG_LOG_TRACE(logger, *r.first);
+			}
+			else {
+				CYNG_LOG_WARNING(logger, "cannot insert " << a);
+			}
+		}
+
+		//
+		//	create VM controller
+		//
 		BOOST_ASSERT_MSG(scheduler.is_running(), "scheduler not running");
-		
+		boost::uuids::random_generator uidgen;
+		cyng::controller vm(scheduler.get_io_service(), uidgen(), std::cout, std::cerr);
+
 		// Create and launch a listening port
-		auto srv = std::make_shared<listener>(
-			logger, 
-			scheduler.get_io_service(),
-			boost::asio::ip::tcp::endpoint{address, port},
-			doc_root,
-			mx,
- 			ad);
+		auto srv = std::make_shared<http::server>(logger
+			, scheduler.get_io_service()
+			, boost::asio::ip::tcp::endpoint{ address, port }
+			, doc_root
+#ifdef NODE_SSL_INSTALLED
+			, ad
+#endif
+			, blacklist
+			, vm);
+
+
+		//
+		//	add logic
+		//
+		http::logic handler(*srv, vm, logger);
 
 		if (srv->run())
 		{

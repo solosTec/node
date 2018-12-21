@@ -6,10 +6,13 @@
  */
 
 #include "push_ops.h"
+#include <smf/sml/event.h>
+
 #include <cyng/async/task/base_task.h>
 #include <cyng/chrono.h>
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/vm/generator.h>
+
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 
@@ -144,6 +147,23 @@ namespace node
 							<< "> remove "
 							<< entry.path());
 						boost::filesystem::remove(entry.path());
+
+						config_db_.insert("op.log"
+							, cyng::table::key_generator(0UL)
+							, cyng::table::data_generator(std::chrono::system_clock::now()
+								, static_cast<std::uint32_t>(900u)	//	reg period - 15 min
+								, std::chrono::system_clock::now()	//	val time
+								, static_cast<std::uint64_t>(status_word_.operator size_t())	//	status
+								, node::sml::evt_push_succes()	//	event - push successful
+								, cyng::make_buffer({ 0x81, 0x46, 0x00, 0x00, 0x02, 0xFF })
+								, std::chrono::system_clock::now()	//	val time
+								, cyng::make_buffer({ 0x02, 0xE6, 0x1E, 0x27, 0x66, 0x03, 0x15, 0x35, 0x03 })
+								, target
+								, static_cast<std::uint8_t>(1u))		//	push_nr
+							, 1	//	generation
+							, tag_);
+
+
 
 						break;	//	one item at a time
 					}
