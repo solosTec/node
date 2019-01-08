@@ -771,7 +771,8 @@ namespace node
 			if (!rec.empty())
 			{
 
-				CYNG_LOG_WARNING(logger_, cyng::io::to_str(rec["value"]));
+				CYNG_LOG_TRACE(logger_, "sys.cpu.usage.total: " << cyng::io::to_str(rec["value"]));
+
 				//
 				//	Total CPU load of the system in %
 				//

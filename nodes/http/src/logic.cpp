@@ -13,6 +13,7 @@
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/dom/reader.h>
 #include <cyng/json.h>
+#include <cyng/sys/cpu.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/uuid/nil_generator.hpp>
@@ -88,21 +89,43 @@ namespace node
 			}
 			else if (boost::algorithm::equals(cmd, "update"))
 			{
-				//
-				//	generate response
-				//
-				auto tpl = cyng::tuple_factory(
-					cyng::param_factory("cmd", std::string("update")),
-					cyng::param_factory("channel", channel),
-					cyng::param_factory("value", 42));
+				if (boost::algorithm::equals("sys.cpu.load", channel)) {
 
-				auto msg = cyng::json::to_string(tpl);
+					//
+					//	query cpu load
+					//
+					const auto load = cyng::sys::get_total_cpu_load();
 
+					//
+					//	generate response
+					//
+					auto tpl = cyng::tuple_factory(
+						cyng::param_factory("cmd", std::string("update")),
+						cyng::param_factory("channel", channel),
+						cyng::param_factory("value", load));
 
-				//
-				//	send response
-				//
-				srv_.get_cm().push_event(channel, msg);
+					//
+					//	send response
+					//
+					auto const msg = cyng::json::to_string(tpl);
+					srv_.get_cm().push_event(channel, msg);
+				}
+				else {
+
+					//
+					//	generate response
+					//
+					auto tpl = cyng::tuple_factory(
+						cyng::param_factory("cmd", std::string("update")),
+						cyng::param_factory("channel", channel),
+						cyng::param_factory("value", "unknown channel"));
+
+					//
+					//	send response
+					//
+					auto const msg = cyng::json::to_string(tpl);
+					srv_.get_cm().push_event(channel, msg);
+				}
 			}
 			else
 			{

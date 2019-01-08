@@ -185,8 +185,10 @@ namespace node
 						cyng::param_factory("service", "8080"),
 #if BOOST_OS_LINUX
 						cyng::param_factory("document-root", "/var/www/html"),
+						cyng::param_factory("blog-root", "/var/www/html/blog"),
 #else
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
+						cyng::param_factory("blog-root", (pwd / "htdocs" / "blog").string()),
 #endif
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
@@ -250,11 +252,13 @@ namespace node
 		auto dom = cyng::make_reader(cfg);
 		
  		const auto doc_root = cyng::io::to_str(dom["http"].get("document-root"));
+		const auto blog_root = cyng::io::to_str(dom["http"].get("blog-root"));
 		const auto host = cyng::io::to_str(dom["http"].get("address"));
 		const auto service = cyng::io::to_str(dom["http"].get("service"));
 		const auto port = static_cast<unsigned short>(std::stoi(service));
  		
  		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
+		CYNG_LOG_TRACE(logger, "blog root: " << blog_root);
 
 		mail_config mx;
 		init(dom.get("mail"), mx);

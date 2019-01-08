@@ -229,6 +229,28 @@ namespace node
 
 			auto pos = sessions_[SOCKET_PLAIN].find(tag);
 			if (pos != sessions_[SOCKET_PLAIN].end()) {
+
+#ifdef _DEBUG
+				//	test for duplicate entries
+				auto const range = listener_.equal_range(channel);
+				for (auto it = range.first; it != range.second; ++it) {
+					auto ptr = cyng::object_cast<websocket_session>(it->second);
+					if (ptr) {
+						if (ptr->tag() == tag) {
+							CYNG_LOG_WARNING(logger_, "duplicate entries in channel "
+								<< channel
+								<< " for SOCKET_PLAIN "
+								<< tag);
+						}
+					}
+					else {
+						CYNG_LOG_ERROR(logger_, "empty entries in channel "
+							<< channel
+							<< " for SOCKET_PLAIN");
+					}
+				}			
+#endif
+
 				listener_.emplace(channel, pos->second);
 				return true;
 			}
