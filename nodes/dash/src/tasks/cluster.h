@@ -46,6 +46,7 @@ namespace node
 			, auth_dirs const& ad
 #endif
 			, std::set<boost::asio::ip::address> const&
+			, bool https_rewrite
 		);
 		cyng::continuation run();
 		void stop();

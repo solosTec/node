@@ -40,7 +40,7 @@ namespace node
 		, auth_dirs const& ad
 #endif
 		, std::set<boost::asio::ip::address> const& blacklist
-		)
+		, bool https_rewrite)
 	: base_(*btp)
 		, uidgen_()
 		, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
@@ -54,7 +54,8 @@ namespace node
 			, ad
 #endif
 			, blacklist
-			, bus_->vm_)
+			, bus_->vm_
+			, https_rewrite)
 		, dispatcher_(logger, server_.get_cm())
 		, db_sync_(logger, cache_)
 		, forward_(logger, cache_, server_.get_cm())

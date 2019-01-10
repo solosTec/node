@@ -227,8 +227,8 @@ namespace node
 							})),	//	blacklist
 						cyng::param_factory("redirect", cyng::vector_factory({
 							cyng::param_factory("/", "/index.html")
-						}))
-
+						})),
+						cyng::param_factory("https-rewrite", false)	//	301 - Moved Permanently
 					))
 
 					, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
@@ -426,6 +426,10 @@ namespace node
 			CYNG_LOG_INFO(logger, "restricted access to [" << dir.first << "]");
 		}
 #endif
+		auto const https_rewrite = cyng::value_cast(dom.get("https-rewrite"), false);
+		if (https_rewrite) {
+			CYNG_LOG_WARNING(logger, "HTTPS rewrite is active");
+		}
 
 		//
 		//	get blacklisted addresses
@@ -454,7 +458,8 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 			, ad
 #endif
-			, blacklist);
+			, blacklist
+			, https_rewrite);
 
 	}
 
