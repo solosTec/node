@@ -39,7 +39,8 @@ namespace node
 				, auth_dirs const& ad
 #endif
 				, std::set<boost::asio::ip::address> const& blacklist
-				, cyng::controller& vm);
+				, cyng::controller& vm
+				, bool https_rewrite);
 
 			// Start accepting incoming connections
 			bool run();
@@ -63,7 +64,7 @@ namespace node
 			cyng::logging::log_ptr logger_;
 			boost::asio::ip::tcp::acceptor acceptor_;
 			boost::asio::ip::tcp::socket socket_;
-			const std::set<boost::asio::ip::address> blacklist_;
+			std::set<boost::asio::ip::address> const blacklist_;
 
 			/**
 			 * The connection manager which owns all live connections.

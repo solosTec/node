@@ -26,6 +26,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs const& ad
 #endif
+			, bool https_rewrite
 			)
 		: logger_(logger)
 			, vm_(vm)
@@ -33,6 +34,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs_(ad)
 #endif
+			, https_rewrite_(https_rewrite)
 			, uidgen_()
 			, sessions_()
 			, mutex_()
@@ -54,7 +56,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs_
 #endif
-				);
+				, https_rewrite_);
 
 			auto sp = const_cast<session*>(cyng::object_cast<session>(obj));
 			BOOST_ASSERT(sp != nullptr);

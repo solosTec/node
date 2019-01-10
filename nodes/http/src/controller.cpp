@@ -212,7 +212,8 @@ namespace node
 						)),
 						cyng::param_factory("redirect", cyng::vector_factory({
 							cyng::param_factory("/", "/index.html")
-						}))
+						})),
+						cyng::param_factory("https-rewrite", false)	//	301 - Moved Permanently
 					))
 					, cyng::param_factory("mail", cyng::tuple_factory(
 						cyng::param_factory("host", "smtp.gmail.com"),
@@ -260,6 +261,11 @@ namespace node
  		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
 		CYNG_LOG_TRACE(logger, "blog root: " << blog_root);
 
+		auto const https_rewrite = cyng::value_cast(dom["http"].get("https-rewrite"), false);
+		if (https_rewrite) {
+			CYNG_LOG_WARNING(logger, "HTTPS rewrite is active");
+		}
+		
 		mail_config mx;
 		init(dom.get("mail"), mx);
 
@@ -303,7 +309,8 @@ namespace node
 			, ad
 #endif
 			, blacklist
-			, vm);
+			, vm
+			, https_rewrite);
 
 
 		//
@@ -318,21 +325,13 @@ namespace node
 			//
 			const bool shutdown = wait(logger);
 			
-		
-//  		std::cerr << "STOP" << std::endl;
-		
+				
 			//
 			//	close acceptor
 			//
 			CYNG_LOG_INFO(logger, "close acceptor");
 			srv->close();
-			
-			
-// 			//
-// 			//	stop all connections
-// 			//
-// 			CYNG_LOG_INFO(logger, "stop all connections");			
-			
+					
 			return shutdown;
 		}
 		

@@ -33,13 +33,14 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs const& ad
 #endif
-			)
+			, bool https_rewrite)
 		: logger_(logger)
 			, tag_(tag)
 			, doc_root_(doc_root)
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs_(ad)
 #endif
+			, https_rewrite_(https_rewrite)
 			, socket_(std::move(socket))
 			, connection_manager_(cm)
 			, strand_(socket_.get_executor())
@@ -252,6 +253,18 @@ namespace node
 				req.method() == boost::beast::http::verb::head)
 			{
 
+				if (https_rewrite_) {
+
+					//
+					//	301 - moved permanently
+					//
+					auto pos = req.find("host");
+					return queue_(send_redirect(req.version()
+						, req.keep_alive()
+						, (pos != req.end() ? pos->value().to_string() : "")
+						, req.target().to_string()));
+				}
+
 				//
 				//	test authorization
 				//
@@ -428,8 +441,24 @@ namespace node
 			res.body() = "An error occurred: '" + ec.message() + "'";
 			res.prepare_payload();
 			return res;
-
 		}
+
+		boost::beast::http::response<boost::beast::http::string_body> session::send_redirect(std::uint32_t version
+			, bool keep_alive
+			, std::string host
+			, std::string target)
+		{
+			CYNG_LOG_WARNING(logger_, "301 - moved permanently: " << target);
+			boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::moved_permanently, version };
+			res.set(boost::beast::http::field::server, NODE::version_string);
+			res.set(boost::beast::http::field::content_type, "text/html");
+			res.set(boost::beast::http::field::location, "https://" + host + target);
+			res.keep_alive(keep_alive);
+			res.body() = "301 - moved permanently";
+			res.prepare_payload();
+			return res;
+		}
+
 
 		boost::beast::http::response<boost::beast::http::string_body> session::send_not_found(std::uint32_t version
 			, bool keep_alive

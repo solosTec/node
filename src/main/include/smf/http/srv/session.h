@@ -115,6 +115,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs const& ad
 #endif
+				, bool https_redirect
 			);
 			virtual ~session();
 
@@ -145,6 +146,10 @@ namespace node
 			boost::beast::http::response<boost::beast::http::string_body> send_server_error(std::uint32_t version
 				, bool
 				, boost::system::error_code ec);
+			boost::beast::http::response<boost::beast::http::string_body> send_redirect(std::uint32_t version
+				, bool
+				, std::string host
+				, std::string target);
 			boost::beast::http::response<boost::beast::http::empty_body> send_head(std::uint32_t version
 				, bool
 				, std::string const& path
@@ -165,11 +170,13 @@ namespace node
 
 		private:
 			cyng::logging::log_ptr logger_;
-			const boost::uuids::uuid tag_;
-			const std::string doc_root_;
+			boost::uuids::uuid const tag_;
+			std::string const doc_root_;
 #ifdef NODE_SSL_INSTALLED
-			const auth_dirs& auth_dirs_;
+			auth_dirs const& auth_dirs_;
 #endif
+			bool const https_rewrite_;
+
 			boost::asio::ip::tcp::socket socket_;
 			connections& connection_manager_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;

@@ -26,7 +26,8 @@ namespace node
 			, auth_dirs const& ad
 #endif
 			, std::set<boost::asio::ip::address> const& blacklist
-			, cyng::controller& vm)
+			, cyng::controller& vm
+			, bool https_rewrite)
 		: logger_(logger)
 			, acceptor_(ioc)
 			, socket_(ioc)
@@ -37,7 +38,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 				, ad
 #endif
-			)
+				, https_rewrite)
 			, is_listening_(false)
 			, shutdown_complete_()
 			, mutex_()

@@ -46,6 +46,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs const& ad
 #endif
+				, bool https_rewrite
 			);
 
 			/**
@@ -128,11 +129,13 @@ namespace node
 			/**
 			 * document root
 			 */
-			const std::string doc_root_;
+			std::string const doc_root_;
 
 #ifdef NODE_SSL_INSTALLED
-			const auth_dirs auth_dirs_;
+			auth_dirs const auth_dirs_;
 #endif
+
+			bool const https_rewrite_;
 
 			/**
 			 * Generate unique session tags
