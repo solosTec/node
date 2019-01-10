@@ -41,6 +41,7 @@ namespace node
 				CYNG_LOG_FATAL(logger_, "open: " << ec.message());
 				return;
 			}
+			CYNG_LOG_TRACE(logger_, "open: " << endpoint.address().to_string() << ':' << endpoint.port());
 
 			// Allow address reuse
 			acceptor_.set_option(boost::asio::socket_base::reuse_address(true));
@@ -50,11 +51,8 @@ namespace node
 			}
 
 			// Bind to the server address
-			acceptor_.bind(endpoint, ec);
-			if (ec)	{
-				CYNG_LOG_FATAL(logger_, "bind: " << ec.message());
-				return;
-			}
+			if (!bind(endpoint, 16))	return;
+			CYNG_LOG_TRACE(logger_, "bind: " << endpoint.address().to_string() << ':' << endpoint.port());
 
 			// Start listening for connections
 			acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
@@ -69,6 +67,23 @@ namespace node
 			return connection_manager_;
 		}
 
+        bool server::bind(boost::asio::ip::tcp::endpoint ep, std::size_t retries)
+		{
+			boost::system::error_code ec;
+
+			do
+            {
+                acceptor_.bind(ep, ec);
+                if (ec)
+                {
+                    CYNG_LOG_FATAL(logger_, "bind: " << ec.message());
+                    std::this_thread::sleep_for(std::chrono::seconds(10));
+                }
+            } while(ec && (retries-- > 0u));
+			
+            return !ec;
+		}
+		
 		// Start accepting incoming connections
 		bool server::run()
 		{

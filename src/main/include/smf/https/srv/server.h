@@ -52,7 +52,8 @@ namespace node
 
 		private:
 			void on_accept(boost::system::error_code ec);
-
+			bool bind(boost::asio::ip::tcp::endpoint ep, std::size_t retries);
+			
 		private:
 			cyng::logging::log_ptr logger_;
 			boost::asio::ssl::context& ctx_;

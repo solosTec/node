@@ -193,9 +193,9 @@ namespace node
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
 #endif
 						cyng::param_factory("tls-pwd", "test"),
-						cyng::param_factory("tls-certificate-chain", "demo.cert"),
-						cyng::param_factory("tls-private-key", "priv.key"),
-						cyng::param_factory("tls-dh", "demo.dh"),	//	diffie-hellman
+						cyng::param_factory("tls-certificate-chain", "fullchain.pem"),
+						cyng::param_factory("tls-private-key", "privkey.pem"),
+						cyng::param_factory("tls-dh", "dh4096.pem"),	//	diffie-hellman
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
 							//	authType:
@@ -267,8 +267,8 @@ namespace node
 		const auto host = cyng::io::to_str(dom["https"].get("address"));
 		const auto service = cyng::io::to_str(dom["https"].get("service"));
 		const auto port = static_cast<unsigned short>(std::stoi(service));
- 		
- 		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
+		
+		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
 
 
 		// This holds the self-signed certificate used by the server
@@ -309,9 +309,13 @@ namespace node
 		//	get SSL configuration
 		//
 		auto tls_pwd = cyng::value_cast<std::string>(dom["https"].get("tls-pwd"), "test");
-		auto tls_certificate_chain = cyng::value_cast<std::string>(dom["https"].get("tls-certificate-chain"), "demo.cert");
-		auto tls_private_key = cyng::value_cast<std::string>(dom["https"].get("tls-private-key"), "priv.key");
-		auto tls_dh = cyng::value_cast<std::string>(dom["https"].get("tls-dh"), "demo.dh");
+		auto tls_certificate_chain = cyng::value_cast<std::string>(dom["https"].get("tls-certificate-chain"), "fullchain.pem");
+		auto tls_private_key = cyng::value_cast<std::string>(dom["https"].get("tls-private-key"), "privkey.pem");
+		auto tls_dh = cyng::value_cast<std::string>(dom["https"].get("tls-dh"), "dh4096.pem");
+
+		CYNG_LOG_TRACE(logger, "tls-certificate-chain: " << tls_certificate_chain);	
+		CYNG_LOG_TRACE(logger, "tls-private-key: " << tls_private_key);	
+		CYNG_LOG_TRACE(logger, "tls-dh: " << tls_dh);
 
 		//
 		// This holds the self-signed certificate used by the server
@@ -324,6 +328,8 @@ namespace node
 			boost::uuids::random_generator uidgen;
 			cyng::controller vm(scheduler.get_io_service(), uidgen(), std::cout, std::cerr);
 
+			CYNG_LOG_TRACE(logger, "VM tag: " << vm.tag());
+			
 			// Create and launch a listening port
 			auto srv = std::make_shared<https::server>(logger
 				, scheduler.get_io_service()
@@ -334,11 +340,20 @@ namespace node
 				, blacklist
 				, vm);
 
+			if (srv) {
+				CYNG_LOG_TRACE(logger, "HTTPS server established");
+			}
+			else {
+				CYNG_LOG_FATAL(logger, "no HTTPS server instance");
+			}
+			
 			//
 			//	add logic
 			//
 			https::logic handler(*srv, vm, logger);
 
+			CYNG_LOG_TRACE(logger, "HTTPS server logic initialized - start listening");
+			
 			if (srv->run())
 			{
 				//
@@ -354,7 +369,16 @@ namespace node
 
 				return shutdown;
 			}
+			else 
+			{
+				CYNG_LOG_FATAL(logger, "HTTPS server startup failed");
+			}
 		}
+		else {
+			
+			CYNG_LOG_FATAL(logger, "loading server certificates failed");
+		}
+		
 		//
 		//	shutdown
 		//
@@ -396,6 +420,7 @@ namespace node
 
 		//
 		//	generate files with (see https://www.adfinis-sygroup.ch/blog/de/openssl-x509-certificates/):
+		//	https://certbot.eff.org/lets-encrypt/ubuntubionic-other
 		//
 
 		//	openssl genrsa -out solostec.com.key 4096
@@ -418,8 +443,13 @@ namespace node
 
 		try {
 			ctx.use_certificate_chain_file(tls_certificate_chain);
+			CYNG_LOG_INFO(logger, tls_certificate_chain << " successfull loaded");	
+			
 			ctx.use_private_key_file(tls_private_key, boost::asio::ssl::context::pem);
+			CYNG_LOG_INFO(logger, tls_private_key << " successfull loaded");	
+
 			ctx.use_tmp_dh_file(tls_dh);
+			CYNG_LOG_INFO(logger, tls_dh << " successfull loaded");	
 
 		}
 		catch (std::exception const& ex) {
