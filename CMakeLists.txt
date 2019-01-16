@@ -960,6 +960,15 @@ if(UNIX)
 		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http.service.in"
 		  "${PROJECT_BINARY_DIR}/node-http.service")
 
+	# https
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https.linux.cgf.in"
+		  "${PROJECT_BINARY_DIR}/https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https.service.in"
+		  "${PROJECT_BINARY_DIR}/node-https.service")
+
 	# dash
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash.linux.cgf.in"
