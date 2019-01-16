@@ -305,6 +305,7 @@ namespace node
 			, scheduler.get_io_service()
 			, boost::asio::ip::tcp::endpoint{ address, port }
 			, doc_root
+			, blog_root
 #ifdef NODE_SSL_INSTALLED
 			, ad
 #endif

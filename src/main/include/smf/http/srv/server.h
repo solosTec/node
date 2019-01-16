@@ -35,6 +35,7 @@ namespace node
 				, boost::asio::io_context& ioc
 				, boost::asio::ip::tcp::endpoint endpoint
 				, std::string const& doc_root
+				, std::string const& blog_root
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs const& ad
 #endif
