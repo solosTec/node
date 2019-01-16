@@ -164,6 +164,7 @@ namespace node
 			case BODY_GET_LIST_REQUEST:
 				return read_get_list_request(tpl.begin(), tpl.end());
 			case BODY_GET_LIST_RESPONSE:
+				//	ToDo: read get list response (0701)
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_ATTENTION_RESPONSE:

@@ -146,6 +146,7 @@ namespace node
 		void execute_cmd_set_proc_param();
 		void execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen);
 		void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen);
+		void execute_cmd_get_list_req_last_data_set(sml::req_generator& sml_gen);
 		cyng::mac48 get_mac() const;
 
 	private:

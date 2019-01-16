@@ -116,14 +116,18 @@
                 <a class="nav-link active" id="smf-meter-tab-config" data-toggle="tab" href="#smf-meter-config" aria-selected="true">Configuration</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="smf-meter-tab-gw" data-toggle="tab" href="#smf-meter-gw" aria-selected="true">Gateway</a>
+                <a class="nav-link" id="smf-meter-tab-gw" data-toggle="tab" href="#smf-meter-gw" aria-selected="false">Gateway</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="smf-meter-tab-query" data-toggle="tab" href="#smf-meter-query" aria-selected="false">Measurement</a>
             </li>
         </ul>
 
-        <div class="tab-content bg-secondary">
+        <div class="tab-content bg-secondary" style="min-height:30rem;">
             <div id="smf-meter-config" class="container-fluid tab-pane fade show active" role="tabpanel">
                 <form id="smf-form-meter" style="padding:2em">
                     <input type="hidden" id="smf-form-meter-tag" name="smf-form-meter-tag" />
+                    <!--<input type="hidden" id="smf-form-gw-key" name="smf-form-gw-key" />-->
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
@@ -166,7 +170,7 @@
                             <input id="smf-form-meter-class" name="smf-form-meter-class" type="text" placeholder="<Metrological Class>" class="form-control input-md">
                         </div>
                         <div class="form-group col-md-6">
-                            <label class="control-label" for="smf-form-meter-tom">Time of Manufactoring</label>
+                            <label class="control-label" for="smf-form-meter-tom">Time of Manufactoring (TOM)</label>
                             <input id="smf-form-meter-tom" name="smf-form-meter-tom" type="date" placeholder="<Time of Manufactoring>" class="form-control input-md" readonly>
                         </div>
                     </div>
@@ -184,7 +188,8 @@
                 </form>
                 <br>
             </div>
-            <div id="smf-meter-gw" class="container-fluid tab-pane fade show fade" role="tabpanel">
+
+            <div id="smf-meter-gw" class="container-fluid tab-pane fade show" role="tabpanel">
                 <h4>Gateway</h4>
                 <form id="smf-form-gw" style="padding:2em">
                     <div class="form-row">
@@ -199,6 +204,22 @@
                     </div>
                 </form>
             </div>
+
+            <div id="smf-meter-query" class="container-fluid tab-pane fade show" role="tabpanel">
+                <h4>Query of measured values</h4>
+                <form id="smf-form-gw" style="padding:2em">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <a id="smf-form-meter-query" href="#" class="btn btn-info col-md-4">Query</a>
+                            <label class="control-label" for="smf-form-meter-query">&nbsp;Meter <span id="smf-form-meter-query-name"></span> </label>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <ul class="list-group"></ul>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
         </div>
     </div>
 
@@ -239,8 +260,8 @@
                 { targets: 'sml-col-meter-fw', visible: true, name: 'meter-fw' },
                 { targets: 'sml-col-meter-fn', visible: true, name: 'meter-fn' },
                 { targets: 'sml-col-meter-item', visible: true, name: 'meter-item' },
-                { targets: 'sml-col-meter-class', visible: true, name: 'meter-class' },
-                { targets: 'sml-col-meter-serverId', visible: false, name: 'meter-serverId' },
+                { targets: 'sml-col-meter-class', visible: false, name: 'meter-class' },
+                { targets: 'sml-col-meter-serverId', visible: true, name: 'meter-serverId' },
                 { targets: 'sml-col-meter-gw-key', visible: false, name: 'meter-gw-key' }
             ]
         };
@@ -269,6 +290,8 @@
 
                 $('#smf-form-meter-serverId').val(rowData[10]);
                 $('#smf-form-meter-gw-key').val(rowData[11]);
+
+                $('#smf-form-meter-query-name').html('<abbr title=' + rowData[10] + ' class="font-italic">' + rowData[1] + '</abbr>');
 
             }); //  onSelect()
 
@@ -434,6 +457,19 @@
                             mClass: $('#smf-form-meter-class').val()
                         }
                     }
+                }));
+            });
+
+            $('#smf-form-meter-query').on("click", function (event) {
+                event.preventDefault();
+                console.log('query: ' + $('#smf-form-gw').serialize());
+                _ws.send(JSON.stringify({
+                    cmd: "config:gateway"
+                    , channel: "set.proc.param"
+                    , key: [$('#smf-form-meter-gw-key').val()], params: [
+                        { name: "meter-tag", value: $('#smf-form-meter-tag').val() },
+                        { name: "meter-id", value: $('#smf-form-meter-ident').val() }
+                    ], section: ["query"]
                 }));
             });
 

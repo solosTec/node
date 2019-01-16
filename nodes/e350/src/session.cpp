@@ -193,7 +193,8 @@ namespace node
 			//	control - watchdog
 			//CTRL_REQ_WATCHDOG = 0xC008,	//!<	request
 			//CTRL_RES_WATCHDOG = 0x4008,	//!<	response
-			vm_.register_function("ipt.res.watchdog", 1, std::bind(&session::imega_res_watchdog, this, std::placeholders::_1));
+			vm_.register_function("imega.res.watchdog", 1, std::bind(&session::imega_res_watchdog, this, std::placeholders::_1));
+			CYNG_LOG_TRACE(logger_, vm_.tag() << " imega.res.watchdog registered");
 
 			//	control - multi public login request
 			//MULTI_CTRL_REQ_LOGIN_PUBLIC = 0xC009,	//!<	request
@@ -398,9 +399,11 @@ namespace node
 			//	[imega.req.transmit.data,
 			//	[c5eae235-d5f5-413f-a008-5d317d8baab7,1B1B1B1B01010101768106313830313...1B1B1B1B1A034276]]
 			const cyng::vector_t frame = ctx.get_frame();
+			ctx.run(cyng::generate_invoke("log.msg.debug", "imega.req.transmit.data", frame));
+
 			if (bus_->is_online())
 			{
-				const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+				auto const tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 
 				if (connect_state_.is_local())
 				{

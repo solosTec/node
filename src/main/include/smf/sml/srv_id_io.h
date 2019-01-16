@@ -20,9 +20,19 @@ namespace node
 {
 	namespace sml
 	{
+		/**
+		 * example: 02-e61e-03197715-3c-07
+		 */
+		bool is_mbus(std::string const&);
 		bool is_mbus(cyng::buffer_t const&);
 		bool is_w_mbus(cyng::buffer_t const&);
+
+		/**
+		 * example: 05823740
+		 */
+		bool is_serial(std::string const&);
 		bool is_serial(cyng::buffer_t const&);
+
 		bool is_gateway(cyng::buffer_t const&);
 		bool is_dke_1(cyng::buffer_t const&);
 		bool is_dke_2(cyng::buffer_t const&);
@@ -46,18 +56,15 @@ namespace node
 		 */
 		std::uint32_t get_srv_type(cyng::buffer_t const&);
 
-		/**
-		 * example: 02-e61e-03197715-3c-07
-		 */
-		bool is_mbus(std::string const&);
-
-		/**
-		 * example: 05823740
-		 */
-		bool is_serial(std::string const&);
-
 		void serialize_server_id(std::ostream& os, cyng::buffer_t const&);
 		std::string from_server_id(cyng::buffer_t const&);
+
+		/** @brief parser for server IDs
+		 *
+		 * Accept a server ID like 02-e61e-03197715-3c-07
+		 * and convert it into a buffer.
+		 */
+		cyng::buffer_t from_server_id(std::string const&);
 
 		/**
 		 * Extract serial number from M-Bus or other formats

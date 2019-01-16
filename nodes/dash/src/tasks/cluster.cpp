@@ -49,7 +49,9 @@ namespace node
 		, cache_()
 		, server_(logger
 			, btp->mux_.get_io_service()
-			, ep, doc_root
+			, ep
+			, doc_root
+			, ""	//	no blog
 #ifdef NODE_SSL_INSTALLED
 			, ad
 #endif

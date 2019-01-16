@@ -13,6 +13,7 @@
 #include <smf/sml/status.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/srv_id_io.h>
+#include <smf/sml/parser/srv_id_parser.h>
 
 #include <cyng/vm/generator.h>
 #include <cyng/sys/mac.h>
@@ -473,6 +474,9 @@ namespace node
 					, queue_.front().get_user()
 					, queue_.front().get_pwd());
 			}
+			else if (boost::algorithm::equals(sec, "query")) {
+				execute_cmd_get_list_req_last_data_set(sml_gen);
+			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
@@ -622,7 +626,7 @@ namespace node
 				<< "> set w-MBus parameter "
 				<< p.first
 				<< ": "
-				<< cyng::io::to_str(p.second))
+				<< cyng::io::to_str(p.second));
 
 			// set w-MBus parameter smf-gw-wmbus-adapter: a815927472040131
 			// set w-MBus parameter smf-gw-wmbus-firmware: 3.08
@@ -661,9 +665,78 @@ namespace node
 					, queue_.front().get_pwd()
 					, val);
 			}
+		}
+	}
+
+	void gateway_proxy::execute_cmd_get_list_req_last_data_set(sml::req_generator& sml_gen)
+	{
+		auto const params = queue_.front().get_params();
+		//CYNG_LOG_DEBUG(logger_, "task #"
+		//	<< base_.get_id()
+		//	<< " <"
+		//	<< base_.get_class_name()
+		//	<< "> get last data set - "
+		//	<< params.size()
+		//	<< " parameter available");
+
+		//	[2019-01-16 12:58:57.94951330] DEBUG  2312 -- task #12 <node::gateway_proxy> get last data set meter-id: 01-a815-74314504-01-02
+		//	[2019-01-16 12:58:57.95178820] DEBUG  2312 -- task #12 <node::gateway_proxy> get last data set meter-tag: e7f349a1-0900-4ee4-a7d5-1c468a5552c3
+		for (auto const& p : params) {
+			CYNG_LOG_DEBUG(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> get last data set "
+				<< p.first
+				<< ": "
+				<< cyng::io::to_str(p.second));
+		}
+
+		auto const pos = params.find("meter-id");
+		if (pos != params.end()) {
+
+			//std::pair<cyng::buffer_t, bool> parse_srv_id(std::string const&);
+			auto const r = sml::parse_srv_id(cyng::io::to_str(pos->second));
+			if (r.second) {
+
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> get last data set from ["
+					<< cyng::io::to_str(pos->second)
+					<< "]");
+
+				sml_gen.get_list_last_data_record(get_mac().to_buffer()	//queue_.front().get_srv()
+					, r.first	//	meter
+					, queue_.front().get_user()
+					, queue_.front().get_pwd());
+			}
+			else {
+
+				CYNG_LOG_ERROR(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> get last data set from has an invalid meter ID ["
+					<< cyng::io::to_str(pos->second)
+					<< "]");
+
+			}
+		}
+		else {
+
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> get last data set from "
+				<< sml::from_server_id(queue_.front().get_srv())
+				<< " has no 'meter-id' parameter");
 
 		}
 	}
+
 
 	void gateway_proxy::stop()
 	{

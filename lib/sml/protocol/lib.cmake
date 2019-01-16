@@ -52,9 +52,12 @@ set (sml_generator
 
 set (sml_parser
 	src/main/include/smf/sml/parser/obis_parser.h
+	src/main/include/smf/sml/parser/srv_id_parser.h
 
 	lib/sml/protocol/src/parser/obis_parser.cpp
 	lib/sml/protocol/src/parser/obis_parser.hpp
+	lib/sml/protocol/src/parser/srv_id_parser.cpp
+	lib/sml/protocol/src/parser/srv_id_parser.hpp
 )
 
 source_group("generator" FILES ${sml_generator})

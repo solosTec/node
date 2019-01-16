@@ -191,7 +191,7 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "5200"),
 						cyng::param_factory("timeout", 12),		//	connection timeout
-						//cyng::param_factory("use-global-pwd", true),
+						cyng::param_factory("watchdog", 30),	//	minutes
 						cyng::param_factory("pwd-policy", "global"),	// swibi/MNAME, sgsw/TELNB
 						cyng::param_factory("global-pwd", rnd_str.next(8))	//	8 characters
 					))
