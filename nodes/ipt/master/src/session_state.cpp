@@ -1120,6 +1120,28 @@ namespace node
 
 		}
 
+		void session_state::react(state::evt_sml_get_list_response evt)
+		{
+			switch (state_) {
+			case S_CONNECTED_TASK:
+				break;
+			default:
+				signal_wrong_state("evt_sml_get_list_response");
+				return;
+			}
+
+			//BOOST_ASSERT(evt.vec_.size() == 11);
+			//	[b583e91b-14f5-4691-808a-5b0a517eb1d6,7531511-2,0,,01E61E130900163C07,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06975265]
+			CYNG_LOG_DEBUG(sp_->logger_, "evt_sml_get_list_response to #" << task_.tsk_proxy_);
+			CYNG_LOG_DEBUG(sp_->logger_, "get_list_response: "	<< cyng::io::to_str(evt.vec_));
+
+			//
+			//	message slot (5)
+			//
+			task_.get_list_response(sp_->mux_, evt.vec_);
+
+		}
+
 		void session_state::react(state::evt_sml_attention_msg evt)
 		{
 			switch (state_) {
@@ -1480,6 +1502,13 @@ namespace node
 			{}
 
 			//
+			//	EVENT: evt_sml_get_list_response
+			//
+			evt_sml_get_list_response::evt_sml_get_list_response(cyng::vector_t vec)
+				: vec_(vec)
+			{}
+
+			//
 			//	EVENT: evt_sml_attention_msg
 			//
 			evt_sml_attention_msg::evt_sml_attention_msg(cyng::vector_t vec)
@@ -1772,7 +1801,7 @@ namespace node
 					vec.at(2),	//	idx
 					vec.at(3),	//	server ID
 					vec.at(4),	//	OBIS code
-									//	firmware
+								//	firmware
 					cyng::param_map_factory("manufacturer", vec.at(5))
 						("id", vec.at(6))
 						("firmware", vec.at(7))
@@ -1831,6 +1860,19 @@ namespace node
 						("pwd", vec.at(10))
 					()
 				});
+			}
+
+			void state_connected_task::get_list_response(cyng::async::mux& mux, cyng::vector_t vec)
+			{
+
+				//	[b583e91b-14f5-4691-808a-5b0a517eb1d6,7531511-2,0,,01E61E130900163C07,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06975265]
+				mux.post(tsk_proxy_, 5, cyng::tuple_t{
+					vec.at(1),	//	trx
+					vec.at(2),	//	idx
+					vec.at(4),	//	server ID - mostly empty
+					vec.at(5),	//	OBIS_CODE(99, 00, 00, 00, 00, 03)
+					vec.at(6)	//	last data record
+					});
 			}
 
 			void state_connected_task::attention_msg(cyng::async::mux& mux, cyng::vector_t vec)

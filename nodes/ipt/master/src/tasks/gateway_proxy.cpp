@@ -227,7 +227,7 @@ namespace node
 			<< "/"
 			<< sml::from_server_id(queue_.front().get_srv()));
 
-		BOOST_ASSERT(sml::from_server_id(queue_.front().get_srv()) == server_id);
+		//BOOST_ASSERT(sml::from_server_id(queue_.front().get_srv()) == server_id);
 
 		bus_->vm_.async_run(bus_res_gateway_proxy(queue_.front().get_ident_tag()
 			, queue_.front().get_source_tag()
@@ -321,6 +321,10 @@ namespace node
 
 			execute_cmd_set_proc_param();
 		}
+		else if (boost::algorithm::equals(queue_.front().get_channel(), "get.list.request")) {
+
+			execute_cmd_get_list_request();
+		}
 		else {
 			CYNG_LOG_ERROR(logger_, "task #"
 				<< base_.get_id()
@@ -389,24 +393,12 @@ namespace node
 			else if (boost::algorithm::equals("root-ipt-param", sec)) {
 				sml_gen.get_proc_parameter_ipt_config(queue_.front().get_srv(), queue_.front().get_user(), queue_.front().get_pwd());
 			}
-			//else if (boost::algorithm::equals("last-data-record", sec)) {
-			//	const auto mac_list = cyng::sys::retrieve_mac48();
-			//	const auto mac = (mac_list.empty()) ? cyng::generate_random_mac48() : mac_list.at(0);
-			//	CYNG_LOG_DEBUG(logger_, "task #"
-			//		<< base_.get_id()
-			//		<< " <"
-			//		<< base_.get_class_name()
-			//		<< "> query last data record with MAC "
-			//		<< cyng::io::to_hex(mac.to_buffer(), ' '));
-
-			//	sml_gen.get_list_last_data_record(mac.to_buffer(), cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x13, 0x09, 0x00, 0x16, 0x3C, 0x07 }), queue_.front().get_user(), queue_.front().get_pwd());
-			//}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> unknown parameter/section "
+					<< "> unknown parameter/section for get-proc-param: "
 					<< sec);
 			}
 		}
@@ -474,15 +466,15 @@ namespace node
 					, queue_.front().get_user()
 					, queue_.front().get_pwd());
 			}
-			else if (boost::algorithm::equals(sec, "query")) {
-				execute_cmd_get_list_req_last_data_set(sml_gen);
-			}
+			//else if (boost::algorithm::equals(sec, "query")) {
+			//	execute_cmd_get_list_req_last_data_set(sml_gen);
+			//}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> unknown section "
+					<< "> unknown section for set-proc-param: "
 					<< sec);
 			}
 		}
@@ -518,6 +510,71 @@ namespace node
 			, cyng::generate_invoke("stream.flush") });
 
 	}
+
+	void gateway_proxy::execute_cmd_get_list_request()
+	{
+		//
+		//	generate public open request
+		//
+		node::sml::req_generator sml_gen;
+
+		sml_gen.public_open(get_mac()
+			, queue_.front().get_srv()
+			, queue_.front().get_user()
+			, queue_.front().get_pwd());
+
+		//
+		//	generate get process parameter requests
+		//
+		auto const sections = queue_.front().get_section_names();
+		BOOST_ASSERT_MSG(sections.size() == 1, "one section expected");
+		for (auto const& sec : sections) {
+
+			if (boost::algorithm::equals(sec, "list-current-data-record")) {
+				execute_cmd_get_list_req_last_data_set(sml_gen);
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> unknown section for get-list-request: "
+					<< sec);
+			}
+		}
+
+		//	generate close request
+		//
+		sml_gen.public_close();
+		cyng::buffer_t msg = sml_gen.boxing();
+
+		//
+		//	update data throughput (outgoing)
+		//
+		bus_->vm_.async_run(client_inc_throughput(vm_.tag()
+			, queue_.front().get_source_tag()
+			, msg.size()));
+
+#ifdef SMF_IO_LOG
+		cyng::io::hex_dump hd;
+		hd(std::cerr, msg.begin(), msg.end());
+#else
+		CYNG_LOG_DEBUG(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> \n"
+			<< cyng::io::to_hex(msg, ' '))
+#endif
+
+			//
+			//	send to gateway
+			//
+			vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", std::move(msg))
+				, cyng::generate_invoke("stream.flush") });
+
+	}
+
 
 	void gateway_proxy::execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen)
 	{

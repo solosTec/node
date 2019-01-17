@@ -84,7 +84,11 @@ namespace node
 			std::uint8_t read_unit(std::string const&, cyng::object);
 			std::int8_t read_scaler(cyng::object);
 			std::string read_string(std::string const&, cyng::object);
-			void read_value(obis, std::int8_t, std::uint8_t, cyng::object);
+			/**
+			 * @param use_vector if false the value is noted as a single object otherwise
+			 * a vector of obis code / value pairs is notes. This is usefufull to distinguish between several values in a list.
+			 */
+			void read_value(obis, std::int8_t, std::uint8_t, cyng::object, bool use_vector);
 			cyng::attr_t read_parameter(cyng::object);
 			std::string read_server_id(cyng::object);
 			std::string read_client_id(cyng::object);

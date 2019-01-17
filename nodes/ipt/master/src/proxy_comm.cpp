@@ -43,6 +43,8 @@ namespace node
 		vm.register_function("sml.get.proc.param.wmbus.config", 11, std::bind(&proxy_comm::sml_get_proc_param_wmbus_config, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.param.ipt.state", 8, std::bind(&proxy_comm::sml_get_proc_param_ipt_status, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.param.ipt.param", 11, std::bind(&proxy_comm::sml_get_proc_param_ipt_param, this, std::placeholders::_1));
+		vm.register_function("sml.get.proc.param.ipt.param", 11, std::bind(&proxy_comm::sml_get_proc_param_ipt_param, this, std::placeholders::_1));
+		vm.register_function("sml.get.list.response", 0, std::bind(&proxy_comm::sml_get_list_response, this, std::placeholders::_1));
 		vm.register_function("sml.attention.msg", 6, std::bind(&proxy_comm::sml_attention_msg, this, std::placeholders::_1));
 	}
 
@@ -232,6 +234,13 @@ namespace node
 		//	 [1b2164c5-ee0f-44d4-a4eb-6f3a78e47767,0980651-3,0,00:15:3b:02:23:b3,81490D0700FF,2,1501a8c0,68ef,0,LSMTest4,LSMTest4]
 
 		state_.react(ipt::state::evt_sml_get_proc_param_ipt_param(ctx.get_frame()));
+	}
+
+	void proxy_comm::sml_get_list_response(cyng::context& ctx)
+	{
+		//	[b583e91b-14f5-4691-808a-5b0a517eb1d6,7531511-2,0,,01E61E130900163C07,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06975265]
+
+		state_.react(ipt::state::evt_sml_get_list_response(ctx.get_frame()));
 	}
 
 	void proxy_comm::sml_attention_msg(cyng::context& ctx)

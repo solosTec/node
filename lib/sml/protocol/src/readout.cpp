@@ -62,6 +62,29 @@ namespace node
 			return *this;
 		}
 
+		readout& readout::set_map(obis code, std::string name, cyng::object obj)
+		{
+			if (values_.find(name) == values_.end()) {
+
+				//
+				//	new element
+				//
+				auto map = cyng::param_map_factory(to_hex(code), obj)();
+				values_.emplace(name, map);
+			}
+			else {
+
+				//
+				//	more elements
+				//
+				auto p = cyng::object_cast<cyng::param_map_t>(values_.at(name));
+				if (p != nullptr) {
+					const_cast<cyng::param_map_t*>(p)->emplace(to_hex(code), obj);
+				}
+			}
+			return *this;
+		}
+
 		cyng::object readout::get_value(std::string const& name) const
 		{
 			auto pos = values_.find(name);

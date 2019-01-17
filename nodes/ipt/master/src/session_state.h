@@ -376,6 +376,12 @@ namespace node
 				evt_sml_get_proc_param_ipt_param(cyng::vector_t);
 			};
 
+			struct evt_sml_get_list_response
+			{
+				cyng::vector_t vec_;
+				evt_sml_get_list_response(cyng::vector_t);
+			};
+
 			struct evt_sml_attention_msg
 			{
 				cyng::vector_t vec_;
@@ -459,6 +465,7 @@ namespace node
 				void get_proc_param_wmbus_config(cyng::async::mux&, cyng::vector_t);
 				void get_proc_param_ipt_status(cyng::async::mux&, cyng::vector_t);
 				void get_proc_param_ipt_param(cyng::async::mux&, cyng::vector_t);
+				void get_list_response(cyng::async::mux&, cyng::vector_t);
 				void attention_msg(cyng::async::mux&, cyng::vector_t);
 
 				/**
@@ -504,6 +511,7 @@ namespace node
 			void react(state::evt_sml_get_proc_param_wmbus_config);
 			void react(state::evt_sml_get_proc_param_ipt_status);
 			void react(state::evt_sml_get_proc_param_ipt_param);
+			void react(state::evt_sml_get_list_response);
 			void react(state::evt_sml_attention_msg);
 
 			/**

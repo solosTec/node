@@ -62,7 +62,8 @@ namespace node
 			boost::algorithm::equals(std::get<7>(tpl), "root-wMBus-status") ||
 			boost::algorithm::equals(std::get<7>(tpl), "IF_wMBUS") ||
 			boost::algorithm::equals(std::get<7>(tpl), "root-ipt-state") ||
-			boost::algorithm::equals(std::get<7>(tpl), "root-ipt-param"))
+			boost::algorithm::equals(std::get<7>(tpl), "root-ipt-param") ||
+			boost::algorithm::equals(std::get<7>(tpl), "list-current-data-record"))
 		{
 
 			auto data = cyng::tuple_factory(

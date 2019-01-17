@@ -416,6 +416,19 @@
                                 }
                             }
                         }
+                        else if (obj.cmd == 'update') {
+                            if (obj.channel == 'get.list.request') {
+                                //  {"cmd": "update", "channel": "get.list.request", "section": "list-current-data-record", "rec": {"srv": "", "values": {"08 00 01 00 00 ff":"0.758","08 00 01 02 00 ff":"0.758"}}}
+                                $('#smf-meter-query ul').empty();
+                                $.each(obj.rec.values, function (key, value) {
+                                    $('#smf-meter-query ul').append('<li class="list-group-item list-group-item-success">'
+                                        + key
+                                        + ': '
+                                        + value
+                                        + '</li>');
+                                });
+                            }
+                        }
                     }
                 }
             }
@@ -465,11 +478,11 @@
                 console.log('query: ' + $('#smf-form-gw').serialize());
                 _ws.send(JSON.stringify({
                     cmd: "config:gateway"
-                    , channel: "set.proc.param"
+                    , channel: "get.list.request"
                     , key: [$('#smf-form-meter-gw-key').val()], params: [
                         { name: "meter-tag", value: $('#smf-form-meter-tag').val() },
                         { name: "meter-id", value: $('#smf-form-meter-ident').val() }
-                    ], section: ["query"]
+                    ], section: ["list-current-data-record"]
                 }));
             });
 

@@ -11,6 +11,7 @@
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/units.h>
 #include <smf/sml/scaler.h>
+#include <smf/mbus/defs.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
@@ -1166,6 +1167,9 @@ namespace node
 			//	list name - optional
 			//
 			obis code = read_obis(*pos++);
+			if (code.is_nil()) {
+				code = OBIS_CODE(99, 00, 00, 00, 00, 03);	//	last data set
+			}
 
 			//
 			//	read act. sensor time - optional
@@ -1179,14 +1183,27 @@ namespace node
 			tpl = cyng::value_cast(*pos++, tpl);
 			read_sml_list(code, tpl.begin(), tpl.end());
 
+			//
+			//	SML_Signature - OPTIONAL
+			//
+			ro_.set_value("listSignature", *pos++);
+
+			//
+			//	SML_Time - OPTIONAL 
+			//
+			read_time("actGatewayTime", *pos++);
+
+			
 			return cyng::generate_invoke("sml.get.list.response"
 				, ro_.pk_
 				, ro_.trx_
 				, ro_.idx_
-				, ro_.client_id_
+				, ro_.client_id_	//	mostly empty
 				, ro_.server_id_
-				, ro_.get_value("actSensorTime"));
-
+				, code.to_buffer()
+				, ro_.get_value("values")
+				, ro_.get_value("actSensorTime")
+				, ro_.get_value("actGatewayTime"));
 		}
 
 		cyng::vector_t reader::read_attention_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
@@ -1318,9 +1335,9 @@ namespace node
 			const auto scaler = read_scaler(*pos++);
 
 			//
-			//	value
+			//	value - note value with OBIS code
 			//
-			read_value(code, scaler, unit, *pos++);
+			read_value(code, scaler, unit, *pos++, true);
 
 			//
 			//	valueSignature
@@ -1377,7 +1394,7 @@ namespace node
 			//
 			//	value
 			//
-			read_value(code, scaler, unit, *pos++);
+			read_value(code, scaler, unit, *pos++, false);
 
 			//
 			//	valueSignature
@@ -1477,48 +1494,43 @@ namespace node
 			return scaler;
 		}
 
-		void reader::read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj)
+		void reader::read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj, bool use_vector)
 		{
 			//
 			//	write value
 			//
-			//cyng::xml::write(node, obj);
-
 			if (OBIS_DATA_MANUFACTURER == code)
 			{
 				cyng::buffer_t buffer;
 				buffer = cyng::value_cast(obj, buffer);
 				const auto manufacturer = cyng::io::to_ascii(buffer);
-				ro_.set_value("manufacturer", cyng::make_object(manufacturer));
+				ro_.set_value(get_name(code), cyng::make_object(manufacturer));
 			}
 			else if (OBIS_CURRENT_UTC == code)
 			{
 				if (obj.get_class().tag() == cyng::TC_TUPLE)
 				{
-					read_time("roTime", obj);
+					read_time(get_name(code), obj);
 				}
 				else
 				{
 					const auto tm = cyng::value_cast<std::uint32_t>(obj, 0);
 					const auto tp = std::chrono::system_clock::from_time_t(tm);
-					//const auto str = cyng::to_str(tp);
-					//node.append_attribute("readoutTime").set_value(str.c_str());
-					ro_.set_value("roTime", cyng::make_object(tp));
+					ro_.set_value(get_name(code), cyng::make_object(tp));
 				}
 			}
 			else if (OBIS_ACT_SENSOR_TIME == code)
 			{
 				const auto tm = cyng::value_cast<std::uint32_t>(obj, 0);
 				const auto tp = std::chrono::system_clock::from_time_t(tm);
-				ro_.set_value("actTime", cyng::make_object(tp));
+				ro_.set_value(get_name(code), cyng::make_object(tp));
 			}
 			else if (OBIS_SERIAL_NR == code)
 			{
 				cyng::buffer_t buffer;
 				buffer = cyng::value_cast(obj, buffer);
-				//std::reverse(buffer.begin(), buffer.end());
 				const auto serial_nr = cyng::io::to_hex(buffer);
-				ro_.set_value("serialNr", cyng::make_object(serial_nr));
+				ro_.set_value(get_name(code), cyng::make_object(serial_nr));
 			}
 			else if (OBIS_SERIAL_NR_SECOND == code)
 			{
@@ -1526,11 +1538,20 @@ namespace node
 				buffer = cyng::value_cast(obj, buffer);
 				//std::reverse(buffer.begin(), buffer.end());
 				const auto serial_nr = cyng::io::to_hex(buffer);
-				ro_.set_value("serialNr", cyng::make_object(serial_nr));
+				ro_.set_value(get_name(code), cyng::make_object(serial_nr));
+				if (buffer.size() == 8)
+				{
+					//
+					//	extract manufacturer name
+					//	example: [2d2c]688668691c04
+					//
+					const auto manufacturer = decode(buffer.at(0), buffer.at(1));
+					ro_.set_value("manufacturer", cyng::make_object(manufacturer));
+				}
 			}
 			else if (OBIS_MBUS_STATE == code) {
 				auto const state = cyng::numeric_cast<std::int32_t>(obj, 0);
-				ro_.set_value("errorRegister", cyng::make_object(state));
+				ro_.set_value(get_name(code), cyng::make_object(state));
 			}
 			else
 			{
@@ -1542,19 +1563,28 @@ namespace node
 					{
 						const std::int64_t value = cyng::value_cast<std::int64_t>(obj, 0);
 						const auto str = scale_value(value, scaler);
-						ro_.set_value("value", cyng::make_object(str));
+						if (use_vector)	ro_.set_map(code, "values", cyng::make_object(str));
+						else ro_.set_value("value", cyng::make_object(str));
 					}
 					break;
 					case cyng::TC_INT32:
 					{
 						const std::int32_t value = cyng::value_cast<std::int32_t>(obj, 0);
 						const auto str = scale_value(value, scaler);
-						ro_.set_value("value", cyng::make_object(str));
+						if (use_vector)	ro_.set_map(code, "values", cyng::make_object(str));
+						else ro_.set_value("value", cyng::make_object(str));
 					}
 					break;
 					default:
+						if (use_vector)	ro_.set_map(code, "values", obj);
+						else ro_.set_value("value", obj);
 						break;
 					}
+				}
+				else
+				{
+					if (use_vector)	ro_.set_map(code, "values", obj);
+					else ro_.set_value("value", obj);
 				}
 			}
 		}
