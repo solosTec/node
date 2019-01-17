@@ -165,8 +165,7 @@ namespace node
 				return read_get_list_request(tpl.begin(), tpl.end());
 			case BODY_GET_LIST_RESPONSE:
 				//	ToDo: read get list response (0701)
-				//cyng::xml::write(node.append_child("data"), body);
-				break;
+				return read_get_list_response(tpl.begin(), tpl.end());
 			case BODY_ATTENTION_RESPONSE:
 				return read_attention_response(tpl.begin(), tpl.end());
 			default:
@@ -1147,6 +1146,49 @@ namespace node
 				, code.to_buffer());
 		}
 
+		cyng::vector_t reader::read_get_list_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		{
+			std::size_t count = std::distance(pos, end);
+			BOOST_ASSERT_MSG(count == 7, "Get List Response");
+			if (count != 7) return cyng::vector_t{};
+
+			//
+			//	clientId - optional
+			//
+			read_client_id(*pos++);
+
+			//
+			//	serverId - meter ID
+			//
+			read_server_id(*pos++);
+
+			//
+			//	list name - optional
+			//
+			obis code = read_obis(*pos++);
+
+			//
+			//	read act. sensor time - optional
+			//
+			read_time("actSensorTime", *pos++);
+
+			//
+			//	valList
+			//
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(*pos++, tpl);
+			read_sml_list(code, tpl.begin(), tpl.end());
+
+			return cyng::generate_invoke("sml.get.list.response"
+				, ro_.pk_
+				, ro_.trx_
+				, ro_.idx_
+				, ro_.client_id_
+				, ro_.server_id_
+				, ro_.get_value("actSensorTime"));
+
+		}
+
 		cyng::vector_t reader::read_attention_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
@@ -1220,13 +1262,80 @@ namespace node
 			}
 		}
 
+		void reader::read_sml_list(obis code
+			, cyng::tuple_t::const_iterator pos
+			, cyng::tuple_t::const_iterator end)
+		{
+			std::size_t count = std::distance(pos, end);
+			boost::ignore_unused(count);	//	release version
+
+			//
+			//	list of tuples (period entry)
+			//
+			std::size_t counter{ 0 };
+			while (pos != end)
+			{
+				cyng::tuple_t tpl;
+				tpl = cyng::value_cast(*pos++, tpl);
+				read_list_entry(code, counter, tpl.begin(), tpl.end());
+				++counter;
+
+			}
+		}
+
+		void reader::read_list_entry(obis list_name
+			, std::size_t index
+			, cyng::tuple_t::const_iterator pos
+			, cyng::tuple_t::const_iterator end)
+		{
+			std::size_t count = std::distance(pos, end);
+			BOOST_ASSERT_MSG(count == 7, "List Entry");
+			if (count != 7) return;
+
+			//
+			//	object name
+			//
+			obis code = read_obis(*pos++);
+
+			//
+			//	status - optional
+			//
+			ro_.set_value("status", *pos++);
+
+			//
+			//	valTime - optional
+			//
+			read_time("valTime", *pos++);
+
+			//
+			//	unit (see sml_unit_enum) - optional
+			//
+			const auto unit = read_unit("SMLUnit", *pos++);
+
+			//
+			//	scaler - optional
+			//
+			const auto scaler = read_scaler(*pos++);
+
+			//
+			//	value
+			//
+			read_value(code, scaler, unit, *pos++);
+
+			//
+			//	valueSignature
+			//
+			ro_.set_value("signature", *pos++);
+
+		}
+
 		void reader::read_period_list(std::vector<obis> const& path
 			, cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			boost::ignore_unused(count);	//	release version
-			
+
 			//
 			//	list of tuples (period entry)
 			//
@@ -1277,11 +1386,12 @@ namespace node
 
 		}
 
-
 		cyng::object reader::read_time(std::string const& name, cyng::object obj)
 		{
 			cyng::tuple_t choice;
 			choice = cyng::value_cast(obj, choice);
+			if (choice.empty())	return cyng::make_object();
+
 			BOOST_ASSERT_MSG(choice.size() == 2, "TIME");
 			if (choice.size() == 2)
 			{
@@ -1326,23 +1436,16 @@ namespace node
 			cyng::buffer_t tmp;
 			tmp = cyng::value_cast(obj, tmp);
 
-			const obis code = obis(tmp);
-			//const std::string name_dec = to_string(code);
-			//const std::string name_hex = to_hex(code);
+			return (tmp.empty())
+				? obis()
+				: obis(tmp)
+				;
 
-			//auto child = node.append_child("profile");
-			//child.append_attribute("type").set_value(get_name(code));
-			//child.append_attribute("obis").set_value(name_hex.c_str());
-			//child.append_child(pugi::node_pcdata).set_value(name_dec.c_str());
-
-			return code;
 		}
 
 		std::uint8_t reader::read_unit(std::string const& name, cyng::object obj)
 		{
 			std::uint8_t unit = cyng::value_cast<std::uint8_t>(obj, 0);
-			//node.append_attribute("type").set_value(get_unit_name(unit));
-			//node.append_child(pugi::node_pcdata).set_value(std::to_string(+unit).c_str());
 			ro_.set_value(name, obj);
 			return unit;
 		}
@@ -1370,8 +1473,7 @@ namespace node
 
 		std::int8_t reader::read_scaler(cyng::object obj)
 		{
-			std::int8_t scaler = cyng::value_cast<std::int8_t>(obj, 0);
-			//node.append_child(pugi::node_pcdata).set_value(std::to_string(+scaler).c_str());
+			std::int8_t scaler = cyng::numeric_cast<std::int8_t>(obj, 0);
 			return scaler;
 		}
 
@@ -1382,14 +1484,14 @@ namespace node
 			//
 			//cyng::xml::write(node, obj);
 
-			if (code == OBIS_DATA_MANUFACTURER)
+			if (OBIS_DATA_MANUFACTURER == code)
 			{
 				cyng::buffer_t buffer;
 				buffer = cyng::value_cast(obj, buffer);
 				const auto manufacturer = cyng::io::to_ascii(buffer);
 				ro_.set_value("manufacturer", cyng::make_object(manufacturer));
 			}
-			else if (code == OBIS_CURRENT_UTC)
+			else if (OBIS_CURRENT_UTC == code)
 			{
 				if (obj.get_class().tag() == cyng::TC_TUPLE)
 				{
@@ -1404,29 +1506,31 @@ namespace node
 					ro_.set_value("roTime", cyng::make_object(tp));
 				}
 			}
-			else if (code == OBIS_ACT_SENSOR_TIME)
+			else if (OBIS_ACT_SENSOR_TIME == code)
 			{
 				const auto tm = cyng::value_cast<std::uint32_t>(obj, 0);
 				const auto tp = std::chrono::system_clock::from_time_t(tm);
-				//const auto str = cyng::to_str(tp);
-				//node.append_attribute("sensorTime").set_value(str.c_str());
 				ro_.set_value("actTime", cyng::make_object(tp));
 			}
-			else if (code == OBIS_SERIAL_NR)
+			else if (OBIS_SERIAL_NR == code)
 			{
 				cyng::buffer_t buffer;
 				buffer = cyng::value_cast(obj, buffer);
-				std::reverse(buffer.begin(), buffer.end());
-				const auto serial_nr = cyng::io::to_ascii(buffer);
+				//std::reverse(buffer.begin(), buffer.end());
+				const auto serial_nr = cyng::io::to_hex(buffer);
 				ro_.set_value("serialNr", cyng::make_object(serial_nr));
 			}
-			else if (code == OBIS_SERIAL_NR_SECOND)
+			else if (OBIS_SERIAL_NR_SECOND == code)
 			{
 				cyng::buffer_t buffer;
 				buffer = cyng::value_cast(obj, buffer);
-				std::reverse(buffer.begin(), buffer.end());
-				const auto serial_nr = cyng::io::to_ascii(buffer);
+				//std::reverse(buffer.begin(), buffer.end());
+				const auto serial_nr = cyng::io::to_hex(buffer);
 				ro_.set_value("serialNr", cyng::make_object(serial_nr));
+			}
+			else if (OBIS_MBUS_STATE == code) {
+				auto const state = cyng::numeric_cast<std::int32_t>(obj, 0);
+				ro_.set_value("errorRegister", cyng::make_object(state));
 			}
 			else
 			{

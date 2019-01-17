@@ -91,6 +91,7 @@ namespace node
 			else if (OBIS_ACT_SENSOR_TIME == code)		return "act-sensor-time";
 			else if (OBIS_SERIAL_NR == code)			return "serial-number-I";
 			else if (OBIS_SERIAL_NR_SECOND == code)		return "serial-number-II";
+			else if (OBIS_FABRICATION_NR == code)		return "fabrication-number";
 			else if (OBIS_POWER_OUTAGES == code)		return "power-outages";
 			else if (OBIS_MBUS_STATE == code)			return "status-EN13757-3";
 			else if (OBIS_DATE_TIME_PARAMETERISATION == code)	return "date-time-parameterisation";

@@ -36,6 +36,7 @@ namespace node
 
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 01, 00, FF, SERIAL_NR);	//	Serial number I (assigned by the manufacturer).
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 01, 01, FF, SERIAL_NR_SECOND);	//	Serial number II (assigned by the manufacturer).
+		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 01, FF, FF, FABRICATION_NR);	//	fabrication number
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 02, 01, FF, DATE_TIME_PARAMETERISATION);	//	32 bit
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 07, 00, FF, POWER_OUTAGES);	//	Number of power failures 
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 08, 00, FF, CONFIG_OVERVIEW);   //	
