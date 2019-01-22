@@ -159,7 +159,6 @@ namespace node
 
 			ctx.queue(cyng::generate_invoke("stream.flush"));
 
-			//ctx.queue(cyng::generate_invoke("ipt.transfer.data", buf)).attach(cyng::generate_invoke("stream.flush"));
 			reset();
 		}
 
@@ -1104,15 +1103,15 @@ namespace node
 			val_list.push_back(list_entry(OBIS_CODE(08, 00, 01, 00, 00, FF)
 				, 0	//	status
 				, std::chrono::system_clock::now()
-				, 13
+				, 13	//	m3
 				, -3
 				, cyng::make_object(758)));
-			//val_list.push_back(list_entry(OBIS_CODE(08, 00, 01, 02, 00, FF)
-			//	, cyng::make_object(0)	//	status
-			//	, cyng::make_object()
-			//	, cyng::make_object(13)
-			//	, cyng::make_object(-3)
-			//	, cyng::make_object(758)));
+			val_list.push_back(list_entry(OBIS_CODE(01, 00, 01, 08, 00, FF)
+				, 0	//	status
+				, std::chrono::system_clock::now()
+				, 30	//	Wh
+				, -2
+				, cyng::make_object(463782u)));
 
 			if (OBIS_LIST_CURRENT_DATA_RECORD == code) {
 				CYNG_LOG_TRACE(logger_, "sml.get.list.request - current data record");
@@ -1126,7 +1125,7 @@ namespace node
 
 			}
 			else {
-				CYNG_LOG_TRACE(logger_, "sml.get.list.request - " << get_name(code));
+				CYNG_LOG_WARNING(logger_, "sml.get.list.request - " << get_name(code));
 
 			}
 

@@ -185,7 +185,7 @@ namespace node
 				, list_name.to_buffer()
 				, act_sensor_time
 				, val_list
-				, cyng::null()	//	list signature
+				, cyng::null()	//	no list signature
 				, act_gateway_time);
 		}
 

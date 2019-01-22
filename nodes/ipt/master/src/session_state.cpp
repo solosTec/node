@@ -194,6 +194,7 @@ namespace node
 			//case S_CONNECTED_REMOTE:
 			case S_CONNECTED_TASK:
 				if (authorized_.tsk_proxy_ != cyng::async::NO_TASK) {
+					BOOST_ASSERT_MSG(evt.tpl_.size() == 11, "evt_proxy");
 					sp_->mux_.post(authorized_.tsk_proxy_, 7u, std::move(evt.tpl_));
 				}
 				else {
@@ -899,6 +900,7 @@ namespace node
 			//
 			//	message slot (3)
 			//
+			BOOST_ASSERT_MSG(evt.msg_.size() == 5, "evt_sml_msg");
 			sp_->mux_.post(task_.tsk_proxy_, 3, std::move(evt.msg_));
 		}
 
@@ -917,6 +919,7 @@ namespace node
 			//
 			//	message slot (1)
 			//
+			BOOST_ASSERT_MSG(evt.tpl_.size() == 2, "evt_sml_eom");
 			sp_->mux_.post(task_.tsk_proxy_, 1, std::move(evt.tpl_));
 		}
 
@@ -935,6 +938,7 @@ namespace node
 			//
 			//	message slot (4)
 			//
+			BOOST_ASSERT_MSG(evt.tpl_.size() == 3, "evt_sml_public_close_response");
 			sp_->mux_.post(task_.tsk_proxy_, 4, std::move(evt.tpl_));
 
 			//
@@ -1130,8 +1134,8 @@ namespace node
 				return;
 			}
 
-			//BOOST_ASSERT(evt.vec_.size() == 11);
-			//	[b583e91b-14f5-4691-808a-5b0a517eb1d6,7531511-2,0,,01E61E130900163C07,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06975265]
+			BOOST_ASSERT(evt.vec_.size() == 9);
+			//	[7dee1864-70a4-4029-9787-c5cae1ec52eb,4061719-2,0,,01E61E130900163C07,990000000003,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06988c71]
 			CYNG_LOG_DEBUG(sp_->logger_, "evt_sml_get_list_response to #" << task_.tsk_proxy_);
 			CYNG_LOG_DEBUG(sp_->logger_, "get_list_response: "	<< cyng::io::to_str(evt.vec_));
 
@@ -1865,7 +1869,7 @@ namespace node
 			void state_connected_task::get_list_response(cyng::async::mux& mux, cyng::vector_t vec)
 			{
 
-				//	[b583e91b-14f5-4691-808a-5b0a517eb1d6,7531511-2,0,,01E61E130900163C07,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06975265]
+				//	[7dee1864-70a4-4029-9787-c5cae1ec52eb,4061719-2,0,,01E61E130900163C07,990000000003,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06988c71]
 				mux.post(tsk_proxy_, 5, cyng::tuple_t{
 					vec.at(1),	//	trx
 					vec.at(2),	//	idx

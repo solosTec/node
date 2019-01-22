@@ -21,92 +21,6 @@ namespace node
 		class session : public session_stub
 		{
 			friend class session_state;
-			//struct connect_state
-			//{
-			//	connect_state(session*, std::size_t);
-
-			//	enum {
-			//		STATE_START,		//	start or error state after failed login
-			//		STATE_AUTHORIZED,	//	after successful login
-			//		STATE_OFFLINE,		//	no connection at all
-			//		STATE_LOCAL,		//	open connection to party on the same node
-			//		STATE_REMOTE,		//	open connection to party on different node
-			//		STATE_TASK			//	data stream linked to task
-			//	} state_;
-
-			//	/**
-			//	 * Reference to outer session object
-			//	 */
-			//	session& sr_;
-
-			//	/**
-			//	 * active task
-			//	 */
-			//	std::size_t tsk_;
-
-			//	/**
-			//	 * Update state to authorized
-			//	 */
-			//	response_type set_authorized(bool b);
-
-			//	/**
-			//	 * open a local/remote connection
-			//	 */
-			//	void open_connection(bool);
-
-			//	/**
-			//	 * send data to a task
-			//	 */
-			//	void open_connection(std::size_t);
-
-			//	/**
-			//	 * Close any kind of connection
-			//	 */
-			//	void close_connection();
-
-			//	/**
-			//	 * Stop gatekeeper if running
-			//	 */
-			//	void stop();
-
-			//	/**
-			//	 * @return true if state is not START, AUTHORIZED or OFFLINE
-			//	 */
-			//	bool is_connected() const;
-
-			//	/**
-			//	 * @return true if state is not START.
-			//	 */
-			//	bool is_authorized() const;
-
-			//	/**
-			//	 * stream connection state as text
-			//	 */
-			//	friend std::ostream& operator<<(std::ostream& os, connect_state const& cs);
-
-			//	//
-			//	//	SML data
-			//	//
-			//	void register_this(cyng::controller&);
-			//	void sml_msg(cyng::context& ctx);
-			//	void sml_eom(cyng::context& ctx);
-			//	void sml_public_open_response(cyng::context& ctx);
-			//	void sml_public_close_response(cyng::context& ctx);
-			//	void sml_get_proc_param_srv_visible(cyng::context& ctx);
-			//	void sml_get_proc_param_srv_active(cyng::context& ctx);
-			//	void sml_get_proc_param_firmware(cyng::context& ctx);
-			//	void sml_get_proc_param_simple(cyng::context& ctx);
-			//	void sml_get_proc_status_word(cyng::context& ctx);
-			//	void sml_get_proc_param_memory(cyng::context& ctx);
-			//	void sml_get_proc_param_wmbus_status(cyng::context& ctx);
-			//	void sml_get_proc_param_wmbus_config(cyng::context& ctx);
-			//	void sml_get_proc_param_ipt_status(cyng::context& ctx);
-			//	void sml_get_proc_param_ipt_param(cyng::context& ctx);
-			//	void sml_attention_msg(cyng::context& ctx);
-
-			//};
-
-			//friend std::ostream& operator<<(std::ostream& os, session::connect_state const& cs);
 
 		public:
 			session(boost::asio::ip::tcp::socket&& socket
@@ -116,7 +30,8 @@ namespace node
 				, boost::uuids::uuid tag
 				, std::chrono::seconds timeout
 				, scramble_key const& sk
-				, std::uint16_t watchdog);
+				, std::uint16_t watchdog
+				, bool sml_log);
 
 			session(session const&) = delete;
 			session& operator=(session const&) = delete;
@@ -247,7 +162,8 @@ namespace node
 			, boost::uuids::uuid tag
 			, std::chrono::seconds const& timeout
 			, scramble_key const& sk
-			, std::uint16_t watchdog);
+			, std::uint16_t watchdog
+			, bool sml_log);
 
 	}
 }

@@ -19,10 +19,12 @@ namespace node
 			, bus::shared_type bus
 			, std::chrono::seconds timeout
 			, scramble_key const& sk
-			, uint16_t watchdog)
+			, uint16_t watchdog
+			, bool sml_log)
 		: server_stub(mux, logger, bus, timeout)
 			, sk_(sk)
 			, watchdog_(watchdog)
+			, sml_log_(sml_log)
 		{
 			//
 			//	client/server functions
@@ -44,7 +46,8 @@ namespace node
 				, tag
 				, timeout_
 				, sk_
-				, watchdog_);
+				, watchdog_
+				, sml_log_);
 		}
 
 		bool server::close_connection(boost::uuids::uuid tag, cyng::object obj)

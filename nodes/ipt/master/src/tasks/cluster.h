@@ -34,7 +34,8 @@ namespace node
 			, std::string const& service
 			, ipt::scramble_key const& sk
 			, uint16_t watchdog
-			, int timeout);
+			, int timeout
+			, bool sml_log);
 		cyng::continuation run();
 		void stop();
 

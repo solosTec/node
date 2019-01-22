@@ -58,6 +58,8 @@ namespace node
 				STATE_EOM
 			};
 
+			char const * state_name() const;
+
 			struct sml_start {};
 			struct sml_length {};
 			struct sml_string 
@@ -322,6 +324,5 @@ namespace node
 	}
 }	//	node
 
-//#pragma pack( pop )	//	reset packing alignment
 
 #endif // NODE_LIB_SML_PARSER_H

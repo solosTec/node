@@ -44,7 +44,7 @@ namespace node
 		vm.register_function("sml.get.proc.param.ipt.state", 8, std::bind(&proxy_comm::sml_get_proc_param_ipt_status, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.param.ipt.param", 11, std::bind(&proxy_comm::sml_get_proc_param_ipt_param, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.param.ipt.param", 11, std::bind(&proxy_comm::sml_get_proc_param_ipt_param, this, std::placeholders::_1));
-		vm.register_function("sml.get.list.response", 0, std::bind(&proxy_comm::sml_get_list_response, this, std::placeholders::_1));
+		vm.register_function("sml.get.list.response", 9, std::bind(&proxy_comm::sml_get_list_response, this, std::placeholders::_1));
 		vm.register_function("sml.attention.msg", 6, std::bind(&proxy_comm::sml_attention_msg, this, std::placeholders::_1));
 	}
 

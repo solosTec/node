@@ -22,7 +22,9 @@ namespace node
 		{
 			using serial_t = serializer <T>;
 			auto p = cyng::object_cast<T>(obj);
+			BOOST_ASSERT_MSG(p != nullptr, "cannot serialize null pointer");
 			if (p != nullptr)	serial_t::write(os, *p);
+			else os.put(0x01);	//	[OPTIONAL]
 		}
 
 		void serialize(std::ostream& os, cyng::object obj)
@@ -30,10 +32,12 @@ namespace node
 			switch (obj.get_class().tag())
 			{
 			case cyng::TC_NULL:
-				do_write<typename std::tuple_element<cyng::TC_NULL, cyng::traits::tag_t>::type>(os, obj);
+				os.put(0x01);
+				//do_write<typename std::tuple_element<cyng::TC_NULL, cyng::traits::tag_t>::type>(os, obj);
 				break;
 			case cyng::TC_EOD:
-				do_write<typename std::tuple_element<cyng::TC_EOD, cyng::traits::tag_t>::type>(os, obj);
+				os.put(0x00);
+				//do_write<typename std::tuple_element<cyng::TC_EOD, cyng::traits::tag_t>::type>(os, obj);
 				break;
 			case cyng::TC_BOOL:
 				do_write<typename std::tuple_element<cyng::TC_BOOL, cyng::traits::tag_t>::type>(os, obj);

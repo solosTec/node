@@ -10,7 +10,6 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
-//#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
@@ -22,14 +21,15 @@ namespace node
 		, std::string const& service
 		, ipt::scramble_key const& sk
 		, uint16_t watchdog
-		, int timeout)
+		, int timeout
+		, bool sml_log)
 	: base_(*btp)
 	, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
 	, logger_(logger)
 	, config_(cfg_cls)
 	, ipt_address_(address)
 	, ipt_service_(service)
-	, server_(btp->mux_, logger_, bus_, std::chrono::seconds(timeout), sk, watchdog)
+	, server_(btp->mux_, logger_, bus_, std::chrono::seconds(timeout), sk, watchdog, sml_log)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

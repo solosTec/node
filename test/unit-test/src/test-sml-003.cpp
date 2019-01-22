@@ -20,6 +20,8 @@
 #include <cyng/vm/generator.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/xml.h>
+#include <cyng/log.h>
+#include <cyng/vm/domain/log_domain.h>
 
 #include <boost/uuid/random_generator.hpp>
 
@@ -65,21 +67,31 @@ namespace node
 		cyng::async::scheduler ios;
 		cyng::controller ctrl(ios.get_io_service(), boost::uuids::random_generator()());
 
+		auto clog = cyng::logging::make_console_logger(ios.get_io_service(), "test");
+		cyng::register_logger(clog, ctrl);
+
+
 		ctrl.async_run(cyng::register_function("sml.msg", 1, std::bind(&sml_msg, std::placeholders::_1)));
 		ctrl.async_run(cyng::register_function("sml.eom", 1, std::bind(&sml_eom, std::placeholders::_1)));
+
+		ctrl.register_function("sml.log", 1, [&](cyng::context& ctx) {
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(clog, "sml.log - " << cyng::value_cast<std::string>(frame.at(0), ""));
+		});
 
 		sml::parser p([&](cyng::vector_t&& prg) {
 			//cyng::vector_t r = std::move(prg);
 			//std::cout << cyng::io::to_str(r) << std::endl;
 			ctrl.async_run(std::move(prg));
-		}, false, false);
+		}, false, true);
 
 		//	GetProfileListResponse
 		//std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\push-data-3586334585-418932835.bin", std::ios::binary | std::ios::app);
 		//	GetProcParameterResponse
 		//std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\sml\\smf-48cd47c-e9d30005.bin", std::ios::binary | std::ios::app);
 		//std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\sml\\smf-4fabc9ed-474ba8c4-LSM_Status.bin", std::ios::binary | std::ios::app);
-		std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\analyse\\smf-3895afe1-512d6e73-2018020T231145-pushStore.bin", std::ios::binary | std::ios::app);
+		//std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\sml\\smf-ff67ba9f-edb28f26-2018090T121930-SML-water@solostec.bin", std::ios::binary | std::ios::app);
+		std::ifstream ifile("C:\\projects\\node\\build\\Debug\\SML-GetListResponse.bin", std::ios::binary | std::ios::app);
 		if (ifile.is_open())
 		{
 			//	dont skip whitepsaces

@@ -180,7 +180,7 @@ namespace node
 			else
 			{
 				os.put(0x53);	//	TL field
-				os.put(cyng::swap_num(v));
+				cyng::io::write_binary<std::int16_t, 2, 0>(os, cyng::swap_num(v));
 			}
 			return os;
 		}
@@ -195,12 +195,12 @@ namespace node
 			{
 				os.put(0x54);	//	TL field
 				cyng::io::write_binary<std::int32_t, 3, 1>(os, cyng::swap_num(v));
-
 			}
 			else
 			{
 				os.put(0x55);	//	TL field
-				os.put(cyng::swap_num(v));
+				//os.put(cyng::swap_num(v));
+				cyng::io::write_binary<std::int32_t, 4, 0>(os, cyng::swap_num(v));
 			}
 			return os;
 		}
@@ -214,7 +214,8 @@ namespace node
 			else
 			{
 				os.put(0x59);	//	TL field
-				os.put(cyng::swap_num(v));
+				//os.put(cyng::swap_num(v));
+				cyng::io::write_binary<std::int64_t, 8, 0>(os, cyng::swap_num(v));
 			}
 			return os;
 		}

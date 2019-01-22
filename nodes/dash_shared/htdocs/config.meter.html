@@ -118,9 +118,9 @@
             <li class="nav-item">
                 <a class="nav-link" id="smf-meter-tab-gw" data-toggle="tab" href="#smf-meter-gw" aria-selected="false">Gateway</a>
             </li>
-            <li class="nav-item">
+            <!--<li class="nav-item">
                 <a class="nav-link" id="smf-meter-tab-query" data-toggle="tab" href="#smf-meter-query" aria-selected="false">Measurement</a>
-            </li>
+            </li>-->
         </ul>
 
         <div class="tab-content bg-secondary" style="min-height:30rem;">
@@ -202,10 +202,19 @@
                             <input id="smf-form-meter-gw-key" name="smf-form-meter-gw-key" type="text" placeholder="<Gateway Key>" class="form-control input-md" readonly>
                         </div>
                     </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <a id="smf-form-meter-query" href="#" class="btn btn-info col-md-4">Query</a>
+                            <label class="control-label" for="smf-form-meter-query">&nbsp;Meter <span id="smf-form-meter-query-name"></span> </label>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <ul class="list-group"></ul>
+                        </div>
+                    </div>
                 </form>
             </div>
 
-            <div id="smf-meter-query" class="container-fluid tab-pane fade show" role="tabpanel">
+            <!--<div id="smf-meter-query" class="container-fluid tab-pane fade show" role="tabpanel">
                 <h4>Query of measured values</h4>
                 <form id="smf-form-gw" style="padding:2em">
                     <div class="form-row">
@@ -218,7 +227,7 @@
                         </div>
                     </div>
                 </form>
-            </div>
+            </div>-->
 
         </div>
     </div>
@@ -419,9 +428,9 @@
                         else if (obj.cmd == 'update') {
                             if (obj.channel == 'get.list.request') {
                                 //  {"cmd": "update", "channel": "get.list.request", "section": "list-current-data-record", "rec": {"srv": "", "values": {"08 00 01 00 00 ff":"0.758","08 00 01 02 00 ff":"0.758"}}}
-                                $('#smf-meter-query ul').empty();
+                                $('#smf-meter-gw ul').empty();
                                 $.each(obj.rec.values, function (key, value) {
-                                    $('#smf-meter-query ul').append('<li class="list-group-item list-group-item-success">'
+                                    $('#smf-meter-gw ul').append('<li class="list-group-item list-group-item-success">'
                                         + key
                                         + ': '
                                         + value

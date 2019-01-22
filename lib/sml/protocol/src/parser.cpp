@@ -18,7 +18,6 @@ namespace node
 {
 	namespace sml
 	{
-
 		//
 		//	parser
 		//
@@ -60,6 +59,43 @@ namespace node
 			if (crc_on_)
 			{
 				crc_ = crc_update(crc_, c);
+			}
+
+			if (log_)
+			{
+				std::stringstream ss;
+
+				ss
+					<< "next SML symbol: "
+					<< +c
+					<< "/0x"
+					<< std::hex << std::setw(2) << std::setfill('0')
+					<< +(c & 0xff)
+					<< " - "
+					<< state_name()
+					<< '@'
+					<< pos_
+					;
+				if (!stack_.empty())
+				{
+					ss
+						<< "\t[list "
+						;
+
+					for (std::size_t pos{1u}; pos < stack_.size(); ++pos)
+					{
+						ss 
+							<< '.'
+							;
+					}
+					ss
+						<< stack_.top().values_.size()
+						<< "/"
+						<< stack_.top().target_
+						<< "]"
+						;
+				}
+				cb_(cyng::generate_invoke("sml.log", ss.str()));
 			}
 
 			auto prev_state = stream_state_;
@@ -154,6 +190,36 @@ namespace node
 		{
 		}
 
+		char const * parser::state_name() const
+		{
+			switch (stream_state_) {
+			case STATE_ERROR:	break;
+			case STATE_START:	return "START";
+			case STATE_LENGTH:	return "LENGTH";
+			case STATE_STRING:	return "STRING";
+			case STATE_OCTET:	return "OCTECT";
+			case STATE_BOOLEAN:	return "BOOLEAN";
+			case STATE_INT8:	return "INT8";
+			case STATE_INT16:	return "UNT16";
+			case STATE_INT32:	return "INT32";
+			case STATE_INT64:	return "INT64";
+			case STATE_UINT8:	return "UINT8";
+			case STATE_UINT16:	return "UINT16";
+			case STATE_UINT32:	return "UINT32";
+			case STATE_UINT64:	return "UINT64";
+			case STATE_ESC:	return "ESC";
+			case STATE_PROPERTY:	return "PROPERTY";
+			case STATE_START_STREAM:	return "START_STREAM";
+			case STATE_START_BLOCK:	return "START_BLOCK";
+			case STATE_TIMEOUT:	return "TIMEOUT";
+			case STATE_BLOCK_SIZE:  return "BLOCK_SIZE";
+			case STATE_EOM:	return "EOM";
+			default:
+				break;
+			}
+			return "ERROR";
+		}
+
 		parser::state_visitor::state_visitor(parser& p, char c)
 			: parser_(p)
 			, c_(c)
@@ -203,7 +269,7 @@ namespace node
 					break;
 
 				default:
-					if (parser_.verbose_)
+					//if (parser_.verbose_)
 					{
 						std::stringstream ss;
 						ss
@@ -275,6 +341,26 @@ namespace node
 		{
 			if (s.push(c_))
 			{
+				if (parser_.verbose_ || parser_.log_)
+				{
+					std::stringstream ss;
+					ss
+						<< parser_.prefix()
+						<< "OCTEC "
+						<< cyng::io::to_hex(s.octet_)
+						;
+					if (parser_.verbose_)
+					{
+						std::cerr
+							<< ss.rdbuf()
+							<< std::endl;
+					}
+					if (parser_.log_)
+					{
+						parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
+					}
+				}
+
 				//	emit() is the same as push() but with optional logging
 				parser_.emit(std::move(s.octet_));
 				return STATE_START;
@@ -362,6 +448,9 @@ namespace node
 						<< "UINT16 " 
 						<< std::dec
 						<< s.u_.n_
+						<< "\t0x"
+						<< std::hex
+						<< s.u_.n_
 						;
 					if (parser_.verbose_)
 					{
@@ -392,6 +481,9 @@ namespace node
 						<< "UINT32 "
 						<< std::dec
 						<< s.u_.n_
+						<< "\t0x"
+						<< std::hex
+						<< s.u_.n_
 						;
 					if (parser_.verbose_)
 					{
@@ -420,6 +512,9 @@ namespace node
 						<< parser_.prefix()
 						<< "UINT64 "
 						<< std::dec
+						<< s.u_.n_
+						<< "\t0x"
+						<< std::hex
 						<< s.u_.n_
 						;
 					if (parser_.verbose_)
@@ -853,9 +948,14 @@ namespace node
 						<< " entries @"
 						<< std::hex
 						<< pos_
-// 						<< std::endl
 						;
-					
+					if (stack_.size() == 0 && tl_.length_ == 6) {
+						ss << "\t-- new msg";
+					}
+					else if (stack_.size() == 1 && tl_.length_ == 2) {
+						ss << "\t-- msg body";
+					}
+
 					if (verbose_)
 					{
 						std::cerr
@@ -866,6 +966,19 @@ namespace node
 					{
 						cb_(cyng::generate_invoke("sml.log", ss.str()));
 					}
+
+					if (stack_.size() == 0 && tl_.length_ != 6) {
+						std::stringstream ss;
+						ss
+							<< "msg has wrong size: "
+							<< tl_.length_
+							<< " @"
+							<< std::hex
+							<< pos_
+							;
+						cb_(cyng::generate_invoke("log.msg.error", ss.str()));
+					}
+
 				}
 				if (tl_.length_ == 0) {
 					//
@@ -926,6 +1039,7 @@ namespace node
 				//
 				//	generate SML message
 				//
+				BOOST_ASSERT_MSG(stack_.top().values_.size() == 5, "sml.msg");
 				cyng::vector_t prg{ cyng::generate_invoke("sml.msg", stack_.top().values_, counter_) };
 
 				//
@@ -1022,9 +1136,8 @@ namespace node
 			if (!stack_.empty())
 			{
 				if (stack_.top().target_ < stack_.top().values_.size())	{
-					if (verbose_ || log_) {
-						std::stringstream ss;
-						ss
+					std::stringstream ss;
+					ss
 						<< std::dec
 						<< "list ["
 						<< stack_.size()
@@ -1035,7 +1148,7 @@ namespace node
 						<< "> exceeds expected size "
 						<< stack_.top().target_
 						;
-					}
+					cb_(cyng::generate_invoke("log.msg.error", ss.str()));
 				}
 				
 				if (stack_.top().push(obj))
@@ -1047,7 +1160,7 @@ namespace node
 					if (verbose_ || log_) {
 						std::stringstream ss;
 						ss 
-							<< "reduce list ["
+							<< "reduce list [stack size "
 							<< std::dec
 							<< stack_.size()
 							<< "] "
@@ -1070,7 +1183,7 @@ namespace node
 					push(cyng::make_object(values));
 				}
 			}
-			else //if (verbose_)
+			else
 			{
 				std::stringstream ss;
 				ss
@@ -1104,7 +1217,6 @@ namespace node
 					}
 					ss
 						<< stack_.size()
-						//<< stack_.top().counter()
 						<< "] "
 						;
 				}

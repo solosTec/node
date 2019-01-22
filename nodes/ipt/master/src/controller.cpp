@@ -40,7 +40,8 @@ namespace node
 		, cyng::logging::log_ptr
 		, boost::uuids::uuid cluster_tag
 		, cyng::vector_t const&
-		, cyng::tuple_t const&);
+		, cyng::tuple_t const&
+		, bool sml_log);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -193,6 +194,7 @@ namespace node
 					cyng::param_factory("watchdog", 30),	//	for IP-T connection (minutes)
 					cyng::param_factory("timeout", 10)		//	connection timeout in seconds
 				))
+				, cyng::param_factory("sml-log", false)		//	log SML parser
 				, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
 					cyng::param_factory("host", "127.0.0.1"),
 					cyng::param_factory("service", "7701"),
@@ -290,10 +292,10 @@ namespace node
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
-		auto dom = cyng::make_reader(cfg);
+		auto const dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator uidgen;
-		const auto cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		auto const cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
 
 		//
 		//	apply severity threshold
@@ -306,6 +308,14 @@ namespace node
 #endif
 
 		//
+		//	SML parser logging
+		//
+		auto const log_sml = cyng::value_cast(dom.get("sml-log"), false);
+		if (log_sml) {
+			CYNG_LOG_INFO(logger, "SML logging is ON");
+		}
+
+		//
 		//	connect to cluster
 		//
 		cyng::vector_t tmp_vec;
@@ -314,7 +324,8 @@ namespace node
 			, logger
 			, cluster_tag
 			, cyng::value_cast(dom.get("cluster"), tmp_vec)
-			, cyng::value_cast(dom.get("server"), tmp_tpl));
+			, cyng::value_cast(dom.get("server"), tmp_tpl)
+			, log_sml);
 
 		//
 		//	wait for system signals
@@ -358,7 +369,8 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid cluster_tag
 		, cyng::vector_t const& cfg_cls
-		, cyng::tuple_t const& cfg_srv)
+		, cyng::tuple_t const& cfg_srv
+		, bool sml_log)
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cls.size());
 
@@ -381,7 +393,8 @@ namespace node
 			, cyng::value_cast<std::string>(dom.get("service"), "26862")
 			, sk
 			, cyng::value_cast<int>(dom.get("watchdog"), 30)
-			, cyng::value_cast<int>(dom.get("timeout"), 12));
+			, cyng::value_cast<int>(dom.get("timeout"), 12)
+			, sml_log);
 
 	}
 

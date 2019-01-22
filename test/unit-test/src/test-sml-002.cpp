@@ -20,10 +20,6 @@ namespace node
 	bool test_sml_002()
 	{
 		cyng::tuple_t tpl;
-		//for (std::size_t idx = 0; idx < 0x32; idx++)
-		//{
-		//	tpl.push_back(cyng::make_now());
-		//}
 
 		std::string s("1234567890abcdef1234567890abcdef");
 		tpl.push_back(cyng::make_object("1234567890abcdef1234567890abcdef"));

@@ -9,17 +9,7 @@
 #define NODE_IPT_MASTER_SERVER_H
 
 #include <smf/cluster/server_stub.h>
- //#include <smf/cluster/bus.h>
 #include <smf/ipt/scramble_key.h>
-//#include <cyng/async/mux.h>
-//#include <cyng/log.h>
-//#include <cyng/store/db.h>
-//#include <cyng/compatibility/async.h>
-//#include <unordered_map>
-//#include <boost/uuid/uuid.hpp>
-//#include <boost/uuid/random_generator.hpp>
-//#include <boost/functional/hash.hpp>
-//#include <boost/version.hpp>
 
 namespace node 
 {
@@ -33,7 +23,8 @@ namespace node
 				, bus::shared_type 
 				, std::chrono::seconds timeout
 				, scramble_key const& sk
-				, uint16_t watchdog);
+				, uint16_t watchdog
+				, bool sml_log);
 
 		protected:
 			virtual cyng::object make_client(boost::uuids::uuid tag, boost::asio::ip::tcp::socket socket) override;
@@ -41,116 +32,11 @@ namespace node
 			virtual void start_client(cyng::object) override;
 			virtual void propagate(cyng::object, cyng::vector_t&& msg) override;
 
-		//private:
-  //          /**
-  //           * Perform an asynchronous accept operation.
-  //           */
-		//	void do_accept();
-		//	void create_client(boost::asio::ip::tcp::socket socket);
-
-		//	/**
-		//	 * @return true if entry was found
-		//	 */
-		//	bool clear_connection_map_impl(boost::uuids::uuid);
-		//	void clear_connection_map(cyng::context& ctx);
-
-		//	void shutdown_clients(cyng::context& ctx);
-
-		//	void transmit_data(cyng::context& ctx);	//!< transmit data locally
-
-		//	void client_res_login(cyng::context&);
-		//	void client_res_close_impl(cyng::context&);
-		//	void client_req_close_impl(cyng::context&);
-		//void client_req_reboot(cyng::context&);
-		//void client_req_query_gateway(cyng::context&);
-		//void client_req_modify_gateway(cyng::context&);
-		//	void client_res_open_push_channel(cyng::context&);
-		//	void client_res_register_push_target(cyng::context&);
-		//	void client_res_deregister_push_target(cyng::context& ctx);
-		//	void client_res_open_connection(cyng::context&);
-		//	void client_req_open_connection_forward(cyng::context&);
-		//	void client_res_open_connection_forward(cyng::context&);
-		//	void client_req_transmit_data_forward(cyng::context&);
-		//	void client_res_transfer_pushdata(cyng::context& ctx);
-		//	void client_req_transfer_pushdata_forward(cyng::context& ctx);
-		//	void client_res_close_push_channel(cyng::context& ctx);
-		//	void client_req_close_connection_forward(cyng::context& ctx);
-		//	void client_res_close_connection_forward(cyng::context& ctx);
-
-		//	void propagate(std::string, cyng::vector_t const&);
-		//	void propagate(std::string, boost::uuids::uuid, cyng::vector_t&&);
-
-		//	/**
-		//	 * create a reference of this object on stack.
-		//	 */
-		//	void push_connection(cyng::context& ctx);
-
-		//	/**
-		//	 * Remove a connection/client from connection list.
-		//	 */
-		//	void remove_client(cyng::context&);
-		//	bool remove_client_impl(boost::uuids::uuid tag);
-
-		//	void close_client(cyng::context&);
-		//	bool close_client_impl(boost::uuids::uuid tag);
-
-		//	/**
-		//	 * insert IP-T sessions
-		//	 */
-		//	void insert_client(cyng::context&);
-		//	bool insert_client_impl(boost::uuids::uuid tag, cyng::object obj);
-
-		//	void close_acceptor();
-		//	void close_clients();
-
 		private:
-			///*
-			// * task manager and running I/O context
-			// */
-			//cyng::async::mux& mux_;
-
-			///**
-			// * The logger
-			// */
-			//cyng::logging::log_ptr logger_;
-
-			///**
-			// * cluster bus
-			// */
-			//bus::shared_type bus_;
-
 			 //	configuration
-			 const scramble_key sk_;
-			 const std::uint16_t watchdog_;
-//			 const std::chrono::seconds timeout_;
-//
-//
-//			/// Acceptor used to listen for incoming connections.
-//			boost::asio::ip::tcp::acceptor acceptor_;
-//
-//#if (BOOST_VERSION < 106600)
-//			boost::asio::ip::tcp::socket socket_;
-//#endif
-//			boost::uuids::random_generator rnd_;
-//
-//			/**
-//			 * client map:
-//			 * Establishes the connection between an UUID and a connection/session object.
-//			 */
-//			std::map<boost::uuids::uuid, cyng::object>	client_map_;
-//
-//			/**
-//			 * connection map:
-//			 * Contains all local connections.
-//			 */
-//			std::map<boost::uuids::uuid, boost::uuids::uuid> connection_map_;
-//
-//			/**
-//			 *	Synchronisation objects for proper shutdown
-//			 */
-//			cyng::async::condition_variable cv_acceptor_closed_, cv_sessions_closed_;
-//			cyng::async::mutex mutex_;
-//
+			 scramble_key const sk_;
+			 std::uint16_t const watchdog_;
+			 bool const sml_log_;
 		};
 	}
 }

@@ -41,10 +41,11 @@ namespace node
 			, boost::uuids::uuid tag
 			, std::chrono::seconds timeout
 			, scramble_key const& sk
-			, std::uint16_t watchdog)
+			, std::uint16_t watchdog
+			, bool sml_log)
 		: session_stub(std::move(socket), mux, logger, bus, tag, timeout)
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_DEBUG(logger_, prg.size() << " ipt instructions received");
+				//CYNG_LOG_DEBUG(logger_, prg.size() << " ipt instructions received");
 				//CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
 				vm_.async_run(std::move(prg));
 			}, sk)
@@ -76,8 +77,6 @@ namespace node
 			
 			vm_.register_function("session.start.proxy", 0, [&](cyng::context& ctx) {
 
-				//const cyng::vector_t frame = ctx.get_frame();
-
 				//
 				//	start SML proxy 
 				//
@@ -85,7 +84,8 @@ namespace node
 					, logger_
 					, bus_
 					, vm_
-					, timeout_)));
+					, timeout_
+					, sml_log)));
 
 			});
 
@@ -1750,7 +1750,8 @@ namespace node
 			, boost::uuids::uuid tag
 			, std::chrono::seconds const& timeout
 			, scramble_key const& sk
-			, std::uint16_t watchdog)
+			, std::uint16_t watchdog
+			, bool sml_log)
 		{
 			return cyng::make_object<session>(std::move(socket)
 				, mux
@@ -1759,7 +1760,8 @@ namespace node
 				, tag
 				, timeout
 				, sk
-				, watchdog);
+				, watchdog
+				, sml_log);
 		}
 
 	}

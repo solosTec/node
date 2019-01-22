@@ -65,7 +65,8 @@ namespace node
 			, cyng::logging::log_ptr
 			, bus::shared_type bus
 			, cyng::controller& vm
-			, std::chrono::seconds timeout);
+			, std::chrono::seconds timeout
+			, bool sml_log);
 		cyng::continuation run();
 		void stop();
 

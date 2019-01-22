@@ -32,7 +32,8 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, bus::shared_type bus
 		, cyng::controller& vm
-		, std::chrono::seconds timeout)
+		, std::chrono::seconds timeout
+		, bool sml_log)
 	: base_(*btp)
 		, logger_(logger)
 		, bus_(bus)
@@ -41,18 +42,18 @@ namespace node
 		, start_(std::chrono::system_clock::now())
 		, parser_([this](cyng::vector_t&& prg) {
 
-			CYNG_LOG_DEBUG(logger_, "sml processor - "
-				<< prg.size()
-				<< " instructions");
+			//CYNG_LOG_DEBUG(logger_, "sml processor - "
+			//	<< prg.size()
+			//	<< " instructions");
 
-			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+			//CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 
 			//
 			//	execute programm
 			//
 			vm_.async_run(std::move(prg));
 
-		}, false, false)	//	not verbose, no log instructions
+		}, false, sml_log)	//	not verbose, no log instructions
 		, queue_()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -228,6 +229,9 @@ namespace node
 			<< sml::from_server_id(queue_.front().get_srv()));
 
 		//BOOST_ASSERT(sml::from_server_id(queue_.front().get_srv()) == server_id);
+		if (server_id.empty()) {
+			server_id = sml::from_server_id(queue_.front().get_srv());
+		}
 
 		bus_->vm_.async_run(bus_res_gateway_proxy(queue_.front().get_ident_tag()
 			, queue_.front().get_source_tag()

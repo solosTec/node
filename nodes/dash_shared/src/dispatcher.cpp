@@ -66,6 +66,8 @@ namespace node
 			boost::algorithm::equals(std::get<7>(tpl), "list-current-data-record"))
 		{
 
+			//	[3bb02dd1-b864-474b-b131-7ab85f3862e9,9f773865-e4af-489a-8824-8f78a2311278,19,[8d04b8e0-0faf-44ea-b32b-8405d407f2c1],ea7a2ee6-56ae-4536-9600-45c8dd2c2e9e,get.list.request,,list-current-data-record,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758))]
+			//	{"cmd": "update", "channel": "get.list.request", "section": "list-current-data-record", "rec": {"srv": "", "values": {"08 00 01 00 00 ff":"0.758","08 00 01 02 00 ff":"0.758"}}}
 			auto data = cyng::tuple_factory(
 				cyng::param_factory("cmd", std::string("update")),
 				cyng::param_factory("channel", std::get<5>(tpl)),
