@@ -841,7 +841,7 @@ namespace node
 				//	stop task <close_connection>
 				//	and forward connection close response to client
 				//
-				CYNG_LOG_INFO(logger_, ctx.tag() << "ipt.res.close.connection - stop task #" << tsk);
+				CYNG_LOG_INFO(logger_, ctx.tag() << " - ipt.res.close.connection - stop task #" << tsk);
 				mux_.post(tsk, 0, cyng::tuple_factory(seq, success));
 
 				//

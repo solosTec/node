@@ -591,14 +591,12 @@ namespace node
 			if (STATE_CONNECTED_ != state_) {
 				ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.req.transmit.data - wrong state", get_state()));
 			}
-			else {
-				ctx.queue(cyng::generate_invoke("log.msg.trace", "ipt.req.transmit.data", bp->size()));
-			}
 
 			if (bp != nullptr) {
+				ctx.queue(cyng::generate_invoke("log.msg.trace", "ipt.req.transmit.data", bp->size()));
 				auto buffer = on_transmit_data(*bp);
 				if (!buffer.empty()) {
-					ctx.queue(cyng::generate_invoke("ipt.transfer.data", buffer));
+					ctx.queue(cyng::generate_invoke("ipt.transfer.data", std::move(buffer)));
 					ctx.queue(cyng::generate_invoke("stream.flush"));
 				}
 			}
@@ -841,7 +839,7 @@ namespace node
 				//	stop task <close_connection>
 				//	and forward connection close response to client
 				//
-				CYNG_LOG_INFO(logger_, ctx.tag() << "ipt.res.close.connection - stop task #" << tsk);
+				CYNG_LOG_INFO(logger_, ctx.tag() << " - ipt.res.close.connection - stop task #" << tsk);
 				mux_.post(tsk, 0, cyng::tuple_factory(seq, success));
 
 				//

@@ -13,31 +13,35 @@
 #include <cyng/value_cast.hpp>
 #include <type_traits>
 #include <typeinfo>
-#include <boost/core/demangle.hpp>
+//#include <boost/core/demangle.hpp>
 
 namespace node 
 {
-	template <typename T>
-	void test(T const& v)
-	{
-		char const * name_1 = typeid(T).name();
-		std::cout << name_1 << std::endl; // prints 1XIiE
-		std::cout << boost::core::demangle(name_1) << std::endl; // prints X<int>
+	//template <typename T>
+	//void test(T const& v)
+	//{
+	//	char const * name_1 = typeid(T).name();
+	//	std::cout << name_1 << std::endl; // prints 1XIiE
+	//	std::cout << boost::core::demangle(name_1) << std::endl; // prints X<int>
 
-		using type = typename std::decay<T>::type;
-		char const * name_2 = typeid(type).name();
-		std::cout << name_2 << std::endl; // prints 1XIiE
-		std::cout << boost::core::demangle(name_2) << std::endl; // prints X<int>
+	//	using type = typename std::decay<T>::type;
+	//	char const * name_2 = typeid(type).name();
+	//	std::cout << name_2 << std::endl; // prints 1XIiE
+	//	std::cout << boost::core::demangle(name_2) << std::endl; // prints X<int>
 
-	}
+	//}
 
 	bool test_ipt_002()
 	{
 		//
 		//	std::decay converts char [6] to char * __ptr64
 		//
-		test("hello");
-		test(std::string("hello"));
+		//test("hello");
+		//test(std::string("hello"));
+
+		//
+		//	1. test parsing a scrambled login command
+		//
 
 		ipt::scramble_key sk = ipt::gen_random_sk();
 		cyng::vector_t result;
@@ -61,6 +65,10 @@ namespace node
 		p.read(inp.begin(), inp.end());
 		BOOST_CHECK_EQUAL(result.size(), 12);
 		BOOST_CHECK(cyng::value_cast(result.at(1), ipt::gen_random_sk()).key() == sk.key());
+
+		//
+		//	2. test stream operator for ipt::scramble_k
+		//
 
 		//using ipt::operator>>;
 		std::stringstream ss;

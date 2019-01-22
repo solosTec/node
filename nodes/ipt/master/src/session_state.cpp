@@ -719,14 +719,15 @@ namespace node
 			switch (state_) {
 			case S_CONNECTED_LOCAL:
 			case S_CONNECTED_REMOTE:
-			//case S_CONNECTED_TASK:
+				transit(S_WAIT_FOR_CLOSE_RESPONSE);
 				break;
 			default:
 				signal_wrong_state("evt_ipt_req_close_connection");
 				return prg;
 			}
 
-			//const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(sp_->logger_, sp_->vm().tag() << " received connection close request");
+
 			if (sp_->bus_->is_online())
 			{
 				sp_->bus_->vm_.async_run(node::client_req_close_connection(sp_->vm().tag()

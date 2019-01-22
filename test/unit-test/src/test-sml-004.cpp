@@ -15,6 +15,10 @@ namespace node
 {
 	bool test_sml_004()
 	{
+		//
+		//	test obis and server id functions
+		//
+
 		sml::obis code(1, 2, 3, 4, 5, 6);
 		BOOST_CHECK(code.match({1, 2}));
 		BOOST_CHECK(! code.match({2, 3, 4}));

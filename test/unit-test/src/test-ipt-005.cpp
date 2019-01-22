@@ -1,10 +1,10 @@
 /*
  * The MIT License (MIT)
  * 
- * Copyright (c) 2018 Sylko Olzscher 
+ * Copyright (c) 2019 Sylko Olzscher 
  * 
  */ 
-#include "test-sml-005.h"
+#include "test-ipt-005.h"
 #include <iostream>
 #include <fstream>
 #include <boost/test/unit_test.hpp>
@@ -39,7 +39,7 @@ namespace node
 
 		public:
 			client(cyng::async::base_task* btp, cyng::logging::log_ptr logger)
-				: bus(logger, btp->mux_, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, "ipt:test", 1u)
+				: bus(logger, btp->mux_, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, "ipt:push", 1u)
 				, base_(*btp)
 				, logger_(logger)
 			{
@@ -115,6 +115,7 @@ namespace node
 				vm_.async_run(cyng::generate_invoke("req.open.push.channel", "data-store", "", "", "", "", 0));
 				//vm_.async_run(cyng::generate_invoke("req.open.push.channel", "pushStore", "", "", "", "", 0));	//	EBS test
 				vm_.async_run(cyng::generate_invoke("stream.flush"));
+
 			}
 
 			/**
@@ -316,10 +317,13 @@ namespace node
 		};
 	}
 
-	bool test_sml_005()
+	//
+	//	test data push
+	//
+	bool test_ipt_005()
 	{
 		cyng::async::mux task_manager;
-		auto logger = cyng::logging::make_console_logger(task_manager.get_io_service(), "ipt:test");
+		auto logger = cyng::logging::make_console_logger(task_manager.get_io_service(), "ipt:push");
 		cyng::async::start_task_delayed<ipt::client>(task_manager, std::chrono::seconds(1), logger);
 
 		std::this_thread::sleep_for(std::chrono::seconds(8));

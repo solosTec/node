@@ -8,11 +8,13 @@ set (unit_test_cpp
 	test/unit-test/src/test-ipt-001.cpp
 	test/unit-test/src/test-ipt-002.cpp
 	test/unit-test/src/test-ipt-003.cpp
+	test/unit-test/src/test-ipt-004.cpp
+	test/unit-test/src/test-ipt-005.cpp
 	test/unit-test/src/test-sml-001.cpp
 	test/unit-test/src/test-sml-002.cpp
 	test/unit-test/src/test-sml-003.cpp
 	test/unit-test/src/test-sml-004.cpp
-	test/unit-test/src/test-sml-005.cpp
+#	test/unit-test/src/test-sml-005.cpp
 	test/unit-test/src/test-mbus-001.cpp
 	test/unit-test/src/test-mbus-002.cpp
 	test/unit-test/src/test-mbus-003.cpp
@@ -22,11 +24,13 @@ set (unit_test_h
 	test/unit-test/src/test-ipt-001.h
 	test/unit-test/src/test-ipt-002.h
 	test/unit-test/src/test-ipt-003.h
+	test/unit-test/src/test-ipt-004.h
+	test/unit-test/src/test-ipt-005.h
 	test/unit-test/src/test-sml-001.h
 	test/unit-test/src/test-sml-002.h
 	test/unit-test/src/test-sml-003.h
 	test/unit-test/src/test-sml-004.h
-	test/unit-test/src/test-sml-005.h
+#	test/unit-test/src/test-sml-005.h
 	test/unit-test/src/test-mbus-001.h
 	test/unit-test/src/test-mbus-002.h
 	test/unit-test/src/test-mbus-003.h

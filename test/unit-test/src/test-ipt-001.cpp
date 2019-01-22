@@ -14,6 +14,10 @@ namespace node
 {
 	bool test_ipt_001()
 	{
+		//
+		//	test parsing a public login command
+		//
+
 		ipt::scramble_key sk;
 		cyng::vector_t result;
 		ipt::parser p([&result](cyng::vector_t&& prg) {
@@ -24,7 +28,7 @@ namespace node
 		//	public login
 		std::vector<unsigned char> inp{
 			0x01, 0xc0,	//	cmd
-			0x00,		// sequence
+			0x00,		//	sequence
 			0x00,		//	reserved
 			0x11, 0x00, 0x00, 0x00,	//	length = header + data
 			'n', 'a', 'm', 'e', '\0',

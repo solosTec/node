@@ -12,6 +12,8 @@
 #include "test-ipt-001.h"
 #include "test-ipt-002.h"
 #include "test-ipt-003.h"
+#include "test-ipt-004.h"
+#include "test-ipt-005.h"
 
 //	Start with:
 //	./unit_test --report_level=detailed
@@ -33,6 +35,22 @@ BOOST_AUTO_TEST_CASE(ipt_003)
 	using namespace node;
 	BOOST_CHECK(test_ipt_003());
 }
+BOOST_AUTO_TEST_CASE(ipt_004)
+{
+	//
+	//	test data transfer
+	//
+	using namespace node;
+	BOOST_CHECK(test_ipt_004());
+}
+BOOST_AUTO_TEST_CASE(ipt_005)
+{
+	//
+	//	test data push
+	//
+	using namespace node;
+	BOOST_CHECK(test_ipt_005());
+}
 BOOST_AUTO_TEST_SUITE_END()	//	IPT
 
 
@@ -40,7 +58,7 @@ BOOST_AUTO_TEST_SUITE_END()	//	IPT
 #include "test-sml-002.h"
 #include "test-sml-003.h"
 #include "test-sml-004.h"
-#include "test-sml-005.h"
+//#include "test-sml-005.h"
 
 BOOST_AUTO_TEST_SUITE(SML)
 BOOST_AUTO_TEST_CASE(sml_001)
@@ -63,11 +81,11 @@ BOOST_AUTO_TEST_CASE(sml_004)
 	using namespace node;
 	BOOST_CHECK(test_sml_004());
 }
-BOOST_AUTO_TEST_CASE(sml_005)
-{
-	using namespace node;
-	BOOST_CHECK(test_sml_005());
-}
+//BOOST_AUTO_TEST_CASE(sml_005)
+//{
+//	using namespace node;
+//	BOOST_CHECK(test_sml_005());
+//}
 BOOST_AUTO_TEST_SUITE_END()	//	SML
 
 

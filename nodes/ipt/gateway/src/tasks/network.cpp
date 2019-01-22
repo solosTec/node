@@ -249,13 +249,13 @@ namespace node
 		}
 
 		//	slot [8] - 0x9004/0x1004: connection close request/response
-		void network::on_req_close_connection(sequence_type)
-		{	//	no implementation
-			CYNG_LOG_WARNING(logger_, "connection close request/response not implemented");
+		void network::on_req_close_connection(sequence_type seq)
+		{	
+			CYNG_LOG_INFO(logger_, "connection closed");
 		}
 		void network::on_res_close_connection(sequence_type)
 		{	//	no implementation
-			CYNG_LOG_WARNING(logger_, "connection close request/response not implemented");
+			CYNG_LOG_WARNING(logger_, "connection close response not implemented");
 		}
 
 		//	slot [9] - 0x9002: push data transfer request
@@ -281,13 +281,23 @@ namespace node
 		//	slot [10] - transmit data (if connected)
 		cyng::buffer_t network::on_transmit_data(cyng::buffer_t const& data)
 		{
-			CYNG_LOG_TRACE(logger_, "incoming SML data " << data.size() << " bytes");
+			CYNG_LOG_TRACE(logger_, "incoming IPT/SML data " << data.size() << " bytes");
+			if (data.size() == 6
+				&& data.at(0) == 'h'
+				&& data.at(1) == 'e'
+				&& data.at(2) == 'l'
+				&& data.at(3) == 'l'
+				&& data.at(4) == 'o'
+				&& data.at(5) == '!')
+			{
+				CYNG_LOG_DEBUG(logger_, "answer with hey!");
+				return cyng::make_buffer({ 'h', 'e', 'y', '!' });
+			}
 
 			//
 			//	parse incoming data
 			//
 			parser_.read(data.begin(), data.end());
-
 			return cyng::buffer_t();
 		}
 
