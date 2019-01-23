@@ -625,7 +625,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
     include (nodes/dash/prg.cmake)
     add_executable(dash ${node_dash})
     # libraries to link
-    set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml smf_cluster smf_http_srv ${OPENSSL_LIBRARIES})
+    set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml cyng_csv smf_cluster smf_http_srv ${OPENSSL_LIBRARIES})
 
 	message(STATUS "** dash auth support : ${${PROJECT_NAME}_SSL_SUPPORT}")
 	if(${PROJECT_NAME}_SSL_SUPPORT)
@@ -648,7 +648,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
     include (nodes/dashs/prg.cmake)
     add_executable(dashs ${node_dashs})
     # libraries to link
-    set(dashsboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml smf_cluster smf_https_srv ${OPENSSL_LIBRARIES})
+    set(dashsboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml cyng_csv smf_cluster smf_https_srv ${OPENSSL_LIBRARIES})
     if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND dashsboard_link_libs "${Boost_LIBRARIES}")
         if (UNIX)

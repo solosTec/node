@@ -490,7 +490,7 @@ namespace node
 			}
 		}
 
-		void connections::trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment)
+		void connections::trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment)
 		{
 			//
 			//	lock both http container

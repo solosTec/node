@@ -13,6 +13,7 @@
 #include <cyng/tuple_cast.hpp>
 #include <cyng/parser/buffer_parser.h>
 #include <cyng/xml.h>
+#include <cyng/csv.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/uuid/string_generator.hpp>
@@ -769,15 +770,21 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		trigger_download(std::get<0>(tpl), "TDevice", "device.xml");
-
+		auto const reader = cyng::make_reader(std::get<1>(tpl));
+		auto const fmt = cyng::value_cast<std::string>(reader.get("smf-download-device-format"), "XML");
+		if (boost::algorithm::equals("CSV", fmt)) {
+			trigger_download_csv(std::get<0>(tpl), "TDevice", "device.csv");
+		}
+		else {
+			trigger_download_xml(std::get<0>(tpl), "TDevice", "device.xml");
+		}
 	}
 
 	void forward::cfg_download_gateways(cyng::context& ctx)
 	{
 		//
 		//	example
-		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
+		//	[fd003d7f-43a5-4b3b-9dca-71c7584092a5,%(("smf-download-gw-format":CSV),("smf-procedure":cfg.download.gateways),("target":/config.download.html))]
 		//
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_TRACE(logger_, "cfg.download.gateways - " << cyng::io::to_str(frame));
@@ -787,8 +794,14 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		trigger_download(std::get<0>(tpl), "TGateway", "gateway.xml");
-
+		auto const reader = cyng::make_reader(std::get<1>(tpl));
+		auto const fmt = cyng::value_cast<std::string>(reader.get("smf-download-gw-format"), "XML");
+		if (boost::algorithm::equals("CSV", fmt)) {
+			trigger_download_csv(std::get<0>(tpl), "TGateway", "gateway.csv");
+		}
+		else {
+			trigger_download_xml(std::get<0>(tpl), "TGateway", "gateway.xml");
+		}
 	}
 
 	void forward::cfg_download_meters(cyng::context& ctx)
@@ -805,8 +818,14 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		trigger_download(std::get<0>(tpl), "TMeter", "meter.xml");
-
+		auto const reader = cyng::make_reader(std::get<1>(tpl));
+		auto const fmt = cyng::value_cast<std::string>(reader.get("smf-download-meter-format"), "XML");
+		if (boost::algorithm::equals("CSV", fmt)) {
+			trigger_download_csv(std::get<0>(tpl), "TMeter", "meter.csv");
+		}
+		else {
+			trigger_download_xml(std::get<0>(tpl), "TMeter", "meter.xml");
+		}
 	}
 
 	void forward::cfg_download_messages(cyng::context& ctx)
@@ -823,7 +842,14 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		trigger_download(std::get<0>(tpl), "_SysMsg", "messages.xml");
+		auto const reader = cyng::make_reader(std::get<1>(tpl));
+		auto const fmt = cyng::value_cast<std::string>(reader.get("smf-download-msg-format"), "XML");
+		if (boost::algorithm::equals("CSV", fmt)) {
+			trigger_download_csv(std::get<0>(tpl), "_SysMsg", "messages.csv");
+		}
+		else {
+			trigger_download_xml(std::get<0>(tpl), "_SysMsg", "messages.xml");
+		}
 
 	}
 
@@ -837,12 +863,12 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		trigger_download(std::get<0>(tpl), "TLoRaDevice", "LoRa.xml");
+		trigger_download_xml(std::get<0>(tpl), "TLoRaDevice", "LoRa.xml");
 	}
 
 
 
-	void forward::trigger_download(boost::uuids::uuid tag, std::string table, std::string filename)
+	void forward::trigger_download_xml(boost::uuids::uuid tag, std::string table, std::string filename)
 	{
 		//
 		//	generate XML download file
@@ -873,15 +899,53 @@ namespace node
 
 		}, cyng::store::read_access(table));
 
+		//
+		//	write XML file
+		//
 		auto out = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.xml");
-		doc_.save_file(out.c_str(), PUGIXML_TEXT("  "));
+		if (doc_.save_file(out.c_str(), PUGIXML_TEXT("  "))) {
+
+			//
+			//	trigger download
+			//
+			connection_manager_.trigger_download(tag, out.string(), filename);
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "cannot open file " << out);
+		}
+	}
+
+	void forward::trigger_download_csv(boost::uuids::uuid tag, std::string table, std::string filename)
+	{
+		//
+		//	generate CSV download file
+		//
+		auto out = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.csv");
+
+		db_.access([&](cyng::store::table const* tbl) {
+
+			std::ofstream of(out.string(), std::ios::binary | std::ios::trunc | std::ios::out);
+
+			if (of.is_open()) {
+				auto vec = tbl->convert(true);
+				cyng::csv::write(of, make_object(vec));
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "cannot open file " << out);
+			}
+
+			//
+			//	file closed implicit here
+			//
+
+		}, cyng::store::read_access(table));
+
+
 
 		//
 		//	trigger download
 		//
-		connection_manager_.trigger_download(tag, out.string(), filename);
-
+		connection_manager_.trigger_download(tag, out, filename);
 	}
-
 
 }

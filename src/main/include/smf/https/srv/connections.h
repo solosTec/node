@@ -106,7 +106,7 @@ namespace node
 			/**
 			 * Push browser/client to start a download
 			 */
-			virtual void trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment) override;
+			virtual void trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment) override;
 
 		private:
 			enum session_type {

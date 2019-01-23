@@ -298,7 +298,7 @@ namespace node
 			return false;
 		}
 
-		void connections::trigger_download(boost::uuids::uuid tag, std::string const& filename, std::string const& attachment)
+		void connections::trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment)
 		{
 			cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[HTTP_PLAIN]);
 			auto pos = sessions_[HTTP_PLAIN].find(tag);

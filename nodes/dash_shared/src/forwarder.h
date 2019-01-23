@@ -48,22 +48,6 @@ namespace node
 		, std::string const& channel
 		, cyng::reader<cyng::object> const&);
 
-	/**
-	 * reboot gateway
-	 */
-	//void fwd_reboot(cyng::logging::log_ptr
-	//	, cyng::context& ctx
-	//	, boost::uuids::uuid tag_ws
-	//	, cyng::reader<cyng::object> const&);
-
-	/**
-	 * Send a process parameter request to an gateway
-	 */
-	//void fwd_query_gateway(cyng::logging::log_ptr
-	//	, cyng::context& ctx
-	//	, boost::uuids::uuid tag_ws
-	//	, cyng::reader<cyng::object> const&);
-
 	class forward
 	{
 	public:
@@ -92,7 +76,8 @@ namespace node
 		void cfg_download_messages(cyng::context& ctx);
 		void cfg_download_LoRa(cyng::context& ctx);
 
-		void trigger_download(boost::uuids::uuid tag, std::string table, std::string filename);
+		void trigger_download_xml(boost::uuids::uuid tag, std::string table, std::string filename);
+		void trigger_download_csv(boost::uuids::uuid tag, std::string table, std::string filename);
 
 	private:
 		cyng::logging::log_ptr logger_;

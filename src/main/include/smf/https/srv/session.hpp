@@ -305,19 +305,19 @@ namespace node
 
 			}
 
-			void trigger_download(cyng::object obj, std::string const& path, std::string const& attachment)
+			void trigger_download(cyng::object obj, boost::filesystem::path const& path, std::string const& attachment)
 			{
 
 				boost::beast::error_code ec;
 				boost::beast::http::file_body::value_type body;
-				body.open(path.c_str(), boost::beast::file_mode::scan, ec);
+				body.open(path.string().c_str(), boost::beast::file_mode::scan, ec);
 				if (ec == boost::system::errc::no_such_file_or_directory)
 				{
 					boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::not_found, 11 };
 					res.set(boost::beast::http::field::server, NODE::version_string);
 					res.set(boost::beast::http::field::content_type, "text/html");
 					res.keep_alive(true);
-					res.body() = "The resource '" + path + "' was not found.";
+					res.body() = "The resource '" + path.string() + "' was not found.";
 					res.prepare_payload();
 
 					return queue_(obj, std::move(res));
@@ -335,11 +335,25 @@ namespace node
 
 				res.set(boost::beast::http::field::server, NODE::version_string);
 				res.set(boost::beast::http::field::content_description, "File Transfer");
-				res.set(boost::beast::http::field::content_type, "application/octet-stream");
+				//res.set(boost::beast::http::field::content_type, "application/octet-stream");
 				res.set(boost::beast::http::field::content_type, "application/force-download");
 				res.set(boost::beast::http::field::content_disposition, "attachment; filename='" + attachment + "'");
 				res.set(boost::beast::http::field::expires, 0);
 				res.set(boost::beast::http::field::cache_control, "must-revalidate, post-check=0, pre-check=0");
+
+				auto const ext = path.extension().string();
+				if (boost::algorithm::equals(ext, ".xml")) {
+					res.set(boost::beast::http::field::content_type, "text/xml");
+				}
+				else if (boost::algorithm::equals(ext, ".csv")) {
+					res.set(boost::beast::http::field::content_type, "text/csv");
+				}
+				else if (boost::algorithm::equals(ext, ".pdf")) {
+					res.set(boost::beast::http::field::content_type, "application/pdf");
+				}
+				else {
+					res.set(boost::beast::http::field::content_type, "application/octet-stream");
+				}
 
 				queue_(obj, std::move(res));
 			}
