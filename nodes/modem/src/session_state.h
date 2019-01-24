@@ -1,16 +1,14 @@
 /*
  * The MIT License (MIT)
  * 
- * Copyright (c) 2018 Sylko Olzscher 
+ * Copyright (c) 2019 Sylko Olzscher 
  * 
  */ 
 
-#ifndef NODE_IPT_MASTER_SESSION_STATE_H
-#define NODE_IPT_MASTER_SESSION_STATE_H
+#ifndef NODE_MODEM_SESSION_STATE_H
+#define NODE_MODEM_SESSION_STATE_H
 
 #include <smf/cluster/bus.h>
-#include <smf/ipt/scramble_key.h>
-#include <smf/ipt/defs.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 
@@ -59,7 +57,7 @@
 
 namespace node 
 {
-	namespace ipt
+	namespace modem
 	{
 		//
 		//	forwward declarations
@@ -72,18 +70,18 @@ namespace node
 			{
 				const std::size_t tsk_;
 				const bool success_;
-				const std::uint16_t watchdog_;
-				evt_init_complete(std::pair<std::size_t, bool>, std::uint16_t);
+				//const std::uint16_t watchdog_;
+				evt_init_complete(std::pair<std::size_t, bool>);
 			};
 
 			/**
-			 * device sends public login request
+			 * device sends login request
 			 */
-			struct evt_req_login_public
+			struct evt_req_login
 			{
 				const boost::uuids::uuid tag_;
 				const std::string name_, pwd_;
-				evt_req_login_public(std::tuple
+				evt_req_login(std::tuple
 					<
 						boost::uuids::uuid,		//	[0] peer tag
 						std::string,			//	[1] name
@@ -91,19 +89,6 @@ namespace node
 					>);
 			};
 
-			/**
-			 * device sends scrambled login request
-			 */
-			struct evt_req_login_scrambled
-			{
-				const boost::uuids::uuid tag_;
-				const std::string name_, pwd_;
-				const scramble_key sk_;
-				evt_req_login_scrambled(boost::uuids::uuid
-					, std::string const&
-					, std::string const&
-					, scramble_key const&);
-			};
 
 			/**
 			 * master sends login response
@@ -136,47 +121,45 @@ namespace node
 			struct evt_ipt_req_open_connection
 			{
 				const boost::uuids::uuid tag_;
-				const sequence_type seq_;
+				//const sequence_type seq_;
 				const std::string number_;
 
 				evt_ipt_req_open_connection(boost::uuids::uuid,
-					sequence_type,
+					//sequence_type,
 					std::string);
 			};
 
 			/**
 			 * device sends connection open response
 			 */
-			struct evt_ipt_res_open_connection
+			struct evt_modem_res_open_connection
 			{
 				std::size_t const tsk_;
 				std::size_t const slot_;
-				response_type const res_;
-				evt_ipt_res_open_connection(std::size_t, std::size_t, response_type);
+				//response_type const res_;
+				evt_modem_res_open_connection(std::size_t, std::size_t//, response_type
+				);
 			};
 
 			/**
 			 * device sends connection close request
 			 */
-			struct evt_ipt_req_close_connection 
+			struct evt_modem_req_close_connection 
 			{
-				const boost::uuids::uuid tag_;		//	[0] session tag
-				const sequence_type seq_;			//	[1] seq
-				evt_ipt_req_close_connection(std::tuple<
-					boost::uuids::uuid,		//	[0] session tag
-					sequence_type			//	[1] seq
-				>);
+				boost::uuids::uuid const tag_;		//	[0] session tag
+				evt_modem_req_close_connection(boost::uuids::uuid);		// session tag
 			};
 
 			/**
 			 * device sends connection close response
 			 */
-			struct evt_ipt_res_close_connection 
+			struct evt_modem_res_close_connection 
 			{
 				std::size_t const tsk_;
 				std::size_t const slot_;
-				response_type const res_;
-				evt_ipt_res_close_connection(std::size_t, std::size_t, response_type);
+				//response_type const res_;
+				evt_modem_res_close_connection(std::size_t, std::size_t//, response_type
+				);
 			};
 
 			/**
@@ -184,16 +167,11 @@ namespace node
 			 */
 			struct evt_client_req_open_connection
 			{
-				const std::size_t tsk_;
-				const bool success_;
-				//const boost::uuids::uuid origin_tag_;
-				const bool local_;
-				const std::size_t seq_;
-				const cyng::param_map_t master_;	//	[3] master data
-				const cyng::param_map_t client_;	//	[4] client data
-				evt_client_req_open_connection(std::pair<std::size_t, bool>
-					//, boost::uuids::uuid origin_tag
-					, bool local
+				bool const local_;
+				std::size_t const seq_;
+				cyng::param_map_t const master_;	//	[3] master data
+				cyng::param_map_t const client_;	//	[4] client data
+				evt_client_req_open_connection(bool local
 					, std::size_t seq
 					, cyng::param_map_t		//	master
 					, cyng::param_map_t);	//	client
@@ -224,20 +202,19 @@ namespace node
 			 */
 			struct evt_client_req_close_connection 
 			{
-				std::size_t const tsk_;
-				bool const success_;
 				std::uint64_t const seq_;			//	[1] cluster sequence
 				boost::uuids::uuid const tag_;		//	[2] origin-tag - compare to "origin-tag"
 				bool const shutdown_;				//	[3] shutdown flag
 				cyng::param_map_t const master_;	//	[4] master
 				cyng::param_map_t const client_;	//	[5] client
-				evt_client_req_close_connection(std::pair<std::size_t, bool>,
+				evt_client_req_close_connection(std::tuple<
+					boost::uuids::uuid,		//	[0] peer
 					std::uint64_t,			//	[1] cluster sequence
-					boost::uuids::uuid,		//	[2] origin-tag - compare to "origin-tag"
+					boost::uuids::uuid,		//	[2] origin-tag
 					bool,					//	[3] shutdown flag
-					cyng::param_map_t,		//	[4] master
-					cyng::param_map_t		//	[5] client
-				);
+					cyng::param_map_t,		//	[4] options
+					cyng::param_map_t		//	[5] bag
+				>);
 			};
 
 			/**
@@ -388,15 +365,20 @@ namespace node
 				evt_sml_attention_msg(cyng::vector_t);
 			};
 
+			struct evt_info
+			{
+				std::uint32_t const code_;
+				evt_info(std::uint32_t);
+			};
+
 			//
 			//	states
 			//
 			struct state_idle
 			{
 				state_idle();
-				void stop(cyng::async::mux&);
+				bool stop(cyng::async::mux&);
 				std::size_t tsk_gatekeeper_;
-				std::uint16_t watchdog_;	//!< minutes
 			};
 			struct state_authorized
 			{
@@ -409,13 +391,12 @@ namespace node
 			struct state_wait_for_open_response
 			{
 				state_wait_for_open_response();
-				void init(std::size_t, bool, std::uint64_t, cyng::param_map_t, cyng::param_map_t);
+				void init(bool, std::uint64_t, cyng::param_map_t, cyng::param_map_t);
 				cyng::vector_t establish_local_connection() const;
 				boost::uuids::uuid get_origin_tag() const;
 				void reset();
 
-				std::size_t tsk_connection_open_;
-				//boost::uuids::uuid tag_;	//!< original tag
+				//std::size_t tsk_connection_open_;
 				enum connection_type {
 					E_UNDEF,
 					E_LOCAL,
@@ -431,7 +412,7 @@ namespace node
 				void init(std::size_t, boost::uuids::uuid, bool, std::uint64_t, cyng::param_map_t, cyng::param_map_t, bool);
 				void reset();
 				bool is_connection_local() const;
-				void terminate(bus::shared_type, response_type res);
+				void terminate(bus::shared_type/*, response_type res*/);
 
 				std::size_t tsk_connection_close_;
 				boost::uuids::uuid tag_;	//!< original tag
@@ -439,7 +420,6 @@ namespace node
 				bool shutdown_;
 				cyng::param_map_t master_params_;
 				cyng::param_map_t client_params_;
-				//bool local_;	//	local connection
 			};
 			struct state_connected_local
 			{
@@ -479,7 +459,7 @@ namespace node
 		class session_state
 		{
 		public:
-			session_state(session*);
+			session_state(session*, bool);
 
 			void react(state::evt_init_complete);
 			void react(state::evt_shutdown);
@@ -488,16 +468,17 @@ namespace node
 			void react(state::evt_data);
 			void react(state::evt_watchdog_started);
 			void react(state::evt_proxy_started);
-			cyng::vector_t react(state::evt_req_login_public);
-			cyng::vector_t react(state::evt_req_login_scrambled);
+			cyng::vector_t react(state::evt_req_login);
+			//cyng::vector_t react(state::evt_req_login_scrambled);
 			cyng::vector_t react(state::evt_res_login);
 			cyng::vector_t react(state::evt_client_req_open_connection);
 			cyng::vector_t react(state::evt_client_res_close_connection);
 			cyng::vector_t react(state::evt_client_res_open_connection);
-			cyng::vector_t react(state::evt_ipt_req_close_connection);
-			cyng::vector_t react(state::evt_ipt_res_open_connection);
-			cyng::vector_t react(state::evt_ipt_res_close_connection);
+			cyng::vector_t react(state::evt_modem_req_close_connection);
+			cyng::vector_t react(state::evt_modem_res_open_connection);
+			cyng::vector_t react(state::evt_modem_res_close_connection);
 			cyng::vector_t react(state::evt_client_req_close_connection);
+			cyng::vector_t react(state::evt_info);
 
 			void react(state::evt_sml_msg);
 			void react(state::evt_sml_eom);
@@ -523,11 +504,13 @@ namespace node
 			void signal_wrong_state(std::string);
 			void redirect(cyng::context& ctx);
 
-			cyng::vector_t query(std::uint32_t);
+			void query(std::uint32_t);
 
 		private:
 			session* sp_;
 			cyng::logging::log_ptr logger_;
+			bool const auto_answer_;
+
 			enum internal_state {
 				S_IDLE,	//	TCP/IP connection accepted
 				S_ERROR,
@@ -539,6 +522,7 @@ namespace node
 				S_CONNECTED_REMOTE,
 				S_CONNECTED_TASK,
 			} state_;
+
 			void transit(internal_state);
 
 			state::state_idle	idle_;

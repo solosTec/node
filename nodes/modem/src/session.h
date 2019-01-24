@@ -8,13 +8,10 @@
 #ifndef NODE_MODEM_SESSION_H
 #define NODE_MODEM_SESSION_H
 
-//#include <smf/cluster/bus.h>
 #include <smf/modem/parser.h>
 #include <smf/modem/serializer.h>
 #include <smf/cluster/session_stub.h>
-//#include <cyng/async/mux.h>
-//#include <cyng/log.h>
-//#include <cyng/vm/controller.h>
+#include "session_state.h"
 
 namespace node 
 {
@@ -22,23 +19,10 @@ namespace node
 	{
 		class session : public session_stub
 		{
-			struct connect_state
-			{
-				enum state {
-					NOT_CONNECTED_,
-					LOCAL_,
-					NON_LOCAL_,
-
-				} state_;
-
-				connect_state();
-				void set_connected(bool);
-				void set_disconnected();
-				bool is_local() const;
-				bool is_connected() const;
-			};
-
-			std::string to_str(connect_state const&);
+			//
+			//	allow state class to manager the inner state of the session
+			//
+			friend class session_state;
 
 		public:
 			session(boost::asio::ip::tcp::socket&& socket
@@ -107,12 +91,12 @@ namespace node
 			void client_res_open_connection(cyng::context& ctx);
 
 			void store_relation(cyng::context& ctx);
-			void update_connection_state(cyng::context& ctx);
+			//void update_connection_state(cyng::context& ctx);
 
 			void modem_req_info(cyng::context& ctx);
 
 		private:
-			const bool auto_answer_;
+			//const bool auto_answer_;
 
 			/**
 			 * modem parser
@@ -125,14 +109,9 @@ namespace node
 			serializer 	serializer_;
 
 			/**
-			 * gatekeeper task
-			 */
-			const std::size_t gate_keeper_;
-
-			/**
 			 * contains state of local connections
 			 */
-			connect_state	connect_state_;
+			session_state	state_;
 		};
 
 		cyng::object make_session(boost::asio::ip::tcp::socket&& socket

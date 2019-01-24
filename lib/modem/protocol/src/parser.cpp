@@ -103,6 +103,19 @@ namespace node
 			parser_state_ = command();
 		}
 
+		void parser::clear()
+		{
+			code_.clear();
+			stream_state_ = STATE_COMMAND;
+			parser_state_ = command();
+			input_.clear();
+
+			//
+			//	clear function objects
+			//
+			if (cb_)	cb_ = nullptr;
+		}
+
 		parser::state_visitor::state_visitor(parser& p, char c)
 			: parser_(p)
 			, c_(c)

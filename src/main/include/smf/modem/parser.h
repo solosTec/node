@@ -166,6 +166,11 @@ namespace node
 			 */
 			void set_cmd_mode();
 
+			/**
+			 * Clear internal state and all callback function
+			 */
+			void clear();
+
 		private:
 			/**
 			 * read a single byte and update

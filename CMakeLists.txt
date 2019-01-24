@@ -487,15 +487,6 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 endif()
 
 #
-#	modem/AT bus library (client)
-#
-#include (lib/modem/bus/lib.cmake)
-#add_library(smf_bus_modem ${GLOBAL_LIBRARY_TYPE} ${modem_bus_lib})
-#if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-#	target_link_libraries(smf_bus_modem cyng_domain)
-#endif()
-
-#
 #	M-Bus/EN 13757-3 protocol/application layer library
 #
 include (lib/mbus/protocol/lib.cmake)
@@ -801,7 +792,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 endif()
 
 #
-# master
+# master node
 #
 include (nodes/master/prg.cmake)
 add_executable(master ${node_master})
@@ -816,12 +807,12 @@ endif()
 target_link_libraries(master ${master_link_libs})
 
 #
-# modem
+# modem node
 #
 include (nodes/modem/prg.cmake)
 add_executable(modem ${node_modem})
 # libraries to link
-set(modem_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys smf_cluster smf_protocol_modem)
+set(modem_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys smf_cluster smf_protocol_sml smf_protocol_modem)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND modem_link_libs "${Boost_LIBRARIES}")
     if (UNIX)

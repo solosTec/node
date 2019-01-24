@@ -20,6 +20,9 @@ namespace node
 	{
 		class session : public session_stub
 		{
+			//
+			//	allow state class to manager the inner state of the session
+			//
 			friend class session_state;
 
 		public:

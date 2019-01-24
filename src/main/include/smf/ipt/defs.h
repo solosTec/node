@@ -13,9 +13,50 @@
 
 namespace node
 {
+	/**
+	 * List of parameters each device has to provide oprionally
+	 */
+	enum query_enum : std::uint32_t
+	{
+		//	application - protocol version (0xA000)
+		QUERY_PROTOCOL_VERSION = (1 << 0),	// 0b0000000000000001
+
+		//	application - device firmware version (0xA001)
+		QUERY_FIRMWARE_VERSION = (1 << 1), // 0b0000000000000010
+
+		//	application - device identifier (0xA003)
+		QUERY_DEVICE_IDENTIFIER = (1 << 2),	// 0b0000000000000100
+
+		//	application - network status (0xA004)
+		QUERY_NETWORK_STATUS = (1 << 3),	// 0b0000000000001000
+
+		//	application - IP statistic (0xA005)
+		QUERY_IP_STATISTIC = (1 << 4),	//	0b0000000000010000
+
+		//	application - device authentification (0xA006)
+		QUERY_DEVICE_AUTHENTIFICATION = (1 << 5), // 0b0000000000100000
+
+		//
+		//	skip 6 
+		//	skip 7
+		//
+
+		//	application - device time (0xA007)
+		QUERY_DEVICE_TIME = (1 << 8),	// 0b0000000100000000
+
+		QUERY_DEFAULT_VALUE = (QUERY_FIRMWARE_VERSION | QUERY_DEVICE_IDENTIFIER),
+		QUERY_ALL_VALUES = (QUERY_PROTOCOL_VERSION
+		| QUERY_FIRMWARE_VERSION
+		| QUERY_DEVICE_IDENTIFIER
+		| QUERY_NETWORK_STATUS
+		| QUERY_IP_STATISTIC
+		| QUERY_DEVICE_AUTHENTIFICATION
+		| QUERY_DEVICE_TIME),
+	};
+
+
 	namespace ipt	
 	{
-
 		//	special values
 		enum : std::uint8_t { ESCAPE_SIGN = 0x1b };	//!<	27dec
 		enum { HEADER_SIZE = 8 };		//!<	header size in bytes
@@ -47,44 +88,6 @@ namespace node
 			GPRS_DEVICE	= 0,
 			LAN_DEVICE	= 1,
 		} device_type_enum;
-
-		enum query_enum : std::uint32_t
-		{
-			//	application - protocol version (0xA000)
-			QUERY_PROTOCOL_VERSION = (1 << 0),	// 0b0000000000000001
-
-			//	application - device firmware version (0xA001)
-			QUERY_FIRMWARE_VERSION = (1 << 1), // 0b0000000000000010
-
-			//	application - device identifier (0xA003)
-			QUERY_DEVICE_IDENTIFIER = (1 << 2),	// 0b0000000000000100
-
-			//	application - network status (0xA004)
-			QUERY_NETWORK_STATUS = (1 << 3),	// 0b0000000000001000
-
-			//	application - IP statistic (0xA005)
-			QUERY_IP_STATISTIC = (1 << 4),	//	0b0000000000010000
-
-			//	application - device authentification (0xA006)
-			QUERY_DEVICE_AUTHENTIFICATION = (1 << 5), // 0b0000000000100000
-
-			//
-			//	skip 6 
-			//	skip 7
-			//
-
-			//	application - device time (0xA007)
-			QUERY_DEVICE_TIME = (1 << 8),	// 0b0000000100000000
-
-			QUERY_DEFAULT_VALUE = (QUERY_FIRMWARE_VERSION | QUERY_DEVICE_IDENTIFIER),
-			QUERY_ALL_VALUES = (QUERY_PROTOCOL_VERSION
-			| QUERY_FIRMWARE_VERSION
-			| QUERY_DEVICE_IDENTIFIER
-			| QUERY_NETWORK_STATUS
-			| QUERY_IP_STATISTIC
-			| QUERY_DEVICE_AUTHENTIFICATION
-			| QUERY_DEVICE_TIME),
-		};
 
 		/**
 		 * value is interpreted in minutes.

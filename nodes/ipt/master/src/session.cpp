@@ -284,9 +284,8 @@ namespace node
 			vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
 			//
-			//	register SML callbacks
+			//	initialize state engine
 			//
-			//state_.register_this(vm_);
 			state_.react(state::evt_init_complete(cyng::async::start_task_sync<node::gatekeeper>(mux_
 				, logger_
 				, vm_
@@ -330,10 +329,13 @@ namespace node
 		void session::shutdown()
 		{
 			//
-			//	There could be a running gatekeeper
+			//	Clear connection map and stop running tasks
 			//
 			state_.react(state::evt_shutdown());
 
+			//
+			//	stop all tasks
+			//
 			CYNG_LOG_TRACE(logger_, vm_.tag() << " stop " << task_db_.size() << " task(s)");
 			for (auto const& tsk : task_db_) {
 				mux_.stop(tsk.second.first);
@@ -1002,7 +1004,6 @@ namespace node
 			ctx.queue(cyng::generate_invoke("log.msg.debug", "client.res.open.push.channel", frame));
 
 			auto const tpl = cyng::tuple_cast<
-				//boost::uuids::uuid,		//	[0] tag
 				boost::uuids::uuid,		//	[1] peer
 				std::uint64_t,			//	[2] cluster sequence
 				bool,					//	[3] success flag
@@ -1209,7 +1210,7 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			if (bus_->is_online())
 			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.open.connection", frame));
+				ctx.run(cyng::generate_invoke("log.msg.info", ctx.get_name(), frame));
 
 				bus_->vm_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")	//	number
@@ -1217,7 +1218,7 @@ namespace node
 			}
             else
 			{
-				ctx	.queue(cyng::generate_invoke("log.msg.error", "ipt.req.open.connection", frame))
+				ctx	.queue(cyng::generate_invoke("log.msg.error", ctx.get_name(), frame))
 					.queue(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<response_type>(tp_res_open_connection_policy::NO_MASTER)))
 					.queue(cyng::generate_invoke("stream.flush"));
 			}
@@ -1258,7 +1259,8 @@ namespace node
 			//
 			//	dom reader (options)
 			//
-			auto dom = cyng::make_reader(std::get<3>(tpl));
+			auto const dom = cyng::make_reader(std::get<3>(tpl));
+			auto const local_connect = cyng::value_cast(dom.get("local-connect"), false);
 
 			//
 			//	Use state machine to respond to ip-t response.
@@ -1270,8 +1272,7 @@ namespace node
 					, vm_
 					, std::get<2>(tpl)	//	number
 					, timeout_)
-				//, cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid())
-				, cyng::value_cast(dom.get("local-connect"), false)
+				, local_connect
 				, std::get<1>(tpl)	//	cluster bus sequence
 				, std::get<3>(tpl)	//	master
 				, std::get<4>(tpl)	//	client

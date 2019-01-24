@@ -9,7 +9,7 @@ set (node_modem_cpp
 	nodes/shared/net/session_stub.cpp
 	nodes/modem/src/server.cpp
 	nodes/modem/src/session.cpp
-#	nodes/modem/src/connection.cpp
+	nodes/modem/src/session_state.cpp
 )
 
 set (node_modem_h
@@ -19,7 +19,7 @@ set (node_modem_h
 	nodes/modem/src/server.h
 	src/main/include/smf/cluster/session_stub.h
 	nodes/modem/src/session.h
-#	nodes/modem/src/connection.h
+	nodes/modem/src/session_state.h
 )
 
 set (node_modem_info

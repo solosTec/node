@@ -245,7 +245,7 @@
                         }
                         else if (obj.rec.key.name == "generate-time-series-dir") {
                             console.log('generate-time-series-dir: ' + obj.rec.data.value);
-                            $("#smf-config-system-time-series-dir").text(obj.rec.data.value);
+                            $("#smf-config-system-time-series-dir").html('<a href="file:///' + obj.rec.data.value + '">' + obj.rec.data.value + '</a>');
                         }
                         else if (obj.rec.key.name == "max-messages") {
                             console.log('max-messages": ' + obj.rec.data.value);

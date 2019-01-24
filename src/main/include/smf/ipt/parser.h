@@ -336,7 +336,7 @@ namespace node
 			void reset(scramble_key const&);
 
 			/**
-			 * Clear internal state and all function objects
+			 * Clear internal state and all callback function
 			 */
 			void clear();
 

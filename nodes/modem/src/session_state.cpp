@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  * 
- * Copyright (c) 2018 Sylko Olzscher 
+ * Copyright (c) 2019 Sylko Olzscher 
  * 
  */ 
 
@@ -14,6 +14,7 @@
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/ip_io.h>
 #include <smf/mbus/defs.h>
+//#include <smf/ipt/defs.h>
 
 #include <cyng/dom/reader.h>
 #include <cyng/tuple_cast.hpp>
@@ -25,11 +26,12 @@
 
 namespace node 
 {
-	namespace ipt
+	namespace modem
 	{
-		session_state::session_state(session* sp)
+		session_state::session_state(session* sp, bool auto_answer)
 			: sp_(sp)
 			, logger_(sp->logger_)
+			, auto_answer_(auto_answer)
 			, state_(S_IDLE)
 			, idle_()
 			, authorized_()
@@ -80,31 +82,12 @@ namespace node
 				//
 				//	watchdog in minutes
 				//
-				idle_.watchdog_ = evt.watchdog_;
+				//idle_.watchdog_ = evt.watchdog_;
 			}
 
 			//sp_->vm_.register_function("session.update.connection.state", 2, std::bind(&session_state::update_connection_state, this, std::placeholders::_1));
 			sp_->vm_.register_function("session.redirect", 1, std::bind(&session_state::redirect, this, std::placeholders::_1));
 		}
-
-		//void session_state::update_connection_state(cyng::context& ctx)
-		//{
-		//	if (S_AUTHORIZED == state_) {
-
-		//		auto const tpl = cyng::tuple_cast<
-		//			boost::uuids::uuid,		//	[0] remote tag
-		//			bool					//	[1] new state
-		//		>(ctx.get_frame());
-
-		//		//
-		//		//	update state
-		//		//
-		//		transit(std::get<1>(tpl) ? S_CONNECTED_LOCAL : S_CONNECTED_REMOTE);
-		//	}
-		//	else {
-		//		signal_wrong_state("update_connection_state");
-		//	}
-		//}
 
 		void session_state::redirect(cyng::context& ctx)
 		{
@@ -301,10 +284,6 @@ namespace node
 				break;
 			}
 
-			//if (sp_->bus_->is_online()) {
-
-			//}
-
 			//
 			//	update watchdog timer
 			//
@@ -326,32 +305,6 @@ namespace node
 				return prg;
 			}
 
-
-			//
-			//	read original data
-			//
-			auto dom = cyng::make_reader(evt.bag_);
-
-			//
-			//	IP-T result type
-			//
-			const response_type res = evt.success_
-				? ctrl_res_login_public_policy::SUCCESS
-				: ctrl_res_login_public_policy::UNKNOWN_ACCOUNT
-				;
-
-			//
-			//	send login response to device
-			//
-			const std::string security = cyng::value_cast<std::string>(dom.get("security"), "undef");
-			if (boost::algorithm::equals(security, "scrambled")) {
-				prg << cyng::generate_invoke_unwinded("res.login.scrambled", res, idle_.watchdog_, "");
-			}
-			else {
-				prg << cyng::generate_invoke_unwinded("res.login.public", res, idle_.watchdog_, "");
-			}
-			prg << cyng::generate_invoke_unwinded("stream.flush");
-
 			if (evt.success_) {
 
 				//
@@ -362,19 +315,24 @@ namespace node
 				//
 				//	stop gatekeeper
 				//
-				idle_.stop(sp_->mux_);
-
-				//
-				//	start watchdog
-				//
-				if (idle_.watchdog_ != 0) {
-					prg << cyng::generate_invoke_unwinded("session.start.watchdog", idle_.watchdog_, evt.name_);
+				if (idle_.stop(sp_->mux_)) {
+					CYNG_LOG_TRACE(logger_, sp_->vm().tag()
+						<< " gatekeeper stopped");
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, sp_->vm().tag()
+						<< " cannot stop gatekeeper");
 				}
 
 				//
-				//	send query
+				//	send login response to device
 				//
-				prg << cyng::unwind(query(evt.query_));
+				prg << cyng::generate_invoke_unwinded("print.ok");
+
+				//
+				//	process optional queries
+				//
+				query(evt.query_);
 
 				//
 				//	start proxy
@@ -382,56 +340,41 @@ namespace node
 				prg << cyng::generate_invoke_unwinded("session.start.proxy");
 
 			}
+			else {
 
-			//
-			//	gatekeeper will terminating this session
-			//
+				prg << cyng::generate_invoke_unwinded("print.error");
+
+				//
+				//	gatekeeper will terminating this session
+				//
+			}
+
+			prg << cyng::generate_invoke_unwinded("stream.flush");
 			return prg;
 		}
 
-		cyng::vector_t session_state::query(std::uint32_t query)
+		void session_state::query(std::uint32_t query)
 		{
 			//
 			//	further actions
 			//
-			cyng::vector_t prg;
-			if ((query & QUERY_PROTOCOL_VERSION) == QUERY_PROTOCOL_VERSION)
-			{
-				CYNG_LOG_DEBUG(logger_, sp_->vm().tag() << " QUERY_PROTOCOL_VERSION");
-				prg << cyng::generate_invoke_unwinded("req.protocol.version");
-			}
-			if ((query & QUERY_FIRMWARE_VERSION) == QUERY_FIRMWARE_VERSION)
-			{
-				CYNG_LOG_DEBUG(logger_, sp_->vm().tag() << " QUERY_FIRMWARE_VERSION");
-				prg << cyng::generate_invoke_unwinded("req.software.version");
-			}
-			if ((query & QUERY_DEVICE_IDENTIFIER) == QUERY_DEVICE_IDENTIFIER)
-			{
-				CYNG_LOG_DEBUG(logger_, sp_->vm().tag() << " QUERY_DEVICE_IDENTIFIER");
-				prg << cyng::generate_invoke_unwinded("req.device.id");
-			}
-			if ((query & QUERY_NETWORK_STATUS) == QUERY_NETWORK_STATUS)
-			{
-				CYNG_LOG_DEBUG(logger_, sp_->vm().tag() << " QUERY_NETWORK_STATUS");
-				prg << cyng::generate_invoke_unwinded("req.net.status");
-			}
-			if ((query & QUERY_IP_STATISTIC) == QUERY_IP_STATISTIC)
-			{
-				CYNG_LOG_DEBUG(logger_, sp_->vm().tag() << " QUERY_IP_STATISTIC");
-				prg << cyng::generate_invoke_unwinded("req.ip.statistics");
-			}
-			if ((query & QUERY_DEVICE_AUTHENTIFICATION) == QUERY_DEVICE_AUTHENTIFICATION)
-			{
-				CYNG_LOG_DEBUG(logger_, sp_->vm().tag() << " QUERY_DEVICE_AUTHENTIFICATION");
-				prg << cyng::generate_invoke_unwinded("req.device.auth");
-			}
-			if ((query & QUERY_DEVICE_TIME) == QUERY_DEVICE_TIME)
-			{
-				CYNG_LOG_DEBUG(logger_, sp_->vm().tag() << " QUERY_DEVICE_TIME");
-				prg << cyng::generate_invoke_unwinded("req.device.time");
-			}
-			prg << cyng::generate_invoke_unwinded("stream.flush");
-			return prg;
+			cyng::param_map_t const bag = cyng::param_map_factory("tp-layer", "modem");
+
+			sp_->bus_->vm_.async_run(client_update_attr(sp_->vm().tag()
+				, "TDevice.vFirmware"
+				, cyng::make_object(NODE_VERSION)
+				, bag));
+			sp_->bus_->vm_.async_run(client_update_attr(sp_->vm().tag()
+				, "TDevice.id"
+				, cyng::make_object("modem")
+				, bag));
+
+#ifdef _DEBUG
+			sp_->bus_->vm_.async_run(client_update_attr(sp_->vm().tag()
+				, "device.time"
+				, cyng::make_now()
+				, bag));
+#endif
 		}
 
 		void session_state::react(state::evt_watchdog_started evt)
@@ -453,7 +396,7 @@ namespace node
 				//	init SML comm
 				//
 				CYNG_LOG_DEBUG(logger_, sp_->vm().tag() << " initialize SML comm");
-				sp_->proxy_comm_.register_this(sp_->vm());
+				//sp_->proxy_comm_.register_this(sp_->vm());
 
 			}
 			else {
@@ -461,7 +404,7 @@ namespace node
 			}
 		}
 
-		cyng::vector_t session_state::react(state::evt_req_login_public evt)
+		cyng::vector_t session_state::react(state::evt_req_login evt)
 		{
 			cyng::vector_t prg;
 
@@ -469,11 +412,11 @@ namespace node
 			case S_IDLE:
 				break;
 			default:
-				signal_wrong_state("evt_req_login_public");
+				signal_wrong_state("evt_req_public");
 				return prg;
 			}
 
-			CYNG_LOG_INFO(logger_, "ipt.req.login.public "
+			CYNG_LOG_INFO(logger_, "ipt.req.login "
 				<< evt.tag_
 				<< ':'
 				<< evt.name_
@@ -486,72 +429,18 @@ namespace node
 					, evt.name_	//	name
 					, evt.pwd_	//	pwd
 					, "plain" //	login scheme
-					, cyng::param_map_factory("tp-layer", "ipt")("security", "public")("time", std::chrono::system_clock::now())));
+					, cyng::param_map_factory("tp-layer", "modem")("security", "public")("time", std::chrono::system_clock::now())));
 
 			}
 			else {
 
-				//
-				//	reject login - faulty master
-				//
-				const response_type res = ctrl_res_login_public_policy::MALFUNCTION;
+				CYNG_LOG_WARNING(logger_, "cannot forward authorization request - no master");
 
 				prg
-					<< cyng::generate_invoke_unwinded("res.login.public", res, static_cast<std::uint16_t>(0), "")
+					<< cyng::generate_invoke_unwinded("print.error")
 					<< cyng::generate_invoke_unwinded("stream.flush")
-					<< cyng::generate_invoke_unwinded("log.msg.error", "public login failed - no master")
 					;
 
-			}
-
-			//
-			//	update watchdog timer
-			//
-			authorized_.activity(sp_->mux_);
-
-			return prg;
-		}
-
-		cyng::vector_t session_state::react(state::evt_req_login_scrambled evt)
-		{
-			cyng::vector_t prg;
-
-			switch (state_) {
-			case S_IDLE:
-				break;
-			default:
-				signal_wrong_state("evt_req_login_scrambled");
-				return prg;
-			}
-
-			CYNG_LOG_INFO(logger_, "ipt.req.login.scrambled "
-				<< evt.tag_
-				<< ':'
-				<< evt.name_
-				<< ':'
-				<< evt.pwd_);
-
-			if (sp_->bus_->is_online()) {
-
-				sp_->bus_->vm_.async_run(client_req_login(evt.tag_
-					, evt.name_	//	name
-					, evt.pwd_	//	pwd
-					, "plain" //	login scheme
-					, cyng::param_map_factory("tp-layer", "ipt")("security", "scrambled")("time", std::chrono::system_clock::now())));
-
-			}
-			else {
-
-				//
-				//	reject login - faulty master
-				//
-				const response_type res = ctrl_res_login_public_policy::MALFUNCTION;
-
-				prg
-					<< cyng::generate_invoke_unwinded("res.login.public", res, static_cast<std::uint16_t>(0), "")
-					<< cyng::generate_invoke_unwinded("stream.flush")
-					<< cyng::generate_invoke_unwinded("log.msg.error", "scrambled login failed - no master")
-					;
 			}
 
 			//
@@ -566,21 +455,71 @@ namespace node
 		{
 			cyng::vector_t prg;
 
+			auto const dom = cyng::make_reader(evt.master_);
+			auto const target = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
+
 			switch (state_) {
 			case S_AUTHORIZED:
 				break;
 			default:
 				signal_wrong_state("evt_client_req_open_connection");
+				if (auto_answer_) {
+					sp_->bus_->vm_.async_run(node::client_res_open_connection(target
+						, evt.seq_	//	sequence
+						, false		//	no success
+						, evt.master_
+						, evt.client_));
+				}
 				return prg;
 			}
 
-			if (evt.success_) {
 
+			if (auto_answer_) {
+
+				CYNG_LOG_INFO(logger_, "incoming call - auto answer mode is ON");
+
+				//
+				//	update parser state
+				//
+				sp_->parser_.set_stream_mode();
+
+				//
+				//	print response
+				//
+				prg
+					<< cyng::generate_invoke_unwinded("print.connect")
+					;
+
+				//
+				//	send connection open response response
+				//			
+				sp_->bus_->vm_.async_run(node::client_res_open_connection(target
+					, evt.seq_	//	sequence
+					, true		//	success
+					, evt.master_
+					, evt.client_));
+
+				//
+				//	update session state
+				//
+				transit(evt.local_ ? S_CONNECTED_LOCAL : S_CONNECTED_REMOTE);
+
+			}
+			else {
 				//
 				//	update state
 				//
 				transit(S_WAIT_FOR_OPEN_RESPONSE);
-				wait_for_open_response_.init(evt.tsk_, /*evt.origin_tag_, */evt.local_, evt.seq_, evt.master_, evt.client_);
+
+				//
+				//	ring ring
+				//
+				CYNG_LOG_INFO(logger_, "incoming call - wait for ATA");
+				prg
+					<< cyng::generate_invoke_unwinded("print.ring")
+					;
+
+				wait_for_open_response_.init(evt.local_, evt.seq_, evt.master_, evt.client_);
 			}
 
 			return prg;
@@ -600,27 +539,28 @@ namespace node
 
 
 			//
+			//	send response
+			//
+			if (evt.success_) {
+				prg
+					<< cyng::generate_invoke_unwinded("print.ok")
+					;
+			}
+			else {
+				prg
+					<< cyng::generate_invoke_unwinded("print.error")
+					;
+
+			}
+
+			prg
+				<< cyng::generate_invoke_unwinded("stream.flush")
+				;
+
+			//
 			//	dom reader
 			//
 			auto dom = cyng::make_reader(evt.client_);
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom.get("seq"), 0);
-			BOOST_ASSERT(seq != 0);	//	values of 0 not allowed
-
-			//
-			//	use success flag to get an IP-T response code
-			//
-			const response_type res = (evt.success_)
-				? tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED
-				: tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN
-				;
-
-			//
-			//	send response
-			//
-			prg
-				<< cyng::generate_invoke_unwinded("res.close.connection", seq, res)
-				<< cyng::generate_invoke_unwinded("stream.flush")
-				;
 
 			//
 			//	check lag/response time
@@ -660,9 +600,7 @@ namespace node
 			//
 			//	dom reader
 			//
-			auto dom = cyng::make_reader(evt.client_);
-			const sequence_type seq = cyng::value_cast<sequence_type>(dom.get("seq"), 0);
-			BOOST_ASSERT(seq != 0);	//	values of 0 not allowed
+			auto const dom = cyng::make_reader(evt.client_);
 
 			//
 			//	check lag/response time
@@ -682,9 +620,9 @@ namespace node
 			if (evt.success_)
 			{
 				//
-				//	hides outer variable dom
+				//	hides outer variable dom!
 				//
-				auto dom = cyng::make_reader(evt.master_);
+				auto const dom = cyng::make_reader(evt.master_);
 				const auto local = cyng::value_cast(dom.get("local-connect"), false);
 
 				CYNG_LOG_TRACE(logger_, sp_->vm().tag()
@@ -692,28 +630,45 @@ namespace node
 					<< (local ? "local" : "remote"));
 
 				//
+				//	update parser state
+				//
+				sp_->parser_.set_stream_mode();
+
+				//
+				//	print response
+				//
+				prg
+					<< cyng::generate_invoke_unwinded("print.connect")
+					;
+				//
 				//	update state
 				//
 				transit(local ? S_CONNECTED_LOCAL : S_CONNECTED_REMOTE);
-				prg << cyng::generate_invoke_unwinded("res.open.connection", seq, static_cast<response_type>(tp_res_open_connection_policy::DIALUP_SUCCESS));
 			}
 			else
 			{
+				//
+				//	print response
+				//
+				prg
+					<< cyng::generate_invoke_unwinded("print.no-answer")
+					;
+
 				//
 				//	update state
 				//	To reset the session state to AUTHORIZED reflect the fact that this session is no longer part in any
 				//	attempt to establish a connection.
 				//
 				transit(S_AUTHORIZED);
-				prg << cyng::generate_invoke_unwinded("res.open.connection", seq, static_cast<response_type>(tp_res_open_connection_policy::DIALUP_FAILED));
 			}
 
 			prg << cyng::generate_invoke_unwinded("stream.flush");
 
+
 			return prg;
 		}
 
-		cyng::vector_t session_state::react(state::evt_ipt_req_close_connection evt)
+		cyng::vector_t session_state::react(state::evt_modem_req_close_connection evt)
 		{
 			cyng::vector_t prg;
 
@@ -723,24 +678,25 @@ namespace node
 				transit(S_WAIT_FOR_CLOSE_RESPONSE);
 				break;
 			default:
-				signal_wrong_state("evt_ipt_req_close_connection");
+				signal_wrong_state("evt_modem_req_close_connection");
 				return prg;
 			}
 
-			CYNG_LOG_TRACE(logger_, sp_->vm().tag() << " received connection close request");
 
 			if (sp_->bus_->is_online())
 			{
+				CYNG_LOG_TRACE(logger_, sp_->vm().tag() << " received connection close request");
 				sp_->bus_->vm_.async_run(node::client_req_close_connection(sp_->vm().tag()
 					, false //	no shutdown
-					, cyng::param_map_factory("tp-layer", "ipt")("origin-tag", sp_->vm().tag())("seq", evt.seq_)("start", std::chrono::system_clock::now())));
+					, cyng::param_map_factory("tp-layer", "modem")("origin-tag", sp_->vm().tag())("start", std::chrono::system_clock::now())));
 			}
 			else
 			{
-				//ctx.queue(cyng::generate_invoke("log.msg.error", "ipt.req.close.connection - no master", frame))
+				CYNG_LOG_WARNING(logger_, sp_->vm().tag() << " received connection close request - no master");
 				prg
-					<< cyng::generate_invoke_unwinded("res.close.connection", evt.seq_, static_cast<response_type>(tp_res_close_connection_policy::CONNECTION_CLEARING_FORBIDDEN))
-					<< cyng::generate_invoke_unwinded("stream.flush");
+					<< cyng::generate_invoke_unwinded("print.error")
+					<< cyng::generate_invoke_unwinded("stream.flush")
+					;
 			}
 
 			//
@@ -751,7 +707,7 @@ namespace node
 			return prg;
 		}
 
-		cyng::vector_t session_state::react(state::evt_ipt_res_open_connection evt)
+		cyng::vector_t session_state::react(state::evt_modem_res_open_connection evt)
 		{
 			cyng::vector_t prg;
 
@@ -759,47 +715,47 @@ namespace node
 			case S_WAIT_FOR_OPEN_RESPONSE:
 				break;
 			default:
-				signal_wrong_state("evt_ipt_res_open_connection");
+				signal_wrong_state("evt_modem_res_open_connection");
 				return prg;
 			}
 
 			//
 			//	stop open connection task
 			//
-			BOOST_ASSERT(evt.tsk_ == wait_for_open_response_.tsk_connection_open_);
-			sp_->mux_.post(evt.tsk_, evt.slot_, cyng::tuple_factory(evt.res_));
+			//BOOST_ASSERT(evt.tsk_ == wait_for_open_response_.tsk_connection_open_);
+			//sp_->mux_.post(evt.tsk_, evt.slot_, cyng::tuple_factory(evt.res_));
 
 			//
 			//	update session state
 			//
-			if (ipt::tp_res_open_connection_policy::is_success(evt.res_)) {
-				switch (wait_for_open_response_.type_) {
-				case state::state_wait_for_open_response::E_LOCAL:
-					sp_->bus_->vm_.async_run(wait_for_open_response_.establish_local_connection());
-					transit(S_CONNECTED_LOCAL);
-					break;
-				case state::state_wait_for_open_response::E_REMOTE:
-					transit(S_CONNECTED_REMOTE);
-					break;
-				default:
-					BOOST_ASSERT_MSG(false, "undefined connection state");
-					break;
-				}
-			}
-			else {
+			//if (ipt::tp_res_open_connection_policy::is_success(evt.res_)) {
+			//	switch (wait_for_open_response_.type_) {
+			//	case state::state_wait_for_open_response::E_LOCAL:
+			//		sp_->bus_->vm_.async_run(wait_for_open_response_.establish_local_connection());
+			//		transit(S_CONNECTED_LOCAL);
+			//		break;
+			//	case state::state_wait_for_open_response::E_REMOTE:
+			//		transit(S_CONNECTED_REMOTE);
+			//		break;
+			//	default:
+			//		BOOST_ASSERT_MSG(false, "undefined connection state");
+			//		break;
+			//	}
+			//}
+			//else {
 
-				//
-				//	fallback to authorized
-				//
-				transit(S_AUTHORIZED);
-			}
+			//	//
+			//	//	fallback to authorized
+			//	//
+			//	transit(S_AUTHORIZED);
+			//}
 			
 			if (sp_->bus_->is_online()) {
-				sp_->bus_->vm_.async_run(client_res_open_connection(wait_for_open_response_.get_origin_tag()
-					, wait_for_open_response_.seq_	//	cluster sequence
-					, ipt::tp_res_open_connection_policy::is_success(evt.res_)
-					, wait_for_open_response_.master_params_
-					, wait_for_open_response_.client_params_));
+				//sp_->bus_->vm_.async_run(client_res_open_connection(wait_for_open_response_.get_origin_tag()
+				//	, wait_for_open_response_.seq_	//	cluster sequence
+				//	, ipt::tp_res_open_connection_policy::is_success(evt.res_)
+				//	, wait_for_open_response_.master_params_
+				//	, wait_for_open_response_.client_params_));
 			}
 
 			//
@@ -815,7 +771,7 @@ namespace node
 			return prg;
 		}
 
-		cyng::vector_t session_state::react(state::evt_ipt_res_close_connection evt)
+		cyng::vector_t session_state::react(state::evt_modem_res_close_connection evt)
 		{
 			cyng::vector_t prg;
 
@@ -823,7 +779,7 @@ namespace node
 			case S_WAIT_FOR_CLOSE_RESPONSE:
 				break;
 			default:
-				signal_wrong_state("evt_ipt_res_close_connection");
+				signal_wrong_state("evt_modem_res_close_connection");
 				return prg;
 			}
 
@@ -831,12 +787,12 @@ namespace node
 			//	stop close connection task
 			//
 			BOOST_ASSERT(evt.tsk_ == wait_for_close_response_.tsk_connection_close_);
-			sp_->mux_.post(evt.tsk_, evt.slot_, cyng::tuple_factory(evt.res_));
+			//sp_->mux_.post(evt.tsk_, evt.slot_, cyng::tuple_factory(evt.res_));
 
 			//
 			//	update master
 			//
-			wait_for_close_response_.terminate(sp_->bus_, evt.res_);
+			//wait_for_close_response_.terminate(sp_->bus_, evt.res_);
 
 			//
 			//	update state
@@ -865,22 +821,117 @@ namespace node
 				return prg;
 			}
 
-			if (evt.success_) {
+			//
+			//	print NO CARRIER
+			//
+			prg
+				<< cyng::generate_invoke_unwinded("print.no-carrier")
+				<< cyng::generate_invoke_unwinded("stream.flush")
+				;
 
-				//
-				//	initialize next state
-				//
-				wait_for_close_response_.init(evt.tsk_, evt.tag_, evt.shutdown_, evt.seq_, evt.master_, evt.client_, state_ == S_CONNECTED_LOCAL);
+			//
+			//	update parser state
+			//
+			sp_->parser_.set_cmd_mode();
 
+			//
+			//	initialize next state
+			//
+			//wait_for_close_response_.init(evt.tsk_, evt.tag_, evt.shutdown_, evt.seq_, evt.master_, evt.client_, state_ == S_CONNECTED_LOCAL);
+
+
+			if (!evt.shutdown_)
+			{
 				//
-				//	update state
+				//	don't send response in shutdown mode
 				//
-				transit(S_WAIT_FOR_CLOSE_RESPONSE);
+
+				sp_->bus_->vm_.async_run(client_res_close_connection(sp_->vm().tag()
+					, evt.seq_	//	cluster sequence
+					, true	//	success
+					, evt.master_
+					, evt.client_));
 			}
-			else {
-				CYNG_LOG_FATAL(logger_, "cannot start close_connection");
+
+			//
+			//	update state
+			//
+			transit(S_AUTHORIZED);
+
+			return prg;
+		}
+
+		cyng::vector_t session_state::react(state::evt_info evt)
+		{
+			cyng::vector_t prg;
+
+			switch (state_) {
+			case S_AUTHORIZED:
+				break;
+			default:
+				signal_wrong_state("evt_info");
+				return prg;
 			}
 
+			switch (evt.code_)
+			{
+			case 1:
+				prg << cyng::generate_invoke_unwinded("print.text", cyng::invoke("ip.tcp.socket.ep.local"));
+				break;
+			case 2:
+				prg << cyng::generate_invoke_unwinded("print.text", cyng::invoke("ip.tcp.socket.ep.remote"));
+				break;
+			case 3:
+				prg << cyng::generate_invoke_unwinded("print.text", std::chrono::system_clock::now());
+				break;
+			case 4:
+				prg << cyng::generate_invoke_unwinded("print.text", NODE_VERSION);
+				break;
+			case 5:
+				prg << cyng::generate_invoke_unwinded("print.text", NODE_PLATFORM);
+				break;
+			case 6:
+				prg << cyng::generate_invoke_unwinded("print.text", NODE_PROCESSOR);
+				break;
+			case 7:
+				prg << cyng::generate_invoke_unwinded("print.text", NODE_SSL_VERSION);
+				break;
+			case 8:
+				prg << cyng::generate_invoke_unwinded("print.text", NODE_BUILD_TYPE);
+				break;
+			case 9:
+				prg << cyng::generate_invoke_unwinded("print.text", sp_->vm().tag());
+				break;
+			case 10:
+				prg << cyng::generate_invoke_unwinded("print.text", sp_->bus_->vm_.tag());
+				break;
+			case 11:
+			{
+				std::stringstream ss;
+				ss << state_;
+				prg << cyng::generate_invoke_unwinded("print.text", ss.str());
+			}
+				break;
+			case 12:
+			{
+				std::stringstream ss;
+				ss << *this;
+				prg << cyng::generate_invoke_unwinded("print.text", ss.str());
+			}
+				break;
+			case 13:
+				//	auto answer ON/OFF
+				prg << cyng::generate_invoke_unwinded("print.text", (auto_answer_ ? "ON" : "OFF"));
+				break;
+
+			default:
+				break;
+			}
+
+			prg
+				<< cyng::generate_invoke_unwinded("print.ok")
+				<< cyng::generate_invoke_unwinded("stream.flush")
+				;
 			return prg;
 		}
 
@@ -1210,10 +1261,9 @@ namespace node
 		//
 		namespace state
 		{
-			evt_init_complete::evt_init_complete(std::pair<std::size_t, bool> r, std::uint16_t watchdog)
+			evt_init_complete::evt_init_complete(std::pair<std::size_t, bool> r)
 				: tsk_(r.first)
 				, success_(r.second)
-				, watchdog_(watchdog)
 			{}
 
 			evt_watchdog_started::evt_watchdog_started(std::pair<std::size_t, bool> r)
@@ -1226,7 +1276,7 @@ namespace node
 				, success_(r.second)
 			{}
 
-			evt_req_login_public::evt_req_login_public(std::tuple
+			evt_req_login::evt_req_login(std::tuple
 				<
 				boost::uuids::uuid,		//	[0] peer tag
 				std::string,			//	[1] name
@@ -1236,20 +1286,6 @@ namespace node
 				, name_(std::get<1>(tpl))
 				, pwd_(std::get<2>(tpl))
 			{}
-
-			//
-			//	EVENT: scrambled login
-			//
-			evt_req_login_scrambled::evt_req_login_scrambled(boost::uuids::uuid tag
-				, std::string const& name
-				, std::string const& pwd
-				, scramble_key const& sk)
-				: tag_(tag)
-				, name_(name)
-				, pwd_(pwd)
-				, sk_(sk)
-			{}
-
 
 
 			//
@@ -1278,10 +1314,10 @@ namespace node
 			//	EVENT: IP-T connection open request
 			//
 			evt_ipt_req_open_connection::evt_ipt_req_open_connection(boost::uuids::uuid tag
-				, sequence_type seq
+				//, sequence_type seq
 				, std::string number)
 				: tag_(tag)
-				, seq_(seq)
+				//, seq_(seq)
 				, number_(number)
 			{}
 
@@ -1289,47 +1325,38 @@ namespace node
 			//
 			//	EVENT: IP-T connection open response
 			//
-			evt_ipt_res_open_connection::evt_ipt_res_open_connection(std::size_t tsk, std::size_t slot, response_type res)
+			evt_modem_res_open_connection::evt_modem_res_open_connection(std::size_t tsk, std::size_t slot/*, response_type res*/)
 				: tsk_(tsk)
 			, slot_(slot)
-			, res_(res)
+			//, res_(res)
 			{}
 
 
 			//
-			//	EVENT: IP-T connection close request
+			//	EVENT: modem connection close request
 			//
-			evt_ipt_req_close_connection::evt_ipt_req_close_connection(std::tuple<
-				boost::uuids::uuid,		//	[0] session tag
-				sequence_type			//	[1] seq
-				>tpl )
-			: tag_(std::get<0>(tpl))
-				, seq_(std::get<1>(tpl))
+			evt_modem_req_close_connection::evt_modem_req_close_connection(boost::uuids::uuid tag)		//	session tag
+			: tag_(tag)
 			{}
 
 			//
 			//	EVENT: IP-T connection close response
 			//
-			evt_ipt_res_close_connection::evt_ipt_res_close_connection(std::size_t tsk, std::size_t slot, response_type res)
+			evt_modem_res_close_connection::evt_modem_res_close_connection(std::size_t tsk, std::size_t slot/*, response_type res*/)
 				: tsk_(tsk)
 				, slot_(slot)
-				, res_(res)
+				//, res_(res)
 			{}
 
 
 			//
 			//	EVENT: incoming connection open request
 			//
-			evt_client_req_open_connection::evt_client_req_open_connection(std::pair<std::size_t, bool> r
-				//, boost::uuids::uuid origin_tag
-				, bool local
+			evt_client_req_open_connection::evt_client_req_open_connection(bool local
 				, std::size_t seq
 				, cyng::param_map_t master
 				, cyng::param_map_t client)
-			: tsk_(r.first)
-				, success_(r.second)
-				//, origin_tag_(origin_tag)
-				, local_(local)
+			: local_(local)
 				, seq_(seq)
 				, master_(master)
 				, client_(client)
@@ -1356,19 +1383,19 @@ namespace node
 			//
 			//	EVENT: incoming connection close request
 			//
-			evt_client_req_close_connection::evt_client_req_close_connection(std::pair<std::size_t, bool> r,
-				std::uint64_t seq,			//	[1] cluster sequence
-				boost::uuids::uuid tag,		//	[2] origin-tag - compare to "origin-tag"
-				bool shutdown,				//	[3] shutdown flag
-				cyng::param_map_t master,	//	[4] master
-				cyng::param_map_t client)	//	[5] client
-			: tsk_(r.first)
-				, success_(r.second)
-				, seq_(seq)
-				, tag_(tag)
-				, shutdown_(shutdown)
-				, master_(master)
-				, client_(client)
+			evt_client_req_close_connection::evt_client_req_close_connection(std::tuple<
+				boost::uuids::uuid,		//	[0] peer
+				std::uint64_t,			//	[1] cluster sequence
+				boost::uuids::uuid,		//	[2] origin-tag
+				bool,					//	[3] shutdown flag
+				cyng::param_map_t,		//	[4] options
+				cyng::param_map_t		//	[5] bag
+			> tpl)	
+			: seq_(std::get<1>(tpl))
+				, tag_(std::get<2>(tpl))
+				, shutdown_(std::get<3>(tpl))
+				, master_(std::get<4>(tpl))
+				, client_(std::get<5>(tpl))
 			{}
 
 			//
@@ -1522,15 +1549,25 @@ namespace node
 			{}
 
 			//
+			//	EVENT: evt_info
+			//
+			evt_info::evt_info(std::uint32_t code)
+				: code_(code)
+			{}
+
+			//
 			//	STATE: idle
 			//
 			state_idle::state_idle()
 				: tsk_gatekeeper_(cyng::async::NO_TASK)
 			{}
 
-			void state_idle::stop(cyng::async::mux& mux)
+			bool state_idle::stop(cyng::async::mux& mux)
 			{
-				if (cyng::async::NO_TASK != tsk_gatekeeper_)	mux.stop(tsk_gatekeeper_);
+				if (cyng::async::NO_TASK != tsk_gatekeeper_) {
+					return mux.stop(tsk_gatekeeper_);
+				}
+				return false;
 			}
 
 
@@ -1558,20 +1595,17 @@ namespace node
 			//	STATE: state_wait_for_open_response
 			//
 			state_wait_for_open_response::state_wait_for_open_response()
-			: tsk_connection_open_(cyng::async::NO_TASK)
-				, type_(E_UNDEF)
+			: type_(E_UNDEF)
 				, seq_(0u)
 				, master_params_()
 				, client_params_()
 			{}
 
-			void state_wait_for_open_response::init(std::size_t tsk
-				, bool local
+			void state_wait_for_open_response::init(bool local
 				, std::uint64_t seq
 				, cyng::param_map_t master
 				, cyng::param_map_t client)
 			{
-				tsk_connection_open_ = tsk;
 				type_ = local ? E_LOCAL : E_REMOTE;
 				seq_ = seq;
 				master_params_ = master;
@@ -1598,8 +1632,6 @@ namespace node
 
 			void state_wait_for_open_response::reset()
 			{
-				tsk_connection_open_ = cyng::async::NO_TASK;
-				//tag_ = boost::uuids::nil_uuid();
 				type_ = E_UNDEF;
 				seq_ = 0u;
 				master_params_.clear();
@@ -1654,7 +1686,7 @@ namespace node
 				return cyng::value_cast(dom.get("local-connect"), false);
 			}
 
-			void state_wait_for_close_response::terminate(bus::shared_type bus, response_type res)
+			void state_wait_for_close_response::terminate(bus::shared_type bus/*, response_type res*/)
 			{
 				if (!shutdown_ && bus->is_online())
 				{
@@ -1667,11 +1699,11 @@ namespace node
 					}
 
 					//	send "client.res.close.connection" to SMF master
-					bus->vm_.async_run(client_res_close_connection(tag_
-						, seq_
-						, ipt::tp_res_close_connection_policy::is_success(res)
-						, master_params_
-						, client_params_));
+					//bus->vm_.async_run(client_res_close_connection(tag_
+					//	, seq_
+					//	, ipt::tp_res_close_connection_policy::is_success(res)
+					//	, master_params_
+					//	, client_params_));
 				}
 
 				//
@@ -1699,7 +1731,7 @@ namespace node
 			void state_connected_remote::transmit(bus::shared_type bus, boost::uuids::uuid tag, cyng::object obj)
 			{
 				bus->vm_.async_run(client_req_transmit_data(tag
-					, cyng::param_map_factory("tp-layer", "ipt")("start", std::chrono::system_clock::now())
+					, cyng::param_map_factory("tp-layer", "modem")("start", std::chrono::system_clock::now())
 					, obj));
 			}
 
