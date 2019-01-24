@@ -6,6 +6,7 @@
  */ 
 #include <smf/ipt/parser.h>
 #include <smf/ipt/codes.h>
+#include <NODE_project_info.h>
 
 #include <iostream>
 #include <ios>
@@ -94,6 +95,8 @@ namespace node
 			authorized_ = false;
 #endif
 			read_counter_ = 0u;
+			input_.ignore(NODE::PREFERRED_BUFFER_SIZE, '\n');
+			input_.clear();
 		}
 
 		void parser::clear()

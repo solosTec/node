@@ -30,7 +30,7 @@ namespace node
 			readout& set_index(std::size_t);
 			readout& set_value(std::string const&, cyng::object);
 			readout& set_value(obis, cyng::object);
-			readout& set_map(obis, std::string, cyng::object);
+			readout& set_value(obis, std::string, cyng::object);
 			cyng::object get_value(std::string const&) const;
 			cyng::object get_value(obis) const;
 			std::string get_string(obis) const;

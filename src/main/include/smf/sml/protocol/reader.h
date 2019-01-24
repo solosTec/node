@@ -88,7 +88,7 @@ namespace node
 			 * @param use_vector if false the value is noted as a single object otherwise
 			 * a vector of obis code / value pairs is notes. This is usefufull to distinguish between several values in a list.
 			 */
-			void read_value(obis, std::int8_t, std::uint8_t, cyng::object, bool use_vector);
+			cyng::object read_value(obis, std::int8_t, std::uint8_t, cyng::object);
 			cyng::attr_t read_parameter(cyng::object);
 			std::string read_server_id(cyng::object);
 			std::string read_client_id(cyng::object);

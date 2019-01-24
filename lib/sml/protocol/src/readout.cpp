@@ -62,8 +62,9 @@ namespace node
 			return *this;
 		}
 
-		readout& readout::set_map(obis code, std::string name, cyng::object obj)
+		readout& readout::set_value(obis code, std::string name, cyng::object obj)
 		{
+			BOOST_ASSERT_MSG(!name.empty(), "name for map entry is empty");
 			if (values_.find(name) == values_.end()) {
 
 				//

@@ -1137,7 +1137,7 @@ namespace node
 			}
 
 			BOOST_ASSERT(evt.vec_.size() == 9);
-			//	[7dee1864-70a4-4029-9787-c5cae1ec52eb,4061719-2,0,,01E61E130900163C07,990000000003,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06988c71]
+			//	[f19f5f61-5258-4275-9fcf-c82c17969e83,7876337-2,0,22D337BD776A,01A815743145050102,990000000003,%(("01 00 01 08 00 ff":%(("scaler":-2),("unit":1e),("valTime":2019-01-24 18:34:49.00000000),("value":4637.82))),("08 00 01 00 00 ff":%(("scaler":-3),("unit":d),("valTime":2019-01-24 18:34:49.00000000),("value":758))),("81 81 c7 82 03 ff":%(("scaler":0),("unit":0),("valTime":null),("value":solosTec)))),2019-01-24 18:34:49.00000000,2019-01-24 18:34:49.00000000]
 			CYNG_LOG_DEBUG(logger_, "evt_sml_get_list_response to #" << task_.tsk_proxy_);
 			CYNG_LOG_DEBUG(logger_, "get_list_response: "	<< cyng::io::to_str(evt.vec_));
 

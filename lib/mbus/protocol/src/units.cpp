@@ -42,7 +42,7 @@ namespace node
 			case JOULE:							return "joule";
 			case JOULE_PER_HOUR:				return "joulePerHour";
 			case WATT:							return "watt";
-			case VOLT_AMPERE:					return "ampere";
+			case VOLT_AMPERE:					return "voltAmpere";
 			case VAR:							return "var";
 			case WATT_HOUR:						return "Wh";	//	"wattHour"
 			case VOLT_AMPERE_HOUR:				return "voltAmpereHour";
