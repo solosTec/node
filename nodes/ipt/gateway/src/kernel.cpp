@@ -978,16 +978,16 @@ namespace node
 		void kernel::sml_set_proc_ipt_param_address(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			//CYNG_LOG_TRACE(logger_, "sml.set.proc.ipt.param.address " << cyng::io::to_str(frame));
+			CYNG_LOG_TRACE(logger_, "sml.set.proc.ipt.param.address " << cyng::io::to_str(frame));
 
 			auto const tpl = cyng::tuple_cast<
 				boost::uuids::uuid,			//	[0] pk
 				std::string,				//	[1] trx
 				std::uint8_t,				//	[2] record index (0..1)
-				boost::asio::ip::address	//	[3] address
+				cyng::buffer_t				//	[3] address
 			>(frame);
 
-			const auto idx = std::get<2>(tpl);
+			auto const idx = std::get<2>(tpl);
 			if (idx < cfg_ipt_.config_.size()) {
 
 				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.address["
@@ -995,9 +995,9 @@ namespace node
 					<< "] "
 					<< cfg_ipt_.config_.at(idx).host_
 					<< " => "
-					<< std::get<3>(tpl).to_string());
+					<< cyng::io::to_ascii(std::get<3>(tpl)));
 
-				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_.config_).at(idx).host_) = std::get<3>(tpl).to_string();
+				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_.config_).at(idx).host_) = cyng::io::to_ascii(std::get<3>(tpl));
 			}
 		}
 

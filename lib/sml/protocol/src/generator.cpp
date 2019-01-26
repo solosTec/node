@@ -1146,7 +1146,7 @@ namespace node
 			//				07814917070001                    parameterName: 81 49 17 07 00 01 
 			//				72                                parameterValue(Choice): 
 			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  652A96A8C0                      smlValue: 714516672
+			//				  652A96A8C0                      smlValue: 714516672	;;; IP Address as integer: 192.168.150.101
 			//				01                                child_List: not set
 			//			  73                                  tree_Entry(Sequence): 
 			//				0781491A070001                    parameterName: 81 49 1A 07 00 01 
@@ -1242,21 +1242,22 @@ namespace node
 
 				try {
 					boost::system::error_code ec;
-					auto address = boost::asio::ip::make_address(rec.host_, ec);
-					std::uint32_t numeric_address = cyng::swap_num(address.to_v4().to_uint());	//	network ordering
+					//auto address = boost::asio::ip::make_address(rec.host_, ec);
+					//std::uint32_t numeric_address = cyng::swap_num(address.to_v4().to_uint());	//	network ordering
 
 					std::uint16_t port = std::stoul(rec.service_);
 
 					tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), {
 
 
-						parameter_tree(obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(numeric_address)),
+						parameter_tree(obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(rec.host_)),
+						//parameter_tree(obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(numeric_address)),
 						parameter_tree(obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx), make_value(port)),
 						parameter_tree(obis(0x81, 0x49, 0x19, 0x07, 0x00, idx), make_value(0u)),
 						parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx), make_value(rec.account_)),
 						parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx), make_value(rec.pwd_))
 
-						})));
+					})));
 
 					++idx;
 				}

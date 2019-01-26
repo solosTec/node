@@ -413,7 +413,7 @@ namespace node
 			//
 			//	dasDetails
 			//
-			auto das_details = *pos++;
+			auto const das_details = *pos++;
 			boost::ignore_unused(das_details);
 
 			//
@@ -634,8 +634,7 @@ namespace node
 #endif
 						//	get IP-T params
 						read_get_proc_multiple_parameters(*pos++);
-						//	81 49 17 07 00 NN ip address
-						//	81 49 17 07 00 NN hostname as string - optional
+						//	81 49 17 07 00 NN ip address/hostname as string - optional
 						//	81 49 1A 07 00 NN local port
 						//	81 49 19 07 00 NN remote port
 						return cyng::generate_invoke("sml.get.proc.param.ipt.param"
@@ -1002,13 +1001,15 @@ namespace node
 								--m.first;
 
 								//	remove host byte ordering
-								auto num = cyng::swap_num(cyng::numeric_cast<std::uint32_t>(attr.second, 0u));
-								boost::asio::ip::address address = boost::asio::ip::make_address_v4(num);
+								//auto num = cyng::swap_num(cyng::numeric_cast<std::uint32_t>(attr.second, 0u));
+								//boost::asio::ip::address address = boost::asio::ip::make_address_v4(num);
 								prg << cyng::generate_invoke_unwinded("sml.set.proc.ipt.param.address"
 									, ro_.pk_
 									, ro_.trx_
 									, m.first
-									, address);
+									, attr.second
+									//, address
+								);
 
 							}
 

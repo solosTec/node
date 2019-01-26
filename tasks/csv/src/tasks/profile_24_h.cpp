@@ -117,7 +117,7 @@ namespace node
             //  * tp is (3. oct 7:00) - (3*24h) => (30. sep 7:00)
 			//
 			auto const tp = next_trigger_tp_ - std::chrono::hours(tmp.tm_mday * 24);
-			auto const d = cyng::chrono::days_of_month(tp) + std::chrono::hours(24);
+			auto const d = cyng::chrono::days_of_month(tp);
 
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -129,7 +129,7 @@ namespace node
                 << d.count()
 				<< " days" );
 
-            base_.mux_.post(tsk_db_, 2, cyng::tuple_factory(tp, static_cast<std::int32_t>(d.count())));
+            base_.mux_.post(tsk_db_, 2, cyng::tuple_factory(tp, static_cast<std::int32_t>(d.count() + 1u)));
 
 		}
         else {
