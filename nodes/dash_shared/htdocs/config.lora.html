@@ -38,11 +38,13 @@
                         Configuration
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="config.system.html">System</a>
+                        <div class="dropdown-divider"></div>
                         <a class="dropdown-item" href="config.device.html">Devices</a>
                         <a class="dropdown-item" href="config.gateway.html">Gateway</a>
                         <a class="dropdown-item" href="config.meter.html">Meter</a>
                         <a class="dropdown-item active" href="config.lora.html">LoRa</a>
-                        <a class="dropdown-item" href="config.system.html">System</a>
+                        <div class="dropdown-divider"></div>
                         <a class="dropdown-item" href="config.upload.html">Upload</a>
                         <a class="dropdown-item" href="config.download.html">Download</a>
                     </div>
@@ -122,11 +124,11 @@
                         <input type="hidden" id="smf-form-lora-gwuid" name="smf-form-lora-gwuid" />
                         <div class="form-group">
                             <label class="control-label" for="smf-form-lora-DevEUI">DevEUI</label>
-                            <input id="smf-form-lora-DevEUI" name="smf-form-lora-DevEUI" type="text" placeholder="<DevEUI>" class="form-control input-md">
+                            <input id="smf-form-lora-DevEUI" name="smf-form-lora-DevEUI" type="text" placeholder="<DevEUI>" class="form-control input-md"  maxlength="19" >
                         </div>
                         <div class="form-group">
-                            <label class="control-label" for="smf-form-lora-aes">AES Key</label>
-                            <input id="smf-form-lora-aes" name="smf-form-lora-aes" type="text" placeholder="<AES Key>" class="form-control input-md">
+                            <label class="control-label" for="smf-form-lora-aes">AES Key (64 Bytes)</label>
+                            <input id="smf-form-lora-aes" name="smf-form-lora-aes" type="text" placeholder="<AES Key (64 Bytes)>" class="form-control input-md" maxlength="64" >
                         </div>
                         <div class="form-group">
                             <label class="control-label" for="smf-form-lora-driver">Driver</label>
