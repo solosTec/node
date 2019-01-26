@@ -193,9 +193,9 @@ namespace node
 						cyng::param_factory("service", "8443"),
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
 						cyng::param_factory("tls-pwd", "test"),
-						cyng::param_factory("tls-certificate-chain", "demo.cert"),
-						cyng::param_factory("tls-private-kay", "priv.key"),
-						cyng::param_factory("tls-dh", "demo.dh"),	//	diffie-hellman
+						cyng::param_factory("tls-certificate-chain", "fullchain.cert"),
+						cyng::param_factory("tls-private-kay", "privkey.key"),
+						cyng::param_factory("tls-dh", "dh4096.dh"),	//	diffie-hellman
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
 							//	authType:
@@ -440,10 +440,7 @@ namespace node
 		auto service = cyng::value_cast<std::string>(dom.get("service"), "8443");
 		auto const host = cyng::make_address(address);
 		const auto port = static_cast<unsigned short>(std::stoi(service));
-		static auto pwd = cyng::value_cast<std::string>(dom.get("tls-pwd"), "test");
-		auto certificate_chain = cyng::value_cast<std::string>(dom.get("tls-certificate-chain"), "cert.pem");
-		auto private_key = cyng::value_cast<std::string>(dom.get("tls-private-kay"), "key.pem");
-		auto dh = cyng::value_cast<std::string>(dom.get("tls-dh"), "dh.pem");
+
 
 		CYNG_LOG_INFO(logger, "document root: " << doc_root);
 		CYNG_LOG_INFO(logger, "address: " << address);
@@ -478,8 +475,20 @@ namespace node
 		// The SSL context is required, and holds certificates
 		static boost::asio::ssl::context ctx{ boost::asio::ssl::context::sslv23 };
 
+		//
+		//	get SSL configuration
+		//
+		static auto tls_pwd = cyng::value_cast<std::string>(dom.get("tls-pwd"), "test");
+		auto tls_certificate_chain = cyng::value_cast<std::string>(dom.get("tls-certificate-chain"), "cert.pem");
+		auto tls_private_key = cyng::value_cast<std::string>(dom.get("tls-private-kay"), "key.pem");
+		auto tls_dh = cyng::value_cast<std::string>(dom.get("tls-dh"), "dh.pem");
+
+		CYNG_LOG_TRACE(logger, "tls-certificate-chain: " << tls_certificate_chain);
+		CYNG_LOG_TRACE(logger, "tls-private-key: " << tls_private_key);
+		CYNG_LOG_TRACE(logger, "tls-dh: " << tls_dh);
+
 		// This holds the self-signed certificate used by the server
-		load_server_certificate(ctx, logger, pwd, dh, private_key, certificate_chain);
+		load_server_certificate(ctx, logger, tls_pwd, tls_certificate_chain, tls_private_key, tls_dh);
 
 		auto r = cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
@@ -510,9 +519,9 @@ namespace node
 	void load_server_certificate(boost::asio::ssl::context& ctx
 		, cyng::logging::log_ptr logger
 		, std::string const& pwd
-		, std::string const& dh
-		, std::string const& private_key
-		, std::string const& certificate_chain)
+		, std::string const& tls_certificate_chain
+		, std::string const& tls_private_key
+		, std::string const& tls_dh)
 	{
 		//
 		//	generate files with:
@@ -532,9 +541,14 @@ namespace node
 			boost::asio::ssl::context::single_dh_use);
 
 		try {
-			ctx.use_certificate_chain_file(certificate_chain);
-			ctx.use_private_key_file(private_key, boost::asio::ssl::context::pem);
-			ctx.use_tmp_dh_file(dh);
+			ctx.use_certificate_chain_file(tls_certificate_chain);
+			CYNG_LOG_INFO(logger, tls_certificate_chain << " successfull loaded");
+
+			ctx.use_private_key_file(tls_private_key, boost::asio::ssl::context::pem);
+			CYNG_LOG_INFO(logger, tls_private_key << " successfull loaded");
+
+			ctx.use_tmp_dh_file(tls_dh);
+			CYNG_LOG_INFO(logger, tls_dh << " successfull loaded");
 		}
 		catch (std::exception const& ex) {
 			CYNG_LOG_FATAL(logger, ex.what());
