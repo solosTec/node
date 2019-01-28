@@ -26,7 +26,23 @@ namespace node
 		vm_.register_function("https.launch.session.plain", 0, std::bind(&processor::https_launch_session_plain, this, std::placeholders::_1));
 		vm_.register_function("https.eof.session.plain", 0, std::bind(&processor::https_eof_session_plain, this, std::placeholders::_1));
 
+		
+		bus_->vm_.register_function("http.session.launch", 3, [&](cyng::context& ctx) {
+			//	[849a5b98-429c-431e-911d-18a467a818ca,false,127.0.0.1:61383]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger, "http.session.launch " << cyng::io::to_str(frame));
+		});
+		
+		bus_->vm_.register_function("http.upload.progress", 1, std::bind(&processor::http_upload_progress, this, std::placeholders::_1));
+		
+
 		bus_->vm_.register_function("bus.res.push.data", 0, std::bind(&processor::res_push_data, this, std::placeholders::_1));
+		
+		//
+		//	report library size
+		//
+		vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));		
+		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));		
 	}
 
 	cyng::controller& processor::vm()
@@ -219,6 +235,22 @@ namespace node
 
 	}
 
+	void processor::http_upload_progress(cyng::context& ctx)
+	{
+		//	[ecf139d4-184e-441d-a857-9d02eb58148b,0000a84c,0000a84c,00000064]
+		//
+		//	* session tag
+		//	* upload size
+		//	* content size
+		//	* progress in %
+		//	
+#ifdef __DEBUG
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "http.upload.progress - " << cyng::value_cast<std::uint32_t>(frame.at(3), 0) << "%");
+#endif
+
+	}
+	
 	void processor::write_db(pugi::xml_node node, cyng::buffer_t const& payload)
 	{
 		//auto s = pool_.get_session();

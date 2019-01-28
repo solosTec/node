@@ -31,6 +31,7 @@ namespace node
 		void https_launch_session_plain(cyng::context& ctx);
 		void https_eof_session_plain(cyng::context& ctx);
 		void res_push_data(cyng::context& ctx);
+		void http_upload_progress(cyng::context& ctx);
 
 		void process_uplink_msg(pugi::xml_document const& doc, pugi::xml_node node);
 		void process_localisation_msg(pugi::xml_document const& doc, pugi::xml_node node);
