@@ -31,6 +31,7 @@ namespace node
 			, tag_(tag)
 			, upload_size_(0)
 			, progress_(0)
+			, column_(0)
 		{}
 
 		void multi_part_parser::reset(std::string const& boundary)
@@ -63,6 +64,8 @@ namespace node
 			//
 			upload_size_++;
 
+			update_column(c);
+
 			if (upload_size_ > content_size_)
 			{
 				//CYNG_LOG_ERROR(logger_, "more data received then specified "
@@ -91,323 +94,93 @@ namespace node
 			switch (state_)
 			{
 			case chunk_init_:
-				if (c == '\r')
-				{
-					//	skip
-				}
-				else if (c == '\n')
-				{
-					state_ = chunk_header;
-				}
-				else
-				{
-					boundary_ += c;
-				}
+				state_ = chunk_init(c);
 				break;
-			case chunk_boundary:
+
+			case chunk_boundary_:
 
 				if (upload_size_ < 4)
 				{
 					BOOST_ASSERT_MSG(c == '-', "not a boundary");
 				}
-
-				//	store boundary in buffer
-				chunck_.push_back(c);
-
-				//	ignore trailing "-" signs (hyphens)
-				if (boost::algorithm::equals(chunck_, boundary_))
-				{
-					state_ = chunk_boundary_cr;
-				}
+				state_ = chunk_boundary(c);
 				break;
 
-			case chunk_boundary_cr:
-				switch (c)
-				{
-				case '-':
-					state_ = chunk_boundary_end;
-					break;
-				default:
-					if (c != '\r')
-					{
-						CYNG_LOG_ERROR(logger_, "CR expected");
-					}
-					state_ = chunk_boundary_nl;
-					break;
-				}
+			case chunk_boundary_cr_:
+				state_ = chunk_boundary_cr(c);
 				break;
 
-			case chunk_boundary_end:
+			case chunk_boundary_end_:
 				//	gracefull end of upload
-				if (c != '-')
-				{
-					CYNG_LOG_ERROR(logger_, "- expected");
-				}
-				else
-				{
-					if (upload_size_ + 2 == content_size_)
-					{
-						CYNG_LOG_TRACE(logger_, "end of upload: " << target_);
-
-						//	send HTTP response
-						cb_(cyng::generate_invoke("http.upload.complete"
-							, tag_
-							, true	//	OK
-							, upload_size_
-							, std::string(target_.begin(), target_.end())));
-
-					}
-					else
-					{
-						CYNG_LOG_WARNING(logger_, "upload incomplete");
-
-						//	send HTTP response
-						cb_(cyng::generate_invoke("http.upload.complete"
-							, tag_
-							, false	//	error
-							, upload_size_
-							, std::string(target_.begin(), target_.end())));
-					}
-				}
-				state_ = chunk_boundary;
+				state_ = chunk_boundary_end(c);
 				//	complete
 				return true;
 
-			case chunk_boundary_nl:
-				//if (!is_nl_(c))
+			case chunk_boundary_nl_:
 				if (c != '\n')
 				{
-					CYNG_LOG_ERROR(logger_, "NL expected");
+					CYNG_LOG_ERROR(logger_, "NL expected (chunk_boundary_nl_)");
 				}
 
 				//	create new part
-				state_ = chunk_header;
-				chunck_.clear();
-				clear(upload_);
+				state_ = chunk_boundary_nl(c);
 				break;
 
-			case chunk_header:
+			case chunk_header_:
+				state_ = chunk_header(c);
+				break;
+
+			case chunk_header_nl_:
+				if (c != '\n')
+				{
+					CYNG_LOG_ERROR(logger_, "NL expected (chunk_header_nl_)");
+				}
+
+				state_ = chunk_header_nl(c);
+				break;
+
+			case chunk_data_start_:
 				if (c == '\r')
-				{
-
-					//	header line complete
-					if (chunck_.empty())
-					{
-						state_ = chunk_data_start;
-					}
-					else
-					{
-						CYNG_LOG_TRACE(logger_, "chunk line: "
-							<< chunck_);
-
-						state_ = chunk_header_nl;
-					}
+				{ 
+					CYNG_LOG_ERROR(logger_, "CR expected (chunk_data_start_)");
 				}
-				else
-				{
-
-					//	read header into buffer
-					chunck_.push_back(c);
-				}
+				state_ = chunk_data_;
 				break;
 
-			case chunk_header_nl:
-				if (boost::algorithm::starts_with(chunck_, "Content-Disposition:"))
-				{
-
-					boost::algorithm::replace_first(chunck_, "Content-Disposition:", "");
-					content_disposition cd;
-					bool b = parse_content_disposition(chunck_, cd);
-					if (b)
-					{
-						//	get variable name
-						const std::string var_name = lookup_param(cd.params_, "name");
-						CYNG_LOG_TRACE(logger_, "variable name: "
-							<< var_name);
-
-						//	get filename
-						const std::string filename = lookup_filename(cd.params_);
-						if (!filename.empty())
-						{
-							CYNG_LOG_TRACE(logger_, "upload file: "
-								<< filename);
-						}
-
-						switch (cd.type_)
-						{
-						case rfc2183::cdv_inline:
-							//	displayed automatically, [RFC2183]
-							CYNG_LOG_WARNING(logger_, "inlines not supported yet: "
-								<< chunck_);
-							break;
-						case rfc2183::cdv_attachment:
-							//	user controlled display, [RFC2183]
-							CYNG_LOG_WARNING(logger_, "attachments not supported yet: "
-								<< chunck_);
-							break;
-						case rfc2183::cdv_form_data:
-							//	process as form response, [RFC7578]
-							upload_.meta_.assign(cd.params_.begin(), cd.params_.end());
-							break;
-
-						default:
-							break;
-							//	unknown
-							CYNG_LOG_ERROR(logger_, "unknown content type: "
-								<< chunck_);
-						}
-					}
-					else
-					{
-						CYNG_LOG_ERROR(logger_, "parsing content disposition failed: "
-							<< chunck_);
-
-					}
-				}
-				else if (boost::algorithm::starts_with(chunck_, "Content-Type:"))
-				{
-					//	get MIME type
-					boost::algorithm::replace_first(chunck_, "Content-Type:", "");
-					const bool b = get_http_mime_type(chunck_, upload_.type_);
-					if (!b)
-					{
-						CYNG_LOG_ERROR(logger_, "parsing content type failed: "
-							<< chunck_);
-
-					}
-					state_ = chunk_boundary_nl;
-				}
-				else
-				{
-					CYNG_LOG_ERROR(logger_, "unknown chunk attribute: "
-						<< chunck_);
-				}
-
-				if (c == '\r')
-				{
-					CYNG_LOG_ERROR(logger_, "CR expected");
-				}
-
-				//	next state
-				state_ = chunk_header;
-				chunck_.clear();
+			case chunk_data_:
+				state_ = chunk_data(c);
 				break;
 
-			case chunk_data_start:
-				if (c == '\r')
-				{
-					CYNG_LOG_ERROR(logger_, "CR expected");
-				}
-				state_ = chunk_data;
-				break;
-
-			case chunk_data:
-			{
-				//	detect boundary
-				if (c == '-')
-				{
-					chunck_.clear();
-					chunck_.push_back(c);
-					state_ = chunk_esc1;
-				}
-				else
-				{
-
-					//	save data into memory
-					//	or write on disk
-					upload_.data_.push_back(c);
-				}
-
-				//	upload is running
-			}
-			break;
-
-			case chunk_esc1:
+			case chunk_esc1_:
 				chunck_.push_back(c);
 				if (c == '-')
 				{
-					state_ = chunk_esc2;
+					state_ = chunk_esc2_;
 				}
 				else
 				{
 					BOOST_ASSERT_MSG(chunck_.size() == 2, "wrong chunk size");
 					upload_.data_.insert(upload_.data_.end(), chunck_.begin(), chunck_.end());
-					state_ = chunk_data;
+					state_ = chunk_data_;
 				}
 				break;
 
-			case chunk_esc2:
+			case chunk_esc2_:
 				chunck_.push_back(c);
 				if (c == '-')
 				{
-					state_ = chunk_esc3;
+					state_ = chunk_esc3_;
 				}
 				else
 				{
 					BOOST_ASSERT_MSG(chunck_.size() == 3, "wrong chunk size");
 					upload_.data_.insert(upload_.data_.end(), chunck_.begin(), chunck_.end());
-					state_ = chunk_data;
+					state_ = chunk_data_;
 				}
 				break;
 
-			case chunk_esc3:
-				chunck_.push_back(c);
-				if (chunck_.size() == boundary_.size())
-				{
-					if (boost::algorithm::starts_with(chunck_, boundary_))
-					{
-						std::string var_name = lookup_param(upload_.meta_, "name");
-
-						CYNG_LOG_INFO(logger_, "upload of ["
-							<< var_name
-							<< "] completed");
-
-						std::string filename = lookup_filename(upload_.meta_);
-
-						//
-						//	invoke callback
-						//
-						if (filename.empty() && (upload_.data_.size() > 2))
-						{
-							//	remove <CR><NL> tail
-							upload_.data_.pop_back();
-							upload_.data_.pop_back();
-
-							CYNG_LOG_TRACE(logger_, var_name
-								<< " = "
-								<< std::string(upload_.data_.begin(), upload_.data_.end()));
-
-							cb_(cyng::generate_invoke("http.upload.var"
-								, tag_
-								, var_name
-								, std::string(upload_.data_.begin(), upload_.data_.end())
-							));
-						}
-						else
-						{
-
-							cb_(cyng::generate_invoke("http.upload.data"
-								, tag_
-								, var_name
-								, filename
-								, to_str(upload_.type_)
-								//, upload_.type_
-								, upload_.data_
-								//, cyy::factory(request_.uri_.path_)
-							));
-						}
-
-						//	next boundary
-						state_ = chunk_boundary_cr;
-					}
-					else
-					{
-						//	restore data
-						upload_.data_.insert(upload_.data_.end(), chunck_.begin(), chunck_.end());
-						//	continue read data stream
-						state_ = chunk_data;
-					}
-				}
+			case chunk_esc3_:
+				state_ = chunk_esc3(c);
 				break;
 
 			default:
@@ -420,6 +193,285 @@ namespace node
 			//	stay in multipart state
 			//
 			return false;
+		}
+
+		void multi_part_parser::update_column(char c)
+		{
+			switch (c) {
+			case '\r':
+			case '\n':
+				column_ = 0;
+				break;
+			default:
+				++column_;
+				break;
+			}
+		}
+
+		multi_part_parser::chunk_enum multi_part_parser::chunk_init(char c)
+		{
+			switch (c) {
+			case '\r':
+				//	skip
+				break;
+			case '\n':
+				BOOST_ASSERT_MSG(!boundary_.empty(), "no boundary");
+				return chunk_header_;
+			default:
+				boundary_ += c;
+				break;
+			}
+			return state_;
+		}
+
+		multi_part_parser::chunk_enum multi_part_parser::chunk_boundary(char c)
+		{
+			//	store boundary in buffer
+			chunck_.push_back(c);
+
+			//	ignore trailing "-" signs (hyphens)
+			return (boost::algorithm::equals(chunck_, boundary_))
+				? chunk_boundary_cr_
+				: state_
+				;
+		}
+
+		multi_part_parser::chunk_enum multi_part_parser::chunk_boundary_cr(char c)
+		{
+			switch (c)
+			{
+			case '-':
+				return chunk_boundary_end_;
+			default:
+				if (c != '\r')
+				{
+					CYNG_LOG_ERROR(logger_, "CR expected");
+				}
+				break;;
+			}
+			return chunk_boundary_nl_;
+		}
+
+		multi_part_parser::chunk_enum multi_part_parser::chunk_boundary_end(char c)
+		{
+			if (c != '-')
+			{
+				CYNG_LOG_ERROR(logger_, "- expected");
+			}
+			else
+			{
+				if (upload_size_ + 2 == content_size_)
+				{
+					CYNG_LOG_TRACE(logger_, "end of upload: " << target_);
+
+					//	send HTTP response
+					cb_(cyng::generate_invoke("http.upload.complete"
+						, tag_
+						, true	//	OK
+						, upload_size_
+						, std::string(target_.begin(), target_.end())));
+
+				}
+				else
+				{
+					CYNG_LOG_WARNING(logger_, "upload incomplete");
+
+					//	send HTTP response
+					cb_(cyng::generate_invoke("http.upload.complete"
+						, tag_
+						, false	//	error
+						, upload_size_
+						, std::string(target_.begin(), target_.end())));
+				}
+			}
+			return chunk_boundary_;
+		}
+
+		multi_part_parser::chunk_enum multi_part_parser::chunk_header(char c)
+		{
+			if (c == '\r')
+			{
+				//	header line complete
+				if (chunck_.empty())
+				{
+					return chunk_data_start_;
+				}
+				else
+				{
+					CYNG_LOG_TRACE(logger_, "chunk line: "
+						<< chunck_);
+
+					return chunk_header_nl_;
+				}
+			}
+
+			//	read header into buffer
+			chunck_.push_back(c);
+			return state_;
+		}
+
+		multi_part_parser::chunk_enum multi_part_parser::chunk_header_nl(char c)
+		{
+			if (boost::algorithm::starts_with(chunck_, "Content-Disposition:"))
+			{
+				boost::algorithm::replace_first(chunck_, "Content-Disposition:", "");
+				content_disposition cd;
+				bool b = parse_content_disposition(chunck_, cd);
+
+				if (b)
+				{
+					//	get variable name
+					const std::string var_name = lookup_param(cd.params_, "name");
+					CYNG_LOG_TRACE(logger_, "variable name: "
+						<< var_name);
+
+					//	get filename
+					const std::string filename = lookup_filename(cd.params_);
+					if (!filename.empty())
+					{
+						CYNG_LOG_TRACE(logger_, "upload file: "
+							<< filename);
+					}
+
+					switch (cd.type_)
+					{
+					case rfc2183::cdv_inline:
+						//	displayed automatically, [RFC2183]
+						CYNG_LOG_WARNING(logger_, "inlines not supported yet: "
+							<< chunck_);
+						break;
+					case rfc2183::cdv_attachment:
+						//	user controlled display, [RFC2183]
+						CYNG_LOG_WARNING(logger_, "attachments not supported yet: "
+							<< chunck_);
+						break;
+					case rfc2183::cdv_form_data:
+						//	process as form response, [RFC7578]
+						upload_.meta_.assign(cd.params_.begin(), cd.params_.end());
+						break;
+
+					default:
+						break;
+						//	unknown
+						CYNG_LOG_ERROR(logger_, "unknown content type: "
+							<< chunck_);
+					}
+				}
+				else
+				{
+					CYNG_LOG_ERROR(logger_, "parsing content disposition failed: "
+						<< chunck_);
+
+				}
+			}
+			else if (boost::algorithm::starts_with(chunck_, "Content-Type:"))
+			{
+				//	get MIME type
+				boost::algorithm::replace_first(chunck_, "Content-Type:", "");
+				const bool b = get_http_mime_type(chunck_, upload_.type_);
+				if (!b)
+				{
+					CYNG_LOG_ERROR(logger_, "parsing content type failed: "
+						<< chunck_);
+
+				}
+			}
+			else
+			{
+				CYNG_LOG_ERROR(logger_, "unknown chunk attribute: "
+					<< chunck_);
+			}
+
+			chunck_.clear();
+
+			//	next state
+			return chunk_header_;
+		}
+
+
+		multi_part_parser::chunk_enum multi_part_parser::chunk_boundary_nl(char c)
+		{
+			chunck_.clear();
+			clear(upload_);
+			return chunk_header_;
+		}
+
+		multi_part_parser::chunk_enum multi_part_parser::chunk_data(char c)
+		{
+			//	detect boundary
+			if (column_ == 1 && c == '-')
+			{
+				chunck_.clear();
+				chunck_.push_back(c);
+				return chunk_esc1_;
+			}
+
+			//	save data into memory
+			//	or write on disk
+			upload_.data_.push_back(c);
+
+			//	upload is running
+			return state_;
+		}
+
+		multi_part_parser::chunk_enum multi_part_parser::chunk_esc3(char c)
+		{
+			chunck_.push_back(c);
+
+			if (chunck_.size() == boundary_.size())
+			{
+				if (boost::algorithm::starts_with(chunck_, boundary_))
+				{
+					std::string var_name = lookup_param(upload_.meta_, "name");
+
+					CYNG_LOG_INFO(logger_, "upload of ["
+						<< var_name
+						<< "] completed");
+
+					std::string filename = lookup_filename(upload_.meta_);
+
+					//
+					//	invoke callback
+					//
+					if (filename.empty() && (upload_.data_.size() > 2))
+					{
+						//	remove <CR><NL> tail
+						upload_.data_.pop_back();
+						upload_.data_.pop_back();
+
+						CYNG_LOG_TRACE(logger_, var_name
+							<< " = "
+							<< std::string(upload_.data_.begin(), upload_.data_.end()));
+
+						cb_(cyng::generate_invoke("http.upload.var"
+							, tag_
+							, var_name
+							, std::string(upload_.data_.begin(), upload_.data_.end())));
+					}
+					else
+					{
+
+						cb_(cyng::generate_invoke("http.upload.data"
+							, tag_
+							, var_name
+							, filename
+							, to_str(upload_.type_)
+							, upload_.data_));
+					}
+
+					//	next boundary
+					return chunk_boundary_cr_;
+				}
+				else
+				{
+					//	restore data
+					upload_.data_.insert(upload_.data_.end(), chunck_.begin(), chunck_.end());
+					//	continue read data stream
+					return chunk_data_;
+				}
+			}
+
+			return state_;
 		}
 
 		std::string multi_part_parser::lookup_filename(param_container_t const& phrases)

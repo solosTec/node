@@ -511,37 +511,80 @@ namespace node
 #ifdef _DEBUG
 					CYNG_LOG_DEBUG(logger_, "payload \n" << req.body());
 #endif
-					//
-					//	payload parser
-					//
-					if (req.payload_size()) {
+					CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
+					std::uint64_t payload_size = *req.payload_size();
 
-						CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
-						std::uint64_t payload_size = *req.payload_size();
-						node::http::multi_part_parser mpp([&](cyng::vector_t&& prg) {
-
-							//	executed by HTTP/s session
-							connection_manager_.vm().async_run(std::move(prg));
-
-						}	, logger_
-							, payload_size
-							, target
-							, tag_);
-
-						//
-						//	open new upload sequence
-						//
-						connection_manager_.vm().async_run(cyng::generate_invoke("http.upload.start"
+					if (boost::algorithm::equals(content_type, "application/xml"))
+					{
+						connection_manager_.vm().async_run(cyng::generate_invoke("http.post.xml"
 							, tag_
 							, req.version()
 							, std::string(target.begin(), target.end())
-							, payload_size));
+							, payload_size
+							, std::string(req.body().begin(), req.body().end())));
 
-						//
-						//	parse payload and generate program sequences
-						//
-						mpp.parse(req.body().begin(), req.body().end());
+					}
+					//	Content-Type:application/json; charset=UTF-8
+					else if (boost::algorithm::starts_with(content_type, "application/json"))
+					{
+						connection_manager_.vm().async_run(cyng::generate_invoke("http.post.json"
+							, tag_
+							, req.version()
+							, std::string(target.begin(), target.end())
+							, payload_size
+							, std::string(req.body().begin(), req.body().end())));
 
+					}
+					else if (boost::algorithm::equals(content_type, "application/x-www-form-urlencoded"))
+					{
+						//	ToDo: start parser
+						//cb(cyng::generate_invoke("https.post.form.urlencoded", obj, target, std::string(req.body().begin(), req.body().end())));
+						connection_manager_.vm().async_run(cyng::generate_invoke("http.post.form.urlencoded"
+							, tag_
+							, req.version()
+							, std::string(target.begin(), target.end())
+							, payload_size
+							, std::string(req.body().begin(), req.body().end())));
+
+					}
+					else if (boost::algorithm::equals(content_type, "multipart/form-data"))
+					{
+						//
+						//	payload parser
+						//
+						if (req.payload_size()) {
+
+							node::http::multi_part_parser mpp([&](cyng::vector_t&& prg) {
+
+								//	executed by HTTP/s session
+								connection_manager_.vm().async_run(std::move(prg));
+
+							}	, logger_
+								, payload_size
+								, target
+								, tag_);
+
+							//
+							//	open new upload sequence
+							//
+							connection_manager_.vm().async_run(cyng::generate_invoke("http.upload.start"
+								, tag_
+								, req.version()
+								, std::string(target.begin(), target.end())
+								, payload_size));
+
+							//
+							//	parse payload and generate program sequences
+							//
+							mpp.parse(req.body().begin(), req.body().end());
+						}
+						else {
+							CYNG_LOG_WARNING(logger_, "no payload for " << target);
+						}
+					}
+					else
+					{
+						CYNG_LOG_WARNING(logger_, "unknown MIME content type: " << content_type);
 					}
 				}
 				return queue_(obj, std::move(req));

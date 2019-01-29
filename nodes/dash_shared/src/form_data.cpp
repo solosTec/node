@@ -51,7 +51,6 @@ namespace node
 		if (r.second) {
 			r.first->second.emplace("target", std::get<2>(tpl));
 		}
-
 	}
 
 	void form_data::http_upload_data(cyng::context& ctx)
@@ -69,8 +68,8 @@ namespace node
 			boost::uuids::uuid,	//	[0] session tag
 			std::string,		//	[1] variable name
 			std::string,		//	[2] file name
-			std::string		//	[3] mime type
-			//cyng::buffer_t		//	[4] data (skipped to save memory)
+			std::string			//	[3] mime type
+			//cyng::buffer_t	//	[4] data (skipped to save memory)
 		>(frame);
 
 		CYNG_LOG_TRACE(logger_, "http.upload.data - "

@@ -15,7 +15,7 @@ set (http_srv_h
 	src/main/include/smf/http/srv/websocket.h
 	src/main/include/smf/http/srv/server.h
 	src/main/include/smf/http/srv/session.h
-	src/main/include/smf/http/srv/handle_request.hpp
+#	src/main/include/smf/http/srv/handle_request.hpp
 	src/main/include/smf/http/srv/connections.h
 )
 

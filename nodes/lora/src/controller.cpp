@@ -194,7 +194,7 @@ namespace node
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
 						cyng::param_factory("tls-pwd", "test"),
 						cyng::param_factory("tls-certificate-chain", "fullchain.cert"),
-						cyng::param_factory("tls-private-kay", "privkey.key"),
+						cyng::param_factory("tls-private-key", "privkey.key"),
 						cyng::param_factory("tls-dh", "dh4096.dh"),	//	diffie-hellman
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
@@ -480,7 +480,7 @@ namespace node
 		//
 		static auto tls_pwd = cyng::value_cast<std::string>(dom.get("tls-pwd"), "test");
 		auto tls_certificate_chain = cyng::value_cast<std::string>(dom.get("tls-certificate-chain"), "cert.pem");
-		auto tls_private_key = cyng::value_cast<std::string>(dom.get("tls-private-kay"), "key.pem");
+		auto tls_private_key = cyng::value_cast<std::string>(dom.get("tls-private-key"), "key.pem");
 		auto tls_dh = cyng::value_cast<std::string>(dom.get("tls-dh"), "dh.pem");
 
 		CYNG_LOG_TRACE(logger, "tls-certificate-chain: " << tls_certificate_chain);

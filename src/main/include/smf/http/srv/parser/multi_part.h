@@ -82,19 +82,31 @@ namespace node
 			enum chunk_enum
 			{
 				chunk_init_,	//	read the first line containing the boundary
-				chunk_boundary,
-				chunk_boundary_cr,
-				chunk_boundary_nl,
-				chunk_boundary_end,
-				chunk_header,
-				chunk_header_nl,
-				chunk_data_start,
-				chunk_data,
-				chunk_esc1,
-				chunk_esc2,
-				chunk_esc3,
+				chunk_boundary_,
+				chunk_boundary_cr_,
+				chunk_boundary_nl_,
+				chunk_boundary_end_,
+				chunk_header_,
+				chunk_header_nl_,
+				chunk_data_start_,
+				chunk_data_,
+				chunk_esc1_,
+				chunk_esc2_,
+				chunk_esc3_,
 
 			}	state_;
+
+
+			void update_column(char c);
+			chunk_enum chunk_init(char c);
+			chunk_enum chunk_boundary(char c);
+			chunk_enum chunk_boundary_cr(char c);
+			chunk_enum chunk_boundary_end(char c);
+			chunk_enum chunk_boundary_nl(char c);
+			chunk_enum chunk_header(char c);
+			chunk_enum chunk_header_nl(char c);
+			chunk_enum chunk_data(char c);
+			chunk_enum chunk_esc3(char c);
 
 			/**
 			 * completion callback
@@ -146,6 +158,11 @@ namespace node
 			 * calculation of upload progress
 			 */
 			std::uint32_t progress_;
+
+			/**
+			 * current column
+			 */
+			std::size_t column_;
 		};
 
 	}

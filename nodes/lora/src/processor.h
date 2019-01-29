@@ -27,15 +27,20 @@ namespace node
 		cyng::controller& vm();
 
 	private:
-		void https_post_xml(cyng::context& ctx);
 		void https_launch_session_plain(cyng::context& ctx);
 		void https_eof_session_plain(cyng::context& ctx);
 		void res_push_data(cyng::context& ctx);
+		void http_upload_start(cyng::context& ctx);
+		void http_upload_data(cyng::context& ctx);
 		void http_upload_progress(cyng::context& ctx);
+		void http_upload_complete(cyng::context& ctx);
+		void http_post_xml(cyng::context& ctx);
 
 		void process_uplink_msg(pugi::xml_document const& doc, pugi::xml_node node);
 		void process_localisation_msg(pugi::xml_document const& doc, pugi::xml_node node);
 		void write_db(pugi::xml_node node, cyng::buffer_t const& payload);
+
+		void parse_xml(std::string const*);
 
 	private:
 		cyng::logging::log_ptr logger_;

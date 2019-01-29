@@ -22,7 +22,6 @@ namespace node
 		, bus_(bus)
 		, rgn_()
 	{
-		vm_.register_function("https.post.xml", 3, std::bind(&processor::https_post_xml, this, std::placeholders::_1));
 		vm_.register_function("https.launch.session.plain", 0, std::bind(&processor::https_launch_session_plain, this, std::placeholders::_1));
 		vm_.register_function("https.eof.session.plain", 0, std::bind(&processor::https_eof_session_plain, this, std::placeholders::_1));
 
@@ -30,14 +29,21 @@ namespace node
 		bus_->vm_.register_function("http.session.launch", 3, [&](cyng::context& ctx) {
 			//	[849a5b98-429c-431e-911d-18a467a818ca,false,127.0.0.1:61383]
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger, "http.session.launch " << cyng::io::to_str(frame));
+			CYNG_LOG_INFO(logger_, "http.session.launch " << cyng::io::to_str(frame));
 		});
 		
-		bus_->vm_.register_function("http.upload.progress", 1, std::bind(&processor::http_upload_progress, this, std::placeholders::_1));
 		
+		//
+		//	data upload
+		//
+		bus_->vm_.register_function("http.upload.start", 2, std::bind(&processor::http_upload_start, this, std::placeholders::_1));
+		bus_->vm_.register_function("http.upload.progress", 4, std::bind(&processor::http_upload_progress, this, std::placeholders::_1));
+		bus_->vm_.register_function("http.upload.data", 5, std::bind(&processor::http_upload_data, this, std::placeholders::_1));
+		bus_->vm_.register_function("http.upload.complete", 4, std::bind(&processor::http_upload_complete, this, std::placeholders::_1));
+		bus_->vm_.register_function("http.post.xml", 3, std::bind(&processor::http_post_xml, this, std::placeholders::_1));
 
 		bus_->vm_.register_function("bus.res.push.data", 0, std::bind(&processor::res_push_data, this, std::placeholders::_1));
-		
+
 		//
 		//	report library size
 		//
@@ -50,62 +56,94 @@ namespace node
 		return vm_;
 	}
 
-	void processor::https_post_xml(cyng::context& ctx)
+	void processor::http_post_xml(cyng::context& ctx)
 	{
-		//	[<!259:plain-session>,/LoRa,<?xml version=\"1.0\" ...]
+		//	 [f24f628e-d799-454b-b036-b9e0c0bd26f2,0000000b,/LoRa,859,<?xml versio...]
 		//
-		//	* session object
+		//	* session tag
+		//	* request version 
 		//	* target path
+		//	* payload size
 		//	* content [string]
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "https.post.xml " << cyng::io::to_str(frame));
+		//CYNG_LOG_INFO(logger_, "https.post.xml " << cyng::io::to_str(frame));
 
-		auto ptr = cyng::object_cast<std::string>(frame.at(2));
+		auto ptr = cyng::object_cast<std::string>(frame.at(4));
 		if (ptr != nullptr)
 		{
-			pugi::xml_document doc;
-			const auto result = doc.load_buffer(ptr->data(), ptr->size(), pugi::parse_default, pugi::encoding_auto);
-			if (result.status == pugi::status_ok)
-			{ 
-				//
-				//	get root node
-				//
-				auto node = doc.child("DevEUI_uplink");
-				if (!node.empty())
-				{
-					CYNG_LOG_TRACE(logger_, "XML POST parsed uplink message: "
-						<< result.description());
-					//
-					//	DevEUI_uplink
-					//
-					process_uplink_msg(doc, node);
-					return;
-				}
-				node = doc.child("DevEUI_location");
-				if (!node.empty())
-				{
-					CYNG_LOG_TRACE(logger_, "XML POST parsed localisation message: "
-						<< result.description());
-
-					//
-					//	DevEUI_location
-					//	This message will be send as soon as the LRC has calculated the location.
-					//
-					process_localisation_msg(doc, node);
-					return;
-				}
-
-				CYNG_LOG_WARNING(logger_, "unknown LoRa message type "
-					<< result.description());
-
-			}
-			else
-			{
-				CYNG_LOG_ERROR(logger_, "paring XML POST failed: "
-					<< result.description());
-
-			}
+			parse_xml(ptr);
 		}
+	}
+
+	void processor::parse_xml(std::string const* ptr)
+	{
+		pugi::xml_document doc;
+		const auto result = doc.load_buffer(ptr->data(), ptr->size(), pugi::parse_default, pugi::encoding_auto);
+		if (result.status == pugi::status_ok)
+		{
+			//
+			//	get root node
+			//
+			auto node = doc.child("DevEUI_uplink");
+			if (!node.empty())
+			{
+				CYNG_LOG_TRACE(logger_, "XML POST parsed uplink message: "
+					<< result.description());
+				//
+				//	DevEUI_uplink
+				//
+				process_uplink_msg(doc, node);
+				return;
+			}
+			node = doc.child("DevEUI_location");
+			if (!node.empty())
+			{
+				CYNG_LOG_TRACE(logger_, "XML POST parsed localisation message: "
+					<< result.description());
+
+				//
+				//	DevEUI_location
+				//	This message will be send as soon as the LRC has calculated the location.
+				//
+				process_localisation_msg(doc, node);
+				return;
+			}
+
+			CYNG_LOG_WARNING(logger_, "unknown LoRa message type "
+				<< result.description());
+
+		}
+		else
+		{
+			CYNG_LOG_ERROR(logger_, "paring XML POST failed: "
+				<< result.description());
+
+		}
+	}
+
+	void processor::http_upload_start(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			std::uint32_t,		//	[1] HTTP version
+			std::string,		//	[2] target
+			std::uint32_t		//	[3] payload size
+		>(frame);
+
+		CYNG_LOG_TRACE(logger_, "http.upload.start - "
+			<< std::get<0>(tpl)
+			<< ", "
+			<< std::get<2>(tpl)
+			<< ", payload size: "
+			<< std::get<3>(tpl));
+
+		//data_.erase(std::get<0>(tpl));
+		//auto r = data_.emplace(std::get<0>(tpl), std::map<std::string, std::string>());
+		//if (r.second) {
+		//	r.first->second.emplace("target", std::get<2>(tpl));
+		//}
+
 	}
 
 	void processor::https_launch_session_plain(cyng::context& ctx)
@@ -120,6 +158,85 @@ namespace node
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_INFO(logger_, "https.eof.session.plain " << cyng::io::to_str(frame));
 
+	}
+
+	void processor::http_upload_data(cyng::context& ctx)
+	{
+		//	http.upload.data - [ecf139d4-184e-441d-a857-9d02eb58148b,devConf_0,device_localhost.xml,text/xml,3C3F786D6C2....]
+		//
+		//	* session tag
+		//	* variable name
+		//	* file name
+		//	* mime type
+		//	* content
+		//	
+		const cyng::vector_t frame = ctx.get_frame();
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			std::string,		//	[1] variable name
+			std::string,		//	[2] file name
+			std::string			//	[3] mime type
+			//cyng::buffer_t	//	[4] data (skipped to save memory)
+		>(frame);
+
+		auto const mime_type = cyng::value_cast<std::string>(frame.at(3), "undefined");
+
+		CYNG_LOG_TRACE(logger_, "http.upload.data - "
+			<< cyng::value_cast<std::string>(frame.at(2), "no file name specified")
+			<< " - mime type"
+			<< mime_type);
+
+		if (boost::algorithm::equals(mime_type, "application/xml")) {
+
+			cyng::buffer_t tmp;
+			tmp = cyng::value_cast<>(frame.at(4), tmp);
+			std::string const s(tmp.begin(), tmp.end());
+			parse_xml(&s);
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "http.upload.data - "
+				<< " no handler for mime type"
+				<< mime_type);
+
+		}
+
+		//auto pos = data_.find(std::get<0>(tpl));
+		//if (pos != data_.end()) {
+		//	CYNG_LOG_TRACE(logger_, "http.upload.data - "
+		//		<< std::get<0>(tpl)
+		//		<< ", "
+		//		<< std::get<1>(tpl)
+		//		<< ", "
+		//		<< std::get<2>(tpl)
+		//		<< ", mime type: "
+		//		<< std::get<3>(tpl));
+
+		//	//
+		//	//	write temporary file
+		//	//
+		//	auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("smf-dash-%%%%-%%%%-%%%%-%%%%.tmp");
+		//	auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(4));
+		//	std::ofstream of(p.string());
+		//	if (of.is_open() && ptr != nullptr) {
+		//		CYNG_LOG_DEBUG(logger_, "http.upload.data - write "
+		//			<< ptr->size()
+		//			<< " bytes into file "
+		//			<< p);
+		//		of.write(ptr->data(), ptr->size());
+		//		of.close();
+		//	}
+		//	else {
+		//		CYNG_LOG_FATAL(logger_, "http.upload.data - cannot open "
+		//			<< p);
+		//	}
+		//	pos->second.emplace(std::get<1>(tpl), p.string());
+		//	pos->second.emplace(std::get<2>(tpl), std::get<3>(tpl));
+		//}
+		//else {
+		//	CYNG_LOG_WARNING(logger_, "http.upload.data - session "
+		//		<< std::get<0>(tpl)
+		//		<< " not found");
+		//}
 	}
 
 
@@ -163,7 +280,7 @@ namespace node
 
 	void processor::process_uplink_msg(pugi::xml_document const& doc, pugi::xml_node node)
 	{
-		const std::string dev_eui(node.child("DevEUI").child_value());
+		std::string const dev_eui(node.child("DevEUI").child_value());
 
 		CYNG_LOG_TRACE(logger_, "DevEUI: " << dev_eui);
 
@@ -205,7 +322,8 @@ namespace node
 		//
 		//	extract payload
 		//
-		cyng::buffer_t payload = node::lora::parse_payload(node.child("payload_hex").child_value());
+		std::string const raw{ node.child("payload_hex").child_value() };
+		cyng::buffer_t payload = node::lora::parse_payload(raw);
 		if (!payload.empty())
 		{
 			CYNG_LOG_TRACE(logger_, "meter ID: " << node::lora::meter_id(payload));
@@ -225,6 +343,11 @@ namespace node
 			const auto p = boost::filesystem::unique_path(file_name_pattern);
 			CYNG_LOG_TRACE(logger_, "write " << p.string());
 			doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
+
+			//
+			//	ToDo: save payload (raw)
+			//
+			
 		}
 
 
@@ -244,13 +367,89 @@ namespace node
 		//	* content size
 		//	* progress in %
 		//	
-#ifdef __DEBUG
+#ifdef _DEBUG
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "http.upload.progress - " << cyng::value_cast<std::uint32_t>(frame.at(3), 0) << "%");
+		auto const progress = cyng::value_cast<std::uint32_t>(frame.at(3), 0);
+		if ((progress % 10) == 0)	CYNG_LOG_TRACE(logger_, "http.upload.progress - " << progress << "%");
 #endif
 
 	}
 	
+	void processor::http_upload_complete(cyng::context& ctx)
+	{
+		//	[300dc453-d52d-40c0-843c-e8fd7495ff0e,true,0000a84a,/upload/config/device/]
+		//	[aa681c03-42a5-47a9-920c-9dd2b62b89d3,true,00000440,/LoRa]
+		//
+		//	* session tag
+		//	* success flag
+		//	* total size in bytes
+		//	* target path
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, "http.upload.complete - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			bool,				//	[1] success
+			std::uint32_t,		//	[2] size in bytes
+			std::string			//	[3] target (action: URL)
+		>(frame);
+
+		//
+		//	post a system message
+		//
+		//auto pos = data_.find(std::get<0>(tpl));
+		//auto count = (pos != data_.end())
+		//	? pos->second.size()
+		//	: 0
+		//	;
+		//std::stringstream ss;
+		//ss
+		//	<< "upload/download "
+		//	<< std::get<2>(tpl)
+		//	<< " bytes to "
+		//	<< std::get<3>(tpl)
+		//	<< " with "
+		//	<< count
+		//	<< " variable(s)"
+		//	;
+		//ctx.queue(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_TRACE : cyng::logging::severity::LEVEL_WARNING), ss.str()));
+
+		////
+		////	start procedure
+		////
+		//bool found = false;
+		//if (pos != data_.end()) {
+		//	auto idx = pos->second.find("smf-procedure");
+		//	if (idx != pos->second.end()) {
+
+		//		CYNG_LOG_INFO(logger_, "run proc "
+		//			<< idx->second
+		//			<< ":"
+		//			<< std::get<0>(tpl));
+
+		//		cyng::param_map_t params;
+		//		for (auto const& v : pos->second) {
+		//			params.insert(cyng::param_factory(v.first, v.second));
+		//		}
+		//		ctx.queue(cyng::generate_invoke(idx->second, std::get<0>(tpl), params));
+		//		found = true;
+		//	}
+		//}
+
+		////
+		////	cleanup form data
+		////
+		//data_.erase(std::get<0>(tpl));
+
+		////
+		////	consider to send a 302 - Object moved response
+		////
+		//if (!found) {
+		//	ctx.queue(cyng::generate_invoke("http.move", std::get<0>(tpl), std::get<3>(tpl)));
+		//}
+	}
+
 	void processor::write_db(pugi::xml_node node, cyng::buffer_t const& payload)
 	{
 		//auto s = pool_.get_session();
