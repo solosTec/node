@@ -101,6 +101,7 @@ namespace node
 		vm_.register_function("bus.req.stop.client", 3, std::bind(&session::bus_req_stop_client_impl, this, std::placeholders::_1));
 		vm_.register_function("bus.insert.msg", 2, std::bind(&session::bus_insert_msg, this, std::placeholders::_1));
 		vm_.register_function("bus.req.push.data", 7, std::bind(&session::bus_req_push_data, this, std::placeholders::_1));
+		vm_.register_function("bus.insert.LoRa.uplink", 0, std::bind(&session::bus_insert_lora_uplink, this, std::placeholders::_1));
 
 		//
 		//	statistical data
@@ -975,7 +976,7 @@ namespace node
 		//	* severity
 		//	* message
 		const cyng::vector_t frame = ctx.get_frame();
-		ctx.run(cyng::generate_invoke("log.msg.trace", "client.insert.msg", frame));
+		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,			//	[0] origin client tag
@@ -986,6 +987,39 @@ namespace node
 		insert_msg(db_
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
+			, ctx.tag());
+	}
+
+	void session::bus_insert_lora_uplink(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,			//	[0] origin client tag
+			std::chrono::system_clock::time_point,	//	[1] tp
+			std::string,					//	[2] devEUI
+			std::uint16_t,					//	[3] FPort
+			std::uint32_t,					//	[4] FCntUp
+			std::uint32_t,					//	[5] ADRbit
+			std::uint32_t,					//	[6] MType
+			std::uint32_t,					//	[7] FCntDn
+			std::string,					//	[8] customerID
+			std::string,					//	[9] payload
+			boost::uuids::uuid				//	[10] tag
+		>(frame);
+
+		insert_lora_uplink(db_
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl)
+			, std::get<4>(tpl)
+			, std::get<5>(tpl)
+			, std::get<6>(tpl)
+			, std::get<7>(tpl)
+			, std::get<8>(tpl)
+			, std::get<9>(tpl)
+			, std::get<10>(tpl)
 			, ctx.tag());
 	}
 

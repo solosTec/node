@@ -111,6 +111,38 @@ namespace node
 			CYNG_LOG_INFO(logger_, "http.session.launch " << cyng::io::to_str(frame));
 		});
 
+		bus_->vm_.register_function("http.authorized", 4, [this](cyng::context& ctx) {
+			//	[7f1f9096-dd3b-4a64-a2ed-3b4c97ac9246,true,Basic,sol,/,127.0.0.1:59138]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, "http.authorized " << cyng::io::to_str(frame));
+
+			auto tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] origin session id
+				bool,					//	[1] success
+				std::string,			//	[2] authorization type
+				std::string,			//	[3] user
+				std::string,			//	[4] path
+				boost::asio::ip::tcp::endpoint	//	[5] remote endpoint
+			>(frame);
+
+			//
+			//	emit system message
+			//
+			std::stringstream ss;
+			ss
+				<< std::get<3>(tpl)
+				<< " authorized for "
+				<< std::get<4>(tpl)
+				<< " from "
+				<< std::get<5>(tpl)
+				<< (std::get<1>(tpl) ? " with" : " without")
+				<< " success"
+				;
+
+			ctx.queue(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_TRACE : cyng::logging::severity::LEVEL_WARNING), ss.str()));
+
+		});
+
 		//
 		//	input from HTTP session / ws
 		//
@@ -213,6 +245,8 @@ namespace node
 		sync_table("_Config");
 		cache_.clear("_SysMsg", bus_->vm_.tag());
 		sync_table("_SysMsg");
+		cache_.clear("_LoRaUplink", bus_->vm_.tag());
+		sync_table("_LoRaUplink");
 		sync_table("_CSV");
 
 		return cyng::continuation::TASK_CONTINUE;

@@ -46,7 +46,7 @@ namespace node
 		cyng::logging::log_ptr logger_;
 		cyng::controller vm_;
 		bus::shared_type bus_;
-		boost::uuids::random_generator_mt19937 rgn_;
+		boost::uuids::random_generator_mt19937 uidgen_;
 	};
 	
 }

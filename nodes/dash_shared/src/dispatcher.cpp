@@ -145,6 +145,11 @@ namespace node
 			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		db.get_listener("_LoRaUplink"
+			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 
 		CYNG_LOG_INFO(logger_, "db has " << db.num_all_slots() << " connected slots");
 
@@ -279,6 +284,19 @@ namespace node
 			update_channel("table.msg.count", tbl->size());
 
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_LoRaUplink"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("insert")),
+				cyng::param_factory("channel", "monitor.lora"),
+				cyng::param_factory("rec", rec.convert()));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("monitor.lora", msg);
+
+			update_channel("table.lorauplink.count", tbl->size());
+
+		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
 		{
 			auto tpl = cyng::tuple_factory(
@@ -396,6 +414,16 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("monitor.msg", msg);
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_LoRaUplink"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("delete")),
+				cyng::param_factory("channel", "monitor.lora"),
+				cyng::param_factory("key", key));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("monitor.lora", msg);
+		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
 		{
 			auto tpl = cyng::tuple_factory(
@@ -500,6 +528,16 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("monitor.msg", msg);
+
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_LoRaUplink"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("clear")),
+				cyng::param_factory("channel", "monitor.lora"));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("monitor.lora", msg);
 
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
@@ -728,6 +766,10 @@ namespace node
 		else if (boost::algorithm::starts_with(channel, "monitor.msg"))
 		{
 			subscribe(db, "_SysMsg", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "monitor.lora"))
+		{
+			subscribe(db, "_LoRaUplink", channel, tag);
 		}
 		else if (boost::algorithm::starts_with(channel, "task.csv"))
 		{

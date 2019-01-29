@@ -215,6 +215,25 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_insert_LoRa_uplink(cyng::object tp
+		, std::string const& devEUI
+		, std::uint16_t FPort
+		, std::uint32_t FCntUp
+		, std::uint32_t ADRbit
+		, std::uint32_t MType
+		, std::uint32_t FCntDn
+		, std::string const& customerID
+		, std::string const& payload
+		, boost::uuids::uuid tag)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.insert.LoRa.uplink", cyng::code::IDENT, tp, devEUI, FPort, FCntUp, ADRbit, MType, FCntDn, customerID, payload, tag))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+
 	cyng::vector_t bus_req_stop_client(cyng::vector_t const& key
 		, boost::uuids::uuid source)
 	{

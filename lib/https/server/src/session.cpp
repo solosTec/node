@@ -6,7 +6,6 @@
  */
 
 #include <smf/https/srv/session.h>
-//#include <smf/https/srv/handle_request.hpp>
 #include <smf/https/srv/connections.h>
 
 #include <cyng/vm/controller.h>

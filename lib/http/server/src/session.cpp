@@ -8,7 +8,6 @@
 #include <smf/http/srv/connections.h>
 #include <smf/http/srv/session.h>
 #include <smf/http/srv/websocket.h>
-//#include <smf/http/srv/handle_request.hpp>
 #include <smf/http/srv/path_cat.h>
 #include <smf/http/srv/mime_type.h>
 #include <smf/http/srv/connections.h>
@@ -50,6 +49,7 @@ namespace node
 			, buffer_()
 			, queue_(*this)
             , shutdown_(false)
+			, authorized_(false)
 		{}
 
 		session::~session()
@@ -306,10 +306,19 @@ namespace node
 							if (authorization_test(pos->value(), ad.second)) {
 								CYNG_LOG_DEBUG(logger_, "authorized with "
 									<< pos->value());
+
+								if (!authorized_) {
+									connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized", tag(), true, ad.second.type_, ad.second.user_, ad.first, socket_.remote_endpoint()));
+									authorized_ = true;
+								}
+
 							}
 							else {
 								CYNG_LOG_WARNING(logger_, "authorization failed "
 									<< pos->value());
+
+								connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized", tag(), false, ad.second.type_, ad.second.user_, ad.first, socket_.remote_endpoint()));
+
 								//
 								//	send auth request
 								//

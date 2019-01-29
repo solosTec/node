@@ -33,6 +33,33 @@ namespace node
 		, boost::uuids::uuid tag
 		, std::uint64_t max_messages);
 
+	void insert_lora_uplink(cyng::store::db& db
+		, std::chrono::system_clock::time_point tp
+		, std::string const& devEUI
+		, std::uint16_t FPort
+		, std::uint32_t FCntUp
+		, std::uint32_t ADRbit
+		, std::uint32_t MType
+		, std::uint32_t FCntDn
+		, std::string const& customerID
+		, std::string const& payload
+		, boost::uuids::uuid tag
+		, boost::uuids::uuid origin);
+
+	void insert_lora_uplink(cyng::store::table* tbl
+		, std::chrono::system_clock::time_point tp
+		, std::string const& devEUI
+		, std::uint16_t FPort
+		, std::uint32_t FCntUp
+		, std::uint32_t ADRbit
+		, std::uint32_t MType
+		, std::uint32_t FCntDn
+		, std::string const& customerID
+		, std::string const& payload
+		, boost::uuids::uuid tag
+		, boost::uuids::uuid origin
+		, std::uint64_t max_messages);
+
 	cyng::table::record connection_lookup(cyng::store::table* tbl, cyng::table::key_type&& key);
 	bool connection_erase(cyng::store::table* tbl, cyng::table::key_type&& key, boost::uuids::uuid tag);
 

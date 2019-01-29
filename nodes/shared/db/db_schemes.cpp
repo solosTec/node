@@ -105,7 +105,7 @@ namespace node
 
 	bool create_table_target(cyng::store::db& db)
 	{
-		return db.create_table(cyng::table::make_meta_table<1, 9>("_Target", { "channel"	//	name - primary key
+		return db.create_table(cyng::table::make_meta_table<1, 10>("_Target", { "channel"	//	name - primary key
 			, "tag"		//	[uuid] owner session - primary key 
 			, "peer"	//	[uuid] peer of owner
 			, "name"	//	[uint32] - target id
@@ -115,9 +115,10 @@ namespace node
 			, "wSize"	//	[uint8] - window size
 			, "regTime"	//	registration time
 			, "px"		//	incoming data
+			, "counter"	//	message counter
 			},
-			{ cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT16, cyng::TC_UINT8, cyng::TC_TIME_POINT, cyng::TC_UINT64 },
-			{ 0, 36, 36, 64, 36, 64, 0, 0, 0, 0 }));
+			{ cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT16, cyng::TC_UINT8, cyng::TC_TIME_POINT, cyng::TC_UINT64, cyng::TC_UINT64 },
+			{ 0, 36, 36, 64, 36, 64, 0, 0, 0, 0, 0 }));
 	}
 
 	bool create_table_meter(cyng::store::db& db)
@@ -235,7 +236,6 @@ namespace node
 			},
 			{ cyng::TC_UINT64, cyng::TC_TIME_POINT, cyng::TC_UINT8, cyng::TC_STRING },
 			{ 0, 0, 0, 128 }));
-
 	}
 
 	bool create_table_csv(cyng::store::db& db)
@@ -296,6 +296,46 @@ namespace node
 			, cyng::TC_STRING
 			},
 			{ 36, 23, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 }));
+	}
+
+	bool create_table_lora_uplink(cyng::store::db& db)
+	{
+		return db.create_table(cyng::table::make_meta_table<1, 10>("_LoRaUplink", { "id"	//	message number
+			, "ts"	//	timestamp
+			, "DevEUI"
+			, "FPort"
+			, "FCntUp"
+			, "ADRbit"
+			, "MType"
+			, "FCntDn"
+			, "CustomerID"
+			, "Payload"
+			, "tag"
+			},
+			{ cyng::TC_UINT64		//	id
+			, cyng::TC_TIME_POINT	//	ts
+			, cyng::TC_STRING		//	DevEUI
+			, cyng::TC_UINT16		//	FPort
+			, cyng::TC_INT32		//	FCntUp
+			, cyng::TC_INT32		//	ADRbit
+			, cyng::TC_INT32		//	MType
+			, cyng::TC_INT32		//	FCntDn
+			, cyng::TC_STRING		//	CustomerID
+			, cyng::TC_STRING		//	Payload
+			, cyng::TC_UUID			//	tag
+			},
+			{ 0		//	id
+			, 0		//	ts
+			, 19	//	DevEUI
+			, 0		//	FPort
+			, 0		//	FCntUp
+			, 0		//	ADRbit
+			, 0		//	MType
+			, 0		//	FCntDn
+			, 64	//	CustomerID
+			, 51	//	Payload
+			, 0		//	tag
+			}));
 	}
 
 }

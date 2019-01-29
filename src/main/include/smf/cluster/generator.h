@@ -97,6 +97,20 @@ namespace node
 	cyng::vector_t bus_insert_msg(cyng::logging::severity, std::string const&);
 
 	/**
+	 * place a LoRa uplink event
+	 */
+	cyng::vector_t bus_insert_LoRa_uplink(cyng::object tp
+		, std::string const& devEUI
+		, std::uint16_t FPort
+		, std::uint32_t FCntUp
+		, std::uint32_t ADRbit
+		, std::uint32_t MType
+		, std::uint32_t FCntDn
+		, std::string const& customerID
+		, std::string const& payload
+		, boost::uuids::uuid tag);
+
+	/**
 	 * Send an arbitrary function call to receiver, which will send it back.
 	 */
 	template < typename ...Args >

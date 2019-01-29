@@ -170,12 +170,17 @@ namespace node
 
 		if (!create_table_sys_msg(db))
 		{
-			CYNG_LOG_FATAL(logger, "cannot create table *SysMsg");
+			CYNG_LOG_FATAL(logger, "cannot create table _SysMsg");
 		}
 
 		if (!create_table_csv(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _CSV");
+		}
+
+		if (!create_table_lora_uplink(db))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table _LoRaUplink");
 		}
 
 		//
@@ -186,7 +191,6 @@ namespace node
 
 	void clear_cache(cyng::store::db& db, boost::uuids::uuid tag)
 	{
-
 		db.clear("TDevice", tag);
 		db.clear("TGateway", tag);
 		db.clear("TMeter", tag);

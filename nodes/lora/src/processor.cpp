@@ -20,7 +20,7 @@ namespace node
 		: logger_(logger)
 		, vm_(ios, tag, ostream, estream)
 		, bus_(bus)
-		, rgn_()
+		, uidgen_()
 	{
 		vm_.register_function("https.launch.session.plain", 0, std::bind(&processor::https_launch_session_plain, this, std::placeholders::_1));
 		vm_.register_function("https.eof.session.plain", 0, std::bind(&processor::https_eof_session_plain, this, std::placeholders::_1));
@@ -290,20 +290,29 @@ namespace node
 			<< " - "
 			<< cyng::io::to_str(tp));
 
+		auto const FPort = static_cast<std::uint16_t>(node.child("FPort").text().as_int());	//	FPort
+		auto const FCntUp = static_cast<std::int32_t>(node.child("FCntUp").text().as_int());	//	FCntUp
+		auto const ADRbit = static_cast<std::int32_t>(node.child("ADRbit").text().as_int());	//	ADRbit
+		auto const MType = static_cast<std::int32_t>(node.child("MType").text().as_int());	//	MType
+		auto const FCntDn = static_cast<std::int32_t>(node.child("FCntDn").text().as_int());	//	FCntDn
+
+		std::string const customer_id = node.child("CustomerID").child_value();
+		auto const tag = uidgen_();
+
 		//
 		//	push meta data
 		//
 		bus_->vm_.async_run(bus_req_push_data("setup"
 			, "TLoraUplink"
 			, false		//	single
-			, cyng::table::key_generator(rgn_())
+			, cyng::table::key_generator(tag)
 			, cyng::table::data_generator(dev_eui
 				, tp //	Time
-				, static_cast<std::uint16_t>(node.child("FPort").text().as_int())	//	FPort
-				, static_cast<std::int32_t>(node.child("FCntUp").text().as_int())	//	FCntUp
-				, static_cast<std::int32_t>(node.child("ADRbit").text().as_int())	//	ADRbit
-				, static_cast<std::int32_t>(node.child("MType").text().as_int())	//	MType
-				, static_cast<std::int32_t>(node.child("FCntDn").text().as_int())	//	FCntDn
+				, FPort
+				, FCntUp
+				, ADRbit
+				, MType
+				, FCntDn
 				, node.child("payload_hex").child_value()	//	payload_hex
 				, node.child("mic_hex").child_value()
 				, static_cast<double>(node.child("LrrRSSI").text().as_double())	//	LrrRSSI
@@ -313,7 +322,7 @@ namespace node
 				, node.child("Channel").child_value()	//	Channel
 				, static_cast<std::int32_t>(node.child("DevLrrCnt").text().as_int())	//	DevLrrCnt
 				, node.child("Lrrid").child_value()	//	Lrrid
-				, node.child("CustomerID").child_value()	//	CustomerID
+				, customer_id
 				, static_cast<double>(node.child("LrrLAT").text().as_double())	//	LrrLAT
 				, static_cast<double>(node.child("LrrLON").text().as_double())	//	LrrLON
 			)
@@ -350,6 +359,19 @@ namespace node
 			
 		}
 
+		//
+		//	generate a LoRa uplink event
+		//
+		bus_->vm_.async_run(bus_insert_LoRa_uplink(tp
+			, dev_eui
+			, FPort
+			, FCntUp
+			, ADRbit
+			, MType
+			, FCntDn
+			, customer_id
+			, raw
+			, tag));
 
 	}
 

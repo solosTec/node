@@ -143,6 +143,7 @@ namespace node
 				, doc_root_(doc_root)
 				, auth_dirs_(ad)
 				, queue_(*this)
+				, authorized_(false)
 			{}
 
 			virtual ~session()
@@ -427,10 +428,17 @@ namespace node
 								if (authorization_test(pos->value(), ad.second)) {
 									CYNG_LOG_DEBUG(logger_, "authorized with "
 										<< pos->value());
+
+									if (!authorized_) {
+										
+										connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized", tag(), true, ad.second.type_, ad.second.user_, ad.first, derived().stream().lowest_layer().remote_endpoint()));
+										authorized_ = true;
+									}
 								}
 								else {
 									CYNG_LOG_WARNING(logger_, "authorization failed "
 										<< pos->value());
+									connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized", tag(), false, ad.second.type_, ad.second.user_, ad.first, derived().stream().lowest_layer().remote_endpoint()));
 									//
 									//	send auth request
 									//
@@ -446,10 +454,11 @@ namespace node
 						}
 					}
 
+					//
 					// Build the path to the requested file
+					//
 					std::string path = path_cat(doc_root_, req.target());
 					if (boost::filesystem::is_directory(path))
-					//if (req.target().back() == '/')
 					{
 						path.append("index.html");
 					}
@@ -537,8 +546,7 @@ namespace node
 					}
 					else if (boost::algorithm::equals(content_type, "application/x-www-form-urlencoded"))
 					{
-						//	ToDo: start parser
-						//cb(cyng::generate_invoke("https.post.form.urlencoded", obj, target, std::string(req.body().begin(), req.body().end())));
+						//	already encoded
 						connection_manager_.vm().async_run(cyng::generate_invoke("http.post.form.urlencoded"
 							, tag_
 							, req.version()
@@ -706,6 +714,7 @@ namespace node
 			const auth_dirs& auth_dirs_;
 			boost::beast::http::request<boost::beast::http::string_body> req_;
 			queue queue_;
+			bool authorized_;
 
 		};
 	}

@@ -2131,7 +2131,7 @@ namespace node
 			}, cyng::store::write_access("_Session"));
 
 			//
-			//	update px value of targets
+			//	update px value and msg counter of targets
 			//
 			db_.access([&](cyng::store::table* tbl_target)->void {
 
@@ -2142,6 +2142,9 @@ namespace node
 					{
 						std::uint64_t px = cyng::value_cast<std::uint64_t>(rec["px"], 0);
 						tbl_target->modify(rec.key(), cyng::param_factory("px", static_cast<std::uint64_t>(px + size)), tag);
+
+						std::uint64_t counter = cyng::value_cast<std::uint64_t>(rec["counter"], 0);
+						tbl_target->modify(rec.key(), cyng::param_factory("counter", static_cast<std::uint64_t>(counter + 1)), tag);
 					}
 				}
 			}, cyng::store::write_access("_Target"));
@@ -2293,7 +2296,8 @@ namespace node
 							, p_size
 							, w_size
 							, std::chrono::system_clock::now()	//	reg-time
-							, static_cast<std::uint64_t>(0))
+							, static_cast<std::uint64_t>(0)		//	px
+							, static_cast<std::uint64_t>(0))	//	counter
 						, 1, tag);
 				}
 			}

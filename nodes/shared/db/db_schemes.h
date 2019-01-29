@@ -27,6 +27,7 @@ namespace node
 	bool create_table_config(cyng::store::db&);
 	bool create_table_sys_msg(cyng::store::db&);
 	bool create_table_csv(cyng::store::db&);
+	bool create_table_lora_uplink(cyng::store::db&);
 
 	/**
 	 * dash/s uses a different scheme

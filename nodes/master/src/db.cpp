@@ -171,7 +171,7 @@ namespace node
 		//	
 		if (!create_table_session(db))
 		{
-			CYNG_LOG_FATAL(logger, "cannot create table *Session");
+			CYNG_LOG_FATAL(logger, "cannot create table _Session");
 		}
 
 		if (!create_table_target(db))
@@ -308,6 +308,14 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _CSV");
 		}
+
+		//
+		//	LoRa Uplink
+		//
+		if (!create_table_lora_uplink(db))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table _LoRaUplink");
+		}
 	}
 
 	void insert_msg(cyng::store::db& db
@@ -334,7 +342,6 @@ namespace node
 		, boost::uuids::uuid tag
 		, std::uint64_t max_messages)
 	{
-
 		//
 		//	upper limit is 1000 messages
 		//
@@ -367,6 +374,78 @@ namespace node
 				, 1, tag);
 		}
 	}
+
+	void insert_lora_uplink(cyng::store::db& db
+		, std::chrono::system_clock::time_point tp
+		, std::string const& devEUI
+		, std::uint16_t FPort
+		, std::uint32_t FCntUp
+		, std::uint32_t ADRbit
+		, std::uint32_t MType
+		, std::uint32_t FCntDn
+		, std::string const& customerID
+		, std::string const& payload
+		, boost::uuids::uuid tag
+		, boost::uuids::uuid origin)
+	{
+		db.access([&](cyng::store::table* tbl, cyng::store::table const* tbl_cfg)->void {
+			auto rec = tbl_cfg->lookup(cyng::table::key_generator("max-messages"));
+			const std::uint64_t max_messages = (!rec.empty())
+				? cyng::value_cast<std::uint64_t>(rec["value"], 1000u)
+				: 1000u
+				;
+
+			insert_lora_uplink(tbl, tp, devEUI, FPort, FCntUp, ADRbit, MType, FCntDn, customerID, payload, tag, origin, max_messages);
+		}	, cyng::store::write_access("_LoRaUplink")
+			, cyng::store::read_access("_Config"));
+
+	}
+
+	void insert_lora_uplink(cyng::store::table* tbl
+		, std::chrono::system_clock::time_point tp
+		, std::string const& devEUI
+		, std::uint16_t FPort
+		, std::uint32_t FCntUp
+		, std::uint32_t ADRbit
+		, std::uint32_t MType
+		, std::uint32_t FCntDn
+		, std::string const& customerID
+		, std::string const& payload
+		, boost::uuids::uuid tag
+		, boost::uuids::uuid origin
+		, std::uint64_t max_messages)
+	{
+		//
+		//	upper limit is 1000 messages
+		//
+		if (tbl->size() > max_messages)
+		{
+			auto max_rec = tbl->max_record();
+			if (!max_rec.empty()) {
+
+				//	get next message id
+				auto next_idx = cyng::value_cast<std::uint64_t>(max_rec["id"], 0u);
+
+				tbl->insert(cyng::table::key_generator(++next_idx)
+					, cyng::table::data_generator(tp, devEUI, FPort, FCntUp, ADRbit, MType, FCntDn, customerID, payload, tag)
+					, 1, origin);
+			}
+
+			//
+			//	remove oldest message (message with the lowest id)
+			//
+			auto min_rec = tbl->min_record();
+			if (!min_rec.empty()) {
+				tbl->erase(min_rec.key(), origin);
+			}
+		}
+		else {
+			tbl->insert(cyng::table::key_generator(static_cast<std::uint64_t>(tbl->size()))
+				, cyng::table::data_generator(tp, devEUI, FPort, FCntUp, ADRbit, MType, FCntDn, customerID, payload, tag)
+				, 1, origin);
+		}
+	}
+
 
 	cyng::table::record connection_lookup(cyng::store::table* tbl, cyng::table::key_type&& key)
 	{

@@ -185,6 +185,7 @@ namespace node
 			boost::beast::http::request<boost::beast::http::string_body> req_;
 			queue queue_;
             bool shutdown_;
+			bool authorized_;
 		};
 	}
 }

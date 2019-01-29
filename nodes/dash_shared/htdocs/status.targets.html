@@ -69,6 +69,7 @@
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         <a class="dropdown-item" href="status.system.html">System</a>
                         <a class="dropdown-item" href="monitor.msg.html">Messages</a>
+                        <a class="dropdown-item" href="monitor.lora.html">LoRa Uplink</a>
                     </div>
                 </li>
 
@@ -107,6 +108,7 @@
                             <th scope="col" class="sml-col-target-device">Device</th>
                             <th scope="col" class="sml-col-target-account">Account</th>
                             <th scope="col" class="sml-col-target-px">px</th>
+                            <th scope="col" class="sml-col-target-counter">Messages</th>
                             <th scope="col" class="sml-col-target-channel">Channel</th>
                             <th scope="col" class="sml-col-target-reg">Registered</th>
                         </tr>
@@ -141,6 +143,18 @@
             return data;
         };
 
+        var renderCounter = function (data, type, full, meta) {
+            if (type == "display") {
+                var px = full[4];
+                if (data > 0) {
+                    return data + " - " + Number((px / data)).toFixed(0) + " B/Msg";
+                }
+                return "-";
+            }
+            return data;
+        };
+
+
         //  globals
         var table_target;
         var connection;
@@ -165,6 +179,7 @@
                 { targets: 'sml-col-target-device', visible: false, name: 'target-device' },
                 { targets: 'sml-col-target-account', visible: true, name: 'target-account' },
                 { targets: 'sml-col-target-px', visible: true, name: 'target-px', className: 'text-right', render: renderBytes },
+                { targets: 'sml-col-target-counter', visible: true, name: 'sml-col-target-counter', className: 'text-right', render: renderCounter },
                 { targets: 'sml-col-target-channel', visible: true, name: 'target-channel', className: 'text-right', render: renderChannel },
                 { targets: 'sml-col-target-reg', visible: true, name: 'ses-reg', render: renderDate }
             ]
@@ -200,7 +215,7 @@
             };
 
             connection.onmessage = function (e) {
-                //console.log('incoming data: ' + e.data);
+                console.log('incoming data: ' + e.data);
                 totalIO += e.data.length;
                 var obj = JSON.parse(e.data);
                 if (obj.cmd != null) {
@@ -209,11 +224,11 @@
                         var name = $('<div/>').text(obj.rec.data.name).html();
                         var account = $('<div/>').text(obj.rec.data.account).html();
                         var registered = new Date(obj.rec.data.regTime);
-                        var rowNode = table_target.row.add([obj.rec.data.tag, name, obj.rec.data.device, account, obj.rec.data.px, obj.rec.key.channel, registered]).draw().node();
+                        var rowNode = table_target.row.add([obj.rec.data.tag, name, obj.rec.data.device, account, obj.rec.data.px, obj.rec.data.counter, obj.rec.key.channel, registered]).draw().node();
                     }
                     else if (obj.cmd == 'delete') {
                         table_target.row(function (idx, data, node) {
-                            if ((obj.key.length == 1) && (data[5] == obj.key[0])) {
+                            if ((obj.key.length == 1) && (data[6] == obj.key[0])) {
                                 return true;
                             }
                             return false;
@@ -221,11 +236,14 @@
                     }
                     else if (obj.cmd == 'modify') {
                         table_target.row(function (idx, data, node) {
-                            if ((obj.key.length == 1) && (data[5] == obj.key[0])) {
+                            if ((obj.key.length == 1) && (data[6] == obj.key[0])) {
                                 var r = table_target.row(node);
                                 var d = r.data();
                                 if (obj.value.px != null) {
                                     d[4] = obj.value.px;
+                                }
+                                else if (obj.value.counter != null) {
+                                    d[5] = obj.value.counter;
                                 }
                                 r.data(d);
                                 return true;    //  record found
