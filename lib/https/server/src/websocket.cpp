@@ -6,7 +6,7 @@
  */
 
 #include <smf/https/srv/websocket.h>
-#include <smf/https/srv/handle_request.hpp>
+//#include <smf/https/srv/handle_request.hpp>
 
 namespace node
 {

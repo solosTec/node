@@ -8,7 +8,9 @@
 #include <smf/http/srv/connections.h>
 #include <smf/http/srv/session.h>
 #include <smf/http/srv/websocket.h>
-#include <smf/http/srv/handle_request.hpp>
+//#include <smf/http/srv/handle_request.hpp>
+#include <smf/http/srv/path_cat.h>
+#include <smf/http/srv/mime_type.h>
 #include <smf/http/srv/connections.h>
 #include <smf/http/srv/parser/multi_part.h>
 
@@ -388,40 +390,77 @@ namespace node
 #ifdef _DEBUG
 				CYNG_LOG_DEBUG(logger_, "payload \n" << req.body());
 #endif
+				CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
+				std::uint64_t payload_size = *req.payload_size();
 
-				//
-				//	payload parser
-				//
-				if (req.payload_size()) {
-					CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
-					std::uint64_t payload_size = *req.payload_size();
-					multi_part_parser mpp([&](cyng::vector_t&& prg) {
-
-						//	executed by HTTP session
-						CYNG_LOG_DEBUG(logger_, cyng::io::to_str(prg));
-						connection_manager_.vm().async_run(std::move(prg));
-
-					}, logger_
+				if (boost::algorithm::equals(content_type, "application/xml"))
+				{
+					connection_manager_.vm().async_run(cyng::generate_invoke("http.post.xml"
+						, tag_
+						, req.version()
+						, std::string(target.begin(), target.end())
 						, payload_size
-						, target
-						, tag_);
+						, std::string(req.body().begin(), req.body().end())));
 
+				}
+				//	Content-Type:application/json; charset=UTF-8
+				else if (boost::algorithm::starts_with(content_type, "application/json"))
+				{
+					connection_manager_.vm().async_run(cyng::generate_invoke("http.post.json"
+						, tag_
+						, req.version()
+						, std::string(target.begin(), target.end())
+						, payload_size
+						, std::string(req.body().begin(), req.body().end())));
+
+				}
+				else if (boost::algorithm::equals(content_type, "application/x-www-form-urlencoded"))
+				{
+					//	ToDo: start parser
+					connection_manager_.vm().async_run(cyng::generate_invoke("http.post.form.urlencoded"
+						, tag_
+						, req.version()
+						, std::string(target.begin(), target.end())
+						, payload_size
+						, std::string(req.body().begin(), req.body().end())));
+
+				}
+				else if (boost::algorithm::equals(content_type, "multipart/form-data"))
+				{
 					//
-					//	open new upload sequence
+					//	payload parser
 					//
-					connection_manager_.vm().async_run(cyng::generate_invoke("http.upload.start"
+					if (req.payload_size()) {
+						CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
+						std::uint64_t payload_size = *req.payload_size();
+						multi_part_parser mpp([&](cyng::vector_t&& prg) {
+
+							//	executed by HTTP session
+							CYNG_LOG_DEBUG(logger_, cyng::io::to_str(prg));
+							connection_manager_.vm().async_run(std::move(prg));
+
+						}, logger_
+							, payload_size
+							, target
+							, tag_);
+
+						//
+						//	open new upload sequence
+						//
+						connection_manager_.vm().async_run(cyng::generate_invoke("http.upload.start"
 							, tag_
 							, req.version()
 							, std::string(target.begin(), target.end())
 							, payload_size));
 
-					//
-					//	parse payload and generate program sequences
-					//
-					mpp.parse(req.body().begin(), req.body().end());
-				}
-				else {
-					CYNG_LOG_WARNING(logger_, "no payload for " << target);
+						//
+						//	parse payload and generate program sequences
+						//
+						mpp.parse(req.body().begin(), req.body().end());
+					}
+					else {
+						CYNG_LOG_WARNING(logger_, "no payload for " << target);
+					}
 				}
 
 				return;

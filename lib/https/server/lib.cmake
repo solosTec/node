@@ -19,7 +19,7 @@ set (https_srv_h
 	src/main/include/smf/https/srv/session.hpp
 	src/main/include/smf/https/srv/session.h
 	src/main/include/smf/https/srv/detector.h
-	src/main/include/smf/https/srv/handle_request.hpp
+#	src/main/include/smf/https/srv/handle_request.hpp
 	src/main/include/smf/https/srv/ssl_stream.hpp
 	src/main/include/smf/https/srv/connections.h
 )

@@ -27,6 +27,7 @@
  * Testing this application with curl:
  * @code
  curl -X POST --header "Content-Type:application/xml" -d @D:\build\loral-9035-417b-13e7-8c62.xml http://localhost:8080/LoRa
+ curl --form "fileupload=@example.xml" http://192.168.1.21:8443/LoRa
  * @endcode
  */
 int main(int argc, char **argv) 
