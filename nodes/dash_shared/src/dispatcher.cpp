@@ -24,8 +24,8 @@ namespace node
 	void dispatcher::register_this(cyng::controller& vm)
 	{
 		vm.register_function("store.relation", 2, std::bind(&dispatcher::store_relation, this, std::placeholders::_1));
-		//vm.register_function("bus.res.query.gateway", 6, std::bind(&dispatcher::res_query_gateway, this, std::placeholders::_1));
 		vm.register_function("bus.res.gateway.proxy", 9, std::bind(&dispatcher::res_gateway_proxy, this, std::placeholders::_1));
+		vm.register_function("bus.res.attention.code", 7, std::bind(&dispatcher::res_attention_code, this, std::placeholders::_1));
 
 		vm.register_function("http.move", 2, std::bind(&dispatcher::http_move, this, std::placeholders::_1));
 	}
@@ -40,7 +40,7 @@ namespace node
 	void dispatcher::res_gateway_proxy(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "bus.res.gateway.proxy - " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] ident
@@ -80,12 +80,51 @@ namespace node
 			//	{"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
 			auto msg = cyng::json::to_string(data);
 			connection_manager_.ws_msg(std::get<4>(tpl), msg);
-
-			
+		
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "bus.res.gateway.proxy - unknown section " << std::get<7>(tpl));
 		}
+	}
+
+	void dispatcher::res_attention_code(cyng::context& ctx)
+	{
+		//	[da673931-9743-41b9-8a46-6ce946c9fa6c,9f773865-e4af-489a-8824-8f78a2311278,4,5c200bdf-22c0-41bd-bc93-d879d935889e,00:15:3b:02:29:81,8181C7C7FE03,NO SERVER ID]
+		//
+		//	* [uuid] ident
+		//	* [uuid] source
+		//	* [u64] cluster seq
+		//	* [uuid] ws tag
+		//	* [string] server id
+		//	* [buffer] attention code
+		//	* [string] message
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] ident
+			boost::uuids::uuid,		//	[1] source
+			std::uint64_t,			//	[2] sequence
+			boost::uuids::uuid,		//	[3] ws tag
+			std::string,			//	[4] server id
+			cyng::buffer_t,			//	[5] attention code (OBIS)
+			std::string				//	[6] msg
+		>(frame);
+
+		auto data = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("update")),
+			cyng::param_factory("channel", "attention.code"),
+			cyng::param_factory("section", std::get<5>(tpl)),
+			cyng::param_factory("rec", cyng::tuple_factory(
+				cyng::param_factory("srv", std::get<4>(tpl)),
+				cyng::param_factory("values", std::get<6>(tpl))
+			)));
+
+		//	{"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
+		auto msg = cyng::json::to_string(data);
+		connection_manager_.ws_msg(std::get<3>(tpl), msg);
+
 	}
 
 	void dispatcher::subscribe(cyng::store::db& db)

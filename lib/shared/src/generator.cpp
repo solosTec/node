@@ -298,7 +298,8 @@ namespace node
 	//		;
 	//}
 
-	cyng::vector_t bus_res_attention_code(boost::uuids::uuid source
+	cyng::vector_t bus_res_attention_code(boost::uuids::uuid ident
+		, boost::uuids::uuid source
 		, std::uint64_t seq
 		, boost::uuids::uuid tag_ws
 		, std::string srv
@@ -307,7 +308,7 @@ namespace node
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("bus.res.attention.code", source, seq, tag_ws, srv, code, msg))
+			, cyng::generate_invoke_remote_unwinded("bus.res.attention.code", ident, source, seq, tag_ws, srv, code, msg))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}

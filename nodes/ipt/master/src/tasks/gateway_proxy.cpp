@@ -263,6 +263,7 @@ namespace node
 			<< sml::get_attention_name(attention));
 
 		bus_->vm_.async_run(bus_res_attention_code(queue_.front().get_ident_tag()
+			, queue_.front().get_source_tag()
 			, queue_.front().get_sequence()
 			, queue_.front().get_ws_tag()
 			, srv

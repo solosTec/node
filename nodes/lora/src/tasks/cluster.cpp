@@ -10,6 +10,7 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
+#include <cyng/vm/domain/log_domain.h>
 
 namespace node
 {
@@ -41,6 +42,11 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< ">");
+
+		//
+		//	register logger domain
+		//
+		cyng::register_logger(logger_, bus_->vm_);
 
 		//
 		//	implement request handler

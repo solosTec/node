@@ -36,7 +36,7 @@ namespace node
 	{
 		ctx.queue(cyng::register_function("bus.req.gateway.proxy", 7, std::bind(&cluster::bus_req_gateway_proxy, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("bus.res.gateway.proxy", 9, std::bind(&cluster::bus_res_gateway_proxy, this, std::placeholders::_1)));
-		ctx.queue(cyng::register_function("bus.res.attention.code", 6, std::bind(&cluster::bus_res_attention_code, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.res.attention.code", 7, std::bind(&cluster::bus_res_attention_code, this, std::placeholders::_1)));
 	}
 
 	void cluster::bus_req_gateway_proxy(cyng::context& ctx)
@@ -252,30 +252,69 @@ namespace node
 
 	void cluster::bus_res_attention_code(cyng::context& ctx)
 	{
-		//	[f83e12c6-b22c-4775-ad83-b180d3d2a8e0,38,4ac545a0-2b60-41b4-9d32-81eacec5bd94,00:15:3b:02:29:7e,8181C7C7FD00]
+		//	[da673931-9743-41b9-8a46-6ce946c9fa6c,9f773865-e4af-489a-8824-8f78a2311278,4,5c200bdf-22c0-41bd-bc93-d879d935889e,00:15:3b:02:29:81,8181C7C7FE03,NO SERVER ID]
 		//
+		//	* [uuid] ident
 		//	* [uuid] source
 		//	* [u64] cluster seq
 		//	* [uuid] ws tag
 		//	* [string] server id
 		//	* [buffer] attention code
+		//	* [string] message
 		//
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_INFO(logger_, "bus.res.attention.code " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,		//	[0] source
-			std::uint64_t,			//	[1] sequence
-			boost::uuids::uuid,		//	[2] ws tag
-			std::string,			//	[3] server id
-			cyng::buffer_t,			//	[4] attention code (OBIS)
-			std::string				//	[5] msg
+			boost::uuids::uuid,		//	[0] ident
+			boost::uuids::uuid,		//	[1] source
+			std::uint64_t,			//	[2] sequence
+			boost::uuids::uuid,		//	[3] ws tag
+			std::string,			//	[4] server id
+			cyng::buffer_t,			//	[5] attention code (OBIS)
+			std::string				//	[6] msg
 		>(frame);
 
+		//
+		//	emit system message
+		//
 		insert_msg(db_
 			, cyng::logging::severity::LEVEL_INFO
-			, ("attention message from " + std::get<3>(tpl) + ": " + std::get<5>(tpl))
-			, std::get<0>(tpl));
+			, ("attention message from " + std::get<4>(tpl) + ": " + std::get<6>(tpl))
+			, std::get<1>(tpl));
+
+		//
+		//	routing back - forward to receiver
+		//
+		db_.access([&](const cyng::store::table* tbl_cluster)->void {
+
+			auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<1>(tpl)));
+			if (!rec.empty()) {
+				auto peer = cyng::object_cast<session>(rec["self"]);
+				if (peer != nullptr) {
+
+					CYNG_LOG_INFO(logger_, "bus.res.attention.code - send to peer "
+						<< cyng::value_cast<std::string>(rec["class"], "")
+						<< '@'
+						<< peer->vm_.tag());
+
+					//
+					//	forward data
+					//
+					peer->vm_.async_run(node::bus_res_attention_code(
+						std::get<0>(tpl)		//	ident tag
+						, std::get<1>(tpl)		//	source tag
+						, std::get<2>(tpl)		//	cluster sequence
+						, std::get<3>(tpl)		//	websocket tag
+						, std::get<4>(tpl)		//	server id
+						, std::get<5>(tpl)		//	attention code (OBIS)
+						, std::get<6>(tpl)));	//	msg
+				}
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "bus.res.attention.code - peer not found " << std::get<1>(tpl));
+			}
+		}, cyng::store::read_access("_Cluster"));
 
 	}
 

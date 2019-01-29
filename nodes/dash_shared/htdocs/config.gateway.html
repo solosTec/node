@@ -124,6 +124,16 @@
 
         <hr />
 
+
+        <div class="row">
+            <div class="container-fluid">
+                <p id="attention-msg"></p>
+            </div>
+        </div>
+
+<!--        <br />-->
+        <hr />
+
         <div class="row">
             <div class="col-10">
                 <!--                <ul class="nav nav-pills" role="tablist">-->
@@ -241,14 +251,14 @@
                                         <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-gw-memory_progress-2">0%</div>
                                     </div>
                                     <!--<div id="mem-progress-2"
-                                         data-percentage="20"
-                                         data-track-width="42"
-                                         data-track-colour="555555"
-                                         data-fill-colour="00C0FF"
-                                         data-text-colour="00C0FF"
-                                         data-stroke-colour="FFFFFF"
-                                         data-stroke-spacing="4">
-                                    </div>-->
+                                     data-percentage="20"
+                                     data-track-width="42"
+                                     data-track-colour="555555"
+                                     data-fill-colour="00C0FF"
+                                     data-text-colour="00C0FF"
+                                     data-stroke-colour="FFFFFF"
+                                     data-stroke-spacing="4">
+                                </div>-->
                                 </div>
                                 <div class="card-footer">
                                     <small class="text-muted"><span id="smf-gw-memory-2">wait...</span>%</small>
@@ -331,7 +341,7 @@
                             <div class="form-group row">
                                 <div class="offset-2 col-10">
                                     <a id="smf-form-gw-wmbus-submit" href="#" class="btn btn-primary">Submit</a>
-<!--                                    <button name="submit" type="submit" class="btn btn-primary">Submit</button>-->
+                                    <!--                                    <button name="submit" type="submit" class="btn btn-primary">Submit</button>-->
                                 </div>
                             </div>
                         </form>
@@ -466,7 +476,6 @@
             </div>
         </div>  <!--row-->
 
-        <br />
     </div>
 
     <!-- JavaScript -->
@@ -772,194 +781,203 @@
                                 }
                             }
                         }
-                        else if (obj.section == 'op-log-status-word') {
-                            //  {"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
-                            //  {"cmd": "update", "channel": "op-log-status-word", "rec": {"srv": "00:15:3b:02:17:74", "values": {"word":{"STATUS_BIT_AUTHORIZED_IPT":false,"STATUS_BIT_EXT_IF_AVAILABLE":true,"STATUS_BIT_FATAL_ERROR":false,"STATUS_BIT_MBUS_IF_AVAILABLE":false,"STATUS_BIT_NO_TIMEBASE":false,"STATUS_BIT_OUT_OF_MEMORY":false,"STATUS_BIT_PLC_AVAILABLE":false,"STATUS_BIT_SERVICE_IF_AVAILABLE":false}}}}
-                            //  {"cmd": "update", "section": "op-log-status-word", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"word":{"AUTHORIZED_IPT":false,"EXT_IF_AVAILABLE":true,"FATAL_ERROR":false,"MBUS_IF_AVAILABLE":false,"NO_TIMEBASE":false,"OUT_OF_MEMORY":false,"PLC_AVAILABLE":false,"SERVICE_IF_AVAILABLE":false}}}}
+                        else if (obj.channel == 'get.proc.param') {
                             if (obj.cmd == 'update') {
-                                //console.log("word." + prop + " = " + obj.rec.word[prop]);
-                                if (obj.rec.values.word.FATAL_ERROR) {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">fatal error</li>');
-                                }
-                                else {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">no error</li>');
-                                }
-                                if (obj.rec.values.word.AUTHORIZED_IPT) {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">online</li>');
-                                }
-                                else {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">offline</li>');
-                                }
+                                if (obj.section == 'op-log-status-word') {
+                                    //  channel "get.proc.param"
+                                    //  {"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
+                                    //  {"cmd": "update", "channel": "op-log-status-word", "rec": {"srv": "00:15:3b:02:17:74", "values": {"word":{"STATUS_BIT_AUTHORIZED_IPT":false,"STATUS_BIT_EXT_IF_AVAILABLE":true,"STATUS_BIT_FATAL_ERROR":false,"STATUS_BIT_MBUS_IF_AVAILABLE":false,"STATUS_BIT_NO_TIMEBASE":false,"STATUS_BIT_OUT_OF_MEMORY":false,"STATUS_BIT_PLC_AVAILABLE":false,"STATUS_BIT_SERVICE_IF_AVAILABLE":false}}}}
+                                    //  {"cmd": "update", "section": "op-log-status-word", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"word":{"AUTHORIZED_IPT":false,"EXT_IF_AVAILABLE":true,"FATAL_ERROR":false,"MBUS_IF_AVAILABLE":false,"NO_TIMEBASE":false,"OUT_OF_MEMORY":false,"PLC_AVAILABLE":false,"SERVICE_IF_AVAILABLE":false}}}}
+                                    //console.log("word." + prop + " = " + obj.rec.word[prop]);
+                                    if (obj.rec.values.word.FATAL_ERROR) {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">fatal error</li>');
+                                    }
+                                    else {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">no error</li>');
+                                    }
+                                    if (obj.rec.values.word.AUTHORIZED_IPT) {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">online</li>');
+                                    }
+                                    else {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">offline</li>');
+                                    }
 
-                                if (obj.rec.values.word.OUT_OF_MEMORY)   {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">out of memory</li>');
+                                    if (obj.rec.values.word.OUT_OF_MEMORY) {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-danger">out of memory</li>');
+                                    }
+                                    else {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no memory shortage</li>');
+                                    }
+                                    if (obj.rec.values.word.SERVICE_IF_AVAILABLE) {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">customer interface available</li>');
+                                    }
+                                    else {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no customer interface</li>');
+                                    }
+                                    if (obj.rec.values.word.EXT_IF_AVAILABLE) {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">extension interface available</li>');
+                                    }
+                                    else {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no extension interface</li>');
+                                    }
+                                    if (obj.rec.values.word.MBUS_IF_AVAILABLE) {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">wireless M-bus</li>');
+                                    }
+                                    else {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no wireless M-bus available</li>');
+                                    }
+                                    if (obj.rec.values.word.PLC_AVAILABLE) {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">PLC interface available</li>');
+                                    }
+                                    else {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no PLC interface</li>');
+                                    }
+                                    if (obj.rec.values.word.NO_TIMEBASE) {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-warning">uncertain timebase</li>');
+                                    }
+                                    else {
+                                        $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">NTP is running</li>');
+                                    }
                                 }
-                                else {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no memory shortage</li>');
+                                else if (obj.section == 'root-visible-devices') {
+                                    //  {"cmd": "update", "channel": "root-visible-devices", "rec": {"srv": "00:15:3b:02:17:74", "values": {"class":"---","meter":"000000000000","number":"1","timestamp":"2018-11-04 20:34:28.00000000","type":9}}}
+                                    if (obj.rec.values.type == 0) {
+                                        $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-success">#'
+                                            + obj.rec.values.number
+                                            + ' '
+                                            + obj.rec.values.meter
+                                            + ' ('
+                                            + obj.rec.values.timestamp
+                                            + ')</li>');
+                                    }
+                                    else {
+                                        $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                            + obj.rec.values.number
+                                            + ' '
+                                            + obj.rec.values.meter
+                                            + ' ('
+                                            + obj.rec.values.timestamp
+                                            + ')</li>');
+                                    }
                                 }
-                                if (obj.rec.values.word.SERVICE_IF_AVAILABLE)    {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">customer interface available</li>');
-                                }
-                                else {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no customer interface</li>');
-                                }
-                                if (obj.rec.values.word.EXT_IF_AVAILABLE)    {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">extension interface available</li>');
-                                }
-                                else {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no extension interface</li>');
-                                }
-                                if (obj.rec.values.word.MBUS_IF_AVAILABLE)    {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">wireless M-bus</li>');
-                                }
-                                else {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no wireless M-bus available</li>');
-                                }
-                                if (obj.rec.values.word.PLC_AVAILABLE)    {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">PLC interface available</li>');
-                                }
-                                else {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-secondary">no PLC interface</li>');
-                                }
-                                if (obj.rec.values.word.NO_TIMEBASE) {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-warning">uncertain timebase</li>');
-                                }
-                                else {
-                                    $('#smf-gw-status-word ul').append('<li class="list-group-item list-group-item-success">NTP is running</li>');
-                                }
-                            }
-                        }
-                        else if (obj.section == 'root-visible-devices') {
-                            //  {"cmd": "update", "channel": "root-visible-devices", "rec": {"srv": "00:15:3b:02:17:74", "values": {"class":"---","meter":"000000000000","number":"1","timestamp":"2018-11-04 20:34:28.00000000","type":9}}}
-                            if (obj.cmd == 'update') {
-                                if (obj.rec.values.type == 0) {
-                                    $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-success">#'
+                                else if (obj.section == 'root-active-devices') {
+                                    //  {"cmd": "update", "channel": "root-active-devices", "rec": {"srv": "00:15:3b:01:ec:46", "values": {"class":"---","meter":"01-fa30-6dd7fae0-01-02","number":"10","timestamp":"2016-08-03 09:26:06.00000000","type":0}}}
+                                    if (obj.rec.values.type == 0) {
+                                        $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-success">#'
                                         + obj.rec.values.number
                                         + ' '
                                         + obj.rec.values.meter
                                         + ' ('
                                         + obj.rec.values.timestamp
                                         + ')</li>');
-                                }
-                                else {
-                                    $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                    }
+                                    else {
+                                        $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-secondary">#'
                                         + obj.rec.values.number
                                         + ' '
                                         + obj.rec.values.meter
                                         + ' ('
                                         + obj.rec.values.timestamp
                                         + ')</li>');
+                                    }
+                                }
+                                else if (obj.section == 'root-device-id') {
+                                    //  {"cmd": "update", "channel": "root-device-id", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"active":false,"firmware":"FACTORY VERSION","number":2,"version":"VSES-1.11_11132000__X025b"}}}
+                                    if (obj.rec.values.active) {
+                                        $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-success">#'
+                                            + obj.rec.values.number
+                                            + ' '
+                                            + obj.rec.values.firmware
+                                            + ': '
+                                            + obj.rec.values.version
+                                            + '</li>');
+                                    }
+                                    else {
+                                        $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                            + obj.rec.values.number
+                                            + ' '
+                                            + obj.rec.values.firmware
+                                            + ': '
+                                            + obj.rec.values.version
+                                            + '</li>');
+                                    }
+                                }
+                                else if (obj.section == 'root-memory-usage') {
+                                    //{"cmd": "update", "channel": "root-memory-usage", "rec": {"srv": "00:15:3b:02:17:74", "values": {"memory.mirror":22,"memory.tmp":0}}}
+                                    $('#smf-gw-memory-1').text(obj.rec.values.mirror);
+                                    $('#smf-gw-memory-2').text(obj.rec.values.tmp);
+                                    $('#smf-gw-memory_progress-1').css("width", obj.rec.values.mirror + "%").attr("aria-valuenow", obj.rec.values.mirror).text(obj.rec.values.mirror + "%");
+                                    $('#smf-gw-memory_progress-2').css("width", obj.rec.values.tmp + "%").attr("aria-valuenow", obj.rec.values.tmp).text(obj.rec.values.tmp + "%");
+                                    if (obj.rec.values.mirror > 60) {
+                                        $('#smf-gw-memory_progress-1').removeClass('bg-success');
+                                        $('#smf-gw-memory_progress-1').addClass('bg-warning');
+                                    }
+                                    else {
+                                        $('#smf-gw-memory_progress-1').removeClass('bg-warning');
+                                        $('#smf-gw-memory_progress-1').addClass('bg-success');
+                                    }
+                                }
+                                else if (obj.section == 'root-wMBus-status') {
+                                    // {"cmd": "update", "channel": "root-wMBus-status", "rec": {"srv": "00:ff:b0:0b:ca:ae", "values": {"firmware":"0.6.2018309","hardware":"2.00","id":"a815348340040131","manufacturer":"solos::Tec"}}}
+                                    $('#smf-gw-wmbus-type').val(obj.rec.values.manufacturer);
+                                    $('#smf-gw-wmbus-adapter').val(obj.rec.values.id);
+                                    $('#smf-gw-wmbus-firmware').val(obj.rec.values.firmware);
+                                    $('#smf-gw-wmbus-hardware').val(obj.rec.values.hardware);
+
+                                }
+                                else if (obj.section == 'IF_wMBUS') {
+                                    // {"cmd": "update", "channel": "IF_wMBUS", "rec": {"srv": "00:15:3b:02:23:b3", "values": {"installMode":0,"power":0,"protocol":0,"reboot":86400,"s-mode":30,"t-mode":20}}}
+                                    $('#smf-gw-wmbus-power').val(obj.rec.values.power);
+                                    $('#smf-gw-wmbus-reboot').val(obj.rec.values.reboot);
+                                    switch (obj.rec.values.protocol) {
+                                        case 0: $('#smf-gw-wmbus-protocol-tmode').prop("checked", true); break;
+                                        case 1: $('#smf-gw-wmbus-protocol-smode').prop("checked", true); break;
+                                        case 2: $('#smf-gw-wmbus-protocol-alternate').prop("checked", true); break;
+                                        case 3: $('#smf-gw-wmbus-protocol-parallel').prop("checked", true); break;
+                                        default: break;
+                                    }
+                                    $('#smf-gw-wmbus-install').prop("checked", obj.rec.values.installMode != 0);
+                                    //$('#smf-gw-wmbus-install').prop("checked", true);
+
+                                }
+                                else if (obj.section == 'root-ipt-state') {
+                                    //  {"cmd": "update", "channel": "root-ipt-state", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"address":"192.168.1.21","local":26862,"remote":3653}}}
+                                    $('#smf-gw-ipt-host').val(obj.rec.values.address);
+                                    $('#smf-gw-ipt-local').val(obj.rec.values.local);
+                                    $('#smf-gw-ipt-remote').val(obj.rec.values.remote);
+                                }
+                                else if (obj.section == 'root-ipt-param') {
+                                    // {"cmd": "update", "channel": "root-ipt-param", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"address":"0.0.0.0","idx":1,"local":26862,"name":0,"pwd":0,"remote":0}}}
+                                    //$('#smf-form-gw-ipt-srv').val(obj.rec.srv);
+                                    if (obj.rec.values.idx == 1) {
+
+                                        $('#smf-gw-ipt-host-1').val(obj.rec.values.address);
+                                        $('#smf-gw-ipt-local-1').val(obj.rec.values.local);
+                                        $('#smf-gw-ipt-remote-1').val(obj.rec.values.remote);
+                                        $('#smf-gw-ipt-name-1').val(obj.rec.values.name);
+                                        $('#smf-gw-ipt-pwd-1').val(obj.rec.values.pwd);
+                                    }
+                                    else {
+
+                                        $('#smf-gw-ipt-host-2').val(obj.rec.values.address);
+                                        $('#smf-gw-ipt-local-2').val(obj.rec.values.local);
+                                        $('#smf-gw-ipt-remote-2').val(obj.rec.values.remote);
+                                        $('#smf-gw-ipt-name-2').val(obj.rec.values.name);
+                                        $('#smf-gw-ipt-pwd-2').val(obj.rec.values.pwd);
+                                    }
                                 }
                             }
                         }
-                        else if (obj.section == 'root-active-devices') {
-                            //  {"cmd": "update", "channel": "root-active-devices", "rec": {"srv": "00:15:3b:01:ec:46", "values": {"class":"---","meter":"01-fa30-6dd7fae0-01-02","number":"10","timestamp":"2016-08-03 09:26:06.00000000","type":0}}}
-                            if (obj.cmd == 'update') {
-                                if (obj.rec.values.type == 0) {
-                                    $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-success">#'
-                                    + obj.rec.values.number
-                                    + ' '
-                                    + obj.rec.values.meter
-                                    + ' ('
-                                    + obj.rec.values.timestamp
-                                    + ')</li>');
-                                }
-                                else {
-                                    $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-secondary">#'
-                                    + obj.rec.values.number
-                                    + ' '
-                                    + obj.rec.values.meter
-                                    + ' ('
-                                    + obj.rec.values.timestamp
-                                    + ')</li>');
-                                }
-                            }
-                        }
-                        else if (obj.section == 'root-device-id') {
-                            //  {"cmd": "update", "channel": "root-device-id", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"active":false,"firmware":"FACTORY VERSION","number":2,"version":"VSES-1.11_11132000__X025b"}}}
-                            if (obj.cmd == 'update') {
-                                if (obj.rec.values.active) {
-                                    $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-success">#'
-                                        + obj.rec.values.number
-                                        + ' '
-                                        + obj.rec.values.firmware
-                                        + ': '
-                                        + obj.rec.values.version
-                                        + '</li>');
-                                }
-                                else {
-                                    $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
-                                        + obj.rec.values.number
-                                        + ' '
-                                        + obj.rec.values.firmware
-                                        + ': '
-                                        + obj.rec.values.version
-                                        + '</li>');
-                                }
-                            }
-                        }
-                        else if (obj.section == 'root-memory-usage') {
-                            //{"cmd": "update", "channel": "root-memory-usage", "rec": {"srv": "00:15:3b:02:17:74", "values": {"memory.mirror":22,"memory.tmp":0}}}
-                            $('#smf-gw-memory-1').text(obj.rec.values.mirror);
-                            $('#smf-gw-memory-2').text(obj.rec.values.tmp);
-                            $('#smf-gw-memory_progress-1').css("width", obj.rec.values.mirror + "%").attr("aria-valuenow", obj.rec.values.mirror).text(obj.rec.values.mirror + "%");
-                            $('#smf-gw-memory_progress-2').css("width", obj.rec.values.tmp + "%").attr("aria-valuenow", obj.rec.values.tmp).text(obj.rec.values.tmp + "%");
-                            if (obj.rec.values.mirror > 60) {
-                                $('#smf-gw-memory_progress-1').removeClass('bg-success');
-                                $('#smf-gw-memory_progress-1').addClass('bg-warning');
+                        else if (obj.channel == 'attention.code') {
+                            //alert(obj.rec.values);
+                            if (obj.section == '8181c7c7fe03') {
+                                //  bg-warning
+                                //$('#attention-msg').css("background-color", "gray");
+                                $('#attention-msg').addClass('bg-warning');
+                                $('#attention-msg').text(obj.rec.srv + " is not a valid server ID");
                             }
                             else {
-                                $('#smf-gw-memory_progress-1').removeClass('bg-warning');
-                                $('#smf-gw-memory_progress-1').addClass('bg-success');
-                            }
-                        }
-                        else if (obj.section == 'root-wMBus-status') {
-                            // {"cmd": "update", "channel": "root-wMBus-status", "rec": {"srv": "00:ff:b0:0b:ca:ae", "values": {"firmware":"0.6.2018309","hardware":"2.00","id":"a815348340040131","manufacturer":"solos::Tec"}}}
-                            $('#smf-gw-wmbus-type').val(obj.rec.values.manufacturer);
-                            $('#smf-gw-wmbus-adapter').val(obj.rec.values.id);
-                            $('#smf-gw-wmbus-firmware').val(obj.rec.values.firmware);
-                            $('#smf-gw-wmbus-hardware').val(obj.rec.values.hardware);
-
-                        }
-                        else if (obj.section == 'IF_wMBUS') {
-                            // {"cmd": "update", "channel": "IF_wMBUS", "rec": {"srv": "00:15:3b:02:23:b3", "values": {"installMode":0,"power":0,"protocol":0,"reboot":86400,"s-mode":30,"t-mode":20}}}
-                            $('#smf-gw-wmbus-power').val(obj.rec.values.power);
-                            $('#smf-gw-wmbus-reboot').val(obj.rec.values.reboot);
-                            switch (obj.rec.values.protocol) {
-                                case 0: $('#smf-gw-wmbus-protocol-tmode').prop("checked", true); break;
-                                case 1: $('#smf-gw-wmbus-protocol-smode').prop("checked", true); break;
-                                case 2: $('#smf-gw-wmbus-protocol-alternate').prop("checked", true); break;
-                                case 3: $('#smf-gw-wmbus-protocol-parallel').prop("checked", true); break;
-                                default: break;
-                            }
-                            $('#smf-gw-wmbus-install').prop("checked", obj.rec.values.installMode != 0);
-                            //$('#smf-gw-wmbus-install').prop("checked", true);
-
-                        }
-                        else if (obj.section == 'root-ipt-state') {
-                            //  {"cmd": "update", "channel": "root-ipt-state", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"address":"192.168.1.21","local":26862,"remote":3653}}}
-                            $('#smf-gw-ipt-host').val(obj.rec.values.address);
-                            $('#smf-gw-ipt-local').val(obj.rec.values.local);
-                            $('#smf-gw-ipt-remote').val(obj.rec.values.remote);
-                        }
-                        else if (obj.section == 'root-ipt-param') {
-                            // {"cmd": "update", "channel": "root-ipt-param", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"address":"0.0.0.0","idx":1,"local":26862,"name":0,"pwd":0,"remote":0}}}
-                            //$('#smf-form-gw-ipt-srv').val(obj.rec.srv);
-                            if (obj.rec.values.idx == 1) {
-
-                                $('#smf-gw-ipt-host-1').val(obj.rec.values.address);
-                                $('#smf-gw-ipt-local-1').val(obj.rec.values.local);
-                                $('#smf-gw-ipt-remote-1').val(obj.rec.values.remote);
-                                $('#smf-gw-ipt-name-1').val(obj.rec.values.name);
-                                $('#smf-gw-ipt-pwd-1').val(obj.rec.values.pwd);
-                            }
-                            else {
-
-                                $('#smf-gw-ipt-host-2').val(obj.rec.values.address);
-                                $('#smf-gw-ipt-local-2').val(obj.rec.values.local);
-                                $('#smf-gw-ipt-remote-2').val(obj.rec.values.remote);
-                                $('#smf-gw-ipt-name-2').val(obj.rec.values.name);
-                                $('#smf-gw-ipt-pwd-2').val(obj.rec.values.pwd);
+                                $('#attention-msg').text(obj.rec.srv + ": " + obj.rec.values);
                             }
                         }
                     }

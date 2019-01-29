@@ -185,22 +185,10 @@ namespace node
 		, cyng::param_map_t const&);
 
 	/**
-	 * Response for bus_req_query_gateway()
-	 *
-	 * @param source source tag
-	 * @param srv server id
-	 */
-	//cyng::vector_t bus_res_query_gateway(boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, std::string srv
-	//	, std::string code
-	//	, cyng::param_map_t const&);
-
-	/**
 	 * Send back attention codes
 	 */
-	cyng::vector_t bus_res_attention_code(boost::uuids::uuid source
+	cyng::vector_t bus_res_attention_code(boost::uuids::uuid ident
+		, boost::uuids::uuid source
 		, std::uint64_t seq
 		, boost::uuids::uuid tag_ws
 		, std::string srv
