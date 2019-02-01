@@ -25,8 +25,7 @@ namespace node
 			, std::chrono::hours>;
 		using msg_1 = std::tuple<std::chrono::system_clock::time_point
 			, cyng::chrono::days>;
-		using msg_2 = std::tuple<std::chrono::system_clock::time_point
-			, std::int32_t>;
+		using msg_2 = std::tuple<std::int32_t, std::int32_t, std::chrono::system_clock::time_point, std::chrono::system_clock::time_point>;
 		using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
 
 	public:
@@ -58,8 +57,10 @@ namespace node
 		 * @param end last timepoint for this months to report for
 		 * @param days number of days in the specified month
 		 */
-		cyng::continuation process(std::chrono::system_clock::time_point end
-			, std::int32_t days);
+		cyng::continuation process(std::int32_t year
+			, std::int32_t month
+			, std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end);
 
 		/**
 		 * static method to create tables.
@@ -73,8 +74,10 @@ namespace node
 		void generate_csv_60min(std::chrono::system_clock::time_point start
 			, cyng::chrono::days interval);
 
-		void generate_csv_24h(std::chrono::system_clock::time_point start
-			, std::int32_t days);
+		void generate_csv_24h(std::int32_t year
+			, std::int32_t month
+			, std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end);
 
 		/**
 		 * Get servers IDs for 15 min profile (8181c78611ff)
@@ -101,7 +104,11 @@ namespace node
 			, std::string const& id
 			, std::set<std::string> const&);
 
-		std::ofstream open_file_24_h_profile(std::chrono::system_clock::time_point end);
+		std::ofstream open_file_24_h_profile(std::int32_t year
+			, std::int32_t month
+			, std::size_t
+			, std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end);
 
 		void collect_data_15_min_profile(std::ofstream&
 			, std::chrono::system_clock::time_point start

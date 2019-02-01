@@ -90,11 +90,11 @@ namespace node
 
 	std::chrono::system_clock::time_point profile_24_h::calculate_trigger_tp()
 	{
-		std::tm tmp = cyng::chrono::make_utc_tm(std::chrono::system_clock::now());
+		std::tm now = cyng::chrono::make_utc_tm(std::chrono::system_clock::now());
 
-		return cyng::chrono::init_tp(cyng::chrono::year(tmp)
-			, cyng::chrono::month(tmp)
-			, cyng::chrono::day(tmp)
+		return cyng::chrono::init_tp(cyng::chrono::year(now)
+			, cyng::chrono::month(now)
+			, cyng::chrono::day(now)
 			, 0	//	hour
 			, 0	//	minute
 			, 0.0) //	this day
@@ -104,8 +104,8 @@ namespace node
 
 	void profile_24_h::generate_last_period()
 	{
-		std::tm tmp = cyng::chrono::make_utc_tm(next_trigger_tp_);
-		if (tmp.tm_mday < 4) {
+		std::tm const trigger_tp = cyng::chrono::make_utc_tm(next_trigger_tp_);
+		if (trigger_tp.tm_mday < 4) {
 
 			//
 			//	generate a file for the last month during the first 3 days of the new month
@@ -116,46 +116,56 @@ namespace node
             //  * tmp is 3. oct 7:00
             //  * tp is (3. oct 7:00) - (3*24h) => (30. sep 7:00)
 			//
-			auto const tp = next_trigger_tp_ - std::chrono::hours(tmp.tm_mday * 24);
-			auto const d = cyng::chrono::days_of_month(tp);
+			auto const end = next_trigger_tp_ - std::chrono::hours(trigger_tp.tm_mday * 24);
+			auto const d = cyng::chrono::days_of_month(end);
+			auto const start = end - d;
+
+			//std::cerr << std::endl << "start: " << cyng::to_str(start) << std::endl;
 
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> generate report for last month ["
-				<< cyng::chrono::month(tmp)
+				<< cyng::chrono::month(trigger_tp)
                 << "] over the last "
                 << d.count()
 				<< " days" );
 
-            base_.mux_.post(tsk_db_, 2, cyng::tuple_factory(tp, static_cast<std::int32_t>(d.count() + 1u)));
+			std::tm tmp = cyng::chrono::make_utc_tm(end);
 
+			base_.mux_.post(tsk_db_, 2
+				, cyng::tuple_factory(static_cast<std::int32_t>(cyng::chrono::year(tmp))
+					, static_cast<std::int32_t>(cyng::chrono::month(tmp))
+					, start
+					, end + offset_ + std::chrono::hours(24)));
 		}
-        else {
 
-            //
-            //	generate a file for the running month
-            //
+        //
+        //	generate a file for the running month
+        //
 
-            //
-            //	get current day
-            //
-            auto tp = std::chrono::system_clock::now();
+        //
+        //	get current day
+        //
+        auto const end = std::chrono::system_clock::now();
+		auto const start = end - std::chrono::hours(trigger_tp.tm_mday * 24);
 
-            CYNG_LOG_INFO(logger_, "task #"
-                << base_.get_id()
-                << " <"
-                << base_.get_class_name()
-                << "> generate report for this month ["
-                << cyng::chrono::month(tmp)
-                << "] over the last "
-                << tmp.tm_mday
-                << " days" );
+        CYNG_LOG_INFO(logger_, "task #"
+            << base_.get_id()
+            << " <"
+            << base_.get_class_name()
+            << "> generate report for this month ["
+            << cyng::chrono::month(trigger_tp)
+            << "] over the last "
+            << trigger_tp.tm_mday
+            << " days" );
 
-            base_.mux_.post(tsk_db_, 2, cyng::tuple_factory(tp, static_cast<std::int32_t>(tmp.tm_mday)));
+        base_.mux_.post(tsk_db_, 2, cyng::tuple_factory(static_cast<std::int32_t>(cyng::chrono::year(trigger_tp))
+			, static_cast<std::int32_t>(cyng::chrono::month(trigger_tp))
+			, start
+			, end));
 
-        }
 	}
 
 	void profile_24_h::generate_current_period()
@@ -170,7 +180,13 @@ namespace node
 			<< d.count()
 			<< " days");
 
-		base_.mux_.post(tsk_db_, 2, cyng::tuple_factory(next_trigger_tp_, d.count()));
+		std::tm tmp = cyng::chrono::make_utc_tm(next_trigger_tp_);
+		auto const start = next_trigger_tp_ - d;
+
+		base_.mux_.post(tsk_db_, 2, cyng::tuple_factory(static_cast<std::int32_t>(cyng::chrono::year(tmp))
+			, static_cast<std::int32_t>(cyng::chrono::month(tmp))
+			, start
+			, next_trigger_tp_));
 
 	}
 

@@ -224,17 +224,19 @@ namespace node
 	}
 
 	//	slot [2] - generate CSV file (24 h profile)
-	cyng::continuation storage_db::process(std::chrono::system_clock::time_point end
-		, std::int32_t days)
+	cyng::continuation storage_db::process(std::int32_t year
+		, std::int32_t month
+		, std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> generate 24 h profile until "
+			<< "> generate 24 h profile from "
+			<< cyng::to_str(start)
+			<< " until "
 			<< cyng::to_str(end)
-			<< " with "
-			<< days
 			<< " days");
 
 		if (!pool_.start(cfg_db_))
@@ -253,22 +255,19 @@ namespace node
 		}
 		else
 		{
-			CYNG_LOG_INFO(logger_, "DB connection pool is running with "
-				<< pool_.get_pool_size()
-				<< " connection(s)");
+			//CYNG_LOG_INFO(logger_, "DB connection pool is running with "
+			//	<< pool_.get_pool_size()
+			//	<< " connection(s)");
 
-			std::stringstream ss;
-			ss
-				<< "task #"
+			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> connection pool is running with "
 				<< pool_.get_pool_size()
-				<< " connection(s)"
+				<< " connection(s)")
 				;
 
-			//bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_DEBUG, ss.str()));
 
 			//
 			//	update task state
@@ -278,7 +277,17 @@ namespace node
 			//
 			//	generate CSV files
 			//
-			generate_csv_24h(end, (days < 29) ? 29 : days);
+			auto const now = std::chrono::system_clock::now();
+			generate_csv_24h(year, month, start, end);
+			auto const duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - now);
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> generating report took "
+				<< duration.count()
+				<< " second(s)");
 
 			//
 			//	update task state
@@ -418,8 +427,10 @@ namespace node
 
 	}
 
-	void storage_db::generate_csv_24h(std::chrono::system_clock::time_point end
-		, std::int32_t days)
+	void storage_db::generate_csv_24h(std::int32_t year
+		, std::int32_t month
+		, std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end)
 	{
 		auto pos = meta_map_.find("TSMLMeta");
 		if (pos != meta_map_.end())
@@ -440,7 +451,10 @@ namespace node
 			//
 			//	get all unique server/OBIS combinations in this time frame
 			//
-			auto start = end - std::chrono::hours(days * 24);
+			//auto start = end - std::chrono::hours(days * 24);
+
+			//std::cerr << std::endl << "end: " << cyng::to_str(end) << std::endl;
+			//std::cerr << std::endl << "start: " << cyng::to_str(start) << std::endl;
 
 			//
 			//	get all server ID in this time frame
@@ -448,13 +462,6 @@ namespace node
 			//
 			const auto profile_24_h = cyng::io::to_hex(sml::OBIS_PROFILE_24_HOUR.to_buffer());
 			std::vector<std::string> server_ids = get_server_ids(start, end, profile_24_h, cmd, stmt);
-
-//#ifdef __DEBUG
-//			std::vector<std::pair<std::string, std::string>> combinations = get_unique_server_obis_combinations(std::chrono::system_clock::now() - std::chrono::hours(24 * 30)
-//				, std::chrono::system_clock::now(), cmd, stmt);
-//#else
-//			std::vector<std::pair<std::string, std::string>> combinations = get_unique_server_obis_combinations(start, end, cmd, stmt);
-//#endif
 
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -472,12 +479,12 @@ namespace node
 			//
 			// update _CSV table
 			//
-			update_csv_24h(std::chrono::system_clock::now(), server_ids.size());
+			update_csv_24h(end, server_ids.size());
 
 			//
 			//	open output file
 			//
-			auto file = open_file_24_h_profile(end);
+			auto file = open_file_24_h_profile(year, month, server_ids.size(), start, end);
 			for (auto id : server_ids) {
 
 				//
@@ -967,11 +974,12 @@ namespace node
         return ofs;
 	}
 
-	std::ofstream storage_db::open_file_24_h_profile(std::chrono::system_clock::time_point end)
+	std::ofstream storage_db::open_file_24_h_profile(std::int32_t year
+		, std::int32_t month
+		, std::size_t srv_count
+		, std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end)
 	{
-		auto tt_end = std::chrono::system_clock::to_time_t(end);
-		std::tm time_end = cyng::chrono::convert_utc(tt_end);
-
 		boost::filesystem::path root_dir = cyng::find_value<std::string>(cfg_clock_month_, "root-dir", ".");
 		auto prefix = cyng::find_value<std::string>(cfg_clock_month_, "prefix", "smf-month-");
 		auto suffix = cyng::find_value<std::string>(cfg_clock_month_, "suffix", "csv");
@@ -982,10 +990,10 @@ namespace node
 			<< prefix
 			<< std::setfill('0')
 			<< '_'
-			<< cyng::chrono::year(time_end)
+			<< year
 			<< '-'
 			<< std::setw(2)
-			<< cyng::chrono::month(time_end)
+			<< month
 			<< '.'
 			<< suffix	//	.csv
 			;
@@ -995,7 +1003,20 @@ namespace node
         std::ofstream ofs(path.string());
         if (ofs.is_open()) {
 
-            bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_DEBUG, "update " + path.string()));
+			std::stringstream ss;
+			ss
+				<< "update/create "
+				<< path
+				<< " with "
+				<< srv_count
+				<< " meter(s) ["
+				<< cyng::to_str(start)
+				<< ", "
+				<< cyng::to_str(end)
+				<< "]"
+				;
+			auto const msg = ss.str();
+            bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_DEBUG, msg));
 
             //
             //	optional header
