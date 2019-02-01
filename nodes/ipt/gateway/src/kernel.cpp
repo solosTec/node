@@ -18,10 +18,13 @@
 #include <cyng/tuple_cast.hpp>
 #include <cyng/sys/memory.h>
 #include <cyng/io/swap.h>
+#include <cyng/io/io_buffer.h>
 
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
 #endif
+
+#include <boost/algorithm/string.hpp>
 
 namespace node
 {
@@ -38,7 +41,8 @@ namespace node
 			, std::string pwd, std::string manufacturer
 			, std::string model
 			, std::uint32_t serial
-			, cyng::mac48 mac)
+			, cyng::mac48 mac
+			, bool accept_all)
 		: status_word_(status_word)
 			, logger_(logger)
 			, config_db_(config_db)
@@ -49,6 +53,7 @@ namespace node
 			, manufacturer_(manufacturer)
 			, model_(model)
 			, serial_(serial)
+			, accept_all_(accept_all)
 			, server_id_(to_gateway_srv_id(mac))
 			, reader_()
 			, sml_gen_()
@@ -165,6 +170,7 @@ namespace node
 		void kernel::sml_public_open_request(cyng::context& ctx)
 		{
 			//	[34481794-6866-4776-8789-6f914b4e34e7,180301091943374505-1,0,005056c00008,00:15:3b:02:23:b3,20180301092332,operator,operator]
+			//	[874c991e-cfc0-4348-83ab-064f59363229,190131160312334117-1,0,005056C00008,0500FFB04B94F8,20190131160312,operator,operator]
 			//
 			//	* pk
 			//	* transaction id
@@ -175,26 +181,28 @@ namespace node
 			//	* username
 			//	* password
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_TRACE(logger_, "sml.public.open.request " << cyng::io::to_str(frame));
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 			auto const tpl = cyng::tuple_cast<
 				boost::uuids::uuid,	//	[0] pk
 				std::string,		//	[1] trx
 				std::size_t,		//	[2] SML message id
-				std::string,		//	[3] client ID
-				std::string,		//	[4] server ID
+				cyng::buffer_t,		//	[3] client ID
+				cyng::buffer_t,		//	[4] server ID
 				std::string,		//	[5] request file id
 				std::string,		//	[6] username
 				std::string			//	[7] password
 			>(frame);
+
+			//	sml.public.open.request - trx: 190131160312334117-1, msg id: 0, client id: , server id: , file id: 20190131160312, user: operator, pwd: operator
 			CYNG_LOG_INFO(logger_, "sml.public.open.request - trx: "
 				<< std::get<1>(tpl)
 				<< ", msg id: "
 				<< std::get<2>(tpl)
 				<< ", client id: "
-				<< std::get<3>(tpl)
+				<< cyng::io::to_hex(std::get<3>(tpl))
 				<< ", server id: "
-				<< std::get<4>(tpl)
+				<< cyng::io::to_hex(std::get<4>(tpl))
 				<< ", file id: "
 				<< std::get<5>(tpl)
 				<< ", user: "
@@ -202,6 +210,45 @@ namespace node
 				<< ", pwd: "
 				<< std::get<7>(tpl))
 				;
+
+			if (!accept_all_) {
+
+				//
+				//	test server ID
+				//
+				if (!boost::algorithm::equals(server_id_, std::get<4>(tpl))) {
+
+					sml_gen_.attention_msg(frame.at(1)	// trx
+						, std::get<4>(tpl)	//	server ID
+						, OBIS_ATTENTION_NO_SERVER_ID.to_buffer()
+						, "wrong server id"
+						, cyng::tuple_t());
+
+					CYNG_LOG_WARNING(logger_, "sml.public.open.request - wrong server ID: "
+						<< cyng::io::to_hex(std::get<4>(tpl)))
+						;
+					return;
+				}
+				//
+				//	test login credentials
+				//
+				if (!boost::algorithm::equals(account_, std::get<6>(tpl)) ||
+					!boost::algorithm::equals(pwd_, std::get<7>(tpl))) {
+
+					sml_gen_.attention_msg(frame.at(1)	// trx
+						, std::get<4>(tpl)	//	server ID
+						, OBIS_ATTENTION_NOT_AUTHORIZED.to_buffer()
+						, "login failed"
+						, cyng::tuple_t());
+
+					CYNG_LOG_WARNING(logger_, "sml.public.open.request - login failed: "
+						<< std::get<6>(tpl)
+						<< ":"
+						<< std::get<7>(tpl))
+						;
+					return;
+				}
+			}
 
 			//
 			//	linearize and set CRC16

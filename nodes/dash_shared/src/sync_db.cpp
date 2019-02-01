@@ -93,12 +93,13 @@ namespace node
 // 		{
 // 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
 // 		}
-		if (!db.create_table(cyng::table::make_meta_table<1, 11>("TMeter", { "pk"
+		if (!db.create_table(cyng::table::make_meta_table<1, 12>("TMeter", { "pk"
 			, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 			, "meter"		//	meter number (i.e. 16000913) 4 bytes 
+			, "code"		//	metering code - changed at 2019-01-31
 			, "maker"		//	manufacturer
 			, "tom"			//	time of manufacture
-			, "vFirmare"	//	firmwareversion (i.e. 11600000)
+			, "vFirmware"	//	firmwareversion (i.e. 11600000)
 			, "vParam"		//	parametrierversion (i.e. 16A098828.pse)
 			, "factoryNr"	//	fabrik nummer (i.e. 06441734)
 			, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
@@ -109,9 +110,10 @@ namespace node
 			{ cyng::TC_UUID
 			, cyng::TC_STRING		//	ident
 			, cyng::TC_STRING		//	meter
+			, cyng::TC_STRING		//	code
 			, cyng::TC_STRING		//	maker
 			, cyng::TC_TIME_POINT	//	tom
-			, cyng::TC_STRING		//	vFirmare
+			, cyng::TC_STRING		//	vFirmware
 			, cyng::TC_STRING		//	vParam
 			, cyng::TC_STRING		//	factoryNr
 			, cyng::TC_STRING		//	item
@@ -122,9 +124,10 @@ namespace node
 			{ 36
 			, 24	//	ident
 			, 8		//	meter
+			, 33	//	code - country[2], ident[11], number[22]
 			, 64	//	maker
 			, 0		//	tom
-			, 64	//	vFirmare
+			, 64	//	vFirmware
 			, 64	//	vParam
 			, 32	//	factoryNr
 			, 128	//	item
@@ -272,7 +275,7 @@ namespace node
 				//
 				//	TMeter contains an optional reference to TGateway table
 				//
-				auto key = cyng::table::key_generator(data.at(9));
+				auto key = cyng::table::key_generator(data.at(10));
 				auto dev_gw = tbl_gw->lookup(key);
 				
 				//
@@ -671,8 +674,8 @@ namespace node
 				//
 				//	TMeter contains an optional reference to TGateway table
 				//
-				auto key = cyng::table::key_generator(data.at(9));
-				auto dev_gw = tbl_gw->lookup(key);
+				auto const key_gw = cyng::table::key_generator(data.at(10));
+				auto const dev_gw = tbl_gw->lookup(key_gw);
 
 				//
 				//	set serverId

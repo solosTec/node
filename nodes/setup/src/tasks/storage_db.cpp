@@ -200,7 +200,10 @@ namespace node
 
 				auto stmt = s.create_statement();
 				std::pair<int, bool> r = stmt->prepare(sql);
-				boost::ignore_unused(r);    //  for release versions
+				//boost::ignore_unused(r);    //  for release versions
+				if (!r.second) {
+					CYNG_LOG_ERROR(logger_, "sql prepare failed: " << sql);
+				}
 
 				//
 				//	test 
@@ -332,7 +335,8 @@ namespace node
 				else if (boost::algorithm::equals(name, "TMeter"))
 				{
 					//	insert TMeter 
-                    meta->loop_body([&](cyng::table::column&& col) {
+					stmt->push(key.at(0), 36);	//	pk
+					meta->loop_body([&](cyng::table::column&& col) {
                         if (col.pos_ == 0) 	{
                             stmt->push(cyng::make_object(gen), col.width_);
                         }
@@ -693,11 +697,12 @@ namespace node
 		//	vFirmware: (i.e. 11600000)
 		//	item: artikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 		//	class: Metrological Class: A, B, C, Q3/Q1, ...
-		meta_map.emplace("TMeter", cyng::table::make_meta_table<1, 11>("TMeter",
+		meta_map.emplace("TMeter", cyng::table::make_meta_table<1, 12>("TMeter",
 			{ "pk"
 			, "gen"			//	generation
 			, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 			, "meter"		//	meter number (i.e. 16000913) 4 bytes 
+			, "code"		//	metering code - changed at 2019-01-31
 			, "maker"		//	manufacturer
 			, "tom"			//	time of manufacture
 			, "vFirmware"	//	firmware version (i.e. 11600000)
@@ -711,6 +716,7 @@ namespace node
 			, cyng::TC_UINT64		//	gen
 			, cyng::TC_STRING		//	ident
 			, cyng::TC_STRING		//	meter
+			, cyng::TC_STRING		//	code
 			, cyng::TC_STRING		//	maker
 			, cyng::TC_TIME_POINT	//	tom
 			, cyng::TC_STRING		//	vFirmware
@@ -724,6 +730,7 @@ namespace node
 			, 0		//	gen
 			, 24	//	ident
 			, 8		//	meter
+			, 33	//	code - country[2], ident[11], number[22]
 			, 64	//	maker
 			, 0		//	tom
 			, 64	//	vFirmware

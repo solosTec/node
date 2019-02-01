@@ -169,7 +169,8 @@ namespace node
 					, cyng::param_factory("tag", uidgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
-					
+					, cyng::param_factory("country-code", "CH")
+
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "7701")
@@ -289,6 +290,9 @@ namespace node
 		const boost::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
 		write_pid(log_dir, tag);
 #endif
+
+		auto const country_code = cyng::value_cast<std::string>(dom.get("country-code"), "CH");
+
 		//
 		//	create server
 		//
@@ -303,6 +307,7 @@ namespace node
         server srv(mux
 			, logger
 			, tag
+			, country_code
 			, cyng::value_cast<std::string>(dom["cluster"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["cluster"].get("pwd"), "")	//	ToDo: md5 + salt
 			, cyng::value_cast(dom["cluster"].get("monitor"), 60)

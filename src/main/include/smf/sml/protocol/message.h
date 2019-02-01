@@ -145,6 +145,14 @@ namespace node
 			, cyng::tuple_t val_list);
 
 		/**
+		 * Body of an attention response message
+		 */
+		cyng::tuple_t get_attention_response(cyng::buffer_t const& server_id
+			, cyng::buffer_t const& attention_nr
+			, std::string attention_msg
+			, cyng::tuple_t attention_details);
+
+		/**
 		 * Add SML trailer and tail
 		 */
 		cyng::buffer_t boxing(std::vector<cyng::buffer_t> const&);

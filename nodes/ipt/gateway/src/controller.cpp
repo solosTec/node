@@ -63,7 +63,8 @@ namespace node
 		, std::string manufacturer
 		, std::string model
 		, std::uint32_t serial
-		, cyng::mac48);
+		, cyng::mac48
+		, bool accept_all);
 	void init_config(cyng::logging::log_ptr logger, cyng::store::db&, boost::uuids::uuid, cyng::mac48);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
@@ -230,6 +231,7 @@ namespace node
 					, cyng::param_factory("tag", uidgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("log-pushdata", false)	//	log file for each channel
+					, cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
 
 					//	on this address the gateway acts as a server
 					//	configuration interface
@@ -402,6 +404,15 @@ namespace node
 		boost::ignore_unused(log_pushdata);
 
 		//
+		//	SML login
+		//
+		auto const accept_all = cyng::value_cast(dom.get("accept-all-ids"), false);
+		if (accept_all) {
+			CYNG_LOG_WARNING(logger, "Accepts all server IDs");
+		}
+
+
+		//
 		//	get configuration type
 		//
 		const auto config_types = cyng::vector_cast<std::string>(dom.get("output"), "");
@@ -427,9 +438,9 @@ namespace node
 		std::stringstream ss;
 		ss << cyng::generate_random_mac48();
 		ss >> rnd_mac_str;
-		const std::string mac = cyng::value_cast<std::string>(dom["hardware"].get("mac"), rnd_mac_str);
+		auto const mac = cyng::value_cast<std::string>(dom["hardware"].get("mac"), rnd_mac_str);
 
-		std::pair<cyng::mac48, bool > r = cyng::parse_mac48(mac);
+		std::pair<cyng::mac48, bool > const r = cyng::parse_mac48(mac);
 
 
 		CYNG_LOG_INFO(logger, "manufacturer: " << manufacturer);
@@ -437,6 +448,7 @@ namespace node
 		CYNG_LOG_INFO(logger, "dev_class: " << dev_class);
 		CYNG_LOG_INFO(logger, "serial: " << serial);
 		CYNG_LOG_INFO(logger, "mac: " << mac);
+		
 
 		/**
 		 * Global status word
@@ -482,7 +494,8 @@ namespace node
 			, manufacturer
 			, model
 			, serial
-			, r.first);
+			, r.first
+			, accept_all);
 
 		//
 		//	create server
@@ -498,7 +511,8 @@ namespace node
 			, manufacturer
 			, model
 			, serial
-			, r.first);
+			, r.first
+			, accept_all);
 
 		//
 		//	server runtime configuration
@@ -572,7 +586,8 @@ namespace node
 		, std::string manufacturer
 		, std::string model
 		, std::uint32_t serial
-		, cyng::mac48 mac)
+		, cyng::mac48 mac
+		, bool accept_all)
 	{
 		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg_ipt.size());
 
@@ -589,8 +604,8 @@ namespace node
 			, manufacturer
 			, model
 			, serial
-			, mac);
-
+			, mac
+			, accept_all);
 	}
 
 	void init_config(cyng::logging::log_ptr logger, cyng::store::db& config, boost::uuids::uuid tag, cyng::mac48 mac)

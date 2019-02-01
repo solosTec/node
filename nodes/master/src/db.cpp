@@ -12,16 +12,21 @@
 #include <cyng/table/meta.hpp>
 #include <cyng/intrinsics/traits/tag.hpp>
 #include <cyng/intrinsics/traits.hpp>
+
+#include <algorithm>
+
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/process/environment.hpp>
-#include <algorithm>
+#include <boost/algorithm/string.hpp>
+
 
 namespace node 
 {
 	void init(cyng::logging::log_ptr logger
 		, cyng::store::db& db
 		, boost::uuids::uuid tag
+		, std::string country_code
 		, boost::asio::ip::tcp::endpoint ep
 		, std::uint64_t global_config
 		, boost::filesystem::path stat_dir
@@ -132,6 +137,7 @@ namespace node
 				, cyng::table::key_generator(tag)
 				, cyng::table::data_generator("01-e61e-13090016-3c-07"
 					, "16000913"
+					, "CH9876501234500A7T839KH38O2D78R45"
 					, "ACME"	//	manufacturer
 					, std::chrono::system_clock::now()
 					, "11600000"
@@ -259,6 +265,7 @@ namespace node
 			db.insert("_Config", cyng::table::key_generator("catch-meters-default"), cyng::table::data_generator(catch_meters), 1, tag);
 
 			db.insert("_Config", cyng::table::key_generator("generate-time-series-dir"), cyng::table::data_generator(stat_dir.string()), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("country-code"), cyng::table::data_generator(country_code), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("max-messages"), cyng::table::data_generator(max_messages), 1, tag);
 
 
@@ -316,6 +323,24 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _LoRaUplink");
 		}
+	}
+
+	cyng::object get_config(cyng::store::db& db, std::string key)
+	{
+		cyng::object obj;
+		db.access([&obj, key](cyng::store::table const* tbl_cfg)->void {
+			obj = get_config(tbl_cfg, key);
+		}, cyng::store::read_access("_Config"));
+		return obj;
+	}
+
+	cyng::object get_config(cyng::store::table const* tbl, std::string key)
+	{
+		if (boost::algorithm::equals(tbl->meta().get_name(), "_Config")) {
+			auto const rec = tbl->lookup(cyng::table::key_generator(key));
+			if (!rec.empty())	return rec["value"];
+		}
+		return cyng::make_object();
 	}
 
 	void insert_msg(cyng::store::db& db

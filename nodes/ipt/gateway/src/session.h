@@ -35,7 +35,8 @@ namespace node
 				, std::string manufacturer
 				, std::string model
 				, std::uint32_t serial
-				, cyng::mac48 mac);
+				, cyng::mac48 mac
+				, bool accept_all);
 
 			session(session const&) = delete;
 			session& operator=(session const&) = delete;
@@ -73,8 +74,8 @@ namespace node
 			, std::string manufacturer
 			, std::string model
 			, std::uint32_t serial
-			, cyng::mac48 mac);
-
+			, cyng::mac48 mac
+			, bool accept_all);
 	}
 }
 

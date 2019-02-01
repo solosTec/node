@@ -1629,6 +1629,25 @@ namespace node
 					, val_list)));
 		}
 
+		std::size_t res_generator::attention_msg(cyng::object trx
+			, cyng::buffer_t const& server_id
+			, cyng::buffer_t const& attention_nr
+			, std::string attention_msg
+			, cyng::tuple_t attention_details)
+		{
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_ATTENTION_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_attention_response(server_id
+					, attention_nr
+					, attention_msg
+					, attention_details)));
+		}
 
 		trx::trx()
 			: rng_()

@@ -1741,7 +1741,7 @@ namespace node
 								//	visible/active device
 					cyng::param_map_factory("number", vec.at(5))
 						("ident", node::sml::from_server_id(meter))
-						("meter", node::sml::from_server_id(meter))
+						("meter", node::sml::get_serial(meter))
 						("meterId", meter)
 						("class", vec.at(7))
 						("timestamp", vec.at(8))

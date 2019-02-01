@@ -35,9 +35,14 @@ set (node_lora_tasks
 	nodes/lora/src/tasks/cluster.cpp
 )
 
-set (node_lora_res
+set (node_lora_assets
+	nodes/lora/src/assets/index.html
 )
 	
+set (node_lora_examples
+	nodes/lora/src/examples/example.xml
+)
+
 if(WIN32)
 
 	set (node_lora_service
@@ -57,9 +62,10 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_lora_tasks})
-source_group("resources" FILES ${node_lora_res})
 source_group("service" FILES ${node_lora_service})
 source_group("resources" FILES ${node_lora_info})
+source_group("assets" FILES ${node_lora_assets})
+source_group("examples" FILES ${node_lora_examples})
 
 
 # define the main program
@@ -70,6 +76,8 @@ set (node_lora
   ${node_lora_res}
   ${node_lora_service}
   ${node_lora_info}
+  ${node_lora_assets}
+  ${node_lora_examples}
 )
 
 

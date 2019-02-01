@@ -30,11 +30,12 @@ namespace node
 			, std::string manufacturer
 			, std::string model
 			, std::uint32_t serial
-			, cyng::mac48 mac)
-			: socket_(std::move(socket))
+			, cyng::mac48 mac
+			, bool accept_all)
+		: socket_(std::move(socket))
 			, logger_(logger)
 			, buffer_()
-			, session_(make_session(mux, logger, status_word, config_db, cfg, account, pwd, manufacturer, model, serial, mac))
+			, session_(make_session(mux, logger, status_word, config_db, cfg, account, pwd, manufacturer, model, serial, mac, accept_all))
 			, serializer_(socket_, this->get_session()->vm_)
 		{
 			//

@@ -33,7 +33,8 @@ namespace node
 			, std::string manufacturer
 			, std::string model
 			, std::uint32_t serial
-			, cyng::mac48);
+			, cyng::mac48
+			, bool accept_all);
 
 		/**
 		* start listening
@@ -78,10 +79,11 @@ namespace node
 		//
 		//	hardware
 		//
-		const std::string manufacturer_;
-		const std::string model_;
-		const std::uint32_t serial_;
-		const cyng::mac48 server_id_;
+		std::string const manufacturer_;
+		std::string const model_;
+		std::uint32_t const serial_;
+		cyng::mac48 const server_id_;
+		bool const accept_all_;
 
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor acceptor_;

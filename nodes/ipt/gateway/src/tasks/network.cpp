@@ -37,7 +37,8 @@ namespace node
 			, std::string manufacturer
 			, std::string model
 			, std::uint32_t serial
-			, cyng::mac48 mac)
+			, cyng::mac48 mac
+			, bool accept_all)
 		: bus(logger
 			, btp->mux_
 			, tag	//, boost::uuids::random_generator()()
@@ -66,7 +67,8 @@ namespace node
 				, manufacturer
 				, model
 				, serial
-				, mac)
+				, mac
+				, accept_all)
 			, exec_(logger, btp->mux_, status_word, config_db, vm_, mac)
 			, seq_open_channel_map_()
 		{

@@ -42,7 +42,8 @@ namespace node
 				, std::string manufacturer
 				, std::string model
 				, std::uint32_t serial
-				, cyng::mac48 mac);
+				, cyng::mac48 mac
+				, bool accept_all);
 			cyng::continuation run();
 			void stop();
 

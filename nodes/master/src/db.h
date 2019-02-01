@@ -17,6 +17,7 @@ namespace node
 	void init(cyng::logging::log_ptr logger
 		, cyng::store::db&
 		, boost::uuids::uuid tag
+		, std::string country_code
 		, boost::asio::ip::tcp::endpoint
 		, std::uint64_t global_config
 		, boost::filesystem::path stat_dir
@@ -64,6 +65,13 @@ namespace node
 	bool connection_erase(cyng::store::table* tbl, cyng::table::key_type&& key, boost::uuids::uuid tag);
 
 	/**
+	 * Get value from "_Config" table. 
+	 * Set e read lock on "_Config" table. 
+	 */
+	cyng::object get_config(cyng::store::db& db, std::string key);
+	cyng::object get_config(cyng::store::table const* tbl, std::string key);
+
+	/**
 	 * Define configuration bits
 	 */
 	enum system_config : std::uint64_t
@@ -86,6 +94,7 @@ namespace node
 	bool set_connection_superseed(std::atomic<std::uint64_t>&, bool);
 	bool set_generate_time_series(std::atomic<std::uint64_t>&, bool);
 	bool set_catch_meters(std::atomic<std::uint64_t>&, bool);
+
 }
 
 #endif

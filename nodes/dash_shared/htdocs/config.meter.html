@@ -107,18 +107,19 @@
         <table id="smf-table-meter" class="table table-condensed table-striped table-bordered" cellspacing="0">
             <thead>
                 <tr>
-                    <th class="sml-col-meter-pk">UUID</th>
-                    <th class="sml-col-meter-ident">Ident</th>
-                    <th class="sml-col-meter-meter">Meter</th>
-                    <th class="sml-col-meter-maker">Manufacturer</th>
-                    <th class="sml-col-meter-tom">TOM</th>
-                    <th class="sml-col-meter-fw">Firmware</th>
-                    <th class="sml-col-meter-param">Parameterization</th>
-                    <th class="sml-col-meter-fn">Factory Nr.</th>
-                    <th class="sml-col-meter-item">Item</th>
-                    <th class="sml-col-meter-class">Metrol. Class</th>
-                    <th class="sml-col-meter-serverId">Server ID</th>
-                    <th class="sml-col-meter-gw-key">Gateway Key</th>
+                    <th class="sml-col-meter-pk">UUID</th>              <!--0-->
+                    <th class="sml-col-meter-ident">Ident</th>          <!--1-->
+                    <th class="sml-col-meter-meter">Meter ID</th>       <!--2-->
+                    <th class="sml-col-meter-code">Meter Code</th>      <!--3-->
+                    <th class="sml-col-meter-maker">Manufacturer</th>   <!--4-->
+                    <th class="sml-col-meter-tom">TOM</th>              <!--5-->
+                    <th class="sml-col-meter-fw">Firmware</th>          <!--6-->
+                    <th class="sml-col-meter-param">Parameterization</th>          <!--7-->
+                    <th class="sml-col-meter-fn">Factory Nr.</th>       <!--8-->
+                    <th class="sml-col-meter-item">Item</th>            <!--9-->
+                    <th class="sml-col-meter-class">Metrol. Class</th>  <!--10-->
+                    <th class="sml-col-meter-serverId">Server ID</th>   <!--11-->
+                    <th class="sml-col-meter-gw-key">Gateway Key</th>   <!--12-->
                 </tr>
             </thead>
         </table>
@@ -145,14 +146,24 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label class="control-label" for="smf-form-meter-ident">Ident</label>
-                            <input id="smf-form-meter-ident" name="smf-form-meter-ident" type="text" placeholder="<Ident>" class="form-control input-md" required>
+                            <input id="smf-form-meter-ident" name="smf-form-meter-ident" type="text" placeholder="<Ident>" class="form-control input-md" maxlength="22" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-meter">Meter</label>
+                            <input id="smf-form-meter-meter" name="smf-form-meter-meter" type="text" placeholder="<Meter>" class="form-control input-md" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="smf-form-meter-code">Metering Code</label>
+                            <input id="smf-form-meter-code" name="smf-form-meter-code" type="text" placeholder="<Metering Code>" class="form-control input-md" maxlength="33">
                         </div>
                         <div class="form-group col-md-6">
                             <label class="control-label" for="smf-form-meter-manufacturer">Manufacturer</label>
                             <input id="smf-form-meter-manufacturer" name="smf-form-meter-manufacturer" type="text" placeholder="<Manufacturer>" class="form-control input-md">
                         </div>
                     </div>
-
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
@@ -283,10 +294,12 @@
                 { targets: 'sml-col-meter-pk', visible: false, name: 'meter-pk' },
                 { targets: 'sml-col-meter-ident', visible: true, name: 'meter-ident' },
                 { targets: 'sml-col-meter-meter', visible: true, name: 'meter-meter' },
+                { targets: 'sml-col-meter-code', visible: true, name: 'meter-code' },
                 { targets: 'sml-col-meter-maker', visible: true, name: 'meter-maker' },
                 { targets: 'sml-col-meter-tom', visible: true, name: 'meter-tom', render: renderDate },
                 { targets: 'sml-col-meter-fw', visible: true, name: 'meter-fw' },
-                { targets: 'sml-col-meter-fn', visible: true, name: 'meter-fn' },
+                { targets: 'sml-col-meter-param', visible: false, name: 'meter-param' },
+                { targets: 'sml-col-meter-fn', visible: false, name: 'meter-fn' },
                 { targets: 'sml-col-meter-item', visible: true, name: 'meter-item' },
                 { targets: 'sml-col-meter-class', visible: false, name: 'meter-class' },
                 { targets: 'sml-col-meter-serverId', visible: true, name: 'meter-serverId' },
@@ -307,19 +320,22 @@
 
                 $('#smf-form-meter-tag').val(rowData[0]);
                 $('#smf-form-meter-ident').val(rowData[1]);
-                $('#smf-form-meter-manufacturer').val(rowData[3]);
-                $('#smf-form-meter-tom').val(rowData[4].toISOString().substring(0, 10));
+                $('#smf-form-meter-meter').val(rowData[2]);
+                $('#smf-form-meter-code').val(rowData[3])
+                $('#smf-form-meter-manufacturer').val(rowData[4]);
+                $('#smf-form-meter-tom').val(rowData[5].toISOString().substring(0, 10));
                 //$('#smf-form-meter-tom').val("2018-01-01");
-                $('#smf-form-meter-fw').val(rowData[5]);
-                $('#smf-form-meter-param').val(rowData[6]);
-                $('#smf-form-meter-factory-nr').val(rowData[7]);
-                $('#smf-form-meter-item').val(rowData[8]);
-                $('#smf-form-meter-class').val(rowData[9]);
 
-                $('#smf-form-meter-serverId').val(rowData[10]);
-                $('#smf-form-meter-gw-key').val(rowData[11]);
+                $('#smf-form-meter-fw').val(rowData[6]);
+                $('#smf-form-meter-param').val(rowData[7]);
+                $('#smf-form-meter-factory-nr').val(rowData[8]);
+                $('#smf-form-meter-item').val(rowData[9]);
+                $('#smf-form-meter-class').val(rowData[10]);
 
-                $('#smf-form-meter-query-name').html('<abbr title=' + rowData[10] + ' class="font-italic">' + rowData[1] + '</abbr>');
+                $('#smf-form-meter-serverId').val(rowData[11]);
+                $('#smf-form-meter-gw-key').val(rowData[12]);
+
+                $('#smf-form-meter-delete-name').html('<abbr title=' + rowData[0] + ' class="font-italic">' + rowData[1] + '</abbr>');
 
             }); //  onSelect()
 
@@ -364,6 +380,7 @@
                                 var ident = $('<div/>').text(obj.rec.data.ident).html();
                                 var meter = $('<div/>').text(obj.rec.data.meter).html();
                                 var maker = $('<div/>').text(obj.rec.data.maker).html();
+                                var code = $('<div/>').text(obj.rec.data.code).html();
                                 var tom = new Date(obj.rec.data.tom.substring(0, 19));
                                 var firmware = $('<div/>').text(obj.rec.data.vFirmware).html();
                                 var vParam = $('<div/>').text(obj.rec.data.vParam).html();
@@ -373,7 +390,7 @@
                                 var mClass = $('<div/>').text(obj.rec.data.mClass).html();
                                 var serverId = $('<div/>').text(obj.rec.data.serverId).html();
                                 var gw = $('<div/>').text(obj.rec.data.gw).html();
-                                var rowNode = table_meter.row.add([obj.rec.key.pk, ident, meter, maker, tom, firmware, vParam, factoryNr, item, mClass, serverId, gw]).draw().node();
+                                var rowNode = table_meter.row.add([obj.rec.key.pk, ident, meter, code, maker, tom, firmware, vParam, factoryNr, item, mClass, serverId, gw]).draw().node();
                             }
                             else if (obj.cmd == 'delete') {
                                 //  {"cmd": "delete", "channel": "config.meter", "key": ["85c02cea-52fb-44bf-ade4-8a827e1bbc46"]}
@@ -393,26 +410,32 @@
                                     if (data[0] == obj.key) {
                                         var r = table_meter.row(node);
                                         var d = r.data();
-                                        if (obj.value.maker != null) {
-                                            d[3] = obj.value.maker;
+                                        if (obj.value.ident != null) {
+                                            d[1] = obj.value.ident;
+                                        }
+                                        else if (obj.value.meter != null) {
+                                            d[2] = obj.value.meter;
+                                        }
+                                        else if (obj.value.maker != null) {
+                                            d[4] = obj.value.maker;
                                         }
                                         else if (obj.value.vFirmware != null) {
-                                            d[5] = obj.value.vFirmware;
+                                            d[6] = obj.value.vFirmware;
                                         }
                                         else if (obj.value.vParam != null) {
-                                            d[6] = obj.value.vParam;
+                                            d[7] = obj.value.vParam;
                                         }
                                         else if (obj.value.factoryNr != null) {
-                                            d[7] = obj.value.factoryNr;
+                                            d[8] = obj.value.factoryNr;
                                         }
                                         else if (obj.value.item != null) {
-                                            d[8] = obj.value.item;
+                                            d[9] = obj.value.item;
                                         }
                                         else if (obj.value.mClass != null) {
-                                            d[9] = obj.value.mClass;
+                                            d[10] = obj.value.mClass;
                                         }
                                         else if (obj.value.serverId != null) {
-                                            d[10] = obj.value.serverId;
+                                            d[11] = obj.value.serverId;
                                         }
                                         r.data(d);
                                         return true;
@@ -492,6 +515,7 @@
                         key: [$('#smf-form-meter-tag').val()],
                         data: {
                             ident: $('#smf-form-meter-ident').val(),
+                            code: $('#smf-form-meter-code').val(),
                             maker: $('#smf-form-meter-manufacturer').val(),
                             vFirmware: $('#smf-form-meter-fw').val(),
                             vParam: $('#smf-form-meter-param').val(),

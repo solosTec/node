@@ -435,6 +435,16 @@ namespace node
 				, cyng::tuple_t act_sensor_time
 				, cyng::tuple_t act_gateway_time
 				, cyng::tuple_t val_list);
+
+			/**
+			 * produce an attention message
+			 */
+			std::size_t attention_msg(cyng::object trx
+				, cyng::buffer_t const& server_id
+				, cyng::buffer_t const& attention_nr
+				, std::string attention_msg
+				, cyng::tuple_t attention_details);
+
 		};
 
 	}

@@ -184,12 +184,12 @@ namespace node
 		if (boost::algorithm::equals(std::get<7>(tpl), "root-active-devices")) {
 
 			//
-			//	Use the incoming active devices to populate TMeter table
+			//	Use the incoming active meter devices to populate TMeter table
 			//
 
 			//	%(("class":---),("ident":01-e61e-13090016-3c-07),("number":0009),("timestamp":2018-11-07 12:04:46.00000000),("type":00000000))
 			const auto ident = cyng::find_value<std::string>(std::get<8>(tpl), "ident", "");
-			const auto meter = cyng::find_value<std::string>(std::get<8>(tpl), "meter", "");
+			const auto meter = cyng::find_value<std::string>(std::get<8>(tpl), "meter", ident);
 			const auto maker = cyng::find_value<std::string>(std::get<8>(tpl), "maker", "");
 			const auto class_name = cyng::find_value<std::string>(std::get<8>(tpl), "class", "A");
 			const auto type = cyng::find_value<std::uint32_t>(std::get<8>(tpl), "type", 0u);
@@ -202,15 +202,21 @@ namespace node
 			//	* meter type is SRV_MBUS or SRV_SERIAL - see node::sml::get_srv_type()
 			//	* TGateway key has correct size (and is not empty)
 			//
-			if (is_catch_meters(global_configuration_) && (type < 2) && std::get<3>(tpl).size() == 1)
+			//	Additionally:
+			//	* meters from gateways are unique by meter number ("meter") AND gateway (gw)
+			//
+			if (is_catch_meters(global_configuration_)	//	auto insert meters is true
+				&& (type < 2)	//	 meter type is SRV_MBUS or SRV_SERIAL
+				&& std::get<3>(tpl).size() == 1)	//	TGateway key has correct size (and is not empty)
 			{
 				CYNG_LOG_TRACE(logger_, "update TMeter " << ident);
 
-				db_.access([&](cyng::store::table* tbl_meter)->void {
+				db_.access([&](cyng::store::table* tbl_meter, cyng::store::table const* tbl_cfg)->void {
 					bool found{ false };
 					tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
 
 						const auto rec_ident = cyng::value_cast<std::string>(rec["ident"], "");
+						CYNG_LOG_TRACE(logger_, "compare " << ident << " / " << rec_ident);
 						if (boost::algorithm::equals(ident, rec_ident)) {
 							//	abort loop
 							found = true;
@@ -222,14 +228,39 @@ namespace node
 
 					if (!found) {
 						const auto tag = uidgen_();
-						CYNG_LOG_INFO(logger_, "insert TMeter " << tag << " : " << meter);
+
+						//
+						//	generate meter code
+						//
+						std::stringstream ss;
+						ss
+							<< cyng::value_cast<std::string>(get_config(tbl_cfg, "country-code"), "AU")
+							<< std::setfill('0')
+							//<< std::setw(11)
+							<< 0	//	1
+							<< 0	//	2
+							<< 0	//	3
+							<< 0	//	4
+							<< 0	//	5
+							<< +tag.data[15]	//	6
+							<< +tag.data[14]	//	7
+							<< +tag.data[13]	//	8
+							<< +tag.data[12]	//	9
+							<< +tag.data[11]	//	10
+							<< +tag.data[10]	//	11
+							<< std::setw(20)
+							<< meter
+							;
+						const auto mc = ss.str();
+						CYNG_LOG_INFO(logger_, "insert TMeter " << tag << " : " << meter << " mc: " << mc);
 
 						tbl_meter->insert(cyng::table::key_generator(tag)
-							, cyng::table::data_generator(ident, meter, maker, age, "", "", "", "", class_name, std::get<3>(tpl).front())
+							, cyng::table::data_generator(ident, meter, mc, maker, age, "", "", "", "", class_name, std::get<3>(tpl).front())
 							, 0
 							, std::get<1>(tpl));
 					}
-				}, cyng::store::write_access("TMeter"));
+				}	, cyng::store::write_access("TMeter")
+					, cyng::store::read_access("_Config"));
 			}
 		}
 		else if (boost::algorithm::equals(std::get<4>(tpl), "root-wMBus-status")) {
@@ -247,7 +278,6 @@ namespace node
 				tbl_gw->modify(std::get<3>(tpl), cyng::param_factory("mbus", id), std::get<1>(tpl));
 			}, cyng::store::write_access("TGateway"));
 		}
-
 	}
 
 	void cluster::bus_res_attention_code(cyng::context& ctx)

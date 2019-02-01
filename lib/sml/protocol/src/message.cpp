@@ -189,6 +189,23 @@ namespace node
 				, act_gateway_time);
 		}
 
+		cyng::tuple_t get_attention_response(cyng::buffer_t const& server_id
+			, cyng::buffer_t const& attention_nr
+			, std::string attention_msg
+			, cyng::tuple_t attention_details)
+		{
+			return (attention_details.empty())	
+				? cyng::tuple_factory(server_id
+					, attention_nr
+					, attention_msg
+					, cyng::null())
+				: cyng::tuple_factory(server_id
+					, attention_nr
+					, attention_msg
+					, attention_details)
+				;
+		}
+
 		cyng::buffer_t boxing(std::vector<cyng::buffer_t> const& inp)
 		{
 			//

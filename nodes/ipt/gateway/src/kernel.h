@@ -40,7 +40,8 @@ namespace node
 				, std::string manufacturer
 				, std::string model
 				, std::uint32_t serial
-				, cyng::mac48 mac);
+				, cyng::mac48 mac
+				, bool accept_all);
 
 			/**
 			* reset kernel
@@ -90,17 +91,18 @@ namespace node
 			cyng::store::db& config_db_;
 			node::ipt::redundancy cfg_ipt_;
 
-			const bool server_mode_;
-			const std::string account_;
-			const std::string pwd_;
+			bool const server_mode_;
+			std::string const account_;
+			std::string const pwd_;
 
 			//
 			//	hardware
 			//
-			const std::string manufacturer_;
-			const std::string model_;
-			const std::uint32_t serial_;
-			const cyng::buffer_t server_id_;
+			std::string const manufacturer_;
+			std::string const model_;
+			std::uint32_t const serial_;
+			cyng::buffer_t const server_id_;
+			bool const accept_all_;
 
 			/**
 			 * read SML tree and generate commands

@@ -14,7 +14,6 @@
 #include <unordered_map>
 #include <atomic>
 #include <boost/version.hpp>
-//#include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
 
 namespace node 
@@ -25,6 +24,7 @@ namespace node
 		server(cyng::async::mux&
 			, cyng::logging::log_ptr logger
 			, boost::uuids::uuid
+			, std::string country_code
 			, std::string account
 			, std::string pwd
 			, int monitor
@@ -56,11 +56,13 @@ namespace node
 		cyng::logging::log_ptr logger_;
 
 		//	master tag
-		const boost::uuids::uuid tag_;	
+		boost::uuids::uuid const tag_;
+		std::string const country_code_;
+
 		//	credentials
-		const std::string account_;
-		const std::string pwd_;
-		const std::chrono::seconds monitor_;	//!< cluster monitor
+		std::string const account_;
+		std::string const pwd_;
+		std::chrono::seconds const monitor_;	//!< cluster monitor
 
 		//	global configuration parameters
 		std::atomic<std::uint64_t>	global_configuration_;

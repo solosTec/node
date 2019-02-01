@@ -318,7 +318,7 @@ namespace node
 
 				cyng::vector_t vec;
 				vec = cyng::value_cast(reader["rec"].get("key"), vec);
-				BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
+				BOOST_ASSERT_MSG(vec.size() == 1, "TMeter key has wrong size");
 
 				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
 				//CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");

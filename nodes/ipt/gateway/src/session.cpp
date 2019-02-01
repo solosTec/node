@@ -27,7 +27,8 @@ namespace node
 			, std::string manufacturer
 			, std::string model
 			, std::uint32_t serial
-			, cyng::mac48 mac)
+			, cyng::mac48 mac
+			, bool accept_all)
 		: mux_(mux)
 			, logger_(logger)
 			, vm_(mux.get_io_service(), boost::uuids::random_generator()())
@@ -47,7 +48,8 @@ namespace node
 				, manufacturer
 				, model
 				, serial
-				, mac)
+				, mac
+				, accept_all)	//	check credendials
 		{
 			//
 			//	this external interface
@@ -77,9 +79,10 @@ namespace node
 			, std::string manufacturer
 			, std::string model
 			, std::uint32_t serial
-			, cyng::mac48 mac)
+			, cyng::mac48 mac
+			, bool accept_all)
 		{
-			return cyng::make_object<session>(mux, logger, status_word, config_db, cfg, account, pwd, manufacturer, model, serial, mac);
+			return cyng::make_object<session>(mux, logger, status_word, config_db, cfg, account, pwd, manufacturer, model, serial, mac, accept_all);
 		}
 
 	}

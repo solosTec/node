@@ -24,7 +24,8 @@ namespace node
 		, std::string manufacturer
 		, std::string model
 		, std::uint32_t serial
-		, cyng::mac48 mac)
+		, cyng::mac48 mac
+		, bool accept_all)
 	: mux_(mux)
 		, logger_(logger)
 		, status_word_(status_word)
@@ -36,6 +37,7 @@ namespace node
 		, model_(model)
 		, serial_(serial)
 		, server_id_(mac)
+		, accept_all_(accept_all)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
 		, socket_(io_ctx_)
@@ -95,7 +97,8 @@ namespace node
 					, manufacturer_
 					, model_
 					, serial_
-					, server_id_)->start();
+					, server_id_
+					, accept_all_)->start();
 
 				do_accept();
 			}

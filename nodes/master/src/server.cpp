@@ -16,6 +16,7 @@ namespace node
 	server::server(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid tag
+		, std::string country_code
 		, std::string account
 		, std::string pwd
 		, int monitor	//	cluster
@@ -23,6 +24,7 @@ namespace node
 	: mux_(mux)
 		, logger_(logger)
 		, tag_(tag)
+		, country_code_(country_code)
 		, account_(account)
 		, pwd_(pwd)
 		, monitor_(monitor)
@@ -55,6 +57,8 @@ namespace node
 		const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 		stat_dir_ = cyng::value_cast(dom.get("stat-dir"), tmp.string());
 		CYNG_LOG_INFO(logger_, "store statistics data at " << stat_dir_);
+
+		CYNG_LOG_TRACE(logger_, "country code" << country_code);
 
 		max_messages_ = cyng::value_cast<std::uint64_t>(dom.get("ax-messages"), max_messages_);
 		CYNG_LOG_INFO(logger_, "store max. " << max_messages_ << " messages");
@@ -89,6 +93,7 @@ namespace node
 			init(logger_
 				, db_
 				, tag_
+				, country_code_
 				, acceptor_.local_endpoint()
 				, global_configuration_.load()
 				, stat_dir_
