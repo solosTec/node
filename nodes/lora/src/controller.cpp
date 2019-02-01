@@ -219,7 +219,8 @@ namespace node
 						//185.244.25.187
 						cyng::param_factory("blacklist", cyng::vector_factory({
 							cyng::make_address("185.244.25.187"),	//	KV Solutions B.V. scans for login.cgi
-							cyng::make_address("139.219.100.104")	//	ISP Microsoft (China) Co. Ltd. - 2018-07-31T21:14
+							cyng::make_address("139.219.100.104"),	//	ISP Microsoft (China) Co. Ltd. - 2018-07-31T21:14
+							cyng::make_address("194.147.32.109")	//	Udovikhin Evgenii - 2019-02-01 15:23:08.13699453
 							})),	//	blacklist
 
 						cyng::param_factory("redirect", cyng::vector_factory({
