@@ -405,7 +405,7 @@ namespace node
 
 	void insert_lora_uplink(cyng::store::db& db
 		, std::chrono::system_clock::time_point tp
-		, std::string const& devEUI
+		, cyng::mac64 devEUI
 		, std::uint16_t FPort
 		, std::uint32_t FCntUp
 		, std::uint32_t ADRbit
@@ -431,7 +431,7 @@ namespace node
 
 	void insert_lora_uplink(cyng::store::table* tbl
 		, std::chrono::system_clock::time_point tp
-		, std::string const& devEUI
+		, cyng::mac64 devEUI
 		, std::uint16_t FPort
 		, std::uint32_t FCntUp
 		, std::uint32_t ADRbit

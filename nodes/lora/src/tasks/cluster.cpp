@@ -37,8 +37,8 @@ namespace node
 			, ad
 			, blacklist
 			, bus_->vm_)
-		, processor_(logger, btp->mux_.get_io_service(), tag, bus_)
 		, cache_()
+		, processor_(logger, cache_, btp->mux_.get_io_service(), tag, bus_)
 		, dispatcher_(logger, cache_)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
@@ -125,6 +125,7 @@ namespace node
 		//	sync tables
 		//
 		sync_table("TLoRaDevice");
+		sync_table("_Config");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

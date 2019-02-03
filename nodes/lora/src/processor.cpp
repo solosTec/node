@@ -8,16 +8,26 @@
 #include "processor.h"
 #include <smf/cluster/generator.h>
 #include <smf/lora/payload/parser.h>
+
 #include <cyng/vm/generator.h>
 #include <cyng/table/key.hpp>
 #include <cyng/table/body.hpp>
 #include <cyng/parser/chrono_parser.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/parser/mac_parser.h>
+#include <cyng/io/serializer.h>
 
 namespace node
 {
-	processor::processor(cyng::logging::log_ptr logger, cyng::io_service_t& ios, boost::uuids::uuid tag, bus::shared_type bus, std::ostream& ostream, std::ostream& estream)
-		: logger_(logger)
+	processor::processor(cyng::logging::log_ptr logger
+		, cyng::store::db& cache
+		, cyng::io_service_t& ios
+		, boost::uuids::uuid tag
+		, bus::shared_type bus
+		, std::ostream& ostream
+		, std::ostream& estream)
+	: logger_(logger)
+		, cache_(cache)
 		, vm_(ios, tag, ostream, estream)
 		, bus_(bus)
 		, uidgen_()
@@ -281,8 +291,17 @@ namespace node
 	void processor::process_uplink_msg(pugi::xml_document const& doc, pugi::xml_node node)
 	{
 		std::string const dev_eui(node.child("DevEUI").child_value());
+		std::pair<cyng::mac64, bool > const r = cyng::parse_mac64(dev_eui);
 
-		CYNG_LOG_TRACE(logger_, "DevEUI: " << dev_eui);
+		if (r.second) {
+			using cyng::io::operator<<;
+			std::stringstream ss;
+			ss << r.first;
+			CYNG_LOG_TRACE(logger_, "DevEUI: " << ss.str());
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "DevEUI: " << dev_eui);
+		}
 
 		auto tp = cyng::parse_rfc3339_obj(node.child("Time").child_value());
 		CYNG_LOG_TRACE(logger_, "roTime: " 
@@ -329,6 +348,20 @@ namespace node
 			, bus_->vm_.tag()));
 
 		//
+		//	lookup configured LoRa devices
+		//
+		if (r.second) {
+			auto [aes_key, driver, found] = lookup(r.first);
+			if (!found) {
+				CYNG_LOG_WARNING(logger_, "DevEUI " << dev_eui << " is not configured");
+
+			}
+			else {
+				CYNG_LOG_TRACE(logger_, "decode DevEUI " << dev_eui << " with driver " << driver);
+			}
+		}
+
+		//
 		//	extract payload
 		//
 		std::string const raw{ node.child("payload_hex").child_value() };
@@ -363,7 +396,7 @@ namespace node
 		//	generate a LoRa uplink event
 		//
 		bus_->vm_.async_run(bus_insert_LoRa_uplink(tp
-			, dev_eui
+			, r.first
 			, FPort
 			, FCntUp
 			, ADRbit
@@ -378,6 +411,24 @@ namespace node
 	void processor::process_localisation_msg(pugi::xml_document const& doc, pugi::xml_node node)
 	{
 
+	}
+
+	std::tuple<std::string, std::string, bool> processor::lookup(cyng::mac64 eui)
+	{
+		std::string aes_key;
+		std::string driver;
+		bool found = false;
+		cache_.access([&](cyng::store::table const* tbl)->void {
+
+			auto const rec = tbl->lookup(cyng::table::key_generator(eui));
+			if (!rec.empty()) {
+				aes_key = cyng::value_cast<std::string>(rec["AESKey"], "");
+				driver = cyng::value_cast<std::string>(rec["driver"], "");
+				found = true;
+			}
+		}, cyng::store::read_access("TLoRaDevice"));
+
+		return std::make_tuple(aes_key, driver, found);
 	}
 
 	void processor::http_upload_progress(cyng::context& ctx)

@@ -10,6 +10,7 @@
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/bus.h>
+#include <cyng/store/db.h>
 
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
@@ -22,7 +23,7 @@ namespace node
 	class processor
 	{
 	public:
-		processor(cyng::logging::log_ptr, cyng::io_service_t&, boost::uuids::uuid tag, bus::shared_type, std::ostream& = std::cout, std::ostream& = std::cerr);
+		processor(cyng::logging::log_ptr, cyng::store::db&, cyng::io_service_t&, boost::uuids::uuid tag, bus::shared_type, std::ostream& = std::cout, std::ostream& = std::cerr);
 
 		cyng::controller& vm();
 
@@ -41,9 +42,11 @@ namespace node
 		void write_db(pugi::xml_node node, cyng::buffer_t const& payload);
 
 		void parse_xml(std::string const*);
+		std::tuple<std::string, std::string, bool> lookup(cyng::mac64);
 
 	private:
 		cyng::logging::log_ptr logger_;
+		cyng::store::db& cache_;
 		cyng::controller vm_;
 		bus::shared_type bus_;
 		boost::uuids::random_generator_mt19937 uidgen_;

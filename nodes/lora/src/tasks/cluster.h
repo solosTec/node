@@ -77,12 +77,12 @@ namespace node
 		 * the HTTPS server
 		 */
 		https::server	server_;
-		processor processor_;
 
 		/**
 		 * global data cache
 		 */
 		cyng::store::db cache_;
+		processor processor_;
 
 		dispatcher	dispatcher_;
 	};

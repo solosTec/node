@@ -1002,7 +1002,7 @@ namespace node
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,			//	[0] origin client tag
 			std::chrono::system_clock::time_point,	//	[1] tp
-			std::string,					//	[2] devEUI
+			cyng::mac64,					//	[2] devEUI
 			std::uint16_t,					//	[3] FPort
 			std::uint32_t,					//	[4] FCntUp
 			std::uint32_t,					//	[5] ADRbit

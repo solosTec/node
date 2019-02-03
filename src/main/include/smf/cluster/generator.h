@@ -100,7 +100,7 @@ namespace node
 	 * place a LoRa uplink event
 	 */
 	cyng::vector_t bus_insert_LoRa_uplink(cyng::object tp
-		, std::string const& devEUI
+		, cyng::mac64 devEUI
 		, std::uint16_t FPort
 		, std::uint32_t FCntUp
 		, std::uint32_t ADRbit

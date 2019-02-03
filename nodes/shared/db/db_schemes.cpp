@@ -317,7 +317,7 @@ namespace node
 			},
 			{ cyng::TC_UINT64		//	id
 			, cyng::TC_TIME_POINT	//	ts
-			, cyng::TC_STRING		//	DevEUI
+			, cyng::TC_MAC64		//	DevEUI
 			, cyng::TC_UINT16		//	FPort
 			, cyng::TC_INT32		//	FCntUp
 			, cyng::TC_INT32		//	ADRbit
