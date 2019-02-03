@@ -216,14 +216,24 @@
 
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">User</h5>
-                    <form id="smf-download-config-user" method="post" action="config.download.html" enctype="multipart/form-data" class="form-horizontal">
-                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.download.users" />
-                        <button type="submit" class="btn btn-primary" id="smf-download-config-user-button" disabled>&#8681; Download</button>
+                    <h5 class="card-title">LoRa Uplink</h5>
+                    <form id="smf-download-lora-uplink" method="post" action="config.download.html" enctype="multipart/form-data" class="form-horizontal">
+                        <div class="form-group">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-download-uplink-format" id="smf-download-uplink-format-xml" value="XML" checked>
+                                <label class="form-check-label" for="ssmf-download-uplink-format-xml">XML</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="smf-download-uplink-format" id="smf-download-uplink-format-csv" value="CSV">
+                                <label class="form-check-label" for="smf-download-uplink-format-csv">CSV</label>
+                            </div>
+                        </div>
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.download.uplink" />
+                        <button type="submit" class="btn btn-primary" id="smf-download-lora-uplink-button" disabled>&#8681; Download</button>
                     </form>
                 </div>
                 <div class="card-footer">
-                    <small class="text-muted"><span id="ws-table-user-count"></span> no users configured yet</small>
+                    <small class="text-muted"><span id="ws-table-uplink-count"></span> no uplink messages collected</small>
                 </div>
             </div>
 
@@ -234,7 +244,7 @@
                         <div class="form-group">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="smf-download-msg-format" id="smf-download-msg-format-xml" value="XML" checked>
-                                <label class="form-check-label" for="smf-download-gw-format-xml">XML</label>
+                                <label class="form-check-label" for="smf-download-msg-format-xml">XML</label>
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="smf-download-msg-format" id="smf-download-msg-format-csv" value="CSV">
@@ -273,6 +283,7 @@
                 connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.meter.count", push: true }));
                 connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.msg.count", push: true }));
                 connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.LoRa.count", push: true }));
+                connection.send(JSON.stringify({ cmd: "subscribe", channel: "table.uplink.count", push: true }));
             };
 
             connection.onclose = function (event) {
@@ -337,6 +348,15 @@
                                 }
                                 else {
                                     $('#smf-download-config-LoRa-button').prop("disabled", false);
+                                }
+                            }
+                            else if (obj.channel == 'table.uplink.count') {
+                                $('#ws-table-uplink-count').text(obj.value);
+                                if (obj.value == 0) {
+                                    $('#smf-download-lora-uplink-button').prop("disabled", true);
+                                }
+                                else {
+                                    $('#smf-download-lora-uplink-button').prop("disabled", false);
                                 }
                             }
                         }

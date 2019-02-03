@@ -68,6 +68,7 @@ namespace node
 		void subscribe_table_connection_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
 		void subscribe_table_msg_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
 		void subscribe_table_LoRa_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		void subscribe_table_uplink_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
 
 		void store_relation(cyng::context& ctx);
 

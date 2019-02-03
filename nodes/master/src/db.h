@@ -81,6 +81,7 @@ namespace node
 		SMF_CONNECTION_SUPERSEDED	= (1 << 2),
 		SMF_GENERATE_TIME_SERIES	= (1 << 3),
 		SMF_GENERATE_CATCH_METERS	= (1 << 4),
+		SMF_GENERATE_CATCH_LORA		= (1 << 5),
 	};
 
 	bool is_connection_auto_login(std::uint64_t);
@@ -88,12 +89,14 @@ namespace node
 	bool is_connection_superseed(std::uint64_t);
 	bool is_generate_time_series(std::uint64_t);
 	bool is_catch_meters(std::uint64_t);
+	bool is_catch_lora(std::uint64_t);
 
 	bool set_connection_auto_login(std::atomic<std::uint64_t>&, bool);
 	bool set_connection_auto_enabled(std::atomic<std::uint64_t>&, bool);
 	bool set_connection_superseed(std::atomic<std::uint64_t>&, bool);
 	bool set_generate_time_series(std::atomic<std::uint64_t>&, bool);
 	bool set_catch_meters(std::atomic<std::uint64_t>&, bool);
+	bool set_catch_lora(std::atomic<std::uint64_t>&, bool);
 
 }
 

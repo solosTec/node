@@ -75,6 +75,7 @@ namespace node
 		void cfg_download_meters(cyng::context& ctx);
 		void cfg_download_messages(cyng::context& ctx);
 		void cfg_download_LoRa(cyng::context& ctx);
+		void cfg_download_uplink(cyng::context& ctx);
 
 		void trigger_download_xml(boost::uuids::uuid tag, std::string table, std::string filename);
 		void trigger_download_csv(boost::uuids::uuid tag, std::string table, std::string filename);

@@ -9,6 +9,7 @@
 #define NODE_LORA_TASK_CLUSTER_H
 
 #include "../processor.h"
+#include "../dispatcher.h"
 #include <smf/http/srv/auth.h>
 
 #include <smf/cluster/bus.h>
@@ -18,6 +19,7 @@
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
+#include <cyng/store/db.h>
 
 namespace node
 {
@@ -62,13 +64,27 @@ namespace node
 		void reconfigure_impl();
 		void session_callback(boost::uuids::uuid, cyng::vector_t&&);
 
+		void create_cache();
+		void sync_table(std::string const& name);
+
 	private:
 		cyng::async::base_task& base_;
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
 		const cluster_redundancy config_;
+
+		/**
+		 * the HTTPS server
+		 */
 		https::server	server_;
 		processor processor_;
+
+		/**
+		 * global data cache
+		 */
+		cyng::store::db cache_;
+
+		dispatcher	dispatcher_;
 	};
 	
 }

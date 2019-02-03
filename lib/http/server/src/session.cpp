@@ -423,7 +423,7 @@ namespace node
 						, std::string(req.body().begin(), req.body().end())));
 
 				}
-				else if (boost::algorithm::equals(content_type, "application/x-www-form-urlencoded"))
+				else if (boost::algorithm::starts_with(content_type, "application/x-www-form-urlencoded"))
 				{
 					//	ToDo: start parser
 					connection_manager_.vm().async_run(cyng::generate_invoke("http.post.form.urlencoded"
@@ -434,7 +434,7 @@ namespace node
 						, std::string(req.body().begin(), req.body().end())));
 
 				}
-				else if (boost::algorithm::equals(content_type, "multipart/form-data"))
+				else if (boost::algorithm::starts_with(content_type, "multipart/form-data"))
 				{
 					//
 					//	payload parser

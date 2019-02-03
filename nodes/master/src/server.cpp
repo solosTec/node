@@ -51,6 +51,7 @@ namespace node
 		set_connection_superseed(global_configuration_, cyng::value_cast(dom.get("supersede"), true));
 		set_generate_time_series(global_configuration_, cyng::value_cast(dom.get("generate-time-series"), false));
 		set_catch_meters(global_configuration_, cyng::value_cast(dom.get("catch-meters"), false));
+		set_catch_lora(global_configuration_, cyng::value_cast(dom.get("catch-lora"), false));
 
 		CYNG_LOG_TRACE(logger_, "global configuration bitmask: " << global_configuration_.load());
 

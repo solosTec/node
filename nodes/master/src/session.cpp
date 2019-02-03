@@ -857,6 +857,10 @@ namespace node
 				{
 					client_.set_catch_meters(attr.second);
 				}
+				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "catch-lora"))
+				{
+					client_.set_catch_lora(attr.second);
+				}
 				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "generate-time-series"))
 				{
 					client_.set_generate_time_series(attr.second);

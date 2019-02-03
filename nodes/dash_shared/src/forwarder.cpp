@@ -189,67 +189,6 @@ namespace node
 				BOOST_ASSERT_MSG(vec.size() == 1, "TGateway key has wrong size");
 				auto key = cyng::table::key_generator(vec.at(0));
 
-		//		if (boost::algorithm::equals(channel, "config.gateway.ipt")) {
-
-		//			vec = cyng::value_cast(reader["rec"].get("data"), vec);
-		//			BOOST_ASSERT_MSG(vec.size() == 11, "TGateway with wrong data size");
-		//			cyng::param_map_t params;
-					//for (std::size_t idx = 0; idx < vec.size(); ++idx) {
-					//	auto name = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("name"), "");
-
-					//	if (boost::algorithm::equals(name, "smf-form-gw-ipt-srv")) {
-
-					//		//
-					//		//	send server/gateway ID as buffer_t type
-					//		//
-					//		const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "00");
-					//		const auto r = cyng::parse_hex_string(inp);
-					//		if (r.second) {
-					//			params["serverId"] = cyng::make_object(r.first);
-					//		}
-					//		else {
-					//			//	error
-					//			CYNG_LOG_ERROR(logger, "parse ["
-					//				<< inp
-					//				<<"] failed");
-					//		}
-					//	}
-					//	else if (boost::algorithm::starts_with(name, "smf-gw-ipt-host-")) {
-
-					//		//
-					//		//	send host name as IP address
-					//		//
-					//		const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0.0.0.0");
-					//		const auto address = boost::asio::ip::make_address(inp);
-					//		params[name] = cyng::make_object(address);
-					//	}
-					//	else if (boost::algorithm::starts_with(name, "smf-gw-ipt-local-")) {
-
-					//		//
-					//		//	send port as u16 
-					//		//
-					//		const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0");
-					//		const std::uint16_t port = std::stoul(inp);
-					//		params[name] = cyng::make_object(port);
-					//	}
-					//	else if (boost::algorithm::starts_with(name, "smf-gw-ipt-remote-")) {
-
-					//		//
-					//		//	send port as u16 
-					//		//
-					//		const std::string inp = cyng::value_cast<std::string>(reader["rec"]["data"][idx].get("value"), "0");
-					//		const std::uint16_t port = std::stoul(inp);
-					//		params[name] = cyng::make_object(port);
-					//	}
-					//	else {
-					//		params[name] = reader["rec"]["data"][idx].get("value");
-					//	}
-					//}
-				//	ctx.queue(bus_req_modify_gateway("ipt", key, ctx.tag(), params));
-
-				//}
-				//else {
-
 				cyng::tuple_t tpl;
 				tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
 				for (auto p : tpl)
@@ -433,6 +372,7 @@ namespace node
 		vm.register_function("cfg.download.meters", 2, std::bind(&forward::cfg_download_meters, this, std::placeholders::_1));
 		vm.register_function("cfg.download.messages", 2, std::bind(&forward::cfg_download_messages, this, std::placeholders::_1));
 		vm.register_function("cfg.download.LoRa", 2, std::bind(&forward::cfg_download_LoRa, this, std::placeholders::_1));
+		vm.register_function("cfg.download.uplink", 2, std::bind(&forward::cfg_download_uplink, this, std::placeholders::_1));
 
 	}
 
@@ -850,7 +790,6 @@ namespace node
 		else {
 			trigger_download_xml(std::get<0>(tpl), "_SysMsg", "messages.xml");
 		}
-
 	}
 
 	void forward::cfg_download_LoRa(cyng::context& ctx)
@@ -866,6 +805,25 @@ namespace node
 		trigger_download_xml(std::get<0>(tpl), "TLoRaDevice", "LoRa.xml");
 	}
 
+	void forward::cfg_download_uplink(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+		auto const reader = cyng::make_reader(std::get<1>(tpl));
+		auto const fmt = cyng::value_cast<std::string>(reader.get("smf-download-uplink-format"), "XML");
+		if (boost::algorithm::equals("CSV", fmt)) {
+			trigger_download_csv(std::get<0>(tpl), "_LoRaUplink", "LoRaUplink.csv");
+		}
+		else {
+			trigger_download_xml(std::get<0>(tpl), "_LoRaUplink", "LoRaUplink.xml");
+		}
+	}
 
 
 	void forward::trigger_download_xml(boost::uuids::uuid tag, std::string table, std::string filename)

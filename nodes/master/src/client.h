@@ -185,6 +185,7 @@ namespace node
 		bool set_connection_auto_enabled(cyng::object);
 		bool set_connection_superseed(cyng::object);
 		bool set_catch_meters(cyng::object obj);
+		bool set_catch_lora(cyng::object obj);
 
 		/**
 		 * Turn generating time series on or off

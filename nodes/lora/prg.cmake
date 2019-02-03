@@ -6,12 +6,14 @@ set (node_lora_cpp
 	nodes/lora/src/main.cpp	
 	nodes/lora/src/controller.cpp
 	nodes/lora/src/processor.cpp
+	nodes/lora/src/dispatcher.cpp
 )
 
 set (node_lora_h
 
 	nodes/lora/src/controller.h
 	nodes/lora/src/processor.h
+	nodes/lora/src/dispatcher.h
 
 )
 set (node_lora_info
@@ -43,6 +45,12 @@ set (node_lora_examples
 	nodes/lora/src/examples/example.xml
 )
 
+set (node_lora_schemes
+
+	nodes/shared/db/db_schemes.h
+	nodes/shared/db/db_schemes.cpp
+)
+
 if(WIN32)
 
 	set (node_lora_service
@@ -66,6 +74,7 @@ source_group("service" FILES ${node_lora_service})
 source_group("resources" FILES ${node_lora_info})
 source_group("assets" FILES ${node_lora_assets})
 source_group("examples" FILES ${node_lora_examples})
+source_group("schemes" FILES ${node_lora_schemes})
 
 
 # define the main program
@@ -78,6 +87,7 @@ set (node_lora
   ${node_lora_info}
   ${node_lora_assets}
   ${node_lora_examples}
+  ${node_lora_schemes}
 )
 
 

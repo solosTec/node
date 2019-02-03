@@ -24,6 +24,9 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table TDevice");
 		}
 
+		//
+		//	Has more columns than original TGateway definition
+		//
 		if (!db.create_table(cyng::table::make_meta_table<1, 16>("TGateway", { "pk"	//	primary key
 			, "serverId"	//	(1) Server-ID (i.e. 0500153B02517E)
 			, "manufacturer"	//	(2) manufacturer (i.e. EMH)

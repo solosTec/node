@@ -333,7 +333,7 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("monitor.lora", msg);
 
-			update_channel("table.lorauplink.count", tbl->size());
+			update_channel("table.uplink.count", tbl->size());
 
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
@@ -802,6 +802,10 @@ namespace node
 		{
 			subscribe_table_LoRa_count(db, channel, tag);
 		}
+		else if (boost::algorithm::starts_with(channel, "table.uplink.count"))
+		{
+			subscribe_table_uplink_count(db, channel, tag);
+		}
 		else if (boost::algorithm::starts_with(channel, "monitor.msg"))
 		{
 			subscribe(db, "_SysMsg", channel, tag);
@@ -1060,6 +1064,13 @@ namespace node
 	{
 		connection_manager_.add_channel(tag, channel);
 		const auto size = db.size("TLoRaDevice");
+		update_channel(channel, size);
+	}
+
+	void dispatcher::subscribe_table_uplink_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		connection_manager_.add_channel(tag, channel);
+		const auto size = db.size("_LoRaUplink");
 		update_channel(channel, size);
 	}
 

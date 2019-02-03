@@ -290,10 +290,10 @@ namespace node
 			<< " - "
 			<< cyng::io::to_str(tp));
 
-		auto const FPort = static_cast<std::uint16_t>(node.child("FPort").text().as_int());	//	FPort
+		auto const FPort = static_cast<std::uint16_t>(node.child("FPort").text().as_int());		//	FPort
 		auto const FCntUp = static_cast<std::int32_t>(node.child("FCntUp").text().as_int());	//	FCntUp
 		auto const ADRbit = static_cast<std::int32_t>(node.child("ADRbit").text().as_int());	//	ADRbit
-		auto const MType = static_cast<std::int32_t>(node.child("MType").text().as_int());	//	MType
+		auto const MType = static_cast<std::int32_t>(node.child("MType").text().as_int());		//	MType
 		auto const FCntDn = static_cast<std::int32_t>(node.child("FCntDn").text().as_int());	//	FCntDn
 
 		std::string const customer_id = node.child("CustomerID").child_value();
@@ -341,7 +341,7 @@ namespace node
 			if (true)
 			{
 				std::string file_name_pattern = dev_eui + "--" + node::lora::meter_id(payload) + "--%%%%-%%%%-%%%%-%%%%.xml";
-				const auto p = boost::filesystem::unique_path(file_name_pattern);
+				const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
 				CYNG_LOG_TRACE(logger_, "write " << p.string());
 				doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
 			}
@@ -349,13 +349,13 @@ namespace node
 		else
 		{
 			std::string file_name_pattern = "LoRa--invalid.payload--%%%%-%%%%-%%%%-%%%%.xml";
-			const auto p = boost::filesystem::unique_path(file_name_pattern);
+			const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
 			CYNG_LOG_TRACE(logger_, "write " << p.string());
-			doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
 
 			//
-			//	ToDo: save payload (raw)
+			//	save payload (raw)
 			//
+			doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
 			
 		}
 

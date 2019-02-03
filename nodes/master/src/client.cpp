@@ -85,6 +85,11 @@ namespace node
 		return node::set_catch_meters(global_configuration_, cyng::value_cast(obj, true));
 	}
 
+	bool client::set_catch_lora(cyng::object obj)
+	{
+		return node::set_catch_lora(global_configuration_, cyng::value_cast(obj, true));
+	}
+
 	bool client::set_generate_time_series(cyng::object obj)
 	{
 		return node::set_generate_time_series(global_configuration_, cyng::value_cast(obj, false));

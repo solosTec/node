@@ -7,6 +7,8 @@
 
 #include "cluster.h"
 #include <smf/cluster/generator.h>
+#include "../../../shared/db/db_schemes.h"
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
@@ -36,6 +38,8 @@ namespace node
 			, blacklist
 			, bus_->vm_)
 		, processor_(logger, btp->mux_.get_io_service(), tag, bus_)
+		, cache_()
+		, dispatcher_(logger, cache_)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -47,6 +51,17 @@ namespace node
 		//	register logger domain
 		//
 		cyng::register_logger(logger_, bus_->vm_);
+
+		//
+		//	init cache
+		//
+		create_cache();
+
+		//
+		//	subscribe to database
+		//
+		dispatcher_.register_this(bus_->vm_);
+		dispatcher_.subscribe();
 
 		//
 		//	implement request handler
@@ -105,6 +120,11 @@ namespace node
 		//	start http server
 		//
 		server_.run();
+
+		//
+		//	sync tables
+		//
+		sync_table("TLoRaDevice");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -173,6 +193,39 @@ namespace node
 		CYNG_LOG_TRACE(logger_, "received " << prg.size() << " HTTP(s) instructions from " << tag);
 		//CYNG_LOG_TRACE(logger_, "session callback: " << cyng::io::to_str(prg));
 		this->processor_.vm().async_run(std::move(prg));
+	}
+
+	void cluster::create_cache()
+	{
+		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices
+		//	DevEUI - 64 bit end-device identifier, EUI-64 (unique)
+		//	DevAddr - 32 bit device address (non-unique)
+		if (!create_table_lora_device(cache_))
+		{
+			CYNG_LOG_FATAL(logger_, "cannot create table TLoRaDevice");
+		}
+
+		if (!create_table_config(cache_))
+		{
+			CYNG_LOG_FATAL(logger_, "cannot create table _Config");
+		}
+	}
+
+	void cluster::sync_table(std::string const& name)
+	{
+		CYNG_LOG_INFO(logger_, "sync table " << name);
+
+		//
+		//	manage table state
+		//
+		cache_.set_state(name, 0);
+
+		//
+		//	Get existing records from master. This could be setup data
+		//	from another redundancy or data collected during a line disruption.
+		//
+		bus_->vm_.async_run(bus_req_subscribe(name, base_.get_id()));
+
 	}
 
 }
