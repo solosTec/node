@@ -40,6 +40,7 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, cyng::store::db&
 			, std::atomic<std::uint64_t>& global_configuration
+			, boost::uuids::uuid stag
 			, boost::filesystem::path stat_dir);
 
 		client(client const&) = delete;
@@ -279,7 +280,8 @@ namespace node
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
 		std::atomic<std::uint64_t>& global_configuration_;
-		const boost::filesystem::path stat_dir_;
+		boost::uuids::uuid const stag_;
+		boost::filesystem::path const stat_dir_;
 
 		/**
 		 * transport layer

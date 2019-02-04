@@ -7,6 +7,7 @@ set (node_lora_cpp
 	nodes/lora/src/controller.cpp
 	nodes/lora/src/processor.cpp
 	nodes/lora/src/dispatcher.cpp
+	nodes/lora/src/sync_db.cpp
 )
 
 set (node_lora_h
@@ -14,6 +15,7 @@ set (node_lora_h
 	nodes/lora/src/controller.h
 	nodes/lora/src/processor.h
 	nodes/lora/src/dispatcher.h
+	nodes/lora/src/sync_db.h
 
 )
 set (node_lora_info

@@ -34,12 +34,14 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cyng::store::db& db
 		, std::atomic<std::uint64_t>& global_configuration
+		, boost::uuids::uuid stag
 		, boost::filesystem::path stat_dir)
 	: mux_(mux)
 		, logger_(logger)
 		, db_(db)
 		, global_configuration_(global_configuration)
 		, stat_dir_(stat_dir)
+		, stag_(stag)
 		, node_class_("undefined")
 		, rng_(std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max())
 		, uuid_gen_()

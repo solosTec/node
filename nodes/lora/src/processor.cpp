@@ -210,43 +210,6 @@ namespace node
 
 		}
 
-		//auto pos = data_.find(std::get<0>(tpl));
-		//if (pos != data_.end()) {
-		//	CYNG_LOG_TRACE(logger_, "http.upload.data - "
-		//		<< std::get<0>(tpl)
-		//		<< ", "
-		//		<< std::get<1>(tpl)
-		//		<< ", "
-		//		<< std::get<2>(tpl)
-		//		<< ", mime type: "
-		//		<< std::get<3>(tpl));
-
-		//	//
-		//	//	write temporary file
-		//	//
-		//	auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("smf-dash-%%%%-%%%%-%%%%-%%%%.tmp");
-		//	auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(4));
-		//	std::ofstream of(p.string());
-		//	if (of.is_open() && ptr != nullptr) {
-		//		CYNG_LOG_DEBUG(logger_, "http.upload.data - write "
-		//			<< ptr->size()
-		//			<< " bytes into file "
-		//			<< p);
-		//		of.write(ptr->data(), ptr->size());
-		//		of.close();
-		//	}
-		//	else {
-		//		CYNG_LOG_FATAL(logger_, "http.upload.data - cannot open "
-		//			<< p);
-		//	}
-		//	pos->second.emplace(std::get<1>(tpl), p.string());
-		//	pos->second.emplace(std::get<2>(tpl), std::get<3>(tpl));
-		//}
-		//else {
-		//	CYNG_LOG_WARNING(logger_, "http.upload.data - session "
-		//		<< std::get<0>(tpl)
-		//		<< " not found");
-		//}
 	}
 
 
@@ -354,7 +317,23 @@ namespace node
 			auto [aes_key, driver, found] = lookup(r.first);
 			if (!found) {
 				CYNG_LOG_WARNING(logger_, "DevEUI " << dev_eui << " is not configured");
+				if (is_autoconfig_on()) {
 
+					//
+					//	insert a LoRa device with default values
+					//
+					bus_->vm_.async_run(bus_req_db_insert("TLoRaDevice"
+						, cyng::table::key_generator(uidgen_())
+						, cyng::table::data_generator(r.first
+							, "0000000000000000000000000000000000000000000000000000000000000000"
+							, "raw"
+							, true
+							, 0x64
+							, cyng::mac64(0, 0, 0, 0, 0, 0, 0, 0)
+							, cyng::mac64(0, 0, 0, 0, 0, 0, 0, 0))
+						, 0
+						, vm_.tag()));
+				}
 			}
 			else {
 				CYNG_LOG_TRACE(logger_, "decode DevEUI " << dev_eui << " with driver " << driver);
@@ -420,15 +399,36 @@ namespace node
 		bool found = false;
 		cache_.access([&](cyng::store::table const* tbl)->void {
 
-			auto const rec = tbl->lookup(cyng::table::key_generator(eui));
-			if (!rec.empty()) {
-				aes_key = cyng::value_cast<std::string>(rec["AESKey"], "");
-				driver = cyng::value_cast<std::string>(rec["driver"], "");
-				found = true;
-			}
+			tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+				cyng::mac64 tmp;
+				tmp = cyng::value_cast(rec["DevEUI"], tmp);
+				if (eui == tmp) {
+
+					aes_key = cyng::value_cast<std::string>(rec["AESKey"], "");
+					driver = cyng::value_cast<std::string>(rec["driver"], "");
+					found = true;
+					return false;	//	abort
+				}
+				return true;	//	continue
+			});
 		}, cyng::store::read_access("TLoRaDevice"));
 
 		return std::make_tuple(aes_key, driver, found);
+	}
+
+	bool processor::is_autoconfig_on() const
+	{
+		bool on{ false };
+		cache_.access([&](cyng::store::table const* tbl)->void {
+
+			auto const rec = tbl->lookup(cyng::table::key_generator("catch-lora"));
+			if (!rec.empty()) {
+				on = cyng::value_cast(rec["value"], false);
+			}
+		}, cyng::store::read_access("_Config"));
+
+		return on;
 	}
 
 	void processor::http_upload_progress(cyng::context& ctx)

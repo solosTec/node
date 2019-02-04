@@ -118,32 +118,53 @@
             <div class="col-md-3">
                 <form class="form-horizontal" id="smf-form-lora">
                     <fieldset>
-                        <legend id="smf-form-legend-lora" class="small">No gateway selected</legend>
+                        <!--<legend id="smf-form-legend-lora" class="small">No gateway selected</legend>-->
                         <input type="hidden" id="smf-form-lora-pk" name="smf-form-lora-pk" />
                         <input type="hidden" id="smf-form-lora-address" name="smf-form-lora-address" />
                         <input type="hidden" id="smf-form-lora-appuid" name="smf-form-lora-appuid" />
                         <input type="hidden" id="smf-form-lora-gwuid" name="smf-form-lora-gwuid" />
                         <div class="form-group">
                             <label class="control-label" for="smf-form-lora-DevEUI">DevEUI</label>
-                            <input id="smf-form-lora-DevEUI" name="smf-form-lora-DevEUI" type="text" placeholder="<DevEUI>" class="form-control input-md"  maxlength="19" >
+                            <input id="smf-form-lora-DevEUI" name="smf-form-lora-DevEUI" type="text" placeholder="<DevEUI>" class="form-control input-md" maxlength="19">
                         </div>
                         <div class="form-group">
                             <label class="control-label" for="smf-form-lora-aes">AppSKey (64 Bytes)</label>
-                            <input id="smf-form-lora-aes" name="smf-form-lora-aes" type="text" placeholder="<AES Key (64 Bytes)>" class="form-control input-md" maxlength="64" >
+                            <input id="smf-form-lora-aes" name="smf-form-lora-aes" type="text" placeholder="<AES Key (64 Bytes)>" class="form-control input-md" maxlength="64">
                         </div>
                         <div class="form-group">
                             <label class="control-label" for="smf-form-lora-driver">Driver</label>
-                            <input id="smf-form-lora-driver" name="smf-form-lora-driver" type="text" placeholder="<Driver>" class="form-control input-md">
+                            <select class="form-control" id="smf-form-lora-driver" name="smf-form-lora-driver " placeholder="<Driver>">
+                                <option value="raw" selected>raw</option>
+                                <option value="ascii">ascii</option>
+                                <option value="water">water</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <div class="col-md-offset-4 col-md-8">
                                 <div class="form-check-inline">
-                                    <label class="form-check-label"><input id="smf-form-lora-activation-otaa" name="smf-form-lora-activation" type="radio"> OTAA</label>
+                                    <label class="form-check-label" for="mf-form-lora-activation-otaa">OTAA&nbsp;</label>
+                                    <input id="smf-form-lora-activation-otaa" name="smf-form-lora-activation" type="radio" value="OTAA" />
                                 </div>
                                 <div class="form-check-inline">
-                                    <label class="form-check-label"><input id="smf-form-lora-activation-abp" name="smf-form-lora-activation" type="radio"> ABP</label>
+                                    <label class="form-check-label" for="smf-form-lora-activation-abp">ABP&nbsp;</label>
+                                    <input id="smf-form-lora-activation-abp" name="smf-form-lora-activation" type="radio" value="ABP" />
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label" for="smf-form-lora-devaddr">DevAddr</label>
+                            <input id="smf-form-lora-devaddr" name="smf-form-lora-devaddr" type="number" placeholder="<Device Address EUI>" class="form-control input-md">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label" for="smf-form-lora-appeui">AppEUI</label>
+                            <input id="smf-form-lora-appeui" name="smf-form-lora-appeui" type="text" placeholder="<Gateway EUI>" class="form-control input-md" maxlength="19">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label" for="smf-form-lora-gweui">GatewayEUI</label>
+                            <input id="smf-form-lora-gweui" name="smf-form-lora-gweui" type="text" placeholder="<Gateway EUI>" class="form-control input-md" maxlength="19">
                         </div>
 
                         <div class="form-group">
@@ -214,8 +235,8 @@
                 //  select: a584c1cc-7ae1-455b-99d1-de0f9483520d,05000000000000,solosTec,gateway,ipt:gateway,0.5.2018155,operator,operator,false, length:9
                 var rowData = datatable.rows(indexes).data().toArray()[0];
                 var rows = table_lora.rows(indexes).data();
-                console.log("select: " + rows.toArray() + ", length:" + rowData.length);
-                $('#smf-form-legend-lora').text("{" + rowData[0] + "}");
+                //console.log("select: " + rows.toArray() + ", length:" + rowData.length);
+                //$('#smf-form-legend-lora').text("{" + rowData[0] + "}");
                 $('#smf-form-lora-pk').val(rowData[0]);
                 $('#smf-form-lora-DevEUI').val(rowData[1]);
                 $('#smf-form-lora-aes').val(rowData[2]);
@@ -227,7 +248,9 @@
                 else {
                     $('#smf-form-lora-activation-abp').prop("checked", true);
                 }
-
+                $('#smf-form-lora-devaddr').val(rowData[5]);
+                $('#smf-form-lora-appeui').val(rowData[6]);
+                $('#smf-form-lora-gweui').val(rowData[7]);
 
                 //  enable submit button
                 $('#smf-form-lora-update').removeClass('disabled');
@@ -295,26 +318,31 @@
                         }).remove().draw(false);
                     }
                     else if (obj.cmd == 'modify') {
-                        //  {"cmd": "modify", "channel": "config.gateway", "key": ["dca135f3-ff2b-4bf7-8371-a9904c74522b"], "value": {"online":true}}
-                        //  {"cmd": "modify", "channel": "config.gateway", "key": ["a584c1cc-7ae1-455b-99d1-de0f9483520d"], "value": {"online":false}}
+                        //  {"cmd": "modify", "channel": "config.lora", "key": ["96c24827-2847-4612-9982-ab5cb1e8dee7"], "value": {"GatewayEUI":"0100:0302:0604:0807"}}
                         table_lora.row(function (idx, data, node) {
                             if (data[0] == obj.key) {
                                 var r = table_lora.row(node);
                                 var d = r.data();
-                                if (obj.value.online != null) {
-                                    d[8] = obj.value.online;
+                                if (obj.value.DevEUI != null) {
+                                    d[1] = obj.value.DevEUI;
                                 }
-                                else if (obj.value.id != null) {
-                                    d[1] = obj.value.id;
+                                else if (obj.value.AESKey != null) {
+                                    d[2] = obj.value.AESKey;
                                 }
-                                else if (obj.value.manufacturer != null) {
-                                    d[2] = obj.value.manufacturer;
+                                else if (obj.value.driver != null) {
+                                    d[3] = obj.value.driver;
                                 }
-                                else if (obj.value.userName != null) {
-                                    d[6] = obj.value.userName;
+                                else if (obj.value.activation != null) {
+                                    d[4] = obj.value.activation;
                                 }
-                                else if (obj.value.userPwd != null) {
-                                    d[7] = obj.value.userPwd;
+                                else if (obj.value.DevAddr != null) {
+                                    d[5] = obj.value.DevAddr;
+                                }
+                                else if (obj.value.AppEUI != null) {
+                                    d[6] = obj.value.AppEUI;
+                                }
+                                else if (obj.value.GatewayEUI != null) {
+                                    d[7] = obj.value.GatewayEUI;
                                 }
                                 r.data(d);
                                 $('#smf-form-lora-delete').addClass('disabled');
@@ -342,7 +370,7 @@
 
             $('#smf-form-lora-delete').on("click", function (event) {
                 event.preventDefault();
-                var key = $('#smf-form-lora-tag').val();
+                var key = $('#smf-form-lora-pk').val();
                 console.log($(this).text() + ' ' + key);
                 connection.send(JSON.stringify({
                     cmd: 'delete', channel: 'config.lora', key: {
@@ -359,10 +387,14 @@
                     cmd: "modify", channel: "config.lora", rec: {
                         key: [$('#smf-form-lora-pk').val()],
                         data: {
-                            euid: $('#smf-form-lora-DevEUI').val(),
-                            userName: $('#smf-form-lora-user').val(),
-                            userPwd: $('#smf-form-lora-pwd').val(),
-                            driver: $('#smf-form-lora-driver').val()
+                            DevEUI: $('#smf-form-lora-DevEUI').val(),
+                            AESKey: $('#smf-form-lora-aes').val(),
+                            driver: $('#smf-form-lora-driver').val(),
+                            //activation: $('#smf-form-lora-activation').val(),
+                            activation: $("[name='smf-form-lora-activation']:checked").val(),
+                            DevAddr: $('#smf-form-lora-devaddr').val(),
+                            AppEUI: $('#smf-form-lora-appeui').val(),
+                            GatewayEUI: $('#smf-form-lora-gweui').val()
                         }
                     }
                 }));

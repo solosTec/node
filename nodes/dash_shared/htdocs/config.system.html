@@ -147,7 +147,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Generate Time-Series</h5>
-                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-time-series-data" value=""> Write statistics into <span id="smf-config-system-time-series-dir" style="font-style: italic;">dir</span>. (It may have a performance impact.)</label>
+                    <label class="checkbox-inline"><input type="checkbox" id="smf-config-system-time-series-data" value=""> Write statistics into <span id="smf-config-system-time-series-dir" style="font-style: italic;">dir</span>. (This may have a performance impact.)</label>
                 </div>
                 <div class="card-footer">
                     <small class="text-muted">default = <span id="smf-config-system-time-series-data-default">wait...</span></small>
@@ -222,11 +222,11 @@
                 if (obj.cmd != null) {
                     if (obj.cmd == 'insert') {
                         if (obj.rec.key.name == 'connection-auto-login') {
-                            console.log('connection-auto-login: ' + obj.rec.data.value);
+                            //console.log('connection-auto-login: ' + obj.rec.data.value);
                             $("#smf-config-system-auto-login-data").prop("checked", obj.rec.data.value);
                         }
                         else if (obj.rec.key.name == 'connection-auto-enabled') {
-                            console.log('connection-auto-enabled: ' + obj.rec.data.value);
+                            //console.log('connection-auto-enabled: ' + obj.rec.data.value);
                             $("#smf-config-system-auto-enabled-data").prop("checked", obj.rec.data.value);
                         }
                         else if (obj.rec.key.name == 'connection-superseed') {

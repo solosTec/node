@@ -40,6 +40,7 @@ namespace node
 		, cache_()
 		, processor_(logger, cache_, btp->mux_.get_io_service(), tag, bus_)
 		, dispatcher_(logger, cache_)
+		, db_sync_(logger, cache_)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -55,7 +56,7 @@ namespace node
 		//
 		//	init cache
 		//
-		create_cache();
+		create_cache(logger_, cache_);
 
 		//
 		//	subscribe to database
@@ -67,6 +68,11 @@ namespace node
 		//	implement request handler
 		//
 		bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1));
+
+		//
+		//	register sync. functions
+		//
+		db_sync_.register_this(bus_->vm_);
 
 		//
 		//	report library size
@@ -133,6 +139,15 @@ namespace node
 	cyng::continuation cluster::process()
 	{
 		//
+		//	Connection to master lost
+		//
+
+		//
+		//	tell server to discard all data
+		//
+		clear_cache(cache_, bus_->vm_.tag());
+
+		//
 		//	switch to other configuration
 		//
 		reconfigure_impl();
@@ -194,22 +209,6 @@ namespace node
 		CYNG_LOG_TRACE(logger_, "received " << prg.size() << " HTTP(s) instructions from " << tag);
 		//CYNG_LOG_TRACE(logger_, "session callback: " << cyng::io::to_str(prg));
 		this->processor_.vm().async_run(std::move(prg));
-	}
-
-	void cluster::create_cache()
-	{
-		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices
-		//	DevEUI - 64 bit end-device identifier, EUI-64 (unique)
-		//	DevAddr - 32 bit device address (non-unique)
-		if (!create_table_lora_device(cache_))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table TLoRaDevice");
-		}
-
-		if (!create_table_config(cache_))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table _Config");
-		}
 	}
 
 	void cluster::sync_table(std::string const& name)

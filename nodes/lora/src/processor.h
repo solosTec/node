@@ -44,6 +44,11 @@ namespace node
 		void parse_xml(std::string const*);
 		std::tuple<std::string, std::string, bool> lookup(cyng::mac64);
 
+		/**
+		 * @return true if auto configuration for LoRa devices is on
+		 */
+		bool is_autoconfig_on() const;
+
 	private:
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& cache_;

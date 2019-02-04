@@ -10,6 +10,7 @@
 
 #include "../processor.h"
 #include "../dispatcher.h"
+#include "../sync_db.h"
 #include <smf/http/srv/auth.h>
 
 #include <smf/cluster/bus.h>
@@ -64,7 +65,6 @@ namespace node
 		void reconfigure_impl();
 		void session_callback(boost::uuids::uuid, cyng::vector_t&&);
 
-		void create_cache();
 		void sync_table(std::string const& name);
 
 	private:
@@ -85,6 +85,7 @@ namespace node
 		processor processor_;
 
 		dispatcher	dispatcher_;
+		db_sync	db_sync_;
 	};
 	
 }

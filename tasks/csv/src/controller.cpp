@@ -25,6 +25,8 @@
 #if BOOST_OS_LINUX
 #include "../../../nodes/write_pid.h"
 #endif
+#include <cyng/io/iso_3166_1.h>
+
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/random.hpp>
@@ -188,6 +190,7 @@ namespace node
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 					, cyng::param_factory("load-config", "local")	//	options are local, master, mixed
+					, cyng::param_factory("language", "EN")	//	ISO 2 Letter Language Code (DE, FR, ...)
 
 					, cyng::param_factory("trigger", cyng::tuple_factory(
 						cyng::param_factory("offset", 7),	//	minutes after midnight
@@ -329,7 +332,18 @@ namespace node
 		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator uidgen;
-		const auto cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		auto const cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		CYNG_LOG_INFO(logger, "cluster tag: " << cluster_tag);
+
+		auto const language = cyng::value_cast<std::string>(dom.get("language"), "EN");
+		std::uint32_t cc = cyng::io::CC_GB;
+		if (language.size() == 2) {
+			CYNG_LOG_INFO(logger, "language code: " << language);
+			cc = cyng::io::get_code(language.at(0), language.at(1));
+		}
+		else {
+			CYNG_LOG_WARNING(logger, "invalid language code: " << language);
+		}
 
 		//
 		//	apply severity threshold

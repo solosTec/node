@@ -128,6 +128,25 @@ namespace node
 					<< ex.what());
 			}
 		}
+		else if (boost::algorithm::starts_with(channel, "config.lora"))
+		{
+			//
+			//	TLoRaDevice key is of type UUID
+			//
+			try {
+				cyng::vector_t vec;
+				vec = cyng::value_cast(reader["key"].get("tag"), vec);
+				BOOST_ASSERT_MSG(vec.size() == 1, "TLoRaDevice key has wrong size");
+				auto key = cyng::table::key_generator(vec.at(0));
+				ctx.queue(bus_req_db_remove("TLoRaDevice", key, ctx.tag()));
+			}
+			catch (std::exception const& ex) {
+				CYNG_LOG_ERROR(logger, "ws.read - delete channel ["
+					<< channel
+					<< "] failed: "
+					<< ex.what());
+			}
+		}
 		else
 		{
 			CYNG_LOG_WARNING(logger, "ws.read - unknown delete channel [" << channel << "]");
@@ -274,6 +293,58 @@ namespace node
 						, cyng::value_cast(p, param)
 						, 0
 						, ctx.tag()));
+				}
+			}
+			catch (std::exception const& ex) {
+				CYNG_LOG_ERROR(logger, "ws.read - modify channel ["
+					<< channel <<
+					"] failed:"
+					<< ex.what());
+			}
+		}
+		else if (boost::algorithm::starts_with(channel, "config.lora")) 
+		{
+			try {
+
+				//	smf-form-lora-pk=96c24827-2847-4612-9982-ab5cb1e8dee7&smf-form-lora-address=&smf-form-lora-appuid=&smf-form-lora-gwuid=&smf-form-lora-DevEUI=0100%3A0302%3A0504%3A0706&smf-form-lora-aes=0000000000000000000000000000000000000000000000000000000000000000&smf-form-lora-driver%20=raw&smf-form-lora-activation=on&smf-form-lora-devaddr=&smf-form-lora-appeui=&smf-form-lora-gweui=
+				//	 {"cmd":"modify","channel":"config.lora","rec":{"key":["96c24827-2847-4612-9982-ab5cb1e8dee7"],"data":{"DevEUI":"0100:0302:0504:0706","AESKey":"0000000000000000000000000000000000000000000000000000000000000000","driver":"raw","activation":"ABP","DevAddr":"20","AppEUI":"0100:0302:0604:0807","GatewayEUI":"0100:0302:0604:0807"}}}
+
+				cyng::vector_t vec;
+				vec = cyng::value_cast(reader["rec"].get("key"), vec);
+				BOOST_ASSERT_MSG(vec.size() == 1, "TLoRaDevice key has wrong size");
+
+				auto key = cyng::table::key_generator(vec.at(0));
+
+				cyng::tuple_t tpl;
+				tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
+				for (auto p : tpl)
+				{
+					cyng::param_t param;
+					param = cyng::value_cast(p, param);
+
+					if (boost::algorithm::equals(param.first, "activation")) {
+
+						//
+						//	convert value from radion button into bool
+						//	OTAA == true
+						//	ABP == false
+						//
+						auto const activation = cyng::value_cast<std::string>(reader["rec"]["data"].get("activation"), "OTAA");
+
+						ctx.queue(bus_req_db_modify("TLoRaDevice"
+							, key
+							, cyng::param_factory(param.first, boost::algorithm::equals(activation, "OTAA"))
+							, 0
+							, ctx.tag()));
+
+					}
+					else {
+						ctx.queue(bus_req_db_modify("TLoRaDevice"
+							, key
+							, param
+							, 0
+							, ctx.tag()));
+					}
 				}
 			}
 			catch (std::exception const& ex) {

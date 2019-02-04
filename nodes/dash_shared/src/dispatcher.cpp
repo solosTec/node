@@ -395,6 +395,18 @@ namespace node
 			update_channel("table.meter.count", tbl->size());
 
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("delete")),
+				cyng::param_factory("channel", "config.lora"),
+				cyng::param_factory("key", key));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("config.lora", msg);
+			update_channel("table.LoRa.count", tbl->size());
+
+		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
 		{
 			auto tpl = cyng::tuple_factory(
@@ -647,6 +659,17 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("config.meter", msg);
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("modify")),
+				cyng::param_factory("channel", "config.lora"),
+				cyng::param_factory("key", key),
+				cyng::param_factory("value", pm));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("config.lora", msg);
+		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
 		{
 			auto tpl = cyng::tuple_factory(
@@ -715,7 +738,7 @@ namespace node
 		}
 		else
 		{
-			CYNG_LOG_WARNING(logger_, "sig.mode - unknown table "
+			CYNG_LOG_WARNING(logger_, "sig.mod - unknown table "
 				<< tbl->meta().get_name());
 
 		}

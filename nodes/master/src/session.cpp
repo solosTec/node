@@ -58,7 +58,7 @@ namespace node
 		, pwd_(pwd)
 		, cluster_monitor_(monitor)
 		, seq_(0)
-		, client_(mux, logger, db, global_configuration, stat_dir)
+		, client_(mux, logger, db, global_configuration, stag, stat_dir)
 		, cluster_(mux, logger, db, global_configuration)
 		, subscriptions_()
 		, tsk_watchdog_(cyng::async::NO_TASK)

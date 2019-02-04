@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <DevEUI_uplink xmlns="http://uri.actility.com/lora">
 	<Time>2019-01-29T07:30:44.489+02:00</Time>
-	<DevEUI>0100030205040706</DevEUI>
+	<DevEUI>70B3D549918275BF</DevEUI>
 	<FPort>1</FPort>
 	<FCntUp>1</FCntUp>
 	<ADRbit>1</ADRbit>

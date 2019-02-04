@@ -17,6 +17,7 @@
 
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/nil_generator.hpp>
+#include <boost/uuid/string_generator.hpp>
 #include <boost/process/environment.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -93,17 +94,12 @@ namespace node
 		//	(1) tag (UUID) - pk
 		//	+-----------------
 		//	(1) id (server/gateway ID) - unique
-		//	(2) manufacturer (i.e. EMH)
-		//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
-		//	(4) production date/time
-		//	(5) firmwareversion (i.e. 11600000)
-		//	(6) fabrik nummer (i.e. 06441734)
-		//	(7) MAC of service interface
-		//	(8) MAC od data interface
-		//	(9) Default PW
-		//	(10) root PW
-		//	(11) W-Mbus ID (i.e. A815408943050131)
-		//	(12) source (UUID) - usefull to detect multiple configuration uploads
+		//	(2) AESKey (128 bit encryption)
+		//	(3) driver
+		//	(4) activation
+		//	(5) DevAddr
+		//	(6) AppEUI - provided by the owner of the application server
+		//	(7) GatewayEUI
 		if (!create_table_lora_device(db))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TLoRaDevice");
@@ -145,7 +141,7 @@ namespace node
 					, "06441734"
 					, "NXT4-S20EW-6N00-4000-5020-E50/Q"
 					, "Q3"
-					, tag)	//	reference to TGateway
+					, boost::uuids::string_generator()("8d04b8e0-0faf-44ea-b32b-8405d407f2c1"))	//	reference to TGateway 8d04b8e0-0faf-44ea-b32b-8405d407f2c1
 				, 5
 				, tag);
 		}
@@ -244,12 +240,12 @@ namespace node
 		}
 		else
 		{
-			const bool connection_auto_login = is_connection_auto_login(global_config);
-			const bool connection_auto_enabled = is_connection_auto_enabled(global_config);
-			const bool connection_superseed = is_connection_superseed(global_config);
-			const bool generate_time_series = is_generate_time_series(global_config);
-			const bool catch_meters = is_catch_meters(global_config);
-			const bool catch_lora = is_catch_lora(global_config);
+			bool const connection_auto_login = is_connection_auto_login(global_config);
+			bool const connection_auto_enabled = is_connection_auto_enabled(global_config);
+			bool const connection_superseed = is_connection_superseed(global_config);
+			bool const generate_time_series = is_generate_time_series(global_config);
+			bool const catch_meters = is_catch_meters(global_config);
+			bool const catch_lora = is_catch_lora(global_config);
 
 			db.insert("_Config", cyng::table::key_generator("startup"), cyng::table::data_generator(std::chrono::system_clock::now()), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("master-tag"), cyng::table::data_generator(tag), 1, tag);
