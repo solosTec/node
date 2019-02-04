@@ -783,7 +783,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
     # libraries to link
     set(lora_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_crypto cyng_xml smf_cluster smf_https_srv smf_lora smf_protocol_sml ${OPENSSL_LIBRARIES})
     if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-        list(APPEND lora_link_libs "${Boost_LIBRARIES}")
+        list(APPEND lora_link_libs cyng_store cyng_table "${Boost_LIBRARIES}")
         if (UNIX)
             list(APPEND lora_link_libs pthread)
         endif()
