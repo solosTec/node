@@ -91,7 +91,7 @@
 
     <div class="jumbotron jumbotron-fluid">
         <div class="container">
-            <h1 class="display-4">Configure your System</h1>
+            <h1 class="display-4">Configure your System <span id="smf-config-smf-version">[wait...]</span></h1>
             <hr class="my-4">
             <p class="lead"><span id="smf-config-system-host-name">[wait...]</span> is the current master node</p>
         </div>
@@ -240,6 +240,10 @@
                         else if (obj.rec.key.name == 'host-name') {
                             //console.log('host-name: ' + obj.rec.data.value);
                             $("#smf-config-system-host-name").html(obj.rec.data.value);
+                        }
+                        else if (obj.rec.key.name == 'smf-version') {
+                            //console.log('smf-version: ' + obj.rec.data.value);
+                            $("#smf-config-smf-version").html(obj.rec.data.value);
                         }
                         else if (obj.rec.key.name == "connection-auto-login-default") {
                             //console.log('connection-auto-login-default: ' + obj.rec.data.value);

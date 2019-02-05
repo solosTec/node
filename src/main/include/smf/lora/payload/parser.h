@@ -42,7 +42,7 @@ namespace node
 		std::string		meter_id(cyng::buffer_t const&);
 
 		/**
-		 * Same as server id but with binary values
+		 * Same as meter id but with binary values
 		 */
 		cyng::buffer_t	server_id(cyng::buffer_t const&);
 

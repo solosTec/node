@@ -13,13 +13,16 @@
 #include <cyng/table/key.hpp>
 #include <cyng/table/body.hpp>
 #include <cyng/parser/chrono_parser.h>
+#include <cyng/parser/buffer_parser.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/parser/mac_parser.h>
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_buffer.h>
 
 namespace node
 {
 	processor::processor(cyng::logging::log_ptr logger
+		, bool keep_xml_files
 		, cyng::store::db& cache
 		, cyng::io_service_t& ios
 		, boost::uuids::uuid tag
@@ -27,6 +30,7 @@ namespace node
 		, std::ostream& ostream
 		, std::ostream& estream)
 	: logger_(logger)
+		, keep_xml_files_(keep_xml_files)
 		, cache_(cache)
 		, vm_(ios, tag, ostream, estream)
 		, bus_(bus)
@@ -251,7 +255,7 @@ namespace node
 		}
 	}
 
-	void processor::process_uplink_msg(pugi::xml_document const& doc, pugi::xml_node node)
+	void processor::process_uplink_msg(pugi::xml_document& doc, pugi::xml_node node)
 	{
 		std::string const dev_eui(node.child("DevEUI").child_value());
 		std::pair<cyng::mac64, bool > const r = cyng::parse_mac64(dev_eui);
@@ -311,6 +315,11 @@ namespace node
 			, bus_->vm_.tag()));
 
 		//
+		//	extract payload
+		//
+		std::string const raw{ node.child("payload_hex").child_value() };
+
+		//
 		//	lookup configured LoRa devices
 		//
 		if (r.second) {
@@ -337,38 +346,30 @@ namespace node
 			}
 			else {
 				CYNG_LOG_TRACE(logger_, "decode DevEUI " << dev_eui << " with driver " << driver);
-			}
-		}
 
-		//
-		//	extract payload
-		//
-		std::string const raw{ node.child("payload_hex").child_value() };
-		cyng::buffer_t payload = node::lora::parse_payload(raw);
-		if (!payload.empty())
-		{
-			CYNG_LOG_TRACE(logger_, "meter ID: " << node::lora::meter_id(payload));
-			CYNG_LOG_TRACE(logger_, "value: " << lora::value(lora::vif(payload), lora::volume(payload)));
-			CYNG_LOG_TRACE(logger_, "CRC: " << (node::lora::crc_ok(payload) ? "OK" : "ERROR"));
-			if (true)
-			{
-				std::string file_name_pattern = dev_eui + "--" + node::lora::meter_id(payload) + "--%%%%-%%%%-%%%%-%%%%.xml";
-				const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
-				CYNG_LOG_TRACE(logger_, "write " << p.string());
-				doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
-			}
-		}
-		else
-		{
-			std::string file_name_pattern = "LoRa--invalid.payload--%%%%-%%%%-%%%%-%%%%.xml";
-			const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
-			CYNG_LOG_TRACE(logger_, "write " << p.string());
 
-			//
-			//	save payload (raw)
-			//
-			doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
-			
+				if (boost::algorithm::equals(driver, "water")) {
+
+					//
+					//	water
+					//
+					decode_water(doc, dev_eui, raw);
+				}
+				else if (boost::algorithm::equals(driver, "ascii")) {
+
+					//
+					//	ascii
+					//
+					decode_ascii(doc, dev_eui, raw);
+				}
+				else {
+
+					//
+					//	binary
+					//
+					decode_raw(doc, dev_eui, raw);
+				}
+			}
 		}
 
 		//
@@ -387,6 +388,96 @@ namespace node
 
 	}
 
+	void processor::decode_water(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw)
+	{
+		cyng::buffer_t payload = node::lora::parse_payload(raw);
+		if (!payload.empty())
+		{
+			auto const meter = node::lora::meter_id(payload);
+			auto const value = lora::value(lora::vif(payload), lora::volume(payload));
+			CYNG_LOG_TRACE(logger_, "meter ID: " << meter);
+			CYNG_LOG_TRACE(logger_, "value: " << value);
+			CYNG_LOG_TRACE(logger_, "CRC: " << (node::lora::crc_ok(payload) ? "OK" : "ERROR"));
+			if (keep_xml_files_)
+			{
+				pugi::xpath_node_set pos = doc.select_nodes("/DevEUI_uplink");
+				if (pos.begin() != pos.end()) {
+					pugi::xpath_node node = pos.first();
+					auto vnode = node.node().append_child("value");
+					vnode.append_child(pugi::node_pcdata).set_value(value.c_str());
+					vnode.append_attribute("meter").set_value(meter.c_str());
+
+					auto const manufacturer = node::lora::manufacturer(payload);
+					vnode.append_attribute("manufacturer").set_value(manufacturer.c_str());
+
+					vnode.append_attribute("medium").set_value(node::lora::medium(payload));
+					vnode.append_attribute("state").set_value(node::lora::state(payload));
+					vnode.append_attribute("actuality").set_value(node::lora::actuality(payload));
+					vnode.append_attribute("semester").set_value(node::lora::semester(node::lora::lifetime(payload)));
+					vnode.append_attribute("link_error").set_value(node::lora::link_error(payload));
+					vnode.append_attribute("crc").set_value(node::lora::crc(payload));
+					vnode.append_attribute("version").set_value(node::lora::version(payload));
+				}
+				
+				std::string file_name_pattern = dev_eui + "--" + node::lora::meter_id(payload) + "--%%%%-%%%%-%%%%-%%%%.xml";
+				const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
+				CYNG_LOG_TRACE(logger_, "write " << p.string());
+				//root.append_attribute("xmlns") = "http://uri.actility.com/lora";
+				doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
+			}
+		}
+		else
+		{
+			std::string file_name_pattern = "LoRa--invalid.payload--%%%%-%%%%-%%%%-%%%%.xml";
+			const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
+			CYNG_LOG_TRACE(logger_, "write " << p.string());
+
+			//
+			//	save payload (raw)
+			//
+			if (keep_xml_files_)	doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
+
+		}
+	}
+
+	void processor::decode_ascii(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw)
+	{
+		if (keep_xml_files_) {
+			const std::pair<cyng::buffer_t, bool > r = cyng::parse_hex_string(raw);
+			if (r.second) {
+				auto const ascii = cyng::io::to_ascii(r.first);
+
+				pugi::xpath_node_set pos = doc.select_nodes("/DevEUI_uplink");
+				if (pos.begin() != pos.end()) {
+					pugi::xpath_node node = pos.first();
+					auto vnode = node.node().append_child("value");
+					vnode.append_child(pugi::node_pcdata).set_value(ascii.c_str());
+					vnode.append_attribute("type").set_value("ascii");
+				}
+			}
+
+			//
+			//	write XML file to disk
+			//
+			std::string file_name_pattern = dev_eui + "--ASCII--%%%%-%%%%-%%%%-%%%%.xml";
+			const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
+			doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
+		}
+	}
+
+	void processor::decode_raw(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw)
+	{
+		if (keep_xml_files_) {
+
+			//
+			//	write XML file to disk
+			//
+			std::string file_name_pattern = dev_eui + "--RAW--%%%%-%%%%-%%%%-%%%%.xml";
+			const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
+			doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
+		}
+	}
+
 	void processor::process_localisation_msg(pugi::xml_document const& doc, pugi::xml_node node)
 	{
 
@@ -402,11 +493,12 @@ namespace node
 			tbl->loop([&](cyng::table::record const& rec) -> bool {
 
 				cyng::mac64 tmp;
+				BOOST_ASSERT_MSG(rec["DevEUI"].get_class().tag() == cyng::TC_MAC64, "DevEUI has wrong data type");
 				tmp = cyng::value_cast(rec["DevEUI"], tmp);
 				if (eui == tmp) {
 
 					aes_key = cyng::value_cast<std::string>(rec["AESKey"], "");
-					driver = cyng::value_cast<std::string>(rec["driver"], "");
+					driver = cyng::value_cast<std::string>(rec["driver"], "raw");
 					found = true;
 					return false;	//	abort
 				}

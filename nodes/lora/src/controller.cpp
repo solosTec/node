@@ -39,7 +39,7 @@ namespace node
 	//
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	std::size_t join_cluster(cyng::async::mux&, cyng::logging::log_ptr, boost::uuids::uuid, cyng::vector_t const&, cyng::tuple_t const&);
+	std::size_t join_cluster(cyng::async::mux&, cyng::logging::log_ptr, boost::uuids::uuid, bool, cyng::vector_t const&, cyng::tuple_t const&);
 	void load_server_certificate(boost::asio::ssl::context& ctx
 		, cyng::logging::log_ptr logger
 		, std::string const& pwd
@@ -187,6 +187,7 @@ namespace node
 					, cyng::param_factory("tag", uidgen())
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
+					, cyng::param_factory("keep-xml-files", false)	//	store all incoming data as XML file
 
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
@@ -357,8 +358,14 @@ namespace node
 		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator uidgen;
-		const auto cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		auto const cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		CYNG_LOG_TRACE(logger, "cluster tag: " << cluster_tag);
 
+		auto const keep_xml_file = cyng::value_cast(dom.get("keep-xml-files"), false);
+		if (keep_xml_file) {
+			CYNG_LOG_TRACE(logger, "incoming XML files are stored");
+		}
+		
 		//
 		//	apply severity threshold
 		//
@@ -377,6 +384,7 @@ namespace node
 		const auto tsk = join_cluster(mux
 			, logger
 			, cluster_tag
+			, keep_xml_file
 			, cyng::value_cast(dom.get("cluster"), tmp_vec)
 			, cyng::value_cast(dom.get("server"), tmp_tpl));
 
@@ -427,6 +435,7 @@ namespace node
 	std::size_t join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid cluster_tag
+		, bool keep_xml_files
 		, cyng::vector_t const& cfg_cls
 		, cyng::tuple_t const& cfg_srv)
 	{
@@ -497,6 +506,7 @@ namespace node
 			, logger
 			, ctx
 			, cluster_tag
+			, keep_xml_files
 			, load_cluster_cfg(cfg_cls)
 			, boost::asio::ip::tcp::endpoint{ host, port }
 			, doc_root

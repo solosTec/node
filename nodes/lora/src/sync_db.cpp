@@ -54,86 +54,6 @@ namespace node
 		, boost::uuids::uuid origin		//	[4] origin session id
 		, std::size_t tsk)
 	{
-		//
-		//	Boost gateway records with additional data from TDevice and _Session table
-		//
-		if (boost::algorithm::equals(table, "TGateway"))
-		{
-			//
-			//	Additional values for TGateway
-			//
-			db.access([&](const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
-
-				//
-				//	Gateway and Device table share the same table key
-				//	look for a session of this device
-				//
-				auto dev_rec = tbl_dev->lookup(key);
-				auto ses_rec = tbl_ses->find_first(cyng::param_t("device", key.at(0)));
-
-				//
-				//	set device name
-				//	set model
-				//	set firmware
-				//	set online state
-				//
-				if (!dev_rec.empty())
-				{
-					data.push_back(dev_rec["name"]);
-					data.push_back(dev_rec["descr"]);
-					data.push_back(dev_rec["id"]);
-					data.push_back(dev_rec["vFirmware"]);
-					if (ses_rec.empty()) {
-						data.push_back(cyng::make_object(0));
-					}
-					else {
-						const auto peer = cyng::value_cast(ses_rec["rtag"], boost::uuids::nil_uuid());
-						data.push_back(cyng::make_object(peer.is_nil() ? 1 : 2));
-					}
-				}
-				else
-				{
-					CYNG_LOG_WARNING(logger, "res.subscribe - gateway"
-						<< cyng::io::to_str(key)
-						<< " has no associated device");
-				}
-			}	, cyng::store::read_access("TDevice")
-				, cyng::store::read_access("_Session"));
-		}
-		
-		//
-		//	Boost meter records with additional data from TGateway
-		//
-		if (boost::algorithm::equals(table, "TMeter"))
-		{
-			//
-			//	Additional values for TMeter
-			//
-			db.access([&](const cyng::store::table* tbl_gw) {
-				
-				//
-				//	TMeter contains an optional reference to TGateway table
-				//
-				auto key = cyng::table::key_generator(data.at(10));
-				auto dev_gw = tbl_gw->lookup(key);
-				
-				//
-				//	set serverId
-				//
-				if (!dev_gw.empty())
-				{
-					data.push_back(dev_gw["serverId"]);
-				}
-				else
-				{
-					data.push_back(cyng::make_object("05000000000000"));
-					
-					CYNG_LOG_WARNING(logger, "res.subscribe - meter"
-					<< cyng::io::to_str(key)
-					<< " has no associated gateway");
-				}
-			}, cyng::store::read_access("TGateway"));
-		}
 
 		if (!db.insert(table	//	table name
 			, key	//	table key
@@ -145,32 +65,6 @@ namespace node
 				<< table		// table name
 				<< " - "
 				<< cyng::io::to_str(key));
-		}
-		else
-		{
-			if (boost::algorithm::equals(table, "_Session"))
-			{
-				//
-				//	mark gateways as online
-				//
-				db.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
-
-					//
-					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
-					//	Gateway and Device table share the same table key
-					//
-					auto rec = tbl_ses->lookup(key);
-					if (rec.empty())	{
-						//	set online state
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
-					}
-					else {
-						const auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", rtag.is_nil() ? 1 : 2), origin);
-					}
-				}	, cyng::store::write_access("TGateway")
-					, cyng::store::read_access("_Session"));
-			}
 		}
 	}
 
@@ -252,6 +146,12 @@ namespace node
 		//
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
+
+#ifdef _DEBUG
+		if (boost::algorithm::equals(std::get<0>(tpl), "TLoRaDevice")) {
+			BOOST_ASSERT_MSG(std::get<2>(tpl).at(0).get_class().tag() == cyng::TC_MAC64, "DevEUI has wrong data type");
+		}
+#endif
 
 		node::db_req_insert(logger_
 			, db_
@@ -403,6 +303,14 @@ namespace node
 		//	reordering table key
 		//	
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
+
+#ifdef _DEBUG
+		if (boost::algorithm::equals(std::get<0>(tpl), "TLoRaDevice")) {
+			if (boost::algorithm::equals(std::get<2>(tpl).first, "DevEUI")) {
+				BOOST_ASSERT_MSG(std::get<2>(tpl).second.get_class().tag() == cyng::TC_MAC64, "DevEUI has wrong data type");
+			}
+		}
+#endif
 
 		node::db_req_modify_by_param(logger_
 			, db_

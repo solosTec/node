@@ -744,6 +744,12 @@ namespace node
 		, boost::uuids::uuid source)
 	{
 #ifdef _DEBUG
+		if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice")) {
+			BOOST_ASSERT_MSG(data.at(0).get_class().tag() == cyng::TC_MAC64, "DevEUI has wrong data type");
+		}
+#endif
+
+#ifdef _DEBUG
 		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
 		{
 			vm_.async_run(cyng::generate_invoke("log.msg.debug"	
@@ -913,6 +919,12 @@ namespace node
 
 			CYNG_LOG_INFO(logger_, tbl->meta().get_name() << "->size(" << tbl->size() << ")");
 			tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+#ifdef _DEBUG
+				if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice")) {
+					BOOST_ASSERT_MSG(rec.data().at(0).get_class().tag() == cyng::TC_MAC64, "DevEUI has wrong data type");
+				}
+#endif
 
 				ctx.run(bus_res_subscribe(tbl->meta().get_name()
 					, rec.key()

@@ -20,6 +20,7 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, boost::asio::ssl::context& ctx
 		, boost::uuids::uuid tag
+		, bool keep_xml_files
 		, cluster_config_t const& cfg
 		, boost::asio::ip::tcp::endpoint ep
 		, std::string const& doc_root
@@ -38,7 +39,7 @@ namespace node
 			, blacklist
 			, bus_->vm_)
 		, cache_()
-		, processor_(logger, cache_, btp->mux_.get_io_service(), tag, bus_)
+		, processor_(logger, keep_xml_files, cache_, btp->mux_.get_io_service(), tag, bus_)
 		, dispatcher_(logger, cache_)
 		, db_sync_(logger, cache_)
 	{

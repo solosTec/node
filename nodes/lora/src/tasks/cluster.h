@@ -37,6 +37,7 @@ namespace node
 			, cyng::logging::log_ptr
 			, boost::asio::ssl::context& ctx
 			, boost::uuids::uuid tag
+			, bool keep_xml_files
 			, cluster_config_t const& cfg
 			, boost::asio::ip::tcp::endpoint ep
 			, std::string const& doc_root
@@ -71,7 +72,7 @@ namespace node
 		cyng::async::base_task& base_;
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-		const cluster_redundancy config_;
+		cluster_redundancy const config_;
 
 		/**
 		 * the HTTPS server

@@ -277,6 +277,9 @@ namespace node
 			else {
 				db.insert("_Config", cyng::table::key_generator("host-name"), cyng::table::data_generator(ec.message()), 1, tag);
 			}
+
+			db.insert("_Config", cyng::table::key_generator("smf-version"), cyng::table::data_generator(NODE_SUFFIX), 1, tag);
+
 		}
 
 		if (!create_table_sys_msg(db))

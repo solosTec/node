@@ -45,6 +45,7 @@ set (node_lora_assets
 	
 set (node_lora_examples
 	nodes/lora/src/examples/example.xml
+	nodes/lora/src/examples/water.xml
 )
 
 set (node_lora_schemes

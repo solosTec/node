@@ -84,6 +84,9 @@ namespace node
 		if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
 		{
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
+		{
+		}
 		else
 		{
 			CYNG_LOG_ERROR(logger_, "sig.del - unknown table "
@@ -93,7 +96,10 @@ namespace node
 
 	void dispatcher::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
 	{
-		if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
+		if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
+		{
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
 		{
 		}
 		else
@@ -118,12 +124,15 @@ namespace node
 		//
 		auto pm = tbl->meta().to_param_map(attr);
 
-		if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
+		if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
+		{
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
 		{
 		}
 		else
 		{
-			CYNG_LOG_WARNING(logger_, "sig.mode - unknown table "
+			CYNG_LOG_WARNING(logger_, "sig.mod - unknown table "
 				<< tbl->meta().get_name());
 
 		}
@@ -167,6 +176,12 @@ namespace node
 		//
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
+
+#ifdef _DEBUG
+		if (boost::algorithm::equals(std::get<0>(tpl), "TLoRaDevice")) {
+			BOOST_ASSERT_MSG(std::get<2>(tpl).at(0).get_class().tag() == cyng::TC_MAC64, "DevEUI has wrong data type");
+		}
+#endif
 
 		if (!cache_.insert(std::get<0>(tpl)	//	table name
 			, std::get<1>(tpl)	//	table key

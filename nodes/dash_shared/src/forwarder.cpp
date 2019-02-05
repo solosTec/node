@@ -12,6 +12,7 @@
 #include <cyng/vector_cast.hpp>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/parser/buffer_parser.h>
+#include <cyng/parser/mac_parser.h>
 #include <cyng/xml.h>
 #include <cyng/csv.h>
 
@@ -71,9 +72,6 @@ namespace node
 				cyng::vector_t vec;
 				vec = cyng::value_cast(reader["key"].get("tag"), vec);
 				BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
-				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				//CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");
-				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
 				auto key = cyng::table::key_generator(vec.at(0));
 				ctx.queue(bus_req_db_remove("TDevice", key, ctx.tag()));
 			}
@@ -93,9 +91,6 @@ namespace node
 				cyng::vector_t vec;
 				vec = cyng::value_cast(reader["key"].get("tag"), vec);
 				BOOST_ASSERT_MSG(vec.size() == 1, "TGateway key has wrong size");
-				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				//CYNG_LOG_DEBUG(logger, "TGateway key [" << str << "]");
-				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
 				auto key = cyng::table::key_generator(vec.at(0));
 				ctx.queue(bus_req_db_remove("TGateway", key, ctx.tag()));
 			}
@@ -115,9 +110,6 @@ namespace node
 				cyng::vector_t vec;
 				vec = cyng::value_cast(reader["key"].get("tag"), vec);
 				BOOST_ASSERT_MSG(vec.size() == 1, "TMeter key has wrong size");
-				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				//CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");
-				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
 				auto key = cyng::table::key_generator(vec.at(0));
 				ctx.queue(bus_req_db_remove("TMeter", key, ctx.tag()));
 			}
@@ -337,6 +329,75 @@ namespace node
 							, 0
 							, ctx.tag()));
 
+					}
+					else if (boost::algorithm::equals(param.first, "DevEUI")) {
+
+						//
+						//	convert value to mac64
+						//
+						auto const eui = cyng::value_cast<std::string>(reader["rec"]["data"].get(param.first), "0000:0000:0000:0000");
+						std::pair<cyng::mac64, bool > r = cyng::parse_mac64(eui);
+						if (r.second) {
+							ctx.queue(bus_req_db_modify("TLoRaDevice"
+								, key
+								, cyng::param_factory(param.first, r.first)
+								, 0
+								, ctx.tag()));
+						}
+						else {
+							CYNG_LOG_WARNING(logger, "modify channel ["
+								<< channel <<
+								"] with invalid "
+								<< param.first
+								<< ": "
+								<< eui);
+						}
+					}
+					else if (boost::algorithm::equals(param.first, "AppEUI")) {
+
+						//
+						//	convert value to mac64
+						//
+						auto const eui = cyng::value_cast<std::string>(reader["rec"]["data"].get(param.first), "0000:0000:0000:0000");
+						std::pair<cyng::mac64, bool > r = cyng::parse_mac64(eui);
+						if (r.second) {
+							ctx.queue(bus_req_db_modify("TLoRaDevice"
+								, key
+								, cyng::param_factory(param.first, r.first)
+								, 0
+								, ctx.tag()));
+						}
+						else {
+							CYNG_LOG_WARNING(logger, "modify channel ["
+								<< channel <<
+								"] with invalid "
+								<< param.first
+								<< ": "
+								<< eui);
+						}
+					}
+					else if (boost::algorithm::equals(param.first, "GatewayEUI")) {
+
+						//
+						//	convert value to mac64
+						//
+						auto const eui = cyng::value_cast<std::string>(reader["rec"]["data"].get(param.first), "0000:0000:0000:0000");
+						std::pair<cyng::mac64, bool > r = cyng::parse_mac64(eui);
+						if (r.second) {
+							ctx.queue(bus_req_db_modify("TLoRaDevice"
+								, key
+								, cyng::param_factory(param.first, r.first)
+								, 0
+								, ctx.tag()));
+						}
+						else {
+							CYNG_LOG_WARNING(logger, "modify channel ["
+								<< channel <<
+								"] with invalid "
+								<< param.first
+								<< ": "
+								<< eui);
+						}
 					}
 					else {
 						ctx.queue(bus_req_db_modify("TLoRaDevice"

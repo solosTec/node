@@ -23,7 +23,14 @@ namespace node
 	class processor
 	{
 	public:
-		processor(cyng::logging::log_ptr, cyng::store::db&, cyng::io_service_t&, boost::uuids::uuid tag, bus::shared_type, std::ostream& = std::cout, std::ostream& = std::cerr);
+		processor(cyng::logging::log_ptr
+			, bool keep_xml_files
+			, cyng::store::db&
+			, cyng::io_service_t&
+			, boost::uuids::uuid tag
+			, bus::shared_type
+			, std::ostream& = std::cout
+			, std::ostream& = std::cerr);
 
 		cyng::controller& vm();
 
@@ -37,12 +44,16 @@ namespace node
 		void http_upload_complete(cyng::context& ctx);
 		void http_post_xml(cyng::context& ctx);
 
-		void process_uplink_msg(pugi::xml_document const& doc, pugi::xml_node node);
+		void process_uplink_msg(pugi::xml_document& doc, pugi::xml_node node);
 		void process_localisation_msg(pugi::xml_document const& doc, pugi::xml_node node);
 		void write_db(pugi::xml_node node, cyng::buffer_t const& payload);
 
 		void parse_xml(std::string const*);
 		std::tuple<std::string, std::string, bool> lookup(cyng::mac64);
+
+		void decode_water(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw);
+		void decode_ascii(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw);
+		void decode_raw(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw);
 
 		/**
 		 * @return true if auto configuration for LoRa devices is on
@@ -51,6 +62,7 @@ namespace node
 
 	private:
 		cyng::logging::log_ptr logger_;
+		bool const keep_xml_files_;
 		cyng::store::db& cache_;
 		cyng::controller vm_;
 		bus::shared_type bus_;

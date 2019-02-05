@@ -105,12 +105,20 @@ namespace node
 				while (auto res = stmt->get_result())
 				{
 					//
-					//	convert SQL result to record
+					//	Convert SQL result to record
+					//	Note that the uses meta data are incorrect!
+					//	Meta data from SQL table, but generated record has NO gen(eration) column.
 					//
 					cyng::table::record rec = cyng::to_record(meta, res);
 
+#ifdef _DEBUG
+					if (boost::algorithm::equals(meta->get_name(), "TLoRaDevice")) {
+						BOOST_ASSERT_MSG(rec.data().at(0).get_class().tag() == cyng::TC_MAC64, "DevEUI has wrong data type");
+					}
+#endif
+
 					//
-					//	ToDo: transform SQL record into cache record
+					//	transform SQL record into cache record
 					//
 					if (!tbl->insert(rec.key(), rec.data(), rec.get_generation(), tag))
 					{
@@ -211,8 +219,10 @@ namespace node
 				BOOST_ASSERT(r.second);
 				BOOST_ASSERT_MSG(r.first == pos->second->size(), "invalid key or data");
 
-
-				if (boost::algorithm::equals(name, "TDevice"))
+				if (boost::algorithm::equals(name, "TDevice") || 
+					boost::algorithm::equals(name, "TMeter") ||
+					boost::algorithm::equals(name, "TLoRaDevice") ||
+					boost::algorithm::equals(name, "TGateway"))
 				{
 					//	[763ae055-449c-4783-b383-8fc8cd52f44f]
 					//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
@@ -224,6 +234,10 @@ namespace node
 							stmt->push(cyng::make_object(gen), col.width_);
 						}
 						else {
+							//BOOST_ASSERT_MSG(col.type_ == data.at(col.pos_ - 1).get_class().tag(), "wrong data type");
+							if (col.type_ != data.at(col.pos_ - 1).get_class().tag()) {
+								CYNG_LOG_WARNING(logger_, "wrong data type in tbale " << name << " at index: " << col.pos_);
+							}
 							stmt->push(data.at(col.pos_ - 1), col.width_);
 						}
 					});
@@ -231,67 +245,22 @@ namespace node
 					{
 						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
 						CYNG_LOG_TRACE(logger_, "pk [" << key.size() << "]: " << cyng::io::to_str(key));
-						CYNG_LOG_TRACE(logger_, "data [" << data.size() << "]: " << cyng::io::to_str(data));
-					}
-					else {
-						stmt->clear();
-					}
-
-				}
-				else if (boost::algorithm::equals(name, "TGateway"))
-				{
-					//	[54c15b9e-858a-431c-9c2c-8b654c7d7651][05000000000000,EMH,EMH-VMET,2018-06-06 07:22:47.26852400,VARIOMUC-ETHERNET-1.407_14232___11X022a,factory-nr,00:01:02:03:04:05,00:01:02:03:04:06,user,pwd,mbus,operator,operator]
-
-					//meta_map.emplace("TGateway", cyng::table::make_meta_table<1, 14>("TGateway",
-					//	{ "pk", "gen", "serverId", "manufacturer", "model", "proddata", "vFirmware", "factoryNr", "ifService", "ifData", "pwdDef", "pwdRoot", "mbus", "userName", "userPwd" },
-					//	{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_TIME_POINT, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING },
-					//	{ 36, 0, 23, 64, 64, 0, 64, 8, 18, 18, 32, 32, 16, 32, 32 }));
-
-					stmt->push(key.at(0), 36);	//	pk (same as TDevice)
-					meta->loop_body([&](cyng::table::column&& col) {
-						if (col.pos_ == 0)
-						{
-							stmt->push(cyng::make_object(gen), col.width_);
+						//CYNG_LOG_TRACE(logger_, "data [" << data.size() << "]: " << cyng::io::to_str(data));
+						std::size_t idx{ 0 };
+						for (auto const& obj : data) {
+							CYNG_LOG_TRACE(logger_, "data ["
+								<< idx++
+								<< "] "
+								<< obj.get_class().type_name()
+								<< ": "
+								<< cyng::io::to_str(obj))
+								;
 						}
-						else
-						{
-							stmt->push(data.at(col.pos_ - 1), col.width_);
-						}
-					});
-					if (!stmt->execute())
-					{
-						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
-						CYNG_LOG_TRACE(logger_, "pk [" << key.size() << "]: " << cyng::io::to_str(key));
-						CYNG_LOG_TRACE(logger_, "data [" << data.size() << "]: " << cyng::io::to_str(data));
 					}
 					else {
 						stmt->clear();
 					}
-				}
-				else if (boost::algorithm::equals(name, "TLoRaDevice"))
-				{
-					//	insert TLoRaDevice 
-					//	[f4f697c0-670f-4897-9500-adfc9bff60fb]
-					//	[0100:0302:0504:0706,1122334455667788990011223344556677889900112233445566778899001122,demo,true,100,0100:0302:0604:0807,0100:0302:0604:0807] - gen 8
-					stmt->push(key.at(0), 36)	//	pk
-						.push(cyng::make_object(gen), 0)	//	generation
-						.push(data.at(0), 19)	//	DevEUI
-						.push(data.at(1), 0)	//	AESKey
-						.push(data.at(2), 0)	//	driver
-						.push(data.at(3), 0)	//	activation
-						.push(data.at(4), 0)	//	DevAddr
-						.push(data.at(5), 0)	//	AppEUI
-						.push(data.at(6), 0)	//	GatewayEUI
-						;
-					if (!stmt->execute())
-					{
-						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
-						CYNG_LOG_TRACE(logger_, "pk [" << key.size() << "]: " << cyng::io::to_str(key));
-						CYNG_LOG_TRACE(logger_, "data [" << data.size() << "]: " << cyng::io::to_str(data));
-					}
-					else {
-						stmt->clear();
-					}
+
 				}
 				else if (boost::algorithm::equals(name, "TLoraUplink"))
 				{
@@ -327,38 +296,6 @@ namespace node
 						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
 						CYNG_LOG_TRACE(logger_, "pk [" << key.size() << "]: " << cyng::io::to_str(key));
 						CYNG_LOG_TRACE(logger_, "data [" << data.size() << "]: " << cyng::io::to_str(data));
-					}
-					else {
-						stmt->clear();
-					}
-				}
-				else if (boost::algorithm::equals(name, "TMeter"))
-				{
-					//	insert TMeter 
-					stmt->push(key.at(0), 36);	//	pk
-					meta->loop_body([&](cyng::table::column&& col) {
-                        if (col.pos_ == 0) 	{
-                            stmt->push(cyng::make_object(gen), col.width_);
-                        }
-                        else {
-                            stmt->push(data.at(col.pos_ - 1), col.width_);
-                        }
-                    });
-
-					if (!stmt->execute())
-					{
-						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
-						CYNG_LOG_TRACE(logger_, "pk [" << key.size() << "]: " << cyng::io::to_str(key));
-						std::size_t idx{ 0 };
-						for (auto const& obj : data) {
-							CYNG_LOG_TRACE(logger_, "data [" 
-								<< idx++ 
-								<< "] " 
-								<< obj.get_class().type_name()
-								<< ": "
-								<< cyng::io::to_str(obj))
-								;
-						}
 					}
 					else {
 						stmt->clear();
