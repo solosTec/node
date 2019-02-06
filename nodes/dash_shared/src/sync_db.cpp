@@ -7,6 +7,8 @@
 
 #include "sync_db.h"
 #include "../../shared/db/db_schemes.h"
+#include <smf/cluster/generator.h>
+
 #include <cyng/table/meta.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
@@ -20,7 +22,7 @@ namespace node
 	{
 		CYNG_LOG_TRACE(logger, "create cache tables");
 
-		if (!create_table_device(db)) {
+		if (!create_table(db, "TDevice")) {
 			CYNG_LOG_FATAL(logger, "cannot create table TDevice");
 		}
 
@@ -39,6 +41,7 @@ namespace node
 			, "mbus"	//	(11) W-Mbus ID (i.e. A815408943050131)
 			, "userName"	//	(12)
 			, "userPwd"	//	(13)
+			//	since here columns specific for dash/s and not part of the original table scheme
 			, "name"	//	IP-T/device name
 			, "descr"	//	IP-T/device description
 			, "model"	//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
@@ -87,7 +90,7 @@ namespace node
 		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices
 		//	DevEUI - 64 bit end-device identifier, EUI-64 (unique)
 		//	DevAddr - 32 bit device address (non-unique)
-		if (!create_table_lora_device(db))
+		if (!create_table(db, "TLoRaDevice"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TLoRaDevice");
 		}
@@ -142,27 +145,27 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
 		}
 		
-		if (!create_table_session(db))
+		if (!create_table(db, "_Session"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Session");
 		}
 
-		if (!create_table_target(db))
+		if (!create_table(db, "_Target"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Target");
 		}
 
-		if (!create_table_connection(db))
+		if (!create_table(db, "_Connection"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Connection");
 		}
 
-		if (!create_table_cluster(db))
+		if (!create_table(db, "_Cluster"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Cluster");
 		}
 
-		if (!create_table_config(db))
+		if (!create_table(db, "_Config"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Config");
 		}
@@ -174,17 +177,17 @@ namespace node
 			//db.insert("_Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, bus_->vm_.tag());
 		}
 
-		if (!create_table_sys_msg(db))
+		if (!create_table(db, "_SysMsg"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _SysMsg");
 		}
 
-		if (!create_table_csv(db))
+		if (!create_table(db, "_CSV"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _CSV");
 		}
 
-		if (!create_table_lora_uplink(db))
+		if (!create_table(db, "_LoRaUplink"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _LoRaUplink");
 		}
@@ -380,13 +383,20 @@ namespace node
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
 
-		node::db_res_insert(logger_
-			, db_
+		db_insert(ctx
 			, std::get<0>(tpl)		//	[0] table name
 			, std::get<1>(tpl)		//	[1] table key
 			, std::get<2>(tpl)		//	[2] record
 			, std::get<3>(tpl)		//	[3] generation
-			, ctx.tag());
+			, ctx.tag());	//	[4] origin	
+
+		//node::db_res_insert(logger_
+		//	, db_
+		//	, std::get<0>(tpl)		//	[0] table name
+		//	, std::get<1>(tpl)		//	[1] table key
+		//	, std::get<2>(tpl)		//	[2] record
+		//	, std::get<3>(tpl)		//	[3] generation
+		//	, ctx.tag());
 
 	}
 
@@ -417,13 +427,20 @@ namespace node
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
 
-		node::db_req_insert(logger_
-			, db_
+		db_insert(ctx
 			, std::get<0>(tpl)		//	[0] table name
 			, std::get<1>(tpl)		//	[1] table key
 			, std::get<2>(tpl)		//	[2] record
 			, std::get<3>(tpl)		//	[3] generation
-			, std::get<4>(tpl));
+			, std::get<4>(tpl));	//	[4] origin	
+
+		//node::db_req_insert(logger_
+		//	, db_
+		//	, std::get<0>(tpl)		//	[0] table name
+		//	, std::get<1>(tpl)		//	[1] table key
+		//	, std::get<2>(tpl)		//	[2] record
+		//	, std::get<3>(tpl)		//	[3] generation
+		//	, std::get<4>(tpl));
 	}
 
 	void db_sync::db_req_remove(cyng::context& ctx)
@@ -575,43 +592,239 @@ namespace node
 			, std::move(std::get<2>(tpl))		//	[2] parameter
 			, std::get<3>(tpl)		//	[3] generation
 			, std::get<4>(tpl));	//	[4] source
-
 	}
 
-
-	void db_res_insert(cyng::logging::log_ptr logger
-		, cyng::store::db& db
+	void db_sync::db_insert(cyng::context& ctx
 		, std::string const& table		//	[0] table name
 		, cyng::table::key_type key		//	[1] table key
 		, cyng::table::data_type data	//	[2] record
 		, std::uint64_t	gen
 		, boost::uuids::uuid origin)
 	{
-		cyng::table::record rec(db.meta(table), key, data, gen);
+		if (boost::algorithm::equals(table, "TGateway"))
+		{
+			db_.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
 
-		if (!db.insert(table
+				//
+				//	search session with this device/GW tag
+				//
+				auto dev_rec = tbl_dev->lookup(key);
+
+				//
+				//	set device name
+				//	set model
+				//	set vFirmware
+				//	set online state
+				//
+				if (!dev_rec.empty())
+				{
+					data.push_back(dev_rec["name"]);
+					data.push_back(dev_rec["descr"]);
+					data.push_back(dev_rec["id"]);
+					data.push_back(dev_rec["vFirmware"]);
+
+					//
+					//	get online state
+					//
+					auto ses_rec = tbl_ses->find_first(cyng::param_t("device", key.at(0)));
+					if (ses_rec.empty()) {
+						data.push_back(cyng::make_object(0));
+					}
+					else {
+						const auto rtag = cyng::value_cast(ses_rec["rtag"], boost::uuids::nil_uuid());
+						data.push_back(cyng::make_object(rtag.is_nil() ? 1 : 2));
+					}
+
+					if (!tbl_gw->insert(key, data, gen, origin))
+					{
+
+						CYNG_LOG_WARNING(logger_, ctx.get_name()
+							<< " failed "
+							<< table		// table name
+							<< " - "
+							<< cyng::io::to_str(key)
+							<< " => "
+							<< cyng::io::to_str(data));
+
+					}
+				}
+				else {
+
+					std::stringstream ss;
+					ss
+						<< "gateway "
+						<< cyng::io::to_str(key)
+						<< " has no associated device"
+						;
+
+					CYNG_LOG_WARNING(logger_, ss.str());
+
+					ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+
+				}
+			}	, cyng::store::write_access("TGateway")
+				, cyng::store::read_access("TDevice")
+				, cyng::store::read_access("_Session"));
+		}
+		else if (boost::algorithm::equals(table, "TMeter"))
+		{
+			//
+			//	Additional values for TMeter
+			//
+			db_.access([&](cyng::store::table* tbl_meter, cyng::store::table const* tbl_gw) {
+
+				//
+				//	TMeter contains an optional reference to TGateway table
+				//
+				auto const key_gw = cyng::table::key_generator(data.at(10));
+				auto const dev_gw = tbl_gw->lookup(key_gw);
+
+				//
+				//	set serverId
+				//
+				if (!dev_gw.empty())
+				{
+					data.push_back(dev_gw["serverId"]);
+				}
+				else
+				{
+					data.push_back(cyng::make_object("00000000000000"));
+
+					CYNG_LOG_WARNING(logger_, "res.subscribe - meter"
+						<< cyng::io::to_str(key)
+						<< " has no associated gateway");
+				}
+
+				if (!tbl_meter->insert(key, data, gen, origin))
+				{
+
+					CYNG_LOG_WARNING(logger_, ctx.get_name()
+						<< " failed "
+						<< table		// table name
+						<< " - "
+						<< cyng::io::to_str(key)
+						<< " => "
+						<< cyng::io::to_str(data));
+
+				}
+
+			}	, cyng::store::write_access("TMeter")
+				, cyng::store::read_access("TGateway"));
+
+		}
+		else if (!db_.insert(table
 			, key
 			, data
 			, gen
-			, origin))	//	self
+			, origin))
 		{
-			CYNG_LOG_WARNING(logger, "db.res.insert failed "
+			CYNG_LOG_WARNING(logger_, ctx.get_name()
+				<< " failed "
 				<< table		// table name
 				<< " - "
-				<< cyng::io::to_str(key));
+				<< cyng::io::to_str(key)
+				<< " => "
+				<< cyng::io::to_str(data));
+
+			//
+			//	dump record data
+			//
+			std::size_t idx{ 0 };
+			for (auto const& obj : data) {
+				CYNG_LOG_TRACE(logger_, "data ["
+					<< idx++
+					<< "] "
+					<< obj.get_class().type_name()
+					<< ": "
+					<< cyng::io::to_str(obj))
+					;
+			}
+
+		}
+		else
+		{
+			if (boost::algorithm::equals(table, "_Session"))
+			{
+				db_.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+
+					//
+					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
+					//	Gateway and Device table share the same table key
+					//
+					auto rec = tbl_ses->lookup(key);
+					if (rec.empty()) {
+						//	set online state
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
+					}
+					else {
+						const auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", rtag.is_nil() ? 1 : 2), origin);
+					}
+				}	, cyng::store::write_access("TGateway")
+					, cyng::store::read_access("_Session"));
+			}
 		}
 	}
 
-	void db_req_insert(cyng::logging::log_ptr logger
+
+
+	//void db_res_insert(cyng::logging::log_ptr logger
+	//	, cyng::store::db& db
+	//	, std::string const& table		//	[0] table name
+	//	, cyng::table::key_type key		//	[1] table key
+	//	, cyng::table::data_type data	//	[2] record
+	//	, std::uint64_t	gen
+	//	, boost::uuids::uuid origin)
+	//{
+	//	db_insert(logger, db, table, key, data, gen, origin, "db.res.insert");
+		//cyng::table::record rec(db.meta(table), key, data, gen);
+
+		//if (!db.insert(table
+		//	, key
+		//	, data
+		//	, gen
+		//	, origin))	//	self
+		//{
+		//	CYNG_LOG_ERROR(logger, "db.res.insert failed "
+		//		<< table		// table name
+		//		<< " - "
+		//		<< cyng::io::to_str(key));
+		//	//
+		//	//	dump record data
+		//	//
+		//	std::size_t idx{ 0 };
+		//	for (auto const& obj : data) {
+		//		CYNG_LOG_TRACE(logger, "data ["
+		//			<< idx++
+		//			<< "] "
+		//			<< obj.get_class().type_name()
+		//			<< ": "
+		//			<< cyng::io::to_str(obj))
+		//			;
+		//	}
+		//}
+	//}
+
+	//void db_req_insert(cyng::logging::log_ptr logger
+	//	, cyng::store::db& db
+	//	, std::string const& table		//	[0] table name
+	//	, cyng::table::key_type key		//	[1] table key
+	//	, cyng::table::data_type data	//	[2] record
+	//	, std::uint64_t	gen
+	//	, boost::uuids::uuid origin)
+	//{
+	//	db_insert(logger, db, table, key, data, gen, origin, "db.req.insert");
+	//}
+
+	void db_insert(cyng::logging::log_ptr logger
 		, cyng::store::db& db
 		, std::string const& table		//	[0] table name
 		, cyng::table::key_type key		//	[1] table key
 		, cyng::table::data_type data	//	[2] record
 		, std::uint64_t	gen
-		, boost::uuids::uuid origin)
+		, boost::uuids::uuid origin
+		, std::string cmd)
 	{
-		//cyng::table::record rec(cache_.meta(table), key, data, gen);
-
 		if (boost::algorithm::equals(table, "TGateway"))
 		{
 			db.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
@@ -649,7 +862,8 @@ namespace node
 					if (!tbl_gw->insert(key, data, gen, origin))
 					{
 
-						CYNG_LOG_WARNING(logger, "db.req.insert failed "
+						CYNG_LOG_WARNING(logger, cmd
+							<< " failed "
 							<< table		// table name
 							<< " - "
 							<< cyng::io::to_str(key)
@@ -662,6 +876,8 @@ namespace node
 					CYNG_LOG_WARNING(logger, "gateway "
 						<< cyng::io::to_str(key)
 						<< " has no associated device");
+					//ctx.queue(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_TRACE : cyng::logging::severity::LEVEL_WARNING), ss.str()));
+
 				}
 			}	, cyng::store::write_access("TGateway")
 				, cyng::store::read_access("TDevice")
@@ -699,7 +915,8 @@ namespace node
 				if (!tbl_meter->insert(key, data, gen, origin))
 				{
 
-					CYNG_LOG_WARNING(logger, "db.req.insert failed "
+					CYNG_LOG_WARNING(logger, cmd
+						<< " failed "
 						<< table		// table name
 						<< " - "
 						<< cyng::io::to_str(key)
@@ -718,12 +935,28 @@ namespace node
 			, gen
 			, origin))
 		{
-			CYNG_LOG_WARNING(logger, "db.req.insert failed "
+			CYNG_LOG_WARNING(logger, cmd 
+				<< " failed "
 				<< table		// table name
 				<< " - "
 				<< cyng::io::to_str(key)
 				<< " => "
 				<< cyng::io::to_str(data));
+
+			//
+			//	dump record data
+			//
+			std::size_t idx{ 0 };
+			for (auto const& obj : data) {
+				CYNG_LOG_TRACE(logger, "data ["
+					<< idx++
+					<< "] "
+					<< obj.get_class().type_name()
+					<< ": "
+					<< cyng::io::to_str(obj))
+					;
+			}
+
 		}
 		else
 		{

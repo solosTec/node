@@ -245,7 +245,6 @@ namespace node
 					{
 						CYNG_LOG_ERROR(logger_, "sql insert failed: " << sql);
 						CYNG_LOG_TRACE(logger_, "pk [" << key.size() << "]: " << cyng::io::to_str(key));
-						//CYNG_LOG_TRACE(logger_, "data [" << data.size() << "]: " << cyng::io::to_str(data));
 						std::size_t idx{ 0 };
 						for (auto const& obj : data) {
 							CYNG_LOG_TRACE(logger_, "data ["

@@ -6,6 +6,7 @@
  */ 
 
 #include "forwarder.h"
+#include "../../shared/db/db_schemes.h"
 #include <smf/cluster/generator.h>
 #include <cyng/table/key.hpp>
 #include <cyng/io/serializer.h>
@@ -584,8 +585,13 @@ namespace node
 		if (result) {
 
 			std::size_t counter{ 0 };
-			pugi::xpath_node_set data = doc.select_nodes("TGateway/record");
-			auto meta = db_.meta("TGateway");
+			pugi::xpath_node_set data = doc.select_nodes("/TGateway/record");
+
+			//
+			//	target scheme required
+			//
+			//auto meta = db_.meta("TGateway");
+			auto meta = create_meta("TGateway");
 			for (pugi::xpath_node_set::const_iterator it = data.begin(); it != data.end(); ++it)
 			{
 				counter++;
@@ -593,14 +599,14 @@ namespace node
 
 				auto rec = cyng::xml::read(node, meta);
 
-				CYNG_LOG_TRACE(logger_, "session "
+				CYNG_LOG_INFO(logger_, "session "
 					<< ctx.tag()
 					<< " - insert gateway #"
 					<< counter
 					<< " "
 					<< cyng::value_cast(rec["pk"], boost::uuids::nil_uuid())
 					<< " - "
-					<< cyng::value_cast<std::string>(rec["name"], ""));
+					<< cyng::value_cast<std::string>(rec["serverId"], ""));
 
 				ctx.queue(bus_req_db_insert("TGateway", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
 			}

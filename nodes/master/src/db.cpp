@@ -49,7 +49,7 @@ namespace node
 		//	(8) [std::chrono::system_clock::time_stamp] created 
 		//	(9) [std::uint32] query
 
-		if (!create_table_device(db))	{
+		if (!create_table(db, "TDevice"))	{
 			CYNG_LOG_FATAL(logger, "cannot create table TDevice");
 		}
 
@@ -67,7 +67,7 @@ namespace node
 		//	(10) root PW
 		//	(11) W-Mbus ID (i.e. A815408943050131)
 		//	(12) source (UUID) - usefull to detect multiple configuration uploads
-		if (!create_table_gateway(db)) {
+		if (!create_table(db, "TGateway")) {
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
 		}
 		else
@@ -100,7 +100,7 @@ namespace node
 		//	(5) DevAddr
 		//	(6) AppEUI - provided by the owner of the application server
 		//	(7) GatewayEUI
-		if (!create_table_lora_device(db))
+		if (!create_table(db, "TLoRaDevice"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TLoRaDevice");
 		}
@@ -122,7 +122,7 @@ namespace node
 #endif
 
 
-		if (!create_table_meter(db))
+		if (!create_table(db, "TMeter"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
 		}
@@ -154,7 +154,7 @@ namespace node
 		//	+-----------------
 		//	(3) description [std::string]
 		//	(4) creation-time [std::chrono::system_clock::time_stamp]
-		if (!create_table_leased_line(db))
+		if (!create_table(db, "TLL"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TLL");
 		}
@@ -171,12 +171,12 @@ namespace node
 		//
 		//	The session tables uses the same tag as the remote client session
 		//	
-		if (!create_table_session(db))
+		if (!create_table(db, "_Session"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Session");
 		}
 
-		if (!create_table_target(db))
+		if (!create_table(db, "_Target"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Target");
 		}
@@ -208,12 +208,12 @@ namespace node
 		//
 		//	All dial-up connections. Leased Lines have to be incorporated.
 		//
-		if (!create_table_connection(db))
+		if (!create_table(db, "_Connection"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Connection");
 		}
 
-		if (!create_table_cluster(db))
+		if (!create_table(db, "_Cluster"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Cluster");
 		}
@@ -234,7 +234,7 @@ namespace node
 
 		}
 
-		if (!create_table_config(db))
+		if (!create_table(db, "_Config"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Config");
 		}
@@ -282,7 +282,7 @@ namespace node
 
 		}
 
-		if (!create_table_sys_msg(db))
+		if (!create_table(db, "_SysMsg"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _SysMsg");
 		}
@@ -313,7 +313,7 @@ namespace node
 		//
 		//	CSV task
 		//
-		if (!create_table_csv(db))
+		if (!create_table(db, "_CSV"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _CSV");
 		}
@@ -321,7 +321,7 @@ namespace node
 		//
 		//	LoRa Uplink
 		//
-		if (!create_table_lora_uplink(db))
+		if (!create_table(db, "_LoRaUplink"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _LoRaUplink");
 		}

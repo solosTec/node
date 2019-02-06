@@ -495,22 +495,22 @@ namespace node
 	{
 		CYNG_LOG_TRACE(logger_, "create cache tables");
 
-		if (!create_table_device(cache_))
+		if (!create_table(cache_, "TDevice"))
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table TDevice");
 		}
 
-		if (!create_table_gateway(cache_)) 
+		if (!create_table(cache_, "TGateway")) 
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table TGateway");
 		}
 
-		if (!create_table_lora_device(cache_))
+		if (!create_table(cache_, "TLoRaDevice"))
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table TLoRaDevice");
 		}
 
-		if (!create_table_meter(cache_))
+		if (!create_table(cache_, "TMeter"))
 		{
 			CYNG_LOG_FATAL(logger_, "cannot create table TMeter");
 		}

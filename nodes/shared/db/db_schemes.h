@@ -15,24 +15,17 @@ namespace cyng {
 }
 namespace node 
 {
-	bool create_table_device(cyng::store::db&);
-	bool create_table_lora_device(cyng::store::db&);
-
-	bool create_table_session(cyng::store::db&);
-	bool create_table_target(cyng::store::db&);
-	bool create_table_meter(cyng::store::db&);
-	bool create_table_leased_line(cyng::store::db&);	
-	bool create_table_connection(cyng::store::db&);
-	bool create_table_cluster(cyng::store::db&);
-	bool create_table_config(cyng::store::db&);
-	bool create_table_sys_msg(cyng::store::db&);
-	bool create_table_csv(cyng::store::db&);
-	bool create_table_lora_uplink(cyng::store::db&);
+	/**
+	 * Provide meta data of the specified table. If table name 
+	 * unknown the return value is an empty pointer.
+	 */
+	cyng::table::meta_table_ptr create_meta(std::string);
 
 	/**
-	 * dash/s uses a different scheme
+	 * create a table with the specified name.
 	 */
-	bool create_table_gateway(cyng::store::db&);
+	bool create_table(cyng::store::db&, std::string);
+
 }
 
 #endif

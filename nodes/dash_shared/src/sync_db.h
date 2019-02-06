@@ -36,6 +36,13 @@ namespace node
 		void db_req_remove(cyng::context& ctx);
 		void db_req_modify_by_param(cyng::context& ctx);
 
+		void db_insert(cyng::context& ctx
+			, std::string const&		//	[0] table name
+			, cyng::table::key_type		//	[1] table key
+			, cyng::table::data_type	//	[2] record
+			, std::uint64_t	gen
+			, boost::uuids::uuid origin);
+
 	private:
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
@@ -50,21 +57,31 @@ namespace node
 		, boost::uuids::uuid		//	[4] origin session id
 		, std::size_t tsk);
 
-	void db_res_insert(cyng::logging::log_ptr
-		, cyng::store::db&
-		, std::string const&		//	[0] table name
-		, cyng::table::key_type		//	[1] table key
-		, cyng::table::data_type	//	[2] record
-		, std::uint64_t	gen
-		, boost::uuids::uuid origin);
+	//void db_res_insert(cyng::logging::log_ptr
+	//	, cyng::store::db&
+	//	, std::string const&		//	[0] table name
+	//	, cyng::table::key_type		//	[1] table key
+	//	, cyng::table::data_type	//	[2] record
+	//	, std::uint64_t	gen
+	//	, boost::uuids::uuid origin);
 
-	void db_req_insert(cyng::logging::log_ptr
+	//void db_req_insert(cyng::logging::log_ptr
+	//	, cyng::store::db&
+	//	, std::string const&		//	[0] table name
+	//	, cyng::table::key_type		//	[1] table key
+	//	, cyng::table::data_type	//	[2] record
+	//	, std::uint64_t	gen
+	//	, boost::uuids::uuid origin);
+
+	void db_insert(cyng::logging::log_ptr
 		, cyng::store::db&
 		, std::string const&		//	[0] table name
 		, cyng::table::key_type		//	[1] table key
 		, cyng::table::data_type	//	[2] record
 		, std::uint64_t	gen
-		, boost::uuids::uuid origin);
+		, boost::uuids::uuid origin
+		, std::string cmd);
+
 
 	void db_req_remove(cyng::logging::log_ptr
 		, cyng::store::db&
