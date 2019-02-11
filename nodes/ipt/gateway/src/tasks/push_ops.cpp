@@ -153,7 +153,7 @@ namespace node
 							, cyng::table::data_generator(std::chrono::system_clock::now()
 								, static_cast<std::uint32_t>(900u)	//	reg period - 15 min
 								, std::chrono::system_clock::now()	//	val time
-								, static_cast<std::uint64_t>(status_word_.operator size_t())	//	status
+								, static_cast<std::uint64_t>(status_word_.operator std::uint64_t())	//	status
 								, node::sml::evt_push_succes()	//	event - push successful
 								, cyng::make_buffer({ 0x81, 0x46, 0x00, 0x00, 0x02, 0xFF })
 								, std::chrono::system_clock::now()	//	val time

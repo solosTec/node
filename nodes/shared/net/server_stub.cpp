@@ -209,7 +209,13 @@ namespace node
 		CYNG_LOG_TRACE(logger_, "server_stub is waiting for "
 			<< client_map_.size()
 			<< " clients to shutdown");
+        
+#ifdef CYNG_STD_SHARED_MUTEX_OFF
+        //  conversion to boost::chrono::seconds required
+		if (cv_sessions_closed_.wait_for(lock, boost::chrono::seconds(timeout_.count()), [this] {
+#else
 		if (cv_sessions_closed_.wait_for(lock, timeout_, [this] {
+#endif
 			return client_map_.empty();
 		})) {
 

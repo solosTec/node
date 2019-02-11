@@ -323,7 +323,14 @@ namespace node
 		//	lookup configured LoRa devices
 		//
 		if (r.second) {
-			auto [aes_key, driver, found] = lookup(r.first);
+#if defined _WIN32 || (defined __GNUC__ && __GNUC_PREREQ(5,0))
+			auto const [aes_key, driver, found] = lookup(r.first);
+#else
+            std::string aes_key;
+            std::string driver;
+            bool found;
+            std::tie(aes_key, driver, found) = lookup(r.first);
+#endif
 			if (!found) {
 				CYNG_LOG_WARNING(logger_, "DevEUI " << dev_eui << " is not configured");
 				if (is_autoconfig_on()) {
