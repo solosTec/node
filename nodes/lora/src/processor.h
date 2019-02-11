@@ -53,6 +53,7 @@ namespace node
 
 		void decode_water(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw);
 		void decode_ascii(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw);
+		void decode_mbus(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw);
 		void decode_raw(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw);
 
 		/**

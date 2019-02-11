@@ -205,7 +205,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">LoRa</h5>
-                    <form id="smf-upload-config-LoRa" method="post" action="/" enctype="multipart/form-data" class="form-horizontal">
+                    <form id="smf-upload-config-LoRa" method="post" action="config.upload.html" enctype="multipart/form-data" class="form-horizontal">
                         <div class="form-group">
                             <label for="smf-upload-config-LoRa-file" id="smf-upload-config-LoRa-header">Select a LoRa configuration file<span id="xxx"></span></label>
                             <input type="file" class="form-control-file" id="smf-upload-config-LoRa-file" accept=".xml, application/xml" multiple>
@@ -236,7 +236,7 @@
                                 <label class="form-check-label" for="smf-upload-config-LoRa-v5">SigFox</label>
                             </div>
                         </div>
-                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.upload.meters" />
+                        <input type="hidden" id="smf-procedure" name="smf-procedure" value="cfg.upload.LoRa" />
                         <button type="submit" class="btn btn-primary">&#8679; Upload</button>
                     </form>
                 </div>
@@ -307,7 +307,28 @@
             var files = this['smf-upload-config-gw-file'].files;
             console.log("Handler for .submit() called with " + data.length + ' param(s) and ' + files.length + ' file(s)');
             uploadConfigFiles(data, files, "gw-conf-", '/upload/config/gw/');
+        });
 
+        //  smf-upload-config-meter
+        $('#smf-upload-config-meter').submit(function (event) {
+            event.preventDefault();
+            console.log('upload: ' + $('#smf-upload-config-meter').serialize());
+            //console.log('upload ' + event.target.baseURI);
+            var data = $('#smf-upload-config-meter').serializeArray();
+            var files = this['smf-upload-config-meter-file'].files;
+            console.log("Handler for .submit() called with " + data.length + ' param(s) and ' + files.length + ' file(s)');
+            uploadConfigFiles(data, files, "gw-conf-", '/upload/config/meter/');
+        });
+
+        //  smf-upload-config-LoRa
+        $('#smf-upload-config-LoRa').submit(function (event) {
+            event.preventDefault();
+            console.log('upload: ' + $('#smf-upload-config-LoRa').serialize());
+            //console.log('upload ' + event.target.baseURI);
+            var data = $('#smf-upload-config-LoRa').serializeArray();
+            var files = this['smf-upload-config-LoRa-file'].files;
+            console.log("Handler for .submit() called with " + data.length + ' param(s) and ' + files.length + ' file(s)');
+            uploadConfigFiles(data, files, "gw-conf-", '/upload/config/LoRa/');
         });
 
         function uploadConfigFiles(data, files, prefix, url) {

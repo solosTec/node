@@ -362,6 +362,13 @@ namespace node
 					//
 					decode_ascii(doc, dev_eui, raw);
 				}
+				else if (boost::algorithm::equals(driver, "mbus")) {
+
+					//
+					//	M-Bus
+					//
+					decode_mbus(doc, dev_eui, raw);
+				}
 				else {
 
 					//
@@ -463,6 +470,11 @@ namespace node
 			const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
 			doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
 		}
+	}
+
+	void processor::decode_mbus(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw)
+	{
+		CYNG_LOG_ERROR(logger_, "decode DevEUI " << dev_eui << " with driver M-Bus not implemented yet");
 	}
 
 	void processor::decode_raw(pugi::xml_document& doc, std::string const& dev_eui, std::string const& raw)
