@@ -7,16 +7,12 @@
 
 #include "proxy_comm.h"
 #include "session_state.h"
+#include <smf/sml/intrinsics/obis.h>
+#include <smf/sml/obis_db.h>
 
 #include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>
-//#include <cyng/vector_cast.hpp>
-//#include <cyng/numeric_cast.hpp>
-//#include <cyng/dom/reader.h>
-//#include <cyng/parser/buffer_parser.h>
-//#include <cyng/factory/factory.hpp>
-//
-//#include <boost/algorithm/string.hpp>
+#include <cyng/vm/generator.h>
 
 namespace node 
 {
@@ -36,7 +32,7 @@ namespace node
 		vm.register_function("sml.get.proc.param.srv.visible", 8, std::bind(&proxy_comm::sml_get_proc_param_srv_visible, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.param.srv.active", 8, std::bind(&proxy_comm::sml_get_proc_param_srv_active, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.param.firmware", 8, std::bind(&proxy_comm::sml_get_proc_param_firmware, this, std::placeholders::_1));
-		//vm.register_function("sml.get.proc.param.simple", 6, std::bind(&proxy_comm::sml_get_proc_param_simple, this, std::placeholders::_1));
+		vm.register_function("sml.get.proc.param.simple", 6, std::bind(&proxy_comm::sml_get_proc_param_simple, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.status.word", 6, std::bind(&proxy_comm::sml_get_proc_param_status_word, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.param.memory", 7, std::bind(&proxy_comm::sml_get_proc_param_memory, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.param.wmbus.status", 9, std::bind(&proxy_comm::sml_get_proc_param_wmbus_status, this, std::placeholders::_1));
@@ -162,6 +158,58 @@ namespace node
 		//	* [bool] active/inactive
 
 		state_.react(ipt::state::evt_sml_get_proc_param_firmware(ctx.get_frame()));
+	}
+
+	void proxy_comm::sml_get_proc_param_simple(cyng::context& ctx)
+	{
+		//
+		//	examples
+		//	[c61cc215-26b7-4905-a87a-4ee23500cbfd,2933188-5,0,05002518A064,8181C78203FF,736F6C6F73546563]
+		//	[c61cc215-26b7-4905-a87a-4ee23500cbfd,2933188-5,0,05002518A064,8181C78204FF,05002518A064CE]
+		//	
+		//	* [uuid] pk
+		//	* [string] trx
+		//	* [size_t] idx
+		//	* [buffer] server_id
+		//	* [buffer] path/OBIS
+		//	* value
+		//
+
+		cyng::vector_t const frame = ctx.get_frame();
+		//ctx.queue(cyng::generate_invoke("log.msg.info", ctx.get_name(), frame));
+
+		//	OBIS_CODE_DEVICE_CLASS - 81 81 C7 82 02 FF
+		//	OBIS_DATA_MANUFACTURER
+		//	OBIS_CODE_SERVER_ID - 81 81 C7 82 04 FF
+		cyng::buffer_t tmp;
+		sml::obis const path(cyng::value_cast(frame.at(4), tmp));
+		if (sml::OBIS_CODE_DEVICE_CLASS == path) {
+
+			//
+			//	device class
+			//
+			ctx.queue(cyng::generate_invoke("log.msg.info", ctx.get_name(), "device class", frame.at(5)));
+			state_.react(ipt::state::evt_sml_get_proc_param_device_class(frame));
+		}
+		else if (sml::OBIS_DATA_MANUFACTURER == path) {
+
+			//
+			//	manufacturer
+			//
+			ctx.queue(cyng::generate_invoke("log.msg.info", ctx.get_name(), "manufacturer", frame.at(5)));
+			state_.react(ipt::state::evt_sml_get_proc_param_manufacturer(frame));
+		}
+		else if (sml::OBIS_CODE_SERVER_ID == path) {
+
+			//
+			//	server ID
+			//
+			ctx.queue(cyng::generate_invoke("log.msg.info", ctx.get_name(), "server ID", frame.at(5)));
+			state_.react(ipt::state::evt_sml_get_proc_param_server_id(frame));
+		}
+		else {
+			ctx.queue(cyng::generate_invoke("log.msg.error", ctx.get_name(), "unknown OBIS path"));
+		}
 	}
 
 	void proxy_comm::sml_get_proc_param_status_word(cyng::context& ctx)

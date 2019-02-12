@@ -9,11 +9,7 @@
 #define NODE_IPT_MASTER_PROXY_COMM_H
 
 #include <cyng/vm/controller.h>
-//#include <cyng/intrinsics/buffer.h>
-//#include <cyng/object.h>
-//#include <cyng/intrinsics/sets.h>
-//#include <boost/uuid/uuid.hpp>
-//
+
 namespace node 
 {
 	namespace ipt
@@ -21,7 +17,6 @@ namespace node
 		//
 		//	forwward declarations
 		//
-		//class session;
 		class session_state;
 	}
 
@@ -43,7 +38,7 @@ namespace node
 		void sml_get_proc_param_srv_visible(cyng::context& ctx);
 		void sml_get_proc_param_srv_active(cyng::context& ctx);
 		void sml_get_proc_param_firmware(cyng::context& ctx);
-		//void sml_get_proc_param_simple(cyng::context& ctx);
+		void sml_get_proc_param_simple(cyng::context& ctx);
 		void sml_get_proc_param_status_word(cyng::context& ctx);
 		void sml_get_proc_param_memory(cyng::context& ctx);
 		void sml_get_proc_param_wmbus_status(cyng::context& ctx);

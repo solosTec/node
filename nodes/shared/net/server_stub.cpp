@@ -239,8 +239,9 @@ namespace node
 		// operations. Once all operations have finished the io_context::run()
 		// call will exit.
 		cyng::async::unique_lock<cyng::async::mutex> lock(mutex_);
-		acceptor_.cancel();
-		acceptor_.close();
+		boost::system::error_code ec;
+		acceptor_.cancel(ec);
+		acceptor_.close(ec);
 
 		//
 		//	wait for cancellation of accept operation

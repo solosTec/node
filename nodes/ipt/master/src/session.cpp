@@ -1668,7 +1668,7 @@ namespace node
 				//
 				//	ToDo: log less data
 				//
-				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.transfer.pushdata", frame));
+				//ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.transfer.pushdata", frame));
 
 				cyng::param_map_t bag;
 				bag["tp-layer"] = cyng::make_object("ipt");

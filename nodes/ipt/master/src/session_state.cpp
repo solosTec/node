@@ -1126,6 +1126,61 @@ namespace node
 
 		}
 
+		void session_state::react(state::evt_sml_get_proc_param_device_class evt)
+		{
+			switch (state_) {
+			case S_CONNECTED_TASK:
+				break;
+			default:
+				signal_wrong_state("evt_sml_get_proc_param_device_class");
+				return;
+			}
+
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_device_class to #" << task_.tsk_proxy_);
+
+			//
+			//	message slot (5)
+			//
+			task_.get_proc_param_device_class(sp_->mux_, evt.vec_);
+
+		}
+
+		void session_state::react(state::evt_sml_get_proc_param_manufacturer evt)
+		{
+			switch (state_) {
+			case S_CONNECTED_TASK:
+				break;
+			default:
+				signal_wrong_state("evt_sml_get_proc_param_manufacturer");
+				return;
+			}
+
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_manufacturer to #" << task_.tsk_proxy_);
+
+			//
+			//	message slot (5)
+			//
+			task_.get_proc_param_manufacturer(sp_->mux_, evt.vec_);
+		}
+
+		void session_state::react(state::evt_sml_get_proc_param_server_id evt)
+		{
+			switch (state_) {
+			case S_CONNECTED_TASK:
+				break;
+			default:
+				signal_wrong_state("evt_sml_get_proc_param_server_id");
+				return;
+			}
+
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_server_id to #" << task_.tsk_proxy_);
+
+			//
+			//	message slot (5)
+			//
+			task_.get_proc_param_server_id(sp_->mux_, evt.vec_);
+		}
+
 		void session_state::react(state::evt_sml_get_list_response evt)
 		{
 			switch (state_) {
@@ -1508,6 +1563,27 @@ namespace node
 			{}
 
 			//
+			//	EVENT: evt_sml_get_proc_param_device_class (sml_get_proc_param_simple)
+			//
+			evt_sml_get_proc_param_device_class::evt_sml_get_proc_param_device_class(cyng::vector_t vec)
+				: vec_(vec)
+			{}
+
+			//
+			//	EVENT: evt_sml_get_proc_param_manufacturer (sml_get_proc_param_simple)
+			//
+			evt_sml_get_proc_param_manufacturer::evt_sml_get_proc_param_manufacturer(cyng::vector_t vec)
+				: vec_(vec)
+			{}
+
+			//
+			//	EVENT: evt_sml_get_proc_param_server_id (sml_get_proc_param_simple)
+			//
+			evt_sml_get_proc_param_server_id::evt_sml_get_proc_param_server_id(cyng::vector_t vec)
+			: vec_(vec)
+			{}
+
+			//
 			//	EVENT: evt_sml_get_list_response
 			//
 			evt_sml_get_list_response::evt_sml_get_list_response(cyng::vector_t vec)
@@ -1866,6 +1942,45 @@ namespace node
 						("remote", cyng::numeric_cast<std::uint16_t>(vec.at(8), 0))
 						("name", vec.at(9))
 						("pwd", vec.at(10))
+					()
+				});
+			}
+
+			void state_connected_task::get_proc_param_device_class(cyng::async::mux& mux, cyng::vector_t vec)
+			{
+				mux.post(tsk_proxy_, 5, cyng::tuple_t{
+					vec.at(1),	//	trx
+					vec.at(2),	//	idx
+					vec.at(3),	//	server ID
+					vec.at(4),	//	OBIS code
+								//	IP-T configuration record
+					cyng::param_map_factory("value", vec.at(5))
+					()
+				});
+			}
+
+			void state_connected_task::get_proc_param_manufacturer(cyng::async::mux& mux, cyng::vector_t vec)
+			{
+				mux.post(tsk_proxy_, 5, cyng::tuple_t{
+					vec.at(1),	//	trx
+					vec.at(2),	//	idx
+					vec.at(3),	//	server ID
+					vec.at(4),	//	OBIS code
+								//	IP-T configuration record
+					cyng::param_map_factory("value", vec.at(5))
+					()
+				});
+			}
+
+			void state_connected_task::get_proc_param_server_id(cyng::async::mux& mux, cyng::vector_t vec)
+			{
+				mux.post(tsk_proxy_, 5, cyng::tuple_t{
+					vec.at(1),	//	trx
+					vec.at(2),	//	idx
+					vec.at(3),	//	server ID
+					vec.at(4),	//	OBIS code
+								//	IP-T configuration record
+					cyng::param_map_factory("value", vec.at(5))
 					()
 				});
 			}

@@ -314,6 +314,9 @@ namespace node
 		if (log_sml) {
 			CYNG_LOG_INFO(logger, "SML logging is ON");
 		}
+		else {
+			CYNG_LOG_INFO(logger, "SML logging is OFF");
+		}
 
 		//
 		//	connect to cluster
