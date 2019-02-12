@@ -56,6 +56,9 @@ namespace node
 		 */
 		std::uint32_t get_srv_type(cyng::buffer_t const&);
 
+		/**
+		 * Find a textual representation for all server types
+		 */
 		void serialize_server_id(std::ostream& os, cyng::buffer_t const&);
 		std::string from_server_id(cyng::buffer_t const&);
 

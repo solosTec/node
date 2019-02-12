@@ -91,14 +91,15 @@ namespace node
 		//
 		//	terminate task
 		//
+		//	Be carefull when using resources from the session like vm_, 
+		//	they may already be invalid.
+		//
 		const auto uptime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_);
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> "
-			<< vm_.tag()
-			<< " stopped after "
+			<< "> stopped after "
 			<< cyng::to_str(uptime));
 	}
 

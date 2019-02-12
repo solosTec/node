@@ -215,15 +215,13 @@ namespace node
 			else
 			{
 				//
-				//	something else
+				//	something else like 31454d4830303035353133383935
 				//
-				os
-					<< std::hex
-					<< std::setfill('0')
-					;
-				for (auto c : buffer)
-				{
-					os << std::setw(2) << (+c & 0xFF);
+				if (cyng::is_ascii(buffer)) {
+					cyng::io::to_ascii(os, buffer);
+				}
+				else {
+					cyng::io::to_hex(os, buffer);
 				}
 			}
 		}

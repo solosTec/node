@@ -106,12 +106,10 @@ namespace node
 
 	void cluster::bus_res_gateway_proxy(cyng::context& ctx)
 	{
-		//	[73285cb1-45bb-4dcb-bae5-363ed6632624,9f773865-e4af-489a-8824-8f78a2311278,20,[df735c77-797f-4ce8-bb74-86280f9884a9],595a3a58-2ac4-4946-a265-93324706491c,
-		//	get.proc.param,
-		//	[root-ipt-param,root-ipt-state,op-log-status-word],
-		//	00:15:3b:02:29:80,
-		//	root-ipt-param,
-		//	%(("address":192.168.1.21),("idx":1),("local":68ee),("name":LSMTest1),("pwd":LSMTest1),("remote":0000))]
+		//
+		//	[21c95367-9d92-40d7-ba79-f2eee35dddc2,9f773865-e4af-489a-8824-8f78a2311278,23,[ec563e58-f0d6-4d6a-8a13-63f639f6c9a7],dd44ad9e-8995-48f0-81aa-eec454cf0625,
+		//	get.proc.param,00:15:3b:02:23:b3,root-active-devices,
+		//	%(("class":---),("ident":0ac00001),("maker":),("meter":00000000),("meterId":0AC00001),("number":0005),("timestamp":2014-11-25 15:41:29.00000000),("type":0000000a))]
 		//
 		//	* [uuid] ident tag
 		//	* [uuid] source tag
@@ -140,7 +138,7 @@ namespace node
 		//
 		//	test TGateway key
 		//
-		BOOST_ASSERT(!std::get<3>(tpl).empty());
+		BOOST_ASSERT_MSG(!std::get<3>(tpl).empty(), "no TGateway key");
 
 		//
 		//	routing back
@@ -223,7 +221,7 @@ namespace node
 						}
 
 						//	continue loop
-						return found;
+						return !found;
 					});
 
 					if (!found) {

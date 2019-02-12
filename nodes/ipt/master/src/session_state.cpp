@@ -1733,6 +1733,7 @@ namespace node
 					maker = node::sml::decode(code);
 				}
 
+				//
 				mux.post(tsk_proxy_, 5, cyng::tuple_t{
 					vec.at(1),	//	trx
 					vec.at(2),	//	idx
@@ -1741,7 +1742,8 @@ namespace node
 								//	visible/active device
 					cyng::param_map_factory("number", vec.at(5))
 						("ident", node::sml::from_server_id(meter))
-						("meter", node::sml::get_serial(meter))
+						//("meter", node::sml::get_serial(meter))
+						("meter", ((node::sml::get_srv_type(meter) < 2) ? node::sml::get_serial(meter) : node::sml::from_server_id(meter)))
 						("meterId", meter)
 						("class", vec.at(7))
 						("timestamp", vec.at(8))

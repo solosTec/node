@@ -76,13 +76,16 @@ namespace node
 
 	void watchdog::stop()
 	{
+		//
+		//	Be carefull when using resources from the session like vm_, 
+		//	they may already be invalid.
+		//
+
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> "
-			<< vm_.tag()
-			<< " stopped");
+			<< "> stopped");
 	}
 
 	//	slot 0 - activity
