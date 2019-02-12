@@ -28,7 +28,6 @@ namespace node
 		public:
 			using signatures_t = std::tuple<>;
 
-
 		public:
 			network(cyng::async::base_task* bt
 				, cyng::logging::log_ptr
@@ -36,7 +35,8 @@ namespace node
 				, cyng::store::db& config_db
 				, boost::uuids::uuid tag
 				, redundancy const& cfg
-				, cyng::tuple_t const& cfg_wmbus
+				, cyng::tuple_t const& cfg_wireless_lmn
+				, cyng::tuple_t const& cfg_wired_lmn
 				, std::string account
 				, std::string pwd
 				, std::string manufacturer
@@ -168,6 +168,9 @@ namespace node
 			void reconfigure_impl();
 			void insert_seq_open_channel_rel(cyng::context& ctx);
 
+			bool start_wireless_lmn(cyng::store::db&, cyng::tuple_t const&);
+			bool start_wired_lmn(cyng::store::db&, cyng::tuple_t const&);
+
 		private:
 			cyng::async::base_task& base_;
 			cyng::logging::log_ptr logger_;
@@ -176,11 +179,6 @@ namespace node
 			 * managing redundant ipt master configurations
 			 */
 			const redundancy	config_;
-
-			/**
-			 * wireless M-Bus configuration
-			 */
-			const cyng::tuple_t cfg_wmbus_;
 
 			/**
 			 * SML parser

@@ -6,6 +6,9 @@
  */
 
 #include "network.h"
+#include "wireless_lmn.h"
+#include "wired_lmn.h"
+
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/generator.h>
 #include <smf/sml/protocol/serializer.h>
@@ -15,6 +18,7 @@
 #include <cyng/vm/generator.h>
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/numeric_cast.hpp>
 
 #include <boost/uuid/random_generator.hpp>
 #ifdef SMF_IO_DEBUG
@@ -31,7 +35,8 @@ namespace node
 			, cyng::store::db& config_db
 			, boost::uuids::uuid tag
 			, redundancy const& cfg
-			, cyng::tuple_t const& cfg_wmbus
+			, cyng::tuple_t const& cfg_wireless_lmn
+			, cyng::tuple_t const& cfg_wired_lmn
 			, std::string account
 			, std::string pwd
 			, std::string manufacturer
@@ -48,7 +53,6 @@ namespace node
 			, base_(*btp)
 			, logger_(logger)
 			, config_(cfg)
-			, cfg_wmbus_(cfg_wmbus)
 			, parser_([this](cyng::vector_t&& prg) {
 				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
 #ifdef _DEBUG
@@ -88,6 +92,93 @@ namespace node
 			//	statistics
 			//
 			vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+
+			//
+			// wireless-LMN configuration
+			//
+			start_wireless_lmn(config_db, cfg_wireless_lmn);
+
+			//
+			// wireed-LMN configuration
+			//
+			start_wired_lmn(config_db, cfg_wired_lmn);
+
+		}
+
+		bool network::start_wireless_lmn(cyng::store::db& db, cyng::tuple_t const& cfg)
+		{
+			auto dom = cyng::make_reader(cfg);
+			auto const enabled = cyng::value_cast(dom.get("enabled"), false);
+			if (enabled) {
+
+				auto const port = cyng::value_cast<std::string>(dom.get("port"), "/dev/ttyAPP0");
+				auto const databits = cyng::numeric_cast<std::uint8_t>(dom.get("databits"), 8);
+				auto const paritybit = cyng::numeric_cast<std::uint8_t>(dom.get("paritybit"), 0);
+				auto const rtscts = cyng::numeric_cast<std::uint8_t>(dom.get("rtscts"), 0);
+				auto const stopbits = cyng::numeric_cast<std::uint8_t>(dom.get("stopbits"), 1);
+				auto const speed = cyng::numeric_cast<std::uint32_t>(dom.get("speed"), 115200);
+
+				CYNG_LOG_INFO(logger_, "start wireless LMN on port "
+					<< port
+					<< " with "
+					<< speed
+					<< " B/sec");
+
+				cyng::async::start_task_delayed<wireless_LMN>(base_.mux_
+					, std::chrono::seconds(2)
+					, logger_
+					, db
+					, vm_
+					, port
+					, databits
+					, paritybit
+					, rtscts
+					, stopbits
+					, speed);
+
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "wireless LMN is disabled");
+			}
+			return enabled;
+		}
+
+		bool network::start_wired_lmn(cyng::store::db& db, cyng::tuple_t const& cfg)
+		{
+			auto dom = cyng::make_reader(cfg);
+			auto const enabled = cyng::value_cast(dom.get("enabled"), false);
+			if (enabled) {
+
+				auto const port = cyng::value_cast<std::string>(dom.get("port"), "/dev/ttyAPP1");
+				auto const databits = cyng::numeric_cast<std::uint8_t>(dom.get("databits"), 8);
+				auto const paritybit = cyng::numeric_cast<std::uint8_t>(dom.get("paritybit"), 0);
+				auto const rtscts = cyng::numeric_cast<std::uint8_t>(dom.get("rtscts"), 0);
+				auto const stopbits = cyng::numeric_cast<std::uint8_t>(dom.get("stopbits"), 1);
+				auto const speed = cyng::numeric_cast<std::uint32_t>(dom.get("speed"), 115200);
+
+				CYNG_LOG_INFO(logger_, "start wired LMN on port "
+					<< port
+					<< " with "
+					<< speed
+					<< " B/sec");
+
+				cyng::async::start_task_delayed<wired_LMN>(base_.mux_
+					, std::chrono::seconds(2)
+					, logger_
+					, db
+					, vm_
+					, port
+					, databits
+					, paritybit
+					, rtscts
+					, stopbits
+					, speed);
+
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "wired LMN is disabled");
+			}
+			return enabled;
 		}
 
 		cyng::continuation network::run()

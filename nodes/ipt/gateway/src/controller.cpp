@@ -57,7 +57,8 @@ namespace node
 		, cyng::store::db&
 		, boost::uuids::uuid tag
 		, ipt::master_config_t const& cfg_ipt
-		, cyng::tuple_t const& cfg_wmbus
+		, cyng::tuple_t const& cfg_wireless_lmn
+		, cyng::tuple_t const& cfg_wired_lmn
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
@@ -257,14 +258,32 @@ namespace node
 					//	stty -F /dev/ttyAPP0  -echo -echoe -echok
 					//	stty -F /dev/ttyAPP0 115200 
 					//	cat /dev/ttyAPP0 | hexdump 
-					, cyng::param_factory("wMBus", cyng::tuple_factory(
+					, cyng::param_factory("wireless-LMN", cyng::tuple_factory(
 #if BOOST_OS_WINDOWS
 						cyng::param_factory("enabled", false),
 #else
 						cyng::param_factory("enabled", true),
 #endif
-						cyng::param_factory("input", "/dev/ttyAPP0"),
+						cyng::param_factory("port", "/dev/ttyAPP0"),
+						cyng::param_factory("databits", 8),
+						cyng::param_factory("paritybit", 0),
+						cyng::param_factory("rtscts", 0),	//	flow control
+						cyng::param_factory("stopbits", 1),
 						cyng::param_factory("speed", 115200)
+					))
+
+					, cyng::param_factory("wired-LMN", cyng::tuple_factory(
+#if BOOST_OS_WINDOWS
+						cyng::param_factory("enabled", false),
+#else
+						cyng::param_factory("enabled", true),
+#endif
+						cyng::param_factory("port", "/dev/ttyAPP1"),
+						cyng::param_factory("databits", 8),
+						cyng::param_factory("paritybit", 0),
+						cyng::param_factory("rtscts", 0),	//	flow control
+						cyng::param_factory("stopbits", 1),
+						cyng::param_factory("speed", 921600)
 					))
 
 					, cyng::param_factory("ipt", cyng::vector_factory({
@@ -373,13 +392,13 @@ namespace node
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
-		auto dom = cyng::make_reader(cfg);
+		auto const dom = cyng::make_reader(cfg);
 
 		//
 		//	random UUID
 		//
 		boost::uuids::random_generator uidgen;
-		const auto tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		auto const tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
 
 		//
 		//	generate even distributed integers
@@ -400,7 +419,7 @@ namespace node
 		//
 		//  control push data logging
 		//
-		const auto log_pushdata = cyng::value_cast(dom.get("log-pushdata"), false);
+		auto const log_pushdata = cyng::value_cast(dom.get("log-pushdata"), false);
 		boost::ignore_unused(log_pushdata);
 
 		//
@@ -415,20 +434,20 @@ namespace node
 		//
 		//	get configuration type
 		//
-		const auto config_types = cyng::vector_cast<std::string>(dom.get("output"), "");
+		auto const config_types = cyng::vector_cast<std::string>(dom.get("output"), "");
 
 		//
 		//	get hardware info
 		//
-		const std::string manufacturer = cyng::value_cast<std::string>(dom["hardware"].get("manufacturer"), "solosTec");
-		const std::string model = cyng::value_cast<std::string>(dom["hardware"].get("model"), "Gateway");
+		std::string const manufacturer = cyng::value_cast<std::string>(dom["hardware"].get("manufacturer"), "solosTec");
+		std::string const model = cyng::value_cast<std::string>(dom["hardware"].get("model"), "Gateway");
 
 		//
 		//	serial number = 32 bit unsigned
 		//
-		const auto serial = cyng::value_cast(dom["hardware"].get("serial"), rng());
+		auto const serial = cyng::value_cast(dom["hardware"].get("serial"), rng());
 
-		const std::string dev_class = cyng::value_cast<std::string>(dom["hardware"].get("class"), "129-129:199.130.83*255");
+		std::string const dev_class = cyng::value_cast<std::string>(dom["hardware"].get("class"), "129-129:199.130.83*255");
 
 		//
 		//	05 + MAC = server ID
@@ -467,10 +486,16 @@ namespace node
 		auto cfg_ipt = ipt::load_cluster_cfg(vec);
 
 		//
-		//	get wMBus configuration
+		//	get wireless-LMN configuration
 		//
-		cyng::tuple_t cfg_wmbus;
-		cfg_wmbus = cyng::value_cast(dom.get("wMBus"), cfg_wmbus);
+		cyng::tuple_t cfg_wireless_lmn;
+		cfg_wireless_lmn = cyng::value_cast(dom.get("wireless-LMN"), cfg_wireless_lmn);
+
+		//
+		//	get wired-LMN configuration
+		//
+		cyng::tuple_t cfg_wired_lmn;
+		cfg_wired_lmn = cyng::value_cast(dom.get("wired-LMN"), cfg_wired_lmn);
 
 		/**
 		 * global data cache
@@ -488,7 +513,8 @@ namespace node
 			, config_db
 			, tag
 			, cfg_ipt
-			, cfg_wmbus
+			, cfg_wireless_lmn
+			, cfg_wired_lmn
 			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
 			, manufacturer
@@ -580,7 +606,8 @@ namespace node
 		, cyng::store::db& config_db
 		, boost::uuids::uuid tag
 		, ipt::master_config_t const& cfg_ipt
-		, cyng::tuple_t const& cfg_wmbus
+		, cyng::tuple_t const& cfg_wireless_lmn
+		, cyng::tuple_t const& cfg_wired_lmn
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
@@ -598,7 +625,8 @@ namespace node
 			, config_db
 			, tag
 			, cfg_ipt
-			, cfg_wmbus
+			, cfg_wireless_lmn
+			, cfg_wired_lmn
 			, account
 			, pwd
 			, manufacturer

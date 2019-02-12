@@ -48,6 +48,10 @@ set (node_ipt_gateway_tasks
 	nodes/ipt/gateway/src/tasks/network.cpp
 	nodes/ipt/gateway/src/tasks/push_ops.h
 	nodes/ipt/gateway/src/tasks/push_ops.cpp
+	nodes/ipt/gateway/src/tasks/wired_lmn.cpp
+	nodes/ipt/gateway/src/tasks/wireless_lmn.cpp
+	nodes/ipt/gateway/src/tasks/wired_lmn.h
+	nodes/ipt/gateway/src/tasks/wireless_lmn.h
 
 )
 	
