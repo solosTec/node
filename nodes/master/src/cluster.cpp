@@ -79,7 +79,15 @@ namespace node
 			//	of that device/gateway. Additionally we get the required access data like
 			//	server ID, user and password.
 			//
-			const auto[peer, rec, server, tag] = find_peer(std::get<2>(tpl), tbl_session, tbl_gw);
+#if defined __GNUC__ && __GNUC_PREREQ(6,0)
+			auto const[peer, rec, server, tag] = find_peer(std::get<2>(tpl), tbl_session, tbl_gw);
+#else            
+            std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> r = find_peer(std::get<2>(tpl), tbl_session, tbl_gw);
+            session const* peer = std::get<0>(r);
+            cyng::table::record const rec = std::get<1>(r);
+            cyng::buffer_t const server = std::get<2>(r);
+            boost::uuids::uuid const tag =  std::get<3>(r);
+#endif
 
 			if (peer != nullptr && !rec.empty()) {
 

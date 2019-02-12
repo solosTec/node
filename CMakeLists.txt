@@ -687,7 +687,7 @@ add_executable(emitter ${node_ipt_emitter})
 # libraries to link
 set(emitter_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_table cyng_sys cyng_crypto smf_protocol_ipt smf_bus_ipt)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND emitter_link_libs "${Boost_LIBRARIES}")
+	list(APPEND emitter_link_libs "${Boost_LIBRARIES}" ${OPENSSL_LIBRARIES})
     if (UNIX)
         list(APPEND emitter_link_libs pthread)
     endif()

@@ -324,7 +324,7 @@ namespace node
 		//
 		if (r.second) {
 //#if defined _WIN32 || (defined __GNUC__ && __GNUC_PREREQ(5,0))
-#if defined __GNUC__ && __GNUC_PREREQ(5,0)
+#if defined __GNUC__ && __GNUC_PREREQ(6,0)
 			auto const [aes_key, driver, found] = lookup(r.first);
 #else
             std::string aes_key;
