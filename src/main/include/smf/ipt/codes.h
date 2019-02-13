@@ -160,8 +160,8 @@ namespace node
 		}	//	code
 
 		/**
-		*	@return name of the IP-T command
-		*/
+		 *	@return name of the IP-T command
+		 */
 		std::string command_name(std::uint16_t);
 
 	}	//	ipt

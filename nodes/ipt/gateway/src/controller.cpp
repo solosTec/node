@@ -266,9 +266,9 @@ namespace node
 #endif
 						cyng::param_factory("port", "/dev/ttyAPP0"),
 						cyng::param_factory("databits", 8),
-						cyng::param_factory("paritybit", 0),
-						cyng::param_factory("rtscts", 0),	//	flow control
-						cyng::param_factory("stopbits", 1),
+						cyng::param_factory("parity", "none"),	//	none, odd, even
+						cyng::param_factory("flow-control", "none"),	//	none, software, hardware
+						cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 						cyng::param_factory("speed", 115200)
 					))
 
@@ -280,9 +280,9 @@ namespace node
 #endif
 						cyng::param_factory("port", "/dev/ttyAPP1"),
 						cyng::param_factory("databits", 8),
-						cyng::param_factory("paritybit", 0),
-						cyng::param_factory("rtscts", 0),	//	flow control
-						cyng::param_factory("stopbits", 1),
+						cyng::param_factory("parity", "none"),	//	none, odd, even
+						cyng::param_factory("flow-control", "none"),	//	none, software, hardware
+						cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 						cyng::param_factory("speed", 921600)
 					))
 

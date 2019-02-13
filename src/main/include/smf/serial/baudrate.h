@@ -113,4 +113,4 @@ namespace node
 }	//	node
 
 
-#endif	//	NODE_SML_DEFS_H
+#endif	//	NODE_SERIAL_BAUDRATE_H

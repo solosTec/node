@@ -114,9 +114,9 @@ namespace node
 
 				auto const port = cyng::value_cast<std::string>(dom.get("port"), "/dev/ttyAPP0");
 				auto const databits = cyng::numeric_cast<std::uint8_t>(dom.get("databits"), 8);
-				auto const paritybit = cyng::numeric_cast<std::uint8_t>(dom.get("paritybit"), 0);
-				auto const rtscts = cyng::numeric_cast<std::uint8_t>(dom.get("rtscts"), 0);
-				auto const stopbits = cyng::numeric_cast<std::uint8_t>(dom.get("stopbits"), 1);
+				auto const parity = cyng::value_cast<std::string>(dom.get("parity"), "none");
+				auto const flow_control = cyng::value_cast<std::string>(dom.get("flow-control"), "none");
+				auto const stopbits = cyng::value_cast<std::string>(dom.get("stopbits"), "one");
 				auto const speed = cyng::numeric_cast<std::uint32_t>(dom.get("speed"), 115200);
 
 				CYNG_LOG_INFO(logger_, "start wireless LMN on port "
@@ -132,8 +132,8 @@ namespace node
 					, vm_
 					, port
 					, databits
-					, paritybit
-					, rtscts
+					, parity
+					, flow_control
 					, stopbits
 					, serial::adjust_baudrate(speed));
 
@@ -152,9 +152,9 @@ namespace node
 
 				auto const port = cyng::value_cast<std::string>(dom.get("port"), "/dev/ttyAPP1");
 				auto const databits = cyng::numeric_cast<std::uint8_t>(dom.get("databits"), 8);
-				auto const paritybit = cyng::numeric_cast<std::uint8_t>(dom.get("paritybit"), 0);
-				auto const rtscts = cyng::numeric_cast<std::uint8_t>(dom.get("rtscts"), 0);
-				auto const stopbits = cyng::numeric_cast<std::uint8_t>(dom.get("stopbits"), 1);
+				auto const parity = cyng::value_cast<std::string>(dom.get("parity"), "none");
+				auto const flow_control = cyng::value_cast<std::string>(dom.get("flow-control"), "none");
+				auto const stopbits = cyng::value_cast<std::string>(dom.get("stopbits"), "one");
 				auto const speed = cyng::numeric_cast<std::uint32_t>(dom.get("speed"), 115200u);
 
 				CYNG_LOG_INFO(logger_, "start wired LMN on port "
@@ -170,8 +170,8 @@ namespace node
 					, vm_
 					, port
 					, databits
-					, paritybit
-					, rtscts
+					, parity
+					, flow_control
 					, stopbits
 					, serial::adjust_baudrate(speed));
 

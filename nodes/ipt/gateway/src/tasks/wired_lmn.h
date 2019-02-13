@@ -13,6 +13,9 @@
 #include <cyng/store/db.h>
 #include <cyng/async/mux.h>
 
+#include <boost/asio.hpp>
+#include <boost/asio/serial_port.hpp>
+
 namespace node
 {
 	/**
@@ -20,6 +23,8 @@ namespace node
 	 */
 	class wired_LMN
 	{
+		using read_buffer_t = std::array<char, NODE::PREFERRED_BUFFER_SIZE>;
+
 	public:
 		using signatures_t = std::tuple<>;
 
@@ -30,15 +35,17 @@ namespace node
 			, cyng::controller& vm
 			, std::string port
 			, std::uint8_t databits
-			, std::uint8_t paritybit
-			, std::uint8_t rtscts
-			, std::uint8_t stopbits
+			, std::string parity
+			, std::string flow_control
+			, std::string stopbits
 			, std::uint32_t speed);
 
 		cyng::continuation run();
 		void stop();
 
 	private:
+		void do_read();
+
 	private:
 		cyng::async::base_task& base_;
 
@@ -57,12 +64,15 @@ namespace node
 		 */
 		cyng::controller& vm_;
 
-		std::string const port_;
-		std::uint8_t const databits_;
-		std::uint8_t const paritybit_;
-		std::uint8_t const rtscts_;
-		std::uint8_t const stopbits_;
-		std::uint32_t const speed_;
+		/**
+		 * serial port
+		 */
+		boost::asio::serial_port port_;
+
+		/**
+		 * Buffer for incoming data.
+		 */
+		read_buffer_t buffer_;
 
 	};
 

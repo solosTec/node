@@ -167,6 +167,9 @@ namespace node
 				CYNG_LOG_TRACE(logger_, "session " << vm().tag() << " input dump " << buf.size() << " bytes:\n" << ss.str());
 #endif
 
+				//
+				//	continue reading
+				//
 				do_read();
 			}
 
