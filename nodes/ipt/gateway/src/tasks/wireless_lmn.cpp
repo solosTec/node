@@ -110,6 +110,6 @@ namespace node
 				do_read();
 			}
 		});
-
+    }
 }
 
