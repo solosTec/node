@@ -110,20 +110,21 @@ namespace node
 			vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
 			//
+			//	gpio control
+			//
+			control_gpio(config_db, gpio_paths);
+
+			//
 			//	wireless-LMN configuration
 			//	update status word
 			//
 			status_word.set_mbus_if_available(start_wireless_lmn(config_db, cfg_wireless_lmn));
 
 			//
-			// wireed-LMN configuration
+			// wired-LMN configuration
 			//
 			start_wired_lmn(config_db, cfg_wired_lmn);
 
-			//
-			//	gpio control
-			//
-			control_gpio(config_db, gpio_paths);
 		}
 
 		bool network::start_wireless_lmn(cyng::store::db& db, cyng::tuple_t const& cfg)
