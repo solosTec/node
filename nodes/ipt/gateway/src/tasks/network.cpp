@@ -216,16 +216,16 @@ namespace node
 
 				switch (v.first) {
 				case 46:
-					db.modify("_Config", cyng::table::key_generator("gpio.46"), cyng::param_factory("value", v.second), vm_.tag());
+					db.modify("_Config", cyng::table::key_generator("gpio.46"), cyng::param_factory("value", tid), vm_.tag());
 					break;
 				case 47:
-					db.modify("_Config", cyng::table::key_generator("gpio.47"), cyng::param_factory("value", v.second), vm_.tag());
+					db.modify("_Config", cyng::table::key_generator("gpio.47"), cyng::param_factory("value", tid), vm_.tag());
 					break;
 				case 50:
-					db.modify("_Config", cyng::table::key_generator("gpio.50"), cyng::param_factory("value", v.second), vm_.tag());
+					db.modify("_Config", cyng::table::key_generator("gpio.50"), cyng::param_factory("value", tid), vm_.tag());
 					break;
 				case 53:
-					db.modify("_Config", cyng::table::key_generator("gpio.53"), cyng::param_factory("value", v.second), vm_.tag());
+					db.modify("_Config", cyng::table::key_generator("gpio.53"), cyng::param_factory("value", tid), vm_.tag());
 					break;
 				default:
 					CYNG_LOG_WARNING(logger_, "unknown GPIO: " << v.first);
