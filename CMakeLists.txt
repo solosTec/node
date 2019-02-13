@@ -511,6 +511,14 @@ include (lib/iec/protocol/lib.cmake)
 add_library(smf_protocol_iec ${GLOBAL_LIBRARY_TYPE} ${iec_protocol_lib})
 
 #
+#	serial bus library (client)
+#	at it's core it's the boost asio serial_port implementation
+#
+include (lib/serial/bus/lib.cmake)
+add_library(smf_bus_serial ${GLOBAL_LIBRARY_TYPE} ${serial_bus_lib})
+#set(serial_bus_link_libs smf_protocol_serial)
+
+#
 #	LoRa payload library
 #
 include (lib/lora/payload/lib.cmake)
@@ -700,7 +708,7 @@ target_link_libraries(emitter ${emitter_link_libs})
 include (nodes/ipt/gateway/prg.cmake)
 add_executable(gateway ${node_ipt_gateway})
 # libraries to link
-set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_store cyng_table cyng_domain cyng_sys cyng_rnd smf_protocol_ipt smf_bus_ipt smf_bus_sml)
+set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_store cyng_table cyng_domain cyng_sys cyng_rnd smf_protocol_ipt smf_bus_ipt smf_bus_sml smf_bus_serial)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND gateway_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -913,7 +921,7 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 		TARGET unit_test
 		PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
 
-	set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_mbus)
+	set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_mbus smf_bus_serial)
 
 	if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 		list(APPEND unittest_link_libs cyng_xml)

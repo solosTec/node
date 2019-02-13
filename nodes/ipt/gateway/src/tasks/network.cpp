@@ -8,6 +8,7 @@
 #include "network.h"
 #include "wireless_lmn.h"
 #include "wired_lmn.h"
+#include <smf/serial/baudrate.h>
 
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/generator.h>
@@ -121,7 +122,7 @@ namespace node
 				CYNG_LOG_INFO(logger_, "start wireless LMN on port "
 					<< port
 					<< " with "
-					<< speed
+					<< serial::adjust_baudrate(speed)
 					<< " B/sec");
 
 				cyng::async::start_task_delayed<wireless_LMN>(base_.mux_
@@ -134,7 +135,7 @@ namespace node
 					, paritybit
 					, rtscts
 					, stopbits
-					, speed);
+					, serial::adjust_baudrate(speed));
 
 			}
 			else {
@@ -154,12 +155,12 @@ namespace node
 				auto const paritybit = cyng::numeric_cast<std::uint8_t>(dom.get("paritybit"), 0);
 				auto const rtscts = cyng::numeric_cast<std::uint8_t>(dom.get("rtscts"), 0);
 				auto const stopbits = cyng::numeric_cast<std::uint8_t>(dom.get("stopbits"), 1);
-				auto const speed = cyng::numeric_cast<std::uint32_t>(dom.get("speed"), 115200);
+				auto const speed = cyng::numeric_cast<std::uint32_t>(dom.get("speed"), 115200u);
 
 				CYNG_LOG_INFO(logger_, "start wired LMN on port "
 					<< port
 					<< " with "
-					<< speed
+					<< serial::adjust_baudrate(speed)
 					<< " B/sec");
 
 				cyng::async::start_task_delayed<wired_LMN>(base_.mux_
@@ -172,7 +173,7 @@ namespace node
 					, paritybit
 					, rtscts
 					, stopbits
-					, speed);
+					, serial::adjust_baudrate(speed));
 
 			}
 			else {

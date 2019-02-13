@@ -14,10 +14,10 @@ set (unit_test_cpp
 	test/unit-test/src/test-sml-002.cpp
 	test/unit-test/src/test-sml-003.cpp
 	test/unit-test/src/test-sml-004.cpp
-#	test/unit-test/src/test-sml-005.cpp
 	test/unit-test/src/test-mbus-001.cpp
 	test/unit-test/src/test-mbus-002.cpp
 	test/unit-test/src/test-mbus-003.cpp
+	test/unit-test/src/test-serial-001.cpp
 )
     
 set (unit_test_h
@@ -30,10 +30,10 @@ set (unit_test_h
 	test/unit-test/src/test-sml-002.h
 	test/unit-test/src/test-sml-003.h
 	test/unit-test/src/test-sml-004.h
-#	test/unit-test/src/test-sml-005.h
 	test/unit-test/src/test-mbus-001.h
 	test/unit-test/src/test-mbus-002.h
 	test/unit-test/src/test-mbus-003.h
+	test/unit-test/src/test-serial-001.h
 )
 
 set (sml_exporter
