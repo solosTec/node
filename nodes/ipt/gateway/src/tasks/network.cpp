@@ -146,20 +146,24 @@ namespace node
 					<< serial::adjust_baudrate(speed)
 					<< " B/sec");
 
-				auto const r = cyng::async::start_task_delayed<wireless_LMN>(base_.mux_
-					, std::chrono::seconds(2)
-					, logger_
-					, db
-					, vm_
-					, port
-					, databits
-					, parity
-					, flow_control
-					, stopbits
-					, serial::adjust_baudrate(speed));
+				try {
+					auto const r = cyng::async::start_task_delayed<wireless_LMN>(base_.mux_
+						, std::chrono::seconds(2)
+						, logger_
+						, db
+						, vm_
+						, port
+						, databits
+						, parity
+						, flow_control
+						, stopbits
+						, serial::adjust_baudrate(speed));
 
-				return r.second;
-
+					return r.second;
+				}
+				catch (std::exception const& ex) {
+					CYNG_LOG_FATAL(logger_, "start wireless LMN - " << ex.what());
+				}
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "wireless LMN is disabled");
@@ -186,19 +190,24 @@ namespace node
 					<< serial::adjust_baudrate(speed)
 					<< " B/sec");
 
-				auto const r = cyng::async::start_task_delayed<wired_LMN>(base_.mux_
-					, std::chrono::seconds(2)
-					, logger_
-					, db
-					, vm_
-					, port
-					, databits
-					, parity
-					, flow_control
-					, stopbits
-					, serial::adjust_baudrate(speed));
+				try {
+					auto const r = cyng::async::start_task_delayed<wired_LMN>(base_.mux_
+						, std::chrono::seconds(2)
+						, logger_
+						, db
+						, vm_
+						, port
+						, databits
+						, parity
+						, flow_control
+						, stopbits
+						, serial::adjust_baudrate(speed));
 
-				return r.second;
+					return r.second;
+				}
+				catch (std::exception const& ex) {
+					CYNG_LOG_FATAL(logger_, "start wired LMN - " << ex.what());
+				}
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "wired LMN is disabled");
@@ -210,7 +219,7 @@ namespace node
 		{
 			for (auto const& v : gpio_paths) {
 
-				auto const tid = cyng::async::start_task_detached<gpio>(base_.mux_
+				auto tid = cyng::async::start_task_detached<gpio>(base_.mux_
 					, logger_
 					, boost::filesystem::path(v.second));
 

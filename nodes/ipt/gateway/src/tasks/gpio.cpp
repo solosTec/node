@@ -17,8 +17,8 @@ namespace node
 	: base_(*btp) 
 		, logger_(logger)
 		, path_(path)
-		, counter_(0)
-		, ms_(0)
+		, counter_(5)
+		, ms_(10)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
