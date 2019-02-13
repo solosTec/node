@@ -75,6 +75,7 @@ namespace node
 		 */
 		read_buffer_t buffer_;
 
+		std::size_t task_gpio_;
 	};
 }
 

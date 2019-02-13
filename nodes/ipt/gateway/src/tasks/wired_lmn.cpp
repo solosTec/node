@@ -36,7 +36,8 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< ">");
+			<< "> "
+			<< port);
 
 		try {
 			port_.set_option(serial::to_parity(parity));	// default none

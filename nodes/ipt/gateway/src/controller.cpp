@@ -692,6 +692,15 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Config");
 		}
+		else {
+			config.insert("_Config", cyng::table::key_generator("local.ep"), cyng::table::data_generator(boost::asio::ip::tcp::endpoint()), 1, tag);
+			config.insert("_Config", cyng::table::key_generator("remote.ep"), cyng::table::data_generator(boost::asio::ip::tcp::endpoint()), 1, tag);
+
+			config.insert("_Config", cyng::table::key_generator("gpio.46"), cyng::table::data_generator(std::size_t(cyng::async::NO_TASK)), 1, tag);
+			config.insert("_Config", cyng::table::key_generator("gpio.47"), cyng::table::data_generator(std::size_t(cyng::async::NO_TASK)), 1, tag);
+			config.insert("_Config", cyng::table::key_generator("gpio.50"), cyng::table::data_generator(std::size_t(cyng::async::NO_TASK)), 1, tag);
+			config.insert("_Config", cyng::table::key_generator("gpio.53"), cyng::table::data_generator(std::size_t(cyng::async::NO_TASK)), 1, tag);
+		}
 		
 	}
 }

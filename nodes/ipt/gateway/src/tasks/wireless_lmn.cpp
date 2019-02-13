@@ -32,12 +32,14 @@ namespace node
 		, vm_(vm)
 		, port_(btp->mux_.get_io_service(), port)
 		, buffer_()
+		, task_gpio_(cyng::async::NO_TASK)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< ">");
+			<< "> "
+			<< port);
 
 		try {
 			port_.set_option(serial::to_parity(parity));	// default none
@@ -55,6 +57,26 @@ namespace node
 				<< "> "
 				<< ex.what());
 		}
+
+		//
+		//	get GPIO task
+		//
+		config_db.access([&](cyng::store::table const* tbl) {
+
+			auto const rec = tbl->lookup(cyng::table::key_generator("gpio.47"));
+			if (!rec.empty()) {
+				task_gpio_ = cyng::value_cast<std::size_t>(rec["value"], cyng::async::NO_TASK);
+
+				CYNG_LOG_INFO(logger_, "initialize task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> GPIO task id "
+					<< task_gpio_);
+
+			}
+
+		}, cyng::store::read_access("_Config"));
 	}
 
 	cyng::continuation wireless_LMN::run()
@@ -111,6 +133,13 @@ namespace node
 					<< " bytes\n"
 					<< ss.str());
 //#endif
+
+				//
+				//	signal LED
+				//
+				if (cyng::async::NO_TASK != task_gpio_) {
+					base_.mux_.post(task_gpio_, 2, cyng::tuple_factory(std::uint32_t(100), std::size_t(4)));
+				}
 
 				//
 				//	continue reading

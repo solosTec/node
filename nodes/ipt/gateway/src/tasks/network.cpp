@@ -93,16 +93,15 @@ namespace node
 
 			vm_.register_function("update.status.ip", 2, [&](cyng::context& ctx) {
 
+				//	 [192.168.1.200:59536,192.168.1.100:26862]
 				const cyng::vector_t frame = ctx.get_frame();
 				CYNG_LOG_INFO(logger_, ctx.get_name()
 					<< " - "
 					<< cyng::io::to_str(frame));
 
-				//auto const tpl = cyng::tuple_cast<
-				//	sequence_type,		//	[0] ipt seq
-				//	std::size_t,		//	[1] task id
-				//	std::string			//	[2] target name
-				//>(frame);
+				config_db.modify("_Config", cyng::table::key_generator("remote.ep"), cyng::param_t("value", frame.at(0)), ctx.tag());
+				config_db.modify("_Config", cyng::table::key_generator("local.ep"), cyng::param_t("value", frame.at(1)), ctx.tag());
+
 			});
 
 			//
@@ -124,7 +123,7 @@ namespace node
 			//
 			//	gpio control
 			//
-			control_gpio(gpio_paths);
+			control_gpio(config_db, gpio_paths);
 		}
 
 		bool network::start_wireless_lmn(cyng::store::db& db, cyng::tuple_t const& cfg)
@@ -206,13 +205,31 @@ namespace node
 			return enabled;
 		}
 
-		void network::control_gpio(std::map<int, std::string> gpio_paths)
+		void network::control_gpio(cyng::store::db& db, std::map<int, std::string> gpio_paths)
 		{
 			for (auto const& v : gpio_paths) {
 
-				auto const r = cyng::async::start_task_detached<gpio>(base_.mux_
+				auto const tid = cyng::async::start_task_detached<gpio>(base_.mux_
 					, logger_
 					, boost::filesystem::path(v.second));
+
+				switch (v.first) {
+				case 46:
+					db.modify("_Config", cyng::table::key_generator("gpio.46"), cyng::param_factory("value", v.second), vm_.tag());
+					break;
+				case 47:
+					db.modify("_Config", cyng::table::key_generator("gpio.47"), cyng::param_factory("value", v.second), vm_.tag());
+					break;
+				case 50:
+					db.modify("_Config", cyng::table::key_generator("gpio.50"), cyng::param_factory("value", v.second), vm_.tag());
+					break;
+				case 53:
+					db.modify("_Config", cyng::table::key_generator("gpio.53"), cyng::param_factory("value", v.second), vm_.tag());
+					break;
+				default:
+					CYNG_LOG_WARNING(logger_, "unknown GPIO: " << v.first);
+					break;
+				}
 			}
 		}
 

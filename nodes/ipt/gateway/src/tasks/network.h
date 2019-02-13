@@ -171,7 +171,7 @@ namespace node
 
 			bool start_wireless_lmn(cyng::store::db&, cyng::tuple_t const&);
 			bool start_wired_lmn(cyng::store::db&, cyng::tuple_t const&);
-			void control_gpio(std::map<int, std::string> gpio_paths);
+			void control_gpio(cyng::store::db&, std::map<int, std::string> gpio_paths);
 
 		private:
 			cyng::async::base_task& base_;
