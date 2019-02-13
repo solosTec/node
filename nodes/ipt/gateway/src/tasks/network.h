@@ -43,7 +43,8 @@ namespace node
 				, std::string model
 				, std::uint32_t serial
 				, cyng::mac48 mac
-				, bool accept_all);
+				, bool accept_all
+				, std::map<int, std::string> gpio_paths);
 			cyng::continuation run();
 			void stop();
 
@@ -170,6 +171,7 @@ namespace node
 
 			bool start_wireless_lmn(cyng::store::db&, cyng::tuple_t const&);
 			bool start_wired_lmn(cyng::store::db&, cyng::tuple_t const&);
+			void control_gpio(std::map<int, std::string> gpio_paths);
 
 		private:
 			cyng::async::base_task& base_;

@@ -9,9 +9,9 @@
 #include <smf/serial/parity.h>
 #include <smf/serial/stopbits.h>
 #include <smf/serial/flow_control.h>
-#ifdef SMF_IO_DEBUG
+//#ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
-#endif
+//#endif
 
 namespace node
 {
@@ -92,17 +92,25 @@ namespace node
 					<< bytes_transferred
 					<< " bytes");
 
-#ifdef SMF_IO_DEBUG
+//#ifdef SMF_IO_DEBUG
 				cyng::io::hex_dump hd;
 				std::stringstream ss;
-				if (buf.size() > 128) {
-					hd(ss, buf.cbegin(), buf.cbegin() + 128);
+				if (buffer_.size() > 128) {
+					hd(ss, buffer_.cbegin(), buffer_.cbegin() + 128);
 				}
 				else {
-					hd(ss, buf.cbegin(), buf.cend());
+					hd(ss, buffer_.cbegin(), buffer_.cend());
 				}
-				CYNG_LOG_TRACE(logger_, "session " << vm().tag() << " input dump " << buf.size() << " bytes:\n" << ss.str());
-#endif
+
+				CYNG_LOG_TRACE(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> input dump "
+					<< buffer_.size()
+					<< " bytes\n"
+					<< ss.str());
+//#endif
 
 				//
 				//	continue reading

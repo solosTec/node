@@ -18,8 +18,8 @@ set (node_ipt_gateway_h
 
 set (node_ipt_gateway_schemes
 
-	nodes/shared/db/db_schemes.h
-	nodes/shared/db/db_schemes.cpp
+#	nodes/shared/db/db_schemes.h
+#	nodes/shared/db/db_schemes.cpp
 	nodes/shared/db/db_meta.h
 	nodes/shared/db/db_meta.cpp
 )
@@ -52,7 +52,8 @@ set (node_ipt_gateway_tasks
 	nodes/ipt/gateway/src/tasks/wireless_lmn.cpp
 	nodes/ipt/gateway/src/tasks/wired_lmn.h
 	nodes/ipt/gateway/src/tasks/wireless_lmn.h
-
+	nodes/ipt/gateway/src/tasks/gpio.h
+	nodes/ipt/gateway/src/tasks/gpio.cpp
 )
 	
 set (node_ipt_gateway_server

@@ -65,7 +65,8 @@ namespace node
 		, std::string model
 		, std::uint32_t serial
 		, cyng::mac48
-		, bool accept_all);
+		, bool accept_all
+		, std::map<int, std::string> gpio_list);
 	void init_config(cyng::logging::log_ptr logger, cyng::store::db&, boost::uuids::uuid, cyng::mac48);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
@@ -233,6 +234,8 @@ namespace node
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("log-pushdata", false)	//	log file for each channel
 					, cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
+					, cyng::param_factory("gpio-path", "/sys/class/gpio")	//	accept only the specified MAC id
+					, cyng::param_factory("gpio-list", cyng::vector_factory({46, 47, 50, 53}))
 
 					//	on this address the gateway acts as a server
 					//	configuration interface
@@ -430,6 +433,30 @@ namespace node
 			CYNG_LOG_WARNING(logger, "Accepts all server IDs");
 		}
 
+		//
+		//	map all available GPIO paths
+		//
+		auto const gpio_path = cyng::value_cast<std::string>(dom.get("gpio-path"), "/sys/class/gpio");
+		CYNG_LOG_INFO(logger, "gpio path: " << gpio_path);
+
+		auto const gpio_list = cyng::vector_cast<int>(dom.get("gpio-list"), 0);
+		std::map<int, std::string> gpio_paths;
+		for (auto const gpio : gpio_list) {
+			std::stringstream ss;
+			ss
+				<< gpio_path
+				<< "/gpio"
+				<< gpio
+				;
+			auto const p = ss.str();
+			CYNG_LOG_TRACE(logger, "gpio: " << p);
+			gpio_paths.emplace(gpio, p);
+		}
+
+		if (gpio_paths.size() != 4) {
+			CYNG_LOG_WARNING(logger, "invalid count of gpios: " << gpio_paths.size());
+		}
+		
 
 		//
 		//	get configuration type
@@ -453,10 +480,12 @@ namespace node
 		//	05 + MAC = server ID
 		//
 		std::string rnd_mac_str;
-		using cyng::io::operator<<;
-		std::stringstream ss;
-		ss << cyng::generate_random_mac48();
-		ss >> rnd_mac_str;
+		{
+			using cyng::io::operator<<;
+			std::stringstream ss;
+			ss << cyng::generate_random_mac48();
+			ss >> rnd_mac_str;
+		}
 		auto const mac = cyng::value_cast<std::string>(dom["hardware"].get("mac"), rnd_mac_str);
 
 		std::pair<cyng::mac48, bool > const r = cyng::parse_mac48(mac);
@@ -521,7 +550,8 @@ namespace node
 			, model
 			, serial
 			, r.first
-			, accept_all);
+			, accept_all
+			, gpio_paths);
 
 		//
 		//	create server
@@ -538,7 +568,9 @@ namespace node
 			, model
 			, serial
 			, r.first
-			, accept_all);
+			, accept_all
+			//, gpio_list
+		);
 
 		//
 		//	server runtime configuration
@@ -614,7 +646,8 @@ namespace node
 		, std::string model
 		, std::uint32_t serial
 		, cyng::mac48 mac
-		, bool accept_all)
+		, bool accept_all
+		, std::map<int, std::string> gpio_list)
 	{
 		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg_ipt.size());
 
@@ -633,103 +666,32 @@ namespace node
 			, model
 			, serial
 			, mac
-			, accept_all);
+			, accept_all
+			, gpio_list);
 	}
 
 	void init_config(cyng::logging::log_ptr logger, cyng::store::db& config, boost::uuids::uuid tag, cyng::mac48 mac)
 	{
 		CYNG_LOG_TRACE(logger, "init configuration db");
 
-		if (!config.create_table(gw_devices()))
-		{
+		if (!create_table(config, "devices")) {
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
 		}
-		//else {
-		//	//	insert demo device
-		//	config.insert("devices"
-		//	, cyng::table::key_generator(sml::to_gateway_srv_id(mac))
-		//	, cyng::table::data_generator(std::chrono::system_clock::now()
-		//	, "---"
-		//	, true	//	visible
-		//	, true	//	active
-		//	, "demo entry"
-		//	, 0ull	//	status
-		//	, cyng::buffer_t{ 0, 0 }	//	mask
-		//	, 26000ul	//	interval
-		//	, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-		//	, cyng::buffer_t{}	//	aes
-		//	, "user"
-		//	, "pwd")
-		//	, 1	//	generation
-		//	, tag);
-		//	
-		//	config.insert("devices"
-		//	, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }))
-		//	, cyng::table::data_generator(std::chrono::system_clock::now()
-		//	, "---"
-		//	, true	//	visible
-		//	, true	//	active
-		//	, "01 A8 15 74 31 45 05 01 02"
-		//	, 0ull	//	status
-		//	, cyng::buffer_t{ 0, 0 }	//	mask
-		//	, 26000ul	//	interval
-		//	, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-		//	, cyng::buffer_t{}	//	aes
-		//	, "user"
-		//	, "pwd")
-		//	, 1	//	generation
-		//	, tag);
-		//	
-		//	config.insert("devices"
-		//	, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02 }))
-		//	, cyng::table::data_generator(std::chrono::system_clock::now()
-		//	, "---"
-		//	, true	//	visible
-		//	, false	//	active
-		//	, "01 E6 1E 74 31 45 05 01 02"
-		//	, 0ull	//	status
-		//	, cyng::buffer_t{ 0, 0 }	//	mask
-		//	, 26000ul	//	interval
-		//	, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-		//	, cyng::buffer_t{}	//	aes
-		//	, "user"
-		//	, "pwd")
-		//	, 1	//	generation
-		//	, tag);			
-		//}
 
-		if (!config.create_table(gw_push_ops()))
+		if (!create_table(config, "push.ops"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table push.ops");
 		}
-		//else {
-		//	//	insert demo push.ops
-		//	config.insert("push.ops"
-		//	, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 2u)
-		//	, cyng::table::data_generator(static_cast<std::uint32_t>(900u)	//	15 min
-		//	, static_cast<std::uint32_t>(4u)	//	delay
-		//	, "power@solostec"
-		//	, static_cast<std::uint8_t>(1u)		//	source
-		//	, static_cast<std::uint8_t>(1u)		//	profile
-		//	, 0)
-		//	, 1	//	generation
-		//	, tag);
-		//	
-		//	config.insert("push.ops"
-		//	, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 3u)
-		//	, cyng::table::data_generator(static_cast<std::uint32_t>(1800u)	//	30 min
-		//	, static_cast<std::uint32_t>(12u)	//	delay
-		//	, "water@solostec"
-		//	, static_cast<std::uint8_t>(1u)		//	source
-		//	, static_cast<std::uint8_t>(3u)		//	profile
-		//	, 0)
-		//	, 1	//	generation
-		//	, tag);
-		//}
 
-		if (!config.create_table(gw_op_log()))
+		if (!create_table(config, "op.log"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table op.log");
 		}
+
+		if (!create_table(config, "_Config"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table _Config");
+		}
+		
 	}
 }

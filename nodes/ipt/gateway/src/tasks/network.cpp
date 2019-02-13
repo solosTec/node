@@ -8,6 +8,7 @@
 #include "network.h"
 #include "wireless_lmn.h"
 #include "wired_lmn.h"
+#include "gpio.h"
 #include <smf/serial/baudrate.h>
 
 #include <smf/ipt/response.hpp>
@@ -44,7 +45,8 @@ namespace node
 			, std::string model
 			, std::uint32_t serial
 			, cyng::mac48 mac
-			, bool accept_all)
+			, bool accept_all
+			, std::map<int, std::string> gpio_paths)
 		: bus(logger
 			, btp->mux_
 			, tag	//, boost::uuids::random_generator()()
@@ -89,21 +91,40 @@ namespace node
 			vm_.register_function("bus.reconfigure", 1, std::bind(&network::reconfigure, this, std::placeholders::_1));
 			vm_.register_function("bus.store.rel.channel.open", 3, std::bind(&network::insert_seq_open_channel_rel, this, std::placeholders::_1));
 
+			vm_.register_function("update.status.ip", 2, [&](cyng::context& ctx) {
+
+				const cyng::vector_t frame = ctx.get_frame();
+				CYNG_LOG_INFO(logger_, ctx.get_name()
+					<< " - "
+					<< cyng::io::to_str(frame));
+
+				//auto const tpl = cyng::tuple_cast<
+				//	sequence_type,		//	[0] ipt seq
+				//	std::size_t,		//	[1] task id
+				//	std::string			//	[2] target name
+				//>(frame);
+			});
+
 			//
 			//	statistics
 			//
 			vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
 			//
-			// wireless-LMN configuration
+			//	wireless-LMN configuration
+			//	update status word
 			//
-			start_wireless_lmn(config_db, cfg_wireless_lmn);
+			status_word.set_mbus_if_available(start_wireless_lmn(config_db, cfg_wireless_lmn));
 
 			//
 			// wireed-LMN configuration
 			//
 			start_wired_lmn(config_db, cfg_wired_lmn);
 
+			//
+			//	gpio control
+			//
+			control_gpio(gpio_paths);
 		}
 
 		bool network::start_wireless_lmn(cyng::store::db& db, cyng::tuple_t const& cfg)
@@ -125,7 +146,7 @@ namespace node
 					<< serial::adjust_baudrate(speed)
 					<< " B/sec");
 
-				cyng::async::start_task_delayed<wireless_LMN>(base_.mux_
+				auto const r = cyng::async::start_task_delayed<wireless_LMN>(base_.mux_
 					, std::chrono::seconds(2)
 					, logger_
 					, db
@@ -136,6 +157,8 @@ namespace node
 					, flow_control
 					, stopbits
 					, serial::adjust_baudrate(speed));
+
+				return r.second;
 
 			}
 			else {
@@ -163,7 +186,7 @@ namespace node
 					<< serial::adjust_baudrate(speed)
 					<< " B/sec");
 
-				cyng::async::start_task_delayed<wired_LMN>(base_.mux_
+				auto const r = cyng::async::start_task_delayed<wired_LMN>(base_.mux_
 					, std::chrono::seconds(2)
 					, logger_
 					, db
@@ -175,11 +198,22 @@ namespace node
 					, stopbits
 					, serial::adjust_baudrate(speed));
 
+				return r.second;
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "wired LMN is disabled");
 			}
 			return enabled;
+		}
+
+		void network::control_gpio(std::map<int, std::string> gpio_paths)
+		{
+			for (auto const& v : gpio_paths) {
+
+				auto const r = cyng::async::start_task_detached<gpio>(base_.mux_
+					, logger_
+					, boost::filesystem::path(v.second));
+			}
 		}
 
 		cyng::continuation network::run()
@@ -243,6 +277,10 @@ namespace node
 			//
 			exec_.ipt_access(true, config_.get_address());
 
+			//
+			//	update IP address
+			//
+			vm_.async_run(cyng::generate_invoke("update.status.ip", cyng::invoke("ip.tcp.socket.ep.local"), cyng::invoke("ip.tcp.socket.ep.remote")));
 		}
 
 		//	slot [1] - connection lost / reconnect

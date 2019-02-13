@@ -13,6 +13,7 @@ namespace cyng {
 		class db;
 	}
 }
+
 namespace node 
 {
 	/**

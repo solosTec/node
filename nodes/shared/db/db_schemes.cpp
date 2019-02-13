@@ -10,8 +10,6 @@
 #include "db_schemes.h"
 
 #include <cyng/table/meta.hpp>
-//#include <cyng/intrinsics/traits/tag.hpp>
-//#include <cyng/intrinsics/traits.hpp>
 
 #include <boost/algorithm/string.hpp>
 
@@ -334,6 +332,9 @@ namespace node
 				});
 		}
 
+		//
+		//	table name not defined
+		//
 		return cyng::table::meta_table_ptr();
 	}
 
