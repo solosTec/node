@@ -375,13 +375,13 @@ namespace node
 			//	msgIdx - message index
 			//	status - M-Bus status
 			//
-			meta_map.emplace("TSMLMeta", TSMLMeta());
+			meta_map.emplace("TSMLMeta", create_meta("TSMLMeta"));
 
 			//
 			//	unitCode - physical unit
 			//	unitName - descriptiv
 			//	
-			meta_map.emplace("TSMLData", TSMLData());
+			meta_map.emplace("TSMLData", create_meta("TSMLData"));
 		}
 		return meta_map;
 	}
