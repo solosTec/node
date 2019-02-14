@@ -98,11 +98,11 @@ namespace node
 //#ifdef SMF_IO_DEBUG
 				cyng::io::hex_dump hd;
 				std::stringstream ss;
-				if (buffer_.size() > 128) {
+				if (bytes_transferred > 128) {
 					hd(ss, buffer_.cbegin(), buffer_.cbegin() + 128);
 				}
 				else {
-					hd(ss, buffer_.cbegin(), buffer_.cend());
+					hd(ss, buffer_.cbegin(), buffer_.cbegin() + bytes_transferred);
 				}
 
 				CYNG_LOG_TRACE(logger_, "task #"
@@ -119,7 +119,7 @@ namespace node
 				//	signal LED
 				//
 				if (cyng::async::NO_TASK != task_gpio_) {
-					base_.mux_.post(task_gpio_, 2, cyng::tuple_factory(std::uint32_t(100), std::size_t(4)));
+					base_.mux_.post(task_gpio_, 1, cyng::tuple_factory(std::uint32_t(150), std::size_t(bytes_transferred / 10)));
 				}
 
 				//

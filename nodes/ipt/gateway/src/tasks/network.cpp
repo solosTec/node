@@ -125,7 +125,7 @@ namespace node
 			//
 			// wired-LMN configuration
 			//
-			pos = tid_map.find(46);
+			pos = tid_map.find(50);
 			start_wired_lmn(config_db, cfg_wired_lmn, (pos != tid_map.end()) ? pos->second : cyng::async::NO_TASK);
 
 		}
@@ -234,16 +234,23 @@ namespace node
 
 				switch (v.first) {
 				case 46:
+                    //  blue LED
+                    //  signal wired data 
+                    //  signal IP-T connection state
 					db.modify("_Config", cyng::table::key_generator("gpio.46"), cyng::param_factory("value", tid), vm_.tag());
+					task_gpio_ = tid;
 					break;
 				case 47:
+                    //  second after the blue one (LMN)
+                    //  signal wireless data
 					db.modify("_Config", cyng::table::key_generator("gpio.47"), cyng::param_factory("value", tid), vm_.tag());
 					break;
 				case 50:
+                    //  TLS
 					db.modify("_Config", cyng::table::key_generator("gpio.50"), cyng::param_factory("value", tid), vm_.tag());
-					task_gpio_ = tid;
 					break;
 				case 53:
+                    //  reserved blinking
 					db.modify("_Config", cyng::table::key_generator("gpio.53"), cyng::param_factory("value", tid), vm_.tag());
 					break;
 				default:
@@ -320,7 +327,7 @@ namespace node
 			//	signal LED
 			//
 			if (cyng::async::NO_TASK != task_gpio_) {
-				base_.mux_.post(task_gpio_, 1, cyng::tuple_factory(true));
+				base_.mux_.post(task_gpio_, 0, cyng::tuple_factory(true));
 			}
 
 			//
@@ -346,7 +353,7 @@ namespace node
 			//	signal LED
 			//
 			if (cyng::async::NO_TASK != task_gpio_) {
-				base_.mux_.post(task_gpio_, 1, cyng::tuple_factory(false));
+ 				base_.mux_.post(task_gpio_, 0, cyng::tuple_factory(false));
 			}
 
 			//

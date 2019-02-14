@@ -60,12 +60,22 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> is stopped");
+			<< "> "
+            << path_
+            << " is stopped");
 	}
 
 	cyng::continuation gpio::process(bool on)
 	{
-		control(on);
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> "
+            << path_
+            << (on ? " on" : " off"));
+
+        control(on);
 
 		//
 		//	continue task
