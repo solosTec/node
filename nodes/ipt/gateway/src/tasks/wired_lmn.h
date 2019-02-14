@@ -38,7 +38,8 @@ namespace node
 			, std::string parity
 			, std::string flow_control
 			, std::string stopbits
-			, std::uint32_t speed);
+			, std::uint32_t speed
+			, std::size_t);
 
 		cyng::continuation run();
 		void stop();
@@ -73,6 +74,8 @@ namespace node
 		 * Buffer for incoming data.
 		 */
 		read_buffer_t buffer_;
+
+		std::size_t const task_gpio_;
 
 	};
 

@@ -112,22 +112,24 @@ namespace node
 			//
 			//	gpio control
 			//
-			control_gpio(config_db, gpio_paths);
+			auto const tid_map = control_gpio(config_db, gpio_paths);
 
 			//
 			//	wireless-LMN configuration
 			//	update status word
 			//
-			status_word.set_mbus_if_available(start_wireless_lmn(config_db, cfg_wireless_lmn));
+			auto pos = tid_map.find(47);
+			status_word.set_mbus_if_available(start_wireless_lmn(config_db, cfg_wireless_lmn, (pos != tid_map.end()) ? pos->second : cyng::async::NO_TASK));
 
 			//
 			// wired-LMN configuration
 			//
-			start_wired_lmn(config_db, cfg_wired_lmn);
+			pos = tid_map.find(46);
+			start_wired_lmn(config_db, cfg_wired_lmn, (pos != tid_map.end()) ? pos->second : cyng::async::NO_TASK);
 
 		}
 
-		bool network::start_wireless_lmn(cyng::store::db& db, cyng::tuple_t const& cfg)
+		bool network::start_wireless_lmn(cyng::store::db& db, cyng::tuple_t const& cfg, std::size_t tid)
 		{
 			auto dom = cyng::make_reader(cfg);
 			auto const enabled = cyng::value_cast(dom.get("enabled"), false);
@@ -157,7 +159,8 @@ namespace node
 						, parity
 						, flow_control
 						, stopbits
-						, serial::adjust_baudrate(speed));
+						, serial::adjust_baudrate(speed)
+						, tid);
 
 					return r.second;
 				}
@@ -171,7 +174,7 @@ namespace node
 			return enabled;
 		}
 
-		bool network::start_wired_lmn(cyng::store::db& db, cyng::tuple_t const& cfg)
+		bool network::start_wired_lmn(cyng::store::db& db, cyng::tuple_t const& cfg, std::size_t tid)
 		{
 			auto dom = cyng::make_reader(cfg);
 			auto const enabled = cyng::value_cast(dom.get("enabled"), false);
@@ -201,7 +204,8 @@ namespace node
 						, parity
 						, flow_control
 						, stopbits
-						, serial::adjust_baudrate(speed));
+						, serial::adjust_baudrate(speed)
+						, tid);
 
 					return r.second;
 				}
@@ -215,13 +219,17 @@ namespace node
 			return enabled;
 		}
 
-		void network::control_gpio(cyng::store::db& db, std::map<int, std::string> gpio_paths)
+		std::map<int, std::size_t> network::control_gpio(cyng::store::db& db, std::map<int, std::string> gpio_paths)
 		{
+			std::map<int, std::size_t> tid_map;
+
 			for (auto const& v : gpio_paths) {
 
 				auto tid = cyng::async::start_task_detached<gpio>(base_.mux_
 					, logger_
 					, boost::filesystem::path(v.second));
+
+				tid_map.emplace(v.first, tid);
 
 				switch (v.first) {
 				case 46:
@@ -241,6 +249,8 @@ namespace node
 					break;
 				}
 			}
+
+			return tid_map;
 		}
 
 		cyng::continuation network::run()

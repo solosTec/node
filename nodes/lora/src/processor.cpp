@@ -531,16 +531,7 @@ namespace node
 
 	bool processor::is_autoconfig_on() const
 	{
-		bool on{ false };
-		cache_.access([&](cyng::store::table const* tbl)->void {
-
-			auto const rec = tbl->lookup(cyng::table::key_generator("catch-lora"));
-			if (!rec.empty()) {
-				on = cyng::value_cast(rec["value"], false);
-			}
-		}, cyng::store::read_access("_Config"));
-
-		return on;
+		return cyng::value_cast(cache_.get_value("_Config", "value", std::string("catch-lora")), false);
 	}
 
 	void processor::http_upload_progress(cyng::context& ctx)

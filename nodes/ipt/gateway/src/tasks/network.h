@@ -169,9 +169,9 @@ namespace node
 			void reconfigure_impl();
 			void insert_seq_open_channel_rel(cyng::context& ctx);
 
-			bool start_wireless_lmn(cyng::store::db&, cyng::tuple_t const&);
-			bool start_wired_lmn(cyng::store::db&, cyng::tuple_t const&);
-			void control_gpio(cyng::store::db&, std::map<int, std::string> gpio_paths);
+			bool start_wireless_lmn(cyng::store::db&, cyng::tuple_t const&, std::size_t);
+			bool start_wired_lmn(cyng::store::db&, cyng::tuple_t const&, std::size_t);
+			std::map<int, std::size_t> control_gpio(cyng::store::db&, std::map<int, std::string> gpio_paths);
 
 		private:
 			cyng::async::base_task& base_;

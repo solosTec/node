@@ -24,13 +24,15 @@ namespace node
 		, std::string parity
 		, std::string flow_control
 		, std::string stopbits
-		, std::uint32_t speed)
+		, std::uint32_t speed
+		, std::size_t tid)
 	: base_(*btp) 
 		, logger_(logger)
 		, config_db_(config_db)
 		, vm_(vm)
 		, port_(btp->mux_.get_io_service(), port)
 		, buffer_()
+		, task_gpio_(tid)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
