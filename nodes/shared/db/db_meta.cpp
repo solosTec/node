@@ -16,16 +16,84 @@ namespace node
 	cyng::table::meta_table_ptr create_meta(std::string name)
 	{
 		if (boost::algorithm::equals(name, "TSMLMeta")) {
+
 			return cyng::table::make_meta_table<1, 12>(name,
 				{ "pk", "trxID", "msgIdx", "roTime", "actTime", "valTime", "gateway", "server", "status", "source", "channel", "target", "profile" },
 				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_TIME_POINT, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_STRING },
 				{ 36, 16, 0, 0, 0, 0, 23, 23, 0, 0, 0, 32, 24 });
 		}
 		else if (boost::algorithm::equals(name, "TSMLData")) {
+
 			return cyng::table::make_meta_table<2, 6>(name,
 				{ "pk", "OBIS", "unitCode", "unitName", "dataType", "scaler", "val", "result" },
 				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT8, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_INT32, cyng::TC_INT64, cyng::TC_STRING },
 				{ 36, 24, 0, 64, 16, 0, 0, 512 });
+		}
+		else if (boost::algorithm::equals(name, "TIECMeta")) {
+
+			//
+			//	trxID - unique for every message
+			//	msgIdx - message index
+			//	status - M-Bus status
+			//
+			return cyng::table::make_meta_table<1, 8>(name,
+				{ "pk"
+				, "roTime"
+				, "meter"
+				, "status"
+				, "bcc"
+				, "size"
+				, "source"
+				, "channel"
+				, "target"
+				},
+				{ cyng::TC_UUID	//	pk
+				, cyng::TC_TIME_POINT	//	roTime
+				, cyng::TC_STRING	//	meter
+				, cyng::TC_STRING	//	status
+				, cyng::TC_BOOL		//	bcc
+				, cyng::TC_UINT64	//	size
+				, cyng::TC_UINT32	//	source
+				, cyng::TC_UINT32	//	channel
+				, cyng::TC_STRING	//	target
+				},
+				{ 36	//	pk
+				, 0		//	roTime
+				, 8		//	meter
+				, 8		//	status
+				, 0		//	bcc
+				, 0		//	size
+				, 0		//	source
+				, 0		//	channel
+				, 32	//	target
+				});
+		}
+		else if (boost::algorithm::equals(name, "TIECData")) {
+
+			//
+			//	unitCode - physical unit
+			//	unitName - descriptiv
+			//	
+			return cyng::table::make_meta_table<2, 4>(name,
+				{ "pk"		//	join to TIECMeta
+				, "idx"		//	message index
+				, "OBIS"	//	OBIS code
+				, "val"		//	value
+				, "unit"	//	physical unit
+				, "status" },
+				{ cyng::TC_UUID			//	pk
+				, cyng::TC_UINT32		//	idx
+				, cyng::TC_STRING		//	OBIS
+				, cyng::TC_STRING		//	val
+				, cyng::TC_STRING		//	unir
+				, cyng::TC_STRING },	//	status
+				{ 36	//	pk
+				, 0		//	idx
+				, 24	//	OBIS
+				, 64	//	val
+				, 16	//	unit
+				, 24	//	status
+				});
 		}
 		else if (boost::algorithm::equals(name, "devices")) {
 			return cyng::table::make_meta_table<1, 12>(name,

@@ -8,6 +8,10 @@
 #ifndef NODE_DB_SCHEMES_H
 #define NODE_DB_SCHEMES_H
 
+#if defined NODE_DB_GATEWAY_H
+#error cannot mix db_schemes.h and db_meta.h
+#endif
+
 namespace cyng {
 	namespace store {
 		class db;

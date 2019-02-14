@@ -7,6 +7,8 @@
 
 #include "iec_to_db_consumer.h"
 #include "../message_ids.h"
+#include "../../../../../nodes/shared/db/db_meta.h"
+
 #include <smf/iec/defs.h>
 #include <smf/sml/obis_io.h>
 #include <NODE_project_info.h>
@@ -351,67 +353,8 @@ namespace node
 		//
 		std::map<std::string, cyng::table::meta_table_ptr> meta_map;
 
-		//
-		//	trxID - unique for every message
-		//	msgIdx - message index
-		//	status - M-Bus status
-		//
-		meta_map.emplace("TIECMeta", cyng::table::make_meta_table<1, 8>("TIECMeta",
-			{ "pk"
-			, "roTime"
-			, "meter"
-			, "status"
-			, "bcc"
-			, "size"
-			, "source"
-			, "channel"
-			, "target"
-			},
-			{ cyng::TC_UUID	//	pk
-			, cyng::TC_TIME_POINT	//	roTime
-			, cyng::TC_STRING	//	meter
-			, cyng::TC_STRING	//	status
-			, cyng::TC_BOOL		//	bcc
-			, cyng::TC_UINT64	//	size
-			, cyng::TC_UINT32	//	source
-			, cyng::TC_UINT32	//	channel
-			, cyng::TC_STRING	//	target
-			},
-			{ 36	//	pk
-			, 0		//	roTime
-			, 8		//	meter
-			, 8		//	status
-			, 0		//	bcc
-			, 0		//	size
-			, 0		//	source
-			, 0		//	channel
-			, 32	//	target
-			}));
-
-		//
-		//	unitCode - physical unit
-		//	unitName - descriptiv
-		//	
-		meta_map.emplace("TIECData", cyng::table::make_meta_table<2, 4>("TIECData",
-			{ "pk"		//	join to TIECMeta
-			, "idx"		//	message index
-			, "OBIS"	//	OBIS code
-			, "val"		//	value
-			, "unit"	//	physical unit
-			, "status" },
-			{ cyng::TC_UUID			//	pk
-			, cyng::TC_UINT32		//	idx
-			, cyng::TC_STRING		//	OBIS
-			, cyng::TC_STRING		//	val
-			, cyng::TC_STRING		//	unir
-			, cyng::TC_STRING },	//	status
-			{ 36	//	pk
-			, 0		//	idx
-			, 24	//	OBIS
-			, 64	//	val
-			, 16	//	unit
-			, 24	//	status
-			}));
+		meta_map.emplace("TIECMeta", create_meta("TIECMeta"));
+		meta_map.emplace("TIECData", create_meta("TIECData"));
 
 		return meta_map;
 	}
