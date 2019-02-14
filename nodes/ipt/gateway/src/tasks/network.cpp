@@ -78,6 +78,7 @@ namespace node
 				, accept_all)
 			, exec_(logger, btp->mux_, status_word, config_db, vm_, mac)
 			, seq_open_channel_map_()
+			, task_gpio_(cyng::async::NO_TASK)
 		{
 			CYNG_LOG_INFO(logger_, "initialize task #"
 				<< base_.get_id()
@@ -240,6 +241,7 @@ namespace node
 					break;
 				case 50:
 					db.modify("_Config", cyng::table::key_generator("gpio.50"), cyng::param_factory("value", tid), vm_.tag());
+					task_gpio_ = tid;
 					break;
 				case 53:
 					db.modify("_Config", cyng::table::key_generator("gpio.53"), cyng::param_factory("value", tid), vm_.tag());
@@ -315,6 +317,13 @@ namespace node
 			exec_.ipt_access(true, config_.get_address());
 
 			//
+			//	signal LED
+			//
+			if (cyng::async::NO_TASK != task_gpio_) {
+				base_.mux_.post(task_gpio_, 1, cyng::tuple_factory(true));
+			}
+
+			//
 			//	update IP address
 			//
 			vm_.async_run(cyng::generate_invoke("update.status.ip", cyng::invoke("ip.tcp.socket.ep.local"), cyng::invoke("ip.tcp.socket.ep.remote")));
@@ -332,6 +341,13 @@ namespace node
 			//	op log entry
 			//
 			exec_.ipt_access(false, config_.get_address());
+
+			//
+			//	signal LED
+			//
+			if (cyng::async::NO_TASK != task_gpio_) {
+				base_.mux_.post(task_gpio_, 1, cyng::tuple_factory(false));
+			}
 
 			//
 			//	switch to other configuration

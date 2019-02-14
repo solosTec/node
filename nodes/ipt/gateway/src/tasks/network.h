@@ -202,6 +202,11 @@ namespace node
 			 */
 			std::map<sequence_type, std::pair<std::size_t, std::string>>	seq_open_channel_map_;
 
+			/**
+			 * GPIO to signal IP-T online state
+			 */
+			std::size_t task_gpio_;
+
 		};
 	}
 }
