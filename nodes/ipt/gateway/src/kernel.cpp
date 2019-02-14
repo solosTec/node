@@ -792,69 +792,52 @@ namespace node
 			//const cyng::vector_t frame = ctx.get_frame();
 			//CYNG_LOG_INFO(logger_, "sml.get.proc.ipt.state " << cyng::io::to_str(frame));
 
-			//76                                                SML_Message(Sequence): 
-			//  81063137303531313136303831363537393537312D33    transactionId: 170511160816579571-3
-			//  6202                                            groupNo: 2
-			//  6200                                            abortOnError: 0
-			//  72                                              messageBody(Choice): 
-			//	630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
-			//	73                                            SML_GetProcParameter_Res(Sequence): 
-			//	  080500153B01EC46                            serverId: 05 00 15 3B 01 EC 46 
-			//	  71                                          parameterTreePath(SequenceOf): 
-			//		0781490D0600FF                            path_Entry: 81 49 0D 06 00 FF 
-			//	  73                                          parameterTree(Sequence): 
-			//		0781490D0600FF                            parameterName: 81 49 0D 06 00 FF 
-			//		01                                        parameterValue: not set
-			//		73                                        child_List(SequenceOf): 
-			//		  73                                      tree_Entry(Sequence): 
-			//			07814917070000                        parameterName: 81 49 17 07 00 00 
-			//			72                                    parameterValue(Choice): 
-			//			  6201                                parameterValue: 1 => smlValue (0x01)
-			//			  652A96A8C0                          smlValue: 714516672
-			//			01                                    child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			0781491A070000                        parameterName: 81 49 1A 07 00 00 
-			//			72                                    parameterValue(Choice): 
-			//			  6201                                parameterValue: 1 => smlValue (0x01)
-			//			  6368EF                              smlValue: 26863
-			//			01                                    child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			07814919070000                        parameterName: 81 49 19 07 00 00 
-			//			72                                    parameterValue(Choice): 
-			//			  6201                                parameterValue: 1 => smlValue (0x01)
-			//			  631019                              smlValue: 4121
-			//			01                                    child_List: not set
-			//  639CB8                                          crc16: 40120
-			//  00                                              endOfSmlMsg: 00 
+			//
+			//	get TCP/IP endpoint from _Config table
+			//
+			auto const obj_rem = config_db_.get_value("_Config", "value", std::string("remote.ep"));
+			auto const obj_loc = config_db_.get_value("_Config", "value", std::string("local.ep"));
 
-			//const std::uint32_t ip_address = bus_->remote_endpoint().address().to_v4().to_ulong();
-			const std::uint32_t ip_address = 0x11223344;
-			//const std::uint16_t target_port = bus_->local_endpoint().port()
-			//	, source_port = bus_->remote_endpoint().port();
-			//	ToDo: use "ip.tcp.socket.ep.local.port"
-			//	ToDo: use "ip.tcp.socket.ep.remote.port"
-			const std::uint16_t target_port = 1000, source_port = 2000;
+			CYNG_LOG_INFO(logger_, "remote endpoint " << cyng::io::to_str(obj_rem));
+
+			boost::asio::ip::tcp::endpoint rep;
+			rep = cyng::value_cast(obj_rem, rep);
+
+			boost::asio::ip::tcp::endpoint lep;
+			lep = cyng::value_cast(obj_loc, lep);
+
+			//const std::uint32_t ip_address = rep.address().to_v4().to_uint();
+			//const std::uint16_t target_port = rep.port()
+			//	, source_port = lep.port();
+
+			//
+			//	generate response
+			//
+			sml_gen_.get_proc_parameter_ipt_state(trx
+				, server
+				, rep
+				, lep);
 
 			//
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			sml_gen_.append_msg(message(trx	//	trx
-				, 2 //, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+			//sml_gen_.append_msg(message(trx	//	trx
+			//	, 2 //, ++group_no_	//	group
+			//	, 0 //	abort code
+			//	, BODY_GET_PROC_PARAMETER_RESPONSE
 
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(server	//	server id  
-					, OBIS_CODE_ROOT_IPT_STATE	//	path entry - 81 49 0D 06 00 FF 
-					, child_list_tree(OBIS_CODE_ROOT_IPT_STATE, {
+			//	//
+			//	//	generate get process parameter response
+			//	//
+			//	, get_proc_parameter_response(server	//	server id  
+			//		, OBIS_CODE_ROOT_IPT_STATE	//	path entry - 81 49 0D 06 00 FF 
+			//		, child_list_tree(OBIS_CODE_ROOT_IPT_STATE, {
 
-						parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 00), make_value(ip_address)),
-						parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 00), make_value(target_port)),
-						parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 00), make_value(source_port))
-					}))));
+			//			parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 00), make_value(ip_address)),
+			//			parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 00), make_value(target_port)),
+			//			parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 00), make_value(source_port))
+			//		}))));
 		}
 
 

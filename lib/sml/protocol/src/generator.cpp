@@ -1408,6 +1408,70 @@ namespace node
 
 		}
 
+		std::size_t res_generator::get_proc_parameter_ipt_state(cyng::object trx
+			, cyng::object server_id
+			, boost::asio::ip::tcp::endpoint remote_ep
+			, boost::asio::ip::tcp::endpoint local_ep)
+		{
+			//76                                                SML_Message(Sequence): 
+			//  81063137303531313136303831363537393537312D33    transactionId: 170511160816579571-3
+			//  6202                                            groupNo: 2
+			//  6200                                            abortOnError: 0
+			//  72                                              messageBody(Choice): 
+			//	630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
+			//	73                                            SML_GetProcParameter_Res(Sequence): 
+			//	  080500153B01EC46                            serverId: 05 00 15 3B 01 EC 46 
+			//	  71                                          parameterTreePath(SequenceOf): 
+			//		0781490D0600FF                            path_Entry: 81 49 0D 06 00 FF 
+			//	  73                                          parameterTree(Sequence): 
+			//		0781490D0600FF                            parameterName: 81 49 0D 06 00 FF 
+			//		01                                        parameterValue: not set
+			//		73                                        child_List(SequenceOf): 
+			//		  73                                      tree_Entry(Sequence): 
+			//			07814917070000                        parameterName: 81 49 17 07 00 00 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  652A96A8C0                          smlValue: 714516672
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			0781491A070000                        parameterName: 81 49 1A 07 00 00 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  6368EF                              smlValue: 26863
+			//			01                                    child_List: not set
+			//		  73                                      tree_Entry(Sequence): 
+			//			07814919070000                        parameterName: 81 49 19 07 00 00 
+			//			72                                    parameterValue(Choice): 
+			//			  6201                                parameterValue: 1 => smlValue (0x01)
+			//			  631019                              smlValue: 4121
+			//			01                                    child_List: not set
+			//  639CB8                                          crc16: 40120
+			//  00                                              endOfSmlMsg: 00 
+
+
+			std::uint32_t const ip_address = remote_ep.address().to_v4().to_uint();
+			std::uint16_t const target_port = remote_ep.port()
+				, source_port = local_ep.port();
+
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id	//	server id  
+					, OBIS_CODE_ROOT_IPT_STATE	//	path entry - 81 49 0D 06 00 FF 
+					, child_list_tree(OBIS_CODE_ROOT_IPT_STATE, {
+
+						parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 00), make_value(ip_address)),
+						parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 00), make_value(target_port)),
+						parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 00), make_value(source_port))
+					}))));
+		}
+
+
 		std::size_t res_generator::get_profile_op_log(cyng::object trx
 			, cyng::object client_id
 			, std::chrono::system_clock::time_point act_time

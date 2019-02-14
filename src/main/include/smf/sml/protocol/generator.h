@@ -375,6 +375,14 @@ namespace node
 				, cyng::object server_id);
 
 			/**
+			 * get current IP-T status - 81 49 0D 06 00 FF (OBIS_CODE_ROOT_IPT_STATE)
+			 */
+			std::size_t get_proc_parameter_ipt_state(cyng::object trx
+				, cyng::object server_id
+				, boost::asio::ip::tcp::endpoint remote_ep
+				, boost::asio::ip::tcp::endpoint local_ep);
+
+			/**
 			 * Operation log data
 			 */
 			std::size_t get_profile_op_log(cyng::object trx
