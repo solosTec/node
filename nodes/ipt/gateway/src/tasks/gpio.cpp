@@ -44,7 +44,11 @@ namespace node
 		if (counter_ != 0) {
 			--counter_;
 			base_.suspend(ms_);
-			control((counter_ % 2) == 0);
+
+			//
+			//	last value of counter_ is 0 which turns the LED off
+			//
+			control((counter_ % 2) != 0);
 		}
 
 		return cyng::continuation::TASK_CONTINUE;

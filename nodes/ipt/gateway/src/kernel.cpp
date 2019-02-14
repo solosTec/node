@@ -806,10 +806,6 @@ namespace node
 			boost::asio::ip::tcp::endpoint lep;
 			lep = cyng::value_cast(obj_loc, lep);
 
-			//const std::uint32_t ip_address = rep.address().to_v4().to_uint();
-			//const std::uint16_t target_port = rep.port()
-			//	, source_port = lep.port();
-
 			//
 			//	generate response
 			//
@@ -817,27 +813,6 @@ namespace node
 				, server
 				, rep
 				, lep);
-
-			//
-			//	linearize and set CRC16
-			//	append to current SML message
-			//
-			//sml_gen_.append_msg(message(trx	//	trx
-			//	, 2 //, ++group_no_	//	group
-			//	, 0 //	abort code
-			//	, BODY_GET_PROC_PARAMETER_RESPONSE
-
-			//	//
-			//	//	generate get process parameter response
-			//	//
-			//	, get_proc_parameter_response(server	//	server id  
-			//		, OBIS_CODE_ROOT_IPT_STATE	//	path entry - 81 49 0D 06 00 FF 
-			//		, child_list_tree(OBIS_CODE_ROOT_IPT_STATE, {
-
-			//			parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 00), make_value(ip_address)),
-			//			parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 00), make_value(target_port)),
-			//			parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 00), make_value(source_port))
-			//		}))));
 		}
 
 

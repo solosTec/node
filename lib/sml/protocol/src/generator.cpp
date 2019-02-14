@@ -1449,7 +1449,11 @@ namespace node
 			//  00                                              endOfSmlMsg: 00 
 
 
-			std::uint32_t const ip_address = remote_ep.address().to_v4().to_uint();
+			//
+			//	network ordering 
+			//
+			std::uint32_t const ip_address = cyng::swap_num(remote_ep.address().to_v4().to_uint());
+
 			std::uint16_t const target_port = remote_ep.port()
 				, source_port = local_ep.port();
 
