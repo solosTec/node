@@ -180,13 +180,21 @@ namespace node
 			<< d.count()
 			<< " days");
 
+		//
+		//	determine year and month to report
+		//
 		std::tm tmp = cyng::chrono::make_utc_tm(next_trigger_tp_);
-		auto const start = next_trigger_tp_ - d;
+
+		//
+		//	calculate time frame
+		//
+		auto const now = std::chrono::system_clock::now();
+		auto const start = now - d;
 
 		base_.mux_.post(tsk_db_, 2, cyng::tuple_factory(static_cast<std::int32_t>(cyng::chrono::year(tmp))
 			, static_cast<std::int32_t>(cyng::chrono::month(tmp))
 			, start
-			, next_trigger_tp_));
+			, now));
 
 	}
 
