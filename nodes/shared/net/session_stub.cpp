@@ -11,6 +11,10 @@
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
 #endif
+#ifdef SMF_IO_LOG
+#include <cyng/io/hex_dump.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#endif
 
 namespace node 
 {
@@ -28,6 +32,9 @@ namespace node
 		, bus_(bus)
 		, vm_(mux.get_io_service(), tag)
 		, timeout_(timeout)
+#ifdef SMF_IO_LOG
+		, log_counter_{ 0u }
+#endif
 	{
 		//
 		//	register logger domain
@@ -165,6 +172,30 @@ namespace node
 					hd(ss, buf.cbegin(), buf.cend());
 				}
 				CYNG_LOG_TRACE(logger_, "session " << vm().tag() << " input dump " << buf.size() << " bytes:\n" << ss.str());
+#endif
+#ifdef SMF_IO_LOG
+				std::stringstream ss;
+				ss
+					<< "ipt-rx-"
+					<< boost::uuids::to_string(vm_.tag())
+					<< "-"
+					<< std::setw(4)
+					<< std::setfill('0')
+					<< std::dec
+					<< ++log_counter_
+					<< ".log"
+					;
+
+				const std::string file_name = (boost::filesystem::temp_directory_path() / ss.str()).string();
+				std::ofstream of(file_name, std::ios::out | std::ios::app);
+				if (of.is_open())
+				{
+					cyng::io::hex_dump hd;
+					hd(of, buf.begin(), buf.end());
+
+					CYNG_LOG_TRACE(logger_, "write debug log " << file_name);
+					of.close();
+				}
 #endif
 
 				//

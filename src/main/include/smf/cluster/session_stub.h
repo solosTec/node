@@ -114,6 +114,12 @@ namespace node
 	private:
 		void stop(boost::system::error_code ec);
 		void do_read();
+
+	private:
+#ifdef SMF_IO_LOG
+		std::size_t log_counter_;
+#endif
+
 	};
 }
 

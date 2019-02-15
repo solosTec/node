@@ -138,6 +138,8 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 06, 01, FF, CODE_LIST_1_VISIBLE_DEVICES);	//	1. Liste der sichtbaren Sensoren
 		const static obis	DEFINE_OBIS_CODE(81, 81, 11, 06, FF, FF, CODE_ROOT_ACTIVE_DEVICES);	//	active devices (Liste der aktiven Sensoren)
 		const static obis	DEFINE_OBIS_CODE(81, 81, 11, 06, 01, FF, CODE_LIST_1_ACTIVE_DEVICES);	//	1. Liste der aktiven Sensoren)
+		const static obis	DEFINE_OBIS_CODE(81, 81, 11, 06, FB, FF, CODE_ACTIVATE_DEVICE);	//	activate meter/sensor
+		const static obis	DEFINE_OBIS_CODE(81, 81, 11, 06, FC, FF, CODE_DEACTIVATE_DEVICE);	//	deactivate meter/sensor
 		const static obis	DEFINE_OBIS_CODE(81, 81, 12, 06, FF, FF, CODE_ROOT_DEVICE_INFO);	//	extended device information
 		const static obis	DEFINE_OBIS_CODE(81, 81, 81, 60, FF, FF, CODE_ROOT_ACCESS_RIGHTS);	//	see: 7.3.1.2 Datenstruktur zur Parametrierung der Rollen / Benutzerrechte 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 01, FF, CODE_ROOT_DEVICE_IDENT);	//	see: 7.3.2.9 Datenstruktur zur Abfrage der Geräte-Identifikation) 
@@ -280,6 +282,9 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 0F, ATTENTION_UNSUPPORTED_DATA_TYPE);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 10, ATTENTION_ELEMENT_NOT_OPTIONAL);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 11, ATTENTION_NO_ENTRIES);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 12, ATTENTION_END_LIMIT_BEFORE_START);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 13, ATTENTION_NO_ENTRIES_IN_RANGE);	//	range is empty - not the profile
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FE, 14, ATTENTION_MISSING_CLOSE_MSG);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FD, 00, ATTENTION_OK);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, C7, FD, 01, ATTENTION_JOB_IS_RUNNINNG);
 

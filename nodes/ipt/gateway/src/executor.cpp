@@ -181,7 +181,7 @@ namespace node
 				, cyng::table::data_generator(std::chrono::system_clock::now()
 					, "---"
 					, true	//	visible
-					, true	//	active
+					, false	//	active
 					, "demo entry"
 					, 0ull	//	status
 					, cyng::buffer_t{ 0, 0 }	//	mask
@@ -211,7 +211,7 @@ namespace node
 				, tag);
 
 			config_db_.insert("devices"
-				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02 }))
+				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x73, 0x31, 0x45, 0x04, 0x01, 0x02 }))
 				, cyng::table::data_generator(std::chrono::system_clock::now()
 					, "---"
 					, true	//	visible

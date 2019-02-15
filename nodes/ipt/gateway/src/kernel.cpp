@@ -86,6 +86,9 @@ namespace node
 			vm.register_function("sml.set.proc.ipt.param.user", 4, std::bind(&kernel::sml_set_proc_ipt_param_user, this, std::placeholders::_1));
 			vm.register_function("sml.set.proc.ipt.param.pwd", 4, std::bind(&kernel::sml_set_proc_ipt_param_pwd, this, std::placeholders::_1));
 
+			vm.register_function("sml.set.proc.activate", 7, std::bind(&kernel::sml_set_proc_activate, this, std::placeholders::_1));
+			vm.register_function("sml.set.proc.deactivate", 7, std::bind(&kernel::sml_set_proc_deactivate, this, std::placeholders::_1));
+
 			vm.register_function("sml.get.list.request", 9, std::bind(&kernel::sml_get_list_request, this, std::placeholders::_1));
 			//vm.register_function("sml.get.list.response", 0, std::bind(&kernel::sml_get_list_response, this, std::placeholders::_1));
 
@@ -146,7 +149,7 @@ namespace node
 			//	build SML message frame
 			//
 			//cyng::buffer_t buf = boxing(msg_);
-			cyng::buffer_t buf = sml_gen_.boxing();;
+			cyng::buffer_t buf = sml_gen_.boxing();
 
 #ifdef SMF_IO_DEBUG
 			cyng::io::hex_dump hd;
@@ -1090,6 +1093,120 @@ namespace node
 			}
 		}
 
+		void kernel::sml_set_proc_activate(cyng::context& ctx)
+		{
+			//	[3ad68eea-ac45-4349-96c6-d77f0a45a67d,190215220337893589-2,1,0500FFB04B94F8,operator,operator,01E61E733145040102]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::uint8_t,		//	[2] record index (1..2)
+				cyng::buffer_t,		//	[3] gateway id e.g 0500FFB04B94F8
+				std::string,		//	[4] user name
+				std::string,		//	[5] password
+				cyng::buffer_t		//	[6] server/meter ID 
+			>(frame);
+
+			config_db_.access([&](cyng::store::table* tbl) {
+
+				auto const rec = tbl->lookup(cyng::table::key_generator(std::get<6>(tpl)));
+				if (!rec.empty()) {
+
+					//
+					//	set sensor/actor active
+					//
+					CYNG_LOG_INFO(logger_, "activate sensor: " << cyng::io::to_hex(std::get<6>(tpl)));
+					tbl->modify(rec.key(), cyng::param_factory("active", true), ctx.tag());
+
+					//
+					//	send attention code ATTENTION_OK
+					//
+					sml_gen_.attention_msg(frame.at(1)	// trx
+						, std::get<3>(tpl)	//	server ID
+						, OBIS_ATTENTION_OK.to_buffer()
+						, "OK"
+						, cyng::tuple_t());
+
+				}
+				else {
+
+					//
+					//	send attention code OBIS_ATTENTION_NO_SERVER_ID
+					//
+					sml_gen_.attention_msg(frame.at(1)	// trx
+						, std::get<3>(tpl)	//	server ID
+						, OBIS_ATTENTION_NO_SERVER_ID.to_buffer()
+						, ctx.get_name()
+						, cyng::tuple_t());
+
+					CYNG_LOG_WARNING(logger_, ctx.get_name() << " - wrong server ID: "
+						<< cyng::io::to_hex(std::get<3>(tpl)))
+						;
+				}
+			}, cyng::store::write_access("devices"));
+
+		}
+
+		void kernel::sml_set_proc_deactivate(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::uint8_t,		//	[2] record index (1..2)
+				cyng::buffer_t,		//	[3] gateway id e.g 0500FFB04B94F8
+				std::string,		//	[4] user name
+				std::string,		//	[5] password
+				cyng::buffer_t		//	[6] server/meter ID 
+			>(frame);
+
+			config_db_.access([&](cyng::store::table* tbl) {
+
+				auto const rec = tbl->lookup(cyng::table::key_generator(std::get<6>(tpl)));
+				if (!rec.empty()) {
+
+					//
+					//	set sensor/actor active
+					//
+					CYNG_LOG_INFO(logger_, "deactivate sensor: " << cyng::io::to_hex(std::get<6>(tpl)));
+					tbl->modify(rec.key(), cyng::param_factory("active", false), ctx.tag());
+
+					//
+					//	send attention code
+					//
+					//
+					//	send attention code ATTENTION_OK
+					//
+					sml_gen_.attention_msg(frame.at(1)	// trx
+						, std::get<3>(tpl)	//	server ID
+						, OBIS_ATTENTION_OK.to_buffer()
+						, "OK"
+						, cyng::tuple_t());
+
+				}
+				else {
+
+					//
+					//	send attention code OBIS_ATTENTION_NO_SERVER_ID
+					//
+					sml_gen_.attention_msg(frame.at(1)	// trx
+						, std::get<3>(tpl)	//	server ID
+						, OBIS_ATTENTION_NO_SERVER_ID.to_buffer()
+						, ctx.get_name()
+						, cyng::tuple_t());
+
+					CYNG_LOG_WARNING(logger_, ctx.get_name() << " - wrong server ID: "
+						<< cyng::io::to_hex(std::get<3>(tpl)))
+						;
+				}
+			}, cyng::store::write_access("devices"));
+
+		}
+
 		void kernel::sml_get_list_request(cyng::context& ctx)
 		{
 			cyng::vector_t const frame = ctx.get_frame();
@@ -1159,10 +1276,10 @@ namespace node
 			>(frame);
 
 			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - manufacturer: " << std::get<0>(tpl));
-			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - version: " << std::get<1>(tpl));
-			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - media: " << std::get<2>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - version: " << +std::get<1>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - media: " << +std::get<2>(tpl));
 			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - device id: " << std::get<3>(tpl));
-			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - frame type: " << std::get<4>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - frame type: " << +std::get<4>(tpl));
 
 //#ifdef SMF_IO_DEBUG
 			cyng::io::hex_dump hd;
@@ -1218,7 +1335,7 @@ namespace node
 							, "+++"	//	class
 							, true	//	visible
 							, false	//	active
-							, ""	//	description
+							, manufacturer	//	description
 							, 0ull	//	status
 							, cyng::buffer_t{ 0, 0 }	//	mask
 							, 26000ul	//	interval
@@ -1234,12 +1351,8 @@ namespace node
 					CYNG_LOG_TRACE(logger_, "update device: " << cyng::io::to_hex(dev_id));
 					tbl->modify(rec.key(), cyng::param_factory("lastSeen", std::chrono::system_clock::now()), tag);
 				}
-
 			}, cyng::store::write_access("devices"));
-
 		}
-
-
 	}	//	sml
 }
 

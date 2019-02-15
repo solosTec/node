@@ -153,67 +153,30 @@ namespace node
 
 		const char* get_attention_name(obis const& code)
 		{
-			if (OBIS_ATTENTION_UNKNOWN_ERROR == code) {
-				return "UNKNOWN ERROR";
-			}
-			else if (OBIS_ATTENTION_UNKNOWN_SML_ID == code) {
-				return "UNKNOWN SML ID";
-			}
-			else if (OBIS_ATTENTION_NOT_AUTHORIZED == code) {
-				return "NOT AUTHORIZED";
-			}
-			else if (OBIS_ATTENTION_NO_SERVER_ID == code) {
-				return "NO SERVER ID";
-			}
-			else if (OBIS_ATTENTION_NO_REQ_FIELD == code) {
-				return "NO REQ FIELD";
-			}
-			else if (OBIS_ATTENTION_CANNOT_WRITE == code) {
-				return "CANNOT WRITE";
-			}
-			else if (OBIS_ATTENTION_CANNOT_READ == code) {
-				return "CANNOT READ";
-			}
-			else if (OBIS_ATTENTION_COMM_ERROR == code) {
-				return "COMM ERROR";
-			}
-			else if (OBIS_ATTENTION_PARSER_ERROR == code) {
-				return "PARSER ERROR";
-			}
-			else if (OBIS_ATTENTION_OUT_OF_RANGE == code) {
-				return "OUT OF RANGE";
-			}
-			else if (OBIS_ATTENTION_NOT_EXECUTED == code) {
-				return "NOT EXECUTED";
-			}
-			else if (OBIS_ATTENTION_INVALID_CRC == code) {
-				return "INVALID CRC";
-			}
-			else if (OBIS_ATTENTION_NO_BROADCAST == code) {
-				return "NO BROADCAST";
-			}
-			else if (OBIS_ATTENTION_UNEXPECTED_MSG == code) {
-				return "UNEXPECTED MSG";
-			}
-			else if (OBIS_ATTENTION_UNKNOWN_OBIS_CODE == code) {
-				return "UNKNOWN OBIS CODE";
-			}
-			else if (OBIS_ATTENTION_UNSUPPORTED_DATA_TYPE == code) {
-				return "UNSUPPORTED DATA TYPE";
-			}
-			else if (OBIS_ATTENTION_ELEMENT_NOT_OPTIONAL == code) {
-				return "NOT OPTIONAL";
-			}
-			else if (OBIS_ATTENTION_NO_ENTRIES == code) {
-				//	requested profile has no entry
-				return "NO ENTRY";
-			}
-			else if (OBIS_ATTENTION_OK == code) {
-				return "OK";
-			}
-			else if (OBIS_ATTENTION_JOB_IS_RUNNINNG == code) {
-				return "JOB IS RUNNINNG";
-			}
+			if (OBIS_ATTENTION_UNKNOWN_ERROR == code)		return "UNKNOWN ERROR";
+			else if (OBIS_ATTENTION_UNKNOWN_SML_ID == code) return "UNKNOWN SML ID";
+			else if (OBIS_ATTENTION_NOT_AUTHORIZED == code) return "NOT AUTHORIZED";
+			else if (OBIS_ATTENTION_NO_SERVER_ID == code) 	return "NO SERVER ID";
+			else if (OBIS_ATTENTION_NO_REQ_FIELD == code)	return "NO REQ FIELD";
+			else if (OBIS_ATTENTION_CANNOT_WRITE == code)	return "CANNOT WRITE";
+			else if (OBIS_ATTENTION_CANNOT_READ == code)	return "CANNOT READ";
+			else if (OBIS_ATTENTION_COMM_ERROR == code)		return "COMM ERROR";
+			else if (OBIS_ATTENTION_PARSER_ERROR == code)	return "PARSER ERROR";
+			else if (OBIS_ATTENTION_OUT_OF_RANGE == code)	return "OUT OF RANGE";
+			else if (OBIS_ATTENTION_NOT_EXECUTED == code)	return "NOT EXECUTED";
+			else if (OBIS_ATTENTION_INVALID_CRC == code)	return "INVALID CRC";
+			else if (OBIS_ATTENTION_NO_BROADCAST == code)	return "NO BROADCAST";
+			else if (OBIS_ATTENTION_UNEXPECTED_MSG == code) return "UNEXPECTED MSG";
+			else if (OBIS_ATTENTION_UNKNOWN_OBIS_CODE == code)	return "UNKNOWN OBIS CODE";
+			else if (OBIS_ATTENTION_UNSUPPORTED_DATA_TYPE == code)	return "UNSUPPORTED DATA TYPE";
+			else if (OBIS_ATTENTION_ELEMENT_NOT_OPTIONAL == code)	return "NOT OPTIONAL";
+			//	requested profile has no entry
+			else if (OBIS_ATTENTION_NO_ENTRIES == code)				return "NO ENTRY";
+			else if (OBIS_ATTENTION_END_LIMIT_BEFORE_START == code)	return "END LIMIT BEFORE START";
+			else if (OBIS_ATTENTION_NO_ENTRIES_IN_RANGE == code)	return "NO ENTRIES IN RANGE";
+			else if (OBIS_ATTENTION_MISSING_CLOSE_MSG == code)		return "MISSING CLOSE MSG";
+			else if (OBIS_ATTENTION_OK == code)						return "OK";
+			else if (OBIS_ATTENTION_JOB_IS_RUNNINNG == code)		return "JOB IS RUNNINNG";
 			return "no-entry";
 		}
 
@@ -221,54 +184,24 @@ namespace node
 		{
 			switch (evt & 0xFFFFFF)
 			{
-			case 0x810120:
-				return "switching operation";
-				break;
-			case 0x810101:
-				return "Regelsatzänderung";
-				break;
-			case 0x810102:
-				return "job received";
-				break;
-			case 0x810103:
-				return "Kontaktmatrix geändert";
-				break;
-			case 0x810104:
-				return "keine Kontaktmatrix parametriert";
-				break;
-			case 0x810105:
-				return "Objektkonfiguration geändert";
-				break;
-			case 0x810106:
-				return "Konfiguration in LSM programmiert";
-				break;
-			case 0x810107:
-				return "Konfiguration konnte nicht in LSM programmiert werden";
-				break;
-			case 0x810108:
-				return "Abweichende Konfiguration";
-				break;
-			case 0x810130:
-				return "Relaistest";
-				break;
-			case 0x810131:
-				return "Pegeländerung am MUC Eingangskontakt";
-				break;
-			case 0x810001:
-				return "MUC Zeitbasis unsicher";
-				break;
-			case 0x810111:
-				return "Objektschaltauftrag angenommen";
-				break;
-			case 0x810112:
-				return "Objektschaltauftrag abgelehnt";
-				break;
+			case 0x810120:	return "switching operation";
+			case 0x810101:	return "Regelsatzänderung";
+			case 0x810102:	return "job received";
+			case 0x810103:	return "Kontaktmatrix geändert";
+			case 0x810104:	return "keine Kontaktmatrix parametriert";
+			case 0x810105:	return "Objektkonfiguration geändert";
+			case 0x810106:	return "Konfiguration in LSM programmiert";
+			case 0x810107:	return "Konfiguration konnte nicht in LSM programmiert werden";
+			case 0x810108:	return "Abweichende Konfiguration";
+			case 0x810130:	return "Relaistest";
+			case 0x810131:	return "Pegeländerung am MUC Eingangskontakt";
+			case 0x810001:	return "MUC Zeitbasis unsicher";
+			case 0x810111:	return "Objektschaltauftrag angenommen";
+			case 0x810112:	return "Objektschaltauftrag abgelehnt";
 			default:
 				break;
 			}
 			return "unknown";
-
 		}
-
 	}
 }

@@ -66,6 +66,9 @@ namespace node
 				, cyng::tuple_t::const_iterator pos
 				, cyng::tuple_t::const_iterator end);
 
+			cyng::vector_t set_proc_param_request_push_op(std::vector<obis> const&, cyng::object obj);
+			cyng::vector_t set_proc_param_request_ipt_param(std::vector<obis> const&, cyng::object obj);
+
 			cyng::vector_t read_get_proc_parameter_response(std::vector<obis> path
 				, std::size_t depth
 				, cyng::tuple_t::const_iterator pos

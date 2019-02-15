@@ -674,7 +674,8 @@ namespace node
 				<< ++log_counter_
 				<< ".log"
 				;
-			const std::string file_name = ss.str();
+			
+			const std::string file_name = (boost::filesystem::temp_directory_path() / ss.str()).string();
 			std::ofstream of(file_name, std::ios::out | std::ios::app);
 			if (of.is_open())
 			{
