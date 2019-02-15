@@ -20,9 +20,9 @@
 #include <cyng/io/swap.h>
 #include <cyng/io/io_buffer.h>
 
-#ifdef SMF_IO_DEBUG
+//#ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
-#endif
+//#endif
 
 #include <boost/algorithm/string.hpp>
 
@@ -91,7 +91,7 @@ namespace node
 			//
 			//	callback from wireless LMN
 			//
-			vm.register_function("mbus.push.frame", 0, std::bind(&kernel::mbus_push_frame, this, std::placeholders::_1));
+			vm.register_function("mbus.push.frame", 6, std::bind(&kernel::mbus_push_frame, this, std::placeholders::_1));
 
 		}
 
@@ -1143,9 +1143,31 @@ namespace node
 
 		void kernel::mbus_push_frame(cyng::context& ctx)
 		{
+            //  [HYD,18,e,0003105c,72,000000000000BF00C4002005676D1ECC768315BE007228E27E9C8C16A1F82098EEB2ADFCFF39388816DA0F6A]
+
 			cyng::vector_t const frame = ctx.get_frame();
 			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
+            cyng::buffer_t buffer;
+            buffer = cyng::value_cast(frame.at(5), buffer);
+            
+//#ifdef SMF_IO_DEBUG
+            cyng::io::hex_dump hd;
+            std::stringstream ss;
+            if (buffer.size() > 128) {
+                hd(ss, buffer.cbegin(), buffer.cbegin() + 128);
+            }
+            else {
+                hd(ss, buffer.cbegin(), buffer.cend());
+            }
+
+            CYNG_LOG_TRACE(logger_, ctx.get_name()
+                << " input dump "
+                << buffer.size()
+                << " bytes\n"
+                << ss.str());
+//#endif
+            
 			//
 			//	variable_data_block vdb;
 			//

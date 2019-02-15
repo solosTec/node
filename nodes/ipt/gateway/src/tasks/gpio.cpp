@@ -73,7 +73,7 @@ namespace node
 			<< base_.get_class_name()
 			<< "> "
             << path_
-            << (on ? " on" : " off"));
+            << (on ? " on" : " oj   off"));
 
         control(on);
 

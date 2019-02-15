@@ -12,9 +12,9 @@
 
 #include <cyng/io/serializer.h>
 
-//#ifdef SMF_IO_DEBUG
+#ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
-//#endif
+#endif
 
 namespace node
 {
@@ -39,8 +39,8 @@ namespace node
 		, task_gpio_(tid)
 		, parser_([&](cyng::vector_t&& prg){
 
-			CYNG_LOG_DEBUG(logger_, prg.size() << " m-bus instructions received");
-			CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
+// 			CYNG_LOG_DEBUG(logger_, prg.size() << " m-bus instructions received");
+// 			CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
 			vm_.async_run(std::move(prg));
 	})
 	{
@@ -104,7 +104,7 @@ namespace node
 					<< bytes_transferred
 					<< " bytes");
 
-//#ifdef SMF_IO_DEBUG
+#ifdef SMF_IO_DEBUG
 				cyng::io::hex_dump hd;
 				std::stringstream ss;
 				if (bytes_transferred > 128) {
@@ -122,8 +122,13 @@ namespace node
 					<< buffer_.size()
 					<< " bytes\n"
 					<< ss.str());
-//#endif
+#endif
 
+                //
+                //  feed the parser
+                //
+                parser_.read(buffer_.cbegin(), buffer_.cbegin() + bytes_transferred);
+                
 				//
 				//	signal LED
 				//
