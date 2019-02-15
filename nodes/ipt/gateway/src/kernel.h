@@ -76,6 +76,11 @@ namespace node
 
 			void sml_get_list_request(cyng::context& ctx);
 
+			/**
+			 *	callback from wireless LMN
+			 */
+			void mbus_push_frame(cyng::context& ctx);
+
 		public:
 			/**
 			 * global state

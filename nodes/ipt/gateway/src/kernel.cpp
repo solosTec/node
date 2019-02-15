@@ -88,6 +88,11 @@ namespace node
 			vm.register_function("sml.get.list.request", 9, std::bind(&kernel::sml_get_list_request, this, std::placeholders::_1));
 			//vm.register_function("sml.get.list.response", 0, std::bind(&kernel::sml_get_list_response, this, std::placeholders::_1));
 
+			//
+			//	callback from wireless LMN
+			//
+			vm.register_function("mbus.push.frame", 0, std::bind(&kernel::mbus_push_frame, this, std::placeholders::_1));
+
 		}
 
 		void kernel::reset()
@@ -1086,7 +1091,7 @@ namespace node
 
 		void kernel::sml_get_list_request(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
+			cyng::vector_t const frame = ctx.get_frame();
 			CYNG_LOG_TRACE(logger_, "sml.get.list.request " << cyng::io::to_str(frame));
 
 			auto const tpl = cyng::tuple_cast<
@@ -1134,6 +1139,16 @@ namespace node
 
 			}
 
+		}
+
+		void kernel::mbus_push_frame(cyng::context& ctx)
+		{
+			cyng::vector_t const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			//
+			//	variable_data_block vdb;
+			//
 		}
 
 

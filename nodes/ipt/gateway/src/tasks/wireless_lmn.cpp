@@ -9,6 +9,9 @@
 #include <smf/serial/parity.h>
 #include <smf/serial/stopbits.h>
 #include <smf/serial/flow_control.h>
+
+#include <cyng/io/serializer.h>
+
 //#ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
 //#endif
@@ -34,6 +37,12 @@ namespace node
 		, port_(btp->mux_.get_io_service(), port)
 		, buffer_()
 		, task_gpio_(tid)
+		, parser_([&](cyng::vector_t&& prg){
+
+			CYNG_LOG_DEBUG(logger_, prg.size() << " m-bus instructions received");
+			CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
+			vm_.async_run(std::move(prg));
+	})
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

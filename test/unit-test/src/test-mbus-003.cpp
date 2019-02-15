@@ -5,6 +5,7 @@
  * 
  */ 
 #include "test-mbus-003.h"
+#include <NODE_project_info.h>
 #include <iostream>
 #include <fstream>
 #include <boost/test/unit_test.hpp>
@@ -30,10 +31,9 @@ namespace node
 		//>(frame);
 
 		//	get data
-		auto p = std::string("C:\\projects\\github\\node\\test\\unit-test\\src\\samples\\mbus-003.bin");
-		//auto p = std::string("C:\\projects\\github\\node\\test\\unit-test\\src\\samples\\mbus-004.bin");
-		//auto p = std::string("C:\\projects\\github\\node\\test\\unit-test\\src\\samples\\mbus-005.bin");
-		std::ifstream ifs(p, std::ios::binary | std::ios::app);
+		auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-003.bin";
+		//auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-004.bin";
+		std::ifstream ifs(p.string(), std::ios::binary | std::ios::app);
 		if (ifs.is_open())
 		{
 			ifs >> std::noskipws;

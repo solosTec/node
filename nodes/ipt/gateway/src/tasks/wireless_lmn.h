@@ -10,6 +10,8 @@
 
 
 #include <smf/ipt/bus.h>
+#include <smf/mbus/parser.h>
+
 #include <cyng/log.h>
 #include <cyng/store/db.h>
 #include <cyng/async/mux.h>
@@ -76,7 +78,15 @@ namespace node
 		 */
 		read_buffer_t buffer_;
 
+		/**
+		 * GPIO control
+		 */
 		std::size_t const task_gpio_;
+
+		/**
+		 * M-Bus parser
+		 */
+		wmbus::parser parser_;
 	};
 }
 

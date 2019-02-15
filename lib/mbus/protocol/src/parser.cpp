@@ -28,7 +28,7 @@ namespace node
 			, input_(&stream_buffer_)
 			, stream_state_(STATE_START)
 			, parser_state_()
-			, f_read_uint8(std::bind(&parser::read_numeric<std::uint8_t>, this))
+			//, f_read_uint8(std::bind(&parser::read_numeric<std::uint8_t>, this))
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
 			parser_state_ = ack();
@@ -37,7 +37,7 @@ namespace node
 		parser::~parser()
 		{
 			if (cb_)	cb_ = nullptr;
-			if (f_read_uint8)	f_read_uint8 = nullptr;
+			//if (f_read_uint8)	f_read_uint8 = nullptr;
 		}
 
 
@@ -137,9 +137,9 @@ namespace node
 				parser_.code_ << cyng::generate_invoke("mbus.short.frame"
 					, cyng::code::IDENT
 					, frm.ok_	//	OK
-					, parser_.f_read_uint8	//	C-field
-					, parser_.f_read_uint8	//	A-field
-					, parser_.f_read_uint8)	//	check sum
+					, parser_.get_read_uint8_f()	//	C-field
+					, parser_.get_read_uint8_f()	//	A-field
+					, parser_.get_read_uint8_f())	//	check sum
 					<< cyng::unwind_vec();
 				return STATE_START;
 			default:
@@ -161,6 +161,12 @@ namespace node
 			parser_.input_.put(c_);
 			return STATE_START;
 		}
+
+		std::function<std::uint8_t()> parser::get_read_uint8_f()
+		{
+			return [&]()->std::uint8_t { return this->read_numeric<std::uint8_t>(); };
+		}
+
 	}
 
 	//
