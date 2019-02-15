@@ -19,6 +19,7 @@
 #include <cyng/sys/memory.h>
 #include <cyng/io/swap.h>
 #include <cyng/io/io_buffer.h>
+#include <cyng/util/slice.hpp>
 
 //#ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
@@ -1146,31 +1147,96 @@ namespace node
             //  [HYD,18,e,0003105c,72,000000000000BF00C4002005676D1ECC768315BE007228E27E9C8C16A1F82098EEB2ADFCFF39388816DA0F6A]
 
 			cyng::vector_t const frame = ctx.get_frame();
-			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
-
-            cyng::buffer_t buffer;
-            buffer = cyng::value_cast(frame.at(5), buffer);
+			//CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
             
+			auto const tpl = cyng::tuple_cast<
+				std::string,		//	[1] manufacturer
+				std::uint8_t,		//	[2] version
+				std::uint8_t,		//	[3] media
+				std::uint32_t,		//	[4] device id
+				std::uint8_t,		//	[5] frame_type
+				cyng::buffer_t		//	[6] payload
+			>(frame);
+
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - manufacturer: " << std::get<0>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - version: " << std::get<1>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - media: " << std::get<2>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - device id: " << std::get<3>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - frame type: " << std::get<4>(tpl));
+
 //#ifdef SMF_IO_DEBUG
-            cyng::io::hex_dump hd;
-            std::stringstream ss;
-            if (buffer.size() > 128) {
-                hd(ss, buffer.cbegin(), buffer.cbegin() + 128);
-            }
-            else {
-                hd(ss, buffer.cbegin(), buffer.cend());
-            }
+			cyng::io::hex_dump hd;
+			std::stringstream ss;
+			if (std::get<5>(tpl).size() > 128) {
+				hd(ss, std::get<5>(tpl).cbegin(), std::get<5>(tpl).cbegin() + 128);
+			}
+			else {
+				hd(ss, std::get<5>(tpl).cbegin(), std::get<5>(tpl).cend());
+			}
 
-            CYNG_LOG_TRACE(logger_, ctx.get_name()
-                << " input dump "
-                << buffer.size()
-                << " bytes\n"
-                << ss.str());
+			CYNG_LOG_TRACE(logger_, ctx.get_name()
+				<< " input dump "
+				<< std::get<5>(tpl).size()
+				<< " bytes\n"
+				<< ss.str());
 //#endif
-            
+
 			//
-			//	variable_data_block vdb;
+			//	update device table
 			//
+			cyng::buffer_t dev_id = cyng::to_vector<char>(std::get<3>(tpl));
+			std::reverse(dev_id.begin(), dev_id.end());
+
+			update_device_table(dev_id, std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl), std::get<4>(tpl), ctx.tag());
+
+
+			//
+			//	ToDo: decode variable_data_block vdb;
+			//
+
+		}
+
+		void kernel::update_device_table(cyng::buffer_t const& dev_id
+			, std::string const& manufacturer
+			, std::uint8_t version
+			, std::uint8_t media
+			, std::uint8_t frame_type
+			, boost::uuids::uuid tag)
+		{
+			config_db_.access([&](cyng::store::table* tbl) {
+
+				auto const rec = tbl->lookup(cyng::table::key_generator(dev_id));
+				if (rec.empty()) {
+
+					//
+					//	new device
+					//
+					CYNG_LOG_INFO(logger_, "insert new device: " << cyng::io::to_hex(dev_id));
+
+					tbl->insert(cyng::table::key_generator(dev_id)
+						, cyng::table::data_generator(std::chrono::system_clock::now()
+							, "+++"	//	class
+							, true	//	visible
+							, false	//	active
+							, ""	//	description
+							, 0ull	//	status
+							, cyng::buffer_t{ 0, 0 }	//	mask
+							, 26000ul	//	interval
+							, cyng::make_buffer({})	//	pubKey
+							, cyng::buffer_t{}	//	aes
+							, ""	//	user
+							, "")	//	password
+						, 1	//	generation
+						, tag);
+
+				}
+				else {
+					CYNG_LOG_TRACE(logger_, "update device: " << cyng::io::to_hex(dev_id));
+					tbl->modify(rec.key(), cyng::param_factory("lastSeen", std::chrono::system_clock::now()), tag);
+				}
+
+			}, cyng::store::write_access("devices"));
+
 		}
 
 

@@ -81,6 +81,13 @@ namespace node
 			 */
 			void mbus_push_frame(cyng::context& ctx);
 
+			void update_device_table(cyng::buffer_t const& dev_id
+				, std::string const& manufacturer
+				, std::uint8_t version
+				, std::uint8_t media
+				, std::uint8_t frame_type
+				, boost::uuids::uuid tag);
+
 		public:
 			/**
 			 * global state

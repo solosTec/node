@@ -264,10 +264,12 @@ namespace node
 					, cyng::param_factory("wireless-LMN", cyng::tuple_factory(
 #if BOOST_OS_WINDOWS
 						cyng::param_factory("enabled", false),
+						cyng::param_factory("port", "COM3"),	//	USB serial port
+						//	if port number is greater than 9 the following syntax is required: "\\\\.\\COM12"
 #else
 						cyng::param_factory("enabled", true),
-#endif
 						cyng::param_factory("port", "/dev/ttyAPP0"),
+#endif
 						cyng::param_factory("databits", 8),
 						cyng::param_factory("parity", "none"),	//	none, odd, even
 						cyng::param_factory("flow-control", "none"),	//	none, software, hardware
@@ -278,10 +280,11 @@ namespace node
 					, cyng::param_factory("wired-LMN", cyng::tuple_factory(
 #if BOOST_OS_WINDOWS
 						cyng::param_factory("enabled", false),
+						cyng::param_factory("port", "COM1"),
 #else
 						cyng::param_factory("enabled", true),
-#endif
 						cyng::param_factory("port", "/dev/ttyAPP1"),
+#endif
 						cyng::param_factory("databits", 8),
 						cyng::param_factory("parity", "none"),	//	none, odd, even
 						cyng::param_factory("flow-control", "none"),	//	none, software, hardware

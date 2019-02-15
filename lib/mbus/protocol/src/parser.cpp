@@ -28,7 +28,6 @@ namespace node
 			, input_(&stream_buffer_)
 			, stream_state_(STATE_START)
 			, parser_state_()
-			//, f_read_uint8(std::bind(&parser::read_numeric<std::uint8_t>, this))
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
 			parser_state_ = ack();
@@ -97,10 +96,6 @@ namespace node
 				//	std::istreambuf_iterator<char> eos; 
 				//	if {} doesn't work
 				cyng::buffer_t buffer(std::istreambuf_iterator<char>(input_), {});
-				//if (!buffer.empty())
-				//{
-				//	cb_(cyng::generate_invoke("ipt.req.transmit.data", cyng::code::IDENT, buffer));
-				//}
 			}
 		}
 
@@ -282,14 +277,7 @@ namespace node
 
 		void parser::post_processing()
 		{
-			//if (stream_state_ == STATE_START)
-			//{
-				//
-				//	use 
-				//	std::istreambuf_iterator<char> eos; 
-				//	if {} doesn't work
-				cyng::buffer_t buffer(std::istreambuf_iterator<char>(input_), {});
-			//}
+			cyng::buffer_t buffer(std::istreambuf_iterator<char>(input_), {});
 		}
 
 		parser::state_visitor::state_visitor(parser& p, char c)
@@ -308,7 +296,7 @@ namespace node
 			if (v.pos_ == v.data_.size()) {
 
 				this->parser_.manufacturer_ = node::sml::decode(v.data_.at(0), v.data_.at(1));
-				std::cout << "manufacturer: " << this->parser_.manufacturer_ << std::endl;
+				//std::cout << "manufacturer: " << this->parser_.manufacturer_ << std::endl;
 				return STATE_DEV_ID;
 			}
 			return STATE_MANUFACTURER;
@@ -317,7 +305,7 @@ namespace node
 		parser::state parser::state_visitor::operator()(dev_version& v) const
 		{
 			v.u_.c_ = this->c_;
-			std::cout << "protocol type: " << +v.u_.internal_.type_ << ", protocol version: " << +v.u_.internal_.ver_ << std::endl;
+			//std::cout << "protocol type: " << +v.u_.internal_.type_ << ", protocol version: " << +v.u_.internal_.ver_ << std::endl;
 			this->parser_.version_ = v.u_.internal_.ver_;
 			return STATE_DEV_TYPE;
 		}
@@ -338,7 +326,7 @@ namespace node
 				std::stringstream ss;
 				ss.fill('0');
 				ss << std::setw(8) << std::setbase(16) << id;
-				std::cout << "device id: " << ss.str() << std::endl;
+				//std::cout << "device id: " << ss.str() << std::endl;
 
 				//
 				//	write this value as decimal value
@@ -449,7 +437,7 @@ namespace node
 			v.data_.push_back(this->c_);
 			--v.size_;
 			if (v.size_ == 0) {
-				std::cout << "frame with " << v.data_.size() << " bytes complete" << std::endl;
+				//std::cout << "frame with " << v.data_.size() << " bytes complete" << std::endl;
 
 				parser_.cb_(cyng::generate_invoke("mbus.push.frame"
 					, this->parser_.manufacturer_
