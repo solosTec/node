@@ -432,6 +432,17 @@ namespace node
 			std::uint8_t media_;
 			std::uint32_t dev_id_;
 			std::uint8_t frame_type_;
+			/**
+			 * [0] 1 byte 01/02 01 == wireless, 02 == wired
+			 * [1-2] 2 bytes manufacturer ID
+			 * [3-6] 4 bytes serial number
+			 * [7] 1 byte device type / media
+			 * [8] 1 byte product revision
+			 *
+			 * 9 bytes in total
+			 * example: 01-e61e-13090016-3c-07
+			 */
+			std::array<char, 9>	server_id_;
 
 #ifdef _DEBUG
 			std::set<std::uint32_t>	meter_set_;

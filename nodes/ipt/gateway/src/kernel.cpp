@@ -95,7 +95,7 @@ namespace node
 			//
 			//	callback from wireless LMN
 			//
-			vm.register_function("mbus.push.frame", 6, std::bind(&kernel::mbus_push_frame, this, std::placeholders::_1));
+			vm.register_function("mbus.push.frame", 7, std::bind(&kernel::mbus_push_frame, this, std::placeholders::_1));
 
 		}
 
@@ -1267,6 +1267,7 @@ namespace node
 			//CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
             
 			auto const tpl = cyng::tuple_cast<
+				cyng::buffer_t,		//	[0] server id
 				std::string,		//	[1] manufacturer
 				std::uint8_t,		//	[2] version
 				std::uint8_t,		//	[3] media
@@ -1275,25 +1276,28 @@ namespace node
 				cyng::buffer_t		//	[6] payload
 			>(frame);
 
-			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - manufacturer: " << std::get<0>(tpl));
-			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - version: " << +std::get<1>(tpl));
-			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - media: " << +std::get<2>(tpl));
-			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - device id: " << std::get<3>(tpl));
-			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - frame type: " << +std::get<4>(tpl));
+			auto const server_id = sml::from_server_id(std::get<0>(tpl));
+
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - server id: " << server_id);
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - manufacturer: " << std::get<1>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - version: " << +std::get<2>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - media: " << +std::get<3>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - device id: " << std::get<4>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - frame type: " << +std::get<5>(tpl));
 
 //#ifdef SMF_IO_DEBUG
 			cyng::io::hex_dump hd;
 			std::stringstream ss;
-			if (std::get<5>(tpl).size() > 128) {
-				hd(ss, std::get<5>(tpl).cbegin(), std::get<5>(tpl).cbegin() + 128);
+			if (std::get<6>(tpl).size() > 128) {
+				hd(ss, std::get<6>(tpl).cbegin(), std::get<6>(tpl).cbegin() + 128);
 			}
 			else {
-				hd(ss, std::get<5>(tpl).cbegin(), std::get<5>(tpl).cend());
+				hd(ss, std::get<6>(tpl).cbegin(), std::get<6>(tpl).cend());
 			}
 
 			CYNG_LOG_TRACE(logger_, ctx.get_name()
 				<< " input dump "
-				<< std::get<5>(tpl).size()
+				<< std::get<6>(tpl).size()
 				<< " bytes\n"
 				<< ss.str());
 //#endif
@@ -1301,10 +1305,10 @@ namespace node
 			//
 			//	update device table
 			//
-			cyng::buffer_t dev_id = cyng::to_vector<char>(std::get<3>(tpl));
+			cyng::buffer_t dev_id = cyng::to_vector<char>(std::get<4>(tpl));
 			std::reverse(dev_id.begin(), dev_id.end());
 
-			update_device_table(dev_id, std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl), std::get<4>(tpl), ctx.tag());
+			update_device_table(dev_id, std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl), std::get<5>(tpl), ctx.tag());
 
 
 			//

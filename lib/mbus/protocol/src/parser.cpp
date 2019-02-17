@@ -184,12 +184,14 @@ namespace node
 			, version_(0)
 			, media_(0)
 			, dev_id_(0)
+			, server_id_()
 #ifdef _DEBUG
 			, meter_set_()
 #endif
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
 			parser_state_ = error();
+			server_id_[0] = 1;	//	wireless M-Bus
 		}
 
 		parser::~parser()
@@ -214,6 +216,7 @@ namespace node
 			version_ = 0;
 			media_ = 0;
 			dev_id_ = 0;
+			server_id_.fill(0);
 #ifdef _DEBUG
 			std::cout << meter_set_.size() << " meter(s) read" << std::endl;
 			for (auto m : meter_set_) {
@@ -256,6 +259,7 @@ namespace node
 				break;
 			case STATE_DEV_TYPE:
 				media_ = boost::numeric_cast<std::uint8_t>(c);
+				server_id_[7] = media_;
 				stream_state_ = STATE_FRAME_TYPE;
 				break;
 			case STATE_FRAME_TYPE:
@@ -293,6 +297,7 @@ namespace node
 		parser::state parser::state_visitor::operator()(manufacturer& v) const
 		{
 			v.data_[v.pos_++] = this->c_;
+			this->parser_.server_id_[v.pos_] = this->c_;
 			if (v.pos_ == v.data_.size()) {
 
 				this->parser_.manufacturer_ = node::sml::decode(v.data_.at(0), v.data_.at(1));
@@ -307,12 +312,14 @@ namespace node
 			v.u_.c_ = this->c_;
 			//std::cout << "protocol type: " << +v.u_.internal_.type_ << ", protocol version: " << +v.u_.internal_.ver_ << std::endl;
 			this->parser_.version_ = v.u_.internal_.ver_;
+			this->parser_.server_id_[8] = v.u_.internal_.ver_;
 			return STATE_DEV_TYPE;
 		}
 
 		parser::state parser::state_visitor::operator()(dev_id& v) const
 		{
 			v.data_[v.pos_++] = this->c_;
+			this->parser_.server_id_[v.pos_ + 2] = this->c_;
 			if (v.pos_ == v.data_.size()) {
 
 				//
@@ -440,6 +447,7 @@ namespace node
 				//std::cout << "frame with " << v.data_.size() << " bytes complete" << std::endl;
 
 				parser_.cb_(cyng::generate_invoke("mbus.push.frame"
+					, cyng::buffer_t(this->parser_.server_id_.begin(), this->parser_.server_id_.end())
 					, this->parser_.manufacturer_
 					, this->parser_.version_
 					, this->parser_.media_
