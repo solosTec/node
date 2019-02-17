@@ -119,7 +119,7 @@ namespace node
 					<< " <"
 					<< base_.get_class_name()
 					<< "> input dump "
-					<< buffer_.size()
+					<< bytes_transferred
 					<< " bytes\n"
 					<< ss.str());
 //#endif

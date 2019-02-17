@@ -1296,7 +1296,7 @@ namespace node
 			}
 
 			CYNG_LOG_TRACE(logger_, ctx.get_name()
-				<< " input dump "
+				<< " variable data structure with "
 				<< std::get<6>(tpl).size()
 				<< " bytes\n"
 				<< ss.str());
@@ -1305,10 +1305,10 @@ namespace node
 			//
 			//	update device table
 			//
-			cyng::buffer_t dev_id = cyng::to_vector<char>(std::get<4>(tpl));
-			std::reverse(dev_id.begin(), dev_id.end());
+			//cyng::buffer_t dev_id = cyng::to_vector<char>(std::get<4>(tpl));
+			//std::reverse(dev_id.begin(), dev_id.end());
 
-			update_device_table(dev_id, std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl), std::get<5>(tpl), ctx.tag());
+			update_device_table(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl), std::get<5>(tpl), ctx.tag());
 
 
 			//

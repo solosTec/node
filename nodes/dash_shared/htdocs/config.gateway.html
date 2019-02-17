@@ -841,7 +841,7 @@
                                 }
                                 else if (obj.section == 'root-visible-devices') {
                                     //  {"cmd": "update", "channel": "root-visible-devices", "rec": {"srv": "00:15:3b:02:17:74", "values": {"class":"---","meter":"000000000000","number":"1","timestamp":"2018-11-04 20:34:28.00000000","type":9}}}
-                                    if (obj.rec.values.type == 0) {
+                                    if (obj.rec.values.type < 2) {
                                         $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-success">#'
                                             + obj.rec.values.number
                                             + ' '
@@ -862,7 +862,7 @@
                                 }
                                 else if (obj.section == 'root-active-devices') {
                                     //  {"cmd": "update", "channel": "root-active-devices", "rec": {"srv": "00:15:3b:01:ec:46", "values": {"class":"---","meter":"01-fa30-6dd7fae0-01-02","number":"10","timestamp":"2016-08-03 09:26:06.00000000","type":0}}}
-                                    if (obj.rec.values.type == 0) {
+                                    if (obj.rec.values.type < 2) {
                                         $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-success">#'
                                         + obj.rec.values.number
                                         + ' '
