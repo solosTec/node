@@ -326,20 +326,20 @@ namespace node
 				//	get the device ID as u32 value
 				//
 				auto idp = reinterpret_cast<std::uint32_t*>(v.data_.data());
-				this->parser_.dev_id_ = (idp != nullptr) ? *idp : 0u;
+				//this->parser_.dev_id_ = (idp != nullptr) ? *idp : 0u;
 
 				//
 				//	read this value as a hex value
 				//
-				//std::stringstream ss;
-				//ss.fill('0');
-				//ss << std::setw(8) << std::setbase(16) << id;
+				std::stringstream ss;
+				ss.fill('0');
+				ss << std::setw(8) << std::setbase(16) << *idp;
 				//std::cout << "device id: " << ss.str() << std::endl;
 
 				//
 				//	write this value as decimal value
 				//
-				//ss >> std::setbase(10) >> this->parser_.dev_id_;
+				ss >> std::setbase(10) >> this->parser_.dev_id_;
 #ifdef _DEBUG
 				this->parser_.meter_set_.emplace(this->parser_.dev_id_);
 #endif

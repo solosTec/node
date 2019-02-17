@@ -274,7 +274,9 @@ namespace node
 						cyng::param_factory("parity", "none"),	//	none, odd, even
 						cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 						cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
-						cyng::param_factory("speed", 115200)
+						cyng::param_factory("speed", 115200),
+						cyng::param_factory("transparent-mode", false),
+						cyng::param_factory("transparent-port", 12001)
 					))
 
 					, cyng::param_factory("wired-LMN", cyng::tuple_factory(
@@ -289,7 +291,9 @@ namespace node
 						cyng::param_factory("parity", "none"),	//	none, odd, even
 						cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 						cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
-						cyng::param_factory("speed", 921600)
+						cyng::param_factory("speed", 921600),
+						cyng::param_factory("transparent-mode", false),
+						cyng::param_factory("transparent-port", 12002)
 					))
 
 					, cyng::param_factory("ipt", cyng::vector_factory({

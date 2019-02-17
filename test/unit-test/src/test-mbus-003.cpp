@@ -21,13 +21,16 @@ namespace node
 	bool test_mbus_003()
 	{
 
-		//std::array<char, 4> v{ 0x74, 0x31, 0x45, 0x04 };
-		//auto id = *reinterpret_cast<std::uint32_t*>(v.data());
+		std::array<char, 4> v{ 0x74, 0x31, 0x45, 0x04 };
+		auto const idp = reinterpret_cast<std::uint32_t*>(v.data());
 
-		//std::stringstream ss;
-		//ss.fill('0');
-		//ss << std::setw(8) << std::setbase(16) << id;
-		//auto const s = ss.str();
+		std::stringstream ss;
+		ss.fill('0');
+		ss << std::setw(8) << std::setbase(16) << *idp;
+		auto const s = ss.str();
+
+		std::uint32_t id{ 0 };
+		ss >> std::setbase(10) >> id;
 
 		//auto tpl = cyng::tuple_cast<
 		//	cyng::buffer_t, 
