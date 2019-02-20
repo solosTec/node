@@ -19,6 +19,11 @@
         .collapsing {
             background-color: yellow;
         }
+
+        .nav-tabs .nav-link.active {
+            color: aliceblue;
+            background-color: #6c757d;
+        }
     </style>
 </head>
 <body>
@@ -213,22 +218,58 @@
                     <div id="smf-gw-status-word" class="container-fluid tab-pane fade" role="tabpanel">
                         <h4>Status word</h4>
                         <ul class="list-group"></ul>
-                        <br>
                     </div>
                     <div id="smf-gw-srv-visible" class="container-fluid tab-pane fade" role="tabpanel">
                         <h4></h4>
-                        <ul class="list-group"></ul>
-                        <br>
+                        <table id="smf-table-gw-visible" class="table table-condensed table-striped table-bordered" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th class="sml-col-gw-meter-number">Nr</th>
+                                    <th class="sml-col-gw-meter-ident">Ident</th>
+                                    <th class="sml-col-gw-meter-meter-id">ID</th>
+                                    <th class="sml-col-gw-meter-meter">Meter</th>
+                                    <th class="sml-col-gw-meter-maker">Maker</th>
+                                    <th class="sml-col-gw-meter-time">Last Seen</th>
+                                    <th class="sml-col-gw-meter-class">Class</th>
+                                    <th class="sml-col-gw-meter-srv">Server</th>
+                                    <th class="sml-col-gw-meter-type">Type</th>
+                                </tr>
+                            </thead>
+                        </table>
                     </div>
                     <div id="smf-gw-srv-active" class="container-fluid tab-pane fade" role="tabpanel">
                         <h4></h4>
                         <ul class="list-group"></ul>
-                        <br>
+                        <table id="smf-table-gw-active" class="table table-condensed table-striped table-bordered" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th class="sml-col-gw-meter-number">Nr</th>
+                                    <th class="sml-col-gw-meter-ident">Ident</th>
+                                    <th class="sml-col-gw-meter-meter-id">ID</th>
+                                    <th class="sml-col-gw-meter-meter">Meter</th>
+                                    <th class="sml-col-gw-meter-maker">Maker</th>
+                                    <th class="sml-col-gw-meter-time">Last Seen</th>
+                                    <th class="sml-col-gw-meter-class">Class</th>
+                                    <th class="sml-col-gw-meter-srv">Server</th>
+                                    <th class="sml-col-gw-meter-type">Type</th>
+                                </tr>
+                            </thead>
+                        </table>
                     </div>
                     <div id="smf-gw-firmware" class="container-fluid tab-pane fade" role="tabpanel">
                         <h4></h4>
-                        <ul class="list-group"></ul>
-                        <br>
+<!--                        <ul class="list-group"></ul>-->
+                        <table id="smf-table-gw-firmware" class="table table-condensed table-striped table-bordered" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th class="sml-col-gw-fw-number">Nr</th>
+                                    <th class="sml-col-gw-fw-name">Firmware</th>
+                                    <th class="sml-col-gw-fw-version">Version</th>
+                                    <th class="sml-col-gw-fw-active">Active</th>
+                                    <th class="sml-col-gw-fw-srv">Server</th>
+                                </tr>
+                            </thead>
+                        </table>
                     </div>
                     <div id="smf-gw-memory" class="container-fluid tab-pane fade" role="tabpanel">
                         <h4>ddd</h4>
@@ -251,21 +292,20 @@
                                         <div class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="smf-gw-memory_progress-2">0%</div>
                                     </div>
                                     <!--<div id="mem-progress-2"
-                                     data-percentage="20"
-                                     data-track-width="42"
-                                     data-track-colour="555555"
-                                     data-fill-colour="00C0FF"
-                                     data-text-colour="00C0FF"
-                                     data-stroke-colour="FFFFFF"
-                                     data-stroke-spacing="4">
-                                </div>-->
+                                 data-percentage="20"
+                                 data-track-width="42"
+                                 data-track-colour="555555"
+                                 data-fill-colour="00C0FF"
+                                 data-text-colour="00C0FF"
+                                 data-stroke-colour="FFFFFF"
+                                 data-stroke-spacing="4">
+                            </div>-->
                                 </div>
                                 <div class="card-footer">
                                     <small class="text-muted"><span id="smf-gw-memory-2">wait...</span>%</small>
                                 </div>
                             </div>
                         </div>
-                        <br>
                     </div>
                     <div id="smf-gw-wireless-mbus" class="container-fluid tab-pane fade" role="tabpanel">
                         <h4>w-MBus</h4>
@@ -345,7 +385,6 @@
                                 </div>
                             </div>
                         </form>
-                        <br>
                     </div>
                     <div id="smf-gw-ipt" class="container-fluid tab-pane fade" role="tabpanel">
                         <!--<h4>IP-T</h4>-->
@@ -353,7 +392,7 @@
                             <div class="col-md-9">
                                 <h5>IP-T Parameters</h5>
                                 <form id="smf-form-gw-ipt-param" style="padding:2em">
-                                    <h5>Redundancy I</h5>
+                                    <h5 style="color:antiquewhite">&#9312;</h5>
                                     <input type="hidden" id="smf-form-gw-ipt-srv" name="smf-form-gw-ipt-srv" />
                                     <div class="form-group row">
                                         <label for="smf-gw-ipt-host-1" class="col-md-1 col-form-label">Host</label>
@@ -380,7 +419,7 @@
                                         </div>
                                     </div>
                                     <hr />
-                                    <h5>Redundancy II</h5>
+                                    <h5 style="color:antiquewhite">&#9313;</h5>
                                     <div class="form-group row">
                                         <label for="smf-gw-ipt-host-2" class="col-md-1 col-form-label">Host</label>
                                         <div class="col-md-5">
@@ -431,9 +470,9 @@
                                 </div>
                             </div>
                         </div>
-                        <!--<br>-->
                     </div>
                 </div>
+                <br />
             </div>
             <div class="col-2 bg-warning">
                 <div class="form-group">
@@ -472,7 +511,6 @@
                         <label class="form-check-label" for="smf-form-gw-ipt">IP-T</label>
                     </div>
                 </div>
-
             </div>
         </div>  <!--row-->
 
@@ -499,8 +537,37 @@
             return data;
         };
 
+        var renderDate = function (data, type, full, meta) {
+            if (type == "display") {
+                return data.toLocaleString();
+            }
+            return data;
+        };
+
+        var renderType = function (data, type, full, meta) {
+            if (type == "display") {
+                switch (data) {
+                    case 0: return "M-Bus";
+                    case 1: return "serial";
+                    case 2: return "gateway";
+                    case 3: return "BCD";
+                    case 4: return "EON";
+                    case 5: return "DKE-1";
+                    case 6: return "IMEI";
+                    case 7: return "RWE";
+                    case 8: return "DKE-2";
+                    case 8: return "wM-Bus";
+                    default:
+                        break;
+                }
+                return "other";
+            }
+            return data;
+        };
+
+
         //  globals
-        var table_gw;
+        var table_gw, table_visible, table_active, table_fw;
         var _ws = null;
         var totalIO = 0;
 
@@ -530,9 +597,57 @@
             ]
         };
 
+        var tbl_meter = {
+            paging: true,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            pageLength: 10,
+            ordering: true,
+            info: true,
+            autoWidth: false,
+            deferRender: false,
+            processing: true,
+            searching: true,
+            select: true,
+            columnDefs: [
+                { targets: 'sml-col-gw-meter-number', visible: true, name: 'gw-meter-number' },
+                { targets: 'sml-col-gw-meter-ident', visible: true, name: 'gw-meter-ident' },
+                { targets: 'sml-col-gw-meter-meter-id', visible: false, name: 'gw-meter-meter-id' },
+                { targets: 'sml-col-gw-meter-meter', visible: true, name: 'gw-meter-meter' },
+                { targets: 'sml-col-gw-meter-maker', visible: true, name: 'gw-meter-maker' },
+                { targets: 'sml-col-gw-meter-time', visible: true, name: 'gw-meter-time', render: renderDate },
+                { targets: 'sml-col-gw-meter-class', visible: false, name: 'gw-meter-class' },
+                { targets: 'sml-col-gw-meter-srv', visible: true, name: 'gw-meter-srv' },
+                { targets: 'sml-col-gw-meter-type', visible: true, name: 'gw-meter-type', render: renderType }
+            ]
+        };
+
+        var tbl_fw = {
+            paging: true,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            pageLength: 10,
+            ordering: true,
+            info: true,
+            autoWidth: false,
+            deferRender: false,
+            processing: true,
+            searching: true,
+            select: true,
+            columnDefs: [
+                { targets: 'sml-col-gw-fw-number', visible: true, name: 'gw-fw-number' },
+                { targets: 'sml-col-gw-fw-name', visible: true, name: 'gw-fw-name' },
+                { targets: 'sml-col-gw-fw-version', visible: true, name: 'gw-fw-version' },
+                { targets: 'sml-col-gw-fw-active', visible: true, name: 'gw-fw-active' },
+                { targets: 'sml-col-gw-fw-srv', visible: true, name: 'gw-fw-srv' }
+            ]
+        };
+
         $(document).ready(function () {
             console.log('document ready');
+
             table_gw = $('#smf-table-gw').DataTable(tbl_config);
+            table_visible = $('#smf-table-gw-visible').DataTable(tbl_meter);
+            table_active = $('#smf-table-gw-active').DataTable(tbl_meter);
+            table_fw = $('#smf-table-gw-firmware').DataTable(tbl_fw);
 
             table_gw.on('select', function (e, datatable, type, indexes) {
 
@@ -593,17 +708,17 @@
                         gw_req_vec.push("op-log-status-word");
                     }
                     if ($('#smf-form-gw-srv-visible').is(":checked")) {
-                        $('#smf-gw-srv-visible ul').empty();
+                        table_visible.clear().draw(false);
                         $('#smf-gw-srv-visible h4').text('Visible meters of ' + rowData[1]);
                         gw_req_vec.push("root-visible-devices");
                     }
                     if ($('#smf-form-gw-srv-active').is(":checked")) {
-                        $('#smf-gw-srv-active ul').empty();
+                        table_active.clear().draw(false);
                         $('#smf-gw-srv-active h4').text('Active meters of ' + rowData[1]);
                         gw_req_vec.push("root-active-devices");
                     }
                     if ($('#smf-form-gw-firmware').is(":checked")) {
-                        $('#smf-gw-firmware ul').empty();
+                        table_fw.clear().draw(false);
                         $('#smf-gw-firmware h4').text('Firmware overview ' + rowData[1]);
                         gw_req_vec.push("root-device-id");
                     }
@@ -785,7 +900,6 @@
                             if (obj.cmd == 'update') {
                                 if (obj.section == 'op-log-status-word') {
                                     //  channel "get.proc.param"
-                                    //  {"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
                                     //  {"cmd": "update", "channel": "op-log-status-word", "rec": {"srv": "00:15:3b:02:17:74", "values": {"word":{"STATUS_BIT_AUTHORIZED_IPT":false,"STATUS_BIT_EXT_IF_AVAILABLE":true,"STATUS_BIT_FATAL_ERROR":false,"STATUS_BIT_MBUS_IF_AVAILABLE":false,"STATUS_BIT_NO_TIMEBASE":false,"STATUS_BIT_OUT_OF_MEMORY":false,"STATUS_BIT_PLC_AVAILABLE":false,"STATUS_BIT_SERVICE_IF_AVAILABLE":false}}}}
                                     //  {"cmd": "update", "section": "op-log-status-word", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"word":{"AUTHORIZED_IPT":false,"EXT_IF_AVAILABLE":true,"FATAL_ERROR":false,"MBUS_IF_AVAILABLE":false,"NO_TIMEBASE":false,"OUT_OF_MEMORY":false,"PLC_AVAILABLE":false,"SERVICE_IF_AVAILABLE":false}}}}
                                     //console.log("word." + prop + " = " + obj.rec.word[prop]);
@@ -840,67 +954,45 @@
                                     }
                                 }
                                 else if (obj.section == 'root-visible-devices') {
-                                    //  {"cmd": "update", "channel": "root-visible-devices", "rec": {"srv": "00:15:3b:02:17:74", "values": {"class":"---","meter":"000000000000","number":"1","timestamp":"2018-11-04 20:34:28.00000000","type":9}}}
+                                    var lastSeen = new Date(obj.rec.values.timestamp.substring(0, 19));
+                                    var node = table_visible.row.add([obj.rec.values.number, obj.rec.values.ident, obj.rec.values.meterId, obj.rec.values.meter, obj.rec.values.maker, lastSeen, obj.rec.values.class, obj.rec.srv, obj.rec.values.type]).draw().node();
                                     if (obj.rec.values.type < 2) {
-                                        $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-success">#'
-                                            + obj.rec.values.number
-                                            + ' '
-                                            + obj.rec.values.meter
-                                            + ' ('
-                                            + obj.rec.values.timestamp
-                                            + ')</li>');
-                                    }
-                                    else {
-                                        $('#smf-gw-srv-visible ul').append('<li class="list-group-item list-group-item-secondary">#'
-                                            + obj.rec.values.number
-                                            + ' '
-                                            + obj.rec.values.meter
-                                            + ' ('
-                                            + obj.rec.values.timestamp
-                                            + ')</li>');
+                                        $(node).addClass('bg-success');
                                     }
                                 }
                                 else if (obj.section == 'root-active-devices') {
-                                    //  {"cmd": "update", "channel": "root-active-devices", "rec": {"srv": "00:15:3b:01:ec:46", "values": {"class":"---","meter":"01-fa30-6dd7fae0-01-02","number":"10","timestamp":"2016-08-03 09:26:06.00000000","type":0}}}
+                                    var lastSeen = new Date(obj.rec.values.timestamp.substring(0, 19));
+                                    var node = table_active.row.add([obj.rec.values.number, obj.rec.values.ident, obj.rec.values.meterId, obj.rec.values.meter, obj.rec.values.maker, lastSeen, obj.rec.values.class, obj.rec.srv, obj.rec.values.type]).draw().node();
                                     if (obj.rec.values.type < 2) {
-                                        $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-success">#'
-                                        + obj.rec.values.number
-                                        + ' '
-                                        + obj.rec.values.meter
-                                        + ' ('
-                                        + obj.rec.values.timestamp
-                                        + ')</li>');
+                                        $(node).addClass('bg-success');
                                     }
-                                    else {
-                                        $('#smf-gw-srv-active ul').append('<li class="list-group-item list-group-item-secondary">#'
-                                        + obj.rec.values.number
-                                        + ' '
-                                        + obj.rec.values.meter
-                                        + ' ('
-                                        + obj.rec.values.timestamp
-                                        + ')</li>');
-                                    }
+
                                 }
                                 else if (obj.section == 'root-device-id') {
                                     //  {"cmd": "update", "channel": "root-device-id", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"active":false,"firmware":"FACTORY VERSION","number":2,"version":"VSES-1.11_11132000__X025b"}}}
+                                    //if (obj.rec.values.active) {
+                                    //    $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-success">#'
+                                    //        + obj.rec.values.number
+                                    //        + ' '
+                                    //        + obj.rec.values.firmware
+                                    //        + ': '
+                                    //        + obj.rec.values.version
+                                    //        + '</li>');
+                                    //}
+                                    //else {
+                                    //    $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
+                                    //        + obj.rec.values.number
+                                    //        + ' '
+                                    //        + obj.rec.values.firmware
+                                    //        + ': '
+                                    //        + obj.rec.values.version
+                                    //        + '</li>');
+                                    //}
+                                    var node = table_fw.row.add([obj.rec.values.number, obj.rec.values.firmware, obj.rec.values.version, obj.rec.values.active, obj.rec.srv]).draw().node();
                                     if (obj.rec.values.active) {
-                                        $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-success">#'
-                                            + obj.rec.values.number
-                                            + ' '
-                                            + obj.rec.values.firmware
-                                            + ': '
-                                            + obj.rec.values.version
-                                            + '</li>');
+                                        $(node).addClass('bg-success');
                                     }
-                                    else {
-                                        $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
-                                            + obj.rec.values.number
-                                            + ' '
-                                            + obj.rec.values.firmware
-                                            + ': '
-                                            + obj.rec.values.version
-                                            + '</li>');
-                                    }
+
                                 }
                                 else if (obj.section == 'root-memory-usage') {
                                     //{"cmd": "update", "channel": "root-memory-usage", "rec": {"srv": "00:15:3b:02:17:74", "values": {"memory.mirror":22,"memory.tmp":0}}}
