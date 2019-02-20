@@ -97,13 +97,17 @@ namespace node
 //#ifdef SMF_IO_DEBUG
 				cyng::io::hex_dump hd;
 				std::stringstream ss;
-				if (buf.size() > 128) {
-					hd(ss, buf.cbegin(), buf.cbegin() + 128);
+				if (bytes_transferred > 128) {
+					hd(ss, buffer_.cbegin(), buffer_.cbegin() + 128);
 				}
 				else {
-					hd(ss, buf.cbegin(), buf.cend());
+					hd(ss, buffer_.cbegin(), buffer_.cend());
 				}
-				CYNG_LOG_TRACE(logger_, "session " << vm().tag() << " input dump " << buf.size() << " bytes:\n" << ss.str());
+				CYNG_LOG_TRACE(logger_, "session " 
+					<< vm_.tag()
+					<< " input dump " 
+					<< bytes_transferred 
+					<< " bytes:\n" << ss.str());
 //#endif
 
 				//
