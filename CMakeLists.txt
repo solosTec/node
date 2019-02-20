@@ -1436,3 +1436,25 @@ endif(UNIX)
 # set_property(
 # 	TARGET unit_test
 # 	PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK)
+
+#
+# GeneratING OPKG files requires the OPKG tools (https://git.yoctoproject.org/cgit/cgit.cgi/opkg-utils)
+# fakeroot opkg/opkg-tools/opkg-buildpackage
+# Install with: opkg --force-space install /tmp/oecp-cyng_0.x_armel.ipk
+#
+if(${PROJECT_NAME}_CROSS_COMPILE)
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/src/main/templates/opkg/control"
+		  "${PROJECT_BINARY_DIR}/opkg/control")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/src/main/templates/opkg/postinst"
+		  "${PROJECT_BINARY_DIR}/opkg/postinst")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/src/main/templates/opkg/rules"
+		  "${PROJECT_BINARY_DIR}/opkg/rules")
+		  
+endif()
+
