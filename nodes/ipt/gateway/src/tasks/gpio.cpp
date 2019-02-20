@@ -67,7 +67,7 @@ namespace node
 
 	cyng::continuation gpio::process(bool on)
 	{
-		CYNG_LOG_INFO(logger_, "task #"
+		CYNG_LOG_DEBUG(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()

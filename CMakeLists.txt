@@ -710,7 +710,9 @@ add_executable(gateway ${node_ipt_gateway})
 # libraries to link
 set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_store cyng_table cyng_domain cyng_sys cyng_rnd smf_protocol_ipt smf_bus_ipt smf_bus_sml smf_bus_serial smf_protocol_mbus)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND gateway_link_libs "${Boost_LIBRARIES}")
+#-- ** Boost Libraries  : /home/sol/projects/install/x64/boost/lib/libboost_thread.so;/home/sol/projects/install/x64/boost/lib/libboost_system.so;/home/sol/projects/install/x64/boost/lib/libboost_filesystem.so;/home/sol/projects/install/x64/boost/lib/libboost_program_options.so;/home/sol/projects/install/x64/boost/lib/libboost_random.so;/home/sol/projects/install/x64/boost/lib/libboost_unit_test_framework.so;/home/sol/projects/install/x64/boost/lib/libboost_chrono.so;/usr/lib/x86_64-linux-gnu/libpthread.so
+#    list(APPEND gateway_link_libs "${Boost_LIBRARIES}")
+	list(APPEND gateway_link_libs boost_thread boost_system boost_filesystem boost_program_options boost_random)
     if (UNIX)
         list(APPEND gateway_link_libs pthread)
     endif()
