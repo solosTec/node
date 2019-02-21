@@ -966,28 +966,8 @@
                                     if (obj.rec.values.type < 2) {
                                         $(node).addClass('bg-success');
                                     }
-
                                 }
                                 else if (obj.section == 'root-device-id') {
-                                    //  {"cmd": "update", "channel": "root-device-id", "rec": {"srv": "00:15:3b:02:29:7e", "values": {"active":false,"firmware":"FACTORY VERSION","number":2,"version":"VSES-1.11_11132000__X025b"}}}
-                                    //if (obj.rec.values.active) {
-                                    //    $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-success">#'
-                                    //        + obj.rec.values.number
-                                    //        + ' '
-                                    //        + obj.rec.values.firmware
-                                    //        + ': '
-                                    //        + obj.rec.values.version
-                                    //        + '</li>');
-                                    //}
-                                    //else {
-                                    //    $('#smf-gw-firmware ul').append('<li class="list-group-item list-group-item-secondary">#'
-                                    //        + obj.rec.values.number
-                                    //        + ' '
-                                    //        + obj.rec.values.firmware
-                                    //        + ': '
-                                    //        + obj.rec.values.version
-                                    //        + '</li>');
-                                    //}
                                     var node = table_fw.row.add([obj.rec.values.number, obj.rec.values.firmware, obj.rec.values.version, obj.rec.values.active, obj.rec.srv]).draw().node();
                                     if (obj.rec.values.active) {
                                         $(node).addClass('bg-success');
@@ -1062,13 +1042,13 @@
                         }
                         else if (obj.channel == 'attention.code') {
                             //alert(obj.rec.values);
-                            if (obj.section == '8181c7c7fe03') {
-                                //  bg-warning
-                                //$('#attention-msg').css("background-color", "gray");
-                                $('#attention-msg').addClass('bg-warning');
-                                $('#attention-msg').text(obj.rec.srv + " is not a valid server ID");
+                            if (obj.section == '8181c7c7fd00') {
+                                //  OK
+                                $('#attention-msg').text(obj.rec.srv + ": " + obj.rec.values);
                             }
                             else {
+                                //  not OK
+                                $('#attention-msg').addClass('bg-warning');
                                 $('#attention-msg').text(obj.rec.srv + ": " + obj.rec.values);
                             }
                         }

@@ -15,6 +15,12 @@
             padding-top: 2px;
             padding-bottom: 2px;
         }
+
+        .nav-tabs .nav-link.active {
+            color: aliceblue;
+            background-color: #6c757d;
+        }
+
     </style>
     <!-- Custom styles for this template -->
     <!--<link href="dashboard.css" rel="stylesheet">-->
@@ -120,11 +126,21 @@
                     <th class="sml-col-meter-class">Metrol. Class</th>  <!--10-->
                     <th class="sml-col-meter-serverId">Server ID</th>   <!--11-->
                     <th class="sml-col-meter-gw-key">Gateway Key</th>   <!--12-->
+                    <th class="sml-col-meter-online" style="width:10px">&#11156;</th>        <!--13-->
                 </tr>
             </thead>
         </table>
 
         <hr />
+
+        <div class="row">
+            <div class="container-fluid">
+                <p id="attention-msg"></p>
+            </div>
+        </div>
+
+        <hr />
+
         <ul class="nav nav-tabs" role="tablist" id="smf-meter-tab">
             <li class="nav-item">
                 <a class="nav-link active" id="smf-meter-tab-config" data-toggle="tab" href="#smf-meter-config" aria-selected="true">Configuration</a>
@@ -132,9 +148,6 @@
             <li class="nav-item">
                 <a class="nav-link" id="smf-meter-tab-gw" data-toggle="tab" href="#smf-meter-gw" aria-selected="false">Gateway</a>
             </li>
-            <!--<li class="nav-item">
-                <a class="nav-link" id="smf-meter-tab-query" data-toggle="tab" href="#smf-meter-query" aria-selected="false">Measurement</a>
-            </li>-->
         </ul>
 
         <div class="tab-content bg-secondary" style="min-height:30rem;">
@@ -228,11 +241,22 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <a id="smf-form-meter-query" href="#" class="btn btn-info col-md-4">Query</a>
-                            <label class="control-label" for="smf-form-meter-query">&nbsp;Meter <span id="smf-form-meter-query-name"></span> </label>
+                            <!--<ul class="list-group"></ul>-->
+                            <table id="smf-table-meter-data" class="table table-condensed table-striped table-bordered bg-light" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th class="sml-col-data-obis">OBIS</th>
+                                        <th class="sml-col-data-value">Value</th>
+                                        <th class="sml-col-data-unit">Unit</th>
+                                        <th class="sml-col-data-ts">Time</th>
+                                        <th class="sml-col-data-srv">Server</th>
+                                    </tr>
+                                </thead>
+                            </table>
                         </div>
                         <div class="form-group col-md-6">
-                            <ul class="list-group"></ul>
+                            <a id="smf-form-meter-query" href="#" class="btn btn-info col-md-4">Query last record</a>
+                            <label class="control-label" for="smf-form-meter-query">&nbsp;Meter <span id="smf-form-meter-query-name"></span> </label>
                         </div>
                     </div>
                 </form>
@@ -247,7 +271,7 @@
 
     <script>
         //  globals
-        var table_meter;
+        var table_meter, table_data;
         var _ws = null;
         var totalIO = 0;
 
@@ -263,6 +287,7 @@
                 case 0: return "";
                 case 9: return "&deg;C";
                 case 13: return "m<sup>3</sup>";
+                case 27: return "W"
                 case 29: return "var";
                 case 28: return "VA";
                 case 30: return "Wh";
@@ -276,6 +301,21 @@
                     break;
             }
             return '(' + u + ')';
+        };
+
+        var renderOnlineState = function (data, type, full, meta) {
+            if (type == "display") {
+                switch (data) {
+                    case 1:
+                        return "<div style='width: 10px; border: 10px green solid; border-radius: 50%;'></div>";
+                    case 2:
+                        return "<div style='width: 10px; border: 10px #ffc107 solid; border-radius: 50%;'></div>";
+                    default:
+                        break;
+                }
+                return "<div style='width: 10px; border: 10px #ccc solid;'></div>";
+            }
+            return data;
         };
 
         var tbl_config = {
@@ -303,14 +343,36 @@
                 { targets: 'sml-col-meter-item', visible: true, name: 'meter-item' },
                 { targets: 'sml-col-meter-class', visible: false, name: 'meter-class' },
                 { targets: 'sml-col-meter-serverId', visible: true, name: 'meter-serverId' },
-                { targets: 'sml-col-meter-gw-key', visible: false, name: 'meter-gw-key' }
+                { targets: 'sml-col-meter-gw-key', visible: false, name: 'meter-gw-key' },
+                { targets: 'sml-col-meter-online', visible: true, name: 'meter-online', render: renderOnlineState }
             ]
         };
 
+        var tbl_data = {
+            paging: true,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            pageLength: 10,
+            ordering: true,
+            info: true,
+            autoWidth: false,
+            deferRender: false,
+            processing: true,
+            searching: true,
+            select: true,
+            //colReorder: true,
+            columnDefs: [
+                { targets: 'sml-col-data-obis', visible: true, name: 'data-obis' },
+                { targets: 'sml-col-data-value', visible: true, name: 'data-value' },
+                { targets: 'sml-col-data-unit', visible: true, name: 'data-unit', render: renderUnit },
+                { targets: 'sml-col-data-ts', visible: true, name: 'data-ts' },
+                { targets: 'sml-col-data-srv', visible: true, name: 'data-srv' }
+            ]
+        };
 
         $(document).ready(function () {
             console.log('document ready');
             table_meter = $('#smf-table-meter').DataTable(tbl_config);
+            table_data = $('#smf-table-meter-data').DataTable(tbl_data);
 
             table_meter.on('select', function (e, datatable, type, indexes) {
 
@@ -336,6 +398,8 @@
                 $('#smf-form-meter-gw-key').val(rowData[12]);
 
                 $('#smf-form-meter-delete-name').html('<abbr title=' + rowData[0] + ' class="font-italic">' + rowData[1] + '</abbr>');
+
+                $('#smf-form-meter-query-name').html(rowData[1]);
 
             }); //  onSelect()
 
@@ -374,6 +438,7 @@
                     console.log('incoming data: ' + e.data);
                     totalIO += e.data.length;
                     var obj = JSON.parse(e.data);
+                    //  {"cmd": "update", "channel": "attention.code", "section": "8181c7c7fe11", "rec": {"srv": "01-e61e-17171717-bf-07", "values": "NO ENTRY"}}
                     if (obj.cmd != null && obj.channel != null) {
                         if (obj.channel == 'config.meter') {
                             if (obj.cmd == 'insert') {
@@ -390,7 +455,7 @@
                                 var mClass = $('<div/>').text(obj.rec.data.mClass).html();
                                 var serverId = $('<div/>').text(obj.rec.data.serverId).html();
                                 var gw = $('<div/>').text(obj.rec.data.gw).html();
-                                var rowNode = table_meter.row.add([obj.rec.key.pk, ident, meter, code, maker, tom, firmware, vParam, factoryNr, item, mClass, serverId, gw]).draw().node();
+                                var rowNode = table_meter.row.add([obj.rec.key.pk, ident, meter, code, maker, tom, firmware, vParam, factoryNr, item, mClass, serverId, gw, obj.rec.data.online]).draw().node();
                             }
                             else if (obj.cmd == 'delete') {
                                 //  {"cmd": "delete", "channel": "config.meter", "key": ["85c02cea-52fb-44bf-ade4-8a827e1bbc46"]}
@@ -470,20 +535,26 @@
                         else if (obj.cmd == 'update') {
                             if (obj.channel == 'get.list.request') {
                                 //  {"cmd": "update", "channel": "get.list.request", "section": "list-current-data-record", "rec": {"srv": "00:ff:b0:4b:94:f8", "values": {"01 00 01 08 00 ff":{"value":"4637.82","scaler":"\ufffffffe","unit":30,"valTime":"2019-01-24 18:21:29.00000000"},"08 00 01 00 00 ff":{"value":758,"scaler":"\ufffffffd","unit":13,"valTime":"2019-01-24 18:21:29.00000000"},"81 81 c7 82 03 ff":{"value":"solosTec","scaler":"\u0000","unit":0,"valTime":null}}}}
-                                $('#smf-meter-gw ul').empty();
+                                //$('#smf-meter-gw ul').empty();
+                                table_data.clear().draw(false);
                                 $.each(obj.rec.values, function (key, value) {
-                                    $('#smf-meter-gw ul').append('<li class="list-group-item list-group-item-success">'
-                                        + key
-                                        + ': '
-                                        + value.value
-                                        + ' '
-                                        + renderUnit(value.unit)
-                                        + '</li>');
+                                    var node = table_data.row.add([key, value.value, value.unit, value.valTime, obj.rec.srv]).draw().node();
                                 });
+                            }
+                            else if (obj.channel == 'attention.code') {
+                                if (obj.section == '8181c7c7fd00') {
+                                    $('#attention-msg').text(obj.rec.srv + ": " + obj.rec.values);
+                                }
+                                else {
+                                    $('#attention-msg').addClass('bg-warning');
+                                    $('#attention-msg').text(obj.rec.srv + ": " + obj.rec.values);
+                                }
                             }
                         }
                     }
-                }
+                    $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
+                    $('#ws-activity-symbol').fadeOut();
+                };
             }
 
             function check_ws() {
@@ -543,5 +614,20 @@
         }); //  document ready
 
     </script>
+
+    <script>
+            const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            function format_bytes(x) {
+
+                let l = 0, n = parseInt(x, 10) || 0;
+                while (n >= 1024 && ++l) {
+                    n = n / 1024;
+                }
+
+                if (n == 0) return '-';
+                return (n.toFixed(l < 1 ? 0 : 1) + ' ' + units[l]);
+            }
+    </script>
+
 </body>
 </html>

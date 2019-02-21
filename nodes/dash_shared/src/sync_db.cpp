@@ -64,7 +64,7 @@ namespace node
 			, cyng::TC_STRING	//	IP-T/device name
 			, cyng::TC_STRING	//	model
 			, cyng::TC_STRING	//	vFirmware
-			, cyng::TC_BOOL		//	on/offline
+			, cyng::TC_INT32	//	on/offline state
 			},
 			{ 36	//	pk
 			, 23	//	server id
@@ -81,7 +81,7 @@ namespace node
 			, 128	//	IP-T/device name
 			, 64	//	model
 			, 64	//	vFirmware
-			, 0		//	bool online/offline
+			, 0		//	online/offline state
 			})))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
@@ -95,11 +95,7 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table TLoRaDevice");
 		}
 
-// 		if (!create_table_meter(db))
-// 		{
-// 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
-// 		}
-		if (!db.create_table(cyng::table::make_meta_table<1, 12>("TMeter", { "pk"
+		if (!db.create_table(cyng::table::make_meta_table<1, 13>("TMeter", { "pk"
 			, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 			, "meter"		//	meter number (i.e. 16000913) 4 bytes 
 			, "code"		//	metering code - changed at 2019-01-31
@@ -111,7 +107,9 @@ namespace node
 			, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 			, "mClass"		//	Metrological Class: A, B, C, Q3/Q1, ...
 			, "gw"			//	optional gateway pk
+			//	-- additional columns
 			, "serverId"	//	optional gateway server ID
+			, "online"		//	gateway online state (1,2,3)
 			},
 			{ cyng::TC_UUID
 			, cyng::TC_STRING		//	ident
@@ -126,6 +124,7 @@ namespace node
 			, cyng::TC_STRING		//	mClass
 			, cyng::TC_UUID			//	gw
 			, cyng::TC_STRING		//	serverID
+			, cyng::TC_INT32		//	on/offline state
 			},
 			{ 36
 			, 24	//	ident
@@ -140,6 +139,7 @@ namespace node
 			, 8		//	mClass 
 			, 36	//	gw
 			, 23 	//	serverId
+			, 0		//	on/offline state
 		})))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
@@ -285,16 +285,18 @@ namespace node
 				auto dev_gw = tbl_gw->lookup(key);
 				
 				//
-				//	set serverId
+				//	set serverId and online state
 				//
 				if (!dev_gw.empty())
 				{
 					data.push_back(dev_gw["serverId"]);
+					data.push_back(dev_gw["online"]);
 				}
 				else
 				{
 					data.push_back(cyng::make_object("05000000000000"));
-					
+					data.push_back(cyng::make_object(-1));
+
 					CYNG_LOG_WARNING(logger, "res.subscribe - meter"
 					<< cyng::io::to_str(key)
 					<< " has no associated gateway");
@@ -320,7 +322,7 @@ namespace node
 				//
 				//	mark gateways as online
 				//
-				db.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+				db.access([&](cyng::store::table* tbl_gw, cyng::store::table* tbl_meter, const cyng::store::table* tbl_ses) {
 
 					//
 					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
@@ -328,14 +330,50 @@ namespace node
 					//
 					auto rec = tbl_ses->lookup(key);
 					if (rec.empty())	{
-						//	set online state
+						//	set state: offline
 						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
 					}
 					else {
-						const auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", rtag.is_nil() ? 1 : 2), origin);
+
+						//
+						//	If rtag is not nil then this session has an open connection
+						//
+						auto const rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+						auto const state = rtag.is_nil() ? 1 : 2;
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", state), origin);
+
+						//
+						//	update TMeter
+						//	Lookup if TMeter has a gateway with this key
+						//	This method is inherently slow.
+						//	ToDo: optimize
+						//
+						std::map<cyng::table::key_type, int>	result;
+						auto const gw_tag = cyng::value_cast(rec["device"], boost::uuids::nil_uuid());
+						tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
+
+							auto const tag = cyng::value_cast(rec["gw"], boost::uuids::nil_uuid());
+							if (tag == gw_tag) {
+
+								//
+								//	The gateway of this meter is online/connected
+								//
+								result.emplace(rec.key(), state);
+							}
+							return true;	//	continue
+						});
+
+						//
+						//	Update all found meters
+						//
+						for (auto const& item : result) {
+							tbl_meter->modify(item.first, cyng::param_factory("online", item.second), origin);
+						}
+
 					}
+
 				}	, cyng::store::write_access("TGateway")
+					, cyng::store::write_access("TMeter")
 					, cyng::store::read_access("_Session"));
 			}
 		}
@@ -434,13 +472,6 @@ namespace node
 			, std::get<3>(tpl)		//	[3] generation
 			, std::get<4>(tpl));	//	[4] origin	
 
-		//node::db_req_insert(logger_
-		//	, db_
-		//	, std::get<0>(tpl)		//	[0] table name
-		//	, std::get<1>(tpl)		//	[1] table key
-		//	, std::get<2>(tpl)		//	[2] record
-		//	, std::get<3>(tpl)		//	[3] generation
-		//	, std::get<4>(tpl));
 	}
 
 	void db_sync::db_req_remove(cyng::context& ctx)
@@ -685,10 +716,12 @@ namespace node
 				if (!dev_gw.empty())
 				{
 					data.push_back(dev_gw["serverId"]);
+					data.push_back(dev_gw["online"]);
 				}
 				else
 				{
 					data.push_back(cyng::make_object("00000000000000"));
+					data.push_back(cyng::make_object(-1));
 
 					CYNG_LOG_WARNING(logger_, "res.subscribe - meter"
 						<< cyng::io::to_str(key)
@@ -765,56 +798,6 @@ namespace node
 			}
 		}
 	}
-
-
-
-	//void db_res_insert(cyng::logging::log_ptr logger
-	//	, cyng::store::db& db
-	//	, std::string const& table		//	[0] table name
-	//	, cyng::table::key_type key		//	[1] table key
-	//	, cyng::table::data_type data	//	[2] record
-	//	, std::uint64_t	gen
-	//	, boost::uuids::uuid origin)
-	//{
-	//	db_insert(logger, db, table, key, data, gen, origin, "db.res.insert");
-		//cyng::table::record rec(db.meta(table), key, data, gen);
-
-		//if (!db.insert(table
-		//	, key
-		//	, data
-		//	, gen
-		//	, origin))	//	self
-		//{
-		//	CYNG_LOG_ERROR(logger, "db.res.insert failed "
-		//		<< table		// table name
-		//		<< " - "
-		//		<< cyng::io::to_str(key));
-		//	//
-		//	//	dump record data
-		//	//
-		//	std::size_t idx{ 0 };
-		//	for (auto const& obj : data) {
-		//		CYNG_LOG_TRACE(logger, "data ["
-		//			<< idx++
-		//			<< "] "
-		//			<< obj.get_class().type_name()
-		//			<< ": "
-		//			<< cyng::io::to_str(obj))
-		//			;
-		//	}
-		//}
-	//}
-
-	//void db_req_insert(cyng::logging::log_ptr logger
-	//	, cyng::store::db& db
-	//	, std::string const& table		//	[0] table name
-	//	, cyng::table::key_type key		//	[1] table key
-	//	, cyng::table::data_type data	//	[2] record
-	//	, std::uint64_t	gen
-	//	, boost::uuids::uuid origin)
-	//{
-	//	db_insert(logger, db, table, key, data, gen, origin, "db.req.insert");
-	//}
 
 	void db_insert(cyng::logging::log_ptr logger
 		, cyng::store::db& db
@@ -902,10 +885,12 @@ namespace node
 				if (!dev_gw.empty())
 				{
 					data.push_back(dev_gw["serverId"]);
+					data.push_back(dev_gw["online"]);
 				}
 				else
 				{
 					data.push_back(cyng::make_object("00000000000000"));
+					data.push_back(cyng::make_object(-1));
 
 					CYNG_LOG_WARNING(logger, "res.subscribe - meter"
 						<< cyng::io::to_str(key)
