@@ -57,32 +57,6 @@ namespace node
 		, boost::uuids::uuid		//	[4] origin session id
 		, std::size_t tsk);
 
-	//void db_res_insert(cyng::logging::log_ptr
-	//	, cyng::store::db&
-	//	, std::string const&		//	[0] table name
-	//	, cyng::table::key_type		//	[1] table key
-	//	, cyng::table::data_type	//	[2] record
-	//	, std::uint64_t	gen
-	//	, boost::uuids::uuid origin);
-
-	//void db_req_insert(cyng::logging::log_ptr
-	//	, cyng::store::db&
-	//	, std::string const&		//	[0] table name
-	//	, cyng::table::key_type		//	[1] table key
-	//	, cyng::table::data_type	//	[2] record
-	//	, std::uint64_t	gen
-	//	, boost::uuids::uuid origin);
-
-	void db_insert(cyng::logging::log_ptr
-		, cyng::store::db&
-		, std::string const&		//	[0] table name
-		, cyng::table::key_type		//	[1] table key
-		, cyng::table::data_type	//	[2] record
-		, std::uint64_t	gen
-		, boost::uuids::uuid origin
-		, std::string cmd);
-
-
 	void db_req_remove(cyng::logging::log_ptr
 		, cyng::store::db&
 		, std::string const&		//	[0] table name
