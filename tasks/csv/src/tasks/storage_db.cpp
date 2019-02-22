@@ -808,15 +808,16 @@ namespace node
 					//	write first values
 					//
 					file
-						<< sml::get_serial(id)
+						<< id
 						<< ';'
 						<< sml::get_serial(id)
+						<< ';'
+						<< cyng::to_str(ro_time)
 						<< ';'
 						<< cyng::to_str(act_time)
 						<< ';'
 						<< trx
 						;
-
 				}
 
 				value_map.emplace(code, std::make_pair(result, unit));
@@ -950,9 +951,11 @@ namespace node
 					//	write first values
 					//
 					file
-						<< sml::get_serial(id)
+						<< id
 						<< ';'
 						<< sml::get_serial(id)
+						<< ';'
+						<< cyng::to_str(ro_time)
 						<< ';'
 						<< cyng::to_str(act_time)
 						<< ';'
