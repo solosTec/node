@@ -933,8 +933,30 @@ namespace node
 		}
 		else if (boost::algorithm::equals(table, "TGateway")) {
 			//
-			//	ToDo: distribute modified serverID to TMeter
+			//	distribute changes from TGateway to TMeter
 			//
+			switch (attr.first) {
+			case 0:
+				//	modified serverID 
+				db.access([&](cyng::store::table* tbl_meter) {
+					auto const gw_tag = cyng::value_cast(key.at(0), boost::uuids::nil_uuid());
+					std::set<cyng::table::key_type> result;
+					tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
+
+						auto const tag = cyng::value_cast(rec["gw"], boost::uuids::nil_uuid());
+						if (tag == gw_tag) {
+							result.insert(rec.key());
+						}
+						return true;	//	continue
+					});
+					for (auto const& item : result) {
+						tbl_meter->modify(item, cyng::param_factory("serverId", attr.second), origin);
+					}
+				}, cyng::store::write_access("TMeter"));
+				break;
+			default:
+				break;
+			}
 		}
 
 		//
