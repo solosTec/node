@@ -92,10 +92,11 @@
                 </li>
 
             </ul>
-            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="6" stroke="red" stroke-width="0" fill="grey" /></svg></span>
             <span id="ws-activity-text" class="navbar-text">
                 connection state
             </span>
+            <span>&nbsp;</span>
+            <span id="ws-activity-symbol" style="height: 40px"><svg height="40" width="20"><circle cx="10" cy="20" r="10" stroke="red" stroke-width="0" fill="grey" /></svg></span>
 
         </div>
     </nav>
@@ -421,12 +422,11 @@
                     $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
                     $('#ws-activity-level').text("out of sync").removeClass('bg-success').addClass('bg-warning');
                     if (event.code == 1006) {
-                        $('#ws-activity-text').html('_ws lost - press reload');
+                        $('#ws-activity-text').html('connection lost - press reload');
                     }
                     else {
                         $('#ws-activity-text').html('error ' + event.code);
                     }
-                    check_ws();
                 };
 
                 _ws.onerror = function (error) {
@@ -435,7 +435,7 @@
                 };
 
                 _ws.onmessage = function (e) {
-                    $('#ws-activity-symbol').show();
+                    //$('#ws-activity-symbol').show();
                     console.log('incoming data: ' + e.data);
                     totalIO += e.data.length;
                     var obj = JSON.parse(e.data);
@@ -557,7 +557,7 @@
                         }
                     }
                     $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
-                    $('#ws-activity-symbol').fadeOut();
+                    //$('#ws-activity-symbol').fadeOut();
                 };
             }
 

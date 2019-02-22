@@ -155,8 +155,8 @@
 
         //  globals
         var table_msg;
-        var connection;
         var totalIO = 0;
+        var _ws = null;
 
         var tbl_config = {
             paging: true,
@@ -183,78 +183,94 @@
             console.log('document ready');
             table_msg = $('#smf-table-msg').DataTable(tbl_config);
 
-            $('#ws-activity-text').html('connecting to ' + location.host + '...');
-            connection = new WebSocket('ws://' + location.host + '/smf/api/msg/v0.1', ['SMF']);
-            connection.onopen = function () {
-                //  subscribe system status
-                connection.send(JSON.stringify({ cmd: "subscribe", channel: "monitor.msg", push: true }));
-            };
+            function start_ws() {
+                $('#ws-activity-text').html('connecting to ' + location.host + '...');
+                _ws = new WebSocket('ws://' + location.host + '/smf/api/msg/v0.1', ['SMF']);
 
-            connection.onclose = function (event) {
-                $('#ws-activity-symbol').show();
-                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
-                if (event.code == 1006) {
-                    $('#ws-activity-text').html('connection lost - press reload');
-                }
-                else {
-                    $('#ws-activity-text').html('error ' + event.code);
-                }
-            };
+                _ws.onopen = function () {
+                    //  clear table in case of reconnect
+                    table_msg.clear().draw(false);
+                    //  subscribe system status
+                    _ws.send(JSON.stringify({ cmd: "subscribe", channel: "monitor.msg", push: true }));
+                };
 
-            connection.onerror = function (error) {
-                console.log('ws error');
-                $('#ws-activity-text').html('ws error');
-            };
-
-            //  {"cmd": "insert", "channel": "monitor.msg", "rec": {"key": {"id":0}, "data": {"msg":"startup","severity":3,"ts":"2018-03-20 18:05:24.71590930"}, "gen": 1}}
-            connection.onmessage = function (e) {
-                console.log('incoming data: ' + e.data);
-                totalIO += e.data.length;
-                var obj = JSON.parse(e.data);
-                if (obj.cmd != null) {
-                    if (obj.cmd == 'insert') {
-                        var msg = $('<div/>').text(obj.rec.data.msg).html();
-                        var ts = new Date(obj.rec.data.ts.substring(0, 19));
-                        var rowNode = table_msg.row.add([obj.rec.key.id, ts, obj.rec.data.severity, msg]).draw().node();
-                        if (obj.rec.data.severity == 3) {
-                            $(rowNode).css('color', 'LimeGreen');
-                        }
-                        else if (obj.rec.data.severity == 4) {
-                            $(rowNode).css('color', '#ff9900');
-                        }
-                        else if (obj.rec.data.severity == 5) {
-                            $(rowNode).css('color', 'orange');
-                        }
-                        else if (obj.rec.data.severity == 6) {
-                            $(rowNode).css('color', 'OrangeRed');
-                        }
+                _ws.onclose = function (event) {
+                    $('#ws-activity-symbol').show();
+                    $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'red' });
+                    if (event.code == 1006) {
+                        $('#ws-activity-text').html('connection lost - press reload');
                     }
-                    else if (obj.cmd == 'delete') {
-                        table_msg.row(function (idx, data, node) {
-                            if ((obj.key.length == 1) && (data[0] == obj.key[0])) {
-                                return true;
+                    else {
+                        $('#ws-activity-text').html('error ' + event.code);
+                    }
+                };
+
+                _ws.onerror = function (error) {
+                    console.log('ws error');
+                    $('#ws-activity-text').html('ws error');
+                };
+
+                //  {"cmd": "insert", "channel": "monitor.msg", "rec": {"key": {"id":0}, "data": {"msg":"startup","severity":3,"ts":"2018-03-20 18:05:24.71590930"}, "gen": 1}}
+                _ws.onmessage = function (e) {
+                    console.log('incoming data: ' + e.data);
+                    totalIO += e.data.length;
+                    var obj = JSON.parse(e.data);
+                    if (obj.cmd != null) {
+                        if (obj.cmd == 'insert') {
+                            var msg = $('<div/>').text(obj.rec.data.msg).html();
+                            var ts = new Date(obj.rec.data.ts.substring(0, 19));
+                            var rowNode = table_msg.row.add([obj.rec.key.id, ts, obj.rec.data.severity, msg]).draw().node();
+                            if (obj.rec.data.severity == 3) {
+                                $(rowNode).css('color', 'LimeGreen');
                             }
-                            return false;
-                        }).remove().draw(false);
-                    }
-                    else if (obj.cmd == 'clear') {
-                        table_msg.clear().draw(false);
-                    }
-                    else if (obj.cmd == 'load') {
-                        if (obj.show != null && obj.show) {
-                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });
-                            $('#ws-activity-symbol').show();
+                            else if (obj.rec.data.severity == 4) {
+                                $(rowNode).css('color', '#ff9900');
+                            }
+                            else if (obj.rec.data.severity == 5) {
+                                $(rowNode).css('color', 'orange');
+                            }
+                            else if (obj.rec.data.severity == 6) {
+                                $(rowNode).css('color', 'OrangeRed');
+                            }
                         }
-                        else {
-                            $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
-                            $('#ws-activity-symbol').fadeOut();
+                        else if (obj.cmd == 'delete') {
+                            table_msg.row(function (idx, data, node) {
+                                if ((obj.key.length == 1) && (data[0] == obj.key[0])) {
+                                    return true;
+                                }
+                                return false;
+                            }).remove().draw(false);
+                        }
+                        else if (obj.cmd == 'clear') {
+                            table_msg.clear().draw(false);
+                        }
+                        else if (obj.cmd == 'load') {
+                            if (obj.show != null && obj.show) {
+                                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'orange' });
+                                $('#ws-activity-symbol').show();
+                            }
+                            else {
+                                $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
+                                $('#ws-activity-symbol').fadeOut();
+                            }
                         }
                     }
+                    $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
+                };
+            }
+
+            function check_ws() {
+                if (!_ws || _ws.readyState == 3) {
+                    start_ws();
                 }
-                $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
-            };
-        });
+            }
+
+            start_ws();
+            setInterval(check_ws, 5000);
+
+        }); //  document ready
     </script>
+
     <script>
             const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
             function format_bytes(x) {

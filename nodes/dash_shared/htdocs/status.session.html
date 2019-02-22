@@ -223,6 +223,7 @@
 
                 $('#ws-activity-text').html('connecting to ' + location.host + '...');
                 _ws = new WebSocket('ws://' + location.host + '/smf/api/session/v0.1', ['SMF']);
+
                 _ws.onopen = function () {
                     //  clear table in case of reconnect
                     table_ses.clear().draw(false);
@@ -318,7 +319,8 @@
                 };
             }
 
-            function check_ws() {
+   
+            check_ws() {
                 if (!_ws || _ws.readyState == 3) {
                     start_ws();
                 }
