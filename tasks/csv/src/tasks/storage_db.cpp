@@ -41,6 +41,7 @@ namespace node
 {
 	storage_db::storage_db(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, std::string language
 		, bus::shared_type bus
 		, cyng::param_map_t cfg_db
 		, cyng::param_map_t cfg_clock_day
@@ -48,6 +49,7 @@ namespace node
 		, cyng::param_map_t cfg_clock_month)
 	: base_(*btp)
 		, logger_(logger)
+		, language_(language)
 		, bus_(bus)
 		, pool_(base_.mux_.get_io_service(), cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg_db["type"], "SQLite")))
 		, cfg_db_(cfg_db)
@@ -346,7 +348,9 @@ namespace node
 			//
 			update_csv_15min(std::chrono::system_clock::now(), server_ids.size());
 
-
+			//
+			//	generate separate reports for each server
+			//
 			for (auto id : server_ids) {
 
 				//
@@ -419,8 +423,23 @@ namespace node
 			update_csv_60min(std::chrono::system_clock::now(), server_ids.size());
 
 			//
-			//	no file will be generated (yet)
+			//	generate separate reports for each server
 			//
+			for (auto id : server_ids) {
+
+				//
+				//	get all unique OBIS codes for this server of this profile in this time range
+				//
+				auto obis_codes = get_obis_codes(start, end, profile_60_min, id, cmd, stmt);
+
+				//
+				//	open output file
+				//
+				auto file = open_file_60_min_profile(start, end, id, obis_codes);
+
+				collect_data_60_min_profile(file, start, end, cmd, stmt, id, obis_codes);
+				file.close();
+			}
 
 			stmt->close();
 		}
@@ -735,8 +754,8 @@ namespace node
 					<< ", "
 					<< new_trx
 					<< ", "
-					//<< cyng::to_str(ro_time)
-					//<< ", "
+					<< cyng::to_str(ro_time)
+					<< ", "
 					<< cyng::to_str(act_time)
 					<< ", "
 					<< code
@@ -831,6 +850,147 @@ namespace node
 		}
 	}
 
+	void storage_db::collect_data_60_min_profile(std::ofstream& file
+		, std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end
+		, cyng::sql::command& cmd
+		, cyng::db::statement_ptr stmt
+		, std::string const& id
+		, std::set<std::string> const& obis_code)
+	{
+		//
+		//	get join result
+		//
+		auto sql = "select TSMLMeta.pk, trxID, msgIdx, datetime(roTime), datetime(actTime), valTime, gateway, server, status, source, channel, target, OBIS, unitCode, unitName, dataType, scaler, val, result FROM TSMLMeta INNER JOIN TSMLData ON TSMLMeta.pk = TSMLData.pk WHERE ((actTime > julianday(?)) AND (actTime < julianday(?)) AND TSMLMeta.server = ? AND TSMLMeta.profile = '8181c78612ff') ORDER BY actTime";
+		auto r = stmt->prepare(sql);
+		if (r.second) {
+			stmt->push(cyng::make_object(start), 0)
+				.push(cyng::make_object(end), 0)
+				.push(cyng::make_object(id), 23)
+				;
+
+			//
+			//	map to collect results
+			//
+			std::map<std::string, std::pair<std::string, std::string>>	value_map;
+
+			//
+			//	running tansaction
+			//
+			std::string trx;
+			while (auto res = stmt->get_result()) {
+				//	pk|trxID|msgIdx|roTime|actTime|valTime|gateway|server|status|source|channel|target|pk|OBIS|unitCode|unitName|dataType|scaler|val|result
+				//	43a2a6bb-f45f-48e3-a2b7-74762f1752c1|41091175|1|2458330.95813657|2458330.97916667|118162556|00:15:3b:02:17:74|01-e61e-29436587-bf-03|0|0|0|Gas2|43a2a6bb-f45f-48e3-a2b7-74762f1752c1|0000616100ff|255|counter|u8|0|0|0
+
+				//
+				//	detect new lines in CSV file by changed trx
+				//
+				auto new_trx = cyng::value_cast<std::string>(res->get(2, cyng::TC_STRING, 0), "TRX");
+				auto ro_time = cyng::value_cast(res->get(4, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
+				auto act_time = cyng::value_cast(res->get(5, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
+				auto code = cyng::value_cast<std::string>(res->get(13, cyng::TC_STRING, 24), "OBIS");
+				auto result = cyng::value_cast<std::string>(res->get(19, cyng::TC_STRING, 512), "result");
+				auto unit = cyng::value_cast<std::string>(res->get(15, cyng::TC_STRING, 512), "unitName");
+				boost::ignore_unused(ro_time);	//	release version
+				CYNG_LOG_TRACE(logger_, id
+					<< ", "
+					<< new_trx
+					<< ", "
+					<< cyng::to_str(ro_time)
+					<< ", "
+					<< cyng::to_str(act_time)
+					<< ", "
+					<< code
+					<< ", "
+					<< result
+					<< ", "
+					<< unit);
+
+
+				//
+				//	detect new line
+				//
+				if (trx != new_trx) {
+
+					//
+					//	start a new line except for the first value
+					//
+					if (!trx.empty()) {
+
+						//
+						//	append values
+						//
+						for (auto const& code : obis_code) {
+							file << ';';
+							auto pos = value_map.find(code);
+							if (pos != value_map.end()) {
+								file << pos->second.first;
+							}
+						}
+
+						//
+						//	add new line
+						//
+						file << std::endl;
+
+					}
+
+					//
+					//	clear value map
+					//
+					value_map.clear();
+
+
+					//
+					//	new transaction
+					//
+					trx = new_trx;
+
+					//
+					//	write first values
+					//
+					file
+						<< sml::get_serial(id)
+						<< ';'
+						<< sml::get_serial(id)
+						<< ';'
+						<< cyng::to_str(act_time)
+						<< ';'
+						<< trx
+						;
+
+				}
+
+				value_map.emplace(code, std::make_pair(result, unit));
+
+			}
+
+			//
+			//	append values
+			//
+			for (auto const& code : obis_code) {
+				file << ';';
+				auto pos = value_map.find(code);
+				if (pos != value_map.end()) {
+					file << pos->second.first;
+				}
+			}
+
+			//
+			//	add new line
+			//
+			file << std::endl;
+
+			//
+			//	read for next query
+			//
+			stmt->clear();
+
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "prepare failed with: " << sql);
+		}
+	}
 
 	std::vector<std::string> storage_db::get_server_ids(std::chrono::system_clock::time_point start
 		, std::chrono::system_clock::time_point end
@@ -932,8 +1092,6 @@ namespace node
 		ss
 			<< prefix
 			<< std::setfill('0')
-			<< id
-			<< '_'
 			<< cyng::chrono::year(time_start)
 			<< '-'
 			<< std::setw(2)
@@ -942,11 +1100,14 @@ namespace node
 			<< std::setw(2)
 			<< cyng::chrono::day(time_start)
 			<< '-'
+			<< '-'
 			<< std::setw(2)
 			<< cyng::chrono::month(time_end)
 			<< '-'
 			<< std::setw(2)
 			<< cyng::chrono::day(time_end)
+			<< '_'
+			<< id
 			<< '.'
 			<< suffix	//	.csv
 			;
@@ -961,7 +1122,15 @@ namespace node
             //	optional header
             //
             if (header) {
-                ofs << "server;meter;time;trx;";
+				if (boost::algorithm::equals(language_, "DE")) {
+					ofs << "Server;Zähler;Auslesezeit;Messzeit;Transaktion;";
+				}
+				else if (boost::algorithm::equals(language_, "FR")) {
+					ofs << "Serveur;Compteur;TempsDeLecture;TempsDeMesure;Transaction;";
+				}
+				else {
+					ofs << "server;meter;readout;measurement;trx;";
+				}
                 for (auto const& c : codes) {
                     ofs << c << ';';
                 }
@@ -972,6 +1141,77 @@ namespace node
             bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_ERROR, "cannot open " + path.string()));
         }
         return ofs;
+	}
+
+	std::ofstream storage_db::open_file_60_min_profile(std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end
+		, std::string const& id
+		, std::set<std::string> const& codes)
+	{
+		auto tt_start = std::chrono::system_clock::to_time_t(start);
+		std::tm time_start = cyng::chrono::convert_utc(tt_start);
+
+		auto tt_end = std::chrono::system_clock::to_time_t(end);
+		std::tm time_end = cyng::chrono::convert_utc(tt_end);
+
+		boost::filesystem::path root_dir = cyng::find_value<std::string>(cfg_clock_hour_, "root-dir", ".");
+		auto prefix = cyng::find_value<std::string>(cfg_clock_hour_, "prefix", "smf-1h-report-");
+		auto suffix = cyng::find_value<std::string>(cfg_clock_hour_, "suffix", "csv");
+		auto header = cyng::find_value(cfg_clock_hour_, "header", true);
+
+		std::stringstream ss;
+		ss
+			<< prefix
+			<< std::setfill('0')
+			<< cyng::chrono::year(time_start)
+			<< '-'
+			<< std::setw(2)
+			<< cyng::chrono::month(time_start)
+			<< '-'
+			<< std::setw(2)
+			<< cyng::chrono::day(time_start)
+			<< '-'
+			<< '-'
+			<< std::setw(2)
+			<< cyng::chrono::month(time_end)
+			<< '-'
+			<< std::setw(2)
+			<< cyng::chrono::day(time_end)
+			<< '_'
+			<< id
+			<< '.'
+			<< suffix	//	.csv
+			;
+		CYNG_LOG_INFO(logger_, "open " << root_dir / ss.str());
+		auto path = root_dir / ss.str();
+		std::ofstream ofs(path.string());
+		if (ofs.is_open()) {
+
+			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_DEBUG, "update " + path.string()));
+
+			//
+			//	optional header
+			//
+			if (header) {
+				if (boost::algorithm::equals(language_, "DE")) {
+					ofs << "Server;Zähler;Auslesezeit;Messzeit;Transaktion;";
+				}
+				else if (boost::algorithm::equals(language_, "FR")) {
+					ofs << "Serveur;Compteur;TempsDeLecture;TempsDeMesure;Transaction;";
+				}
+				else {
+					ofs << "server;meter;readout;measurement;trx;";
+				}
+				for (auto const& c : codes) {
+					ofs << c << ';';
+				}
+				ofs << std::endl;
+			}
+		}
+		else {
+			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_ERROR, "cannot open " + path.string()));
+		}
+		return ofs;
 	}
 
 	std::ofstream storage_db::open_file_24_h_profile(std::int32_t year
@@ -1022,10 +1262,15 @@ namespace node
             //	optional header
             //
             if (header) {
-                ofs
-                    << "ZaehlerNr;Obis;Stand;Datum"
-                    << std::endl
-                    ;
+				if (boost::algorithm::equals(language_, "DE")) {
+					ofs << "ZaehlerNr;Obis;Stand;Datum" << std::endl;
+				}
+				else if (boost::algorithm::equals(language_, "FR")) {
+					ofs << "Compteur;OBIS;Valeur;Sortir" << std::endl;
+				}
+				else {
+					ofs << "meter;obis;counter;date"	<< std::endl;
+				}
             }
         }
         else {

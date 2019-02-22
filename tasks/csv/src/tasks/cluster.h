@@ -28,6 +28,7 @@ namespace node
 		cluster(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, boost::uuids::uuid tag
+			, std::string language
 			, cluster_config_t const& cfg_cluster
 			, cyng::param_map_t const& cfg_db
 			, cyng::param_map_t const& cfg_clock_day
@@ -64,14 +65,15 @@ namespace node
 		cyng::async::base_task& base_;
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-        const cluster_redundancy config_;
-		const cyng::param_map_t cfg_db_;
-		const cyng::param_map_t cfg_clock_day_;
-		const cyng::param_map_t cfg_clock_hour_;
-		const cyng::param_map_t cfg_clock_month_;
-		const std::chrono::minutes offset_;
-		const std::chrono::minutes frame_;
-		const std::string format_;
+        cluster_redundancy const config_;
+		cyng::param_map_t const cfg_db_;
+		cyng::param_map_t const cfg_clock_day_;
+		cyng::param_map_t const cfg_clock_hour_;
+		cyng::param_map_t const cfg_clock_month_;
+		std::chrono::minutes const offset_;
+		std::chrono::minutes const frame_;
+		std::string const format_;
+		std::string const language_;
 
 		std::size_t profile_15_min_tsk_
 			, profile_60_min_tsk_

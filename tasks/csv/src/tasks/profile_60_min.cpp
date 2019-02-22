@@ -48,7 +48,7 @@ namespace node
 			//
 			//	trigger generation of last time period
 			//
-			//generate_last_period();
+			generate_last_period();
 
 
 			//
@@ -102,19 +102,19 @@ namespace node
 
 	}
 
-	//void profile_60_min::generate_last_period()
-	//{
-	//	//
-	//	//	start time of previous period
-	//	//
+	void profile_60_min::generate_last_period()
+	{
+		//
+		//	start time of previous period
+		//
 
-	//	base_.mux_.post(tsk_db_, 0, cyng::tuple_factory(next_trigger_tp_ - std::chrono::hours(48), std::chrono::hours(24)));
-	//	
-	//}
+		base_.mux_.post(tsk_db_, 1, cyng::tuple_factory(next_trigger_tp_ - std::chrono::hours(48), cyng::chrono::days(2)));
+		
+	}
 
 	void profile_60_min::generate_current_period()
 	{
-		base_.mux_.post(tsk_db_, 0, cyng::tuple_factory(next_trigger_tp_, cyng::chrono::days(1)));
+		base_.mux_.post(tsk_db_, 1, cyng::tuple_factory(next_trigger_tp_, cyng::chrono::days(1)));
 
 	}
 

@@ -31,6 +31,7 @@ namespace node
 	public:
 		storage_db(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
+			, std::string language
 			, bus::shared_type bus
 			, cyng::param_map_t
 			, cyng::param_map_t
@@ -104,6 +105,11 @@ namespace node
 			, std::string const& id
 			, std::set<std::string> const&);
 
+		std::ofstream open_file_60_min_profile(std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end
+			, std::string const& id
+			, std::set<std::string> const&);
+
 		std::ofstream open_file_24_h_profile(std::int32_t year
 			, std::int32_t month
 			, std::size_t
@@ -111,6 +117,14 @@ namespace node
 			, std::chrono::system_clock::time_point end);
 
 		void collect_data_15_min_profile(std::ofstream&
+			, std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end
+			, cyng::sql::command&
+			, cyng::db::statement_ptr
+			, std::string const& id
+			, std::set<std::string> const& obis_code);
+
+		void collect_data_60_min_profile(std::ofstream&
 			, std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, cyng::sql::command&
@@ -152,12 +166,13 @@ namespace node
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
+		std::string const language_;
 		bus::shared_type bus_;
 		cyng::db::session_pool pool_;
-		const cyng::param_map_t cfg_db_;
-		const cyng::param_map_t cfg_clock_day_;
-		const cyng::param_map_t cfg_clock_hour_;
-		const cyng::param_map_t cfg_clock_month_;
+		cyng::param_map_t const cfg_db_;
+		cyng::param_map_t const cfg_clock_day_;
+		cyng::param_map_t const cfg_clock_hour_;
+		cyng::param_map_t const cfg_clock_month_;
 
 		const std::string schema_;
 		cyng::table::mt_table	meta_map_;

@@ -105,10 +105,10 @@ namespace node
 	void profile_15_min::generate_last_period()
 	{
 		//
-		//	start time of previous period
+		//	start time of previous period: last 48 hours
 		//
 
-		base_.mux_.post(tsk_db_, 0, cyng::tuple_factory(next_trigger_tp_ - std::chrono::hours(48), std::chrono::hours(24)));
+		base_.mux_.post(tsk_db_, 0, cyng::tuple_factory(std::chrono::system_clock::now() - std::chrono::hours(48), std::chrono::hours(48)));
 		
 	}
 

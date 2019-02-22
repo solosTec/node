@@ -43,7 +43,7 @@ namespace node
 
 	private:
 		std::chrono::system_clock::time_point calculate_trigger_tp();
-		//void generate_last_period();
+		void generate_last_period();
 		void generate_current_period();
 
 	private:

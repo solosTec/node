@@ -22,6 +22,7 @@ namespace node
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid cluster_tag
+		, std::string language
 		, cluster_config_t const& cfg_cluster
 		, cyng::param_map_t const& cfg_db
 		, cyng::param_map_t const& cfg_clock_day
@@ -39,6 +40,7 @@ namespace node
 		, offset_(cyng::find_value(cfg_trigger, "offset", 7))
 		, frame_(cyng::find_value(cfg_trigger, "frame", 7))
 		, format_(cyng::find_value<std::string>(cfg_trigger, "format", "SML"))
+		, language_(language)
 		, profile_15_min_tsk_(cyng::async::NO_TASK)
 		, profile_60_min_tsk_(cyng::async::NO_TASK)
 		, profile_24_h_tsk_(cyng::async::NO_TASK)
@@ -178,6 +180,7 @@ namespace node
 		storage_task_ = cyng::async::start_task_delayed<storage_db>(base_.mux_
 			, std::chrono::seconds(2)
 			, logger_
+			, language_
 			, bus_
 			, cfg_db_
 			, cfg_clock_day_
