@@ -134,7 +134,7 @@
         <hr />
 
         <div class="row">
-            <div class="container-fluid">
+            <div class="container-fluid" aria-live="polite" aria-atomic="true" style="position: relative; min-height: 100px;" id="toast-container">
                 <p id="attention-msg"></p>
             </div>
         </div>
@@ -270,6 +270,7 @@
     <script type="text/javascript" src="DataTables/datatables.min.js"></script>
 
     <script>
+
         //  globals
         var table_meter, table_data;
         var _ws = null;
@@ -471,6 +472,7 @@
                             }
                             else if (obj.cmd == 'modify') {
                                 //  {"cmd": "modify", "channel": "config.meter", "key": ["ac2c54ca-0c39-4edf-aa70-1a409d2d9e08"], "value": {"maker":"asdasdasd"}}
+                                //  {"cmd": "modify", "channel": "config.meter", "key": ["1fe54f60-c645-468a-ba72-73967c22d372"], "value": {"online":1}}
                                 table_meter.row(function (idx, data, node) {
                                     if (data[0] == obj.key) {
                                         var r = table_meter.row(node);
@@ -503,7 +505,7 @@
                                             d[11] = obj.value.serverId;
                                         }
                                         else if (obj.value.online != null) {
-                                            d[12] = obj.value.online;
+                                            d[13] = obj.value.online;
                                         }
                                         r.data(d);
                                         return true;
@@ -537,8 +539,6 @@
                         }
                         else if (obj.cmd == 'update') {
                             if (obj.channel == 'get.list.request') {
-                                //  {"cmd": "update", "channel": "get.list.request", "section": "list-current-data-record", "rec": {"srv": "00:ff:b0:4b:94:f8", "values": {"01 00 01 08 00 ff":{"value":"4637.82","scaler":"\ufffffffe","unit":30,"valTime":"2019-01-24 18:21:29.00000000"},"08 00 01 00 00 ff":{"value":758,"scaler":"\ufffffffd","unit":13,"valTime":"2019-01-24 18:21:29.00000000"},"81 81 c7 82 03 ff":{"value":"solosTec","scaler":"\u0000","unit":0,"valTime":null}}}}
-                                //$('#smf-meter-gw ul').empty();
                                 table_data.clear().draw(false);
                                 $.each(obj.rec.values, function (key, value) {
                                     var node = table_data.row.add([key, value.value, value.unit, value.valTime, obj.rec.srv]).draw().node();
@@ -552,6 +552,7 @@
                                     $('#attention-msg').addClass('bg-warning');
                                     $('#attention-msg').text(obj.rec.srv + ": " + obj.rec.values);
                                 }
+                                //  ToDo: show toast
                             }
                         }
                     }

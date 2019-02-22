@@ -271,7 +271,7 @@ namespace node
 		//
 		//	Boost meter records with additional data from TGateway
 		//
-		if (boost::algorithm::equals(table, "TMeter"))
+		else if (boost::algorithm::equals(table, "TMeter"))
 		{
 			//
 			//	Additional values for TMeter
@@ -304,6 +304,9 @@ namespace node
 			}, cyng::store::read_access("TGateway"));
 		}
 
+		//
+		//	insert new record
+		//
 		if (!db.insert(table	//	table name
 			, key	//	table key
 			, data	//	table data
@@ -427,15 +430,6 @@ namespace node
 			, std::get<2>(tpl)		//	[2] record
 			, std::get<3>(tpl)		//	[3] generation
 			, ctx.tag());	//	[4] origin	
-
-		//node::db_res_insert(logger_
-		//	, db_
-		//	, std::get<0>(tpl)		//	[0] table name
-		//	, std::get<1>(tpl)		//	[1] table key
-		//	, std::get<2>(tpl)		//	[2] record
-		//	, std::get<3>(tpl)		//	[3] generation
-		//	, ctx.tag());
-
 	}
 
 	void db_sync::db_req_insert(cyng::context& ctx)
@@ -778,7 +772,7 @@ namespace node
 		{
 			if (boost::algorithm::equals(table, "_Session"))
 			{
-				db_.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+				db_.access([&](cyng::store::table* tbl_gw, cyng::store::table* tbl_meter, const cyng::store::table* tbl_ses) {
 
 					//
 					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
@@ -790,10 +784,42 @@ namespace node
 						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
 					}
 					else {
-						const auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", rtag.is_nil() ? 1 : 2), origin);
+						auto const rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+						auto const state = rtag.is_nil() ? 1 : 2;
+						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", state), origin);
+
+						//
+						//	update TMeter
+						//	Lookup if TMeter has a gateway with this key
+						//	This method is inherently slow.
+						//	ToDo: optimize
+						//
+
+						std::map<cyng::table::key_type, int>	result;
+						auto const gw_tag = cyng::value_cast(rec["device"], boost::uuids::nil_uuid());
+						tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
+
+							auto const tag = cyng::value_cast(rec["gw"], boost::uuids::nil_uuid());
+							if (tag == gw_tag) {
+
+								//
+								//	The gateway of this meter is online/connected
+								//
+								result.emplace(rec.key(), state);
+							}
+							return true;	//	continue
+						});
+
+						//
+						//	Update all found meters
+						//
+						for (auto const& item : result) {
+							tbl_meter->modify(item.first, cyng::param_factory("online", item.second), origin);
+						}
+
 					}
 				}	, cyng::store::write_access("TGateway")
+					, cyng::store::write_access("TMeter")
 					, cyng::store::read_access("_Session"));
 			}
 		}
@@ -810,7 +836,7 @@ namespace node
 		//
 		if (boost::algorithm::equals(table, "_Session"))
 		{
-			db.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_ses) {
+			db.access([&](cyng::store::table* tbl_gw, cyng::store::table* tbl_meter, const cyng::store::table* tbl_ses) {
 
 				//
 				//	Gateway and Device table share the same table key
@@ -819,12 +845,43 @@ namespace node
 				if (!rec.empty())
 				{
 					//	set online state
-					tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
+					auto const gw_tag = cyng::value_cast(rec["device"], boost::uuids::nil_uuid());
+					tbl_gw->modify(cyng::table::key_generator(gw_tag), cyng::param_factory("online", 0), origin);
+
+					//
+					//	find meters of this gateway and set offline
+					//
+					std::set<cyng::table::key_type>	result;
+					tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
+
+						auto const tag = cyng::value_cast(rec["gw"], boost::uuids::nil_uuid());
+						if (tag == gw_tag) {
+
+							//
+							//	The gateway of this meter is offline
+							//
+							result.emplace(rec.key());
+						}
+
+						return true;	//	continue
+					});
+
+					//
+					//	Update all found meters
+					//
+					for (auto const& item : result) {
+						tbl_meter->modify(item, cyng::param_factory("online", 0), origin);
+					}
+
 				}
 			}	, cyng::store::write_access("TGateway")
+				, cyng::store::write_access("TMeter")
 				, cyng::store::read_access("_Session"));
 		}
 
+		//
+		//	remove record
+		//
 		if (!db.erase(table, key, origin))
 		{
 			CYNG_LOG_WARNING(logger, "db.req.remove failed "
