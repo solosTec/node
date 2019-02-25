@@ -165,7 +165,7 @@ namespace node
 #ifdef SMF_IO_DEBUG
 				cyng::io::hex_dump hd;
 				std::stringstream ss;
-				if (buf.size() > 128) {
+				if (buf.size() > 512) {
 					hd(ss, buf.cbegin(), buf.cbegin() + 128);
 				}
 				else {

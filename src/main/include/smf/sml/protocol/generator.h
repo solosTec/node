@@ -156,6 +156,14 @@ namespace node
 				, std::string const& password);
 
 			/**
+			 * Delete meter - 81 81 11 06 FD FF / 81 81 11 06 FD 01 / 81 81 C7 82 04 FF
+			 */
+			std::size_t set_proc_parameter_delete(cyng::buffer_t const& server_id
+				, cyng::buffer_t const& meter_id
+				, std::string const& username
+				, std::string const& password);
+
+			/**
 			 * IP-T Host - 81 49 0D 07 00 FF
 			 */
 			std::size_t set_proc_parameter_ipt_host(cyng::buffer_t const& server_id

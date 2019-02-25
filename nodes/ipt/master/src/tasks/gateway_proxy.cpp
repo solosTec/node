@@ -161,13 +161,6 @@ namespace node
 		//
 		parser_.read(data.begin(), data.end());
 
-		//
-		//	update data throughput (incoming)
-		//
-		//bus_->vm_.async_run(client_inc_throughput(tag_ctx_
-		//	, tag_remote_
-		//	, data.size()));
-
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
@@ -852,7 +845,34 @@ namespace node
 	void gateway_proxy::execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen)
 	{
 		auto const params = queue_.front().get_params();
-
+		auto const pos = params.find("smf-form-gw-srv-visible-meter");
+		if (pos != params.end()) {
+			cyng::buffer_t meter;
+			meter = cyng::value_cast(pos->second, meter);
+			sml_gen.set_proc_parameter_delete(queue_.front().get_srv()
+				, meter
+				, queue_.front().get_user()
+				, queue_.front().get_pwd());
+		}
+		else {
+			auto const pos = params.find("smf-form-gw-srv-active-meter");
+			if (pos != params.end()) {
+				cyng::buffer_t meter;
+				meter = cyng::value_cast(pos->second, meter);
+				sml_gen.set_proc_parameter_delete(queue_.front().get_srv()
+					, meter
+					, queue_.front().get_user()
+					, queue_.front().get_pwd());
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> [delete] has no parameters - "
+					<< sml::from_server_id(queue_.front().get_srv()));
+			}
+		}
 	}
 
 	void gateway_proxy::stop()

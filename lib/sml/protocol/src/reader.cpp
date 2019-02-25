@@ -12,7 +12,6 @@
 #include <smf/sml/units.h>
 #include <smf/sml/scaler.h>
 #include <smf/mbus/defs.h>
-//#include <smf/mbus/units.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
@@ -664,9 +663,6 @@ namespace node
 					//
 					read_get_proc_multiple_parameters(*pos++);
 
-					//cyng::buffer_t meter;
-					//meter = cyng::value_cast(ro_.get_value(OBIS_CODE_SERVER_ID), meter);
-
 					return cyng::generate_invoke("sml.get.proc.param.srv.visible"
 						, ro_.pk_
 						, ro_.trx_
@@ -965,7 +961,7 @@ namespace node
 				}
 				else if (OBIS_CODE_DEACTIVATE_DEVICE == path.front()) {
 
-					BOOST_ASSERT_MSG(path.size() == 3, "OBIS_CODE_DEACTIVATE_DEVICE param tree too short");
+					BOOST_ASSERT_MSG(path.size() == 3, "OBIS_CODE_DEACTIVATE_DEVICE parameter tree too short");
 
 					cyng::buffer_t tmp;
 					tmp = cyng::value_cast(attr.second, tmp);
@@ -974,6 +970,26 @@ namespace node
 					if (r.second) {
 
 						prg << cyng::generate_invoke_unwinded("sml.set.proc.deactivate"
+							, ro_.pk_
+							, ro_.trx_
+							, r.first
+							, ro_.server_id_
+							, ro_.get_value("userName")
+							, ro_.get_value("password")
+							, tmp);
+					}
+				}
+				else if (OBIS_CODE_DELETE_DEVICE == path.front()) {
+
+					BOOST_ASSERT_MSG(path.size() == 3, "OBIS_CODE_DELETE_DEVICE parameter tree too short");
+
+					cyng::buffer_t tmp;
+					tmp = cyng::value_cast(attr.second, tmp);
+
+					auto r = path.at(1).is_matching(0x81, 0x81, 0x11, 0x06, 0xfd);
+					if (r.second) {
+
+						prg << cyng::generate_invoke_unwinded("sml.set.proc.delete"
 							, ro_.pk_
 							, ro_.trx_
 							, r.first

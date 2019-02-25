@@ -88,6 +88,7 @@ namespace node
 
 			vm.register_function("sml.set.proc.activate", 7, std::bind(&kernel::sml_set_proc_activate, this, std::placeholders::_1));
 			vm.register_function("sml.set.proc.deactivate", 7, std::bind(&kernel::sml_set_proc_deactivate, this, std::placeholders::_1));
+			vm.register_function("sml.set.proc.delete", 7, std::bind(&kernel::sml_set_proc_delete, this, std::placeholders::_1));
 
 			vm.register_function("sml.get.list.request", 9, std::bind(&kernel::sml_get_list_request, this, std::placeholders::_1));
 			//vm.register_function("sml.get.list.response", 0, std::bind(&kernel::sml_get_list_response, this, std::placeholders::_1));
@@ -1176,9 +1177,6 @@ namespace node
 					tbl->modify(rec.key(), cyng::param_factory("active", false), ctx.tag());
 
 					//
-					//	send attention code
-					//
-					//
 					//	send attention code ATTENTION_OK
 					//
 					sml_gen_.attention_msg(frame.at(1)	// trx
@@ -1204,7 +1202,57 @@ namespace node
 						;
 				}
 			}, cyng::store::write_access("devices"));
+		}
 
+		void kernel::sml_set_proc_delete(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::uint8_t,		//	[2] record index (1..2)
+				cyng::buffer_t,		//	[3] gateway id e.g 0500FFB04B94F8
+				std::string,		//	[4] user name
+				std::string,		//	[5] password
+				cyng::buffer_t		//	[6] server/meter ID 
+			>(frame);
+
+			config_db_.access([&](cyng::store::table* tbl) {
+
+				//
+				//	remove sensor/actor
+				//
+				CYNG_LOG_WARNING(logger_, "delete sensor: " << cyng::io::to_hex(std::get<6>(tpl)));
+				auto const key = cyng::table::key_generator(std::get<6>(tpl));
+				if (tbl->erase(key, ctx.tag())) {
+
+					//
+					//	send attention code ATTENTION_OK
+					//
+					sml_gen_.attention_msg(frame.at(1)	// trx
+						, std::get<3>(tpl)	//	server ID
+						, OBIS_ATTENTION_OK.to_buffer()
+						, "OK"
+						, cyng::tuple_t());
+				}
+				else {
+
+					//
+					//	send attention code OBIS_ATTENTION_NO_SERVER_ID
+					//
+					sml_gen_.attention_msg(frame.at(1)	// trx
+						, std::get<3>(tpl)	//	server ID
+						, OBIS_ATTENTION_NO_SERVER_ID.to_buffer()
+						, ctx.get_name()
+						, cyng::tuple_t());
+
+					CYNG_LOG_WARNING(logger_, ctx.get_name() << " - wrong server ID: "
+						<< cyng::io::to_hex(std::get<3>(tpl)))
+						;
+				}
+			}, cyng::store::write_access("devices"));
 		}
 
 		void kernel::sml_get_list_request(cyng::context& ctx)
