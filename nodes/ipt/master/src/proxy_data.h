@@ -39,7 +39,6 @@ namespace node
 			 * @return a vector containing all affected sections
 			 */
 			std::vector<std::string> get_section_names() const;
-			//cyng::vector_t get_sections() const;
 
 			/**
 			 * Walks over parameter vector and build a parameter map

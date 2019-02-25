@@ -8,10 +8,14 @@
 
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/defs.h>
+#include <smf/sml/parser/srv_id_parser.h>
+
 #include <cyng/io/io_buffer.h>
+
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
+
 #include <boost/io/ios_state.hpp>
 
 namespace node
@@ -231,6 +235,15 @@ namespace node
 			std::ostringstream ss;
 			serialize_server_id(ss, buffer);
 			return ss.str();
+		}
+
+		cyng::buffer_t from_server_id(std::string const& id)
+		{
+			auto const r = parse_srv_id(id);
+			return (r.second)
+				? r.first
+				: cyng::buffer_t()
+				;
 		}
 
 		std::string get_serial(cyng::buffer_t const& buffer)

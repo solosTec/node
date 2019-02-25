@@ -140,7 +140,7 @@ namespace node
 				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600
 
 				//
-				//	generate public open response
+				//	generate reboot request
 				//
 				, set_proc_parameter_request(cyng::make_object(server_id)
 					, username
@@ -151,13 +151,59 @@ namespace node
 			);
 		}
 
+		std::size_t req_generator::set_proc_parameter_activate(cyng::buffer_t const& server_id
+			, cyng::buffer_t const& meter_id
+			, std::string const& username
+			, std::string const& password)
+		{
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600
+
+				//
+				//	generate activate request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, obis_path{ OBIS_CODE_ACTIVATE_DEVICE, make_obis(0x81, 0x81, 0x11, 0x06, 0xFB, 0x01), OBIS_CODE_SERVER_ID }
+					, parameter_tree(OBIS_CODE_SERVER_ID, make_value(meter_id)))
+				)
+			);
+		}
+
+		std::size_t req_generator::set_proc_parameter_deactivate(cyng::buffer_t const& server_id
+			, cyng::buffer_t const& meter_id
+			, std::string const& username
+			, std::string const& password)
+		{
+			++trx_;
+			return append_msg(message(cyng::make_object(*trx_)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600
+
+				//
+				//	generate activate request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, obis_path{ OBIS_CODE_DEACTIVATE_DEVICE, make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, 0x01), OBIS_CODE_SERVER_ID }
+					, parameter_tree(OBIS_CODE_SERVER_ID, make_value(meter_id)))
+				)
+			);
+		}
+
 		std::size_t req_generator::set_proc_parameter_ipt_host(cyng::buffer_t const& server_id
 			, std::string const& username
 			, std::string const& password
 			, std::uint8_t idx
 			, std::string const& address)
 		{
-			const obis_path tree_path({OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) });
+			//const obis_path tree_path({OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) });
 
 			++trx_;
 			return append_msg(message(cyng::make_object(*trx_)
@@ -171,7 +217,7 @@ namespace node
 				, set_proc_parameter_request(cyng::make_object(server_id)
 					, username
 					, password
-					, tree_path
+					, obis_path{ OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) }
 					, parameter_tree(make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(address)))
 				)
 			);

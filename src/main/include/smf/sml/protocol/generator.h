@@ -140,6 +140,22 @@ namespace node
 				, std::string const& password);
 
 			/**
+			 * Activate meter - 81 81 11 06 FB FF / 81 81 11 06 FB 01 / 81 81 C7 82 04 FF
+			 */
+			std::size_t set_proc_parameter_activate(cyng::buffer_t const& server_id
+				, cyng::buffer_t const& meter_id
+				, std::string const& username
+				, std::string const& password);
+
+			/**
+			 * Deactivate meter - 81 81 11 06 FC FF / 81 81 11 06 FC 01 / 81 81 C7 82 04 FF
+			 */
+			std::size_t set_proc_parameter_deactivate(cyng::buffer_t const& server_id
+				, cyng::buffer_t const& meter_id
+				, std::string const& username
+				, std::string const& password);
+
+			/**
 			 * IP-T Host - 81 49 0D 07 00 FF
 			 */
 			std::size_t set_proc_parameter_ipt_host(cyng::buffer_t const& server_id

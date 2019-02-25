@@ -562,8 +562,6 @@ namespace node
 
 			ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
 		}
-
-
 	}
 
 	void forward::cfg_upload_gateways(cyng::context& ctx)

@@ -74,6 +74,7 @@ namespace node
 				cyng::param_factory("section", std::get<7>(tpl)),
 				cyng::param_factory("rec", cyng::tuple_factory(
 					cyng::param_factory("srv", std::get<6>(tpl)),
+					cyng::param_factory("gw", std::get<3>(tpl).at(0)),
 					cyng::param_factory("values", std::get<8>(tpl))
 				)));
 

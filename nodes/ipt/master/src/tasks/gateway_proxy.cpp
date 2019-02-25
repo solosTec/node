@@ -471,9 +471,15 @@ namespace node
 					, queue_.front().get_user()
 					, queue_.front().get_pwd());
 			}
-			//else if (boost::algorithm::equals(sec, "query")) {
-			//	execute_cmd_get_list_req_last_data_set(sml_gen);
-			//}
+			else if (boost::algorithm::equals(sec, "activate")) {
+				execute_cmd_set_proc_param_activate(sml_gen);
+			}
+			else if (boost::algorithm::equals(sec, "deactivate")) {
+				execute_cmd_set_proc_param_deactivate(sml_gen);
+			}
+			else if (boost::algorithm::equals(sec, "delete")) {
+				execute_cmd_set_proc_param_delete(sml_gen);
+			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
@@ -504,7 +510,7 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> \n"
+			<< "> emits \n"
 			<< cyng::io::to_hex(msg, ' '))
 #endif
 
@@ -769,7 +775,7 @@ namespace node
 					<< cyng::io::to_str(pos->second)
 					<< "]");
 
-				sml_gen.get_list_last_data_record(get_mac().to_buffer()	//queue_.front().get_srv()
+				sml_gen.get_list_last_data_record(get_mac().to_buffer()	
 					, r.first	//	meter
 					, queue_.front().get_user()
 					, queue_.front().get_pwd());
@@ -799,6 +805,55 @@ namespace node
 		}
 	}
 
+	void gateway_proxy::execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen)
+	{
+		auto const params = queue_.front().get_params();
+		auto const pos = params.find("smf-form-gw-srv-visible-meter");
+		if (pos != params.end()) {
+			cyng::buffer_t meter;
+			meter = cyng::value_cast(pos->second, meter);
+			sml_gen.set_proc_parameter_activate(queue_.front().get_srv()
+				, meter
+				, queue_.front().get_user()
+				, queue_.front().get_pwd());
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> [deactivate] has no parameters - "
+				<< sml::from_server_id(queue_.front().get_srv()));
+		}
+	}
+
+	void gateway_proxy::execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen)
+	{
+		auto const params = queue_.front().get_params();
+		auto const pos = params.find("smf-form-gw-srv-active-meter");
+		if (pos != params.end()) {
+			cyng::buffer_t meter;
+			meter = cyng::value_cast(pos->second, meter);
+			sml_gen.set_proc_parameter_deactivate(queue_.front().get_srv()
+				, meter
+				, queue_.front().get_user()
+				, queue_.front().get_pwd());
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> [activate] has no parameters - "
+				<< sml::from_server_id(queue_.front().get_srv()));
+		}
+	}
+
+	void gateway_proxy::execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen)
+	{
+		auto const params = queue_.front().get_params();
+
+	}
 
 	void gateway_proxy::stop()
 	{

@@ -221,7 +221,8 @@
                         <ul class="list-group"></ul>
                     </div>
                     <div id="smf-gw-srv-visible" class="container-fluid tab-pane fade" role="tabpanel">
-                        <h4></h4>
+                        <!--<h4></h4>-->
+                        <br />
                         <table id="smf-table-gw-visible" class="table table-condensed table-striped table-bordered" cellspacing="0">
                             <thead>
                                 <tr>
@@ -234,9 +235,28 @@
                                     <th class="sml-col-gw-meter-class">Class</th>
                                     <th class="sml-col-gw-meter-srv">Server</th>
                                     <th class="sml-col-gw-meter-type">Type</th>
+                                    <th class="sml-col-gw-meter-visible">Visible</th>
+                                    <th class="sml-col-gw-meter-active">Active</th>
+                                    <th class="sml-col-gw-pk">UUID</th>
                                 </tr>
                             </thead>
                         </table>
+                        <form id="smf-form-gw-srv-visible-activate" style="padding:2em">
+                            <input type="hidden" id="smf-form-gw-srv-visible-meter" name="smf-form-gw-srv-visible-meter" />
+                            <input type="hidden" id="smf-form-gw-srv-visible-tag" name="smf-form-gw-srv-visible-tag" />
+                            <div class="form-group row">
+                                <div class="form-group col-md-12">
+                                    <a id="smf-form-gw-srv-visible-activate-submit" href="#" class="btn btn-info col-md-4 disabled">Activate</a>
+                                    <label class="control-label" for="smf-form-gw-srv-visible-activate-submit">Activate selected meter</label>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="form-group col-md-12">
+                                    <a id="smf-form-gw-srv-visible-delete-submit" href="#" class="btn btn-danger col-md-4 disabled">Delete</a>
+                                    <label class="control-label" for="smf-form-gw-srv-visible-delete-submit">Remove <span id="smf-form-gw-srv-visible-delete-meter">Device</span></label>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                     <div id="smf-gw-srv-active" class="container-fluid tab-pane fade" role="tabpanel">
                         <h4></h4>
@@ -253,9 +273,28 @@
                                     <th class="sml-col-gw-meter-class">Class</th>
                                     <th class="sml-col-gw-meter-srv">Server</th>
                                     <th class="sml-col-gw-meter-type">Type</th>
+                                    <th class="sml-col-gw-meter-visible">Visible</th>
+                                    <th class="sml-col-gw-meter-active">Active</th>
+                                    <th class="sml-col-gw-pk">UUID</th>
                                 </tr>
                             </thead>
                         </table>
+                        <form id="smf-form-gw-srv-active-deactivate" style="padding:2em">
+                            <input type="hidden" id="smf-form-gw-srv-active-meter" name="smf-form-gw-srv-active-meter" />
+                            <input type="hidden" id="smf-form-gw-srv-active-tag" name="smf-form-gw-srv-active-tag" />
+                            <div class="form-group row">
+                                <div class="form-group col-md-12">
+                                    <a id="smf-form-gw-srv-active-deactivate-submit" href="#" class="btn btn-info col-md-4 disabled">Deactivate</a>
+                                    <label class="control-label" for="smf-form-gw-srv-active-deactivate-submit">Activate selected meter</label>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="form-group col-md-12">
+                                    <a id="smf-form-gw-srv-active-delete-submit" href="#" class="btn btn-danger col-md-4 disabled">Delete</a>
+                                    <label class="control-label" for="smf-form-gw-srv-active-delete-submit">Remove <span id="smf-form-gw-srv-active-delete-meter">Device</span></label>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                     <div id="smf-gw-firmware" class="container-fluid tab-pane fade" role="tabpanel">
                         <h4></h4>
@@ -382,7 +421,6 @@
                             <div class="form-group row">
                                 <div class="offset-2 col-10">
                                     <a id="smf-form-gw-wmbus-submit" href="#" class="btn btn-primary">Submit</a>
-                                    <!--                                    <button name="submit" type="submit" class="btn btn-primary">Submit</button>-->
                                 </div>
                             </div>
                         </form>
@@ -449,7 +487,6 @@
                                     <div class="form-group row">
                                         <div class="offset-1 col-11">
                                             <a id="smf-form-gw-ipt-submit" href="#" class="btn btn-primary">Submit</a>
-                                            <!--                                    <button name="submit" type="submit" class="btn btn-primary" disabled>Submit</button>-->
                                         </div>
                                     </div>
                                 </form>
@@ -618,7 +655,10 @@
                 { targets: 'sml-col-gw-meter-time', visible: true, name: 'gw-meter-time', render: renderDate },
                 { targets: 'sml-col-gw-meter-class', visible: false, name: 'gw-meter-class' },
                 { targets: 'sml-col-gw-meter-srv', visible: true, name: 'gw-meter-srv' },
-                { targets: 'sml-col-gw-meter-type', visible: true, name: 'gw-meter-type', render: renderType }
+                { targets: 'sml-col-gw-meter-type', visible: true, name: 'gw-meter-type', render: renderType },
+                { targets: 'sml-col-gw-meter-visible', visible: false, name: 'gw-meter-visible' },
+                { targets: 'sml-col-gw-meter-active', visible: false, name: 'gw-meter-active' },
+                { targets: 'sml-col-gw-pk', visible: false, name: 'gw-pk' },
             ]
         };
 
@@ -655,7 +695,7 @@
                 //  select: a584c1cc-7ae1-455b-99d1-de0f9483520d,05000000000000,solosTec,gateway,ipt:gateway,0.5.2018155,operator,operator,false, length:9
                 var rowData = datatable.rows(indexes).data().toArray()[0];
                 var rows = table_gw.rows(indexes).data();
-                console.log("select: " + rows.toArray() + ", length:" + rowData.length);
+                //console.log("select: " + rows.toArray() + ", length:" + rowData.length);
                 $('#smf-form-legend-gw').text("{" + rowData[0] + "}");
                 $('#smf-form-gw-tag').val(rowData[0]);
                 $('#smf-form-gw-server').val(rowData[1]);
@@ -671,26 +711,20 @@
                 $('#smf-form-gw-delete-name').html('<abbr title=' + rowData[0] + ' class="font-italic">' + rowData[4] + '</abbr>');
 
                 //  online state
-                if (rowData[9]) {
+                var online = rowData[9];
+                if (online) {
                     $('#smf-form-gw-reboot').removeClass('disabled');
-                    $('#smf-form-gw-status-word').removeAttr('disabled');
-                    $('#smf-form-gw-srv-visible').removeAttr("disabled");
-                    $('#smf-form-gw-srv-active').removeAttr('disabled');
-                    $('#smf-form-gw-firmware').removeAttr('disabled');
-                    $('#smf-form-gw-memory').removeAttr('disabled');
-                    $('#smf-form-gw-wireless-mbus').removeAttr('disabled');
-                    $('#smf-form-gw-ipt').removeAttr('disabled');
                 }
                 else {
                     $('#smf-form-gw-reboot').addClass('disabled');
-                    $('#smf-form-gw-status-word').attr("disabled", "disabled");
-                    $('#smf-form-gw-srv-visible').attr("disabled", "disabled");
-                    $('#smf-form-gw-srv-active').attr("disabled", "disabled");
-                    $('#smf-form-gw-firmware').attr("disabled", "disabled");
-                    $('#smf-form-gw-memory').attr("disabled", "disabled");
-                    $('#smf-form-gw-wireless-mbus').attr("disabled", "disabled");
-                    $('#smf-form-gw-ipt').attr("disabled", "disabled");
                 }
+                $('#smf-form-gw-status-word').attr("disabled", !online);
+                $('#smf-form-gw-srv-visible').attr("disabled", !online);
+                $('#smf-form-gw-srv-active').attr("disabled", !online);
+                $('#smf-form-gw-firmware').attr("disabled", !online);
+                $('#smf-form-gw-memory').attr("disabled", !online);
+                $('#smf-form-gw-wireless-mbus').attr("disabled", !online);
+                $('#smf-form-gw-ipt').attr("disabled", !online);
 
                 $('#smf-form-gw-online').val(rowData[9]);    //  online
                 //  gateway is online
@@ -710,7 +744,6 @@
                     }
                     if ($('#smf-form-gw-srv-visible').is(":checked")) {
                         table_visible.clear().draw(false);
-                        $('#smf-gw-srv-visible h4').text('Visible meters of ' + rowData[1]);
                         gw_req_vec.push("root-visible-devices");
                     }
                     if ($('#smf-form-gw-srv-active').is(":checked")) {
@@ -759,11 +792,48 @@
                         }));
                     }
                 }
-                else {
-                    //  seems not to work
-                    //$('#smf-nav-item-gw-config').addClass('disabled');
-                    //$('#smf-nav-item-gw-config').hide();
+            });
+
+            table_visible.on('select', function (e, datatable, type, indexes) {
+                var rowData = datatable.rows(indexes).data().toArray()[0];
+                var rows = table_visible.rows(indexes).data();
+                //console.log("select: " + rows.toArray() + ", length:" + rowData.length);
+                $('#smf-form-gw-srv-visible-meter').val(rowData[2]);    //  binary
+                $('#smf-form-gw-srv-visible-tag').val(rowData[11]);     //  gw
+                var active = rowData[10];
+                //alert(rowData[1] + " " + active);
+                if (active) {
+                    $('#smf-form-gw-srv-visible-activate-submit').addClass('disabled');
                 }
+                else {
+                    $('#smf-form-gw-srv-visible-activate-submit').removeClass('disabled');
+                    $('#smf-form-gw-srv-visible-delete-meter').html(rowData[1]);
+                }
+                $('#smf-form-gw-srv-visible-activate-submit').prop('disabled', active);
+
+                $('#smf-form-gw-srv-visible-delete-submit').removeClass('disabled');
+                $('#smf-form-gw-srv-visible-delete-submit').prop('disabled', false);
+            });
+
+            table_active.on('select', function (e, datatable, type, indexes) {
+                var rowData = datatable.rows(indexes).data().toArray()[0];
+                var rows = table_active.rows(indexes).data();
+                console.log("select: " + rows.toArray() + ", length:" + rowData.length);
+                $('#smf-form-gw-srv-active-meter').val(rowData[2]);    //  binary
+                $('#smf-form-gw-srv-active-tag').val(rowData[11]);     //  gw
+                var active = rowData[10];
+                //alert(rowData[1] + " " + active);
+                if (!active) {
+                    $('#smf-form-gw-srv-active-deactivate-submit').addClass('disabled');
+                }
+                else {
+                    $('#smf-form-gw-srv-active-deactivate-submit').removeClass('disabled');
+                    $('#smf-form-gw-srv-active-delete-meter').html(rowData[1]);
+                }
+                $('#smf-form-gw-srv-active-deactivate-submit').prop('disabled', !active);
+
+                $('#smf-form-gw-srv-active-delete-submit').removeClass('disabled');
+                $('#smf-form-gw-srv-active-delete-submit').prop('disabled', false);
             });
 
             function start_ws() {
@@ -831,9 +901,6 @@
                                         $('#smf-form-gw-update').addClass('disabled');
                                         $('#smf-form-gw-delete').addClass('disabled');
                                         $('#smf-form-gw-reboot').addClass('disabled');
-                                        //$('#smf-form-gw-srv-visible').addClass('disabled');
-                                        //$('#smf-form-gw-srv-active').addClass('disabled');
-
                                         return true;
                                     }
                                     return false;
@@ -958,17 +1025,29 @@
                                 }
                                 else if (obj.section == 'root-visible-devices') {
                                     var lastSeen = new Date(obj.rec.values.timestamp.substring(0, 19));
-                                    var node = table_visible.row.add([obj.rec.values.number, obj.rec.values.ident, obj.rec.values.meterId, obj.rec.values.meter, obj.rec.values.maker, lastSeen, obj.rec.values.class, obj.rec.srv, obj.rec.values.type]).draw().node();
+                                    var node = table_visible.row.add([obj.rec.values.number, obj.rec.values.ident, obj.rec.values.meterId, obj.rec.values.meter, obj.rec.values.maker, lastSeen, obj.rec.values.class, obj.rec.srv, obj.rec.values.type, true, false, obj.rec.gw]).draw().node();
                                     if (obj.rec.values.type < 2) {
                                         $(node).addClass('bg-success');
                                     }
                                 }
                                 else if (obj.section == 'root-active-devices') {
                                     var lastSeen = new Date(obj.rec.values.timestamp.substring(0, 19));
-                                    var node = table_active.row.add([obj.rec.values.number, obj.rec.values.ident, obj.rec.values.meterId, obj.rec.values.meter, obj.rec.values.maker, lastSeen, obj.rec.values.class, obj.rec.srv, obj.rec.values.type]).draw().node();
+                                    var node = table_active.row.add([obj.rec.values.number, obj.rec.values.ident, obj.rec.values.meterId, obj.rec.values.meter, obj.rec.values.maker, lastSeen, obj.rec.values.class, obj.rec.srv, obj.rec.values.type, false, true, obj.rec.gw]).draw().node();
                                     if (obj.rec.values.type < 2) {
                                         $(node).addClass('bg-success');
                                     }
+                                    //  find the corresponding visible entry  
+                                    table_visible.row(function (idx, data, node) {
+                                        if (data[1] == obj.rec.values.ident) {
+                                            $(node).removeClass('bg-success').addClass('bg-warning');
+                                            var r = table_visible.row(node);
+                                            var d = r.data();
+                                            d[10] = true;
+                                            r.data(d);
+                                            return true;
+                                        }
+                                        return false;
+                                    });
                                 }
                                 else if (obj.section == 'root-device-id') {
                                     var node = table_fw.row.add([obj.rec.values.number, obj.rec.values.firmware, obj.rec.values.version, obj.rec.values.active, obj.rec.srv]).draw().node();
@@ -1044,14 +1123,15 @@
                             }
                         }
                         else if (obj.channel == 'attention.code') {
-                            //alert(obj.rec.values);
+                            //  ToDo: use a toast (requires bootstrap 4.2)
                             if (obj.section == '8181c7c7fd00') {
                                 //  OK
+                                $('#attention-msg').removeClass('bg-warning').addClass('bg-success');
                                 $('#attention-msg').text(obj.rec.srv + ": " + obj.rec.values);
                             }
                             else {
                                 //  not OK
-                                $('#attention-msg').addClass('bg-warning');
+                                $('#attention-msg').removeClass('bg-success').addClass('bg-warning');
                                 $('#attention-msg').text(obj.rec.srv + ": " + obj.rec.values);
                             }
                         }
@@ -1100,7 +1180,7 @@
 
             $('#smf-form-gw-reboot').on("click", function (event) {
                 event.preventDefault();
-                console.log('reboot: ' + $('#smf-form-gw').serialize());
+                //console.log('reboot: ' + $('#smf-form-gw').serialize());
 
                 _ws.send(JSON.stringify({
                     cmd: "config:gateway", channel: "set.proc.param", key: [$('#smf-form-gw-tag').val()], params: [], section: ["reboot"]
@@ -1249,6 +1329,48 @@
                 else {
                     $('#smf-gw-tab-ipt').addClass('disabled');
                 }
+            });
+
+            $('#smf-form-gw-srv-visible-activate-submit').on("click", function (event) {
+                event.preventDefault();
+                var formArray = jQuery('#smf-form-gw-srv-visible-activate').serializeArray();
+                var formData = JSON.parse(JSON.stringify(formArray)); // store json object
+
+                var gw = formArray.find(function (elem) {
+                    return (elem.name == "smf-form-gw-srv-visible-tag");
+                }).value;
+
+                _ws.send(JSON.stringify({
+                    cmd: "config:gateway", channel: "set.proc.param", key: [gw], params: formData, section: ["activate"]
+                }));
+            });
+
+            $('#smf-form-gw-srv-active-deactivate-submit').on("click", function (event) {
+                event.preventDefault();
+                var formArray = jQuery('#smf-form-gw-srv-active-deactivate').serializeArray();
+                var formData = JSON.parse(JSON.stringify(formArray)); // store json object
+
+                var gw = formArray.find(function (elem) {
+                    return (elem.name == "smf-form-gw-srv-active-tag");
+                }).value;
+
+                _ws.send(JSON.stringify({
+                    cmd: "config:gateway", channel: "set.proc.param", key: [gw], params: formData, section: ["deactivate"]
+                }));
+            });
+
+            $('#smf-form-gw-srv-visible-delete-submit').on("click", function (event) {
+                event.preventDefault();
+                var formArray = jQuery('#smf-form-gw-srv-visible-activate').serializeArray();
+                var formData = JSON.parse(JSON.stringify(formArray)); // store json object
+
+                var gw = formArray.find(function (elem) {
+                    return (elem.name == "smf-form-gw-srv-visible-tag");
+                }).value;
+
+                _ws.send(JSON.stringify({
+                    cmd: "config:gateway", channel: "set.proc.param", key: [gw], params: formData, section: ["delete"]
+                }));
             });
 
             //var g_1 = d3.select("mem-progress-1").append("svg").append('g').attr('transform', 'translate(' + boxSize / 2 + ',' + boxSize / 2 + ')');
