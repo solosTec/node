@@ -17,8 +17,71 @@ namespace node
 	{
 
 		std::uint32_t evt_timer();
-		std::uint32_t evt_power_on();
+
+		/**
+		 * voltage recovery
+		 */
+		std::uint32_t evt_voltage_recovery();
+
+		/**
+		 * If possible lof this event in case of power outage.
+		 */
 		std::uint32_t evt_power_outage();
+
+		/** @brief 0x00100001
+		 *
+		 * First entry after power recovery
+		 */
+		std::uint32_t evt_power_recovery();
+
+		/** @brief 0x00100003
+		 *
+		 * Firmware successful activated
+		 */
+		std::uint32_t evt_firmware_activated();
+
+		/** @brief 0x00100004
+		 *
+		 * Firmware not working
+		 */
+		std::uint32_t evt_firmware_failure();
+
+		/** @brief 0x00100005
+		 *
+		 * Firmware hash error
+		 */
+		std::uint32_t evt_firmware_hash_error();
+
+		/** @brief 0x00100006
+		 *
+		 * Firmware type error (wrong hardware)
+		 */
+		std::uint32_t evt_firmware_type_error();
+
+		/** @brief 0x00100007
+		 *
+		 * Firmware upload OK
+		 */
+		std::uint32_t evt_firmware_upload_complete();
+
+		/** @brief 0x00800000
+		 *
+		 * Timer - cyclic logbook entry
+		 */
+		std::uint32_t evt_timer();
+
+		/** @brief 0x00800004
+		 *
+		 * cyclic reset of a communication module
+		 */
+		std::uint32_t evt_cyclic_reset();
+
+		/** @brief 0x00800010
+		 *
+		 * set system time by user
+		 */
+		std::uint32_t evt_system_time_set();
+
 		std::uint32_t evt_watchdog();
 		std::uint32_t evt_push_succes();
 		std::uint32_t evt_push_failed();

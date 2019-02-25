@@ -294,6 +294,39 @@ namespace node
 		//
 		const static obis	DEFINE_OBIS_CODE(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);
 
+		//
+		//	source for log entries
+		//
+		const static obis	DEFINE_OBIS_CODE(81, 01, 00, 00, 00, FF, LOG_SOURCE_ETH_AUX);
+		const static obis	DEFINE_OBIS_CODE(81, 02, 00, 00, 00, FF, LOG_SOURCE_ETH_CUSTOM);
+		const static obis	DEFINE_OBIS_CODE(81, 03, 00, 00, 00, FF, LOG_SOURCE_RS232);
+		const static obis	DEFINE_OBIS_CODE(81, 04, 00, 00, 00, FF, LOG_SOURCE_ETH);	//	WAN interface
+		const static obis	DEFINE_OBIS_CODE(81, 05, 00, 00, 00, FF, LOG_SOURCE_eHZ);	
+		const static obis	DEFINE_OBIS_CODE(81, 06, 00, 00, 00, FF, LOG_SOURCE_wMBUS);
+		const static obis	DEFINE_OBIS_CODE(81, 41, 00, 00, 00, FF, LOG_SOURCE_IP);
+		const static obis	DEFINE_OBIS_CODE(81, 42, 00, 00, 00, 01, LOG_SOURCE_SML_EXT);
+		const static obis	DEFINE_OBIS_CODE(81, 42, 00, 00, 00, 02, LOG_SOURCE_SML_CUSTOM);
+		const static obis	DEFINE_OBIS_CODE(81, 42, 00, 00, 00, 03, LOG_SOURCE_SML_SERVICE);
+		const static obis	DEFINE_OBIS_CODE(81, 42, 00, 00, 00, 04, LOG_SOURCE_SML_WAN);
+		const static obis	DEFINE_OBIS_CODE(81, 42, 00, 00, 00, 05, LOG_SOURCE_SML_eHZ);
+		const static obis	DEFINE_OBIS_CODE(81, 42, 00, 00, 00, 06, LOG_SOURCE_SML_wMBUS);
+		const static obis	DEFINE_OBIS_CODE(81, 45, 00, 00, 00, FF, LOG_SOURCE_PUSH_SML);
+		const static obis	DEFINE_OBIS_CODE(81, 46, 00, 00, 00, FF, LOG_SOURCE_PUSH_IPT_SOURCE);
+		const static obis	DEFINE_OBIS_CODE(81, 47, 00, 00, 00, FF, LOG_SOURCE_PUSH_IPT_SINK);
+		const static obis	DEFINE_OBIS_CODE(81, 48, 00, 00, 00, 01, LOG_SOURCE_WAN_DHCP);
+		const static obis	DEFINE_OBIS_CODE(81, 48, 00, 00, 00, 02, LOG_SOURCE_WAN_IP);
+		const static obis	DEFINE_OBIS_CODE(81, 48, 00, 00, 00, 03, LOG_SOURCE_WAN_PPPoE);
+		const static obis	DEFINE_OBIS_CODE(81, 49, 00, 00, 00, 01, LOG_SOURCE_WAN_IPT_CONTROLLER);
+		const static obis	DEFINE_OBIS_CODE(81, 49, 00, 00, 00, 02, LOG_SOURCE_WAN_IPT);
+		const static obis	DEFINE_OBIS_CODE(81, 4A, 00, 00, 00, FF, LOG_SOURCE_WAN_NTP);
+		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 00, 00, 01, LOG_SOURCE_LOG);
+		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 00, 00, 02, LOG_SOURCE_SCM);	//	internal software function
+		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 00, 00, 03, LOG_SOURCE_UPDATE);
+		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 00, 00, 04, LOG_SOURCE_SMLC);
+
+		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 00, 00, 0C, LOG_SOURCE_LEDIO);
+
+		const static obis	DEFINE_OBIS_CODE(81, 81, 10, 00, 00, 14, LOG_SOURCE_WANPLC);
 
 		/**
 		 * @return a short description of the OBIS code if available

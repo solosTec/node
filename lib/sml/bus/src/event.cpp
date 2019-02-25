@@ -52,11 +52,38 @@ namespace node
 		std::uint32_t evt_timer() {
 			return make_op_event(0x00, 0x08, 0x00);
 		}
-		std::uint32_t evt_power_on() {
-			return make_op_event(0x00, 0x01, 0x01);
+		std::uint32_t evt_voltage_recovery() {
+			return make_op_event(0x00, 0x01, 0x23);
 		}
 		std::uint32_t evt_power_outage() {
 			return make_op_event(0x00, 0x01, 0x02);
+		}
+		std::uint32_t evt_power_recovery() {
+			return make_op_event(0x00, 0x01, 0x01);
+		}
+		std::uint32_t evt_firmware_activated() {
+			return make_op_event(0x00, 0x01, 0x03);
+		}
+		std::uint32_t evt_firmware_failure() {
+			return make_op_event(0x00, 0x01, 0x04);
+		}
+		std::uint32_t evt_firmware_hash_error() {
+			return make_op_event(0x00, 0x01, 0x05);
+		}
+		std::uint32_t evt_firmware_type_error() {
+			return make_op_event(0x00, 0x01, 0x06);
+		}
+		std::uint32_t evt_firmware_upload_complete() {
+			return make_op_event(0x00, 0x01, 0x07);
+		}
+		std::uint32_t evt_timer() {
+			return make_op_event(0x00, 0x80, 0x00);
+		}
+		std::uint32_t evt_cyclic_reset() {
+			return make_op_event(0x00, 0x80, 0x04);
+		}
+		std::uint32_t evt_system_time_set() {
+			return make_op_event(0x00, 0x08, 0x10);
 		}
 		std::uint32_t evt_watchdog() {
 			return make_op_event(0x00, 0x08, 0x05);
