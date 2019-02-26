@@ -76,9 +76,6 @@ namespace node
 		std::uint32_t evt_firmware_upload_complete() {
 			return make_op_event(0x00, 0x01, 0x07);
 		}
-		std::uint32_t evt_timer() {
-			return make_op_event(0x00, 0x80, 0x00);
-		}
 		std::uint32_t evt_cyclic_reset() {
 			return make_op_event(0x00, 0x80, 0x04);
 		}
