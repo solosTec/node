@@ -215,23 +215,37 @@ namespace node
 				&& (type < 2)	//	 meter type is SRV_MBUS or SRV_SERIAL
 				&& std::get<3>(tpl).size() == 1)	//	TGateway key has correct size (and is not empty)
 			{
-				CYNG_LOG_TRACE(logger_, "update TMeter " << ident);
+				CYNG_LOG_TRACE(logger_, "search for "
+					<< ident 
+					<< " in TMeter table with " 
+					<< db_.size("TMeter") 
+					<< " record(s)");
+
+				//
+				//	get the tag from the TGateway table key
+				//
+				auto const gw_tag = cyng::value_cast(std::get<3>(tpl).at(0), boost::uuids::nil_uuid());
 
 				db_.access([&](cyng::store::table* tbl_meter, cyng::store::table const* tbl_cfg)->void {
 					bool found{ false };
 					tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
 
 						const auto rec_ident = cyng::value_cast<std::string>(rec["ident"], "");
-						CYNG_LOG_TRACE(logger_, "compare " << ident << " / " << rec_ident);
+						//CYNG_LOG_DEBUG(logger_, "compare " << ident << " / " << rec_ident);
 						if (boost::algorithm::equals(ident, rec_ident)) {
-							//	abort loop
-							found = true;
+							//	abort loop if the same gw key is used
+							const auto meter_gw_tag = cyng::value_cast(rec["gw"], boost::uuids::nil_uuid());
+							CYNG_LOG_DEBUG(logger_, ident << " compare " << meter_gw_tag << " / " << gw_tag);
+							found = (meter_gw_tag == gw_tag);
 						}
 
 						//	continue loop
 						return !found;
 					});
 
+					//
+					//	insert meter if not found
+					//
 					if (!found) {
 						const auto tag = uidgen_();
 
