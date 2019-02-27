@@ -102,7 +102,12 @@ namespace node
 		/**
 		 * @return B/sec for the specified baudrate
 		 */
-		std::uint32_t get_value(baudrate);
+		std::uint32_t get_speed(baudrate);
+
+		/**
+		 * @return the baudrate code for the specified speed
+		 */
+		baudrate get_baudrate(std::uint32_t);
 
 		/**
 		 * adjust the value to a valid baudrate by implementing

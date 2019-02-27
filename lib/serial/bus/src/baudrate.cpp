@@ -11,7 +11,7 @@ namespace node
 {
 	namespace serial
 	{
-		std::uint32_t get_value(baudrate br)
+		std::uint32_t get_speed(baudrate br)
 		{
 			switch (br) {
 			case BR_50:	return 50u;
@@ -54,6 +54,51 @@ namespace node
 			}
 			return std::numeric_limits<std::uint32_t>::max();
 		}
+
+		baudrate get_baudrate(std::uint32_t speed)
+		{
+			switch (speed) {
+			case 50u:	return BR_50;
+			case 75u:	return BR_75;
+			case 110u:	return BR_110;
+			case 134u:	return BR_134;
+			case 150u:	return BR_150;
+			case 200u:	return BR_200;
+			case 300u:	return BR_300;
+
+			case 600u:	return BR_600;
+			case 1200u:	return BR_1200;
+			case 1800u:	return BR_1800;
+			case 2400u:	return BR_2400;
+			case 4800u:	return BR_4800;
+			case 9600u:	return BR_9600;
+			case 19200u: return BR_19200;
+			case 38400u: return BR_38400;
+
+			case 57600u:	return BR_57600;
+			case 115200u:	return BR_115200;
+			case 230400u:	return BR_230400;
+
+			case 460800u:	return BR_460800;
+			case 500000u:	return BR_500000;
+			case 576000u:	return BR_576000;
+			case 921600u:	return BR_921600;
+
+			case 1000000u:	return BR_1000000;
+			case 1152000u:	return BR_1152000;
+			case 1500000u:	return BR_1500000;
+			case 2000000u:	return BR_2000000;
+			case 2500000u:	return BR_2500000;
+			case 3000000u:	return BR_3000000;
+			case 3500000u:	return BR_3500000;
+			case 4000000u:	return BR_4000000;
+
+			default:
+				break;
+			}
+			return BR_INVALID;
+		}
+
 
 		std::uint32_t adjust_baudrate(std::uint32_t v)
 		{
