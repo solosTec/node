@@ -7,6 +7,7 @@
 
 #include <smf/sml/intrinsics/obis.h>
 #include <smf/sml/units.h>
+#include <cyng/io/io_buffer.h>
 #include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
 
@@ -299,6 +300,16 @@ namespace node
 		octet_type obis::to_buffer() const
 		{
 			return octet_type(value_.begin(), value_.end());
+		}
+
+		std::string obis::to_str() const
+		{
+			std::string s;
+			s.reserve(6);
+			for (const char c : value_) {
+				s += cyng::io::to_hex(c);
+			}
+			return s;
 		}
 
 		std::size_t obis::hash() const

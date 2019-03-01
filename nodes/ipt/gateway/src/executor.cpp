@@ -34,7 +34,7 @@ namespace node
 			, config_db_(config_db)
 			, vm_(vm)
 		{
-			subscribe("devices");
+			subscribe("mbus-devices");
 			subscribe("push.ops");
 
 #ifdef _DEBUG
@@ -91,7 +91,7 @@ namespace node
 			, std::uint64_t gen
 			, boost::uuids::uuid source)
 		{
-			if (boost::algorithm::equals(table->meta().get_name(), "devices")) {
+			if (boost::algorithm::equals(table->meta().get_name(), "mbus-devices")) {
 
 			}
 			else if (boost::algorithm::equals(table->meta().get_name(), "push.ops")) {
@@ -124,7 +124,7 @@ namespace node
 			, cyng::table::key_type const& key
 			, boost::uuids::uuid source)
 		{
-			if (boost::algorithm::equals(table->meta().get_name(), "devices")) {
+			if (boost::algorithm::equals(table->meta().get_name(), "mbus-devices")) {
 
 			}
 			else if (boost::algorithm::equals(table->meta().get_name(), "push.ops")) {
@@ -138,7 +138,7 @@ namespace node
 		void executor::sig_clr(cyng::store::table const* table
 			, boost::uuids::uuid source)
 		{
-			if (boost::algorithm::equals(table->meta().get_name(), "devices")) {
+			if (boost::algorithm::equals(table->meta().get_name(), "mbus-devices")) {
 
 			}
 			else if (boost::algorithm::equals(table->meta().get_name(), "push.ops")) {
@@ -161,7 +161,7 @@ namespace node
 				<< " "
 				<< table->meta().to_param(attr).first);
 
-			if (boost::algorithm::equals(table->meta().get_name(), "devices")) {
+			if (boost::algorithm::equals(table->meta().get_name(), "mbus-devices")) {
 
 			}
 			else if (boost::algorithm::equals(table->meta().get_name(), "push.ops")) {
@@ -176,7 +176,7 @@ namespace node
 		{
 #ifdef _DEBUG
 			//	insert demo device
-			config_db_.insert("devices"
+			config_db_.insert("mbus-devices"
 				, cyng::table::key_generator(sml::to_gateway_srv_id(mac))
 				, cyng::table::data_generator(std::chrono::system_clock::now()
 					, "---"
@@ -193,7 +193,7 @@ namespace node
 				, 1	//	generation
 				, tag);
 
-			config_db_.insert("devices"
+			config_db_.insert("mbus-devices"
 				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }))
 				, cyng::table::data_generator(std::chrono::system_clock::now()
 					, "---"
@@ -210,7 +210,7 @@ namespace node
 				, 1	//	generation
 				, tag);
 
-			config_db_.insert("devices"
+			config_db_.insert("mbus-devices"
 				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x73, 0x31, 0x45, 0x04, 0x01, 0x02 }))
 				, cyng::table::data_generator(std::chrono::system_clock::now()
 					, "---"
@@ -224,6 +224,16 @@ namespace node
 					, cyng::buffer_t{}	//	aes
 					, "user"
 					, "pwd")
+				, 1	//	generation
+				, tag);
+
+			auto const b = config_db_.insert("iec62056-21-devices"
+				, cyng::table::key_generator("1EMH0005513895")
+				, cyng::table::data_generator("1EMH0005513895"
+					, "demo device"
+					, 9600u
+					, "87654321"
+					, "00000000")
 				, 1	//	generation
 				, tag);
 
@@ -241,17 +251,6 @@ namespace node
 					, 0)
 				, 1	//	generation
 				, tag);
-
-			//config_db_.insert("push.ops"
-			//	, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 3u)
-			//	, cyng::table::data_generator(static_cast<std::uint32_t>(1800u)	//	30 min
-			//		, static_cast<std::uint32_t>(12u)	//	delay
-			//		, "water@solostec"
-			//		, static_cast<std::uint8_t>(1u)		//	source
-			//		, static_cast<std::uint8_t>(3u)		//	profile
-			//		, 0)
-			//	, 1	//	generation
-			//	, tag);
 
 			CYNG_LOG_INFO(logger_, "table push.ops has " << config_db_.size("push.ops") << " entries");
 

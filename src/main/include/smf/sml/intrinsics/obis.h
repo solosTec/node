@@ -132,6 +132,13 @@ namespace node
 			octet_type to_buffer() const;
 
 			/**
+			 * Create a hex string without spaces.
+			 *
+			 * @see node::sml::to_hex(obis const&);
+			 */
+			std::string to_str() const;
+
+			/**
 			 * Calculate a hash value of 64 bits
 			 */
 			std::size_t hash() const;

@@ -979,7 +979,7 @@ namespace node
 		{
 
 			BOOST_ASSERT(tbl != nullptr);
-			BOOST_ASSERT(tbl->meta().get_name() == "devices");
+			BOOST_ASSERT(tbl->meta().get_name() == "mbus-devices");
 
 			//	1. list: 81, 81, 10, 06, 01, FF
 			//	2. list: 81, 81, 10, 06, 02, FF
@@ -997,7 +997,7 @@ namespace node
 						parameter_tree(OBIS_CODE(81, 81, C7, 82, 02, FF), make_value(cyng::value_cast<std::string>(rec["class"], ""))),
 						//	timestamp (01 00 00 09 0B 00 )
 						parameter_tree(OBIS_CURRENT_UTC, make_value(cyng::value_cast(rec["lastSeen"], std::chrono::system_clock::now())))
-						})));
+					})));
 
 					//
 					//	start new list
@@ -1009,9 +1009,7 @@ namespace node
 					}
 					BOOST_ASSERT_MSG(list.size() < 0xFA, "visible device list to large");
 				}
-
-				//continue
-				return true;
+				return true;	//	continue
 			});
 
 			//
@@ -1108,6 +1106,76 @@ namespace node
 
 		}
 
+		std::size_t res_generator::get_proc_1107_if(cyng::object trx
+			, cyng::object server_id
+			, cyng::store::table const* tbl
+			, cyng::object active
+			, cyng::object loop_time
+			, cyng::object retries
+			, cyng::object min_timeout
+			, cyng::object max_timeout
+			, cyng::object data_rate
+			, cyng::object rs485
+			, cyng::object protocol_mode
+			, cyng::object auto_activation
+			, cyng::object time_grid
+			, cyng::object time_sync
+			, cyng::object max_variation)
+		{
+			BOOST_ASSERT(tbl != nullptr);
+			BOOST_ASSERT(tbl->meta().get_name() == "iec62056-21-devices");
+
+			//
+			//	collect all IEC 62056 devices
+			//
+			cyng::tuple_t tpl;	// current list
+			tbl->loop([&](cyng::table::record const& rec)->bool {
+
+				BOOST_ASSERT(tpl.size() < 0x0a);	//	specification
+				tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, tpl.size() + 1), {
+					parameter_tree(OBIS_CODE(81, 81, C7, 93, 0A, FF), make_value(rec["meterID"])),	//	meter id
+					parameter_tree(OBIS_CODE(81, 81, C7, 93, 0B, FF), make_value(rec["baudrate"])),	//	baudrate
+					parameter_tree(OBIS_CODE(81, 81, C7, 93, 0C, FF), make_value(rec["address"])),
+					parameter_tree(OBIS_CODE(81, 81, C7, 93, 0D, FF), make_value(rec["p1"])),
+					parameter_tree(OBIS_CODE(81, 81, C7, 93, 0E, FF), make_value(rec["w5"]))
+				})));
+
+				return true;	//	continue
+			});
+
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id	//	server id  
+					, OBIS_CODE_IF_1107	//	path entry - 81 81 C7 93 01 FF
+					, child_list_tree(OBIS_CODE_IF_1107, {
+
+						parameter_tree(OBIS_CODE_IF_1107_ACTIVE, make_value(active)),	//	active
+						parameter_tree(OBIS_CODE_IF_1107_LOOP_TIME, make_value(loop_time)),
+						parameter_tree(OBIS_CODE_IF_1107_RETRIES, make_value(retries)),
+						parameter_tree(OBIS_CODE_IF_1107_MIN_TIMEOUT, make_value(min_timeout)),
+						parameter_tree(OBIS_CODE_IF_1107_MAX_TIMEOUT, make_value(max_timeout)),
+						parameter_tree(OBIS_CODE_IF_1107_MAX_DATA_RATE, make_value(data_rate)),
+						parameter_tree(OBIS_CODE_IF_1107_RS485, make_value(rs485)),
+						parameter_tree(OBIS_CODE_IF_1107_PROTOCOL_MODE, make_value(protocol_mode)),
+
+						//	81 81 C7 93 09 FF             
+						child_list_tree(OBIS_CODE_IF_1107_METER_LIST, tpl),
+
+						parameter_tree(OBIS_CODE_IF_1107_AUTO_ACTIVATION, make_value(auto_activation)),
+						parameter_tree(OBIS_CODE_IF_1107_TIME_GRID, make_value(time_grid)),	//	time grid of load profile readout in seconds
+						parameter_tree(OBIS_CODE_IF_1107_TIME_SYNC, make_value(time_sync)),	//	time sync in seconds
+						parameter_tree(OBIS_CODE_IF_1107_MAX_VARIATION, make_value(max_variation))	//	seconds
+
+			}))));
+
+		}
+
 		std::size_t res_generator::get_proc_push_ops(cyng::object trx
 			, cyng::object server_id
 			, const cyng::store::table* tbl)
@@ -1151,12 +1219,12 @@ namespace node
 					//	* 81 81 C7 8A 43 FF == Installationsparameter
 					//	* 81 81 C7 8A 44 FF == list of visible sensors/actors
 					tree(OBIS_CODE(81, 81, C7, 8A, 04, FF)
-					, make_value(OBIS_CODE(81, 81, C7, 8A, 42, FF))
-					, {
-						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 81, FF), make_value(rec["serverID"])),
-						//	15 min period (load profile)
-						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_PROFILE_15_MINUTE)),
-						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 82, FF), make_value())
+						, make_value(OBIS_CODE(81, 81, C7, 8A, 42, FF))
+						, {
+							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 81, FF), make_value(rec["serverID"])),
+							//	15 min period (load profile)
+							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_PROFILE_15_MINUTE)),
+							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 82, FF), make_value())
 					}),
 					parameter_tree(OBIS_CODE(81, 47, 17, 07, 00, FF), make_value(rec["target"])),		//	Targetname
 					//	push service: 
@@ -1165,7 +1233,7 @@ namespace node
 					//	* 81 81 C7 8A 23 FF == KNX ID 
 					parameter_tree(OBIS_CODE(81, 49, 00, 00, 10, FF), make_value(OBIS_CODE(81, 81, C7, 8A, 21, FF)))
 
-					})));
+				})));
 
 				return true;	//	continue
 			});

@@ -11,6 +11,8 @@
 #include "tasks/network.h"
 #include "../../../../nodes/shared/db/db_meta.h"
 #include <smf/sml/srv_id_io.h>
+#include <smf/sml/obis_io.h>
+#include <smf/sml/obis_db.h>
 #include <smf/sml/status.h>
 
 #include <cyng/log.h>
@@ -24,6 +26,7 @@
 #include <cyng/dom/tree_walker.h>
 #include <cyng/json.h>
 #include <cyng/value_cast.hpp>
+#include <cyng/numeric_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/vector_cast.hpp>
 #include <cyng/sys/mac.h>
@@ -67,7 +70,11 @@ namespace node
 		, cyng::mac48
 		, bool accept_all
 		, std::map<int, std::string> gpio_list);
-	void init_config(cyng::logging::log_ptr logger, cyng::store::db&, boost::uuids::uuid, cyng::mac48);
+	void init_config(cyng::logging::log_ptr logger
+		, cyng::store::db&
+		, boost::uuids::uuid
+		, cyng::mac48
+		, cyng::reader<cyng::object> const&);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 		: pool_size_(pool_size)
@@ -247,7 +254,7 @@ namespace node
 						cyng::param_factory("pwd", "operator")
 					))
 
-					//	data interface
+					//	hardware
 					, cyng::param_factory("hardware", cyng::tuple_factory(
 						cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF)
 						cyng::param_factory("model", "virtual.gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
@@ -294,6 +301,21 @@ namespace node
 						cyng::param_factory("speed", 921600),
 						cyng::param_factory("transparent-mode", false),
 						cyng::param_factory("transparent-port", 12002)
+					))
+
+					, cyng::param_factory("if-1107", cyng::tuple_factory(
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_ACTIVE.to_str(), true),	//	active
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str(), 0),	//	loop timeout in seconds
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_RETRIES.to_str(), 0),	//	retries
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str(), 200),	//	min. timeout (milliseconds)
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str(), 5000),	//	max. timeout (milliseconds)
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str(), 10240),	//	max. databytes
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_RS485.to_str(), true),	//	 true = RS485, false = RS232
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str(), 2),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str(), true),	//	auto activation
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str(), 900),
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str(), 14400),
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str(), 9)	//	max. variation in seconds
 					))
 
 					, cyng::param_factory("ipt", cyng::vector_factory({
@@ -537,7 +559,7 @@ namespace node
 		 * global data cache
 		 */
 		cyng::store::db config_db;
-		init_config(logger, config_db, tag, r.first);
+		init_config(logger, config_db, tag, r.first, dom);
 
 		//
 		//	connect to ipt master
@@ -677,12 +699,20 @@ namespace node
 			, gpio_list);
 	}
 
-	void init_config(cyng::logging::log_ptr logger, cyng::store::db& config, boost::uuids::uuid tag, cyng::mac48 mac)
+	void init_config(cyng::logging::log_ptr logger
+		, cyng::store::db& config
+		, boost::uuids::uuid tag
+		, cyng::mac48 mac
+		, cyng::reader<cyng::object> const& dom)
 	{
 		CYNG_LOG_TRACE(logger, "init configuration db");
 
-		if (!create_table(config, "devices")) {
+		if (!create_table(config, "mbus-devices")) {
 			CYNG_LOG_FATAL(logger, "cannot create table devices");
+		}
+
+		if (!create_table(config, "iec62056-21-devices")) {
+			CYNG_LOG_FATAL(logger, "cannot create table iec62056-21-devices");
 		}
 
 		if (!create_table(config, "push.ops"))
@@ -707,6 +737,62 @@ namespace node
 			config.insert("_Config", cyng::table::key_generator("gpio.47"), cyng::table::data_generator(std::size_t(cyng::async::NO_TASK)), 1, tag);
 			config.insert("_Config", cyng::table::key_generator("gpio.50"), cyng::table::data_generator(std::size_t(cyng::async::NO_TASK)), 1, tag);
 			config.insert("_Config", cyng::table::key_generator("gpio.53"), cyng::table::data_generator(std::size_t(cyng::async::NO_TASK)), 1, tag);
+
+			//
+			//	get if-1107 default configuration
+			//
+			auto const active = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str()), true);
+			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_ACTIVE.to_str() << " (OBIS_CODE_IF_1107_ACTIVE): " << (active ? "true" : "false"));
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_ACTIVE.to_str()), cyng::table::data_generator(active), 1, tag);
+
+			auto const loop_time = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str()), 0u);
+			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str() << " (OBIS_CODE_IF_1107_LOOP_TIME): " << loop_time);
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str()), cyng::table::data_generator(loop_time), 1, tag);
+
+			auto const retries = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_RETRIES.to_str()), 0u);
+			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_RETRIES.to_str() << " (OBIS_CODE_IF_1107_RETRIES): " << retries);
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_RETRIES.to_str()), cyng::table::data_generator(retries), 1, tag);
+
+			auto const min_timeout = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str()), 200u);
+			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str() << " (OBIS_CODE_IF_1107_MIN_TIMEOUT): " << min_timeout << " milliseconds");
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str()), cyng::table::data_generator(min_timeout), 1, tag);
+
+			auto const max_timeout = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str()), 5000u);
+			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str() << " (OBIS_CODE_IF_1107_MAX_TIMEOUT): " << max_timeout << " milliseconds");
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str()), cyng::table::data_generator(max_timeout), 1, tag);
+
+			auto const max_data_rate = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str()), 10240u);
+			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str() << " (OBIS_CODE_IF_1107_MAX_DATA_RATE): " << max_data_rate);
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str()), cyng::table::data_generator(max_data_rate), 1, tag);
+
+			auto const rs485 = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_RS485.to_str()), true);
+			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_RS485.to_str() << " (OBIS_CODE_IF_1107_RS485): " << (rs485 ? "true" : "false"));
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_RS485.to_str()), cyng::table::data_generator(rs485), 1, tag);
+
+			auto const protocol_mode = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str()), 2u);
+			if (protocol_mode > 4) {
+				CYNG_LOG_WARNING(logger, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str() << " (OBIS_CODE_IF_1107_PROTOCOL_MODE out of range): " << protocol_mode);
+			}
+			else {
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str() << " (OBIS_CODE_IF_1107_PROTOCOL_MODE): " << protocol_mode << " - " << char('A' + protocol_mode));
+			}
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str()), cyng::table::data_generator(protocol_mode), 1, tag);
+
+			auto const auto_activation = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str()), true);
+			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str() << " (OBIS_CODE_IF_1107_AUTO_ACTIVATION): " << (auto_activation ? "true" : "false"));
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str()), cyng::table::data_generator(auto_activation), 1, tag);
+
+			auto const time_grid = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str()), 900u);
+			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_TIME_GRID.to_str() << " (OBIS_CODE_IF_1107_TIME_GRID): " << time_grid << " seconds, " << (time_grid / 60) << " minutes");
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str()), cyng::table::data_generator(time_grid), 1, tag);
+
+			auto const time_sync = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str()), 14400u);
+			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str() << " (OBIS_CODE_IF_1107_TIME_SYNC): " << time_sync << " seconds, " << (time_sync / 3600) << " h");
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str()), cyng::table::data_generator(time_sync), 1, tag);
+
+			auto const max_variation = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str()), 9u);
+			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str() << " (OBIS_CODE_IF_1107_MAX_VARIATION): " << max_variation << " seconds");
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str()), cyng::table::data_generator(max_variation), 1, tag);
 		}
 		
 	}

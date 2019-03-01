@@ -60,6 +60,13 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 14, 03, FF, CLASS_OP_LSM_JOB);//	Schaltauftrags ID ((octet string)	
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 14, 20, FF, CLASS_OP_LSM_POSITION);	//	current position
 
+		const static obis	DEFINE_OBIS_CODE(00, B0, 00, 02, 00, 00, CLASS_MBUS);
+		const static obis	DEFINE_OBIS_CODE(00, B0, 00, 02, 00, 01, CLASS_MBUS_RO_INTERVAL);	//	readout interval in seconds % 3600 (33 36 30 30)
+		const static obis	DEFINE_OBIS_CODE(00, B0, 00, 02, 00, 02, CLASS_MBUS_SEARCH_INTERVAL);	//	search interval in seconds % 0 (30)
+		const static obis	DEFINE_OBIS_CODE(00, B0, 00, 02, 00, 03, CLASS_MBUS_SEARCH_DEVICE);	//	search device now and by restart	% True(54 72 75 65)
+		const static obis	DEFINE_OBIS_CODE(00, B0, 00, 02, 00, 04, CLASS_MBUS_AUTO_ACTICATE);	//	automatic activation of meters     % False(46 61 6C 73 65)
+		const static obis	DEFINE_OBIS_CODE(00, B0, 00, 02, 00, 05, CLASS_MBUS_BITRATE);		//	used baud rates(bitmap) % 82 (38 32)
+
 		//	Identifikationsnummer 1.1 - comes as unsigned int with 3 bytes (this is the server ID)
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 00, FF, SERVER_ID_1_1);
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 00, 01, FF, SERVER_ID_1_2);		//	Identifikationsnummer 1.2
@@ -156,11 +163,31 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 01, FF, CODE_ROOT_NTP);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 10, FF, CODE_ROOT_DEVICE_TIME);	//	device time
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 20, FF, CODE_ROOT_DATA_COLLECTOR);	//	properties of data collector (Eigenschaften eines Datensammlers)
-		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 00, FF, CODE_ROOT_1107_IF);	 //	1107 interface
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 02, FF, CODE_AVERAGE_TIME_MS);	//	average time between two received data records (milliseconds)
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 83, 82, 01, CODE_REBOOT);	//	request reboot
 
-		//
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 00, FF, CODE_IF_1107);	 //	1107 interface (IEC 62056-21)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 01, FF, CODE_IF_1107_ACTIVE); //	(bool) - if true 1107 interface active
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 02, FF, CODE_IF_1107_LOOP_TIME); //	(u) - Loop timeout in seconds
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 03, FF, CODE_IF_1107_RETRIES); //	(u) - Retry count
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 04, FF, CODE_IF_1107_MIN_TIMEOUT); //	(u) - Minimal answer timeout(300)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 05, FF, CODE_IF_1107_MAX_TIMEOUT); //	(u) - Maximal answer timeout(5000)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 06, FF, CODE_IF_1107_MAX_DATA_RATE); //	(u) - Maximum data bytes(10240)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 07, FF, CODE_IF_1107_RS485); //	(bool) - if true RS 485, otherwise RS 323
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 08, FF, CODE_IF_1107_PROTOCOL_MODE); //	(u) - Protocol mode(A ... D)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 09, FF, CODE_IF_1107_METER_LIST); // Liste der abzufragenden 1107 Zähler
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 10, FF, CODE_IF_1107_AUTO_ACTIVATION); //(True)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 11, FF, CODE_IF_1107_TIME_GRID); //	time grid of load profile readout in seconds
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 13, FF, CODE_IF_1107_TIME_SYNC); //	time sync in seconds
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 14, FF, CODE_IF_1107_MAX_VARIATION); //(seconds)
+
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0A, FF, CODE_IF_1107_METER_ID); //	(octet)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0B, FF, CODE_IF_1107_BAUDRATE); //	(u)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0C, FF, CODE_IF_1107_ADDRESS); //	(octet)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0D, FF, CODE_IF_1107_P1); //	(octet)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0E, FF, CODE_IF_1107_W5); //	(octet)
+
+																								  //
 		//	Interfaces
 		//
 		const static obis	DEFINE_OBIS_CODE(81, 48, 17, 07, 00, FF, CODE_IF_LAN_DSL);	// see: 7.3.1.18 Datenstruktur zum Lesen / Setzen der LAN/DSL-Parameter
@@ -168,10 +195,10 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 04, 0D, 07, 00, FF, CODE_IF_GPRS);
 		const static obis	DEFINE_OBIS_CODE(81, 02, 00, 07, 00, FF, CODE_IF_USER);	//	Endkundenschnittstelle:
 		//const static obis	DEFINE_OBIS_CODE(81, 49, 0D, 07, 00, FF, CODE_IF_IPT);	//	 same as OBIS_CODE_ROOT_IPT_PARAM
-		const static obis	DEFINE_OBIS_CODE(81, 05, 0D, 07, 00, FF, CODE_IF_EDL);		//	M-Bus EDL
+		const static obis	DEFINE_OBIS_CODE(81, 05, 0D, 07, 00, FF, CODE_IF_EDL);		//	M-Bus EDL (RJ10)
 		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 00, FF, CODE_IF_wMBUS);	//	Wireless M-BUS:
 		const static obis	DEFINE_OBIS_CODE(81, 04, 18, 07, 00, FF, CODE_IF_PLC);
-		const static obis	DEFINE_OBIS_CODE(81, 05, 0D, 07, 00, FF, CODE_IF_SyM2);	//	Erweiterungsschnittstelle:
+		//const static obis	DEFINE_OBIS_CODE(81, 05, 0D, 07, 00, FF, CODE_IF_SyM2);	//	same as CODE_IF_EDL
 		const static obis	DEFINE_OBIS_CODE(81, 00, 00, 09, 0B, 00, ACT_SENSOR_TIME);	//	actSensorTime - time delivered from sensor 
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 89, E1, FF, CLASS_OP_LOG);

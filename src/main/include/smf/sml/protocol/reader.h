@@ -66,8 +66,8 @@ namespace node
 				, cyng::tuple_t::const_iterator pos
 				, cyng::tuple_t::const_iterator end);
 
-			cyng::vector_t set_proc_param_request_push_op(std::vector<obis> const&, cyng::object obj);
-			cyng::vector_t set_proc_param_request_ipt_param(std::vector<obis> const&, cyng::object obj);
+			cyng::vector_t set_proc_param_request_push_op(obis, cyng::object obj);
+			cyng::vector_t set_proc_param_request_ipt_param(obis, cyng::object obj);
 
 			cyng::vector_t read_get_proc_parameter_response(std::vector<obis> path
 				, std::size_t depth
@@ -77,7 +77,6 @@ namespace node
 				, cyng::tuple_t::const_iterator end);
 			void read_get_proc_single_parameter(cyng::object);
 			void read_get_proc_multiple_parameters(cyng::object);
-			//void read_get_proc_memory(cyng::object);
 
 			cyng::vector_t read_tree_list(std::vector<obis> path, cyng::object, std::size_t depth);
 
@@ -101,7 +100,8 @@ namespace node
 
 			void read_period_list(std::vector<obis> const&, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_period_entry(std::vector<obis> const&, std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_param_tree(std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::param_map_t read_param_tree(std::size_t, cyng::object);
+			cyng::param_map_t read_param_tree(std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
 		private:
 			boost::uuids::random_generator rgn_;

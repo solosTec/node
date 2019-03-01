@@ -58,7 +58,7 @@ namespace node
 
 		readout& readout::set_value(obis code, cyng::object obj)
 		{
-			values_[to_hex(code)] = obj;
+			values_[code.to_str()] = obj;
 			return *this;
 		}
 
@@ -70,7 +70,7 @@ namespace node
 				//
 				//	new element
 				//
-				auto map = cyng::param_map_factory(to_hex(code), obj)();
+				auto map = cyng::param_map_factory(code.to_str(), obj)();
 				values_.emplace(name, map);
 			}
 			else {
@@ -80,7 +80,7 @@ namespace node
 				//
 				auto p = cyng::object_cast<cyng::param_map_t>(values_.at(name));
 				if (p != nullptr) {
-					const_cast<cyng::param_map_t*>(p)->emplace(to_hex(code), obj);
+					const_cast<cyng::param_map_t*>(p)->emplace(code.to_str(), obj);
 				}
 			}
 			return *this;
@@ -97,7 +97,7 @@ namespace node
 
 		cyng::object readout::get_value(obis code) const
 		{
-			return get_value(to_hex(code));
+			return get_value(code.to_str());
 		}
 
 		std::string readout::get_string(obis code) const

@@ -365,11 +365,11 @@ namespace node
 
 			std::size_t get_proc_active_devices(cyng::object trx
 				, cyng::object server_id
-				, const cyng::store::table*);
+				, cyng::store::table const *);
 
 			std::size_t get_proc_visible_devices(cyng::object trx
 				, cyng::object server_id
-				, const cyng::store::table*);
+				, cyng::store::table const*);
 
 			/**
 			 * 81 81 C7 86 00 FF
@@ -397,6 +397,25 @@ namespace node
 
 			std::size_t get_proc_actuators(cyng::object trx
 				, cyng::object server_id);
+
+			/**
+			 * IF 1107 configuration
+			 */
+			std::size_t get_proc_1107_if(cyng::object trx
+				, cyng::object server_id
+				, cyng::store::table const*
+				, cyng::object
+				, cyng::object
+				, cyng::object
+				, cyng::object
+				, cyng::object
+				, cyng::object
+				, cyng::object
+				, cyng::object
+				, cyng::object
+				, cyng::object
+				, cyng::object
+				, cyng::object	);
 
 			/**
 			 * get current IP-T status - 81 49 0D 06 00 FF (OBIS_CODE_ROOT_IPT_STATE)

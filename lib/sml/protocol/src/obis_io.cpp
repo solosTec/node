@@ -107,6 +107,9 @@ namespace node
 
 		obis to_obis(std::string const& str)
 		{
+			//
+			//	heuristic approach
+			//
 			const auto size = str.size();
 			auto num_dots = std::count(str.begin(), str.end(), '.');
 			auto num_dashes = std::count(str.begin(), str.end(), '-');
@@ -147,7 +150,7 @@ namespace node
 						, buffer.first.at(5));
 				}
 			}
-			else if (size == 12 && num_dots == 0 && num_dashes == 0 && num_colons == 0 && num_spaces == 5) {
+			else if (size == 17 && num_dots == 0 && num_dashes == 0 && num_colons == 0 && num_spaces == 5) {
 				//
 				//	hex representation
 				//	example: 01 00 01 08 00 ff

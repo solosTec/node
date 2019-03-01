@@ -77,7 +77,7 @@ namespace node
 			else if (OBIS_CODE_IF_EDL == code)		return "IF_EDL";
 			else if (OBIS_CODE_IF_wMBUS == code)	return "IF_wMBUS";
 			else if (OBIS_CODE_IF_PLC == code)		return "IF_PLC";
-			else if (OBIS_CODE_IF_SyM2 == code)		return "IF_SyM2";
+			//else if (OBIS_CODE_IF_SyM2 == code)		return "IF_SyM2";
 
 			else if (OBIS_W_MBUS_ADAPTER_MANUFACTURER == code)		return "W_MBUS_ADAPTER_MANUFACTURER";
 			else if (OBIS_W_MBUS_ADAPTER_ID == code)				return "W_MBUS_ADAPTER_ID";

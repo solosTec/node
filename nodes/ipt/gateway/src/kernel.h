@@ -78,6 +78,9 @@ namespace node
 			void sml_set_proc_deactivate(cyng::context& ctx);
 			void sml_set_proc_delete(cyng::context& ctx);
 
+			void sml_set_proc_if1107_param(cyng::context& ctx);
+			void sml_set_proc_if1107_device(cyng::context& ctx);
+
 			void sml_get_list_request(cyng::context& ctx);
 
 			/**
