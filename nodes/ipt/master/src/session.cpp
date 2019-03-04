@@ -329,7 +329,7 @@ namespace node
 		void session::shutdown()
 		{
 			//
-			//	Clear connection map and stop running tasks
+			//	Clear connection map and stop proxy and watchdog tasks
 			//
 			state_.react(state::evt_shutdown());
 
@@ -338,7 +338,24 @@ namespace node
 			//
 			CYNG_LOG_TRACE(logger_, vm_.tag() << " stop " << task_db_.size() << " task(s)");
 			for (auto const& tsk : task_db_) {
+
+				//
+				//	stop tasks
+				//
+				CYNG_LOG_TRACE(logger_, vm_.tag() << " task #" << tsk.second.first << " will be stopped");
 				mux_.stop(tsk.second.first);
+
+				//
+				//	wait for task
+				//
+				//bool stopped{ false };
+				//while (!stopped) {
+				//	mux_.is_task(tsk.second.first, [&](bool b) {
+				//		stopped = !b;
+				//	});
+				//}
+				//CYNG_LOG_TRACE(logger_, vm_.tag() << " task #" << tsk.second.first << " stopped");
+
 			}
 
 			//

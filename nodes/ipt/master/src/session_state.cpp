@@ -138,6 +138,7 @@ namespace node
 			case S_CONNECTED_LOCAL:
 			case S_CONNECTED_REMOTE:
 			case S_CONNECTED_TASK:
+			case S_WAIT_FOR_CLOSE_RESPONSE:	//	still in connection 
 
 				//
 				//	clear connection map
@@ -149,6 +150,7 @@ namespace node
 				//
 				//break;
 
+			case S_WAIT_FOR_OPEN_RESPONSE:
 			case S_AUTHORIZED:
 				authorized_.stop(sp_->mux_);
 				break;
@@ -251,7 +253,12 @@ namespace node
 				break;
 
 				//case S_WAIT_FOR_OPEN_RESPONSE:
-				//case S_WAIT_FOR_CLOSE_RESPONSE:
+			case S_WAIT_FOR_CLOSE_RESPONSE:
+				CYNG_LOG_WARNING(logger_, sp_->vm().tag()
+					<< " received "
+					<< ptr->size()
+					<< " bytes while waiting for close response");
+				break;
 
 			case S_CONNECTED_LOCAL:
 				CYNG_LOG_DEBUG(logger_, sp_->vm().tag()
@@ -300,10 +307,6 @@ namespace node
 					<< " bytes get lost");
 				break;
 			}
-
-			//if (sp_->bus_->is_online()) {
-
-			//}
 
 			//
 			//	update watchdog timer

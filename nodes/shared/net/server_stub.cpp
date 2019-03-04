@@ -518,7 +518,7 @@ namespace node
 		//
 		//	* client tag
 		//	* peer
-		//	* sequence
+		//	* cluster sequence
 		//
 		const cyng::vector_t frame = ctx.get_frame();
 		ctx.queue(cyng::generate_invoke("log.msg.info", "client.res.close", frame));

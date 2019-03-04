@@ -32,9 +32,9 @@ namespace node
 				<< " instructions received (including "
 				<< cyng::op_counter(prg, cyng::code::INVOKE)
 				<< " invoke(s))");
-//#ifdef SMF_IO_DEBUG
+#ifdef SMF_IO_DEBUG
             CYNG_LOG_DEBUG(logger_, "exec: " << cyng::io::to_str(prg));
-//#endif
+#endif
 			vm_.async_run(std::move(prg));
 	})
 		, serializer_(socket_, vm_)

@@ -191,6 +191,9 @@ namespace node
 			//	reset default scramble key
 			//	error: new key is 00000
 			def_key_ = cyng::value_cast(frame.at(0), def_key_).key();
+
+			//	clear buffer
+			buffer_.consume(buffer_.size());
 		}
 
 		void serializer::push_seq(cyng::context& ctx)

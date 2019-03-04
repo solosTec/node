@@ -116,7 +116,7 @@ namespace node
 
 		if (pending_) {
 			//
-			//	tell master to close *this* client
+			//	instruct master to close *this* client and send a "client.res.close" response
 			//
 			bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
 		}

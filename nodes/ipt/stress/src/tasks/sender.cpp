@@ -369,6 +369,7 @@ namespace node
 			//
 			std::uniform_int_distribution<int> dist_buffer_size(packet_size_min_, packet_size_max_);
 			cyng::buffer_t buffer(dist_buffer_size(rnd_device_));
+			BOOST_ASSERT(!buffer.empty());
 
 			CYNG_LOG_INFO(logger_, "initialize task #"
 				<< base_.get_id()
@@ -384,6 +385,9 @@ namespace node
 			std::uniform_int_distribution<int> dist(std::numeric_limits<char>::min(), std::numeric_limits<char>::max());
 			auto gen = std::bind(dist, mersenne_engine_);
 			std::generate(begin(buffer), end(buffer), gen);
+#ifdef _DEBUG
+			buffer.at(0) = 0x00;
+#endif
 
 			return buffer;
 

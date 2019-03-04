@@ -50,7 +50,7 @@ namespace node
 			//
 			//	Safe way to intentionally close this session.
 			//	
-			//	* set session in shutdown state
+			//	* set session in shutdown state (pending_ = true)
 			//	* close socket
 			//	* update cluster master state and
 			//	* remove session from IP-T masters client_map
