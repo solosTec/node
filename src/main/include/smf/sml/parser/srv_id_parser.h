@@ -25,23 +25,20 @@ namespace node
 		 * Accept a server ID like 02-e61e-03197715-3c-07
 		 * and convert it into a buffer.
 		 */
-		//std::pair<cyng::buffer_t, bool> srv_id_parser(std::string const& inp);
-		//cyng::buffer_t srv_id_parser(std::string const&);
-
 		template <typename InputIterator>
 		struct srv_id_parser
 			: boost::spirit::qi::grammar<InputIterator, cyng::buffer_t()>
 		{
 			srv_id_parser();
 
-			boost::spirit::qi::rule<InputIterator, cyng::buffer_t()> r_start;
-			//boost::fusion::vector<unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int>()> r_srv_id;
+			boost::spirit::qi::rule<InputIterator, cyng::buffer_t()>	r_start, r_long, r_short;
 			boost::spirit::qi::uint_parser<unsigned int, 16, 2, 2>		r_hex2;
 		};
 
 
 		/**
-		 * wrapper function for obis_raw_parser
+		 * Accept a server ID like 02-e61e-03197715-3c-07
+		 * and convert it into a buffer.
 		 */
 		std::pair<cyng::buffer_t, bool> parse_srv_id(std::string const&);
 

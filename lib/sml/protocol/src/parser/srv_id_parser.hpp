@@ -27,6 +27,11 @@ namespace node
 			: srv_id_parser::base_type(r_start)
 		{
 			r_start
+				= r_long[boost::spirit::qi::_val = boost::spirit::qi::_1]
+				| r_short[boost::spirit::qi::_val = boost::spirit::qi::_1]
+				;
+
+			r_long
 				%= r_hex2
 				>> '-'
 				>> r_hex2
@@ -42,21 +47,12 @@ namespace node
 				>> r_hex2
 				;
 
-			//r_srv_id
-			//	= r_hex2
-			//	>> '-'
-			//	>> r_hex2
-			//	>> r_hex2
-			//	>> '-'
-			//	>> r_hex2
-			//	>> r_hex2
-			//	>> r_hex2
-			//	>> r_hex2
-			//	>> '-'
-			//	>> r_hex2
-			//	>> '-'
-			//	>> r_hex2
-			//	;
+			r_short
+				%= r_hex2
+				>> r_hex2
+				>> r_hex2
+				>> r_hex2
+				;
 
 		}
 

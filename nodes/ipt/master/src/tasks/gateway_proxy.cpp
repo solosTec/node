@@ -756,7 +756,6 @@ namespace node
 		auto const pos = params.find("meter-id");
 		if (pos != params.end()) {
 
-			//std::pair<cyng::buffer_t, bool> parse_srv_id(std::string const&);
 			auto const r = sml::parse_srv_id(cyng::io::to_str(pos->second));
 			if (r.second) {
 
@@ -764,7 +763,7 @@ namespace node
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> get last data set from ["
+					<< "> get-last-data-set-request from ["
 					<< cyng::io::to_str(pos->second)
 					<< "]");
 
@@ -779,7 +778,7 @@ namespace node
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> get last data set from has an invalid meter ID ["
+					<< "> get-last-data-set-request has an invalid meter ID ["
 					<< cyng::io::to_str(pos->second)
 					<< "]");
 

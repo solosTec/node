@@ -670,8 +670,6 @@ namespace node
 					, ro_.get_value(OBIS_CURRENT_UTC));	//	UTC
 			}
 			else if (path.size() == 3 && (path.front() == OBIS_CODE_ROOT_ACTIVE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x11, 0x06)) {
-				//cyng::tuple_t tpl;
-				//tpl = cyng::value_cast(*pos++, tpl);
 
 				//
 				//	collect meter info
@@ -680,13 +678,7 @@ namespace node
 				//	* 01 00 00 09 0B 00: timestamp
 				//
 				read_get_proc_multiple_parameters(*pos++);
-				//for (auto const child : tpl)
-				//{
-				//	cyng::tuple_t tmp;
-				//	tmp = cyng::value_cast(child, tmp);
-				//	read_get_proc_single_parameter(tmp.begin(), tmp.end());
 
-				//}
 				return cyng::generate_invoke("sml.get.proc.param.srv.active"
 					, ro_.pk_
 					, ro_.trx_
