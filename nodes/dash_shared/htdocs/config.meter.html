@@ -539,6 +539,8 @@
                         }
                         else if (obj.cmd == 'update') {
                             if (obj.channel == 'get.list.request') {
+                                $('#attention-msg').removeClass('bg-warning').addClass('bg-success');
+                                $('#attention-msg').text(obj.rec.srv + ": OK");
                                 table_data.clear().draw(false);
                                 $.each(obj.rec.values, function (key, value) {
                                     var node = table_data.row.add([key, value.value, value.unit, value.valTime, obj.rec.srv]).draw().node();
@@ -546,10 +548,11 @@
                             }
                             else if (obj.channel == 'attention.code') {
                                 if (obj.section == '8181c7c7fd00') {
+                                    $('#attention-msg').removeClass('bg-warning').addClass('bg-success');
                                     $('#attention-msg').text(obj.rec.srv + ": " + obj.rec.values);
                                 }
                                 else {
-                                    $('#attention-msg').addClass('bg-warning');
+                                    $('#attention-msg').removeClass('bg-success').addClass('bg-warning');
                                     $('#attention-msg').text(obj.rec.srv + ": " + obj.rec.values);
                                 }
                                 //  ToDo: show toast
@@ -557,7 +560,6 @@
                         }
                     }
                     $('#ws-activity-text').html(format_bytes(totalIO) + ' received');
-                    //$('#ws-activity-symbol').fadeOut();
                 };
             }
 
