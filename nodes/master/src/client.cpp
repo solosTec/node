@@ -107,29 +107,6 @@ namespace node
 		node_class_ = node_class;
 	}
 
-	bool client::open_stat(std::ofstream& of, std::string const& account)
-	{
-		//
-		//	file name
-		//
-		std::stringstream ss;
-		ss
-			<< "smf-stat-"
-			<< node_class_
-			<< '-'
-			<< account
-			<< ".log"
-			;
-
-		const std::string file_name = (stat_dir_ / ss.str()).string();
-		of.open(file_name, std::ios::out | std::ios::app);
-		if (!of.is_open()) {
-			CYNG_LOG_WARNING(logger_, "session.write.stat - cannot open file " << file_name);
-		}
-
-		return of.is_open();
-	}
-
 	void client::req_login(cyng::context& ctx)
 	{
 		//	[1cea6ddf-5044-478b-9fba-67fa23997ba6,65d9eb67-2187-481b-8770-5ce41801eaa6,1,data-store,secret,plain,%(("security":scrambled),("tp-layer":ipt)),<!259:session>]

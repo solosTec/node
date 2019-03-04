@@ -38,14 +38,6 @@ set (task_stat_info
 set (task_stat_tasks
 	tasks/stat/src/tasks/cluster.h
 	tasks/stat/src/tasks/cluster.cpp
-#	tasks/stat/src/tasks/storage_db.h
-#	tasks/stat/src/tasks/storage_db.cpp
-#	tasks/stat/src/tasks/profile_15_min.h
-#	tasks/stat/src/tasks/profile_15_min.cpp
-#	tasks/stat/src/tasks/profile_60_min.h
-#	tasks/stat/src/tasks/profile_60_min.cpp
-#	tasks/stat/src/tasks/profile_24_h.h
-#	tasks/stat/src/tasks/profile_24_h.cpp
 )
 	
 if(WIN32)

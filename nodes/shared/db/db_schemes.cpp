@@ -331,6 +331,28 @@ namespace node
 				, 0		//	tag
 				});
 		}
+		else if (boost::algorithm::equals(name, "_TimeSeries")) {
+
+			return cyng::table::make_meta_table<1, 5>(name, { "id"	//	message number
+				, "ts"	//	timestamp
+				, "tag"	//	session tag
+				, "account"	//	device/user
+				, "evt"	//	event
+				, "obj"	//	value
+				},
+				{ cyng::TC_UINT64
+				, cyng::TC_TIME_POINT
+				, cyng::TC_UUID			//	tag
+				, cyng::TC_STRING		//	account
+				, cyng::TC_STRING		//	evt
+				, cyng::TC_STRING },	//	obj
+				{ 0
+				, 0
+				, 0			//	tag
+				, 64		//	account
+				, 64		//	evt
+				, 128 });	//	obj
+		}
 
 		//
 		//	table name not defined

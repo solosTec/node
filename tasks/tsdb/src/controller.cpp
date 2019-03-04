@@ -40,7 +40,10 @@ namespace node
 		, cyng::logging::log_ptr
 		, boost::uuids::uuid
 		, cyng::vector_t const& cfg_cluster
-		, cyng::tuple_t cfg_db);
+		, cyng::tuple_t cfg_db
+		, cyng::tuple_t const& cfg_clock_day
+		, cyng::tuple_t const& cfg_clock_month
+		, cyng::tuple_t const& cfg_trigger);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -93,19 +96,19 @@ namespace node
 						//	initialize logger
 						//
 #if BOOST_OS_LINUX
-						auto logger = cyng::logging::make_sys_logger("task:stat", true);
+						auto logger = cyng::logging::make_sys_logger("task:tsdb", true);
 #else
 						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 						auto dom = cyng::make_reader(vec[0]);
 						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
 
 						auto logger = (console)
-							? cyng::logging::make_console_logger(mux.get_io_service(), "task:stat")
-							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "task-stat.log"))
+							? cyng::logging::make_console_logger(mux.get_io_service(), "task:tsdb")
+							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "task-tsdb.log"))
 							;
 #ifdef _DEBUG
 						if (!console) {
-							std::cout << "log file see: " << (log_dir / "task-stat.log") << std::endl;
+							std::cout << "log file see: " << (log_dir / "task-tsdb.log") << std::endl;
 						}
 #endif
 #endif
@@ -268,22 +271,22 @@ namespace node
 		{
 		case ERROR_SERVICE_ALREADY_RUNNING:
 			//	An instance of the service is already running.
-			::OutputDebugString("An instance of the [stat] service is already running.");
+			::OutputDebugString("An instance of the [tsdb] service is already running.");
 			break;
 		case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
 			//
 			//	The service process could not connect to the service controller.
 			//	Typical error message, when running in console mode.
 			//
-			::OutputDebugString("***Error 1063: The [stat] service process could not connect to the service controller.");
+			::OutputDebugString("***Error 1063: The [tsdb] service process could not connect to the service controller.");
 			std::cerr
-				<< "***Error 1063: The [stat] service could not connect to the service controller."
+				<< "***Error 1063: The [tsdb] service could not connect to the service controller."
 				<< std::endl
 				;
 			break;
 		case ERROR_SERVICE_NOT_IN_EXE:
 			//	The executable program that this service is configured to run in does not implement the service.
-			::OutputDebugString("The [stat] service is configured to run in does not implement the service.");
+			::OutputDebugString("The [tsdb] service is configured to run in does not implement the service.");
 			break;
 		default:
 		{
@@ -343,7 +346,10 @@ namespace node
 			, logger
 			, cluster_tag
 			, cyng::value_cast(dom.get("cluster"), vec)
-			, cyng::value_cast(dom.get("DB"), tpl));
+			, cyng::value_cast(dom.get("DB"), tpl)
+			, cyng::value_cast(dom.get("profile-15min"), tpl)
+			, cyng::value_cast(dom.get("profile-24h"), tpl)
+			, cyng::value_cast(dom.get("trigger"), tpl));
 
 		//
 		//	wait for system signals
@@ -397,7 +403,10 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid tag
 		, cyng::vector_t const& cfg_cluster
-		, cyng::tuple_t cfg_db)
+		, cyng::tuple_t cfg_db
+		, cyng::tuple_t const& cfg_clock_day
+		, cyng::tuple_t const& cfg_clock_month
+		, cyng::tuple_t const& cfg_trigger)
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cluster.size());
 
@@ -406,6 +415,9 @@ namespace node
 			, logger
 			, tag
 			, load_cluster_cfg(cfg_cluster)
-			, cyng::to_param_map(cfg_db));
+			, cyng::to_param_map(cfg_db)
+			, cyng::to_param_map(cfg_clock_day)
+			, cyng::to_param_map(cfg_clock_month)
+			, cyng::to_param_map(cfg_trigger));
 	}
 }

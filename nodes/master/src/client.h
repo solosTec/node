@@ -201,51 +201,17 @@ namespace node
 		bool is_generate_time_series() const;
 
 		void set_class(std::string const&);
-		bool open_stat(std::ofstream&, std::string const& account);
 
 		template <typename T>
 		void write_stat(boost::uuids::uuid tag, std::string const& account, std::string const& evt, T&& value)
 		{
 			if (is_generate_time_series())
 			{
-
-				std::ofstream of;
-				if (open_stat(of, account))
-				{
-
-					//
-					//	want to use stream operator from namespace cyng
-					// 	cyng::operator<<(os, rec.tp_);
-					//
-					using cyng::operator<<;
-					of
-						<< std::chrono::system_clock::now()
-						<< ';'
-						<< tag
-						<< ';'
-						<< '"'
-						<< evt
-						<< '"'
-						<< ';'
-						<< value
-						<< std::endl
-						;
-				}
-				else {
-					//
-					//	want to use stream operator from namespace cyng
-					// 	cyng::operator<<(os, rec.tp_);
-					//
-					using cyng::operator<<;
-					//CYNG_LOG_TRACE(logger_, "session.write.stat "
-					//	<< tag
-					//	<< ';'
-					//	<< '"'
-					//	<< evt
-					//	<< '"'
-					//	<< ';'
-					//	<< value);
-				}
+				insert_ts_event(db_
+					, tag
+					, account
+					, evt
+					, cyng::make_object(value));
 			}
 		}
 

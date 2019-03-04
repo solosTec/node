@@ -34,6 +34,18 @@ namespace node
 		, boost::uuids::uuid tag
 		, std::uint64_t max_messages);
 
+	void insert_ts_event(cyng::store::table* tbl
+		, boost::uuids::uuid tag
+		, std::string const& account
+		, std::string const& evt
+		, cyng::object);
+
+	void insert_ts_event(cyng::store::db&
+		, boost::uuids::uuid tag
+		, std::string const& account
+		, std::string const& evt
+		, cyng::object);
+
 	void insert_lora_uplink(cyng::store::db& db
 		, std::chrono::system_clock::time_point tp
 		, cyng::mac64 devEUI

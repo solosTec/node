@@ -909,6 +909,20 @@ endif(WIN32)
 target_link_libraries(csv ${csv_link_libs})
 
 #
+# task: tsdb (time series database)
+#
+include (tasks/tsdb/prg.cmake)
+add_executable(tsdb ${task_tsdb})
+target_link_libraries(tsdb cyng_core cyng_io cyng_async cyng_log cyng_vm cyng_db cyng_parser cyng_json cyng_sys cyng_domain cyng_store cyng_table smf_cluster)
+
+#
+# task: stat (statistics - detecting gaps, etc)
+#
+include (tasks/stat/prg.cmake)
+add_executable(stat ${task_stat})
+target_link_libraries(stat cyng_core cyng_io cyng_async cyng_log cyng_vm cyng_db cyng_parser cyng_json cyng_sys cyng_domain cyng_store cyng_table smf_cluster)
+
+#
 # test unit using Boost.Test
 # BOOST_TEST_DYN_LINK is required to build a main() function
 # cmake -DNODE_BUILD_TEST:bool=ON ..
@@ -1419,6 +1433,49 @@ else()
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.rc.in"
 		  "${PROJECT_BINARY_DIR}/csv.rc")
+
+      # stat
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.windows.cgf.in"
+            "${PROJECT_BINARY_DIR}/stat_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_create_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/stat_create_service.cmd")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_delete_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/stat_delete_service.cmd")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_restart_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/stat_restart_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.rc.in"
+		  "${PROJECT_BINARY_DIR}/stat.rc")
+
+
+      # tsdb
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb.windows.cgf.in"
+            "${PROJECT_BINARY_DIR}/tsdb_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb_create_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/tsdb_create_service.cmd")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb_delete_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/tsdb_delete_service.cmd")
+
+      configure_file (
+            "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb_restart_service.cmd.in"
+            "${PROJECT_BINARY_DIR}/tsdb_restart_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb.rc.in"
+		  "${PROJECT_BINARY_DIR}/tsdb.rc")
 
 endif(UNIX)
 

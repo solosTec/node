@@ -5,8 +5,8 @@
  * 
  */ 
 
-#ifndef NODE_STAT_CONTROLLER_H
-#define NODE_STAT_CONTROLLER_H
+#ifndef NODE_TSDB_CONTROLLER_H
+#define NODE_TSDB_CONTROLLER_H
 
 #include <string>
 #include <cstdint>

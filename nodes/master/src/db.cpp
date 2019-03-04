@@ -12,6 +12,7 @@
 #include <cyng/table/meta.hpp>
 #include <cyng/intrinsics/traits/tag.hpp>
 #include <cyng/intrinsics/traits.hpp>
+#include <cyng/io/serializer.h>
 
 #include <algorithm>
 
@@ -325,6 +326,15 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _LoRaUplink");
 		}
+
+		//
+		//	time series
+		//
+		if (!create_table(db, "_TimeSeries"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table _TimeSeries");
+		}
+
 	}
 
 	cyng::object get_config(cyng::store::db& db, std::string key)
@@ -401,6 +411,63 @@ namespace node
 				, 1, tag);
 		}
 	}
+
+	void insert_ts_event(cyng::store::db& db
+		, boost::uuids::uuid tag
+		, std::string const& account
+		, std::string const& evt
+		, cyng::object obj)
+	{
+		db.access([&](cyng::store::table* tbl)->void {
+			insert_ts_event(tbl, tag, account, evt, obj);
+		}, cyng::store::write_access("_TimeSeries"));
+	}
+
+	void insert_ts_event(cyng::store::table* tbl
+		, boost::uuids::uuid tag
+		, std::string const& account
+		, std::string const& evt
+		, cyng::object obj)
+	{
+		//
+		//	upper limit is 256 entries
+		//
+		if (tbl->size() > 255)
+		{
+			auto max_rec = tbl->max_record();
+			if (!max_rec.empty()) {
+
+				//	get next message id
+				auto next_idx = cyng::value_cast<std::uint64_t>(max_rec["id"], 0u);
+
+				tbl->insert(cyng::table::key_generator(++next_idx)
+					, cyng::table::data_generator(std::chrono::system_clock::now()
+						, tag
+						, account
+						, evt
+						, cyng::io::to_str(obj))
+					, 1, tag);
+			}
+
+			//
+			//	remove oldest message (message with the lowest id)
+			//
+			auto min_rec = tbl->min_record();
+			if (!min_rec.empty()) {
+				tbl->erase(min_rec.key(), tag);
+			}
+		}
+		else {
+			tbl->insert(cyng::table::key_generator(static_cast<std::uint64_t>(tbl->size()))
+				, cyng::table::data_generator(std::chrono::system_clock::now()
+					, tag
+					, account
+					, evt
+					, cyng::io::to_str(obj))
+				, 1, tag);
+		}
+	}
+
 
 	void insert_lora_uplink(cyng::store::db& db
 		, std::chrono::system_clock::time_point tp
