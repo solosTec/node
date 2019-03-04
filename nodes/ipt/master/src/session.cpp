@@ -61,7 +61,7 @@ namespace node
 			vm_.register_function("session.store.relation", 3, std::bind(&session::store_relation, this, std::placeholders::_1));
 			vm_.register_function("session.remove.relation", 1, std::bind(&session::remove_relation, this, std::placeholders::_1));
 
-			vm_.register_function("session.start.watchdog", 1, [&](cyng::context& ctx) {
+			vm_.register_function("session.start.watchdog", 1, [this](cyng::context& ctx) {
 
 				const cyng::vector_t frame = ctx.get_frame();
 
@@ -75,7 +75,7 @@ namespace node
 
 			vm_.register_function("client.req.gateway.proxy", 11, std::bind(&session::client_req_gateway_proxy, this, std::placeholders::_1));
 			
-			vm_.register_function("session.start.proxy", 0, [&](cyng::context& ctx) {
+			vm_.register_function("session.start.proxy", 0, [this, sml_log](cyng::context& ctx) {
 
 				//
 				//	start SML proxy 
@@ -89,7 +89,7 @@ namespace node
 
 			});
 
-			vm_.register_function("sml.log", 1, [&](cyng::context& ctx){
+			vm_.register_function("sml.log", 1, [this](cyng::context& ctx){
 				const cyng::vector_t frame = ctx.get_frame();
 				CYNG_LOG_INFO(logger_, "sml.log - " << cyng::value_cast<std::string>(frame.at(0), ""));
 			});

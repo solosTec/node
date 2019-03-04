@@ -484,6 +484,7 @@ namespace node
 				BOOST_ASSERT(depth == 0);
 			}
 			else {
+				BOOST_ASSERT(depth == path.size());
 				path.push_back(code);
 			}
 
@@ -497,7 +498,7 @@ namespace node
 			//
 			cyng::vector_t prg;
 
-			if (path.front() == OBIS_CLASS_OP_LOG_STATUS_WORD) {
+			if (path.size() == 1 && path.front() == OBIS_CLASS_OP_LOG_STATUS_WORD) {
 				//	generate status word
 
 				//to_param_map
@@ -509,7 +510,7 @@ namespace node
 					, OBIS_CLASS_OP_LOG_STATUS_WORD.to_buffer()	//	same as path.front()
 					, cyng::value_cast<std::uint32_t>(attr.second, 0u));	//	[u32] value
 			}
-			else if (path.front() == OBIS_CODE_ROOT_MEMORY_USAGE) {
+			else if (path.size() == 1 && path.front() == OBIS_CODE_ROOT_MEMORY_USAGE) {
 				//	get memory usage
 				read_get_proc_multiple_parameters(*pos++);
 				return cyng::generate_invoke("sml.get.proc.param.memory"
@@ -521,7 +522,7 @@ namespace node
 					, ro_.get_value(OBIS_CODE_ROOT_MEMORY_MIRROR)	//	mirror
 					, ro_.get_value(OBIS_CODE_ROOT_MEMORY_TMP));	//	tmp
 			}
-			else if (path.front() == OBIS_CODE_ROOT_W_MBUS_STATUS) {
+			else if (path.size() == 1 && path.front() == OBIS_CODE_ROOT_W_MBUS_STATUS) {
 				//	get memory usage
 				read_get_proc_multiple_parameters(*pos++);
 				return cyng::generate_invoke("sml.get.proc.param.wmbus.status"
@@ -536,7 +537,7 @@ namespace node
 					, ro_.get_string(OBIS_W_MBUS_HARDWARE)	//	hardware version (2.00)
 				);
 			}
-			else if (path.front() == OBIS_CODE_IF_wMBUS) {
+			else if (path.size() == 1 && path.front() == OBIS_CODE_IF_wMBUS) {
 				//	get memory usage
 				read_get_proc_multiple_parameters(*pos++);
 				return cyng::generate_invoke("sml.get.proc.param.wmbus.config"
@@ -553,7 +554,7 @@ namespace node
 					, ro_.get_value(OBIS_W_MBUS_INSTALL_MODE)	//	installation mode (true)
 				);
 			}
-			else if (path.front() == OBIS_CODE_ROOT_IPT_STATE) {
+			else if (path.size() == 1 && path.front() == OBIS_CODE_ROOT_IPT_STATE) {
 				//	get IP-T status
 				read_get_proc_multiple_parameters(*pos++);
 				//	81 49 17 07 00 00 ip address
@@ -570,7 +571,7 @@ namespace node
 					, ro_.get_value(OBIS_CODE_ROOT_IPT_STATE_PORT_REMOTE)	//	remote port
 				);
 			}
-			else if (path.front() == OBIS_CODE_ROOT_DEVICE_IDENT)
+			else if (path.size() == 2 && path.front() == OBIS_CODE_ROOT_DEVICE_IDENT)
 			{
 				if (path.back() == OBIS_CODE_DEVICE_CLASS) {
 					//
@@ -621,7 +622,7 @@ namespace node
 						, attr.second);	//	value
 				}
 			}
-			else if (path.front() == OBIS_CODE_ROOT_IPT_PARAM) {
+			else if (path.size() == 2 && path.front() == OBIS_CODE_ROOT_IPT_PARAM) {
 				const auto r = path.back().is_matching(0x81, 0x49, 0x0D, 0x07, 0x00);
 				if (r.second) {
 #ifdef _DEBUG
@@ -647,7 +648,7 @@ namespace node
 					);
 				}
 			}
-			else if ((path.front() == OBIS_CODE_ROOT_VISIBLE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x10, 0x06)) {
+			else if (path.size() == 3 && (path.front() == OBIS_CODE_ROOT_VISIBLE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x10, 0x06)) {
 
 				//
 				//	collect meter info
@@ -668,9 +669,9 @@ namespace node
 					, ro_.get_string(OBIS_CODE_DEVICE_CLASS)	//	device class
 					, ro_.get_value(OBIS_CURRENT_UTC));	//	UTC
 			}
-			else if ((path.front() == OBIS_CODE_ROOT_ACTIVE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x11, 0x06)) {
-				cyng::tuple_t tpl;
-				tpl = cyng::value_cast(*pos++, tpl);
+			else if (path.size() == 3 && (path.front() == OBIS_CODE_ROOT_ACTIVE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x11, 0x06)) {
+				//cyng::tuple_t tpl;
+				//tpl = cyng::value_cast(*pos++, tpl);
 
 				//
 				//	collect meter info
@@ -678,13 +679,14 @@ namespace node
 				//	* 81 81 C7 82 02 FF: --- (device class)
 				//	* 01 00 00 09 0B 00: timestamp
 				//
-				for (auto const child : tpl)
-				{
-					cyng::tuple_t tmp;
-					tmp = cyng::value_cast(child, tmp);
-					read_get_proc_single_parameter(tmp.begin(), tmp.end());
+				read_get_proc_multiple_parameters(*pos++);
+				//for (auto const child : tpl)
+				//{
+				//	cyng::tuple_t tmp;
+				//	tmp = cyng::value_cast(child, tmp);
+				//	read_get_proc_single_parameter(tmp.begin(), tmp.end());
 
-				}
+				//}
 				return cyng::generate_invoke("sml.get.proc.param.srv.active"
 					, ro_.pk_
 					, ro_.trx_
@@ -696,7 +698,7 @@ namespace node
 					, ro_.get_string(OBIS_CODE_DEVICE_CLASS)	//	device class
 					, ro_.get_value(OBIS_CURRENT_UTC));	//	UTC
 			}
-			else if ((path.front() == OBIS_CODE_ROOT_DEVICE_IDENT) && path.back().is_matching(0x81, 0x81, 0xc7, 0x82, 0x07).second) {
+			else if (path.size() == 3 && (path.front() == OBIS_CODE_ROOT_DEVICE_IDENT) && path.back().is_matching(0x81, 0x81, 0xc7, 0x82, 0x07).second) {
 
 				//	* 81, 81, c7, 82, 08, ff:	CURRENT_VERSION/KERNEL
 				//	* 81, 81, 00, 02, 00, 00:	VERSION

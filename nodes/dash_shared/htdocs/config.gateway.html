@@ -1024,14 +1024,18 @@
                                     }
                                 }
                                 else if (obj.section == 'root-visible-devices') {
-                                    var lastSeen = new Date(obj.rec.values.timestamp.substring(0, 19));
+                                    var lastSeen = (obj.rec.values.timestamp != null)
+                                        ? new Date(obj.rec.values.timestamp.substring(0, 19))
+                                        : new Date();
                                     var node = table_visible.row.add([obj.rec.values.number, obj.rec.values.ident, obj.rec.values.meterId, obj.rec.values.meter, obj.rec.values.maker, lastSeen, obj.rec.values.class, obj.rec.srv, obj.rec.values.type, true, false, obj.rec.gw]).draw().node();
                                     if (obj.rec.values.type < 2) {
                                         $(node).addClass('bg-success');
                                     }
                                 }
                                 else if (obj.section == 'root-active-devices') {
-                                    var lastSeen = new Date(obj.rec.values.timestamp.substring(0, 19));
+                                    var lastSeen = (obj.rec.values.timestamp != null)
+                                        ? new Date(obj.rec.values.timestamp.substring(0, 19))
+                                        : new Date();
                                     var node = table_active.row.add([obj.rec.values.number, obj.rec.values.ident, obj.rec.values.meterId, obj.rec.values.meter, obj.rec.values.maker, lastSeen, obj.rec.values.class, obj.rec.srv, obj.rec.values.type, false, true, obj.rec.gw]).draw().node();
                                     if (obj.rec.values.type < 2) {
                                         $(node).addClass('bg-success');
