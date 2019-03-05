@@ -23,24 +23,12 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid cluster_tag
 		, cluster_config_t const& cfg_cluster
-		, cyng::param_map_t const& cfg_db
-		, cyng::param_map_t const& cfg_clock_day
-		, cyng::param_map_t const& cfg_clock_month
-		, cyng::param_map_t const& cfg_trigger)
+		, cyng::param_map_t const& cfg_db)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
 		, logger_(logger)
         , config_(cfg_cluster)
 		, cfg_db_(cfg_db)
-		, cfg_clock_day_(cfg_clock_day)
-		, cfg_clock_month_(cfg_clock_month)
-		, offset_(cyng::find_value(cfg_trigger, "offset", 7))
-		, frame_(cyng::find_value(cfg_trigger, "frame", 7))
-		, format_(cyng::find_value<std::string>(cfg_trigger, "format", "SML"))
-		, profile_15_min_tsk_(cyng::async::NO_TASK)
-		, profile_60_min_tsk_(cyng::async::NO_TASK)
-		, profile_24_h_tsk_(cyng::async::NO_TASK)
-		, storage_task_(cyng::async::NO_TASK)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -96,10 +84,6 @@ namespace node
 		//
 		start_sub_tasks();
 
-		//
-		//	insert instance into table _CSV
-		//
-		make_public();
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -264,25 +248,5 @@ namespace node
 		//}
 	}
 
-	void cluster::make_public()
-	{
-		//
-		//	create entry in table _STAT
-		//
-		//bus_->vm_.async_run(bus_req_db_insert("_STAT"
-		//	, cyng::table::key_generator(bus_->vm_.tag())
-		//	, cyng::table::data_generator(format_
-		//		, "SML"
-		//		, offset_
-		//		, frame_
-		//		, std::chrono::system_clock::now()
-		//		, std::chrono::system_clock::now()
-		//		, std::chrono::system_clock::now()
-		//		, 0u
-		//		, 0u
-		//		, 0u)
-		//	, 1	//	generation
-		//	, bus_->vm_.tag()));
-	}
 
 }
