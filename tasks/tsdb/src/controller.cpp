@@ -244,7 +244,7 @@ namespace node
 
 #if BOOST_OS_LINUX
 				, cyng::param_factory("syslog", cyng::tuple_factory(
-					cyng::param_factory("enabled", false),
+					cyng::param_factory("enabled", false)
 				))
 #endif
 				, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(

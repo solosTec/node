@@ -913,14 +913,22 @@ target_link_libraries(csv ${csv_link_libs})
 #
 include (tasks/tsdb/prg.cmake)
 add_executable(tsdb ${task_tsdb})
-target_link_libraries(tsdb cyng_core cyng_io cyng_async cyng_log cyng_vm cyng_db cyng_parser cyng_json cyng_sys cyng_domain cyng_store cyng_table smf_cluster)
+set(tsdb_link_libs cyng_core cyng_io cyng_async cyng_log cyng_vm cyng_db cyng_parser cyng_json cyng_sys cyng_domain cyng_store cyng_table smf_cluster)
+if (UNIX)
+	list(APPEND tsdb_link_libs pthread ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})
+endif()
+target_link_libraries(tsdb ${tsdb_link_libs})
 
 #
 # task: stat (statistics - detecting gaps, etc)
 #
 include (tasks/stat/prg.cmake)
 add_executable(stat ${task_stat})
-target_link_libraries(stat cyng_core cyng_io cyng_async cyng_log cyng_vm cyng_db cyng_parser cyng_json cyng_sys cyng_domain cyng_store cyng_table smf_cluster)
+set(stat_link_libs cyng_core cyng_io cyng_async cyng_log cyng_vm cyng_db cyng_parser cyng_json cyng_sys cyng_domain cyng_store cyng_table smf_cluster)
+if (UNIX)
+	list(APPEND stat_link_libs pthread ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})
+endif()
+target_link_libraries(stat ${stat_link_libs})
 
 #
 # test unit using Boost.Test

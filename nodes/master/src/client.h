@@ -8,9 +8,11 @@
 #ifndef NODE_MASTER_CLIENT_H
 #define NODE_MASTER_CLIENT_H
 
+#include "db.h"
+
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
-#include <cyng/store/db.h>
+// #include <cyng/store/db.h>
 #include <cyng/table/key.hpp>
 #include <cyng/vm/context.h>
 #include <cyng/io/serializer.h>
@@ -208,7 +210,7 @@ namespace node
 		{
 			if (is_generate_time_series())
 			{
-				insert_ts_event(db_
+				node::insert_ts_event(db_
 					, tag
 					, account
 					, evt
