@@ -29,10 +29,7 @@ namespace node
 			, cyng::logging::log_ptr
 			, boost::uuids::uuid tag
 			, cluster_config_t const& cfg_cluster
-			, cyng::param_map_t const& cfg_db
-			, cyng::param_map_t const& cfg_clock_day
-			, cyng::param_map_t const& cfg_clock_month
-			, cyng::param_map_t const& cfg_trigger);
+			, cyng::param_map_t cfg_db);
 		cyng::continuation run();
 		void stop();
 
@@ -65,16 +62,6 @@ namespace node
 		cyng::logging::log_ptr logger_;
         const cluster_redundancy config_;
 		const cyng::param_map_t cfg_db_;
-		const cyng::param_map_t cfg_clock_day_;
-		const cyng::param_map_t cfg_clock_month_;
-		const std::chrono::minutes offset_;
-		const std::chrono::minutes frame_;
-		const std::string format_;
-
-		std::size_t profile_15_min_tsk_
-			, profile_60_min_tsk_
-			, profile_24_h_tsk_
-			, storage_task_;
 
 	};	
 }

@@ -5,17 +5,21 @@ set (task_tsdb_cpp
 
 	tasks/tsdb/src/main.cpp	
 	tasks/tsdb/src/controller.cpp
+	tasks/tsdb/src/dispatcher.cpp
+	tasks/tsdb/src/sync_db.cpp
 )
 
 set (task_tsdb_h
 
 	tasks/tsdb/src/controller.h
+	tasks/tsdb/src/dispatcher.h
+	tasks/tsdb/src/sync_db.h
 )
 
 set (task_tsdb_schemes
 
-	nodes/shared/db/db_meta.h
-	nodes/shared/db/db_meta.cpp
+	nodes/shared/db/db_schemes.h
+	nodes/shared/db/db_schemes.cpp
 )
 
 set (task_tsdb_info

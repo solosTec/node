@@ -18,7 +18,11 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/factory/set_factory.h>
 
-//#include <boost/uuid/random_generator.hpp>
+//#ifdef SMF_IO_LOG
+#include <cyng/io/hex_dump.hpp>
+#include <boost/uuid/uuid_io.hpp>
+//#endif
+
 #include <boost/uuid/nil_generator.hpp>
 
 namespace node 
@@ -247,12 +251,12 @@ namespace node
 			BOOST_ASSERT(size == bytes_transferred);
 			boost::ignore_unused(size);	//	release version
 
-#ifdef SMF_IO_DEBUG
+//#ifdef SMF_IO_DEBUG
 			cyng::io::hex_dump hd;
 			std::stringstream ss;
-			hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
+			hd(ss, begin, end);
 			CYNG_LOG_TRACE(logger_, "imega input dump \n" << ss.str());
-#endif
+//#endif
 			return cyng::buffer_t(begin, end);
 		}
 

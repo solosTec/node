@@ -76,12 +76,6 @@ namespace node
 		create_cache(logger_, cache_);
 
 		//
-		//	subscribe to database
-		//
-		dispatcher_.subscribe(cache_);
-		dispatcher_.register_this(bus_->vm_);
-
-		//
 		//	handle form data
 		//
 		form_data_.register_this(bus_->vm_);
@@ -149,6 +143,13 @@ namespace node
 		bus_->vm_.register_function("ws.read", 2, std::bind(&cluster::ws_read, this, std::placeholders::_1));
 		
 		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+
+		//
+		//	subscribe to database
+		//
+		dispatcher_.subscribe(cache_);
+		dispatcher_.register_this(bus_->vm_);
+
 	}
 
     void cluster::start_sys_task()

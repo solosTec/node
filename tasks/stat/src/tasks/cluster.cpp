@@ -6,10 +6,6 @@
  */
 
 #include "cluster.h"
-//#include "storage_db.h"
-//#include "profile_15_min.h"
-//#include "profile_60_min.h"
-//#include "profile_24_h.h"
 
 #include <smf/cluster/generator.h>
 #include <cyng/async/task/task_builder.hpp>
@@ -23,24 +19,12 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid cluster_tag
 		, cluster_config_t const& cfg_cluster
-		, cyng::param_map_t const& cfg_db
-		, cyng::param_map_t const& cfg_clock_day
-		, cyng::param_map_t const& cfg_clock_month
-		, cyng::param_map_t const& cfg_trigger)
+		, cyng::param_map_t cfg_db)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
 		, logger_(logger)
         , config_(cfg_cluster)
 		, cfg_db_(cfg_db)
-		, cfg_clock_day_(cfg_clock_day)
-		, cfg_clock_month_(cfg_clock_month)
-		, offset_(cyng::find_value(cfg_trigger, "offset", 7))
-		, frame_(cyng::find_value(cfg_trigger, "frame", 7))
-		, format_(cyng::find_value<std::string>(cfg_trigger, "format", "SML"))
-		, profile_15_min_tsk_(cyng::async::NO_TASK)
-		, profile_60_min_tsk_(cyng::async::NO_TASK)
-		, profile_24_h_tsk_(cyng::async::NO_TASK)
-		, storage_task_(cyng::async::NO_TASK)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

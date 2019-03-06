@@ -56,7 +56,10 @@ namespace node
 				else 
 				{
 					stream_state_ = STATE_ERROR;
-					cb_(cyng::generate_invoke("log.msg.error", "invalid login sequence", c));
+					cb_(cyng::generate_invoke("log.msg.error", "invalid login sequence", +c));
+					cb_(cyng::generate_invoke("session.state.pending"));
+					cb_(cyng::generate_invoke("ip.tcp.socket.shutdown"));
+					cb_(cyng::generate_invoke("ip.tcp.socket.close"));
 				}
 				break;
 
@@ -187,7 +190,6 @@ namespace node
 
 			default:
 				cb_(cyng::generate_invoke("log.msg.error", "iMega parser in illegal state"));
-				//BOOST_ASSERT_MSG(false, "illegal state");
 				if (c == '<')	stream_state_ = STATE_LOGIN;
 				break;
 			}
