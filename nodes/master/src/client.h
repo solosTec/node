@@ -216,6 +216,19 @@ namespace node
 			}
 		}
 
+		template <typename T>
+		void write_stat(cyng::store::table* tbl, boost::uuids::uuid tag, std::string const& account, std::string const& evt, T&& value)
+		{
+			if (is_generate_time_series())
+			{
+				insert_ts_event(tbl
+					, tag
+					, account
+					, evt
+					, cyng::make_object(value));
+			}
+		}
+
 	private:
 		void req_open_push_channel_empty(cyng::context& ctx
 			, boost::uuids::uuid tag
@@ -232,7 +245,8 @@ namespace node
 			, cyng::store::table* tbl_channel
 			, const cyng::store::table* tbl_session
 			, cyng::store::table* tbl_msg
-			, std::string const& name
+			, std::string const& target_name
+			, std::string const& account
 			, std::uint32_t source_channel
 			, std::uint32_t channel
 			, cyng::table::record const& target_rec

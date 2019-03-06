@@ -103,7 +103,7 @@
     </nav>
     <div class="jumbotron jumbotron-fluid">
         <div class="container">
-            <h1 class="display-4">System Messages</h1>
+            <h1 class="display-4">Time Series</h1>
         </div>
     </div>
 
@@ -114,10 +114,11 @@
                     <!--<table id="smf-table-msg" class="table table-condensed table-striped table-bordered" cellspacing="0" style="background-color:#808080;">-->
                     <thead>
                         <tr>
-                            <th scope="col" class="sml-col-msg-id">ID</th>
-                            <th scope="col" class="sml-col-msg-ts">Timestamp (UTC)</th>
-                            <th scope="col" class="sml-col-msg-severity">Severity</th>
-                            <th scope="col" class="sml-col-msg-txt">Message</th>
+                            <th scope="col" class="sml-col-tsdb-id">ID</th>
+                            <th scope="col" class="sml-col-tsdb-ts">Timestamp (UTC)</th>
+                            <th scope="col" class="sml-col-tsdb-account">Account</th>
+                            <th scope="col" class="sml-col-tsdb-event">Event</th>
+                            <th scope="col" class="sml-col-tsdb-descr">Description</th>
                         </tr>
                     </thead>
                 </table>
@@ -138,24 +139,8 @@
             return data;
         };
 
-        var renderSeverity = function (data, type, full, meta) {
-            if (type == "display") {
-                switch(data) {
-                case 1: return "TRACE";
-                case 2: return "DEBUG";
-                case 3: return "INFO ";
-                case 4: return "WARN ";
-                case 5: return "ERROR";
-                case 6: return "FATAL";
-                default: break;
-                }
-                return 'ALL';
-            }
-            return data;
-        };
-
         //  globals
-        var table_msg;
+        var table_tsdb;
         var totalIO = 0;
         var _ws = null;
 
@@ -164,7 +149,7 @@
             lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
             pageLength: 25,
             ordering: true,
-            order: [[0, "desc"]],
+            order: [[1, "desc"]],
             info: true,
             //scrollY: "100%",
             autoWidth: false,
@@ -173,26 +158,27 @@
             searching: true,
             select: true,
             columnDefs: [
-                { targets: 'sml-col-msg-id', visible: true, name: 'msg-id', className: 'text-right' },
-                { targets: 'sml-col-msg-ts', visible: true, name: 'msg-ts', render: renderDate },
-                { targets: 'sml-col-msg-severity', visible: true, name: 'msg-severity', render: renderSeverity },
-                { targets: 'sml-col-msg-txt', visible: true, name: 'msg-txt' }
-            ]
+                { targets: 'sml-col-tsdb-id', visible: false, name: 'msg-id', className: 'text-right' },
+                { targets: 'sml-col-tsdb-ts', visible: true, name: 'msg-ts', render: renderDate },
+                { targets: 'sml-col-tsdb-account', visible: true, name: 'msg-account' },
+                { targets: 'sml-col-tsdb-event', visible: true, name: 'msg-event' },
+                { targets: 'sml-col-tsdb-descr', visible: true, name: 'msg-descr' }
+        ]
         };
 
         $(document).ready(function () {
             console.log('document ready');
-            table_msg = $('#smf-table-msg').DataTable(tbl_config);
+            table_tsdb = $('#smf-table-msg').DataTable(tbl_config);
 
             function start_ws() {
                 $('#ws-activity-text').html('connecting to ' + location.host + '...');
-                _ws = new WebSocket('ws://' + location.host + '/smf/api/msg/v0.1', ['SMF']);
+                _ws = new WebSocket('ws://' + location.host + '/smf/api/tsdb/v0.1', ['SMF']);
 
                 _ws.onopen = function () {
                     //  clear table in case of reconnect
-                    table_msg.clear().draw(false);
+                    table_tsdb.clear().draw(false);
                     //  subscribe system status
-                    _ws.send(JSON.stringify({ cmd: "subscribe", channel: "monitor.msg", push: true }));
+                    _ws.send(JSON.stringify({ cmd: "subscribe", channel: "monitor.tsdb", push: true }));
                 };
 
                 _ws.onclose = function (event) {
@@ -211,7 +197,7 @@
                     $('#ws-activity-text').html('ws error');
                 };
 
-                //  {"cmd": "insert", "channel": "monitor.msg", "rec": {"key": {"id":0}, "data": {"msg":"startup","severity":3,"ts":"2018-03-20 18:05:24.71590930"}, "gen": 1}}
+                //  {"cmd": "insert", "channel": "monitor.tsdb", "rec": {"key": {"id":0}, "data": {"account":"LSMTest1","evt":"start recording...","gen":1,"obj":"7","tag":"d95ea0c1-e059-4fc0-b2aa-ca9f756f006f","ts":"2019-03-06 16:26:15.17398100"}}}
                 _ws.onmessage = function (e) {
                     console.log('incoming data: ' + e.data);
                     totalIO += e.data.length;
@@ -220,22 +206,12 @@
                         if (obj.cmd == 'insert') {
                             var msg = $('<div/>').text(obj.rec.data.msg).html();
                             var ts = new Date(obj.rec.data.ts.substring(0, 19));
-                            var rowNode = table_msg.row.add([obj.rec.key.id, ts, obj.rec.data.severity, msg]).draw().node();
-                            if (obj.rec.data.severity == 3) {
-                                $(rowNode).css('color', 'LimeGreen');
-                            }
-                            else if (obj.rec.data.severity == 4) {
-                                $(rowNode).css('color', '#ff9900');
-                            }
-                            else if (obj.rec.data.severity == 5) {
-                                $(rowNode).css('color', 'orange');
-                            }
-                            else if (obj.rec.data.severity == 6) {
-                                $(rowNode).css('color', 'OrangeRed');
-                            }
+                            var evt = $('<div/>').text(obj.rec.data.evt).html();
+                            var descr = $('<div/>').text(obj.rec.data.obj).html();
+                            var rowNode = table_tsdb.row.add([obj.rec.key.id, ts, obj.rec.data.account, evt, descr]).draw().node();
                         }
                         else if (obj.cmd == 'delete') {
-                            table_msg.row(function (idx, data, node) {
+                            table_tsdb.row(function (idx, data, node) {
                                 if ((obj.key.length == 1) && (data[0] == obj.key[0])) {
                                     return true;
                                 }
@@ -243,7 +219,7 @@
                             }).remove().draw(false);
                         }
                         else if (obj.cmd == 'clear') {
-                            table_msg.clear().draw(false);
+                            table_tsdb.clear().draw(false);
                         }
                         else if (obj.cmd == 'load') {
                             if (obj.show != null && obj.show) {
@@ -253,6 +229,7 @@
                             else {
                                 $('#ws-activity-symbol').find('svg').children().css({ 'fill': 'green' });
                                 $('#ws-activity-symbol').fadeOut();
+                                table_tsdb.order([1, 'desc']).draw();
                             }
                         }
                     }

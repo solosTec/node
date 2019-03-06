@@ -5,7 +5,7 @@
  *
  */
 
-#include "single.h"
+#include "line_protocol.h"
 #include <cyng/chrono.h>
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/async/task/base_task.h>
@@ -14,7 +14,7 @@
 
 namespace node
 {
-	single::single(cyng::async::base_task* btp
+	line_protocol::line_protocol(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, boost::filesystem::path root
 		, std::string prefix
@@ -34,7 +34,7 @@ namespace node
 			<< file_name_);
 	}
 
-	cyng::continuation single::run()
+	cyng::continuation line_protocol::run()
 	{	
 		if (ofs_.is_open()) {
 			ofs_.flush();
@@ -59,7 +59,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void single::stop()
+	void line_protocol::stop()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -68,7 +68,7 @@ namespace node
 			<< "> stopped");
 	}
 
-	cyng::continuation single::process(std::string table
+	cyng::continuation line_protocol::process(std::string table
 		, std::size_t idx
 		, std::chrono::system_clock::time_point	tp
 		, boost::uuids::uuid tag
@@ -85,33 +85,31 @@ namespace node
 
 		if (ofs_.is_open()) {
 			ofs_
-				<< table
-				<< ';'
-				<< idx
-				<< ';'
-				<< cyng::to_str_iso(tp)
-				<< ';'
-				<< tag
-				<< ';'
 				<< name
-				<< ';'
-				<< '"'
-				<< evt
-				<< '"'
-				<< ';'
-				<< '"'
-				<< descr
-				<< '"'
+				<< ','
+				<< "tag="
+				<< tag
+				<< ','
+				<< "event="
+				<< escape(evt)
+				<< ','
+				<< "value="
+				<< escape(descr)
+				<< ' '
+				<< "index="
+				<< idx
+				<< ' '
+				<< tp.time_since_epoch().count()
 				<< std::endl;
 		}
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void single::test_file_size()
+	void line_protocol::test_file_size()
 	{
 		const auto fs = boost::filesystem::file_size(file_name_.string());
-		if (fs > 0x2000000)
-		{	//	32 MB
+		if (fs > 0x800000)
+		{	//	8 MB
 
 			//
 			//	create backup file
@@ -121,7 +119,7 @@ namespace node
 		}
 	}
 
-	void single::create_backup_file()
+	void line_protocol::create_backup_file()
 	{
 		std::pair<std::time_t, double> r = cyng::chrono::to_dbl_time_point(std::chrono::system_clock::now());
 		std::tm tm = cyng::chrono::convert_utc(r.first);
@@ -143,6 +141,26 @@ namespace node
 			= file_name_.parent_path() / ((file_name_.stem().string() + "_backup_" + tag) + file_name_.extension().string());
 
 		boost::filesystem::rename(file_name_, backup);
+	}
+
+	std::string line_protocol::escape(std::string const& str)
+	{
+		std::string r;
+		r.reserve(str.size());
+		for (auto const c : str) {
+			switch (c) {
+			case ' ':
+			case ',':
+			case '=':
+			case '"':
+				r.push_back('\\');
+				break;
+			default:
+				break;
+			}
+			r.push_back(c);
+		}
+		return r;
 	}
 
 

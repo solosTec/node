@@ -246,6 +246,8 @@ namespace node
 		sync_table("_Config");
 		cache_.clear("_SysMsg", bus_->vm_.tag());
 		sync_table("_SysMsg");
+		cache_.clear("_TimeSeries", bus_->vm_.tag());
+		sync_table("_TimeSeries");
 		cache_.clear("_LoRaUplink", bus_->vm_.tag());
 		sync_table("_LoRaUplink");
 		sync_table("_CSV");

@@ -116,7 +116,13 @@ namespace node
 				, "counter"	//	message counter
 				},
 				{ cyng::TC_UINT32, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT16, cyng::TC_UINT8, cyng::TC_TIME_POINT, cyng::TC_UINT64, cyng::TC_UINT64 },
-				{ 0, 36, 36, 64, 36, 64, 0, 0, 0, 0, 0 });
+				{ 0
+				, 36	//	tag
+				, 36	//	peer
+				, 64	//	name
+				, 36	//	device
+				, 64	//	account
+				, 0, 0, 0, 0, 0 });
 
 		}
 		else if (boost::algorithm::equals(name, "TMeter")) {

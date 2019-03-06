@@ -164,7 +164,7 @@ namespace node
 		//
 		bool found{ false };
 		bool wrong_pwd{ false };
-		db_.access([&](const cyng::store::table* tbl_device, cyng::store::table* tbl_session, cyng::store::table* tbl_cluster)->void {
+		db_.access([&](const cyng::store::table* tbl_device, cyng::store::table* tbl_session, cyng::store::table* tbl_cluster, cyng::store::table* tbl_tsdb)->void {
 
 			//
 			// check if session is already authorized
@@ -231,7 +231,7 @@ namespace node
 							//
 							//	write statistics
 							//
-							write_stat(tag, account, "login", "OK");
+							write_stat(tbl_tsdb, tag, account, "login", "OK");
 
 							//
 							//	update cluster table
@@ -261,7 +261,7 @@ namespace node
 							//
 							//	write statistics
 							//
-							write_stat(tag, account, "login", "internal error");
+							write_stat(tbl_tsdb, tag, account, "login", "internal error");
 
 						}
 					}
@@ -281,13 +281,14 @@ namespace node
 					//
 					//	write statistics
 					//
-					write_stat(tag, account, "login", "already online");
+					write_stat(tbl_tsdb, tag, account, "login", "already online");
 
 				}
 			}
 		}	, cyng::store::read_access("TDevice")
 			, cyng::store::write_access("_Session")
-			, cyng::store::write_access("_Cluster"));
+			, cyng::store::write_access("_Cluster")
+			, cyng::store::write_access("_TimeSeries"));
 
 		if (!found)
 		{
@@ -545,7 +546,8 @@ namespace node
 		db_.access([&](cyng::store::table* tbl_session
 			, cyng::store::table* tbl_target
 			, cyng::store::table* tbl_cluster
-			, cyng::store::table* tbl_connection)->void {
+			, cyng::store::table* tbl_connection
+			, cyng::store::table* tbl_tsdb)->void {
 
 			//
 			//	generate table key for
@@ -605,7 +607,7 @@ namespace node
 						//
 						//	write stats
 						//
-						write_stat(rtag, account, "close connection", "local");
+						write_stat(tbl_tsdb, rtag, account, "close connection", "local");
 
 					}
 					else
@@ -620,7 +622,7 @@ namespace node
 							, rtag));
 						remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_factory("local-connect", false), bag));
 
-						write_stat(rtag, account, "close connection", "remote");
+						write_stat(tbl_tsdb, rtag, account, "close connection", "remote");
 					}
 
 					//
@@ -651,7 +653,7 @@ namespace node
 					, "removed"));
 
 				if (count_targets != 0u) {
-					write_stat(tag, account, "remove targets", count_targets);
+					write_stat(tbl_tsdb, tag, account, "remove targets", count_targets);
 				}
 
 				//
@@ -668,7 +670,7 @@ namespace node
 
 				const auto now = std::chrono::system_clock::now();
 				auto uptime = std::chrono::duration_cast<std::chrono::seconds>(now - cyng::value_cast(rec["loginTime"], now));
-				write_stat(tag, account, "offline", uptime);
+				write_stat(tbl_tsdb, tag, account, "offline", uptime);
 
 				//
 				//	update cluster table
@@ -688,7 +690,8 @@ namespace node
 		}	, cyng::store::write_access("_Session")
 			, cyng::store::write_access("_Target")
 			, cyng::store::write_access("_Cluster")
-			, cyng::store::write_access("_Connection"));
+			, cyng::store::write_access("_Connection")
+			, cyng::store::write_access("_TimeSeries"));
 
 		if (req)
 		{
@@ -749,7 +752,7 @@ namespace node
 		options["local-peer"] = cyng::make_object(peer);	//	and this peer
 															
 		bool success{ false };
-		db_.access([&](cyng::store::table const* tbl_device, cyng::store::table* tbl_session)->void {
+		db_.access([&](cyng::store::table const* tbl_device, cyng::store::table* tbl_session, cyng::store::table* tbl_tsdb)->void {
 
 			//
 			//	generate statistics
@@ -813,7 +816,7 @@ namespace node
 						//
 						//	write statistics
 						//
-						write_stat(tag, account, "dialup " + dev_number, "disabled");
+						write_stat(tbl_tsdb, tag, account, "dialup " + dev_number, "disabled");
 
 						//
 						//	abort loop
@@ -885,8 +888,8 @@ namespace node
 							//	write statistics
 							//
 							if (is_generate_time_series()) {
-								write_stat(tag, account, "dialup", dev_number.c_str());
-								write_stat(tag, callee, "called by", account.c_str());
+								write_stat(tbl_tsdb, tag, account, "dialup", dev_number.c_str());
+								write_stat(tbl_tsdb, tag, callee, "called by", account.c_str());
 							}
 
 							success = true;
@@ -903,7 +906,8 @@ namespace node
 			});
 
 		}	, cyng::store::read_access("TDevice")
-			, cyng::store::write_access("_Session"));
+			, cyng::store::write_access("_Session")
+			, cyng::store::write_access("_TimeSeries"));
 
 		if (!success)
 		{
@@ -983,7 +987,7 @@ namespace node
 		//
 		//	insert connection record
 		//
-		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection)->void {
+		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection, cyng::store::table* tbl_tsdb)->void {
 
 			//
 			//	generate statistics
@@ -1052,7 +1056,7 @@ namespace node
 					//
 					//	write statistics
 					//
-					write_stat(tag, account, "answer from " + callee, "OK");
+					write_stat(tbl_tsdb, tag, account, "answer from " + callee, "OK");
 
 				}
 				else
@@ -1060,7 +1064,7 @@ namespace node
 					//
 					//	write statistics
 					//
-					write_stat(tag, account, "answer from " + callee, "failed");
+					write_stat(tbl_tsdb, tag, account, "answer from " + callee, "failed");
 				}
 
 				if (local)
@@ -1109,7 +1113,8 @@ namespace node
 			}
 
 		}	, cyng::store::write_access("_Session")
-			, cyng::store::write_access("_Connection"));
+			, cyng::store::write_access("_Connection")
+			, cyng::store::write_access("_TimeSeries"));
 
 	}
 
@@ -1648,7 +1653,8 @@ namespace node
 			, cyng::store::table* tbl_channel
 			, const cyng::store::table* tbl_session
 			, cyng::store::table* tbl_msg
-			, const cyng::store::table* tbl_device)->void {
+			, const cyng::store::table* tbl_device
+			, cyng::store::table* tbl_tsdb)->void {
 
 
 			//
@@ -1709,7 +1715,7 @@ namespace node
 				//
 				//	write statistics
 				//
-				write_stat(tag, account, "no target", name.c_str());
+				write_stat(tbl_tsdb, tag, account, "no target", name.c_str());
 
 			}
 
@@ -1731,6 +1737,7 @@ namespace node
 					, tbl_session
 					, tbl_msg
 					, name
+					, account
 					, source_channel
 					, channel
 					, target_rec
@@ -1743,7 +1750,14 @@ namespace node
 					//
 					//	write statistics
 					//
-					write_stat(tag, account, "open push channel", name.c_str());
+					std::stringstream ss;
+					ss
+						<< name 
+						<< " ("
+						<< channel
+						<< ")"
+						;
+					write_stat(tbl_tsdb, tag, account, "open push channel", ss.str());
 				}
 
 			}
@@ -1767,14 +1781,16 @@ namespace node
 			, cyng::store::write_access("_Channel")
 			, cyng::store::read_access("_Session")
 			, cyng::store::write_access("_SysMsg")
-			, cyng::store::read_access("TDevice"));
+			, cyng::store::read_access("TDevice")
+			, cyng::store::write_access("_TimeSeries"));
 	}
 
 	bool client::create_channel(cyng::context& ctx
 		, cyng::store::table* tbl_channel
 		, const cyng::store::table* tbl_session
 		, cyng::store::table* tbl_msg
-		, std::string const& name
+		, std::string const& target_name
+		, std::string const& account
 		, std::uint32_t source_channel
 		, std::uint32_t channel
 		, cyng::table::record const& target_rec
@@ -1806,7 +1822,9 @@ namespace node
 					, self	// ChannelPeer
 					, max_packet_size	//	max packet size
 					, timeout	//	timeout
-					, count)	//	target count
+					, count
+					, account	//	owner
+					, target_name)
 				, 1, tag))
 			{
 				ctx.queue(cyng::generate_invoke("log.msg.info"
@@ -1825,7 +1843,7 @@ namespace node
 
 				insert_msg(tbl_msg
 					, cyng::logging::severity::LEVEL_WARNING
-					, "open push channel - [" + name + "] failed"
+					, "open push channel - [" + target_name + "] failed"
 					, tag
 					, 1000u);
 
@@ -1839,7 +1857,7 @@ namespace node
 
 			insert_msg(tbl_msg
 				, cyng::logging::severity::LEVEL_WARNING
-				, "open push channel - no target [" + name + "] session"
+				, "open push channel - no target [" + target_name + "] session"
 				, tag
 				, 1000u);
 
@@ -1913,21 +1931,47 @@ namespace node
 	{
 		cyng::table::key_list_t pks;
 
-		db_.access([&](cyng::store::table* tbl_channel)->void {
+		db_.access([&](cyng::store::table* tbl_channel, cyng::store::table* tbl_tsdb)->void {
 			tbl_channel->loop([&](cyng::table::record const& rec) -> bool {
-				if (channel == cyng::value_cast<std::uint32_t>(rec["channel"], 0))
+				if (channel == cyng::value_cast<std::uint32_t>(rec["channel"], 0u))
 				{ 
+					//
+					//	store table key
+					//
 					pks.push_back(rec.key());
+
+					//
+					//	write a debug message
+					//
 					ctx.queue(cyng::generate_invoke("log.msg.debug"
 						, "req.close.push.channel"
 						, rec.key()));
 
+					//
+					//	generate a time series event
+					//
+					auto const account = cyng::value_cast<std::string>(rec["owner"], "unknown");
+					auto const target = cyng::value_cast<std::string>(rec["name"], "unknown");
+					std::stringstream ss;
+					ss
+						<< target
+						<< " ("
+						<< channel
+						<< ")"
+						;
+					write_stat(tbl_tsdb, tag, account, "close push channel", ss.str());
 				}
 				//	continue
 				return true;
 			});
+
+			//
+			//	remove channels from table
+			//
 			cyng::erase(tbl_channel, pks, tag);
-		}, cyng::store::write_access("_Channel"));
+
+		}	, cyng::store::write_access("_Channel")
+			, cyng::store::write_access("_TimeSeries"));
 
 		//
 		//	send response

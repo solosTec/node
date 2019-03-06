@@ -48,6 +48,7 @@ set (node_dashs_assets
 	nodes/dash_shared/htdocs/status.targets.html
 	nodes/dash_shared/htdocs/status.connections.html
 	nodes/dash_shared/htdocs/monitor.msg.html
+	nodes/dash_shared/htdocs/monitor.tsdb.html
 	nodes/dash_shared/htdocs/monitor.lora.html
 	nodes/dash_shared/htdocs/csv.task.html
 	nodes/dash_shared/htdocs/stat.task.html

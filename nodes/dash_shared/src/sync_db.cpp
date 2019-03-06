@@ -182,6 +182,11 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table _SysMsg");
 		}
 
+		if (!create_table(db, "_TimeSeries"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table _TimeSeries");
+		}
+
 		if (!create_table(db, "_CSV"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _CSV");

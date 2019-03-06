@@ -44,6 +44,8 @@ set (task_tsdb_tasks
 	tasks/tsdb/src/tasks/single.cpp
 	tasks/tsdb/src/tasks/multiple.h
 	tasks/tsdb/src/tasks/multiple.cpp
+	tasks/tsdb/src/tasks/line_protocol.h
+	tasks/tsdb/src/tasks/line_protocol.cpp
 )
 	
 if(WIN32)

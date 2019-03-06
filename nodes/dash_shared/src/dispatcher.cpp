@@ -180,6 +180,11 @@ namespace node
 			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		db.get_listener("_TimeSeries"
+			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 		db.get_listener("_CSV"
 			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
 			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
@@ -320,6 +325,19 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("monitor.msg", msg);
+
+			update_channel("table.msg.count", tbl->size());
+
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeries"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("insert")),
+				cyng::param_factory("channel", "monitor.tsdb"),
+				cyng::param_factory("rec", rec.convert()));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("monitor.tsdb", msg);
 
 			update_channel("table.msg.count", tbl->size());
 
@@ -466,6 +484,16 @@ namespace node
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("monitor.msg", msg);
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeries"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("delete")),
+				cyng::param_factory("channel", "monitor.tsdb"),
+				cyng::param_factory("key", key));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("monitor.tsdb", msg);
+		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_LoRaUplink"))
 		{
 			auto tpl = cyng::tuple_factory(
@@ -580,6 +608,16 @@ namespace node
 
 			auto msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("monitor.msg", msg);
+
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeries"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("clear")),
+				cyng::param_factory("channel", "monitor.tsdb"));
+
+			auto msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("monitor.tsdb", msg);
 
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_LoRaUplink"))
@@ -822,6 +860,10 @@ namespace node
 		{
 			subscribe_table_msg_count(db, channel, tag);
 		}
+		else if (boost::algorithm::starts_with(channel, "table.tsdb.count"))
+		{
+			subscribe_table_tsdb_count(db, channel, tag);
+		}
 		else if (boost::algorithm::starts_with(channel, "table.LoRa.count"))
 		{
 			subscribe_table_LoRa_count(db, channel, tag);
@@ -833,6 +875,10 @@ namespace node
 		else if (boost::algorithm::starts_with(channel, "monitor.msg"))
 		{
 			subscribe(db, "_SysMsg", channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "monitor.tsdb"))
+		{
+			subscribe(db, "_TimeSeries", channel, tag);
 		}
 		else if (boost::algorithm::starts_with(channel, "monitor.lora"))
 		{
@@ -1081,6 +1127,13 @@ namespace node
 	{
 		connection_manager_.add_channel(tag, channel);
 		const auto size = db.size("_SysMsg");
+		update_channel(channel, size);
+	}
+
+	void dispatcher::subscribe_table_tsdb_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		connection_manager_.add_channel(tag, channel);
+		const auto size = db.size("_TimeSeries");
 		update_channel(channel, size);
 	}
 

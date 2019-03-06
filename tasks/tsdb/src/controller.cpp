@@ -9,6 +9,7 @@
 #include "tasks/cluster.h"
 #include "tasks/single.h"
 #include "tasks/multiple.h"
+#include "tasks/line_protocol.h"
 #include <NODE_project_info.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -230,7 +231,7 @@ namespace node
 				, cyng::param_factory("line-protocol", cyng::tuple_factory(
 					cyng::param_factory("enabled", true),
 					cyng::param_factory("root-dir", (pwd / "line-protocol").string()),
-					cyng::param_factory("prefix", "smf-full-report-"),
+					cyng::param_factory("prefix", "smf-line-protocol"),
 					cyng::param_factory("suffix", "txt"),
 					cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 				))
@@ -521,8 +522,30 @@ namespace node
 		if (cyng::value_cast(dom_line_protocol.get("enabled"), false)) {
 
 			//
+			//	test output directory
+			//
+			boost::filesystem::path const dir = cyng::value_cast(dom_line_protocol.get("root-dir"), tmp.string());
+			if (force_mkdir) {
+				boost::system::error_code ec;
+				if (!boost::filesystem::exists(dir, ec)) {
+					CYNG_LOG_WARNING(logger, "create directory: " << dir);
+					boost::filesystem::create_directory(dir, ec);
+				}
+			}
+
+			//
 			//	start line protocol task
 			//
+			auto const r = cyng::async::start_task_sync<line_protocol>(mux, logger, dir
+				, cyng::value_cast<std::string>(dom_line_protocol.get("prefix"), "smf-line-protocol")
+				, cyng::value_cast<std::string>(dom_line_protocol.get("suffix"), "txt")
+				, std::chrono::seconds(cyng::value_cast(dom_line_protocol.get("period"), 60)));
+			if (r.second) {
+				tasks.insert(r.first);
+			}
+			else {
+				CYNG_LOG_FATAL(logger, "cannot start <line_protocol> task");
+			}
 		}
 
 		auto const dom_influxdb = cyng::make_reader(cfg_influxdb);
