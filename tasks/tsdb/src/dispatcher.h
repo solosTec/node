@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  * 
- * Copyright (c) 2019 Sylko Olzscher 
+ * Copyright (c) 2018 Sylko Olzscher 
  * 
  */ 
 
@@ -9,44 +9,53 @@
 #define NODE_TSDB_DISPATCHER_H
 
 #include <cyng/log.h>
-#include <cyng/store/db.h>
+#include <cyng/table/body.hpp>
 #include <cyng/vm/controller.h>
+#include <cyng/async/mux.h>
 
 namespace node 
 {
+
 	class dispatcher
 	{
 	public:
-		dispatcher(cyng::logging::log_ptr, cyng::store::db& cache);
-
-		void register_this(cyng::controller&);
+		dispatcher(cyng::async::mux&, cyng::logging::log_ptr, std::set<std::size_t>);
 
 		/**
-		 *	subscribe to database
+		 * register provided functions
 		 */
-		void subscribe();
+		void register_this(cyng::controller&);
+
+		void res_subscribe(std::string const&		//	[0] table name
+			, cyng::table::key_type		//	[1] table key
+			, cyng::table::data_type	//	[2] record
+			, std::uint64_t				//	[3] generation
+			, boost::uuids::uuid		//	[4] origin session id
+			, std::size_t tsk);
+
+	private:
+		void db_res_insert(cyng::context& ctx);
+		void db_res_remove(cyng::context& ctx);
+		void db_res_modify_by_attr(cyng::context& ctx);
+		void db_res_modify_by_param(cyng::context& ctx);
+		void db_req_insert(cyng::context& ctx);
+		void db_req_remove(cyng::context& ctx);
+		void db_req_modify_by_param(cyng::context& ctx);
+
+		void distribute(std::string const&		//	[0] table name
+			, cyng::table::key_type		//	[1] table key
+			, cyng::table::data_type	//	[2] record
+			, std::uint64_t	gen
+			, boost::uuids::uuid origin);
 
 
 	private:
-		void sig_ins(cyng::store::table const*
-			, cyng::table::key_type const&
-			, cyng::table::data_type const&
-			, std::uint64_t
-			, boost::uuids::uuid);
-		void sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid);
-		void sig_clr(cyng::store::table const*, boost::uuids::uuid);
-		void sig_mod(cyng::store::table const*
-			, cyng::table::key_type const&
-			, cyng::attr_t const&
-			, std::uint64_t
-			, boost::uuids::uuid);
-
-
-	private:
+		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
-		cyng::store::db& cache_;
+		std::set<std::size_t> const tasks_;
 	};
+
+
 }
 
 #endif
- 

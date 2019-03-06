@@ -249,7 +249,7 @@ namespace node
 				//	There is an error in ec serialization/deserialization
 				//	
 				auto ec = cyng::value_cast(frame.at(1), boost::system::error_code());
-				client_.write_stat(tag, account, "shutdown node", ec.message());
+				client_.write_stat(tag, account, "shutdown node " + client_.get_class(), ec.message());
 
 				//	continue
 				return true;

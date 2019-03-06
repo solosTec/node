@@ -6,7 +6,6 @@
  */
 
 #include "cluster.h"
-//#include "../../../nodes/shared/db/db_schemes.h"
 
 #include <smf/cluster/generator.h>
 #include <cyng/async/task/task_builder.hpp>
@@ -21,26 +20,18 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid cluster_tag
 		, cluster_config_t const& cfg_cluster
-		, cyng::param_map_t cfg_db)
+		, std::set<std::size_t> tasks)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
 		, logger_(logger)
         , config_(cfg_cluster)
-		, cfg_db_(cfg_db)
-		, cache_()
-		, dispatcher_(logger, cache_)
-		, db_sync_(logger, cache_)
+		, dispatcher_(btp->mux_, logger, tasks)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
 			<< ">");
-
-		//
-		//	init cache
-		//
-		node::create_cache(logger, cache_);
 
 		//
 		//	data handling
@@ -51,7 +42,7 @@ namespace node
 		bus_->vm_.register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
 			CYNG_LOG_TRACE(logger_, "db.trx.commit");
 		});
-		db_sync_.register_this(bus_->vm_);
+		dispatcher_.register_this(bus_->vm_);
 
         //
         //	implement request handler
@@ -60,11 +51,6 @@ namespace node
 		bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1));
         bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
-		//
-		//	subscribe to database
-		//
-		dispatcher_.subscribe();
-		dispatcher_.register_this(bus_->vm_);
 
 	}
 
@@ -106,7 +92,7 @@ namespace node
 		//
 		//	start clocks and storage tasks
 		//
-		start_sub_tasks();
+		//dispatcher_.start_sub_tasks();
 
 		//
 		//	sync tables
@@ -121,11 +107,6 @@ namespace node
 		CYNG_LOG_INFO(logger_, "sync table " << name);
 
 		//
-		//	manage table state
-		//
-		cache_.set_state(name, 0);
-
-		//
 		//	Get existing records from master. This could be setup data
 		//	from another redundancy or data collected during a line disruption.
 		//
@@ -138,7 +119,7 @@ namespace node
 		//
 		//	stop clocks and storage tasks
 		//
-		stop_sub_tasks();
+		//dispatcher_.stop_sub_tasks();
 
         //
         //  switch to other configuration
@@ -170,7 +151,6 @@ namespace node
         reconfigure_impl();
     }
 
-
     void cluster::reconfigure_impl()
     {
         //
@@ -198,112 +178,6 @@ namespace node
 
     }
 
-	void cluster::start_sub_tasks()
-	{
-		CYNG_LOG_INFO(logger_, "connect to configuration database");
-
-		//storage_task_ = cyng::async::start_task_delayed<storage_db>(base_.mux_
-		//	, std::chrono::seconds(2)
-		//	, logger_
-		//	, bus_
-		//	, cfg_db_
-		//	, cfg_clock_day_
-		//	, cfg_clock_month_).first;
-
-		//CYNG_LOG_INFO(logger_, "start clocks");
-
-  //      profile_15_min_tsk_ = cyng::async::start_task_delayed<profile_15_min>(base_.mux_
-  //          , std::chrono::seconds(3)
-  //          , logger_
-  //          , storage_task_
-  //          , offset_
-		//	, frame_
-		//	, format_).first;
-
-		//profile_60_min_tsk_ = cyng::async::start_task_delayed<profile_60_min>(base_.mux_
-		//	, std::chrono::seconds(4)
-		//	, logger_
-		//	, storage_task_
-		//	, offset_
-		//	, frame_
-		//	, format_).first;
-
-		//profile_24_h_tsk_ = cyng::async::start_task_delayed<profile_24_h>(base_.mux_
-  //          , std::chrono::seconds(5)
-		//	, logger_
-		//	, storage_task_
-		//	, offset_
-		//	, frame_
-		//	, format_).first;
-	}
-
-	void cluster::stop_sub_tasks()
-	{
-		CYNG_LOG_INFO(logger_, "stop the clocks");
-
-		//if (profile_15_min_tsk_ != cyng::async::NO_TASK) {
-
-		//	CYNG_LOG_WARNING(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> stop clock #"
-		//		<< profile_15_min_tsk_);
-
-		//	base_.mux_.stop(profile_15_min_tsk_);
-		//	profile_15_min_tsk_ = cyng::async::NO_TASK;
-		//}
-
-		//if (profile_60_min_tsk_ != cyng::async::NO_TASK) {
-
-		//	CYNG_LOG_WARNING(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> stop clock #"
-		//		<< profile_60_min_tsk_);
-
-		//	base_.mux_.stop(profile_60_min_tsk_);
-		//	profile_60_min_tsk_ = cyng::async::NO_TASK;
-		//}
-
-		//if (profile_24_h_tsk_ != cyng::async::NO_TASK) {
-
-		//	CYNG_LOG_WARNING(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> stop clock #"
-		//		<< profile_24_h_tsk_);
-
-		//	base_.mux_.stop(profile_24_h_tsk_);
-		//	profile_24_h_tsk_ = cyng::async::NO_TASK;
-		//}
-
-		//if (storage_task_ != cyng::async::NO_TASK) {
-
-		//	CYNG_LOG_WARNING(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> stop storage task #"
-		//		<< storage_task_);
-		//	base_.mux_.stop(storage_task_);
-		//	storage_task_ = cyng::async::NO_TASK;
-		//}
-	}
-
-	//void cluster::create_cache()
-	//{
-	//	//
-	//	//	time series
-	//	//
-	//	if (!create_table(cache_, "_TimeSeries"))
-	//	{
-	//		CYNG_LOG_FATAL(logger_, "cannot create table _TimeSeries");
-	//	}
-
-	//}
 
 	void cluster::res_subscribe(cyng::context& ctx)
 	{
@@ -343,9 +217,7 @@ namespace node
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
 
-		node::res_subscribe(logger_
-			, cache_
-			, std::get<0>(tpl)	//	[0] table name
+		dispatcher_.res_subscribe(std::get<0>(tpl)	//	[0] table name
 			, std::get<1>(tpl)	//	[1] table key
 			, std::get<2>(tpl)	//	[2] record
 			, std::get<3>(tpl)	//	[3] generation

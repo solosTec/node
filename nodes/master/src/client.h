@@ -201,6 +201,7 @@ namespace node
 		bool is_generate_time_series() const;
 
 		void set_class(std::string const&);
+		std::string get_class();
 
 		template <typename T>
 		void write_stat(boost::uuids::uuid tag, std::string const& account, std::string const& evt, T&& value)

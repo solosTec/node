@@ -6,14 +6,12 @@ set (task_tsdb_cpp
 	tasks/tsdb/src/main.cpp	
 	tasks/tsdb/src/controller.cpp
 	tasks/tsdb/src/dispatcher.cpp
-	tasks/tsdb/src/sync_db.cpp
 )
 
 set (task_tsdb_h
 
 	tasks/tsdb/src/controller.h
 	tasks/tsdb/src/dispatcher.h
-	tasks/tsdb/src/sync_db.h
 )
 
 set (task_tsdb_schemes
@@ -42,6 +40,10 @@ set (task_tsdb_info
 set (task_tsdb_tasks
 	tasks/tsdb/src/tasks/cluster.h
 	tasks/tsdb/src/tasks/cluster.cpp
+	tasks/tsdb/src/tasks/single.h
+	tasks/tsdb/src/tasks/single.cpp
+	tasks/tsdb/src/tasks/multiple.h
+	tasks/tsdb/src/tasks/multiple.cpp
 )
 	
 if(WIN32)

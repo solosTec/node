@@ -121,7 +121,7 @@ namespace node
 						//	print uptime
 						//
 						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+						CYNG_LOG_INFO(logger, "smf:iec-62056 uptime " << cyng::io::to_str(cyng::make_object(duration)));
 					}
 				}
 				else

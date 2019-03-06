@@ -107,6 +107,11 @@ namespace node
 		node_class_ = node_class;
 	}
 
+	std::string client::get_class()
+	{
+		return node_class_;
+	}
+
 	void client::req_login(cyng::context& ctx)
 	{
 		//	[1cea6ddf-5044-478b-9fba-67fa23997ba6,65d9eb67-2187-481b-8770-5ce41801eaa6,1,data-store,secret,plain,%(("security":scrambled),("tp-layer":ipt)),<!259:session>]

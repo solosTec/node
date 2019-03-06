@@ -106,7 +106,7 @@ namespace node
 						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
 
 						auto logger = (console)
-							? cyng::logging::make_console_logger(mux.get_io_service(), "dash")
+							? cyng::logging::make_console_logger(mux.get_io_service(), "smf::dash")
 							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "smf-dash.log"))
 							;
 #ifdef _DEBUG
@@ -128,7 +128,7 @@ namespace node
 						//	print uptime
 						//
 						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+						CYNG_LOG_INFO(logger, "smf::dash uptime " << cyng::io::to_str(cyng::make_object(duration)));
 					}
 				}
 				else

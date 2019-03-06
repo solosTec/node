@@ -19,6 +19,18 @@
 
 #include <boost/uuid/nil_generator.hpp>
 
+#ifdef __GNUC__
+#  include <features.h>
+#  if __GNUC_PREREQ(6,0)
+#define SMF_AUTO_TUPLE_ENABLED
+#  else
+#define SMF_AUTO_TUPLE_DISABLED
+#  endif
+#else
+ //    If not gcc
+#define SMF_AUTO_TUPLE_ENABLED
+#endif
+
 namespace node 
 {
 	cluster::cluster(cyng::async::mux& mux
@@ -79,7 +91,7 @@ namespace node
 			//	of that device/gateway. Additionally we get the required access data like
 			//	server ID, user and password.
 			//
-#if defined __GNUC__ && __GNUC_PREREQ(6,0)
+#if defined SMF_AUTO_TUPLE_ENABLED
 			auto const[peer, rec, server, tag] = find_peer(std::get<2>(tpl), tbl_session, tbl_gw);
 #else            
             std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> r = find_peer(std::get<2>(tpl), tbl_session, tbl_gw);

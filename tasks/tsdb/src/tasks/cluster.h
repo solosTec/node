@@ -11,12 +11,11 @@
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
 #include "../dispatcher.h"
-#include "../sync_db.h"
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
-#include <cyng/store/db.h>
+
 
 namespace node
 {
@@ -33,7 +32,7 @@ namespace node
 			, cyng::logging::log_ptr
 			, boost::uuids::uuid tag
 			, cluster_config_t const& cfg_cluster
-			, cyng::param_map_t cfg_db);
+			, std::set<std::size_t> tasks);
 		cyng::continuation run();
 		void stop();
 
@@ -55,10 +54,7 @@ namespace node
         void connect();
         void reconfigure(cyng::context& ctx);
         void reconfigure_impl();
-        void start_sub_tasks();
-		void stop_sub_tasks();
 
-		//void create_cache();
 		void sync_table(std::string const& name);
 		void res_subscribe(cyng::context& ctx);
 
@@ -66,12 +62,9 @@ namespace node
 		cyng::async::base_task& base_;
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-        const cluster_redundancy config_;
-		const cyng::param_map_t cfg_db_;
+        cluster_redundancy  const config_;
 
-		cyng::store::db cache_;
 		dispatcher dispatcher_;
-		db_sync db_sync_;
 
 	};	
 }

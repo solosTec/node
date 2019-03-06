@@ -7,6 +7,8 @@
 
 #include "controller.h"
 #include "tasks/cluster.h"
+#include "tasks/single.h"
+#include "tasks/multiple.h"
 #include <NODE_project_info.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -39,8 +41,17 @@ namespace node
 	void join_cluster(cyng::async::mux&
 		, cyng::logging::log_ptr
 		, boost::uuids::uuid
+		, bool force_mkdir
 		, cyng::vector_t const& cfg_cluster
-		, cyng::tuple_t cfg_db);
+		, cyng::tuple_t cfg_db
+		, cyng::tuple_t cfg_single
+		, cyng::tuple_t cfg_multiple
+		, cyng::tuple_t cfg_line_protocol
+		, cyng::tuple_t cfg_influxdb
+#if BOOST_OS_LINUX
+		, cyng::tuple_t cfg_syslog
+#endif
+	);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path)
 	: pool_size_(pool_size)
@@ -122,7 +133,7 @@ namespace node
 						//	print uptime
 						//
 						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-						CYNG_LOG_INFO(logger, "uptime " << cyng::io::to_str(cyng::make_object(duration)));
+						CYNG_LOG_INFO(logger, "task:tsdb uptime " << cyng::io::to_str(cyng::make_object(duration)));
 					}
 				}
 				else
@@ -168,8 +179,8 @@ namespace node
 			//
 			//	get default values
 			//
-			const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
-			const boost::filesystem::path pwd = boost::filesystem::current_path();
+			auto const tmp = boost::filesystem::temp_directory_path();
+			auto const pwd = boost::filesystem::current_path();
 			boost::uuids::random_generator uidgen;
 
 			//
@@ -184,14 +195,15 @@ namespace node
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
 				, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 				//, cyng::param_factory("load-config", "local")	//	options are local, master, mixed
-				//, cyng::param_factory("output", cyng::vector_factory({"ALL:BIN"}))	//	options are XML, JSON, DB, BIN, ...
+				, cyng::param_factory("force-mkdir", false)	//	create output directories if not exists
 
 				, cyng::param_factory("single-file", cyng::tuple_factory(
 					cyng::param_factory("enabled", true),
 					cyng::param_factory("root-dir", (pwd / "ts-report").string()),
-					cyng::param_factory("prefix", "smf-full-report-"),
+					cyng::param_factory("prefix", "smf-full-report"),
                     cyng::param_factory("suffix", "csv"),
-					cyng::param_factory("header", true),
+					cyng::param_factory("period", 60),	//	seconds
+					//cyng::param_factory("header", true),
 					cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 				))
 
@@ -200,7 +212,7 @@ namespace node
 					cyng::param_factory("root-dir", (pwd / "ts-report").string()),
 					cyng::param_factory("prefix", "smf-sub-report-"),
                     cyng::param_factory("suffix", "csv"),
-					cyng::param_factory("header", true),
+					cyng::param_factory("period", 60),	//	seconds
 					cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 				))
 
@@ -332,7 +344,7 @@ namespace node
 		auto dom = cyng::make_reader(cfg);
 
 		boost::uuids::random_generator uidgen;
-		const auto cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
+		auto const cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
 
 		//
 		//	apply severity threshold
@@ -344,21 +356,27 @@ namespace node
 		write_pid(log_dir, cluster_tag);
 #endif
 
-		//
-		//	storage manager task
-		//	Open database session only when needed (from task clock)
-		//
-		cyng::tuple_t tpl;
+		auto const force_mkdir = cyng::value_cast(dom.get("force-mkdir"), false);
 
 		//
 		//	connect to cluster
 		//
 		cyng::vector_t vec;
+		cyng::tuple_t tpl;
 		join_cluster(mux
 			, logger
 			, cluster_tag
+			, force_mkdir
 			, cyng::value_cast(dom.get("cluster"), vec)
-			, cyng::value_cast(dom.get("DB"), tpl));
+			, cyng::value_cast(dom.get("DB"), tpl)
+			, cyng::value_cast(dom.get("single-file"), tpl)
+			, cyng::value_cast(dom.get("multiple-files"), tpl)
+			, cyng::value_cast(dom.get("line-protocol"), tpl)
+			, cyng::value_cast(dom.get("influxdb"), tpl)
+#if BOOST_OS_LINUX
+			, cyng::value_cast(dom.get("syslog"), tpl)
+#endif
+		);
 
 		//
 		//	wait for system signals
@@ -411,16 +429,125 @@ namespace node
 	void join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid tag
+		, bool force_mkdir
 		, cyng::vector_t const& cfg_cluster
-		, cyng::tuple_t cfg_db)
+		, cyng::tuple_t cfg_db
+		, cyng::tuple_t cfg_single
+		, cyng::tuple_t cfg_multiple
+		, cyng::tuple_t cfg_line_protocol
+		, cyng::tuple_t cfg_influxdb
+#if BOOST_OS_LINUX
+		, cyng::tuple_t cfg_syslog
+#endif
+		)
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cluster.size());
+		auto const tmp = boost::filesystem::temp_directory_path();
+
+		//
+		//	all storage tasks
+		//
+		std::set<std::size_t>	tasks;
+
+		auto const dom_db = cyng::make_reader(cfg_db);
+		if (cyng::value_cast(dom_db.get("enabled"), false)) {
+
+			//
+			//	start db task
+			//
+		}
+
+		auto const dom_single = cyng::make_reader(cfg_single);
+		if (cyng::value_cast(dom_single.get("enabled"), false)) {
+
+			//
+			//	test output directory
+			//
+			boost::filesystem::path const dir = cyng::value_cast(dom_single.get("root-dir"), tmp.string());
+			if (force_mkdir) {
+				boost::system::error_code ec;
+				if (!boost::filesystem::exists(dir, ec)) {
+					CYNG_LOG_WARNING(logger, "create directory: " << dir);
+					boost::filesystem::create_directory(dir, ec);
+				}
+			}
+
+			//
+			//	start single file task
+			//
+			auto const r = cyng::async::start_task_sync<single>(mux, logger, dir
+				, cyng::value_cast<std::string>(dom_single.get("prefix"), "smf-full-report")
+				, cyng::value_cast<std::string>(dom_single.get("suffix"), "csv")
+				, std::chrono::seconds(cyng::value_cast(dom_single.get("period"), 60)));
+			if (r.second) {
+				tasks.insert(r.first);
+			}
+			else {
+				CYNG_LOG_FATAL(logger, "cannot start <single> task");
+			}
+		}
+
+		auto const dom_multiple = cyng::make_reader(cfg_multiple);
+		if (cyng::value_cast(dom_multiple.get("enabled"), false)) {
+
+			//
+			//	test output directory
+			//
+			boost::filesystem::path const dir = cyng::value_cast(dom_single.get("root-dir"), tmp.string());
+			if (force_mkdir) {
+				boost::system::error_code ec;
+				if (!boost::filesystem::exists(dir, ec)) {
+					CYNG_LOG_WARNING(logger, "create directory: " << dir);
+					boost::filesystem::create_directory(dir, ec);
+				}
+			}
+
+			//
+			//	start multiple file task
+			//
+			auto const r = cyng::async::start_task_sync<multiple>(mux, logger, dir
+				, cyng::value_cast<std::string>(dom_single.get("prefix"), "smf-sub-report-")
+				, cyng::value_cast<std::string>(dom_single.get("suffix"), "csv")
+				, std::chrono::seconds(cyng::value_cast(dom_single.get("period"), 60)));
+			if (r.second) {
+				tasks.insert(r.first);
+			}
+			else {
+				CYNG_LOG_FATAL(logger, "cannot start <multiple> task");
+			}
+		}
+
+		auto const dom_line_protocol = cyng::make_reader(cfg_line_protocol);
+		if (cyng::value_cast(dom_line_protocol.get("enabled"), false)) {
+
+			//
+			//	start line protocol task
+			//
+		}
+
+		auto const dom_influxdb = cyng::make_reader(cfg_influxdb);
+		if (cyng::value_cast(dom_influxdb.get("enabled"), false)) {
+
+			//
+			//	start influxdb task
+			//
+		}
+
+#if BOOST_OS_LINUX
+		auto const dom_syslog = cyng::make_reader(cfg_syslog);
+		if (cyng::value_cast(dom_syslog.get("enabled"), false)) {
+
+			//
+			//	start syslog task
+			//
+		}
+#endif
 
 		cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
 			, tag
 			, load_cluster_cfg(cfg_cluster)
-			, cyng::to_param_map(cfg_db));
+			, tasks);
 	}
 }

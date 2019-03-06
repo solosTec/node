@@ -12,6 +12,8 @@
 #error cannot mix db_schemes.h and db_meta.h
 #endif
 
+#include <cyng/table/meta_interface.h>
+
 namespace cyng {
 	namespace store {
 		class db;
