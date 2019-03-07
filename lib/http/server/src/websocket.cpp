@@ -50,14 +50,14 @@ namespace node
             // Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
 			{
-				CYNG_LOG_WARNING(logger_, "ws aborted - read");
+				CYNG_LOG_WARNING(logger_, tag() << " ws aborted - read");
 				connection_manager_.stop_ws(tag());
 				return;
 			}
 
 			if (ec)
 			{
-				CYNG_LOG_ERROR(logger_, "ws read error: " << ec << " - " << ec.message());
+				CYNG_LOG_ERROR(logger_, tag() << " ws read error: " << ec << " - " << ec.message());
 				connection_manager_.stop_ws(tag());
 				return;
 			}
@@ -80,7 +80,7 @@ namespace node
 
             if (ec && ec != boost::asio::error::operation_aborted)
 			{
-				CYNG_LOG_WARNING(logger_, "ws timer aborted - read");
+				CYNG_LOG_WARNING(logger_, tag() << " ws timer aborted - read");
 				connection_manager_.stop_ws(tag());
 				return;
 			}

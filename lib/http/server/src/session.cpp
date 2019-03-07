@@ -178,22 +178,23 @@ namespace node
 			if (ec == boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, tag() << " - timer aborted session");
-				connection_manager_.stop_session(tag());
+				auto obj = connection_manager_.stop_session(tag());
 				return;
 			}
 
 			// This means they closed the connection
 			if (ec == boost::beast::http::error::end_of_stream)
 			{
-				CYNG_LOG_TRACE(logger_, "session closed - read");
-				connection_manager_.stop_session(tag());
+				CYNG_LOG_TRACE(logger_,  tag() << " session closed - read");
+				auto obj = connection_manager_.stop_session(tag());
+// 				queue_.items_.clear();
 				return;
 			}
 
 			if (ec)
 			{
-				CYNG_LOG_ERROR(logger_, "read error: " << ec.message());
-				connection_manager_.stop_session(tag());
+				CYNG_LOG_ERROR(logger_, tag() << " read error: " << ec.message());
+				auto obj = connection_manager_.stop_session(tag());
 				return;
 			}
 
@@ -761,23 +762,6 @@ namespace node
 		{
 			return items_.size() >= limit;
 		}
-
-		//cyng::object make_http_session(cyng::logging::log_ptr logger
-		//	, connection_manager& cm
-		//	, boost::asio::ip::tcp::socket&& socket
-		//	, std::string const& doc_root
-		//	, bus::shared_type bus
-		//	, boost::uuids::uuid tag) {
-
-		//	return cyng::make_object<session>(logger
-		//		, cm
-		//		, std::move(socket)
-		//		, doc_root
-		//		, bus
-		//		, tag);
-
-		//}
-
 	}
 }
 
