@@ -10,4 +10,9 @@ echo create service node_csv_v${${PROJECT_NAME}_VERSION_MAJOR}
 sc create node_csv_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\csv.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF csv server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
 sc description node_csv_v${${PROJECT_NAME}_VERSION_MAJOR} "csv Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
 sv failure node_csv_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
+REM
+REM Add a dependency to SMF master service.
+REM Modify or remove this dependency if SMF master is running on a different node.
+REM
+sc config node_csv_v${${PROJECT_NAME}_VERSION_MAJOR} depend= node_master_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on
