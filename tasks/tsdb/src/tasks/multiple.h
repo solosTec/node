@@ -15,7 +15,6 @@
 
 namespace node
 {
-
 	class multiple
 	{
 	public:
@@ -55,11 +54,15 @@ namespace node
 
 
 	private:
+		void test_file_size(boost::filesystem::path p);
+		void create_backup_file(boost::filesystem::path p);
 
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		boost::filesystem::path const out_;
+		std::string const prefix_;
+		std::string const suffix_;
 		std::chrono::seconds const period_;
 	};
 }
