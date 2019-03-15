@@ -231,7 +231,7 @@ namespace node
 							//
 							//	write statistics
 							//
-							write_stat(tbl_tsdb, tag, account, "login", "OK");
+							write_stat(tbl_tsdb, tag, account, "login", tbl_session->size());
 
 							//
 							//	update cluster table

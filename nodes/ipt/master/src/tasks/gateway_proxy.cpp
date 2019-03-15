@@ -836,7 +836,7 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> [activate] has no parameters - "
+				<< "> [deactivate] has no parameters - "
 				<< sml::from_server_id(queue_.front().get_srv()));
 		}
 	}

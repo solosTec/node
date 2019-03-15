@@ -194,7 +194,7 @@ namespace node
 		//
 		//	remove all client sessions of this node and close open connections
 		//
-		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection, const cyng::store::table* tbl_device)->void {
+		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection, const cyng::store::table* tbl_device, cyng::store::table* tbl_tsdb)->void {
 			cyng::table::key_list_t pks;
 			tbl_session->loop([&](cyng::table::record const& rec) -> bool {
 
@@ -237,19 +237,19 @@ namespace node
 						}
 
 						//
+						//	generate statistics
+						//	There is an error in ec serialization/deserialization
+						//	
+						auto ec = cyng::value_cast(frame.at(1), boost::system::error_code());
+						client_.write_stat(tbl_tsdb, tag, account, "shutdown node " + client_.get_class(), ec.message());
+
+						//
 						//	remove from connection table
 						//
 						connection_erase(tbl_connection, cyng::table::key_generator(tag, rtag), tag);
 					}
 
 				}
-
-				//
-				//	generate statistics
-				//	There is an error in ec serialization/deserialization
-				//	
-				auto ec = cyng::value_cast(frame.at(1), boost::system::error_code());
-				client_.write_stat(tag, account, "shutdown node " + client_.get_class(), ec.message());
 
 				//	continue
 				return true;
@@ -263,7 +263,8 @@ namespace node
 
 		}	, cyng::store::write_access("_Session")
 			, cyng::store::write_access("_Connection")
-			, cyng::store::read_access("TDevice"));
+			, cyng::store::read_access("TDevice")
+			, cyng::store::write_access("_TimeSeries"));
 
 		//
 		//	cluster table

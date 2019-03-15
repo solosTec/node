@@ -42,14 +42,26 @@ namespace node
 			test_file_size();
 		}
 
-		CYNG_LOG_INFO(logger_, "initialize task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> re-open "
-			<< file_name_);
-
 		ofs_.open(file_name_.string(), std::ios::app | std::ios::out);
+		if (ofs_.is_open()) {
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> re-open "
+				<< file_name_);
+		}
+		else {
+
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> re-open "
+				<< file_name_
+				<< " failed");
+		}
 
 		//
 		//
@@ -61,6 +73,11 @@ namespace node
 
 	void single::stop()
 	{
+		if (ofs_.is_open()) {
+			ofs_.flush();
+			ofs_.close();
+		}
+
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
