@@ -1163,7 +1163,9 @@ namespace node
 		//	%(("local-connect":true),("local-peer":bdc31cf8-e18e-4d95-ad31-ad821661e857)),
 		//	%(("tp-layer":modem),("origin-tag":5afa7628-caa3-484d-b1de-a4730b53a656))]
 		//
-		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection)->void {
+		db_.access([&](cyng::store::table* tbl_session
+			, cyng::store::table* tbl_connection
+			, cyng::store::table* tbl_tsdb)->void {
 
 			//
 			//	send response back to "origin-tag"
@@ -1198,7 +1200,8 @@ namespace node
 				if (remote_peer && local_peer)
 				{
 
-					if (local_peer->hash() == remote_peer->hash())
+					auto const local = local_peer->hash() == remote_peer->hash();
+					if (local)
 					{
 
 						CYNG_LOG_TRACE(logger_, "forward connection close response (local) to "
@@ -1233,6 +1236,21 @@ namespace node
 							, options
 							, bag));
 					}
+
+					//
+					//	write statistics
+					//
+					std::stringstream ss;
+					ss
+						<< "type: "
+						<< (local ? "local" : "remote")
+						<< ", rx: "
+						<< cyng::value_cast<std::size_t>(rec["rx"], 0u)
+						<< ", sx: "
+						<< cyng::value_cast<std::size_t>(rec["sx"], 0u)
+						;
+					write_stat(tbl_tsdb, tag, local_name, "connection closed", ss.str());
+
 
 					//
 					//	remove connection record
@@ -1275,7 +1293,8 @@ namespace node
 			}
 
 		}	, cyng::store::write_access("_Session")
-			, cyng::store::write_access("_Connection"));
+			, cyng::store::write_access("_Connection")
+			, cyng::store::write_access("_TimeSeries"));
 	}
 
 	void client::req_transmit_data(cyng::context& ctx)
