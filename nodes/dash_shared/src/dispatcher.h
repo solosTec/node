@@ -70,6 +70,7 @@ namespace node
 		void subscribe_table_tsdb_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag);
 		void subscribe_table_LoRa_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
 		void subscribe_table_uplink_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		void subscribe_table_cluster_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
 
 		void store_relation(cyng::context& ctx);
 

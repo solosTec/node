@@ -145,7 +145,6 @@ namespace node
         reconfigure_impl();
     }
 
-
     void cluster::reconfigure_impl()
     {
         //

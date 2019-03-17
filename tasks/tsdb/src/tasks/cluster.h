@@ -58,6 +58,8 @@ namespace node
 		void sync_table(std::string const& name);
 		void res_subscribe(cyng::context& ctx);
 
+		void make_public();
+
 	private:
 		cyng::async::base_task& base_;
 		bus::shared_type bus_;

@@ -670,7 +670,20 @@ namespace node
 
 				const auto now = std::chrono::system_clock::now();
 				auto uptime = std::chrono::duration_cast<std::chrono::seconds>(now - cyng::value_cast(rec["loginTime"], now));
-				write_stat(tbl_tsdb, tag, account, "offline", uptime);
+
+				std::stringstream ss;
+				ss
+					<< "uptime: "
+					<< cyng::to_str(uptime)
+					<< ", rx: "
+					<< cyng::value_cast<std::size_t>(rec["rx"], 0u)
+					<< ", sx: "
+					<< cyng::value_cast<std::size_t>(rec["sx"], 0u)
+					<< ", px: "
+					<< cyng::value_cast<std::size_t>(rec["px"], 0u)
+					;
+
+				write_stat(tbl_tsdb, tag, account, "offline", ss.str());
 
 				//
 				//	update cluster table

@@ -90,9 +90,9 @@ namespace node
 		}
 
 		//
-		//	start clocks and storage tasks
+		//	insert instance into table _TimeSeriesParams
 		//
-		//dispatcher_.start_sub_tasks();
+		make_public();
 
 		//
 		//	sync tables
@@ -225,5 +225,25 @@ namespace node
 			, std::get<5>(tpl));
 	}
 
+	void cluster::make_public()
+	{
+		//
+		//	create entry in table _TimeSeriesParams
+		//
+		//bus_->vm_.async_run(bus_req_db_insert("_TimeSeriesParams"
+		//	, cyng::table::key_generator(bus_->vm_.tag())
+		//	, cyng::table::data_generator(format_
+		//		, "SML"
+		//		, offset_
+		//		, frame_
+		//		, std::chrono::system_clock::now()
+		//		, std::chrono::system_clock::now()
+		//		, std::chrono::system_clock::now()
+		//		, 0u
+		//		, 0u
+		//		, 0u)
+		//	, 1	//	generation
+		//	, bus_->vm_.tag()));
+	}
 
 }

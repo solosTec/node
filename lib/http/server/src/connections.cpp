@@ -232,9 +232,9 @@ namespace node
 			auto pos = sessions_[SOCKET_PLAIN].find(tag);
 			if (pos != sessions_[SOCKET_PLAIN].end()) {
 
-#ifdef _DEBUG
 				//	test for duplicate entries
 				auto const range = listener_.equal_range(channel);
+//#ifdef _DEBUG
 				for (auto it = range.first; it != range.second; ++it) {
 					auto ptr = cyng::object_cast<websocket_session>(it->second);
 					if (ptr) {
@@ -243,16 +243,22 @@ namespace node
 								<< channel
 								<< " for SOCKET_PLAIN "
 								<< tag);
+							listener_.erase(it);
+							break;
 						}
 					}
 					else {
 						CYNG_LOG_ERROR(logger_, "empty entries in channel "
 							<< channel
 							<< " for SOCKET_PLAIN");
+						listener_.erase(it);
+						break;
 					}
 				}			
-#endif
-
+//#endif
+				//
+				//	insert new element
+				//
 				listener_.emplace(channel, pos->second);
 				return true;
 			}
