@@ -429,7 +429,12 @@ namespace node
 					, evt.name_	//	name
 					, evt.pwd_	//	pwd
 					, "plain" //	login scheme
-					, cyng::param_map_factory("tp-layer", "modem")("security", "public")("time", std::chrono::system_clock::now())));
+					, cyng::param_map_factory
+						("tp-layer", "modem")
+						("security", "public")
+						("time", std::chrono::system_clock::now())
+						("local-ep", evt.lep_)
+						("remote-ep", evt.rep_)));
 
 			}
 			else {
@@ -1280,11 +1285,15 @@ namespace node
 				<
 				boost::uuids::uuid,		//	[0] peer tag
 				std::string,			//	[1] name
-				std::string				//	[2] pwd
+				std::string,			//	[2] pwd
+				boost::asio::ip::tcp::endpoint,	//	[3] local ep
+				boost::asio::ip::tcp::endpoint	//	[4] remote ep
 				> tpl)
-				: tag_(std::get<0>(tpl))
+			: tag_(std::get<0>(tpl))
 				, name_(std::get<1>(tpl))
 				, pwd_(std::get<2>(tpl))
+				, lep_(std::get<3>(tpl))
+				, rep_(std::get<4>(tpl))
 			{}
 
 

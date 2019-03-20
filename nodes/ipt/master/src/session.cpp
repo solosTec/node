@@ -471,7 +471,6 @@ namespace node
 		void session::ipt_req_login_public(cyng::context& ctx)
 		{
 			BOOST_ASSERT(ctx.tag() == vm_.tag());
-
 			//
 			//	update session state
 			//	[LSMTest5,LSMTest5,<sk>]
@@ -479,7 +478,9 @@ namespace node
 			ctx.queue(state_.react(state::evt_req_login_public(cyng::tuple_cast<
 				boost::uuids::uuid,		//	[0] peer tag
 				std::string,			//	[1] name
-				std::string				//	[2] pwd
+				std::string,			//	[2] pwd
+				boost::asio::ip::tcp::endpoint,
+				boost::asio::ip::tcp::endpoint
 			>(ctx.get_frame()))));
 		}
 
@@ -491,7 +492,9 @@ namespace node
 			ctx.queue(state_.react(state::evt_req_login_scrambled(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 				, cyng::value_cast<std::string>(frame.at(1), "")
 				, cyng::value_cast<std::string>(frame.at(2), "")
-				, cyng::value_cast<scramble_key>(frame.at(3), scramble_key::null_scramble_key_))));
+				, cyng::value_cast<scramble_key>(frame.at(3), scramble_key::null_scramble_key_)
+				, cyng::value_cast(frame.at(4), boost::asio::ip::tcp::endpoint())
+				, cyng::value_cast(frame.at(5), boost::asio::ip::tcp::endpoint()))));
 		}
 
 		void session::ipt_req_logout(cyng::context& ctx)

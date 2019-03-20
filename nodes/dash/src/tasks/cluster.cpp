@@ -424,7 +424,6 @@ namespace node
 
 		if (boost::algorithm::equals(cmd, "subscribe"))
 		{
-			//const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
 			CYNG_LOG_TRACE(logger_, "ws.read - subscribe channel [" << channel << "]");
 
 			//
@@ -435,7 +434,6 @@ namespace node
 		}
 		else if (boost::algorithm::equals(cmd, "update"))
 		{
-			//const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
 			CYNG_LOG_TRACE(logger_, "ws.read - pull channel [" << channel << "]");
 			dispatcher_.pull(cache_, channel, tag_ws);
 		}

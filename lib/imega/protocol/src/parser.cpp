@@ -244,7 +244,9 @@ namespace node
 						, protocol
 						, ver
 						, name
-						, meter));
+						, meter
+						, cyng::invoke("ip.tcp.socket.ep.local")
+						, cyng::invoke("ip.tcp.socket.ep.remote")));
 
 					return STATE_STREAM_MODE;
 				}

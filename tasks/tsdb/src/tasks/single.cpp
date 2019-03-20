@@ -126,8 +126,9 @@ namespace node
 
 	void single::test_file_size()
 	{
-		const auto fs = boost::filesystem::file_size(file_name_.string());
-		if (fs > 0x2000000)
+		boost::system::error_code ec;
+		const auto fs = boost::filesystem::file_size(file_name_.string(), ec);
+		if (!ec && (fs > 0x2000000))
 		{	//	32 MB
 
 			//

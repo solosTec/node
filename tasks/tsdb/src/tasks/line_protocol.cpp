@@ -107,8 +107,9 @@ namespace node
 
 	void line_protocol::test_file_size()
 	{
+		boost::system::error_code ec;
 		const auto fs = boost::filesystem::file_size(file_name_.string());
-		if (fs > 0x800000)
+		if (!ec && (fs > 0x800000))
 		{	//	8 MB
 
 			//

@@ -81,13 +81,18 @@ namespace node
 			 */
 			struct evt_req_login_public
 			{
-				const boost::uuids::uuid tag_;
-				const std::string name_, pwd_;
+				boost::uuids::uuid const tag_;
+				std::string const name_, pwd_;
+				boost::asio::ip::tcp::endpoint const lep_;
+				boost::asio::ip::tcp::endpoint const rep_;
+
 				evt_req_login_public(std::tuple
 					<
 						boost::uuids::uuid,		//	[0] peer tag
 						std::string,			//	[1] name
-						std::string				//	[2] pwd
+						std::string,			//	[2] pwd
+						boost::asio::ip::tcp::endpoint,	//	[3] local ep
+						boost::asio::ip::tcp::endpoint	//	[4] remote ep
 					>);
 			};
 
@@ -96,13 +101,17 @@ namespace node
 			 */
 			struct evt_req_login_scrambled
 			{
-				const boost::uuids::uuid tag_;
-				const std::string name_, pwd_;
-				const scramble_key sk_;
+				boost::uuids::uuid const tag_;
+				std::string const name_, pwd_;
+				scramble_key const sk_;
+				boost::asio::ip::tcp::endpoint const lep_;
+				boost::asio::ip::tcp::endpoint const rep_;
 				evt_req_login_scrambled(boost::uuids::uuid
 					, std::string const&
 					, std::string const&
-					, scramble_key const&);
+					, scramble_key const&
+					, boost::asio::ip::tcp::endpoint
+					, boost::asio::ip::tcp::endpoint);
 			};
 
 			/**

@@ -18,10 +18,12 @@ namespace node
 		, cyng::store::db&
 		, boost::uuids::uuid tag
 		, std::string country_code
+		, std::string language_code
 		, boost::asio::ip::tcp::endpoint
 		, std::uint64_t global_config
 		, boost::filesystem::path stat_dir
-		, std::uint64_t max_messages);
+		, std::uint64_t max_messages
+		, std::uint64_t max_events);
 
 	void insert_msg(cyng::store::db&
 		, cyng::logging::severity
@@ -34,17 +36,18 @@ namespace node
 		, boost::uuids::uuid tag
 		, std::uint64_t max_messages);
 
-	void insert_ts_event(cyng::store::table* tbl
-		, boost::uuids::uuid tag
-		, std::string const& account
-		, std::string const& evt
-		, cyng::object);
-
 	void insert_ts_event(cyng::store::db&
 		, boost::uuids::uuid tag
 		, std::string const& account
 		, std::string const& evt
 		, cyng::object);
+
+	void insert_ts_event(cyng::store::table* tbl
+		, boost::uuids::uuid tag
+		, std::string const& account
+		, std::string const& evt
+		, cyng::object
+		, std::uint64_t max_events);
 
 	void insert_lora_uplink(cyng::store::db& db
 		, std::chrono::system_clock::time_point tp

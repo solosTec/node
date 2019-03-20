@@ -170,6 +170,7 @@ namespace node
 					, cyng::param_factory("generated", std::chrono::system_clock::now())
 					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 					, cyng::param_factory("country-code", "CH")
+					, cyng::param_factory("language-code", "EN")
 
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
@@ -183,7 +184,8 @@ namespace node
 						cyng::param_factory("catch-meters", false),
 						cyng::param_factory("catch-lora", true),
 						cyng::param_factory("stat-dir", tmp.string()),	//	store statistics
-						cyng::param_factory("max-messages", 1000)
+						cyng::param_factory("max-messages", 1000),	//	system log
+						cyng::param_factory("max-events", 2000)		//	time series events
 						//cyng::param_factory("auto-gw", true)	//	insert gateways automatically
 					))
 					, cyng::param_factory("cluster", cyng::tuple_factory(
@@ -293,6 +295,7 @@ namespace node
 #endif
 
 		auto const country_code = cyng::value_cast<std::string>(dom.get("country-code"), "CH");
+		auto const language_code = cyng::value_cast<std::string>(dom.get("language-code"), "EN");
 
 		//
 		//	create server
@@ -309,6 +312,7 @@ namespace node
 			, logger
 			, tag
 			, country_code
+			, language_code
 			, cyng::value_cast<std::string>(dom["cluster"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["cluster"].get("pwd"), "")	//	ToDo: md5 + salt
 			, cyng::value_cast(dom["cluster"].get("monitor"), 60)

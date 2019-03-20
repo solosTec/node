@@ -194,7 +194,17 @@ namespace node
 		//
 		//	remove all client sessions of this node and close open connections
 		//
-		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection, const cyng::store::table* tbl_device, cyng::store::table* tbl_tsdb)->void {
+		db_.access([&](cyng::store::table* tbl_session
+			, cyng::store::table* tbl_connection
+			, const cyng::store::table* tbl_device
+			, cyng::store::table* tbl_tsdb
+			, cyng::store::table const* tbl_cfg)->void {
+
+			//
+			//	get max event limit
+			//
+			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
+
 			cyng::table::key_list_t pks;
 			tbl_session->loop([&](cyng::table::record const& rec) -> bool {
 
@@ -236,12 +246,13 @@ namespace node
 								, cyng::param_map_factory("origin-tag", tag)("local-peer", ctx.tag())("local-connect", true)));
 						}
 
+
 						//
 						//	generate statistics
 						//	There is an error in ec serialization/deserialization
 						//	
 						auto ec = cyng::value_cast(frame.at(1), boost::system::error_code());
-						client_.write_stat(tbl_tsdb, tag, account, "shutdown node " + client_.get_class(), ec.message());
+						client_.write_stat(tbl_tsdb, tag, account, "shutdown node " + client_.get_class(), ec.message(), max_events);
 						
 						//
 						//	remove from connection table
@@ -264,7 +275,8 @@ namespace node
 		}	, cyng::store::write_access("_Session")
 			, cyng::store::write_access("_Connection")
 			, cyng::store::read_access("TDevice")
-			, cyng::store::write_access("_TimeSeries"));
+			, cyng::store::write_access("_TimeSeries")
+			, cyng::store::read_access("_Config"));
 
 		//
 		//	cluster table
@@ -848,50 +860,88 @@ namespace node
 			
 			if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
 			{
-				if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "connection-auto-login"))
+				if (!key.empty())
 				{
-					client_.set_connection_auto_login(attr.second);
-				}
-				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "connection-auto-enabled"))
-				{
-					client_.set_connection_auto_enabled(attr.second);
-				}
-				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "connection-superseed"))
-				{
-					client_.set_connection_superseed(attr.second);
-				}
-				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "catch-meters"))
-				{
-					client_.set_catch_meters(attr.second);
-				}
-				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "catch-lora"))
-				{
-					client_.set_catch_lora(attr.second);
-				}
-				else if (!key.empty() && boost::algorithm::equals(cyng::value_cast<std::string>(key.at(0), "?"), "generate-time-series"))
-				{
-					client_.set_generate_time_series(attr.second);
+					auto const name = cyng::value_cast<std::string>(key.at(0), "?");
 
-					//
-					//	write a line	
-					//
-					//
-					if (client_.is_generate_time_series()) {
-						db_.access([&](cyng::store::table const* tbl_session)->void {
+					if (boost::algorithm::equals(name, "connection-auto-login"))
+					{
+						client_.set_connection_auto_login(attr.second);
+					}
+					else if (boost::algorithm::equals(name, "connection-auto-enabled"))
+					{
+						client_.set_connection_auto_enabled(attr.second);
+					}
+					else if (boost::algorithm::equals(name, "connection-superseed"))
+					{
+						client_.set_connection_superseed(attr.second);
+					}
+					else if (boost::algorithm::equals(name, "catch-meters"))
+					{
+						client_.set_catch_meters(attr.second);
+					}
+					else if (boost::algorithm::equals(name, "catch-lora"))
+					{
+						client_.set_catch_lora(attr.second);
+					}
+					else if (boost::algorithm::equals(name, "generate-time-series"))
+					{
+						client_.set_generate_time_series(attr.second);
+
+						//
+						//	generate a time series event.
+						//	We have to be carefull to avoid a deadlock with tables.
+						//
+
+						std::size_t counter{ 0 };
+						db_.access([&](cyng::store::table const* tbl_session, cyng::store::table* tbl_ts)->void {
 
 							const auto size = tbl_session->size();
 							tbl_session->loop([&](cyng::table::record const& rec) -> bool {
 								const auto tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
 								const auto name = cyng::value_cast<std::string>(rec["name"], "");
-								auto local_peer = cyng::object_cast<session>(rec["local"]);
 
-								if (local_peer != nullptr) {
-									const_cast<session*>(local_peer)->client_.write_stat(tag, name, "start recording...", size);
+								//
+								//	read max number of events from config table
+								//
+								std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
+
+								//
+								//	create a time series event
+								//
+								std::stringstream ss;
+									ss
+									<< ++counter
+									<< "/"
+									<< size
+									;
+								if (client_.is_generate_time_series()) {
+									insert_ts_event(tbl_ts, tag, name, "start recording...", cyng::make_object(ss.str()), max_events);
 								}
+								else {
+									insert_ts_event(tbl_ts, tag, name, "...stop recording", cyng::make_object(ss.str()), max_events);
+								}
+
 								return true;
 							});
-						}, cyng::store::read_access("_Session"));
+						}	, cyng::store::read_access("_Session")
+							, cyng::store::write_access("_TimeSeries"));
+						
 					}
+					else {
+
+						CYNG_LOG_WARNING(logger_, "sig.mod - table "
+							<< tbl->meta().get_name()
+							<< " ignores key: "
+							<< name);
+					}
+				}
+				else {
+
+					CYNG_LOG_WARNING(logger_, "sig.mod - table "
+						<< tbl->meta().get_name()
+						<< " comes with empty key");
+
 				}
 			}
 		}

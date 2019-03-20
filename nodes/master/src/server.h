@@ -25,6 +25,7 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, boost::uuids::uuid
 			, std::string country_code
+			, std::string language_code
 			, std::string account
 			, std::string pwd
 			, int monitor
@@ -58,6 +59,7 @@ namespace node
 		//	master tag
 		boost::uuids::uuid const tag_;
 		std::string const country_code_;
+		std::string const language_code_;
 
 		//	credentials
 		std::string const account_;
@@ -67,7 +69,7 @@ namespace node
 		//	global configuration parameters
 		std::atomic<std::uint64_t>	global_configuration_;
 		boost::filesystem::path stat_dir_;
-		std::uint64_t max_messages_;
+		std::uint64_t max_messages_, max_events_;
 
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor acceptor_;		

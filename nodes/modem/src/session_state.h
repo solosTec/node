@@ -79,13 +79,18 @@ namespace node
 			 */
 			struct evt_req_login
 			{
-				const boost::uuids::uuid tag_;
-				const std::string name_, pwd_;
+				boost::uuids::uuid const tag_;
+				std::string const name_, pwd_;
+				boost::asio::ip::tcp::endpoint const lep_;
+				boost::asio::ip::tcp::endpoint const rep_;
+
 				evt_req_login(std::tuple
 					<
 						boost::uuids::uuid,		//	[0] peer tag
 						std::string,			//	[1] name
-						std::string				//	[2] pwd
+						std::string,				//	[2] pwd
+						boost::asio::ip::tcp::endpoint,	//	[3] local ep
+						boost::asio::ip::tcp::endpoint	//	[4] remote ep
 					>);
 			};
 

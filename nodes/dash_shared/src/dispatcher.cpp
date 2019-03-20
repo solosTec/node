@@ -1093,24 +1093,38 @@ namespace node
 					cyng::param_factory("channel", channel),
 					cyng::param_factory("rec", rec.convert()));
 
-				auto msg = cyng::json::to_string(tpl);
-				connection_manager_.ws_msg(tag, msg);
-
-				++idx;
-
 				//
-				//	calculate charge status in percent
+				//	convert to JSON may fail
 				//
-				const auto prev_percent = percent;
-				percent = (100u * idx) / size;
+				try {
+					auto msg = cyng::json::to_string(tpl);
+					connection_manager_.ws_msg(tag, msg);
 
-				if (prev_percent != percent) {
-					display_loading_level(tag, percent, channel);
+					++idx;
 
 					//
-					//	give GUI a change to refresh
+					//	calculate charge status in percent
 					//
-					std::this_thread::sleep_for(std::chrono::milliseconds(12));
+					const auto prev_percent = percent;
+					percent = (100u * idx) / size;
+
+					if (prev_percent != percent) {
+						display_loading_level(tag, percent, channel);
+
+						//
+						//	give GUI a chance to refresh
+						//
+						std::this_thread::sleep_for(std::chrono::milliseconds(12));
+					}
+				}
+				catch (std::exception const& ex) {
+					CYNG_LOG_ERROR(logger_, ex.what()
+						<< " - insert into "
+						<< table
+						<< " failed "
+						<< cyng::io::to_str(tpl));
+					//ctx.queue(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_TRACE : cyng::logging::severity::LEVEL_WARNING), ss.str()));
+
 				}
 
 				return true;	//	continue

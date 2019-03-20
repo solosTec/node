@@ -929,11 +929,12 @@ namespace node
 			parser_.input_.put(c_);
 			if (req.pos_ >= size(parser_.header_))
 			{
-				parser_.code_ << cyng::generate_invoke("ipt.req.login.public"
+				parser_.code_ << cyng::generate_invoke_unwinded("ipt.req.login.public"
 					, cyng::code::IDENT
 					, parser_.get_read_string_f()	//	name
-					, parser_.get_read_string_f())	//	password
-					<< cyng::unwind_vec();
+					, parser_.get_read_string_f()	//	password
+					, cyng::invoke("ip.tcp.socket.ep.local")
+					, cyng::invoke("ip.tcp.socket.ep.remote"));
 
 #ifdef _DEBUG
 				parser_.authorized_ = true;
@@ -954,14 +955,14 @@ namespace node
 				const auto sk = parser_.read_sk();
 				parser_.scrambler_ = sk.key();
 				parser_.code_
-					<< cyng::generate_invoke("ipt.set.sk.def", sk)
-					<< cyng::generate_invoke("ipt.req.login.scrambled"
+					<< cyng::generate_invoke_unwinded("ipt.set.sk.def", sk)
+					<< cyng::generate_invoke_unwinded("ipt.req.login.scrambled"
 						, cyng::code::IDENT
 						, name	//	name
 						, pwd	//	password
-						, sk)	//	scramble key
-					<< cyng::unwind_vec()
-					;
+						, sk	//	scramble key
+						, cyng::invoke("ip.tcp.socket.ep.local")
+						, cyng::invoke("ip.tcp.socket.ep.remote"));
 				
 #ifdef _DEBUG
 				parser_.authorized_ = true;

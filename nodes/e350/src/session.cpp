@@ -171,7 +171,7 @@ namespace node
 			//CTRL_RES_LOGIN_SCRAMBLED = 0x4002,	//!<	scrambled login response
 			//CTRL_REQ_LOGIN_PUBLIC = 0xC001,	//!<	public login request
 			//CTRL_REQ_LOGIN_SCRAMBLED = 0xC002,	//!<	scrambled login request
-			vm_.register_function("imega.req.login.public", 5, std::bind(&session::imega_req_login, this, std::placeholders::_1));
+			vm_.register_function("imega.req.login.public", 7, std::bind(&session::imega_req_login, this, std::placeholders::_1));
 			vm_.register_function("client.res.login", 6, std::bind(&session::client_res_login, this, std::placeholders::_1));
 
 			//	control - maintenance
@@ -323,7 +323,7 @@ namespace node
 		{
 			BOOST_ASSERT(ctx.tag() == vm_.tag());
 
-			//	[LSMTest5,LSMTest5,<sk>]
+			//	<PROT:1;VERS:1.0;TELNB:96110845-2;MNAME:95298073>
 			const cyng::vector_t frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, "imega.req.login.public " << cyng::io::to_str(frame));
 
@@ -333,12 +333,15 @@ namespace node
 			if (bus_->is_online())
 			{
 				//const std::string name = cyng::value_cast<std::string>(frame.at(0));
-				cyng::param_map_t bag = cyng::param_map_factory("tp-layer", "imega")
+				cyng::param_map_t bag = cyng::param_map_factory
+					("tp-layer", "imega")
 					("security", "public")
 					("time", std::chrono::system_clock::now())
 					("imega-protocol", frame.at(1))
 					("imega-version", frame.at(2))
 					("imega-module", frame.at(3))	//	"TELNB" - modulname
+					("local-ep", frame.at(4))	//	local endpoint
+					("remote-ep", frame.at(5))	//	remote endpoint
 					;
 
 				if (boost::algorithm::iequals(pwd_policy_, "global")) {

@@ -233,7 +233,9 @@ namespace node
 						p.cb_(cyng::generate_invoke("modem.req.login.public"
 							, cyng::code::IDENT
 							, result.at(0)
-							, result.at(1)));
+							, result.at(1)
+							, cyng::invoke("ip.tcp.socket.ep.local")
+							, cyng::invoke("ip.tcp.socket.ep.remote")));
 					}
 					else
 					{

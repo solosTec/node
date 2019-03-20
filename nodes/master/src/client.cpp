@@ -164,7 +164,16 @@ namespace node
 		//
 		bool found{ false };
 		bool wrong_pwd{ false };
-		db_.access([&](const cyng::store::table* tbl_device, cyng::store::table* tbl_session, cyng::store::table* tbl_cluster, cyng::store::table* tbl_tsdb)->void {
+		db_.access([&](const cyng::store::table* tbl_device
+			, cyng::store::table* tbl_session
+			, cyng::store::table* tbl_cluster
+			, cyng::store::table* tbl_tsdb
+			, cyng::store::table const* tbl_cfg)->void {
+
+			//
+			//	get max event limit
+			//
+			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
 
 			//
 			// check if session is already authorized
@@ -229,9 +238,21 @@ namespace node
 							ctx.queue(cyng::generate_invoke("log.msg.info", "[" + account + "] has session tag", tag));
 
 							//
-							//	write statistics
+							//	write time series event
 							//
-							write_stat(tbl_tsdb, tag, account, "login", tbl_session->size());
+							std::stringstream ss;
+							ss
+								<< "#"
+								<< tbl_session->size()
+								<< ", tp-layer: "
+								<< cyng::value_cast<std::string>(dom.get("tp-layer"), "tcp/ip")
+								<< ", local-ep: "
+								<< cyng::value_cast(dom.get("local-ep"), boost::asio::ip::tcp::endpoint())
+								<< ", remote-ep: "
+								<< cyng::value_cast(dom.get("remote-ep"), boost::asio::ip::tcp::endpoint())
+								;
+
+							write_stat(tbl_tsdb, tag, account, "login", ss.str(), max_events);
 
 							//
 							//	update cluster table
@@ -259,9 +280,9 @@ namespace node
 								, tag));
 
 							//
-							//	write statistics
+							//	write time series event
 							//
-							write_stat(tbl_tsdb, tag, account, "login", "internal error");
+							write_stat(tbl_tsdb, tag, account, "login", "internal error", max_events);
 
 						}
 					}
@@ -281,14 +302,15 @@ namespace node
 					//
 					//	write statistics
 					//
-					write_stat(tbl_tsdb, tag, account, "login", "already online");
+					write_stat(tbl_tsdb, tag, account, "login", "already online", max_events);
 
 				}
 			}
 		}	, cyng::store::read_access("TDevice")
 			, cyng::store::write_access("_Session")
 			, cyng::store::write_access("_Cluster")
-			, cyng::store::write_access("_TimeSeries"));
+			, cyng::store::write_access("_TimeSeries")
+			, cyng::store::read_access("_Config"));
 
 		if (!found)
 		{
@@ -547,13 +569,19 @@ namespace node
 			, cyng::store::table* tbl_target
 			, cyng::store::table* tbl_cluster
 			, cyng::store::table* tbl_connection
-			, cyng::store::table* tbl_tsdb)->void {
+			, cyng::store::table* tbl_tsdb
+			, cyng::store::table const* tbl_cfg)->void {
+
+			//
+			//	get max event limit
+			//
+			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
 
 			//
 			//	generate table key for
 			//	* session table: _Session
 			//
-			auto key = cyng::table::key_generator(tag);
+			auto const key = cyng::table::key_generator(tag);
 
 			//
 			//	get session object
@@ -607,7 +635,7 @@ namespace node
 						//
 						//	write stats
 						//
-						write_stat(tbl_tsdb, rtag, account, "close connection", "local");
+						write_stat(tbl_tsdb, rtag, account, "close connection", "local", max_events);
 
 					}
 					else
@@ -622,7 +650,7 @@ namespace node
 							, rtag));
 						remote_peer->vm_.async_run(client_req_close_connection_forward(rtag, tag, seq, true, cyng::param_map_factory("local-connect", false), bag));
 
-						write_stat(tbl_tsdb, rtag, account, "close connection", "remote");
+						write_stat(tbl_tsdb, rtag, account, "close connection", "remote", max_events);
 					}
 
 					//
@@ -653,7 +681,7 @@ namespace node
 					, "removed"));
 
 				if (count_targets != 0u) {
-					write_stat(tbl_tsdb, tag, account, "remove targets", count_targets);
+					write_stat(tbl_tsdb, tag, account, "remove targets", count_targets, max_events);
 				}
 
 				//
@@ -683,7 +711,7 @@ namespace node
 					<< cyng::value_cast<std::size_t>(rec["px"], 0u)
 					;
 
-				write_stat(tbl_tsdb, tag, account, "offline", ss.str());
+				write_stat(tbl_tsdb, tag, account, "offline", ss.str(), max_events);
 
 				//
 				//	update cluster table
@@ -704,7 +732,8 @@ namespace node
 			, cyng::store::write_access("_Target")
 			, cyng::store::write_access("_Cluster")
 			, cyng::store::write_access("_Connection")
-			, cyng::store::write_access("_TimeSeries"));
+			, cyng::store::write_access("_TimeSeries")
+			, cyng::store::read_access("_Config"));
 
 		if (req)
 		{
@@ -765,7 +794,10 @@ namespace node
 		options["local-peer"] = cyng::make_object(peer);	//	and this peer
 															
 		bool success{ false };
-		db_.access([&](cyng::store::table const* tbl_device, cyng::store::table* tbl_session, cyng::store::table* tbl_tsdb)->void {
+		db_.access([&](cyng::store::table const* tbl_device
+			, cyng::store::table* tbl_session
+			, cyng::store::table* tbl_tsdb
+			, cyng::store::table const* tbl_cfg)->void {
 
 			//
 			//	generate statistics
@@ -773,6 +805,11 @@ namespace node
 			//
 			cyng::table::record rec = tbl_session->lookup(cyng::table::key_generator(tag));
 			const std::string account = cyng::value_cast<std::string>(rec["name"], "");
+
+			//
+			//	get max event limit
+			//
+			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
 
 			//
 			//	search device with the given number
@@ -829,7 +866,7 @@ namespace node
 						//
 						//	write statistics
 						//
-						write_stat(tbl_tsdb, tag, account, "dialup " + dev_number, "disabled");
+						write_stat(tbl_tsdb, tag, account, "dialup " + dev_number, "disabled", max_events);
 
 						//
 						//	abort loop
@@ -901,8 +938,8 @@ namespace node
 							//	write statistics
 							//
 							if (is_generate_time_series()) {
-								write_stat(tbl_tsdb, tag, account, "dialup", dev_number.c_str());
-								write_stat(tbl_tsdb, tag, callee, "called by", account.c_str());
+								write_stat(tbl_tsdb, tag, account, "dialup", dev_number.c_str(), max_events);
+								write_stat(tbl_tsdb, tag, callee, "called by", account.c_str(), max_events);
 							}
 
 							success = true;
@@ -920,7 +957,8 @@ namespace node
 
 		}	, cyng::store::read_access("TDevice")
 			, cyng::store::write_access("_Session")
-			, cyng::store::write_access("_TimeSeries"));
+			, cyng::store::write_access("_TimeSeries")
+			, cyng::store::read_access("_Config"));
 
 		if (!success)
 		{
@@ -1000,13 +1038,16 @@ namespace node
 		//
 		//	insert connection record
 		//
-		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection, cyng::store::table* tbl_tsdb)->void {
+		db_.access([&](cyng::store::table* tbl_session
+			, cyng::store::table* tbl_connection
+			, cyng::store::table* tbl_tsdb
+			, cyng::store::table const* tbl_cfg)->void {
 
 			//
 			//	generate statistics
 			//	
-			cyng::table::record rec = tbl_session->lookup(cyng::table::key_generator(tag));
-			const std::string account = cyng::value_cast<std::string>(rec["name"], "");
+			cyng::table::record const rec = tbl_session->lookup(cyng::table::key_generator(tag));
+			std::string const account = cyng::value_cast<std::string>(rec["name"], "");
 
 			//
 			//	generate table keys
@@ -1022,6 +1063,11 @@ namespace node
 
 			BOOST_ASSERT_MSG(!caller_rec.empty(), "no caller record");
 			BOOST_ASSERT_MSG(!callee_rec.empty(), "no callee record");
+
+			//
+			//	get max event limit
+			//
+			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
 
 			if (!caller_rec.empty() && !callee_rec.empty())
 			{
@@ -1069,7 +1115,7 @@ namespace node
 					//
 					//	write statistics
 					//
-					write_stat(tbl_tsdb, tag, account, "answer from " + callee, "OK");
+					write_stat(tbl_tsdb, tag, account, "answer from " + callee, "OK", max_events);
 
 				}
 				else
@@ -1077,7 +1123,7 @@ namespace node
 					//
 					//	write statistics
 					//
-					write_stat(tbl_tsdb, tag, account, "answer from " + callee, "failed");
+					write_stat(tbl_tsdb, tag, account, "answer from " + callee, "failed", max_events);
 				}
 
 				if (local)
@@ -1127,7 +1173,8 @@ namespace node
 
 		}	, cyng::store::write_access("_Session")
 			, cyng::store::write_access("_Connection")
-			, cyng::store::write_access("_TimeSeries"));
+			, cyng::store::write_access("_TimeSeries")
+			, cyng::store::read_access("_Config"));
 
 	}
 
@@ -1178,7 +1225,13 @@ namespace node
 		//
 		db_.access([&](cyng::store::table* tbl_session
 			, cyng::store::table* tbl_connection
-			, cyng::store::table* tbl_tsdb)->void {
+			, cyng::store::table* tbl_tsdb
+			, cyng::store::table const* tbl_cfg)->void {
+
+			//
+			//	get max event limit
+			//
+			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
 
 			//
 			//	send response back to "origin-tag"
@@ -1192,7 +1245,7 @@ namespace node
 			//
 			//	get session objects
 			//
-			cyng::table::record rec = tbl_session->lookup(key);
+			cyng::table::record const rec = tbl_session->lookup(key);
 
 			if (!rec.empty())
 			{
@@ -1262,7 +1315,7 @@ namespace node
 						<< ", sx: "
 						<< cyng::value_cast<std::size_t>(rec["sx"], 0u)
 						;
-					write_stat(tbl_tsdb, tag, local_name, "connection closed", ss.str());
+					write_stat(tbl_tsdb, tag, local_name, "connection closed", ss.str(), max_events);
 
 
 					//
@@ -1307,7 +1360,8 @@ namespace node
 
 		}	, cyng::store::write_access("_Session")
 			, cyng::store::write_access("_Connection")
-			, cyng::store::write_access("_TimeSeries"));
+			, cyng::store::write_access("_TimeSeries")
+			, cyng::store::read_access("_Config"));
 	}
 
 	void client::req_transmit_data(cyng::context& ctx)
@@ -1686,8 +1740,13 @@ namespace node
 			, const cyng::store::table* tbl_session
 			, cyng::store::table* tbl_msg
 			, const cyng::store::table* tbl_device
-			, cyng::store::table* tbl_tsdb)->void {
+			, cyng::store::table* tbl_tsdb
+			, cyng::store::table const* tbl_cfg)->void {
 
+			//
+			//	get max event limit
+			//
+			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
 
 			//
 			//	get source channel
@@ -1747,7 +1806,7 @@ namespace node
 				//
 				//	write statistics
 				//
-				write_stat(tbl_tsdb, tag, account, "no target", name.c_str());
+				write_stat(tbl_tsdb, tag, account, "no target", name.c_str(), max_events);
 
 			}
 
@@ -1789,7 +1848,7 @@ namespace node
 						<< channel
 						<< ")"
 						;
-					write_stat(tbl_tsdb, tag, account, "open push channel", ss.str());
+					write_stat(tbl_tsdb, tag, account, "open push channel", ss.str(), max_events);
 				}
 
 			}
@@ -1814,7 +1873,8 @@ namespace node
 			, cyng::store::read_access("_Session")
 			, cyng::store::write_access("_SysMsg")
 			, cyng::store::read_access("TDevice")
-			, cyng::store::write_access("_TimeSeries"));
+			, cyng::store::write_access("_TimeSeries")
+			, cyng::store::read_access("_Config"));
 	}
 
 	bool client::create_channel(cyng::context& ctx
@@ -1963,7 +2023,15 @@ namespace node
 	{
 		cyng::table::key_list_t pks;
 
-		db_.access([&](cyng::store::table* tbl_channel, cyng::store::table* tbl_tsdb)->void {
+		db_.access([&](cyng::store::table* tbl_channel
+			, cyng::store::table* tbl_tsdb
+			, cyng::store::table const* tbl_cfg)->void {
+
+			//
+			//	get max event limit
+			//
+			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
+
 			tbl_channel->loop([&](cyng::table::record const& rec) -> bool {
 				if (channel == cyng::value_cast<std::uint32_t>(rec["channel"], 0u))
 				{ 
@@ -1991,7 +2059,7 @@ namespace node
 						<< channel
 						<< ")"
 						;
-					write_stat(tbl_tsdb, tag, account, "close push channel", ss.str());
+					write_stat(tbl_tsdb, tag, account, "close push channel", ss.str(), max_events);
 				}
 				//	continue
 				return true;
@@ -2003,7 +2071,8 @@ namespace node
 			cyng::erase(tbl_channel, pks, tag);
 
 		}	, cyng::store::write_access("_Channel")
-			, cyng::store::write_access("_TimeSeries"));
+			, cyng::store::write_access("_TimeSeries")
+			, cyng::store::read_access("_Config"));
 
 		//
 		//	send response

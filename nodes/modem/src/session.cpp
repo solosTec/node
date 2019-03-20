@@ -162,7 +162,7 @@ namespace node
 			//CTRL_RES_LOGIN_SCRAMBLED = 0x4002,	//!<	scrambled login response
 			//CTRL_REQ_LOGIN_PUBLIC = 0xC001,	//!<	public login request
 			//CTRL_REQ_LOGIN_SCRAMBLED = 0xC002,	//!<	scrambled login request
-			vm_.register_function("modem.req.login.public", 2, std::bind(&session::modem_req_login, this, std::placeholders::_1));
+			vm_.register_function("modem.req.login.public", 5, std::bind(&session::modem_req_login, this, std::placeholders::_1));
 			vm_.register_function("client.res.login", 6, std::bind(&session::client_res_login, this, std::placeholders::_1));
 
 			//	control - maintenance
@@ -324,7 +324,9 @@ namespace node
 			ctx.queue(state_.react(state::evt_req_login(cyng::tuple_cast<
 				boost::uuids::uuid,		//	[0] peer tag
 				std::string,			//	[1] name
-				std::string				//	[2] pwd
+				std::string,			//	[2] pwd
+				boost::asio::ip::tcp::endpoint,
+				boost::asio::ip::tcp::endpoint
 			>(ctx.get_frame()))));
 		}
 

@@ -17,6 +17,7 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid tag
 		, std::string country_code
+		, std::string language_code
 		, std::string account
 		, std::string pwd
 		, int monitor	//	cluster
@@ -25,12 +26,14 @@ namespace node
 		, logger_(logger)
 		, tag_(tag)
 		, country_code_(country_code)
+		, language_code_(language_code)
 		, account_(account)
 		, pwd_(pwd)
 		, monitor_(monitor)
 		, global_configuration_(0)
 		, stat_dir_()
 		, max_messages_(1000u)
+		, max_events_(2000u)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
 		, socket_(io_ctx_)
@@ -61,9 +64,11 @@ namespace node
 
 		CYNG_LOG_TRACE(logger_, "country code" << country_code);
 
-		max_messages_ = cyng::value_cast<std::uint64_t>(dom.get("ax-messages"), max_messages_);
+		max_messages_ = cyng::value_cast<std::uint64_t>(dom.get("max-messages"), max_messages_);
 		CYNG_LOG_INFO(logger_, "store max. " << max_messages_ << " messages");
 
+		max_events_ = cyng::value_cast<std::uint64_t>(dom.get("max-events"), max_events_);
+		CYNG_LOG_INFO(logger_, "store max. " << max_events_ << " events");
 	}
 	
 	void server::run(std::string const& address, std::string const& service)
@@ -95,10 +100,12 @@ namespace node
 				, db_
 				, tag_
 				, country_code_
+				, language_code_
 				, acceptor_.local_endpoint()
 				, global_configuration_.load()
 				, stat_dir_
-				, max_messages_);
+				, max_messages_
+				, max_events_);
 
 			do_accept();
 		}

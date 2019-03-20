@@ -29,10 +29,12 @@ namespace node
 		, cyng::store::db& db
 		, boost::uuids::uuid tag
 		, std::string country_code
+		, std::string language_code
 		, boost::asio::ip::tcp::endpoint ep
 		, std::uint64_t global_config
 		, boost::filesystem::path stat_dir
-		, std::uint64_t max_messages)
+		, std::uint64_t max_messages
+		, std::uint64_t max_events)
 	{
 		CYNG_LOG_INFO(logger, "initialize database as node " << tag);
 
@@ -268,7 +270,13 @@ namespace node
 
 			db.insert("_Config", cyng::table::key_generator("generate-time-series-dir"), cyng::table::data_generator(stat_dir.string()), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("country-code"), cyng::table::data_generator(country_code), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("country-code-default"), cyng::table::data_generator(country_code), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("language-code"), cyng::table::data_generator(language_code), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("language-code-default"), cyng::table::data_generator(language_code), 1, tag);
 			db.insert("_Config", cyng::table::key_generator("max-messages"), cyng::table::data_generator(max_messages), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("max-messages-default"), cyng::table::data_generator(max_messages), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("max-events"), cyng::table::data_generator(max_events), 1, tag);
+			db.insert("_Config", cyng::table::key_generator("max-events-default"), cyng::table::data_generator(max_events), 1, tag);
 
 
 			//	get hostname
@@ -350,6 +358,9 @@ namespace node
 
 	cyng::object get_config(cyng::store::table const* tbl, std::string key)
 	{
+		//
+		//	maybe other tables are coming
+		//
 		if (boost::algorithm::equals(tbl->meta().get_name(), "_Config")) {
 			auto const rec = tbl->lookup(cyng::table::key_generator(key));
 			if (!rec.empty())	return rec["value"];
@@ -363,13 +374,14 @@ namespace node
 		, boost::uuids::uuid tag)
 	{
 		db.access([&](cyng::store::table* tbl, cyng::store::table const* tbl_cfg)->void {
-			auto rec = tbl_cfg->lookup(cyng::table::key_generator("max-messages"));
-			const std::uint64_t max_messages = (!rec.empty())
-				? cyng::value_cast<std::uint64_t>(rec["value"], 1000u)
-				: 1000u
-				;
+
+			//
+			//	read max number of messages from config table
+			//
+			std::uint64_t const max_messages = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-messages"), "value"), 1000u);
 
 			insert_msg(tbl, level, msg, tag, max_messages);
+
 		}	, cyng::store::write_access("_SysMsg")
 			, cyng::store::read_access("_Config"));
 
@@ -420,21 +432,30 @@ namespace node
 		, std::string const& evt
 		, cyng::object obj)
 	{
-		db.access([&](cyng::store::table* tbl)->void {
-			insert_ts_event(tbl, tag, account, evt, obj);
-		}, cyng::store::write_access("_TimeSeries"));
+		db.access([&](cyng::store::table* tbl_ts, cyng::store::table const* tbl_cfg)->void {
+
+			//
+			//	read max number of events from config table
+			//
+			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
+
+			insert_ts_event(tbl_ts, tag, account, evt, obj, max_events);
+
+		}	, cyng::store::write_access("_TimeSeries")
+			, cyng::store::read_access("_Config"));
 	}
 
 	void insert_ts_event(cyng::store::table* tbl
 		, boost::uuids::uuid tag
 		, std::string const& account
 		, std::string const& evt
-		, cyng::object obj)
+		, cyng::object obj
+		, std::uint64_t max_events)
 	{
 		//
 		//	upper limit is 256 entries
 		//
-		if (tbl->size() > 255)
+		if (tbl->size() > max_events)
 		{
 			auto max_rec = tbl->max_record();
 			if (!max_rec.empty()) {

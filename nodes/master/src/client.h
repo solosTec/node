@@ -219,7 +219,7 @@ namespace node
 		}
 
 		template <typename T>
-		void write_stat(cyng::store::table* tbl, boost::uuids::uuid tag, std::string const& account, std::string const& evt, T&& value)
+		void write_stat(cyng::store::table* tbl, boost::uuids::uuid tag, std::string const& account, std::string const& evt, T&& value, std::uint64_t max_events)
 		{
 			if (is_generate_time_series())
 			{
@@ -227,7 +227,8 @@ namespace node
 					, tag
 					, account
 					, evt
-					, cyng::make_object(value));
+					, cyng::make_object(value)
+					, max_events);
 			}
 		}
 

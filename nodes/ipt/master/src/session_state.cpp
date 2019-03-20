@@ -87,25 +87,6 @@ namespace node
 			sp_->vm_.register_function("session.redirect", 1, std::bind(&session_state::redirect, this, std::placeholders::_1));
 		}
 
-		//void session_state::update_connection_state(cyng::context& ctx)
-		//{
-		//	if (S_AUTHORIZED == state_) {
-
-		//		auto const tpl = cyng::tuple_cast<
-		//			boost::uuids::uuid,		//	[0] remote tag
-		//			bool					//	[1] new state
-		//		>(ctx.get_frame());
-
-		//		//
-		//		//	update state
-		//		//
-		//		transit(std::get<1>(tpl) ? S_CONNECTED_LOCAL : S_CONNECTED_REMOTE);
-		//	}
-		//	else {
-		//		signal_wrong_state("update_connection_state");
-		//	}
-		//}
-
 		void session_state::redirect(cyng::context& ctx)
 		{
 			if (S_AUTHORIZED == state_) {
@@ -489,7 +470,12 @@ namespace node
 					, evt.name_	//	name
 					, evt.pwd_	//	pwd
 					, "plain" //	login scheme
-					, cyng::param_map_factory("tp-layer", "ipt")("security", "public")("time", std::chrono::system_clock::now())));
+					, cyng::param_map_factory
+						("tp-layer", "ipt")
+						("security", "public")
+						("time", std::chrono::system_clock::now())
+						("local-ep", evt.lep_)
+						("remote-ep", evt.rep_)));
 
 			}
 			else {
@@ -540,7 +526,13 @@ namespace node
 					, evt.name_	//	name
 					, evt.pwd_	//	pwd
 					, "plain" //	login scheme
-					, cyng::param_map_factory("tp-layer", "ipt")("security", "scrambled")("time", std::chrono::system_clock::now())));
+					, cyng::param_map_factory
+						("tp-layer", "ipt")
+						("security", "scrambled")
+						("time", std::chrono::system_clock::now())
+						("local-ep", evt.lep_)
+						("remote-ep", evt.rep_)
+					));
 
 			}
 			else {
@@ -1288,11 +1280,15 @@ namespace node
 				<
 				boost::uuids::uuid,		//	[0] peer tag
 				std::string,			//	[1] name
-				std::string				//	[2] pwd
+				std::string,			//	[2] pwd
+				boost::asio::ip::tcp::endpoint,	//	[3] local ep
+				boost::asio::ip::tcp::endpoint	//	[4] remote ep
 				> tpl)
-				: tag_(std::get<0>(tpl))
+			: tag_(std::get<0>(tpl))
 				, name_(std::get<1>(tpl))
 				, pwd_(std::get<2>(tpl))
+				, lep_(std::get<3>(tpl))
+				, rep_(std::get<4>(tpl))
 			{}
 
 			//
@@ -1301,11 +1297,15 @@ namespace node
 			evt_req_login_scrambled::evt_req_login_scrambled(boost::uuids::uuid tag
 				, std::string const& name
 				, std::string const& pwd
-				, scramble_key const& sk)
-				: tag_(tag)
+				, scramble_key const& sk
+				, boost::asio::ip::tcp::endpoint lep
+				, boost::asio::ip::tcp::endpoint rep)
+			: tag_(tag)
 				, name_(name)
 				, pwd_(pwd)
 				, sk_(sk)
+				, lep_(lep)
+				, rep_(rep)
 			{}
 
 
