@@ -56,6 +56,12 @@ namespace node
 			return *this;
 		}
 
+		readout& readout::set_value(cyng::param_t const& param)
+		{
+			values_[param.first] = param.second;
+			return *this;
+		}
+
 		readout& readout::set_value(obis code, cyng::object obj)
 		{
 			values_[code.to_str()] = obj;

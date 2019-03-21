@@ -60,9 +60,11 @@ namespace node
 			boost::algorithm::equals(std::get<7>(tpl), "root-device-id") ||
 			boost::algorithm::equals(std::get<7>(tpl), "root-memory-usage") ||
 			boost::algorithm::equals(std::get<7>(tpl), "root-wMBus-status") ||
-			boost::algorithm::equals(std::get<7>(tpl), "IF_wMBUS") ||
+			boost::algorithm::equals(std::get<7>(tpl), "IF-wireless-mbus") ||
 			boost::algorithm::equals(std::get<7>(tpl), "root-ipt-state") ||
 			boost::algorithm::equals(std::get<7>(tpl), "root-ipt-param") ||
+			boost::algorithm::equals(std::get<7>(tpl), "IF-IEC-62505-21") ||
+			//boost::algorithm::equals(std::get<7>(tpl), "IF-MBUS") ||
 			boost::algorithm::equals(std::get<7>(tpl), "list-current-data-record"))
 		{
 

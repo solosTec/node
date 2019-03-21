@@ -197,7 +197,7 @@ namespace node
 			//	reqFileId
 			//
 			//ro_.set_value("reqFileId", *pos++);
-			read_string("reqFileId", *pos++);
+			ro_.set_value("reqFileId", read_string(*pos++));
 
 			//
 			//	serverId
@@ -207,12 +207,12 @@ namespace node
 			//
 			//	username
 			//
-			read_string("userName", *pos++);
+			ro_.set_value("userName", read_string(*pos++));
 
 			//
 			//	password
 			//
-			read_string("password", *pos++);
+			ro_.set_value("password", read_string(*pos++));
 
 			//
 			//	sml-Version: default = 1
@@ -251,7 +251,7 @@ namespace node
 			//
 			//	reqFileId
 			//
-			read_string("reqFileId", *pos++);
+			ro_.set_value("reqFileId", read_string(*pos++));
 
 			//
 			//	serverId
@@ -317,7 +317,7 @@ namespace node
 			//
 			//	actTime
 			//
-			read_time("actTime", *pos++);
+			ro_.set_value("actTime", read_time(*pos++));
 
 			//
 			//	regPeriod
@@ -332,7 +332,7 @@ namespace node
 			//
 			//	valTime
 			//
-			read_time("valTime", *pos++);
+			ro_.set_value("valTime", read_time(*pos++));
 
 			//
 			//	M-bus status
@@ -380,12 +380,12 @@ namespace node
 			//
 			//	username
 			//
-			read_string("userName", *pos++);
+			ro_.set_value("userName", read_string(*pos++));
 
 			//
 			//	password
 			//
-			read_string("password", *pos++);
+			ro_.set_value("password", read_string(*pos++));
 
 			//
 			//	rawdata (typically not set)
@@ -395,8 +395,8 @@ namespace node
 			//
 			//	start/end time
 			//
-			read_time("beginTime", *pos++);
-			read_time("endTime", *pos++);
+			ro_.set_value("beginTime", read_time(*pos++));
+			ro_.set_value("endTime", read_time(*pos++));
 
 			//	parameterTreePath (OBIS)
 			//
@@ -498,10 +498,63 @@ namespace node
 			//
 			cyng::vector_t prg;
 
-			if (path.size() == 1 && path.front() == OBIS_CLASS_OP_LOG_STATUS_WORD) {
-				//	generate status word
+			switch (depth) {
+			case 0:
+				prg << cyng::unwinder(read_get_proc_parameter_response_L0(attr, pos, path.front()));
+				break;
+			case 1:
+				prg << cyng::unwinder(read_get_proc_parameter_response_L1(attr, pos, path.front(), path.back()));
+				break;
+			case 2:
+				prg << cyng::unwinder(read_get_proc_parameter_response_L2(attr, pos, path.front(), path.back()));
+				break;
+			case 3:
+				prg << cyng::unwinder(read_get_proc_parameter_response_L3(attr, pos, path.front(), path.back()));
+				break;
+			default:
+				break;
+			}
 
-				//to_param_map
+
+			//
+			//	3. child_List List_of_SML_Tree OPTIONAL
+			//
+			return (prg.empty())
+				? read_tree_list(path, *pos++, ++depth)
+				: prg
+				;
+
+		}
+
+		cyng::vector_t reader::read_get_proc_parameter_response_L0(cyng::attr_t attr, cyng::tuple_t::const_iterator pos, obis root)
+		{
+			if (root == OBIS_CODE_IF_1107) {
+				//	get wired IEC (IEC 62506-21) configuartion
+				read_get_proc_multiple_parameters(*pos++);
+				return cyng::generate_invoke("sml.get.proc.param.iec.config"
+					, ro_.pk_
+					, ro_.trx_
+					, ro_.idx_
+					, from_server_id(ro_.server_id_)
+					, OBIS_CODE_IF_1107.to_buffer()	//	same as path.front()
+					, ro_.get_value(OBIS_CODE_IF_1107_ACTIVE)	 //	(bool) - if true 1107 interface active
+					, ro_.get_value(OBIS_CODE_IF_1107_LOOP_TIME)	//	(u) - Loop timeout in seconds
+					, ro_.get_value(OBIS_CODE_IF_1107_RETRIES)	//	(u) - Retry count
+					, ro_.get_value(OBIS_CODE_IF_1107_MIN_TIMEOUT)	//	(u) - Minimal answer timeout(300)
+					, ro_.get_value(OBIS_CODE_IF_1107_MAX_TIMEOUT)	//	(u) - Maximal answer timeout(5000)
+					, ro_.get_value(OBIS_CODE_IF_1107_MAX_DATA_RATE)	//	(u) - Maximum data bytes(10240)
+					, ro_.get_value(OBIS_CODE_IF_1107_RS485) //	(bool) - if true RS 485, otherwise RS 323
+					, ro_.get_value(OBIS_CODE_IF_1107_PROTOCOL_MODE) //	(u) - Protocol mode(A ... D)
+					, ro_.get_value(OBIS_CODE_IF_1107_METER_LIST) // Liste der abzufragenden 1107 Zähler
+					, ro_.get_value(OBIS_CODE_IF_1107_AUTO_ACTIVATION) //(True)
+					, ro_.get_value(OBIS_CODE_IF_1107_TIME_GRID) //	time grid of load profile readout in seconds
+					, ro_.get_value(OBIS_CODE_IF_1107_TIME_SYNC) //	time sync in seconds
+					, ro_.get_value(OBIS_CODE_IF_1107_MAX_VARIATION) //(seconds)
+				);
+			}
+			else if (root == OBIS_CLASS_OP_LOG_STATUS_WORD) {
+
+				//	generate status word
 				return cyng::generate_invoke("sml.get.proc.status.word"
 					, ro_.pk_
 					, ro_.trx_
@@ -510,7 +563,8 @@ namespace node
 					, OBIS_CLASS_OP_LOG_STATUS_WORD.to_buffer()	//	same as path.front()
 					, cyng::value_cast<std::uint32_t>(attr.second, 0u));	//	[u32] value
 			}
-			else if (path.size() == 1 && path.front() == OBIS_CODE_ROOT_MEMORY_USAGE) {
+			else if (root == OBIS_CODE_ROOT_MEMORY_USAGE) {
+
 				//	get memory usage
 				read_get_proc_multiple_parameters(*pos++);
 				return cyng::generate_invoke("sml.get.proc.param.memory"
@@ -522,7 +576,8 @@ namespace node
 					, ro_.get_value(OBIS_CODE_ROOT_MEMORY_MIRROR)	//	mirror
 					, ro_.get_value(OBIS_CODE_ROOT_MEMORY_TMP));	//	tmp
 			}
-			else if (path.size() == 1 && path.front() == OBIS_CODE_ROOT_W_MBUS_STATUS) {
+			else if (root == OBIS_CODE_ROOT_W_MBUS_STATUS) {
+
 				//	get memory usage
 				read_get_proc_multiple_parameters(*pos++);
 				return cyng::generate_invoke("sml.get.proc.param.wmbus.status"
@@ -537,8 +592,8 @@ namespace node
 					, ro_.get_string(OBIS_W_MBUS_HARDWARE)	//	hardware version (2.00)
 				);
 			}
-			else if (path.size() == 1 && path.front() == OBIS_CODE_IF_wMBUS) {
-				//	get memory usage
+			else if (root == OBIS_CODE_IF_wMBUS) {
+				//	get wireless M-Bus configuration
 				read_get_proc_multiple_parameters(*pos++);
 				return cyng::generate_invoke("sml.get.proc.param.wmbus.config"
 					, ro_.pk_
@@ -554,7 +609,7 @@ namespace node
 					, ro_.get_value(OBIS_W_MBUS_INSTALL_MODE)	//	installation mode (true)
 				);
 			}
-			else if (path.size() == 1 && path.front() == OBIS_CODE_ROOT_IPT_STATE) {
+			else if (root == OBIS_CODE_ROOT_IPT_STATE) {
 				//	get IP-T status
 				read_get_proc_multiple_parameters(*pos++);
 				//	81 49 17 07 00 00 ip address
@@ -571,9 +626,15 @@ namespace node
 					, ro_.get_value(OBIS_CODE_ROOT_IPT_STATE_PORT_REMOTE)	//	remote port
 				);
 			}
-			else if (path.size() == 2 && path.front() == OBIS_CODE_ROOT_DEVICE_IDENT)
+
+			return cyng::vector_t{};
+		}
+
+		cyng::vector_t reader::read_get_proc_parameter_response_L1(cyng::attr_t attr, cyng::tuple_t::const_iterator pos, obis root, obis code)
+		{
+			if (root == OBIS_CODE_ROOT_DEVICE_IDENT)
 			{
-				if (path.back() == OBIS_CODE_DEVICE_CLASS) {
+				if (code == OBIS_CODE_DEVICE_CLASS) {
 					//
 					//	device class
 					//	CODE_ROOT_DEVICE_IDENT (81, 81, C7, 82, 01, FF)
@@ -587,11 +648,11 @@ namespace node
 						, ro_.trx_
 						, ro_.idx_
 						, ro_.server_id_
-						, path.back().to_buffer()
+						, code.to_buffer()
 						, attr.second);	//	value
 
 				}
-				else if (path.back() == OBIS_DATA_MANUFACTURER) {
+				else if (code == OBIS_DATA_MANUFACTURER) {
 					//
 					//	device class
 					//
@@ -603,10 +664,10 @@ namespace node
 						, ro_.trx_
 						, ro_.idx_
 						, ro_.server_id_
-						, path.back().to_buffer()
+						, code.to_buffer()
 						, attr.second);	//	value
 				}
-				else if (path.back() == OBIS_CODE_SERVER_ID) {
+				else if (code == OBIS_CODE_SERVER_ID) {
 					//
 					//	server ID (81 81 C7 82 04 FF)
 					//
@@ -618,12 +679,12 @@ namespace node
 						, ro_.trx_
 						, ro_.idx_
 						, ro_.server_id_
-						, path.back().to_buffer()
+						, code.to_buffer()
 						, attr.second);	//	value
 				}
 			}
-			else if (path.size() == 2 && path.front() == OBIS_CODE_ROOT_IPT_PARAM) {
-				const auto r = path.back().is_matching(0x81, 0x49, 0x0D, 0x07, 0x00);
+			else if (root == OBIS_CODE_ROOT_IPT_PARAM) {
+				const auto r = code.is_matching(0x81, 0x49, 0x0D, 0x07, 0x00);
 				if (r.second) {
 #ifdef _DEBUG
 					std::cout << "OBIS_CODE_ROOT_IPT_PARAM: " << +r.first << std::endl;
@@ -648,7 +709,12 @@ namespace node
 					);
 				}
 			}
-			else if (path.size() == 3 && (path.front() == OBIS_CODE_ROOT_VISIBLE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x10, 0x06)) {
+			return cyng::vector_t{};
+		}
+
+		cyng::vector_t reader::read_get_proc_parameter_response_L2(cyng::attr_t attr, cyng::tuple_t::const_iterator pos, obis root, obis code)
+		{
+			if (root == OBIS_CODE_ROOT_VISIBLE_DEVICES && code.is_matching(0x81, 0x81, 0x10, 0x06)) {
 
 				//
 				//	collect meter info
@@ -664,12 +730,12 @@ namespace node
 					, ro_.idx_
 					, from_server_id(ro_.server_id_)
 					, OBIS_CODE_ROOT_VISIBLE_DEVICES.to_buffer()
-					, path.back().get_number()	//	4/5 
+					, code.get_number()	//	4/5 
 					, ro_.get_value(OBIS_CODE_SERVER_ID)	//	meter ID
 					, ro_.get_string(OBIS_CODE_DEVICE_CLASS)	//	device class
 					, ro_.get_value(OBIS_CURRENT_UTC));	//	UTC
 			}
-			else if (path.size() == 3 && (path.front() == OBIS_CODE_ROOT_ACTIVE_DEVICES) && path.back().is_matching(0x81, 0x81, 0x11, 0x06)) {
+			else if (root == OBIS_CODE_ROOT_ACTIVE_DEVICES && code.is_matching(0x81, 0x81, 0x11, 0x06)) {
 
 				//
 				//	collect meter info
@@ -685,12 +751,12 @@ namespace node
 					, ro_.idx_
 					, from_server_id(ro_.server_id_)
 					, OBIS_CODE_ROOT_ACTIVE_DEVICES.to_buffer()
-					, path.back().get_number()	//	4/5 
+					, code.get_number()	//	4/5 
 					, ro_.get_value(OBIS_CODE_SERVER_ID)	//	meter ID
 					, ro_.get_string(OBIS_CODE_DEVICE_CLASS)	//	device class
 					, ro_.get_value(OBIS_CURRENT_UTC));	//	UTC
 			}
-			else if (path.size() == 3 && (path.front() == OBIS_CODE_ROOT_DEVICE_IDENT) && path.back().is_matching(0x81, 0x81, 0xc7, 0x82, 0x07).second) {
+			else if (root == OBIS_CODE_ROOT_DEVICE_IDENT && code.is_matching(0x81, 0x81, 0xc7, 0x82, 0x07).second) {
 
 				//	* 81, 81, c7, 82, 08, ff:	CURRENT_VERSION/KERNEL
 				//	* 81, 81, 00, 02, 00, 00:	VERSION
@@ -709,28 +775,20 @@ namespace node
 					, ro_.idx_
 					, from_server_id(ro_.server_id_)
 					, OBIS_CODE_ROOT_DEVICE_IDENT.to_buffer()
-					, path.back().get_storage()	//	[5] as u32
+					, code.get_storage()	//	[5] as u32
 					, ro_.get_string(OBIS_CODE_DEVICE_KERNEL)	//	root-device-id name/section
 					, ro_.get_string(OBIS_CODE_VERSION)	//	version
 					, ro_.get_value(OBIS_CODE_DEVICE_ACTIVATED));	//	active/inactive
 
 			}
-			else {
-
-				//
-				//	OBIS path not implemented yet
-				//
-
-				;
-			}
-
-
-			//
-			//	3. child_List List_of_SML_Tree OPTIONAL
-			//
-			return read_tree_list(path, *pos++, ++depth);
-
+			return cyng::vector_t{};
 		}
+
+		cyng::vector_t reader::read_get_proc_parameter_response_L3(cyng::attr_t attr, cyng::tuple_t::const_iterator pos, obis root, obis code)
+		{
+			return cyng::vector_t{};
+		}
+
 
 		cyng::vector_t reader::read_tree_list(std::vector<obis> path, cyng::object obj, std::size_t depth)
 		{
@@ -753,41 +811,8 @@ namespace node
 			tpl = cyng::value_cast(obj, tpl);
 			for (auto const child : tpl)
 			{
-				read_get_proc_single_parameter(child);
+				ro_.set_value(read_get_proc_single_parameter(child));
 			}
-
-		}
-
-		void reader::read_get_proc_single_parameter(cyng::object obj)
-		{
-			cyng::tuple_t tmp;
-			tmp = cyng::value_cast(obj, tmp);
-			read_get_proc_single_parameter(tmp.begin(), tmp.end());
-		}
-
-		void reader::read_get_proc_single_parameter(cyng::tuple_t::const_iterator pos
-			, cyng::tuple_t::const_iterator end)
-		{
-			std::size_t count = std::distance(pos, end);
-			BOOST_ASSERT_MSG(count == 3, "SML Tree");
-			if (count != 3)	return;
-			
-			//
-			//	1. parameterName Octet String,
-			//
-			obis code = read_obis(*pos++);
-
-			//
-			//	2. parameterValue SML_ProcParValue OPTIONAL,
-			//
-			auto attr = read_parameter(*pos++);
-			ro_.set_value(code, attr.second);
-
-			//std::cerr
-			//	<< to_hex(code)
-			//	<< " = "
-			//	//<< cyng::io::to_str(attr.second)
-			//	<< std::endl;
 
 		}
 
@@ -805,12 +830,12 @@ namespace node
 			//
 			//	username
 			//
-			read_string("userName", *pos++);
+			ro_.set_value("userName", read_string(*pos++));
 
 			//
 			//	password
 			//
-			read_string("password", *pos++);
+			ro_.set_value("password", read_string(*pos++));
 
 			//
 			//	parameterTreePath == parameter address
@@ -862,12 +887,12 @@ namespace node
             //
             //	username
             //
-            read_string("userName", *pos++);
+            ro_.set_value("userName", read_string(*pos++));
 
             //
             //	password
             //
-            read_string("password", *pos++);
+			ro_.set_value("password", read_string(*pos++));
 
             //
             //	parameterTreePath == parameter address
@@ -1250,12 +1275,12 @@ namespace node
 			//
 			//	username
 			//
-			read_string("userName", *pos++);
+			ro_.set_value("userName", read_string(*pos++));
 
 			//
 			//	password
 			//
-			read_string("password", *pos++);
+			ro_.set_value("password", read_string(*pos++));
 
 			//
 			//	list name
@@ -1301,7 +1326,7 @@ namespace node
 			//
 			//	read act. sensor time - optional
 			//
-			read_time("actSensorTime", *pos++);
+			ro_.set_value("actSensorTime", read_time(*pos++));
 
 			//
 			//	valList
@@ -1318,7 +1343,7 @@ namespace node
 			//
 			//	SML_Time - OPTIONAL 
 			//
-			read_time("actGatewayTime", *pos++);
+			ro_.set_value("actGatewayTime", read_time(*pos++));
 
 			
 			return cyng::generate_invoke("sml.get.list.response"
@@ -1368,57 +1393,6 @@ namespace node
 				, ro_.get_value("attentionMsg"));
 		}
 
-		cyng::param_map_t reader::read_param_tree(std::size_t depth, cyng::object obj)
-		{
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(obj, tpl);
-
-			return (tpl.size() == 3)
-				? read_param_tree(depth, tpl.begin(), tpl.end())
-				: cyng::param_map_t()
-				;
-		}
-
-		cyng::param_map_t reader::read_param_tree(std::size_t depth
-			, cyng::tuple_t::const_iterator pos
-			, cyng::tuple_t::const_iterator end)
-		{
-			std::size_t count = std::distance(pos, end);
-			BOOST_ASSERT_MSG(count == 3, "SML Tree");
-			if (count != 3) return cyng::param_map_t{};
-
-			cyng::param_map_t params;
-
-			//
-			//	1. parameterName Octet String,
-			//
-			obis code = read_obis(*pos++);
-			boost::ignore_unused(code);
-
-			//
-			//	2. parameterValue SML_ProcParValue OPTIONAL,
-			//
-			auto attr = read_parameter(*pos++);
-			if (attr.first != PROC_PAR_UNDEF) {
-				params.emplace(code.to_str(), attr.second);
-			}
-
-			//
-			//	3. child_List List_of_SML_Tree OPTIONAL
-			//
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(*pos++, tpl);
-			for (auto const child : tpl)
-			{
-				cyng::tuple_t tmp;
-				tmp = cyng::value_cast(child, tmp);
-				auto const m = read_param_tree(depth + 1, tmp.begin(), tmp.end());
-				params.insert(m.begin(), m.end());	//	preserve existing keys
-			}
-
-			return params;
-		}
-
 		void reader::read_sml_list(obis code
 			, cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)
@@ -1462,12 +1436,14 @@ namespace node
 			//
 			//	valTime - optional
 			//
-			auto val_time = read_time("valTime", *pos++);
+			auto val_time = read_time(*pos++);
+			ro_.set_value("valTime", val_time);
 
 			//
 			//	unit (see sml_unit_enum) - optional
 			//
-			auto const unit = read_unit("SMLUnit", *pos++);
+			ro_.set_value("SMLUnit", *pos);
+			auto const unit = read_unit(*pos++);
 
 			//
 			//	scaler - optional
@@ -1526,7 +1502,8 @@ namespace node
 			//
 			//	unit (see sml_unit_enum)
 			//
-			const auto unit = read_unit("SMLUnit", *pos++);
+			ro_.set_value("SMLUnit", *pos);
+			auto const unit = read_unit(*pos++);
 
 			//
 			//	scaler
@@ -1546,35 +1523,6 @@ namespace node
 
 		}
 
-		cyng::object reader::read_time(std::string const& name, cyng::object obj)
-		{
-			cyng::tuple_t choice;
-			choice = cyng::value_cast(obj, choice);
-			if (choice.empty())	return cyng::make_object();
-
-			BOOST_ASSERT_MSG(choice.size() == 2, "TIME");
-			if (choice.size() == 2)
-			{
-				auto code = cyng::value_cast<std::uint8_t>(choice.front(), 0);
-				switch (code)
-				{
-				case TIME_TIMESTAMP:
-				{
-					const std::uint32_t sec = cyng::value_cast<std::uint32_t>(choice.back(), 0);
-					ro_.set_value(name, cyng::make_time_point(sec));
-					return cyng::make_time_point(sec);
-				}
-				break;
-				case TIME_SECINDEX:
-					ro_.set_value(name, choice.back());
-					return choice.back();
-				default:
-					break;
-				}
-			}
-			return cyng::make_object();
-		}
-
 		std::vector<obis> reader::read_param_tree_path(cyng::object obj)
 		{
 			std::vector<obis> result;
@@ -1591,34 +1539,6 @@ namespace node
 			return result;
 		}
 
-		obis reader::read_obis(cyng::object obj)
-		{
-			cyng::buffer_t tmp;
-			tmp = cyng::value_cast(obj, tmp);
-
-			return (tmp.empty())
-				? obis()
-				: obis(tmp)
-				;
-
-		}
-
-		std::uint8_t reader::read_unit(std::string const& name, cyng::object obj)
-		{
-			std::uint8_t unit = cyng::value_cast<std::uint8_t>(obj, 0);
-			ro_.set_value(name, obj);
-			return unit;
-		}
-
-		std::string reader::read_string(std::string const& name, cyng::object obj)
-		{
-			cyng::buffer_t buffer;
-			buffer = cyng::value_cast(obj, buffer);
-			const auto str = cyng::io::to_ascii(buffer);
-			ro_.set_value(name, cyng::make_object(str));
-			return str;
-		}
-
 		std::string reader::read_server_id(cyng::object obj)
 		{
 			ro_.server_id_ = cyng::value_cast(obj, ro_.server_id_);
@@ -1629,12 +1549,6 @@ namespace node
 		{
 			ro_.client_id_ = cyng::value_cast(obj, ro_.client_id_);
 			return from_server_id(ro_.client_id_);
-		}
-
-		std::int8_t reader::read_scaler(cyng::object obj)
-		{
-			std::int8_t scaler = cyng::numeric_cast<std::int8_t>(obj, 0);
-			return scaler;
 		}
 
 		cyng::object reader::read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj)
@@ -1653,7 +1567,7 @@ namespace node
 			{
 				if (obj.get_class().tag() == cyng::TC_TUPLE)
 				{
-					read_time(get_name(code), obj);
+					ro_.set_value(code, read_time(obj));
 				}
 				else
 				{
@@ -1736,7 +1650,70 @@ namespace node
 			return  obj;
 		}
 
-		cyng::attr_t reader::read_parameter(cyng::object obj)
+		cyng::param_map_t read_param_tree(std::size_t depth, cyng::object obj)
+		{
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(obj, tpl);
+
+			return (tpl.size() == 3)
+				? read_param_tree(depth, tpl.begin(), tpl.end())
+				: cyng::param_map_t()
+				;
+		}
+
+		cyng::param_map_t read_param_tree(std::size_t depth
+			, cyng::tuple_t::const_iterator pos
+			, cyng::tuple_t::const_iterator end)
+		{
+			std::size_t count = std::distance(pos, end);
+			BOOST_ASSERT_MSG(count == 3, "SML Tree");
+			if (count != 3) return cyng::param_map_t{};
+
+			cyng::param_map_t params;
+
+			//
+			//	1. parameterName Octet String,
+			//
+			obis code = read_obis(*pos++);
+			boost::ignore_unused(code);
+
+			//
+			//	2. parameterValue SML_ProcParValue OPTIONAL,
+			//
+			auto attr = read_parameter(*pos++);
+			if (attr.first != PROC_PAR_UNDEF) {
+				params.emplace(code.to_str(), attr.second);
+			}
+
+			//
+			//	3. child_List List_of_SML_Tree OPTIONAL
+			//
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(*pos++, tpl);
+			for (auto const child : tpl)
+			{
+				cyng::tuple_t tmp;
+				tmp = cyng::value_cast(child, tmp);
+				auto const m = read_param_tree(depth + 1, tmp.begin(), tmp.end());
+				params.insert(m.begin(), m.end());	//	preserve existing keys
+			}
+
+			return params;
+		}
+
+		obis read_obis(cyng::object obj)
+		{
+			cyng::buffer_t tmp;
+			tmp = cyng::value_cast(obj, tmp);
+
+			return (tmp.empty())
+				? obis()
+				: obis(tmp)
+				;
+
+		}
+
+		cyng::attr_t read_parameter(cyng::object obj)
 		{
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(obj, tpl);
@@ -1748,13 +1725,96 @@ namespace node
 				case PROC_PAR_VALUE:		return cyng::attr_t(type, tpl.back());
 				case PROC_PAR_PERIODENTRY:	return cyng::attr_t(type, tpl.back());
 				case PROC_PAR_TUPELENTRY:	return cyng::attr_t(type, tpl.back());
-				case PROC_PAR_TIME:			return cyng::attr_t(type, read_time("parTime", tpl.back()));
+				case PROC_PAR_TIME:			return cyng::attr_t(type, read_time(tpl.back()));
 				default:
 					break;
 				}
 			}
 			return cyng::attr_t(PROC_PAR_UNDEF, cyng::make_object());
 		}
+
+		cyng::object read_time(cyng::object obj)
+		{
+			cyng::tuple_t choice;
+			choice = cyng::value_cast(obj, choice);
+			//if (choice.empty())	return cyng::make_object();
+
+			BOOST_ASSERT_MSG(choice.size() == 2, "TIME");
+			if (choice.size() == 2)
+			{
+				auto code = cyng::value_cast<std::uint8_t>(choice.front(), 0);
+				switch (code)
+				{
+				case TIME_TIMESTAMP:
+				{
+					const std::uint32_t sec = cyng::value_cast<std::uint32_t>(choice.back(), 0);
+					//return cyng::param_t(name, cyng::make_time_point(sec));
+					//ro_.set_value(name, cyng::make_time_point(sec));
+					return cyng::make_time_point(sec);
+				}
+				break;
+				case TIME_SECINDEX:
+					//ro_.set_value(name, choice.back());
+					return choice.back();
+				default:
+					break;
+				}
+			}
+			return cyng::make_object();
+		}
+
+		cyng::object read_string(cyng::object obj)
+		{
+			cyng::buffer_t buffer;
+			buffer = cyng::value_cast(obj, buffer);
+			return cyng::make_object(cyng::io::to_ascii(buffer));
+		}
+
+		std::int8_t read_scaler(cyng::object obj)
+		{
+			std::int8_t const scaler = cyng::numeric_cast<std::int8_t>(obj, 0);
+			return scaler;
+		}
+
+		std::uint8_t read_unit(cyng::object obj)
+		{
+			std::uint8_t const unit = cyng::value_cast<std::uint8_t>(obj, 0);
+			//ro_.set_value(name, obj);
+			return unit;
+		}
+
+		cyng::param_t read_get_proc_single_parameter(cyng::tuple_t::const_iterator pos
+			, cyng::tuple_t::const_iterator end)
+		{
+			std::size_t count = std::distance(pos, end);
+			BOOST_ASSERT_MSG(count == 3, "SML Parameter");
+			if (count != 3)	return cyng::param_t{ "", cyng::make_object() };
+
+			//
+			//	1. parameterName Octet String,
+			//
+			obis const code = read_obis(*pos++);
+
+			//
+			//	2. parameterValue SML_ProcParValue OPTIONAL,
+			//
+			auto attr = read_parameter(*pos++);
+
+			if (OBIS_CODE_IF_1107_METER_LIST == code) {
+				return cyng::param_t(code.to_str(), *pos);
+			}
+			return cyng::param_t(code.to_str(), attr.second);
+
+		}
+
+		cyng::param_t read_get_proc_single_parameter(cyng::object obj)
+		{
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(obj, tpl);
+			BOOST_ASSERT_MSG(tpl.size() == 3, "SML Parameter");
+			return read_get_proc_single_parameter(tpl.begin(), tpl.end());
+		}
+
 	}	//	sml
 }
 

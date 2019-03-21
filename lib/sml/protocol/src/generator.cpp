@@ -547,6 +547,13 @@ namespace node
 			return get_proc_parameter(srv, OBIS_CODE_IF_wMBUS, username, password);
 		}
 
+		std::size_t req_generator::get_proc_parameter_wired_iec_config(cyng::buffer_t const& srv
+			, std::string const& username
+			, std::string const& password)
+		{
+			return get_proc_parameter(srv, OBIS_CODE_IF_1107, username, password);
+		}
+
 		std::size_t req_generator::get_proc_parameter_ipt_status(cyng::buffer_t const& srv
 			, std::string const& username
 			, std::string const& password)

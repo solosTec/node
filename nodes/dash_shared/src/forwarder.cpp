@@ -466,7 +466,7 @@ namespace node
 		, std::string const& channel
 		, cyng::reader<cyng::object> const& reader)
 	{
-		//	{"cmd":"config:gateway","channel":"get.proc.param","key":["fce4fe15-0756-4ae4-91e7-28dee59f07e6"],"params":[{"section":["op-log-status-word","root-visible-devices","root-active-devices","root-device-id","memory","root-wMBus-status","IF_wMBUS","root-ipt-state","root-ipt-param"]}]}
+		//	{"cmd":"config:gateway","channel":"get.proc.param","key":["fce4fe15-0756-4ae4-91e7-28dee59f07e6"],"params":[{"section":["op-log-status-word","root-visible-devices","root-active-devices","root-device-id","memory","root-wMBus-status","IF-wireless-mbus","root-ipt-state","root-ipt-param"]}]}
 		//	{"cmd":"config:gateway","channel":"set.proc.param","key":["fce4fe15-0756-4ae4-91e7-28dee59f07e6"],"params":[{"name":"smf-form-gw-ipt-srv","value":"0500153B0223B3"},{"name":"smf-gw-ipt-host-1","value":"waiting..."},{"name":"smf-gw-ipt-local-1","value":""},{"name":"smf-gw-ipt-remote-1","value":""},{"name":"smf-gw-ipt-name-1","value":"waiting..."},{"name":"smf-gw-ipt-pwd-1","value":""},{"name":"smf-gw-ipt-host-2","value":"waiting..."},{"name":"smf-gw-ipt-local-2","value":""},{"name":"smf-gw-ipt-remote-2","value":""},{"name":"smf-gw-ipt-name-2","value":"waiting..."},{"name":"smf-gw-ipt-pwd-2","value":""},{"section":["ipt"]}]}
 		//	{"cmd":"config:gateway","channel":"set.proc.param","key":["31cad258-45f1-4b1d-b131-8a55eb671bb1"],"params":[{"name":"meter-tag","value":"1a38ed66-bd25-4e34-827c-b1a62f09abf4"},{"name":"meter-id","value":"01-a815-74314505-01-02"}],"section":["query"]}
 		cyng::vector_t key;

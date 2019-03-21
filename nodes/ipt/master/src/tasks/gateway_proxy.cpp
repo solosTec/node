@@ -382,7 +382,7 @@ namespace node
 			else if (boost::algorithm::equals("root-wMBus-status", sec)) {
 				sml_gen.get_proc_parameter_wireless_mbus_status(queue_.front().get_srv(), queue_.front().get_user(), queue_.front().get_pwd());
 			}
-			else if (boost::algorithm::equals("IF_wMBUS", sec)) {
+			else if (boost::algorithm::equals("IF-wireless-mbus", sec)) {
 				sml_gen.get_proc_parameter_wireless_mbus_config(queue_.front().get_srv(), queue_.front().get_user(), queue_.front().get_pwd());
 			}
 			else if (boost::algorithm::equals("root-ipt-state", sec)) {
@@ -390,6 +390,9 @@ namespace node
 			}
 			else if (boost::algorithm::equals("root-ipt-param", sec)) {
 				sml_gen.get_proc_parameter_ipt_config(queue_.front().get_srv(), queue_.front().get_user(), queue_.front().get_pwd());
+			}
+			else if (boost::algorithm::equals("IF-IEC-62505-21", sec)) {
+				sml_gen.get_proc_parameter_wired_iec_config(queue_.front().get_srv(), queue_.front().get_user(), queue_.front().get_pwd());
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"

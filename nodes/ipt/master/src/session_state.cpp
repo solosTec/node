@@ -197,28 +197,28 @@ namespace node
 			BOOST_ASSERT(ptr != nullptr);
 
 #ifdef SMF_IO_LOG
-			std::stringstream ss;
-			ss
-				<< "ipt-rx-"
-				<< boost::uuids::to_string(tag)
-				<< "-"
-				<< std::setw(4)
-				<< std::setfill('0')
-				<< std::dec
-				<< ++log_counter_
-				<< ".log"
-				;
-			const std::string file_name = ss.str();
-			std::ofstream of(file_name, std::ios::out | std::ios::app);
-			if (of.is_open())
-			{
-				cyng::io::hex_dump hd;
-				auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(1));
-				hd(of, ptr->begin(), ptr->end());
+			//std::stringstream ss;
+			//ss
+			//	<< "ipt-rx-"
+			//	<< boost::uuids::to_string(tag)
+			//	<< "-"
+			//	<< std::setw(4)
+			//	<< std::setfill('0')
+			//	<< std::dec
+			//	<< ++log_counter_
+			//	<< ".log"
+			//	;
+			//const std::string file_name = ss.str();
+			//std::ofstream of(file_name, std::ios::out | std::ios::app);
+			//if (of.is_open())
+			//{
+			//	cyng::io::hex_dump hd;
+			//	auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(1));
+			//	hd(of, ptr->begin(), ptr->end());
 
-				CYNG_LOG_TRACE(logger_, "write debug log " << file_name);
-				of.close();
-			}
+			//	CYNG_LOG_TRACE(logger_, "write debug log " << file_name);
+			//	of.close();
+			//}
 #endif
 
 			switch (state_) {
@@ -1081,6 +1081,26 @@ namespace node
 
 		}
 
+		void session_state::react(state::evt_sml_get_proc_param_iec_config evt)
+		{
+			switch (state_) {
+			case S_CONNECTED_TASK:
+				break;
+			default:
+				signal_wrong_state("evt_sml_get_proc_param_iec_config");
+				return;
+			}
+
+			//BOOST_ASSERT(evt.vec_.size() == 8);
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_iec_config to #" << task_.tsk_proxy_);
+
+			//
+			//	message slot (5)
+			//
+			task_.get_proc_param_iec_config(sp_->mux_, evt.vec_);
+
+		}
+
 		void session_state::react(state::evt_sml_get_proc_param_ipt_status evt)
 		{
 			switch (state_) {
@@ -1552,6 +1572,13 @@ namespace node
 			{}
 
 			//
+			//	EVENT: evt_sml_get_proc_param_iec_config
+			//
+			evt_sml_get_proc_param_iec_config::evt_sml_get_proc_param_iec_config(cyng::vector_t vec)
+				: vec_(vec)
+			{}
+
+			//
 			//	EVENT: evt_sml_get_proc_param_ipt_status
 			//
 			evt_sml_get_proc_param_ipt_status::evt_sml_get_proc_param_ipt_status(cyng::vector_t vec)
@@ -1904,7 +1931,7 @@ namespace node
 					vec.at(2),	//	idx
 					vec.at(3),	//	server ID
 					vec.at(4),	//	OBIS code
-								//	wireless M-Bus configuration
+								//	wired IEC configuration
 					cyng::param_map_factory("protocol", vec.at(5))
 						("sMode", cyng::numeric_cast<std::uint16_t>(vec.at(6), 0))
 						("tMode", cyng::numeric_cast<std::uint16_t>(vec.at(7), 0))
@@ -1913,6 +1940,37 @@ namespace node
 						("installMode", vec.at(10))
 					()
 				});
+			}
+
+			void state_connected_task::get_proc_param_iec_config(cyng::async::mux& mux, cyng::vector_t vec)
+			{
+
+				//
+				//	protocol mode
+				//
+				std::string const protol_mode(1, cyng::numeric_cast<std::int8_t>(vec.at(12), 0) + 'A');
+
+				mux.post(tsk_proxy_, 5, cyng::tuple_t{
+					vec.at(1),	//	trx
+					vec.at(2),	//	idx
+					vec.at(3),	//	server ID
+					vec.at(4),	//	OBIS code
+								//	wireless M-Bus configuration
+					cyng::param_map_factory("active", vec.at(5))
+						("loopTime", cyng::numeric_cast<std::uint16_t>(vec.at(6), 0))
+						("retries", cyng::numeric_cast<std::uint16_t>(vec.at(7), 0))
+						("minTimeout", cyng::numeric_cast<std::uint16_t>(vec.at(8), 0))
+						("maxTimeout", cyng::numeric_cast<std::uint16_t>(vec.at(9), 0))
+						("maxDataRate", cyng::numeric_cast<std::uint32_t>(vec.at(10), 0))
+						("rs485", vec.at(11))
+						("protocolMode", protol_mode)	//	A ... D
+						("devices", vec.at(13))
+						("autoActivation", vec.at(14))
+						("timeGrid", cyng::numeric_cast<std::uint32_t>(vec.at(15), 0))
+						("timeSync", cyng::numeric_cast<std::uint32_t>(vec.at(16), 0))
+						("maxVar", cyng::numeric_cast<std::uint32_t>(vec.at(17), 0))
+					()
+					});
 			}
 
 			void state_connected_task::get_proc_param_ipt_status(cyng::async::mux& mux, cyng::vector_t vec)

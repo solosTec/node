@@ -9,6 +9,7 @@
 #include "session_state.h"
 #include <smf/sml/intrinsics/obis.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/protocol/reader.h>
 
 #include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>
@@ -40,6 +41,7 @@ namespace node
 		vm.register_function("sml.get.proc.param.ipt.state", 8, std::bind(&proxy_comm::sml_get_proc_param_ipt_status, this, std::placeholders::_1));
 		//vm.register_function("sml.get.proc.param.ipt.param", 11, std::bind(&proxy_comm::sml_get_proc_param_ipt_param, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.param.ipt.param", 11, std::bind(&proxy_comm::sml_get_proc_param_ipt_param, this, std::placeholders::_1));
+		vm.register_function("sml.get.proc.param.iec.config", 18, std::bind(&proxy_comm::sml_get_proc_param_iec_config, this, std::placeholders::_1));
 		vm.register_function("sml.get.list.response", 9, std::bind(&proxy_comm::sml_get_list_response, this, std::placeholders::_1));
 		vm.register_function("sml.attention.msg", 6, std::bind(&proxy_comm::sml_attention_msg, this, std::placeholders::_1));
 	}
@@ -282,6 +284,80 @@ namespace node
 		//	 [1b2164c5-ee0f-44d4-a4eb-6f3a78e47767,0980651-3,0,00:15:3b:02:23:b3,81490D0700FF,2,1501a8c0,68ef,0,LSMTest4,LSMTest4]
 
 		state_.react(ipt::state::evt_sml_get_proc_param_ipt_param(ctx.get_frame()));
+	}
+
+	void proxy_comm::sml_get_proc_param_iec_config(cyng::context& ctx)
+	{
+		//	[9b54b736-e77e-4e18-8924-961224dd8c99,0779073-2,0,00:15:3b:01:ec:46,8181C79300FF,true,3c,3,c8,1388,2800,null,2,
+		//	{{8181C7930901,null,{{8181C7930AFF,{1,3034303435303537},null},{8181C7930BFF,{1,2580},null},{8181C7930CFF,{1,3034303435303537},null}}},{8181C7930902,null,{{8181C7930AFF,{1,3034333635363633},null},{8181C7930BFF,{1,012c},null},{8181C7930CFF,{1,3034333635363633},null}}}},
+		//	true,null,null,null]
+		cyng::vector_t frame = ctx.get_frame();
+		//std::cerr << cyng::io::to_str(frame) << std::endl;;
+
+		//
+		//	* [uuid] pk
+		//	* [str] trx
+		//	* [u] idx
+		//	* [str] server id
+		//	* [bin] OBIS_CODE_IF_1107
+		//	* [bool] interface active
+		//	* [u] Loop timeout in seconds
+		//	* [u] - Retry count
+		//	* [u] - Minimal answer timeout(300)
+		//	* [u] - Maximal answer timeout(5000)
+		//	* [u] - Maximum data bytes(10240)
+		//	* [bool] - if true RS 485, otherwise RS 323
+		//	* [u] - Protocol mode(A ... D)
+		//	* Liste der abzufragenden 1107 Zähler
+		//	* [bool] auto activation
+		//	* [u] time grid of load profile readout in seconds
+		//	* [u] time sync in seconds
+		//	* [u] max variation in seocnds
+
+
+		//
+		//	device list
+		//
+		cyng::vector_t result;
+		cyng::tuple_t devs;
+		devs = cyng::value_cast(frame.at(13), devs);
+
+		for (auto const& dev : devs) {
+			cyng::tuple_t params;
+			params = cyng::value_cast(dev, params);
+			if (params.size() == 3) {
+
+				cyng::tuple_t child;
+				child = cyng::value_cast(params.back(), child);
+
+				cyng::tuple_t record;
+				for (auto const& p : child) {
+
+					cyng::param_t const param = sml::read_get_proc_single_parameter(p);
+
+					if (boost::algorithm::equals(sml::OBIS_CODE_IF_1107_METER_ID.to_str(), param.first) ||
+						boost::algorithm::equals(sml::OBIS_CODE_IF_1107_ADDRESS.to_str(), param.first)) {
+
+						//
+						//	convert to string
+						//
+						auto val = cyng::param_factory(param.first, sml::read_string(param.second));
+						record.push_back(cyng::make_object(val));
+					}
+					else {
+						record.push_back(cyng::make_object(param));
+					}
+				}
+				result.push_back(cyng::make_object(record));
+			}
+		}
+
+		//
+		//	overwrite device list
+		//
+		frame.at(13) = cyng::make_object(result);
+
+		state_.react(ipt::state::evt_sml_get_proc_param_iec_config(frame));
 	}
 
 	void proxy_comm::sml_get_list_response(cyng::context& ctx)

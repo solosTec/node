@@ -283,6 +283,13 @@ namespace node
 				, std::string const& password);
 
 			/**
+			 * get current wried IEC interface - 81 81 C7 93 00 FF (OBIS_CODE_IF_1107)
+			 */
+			std::size_t get_proc_parameter_wired_iec_config(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password);
+			
+			/**
 			 * get current IP-T status - 81 49 0D 06 00 FF (OBIS_CODE_ROOT_IPT_STATE)
 			 */
 			std::size_t get_proc_parameter_ipt_status(cyng::buffer_t const& server_id

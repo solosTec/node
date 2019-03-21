@@ -765,7 +765,7 @@
                     if ($('#smf-form-gw-wireless-mbus').is(":checked")) {
                         $('#smf-gw-wireless-mbus h4').text('wireless M-Bus data ' + rowData[1]);
                         gw_req_vec.push("root-wMBus-status");
-                        gw_req_vec.push("IF_wMBUS");
+                        gw_req_vec.push("IF-wireless-mbus");
                         $('#smf-gw-wmbus-type').val("");
                         $('#smf-gw-wmbus-adapter').val("");
                         $('#smf-gw-wmbus-firmware').val("");
@@ -1085,7 +1085,7 @@
 
                                 }
                                 else if (obj.section == 'IF_wMBUS') {
-                                    // {"cmd": "update", "channel": "IF_wMBUS", "rec": {"srv": "00:15:3b:02:23:b3", "values": {"installMode":0,"power":0,"protocol":0,"reboot":86400,"s-mode":30,"t-mode":20}}}
+                                    // {"cmd": "update", "channel": "IF-wireless-mbus", "rec": {"srv": "00:15:3b:02:23:b3", "values": {"installMode":0,"power":0,"protocol":0,"reboot":86400,"s-mode":30,"t-mode":20}}}
                                     $('#smf-gw-wmbus-power').val(obj.rec.values.power);
                                     $('#smf-gw-wmbus-reboot').val(obj.rec.values.reboot);
                                     switch (obj.rec.values.protocol) {
@@ -1311,7 +1311,7 @@
                     var data = table_gw.rows({ selected: true }).data();
                     if (data.length != 0) {
                         _ws.send(JSON.stringify({
-                            cmd: "config:gateway", channel: "get.proc.param", key: [data[0][0]], params: [], section: ["root-wMBus-status", "IF_wMBUS"]
+                            cmd: "config:gateway", channel: "get.proc.param", key: [data[0][0]], params: [], section: ["root-wMBus-status", "IF-wireless-mbus"]
                         }));
                     }
                 }
