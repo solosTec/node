@@ -43,7 +43,7 @@ namespace node
 			/**
 			 * Walks over parameter vector and build a parameter map
 			 */
-			cyng::param_map_t get_params() const;
+			cyng::vector_t get_params() const;
 
 			std::string const& get_channel() const;
 			cyng::buffer_t const& get_srv() const;
@@ -66,17 +66,17 @@ namespace node
 			void next();
 
 		private:
-			const boost::uuids::uuid tag_;		//	ident tag
-			const boost::uuids::uuid source_;	//	source tag
-			const std::uint64_t seq_;			//	cluster seq
-			const cyng::vector_t key_;			//	TGateway key
-			const boost::uuids::uuid ws_tag_;	//	ws tag
-			const std::string channel_;
-			const cyng::vector_t sections_;		//	sections
-			const cyng::vector_t params_;		//	parameters
-			const cyng::buffer_t srv_;			//	server id
-			const std::string name_;			//	name
-			const std::string pwd_;				//	pwd
+			boost::uuids::uuid const tag_;		//	ident tag
+			boost::uuids::uuid const source_;	//	source tag
+			std::uint64_t const seq_;			//	cluster seq
+			cyng::vector_t const key_;			//	TGateway key
+			boost::uuids::uuid const ws_tag_;	//	ws tag
+			std::string const channel_;
+			cyng::vector_t const sections_;		//	sections
+			cyng::vector_t const params_;		//	parameters
+			cyng::buffer_t const srv_;			//	server id
+			std::string const name_;			//	name
+			std::string const pwd_;				//	pwd
 			enum {
 				STATE_PROCESSING_,
 				STATE_WAITING_,

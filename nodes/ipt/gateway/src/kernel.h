@@ -81,6 +81,12 @@ namespace node
 			void sml_set_proc_if1107_param(cyng::context& ctx);
 			void sml_set_proc_if1107_device(cyng::context& ctx);
 
+			void sml_set_proc_mbus_param(cyng::context& ctx);
+			//void sml_set_proc_mbus_install_mode(cyng::context& ctx);
+			//void sml_set_proc_mbus_smode(cyng::context& ctx);
+			//void sml_set_proc_mbus_tmode(cyng::context& ctx);
+			//void sml_set_proc_mbus_protocol(cyng::context& ctx);
+
 			void sml_get_list_request(cyng::context& ctx);
 
 			/**

@@ -942,62 +942,20 @@ namespace node
 
 			if (depth == 0) {
 
-				if (OBIS_CODE_IF_1107 == path.front()) {
+				if (OBIS_CODE_IF_wMBUS == path.front()) {
+
+					//
+					//	wireless M-Bus parameter
+					//
+					return set_param_if_mbus(code, attr, pos);
+				}
+				else if (OBIS_CODE_IF_1107 == path.front()) {
+
 					//
 					//	root: IEC 62056-21 device
 					//
+					return set_param_if_1107(code, attr, pos);
 
-					auto r = code.is_matching(0x81, 0x81, 0xC7, 0x93, 0x09);
-					if (r.second) {
-
-						//
-						//	add/modify IEC 62056-21 device
-						//	
-						BOOST_ASSERT(path.size() == 3);
-
-						//
-						//	collect if 1107 device data
-						//
-						cyng::tuple_t tpl;
-						tpl = cyng::value_cast(*pos, tpl);
-						BOOST_ASSERT(tpl.size() <= 5);
-						cyng::param_map_t params;
-						for (auto obj : tpl) {
-							auto const m = read_param_tree(depth + 1, obj);
-							params.insert(m.begin(), m.end());	//	preserve existing keys
-						}
-
-						return cyng::generate_invoke("sml.set.proc.if1107.device"
-							, ro_.pk_
-							, ro_.trx_
-							, r.first
-							, ro_.server_id_
-							, ro_.get_value("userName")
-							, ro_.get_value("password")
-							, params);
-							//, ro_.get_value(OBIS_CODE_IF_1107_METER_ID)
-							//, ro_.get_value(OBIS_CODE_IF_1107_BAUDRATE)
-							//, ro_.get_value(OBIS_CODE_IF_1107_ADDRESS)
-							//, ro_.get_value(OBIS_CODE_IF_1107_P1)
-							//, ro_.get_value(OBIS_CODE_IF_1107_W5));
-					}
-					else {
-
-						BOOST_ASSERT(path.size() == 2);
-
-						//
-						//	set IEC 62056-21 parameters
-						//
-						prg << cyng::generate_invoke_unwinded("sml.set.proc.if1107.param"
-							, ro_.pk_
-							, ro_.trx_
-							, ro_.server_id_
-							, ro_.get_value("userName")
-							, ro_.get_value("password")
-							, path.at(1).to_buffer()
-							, attr.second);
-
-					}
 				}
 				else if (OBIS_CODE_ROOT_IPT_PARAM == path.front()) {
 
@@ -1005,7 +963,8 @@ namespace node
 					//	set IP-T parameters
 					//
 					BOOST_ASSERT_MSG(path.size() == 3, "OBIS_CODE_ROOT_IPT_PARAM param tree too short");
-					prg << cyng::unwinder(set_proc_param_request_ipt_param(code, attr.second));
+					//prg << cyng::unwinder(set_proc_param_request_ipt_param(code, attr.second));
+					return set_proc_param_request_ipt_param(code, attr.second);
 
 				}
 				else if (OBIS_CODE_ACTIVATE_DEVICE == path.front()) {
@@ -1021,7 +980,15 @@ namespace node
 					auto r = path.at(1).is_matching(0x81, 0x81, 0x11, 0x06, 0xfb);
 					if (r.second) {
 
-						prg << cyng::generate_invoke_unwinded("sml.set.proc.activate"
+						//prg << cyng::generate_invoke_unwinded("sml.set.proc.activate"
+						//	, ro_.pk_
+						//	, ro_.trx_
+						//	, r.first	//	should be 1
+						//	, ro_.server_id_
+						//	, ro_.get_value("userName")
+						//	, ro_.get_value("password")
+						//	, tmp);
+						return cyng::generate_invoke("sml.set.proc.activate"
 							, ro_.pk_
 							, ro_.trx_
 							, r.first	//	should be 1
@@ -1045,7 +1012,15 @@ namespace node
 					auto r = path.at(1).is_matching(0x81, 0x81, 0x11, 0x06, 0xfc);
 					if (r.second) {
 
-						prg << cyng::generate_invoke_unwinded("sml.set.proc.deactivate"
+						//prg << cyng::generate_invoke_unwinded("sml.set.proc.deactivate"
+						//	, ro_.pk_
+						//	, ro_.trx_
+						//	, r.first	//	should be 1
+						//	, ro_.server_id_
+						//	, ro_.get_value("userName")
+						//	, ro_.get_value("password")
+						//	, tmp);
+						return cyng::generate_invoke("sml.set.proc.deactivate"
 							, ro_.pk_
 							, ro_.trx_
 							, r.first	//	should be 1
@@ -1057,10 +1032,10 @@ namespace node
 				}
 				else if (OBIS_CODE_DELETE_DEVICE == path.front()) {
 
-				//
-				//	delete device
-				//
-				BOOST_ASSERT_MSG(path.size() == 3, "OBIS_CODE_DELETE_DEVICE parameter tree too short");
+					//
+					//	delete device
+					//
+					BOOST_ASSERT_MSG(path.size() == 3, "OBIS_CODE_DELETE_DEVICE parameter tree too short");
 
 					cyng::buffer_t tmp;
 					tmp = cyng::value_cast(attr.second, tmp);
@@ -1068,7 +1043,15 @@ namespace node
 					auto r = path.at(1).is_matching(0x81, 0x81, 0x11, 0x06, 0xfd);
 					if (r.second) {
 
-						prg << cyng::generate_invoke_unwinded("sml.set.proc.delete"
+						//prg << cyng::generate_invoke_unwinded("sml.set.proc.delete"
+						//	, ro_.pk_
+						//	, ro_.trx_
+						//	, r.first	//	should be 1
+						//	, ro_.server_id_
+						//	, ro_.get_value("userName")
+						//	, ro_.get_value("password")
+						//	, tmp);
+						return cyng::generate_invoke("sml.set.proc.delete"
 							, ro_.pk_
 							, ro_.trx_
 							, r.first	//	should be 1
@@ -1087,7 +1070,8 @@ namespace node
 					//	81 81 c7 8a 01 ff => 81 81 c7 8a 01 [01] => 81 81 c7 8a 03 ff
 					//	//	std::cout << to_hex(path) << std::endl;
 					BOOST_ASSERT_MSG(path.size() == 2, "OBIS_PUSH_OPERATIONS param tree has wro");
-					prg << cyng::unwinder(set_proc_param_request_push_op(code, attr.second));
+					return set_proc_param_request_push_op(code, attr.second);
+					//prg << cyng::unwinder(set_proc_param_request_push_op(code, attr.second));
 
 				}
 			}
@@ -1108,6 +1092,71 @@ namespace node
 				prg << cyng::unwinder(read_set_proc_parameter_request_tree(path, depth + 1, tmp.begin(), tmp.end()));
 			}
 			return prg;
+		}
+
+		cyng::vector_t reader::set_param_if_mbus(obis code, cyng::attr_t attr, cyng::tuple_t::const_iterator pos)
+		{
+			return cyng::generate_invoke("sml.set.proc.mbus.param"
+				, ro_.pk_
+				, ro_.trx_
+				, ro_.server_id_
+				, code.to_buffer()
+				, ro_.get_value("userName")
+				, ro_.get_value("password")
+				, attr.second);
+		}
+
+		cyng::vector_t reader::set_param_if_1107(obis code, cyng::attr_t attr, cyng::tuple_t::const_iterator pos)
+		{
+			if (OBIS_CODE_IF_1107_METER_LIST == code) {
+
+				//
+				//	read device list
+				//
+				//auto r = code.is_matching(0x81, 0x81, 0xC7, 0x93, 0x09);
+				//if (r.second) {
+
+				//	//
+				//	//	add/modify IEC 62056-21 device
+				//	//	
+				//	//BOOST_ASSERT(path.size() == 3);
+
+				//	//
+				//	//	collect if 1107 device data
+				//	//
+				//	cyng::tuple_t tpl;
+				//	tpl = cyng::value_cast(*pos, tpl);
+				//	BOOST_ASSERT(tpl.size() <= 5);
+				//	cyng::param_map_t params;
+				//	for (auto obj : tpl) {
+				//		auto const m = read_param_tree(1, obj);
+				//		params.insert(m.begin(), m.end());	//	preserve existing keys
+				//	}
+
+				//	return cyng::generate_invoke("sml.set.proc.if1107.device"
+				//		, ro_.pk_
+				//		, ro_.trx_
+				//		, r.first
+				//		, ro_.server_id_
+				//		, ro_.get_value("userName")
+				//		, ro_.get_value("password")
+				//		, params);
+				//}
+
+			}
+
+			//
+			//	set IEC 62056-21 parameters
+			//
+			return cyng::generate_invoke("sml.set.proc.if1107.param"
+				, ro_.pk_
+				, ro_.trx_
+				, ro_.server_id_
+				, ro_.get_value("userName")
+				, ro_.get_value("password")
+				, code.to_buffer()
+				, attr.second);
+
 		}
 
 		cyng::vector_t reader::set_proc_param_request_push_op(obis code, cyng::object obj)

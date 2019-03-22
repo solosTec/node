@@ -149,6 +149,7 @@ namespace node
 		void execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen);
 		void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen);
 		void execute_cmd_get_list_req_last_data_set(sml::req_generator& sml_gen);
+		void execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen);
 		void execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen);
 		void execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen);
 		void execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen);

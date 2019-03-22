@@ -94,6 +94,12 @@ namespace node
 			vm.register_function("sml.set.proc.if1107.param", 7, std::bind(&kernel::sml_set_proc_if1107_param, this, std::placeholders::_1));
 			vm.register_function("sml.set.proc.if1107.device", 7, std::bind(&kernel::sml_set_proc_if1107_device, this, std::placeholders::_1));
 
+			vm.register_function("sml.set.proc.mbus.param", 7, std::bind(&kernel::sml_set_proc_mbus_param, this, std::placeholders::_1));
+			//vm.register_function("sml.set.proc.mbus.install.mode", 6, std::bind(&kernel::sml_set_proc_mbus_install_mode, this, std::placeholders::_1));
+			//vm.register_function("sml.set.proc.mbus.s.mode", 6, std::bind(&kernel::sml_set_proc_mbus_smode, this, std::placeholders::_1));
+			//vm.register_function("sml.set.proc.mbus.t.mode", 6, std::bind(&kernel::sml_set_proc_mbus_tmode, this, std::placeholders::_1));
+			//vm.register_function("sml.set.proc.mbus.protocol", 6, std::bind(&kernel::sml_set_proc_mbus_protocol, this, std::placeholders::_1));
+
 			vm.register_function("sml.get.list.request", 9, std::bind(&kernel::sml_get_list_request, this, std::placeholders::_1));
 			//vm.register_function("sml.get.list.response", 0, std::bind(&kernel::sml_get_list_response, this, std::placeholders::_1));
 
@@ -476,15 +482,18 @@ namespace node
 			}
 			else if (OBIS_CODE_IF_wMBUS == code)
 			{
-				sml_gen_.get_proc_w_mbus_if(frame.at(1)
-					, frame.at(3)	//	server id
-					, node::mbus::ALTERNATING	//	protocol
-					, 30	// duration in seconds
-					, 20	// duration in seconds
-					, 86399	//	duration in seconds
-					, node::mbus::STRONG	//	transmision power (transmission_power)
-					, true
-				);
+				config_db_.access([&](cyng::store::table const* tbl_cfg) {
+					
+					sml_gen_.get_proc_w_mbus_if(frame.at(1)
+						, frame.at(3)	//	server id
+						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_PROTOCOL.to_str()), "value")	//	protocol
+						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_S_MODE.to_str()), "value")	//	duration in seconds
+						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_T_MODE.to_str()), "value")	//	duration in seconds
+						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_REBOOT.to_str()), "value")	//	duration in seconds
+						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_POWER.to_str()), "value")	//	transmision power (transmission_power)
+						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_INSTALL_MODE.to_str()), "value")
+					);
+				}, cyng::store::read_access("_Config"));
 			}
 			else if (OBIS_CODE_ROOT_LAN_DSL == code)
 			{
@@ -1419,6 +1428,24 @@ namespace node
 				, "OK"
 				, cyng::tuple_t());
 
+		}
+
+		void kernel::sml_set_proc_mbus_param(cyng::context& ctx)
+		{
+			//	[828497da-d0d5-4e55-8b2d-8bd4d8c4c6e0,0343476-2,0500FFB04B94F8,OBIS,operator,operator,0001517f]
+			cyng::vector_t const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			//
+			//	get OBIS code
+			//
+			cyng::buffer_t tmp;
+			obis const code(cyng::value_cast(frame.at(3), tmp));
+
+			//
+			//	update config db
+			//
+			config_db_.modify("_Config", cyng::table::key_generator(code.to_str()), cyng::param_t("value", frame.at(6)), ctx.tag());
 		}
 
 		void kernel::sml_get_list_request(cyng::context& ctx)

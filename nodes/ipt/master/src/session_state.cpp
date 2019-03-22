@@ -1926,6 +1926,7 @@ namespace node
 
 			void state_connected_task::get_proc_param_wmbus_config(cyng::async::mux& mux, cyng::vector_t vec)
 			{
+
 				mux.post(tsk_proxy_, 5, cyng::tuple_t{
 					vec.at(1),	//	trx
 					vec.at(2),	//	idx
@@ -1933,8 +1934,8 @@ namespace node
 					vec.at(4),	//	OBIS code
 								//	wired IEC configuration
 					cyng::param_map_factory("protocol", vec.at(5))
-						("sMode", cyng::numeric_cast<std::uint16_t>(vec.at(6), 0))
-						("tMode", cyng::numeric_cast<std::uint16_t>(vec.at(7), 0))
+						("sMode", cyng::numeric_cast<std::uint8_t>(vec.at(6), 0))
+						("tMode", cyng::numeric_cast<std::uint8_t>(vec.at(7), 0))
 						("reboot", vec.at(8))
 						("power", vec.at(9))
 						("installMode", vec.at(10))

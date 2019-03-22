@@ -14,6 +14,7 @@
 #include <smf/sml/obis_io.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/status.h>
+#include <smf/mbus/defs.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -282,6 +283,14 @@ namespace node
 						cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 						cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 						cyng::param_factory("speed", 115200),
+
+						cyng::param_factory(sml::OBIS_W_MBUS_PROTOCOL.to_str(), mbus::S_MODE),	//	0 = T-Mode, 1 = S-Mode, 2 = S/T Automatic
+						cyng::param_factory(sml::OBIS_W_MBUS_S_MODE.to_str(), 30),	//	seconds
+						cyng::param_factory(sml::OBIS_W_MBUS_T_MODE.to_str(), 20),	//	seconds
+						cyng::param_factory(sml::OBIS_W_MBUS_REBOOT.to_str(), 0),	//	0 = no reboot
+						cyng::param_factory(sml::OBIS_W_MBUS_POWER.to_str(), mbus::STRONG),	//	low, basic, average, strong (unused)
+						cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str(), true),	//	install mode
+
 						cyng::param_factory("transparent-mode", false),
 						cyng::param_factory("transparent-port", 12001)
 					))
@@ -304,9 +313,23 @@ namespace node
 					))
 
 					, cyng::param_factory("if-1107", cyng::tuple_factory(
+#ifdef _DEBUG
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_ACTIVE.to_str() + "-descr", "OBIS_CODE_IF_1107_ACTIVE"),	//	active
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str() + "-descr", "OBIS_CODE_IF_1107_LOOP_TIME"),	//	loop timeout in seconds
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_RETRIES.to_str() + "-descr", "OBIS_CODE_IF_1107_RETRIES"),	//	retries
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str() + "-descr", "OBIS_CODE_IF_1107_MIN_TIMEOUT"),	//	min. timeout (milliseconds)
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str() + "-descr", "OBIS_CODE_IF_1107_MAX_TIMEOUT"),	//	max. timeout (milliseconds)
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str() + "-descr", "OBIS_CODE_IF_1107_MAX_DATA_RATE"),	//	max. databytes
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_RS485.to_str() + "-descr", "OBIS_CODE_IF_1107_RS485"),	//	 true = RS485, false = RS232
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str() + "-descr", "OBIS_CODE_IF_1107_PROTOCOL_MODE"),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str() + "-descr", "OBIS_CODE_IF_1107_AUTO_ACTIVATION"),	//	auto activation
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str() + "-descr", "OBIS_CODE_IF_1107_TIME_GRID"),
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str() + "-descr", "OBIS_CODE_IF_1107_TIME_SYNC"),
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str() + "-descr", "OBIS_CODE_IF_1107_MAX_VARIATION"),	//	max. variation in seconds
+#endif
 						cyng::param_factory(sml::OBIS_CODE_IF_1107_ACTIVE.to_str(), true),	//	active
-						cyng::param_factory(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str(), 0),	//	loop timeout in seconds
-						cyng::param_factory(sml::OBIS_CODE_IF_1107_RETRIES.to_str(), 0),	//	retries
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str(), 60),	//	loop timeout in seconds
+						cyng::param_factory(sml::OBIS_CODE_IF_1107_RETRIES.to_str(), 3),	//	retries
 						cyng::param_factory(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str(), 200),	//	min. timeout (milliseconds)
 						cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str(), 5000),	//	max. timeout (milliseconds)
 						cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str(), 10240),	//	max. databytes
@@ -316,6 +339,7 @@ namespace node
 						cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str(), 900),
 						cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str(), 14400),
 						cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str(), 9)	//	max. variation in seconds
+
 					))
 
 					, cyng::param_factory("ipt", cyng::vector_factory({
@@ -424,6 +448,10 @@ namespace node
 	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
 	{
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
+
+		//
+		//	provide a configuration reader
+		//
 		auto const dom = cyng::make_reader(cfg);
 
 		//
@@ -745,11 +773,11 @@ namespace node
 			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_ACTIVE.to_str() << " (OBIS_CODE_IF_1107_ACTIVE): " << (active ? "true" : "false"));
 			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_ACTIVE.to_str()), cyng::table::data_generator(active), 1, tag);
 
-			auto const loop_time = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str()), 0u);
+			auto const loop_time = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str()), 60u);
 			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str() << " (OBIS_CODE_IF_1107_LOOP_TIME): " << loop_time);
 			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str()), cyng::table::data_generator(loop_time), 1, tag);
 
-			auto const retries = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_RETRIES.to_str()), 0u);
+			auto const retries = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_RETRIES.to_str()), 3u);
 			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_RETRIES.to_str() << " (OBIS_CODE_IF_1107_RETRIES): " << retries);
 			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_RETRIES.to_str()), cyng::table::data_generator(retries), 1, tag);
 
@@ -793,6 +821,35 @@ namespace node
 			auto const max_variation = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str()), 9u);
 			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str() << " (OBIS_CODE_IF_1107_MAX_VARIATION): " << max_variation << " seconds");
 			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str()), cyng::table::data_generator(max_variation), 1, tag);
+
+			//
+			//	get wireless M-Bus default configuration
+			//
+			auto const radio_protocol = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_PROTOCOL.to_str()), mbus::S_MODE);
+			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_PROTOCOL.to_str() << " (OBIS_W_MBUS_PROTOCOL): " << +radio_protocol);
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_PROTOCOL.to_str()), cyng::table::data_generator(radio_protocol), 1, tag);
+
+			auto const s_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_S_MODE.to_str()), 30u);
+			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_S_MODE.to_str() << " (OBIS_W_MBUS_S_MODE): " << s_mode << " seconds");
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_S_MODE.to_str()), cyng::table::data_generator(s_mode), 1, tag);
+
+			auto const t_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_T_MODE.to_str()), 20u);
+			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_T_MODE.to_str() << " (OBIS_W_MBUS_T_MODE): " << t_mode << " seconds");
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_T_MODE.to_str()), cyng::table::data_generator(t_mode), 1, tag);
+
+			auto const reboot = cyng::numeric_cast<std::uint32_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_REBOOT.to_str()), 20u);
+			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_REBOOT.to_str() << " (OBIS_W_MBUS_REBOOT): " << reboot << " seconds, " << (reboot / 3600) << " h");
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_REBOOT.to_str()), cyng::table::data_generator(reboot), 1, tag);
+
+			auto const radio_power = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_POWER.to_str()), mbus::STRONG);
+			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_POWER.to_str() << " (OBIS_W_MBUS_POWER): " << +radio_power);
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_POWER.to_str()), cyng::table::data_generator(radio_power), 1, tag);
+
+			auto const install_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_INSTALL_MODE.to_str()), true);
+			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_INSTALL_MODE.to_str() << " (OBIS_W_MBUS_INSTALL_MODE): " << (install_mode ? "active" : "inactive"));
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_INSTALL_MODE.to_str()), cyng::table::data_generator(install_mode), 1, tag);
+
+
 		}
 		
 	}

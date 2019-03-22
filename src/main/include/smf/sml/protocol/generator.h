@@ -11,6 +11,9 @@
 #include <smf/sml/defs.h>
 #include <smf/sml/intrinsics/obis.h>
 #include <smf/ipt/config.h>
+#include <smf/sml/protocol/message.h>
+#include <smf/sml/protocol/value.hpp>
+
 #include <cyng/intrinsics/sets.h>
 #include <cyng/intrinsics/mac.h>
 #include <cyng/store/table.h>
@@ -133,6 +136,35 @@ namespace node
 			std::size_t public_close();
 
 			/**
+			 * Generic set process parameter function
+			 */
+			template< typename T >
+			std::size_t set_proc_parameter(cyng::buffer_t const& server_id
+				, obis_path tree_path
+				, std::string const& username
+				, std::string const& password
+				, T&& val)
+			{
+				++trx_;
+				return append_msg(message(cyng::make_object(*trx_)
+					, group_no_++	//	group
+					, 0 //	abort code
+					, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+
+					//
+					//	generate process parameter request
+					//
+					, set_proc_parameter_request(cyng::make_object(server_id)
+						, username
+						, password
+						, tree_path
+						, parameter_tree(tree_path.back(), make_value(val)))
+					)
+				);
+			}
+
+
+			/**
 			 * Restart system - 81 81 C7 83 82 01
 			 */
 			std::size_t set_proc_parameter_restart(cyng::buffer_t const& server_id
@@ -196,25 +228,41 @@ namespace node
 				, std::uint8_t idx
 				, std::string const&);
 
-			std::size_t set_proc_parameter_wmbus_install(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password
-				, bool);
+			//std::size_t set_proc_parameter_wmbus_install(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password
+			//	, bool);
 
-			std::size_t set_proc_parameter_wmbus_power(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password
-				, std::uint8_t);
+			//std::size_t set_proc_parameter_wmbus_power(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password
+			//	, std::uint8_t);
 
 			std::size_t set_proc_parameter_wmbus_protocol(cyng::buffer_t const& server_id
 				, std::string const& username
 				, std::string const& password
 				, std::uint8_t);
 
-			std::size_t set_proc_parameter_wmbus_reboot(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password
-				, std::uint64_t);
+			//std::size_t set_proc_parameter_wmbus_reboot(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password
+			//	, std::uint64_t);
+
+			/**
+			 * sMode 81 06 19 07 02 FF
+			 */
+			//std::size_t set_proc_parameter_wmbus_smode(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password
+			//	, std::uint8_t);
+
+			/**
+			 * tMode 81 06 19 07 03 FF
+			 */
+			//std::size_t set_proc_parameter_wmbus_tmode(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password
+			//	, std::uint8_t);
 
 			/**
 			 * Simple root query - BODY_GET_PROC_PARAMETER_REQUEST (0x500)
@@ -474,12 +522,12 @@ namespace node
 			 */
 			std::size_t get_proc_w_mbus_if(cyng::object trx
 				, cyng::object client_id
-				, std::uint8_t protocol	// radio protocol
-				, std::uint8_t s_mode	// duration in seconds
-				, std::uint8_t t_mode	// duration in seconds
-				, std::uint32_t reboot	//	duration in seconds
-				, std::uint8_t power	//	transmision power (transmission_power)
-				, bool	//	installation mode
+				, cyng::object protocol	// radio protocol
+				, cyng::object s_mode	// duration in seconds
+				, cyng::object t_mode	// duration in seconds
+				, cyng::object reboot	//	duration in seconds
+				, cyng::object power	//	transmision power (transmission_power)
+				, cyng::object	//	installation mode
 			);
 
 			/**

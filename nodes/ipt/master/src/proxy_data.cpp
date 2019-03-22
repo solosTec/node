@@ -9,7 +9,9 @@
 #include <smf/sml/srv_id_io.h>
 
 #include <cyng/vector_cast.hpp>
-#include <cyng/numeric_cast.hpp>
+//#include <cyng/numeric_cast.hpp>
+#include <cyng/set_cast.h>
+
 #include <cyng/dom/reader.h>
 #include <cyng/parser/buffer_parser.h>
 #include <cyng/factory/factory.hpp>
@@ -54,77 +56,108 @@ namespace node
 			return cyng::vector_cast<std::string>(sections_, "nope");
 		}
 
-		cyng::param_map_t proxy_data::get_params() const
+		cyng::vector_t proxy_data::get_params() const
 		{
-			cyng::param_map_t params;
-
-			//	vector of tuples
-
 			auto const reader = cyng::make_reader(params_);
 
-			for (std::size_t idx = 0; idx < params_.size(); ++idx) {
+			auto const sections = get_section_names();
+			if (sections.size() == 1 && boost::algorithm::equals(sections.front(), "root-ipt-param")) {
 
-				auto name = cyng::value_cast<std::string>(reader[idx].get("name"), "");
-				auto obj = reader[idx].get("value");
+				if (params_.size() == 1) {
+					cyng::vector_t vec;
+					return cyng::value_cast(reader[0].get("ipt"), vec);
+				}
+			}
+			else if (sections.size() == 1 && boost::algorithm::equals(sections.front(), "IF-wireless-mbus")) {
 
-				if (boost::algorithm::equals(name, "smf-form-gw-ipt-srv")) {
-
-					//
-					//	send server/gateway ID as buffer_t type
-					//
-					std::string const inp = cyng::value_cast<std::string>(obj, "000000");
-					auto const r = cyng::parse_hex_string(inp);
-					if (r.second) {
-						params.emplace("serverId", cyng::make_object(r.first));
-					}
-					else {
-						params.emplace("serverId", cyng::make_object(cyng::make_buffer({0, 0, 0, 0, 0, 0})));
-					}
+				if (params_.size() == 1) {
+					cyng::tuple_t tpl;
+					tpl = cyng::value_cast(reader[0].get("wmbus"), tpl);
+					return cyng::to_vector(tpl);
 				}
-				else if (boost::algorithm::starts_with(name, "smf-gw-ipt-local-")
-					|| boost::algorithm::starts_with(name, "smf-gw-ipt-remote-")) {
-
-					//
-					//	send port as u16 
-					//
-					params.emplace(name, cyng::make_object(cyng::numeric_cast<std::uint16_t>(obj, 26862)));
-				}
-				else if (boost::algorithm::equals(name, "parameter smf-gw-wmbus-power")
-					|| boost::algorithm::equals(name, "smf-gw-wmbus-protocol")) {
-					//
-					//	send transmission power value as u8 
-					//
-					params.emplace(name, cyng::make_object(cyng::numeric_cast<std::uint8_t>(obj, 0)));
-				}
-				else if (boost::algorithm::equals(name, "smf-gw-wmbus-reboot")) {
-					//
-					//	send reboot cycle as u64 
-					//
-					params.emplace(name, cyng::make_object(cyng::numeric_cast<std::uint64_t>(obj, 0)));
-				}
-				else if (boost::algorithm::equals(name, "smf-gw-wmbus-adapter")) {}		//	skip
-				else if (boost::algorithm::equals(name, "smf-gw-wmbus-firmware")) {}	//	skip
-				else if (boost::algorithm::equals(name, "smf-gw-wmbus-hardware")) {}	//	skip
-				else if (boost::algorithm::equals(name, "smf-gw-wmbus-type")) {}		//	skip
-				else if (boost::algorithm::equals(name, "smf-form-gw-srv-visible-meter")
-					|| boost::algorithm::equals(name, "smf-form-gw-srv-active-meter")) {
-					//	get a server id as hex string and convert it into a binary buffer
-					auto const inp = cyng::value_cast<std::string>(obj, "");
-					auto const r = cyng::parse_hex_string(inp);
-					if (r.second) {
-						params.emplace(name, cyng::make_object(r.first));
-					}
-					else {
-						params.emplace(name, cyng::make_object(cyng::make_buffer({ 0, 0, 0, 0, 0, 0 })));
-					}
-				}
-				else {
-					params.emplace(name, obj);
+			}
+			else if (sections.size() == 1 && boost::algorithm::equals(sections.front(), "IF-IEC-62505-21")) {
+				if (params_.size() == 1) {
+					cyng::tuple_t tpl;
+					tpl = cyng::value_cast(reader[0].get("iec"), tpl);
+					return cyng::to_vector(tpl);
 				}
 			}
 
-			return params;
+			return params_;
 		}
+
+		//cyng::param_map_t proxy_data::get_params() const
+		//{
+		//	cyng::param_map_t params;
+
+		//	//	vector of tuples
+
+		//	auto const reader = cyng::make_reader(params_);
+
+			//for (std::size_t idx = 0; idx < params_.size(); ++idx) {
+
+			//	auto name = cyng::value_cast<std::string>(reader[idx].get("name"), "");
+			//	auto obj = reader[idx].get("value");
+
+			//	if (boost::algorithm::equals(name, "smf-form-gw-ipt-srv")) {
+
+			//		//
+			//		//	send server/gateway ID as buffer_t type
+			//		//
+			//		std::string const inp = cyng::value_cast<std::string>(obj, "000000");
+			//		auto const r = cyng::parse_hex_string(inp);
+			//		if (r.second) {
+			//			params.emplace("serverId", cyng::make_object(r.first));
+			//		}
+			//		else {
+			//			params.emplace("serverId", cyng::make_object(cyng::make_buffer({0, 0, 0, 0, 0, 0})));
+			//		}
+			//	}
+			//	else if (boost::algorithm::starts_with(name, "smf-gw-ipt-local-")
+			//		|| boost::algorithm::starts_with(name, "smf-gw-ipt-remote-")) {
+
+			//		//
+			//		//	send port as u16 
+			//		//
+			//		params.emplace(name, cyng::make_object(cyng::numeric_cast<std::uint16_t>(obj, 26862)));
+			//	}
+			//	else if (boost::algorithm::equals(name, "parameter smf-gw-wmbus-power")
+			//		|| boost::algorithm::equals(name, "smf-gw-wmbus-protocol")) {
+			//		//
+			//		//	send transmission power value as u8 
+			//		//
+			//		params.emplace(name, cyng::make_object(cyng::numeric_cast<std::uint8_t>(obj, 0)));
+			//	}
+			//	else if (boost::algorithm::equals(name, "smf-gw-wmbus-reboot")) {
+			//		//
+			//		//	send reboot cycle as u64 
+			//		//
+			//		params.emplace(name, cyng::make_object(cyng::numeric_cast<std::uint64_t>(obj, 0)));
+			//	}
+			//	else if (boost::algorithm::equals(name, "smf-gw-wmbus-adapter")) {}		//	skip
+			//	else if (boost::algorithm::equals(name, "smf-gw-wmbus-firmware")) {}	//	skip
+			//	else if (boost::algorithm::equals(name, "smf-gw-wmbus-hardware")) {}	//	skip
+			//	else if (boost::algorithm::equals(name, "smf-gw-wmbus-type")) {}		//	skip
+			//	else if (boost::algorithm::equals(name, "smf-form-gw-srv-visible-meter")
+			//		|| boost::algorithm::equals(name, "smf-form-gw-srv-active-meter")) {
+			//		//	get a server id as hex string and convert it into a binary buffer
+			//		auto const inp = cyng::value_cast<std::string>(obj, "");
+			//		auto const r = cyng::parse_hex_string(inp);
+			//		if (r.second) {
+			//			params.emplace(name, cyng::make_object(r.first));
+			//		}
+			//		else {
+			//			params.emplace(name, cyng::make_object(cyng::make_buffer({ 0, 0, 0, 0, 0, 0 })));
+			//		}
+			//	}
+			//	else {
+			//		params.emplace(name, obj);
+			//	}
+			//}
+
+		//	return params;
+		//}
 
 
 		std::string const& proxy_data::get_channel() const
