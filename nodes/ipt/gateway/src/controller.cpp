@@ -9,11 +9,13 @@
 #include "server.h"
 #include <NODE_project_info.h>
 #include "tasks/network.h"
+#include "tasks/virtual_meter.h"
 #include "../../../../nodes/shared/db/db_meta.h"
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/status.h>
+#include <smf/sml/parser/srv_id_parser.h>
 #include <smf/mbus/defs.h>
 
 #include <cyng/log.h>
@@ -63,6 +65,7 @@ namespace node
 		, ipt::master_config_t const& cfg_ipt
 		, cyng::tuple_t const& cfg_wireless_lmn
 		, cyng::tuple_t const& cfg_wired_lmn
+		, cyng::tuple_t const& cfg_virtual_meter
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
@@ -360,7 +363,15 @@ namespace node
 							cyng::param_factory("scrambled", false),
 							cyng::param_factory("monitor", rnd_monitor()))
 						}))
-				)
+
+					//	built-in meter
+					, cyng::param_factory("virtual-meter", cyng::tuple_factory(
+						cyng::param_factory("enabled", true),
+						cyng::param_factory("server", "01-d81c-10000001-3c-02"),	//	1CD8
+						cyng::param_factory("interval", 26000)
+					))
+
+					)
 				});
 
 			cyng::json::write(std::cout, cyng::make_object(conf));
@@ -583,6 +594,12 @@ namespace node
 		cyng::tuple_t cfg_wired_lmn;
 		cfg_wired_lmn = cyng::value_cast(dom.get("wired-LMN"), cfg_wired_lmn);
 
+		//
+		//	get virtual meter
+		//
+		cyng::tuple_t cfg_virtual_meter;
+		cfg_virtual_meter = cyng::value_cast(dom.get("virtual-meter"), cfg_virtual_meter);
+
 		/**
 		 * global data cache
 		 */
@@ -601,6 +618,7 @@ namespace node
 			, cfg_ipt
 			, cfg_wireless_lmn
 			, cfg_wired_lmn
+			, cfg_virtual_meter
 			, cyng::value_cast<std::string>(dom["server"].get("account"), "")
 			, cyng::value_cast<std::string>(dom["server"].get("pwd"), "")
 			, manufacturer
@@ -625,9 +643,7 @@ namespace node
 			, model
 			, serial
 			, r.first
-			, accept_all
-			//, gpio_list
-		);
+			, accept_all);
 
 		//
 		//	server runtime configuration
@@ -697,6 +713,7 @@ namespace node
 		, ipt::master_config_t const& cfg_ipt
 		, cyng::tuple_t const& cfg_wireless_lmn
 		, cyng::tuple_t const& cfg_wired_lmn
+		, cyng::tuple_t const& cfg_virtual_meter
 		, std::string account
 		, std::string pwd
 		, std::string manufacturer
@@ -725,6 +742,60 @@ namespace node
 			, mac
 			, accept_all
 			, gpio_list);
+
+		auto const dom = cyng::make_reader(cfg_virtual_meter);
+		auto const b = cyng::value_cast(dom.get("enabled"), false);
+		if (b) {
+
+			//
+			//	define virtual meter
+			//
+			auto const server = cyng::value_cast<std::string>(dom.get("server"), "01-d81c-10000001-3c-02");
+			std::pair<cyng::buffer_t, bool> const r = sml::parse_srv_id(server);
+
+			if (r.second) {
+
+				auto const interval = cyng::numeric_cast<std::uint32_t>(dom.get("interval"), 26000ul);
+				
+				if (config_db.insert("mbus-devices"
+					, cyng::table::key_generator(r.first)
+					, cyng::table::data_generator(std::chrono::system_clock::now()
+						, "---"
+						, true	//	visible
+						, false	//	active
+						, "virtual meter"
+						, 0ull	//	status
+						, cyng::buffer_t{ 0, 0 }	//	mask
+						, interval	//	interval
+						, cyng::make_buffer({ 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F })	//	pubKey
+						, cyng::buffer_t{}	//	aes
+						, "user"
+						, "pwd")
+					, 1	//	generation
+					, tag)) {
+
+					//
+					//	start virtual meter
+					//
+					cyng::async::start_task_delayed<virtual_meter>(mux
+						, std::chrono::seconds(5)
+						, logger
+						, r.first	//	server ID
+						, config_db
+						, std::chrono::seconds(interval));
+				}
+				else {
+					CYNG_LOG_WARNING(logger, "insert server ID: " << server << " into table \"mbus-devices\" failed");
+				}
+			}
+			else {
+				CYNG_LOG_WARNING(logger, "invalid server ID: " << server);
+
+			}
+		}
+		else {
+			CYNG_LOG_TRACE(logger, "virtual meter is not enabled");
+		}
 	}
 
 	void init_config(cyng::logging::log_ptr logger

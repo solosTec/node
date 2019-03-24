@@ -129,7 +129,7 @@ namespace node
 		}
 		else
 		{
-			CYNG_LOG_ERROR(logger_, "paring XML POST failed: "
+			CYNG_LOG_ERROR(logger_, "parsing XML POST failed: "
 				<< result.description());
 
 		}

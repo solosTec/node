@@ -251,7 +251,7 @@ namespace node
 		cache_.clear("_LoRaUplink", bus_->vm_.tag());
 		sync_table("_LoRaUplink");
 		sync_table("_CSV");
-		sync_table("_TimeSeriesParams");
+		//sync_table("_TimeSeriesParams");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -465,6 +465,14 @@ namespace node
 		else if (boost::algorithm::equals(cmd, "config:gateway"))
 		{
 			node::fwd_config_gateway(logger_
+				, ctx
+				, tag_ws
+				, channel
+				, reader);
+		}
+		else if (boost::algorithm::equals(cmd, "task:tsdb"))
+		{
+			node::fwd_config_task_tsdb(logger_
 				, ctx
 				, tag_ws
 				, channel

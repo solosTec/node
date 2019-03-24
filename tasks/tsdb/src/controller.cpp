@@ -256,6 +256,12 @@ namespace node
 					cyng::param_factory("monitor", rng()),	//	seconds
 					cyng::param_factory("group", 0)	//	customer ID
 				) })))
+
+				//
+				//	ToDo: specify parameter for event logging (windows only)
+				//	C:\WINDOWS\system32>EventCreate /t WARNING /id 118 /l APPLICATION /so "low session count" /d "below session count threshold"
+				//	C:\WINDOWS\system32 > EventCreate /t WARNING /id 118 /l APPLICATION /so "SMF" /d "low session count"
+				//
 			});
 
 			cyng::json::write(std::cout, cyng::make_object(conf));

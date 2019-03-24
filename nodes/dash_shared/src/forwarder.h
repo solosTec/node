@@ -40,9 +40,18 @@ namespace node
 		, cyng::reader<cyng::object> const&);
 
 	/**
-	 * Communicate to IP-T proxy
+	 * communicate with the IP-T proxy
 	 */
 	void fwd_config_gateway(cyng::logging::log_ptr
+		, cyng::context& ctx
+		, boost::uuids::uuid tag_ws
+		, std::string const& channel
+		, cyng::reader<cyng::object> const&);
+
+	/**
+	 * communicate with the tsdb task
+	 */
+	void fwd_config_task_tsdb(cyng::logging::log_ptr
 		, cyng::context& ctx
 		, boost::uuids::uuid tag_ws
 		, std::string const& channel

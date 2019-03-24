@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_WIRED_LMN_H
-#define NODE_WIRED_LMN_H
+#ifndef NODE_GATEWAY_TASK_WIRED_LMN_H
+#define NODE_GATEWAY_TASK_WIRED_LMN_H
 
 #include <smf/ipt/bus.h>
 #include <cyng/log.h>

@@ -157,9 +157,25 @@ namespace node
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 08, FF, CODE_DEVICE_KERNEL);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 0E, FF, CODE_DEVICE_ACTIVATED);
-		
 
+		//	device classes
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 41, FF, DEV_CLASS_BASIC_DIRECT);	//	3 x 230 /400 V and 5 (100) A 
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 42, FF, DEV_CLASS_BASIC_SEMI);	//	3 x 230 /400 V and 1 (6) A
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 43, FF, DEV_CLASS_BASIC_INDIRECT);	//	3 x  58 / 100 V and 1 (6) A 
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 45, FF, DEV_CLASS_IW);	//	IW module
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 46, FF, DEV_CLASS_PSTN);	//	PSTN
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 47, FF, DEV_CLASS_GPRS); //	or PLC
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 48, FF, DEV_CLASS_KM);		//	KM module (LAN/DSL)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 49, FF, DEV_CLASS_NK);		//	NK/HS
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 4A, FF, DEV_CLASS_EXTERN);		//	external load profile collector 
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 4B, FF, DEV_CLASS_RESERVED);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 4F, FF, DEV_CLASS_LAN);	//	see DEV_CLASS_MUC_LAN
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 50, FF, DEV_CLASS_eHZ);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 52, FF, DEV_CLASS_3HZ);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 53, FF, DEV_CLASS_MUC_LAN);	// (MUC - LAN / DSL)
+		
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 00, FF, CODE_ROOT_SENSOR_PROPERTY);	//	properties of data sensor/actor (Eigenschaften eines Datenspiegels)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 01, FF, CODE_ROOT_SENSOR_BITMASK);	//	Bitmask to define bits that will be transferred into log
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 01, FF, CODE_ROOT_NTP);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 10, FF, CODE_ROOT_DEVICE_TIME);	//	device time
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 20, FF, CODE_ROOT_DATA_COLLECTOR);	//	properties of data collector (Eigenschaften eines Datensammlers)
@@ -268,13 +284,13 @@ namespace node
 		 *	0	always 0
 		 *	1	always 1
 		 *	2-7	always 0
-		 *	8	1 if error was detected
+		 *	8	1 if (fatal) error was detected
 		 *	9	1 if restart was triggered by watchdog reset
 		 *	10	0 if IP address is available (DHCP)
 		 *	11	0 if ethernet link is available
 		 *	12	always 0
 		 *	13	0 if authorized on IP-T server
-		 *	14	1 ic case of out of memory
+		 *	14	1 in case of out of memory
 		 *	15	always 0
 		 *	16	1 if Service interface is available (Kundenschnittstelle)
 		 *	17	1 if extension interface is available (Erweiterungs-Schnittstelle)

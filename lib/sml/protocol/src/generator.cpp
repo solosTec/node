@@ -1002,7 +1002,7 @@ namespace node
 						parameter_tree(OBIS_CODE_SERVER_ID, make_value(cyng::value_cast(server_id, tmp))),
 
 						//	Geräteklasse
-						parameter_tree(OBIS_CODE_DEVICE_CLASS, make_value()),
+						parameter_tree(OBIS_CODE_DEVICE_CLASS, make_value(cyng::make_buffer({ 0x02 }))),
 
 						//	Manufacturer
 						parameter_tree(OBIS_DATA_MANUFACTURER, make_value("solosTec")),
@@ -1011,7 +1011,7 @@ namespace node
 						parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(status)),
 
 						//	Bitmaske zur Definition von Bits, deren Änderung zu einem Eintrag im Betriebslogbuch zum Datenspiegel führt
-						parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(static_cast<std::uint8_t>(0x0))),
+						parameter_tree(OBIS_CODE_ROOT_SENSOR_BITMASK, make_value("00")),
 
 						//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
 						parameter_tree(OBIS_CODE_AVERAGE_TIME_MS, make_value(static_cast<std::uint16_t>(1234))),

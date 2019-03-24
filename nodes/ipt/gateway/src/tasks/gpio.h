@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_TASK_GPIO_H
-#define NODE_TASK_GPIO_H
+#ifndef NODE_GATEWAY_TASK_GPIO_H
+#define NODE_GATEWAY_TASK_GPIO_H
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>

@@ -109,7 +109,7 @@ namespace node
 				, "interval"	//	"Zeit zwischen zwei Datensätzen: 49000"
 								//	--- optional data
 				, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
-				, "aes"		//	AES-Schlüssel: "
+				, "aes"		//	AES-Schlüssel: 
 				, "user"
 				, "pwd"
 				},

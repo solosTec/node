@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_WIRELESS_LMN_H
-#define NODE_WIRELESS_LMN_H
+#ifndef NODE_GATEWAY_TASK_WIRELESS_LMN_H
+#define NODE_GATEWAY_TASK_WIRELESS_LMN_H
 
 
 #include <smf/ipt/bus.h>

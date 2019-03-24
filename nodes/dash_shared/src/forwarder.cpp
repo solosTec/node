@@ -485,6 +485,19 @@ namespace node
 		}
 	}
 
+	void fwd_config_task_tsdb(cyng::logging::log_ptr logger
+		, cyng::context& ctx
+		, boost::uuids::uuid tag_ws
+		, std::string const& channel
+		, cyng::reader<cyng::object> const& reader)
+	{
+		cyng::vector_t key;
+		key = cyng::value_cast(reader.get("key"), key);
+		CYNG_LOG_WARNING(logger, "ws tag: " << tag_ws << " - TASK key" << cyng::io::to_str(key));
+
+	}
+
+
 	forward::forward(cyng::logging::log_ptr logger
 		, cyng::store::db& db
 		, connection_manager_interface& cm)

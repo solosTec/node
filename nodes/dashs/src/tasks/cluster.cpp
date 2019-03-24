@@ -437,6 +437,14 @@ namespace node
 				, channel
 				, reader);
 		}
+		else if (boost::algorithm::equals(cmd, "task:tsdb"))
+		{
+			node::fwd_config_task_tsdb(logger_
+				, ctx
+				, tag_ws
+				, channel
+				, reader);
+		}
 		else
 		{
 			CYNG_LOG_WARNING(logger_, "ws.read - unknown command " << cmd);

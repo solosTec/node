@@ -54,6 +54,8 @@ set (node_ipt_gateway_tasks
 	nodes/ipt/gateway/src/tasks/wireless_lmn.h
 	nodes/ipt/gateway/src/tasks/gpio.h
 	nodes/ipt/gateway/src/tasks/gpio.cpp
+	nodes/ipt/gateway/src/tasks/virtual_meter.h
+	nodes/ipt/gateway/src/tasks/virtual_meter.cpp
 )
 	
 set (node_ipt_gateway_server

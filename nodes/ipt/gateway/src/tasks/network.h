@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_IPT_STORE_TASK_NETWORK_H
-#define NODE_IPT_STORE_TASK_NETWORK_H
+#ifndef NODE_GATEWAY_TASK_NETWORK_H
+#define NODE_GATEWAY_TASK_NETWORK_H
 
 #include <smf/ipt/bus.h>
 #include <smf/ipt/config.h>

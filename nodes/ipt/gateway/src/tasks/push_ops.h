@@ -67,7 +67,7 @@ namespace node
 			cyng::store::db& config_db_;
 
 			/**
-			 * ipt bus
+			 * VM
 			 */
 			cyng::controller& vm_;
 
