@@ -519,6 +519,12 @@ add_library(smf_bus_serial ${GLOBAL_LIBRARY_TYPE} ${serial_bus_lib})
 #set(serial_bus_link_libs smf_protocol_serial)
 
 #
+#	telnet protocol library
+#
+include (lib/telnet/protocol/lib.cmake)
+add_library(smf_protocol_telnet ${GLOBAL_LIBRARY_TYPE} ${telnet_protocol_lib})
+
+#
 #	LoRa payload library
 #
 include (lib/lora/payload/lib.cmake)
