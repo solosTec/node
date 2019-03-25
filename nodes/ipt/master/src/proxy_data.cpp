@@ -7,10 +7,9 @@
 
 #include "proxy_data.h"
 #include <smf/sml/srv_id_io.h>
-//#include <smf/sml/parser/srv_id_parser.h>
+#include <smf/sml/parser/srv_id_parser.h>
 
 #include <cyng/vector_cast.hpp>
-//#include <cyng/numeric_cast.hpp>
 #include <cyng/set_cast.h>
 
 #include <cyng/dom/reader.h>
@@ -87,25 +86,32 @@ namespace node
 			else if ((params_.size() == 3) && boost::algorithm::equals(section, "activate")) {
 
 				//
-				//	extract parameter "meter"
+				//	extract parameter "meterId"
 				//
-				return cyng::vector_t({ reader[0].get("nr"), parse_server_id(reader[2].get("meterId")) });
+				return cyng::vector_t({ reader[0].get("nr"), read_server_id(reader[2].get("meterId")) });
 			}
 			else if ((params_.size() == 3) && boost::algorithm::equals(section, "deactivate")) {
 
 				//
-				//	extract parameter "meter"
+				//	extract parameter "meterId"
 				//
-				return cyng::vector_t({ reader[0].get("nr"), parse_server_id(reader[2].get("meterId")) });
+				return cyng::vector_t({ reader[0].get("nr"), read_server_id(reader[2].get("meterId")) });
 			}
 			else if ((params_.size() == 3) && boost::algorithm::equals(section, "delete")) {
 
 				//
-				//	extract parameter "meter"
+				//	extract parameter "meterId"
 				//
-				return cyng::vector_t({ reader[0].get("nr"), parse_server_id(reader[2].get("meterId")) });
+				return cyng::vector_t({ reader[0].get("nr"), read_server_id(reader[2].get("meterId")) });
 			}
 
+			else if ((params_.size() == 1) && boost::algorithm::equals(section, "current-data-record")) {
+
+				//
+				//	extract parameter "meterId"
+				//
+				return cyng::vector_t({ parse_server_id(reader[0].get("meterId")) });
+			}
 			if (params_.size() == 1) {
 				//
 				//	assuming the payload is a parameter (param_t)
@@ -248,11 +254,20 @@ namespace node
 			state_ = STATE_PROCESSING_;
 		}
 
+		cyng::object read_server_id(cyng::object obj)
+		{
+			auto const inp = cyng::value_cast<std::string>(obj, "");
+			auto const r = cyng::parse_hex_string(inp);
+			return (r.second)
+				? cyng::make_object(r.first)
+				: cyng::make_object()
+				;
+		}
+
 		cyng::object parse_server_id(cyng::object obj)
 		{
 			auto const inp = cyng::value_cast<std::string>(obj, "");
-			//std::pair<cyng::buffer_t, bool> const r = node::sml::parse_srv_id(inp);
-			auto const r = cyng::parse_hex_string(inp);
+			std::pair<cyng::buffer_t, bool> const r = node::sml::parse_srv_id(inp);
 			return (r.second)
 				? cyng::make_object(r.first)
 				: cyng::make_object()

@@ -144,7 +144,7 @@ namespace node
 			else if (code == OBIS_CLASS_OP_LSM_JOB)						return "LSM-job-name";
 			else if (code == OBIS_CLASS_OP_LSM_POSITION)				return "LSM-position";
 
-			else if (OBIS_LIST_CURRENT_DATA_RECORD == code)			return "list-current-data-record";
+			else if (OBIS_LIST_CURRENT_DATA_RECORD == code)			return "current-data-record";
 
 			//
 			//	attention codes

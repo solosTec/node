@@ -54,9 +54,9 @@ namespace node
 	void cluster::bus_req_gateway_proxy(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "bus.req.gateway.proxy " << cyng::io::to_str(frame));
+		//CYNG_LOG_INFO(logger_, "bus.req.gateway.proxy " << cyng::io::to_str(frame));
 		
-		//	[]
+		//	[9f773865-e4af-489a-8824-8f78a2311278,8,[430a586d-e96d-477d-a3fe-9b9a6120442a],f21b82e8-a1bd-48c0-aa6e-84f24cfb4efa,get.list.request,[current-data-record],[{("meterId":01-e61e-29436587-bf-03)}]]
 		//
 		//	* source
 		//	* bus sequence
@@ -103,6 +103,8 @@ namespace node
 
 			if (peer != nullptr && !rec.empty()) {
 
+				CYNG_LOG_INFO(logger_, "bus.req.gateway.proxy " << cyng::io::to_str(frame));
+
 				const auto name = cyng::value_cast<std::string>(rec["userName"], "operator");
 				const auto pwd = cyng::value_cast<std::string>(rec["userPwd"], "operator");
 
@@ -117,6 +119,16 @@ namespace node
 					, server			//	server
 					, name
 					, pwd));
+			}
+			else {
+
+				//
+				//	peer/node not found
+				//
+				CYNG_LOG_WARNING(logger_, "bus.req.gateway.proxy - peer/node not found " 
+					<< cyng::io::to_str(std::get<2>(tpl))
+					<< ", channel: "
+					<< std::get<4>(tpl));
 			}
 
 		}	, cyng::store::read_access("_Session")

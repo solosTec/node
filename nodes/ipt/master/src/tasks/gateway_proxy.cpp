@@ -570,7 +570,11 @@ namespace node
 		BOOST_ASSERT_MSG(sections.size() == 1, "one section expected");
 		for (auto const& sec : sections) {
 
-			if (boost::algorithm::equals(sec, "list-current-data-record")) {
+			if (boost::algorithm::equals(sec, "current-data-record")) {
+
+				//
+				//	get last/newest data set
+				//
 				execute_cmd_get_list_req_last_data_set(sml_gen, sec);
 			}
 			else {
@@ -906,8 +910,32 @@ namespace node
 
 	void gateway_proxy::execute_cmd_get_list_req_last_data_set(sml::req_generator& sml_gen, std::string const& section)
 	{
-		auto const params = queue_.front().get_params(section);
-		//CYNG_LOG_DEBUG(logger_, "task #"
+		auto const vec = queue_.front().get_params(section);
+		if (!vec.empty()) {
+
+			//
+			//	extract meter
+			//
+			cyng::buffer_t meter;
+			meter = cyng::value_cast(vec.at(0), meter);
+
+			sml_gen.get_list_last_data_record(get_mac().to_buffer()
+				, meter
+				, queue_.front().get_user()
+				, queue_.front().get_pwd());
+		}
+		else {
+
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> get last data set from "
+				<< sml::from_server_id(queue_.front().get_srv())
+				<< " has no parameters");
+
+		}
+			//CYNG_LOG_DEBUG(logger_, "task #"
 		//	<< base_.get_id()
 		//	<< " <"
 		//	<< base_.get_class_name()
@@ -917,16 +945,6 @@ namespace node
 
 		//	[2019-01-16 12:58:57.94951330] DEBUG  2312 -- task #12 <node::gateway_proxy> get last data set meter-id: 01-a815-74314504-01-02
 		//	[2019-01-16 12:58:57.95178820] DEBUG  2312 -- task #12 <node::gateway_proxy> get last data set meter-tag: e7f349a1-0900-4ee4-a7d5-1c468a5552c3
-		for (auto const& p : params) {
-			//CYNG_LOG_DEBUG(logger_, "task #"
-			//	<< base_.get_id()
-			//	<< " <"
-			//	<< base_.get_class_name()
-			//	<< "> get last data set "
-			//	<< p.first
-			//	<< ": "
-			//	<< cyng::io::to_str(p.second));
-		}
 
 		//auto const pos = params.find("meter-id");
 		//if (pos != params.end()) {
@@ -959,17 +977,6 @@ namespace node
 
 		//	}
 		//}
-		//else {
-
-		//	CYNG_LOG_ERROR(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> get last data set from "
-		//		<< sml::from_server_id(queue_.front().get_srv())
-		//		<< " has no 'meter-id' parameter");
-
-		//}
 	}
 
 	void gateway_proxy::execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen, std::string const& section)
@@ -988,10 +995,6 @@ namespace node
 				, queue_.front().get_user()
 				, queue_.front().get_pwd()
 				, meter);
-			//sml_gen.set_proc_parameter_activate(queue_.front().get_srv()
-			//	, meter
-			//	, queue_.front().get_user()
-			//	, queue_.front().get_pwd());
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "task #"

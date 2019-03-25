@@ -86,6 +86,7 @@ namespace node
 		/**
 		 * Convert obj to string and parse it as an server ID
 		 */
+		cyng::object read_server_id(cyng::object obj);
 		cyng::object parse_server_id(cyng::object obj);
 	}
 }

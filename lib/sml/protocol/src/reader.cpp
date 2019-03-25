@@ -1786,7 +1786,7 @@ namespace node
 		{
 			cyng::tuple_t choice;
 			choice = cyng::value_cast(obj, choice);
-			//if (choice.empty())	return cyng::make_object();
+			if (choice.empty())	return cyng::make_object();
 
 			BOOST_ASSERT_MSG(choice.size() == 2, "TIME");
 			if (choice.size() == 2)
@@ -1797,13 +1797,10 @@ namespace node
 				case TIME_TIMESTAMP:
 				{
 					const std::uint32_t sec = cyng::value_cast<std::uint32_t>(choice.back(), 0);
-					//return cyng::param_t(name, cyng::make_time_point(sec));
-					//ro_.set_value(name, cyng::make_time_point(sec));
 					return cyng::make_time_point(sec);
 				}
 				break;
 				case TIME_SECINDEX:
-					//ro_.set_value(name, choice.back());
 					return choice.back();
 				default:
 					break;
