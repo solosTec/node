@@ -28,6 +28,8 @@ namespace node
 		{
 			r_start
 				= r_long[boost::spirit::qi::_val = boost::spirit::qi::_1]
+				| r_mac[boost::spirit::qi::_val = boost::spirit::qi::_1]
+				| r_medium[boost::spirit::qi::_val = boost::spirit::qi::_1]
 				| r_short[boost::spirit::qi::_val = boost::spirit::qi::_1]
 				;
 
@@ -44,6 +46,31 @@ namespace node
 				>> '-'
 				>> r_hex2
 				>> '-'
+				>> r_hex2
+				;
+
+			//	00:FF:B0:4B:94:F8
+			r_mac
+				>> r_hex2
+				>> ':'
+				>> r_hex2
+				>> ':'
+				>> r_hex2
+				>> ':'
+				>> r_hex2
+				>> ':'
+				>> r_hex2
+				>> ':'
+				>> r_hex2
+				;
+
+			//0fb63d76184c
+			r_medium
+				%= r_hex2
+				>> r_hex2
+				>> r_hex2
+				>> r_hex2
+				>> r_hex2
 				>> r_hex2
 				;
 

@@ -463,6 +463,7 @@ namespace node
 				, reader);
 		}
 		else if (boost::algorithm::equals(cmd, "config:gateway"))
+		//else if (boost::algorithm::equals(cmd, "com:sml"))
 		{
 			node::fwd_config_gateway(logger_
 				, ctx
@@ -471,12 +472,21 @@ namespace node
 				, reader);
 		}
 		else if (boost::algorithm::equals(cmd, "task:tsdb"))
+		//else if (boost::algorithm::equals(cmd, "com:task"))
 		{
 			node::fwd_config_task_tsdb(logger_
 				, ctx
 				, tag_ws
 				, channel
 				, reader);
+		}
+		else if (boost::algorithm::equals(cmd, "com:node"))
+		{
+			//node::fwd_com_node(logger_
+			//	, ctx
+			//	, tag_ws
+			//	, channel
+			//	, reader);
 		}
 		else
 		{

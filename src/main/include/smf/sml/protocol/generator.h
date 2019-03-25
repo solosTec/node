@@ -172,30 +172,6 @@ namespace node
 				, std::string const& password);
 
 			/**
-			 * Activate meter - 81 81 11 06 FB FF / 81 81 11 06 FB 01 / 81 81 C7 82 04 FF
-			 */
-			std::size_t set_proc_parameter_activate(cyng::buffer_t const& server_id
-				, cyng::buffer_t const& meter_id
-				, std::string const& username
-				, std::string const& password);
-
-			/**
-			 * Deactivate meter - 81 81 11 06 FC FF / 81 81 11 06 FC 01 / 81 81 C7 82 04 FF
-			 */
-			std::size_t set_proc_parameter_deactivate(cyng::buffer_t const& server_id
-				, cyng::buffer_t const& meter_id
-				, std::string const& username
-				, std::string const& password);
-
-			/**
-			 * Delete meter - 81 81 11 06 FD FF / 81 81 11 06 FD 01 / 81 81 C7 82 04 FF
-			 */
-			std::size_t set_proc_parameter_delete(cyng::buffer_t const& server_id
-				, cyng::buffer_t const& meter_id
-				, std::string const& username
-				, std::string const& password);
-
-			/**
 			 * IP-T Host - 81 49 0D 07 00 FF
 			 */
 			std::size_t set_proc_parameter_ipt_host(cyng::buffer_t const& server_id
@@ -228,41 +204,11 @@ namespace node
 				, std::uint8_t idx
 				, std::string const&);
 
-			//std::size_t set_proc_parameter_wmbus_install(cyng::buffer_t const& server_id
-			//	, std::string const& username
-			//	, std::string const& password
-			//	, bool);
-
-			//std::size_t set_proc_parameter_wmbus_power(cyng::buffer_t const& server_id
-			//	, std::string const& username
-			//	, std::string const& password
-			//	, std::uint8_t);
-
 			std::size_t set_proc_parameter_wmbus_protocol(cyng::buffer_t const& server_id
 				, std::string const& username
 				, std::string const& password
 				, std::uint8_t);
 
-			//std::size_t set_proc_parameter_wmbus_reboot(cyng::buffer_t const& server_id
-			//	, std::string const& username
-			//	, std::string const& password
-			//	, std::uint64_t);
-
-			/**
-			 * sMode 81 06 19 07 02 FF
-			 */
-			//std::size_t set_proc_parameter_wmbus_smode(cyng::buffer_t const& server_id
-			//	, std::string const& username
-			//	, std::string const& password
-			//	, std::uint8_t);
-
-			/**
-			 * tMode 81 06 19 07 03 FF
-			 */
-			//std::size_t set_proc_parameter_wmbus_tmode(cyng::buffer_t const& server_id
-			//	, std::string const& username
-			//	, std::string const& password
-			//	, std::uint8_t);
 
 			/**
 			 * Simple root query - BODY_GET_PROC_PARAMETER_REQUEST (0x500)

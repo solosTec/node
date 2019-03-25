@@ -43,7 +43,7 @@ namespace node
 			/**
 			 * Walks over parameter vector and build a parameter map
 			 */
-			cyng::vector_t get_params() const;
+			cyng::vector_t get_params(std::string const& section) const;
 
 			std::string const& get_channel() const;
 			cyng::buffer_t const& get_srv() const;
@@ -83,6 +83,10 @@ namespace node
 			} state_;
 		};
 
+		/**
+		 * Convert obj to string and parse it as an server ID
+		 */
+		cyng::object parse_server_id(cyng::object obj);
 	}
 }
 

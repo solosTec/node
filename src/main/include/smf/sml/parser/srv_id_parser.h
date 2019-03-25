@@ -31,7 +31,7 @@ namespace node
 		{
 			srv_id_parser();
 
-			boost::spirit::qi::rule<InputIterator, cyng::buffer_t()>	r_start, r_long, r_short;
+			boost::spirit::qi::rule<InputIterator, cyng::buffer_t()>	r_start, r_long, r_medium, r_short, r_mac;
 			boost::spirit::qi::uint_parser<unsigned int, 16, 2, 2>		r_hex2;
 		};
 
