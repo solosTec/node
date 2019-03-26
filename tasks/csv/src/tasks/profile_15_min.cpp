@@ -73,7 +73,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void profile_15_min::stop()
+	void profile_15_min::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

@@ -57,7 +57,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void system::stop()
+	void system::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "system task is stopped");
 	}

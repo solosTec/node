@@ -34,7 +34,7 @@ namespace node
 			, std::size_t
 			, cluster_config_t const& cfg);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

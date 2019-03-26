@@ -50,7 +50,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void sync::stop()
+	void sync::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "sync "
 			<< table_

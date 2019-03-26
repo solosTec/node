@@ -30,7 +30,7 @@ namespace node
 			, std::chrono::minutes frame
 			, std::string format);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

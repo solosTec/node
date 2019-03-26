@@ -116,7 +116,7 @@ namespace node
 		return cyng::continuation::TASK_STOP;
 	}
 
-	void close_connection::stop()
+	void close_connection::stop(bool shutdown)
 	{
 		//
 		//	terminate task

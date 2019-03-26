@@ -43,7 +43,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void multiple::stop()
+	void multiple::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

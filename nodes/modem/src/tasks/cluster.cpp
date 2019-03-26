@@ -58,7 +58,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void cluster::stop()
+	void cluster::stop(bool shutdown)
 	{
 		//
 		//	stop server

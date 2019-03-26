@@ -36,7 +36,7 @@ namespace node
 			, bool auto_answer
 			, std::chrono::milliseconds guard_time);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

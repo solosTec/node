@@ -27,16 +27,10 @@ namespace node
 	public:
 		close_connection(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			//, bus::shared_type bus
 			, cyng::controller& vm
-			//, bool shutdown
-			//, boost::uuids::uuid tag
-			//, std::size_t seq
-			//, cyng::param_map_t const& options
-			//, cyng::param_map_t const& bag
 			, std::chrono::seconds timeout);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

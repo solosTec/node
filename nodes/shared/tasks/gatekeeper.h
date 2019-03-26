@@ -29,7 +29,7 @@ namespace node
 			, std::chrono::seconds timeout);
 		~gatekeeper();
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

@@ -35,7 +35,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void storage_xml::stop()
+	void storage_xml::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "storage_xml is stopped");
 	}

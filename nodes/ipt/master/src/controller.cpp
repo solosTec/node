@@ -36,7 +36,7 @@ namespace node
 	//
 	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
 	bool wait(cyng::logging::log_ptr logger);
-	void join_cluster(cyng::async::mux&
+	std::pair<std::size_t, bool> join_cluster(cyng::async::mux&
 		, cyng::logging::log_ptr
 		, boost::uuids::uuid cluster_tag
 		, cyng::vector_t const&
@@ -323,17 +323,31 @@ namespace node
 		//
 		cyng::vector_t tmp_vec;
 		cyng::tuple_t tmp_tpl;
-		join_cluster(mux
+		std::pair<std::size_t, bool> const r = join_cluster(mux
 			, logger
 			, cluster_tag
 			, cyng::value_cast(dom.get("cluster"), tmp_vec)
 			, cyng::value_cast(dom.get("server"), tmp_tpl)
 			, log_sml);
 
-		//
-		//	wait for system signals
-		//
-		const bool shutdown = wait(logger);
+		bool shutdown{ true };
+		if (r.second) {
+
+			//
+			//	wait for system signals
+			//
+			shutdown = wait(logger);
+
+			//
+			//	cluster tasks
+			//
+			CYNG_LOG_INFO(logger, "stop cluster task #" << r.first);
+			mux.stop(r.first);
+		}
+		else {
+
+			CYNG_LOG_FATAL(logger, "couldn't start cluster task");
+		}
 
 		//
 		//	stop all tasks
@@ -368,7 +382,7 @@ namespace node
 		return shutdown;
 	}
 
-	void join_cluster(cyng::async::mux& mux
+	std::pair<std::size_t, bool> join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid cluster_tag
 		, cyng::vector_t const& cfg_cls
@@ -387,7 +401,7 @@ namespace node
 		ss << cyng::value_cast<std::string>(dom.get("sk"), "0102030405060708090001020304050607080900010203040506070809000001");
 		ss >> sk;
 
-		cyng::async::start_task_delayed<cluster>(mux
+		return cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
 			, cluster_tag

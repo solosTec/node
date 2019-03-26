@@ -33,7 +33,7 @@ namespace node
 			, cyng::store::db& cache
 			, cyng::param_map_t);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * slot [0] - load cache

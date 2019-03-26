@@ -44,7 +44,7 @@ namespace node
 			, auth_dirs const& ad
 			, std::set<boost::asio::ip::address> const&);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

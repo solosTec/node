@@ -27,7 +27,7 @@ namespace node
 			, std::chrono::seconds timeout
 			, ipt::bus_interface& bus);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

@@ -1058,7 +1058,7 @@ namespace node
 		}
 	}
 
-	void gateway_proxy::stop()
+	void gateway_proxy::stop(bool shutdown)
 	{
 		//
 		//	terminate task

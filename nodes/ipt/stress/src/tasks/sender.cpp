@@ -126,7 +126,7 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		void sender::stop()
+		void sender::stop(bool shutdown)
 		{
 			//
 			//	call base class

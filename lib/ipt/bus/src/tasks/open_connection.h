@@ -29,7 +29,7 @@ namespace node
 			, std::size_t retries
 			, ipt::bus_interface&);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

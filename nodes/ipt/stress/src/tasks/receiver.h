@@ -37,7 +37,7 @@ namespace node
 				, std::chrono::milliseconds
 				, std::size_t retries);
 			cyng::continuation run();
-			void stop();
+			void stop(bool shutdown);
 
 			/**
 			 * @brief slot [0] 0x4001/0x4002: response login

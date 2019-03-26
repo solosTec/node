@@ -31,7 +31,7 @@ namespace node
 			, cyng::store::db&
 			, boost::uuids::uuid);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

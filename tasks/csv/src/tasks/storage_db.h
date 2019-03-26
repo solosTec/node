@@ -38,7 +38,7 @@ namespace node
 			, cyng::param_map_t
 			, cyng::param_map_t);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * slot [0] - generate CSV file (15 min profile)

@@ -41,7 +41,7 @@ namespace node
 				, redundancy const& cfg
 				, std::map<std::string, std::string> const& targets);
 			cyng::continuation run();
-			void stop();
+			void stop(bool shutdown);
 
 			/**
 			 * @brief event 0x4001/0x4002: response login

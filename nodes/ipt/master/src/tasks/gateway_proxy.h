@@ -68,7 +68,7 @@ namespace node
 			, std::chrono::seconds timeout
 			, bool sml_log);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

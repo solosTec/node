@@ -107,7 +107,7 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		void receiver::stop()
+		void receiver::stop(bool shutdown)
 		{
 			bus::stop();
 			while (!vm_.is_halted()) {

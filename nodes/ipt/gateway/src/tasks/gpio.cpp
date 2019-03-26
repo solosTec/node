@@ -54,7 +54,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void gpio::stop()
+	void gpio::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

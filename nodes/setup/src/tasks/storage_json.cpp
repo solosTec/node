@@ -34,7 +34,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void storage_json::stop()
+	void storage_json::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "storage_json is stopped");
 	}

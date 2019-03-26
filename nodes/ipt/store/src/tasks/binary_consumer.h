@@ -30,7 +30,7 @@ namespace node
 			, std::string suffix
 			, std::chrono::seconds period);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

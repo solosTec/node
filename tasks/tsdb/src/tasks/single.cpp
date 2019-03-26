@@ -71,7 +71,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void single::stop()
+	void single::stop(bool shutdown)
 	{
 		if (ofs_.is_open()) {
 			ofs_.flush();

@@ -42,7 +42,7 @@ namespace node
 			, std::size_t);
 
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 	private:
 		void do_read();

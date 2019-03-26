@@ -31,7 +31,7 @@ namespace node
 			, std::string number
 			, std::chrono::seconds timeout);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

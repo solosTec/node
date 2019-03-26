@@ -80,7 +80,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void storage_db::stop()
+	void storage_db::stop(bool shutdown)
 	{
 		if (state_ == TASK_STATE_OPEN_) {
 			//

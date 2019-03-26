@@ -110,7 +110,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void sml_db_consumer::stop()
+	void sml_db_consumer::stop(bool shutdown)
 	{
 		//
 		//	remove all open lines

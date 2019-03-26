@@ -46,7 +46,7 @@ namespace node
 				, bool accept_all
 				, std::map<int, std::string> gpio_paths);
 			cyng::continuation run();
-			void stop();
+			void stop(bool shutdown);
 
 			/**
 			 * @brief slot [0] 0x4001/0x4002: response login

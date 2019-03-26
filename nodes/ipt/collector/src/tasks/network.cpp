@@ -222,7 +222,7 @@ namespace node
 			base_.suspend(config_.get().monitor_);
 		}
 
-		void network::stop()
+		void network::stop(bool shutdown)
 		{
 			//
 			//	call base class

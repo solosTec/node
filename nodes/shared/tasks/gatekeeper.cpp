@@ -86,7 +86,7 @@ namespace node
 	}
 
 
-	void gatekeeper::stop()
+	void gatekeeper::stop(bool shutdown)
 	{
 		//
 		//	terminate task

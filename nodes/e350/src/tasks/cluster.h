@@ -36,7 +36,7 @@ namespace node
 			, std::string pwd_policy
 			, std::string);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

@@ -81,7 +81,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void sml_xml_consumer::stop()
+	void sml_xml_consumer::stop(bool shutdown)
 	{
 		//
 		//	remove all open lines

@@ -108,7 +108,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void iec_db_consumer::stop()
+	void iec_db_consumer::stop(bool shutdown)
 	{
 		//
 		//	remove all open lines

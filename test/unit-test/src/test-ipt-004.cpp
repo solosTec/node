@@ -82,7 +82,7 @@ namespace node
 				}
 				return cyng::continuation::TASK_CONTINUE;
 			}
-			void stop()
+			void stop(bool shutdown)
 			{
 				bus::stop();
 				while (!vm_.is_halted()) {

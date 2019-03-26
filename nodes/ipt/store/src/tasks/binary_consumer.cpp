@@ -72,7 +72,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void binary_consumer::stop()
+	void binary_consumer::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

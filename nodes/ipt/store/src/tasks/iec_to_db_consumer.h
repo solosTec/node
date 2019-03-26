@@ -33,7 +33,7 @@ namespace node
 			, std::size_t ntid	//	network task id
 			, cyng::param_map_t);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

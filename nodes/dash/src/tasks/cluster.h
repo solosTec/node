@@ -49,7 +49,7 @@ namespace node
 			, bool https_rewrite
 		);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

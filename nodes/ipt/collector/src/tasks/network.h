@@ -28,7 +28,7 @@ namespace node
 				, cyng::logging::log_ptr
 				, redundancy const& cfg);
 			cyng::continuation run();
-			void stop();
+			void stop(bool shutdown);
 
 			/**
 			* @brief slot [0] 0x4001/0x4002: response login

@@ -105,7 +105,7 @@ namespace node
 		return cyng::continuation::TASK_STOP;
 	}
 
-	void register_target::stop()
+	void register_target::stop(bool shutdown)
 	{
 
 		//

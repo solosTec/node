@@ -28,7 +28,7 @@ namespace node
 			, std::uint16_t watchdog
 			, std::string account);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

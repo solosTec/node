@@ -46,7 +46,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void watchdog::stop()
+	void watchdog::stop(bool shutdown)
 	{
 		//
 		//	terminate task

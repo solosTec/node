@@ -81,7 +81,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void wireless_LMN::stop()
+	void wireless_LMN::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

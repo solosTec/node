@@ -71,7 +71,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void wired_LMN::stop()
+	void wired_LMN::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

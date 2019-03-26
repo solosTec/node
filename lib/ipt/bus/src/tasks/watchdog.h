@@ -26,7 +26,7 @@ namespace node
 			, cyng::controller& vm
 			, std::uint16_t watchdog);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 	private:
 		cyng::async::base_task& base_;

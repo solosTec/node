@@ -45,7 +45,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void sml_json_consumer::stop()
+	void sml_json_consumer::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

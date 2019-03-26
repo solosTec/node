@@ -84,7 +84,7 @@ namespace node
 	}
 
 
-	void sml_abl_consumer::stop()
+	void sml_abl_consumer::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

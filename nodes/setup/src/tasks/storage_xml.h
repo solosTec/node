@@ -29,7 +29,7 @@ namespace node
 			, cyng::store::db& cache
 			, cyng::param_map_t);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 		cyng::continuation process(int i, std::string name);
 
 	private:

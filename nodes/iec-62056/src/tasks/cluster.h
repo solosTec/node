@@ -32,7 +32,7 @@ namespace node
 			, cluster_config_t const& cfg
 			, boost::asio::ip::tcp::endpoint ep);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

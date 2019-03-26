@@ -38,7 +38,7 @@ namespace node
 			, bool eol
 			, cyng::object);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0] - CONSUMER_CREATE_LINE

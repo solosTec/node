@@ -86,7 +86,7 @@ namespace node
 			return cyng::continuation::TASK_CONTINUE;
 		}
 
-		void push_ops::stop()
+		void push_ops::stop(bool shutdown)
 		{
 			//bus_->stop();
 			CYNG_LOG_INFO(logger_, "task #"

@@ -51,7 +51,7 @@ namespace node
 
 	}
 
-	void cluster::stop()
+	void cluster::stop(bool shutdown)
 	{
 		//
 		//	stop server

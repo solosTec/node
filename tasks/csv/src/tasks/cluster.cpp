@@ -73,7 +73,7 @@ namespace node
 
 	}
 
-	void cluster::stop()
+	void cluster::stop(bool shutdown)
 	{
         //
         //	sign off from cloud

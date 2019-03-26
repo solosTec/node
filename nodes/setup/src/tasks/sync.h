@@ -39,7 +39,7 @@ namespace node
 			, std::string const&
 			, cyng::store::db&);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * slot [0] - load cache complete

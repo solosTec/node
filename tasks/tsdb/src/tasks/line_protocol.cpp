@@ -59,7 +59,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void line_protocol::stop()
+	void line_protocol::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

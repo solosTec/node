@@ -31,7 +31,7 @@ namespace node
 			, cluster_config_t const& cfg_cluster
 			, cyng::param_map_t cfg_db);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

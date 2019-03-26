@@ -36,7 +36,7 @@ namespace node
 			, cyng::param_map_t const& cfg_clock_month
 			, cyng::param_map_t const& cfg_trigger);
 		cyng::continuation run();
-		void stop();
+		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]

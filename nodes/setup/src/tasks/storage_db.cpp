@@ -63,7 +63,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void storage_db::stop()
+	void storage_db::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "storage_db is stopped");
 	}
