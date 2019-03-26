@@ -22,7 +22,11 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
+#if (BOOST_ASIO_VERSION < 101202)
 #include <boost/beast/experimental/core/ssl_stream.hpp>
+#else
+#include <boost/beast/ssl/ssl_stream.hpp>
+#endif
 
 namespace node 
 {

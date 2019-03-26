@@ -6,7 +6,6 @@
  */
 
 #include <smf/https/srv/websocket.h>
-//#include <smf/https/srv/handle_request.hpp>
 
 namespace node
 {
@@ -16,8 +15,13 @@ namespace node
 			, connections& cm
 			, boost::uuids::uuid tag
 			, boost::asio::ip::tcp::socket socket)
+#if (BOOST_ASIO_VERSION < 101202)
 		: websocket_session<plain_websocket>(logger, cm, tag, socket.get_executor().context())
 			, ws_(std::move(socket))
+#else
+		: websocket_session<plain_websocket>(logger, cm, tag, socket.get_executor())
+			, ws_(std::move(socket))
+#endif
 		{}
 
 		// Called by the base class
@@ -75,7 +79,11 @@ namespace node
 			, boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream)
 		: websocket_session<ssl_websocket>(logger, cm, tag, stream.get_executor().context())
 			, ws_(std::move(stream))
+#if (BOOST_ASIO_VERSION < 101202)
 			, strand_(ws_.get_executor())
+#else
+			, strand_(boost::asio::make_strand(ws_.get_executor()))
+#endif
 		{
 		}
 

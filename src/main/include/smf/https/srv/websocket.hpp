@@ -16,8 +16,14 @@
 #include <cyng/vm/controller.h>
 #include <cyng/json.h>
 
+#include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
+
+#if (BOOST_ASIO_VERSION < 101202)
 #include <boost/beast/experimental/core/ssl_stream.hpp>
+#else
+#include <boost/beast/ssl/ssl_stream.hpp>
+#endif
 #include <boost/algorithm/string.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
@@ -282,9 +288,14 @@ namespace node
 				// Note that there is activity
 				activity();
 
+				
+#if (BOOST_ASIO_VERSION < 101202)
 				std::stringstream msg;
 				msg << boost::beast::buffers(buffer_.data());
-				const std::string str = msg.str();
+				std::string const str = msg.str();
+#else
+				std::string const str = boost::beast::buffers_to_string(buffer_);
+#endif
 				CYNG_LOG_TRACE(logger_, "ws " << tag() << " read - " << str);
 
 				//

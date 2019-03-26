@@ -15,7 +15,11 @@
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/stream.hpp>
+#if (BOOST_ASIO_VERSION < 101202)
 #include <boost/beast/experimental/core/ssl_stream.hpp>
+#else
+#include <boost/beast/ssl/ssl_stream.hpp>
+#endif
 #include <cstddef>
 #include <memory>
 #include <type_traits>

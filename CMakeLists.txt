@@ -33,8 +33,10 @@ math(EXPR PATCH_LEVEL "(${THIS_YEAR} * 1000) + ${PATCH_LEVEL}")
 # set project name/properties
 #
 project(NODE 
-	VERSION 0.7.${PATCH_LEVEL}.1
-	LANGUAGES CXX C)
+	VERSION 0.8.${PATCH_LEVEL}.1
+	LANGUAGES CXX C
+	DESCRIPTION "Smart Metering Framework"
+	HOMEPAGE_URL "https://solostec.ch")
 
 
 set (${PROJECT_NAME}_COPYRIGHT_YEAR ${THIS_YEAR})
@@ -236,9 +238,13 @@ endfunction()
 
 if(NOT ${PROJECT_NAME}_CROSS_COMPILE)
     if(UNIX)
-        if(EXISTS "$ENV{HOME}/projects/boost_1_69_0")
-            set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_69_0" CACHE PATH "BOOST_ROOT")
-            set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_69_0/lib" CACHE PATH "BOOST_LIBRARYDIR")
+        if(EXISTS "$ENV{HOME}/projects/boost_1_70_0/install")
+            set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_70_0/install" CACHE PATH "BOOST_ROOT")
+            set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_70_0/install/lib" CACHE PATH "BOOST_LIBRARYDIR")
+            message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
+        elseif(EXISTS "$ENV{HOME}/projects/boost_1_69_0/install")
+            set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_69_0/install" CACHE PATH "BOOST_ROOT")
+            set(BOOST_LIBRARYDIR "$ENV{HOME}/projects/boost_1_69_0/install/lib" CACHE PATH "BOOST_LIBRARYDIR")
             message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
         elseif(EXISTS "$ENV{HOME}/projects/boost_1_68_0/install")
             set(BOOST_ROOT "$ENV{HOME}/projects/boost_1_68_0/install" CACHE PATH "BOOST_ROOT")
@@ -254,7 +260,9 @@ if(NOT ${PROJECT_NAME}_CROSS_COMPILE)
             message(STATUS "** Search Boost    : overwrite with ${BOOST_ROOT}")
         endif()
     elseif(WIN32)
-        if(EXISTS "C:/local/boost_1_69_0")
+        if(EXISTS "C:/local/boost_1_70_0")
+            windows_boost_fix("1_70")
+        elseif(EXISTS "C:/local/boost_1_69_0")
             windows_boost_fix("1_69")
         elseif(EXISTS "C:/local/boost_1_68_0")
             windows_boost_fix("1_68")

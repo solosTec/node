@@ -280,15 +280,19 @@ namespace node
 			// Note that there is activity
 			activity();
 
+#if (BOOST_ASIO_VERSION < 101202)
 			std::stringstream msg;
 			msg << boost::beast::buffers(buffer_.data());
-			const std::string str = msg.str();
+			std::string const str = msg.str();
+#else			
+			std::string const str = boost::beast::buffers_to_string(boost::beast::buffers(buffer_.data()));
+#endif
+			
 			CYNG_LOG_TRACE(logger_, "ws " << tag() << " read - " << str);
 
 			//
 			//	execute on bus VM
 			//
-			//bus_->vm_.async_run(cyng::generate_invoke("ws.read", tag_, cyng::invoke("ws.push"), cyng::json::read(str)));
 			connection_manager_.vm().async_run(cyng::generate_invoke("ws.read", tag(), cyng::json::read(str)));
 
 			// Clear buffer
