@@ -35,7 +35,7 @@ namespace node
 		/**
 		 * @brief slot [0]
 		 *
-		 * sucessful cluster login
+		 * master shutdown
 		 */
 		cyng::continuation process(boost::uuids::uuid tag);
 

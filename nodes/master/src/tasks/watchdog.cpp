@@ -81,7 +81,7 @@ namespace node
 			<< sp->vm_.tag());
 
 		const_cast<session*>(sp)->stop(session_obj_);
-		return cyng::continuation::TASK_CONTINUE;
+		return cyng::continuation::TASK_STOP;
 	}
 
 	void watchdog::send_watchdogs()

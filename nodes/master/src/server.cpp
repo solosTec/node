@@ -204,15 +204,31 @@ namespace node
 
 		CYNG_LOG_WARNING(logger_, "close server");
 
+		// The server is stopped by cancelling all outstanding asynchronous
+		// operations. Once all operations have finished the io_context::run()
+		// call will exit.
+		acceptor_.close();
+
 		//
 		//	terminate all sessions
 		//
 		mux_.post("node::watchdog", 0, cyng::tuple_factory(tag_));
 
-		// The server is stopped by cancelling all outstanding asynchronous
-        // operations. Once all operations have finished the io_context::run()
-        // call will exit.
-        acceptor_.close();
+		//
+		//	wait for all watchdog tasks to terminate
+		//
+		//bool size(std::string const&, std::function<void(std::size_t)> f) const;
+
+		std::atomic< bool >	complete{ false };
+		while (!complete) {
+			mux_.size("node::watchdog", [&](std::size_t count) {
+				complete = (count == 0);
+				if (!complete) {
+					CYNG_LOG_WARNING(logger_, "still waiting for " << count << " watchdog task(s)");
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				}
+			});
+		}
 
 	}
 	

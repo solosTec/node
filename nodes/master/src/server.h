@@ -61,7 +61,7 @@ namespace node
 		std::string const country_code_;
 		std::string const language_code_;
 
-		//	credentials
+		//	credentials (default)
 		std::string const account_;
 		std::string const pwd_;
 		std::chrono::seconds const monitor_;	//!< cluster monitor
