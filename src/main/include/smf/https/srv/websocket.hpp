@@ -19,7 +19,8 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 
-#if (BOOST_ASIO_VERSION < 101202)
+#if (BOOST_VERSION < 107000)
+//#if (BOOST_ASIO_VERSION < 101202)
 #include <boost/beast/experimental/core/ssl_stream.hpp>
 #else
 #include <boost/beast/ssl/ssl_stream.hpp>
@@ -289,7 +290,8 @@ namespace node
 				activity();
 
 				
-#if (BOOST_ASIO_VERSION < 101202)
+#if (BOOST_VERSION < 107000)
+//#if (BOOST_ASIO_VERSION < 101202)
 				std::stringstream msg;
 				msg << boost::beast::buffers(buffer_.data());
 				std::string const str = msg.str();

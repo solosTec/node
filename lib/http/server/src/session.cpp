@@ -44,7 +44,7 @@ namespace node
 			, https_rewrite_(https_rewrite)
 			, socket_(std::move(socket))
 			, connection_manager_(cm)
-#if (BOOST_ASIO_VERSION < 101202)			
+#if (BOOST_ASIO_VERSION < 101203)
 			, strand_(socket_.get_executor())
 #else
 			, strand_(boost::asio::make_strand(socket_.get_executor()))

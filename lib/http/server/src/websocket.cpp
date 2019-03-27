@@ -280,7 +280,8 @@ namespace node
 			// Note that there is activity
 			activity();
 
-#if (BOOST_ASIO_VERSION < 101202)
+#if (BOOST_VERSION < 107000)
+//#if (BOOST_ASIO_VERSION < 101202)
 			std::stringstream msg;
 			msg << boost::beast::buffers(buffer_.data());
 			std::string const str = msg.str();

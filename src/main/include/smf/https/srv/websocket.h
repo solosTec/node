@@ -9,7 +9,8 @@
 #define NODE_LIB_HTTPS_SRV_WEBSOCKET_H
 
 #include <smf/https/srv/websocket.hpp>
-#if (BOOST_ASIO_VERSION < 101202)
+#if (BOOST_VERSION < 107000)
+//#if (BOOST_ASIO_VERSION < 101202)
 #include <smf/https/srv/ssl_stream.hpp>
 #else
 #include <boost/beast/ssl/ssl_stream.hpp>

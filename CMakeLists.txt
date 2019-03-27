@@ -35,8 +35,8 @@ math(EXPR PATCH_LEVEL "(${THIS_YEAR} * 1000) + ${PATCH_LEVEL}")
 project(NODE 
 	VERSION 0.8.${PATCH_LEVEL}.1
 	LANGUAGES CXX C
-	DESCRIPTION "Smart Metering Framework"
-	HOMEPAGE_URL "https://solostec.ch")
+	DESCRIPTION "Smart Metering Framework")
+#	HOMEPAGE_URL "https://solostec.ch")	- requires CMake 3.12.4
 
 
 set (${PROJECT_NAME}_COPYRIGHT_YEAR ${THIS_YEAR})
