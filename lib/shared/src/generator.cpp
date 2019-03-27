@@ -244,7 +244,7 @@ namespace node
 			;
 	}
 
-	cyng::vector_t bus_req_gateway_proxy(cyng::vector_t const& key
+	cyng::vector_t bus_req_com_sml(cyng::vector_t const& key
 		, boost::uuids::uuid tag_ws
 		, std::string channel
 		, cyng::vector_t sections
@@ -257,18 +257,7 @@ namespace node
 			;
 	}
 
-	//cyng::vector_t bus_req_reboot_client(cyng::vector_t const& key
-	//	, boost::uuids::uuid source
-	//	, boost::uuids::uuid tag_ws)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("bus.req.reboot.client", cyng::invoke("bus.seq.next"), key, source, tag_ws))
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
-	cyng::vector_t bus_res_gateway_proxy(boost::uuids::uuid ident
+	cyng::vector_t bus_res_com_sml(boost::uuids::uuid ident
 		, boost::uuids::uuid source
 		, std::uint64_t seq
 		, cyng::vector_t key
@@ -285,19 +274,6 @@ namespace node
 			;
 	}
 
-	//cyng::vector_t bus_req_query_gateway(cyng::vector_t const& key
-	//	, boost::uuids::uuid source
-	//	, cyng::vector_t vec	//	params
-	//	, boost::uuids::uuid tag_ws)
-	//{
-	//	cyng::vector_t prg;
-	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
-	//		, cyng::generate_invoke_remote_unwinded("bus.req.query.gateway", cyng::invoke("bus.seq.next"), key, source, vec, tag_ws))
-	//		<< cyng::generate_invoke_unwinded("store.relation", cyng::invoke("bus.seq.push"), tag_ws)	//	store seq => ws relation
-	//		<< cyng::generate_invoke_unwinded("stream.flush")
-	//		;
-	//}
-
 	cyng::vector_t bus_res_attention_code(boost::uuids::uuid ident
 		, boost::uuids::uuid source
 		, std::uint64_t seq
@@ -309,6 +285,32 @@ namespace node
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
 			, cyng::generate_invoke_remote_unwinded("bus.res.attention.code", ident, source, seq, tag_ws, srv, code, msg))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_req_com_task(boost::uuids::uuid key
+		, boost::uuids::uuid tag_ws
+		, std::string channel
+		, cyng::vector_t sections
+		, cyng::vector_t params)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.req.com.task", cyng::code::IDENT, cyng::invoke("bus.seq.next"), key, tag_ws, channel, sections, params))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_req_com_node(boost::uuids::uuid key
+		, boost::uuids::uuid tag_ws
+		, std::string channel
+		, cyng::vector_t sections
+		, cyng::vector_t params)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.req.com.node", cyng::code::IDENT, cyng::invoke("bus.seq.next"), key, tag_ws, channel, sections, params))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}

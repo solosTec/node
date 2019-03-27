@@ -227,7 +227,7 @@ namespace node
 			server_id = sml::from_server_id(queue_.front().get_srv());
 		}
 
-		bus_->vm_.async_run(bus_res_gateway_proxy(queue_.front().get_ident_tag()
+		bus_->vm_.async_run(bus_res_com_sml(queue_.front().get_ident_tag()
 			, queue_.front().get_source_tag()
 			, queue_.front().get_sequence()
 			, queue_.front().get_key()

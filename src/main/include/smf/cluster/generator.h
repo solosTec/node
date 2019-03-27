@@ -135,26 +135,6 @@ namespace node
 		, boost::uuids::uuid source);
 
 	/**
-	 * Reboot a client
-	 */
-	//cyng::vector_t bus_req_reboot_client(cyng::vector_t const&
-	//	, boost::uuids::uuid source
-	//	, boost::uuids::uuid tag_ws);
-
-	/**
-	 * Send a process parameter request to an gateway
-	 * 
-	 * @param key key for TGateway table
-	 * @param source source tag
-	 * @param vec vector of parameter requests
-	 * @param tag_ws websocket session tag
-	 */
-	//cyng::vector_t bus_req_query_gateway(cyng::vector_t const&
-	//	, boost::uuids::uuid source
-	//	, cyng::vector_t vec	//	params
-	//	, boost::uuids::uuid tag_ws);
-
-	/**
 	 * Send a process parameter request to an gateway
 	 *
 	 * @param key key for TGateway/TDevice table
@@ -162,19 +142,19 @@ namespace node
 	 * @param channel channel name (get.proc.param, set.proc.param, ...)
 	 * @param vec vector of parameter requests
 	 */
-	cyng::vector_t bus_req_gateway_proxy(cyng::vector_t const& key
+	cyng::vector_t bus_req_com_sml(cyng::vector_t const& key
 		, boost::uuids::uuid tag_ws
 		, std::string channel
 		, cyng::vector_t sections
 		, cyng::vector_t params);
 
 	/**
-	 * Response for bus_req_gateway_proxy()
+	 * Response for bus_req_com_sml()
 	 *
 	 * @param source source tag
 	 * @param srv server id
 	 */
-	cyng::vector_t bus_res_gateway_proxy(boost::uuids::uuid ident
+	cyng::vector_t bus_res_com_sml(boost::uuids::uuid ident
 		, boost::uuids::uuid source
 		, std::uint64_t seq
 		, cyng::vector_t key
@@ -194,6 +174,34 @@ namespace node
 		, std::string srv
 		, cyng::buffer_t code
 		, std::string msg);
+
+	/**
+	 * Send a request to a specific task
+	 *
+	 * @param key key for TGateway/TDevice table
+	 * @param tag_ws websocket session tag
+	 * @param channel channel name (get.proc.param, set.proc.param, ...)
+	 * @param vec vector of parameter requests
+	 */
+	cyng::vector_t bus_req_com_task(boost::uuids::uuid key
+		, boost::uuids::uuid tag_ws
+		, std::string channel
+		, cyng::vector_t sections
+		, cyng::vector_t params);
+
+	/**
+	 * Send a request to a specific node
+	 *
+	 * @param key key for TGateway/TDevice table
+	 * @param tag_ws websocket session tag
+	 * @param channel channel name (get.proc.param, set.proc.param, ...)
+	 * @param vec vector of parameter requests
+	 */
+	cyng::vector_t bus_req_com_node(boost::uuids::uuid key
+		, boost::uuids::uuid tag_ws
+		, std::string channel
+		, cyng::vector_t sections
+		, cyng::vector_t params);
 
 	/**
 	 * Send a process parameter change request to an gateway

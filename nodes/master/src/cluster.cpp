@@ -46,12 +46,14 @@ namespace node
 
 	void cluster::register_this(cyng::context& ctx)
 	{
-		ctx.queue(cyng::register_function("bus.req.gateway.proxy", 7, std::bind(&cluster::bus_req_gateway_proxy, this, std::placeholders::_1)));
-		ctx.queue(cyng::register_function("bus.res.gateway.proxy", 9, std::bind(&cluster::bus_res_gateway_proxy, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.req.gateway.proxy", 7, std::bind(&cluster::bus_req_com_sml, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.res.gateway.proxy", 9, std::bind(&cluster::bus_res_com_sml, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("bus.res.attention.code", 7, std::bind(&cluster::bus_res_attention_code, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.req.com.task", 7, std::bind(&cluster::bus_req_com_task, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.req.com.node", 7, std::bind(&cluster::bus_req_com_node, this, std::placeholders::_1)));
 	}
 
-	void cluster::bus_req_gateway_proxy(cyng::context& ctx)
+	void cluster::bus_req_com_sml(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
 		//CYNG_LOG_INFO(logger_, "bus.req.gateway.proxy " << cyng::io::to_str(frame));
@@ -136,7 +138,7 @@ namespace node
 
 	}
 
-	void cluster::bus_res_gateway_proxy(cyng::context& ctx)
+	void cluster::bus_res_com_sml(cyng::context& ctx)
 	{
 		//
 		//	[21c95367-9d92-40d7-ba79-f2eee35dddc2,9f773865-e4af-489a-8824-8f78a2311278,23,[ec563e58-f0d6-4d6a-8a13-63f639f6c9a7],dd44ad9e-8995-48f0-81aa-eec454cf0625,
@@ -190,7 +192,7 @@ namespace node
 					//
 					//	forward data
 					//
-					peer->vm_.async_run(node::bus_res_gateway_proxy(
+					peer->vm_.async_run(node::bus_res_com_sml(
 						  std::get<0>(tpl)		//	ident tag
 						, std::get<1>(tpl)		//	source tag
 						, std::get<2>(tpl)		//	cluster sequence
@@ -337,7 +339,7 @@ namespace node
 		//	* [string] message
 		//
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "bus.res.attention.code " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] ident
@@ -391,6 +393,38 @@ namespace node
 		}, cyng::store::read_access("_Cluster"));
 
 	}
+
+	void cluster::bus_req_com_task(cyng::context& ctx)
+	{
+		//	[9f773865-e4af-489a-8824-8f78a2311278,3,7a7f89be-5440-4e57-94f1-88483c022d19,09be403a-aa78-4946-9cc0-0f510441717c,req.config,[monitor,influxdb,lineProtocol,db,multiple,single],[tsdb]]
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] ident
+			std::uint64_t,			//	[1] cluster sequence
+			boost::uuids::uuid,		//	[2] task key
+			boost::uuids::uuid,		//	[3] source (web socket)
+			std::string,			//	[4] channel
+			cyng::vector_t,			//	[5] sections
+			cyng::vector_t			//	[6] params
+		>(frame);
+
+		//
+		//	ToDo: search session and forward request
+		//
+	}
+
+	void cluster::bus_req_com_node(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		//
+		//	ToDo: search session and forward request
+		//
+	}
+
 
 	std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> cluster::find_peer(cyng::table::key_type const& key_gw
 		, const cyng::store::table* tbl_session

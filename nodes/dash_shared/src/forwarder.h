@@ -42,16 +42,25 @@ namespace node
 	/**
 	 * communicate with the IP-T proxy
 	 */
-	void fwd_config_gateway(cyng::logging::log_ptr
+	void fwd_com_sml(cyng::logging::log_ptr
 		, cyng::context& ctx
 		, boost::uuids::uuid tag_ws
 		, std::string const& channel
 		, cyng::reader<cyng::object> const&);
 
 	/**
-	 * communicate with the tsdb task
+	 * communicate with a task
 	 */
-	void fwd_config_task_tsdb(cyng::logging::log_ptr
+	void fwd_com_task(cyng::logging::log_ptr
+		, cyng::context& ctx
+		, boost::uuids::uuid tag_ws
+		, std::string const& channel
+		, cyng::reader<cyng::object> const&);
+
+	/**
+	 * communicate with a node
+	 */
+	void fwd_com_node(cyng::logging::log_ptr
 		, cyng::context& ctx
 		, boost::uuids::uuid tag_ws
 		, std::string const& channel

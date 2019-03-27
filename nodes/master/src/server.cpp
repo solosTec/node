@@ -220,12 +220,15 @@ namespace node
 		//bool size(std::string const&, std::function<void(std::size_t)> f) const;
 
 		std::atomic< bool >	complete{ false };
+		std::size_t msec{ 10 };
 		while (!complete) {
 			mux_.size("node::watchdog", [&](std::size_t count) {
 				complete = (count == 0);
 				if (!complete) {
 					CYNG_LOG_WARNING(logger_, "still waiting for " << count << " watchdog task(s)");
-					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+					std::this_thread::sleep_for(std::chrono::milliseconds(msec));
+					msec += 20;
+					complete = (msec > 1000);	// last exit
 				}
 			});
 		}

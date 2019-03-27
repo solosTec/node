@@ -460,7 +460,7 @@ namespace node
 		}
 	}
 
-	void fwd_config_gateway(cyng::logging::log_ptr logger
+	void fwd_com_sml(cyng::logging::log_ptr logger
 		, cyng::context& ctx
 		, boost::uuids::uuid tag_ws
 		, std::string const& channel
@@ -476,7 +476,7 @@ namespace node
 		if (!key.empty()) {
 
 			cyng::vector_t vec;
-			ctx.queue(bus_req_gateway_proxy(key	//	key into TGateway and TDevice table
+			ctx.queue(bus_req_com_sml(key	//	key into TGateway and TDevice table
 				, tag_ws	//	web-socket tag
 				, channel
 				, cyng::value_cast(reader.get("section"), vec)
@@ -485,17 +485,41 @@ namespace node
 		}
 	}
 
-	void fwd_config_task_tsdb(cyng::logging::log_ptr logger
+	void fwd_com_task(cyng::logging::log_ptr logger
 		, cyng::context& ctx
 		, boost::uuids::uuid tag_ws
 		, std::string const& channel
 		, cyng::reader<cyng::object> const& reader)
 	{
-		cyng::vector_t key;
-		key = cyng::value_cast(reader.get("key"), key);
-		CYNG_LOG_WARNING(logger, "ws tag: " << tag_ws << " - TASK key" << cyng::io::to_str(key));
+		auto const tag = cyng::value_cast(reader.get("key"), boost::uuids::nil_uuid());
+		CYNG_LOG_WARNING(logger, "ws tag: " << tag_ws << " - TASK key" << tag);
+
+		cyng::vector_t vec;
+		ctx.queue(bus_req_com_task(tag	//	key 
+			, tag_ws	//	web-socket tag
+			, channel
+			, cyng::value_cast(reader.get("section"), vec)
+			, cyng::value_cast(reader.get("params"), vec)));	//	parameters, requests, commands
 
 	}
+
+	void fwd_com_node(cyng::logging::log_ptr logger
+		, cyng::context& ctx
+		, boost::uuids::uuid tag_ws
+		, std::string const& channel
+		, cyng::reader<cyng::object> const& reader)
+	{
+		auto const tag = cyng::value_cast(reader.get("key"), boost::uuids::nil_uuid());
+		CYNG_LOG_WARNING(logger, "ws tag: " << tag_ws << " - NODE key" << tag);
+
+		cyng::vector_t vec;
+		ctx.queue(bus_req_com_node(tag	//	key
+			, tag_ws	//	web-socket tag
+			, channel
+			, cyng::value_cast(reader.get("section"), vec)
+			, cyng::value_cast(reader.get("params"), vec)));	//	parameters, requests, commands
+	}
+
 
 
 	forward::forward(cyng::logging::log_ptr logger
