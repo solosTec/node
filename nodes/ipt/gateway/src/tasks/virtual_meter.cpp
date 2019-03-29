@@ -9,12 +9,6 @@
 #include <smf/sml/srv_id_io.h>
 
 #include <cyng/async/task/base_task.h>
-//#include <cyng/chrono.h>
-//#include <cyng/io/io_chrono.hpp>
-//#include <cyng/vm/generator.h>
-
-//#include <boost/filesystem.hpp>
-//#include <boost/range/iterator_range.hpp>
 
 namespace node
 {
