@@ -38,7 +38,7 @@ namespace node
 
 		parser::state parser::put(char c)
 		{
-			switch (state_) {
+			switch (static_cast<std::uint8_t>(state_)) {
 			case STATE_DATA:
 				switch (c) {
 				case TELNET_IAC:

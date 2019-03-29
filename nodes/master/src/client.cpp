@@ -1711,8 +1711,8 @@ namespace node
 			//, ctx.tag());
 	}
 
-	void client::req_open_push_channel_impl(cyng::context& ctx
-		, boost::uuids::uuid tag, //	remote tag
+	void client::req_open_push_channel_impl(cyng::context& ctx,
+		boost::uuids::uuid tag, //	remote tag
 		boost::uuids::uuid peer,	//	[1] remote peer
 		std::uint64_t seq,			//	[2] sequence number
 		std::string name,			//	[3] target name
@@ -1734,12 +1734,13 @@ namespace node
 
 		//
 		//	find matching target
+		//  To much parameters for gcc 5.4.0 - upper limit is 5
 		//
-		db_.access([&](const cyng::store::table* tbl_target
+		db_.access([&](cyng::store::table const* tbl_target
 			, cyng::store::table* tbl_channel
-			, const cyng::store::table* tbl_session
+			, cyng::store::table const* tbl_session
 			, cyng::store::table* tbl_msg
-			, const cyng::store::table* tbl_device
+			, cyng::store::table const* tbl_device
 			, cyng::store::table* tbl_tsdb
 			, cyng::store::table const* tbl_cfg)->void {
 
