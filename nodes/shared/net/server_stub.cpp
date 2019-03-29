@@ -210,11 +210,11 @@ namespace node
 			<< client_map_.size()
 			<< " clients to shutdown");
         
-#ifdef CYNG_STD_SHARED_MUTEX_OFF
+#if defined(__CPP_SUPPORT_N4508)	
+		if (cv_sessions_closed_.wait_for(lock, timeout_, [this] {
+#else
         //  conversion to boost::chrono::seconds required
 		if (cv_sessions_closed_.wait_for(lock, boost::chrono::seconds(timeout_.count()), [this] {
-#else
-		if (cv_sessions_closed_.wait_for(lock, timeout_, [this] {
 #endif
 			return client_map_.empty();
 		})) {

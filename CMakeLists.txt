@@ -187,29 +187,24 @@ include(CPPFeatureSupport)
 if (CMAKE_COMPILER_IS_GNUCXX)
 
 	#
-	# gnu C++
+	# gnu C++ select dialect
 	#
 	
-	# -std=c++98
-	# C++11 since 4.8.1
-	# C++14 since 6.1
-	# C++17 since 7.0 (?)
-	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "4.8.1")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98") 
-		message(STATUS "** C++ support     : C++98")
-	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "5.5")
-	# crosscompile OECP with gcc 5.4.0 
+	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "4.7")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 		message(STATUS "** C++ support     : C++11")
-	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "6.1")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
-		message(STATUS "** C++ support     : C++11")
-	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "7.0")
+	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "5.1")
+	# default since  GCC 6.1
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14") 
+		message(STATUS "** C++ support     : C++14")
+	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "8.1")
+    # partly since 5.0
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") 
 		message(STATUS "** C++ support     : C++17")
 	else()
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") 
-		message(STATUS "** C++ support     : C++17")
+    # partly since 8.0
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a") 
+		message(STATUS "** C++ support     : C++2a")
 	endif()
 	
 	# only shared libraries

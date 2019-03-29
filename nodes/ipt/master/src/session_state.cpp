@@ -357,8 +357,9 @@ namespace node
 
 				//
 				//	send query
+				//  the template parameter is requires by gcc 5.4.0
 				//
-				prg << cyng::unwind(query(evt.query_));
+				prg << cyng::unwind<cyng::vector_t>(query(evt.query_));
 
 				//
 				//	start proxy

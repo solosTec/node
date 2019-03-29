@@ -44,6 +44,7 @@ namespace node
 
 		using msg_6 = std::tuple<std::string, cyng::buffer_t>;
 
+        //  gcc 5.4.0 has a problem with this tuple - maybe to big
 		using msg_7 = std::tuple <
 			boost::uuids::uuid,		//	[0] ident tag
 			boost::uuids::uuid,		//	[1] source tag
