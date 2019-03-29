@@ -96,6 +96,7 @@ namespace node
 }
 
 #include <cyng/intrinsics/traits.hpp>
+
 namespace cyng
 {
 	namespace traits
@@ -104,16 +105,29 @@ namespace cyng
 		struct type_tag<node::https::plain_websocket>
 		{
 			using type = node::https::plain_websocket;
-			using tag = std::integral_constant<std::size_t, PREDEF_SOCKET>;
-#if defined(CYNG_LEGACY_MODE_ON)
-			const static char name[];
+			using tag = std::integral_constant<std::size_t, 
+#if defined(__CPP_SUPPORT_N2347)
+				static_cast<std::size_t>(traits::predef_type_code::PREDEF_SOCKET)
 #else
+				PREDEF_SOCKET
+#endif
+			>;
+
+#if defined(__CPP_SUPPORT_N2235)
 			constexpr static char name[] = "plain-websocket";
+#else
+			const static char name[];
 #endif
 		};
 
 		template <>
-		struct reverse_type < PREDEF_SOCKET >
+		struct reverse_type < 
+#if defined(__CPP_SUPPORT_N2347)
+			static_cast<std::size_t>(traits::predef_type_code::PREDEF_SOCKET)
+#else
+			PREDEF_SOCKET 
+#endif
+		>
 		{
 			using type = node::https::plain_websocket;
 		};
@@ -122,16 +136,29 @@ namespace cyng
 		struct type_tag<node::https::ssl_websocket>
 		{
 			using type = node::https::ssl_websocket;
-			using tag = std::integral_constant<std::size_t, PREDEF_SSL_SOCKET>;
-#if defined(CYNG_LEGACY_MODE_ON)
-			const static char name[];
+			using tag = std::integral_constant<std::size_t, 
+#if defined(__CPP_SUPPORT_N2347)
+				static_cast<std::size_t>(traits::predef_type_code::PREDEF_SSL_SOCKET)
 #else
+				PREDEF_SSL_SOCKET
+#endif
+			>;
+
+#if defined(__CPP_SUPPORT_N2235)
 			constexpr static char name[] = "ssl-websocket";
+#else
+			const static char name[];
 #endif
 		};
 
 		template <>
-		struct reverse_type < PREDEF_SSL_SOCKET >
+		struct reverse_type < 
+#if defined(__CPP_SUPPORT_N2347)
+			static_cast<std::size_t>(traits::predef_type_code::PREDEF_SSL_SOCKET)
+#else
+			PREDEF_SSL_SOCKET 
+#endif
+		>
 		{
 			using type = node::https::ssl_websocket;
 		};
@@ -141,7 +168,6 @@ namespace cyng
 }
 
 #include <functional>
-//#include <boost/functional/hash.hpp>
 
 namespace std
 {

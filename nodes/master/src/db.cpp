@@ -202,8 +202,21 @@ namespace node
 			, "name"		//	[string] name of push target
 			},
 			{	
-				cyng::TC_UINT32, cyng::TC_UINT32, cyng::TC_UINT32, 
-				cyng::TC_UUID, cyng::traits::PREDEF_SESSION, cyng::TC_UUID, cyng::TC_UINT16, cyng::TC_UINT32, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING
+				cyng::TC_UINT32, 
+				cyng::TC_UINT32, 
+				cyng::TC_UINT32, 
+				cyng::TC_UUID, 
+#if defined(__CPP_SUPPORT_N2347)
+				static_cast<std::size_t>(cyng::traits::predef_type_code::PREDEF_SESSION),
+#else
+				cyng::traits::PREDEF_SESSION,
+#endif
+				cyng::TC_UUID, 
+				cyng::TC_UINT16, 
+				cyng::TC_UINT32, 
+				cyng::TC_UINT64, 
+				cyng::TC_STRING, 
+				cyng::TC_STRING
 			},
 			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 64 })))
 		{

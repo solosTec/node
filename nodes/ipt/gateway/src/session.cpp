@@ -93,7 +93,7 @@ namespace cyng
 	namespace traits
 	{
 
-#if defined(CYNG_LEGACY_MODE_ON)
+#if !defined(__CPP_SUPPORT_N2235)
 		const char type_tag<node::sml::session>::name[] = "session";
 #endif
 	}	// traits	

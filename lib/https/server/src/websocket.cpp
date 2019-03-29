@@ -155,7 +155,7 @@ namespace cyng
 	namespace traits
 	{
 
-#if defined(CYNG_LEGACY_MODE_ON)
+#if !defined(__CPP_SUPPORT_N2235)
 		const char type_tag<node::https::plain_websocket>::name[] = "plain-websocket";
 		const char type_tag<node::https::ssl_websocket>::name[] = "ssl-websocket";
 #endif

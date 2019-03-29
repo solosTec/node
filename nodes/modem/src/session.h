@@ -96,8 +96,6 @@ namespace node
 			void modem_req_info(cyng::context& ctx);
 
 		private:
-			//const bool auto_answer_;
-
 			/**
 			 * modem parser
 			 */
@@ -135,16 +133,29 @@ namespace cyng
 		struct type_tag<node::modem::session>
 		{
 			using type = node::modem::session;
-			using tag = std::integral_constant<std::size_t, PREDEF_CONNECTION>;
-#if defined(CYNG_LEGACY_MODE_ON)
-			const static char name[];
+			using tag = std::integral_constant<std::size_t, 
+#if defined(__CPP_SUPPORT_N2347)
+				static_cast<std::size_t>(traits::predef_type_code::PREDEF_CONNECTION)
 #else
+				PREDEF_CONNECTION
+#endif
+			>;
+
+#if defined(__CPP_SUPPORT_N2235)
 			constexpr static char name[] = "ipt:connection";
+#else
+			const static char name[];
 #endif
 		};
 
 		template <>
-		struct reverse_type < PREDEF_CONNECTION >
+		struct reverse_type < 
+#if defined(__CPP_SUPPORT_N2347)
+			static_cast<std::size_t>(traits::predef_type_code::PREDEF_CONNECTION)
+#else
+			PREDEF_CONNECTION
+#endif
+		>
 		{
 			using type = node::modem::session;
 		};

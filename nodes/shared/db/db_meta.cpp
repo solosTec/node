@@ -97,7 +97,7 @@ namespace node
 		}
 		else if (boost::algorithm::equals(name, "mbus-devices")) {
 			return cyng::table::make_meta_table<1, 12>(name,
-				{ "serverID"			//	server ID
+				{ "serverID"	//	server ID
 				, "lastSeen"	//	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
 				, "class"		//	device class (always "---" == 2D 2D 2D)
 				, "visible"

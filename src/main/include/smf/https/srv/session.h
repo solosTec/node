@@ -110,16 +110,29 @@ namespace cyng
 		struct type_tag<node::https::plain_session>
 		{
 			using type = node::https::plain_session;
-			using tag = std::integral_constant<std::size_t, PREDEF_SESSION>;
-#if defined(CYNG_LEGACY_MODE_ON)
-			const static char name[];
+			using tag = std::integral_constant<std::size_t, 
+#if defined(__CPP_SUPPORT_N2347)
+				static_cast<std::size_t>(traits::predef_type_code::PREDEF_SESSION)
 #else
+				PREDEF_SESSION
+#endif
+			>;
+
+#if defined(__CPP_SUPPORT_N2235)
 			constexpr static char name[] = "plain-session";
+#else
+			const static char name[];
 #endif
 		};
 
 		template <>
-		struct reverse_type < PREDEF_SESSION >
+		struct reverse_type <
+#if defined(__CPP_SUPPORT_N2347)
+			static_cast<std::size_t>(traits::predef_type_code::PREDEF_SESSION)
+#else
+			PREDEF_SESSION
+#endif
+		>
 		{
 			using type = node::https::plain_session;
 		};
@@ -128,16 +141,29 @@ namespace cyng
 		struct type_tag<node::https::ssl_session>
 		{
 			using type = node::https::ssl_session;
-			using tag = std::integral_constant<std::size_t, PREDEF_SSL_SESSION>;
-#if defined(CYNG_LEGACY_MODE_ON)
-			const static char name[];
+			using tag = std::integral_constant<std::size_t, 
+#if defined(__CPP_SUPPORT_N2347)
+				static_cast<std::size_t>(traits::predef_type_code::PREDEF_SSL_SESSION)
 #else
+				PREDEF_SSL_SESSION
+#endif
+			>;
+
+#if defined(__CPP_SUPPORT_N2235)
 			constexpr static char name[] = "ssl-session";
+#else
+			const static char name[];
 #endif
 		};
 
 		template <>
-		struct reverse_type < PREDEF_SSL_SESSION >
+		struct reverse_type < 
+#if defined(__CPP_SUPPORT_N2347)
+			static_cast<std::size_t>(traits::predef_type_code::PREDEF_SSL_SESSION)
+#else
+			PREDEF_SSL_SESSION
+#endif
+		>
 		{
 			using type = node::https::ssl_session;
 		};

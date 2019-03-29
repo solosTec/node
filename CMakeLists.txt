@@ -131,6 +131,57 @@ if(NOT DEFINED ${PROJECT_NAME}_BUILD_TEST)
 endif()
 
 #
+#	setup cyng library
+#   -DCYNG_ROOT:path=...
+#	assume parallel installation - that is both projects share the same parent directory.
+#
+if(NOT CYNG_ROOT)
+    set(CYNG_ROOT "${PROJECT_SOURCE_DIR}/../cyng" CACHE PATH "CYNG_ROOT")
+	message(STATUS "** Set CYNG_ROOT: ${CYNG_ROOT}")
+endif()
+
+get_filename_component(CYNG_INCLUDE_DIR "${CYNG_ROOT}/src/main/include" REALPATH)
+include_directories("${CYNG_INCLUDE_DIR}")
+message(STATUS "** CYNG include path : ${CYNG_INCLUDE_DIR}")
+
+#
+#	setup cyng build directory
+#   -DCYNG_BUILD:path=...
+#	assume parallel installation - that is both projects share the same parent directory.
+#
+if (NOT CYNG_BUILD)
+    set(CYNG_BUILD "${CYNG_ROOT}/build" CACHE PATH "CYNG_BUILD")
+	message(STATUS "** Set CYNG_BUILD: ${CYNG_BUILD}")
+endif()
+
+get_filename_component(CYNG_LIBRARY_DIR ${CYNG_BUILD} REALPATH)
+include_directories(${CYNG_LIBRARY_DIR})
+message(STATUS "** CYNG include path : ${CYNG_LIBRARY_DIR}")
+
+if (UNIX)
+    link_directories(${CYNG_LIBRARY_DIR})
+    message(STATUS "** CYNG Libraries    : ${CYNG_LIBRARY_DIR}")
+else()
+	#
+	#	$(ConfigurationName) is a variable used by the MS build system
+	#
+	link_directories(${CYNG_LIBRARY_DIR}/$(ConfigurationName))
+    message(STATUS "** CYNG Libraries    : ${CYNG_LIBRARY_DIR}")
+endif()
+
+#
+#	Use CMake modules from CYNG project
+#
+get_filename_component(cyng_MODULE_PATH "${CYNG_ROOT}/src/modules/" REALPATH)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${cyng_MODULE_PATH}")
+message(STATUS "** CMake modules     : ${CMAKE_MODULE_PATH}")
+
+#
+#	setup compiler features
+#
+include(CPPFeatureSupport)
+
+#
 #	setup C++ compiler
 #
 if (CMAKE_COMPILER_IS_GNUCXX)
@@ -145,24 +196,19 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 	# C++17 since 7.0 (?)
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "4.8.1")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98") 
-		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_ON)
 		message(STATUS "** C++ support     : C++98")
 	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "5.5")
 	# crosscompile OECP with gcc 5.4.0 
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
-		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_ON)
 		message(STATUS "** C++ support     : C++11")
 	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "6.1")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
-		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_ON)
 		message(STATUS "** C++ support     : C++11")
 	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "7.0")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") 
-		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_OFF)
 		message(STATUS "** C++ support     : C++17")
 	else()
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") 
-		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_OFF)
 		message(STATUS "** C++ support     : C++17")
 	endif()
 	
@@ -178,14 +224,6 @@ elseif(MSVC)
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "18.0")
 	# 	prior Visual Studio 2013
 		message(FATAL_ERROR "Insufficient MSVC version")
-	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "19.12")
-	# Visual Studio 2017 15.6.0
-		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_OFF)
-	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "19.0")
-	#	after Visual Studio 2015
-		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_ON)
-	else()
-		set(${PROJECT_NAME}_LEGACY_MODE ${PROJECT_NAME}_LEGACY_MODE_ON)
 	endif()
 
 	# only static libraries
@@ -353,51 +391,6 @@ else()
     
 endif()
 
-#
-#	setup cyng library
-#   -DCYNG_ROOT:path=...
-#	assume parallel installation - that is both projects share the same parent directory.
-#
-if(NOT CYNG_ROOT)
-    set(CYNG_ROOT "${PROJECT_SOURCE_DIR}/../cyng" CACHE PATH "CYNG_ROOT")
-	message(STATUS "** Set CYNG_ROOT: ${CYNG_ROOT}")
-endif()
-
-get_filename_component(CYNG_INCLUDE_DIR "${CYNG_ROOT}/src/main/include" REALPATH)
-include_directories("${CYNG_INCLUDE_DIR}")
-message(STATUS "** CYNG include path : ${CYNG_INCLUDE_DIR}")
-
-#
-#	setup cyng build directory
-#   -DCYNG_BUILD:path=...
-#	assume parallel installation - that is both projects share the same parent directory.
-#
-if (NOT CYNG_BUILD)
-    set(CYNG_BUILD "${CYNG_ROOT}/build" CACHE PATH "CYNG_BUILD")
-	message(STATUS "** Set CYNG_BUILD: ${CYNG_BUILD}")
-endif()
-
-get_filename_component(CYNG_LIBRARY_DIR ${CYNG_BUILD} REALPATH)
-include_directories(${CYNG_LIBRARY_DIR})
-message(STATUS "** CYNG include path : ${CYNG_LIBRARY_DIR}")
-
-if (UNIX)
-    link_directories(${CYNG_LIBRARY_DIR})
-    message(STATUS "** CYNG Libraries    : ${CYNG_LIBRARY_DIR}")
-else()
-	#
-	#	$(ConfigurationName) is a variable used by the MS build system
-	#
-	link_directories(${CYNG_LIBRARY_DIR}/$(ConfigurationName))
-    message(STATUS "** CYNG Libraries    : ${CYNG_LIBRARY_DIR}")
-endif()
-
-#
-#	Use CMake modules from CYNG project
-#
-get_filename_component(cyng_MODULE_PATH "${CYNG_ROOT}/src/modules/" REALPATH)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${cyng_MODULE_PATH}")
-message(STATUS "** CMake modules     : ${CMAKE_MODULE_PATH}")
 
 #
 # libpugixml-dev (v1.8)
