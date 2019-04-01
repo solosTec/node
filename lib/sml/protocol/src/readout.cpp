@@ -17,8 +17,6 @@ namespace node
 {
 	namespace sml
 	{
-
-
 		readout::readout(boost::uuids::uuid pk)
 			: pk_(pk)
 			, idx_(0)

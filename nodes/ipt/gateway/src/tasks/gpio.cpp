@@ -34,17 +34,25 @@ namespace node
 
 	cyng::continuation gpio::run()
 	{
-		CYNG_LOG_INFO(logger_, "task #"
+#ifdef _DEBUG
+		CYNG_LOG_TRACE(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
 			<< "> counter: "
 			<< counter_);
+#endif
 
 		if (counter_ != 0) {
 			--counter_;
 			base_.suspend(ms_);
 
+            CYNG_LOG_DEBUG(logger_, "task #"
+                << base_.get_id()
+                << " <"
+                << base_.get_class_name()
+                << "> counter: "
+                << counter_);
 			//
 			//	last value of counter_ is 0 which turns the LED off
 			//
@@ -67,14 +75,6 @@ namespace node
 
 	cyng::continuation gpio::process(bool on)
 	{
-		CYNG_LOG_DEBUG(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> "
-            << path_
-            << (on ? " on" : " oj   off"));
-
         control(on);
 
 		//
@@ -108,6 +108,15 @@ namespace node
 		//	build complete path
 		//
 		auto const p = (path_ / "value").string();
+        
+		CYNG_LOG_DEBUG(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> "
+            << p
+            << (on ? " on" : " off"));
+        
 
 		std::fstream ifs(p, std::ios_base::in | std::ios_base::out);
 		if (ifs.is_open()) {
