@@ -169,6 +169,7 @@ namespace node
 	//
 	namespace wmbus
 	{
+		using namespace node::mbus;
 
 		//
 		//	parser
@@ -239,8 +240,9 @@ namespace node
 				break;
 			case STATE_CTRL_FIELD:
 				BOOST_ASSERT_MSG(c == 0x44, "unknown control field");
+				//	0x44 == Indicates message from primary station, function send / no reply(SND - NR)
 				stream_state_ = STATE_MANUFACTURER;
-				parser_state_ = manufacturer();
+				parser_state_ = manufacturer();	//	2 bytes
 				break;
 			case STATE_MANUFACTURER:
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
@@ -259,17 +261,42 @@ namespace node
 				break;
 			case STATE_DEV_TYPE:
 				media_ = boost::numeric_cast<std::uint8_t>(c);
-				server_id_[7] = media_;
+				server_id_[8] = media_;
 				stream_state_ = STATE_FRAME_TYPE;
 				break;
 			case STATE_FRAME_TYPE:
+				//	CI field of SND-NR frame
 				//	0x72, 0x78 or 0x7A expected
+				//	0x72: long data header
+				//	0x7A: short data header
+				//	0x78: no data header
 				BOOST_ASSERT(c == 0x72 || c == 0x78 || c == 0x7A || c == 0x7F);
 				frame_type_ = boost::numeric_cast<std::uint8_t>(c);
-				stream_state_ = STATE_FRAME_DATA;
+				switch (frame_type_) {
+				case FIELD_CI_HEADER_LONG:
+					stream_state_ = STATE_HEADER_LONG;
+					//	secondary address (8 bytes) + short header
+					//
+					break;
+				case FIELD_CI_HEADER_SHORT:
+					stream_state_ = STATE_HEADER_SHORT;
+					//	byte1: counter (EN 13757-)
+					//	byte2: status
+					//	byte3/4: configuration (encryption mode and number of encrypted bytes)
+					//
+					break;
+				case FIELD_CI_HEADER_NO:
+					stream_state_ = STATE_HEADER_NONE;
+					break;
+				default:
+					stream_state_ = STATE_ERROR;
+					break;
+				}
 				parser_state_ = frame_data(packet_size_);
 				break;
-			case STATE_FRAME_DATA:
+			case STATE_HEADER_LONG:
+			case STATE_HEADER_SHORT:
+			case STATE_HEADER_NONE:
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 				break;
 			default:
@@ -312,7 +339,7 @@ namespace node
 			v.u_.c_ = this->c_;
 			//std::cout << "protocol type: " << +v.u_.internal_.type_ << ", protocol version: " << +v.u_.internal_.ver_ << std::endl;
 			this->parser_.version_ = v.u_.internal_.ver_;
-			this->parser_.server_id_[8] = v.u_.internal_.ver_;
+			this->parser_.server_id_[7] = v.u_.internal_.ver_;
 			return STATE_DEV_TYPE;
 		}
 
@@ -458,7 +485,7 @@ namespace node
 
 				return STATE_LENGTH;
 			}
-			return STATE_FRAME_DATA;
+			return STATE_HEADER_NONE;
 		}
 	}
 }	//	node

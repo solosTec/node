@@ -1585,8 +1585,8 @@ namespace node
 					, child_list_tree(OBIS_CODE_IF_wMBUS, {
 
 						parameter_tree(OBIS_W_MBUS_PROTOCOL, make_value(protocol)),
-						parameter_tree(OBIS_W_MBUS_S_MODE, make_value(s_mode)),
-						parameter_tree(OBIS_W_MBUS_T_MODE, make_value(t_mode)),
+						parameter_tree(OBIS_W_MBUS_MODE_S, make_value(s_mode)),
+						parameter_tree(OBIS_W_MBUS_MODE_T, make_value(t_mode)),
 						parameter_tree(OBIS_W_MBUS_REBOOT, make_value(reboot)),
 						parameter_tree(OBIS_W_MBUS_POWER, make_value(power)),
 						parameter_tree(OBIS_W_MBUS_INSTALL_MODE, make_value(install_mode))

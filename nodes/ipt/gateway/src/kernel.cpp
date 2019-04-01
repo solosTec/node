@@ -487,8 +487,8 @@ namespace node
 					sml_gen_.get_proc_w_mbus_if(frame.at(1)
 						, frame.at(3)	//	server id
 						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_PROTOCOL.to_str()), "value")	//	protocol
-						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_S_MODE.to_str()), "value")	//	duration in seconds
-						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_T_MODE.to_str()), "value")	//	duration in seconds
+						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_MODE_S.to_str()), "value")	//	duration in seconds
+						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_MODE_T.to_str()), "value")	//	duration in seconds
 						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_REBOOT.to_str()), "value")	//	duration in seconds
 						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_POWER.to_str()), "value")	//	transmision power (transmission_power)
 						, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_INSTALL_MODE.to_str()), "value")

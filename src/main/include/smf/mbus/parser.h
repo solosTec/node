@@ -281,7 +281,12 @@ namespace node
 				STATE_DEV_VERSION,
 				STATE_DEV_TYPE,
 				STATE_FRAME_TYPE,
-				STATE_FRAME_DATA,
+				//	0x72: long data header
+				//	0x7A: short data header
+				//	0x78: no data header
+				STATE_HEADER_SHORT,
+				STATE_HEADER_LONG,
+				STATE_HEADER_NONE,
 			};
 
 			struct error {

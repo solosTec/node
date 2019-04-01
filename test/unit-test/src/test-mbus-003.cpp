@@ -43,8 +43,9 @@ namespace node
 		//>(frame);
 
 		//	get data
-		auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-003.bin";
+		//auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-003.bin";
 		//auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-004.bin";
+		auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-005.bin";
 		std::ifstream ifs(p.string(), std::ios::binary | std::ios::app);
 		if (ifs.is_open())
 		{

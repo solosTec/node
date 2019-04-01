@@ -750,7 +750,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
 				sml_gen.set_proc_parameter(queue_.front().get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_S_MODE }
+					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_MODE_S }
 					, queue_.front().get_user()
 					, queue_.front().get_pwd()
 					, val);
@@ -759,7 +759,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
 				sml_gen.set_proc_parameter(queue_.front().get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_T_MODE }
+					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_MODE_T }
 					, queue_.front().get_user()
 					, queue_.front().get_pwd()
 					, val);

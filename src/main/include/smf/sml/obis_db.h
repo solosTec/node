@@ -234,8 +234,12 @@ namespace node
 		//	81 06 19 07 00 FF, CODE_IF_wMBUS
 		//
 		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 01, FF, W_MBUS_PROTOCOL);
-		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 02, FF, W_MBUS_S_MODE);	//	u8
-		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 03, FF, W_MBUS_T_MODE);	//	u8
+		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 02, FF, W_MBUS_MODE_S);	//	u8
+		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 03, FF, W_MBUS_MODE_T);	//	u8
+		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 04, FF, W_MBUS_MODE_C);	//	alternating
+		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 05, FF, W_MBUS_MODE_N);	//	parallel
+		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 06, FF, W_MBUS_MODE_S_SYN);	//	Used for synchronized messages in meters
+
 		const static obis	DEFINE_OBIS_CODE(81, 06, 27, 32, 03, 01, W_MBUS_REBOOT);	//	u32
 		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 04, FF, W_MBUS_POWER);
 		const static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 11, FF, W_MBUS_INSTALL_MODE);

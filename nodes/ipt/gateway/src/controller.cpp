@@ -287,9 +287,9 @@ namespace node
 						cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 						cyng::param_factory("speed", 115200),
 
-						cyng::param_factory(sml::OBIS_W_MBUS_PROTOCOL.to_str(), static_cast<std::uint8_t>(mbus::S_MODE)),	//	0 = T-Mode, 1 = S-Mode, 2 = S/T Automatic
-						cyng::param_factory(sml::OBIS_W_MBUS_S_MODE.to_str(), 30),	//	seconds
-						cyng::param_factory(sml::OBIS_W_MBUS_T_MODE.to_str(), 20),	//	seconds
+						cyng::param_factory(sml::OBIS_W_MBUS_PROTOCOL.to_str(), static_cast<std::uint8_t>(mbus::MODE_S)),	//	0 = T-Mode, 1 = S-Mode, 2 = S/T Automatic
+						cyng::param_factory(sml::OBIS_W_MBUS_MODE_S.to_str(), 30),	//	seconds
+						cyng::param_factory(sml::OBIS_W_MBUS_MODE_T.to_str(), 20),	//	seconds
 						cyng::param_factory(sml::OBIS_W_MBUS_REBOOT.to_str(), 0),	//	0 = no reboot
 						cyng::param_factory(sml::OBIS_W_MBUS_POWER.to_str(), static_cast<std::uint8_t>(mbus::STRONG)),	//	low, basic, average, strong (unused)
 						cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str(), true),	//	install mode
@@ -897,17 +897,17 @@ namespace node
 			//	get wireless M-Bus default configuration
 			//
 // 			auto const radio_protocol = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_PROTOCOL.to_str()), static_cast<std::uint8_t>(1));
-			auto const radio_protocol = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_PROTOCOL.to_str()), static_cast<std::uint8_t>(mbus::S_MODE));
+			auto const radio_protocol = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_PROTOCOL.to_str()), static_cast<std::uint8_t>(mbus::MODE_S));
 			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_PROTOCOL.to_str() << " (OBIS_W_MBUS_PROTOCOL): " << +radio_protocol);
 			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_PROTOCOL.to_str()), cyng::table::data_generator(radio_protocol), 1, tag);
 
-			auto const s_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_S_MODE.to_str()), 30u);
-			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_S_MODE.to_str() << " (OBIS_W_MBUS_S_MODE): " << s_mode << " seconds");
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_S_MODE.to_str()), cyng::table::data_generator(s_mode), 1, tag);
+			auto const s_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_MODE_S.to_str()), 30u);
+			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_MODE_S.to_str() << " (OBIS_W_MBUS_MODE_S): " << s_mode << " seconds");
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_MODE_S.to_str()), cyng::table::data_generator(s_mode), 1, tag);
 
-			auto const t_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_T_MODE.to_str()), 20u);
-			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_T_MODE.to_str() << " (OBIS_W_MBUS_T_MODE): " << t_mode << " seconds");
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_T_MODE.to_str()), cyng::table::data_generator(t_mode), 1, tag);
+			auto const t_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_MODE_T.to_str()), 20u);
+			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_MODE_T.to_str() << " (OBIS_W_MBUS_MODE_T): " << t_mode << " seconds");
+			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_MODE_T.to_str()), cyng::table::data_generator(t_mode), 1, tag);
 
 			auto const reboot = cyng::numeric_cast<std::uint32_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_REBOOT.to_str()), 20u);
 			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_REBOOT.to_str() << " (OBIS_W_MBUS_REBOOT): " << reboot << " seconds, " << (reboot / 3600) << " h");

@@ -33,3 +33,5 @@
 /.vs
 /test/unit-test/src/samples/mbus-005.bin
 /build
+/test/unit-test/src/samples/mbus.log
+/test/unit-test/src/samples/mbus.ipp

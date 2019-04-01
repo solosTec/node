@@ -602,8 +602,8 @@ namespace node
 					, from_server_id(ro_.server_id_)
 					, OBIS_CODE_IF_wMBUS.to_buffer()	//	same as path.front()
 					, ro_.get_value(OBIS_W_MBUS_PROTOCOL)	//	protocol
-					, ro_.get_value(OBIS_W_MBUS_S_MODE)	//	S2 mode in seconds (30)
-					, ro_.get_value(OBIS_W_MBUS_T_MODE)	//	T2 mode in seconds (20)
+					, ro_.get_value(OBIS_W_MBUS_MODE_S)	//	S2 mode in seconds (30)
+					, ro_.get_value(OBIS_W_MBUS_MODE_T)	//	T2 mode in seconds (20)
 					, ro_.get_value(OBIS_W_MBUS_REBOOT)	//	automatic reboot in seconds (86400)
 					, ro_.get_value(OBIS_W_MBUS_POWER)	//	0
 					, ro_.get_value(OBIS_W_MBUS_INSTALL_MODE)	//	installation mode (true)
