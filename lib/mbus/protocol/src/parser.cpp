@@ -7,6 +7,7 @@
 #include <smf/mbus/parser.h>
 #include <smf/mbus/defs.h>
 #include <cyng/vm/generator.h>
+#include <cyng/util/slice.hpp>
 #include <iostream>
 #include <sstream>
 #include <ios>
@@ -185,6 +186,7 @@ namespace node
 			, version_(0)
 			, media_(0)
 			, dev_id_(0)
+			//, crc_(0)
 			, server_id_()
 #ifdef _DEBUG
 			, meter_set_()
@@ -203,7 +205,12 @@ namespace node
 #ifdef _DEBUG
 			std::cout << meter_set_.size() << " meter(s) read" << std::endl;
 			for (auto m : meter_set_) {
-				std::cout << m << std::endl;
+				std::cout 
+					<< std::dec
+					<< std::setfill('0')
+					<< std::setw(8)
+					<< m
+					<< std::endl;
 			}
 #endif
 		}
@@ -221,7 +228,12 @@ namespace node
 #ifdef _DEBUG
 			std::cout << meter_set_.size() << " meter(s) read" << std::endl;
 			for (auto m : meter_set_) {
-				std::cout << m << std::endl;
+				std::cout
+					<< std::dec
+					<< std::setfill('0')
+					<< std::setw(8)
+					<< m
+					<< std::endl;
 			}
 			meter_set_.clear();
 #endif
@@ -240,9 +252,17 @@ namespace node
 				break;
 			case STATE_CTRL_FIELD:
 				BOOST_ASSERT_MSG(c == 0x44, "unknown control field");
-				//	0x44 == Indicates message from primary station, function send / no reply(SND - NR)
-				stream_state_ = STATE_MANUFACTURER;
-				parser_state_ = manufacturer();	//	2 bytes
+				switch (c) {
+				case CTRL_FIELD_SND_NR:
+					//	0x44 == Indicates message from primary station, function send / no reply(SND - NR)
+					stream_state_ = STATE_MANUFACTURER;
+					parser_state_ = manufacturer();	//	2 bytes
+					break;
+				case CTRL_FIELD_SND_IR: 					//	0x46 == Send manually initiated installation data (Send Installation Request)				case CTRL_FIELD_ACC_NR: 					//	0x47 == Contains no data – signals an empty transmission or provides the opportunity to access the bidirectional meter, between two application data transmissions				case CTRL_FIELD_ACC_DMD: 					//	0x48 == Access demand to master in order to request new important application data (alerts)					break;
+				default:
+					stream_state_ = STATE_ERROR;
+					break;
+				}
 				break;
 			case STATE_MANUFACTURER:
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
@@ -252,44 +272,50 @@ namespace node
 				break;
 			case STATE_DEV_ID:
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
-				if (stream_state_ == STATE_DEV_VERSION) {
-					parser_state_ = dev_version();
-				}
 				break;
 			case STATE_DEV_VERSION:
-				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
+				version_ = boost::numeric_cast<std::uint8_t>(c);
+				server_id_[7] = version_;
+				stream_state_ = STATE_DEV_TYPE;
 				break;
 			case STATE_DEV_TYPE:
 				media_ = boost::numeric_cast<std::uint8_t>(c);
 				server_id_[8] = media_;
 				stream_state_ = STATE_FRAME_TYPE;
+				//stream_state_ = STATE_CRC;
+				//parser_state_ = crc();
 				break;
+			//case STATE_CRC:
+			//	stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
+			//	break;
 			case STATE_FRAME_TYPE:
 				//	CI field of SND-NR frame
 				//	0x72, 0x78 or 0x7A expected
 				//	0x72: long data header
 				//	0x7A: short data header
 				//	0x78: no data header
-				BOOST_ASSERT(c == 0x72 || c == 0x78 || c == 0x7A || c == 0x7F);
 				frame_type_ = boost::numeric_cast<std::uint8_t>(c);
 				switch (frame_type_) {
-				case FIELD_CI_HEADER_LONG:
+				case FIELD_CI_HEADER_LONG:	//	0x72
 					stream_state_ = STATE_HEADER_LONG;
 					//	secondary address (8 bytes) + short header
 					//
 					break;
-				case FIELD_CI_HEADER_SHORT:
+				case FIELD_CI_HEADER_SHORT:	//	0x7A
 					stream_state_ = STATE_HEADER_SHORT;
 					//	byte1: counter (EN 13757-)
 					//	byte2: status
 					//	byte3/4: configuration (encryption mode and number of encrypted bytes)
 					//
 					break;
-				case FIELD_CI_HEADER_NO:
+				case FIELD_CI_HEADER_NO:	//	 0x78
 					stream_state_ = STATE_HEADER_NONE;
 					break;
+				case FIELD_CI_NULL:	//	0xFF
 				default:
-					stream_state_ = STATE_ERROR;
+					BOOST_ASSERT(c == 0x72 || c == 0x78 || c == 0x7A || c == 0x7F);
+					//stream_state_ = STATE_ERROR;
+					stream_state_ = STATE_HEADER_NONE;
 					break;
 				}
 				parser_state_ = frame_data(packet_size_);
@@ -334,14 +360,14 @@ namespace node
 			return STATE_MANUFACTURER;
 		}
 
-		parser::state parser::state_visitor::operator()(dev_version& v) const
-		{
-			v.u_.c_ = this->c_;
-			//std::cout << "protocol type: " << +v.u_.internal_.type_ << ", protocol version: " << +v.u_.internal_.ver_ << std::endl;
-			this->parser_.version_ = v.u_.internal_.ver_;
-			this->parser_.server_id_[7] = v.u_.internal_.ver_;
-			return STATE_DEV_TYPE;
-		}
+		//parser::state parser::state_visitor::operator()(dev_version& v) const
+		//{
+		//	v.u_.c_ = this->c_;
+		//	//std::cout << "protocol type: " << +v.u_.internal_.type_ << ", protocol version: " << +v.u_.internal_.ver_ << std::endl;
+		//	this->parser_.version_ = v.u_.internal_.ver_;
+		//	this->parser_.server_id_[7] = v.u_.internal_.ver_;
+		//	return STATE_DEV_TYPE;
+		//}
 
 		parser::state parser::state_visitor::operator()(dev_id& v) const
 		{
@@ -368,12 +394,36 @@ namespace node
 				//
 				ss >> std::setbase(10) >> this->parser_.dev_id_;
 #ifdef _DEBUG
-				this->parser_.meter_set_.emplace(this->parser_.dev_id_);
+				if (this->parser_.meter_set_.find(this->parser_.dev_id_) == this->parser_.meter_set_.end()) {
+					this->parser_.meter_set_.emplace(this->parser_.dev_id_);
+					std::cout
+						<< "new meter: "
+						<< std::dec
+						<< std::setfill('0')
+						<< std::setw(8)
+						<< this->parser_.dev_id_
+						<< std::endl
+						;
+				}
 #endif
 				return STATE_DEV_VERSION;
 			}
 			return STATE_DEV_ID;
 		}
+
+		//parser::state parser::state_visitor::operator()(crc& v) const
+		//{
+		//	v.data_[v.pos_++] = this->c_;
+		//	if (v.pos_ == v.data_.size()) {
+
+		//		//
+		//		//	CRC complete
+		//		//
+		//		this->parser_.crc_ = cyng::slicer<std::uint16_t, 0>(v.data_);
+		//		return STATE_FRAME_TYPE;
+		//	}
+		//	return STATE_CRC;
+		//}
 
 		parser::frame_data::frame_data(std::size_t size)
 			: size_(size - 10)
@@ -474,7 +524,7 @@ namespace node
 			if (v.size_ == 0) {
 				//std::cout << "frame with " << v.data_.size() << " bytes complete" << std::endl;
 
-				parser_.cb_(cyng::generate_invoke("mbus.push.frame"
+				parser_.cb_(cyng::generate_invoke("wmbus.push.frame"
 					, cyng::buffer_t(this->parser_.server_id_.begin(), this->parser_.server_id_.end())
 					, this->parser_.manufacturer_
 					, this->parser_.version_

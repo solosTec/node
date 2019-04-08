@@ -710,7 +710,7 @@ target_link_libraries(emitter ${emitter_link_libs})
 include (nodes/ipt/gateway/prg.cmake)
 add_executable(gateway ${node_ipt_gateway})
 # libraries to link
-set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_store cyng_table cyng_domain cyng_sys cyng_rnd smf_protocol_ipt smf_bus_ipt smf_bus_sml smf_bus_serial smf_protocol_mbus)
+set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_store cyng_table cyng_domain cyng_sys cyng_rnd cyng_crypto smf_protocol_ipt smf_bus_ipt smf_bus_sml smf_bus_serial smf_protocol_mbus  ${OPENSSL_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 #-- ** Boost Libraries  : /home/sol/projects/install/x64/boost/lib/libboost_thread.so;/home/sol/projects/install/x64/boost/lib/libboost_system.so;/home/sol/projects/install/x64/boost/lib/libboost_filesystem.so;/home/sol/projects/install/x64/boost/lib/libboost_program_options.so;/home/sol/projects/install/x64/boost/lib/libboost_random.so;/home/sol/projects/install/x64/boost/lib/libboost_unit_test_framework.so;/home/sol/projects/install/x64/boost/lib/libboost_chrono.so;/usr/lib/x86_64-linux-gnu/libpthread.so
 #    list(APPEND gateway_link_libs "${Boost_LIBRARIES}")
@@ -749,7 +749,7 @@ target_link_libraries(ipt ${ipt_link_libs})
 include (nodes/ipt/store/prg.cmake)
 add_executable(store ${node_ipt_store})
 # libraries to link
-set(store_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_xml cyng_sys smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_iec)
+set(store_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_db cyng_sql cyng_store cyng_table cyng_xml cyng_sys smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_iec smf_protocol_mbus)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND store_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -947,14 +947,14 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 		TARGET unit_test
 		PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
 
-	set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_mbus smf_bus_serial)
+	set(unittest_link_libs cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_domain cyng_sql cyng_json cyng_parser cyng_mail cyng_crypto cyng_sys cyng_db cyng_table cyng_xml smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_mbus smf_bus_serial  ${OPENSSL_LIBRARIES})
 
 	if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 		list(APPEND unittest_link_libs cyng_xml)
 	endif()
 
 	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-		list(APPEND unittest_link_libs ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES})
+		list(APPEND unittest_link_libs ${Boost_LIBRARIES})
 	else()
 		if(WIN32)
 			list(APPEND unittest_link_libs odbc32.lib cyng_sqlite3)

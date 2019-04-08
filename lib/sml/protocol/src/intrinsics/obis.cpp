@@ -6,7 +6,9 @@
  */
 
 #include <smf/sml/intrinsics/obis.h>
-#include <smf/sml/units.h>
+//#include <smf/sml/units.h>
+#include <smf/mbus/units.h>
+
 #include <cyng/io/io_buffer.h>
 #include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
@@ -294,7 +296,7 @@ namespace node
 
 		bool obis::is_physical_unit() const
 		{
-			return (get_medium() < UNIT_RESERVED) && (get_medium() != 0);
+			return (get_medium() < node::mbus::UNIT_RESERVED) && (get_medium() != 0);
 		}
 
 		octet_type obis::to_buffer() const

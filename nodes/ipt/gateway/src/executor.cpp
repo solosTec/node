@@ -13,6 +13,7 @@
 
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/intrinsics/buffer.h>
+#include <cyng/crypto/aes.h>
 
 #include <boost/uuid/random_generator.hpp>
 #include <boost/algorithm/string.hpp>
@@ -93,6 +94,10 @@ namespace node
 		{
 			if (boost::algorithm::equals(table->meta().get_name(), "mbus-devices")) {
 
+				//
+				//	ToDo: handle M-Bus devices
+				//
+				;
 			}
 			else if (boost::algorithm::equals(table->meta().get_name(), "push.ops")) {
 
@@ -126,6 +131,10 @@ namespace node
 		{
 			if (boost::algorithm::equals(table->meta().get_name(), "mbus-devices")) {
 
+				//
+				//	ToDo: handle M-Bus devices
+				//
+				;
 			}
 			else if (boost::algorithm::equals(table->meta().get_name(), "push.ops")) {
 
@@ -140,6 +149,10 @@ namespace node
 		{
 			if (boost::algorithm::equals(table->meta().get_name(), "mbus-devices")) {
 
+				//
+				//	ToDo: handle M-Bus devices
+				//
+				;
 			}
 			else if (boost::algorithm::equals(table->meta().get_name(), "push.ops")) {
 
@@ -163,6 +176,10 @@ namespace node
 
 			if (boost::algorithm::equals(table->meta().get_name(), "mbus-devices")) {
 
+				//
+				//	ToDo: handle M-Bus devices
+				//
+				;
 			}
 			else if (boost::algorithm::equals(table->meta().get_name(), "push.ops")) {
 
@@ -175,57 +192,91 @@ namespace node
 		void executor::init_db(boost::uuids::uuid tag, cyng::mac48 mac)
 		{
 #ifdef _DEBUG
+			cyng::crypto::aes_128_key aes_key;
+			cyng::crypto::aes::randomize(aes_key);
+
 			//	insert demo device
 			config_db_.insert("mbus-devices"
 				, cyng::table::key_generator(sml::to_gateway_srv_id(mac))
 				, cyng::table::data_generator(std::chrono::system_clock::now()
 					, "---"
-					, true	//	visible
+					//, true	//	visible
 					, false	//	active
 					, "demo entry"
 					, 0ull	//	status
 					, cyng::buffer_t{ 0, 0 }	//	mask
 					, 26000ul	//	interval
 					, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-					, cyng::buffer_t{}	//	aes
+					, aes_key	//	random AES key
 					, "user"
 					, "pwd")
 				, 1	//	generation
 				, tag);
 
+			//
+			//	01-a815-74314504-01-02 - Electricity (ED300L)
+			//	AES Key : 23 A8 4B 07 EB CB AF 94 88 95 DF 0E 91 33 52 0D
+			//	IV: a8 15 74 31 45 04 01 02 ....
+			//
+			aes_key.key_ = { 0x23, 0xA8, 0x4B, 0x07, 0xEB, 0xCB, 0xAF, 0x94, 0x88, 0x95, 0xDF, 0x0E, 0x91, 0x33, 0x52, 0x0D };
 			config_db_.insert("mbus-devices"
 				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }))
 				, cyng::table::data_generator(std::chrono::system_clock::now()
 					, "---"
-					, true	//	visible
+					//, true	//	visible
 					, true	//	active
 					, "01 A8 15 74 31 45 05 01 02"
 					, 0ull	//	status
 					, cyng::buffer_t{ 0, 0 }	//	mask
 					, 26000ul	//	interval
 					, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-					, cyng::buffer_t{}	//	aes
+					, aes_key	//	random AES key
 					, "user"
 					, "pwd")
 				, 1	//	generation
 				, tag);
 
+			cyng::crypto::aes::randomize(aes_key);
 			config_db_.insert("mbus-devices"
 				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x73, 0x31, 0x45, 0x04, 0x01, 0x02 }))
 				, cyng::table::data_generator(std::chrono::system_clock::now()
 					, "---"
-					, true	//	visible
+					//, true	//	visible
 					, false	//	active
 					, "01 E6 1E 74 31 45 05 01 02"
 					, 0ull	//	status
 					, cyng::buffer_t{ 0, 0 }	//	mask
 					, 26000ul	//	interval
 					, cyng::make_buffer({ 0x18, 0x01, 0x16, 0x05, 0xE6, 0x1E, 0x0D, 0x02, 0xBF, 0x0C, 0xFA, 0x35, 0x7D, 0x9E, 0x77, 0x03 })	//	pubKey
-					, cyng::buffer_t{}	//	aes
+					, aes_key	//	random AES key
 					, "user"
 					, "pwd")
 				, 1	//	generation
 				, tag);
+
+			//
+			//	GWF: Gas - 01-e61e-29436587-bf-03 over 01-2423-96072000-63-0e - Bus / System component
+			//	Hydrometer Funkmodule (Gas-, Wasserfunkmodule) AES Key: 51 72 89 10 E6 6D 83 F8 51 72 89 10 E6 6D 83 F8
+			//	IV: e6 1e 29 43 65 87 bf 03 ....
+			//
+			aes_key.key_ = { 0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8, 0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8 };
+			config_db_.insert("mbus-devices"
+				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x29, 0x43, 0x65, 0x87, 0xbf, 0x03 }))
+				, cyng::table::data_generator(std::chrono::system_clock::now()
+					, "---"
+					//, true	//	visible
+					, true	//	active
+					, "GWF gas meter 87654329"
+					, 0ull	//	status
+					, cyng::buffer_t{ 0, 0 }	//	mask
+					, 26000ul	//	interval
+					, cyng::make_buffer({ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })	//	pubKey
+					, aes_key	//	random AES key
+					, "user"
+					, "pwd")
+				, 1	//	generation
+				, tag);
+
 
 			auto const b = config_db_.insert("iec62056-21-devices"
 				, cyng::table::key_generator("1EMH0005513895")

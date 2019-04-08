@@ -9,8 +9,9 @@
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/srv_id_io.h>
-#include <smf/sml/units.h>
+//#include <smf/sml/units.h>
 #include <smf/sml/scaler.h>
+#include <smf/mbus/units.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
@@ -512,7 +513,7 @@ namespace node
 				<< ";"
 				<< cyng::io::to_str(ro_.get_value("value"))
 				<< ";"
-				<< get_unit_name(unit)
+				<< node::mbus::get_unit_name(unit)
 				<< std::endl
 				;
 		}

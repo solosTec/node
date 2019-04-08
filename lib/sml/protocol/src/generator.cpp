@@ -774,25 +774,23 @@ namespace node
 			const cyng::buffer_t tmp;
 			tbl->loop([&](cyng::table::record const& rec)->bool {
 
-				if (cyng::value_cast(rec["visible"], false)) {
 
-					tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x10, 0x06, 0x01, tpl.size() + 1), {
-						parameter_tree(OBIS_CODE(81, 81, C7, 82, 04, FF), make_value(cyng::value_cast(rec["serverID"], tmp))),
-						parameter_tree(OBIS_CODE(81, 81, C7, 82, 02, FF), make_value(cyng::value_cast<std::string>(rec["class"], ""))),
-						//	timestamp (01 00 00 09 0B 00 )
-						parameter_tree(OBIS_CURRENT_UTC, make_value(cyng::value_cast(rec["lastSeen"], std::chrono::system_clock::now())))
-					})));
+				tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x10, 0x06, 0x01, tpl.size() + 1), {
+					parameter_tree(OBIS_CODE(81, 81, C7, 82, 04, FF), make_value(cyng::value_cast(rec["serverID"], tmp))),
+					parameter_tree(OBIS_CODE(81, 81, C7, 82, 02, FF), make_value(cyng::value_cast<std::string>(rec["class"], ""))),
+					//	timestamp (01 00 00 09 0B 00 )
+					parameter_tree(OBIS_CURRENT_UTC, make_value(cyng::value_cast(rec["lastSeen"], std::chrono::system_clock::now())))
+				})));
 
-					//
-					//	start new list
-					//
-					if (tpl.size() == 0xFE)
-					{
-						list.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x10, 0x06, list.size() + 1, 0xFF), tpl)));
-						tpl.clear();
-					}
-					BOOST_ASSERT_MSG(list.size() < 0xFA, "visible device list to large");
+				//
+				//	start new list
+				//
+				if (tpl.size() == 0xFE)
+				{
+					list.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x10, 0x06, list.size() + 1, 0xFF), tpl)));
+					tpl.clear();
 				}
+				BOOST_ASSERT_MSG(list.size() < 0xFA, "visible device list to large");
 				return true;	//	continue
 			});
 

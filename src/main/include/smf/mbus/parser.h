@@ -280,6 +280,7 @@ namespace node
 				STATE_DEV_ID,
 				STATE_DEV_VERSION,
 				STATE_DEV_TYPE,
+				//STATE_CRC,
 				STATE_FRAME_TYPE,
 				//	0x72: long data header
 				//	0x7A: short data header
@@ -303,16 +304,28 @@ namespace node
 
 			};
 			struct manufacturer : base<2> {};
-			struct dev_version {
-				union {
-					struct {
-						std::uint8_t type_ : 2;
-						std::uint8_t ver_ : 6;
-					} internal_;
-					char c_;
-				} u_;
-			};
 			struct dev_id : base<4> {};
+			//struct crc : base<2> {};
+
+			/**
+			 * Transport Layer (TPL)
+			 */
+			struct frame_short {
+				/**
+				 * The Access Number together with the transmitter address is used to identify a datagram.
+				 */
+				std::uint8_t access_nr_;
+
+				/**
+				 * It will be distinguished between:
+				 * > Gateway Status (applied with CI-Field 5Ah, 5Bh, 60h, 61h, 64h, 65h, 6Ch, 6Dh or 80h)
+				 * > Meter Status (applied with CI-Field 6Eh, 6Fh, 72h, 74h, 75h, 7Ah, 7Ch, 7Dh, 7Eh, 7Fh, 8Ah or 8Bh)
+				 */
+				std::uint8_t status_;
+
+				std::uint16_t cfg_;
+				std::uint8_t aes_[2];
+			};
 
 			struct frame_data {
 				std::size_t size_;
@@ -331,8 +344,8 @@ namespace node
 
 			using parser_state_t = boost::variant<error
 				, manufacturer
-				, dev_version
 				, dev_id
+				//, crc
 				, frame_data>;
 
 			//
@@ -343,8 +356,9 @@ namespace node
 				state_visitor(parser&, char c);
 				state operator()(error&) const;
 				state operator()(manufacturer&) const;
-				state operator()(dev_version&) const;
+				//state operator()(dev_version&) const;
 				state operator()(dev_id&) const;
+				//state operator()(crc&) const;
 				state operator()(frame_data&) const;
 
 				parser& parser_;
@@ -436,6 +450,7 @@ namespace node
 			std::uint8_t version_;
 			std::uint8_t media_;
 			std::uint32_t dev_id_;
+			//std::uint16_t crc_;
 			std::uint8_t frame_type_;
 			/**
 			 * [0] 1 byte 01/02 01 == wireless, 02 == wired

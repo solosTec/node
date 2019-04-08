@@ -82,6 +82,12 @@ namespace node
 		std::uint16_t get_manufacturer_code(cyng::buffer_t const&);
 
 		/**
+		 * Extract mdium code from M-Bus format.
+		 */
+		std::uint8_t get_medium_code(cyng::buffer_t const&);
+
+
+		/**
 		 * Build a server ID for a gateway by inserting 0x05 in front 
 		 * of the buffer.
 		 */

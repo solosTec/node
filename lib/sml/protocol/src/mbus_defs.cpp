@@ -192,40 +192,58 @@ namespace node
 			const std::uint16_t code = static_cast<unsigned char>(c1) + (static_cast<unsigned char>(c2) << 8);
 			return get_manufacturer_name(code);
 		}
-		
-		std::string get_medium_name(std::uint8_t m)	
+	}	//	sml
+
+	namespace mbus
+	{
+		std::string get_medium_name(std::uint8_t m)
 		{
 			switch (m)
 			{
-			case 0: return "other";
-			case 1: return "oil";
-			case 2: return "electricity";
-			case 3: return "gas";
-			case 4: return "heat (return)";  //  (Wärme-Rücklauf)
-			case 5: return "steam";
-			case 6: return "water (warm)";	//	(30°C-90°C)
-			case 7: return "water";
-			case 8: return "heat cost allocator";
-			case 9: return "compressed air";
-			case 0xA:   return "gas (mode 2)";	//	cooling load meter
-			case 0xB:   return "heat (mode 2)";	//	cooling load meter
-			case 0xC:   return "water (hot - mode 2)";  // (Wärme-Vorlauf)
-			case 0xD:   return "water (cold - mode 2)";
-			case 0xE:   return "heat cost allocator (mode 2)";	//	bus
-			case 0xF:   return "unknown";
-			case 0x15:	return "water (hot)";	//	 (>=90°C)
-			case 0x16:	return "water (cold)";
-			case 0x17:	return "water (dual)";	//	Dual register (hot/cold) Water meter 
-			case 0x18:	return "pressure";
-			case 0x19:	return "A/D converter";
+			case DEV_TYPE_OTHER: return "other";
+			case DEV_TYPE_OIL: return "Oil";
+			case DEV_TYPE_ELECTRICITY: return "Electricity";
+			case DEV_TYPE_GAS: return "Gas";
+			case DEV_TYPE_HEAT: return "Heat";
+			case DEV_TYPE_STEAM: return "Steam";
+			case DEV_TYPE_WARM_WATER: return "Warm Water (30C...90C)";
+			case DEV_TYPE_WATER: return "Water";
+			case DEV_TYPE_HEAT_COST_ALLOCATOR: return "Heat Cost Allocator";
+			case DEV_TYPE_COMPRESSED_AIR: return "Compressed Air";
+			case DEV_TYPE_CLM_OUTLET: return "Cooling load meter (Volume measured at return temperature: outlet)";
+			case DEV_TYPE_CLM_INLET: return "Cooling load meter (Volume measured at flow temperature: inlet)";
+			case DEV_TYPE_HEAT_INLET: return "Heat (Volume measured at flow temperature: inlet)";
+			case DEV_TYPE_HEAT_COOLING_LOAD_METER: return "Heat / Cooling load meter";
+			case DEV_TYPE_BUS_SYSTEM_COMPONENT: return "Bus / System component";
+			case DEV_TYPE_UNKNOWN_MEDIUM: return "Unknwon medium";
+				// 0x10 to 0x14 reserved
+			case DEV_TYPE_HOT_WATER: return "Hot water (>=90C)";
+			case DEV_TYPE_COLD_WATER: return "Cold water";
+			case DEV_TYPE_DUAL_REGISTER_WATER_METER: return "Dual register (hot/cold) Water Meter";
+			case DEV_TYPE_PRESSURE: return "Pressure meter";
+			case DEV_TYPE_AD_CONVERTER: return "A/D Converter";
+			case DEV_TYPE_SMOKE_DETECTOR: return "Smoke detector";
+			case DEV_TYPE_ROOM_SENSOR: return "Room sensor  (e.g. temperature or humidity)";
+			case DEV_TYPE_GAS_DETECTOR: return "Gas detector";
+				// 0x1A to 0x20 reserved
+			case DEV_TYPE_VALVE: return "Reserved for valve";
+				// 0x22 to 0xFF reserved
+			case DEV_TYPE_DISPLAY: return "Display device (OMS Vol.2 Issue 2.0.02009-07-20)";
+			case DEV_TYPE_MUC: return "OMS MUC (OMS Vol.2 Issue 2.0.02009-07-20)";
+			case DEV_TYPE_REPEATER_UNIDIRECTIONAL: return "OMS unidirectional repeater (OMS Vol.2 Issue 2.0.02009-07-20)";
+			case DEV_TYPE_REPEATER_BIDIRECTIONAL: return "OMS bidirectional repeater (OMS Vol.2 Issue 2.0.02009-07-20)";
+			case DEV_TYPE_SM_ELECTRICITY: return "Smart Metering Electricity Meter (OMS Vol.2 Issue 2.0.02009-07-20)";
+			case DEV_TYPE_SM_GAS: return "Smart Metering Gas Meter (OMS Vol.2 Issue 2.0.02009-07-20)";
+			case DEV_TYPE_SM_HEAT: return "Smart Metering Heat Meter (OMS Vol.2 Issue 2.0.02009-07-20)";
+			case DEV_TYPE_SM_WATER: return "Smart Metering Water Meter (OMS Vol.2 Issue 2.0.02009-07-20)";
+			case DEV_TYPE_SM_HCALLOC: return "Smart Metering Heat Cost Allocator (OMS Vol.2 Issue 2.0.02009-07-20)";
 			default:
 				break;
 			}
 			return "reserved";
 		}
-		
 
-	}	//	mbus
+	}
 }	//	node
 
 

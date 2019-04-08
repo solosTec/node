@@ -9,9 +9,9 @@
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/srv_id_io.h>
-#include <smf/sml/units.h>
 #include <smf/sml/scaler.h>
 #include <smf/mbus/defs.h>
+#include <smf/mbus/units.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
@@ -591,7 +591,7 @@ namespace node
 		std::uint8_t xml_exporter::read_unit(pugi::xml_node node, cyng::object obj)
 		{
 			std::uint8_t unit = cyng::value_cast<std::uint8_t>(obj, 0);
-			node.append_attribute("type").set_value(get_unit_name(unit));
+			node.append_attribute("type").set_value(node::mbus::get_unit_name(unit));
 			node.append_child(pugi::node_pcdata).set_value(std::to_string(+unit).c_str());
 			return unit;
 		}

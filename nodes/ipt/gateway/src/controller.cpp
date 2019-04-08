@@ -36,6 +36,8 @@
 #include <cyng/store/db.h>
 #include <cyng/table/meta.hpp>
 #include <cyng/rnd.h>
+#include <cyng/crypto/aes.h>
+
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/service.hpp>
 #endif
@@ -756,19 +758,22 @@ namespace node
 			if (r.second) {
 
 				auto const interval = cyng::numeric_cast<std::uint32_t>(dom.get("interval"), 26000ul);
+
+				cyng::crypto::aes_128_key aes_key;
+				cyng::crypto::aes::randomize(aes_key);
 				
 				if (config_db.insert("mbus-devices"
 					, cyng::table::key_generator(r.first)
 					, cyng::table::data_generator(std::chrono::system_clock::now()
 						, "---"
-						, true	//	visible
+						//, true	//	visible
 						, false	//	active
 						, "virtual meter"
 						, 0ull	//	status
 						, cyng::buffer_t{ 0, 0 }	//	mask
 						, interval	//	interval
 						, cyng::make_buffer({ 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F })	//	pubKey
-						, cyng::buffer_t{}	//	aes
+						, aes_key	//	random AES key
 						, "user"
 						, "pwd")
 					, 1	//	generation

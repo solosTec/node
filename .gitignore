@@ -35,3 +35,5 @@
 /build
 /test/unit-test/src/samples/mbus.log
 /test/unit-test/src/samples/mbus.ipp
+/test/unit-test/src/samples/mbus-snd-nr.bin
+/test/unit-test/src/samples/mbus-005-old.bin

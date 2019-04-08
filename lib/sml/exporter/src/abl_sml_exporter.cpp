@@ -9,8 +9,8 @@
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/srv_id_io.h>
-#include <smf/sml/units.h>
 #include <smf/sml/scaler.h>
+#include <smf/mbus/units.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
@@ -568,11 +568,11 @@ namespace node
 
 				//	7-1:3.0.0*255(58634.69*m3)
 				//	0-1:97.97.0*255(0)
-				if (unit != COUNT)
+				if (unit != node::mbus::COUNT)
 				{
 					of
 						<< '*'
-						<< get_unit_name(unit)
+						<< node::mbus::get_unit_name(unit)
 						;
 				}
 

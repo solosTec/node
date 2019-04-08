@@ -44,8 +44,8 @@ namespace node
 				, bool accept_all);
 
 			/**
-			* reset kernel
-			*/
+			 * reset kernel
+			 */
 			void reset();
 
 		private:
@@ -92,7 +92,7 @@ namespace node
 			/**
 			 *	callback from wireless LMN
 			 */
-			void mbus_push_frame(cyng::context& ctx);
+			void wmbus_push_frame(cyng::context& ctx);
 
 			void update_device_table(cyng::buffer_t const& dev_id
 				, std::string const& manufacturer
@@ -100,6 +100,17 @@ namespace node
 				, std::uint8_t media
 				, std::uint8_t frame_type
 				, boost::uuids::uuid tag);
+
+			/**
+			 * Applied from master with CI = 0x53, 0x55, 0x5B, 0x5F, 0x60, 0x64, 0x6Ch, 0x6D
+			 * Applied from slave with CI = 0x68, 0x6F, 0x72, 0x75, 0x7C, 0x7E, 0x9F
+			 */
+			void read_frame_header_long(cyng::buffer_t const&, cyng::buffer_t const&);
+
+			/**
+			 * frame type 0x7F
+			 */
+			void read_frame_header_short_sml(cyng::context& ctx, cyng::buffer_t const&, cyng::buffer_t const&);
 
 		public:
 			/**

@@ -100,7 +100,6 @@ namespace node
 				{ "serverID"	//	server ID
 				, "lastSeen"	//	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
 				, "class"		//	device class (always "---" == 2D 2D 2D)
-				, "visible"
 				, "active"
 				, "descr"
 				//	---
@@ -116,7 +115,6 @@ namespace node
 				{ cyng::TC_BUFFER		//	server ID
 				, cyng::TC_TIME_POINT	//	last seen
 				, cyng::TC_STRING		//	device class
-				, cyng::TC_BOOL			//	visible
 				, cyng::TC_BOOL			//	active
 				, cyng::TC_STRING		//	description
 
@@ -124,14 +122,13 @@ namespace node
 				, cyng::TC_BUFFER		//	bit mask (81 81 C7 86 01 FF)
 				, cyng::TC_UINT32		//	interval (milliseconds)
 				, cyng::TC_BUFFER		//	pubKey
-				, cyng::TC_BUFFER		//	aes
+				, cyng::TC_AES128		//	AES 128 (16 bytes)
 				, cyng::TC_STRING		//	user
 				, cyng::TC_STRING		//	pwd
 				},
 				{ 9
 				, 0
 				, 16	//	device class
-				, 0		//	visible
 				, 0		//	active
 				, 128	//	description
 

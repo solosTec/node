@@ -250,15 +250,14 @@ namespace node
 		//	Scheinleistung - apparent power
 		//	Wirkleistung - effective (or active) power
 
-		const static obis	DEFINE_OBIS_CODE(01, 00, 01, 08, 00, FF, REG_POS_AE_NO_TARIFF);	//	Zählwerk pos. Wirkenergie, 	tariflos
-		const static obis	DEFINE_OBIS_CODE(01, 00, 01, 08, 01, FF, REG_POS_AE_T1);	//	Zählwerk pos. Wirkenergie, Tarif 1
-		const static obis	DEFINE_OBIS_CODE(01, 00, 01, 08, 02, FF, REG_POS_AE_T2);	//	Zählwerk pos. Wirkenergie, Tarif 2
-		const static obis	DEFINE_OBIS_CODE(01, 00, 02, 08, 00, FF, REG_NEG_AE_NO_TARIFF);	//	Zählwerk neg. Wirkenergie, 	tariflos
-		const static obis	DEFINE_OBIS_CODE(01, 00, 02, 08, 01, FF, REG_NEG_AE_T1);	//	Zählwerk neg. Wirkenergie, Tarif 1
-		const static obis	DEFINE_OBIS_CODE(01, 00, 02, 08, 02, FF, REG_NEG_AE_T2); //	Zählwerk neg. Wirkenergie, Tarif 2
-		//const static obis	DEFINE_OBIS_CODE(01, 00, 0F, 07, 00, FF, REG_CUR_POS_AE);	//	Aktuelle pos.	Wirkleistung 	Betrag
-		const static obis	DEFINE_OBIS_CODE(01, 00, 0F, 07, 00, FF, REG_CUR_POS_AE);
-		const static obis	DEFINE_OBIS_CODE(01, 00, 10, 07, 00, ff, REG_CUR_AP);	//	aktuelle Wirkleistung 
+		const static obis	DEFINE_OBIS_CODE(01, 00, 01, 08, 00, FF, REG_POS_AE_NO_TARIFF);	//	1.8.0 - Zählwerk pos. Wirkenergie, 	tariflos
+		const static obis	DEFINE_OBIS_CODE(01, 00, 01, 08, 01, FF, REG_POS_AE_T1);		//	1.8.1 - Zählwerk pos. Wirkenergie, Tarif 1
+		const static obis	DEFINE_OBIS_CODE(01, 00, 01, 08, 02, FF, REG_POS_AE_T2);		//	1.8.2 - Zählwerk pos. Wirkenergie, Tarif 2
+		const static obis	DEFINE_OBIS_CODE(01, 00, 02, 08, 00, FF, REG_NEG_AE_NO_TARIFF);	//	2.8.0 - Zählwerk neg. Wirkenergie, 	tariflos
+		const static obis	DEFINE_OBIS_CODE(01, 00, 02, 08, 01, FF, REG_NEG_AE_T1);		//	2.8.1 - Zählwerk neg. Wirkenergie, Tarif 1
+		const static obis	DEFINE_OBIS_CODE(01, 00, 02, 08, 02, FF, REG_NEG_AE_T2);		//	2.8.2 - Zählwerk neg. Wirkenergie, Tarif 2
+		const static obis	DEFINE_OBIS_CODE(01, 00, 0F, 07, 00, FF, REG_CUR_POS_AE);		//	15.7.0 - Aktuelle positive Wirkleistung, Betrag
+		const static obis	DEFINE_OBIS_CODE(01, 00, 10, 07, 00, ff, REG_CUR_AP);		//	aktuelle Wirkleistung 
 
 		//	01 00 24 07 00 FF: Wirkleistung L1
 		//01 00 38 07 00 FF: Wirkleistung L2

@@ -9,8 +9,8 @@
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/srv_id_io.h>
-#include <smf/sml/units.h>
 #include <smf/sml/scaler.h>
+#include <smf/mbus/units.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
@@ -480,7 +480,7 @@ namespace node
 				, ro_.idx_
 				, code	//	.to_buffer()
 				, unit
-				, get_unit_name(unit)
+				, node::mbus::get_unit_name(unit)
 				, cyng::traits::get_type_name(type_tag)	//	CYNG data type name
 				, scaler	//	scaler
 				, ro_.get_value("raw")	//	raw value

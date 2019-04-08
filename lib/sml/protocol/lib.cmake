@@ -4,7 +4,7 @@ set (sml_protocol_lib)
 set (sml_protocol_cpp
 
 	lib/sml/protocol/src/crc16.cpp
-	lib/sml/protocol/src/units.cpp
+#	lib/sml/protocol/src/units.cpp
 	lib/sml/protocol/src/scaler.cpp
 	lib/sml/protocol/src/writer.hpp
 	lib/sml/protocol/src/writer.cpp
@@ -22,7 +22,7 @@ set (sml_protocol_cpp
 set (sml_protocol_h
 	src/main/include/smf/sml/defs.h
 	src/main/include/smf/sml/crc16.h
-	src/main/include/smf/sml/units.h
+#	src/main/include/smf/sml/units.h
 	src/main/include/smf/sml/scaler.h
 	src/main/include/smf/sml/intrinsics/obis.h
 	src/main/include/smf/mbus/defs.h

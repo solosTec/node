@@ -318,6 +318,14 @@ namespace node
 			return 0u;
 		}
 
+		std::uint8_t get_medium_code(cyng::buffer_t const& buffer)
+		{
+			if (is_mbus(buffer)) {
+				return static_cast<std::uint8_t>(buffer[8]);
+			}
+			return 0u;
+		}
+
 		cyng::buffer_t to_gateway_srv_id(cyng::mac48 mac)
 		{
 			cyng::buffer_t buffer(mac.to_buffer());

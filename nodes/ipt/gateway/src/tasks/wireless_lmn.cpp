@@ -12,9 +12,9 @@
 
 #include <cyng/io/serializer.h>
 
-//#ifdef SMF_IO_DEBUG
+#ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
-//#endif
+#endif
 
 namespace node
 {
@@ -104,7 +104,7 @@ namespace node
 					<< bytes_transferred
 					<< " bytes");
 
-//#ifdef SMF_IO_DEBUG
+#ifdef SMF_IO_DEBUG
 				cyng::io::hex_dump hd;
 				std::stringstream ss;
 				if (bytes_transferred > 128) {
@@ -122,7 +122,7 @@ namespace node
 					<< bytes_transferred
 					<< " bytes\n"
 					<< ss.str());
-//#endif
+#endif
 
                 //
                 //  feed the parser
