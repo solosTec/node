@@ -10,6 +10,7 @@
 
 #include <cyng/intrinsics/buffer.h>
 #include <cstdint>
+#include <algorithm>
 #include <boost/assert.hpp>
 
 namespace node
@@ -39,6 +40,5 @@ namespace node
 		}
 	}
 }
-
 
 #endif

@@ -17,6 +17,8 @@
 
 #include <array>
 
+#pragma pack(push, 1)
+
 namespace node 
 {
 
@@ -75,7 +77,7 @@ namespace node
 	union cfg_fields
 	{
 		char		raw_[2];
-		cfg_field	cfg_field;
+		cfg_field	cfg_field_;
 		cfg_field_5	cfg_field_5_;
 		cfg_field_7	cfg_field_7_;
 		cfg_field_D	cfg_field_D_;
@@ -92,6 +94,10 @@ namespace node
 
 	public:
 		header_short();
+		header_short(header_short const&);
+		header_short(header_short&&) = delete;
+		
+		header_short& operator=(header_short const&);
 
 		std::uint8_t get_access_no() const;
 		std::uint8_t get_status() const;
@@ -167,7 +173,11 @@ namespace node
 
 	public:
 		header_long();
-
+		header_long(header_long const&);
+		header_long(header_long&&) = delete;
+		
+		header_long& operator=(header_long const&);
+		
 		cyng::buffer_t get_srv_id() const;
 
 		/** 
@@ -196,6 +206,7 @@ namespace node
 	};
 
 
+	std::pair<header_short, bool> make_header_short(cyng::buffer_t const& inp);
 	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const&);
 
 	/**
@@ -205,5 +216,7 @@ namespace node
 
 	
 }	//	node
+
+#pragma pack(pop)
 
 #endif

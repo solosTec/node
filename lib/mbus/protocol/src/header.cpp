@@ -21,6 +21,28 @@ namespace node
 		, data_()
 	{}
 
+	header_short::header_short(header_short const& other)
+		: access_no_(other.access_no_)
+		, status_(other.status_)
+		, cfg_()
+		, data_(other.data_)
+	{
+		std::cerr << "header_short::header_short(header_short const& other)" << std::endl;				
+	}
+	
+	header_short& header_short::operator=(header_short const& other)
+	{
+		std::cerr << "header_short& header_short::operator=(header_short const& other)..." << std::endl;		
+		if (this != &other) {
+			access_no_ = other.get_access_no();
+			status_ = other.get_status();
+// 			cfg_.raw_
+			data_.assign(other.data_.begin(), other.data_.end());
+		}
+		std::cerr << "...header_short& header_short::operator=(header_short const& other)" << std::endl;		
+		return *this;
+	}
+	
 	std::uint8_t header_short::get_access_no() const
 	{
 		return access_no_;
@@ -33,7 +55,7 @@ namespace node
 
 	std::uint8_t header_short::get_mode() const
 	{
-		return cfg_.cfg_field.mode_;
+		return cfg_.cfg_field_.mode_;
 	}
 
 	std::uint8_t header_short::get_block_counter() const
@@ -101,12 +123,13 @@ namespace node
 			//	Access Number of Meter
 			//
 			h.access_no_ = *pos++;	//	0/8
-
+			std::cerr << "Access Number of Meter" << std::endl;
 			//
 			//	Meter state (Low power)
 			//
 			h.status_ = *pos++;	//	1/9
-
+			std::cerr << "Meter state" << std::endl;
+			
 			//
 			//	Config Field
 			//	0 - no enryption
@@ -125,8 +148,10 @@ namespace node
 			//
 			//	data field
 			//
+			std::cerr << "data field..." << std::endl;
 			h.data_.insert(h.data_.end(), pos, inp.end());
-
+			std::cerr << "...data field" << std::endl;
+			
 			return std::make_pair(h, true);
 		}
 		return std::make_pair(h, false);
@@ -137,6 +162,24 @@ namespace node
 		, hs_()
 	{}
 
+	header_long::header_long(header_long const& other)
+		: server_id_(other.server_id_)
+		, hs_(other.hs_)
+	{
+		std::cerr << "header_long::header_long(header_long const& other)" << std::endl;		
+	}
+	
+	header_long& header_long::operator=(header_long const& other)
+	{
+		std::cerr << "header_long& header_long::operator=(header_long const& other)..." << std::endl;		
+		if (this != &other) {
+			server_id_ = other.server_id_;
+			hs_ = other.hs_;
+		}
+		std::cerr << "...header_long& header_long::operator=(header_long const& other)" << std::endl;		
+		return *this;
+	}
+	
 	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const& inp)
 	{
 		BOOST_ASSERT_MSG(inp.size() > 14, "header_long to short");
@@ -156,7 +199,7 @@ namespace node
 			h.server_id_[4] = *pos++;
 			h.server_id_[5] = *pos++;
 			h.server_id_[6] = *pos++;
-
+			
 			//
 			//	Manufacturer Acronym / Code
 			//
@@ -176,9 +219,16 @@ namespace node
 			//
 			//	build short header
 			//
-			auto r = make_header_short(cyng::buffer_t(pos, inp.end()));
+			std::cerr << "build short header" << std::endl;
+			auto const sh = cyng::buffer_t(pos, inp.end());
+			auto r = make_header_short(sh);
+			std::cerr << "short header " << (r.second ? "complete" : "INVALID") << std::endl;
 			h.hs_ = r.first;
-			return std::make_pair(h, r.second);
+			std::cerr << "long header complete" << std::endl;
+			std::pair<header_long, bool> p(h, r.second);
+// 			return std::make_pair(h, r.second);
+			std::cerr << "return pair" << std::endl;
+			return p;
 		}
 
 		return std::make_pair(h, false);
