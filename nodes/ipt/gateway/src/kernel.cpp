@@ -1559,7 +1559,13 @@ namespace node
 				//
 				// update device table
 				//
-				update_device_table(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl), std::get<5>(tpl), ctx.tag());
+// 				update_device_table(std::get<0>(tpl)	//	server ID
+// 					, std::get<1>(tpl)	//	manufacturer
+// 					, std::get<2>(tpl)	//	version
+// 					, std::get<3>(tpl)	//	medium
+// 					, std::get<5>(tpl)	//	frame type
+// 					, cyng::crypto::aes_128_key({ 0x23, 0xA8, 0x4B, 0x07, 0xEB, 0xCB, 0xAF, 0x94, 0x88, 0x95, 0xDF, 0x0E, 0x91, 0x33, 0x52, 0x0D })
+// 					, ctx.tag());	//	source
 				break;
 			case node::mbus::FIELD_CI_HEADER_SHORT:	//	0x7A
 				//break;
@@ -1586,7 +1592,13 @@ namespace node
 				//
 				// update device table
 				//
-				update_device_table(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl), std::get<3>(tpl), std::get<5>(tpl), ctx.tag());
+				update_device_table(std::get<0>(tpl)
+					, std::get<1>(tpl)
+					, std::get<2>(tpl)
+					, std::get<3>(tpl)
+					, std::get<5>(tpl)
+					, cyng::crypto::aes_128_key{}
+					, ctx.tag());
 				break;
 			}
 
@@ -1647,6 +1659,19 @@ namespace node
 						}
 						else {
 							CYNG_LOG_WARNING(logger_, "meter " << sml::from_server_id(server_id) << " is not configured");
+							
+							cyng::crypto::aes_128_key key;
+							key.key_ = { 0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8, 0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8 };
+							
+							//
+							//	decode payload data
+							//
+							if (!r.first.decode(key)) {
+								CYNG_LOG_WARNING(logger_, "meter "
+								<< sml::from_server_id(server_id)
+								<< " has invalid AES key: "
+								<< cyng::io::to_hex(key.to_buffer(), ' '));
+							}
 						}
 					}, cyng::store::read_access("mbus-devices"));
 				}
@@ -1825,7 +1850,7 @@ namespace node
 				parser sml_parser([&](cyng::vector_t&& prg) {
 					//std::cout << cyng::io::to_str(prg) << std::endl;
 					ctx.queue(std::move(prg));
-				}, false, true);	//	not verbose, logging
+				}, false, false);	//	not verbose, logging
 
 				auto const sml = r.first.data();
 				sml_parser.read(sml.begin(), sml.end());
@@ -1840,6 +1865,7 @@ namespace node
 			, std::uint8_t version
 			, std::uint8_t media
 			, std::uint8_t frame_type
+			, cyng::crypto::aes_128_key aes_key
 			, boost::uuids::uuid tag)
 		{
 			config_db_.access([&](cyng::store::table* tbl) {
@@ -1862,7 +1888,7 @@ namespace node
 							, cyng::buffer_t{ 0, 0 }	//	mask
 							, 26000ul	//	interval
 							, cyng::make_buffer({})	//	pubKey
-							, cyng::crypto::aes_128_key{}	//	 AES key 
+							, aes_key	//	 AES key 
 							, ""	//	user
 							, "")	//	password
 						, 1	//	generation

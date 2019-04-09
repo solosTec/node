@@ -104,6 +104,7 @@ namespace node
 				, std::uint8_t version
 				, std::uint8_t media
 				, std::uint8_t frame_type
+				, cyng::crypto::aes_128_key
 				, boost::uuids::uuid tag);
 
 			/**

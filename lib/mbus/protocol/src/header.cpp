@@ -46,13 +46,35 @@ namespace node
 
 	header_short& header_short::operator=(header_short const& other)
 	{
-		std::cerr << "header_short& header_short::operator=(header_short const& other)..." << std::endl;		
-		if (this != &other) {
-			access_no_ = other.get_access_no();
-			status_ = other.get_status();
-			cfg_ = other.cfg_;
-			//  replace content
-			data_.assign(other.data_.begin(), other.data_.end());
+		std::cerr << "header_short& header_short::operator=(header_short const& other)...." << std::endl;
+		try {
+			std::cerr << "this : " << std::hex << reinterpret_cast<void*>(this) << std::endl;
+			std::cerr << "other: " << std::hex << reinterpret_cast<void const*>(&other) << std::endl;
+			if (this != &other) {
+				std::cerr << "header_short& header_short::operator=(header_short const& other)... !=" << std::endl;
+				std::cerr << "header_short& header_short::operator=(header_short const& other)... access no: " << +access_no_ << std::endl;
+				access_no_ = other.get_access_no();
+				std::cerr << "header_short& header_short::operator=(header_short const& other)... access no: " << +access_no_ << std::endl;
+
+				std::cerr << "header_short& header_short::operator=(header_short const& other)... status: " << +status_ << std::endl;
+				status_ = other.get_status();
+				std::cerr << "header_short& header_short::operator=(header_short const& other)... status: " << +status_ << std::endl;
+				
+// 				cfg_ = other.cfg_;
+				
+				//  replace content
+				std::cerr << "header_short& header_short::operator=(header_short const& other) - copy " << std::dec << other.data_.size() << " bytes" << std::endl;
+				std::cerr << "this->data_ contains " << std::dec << this->data_.size() << " bytes" << std::endl;
+//  			data_.assign(other.data_.begin(), other.data_.end());
+				for (auto c : other.data_) {
+					std::cerr << "this->data_ contains " << std::dec << this->data_.size() << " bytes + " << std::hex << +c << std::endl;
+					this->data_.push_back(c);
+				}
+				std::cerr << "header_short& header_short::operator=(header_short const& other) " << this->data_.size() << " bytes copied " << std::endl;
+			}
+		}
+		catch( std::exception const& ex) {
+			std::cerr << ex.what() << std::endl;
 		}
 		std::cerr << "...header_short& header_short::operator=(header_short const& other)" << std::endl;		
 		return *this;
@@ -142,9 +164,10 @@ namespace node
 		return counter;
 	}
 
-	std::pair<header_short, bool> make_header_short(cyng::buffer_t const& inp)
+	std::pair<header_short, bool> make_header_short(cyng::buffer_t inp)
 	{
 		BOOST_ASSERT_MSG(inp.size() > 6, "header_long to short");
+		std::cerr << "make_header_short from " << std::dec << inp.size() << " bytes" << std::endl;
 		header_short h;
 		if (inp.size() > 6) {
 
@@ -179,9 +202,14 @@ namespace node
 			//
 			//	data field
 			//
-			std::cerr << "data field..." << std::endl;
-			h.data_.insert(h.data_.end(), pos, inp.end());
-			std::cerr << "...data field" << std::endl;
+			std::cerr << "data field... " << h.data_.size() << std::endl;
+// 			h.data_.assign(pos, inp.end());
+			while(pos < inp.end()) {
+				std::cerr << "data field... " << std::dec << h.data_.size() << " + " << std::hex << +*pos << std::endl;
+				h.data_.push_back(*pos);
+				++pos;
+			}
+			std::cerr << "...data field with " << std::dec << h.data_.size() << " bytes" << std::endl;
 			
 			return std::make_pair(h, true);
 		}
@@ -221,7 +249,7 @@ namespace node
 		return *this;
 	}
 	
-	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const& inp)
+	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t inp)
 	{
 		BOOST_ASSERT_MSG(inp.size() > 14, "header_long to short");
 		header_long h;
@@ -260,10 +288,17 @@ namespace node
 			//
 			//	build short header
 			//
-			std::cerr << "build short header" << std::endl;
-			auto const sh = cyng::buffer_t(pos, inp.end());
-			auto r = make_header_short(sh);
+			std::cerr << "build short header from " << std::dec << std::distance(pos, inp.end()) << " bytes" << std::endl;
+// 			auto const sh = cyng::buffer_t(pos, inp.end());
+			cyng::buffer_t sh;
+			while(pos < inp.end()) {
+				std::cerr << "buffer " << std::dec << sh.size() << " + " << std::hex << +*pos << std::endl;
+				sh.push_back(*pos);
+				++pos;
+			}
+			std::pair<header_short, bool> const r = make_header_short(sh);
 			std::cerr << "short header " << (r.second ? "complete" : "INVALID") << std::endl;
+			std::cerr << "short header has " << std::dec << h.hs_.data().size() << " bytes" << std::endl;
 			h.hs_ = r.first;
 			std::cerr << "long header complete" << std::endl;
 			std::pair<header_long, bool> p(h, r.second);

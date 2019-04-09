@@ -91,7 +91,7 @@ namespace node
 	 */
 	class header_short
 	{
-		friend std::pair<header_short, bool> make_header_short(cyng::buffer_t const&);
+		friend std::pair<header_short, bool> make_header_short(cyng::buffer_t);
 
 	public:
 		header_short();
@@ -176,7 +176,7 @@ namespace node
 	 */
 	class header_long
 	{
-		friend std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const&);
+		friend std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t);
 
 	public:
 		header_long();
@@ -215,8 +215,8 @@ namespace node
 	};
 
 
-	std::pair<header_short, bool> make_header_short(cyng::buffer_t const& inp);
-	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const&);
+	std::pair<header_short, bool> make_header_short(cyng::buffer_t inp);
+	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t);
 
 	/**
 	 * @return true is buffer is longer then 2 bytes and first two bytes are 0x2F
