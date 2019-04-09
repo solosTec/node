@@ -109,7 +109,7 @@ namespace node
 			//vm.register_function("sml.set.proc.mbus.protocol", 6, std::bind(&kernel::sml_set_proc_mbus_protocol, this, std::placeholders::_1));
 			
 			vm.register_function("sml.get.list.request", 9, std::bind(&kernel::sml_get_list_request, this, std::placeholders::_1));
-			//vm.register_function("sml.get.list.response", 0, std::bind(&kernel::sml_get_list_response, this, std::placeholders::_1));
+			vm.register_function("sml.get.list.response", 9, std::bind(&kernel::sml_get_list_response, this, std::placeholders::_1));
 
 
 			//
@@ -1505,7 +1505,13 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "sml.get.list.request - " << get_name(code));
 
 			}
+		}
 
+		void kernel::sml_get_list_response(cyng::context& ctx)
+		{
+			//	[b583e91b-14f5-4691-808a-5b0a517eb1d6,7531511-2,0,,01E61E130900163C07,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06975265]
+			cyng::vector_t const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 		}
 
 		void kernel::wmbus_push_frame(cyng::context& ctx)

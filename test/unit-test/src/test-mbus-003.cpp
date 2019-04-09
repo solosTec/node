@@ -29,16 +29,20 @@ namespace node
 {
 	bool test_mbus_003()
 	{
-		std::array<char, 4> v{ 0x74, 0x31, 0x45, 0x04 };
-		auto const idp = reinterpret_cast<std::uint32_t*>(v.data());
+		//std::array<char, 4> v{ 0x74, 0x31, 0x45, 0x04 };
+		//auto const idp = reinterpret_cast<std::uint32_t*>(v.data());
 
-		std::stringstream ss;
-		ss.fill('0');
-		ss << std::setw(8) << std::setbase(16) << *idp;
-		auto const s = ss.str();
+		//std::stringstream ss;
+		//ss.fill('0');
+		//ss << std::setw(8) << std::setbase(16) << *idp;
+		//auto const s = ss.str();
 
-		std::uint32_t id{ 0 };
-		ss >> std::setbase(10) >> id;
+		//std::uint32_t id{ 0 };
+		//ss >> std::setbase(10) >> id;
+
+		auto data = cyng::make_buffer({ 0x13, 0x09, 0x00, 0x16, 0xe6, 0x1e, 0x3c, 0x07, 0x3a, 0x00, 0x20, 0x65, 0x3a, 0xc4, 0xef, 0xf7, 0x37, 0x13, 0xd0, 0x9a, 0x92, 0xa7, 0xb5, 0xd9, 0x83, 0xb8, 0x0c, 0x67, 0xac, 0x3b, 0x33, 0x67, 0xc6, 0x9d, 0x3e, 0xe7, 0x56, 0x2b, 0x96, 0x21, 0x26, 0x7c, 0xe2, 0xc9 });
+		std::pair<header_long, bool> r = make_header_long(1, data);
+
 
 		//	get data
 		//auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-003.bin";
