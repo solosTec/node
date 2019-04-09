@@ -24,10 +24,12 @@ namespace node
 
 	/**
 	 * 7.2.4 Configuration Field
+	 * Containing 5 bytes defining the encryption mode
+	 * This is the 2. byte (MSB)
+	 * You can mask the first 5 bits with 0x1F.
 	 */
-	struct cfg_field
+	struct cfg_field_mode
 	{
-		std::uint16_t x2_ : 8;	//	mode specific
 		std::uint16_t mode_ : 5;	//	mode (0, 5, 7, or 13)
 		std::uint16_t x1_ : 3;	//	mode specific
 	};
@@ -74,10 +76,9 @@ namespace node
 		std::uint16_t c_ : 2;	//	Content of Message
 	};
 
-	union cfg_fields
+	union ucfg_fields
 	{
 		char		raw_[2];
-		cfg_field	cfg_field_;
 		cfg_field_5	cfg_field_5_;
 		cfg_field_7	cfg_field_7_;
 		cfg_field_D	cfg_field_D_;
@@ -95,7 +96,8 @@ namespace node
 	public:
 		header_short();
 		header_short(header_short const&);
-		header_short(header_short&&) = delete;
+		header_short(header_short&&);
+		virtual ~header_short();
 		
 		header_short& operator=(header_short const&);
 
@@ -153,7 +155,7 @@ namespace node
 		/**
 		 * Configuration Field / Configuration Field Extension
 		 */
-		cfg_fields cfg_;
+		std::array<char, 2>   cfg_;
 
 		/**
 		 * raw data
@@ -174,8 +176,9 @@ namespace node
 	public:
 		header_long();
 		header_long(header_long const&);
-		header_long(header_long&&) = delete;
-		
+		header_long(header_long&&);
+		virtual ~header_long();
+
 		header_long& operator=(header_long const&);
 		
 		cyng::buffer_t get_srv_id() const;

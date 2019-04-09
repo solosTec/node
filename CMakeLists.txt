@@ -3,7 +3,7 @@
 # CMake compatibility issues: don't modify this, please!
 cmake_minimum_required (VERSION 3.5)
 
-                                                     
+
 #                                                
 #                                **              
 #                                 **             
@@ -487,9 +487,9 @@ endif()
 #
 include (lib/mbus/protocol/lib.cmake)
 add_library(smf_protocol_mbus ${GLOBAL_LIBRARY_TYPE} ${mbus_protocol_lib})
-#if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-#	target_link_libraries(smf_protocol_mbus cyng_vm)
-#endif()
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	target_link_libraries(smf_protocol_mbus ${OPENSSL_LIBRARIES})
+endif()
 
 #
 #	iMega/CU protocol library

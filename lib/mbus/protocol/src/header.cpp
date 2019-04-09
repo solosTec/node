@@ -22,21 +22,36 @@ namespace node
 	{}
 
 	header_short::header_short(header_short const& other)
-		: access_no_(other.access_no_)
-		, status_(other.status_)
-		, cfg_()
+		: access_no_(other.get_access_no())
+		, status_(other.get_status())
+		, cfg_(other.cfg_)
 		, data_(other.data_)
 	{
 		std::cerr << "header_short::header_short(header_short const& other)" << std::endl;				
 	}
 	
+	header_short::header_short(header_short&& other)
+	  : access_no_(other.access_no_)
+	  , status_(other.status_)
+	  , cfg_(other.cfg_)
+	  , data_(std::move(other.data_))
+	{
+	  std::cerr << "header_short::header_short(header_short&& other)" << std::endl;
+	}
+
+	header_short::~header_short()
+	{
+	  data_.clear();
+	}
+
 	header_short& header_short::operator=(header_short const& other)
 	{
 		std::cerr << "header_short& header_short::operator=(header_short const& other)..." << std::endl;		
 		if (this != &other) {
 			access_no_ = other.get_access_no();
 			status_ = other.get_status();
-// 			cfg_.raw_
+			cfg_ = other.cfg_;
+			//  replace content
 			data_.assign(other.data_.begin(), other.data_.end());
 		}
 		std::cerr << "...header_short& header_short::operator=(header_short const& other)" << std::endl;		
@@ -55,20 +70,24 @@ namespace node
 
 	std::uint8_t header_short::get_mode() const
 	{
-		return cfg_.cfg_field_.mode_;
+	  return (cfg_[1] & 0x1F);  // mask the first 5 bits to get the mode
 	}
 
 	std::uint8_t header_short::get_block_counter() const
 	{
-		switch (get_mode()) {
-		case 5:	return cfg_.cfg_field_5_.number_;
-		case 7: return cfg_.cfg_field_7_.number_;
-		case 13: return cfg_.cfg_field_D_.number_;
+	  ucfg_fields cfg;
+	  cfg.raw_[0] = cfg_[0];
+	  cfg.raw_[1] = cfg_[1];
 
-		default:
-			break;
-		}
-		return 0;
+	  switch (get_mode()) {
+	    case 5:	return cfg.cfg_field_5_.number_;
+	    case 7: return cfg.cfg_field_7_.number_;
+	    case 13: return cfg.cfg_field_D_.number_;
+
+	    default:
+	      break;
+	    }
+	  return 0;
 	}
 
 	cyng::buffer_t header_short::data() const
@@ -122,12 +141,12 @@ namespace node
 			//
 			//	Access Number of Meter
 			//
-			h.access_no_ = *pos++;	//	0/8
+			h.access_no_ = static_cast<std::uint8_t>(*pos++);	//	0/8
 			std::cerr << "Access Number of Meter" << std::endl;
 			//
 			//	Meter state (Low power)
 			//
-			h.status_ = *pos++;	//	1/9
+			h.status_ = static_cast<std::uint8_t>(*pos++);	//	1/9
 			std::cerr << "Meter state" << std::endl;
 			
 			//
@@ -137,8 +156,8 @@ namespace node
 			//	7 - advanced symmetric enryption
 			//	13 - assymetric enryption
 			//
-			h.cfg_.raw_[0] = *pos++;	//	2/10
-			h.cfg_.raw_[1] = *pos++;	//	3/11
+			h.cfg_[0] = *pos++;	//	2/10
+			h.cfg_[1] = *pos++;	//	3/11
 
 			//
 			//	AES-Verify
@@ -169,6 +188,16 @@ namespace node
 		std::cerr << "header_long::header_long(header_long const& other)" << std::endl;		
 	}
 	
+	header_long::header_long(header_long&& other)
+		: server_id_(other.server_id_)
+		, hs_(std::move(other.hs_))
+	{
+		std::cerr << "header_long::header_long(header_long&& other)" << std::endl;
+	}
+
+	header_long::~header_long()
+	{}
+
 	header_long& header_long::operator=(header_long const& other)
 	{
 		std::cerr << "header_long& header_long::operator=(header_long const& other)..." << std::endl;		
