@@ -71,7 +71,11 @@ namespace node
 			//
 			vm.register_function("sml.msg", 2, std::bind(&kernel::sml_msg, this, std::placeholders::_1));
 			vm.register_function("sml.eom", 2, std::bind(&kernel::sml_eom, this, std::placeholders::_1));
-
+			vm.register_function("sml.log", 1, [this](cyng::context& ctx){
+				const cyng::vector_t frame = ctx.get_frame();
+				CYNG_LOG_INFO(logger_, "sml.log - " << cyng::value_cast<std::string>(frame.at(0), ""));
+			});
+			
 			//
 			//	SML data
 			//
@@ -103,7 +107,7 @@ namespace node
 			//vm.register_function("sml.set.proc.mbus.s.mode", 6, std::bind(&kernel::sml_set_proc_mbus_smode, this, std::placeholders::_1));
 			//vm.register_function("sml.set.proc.mbus.t.mode", 6, std::bind(&kernel::sml_set_proc_mbus_tmode, this, std::placeholders::_1));
 			//vm.register_function("sml.set.proc.mbus.protocol", 6, std::bind(&kernel::sml_set_proc_mbus_protocol, this, std::placeholders::_1));
-
+			
 			vm.register_function("sml.get.list.request", 9, std::bind(&kernel::sml_get_list_request, this, std::placeholders::_1));
 			vm.register_function("sml.get.list.response", 9, std::bind(&kernel::sml_get_list_response, this, std::placeholders::_1));
 
@@ -1535,32 +1539,10 @@ namespace node
 			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - server id: " << server_id);
 			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - manufacturer: " << std::get<1>(tpl));
 			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - version: " << +std::get<2>(tpl));
-			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - media: " << +std::get<3>(tpl));
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - media: " << +std::get<3>(tpl) << " - " << node::mbus::get_medium_name(std::get<3>(tpl)));
 			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - device id: " << std::get<4>(tpl));
 			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - frame type: " << +std::get<5>(tpl));
 
-//#ifdef SMF_IO_DEBUG
-			//cyng::io::hex_dump hd;
-			//std::stringstream ss;
-			//if (std::get<6>(tpl).size() > 128) {
-			//	hd(ss, std::get<6>(tpl).cbegin(), std::get<6>(tpl).cbegin() + 128);
-			//}
-			//else {
-			//	hd(ss, std::get<6>(tpl).cbegin(), std::get<6>(tpl).cend());
-			//}
-
-			//CYNG_LOG_TRACE(logger_, ctx.get_name()
-			//	<< " variable data structure with "
-			//	<< std::get<6>(tpl).size()
-			//	<< " bytes\n"
-			//	<< ss.str());
-//#endif
-
-			//
-			//	update device table
-			//
-			//cyng::buffer_t dev_id = cyng::to_vector<char>(std::get<4>(tpl));
-			//std::reverse(dev_id.begin(), dev_id.end());
 
 			//
 			//	decoding depends on frame type and AES key from
@@ -1612,8 +1594,13 @@ namespace node
 
 		void kernel::read_frame_header_long(cyng::buffer_t const& srv_id, cyng::buffer_t const& data)
 		{
+			CYNG_LOG_DEBUG(logger_, "make_header_long: " << cyng::io::to_hex(data));
+			
 			std::pair<header_long, bool> r = make_header_long(1, data);
 			if (r.second) {
+				
+				std::cerr << "access nr: " << std::endl;		
+				CYNG_LOG_DEBUG(logger_, "access nr: " << +r.first.header().get_access_no());
 
 				auto const server_id = r.first.get_srv_id();
 				auto const manufacturer = sml::get_manufacturer_code(server_id);
@@ -1624,6 +1611,11 @@ namespace node
 				//	currently only 0 (== no encryption) and 5 (== AES CBC) is supported
 				//
 				auto const aes_mode = r.first.header().get_mode();
+				
+				CYNG_LOG_DEBUG(logger_, "manufacturer: " << manufacturer);
+				CYNG_LOG_DEBUG(logger_, "status      : " << +mbus_status);
+				CYNG_LOG_DEBUG(logger_, "mode        : " << +aes_mode);
+				
 
 				if (aes_mode == 5) {
 
@@ -1632,6 +1624,11 @@ namespace node
 					//
 					config_db_.access([&](cyng::store::table const* tbl) {
 
+						CYNG_LOG_DEBUG(logger_, "search: " 
+							<< sml::from_server_id(server_id)
+							<< " / "
+							<< tbl->size());
+						
 						auto const rec = tbl->lookup(cyng::table::key_generator(srv_id));
 						if (!rec.empty()) {
 
@@ -1699,23 +1696,127 @@ namespace node
 
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "cannot read header of " << sml::from_server_id(srv_id));
+				CYNG_LOG_WARNING(logger_, "cannot read long header of " << sml::from_server_id(srv_id));
 			}
 		}
 
 		void kernel::read_frame_header_short_sml(cyng::context& ctx, cyng::buffer_t const& srv_id, cyng::buffer_t const& data)
 		{
+			std::pair<header_short, bool> r = make_header_short(data);
+			auto const manufacturer = sml::get_manufacturer_code(srv_id);
+			
 			//
-			//	start SML parser
+			//	0, 5, 7, or 13
+			//	currently only 0 (== no encryption) and 5 (== AES CBC) is supported
 			//
-			parser sml_parser([&](cyng::vector_t&& prg) {
-				//std::cout << cyng::io::to_str(prg) << std::endl;
-				ctx.queue(std::move(prg));
-			}, false, true);	//	not verbose, logging
+			auto const aes_mode = r.first.get_mode();
+			
+			if (r.second) {
+				std::cout
+				<< sml::decode(manufacturer)
+				<< ": "
+				<< mbus::get_medium_name(sml::get_medium_code(srv_id))
+				<< " - "
+				<< sml::from_server_id(srv_id)
+				<< std::hex
+				<< ", access #"
+				<< +r.first.get_access_no()
+				<< ", status: "
+				<< +r.first.get_status()
+				<< ", mode: "
+				<< std::dec
+				<< +aes_mode
+				<< ", counter: "
+				<< +r.first.get_block_counter()
+				<< std::endl
+				;
+				
+				//
+				//	encrypt data
+				//
+				if (aes_mode == 5) {
+					
+					//
+					//	get AES key and decrypt content (AES CBC - mode 5)
+					//
+					config_db_.access([&](cyng::store::table const* tbl) {
+						
+						CYNG_LOG_DEBUG(logger_, "search: " 
+						<< sml::from_server_id(srv_id)
+						<< " / "
+						<< tbl->size());
+						
+						auto const rec = tbl->lookup(cyng::table::key_generator(srv_id));
+						if (!rec.empty()) {
 
-			//auto const data = r.first.data();
-			sml_parser.read(data.begin(), data.end());
+							//
+							//	get AES key
+							//
+							cyng::crypto::aes_128_key key;
+							key = cyng::value_cast(rec["aes"], key);
+							
+							//
+							//	build initialization vector
+							//
+							auto const iv = mbus::build_initial_vector(srv_id, r.first.get_access_no());
+							
+							//
+							//	decode payload data
+							//
+							if (!r.first.decode(key, iv)) {
+								CYNG_LOG_WARNING(logger_, "meter "
+								<< sml::from_server_id(srv_id)
+								<< " has invalid AES key: "
+								<< cyng::io::to_hex(key.to_buffer(), ' '));
+							}
+						}
+						else {
+							CYNG_LOG_WARNING(logger_, "meter " << sml::from_server_id(srv_id) << " is not configured");
+							
+							cyng::crypto::aes_128_key key;
+							key.key_ = { 0x23, 0xA8, 0x4B, 0x07, 0xEB, 0xCB, 0xAF, 0x94, 0x88, 0x95, 0xDF, 0x0E, 0x91, 0x33, 0x52, 0x0D };
+							
+							auto const iv = mbus::build_initial_vector(srv_id, r.first.get_access_no());
+							
+							//
+							//	decode payload data
+							//
+							if (!r.first.decode(key, iv)) {
+								CYNG_LOG_WARNING(logger_, "meter "
+								<< sml::from_server_id(srv_id)
+								<< " has invalid AES key: "
+								<< cyng::io::to_hex(key.to_buffer(), ' '));
+							}
+							else {
+								CYNG_LOG_INFO(logger_, "meter " 
+									<< sml::from_server_id(srv_id) 
+									<< " encrypted with default key: "
+									<< cyng::io::to_hex(key.to_buffer(), ' '));
+								
+								CYNG_LOG_DEBUG(logger_, "meter " 
+									<< sml::from_server_id(srv_id) 
+									<< " encrypted data: "
+									<< cyng::io::to_hex(r.first.data()));								
+							}
+						}
+					}, cyng::store::read_access("mbus-devices"));
+				}
+				
+				
+				//
+				//	start SML parser
+				//
+				parser sml_parser([&](cyng::vector_t&& prg) {
+					//std::cout << cyng::io::to_str(prg) << std::endl;
+					ctx.queue(std::move(prg));
+				}, false, true);	//	not verbose, logging
 
+				auto const sml = r.first.data();
+				sml_parser.read(sml.begin(), sml.end());
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "cannot read short header of " << sml::from_server_id(srv_id));
+			}
 		}
 
 		void kernel::update_device_table(cyng::buffer_t const& dev_id

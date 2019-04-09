@@ -10,6 +10,8 @@
 
 #include <cstdint>
 
+#pragma pack(push, 1)
+
 namespace node
 {
 	namespace mbus	
@@ -80,5 +82,6 @@ namespace node
 	}
 }
 
+#pragma pack(pop)
 
 #endif
