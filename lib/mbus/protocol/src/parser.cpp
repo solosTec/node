@@ -251,14 +251,15 @@ namespace node
 				stream_state_ = STATE_CTRL_FIELD;
 				break;
 			case STATE_CTRL_FIELD:
-				BOOST_ASSERT_MSG(c == 0x44, "unknown control field");
+				//BOOST_ASSERT_MSG(c == 0x44, "unknown control field");
 				switch (c) {
 				case CTRL_FIELD_SND_NR:
 					//	0x44 == Indicates message from primary station, function send / no reply(SND - NR)
 					stream_state_ = STATE_MANUFACTURER;
 					parser_state_ = manufacturer();	//	2 bytes
 					break;
-				case CTRL_FIELD_SND_IR: 					//	0x46 == Send manually initiated installation data (Send Installation Request)				case CTRL_FIELD_ACC_NR: 					//	0x47 == Contains no data – signals an empty transmission or provides the opportunity to access the bidirectional meter, between two application data transmissions				case CTRL_FIELD_ACC_DMD: 					//	0x48 == Access demand to master in order to request new important application data (alerts)					break;
+				case CTRL_FIELD_SND_IR: 					//	0x46 == Send manually initiated installation data (Send Installation Request - SND_IR)					//	ED300L is sending 10 SND_IR packets after restart					break;
+				//case CTRL_FIELD_ACC_NR: 					//	0x47 == Contains no data – signals an empty transmission or provides the opportunity to access the bidirectional meter, between two application data transmissions				case CTRL_FIELD_ACC_DMD: 					//	0x48 == Access demand to master in order to request new important application data (alerts)					break;
 				default:
 					stream_state_ = STATE_ERROR;
 					break;

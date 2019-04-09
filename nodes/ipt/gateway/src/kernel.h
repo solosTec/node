@@ -90,6 +90,11 @@ namespace node
 			void sml_get_list_request(cyng::context& ctx);
 
 			/**
+			 * data from SML parser after receiving a 0x7F frame (short SML header)
+			 */
+			void sml_get_list_response(cyng::context& ctx);
+
+			/**
 			 *	callback from wireless LMN
 			 */
 			void wmbus_push_frame(cyng::context& ctx);
