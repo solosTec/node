@@ -130,6 +130,18 @@ namespace node
 		return test_aes(data_);
 	}
 
+	std::size_t header_short::remove_aes_trailer()
+	{
+		std::size_t counter{ 0 };
+		if (!data_.empty()) {
+			while (data_.back() == 0x2F) {
+				data_.pop_back();
+				++counter;
+			}
+		}
+		return counter;
+	}
+
 	std::pair<header_short, bool> make_header_short(cyng::buffer_t const& inp)
 	{
 		BOOST_ASSERT_MSG(inp.size() > 6, "header_long to short");
@@ -269,6 +281,11 @@ namespace node
 	}
 
 	header_short const& header_long::header() const
+	{
+		return hs_;
+	}
+
+	header_short& header_long::header()
 	{
 		return hs_;
 	}

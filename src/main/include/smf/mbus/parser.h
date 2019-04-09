@@ -448,7 +448,7 @@ namespace node
 
 			std::string manufacturer_;
 			std::uint8_t version_;
-			std::uint8_t media_;
+			std::uint8_t medium_;
 			std::uint32_t dev_id_;
 			//std::uint16_t crc_;
 			std::uint8_t frame_type_;

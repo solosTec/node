@@ -49,7 +49,7 @@ namespace node
 		std::uint16_t mode_ : 5;	//	mode (== 5)
 		std::uint16_t s_ : 1;	//	synchronous
 		std::uint16_t a_ : 1;	//	accessibility
-		std::uint16_t b_ : 1;	//	bidrectional communication
+		std::uint16_t b_ : 1;	//	bidrectional communication (static/dynamic)
 	};
 
 	/** @brief 7.2.4.4 Configuration Field for Security Mode 7
@@ -139,6 +139,11 @@ namespace node
 		 */
 		bool verify_encryption() const;
 
+		/**
+		 * Remove all elements with value 0x2F from end of data vector
+		 */
+		std::size_t remove_aes_trailer();
+
 	private:
 		/**
 		 * Access Number (From master initiated session uses Gateway Access	Number.
@@ -187,6 +192,7 @@ namespace node
 		 * @return short part of header
 		 */
 		header_short const& header() const;
+		header_short& header();
 
 		/**
 		 * @return initial vector for AES CBC decoding

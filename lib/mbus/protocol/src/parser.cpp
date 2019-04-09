@@ -184,9 +184,8 @@ namespace node
 			, parser_state_()
 			, packet_size_(0)
 			, version_(0)
-			, media_(0)
+			, medium_(0)
 			, dev_id_(0)
-			//, crc_(0)
 			, server_id_()
 #ifdef _DEBUG
 			, meter_set_()
@@ -222,7 +221,7 @@ namespace node
 			packet_size_ = 0u;
 			manufacturer_.clear();
 			version_ = 0;
-			media_ = 0;
+			medium_ = 0;
 			dev_id_ = 0;
 			server_id_.fill(0);
 #ifdef _DEBUG
@@ -251,7 +250,7 @@ namespace node
 				stream_state_ = STATE_CTRL_FIELD;
 				break;
 			case STATE_CTRL_FIELD:
-				//BOOST_ASSERT_MSG(c == 0x44, "unknown control field");
+				--packet_size_;
 				switch (c) {
 				case CTRL_FIELD_SND_NR:
 					//	0x44 == Indicates message from primary station, function send / no reply(SND - NR)
@@ -266,29 +265,30 @@ namespace node
 				}
 				break;
 			case STATE_MANUFACTURER:
+				--packet_size_;
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 				if (stream_state_ == STATE_DEV_ID) {
 					parser_state_ = dev_id();
 				}
 				break;
 			case STATE_DEV_ID:
+				--packet_size_;
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 				break;
 			case STATE_DEV_VERSION:
+				//	Version (or Generation number) 
+				--packet_size_;
 				version_ = boost::numeric_cast<std::uint8_t>(c);
 				server_id_[7] = version_;
 				stream_state_ = STATE_DEV_TYPE;
 				break;
 			case STATE_DEV_TYPE:
-				media_ = boost::numeric_cast<std::uint8_t>(c);
-				server_id_[8] = media_;
+				//	Device type/Medium
+				--packet_size_;
+				medium_ = boost::numeric_cast<std::uint8_t>(c);
+				server_id_[8] = medium_;
 				stream_state_ = STATE_FRAME_TYPE;
-				//stream_state_ = STATE_CRC;
-				//parser_state_ = crc();
 				break;
-			//case STATE_CRC:
-			//	stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
-			//	break;
 			case STATE_FRAME_TYPE:
 				//	CI field of SND-NR frame
 				//	0x72, 0x78 or 0x7A expected
@@ -412,22 +412,8 @@ namespace node
 			return STATE_DEV_ID;
 		}
 
-		//parser::state parser::state_visitor::operator()(crc& v) const
-		//{
-		//	v.data_[v.pos_++] = this->c_;
-		//	if (v.pos_ == v.data_.size()) {
-
-		//		//
-		//		//	CRC complete
-		//		//
-		//		this->parser_.crc_ = cyng::slicer<std::uint16_t, 0>(v.data_);
-		//		return STATE_FRAME_TYPE;
-		//	}
-		//	return STATE_CRC;
-		//}
-
 		parser::frame_data::frame_data(std::size_t size)
-			: size_(size - 10)
+			: size_(size - 1)
 			, data_()
 		{
 			data_.reserve(size_);
@@ -529,7 +515,7 @@ namespace node
 					, cyng::buffer_t(this->parser_.server_id_.begin(), this->parser_.server_id_.end())
 					, this->parser_.manufacturer_
 					, this->parser_.version_
-					, this->parser_.media_
+					, this->parser_.medium_
 					, this->parser_.dev_id_
 					, this->parser_.frame_type_
 					, v.data_));

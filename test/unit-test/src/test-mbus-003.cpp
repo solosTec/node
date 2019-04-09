@@ -123,27 +123,35 @@ namespace node
 
 						std::cout << cyng::io::to_hex(r.first.header().data(), ' ') << std::endl;
 
-						auto counter = r.first.header().get_block_counter();
+						auto counter = r.first.header().get_block_counter() * 16;
+						counter -= r.first.header().remove_aes_trailer();
+
 						node::vdb_reader reader;
 						std::size_t offset{ 0 };
 
-						while (counter-- != 0) {
+						while (offset < counter) {
 
 							//
 							//	decode block
 							//
-							offset = reader.decode(r.first.header().data(), offset);
+							std::size_t new_offset = reader.decode(r.first.header().data(), offset);
+							if (new_offset > offset) {
 
-							std::cout
-								<< "meter "
-								<< sml::from_server_id(server_id)
-								<< ", value: "
-								<< cyng::io::to_str(reader.get_value())
-								<< ", scaler: "
-								<< +reader.get_scaler()
-								<< ", unit: "
-								<< get_unit_name(reader.get_unit())
-								<< std::endl;
+								offset = new_offset;
+								std::cout
+									<< "meter "
+									<< sml::from_server_id(server_id)
+									<< ", value: "
+									<< cyng::io::to_str(reader.get_value())
+									<< ", scaler: "
+									<< +reader.get_scaler()
+									<< ", unit: "
+									<< get_unit_name(reader.get_unit())
+									<< std::endl;
+							}
+							else {
+								break;
+							}
 						}
 
 					}
@@ -169,7 +177,7 @@ namespace node
 						<< std::dec
 						<< +r.first.get_mode()
 						<< ", counter: "
-						<< +r.first.get_block_counter()
+						<< +(r.first.get_block_counter() * 16)
 						<< std::endl
 						;
 
@@ -193,8 +201,9 @@ namespace node
 						std::cout << cyng::io::to_hex(r.first.data(), ' ') << std::endl;
 
 						//
-						//	ToDo: remove 0x2F from end of data buffer
+						//	remove 0x2F from end of data buffer
 						//
+						r.first.remove_aes_trailer();
 
 						//
 						//	start SML parser

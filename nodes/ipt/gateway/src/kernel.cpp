@@ -1661,34 +1661,39 @@ namespace node
 				if (r.first.header().verify_encryption()) {
 
 					//
-					//	get number of encrypted blocks
+					//	get number of encrypted bytes
 					//
-					auto counter = r.first.header().get_block_counter();
+					auto counter = r.first.header().get_block_counter() * 16;
+					counter -= r.first.header().remove_aes_trailer();
 
 					vdb_reader reader;
 					std::size_t offset{ 0 };
-					while (counter-- != 0) {
+					while (offset < counter) {
 
 						//
 						//	read block
 						//
-						offset = reader.decode(r.first.header().data(), offset);
+						std::size_t const new_offset = reader.decode(r.first.header().data(), offset);
+						if (new_offset > offset) {
 
-						//
-						//	store block
-						//
-						CYNG_LOG_INFO(logger_, "offset: "
-							<< offset
-							<< ", meter " 
-							<< sml::from_server_id(server_id) 
-							<< ", value: "
-							<< cyng::io::to_str(reader.get_value())
-							<< ", scaler: "
-							<< +reader.get_scaler()
-							<< ", unit: "
-							<< get_unit_name(reader.get_unit()));
+							//
+							//	store block
+							//
+							CYNG_LOG_INFO(logger_, "offset: "
+								<< offset
+								<< ", meter "
+								<< sml::from_server_id(server_id)
+								<< ", value: "
+								<< cyng::io::to_str(reader.get_value())
+								<< ", scaler: "
+								<< +reader.get_scaler()
+								<< ", unit: "
+								<< get_unit_name(reader.get_unit()));
+						}
+						else {
+							break;
+						}
 					}
-
 				}
 				else {
 					CYNG_LOG_WARNING(logger_, "meter " << sml::from_server_id(server_id) << " encryption failed");
@@ -1712,30 +1717,35 @@ namespace node
 			auto const aes_mode = r.first.get_mode();
 			
 			if (r.second) {
+
 				std::cout
-				<< sml::decode(manufacturer)
-				<< ": "
-				<< mbus::get_medium_name(sml::get_medium_code(srv_id))
-				<< " - "
-				<< sml::from_server_id(srv_id)
-				<< std::hex
-				<< ", access #"
-				<< +r.first.get_access_no()
-				<< ", status: "
-				<< +r.first.get_status()
-				<< ", mode: "
-				<< std::dec
-				<< +aes_mode
-				<< ", counter: "
-				<< +r.first.get_block_counter()
-				<< std::endl
-				;
+					<< sml::decode(manufacturer)
+					<< ": "
+					<< mbus::get_medium_name(sml::get_medium_code(srv_id))
+					<< " - "
+					<< sml::from_server_id(srv_id)
+					<< std::hex
+					<< ", access #"
+					<< +r.first.get_access_no()
+					<< ", status: "
+					<< +r.first.get_status()
+					<< ", mode: "
+					<< std::dec
+					<< +aes_mode
+					<< ", counter: "
+					<< +(r.first.get_block_counter() * 16u)	//	 V * 16 Bytes
+					<< std::endl
+					;
+
 				
 				//
 				//	encrypt data
 				//
 				if (aes_mode == 5) {
 					
+					//	max message size is 240 bytes
+					BOOST_ASSERT_MSG(r.first.get_block_counter() < 16, "invalid block count");
+
 					//
 					//	get AES key and decrypt content (AES CBC - mode 5)
 					//
@@ -1798,6 +1808,12 @@ namespace node
 									<< " encrypted data: "
 									<< cyng::io::to_hex(r.first.data()));								
 							}
+
+							//
+							//	remove trailing 0x2F
+							//
+							r.first.remove_aes_trailer();
+
 						}
 					}, cyng::store::read_access("mbus-devices"));
 				}
