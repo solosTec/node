@@ -27,7 +27,6 @@ namespace node
 		, cfg_(other.cfg_)
 		, data_(other.data_)
 	{
-		std::cerr << "header_short::header_short(header_short const& other)" << std::endl;				
 	}
 	
 	header_short::header_short(header_short&& other)
@@ -36,7 +35,6 @@ namespace node
 	  , cfg_(other.cfg_)
 	  , data_(std::move(other.data_))
 	{
-	  std::cerr << "header_short::header_short(header_short&& other)" << std::endl;
 	}
 
 	header_short::~header_short()
@@ -46,37 +44,12 @@ namespace node
 
 	header_short& header_short::operator=(header_short const& other)
 	{
-		std::cerr << "header_short& header_short::operator=(header_short const& other)...." << std::endl;
-		try {
-			std::cerr << "this : " << std::hex << reinterpret_cast<void*>(this) << std::endl;
-			std::cerr << "other: " << std::hex << reinterpret_cast<void const*>(&other) << std::endl;
-			if (this != &other) {
-				std::cerr << "header_short& header_short::operator=(header_short const& other)... !=" << std::endl;
-				std::cerr << "header_short& header_short::operator=(header_short const& other)... access no: " << +access_no_ << std::endl;
-				access_no_ = other.get_access_no();
-				std::cerr << "header_short& header_short::operator=(header_short const& other)... access no: " << +access_no_ << std::endl;
-
-				std::cerr << "header_short& header_short::operator=(header_short const& other)... status: " << +status_ << std::endl;
-				status_ = other.get_status();
-				std::cerr << "header_short& header_short::operator=(header_short const& other)... status: " << +status_ << std::endl;
-				
-// 				cfg_ = other.cfg_;
-				
-				//  replace content
-				std::cerr << "header_short& header_short::operator=(header_short const& other) - copy " << std::dec << other.data_.size() << " bytes" << std::endl;
-				std::cerr << "this->data_ contains " << std::dec << this->data_.size() << " bytes" << std::endl;
-//  			data_.assign(other.data_.begin(), other.data_.end());
-				for (auto c : other.data_) {
-					std::cerr << "this->data_ contains " << std::dec << this->data_.size() << " bytes + " << std::hex << +c << std::endl;
-					this->data_.push_back(c);
-				}
-				std::cerr << "header_short& header_short::operator=(header_short const& other) " << this->data_.size() << " bytes copied " << std::endl;
-			}
+		if (this != &other) {
+			access_no_ = other.get_access_no();
+			status_ = other.get_status();
+			cfg_ = other.cfg_;
+			data_.assign(other.data_.begin(), other.data_.end());
 		}
-		catch( std::exception const& ex) {
-			std::cerr << ex.what() << std::endl;
-		}
-		std::cerr << "...header_short& header_short::operator=(header_short const& other)" << std::endl;		
 		return *this;
 	}
 	
@@ -168,11 +141,15 @@ namespace node
 	{
 		header_short hs;
 		bool const b = reset_header_short(hs, inp);
-		return std::make_pair(hs, false);
+		return std::make_pair(hs, b);
 	}
 
 	bool reset_header_short(header_short& hs, cyng::buffer_t const& inp)
 	{
+// 		std::cerr << "test-S"  << std::endl;
+// 		std::size_t dbg{0};
+// 		std::cerr << "(S" << dbg++ << ")" << std::endl;
+		
 		//
 		//	reset
 		//
@@ -181,20 +158,25 @@ namespace node
 		hs.cfg_[0] = 0;
 		hs.cfg_[1] = 0;
 		hs.data_.clear();
-
+// 		std::cerr << "(S" << dbg++ << ") " << inp.size() << std::endl;
+		
 		if (inp.size() > 6) {
 
 			auto pos = inp.cbegin();
-
+// 			std::cerr << "(S" << dbg++ << ")" << std::endl;
+			
 			//
 			//	Access Number of Meter
 			//
 			hs.access_no_ = static_cast<std::uint8_t>(*pos++);	//	0/8
+// 			std::cerr << "(S" << dbg++ << ")" << std::endl;
+			
 			//
 			//	Meter state (Low power)
 			//
 			hs.status_ = static_cast<std::uint8_t>(*pos++);	//	1/9
-
+// 			std::cerr << "(S" << dbg++ << ")" << std::endl;
+			
 			//
 			//	Config Field
 			//	0 - no enryption
@@ -202,9 +184,10 @@ namespace node
 			//	7 - advanced symmetric enryption
 			//	13 - assymetric enryption
 			//
-			hs.cfg_[0] = *pos++;	//	2/10
-			hs.cfg_[1] = *pos++;	//	3/11
-
+ 			hs.cfg_[0] = *pos++;	//	2/10
+ 			hs.cfg_[1] = *pos++;	//	3/11
+// 			std::cerr << "(S" << dbg++ << ")" << std::endl;
+			
 			//
 			//	AES-Verify
 			//	0x2F, 0x2F after decoding
@@ -213,8 +196,11 @@ namespace node
 			//
 			//	data field
 			//
+// 			std::cerr << "(S" << dbg++ << ") " << inp.size() << std::endl;
+// 			std::cerr << "(S" << dbg++ << ") " << hs.data_.size() << std::endl;	//(7)
 			hs.data_.assign(pos, inp.end());
-
+// 			hs.data_ = inp;
+// 			std::cerr << "(S" << dbg++ << ") " << hs.data_.size() << std::endl;
 			return true;
 		}
 		return false;
@@ -229,14 +215,12 @@ namespace node
 		: server_id_(other.server_id_)
 		, hs_(other.hs_)
 	{
-		std::cerr << "header_long::header_long(header_long const& other)" << std::endl;		
 	}
 	
 	header_long::header_long(header_long&& other)
 		: server_id_(other.server_id_)
 		, hs_(std::move(other.hs_))
 	{
-		std::cerr << "header_long::header_long(header_long&& other)" << std::endl;
 	}
 
 	header_long::~header_long()
@@ -244,12 +228,10 @@ namespace node
 
 	header_long& header_long::operator=(header_long const& other)
 	{
-		std::cerr << "header_long& header_long::operator=(header_long const& other)..." << std::endl;		
 		if (this != &other) {
 			server_id_ = other.server_id_;
 			hs_ = other.hs_;
 		}
-		std::cerr << "...header_long& header_long::operator=(header_long const& other)" << std::endl;		
 		return *this;
 	}
 	
@@ -262,20 +244,27 @@ namespace node
 
 	bool reset_header_long(header_long& hl, char type, cyng::buffer_t const& inp)
 	{
+// 		std::cerr << "test-L"  << std::endl;
+// 		std::size_t dbg{0};
+// 		std::cerr << "(L" << dbg++ << ")" << std::endl;
 		//
 		//	reset
 		//
-		hl.server_id_[0] = type;
+// 		std::cerr << "(L" << dbg++ << ")" << std::endl;
+// 		std::cerr << "(L" << dbg++ << ")" << std::endl;
 		hl.server_id_.fill(0u);
-
+		hl.server_id_[0] = type;
+		
 		if (inp.size() > 14) {
 
+// 			std::cerr << "(L" << dbg++ << ")" << std::endl;
 			auto pos = inp.cbegin();
 
 			//
 			//	Identification Number
 			//	4 bytes serial ID
 			//
+// 			std::cerr << "(L" << dbg++ << ")" << std::endl;
 			hl.server_id_[3] = *pos++;
 			hl.server_id_[4] = *pos++;
 			hl.server_id_[5] = *pos++;
@@ -284,24 +273,30 @@ namespace node
 			//
 			//	Manufacturer Acronym / Code
 			//
+// 			std::cerr << "(L" << dbg++ << ")" << std::endl;
 			hl.server_id_[1] = *pos++;	//	4
 			hl.server_id_[2] = *pos++;	//	5
 
 			//
 			//	Version/Generation
 			//
+// 			std::cerr << "(L" << dbg++ << ")" << std::endl;
 			hl.server_id_[7] = *pos++;	//	6
 
 			//
 			//	Device type (Medium=HCA)
 			//
+// 			std::cerr << "(L" << dbg++ << ")" << std::endl;
 			hl.server_id_[8] = *pos++;	//	7
 
 			//
 			//	build short header
 			//
-			auto const sh = cyng::buffer_t(pos, inp.end());
-			return reset_header_short(hl.hs_, sh);
+ 			auto const sh = cyng::buffer_t(pos, inp.end());
+// 			std::cerr << "(L" << dbg++ << ")" << std::endl;
+			auto const b = reset_header_short(hl.hs_, sh);
+// 			std::cerr << "(L" << dbg++ << ") " << (b ? "OK" : "FAILED") << std::endl;
+			return b;
 		}
 
 		return false;

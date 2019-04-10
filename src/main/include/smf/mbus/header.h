@@ -17,7 +17,7 @@
 
 #include <array>
 
-#pragma pack(push, 1)
+// #pragma pack(push, 1)
 
 namespace node 
 {
@@ -76,6 +76,7 @@ namespace node
 		std::uint16_t c_ : 2;	//	Content of Message
 	};
 
+#pragma pack(push, 1)	
 	union ucfg_fields
 	{
 		char		raw_[2];
@@ -83,7 +84,7 @@ namespace node
 		cfg_field_7	cfg_field_7_;
 		cfg_field_D	cfg_field_D_;
 	};
-
+#pragma pack(pop)
 	/**
 	 * Short header used only by wireless M-Bus.
 	 * Applied from master with CI = 0x5A, 0x61, 0x65
@@ -230,6 +231,6 @@ namespace node
 	
 }	//	node
 
-#pragma pack(pop)
+// #pragma pack(pop)
 
 #endif

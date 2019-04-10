@@ -17,6 +17,8 @@
 #include <cyng/io/serializer.h>
 #include <cyng/io/hex_dump.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 namespace node
 {
 	namespace sml
@@ -181,8 +183,8 @@ namespace node
 			std::pair<header_long, bool> r = make_header_long(1, data);
 			if (r.second) {
 
-				std::cerr << "access nr: " << std::endl;
-				CYNG_LOG_DEBUG(logger_, "access nr: " << +r.first.header().get_access_no());
+// 				std::cerr << "access nr: " << std::endl;
+				CYNG_LOG_DEBUG(logger_, "access nr   : " << +r.first.header().get_access_no());
 
 				auto const server_id = r.first.get_srv_id();
 				auto const manufacturer = sml::get_manufacturer_code(server_id);
@@ -194,7 +196,8 @@ namespace node
 				//
 				auto const aes_mode = r.first.header().get_mode();
 
-				CYNG_LOG_DEBUG(logger_, "manufacturer: " << manufacturer);
+				CYNG_LOG_DEBUG(logger_, "server ID   : " << sml::from_server_id(server_id));
+				CYNG_LOG_DEBUG(logger_, "manufacturer: " << sml::decode(manufacturer));
 				CYNG_LOG_DEBUG(logger_, "status      : " << +mbus_status);
 				CYNG_LOG_DEBUG(logger_, "mode        : " << +aes_mode);
 
@@ -301,6 +304,7 @@ namespace node
 			//	currently only 0 (== no encryption) and 5 (== AES CBC) is supported
 			//
 			auto const aes_mode = r.first.get_mode();
+			
 
 			if (r.second) {
 
@@ -421,7 +425,8 @@ namespace node
 					CYNG_LOG_WARNING(logger_, "meter " << sml::from_server_id(server_id) << " is not configured");
 
 					cyng::crypto::aes_128_key key;
-					if (sml::from_server_id(server_id) == "01-e61e-29436587-bf-03") {
+					if (boost::algorithm::equals(sml::from_server_id(server_id), "01-e61e-29436587-bf-03") ||
+						boost::algorithm::equals(sml::from_server_id(server_id), "01-e61e-13090016-3c-07"))	{
 						key.key_ = { 0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8, 0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8 };
 					}
 					else if (sml::from_server_id(server_id) == "01-a815-74314504-01-02") {
