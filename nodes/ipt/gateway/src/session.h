@@ -11,7 +11,7 @@
 #include <smf/sml/protocol/parser.h>
 #include <smf/sml/status.h>
 #include <smf/sml/protocol/reader.h>
-#include "kernel.h"
+#include "core.h"
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>

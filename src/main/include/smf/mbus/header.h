@@ -91,7 +91,8 @@ namespace node
 	 */
 	class header_short
 	{
-		friend std::pair<header_short, bool> make_header_short(cyng::buffer_t);
+		friend std::pair<header_short, bool> make_header_short(cyng::buffer_t const&);
+		friend bool reset_header_short(header_short&, cyng::buffer_t const& inp);
 
 	public:
 		header_short();
@@ -124,7 +125,7 @@ namespace node
 		std::uint8_t get_block_counter() const;
 
 		/**
-		 * encoded data
+		 * encoded data (without verification bytes)
 		 */
 		cyng::buffer_t data() const;
 
@@ -176,7 +177,8 @@ namespace node
 	 */
 	class header_long
 	{
-		friend std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t);
+		friend std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const&);
+		friend bool reset_header_long(header_long&, char type, cyng::buffer_t const&);
 
 	public:
 		header_long();
@@ -215,8 +217,10 @@ namespace node
 	};
 
 
-	std::pair<header_short, bool> make_header_short(cyng::buffer_t inp);
-	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t);
+	std::pair<header_short, bool> make_header_short(cyng::buffer_t const& inp);
+	bool reset_header_short(header_short&, cyng::buffer_t const& inp);
+	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const&);
+	bool reset_header_long(header_long&, char type, cyng::buffer_t const&);
 
 	/**
 	 * @return true is buffer is longer then 2 bytes and first two bytes are 0x2F

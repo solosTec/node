@@ -164,26 +164,37 @@ namespace node
 		return counter;
 	}
 
-	std::pair<header_short, bool> make_header_short(cyng::buffer_t inp)
+	std::pair<header_short, bool> make_header_short(cyng::buffer_t const& inp)
 	{
-		BOOST_ASSERT_MSG(inp.size() > 6, "header_long to short");
-		std::cerr << "make_header_short from " << std::dec << inp.size() << " bytes" << std::endl;
-		header_short h;
+		header_short hs;
+		bool const b = reset_header_short(hs, inp);
+		return std::make_pair(hs, false);
+	}
+
+	bool reset_header_short(header_short& hs, cyng::buffer_t const& inp)
+	{
+		//
+		//	reset
+		//
+		hs.access_no_ = 0;
+		hs.status_ = 0;
+		hs.cfg_[0] = 0;
+		hs.cfg_[1] = 0;
+		hs.data_.clear();
+
 		if (inp.size() > 6) {
 
-			auto pos = inp.begin();
+			auto pos = inp.cbegin();
 
 			//
 			//	Access Number of Meter
 			//
-			h.access_no_ = static_cast<std::uint8_t>(*pos++);	//	0/8
-			std::cerr << "Access Number of Meter" << std::endl;
+			hs.access_no_ = static_cast<std::uint8_t>(*pos++);	//	0/8
 			//
 			//	Meter state (Low power)
 			//
-			h.status_ = static_cast<std::uint8_t>(*pos++);	//	1/9
-			std::cerr << "Meter state" << std::endl;
-			
+			hs.status_ = static_cast<std::uint8_t>(*pos++);	//	1/9
+
 			//
 			//	Config Field
 			//	0 - no enryption
@@ -191,8 +202,8 @@ namespace node
 			//	7 - advanced symmetric enryption
 			//	13 - assymetric enryption
 			//
-			h.cfg_[0] = *pos++;	//	2/10
-			h.cfg_[1] = *pos++;	//	3/11
+			hs.cfg_[0] = *pos++;	//	2/10
+			hs.cfg_[1] = *pos++;	//	3/11
 
 			//
 			//	AES-Verify
@@ -202,18 +213,11 @@ namespace node
 			//
 			//	data field
 			//
-			std::cerr << "data field... " << h.data_.size() << std::endl;
-// 			h.data_.assign(pos, inp.end());
-			while(pos < inp.end()) {
-				std::cerr << "data field... " << std::dec << h.data_.size() << " + " << std::hex << +*pos << std::endl;
-				h.data_.push_back(*pos);
-				++pos;
-			}
-			std::cerr << "...data field with " << std::dec << h.data_.size() << " bytes" << std::endl;
-			
-			return std::make_pair(h, true);
+			hs.data_.assign(pos, inp.end());
+
+			return true;
 		}
-		return std::make_pair(h, false);
+		return false;
 	}
 
 	header_long::header_long()
@@ -249,65 +253,58 @@ namespace node
 		return *this;
 	}
 	
-	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t inp)
+	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const& inp)
 	{
-		BOOST_ASSERT_MSG(inp.size() > 14, "header_long to short");
-		header_long h;
+		header_long hl;
+		bool const b = reset_header_long(hl, type, inp);
+		return std::make_pair(hl, b);
+	}
 
-		h.server_id_[0] = type;
+	bool reset_header_long(header_long& hl, char type, cyng::buffer_t const& inp)
+	{
+		//
+		//	reset
+		//
+		hl.server_id_[0] = type;
+		hl.server_id_.fill(0u);
 
 		if (inp.size() > 14) {
 
-			auto pos = inp.begin();
+			auto pos = inp.cbegin();
 
 			//
 			//	Identification Number
 			//	4 bytes serial ID
 			//
-			h.server_id_[3] = *pos++;
-			h.server_id_[4] = *pos++;
-			h.server_id_[5] = *pos++;
-			h.server_id_[6] = *pos++;
-			
+			hl.server_id_[3] = *pos++;
+			hl.server_id_[4] = *pos++;
+			hl.server_id_[5] = *pos++;
+			hl.server_id_[6] = *pos++;
+
 			//
 			//	Manufacturer Acronym / Code
 			//
-			h.server_id_[1] = *pos++;	//	4
-			h.server_id_[2] = *pos++;	//	5
+			hl.server_id_[1] = *pos++;	//	4
+			hl.server_id_[2] = *pos++;	//	5
 
 			//
 			//	Version/Generation
 			//
-			h.server_id_[7] = *pos++;	//	6
+			hl.server_id_[7] = *pos++;	//	6
 
 			//
 			//	Device type (Medium=HCA)
 			//
-			h.server_id_[8] = *pos++;	//	7
+			hl.server_id_[8] = *pos++;	//	7
 
 			//
 			//	build short header
 			//
-			std::cerr << "build short header from " << std::dec << std::distance(pos, inp.end()) << " bytes" << std::endl;
-// 			auto const sh = cyng::buffer_t(pos, inp.end());
-			cyng::buffer_t sh;
-			while(pos < inp.end()) {
-				std::cerr << "buffer " << std::dec << sh.size() << " + " << std::hex << +*pos << std::endl;
-				sh.push_back(*pos);
-				++pos;
-			}
-			std::pair<header_short, bool> const r = make_header_short(sh);
-			std::cerr << "short header " << (r.second ? "complete" : "INVALID") << std::endl;
-			std::cerr << "short header has " << std::dec << h.hs_.data().size() << " bytes" << std::endl;
-			h.hs_ = r.first;
-			std::cerr << "long header complete" << std::endl;
-			std::pair<header_long, bool> p(h, r.second);
-// 			return std::make_pair(h, r.second);
-			std::cerr << "return pair" << std::endl;
-			return p;
+			auto const sh = cyng::buffer_t(pos, inp.end());
+			return reset_header_short(hl.hs_, sh);
 		}
 
-		return std::make_pair(h, false);
+		return false;
 	}
 
 	cyng::buffer_t header_long::get_srv_id() const

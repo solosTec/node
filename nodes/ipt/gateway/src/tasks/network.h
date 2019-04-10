@@ -12,7 +12,7 @@
 #include <smf/ipt/config.h>
 #include <smf/sml/protocol/parser.h>
 #include <smf/sml/status.h>
-#include "../kernel.h"
+#include "../core.h"
 #include "../executor.h"
 
 #include <cyng/log.h>

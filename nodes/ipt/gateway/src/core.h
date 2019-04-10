@@ -14,6 +14,7 @@
 #include <smf/ipt/config.h>
 #include <smf/sml/protocol/reader.h>
 #include <smf/sml/protocol/generator.h>
+#include "data.h"
 
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
@@ -89,34 +90,7 @@ namespace node
 
 			void sml_get_list_request(cyng::context& ctx);
 
-			/**
-			 * data from SML parser after receiving a 0x7F frame (short SML header)
-			 */
-			void sml_get_list_response(cyng::context& ctx);
 
-			/**
-			 *	callback from wireless LMN
-			 */
-			void wmbus_push_frame(cyng::context& ctx);
-
-			void update_device_table(cyng::buffer_t const& dev_id
-				, std::string const& manufacturer
-				, std::uint8_t version
-				, std::uint8_t media
-				, std::uint8_t frame_type
-				, cyng::crypto::aes_128_key
-				, boost::uuids::uuid tag);
-
-			/**
-			 * Applied from master with CI = 0x53, 0x55, 0x5B, 0x5F, 0x60, 0x64, 0x6Ch, 0x6D
-			 * Applied from slave with CI = 0x68, 0x6F, 0x72, 0x75, 0x7C, 0x7E, 0x9F
-			 */
-			void read_frame_header_long(cyng::buffer_t const&, cyng::buffer_t const&);
-
-			/**
-			 * frame type 0x7F
-			 */
-			void read_frame_header_short_sml(cyng::context& ctx, cyng::buffer_t const&, cyng::buffer_t const&);
 
 		public:
 			/**
@@ -155,6 +129,11 @@ namespace node
 			 * buffer for current SML message
 			 */
 			res_generator sml_gen_;
+
+			/**
+			 * process incoming data
+			 */
+			data data_;
 
 		};
 

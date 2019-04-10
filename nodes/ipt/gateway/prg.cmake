@@ -5,21 +5,21 @@ set (node_ipt_gateway_cpp
 
 	nodes/ipt/gateway/src/main.cpp	
 	nodes/ipt/gateway/src/controller.cpp
-	nodes/ipt/gateway/src/kernel.cpp
+	nodes/ipt/gateway/src/core.cpp
 	nodes/ipt/gateway/src/executor.cpp
+	nodes/ipt/gateway/src/data.cpp
 )
 
 set (node_ipt_gateway_h
 
 	nodes/ipt/gateway/src/controller.h
-	nodes/ipt/gateway/src/kernel.h
+	nodes/ipt/gateway/src/core.h
 	nodes/ipt/gateway/src/executor.h
+	nodes/ipt/gateway/src/data.h
 )
 
 set (node_ipt_gateway_schemes
 
-#	nodes/shared/db/db_schemes.h
-#	nodes/shared/db/db_schemes.cpp
 	nodes/shared/db/db_meta.h
 	nodes/shared/db/db_meta.cpp
 )
