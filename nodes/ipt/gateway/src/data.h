@@ -41,6 +41,11 @@ namespace node
 			 */
 			void sml_get_list_response(cyng::context& ctx);
 
+			/**
+			 * store received data
+			 */
+			void store(cyng::context& ctx);
+
 			void update_device_table(cyng::buffer_t const& dev_id
 				, std::string const& manufacturer
 				, std::uint8_t version
@@ -55,6 +60,8 @@ namespace node
 			 */
 			void read_frame_header_long(cyng::context& ctx, cyng::buffer_t const&, cyng::buffer_t const&);
 			void read_frame_header_short(cyng::context& ctx, cyng::buffer_t const&, cyng::buffer_t const&);
+
+			void read_variable_data_block(cyng::buffer_t const&, header_short&);
 
 			/**
 			 * frame type 0x7F
@@ -74,6 +81,11 @@ namespace node
 			 * configuration db
 			 */
 			cyng::store::db& config_db_;
+
+			/**
+			 * last/current data set of SML data
+			 */
+			cyng::param_map_t params_;
 
 		};
 

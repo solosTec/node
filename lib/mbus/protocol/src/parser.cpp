@@ -37,7 +37,6 @@ namespace node
 		parser::~parser()
 		{
 			if (cb_)	cb_ = nullptr;
-			//if (f_read_uint8)	f_read_uint8 = nullptr;
 		}
 
 

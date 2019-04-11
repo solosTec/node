@@ -12,10 +12,12 @@
 #include <smf/mbus/aes.h>
 #include <smf/sml/protocol/parser.h>
 #include <smf/sml/srv_id_io.h>
+#include <smf/sml/obis_db.h>
 
 #include <cyng/tuple_cast.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/io/hex_dump.hpp>
+#include <cyng/vm/generator.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -29,6 +31,7 @@ namespace node
 			, cyng::store::db& config_db)
 		: logger_(logger)
 			, config_db_(config_db)
+			, params_()
 		{
 			//
 			//	callback from wireless LMN
@@ -40,13 +43,76 @@ namespace node
 			//
 			vm.register_function("sml.get.list.response", 9, std::bind(&data::sml_get_list_response, this, std::placeholders::_1));
 
+			//
+			//	process latest received data (this->params_)
+			//
+			vm.register_function("gw.data.store", 2, std::bind(&data::store, this, std::placeholders::_1));
 		}
 
 		void data::sml_get_list_response(cyng::context& ctx)
 		{
-			//	[b583e91b-14f5-4691-808a-5b0a517eb1d6,7531511-2,0,,01E61E130900163C07,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06975265]
+			//	
+			//	example:
+			//	[c450540c-b69a-4a89-ae48-017e301f7dff,.,00000000,,01A815743145040102,990000000003,
+			//	%(	("0100000009FF":%(("scaler":0),("unit":0),("valTime":null),("value":01A815743145040102))),
+			//		("0100010800FF":%(("scaler":-1),("unit":1e),("valTime":null),("value":1452.1))),
+			//		("0100010801FF":%(("scaler":-1),("unit":1e),("valTime":null),("value":0))),
+			//		("0100010802FF":%(("scaler":-1),("unit":1e),("valTime":null),("value":1452.1))),
+			//		("0100020800FF":%(("scaler":-1),("unit":1e),("valTime":null),("value":55330.2))),
+			//		("0100020801FF":%(("scaler":-1),("unit":1e),("valTime":null),("value":0))),
+			//		("0100020802FF":%(("scaler":-1),("unit":1e),("valTime":null),("value":55330.2))),
+			//		("0100100700FF":%(("scaler":-1),("unit":1b),("valTime":null),("value":0))),
+			//		("8181C78203FF":%(("scaler":0),("unit":0),("valTime":null),("value":EMH))),
+			//		("8181C78205FF":%(("scaler":0),("unit":0),("valTime":null),("value":1C661D023F438BB639D3D95AA580F63DF78F2EA4692709F3D40209C35E98CDBC25B95A7C3A813F55E13AA2DC61020FA2)))),
+			//		null,null]
+			//
+			//	* [uuid] pk (meta data)
+			//	* [string] trx
+			//	* [size] idx
+			//	* [buffer] client id (empty)
+			//	* [buffer] server id
+			//	* [buffer] OBIS code
+			//	* [obj] values
+			//	* [ ] actSensorTime
+			//	* [ ] actGatewayTime
+			//	
 			cyng::vector_t const frame = ctx.get_frame();
-			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+			//CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			//
+			//	get server/meter id
+			//
+			cyng::buffer_t server_id;
+			server_id = cyng::value_cast(frame.at(4), server_id);
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << from_server_id(server_id));
+
+			//
+			//	extract parameter list with values
+			//
+			params_.clear();
+			params_ = cyng::value_cast(frame.at(6), params_);
+
+			for (auto const& p : params_) {
+
+				CYNG_LOG_DEBUG(logger_, p.first << " = " << cyng::io::to_str(p.second));
+
+				if (boost::algorithm::equals(p.first, OBIS_DATA_PUBLIC_KEY.to_str())) {
+
+					//
+					//	update public key
+					//
+					CYNG_LOG_TRACE(logger_, "update public key " << cyng::io::to_str(p.second));
+
+					config_db_.modify("mbus-devices"
+						, cyng::table::key_generator(server_id)
+						, cyng::param_t("pubKey", p.second)
+						, ctx.tag());
+				}
+			}
+
+			//
+			//	handle special parameters
+			//
 		}
 
 
@@ -204,49 +270,8 @@ namespace node
 
 				if (decode_data(ctx.tag(), aes_mode, server_id, r.first)) {
 
-					//
-					//	remove trailing 0x2F
-					//
-					r.first.header().remove_aes_trailer();
+					read_variable_data_block(server_id, r.first.header());
 
-					//
-					//	get number of encrypted bytes
-					//
-					auto counter = r.first.header().get_block_counter() * 16u;
-					counter -= r.first.header().remove_aes_trailer();
-
-					vdb_reader reader;
-					std::size_t offset{ 0 };
-					while (offset < counter) {
-
-						//
-						//	read block
-						//
-						std::size_t const new_offset = reader.decode(r.first.header().data(), offset);
-						if (new_offset > offset) {
-
-							//
-							//	store block
-							//
-							CYNG_LOG_INFO(logger_, "offset: "
-								<< offset
-								<< ", meter "
-								<< sml::from_server_id(server_id)
-								<< ", value: "
-								<< cyng::io::to_str(reader.get_value())
-								<< ", scaler: "
-								<< +reader.get_scaler()
-								<< ", unit: "
-								<< get_unit_name(reader.get_unit()));
-						}
-						else {
-
-							//
-							//	no more data blocks
-							//
-							break;
-						}
-					}
 				}
 				else {
 					CYNG_LOG_WARNING(logger_, "meter " << sml::from_server_id(server_id) << " encryption failed");
@@ -279,13 +304,9 @@ namespace node
 				if (decode_data(ctx.tag(), aes_mode, server_id, r.first)) {
 
 					//
-					//	remove trailing 0x2F
+					//	read data block
 					//
-					r.first.remove_aes_trailer();
-
-					//
-					//	ToDo: implement
-					//
+					read_variable_data_block(server_id, r.first);
 				}
 
 			}
@@ -337,21 +358,83 @@ namespace node
 					//
 					r.first.remove_aes_trailer();
 
-
 					//
 					//	start SML parser
 					//
 					parser sml_parser([&](cyng::vector_t&& prg) {
-						//std::cout << cyng::io::to_str(prg) << std::endl;
+
+						//
+						//	This results in a call of sml_get_list_response()
+						//
 						ctx.queue(std::move(prg));
+
 					}, false, false);	//	not verbose, no logging
 
 					auto const sml = r.first.data();
 					sml_parser.read(sml.begin(), sml.end());
+
+					//
+					//	process values stored in this->params_
+					//
+					ctx.queue(cyng::generate_invoke("gw.data.store", srv_id, static_cast<std::uint8_t > (node::mbus::FIELD_CI_RES_SHORT_SML)));
 				}
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "cannot read short header of " << sml::from_server_id(srv_id));
+			}
+		}
+
+		void data::read_variable_data_block(cyng::buffer_t const& server_id, header_short& hs)
+		{
+			//
+			//	get number of encrypted bytes
+			//
+			auto counter = hs.get_block_counter() * 16u;
+
+			//
+			//	remove trailing 0x2F
+			//
+			counter -= hs.remove_aes_trailer();
+
+			CYNG_LOG_DEBUG(logger_, "read_variable_data_block("
+				<< counter
+				<< " bytes, meter "
+				<< sml::from_server_id(server_id)
+				<< ")");
+
+
+			vdb_reader reader;
+			std::size_t offset{ 0 };
+			while (offset < counter) {
+
+				//
+				//	read block
+				//
+				std::size_t const new_offset = reader.decode(hs.data(), offset);
+				if (new_offset > offset) {
+
+					//
+					//	store block
+					//
+					CYNG_LOG_INFO(logger_, "offset: "
+						<< offset
+						<< ", meter "
+						<< sml::from_server_id(server_id)
+						<< ", value: "
+						<< cyng::io::to_str(reader.get_value())
+						<< ", scaler: "
+						<< +reader.get_scaler()
+						<< ", unit: "
+						<< get_unit_name(reader.get_unit()));
+				}
+				else {
+
+					//
+					//	no more data blocks
+					//
+					offset = counter;
+					break;
+				}
 			}
 		}
 
@@ -545,6 +628,20 @@ namespace node
 			}, cyng::store::write_access("mbus-devices"));
 
 			return hs.verify_encryption();
+
+		}
+
+		void data::store(cyng::context& ctx)
+		{
+			cyng::vector_t const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				cyng::buffer_t,		//	[0] server/meter ID
+				std::uint8_t		//	[1] frame type
+			>(frame);
+
+
 
 		}
 

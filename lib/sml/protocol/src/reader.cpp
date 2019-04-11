@@ -53,7 +53,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
-			if (count!= 5)	return cyng::vector_t{};
+			if (count != 5)	return cyng::generate_invoke("log.msg.error", "SMLMsg", count);
 
 			//
 			//	instruction vector
@@ -95,12 +95,6 @@ namespace node
 			cyng::tuple_t choice;
 			choice = cyng::value_cast(*pos++, choice);
 			prg << cyng::unwinder(read_choice(choice));
-			//BOOST_ASSERT_MSG(choice.size() == 2, "CHOICE");
-			//if (choice.size() == 2)
-			//{
-			//	ro_.set_value("code", choice.front());
-			//	prg << cyng::unwinder(read_body(choice.front(), choice.back()));
-			//}
 
 			//
 			//	(6) CRC16
@@ -123,7 +117,7 @@ namespace node
 				ro_.set_value("code", choice.front());
 				return read_body(choice.front(), choice.back());
 			}
-			return cyng::vector_t();
+			return cyng::generate_invoke("log.msg.error", "SMLMsg-choice", choice.size());
 		}
 
 		cyng::vector_t reader::read_body(cyng::object type, cyng::object body)
@@ -183,7 +177,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 7, "Public Open Request");
-			if (count != 7)	return cyng::vector_t{};
+			if (count != 7)	cyng::generate_invoke("log.msg.error", "SML Public Open Request", count);
 
 			//	codepage "ISO 8859-15"
 			ro_.set_value("codepage", *pos++);
@@ -238,7 +232,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 6, "Public Open Response");
-			if (count != 6)	return cyng::vector_t{};
+			if (count != 6)	return cyng::generate_invoke("log.msg.error", "SML Public Open Response", count);
 
 			//	codepage "ISO 8859-15"
 			ro_.set_value("codepage", *pos++);
@@ -279,7 +273,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 1, "Public Close Request");
-			if (count != 1)	return cyng::vector_t{};
+			if (count != 1)	return cyng::generate_invoke("log.msg.error", "SML Public Close Request", count);
 			
 			ro_.set_value("globalSignature", *pos++);
 
@@ -293,7 +287,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 1, "Public Close Response");
-			if (count != 1)	return cyng::vector_t{};
+			if (count != 1)	cyng::generate_invoke("log.msg.error", "SML Public Close Response", count);
 			
 			ro_.set_value("globalSignature", *pos++);
 
@@ -307,7 +301,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
-			if (count != 9)	return cyng::vector_t{};
+			if (count != 9)	return cyng::generate_invoke("log.msg.error", "SML Get Profile List Response", count);
 			
 			//
 			//	serverId
@@ -369,7 +363,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Request");
-			if (count != 9)	return cyng::vector_t{};
+			if (count != 9)	return cyng::generate_invoke("log.msg.error", "SML Get Profile List Request", count);
 
 			//
 			//	serverId
@@ -439,7 +433,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "Get Proc Parameter Response");
-			if (count != 3)	return cyng::vector_t{};
+			if (count != 3)	return cyng::generate_invoke("log.msg.error", "SML Get Proc Parameter Response", count);
 			
 			//
 			//	serverId
@@ -472,7 +466,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "SML Tree");
-			if (count != 3)	return cyng::vector_t{};
+			if (count != 3)	return cyng::generate_invoke("log.msg.error", "SML Tree", count);
 			
 			//
 			//	1. parameterName Octet String,
@@ -820,7 +814,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Get Profile List Request");
-			if (count != 5)	return cyng::vector_t{};
+			if (count != 5)	return cyng::generate_invoke("log.msg.error", "SML Get Profile List Request", count);
 			
 			//
 			//	serverId
@@ -877,7 +871,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Set Proc Parameter Request");
-            if (count != 5) return cyng::vector_t{};
+            if (count != 5) return cyng::generate_invoke("log.msg.error", "SML Set Proc Parameter Request", count);
             
             //
             //	serverId
@@ -920,7 +914,7 @@ namespace node
 
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "SML Tree");
-            if (count != 3) return cyng::vector_t{};
+            if (count != 3) return cyng::generate_invoke("log.msg.error", "SML Tree", count);
 
 			//
 			//	1. parameterName Octet String,
@@ -1309,7 +1303,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Get List Request");
-			if (count != 5) return cyng::vector_t{};
+			if (count != 5) return cyng::generate_invoke("log.msg.error", "SML Get List Request", count);
 
 			//
 			//	clientId - MAC address from caller
@@ -1352,7 +1346,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 7, "Get List Response");
-			if (count != 7) return cyng::vector_t{};
+			if (count != 7) return cyng::generate_invoke("log.msg.error", "SML Get List Response", count);
 
 			//
 			//	clientId - optional
@@ -1411,7 +1405,7 @@ namespace node
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 4, "Attention Response");
-            if (count != 4) return cyng::vector_t{};
+            if (count != 4) return cyng::generate_invoke("log.msg.error", "SML Attention Response", count);
 
 			//
 			//	serverId

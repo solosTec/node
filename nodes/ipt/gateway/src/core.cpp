@@ -11,11 +11,6 @@
 #include <smf/sml/obis_db.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_io.h>
-//#include <smf/sml/protocol/parser.h>
-//#include <smf/mbus/defs.h>
-//#include <smf/mbus/header.h>
-//#include <smf/mbus/variable_data_block.h>
-//#include <smf/mbus/aes.h>
 
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
