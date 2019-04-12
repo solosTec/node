@@ -40,6 +40,9 @@ namespace node
 			{
 				return (buffer.at(6) >= 0x00) && (buffer.at(6) <= 0x0F);
 			}
+			else if (is_mbus(buffer)) {
+				return buffer.at(0) == MBUS_WIRELESS;
+			}
 			return false;
 		}
 
@@ -76,13 +79,14 @@ namespace node
 
 		std::uint32_t get_srv_type(cyng::buffer_t const& buffer)
 		{
-			if (is_mbus(buffer))	return SRV_MBUS;
-			if (is_serial(buffer))	return SRV_SERIAL;
-			if (is_gateway(buffer))	return SRV_GW;
-			if (buffer.size() == 10 && buffer.at(1) == '3')	return SRV_BCD;
-			if (buffer.size() == 8 && buffer.at(2) == '4')	return SRV_EON;
-			if (is_dke_1(buffer))	return SRV_DKE_1;
-			if (is_dke_2(buffer))	return SRV_DKE_2;
+			if (is_w_mbus(buffer))	return SRV_W_MBUS;
+			else if (is_mbus(buffer))	return SRV_MBUS;
+			else if (is_serial(buffer))	return SRV_SERIAL;
+			else if (is_gateway(buffer))	return SRV_GW;
+			else if (buffer.size() == 10 && buffer.at(1) == '3')	return SRV_BCD;
+			else if (buffer.size() == 8 && buffer.at(2) == '4')	return SRV_EON;
+			else if (is_dke_1(buffer))	return SRV_DKE_1;
+			else if (is_dke_2(buffer))	return SRV_DKE_2;
 
 			return SRV_OTHER;
 		}
