@@ -620,6 +620,41 @@ namespace node
 					, ro_.get_value(OBIS_CODE_ROOT_IPT_STATE_PORT_REMOTE)	//	remote port
 				);
 			}
+			else if (root == OBIS_CODE_ROOT_SENSOR_PARAMS) {
+
+				//	get meter configuration
+				read_get_proc_multiple_parameters(*pos++);
+
+				//	81 81 c7 82 04 ff - CODE_SERVER_ID- MUC Server Identifier (string)
+				//	81 81 C7 82 02 FF - CODE_DEVICE_CLASS Device class (string)
+				//	81 81 C7 82 03 FF - DATA_MANUFACTURER- Manufacturer
+				//	81 00 60 05 00 00 - CLASS_OP_LOG_STATUS_WORD - Last Status Word
+				//	81 81 C7 86 01 FF
+				//	81 81 C7 86 02 FF
+				//	01 00 00 09 0B 00
+				//	81 81 C7 82 05 FF
+				//	81 81 C7 86 03 FF
+				//	81 81 61 3C 01 FF
+				//	81 81 61 3C 02 FF
+
+				return cyng::generate_invoke("sml.get.proc.param.meter"
+					, ro_.pk_
+					, ro_.trx_
+					, ro_.idx_
+					, from_server_id(ro_.server_id_)
+					, OBIS_CODE_ROOT_SENSOR_PARAMS.to_buffer()	//	same as path.front()
+					, ro_.get_value(OBIS_CODE_DEVICE_CLASS)	//	81 81 C7 82 02 FF
+					, ro_.get_string(OBIS_DATA_MANUFACTURER)	//	81 81 C7 82 03 FF
+					, ro_.get_value(OBIS_CLASS_OP_LOG_STATUS_WORD)	//	81 00 60 05 00 00
+					, ro_.get_value(OBIS_CODE_ROOT_SENSOR_BITMASK)	//	81 81 C7 86 01 FF
+					, ro_.get_value(OBIS_CODE_AVERAGE_TIME_MS)	//	81 81 C7 86 02 FF
+					, ro_.get_value(OBIS_CURRENT_UTC)		//	01 00 00 09 0B 00
+					, ro_.get_value(OBIS_DATA_PUBLIC_KEY)	//	81 81 C7 82 05 FF
+					, ro_.get_value(OBIS_DATA_AES_KEY)		//	81 81 C7 86 03 FF
+					, ro_.get_string(OBIS_DATA_USER_NAME)	//	81 81 61 3C 01 FF
+					, ro_.get_string(OBIS_DATA_USER_PWD)		//	81 81 61 3C 02 FF
+				);
+			}
 
 			return cyng::vector_t{};
 		}

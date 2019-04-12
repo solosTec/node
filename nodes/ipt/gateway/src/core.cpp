@@ -564,7 +564,7 @@ namespace node
 					, frame.at(3)	//	server id
 					, OBIS_CODE_ROOT_DEVICE_INFO);
 			}
-			else if (OBIS_CODE_ROOT_SENSOR_PROPERTY == code)
+			else if (OBIS_CODE_ROOT_SENSOR_PARAMS == code)
 			{
 				config_db_.access([&](const cyng::store::table* tbl) {
 
@@ -574,7 +574,7 @@ namespace node
 					{
 						sml_gen_.empty(frame.at(1)
 							, frame.at(3)	//	server id
-							, OBIS_CODE_ROOT_SENSOR_PROPERTY);
+							, OBIS_CODE_ROOT_SENSOR_PARAMS);
 					}
 					else
 					{
@@ -988,7 +988,7 @@ namespace node
 							parameter_tree(OBIS_CODE(81, 81, C7, 86, 22, FF), make_value(100)),		//	Einträge
 							parameter_tree(OBIS_CODE(81, 81, C7, 87, 81, FF), make_value(0)),		//	Registerperiode
 							//	15 min period
-							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_CODE(81, 81, C7, 86, 11, FF))),
+							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_PROFILE_15_MINUTE)),
 							//	Liste von Einträgen z.B. 08 00 01 00 00 FF := Zählerstand Wasser
 							child_list_tree(OBIS_CODE(81, 81, C7, 8A, 23, FF),{
 								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 23, 01), make_value(OBIS_CODE(08, 00, 01, 00, 00, FF))),

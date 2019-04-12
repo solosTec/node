@@ -230,72 +230,72 @@ namespace node
 			/**
 			 * get list of visible servers/meters - 81 81 10 06 FF FF
 			 */
-			std::size_t get_proc_parameter_srv_visible(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+			//std::size_t get_proc_parameter_srv_visible(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password);
 
 			/**
 			 * get list of active servers/meters - 81 81 11 06 FF FF
 			 */
-			std::size_t get_proc_parameter_srv_active(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+			//std::size_t get_proc_parameter_srv_active(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password);
 
 			/**
 			 * get list of available firmware versions - 81 81 C7 82 FF (CODE_ROOT_DEVICE_IDENT)
 			 */
-			std::size_t get_proc_parameter_firmware(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+			//std::size_t get_proc_parameter_firmware(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password);
 
 			/**
 			 * get status word - 81 00 60 05 00 00 (CLASS_OP_LOG_STATUS_WORD)
 			 */
-			std::size_t get_proc_status_word(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+			//std::size_t get_proc_status_word(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password);
 
 			/**
 			 * get list of available memory - 81 81 C7 82 FF (CODE_ROOT_MEMORY_USAGE)
 			 */
-			std::size_t get_proc_parameter_memory(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+			//std::size_t get_proc_parameter_memory(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password);
 
 			/**
 			 * get current wireless M-Bus data - 81 06 0F 06 00 FF (CODE_ROOT_W_MBUS_STATUS)
 			 */
-			std::size_t get_proc_parameter_wireless_mbus_status(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+			//std::size_t get_proc_parameter_wireless_mbus_status(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password);
 
 			/**
 			 * get current wireless M-Bus interface - 81 06 19 07 00 FF (OBIS_CODE_IF_wMBUS)
 			 */
-			std::size_t get_proc_parameter_wireless_mbus_config(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+			//std::size_t get_proc_parameter_wireless_mbus_config(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password);
 
 			/**
 			 * get current wried IEC interface - 81 81 C7 93 00 FF (OBIS_CODE_IF_1107)
 			 */
-			std::size_t get_proc_parameter_wired_iec_config(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+			//std::size_t get_proc_parameter_wired_iec_config(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password);
 			
 			/**
 			 * get current IP-T status - 81 49 0D 06 00 FF (OBIS_CODE_ROOT_IPT_STATE)
 			 */
-			std::size_t get_proc_parameter_ipt_status(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+			//std::size_t get_proc_parameter_ipt_status(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password);
 
 			/**
 			 * get current IP-T config - 81 49 0D 07 00 FF (CODE_ROOT_IPT_PARAM)
 			 */
-			std::size_t get_proc_parameter_ipt_config(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+			//std::size_t get_proc_parameter_ipt_config(cyng::buffer_t const& server_id
+			//	, std::string const& username
+			//	, std::string const& password);
 
 			/**
 			 * get last data record - 99 00 00 00 00 03 (CODE_LAST_DATA_RECORD)

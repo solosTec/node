@@ -64,7 +64,8 @@ namespace node
 			boost::algorithm::equals(std::get<7>(tpl), "root-ipt-state") ||
 			boost::algorithm::equals(std::get<7>(tpl), "root-ipt-param") ||
 			boost::algorithm::equals(std::get<7>(tpl), "IF-IEC-62505-21") ||
-			//boost::algorithm::equals(std::get<7>(tpl), "IF-MBUS") ||
+			boost::algorithm::equals(std::get<7>(tpl), "root-sensor-params") ||	//	81 81 C7 86 00 FF
+			boost::algorithm::equals(std::get<7>(tpl), "root-sensor-prop") ||	//	81 81 C7 86 00 FF
 			boost::algorithm::equals(std::get<7>(tpl), "current-data-record"))
 		{
 

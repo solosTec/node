@@ -6,9 +6,7 @@
  */
 
 #include <smf/sml/protocol/generator.h>
-//#include <smf/sml/protocol/message.h>
 #include <smf/sml/protocol/serializer.h>
-//#include <smf/sml/protocol/value.hpp>
 #include <smf/sml/crc16.h>
 #include <smf/sml/obis_db.h>
 #include <NODE_project_info.h>
@@ -272,77 +270,6 @@ namespace node
 					, code)
 				)
 			);
-
-		}
-
-		std::size_t req_generator::get_proc_parameter_srv_visible(cyng::buffer_t const& srv
-			, std::string const& username
-			, std::string const& password)
-		{
-			return get_proc_parameter(srv, OBIS_CODE_ROOT_VISIBLE_DEVICES, username, password);
-		}
-
-		std::size_t req_generator::get_proc_parameter_srv_active(cyng::buffer_t const& srv
-			, std::string const& username
-			, std::string const& password)
-		{
-			return get_proc_parameter(srv, OBIS_CODE_ROOT_ACTIVE_DEVICES, username, password);
-		}
-
-		std::size_t req_generator::get_proc_parameter_firmware(cyng::buffer_t const& srv
-			, std::string const& username
-			, std::string const& password)
-		{
-			return get_proc_parameter(srv, OBIS_CODE_ROOT_DEVICE_IDENT, username, password);
-		}
-
-		std::size_t req_generator::get_proc_status_word(cyng::buffer_t const& srv
-			, std::string const& username
-			, std::string const& password)
-		{
-			return get_proc_parameter(srv, OBIS_CLASS_OP_LOG_STATUS_WORD, username, password);
-		}
-
-		std::size_t req_generator::get_proc_parameter_memory(cyng::buffer_t const& srv
-			, std::string const& username
-			, std::string const& password)
-		{
-			return get_proc_parameter(srv, OBIS_CODE_ROOT_MEMORY_USAGE, username, password);
-		}
-
-		std::size_t req_generator::get_proc_parameter_wireless_mbus_status(cyng::buffer_t const& srv
-			, std::string const& username
-			, std::string const& password)
-		{
-			return get_proc_parameter(srv, OBIS_CODE_ROOT_W_MBUS_STATUS, username, password);
-		}
-
-		std::size_t req_generator::get_proc_parameter_wireless_mbus_config(cyng::buffer_t const& srv
-			, std::string const& username
-			, std::string const& password)
-		{
-			return get_proc_parameter(srv, OBIS_CODE_IF_wMBUS, username, password);
-		}
-
-		std::size_t req_generator::get_proc_parameter_wired_iec_config(cyng::buffer_t const& srv
-			, std::string const& username
-			, std::string const& password)
-		{
-			return get_proc_parameter(srv, OBIS_CODE_IF_1107, username, password);
-		}
-
-		std::size_t req_generator::get_proc_parameter_ipt_status(cyng::buffer_t const& srv
-			, std::string const& username
-			, std::string const& password)
-		{
-			return get_proc_parameter(srv, OBIS_CODE_ROOT_IPT_STATE, username, password);
-		}
-
-		std::size_t req_generator::get_proc_parameter_ipt_config(cyng::buffer_t const& srv
-			, std::string const& username
-			, std::string const& password)
-		{
-			return get_proc_parameter(srv, OBIS_CODE_ROOT_IPT_PARAM, username, password);
 		}
 
 		std::size_t req_generator::get_list_last_data_record(cyng::buffer_t const& client_id
@@ -851,8 +778,8 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(server_id	//	server id  
-					, OBIS_CODE_ROOT_SENSOR_PROPERTY	//	path entry - 81 81 C7 86 00 FF
-					, child_list_tree(OBIS_CODE_ROOT_SENSOR_PROPERTY, {
+					, OBIS_CODE_ROOT_SENSOR_PARAMS	//	path entry - 81 81 C7 86 00 FF
+					, child_list_tree(OBIS_CODE_ROOT_SENSOR_PARAMS, {
 
 						//	repeat server id
 						parameter_tree(OBIS_CODE_SERVER_ID, make_value(cyng::value_cast(server_id, tmp))),

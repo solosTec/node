@@ -65,7 +65,7 @@ namespace node
 			else if (code == OBIS_CODE_ROOT_INVISIBLE_DEVICES)	return "root-lost-devices";
 			else if (code == OBIS_CODE_ROOT_DEVICE_INFO)		return "root-device-info";
 			else if (code == OBIS_CODE_ROOT_VISIBLE_DEVICES)	return "root-visible-devices";
-			else if (code == OBIS_CODE_ROOT_SENSOR_PROPERTY)	return "root-sensor-prop";
+			else if (code == OBIS_CODE_ROOT_SENSOR_PARAMS)	return "root-sensor-prop";
 			else if (code == OBIS_CODE_ROOT_DATA_COLLECTOR)		return "root-data-prop";
 			
 
