@@ -24,6 +24,15 @@ namespace node
 		public:
 			typedef std::array< std::uint8_t, 6 >	data_type;
 
+			enum value_group {
+				VG_MEDIUM = 0,
+				VG_CHANNEL = 1,
+				VG_INDICATOR = 2,
+				VG_MODE = 3,
+				VG_QUANTITY = 4,	//	tariff
+				VG_STORAGE = 5
+			};
+
 		public:
 			obis();
 			obis(octet_type const&);

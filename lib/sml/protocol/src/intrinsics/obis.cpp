@@ -50,12 +50,12 @@ namespace node
 			, std::uint8_t e
 			, std::uint8_t f)
 		{
-			value_[0] = a;
-			value_[1] = b;
-			value_[2] = c;
-			value_[3] = d;
-			value_[4] = e;
-			value_[5] = f;
+			value_[VG_MEDIUM] = a;
+			value_[VG_CHANNEL] = b;
+			value_[VG_INDICATOR] = c;
+			value_[VG_MODE] = d;
+			value_[VG_QUANTITY] = e;
+			value_[VG_STORAGE] = f;
 		}
 
 		void obis::swap(obis& other)	
@@ -126,7 +126,7 @@ namespace node
 
 		std::uint32_t obis::get_medium() const	
 		{
-			return value_[0];
+			return value_.at(VG_MEDIUM);
 		}
 
 		const char* obis::get_medium_name() const 
@@ -155,10 +155,9 @@ namespace node
 			return get_medium() == 0;
 		}
 
-
 		std::uint32_t obis::get_channel() const
 		{
-				return value_[1];
+				return value_.at(VG_CHANNEL);
 		}
 
 		const char* obis::get_channel_name() const
@@ -197,7 +196,7 @@ namespace node
 
 		std::uint32_t obis::get_indicator() const 
 		{
-			return value_[2];
+			return value_.at(VG_INDICATOR);
 		}
 
 		const char* obis::get_indicator_name() const
@@ -241,17 +240,17 @@ namespace node
 
 		std::uint32_t obis::get_mode() const 
 		{
-			return value_[3];
+			return value_.at(VG_MODE);
 		}
 
 		std::uint32_t obis::get_quantities() const 
 		{
-			return value_[4];
+			return value_.at(VG_QUANTITY);
 		}
 
 		std::uint32_t obis::get_storage() const 
 		{
-			return value_[5];
+			return value_.at(VG_STORAGE);
 		}
 
 		std::uint16_t obis::get_number() const
@@ -264,8 +263,8 @@ namespace node
 			//
 			//	map values
 			//
-			u.val_[0] = value_[5];
-			u.val_[1] = value_[4] - 1;
+			u.val_[0] = value_[VG_STORAGE];
+			u.val_[1] = value_[VG_QUANTITY] - 1;
 
 			return u.num_;
 		}
