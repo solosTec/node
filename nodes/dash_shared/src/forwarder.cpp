@@ -471,7 +471,7 @@ namespace node
 		//	{"cmd":"config:gateway","channel":"set.proc.param","key":["31cad258-45f1-4b1d-b131-8a55eb671bb1"],"params":[{"name":"meter-tag","value":"1a38ed66-bd25-4e34-827c-b1a62f09abf4"},{"name":"meter-id","value":"01-a815-74314505-01-02"}],"section":["query"]}
 		cyng::vector_t key;
 		key = cyng::value_cast(reader.get("key"), key);
-		CYNG_LOG_INFO(logger, "ws tag: " << tag_ws << " - TGateway key" << cyng::io::to_str(key));
+		CYNG_LOG_INFO(logger, "\"sml:com\" from ws: " << tag_ws << " to TGateway " << cyng::io::to_str(key));
 		BOOST_ASSERT_MSG(!key.empty(), "TGateway key is empty");
 		if (!key.empty()) {
 

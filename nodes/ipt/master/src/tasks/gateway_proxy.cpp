@@ -21,6 +21,8 @@
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/dom/reader.h>
+#include <cyng/parser/buffer_parser.h>
 
 #ifdef SMF_IO_LOG
 #include <cyng/io/hex_dump.hpp>
@@ -528,7 +530,8 @@ namespace node
 				//
 				//	modify IP-T parameters
 				//
-				execute_cmd_set_proc_param_ipt(sml_gen, sec);
+				auto const vec = queue_.front().get_params(sec);
+				execute_cmd_set_proc_param_ipt(sml_gen, server_id, user, pwd, vec);
 			}
 			else if (boost::algorithm::equals(sec, "IF-wireless-mbus")) {
 
@@ -549,9 +552,7 @@ namespace node
 				//
 				//	reboot the gateway
 				//
-				sml_gen.set_proc_parameter_restart(queue_.front().get_srv()
-					, queue_.front().get_user()
-					, queue_.front().get_pwd());
+				sml_gen.set_proc_parameter_restart(server_id, user, pwd);
 			}
 			else if (boost::algorithm::equals(sec, "activate")) {
 
@@ -573,6 +574,14 @@ namespace node
 				//	remove a meter device from list of visible meters
 				//
 				execute_cmd_set_proc_param_delete(sml_gen, sec);
+			}
+			else if (boost::algorithm::equals(sec, "root-sensor-params")) {
+
+				//
+				//	change root parameters of meter
+				//
+				auto const vec = queue_.front().get_params(sec);
+				execute_cmd_set_proc_param_meter(sml_gen, server_id, user, pwd, vec);
 			}
 			else {
 
@@ -697,9 +706,13 @@ namespace node
 	}
 
 
-	void gateway_proxy::execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen, std::string const& section)
+	void gateway_proxy::execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen
+		, cyng::buffer_t const& server_id
+		, std::string const& user
+		, std::string const& pwd
+		, cyng::vector_t vec)
 	{
-		auto const vec  = queue_.front().get_params(section);
+		//auto const vec  = queue_.front().get_params(section);
 		std::size_t idx{ 1 };	//	index starts with 1
 		for (auto const& p : vec) {
 
@@ -717,34 +730,34 @@ namespace node
 				if (boost::algorithm::equals(param.first, "host")) {
 
 					auto address = cyng::value_cast<std::string>(param.second, "0.0.0.0");
-					sml_gen.set_proc_parameter_ipt_host(queue_.front().get_srv()
-						, queue_.front().get_user()
-						, queue_.front().get_pwd()
+					sml_gen.set_proc_parameter_ipt_host(server_id
+						, user
+						, pwd
 						, idx
 						, address);
 
 				}
 				else if (boost::algorithm::equals(param.first, "port")) {
 					auto port = cyng::numeric_cast<std::uint16_t>(param.second, 26862u);
-					sml_gen.set_proc_parameter_ipt_port_local(queue_.front().get_srv()
-						, queue_.front().get_user()
-						, queue_.front().get_pwd()
+					sml_gen.set_proc_parameter_ipt_port_local(server_id
+						, user
+						, pwd
 						, idx
 						, port);
 				}
 				else if (boost::algorithm::equals(param.first, "user")) {
 					auto str = cyng::value_cast<std::string>(param.second, "");
-					sml_gen.set_proc_parameter_ipt_user(queue_.front().get_srv()
-						, queue_.front().get_user()
-						, queue_.front().get_pwd()
+					sml_gen.set_proc_parameter_ipt_user(server_id
+						, user
+						, pwd
 						, idx
 						, str);
 				}
 				else if (boost::algorithm::equals(param.first, "pwd")) {
 					auto str = cyng::value_cast<std::string>(param.second, "");
-					sml_gen.set_proc_parameter_ipt_pwd(queue_.front().get_srv()
-						, queue_.front().get_user()
-						, queue_.front().get_pwd()
+					sml_gen.set_proc_parameter_ipt_pwd(server_id
+						, user
+						, pwd
 						, idx
 						, str);
 				}
@@ -991,7 +1004,6 @@ namespace node
 		, std::string const& pwd
 		, cyng::vector_t vec)
 	{
-		//auto const vec = queue_.front().get_params(section);
 		if (!vec.empty()) {
 
 			//
@@ -1015,6 +1027,103 @@ namespace node
 				<< sml::from_server_id(server_id)
 				<< " has no parameters");
 		}
+	}
+
+	void gateway_proxy::execute_cmd_set_proc_param_meter(sml::req_generator& sml_gen
+		, cyng::buffer_t const& server_id
+		, std::string const& user
+		, std::string const& pwd
+		, cyng::vector_t vec)
+	{
+		if (vec.size() == 2) {
+
+			//
+			//	parameters are "meterId" and "data" with 
+			//	devClass: '-',
+			//	maker: '-',
+			//	status: 0,
+			//	bitmask: '00 00',
+			//	interval: 0,
+			//	lastRecord: "1964-04-20",
+			//	pubKey: '',
+			//	aesKey: '',
+			//	user: '',
+			//	pwd: ''
+			//	timeRef: 0
+			//
+
+			//
+			//	DOM/param_map_t reader
+			//
+			auto dom = cyng::make_reader(vec);
+
+			//
+			//	extract meter: meter ID is used as server ID
+			//
+			auto const str = cyng::value_cast<std::string>(dom[0].get("meterId"), "");
+			std::pair<cyng::buffer_t, bool> const r = sml::parse_srv_id(str);
+
+			//
+			//	modify user name
+			//
+			auto const new_user = cyng::value_cast<std::string>(dom[1]["data"].get("user"), "");
+			sml_gen.set_proc_parameter(r.first
+				, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_NAME }
+				, user
+				, pwd
+				, new_user);
+
+			//
+			//	modify user password
+			//
+			auto const new_pwd = cyng::value_cast<std::string>(dom[1]["data"].get("pwd"), "");
+			sml_gen.set_proc_parameter(r.first
+				, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_PWD }
+				, user
+				, pwd
+				, new_pwd);
+
+			//
+			//	modify public key
+			//
+			auto const new_pub_key = cyng::value_cast<std::string>(dom[1]["data"].get("pubKey"), "");
+			auto const r_pub_key = cyng::parse_hex_string(new_pub_key);
+			if (r_pub_key.second) {
+
+				sml_gen.set_proc_parameter(r.first
+					, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_PUBLIC_KEY }
+					, user
+					, pwd
+					, r_pub_key.first);
+
+			}
+
+			//
+			//	modify AES key
+			//
+			auto const new_aes_key = cyng::value_cast<std::string>(dom[1]["data"].get("aesKey"), "");
+			auto const r_aes_key = cyng::parse_hex_string(new_aes_key);
+			if (r_aes_key.second) {
+
+				sml_gen.set_proc_parameter(r.first
+					, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_AES_KEY }
+					, user
+					, pwd
+					, r_aes_key.first);
+			}
+
+		}
+		else {
+
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> set meter root properties "
+				<< sml::from_server_id(server_id)
+				<< " has no parameters");
+		}
+
 	}
 
 	void gateway_proxy::execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen, std::string const& section)

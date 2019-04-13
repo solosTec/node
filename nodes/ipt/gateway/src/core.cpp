@@ -566,6 +566,11 @@ namespace node
 			}
 			else if (OBIS_CODE_ROOT_SENSOR_PARAMS == code)
 			{
+				//
+				//	81 81 C7 86 00 FF
+				//	[07a51407-46ff-4eef-96ee-db9ac4b664c0,4002538-2,1,01E61E29436587BF03,operator,operator,8181C78600FF,null]
+				//	frame[3] contains the meter ID
+				//
 				config_db_.access([&](const cyng::store::table* tbl) {
 
 					CYNG_LOG_INFO(logger_, tbl->size() << " devices");
@@ -573,13 +578,13 @@ namespace node
 					if (rec.empty())
 					{
 						sml_gen_.empty(frame.at(1)
-							, frame.at(3)	//	server id
+							, frame.at(3)	//	server/meter id
 							, OBIS_CODE_ROOT_SENSOR_PARAMS);
 					}
 					else
 					{
 						sml_gen_.get_proc_sensor_property(frame.at(1)
-							, frame.at(3)	//	server id
+							, frame.at(3)	//	server/meter id
 							, rec);
 					}
 				}, cyng::store::read_access("mbus-devices"));
@@ -682,7 +687,6 @@ namespace node
 
 			}
 		}
-
 
 		void kernel::sml_get_profile_list_request(cyng::context& ctx) 
 		{

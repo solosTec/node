@@ -147,17 +147,27 @@ namespace node
 		void execute_cmd_get_proc_param();
 		void execute_cmd_set_proc_param();
 		void execute_cmd_get_list_request();
-		void execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen, std::string const& section);
+		void execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen
+			, cyng::buffer_t const& server_id
+			, std::string const& user
+			, std::string const& pwd
+			, cyng::vector_t vec);
 		void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen, std::string const& section);
 		void execute_cmd_get_list_req_last_data_set(sml::req_generator& sml_gen
 			, cyng::buffer_t const& server_id
 			, std::string const& user
 			, std::string const& pwd
 			, cyng::vector_t vec);
+
 		void execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen, std::string const& section);
 		void execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen, std::string const& section);
 		void execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen, std::string const& section);
 		void execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen, std::string const& section);
+		void execute_cmd_set_proc_param_meter(sml::req_generator& sml_gen
+			, cyng::buffer_t const& server_id
+			, std::string const& user
+			, std::string const& pwd
+			, cyng::vector_t vec);
 
 		cyng::mac48 get_mac() const;
 

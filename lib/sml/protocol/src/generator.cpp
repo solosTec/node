@@ -764,10 +764,54 @@ namespace node
 			//	   81 81 61 3C 01 FF             Not set
 			//	   81 81 61 3C 02 FF             Not set
 
-			const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-			const cyng::buffer_t	public_key{ 0x18, 0x01, 0x16, 0x05, (char)0xE6, 0x1E, 0x0D, 0x02, (char)0xBF, 0x0C, (char)0xFA, 0x35, 0x7D, (char)0x9E, 0x77, 0x03 };
+			//
+			//	01 00 00 09 0B 00 : OBIS_CURRENT_UTC - last seen timestamp
+			//
+			std::chrono::system_clock::time_point const now = cyng::value_cast(rec["lastSeen"], std::chrono::system_clock::now());
+
+			//
+			//	81 81 C7 82 05 FF : OBIS_DATA_PUBLIC_KEY - public key
+			//
+			cyng::buffer_t public_key(16, 0u);
+			public_key = cyng::value_cast(rec["pubKey"], public_key);
+
+			//
+			//	81 81 C7 86 03 FF : OBIS_DATA_AES_KEY - AES key (128 bits)
+			//
+			cyng::crypto::aes_128_key	aes_key;
+			aes_key = cyng::value_cast(rec["aes"], aes_key);
+
+			//
+			//	 81 81 C7 82 03 FF : OBIS_DATA_MANUFACTURER - descr
+			//
+			std::string const descr = cyng::value_cast<std::string>(rec["descr"], "");
+
+			//
+			//	81 00 60 05 00 00 : OBIS_CLASS_OP_LOG_STATUS_WORD
+			//
 			cyng::buffer_t tmp;
 			const cyng::buffer_t status{ 0x00 };
+
+			//
+			//	81 81 C7 86 02 FF : OBIS_CODE_AVERAGE_TIME_MS - interval
+			//
+			std::uint64_t interval = cyng::numeric_cast<std::uint64_t>(rec["interval"], 0u);
+
+			//
+			//	81 81 61 3C 01 FF : OBIS_DATA_USER_NAME - user
+			//
+			std::string const user = cyng::value_cast<std::string>(rec["user"], "");
+
+			//
+			//	81 81 61 3C 02 FF : OBIS_DATA_USER_PWD - pwd
+			//
+			std::string const pwd = cyng::value_cast<std::string>(rec["pwd"], "");
+
+			//
+			//	81 81 C7 86 04 FF : OBIS_CODE_TIME_REFERENCE
+			//	[u8] 0 == UTC, 1 == UTC + time zone, 2 == local time
+			//
+			std::uint8_t const time_ref = 0;
 
 			return append_msg(message(trx	//	trx
 				, ++group_no_	//	group
@@ -788,7 +832,7 @@ namespace node
 						parameter_tree(OBIS_CODE_DEVICE_CLASS, make_value(cyng::make_buffer({ 0x02 }))),
 
 						//	Manufacturer
-						parameter_tree(OBIS_DATA_MANUFACTURER, make_value("solosTec")),
+						parameter_tree(OBIS_DATA_MANUFACTURER, make_value(descr)),
 
 						//	Statuswort [octet string]
 						parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(status)),
@@ -797,7 +841,7 @@ namespace node
 						parameter_tree(OBIS_CODE_ROOT_SENSOR_BITMASK, make_value("00")),
 
 						//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
-						parameter_tree(OBIS_CODE_AVERAGE_TIME_MS, make_value(static_cast<std::uint16_t>(1234))),
+						parameter_tree(OBIS_CODE_AVERAGE_TIME_MS, make_value(interval)),
 
 						//	aktuelle UTC-Zeit
 						parameter_tree(OBIS_CURRENT_UTC, make_value(now)),
@@ -806,10 +850,14 @@ namespace node
 						parameter_tree(OBIS_DATA_PUBLIC_KEY, make_value(public_key)),
 
 						//	AES Schlüssel für wireless M-Bus
-						empty_tree(OBIS_DATA_AES_KEY),
+						parameter_tree(OBIS_DATA_AES_KEY, make_value(aes_key)),
 
-						parameter_tree(OBIS_DATA_USER_NAME, make_value("user")),
-						parameter_tree(OBIS_DATA_USER_PWD, make_value("pwd"))
+						//	user and password
+						parameter_tree(OBIS_DATA_USER_NAME, make_value(user)),
+						parameter_tree(OBIS_DATA_USER_PWD, make_value(pwd)),
+
+						//	time reference
+						parameter_tree(OBIS_CODE_TIME_REFERENCE, make_value(time_ref))
 
 			}))));
 
