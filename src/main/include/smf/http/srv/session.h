@@ -77,6 +77,7 @@ namespace node
 
 						void operator()()
 						{
+#if (BOOST_BEAST_VERSION < 248)
 							boost::beast::http::async_write(
 								self_.socket_,
 								msg_,
@@ -85,9 +86,19 @@ namespace node
 									std::bind(
 										&session::on_write,
 										&self_,
-										//self_.shared_from_this(),
 										std::placeholders::_1,
 										msg_.need_eof())));
+#else
+							boost::beast::http::async_write(
+								self_.stream_,
+								msg_,
+								boost::beast::bind_front_handler(
+									&session::on_write,
+									&self_,
+									msg_.need_eof()
+								)
+							);
+#endif
 						}
 					};
 
@@ -123,11 +134,18 @@ namespace node
 			void run(cyng::object);
 			void do_read();
 
+#if (BOOST_BEAST_VERSION < 248)
 			// Called when the timer expires.
 			void on_timer(boost::system::error_code ec, cyng::object);
+#endif
 
+#if (BOOST_BEAST_VERSION < 248)
 			void on_read(boost::system::error_code ec);
 			void on_write(boost::system::error_code ec, bool close);
+#else
+			void on_read(boost::beast::error_code ec, std::size_t bytes_transferred);
+			void on_write(bool close, boost::beast::error_code ec, std::size_t bytes_transferred);
+#endif
 			void do_close();
 
 			void send_moved(std::string const& location);
@@ -135,6 +153,7 @@ namespace node
 
 		private:
 			void handle_request(boost::beast::http::request<boost::beast::http::string_body>&&);
+
 			boost::beast::http::response<boost::beast::http::string_body> send_bad_request(std::uint32_t version
 				, bool
 				, std::string const& why);
@@ -175,12 +194,20 @@ namespace node
 #endif
 			bool const https_rewrite_;
 
+#if (BOOST_BEAST_VERSION < 248)
 			boost::asio::ip::tcp::socket socket_;
-			connections& connection_manager_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 			boost::asio::steady_timer timer_;
-			boost::beast::flat_buffer buffer_;
 			boost::beast::http::request<boost::beast::http::string_body> req_;
+#else
+			boost::beast::tcp_stream stream_;
+
+			// The parser is stored in an optional container so we can
+			// construct it from scratch it at the beginning of each new message.
+			boost::optional<boost::beast::http::request_parser<boost::beast::http::string_body>> parser_;
+#endif
+			connections& connection_manager_;
+			boost::beast::flat_buffer buffer_;
 			queue queue_;
             bool shutdown_;
 			bool authorized_;

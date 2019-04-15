@@ -61,20 +61,30 @@ namespace node
 						std::placeholders::_2);
 				ws_.control_callback(ping_cb_);
 
-#else
+#elif (BOOST_BEAST_VERSION < 167)
 				ws_.control_callback(std::bind(&websocket_session::on_control_callback
 					, this
 					, std::placeholders::_1
 					, std::placeholders::_2));
 
 #endif
+
+#if (BOOST_BEAST_VERSION < 248)
+
 				// Run the timer. The timer is operated
 				// continuously, this simplifies the code.
 				on_timer(boost::system::error_code{}, obj);
 
 				// Set the timer
 				timer_.expires_after(std::chrono::seconds(15));
+#endif
 
+#if (BOOST_BEAST_VERSION >= 248)
+
+				// Set suggested timeout settings for the websocket
+				ws_.set_option(
+					boost::beast::websocket::stream_base::timeout::suggested(boost::beast::role_type::server));
+#endif
 				//
 				//	check subprotocols
 				//
@@ -105,30 +115,42 @@ namespace node
 							}
 						}
 
-					}, boost::asio::bind_executor(strand_,
+					},
+#if (BOOST_BEAST_VERSION < 248)
+					 boost::asio::bind_executor(strand_,
 						std::bind(&websocket_session::on_accept
 							, this
 							, std::placeholders::_1)));
+#else
+						boost::beast::bind_front_handler(&websocket_session::on_accept, this));
+#endif
 				}
 				else
 				{
 					// Accept the websocket handshake
+#if (BOOST_BEAST_VERSION < 248)
 					ws_.async_accept(req,
 						boost::asio::bind_executor(	strand_,
 							std::bind(&websocket_session::on_accept
 								, this
 								, std::placeholders::_1)));
+#else
+					ws_.async_accept(req,
+						boost::beast::bind_front_handler(&websocket_session::on_accept, this));
+#endif
 				}
 			}
 
 			void on_accept(boost::system::error_code ec);
 
 
+#if (BOOST_BEAST_VERSION < 248)
 			// Called after a ping is sent.
 			void on_ping(boost::system::error_code ec);
 
 			void on_control_callback(boost::beast::websocket::frame_type kind,
 				boost::beast::string_view payload);
+#endif
 
 			void do_read();
 			void on_read(boost::system::error_code ec, std::size_t bytes_transferred);
@@ -142,6 +164,7 @@ namespace node
             bool send_msg(std::string const&);
 
 		private:
+#if (BOOST_BEAST_VERSION < 248)
 			/**
 			 * Called to indicate activity from the remote peer
 			 */
@@ -151,16 +174,22 @@ namespace node
 			 * Called when the timer expires.
 			 */
 			void on_timer(boost::system::error_code ec, cyng::object obj);
+#endif
 
 		private:
 			boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
+#if (BOOST_BEAST_VERSION < 248)
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
-			boost::asio::steady_timer timer_;
 			boost::beast::multi_buffer buffer_;
+			boost::asio::steady_timer timer_;
+			char ping_state_ = 0;
+#else
+			boost::beast::flat_buffer buffer_;
+#endif
+
 			cyng::logging::log_ptr logger_;
 			connections& connection_manager_;
 			boost::uuids::uuid tag_;
-			char ping_state_ = 0;
 #if (BOOST_BEAST_VERSION < 167)
 			std::function<void(boost::beast::websocket::frame_type, boost::beast::string_view)>	ping_cb_;
 #endif

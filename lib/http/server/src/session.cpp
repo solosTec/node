@@ -23,7 +23,6 @@
 
 namespace node
 {
-
 	namespace http
 	{
 		session::session(cyng::logging::log_ptr logger
@@ -42,14 +41,14 @@ namespace node
 			, auth_dirs_(ad)
 #endif
 			, https_rewrite_(https_rewrite)
+#if (BOOST_BEAST_VERSION < 248)
 			, socket_(std::move(socket))
-			, connection_manager_(cm)
-#if (BOOST_ASIO_VERSION < 101203)
 			, strand_(socket_.get_executor())
-#else
-			, strand_(boost::asio::make_strand(socket_.get_executor()))
-#endif
 			, timer_(socket_.get_executor().context(), (std::chrono::steady_clock::time_point::max)())
+#else
+			, stream_(std::move(socket))
+#endif
+			, connection_manager_(cm)
 			, buffer_()
 			, queue_(*this)
             , shutdown_(false)
@@ -74,6 +73,8 @@ namespace node
 		{
 			BOOST_ASSERT(cyng::object_cast<session>(obj) == this);
 
+#if (BOOST_BEAST_VERSION < 248)
+
 			// Make sure we run on the strand
 			if (!strand_.running_in_this_thread())
 				return boost::asio::post(
@@ -90,6 +91,9 @@ namespace node
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
 			on_timer(boost::system::error_code{}, obj);
+#else
+			connection_manager_.vm().async_run(cyng::generate_invoke("http.session.launch", tag(), false, stream_.socket().remote_endpoint()));
+#endif
 
 			do_read();
 		}
@@ -100,6 +104,8 @@ namespace node
             //  no activities during shutdown
             //
             if (shutdown_)  return;
+
+#if (BOOST_BEAST_VERSION < 248)
 
             // Set the timer
 			timer_.expires_after(std::chrono::seconds(15));
@@ -115,11 +121,29 @@ namespace node
 					std::bind(
 						&session::on_read,
 						this,
-						//shared_from_this(),
 						std::placeholders::_1)));
+#else
+			// Construct a new parser for each message
+			parser_.emplace();
+
+			// Apply a reasonable limit to the allowed size
+			// of the body in bytes to prevent abuse.
+			parser_->body_limit(10000);
+
+			// Set the timeout.
+			stream_.expires_after(std::chrono::seconds(30));
+
+			// Read a request using the parser-oriented interface
+			boost::beast::http::async_read(
+				stream_,
+				buffer_,
+				*parser_,
+				boost::beast::bind_front_handler(&session::on_read, this));
+#endif
+
 		}
 
-		// Called when the timer expires.
+#if (BOOST_BEAST_VERSION < 248)
 		void session::on_timer(boost::system::error_code ec, cyng::object obj)
 		{
 			BOOST_ASSERT(cyng::object_cast<session>(obj) == this);
@@ -128,13 +152,6 @@ namespace node
             //  no activities during shutdown
             //
             if (shutdown_)  return;
-//#if BOOST_OS_LINUX
-//            //
-//            //  timer is currently not working on linux.
-//            //  further investigation requires
-//            //
-//            return;
-//#endif
 
             if (ec && ec != boost::asio::error::operation_aborted)
 			{
@@ -168,8 +185,13 @@ namespace node
 						std::bind(&session::on_timer, this, std::placeholders::_1, obj)));
 			}
 		}
+#endif
 
+#if (BOOST_BEAST_VERSION < 248)
 		void session::on_read(boost::system::error_code ec)
+#else
+		void session::on_read(boost::beast::error_code ec, std::size_t bytes_transferred)
+#endif
 		{
             //
             //  no activities during shutdown
@@ -203,6 +225,7 @@ namespace node
 			}
 
 			// See if it is a WebSocket Upgrade
+#if (BOOST_BEAST_VERSION < 248)
 			if (boost::beast::websocket::is_upgrade(req_))
 			{
 				CYNG_LOG_TRACE(logger_, "update session " 
@@ -223,6 +246,32 @@ namespace node
 			// Send the response
 			CYNG_LOG_TRACE(logger_, "handle request " << socket_.remote_endpoint());
 			handle_request(std::move(req_));
+#else
+			boost::ignore_unused(bytes_transferred);
+			if (boost::beast::websocket::is_upgrade(parser_->get())) {
+
+				// Create a websocket session, transferring ownership
+				// of both the socket and the HTTP request.
+
+				CYNG_LOG_TRACE(logger_, "update session "
+					<< tag()
+					<< " to websocket"
+					<< stream_.socket().remote_endpoint());
+
+				//std::make_shared<websocket_session>(
+				//	stream_.release_socket())->do_accept(parser_->release());
+				// Create a WebSocket websocket_session by transferring the socket
+				connection_manager_.upgrade(tag(), stream_.release_socket(), parser_->release());
+
+				return;
+
+			}
+
+			// Send the response
+			CYNG_LOG_TRACE(logger_, "handle request " << stream_.socket().remote_endpoint());
+			//handle_request(*doc_root_, std::move(parser_->release()), queue_);
+			handle_request(parser_->release());
+#endif
 
 			// If we aren't at the queue limit, try to pipeline another request
 			if (!queue_.is_full())
@@ -313,7 +362,18 @@ namespace node
 									<< pos->value());
 
 								if (!authorized_) {
-									connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized", tag(), true, ad.second.type_, ad.second.user_, ad.first, socket_.remote_endpoint()));
+									connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized"
+										, tag()
+										, true
+										, ad.second.type_
+										, ad.second.user_
+										, ad.first
+#if (BOOST_BEAST_VERSION < 248)
+										, socket_.remote_endpoint()
+#else
+										, stream_.socket().remote_endpoint()
+#endif
+									));
 									authorized_ = true;
 								}
 
@@ -322,7 +382,18 @@ namespace node
 								CYNG_LOG_WARNING(logger_, "authorization failed "
 									<< pos->value());
 
-								connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized", tag(), false, ad.second.type_, ad.second.user_, ad.first, socket_.remote_endpoint()));
+								connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized"
+									, tag()
+									, false
+									, ad.second.type_
+									, ad.second.user_
+									, ad.first
+#if (BOOST_BEAST_VERSION < 248)
+									, socket_.remote_endpoint()
+#else 
+									, stream_.socket().remote_endpoint()
+#endif
+								));
 
 								//
 								//	send auth request
@@ -388,11 +459,20 @@ namespace node
 				else if (req.method() == boost::beast::http::verb::get)
 				{
 					// Respond to GET request
-					return queue_(send_get(req.version()
+#if (BOOST_BEAST_VERSION < 248)
+					queue_(send_get(req.version()
 						, req.keep_alive()
 						, std::move(body)
 						, path
 						, size));
+#else
+					queue_(send_get(req.version()
+						, req.keep_alive()
+						, std::move(body)
+						, path
+						, size));
+#endif
+					return;
 				}
 			}
 			else if (req.method() == boost::beast::http::verb::post)
@@ -430,7 +510,7 @@ namespace node
 				}
 				else if (boost::algorithm::starts_with(content_type, "application/x-www-form-urlencoded"))
 				{
-					//	ToDo: start parser
+					//	start parser
 					connection_manager_.vm().async_run(cyng::generate_invoke("http.post.form.urlencoded"
 						, tag_
 						, req.version()
@@ -555,7 +635,6 @@ namespace node
 			res.content_length(size);
 			res.keep_alive(keep_alive);
 			return res;
-
 		}
 
 		boost::beast::http::response<boost::beast::http::string_body> session::send_bad_request(std::uint32_t version
@@ -605,7 +684,11 @@ namespace node
 #endif
 
 
+#if (BOOST_BEAST_VERSION < 248)
 		void session::on_write(boost::system::error_code ec, bool close)
+#else
+		void session::on_write(bool close, boost::beast::error_code ec, std::size_t bytes_transferred)
+#endif
 		{
             //
             //  no activities during shutdown
@@ -631,7 +714,6 @@ namespace node
 			{
 				// This means we should close the connection, usually because
 				// the response indicated the "Connection: close" semantic.
-				//return do_close();
 				connection_manager_.stop_session(tag());
 				return;
 			}
@@ -648,7 +730,8 @@ namespace node
 		{
             shutdown_ = true;
 
-            timer_.cancel();
+#if (BOOST_BEAST_VERSION < 248)
+			timer_.cancel();
 
             if (socket_.is_open())
             {
@@ -662,6 +745,12 @@ namespace node
             {
                 CYNG_LOG_WARNING(logger_, "session::do_close(" << tag_ << ")");
             }
+#else
+			// Send a TCP shutdown
+			boost::beast::error_code ec;
+			stream_.socket().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+			CYNG_LOG_WARNING(logger_, "session::do_close(" << ec.message() << ")");
+#endif
 
 
 			// At this point the connection is closed gracefully
@@ -669,13 +758,6 @@ namespace node
 
 		void session::send_moved(std::string const& location)
 		{
-			//boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::ok, req.version() };
-			//res.set(boost::beast::http::field::server, NODE::version_string);
-			//res.body() = std::string("");
-			//res.prepare_payload();
-			////res.content_length(body.size());
-			//res.keep_alive(req.keep_alive());
-
 			boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::temporary_redirect, 11 };
 			res.set(boost::beast::http::field::server, NODE::version_string);
 			res.set(boost::beast::http::field::location, location);
