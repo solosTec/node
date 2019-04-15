@@ -66,8 +66,9 @@ namespace node
 			cyng::vector_t read_get_proc_parameter_response_L2(cyng::attr_t attr, cyng::tuple_t::const_iterator pos, obis root, obis code);
 			cyng::vector_t read_get_proc_parameter_response_L3(cyng::attr_t attr, cyng::tuple_t::const_iterator pos, obis root, obis code);
 
-			cyng::vector_t set_param_if_mbus(obis code, cyng::attr_t attr, cyng::tuple_t::const_iterator pos);
-			cyng::vector_t set_param_if_1107(obis code, cyng::attr_t attr, cyng::tuple_t::const_iterator pos);
+			cyng::vector_t generate_set_proc_parameter_request(obis root, obis code, cyng::attr_t attr, std::vector<obis> const& path);
+			cyng::vector_t set_param_if_mbus(obis code, cyng::attr_t attrs);
+			cyng::vector_t set_param_if_1107(obis code, cyng::attr_t attr);
 
 			cyng::vector_t read_set_proc_parameter_request_tree(std::vector<obis> path
 				, std::size_t depth

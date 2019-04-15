@@ -78,8 +78,7 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 09, 0B, 00, CURRENT_UTC);	//	readout time in UTC
 
 		//
-		//	Lastgänge (profiles)
-		//	The OBIS code to encode profiles is 81 81 C7 8A 83 FF
+		//	sensor/meter parameters
 		//
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 03, FF, DATA_MANUFACTURER);
@@ -88,6 +87,12 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 03, FF, DATA_AES_KEY);
 		const static obis	DEFINE_OBIS_CODE(81, 81, 61, 3C, 01, FF, DATA_USER_NAME);
 		const static obis	DEFINE_OBIS_CODE(81, 81, 61, 3C, 02, FF, DATA_USER_PWD);
+
+
+		//
+		//	Profiles (Lastgänge)
+		//	The OBIS code to encode profiles is 81 81 C7 8A 83 FF
+		//
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 10, FF, PROFILE_1_MINUTE);	//	1 minute
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 11, FF, PROFILE_15_MINUTE);
@@ -102,7 +107,6 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 83, FF, PROFILE);	//	encode profiles
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 01, FF, PUSH_OPERATIONS);	//	7.3.1.26 Datenstruktur zum Transport der Eigenschaften von Push-Vorgängen. 
 
-		//
 		/**
 		 * @return true id the 4th first bytes are 0x81, 0x81, 0xC7, 0x86
 		 */
