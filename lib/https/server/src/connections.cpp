@@ -46,6 +46,7 @@ namespace node
 				, ctx)->run();
 		}
 
+#if (BOOST_BEAST_VERSION < 248)
 		void connections::add_ssl_session(boost::asio::ip::tcp::socket socket, boost::asio::ssl::context& ctx, boost::beast::flat_buffer buffer)
 		{
 			auto obj = cyng::make_object<ssl_session>(logger_
@@ -82,7 +83,9 @@ namespace node
 				sp->run(obj);
 			}
 		}
+#endif
 
+#if (BOOST_BEAST_VERSION < 248)
 		void connections::upgrade(boost::uuids::uuid tag
 			, boost::asio::ip::tcp::socket socket
 			, boost::beast::http::request<boost::beast::http::string_body> req)
@@ -138,7 +141,103 @@ namespace node
 				wp->run(obj, std::move(req));
 			}
 		}
+#else
+		void connections::upgrade(boost::uuids::uuid tag
+			, boost::beast::tcp_stream stream
+			, boost::beast::http::request<boost::beast::http::string_body> req)
+		{
+			auto obj = cyng::make_object<plain_websocket>(logger_, *this, tag, std::move(stream));
+			auto wp = const_cast<plain_websocket*>(cyng::object_cast<plain_websocket>(obj));
+			BOOST_ASSERT(wp != nullptr);
+			if (wp != nullptr) {
 
+				CYNG_LOG_DEBUG(logger_, "upgrade plain session " << tag);
+
+				//
+				//	lock HTTP_PLAIN and SOCKET_PLAIN 
+				//
+				{
+					cyng::async::lock(mutex_[HTTP_PLAIN], mutex_[SOCKET_PLAIN]);
+					cyng::async::lock_guard<cyng::async::shared_mutex> lk1(mutex_[HTTP_PLAIN], cyng::async::adopt_lock);
+					cyng::async::lock_guard<cyng::async::shared_mutex> lk2(mutex_[SOCKET_PLAIN], cyng::async::adopt_lock);
+
+					const auto size = sessions_[HTTP_PLAIN].erase(tag);
+					BOOST_ASSERT(size == 1);
+					sessions_[SOCKET_PLAIN].emplace(tag, obj);
+				}	//	unlock
+
+				wp->run(obj, std::move(req));
+			}
+		}
+
+		void connections::upgrade(boost::uuids::uuid tag
+			, boost::beast::ssl_stream<boost::beast::tcp_stream> stream
+			, boost::beast::http::request<boost::beast::http::string_body> req)
+		{
+			auto obj = cyng::make_object<ssl_websocket>(logger_, *this, tag, std::move(stream));
+			auto wp = const_cast<ssl_websocket*>(cyng::object_cast<ssl_websocket>(obj));
+			BOOST_ASSERT(wp != nullptr);
+			if (wp != nullptr) {
+
+				CYNG_LOG_DEBUG(logger_, "upgrade ssl session " << tag);
+
+				//
+				//	lock HTTP_SSL and SOCKET_SSL 
+				//
+				{
+					cyng::async::lock(mutex_[HTTP_SSL], mutex_[SOCKET_SSL]);
+					cyng::async::lock_guard<cyng::async::shared_mutex> lk1(mutex_[HTTP_SSL], cyng::async::adopt_lock);
+					cyng::async::lock_guard<cyng::async::shared_mutex> lk2(mutex_[SOCKET_SSL], cyng::async::adopt_lock);
+
+					const auto size = sessions_[HTTP_SSL].erase(tag);
+					BOOST_ASSERT(size == 1);
+					sessions_[SOCKET_SSL].emplace(tag, obj);
+				}	//	implicit unlock
+
+				wp->run(obj, std::move(req));
+			}
+		}
+
+		void connections::add_ssl_session(boost::beast::tcp_stream stream, boost::asio::ssl::context& ctx, boost::beast::flat_buffer buffer)
+		{
+			auto obj = cyng::make_object<ssl_session>(logger_
+				, *this
+				, uidgen_()
+				, std::move(stream)
+				, ctx
+				, std::move(buffer)
+				, doc_root_
+				, auth_dirs_);
+
+			auto sp = const_cast<ssl_session*>(cyng::object_cast<ssl_session>(obj));
+			BOOST_ASSERT(sp != nullptr);
+			if (sp != nullptr) {
+				sessions_[HTTP_SSL].emplace(sp->tag(), obj);
+				sp->run(obj);
+			}
+		}
+
+		void connections::add_plain_session(boost::beast::tcp_stream stream, boost::beast::flat_buffer buffer)
+		{
+			auto obj = cyng::make_object<plain_session>(logger_
+				, *this
+				, uidgen_()
+				, std::move(stream)
+				, std::move(buffer)
+				, doc_root_
+				, auth_dirs_);
+
+			auto sp = const_cast<plain_session*>(cyng::object_cast<plain_session>(obj));
+			BOOST_ASSERT(sp != nullptr);
+			if (sp != nullptr) {
+				sessions_[HTTP_PLAIN].emplace(sp->tag(), obj);
+				sp->run(obj);
+			}
+		}
+
+#endif
+
+#if (BOOST_BEAST_VERSION < 248)
 		cyng::object connections::create_wsocket(boost::uuids::uuid tag, boost::asio::ip::tcp::socket socket)
 		{
 			return cyng::make_object<plain_websocket>(logger_, *this, tag, std::move(socket));
@@ -148,6 +247,7 @@ namespace node
 		{
 			return cyng::make_object<ssl_websocket>(logger_, *this, tag, std::move(stream));
 		}
+#endif
 
 		std::pair<cyng::object, connections::session_type> connections::find_http(boost::uuids::uuid tag) const
 		{

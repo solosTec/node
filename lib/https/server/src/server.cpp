@@ -26,7 +26,11 @@ namespace node
 			, logger_(logger)
 			, ctx_(ctx)
 			, acceptor_(ioc)
+#if (BOOST_BEAST_VERSION < 248)
 			, socket_(ioc)
+#else
+			, ioc_(ioc)
+#endif
 			, connection_manager_(logger, vm, doc_root, ad)
 			, blacklist_(blacklist)
 			, is_listening_(false)
@@ -44,7 +48,7 @@ namespace node
 			CYNG_LOG_TRACE(logger_, "open: " << endpoint.address().to_string() << ':' << endpoint.port());
 
 			// Allow address reuse
-			acceptor_.set_option(boost::asio::socket_base::reuse_address(true));
+			acceptor_.set_option(boost::asio::socket_base::reuse_address(true), ec);
 			if (ec)	{
 				CYNG_LOG_FATAL(logger_, "allow address reuse: " << ec.message());
 				return;
@@ -101,10 +105,22 @@ namespace node
 
 		void server::do_accept()
 		{
+#if (BOOST_BEAST_VERSION < 248)
 			acceptor_.async_accept(socket_, std::bind(&server::on_accept, this, std::placeholders::_1));
+#else
+			acceptor_.async_accept(
+				boost::asio::make_strand(ioc_),
+				boost::beast::bind_front_handler(
+					&server::on_accept,
+					shared_from_this()));
+#endif
 		}
 
+#if (BOOST_BEAST_VERSION < 248)
 		void server::on_accept(boost::system::error_code ec)
+#else
+		void server::on_accept(boost::beast::error_code ec, boost::asio::ip::tcp::socket socket)
+#endif
 		{
 			if (ec)	{
 				CYNG_LOG_ERROR(logger_, "accept: " << ec.message());
@@ -123,6 +139,7 @@ namespace node
 			else
 			{
 				//	since C++20 use contains()
+#if (BOOST_BEAST_VERSION < 248)
 				auto pos = blacklist_.find(socket_.remote_endpoint().address());
 				if (pos != blacklist_.end()) {
 
@@ -130,7 +147,15 @@ namespace node
 						<< socket_.remote_endpoint()
 						<< " is blacklisted");
 					socket_.close();
-					
+#else
+				auto pos = blacklist_.find(socket.remote_endpoint().address());
+				if (pos != blacklist_.end()) {
+
+					CYNG_LOG_WARNING(logger_, "address "
+						<< socket.remote_endpoint()
+						<< " is blacklisted");
+					socket.close();
+#endif
 					std::stringstream ss;
 					ss
 					 << "access from blacklisted address: "
@@ -140,11 +165,19 @@ namespace node
 
 				}
 				else {
+#if (BOOST_BEAST_VERSION < 248)
 					CYNG_LOG_TRACE(logger_, "accept "
 						<< socket_.remote_endpoint());
 
 					//	Create the session and run it
 					connection_manager_.create_session(std::move(socket_), ctx_);
+#else
+					CYNG_LOG_TRACE(logger_, "accept "
+						<< socket.remote_endpoint());
+
+					//	Create the session and run it
+					connection_manager_.create_session(std::move(socket), ctx_);
+#endif
 				}
 
 				// Accept another connection

@@ -293,7 +293,7 @@ namespace node
 			}
 
 			// Note that there is activity
-#if (BOOST_BEAST_VERSION < 167)
+#if (BOOST_BEAST_VERSION < 248)
 			activity();
 #endif
 

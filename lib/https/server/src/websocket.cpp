@@ -14,23 +14,36 @@ namespace node
 		plain_websocket::plain_websocket(cyng::logging::log_ptr logger
 			, connections& cm
 			, boost::uuids::uuid tag
-			, boost::asio::ip::tcp::socket socket)
-#if (BOOST_VERSION < 107000)
-//#if (BOOST_ASIO_VERSION < 101202)
+#if (BOOST_BEAST_VERSION < 248)
+			, boost::asio::ip::tcp::socket socket
+#else
+			, boost::beast::tcp_stream&& stream
+#endif
+		)
+#if (BOOST_BEAST_VERSION < 248)
 		: websocket_session<plain_websocket>(logger, cm, tag, socket.get_executor().context())
 			, ws_(std::move(socket))
 #else
-		: websocket_session<plain_websocket>(logger, cm, tag, socket.get_executor())
-			, ws_(std::move(socket))
+		: websocket_session<plain_websocket>(logger, cm, tag)
+			, ws_(std::move(stream))
 #endif
 		{}
 
 		// Called by the base class
+#if (BOOST_BEAST_VERSION < 248)
 		boost::beast::websocket::stream<boost::asio::ip::tcp::socket>& plain_websocket::ws()
 		{
 			return ws_;
 		}
+#else
+		boost::beast::websocket::stream<boost::beast::tcp_stream>& plain_websocket::ws()
+		{
+			return ws_;
+		}
+#endif
 
+
+#if (BOOST_BEAST_VERSION < 248)
 		void plain_websocket::do_timeout(cyng::object obj)
 		{
 			// This is so the close can have a timeout
@@ -73,28 +86,42 @@ namespace node
 
 			// At this point the connection is gracefully closed
 		}
+#endif
 
 		ssl_websocket::ssl_websocket(cyng::logging::log_ptr logger
 			, connections& cm
 			, boost::uuids::uuid tag
-			, boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream)
-		: websocket_session<ssl_websocket>(logger, cm, tag, stream.get_executor().context())
-			, ws_(std::move(stream))
-#if (BOOST_VERSION < 107000)
-//#if (BOOST_ASIO_VERSION < 101202)
-			, strand_(ws_.get_executor())
+#if (BOOST_BEAST_VERSION < 248)
+			, boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream
 #else
-			, strand_(boost::asio::make_strand(ws_.get_executor()))
+			, boost::beast::ssl_stream<boost::beast::tcp_stream>&& stream
 #endif
-		{
-		}
+		)
+#if (BOOST_BEAST_VERSION < 248)
+		: websocket_session<ssl_websocket>(logger, cm, tag, stream.get_executor().context())
+#else
+		: websocket_session<ssl_websocket>(logger, cm, tag)
+#endif
+			, ws_(std::move(stream))
+#if (BOOST_BEAST_VERSION < 248)
+			, strand_(ws_.get_executor())
+#endif
+		{}
 
 		// Called by the base class
+#if (BOOST_BEAST_VERSION < 248)
 		boost::beast::websocket::stream<boost::beast::ssl_stream<boost::asio::ip::tcp::socket>>& ssl_websocket::ws()
 		{
 			return ws_;
 		}
+#else
+		boost::beast::websocket::stream<boost::beast::ssl_stream<boost::beast::tcp_stream>>& ssl_websocket::ws()
+		{
+			return ws_;
+		}
+#endif
 
+#if (BOOST_BEAST_VERSION < 248)
 		void ssl_websocket::do_eof(cyng::object obj)
 		{
 			eof_ = true;
@@ -142,10 +169,10 @@ namespace node
 
 			// Start the timer again
 			timer_.expires_at((std::chrono::steady_clock::time_point::max)());
-			//on_timer({});
 			on_timer(obj, boost::system::error_code{});
 			do_eof(obj);
 		}
+#endif
 
 	}
 }

@@ -22,8 +22,7 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
-//#if (BOOST_ASIO_VERSION < 101202)
-#if (BOOST_VERSION < 107000)
+#if (BOOST_BEAST_VERSION < 248)
 #include <boost/beast/experimental/core/ssl_stream.hpp>
 #else
 #include <boost/beast/ssl/ssl_stream.hpp>
@@ -54,6 +53,8 @@ namespace node
 			void create_session(boost::asio::ip::tcp::socket socket
 				, boost::asio::ssl::context& ctx);
 
+#if (BOOST_BEAST_VERSION < 248)
+
 			void add_ssl_session(boost::asio::ip::tcp::socket, boost::asio::ssl::context&, boost::beast::flat_buffer);
 			void add_plain_session(boost::asio::ip::tcp::socket, boost::beast::flat_buffer);
 
@@ -70,6 +71,27 @@ namespace node
 			void upgrade(boost::uuids::uuid
 				, boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream
 				, boost::beast::http::request<boost::beast::http::string_body> req);
+#else
+
+			/**
+			 * Upgrade a plain HTTP session to web-socket
+			 */
+			void upgrade(boost::uuids::uuid
+				, boost::beast::tcp_stream stream
+				, boost::beast::http::request<boost::beast::http::string_body> req);
+
+
+			/**
+			 * Upgrade a secured HTTP session to web-socket
+			 */
+			void upgrade(boost::uuids::uuid
+				, boost::beast::ssl_stream<boost::beast::tcp_stream> stream
+				, boost::beast::http::request<boost::beast::http::string_body> req);
+
+			void add_ssl_session(boost::beast::tcp_stream, boost::asio::ssl::context&, boost::beast::flat_buffer);
+			void add_plain_session(boost::beast::tcp_stream, boost::beast::flat_buffer);
+
+#endif
 
 			/**
 			 * Stop the specified HTTP session.
@@ -123,8 +145,10 @@ namespace node
 				NO_SESSION	//	no session found
 			};
 
+#if (BOOST_BEAST_VERSION < 248)
 			cyng::object create_wsocket(boost::uuids::uuid, boost::asio::ip::tcp::socket socket);
 			cyng::object create_wsocket(boost::uuids::uuid, boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream);
+#endif
 
 			/**
 			 * Precondition: session container is locked.

@@ -9,8 +9,7 @@
 #define NODE_LIB_HTTPS_SRV_WEBSOCKET_H
 
 #include <smf/https/srv/websocket.hpp>
-#if (BOOST_VERSION < 107000)
-//#if (BOOST_ASIO_VERSION < 101202)
+#if (BOOST_BEAST_VERSION < 248)
 #include <smf/https/srv/ssl_stream.hpp>
 #else
 #include <boost/beast/ssl/ssl_stream.hpp>
@@ -28,30 +27,46 @@ namespace node
 			explicit plain_websocket(cyng::logging::log_ptr logger
 				, connections&
 				, boost::uuids::uuid
-				, boost::asio::ip::tcp::socket socket);
+#if (BOOST_BEAST_VERSION < 248)
+				, boost::asio::ip::tcp::socket socket
+#else
+				, boost::beast::tcp_stream&& stream
+#endif
+			);
 
 			// Called by the base class
+#if (BOOST_BEAST_VERSION < 248)
 			boost::beast::websocket::stream<boost::asio::ip::tcp::socket>& ws();
+#else
+			boost::beast::websocket::stream<boost::beast::tcp_stream>& ws();
+#endif
 
+#if (BOOST_BEAST_VERSION < 248)
 			// Start the asynchronous operation
 			template<class Body, class Allocator>
 			void run(cyng::object obj, boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req)
 			{
 				// Run the timer. The timer is operated
 				// continuously, this simplifies the code.
-				//on_timer({});
 				on_timer(obj, boost::system::error_code{});
 
 				// Accept the WebSocket upgrade request
 				do_accept(obj, std::move(req));
 			}
+#endif
 
+#if (BOOST_BEAST_VERSION < 248)
 			void do_timeout(cyng::object obj);
 			void on_close(cyng::object obj, boost::system::error_code ec);
+#endif
 
 		private:
+#if (BOOST_BEAST_VERSION < 248)
 			boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
 			bool close_ = false;
+#else
+			boost::beast::websocket::stream<boost::beast::tcp_stream> ws_;
+#endif
 		};
 
 		// Handles an SSL WebSocket connection
@@ -62,34 +77,50 @@ namespace node
 			explicit ssl_websocket(cyng::logging::log_ptr logger
 				, connections&
 				, boost::uuids::uuid
-				, boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream);
+#if (BOOST_BEAST_VERSION < 248)
+				, boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream
+#else
+				, boost::beast::ssl_stream<boost::beast::tcp_stream>&& stream
+#endif
+			);
 
 			// Called by the base class
+#if (BOOST_BEAST_VERSION < 248)
 			boost::beast::websocket::stream<boost::beast::ssl_stream<boost::asio::ip::tcp::socket>>& ws();
+#else
+			boost::beast::websocket::stream<boost::beast::ssl_stream<boost::beast::tcp_stream>>& ws();
+#endif
 
 			// Start the asynchronous operation
 			template<class Body, class Allocator>
 			void run(cyng::object obj, boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req)
 			{
+#if (BOOST_BEAST_VERSION < 248)
 				// Run the timer. The timer is operated
 				// continuously, this simplifies the code.
-				//on_timer({});
 				on_timer(obj, boost::system::error_code{});
+#endif
 
 				// Accept the WebSocket upgrade request
 				do_accept(obj, std::move(req));
 			}
 
+#if (BOOST_BEAST_VERSION < 248)
 			void do_eof(cyng::object obj);
 			void do_timeout(cyng::object obj);
+#endif
 
 		private:
 			void on_shutdown(cyng::object obj, boost::system::error_code ec);
 
 		private:
+#if (BOOST_BEAST_VERSION < 248)
 			boost::beast::websocket::stream<boost::beast::ssl_stream<boost::asio::ip::tcp::socket>> ws_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 			bool eof_ = false;
+#else
+			boost::beast::websocket::stream<boost::beast::ssl_stream<boost::beast::tcp_stream>> ws_;
+#endif
 
 		};
 	}

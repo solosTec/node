@@ -40,9 +40,13 @@ namespace node
 		private:
 			cyng::logging::log_ptr logger_;
 			connections& connection_manager_;
-			boost::asio::ip::tcp::socket socket_;
 			boost::asio::ssl::context& ctx_;
+#if (BOOST_BEAST_VERSION < 248)
+			boost::asio::ip::tcp::socket socket_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
+#else
+			boost::beast::tcp_stream stream_;
+#endif
 			boost::beast::flat_buffer buffer_;
 
 		};
