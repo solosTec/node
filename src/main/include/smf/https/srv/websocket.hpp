@@ -336,12 +336,13 @@ namespace node
 #endif
 
 				
-#if (BOOST_BEAST_VERSION < 189)
+//#if (BOOST_BEAST_VERSION < 189)
+#if (BOOST_BEAST_VERSION < 248)
 				std::stringstream msg;
 				msg << boost::beast::buffers(buffer_.data());
 				std::string const str = msg.str();
-#elif (BOOST_BEAST_VERSION < 248)
-				std::string const str = boost::beast::buffers_to_string(boost::beast::buffers(buffer_.data()));
+//#elif (BOOST_BEAST_VERSION < 248)
+				//std::string const str = boost::beast::buffers_to_string(boost::beast::buffers(buffer_.data()));
 #else
 				std::stringstream msg;
 				msg << boost::beast::make_printable(buffer_.data());
