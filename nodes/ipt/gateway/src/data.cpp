@@ -100,13 +100,20 @@ namespace node
 
 					//
 					//	update public key
+					//	8181C78205FF = %(("scaler":0),("unit":0),("valTime":null),("value":1C661D023F438BB639D3D95AA580F63DF78F2EA4692709F3D40209C
 					//
 					CYNG_LOG_TRACE(logger_, "update public key " << cyng::io::to_str(p.second));
-
-					config_db_.modify("mbus-devices"
-						, cyng::table::key_generator(server_id)
-						, cyng::param_t("pubKey", p.second)
-						, ctx.tag());
+					
+					cyng::param_map_t params;
+					params = cyng::value_cast(p.second, params);
+					
+					auto const pos = params.find("value");
+					if (pos != params.end()) {
+						config_db_.modify("mbus-devices"
+							, cyng::table::key_generator(server_id)
+							, cyng::param_t("pubKey", pos->second)
+							, ctx.tag());
+					}
 				}
 			}
 
@@ -426,6 +433,21 @@ namespace node
 						<< +reader.get_scaler()
 						<< ", unit: "
 						<< get_unit_name(reader.get_unit()));
+					
+					//
+					//	update offset
+					//
+					offset = new_offset;
+
+					//
+					//	extract values
+					//
+// 					ipt:gateway[11017]: [1970-01-15 06:07:45.85215967] INFO  3053065296 -- offset: 0, meter 01-e61e-29436587-bf-03, value: 000001da, scaler: 0, unit: second
+// 					ipt:gateway[11017]: [1970-01-15 06:07:45.85694233] INFO  3053065296 -- offset: 5, meter 01-e61e-29436587-bf-03, value: 0000008d, scaler: -2, unit: m3
+// 					ipt:gateway[11017]: [1970-01-15 06:07:45.89158258] INFO  3053065296 -- offset: 12, meter 01-e61e-29436587-bf-03, value: 00000000, scaler: -2, unit: m3
+// 					ipt:gateway[11017]: [1970-01-15 06:07:45.89708575] INFO  3053065296 -- offset: 19, meter 01-e61e-29436587-bf-03, value: 2019-03-31 00:00:00.00000000, scaler: -2, unit: counter
+// 					ipt:gateway[11017]: [1970-01-15 06:07:45.92197215] INFO  3053065296 -- offset: 23, meter 01-e61e-29436587-bf-03, value: ff9a, scaler: -2, unit: day
+					
 				}
 				else {
 
