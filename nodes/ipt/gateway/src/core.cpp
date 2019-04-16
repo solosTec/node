@@ -99,6 +99,7 @@ namespace node
 			vm.register_function("sml.set.proc.if1107.device", 7, std::bind(&kernel::sml_set_proc_if1107_device, this, std::placeholders::_1));
 
 			vm.register_function("sml.set.proc.mbus.param", 7, std::bind(&kernel::sml_set_proc_mbus_param, this, std::placeholders::_1));
+			vm.register_function("sml.set.proc.sensor", 7, std::bind(&kernel::sml_set_proc_sensor, this, std::placeholders::_1));
 			//vm.register_function("sml.set.proc.mbus.install.mode", 6, std::bind(&kernel::sml_set_proc_mbus_install_mode, this, std::placeholders::_1));
 			//vm.register_function("sml.set.proc.mbus.s.mode", 6, std::bind(&kernel::sml_set_proc_mbus_smode, this, std::placeholders::_1));
 			//vm.register_function("sml.set.proc.mbus.t.mode", 6, std::bind(&kernel::sml_set_proc_mbus_tmode, this, std::placeholders::_1));
@@ -564,8 +565,13 @@ namespace node
 					, frame.at(3)	//	server id
 					, OBIS_CODE_ROOT_DEVICE_INFO);
 			}
-			else if (OBIS_CODE_ROOT_SENSOR_PROPERTY == code)
+			else if (OBIS_CODE_ROOT_SENSOR_PARAMS == code)
 			{
+				//
+				//	81 81 C7 86 00 FF
+				//	[07a51407-46ff-4eef-96ee-db9ac4b664c0,4002538-2,1,01E61E29436587BF03,operator,operator,8181C78600FF,null]
+				//	frame[3] contains the meter ID
+				//
 				config_db_.access([&](const cyng::store::table* tbl) {
 
 					CYNG_LOG_INFO(logger_, tbl->size() << " devices");
@@ -573,13 +579,13 @@ namespace node
 					if (rec.empty())
 					{
 						sml_gen_.empty(frame.at(1)
-							, frame.at(3)	//	server id
-							, OBIS_CODE_ROOT_SENSOR_PROPERTY);
+							, frame.at(3)	//	server/meter id
+							, OBIS_CODE_ROOT_SENSOR_PARAMS);
 					}
 					else
 					{
 						sml_gen_.get_proc_sensor_property(frame.at(1)
-							, frame.at(3)	//	server id
+							, frame.at(3)	//	server/meter id
 							, rec);
 					}
 				}, cyng::store::read_access("mbus-devices"));
@@ -682,7 +688,6 @@ namespace node
 
 			}
 		}
-
 
 		void kernel::sml_get_profile_list_request(cyng::context& ctx) 
 		{
@@ -988,7 +993,7 @@ namespace node
 							parameter_tree(OBIS_CODE(81, 81, C7, 86, 22, FF), make_value(100)),		//	Einträge
 							parameter_tree(OBIS_CODE(81, 81, C7, 87, 81, FF), make_value(0)),		//	Registerperiode
 							//	15 min period
-							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_CODE(81, 81, C7, 86, 11, FF))),
+							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_PROFILE_15_MINUTE)),
 							//	Liste von Einträgen z.B. 08 00 01 00 00 FF := Zählerstand Wasser
 							child_list_tree(OBIS_CODE(81, 81, C7, 8A, 23, FF),{
 								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 23, 01), make_value(OBIS_CODE(08, 00, 01, 00, 00, FF))),
@@ -1445,7 +1450,70 @@ namespace node
 			//	update config db
 			//
 			config_db_.modify("_Config", cyng::table::key_generator(code.to_str()), cyng::param_t("value", frame.at(6)), ctx.tag());
+
+			//
+			//	send attention code ATTENTION_OK
+			//
+			tmp.clear();
+			sml_gen_.attention_msg(frame.at(1)	// trx
+				, cyng::value_cast(frame.at(2), tmp)	//	server ID
+				, OBIS_ATTENTION_OK.to_buffer()
+				, "OK"
+				, cyng::tuple_t());
+
 		}
+
+		void kernel::sml_set_proc_sensor(cyng::context& ctx)
+		{
+			//
+			//	examples:
+			//
+			//	[eea7d18d-f7c3-4cf5-af66-4d1d9011beb3,5522760-4,01E61E29436587BF03,operator,operator,8181C78205FF,00000000000000000000000000000000]
+			//	[eea7d18d-f7c3-4cf5-af66-4d1d9011beb3,5522760-2,01E61E29436587BF03,operator,operator,8181613C01FF,75736572]
+			//
+			//
+			cyng::vector_t const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			//
+			//	get OBIS code
+			//
+			cyng::buffer_t tmp;
+			obis const code(cyng::value_cast(frame.at(5), tmp));
+
+			config_db_.access([&](cyng::store::table* tbl) {
+
+				auto const key = cyng::table::key_generator(frame.at(2));
+
+				if (OBIS_DATA_USER_NAME == code) {
+					tbl->modify(key, cyng::param_t("user", frame.at(6)), ctx.tag());
+				}
+				else if (OBIS_DATA_USER_PWD == code) {
+					tbl->modify(key, cyng::param_t("pwd", frame.at(6)), ctx.tag());
+				}
+				else if (OBIS_DATA_PUBLIC_KEY == code) {
+					tbl->modify(key, cyng::param_t("pubKey", frame.at(6)), ctx.tag());
+				}
+				else if (OBIS_DATA_AES_KEY == code) {
+					tbl->modify(key, cyng::param_t("aes", frame.at(6)), ctx.tag());
+				}
+				else if (OBIS_CODE_ROOT_SENSOR_BITMASK == code) {
+					tbl->modify(key, cyng::param_t("mask", frame.at(6)), ctx.tag());
+				}
+			}, cyng::store::write_access("mbus-devices"));
+
+			//
+			//	send attention code ATTENTION_OK
+			//
+			tmp.clear();
+			sml_gen_.attention_msg(frame.at(1)	// trx
+				, cyng::value_cast(frame.at(2), tmp)	//	server ID
+				, OBIS_ATTENTION_OK.to_buffer()
+				, "OK"
+				, cyng::tuple_t());
+
+		}
+
 
 		void kernel::sml_get_list_request(cyng::context& ctx)
 		{

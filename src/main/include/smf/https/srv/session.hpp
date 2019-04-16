@@ -99,6 +99,7 @@ namespace node
 
 						void operator()(cyng::object obj)
 						{
+#if (BOOST_BEAST_VERSION < 248)
 							boost::beast::http::async_write(
 								self_.derived().stream(),
 								msg_,
@@ -110,6 +111,16 @@ namespace node
 										obj,	//	reference
 										std::placeholders::_1,
 										msg_.need_eof())));
+#else
+							boost::beast::http::async_write(
+								self_.derived().stream(),
+								msg_,
+								boost::beast::bind_front_handler(
+									&session::on_write,
+									&self_.derived(),
+									obj,	//	reference
+									msg_.need_eof()));
+#endif
 						}
 					};
 
@@ -117,8 +128,7 @@ namespace node
 					items_.push_back(boost::make_unique<work_impl>(self_, std::move(msg)));
 
 					// If there was no previous work, start this one
-					if (items_.size() == 1)
-					{
+					if (items_.size() == 1)	{
 						(*items_.front())(obj);
 					}
 				}
@@ -130,15 +140,19 @@ namespace node
 			session(cyng::logging::log_ptr logger
 				, connections& cm
 				, boost::uuids::uuid tag
+#if (BOOST_BEAST_VERSION < 248)
 				, boost::asio::io_context& ioc
+#endif
 				, boost::beast::flat_buffer buffer
 				, std::string const& doc_root
 				, auth_dirs const& ad)
 			: logger_(logger)
 				, connection_manager_(cm)
 				, tag_(tag)
+#if (BOOST_BEAST_VERSION < 248)
 				, timer_(ioc, (std::chrono::steady_clock::time_point::max)())
 				, strand_(ioc.get_executor())
+#endif
 				, buffer_(std::move(buffer))
 				, doc_root_(doc_root)
 				, auth_dirs_(ad)
@@ -159,6 +173,7 @@ namespace node
 
 			void do_read(cyng::object obj)
 			{
+#if (BOOST_BEAST_VERSION < 248)
 				// Set the timer
 				timer_.expires_after(std::chrono::seconds(15));
 
@@ -178,8 +193,32 @@ namespace node
 							&derived(),
 							obj,	//	reference
 							std::placeholders::_1)));
+#else
+				// Construct a new parser for each message
+				parser_.emplace();
+
+				// Apply a reasonable limit to the allowed size
+				// of the body in bytes to prevent abuse.
+				parser_->body_limit(10000);
+
+				// Set the timeout.
+				boost::beast::get_lowest_layer(
+					derived().stream()).expires_after(std::chrono::seconds(30));
+
+				// Read a request using the parser-oriented interface
+				boost::beast::http::async_read(
+					derived().stream(),
+					buffer_,
+					*parser_,
+					boost::beast::bind_front_handler(
+						&session::on_read,
+						&derived(),
+						obj));
+
+#endif
 			}
 
+#if (BOOST_BEAST_VERSION < 248)
 			// Called when the timer expires.
 			void on_timer(cyng::object obj, boost::system::error_code ec)
 			{
@@ -205,15 +244,22 @@ namespace node
 							obj,	//	reference
 							std::placeholders::_1)));
 			}
+#endif
 
+#if (BOOST_BEAST_VERSION < 248)
 			void on_read(cyng::object obj, boost::system::error_code ec)
+#else
+			void on_read(cyng::object obj, boost::beast::error_code ec, std::size_t bytes_transferred)
+#endif
 			{
+#if (BOOST_BEAST_VERSION < 248)
 				// Happens when the timer closes the socket
 				if (ec == boost::asio::error::operation_aborted)	{
 					CYNG_LOG_WARNING(logger_, tag() << " - timer aborted session");
 					connection_manager_.stop_session(tag());
 					return;
 				}
+#endif
 
 				// This means they closed the connection
 				if (ec == boost::beast::http::error::end_of_stream)	{
@@ -228,6 +274,7 @@ namespace node
 				}
 
 				// See if it is a WebSocket Upgrade
+#if (BOOST_BEAST_VERSION < 248)
 				if (boost::beast::websocket::is_upgrade(req_))
 				{
 					// Transfer the stream to a new WebSocket session
@@ -242,9 +289,8 @@ namespace node
 				else
 				{
 
-					// Send the response
 					//
-					//	ToDo: substitute cb_
+					// Send the response
 					//
 					handle_request(obj, std::move(req_));
 
@@ -253,16 +299,48 @@ namespace node
 						do_read(obj);
 					}
 				}
+#else
+				if (boost::beast::websocket::is_upgrade(parser_->get()))
+				{
+					//	Disable the timeout.
+					//	The websocket::stream uses its own timeout settings.
+					boost::beast::get_lowest_layer(derived().stream()).expires_never();
+
+					//
+					//	Upgrade.
+					//	Create a websocket session, transferring ownership
+					//	of both the socket and the HTTP request.
+					//
+					connection_manager_.upgrade(tag(), derived().release_stream(), parser_->release());
+				}
+				else
+				{
+					// Send the response
+					handle_request(obj, parser_->release());
+
+					// If we aren't at the queue limit, try to pipeline another request
+					if (!queue_.is_full()) {
+						do_read(obj);
+					}
+				}
+#endif
 			}
 
+#if (BOOST_BEAST_VERSION < 248)
 			void on_write(cyng::object obj, boost::system::error_code ec, bool close)
+#else
+			void on_write(cyng::object obj, bool close, boost::beast::error_code ec, std::size_t bytes_transferred)
+#endif
 			{
+
+#if (BOOST_BEAST_VERSION < 248)
 				// Happens when the timer closes the socket
 				if (ec == boost::asio::error::operation_aborted)
 				{
 					connection_manager_.stop_session(tag());
 					return;
 				}
+#endif
 
 				if (ec)
 				{
@@ -431,14 +509,47 @@ namespace node
 
 									if (!authorized_) {
 										
-										connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized", tag(), true, ad.second.type_, ad.second.user_, ad.first, derived().stream().lowest_layer().remote_endpoint()));
+#if (BOOST_BEAST_VERSION < 248)
+										connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized"
+											, tag()
+											, true
+											, ad.second.type_
+											, ad.second.user_
+											, ad.first
+											, derived().stream().lowest_layer().remote_endpoint()));
+#else
+										//connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized"
+										//	, tag()
+										//	, true
+										//	, ad.second.type_
+										//	, ad.second.user_
+										//	, ad.first
+										//	, derived().stream().next_layer().socket().remote_endpoint()));
+#endif
 										authorized_ = true;
 									}
 								}
 								else {
 									CYNG_LOG_WARNING(logger_, "authorization failed "
 										<< pos->value());
-									connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized", tag(), false, ad.second.type_, ad.second.user_, ad.first, derived().stream().lowest_layer().remote_endpoint()));
+#if (BOOST_BEAST_VERSION < 248)
+									connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized"
+										, tag()
+										, false
+										, ad.second.type_
+										, ad.second.user_
+										, ad.first
+										, derived().stream().lowest_layer().remote_endpoint()));
+#else
+									//connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized"
+									//	, tag()
+									//	, false
+									//	, ad.second.type_
+									//	, ad.second.user_
+									//	, ad.first
+									//	, derived().stream().next_layer().socket().remote_endpoint()));
+#endif
+
 									//
 									//	send auth request
 									//
@@ -705,14 +816,22 @@ namespace node
 			cyng::logging::log_ptr logger_;
 			connections& connection_manager_;
 			const boost::uuids::uuid tag_;
+#if (BOOST_BEAST_VERSION < 248)
 			boost::asio::steady_timer timer_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
+#endif
 			boost::beast::flat_buffer buffer_;
 
 		private:
 			const std::string doc_root_;
 			const auth_dirs& auth_dirs_;
+#if (BOOST_BEAST_VERSION < 248)
 			boost::beast::http::request<boost::beast::http::string_body> req_;
+#else
+			// The parser is stored in an optional container so we can
+			// construct it from scratch it at the beginning of each new message.
+			boost::optional<boost::beast::http::request_parser<boost::beast::http::string_body>> parser_;
+#endif
 			queue queue_;
 			bool authorized_;
 

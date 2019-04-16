@@ -9,7 +9,11 @@
 #define NODE_LIB_HTTPS_SRV_SESSION_H
 
 #include <smf/https/srv/session.hpp>
+#if (BOOST_BEAST_VERSION < 248)
 #include <smf/https/srv/ssl_stream.hpp>
+#else
+#include <boost/beast/ssl/ssl_stream.hpp>
+#endif
 #include <cyng/object.h>
 
 namespace node
@@ -30,7 +34,11 @@ namespace node
 			plain_session(cyng::logging::log_ptr logger
 				, connections&
 				, boost::uuids::uuid
+#if (BOOST_BEAST_VERSION < 248)
 				, boost::asio::ip::tcp::socket socket
+#else
+				, boost::beast::tcp_stream&& stream
+#endif
 				, boost::beast::flat_buffer buffer
 				, std::string const& doc_root
 				, auth_dirs const& ad);
@@ -38,19 +46,29 @@ namespace node
 			virtual ~plain_session();
 
 			// Called by the base class
+#if (BOOST_BEAST_VERSION < 248)
 			boost::asio::ip::tcp::socket& stream();
 
 			// Called by the base class
 			boost::asio::ip::tcp::socket release_stream();
+			void do_timeout(cyng::object obj);
+#else
+			boost::beast::tcp_stream& stream();
+			boost::beast::tcp_stream release_stream();
+#endif
 
 			// Start the asynchronous operation
 			void run(cyng::object);
-			void do_timeout(cyng::object obj);
 			void do_eof(cyng::object obj);
 
 		private:
+#if (BOOST_BEAST_VERSION < 248)
 			boost::asio::ip::tcp::socket socket_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
+#else
+			boost::beast::tcp_stream stream_;
+#endif
+
 		};
 
 		/** 
@@ -63,7 +81,11 @@ namespace node
 			ssl_session(cyng::logging::log_ptr logger
 				, connections&
 				, boost::uuids::uuid
+#if (BOOST_BEAST_VERSION < 248)
 				, boost::asio::ip::tcp::socket socket
+#else
+				, boost::beast::tcp_stream&& stream
+#endif
 				, boost::asio::ssl::context& ctx
 				, boost::beast::flat_buffer buffer
 				, std::string const& doc_root
@@ -72,26 +94,33 @@ namespace node
 			virtual ~ssl_session();
 
 			// Called by the base class
+#if (BOOST_BEAST_VERSION < 248)
 			boost::beast::ssl_stream<boost::asio::ip::tcp::socket>& stream();
-
-			// Called by the base class
 			boost::beast::ssl_stream<boost::asio::ip::tcp::socket> release_stream();
+			void do_timeout(cyng::object obj);
+#else
+			boost::beast::ssl_stream<boost::beast::tcp_stream>& stream();
+			boost::beast::ssl_stream<boost::beast::tcp_stream> release_stream();
+#endif
 
 			/**
 			 * Start the asynchronous operation
 			 */
 			void run(cyng::object);
 			void do_eof(cyng::object obj);
-			void do_timeout(cyng::object obj);
 
 		private:
 			void on_handshake(cyng::object obj, boost::system::error_code ec, std::size_t bytes_used);
 			void on_shutdown(cyng::object obj, boost::system::error_code ec);
 
 		private:
+#if (BOOST_BEAST_VERSION < 248)
 			boost::beast::ssl_stream<boost::asio::ip::tcp::socket> stream_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 			bool eof_ = false;
+#else
+			boost::beast::ssl_stream<boost::beast::tcp_stream> stream_;
+#endif
 
 		};
 

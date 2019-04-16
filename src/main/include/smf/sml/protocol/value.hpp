@@ -160,6 +160,22 @@ namespace node
 			};
 
 			template<>
+			struct factory_policy<cyng::crypto::aes_128_key>
+			{
+				static cyng::tuple_t create(cyng::crypto::aes_128_key v);
+			};
+			template<>
+			struct factory_policy<cyng::crypto::aes_192_key>
+			{
+				static cyng::tuple_t create(cyng::crypto::aes_192_key v);
+			};
+			template<>
+			struct factory_policy<cyng::crypto::aes_256_key>
+			{
+				static cyng::tuple_t create(cyng::crypto::aes_256_key v);
+			};
+
+			template<>
 			struct factory_policy<cyng::object>
 			{
 				static cyng::tuple_t create(cyng::object const& v);

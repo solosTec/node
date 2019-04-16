@@ -51,14 +51,22 @@ namespace node
 			connection_manager_interface& get_cm();
 
 		private:
+#if (BOOST_BEAST_VERSION < 248)
 			void on_accept(boost::system::error_code ec);
+#else
+			void on_accept(boost::beast::error_code ec, boost::asio::ip::tcp::socket socket);
+#endif
 			bool bind(boost::asio::ip::tcp::endpoint ep, std::size_t retries);
 			
 		private:
 			cyng::logging::log_ptr logger_;
 			boost::asio::ssl::context& ctx_;
 			boost::asio::ip::tcp::acceptor acceptor_;
+#if (BOOST_BEAST_VERSION < 248)
 			boost::asio::ip::tcp::socket socket_;
+#else
+			boost::asio::io_context& ioc_;
+#endif
 
 			/**
 			 * The connection manager which owns all live connections.

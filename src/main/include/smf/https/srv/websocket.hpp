@@ -19,8 +19,9 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 
-#if (BOOST_VERSION < 107000)
+//#if (BOOST_VERSION < 107000)
 //#if (BOOST_ASIO_VERSION < 101202)
+#if (BOOST_BEAST_VERSION < 248)
 #include <boost/beast/experimental/core/ssl_stream.hpp>
 #else
 #include <boost/beast/ssl/ssl_stream.hpp>
@@ -50,13 +51,19 @@ namespace node
 			explicit websocket_session(cyng::logging::log_ptr logger
 				, connections& cm
 				, boost::uuids::uuid tag
-				, boost::asio::io_context& ioc)
+#if (BOOST_BEAST_VERSION < 248)
+				, boost::asio::io_context& ioc
+#endif
+			)
 			: logger_(logger)
 				, connection_manager_(cm)
 				, tag_(tag)
 				, sub_protocols_{"SMF", "LoRa"}
+#if (BOOST_BEAST_VERSION < 248)
 				, strand_(ioc.get_executor())
 				, timer_(ioc, (std::chrono::steady_clock::time_point::max)())
+#endif
+				, buffer_()
 			{}
 
 			boost::uuids::uuid tag() const
@@ -64,10 +71,21 @@ namespace node
 				return tag_;
 			}
 
+#if (BOOST_BEAST_VERSION >= 248)
+			// Start the asynchronous operation
+			template<class Body, class Allocator>
+			void run(cyng::object obj, boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req)
+			{
+				// Accept the WebSocket upgrade request
+				do_accept(obj, std::move(req));
+			}
+#endif
+
 			// Start the asynchronous operation
 			template<class Body, class Allocator>
 			void do_accept(cyng::object obj, boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req)
 			{
+#if (BOOST_BEAST_VERSION < 248)
 				// Set the control callback. This will be called
 				// on every incoming ping, pong, and close frame.
 				derived().ws().control_callback(
@@ -79,6 +97,12 @@ namespace node
 
 				// Set the timer
 				timer_.expires_after(std::chrono::seconds(15));
+#else
+				// Set suggested timeout settings for the websocket
+				derived().ws().set_option(
+					boost::beast::websocket::stream_base::timeout::suggested(
+						boost::beast::role_type::server));
+#endif
 
 				//
 				// Accept the websocket handshake
@@ -106,20 +130,29 @@ namespace node
 						}
 					}
 
-				}, boost::asio::bind_executor(strand_,
+				}, 
+#if (BOOST_BEAST_VERSION < 248)
+					boost::asio::bind_executor(strand_,
 					std::bind(&websocket_session::on_accept
 						, this
 						, obj //	reference
 						, std::placeholders::_1)));
-
+#else
+					boost::beast::bind_front_handler(
+						&websocket_session::on_accept,
+						this,
+						obj));
+#endif
 			}
 
 			void on_accept(cyng::object obj, boost::system::error_code ec)
 			{
+#if (BOOST_BEAST_VERSION < 248)
 				// Happens when the timer closes the socket
 				if (ec == boost::asio::error::operation_aborted)	{
 					return;
 				}
+#endif
 
 				if (ec)	{
 					CYNG_LOG_FATAL(logger_, "ws " << tag() << " accept: " << ec.message());
@@ -130,6 +163,7 @@ namespace node
 				do_read(obj);
 			}
 
+#if (BOOST_BEAST_VERSION < 248)
 			// Called when the timer expires.
 			void on_timer(cyng::object obj, boost::system::error_code ec)
 			{
@@ -235,10 +269,12 @@ namespace node
 				// Note that there is activity
 				activity();
 			}
+#endif
 
 			void do_read(cyng::object obj)
 			{
 				// Read a message into our buffer
+#if (BOOST_BEAST_VERSION < 248)
 				derived().ws().async_read(
 					buffer_,
 					boost::asio::bind_executor(
@@ -250,6 +286,14 @@ namespace node
 							obj,	//	reference
 							std::placeholders::_1,
 							std::placeholders::_2)));
+#else
+				derived().ws().async_read(
+					buffer_,
+					boost::beast::bind_front_handler(
+						&websocket_session::on_read,
+						&derived(),
+						obj));	//	reference
+#endif
 			}
 
 			void on_read(cyng::object obj, boost::system::error_code ec, std::size_t bytes_transferred)
@@ -261,20 +305,20 @@ namespace node
 					<< bytes_transferred
 					<< " bytes websocket data" );
 
+#if (BOOST_BEAST_VERSION < 248)
 				// Happens when the timer closes the socket
-				if (ec == boost::asio::error::operation_aborted)
-				{
+				if (ec == boost::asio::error::operation_aborted)	{
 					connection_manager_.stop_ws(tag());
 					return;
 				}
+#endif
 
 				// This indicates that the websocket_session was closed
 				if (ec == boost::beast::websocket::error::closed)
 				{
 					//
-					//	ToDo: substitute cb_
+					//	remove websocket
 					//
-					//cb_(cyng::generate_invoke("ws.closed", ec));
 					connection_manager_.stop_ws(tag());
 					return;
 				}
@@ -286,17 +330,22 @@ namespace node
 					return;
 				}
 
+#if (BOOST_BEAST_VERSION < 248)
 				// Note that there is activity
 				activity();
+#endif
 
 				
-#if (BOOST_VERSION < 107000)
-//#if (BOOST_ASIO_VERSION < 101202)
+#if (BOOST_BEAST_VERSION < 189)
 				std::stringstream msg;
 				msg << boost::beast::buffers(buffer_.data());
 				std::string const str = msg.str();
+#elif (BOOST_BEAST_VERSION < 248)
+				std::string const str = boost::beast::buffers_to_string(boost::beast::buffers(buffer_.data()));
 #else
-				std::string const str = boost::beast::buffers_to_string(buffer_);
+				std::stringstream msg;
+				msg << boost::beast::make_printable(buffer_.data());
+				std::string const str = msg.str();
 #endif
 				CYNG_LOG_TRACE(logger_, "ws " << tag() << " read - " << str);
 
@@ -323,14 +372,14 @@ namespace node
 			{
 				boost::ignore_unused(bytes_transferred);
 
+#if (BOOST_BEAST_VERSION < 248)
 				// Happens when the timer closes the socket
-				if (ec == boost::asio::error::operation_aborted)
-				{
+				if (ec == boost::asio::error::operation_aborted)	{
 					return;
 				}
+#endif
 
-				if (ec)
-				{
+				if (ec)	{
 					CYNG_LOG_FATAL(logger_, "ws " << tag() << " write: " << ec.message());
 					connection_manager_.stop_ws(tag());
 					return;
@@ -340,7 +389,7 @@ namespace node
 				buffer_.consume(buffer_.size());
 
 				// Do another read
-				do_read();
+				//do_read();
 			}
 
 			/**
@@ -396,12 +445,18 @@ namespace node
 			connections& connection_manager_;
 			const boost::uuids::uuid tag_;
 			const std::vector<std::string> sub_protocols_;
+#if (BOOST_BEAST_VERSION < 248)
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 			boost::asio::steady_timer timer_;
+#endif
 
 		private:
+#if (BOOST_BEAST_VERSION < 248)
 			boost::beast::multi_buffer buffer_;
 			char ping_state_ = 0;
+#else
+			boost::beast::flat_buffer buffer_;
+#endif
 
 		};
 	}

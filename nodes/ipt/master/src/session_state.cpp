@@ -1102,6 +1102,26 @@ namespace node
 
 		}
 
+		void session_state::react(state::evt_sml_get_proc_param_meter evt)
+		{
+			switch (state_) {
+			case S_CONNECTED_TASK:
+				break;
+			default:
+				signal_wrong_state("evt_sml_get_proc_param_meterg");
+				return;
+			}
+
+			//BOOST_ASSERT(evt.vec_.size() == 8);
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_meterg to #" << task_.tsk_proxy_);
+
+			//
+			//	message slot (5)
+			//
+			task_.get_proc_param_meter(sp_->mux_, evt.vec_);
+
+		}
+
 		void session_state::react(state::evt_sml_get_proc_param_ipt_status evt)
 		{
 			switch (state_) {
@@ -1613,6 +1633,13 @@ namespace node
 			evt_sml_get_proc_param_server_id::evt_sml_get_proc_param_server_id(cyng::vector_t vec)
 			: vec_(vec)
 			{}
+	
+			//
+			//	EVENT: evt_sml_get_proc_param_meter (sml_get_proc_param_simple)
+			//
+			evt_sml_get_proc_param_meter::evt_sml_get_proc_param_meter(cyng::vector_t vec)
+				: vec_(vec)
+			{}
 
 			//
 			//	EVENT: evt_sml_get_list_response
@@ -2044,6 +2071,28 @@ namespace node
 					vec.at(4),	//	OBIS code
 								//	IP-T configuration record
 					cyng::param_map_factory("value", vec.at(5))
+					()
+				});
+			}
+
+			void state_connected_task::get_proc_param_meter(cyng::async::mux& mux, cyng::vector_t vec)
+			{
+				mux.post(tsk_proxy_, 5, cyng::tuple_t{
+					vec.at(1),	//	trx
+					vec.at(2),	//	idx
+					vec.at(3),	//	server ID
+					vec.at(4),	//	OBIS code
+								//	meter configuration record
+					cyng::param_map_factory("devClass", vec.at(5))
+						("maker", vec.at(6))
+						("status", cyng::numeric_cast<std::uint64_t>(vec.at(7), 0))
+						("bitMask", vec.at(8))
+						("interval", cyng::numeric_cast<std::uint64_t>(vec.at(9), 0))
+						("lastRecord", vec.at(10))
+						("pubKey", vec.at(11))
+						("aesKey", vec.at(12))
+						("user", vec.at(13))
+						("pwd", vec.at(14))
 					()
 				});
 			}

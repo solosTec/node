@@ -97,7 +97,7 @@ namespace node
 		}
 		else if (boost::algorithm::equals(name, "mbus-devices")) {
 			return cyng::table::make_meta_table<1, 11>(name,
-				{ "serverID"	//	server ID
+				{ "serverID"	//	server/meter ID
 				, "lastSeen"	//	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
 				, "class"		//	device class (always "---" == 2D 2D 2D)
 				, "active"
@@ -116,9 +116,9 @@ namespace node
 				, cyng::TC_TIME_POINT	//	last seen
 				, cyng::TC_STRING		//	device class
 				, cyng::TC_BOOL			//	active
-				, cyng::TC_STRING		//	description
+				, cyng::TC_STRING		//	manufacturer/description
 
-				, cyng::TC_UINT64		//	status (81 00 60 05 00 00)
+				, cyng::TC_BUFFER		//	status (81 00 60 05 00 00)
 				, cyng::TC_BUFFER		//	bit mask (81 81 C7 86 01 FF)
 				, cyng::TC_UINT32		//	interval (milliseconds)
 				, cyng::TC_BUFFER		//	pubKey
@@ -130,7 +130,7 @@ namespace node
 				, 0
 				, 16	//	device class
 				, 0		//	active
-				, 128	//	description
+				, 128	//	manufacturer/description
 
 				, 0		//	status
 				, 8		//	mask

@@ -23,8 +23,10 @@ namespace node
 			, boost::asio::ip::tcp::socket&& socket
 			, boost::uuids::uuid tag)
 		: ws_(std::move(socket))
+#if (BOOST_BEAST_VERSION < 248)
 			, strand_(ws_.get_executor())
 			, timer_(ws_.get_executor().context(), (std::chrono::steady_clock::time_point::max)())
+#endif
 			, buffer_()
 			, logger_(logger)
 			, connection_manager_(cm)
@@ -69,6 +71,7 @@ namespace node
 		}
 
 		// Called when the timer expires.
+#if (BOOST_BEAST_VERSION < 248)
 		void websocket_session::on_timer(boost::system::error_code ec, cyng::object obj)
 		{
 			BOOST_ASSERT(cyng::object_cast<websocket_session>(obj) == this);
@@ -219,6 +222,7 @@ namespace node
 			// Note that there is activity
 			activity();
 		}
+#endif
 
 		void websocket_session::do_read()
 		{
@@ -228,12 +232,21 @@ namespace node
             if (shutdown_)  return;
 
             // Read a message into our buffer
+#if (BOOST_BEAST_VERSION < 167)
 			ws_.async_read(	buffer_,
 				boost::asio::bind_executor(strand_,
 					std::bind(&websocket_session::on_read
 						, this
 						, std::placeholders::_1
 						, std::placeholders::_2)));
+#else
+			ws_.async_read(
+				buffer_,
+				boost::beast::bind_front_handler(
+					&websocket_session::on_read,
+					this));
+#endif
+
 		}
 
 		void websocket_session::on_read(boost::system::error_code ec,
@@ -246,6 +259,7 @@ namespace node
 
 			boost::ignore_unused(bytes_transferred);
 
+#if (BOOST_BEAST_VERSION < 167)
 			// Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
 			{
@@ -254,6 +268,7 @@ namespace node
 				connection_manager_.stop_ws(tag());
 				return;
 			}
+#endif
 
 			// This indicates that the websocket_session was closed
 			if (ec == boost::beast::websocket::error::closed)
@@ -278,15 +293,20 @@ namespace node
 			}
 
 			// Note that there is activity
+#if (BOOST_BEAST_VERSION < 248)
 			activity();
+#endif
 
-#if (BOOST_VERSION < 107000)
-//#if (BOOST_ASIO_VERSION < 101202)
+#if (BOOST_BEAST_VERSION < 189)
 			std::stringstream msg;
 			msg << boost::beast::buffers(buffer_.data());
 			std::string const str = msg.str();
-#else			
+#elif (BOOST_BEAST_VERSION < 248)
 			std::string const str = boost::beast::buffers_to_string(boost::beast::buffers(buffer_.data()));
+#else
+			std::stringstream msg;
+			msg << boost::beast::make_printable(buffer_.data());
+			std::string const str = msg.str();
 #endif
 			
 			CYNG_LOG_TRACE(logger_, "ws " << tag() << " read - " << str);
@@ -302,6 +322,9 @@ namespace node
 
 			buffer_.consume(buffer_.size());
 
+			//
+			//	continue to read incoming data
+			//
 			do_read();
 		}
 
@@ -315,6 +338,7 @@ namespace node
 
             boost::ignore_unused(bytes_transferred);
 
+#if (BOOST_BEAST_VERSION < 167)
 			// Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
 			{
@@ -323,6 +347,7 @@ namespace node
 				connection_manager_.stop_ws(tag());
 				return;
 			}
+#endif
 
 			if (ec)
 			{
@@ -337,8 +362,10 @@ namespace node
 			// Clear the buffer
 			buffer_.consume(buffer_.size());
 
-			// Do another read
-			do_read();
+			//
+			//	already triggered by on_read()
+			//
+			//do_read();
 		}
 
 		void websocket_session::do_close()
@@ -348,13 +375,16 @@ namespace node
             //
             if (shutdown_)  return;
 
-            CYNG_LOG_TRACE(logger_, "ws::do_close(cancel timer)");
+			boost::system::error_code ec;
+
+#if (BOOST_BEAST_VERSION < 167)
+			CYNG_LOG_TRACE(logger_, "ws::do_close(cancel timer)");
 			timer_.cancel();
+#endif
 
 			//CYNG_LOG_TRACE(logger_, "ws::do_close(use count " << shared_from_this().use_count() << ")");
 
 			// Send a TCP shutdown
-			boost::system::error_code ec;
 			ws_.next_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
 			ws_.next_layer().close(ec);
 
@@ -370,7 +400,9 @@ namespace node
         {
             shutdown_ = true;
 
-            timer_.cancel();
+#if (BOOST_BEAST_VERSION < 167)
+			timer_.cancel();
+#endif
 
             if (ws_.is_open())
             {

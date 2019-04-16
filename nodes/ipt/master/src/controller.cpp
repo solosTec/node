@@ -98,7 +98,7 @@ namespace node
 						auto logger = cyng::logging::make_sys_logger("ipt:master", true);
 #else
 						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
-						auto dom = cyng::make_reader(vec[0]);
+						auto const dom = cyng::make_reader(vec[0]);
 						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
 
 						auto logger = (console)

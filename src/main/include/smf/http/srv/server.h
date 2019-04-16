@@ -58,7 +58,11 @@ namespace node
 			connection_manager_interface& get_cm();
 
 		private:
+#if (BOOST_BEAST_VERSION < 248)
 			void on_accept(boost::system::error_code ec);
+#else
+			void on_accept(boost::system::error_code ec, boost::asio::ip::tcp::socket socket);
+#endif
             bool bind(boost::asio::ip::tcp::endpoint, std::size_t);
 
 		private:

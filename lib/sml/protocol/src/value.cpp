@@ -109,6 +109,19 @@ namespace node
 				return cyng::tuple_t();
 			}
 
+			cyng::tuple_t factory_policy<cyng::crypto::aes_128_key>::create(cyng::crypto::aes_128_key v)
+			{
+				return factory_policy<cyng::buffer_t>::create(v.to_buffer());
+			}
+			cyng::tuple_t factory_policy<cyng::crypto::aes_192_key>::create(cyng::crypto::aes_192_key v)
+			{
+				return factory_policy<cyng::buffer_t>::create(v.to_buffer());
+			}
+			cyng::tuple_t factory_policy<cyng::crypto::aes_256_key>::create(cyng::crypto::aes_256_key v)
+			{
+				return factory_policy<cyng::buffer_t>::create(v.to_buffer());
+			}
+
 
 			cyng::tuple_t factory_policy<cyng::object>::create(cyng::object const& obj)
 			{

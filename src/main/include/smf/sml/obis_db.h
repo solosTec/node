@@ -78,8 +78,7 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 09, 0B, 00, CURRENT_UTC);	//	readout time in UTC
 
 		//
-		//	Lastgänge (profiles)
-		//	The OBIS code to encode profiles is 81 81 C7 8A 83 FF
+		//	sensor/meter parameters
 		//
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 03, FF, DATA_MANUFACTURER);
@@ -88,6 +87,12 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 03, FF, DATA_AES_KEY);
 		const static obis	DEFINE_OBIS_CODE(81, 81, 61, 3C, 01, FF, DATA_USER_NAME);
 		const static obis	DEFINE_OBIS_CODE(81, 81, 61, 3C, 02, FF, DATA_USER_PWD);
+
+
+		//
+		//	Profiles (Lastgänge)
+		//	The OBIS code to encode profiles is 81 81 C7 8A 83 FF
+		//
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 10, FF, PROFILE_1_MINUTE);	//	1 minute
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 11, FF, PROFILE_15_MINUTE);
@@ -102,7 +107,6 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 83, FF, PROFILE);	//	encode profiles
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 01, FF, PUSH_OPERATIONS);	//	7.3.1.26 Datenstruktur zum Transport der Eigenschaften von Push-Vorgängen. 
 
-		//
 		/**
 		 * @return true id the 4th first bytes are 0x81, 0x81, 0xC7, 0x86
 		 */
@@ -174,13 +178,15 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 52, FF, DEV_CLASS_3HZ);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 53, FF, DEV_CLASS_MUC_LAN);	// (MUC - LAN / DSL)
 		
-		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 00, FF, CODE_ROOT_SENSOR_PROPERTY);	//	properties of data sensor/actor (Eigenschaften eines Datenspiegels)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 83, 82, 01, CODE_REBOOT);	//	request reboot
+
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 00, FF, CODE_ROOT_SENSOR_PARAMS);	//	properties of data sensor/actor (Eigenschaften eines Datenspiegels)
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 01, FF, CODE_ROOT_SENSOR_BITMASK);	//	Bitmask to define bits that will be transferred into log
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 01, FF, CODE_ROOT_NTP);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 10, FF, CODE_ROOT_DEVICE_TIME);	//	device time
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 20, FF, CODE_ROOT_DATA_COLLECTOR);	//	properties of data collector (Eigenschaften eines Datensammlers)
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 02, FF, CODE_AVERAGE_TIME_MS);	//	average time between two received data records (milliseconds)
-		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 83, 82, 01, CODE_REBOOT);	//	request reboot
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 04, FF, CODE_TIME_REFERENCE);	//	[u8] 0 == UTC, 1 == UTC + time zone, 2 == local time
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 00, FF, CODE_IF_1107);	 //	1107 interface (IEC 62056-21)
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 01, FF, CODE_IF_1107_ACTIVE); //	(bool) - if true 1107 interface active

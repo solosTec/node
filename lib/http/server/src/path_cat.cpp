@@ -14,8 +14,8 @@ namespace node
 		boost::beast::string_view path)
 	{
 		if(base.empty())
-			return path.to_string();
-		std::string result = base.to_string();
+			return std::string(path);
+		std::string result(base);
 #if BOOST_MSVC
 		char constexpr path_separator = '\\';
 		if(result.back() == path_separator)

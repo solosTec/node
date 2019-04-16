@@ -20,19 +20,29 @@ namespace node
 		plain_session::plain_session(cyng::logging::log_ptr logger
 			, connections& cm
 			, boost::uuids::uuid tag
+#if (BOOST_BEAST_VERSION < 248)
 			, boost::asio::ip::tcp::socket socket
+#else
+			, boost::beast::tcp_stream&& stream
+#endif
 			, boost::beast::flat_buffer buffer
 			, std::string const& doc_root
 			, auth_dirs const& ad)
+#if (BOOST_BEAST_VERSION < 248)
 		: session<plain_session>(logger, cm, tag, socket.get_executor().context(), std::move(buffer), doc_root, ad)
 			, socket_(std::move(socket))
 			, strand_(socket_.get_executor())
+#else
+		: session<plain_session>(logger, cm, tag, std::move(buffer), doc_root, ad)
+			, stream_(std::move(stream))
+#endif
 		{}
 
 		plain_session::~plain_session()
 		{}
 
 		// Called by the base class
+#if (BOOST_BEAST_VERSION < 248)
 		boost::asio::ip::tcp::socket& plain_session::stream()
 		{
 			return socket_;
@@ -43,19 +53,38 @@ namespace node
 		{
 			return std::move(socket_);
 		}
+#else
+		boost::beast::tcp_stream& plain_session::stream()
+		{
+			return stream_;
+		}
+
+		boost::beast::tcp_stream plain_session::release_stream()
+		{
+			return std::move(stream_);
+		}
+#endif
 
 		// Start the asynchronous operation
 		void plain_session::run(cyng::object obj)
 		{
+
+#if (BOOST_BEAST_VERSION < 248)
 			//
-			//	substitute cb_
+			//	signal session launch
 			//
 			this->connection_manager_.vm().async_run(cyng::generate_invoke("http.session.launch", tag(), false, stream().lowest_layer().remote_endpoint()));
 
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
-			//on_timer({});
 			on_timer(obj, boost::system::error_code{});
+#else
+			//
+			//	signal session launch
+			//
+			this->connection_manager_.vm().async_run(cyng::generate_invoke("http.session.launch", tag(), false, stream().socket().remote_endpoint()));
+#endif
+
 			do_read(obj);
 		}
 
@@ -63,16 +92,15 @@ namespace node
 		{
 			// Send a TCP shutdown
 			boost::system::error_code ec;
+#if (BOOST_BEAST_VERSION < 248)
 			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+#else
+			stream_.socket().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+#endif
 
-			//
-			//	substitute cb_
-			//
-			//this->connection_manager_.vm().async_run(cyng::generate_invoke("http.session.eof", tag(), false));
-			//cb_(cyng::generate_invoke("https.eof.session.plain", obj));
-			// At this point the connection is closed gracefully
 		}
 
+#if (BOOST_BEAST_VERSION < 248)
 		void plain_session::do_timeout(cyng::object obj)
 		{
 			// Closing the socket cancels all outstanding operations. They
@@ -81,18 +109,28 @@ namespace node
 			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
 			socket_.close(ec);
 		}
+#endif
 
 		ssl_session::ssl_session(cyng::logging::log_ptr logger
 			, connections& cm
 			, boost::uuids::uuid tag
+#if (BOOST_BEAST_VERSION < 248)
 			, boost::asio::ip::tcp::socket socket
+#else
+			, boost::beast::tcp_stream&& stream
+#endif
 			, boost::asio::ssl::context& ctx
 			, boost::beast::flat_buffer buffer
 			, std::string const& doc_root
 			, auth_dirs const& ad)
+#if (BOOST_BEAST_VERSION < 248)
 		: session<ssl_session>(logger, cm, tag, socket.get_executor().context(), std::move(buffer), doc_root, ad)
 			, stream_(std::move(socket), ctx)
 			, strand_(stream_.get_executor())
+#else
+		: session<ssl_session>(logger, cm, tag, std::move(buffer), doc_root, ad)
+			, stream_(std::move(stream), ctx)
+#endif
 		{}
 
 		ssl_session::~ssl_session()
@@ -100,6 +138,7 @@ namespace node
 			//std::cerr << "ssl_session::~ssl_session()" << std::endl;
 		}
 
+#if (BOOST_BEAST_VERSION < 248)
 		// Called by the base class
 		boost::beast::ssl_stream<boost::asio::ip::tcp::socket>& ssl_session::stream()
 		{
@@ -111,18 +150,30 @@ namespace node
 		{
 			return std::move(stream_);
 		}
+#else
+		boost::beast::ssl_stream<boost::beast::tcp_stream>& ssl_session::stream()
+		{
+			return stream_;
+		}
+
+		boost::beast::ssl_stream<boost::beast::tcp_stream> ssl_session::release_stream()
+		{
+			return std::move(stream_);
+		}
+#endif
 
 		// Start the asynchronous operation
 		void ssl_session::run(cyng::object obj)
 		{
+
+#if (BOOST_BEAST_VERSION < 248)
 			//
-			//	ToDo: substitute cb_
+			//	signal session launch
 			//
 			this->connection_manager_.vm().async_run(cyng::generate_invoke("http.session.launch", tag(), true, stream().lowest_layer().remote_endpoint()));
 
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
-			//on_timer({});
 			on_timer(obj, boost::system::error_code{});
 
 			// Set the timer
@@ -141,20 +192,41 @@ namespace node
 						obj,	//	hold reference
 						std::placeholders::_1,
 						std::placeholders::_2)));
+#else
+			//
+			//	signal session launch
+			//
+			this->connection_manager_.vm().async_run(cyng::generate_invoke("http.session.launch", tag(), true, stream().next_layer().socket().remote_endpoint()));
+
+			// Set the timeout.
+			boost::beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));
+
+			// Perform the SSL handshake
+			// Note, this is the buffered version of the handshake.
+			stream_.async_handshake(
+				boost::asio::ssl::stream_base::server,
+				buffer_.data(),
+				boost::beast::bind_front_handler(
+					&ssl_session::on_handshake,
+					this,
+					obj));
+
+#endif
 		}
 
 		void ssl_session::on_handshake(cyng::object obj
 			, boost::system::error_code ec
 			, std::size_t bytes_used)
 		{
+#if (BOOST_BEAST_VERSION < 248)
 			// Happens when the handshake times out
 			if (ec == boost::asio::error::operation_aborted)	{
 				CYNG_LOG_ERROR(logger_, "handshake timeout ");
 				return;
 			}
+#endif
 
-			if (ec)
-			{
+			if (ec)	{
 				CYNG_LOG_FATAL(logger_, "handshake: " << ec.message());
 				return;
 			}
@@ -167,6 +239,7 @@ namespace node
 
 		void ssl_session::do_eof(cyng::object obj)
 		{
+#if (BOOST_BEAST_VERSION < 248)
 			eof_ = true;
 
 			// Set the timer
@@ -182,16 +255,28 @@ namespace node
 						obj,
 						std::placeholders::_1)));
 
+#else
+			// Set the timeout.
+			boost::beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));
+
+			// Perform the SSL shutdown
+			stream_.async_shutdown(
+				boost::beast::bind_front_handler(
+					&ssl_session::on_shutdown,
+					this,
+					obj));
+
+#endif
 			//
-			//	ToDo: substitute cb_
+			//	log SSL shutdown
 			//
 			CYNG_LOG_WARNING(logger_, tag() << " - SSL shutdown");
-			//cb_(cyng::generate_invoke("https.eof.session.ssl", obj));
 
 		}
 
 		void ssl_session::on_shutdown(cyng::object obj, boost::system::error_code ec)
 		{
+#if (BOOST_BEAST_VERSION < 248)
 			// Happens when the shutdown times out
 			if (ec == boost::asio::error::operation_aborted)
 			{
@@ -199,23 +284,24 @@ namespace node
 				connection_manager_.stop_session(tag());
 				return;
 			}
+#endif
 
 			if (ec)
 			{
-				//return fail(ec, "shutdown");
 				CYNG_LOG_WARNING(logger_, tag() << " - SSL shutdown failed");
 				connection_manager_.stop_session(tag());
 				return;
 			}
 
 			//
-			//	ToDo: substitute cb_
+			//	let connection manager remove this session
 			//
-			//cb_(cyng::generate_invoke("https.on.shutdown.session.ssl", obj));
 			connection_manager_.stop_session(tag());
+
 			// At this point the connection is closed gracefully
 		}
 
+#if (BOOST_BEAST_VERSION < 248)
 		void ssl_session::do_timeout(cyng::object obj)
 		{
 			// If this is true it means we timed out performing the shutdown
@@ -230,7 +316,7 @@ namespace node
 			on_timer(obj, boost::system::error_code());
 			do_eof(obj);
 		}
-
+#endif
 	}
 }
 
