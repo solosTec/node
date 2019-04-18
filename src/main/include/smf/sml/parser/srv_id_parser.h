@@ -41,8 +41,6 @@ namespace node
 		 * and convert it into a buffer.
 		 */
 		std::pair<cyng::buffer_t, bool> parse_srv_id(std::string const&);
-
-
 	}
 }
 

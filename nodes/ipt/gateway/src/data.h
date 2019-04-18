@@ -11,6 +11,7 @@
 
 #include <smf/sml/defs.h>
 #include <smf/mbus/header.h>
+#include <smf/sml/protocol/generator.h>
 
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
@@ -27,6 +28,7 @@ namespace node
 		{
 		public:
 			data(cyng::logging::log_ptr 
+				, res_generator& sml_gen
 				, cyng::controller& vm
 				, cyng::store::db& config_db);
 
@@ -40,6 +42,11 @@ namespace node
 			 * data from SML parser after receiving a 0x7F frame (short SML header)
 			 */
 			void sml_get_list_response(cyng::context& ctx);
+
+			/**
+			 *	query last data record
+			 */
+			void sml_get_list_request(cyng::context& ctx);
 
 			/**
 			 * store received data
@@ -76,6 +83,12 @@ namespace node
 
 		private:
 			cyng::logging::log_ptr logger_;
+
+
+			/**
+			 * buffer for current SML message
+			 */
+			res_generator& sml_gen_;
 
 			/**
 			 * configuration db

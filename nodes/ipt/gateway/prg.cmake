@@ -8,6 +8,9 @@ set (node_ipt_gateway_cpp
 	nodes/ipt/gateway/src/core.cpp
 	nodes/ipt/gateway/src/executor.cpp
 	nodes/ipt/gateway/src/data.cpp
+	nodes/ipt/gateway/src/attention.cpp
+	nodes/ipt/gateway/src/cfg_push.cpp
+	nodes/ipt/gateway/src/cfg_ipt.cpp
 )
 
 set (node_ipt_gateway_h
@@ -16,6 +19,9 @@ set (node_ipt_gateway_h
 	nodes/ipt/gateway/src/core.h
 	nodes/ipt/gateway/src/executor.h
 	nodes/ipt/gateway/src/data.h
+	nodes/ipt/gateway/src/attention.h
+	nodes/ipt/gateway/src/cfg_push.h
+	nodes/ipt/gateway/src/cfg_ipt.h
 )
 
 set (node_ipt_gateway_schemes
@@ -66,9 +72,6 @@ set (node_ipt_gateway_server
 	nodes/ipt/gateway/src/session.cpp
 	nodes/ipt/gateway/src/server.h
 	nodes/ipt/gateway/src/server.cpp
-#	nodes/ipt/gateway/src/sml_reader.h
-#	nodes/ipt/gateway/src/sml_reader.cpp
-
 )
 
 if(WIN32)

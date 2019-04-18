@@ -25,9 +25,31 @@ namespace node
 		else if (boost::algorithm::equals(name, "TSMLData")) {
 
 			return cyng::table::make_meta_table<2, 6>(name,
-				{ "pk", "OBIS", "unitCode", "unitName", "dataType", "scaler", "val", "result" },
-				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT8, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_INT32, cyng::TC_INT64, cyng::TC_STRING },
-				{ 36, 24, 0, 64, 16, 0, 0, 512 });
+				{ "pk"
+				, "OBIS"
+				, "unitCode"
+				, "unitName"
+				, "dataType"
+				, "scaler"
+				, "val"
+				, "result" //	processed value
+				},
+				{ cyng::TC_UUID		//	pk
+				, cyng::TC_STRING	//	OBIS
+				, cyng::TC_UINT8	//	unitCode
+				, cyng::TC_STRING	//	unitName
+				, cyng::TC_STRING	//	dataType
+				, cyng::TC_INT32	//	scaler
+				, cyng::TC_INT64	//	val
+				, cyng::TC_STRING },//	result
+				{ 36
+				, 24
+				, 0
+				, 64
+				, 16
+				, 0
+				, 0
+				, 512 });
 		}
 		else if (boost::algorithm::equals(name, "TIECMeta")) {
 
@@ -126,8 +148,8 @@ namespace node
 				, cyng::TC_STRING		//	user
 				, cyng::TC_STRING		//	pwd
 				},
-				{ 9
-				, 0
+				{ 9		//	serverID
+				, 0		//	lastSeen
 				, 16	//	device class
 				, 0		//	active
 				, 128	//	manufacturer/description
@@ -172,6 +194,10 @@ namespace node
 				});
 		}
 		else if (boost::algorithm::equals(name, "push.ops")) {
+
+			//
+			//	Definition of all configured push targets
+			//
 			return cyng::table::make_meta_table<2, 6>(name,
 				{ "serverID"	//	server ID
 				, "idx"			//	index
@@ -179,8 +205,8 @@ namespace node
 				, "interval"	//	seconds
 				, "delay"		//	seconds
 				, "target"		//	target name
-				, "source"		//	push source (profile, installation parameters, list of visible sensors/actors)
-				, "profile"		//	"Lastgang"
+				, "source"		//	push source - OBIS_PUSH_SOURCE (profile, installation parameters, list of visible sensors/actors)
+				, "profile"		//	"Lastgang" - OBIS_PROFILE
 				, "task"		//	associated task id
 
 				},
@@ -190,8 +216,8 @@ namespace node
 				, cyng::TC_UINT32		//	interval [seconds]
 				, cyng::TC_UINT32		//	delay [seconds]
 				, cyng::TC_STRING		//	target
-				, cyng::TC_UINT8		//	source
-				, cyng::TC_UINT8		//	profile
+				, cyng::TC_BUFFER		//	source
+				, cyng::TC_BUFFER		//	profile => reference to "data.collector"
 				, cyng::TC_UINT64		//	task
 
 				},
@@ -207,6 +233,7 @@ namespace node
 				});
 		}
 		else if (boost::algorithm::equals(name, "op.log")) {
+
 			return cyng::table::make_meta_table<1, 10>(name,
 				{ "idx"			//	index
 								//	-- body
@@ -256,6 +283,103 @@ namespace node
 				},
 				{ cyng::TC_STRING, cyng::TC_STRING },
 				{ 64, 128 });
+		}
+		else if (boost::algorithm::equals(name, "readout")) {
+			
+			//
+			//	last record of a sensor/meter
+			//
+			return cyng::table::make_meta_table<2, 6>(name,
+				{ "serverID"	//	server/meter/sensor ID
+				, "OBIS"		//	OBIS code
+								//	-- body
+				, "unitCode"	//	M-Bus
+				, "scaler"		//	signed integer
+				, "val"			//	original value
+				, "result"		//	processed value
+				, "status"		//	status
+				, "roTime"		//	timepoint (UTC)
+				},
+				{ cyng::TC_BUFFER		//	serverID
+				, cyng::TC_STRING		//	OBIS
+										//	-- body
+				, cyng::TC_UINT8		//	unitCode
+				, cyng::TC_INT8			//	scaler
+				, cyng::TC_INT64		//	val
+				, cyng::TC_STRING		//	result
+				, cyng::TC_UINT32		//	status
+				, cyng::TC_TIME_POINT	//	roTime
+				},
+				{ 9		//	serverID
+				, 24	//	OBIS
+						//	-- body
+				, 0		//	unitCode
+				, 0		//	scaler
+				, 0		//	val
+				, 512	//	result
+				, 0		//	status
+				, 23	//	roTime
+				});
+		}
+		else if (boost::algorithm::equals(name, "data.collector")) {
+
+			//
+			//	Defines how the data is to be stored. 
+			//	81 81 C7 86 20 FF - OBIS_CODE_ROOT_DATA_COLLECTOR
+			//
+			return cyng::table::make_meta_table<2, 4>(name,
+				{ "serverID"	//	server/meter/sensor ID
+				, "nr"			//	position/number
+								//	-- body
+				, "profile"		//	OBIS code
+				, "active"		//	turned on/off
+				, "maxSize"		//	signed integer
+				, "period"		//	register period
+				},
+				{ cyng::TC_BUFFER		//	serverID
+				, cyng::TC_UINT8		//	nr
+										//	-- body
+				, cyng::TC_BUFFER		//	profile
+				, cyng::TC_BOOL			//	active
+				, cyng::TC_UINT16		//	maxSize
+				, cyng::TC_SECOND		//	period
+				},
+				{ 9		//	serverID
+				, 0		//	nr
+						//	-- body
+				, 24	//	profile
+				, 0		//	active
+				, 0		//	maxSize
+				, 0		//	period
+				});
+		}
+		else if (boost::algorithm::equals(name, "trx")) {
+
+			//
+			//	Transaction ID
+			//	example: "19041816034914837-2"
+			//	Server ID
+			//	example:  01 EC 4D 01 00 00 10 3C 02
+			//
+			return cyng::table::make_meta_table<1, 3>(name,
+				{ "trx"		//	transaction ID
+								//	-- body
+				, "code"		//	OBIS code
+				, "serverID"	//	server ID
+				, "msg"			//	optional message
+				},
+				{ cyng::TC_STRING		//	trx
+										//	-- body
+				, cyng::TC_BUFFER		//	code
+				, cyng::TC_BUFFER		//	serverID
+				, cyng::TC_STRING		//	msg
+				},
+				{ 24	//	trx
+						//	-- body
+				, 24	//	OBIS
+				, 9		//	serverID
+				, 32		//	msg
+				});
 		}
 
 		//

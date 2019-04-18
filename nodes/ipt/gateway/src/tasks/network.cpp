@@ -9,11 +9,13 @@
 #include "wireless_lmn.h"
 #include "wired_lmn.h"
 #include "gpio.h"
-#include <smf/serial/baudrate.h>
+//#include "virtual_meter.h"
 
+#include <smf/serial/baudrate.h>
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/generator.h>
 #include <smf/sml/protocol/serializer.h>
+
 #include <cyng/factory/set_factory.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
@@ -127,6 +129,11 @@ namespace node
 			//
 			pos = tid_map.find(50);
 			start_wired_lmn(config_db, cfg_wired_lmn, (pos != tid_map.end()) ? pos->second : cyng::async::NO_TASK);
+
+			//
+			//	virtual meter (optional)
+			//
+			//start_virtual_meter(config_db, cfg_virtual_meter);
 
 		}
 

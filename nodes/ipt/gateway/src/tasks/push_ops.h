@@ -73,7 +73,7 @@ namespace node
 
 			cyng::table::key_type key_;
 
-			const boost::uuids::uuid tag_;
+			boost::uuids::uuid const tag_;
 
 			enum {
 				TASK_STATE_INITIAL_,

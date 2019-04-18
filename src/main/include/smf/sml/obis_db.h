@@ -77,6 +77,12 @@ namespace node
 
 		const static obis	DEFINE_OBIS_CODE(01, 00, 00, 09, 0B, 00, CURRENT_UTC);	//	readout time in UTC
 
+		const static obis	DEFINE_OBIS_CODE(81, 49, 00, 00, 10, FF, PUSH_SERVICE);	//	options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 21, FF, PUSH_SERVICE_IPT); //	SML data response without request - typical IP - T push
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 22, FF, PUSH_SERVICE_SML); //	SML data response without request - target is SML client address
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 23, FF, PUSH_SERVICE_KNX); //	target is KNX ID
+
+
 		//
 		//	sensor/meter parameters
 		//
@@ -106,6 +112,16 @@ namespace node
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 83, FF, PROFILE);	//	encode profiles
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 01, FF, PUSH_OPERATIONS);	//	7.3.1.26 Datenstruktur zum Transport der Eigenschaften von Push-Vorgängen. 
+
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 02, FF, PUSH_INTERVAL);	//	in seconds
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 03, FF, PUSH_DELAY);	//	in seconds
+
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 04, FF, PUSH_SOURCE);	//	options are PUSH_SOURCE_PROFILE, PUSH_SOURCE_INSTALL and PUSH_SOURCE_SENSOR_LIST
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 42, FF, PUSH_SOURCE_PROFILE);	//!< new meter/sensor data
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 43, FF, PUSH_SOURCE_INSTALL);	//!< configuration changed
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 44, FF, PUSH_SOURCE_SENSOR_LIST);	//!< list of visible meters changed
+
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 81, FF, PUSH_SERVER_ID);
 
 		/**
 		 * @return true id the 4th first bytes are 0x81, 0x81, 0xC7, 0x86

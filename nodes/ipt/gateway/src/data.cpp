@@ -13,8 +13,10 @@
 #include <smf/sml/protocol/parser.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/protocol/message.h>
 
 #include <cyng/tuple_cast.hpp>
+#include <cyng/numeric_cast.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/io/hex_dump.hpp>
 #include <cyng/vm/generator.h>
@@ -27,9 +29,11 @@ namespace node
 	{
 
 		data::data(cyng::logging::log_ptr logger
+			, res_generator& sml_gen
 			, cyng::controller& vm
 			, cyng::store::db& config_db)
 		: logger_(logger)
+			, sml_gen_(sml_gen)
 			, config_db_(config_db)
 			, params_()
 		{
@@ -42,6 +46,12 @@ namespace node
 			//	data from SML parser after receiving a 0x7F frame (short SML header)
 			//
 			vm.register_function("sml.get.list.response", 9, std::bind(&data::sml_get_list_response, this, std::placeholders::_1));
+
+			//
+			//	query last data record
+			//
+			vm.register_function("sml.get.list.request", 9, std::bind(&data::sml_get_list_request, this, std::placeholders::_1));
+
 
 			//
 			//	process latest received data (this->params_)
@@ -662,10 +672,104 @@ namespace node
 				cyng::buffer_t,		//	[0] server/meter ID
 				std::uint8_t		//	[1] frame type
 			>(frame);
-
-
-
 		}
+
+		void data::sml_get_list_request(cyng::context& ctx)
+		{
+			//
+			//	[c0265010-8044-48a5-aaaf-48b34dca1ebd,190417113653678930-2,1,005056C00008,01EC4D010000103C02,20190417113653,operator,operator,990000000003]
+			//
+			cyng::vector_t const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] pk
+				std::string,		//	[1] trx
+				std::size_t,		//	[2] msg id
+				cyng::buffer_t,		//	[3] client id
+				cyng::buffer_t,		//	[4] server id <- meter/sensor ID with the requested data
+				std::string,		//	[5] reqFileId
+				std::string,		//	[6] user
+				std::string,		//	[7] password
+				cyng::buffer_t		//	[8] path (OBIS)
+			>(frame);
+
+			const obis code(std::get<8>(tpl));
+
+			cyng::tuple_t val_list;
+
+#ifdef _NODE_GW_FIXED_DATA_SET
+			val_list.push_back(list_entry_manufacturer("solosTec"));
+			val_list.push_back(list_entry(OBIS_CODE(08, 00, 01, 00, 00, FF)
+				, 0	//	status
+				, std::chrono::system_clock::now()
+				, 13	//	m3
+				, -3
+				, cyng::make_object(758)));
+			val_list.push_back(list_entry(OBIS_CODE(01, 00, 01, 08, 00, FF)
+				, 0	//	status
+				, std::chrono::system_clock::now()
+				, 30	//	Wh
+				, -2
+				, cyng::make_object(463782u)));
+#else
+			//
+			//	real data from table "readout"
+			//
+			config_db_.access([&](cyng::store::table const* tbl) {
+
+				tbl->loop([&](cyng::table::record const& rec) {
+
+					cyng::buffer_t srv;
+					srv = cyng::value_cast(rec["serverID"], srv);
+
+					if (srv == std::get<4>(tpl)) {
+
+						srv.clear();
+						obis const code(cyng::value_cast(rec["OBIS"], srv));
+
+						CYNG_LOG_DEBUG(logger_, "meter "
+							<< sml::from_server_id(std::get<3>(tpl))
+							<< " - "
+							<< sml::from_server_id(std::get<4>(tpl))
+							<< " - "
+							<< code.to_str()
+							<< ": "
+							<< cyng::value_cast<std::string>(rec["result"], ""));
+
+
+						val_list.push_back(list_entry(code
+							, 0	//	status
+							, cyng::value_cast(rec["roTime"], std::chrono::system_clock::now())
+							, cyng::numeric_cast<std::uint8_t>(rec["unitCode"], 0)	//	unit
+							, cyng::numeric_cast<std::int8_t>(rec["scaler"], 0)	//	scaler
+							, rec["val"]));
+					}
+
+					//	continue
+					return true;
+				});
+
+			}, cyng::store::read_access("readout"));
+#endif
+
+			if (OBIS_LIST_CURRENT_DATA_RECORD == code) {
+				CYNG_LOG_TRACE(logger_, "sml.get.list.request - current data record");
+				sml_gen_.get_list(frame.at(1)	//	trx
+					, std::get<3>(tpl)	//	client id 
+					, std::get<4>(tpl)	//	server id
+					, OBIS_LIST_CURRENT_DATA_RECORD
+					, make_timestamp(std::chrono::system_clock::now())
+					, make_timestamp(std::chrono::system_clock::now())
+					, val_list);
+
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "sml.get.list.request - " << get_name(code));
+
+			}
+		}
+
 
 	}	//	sml
 }

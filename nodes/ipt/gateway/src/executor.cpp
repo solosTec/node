@@ -292,14 +292,13 @@ namespace node
 
 			//	insert demo push.ops
 			config_db_.insert("push.ops"
-				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), 2u)
-				, cyng::table::data_generator(static_cast<std::uint32_t>(900u)	//	15 min
-					, static_cast<std::uint32_t>(4u)	//	delay
-					//, "power@solostec"
-					, "pushStore"
-					, static_cast<std::uint8_t>(1u)		//	source
-					, static_cast<std::uint8_t>(1u)		//	profile
-					, 0)
+				, cyng::table::key_generator(cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x05, 0x01, 0x02 }), static_cast<std::uint8_t>(1u))
+				, cyng::table::data_generator(static_cast<std::uint32_t>(900u)	//	15 min interval
+					, static_cast<std::uint32_t>(4u)	//	delay in seconds
+					, "pushStore"	//	target name
+					, OBIS_PUSH_SOURCE_PROFILE.to_buffer()	//	source
+					, OBIS_PROFILE_15_MINUTE.to_buffer()	//	profile
+					, static_cast<std::uint64_t>(cyng::async::NO_TASK))
 				, 1	//	generation
 				, tag);
 

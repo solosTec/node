@@ -296,7 +296,7 @@ namespace node
 
 			std::size_t get_proc_active_devices(cyng::object trx
 				, cyng::object server_id
-				, cyng::store::table const *);
+				, cyng::store::table const*);
 
 			std::size_t get_proc_visible_devices(cyng::object trx
 				, cyng::object server_id
@@ -311,7 +311,7 @@ namespace node
 				, const cyng::table::record&);
 
 			std::size_t get_proc_push_ops(cyng::object trx
-				, cyng::object server_id
+				, cyng::buffer_t server_id
 				, const cyng::store::table*);
 
 			std::size_t get_proc_ipt_params(cyng::object trx
@@ -346,7 +346,7 @@ namespace node
 				, cyng::object
 				, cyng::object
 				, cyng::object
-				, cyng::object	);
+				, cyng::object);
 
 			/**
 			 * get current IP-T status - 81 49 0D 06 00 FF (OBIS_CODE_ROOT_IPT_STATE)
@@ -427,6 +427,13 @@ namespace node
 				, std::string attention_msg
 				, cyng::tuple_t attention_details);
 
+			/**
+			 *	81 81 C7 86 20 FF - table "data.collector"
+			 */
+			std::size_t get_proc_data_collector(cyng::object trx
+				, cyng::object server_id
+				, cyng::store::table const* tbl_dc
+				, cyng::store::table const* tbl_ro);
 		};
 
 	}

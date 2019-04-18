@@ -171,6 +171,8 @@ namespace node
 
 			bool start_wireless_lmn(cyng::store::db&, cyng::tuple_t const&, std::size_t);
 			bool start_wired_lmn(cyng::store::db&, cyng::tuple_t const&, std::size_t);
+			//bool start_virtual_meter(cyng::store::db&, cyng::tuple_t const&);
+
 			std::map<int, std::size_t> control_gpio(cyng::store::db&, std::map<int, std::string> gpio_paths);
 
 		private:

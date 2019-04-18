@@ -75,7 +75,7 @@ namespace node
 
 			//
 			//	(1) - transaction id
-			//	This is typically a printable sequence of 6 up to 9 ASCII values
+			//	This is typically a printable sequence of 6 up to 19 ASCII values
 			//
 			cyng::buffer_t buffer;
 			ro_.set_trx(cyng::value_cast(*pos++, buffer));
@@ -933,16 +933,40 @@ namespace node
             //
             std::vector<obis> path = read_param_tree_path(*pos++);
 
-            //
-            //	parameterTree
-            //
-            cyng::tuple_t tpl;
-            tpl = cyng::value_cast(*pos++, tpl);
+			//
+			//	each setProcParamReq has to send an attension message as response
+			//
+			auto prg = cyng::generate_invoke("sml.attention.init"
+				, ro_.trx_
+				, ro_.server_id_
+				, OBIS_ATTENTION_OK.to_buffer()
+				, "Set Proc Parameter Request");
 
             //
             //	recursiv call to an parameter tree - similiar to read_param_tree()
             //
-            return read_set_proc_parameter_request_tree(path, 0, tpl.begin(), tpl.end());
+			auto p = read_set_proc_parameter_request_tree(path, 0, *pos++);
+			prg.insert(prg.end(), p.begin(), p.end());
+
+			//
+			//	send prepared attention message
+			//
+			p = cyng::generate_invoke("sml.attention.send", ro_.trx_);
+			prg.insert(prg.end(), p.begin(), p.end());
+
+			return prg;
+		}
+
+		cyng::vector_t reader::read_set_proc_parameter_request_tree(std::vector<obis> path
+			, std::size_t depth
+			, cyng::object obj)
+		{
+			//
+			//	parameterTree
+			//
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(obj, tpl);
+			return read_set_proc_parameter_request_tree(path, depth, tpl.begin(), tpl.end());
 		}
 
 		cyng::vector_t reader::read_set_proc_parameter_request_tree(std::vector<obis> path
@@ -974,38 +998,47 @@ namespace node
 			auto attr = read_parameter(*pos++);
 
 			//
+			//	an empty child list signals that the parameter set is
+			//	to be removed.
+			//	
+			//
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(*pos++, tpl);
+
+			//
 			//	program vector
 			//
 			cyng::vector_t prg;
-
-			if (depth == 0) {
-				prg = generate_set_proc_parameter_request(path.front(), code, attr, path);
+			
+			switch (depth) {
+			case 0:
+				prg = generate_set_proc_parameter_request_L0(path.front(), code, attr, path, tpl.empty());
+				break;
+			case 1:
+				prg = generate_set_proc_parameter_request_L1(path.front(), code, attr, path);
+				break;
+			case 2:
+				prg = generate_set_proc_parameter_request_L2(path.front(), code, attr, path);
+				break;
+			default:
+				break;
 			}
 
 			//
 			//	3. child_List List_of_SML_Tree OPTIONAL
 			//
-			return (prg.empty())
-				? read_tree_list(path, *pos++, depth + 1)
-				: prg
-				;
-
-			//cyng::tuple_t tpl;
-			//tpl = cyng::value_cast(*pos++, tpl);
-			//for (auto const child : tpl)
-			//{
-			//	cyng::tuple_t tmp;
-			//	tmp = cyng::value_cast(child, tmp);
-
-			//	//
-			//	//	recursive call of read_set_proc_parameter_request_tree()
-			//	//
-			//	prg << cyng::unwinder(read_set_proc_parameter_request_tree(path, depth + 1, tmp.begin(), tmp.end()));
-			//}
-			//return prg;
+			for (auto obj : tpl) {
+				auto const p =  read_set_proc_parameter_request_tree(path, depth + 1, obj);
+				prg.insert(prg.end(), p.begin(), p.end());
+			}
+			return prg;
 		}
 
-		cyng::vector_t reader::generate_set_proc_parameter_request(obis root, obis code, cyng::attr_t attr, std::vector<obis> const& path)
+		cyng::vector_t reader::generate_set_proc_parameter_request_L0(obis root
+			, obis code
+			, cyng::attr_t attr
+			, std::vector<obis> const& path
+			, bool empty)
 		{
 			if (OBIS_CODE_IF_wMBUS == root) {
 
@@ -1102,19 +1135,6 @@ namespace node
 						, tmp);
 				}
 			}
-			else if (OBIS_PUSH_OPERATIONS == root) {
-
-				//
-				//	set push target
-				//
-				//	example: push delay
-				//	81 81 c7 8a 01 ff => 81 81 c7 8a 01 [01] => 81 81 c7 8a 03 ff
-				//	//	std::cout << to_hex(path) << std::endl;
-				BOOST_ASSERT_MSG(path.size() == 2, "OBIS_PUSH_OPERATIONS param tree to short");
-				return set_proc_param_request_push_op(code, attr.second);
-				//prg << cyng::unwinder(set_proc_param_request_push_op(code, attr.second));
-
-			}
 			else if (OBIS_CODE_ROOT_SENSOR_PARAMS == root) {
 
 				//
@@ -1160,7 +1180,79 @@ namespace node
 					, code.to_buffer()
 					, attr.second);
 			}
+			else if (OBIS_PUSH_OPERATIONS == root) {
 
+				//
+				//	find empty parameter values
+				//
+				if (empty) {
+					return cyng::generate_invoke("sml.set.proc.push.delete"
+						, ro_.pk_
+						, ro_.trx_
+						, static_cast<std::uint8_t>(code.get_storage())
+						, ro_.server_id_
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+				else {
+
+					//
+					//	make sure that the requested push operation exists
+					//
+					return cyng::generate_invoke("sml.set.proc.push.reserve"
+						, ro_.pk_
+						, ro_.trx_
+						, static_cast<std::uint8_t>(code.get_storage())
+						, ro_.server_id_
+						, ro_.get_value("userName")
+						, ro_.get_value("password"));
+				}
+			}
+
+			return cyng::vector_t{};
+		}
+
+		cyng::vector_t reader::generate_set_proc_parameter_request_L1(obis root, obis code, cyng::attr_t attr, std::vector<obis> const& path)
+		{
+			if ((OBIS_PUSH_OPERATIONS == root) && (path.size() == 3)) {
+
+				//
+				//	set push target
+				//
+				//	example: push delay
+				//	81 81 c7 8a 01 ff => 81 81 c7 8a 01 [01] => 81 81 c7 8a 03 ff
+				//	//	std::cout << to_hex(path) << std::endl;
+				auto const r = path.at(1).is_matching(0x81, 0x81, 0xc7, 0x8a, 0x01);
+				if (r.second) {
+
+
+					BOOST_ASSERT_MSG(path.size() == 3, "OBIS_PUSH_OPERATIONS param tree to short");
+					return set_proc_param_request_push_op(code, attr.second, r.first);
+
+				}
+			}
+			return cyng::vector_t{};
+		}
+
+		cyng::vector_t reader::generate_set_proc_parameter_request_L2(obis root, obis code, cyng::attr_t attr, std::vector<obis> const& path)
+		{
+			if ((OBIS_PUSH_OPERATIONS == root) && (path.size() == 4)) {
+
+				//
+				//	set push target
+				//
+				//	example: push delay
+				//	81 81 c7 8a 01 ff => 81 81 c7 8a 01 [01] => 81 81 c7 8a 03 ff
+				//	//	std::cout << to_hex(path) << std::endl;
+				auto const r = path.at(1).is_matching(0x81, 0x81, 0xc7, 0x8a, 0x01);
+				if (r.second) {
+
+
+					BOOST_ASSERT_MSG(path.size() == 4, "OBIS_PUSH_OPERATIONS param tree to short");
+					return set_proc_param_request_push_op(code, attr.second, r.first);
+
+				}
+			}
 			return cyng::vector_t{};
 		}
 
@@ -1201,17 +1293,17 @@ namespace node
 				//	cyng::param_map_t params;
 				//	for (auto obj : tpl) {
 				//		auto const m = read_param_tree(1, obj);
-				//		params.insert(m.begin(), m.end());	//	preserve existing keys
-				//	}
+//		params.insert(m.begin(), m.end());	//	preserve existing keys
+//	}
 
-				//	return cyng::generate_invoke("sml.set.proc.if1107.device"
-				//		, ro_.pk_
-				//		, ro_.trx_
-				//		, r.first
-				//		, ro_.server_id_
-				//		, ro_.get_value("userName")
-				//		, ro_.get_value("password")
-				//		, params);
+//	return cyng::generate_invoke("sml.set.proc.if1107.device"
+//		, ro_.pk_
+//		, ro_.trx_
+//		, r.first
+//		, ro_.server_id_
+//		, ro_.get_value("userName")
+//		, ro_.get_value("password")
+//		, params);
 				}
 
 			}
@@ -1230,56 +1322,91 @@ namespace node
 
 		}
 
-		cyng::vector_t reader::set_proc_param_request_push_op(obis code, cyng::object obj)
+		cyng::vector_t reader::set_proc_param_request_push_op(obis code, cyng::object obj, std::uint8_t nr)
 		{
-			//if (path.size() > 2) {
-			//	auto r = path.at(1).is_matching(0x81, 0x81, 0xc7, 0x8a, 0x01);
-			//	if (r.second) {
-			//		if (path.at(2) == OBIS_CODE(81, 81, c7, 8a, 02, ff)) {
+			if (OBIS_PUSH_SOURCE == code) {
 
+				//
+				//	contains an additional SML tree
+				//
+				return cyng::generate_invoke("sml.set.proc.push.source"
+					, ro_.pk_
+					, ro_.trx_
+					, nr
+					, ro_.server_id_
+					, ro_.get_value("userName")
+					, ro_.get_value("password")
+					, obj);
 
-			//			return cyng::generate_invoke("sml.set.proc.push.interval"
-			//				, ro_.pk_
-			//				, ro_.trx_
-			//				, r.first
-			//				, ro_.server_id_
-			//				, ro_.get_value("userName")
-			//				, ro_.get_value("password")
-			//				, std::chrono::seconds(cyng::numeric_cast<std::int64_t>(obj, 900)));
+			}
+			else if (OBIS_PUSH_SERVICE == code) {
+				return cyng::generate_invoke("sml.set.proc.push.service"
+					, ro_.pk_
+					, ro_.trx_
+					, nr
+					, ro_.server_id_
+					, ro_.get_value("userName")
+					, ro_.get_value("password")
+					, obj);
+			}
+			else if (OBIS_CODE_PUSH_TARGET == code) {
 
-			//		}
-			//		else if (path.at(2) == OBIS_CODE(81, 81, c7, 8a, 03, ff)) {
+				cyng::buffer_t tmp;
+				tmp = cyng::value_cast(obj, tmp);
 
-			//			return cyng::generate_invoke("sml.set.proc.push.delay"
-			//				, ro_.pk_
-			//				, ro_.trx_
-			//				, r.first
-			//				, ro_.server_id_
-			//				, ro_.get_value("userName")
-			//				, ro_.get_value("password")
-			//				, std::chrono::seconds(cyng::numeric_cast<std::int64_t>(obj, 0)));
+				return cyng::generate_invoke("sml.set.proc.push.name"
+					, ro_.pk_
+					, ro_.trx_
+					, nr
+					, ro_.server_id_
+					, ro_.get_value("userName")
+					, ro_.get_value("password")
+					, std::string(tmp.begin(), tmp.end()));
 
-			//		}
-			//		else if (path.at(2) == OBIS_CODE(81, 47, 17, 07, 00, FF)) {
+			}
+			else if (OBIS_PUSH_INTERVAL == code) {
 
-			//			cyng::buffer_t tmp;
-			//			tmp = cyng::value_cast(obj, tmp);
+				return cyng::generate_invoke("sml.set.proc.push.interval"
+					, ro_.pk_
+					, ro_.trx_
+					, nr
+					, ro_.server_id_
+					, ro_.get_value("userName")
+					, ro_.get_value("password")
+					, std::chrono::seconds(cyng::numeric_cast<std::int64_t>(obj, 900)));
 
-			//			return cyng::generate_invoke("sml.set.proc.push.name"
-			//				, ro_.pk_
-			//				, ro_.trx_
-			//				, r.first
-			//				, ro_.server_id_
-			//				, ro_.get_value("userName")
-			//				, ro_.get_value("password")
-			//				, std::string(tmp.begin(), tmp.end()));
+			}
+			else if (OBIS_PUSH_DELAY == code) {
 
-			//		}
-			//	}
-			//}
+				return cyng::generate_invoke("sml.set.proc.push.delay"
+					, ro_.pk_
+					, ro_.trx_
+					, nr
+					, ro_.server_id_
+					, ro_.get_value("userName")
+					, ro_.get_value("password")
+					, std::chrono::seconds(cyng::numeric_cast<std::int64_t>(obj, 0)));
 
-			//	param tree too short
-			return cyng::generate_invoke("log.msg.warning", "param tree too short");
+			}
+			else if (OBIS_PUSH_SERVER_ID == code) {
+				//
+				//	skip - redundant information
+				//
+			}
+			else if (OBIS_PROFILE == code) {
+
+				return cyng::generate_invoke("sml.set.proc.push.profile"
+					, ro_.pk_
+					, ro_.trx_
+					, nr
+					, ro_.server_id_
+					, ro_.get_value("userName")
+					, ro_.get_value("password")
+					, obj);
+			}
+
+			//	not implemented
+			return cyng::generate_invoke("log.msg.warning", "not implemented yet", code.to_str(), obj);
 
 		}
 

@@ -15,6 +15,9 @@
 #include <smf/sml/protocol/reader.h>
 #include <smf/sml/protocol/generator.h>
 #include "data.h"
+#include "attention.h"
+#include "cfg_ipt.h"
+#include "cfg_push.h"
 
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
@@ -66,14 +69,6 @@ namespace node
 			void sml_get_proc_data_collector(cyng::object trx, cyng::object server);
 			//void sml_get_proc_0080800000FF(cyng::object trx, cyng::object server);
 
-			void sml_set_proc_push_interval(cyng::context& ctx);
-			void sml_set_proc_push_delay(cyng::context& ctx);
-			void sml_set_proc_push_name(cyng::context& ctx);
-
-			void sml_set_proc_ipt_param_address(cyng::context& ctx);
-			void sml_set_proc_ipt_param_port_target(cyng::context& ctx);
-			void sml_set_proc_ipt_param_user(cyng::context& ctx);
-			void sml_set_proc_ipt_param_pwd(cyng::context& ctx);
 
 			void sml_set_proc_activate(cyng::context& ctx);
 			void sml_set_proc_deactivate(cyng::context& ctx);
@@ -89,9 +84,6 @@ namespace node
 			//void sml_set_proc_mbus_tmode(cyng::context& ctx);
 			//void sml_set_proc_mbus_protocol(cyng::context& ctx);
 
-			void sml_get_list_request(cyng::context& ctx);
-
-
 
 		public:
 			/**
@@ -106,7 +98,6 @@ namespace node
 			 * configuration db
 			 */
 			cyng::store::db& config_db_;
-			node::ipt::redundancy cfg_ipt_;
 
 			bool const server_mode_;
 			std::string const account_;
@@ -135,7 +126,9 @@ namespace node
 			 * process incoming data
 			 */
 			data data_;
-
+			attention attention_;
+			cfg_ipt ipt_;
+			cfg_push push_;
 		};
 
 	}	//	sml

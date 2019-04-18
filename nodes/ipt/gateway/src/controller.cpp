@@ -368,7 +368,8 @@ namespace node
 
 					//	built-in meter
 					, cyng::param_factory("virtual-meter", cyng::tuple_factory(
-						cyng::param_factory("enabled", true),
+						cyng::param_factory("enabled", false),
+						cyng::param_factory("active", true),
 						cyng::param_factory("server", "01-d81c-10000001-3c-02"),	//	1CD8
 						cyng::param_factory("interval", 26000)
 					))
@@ -758,6 +759,7 @@ namespace node
 			if (r.second) {
 
 				auto const interval = cyng::numeric_cast<std::uint32_t>(dom.get("interval"), 26000ul);
+				auto const active = cyng::value_cast(dom.get("active"), true);
 
 				cyng::crypto::aes_128_key aes_key;
 				cyng::crypto::aes::randomize(aes_key);
@@ -766,8 +768,7 @@ namespace node
 					, cyng::table::key_generator(r.first)
 					, cyng::table::data_generator(std::chrono::system_clock::now()
 						, "---"
-						//, true	//	visible
-						, false	//	active
+						, active	//	active
 						, "virtual meter"
 						, 0ull	//	status
 						, cyng::buffer_t{ 0, 0 }	//	mask
@@ -780,13 +781,60 @@ namespace node
 					, tag)) {
 
 					//
+					//	register some data collectors
+					//
+					std::uint8_t nr{ 0 };
+
+					config_db.insert("data.collector"
+						, cyng::table::key_generator(r.first, ++nr)	//	key
+						, cyng::table::data_generator(sml::OBIS_PROFILE_1_MINUTE.to_buffer(), false, static_cast<std::uint16_t>(1024u), std::chrono::seconds(0))
+						, 1
+						, tag);
+					config_db.insert("data.collector"
+						, cyng::table::key_generator(r.first, ++nr)	//	key
+						, cyng::table::data_generator(sml::OBIS_PROFILE_15_MINUTE.to_buffer(), true, static_cast<std::uint16_t>(512u), std::chrono::seconds(0))
+						, 1
+						, tag);
+					config_db.insert("data.collector"
+						, cyng::table::key_generator(r.first, ++nr)	//	key
+						, cyng::table::data_generator(sml::OBIS_PROFILE_60_MINUTE.to_buffer(), true, static_cast<std::uint16_t>(256u), std::chrono::seconds(0))
+						, 1
+						, tag);
+					config_db.insert("data.collector"
+						, cyng::table::key_generator(r.first, ++nr)	//	key
+						, cyng::table::data_generator(sml::OBIS_PROFILE_24_HOUR.to_buffer(), true, static_cast<std::uint16_t>(128u), std::chrono::seconds(0))
+						, 1
+						, tag);
+					config_db.insert("data.collector"
+						, cyng::table::key_generator(r.first, ++nr)	//	key
+						, cyng::table::data_generator(sml::OBIS_PROFILE_LAST_2_HOURS.to_buffer(), false, static_cast<std::uint16_t>(32u), std::chrono::seconds(0))
+						, 1
+						, tag);
+					config_db.insert("data.collector"
+						, cyng::table::key_generator(r.first, ++nr)	//	key
+						, cyng::table::data_generator(sml::OBIS_PROFILE_LAST_WEEK.to_buffer(), false, static_cast<std::uint16_t>(32u), std::chrono::seconds(0))
+						, 1
+						, tag);
+					config_db.insert("data.collector"
+						, cyng::table::key_generator(r.first, ++nr)	//	key
+						, cyng::table::data_generator(sml::OBIS_PROFILE_1_MONTH.to_buffer(), false, static_cast<std::uint16_t>(12u), std::chrono::seconds(0))
+						, 1
+						, tag);
+					config_db.insert("data.collector"
+						, cyng::table::key_generator(r.first, ++nr)	//	key
+						, cyng::table::data_generator(sml::OBIS_PROFILE_1_YEAR.to_buffer(), false, static_cast<std::uint16_t>(2u), std::chrono::seconds(0))
+						, 1
+						, tag);
+
+
+					//
 					//	start virtual meter
 					//
 					cyng::async::start_task_delayed<virtual_meter>(mux
 						, std::chrono::seconds(5)
 						, logger
-						, r.first	//	server ID
 						, config_db
+						, r.first	//	server ID
 						, std::chrono::seconds(interval));
 				}
 				else {
@@ -928,6 +976,21 @@ namespace node
 			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_INSTALL_MODE.to_str()), cyng::table::data_generator(install_mode), 1, tag);
 
 
+		}
+
+		if (!create_table(config, "readout"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table readout");
+		}
+
+		if (!create_table(config, "data.collector"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table data.collector");
+		}
+
+		if (!create_table(config, "trx"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table trx");
 		}
 	}
 }

@@ -61,7 +61,16 @@ namespace node
 			, obis code
 			, cyng::tuple_t params)
 		{
-			return cyng::tuple_factory( server_id
+			return cyng::tuple_factory(server_id
+				, cyng::tuple_factory(code.to_buffer())	//	path entry
+				, params);
+		}
+
+		cyng::tuple_t get_proc_parameter_response(cyng::buffer_t server_id
+			, obis code
+			, cyng::tuple_t params)
+		{
+			return cyng::tuple_factory(server_id
 				, cyng::tuple_factory(code.to_buffer())	//	path entry
 				, params);
 		}
@@ -180,6 +189,16 @@ namespace node
 			, cyng::tuple_t act_gateway_time
 			, cyng::tuple_t val_list)
 		{
+			if (client_id.empty()) {
+				return cyng::tuple_factory(cyng::null()
+					, server_id
+					, list_name.to_buffer()
+					, act_sensor_time
+					, val_list
+					, cyng::null()	//	no list signature
+					, act_gateway_time);
+
+			}
 			return cyng::tuple_factory(client_id
 				, server_id
 				, list_name.to_buffer()
@@ -331,6 +350,7 @@ namespace node
 				, value
 				, cyng::null()));	//	signature
 		}
+
 		cyng::object list_entry_manufacturer(std::string manufacturer)
 		{
 			return cyng::make_object(cyng::tuple_factory(OBIS_DATA_MANUFACTURER.to_buffer()

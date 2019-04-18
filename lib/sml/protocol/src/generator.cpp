@@ -934,7 +934,7 @@ namespace node
 		}
 
 		std::size_t res_generator::get_proc_push_ops(cyng::object trx
-			, cyng::object server_id
+			, cyng::buffer_t server_id
 			, const cyng::store::table* tbl)
 		{
 
@@ -944,16 +944,16 @@ namespace node
 			//	example:
 			//	ServerId: 05 00 15 3B 02 17 74 
 			//	ServerId: 01 A8 15 70 94 48 03 01 02 
-			//	81 81 C7 8A 01 FF                Not set
-			//	   81 81 C7 8A 01 [nn]           Not set
-			//		  81 81 C7 8A 02 FF          900 (39 30 30 )
-			//		  81 81 C7 8A 03 FF          12 (31 32 )
-			//		  81 81 C7 8A 04 FF          ____B_ (81 81 C7 8A 42 FF )
-			//			 81 81 C7 8A 81 FF       ___p_H___ (01 A8 15 70 94 48 03 01 02 )
-			//			 81 81 C7 8A 83 FF       ______ (81 81 C7 86 11 FF )
+			//	81 81 C7 8A 01 FF                root for push operations
+			//	   81 81 C7 8A 01 [NN]           NN == index
+			//		  81 81 C7 8A 02 FF          900 - interval in seconds
+			//		  81 81 C7 8A 03 FF          12 - delay in seconds
+			//		  81 81 C7 8A 04 FF          (81 81 C7 8A 42 FF) - push source
+			//			 81 81 C7 8A 81 FF       (01 A8 15 70 94 48 03 01 02) - server/meter id
+			//			 81 81 C7 8A 83 FF       (81 81 C7 86 11 FF)
 			//			 81 81 C7 8A 82 FF       Not set
-			//		  81 47 17 07 00 FF          DataSink (44 61 74 61 53 69 6E 6B )
-			//		  81 49 00 00 10 FF          ____!_ (81 81 C7 8A 21 FF )
+			//		  81 47 17 07 00 FF          DataSink - name of push target
+			//		  81 49 00 00 10 FF          (81 81 C7 8A 21 FF) - push service (IP-T)
 
 			//	1. list: 81 81 C7 8A 01 01
 			//	2. list: 81 81 C7 8A 01 02
@@ -965,36 +965,50 @@ namespace node
 			//
 			tbl->loop([&](cyng::table::record const& rec)->bool {
 
-				auto idx = cyng::numeric_cast<std::uint8_t>(rec["idx"], 1);
-				tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x81, 0xC7, 0x8A, 0x01, idx), {
+				cyng::buffer_t id;
+				id = cyng::value_cast(rec["serverID"], id);
 
-					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 02, FF), make_value(rec["interval"])),		//	intervall (sec.) [uint16]
-					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 03, FF), make_value(rec["delay"])),		//	intervall (sec.) [uint8]
-					//	7.3.1.25 Liste möglicher Push-Quellen 
-					//	push source: 
-					//	* 81 81 C7 8A 42 FF == profile
-					//	* 81 81 C7 8A 43 FF == Installationsparameter
-					//	* 81 81 C7 8A 44 FF == list of visible sensors/actors
-					tree(OBIS_CODE(81, 81, C7, 8A, 04, FF)
-						, make_value(OBIS_CODE(81, 81, C7, 8A, 42, FF))
-						, {
-							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 81, FF), make_value(rec["serverID"])),
-							//	15 min period (load profile)
-							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_PROFILE_15_MINUTE)),
-							parameter_tree(OBIS_CODE(81, 81, C7, 8A, 82, FF), make_value())
-					}),
-					parameter_tree(OBIS_CODE(81, 47, 17, 07, 00, FF), make_value(rec["target"])),		//	Targetname
-					//	push service: 
-					//	* 81 81 C7 8A 21 FF == IP-T
-					//	* 81 81 C7 8A 22 FF == SML client address
-					//	* 81 81 C7 8A 23 FF == KNX ID 
-					parameter_tree(OBIS_CODE(81, 49, 00, 00, 10, FF), make_value(OBIS_CODE(81, 81, C7, 8A, 21, FF)))
+				if (server_id == id) {
+					auto idx = cyng::numeric_cast<std::uint8_t>(rec["idx"], 1);
 
-				})));
+#ifdef _DEBUG
+					id = cyng::value_cast(rec["profile"], id);
+#endif
+
+					tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, idx), {
+
+						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 02, FF), make_value(rec["interval"])),		//	intervall (sec.) [uint16]
+						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 03, FF), make_value(rec["delay"])),		//	intervall (sec.) [uint8]
+						//	7.3.1.25 Liste möglicher Push-Quellen 
+						//	push source: 
+						//	* 81 81 C7 8A 42 FF == profile
+						//	* 81 81 C7 8A 43 FF == installation parameters
+						//	* 81 81 C7 8A 44 FF == list of visible sensors/actors
+						tree(OBIS_PUSH_SOURCE, make_value(OBIS_PUSH_SOURCE_PROFILE)
+							, {
+								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 81, FF), make_value(server_id)),
+								//	load profile (PROFILE_1_MINUTE ... PROFILE_1_YEAR)
+								parameter_tree(OBIS_PROFILE, make_value(rec["profile"])),
+								//	identifiers (of the channel) of a push source - this is a list of OBIS codes
+								//	to be delivered by the push source
+								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 82, FF), make_value())	//	OBIS code 
+						}),
+						parameter_tree(OBIS_CODE_PUSH_TARGET, make_value(rec["target"])),		//	Targetname
+						//	push service: 
+						//	* 81 81 C7 8A 21 FF == IP-T
+						//	* 81 81 C7 8A 22 FF == SML client address
+						//	* 81 81 C7 8A 23 FF == KNX ID 
+						parameter_tree(OBIS_PUSH_SERVICE, make_value(OBIS_PUSH_SERVICE_IPT))
+
+					})));
+				}
 
 				return true;	//	continue
 			});
 
+			//
+			//	build response message
+			//
 			return append_msg(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
@@ -1004,7 +1018,7 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(server_id	//	server id
-					, OBIS_PUSH_OPERATIONS		//	path entry
+					, OBIS_PUSH_OPERATIONS		//	path entry: 81 81 C7 8A 01 FF
 
 					//
 					//	generate get process parameter response
@@ -1144,12 +1158,12 @@ namespace node
 					tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), {
 
 
-						parameter_tree(obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(rec.host_)),
-						//parameter_tree(obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(numeric_address)),
-						parameter_tree(obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx), make_value(port)),
-						parameter_tree(obis(0x81, 0x49, 0x19, 0x07, 0x00, idx), make_value(0u)),
-						parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx), make_value(rec.account_)),
-						parameter_tree(obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx), make_value(rec.pwd_))
+						parameter_tree(make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(rec.host_)),
+						//parameter_tree(make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(numeric_address)),
+						parameter_tree(make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx), make_value(port)),
+						parameter_tree(make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx), make_value(0u)),
+						parameter_tree(make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx), make_value(rec.account_)),
+						parameter_tree(make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx), make_value(rec.pwd_))
 
 					})));
 
@@ -1168,10 +1182,12 @@ namespace node
 				}
 			}
 
-			const std::uint16_t wait_time = 12;	//	minutes
-			const std::uint16_t repetitions = 120;	//	counter
-			const bool ssl = false;
-
+			//
+			//	fixed values
+			//
+			std::uint16_t const wait_time = 12;	//	minutes
+			std::uint16_t const repetitions = 120;	//	counter
+			bool const ssl = false;
 
 			//	waiting time (Wartezeit)
 			tpl.push_back(cyng::make_object(parameter_tree(OBIS_CODE(81, 48, 27, 32, 06, 01), make_value(wait_time))));
@@ -1610,6 +1626,130 @@ namespace node
 					, attention_msg
 					, attention_details)));
 		}
+
+		std::size_t res_generator::get_proc_data_collector(cyng::object trx
+			, cyng::object obj
+			, cyng::store::table const* tbl_dc
+			, cyng::store::table const* tbl_ro)
+		{
+			cyng::buffer_t server_id;
+			server_id = cyng::value_cast(obj, server_id);
+
+			//
+			//	collect all available OBIS codes for this meter from "readout" table
+			//
+			std::uint8_t idx{ 0 };	//	OBIS counter
+			cyng::tuple_t obis_tpl;	//	hold all found OBIS codes
+			tbl_ro->loop([&](cyng::table::record const& rec) {
+
+				//
+				//	extract server/meter ID from record
+				//
+				cyng::buffer_t srv;
+				srv = cyng::value_cast(rec["serverID"], srv);
+
+				if (srv == server_id) {
+
+					//
+					//	match - collect OBIS code
+					//
+					srv.clear();
+					obis const code(cyng::value_cast(rec["OBIS"], srv));
+					obis_tpl.push_back(cyng::make_object(parameter_tree(make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, ++idx), make_value(code))));
+
+				}
+
+				//	continue
+				return true;
+			});
+
+			//
+			//	collect all available data collectors for this meter
+			//	from table "data.collector"
+			//
+			idx = 0;	//	data collector counter
+			cyng::tuple_t dc_tpl;	//	hold all found data collectors
+			tbl_dc->loop([&](cyng::table::record const& rec) {
+
+				//
+				//	extract server/meter ID from record
+				//
+				cyng::buffer_t srv;
+				srv = cyng::value_cast(rec["serverID"], srv);
+
+				if (srv == server_id) {
+
+					//
+					//	match - build description of data collector
+					//
+
+					srv.clear();
+					obis const code(cyng::value_cast(rec["profile"], srv));
+
+					dc_tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, ++idx), {
+						parameter_tree(OBIS_CODE(81, 81, C7, 86, 21, FF), make_value(rec["active"])),	//	active
+						parameter_tree(OBIS_CODE(81, 81, C7, 86, 22, FF), make_value(rec["maxSize"])),	//	Einträge
+						parameter_tree(OBIS_CODE(81, 81, C7, 87, 81, FF), make_value(rec["period"])),	//	Registerperiode (seconds)
+						//	profile
+						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(code)),
+
+						//	
+						//	all data collectors using the same set of OBIS codes
+						//
+						child_list_tree(OBIS_CODE(81, 81, C7, 8A, 23, FF), obis_tpl)
+					})));
+				}
+
+				//	continue
+				return true;
+			});
+
+			//
+			//
+			//
+			return append_msg(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(obj
+					, OBIS_CODE_ROOT_DATA_COLLECTOR	//	path entry - 81 81 C7 86 20 FF 
+					, child_list_tree(OBIS_CODE_ROOT_DATA_COLLECTOR, dc_tpl))));
+
+			//sml_gen_.append_msg(message(trx	//	trx
+			//	, 2 //, ++group_no_	//	group
+			//	, 0 //	abort code
+			//	, BODY_GET_PROC_PARAMETER_RESPONSE
+
+			//	//
+			//	//	generate get process parameter response
+			//	//
+			//	, get_proc_parameter_response(server	//	server id  
+			//		, OBIS_CODE_ROOT_DATA_COLLECTOR	//	path entry - 81 81 C7 86 20 FF 
+			//		, child_list_tree(OBIS_CODE_ROOT_DATA_COLLECTOR, {
+
+			//			//	1. entry
+			//			child_list_tree(OBIS_CODE(81, 81, C7, 86, 20, 01),{
+			//				parameter_tree(OBIS_CODE(81, 81, C7, 86, 21, FF), make_value(true)),	//	active
+			//				parameter_tree(OBIS_CODE(81, 81, C7, 86, 22, FF), make_value(100)),		//	Einträge
+			//				parameter_tree(OBIS_CODE(81, 81, C7, 87, 81, FF), make_value(0)),		//	Registerperiode
+			//				//	15 min period
+			//				parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_PROFILE_15_MINUTE)),
+			//				//	Liste von Einträgen z.B. 08 00 01 00 00 FF := Zählerstand Wasser
+			//				child_list_tree(OBIS_CODE(81, 81, C7, 8A, 23, FF),{
+			//					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 23, 01), make_value(OBIS_CODE(08, 00, 01, 00, 00, FF))),
+			//					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 23, 02), make_value(OBIS_CODE(08, 00, 01, 02, 00, FF)))
+			//					})
+			//				}),
+
+			//			}))));
+
+
+		}
+
 
 		trx::trx()
 			: rng_()
