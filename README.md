@@ -1,3 +1,5 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a2a3b4b68222433a8215f1ef8b39a02d)](https://www.codacy.com/app/solosTec/node?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=solosTec/node&amp;utm_campaign=Badge_Grade)
+
 # node
 **node** is a Smart Metering Framework (SMF) build upon the [CYNG](https://github.com/solosTec/cyng) library.
 
