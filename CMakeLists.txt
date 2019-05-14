@@ -388,7 +388,7 @@ endif()
 
 
 #
-# libpugixml-dev (v1.8)
+# libpugixml-dev (v1.9)
 # On Windows set CMake variables PugiXML_INCLUDE_DIRS and PugiXML_LIBRARIES 
 #
 # Included as 3party software
@@ -431,7 +431,6 @@ add_library(smf_cluster ${GLOBAL_LIBRARY_TYPE} ${cluster_lib})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	target_link_libraries(smf_cluster cyng_domain)
 endif()
-
 #
 #	ipt protocol library
 #
@@ -460,7 +459,6 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 else()
 	target_link_libraries(smf_protocol_sml cyng_table cyng_store)
 endif()
-
 
 #
 #	sml bus library (client)
@@ -537,6 +535,9 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 		target_link_libraries(smf_http_srv cyng_crypto)
 	endif()
 endif()
+install(TARGETS smf_cluster smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_bus_sml smf_protocol_modem smf_protocol_mbus smf_protocol_imega smf_protocol_iec smf_bus_serial smf_protocol_telnet smf_http_srv
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib/static)
 
 #
 # https server library
@@ -1525,3 +1526,35 @@ if(${PROJECT_NAME}_CROSS_COMPILE)
 		  
 endif()
 
+#
+# CPack configuration
+#
+set(CPACK_PACKAGE_VERSION ${VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_NAME} - Smart Metering Framework")
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_RELEASE 1)
+set(CPACK_PACKAGE_CONTACT "info@solostec.ch")
+set(CPACK_PACKAGE_VENDOR "solosTec")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_RPM_PACKAGE_DESCRIPTION "SMF library")
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+
+if(UNIX)
+#	set(CPACK_PACKAGING_INSTALL_PREFIX "/opt")
+	set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+	set(CPACK_GENERATOR "RPM")
+elseif(WIN32)
+
+	set(CPACK_GENERATOR "NSIS64")
+	set(CPACK_NSIS_MUI_ICON ${PROJECT_SOURCE_DIR}/logo.ico)
+	set(CPACK_NSIS_MUI_UNIICON ${PROJECT_SOURCE_DIR}/logo.ico)
+	#set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vcredist_x86.exe\\\" /q:a'")
+	set(CPACK_NSIS_MODIFY_PATH ON)
+	set(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.solostec.com")
+
+else()
+	set(CPACK_GENERATOR "DEB")
+endif()
+
+
+include(CPack)
