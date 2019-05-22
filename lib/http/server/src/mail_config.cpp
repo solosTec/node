@@ -5,7 +5,7 @@
  * 
  */ 
 
-#include "mail_config.h"
+#include <smf/http/srv/mail_config.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>

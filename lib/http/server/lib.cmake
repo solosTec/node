@@ -7,16 +7,15 @@ set (http_srv_cpp
 	lib/http/server/src/server.cpp
 	lib/http/server/src/session.cpp
 	lib/http/server/src/connections.cpp
-	lib/http/server/src/auth.cpp
-
+	lib/http/server/src/mail_config.cpp
 )
 
 set (http_srv_h
 	src/main/include/smf/http/srv/websocket.h
 	src/main/include/smf/http/srv/server.h
 	src/main/include/smf/http/srv/session.h
-#	src/main/include/smf/http/srv/handle_request.hpp
 	src/main/include/smf/http/srv/connections.h
+	src/main/include/smf/http/srv/mail_config.h
 )
 
 set (http_parser 

@@ -7,7 +7,7 @@
 
 #include "controller.h"
 #include <NODE_project_info.h>
-#include "mail_config.h"
+#include <smf/http/srv/mail_config.h>
 #include "logic.h"
 #include <smf/http/srv/auth.h>
 #include <smf/http/srv/server.h>
