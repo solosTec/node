@@ -220,7 +220,8 @@ namespace node
 							cyng::make_address("139.219.100.104"),	//	ISP Microsoft (China) Co. Ltd. - 2018-07-31T21:14
 							cyng::make_address("194.147.32.109"),	//	Udovikhin Evgenii - 2019-02-01 15:23:08.13699453
 							cyng::make_address("185.209.0.12"),		//	2019-03-27 11:23:39
-							cyng::make_address("42.236.101.234")	//	hn.kd.ny.adsl (china)
+							cyng::make_address("42.236.101.234"),	//	hn.kd.ny.adsl (china)
+							cyng::make_address("185.104.184.126")	//	M247 Ltd
 						}))	//	blacklist
 					))
 					, cyng::param_factory("mail", cyng::tuple_factory(
