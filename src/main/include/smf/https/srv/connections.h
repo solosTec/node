@@ -40,12 +40,18 @@ namespace node
 			connections(cyng::logging::log_ptr
 				, cyng::controller& vm
 				, std::string const& doc_root
-				, auth_dirs const& ad);
+				, auth_dirs const& ad
+				, std::map<std::string, std::string> const& redirects);
 
 			/**
 			 * Provide access to vm controller
 			 */
 			cyng::controller& vm();
+
+			/**
+			 * apply redirections
+			 */
+			bool redirect(std::string&) const;
 
 			/**
 			 * Create a session and test for SSL/TSL
@@ -168,8 +174,9 @@ namespace node
 			/**
 			 * document root
 			 */
-			const std::string doc_root_;
-			const auth_dirs auth_dirs_;
+			std::string const doc_root_;
+			auth_dirs const auth_dirs_;
+			std::map<std::string, std::string> const redirects_;
 
 			/**
 			 * Generate unique session tags

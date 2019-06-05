@@ -39,14 +39,15 @@ namespace node
 		, boost::asio::ip::tcp::endpoint ep
 		, std::string const& doc_root
 		, auth_dirs const& ad
-		, std::set<boost::asio::ip::address> const& blacklist)
+		, std::set<boost::asio::ip::address> const& blacklist
+		, std::map<std::string, std::string> const& redirects)
 	: base_(*btp)
 		, uidgen_()
 		, bus_(bus_factory(btp->mux_, logger, uidgen_(), btp->get_id()))
 		, logger_(logger)
 		, config_(cfg_cls)
 		, cache_()
-		, server_(logger, btp->mux_.get_io_service(), ctx, ep, doc_root, ad, blacklist, bus_->vm_)
+		, server_(logger, btp->mux_.get_io_service(), ctx, ep, doc_root, ad, blacklist, redirects, bus_->vm_)
 		, dispatcher_(logger, server_.get_cm())
 		, db_sync_(logger, cache_)
 		, forward_(logger, cache_, server_.get_cm())

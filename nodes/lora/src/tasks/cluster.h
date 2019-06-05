@@ -42,7 +42,8 @@ namespace node
 			, boost::asio::ip::tcp::endpoint ep
 			, std::string const& doc_root
 			, auth_dirs const& ad
-			, std::set<boost::asio::ip::address> const&);
+			, std::set<boost::asio::ip::address> const&
+			, std::map<std::string, std::string> const& redirects);
 		cyng::continuation run();
 		void stop(bool shutdown);
 

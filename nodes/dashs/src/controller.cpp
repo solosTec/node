@@ -20,6 +20,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/vector_cast.hpp>
+#include <cyng/set_cast.h>
 #include <cyng/rnd.h>
 
 #if BOOST_OS_WINDOWS
@@ -484,6 +485,21 @@ namespace node
 			}
 		}
 
+		//
+		//	redirects
+		//
+		cyng::vector_t vec;
+		auto const rv = cyng::value_cast(dom.get("redirect"), vec);
+		auto const rs = cyng::to_param_map(rv);	// cyng::param_map_t
+		CYNG_LOG_INFO(logger, rs.size() << " redirects configured");
+		std::map<std::string, std::string> redirects;
+		for (auto const& redirect : rs) {
+			auto const target = cyng::value_cast<std::string>(redirect.second, "");
+			CYNG_LOG_TRACE(logger, redirect.first
+				<< " ==> "
+				<< target);
+			redirects.emplace(redirect.first, target);
+		}
 
 		static auto tls_pwd = cyng::value_cast<std::string>(dom.get("tls-pwd"), "test");
 		auto tls_certificate_chain = cyng::value_cast<std::string>(dom.get("tls-certificate-chain"), "demo.cert");
@@ -504,7 +520,8 @@ namespace node
 				, boost::asio::ip::tcp::endpoint{ host, port }
 				, doc_root
 				, ad
-				, blacklist);
+				, blacklist
+				, redirects);
 		}
 		else {
 			CYNG_LOG_FATAL(logger, "loading server certificates failed");

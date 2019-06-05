@@ -20,11 +20,13 @@ namespace node
 		connections::connections(cyng::logging::log_ptr logger
 			, cyng::controller& vm
 			, std::string const& doc_root
-			, auth_dirs const& ad)
+			, auth_dirs const& ad
+			, std::map<std::string, std::string> const& redirects)
 		: logger_(logger)
 			, vm_(vm)
 			, doc_root_(doc_root)
 			, auth_dirs_(ad)
+			, redirects_(redirects)
 			, uidgen_()
 			, sessions_()
 			, mutex_()
@@ -35,6 +37,22 @@ namespace node
 		cyng::controller& connections::vm()
 		{
 			return vm_;
+		}
+
+		bool connections::redirect(std::string& path) const
+		{
+			if (boost::filesystem::is_directory(path)) {
+				path.append("/index.html");
+			}
+
+			auto const pos = redirects_.find(path);
+			if (pos != redirects_.end()) {
+
+				CYNG_LOG_TRACE(logger_, "redirect " << path << " ==> " << pos->second);
+				path = pos->second;
+				return true;
+			}
+			return false;
 		}
 
 		void connections::create_session(boost::asio::ip::tcp::socket socket

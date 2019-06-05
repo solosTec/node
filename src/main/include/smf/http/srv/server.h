@@ -40,6 +40,7 @@ namespace node
 				, auth_dirs const& ad
 #endif
 				, std::set<boost::asio::ip::address> const& blacklist
+				, std::map<std::string, std::string> const& redirects
 				, cyng::controller& vm
 				, bool https_rewrite);
 

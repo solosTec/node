@@ -46,6 +46,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs const& ad
 #endif
+				, std::map<std::string, std::string> const&
 				, bool https_rewrite
 			);
 
@@ -53,6 +54,8 @@ namespace node
 			 * Provide access to vm controller
 			 */
 			cyng::controller& vm();
+
+			bool redirect(std::string& path) const;
 
 			/**
 			 * Add the specified connection to the manager and start it.
@@ -135,6 +138,7 @@ namespace node
 			auth_dirs const auth_dirs_;
 #endif
 
+			std::map<std::string, std::string> const redirects_;
 			bool const https_rewrite_;
 
 			/**

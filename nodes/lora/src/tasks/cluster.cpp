@@ -25,7 +25,8 @@ namespace node
 		, boost::asio::ip::tcp::endpoint ep
 		, std::string const& doc_root
 		, auth_dirs const& ad
-		, std::set<boost::asio::ip::address> const& blacklist)
+		, std::set<boost::asio::ip::address> const& blacklist
+		, std::map<std::string, std::string> const& redirects)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 		, logger_(logger)
@@ -37,6 +38,7 @@ namespace node
 			, doc_root
 			, ad
 			, blacklist
+			, redirects
 			, bus_->vm_)
 		, cache_()
 		, processor_(logger, keep_xml_files, cache_, btp->mux_.get_io_service(), tag, bus_)

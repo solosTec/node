@@ -26,6 +26,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs const& ad
 #endif
+			, std::map<std::string, std::string> const& redirects
 			, bool https_rewrite
 			)
 		: logger_(logger)
@@ -34,6 +35,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs_(ad)
 #endif
+			, redirects_(redirects)
 			, https_rewrite_(https_rewrite)
 			, uidgen_()
 			, sessions_()
@@ -44,6 +46,22 @@ namespace node
 		cyng::controller& connections::vm()
 		{
 			return vm_;
+		}
+
+		bool connections::redirect(std::string& path) const
+		{
+			if (boost::filesystem::is_directory(path)) {
+				path.append("/index.html");
+			}
+
+			auto const pos = redirects_.find(path);
+			if (pos != redirects_.end()) {
+
+				CYNG_LOG_TRACE(logger_, "redirect " << path << " ==> " << pos->second);
+				path = pos->second;
+				return true;
+			}
+			return false;
 		}
 
 		void connections::create_session(boost::asio::ip::tcp::socket socket)
@@ -66,7 +84,6 @@ namespace node
 				sessions_[HTTP_PLAIN].emplace(sp->tag(), obj);
 				sp->run(obj);
 			}
-
 		}
 
 		void connections::upgrade(boost::uuids::uuid tag

@@ -40,6 +40,7 @@ namespace node
 		, auth_dirs const& ad
 #endif
 		, std::set<boost::asio::ip::address> const& blacklist
+		, std::map<std::string, std::string> const& redirects
 		, bool https_rewrite)
 	: base_(*btp)
 		, uidgen_()
@@ -56,6 +57,7 @@ namespace node
 			, ad
 #endif
 			, blacklist
+			, redirects
 			, bus_->vm_
 			, https_rewrite)
 		, dispatcher_(logger, server_.get_cm())

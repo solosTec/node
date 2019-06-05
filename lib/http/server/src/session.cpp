@@ -12,6 +12,7 @@
 #include <smf/http/srv/mime_type.h>
 #include <smf/http/srv/connections.h>
 #include <smf/http/srv/parser/multi_part.h>
+#include <smf/http/srv/url.h>
 
 #include <cyng/vm/generator.h>
 #include <cyng/vm/controller.h>
@@ -411,20 +412,24 @@ namespace node
 				}
 #endif
 
+				//	apply redirections
+				std::string target = req.target().to_string();
+				connection_manager_.redirect(target);
+
 				// Build the path to the requested file
-				std::string path = path_cat(doc_root_, req.target());
-				if (boost::filesystem::is_directory(path))
-				//if (req.target().back() == '/')
-				{
-					path.append("index.html");
-				}
+				std::string path = path_cat(doc_root_, target);
 
 				//
 				// Attempt to open the file
 				//
 				boost::beast::error_code ec;
 				boost::beast::http::file_body::value_type body;
-				body.open(path.c_str(), boost::beast::file_mode::scan, ec);
+
+				//
+				//	uri decoding is coming (https://github.com/vinniefalco/beast/commits/uri)
+				//
+				std::string const url = decode_url(path);
+				body.open(url.c_str(), boost::beast::file_mode::scan, ec);
 
 				// Handle the case where the file doesn't exist
 				if (ec == boost::system::errc::no_such_file_or_directory)

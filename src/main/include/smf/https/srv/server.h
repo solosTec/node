@@ -34,6 +34,7 @@ namespace node
 				, std::string const& doc_root
 				, auth_dirs const& ad
 				, std::set<boost::asio::ip::address> const& blacklist
+				, std::map<std::string, std::string> const& redirects
 				, cyng::controller& vm);
 
 			// Start accepting incoming connections

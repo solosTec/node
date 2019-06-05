@@ -21,6 +21,7 @@ namespace node
 			, std::string const& doc_root
 			, auth_dirs const& ad
 			, std::set<boost::asio::ip::address> const& blacklist
+			, std::map<std::string, std::string> const& redirects
 			, cyng::controller& vm)
 		: std::enable_shared_from_this<server>()
 			, logger_(logger)
@@ -31,7 +32,7 @@ namespace node
 #else
 			, ioc_(ioc)
 #endif
-			, connection_manager_(logger, vm, doc_root, ad)
+			, connection_manager_(logger, vm, doc_root, ad, redirects)
 			, blacklist_(blacklist)
 			, is_listening_(false)
 			, shutdown_complete_()

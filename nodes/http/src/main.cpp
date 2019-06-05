@@ -24,7 +24,6 @@
  */
 int main(int argc, char **argv) 
 {
-
     //	will contain the path to an optional configuration file
     std::string config_file;
 

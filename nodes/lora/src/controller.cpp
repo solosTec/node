@@ -19,7 +19,8 @@
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/vector_cast.hpp>
-//#include <cyng/crypto/x509.h>
+#include <cyng/set_cast.h>
+ //#include <cyng/crypto/x509.h>
 #include <cyng/rnd.h>
 
 #if BOOST_OS_WINDOWS
@@ -484,6 +485,22 @@ namespace node
 			}
 		}
 
+		//
+		//	redirects
+		//
+		cyng::vector_t vec;
+		auto const rv = cyng::value_cast(dom.get("redirect"), vec);
+		auto const rs = cyng::to_param_map(rv);	// cyng::param_map_t
+		CYNG_LOG_INFO(logger, rs.size() << " redirects configured");
+		std::map<std::string, std::string> redirects;
+		for (auto const& redirect : rs) {
+			auto const target = cyng::value_cast<std::string>(redirect.second, "");
+			CYNG_LOG_TRACE(logger, redirect.first
+				<< " ==> "
+				<< target);
+			redirects.emplace(redirect.first, target);
+		}
+
 		// The SSL context is required, and holds certificates
 		static boost::asio::ssl::context ctx{ boost::asio::ssl::context::sslv23 };
 
@@ -512,7 +529,8 @@ namespace node
 			, boost::asio::ip::tcp::endpoint{ host, port }
 			, doc_root
 			, ad
-			, blacklist);
+			, blacklist
+			, redirects);
 
 		if (r.second)	return r.first;
 
