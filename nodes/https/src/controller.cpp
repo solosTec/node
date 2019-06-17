@@ -17,8 +17,8 @@
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/json.h>
-#include <cyng/value_cast.hpp>
 #include <cyng/compatibility/io_service.h>
+#include <cyng/numeric_cast.hpp>
 #include <cyng/vector_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/vm/controller.h>
@@ -188,6 +188,7 @@ namespace node
 					, cyng::param_factory("https", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8443"),	//	default is 443
+						cyng::param_factory("timeout", "15"),	//	seconds
 #if BOOST_OS_LINUX
 						cyng::param_factory("document-root", "/var/www/html"),
 #else
@@ -267,12 +268,16 @@ namespace node
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found" );	
 		auto dom = cyng::make_reader(cfg);
 		
- 		const auto doc_root = cyng::io::to_str(dom["https"].get("document-root"));
-		const auto host = cyng::io::to_str(dom["https"].get("address"));
-		const auto service = cyng::io::to_str(dom["https"].get("service"));
-		const auto port = static_cast<unsigned short>(std::stoi(service));
-		
+ 		auto const doc_root = cyng::io::to_str(dom["https"].get("document-root"));
+		auto const host = cyng::io::to_str(dom["https"].get("address"));
+		auto const service = cyng::io::to_str(dom["https"].get("service"));
+		auto const port = static_cast<unsigned short>(std::stoi(service));
+		auto const timeout = cyng::numeric_cast<std::size_t>(dom["https"].get("timeout"), 15u);
+
 		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
+		CYNG_LOG_INFO(logger, "HTTP/S address: " << host);
+		CYNG_LOG_INFO(logger, "HTTP/S service: " << port);
+		CYNG_LOG_INFO(logger, "HTTP/S timeout: " << timeout << " seconds");
 
 
 		// This holds the self-signed certificate used by the server
@@ -355,6 +360,7 @@ namespace node
 				, scheduler.get_io_service()
 				, ctx
 				, boost::asio::ip::tcp::endpoint{ address, port }
+				, timeout
 				, doc_root
 				, ad
 				, blacklist

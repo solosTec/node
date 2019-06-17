@@ -88,7 +88,7 @@ namespace node
 				// Launch SSL session
 				CYNG_LOG_DEBUG(logger_, "launch SSL session " << stream_.socket().remote_endpoint());
 
-				BOOST_ASSERT_MSG(false, "ToDo: fix this");
+				//BOOST_ASSERT_MSG(false, "ToDo: fix this");
 				connection_manager_.add_ssl_session(std::move(stream_)
 					, ctx_
 					, std::move(buffer_));

@@ -24,7 +24,7 @@ namespace node
 		/**
 		 * Accepts incoming HTTPS connections and launches the sessions
 		 */
-		class server : public std::enable_shared_from_this<server>
+		class server //: public std::enable_shared_from_this<server>
 		{
 		public:
 			server(cyng::logging::log_ptr

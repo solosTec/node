@@ -24,8 +24,8 @@ namespace node
 			, std::set<boost::asio::ip::address> const& blacklist
 			, std::map<std::string, std::string> const& redirects
 			, cyng::controller& vm)
-		: std::enable_shared_from_this<server>()
-			, logger_(logger)
+		//: std::enable_shared_from_this<server>()
+		: logger_(logger)
 			, ctx_(ctx)
 			, acceptor_(ioc)
 #if (BOOST_BEAST_VERSION < 248)
@@ -98,24 +98,31 @@ namespace node
 			//	a concurrent call of this same
 			//	method
 			//
-			if (acceptor_.is_open() && !is_listening_.exchange(true))
-			{
+			if (acceptor_.is_open() && !is_listening_.exchange(true)) {
 				do_accept();
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "acceptor not open or no listener flag set");
 			}
 			return is_listening_;
 		}
 
 		void server::do_accept()
 		{
+			try {
 #if (BOOST_BEAST_VERSION < 248)
-			acceptor_.async_accept(socket_, std::bind(&server::on_accept, this, std::placeholders::_1));
+				acceptor_.async_accept(socket_, std::bind(&server::on_accept, this, std::placeholders::_1));
 #else
-			acceptor_.async_accept(
-				boost::asio::make_strand(ioc_),
-				boost::beast::bind_front_handler(
-					&server::on_accept,
-					shared_from_this()));
+				acceptor_.async_accept(
+					boost::asio::make_strand(ioc_),
+					boost::beast::bind_front_handler(
+						&server::on_accept, this));
 #endif
+			}
+			catch (std::exception const& ex) {
+				CYNG_LOG_FATAL(logger_, "accept: " << ex.what());
+				close();
+			}
 		}
 
 #if (BOOST_BEAST_VERSION < 248)

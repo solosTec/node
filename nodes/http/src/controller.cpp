@@ -21,7 +21,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/json.h>
-#include <cyng/value_cast.hpp>
+#include <cyng/numeric_cast.hpp>
 #include <cyng/vector_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/compatibility/io_service.h>
@@ -184,6 +184,7 @@ namespace node
 					, cyng::param_factory("http", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8080"),
+						cyng::param_factory("timeout", "15"),	//	seconds
 #if BOOST_OS_LINUX
 						cyng::param_factory("document-root", "/var/www/html"),
 						cyng::param_factory("blog-root", "/var/www/html/blog"),
@@ -262,14 +263,18 @@ namespace node
 		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found" );	
 		auto dom = cyng::make_reader(cfg);
 		
- 		const auto doc_root = cyng::io::to_str(dom["http"].get("document-root"));
-		const auto blog_root = cyng::io::to_str(dom["http"].get("blog-root"));
-		const auto host = cyng::io::to_str(dom["http"].get("address"));
-		const auto service = cyng::io::to_str(dom["http"].get("service"));
-		const auto port = static_cast<unsigned short>(std::stoi(service));
- 		
+ 		auto const doc_root = cyng::io::to_str(dom["http"].get("document-root"));
+		auto const blog_root = cyng::io::to_str(dom["http"].get("blog-root"));
+		auto const host = cyng::io::to_str(dom["http"].get("address"));
+		auto const service = cyng::io::to_str(dom["http"].get("service"));
+		auto const port = static_cast<unsigned short>(std::stoi(service));
+		auto const timeout = cyng::numeric_cast<std::size_t>(dom["http"].get("timeout"), 15u);
+
  		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
 		CYNG_LOG_TRACE(logger, "blog root: " << blog_root);
+		CYNG_LOG_INFO(logger, "HTTP address: " << host);
+		CYNG_LOG_INFO(logger, "HTTP service: " << port);
+		CYNG_LOG_INFO(logger, "HTTP timeout: " << timeout << " seconds");
 
 		auto const https_rewrite = cyng::value_cast(dom["http"].get("https-rewrite"), false);
 		if (https_rewrite) {
@@ -330,6 +335,7 @@ namespace node
 		auto srv = std::make_shared<http::server>(logger
 			, scheduler.get_io_service()
 			, boost::asio::ip::tcp::endpoint{ address, port }
+			, timeout
 			, doc_root
 			, blog_root
 #ifdef NODE_SSL_INSTALLED
