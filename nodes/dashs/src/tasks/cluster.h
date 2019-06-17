@@ -40,6 +40,7 @@ namespace node
 			, boost::asio::ssl::context& ctx
 			, cluster_config_t const& cfg_cls
 			, boost::asio::ip::tcp::endpoint
+			, std::size_t timeout
 			, std::string const& doc_root
 			, auth_dirs const& ad
 			, std::set<boost::asio::ip::address> const&

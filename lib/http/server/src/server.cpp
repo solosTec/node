@@ -21,6 +21,7 @@ namespace node
 		server::server(cyng::logging::log_ptr logger
 			, boost::asio::io_context& ioc
 			, boost::asio::ip::tcp::endpoint endpoint
+            , std::size_t timeout
 			, std::string const& doc_root
 			, std::string const& blog_root
 #ifdef NODE_SSL_INSTALLED
@@ -41,6 +42,7 @@ namespace node
 				, ad
 #endif
 				, redirects
+				, timeout
 				, https_rewrite)
 			, is_listening_(false)
 			, shutdown_complete_()

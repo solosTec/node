@@ -21,12 +21,14 @@ namespace node
 			, cyng::controller& vm
 			, std::string const& doc_root
 			, auth_dirs const& ad
-			, std::map<std::string, std::string> const& redirects)
+			, std::map<std::string, std::string> const& redirects
+            , std::size_t timeout)
 		: logger_(logger)
 			, vm_(vm)
 			, doc_root_(doc_root)
 			, auth_dirs_(ad)
 			, redirects_(redirects)
+            , timeout_(timeout)
 			, uidgen_()
 			, sessions_()
 			, mutex_()
@@ -218,6 +220,14 @@ namespace node
 
 		void connections::add_ssl_session(boost::beast::tcp_stream stream, boost::asio::ssl::context& ctx, boost::beast::flat_buffer buffer)
 		{
+            //
+            //  set connection timeout
+            //
+            stream.expires_after(timeout_);
+            
+            //
+            //  create HTTPS session object
+            //
 			auto obj = cyng::make_object<ssl_session>(logger_
 				, *this
 				, uidgen_()
@@ -237,6 +247,14 @@ namespace node
 
 		void connections::add_plain_session(boost::beast::tcp_stream stream, boost::beast::flat_buffer buffer)
 		{
+            //
+            //  set connection timeout
+            //
+            stream.expires_after(timeout_);
+            
+            //
+            //  create HTTP session object
+            //
 			auto obj = cyng::make_object<plain_session>(logger_
 				, *this
 				, uidgen_()

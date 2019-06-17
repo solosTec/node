@@ -18,6 +18,7 @@ namespace node
 			, boost::asio::io_context& ioc
 			, boost::asio::ssl::context& ctx
 			, boost::asio::ip::tcp::endpoint endpoint
+			, std::size_t timeout
 			, std::string const& doc_root
 			, auth_dirs const& ad
 			, std::set<boost::asio::ip::address> const& blacklist
@@ -32,7 +33,7 @@ namespace node
 #else
 			, ioc_(ioc)
 #endif
-			, connection_manager_(logger, vm, doc_root, ad, redirects)
+			, connection_manager_(logger, vm, doc_root, ad, redirects, timeout)
 			, blacklist_(blacklist)
 			, is_listening_(false)
 			, shutdown_complete_()

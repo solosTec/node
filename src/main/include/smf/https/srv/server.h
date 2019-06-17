@@ -31,7 +31,8 @@ namespace node
 				, boost::asio::io_context& ioc
 				, boost::asio::ssl::context& ctx
 				, boost::asio::ip::tcp::endpoint endpoint
-				, std::string const& doc_root
+                , std::size_t timeout
+                , std::string const& doc_root
 				, auth_dirs const& ad
 				, std::set<boost::asio::ip::address> const& blacklist
 				, std::map<std::string, std::string> const& redirects

@@ -19,6 +19,7 @@
 #include <cyng/json.h>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
+#include <cyng/numeric_cast.hpp>
 #include <cyng/vector_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/rnd.h>
@@ -200,6 +201,7 @@ namespace node
 					, cyng::param_factory("server", cyng::tuple_factory(
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8443"),	//	default is 443
+						cyng::param_factory("timeout", "15"),	//	seconds
 						cyng::param_factory("document-root", (pwd / "nodes" / "dash_shared" / "htdocs").string()),
 						//cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
 						cyng::param_factory("tls-pwd", "test"),
@@ -454,11 +456,13 @@ namespace node
 		auto address = cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0");
 		auto service = cyng::value_cast<std::string>(dom.get("service"), "8080");
 		auto const host = cyng::make_address(address);
-		const auto port = static_cast<unsigned short>(std::stoi(service));
+		auto const port = static_cast<unsigned short>(std::stoi(service));
+		auto const timeout = cyng::numeric_cast<std::size_t>(dom.get("timeout"), 15u);
 
 		CYNG_LOG_INFO(logger, "document root: " << doc_root);
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
+		CYNG_LOG_INFO(logger, "timeout: " << timeout << " seconds");
 
 		//
 		//	get user credentials
@@ -518,6 +522,7 @@ namespace node
 				, ctx
 				, load_cluster_cfg(cfg_cls)
 				, boost::asio::ip::tcp::endpoint{ host, port }
+				, timeout
 				, doc_root
 				, ad
 				, blacklist

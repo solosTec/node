@@ -27,8 +27,8 @@ namespace node
 			, auth_dirs const& ad
 #endif
 			, std::map<std::string, std::string> const& redirects
-			, bool https_rewrite
-			)
+            , std::size_t timeout
+			, bool https_rewrite)
 		: logger_(logger)
 			, vm_(vm)
 			, doc_root_(doc_root)
@@ -36,6 +36,7 @@ namespace node
 			, auth_dirs_(ad)
 #endif
 			, redirects_(redirects)
+            , timeout_(timeout)
 			, https_rewrite_(https_rewrite)
 			, uidgen_()
 			, sessions_()
@@ -66,10 +67,15 @@ namespace node
 
 		void connections::create_session(boost::asio::ip::tcp::socket socket)
 		{
-			auto obj = cyng::make_object<session>(logger_
+
+            //
+            //  create HTTP session object
+            //
+            auto obj = cyng::make_object<session>(logger_
 				, *this
 				, uidgen_()
 				, std::move(socket)
+                , timeout_
 				, doc_root_
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs_

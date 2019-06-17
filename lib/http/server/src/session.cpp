@@ -30,6 +30,7 @@ namespace node
 			, connections& cm
 			, boost::uuids::uuid tag
 			, boost::asio::ip::tcp::socket socket
+			, std::chrono::seconds timeout
 			, std::string const& doc_root
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs const& ad
@@ -54,7 +55,9 @@ namespace node
 			, queue_(*this)
             , shutdown_(false)
 			, authorized_(false)
-		{}
+		{
+            stream_.expires_after(timeout);
+        }
 
 		session::~session()
 		{
@@ -94,6 +97,7 @@ namespace node
 			on_timer(boost::system::error_code{}, obj);
 #else
 			connection_manager_.vm().async_run(cyng::generate_invoke("http.session.launch", tag(), false, stream_.socket().remote_endpoint()));
+            stream_.expires_after(std::chrono::seconds(15));
 #endif
 
 			do_read();

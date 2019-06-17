@@ -120,6 +120,7 @@ namespace node
 				, connections& cm
 				, boost::uuids::uuid
 				, boost::asio::ip::tcp::socket socket
+				, std::chrono::seconds timeout
 				, std::string const& doc_root
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs const& ad

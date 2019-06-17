@@ -41,7 +41,8 @@ namespace node
 				, cyng::controller& vm
 				, std::string const& doc_root
 				, auth_dirs const& ad
-				, std::map<std::string, std::string> const& redirects);
+				, std::map<std::string, std::string> const& redirects
+                , std::size_t timeout);
 
 			/**
 			 * Provide access to vm controller
@@ -177,6 +178,7 @@ namespace node
 			std::string const doc_root_;
 			auth_dirs const auth_dirs_;
 			std::map<std::string, std::string> const redirects_;
+            std::chrono::seconds const timeout_;
 
 			/**
 			 * Generate unique session tags

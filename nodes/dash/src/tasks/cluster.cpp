@@ -35,6 +35,7 @@ namespace node
 		, boost::uuids::uuid cluster_tag
 		, cluster_config_t const& cfg_cls
 		, boost::asio::ip::tcp::endpoint ep
+		, std::size_t timeout
 		, std::string const& doc_root
 #ifdef NODE_SSL_INSTALLED
 		, auth_dirs const& ad
@@ -51,6 +52,7 @@ namespace node
 		, server_(logger
 			, btp->mux_.get_io_service()
 			, ep
+			, timeout
 			, doc_root
 			, ""	//	no blog
 #ifdef NODE_SSL_INSTALLED

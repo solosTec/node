@@ -47,7 +47,8 @@ namespace node
 				, auth_dirs const& ad
 #endif
 				, std::map<std::string, std::string> const&
-				, bool https_rewrite
+                , std::size_t timeout
+                , bool https_rewrite
 			);
 
 			/**
@@ -139,6 +140,7 @@ namespace node
 #endif
 
 			std::map<std::string, std::string> const redirects_;
+            std::chrono::seconds const timeout_;
 			bool const https_rewrite_;
 
 			/**
