@@ -202,8 +202,7 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8443"),	//	default is 443
 						cyng::param_factory("timeout", "15"),	//	seconds
-						cyng::param_factory("document-root", (pwd / "nodes" / "dash_shared" / "htdocs").string()),
-						//cyng::param_factory("sub-protocols", cyng::vector_factory({ "SMF", "LoRa" })),
+						cyng::param_factory("document-root", (pwd / "dash" / "dist").string()),
 						cyng::param_factory("tls-pwd", "test"),
 						cyng::param_factory("tls-certificate-chain", "demo.cert"),
                         cyng::param_factory("tls-private-key", "priv.key"),
@@ -239,7 +238,27 @@ namespace node
 							cyng::make_address("185.162.235.56")	//	SILEX malware
 							})),	//	blacklist
 						cyng::param_factory("redirect", cyng::vector_factory({
-							cyng::param_factory("/", "/index.html")
+							cyng::param_factory("/", "/index.html"),
+							cyng::param_factory("/config/system", "/index.html" ),
+							cyng::param_factory("/config/device", "/index.html" ),
+							cyng::param_factory("/config/gateway", "/index.html" ),
+							cyng::param_factory("/config/meter", "/index.html" ),
+							cyng::param_factory("/config/lora", "/index.html" ),
+							cyng::param_factory("/config/upload", "/index.html" ),
+							cyng::param_factory("/config/download", "/index.html" ),
+
+							cyng::param_factory("/status/sessions", "/index.html"),
+							cyng::param_factory("/status/targets", "/index.html"),
+							cyng::param_factory("/status/connections", "/index.html"),
+
+							cyng::param_factory("/monitor/system", "/index.html"),
+							cyng::param_factory("/monitor/messages", "/index.html"),
+							cyng::param_factory("/monitor/tsdb", "/index.html"),
+							cyng::param_factory("/monitor/lora", "/index.html"),
+
+							cyng::param_factory("/task/csv", "/index.html"),
+							cyng::param_factory("/task/tsdb", "/index.html"),
+							cyng::param_factory("/task/plausibility", "/index.html")
 						}))
 
 					))
