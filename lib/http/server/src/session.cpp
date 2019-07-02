@@ -287,6 +287,8 @@ namespace node
 
 		void session::handle_request(boost::beast::http::request<boost::beast::http::string_body>&& req)
 		{
+			BOOST_ASSERT_MSG(req.version() == 11, "wrong HTTP version");
+
 			if (req.method() != boost::beast::http::verb::get &&
 				req.method() != boost::beast::http::verb::head &&
 				req.method() != boost::beast::http::verb::post)
@@ -511,7 +513,7 @@ namespace node
 				{
 					connection_manager_.vm().async_run(cyng::generate_invoke("http.post.json"
 						, tag_
-						, req.version()
+						, static_cast<std::uint32_t>(req.version())
 						, std::string(target.begin(), target.end())
 						, payload_size
 						, std::string(req.body().begin(), req.body().end())));
@@ -641,6 +643,12 @@ namespace node
 				std::make_tuple(boost::beast::http::status::ok, version) };
 			res.set(boost::beast::http::field::server, NODE::version_string);
 			res.set(boost::beast::http::field::content_type, mime_type(path));
+
+			//res.set(boost::beast::http::field::access_control_allow_origin, "*");
+			//res.set(boost::beast::http::field::access_control_allow_methods, "POST, GET, PUT, OPTIONS, DELETE");
+			//res.set(boost::beast::http::field::access_control_max_age, "3600");
+			//res.set(boost::beast::http::field::access_control_allow_headers, "x-requested-with, content-type");
+
 			res.content_length(size);
 			res.keep_alive(keep_alive);
 			return res;
@@ -808,17 +816,26 @@ namespace node
 
 			res.set(boost::beast::http::field::server, NODE::version_string);
 			res.set(boost::beast::http::field::content_description, "File Transfer");
-			res.set(boost::beast::http::field::content_type, "application/force-download");
+			//res.set(boost::beast::http::field::content_type, "application/force-download");
+			//res.set(boost::beast::http::field::content_type, "application/octet-stream");
 			res.set(boost::beast::http::field::content_disposition, "attachment; filename='" + attachment + "'");
 			res.set(boost::beast::http::field::expires, 0);
 			res.set(boost::beast::http::field::cache_control, "must-revalidate, post-check=0, pre-check=0");
+			res.set(boost::beast::http::field::pragma, "public");
+			res.set(boost::beast::http::field::content_transfer_encoding, "binary");
+			//Access-Control-Allow-Origin: *
+			//res.set(boost::beast::http::field::access_control_allow_origin, "*");
+			//res.set(boost::beast::http::field::access_control_allow_methods, "POST, GET, PUT, OPTIONS, DELETE");
+			//res.set(boost::beast::http::field::access_control_max_age, "3600");
+			//res.set(boost::beast::http::field::access_control_allow_headers, "x-requested-with, content-type");
+
 
 			auto const ext = path.extension().string();
 			if (boost::algorithm::equals(ext, ".xml")) {
-				res.set(boost::beast::http::field::content_type, "text/xml");
+				res.set(boost::beast::http::field::content_type, "application/xml");
 			}
 			else if (boost::algorithm::equals(ext, ".csv")) {
-				res.set(boost::beast::http::field::content_type, "text/csv");
+				res.set(boost::beast::http::field::content_type, "application/csv");
 			}
 			else if (boost::algorithm::equals(ext, ".pdf")) {
 				res.set(boost::beast::http::field::content_type, "application/pdf");

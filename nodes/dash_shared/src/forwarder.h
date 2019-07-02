@@ -89,15 +89,12 @@ namespace node
 		void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc, bool);
 		void read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc, bool);
 
-		void cfg_download_devices(cyng::context& ctx);
-		void cfg_download_gateways(cyng::context& ctx);
-		void cfg_download_meters(cyng::context& ctx);
-		void cfg_download_messages(cyng::context& ctx);
-		void cfg_download_LoRa(cyng::context& ctx);
-		void cfg_download_uplink(cyng::context& ctx);
+		void cfg_post_json(cyng::context& ctx);
+		void cfg_post_form_urlencoded(cyng::context& ctx);
 
 		void trigger_download_xml(boost::uuids::uuid tag, std::string table, std::string filename);
 		void trigger_download_csv(boost::uuids::uuid tag, std::string table, std::string filename);
+		void trigger_download_json(boost::uuids::uuid tag, std::string table, std::string filename);
 
 	private:
 		cyng::logging::log_ptr logger_;

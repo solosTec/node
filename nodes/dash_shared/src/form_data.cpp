@@ -201,38 +201,43 @@ namespace node
 		ctx.queue(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_TRACE : cyng::logging::severity::LEVEL_WARNING), ss.str()));
 
 		//
+		//	This has changed since version 0.8.
+		//	Now we use XMLHttpRequest instead of enctype="multipart/form-data"
+		//
+
+		//
 		//	start procedure
 		//
-		bool found = false;
-		if (pos != data_.end()) {
-			auto idx = pos->second.find("smf-procedure");
-			if (idx != pos->second.end()) {
+		//bool found = false;
+		//if (pos != data_.end()) {
+		//	auto idx = pos->second.find("smf-procedure");
+		//	if (idx != pos->second.end()) {
 
-				CYNG_LOG_INFO(logger_, "run proc "
-					<< idx->second
-					<< ":"
-					<< std::get<0>(tpl));
+		//		CYNG_LOG_INFO(logger_, "run proc "
+		//			<< idx->second
+		//			<< ":"
+		//			<< std::get<0>(tpl));
 
-				cyng::param_map_t params;
-				for (auto const& v : pos->second) {
-					params.insert(cyng::param_factory(v.first, v.second));
-				}
-				ctx.queue(cyng::generate_invoke(idx->second, std::get<0>(tpl), params));
-				found = true;
-			}
-		}
+		//		cyng::param_map_t params;
+		//		for (auto const& v : pos->second) {
+		//			params.insert(cyng::param_factory(v.first, v.second));
+		//		}
+		//		ctx.queue(cyng::generate_invoke(idx->second, std::get<0>(tpl), params));
+		//		found = true;
+		//	}
+		//}
 
-		//
-		//	cleanup form data
-		//
-		data_.erase(std::get<0>(tpl));
+		////
+		////	cleanup form data
+		////
+		//data_.erase(std::get<0>(tpl));
 
-		//
-		//	consider to send a 302 - Object moved response
-		//
-		if (!found) {
-			ctx.queue(cyng::generate_invoke("http.move", std::get<0>(tpl), std::get<3>(tpl)));
-		}
+		////
+		////	consider to send a 302 - Object moved response
+		////
+		//if (!found) {
+		//	ctx.queue(cyng::generate_invoke("http.move", std::get<0>(tpl), std::get<3>(tpl)));
+		//}
 	}
 
 

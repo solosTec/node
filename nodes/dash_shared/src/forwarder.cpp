@@ -14,8 +14,11 @@
 #include <cyng/tuple_cast.hpp>
 #include <cyng/parser/buffer_parser.h>
 #include <cyng/parser/mac_parser.h>
+#include <cyng/json/json_parser.h>
+#include <cyng/dom/reader.h>
 #include <cyng/xml.h>
 #include <cyng/csv.h>
+#include <cyng/json.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/uuid/string_generator.hpp>
@@ -538,13 +541,15 @@ namespace node
 		vm.register_function("cfg.upload.meter", 2, std::bind(&forward::cfg_upload_meter, this, std::placeholders::_1));
 		vm.register_function("cfg.upload.LoRa", 2, std::bind(&forward::cfg_upload_LoRa, this, std::placeholders::_1));
 
-		vm.register_function("cfg.download.devices", 2, std::bind(&forward::cfg_download_devices, this, std::placeholders::_1));
-		vm.register_function("cfg.download.gateways", 2, std::bind(&forward::cfg_download_gateways, this, std::placeholders::_1));
-		vm.register_function("cfg.download.meters", 2, std::bind(&forward::cfg_download_meters, this, std::placeholders::_1));
-		vm.register_function("cfg.download.messages", 2, std::bind(&forward::cfg_download_messages, this, std::placeholders::_1));
-		vm.register_function("cfg.download.LoRa", 2, std::bind(&forward::cfg_download_LoRa, this, std::placeholders::_1));
-		vm.register_function("cfg.download.uplink", 2, std::bind(&forward::cfg_download_uplink, this, std::placeholders::_1));
+		//vm.register_function("cfg.download.devices", 2, std::bind(&forward::cfg_download_devices, this, std::placeholders::_1));
+		//vm.register_function("cfg.download.gateways", 2, std::bind(&forward::cfg_download_gateways, this, std::placeholders::_1));
+		//vm.register_function("cfg.download.meters", 2, std::bind(&forward::cfg_download_meters, this, std::placeholders::_1));
+		//vm.register_function("cfg.download.messages", 2, std::bind(&forward::cfg_download_messages, this, std::placeholders::_1));
+		//vm.register_function("cfg.download.LoRa", 2, std::bind(&forward::cfg_download_LoRa, this, std::placeholders::_1));
+		//vm.register_function("cfg.download.uplink", 2, std::bind(&forward::cfg_download_uplink, this, std::placeholders::_1));
 
+		vm.register_function("http.post.json", 5, std::bind(&forward::cfg_post_json, this, std::placeholders::_1));
+		vm.register_function("http.post.form.urlencoded", 5, std::bind(&forward::cfg_post_form_urlencoded, this, std::placeholders::_1));
 	}
 
 	void forward::cfg_upload_devices(cyng::context& ctx)
@@ -982,135 +987,85 @@ namespace node
 		}
 	}
 
-	void forward::cfg_download_devices(cyng::context& ctx)
+	void forward::cfg_post_json(cyng::context& ctx)
 	{
-		//
-		//	example
-		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
-		//
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "cfg.download.devices - " << cyng::io::to_str(frame));
-
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			cyng::param_map_t	//	[1] variables
-		>(frame);
-
-		auto const reader = cyng::make_reader(std::get<1>(tpl));
-		auto const fmt = cyng::value_cast<std::string>(reader.get("smf-download-device-format"), "XML");
-		if (boost::algorithm::equals("CSV", fmt)) {
-			trigger_download_csv(std::get<0>(tpl), "TDevice", "device.csv");
-		}
-		else {
-			trigger_download_xml(std::get<0>(tpl), "TDevice", "device.xml");
-		}
-	}
-
-	void forward::cfg_download_gateways(cyng::context& ctx)
-	{
-		//
-		//	example
-		//	[fd003d7f-43a5-4b3b-9dca-71c7584092a5,%(("smf-download-gw-format":CSV),("smf-procedure":cfg.download.gateways),("target":/config.download.html))]
-		//
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "cfg.download.gateways - " << cyng::io::to_str(frame));
-
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			cyng::param_map_t	//	[1] variables
-		>(frame);
-
-		auto const reader = cyng::make_reader(std::get<1>(tpl));
-		auto const fmt = cyng::value_cast<std::string>(reader.get("smf-download-gw-format"), "XML");
-		if (boost::algorithm::equals("CSV", fmt)) {
-			trigger_download_csv(std::get<0>(tpl), "TGateway", "gateway.csv");
-		}
-		else {
-			trigger_download_xml(std::get<0>(tpl), "TGateway", "gateway.xml");
-		}
-	}
-
-	void forward::cfg_download_meters(cyng::context& ctx)
-	{
-		//
-		//	example
-		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
-		//
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "cfg.download.meters - " << cyng::io::to_str(frame));
-
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			cyng::param_map_t	//	[1] variables
-		>(frame);
-
-		auto const reader = cyng::make_reader(std::get<1>(tpl));
-		auto const fmt = cyng::value_cast<std::string>(reader.get("smf-download-meter-format"), "XML");
-		if (boost::algorithm::equals("CSV", fmt)) {
-			trigger_download_csv(std::get<0>(tpl), "TMeter", "meter.csv");
-		}
-		else {
-			trigger_download_xml(std::get<0>(tpl), "TMeter", "meter.xml");
-		}
-	}
-
-	void forward::cfg_download_messages(cyng::context& ctx)
-	{
-		//
-		//	example
-		//	[%(("smf-procedure":cfg.download.devices),("smf-upload-config-device-version":v5.0),("target":/api/download/config/device))]
-		//
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "cfg.download.messages - " << cyng::io::to_str(frame));
-
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			cyng::param_map_t	//	[1] variables
-		>(frame);
-
-		auto const reader = cyng::make_reader(std::get<1>(tpl));
-		auto const fmt = cyng::value_cast<std::string>(reader.get("smf-download-msg-format"), "XML");
-		if (boost::algorithm::equals("CSV", fmt)) {
-			trigger_download_csv(std::get<0>(tpl), "_SysMsg", "messages.csv");
-		}
-		else {
-			trigger_download_xml(std::get<0>(tpl), "_SysMsg", "messages.xml");
-		}
-	}
-
-	void forward::cfg_download_LoRa(cyng::context& ctx)
-	{
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "cfg.download.LoRa - " << cyng::io::to_str(frame));
-
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] session tag
-			cyng::param_map_t	//	[1] variables
-		>(frame);
-
-		trigger_download_xml(std::get<0>(tpl), "TLoRaDevice", "LoRa.xml");
-	}
-
-	void forward::cfg_download_uplink(cyng::context& ctx)
-	{
+		//	[b585cb1d-5641-445b-b6cb-8b40f9859203,0000000b,/config/download.devices,30,{"type":"XML","version":"v50"}]
+		//	
+		//	* [uuid] session id
+		//	* [uint] version
+		//	* [string] URL
+		//	* [uint] length of JSON string
+		//	* [string] JSON payload
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,	//	[0] session tag
-			cyng::param_map_t	//	[1] variables
+			std::uint32_t,		//	[1] version
+			std::string,
+			std::uint64_t,
+			std::string
 		>(frame);
 
-		auto const reader = cyng::make_reader(std::get<1>(tpl));
-		auto const fmt = cyng::value_cast<std::string>(reader.get("smf-download-uplink-format"), "XML");
-		if (boost::algorithm::equals("CSV", fmt)) {
-			trigger_download_csv(std::get<0>(tpl), "_LoRaUplink", "LoRaUplink.csv");
+		//std::pair<object, bool> parse_json(std::string const& inp);
+		auto const r = cyng::parse_json(std::get<4>(tpl));
+		if (r.second) {
+			auto const reader = cyng::make_reader(r.first);
+			auto const type = cyng::value_cast<std::string>(reader.get("type"), "type");
+			auto const fmt = cyng::value_cast<std::string>(reader.get("fmt"), "format");
+			auto const version = cyng::value_cast<std::string>(reader.get("version"), "v");
+			if (boost::algorithm::equals(type, "dev")) {
+				if (boost::algorithm::equals(fmt, "XML")) trigger_download_xml(std::get<0>(tpl), "TDevice", "device.xml");
+				else if (boost::algorithm::equals(fmt, "JSON")) trigger_download_json(std::get<0>(tpl), "TDevice", "device.json");
+				else trigger_download_csv(std::get<0>(tpl), "TDevice", "device.csv");
+			}
+			else if (boost::algorithm::equals(type, "gw")) {
+				if (boost::algorithm::equals(fmt, "XML")) trigger_download_xml(std::get<0>(tpl), "TGateway", "gateway.xml");
+				else if (boost::algorithm::equals(fmt, "JSON")) trigger_download_json(std::get<0>(tpl), "TGateway", "gateway.json");
+				else trigger_download_csv(std::get<0>(tpl), "TGateway", "gateway.csv");
+			}
+			else if (boost::algorithm::equals(type, "meter")) {
+				if (boost::algorithm::equals(fmt, "XML")) trigger_download_xml(std::get<0>(tpl), "TMeter", "meter.xml");
+				else if (boost::algorithm::equals(fmt, "json")) trigger_download_json(std::get<0>(tpl), "TMeter", "meter.json");
+				else trigger_download_csv(std::get<0>(tpl), "TMeter", "meter.csv");
+			}
+			else if (boost::algorithm::equals(type, "LoRa")) {
+				if (boost::algorithm::equals(fmt, "XML")) trigger_download_xml(std::get<0>(tpl), "TLoRaDevice", "LoRa.xml");
+				else if (boost::algorithm::equals(fmt, "JSON")) trigger_download_json(std::get<0>(tpl), "TLoRaDevice", "LoRa.json");
+				else trigger_download_csv(std::get<0>(tpl), "TLoRaDevice", "LoRa.csv");
+			}
+			else if (boost::algorithm::equals(type, "uplink")) {
+				if (boost::algorithm::equals(fmt, "XML")) trigger_download_xml(std::get<0>(tpl), "_LoRaUplink", "LoRaUplink.xml");
+				else if (boost::algorithm::equals(fmt, "JSON")) trigger_download_json(std::get<0>(tpl), "_LoRaUplink", "LoRaUplink.json");
+				else trigger_download_csv(std::get<0>(tpl), "_LoRaUplink", "LoRaUplink.csv");
+			}
+			else if (boost::algorithm::equals(type, "msg")) {
+				if (boost::algorithm::equals(fmt, "XML")) trigger_download_xml(std::get<0>(tpl), "_SysMsg", "messages.xml");
+				else if (boost::algorithm::equals(fmt, "JSON")) trigger_download_json(std::get<0>(tpl), "_SysMsg", "messages.json");
+				else trigger_download_csv(std::get<0>(tpl), "_SysMsg", "messages.csv");
+			}
 		}
 		else {
-			trigger_download_xml(std::get<0>(tpl), "_LoRaUplink", "LoRaUplink.xml");
+			CYNG_LOG_ERROR(logger_, ctx.get_name() << " JSON parse errror " << std::get<4>(tpl));
 		}
 	}
 
+	void forward::cfg_post_form_urlencoded(cyng::context& ctx)
+	{
+		//	[44018499-1ada-458a-ac4d-d0f44fef457f,0000000b,/config/download.devices,28,type=dev&fmt=XML&version=v50]
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			std::uint32_t,		//	[1] version
+			std::string,
+			std::uint64_t,
+			std::string
+		>(frame);
+
+		trigger_download_xml(std::get<0>(tpl), "TDevice", "device.xml");
+	}
 
 	void forward::trigger_download_xml(boost::uuids::uuid tag, std::string table, std::string filename)
 	{
@@ -1190,6 +1145,49 @@ namespace node
 		//	trigger download
 		//
 		connection_manager_.trigger_download(tag, out, filename);
+	}
+
+	void forward::trigger_download_json(boost::uuids::uuid tag, std::string table, std::string filename)
+	{
+		//
+		//	generate JSON download file
+		//
+		auto out = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.json");
+
+		cyng::vector_t vec;
+		db_.access([&](cyng::store::table const* tbl) {
+
+			vec.reserve(tbl->size());
+			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+				//
+				//	write record
+				//
+				//cyng::xml::write(root.append_child("record"), rec.convert());
+				vec.push_back(cyng::make_object(rec.convert()));
+
+				//	continue
+				return true;
+			});
+			BOOST_ASSERT(counter == 0);
+			boost::ignore_unused(counter);	//	release version
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
+
+		}, cyng::store::read_access(table));
+
+		std::ofstream of(out.string(), std::ios::binary | std::ios::trunc | std::ios::out);
+		if (of.is_open()) {
+			cyng::json::write(of, cyng::make_object(vec));
+
+			//
+			//	trigger download
+			//
+			of.close();
+			connection_manager_.trigger_download(tag, out, filename);
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "cannot open file " << out);
+		}
 	}
 
 }
