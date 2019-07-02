@@ -145,6 +145,7 @@ namespace node
 				, boost::asio::io_context& ioc
 #endif
 				, boost::beast::flat_buffer buffer
+				, std::uint64_t max_upload_size
 				, std::string const& doc_root
 				, auth_dirs const& ad)
 			: logger_(logger)
@@ -155,6 +156,7 @@ namespace node
 				, strand_(ioc.get_executor())
 #endif
 				, buffer_(std::move(buffer))
+				, max_upload_size_(max_upload_size)
 				, doc_root_(doc_root)
 				, auth_dirs_(ad)
 				, queue_(*this)
@@ -200,7 +202,7 @@ namespace node
 
 				// Apply a reasonable limit to the allowed size
 				// of the body in bytes to prevent abuse.
-				parser_->body_limit(10000);
+				parser_->body_limit(this->max_upload_size_);
 
 				// Set the timeout.
 				boost::beast::get_lowest_layer(
@@ -817,7 +819,7 @@ namespace node
 		protected:
 			cyng::logging::log_ptr logger_;
 			connections& connection_manager_;
-			const boost::uuids::uuid tag_;
+			boost::uuids::uuid const tag_;
 #if (BOOST_BEAST_VERSION < 248)
 			boost::asio::steady_timer timer_;
 			boost::asio::strand<boost::asio::io_context::executor_type> strand_;
@@ -825,8 +827,9 @@ namespace node
 			boost::beast::flat_buffer buffer_;
 
 		private:
-			const std::string doc_root_;
-			const auth_dirs& auth_dirs_;
+			std::uint64_t const max_upload_size_;
+			std::string const doc_root_;
+			auth_dirs const&  auth_dirs_;
 #if (BOOST_BEAST_VERSION < 248)
 			boost::beast::http::request<boost::beast::http::string_body> req_;
 #else

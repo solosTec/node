@@ -121,6 +121,7 @@ namespace node
 				, boost::uuids::uuid
 				, boost::asio::ip::tcp::socket socket
 				, std::chrono::seconds timeout
+				, std::uint64_t max_upload_size
 				, std::string const& doc_root
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs const& ad
@@ -189,6 +190,7 @@ namespace node
 		private:
 			cyng::logging::log_ptr logger_;
 			boost::uuids::uuid const tag_;
+			std::uint64_t const max_upload_size_;
 			std::string const doc_root_;
 #ifdef NODE_SSL_INSTALLED
 			auth_dirs const& auth_dirs_;

@@ -26,6 +26,7 @@ namespace node
 			, boost::beast::tcp_stream&& stream
 #endif
 			, boost::beast::flat_buffer buffer
+			, std::uint64_t max_upload_size
 			, std::string const& doc_root
 			, auth_dirs const& ad)
 #if (BOOST_BEAST_VERSION < 248)
@@ -33,7 +34,7 @@ namespace node
 			, socket_(std::move(socket))
 			, strand_(socket_.get_executor())
 #else
-		: session<plain_session>(logger, cm, tag, std::move(buffer), doc_root, ad)
+		: session<plain_session>(logger, cm, tag, std::move(buffer), max_upload_size, doc_root, ad)
 			, stream_(std::move(stream))
 #endif
 		{}
@@ -121,6 +122,7 @@ namespace node
 #endif
 			, boost::asio::ssl::context& ctx
 			, boost::beast::flat_buffer buffer
+			, std::uint64_t max_upload_size
 			, std::string const& doc_root
 			, auth_dirs const& ad)
 #if (BOOST_BEAST_VERSION < 248)
@@ -128,7 +130,7 @@ namespace node
 			, stream_(std::move(socket), ctx)
 			, strand_(stream_.get_executor())
 #else
-		: session<ssl_session>(logger, cm, tag, std::move(buffer), doc_root, ad)
+		: session<ssl_session>(logger, cm, tag, std::move(buffer), max_upload_size, doc_root, ad)
 			, stream_(std::move(stream), ctx)
 #endif
 		{}

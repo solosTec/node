@@ -48,7 +48,8 @@ namespace node
 #endif
 				, std::map<std::string, std::string> const&
                 , std::size_t timeout
-                , bool https_rewrite
+				, std::uint64_t max_upload_size
+				, bool https_rewrite
 			);
 
 			/**
@@ -141,6 +142,7 @@ namespace node
 
 			std::map<std::string, std::string> const redirects_;
             std::chrono::seconds const timeout_;
+			std::uint64_t const max_upload_size_;
 			bool const https_rewrite_;
 
 			/**

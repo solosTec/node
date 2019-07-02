@@ -31,6 +31,7 @@ namespace node
 			, boost::uuids::uuid tag
 			, boost::asio::ip::tcp::socket socket
 			, std::chrono::seconds timeout
+			, std::uint64_t max_upload_size
 			, std::string const& doc_root
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs const& ad
@@ -38,6 +39,7 @@ namespace node
 			, bool https_rewrite)
 		: logger_(logger)
 			, tag_(tag)
+			, max_upload_size_(max_upload_size)
 			, doc_root_(doc_root)
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs_(ad)
@@ -133,7 +135,8 @@ namespace node
 
 			// Apply a reasonable limit to the allowed size
 			// of the body in bytes to prevent abuse.
-			parser_->body_limit(10000);
+			parser_->body_limit(this->max_upload_size_);
+			//parser_->body_limit((std::numeric_limits<std::uint64_t>::max)());
 
 			// Set the timeout.
 			stream_.expires_after(std::chrono::seconds(30));
@@ -536,7 +539,7 @@ namespace node
 					//	payload parser
 					//
 					if (req.payload_size()) {
-						CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
+						//CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
 						std::uint64_t payload_size = *req.payload_size();
 						multi_part_parser mpp([&](cyng::vector_t&& prg) {
 
@@ -544,7 +547,7 @@ namespace node
 							CYNG_LOG_DEBUG(logger_, cyng::io::to_str(prg));
 							connection_manager_.vm().async_run(std::move(prg));
 
-						}, logger_
+						}	, logger_
 							, payload_size
 							, target
 							, tag_);
@@ -643,12 +646,6 @@ namespace node
 				std::make_tuple(boost::beast::http::status::ok, version) };
 			res.set(boost::beast::http::field::server, NODE::version_string);
 			res.set(boost::beast::http::field::content_type, mime_type(path));
-
-			//res.set(boost::beast::http::field::access_control_allow_origin, "*");
-			//res.set(boost::beast::http::field::access_control_allow_methods, "POST, GET, PUT, OPTIONS, DELETE");
-			//res.set(boost::beast::http::field::access_control_max_age, "3600");
-			//res.set(boost::beast::http::field::access_control_allow_headers, "x-requested-with, content-type");
-
 			res.content_length(size);
 			res.keep_alive(keep_alive);
 			return res;
@@ -816,19 +813,11 @@ namespace node
 
 			res.set(boost::beast::http::field::server, NODE::version_string);
 			res.set(boost::beast::http::field::content_description, "File Transfer");
-			//res.set(boost::beast::http::field::content_type, "application/force-download");
-			//res.set(boost::beast::http::field::content_type, "application/octet-stream");
 			res.set(boost::beast::http::field::content_disposition, "attachment; filename='" + attachment + "'");
 			res.set(boost::beast::http::field::expires, 0);
 			res.set(boost::beast::http::field::cache_control, "must-revalidate, post-check=0, pre-check=0");
 			res.set(boost::beast::http::field::pragma, "public");
 			res.set(boost::beast::http::field::content_transfer_encoding, "binary");
-			//Access-Control-Allow-Origin: *
-			//res.set(boost::beast::http::field::access_control_allow_origin, "*");
-			//res.set(boost::beast::http::field::access_control_allow_methods, "POST, GET, PUT, OPTIONS, DELETE");
-			//res.set(boost::beast::http::field::access_control_max_age, "3600");
-			//res.set(boost::beast::http::field::access_control_allow_headers, "x-requested-with, content-type");
-
 
 			auto const ext = path.extension().string();
 			if (boost::algorithm::equals(ext, ".xml")) {

@@ -28,6 +28,7 @@ namespace node
 #endif
 			, std::map<std::string, std::string> const& redirects
             , std::size_t timeout
+			, std::uint64_t max_upload_size
 			, bool https_rewrite)
 		: logger_(logger)
 			, vm_(vm)
@@ -37,6 +38,7 @@ namespace node
 #endif
 			, redirects_(redirects)
             , timeout_(timeout)
+			, max_upload_size_(max_upload_size)
 			, https_rewrite_(https_rewrite)
 			, uidgen_()
 			, sessions_()
@@ -76,6 +78,7 @@ namespace node
 				, uidgen_()
 				, std::move(socket)
                 , timeout_
+				, max_upload_size_
 				, doc_root_
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs_

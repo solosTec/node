@@ -19,12 +19,12 @@ namespace node
 			, boost::asio::ssl::context& ctx
 			, boost::asio::ip::tcp::endpoint endpoint
 			, std::size_t timeout
+			, std::uint64_t max_upload_size
 			, std::string const& doc_root
 			, auth_dirs const& ad
 			, std::set<boost::asio::ip::address> const& blacklist
 			, std::map<std::string, std::string> const& redirects
 			, cyng::controller& vm)
-		//: std::enable_shared_from_this<server>()
 		: logger_(logger)
 			, ctx_(ctx)
 			, acceptor_(ioc)
@@ -33,7 +33,13 @@ namespace node
 #else
 			, ioc_(ioc)
 #endif
-			, connection_manager_(logger, vm, doc_root, ad, redirects, timeout)
+			, connection_manager_(logger
+				, vm
+				, doc_root
+				, ad
+				, redirects
+				, max_upload_size
+				, timeout)
 			, blacklist_(blacklist)
 			, is_listening_(false)
 			, shutdown_complete_()

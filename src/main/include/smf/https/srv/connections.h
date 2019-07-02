@@ -42,7 +42,8 @@ namespace node
 				, std::string const& doc_root
 				, auth_dirs const& ad
 				, std::map<std::string, std::string> const& redirects
-                , std::size_t timeout);
+                , std::size_t timeout
+				, std::uint64_t max_upload_size);
 
 			/**
 			 * Provide access to vm controller
@@ -179,6 +180,7 @@ namespace node
 			auth_dirs const auth_dirs_;
 			std::map<std::string, std::string> const redirects_;
             std::chrono::seconds const timeout_;
+			std::uint64_t const max_upload_size_;
 
 			/**
 			 * Generate unique session tags

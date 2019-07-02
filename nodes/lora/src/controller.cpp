@@ -195,6 +195,7 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8443"),
 						cyng::param_factory("timeout", "15"),	//	seconds
+						cyng::param_factory("max-upload-size", 1024 * 1024 * 10),	//	10 MB
 						cyng::param_factory("document-root", (pwd / "htdocs").string()),
 						cyng::param_factory("tls-pwd", "test"),
 						cyng::param_factory("tls-certificate-chain", "fullchain.cert"),
@@ -456,11 +457,13 @@ namespace node
 		auto const host = cyng::make_address(address);
 		const auto port = static_cast<unsigned short>(std::stoi(service));
         auto const timeout = cyng::numeric_cast<std::size_t>(dom.get("timeout"), 15u);
+		auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(dom.get("max-upload-size"), 1024u * 1024 * 10u);
 
 		CYNG_LOG_INFO(logger, "document root: " << doc_root);
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
 		CYNG_LOG_INFO(logger, "timeout: " << timeout << " seconds");
+		CYNG_LOG_INFO(logger, "max-upload-size: " << max_upload_size << " bytes");
 
 		//
 		//	get user credentials
@@ -531,6 +534,7 @@ namespace node
 			, load_cluster_cfg(cfg_cls)
 			, boost::asio::ip::tcp::endpoint{ host, port }
 			, timeout
+			, max_upload_size
 			, doc_root
 			, ad
 			, blacklist

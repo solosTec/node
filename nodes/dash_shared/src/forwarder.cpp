@@ -541,28 +541,20 @@ namespace node
 		vm.register_function("cfg.upload.meter", 2, std::bind(&forward::cfg_upload_meter, this, std::placeholders::_1));
 		vm.register_function("cfg.upload.LoRa", 2, std::bind(&forward::cfg_upload_LoRa, this, std::placeholders::_1));
 
-		//vm.register_function("cfg.download.devices", 2, std::bind(&forward::cfg_download_devices, this, std::placeholders::_1));
-		//vm.register_function("cfg.download.gateways", 2, std::bind(&forward::cfg_download_gateways, this, std::placeholders::_1));
-		//vm.register_function("cfg.download.meters", 2, std::bind(&forward::cfg_download_meters, this, std::placeholders::_1));
-		//vm.register_function("cfg.download.messages", 2, std::bind(&forward::cfg_download_messages, this, std::placeholders::_1));
-		//vm.register_function("cfg.download.LoRa", 2, std::bind(&forward::cfg_download_LoRa, this, std::placeholders::_1));
-		//vm.register_function("cfg.download.uplink", 2, std::bind(&forward::cfg_download_uplink, this, std::placeholders::_1));
-
 		vm.register_function("http.post.json", 5, std::bind(&forward::cfg_post_json, this, std::placeholders::_1));
 		vm.register_function("http.post.form.urlencoded", 5, std::bind(&forward::cfg_post_form_urlencoded, this, std::placeholders::_1));
 	}
 
 	void forward::cfg_upload_devices(cyng::context& ctx)
 	{
-		//	
-		//	[181f86c7-23e5-4e01-a4d9-f6c9855962bf,
+		//
+		//	[cbc55458-5e42-406b-bc7e-95e4fb69c7f1,
 		//	%(
-		//		("devConf_0":text/xml),
-		//		("devices.xml":C:\\Users\\Pyrx\\AppData\\Local\\Temp\\smf-dash-ea2e-1fe1-6628-93ff.tmp),
-		//		("smf-procedure":cfg.upload.devices),
-		//		("smf-upload-config-device-version":v5.0),
-		//		("target":/upload/config/device/)
-		//	)]
+		//		("data":C:\Users\Pyrx\AppData\Local\Temp\smf-dash-e0ee-17ae-63c8-b2dc.tmp),
+		//		("devices-2.xml":text/xml),
+		//		("policy":append),
+		//		("target":/config/upload.devices),
+		//		("version":v50))]
 		//
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_TRACE(logger_, "cfg.upload.device - " << cyng::io::to_str(frame));
@@ -572,9 +564,9 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		auto file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "dev-conf-0"), "");
-		auto version = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "smf-upload-config-device-version"), "v0.5");
-		auto merge = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "smf-upload-config-device-merge"), "insert");
+		auto file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "data"), "");
+		auto version = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "version"), "v0.5");
+		auto policy = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "policy"), "insert");
 
 		//
 		//	get pointer to XML data
@@ -584,10 +576,10 @@ namespace node
 		if (result) {
 
 			if (boost::algorithm::equals(version, "v3.2")) {
-				read_device_configuration_3_2(ctx, doc, boost::algorithm::equals(merge, "insert"));
+				read_device_configuration_3_2(ctx, doc, boost::algorithm::equals(policy, "append"));
 			}
 			else {
-				read_device_configuration_5_x(ctx, doc, boost::algorithm::equals(merge, "insert"));
+				read_device_configuration_5_x(ctx, doc, boost::algorithm::equals(policy, "append"));
 			}
 		}
 		else {
@@ -616,7 +608,7 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "gw-conf-0"), "");
+		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "data"), "");
 
 		//
 		//	get pointer to XML data
@@ -678,7 +670,7 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "gw-conf-0"), "");
+		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "data"), "");
 
 		//
 		//	get pointer to XML data
@@ -741,7 +733,7 @@ namespace node
 		>(frame);
 
 
-		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "gw-conf-0"), "");
+		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "data"), "");
 
 		//
 		//	get pointer to XML data
@@ -972,18 +964,28 @@ namespace node
 			counter++;
 			pugi::xml_node node = it->node();
 
-			auto rec = cyng::xml::read(node, meta);
+			auto const rec = cyng::xml::read(node, meta);
+			if (!rec.empty()) {
 
-			CYNG_LOG_TRACE(logger_, "session "
-				<< ctx.tag()
-				<< " - insert device #"
-				<< counter
-				<< " "
-				<< cyng::value_cast(rec["pk"], boost::uuids::nil_uuid())
-				<< " - "
-				<< cyng::value_cast<std::string>(rec["name"], ""));
+				CYNG_LOG_TRACE(logger_, "session "
+					<< ctx.tag()
+					<< " - insert device #"
+					<< counter
+					<< " "
+					<< cyng::value_cast(rec["pk"], boost::uuids::nil_uuid())
+					<< " - "
+					<< cyng::value_cast<std::string>(rec["name"], ""));
 
-			ctx.queue(bus_req_db_insert("TDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+				ctx.queue(bus_req_db_insert("TDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+			}
+			else {
+
+				CYNG_LOG_ERROR(logger_, "session "
+					<< ctx.tag()
+					<< " - record #"
+					<< counter
+					<< " is empty");
+			}
 		}
 	}
 

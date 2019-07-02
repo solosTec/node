@@ -9,9 +9,11 @@
 #include <smf/cluster/generator.h>
 
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_bytes.hpp>
 #include <cyng/tuple_cast.hpp>
 
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace node 
 {
@@ -171,7 +173,7 @@ namespace node
 		//	* target path
 		//
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "http.upload.complete - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,	//	[0] session tag
@@ -183,16 +185,17 @@ namespace node
 		//
 		//	post a system message
 		//
-		auto pos = data_.find(std::get<0>(tpl));
+		auto const pos = data_.find(std::get<0>(tpl));
 		auto count = (pos != data_.end())
 			? pos->second.size()
 			: 0
 			;
+
 		std::stringstream ss;
 		ss
 			<< "upload/download "
-			<< std::get<2>(tpl)
-			<< " bytes to "
+			<< cyng::bytes_to_str(std::get<2>(tpl))
+			<< " to "
 			<< std::get<3>(tpl)
 			<< " with "
 			<< count
@@ -205,32 +208,25 @@ namespace node
 		//	Now we use XMLHttpRequest instead of enctype="multipart/form-data"
 		//
 
+		cyng::param_map_t params;
+		if (pos != data_.end()) {
+			for (auto const& v : pos->second) {
+				params.insert(cyng::param_factory(v.first, v.second));
+			}
+		}
+
+		if (boost::algorithm::equals(std::get<3>(tpl), "/config/upload.devices")) {
+			ctx.queue(cyng::generate_invoke("cfg.upload.devices", std::get<0>(tpl), params));
+			
+		}
+		
+		
+
 		//
-		//	start procedure
+		//	cleanup form data
 		//
-		//bool found = false;
-		//if (pos != data_.end()) {
-		//	auto idx = pos->second.find("smf-procedure");
-		//	if (idx != pos->second.end()) {
+		data_.erase(std::get<0>(tpl));
 
-		//		CYNG_LOG_INFO(logger_, "run proc "
-		//			<< idx->second
-		//			<< ":"
-		//			<< std::get<0>(tpl));
-
-		//		cyng::param_map_t params;
-		//		for (auto const& v : pos->second) {
-		//			params.insert(cyng::param_factory(v.first, v.second));
-		//		}
-		//		ctx.queue(cyng::generate_invoke(idx->second, std::get<0>(tpl), params));
-		//		found = true;
-		//	}
-		//}
-
-		////
-		////	cleanup form data
-		////
-		//data_.erase(std::get<0>(tpl));
 
 		////
 		////	consider to send a 302 - Object moved response

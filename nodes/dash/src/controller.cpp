@@ -17,6 +17,7 @@
 #include <cyng/async/signal_handler.h>
 #include <cyng/factory/set_factory.h>
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_bytes.hpp>
 #include <cyng/json.h>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
@@ -197,6 +198,7 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8080"),
 						cyng::param_factory("timeout", "15"),	//	seconds
+						cyng::param_factory("max-upload-size", 1024 * 1024 * 10),	//	10 MB
 						cyng::param_factory("document-root", (pwd / "dash" / "dist").string()),
 #ifdef NODE_SSL_INSTALLED
 						cyng::param_factory("auth", cyng::vector_factory({
@@ -439,11 +441,18 @@ namespace node
 		auto const host = cyng::make_address(address);
 		auto const port = static_cast<unsigned short>(std::stoi(service));
 		auto const timeout = cyng::numeric_cast<std::size_t>(dom.get("timeout"), 15u);
+		auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(dom.get("max-upload-size"), 1024u * 1024 * 10u);
 
 		CYNG_LOG_INFO(logger, "document root: " << doc_root);
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
 		CYNG_LOG_INFO(logger, "timeout: " << timeout << " seconds");
+		if (max_upload_size < 10 * 1024) {
+			CYNG_LOG_WARNING(logger, "max-upload-size: " << max_upload_size << " bytes");
+		}
+		else {
+			CYNG_LOG_INFO(logger, "max-upload-size: " << cyng::bytes_to_str(max_upload_size));
+		}
 
 #ifdef NODE_SSL_INSTALLED
 		//
@@ -500,6 +509,7 @@ namespace node
 			, load_cluster_cfg(cfg_cls)
 			, boost::asio::ip::tcp::endpoint{ host, port }
 			, timeout
+			, max_upload_size
 			, doc_root
 #ifdef NODE_SSL_INSTALLED
 			, ad

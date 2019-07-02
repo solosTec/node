@@ -22,13 +22,15 @@ namespace node
 			, std::string const& doc_root
 			, auth_dirs const& ad
 			, std::map<std::string, std::string> const& redirects
-            , std::size_t timeout)
+            , std::size_t timeout
+			, std::uint64_t max_upload_size)
 		: logger_(logger)
 			, vm_(vm)
 			, doc_root_(doc_root)
 			, auth_dirs_(ad)
 			, redirects_(redirects)
             , timeout_(timeout)
+			, max_upload_size_(max_upload_size)
 			, uidgen_()
 			, sessions_()
 			, mutex_()
@@ -75,6 +77,7 @@ namespace node
 				, std::move(socket)
 				, ctx
 				, std::move(buffer)
+				, max_upload_size_
 				, doc_root_
 				, auth_dirs_);
 
@@ -93,6 +96,7 @@ namespace node
 				, uidgen_()
 				, std::move(socket)
 				, std::move(buffer)
+				, max_upload_size_
 				, doc_root_
 				, auth_dirs_);
 
@@ -234,6 +238,7 @@ namespace node
 				, std::move(stream)
 				, ctx
 				, std::move(buffer)
+				, max_upload_size_
 				, doc_root_
 				, auth_dirs_);
 
@@ -260,6 +265,7 @@ namespace node
 				, uidgen_()
 				, std::move(stream)
 				, std::move(buffer)
+				, max_upload_size_
 				, doc_root_
 				, auth_dirs_);
 
@@ -646,17 +652,7 @@ namespace node
 			default:
 				break;
 			}
-
-			//cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[HTTP_PLAIN]);
-			//auto pos = sessions_[HTTP_PLAIN].find(tag);
-			//if (pos != sessions_[HTTP_PLAIN].end()) {
-			//	auto ptr = cyng::object_cast<session>(pos->second);
-			//	if (ptr != nullptr) {
-			//		const_cast<session*>(ptr)->trigger_download(filename, attachment);
-			//	}
-			//}
 		}
-
 	}
 }
 

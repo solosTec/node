@@ -24,6 +24,7 @@ namespace node
 		, cluster_config_t const& cfg
 		, boost::asio::ip::tcp::endpoint ep
 		, std::size_t timeout
+		, std::uint64_t max_upload_size
 		, std::string const& doc_root
 		, auth_dirs const& ad
 		, std::set<boost::asio::ip::address> const& blacklist
@@ -37,6 +38,7 @@ namespace node
 			, ctx
 			, ep
 			, timeout
+			, max_upload_size
 			, doc_root
 			, ad
 			, blacklist

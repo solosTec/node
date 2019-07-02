@@ -40,6 +40,7 @@ namespace node
 				, boost::beast::tcp_stream&& stream
 #endif
 				, boost::beast::flat_buffer buffer
+				, std::uint64_t max_upload_size
 				, std::string const& doc_root
 				, auth_dirs const& ad);
 
@@ -88,6 +89,7 @@ namespace node
 #endif
 				, boost::asio::ssl::context& ctx
 				, boost::beast::flat_buffer buffer
+				, std::uint64_t max_upload_size
 				, std::string const& doc_root
 				, auth_dirs const& ad);
 

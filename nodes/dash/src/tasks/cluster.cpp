@@ -36,6 +36,7 @@ namespace node
 		, cluster_config_t const& cfg_cls
 		, boost::asio::ip::tcp::endpoint ep
 		, std::size_t timeout
+		, std::uint64_t max_upload_size
 		, std::string const& doc_root
 #ifdef NODE_SSL_INSTALLED
 		, auth_dirs const& ad
@@ -53,6 +54,7 @@ namespace node
 			, btp->mux_.get_io_service()
 			, ep
 			, timeout
+			, max_upload_size
 			, doc_root
 			, ""	//	no blog
 #ifdef NODE_SSL_INSTALLED

@@ -22,6 +22,7 @@ namespace node
 			, boost::asio::io_context& ioc
 			, boost::asio::ip::tcp::endpoint endpoint
             , std::size_t timeout
+			, std::uint64_t max_upload_size
 			, std::string const& doc_root
 			, std::string const& blog_root
 #ifdef NODE_SSL_INSTALLED
@@ -43,6 +44,7 @@ namespace node
 #endif
 				, redirects
 				, timeout
+				, max_upload_size
 				, https_rewrite)
 			, is_listening_(false)
 			, shutdown_complete_()

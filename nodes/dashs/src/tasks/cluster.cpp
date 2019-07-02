@@ -38,6 +38,7 @@ namespace node
 		, cluster_config_t const& cfg_cls
 		, boost::asio::ip::tcp::endpoint ep
 		, std::size_t timeout
+		, std::uint64_t max_upload_size
 		, std::string const& doc_root
 		, auth_dirs const& ad
 		, std::set<boost::asio::ip::address> const& blacklist
@@ -48,7 +49,17 @@ namespace node
 		, logger_(logger)
 		, config_(cfg_cls)
 		, cache_()
-		, server_(logger, btp->mux_.get_io_service(), ctx, ep, timeout, doc_root, ad, blacklist, redirects, bus_->vm_)
+		, server_(logger
+			, btp->mux_.get_io_service()
+			, ctx
+			, ep
+			, timeout
+			, max_upload_size
+			, doc_root
+			, ad
+			, blacklist
+			, redirects
+			, bus_->vm_)
 		, dispatcher_(logger, server_.get_cm())
 		, db_sync_(logger, cache_)
 		, forward_(logger, cache_, server_.get_cm())
