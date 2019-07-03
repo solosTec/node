@@ -217,9 +217,20 @@ namespace node
 
 		if (boost::algorithm::equals(std::get<3>(tpl), "/config/upload.devices")) {
 			ctx.queue(cyng::generate_invoke("cfg.upload.devices", std::get<0>(tpl), params));
-			
 		}
-		
+		else if (boost::algorithm::equals(std::get<3>(tpl), "/config/upload.gateways")) {
+			ctx.queue(cyng::generate_invoke("cfg.upload.gateways", std::get<0>(tpl), params));
+		}
+		else if (boost::algorithm::equals(std::get<3>(tpl), "/config/upload.meters")) {
+			ctx.queue(cyng::generate_invoke("cfg.upload.meter", std::get<0>(tpl), params));
+		}
+		else if (boost::algorithm::equals(std::get<3>(tpl), "/config/upload.LoRa")) {
+			ctx.queue(cyng::generate_invoke("cfg.upload.LoRa", std::get<0>(tpl), params));
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, ctx.get_name() << " - unknown upload path: " << std::get<3>(tpl));
+			ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_ERROR, "unknown upload path: " + std::get<3>(tpl)));
+		}
 		
 
 		//

@@ -177,8 +177,9 @@ namespace node
 			//
 			//	get default values
 			//
-			const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
-			const boost::filesystem::path pwd = boost::filesystem::current_path();
+			auto const tmp = boost::filesystem::temp_directory_path();
+			auto const pwd = boost::filesystem::current_path();
+			auto const root = (pwd / ".." / "dash" / "dist").lexically_normal();
 			boost::uuids::random_generator uidgen;
 
 			//
@@ -199,7 +200,7 @@ namespace node
 						cyng::param_factory("service", "8080"),
 						cyng::param_factory("timeout", "15"),	//	seconds
 						cyng::param_factory("max-upload-size", 1024 * 1024 * 10),	//	10 MB
-						cyng::param_factory("document-root", (pwd / "dash" / "dist").string()),
+						cyng::param_factory("document-root", root.string()),
 #ifdef NODE_SSL_INSTALLED
 						cyng::param_factory("auth", cyng::vector_factory({
 							//	directory: /
@@ -432,10 +433,11 @@ namespace node
 
 		auto dom = cyng::make_reader(cfg_srv);
 
-		const boost::filesystem::path pwd = boost::filesystem::current_path();
+		auto const pwd = boost::filesystem::current_path();
+		auto const root = (pwd / ".." / "dash" / "dist").lexically_normal();
 
 		//	http::server build a string view
-		static auto doc_root = cyng::value_cast(dom.get("document-root"), (pwd / "htdocs").string());
+		static auto doc_root = cyng::value_cast(dom.get("document-root"), root.string());
 		auto address = cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0");
 		auto service = cyng::value_cast<std::string>(dom.get("service"), "8080");
 		auto const host = cyng::make_address(address);
@@ -443,12 +445,18 @@ namespace node
 		auto const timeout = cyng::numeric_cast<std::size_t>(dom.get("timeout"), 15u);
 		auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(dom.get("max-upload-size"), 1024u * 1024 * 10u);
 
-		CYNG_LOG_INFO(logger, "document root: " << doc_root);
+		boost::system::error_code ec;
+		if (boost::filesystem::exists(doc_root, ec)) {
+			CYNG_LOG_INFO(logger, "document root: " << doc_root);
+		}
+		else {
+			CYNG_LOG_FATAL(logger, "document root does not exists " << doc_root);
+		}
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
 		CYNG_LOG_INFO(logger, "timeout: " << timeout << " seconds");
 		if (max_upload_size < 10 * 1024) {
-			CYNG_LOG_WARNING(logger, "max-upload-size: " << max_upload_size << " bytes");
+			CYNG_LOG_WARNING(logger, "max-upload-size only: " << max_upload_size << " bytes");
 		}
 		else {
 			CYNG_LOG_INFO(logger, "max-upload-size: " << cyng::bytes_to_str(max_upload_size));

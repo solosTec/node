@@ -58,6 +58,18 @@ namespace node
 		, cyng::vector_t const&
 		, std::uint64_t generation);
 
+	cyng::vector_t bus_req_db_merge(std::string const&
+		, cyng::vector_t const&
+		, cyng::vector_t const&
+		, std::uint64_t generation
+		, boost::uuids::uuid source);
+
+	cyng::vector_t bus_req_db_update(std::string const&
+		, cyng::vector_t const&
+		, cyng::vector_t const&
+		, std::uint64_t generation
+		, boost::uuids::uuid source);
+
 	cyng::vector_t bus_req_db_modify(std::string const&
 		, cyng::vector_t const&
 		, cyng::attr_t const&

@@ -14,6 +14,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/vm/controller.h>
 #include <cyng/store/db.h>
+#include <cyng/table/record.h>
 #include <pugixml.hpp>
 #include <boost/uuid/random_generator.hpp>
 
@@ -87,7 +88,7 @@ namespace node
 
 		void read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc, bool);
 		void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc, bool);
-		void read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc, bool);
+		void read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc, cyng::table::policy policy);
 
 		void cfg_post_json(cyng::context& ctx);
 		void cfg_post_form_urlencoded(cyng::context& ctx);

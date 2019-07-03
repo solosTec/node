@@ -564,9 +564,9 @@ namespace node
 			cyng::param_map_t	//	[1] variables
 		>(frame);
 
-		auto file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "data"), "");
-		auto version = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "version"), "v0.5");
-		auto policy = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "policy"), "insert");
+		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "data"), "");
+		auto const version = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "version"), "v0.5");
+		auto const policy = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "policy"), "append");
 
 		//
 		//	get pointer to XML data
@@ -579,7 +579,7 @@ namespace node
 				read_device_configuration_3_2(ctx, doc, boost::algorithm::equals(policy, "append"));
 			}
 			else {
-				read_device_configuration_5_x(ctx, doc, boost::algorithm::equals(policy, "append"));
+				read_device_configuration_5_x(ctx, doc, cyng::table::to_policy(policy));
 			}
 		}
 		else {
@@ -609,6 +609,8 @@ namespace node
 		>(frame);
 
 		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "data"), "");
+		auto const version = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "version"), "v0.5");
+		auto const policy = cyng::table::to_policy(cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "policy"), "append"));
 
 		//
 		//	get pointer to XML data
@@ -630,19 +632,38 @@ namespace node
 				pugi::xml_node node = it->node();
 
 				auto rec = cyng::xml::read(node, meta);
+				if (!rec.empty()) {
 
-				CYNG_LOG_INFO(logger_, "session "
-					<< ctx.tag()
-					<< " - insert gateway #"
-					<< counter
-					<< " "
-					<< cyng::value_cast(rec["pk"], boost::uuids::nil_uuid())
-					<< " - "
-					<< cyng::value_cast<std::string>(rec["serverId"], ""));
+					CYNG_LOG_INFO(logger_, "session "
+						<< ctx.tag()
+						<< " - insert gateway #"
+						<< counter
+						<< " "
+						<< cyng::value_cast(rec["pk"], boost::uuids::nil_uuid())
+						<< " - "
+						<< cyng::value_cast<std::string>(rec["serverId"], ""));
 
-				ctx.queue(bus_req_db_insert("TGateway", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+					switch (policy) {
+					case cyng::table::POLICY_MERGE:
+						ctx.queue(bus_req_db_merge("TGateway", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+						break;
+					case cyng::table::POLICY_SUBSTITUTE:
+						ctx.queue(bus_req_db_update("TGateway", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+						break;
+					default:
+						ctx.queue(bus_req_db_insert("TGateway", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+						break;
+					}
+				}
+				else {
+
+					CYNG_LOG_ERROR(logger_, "session "
+						<< ctx.tag()
+						<< " - TGateway record #"
+						<< counter
+						<< " is empty");
+				}
 			}
-
 		}
 		else {
 			std::stringstream ss;
@@ -671,6 +692,8 @@ namespace node
 		>(frame);
 
 		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "data"), "");
+		auto const version = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "version"), "v0.5");
+		auto const policy = cyng::table::to_policy(cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "policy"), "append"));
 
 		//
 		//	get pointer to XML data
@@ -692,17 +715,37 @@ namespace node
 				pugi::xml_node node = it->node();
 
 				auto rec = cyng::xml::read(node, meta);
+				if (!rec.empty()) {
 
-				CYNG_LOG_INFO(logger_, "session "
-					<< ctx.tag()
-					<< " - insert meter #"
-					<< counter
-					<< " "
-					<< cyng::value_cast(rec["pk"], boost::uuids::nil_uuid())
-					<< " - "
-					<< cyng::value_cast<std::string>(rec["serverId"], ""));
+					CYNG_LOG_INFO(logger_, "session "
+						<< ctx.tag()
+						<< " - insert meter #"
+						<< counter
+						<< " "
+						<< cyng::value_cast(rec["pk"], boost::uuids::nil_uuid())
+						<< " - "
+						<< cyng::value_cast<std::string>(rec["serverId"], ""));
 
-				ctx.queue(bus_req_db_insert("TMeter", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+					switch (policy) {
+					case cyng::table::POLICY_MERGE:
+						ctx.queue(bus_req_db_merge("TMeter", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+						break;
+					case cyng::table::POLICY_SUBSTITUTE:
+						ctx.queue(bus_req_db_update("TMeter", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+						break;
+					default:
+						ctx.queue(bus_req_db_insert("TMeter", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+						break;
+					}
+				}
+				else {
+
+					CYNG_LOG_ERROR(logger_, "session "
+						<< ctx.tag()
+						<< " - TMeter record #"
+						<< counter
+						<< " is empty");
+				}
 			}
 
 		}
@@ -734,6 +777,8 @@ namespace node
 
 
 		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "data"), "");
+		auto const version = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "version"), "v0.5");
+		auto const policy = cyng::table::to_policy(cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "policy"), "append"));
 
 		//
 		//	get pointer to XML data
@@ -755,17 +800,37 @@ namespace node
 				pugi::xml_node node = it->node();
 
 				auto rec = cyng::xml::read(node, meta);
+				if (!rec.empty()) {
 
-				CYNG_LOG_INFO(logger_, "session "
-					<< ctx.tag()
-					<< " - insert LoRa device #"
-					<< counter
-					<< " "
-					<< cyng::value_cast(rec["pk"], boost::uuids::nil_uuid())
-					<< " - "
-					<< cyng::value_cast<std::string>(rec["serverId"], ""));
+					CYNG_LOG_INFO(logger_, "session "
+						<< ctx.tag()
+						<< " - insert LoRa device #"
+						<< counter
+						<< " "
+						<< cyng::value_cast(rec["pk"], boost::uuids::nil_uuid())
+						<< " - "
+						<< cyng::value_cast<std::string>(rec["serverId"], ""));
 
-				ctx.queue(bus_req_db_insert("TLoRaDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+					switch (policy) {
+					case cyng::table::POLICY_MERGE:
+						ctx.queue(bus_req_db_merge("TLoRaDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+						break;
+					case cyng::table::POLICY_SUBSTITUTE:
+						ctx.queue(bus_req_db_update("TLoRaDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+						break;
+					default:
+						ctx.queue(bus_req_db_insert("TLoRaDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+						break;
+					}
+				}
+				else {
+
+					CYNG_LOG_ERROR(logger_, "session "
+						<< ctx.tag()
+						<< " - TLoRaDevice record #"
+						<< counter
+						<< " is empty");
+				}
 			}
 		}
 		else {
@@ -954,7 +1019,7 @@ namespace node
 
 	}
 
-	void forward::read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc, bool insert)
+	void forward::read_device_configuration_5_x(cyng::context& ctx, pugi::xml_document const& doc, cyng::table::policy policy)
 	{
 		std::size_t counter{ 0 };
 		pugi::xpath_node_set data = doc.select_nodes("TDevice/record");
@@ -976,13 +1041,23 @@ namespace node
 					<< " - "
 					<< cyng::value_cast<std::string>(rec["name"], ""));
 
-				ctx.queue(bus_req_db_insert("TDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+				switch (policy) {
+				case cyng::table::POLICY_MERGE:
+					ctx.queue(bus_req_db_merge("TDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+					break;
+				case cyng::table::POLICY_SUBSTITUTE:
+					ctx.queue(bus_req_db_update("TDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+					break;
+				default:
+					ctx.queue(bus_req_db_insert("TDevice", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+					break;
+				}
 			}
 			else {
 
 				CYNG_LOG_ERROR(logger_, "session "
 					<< ctx.tag()
-					<< " - record #"
+					<< " - TDevice record #"
 					<< counter
 					<< " is empty");
 			}

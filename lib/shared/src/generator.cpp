@@ -132,6 +132,32 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_req_db_merge(std::string const& table
+		, cyng::vector_t const& key
+		, cyng::vector_t const& data
+		, std::uint64_t generation
+		, boost::uuids::uuid source)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("db.req.insert", table, key, data, generation, source))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
+	cyng::vector_t bus_req_db_update(std::string const& table
+		, cyng::vector_t const& key
+		, cyng::vector_t const& data
+		, std::uint64_t generation
+		, boost::uuids::uuid source)
+	{
+		cyng::vector_t prg;
+		return prg << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("db.req.update", table, key, data, generation, source))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
 	cyng::vector_t bus_req_db_modify(std::string const& table
 		, cyng::vector_t const& key
 		, cyng::attr_t const& value
