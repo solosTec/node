@@ -78,12 +78,6 @@ namespace node
 		create_cache(logger_, cache_);
 
 		//
-		//	subscribe to database
-		//
-		dispatcher_.subscribe(cache_);
-		dispatcher_.register_this(bus_->vm_);
-
-		//
 		//	handle form data
 		//
 		form_data_.register_this(bus_->vm_);
@@ -143,6 +137,19 @@ namespace node
 		bus_->vm_.register_function("ws.read", 2, std::bind(&cluster::ws_read, this, std::placeholders::_1));
 
 		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+
+		//
+		//	store local web ui configuration
+		//
+		cache_.modify("_Config", cyng::table::key_generator("https-session-timeout"), cyng::param_factory("value", timeout), bus_->vm_.tag());
+		cache_.modify("_Config", cyng::table::key_generator("https-max-upload-size"), cyng::param_factory("value", max_upload_size), bus_->vm_.tag());
+		cache_.modify("_Config", cyng::table::key_generator("https-available"), cyng::param_factory("value", true), bus_->vm_.tag());
+
+		//
+		//	subscribe to database
+		//
+		dispatcher_.subscribe(cache_);
+		dispatcher_.register_this(bus_->vm_);
 
 	}
 

@@ -856,6 +856,11 @@ namespace node
 		{
 			subscribe(db, "_Config", channel, tag);
 		}
+		else if (boost::algorithm::starts_with(channel, "config.web"))
+		{
+			//subscribe(db, "_Config", channel, tag);
+			subscribe_web(db, channel, tag);
+		}
 		else if (boost::algorithm::starts_with(channel, "status.session"))
 		{
 			subscribe(db, "_Session", channel, tag);
@@ -1058,6 +1063,38 @@ namespace node
 
 		auto msg = cyng::json::to_string(tpl);
 
+		connection_manager_.ws_msg(tag, msg);
+	}
+
+	void dispatcher::subscribe_web(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		//
+		//	install channel
+		//
+		connection_manager_.add_channel(tag, channel);
+
+		//
+		//	send initial data set
+		//
+		subscribe_web(db, channel, tag, "https-available");
+		subscribe_web(db, channel, tag, "https-rewrite");
+		subscribe_web(db, channel, tag, "http-max-upload-size");
+		subscribe_web(db, channel, tag, "http-session-timeout");
+		subscribe_web(db, channel, tag, "https-max-upload-size");
+		subscribe_web(db, channel, tag, "https-session-timeout");
+	}
+
+	void dispatcher::subscribe_web(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag, std::string name)
+	{
+		auto const obj = db.get_value("_Config", "value", name);
+		//BOOST_ASSERT_MSG(!obj.is_null(), "name not found");
+
+		auto const tpl = cyng::tuple_factory(cyng::param_factory("cmd", "insert")
+			, cyng::param_factory("channel", channel)
+			, cyng::param_factory("rec", cyng::tuple_factory(cyng::param_factory("key", cyng::param_factory("name", name))
+				, cyng::param_factory("data", cyng::param_factory("value", obj)))));
+
+		auto const msg = cyng::json::to_string(tpl);
 		connection_manager_.ws_msg(tag, msg);
 	}
 

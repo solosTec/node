@@ -72,6 +72,9 @@ namespace node
 		void subscribe_table_uplink_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
 		void subscribe_table_cluster_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
 
+		void subscribe_web(cyng::store::db&, std::string const& channel, boost::uuids::uuid tag);
+		void subscribe_web(cyng::store::db&, std::string const& channel, boost::uuids::uuid tag, std::string);
+
 		void store_relation(cyng::context& ctx);
 
 		void update_sys_cpu_usage_total(cyng::store::db&, std::string const&, boost::uuids::uuid);

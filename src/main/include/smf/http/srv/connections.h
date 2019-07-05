@@ -114,8 +114,9 @@ namespace node
 			 */
 			virtual void trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment) override;
 
-
 		private:
+			void modify_config(cyng::context& ctx);
+
 			enum session_type {
 				HTTP_PLAIN,
 				SOCKET_PLAIN,
@@ -141,9 +142,9 @@ namespace node
 #endif
 
 			std::map<std::string, std::string> const redirects_;
-            std::chrono::seconds const timeout_;
-			std::uint64_t const max_upload_size_;
-			bool const https_rewrite_;
+            std::chrono::seconds timeout_;
+			std::uint64_t max_upload_size_;
+			bool https_rewrite_;
 
 			/**
 			 * Generate unique session tags

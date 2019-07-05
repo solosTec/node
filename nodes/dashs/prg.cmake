@@ -31,29 +31,6 @@ set (node_dashs_shared
 	nodes/dash_shared/src/form_data.cpp
 )
 
-#
-#	same as for dash (HTTP)
-#
-set (node_dashs_assets
-	nodes/dash_shared/htdocs/index.html
-	nodes/dash_shared/htdocs/config.system.html
-	nodes/dash_shared/htdocs/config.device.html
-	nodes/dash_shared/htdocs/config.gateway.html
-	nodes/dash_shared/htdocs/config.lora.html
-	nodes/dash_shared/htdocs/config.meter.html
-	nodes/dash_shared/htdocs/config.upload.html
-	nodes/dash_shared/htdocs/config.download.html
-	nodes/dash_shared/htdocs/status.session.html
-	nodes/dash_shared/htdocs/status.system.html
-	nodes/dash_shared/htdocs/status.targets.html
-	nodes/dash_shared/htdocs/status.connections.html
-	nodes/dash_shared/htdocs/monitor.msg.html
-	nodes/dash_shared/htdocs/monitor.tsdb.html
-	nodes/dash_shared/htdocs/monitor.lora.html
-	nodes/dash_shared/htdocs/csv.task.html
-	nodes/dash_shared/htdocs/stat.task.html
-)
-
 set (node_dashs_schemes
 
 	nodes/shared/db/db_schemes.h
@@ -102,7 +79,6 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_dashs_tasks})
-source_group("assets" FILES ${node_dashs_assets})
 source_group("service" FILES ${node_dashs_service})
 source_group("info" FILES ${node_dashs_info})
 source_group("shared" FILES ${node_dashs_shared})
@@ -114,7 +90,6 @@ set (node_dashs
   ${node_dashs_cpp}
   ${node_dashs_h}
   ${node_dashs_tasks}
-  ${node_dashs_assets}
   ${node_dashs_service}
   ${node_dashs_info}
   ${node_dashs_shared}

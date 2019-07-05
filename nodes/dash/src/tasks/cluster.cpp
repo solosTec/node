@@ -151,6 +151,13 @@ namespace node
 		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
 		//
+		//	store local web ui configuration
+		//
+		cache_.insert("_Config", cyng::table::key_generator("http-session-timeout"), cyng::table::data_generator(timeout), 0u, cluster_tag);
+		cache_.insert("_Config", cyng::table::key_generator("http-max-upload-size"), cyng::table::data_generator(max_upload_size), 0u, cluster_tag);
+		cache_.insert("_Config", cyng::table::key_generator("https-rewrite"), cyng::table::data_generator(https_rewrite), 0u, cluster_tag);
+
+		//
 		//	subscribe to database
 		//
 		dispatcher_.subscribe(cache_);

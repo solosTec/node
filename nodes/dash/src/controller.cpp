@@ -210,7 +210,7 @@ namespace node
 							cyng::tuple_factory(
 								cyng::param_factory("directory", "/"),
 								cyng::param_factory("authType", "Basic"),
-								cyng::param_factory("realm", "Root Areay"),
+								cyng::param_factory("realm", "solos::Tec"),
 								cyng::param_factory("name", "auth@example.com"),
 								cyng::param_factory("pwd", "secret")
 							),
@@ -237,13 +237,14 @@ namespace node
 							})),	//	blacklist
 						cyng::param_factory("redirect", cyng::vector_factory({
 							cyng::param_factory("/", "/index.html"),
-							cyng::param_factory("/config/system", "/index.html"),
 							cyng::param_factory("/config/device", "/index.html"),
 							cyng::param_factory("/config/gateway", "/index.html"),
 							cyng::param_factory("/config/meter", "/index.html"),
 							cyng::param_factory("/config/lora", "/index.html"),
 							cyng::param_factory("/config/upload", "/index.html"),
 							cyng::param_factory("/config/download", "/index.html"),
+							cyng::param_factory("/config/system", "/index.html"),
+							cyng::param_factory("/config/web", "/index.html"),
 
 							cyng::param_factory("/status/sessions", "/index.html"),
 							cyng::param_factory("/status/targets", "/index.html"),

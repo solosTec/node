@@ -9,9 +9,15 @@
 #include <smf/https/srv/detector.h>
 #include <smf/https/srv/session.h>
 #include <smf/https/srv/websocket.h>
-#include <cyng/object_cast.hpp>
-#include <cyng/vm/controller.h>
+#include <smf/cluster/generator.h>
+
 #include <cyng/compatibility/async.h>
+#include <cyng/object_cast.hpp>
+#include <cyng/numeric_cast.hpp>
+#include <cyng/vm/controller.h>
+#include <cyng/table/key.hpp>
+#include <cyng/table/body.hpp>
+#include <cyng/io/serializer.h>
 
 namespace node
 {
@@ -22,25 +28,46 @@ namespace node
 			, std::string const& doc_root
 			, auth_dirs const& ad
 			, std::map<std::string, std::string> const& redirects
-            , std::size_t timeout
+			, std::size_t timeout
 			, std::uint64_t max_upload_size)
-		: logger_(logger)
+			: logger_(logger)
 			, vm_(vm)
 			, doc_root_(doc_root)
 			, auth_dirs_(ad)
 			, redirects_(redirects)
-            , timeout_(timeout)
+			, timeout_(timeout)
 			, max_upload_size_(max_upload_size)
 			, uidgen_()
 			, sessions_()
 			, mutex_()
 			, listener_plain_()
 			, listener_ssl_()
-		{}
+		{
+			vm_.register_function("modify.web.config", 2, std::bind(&connections::modify_config, this, std::placeholders::_1));
+		}
 
 		cyng::controller& connections::vm()
 		{
 			return vm_;
+		}
+
+		void connections::modify_config(cyng::context& ctx)
+		{
+			//	[http-session-timeout,33]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			auto const name = cyng::value_cast<std::string>(frame.at(0), "");
+			if (boost::algorithm::equals(name, "https-max-upload-size")) {
+				auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(frame.at(1), 1024 * 1024 * 10);
+				CYNG_LOG_INFO(logger_, "https-max-upload-size: " << max_upload_size_ << " => " << max_upload_size);
+				max_upload_size_ = max_upload_size;
+			}
+			else if (boost::algorithm::equals(name, "https-session-timeout")) {
+				auto const timeout = cyng::numeric_cast<std::size_t>(frame.at(1), 30u);
+				CYNG_LOG_INFO(logger_, "https-session-timeout: " << timeout_.count() << " => " << timeout);
+				timeout_ = std::chrono::seconds(timeout);
+			}
 		}
 
 		bool connections::redirect(std::string& path) const

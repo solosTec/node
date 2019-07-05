@@ -8,10 +8,15 @@
 #include <smf/http/srv/connections.h>
 #include <smf/http/srv/session.h>
 #include <smf/http/srv/websocket.h>
+#include <smf/cluster/generator.h>
 
 #include <cyng/factory.h>
 #include <cyng/object_cast.hpp>
+#include <cyng/numeric_cast.hpp>
 #include <cyng/vm/controller.h>
+#include <cyng/table/key.hpp>
+#include <cyng/table/body.hpp>
+#include <cyng/io/serializer.h>
 
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -44,11 +49,36 @@ namespace node
 			, sessions_()
 			, mutex_()
 			, listener_()
-		{}
+		{
+			vm_.register_function("modify.web.config", 2, std::bind(&connections::modify_config, this, std::placeholders::_1));
+		}
 
 		cyng::controller& connections::vm()
 		{
 			return vm_;
+		}
+
+		void connections::modify_config(cyng::context& ctx)
+		{
+			//	[http-max-upload-size,888888]
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			auto const name = cyng::value_cast<std::string>(frame.at(0), "");
+			if (boost::algorithm::equals(name, "http-max-upload-size")) {
+				auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(frame.at(1), 1024 * 1024 * 10);
+				CYNG_LOG_INFO(logger_, "http-max-upload-size: " << max_upload_size_ << " => " << max_upload_size);
+				max_upload_size_ = max_upload_size;
+			}
+			else if (boost::algorithm::equals(name, "http-session-timeout")) {
+				auto const timeout = cyng::numeric_cast<std::size_t>(frame.at(1), 30u);
+				CYNG_LOG_INFO(logger_, "http-session-timeout: " << timeout_.count() << " => " << timeout);
+				timeout_ = std::chrono::seconds(timeout);
+			}
+			else if (boost::algorithm::equals(name, "https-rewrite")) {
+				https_rewrite_ = cyng::value_cast(frame.at(1), false);
+				CYNG_LOG_INFO(logger_, "https-rewrite is " << (https_rewrite_ ? "on" : "off"));
+			}
 		}
 
 		bool connections::redirect(std::string& path) const
