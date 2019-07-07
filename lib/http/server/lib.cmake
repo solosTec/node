@@ -37,6 +37,8 @@ set (http_shared
 	lib/http/server/src/mime_type.cpp
 	src/main/include/smf/http/srv/url.h
 	lib/http/server/src/url.cpp
+	src/main/include/smf/http/srv/generator.h
+	lib/http/server/src/generator.cpp
 )
 
 source_group("parser" FILES ${http_parser})

@@ -7,9 +7,13 @@
 
 #include <smf/http/srv/websocket.h>
 #include <smf/http/srv/connections.h>
+#include <smf/http/srv/generator.h>
+
 #include <cyng/json.h>
 #include <cyng/vm/generator.h>
 #include <cyng/vm/domain/log_domain.h>
+#include <cyng/table/key.hpp>
+
 #include <boost/assert.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/functional/hash.hpp>
@@ -311,6 +315,15 @@ namespace node
 #endif
 			
 			CYNG_LOG_TRACE(logger_, "ws " << tag() << " read - " << str);
+
+			//
+			//	update session status
+			//
+			connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+				, cyng::table::key_generator(tag_)
+				, cyng::param_factory("status", str)
+				, 0u
+				, connection_manager_.vm().tag()));
 
 			//
 			//	execute on bus VM

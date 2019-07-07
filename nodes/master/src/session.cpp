@@ -485,7 +485,6 @@ namespace node
 			//
 			//	register additional request handler for database access
 			//
-
 			cyng::register_store(this->db_, ctx);
 
 			//

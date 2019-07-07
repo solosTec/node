@@ -48,7 +48,10 @@ namespace node
 			, cyng::table::data_type const&
 			, std::uint64_t
 			, boost::uuids::uuid);
+		void sig_insert(cyng::table::record const&, std::string);
+		void sig_delete(cyng::table::key_type const& key, std::string channel);
 		void sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid);
+		void sig_clear(std::string channel);
 		void sig_clr(cyng::store::table const*, boost::uuids::uuid);
 		void sig_mod(cyng::store::table const*
 			, cyng::table::key_type const&

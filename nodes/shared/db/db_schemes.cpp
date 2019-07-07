@@ -359,6 +359,30 @@ namespace node
 				, 64		//	evt
 				, 128 });	//	obj
 		}
+		else if (boost::algorithm::equals(name, "_HTTPSession")) {
+			return cyng::table::make_meta_table<1, 5>(name,
+				{ "tag"			//	[uuid] client session - primary key 
+				, "ep"			//	[ep] remote endpoint
+				, "type"		//	[string] HTTP, HTTPS, WS, WSS
+				, "start"		//	[ts] start time
+				, "authorized"	//	[bool] authorized
+				, "status"		//	[string] status text
+				},
+				{ cyng::TC_UUID				//	tag
+				, cyng::TC_IP_TCP_ENDPOINT	//	ep
+				, cyng::TC_STRING			//	type
+				, cyng::TC_TIME_POINT		//	start
+				, cyng::TC_BOOL				//	authorized
+				, cyng::TC_STRING			//	status
+				},
+				{ 36	//	tag
+				, 0		//	ep
+				, 6		//	type
+				, 0		//	start
+				, 0 	//	authorized
+				, 128	//	status
+				});
+		}
 		//else if (boost::algorithm::equals(name, "_TimeSeriesParams")) {
 
 		//	return cyng::table::make_meta_table<1, 3>(name, 

@@ -13,6 +13,7 @@
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
 #include <cyng/vm/domain/log_domain.h>
+#include <cyng/vm/domain/store_domain.h>
 #include <cyng/table/meta.hpp>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>

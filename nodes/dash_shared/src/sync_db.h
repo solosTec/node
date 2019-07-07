@@ -32,6 +32,11 @@ namespace node
 		void db_res_remove(cyng::context& ctx);
 		void db_res_modify_by_attr(cyng::context& ctx);
 		void db_res_modify_by_param(cyng::context& ctx);
+
+		/**
+		 * Cannot use the implementation of the store_domain (CYNG) because
+		 * of the additional source (UUID) parameter.
+		 */
 		void db_req_insert(cyng::context& ctx);
 		void db_req_remove(cyng::context& ctx);
 		void db_req_modify_by_param(cyng::context& ctx);

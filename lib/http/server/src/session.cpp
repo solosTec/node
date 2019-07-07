@@ -13,10 +13,12 @@
 #include <smf/http/srv/connections.h>
 #include <smf/http/srv/parser/multi_part.h>
 #include <smf/http/srv/url.h>
+#include <smf/http/srv/generator.h>
 
 #include <cyng/vm/generator.h>
 #include <cyng/vm/controller.h>
 #include <cyng/io/serializer.h>
+#include <cyng/table/key.hpp>
 
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/functional/hash.hpp>
@@ -384,9 +386,21 @@ namespace node
 										, stream_.socket().remote_endpoint()
 #endif
 									));
-									authorized_ = true;
-								}
 
+									//
+									//	mark session as authorized
+									//
+									authorized_ = true;
+
+									//
+									//	update web session table
+									//
+									connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+										, cyng::table::key_generator(tag())
+										, cyng::param_factory("authorized", authorized_)
+										, 0u
+										, tag()));
+								}
 							}
 							else {
 								CYNG_LOG_WARNING(logger_, "authorization failed "
@@ -444,8 +458,13 @@ namespace node
 				if (ec == boost::system::errc::no_such_file_or_directory)
 				{
 					//
-					//	ToDo: send system message
+					//	update web session table
 					//
+					connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+						, cyng::table::key_generator(tag())
+						, cyng::param_factory("status", "404 " + req.target().to_string())
+						, 0u
+						, tag()));
 
 					//
 					//	404
@@ -467,6 +486,15 @@ namespace node
 
 				if (req.method() == boost::beast::http::verb::head)
 				{
+					//
+					//	update web session table
+					//
+					connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+						, cyng::table::key_generator(tag())
+						, cyng::param_factory("status", "HEAD " + req.target().to_string())
+						, 0u
+						, tag()));
+
 					// Respond to HEAD request
 					return queue_(send_head(req.version(), req.keep_alive(), path, size));
 				}
@@ -486,6 +514,15 @@ namespace node
 						, path
 						, size));
 #endif
+					//
+					//	update web session table
+					//
+					connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+						, cyng::table::key_generator(tag())
+						, cyng::param_factory("status", "GET " + req.target().to_string())
+						, 0u
+						, tag()));
+
 					return;
 				}
 			}
@@ -503,6 +540,15 @@ namespace node
 
 				if (boost::algorithm::equals(content_type, "application/xml"))
 				{
+					//
+					//	update web session table
+					//
+					connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+						, cyng::table::key_generator(tag())
+						, cyng::param_factory("status", "POST XML " + req.target().to_string())
+						, 0u
+						, tag()));
+
 					connection_manager_.vm().async_run(cyng::generate_invoke("http.post.xml"
 						, tag_
 						, req.version()
@@ -514,6 +560,15 @@ namespace node
 				//	Content-Type:application/json; charset=UTF-8
 				else if (boost::algorithm::starts_with(content_type, "application/json"))
 				{
+					//
+					//	update web session table
+					//
+					connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+						, cyng::table::key_generator(tag())
+						, cyng::param_factory("status", "POST JSON " + req.target().to_string())
+						, 0u
+						, tag()));
+
 					connection_manager_.vm().async_run(cyng::generate_invoke("http.post.json"
 						, tag_
 						, static_cast<std::uint32_t>(req.version())
@@ -524,6 +579,15 @@ namespace node
 				}
 				else if (boost::algorithm::starts_with(content_type, "application/x-www-form-urlencoded"))
 				{
+					//
+					//	update web session table
+					//
+					connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+						, cyng::table::key_generator(tag())
+						, cyng::param_factory("status", "POST application/x-www-form-urlencoded " + req.target().to_string())
+						, 0u
+						, tag()));
+
 					//	start parser
 					connection_manager_.vm().async_run(cyng::generate_invoke("http.post.form.urlencoded"
 						, tag_
@@ -535,6 +599,15 @@ namespace node
 				}
 				else if (boost::algorithm::starts_with(content_type, "multipart/form-data"))
 				{
+					//
+					//	update web session table
+					//
+					connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+						, cyng::table::key_generator(tag())
+						, cyng::param_factory("status", "POST multipart/form-data " + req.target().to_string())
+						, 0u
+						, tag()));
+
 					//
 					//	payload parser
 					//
@@ -567,6 +640,12 @@ namespace node
 						mpp.parse(req.body().begin(), req.body().end());
 					}
 					else {
+						connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+							, cyng::table::key_generator(tag())
+							, cyng::param_factory("status", "POST " + req.target().to_string())
+							, 0u
+							, tag()));
+
 						CYNG_LOG_WARNING(logger_, "no payload for " << target);
 					}
 				}

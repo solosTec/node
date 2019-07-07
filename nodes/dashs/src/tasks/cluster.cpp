@@ -357,7 +357,6 @@ namespace node
 		//	* origin session id
 		//	* optional task id
 		//	
-		//CYNG_LOG_TRACE(logger_, "res.subscribe - " << cyng::io::to_str(frame));
 
 		auto tpl = cyng::tuple_cast<
 			std::string,			//	[0] table name

@@ -178,6 +178,11 @@ namespace node
 			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		db.get_listener("_HTTPSession"
+			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 		db.get_listener("_SysMsg"
 			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
 			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
@@ -208,6 +213,17 @@ namespace node
 
 	}
 
+	void dispatcher::sig_insert(cyng::table::record const& rec, std::string channel)
+	{
+		auto const tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("insert")),
+			cyng::param_factory("channel", channel),
+			cyng::param_factory("rec", rec.convert()));
+
+		auto msg = cyng::json::to_string(tpl);
+		connection_manager_.push_event(channel, msg);
+	}
+
 	void dispatcher::sig_ins(cyng::store::table const* tbl
 		, cyng::table::key_type const& key
 		, cyng::table::data_type const& data
@@ -218,163 +234,71 @@ namespace node
 
 		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "config.device"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.device", msg);
-
+			sig_insert(rec, "config.device");
 			update_channel("table.device.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
 		{
-			//	data: {"cmd": "insert", "channel": "config.device", "rec": {"key": {"pk":"0b5c2a64-5c48-48f1-883b-e5be3a3b1e3d"}, "data": {"creationTime":"2018-02-04 15:31:34.00000000","descr":"comment #55","enabled":true,"id":"ID","msisdn":"1055","name":"device-55","pwd":"crypto","query":6,"vFirmware":"v55"}, "gen": 55}}
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "config.gateway"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.gateway", msg);
-
+			sig_insert(rec, "config.gateway");
 			update_channel("table.gateway.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "TMeter"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "config.meter"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.meter", msg);
-
+			sig_insert(rec, "config.meter");
 			update_channel("table.meter.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
 		{
-			//	
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "config.lora"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.lora", msg);
-
+			sig_insert(rec, "config.lora");
 			update_channel("table.LoRa.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "status.session"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.session", msg);
-
+			sig_insert(rec, "status.session");
 			update_channel("table.session.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Target"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "status.target"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.target", msg);
-
+			sig_insert(rec, "status.target");
 			update_channel("table.target.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Connection"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "status.connection"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.connection", msg);
-
+			sig_insert(rec, "status.connection");
 			update_channel("table.connection.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Cluster"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "status.cluster"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.cluster", msg);
-
+			sig_insert(rec, "status.cluster");
 			update_channel("table.cluster.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "config.sys"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.sys", msg);
+			sig_insert(rec, "config.sys");
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_HTTPSession"))
+		{
+			sig_insert(rec, "web.sessions");
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "monitor.msg"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("monitor.msg", msg);
-
+			sig_insert(rec, "monitor.msg");
 			update_channel("table.msg.count", tbl->size());
-
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeries"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "monitor.tsdb"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("monitor.tsdb", msg);
-
+			sig_insert(rec, "monitor.tsdb");
 			update_channel("table.tsdb.count", tbl->size());
-
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_LoRaUplink"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "monitor.lora"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("monitor.lora", msg);
-
+			sig_insert(rec, "monitor.lora");
 			update_channel("table.uplink.count", tbl->size());
-
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("insert")),
-				cyng::param_factory("channel", "task.csv"),
-				cyng::param_factory("rec", rec.convert()));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("task.csv", msg);
-
+			sig_insert(rec, "task.csv");
 			update_channel("table.csv.count", tbl->size());
-
 		}
 		//else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeriesParams"))
 		//{
@@ -396,144 +320,78 @@ namespace node
 		}
 	}
 
+	void dispatcher::sig_delete(cyng::table::key_type const& key, std::string channel)
+	{
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("delete")),
+			cyng::param_factory("channel", channel),
+			cyng::param_factory("key", key));
+
+		auto msg = cyng::json::to_string(tpl);
+		connection_manager_.push_event(channel, msg);
+	}
+
 	void dispatcher::sig_del(cyng::store::table const* tbl, cyng::table::key_type const& key, boost::uuids::uuid source)
 	{
 		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "config.device"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.device", msg);
-
+			sig_delete(key, "config.device");
 			update_channel("table.device.count", tbl->size());
-
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "config.gateway"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.gateway", msg);
+			sig_delete(key, "config.gateway");
 			update_channel("table.gateway.count", tbl->size());
-
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "TMeter"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "config.meter"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.meter", msg);
+			sig_delete(key, "config.meter");
 			update_channel("table.meter.count", tbl->size());
-
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "config.lora"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.lora", msg);
+			sig_delete(key, "config.lora");
 			update_channel("table.LoRa.count", tbl->size());
-
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "status.session"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.session", msg);
-
+			sig_delete(key, "status.session");
 			update_channel("table.session.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Target"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "status.target"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.target", msg);
-
+			sig_delete(key, "status.target");
 			update_channel("table.target.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Connection"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "status.connection"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.connection", msg);
-
+			sig_delete(key, "status.connection");
 			update_channel("table.connection.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Cluster"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "status.cluster"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.cluster", msg);
-
+			sig_delete(key, "status.cluster");
 			update_channel("table.cluster.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "monitor.msg"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("monitor.msg", msg);
+			sig_delete(key, "monitor.msg");
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeries"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "monitor.tsdb"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("monitor.tsdb", msg);
+			sig_delete(key, "monitor.tsdb");
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_LoRaUplink"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "monitor.lora"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("monitor.lora", msg);
+			sig_delete(key, "monitor.lora");
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("delete")),
-				cyng::param_factory("channel", "task.csv"),
-				cyng::param_factory("key", key));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("task.csv", msg);
+			sig_delete(key, "task.csv");
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_HTTPSession"))
+		{
+			sig_delete(key, "web.sessions");
 		}
 		//else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeriesParams"))
 		//{
@@ -552,114 +410,64 @@ namespace node
 		}
 	}
 
+	void dispatcher::sig_clear(std::string channel)
+	{
+		auto tpl = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("clear")),
+			cyng::param_factory("channel", channel));
+
+		auto msg = cyng::json::to_string(tpl);
+		connection_manager_.push_event(channel, msg);
+	}
+
 	void dispatcher::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
 	{
 		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "config.device"));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.device", msg);
-
+			sig_clear("config.device");
 			update_channel("table.device.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "config.gateway"));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.gateway", msg);
+			sig_clear("config.gateway");
 			update_channel("table.gateway.count", tbl->size());
-
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "TMeter"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "config.meter"));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.meter", msg);
+			sig_clear("config.meter");
 			update_channel("table.meter.count", tbl->size());
-
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "status.session"));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.session", msg);
-
+			sig_clear("status.session");
 			update_channel("table.session.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Target"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "status.target"));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.target", msg);
-
+			sig_clear("status.target");
 			update_channel("table.target.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Connection"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "status.connection"));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.connection", msg);
-
+			sig_clear("status.connection");
 			update_channel("table.connection.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Cluster"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "status.cluster"));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.cluster", msg);
-
+			sig_clear("status.cluster");
 			update_channel("table.cluster.count", tbl->size());
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "monitor.msg"));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("monitor.msg", msg);
-
+			sig_clear("monitor.msg");
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeries"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "monitor.tsdb"));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("monitor.tsdb", msg);
-
+			sig_clear("monitor.tsdb");
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_LoRaUplink"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "monitor.lora"));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("monitor.lora", msg);
-
+			sig_clear("monitor.lora");
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
 		{
@@ -667,12 +475,7 @@ namespace node
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
 		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("clear")),
-				cyng::param_factory("channel", "task.csv"));
-
-			auto msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("task.csv", msg);
+			sig_clear("task.csv");
 		}
 		//else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeriesParams"))
 		//{
@@ -799,11 +602,21 @@ namespace node
 				cyng::param_factory("cmd", std::string("modify")),
 				cyng::param_factory("channel", "config.system"),
 				cyng::param_factory("key", key),
-				//	don't send value.value
-				cyng::make_object(tbl->meta().to_param(attr)));
+				tbl->meta().to_param(attr));	//	don't send value.value
 
 			auto const msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event("config.system", msg);
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_HTTPSession"))
+		{
+			auto tpl = cyng::tuple_factory(
+				cyng::param_factory("cmd", std::string("modify")),
+				cyng::param_factory("channel", "web.sessions"),
+				cyng::param_factory("key", key),
+				tbl->meta().to_param(attr));	//	don't send value.value
+
+			auto const msg = cyng::json::to_string(tpl);
+			connection_manager_.push_event("web.sessions", msg);
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
 		{
@@ -858,8 +671,11 @@ namespace node
 		}
 		else if (boost::algorithm::starts_with(channel, "config.web"))
 		{
-			//subscribe(db, "_Config", channel, tag);
 			subscribe_web(db, channel, tag);
+		}
+		else if (boost::algorithm::starts_with(channel, "web.sessions"))
+		{
+			subscribe(db, "_HTTPSession", channel, tag);
 		}
 		else if (boost::algorithm::starts_with(channel, "status.session"))
 		{

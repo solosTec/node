@@ -197,6 +197,11 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table _LoRaUplink");
 		}
 
+		if (!create_table(db, "_HTTPSession"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table _HTTPSession");
+		}
+
 		//
 		//	all tables created
 		//
@@ -447,15 +452,19 @@ namespace node
 		//	* record key
 		//	* record data
 		//	* generation
+		//	* source
 		//	
 		CYNG_LOG_TRACE(logger_, "db.req.insert - " << cyng::io::to_str(frame));
 
+		//
+		//	note: this cast is different from the cast in the store_domain (CYNG).
+		//
 		auto tpl = cyng::tuple_cast<
 			std::string,			//	[0] table name
 			cyng::table::key_type,	//	[1] table key
 			cyng::table::data_type,	//	[2] record
 			std::uint64_t,			//	[3] generation
-			boost::uuids::uuid		//	[4] source
+			boost::uuids::uuid		//	[4] source - explicit
 		>(frame);
 
 		//

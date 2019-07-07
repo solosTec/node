@@ -8,7 +8,7 @@
 #include <smf/http/srv/connections.h>
 #include <smf/http/srv/session.h>
 #include <smf/http/srv/websocket.h>
-#include <smf/cluster/generator.h>
+#include <smf/http/srv/generator.h>
 
 #include <cyng/factory.h>
 #include <cyng/object_cast.hpp>
@@ -99,6 +99,7 @@ namespace node
 
 		void connections::create_session(boost::asio::ip::tcp::socket socket)
 		{
+			auto const rep = socket.remote_endpoint();
 
             //
             //  create HTTP session object
@@ -122,6 +123,15 @@ namespace node
 				cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[HTTP_PLAIN]);
 				sessions_[HTTP_PLAIN].emplace(sp->tag(), obj);
 				sp->run(obj);
+
+				//
+				//	populate web session table
+				//
+				vm_.async_run(node::db::insert("_HTTPSession"
+					, cyng::table::key_generator(sp->tag())
+					, cyng::table::data_generator(rep, "HTTP", std::chrono::system_clock::now(), false, "initial (HTTP)")
+					, 0u
+					, vm_.tag()));				
 			}
 		}
 
@@ -129,6 +139,7 @@ namespace node
 			, boost::asio::ip::tcp::socket socket
 			, boost::beast::http::request<boost::beast::http::string_body> req)
 		{
+
 			//	plain websocket
 			auto obj = cyng::make_object<websocket_session>(logger_
 				, *this
@@ -156,11 +167,27 @@ namespace node
 
 				wp->do_accept(std::move(req), obj);
 
+				//
+				//	update session type
+				//
+				vm_.async_run(node::db::modify_by_param("_HTTPSession"
+					, cyng::table::key_generator(tag)
+					, cyng::param_factory("type", "WS")
+					, 0u
+					, vm_.tag()));
+
 			}
 		}
 
 		cyng::object connections::stop_session(boost::uuids::uuid tag)
 		{
+			//
+			//	remove from web session table
+			//
+			vm_.async_run(node::db::remove("_HTTPSession"
+				, cyng::table::key_generator(tag)
+				, vm_.tag()));
+
 			//
 			//	unique lock
 			//
@@ -183,6 +210,10 @@ namespace node
 
 		cyng::object connections::stop_ws(boost::uuids::uuid tag)
 		{
+			vm_.async_run(node::db::remove("_HTTPSession"
+				, cyng::table::key_generator(tag)
+				, vm_.tag()));
+
 			//
 			//	unique lock
 			//
@@ -257,6 +288,11 @@ namespace node
 			sessions_[HTTP_PLAIN].clear();
 			sessions_[SOCKET_PLAIN].clear();
 			listener_.clear();
+
+			//
+			//	clear web session table
+			//
+			vm_.async_run(node::db::clear("_HTTPSession"));
 		}
 
 		bool connections::ws_msg(boost::uuids::uuid tag, std::string const& msg)

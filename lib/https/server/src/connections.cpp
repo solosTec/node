@@ -10,6 +10,7 @@
 #include <smf/https/srv/session.h>
 #include <smf/https/srv/websocket.h>
 #include <smf/cluster/generator.h>
+#include <smf/http/srv/generator.h>
 
 #include <cyng/compatibility/async.h>
 #include <cyng/object_cast.hpp>
@@ -218,6 +219,16 @@ namespace node
 				}	//	unlock
 
 				wp->run(obj, std::move(req));
+
+				//
+				//	update session type
+				//
+				vm_.async_run(node::db::modify_by_param("_HTTPSession"
+					, cyng::table::key_generator(tag)
+					, cyng::param_factory("type", "WS")
+					, 0u
+					, vm_.tag()));
+
 			}
 		}
 
@@ -246,12 +257,27 @@ namespace node
 				}	//	implicit unlock
 
 				wp->run(obj, std::move(req));
+
+				//
+				//	update session type
+				//
+				vm_.async_run(node::db::modify_by_param("_HTTPSession"
+					, cyng::table::key_generator(tag)
+					, cyng::param_factory("type", "WSS")
+					, 0u
+					, vm_.tag()));
+
 			}
 		}
 
 		void connections::add_ssl_session(boost::beast::tcp_stream stream, boost::asio::ssl::context& ctx, boost::beast::flat_buffer buffer)
 		{
-            //
+			//
+			//	get remote endpoint
+			//
+			auto const rep = stream.socket().remote_endpoint();
+
+			//
             //  set connection timeout
             //
             stream.expires_after(timeout_);
@@ -274,11 +300,26 @@ namespace node
 			if (sp != nullptr) {
 				sessions_[HTTP_SSL].emplace(sp->tag(), obj);
 				sp->run(obj);
+
+				//
+				//	populate web session table
+				//
+				vm_.async_run(node::db::insert("_HTTPSession"
+					, cyng::table::key_generator(sp->tag())
+					, cyng::table::data_generator(rep, "HTTPS", std::chrono::system_clock::now(), false, "initial (HTTPS)")
+					, 0u
+					, vm_.tag()));
+
 			}
 		}
 
 		void connections::add_plain_session(boost::beast::tcp_stream stream, boost::beast::flat_buffer buffer)
 		{
+			//
+			//	get remote endpoint
+			//
+			auto const rep = stream.socket().remote_endpoint();
+
             //
             //  set connection timeout
             //
@@ -301,6 +342,16 @@ namespace node
 			if (sp != nullptr) {
 				sessions_[HTTP_PLAIN].emplace(sp->tag(), obj);
 				sp->run(obj);
+
+				//
+				//	populate web session table
+				//
+				vm_.async_run(node::db::insert("_HTTPSession"
+					, cyng::table::key_generator(sp->tag())
+					, cyng::table::data_generator(rep, "HTTP", std::chrono::system_clock::now(), false, "initial (HTTPS)")
+					, 0u
+					, vm_.tag()));
+
 			}
 		}
 
@@ -360,6 +411,13 @@ namespace node
 		cyng::object connections::stop_session(boost::uuids::uuid tag)
 		{
 			//
+			//	remove from web session table
+			//
+			vm_.async_run(node::db::remove("_HTTPSession"
+				, cyng::table::key_generator(tag)
+				, vm_.tag()));
+
+			//
 			//	unique lock: HTTP_PLAIN
 			//
 			{
@@ -398,6 +456,13 @@ namespace node
 
 		cyng::object connections::stop_ws(boost::uuids::uuid tag)
 		{
+			//
+			//	remove from web session table
+			//
+			vm_.async_run(node::db::remove("_HTTPSession"
+				, cyng::table::key_generator(tag)
+				, vm_.tag()));
+
 			//
 			//	unique lock: SOCKET_PLAIN
 			//
@@ -540,6 +605,11 @@ namespace node
 			sessions_[SOCKET_SSL].clear();
 			listener_plain_.clear();
 			listener_ssl_.clear();
+
+			//
+			//	clear web session table
+			//
+			vm_.async_run(node::db::clear("_HTTPSession"));
 		}
 
 		//
