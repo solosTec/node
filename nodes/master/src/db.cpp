@@ -7,7 +7,7 @@
 
 
 #include "db.h"
-#include "../../shared/db/db_schemes.h"
+#include <smf/shared/db_schemes.h>
 #include <NODE_project_info.h>
 #include <cyng/table/meta.hpp>
 #include <cyng/intrinsics/traits/tag.hpp>

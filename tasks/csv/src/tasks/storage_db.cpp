@@ -9,7 +9,7 @@
 #include "profile_15_min.h"
 #include "profile_60_min.h"
 #include "profile_24_h.h"
-#include "../../../../nodes/shared/db/db_meta.h"
+#include <smf/shared/db_meta.h>
 
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>

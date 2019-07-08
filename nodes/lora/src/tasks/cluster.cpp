@@ -7,7 +7,7 @@
 
 #include "cluster.h"
 #include <smf/cluster/generator.h>
-#include "../../../shared/db/db_schemes.h"
+#include <smf/shared/db_schemes.h>
 
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>

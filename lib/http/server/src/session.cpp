@@ -312,7 +312,8 @@ namespace node
 					, "Illegal request-target"));
 			}
 
-			CYNG_LOG_TRACE(logger_, "HTTP request: " << req.target());
+			auto target = req.target().to_string();
+			CYNG_LOG_TRACE(logger_, "HTTP request: " << target);
 
 			//
 			//	handle GET and HEAD methods immediately
@@ -336,9 +337,10 @@ namespace node
 				//
 				//	test authorization
 				//
+
 #ifdef NODE_SSL_INSTALLED
 				for (auto const& ad : auth_dirs_) {
-					if (boost::algorithm::starts_with(req.target(), ad.first)) {
+					if (boost::algorithm::starts_with(target, ad.first)) {
 
 						//
 						//	Test auth token
@@ -436,7 +438,6 @@ namespace node
 #endif
 
 				//	apply redirections
-				std::string target = req.target().to_string();
 				connection_manager_.redirect(target);
 
 				// Build the path to the requested file

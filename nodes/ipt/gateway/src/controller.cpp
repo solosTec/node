@@ -10,7 +10,7 @@
 #include <NODE_project_info.h>
 #include "tasks/network.h"
 #include "tasks/virtual_meter.h"
-#include "../../../../nodes/shared/db/db_meta.h"
+#include <smf/shared/db_meta.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/obis_db.h>

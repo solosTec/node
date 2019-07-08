@@ -7,7 +7,7 @@
 
 #include "sml_to_db_consumer.h"
 #include "../message_ids.h"
-#include "../../../../../nodes/shared/db/db_meta.h"
+#include <smf/shared/db_meta.h>
 
 #include <smf/sml/defs.h>
 #include <NODE_project_info.h>

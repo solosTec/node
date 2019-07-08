@@ -7,7 +7,7 @@
 
 
 #include <cyng/store/db.h>
-#include "db_schemes.h"
+#include <smf/shared/db_schemes.h>
 
 #include <cyng/table/meta.hpp>
 

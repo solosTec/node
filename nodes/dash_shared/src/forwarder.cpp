@@ -6,7 +6,7 @@
  */ 
 
 #include "forwarder.h"
-#include "../../shared/db/db_schemes.h"
+#include <smf/shared/db_schemes.h>
 #include <smf/cluster/generator.h>
 #include <cyng/table/key.hpp>
 #include <cyng/io/serializer.h>

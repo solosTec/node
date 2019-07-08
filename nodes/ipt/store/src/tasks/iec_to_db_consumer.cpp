@@ -7,7 +7,7 @@
 
 #include "iec_to_db_consumer.h"
 #include "../message_ids.h"
-#include "../../../../../nodes/shared/db/db_meta.h"
+#include <smf/shared/db_meta.h>
 
 #include <smf/iec/defs.h>
 #include <smf/sml/obis_io.h>

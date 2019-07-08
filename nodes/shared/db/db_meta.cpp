@@ -6,7 +6,7 @@
  */
 
 
-#include "db_meta.h"
+#include <smf/shared/db_meta.h>
 #include <cyng/table/meta.hpp>
 #include <cyng/store/db.h>
 #include <boost/algorithm/string.hpp>

@@ -6,7 +6,7 @@
  */ 
 
 #include "sync_db.h"
-#include "../../shared/db/db_schemes.h"
+#include <smf/shared/db_schemes.h>
 #include <smf/cluster/generator.h>
 
 #include <cyng/table/meta.hpp>
