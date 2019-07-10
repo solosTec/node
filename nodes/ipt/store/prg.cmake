@@ -16,7 +16,7 @@ set (node_ipt_store_h
 
 set (node_ipt_store_schemes
 
-	nodes/shared/db/db_meta.h
+	src/main/include/smf/shared/db_meta.h
 	nodes/shared/db/db_meta.cpp
 )
 

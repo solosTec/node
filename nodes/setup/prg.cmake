@@ -47,7 +47,7 @@ set (node_setup_tasks
 
 set (node_setup_schemes
 
-	nodes/shared/db/db_schemes.h
+	src/main/include/smf/shared/db_schemes.h
 	nodes/shared/db/db_schemes.cpp
 )
 

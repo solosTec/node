@@ -14,7 +14,7 @@ set (task_csv_h
 
 set (task_csv_schemes
 
-	nodes/shared/db/db_meta.h
+	src/main/include/smf/shared/db_meta.h
 	nodes/shared/db/db_meta.cpp
 )
 

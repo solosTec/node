@@ -26,7 +26,7 @@ set (node_ipt_gateway_h
 
 set (node_ipt_gateway_schemes
 
-	nodes/shared/db/db_meta.h
+	src/main/include/smf/shared/db_meta.h
 	nodes/shared/db/db_meta.cpp
 )
 

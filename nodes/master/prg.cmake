@@ -56,7 +56,7 @@ set (node_master_shared
 
 set (node_master_schemes
 
-	nodes/shared/db/db_schemes.h
+	src/main/include/smf/shared/db_schemes.h
 	nodes/shared/db/db_schemes.cpp
 )
 
