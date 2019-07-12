@@ -80,7 +80,8 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 49, 00, 00, 10, FF, PUSH_SERVICE);	//	options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 21, FF, PUSH_SERVICE_IPT); //	SML data response without request - typical IP - T push
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 22, FF, PUSH_SERVICE_SML); //	SML data response without request - target is SML client address
-		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 23, FF, PUSH_SERVICE_KNX); //	target is KNX ID
+		//const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 23, FF, PUSH_SERVICE_KNX); //	target is KNX ID
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 23, FF, DATA_COLLECTOR_OBIS); //	OBIS list (data mirror)
 
 
 		//
@@ -198,11 +199,14 @@ namespace node
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 00, FF, CODE_ROOT_SENSOR_PARAMS);	//	properties of data sensor/actor (Eigenschaften eines Datenspiegels)
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 01, FF, CODE_ROOT_SENSOR_BITMASK);	//	Bitmask to define bits that will be transferred into log
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 02, FF, CODE_AVERAGE_TIME_MS);	//	average time between two received data records (milliseconds)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 20, FF, CODE_ROOT_DATA_COLLECTOR);	//	properties of data collector (Eigenschaften eines Datensammlers)
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 21, FF, DATA_COLLECTOR_ACTIVE);	//	true/false
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 22, FF, DATA_COLLECTOR_SIZE);		//	max. table size
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 04, FF, CODE_TIME_REFERENCE);	//	[u8] 0 == UTC, 1 == UTC + time zone, 2 == local time
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 87, 81, FF, DATA_COLLECTOR_PERIOD);	//	 (u32) register period in seconds (0 == event driven)
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 01, FF, CODE_ROOT_NTP);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 10, FF, CODE_ROOT_DEVICE_TIME);	//	device time
-		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 20, FF, CODE_ROOT_DATA_COLLECTOR);	//	properties of data collector (Eigenschaften eines Datensammlers)
-		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 02, FF, CODE_AVERAGE_TIME_MS);	//	average time between two received data records (milliseconds)
-		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 04, FF, CODE_TIME_REFERENCE);	//	[u8] 0 == UTC, 1 == UTC + time zone, 2 == local time
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 00, FF, CODE_IF_1107);	 //	1107 interface (IEC 62056-21)
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 01, FF, CODE_IF_1107_ACTIVE); //	(bool) - if true 1107 interface active

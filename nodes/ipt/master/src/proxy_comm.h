@@ -47,6 +47,7 @@ namespace node
 		void sml_get_proc_param_ipt_param(cyng::context& ctx);
 		void sml_get_proc_param_iec_config(cyng::context& ctx);
 		void sml_get_proc_param_meter(cyng::context& ctx);
+		void sml_get_proc_param_data_mirror(cyng::context& ctx);
 		void sml_get_list_response(cyng::context& ctx);
 		void sml_attention_msg(cyng::context& ctx);
 

@@ -29,7 +29,11 @@ namespace node
 			readout& set_trx(cyng::buffer_t const&);
 			readout& set_index(std::size_t);
 			readout& set_value(std::string const&, cyng::object);
+			/**
+			 * overwrite existing values
+			 */
 			readout& set_value(cyng::param_t const&);
+			readout& set_value(cyng::param_map_t&&);
 			readout& set_value(obis, cyng::object);
 			readout& set_value(obis, std::string, cyng::object);
 			cyng::object get_value(std::string const&) const;

@@ -13,6 +13,7 @@
 #include <smf/sml/status.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/ip_io.h>
+#include <smf/sml/obis_db.h>
 #include <smf/mbus/defs.h>
 
 #include <cyng/dom/reader.h>
@@ -1113,13 +1114,32 @@ namespace node
 			}
 
 			//BOOST_ASSERT(evt.vec_.size() == 8);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_meterg to #" << task_.tsk_proxy_);
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_meter to #" << task_.tsk_proxy_);
 
 			//
 			//	message slot (5)
 			//
 			task_.get_proc_param_meter(sp_->mux_, evt.vec_);
 
+		}
+
+		void session_state::react(state::evt_sml_get_proc_param_data_mirror evt)
+		{
+			switch (state_) {
+			case S_CONNECTED_TASK:
+				break;
+			default:
+				signal_wrong_state("evt_sml_get_proc_param_data_mirror");
+				return;
+			}
+
+			//BOOST_ASSERT(evt.vec_.size() == 8);
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_data_mirror to #" << task_.tsk_proxy_);
+
+			//
+			//	message slot (5)
+			//
+			task_.get_proc_param_data_mirror(sp_->mux_, evt.vec_);
 		}
 
 		void session_state::react(state::evt_sml_get_proc_param_ipt_status evt)
@@ -1642,6 +1662,13 @@ namespace node
 			{}
 
 			//
+			//	EVENT: evt_sml_get_proc_param_data_mirror
+			//
+			evt_sml_get_proc_param_data_mirror::evt_sml_get_proc_param_data_mirror(cyng::vector_t vec)
+				: vec_(vec)
+			{}
+
+			//
 			//	EVENT: evt_sml_get_list_response
 			//
 			evt_sml_get_list_response::evt_sml_get_list_response(cyng::vector_t vec)
@@ -2093,6 +2120,32 @@ namespace node
 						("aesKey", vec.at(12))
 						("user", vec.at(13))
 						("pwd", vec.at(14))
+					()
+				});
+			}
+
+			void state_connected_task::get_proc_param_data_mirror(cyng::async::mux& mux, cyng::vector_t vec)
+			{
+				cyng::buffer_t tmp;
+				node::sml::obis code(cyng::value_cast(vec.at(9), tmp));
+				std::string const profile = (node::sml::is_profile(code))
+					? node::sml::get_name(code)
+					: "no-profile"
+					;
+
+				mux.post(tsk_proxy_, 5, cyng::tuple_t{
+					vec.at(1),	//	trx
+					vec.at(2),	//	idx
+					vec.at(3),	//	server ID
+					vec.at(4),	//	OBIS code
+								//	meter configuration record
+					cyng::param_map_factory("idx", vec.at(5))
+						("active", vec.at(6))
+						("size", cyng::numeric_cast<std::uint32_t>(vec.at(7), 0))
+						("period", cyng::numeric_cast<std::uint32_t>(vec.at(8), 0))
+						("OBIS", vec.at(9))
+						("profile", profile)
+						("registers", vec.at(10))
 					()
 				});
 			}

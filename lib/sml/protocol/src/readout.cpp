@@ -60,6 +60,18 @@ namespace node
 			return *this;
 		}
 
+		readout& readout::set_value(cyng::param_map_t&& params)
+		{
+			//	preserve the elements in values_
+			//values_.insert(params.begin(), params.end());
+
+			//	overwrite existing values
+			for (auto const& value : params) {
+				values_[value.first] = value.second;
+			}
+			return *this;
+		}
+
 		readout& readout::set_value(obis code, cyng::object obj)
 		{
 			values_[code.to_str()] = obj;

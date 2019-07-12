@@ -222,7 +222,10 @@ namespace node
 			<< " from "
 			<< server_id
 			<< "/"
-			<< sml::from_server_id(queue_.front().get_srv()));
+			<< sml::from_server_id(queue_.front().get_srv())
+			<< " ["
+			<< queue_.front().get_channel()
+			<< "]");
 
 		//BOOST_ASSERT(sml::from_server_id(queue_.front().get_srv()) == server_id);
 		if (server_id.empty()) {
@@ -366,8 +369,9 @@ namespace node
 				<< base_.get_class_name()
 				<< "> query "
 				<< sml::from_server_id(server_id)
-				<< " parameter "
-				<< sec);
+				<< " section ["
+				<< sec
+				<< "]");
 
 			if (boost::algorithm::equals("op-log-status-word", sec)) {
 
@@ -451,6 +455,21 @@ namespace node
 					meter = cyng::value_cast(vec.at(0), meter);
 
 					sml_gen.get_proc_parameter(meter, sml::OBIS_CODE_ROOT_SENSOR_PARAMS, user, pwd);
+				}
+			}
+			else if (boost::algorithm::equals("root-data-prop", sec)) {
+
+				//
+				//	81 81 C7 86 20 FF
+				//	data mirror
+				//
+
+				auto const vec = queue_.front().get_params(sec);
+				if (!vec.empty()) {
+					cyng::buffer_t meter;
+					meter = cyng::value_cast(vec.at(0), meter);
+
+					sml_gen.get_proc_parameter(meter, sml::OBIS_CODE_ROOT_DATA_COLLECTOR, user, pwd);
 				}
 			}
 			else {

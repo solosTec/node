@@ -87,7 +87,6 @@ namespace node
 				, std::size_t depth
 				, cyng::tuple_t::const_iterator pos
 				, cyng::tuple_t::const_iterator end);
-			void read_get_proc_multiple_parameters(cyng::object);
 
 			cyng::vector_t read_tree_list(std::vector<obis> path, cyng::object, std::size_t depth);
 
@@ -125,6 +124,7 @@ namespace node
 		cyng::param_map_t read_param_tree(std::size_t, cyng::object);
 		cyng::param_map_t read_param_tree(std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
+		cyng::param_map_t read_get_proc_multiple_parameters(cyng::object);
 		cyng::param_t read_get_proc_single_parameter(cyng::object);
 		cyng::param_t read_get_proc_single_parameter(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
