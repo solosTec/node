@@ -421,6 +421,12 @@ namespace node
 				evt_sml_get_proc_param_data_mirror(cyng::vector_t);
 			};
 
+			struct evt_sml_get_proc_param_push_target
+			{
+				cyng::vector_t const vec_;
+				evt_sml_get_proc_param_push_target(cyng::vector_t);
+			};
+
 			struct evt_sml_get_list_response
 			{
 				cyng::vector_t vec_;
@@ -516,6 +522,7 @@ namespace node
 				void get_proc_param_server_id(cyng::async::mux&, cyng::vector_t);
 				void get_proc_param_meter(cyng::async::mux&, cyng::vector_t);
 				void get_proc_param_data_mirror(cyng::async::mux&, cyng::vector_t);
+				void get_proc_param_push_target(cyng::async::mux&, cyng::vector_t);
 				void get_list_response(cyng::async::mux&, cyng::vector_t);
 				void attention_msg(cyng::async::mux&, cyng::vector_t);
 
@@ -568,6 +575,7 @@ namespace node
 			void react(state::evt_sml_get_proc_param_iec_config);
 			void react(state::evt_sml_get_proc_param_meter);
 			void react(state::evt_sml_get_proc_param_data_mirror);
+			void react(state::evt_sml_get_proc_param_push_target);
 			void react(state::evt_sml_get_list_response);
 			void react(state::evt_sml_attention_msg);
 

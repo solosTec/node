@@ -1142,6 +1142,24 @@ namespace node
 			task_.get_proc_param_data_mirror(sp_->mux_, evt.vec_);
 		}
 
+		void session_state::react(state::evt_sml_get_proc_param_push_target evt)
+		{
+			switch (state_) {
+			case S_CONNECTED_TASK:
+				break;
+			default:
+				signal_wrong_state("evt_sml_get_proc_param_push_target");
+				return;
+			}
+
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_push_target to #" << task_.tsk_proxy_);
+
+			//
+			//	message slot (5)
+			//
+			task_.get_proc_param_push_target(sp_->mux_, evt.vec_);
+		}
+
 		void session_state::react(state::evt_sml_get_proc_param_ipt_status evt)
 		{
 			switch (state_) {
@@ -1669,6 +1687,13 @@ namespace node
 			{}
 
 			//
+			//	EVENT: evt_sml_get_proc_param_push_target
+			//
+			evt_sml_get_proc_param_push_target::evt_sml_get_proc_param_push_target(cyng::vector_t vec)
+				: vec_(vec)
+			{}
+
+			//
 			//	EVENT: evt_sml_get_list_response
 			//
 			evt_sml_get_list_response::evt_sml_get_list_response(cyng::vector_t vec)
@@ -2148,6 +2173,31 @@ namespace node
 						("registers", vec.at(10))
 					()
 				});
+			}
+
+			void state_connected_task::get_proc_param_push_target(cyng::async::mux& mux, cyng::vector_t vec)
+			{
+				//cyng::buffer_t tmp;
+				//node::sml::obis code(cyng::value_cast(vec.at(9), tmp));
+				//std::string const profile = (node::sml::is_profile(code))
+				//	? node::sml::get_name(code)
+				//	: "no-profile"
+				//	;
+
+				mux.post(tsk_proxy_, 5, cyng::tuple_t{
+					vec.at(1),	//	trx
+					vec.at(2),	//	idx
+					vec.at(3),	//	server ID
+					vec.at(4),	//	OBIS code
+								//	meter configuration record
+					cyng::param_map_factory("idx", vec.at(5))
+						("interval",  cyng::numeric_cast<std::uint32_t>(vec.at(6), 0))
+						("delay", cyng::numeric_cast<std::uint32_t>(vec.at(7), 0))
+						("source", vec.at(8))
+						("target", vec.at(9))
+						("service", vec.at(10))
+					()
+					});
 			}
 
 			void state_connected_task::get_list_response(cyng::async::mux& mux, cyng::vector_t vec)

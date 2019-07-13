@@ -95,6 +95,12 @@ namespace node
 		, cyng::param_t			//	[2] parameter
 		, std::uint64_t			//	[3] generation
 		, boost::uuids::uuid);
+
+	/**
+	 * helper function to find all meters of gateway
+	 */
+	cyng::table::key_list_t collect_meter_of_gw(cyng::store::table const* tbl_meter, boost::uuids::uuid gw_tag);
+
 }
 
 #endif

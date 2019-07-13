@@ -113,7 +113,7 @@ namespace node
 				return cyng::vector_t({ parse_server_id(reader[0].get("meterId")) });
 			}
 
-			else if ((params_.size() == 1) && boost::algorithm::equals(section, "root-data-prop")) {
+			else if ((params_.size() == 1) && (boost::algorithm::equals(section, "root-data-prop") || boost::algorithm::equals(section, "root-push-ops"))) {
 
 				//
 				//	get meter ID

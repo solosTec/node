@@ -23,14 +23,23 @@ namespace node
 			else if (OBIS_DATA_PUBLIC_KEY == code)		return "public-key";
 			else if (OBIS_PROFILE_1_MINUTE == code)		return "profile-1min";
 			else if (OBIS_PROFILE_15_MINUTE == code)	return "profile-15min";
-			else if (OBIS_PROFILE_60_MINUTE  == code)	return "profile-1h";
-			else if (OBIS_PROFILE_24_HOUR  == code)		return "profile-1d";
-			else if (OBIS_PROFILE_LAST_2_HOURS  == code)	return "profile-last-2h";
-			else if (OBIS_PROFILE_LAST_WEEK  == code)	return "profile-last-week";
-			else if (OBIS_PROFILE_1_MONTH  == code)		return "profile-1month";
-			else if (OBIS_PROFILE_1_YEAR  == code)		return "profile-1y";
-			else if (OBIS_PROFILE_INITIAL  == code)		return "profile-initial";
-			else if (OBIS_PROFILE  == code)				return "encode-profile";
+			else if (OBIS_PROFILE_60_MINUTE == code)	return "profile-1h";
+			else if (OBIS_PROFILE_24_HOUR == code)		return "profile-1d";
+			else if (OBIS_PROFILE_LAST_2_HOURS == code)	return "profile-last-2h";
+			else if (OBIS_PROFILE_LAST_WEEK == code)	return "profile-last-week";
+			else if (OBIS_PROFILE_1_MONTH == code)		return "profile-1month";
+			else if (OBIS_PROFILE_1_YEAR == code)		return "profile-1y";
+			else if (OBIS_PROFILE_INITIAL == code)		return "profile-initial";
+			else if (OBIS_PROFILE == code)				return "encode-profile";
+
+			else if (OBIS_PUSH_OPERATIONS == code)		return "root-push-ops";	//	7.3.1.26 Datenstruktur zum Transport der Eigenschaften von Push-Vorgängen. 
+			else if (OBIS_PUSH_INTERVAL == code)		return "push-interval";	//	in seconds
+			else if (OBIS_PUSH_DELAY == code)			return "push-delay";	//	in seconds
+			else if (OBIS_PUSH_SOURCE == code)			return "push-source";	//	options are PUSH_SOURCE_PROFILE, PUSH_SOURCE_INSTALL and PUSH_SOURCE_SENSOR_LIST
+			else if (OBIS_PUSH_SOURCE_PROFILE == code)	return "push-source-profile";	//!< new meter/sensor data
+			else if (OBIS_PUSH_SOURCE_INSTALL == code)	return "push-source-install";	//!< configuration changed
+			else if (OBIS_PUSH_SOURCE_SENSOR_LIST == code)		return "push-source-sensor-list";	//!< list of visible meters changed
+			else if (OBIS_PUSH_SERVER_ID == code)		return "push-server-id";
 
 			//
 			//	root elements
@@ -65,8 +74,9 @@ namespace node
 			else if (code == OBIS_CODE_ROOT_INVISIBLE_DEVICES)	return "root-lost-devices";
 			else if (code == OBIS_CODE_ROOT_DEVICE_INFO)		return "root-device-info";
 			else if (code == OBIS_CODE_ROOT_VISIBLE_DEVICES)	return "root-visible-devices";
-			else if (code == OBIS_CODE_ROOT_SENSOR_PARAMS)	return "root-sensor-prop";
+			else if (code == OBIS_CODE_ROOT_SENSOR_PARAMS)		return "root-sensor-prop";
 			else if (code == OBIS_CODE_ROOT_DATA_COLLECTOR)		return "root-data-prop";
+			else if (code == OBIS_STORAGE_TIME_SHIFT)			return "storage-time-shift";	//	?
 			
 
 			else if (OBIS_CODE_IF_LAN_DSL == code)	return "IF_LAN_DSL";

@@ -472,6 +472,21 @@ namespace node
 					sml_gen.get_proc_parameter(meter, sml::OBIS_CODE_ROOT_DATA_COLLECTOR, user, pwd);
 				}
 			}
+			else if (boost::algorithm::equals("root-push-ops", sec)) {
+
+				//
+				//	81 81 C7 8A 01 FF
+				//	push ops
+				//
+
+				auto const vec = queue_.front().get_params(sec);
+				if (!vec.empty()) {
+					cyng::buffer_t meter;
+					meter = cyng::value_cast(vec.at(0), meter);
+
+					sml_gen.get_proc_parameter(meter, sml::OBIS_PUSH_OPERATIONS, user, pwd);
+				}
+			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()

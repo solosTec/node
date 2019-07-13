@@ -342,7 +342,7 @@ namespace node
 			//	* OBIS (parameterTreePath)
 			//	* attribute (should be null)
 			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_TRACE(logger_, "sml.get.proc.parameter.request " << cyng::io::to_str(frame));
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 			auto const tpl = cyng::tuple_cast<
 				boost::uuids::uuid,	//	[0] pk
@@ -919,76 +919,6 @@ namespace node
 
 		void kernel::sml_get_proc_data_collector(cyng::object trx, cyng::object server)
 		{
-			//	### Message ###
-			//	76                                                SML_Message(Sequence): 
-			//	  81063138303631393139343334353337383434352D32    transactionId: 180619194345378445-2
-			//	  6201                                            groupNo: 1
-			//	  6200                                            abortOnError: 0
-			//	  72                                              messageBody(Choice): 
-			//		630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
-			//		73                                            SML_GetProcParameter_Res(Sequence): 
-			//		  0A01E61E130900163C07                        serverId: 01 E6 1E 13 09 00 16 3C 07 
-			//		  71                                          parameterTreePath(SequenceOf): 
-			//			078181C78620FF                            path_Entry: ____ _
-			//		  73                                          parameterTree(Sequence): 
-			//			078181C78620FF                            parameterName: ____ _
-			//			01                                        parameterValue: not set
-			//			71                                        child_List(SequenceOf): 
-			//			  73                                      tree_Entry(Sequence): 
-			//				078181C7862001                        parameterName: 81 81 C7 86 20 01 
-			//				01                                    parameterValue: not set
-			//				75                                    child_List(SequenceOf): 
-			//				  73                                  tree_Entry(Sequence): 
-			//					078181C78621FF                    parameterName: ____!_
-			//					72                                parameterValue(Choice): 
-			//					  6201                            parameterValue: 1 => smlValue (0x01)
-			//					  4201                            smlValue: True
-			//					01                                child_List: not set
-			//				  73                                  tree_Entry(Sequence): 
-			//					078181C78622FF                    parameterName: ____"_
-			//					72                                parameterValue(Choice): 
-			//					  6201                            parameterValue: 1 => smlValue (0x01)
-			//					  6264                            smlValue: 100
-			//					01                                child_List: not set
-			//				  73                                  tree_Entry(Sequence): 
-			//					078181C78781FF                    parameterName: ______
-			//					72                                parameterValue(Choice): 
-			//					  6201                            parameterValue: 1 => smlValue (0x01)
-			//					  6200                            smlValue: 0
-			//					01                                child_List: not set
-			//				  73                                  tree_Entry(Sequence): 
-			//					078181C78A83FF                    parameterName: ______
-			//					72                                parameterValue(Choice): 
-			//					  6201                            parameterValue: 1 => smlValue (0x01)
-			//					  078181C78611FF                  smlValue: 81 81 C7 86 11 FF 
-			//					01                                child_List: not set
-			//				  73                                  tree_Entry(Sequence): 
-			//					078181C78A23FF                    parameterName: ____#_
-			//					01                                parameterValue: not set
-			//					71                                child_List(SequenceOf): 
-			//					  73                              tree_Entry(Sequence): 
-			//						078181C78A2301                parameterName: 81 81 C7 8A 23 01 
-			//						72                            parameterValue(Choice): 
-			//						  6201                        parameterValue: 1 => smlValue (0x01)
-			//						  070800010000FF              smlValue: 08 00 01 00 00 FF 
-			//						01                            child_List: not set
-			//	  63CBE4                                          crc16: 52196
-			//	  00                                              endOfSmlMsg: 00 
-
-			//	ClientId: 05 00 15 3B 02 29 7E 
-			//	ServerId: 01 E6 1E 13 09 00 16 3C 07 
-			//	81 81 C7 86 20 FF                Not set
-			//	   81 81 C7 86 20 01             Not set
-			//		  81 81 C7 86 21 FF          True (54 72 75 65 )	//	active
-			//		  81 81 C7 86 22 FF          100 (31 30 30 )		//	Einträge
-			//		  81 81 C7 87 81 FF          0 (30 )				//	Registerperiode
-			//		  81 81 C7 8A 83 FF          ______ (81 81 C7 86 11 FF )	//	OBIS
-			//		  81 81 C7 8A 23 FF          Not set
-			//			 81 81 C7 8A 23 01       ______ (08 00 01 00 00 FF )	Liste von Einträgen z.B. Zählerstand Wasser
-
-			//const cyng::vector_t frame = ctx.get_frame();
-			//CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
-
 			//
 			//	Comes up when clicked "Datenspiegel"
 			//

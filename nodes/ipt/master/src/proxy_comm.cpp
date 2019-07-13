@@ -44,6 +44,7 @@ namespace node
 		vm.register_function("sml.get.proc.param.iec.config", 18, std::bind(&proxy_comm::sml_get_proc_param_iec_config, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.param.meter", 15, std::bind(&proxy_comm::sml_get_proc_param_meter, this, std::placeholders::_1));
 		vm.register_function("sml.get.proc.param.data.mirror", 11, std::bind(&proxy_comm::sml_get_proc_param_data_mirror, this, std::placeholders::_1));
+		vm.register_function("sml.get.proc.param.push.target", 11, std::bind(&proxy_comm::sml_get_proc_param_push_target, this, std::placeholders::_1));
 		vm.register_function("sml.get.list.response", 9, std::bind(&proxy_comm::sml_get_list_response, this, std::placeholders::_1));
 		vm.register_function("sml.attention.msg", 6, std::bind(&proxy_comm::sml_attention_msg, this, std::placeholders::_1));
 	}
@@ -370,6 +371,11 @@ namespace node
 	void proxy_comm::sml_get_proc_param_data_mirror(cyng::context& ctx)
 	{
 		state_.react(ipt::state::evt_sml_get_proc_param_data_mirror(ctx.get_frame()));
+	}
+
+	void proxy_comm::sml_get_proc_param_push_target(cyng::context& ctx)
+	{
+		state_.react(ipt::state::evt_sml_get_proc_param_push_target(ctx.get_frame()));
 	}
 
 	void proxy_comm::sml_get_list_response(cyng::context& ctx)

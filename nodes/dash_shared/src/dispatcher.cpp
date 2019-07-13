@@ -33,7 +33,7 @@ namespace node
 	void dispatcher::store_relation(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "store.relation - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 		//	cluster seq => ws tag
 	}
 
@@ -41,7 +41,7 @@ namespace node
 	{
 		//	[a7114557-b0f4-4269-82be-5c46f1e9f75b,9f773865-e4af-489a-8824-8f78a2311278,6,[f72f7307-40e6-483b-8106-115290f8f1fe],2697aa30-ec69-4766-9e4d-b312c7b29c25,get.proc.param,01-e61e-29436587-bf-03,root-data-prop,%(("active":true),("idx":2),("period":00000000),("profile":null),("registers":[8181C78203FF,0700030000FF,0000616100FF,0000600101FF,0000600100FF,0000616100FF]),("size":00000064))]
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, ctx.get_name() << " " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] ident
@@ -55,42 +55,46 @@ namespace node
 			cyng::param_map_t		//	[8] params
 		>(frame);
 
-		if (boost::algorithm::equals(std::get<7>(tpl), "op-log-status-word") || 
-			boost::algorithm::equals(std::get<7>(tpl), "root-visible-devices") ||
-			boost::algorithm::equals(std::get<7>(tpl), "root-active-devices") ||
-			boost::algorithm::equals(std::get<7>(tpl), "root-device-id") ||
-			boost::algorithm::equals(std::get<7>(tpl), "root-memory-usage") ||
-			boost::algorithm::equals(std::get<7>(tpl), "root-wMBus-status") ||
-			boost::algorithm::equals(std::get<7>(tpl), "IF-wireless-mbus") ||
-			boost::algorithm::equals(std::get<7>(tpl), "root-ipt-state") ||
-			boost::algorithm::equals(std::get<7>(tpl), "root-ipt-param") ||
-			boost::algorithm::equals(std::get<7>(tpl), "IF-IEC-62505-21") ||
-			boost::algorithm::equals(std::get<7>(tpl), "root-sensor-params") ||	//	81 81 C7 86 00 FF
-			boost::algorithm::equals(std::get<7>(tpl), "root-sensor-prop") ||	//	81 81 C7 86 00 FF
-			boost::algorithm::equals(std::get<7>(tpl), "current-data-record") ||
-			boost::algorithm::equals(std::get<7>(tpl), "root-data-prop"))	//	81 81 C7 86 20 FF
+
+		if (!boost::algorithm::equals(std::get<7>(tpl), "op-log-status-word") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "root-visible-devices") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "root-active-devices") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "root-device-id") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "root-memory-usage") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "root-wMBus-status") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "IF-wireless-mbus") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "root-ipt-state") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "root-ipt-param") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "IF-IEC-62505-21") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "root-sensor-params") &&	//	81 81 C7 86 00 FF
+			!boost::algorithm::equals(std::get<7>(tpl), "root-sensor-prop") &&	//	81 81 C7 86 00 FF
+			!boost::algorithm::equals(std::get<7>(tpl), "current-data-record") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "root-data-prop") &&		//	81 81 C7 86 20 FF
+			!boost::algorithm::equals(std::get<7>(tpl), "root-push-ops"))		//	81 81 C7 8A 01 FF
 		{
-
-			//	[3bb02dd1-b864-474b-b131-7ab85f3862e9,9f773865-e4af-489a-8824-8f78a2311278,19,[8d04b8e0-0faf-44ea-b32b-8405d407f2c1],ea7a2ee6-56ae-4536-9600-45c8dd2c2e9e,get.list.request,,list-current-data-record,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758))]
-			//	{"cmd": "update", "channel": "get.list.request", "section": "list-current-data-record", "rec": {"srv": "", "values": {"08 00 01 00 00 ff":"0.758","08 00 01 02 00 ff":"0.758"}}}
-			auto data = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("update")),
-				cyng::param_factory("channel", std::get<5>(tpl)),
-				cyng::param_factory("section", std::get<7>(tpl)),
-				cyng::param_factory("rec", cyng::tuple_factory(
-					cyng::param_factory("srv", std::get<6>(tpl)),
-					cyng::param_factory("gw", std::get<3>(tpl).at(0)),
-					cyng::param_factory("values", std::get<8>(tpl))
-				)));
-
-			//	{"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
-			auto msg = cyng::json::to_string(data);
-			connection_manager_.ws_msg(std::get<4>(tpl), msg);
-		
-		}
-		else {
 			CYNG_LOG_WARNING(logger_, "bus.res.gateway.proxy - unknown section " << std::get<7>(tpl));
 		}
+
+		//	[3bb02dd1-b864-474b-b131-7ab85f3862e9,9f773865-e4af-489a-8824-8f78a2311278,19,[8d04b8e0-0faf-44ea-b32b-8405d407f2c1],ea7a2ee6-56ae-4536-9600-45c8dd2c2e9e,get.list.request,,list-current-data-record,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758))]
+		//	{"cmd": "update", "channel": "get.list.request", "section": "list-current-data-record", "rec": {"srv": "", "values": {"08 00 01 00 00 ff":"0.758","08 00 01 02 00 ff":"0.758"}}}
+		auto data = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("update")),
+			cyng::param_factory("channel", std::get<5>(tpl)),
+			cyng::param_factory("section", std::get<7>(tpl)),
+			cyng::param_factory("rec", cyng::tuple_factory(
+				cyng::param_factory("srv", std::get<6>(tpl)),
+				cyng::param_factory("gw", std::get<3>(tpl).at(0)),
+				cyng::param_factory("values", std::get<8>(tpl))
+			)));
+
+		//	{"cmd": "update", "channel": "status.gateway.word", "rec": {"srv": "00:ff:b0:0b:ca:ae", "word": {"256":false,"8192":true,"16384":false,"65536":true,"131072":true,"262144":true,"524288":false,"4294967296":false}}}
+		auto msg = cyng::json::to_string(data);
+		connection_manager_.ws_msg(std::get<4>(tpl), msg);
+		
+		//}
+		//else {
+		//	CYNG_LOG_WARNING(logger_, "bus.res.gateway.proxy - unknown section " << std::get<7>(tpl));
+		//}
 	}
 
 	void dispatcher::res_attention_code(cyng::context& ctx)
@@ -106,7 +110,7 @@ namespace node
 		//	* [string] message
 		//
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, ctx.get_name() << " " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] ident
@@ -1094,7 +1098,7 @@ namespace node
 	void dispatcher::http_move(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "http.move - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,	//	[0] source

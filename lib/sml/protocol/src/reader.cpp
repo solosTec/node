@@ -759,7 +759,7 @@ namespace node
 						, ro_.trx_
 						, ro_.idx_
 						, from_server_id(ro_.server_id_)
-						, OBIS_CODE_ROOT_DATA_COLLECTOR.to_buffer()	//	aka [section]
+						, root.to_buffer()	//	aka [section]
 						, r.first
 						, ro_.get_value(OBIS_DATA_COLLECTOR_ACTIVE)	//	active: true/false
 						, ro_.get_value(OBIS_DATA_COLLECTOR_SIZE)	//	max. table size
@@ -768,6 +768,26 @@ namespace node
 						, ro_.get_value(OBIS_DATA_COLLECTOR_OBIS)	//	data mirror (vector)
 					);
 
+				}
+			}
+			else if (root == OBIS_PUSH_OPERATIONS) {
+				auto const r = code.is_matching(0x81, 0x81, 0xC7, 0x8A, 0x01);
+				if (r.second) {
+					//	NN = 01 ... 20
+					ro_.set_value(read_get_proc_multiple_parameters(*pos++));
+					return cyng::generate_invoke("sml.get.proc.param.push.target"
+						, ro_.pk_
+						, ro_.trx_
+						, ro_.idx_
+						, from_server_id(ro_.server_id_)
+						, root.to_buffer()	//	aka [section]
+						, r.first
+						, ro_.get_value(OBIS_PUSH_INTERVAL)	//	push interval
+						, ro_.get_value(OBIS_PUSH_DELAY)	//	push delay
+						, ro_.get_value(OBIS_PUSH_SOURCE)	//	options are PUSH_SOURCE_PROFILE, PUSH_SOURCE_INSTALL and PUSH_SOURCE_SENSOR_LIST
+						, ro_.get_string(OBIS_CODE_PUSH_TARGET)	//	push target name
+						, ro_.get_value(OBIS_PUSH_SERVICE)	//	options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX
+					);
 				}
 			}
 			return cyng::vector_t{};

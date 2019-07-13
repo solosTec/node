@@ -43,6 +43,7 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, F0, 0D, FF, HARDWARE_TYPE);   //	octet
 		const static obis	DEFINE_OBIS_CODE(00, 00, 61, 61, 00, FF, MBUS_STATE);   //	Status according to EN13757-3 (error register)
 
+		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 00, 00, FF, STORAGE_TIME_SHIFT);	//	root push operations
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 10, 00, 01, CLASS_OP_LSM_STATUS);	//	LSM status
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 11, 00, FF, ACTUATORS);	//	list of actuators
 		const static obis	DEFINE_OBIS_CODE(00, 80, 80, 11, 10, FF, CLASS_OP_LSM_ACTOR_ID);	//	ServerID des Aktors (uint16)
@@ -111,7 +112,6 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 17, FF, PROFILE_1_YEAR);
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 18, FF, PROFILE_INITIAL);
 
-		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 83, FF, PROFILE);	//	encode profiles
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 01, FF, PUSH_OPERATIONS);	//	7.3.1.26 Datenstruktur zum Transport der Eigenschaften von Push-Vorgängen. 
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 02, FF, PUSH_INTERVAL);	//	in seconds
@@ -123,6 +123,7 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 44, FF, PUSH_SOURCE_SENSOR_LIST);	//!< list of visible meters changed
 
 		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 81, FF, PUSH_SERVER_ID);
+		const static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 83, FF, PROFILE);	//	encode profiles
 
 		/**
 		 * @return true id the 4th first bytes are 0x81, 0x81, 0xC7, 0x86
