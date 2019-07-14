@@ -156,12 +156,16 @@ namespace node
 				, strand_(ioc.get_executor())
 #endif
 				, buffer_(std::move(buffer))
-				, max_upload_size_(max_upload_size)
+				, max_upload_size_((max_upload_size < (10 * 1024)) ? (10 * 1024) : max_upload_size)
 				, doc_root_(doc_root)
 				, auth_dirs_(ad)
 				, queue_(*this)
 				, authorized_(false)
-			{}
+			{
+				if (max_upload_size < (10 * 1024)) {
+					CYNG_LOG_WARNING(logger_, "low upload size: " << max_upload_size << " bytes");
+				}
+			}
 
 			virtual ~session()
 			{}
