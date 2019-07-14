@@ -33,6 +33,11 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table _Config");
 		}
 
+		if (!create_table(cache, "_HTTPSession"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table _HTTPSession");
+		}
+
 		//
 		//	all tables created
 		//
