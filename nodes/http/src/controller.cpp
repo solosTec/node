@@ -18,6 +18,7 @@
 #include <cyng/async/signal_handler.h>
 #include <cyng/factory/set_factory.h>
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_bytes.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/json.h>
@@ -185,6 +186,7 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8080"),
 						cyng::param_factory("timeout", "15"),	//	seconds
+						cyng::param_factory("max-upload-size", 1024 * 1024 * 10),	//	10 MB
 #if BOOST_OS_LINUX
 						cyng::param_factory("document-root", "/var/www/html"),
 						cyng::param_factory("blog-root", "/var/www/html/blog"),
@@ -270,12 +272,19 @@ namespace node
 		auto const service = cyng::io::to_str(dom["http"].get("service"));
 		auto const port = static_cast<unsigned short>(std::stoi(service));
 		auto const timeout = cyng::numeric_cast<std::size_t>(dom["http"].get("timeout"), 15u);
+		auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(dom["http"].get("max-upload-size"), 1024u * 1024 * 10u);
 
  		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
 		CYNG_LOG_TRACE(logger, "blog root: " << blog_root);
 		CYNG_LOG_INFO(logger, "HTTP address: " << host);
 		CYNG_LOG_INFO(logger, "HTTP service: " << port);
 		CYNG_LOG_INFO(logger, "HTTP timeout: " << timeout << " seconds");
+		if (max_upload_size < 10 * 1024) {
+			CYNG_LOG_WARNING(logger, "max-upload-size only: " << max_upload_size << " bytes");
+		}
+		else {
+			CYNG_LOG_INFO(logger, "max-upload-size: " << cyng::bytes_to_str(max_upload_size));
+		}
 
 		auto const https_rewrite = cyng::value_cast(dom["http"].get("https-rewrite"), false);
 		if (https_rewrite) {
@@ -337,6 +346,7 @@ namespace node
 			, scheduler.get_io_service()
 			, boost::asio::ip::tcp::endpoint{ address, port }
 			, timeout
+			, max_upload_size
 			, doc_root
 			, blog_root
 #ifdef NODE_SSL_INSTALLED

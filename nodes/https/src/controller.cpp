@@ -14,6 +14,7 @@
 #include <cyng/async/signal_handler.h>
 #include <cyng/factory/set_factory.h>
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_bytes.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/json.h>
@@ -189,6 +190,7 @@ namespace node
 						cyng::param_factory("address", "0.0.0.0"),
 						cyng::param_factory("service", "8443"),	//	default is 443
 						cyng::param_factory("timeout", "15"),	//	seconds
+						cyng::param_factory("max-upload-size", 1024 * 1024 * 10),	//	10 MB
 #if BOOST_OS_LINUX
 						cyng::param_factory("document-root", "/var/www/html"),
 #else
@@ -274,11 +276,18 @@ namespace node
 		auto const service = cyng::io::to_str(dom["https"].get("service"));
 		auto const port = static_cast<unsigned short>(std::stoi(service));
 		auto const timeout = cyng::numeric_cast<std::size_t>(dom["https"].get("timeout"), 15u);
+		auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(dom["https"].get("max-upload-size"), 1024u * 1024 * 10u);
 
 		CYNG_LOG_TRACE(logger, "document root: " << doc_root);	
 		CYNG_LOG_INFO(logger, "HTTP/S address: " << host);
 		CYNG_LOG_INFO(logger, "HTTP/S service: " << port);
 		CYNG_LOG_INFO(logger, "HTTP/S timeout: " << timeout << " seconds");
+		if (max_upload_size < 10 * 1024) {
+			CYNG_LOG_WARNING(logger, "max-upload-size only: " << max_upload_size << " bytes");
+		}
+		else {
+			CYNG_LOG_INFO(logger, "max-upload-size: " << cyng::bytes_to_str(max_upload_size));
+		}
 
 
 		// This holds the self-signed certificate used by the server
@@ -362,6 +371,7 @@ namespace node
 				, ctx
 				, boost::asio::ip::tcp::endpoint{ address, port }
 				, timeout
+				, max_upload_size
 				, doc_root
 				, ad
 				, blacklist
