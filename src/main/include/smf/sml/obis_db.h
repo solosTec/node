@@ -40,6 +40,7 @@ namespace node
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 02, 01, FF, DATE_TIME_PARAMETERISATION);	//	32 bit
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 07, 00, FF, POWER_OUTAGES);	//	Number of power failures 
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 08, 00, FF, CONFIG_OVERVIEW);   //	
+		const static obis	DEFINE_OBIS_CODE(00, 00, 60, 10, 00, FF, LOGICAL_NAME);   //	
 		const static obis	DEFINE_OBIS_CODE(00, 00, 60, F0, 0D, FF, HARDWARE_TYPE);   //	octet
 		const static obis	DEFINE_OBIS_CODE(00, 00, 61, 61, 00, FF, MBUS_STATE);   //	Status according to EN13757-3 (error register)
 
