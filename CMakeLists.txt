@@ -586,7 +586,7 @@ set(collector_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_par
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND collector_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND collector_link_libs pthread)
+        list(APPEND collector_link_libs pthread dl)
     endif()
 endif()
 target_link_libraries(collector ${collector_link_libs})
@@ -616,10 +616,10 @@ set(gateway_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parse
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 #-- ** Boost Libraries  : /home/sol/projects/install/x64/boost/lib/libboost_thread.so;/home/sol/projects/install/x64/boost/lib/libboost_system.so;/home/sol/projects/install/x64/boost/lib/libboost_filesystem.so;/home/sol/projects/install/x64/boost/lib/libboost_program_options.so;/home/sol/projects/install/x64/boost/lib/libboost_random.so;/home/sol/projects/install/x64/boost/lib/libboost_unit_test_framework.so;/home/sol/projects/install/x64/boost/lib/libboost_chrono.so;/usr/lib/x86_64-linux-gnu/libpthread.so
 #    list(APPEND gateway_link_libs "${Boost_LIBRARIES}")
-	list(APPEND gateway_link_libs pthread boost_thread boost_system boost_filesystem boost_program_options boost_random)
-#    if (UNIX)
-#        list(APPEND gateway_link_libs pthread)
-#    endif()
+	list(APPEND gateway_link_libs boost_thread boost_system boost_filesystem boost_program_options boost_random)
+    if (UNIX)
+        list(APPEND gateway_link_libs pthread dl)
+    endif()
 endif()
 if(WIN32)
 	list(APPEND gateway_link_libs odbc32.lib cyng_sqlite3)
@@ -639,7 +639,7 @@ set(ipt_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cy
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND ipt_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND ipt_link_libs pthread)
+        list(APPEND ipt_link_libs pthread dl)
     endif()
 endif()
 #message(STATUS "** link ipt_master       : ${ipt_link_libs}")
@@ -715,7 +715,7 @@ set(master_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND master_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND master_link_libs pthread)
+        list(APPEND master_link_libs pthread dl)
     endif()
 endif()
 target_link_libraries(master ${master_link_libs})
@@ -766,7 +766,7 @@ set(iec_62056_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_par
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND iec_62056_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND iec_62056_link_libs pthread)
+        list(APPEND iec_62056_link_libs pthread dl)
     endif()
 endif()
 target_link_libraries(iec_62056 ${iec_62056_link_libs})
@@ -1390,6 +1390,11 @@ else()
 		  "${PROJECT_BINARY_DIR}/tsdb.rc")
 
 endif(UNIX)
+
+#
+#   Generate documentation
+#
+include(GenerateDoxygenDoc)
 
 #
 # test unit using Boost.Test
