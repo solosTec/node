@@ -1,0 +1,30 @@
+DOXYFILE_ENCODING   = UTF-8
+PROJECT_NAME        = @PROJECT_NAME@
+PROJECT_NUMBER      = @PROJECT_VERSION@
+OUTPUT_DIRECTORY    = @CMAKE_CURRENT_BINARY_DIR@/doc_doxygen/
+CREATE_SUBDIRS      = NO
+# Options are:
+# Afrikaans, Arabic, Brazilian, Catalan, Chinese, Chinese-Traditional,
+# Croatian, Czech, Danish, Dutch, Esperanto, Farsi, Finnish, French, German,
+# Greek, Hungarian, Italian, Japanese, Japanese-en (Japanese with English
+# messages), Korean, Korean-en, Lithuanian, Norwegian, Macedonian, Persian,
+# Polish, Portuguese, Romanian, Russian, Serbian, Serbian-Cyrilic, Slovak,
+# Slovene, Spanish, Swedish, Ukrainian, and Vietnamese.
+OUTPUT_LANGUAGE     = English
+
+# If the EXTRACT_PRIVATE tag is set to YES all private members of a class
+# will be included in the documentation.
+
+EXTRACT_PRIVATE        = YES
+
+#---------------------------------------------------------------------------
+# configuration options related to the input files
+#---------------------------------------------------------------------------
+INPUT               = @CMAKE_CURRENT_SOURCE_DIR@/src/main/include/smf \
+                        @CMAKE_CURRENT_SOURCE_DIR@/src/main/include/smf/cluster \
+                        @CMAKE_CURRENT_SOURCE_DIR@/lib \
+                        @CMAKE_CURRENT_SOURCE_DIR@/lib/cluster/src \
+                        @CMAKE_CURRENT_SOURCE_DIR@/nodes \
+                        @CMAKE_CURRENT_SOURCE_DIR@/tasks
+
+RECURSIVE            = YES                          
