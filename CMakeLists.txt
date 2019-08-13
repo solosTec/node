@@ -571,7 +571,7 @@ set(e350_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser c
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND e350_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND e350_link_libs pthread)
+        list(APPEND e350_link_libs pthread dl)
     endif()
 endif()
 target_link_libraries(e350 ${e350_link_libs})
