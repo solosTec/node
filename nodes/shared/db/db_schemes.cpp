@@ -22,7 +22,9 @@ namespace node
 			//
 			//	TDevice table
 			//
-			//	(1) tag (UUID) - pk
+			//	(1) [uuid] tag - pk
+			//	+-----------------
+			//	(1) [string] name - index
 			//	+-----------------
 			//	(2) name [std::string]
 			//	(3) number [std::string]
@@ -32,7 +34,7 @@ namespace node
 			//	(7) [bool] enabled (only login allowed)
 			//	(8) [std::chrono::system_clock::time_stamp] created 
 			//	(9) [std::uint32] query
-			return cyng::table::make_meta_table<1, 9>(name,
+			return cyng::table::make_meta_table<1, 9, 1>(name,
 				{ "pk"
 				, "name"
 				, "pwd"
@@ -84,7 +86,10 @@ namespace node
 		}
 		else if (boost::algorithm::equals(name, "_Session")) {
 
-			return cyng::table::make_meta_table<1, 12>(name, { "tag"	//	client session - primary key [uuid]
+			//
+			//	[uuid] device - index
+			//
+			return cyng::table::make_meta_table<1, 12, 3>(name, { "tag"	//	client session - primary key [uuid]
 				, "local"	//	[object] local peer object (hold session reference)
 				, "remote"	//	[object] remote peer object (if session connected)
 				, "peer"	//	[uuid] remote peer
@@ -127,18 +132,21 @@ namespace node
 		}
 		else if (boost::algorithm::equals(name, "TMeter")) {
 
+			//
+			//	"ident" + "gw" have to be unique
+			//
 			return cyng::table::make_meta_table<1, 11>(name, { "pk"
-				, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-				, "meter"		//	meter number (i.e. 16000913) 4 bytes 
-				, "code"		//	metering code - changed at 2019-01-31
-				, "maker"		//	manufacturer
-				, "tom"			//	time of manufacture
-				, "vFirmware"	//	firmwareversion (i.e. 11600000)
-				, "vParam"		//	parametrierversion (i.e. 16A098828.pse)
-				, "factoryNr"	//	fabrik nummer (i.e. 06441734)
-				, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
-				, "mClass"		//	Metrological Class: A, B, C, Q3/Q1, ...
-				, "gw"			//	optional gateway pk
+				, "ident"		//	[string] ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				, "meter"		//	[string] meter number (i.e. 16000913) 4 bytes 
+				, "code"		//	[string] metering code - changed at 2019-01-31
+				, "maker"		//	[string] manufacturer
+				, "tom"			//	[ts] time of manufacture
+				, "vFirmware"	//	[string] firmwareversion (i.e. 11600000)
+				, "vParam"		//	[string] parametrierversion (i.e. 16A098828.pse)
+				, "factoryNr"	//	[string] fabrik nummer (i.e. 06441734)
+				, "item"		//	[string] ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				, "mClass"		//	[string] Metrological Class: A, B, C, Q3/Q1, ...
+				, "gw"			//	[uuid] optional gateway pk
 				},
 				{ cyng::TC_UUID
 				, cyng::TC_STRING		//	ident

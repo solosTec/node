@@ -49,8 +49,18 @@ namespace node
 
 			//	comparison
 			bool equal(obis const&) const;
+
+			/**
+			 * lexicographical comparison
+			 */
 			bool less(obis const&) const;
+
+			/** @brief Same as equal()
+			 */
 			bool is_matching(obis const&) const;
+
+			/** @brief Compare first 4 elements
+			 */
 			bool is_matching(std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t) const;
 
 			/**
@@ -83,6 +93,10 @@ namespace node
 			 */
 			std::uint32_t get_medium() const;
 			const char* get_medium_name() const;
+
+			/**
+			 * @return true if medium is 0.
+			 */
 			bool is_abstract() const;
 
 			/**

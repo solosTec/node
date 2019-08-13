@@ -37,6 +37,11 @@ namespace node
 
 	private:
 		void bus_req_com_sml(cyng::context& ctx);
+
+		/**
+		 * Any response from the gateway/device will be routed back
+		 * to the sender (cluster member).
+		 */
 		void bus_res_com_sml(cyng::context& ctx);
 
 		void bus_res_attention_code(cyng::context& ctx);

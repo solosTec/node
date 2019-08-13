@@ -57,8 +57,8 @@ namespace node
 
 
 		if (!boost::algorithm::equals(std::get<7>(tpl), "op-log-status-word") &&
-			!boost::algorithm::equals(std::get<7>(tpl), "root-visible-devices") &&
-			!boost::algorithm::equals(std::get<7>(tpl), "root-active-devices") &&
+			!boost::algorithm::equals(std::get<7>(tpl), "root-visible-devices") &&	//	81 81 10 06 FF FF
+			!boost::algorithm::equals(std::get<7>(tpl), "root-active-devices") &&	//	81 81 11 06 FF FF
 			!boost::algorithm::equals(std::get<7>(tpl), "root-device-id") &&
 			!boost::algorithm::equals(std::get<7>(tpl), "root-memory-usage") &&
 			!boost::algorithm::equals(std::get<7>(tpl), "root-wMBus-status") &&
@@ -91,10 +91,6 @@ namespace node
 		auto msg = cyng::json::to_string(data);
 		connection_manager_.ws_msg(std::get<4>(tpl), msg);
 		
-		//}
-		//else {
-		//	CYNG_LOG_WARNING(logger_, "bus.res.gateway.proxy - unknown section " << std::get<7>(tpl));
-		//}
 	}
 
 	void dispatcher::res_attention_code(cyng::context& ctx)

@@ -449,4 +449,4 @@ namespace node
 }	//	node
 
 
-#endif	//	NODDY_IPT_RESPONSE_HPP
+#endif

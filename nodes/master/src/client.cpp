@@ -381,58 +381,56 @@ namespace node
 	std::tuple<bool, bool, boost::uuids::uuid, std::uint32_t> 
 		client::test_credential(cyng::context& ctx, const cyng::store::table* tbl, std::string const& account, std::string const& pwd)
 	{
+		BOOST_ASSERT_MSG(tbl->meta().get_name() == "TDevice", "wrong table");
+
 		bool found{ false };
 		bool wrong_pwd{ false };
 		boost::uuids::uuid dev_tag{ boost::uuids::nil_uuid() };
 		std::uint32_t query{ 6 };
 
-		tbl->loop([&](cyng::table::record const& rec) -> bool {
+		//
+		//	name is the index of table TDevice
+		//
+		auto const rec = tbl->lookup_by_index(cyng::make_object(account));
+		if (!rec.empty()) {
 
-			const auto rec_account = cyng::value_cast<std::string>(rec["name"], "");
+			ctx.queue(cyng::generate_invoke("log.msg.trace", "account match [", account, "] OK"));
 
-			if (boost::algorithm::equals(account, rec_account))
+			//
+			//	matching name
+			//	test password
+			//
+			const auto rec_pwd = cyng::value_cast<std::string>(rec["pwd"], "");
+			if (boost::algorithm::equals(pwd, rec_pwd))
 			{
-				ctx.queue(cyng::generate_invoke("log.msg.trace", "account match [", account, "] OK"));
+				ctx.queue(cyng::generate_invoke("log.msg.info", "password match [", account, "] OK"));
 
 				//
-				//	matching name
-				//	test password
+				//	matching password
+				//	insert new session
 				//
-				const auto rec_pwd = cyng::value_cast<std::string>(rec["pwd"], "");
-				if (boost::algorithm::equals(pwd, rec_pwd))
-				{
-					ctx.queue(cyng::generate_invoke("log.msg.info", "password match [", account, "] OK"));
+				dev_tag = cyng::value_cast(rec["pk"], dev_tag);
+				query = cyng::value_cast<std::uint32_t>(rec["query"], 6);
 
-					//
-					//	matching password
-					//	insert new session
-					//
-					dev_tag = cyng::value_cast(rec["pk"], dev_tag);
-					query = cyng::value_cast<std::uint32_t>(rec["query"], 6);
-
-					//
-					//	terminate loop
-					//
-					found = true;
-				}
-				else
-				{
-					//
-					//	set wrong password marker
-					//
-					wrong_pwd = true;
-
-					ctx.queue(cyng::generate_invoke("log.msg.warning"
-						, "password does not match ["
-						, account
-						, pwd
-						, ("(" + rec_pwd + ")")));
-				}
+				//
+				//	set flag
+				//
+				found = true;
 			}
+			else
+			{
+				//
+				//	set wrong password marker
+				//
+				wrong_pwd = true;
 
-			//	continue loop
-			return !found;
-		});
+				ctx.queue(cyng::generate_invoke("log.msg.warning"
+					, "password does not match ["
+					, account
+					, pwd
+					, ("(" + rec_pwd + ")")));
+			}
+		}
 
 #ifdef _DEBUG
 		if (!found) {
@@ -820,12 +818,12 @@ namespace node
 				<< tbl_device->size()
 				<< " devices");
 
-			tbl_device->loop([&](cyng::table::record const& rec) -> bool {
+			tbl_device->loop([&](cyng::table::record const& rec_dev) -> bool {
 
 				//
 				//	search a matching number
 				//
-				const auto dev_number = cyng::value_cast<std::string>(rec["msisdn"], "");
+				const auto dev_number = cyng::value_cast<std::string>(rec_dev["msisdn"], "");
 
 				//CYNG_LOG_DEBUG(logger_, dev_number);
 				if (boost::algorithm::equals(number, dev_number))
@@ -833,14 +831,14 @@ namespace node
 					//
 					//	search session of this device
 					//
-					const auto dev_tag = cyng::value_cast(rec["pk"], boost::uuids::nil_uuid());
-					const auto callee = cyng::value_cast<std::string>(rec["name"], "");
-					options["device-name"] = rec["name"];
+					const auto dev_tag = cyng::value_cast(rec_dev["pk"], boost::uuids::nil_uuid());
+					const auto callee = cyng::value_cast<std::string>(rec_dev["name"], "");
+					options["device-name"] = rec_dev["name"];
 
 					//
 					//	do not call if device is not enabled
 					//
-					const auto enabled = cyng::value_cast(rec["enabled"], false);
+					const auto enabled = cyng::value_cast(rec_dev["enabled"], false);
 
 					if (enabled)
 					{
@@ -874,80 +872,77 @@ namespace node
 						return false;
 					}
 
-					tbl_session->loop([&](cyng::table::record const& rec) -> bool {
+					//
+					//	device is index of table _Session
+					//
+					auto const rec_session = tbl_session->lookup_by_index(rec_dev["pk"]);
+					if (!rec_session.empty()) {
 
-						const auto ses_tag = cyng::value_cast(rec["device"], boost::uuids::nil_uuid());
-						if (dev_tag == ses_tag)
+						//
+						//	session found
+						//
+						CYNG_LOG_TRACE(logger_, "matching session "
+							<< cyng::io::to_str(rec.key())
+							<< cyng::io::to_str(rec.data()));
+
+						options["remote-tag"] = rec["tag"];
+						options["remote-peer"] = rec["peer"];
+
+						//
+						//	forward connection open request
+						//
+						auto remote_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+						BOOST_ASSERT_MSG(tag != remote_tag, "connection close request with same client tags");
+
+						auto callee_peer = cyng::object_cast<session>(rec["local"]);
+						BOOST_ASSERT(callee_peer != nullptr);
+
+						const bool local_connect = caller_peer->hash() == callee_peer->hash();
+						options["local-connect"] = cyng::make_object(local_connect);
+
+						if (local_connect)
 						{
-							//
-							//	session found
-							//
-							CYNG_LOG_TRACE(logger_, "matching session " 
-								<< cyng::io::to_str(rec.key())
-								<< cyng::io::to_str(rec.data()));
-
-							options["remote-tag"] = rec["tag"];
-							options["remote-peer"] = rec["peer"];
+							CYNG_LOG_TRACE(logger_, "forward (local) connection open request from"
+								<< tag
+								<< " ==> "
+								<< remote_tag);
 
 							//
-							//	forward connection open request
+							//	forward connection open request in same VM
 							//
-							auto remote_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
-							BOOST_ASSERT_MSG(tag != remote_tag, "connection close request with same client tags");
+							ctx.queue(client_req_open_connection_forward(remote_tag
+								, number
+								, options
+								, bag));
 
-							auto callee_peer = cyng::object_cast<session>(rec["local"]);
-							BOOST_ASSERT(callee_peer != nullptr);
-
-							const bool local_connect = caller_peer->hash() == callee_peer->hash();
-							options["local-connect"] = cyng::make_object(local_connect);
-
-							if (local_connect)
-							{
-								CYNG_LOG_TRACE(logger_, "forward (local) connection open request from"
-									<< tag
-									<< " ==> "
-									<< remote_tag);
-
-								//
-								//	forward connection open request in same VM
-								//
-								ctx.queue(client_req_open_connection_forward(remote_tag
-									, number
-									, options
-									, bag));
-
-							}
-							else
-							{
-								CYNG_LOG_TRACE(logger_, "forward (distinct) connection open request from"
-									<< tag
-									<< " ==> "
-									<< remote_tag);
-
-								//
-								//	forward connection open request in different VM
-								//
-								callee_peer->vm_.async_run(client_req_open_connection_forward(remote_tag
-									, number
-									, options
-									, bag));
-
-							}
-
-							//
-							//	write statistics
-							//
-							if (is_generate_time_series()) {
-								write_stat(tbl_tsdb, tag, account, "dialup", dev_number.c_str(), max_events);
-								write_stat(tbl_tsdb, tag, callee, "called by", account.c_str(), max_events);
-							}
-
-							success = true;
-							return false;
 						}
-						//	continue loop in *Session
-						return true;
-					});
+						else
+						{
+							CYNG_LOG_TRACE(logger_, "forward (distinct) connection open request from"
+								<< tag
+								<< " ==> "
+								<< remote_tag);
+
+							//
+							//	forward connection open request in different VM
+							//
+							callee_peer->vm_.async_run(client_req_open_connection_forward(remote_tag
+								, number
+								, options
+								, bag));
+
+						}
+
+						//
+						//	write statistics
+						//
+						if (is_generate_time_series()) {
+							write_stat(tbl_tsdb, tag, account, "dialup", dev_number.c_str(), max_events);
+							write_stat(tbl_tsdb, tag, callee, "called by", account.c_str(), max_events);
+						}
+
+						success = true;
+					}
 
 					//	continue loop in TDevice
 					return false;

@@ -141,9 +141,9 @@ namespace node
 	void cluster::bus_res_com_sml(cyng::context& ctx)
 	{
 		//
-		//	[21c95367-9d92-40d7-ba79-f2eee35dddc2,9f773865-e4af-489a-8824-8f78a2311278,23,[ec563e58-f0d6-4d6a-8a13-63f639f6c9a7],dd44ad9e-8995-48f0-81aa-eec454cf0625,
-		//	get.proc.param,00:15:3b:02:23:b3,root-active-devices,
-		//	%(("class":---),("ident":0ac00001),("maker":),("meter":00000000),("meterId":0AC00001),("number":0005),("timestamp":2014-11-25 15:41:29.00000000),("type":0000000a))]
+		//	[de554679-66c1-41d3-9975-952f3f69e40c,9f773865-e4af-489a-8824-8f78a2311278,11,[31cad258-45f1-4b1d-b131-8a55eb671bb1],98ac9841-335d-4440-8df1-64b0994e3f75,
+		//	get.proc.param,00:ff:b0:4b:94:f8,root-active-devices,
+		//	%(("class":---),("ident":01-ec4d-01000010-3c-02),("maker":),("meter":01-ec4d-01000010-3c-02),("meterId":01EC4D010000103C02),("number":0003),("timestamp":2019-08-13 13:41:04.00000000),("type":00000009))]
 		//
 		//	* [uuid] ident tag
 		//	* [uuid] source tag
@@ -157,7 +157,7 @@ namespace node
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_INFO(logger_, "bus.res.gateway.proxy " << cyng::io::to_str(frame));
 
-		auto const tpl = cyng::tuple_cast<
+		auto tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] ident
 			boost::uuids::uuid,		//	[1] source
 			std::uint64_t,			//	[2] sequence
@@ -165,7 +165,7 @@ namespace node
 			boost::uuids::uuid,		//	[4] websocket tag
 			std::string,			//	[5] channel
 			std::string,			//	[6] server id
-			std::string,			//	[7] "OBIS code" as text
+			std::string,			//	[7] "OBIS code" as text (see obis_db.cpp)
 			cyng::param_map_t		//	[8] params
 		>(frame);
 
@@ -175,43 +175,7 @@ namespace node
 		BOOST_ASSERT_MSG(!std::get<3>(tpl).empty(), "no TGateway key");
 
 		//
-		//	routing back
-		//
-		db_.access([&](const cyng::store::table* tbl_cluster)->void {
-
-			auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<1>(tpl)));
-			if (!rec.empty()) {
-				auto peer = cyng::object_cast<session>(rec["self"]);
-				if (peer != nullptr) {
-
-					CYNG_LOG_INFO(logger_, "bus.res.gateway.proxy - send to peer "
-						<< cyng::value_cast<std::string>(rec["class"], "")
-						<< '@'
-						<< peer->vm_.tag());
-
-					//
-					//	forward data
-					//
-					peer->vm_.async_run(node::bus_res_com_sml(
-						  std::get<0>(tpl)		//	ident tag
-						, std::get<1>(tpl)		//	source tag
-						, std::get<2>(tpl)		//	cluster sequence
-						, std::get<3>(tpl)		//	TGateway key
-						, std::get<4>(tpl)		//	websocket tag
-						, std::get<5>(tpl)		//	channel
-						, std::get<6>(tpl)		//	server id
-						, std::get<7>(tpl)		//	section part
-						, std::get<8>(tpl)));	//	params						
-				}
-			}
-			else {
-				CYNG_LOG_WARNING(logger_, "bus.res.query.gateway - peer not found " << std::get<1>(tpl));
-			}
-		}, cyng::store::read_access("_Cluster"));
-
-
-		//
-		//	update specific data in TGateway and TMeter table
+		//	update specific data in TGateway and TMeter table (81 81 11 06 FF FF)
 		//
 		if (boost::algorithm::equals(std::get<7>(tpl), "root-active-devices")) {
 
@@ -238,7 +202,7 @@ namespace node
 			//	* meters from gateways are unique by meter number ("meter") AND gateway (gw)
 			//
 			if (is_catch_meters(global_configuration_)	//	auto insert meters is true
-				&& (type < 2)	//	 meter type is SRV_MBUS or SRV_SERIAL
+				&& ((type < 2) || (type > 8))	//	 meter type is SRV_MBUS or SRV_SERIAL
 				&& std::get<3>(tpl).size() == 1)	//	TGateway key has correct size (and is not empty)
 			{
 				CYNG_LOG_TRACE(logger_, "search for "
@@ -253,7 +217,12 @@ namespace node
 				auto const gw_tag = cyng::value_cast(std::get<3>(tpl).at(0), boost::uuids::nil_uuid());
 
 				db_.access([&](cyng::store::table* tbl_meter, cyng::store::table const* tbl_cfg)->void {
+
 					bool found{ false };
+
+					//
+					//	"ident" + "gw" have to be unique
+					//
 					tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
 
 						const auto rec_ident = cyng::value_cast<std::string>(rec["ident"], "");
@@ -262,7 +231,7 @@ namespace node
 							//	abort loop if the same gw key is used
 							const auto meter_gw_tag = cyng::value_cast(rec["gw"], boost::uuids::nil_uuid());
 							CYNG_LOG_DEBUG(logger_, ident << " compare " << meter_gw_tag << " / " << gw_tag);
-							found = (meter_gw_tag == gw_tag);
+							found = (meter_gw_tag == gw_tag);	//	test if the matching meter id is from a different gateway
 						}
 
 						//	continue loop
@@ -324,6 +293,67 @@ namespace node
 				tbl_gw->modify(std::get<3>(tpl), cyng::param_factory("mbus", id), std::get<1>(tpl));
 			}, cyng::store::write_access("TGateway"));
 		}
+
+		//
+		//	routing back to sender (cluster member)
+		//
+		db_.access([&](cyng::store::table const* tbl_cluster, cyng::store::table const* tbl_meter)->void {
+
+			auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<1>(tpl)));
+			if (!rec.empty()) {
+				auto peer = cyng::object_cast<session>(rec["self"]);
+				if (peer != nullptr) {
+
+					CYNG_LOG_INFO(logger_, "bus.res.gateway.proxy - send to peer "
+						<< cyng::value_cast<std::string>(rec["class"], "")
+						<< '@'
+						<< peer->vm_.tag()
+						<< " ["
+						<< std::get<5>(tpl)	//	channel
+						<< "]");
+
+					//
+					//	81 81 11 06 FF FF
+					//	get primary key from TMeter table if available
+					//	"ident" is index of table TMeter
+					//	
+					if (boost::algorithm::equals(std::get<7>(tpl), "root-active-devices")) {
+						const auto ident = cyng::find_value<std::string>(std::get<8>(tpl), "ident", "");
+						auto const rec_meter = tbl_meter->lookup_by_index(cyng::make_object(ident));
+						if (!rec_meter.empty()) {
+							CYNG_LOG_TRACE(logger_, "bus.res.query.gateway - add meter pk " << cyng::io::to_str(rec_meter.key()));
+							std::get<8>(tpl).emplace("pk", cyng::make_object(rec_meter.key()));
+							std::get<8>(tpl).emplace("mc", rec_meter["code"]);	//	metering code
+						}
+						else {
+							CYNG_LOG_WARNING(logger_, "bus.res.query.gateway - meter " << ident << " is not configured");
+							std::get<8>(tpl).emplace("pk", cyng::make_object(cyng::table::key_generator(boost::uuids::nil_uuid())));
+							std::get<8>(tpl).emplace("mc", cyng::make_object("MC000000000000000000000000000000000000000000"));	//	metering code
+						}
+					}
+
+					//
+					//	forward data
+					//
+					peer->vm_.async_run(node::bus_res_com_sml(
+						  std::get<0>(tpl)		//	ident tag
+						, std::get<1>(tpl)		//	source tag
+						, std::get<2>(tpl)		//	cluster sequence
+						, std::get<3>(tpl)		//	TGateway key
+						, std::get<4>(tpl)		//	websocket tag
+						, std::get<5>(tpl)		//	channel
+						, std::get<6>(tpl)		//	server id
+						, std::get<7>(tpl)		//	section part
+						, std::get<8>(tpl)));	//	params						
+				}
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "bus.res.query.gateway - peer not found " << std::get<1>(tpl));
+			}
+		}	, cyng::store::read_access("_Cluster")
+			, cyng::store::read_access("TMeter"));
+
+
 	}
 
 	void cluster::bus_res_attention_code(cyng::context& ctx)
