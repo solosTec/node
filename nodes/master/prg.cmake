@@ -24,22 +24,6 @@ set (node_master_h
 	nodes/master/src/cluster.h
 )
 
-set (node_master_info
-	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
-
-	nodes/print_build_info.h
-	nodes/print_version_info.h
-	nodes/set_start_options.h
-	nodes/show_ip_address.h
-	nodes/write_pid.h
-
-	nodes/print_build_info.cpp
-	nodes/print_version_info.cpp
-	nodes/set_start_options.cpp
-	nodes/show_ip_address.cpp
-	nodes/write_pid.cpp
-)
-
 set (node_master_tasks
 	nodes/master/src/tasks/watchdog.h
 	nodes/master/src/tasks/watchdog.cpp	
@@ -51,8 +35,27 @@ set (node_master_shared
 	src/main/include/smf/cluster/serializer.h
 	lib/shared/src/generator.cpp
 	lib/shared/src/serializer.cpp
+
+	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
+
+	nodes/print_build_info.h
+	nodes/print_version_info.h
+	nodes/set_start_options.h
+	nodes/show_ip_address.h
+
+	nodes/print_build_info.cpp
+	nodes/print_version_info.cpp
+	nodes/set_start_options.cpp
+	nodes/show_ip_address.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
 )
 
+if (UNIX)
+	list(APPEND node_master_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_master_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
 
 set (node_master_schemes
 
@@ -87,7 +90,6 @@ endif()
 
 source_group("tasks" FILES ${node_master_tasks})
 source_group("service" FILES ${node_master_service})
-source_group("info" FILES ${node_master_info})
 source_group("shared" FILES ${node_master_shared})
 source_group("schemes" FILES ${node_master_schemes})
 
@@ -99,7 +101,6 @@ set (node_master
   ${node_master_tasks}
   ${node_master_res}
   ${node_master_service}
-  ${node_master_info}
   ${node_master_shared}
   ${node_master_schemes}
 )

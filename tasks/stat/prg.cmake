@@ -18,22 +18,27 @@ set (task_stat_schemes
 	nodes/shared/db/db_meta.cpp
 )
 
-set (task_stat_info
+set (task_stat_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
 	tasks/print_version_info.h
 	tasks/set_start_options.h
 	nodes/show_ip_address.h
-	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	tasks/print_version_info.cpp
 	tasks/set_start_options.cpp
 	nodes/show_ip_address.cpp
-	nodes/write_pid.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
 )
 
+if (UNIX)
+	list(APPEND task_stat_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND task_stat_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
 
 set (task_stat_tasks
 	tasks/stat/src/tasks/cluster.h
@@ -70,7 +75,7 @@ endif()
 
 source_group("tasks" FILES ${task_stat_tasks})
 source_group("service" FILES ${task_stat_service})
-source_group("info" FILES ${task_stat_info})
+source_group("info" FILES ${task_stat_shared})
 source_group("schemes" FILES ${task_stat_schemes})
 
 
@@ -78,7 +83,7 @@ source_group("schemes" FILES ${task_stat_schemes})
 set (task_stat
   ${task_stat_cpp}
   ${task_stat_h}
-  ${task_stat_info}
+  ${task_stat_shared}
   ${task_stat_tasks}
   ${task_stat_service}
   ${task_stat_schemes}

@@ -22,21 +22,27 @@ set (node_modem_h
 	nodes/modem/src/session_state.h
 )
 
-set (node_modem_info
+set (node_modem_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
 	nodes/print_version_info.h
 	nodes/set_start_options.h
 	nodes/show_ip_address.h
-	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
-	nodes/write_pid.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
 )
+
+if (UNIX)
+	list(APPEND node_modem_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_modem_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
 
 set (node_modem_tasks
 	nodes/modem/src/tasks/cluster.h
@@ -66,9 +72,8 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_modem_tasks})
-#source_group("resources" FILES ${node_modem_res})
 source_group("service" FILES ${node_modem_service})
-source_group("info" FILES ${node_modem_info})
+source_group("shared" FILES ${node_modem_shared})
 
 
 # define the main program
@@ -76,8 +81,7 @@ set (node_modem
   ${node_modem_cpp}
   ${node_modem_h}
   ${node_modem_tasks}
-#  ${node_modem_res}
   ${node_modem_service}
-  ${node_modem_info}
+  ${node_modem_shared}
 )
 

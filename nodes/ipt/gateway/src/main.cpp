@@ -1,9 +1,8 @@
 /*
- * Copyright Sylko Olzscher 2016-2017
- * 
- * Use, modification, and distribution is subject to the Boost Software
- * License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
- * http://www.boost.org/LICENSE_1_0.txt)
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2017 Sylko Olzscher
+ *
  */
 
 #include "../../../print_build_info.h"
@@ -19,8 +18,10 @@
 #include <fstream>
 
 //	test
-#include <smf/mbus/header.h>
-#include <smf/sml/srv_id_io.h>
+#include <smf/mbus/header.h>
+
+#include <smf/sml/srv_id_io.h>
+
 #include <stdlib.h>
 
 /**
@@ -185,12 +186,12 @@ int main(int argc, char **argv)
 		//
 		//	establish controller
 		//
-		node::controller ctrl(pool_size, json_path);
+		node::controller ctrl(pool_size, json_path, "ipt:gateway");
 
 		if (vm["default"].as< bool >())
 		{
 			//	write default configuration
- 			return ctrl.create_config();
+			return ctrl.ctl::create_config();	//	base class method is hidden
 		}
 
 		//if (vm["init"].as< bool >())

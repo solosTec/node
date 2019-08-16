@@ -9,7 +9,6 @@ set (node_e350_cpp
 	nodes/shared/net/session_stub.cpp
 	nodes/e350/src/server.cpp
 	nodes/e350/src/session.cpp
-#	nodes/e350/src/connection.cpp
 )
 
 set (node_e350_h
@@ -17,26 +16,33 @@ set (node_e350_h
 	nodes/e350/src/controller.h
 	src/main/include/smf/cluster/server_stub.h
 	nodes/e350/src/server.h
-#	nodes/e350/src/connection.h
 	src/main/include/smf/cluster/session_stub.h
 	nodes/e350/src/session.h
 )
 
-set (node_e350_info
+set (node_e350_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
 	nodes/print_version_info.h
 	nodes/set_start_options.h
 	nodes/show_ip_address.h
-	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
-	nodes/write_pid.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
+
 )
+
+if (UNIX)
+	list(APPEND node_e350_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_e350_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
+
 
 set (node_e350_tasks
 	nodes/e350/src/tasks/cluster.h
@@ -71,14 +77,14 @@ endif()
 
 source_group("tasks" FILES ${node_e350_tasks})
 source_group("service" FILES ${node_e350_service})
-source_group("info" FILES ${node_e350_info})
+source_group("shared" FILES ${node_e350_shared})
 
 
 # define the main program
 set (node_e350
   ${node_e350_cpp}
   ${node_e350_h}
-  ${node_e350_info}
+  ${node_e350_shared}
   ${node_e350_tasks}
   ${node_e350_res}
   ${node_e350_service}

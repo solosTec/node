@@ -27,15 +27,21 @@ set (task_tsdb_info
 	tasks/print_version_info.h
 	tasks/set_start_options.h
 	nodes/show_ip_address.h
-	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	tasks/print_version_info.cpp
 	tasks/set_start_options.cpp
 	nodes/show_ip_address.cpp
-	nodes/write_pid.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
+
 )
 
+if (UNIX)
+	list(APPEND node_dash_info src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_dash_info nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
 
 set (task_tsdb_tasks
 	tasks/tsdb/src/tasks/cluster.h

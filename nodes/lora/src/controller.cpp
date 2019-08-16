@@ -9,13 +9,9 @@
 #include "tasks/cluster.h"
 #include <NODE_project_info.h>
 #include <smf/http/srv/auth.h>
-#include <cyng/log.h>
-#include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>
-#include <cyng/async/signal_handler.h>
 #include <cyng/factory/set_factory.h>
 #include <cyng/io/serializer.h>
-#include <cyng/json.h>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/vector_cast.hpp>
@@ -24,14 +20,7 @@
  //#include <cyng/crypto/x509.h>
 #include <cyng/rnd.h>
 
-#if BOOST_OS_WINDOWS
-#include <cyng/scm/service.hpp>
-#endif
-#if BOOST_OS_LINUX
-#include "../../write_pid.h"
-#endif
 #include <boost/uuid/uuid_io.hpp>
-#include <boost/uuid/random_generator.hpp>
 #include <boost/random.hpp>
 
 namespace node 
@@ -39,8 +28,6 @@ namespace node
 	//
 	//	forward declaration(s):
 	//
-	bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object);
-	bool wait(cyng::logging::log_ptr logger);
 	std::size_t join_cluster(cyng::async::mux&, cyng::logging::log_ptr, boost::uuids::uuid, bool, cyng::vector_t const&, cyng::tuple_t const&);
 	void load_server_certificate(boost::asio::ssl::context& ctx
 		, cyng::logging::log_ptr logger
@@ -49,338 +36,85 @@ namespace node
 		, std::string const&  private_key
 		, std::string const& certificate_chain);
 
-	controller::controller(unsigned int pool_size, std::string const& json_path)
-	: pool_size_(pool_size)
-	, json_path_(json_path)
+	controller::controller(unsigned int pool_size, std::string const& json_path, std::string node_name)
+		: ctl(pool_size, json_path, node_name)
 	{}
-	
-	int controller::run(bool console)
+
+	cyng::vector_t controller::create_config(std::fstream& fout, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const
 	{
-		//
-		//	to calculate uptime
-		//
-		const std::chrono::system_clock::time_point tp_start = std::chrono::system_clock::now();
-		//
-		//	controller loop
-		//
-		try
-		{
-			//
-			//	controller loop
-			//
-			bool shutdown{ false };
-			while (!shutdown)
-			{
-				//
-				//	establish I/O context
-				//
-				cyng::async::mux mux{ this->pool_size_ };
+		cyng::crypto::rnd_num<int> rng(10, 120);
 
-				//
-				//	read configuration file
-				//
-				cyng::object config = cyng::json::read_file(json_path_);
+		return cyng::vector_factory({
+			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
+				, cyng::param_factory("log-level", "INFO")
+				, cyng::param_factory("tag", uidgen_())
+				, cyng::param_factory("generated", std::chrono::system_clock::now())
+				, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
+				, cyng::param_factory("keep-xml-files", false)	//	store all incoming data as XML file
 
-				if (config)
-				{
-					//
-					//	start application
-					//
-					cyng::vector_t vec;
-					vec = cyng::value_cast(config, vec);
+				, cyng::param_factory("server", cyng::tuple_factory(
+					cyng::param_factory("address", "0.0.0.0"),
+					cyng::param_factory("service", "8443"),
+					cyng::param_factory("timeout", "15"),	//	seconds
+					cyng::param_factory("max-upload-size", 1024 * 1024 * 10),	//	10 MB
+					cyng::param_factory("document-root", (cwd / "htdocs").string()),
+					cyng::param_factory("tls-pwd", "test"),
+					cyng::param_factory("tls-certificate-chain", "fullchain.cert"),
+					cyng::param_factory("tls-private-key", "privkey.key"),
+					cyng::param_factory("tls-dh", "dh4096.dh"),	//	diffie-hellman
+					cyng::param_factory("auth", cyng::vector_factory({
+						//	directory: /
+						//	authType:
+						//	user:
+						//	pwd:
+						cyng::tuple_factory(
+							cyng::param_factory("directory", "/"),
+							cyng::param_factory("authType", "Basic"),
+							cyng::param_factory("realm", "Root Area"),
+							cyng::param_factory("name", "auth@example.com"),
+							cyng::param_factory("pwd", "secret")
+						),
+						cyng::tuple_factory(
+							cyng::param_factory("directory", "/temp"),
+							cyng::param_factory("authType", "Basic"),
+							cyng::param_factory("realm", "Restricted Content"),
+							cyng::param_factory("name", "auth@example.com"),
+							cyng::param_factory("pwd", "secret")
+						) } )),	//	auth
 
-					if (vec.empty())
-					{
-						std::cerr
-							<< "use option -D to generate a configuration file"
-							<< std::endl;
-						shutdown = true;
-					}
-					else
-					{
-						//
-						//	initialize logger
-						//
-#if BOOST_OS_LINUX
-						auto logger = cyng::logging::make_sys_logger("smf:LoRa", true);
-#else
-						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
-						auto dom = cyng::make_reader(vec[0]);
-						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
+					//185.244.25.187
+					cyng::param_factory("blacklist", cyng::vector_factory({
+						cyng::make_address("185.244.25.187"),	//	KV Solutions B.V. scans for login.cgi
+						cyng::make_address("139.219.100.104"),	//	ISP Microsoft (China) Co. Ltd. - 2018-07-31T21:14
+						cyng::make_address("194.147.32.109"),	//	Udovikhin Evgenii - 2019-02-01 15:23:08.13699453
+						cyng::make_address("184.105.247.196")	//	Hurricane Electric LLC, scan-15.shadowserver.org - 2019-02-01 16:13:13.81835055
+						//cyng::make_address("178.38.88.91")
+						})),	//	blacklist
 
-						auto logger = (console)
-							? cyng::logging::make_console_logger(mux.get_io_service(), "smf:LoRa")
-							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / "smf:LoRa.log"))
-							;
-#ifdef _DEBUG
-						if (!console) {
-							std::cout << "log file see: " << (log_dir / "smf:LoRa.log") << std::endl;
-						}
-#endif
-#endif
-
-						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
-						CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
-
-						//
-						//	start application
-						//
-						shutdown = start(mux, logger, vec[0]);
-
-						//
-						//	print uptime
-						//
-						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-						CYNG_LOG_INFO(logger, "smf:LoRa uptime " << cyng::io::to_str(cyng::make_object(duration)));
-					}
-				}
-				else
-				{
-					// 	CYNG_LOG_FATAL(logger, "no configuration data");
-					std::cout
-						<< "use option -D to generate a configuration file"
-						<< std::endl;
-
-					//
-					//	no configuration found
-					//
-					shutdown = true;
-				}
-
-				//
-				//	shutdown scheduler
-				//
-				mux.shutdown();
-			}
-
-			return EXIT_SUCCESS;
-		}
-		catch (std::exception& ex)
-		{
-			std::cerr
-				<< ex.what()
-				<< std::endl;
-		}
-
-		return EXIT_FAILURE;
+					cyng::param_factory("redirect", cyng::vector_factory({
+						cyng::param_factory("/", "/index.html")
+						}))	//	redirect
+					))	//	server
+				, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
+					cyng::param_factory("host", "127.0.0.1"),
+					cyng::param_factory("service", "7701"),
+					cyng::param_factory("account", "root"),
+					cyng::param_factory("pwd", NODE_PWD),
+					cyng::param_factory("salt", NODE_SALT),
+					cyng::param_factory("monitor", rng()),	//	seconds
+					cyng::param_factory("group", 0)	//	customer ID
+				) }))
+			)
+		});
 	}
 
-	int controller::create_config() const
+	bool controller::start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag)
 	{
-		std::fstream fout(json_path_, std::ios::trunc | std::ios::out);
-		if (fout.is_open())
-		{
-			std::cout
-				<< "write to file "
-				<< json_path_
-				<< std::endl;
-			//
-			//	get default values
-			//
-			const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
-			const boost::filesystem::path pwd = boost::filesystem::current_path();
-			boost::uuids::random_generator uidgen;
-
-			cyng::crypto::rnd_num<int> rng(10, 120);
-
-			const auto conf = cyng::vector_factory({
-				cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
-					, cyng::param_factory("log-level", "INFO")
-					, cyng::param_factory("tag", uidgen())
-					, cyng::param_factory("generated", std::chrono::system_clock::now())
-					, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
-					, cyng::param_factory("keep-xml-files", false)	//	store all incoming data as XML file
-
-					, cyng::param_factory("server", cyng::tuple_factory(
-						cyng::param_factory("address", "0.0.0.0"),
-						cyng::param_factory("service", "8443"),
-						cyng::param_factory("timeout", "15"),	//	seconds
-						cyng::param_factory("max-upload-size", 1024 * 1024 * 10),	//	10 MB
-						cyng::param_factory("document-root", (pwd / "htdocs").string()),
-						cyng::param_factory("tls-pwd", "test"),
-						cyng::param_factory("tls-certificate-chain", "fullchain.cert"),
-						cyng::param_factory("tls-private-key", "privkey.key"),
-						cyng::param_factory("tls-dh", "dh4096.dh"),	//	diffie-hellman
-						cyng::param_factory("auth", cyng::vector_factory({
-							//	directory: /
-							//	authType:
-							//	user:
-							//	pwd:
-							cyng::tuple_factory(
-								cyng::param_factory("directory", "/"),
-								cyng::param_factory("authType", "Basic"),
-								cyng::param_factory("realm", "Root Area"),
-								cyng::param_factory("name", "auth@example.com"),
-								cyng::param_factory("pwd", "secret")
-							),
-							cyng::tuple_factory(
-								cyng::param_factory("directory", "/temp"),
-								cyng::param_factory("authType", "Basic"),
-								cyng::param_factory("realm", "Restricted Content"),
-								cyng::param_factory("name", "auth@example.com"),
-								cyng::param_factory("pwd", "secret")
-							) } )),	//	auth
-
-						//185.244.25.187
-						cyng::param_factory("blacklist", cyng::vector_factory({
-							cyng::make_address("185.244.25.187"),	//	KV Solutions B.V. scans for login.cgi
-							cyng::make_address("139.219.100.104"),	//	ISP Microsoft (China) Co. Ltd. - 2018-07-31T21:14
-							cyng::make_address("194.147.32.109"),	//	Udovikhin Evgenii - 2019-02-01 15:23:08.13699453
-							cyng::make_address("184.105.247.196")	//	Hurricane Electric LLC, scan-15.shadowserver.org - 2019-02-01 16:13:13.81835055
-							//cyng::make_address("178.38.88.91")
-							})),	//	blacklist
-
-						cyng::param_factory("redirect", cyng::vector_factory({
-							cyng::param_factory("/", "/index.html")
-							}))	//	redirect
-						))	//	server
-					, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
-						cyng::param_factory("host", "127.0.0.1"),
-						cyng::param_factory("service", "7701"),
-						cyng::param_factory("account", "root"),
-						cyng::param_factory("pwd", NODE_PWD),
-						cyng::param_factory("salt", NODE_SALT),
-						cyng::param_factory("monitor", rng()),	//	seconds
-						cyng::param_factory("group", 0)	//	customer ID
-					) }))
-				)
-				});
-
-			cyng::json::write(std::cout, cyng::make_object(conf));
-			std::cout << std::endl;
-			cyng::json::write(fout, cyng::make_object(conf));
-			return EXIT_SUCCESS;
-		}
-		else
-		{
-			std::cerr
-				<< "unable to open file "
-				<< json_path_
-				<< std::endl;
-
-		}
-		return EXIT_FAILURE;
-	}
-
-	//int controller::generate_x509(std::string const& c
-	//	, std::string const& l
-	//	, std::string const& o
-	//	, std::string const& cn)
-	//{
- //       //::OPENSSL_init_ssl(0, NULL);
-
-	//	cyng::crypto::EVP_KEY_ptr pkey(cyng::crypto::generate_key(), ::EVP_PKEY_free);
-	//	if (!pkey)
-	//	{
-	//		return EXIT_FAILURE;
-	//	}
-	//	cyng::crypto::X509_ptr x509(cyng::crypto::generate_x509(pkey.get()
-	//		, 31536000L
-	//		, c.c_str()
-	//		//, l.c_str()
-	//		, o.c_str()
-	//		, cn.c_str()), ::X509_free);
-	//	if (!x509)
-	//	{
-	//		return EXIT_FAILURE;
-	//	}
-
-	//	std::cout << "Writing key and certificate to disk..." << std::endl;
-	//	bool ret = cyng::crypto::write_to_disk(pkey.get(), x509.get());
-	//	return (ret)
-	//		? EXIT_SUCCESS
-	//		: EXIT_FAILURE;
-	//}
-
-#if BOOST_OS_WINDOWS
-	int controller::run_as_service(controller&& ctrl, std::string const& srv_name)
-	{
-		//
-		//	define service type
-		//
-		typedef service< controller >	service_type;
-
-		//
-		//	create service
-		//
-		::OutputDebugString(srv_name.c_str());
-		service_type srv(std::move(ctrl), srv_name);
-
-		//
-		//	starts dispatcher and calls service main() function 
-		//
-		const DWORD r = srv.run();
-		switch (r)
-		{
-		case ERROR_SERVICE_ALREADY_RUNNING:
-			//	An instance of the service is already running.
-			::OutputDebugString("An instance of the [LoRa] service is already running.");
-			break;
-		case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
-			//
-			//	The service process could not connect to the service controller.
-			//	Typical error message, when running in console mode.
-			//
-			::OutputDebugString("***Error 1063: The [LoRa] service process could not connect to the service controller.");
-			std::cerr
-				<< "***Error 1063: The [LoRa] service could not connect to the service controller."
-				<< std::endl
-				;
-			break;
-		case ERROR_SERVICE_NOT_IN_EXE:
-			//	The executable program that this service is configured to run in does not implement the service.
-			::OutputDebugString("The [LoRa] service is configured to run in does not implement the service.");
-			break;
-		default:
-		{
-			std::stringstream ss;
-			ss
-				<< '['
-				<< srv_name
-				<< "] service dispatcher stopped "
-				<< r;
-			const std::string msg = ss.str();
-			::OutputDebugString(msg.c_str());
-		}
-		break;
-		}
-
-
-		return EXIT_SUCCESS;
-	}
-
-	void controller::control_handler(DWORD sig)
-	{
-		//	forward signal to shutdown manager
-		cyng::forward_signal(sig);
-	}
-
-#endif
-
-	bool start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::object cfg)
-	{
-		CYNG_LOG_TRACE(logger, cyng::dom_counter(cfg) << " configuration nodes found");
-		auto dom = cyng::make_reader(cfg);
-
-		boost::uuids::random_generator uidgen;
-		auto const cluster_tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen());
-		CYNG_LOG_TRACE(logger, "cluster tag: " << cluster_tag);
-
-		auto const keep_xml_file = cyng::value_cast(dom.get("keep-xml-files"), false);
+		auto const keep_xml_file = cyng::value_cast(cfg.get("keep-xml-files"), false);
 		if (keep_xml_file) {
 			CYNG_LOG_TRACE(logger, "incoming XML files are stored");
 		}
 		
-		//
-		//	apply severity threshold
-		//
-		logger->set_severity(cyng::logging::to_severity(cyng::value_cast<std::string>(dom.get("log-level"), "INFO")));
-
-#if BOOST_OS_LINUX
-        const boost::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
-        write_pid(log_dir, cluster_tag);
-#endif
-
 		//
 		//	connect to cluster
 		//
@@ -388,10 +122,10 @@ namespace node
 		cyng::tuple_t tmp_tpl;
 		const auto tsk = join_cluster(mux
 			, logger
-			, cluster_tag
+			, tag
 			, keep_xml_file
-			, cyng::value_cast(dom.get("cluster"), tmp_vec)
-			, cyng::value_cast(dom.get("server"), tmp_tpl));
+			, cyng::value_cast(cfg.get("cluster"), tmp_vec)
+			, cyng::value_cast(cfg.get("server"), tmp_tpl));
 
 		//
 		//	wait for system signals
@@ -404,36 +138,6 @@ namespace node
 		CYNG_LOG_INFO(logger, "stop cluster");
 		mux.stop(tsk);
 
-		//
-		//	stop all tasks
-		//
-		CYNG_LOG_INFO(logger, "stop all tasks");
-		mux.stop();
-
-		return shutdown;
-	}
-
-	bool wait(cyng::logging::log_ptr logger)
-	{
-		//
-		//	wait for system signals
-		//
-		bool shutdown = false;
-		cyng::signal_mgr signal;
-		switch (signal.wait())
-		{
-#if BOOST_OS_WINDOWS
-		case CTRL_BREAK_EVENT:
-#else
-		case SIGHUP:
-#endif
-			CYNG_LOG_INFO(logger, "SIGHUP received");
-			break;
-		default:
-			CYNG_LOG_WARNING(logger, "SIGINT received");
-			shutdown = true;
-			break;
-		}
 		return shutdown;
 	}
 

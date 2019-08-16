@@ -29,30 +29,35 @@ set (node_dash_shared
 	nodes/dash_shared/src/forwarder.cpp
 	nodes/dash_shared/src/form_data.h
 	nodes/dash_shared/src/form_data.cpp
-)
 
-set (node_dash_schemes
-
-	src/main/include/smf/shared/db_schemes.h
-	nodes/shared/db/db_schemes.cpp
-)
-
-set (node_dash_info
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
 	nodes/print_version_info.h
 	nodes/set_start_options.h
 	nodes/show_ip_address.h
-	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
-	nodes/write_pid.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
+
 )
 
+if (UNIX)
+	list(APPEND node_dash_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_dash_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
+
+
+set (node_dash_schemes
+
+	src/main/include/smf/shared/db_schemes.h
+	nodes/shared/db/db_schemes.cpp
+)
 	
 if(WIN32)
 
@@ -80,7 +85,6 @@ endif()
 
 source_group("tasks" FILES ${node_dash_tasks})
 source_group("service" FILES ${node_dash_service})
-source_group("info" FILES ${node_dash_info})
 source_group("shared" FILES ${node_dash_shared})
 source_group("schemes" FILES ${node_dash_schemes})
 
@@ -91,7 +95,6 @@ set (node_dash
   ${node_dash_h}
   ${node_dash_tasks}
   ${node_dash_service}
-  ${node_dash_info}
   ${node_dash_shared}
   ${node_dash_schemes}
 )

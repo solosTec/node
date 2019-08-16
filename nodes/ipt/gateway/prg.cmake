@@ -30,7 +30,7 @@ set (node_ipt_gateway_schemes
 	nodes/shared/db/db_meta.cpp
 )
 
-set (node_ipt_gateway_info
+set (node_ipt_gateway_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
@@ -38,15 +38,22 @@ set (node_ipt_gateway_info
 	nodes/set_start_options.h
 	nodes/show_ip_address.h
 	nodes/show_fs_drives.h
-	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
 	nodes/show_fs_drives.cpp
-	nodes/write_pid.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
 )
+
+if (UNIX)
+	list(APPEND node_ipt_gateway_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_ipt_gateway_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
+
 
 set (node_ipt_gateway_tasks
 
@@ -102,7 +109,7 @@ endif()
 
 source_group("tasks" FILES ${node_ipt_gateway_tasks})
 source_group("service" FILES ${node_ipt_gateway_service})
-source_group("info" FILES ${node_ipt_gateway_info})
+source_group("shared" FILES ${node_ipt_gateway_shared})
 source_group("server" FILES ${node_ipt_gateway_server})
 source_group("schemes" FILES ${node_ipt_gateway_schemes})
 
@@ -113,7 +120,7 @@ set (node_ipt_gateway
   ${node_ipt_gateway_h}
   ${node_ipt_gateway_tasks}
   ${node_ipt_gateway_service}
-  ${node_ipt_gateway_info}
+  ${node_ipt_gateway_shared}
   ${node_ipt_gateway_server}
   ${node_ipt_gateway_schemes}
 )

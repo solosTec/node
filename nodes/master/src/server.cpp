@@ -217,25 +217,34 @@ namespace node
 		//
 		//	wait for all watchdog tasks to terminate
 		//
-		//bool size(std::string const&, std::function<void(std::size_t)> f) const;
 
 		std::atomic< bool >	complete{ false };
 		std::size_t msec{ 10 };
 		while (!complete) {
 			mux_.size("node::watchdog", [&](std::size_t count) {
+
+				//
+				//	this runs in another thread than the while loop()
+				//
 				complete = (count == 0);
 				if (!complete) {
-					CYNG_LOG_WARNING(logger_, "still waiting for " << count << " watchdog task(s)");
-					std::this_thread::sleep_for(std::chrono::milliseconds(msec));
+					
+					CYNG_LOG_WARNING(logger_, "waiting for " << count << " watchdog task(s) -  time left " << (1000 - msec) << " msec");
+
 					msec += 20;
 					complete = (msec > 1000);	// last exit
 				}
 			});
+
+			//
+			//	outside thread
+			//
+			std::this_thread::sleep_for(std::chrono::milliseconds(msec));
 		}
 
-	}
-	
+		CYNG_LOG_INFO(logger_, "closing master server complete");
 
+	}
 }
 
 

@@ -18,23 +18,6 @@ set (task_csv_schemes
 	nodes/shared/db/db_meta.cpp
 )
 
-set (task_csv_info
-	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
-
-	nodes/print_build_info.h
-	tasks/print_version_info.h
-	tasks/set_start_options.h
-	nodes/show_ip_address.h
-	nodes/write_pid.h
-
-	nodes/print_build_info.cpp
-	tasks/print_version_info.cpp
-	tasks/set_start_options.cpp
-	nodes/show_ip_address.cpp
-	nodes/write_pid.cpp
-)
-
-
 set (task_csv_tasks
 	tasks/csv/src/tasks/cluster.h
 	tasks/csv/src/tasks/cluster.cpp
@@ -75,10 +58,32 @@ else()
 
 endif()
 
+set (task_csv_shared
+
+	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
+
+	nodes/print_build_info.h
+	tasks/print_version_info.h
+	tasks/set_start_options.h
+	nodes/show_ip_address.h
+
+	nodes/print_build_info.cpp
+	tasks/print_version_info.cpp
+	tasks/set_start_options.cpp
+	nodes/show_ip_address.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
+)
+
+if (UNIX)
+	list(APPEND task_csv_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND task_csv_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
 
 source_group("tasks" FILES ${task_csv_tasks})
 source_group("service" FILES ${task_csv_service})
-source_group("info" FILES ${task_csv_info})
+source_group("shared" FILES ${task_csv_shared})
 source_group("schemes" FILES ${task_csv_schemes})
 
 
@@ -86,7 +91,7 @@ source_group("schemes" FILES ${task_csv_schemes})
 set (task_csv
   ${task_csv_cpp}
   ${task_csv_h}
-  ${task_csv_info}
+  ${task_csv_shared}
   ${task_csv_tasks}
   ${task_csv_service}
   ${task_csv_schemes}

@@ -14,22 +14,28 @@ set (node_mqtt_h
 	nodes/mqtt/src/server.h
 )
 
-set (node_mqtt_info
+set (node_mqtt_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
 	nodes/print_version_info.h
 	nodes/set_start_options.h
 	nodes/show_ip_address.h
-	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
-	nodes/write_pid.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
 )
 
+
+if (UNIX)
+	list(APPEND node_mqtt_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_mqtt_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
 
 set (node_mqtt_tasks
 	nodes/mqtt/src/tasks/cluster.h
@@ -81,7 +87,7 @@ endif()
 
 source_group("tasks" FILES ${node_mqtt_tasks})
 source_group("service" FILES ${node_mqtt_service})
-source_group("info" FILES ${node_mqtt_info})
+source_group("shared" FILES ${node_mqtt_shared})
 source_group("mqtt" FILES ${node_mqtt_srv})
 
 
@@ -89,7 +95,7 @@ source_group("mqtt" FILES ${node_mqtt_srv})
 set (node_mqtt
   ${node_mqtt_cpp}
   ${node_mqtt_h}
-  ${node_mqtt_info}
+  ${node_mqtt_shared}
   ${node_mqtt_tasks}
   ${node_mqtt_srv}
   ${node_mqtt_service}

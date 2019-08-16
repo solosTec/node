@@ -18,6 +18,9 @@ namespace node
 	class watchdog
 	{
 	public:
+		//
+		//	empty message map
+		//
 		using msg_0 = std::tuple<>;
 		using signatures_t = std::tuple<msg_0>;
 

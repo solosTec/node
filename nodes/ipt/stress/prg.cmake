@@ -13,7 +13,7 @@ set (node_ipt_stress_h
 
 )
 
-set (node_ipt_stress_info
+set (node_ipt_stress_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
@@ -25,6 +25,10 @@ set (node_ipt_stress_info
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
+
 )
 
 set (node_ipt_stress_tasks
@@ -58,7 +62,7 @@ endif()
 source_group("tasks" FILES ${node_ipt_stress_tasks})
 source_group("resources" FILES ${node_ipt_stress_res})
 source_group("service" FILES ${node_ipt_stress_service})
-source_group("info" FILES ${node_ipt_stress_info})
+source_group("shared" FILES ${node_ipt_stress_shared})
 
 
 # define the main program
@@ -68,7 +72,7 @@ set (node_ipt_stress
   ${node_ipt_stress_tasks}
   ${node_ipt_stress_res}
   ${node_ipt_stress_service}
-  ${node_ipt_stress_info}
+  ${node_ipt_stress_shared}
 )
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)

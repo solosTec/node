@@ -9,9 +9,6 @@
 #include "../../../print_version_info.h"
 #include "../../../set_start_options.h"
 #include "../../../show_ip_address.h"
-//#if BOOST_OS_WINDOWS
-//#include <boost/asio.hpp>
-//#endif
 #include "controller.h"
 #include <iostream>
 #include <boost/filesystem.hpp>
@@ -138,12 +135,12 @@ int main(int argc, char **argv)
 
 		}
 
- 		node::controller ctrl(pool_size, json_path);
+ 		node::controller ctrl(pool_size, json_path, "ipt:collector");
 
 		if (vm["default"].as< bool >())
 		{
 			//	write default configuration
- 			return ctrl.create_config();
+			return ctrl.ctl::create_config();	//	base class method is hidden
 		}
 
 #if BOOST_OS_WINDOWS

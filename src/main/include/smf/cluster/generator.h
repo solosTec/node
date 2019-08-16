@@ -273,66 +273,6 @@ namespace node
 	cyng::vector_t client_res_close(boost::uuids::uuid tag, std::uint64_t seq, bool success);
 
 	/**
-	 * Send reboot request
-	 *
-	 * @param tag target session
-	 * @param source source session
-	 * @param seq cluster sequence
-	 * @param tag_ws ws tag
-	 * @param server server id
-	 * @param user login name / account
-	 * @param pwd password
-	 */
-	//cyng::vector_t client_req_reboot(boost::uuids::uuid tag
-	//	, boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, boost::uuids::uuid tag_ws
-	//	, cyng::buffer_t const& server
-	//	, std::string const& user
-	//	, std::string const& pwd);
-
-	/**
-	 * Send process parameter request
-	 * 
-	 * @param tag target session
-	 * @param source source session
-	 * @param seq cluster sequence
-	 * @param vec parameters
-	 * @param server server id
-	 * @param user login name / account
-	 * @param pwd password
-	 */
-	//cyng::vector_t client_req_query_gateway(boost::uuids::uuid tag
-	//	, boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, cyng::vector_t vec
-	//	, boost::uuids::uuid tag_ws
-	//	, cyng::buffer_t const& server
-	//	, std::string const& user
-	//	, std::string const& pwd);
-
-	/**
-	 * Send process parameter request
-	 *
-	 * @param tag target session
-	 * @param source source session
-	 * @param seq cluster sequence
-	 * @param section request type
-	 * @param params parameters
-	 * @param server server id
-	 * @param user login name / account
-	 * @param pwd password
-	 */
-	//cyng::vector_t client_req_modify_gateway(boost::uuids::uuid tag
-	//	, boost::uuids::uuid source
-	//	, std::uint64_t seq
-	//	, std::string const& section
-	//	, cyng::param_map_t params
-	//	, cyng::buffer_t const& server
-	//	, std::string const& user
-	//	, std::string const& pwd);
-
-	/**
 	 * Send a request to the IP-T proxy
 	 *
 	 * @param tag target (IP-T) session

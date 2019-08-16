@@ -26,21 +26,29 @@ set (node_ipt_master_h
 	nodes/ipt/master/src/proxy_comm.h
 )
 
-set (node_ipt_master_info
+set (node_ipt_master_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
 	nodes/print_version_info.h
 	nodes/set_start_options.h
 	nodes/show_ip_address.h
-	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
-	nodes/write_pid.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
 )
+
+if (UNIX)
+	list(APPEND node_ipt_master_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_ipt_master_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
+
+
 
 set (node_ipt_master_tasks
 	nodes/shared/tasks/gatekeeper.h
@@ -84,7 +92,7 @@ endif()
 
 source_group("tasks" FILES ${node_ipt_master_tasks})
 source_group("service" FILES ${node_ipt_master_service})
-source_group("info" FILES ${node_ipt_master_info})
+source_group("shared" FILES ${node_ipt_master_shared})
 
 
 # define the main program
@@ -93,7 +101,7 @@ set (node_ipt_master
   ${node_ipt_master_h}
   ${node_ipt_master_tasks}
   ${node_ipt_master_service}
-  ${node_ipt_master_info}
+  ${node_ipt_master_shared}
 )
 
 if(WIN32)

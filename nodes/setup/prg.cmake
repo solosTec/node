@@ -14,7 +14,7 @@ set (node_setup_h
 
 )
 
-set (node_setup_info
+set (node_setup_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
@@ -22,15 +22,22 @@ set (node_setup_info
 	nodes/set_start_options.h
 	nodes/show_ip_address.h
 	nodes/show_fs_drives.h
-	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
 	nodes/show_fs_drives.cpp
-	nodes/write_pid.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
 )
+
+
+if (UNIX)
+	list(APPEND node_setup_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_setup_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
 
 set (node_setup_tasks
 	nodes/setup/src/tasks/cluster.h
@@ -77,7 +84,7 @@ endif()
 
 source_group("tasks" FILES ${node_setup_tasks})
 source_group("service" FILES ${node_setup_service})
-source_group("info" FILES ${node_setup_info})
+source_group("shared" FILES ${node_setup_shared})
 source_group("schemes" FILES ${node_setup_schemes})
 
 
@@ -87,7 +94,7 @@ set (node_setup
   ${node_setup_h}
   ${node_setup_tasks}
   ${node_setup_service}
-  ${node_setup_info}
+  ${node_setup_shared}
   ${node_setup_schemes}
 )
 

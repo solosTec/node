@@ -13,28 +13,33 @@ set (node_ipt_collector_h
 
 )
 
-set (node_ipt_collector_info
+set (node_ipt_collector_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
 	nodes/print_version_info.h
 	nodes/set_start_options.h
 	nodes/show_ip_address.h
-	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
-	nodes/write_pid.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
+
 )
+
+if (UNIX)
+	list(APPEND node_ipt_collector_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_ipt_collector_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
+
 
 set (node_ipt_collector_tasks
 	nodes/ipt/collector/src/tasks/network.h
 	nodes/ipt/collector/src/tasks/network.cpp
-)
-
-set (node_ipt_collector_res
 )
 	
 if(WIN32)
@@ -56,9 +61,8 @@ else()
 endif()
 
 source_group("tasks" FILES ${node_ipt_collector_tasks})
-source_group("resources" FILES ${node_ipt_collector_res})
 source_group("service" FILES ${node_ipt_collector_service})
-source_group("info" FILES ${node_ipt_collector_info})
+source_group("info" FILES ${node_ipt_collector_shared})
 
 
 # define the main program
@@ -66,8 +70,7 @@ set (node_ipt_collector
   ${node_ipt_collector_cpp}
   ${node_ipt_collector_h}
   ${node_ipt_collector_tasks}
-  ${node_ipt_collector_res}
   ${node_ipt_collector_service}
-  ${node_ipt_collector_info}
+  ${node_ipt_collector_shared}
 )
 

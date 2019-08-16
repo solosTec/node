@@ -139,12 +139,12 @@ int main(int argc, char **argv)
 		//
 		//	establish controller
 		//
-		node::controller ctrl(pool_size, json_path);
+		node::controller ctrl(pool_size, json_path, "smf:modem");
 
 		if (vm["default"].as< bool >())
 		{
 			//	write default configuration
-			return ctrl.create_config();
+			return ctrl.ctl::create_config();	//	base class method is hidden
 		}
 
 		if (vm["show"].as< bool >())

@@ -18,21 +18,28 @@ set (node_lora_h
 	nodes/lora/src/sync_db.h
 
 )
-set (node_lora_info
+set (node_lora_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
 	nodes/print_version_info.h
 	nodes/set_start_options.h
 	nodes/show_ip_address.h
-	nodes/write_pid.h
 
 	nodes/print_build_info.cpp
 	nodes/print_version_info.cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
-	nodes/write_pid.cpp
+
+	src/main/include/smf/shared/ctl.h
+	nodes/shared/sys/ctl.cpp
+
 )
+
+if (UNIX)
+	list(APPEND node_lora_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_lora_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
 
 set (node_lora_tasks
 	nodes/lora/src/tasks/cluster.h
@@ -74,7 +81,7 @@ endif()
 
 source_group("tasks" FILES ${node_lora_tasks})
 source_group("service" FILES ${node_lora_service})
-source_group("resources" FILES ${node_lora_info})
+source_group("shared" FILES ${node_lora_shared})
 source_group("assets" FILES ${node_lora_assets})
 source_group("examples" FILES ${node_lora_examples})
 source_group("schemes" FILES ${node_lora_schemes})
@@ -87,7 +94,7 @@ set (node_lora
   ${node_lora_tasks}
   ${node_lora_res}
   ${node_lora_service}
-  ${node_lora_info}
+  ${node_lora_shared}
   ${node_lora_assets}
   ${node_lora_examples}
   ${node_lora_schemes}

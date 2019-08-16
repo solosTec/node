@@ -145,7 +145,7 @@ int main(int argc, char **argv)
 		//	create a controller object
 		//  minimum pool size is 4
 		//
-		node::controller ctrl((pool_size < 4) ? 4 : pool_size, json_path);
+		node::controller ctrl((pool_size < 4) ? 4 : pool_size, json_path, "smf::dash");
 
 		//
 		//	check start optiones
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
 		if (!config_type.empty())
 		{
 			//	write default configuration
-			return ctrl.create_config();
+			return ctrl.ctl::create_config();	//	base class method is hidden
 		}
 
 		if (vm["ip"].as< bool >())

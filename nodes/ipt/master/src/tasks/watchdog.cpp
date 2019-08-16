@@ -78,7 +78,7 @@ namespace node
 	{
 		//
 		//	Be carefull when using resources from the session like vm_, 
-		//	they may already be invalid.
+		//	they may be already be invalid.
 		//
 
 		CYNG_LOG_INFO(logger_, "task #"
