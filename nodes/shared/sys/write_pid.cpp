@@ -5,7 +5,7 @@
  * 
  */ 
 
-#include "write_pid.h"
+#include <smf/shared/write_pid.h>
 #include <cyng/sys/process.h>
 #include <fstream>
 #include <boost/uuid/uuid_io.hpp>

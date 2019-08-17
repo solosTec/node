@@ -296,7 +296,7 @@ namespace node
 		cyng::async::start_task_delayed<ipt::client>(task_manager, std::chrono::seconds(1), logger);
 
 		std::this_thread::sleep_for(std::chrono::seconds(21));
-		task_manager.stop();
+		task_manager.stop(std::chrono::milliseconds(100), 10);
 		task_manager.get_io_service().stop();
 
 		return true;

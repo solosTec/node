@@ -377,7 +377,7 @@ namespace node
 		//	stop all tasks
 		//
 		CYNG_LOG_INFO(logger, "stop all tasks");
-		mux.stop();
+		mux.stop(std::chrono::milliseconds(100), 10);
 
 		return shutdown;
 	}
