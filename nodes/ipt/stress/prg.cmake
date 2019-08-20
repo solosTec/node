@@ -38,6 +38,11 @@ set (node_ipt_stress_tasks
 	nodes/ipt/stress/src/tasks/receiver.cpp
 )
 
+if (UNIX)
+	list(APPEND node_ipt_stress_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_ipt_stress_shared nodes/shared/sys/write_pid.cpp)
+endif(UNIX)
+
 set (node_ipt_stress_res
 )
 	

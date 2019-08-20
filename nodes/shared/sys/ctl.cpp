@@ -70,7 +70,7 @@ namespace node
 					if (!vec.empty())
 					{
 #if BOOST_OS_LINUX
-						auto logger = cyng::logging::make_sys_logger(node_name_, true);
+						auto logger = cyng::logging::make_sys_logger(node_name_.c_str(), true);
 #else
 						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 						auto dom = cyng::make_reader(vec[0]);

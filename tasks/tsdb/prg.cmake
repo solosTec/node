@@ -20,7 +20,7 @@ set (task_tsdb_schemes
 	nodes/shared/db/db_schemes.cpp
 )
 
-set (task_tsdb_info
+set (task_tsdb_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
@@ -39,8 +39,8 @@ set (task_tsdb_info
 )
 
 if (UNIX)
-	list(APPEND node_dash_info src/main/include/smf/shared/write_pid.h)
-	list(APPEND node_dash_info nodes/shared/sys/write_pid.cpp)
+	list(APPEND task_tsdb_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND task_tsdb_shared nodes/shared/sys/write_pid.cpp)
 endif(UNIX)
 
 set (task_tsdb_tasks
@@ -84,7 +84,7 @@ endif()
 
 source_group("tasks" FILES ${task_tsdb_tasks})
 source_group("service" FILES ${task_tsdb_service})
-source_group("info" FILES ${task_tsdb_info})
+source_group("shared" FILES ${task_tsdb_shared})
 source_group("schemes" FILES ${task_tsdb_schemes})
 
 
@@ -92,7 +92,7 @@ source_group("schemes" FILES ${task_tsdb_schemes})
 set (task_tsdb
   ${task_tsdb_cpp}
   ${task_tsdb_h}
-  ${task_tsdb_info}
+  ${task_tsdb_shared}
   ${task_tsdb_tasks}
   ${task_tsdb_service}
   ${task_tsdb_schemes}
