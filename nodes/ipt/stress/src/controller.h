@@ -8,51 +8,23 @@
 #ifndef NODE_HTTP_CONTROLLER_H
 #define NODE_HTTP_CONTROLLER_H
 
-#include <string>
-#include <cstdint>
-#include <boost/predef.h>	//	requires Boost 1.55
-#if BOOST_OS_WINDOWS
-#include <boost/asio.hpp>
-#endif
+#include <smf/shared/ctl.h>
 
 namespace node 
 {
-	class controller 
+	class controller : public ctl
 	{
 	public:
 		/**
-		 * @param pool_size thread pool size 
-		 * @param json_path path to JSON configuration file 
+		 * @param pool_size thread pool size
+		 * @param json_path path to JSON configuration file
 		 */
-		controller(unsigned int pool_size, std::string const& json_path);
-		
-		/**
-		 * Start controller loop.
-		 * The controller loop controls startup and shutdown of the server.
-		 * 
-		 * @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
-		 */
-		int run(bool console);
-		
-		/**
-		 * create a configuration file with default values.
+		controller(unsigned int pool_size, std::string const& json_path, std::string node_name);
+		int init_db();
 
-		 * @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
-		 */
-		int create_config() const;
-		
-#if BOOST_OS_WINDOWS
-		/**
-		* run as windows service
-		*/
-		static int run_as_service(controller&&, std::string const&);
-		virtual void control_handler(DWORD);
-
-#endif
-
-	private:
-		const unsigned int pool_size_;
-		const std::string json_path_;
+	protected:
+		virtual bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag);
+		virtual cyng::vector_t create_config(std::fstream&, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const;
 	};
 }
 
