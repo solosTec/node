@@ -23,6 +23,10 @@ namespace node
 	namespace sml {
 		class req_generator;
 	}
+
+	/**
+	 * The gateway proxy controls the communication with gateways over the IP-T protocol.
+	 */
 	class gateway_proxy
 	{
 		using proxy_queue = std::queue< ipt::proxy_data >;
@@ -108,8 +112,10 @@ namespace node
 
 		/**
 		 * @brief slot [5]
+		 * Incoming message from gateway.
 		 *
 		 * bus_res_query_gateway()
+		 * @see session_state
 		 */
 		cyng::continuation process(std::string trx,
 			std::size_t idx,

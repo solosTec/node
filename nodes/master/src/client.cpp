@@ -8,7 +8,6 @@
 
 #include "client.h"
 #include "session.h"
-// #include "db.h"
 #include <NODE_project_info.h>
 
 #include <smf/cluster/generator.h>
@@ -611,7 +610,7 @@ namespace node
 					BOOST_ASSERT(!rtag.is_nil());
 
 					//
-					//	simulate a bag
+					//	simulate a data bag
 					//
 					cyng::param_map_t bag = cyng::param_map_factory("origin-tag", tag)
 						("local-peer", cluster_tag)

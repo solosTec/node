@@ -170,9 +170,10 @@ namespace node
 		>(frame);
 
 		//
-		//	test TGateway key
+		//	get the tag from the TGateway table key
 		//
 		BOOST_ASSERT_MSG(!std::get<3>(tpl).empty(), "no TGateway key");
+		auto const gw_tag = cyng::value_cast(std::get<3>(tpl).at(0), boost::uuids::nil_uuid());
 
 		//
 		//	update specific data in TGateway and TMeter table (81 81 11 06 FF FF)
@@ -202,7 +203,7 @@ namespace node
 			//	* meters from gateways are unique by meter number ("meter") AND gateway (gw)
 			//
 			if (is_catch_meters(global_configuration_)	//	auto insert meters is true
-				&& ((type < 2) || (type > 8))	//	 meter type is SRV_MBUS or SRV_SERIAL
+				&& (type < 4)	//	 meter type is SRV_MBUS_WIRED, SRV_MBUS_RADIO, SRV_W_MBUS or SRV_SERIAL
 				&& std::get<3>(tpl).size() == 1)	//	TGateway key has correct size (and is not empty)
 			{
 				CYNG_LOG_TRACE(logger_, "search for "
@@ -211,37 +212,18 @@ namespace node
 					<< db_.size("TMeter") 
 					<< " record(s)");
 
-				//
-				//	get the tag from the TGateway table key
-				//
-				auto const gw_tag = cyng::value_cast(std::get<3>(tpl).at(0), boost::uuids::nil_uuid());
 
 				db_.access([&](cyng::store::table* tbl_meter, cyng::store::table const* tbl_cfg)->void {
 
-					bool found{ false };
-
 					//
-					//	"ident" + "gw" have to be unique
+					//	search for meter on this gateway
 					//
-					tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
-
-						const auto rec_ident = cyng::value_cast<std::string>(rec["ident"], "");
-						//CYNG_LOG_DEBUG(logger_, "compare " << ident << " / " << rec_ident);
-						if (boost::algorithm::equals(ident, rec_ident)) {
-							//	abort loop if the same gw key is used
-							const auto meter_gw_tag = cyng::value_cast(rec["gw"], boost::uuids::nil_uuid());
-							CYNG_LOG_DEBUG(logger_, ident << " compare " << meter_gw_tag << " / " << gw_tag);
-							found = (meter_gw_tag == gw_tag);	//	test if the matching meter id is from a different gateway
-						}
-
-						//	continue loop
-						return !found;
-					});
+					auto const rec = lookup_meter(tbl_meter, ident, gw_tag);
 
 					//
 					//	insert meter if not found
 					//
-					if (!found) {
+					if (rec.empty()) {
 						const auto tag = uidgen_();
 
 						//
@@ -267,7 +249,7 @@ namespace node
 							<< meter
 							;
 						const auto mc = ss.str();
-						CYNG_LOG_INFO(logger_, "insert TMeter " << tag << " : " << meter << " mc: " << mc);
+						CYNG_LOG_INFO(logger_, "auto insert TMeter " << tag << " : " << meter << " mc: " << mc);
 
 						tbl_meter->insert(cyng::table::key_generator(tag)
 							, cyng::table::data_generator(ident, meter, mc, maker, age, "", "", "", "", class_name, std::get<3>(tpl).front())
@@ -318,8 +300,8 @@ namespace node
 					//	"ident" is index of table TMeter
 					//	
 					if (boost::algorithm::equals(std::get<7>(tpl), "root-active-devices")) {
-						const auto ident = cyng::find_value<std::string>(std::get<8>(tpl), "ident", "");
-						auto const rec_meter = tbl_meter->lookup_by_index(cyng::make_object(ident));
+						auto const ident = cyng::find_value<std::string>(std::get<8>(tpl), "ident", "");
+						auto const rec_meter = lookup_meter(tbl_meter, ident, gw_tag);
 						if (!rec_meter.empty()) {
 							CYNG_LOG_TRACE(logger_, "bus.res.query.gateway - add meter pk " << cyng::io::to_str(rec_meter.key()));
 							std::get<8>(tpl).emplace("pk", cyng::make_object(rec_meter.key()));

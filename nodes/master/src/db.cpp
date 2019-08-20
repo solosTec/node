@@ -666,6 +666,41 @@ namespace node
 			: cfg.fetch_and(~SMF_GENERATE_CATCH_LORA));
 	}
 
+	cyng::table::record lookup_meter(cyng::store::table const* tbl, std::string const& ident, boost::uuids::uuid gw_tag)
+	{
+		cyng::table::record result(tbl->meta_ptr());
+
+		//
+		//	"ident" + "gw" have to be unique
+		//
+		tbl->loop([&](cyng::table::record const& rec) -> bool {
+
+			const auto cmp_ident = cyng::value_cast<std::string>(rec["ident"], "");
+
+			//
+			//	test if meter "ident" is matching
+			//
+			if (boost::algorithm::equals(ident, cmp_ident)) {
+
+				auto const meter_gw_tag = cyng::value_cast(rec["gw"], boost::uuids::nil_uuid());
+
+				//
+				//	test if the matching meter id is from a different gateway
+				//	abort loop if the same gw key is used
+				//
+				if (meter_gw_tag == gw_tag) {
+					result = rec;
+					return false;	//	stop
+				}
+			}
+
+			//	continue search
+			return true;
+		});
+
+		return result;
+	}
+
 }
 
 

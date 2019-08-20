@@ -829,7 +829,7 @@ namespace node
 
 		std::string get_manufacturer(cyng::buffer_t const& buffer)
 		{
-			if (is_mbus(buffer)) {
+			if (is_mbus_wired(buffer) || is_mbus_radio(buffer)) {
 				switch (buffer.back()) {
 				case 3:		return "/GWF6\\M07Coder";
 				case 7:		return "/GWF6\\M07Coder";

@@ -17,7 +17,7 @@ namespace node
 		{
 			std::array<std::uint8_t, 16> init_vec{ 0 };
 			init_vec.fill(access_nr);
-			if (node::sml::is_mbus(buffer)) {
+			if (node::sml::is_mbus_wired(buffer) || node::sml::is_mbus_radio(buffer)) {
 				
 				auto pos = buffer.begin();
 				++pos;

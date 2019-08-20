@@ -22,10 +22,14 @@ namespace node
 {
 	namespace sml
 	{
-		bool is_mbus(cyng::buffer_t const& buffer)
+		bool is_mbus_wired(cyng::buffer_t const& buffer)
 		{
-			return ((buffer.size() == 9)
-				&& (buffer.at(0) == MBUS_WIRELESS || buffer.at(0) == MBUS_WIRED));
+			return ((buffer.size() == 9) && (buffer.at(0) == MBUS_WIRED));
+		}
+
+		bool is_mbus_radio(cyng::buffer_t const& buffer)
+		{
+			return ((buffer.size() == 9) && (buffer.at(0) == MBUS_WIRELESS));
 		}
 
 		bool is_w_mbus(cyng::buffer_t const& buffer)
@@ -40,9 +44,9 @@ namespace node
 			{
 				return (buffer.at(6) >= 0x00) && (buffer.at(6) <= 0x0F);
 			}
-			else if (is_mbus(buffer)) {
-				return buffer.at(0) == MBUS_WIRELESS;
-			}
+			//else if (is_mbus(buffer)) {
+			//	return buffer.at(0) == MBUS_WIRELESS;
+			//}
 			return false;
 		}
 
@@ -77,16 +81,24 @@ namespace node
 				&& (buffer.at(1) == '9');
 		}
 
+		bool is_switch(cyng::buffer_t const& buffer)
+		{
+			return (buffer.size() == 4)
+				&& (buffer.at(0) == 10);
+		}
+
 		std::uint32_t get_srv_type(cyng::buffer_t const& buffer)
 		{
 			if (is_w_mbus(buffer))	return SRV_W_MBUS;
-			else if (is_mbus(buffer))	return SRV_MBUS;
+			else if (is_mbus_wired(buffer))	return SRV_MBUS_WIRED;
+			else if (is_mbus_radio(buffer))	return SRV_MBUS_RADIO;
 			else if (is_serial(buffer))	return SRV_SERIAL;
 			else if (is_gateway(buffer))	return SRV_GW;
 			else if (buffer.size() == 10 && buffer.at(1) == '3')	return SRV_BCD;
 			else if (buffer.size() == 8 && buffer.at(2) == '4')	return SRV_EON;
 			else if (is_dke_1(buffer))	return SRV_DKE_1;
 			else if (is_dke_2(buffer))	return SRV_DKE_2;
+			else if (is_switch(buffer))	return SRV_SWITCH;
 
 			return SRV_OTHER;
 		}
@@ -138,7 +150,7 @@ namespace node
 			//	store and reset stream state
 			boost::io::ios_flags_saver  ifs(os);
 
-			if (is_mbus(buffer))
+			if (is_mbus_wired(buffer) || is_mbus_radio(buffer))
 			{
 				//
 				//	serial number with M-bus prefix
@@ -252,7 +264,7 @@ namespace node
 
 		std::string get_serial(cyng::buffer_t const& buffer)
 		{
-			if (is_mbus(buffer))
+			if (is_mbus_wired(buffer) || is_mbus_radio(buffer))
 			{
 				std::stringstream ss;
 				ss
@@ -313,7 +325,7 @@ namespace node
 
 		std::uint16_t get_manufacturer_code(cyng::buffer_t const& buffer)
 		{
-			if (is_mbus(buffer)) {
+			if (is_mbus_wired(buffer) || is_mbus_radio(buffer)) {
 				std::uint16_t code{ 0 };
 				code = buffer[1] & 0xFF;
 				code += static_cast<unsigned char>(buffer[2]) << 8;
@@ -324,7 +336,7 @@ namespace node
 
 		std::uint8_t get_medium_code(cyng::buffer_t const& buffer)
 		{
-			if (is_mbus(buffer)) {
+			if (is_mbus_wired(buffer) || is_mbus_radio(buffer)) {
 				return static_cast<std::uint8_t>(buffer[8]);
 			}
 			return 0u;

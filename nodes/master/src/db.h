@@ -113,6 +113,15 @@ namespace node
 	bool set_catch_meters(std::atomic<std::uint64_t>&, bool);
 	bool set_catch_lora(std::atomic<std::uint64_t>&, bool);
 
+	/** @brief lookup meter
+	 * 
+	 * "ident" + "gw" have to be unique
+	 *
+	 * @return true if the specified meter on this gateway exists.
+	 * @note This method is inherently slow.
+	 * @todo optimize
+	 */
+	cyng::table::record lookup_meter(cyng::store::table const* tbl, std::string const& ident, boost::uuids::uuid gw_tag);
 }
 
 #endif

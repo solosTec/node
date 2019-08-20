@@ -1769,7 +1769,7 @@ namespace node
 
 				auto const type = node::sml::get_srv_type(meter);
 				std::string maker;
-				if (type == node::sml::SRV_MBUS) {
+				if (type == node::sml::SRV_MBUS_WIRED || type == node::sml::SRV_MBUS_RADIO) {
 					auto const code = node::sml::get_manufacturer_code(meter);
 					maker = node::sml::decode(code);
 				}

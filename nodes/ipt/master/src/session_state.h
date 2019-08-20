@@ -502,12 +502,16 @@ namespace node
 				state_connected_remote();
 				void transmit(bus::shared_type, boost::uuids::uuid tag, cyng::object);
 			};
+
 			struct state_connected_task
 			{
 				state_connected_task();
 				void reset(cyng::async::mux&, std::size_t tsk);
 				void transmit(cyng::async::mux&, cyng::object);
 
+				/**
+				 * List of visible or active devices/meters
+				 */
 				void get_proc_param_srv_device(cyng::async::mux&, cyng::vector_t);
 				void get_proc_param_srv_firmware(cyng::async::mux&, cyng::vector_t);
 				void get_proc_param_status_word(cyng::async::mux&, cyng::vector_t);

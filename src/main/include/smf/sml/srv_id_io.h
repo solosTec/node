@@ -24,7 +24,14 @@ namespace node
 		 * example: 02-e61e-03197715-3c-07
 		 */
 		bool is_mbus(std::string const&);
-		bool is_mbus(cyng::buffer_t const&);
+		//bool is_mbus_radio(std::string const&);
+
+		bool is_mbus_wired(cyng::buffer_t const&);
+		bool is_mbus_radio(cyng::buffer_t const&);
+
+		/**
+		 * short: 
+		 */
 		bool is_w_mbus(cyng::buffer_t const&);
 
 		/**
@@ -37,8 +44,15 @@ namespace node
 		bool is_dke_1(cyng::buffer_t const&);
 		bool is_dke_2(cyng::buffer_t const&);
 
+		/**
+		 * switches are outdated
+		 */
+		bool is_switch(cyng::buffer_t const&);
+
 		enum srv_type : std::uint32_t {
-			SRV_MBUS,
+			SRV_MBUS_WIRED,	//	M-Bus (long)
+			SRV_MBUS_RADIO,	//	M-Bus (long)
+			SRV_W_MBUS,		//	wireless M-Bus (short)
 			SRV_SERIAL,
 			SRV_GW,
 			SRV_BCD,	//	Rhein-Energie
@@ -47,7 +61,7 @@ namespace node
 			SRV_IMEI,	//	IMEI
 			SRV_RWE,	//	RWE
 			SRV_DKE_2,	//	E DIN 43863-5:2010-07
-			SRV_W_MBUS,	//	wireless M-Bus
+			SRV_SWITCH,	//	outdated
 			SRV_OTHER
 		};
 

@@ -620,7 +620,7 @@ namespace node
 			buffer = cyng::value_cast(obj, buffer);
 			const auto str = from_server_id(buffer);
 			node.append_attribute("value").set_value(str.c_str());
-			if (is_mbus(buffer))
+			if (is_mbus_wired(buffer) || is_mbus_radio(buffer))
 			{
 				//
 				//	extract manufacturer name

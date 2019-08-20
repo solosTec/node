@@ -227,9 +227,11 @@ namespace node
 			<< queue_.front().get_channel()
 			<< "]");
 
-		//BOOST_ASSERT(sml::from_server_id(queue_.front().get_srv()) == server_id);
 		if (server_id.empty()) {
 			server_id = sml::from_server_id(queue_.front().get_srv());
+		}
+		else {
+			BOOST_ASSERT(sml::from_server_id(queue_.front().get_srv()) == server_id);
 		}
 
 		bus_->vm_.async_run(bus_res_com_sml(queue_.front().get_ident_tag()

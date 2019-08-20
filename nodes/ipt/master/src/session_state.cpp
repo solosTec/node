@@ -1909,16 +1909,22 @@ namespace node
 
 			void state_connected_task::get_proc_param_srv_device(cyng::async::mux& mux, cyng::vector_t vec)
 			{
+				//
+				//	visible or active devices
+				//
+
 				cyng::buffer_t meter;
 				meter = cyng::value_cast(vec.at(6), meter);
 
 				auto const type = node::sml::get_srv_type(meter);
 				std::string maker;
-				if (type == node::sml::SRV_MBUS) {
+				if ((type == node::sml::SRV_MBUS_WIRED) || (type == node::sml::SRV_MBUS_RADIO)) {
 					auto const code = node::sml::get_manufacturer_code(meter);
 					maker = node::sml::decode(code);
 				}
 
+				//
+				//	post message to gateway proxy slot [5]
 				//
 				mux.post(tsk_proxy_, 5, cyng::tuple_t{
 					vec.at(1),	//	trx
@@ -1928,8 +1934,7 @@ namespace node
 								//	visible/active device
 					cyng::param_map_factory("number", vec.at(5))
 						("ident", node::sml::from_server_id(meter))
-						//("meter", node::sml::get_serial(meter))
-						("meter", ((node::sml::get_srv_type(meter) < 2) ? node::sml::get_serial(meter) : node::sml::from_server_id(meter)))
+						("meter", ((type < 2) ? node::sml::get_serial(meter) : node::sml::from_server_id(meter)))
 						("meterId", meter)
 						("class", vec.at(7))
 						("timestamp", vec.at(8))
