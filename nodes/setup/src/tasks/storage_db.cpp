@@ -579,27 +579,30 @@ namespace node
 		//	SQL table scheme
 		//
 		std::map<std::string, cyng::table::meta_table_ptr> meta_map;
-		meta_map.emplace("TDevice", cyng::table::make_meta_table<1, 10>("TDevice",
-			{ "pk", "gen", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
-			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
-			{ 36, 0, 128, 16, 128, 512, 64, 64, 0, 0, 0 }));
 
-		meta_map.emplace("TUser", cyng::table::make_meta_table<1, 6>("TUser",
-			{ "pk", "gen", "name", "team", "priv_read", "priv_write", "priv_delete" },
-			{ cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_BOOL, cyng::TC_BOOL, cyng::TC_BOOL },
-			{ 36, 0, 128, 0, 0, 0, 0 }));
+		//
+		//	make_meta_table_gen<>(...) inserts an additional "gen" column
+		//
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 9>("TDevice",
+			{ "pk", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
+			{ 36, 128, 16, 128, 512, 64, 64, 0, 0, 0 }));
 
-		meta_map.emplace("TGroup", cyng::table::make_meta_table<1, 4>("TGroup",
-			{ "id", "gen", "descr", "admin", "shortname" },
-			{ cyng::TC_UINT32, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_STRING },
-			{ 0, 0, 256, 0, 64 }));
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 5>("TUser",
+			{ "pk", "name", "team", "priv_read", "priv_write", "priv_delete" },
+			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_BOOL, cyng::TC_BOOL, cyng::TC_BOOL },
+			{ 36, 128, 0, 0, 0, 0 }));
+
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 3>("TGroup",
+			{ "id", "descr", "admin", "shortname" },
+			{ cyng::TC_UINT32, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_STRING },
+			{ 0, 256, 0, 64 }));
 
 		//	vFirmware-id: (i.e. MUC-ETHERNET-1.318_11332000)
 		//	factoryNr: (i.e. 06441734)
 		//	mbus: W-Mbus ID (i.e. A815408943050131)
-		meta_map.emplace("TGateway", cyng::table::make_meta_table<1, 12>("TGateway",
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 11>("TGateway",
 			{ "pk"
-			, "gen"
 			, "serverId"	//	05 + MAC
 			, "manufacturer"
 			, "proddata"	//	production date
@@ -613,7 +616,6 @@ namespace node
 			, "userPwd"		//	usually: operator
 			},
 			{ cyng::TC_UUID
-			, cyng::TC_UINT64	//	gen
 			, cyng::TC_STRING	//	server ID
 			, cyng::TC_STRING	//	manufacturer
 			, cyng::TC_TIME_POINT
@@ -626,16 +628,31 @@ namespace node
 			, cyng::TC_STRING	//	userName
 			, cyng::TC_STRING	//	userPwd
 			},
-			{ 36, 0, 23, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 }));
+			{ 36, 23, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 }));
+
+
+		//meta_map.emplace("TGWSnapshot", cyng::table::make_meta_table_gen<1, 2>("TGWSnapshot",
+		//	{ "pk"			//	primary key - same as TGateway
+		//	, "name"		//	optional name (serverID)
+		//	, "lastUpdate"	//	last updated
+		//	},
+		//	{ cyng::TC_UUID
+		//	, cyng::TC_STRING	//	name
+		//	, cyng::TC_TIME_POINT
+		//	},
+		//	{ 36	//	pk
+		//	, 23	//	name
+		//	, 0		//	lastUpdate
+		//}));
+	
 
 		//	id: (i.e. 1EMH0006441734)
 		//	vParam: parameterization software version (i.e. 16A098828.pse)
 		//	vFirmware: (i.e. 11600000)
 		//	item: artikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 		//	class: Metrological Class: A, B, C, Q3/Q1, ...
-		meta_map.emplace("TMeter", cyng::table::make_meta_table<1, 12>("TMeter",
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 11>("TMeter",
 			{ "pk"
-			, "gen"			//	generation
 			, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 			, "meter"		//	meter number (i.e. 16000913) 4 bytes 
 			, "code"		//	metering code - changed at 2019-01-31
@@ -649,7 +666,6 @@ namespace node
 			, "gw"			//	optional gateway pk
 			},
 			{ cyng::TC_UUID			//	pk
-			, cyng::TC_UINT64		//	gen
 			, cyng::TC_STRING		//	ident
 			, cyng::TC_STRING		//	meter
 			, cyng::TC_STRING		//	code
@@ -663,7 +679,6 @@ namespace node
 			, cyng::TC_UUID			//	gw
 			},
 			{ 36	//	pk
-			, 0		//	gen
 			, 24	//	ident
 			, 8		//	meter
 			, 33	//	code - country[2], ident[11], number[22]
@@ -680,9 +695,8 @@ namespace node
 		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices
 		//	DevEUI - 64 bit end-device identifier, EUI-64 (unique)
 		//	DevAddr - 32 bit device address (non-unique)
-		meta_map.emplace("TLoRaDevice", cyng::table::make_meta_table<1, 8>("TLoRaDevice",
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 7>("TLoRaDevice",
 			{ "pk"
-			, "gen"
 			, "DevEUI"
 			, "AESKey"		// 256 Bit
 			, "driver"	
@@ -692,7 +706,6 @@ namespace node
 			, "GatewayEUI"	//	64 bit gateway identifier, EUI-64 (unique)
 			},
 			{ cyng::TC_UUID
-			, cyng::TC_UINT64	//	gen
 			, cyng::TC_MAC64	//	DevEUI
 			, cyng::TC_STRING	//	AESKey
 			, cyng::TC_STRING	//	driver
@@ -701,19 +714,21 @@ namespace node
 			, cyng::TC_MAC64	//	AppEUI
 			, cyng::TC_MAC64	//	GatewayEUI
 			},
-			{ 36, 0, 0, 64, 32, 0, 0, 0, 0 }));
+			{ 36, 0, 64, 32, 0, 0, 0, 0 }));
 
-		meta_map.emplace("TLL", cyng::table::make_meta_table<2, 4>("TLL",
+		insert(meta_map, cyng::table::make_meta_table_gen<2, 3>("TLL",
 			{ "first"
 			, "second"
-			, "gen"
 			, "descr"
 			, "enabled"
 			, "creationTime" },
-			{ cyng::TC_UUID, cyng::TC_UUID, cyng::TC_UINT64, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
-			{ 36, 36, 0, 128, 0, 0 }));
+			{ cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
+			{ 36, 36, 128, 0, 0 }));
 
-		meta_map.emplace("TSysMsg", cyng::table::make_meta_table<1, 3>("TSysMsg",
+		//
+		//	no "gen" column
+		//
+		insert(meta_map, cyng::table::make_meta_table<1, 3>("TSysMsg",
 			{ "id"
 			, "ts"
 			, "severity"
@@ -724,9 +739,8 @@ namespace node
 		//
 		//	meta data (without payload)
 		//
-		meta_map.emplace("TLoraUplink", cyng::table::make_meta_table<1, 20>("TLoraUplink",
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 19>("TLoraUplink",
 			{ "pk"
-			, "gen"		//	virtual
 			, "DevEUI"
 			, "roTime"
 			, "FPort" 
@@ -756,7 +770,6 @@ namespace node
 			},
 
 			{ cyng::TC_UUID			//	pk [boost::uuids::uuid]
-			, cyng::TC_UINT64		//	gen
 			, cyng::TC_STRING		//	DevEUI [cyng::mac64]
 			//, cyng::TC_MAC64		//	DevEUI [cyng::mac64] - ToDo: implement adaptor
 			, cyng::TC_TIME_POINT	//	roTime [ std::chrono::system_clock::time_point]
@@ -778,11 +791,10 @@ namespace node
 			, cyng::TC_DOUBLE		//	LrrLAT
 			, cyng::TC_DOUBLE		//	LrrLON
 			},
-			{ 36, 0, 0, 0, 0, 0, 0, 0, 0, 40, 8, 0, 0, 8, 8, 8, 0, 8, 16, 0, 0 }));
+			{ 36, 0, 0, 0, 0, 0, 0, 0, 40, 8, 0, 0, 8, 8, 8, 0, 8, 16, 0, 0 }));
 
-		meta_map.emplace("TLoraLocation", cyng::table::make_meta_table<1, 13>("TLoraLocation",
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 13>("TLoraLocation",
 			{ "pk"
-			, "gen"		//	virtual
 			, "DevEUI"
 			, "DevAddr"
 			, "Lrcid"
@@ -798,7 +810,6 @@ namespace node
 			},
 
 			{ cyng::TC_UUID			//	pk [boost::uuids::uuid]
-			, cyng::TC_UINT64		//	gen
 			, cyng::TC_MAC64		//	DevEUI [cyng::mac64]
 			, cyng::TC_UINT32		//	DevAddr [std::uint32_t]
 			, cyng::TC_UINT32		//	Lrcid [std::uint32_t]
@@ -812,11 +823,10 @@ namespace node
 			, cyng::TC_DOUBLE		//	DevAltRadius [double]
 			, cyng::TC_STRING		//	CustomerID [std::string]
 			},
-			{ 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16 }));
+			{ 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16 }));
 
-		meta_map.emplace("TLoraPayload", cyng::table::make_meta_table<1, 15>("TLoraPayload",
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 15>("TLoraPayload",
 			{ "pk"		
-			, "gen"		//	virtual
 			, "type"	//	version
 			, "manufacturer"
 			, "id"
@@ -833,7 +843,6 @@ namespace node
 			, "CRC"
 			},
 			{ cyng::TC_UUID			//	pk [boost::uuids::uuid]
-			, cyng::TC_UINT64		//	gen
 			, cyng::TC_UINT8		//	type [std::uint8_t]
 			, cyng::TC_STRING		//	manufacturer [std::string]
 			, cyng::TC_STRING		//	meter ID [std::string]
@@ -849,9 +858,14 @@ namespace node
 			, cyng::TC_BOOL			//	link error (bit 2) [bool]
 			, cyng::TC_BOOL			//	CRC OK [bool]
 			},
-			{ 36, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0 }));
+			{ 36, 0, 3, 8, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0 }));
 
 		return meta_map;
+	}
+
+	void insert(std::map<std::string, cyng::table::meta_table_ptr>& map, cyng::table::meta_table_ptr ptr)
+	{
+		map.emplace(ptr->get_name(), ptr);
 	}
 
 }

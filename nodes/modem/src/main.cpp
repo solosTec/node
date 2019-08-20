@@ -161,7 +161,7 @@ int main(int argc, char **argv)
 			//	run as service 
 			const std::string srv_name = vm["service.name"].as< std::string >();
 			::OutputDebugString(srv_name.c_str());
- 			return ctrl.run_as_service(std::move(ctrl), srv_name);
+ 			return node::run_as_service(std::move(ctrl), srv_name);
 		}
 #endif
 

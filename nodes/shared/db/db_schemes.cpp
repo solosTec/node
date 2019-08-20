@@ -279,7 +279,11 @@ namespace node
 		}
 		else if (boost::algorithm::equals(name, "TGateway")) {
 
-			return cyng::table::make_meta_table<1, 11>(name, { "pk"	//	primary key
+			//
+			//	[string] serverId - index
+			//
+			return cyng::table::make_meta_table<1, 11, 1>(name, 
+				{ "pk"			//	primary key
 				, "serverId"	//	(1) Server-ID (i.e. 0500153B02517E)
 				, "manufacturer"	//	(2) manufacturer (i.e. EMH)
 				, "made"		//	(3) production date
@@ -304,7 +308,35 @@ namespace node
 				, cyng::TC_STRING
 				, cyng::TC_STRING
 				},
-				{ 36, 23, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 });
+				{ 36	//	pk
+				, 23	//	serverId
+				, 64	//	manufacturer
+				, 0		//	made
+				, 8		//	factoryNr
+				, 18	//	ifService
+				, 18	//	ifData
+				, 32	//	pwdDef
+				, 32	//	pwdRoot	
+				, 16	//	mbus
+				, 32	//	userName
+				, 32	//	userPwd
+				});
+		}
+		else if (boost::algorithm::equals(name, "TGWSnapshot")) {
+
+			return cyng::table::make_meta_table<1, 2>(name, 
+				{ "pk"			//	primary key - same as TGateway
+				, "name"		//	optional name (serverID)
+				, "lastUpdate"	//	last updated
+				},
+				{ cyng::TC_UUID
+				, cyng::TC_STRING	//	name
+				, cyng::TC_TIME_POINT
+				},
+				{ 36	//	pk
+				, 23	//	name
+				, 0		//	lastUpdate
+				});
 		}
 		else if (boost::algorithm::equals(name, "_LoRaUplink")) {
 

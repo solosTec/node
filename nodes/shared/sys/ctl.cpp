@@ -19,11 +19,8 @@
 #include <smf/shared/write_pid.h>
 #endif
 
-#if BOOST_OS_WINDOWS
-#include <cyng/scm/service.hpp>
-#endif
-
 #include <boost/filesystem.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node
 {
@@ -149,6 +146,10 @@ namespace node
 
 	bool ctl::start(cyng::async::mux&, cyng::logging::log_ptr, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag)
 	{
+#if BOOST_OS_WINDOWS
+		static std::string msg = "***Error: The [" + boost::uuids::to_string(tag) + "] service is not implemented";
+		::OutputDebugString(msg.c_str());
+#endif
 		return false;
 	}
 
@@ -241,69 +242,6 @@ namespace node
 	}
 
 #if BOOST_OS_WINDOWS
-	int ctl::run_as_service(ctl&& ctrl, std::string const& srv_name)
-	{
-		//
-		//	define service type
-		//
-		typedef service< ctl >	service_type;
-
-		//
-		//	messages
-		//
-		static std::string msg_01 = "startup service [" + srv_name + "]";
-		static std::string msg_02 = "An instance of the [" + srv_name + "] service is already running";
-		static std::string msg_03 = "***Error 1063: The [" + srv_name + "] service process could not connect to the service controller";
-		static std::string msg_04 = "The [" + srv_name + "] service is configured to run in does not implement the service";
-
-		//
-		//	create service
-		//
-		::OutputDebugString(msg_01.c_str());
-		service_type srv(std::move(ctrl), srv_name);
-
-		//
-		//	starts dispatcher and calls service main() function 
-		//
-		const DWORD r = srv.run();
-		switch (r)
-		{
-		case ERROR_SERVICE_ALREADY_RUNNING:
-			//	An instance of the service is already running.
-			::OutputDebugString(msg_02.c_str());
-			break;
-		case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
-			//
-			//	The service process could not connect to the service controller.
-			//	Typical error message, when running in console mode.
-			//
-			::OutputDebugString(msg_03.c_str());
-			std::cerr
-				<< msg_03
-				<< std::endl
-				;
-			break;
-		case ERROR_SERVICE_NOT_IN_EXE:
-			//	The executable program that this service is configured to run in does not implement the service.
-			::OutputDebugString(msg_04.c_str());
-			break;
-		default:
-		{
-			std::stringstream ss;
-			ss
-				<< '['
-				<< srv_name
-				<< "] service dispatcher stopped: "
-				<< r;
-			const std::string msg = ss.str();
-			::OutputDebugString(msg.c_str());
-		}
-		break;
-		}
-
-
-		return EXIT_SUCCESS;
-	}
 
 	void ctl::control_handler(DWORD sig)
 	{

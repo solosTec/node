@@ -82,6 +82,8 @@ namespace node
 		cyng::store::db& cache_;
 
 	};
+
+	void insert(std::map<std::string, cyng::table::meta_table_ptr>&, cyng::table::meta_table_ptr);
 	
 }
 
