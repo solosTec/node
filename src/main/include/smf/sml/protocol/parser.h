@@ -200,13 +200,17 @@ namespace node
 
 				list(std::size_t);
 				bool push(cyng::object);
+				std::size_t pos() const;
 			};
 
 		public:
 			/**
 			 * @param cb this function is called, when parsing is complete
+			 * @param verbose write log data to standard output
+			 * @param log send log data with "sml.log" callback
+			 * @param data_only send data blocks instead of instructions
 			 */
-			parser(parser_callback cb, bool verbose, bool log);
+			parser(parser_callback cb, bool verbose, bool log, bool data_only = false);
 
 			/**
 			 * The destructor is required since the unique_ptr
@@ -282,6 +286,7 @@ namespace node
 
 			const bool verbose_;
 			const bool log_;	//!< generate log instructions
+			const bool data_only_;
 			std::size_t pos_;	//!< position index
 
 			/**

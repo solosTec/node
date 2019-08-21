@@ -7,6 +7,8 @@
 #include <smf/sml/protocol/parser.h>
 #include <smf/sml/crc16.h>
 
+#include <cyng/set_cast.h>
+#include <cyng/factory/set_factory.h>
 #include <cyng/vm/generator.h>
 #include <cyng/io/hex_dump.hpp>
 #include <cyng/io/serializer.h>
@@ -21,10 +23,11 @@ namespace node
 		//
 		//	parser
 		//
-		parser::parser(parser_callback cb, bool verbose, bool log)
+		parser::parser(parser_callback cb, bool verbose, bool log, bool data_only)
 			: cb_(cb)
 			, verbose_(verbose)
 			, log_(log)
+			, data_only_(data_only)
 			, pos_(0)
 			, code_()
 			, tl_()
@@ -95,7 +98,7 @@ namespace node
 						<< "]"
 						;
 				}
-				cb_(cyng::generate_invoke("sml.log", ss.str()));
+				if (!data_only_)	cb_(cyng::generate_invoke("sml.log", ss.str()));
 			}
 
 			auto prev_state = stream_state_;
@@ -178,7 +181,7 @@ namespace node
 							<< '@' 
 							<< pos_
 							;
-						cb_(cyng::generate_invoke("log.msg.error", ss.str()));
+						if (!data_only_)	cb_(cyng::generate_invoke("log.msg.error", ss.str()));
 					}
 					break;
 				}
@@ -269,7 +272,7 @@ namespace node
 					break;
 
 				default:
-					//if (parser_.verbose_)
+					if (!parser_.data_only_)
 					{
 						std::stringstream ss;
 						ss
@@ -341,25 +344,25 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_ || parser_.log_)
-				{
-					std::stringstream ss;
-					ss
-						<< parser_.prefix()
-						<< "OCTEC "
-						<< cyng::io::to_hex(s.octet_)
-						;
-					if (parser_.verbose_)
-					{
-						std::cerr
-							<< ss.rdbuf()
-							<< std::endl;
-					}
-					if (parser_.log_)
-					{
-						parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
-					}
-				}
+				//if ((parser_.verbose_ || parser_.log_) && !parser_.data_only_)
+				//{
+				//	std::stringstream ss;
+				//	ss
+				//		<< parser_.prefix()
+				//		<< "OCTET "
+				//		<< cyng::io::to_hex(s.octet_)
+				//		;
+				//	if (parser_.verbose_)
+				//	{
+				//		std::cerr
+				//			<< ss.rdbuf()
+				//			<< std::endl;
+				//	}
+				//	if (parser_.log_)
+				//	{
+				//		parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
+				//	}
+				//}
 
 				//	emit() is the same as push() but with optional logging
 				parser_.emit(std::move(s.octet_));
@@ -381,7 +384,7 @@ namespace node
 
 		parser::state parser::state_visitor::operator()(sml_bool& s) const
 		{
-			if (parser_.verbose_ || parser_.log_)
+			if ((parser_.verbose_ || parser_.log_) && !parser_.data_only_)
 			{
 				std::stringstream ss;
 				ss
@@ -411,7 +414,7 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_ || parser_.log_)
+				if ((parser_.verbose_ || parser_.log_) && !parser_.data_only_)
 				{
 					std::stringstream ss;
 					ss
@@ -440,7 +443,7 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_ || parser_.log_)
+				if ((parser_.verbose_ || parser_.log_) && !parser_.data_only_)
 				{
 					std::stringstream ss;
 					ss
@@ -473,7 +476,7 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_ || parser_.log_)
+				if ((parser_.verbose_ || parser_.log_) && !parser_.data_only_)
 				{
 					std::stringstream ss;
 					ss
@@ -505,7 +508,7 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_ || parser_.log_)
+				if ((parser_.verbose_ || parser_.log_) && !parser_.data_only_)
 				{
 					std::stringstream ss;
 					ss
@@ -537,7 +540,7 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_ || parser_.log_)
+				if ((parser_.verbose_ || parser_.log_) && !parser_.data_only_)
 				{
 					std::stringstream ss;
 					ss
@@ -566,7 +569,7 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_ || parser_.log_)
+				if ((parser_.verbose_ || parser_.log_) && !parser_.data_only_)
 				{
 					std::stringstream ss;
 					ss
@@ -594,7 +597,7 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_ || parser_.log_)
+				if ((parser_.verbose_ || parser_.log_) && !parser_.data_only_)
 				{
 					std::stringstream ss;
 					ss
@@ -622,7 +625,7 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				if (parser_.verbose_ || parser_.log_)
+				if ((parser_.verbose_ || parser_.log_) && !parser_.data_only_)
 				{
 					std::stringstream ss;
 					ss
@@ -667,7 +670,7 @@ namespace node
 						<< std::hex
 						<< parser_.pos_
 						;
-					parser_.cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
+					if (!parser_.data_only_)	parser_.cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
 				}
 
 				//
@@ -699,7 +702,7 @@ namespace node
 					<< +c_
 					<< " not supported"
 					;
-				parser_.cb_(cyng::generate_invoke("log.msg.error", ss.str()));
+				if (!parser_.data_only_) parser_.cb_(cyng::generate_invoke("log.msg.error", ss.str()));
 			}
 				break;
 			}
@@ -892,6 +895,7 @@ namespace node
 					return STATE_INT64;
 				default:
 					//BOOST_ASSERT_MSG(false, "invalid integer length");
+					if (!data_only_)
 					{
 						std::stringstream ss;
 						ss
@@ -919,6 +923,7 @@ namespace node
 					return STATE_UINT64;
 				default:
 					//BOOST_ASSERT_MSG(false, "invalid unsigned length");
+					if (!data_only_)
 					{
 						std::stringstream ss;
 						ss
@@ -937,7 +942,7 @@ namespace node
 				//
 				//	prepare new list
 				//
-				if (verbose_ || log_) {
+				if ((verbose_ || log_) && !data_only_) {
 					std::stringstream ss;
 					ss
 						<< "open list with "
@@ -978,30 +983,29 @@ namespace node
 							;
 						cb_(cyng::generate_invoke("log.msg.error", ss.str()));
 					}
-
 				}
 				if (tl_.length_ == 0) {
 					//
 					//	empty list as empty tuple
 					//
-					push(cyng::tuple_factory());
+					push(cyng::make_tuple());
 				}
 				else {
 					stack_.push(list(tl_.length_));
 				}
 				return STATE_START;
 			default:
-			{
-				std::stringstream ss;
-				ss
-					<< "unknown data type "
-					<< tl_.type_
-					<< " @"
-					<< std::hex
-					<< pos_
-					;
-				cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
-			}
+				if (!data_only_) {
+					std::stringstream ss;
+					ss
+						<< "unknown data type "
+						<< tl_.type_
+						<< " @"
+						<< std::hex
+						<< pos_
+						;
+					cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
+				}
 				BOOST_ASSERT_MSG(false, "unknown data type");
 				break;
 			}
@@ -1058,11 +1062,10 @@ namespace node
 				//
 				//	message complete
 				//
-				cb_(std::move(prg));
+				if (!data_only_) cb_(std::move(prg));
 				counter_++;
 			}
 		}
-
 
 		void parser::emit_nil()
 		{
@@ -1090,19 +1093,19 @@ namespace node
 
 		void parser::emit(cyng::buffer_t&& octet)
 		{
-			if (verbose_)
-			{
-				cyng::io::hex_dump hd(8);
-				std::stringstream ss;
-				hd(ss, octet.data(), octet.data() + octet.size());
-				std::cerr 
-					<< prefix()
-					<< "STRING: "
-					<< tl_.length_
-					<< " bytes\t"
-					<< ss.str()
-				;
-			}
+			//if (verbose_)
+			//{
+			//	cyng::io::hex_dump hd(8);
+			//	std::stringstream ss;
+			//	hd(ss, octet.data(), octet.data() + octet.size());
+			//	std::cerr 
+			//		<< prefix()
+			//		<< "STRING: "
+			//		<< tl_.length_
+			//		<< " bytes\t"
+			//		<< ss.str()
+			//	;
+			//}
 			if (verbose_ || log_)
 			{
 				std::stringstream ss;
@@ -1148,7 +1151,18 @@ namespace node
 						<< "> exceeds expected size "
 						<< stack_.top().target_
 						;
-					cb_(cyng::generate_invoke("log.msg.error", ss.str()));
+					if (!data_only_)	cb_(cyng::generate_invoke("log.msg.error", ss.str()));
+				}
+
+				//
+				//	send only data and position info
+				//
+				if (data_only_) {
+					auto const tpl = cyng::tuple_factory(pos_
+						, stack_.size()
+						, ((!stack_.empty()) ? stack_.top().pos() : 0u)
+						, obj);
+					cb_(cyng::to_vector(tpl));
 				}
 				
 				if (stack_.top().push(obj))
@@ -1197,7 +1211,17 @@ namespace node
 
 		void parser::finalize(std::uint16_t crc, std::uint8_t gap)
 		{
-			cb_(cyng::generate_invoke("sml.eom", this->crc_, counter_));
+			if (data_only_) {
+				auto const tpl = cyng::tuple_factory(pos_
+					, static_cast<std::size_t>(0u)
+					, static_cast<std::size_t>(1u)
+					, cyng::make_object(crc));
+
+				cb_(cyng::to_vector(tpl));
+			}
+			else {
+				cb_(cyng::generate_invoke("sml.eom", this->crc_, counter_));
+			}
 			counter_ = 0;
 			pos_ = 0;
 		}
@@ -1209,14 +1233,11 @@ namespace node
 			{
 				if (!stack_.empty())
 				{
-					ss << "[";
-
-					for (std::size_t indent = 0; indent < stack_.size(); indent++)
-					{
-						ss << "....";
-					}
-					ss
-						<< stack_.size()
+					ss 
+						<< "[" 
+						<< std::setw(stack_.size() * 2) 
+						<< std::setfill('.') 
+						<< stack_.top().pos() 
 						<< "] "
 						;
 				}
@@ -1240,6 +1261,11 @@ namespace node
 			BOOST_ASSERT(values_.size() < target_);
 			values_.push_back(obj);
 			return values_.size() == target_;
+		}
+
+		std::size_t parser::list::pos() const
+		{
+			return target_ - values_.size();
 		}
 
 	}
