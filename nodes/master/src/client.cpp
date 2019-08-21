@@ -881,19 +881,19 @@ namespace node
 						//	session found
 						//
 						CYNG_LOG_TRACE(logger_, "matching session "
-							<< cyng::io::to_str(rec.key())
-							<< cyng::io::to_str(rec.data()));
+							<< cyng::io::to_str(rec_session.key())
+							<< cyng::io::to_str(rec_session.data()));
 
-						options["remote-tag"] = rec["tag"];
-						options["remote-peer"] = rec["peer"];
+						options["remote-tag"] = rec_session["tag"];
+						options["remote-peer"] = rec_session["peer"];
 
 						//
 						//	forward connection open request
 						//
-						auto remote_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
-						BOOST_ASSERT_MSG(tag != remote_tag, "connection close request with same client tags");
+						auto remote_tag = cyng::value_cast(rec_session["tag"], boost::uuids::nil_uuid());
+						BOOST_ASSERT_MSG(tag != remote_tag, "connection open request with same client tags");
 
-						auto callee_peer = cyng::object_cast<session>(rec["local"]);
+						auto callee_peer = cyng::object_cast<session>(rec_session["local"]);
 						BOOST_ASSERT(callee_peer != nullptr);
 
 						const bool local_connect = caller_peer->hash() == callee_peer->hash();

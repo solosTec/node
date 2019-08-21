@@ -89,7 +89,7 @@ namespace node
 			//
 			//	[uuid] device - index
 			//
-			return cyng::table::make_meta_table<1, 12, 3>(name, { "tag"	//	client session - primary key [uuid]
+			return cyng::table::make_meta_table<1, 12, 4>(name, { "tag"	//	client session - primary key [uuid]
 				, "local"	//	[object] local peer object (hold session reference)
 				, "remote"	//	[object] remote peer object (if session connected)
 				, "peer"	//	[uuid] remote peer
