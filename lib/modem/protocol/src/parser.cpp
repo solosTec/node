@@ -6,9 +6,12 @@
  */ 
 #include <smf/modem/parser.h>
 #include <cyng/vm/generator.h>
+
 #include <iostream>
 #include <ios>
+
 #include <boost/algorithm/string.hpp>
+#include <boost/core/ignore_unused.hpp>
 
 namespace node 
 {
@@ -273,6 +276,7 @@ namespace node
 							, static_cast<std::uint32_t>(info)));
 					}
 					catch (std::exception const& ex) {
+						boost::ignore_unused(ex);
 						p.cb_(cyng::generate_invoke("modem.req.info"
 							, cyng::code::IDENT
 							, static_cast<std::uint32_t>(0u)));

@@ -1047,7 +1047,7 @@ namespace node
 				cyng::vector_t prg{ cyng::generate_invoke("sml.msg", stack_.top().values_, counter_) };
 
 				//
-				//	remove accumulated  values from stack
+				//	remove accumulated values from stack
 				//
 				stack_.pop();
 
@@ -1160,7 +1160,8 @@ namespace node
 				if (data_only_) {
 					auto const tpl = cyng::tuple_factory(pos_
 						, stack_.size()
-						, ((!stack_.empty()) ? stack_.top().pos() : 0u)
+						, ((!stack_.empty()) ? stack_.top().values_.size() : 1u)
+						//, ((!stack_.empty()) ? stack_.top().pos() : 0u)
 						, obj);
 					cb_(cyng::to_vector(tpl));
 				}
@@ -1214,7 +1215,7 @@ namespace node
 			if (data_only_) {
 				auto const tpl = cyng::tuple_factory(pos_
 					, static_cast<std::size_t>(0u)
-					, static_cast<std::size_t>(1u)
+					, static_cast<std::size_t>(0u)
 					, cyng::make_object(crc));
 
 				cb_(cyng::to_vector(tpl));

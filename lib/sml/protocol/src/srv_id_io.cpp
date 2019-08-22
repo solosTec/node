@@ -313,7 +313,7 @@ namespace node
 			try {
 				if (is_mbus(str)) {
 					const auto hex = str.substr(3, 2);
-					return std::stoul(hex, nullptr, 16);
+					return static_cast<std::uint16_t>(std::stoul(hex, nullptr, 16));
 				}
 			}
 			catch (std::exception const&) {

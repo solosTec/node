@@ -18,10 +18,6 @@ namespace node
 {
 	namespace sml
 	{
-		obis::obis()
-			: value_{0}
-		{}
-
 		obis::obis(octet_type const& buffer)
 		: value_()
 		{
@@ -42,20 +38,20 @@ namespace node
 			: value_(vec)
 		{}
 
-		obis::obis(std::uint8_t a
-			, std::uint8_t b
-			, std::uint8_t c
-			, std::uint8_t d
-			, std::uint8_t e
-			, std::uint8_t f)
-		{
-			value_[VG_MEDIUM] = a;
-			value_[VG_CHANNEL] = b;
-			value_[VG_INDICATOR] = c;
-			value_[VG_MODE] = d;
-			value_[VG_QUANTITY] = e;
-			value_[VG_STORAGE] = f;
-		}
+		//obis::obis(std::uint8_t a
+		//	, std::uint8_t b
+		//	, std::uint8_t c
+		//	, std::uint8_t d
+		//	, std::uint8_t e
+		//	, std::uint8_t f)
+		//{
+		//	value_[VG_MEDIUM] = a;
+		//	value_[VG_CHANNEL] = b;
+		//	value_[VG_INDICATOR] = c;
+		//	value_[VG_MODE] = d;
+		//	value_[VG_QUANTITY] = e;
+		//	value_[VG_STORAGE] = f;
+		//}
 
 		void obis::swap(obis& other)	
 		{
@@ -321,11 +317,11 @@ namespace node
 			return seed;
 		}
 
-		std::uint64_t obis::to_uint64() const
-		{
-			static_assert(sizeof(std::uint64_t) > sizeof(data_type), "invalid cast");
-			return *reinterpret_cast<std::uint64_t const*>(value_.data());
-		}
+		//constexpr std::uint64_t obis::to_uint64() const
+		//{
+		//	//static_assert(sizeof(std::uint64_t) > sizeof(data_type), "invalid cast");
+		//	//return *reinterpret_cast<std::uint64_t const*>(value_.data());
+		//}
 
 		//
 		//	global operations

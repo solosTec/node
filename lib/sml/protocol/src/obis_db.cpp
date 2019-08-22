@@ -19,20 +19,69 @@ namespace node
 
 		const char* get_name(obis const& code)
 		{
-			if (OBIS_DATA_MANUFACTURER == code)			return "manufacturer";
-			else if (OBIS_DATA_PUBLIC_KEY == code)		return "public-key";
-			else if (OBIS_PROFILE_1_MINUTE == code)		return "profile-1min";
-			else if (OBIS_PROFILE_15_MINUTE == code)	return "profile-15min";
-			else if (OBIS_PROFILE_60_MINUTE == code)	return "profile-1h";
-			else if (OBIS_PROFILE_24_HOUR == code)		return "profile-1d";
-			else if (OBIS_PROFILE_LAST_2_HOURS == code)	return "profile-last-2h";
-			else if (OBIS_PROFILE_LAST_WEEK == code)	return "profile-last-week";
-			else if (OBIS_PROFILE_1_MONTH == code)		return "profile-1month";
-			else if (OBIS_PROFILE_1_YEAR == code)		return "profile-1y";
-			else if (OBIS_PROFILE_INITIAL == code)		return "profile-initial";
-			else if (OBIS_PROFILE == code)				return "encode-profile";
+			auto const n = code.to_uint64();
+			switch (code.to_uint64()) {
 
-			else if (OBIS_PUSH_OPERATIONS == code)		return "root-push-ops";	//	7.3.1.26 Datenstruktur zum Transport der Eigenschaften von Push-Vorgängen. 
+			case 0x818100020000:	return "version";	//	CODE_VERSION
+			case 0x818100020002:	return "file-name";	//	CODE_FILE_NAME
+			case 0x818100020003:	return "msg-counter";	// CODE_MSG_COUNTER [u32]
+			case 0x818100020004:	return "msg-last";		// CODE_MSG_LAST [u32]
+			case 0x818100020005:	return "msg-number";	//	CODE_MSG_NUMBER
+			case 0x8181000202FF:	return "block-number";	//	CODE_BLOCK_NUMBER
+			case 0x8181000203FF:	return "binary-data";	//	CODE_BINARY_DATA
+
+			case 0x8181C78203FF:	return "manufacturer";
+			case 0x8181C78205FF:	return "public-key";
+			case 0x8181C78610FF:	return "profile-1min";
+			case 0x8181C78611FF:	return "profile-15min";
+			case 0x8181C78612FF:	return "profile-1h";
+			case 0x8181C78613FF:	return "profile-1d";
+			case 0x8181C78614FF:	return "profile-last-2h";
+			case 0x8181C78615FF:	return "profile-last-week";
+			case 0x8181C78616FF:	return "profile-1month";
+			case 0x8181C78617FF:	return "profile-1y";
+			case 0x8181C78618FF:	return "profile-initial";
+
+			case 0x8181C78A83FF:	return "encode-profile";	//	OBIS_PROFILE
+
+			case 0x8181C78101FF:	return "root-file-transfer";	//	CODE_ROOT_FILE_TRANSFER
+			case 0x8181C7810EFF:	return "firmware-indirect";	//	DATA_FIRMWARE
+			case 0x8181C7810CFF: 	return "fw-file";	//	DATA_FILENAME);
+			case 0x8181C7810FFF: 	return "fw-file-indirect";	//	DATA_FILENAME_INDIRECT);
+			case 0x8181C7810DFF: 	return "application";	//	DATA_APPLICATION);
+			case 0x8181C78110FF: 	return "application-indirect";	//	DATA_APPLICATION_INDIRECT);
+
+
+			case 0x8101000000FF:	return "log-source-ETH_AUX";	//	OBIS_LOG_SOURCE_ETH_AUX
+			case 0x8102000000FF:	return "log-source-ETH-CUSTOM";	//	OBIS_LOG_SOURCE_ETH_CUSTOM
+			case 0x8103000000FF:	return "log-source-RS232";		//	OBIS_LOG_SOURCE_RS232
+			case 0x8104000000FF:	return "log-source-WAN";		//	OBIS_LOG_SOURCE_ETH
+			case 0x8105000000FF:	return "log-source-eHZ";		//	OBIS_LOG_SOURCE_eHZ 
+			case 0x8106000000FF:	return "log-source-wMBus";		//	OBIS_LOG_SOURCE_wMBUS
+
+			case 0x8141000000FF:	return "log-source-IP";			//	OBIS_LOG_SOURCE_IP
+			case 0x814200000001:	return "log-source-SML-ext";	//	OBIS_LOG_SOURCE_SML_EXT
+			case 0x814200000002:	return "log-source-SML_custom";	//else if (OBIS_LOG_SOURCE_SML_CUSTOM == code)			
+			case 0x814200000003:	return "log-source-SML-service";	//else if (OBIS_LOG_SOURCE_SML_SERVICE == code)			
+			case 0x814200000004:	return "log-source-SML-WAN";	//else if (OBIS_LOG_SOURCE_SML_WAN == code)				
+			case 0x814200000005:	return "log-source-SML-eHZ";	//else if (OBIS_LOG_SOURCE_SML_eHZ == code)				
+			case 0x814200000006:	return "log-source-SML-wMBus";	//else if (OBIS_LOG_SOURCE_SML_wMBUS == code)				
+			case 0x8145000000FF:	return "log-source-push-SML";	//else if (OBIS_LOG_SOURCE_PUSH_SML == code)
+			case 0x8146000000FF:	return "log-source-push-IPT-source";	//else if (OBIS_LOG_SOURCE_PUSH_IPT_SOURCE == code)	
+			case 0x8147000000FF:	return "log-source-push-IPT-sink";	//else if (OBIS_LOG_SOURCE_PUSH_IPT_SINK == code)			
+			case 0x814800000001:	return "log-source-WAN-DHCP";	//else if (OBIS_LOG_SOURCE_WAN_DHCP == code)				
+			case 0x814800000002:	return "log-source-WAN-IP";	//else if (OBIS_LOG_SOURCE_WAN_IP == code)				
+			case 0x814800000003:	return "log-source-WAN-PPPoE";	//else if (OBIS_LOG_SOURCE_WAN_PPPoE == code)				
+			case 0x814900000001:	return "log-source-IPT-controller";	//else if (OBIS_LOG_SOURCE_WAN_IPT_CONTROLLER == code)	
+			case 0x814900000002:	return "log-source-WAN-IPT";	//else if (OBIS_LOG_SOURCE_WAN_IPT == code)				
+			case 0x814A000000FF:	return "log-source-WAN-NTP";	//else if (OBIS_LOG_SOURCE_WAN_NTP == code)				
+
+
+			default:
+				break;
+			}
+
+			if (OBIS_PUSH_OPERATIONS == code)		return "root-push-ops";	//	7.3.1.26 Datenstruktur zum Transport der Eigenschaften von Push-Vorgängen. 
 			else if (OBIS_PUSH_INTERVAL == code)		return "push-interval";	//	in seconds
 			else if (OBIS_PUSH_DELAY == code)			return "push-delay";	//	in seconds
 			else if (OBIS_PUSH_SOURCE == code)			return "push-source";	//	options are PUSH_SOURCE_PROFILE, PUSH_SOURCE_INSTALL and PUSH_SOURCE_SENSOR_LIST
@@ -61,7 +110,7 @@ namespace node
 			else if (OBIS_CODE_ROOT_IPT_PARAM == code)			return "root-ipt-param";
 			else if (OBIS_CODE_PEER_ADDRESS_WANGSM == code)		return "peer-address-wangsm";
 			else if (OBIS_CODE_PEER_ADDRESS == code)			return "peer-address";
-			else if (OBIS_CODE_VERSION == code)					return "version";
+			//else if (OBIS_CODE_VERSION == code)					return "version";
 			else if (code == OBIS_CODE_ROOT_GPRS_PARAM)			return "root-GPRS";
 			else if (OBIS_CODE_ROOT_W_MBUS_STATUS == code)		return "root-wMBus-status";
 			else if (code == OBIS_CODE_ROOT_LAN_DSL)			return "root-LAN";
@@ -118,6 +167,19 @@ namespace node
 			else if (OBIS_SOFTWARE_ID == code)			return "software_id";
 
 			else if (code == OBIS_CURRENT_UTC)			return "readout-utc";
+			else if (code == OBIS_PUSH_SERVICE)			return "push-service";
+			else if (code == OBIS_PUSH_SERVICE_IPT)		return "push-service:IPT";
+			else if (code == OBIS_PUSH_SERVICE_SML)		return "push-service:SML";
+			else if (code == OBIS_DATA_COLLECTOR_OBIS)	return "list-of-OBIS-codes";
+			else if (code == OBIS_DATA_MANUFACTURER)	return "manufacturer";
+			else if (code == OBIS_DATA_PUBLIC_KEY)		return "public-key";
+			else if (code == OBIS_DATA_IP_ADDRESS)		return "IP-address";
+			else if (code == OBIS_DATA_AES_KEY)			return "AES-key";
+			else if (code == OBIS_DATA_USER_NAME)		return "user-name";
+			else if (code == OBIS_DATA_USER_PWD)		return "user-pwd";
+			else if (code == OBIS_SET_ACTIVATE_FW)		return "SET-activate-FW";
+			else if (code == OBIS_SET_START_FW_UPDATE)	return "SET-update-FW";
+			else if (code == OBIS_SET_DISPATCH_FW_UPDATE)	return "SET-dispatch-FW";
 
 			else if (code == OBIS_REG_POS_AE_NO_TARIFF)			return "pos-act-energy-no-tariff";
 			else if (code == OBIS_REG_POS_AE_T1)				return "pos-act-energy-tariff-1";
@@ -154,7 +216,8 @@ namespace node
 			else if (code == OBIS_CLASS_OP_LSM_JOB)						return "LSM-job-name";
 			else if (code == OBIS_CLASS_OP_LSM_POSITION)				return "LSM-position";
 
-			else if (OBIS_LIST_CURRENT_DATA_RECORD == code)			return "current-data-record";
+			else if (OBIS_LIST_CURRENT_DATA_RECORD == code)				return "current-data-record";
+
 
 			//
 			//	attention codes

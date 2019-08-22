@@ -9,6 +9,9 @@
 #define NODE_SML_INTRINSICS_OBIS_H
 
 #include <smf/sml/defs.h>
+#include <cyng/util/slice.hpp>
+#include <cyng/io/swap.h>
+
 #include <array>
 #include <cstdint>
 #include <algorithm>
@@ -34,11 +37,20 @@ namespace node
 			};
 
 		public:
-			obis();
+			constexpr obis()
+				: value_{ 0 }
+			{}
 			obis(octet_type const&);
 			obis(obis const&);
 			obis(data_type const&);
-			obis(std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t);
+			constexpr obis(std::uint8_t a
+				, std::uint8_t b
+				, std::uint8_t c
+				, std::uint8_t d
+				, std::uint8_t e
+				, std::uint8_t f)
+				: value_{ a, b, c, d, e, f }
+			{}
 
 			void swap(obis&);
 
@@ -83,8 +95,7 @@ namespace node
 			/**
 			 *	@return 6
 			 */
-			//BOOST_CONSTEXPR
-			inline std::size_t size() const {
+			constexpr std::size_t size() const {
 				return std::tuple_size< data_type >::value;
 			}
 
@@ -169,7 +180,11 @@ namespace node
 			/**
 			 *	Fill the first 6 bytes from a u64 value with the OBIS groups
 			 */
-			std::uint64_t to_uint64() const;
+			constexpr std::uint64_t to_uint64() const
+			{
+				auto const n = cyng::slicer<std::uint64_t, 0u>(value_) & 0x0000FFFFFFFFFFFF;
+				return cyng::swap_num(n * 0x10000);
+			}
 
 		private:
 			data_type	value_;
