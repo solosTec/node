@@ -177,7 +177,7 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 11, 06, 01, FF, CODE_LIST_1_ACTIVE_DEVICES);	//	1. Liste der aktiven Sensoren)
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 11, 06, FB, FF, CODE_ACTIVATE_DEVICE);	//	activate meter/sensor
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 11, 06, FC, FF, CODE_DEACTIVATE_DEVICE);	//	deactivate meter/sensor
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 11, 06, FD, FF, CODE_DELETE_DEVICE);	//	deelete meter/sensor
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 11, 06, FD, FF, CODE_DELETE_DEVICE);	//	delete meter/sensor
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 12, 06, FF, FF, CODE_ROOT_DEVICE_INFO);	//	extended device information
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 81, 60, FF, FF, CODE_ROOT_ACCESS_RIGHTS);	//	see: 7.3.1.2 Datenstruktur zur Parametrierung der Rollen / Benutzerrechte 
 

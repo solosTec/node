@@ -38,21 +38,6 @@ namespace node
 			: value_(vec)
 		{}
 
-		//obis::obis(std::uint8_t a
-		//	, std::uint8_t b
-		//	, std::uint8_t c
-		//	, std::uint8_t d
-		//	, std::uint8_t e
-		//	, std::uint8_t f)
-		//{
-		//	value_[VG_MEDIUM] = a;
-		//	value_[VG_CHANNEL] = b;
-		//	value_[VG_INDICATOR] = c;
-		//	value_[VG_MODE] = d;
-		//	value_[VG_QUANTITY] = e;
-		//	value_[VG_STORAGE] = f;
-		//}
-
 		void obis::swap(obis& other)	
 		{
 			value_.swap(other.value_);

@@ -270,15 +270,28 @@ namespace node
 			;
 	}
 
-	cyng::vector_t bus_req_com_sml(cyng::vector_t const& key
-		, boost::uuids::uuid tag_ws
-		, std::string channel
-		, cyng::vector_t sections
-		, cyng::vector_t params)
+	//cyng::vector_t bus_req_com_sml(cyng::vector_t const& key
+	//	, boost::uuids::uuid tag_ws
+	//	, std::string channel
+	//	, cyng::vector_t sections
+	//	, cyng::vector_t params)
+	//{
+	//	cyng::vector_t prg;
+	//	return prg << cyng::generate_invoke_unwinded("stream.serialize"
+	//		, cyng::generate_invoke_remote_unwinded("bus.req.gateway.proxy", cyng::code::IDENT, cyng::invoke("bus.seq.next"), key, tag_ws, channel, sections, params))
+	//		<< cyng::generate_invoke_unwinded("stream.flush")
+	//		;
+	//}
+
+	cyng::vector_t bus_req_com_sml(boost::uuids::uuid tag_ws
+		, std::string msg_type
+		, cyng::buffer_t code
+		, cyng::vector_t const& gw
+		, cyng::tuple_t params)
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("bus.req.gateway.proxy", cyng::code::IDENT, cyng::invoke("bus.seq.next"), key, tag_ws, channel, sections, params))
+			, cyng::generate_invoke_remote_unwinded("bus.req.gateway.proxy", cyng::code::IDENT, cyng::invoke("bus.seq.next"), tag_ws, msg_type, code, gw, params))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}
@@ -475,18 +488,18 @@ namespace node
 	cyng::vector_t client_req_gateway_proxy(boost::uuids::uuid tag
 		, boost::uuids::uuid source
 		, std::uint64_t seq
-		, cyng::vector_t key
-		, boost::uuids::uuid ws
+		, boost::uuids::uuid origin
 		, std::string const& channel
-		, cyng::vector_t sections
-		, cyng::vector_t params
+		, cyng::buffer_t const& code
+		, cyng::vector_t gw
+		, cyng::tuple_t params
 		, cyng::buffer_t const& server
 		, std::string const& user
 		, std::string const& pwd)
 	{
 			cyng::vector_t prg;
 			return prg << cyng::generate_invoke_unwinded("stream.serialize"
-				, cyng::generate_invoke_remote_unwinded("client.req.gateway.proxy", tag, cyng::code::IDENT, source, seq, key, ws, channel, sections, params, server, user, pwd))
+				, cyng::generate_invoke_remote_unwinded("client.req.gateway.proxy", tag, cyng::code::IDENT, source, seq, origin, channel, code, gw, params, server, user, pwd))
 				<< cyng::generate_invoke_unwinded("stream.flush")
 				;
 	}

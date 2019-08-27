@@ -224,22 +224,23 @@ namespace node
 			<< "/"
 			<< sml::from_server_id(queue_.front().get_srv())
 			<< " ["
-			<< queue_.front().get_channel()
+			<< queue_.front().get_msg_type()
 			<< "]");
 
 		if (server_id.empty()) {
 			server_id = sml::from_server_id(queue_.front().get_srv());
 		}
 		else {
-			BOOST_ASSERT(sml::from_server_id(queue_.front().get_srv()) == server_id);
+			//	in some cases this is the meter ident
+			//BOOST_ASSERT(sml::from_server_id(queue_.front().get_srv()) == server_id);
 		}
 
-		bus_->vm_.async_run(bus_res_com_sml(queue_.front().get_ident_tag()
-			, queue_.front().get_source_tag()
+		bus_->vm_.async_run(bus_res_com_sml(queue_.front().get_tag_ident()
+			, queue_.front().get_tag_source()
 			, queue_.front().get_sequence()
-			, queue_.front().get_key()
-			, queue_.front().get_ws_tag()
-			, queue_.front().get_channel()
+			, queue_.front().get_key_gw()
+			, queue_.front().get_tag_origin()
+			, queue_.front().get_msg_type()
 			, server_id
 			, sml::get_name(code)
 			, params));
@@ -263,10 +264,10 @@ namespace node
 			<< " attention code "
 			<< sml::get_attention_name(attention));
 
-		bus_->vm_.async_run(bus_res_attention_code(queue_.front().get_ident_tag()
-			, queue_.front().get_source_tag()
+		bus_->vm_.async_run(bus_res_attention_code(queue_.front().get_tag_ident()
+			, queue_.front().get_tag_source()
 			, queue_.front().get_sequence()
-			, queue_.front().get_ws_tag()
+			, queue_.front().get_tag_origin()
 			, srv
 			, code
 			, sml::get_attention_name(attention)));
@@ -275,20 +276,22 @@ namespace node
 	}
 
 	cyng::continuation gateway_proxy::process(
-		boost::uuids::uuid tag,		//	[0] ident tag
+		boost::uuids::uuid tag,		//	[0] ident tag (target)
 		boost::uuids::uuid source,	//	[1] source tag
 		std::uint64_t seq,			//	[2] cluster seq
-		cyng::vector_t key,			//	[3] TGateway key
-		boost::uuids::uuid ws_tag,	//	[4] ws tag
-		std::string channel,		//	[5] channel
-		cyng::vector_t sections,	//	[6] sections
-		cyng::vector_t params,		//	[7] parameters
+		boost::uuids::uuid origin,	//	[3] ws tag (origin)
+
+		std::string channel,		//	[4] channel (SML message type)
+		cyng::buffer_t code,		//	[5] OBIS root code
+		cyng::vector_t gw,			//	[6] TGateway/TDevice PK
+		cyng::tuple_t params,		//	[7] parameters
+
 		cyng::buffer_t srv,			//	[8] server id
 		std::string name,			//	[9] name
 		std::string	pwd				//	[10] pwd
 	)
 	{
-		queue_.emplace(tag, source, seq, key, ws_tag, channel, sections, params, srv, name, pwd, queue_.size());
+		queue_.emplace(tag, source, seq, origin, channel,code, gw, params, srv, name, pwd, queue_.size());
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -317,32 +320,47 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> execute channel "
-			<< queue_.front().get_channel());
+			<< queue_.front().get_msg_type());
 		
-		if (boost::algorithm::equals(queue_.front().get_channel(), "get.proc.param")) {
+		switch (queue_.front().get_msg_code()) {
 
+		case node::sml::BODY_GET_PROFILE_PACK_REQUEST:
+		//	fall through
+		case node::sml::BODY_GET_PROFILE_LIST_REQUEST:
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> not implemented yet "
+				<< queue_.front().get_msg_type());
+			queue_.pop();
+			break;
+
+		case node::sml::BODY_GET_PROC_PARAMETER_REQUEST:
 			execute_cmd_get_proc_param();
-		}
-		else if (boost::algorithm::equals(queue_.front().get_channel(), "set.proc.param")) {
+			break;
 
+		case node::sml::BODY_SET_PROC_PARAMETER_REQUEST:
 			execute_cmd_set_proc_param();
-		}
-		else if (boost::algorithm::equals(queue_.front().get_channel(), "get.list.request")) {
+			break;
 
+		case node::sml::BODY_GET_LIST_REQUEST:
 			execute_cmd_get_list_request();
-		}
-		else {
+			break;
+
+		default:
 			CYNG_LOG_ERROR(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> unknown channel "
-				<< queue_.front().get_channel());
+				<< queue_.front().get_msg_type());
 
 			//
 			//	remove queue entry
 			//
 			queue_.pop();
+			break;
 		}
 	}
 
@@ -351,6 +369,8 @@ namespace node
 		auto const server_id = queue_.front().get_srv();
 		auto const user = queue_.front().get_user();
 		auto const pwd = queue_.front().get_pwd();
+		auto const code = queue_.front().get_root();	//	OBIS root
+		auto const params = cyng::make_reader(queue_.front().get_params());
 
 		//
 		//	generate public open request
@@ -362,141 +382,30 @@ namespace node
 		//
 		//	generate get process parameter requests
 		//
-		auto const sections = queue_.front().get_section_names();
-		for (auto const& sec : sections) {
+		if (sml::OBIS_CODE_ROOT_SENSOR_PARAMS == code || 
+			sml::OBIS_CODE_ROOT_DATA_COLLECTOR == code ||
+			sml::OBIS_PUSH_OPERATIONS == code) {
 
-			CYNG_LOG_INFO(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> query "
-				<< sml::from_server_id(server_id)
-				<< " section ["
-				<< sec
-				<< "]");
-
-			if (boost::algorithm::equals("op-log-status-word", sec)) {
-
-				//
-				//	81 00 60 05 00 00
-				//
-				sml_gen.get_proc_parameter(server_id, sml::OBIS_CLASS_OP_LOG_STATUS_WORD, user, pwd);
-			}
-			else if (boost::algorithm::equals("root-visible-devices", sec)) {
-
-				//
-				//	81 81 10 06 FF FF
-				sml_gen.get_proc_parameter(server_id, sml::OBIS_CODE_ROOT_VISIBLE_DEVICES, user, pwd);
-			}
-			else if (boost::algorithm::equals("root-active-devices", sec)) {
-
-				//
-				//	send 81 81 11 06 FF FF
-				sml_gen.get_proc_parameter(server_id, sml::OBIS_CODE_ROOT_ACTIVE_DEVICES, user, pwd);
-			}
-			else if (boost::algorithm::equals("root-device-id", sec)) {
-
-				//
-				//	81 81 C7 82 FF
-				sml_gen.get_proc_parameter(server_id, sml::OBIS_CODE_ROOT_DEVICE_IDENT, user, pwd);
-			}
-			else if (boost::algorithm::equals("root-memory-usage", sec)) {
-
-				//
-				//	81 81 C7 82 FF
-				//	
-				sml_gen.get_proc_parameter(server_id, sml::OBIS_CODE_ROOT_MEMORY_USAGE, user, pwd);
-			}
-			else if (boost::algorithm::equals("root-wMBus-status", sec)) {
-
-				//
-				//	81 06 0F 06 00 FF
-				//
-				sml_gen.get_proc_parameter(server_id, sml::OBIS_CODE_ROOT_W_MBUS_STATUS, user, pwd);
-			}
-			else if (boost::algorithm::equals("IF-wireless-mbus", sec)) {
-
-				//
-				//	81 06 19 07 00 FF
-				//	
-				sml_gen.get_proc_parameter(server_id, sml::OBIS_CODE_IF_wMBUS, user, pwd);
-			}
-			else if (boost::algorithm::equals("root-ipt-state", sec)) {
-
-				//
-				//	81 49 0D 06 00 FF
-				//
-				sml_gen.get_proc_parameter(server_id, sml::OBIS_CODE_ROOT_IPT_STATE, user, pwd);
-			}
-			else if (boost::algorithm::equals("root-ipt-param", sec)) {
-
-				//
-				//	81 49 0D 07 00 FF 
-				//	
-				sml_gen.get_proc_parameter(server_id, sml::OBIS_CODE_ROOT_IPT_PARAM, user, pwd);
-			}
-			else if (boost::algorithm::equals("IF-IEC-62505-21", sec)) {
-
-				//
-				//	81 81 C7 93 00 FF
-				//
-				sml_gen.get_proc_parameter(server_id, sml::OBIS_CODE_IF_1107, user, pwd);
-			}
-			else if (boost::algorithm::equals("root-sensor-params", sec)) {
-
-				//
-				//	81 81 C7 86 00 FF
-				//
-
-				//
-				//	extract meter
-				//
-				auto const vec = queue_.front().get_params(sec);
-				if (!vec.empty()) {
-					cyng::buffer_t meter;
-					meter = cyng::value_cast(vec.at(0), meter);
-
-					sml_gen.get_proc_parameter(meter, sml::OBIS_CODE_ROOT_SENSOR_PARAMS, user, pwd);
-				}
-			}
-			else if (boost::algorithm::equals("root-data-prop", sec)) {
-
-				//
-				//	81 81 C7 86 20 FF
-				//	data mirror
-				//
-
-				auto const vec = queue_.front().get_params(sec);
-				if (!vec.empty()) {
-					cyng::buffer_t meter;
-					meter = cyng::value_cast(vec.at(0), meter);
-
-					sml_gen.get_proc_parameter(meter, sml::OBIS_CODE_ROOT_DATA_COLLECTOR, user, pwd);
-				}
-			}
-			else if (boost::algorithm::equals("root-push-ops", sec)) {
-
-				//
-				//	81 81 C7 8A 01 FF
-				//	push ops
-				//
-
-				auto const vec = queue_.front().get_params(sec);
-				if (!vec.empty()) {
-					cyng::buffer_t meter;
-					meter = cyng::value_cast(vec.at(0), meter);
-
-					sml_gen.get_proc_parameter(meter, sml::OBIS_PUSH_OPERATIONS, user, pwd);
-				}
+			//
+			//	data mirror
+			//	push operations
+			//
+			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
+			auto const r = sml::parse_srv_id(meter);
+			if (r.second) {
+				sml_gen.get_proc_parameter(r.first, code, user, pwd);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> unknown parameter/section for get-proc-param: "
-					<< sec);
+					<< "> invalid meter id: "
+					<< meter);
 			}
+		}
+		else {
+			sml_gen.get_proc_parameter(server_id, code, user, pwd);
 		}
 
 		//
@@ -509,7 +418,7 @@ namespace node
 		//	update data throughput (outgoing)
 		//
 		bus_->vm_.async_run(client_inc_throughput(vm_.tag()
-			, queue_.front().get_source_tag()
+			, queue_.front().get_tag_source()
 			, msg.size()));
 
 #ifdef SMF_IO_LOG
@@ -537,6 +446,8 @@ namespace node
 		auto const server_id = queue_.front().get_srv();
 		auto const user = queue_.front().get_user();
 		auto const pwd = queue_.front().get_pwd();
+		auto const code = queue_.front().get_root();	//	OBIS root
+		auto const params = cyng::make_reader(queue_.front().get_params());
 
 		//
 		//	generate public open request
@@ -546,88 +457,131 @@ namespace node
 		sml_gen.public_open(get_mac(), server_id, user, pwd);
 
 		//
-		//	generate get process parameter requests
+		//	generate set process parameter requests
 		//
-		auto const sections = queue_.front().get_section_names();
-		BOOST_ASSERT_MSG(sections.size() == 1, "one section expected");
-		for (auto const& sec : sections) {
 
-			CYNG_LOG_INFO(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> set "
-				<< sml::from_server_id(server_id)
-				<< " parameter "
-				<< sec);
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> set "
+			<< sml::from_server_id(server_id)
+			<< " root "
+			<< code.to_str());
 
-			if (boost::algorithm::equals(sec, "root-ipt-param")) {
+		if (sml::OBIS_CODE_ROOT_IPT_PARAM == code) {
 
-				//
-				//	modify IP-T parameters
-				//
-				auto const vec = queue_.front().get_params(sec);
-				execute_cmd_set_proc_param_ipt(sml_gen, server_id, user, pwd, vec);
-			}
-			else if (boost::algorithm::equals(sec, "IF-wireless-mbus")) {
+			//
+			//	modify IP-T parameters
+			//
 
-				//
-				//	modify wireless IEC parameters
-				//
-				execute_cmd_set_proc_param_wmbus(sml_gen, sec);
-			}
-			else if (boost::algorithm::equals(sec, "IF-IEC-62505-21")) {
+			cyng::vector_t vec;
+			vec = cyng::value_cast(params.get("ipt"), vec);
+			execute_cmd_set_proc_param_ipt(sml_gen, server_id, user, pwd, vec);
+		}
+		else if (sml::OBIS_CODE_IF_wMBUS == code) {
 
-				//
-				//	modify wired IEC parameters
-				//
-				execute_cmd_set_proc_param_iec(sml_gen, sec);
-			}
-			else if (boost::algorithm::equals(sec, "reboot")) {
+			//
+			//	modify wireless IEC parameters
+			//
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(params.get("wmbus"), tpl);
+			execute_cmd_set_proc_param_wmbus(sml_gen, server_id, user, pwd, tpl);
+		}
+		else if (sml::OBIS_CODE_IF_1107 == code) {
 
-				//
-				//	reboot the gateway
-				//
-				sml_gen.set_proc_parameter_restart(server_id, user, pwd);
-			}
-			else if (boost::algorithm::equals(sec, "activate")) {
+			//
+			//	modify wired IEC parameters
+			//
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(params.get("iec"), tpl);
+			execute_cmd_set_proc_param_iec(sml_gen, server_id, user, pwd, tpl);
+		}
+		else if (sml::OBIS_CODE_REBOOT == code) {
 
-				//
-				//	activate meter device
-				//
-				execute_cmd_set_proc_param_activate(sml_gen, sec);
-			}
-			else if (boost::algorithm::equals(sec, "deactivate")) {
+			//
+			//	reboot the gateway
+			//
+			sml_gen.set_proc_parameter_restart(server_id, user, pwd);
+		}
+		else if (sml::OBIS_CODE_ACTIVATE_DEVICE == code) {
 
-				//
-				//	deactivate meter device
-				//
-				execute_cmd_set_proc_param_deactivate(sml_gen, sec);
-			}
-			else if (boost::algorithm::equals(sec, "delete")) {
-
-				//
-				//	remove a meter device from list of visible meters
-				//
-				execute_cmd_set_proc_param_delete(sml_gen, sec);
-			}
-			else if (boost::algorithm::equals(sec, "root-sensor-params")) {
-
-				//
-				//	change root parameters of meter
-				//
-				auto const vec = queue_.front().get_params(sec);
-				execute_cmd_set_proc_param_meter(sml_gen, server_id, user, pwd, vec);
+			//
+			//	activate meter device
+			//
+			auto const nr = cyng::numeric_cast<std::uint8_t>(params.get("nr"), 0u);
+			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
+			auto const r = cyng::parse_hex_string(meter);
+			if (r.second) {
+				execute_cmd_set_proc_param_activate(sml_gen, server_id, user, pwd, nr, r.first);
 			}
 			else {
-
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> unknown section for set-proc-param: "
-					<< sec);
+					<< "> invalid meter id: "
+					<< meter);
 			}
+		}
+		else if (sml::OBIS_CODE_DEACTIVATE_DEVICE == code) {
+
+			//
+			//	deactivate meter device
+			//
+			auto const nr = cyng::numeric_cast<std::uint8_t>(params.get("nr"), 0u);
+			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
+			auto const r = cyng::parse_hex_string(meter);
+			if (r.second) {
+				execute_cmd_set_proc_param_activate(sml_gen, server_id, user, pwd, nr, r.first);
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> invalid meter id: "
+					<< meter);
+			}
+			execute_cmd_set_proc_param_deactivate(sml_gen, server_id, user, pwd, nr, r.first);
+		}
+		else if (sml::OBIS_CODE_DELETE_DEVICE == code) {
+
+			//
+			//	remove a meter device from list of visible meters
+			//
+			auto const nr = cyng::numeric_cast<std::uint8_t>(params.get("nr"), 0u);
+			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
+			auto const r = cyng::parse_hex_string(meter);
+			if (r.second) {
+				execute_cmd_set_proc_param_activate(sml_gen, server_id, user, pwd, nr, r.first);
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> invalid meter id: "
+					<< meter);
+			}
+			execute_cmd_set_proc_param_delete(sml_gen, server_id, user, pwd, nr, r.first);
+		}
+		else if (sml::OBIS_CODE_ROOT_SENSOR_PARAMS == code) {
+
+			//
+			//	change root parameters of meter
+			//
+			//auto const vec = queue_.front().get_params(sec);
+			//execute_cmd_set_proc_param_meter(sml_gen, server_id, user, pwd, vec);
+		}
+		else {
+
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> unknown OBIS code for SetProcParameterRequest: "
+				<< code.to_str());
 		}
 
 		//	generate close request
@@ -639,7 +593,7 @@ namespace node
 		//	update data throughput (outgoing)
 		//
 		bus_->vm_.async_run(client_inc_throughput(vm_.tag()
-			, queue_.front().get_source_tag()
+			, queue_.front().get_tag_source()
 			, msg.size()));
 
 #ifdef SMF_IO_LOG
@@ -667,6 +621,8 @@ namespace node
 		auto const server_id = queue_.front().get_srv();
 		auto const user = queue_.front().get_user();
 		auto const pwd = queue_.front().get_pwd();
+		auto const code = queue_.front().get_root();	//	OBIS root
+		auto const params = cyng::make_reader(queue_.front().get_params());
 
 		//
 		//	generate public open request
@@ -675,37 +631,36 @@ namespace node
 
 		sml_gen.public_open(get_mac(), server_id, user, pwd);
 
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> get "
+			<< sml::from_server_id(server_id)
+			<< " GetListRequest: "
+			<< code.to_str());
+
 		//
 		//	generate get process parameter requests
 		//
-		auto const sections = queue_.front().get_section_names();
-		BOOST_ASSERT_MSG(sections.size() == 1, "one section expected");
-		for (auto const& sec : sections) {
 
-			CYNG_LOG_INFO(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> get "
-				<< sml::from_server_id(server_id)
-				<< " list "
-				<< sec);
+		if (sml::OBIS_LIST_CURRENT_DATA_RECORD == code) {
 
-			if (boost::algorithm::equals(sec, "current-data-record")) {
-
-				//
-				//	get last/newest data set
-				//
-				auto const vec = queue_.front().get_params(sec);
-				execute_cmd_get_list_req_last_data_set(sml_gen, server_id, user, pwd, vec);
+			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
+			auto const r = sml::parse_srv_id(meter);
+			if (r.second) {
+				sml_gen.get_list_last_data_record(get_mac().to_buffer()
+					, r.first
+					, user
+					, pwd);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> unknown section for get-list-request: "
-					<< sec);
+					<< "> invalid meter id: "
+					<< meter);
 			}
 		}
 
@@ -718,7 +673,7 @@ namespace node
 		//	update data throughput (outgoing)
 		//
 		bus_->vm_.async_run(client_inc_throughput(vm_.tag()
-			, queue_.front().get_source_tag()
+			, queue_.front().get_tag_source()
 			, msg.size()));
 
 #ifdef SMF_IO_LOG
@@ -733,14 +688,13 @@ namespace node
 			<< cyng::io::to_hex(msg, ' '))
 #endif
 
-			//
-			//	send to gateway
-			//
-			vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", std::move(msg))
-				, cyng::generate_invoke("stream.flush") });
+		//
+		//	send to gateway
+		//
+		vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", std::move(msg))
+			, cyng::generate_invoke("stream.flush") });
 
 	}
-
 
 	void gateway_proxy::execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen
 		, cyng::buffer_t const& server_id
@@ -748,7 +702,6 @@ namespace node
 		, std::string const& pwd
 		, cyng::vector_t vec)
 	{
-		//auto const vec  = queue_.front().get_params(section);
 		std::size_t idx{ 1 };	//	index starts with 1
 		for (auto const& p : vec) {
 
@@ -803,13 +756,16 @@ namespace node
 		}
 	}
 
-	void gateway_proxy::execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen, std::string const& section)
+	void gateway_proxy::execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen
+		, cyng::buffer_t const& server_id
+		, std::string const& user
+		, std::string const& pwd
+		, cyng::tuple_t const& params)
 	{
-		auto const vec = queue_.front().get_params(section);
-		for (auto const& p : vec) {
+		for (auto const& obj : params) {
 
 			cyng::param_t param;
-			param = cyng::value_cast(p, param);
+			param = cyng::value_cast(obj, param);
 
 			CYNG_LOG_DEBUG(logger_, "task #"
 				<< base_.get_id()
@@ -823,19 +779,12 @@ namespace node
 			if (boost::algorithm::equals(param.first, "active")) {
 
 				const auto b = cyng::value_cast(param.second, false);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_INSTALL_MODE }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, b);
 			}
-			//else if (boost::algorithm::equals(p.first, "smf-gw-wmbus-power")) {
-			//	const auto val = cyng::value_cast<std::uint8_t>(p.second, 0u);
-			//	sml_gen.set_proc_parameter_wmbus_power(queue_.front().get_srv()
-			//		, queue_.front().get_user()
-			//		, queue_.front().get_pwd()
-			//		, val);
-			//}
 			else if (boost::algorithm::equals(param.first, "protocol")) {
 
 				//
@@ -843,7 +792,7 @@ namespace node
 				//
 				auto const val = cyng::value_cast<std::string>(param.second, "S");
 
-				sml_gen.set_proc_parameter_wmbus_protocol(queue_.front().get_srv()
+				sml_gen.set_proc_parameter_wmbus_protocol(server_id
 					, queue_.front().get_user()
 					, queue_.front().get_pwd()
 					//
@@ -866,34 +815,38 @@ namespace node
 			else if (boost::algorithm::equals(param.first, "reboot")) {
 
 				const auto val = cyng::numeric_cast<std::uint64_t>(param.second, 0u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_REBOOT }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 			else if (boost::algorithm::equals(param.first, "sMode")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_MODE_S }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 			else if (boost::algorithm::equals(param.first, "tMode")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_MODE_T }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 		}
 	}
 
-	void gateway_proxy::execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen, std::string const& section)
+	void gateway_proxy::execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen
+		, cyng::buffer_t const& server_id
+		, std::string const& user
+		, std::string const& pwd
+		, cyng::tuple_t const& params)
 	{
         //	active: false,
         //	autoActivation: true,
@@ -909,10 +862,11 @@ namespace node
         //	timeSync: 14400,
         //	devices: []
  
-		auto const vec = queue_.front().get_params(section);
-		for (auto const& p : vec) {
+
+		for (auto const& obj : params) {
+
 			cyng::param_t param;
-			param = cyng::value_cast(p, param);
+			param = cyng::value_cast(obj, param);
 
 			CYNG_LOG_DEBUG(logger_, "task #"
 				<< base_.get_id()
@@ -926,28 +880,28 @@ namespace node
 			if (boost::algorithm::equals(param.first, "active")) {
 
 				const auto b = cyng::value_cast(param.second, false);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_ACTIVE }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, b);
 			}
 			else if (boost::algorithm::equals(param.first, "autoActivation")) {
 
 				const auto b = cyng::value_cast(param.second, false);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, b);
 			}
 			else if (boost::algorithm::equals(param.first, "loopTime")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 60u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_LOOP_TIME }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 			else if (boost::algorithm::equals(param.first, "maxDataRate")) {
@@ -955,53 +909,53 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint64_t>(param.second, 0u);
 				sml_gen.set_proc_parameter(queue_.front().get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MAX_DATA_RATE }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 			else if (boost::algorithm::equals(param.first, "minTimeout")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 200u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MIN_TIMEOUT }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 			else if (boost::algorithm::equals(param.first, "maxTimeout")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 5000u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MAX_TIMEOUT }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 			else if (boost::algorithm::equals(param.first, "maxVar")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 9u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MAX_VARIATION }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 			else if (boost::algorithm::equals(param.first, "protocolMode")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 1u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 			else if (boost::algorithm::equals(param.first, "retries")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 3u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_RETRIES }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 			else if (boost::algorithm::equals(param.first, "rs485")) {
@@ -1010,19 +964,19 @@ namespace node
 			else if (boost::algorithm::equals(param.first, "timeGrid")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 900u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_TIME_GRID }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 			else if (boost::algorithm::equals(param.first, "timeSync")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 14400u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				sml_gen.set_proc_parameter(server_id
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_TIME_SYNC }
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+					, user
+					, pwd
 					, val);
 			}
 			else if (boost::algorithm::equals(param.first, "devices")) {
@@ -1031,37 +985,6 @@ namespace node
 				//	ToDo:
 				//
 			}
-		}
-	}
-
-	void gateway_proxy::execute_cmd_get_list_req_last_data_set(sml::req_generator& sml_gen
-		, cyng::buffer_t const& server_id
-		, std::string const& user
-		, std::string const& pwd
-		, cyng::vector_t vec)
-	{
-		if (!vec.empty()) {
-
-			//
-			//	extract meter
-			//
-			cyng::buffer_t meter;
-			meter = cyng::value_cast(vec.at(0), meter);
-
-			sml_gen.get_list_last_data_record(get_mac().to_buffer()
-				, meter
-				, user
-				, pwd);
-		}
-		else {
-
-			CYNG_LOG_ERROR(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> get last data set from "
-				<< sml::from_server_id(server_id)
-				<< " has no parameters");
 		}
 	}
 
@@ -1162,83 +1085,45 @@ namespace node
 
 	}
 
-	void gateway_proxy::execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen, std::string const& section)
+	void gateway_proxy::execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
+		, cyng::buffer_t const& server_id
+		, std::string const& user
+		, std::string const& pwd
+		, std::uint8_t nr
+		, cyng::buffer_t const& meter)
 	{
-		//[{ meter: item.meter }]
-		auto const vec = queue_.front().get_params(section);
-		if (!vec.empty()) {
-
-			//
-			//	extract meter
-			//
-			cyng::buffer_t meter;
-			meter = cyng::value_cast(vec.at(1), meter);
-			sml_gen.set_proc_parameter(queue_.front().get_srv()
-				, { sml::OBIS_CODE_ACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFB, 0x01), sml::OBIS_CODE_SERVER_ID }
-				, queue_.front().get_user()
-				, queue_.front().get_pwd()
-				, meter);
-		}
-		else {
-			CYNG_LOG_ERROR(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> [activate] has no parameters - "
-				<< sml::from_server_id(queue_.front().get_srv()));
-		}
+		sml_gen.set_proc_parameter(server_id
+			, { sml::OBIS_CODE_ACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFB, nr), sml::OBIS_CODE_SERVER_ID }
+			, user
+			, pwd
+			, meter);
 	}
 
-	void gateway_proxy::execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen, std::string const& section)
+	void gateway_proxy::execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
+		, cyng::buffer_t const& server_id
+		, std::string const& user
+		, std::string const& pwd, std::uint8_t nr
+		, cyng::buffer_t const& meter)
 	{
-		auto const vec = queue_.front().get_params(section);
-		if (!vec.empty()) {
-
-			//
-			//	extract meter
-			//
-			cyng::buffer_t meter;
-			meter = cyng::value_cast(vec.at(1), meter);
-			sml_gen.set_proc_parameter(queue_.front().get_srv()
-				, { sml::OBIS_CODE_DEACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, 0x01), sml::OBIS_CODE_SERVER_ID }
-				, queue_.front().get_user()
-				, queue_.front().get_pwd()
-				, meter);
-		}
-		else {
-			CYNG_LOG_ERROR(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> [deactivate] has no parameters - "
-				<< sml::from_server_id(queue_.front().get_srv()));
-		}
+		sml_gen.set_proc_parameter(server_id
+			, { sml::OBIS_CODE_DEACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, nr), sml::OBIS_CODE_SERVER_ID }
+			, user
+			, pwd
+			, meter);
 	}
 
-	void gateway_proxy::execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen, std::string const& section)
+	void gateway_proxy::execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
+		, cyng::buffer_t const& server_id
+		, std::string const& user
+		, std::string const& pwd
+		, std::uint8_t nr
+		, cyng::buffer_t const& meter)
 	{
-		auto const vec = queue_.front().get_params(section);
-		if (!vec.empty()) {
-
-			//
-			//	extract meter
-			//
-			cyng::buffer_t meter;
-			meter = cyng::value_cast(vec.at(1), meter);
-			sml_gen.set_proc_parameter(queue_.front().get_srv()
-				, { sml::OBIS_CODE_DELETE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFD, 0x01), sml::OBIS_CODE_SERVER_ID }
-				, queue_.front().get_user()
-				, queue_.front().get_pwd()
-				, meter);
-		}
-		else {
-			CYNG_LOG_ERROR(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> [delete] has no parameters - "
-				<< sml::from_server_id(queue_.front().get_srv()));
-		}
+		sml_gen.set_proc_parameter(server_id
+			, { sml::OBIS_CODE_DELETE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFD, nr), sml::OBIS_CODE_SERVER_ID }
+			, user
+			, pwd
+			, meter);
 	}
 
 	void gateway_proxy::stop(bool shutdown)

@@ -40,7 +40,11 @@ namespace node
 			constexpr obis()
 				: value_{ 0 }
 			{}
-			obis(octet_type const&);
+
+			/**
+			 * buffer must have the same size as data_type (6 bytes).
+			 */
+			obis(octet_type const& buffer);
 			obis(obis const&);
 			obis(data_type const&);
 			constexpr obis(std::uint8_t a

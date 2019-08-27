@@ -44,6 +44,9 @@ namespace node
 
 			case 0x8181C78A83FF:	return "encode-profile";	//	OBIS_PROFILE
 
+			case 0x8181C789E1FF:	return "class-operation-log";	//	CLASS_OP_LOG
+			case 0x8181C789E2FF:	return "class-event";			//	CLASS_EVENT
+
 			case 0x8181C78101FF:	return "root-file-transfer";	//	CODE_ROOT_FILE_TRANSFER
 			case 0x8181C7810EFF:	return "firmware-indirect";	//	DATA_FIRMWARE
 			case 0x8181C7810CFF: 	return "fw-file";	//	DATA_FILENAME);
@@ -51,6 +54,7 @@ namespace node
 			case 0x8181C7810DFF: 	return "application";	//	DATA_APPLICATION);
 			case 0x8181C78110FF: 	return "application-indirect";	//	DATA_APPLICATION_INDIRECT);
 
+			case 0x8181C7838201:	return "reboot";	//	CODE_REBOOT
 
 			case 0x8101000000FF:	return "log-source-ETH_AUX";	//	OBIS_LOG_SOURCE_ETH_AUX
 			case 0x8102000000FF:	return "log-source-ETH-CUSTOM";	//	OBIS_LOG_SOURCE_ETH_CUSTOM
@@ -144,9 +148,7 @@ namespace node
 			else if (OBIS_W_MBUS_FIRMWARE == code)					return "W_MBUS_FIRMWARE";
 			else if (OBIS_W_MBUS_HARDWARE == code)					return "W_MBUS_HARDWARE";
 
-			else if (code == OBIS_CLASS_OP_LOG)		return "class-operation-log";
-			else if (code == OBIS_CLASS_EVENT)		return "class-event";
-			else if (code == OBIS_CLASS_STATUS)		return "class-status";
+			else if (code == OBIS_CLASS_STATUS)			return "class-status";
 
 			else if (OBIS_ACT_SENSOR_TIME == code)		return "act-sensor-time";
 			else if (OBIS_SERIAL_NR == code)			return "serial-number-I";

@@ -149,16 +149,21 @@ namespace node
 	/**
 	 * Send a process parameter request to an gateway
 	 *
+	 * @param tag_ws websocket session tag (origin)
 	 * @param key key for TGateway/TDevice table
-	 * @param tag_ws websocket session tag
 	 * @param channel channel name (get.proc.param, set.proc.param, ...)
 	 * @param vec vector of parameter requests
-	 */
 	cyng::vector_t bus_req_com_sml(cyng::vector_t const& key
 		, boost::uuids::uuid tag_ws
 		, std::string channel
 		, cyng::vector_t sections
 		, cyng::vector_t params);
+	 */
+	cyng::vector_t bus_req_com_sml(boost::uuids::uuid tag_ws
+		, std::string msg_type
+		, cyng::buffer_t code
+		, cyng::vector_t const& gw
+		, cyng::tuple_t params);
 
 	/**
 	 * Response for bus_req_com_sml()
@@ -278,8 +283,10 @@ namespace node
 	 * @param tag target (IP-T) session
 	 * @param source source session tag
 	 * @param seq cluster sequence
-	 * @param section request type
-	 * @param params parameters
+	 * @param origin web session (sender)
+	 * @param channel SML message type
+	 * @param code OBIS root code
+	 * @param gw PK from table TGateway/TDevice
 	 * @param server server id
 	 * @param user login name / account
 	 * @param pwd password
@@ -287,11 +294,13 @@ namespace node
 	cyng::vector_t client_req_gateway_proxy(boost::uuids::uuid tag
 		, boost::uuids::uuid source
 		, std::uint64_t seq
-		, cyng::vector_t key
-		, boost::uuids::uuid ws
+		, boost::uuids::uuid origin
+
 		, std::string const& channel
-		, cyng::vector_t sections
-		, cyng::vector_t params
+		, cyng::buffer_t const& code
+		, cyng::vector_t gw
+		, cyng::tuple_t params
+
 		, cyng::buffer_t const& server
 		, std::string const& user
 		, std::string const& pwd);

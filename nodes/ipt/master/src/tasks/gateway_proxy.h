@@ -53,14 +53,15 @@ namespace node
 			boost::uuids::uuid,		//	[0] ident tag
 			boost::uuids::uuid,		//	[1] source tag
 			std::uint64_t,			//	[2] cluster seq
-			cyng::vector_t,			//	[3] TGateway key
-			boost::uuids::uuid,		//	[4] ws tag
-			std::string,			//	[5] channel
-			cyng::vector_t,			//	[5] sections
-			cyng::vector_t,			//	[6] parameters
-			cyng::buffer_t,			//	[7] server id
-			std::string,			//	[8] name
-			std::string				//	[9] pwd
+			boost::uuids::uuid,		//	[3] ws tag (origin)
+			std::string,			//	[4] channel (SML message type)
+			cyng::buffer_t,			//	[5] OBIS root code
+			cyng::vector_t,			//	[6] TGateway/TDevice key
+			//cyng::vector_t,			//	[7] TMeter
+			cyng::tuple_t,			//	[7] parameters
+			cyng::buffer_t,			//	[8] server id
+			std::string,			//	[9] name
+			std::string				//	[10] pwd
 		>;
 
 		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7>;
@@ -136,17 +137,17 @@ namespace node
 		 *
 		 * add new entry in work queue
 		 */
-		cyng::continuation process(boost::uuids::uuid,		//	[0] ident tag
-			boost::uuids::uuid,		//	[1] source tag
-			std::uint64_t,			//	[2] cluster seq
-			cyng::vector_t,			//	[3] TGateway key
-			boost::uuids::uuid,		//	[4] ws tag
-			std::string channel,	//	[5] channel
-			cyng::vector_t sections,	//	[6] sections
-			cyng::vector_t params,		//	[7] parameters
-			cyng::buffer_t srv,			//	[8] server id
-			std::string name,			//	[9] name
-			std::string	pwd				//	[10] pwd
+		cyng::continuation process(boost::uuids::uuid tag,		//	[0] ident tag (target)
+			boost::uuids::uuid source,	//	[1] source tag
+			std::uint64_t seq,			//	[2] cluster seq
+			boost::uuids::uuid ws_tag,	//	[3] ws tag (origin)
+			std::string channel,		//	[4] channel
+			cyng::buffer_t code,		//	[5] OBIS root code
+			cyng::vector_t key,			//	[6] TGateway/TDevice PK
+			cyng::tuple_t params,		//	[8] parameters
+			cyng::buffer_t srv,			//	[9] server id
+			std::string name,			//	[10] name
+			std::string	pwd				//	[11] pwd
 		);
 	private:
 		void execute_cmd();
@@ -158,17 +159,34 @@ namespace node
 			, std::string const& user
 			, std::string const& pwd
 			, cyng::vector_t vec);
-		void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen, std::string const& section);
-		void execute_cmd_get_list_req_last_data_set(sml::req_generator& sml_gen
+		void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen
 			, cyng::buffer_t const& server_id
 			, std::string const& user
 			, std::string const& pwd
-			, cyng::vector_t vec);
-
-		void execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen, std::string const& section);
-		void execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen, std::string const& section);
-		void execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen, std::string const& section);
-		void execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen, std::string const& section);
+			, cyng::tuple_t const& params);
+		void execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen
+			, cyng::buffer_t const& server_id
+			, std::string const& user
+			, std::string const& pwd
+			, cyng::tuple_t const& params);
+		void execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
+			, cyng::buffer_t const& server_id
+			, std::string const& user
+			, std::string const& pwd
+			, std::uint8_t nr
+			, cyng::buffer_t const&);
+		void execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
+			, cyng::buffer_t const& server_id
+			, std::string const& user
+			, std::string const& pwd
+			, std::uint8_t nr
+			, cyng::buffer_t const&);
+		void execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
+			, cyng::buffer_t const& server_id
+			, std::string const& user
+			, std::string const& pwd
+			, std::uint8_t nr
+			, cyng::buffer_t const&);
 		void execute_cmd_set_proc_param_meter(sml::req_generator& sml_gen
 			, cyng::buffer_t const& server_id
 			, std::string const& user

@@ -56,24 +56,24 @@ namespace node
 		>(frame);
 
 
-		if (!boost::algorithm::equals(std::get<7>(tpl), "op-log-status-word") &&
-			!boost::algorithm::equals(std::get<7>(tpl), "root-visible-devices") &&	//	81 81 10 06 FF FF
-			!boost::algorithm::equals(std::get<7>(tpl), "root-active-devices") &&	//	81 81 11 06 FF FF
-			!boost::algorithm::equals(std::get<7>(tpl), "root-device-id") &&
-			!boost::algorithm::equals(std::get<7>(tpl), "root-memory-usage") &&
-			!boost::algorithm::equals(std::get<7>(tpl), "root-wMBus-status") &&
-			!boost::algorithm::equals(std::get<7>(tpl), "IF-wireless-mbus") &&
-			!boost::algorithm::equals(std::get<7>(tpl), "root-ipt-state") &&
-			!boost::algorithm::equals(std::get<7>(tpl), "root-ipt-param") &&
-			!boost::algorithm::equals(std::get<7>(tpl), "IF-IEC-62505-21") &&
-			!boost::algorithm::equals(std::get<7>(tpl), "root-sensor-params") &&	//	81 81 C7 86 00 FF
-			!boost::algorithm::equals(std::get<7>(tpl), "root-sensor-prop") &&	//	81 81 C7 86 00 FF
-			!boost::algorithm::equals(std::get<7>(tpl), "current-data-record") &&
-			!boost::algorithm::equals(std::get<7>(tpl), "root-data-prop") &&		//	81 81 C7 86 20 FF
-			!boost::algorithm::equals(std::get<7>(tpl), "root-push-ops"))		//	81 81 C7 8A 01 FF
-		{
-			CYNG_LOG_WARNING(logger_, "bus.res.gateway.proxy - unknown section " << std::get<7>(tpl));
-		}
+		//if (!boost::algorithm::equals(std::get<7>(tpl), "op-log-status-word") &&
+		//	!boost::algorithm::equals(std::get<7>(tpl), "root-visible-devices") &&	//	81 81 10 06 FF FF
+		//	!boost::algorithm::equals(std::get<7>(tpl), "root-active-devices") &&	//	81 81 11 06 FF FF
+		//	!boost::algorithm::equals(std::get<7>(tpl), "root-device-id") &&
+		//	!boost::algorithm::equals(std::get<7>(tpl), "root-memory-usage") &&
+		//	!boost::algorithm::equals(std::get<7>(tpl), "root-wMBus-status") &&
+		//	!boost::algorithm::equals(std::get<7>(tpl), "IF-wireless-mbus") &&
+		//	!boost::algorithm::equals(std::get<7>(tpl), "root-ipt-state") &&
+		//	!boost::algorithm::equals(std::get<7>(tpl), "root-ipt-param") &&
+		//	!boost::algorithm::equals(std::get<7>(tpl), "IF-IEC-62505-21") &&
+		//	!boost::algorithm::equals(std::get<7>(tpl), "root-sensor-params") &&	//	81 81 C7 86 00 FF
+		//	!boost::algorithm::equals(std::get<7>(tpl), "root-sensor-prop") &&	//	81 81 C7 86 00 FF
+		//	!boost::algorithm::equals(std::get<7>(tpl), "current-data-record") &&d
+		//	!boost::algorithm::equals(std::get<7>(tpl), "root-data-prop") &&		//	81 81 C7 86 20 FF
+		//	!boost::algorithm::equals(std::get<7>(tpl), "root-push-ops"))		//	81 81 C7 8A 01 FF
+		//{
+		//	CYNG_LOG_WARNING(logger_, "bus.res.gateway.proxy - unknown section " << std::get<7>(tpl));
+		//}
 
 		//	[3bb02dd1-b864-474b-b131-7ab85f3862e9,9f773865-e4af-489a-8824-8f78a2311278,19,[8d04b8e0-0faf-44ea-b32b-8405d407f2c1],ea7a2ee6-56ae-4536-9600-45c8dd2c2e9e,get.list.request,,list-current-data-record,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758))]
 		//	{"cmd": "update", "channel": "get.list.request", "section": "list-current-data-record", "rec": {"srv": "", "values": {"08 00 01 00 00 ff":"0.758","08 00 01 02 00 ff":"0.758"}}}

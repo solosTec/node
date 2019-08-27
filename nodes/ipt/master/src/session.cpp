@@ -680,7 +680,7 @@ namespace node
 			//	* data
 			//
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.info", "client.req.transmit.data.forward", frame));
+			ctx.run(cyng::generate_invoke("log.msg.info", ctx.get_name(), frame));
 		
 #ifdef SMF_IO_LOG
 			std::stringstream ss;

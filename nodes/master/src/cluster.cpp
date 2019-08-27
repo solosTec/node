@@ -19,18 +19,6 @@
 
 #include <boost/uuid/nil_generator.hpp>
 
-#ifdef __GNUC__
-#  include <features.h>
-#  if __GNUC_PREREQ(6,0)
-#define SMF_AUTO_TUPLE_ENABLED
-#  else
-#define SMF_AUTO_TUPLE_DISABLED
-#  endif
-#else
- //    If not gcc
-#define SMF_AUTO_TUPLE_ENABLED
-#endif
-
 namespace node 
 {
 	cluster::cluster(cyng::async::mux& mux
@@ -56,32 +44,34 @@ namespace node
 	void cluster::bus_req_com_sml(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		//CYNG_LOG_INFO(logger_, "bus.req.gateway.proxy " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 		
-		//	[9f773865-e4af-489a-8824-8f78a2311278,8,[430a586d-e96d-477d-a3fe-9b9a6120442a],f21b82e8-a1bd-48c0-aa6e-84f24cfb4efa,get.list.request,[current-data-record],[{("meterId":01-e61e-29436587-bf-03)}]]
+		//	[]
 		//
 		//	* source
 		//	* bus sequence
-		//	* TGateway/TDevice key
-		//	* web-socket tag
+		//	* web-socket tag (origin)
 		//	* channel
+		//	* OBIS root 
+		//	* TGateway/TDevice key
 		//	* sections
 		//	* params
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] source
 			std::uint64_t,			//	[1] sequence
-			cyng::vector_t,			//	[2] TGateway/TDevice key
-			boost::uuids::uuid,		//	[3] websocket tag
-			std::string,			//	[4] channel
-			cyng::vector_t,			//	[5] sections (strings)
-			cyng::vector_t			//	[6] requests (strings)
+			boost::uuids::uuid,		//	[2] websocket tag (origin)
+			std::string,			//	[3] channel (SML message type)
+			cyng::buffer_t,			//	[4] OBIS root 
+			cyng::vector_t,			//	[5] TGateway/TDevice key
+			cyng::tuple_t			//	[6] optional parameters
 		>(frame);
 
 		//
-		//	test TGateway key
+		//	test channel and TGateway key
 		//
-		BOOST_ASSERT(!std::get<2>(tpl).empty());
+		BOOST_ASSERT_MSG(!std::get<3>(tpl).empty(), "no SML message type specified");
+		BOOST_ASSERT(!std::get<5>(tpl).empty());
 		
 		//
 		//	send process parameter request to an gateway
@@ -93,10 +83,10 @@ namespace node
 			//	of that device/gateway. Additionally we get the required access data like
 			//	server ID, user and password.
 			//
-#if defined SMF_AUTO_TUPLE_ENABLED
-			auto const[peer, rec, server, tag] = find_peer(std::get<2>(tpl), tbl_session, tbl_gw);
+#if defined __CPP_SUPPORT_P0217R3
+			auto const[peer, rec, server, tag] = find_peer(std::get<5>(tpl), tbl_session, tbl_gw);
 #else            
-            std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> r = find_peer(std::get<2>(tpl), tbl_session, tbl_gw);
+            std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> r = find_peer(std::get<5>(tpl), tbl_session, tbl_gw);
             session const* peer = std::get<0>(r);
             cyng::table::record const rec = std::get<1>(r);
             cyng::buffer_t const server = std::get<2>(r);
@@ -113,11 +103,11 @@ namespace node
 				peer->vm_.async_run(node::client_req_gateway_proxy(tag	//	ipt session tag
 					, std::get<0>(tpl)	//	source tag
 					, std::get<1>(tpl)	//	cluster sequence
-					, std::get<2>(tpl)	//	TGateway key
-					, std::get<3>(tpl)	//	websocket tag
-					, std::get<4>(tpl)	//	channel
-					, std::get<5>(tpl)	//	sections
-					, std::get<6>(tpl)	//	requests
+					, std::get<2>(tpl)	//	websocket tag (origin)
+					, std::get<3>(tpl)	//	channel (SML message type)
+					, std::get<4>(tpl)	//	OBIS root 
+					, std::get<5>(tpl)	//	TGateway/TDevice key
+					, std::get<6>(tpl)	//	optional parameters
 					, server			//	server
 					, name
 					, pwd));
@@ -128,9 +118,9 @@ namespace node
 				//	peer/node not found
 				//
 				CYNG_LOG_WARNING(logger_, "bus.req.gateway.proxy - peer/node not found " 
-					<< cyng::io::to_str(std::get<2>(tpl))
+					<< cyng::io::to_str(std::get<5>(tpl))
 					<< ", channel: "
-					<< std::get<4>(tpl));
+					<< std::get<3>(tpl));
 			}
 
 		}	, cyng::store::read_access("_Session")

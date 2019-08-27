@@ -72,7 +72,7 @@ namespace node
 				case BODY_OPEN_RESPONSE:	return "PublicOpenResponse";
 				case BODY_CLOSE_REQUEST:	return "PublicCloseRequest";
 				case BODY_CLOSE_RESPONSE:	return "PublicCloseResponse";
-				case BODY_GET_PROFILE_PACK_REQUEST:	return "GetPrpfilePackRequest";
+				case BODY_GET_PROFILE_PACK_REQUEST:	return "GetProfilePackRequest";
 				case BODY_GET_PROFILE_PACK_RESPONSE:	return "GetProfilePackResponse";
 				case BODY_GET_PROFILE_LIST_REQUEST:	return "GetProfileListRequest";
 				case BODY_GET_PROFILE_LIST_RESPONSE:	return "GetProfileListResponse";

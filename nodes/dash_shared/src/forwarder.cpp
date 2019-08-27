@@ -493,30 +493,58 @@ namespace node
 		, std::string const& channel
 		, cyng::reader<cyng::object> const& reader)
 	{
-		//	{"cmd":"config:gateway","channel":"get.proc.param","key":["fce4fe15-0756-4ae4-91e7-28dee59f07e6"],"params":[{"section":["op-log-status-word","root-visible-devices","root-active-devices","root-device-id","memory","root-wMBus-status","IF-wireless-mbus","root-ipt-state","root-ipt-param"]}]}
-		//	{"cmd":"config:gateway","channel":"set.proc.param","key":["fce4fe15-0756-4ae4-91e7-28dee59f07e6"],"params":[{"name":"smf-form-gw-ipt-srv","value":"0500153B0223B3"},{"name":"smf-gw-ipt-host-1","value":"waiting..."},{"name":"smf-gw-ipt-local-1","value":""},{"name":"smf-gw-ipt-remote-1","value":""},{"name":"smf-gw-ipt-name-1","value":"waiting..."},{"name":"smf-gw-ipt-pwd-1","value":""},{"name":"smf-gw-ipt-host-2","value":"waiting..."},{"name":"smf-gw-ipt-local-2","value":""},{"name":"smf-gw-ipt-remote-2","value":""},{"name":"smf-gw-ipt-name-2","value":"waiting..."},{"name":"smf-gw-ipt-pwd-2","value":""},{"section":["ipt"]}]}
-		//	{"cmd":"config:gateway","channel":"set.proc.param","key":["31cad258-45f1-4b1d-b131-8a55eb671bb1"],"params":[{"name":"meter-tag","value":"1a38ed66-bd25-4e34-827c-b1a62f09abf4"},{"name":"meter-id","value":"01-a815-74314505-01-02"}],"section":["query"]}
-		cyng::vector_t key;
-		key = cyng::value_cast(reader.get("key"), key);
-		CYNG_LOG_INFO(logger, "\"sml:com\" from ws: " << tag_ws << " to TGateway " << cyng::io::to_str(key));
-		BOOST_ASSERT_MSG(!key.empty(), "TGateway key is empty");
-		if (!key.empty()) {
+        //	msgType: [string: SML message type: getProfileList, getProcParameter, getList, getProfilePack, ...]
+        //	channel: [string/OBIS]
+        //	gw: [vector: gateway PK]
+        //	params: [tuple: optional params]
 
-			cyng::vector_t sections, params;
-			sections = cyng::value_cast(reader.get("section"), sections);
-			params = cyng::value_cast(reader.get("params"), params);
+		cyng::vector_t gw;
+		gw = cyng::value_cast(reader.get("gw"), gw);
+		if (!gw.empty()) {
 
-			for (auto const& sec : sections) {
-				CYNG_LOG_TRACE(logger, "\"sml:com\" to TGateway " << cyng::io::to_str(key) << " [" << cyng::io::to_str(sec) << "]");
+			auto const msg_type = cyng::value_cast<std::string>(reader.get("msgType"), "");
+			auto const channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+			auto const r = cyng::parse_hex_string(channel);
+			if (r.second) {
+
+				cyng::tuple_t params;
+				params = cyng::value_cast(reader.get("params"), params);
+
+				ctx.queue(bus_req_com_sml(tag_ws	//	web-socket tag (origin)
+					, msg_type
+					, r.first	//	OBIS root code
+					, gw	//	key into TGateway and TDevice table
+					, params));	//	parameters, requests, commands
 			}
-
-			ctx.queue(bus_req_com_sml(key	//	key into TGateway and TDevice table
-				, tag_ws	//	web-socket tag
-				, channel
-				, sections
-				, params));	//	parameters, requests, commands
-
+			else {
+				CYNG_LOG_ERROR(logger, "\"sml:com\" from ws: " << tag_ws << " with invalid channel " << channel);
+			}
 		}
+		else {
+			CYNG_LOG_ERROR(logger, "\"sml:com\" from ws: " << tag_ws << " with empty gateway PK");
+		}
+
+		//cyng::vector_t key;
+		//key = cyng::value_cast(reader.get("key"), key);
+		//CYNG_LOG_INFO(logger, "\"sml:com\" from ws: " << tag_ws << " to TGateway " << cyng::io::to_str(key));
+		//BOOST_ASSERT_MSG(!key.empty(), "TGateway key is empty");
+		//if (!key.empty()) {
+
+		//	cyng::vector_t sections, params;
+		//	sections = cyng::value_cast(reader.get("section"), sections);
+		//	params = cyng::value_cast(reader.get("params"), params);
+
+		//	for (auto const& sec : sections) {
+		//		CYNG_LOG_TRACE(logger, "\"sml:com\" to TGateway " << cyng::io::to_str(key) << " [" << cyng::io::to_str(sec) << "]");
+		//	}
+
+		//	ctx.queue(bus_req_com_sml(key	//	key into TGateway and TDevice table
+		//		, tag_ws	//	web-socket tag
+		//		, channel
+		//		, sections
+		//		, params));	//	parameters, requests, commands
+
+		//}
 	}
 
 	void fwd_com_task(cyng::logging::log_ptr logger

@@ -186,16 +186,44 @@ namespace node
 					<< ".log"
 					;
 
-				const std::string file_name = (boost::filesystem::temp_directory_path() / ss.str()).string();
-				std::ofstream of(file_name, std::ios::out | std::ios::app);
-				if (of.is_open())
 				{
-					cyng::io::hex_dump hd;
-					hd(of, buf.begin(), buf.end());
+					std::string const file_name = (boost::filesystem::temp_directory_path() / ss.str()).string();
+					std::ofstream of(file_name, std::ios::out | std::ios::app);
+					if (of.is_open())
+					{
+						cyng::io::hex_dump hd;
+						hd(of, buf.begin(), buf.end());
 
-					CYNG_LOG_TRACE(logger_, "write debug log " << file_name);
-					of.close();
+						CYNG_LOG_TRACE(logger_, "write debug log " << file_name);
+						of.close();
+					}
 				}
+
+				ss.str("");
+				ss
+					<< "ipt-rx-"
+					<< boost::uuids::to_string(vm_.tag())
+					<< "-"
+					<< std::setw(4)
+					<< std::setfill('0')
+					<< std::dec
+					<< ".sml"
+					;
+				{
+					std::string const file_name = (boost::filesystem::temp_directory_path() / ss.str()).string();
+					std::ofstream of(file_name, std::ios::out | std::ios::app | std::ios::binary);
+					if (of.is_open())
+					{
+						//
+						//	write binary data
+						//
+						of.write(buf.data(), buf.size());
+
+						CYNG_LOG_TRACE(logger_, "write debug log " << file_name);
+						of.close();
+					}
+				}
+
 #endif
 
 				//
