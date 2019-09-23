@@ -186,6 +186,7 @@ namespace node
 			 */
 			constexpr std::uint64_t to_uint64() const
 			{
+				//	use only the lower 6 bytes
 				auto const n = cyng::slicer<std::uint64_t, 0u>(value_) & 0x0000FFFFFFFFFFFF;
 				return cyng::swap_num(n * 0x10000);
 			}
@@ -210,11 +211,10 @@ namespace node
 		 */
 		obis make_obis(std::uint32_t, std::uint32_t, std::uint32_t, std::uint32_t, std::uint32_t, std::uint32_t);
 
-		//
-		//	define an OBIS path
-		//
+		/**
+		 *	define an OBIS path
+		 */
 		using obis_path = std::vector<obis>;
-
 
 	}	//	sml
 }	//	node

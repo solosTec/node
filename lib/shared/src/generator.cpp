@@ -304,7 +304,7 @@ namespace node
 		, std::string channel
 		, std::string srv
 		, std::string code
-		, cyng::param_map_t const& params)
+		, cyng::param_map_t params)
 	{
 		cyng::vector_t prg;
 		return prg << cyng::generate_invoke_unwinded("stream.serialize"

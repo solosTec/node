@@ -118,6 +118,7 @@ namespace node
 	private:
 #ifdef SMF_IO_LOG
 		std::size_t log_counter_;
+		std::size_t sml_counter_;
 #endif
 
 	};

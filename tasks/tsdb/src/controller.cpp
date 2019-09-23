@@ -15,7 +15,6 @@
 #include <cyng/factory/set_factory.h>
 #include <cyng/set_cast.h>
 #include <cyng/io/serializer.h>
-//#include <cyng/json.h>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/rnd.h>

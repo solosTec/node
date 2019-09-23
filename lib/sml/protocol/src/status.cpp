@@ -13,8 +13,8 @@ namespace node
 	namespace sml
 	{
 
-		status::status()
-		: word_(0)
+		status::status(status_word_t& word)
+		: word_(word)
 		{
 			reset();
 		}
@@ -22,15 +22,6 @@ namespace node
 		status::status(status const& other)
 			: word_(other.word_)
 		{}
-
-		status& status::operator=(status const& other)
-		{
-			if (this != &other)
-			{
-				word_ = other.word_;
-			}
-			return *this;
-		}
 
 		void status::reset()
 		{
@@ -45,9 +36,10 @@ namespace node
 			word_ |= STATUS_BIT_AUTHORIZED_IPT;	//!< 1 if NOT authorized
 		}
 
-		void status::reset(std::uint32_t word)
+		std::uint64_t status::reset(std::uint64_t word)
 		{
-			word_ = word;
+			std::swap(word_, word);
+			return word;
 		}
 
 		status::operator std::uint64_t() const

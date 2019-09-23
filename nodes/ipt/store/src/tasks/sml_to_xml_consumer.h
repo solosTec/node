@@ -22,7 +22,7 @@ namespace node
 	{
 	public:
 		using msg_0 = std::tuple<std::uint64_t, std::string>;
-		using msg_1 = std::tuple<std::uint64_t, std::uint16_t, std::size_t, cyng::tuple_t>;
+		using msg_1 = std::tuple<std::uint64_t, std::uint16_t, cyng::tuple_t>;
 		using msg_2 = std::tuple<std::uint64_t>;
 		using msg_3 = std::tuple<std::uint64_t, std::size_t, std::uint16_t>;
 		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3>;
@@ -52,7 +52,6 @@ namespace node
 		 */
 		cyng::continuation process(std::uint64_t line
 			, std::uint16_t code
-			, std::size_t idx
 			, cyng::tuple_t msg);
 
 		/**

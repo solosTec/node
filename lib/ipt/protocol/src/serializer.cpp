@@ -386,7 +386,7 @@ namespace node
 			const std::uint8_t block = cyng::value_cast<std::uint8_t>(frame.at(3), 0);
 			cyng::buffer_t data;
 			data = cyng::value_cast<cyng::buffer_t>(frame.at(4), data);
-			const std::uint32_t size = data.size();
+			std::uint32_t const size = static_cast<std::uint32_t>(data.size());
 
 			last_seq_ = sgen_();
 			write_header(code::TP_REQ_PUSHDATA_TRANSFER

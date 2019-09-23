@@ -19,13 +19,13 @@ namespace node
 	{
 		struct master_record
 		{
-			const std::string host_;
-			const std::string service_;
-			const std::string account_;
-			const std::string pwd_;
-			const scramble_key	sk_;	//!< default scramble key
-			const bool scrambled_;
-			const std::chrono::seconds monitor_;
+			std::string host_;
+			std::string service_;
+			std::string account_;
+			std::string pwd_;
+			scramble_key	sk_;	//!< default scramble key
+			bool scrambled_;
+			std::chrono::seconds monitor_;
 			master_record();
 			master_record(std::string const&, std::string const&, std::string const&, std::string const&, scramble_key const&, bool, int);
 		};
@@ -69,7 +69,7 @@ namespace node
 			/**
 			 * config data
 			 */
-			const master_config_t config_;
+			master_config_t config_;
 
 			/**
 			 * index of current ipt master configuration

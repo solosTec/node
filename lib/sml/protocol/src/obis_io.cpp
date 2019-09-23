@@ -13,6 +13,7 @@
 #include <cyng/parser/buffer_parser.h>
 
 #include <boost/io/ios_state.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace node
 {
@@ -86,25 +87,6 @@ namespace node
 			return ss.str();
 		}
 
-		std::string to_hex(obis_path const& p)
-		{
-			std::ostringstream ss;
-			bool init = false;
-			for (auto o : p)
-			{
-				if (init)
-				{
-					ss << " => ";
-				}
-				else
-				{
-					init = true;
-				}
-				to_hex(ss, o);
-			}
-			return ss.str();
-		}
-
 		obis to_obis(std::string const& str)
 		{
 			//
@@ -172,5 +154,37 @@ namespace node
 			return obis();
 		}
 
+		std::ostream& to_hex(std::ostream& os, obis_path const& path)
+		{
+			bool initialized{ false };
+			for (auto const& code : path) {
+				if (initialized) {
+					os << ' ';
+				}
+				else {
+					initialized = true;
+				}
+				os << code.to_str();
+			}
+			return os;
+		}
+
+		std::string to_hex(obis_path const& path)
+		{
+			std::stringstream ss;
+			to_hex(ss, path);
+			return ss.str();
+		}
+
+		obis_path to_obis_path(std::string const& path)
+		{
+			obis_path result;
+			std::vector<std::string> parts;
+			boost::split(parts, path, boost::is_any_of("\t\n "));
+			for (auto const& code : parts) {
+				result.push_back(to_obis(code));
+			}
+			return result;
+		}
 	}
 }

@@ -61,6 +61,8 @@ set (node_master_schemes
 
 	src/main/include/smf/shared/db_schemes.h
 	nodes/shared/db/db_schemes.cpp
+	src/main/include/smf/shared/db_cfg.h
+	nodes/shared/db/db_cfg.cpp
 )
 
 if(WIN32)

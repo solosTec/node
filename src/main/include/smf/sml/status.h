@@ -9,8 +9,8 @@
 #define NODE_SML_STATUS_H
 
 
-#include <cstdint>
 #include <cyng/intrinsics/sets.h>
+#include <cstdint>
 
 namespace node
 {
@@ -59,6 +59,11 @@ namespace node
 		};
 
 		/**
+		 * Define a base type to hold the status word information.
+		 */
+		using status_word_t = std::uint64_t;
+
+		/**
 		 * Manage status word for SML kernel
 		 *	bit meaning
 		 *	0	always 0
@@ -90,15 +95,22 @@ namespace node
 		class status
 		{
 		public:
-			status();
+			status(status_word_t&);
 			status(status const&);
-			status& operator=(status const&);
+
+			status& operator=(status const&) = delete;
 
 			/**
-			 * reset kernel
+			 * reset status
 			 */
 			void reset();
-			void reset(std::uint32_t);
+
+			/**
+			 * reset internal value (word)
+			 *
+			 * @return previous value
+			 */
+			std::uint64_t reset(std::uint64_t);
 
 			/**
 			 * @return status word
@@ -166,7 +178,7 @@ namespace node
 			void remove(status_bits);
 
 		private:
-			std::uint64_t	word_;
+			status_word_t& word_;
 		};
 
 		/**

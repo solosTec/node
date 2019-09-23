@@ -129,20 +129,19 @@ namespace node
 			return doc_.save_file(p.c_str(), PUGIXML_TEXT("  "));
 		}
 
-		void xml_exporter::read(cyng::tuple_t const& msg, std::size_t idx)
+		void xml_exporter::read(cyng::tuple_t const& msg)
 		{
-			//std::string s = std::to_string(idx);
-			read_msg(msg.begin(), msg.end(), idx);
+			read_msg(msg.begin(), msg.end());
 		}
 
-		void xml_exporter::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end, std::size_t idx)
+		void xml_exporter::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
 			boost::ignore_unused(count);	//	release version
 			
 			auto msg = root_.append_child("msg");
-			msg.append_attribute("idx").set_value(idx);
+			//msg.append_attribute("idx").set_value(idx);
 
 			//
 			//	(1) - transaction id

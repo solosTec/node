@@ -79,12 +79,6 @@ namespace node
 	cyng::table::record connection_lookup(cyng::store::table* tbl, cyng::table::key_type&& key);
 	bool connection_erase(cyng::store::table* tbl, cyng::table::key_type&& key, boost::uuids::uuid tag);
 
-	/**
-	 * Get value from "_Config" table. 
-	 * Set e read lock on "_Config" table. 
-	 */
-	cyng::object get_config(cyng::store::db& db, std::string key);
-	cyng::object get_config(cyng::store::table const* tbl, std::string key);
 
 	/**
 	 * Define configuration bits

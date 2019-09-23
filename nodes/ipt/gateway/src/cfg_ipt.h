@@ -33,13 +33,12 @@ namespace node
 				, cyng::store::db& config_db
 				, node::ipt::redundancy const& cfg);
 
-			void get_proc_ipt_params(cyng::object trx, cyng::object server_id);
+			void get_proc_ipt_params(std::string trx, cyng::buffer_t server_id) const;
 
-		private:
-			void sml_set_proc_ipt_param_address(cyng::context& ctx);
-			void sml_set_proc_ipt_param_port_target(cyng::context& ctx);
-			void sml_set_proc_ipt_param_user(cyng::context& ctx);
-			void sml_set_proc_ipt_param_pwd(cyng::context& ctx);
+			/**
+			 * overwrite the specified parameter
+			 */
+			void set_param(obis, cyng::param_t const&);
 
 		private:
 			cyng::logging::log_ptr logger_;
@@ -58,6 +57,13 @@ namespace node
 			 * configuration db
 			 */
 			cyng::store::db& config_db_;
+
+			//
+			//	fixed values
+			//
+			std::uint8_t wait_time_;	//	minutes
+			std::uint32_t repetitions_;	//	counter
+			bool ssl_;
 
 		};
 

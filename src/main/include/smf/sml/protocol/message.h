@@ -19,9 +19,29 @@ namespace node
 {
 	namespace sml
 	{
+		/**
+		 * @param trx transaction ID
+		 * @param group_no group number
+		 * @param abort_code abort code
+		 * @param type message type
+		 * @param value message body
+		 */
 		cyng::tuple_t message(cyng::object trx
-			, std::uint8_t groupNo
-			, std::uint8_t abortCode
+			, std::uint8_t group_no
+			, std::uint8_t abort_code
+			, sml_messages_enum type
+			, cyng::tuple_t value);
+
+		/**
+		 * @param trx transaction ID
+		 * @param group_no group number
+		 * @param abort_code abort code
+		 * @param type message type
+		 * @param value message body
+		 */
+		cyng::tuple_t message(std::string trx
+			, std::uint8_t group_no
+			, std::uint8_t abort_code
 			, sml_messages_enum type
 			, cyng::tuple_t value);
 
@@ -81,6 +101,27 @@ namespace node
 			, cyng::tuple_t params);
 
 		/**
+		 * msg must be of type SML_GetProcParameter.Res
+		 *
+		 * @param msg SML_GetProcParameter.Res
+		 * @param code path
+		 */
+		bool append_get_proc_response(cyng::tuple_t& msg
+			, std::initializer_list<obis> path
+			, cyng::tuple_t&& val);
+
+		/**
+		 * msg must be of type SML_GetProfileList.Res 
+		 * 
+		 * @param msg SML_GetProfileList.Res 
+		 * @param code path
+		 * @param obj result of period_entry() function
+		 */
+		void append_period_entry(cyng::tuple_t& msg
+			, obis code
+			, cyng::object&& obj);
+
+		/**
 		 * @param server_id
 		 * @param code parameter tree path
 		 * @param params parameter tree
@@ -126,7 +167,7 @@ namespace node
 			, cyng::tuple_t& obj_list
 			, cyng::tuple_t& details);
 
-		cyng::tuple_t get_profile_list_response(cyng::object server_id
+		cyng::tuple_t get_profile_list_response(cyng::buffer_t server_id
 			, std::chrono::system_clock::time_point act_time
 			, std::uint32_t reg_period
 			, obis code //	tree path
@@ -171,12 +212,16 @@ namespace node
 		 * @param value typically the result of make_value<T>(...)
 		 */
 		cyng::tuple_t empty_tree(obis code);
-		cyng::tuple_t parameter_tree(obis, cyng::tuple_t value);
+
+		/**
+		 * This is a single attribute
+		 */
+		cyng::tuple_t parameter_tree(obis, cyng::tuple_t&& value);
 		cyng::tuple_t child_list_tree(obis, cyng::tuple_t value);
 		cyng::tuple_t child_list_tree(obis, std::initializer_list<cyng::tuple_t> list);
 
-		cyng::tuple_t tree(obis code, cyng::tuple_t param, cyng::tuple_t list);
-		cyng::tuple_t tree(obis code, cyng::tuple_t param, std::initializer_list<cyng::tuple_t> list);
+		//cyng::tuple_t tree(obis code, cyng::tuple_t param, cyng::tuple_t list);
+		//cyng::tuple_t tree(obis code, cyng::tuple_t param, std::initializer_list<cyng::tuple_t> list);
 
 		cyng::object period_entry(obis
 			, std::uint8_t unit
@@ -185,6 +230,8 @@ namespace node
 
 		/**
 		 * SML_ListEntry  - part of 5.1.15. SML_GetList.Res
+		 * A SML_ListEntry is part of an SML_List that holds all values
+		 * in a SML_GetList.Res.
 		 */
 		cyng::object list_entry(obis obj_name
 			, std::uint64_t status
@@ -198,6 +245,7 @@ namespace node
 		 * 81, 81, C7, 82, 03, FF
 		 */
 		cyng::object list_entry_manufacturer(std::string);
+
 		/**
 		 * SML_ListEntry  - part of 5.1.15. SML_GetList.Res
 		 */

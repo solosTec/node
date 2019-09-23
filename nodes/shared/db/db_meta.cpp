@@ -13,6 +13,61 @@
 
 namespace node
 {
+	cyng::table::meta_table_ptr create_meta_load_profile(std::string name)
+	{
+		return cyng::table::make_meta_table<2, 4>(name,
+			{ "clientID"	//	server/meter/sensor ID
+			, "trx"			//	transaction ID
+							//	-- body
+			, "actTime"		//
+			, "valTime"		//	signed integer
+			, "regPeriod"	//	capture period (seconds)
+			, "status"		//	status
+			},
+			{ cyng::TC_BUFFER		//	clientID
+			, cyng::TC_STRING		//	trx
+									//	-- body
+			, cyng::TC_TIME_POINT	//	actTime
+			, cyng::TC_TIME_POINT	//	valTime
+			, cyng::TC_UINT32		//	regPeriod
+			, cyng::TC_UINT32		//	status
+			},
+			{ 9		//	serverID
+			, 24	//	trx
+					//	-- body
+			, 0		//	actTime
+			, 0		//	valTime
+			, 0		//	regPeriod
+			, 0		//	status
+		});
+	}
+
+	cyng::table::meta_table_ptr create_meta_data_storage(std::string name)
+	{
+		return cyng::table::make_meta_table<2, 3>(name,
+			{ "trx"			//	transaction ID - reference to load profile table
+			, "OBIS"		//	register
+							//	-- body
+			, "unit"		//
+			, "scale"		//	signed integer
+			, "value"		//	capture period (seconds)
+			},
+			{ cyng::TC_STRING		//	trx
+			, cyng::TC_STRING		//	OBIS
+									//	-- body
+			, cyng::TC_UINT8		//	unit
+			, cyng::TC_INT8			//	scale
+			, cyng::TC_INT64		//	value
+			},
+			{ 24	//	trx
+			, 24	//	OBIS
+					//	-- body
+			, 0		//	unit
+			, 0		//	scale
+			, 0		//	value
+		});
+	}
+
 	cyng::table::meta_table_ptr create_meta(std::string name)
 	{
 		if (boost::algorithm::equals(name, "TSMLMeta")) {
@@ -234,6 +289,9 @@ namespace node
 		}
 		else if (boost::algorithm::equals(name, "op.log")) {
 
+			//
+			//	operation log (81 81 C7 89 E1 FF)
+			//
 			return cyng::table::make_meta_table<1, 10>(name,
 				{ "idx"			//	index
 								//	-- body
@@ -319,7 +377,137 @@ namespace node
 				, 512	//	result
 				, 0		//	status
 				, 23	//	roTime
-				});
+			});
+		}
+		else if (boost::algorithm::equals(name, "profile.8181C78610FF")) {
+
+			//
+			//	load profile PROFILE_1_MINUTE
+			//
+			return create_meta_load_profile(name);
+		}
+		else if (boost::algorithm::equals(name, "profile.8181C78611FF")) {
+
+			//
+			//	load profile PROFILE_15_MINUTE
+			//
+			return create_meta_load_profile(name);
+		}
+		else if (boost::algorithm::equals(name, "profile.8181C78612FF")) {
+
+			//
+			//	load profile PROFILE_60_MINUTE
+			//
+			return create_meta_load_profile(name);
+		}
+		else if (boost::algorithm::equals(name, "profile.8181C78613FF")) {
+
+			//
+			//	load profile PROFILE_24_HOUR
+			//
+			return create_meta_load_profile(name);
+		}
+		else if (boost::algorithm::equals(name, "profile.8181C78614FF")) {
+
+			//
+			//	load profile PROFILE_LAST_2_HOURS
+			//
+			return create_meta_load_profile(name);
+		}
+		else if (boost::algorithm::equals(name, "profile.8181C78615FF")) {
+
+			//
+			//	load profile PROFILE_LAST_WEEK
+			//
+			return create_meta_load_profile(name);
+		}
+		else if (boost::algorithm::equals(name, "profile.8181C78616FF")) {
+
+			//
+			//	load profile PROFILE_1_MONTH
+			//
+			return create_meta_load_profile(name);
+		}
+		else if (boost::algorithm::equals(name, "profile.8181C78617FF")) {
+
+			//
+			//	load profile PROFILE_1_YEAR
+			//
+			return create_meta_load_profile(name);
+		}
+		else if (boost::algorithm::equals(name, "profile.8181C78618FF")) {
+
+			//
+			//	load profile PROFILE_INITIAL
+			//
+			return create_meta_load_profile(name);
+		}
+
+		//
+		//	data storage
+		//
+		else if (boost::algorithm::equals(name, "storage.8181C78610FF")) {
+
+			//
+			//	load profile PROFILE_1_MINUTE
+			//
+			return create_meta_data_storage(name);
+		}
+		else if (boost::algorithm::equals(name, "storage.8181C78611FF")) {
+
+			//
+			//	load profile PROFILE_15_MINUTE
+			//
+			return create_meta_data_storage(name);
+		}
+		else if (boost::algorithm::equals(name, "storage.8181C78612FF")) {
+
+			//
+			//	load profile PROFILE_60_MINUTE
+			//
+			return create_meta_data_storage(name);
+		}
+		else if (boost::algorithm::equals(name, "storage.8181C78613FF")) {
+
+			//
+			//	load profile PROFILE_24_HOUR
+			//
+			return create_meta_data_storage(name);
+		}
+		else if (boost::algorithm::equals(name, "storage.8181C78614FF")) {
+
+			//
+			//	load profile PROFILE_LAST_2_HOURS
+			//
+			return create_meta_data_storage(name);
+		}
+		else if (boost::algorithm::equals(name, "storage.8181C78615FF")) {
+
+			//
+			//	load profile PROFILE_LAST_WEEK
+			//
+			return create_meta_data_storage(name);
+		}
+		else if (boost::algorithm::equals(name, "storage.8181C78616FF")) {
+
+			//
+			//	load profile PROFILE_1_MONTH
+			//
+			return create_meta_data_storage(name);
+		}
+		else if (boost::algorithm::equals(name, "storage.8181C78617FF")) {
+
+			//
+			//	load profile PROFILE_1_YEAR
+			//
+			return create_meta_data_storage(name);
+		}
+		else if (boost::algorithm::equals(name, "storage.8181C78618FF")) {
+
+			//
+			//	load profile PROFILE_INITIAL
+			//
+			return create_meta_data_storage(name);
 		}
 		else if (boost::algorithm::equals(name, "data.collector")) {
 
@@ -378,7 +566,7 @@ namespace node
 						//	-- body
 				, 24	//	OBIS
 				, 9		//	serverID
-				, 32		//	msg
+				, 32	//	msg
 				});
 		}
 

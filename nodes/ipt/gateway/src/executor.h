@@ -10,9 +10,7 @@
 
 
 #include <smf/sml/defs.h>
-#include <smf/sml/status.h>
 #include <smf/ipt/bus.h>
-#include <cyng/intrinsics/mac.h>
 #include <cyng/log.h>
 #include <cyng/store/db.h>
 #include <cyng/async/mux.h>
@@ -29,19 +27,22 @@ namespace node
 		public:
 			executor(cyng::logging::log_ptr
 				, cyng::async::mux& mux
-				, status&
 				, cyng::store::db& config_db
-				, cyng::controller& vm
-				, cyng::mac48 mac);
+				, cyng::controller& vm);
 
 			/**
 			 * Generate op log entry
 			 */
 			void ipt_access(bool, std::string);
 
+			/**
+			 * Monitor and update wireless LMN status
+			 */
+			void start_wireless_lmn(bool);
+
 		private:
 			void subscribe(std::string const& name);
-			void init_db(boost::uuids::uuid tag, cyng::mac48 mac);
+			void init_db(boost::uuids::uuid tag);
 
 			void sig_ins(cyng::store::table const*
 				, cyng::table::key_type const&
@@ -66,11 +67,6 @@ namespace node
 			 * task manager
 			 */
 			cyng::async::mux& mux_;
-
-			/**
-			 * global state
-			 */
-			status& status_word_;
 
 			/**
 			 * configuration db

@@ -51,92 +51,23 @@ namespace node
 			, srv_(srv)			//	server id
 			, name_(name)		//	name
 			, pwd_(pwd)			//	pwd
-			, state_(queue_size == 0 ? STATE_PROCESSING_ : STATE_WAITING_)
 		{}
 
-		//std::vector<std::string> proxy_data::get_section_names() const
-		//{
-		//	//	[{("section":[op-log-status-word,srv:visible,srv:active,firmware,memory,root-wMBus-status,IF_wMBUS,root-ipt-state,root-ipt-param])}]
-		//	return cyng::vector_cast<std::string>(sections_, "nope");
-		//}
+		proxy_data::proxy_data(proxy_data const& other)
+			: tag_(other.tag_)
+			, source_(other.source_)	//	source tag
+			, seq_(other.seq_)			//	cluster seq
+			, origin_(other.origin_)	//	ws tag
 
-		//cyng::vector_t proxy_data::get_params(std::string const& section) const
-		//{
-		//	auto const reader = cyng::make_reader(params_);
+			, msg_type_(other.msg_type_)	//	SML message type
+			, code_(other.code_)			//	OBIS root code
+			, gw_(other.gw_)				//	TGateway key
+			, params_(other.params_)		//	parameters
 
-			//if (boost::algorithm::equals(section, "root-ipt-param")) {
-
-			//	if (params_.size() == 1) {
-			//		cyng::vector_t vec;
-			//		return cyng::value_cast(reader[0].get("ipt"), vec);
-			//	}
-			//}
-			//else if (boost::algorithm::equals(section, "IF-wireless-mbus")) {
-
-			//	if (params_.size() == 1) {
-			//		cyng::tuple_t tpl;
-			//		tpl = cyng::value_cast(reader[0].get("wmbus"), tpl);
-			//		return cyng::to_vector(tpl);
-			//	}
-			//}
-			//else if (boost::algorithm::equals(section, "IF-IEC-62505-21")) {
-			//	if (params_.size() == 1) {
-			//		cyng::tuple_t tpl;
-			//		tpl = cyng::value_cast(reader[0].get("iec"), tpl);
-			//		return cyng::to_vector(tpl);
-			//	}
-			//}
-			//else if ((params_.size() == 3) && boost::algorithm::equals(section, "activate")) {
-
-			//	//
-			//	//	extract parameter "meterId"
-			//	//
-			//	return cyng::vector_t({ reader[0].get("nr"), read_server_id(reader[2].get("meterId")) });
-			//}
-			//else if ((params_.size() == 3) && boost::algorithm::equals(section, "deactivate")) {
-
-			//	//
-			//	//	extract parameter "meterId"
-			//	//
-			//	return cyng::vector_t({ reader[0].get("nr"), read_server_id(reader[2].get("meterId")) });
-			//}
-			//else if ((params_.size() == 3) && boost::algorithm::equals(section, "delete")) {
-
-			//	//
-			//	//	extract parameter "meterId"
-			//	//
-			//	return cyng::vector_t({ reader[0].get("nr"), read_server_id(reader[2].get("meterId")) });
-			//}
-
-			//else if ((params_.size() == 1) && (boost::algorithm::equals(section, "current-data-record") || boost::algorithm::equals(section, "root-sensor-params"))) {
-
-			//	//
-			//	//	extract parameter "meterId"
-			//	//
-			//	return cyng::vector_t({ parse_server_id(reader[0].get("meterId")) });
-			//}
-
-			//else if ((params_.size() == 1) && (boost::algorithm::equals(section, "root-data-prop") || boost::algorithm::equals(section, "root-push-ops"))) {
-
-			//	//
-			//	//	get meter ID
-			//	//
-			//	return cyng::vector_t({ parse_server_id(reader.get(0)) });
-			//}
-
-			//if (params_.size() == 1) {
-			//	//
-			//	//	assuming the payload is a parameter (param_t)
-			//	//
-			//	return cyng::vector_t(1, reader.get(0));
-			//}
-
-			//
-			//	unknown format
-			//
-			//return params_;
-		//	return cyng::vector_t();
-		//}
+			, srv_(other.srv_)			//	server id
+			, name_(other.name_)		//	name
+			, pwd_(other.pwd_)			//	pwd
+		{}
 
 		std::string const& proxy_data::get_msg_type() const
 		{
@@ -206,16 +137,6 @@ namespace node
 		{
 			BOOST_ASSERT(code_.size() == 6);
 			return node::sml::obis(code_);
-		}
-
-		bool proxy_data::is_waiting() const
-		{
-			return STATE_WAITING_ == state_;
-		}
-
-		void proxy_data::next()
-		{
-			state_ = STATE_PROCESSING_;
 		}
 
 		cyng::object read_server_id(cyng::object obj)

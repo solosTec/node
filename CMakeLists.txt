@@ -622,7 +622,7 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
     endif()
 endif()
 if(WIN32)
-	list(APPEND gateway_link_libs odbc32.lib cyng_sqlite3)
+	list(APPEND gateway_link_libs odbc32.lib cyng_sqlite3 cyng_scm)
 else()
 	list(APPEND gateway_link_libs ${SQLite3_LIBRARY})
 endif(WIN32)
@@ -869,6 +869,20 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 	target_link_libraries(unit_test ${unittest_link_libs})
 endif()
 
+#
+# SMF tool
+#
+include (tools/smf/prg.cmake)
+add_executable(smf ${tool_smf})
+# libraries to link 
+set(smf_link_libs smf_protocol_sml smf_protocol_mbus cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_crypto cyng_sys cyng_vm cyng_domain cyng_csv ${OPENSSL_LIBRARIES})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	list(APPEND smf_link_libs "${Boost_LIBRARIES}")
+	if (UNIX)
+		list(APPEND smf_link_libs pthread)
+	endif()
+endif()
+target_link_libraries(smf ${smf_link_libs})
 
 #
 #   Generate configuration files

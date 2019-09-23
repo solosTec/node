@@ -20,7 +20,7 @@ namespace node
 		<< std::endl
 		<< "Copyright (C) 2012-"
 		<< NODE_BUILD_YEAR
-		<< " S. Olzscher. All rights reserved."
+		<< " S. Olzscher (solos::Tec). All rights reserved."
 		<< std::endl
 		;
         return EXIT_SUCCESS;

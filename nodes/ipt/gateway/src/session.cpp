@@ -6,6 +6,10 @@
  */
 
 #include "session.h"
+#include <smf/shared/db_cfg.h>
+#include <smf/sml/obis_db.h>
+#include <smf/sml/status.h>
+
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
@@ -19,15 +23,10 @@ namespace node
 	{
 		session::session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, status& status_word
 			, cyng::store::db& config_db
 			, node::ipt::master_config_t const& cfg
 			, std::string const& account
 			, std::string const& pwd
-			, std::string manufacturer
-			, std::string model
-			, std::uint32_t serial
-			, cyng::mac48 mac
 			, bool accept_all)
 		: mux_(mux)
 			, logger_(logger)
@@ -39,22 +38,28 @@ namespace node
 			}, false, false)
 			, core_(logger_
 				, vm_
-				, status_word
 				, config_db
 				, cfg
 				, true	//	server mode
 				, account
 				, pwd
-				, manufacturer
-				, model
-				, serial
-				, mac
 				, accept_all)	//	check credendials
 		{
 			//
 			//	this external interface
+			//	atomic status update
 			//
-			core_.status_word_.set_ext_if_available(true);
+			config_db.access([&](cyng::store::table* tbl) {
+
+				auto word = cyng::value_cast<std::uint64_t>(get_config(tbl, OBIS_CLASS_OP_LOG_STATUS_WORD.to_str()), 0u);
+				CYNG_LOG_DEBUG(logger_, "status word: " << word);
+				status status(word);
+
+				status.set_ext_if_available(true);
+				update_config(tbl, OBIS_CLASS_OP_LOG_STATUS_WORD.to_str(), word, vm_.tag());
+
+			}, cyng::store::write_access("_Config"));
+
 
 			//
 			//	register logger domain
@@ -71,18 +76,13 @@ namespace node
 
 		cyng::object make_session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, status& status_word
 			, cyng::store::db& config_db
 			, node::ipt::master_config_t const& cfg
 			, std::string const& account
 			, std::string const& pwd
-			, std::string manufacturer
-			, std::string model
-			, std::uint32_t serial
-			, cyng::mac48 mac
 			, bool accept_all)
 		{
-			return cyng::make_object<session>(mux, logger, status_word, config_db, cfg, account, pwd, manufacturer, model, serial, mac, accept_all);
+			return cyng::make_object<session>(mux, logger, config_db, cfg, account, pwd, accept_all);
 		}
 
 	}

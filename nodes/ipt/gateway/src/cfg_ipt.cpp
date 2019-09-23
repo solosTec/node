@@ -33,122 +33,175 @@ namespace node
 			, sml_gen_(sml_gen)
 			, config_db_(config_db)
 			, cfg_ipt_(cfg)
+			, wait_time_(12)	//	minutes
+			, repetitions_(120)	//	counter
+			, ssl_(false)
+		{}
+
+		void cfg_ipt::get_proc_ipt_params(std::string trx, cyng::buffer_t srv_id) const
 		{
-			vm.register_function("sml.set.proc.ipt.param.address", 4, std::bind(&cfg_ipt::sml_set_proc_ipt_param_address, this, std::placeholders::_1));
-			vm.register_function("sml.set.proc.ipt.param.port.target", 4, std::bind(&cfg_ipt::sml_set_proc_ipt_param_port_target, this, std::placeholders::_1));
-			vm.register_function("sml.set.proc.ipt.param.user", 4, std::bind(&cfg_ipt::sml_set_proc_ipt_param_user, this, std::placeholders::_1));
-			vm.register_function("sml.set.proc.ipt.param.pwd", 4, std::bind(&cfg_ipt::sml_set_proc_ipt_param_pwd, this, std::placeholders::_1));
+
+			//	81 81 11 06 FF FF
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_ROOT_IPT_PARAM);
+
+			std::uint8_t nr{ 1 };
+			for (auto const& rec : cfg_ipt_.config_) {
+				try {
+
+
+					//
+					//	host
+					//
+					append_get_proc_response(msg, {
+						OBIS_CODE_ROOT_IPT_PARAM,
+						make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
+						make_obis(0x81, 0x49, 0x17, 0x07, 0x00, nr)
+						}, make_value(rec.host_));
+
+					//
+					//	target port
+					//
+					std::uint16_t const port = static_cast<std::uint16_t>(std::stoul(rec.service_));
+					append_get_proc_response(msg, {
+						OBIS_CODE_ROOT_IPT_PARAM,
+						make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
+						make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, nr)
+						}, make_value(port));
+
+					//
+					//	source port
+					//	0 == free choice
+					//
+					append_get_proc_response(msg, {
+						OBIS_CODE_ROOT_IPT_PARAM,
+						make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
+						make_obis(0x81, 0x49, 0x19, 0x07, 0x00, nr)
+						}, make_value(0u));
+
+					//
+					//	user
+					//
+					append_get_proc_response(msg, {
+						OBIS_CODE_ROOT_IPT_PARAM,
+						make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
+						make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, nr)
+						}, make_value(rec.account_));
+
+					//
+					//	password
+					//
+					append_get_proc_response(msg, {
+						OBIS_CODE_ROOT_IPT_PARAM,
+						make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
+						make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, nr)
+						}, make_value(rec.pwd_));
+
+					//
+					//	update index
+					//
+					++nr;
+				}
+				catch (std::exception const& ex) {
+					CYNG_LOG_ERROR(logger_, " get_proc_ipt_params <" << ex.what() << ">");
+				}
+			}
+
+			//
+			//	waiting time (Wartezeit)
+			//	81 48 27 32 06 01 - TCP_WAIT_TO_RECONNECT
+			//
+			append_get_proc_response(msg, {
+				OBIS_CODE_ROOT_IPT_PARAM,
+				OBIS_TCP_WAIT_TO_RECONNECT
+				}, make_value(wait_time_));
+
+			//
+			//	repetitions
+			//	81 48 31 32 02 01 TCP_CONNECT_RETRIES
+			//
+			append_get_proc_response(msg, {
+				OBIS_CODE_ROOT_IPT_PARAM,
+				OBIS_TCP_CONNECT_RETRIES
+				}, make_value(repetitions_));
+
+			//
+			//	SSL
+			//
+			append_get_proc_response(msg, {
+				OBIS_CODE_ROOT_IPT_PARAM,
+				OBIS_CODE(00, 80, 80, 00, 03, FF)
+				}, make_value(ssl_));
+			
+			//
+			//	certificates (none)
+			//
+			append_get_proc_response(msg, {
+				OBIS_CODE_ROOT_IPT_PARAM,
+				OBIS_CODE(00, 80, 80, 00, 04, FF)
+				}, make_value());
+
+			//
+			//	append to message queue
+			//
+			sml_gen_.append(std::move(msg));
 		}
 
-		void cfg_ipt::get_proc_ipt_params(cyng::object trx, cyng::object server_id)
+		void cfg_ipt::set_param(obis code, cyng::param_t const& param)
 		{
-			sml_gen_.get_proc_ipt_params(trx, server_id, cfg_ipt_);
-		}
+			switch (code.to_uint64()) {
+			case 0x814917070001:
+				if (param.second.get_class().tag() == cyng::TC_STRING) {
+					cfg_ipt_.config_.at(0).host_ = cyng::io::to_str(param.second);
+				}
+				else {
+					cyng::buffer_t tmp;
+					tmp = cyng::value_cast(param.second, tmp);
+					cfg_ipt_.config_.at(0).host_ = cyng::io::to_ascii(tmp);
+				}
+			break;
+			case 0x81491A070001:	//	target port
+				cfg_ipt_.config_.at(0).service_ = std::to_string(cyng::numeric_cast<std::uint16_t>(param.second, 26862));
+				break;
+			case 0x8149633C0101:	//	account
+				cfg_ipt_.config_.at(0).account_ = cyng::io::to_str(param.second);
+				break;
+			case 0x8149633C0201:	//	pwd
+				cfg_ipt_.config_.at(0).pwd_ = cyng::io::to_str(param.second);
+				break;
 
-		void cfg_ipt::sml_set_proc_ipt_param_address(cyng::context& ctx)
-		{
-			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_TRACE(logger_, "sml.set.proc.ipt.param.address " << cyng::io::to_str(frame));
+			case 0x814917070002:	//	host
+				if (param.second.get_class().tag() == cyng::TC_STRING) {
+					cfg_ipt_.config_.at(1).host_ = cyng::io::to_str(param.second);
+				}
+				else {
+					cyng::buffer_t tmp;
+					tmp = cyng::value_cast(param.second, tmp);
+					cfg_ipt_.config_.at(1).host_ = cyng::io::to_ascii(tmp);
+				}
+				break;
+			case 0x81491A070002:	//	target port
+				cfg_ipt_.config_.at(1).service_ = std::to_string(cyng::numeric_cast<std::uint16_t>(param.second, 26862));
+				break;
+			case 0x8149633C0102:	//	account
+				cfg_ipt_.config_.at(1).account_ = cyng::io::to_str(param.second);
+				break;
+			case 0x8149633C0202:	//	pwd
+				cfg_ipt_.config_.at(1).pwd_ = cyng::io::to_str(param.second);
+				break;
 
-			auto const tpl = cyng::tuple_cast<
-				boost::uuids::uuid,			//	[0] pk
-				std::string,				//	[1] trx
-				std::uint8_t,				//	[2] record index (0..1)
-				cyng::buffer_t				//	[3] address
-			>(frame);
-
-			auto const idx = std::get<2>(tpl);
-			if (idx < cfg_ipt_.config_.size()) {
-
-				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.address["
-					<< +idx
-					<< "] "
-					<< cfg_ipt_.config_.at(idx).host_
-					<< " => "
-					<< cyng::io::to_ascii(std::get<3>(tpl)));
-
-				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_.config_).at(idx).host_) = cyng::io::to_ascii(std::get<3>(tpl));
+			case 0x814827320601:	//	WAIT_TO_RECONNECT
+				wait_time_ = cyng::numeric_cast(param.second, wait_time_);
+				break;
+			case 0x814831320201:	//	TCP_CONNECT_RETRIES
+				repetitions_ = cyng::numeric_cast(param.second, repetitions_);
+				break;
+			case 0x0080800003FF:	//	use SSL
+				ssl_ = cyng::value_cast(param.second, ssl_);
+				break;
+			default:
+				break;
 			}
 		}
-
-		void cfg_ipt::sml_set_proc_ipt_param_port_target(cyng::context& ctx)
-		{
-			const cyng::vector_t frame = ctx.get_frame();
-			//CYNG_LOG_TRACE(logger_, "sml.set.proc.ipt.param.port.target " << cyng::io::to_str(frame));
-
-			auto const tpl = cyng::tuple_cast<
-				boost::uuids::uuid,	//	[0] pk
-				std::string,		//	[1] trx
-				std::uint8_t,		//	[2] record index (1..2)
-				std::uint16_t		//	[3] port
-			>(frame);
-
-			const auto idx = std::get<2>(tpl);
-			if (idx < cfg_ipt_.config_.size()) {
-
-				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.port.target["
-					<< +idx
-					<< "] "
-					<< cfg_ipt_.config_.at(idx).service_
-					<< " => "
-					<< std::get<3>(tpl));
-
-				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_.config_).at(idx).service_) = std::to_string(std::get<3>(tpl));
-			}
-		}
-
-		void cfg_ipt::sml_set_proc_ipt_param_user(cyng::context& ctx)
-		{
-			const cyng::vector_t frame = ctx.get_frame();
-			//CYNG_LOG_TRACE(logger_, "sml.set.proc.ipt.param.user " << cyng::io::to_str(frame));
-
-			auto const tpl = cyng::tuple_cast<
-				boost::uuids::uuid,	//	[0] pk
-				std::string,		//	[1] trx
-				std::uint8_t,		//	[2] record index (1..2)
-				std::string			//	[3] user
-			>(frame);
-
-			const auto idx = std::get<2>(tpl);
-			if (idx < cfg_ipt_.config_.size()) {
-
-				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.user["
-					<< +idx
-					<< "] "
-					<< cfg_ipt_.config_.at(idx).account_
-					<< " => "
-					<< std::get<3>(tpl));
-
-				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_.config_).at(idx).account_) = std::get<3>(tpl);
-			}
-		}
-
-		void cfg_ipt::sml_set_proc_ipt_param_pwd(cyng::context& ctx)
-		{
-			const cyng::vector_t frame = ctx.get_frame();
-			//CYNG_LOG_TRACE(logger_, "sml.set.proc.ipt.param.pwd " << cyng::io::to_str(frame));
-
-			auto const tpl = cyng::tuple_cast<
-				boost::uuids::uuid,	//	[0] pk
-				std::string,		//	[1] trx
-				std::uint8_t,		//	[2] record index (1..2)
-				std::string			//	[3] pwd
-			>(frame);
-
-			const auto idx = std::get<2>(tpl);
-			if (idx < cfg_ipt_.config_.size()) {
-
-				CYNG_LOG_INFO(logger_, " sml.set.proc.ipt.param.pwd["
-					<< +idx
-					<< "] "
-					<< cfg_ipt_.config_.at(idx).pwd_
-					<< " => "
-					<< std::get<3>(tpl));
-
-				*const_cast<std::string*>(&const_cast<node::ipt::master_config_t&>(cfg_ipt_.config_).at(idx).pwd_) = std::get<3>(tpl);
-			}
-		}
-
 	}	//	sml
 }
 

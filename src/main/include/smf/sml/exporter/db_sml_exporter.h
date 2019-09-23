@@ -41,13 +41,13 @@ namespace node
 			 */
 			void reset();
 
-			void write(cyng::db::session, cyng::tuple_t const&, std::size_t idx);
+			void write(cyng::db::session, cyng::tuple_t const&);
 
 		private:
 			/**
 			 * read SML message.
 			 */
-			void read_msg(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator, std::size_t idx);
+			void read_msg(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_body(cyng::db::session, cyng::object, cyng::object);
 			void read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);

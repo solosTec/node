@@ -191,7 +191,7 @@ namespace node
 
 					if (file.is_open())
 					{
-						//	dont skip whitepsaces
+						//	dont skip whitespaces
 						file >> std::noskipws;
 						cyng::buffer_t data;
 						data.insert(data.begin(), std::istream_iterator<char>(file), std::istream_iterator<char>());

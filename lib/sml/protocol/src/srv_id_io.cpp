@@ -44,9 +44,6 @@ namespace node
 			{
 				return (buffer.at(6) >= 0x00) && (buffer.at(6) <= 0x0F);
 			}
-			//else if (is_mbus(buffer)) {
-			//	return buffer.at(0) == MBUS_WIRELESS;
-			//}
 			return false;
 		}
 
@@ -266,6 +263,7 @@ namespace node
 		{
 			if (is_mbus_wired(buffer) || is_mbus_radio(buffer))
 			{
+				//	serial number is encoded in bytes 6, 5, 4, 3
 				std::stringstream ss;
 				ss
 					<< std::hex
@@ -281,9 +279,31 @@ namespace node
 					;
 				return ss.str();
 			}
+			else if (is_w_mbus(buffer)) {
+				//	serial number is encoded in bytes 2, 3, 4, 5
+				std::stringstream ss;
+				ss
+					<< std::hex
+					<< std::setfill('0')
+					<< std::setw(2)
+					<< (+buffer.at(2) & 0xFF)
+					<< std::setw(2)
+					<< (+buffer.at(3) & 0xFF)
+					<< std::setw(2)
+					<< (+buffer.at(4) & 0xFF)
+					<< std::setw(2)
+					<< (+buffer.at(5) & 0xFF)
+					;
+				return ss.str();
+
+			}
 			else if (is_serial(buffer))
 			{
 				return cyng::io::to_ascii(buffer);
+			}
+			else if (buffer.size() == 4) {
+
+				return cyng::io::to_hex(buffer);
 			}
 
 			return "00000000";
@@ -329,6 +349,13 @@ namespace node
 				std::uint16_t code{ 0 };
 				code = buffer[1] & 0xFF;
 				code += static_cast<unsigned char>(buffer[2]) << 8;
+				return code;
+			}
+			else if (is_w_mbus(buffer)) {
+				//	manufacturer is encoded in bytes 0 .. 1
+				std::uint16_t code{ 0 };
+				code = buffer[0] & 0xFF;
+				code += static_cast<unsigned char>(buffer[1]) << 8;
 				return code;
 			}
 			return 0u;

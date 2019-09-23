@@ -15,8 +15,8 @@
 #include <cyng/log.h>
 
 
-/*
-
+/** @brief session states
+ * @verbatim
 
    +---------------------------+                                          +---------------------------+
    |                           |                                          |                           |
@@ -54,7 +54,8 @@
    |                           |   "client.res.close.connection.forward"  |                           |  "ipt.res.close.connection"
    +---------------------------+                                          +---------------------------+
 
-*/
+ * @endverbatim
+ */
 
 
 namespace node 
@@ -195,13 +196,11 @@ namespace node
 			{
 				const std::size_t tsk_;
 				const bool success_;
-				//const boost::uuids::uuid origin_tag_;
 				const bool local_;
 				const std::size_t seq_;
 				const cyng::param_map_t master_;	//	[3] master data
 				const cyng::param_map_t client_;	//	[4] client data
 				evt_client_req_open_connection(std::pair<std::size_t, bool>
-					//, boost::uuids::uuid origin_tag
 					, bool local
 					, std::size_t seq
 					, cyng::param_map_t		//	master
@@ -225,7 +224,7 @@ namespace node
 					bool,					//	[2] success
 					cyng::param_map_t,		//	[3] options
 					cyng::param_map_t		//	[4] bag
-				>);		//	[4] client data
+				>);	
 			};
 
 			/**
@@ -332,99 +331,10 @@ namespace node
 				evt_sml_public_close_response(cyng::tuple_t);
 			};
 
-			struct evt_sml_get_proc_param_srv_visible
+			struct evt_sml_get_proc_param_response
 			{
 				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_srv_visible(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_srv_active
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_srv_active(cyng::vector_t);
-			};
-			struct evt_sml_get_proc_param_firmware
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_firmware(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_status_word
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_status_word(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_memory
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_memory(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_wmbus_status
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_wmbus_status(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_wmbus_config
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_wmbus_config(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_iec_config
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_iec_config(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_ipt_status
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_ipt_status(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_ipt_param
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_ipt_param(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_device_class
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_device_class(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_manufacturer
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_manufacturer(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_server_id
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_server_id(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_meter
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_meter(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_data_mirror
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_data_mirror(cyng::vector_t);
-			};
-
-			struct evt_sml_get_proc_param_push_target
-			{
-				cyng::vector_t const vec_;
-				evt_sml_get_proc_param_push_target(cyng::vector_t);
+				evt_sml_get_proc_param_response(cyng::vector_t&&);
 			};
 
 			struct evt_sml_get_list_response
@@ -466,7 +376,6 @@ namespace node
 				void reset();
 
 				std::size_t tsk_connection_open_;
-				//boost::uuids::uuid tag_;	//!< original tag
 				enum connection_type {
 					E_UNDEF,
 					E_LOCAL,
@@ -490,7 +399,6 @@ namespace node
 				bool shutdown_;
 				cyng::param_map_t master_params_;
 				cyng::param_map_t client_params_;
-				//bool local_;	//	local connection
 			};
 			struct state_connected_local
 			{
@@ -512,21 +420,7 @@ namespace node
 				/**
 				 * List of visible or active devices/meters
 				 */
-				void get_proc_param_srv_device(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_srv_firmware(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_status_word(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_memory(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_wmbus_status(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_wmbus_config(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_iec_config(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_ipt_status(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_ipt_param(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_device_class(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_manufacturer(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_server_id(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_meter(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_data_mirror(cyng::async::mux&, cyng::vector_t);
-				void get_proc_param_push_target(cyng::async::mux&, cyng::vector_t);
+				void get_proc_parameter(cyng::async::mux&, cyng::vector_t);
 				void get_list_response(cyng::async::mux&, cyng::vector_t);
 				void attention_msg(cyng::async::mux&, cyng::vector_t);
 
@@ -564,24 +458,10 @@ namespace node
 			void react(state::evt_sml_msg);
 			void react(state::evt_sml_eom);
 			void react(state::evt_sml_public_close_response);
-			void react(state::evt_sml_get_proc_param_srv_visible);
-			void react(state::evt_sml_get_proc_param_srv_active);
-			void react(state::evt_sml_get_proc_param_firmware);
-			void react(state::evt_sml_get_proc_param_status_word);
-			void react(state::evt_sml_get_proc_param_memory);
-			void react(state::evt_sml_get_proc_param_wmbus_status);
-			void react(state::evt_sml_get_proc_param_wmbus_config);
-			void react(state::evt_sml_get_proc_param_ipt_status);
-			void react(state::evt_sml_get_proc_param_ipt_param);
-			void react(state::evt_sml_get_proc_param_device_class);
-			void react(state::evt_sml_get_proc_param_manufacturer);
-			void react(state::evt_sml_get_proc_param_server_id);
-			void react(state::evt_sml_get_proc_param_iec_config);
-			void react(state::evt_sml_get_proc_param_meter);
-			void react(state::evt_sml_get_proc_param_data_mirror);
-			void react(state::evt_sml_get_proc_param_push_target);
 			void react(state::evt_sml_get_list_response);
 			void react(state::evt_sml_attention_msg);
+
+			void react(state::evt_sml_get_proc_param_response);
 
 			/**
 			 * stream connection state as text

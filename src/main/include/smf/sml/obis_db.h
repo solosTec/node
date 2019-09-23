@@ -79,6 +79,9 @@ namespace node
 
 		constexpr static obis	DEFINE_OBIS_CODE(01, 00, 00, 09, 0B, 00, CURRENT_UTC);	//	readout time in UTC
 
+		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 27, 32, 06, 01, TCP_WAIT_TO_RECONNECT);	//	u8
+		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 31, 32, 02, 01, TCP_CONNECT_RETRIES);		//	u32
+
 		constexpr static obis	DEFINE_OBIS_CODE(81, 49, 00, 00, 10, FF, PUSH_SERVICE);	//	options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX
 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 21, FF, PUSH_SERVICE_IPT); //	SML data response without request - typical IP - T push
@@ -149,19 +152,21 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 0F, 06, 00, FF, CODE_ROOT_W_MBUS_STATUS);	//	see: 7.3.1.23 Datenstruktur zum Lesen des W-MBUS-Status 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 46, 00, 00, 02, FF, CODE_ADDRESSED_PROFILE);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 47, 17, 07, 00, FF, CODE_PUSH_TARGET);	//	push target name
+		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 00, 00, 00, 00, COMPUTER_NAME);	
+		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 00, 32, 02, 01, LAN_DHCP_ENABLED);	//	[bool]
 		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 0D, 06, 00, FF, CODE_ROOT_LAN_DSL);	//	see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter
 		constexpr static obis	DEFINE_OBIS_CODE(81, 49, 0D, 06, 00, FF, CODE_ROOT_IPT_STATE);	//	see: 7.3.1.8 Datenstruktur zur Abfrage des IPT Status 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 49, 0D, 07, 00, FF, CODE_ROOT_IPT_PARAM);	//	see: 7.3.1.9 Datenstruktur zur Lesen/Setzen der IPT Parameter 
 
 		//	ip-t status
-		constexpr static obis	DEFINE_OBIS_CODE(81, 49, 17, 07, 00, 00, CODE_ROOT_IPT_STATE_ADDRESS);	//	IP adress
-		constexpr static obis	DEFINE_OBIS_CODE(81, 49, 1A, 07, 00, 00, CODE_ROOT_IPT_STATE_PORT_LOCAL);	//	local port
-		constexpr static obis	DEFINE_OBIS_CODE(81, 49, 19, 07, 00, 00, CODE_ROOT_IPT_STATE_PORT_REMOTE);	//	remote port
+		//constexpr static obis	DEFINE_OBIS_CODE(81, 49, 17, 07, 00, NN, CODE_ROOT_IPT_STATE_ADDRESS);	//	IP adress
+		//constexpr static obis	DEFINE_OBIS_CODE(81, 49, 1A, 07, 00, NN, CODE_ROOT_IPT_STATE_PORT_LOCAL);	//	local port
+		//constexpr static obis	DEFINE_OBIS_CODE(81, 49, 19, 07, 00, NN, CODE_ROOT_IPT_STATE_PORT_REMOTE);	//	remote port
 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, 13, CODE_PEER_ADDRESS_WANGSM);	//	peer address: WAN/GSM
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, FF, CODE_PEER_ADDRESS);	//	unit is 255
 
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 02, 00, 00, CODE_VERSION);
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 02, 00, 00, CODE_VERSION);		//	[string]
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 02, 00, 02, CODE_FILE_NAME);	//	[string]
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 02, 00, 03, CODE_MSG_COUNTER);	//	[u32] Anzahl aller Nachrichten zur Übertragung des Binary
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 02, 00, 04, CODE_MSG_LAST);	//	[u32] Nummer der zuletzt erfolgreich übertragenen Nachricht des	Binary
@@ -188,16 +193,17 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 81, 0D, FF, DATA_APPLICATION);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 81, 10, FF, DATA_APPLICATION_INDIRECT);
 
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 03, FF, DATA_MANUFACTURER);
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 05, FF, DATA_PUBLIC_KEY);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 81, FF, DATA_IP_ADDRESS);
 
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 01, FF, CODE_ROOT_DEVICE_IDENT);	//	see: 7.3.2.9 Datenstruktur zur Abfrage der Geräte-Identifikation) 
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 02, FF, CODE_DEVICE_CLASS);	//	Geräteklasse 
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 04, FF, CODE_SERVER_ID);	//	Server ID der sichtbaren Komponenten
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 01, FF, CODE_ROOT_DEVICE_IDENT);	//	see: 7.3.2.9 Datenstruktur zur Abfrage der Geräte-Identifikation: firmware, file, application) 
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 02, FF, CODE_DEVICE_CLASS);	//	Geräteklasse (OBIS code or '2D 2D 2D')
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 03, FF, DATA_MANUFACTURER);	//	[string]
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 04, FF, CODE_SERVER_ID);		//	Server ID 
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 05, FF, DATA_PUBLIC_KEY);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 06, FF, CODE_ROOT_FIRMWARE);	//	Firmware
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 09, FF, CODE_HARDWARE);		//	hardware equipment (charge, type, ...)
 
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 08, FF, CODE_DEVICE_KERNEL);
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 08, FF, CODE_DEVICE_KERNEL);	//	[string]
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 0E, FF, CODE_DEVICE_ACTIVATED);
 
 		//	device classes
@@ -226,11 +232,16 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 22, FF, DATA_COLLECTOR_SIZE);		//	max. table size
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 04, FF, CODE_TIME_REFERENCE);	//	[u8] 0 == UTC, 1 == UTC + time zone, 2 == local time
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 87, 81, FF, DATA_COLLECTOR_PERIOD);	//	 (u32) register period in seconds (0 == event driven)
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 01, FF, CODE_ROOT_NTP);
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 01, FF, CODE_ROOT_NTP);	//	NTP configuration
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 02, FF, CODE_NTP_SERVER);	//	List of NTP servers
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 03, FF, CODE_NTP_PORT);	//	[u16] NTP port (123)
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 04, FF, CODE_NTP_TZ);		//	[u32] timezone
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 05, FF, CODE_NTP_OFFSET);	//	[sec] Offset to transmission of the signal for synchronization
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 06, FF, CODE_NTP_ACTIVE);	//	[bool] NTP enabled/disables
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 88, 10, FF, CODE_ROOT_DEVICE_TIME);	//	device time
 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 00, FF, CODE_IF_1107);	 //	1107 interface (IEC 62056-21)
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 01, FF, CODE_IF_1107_ACTIVE); //	(bool) - if true 1107 interface active
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 01, FF, CODE_IF_1107_ACTIVE); //	(bool) - if true 1107 interface active otherwise SML interface active
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 02, FF, CODE_IF_1107_LOOP_TIME); //	(u) - Loop timeout in seconds
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 03, FF, CODE_IF_1107_RETRIES); //	(u) - Retry count
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 04, FF, CODE_IF_1107_MIN_TIMEOUT); //	(u) - Minimal answer timeout(300)
@@ -244,11 +255,11 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 13, FF, CODE_IF_1107_TIME_SYNC); //	time sync in seconds
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 14, FF, CODE_IF_1107_MAX_VARIATION); //(seconds)
 
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0A, FF, CODE_IF_1107_METER_ID); //	(octet)
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0A, FF, CODE_IF_1107_METER_ID); //	(string)
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0B, FF, CODE_IF_1107_BAUDRATE); //	(u)
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0C, FF, CODE_IF_1107_ADDRESS); //	(octet)
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0D, FF, CODE_IF_1107_P1); //	(octet)
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0E, FF, CODE_IF_1107_W5); //	(octet)
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0C, FF, CODE_IF_1107_ADDRESS); //	(string)
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0D, FF, CODE_IF_1107_P1); //	(string)
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 93, 0E, FF, CODE_IF_1107_W5); //	(string)
 
 																								  //
 		//	Interfaces
@@ -271,10 +282,10 @@ namespace node
 		//	wMBus - 81 06 0F 06 00 FF
 		//	7.3.1.23 Datenstruktur zum Lesen des W-MBUS-Status 
 		//
-		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 00, 01, 00, W_MBUS_ADAPTER_MANUFACTURER);
+		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 00, 01, 00, W_MBUS_ADAPTER_MANUFACTURER);	//	[string]
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 00, 03, 00, W_MBUS_ADAPTER_ID);
-		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 00, 00, W_MBUS_FIRMWARE);
-		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 03, FF, W_MBUS_HARDWARE);
+		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 00, 00, W_MBUS_FIRMWARE);	//	[string]
+		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 03, FF, W_MBUS_HARDWARE);	//	[string]
 
 		//
 		//	Wireless M-BUS config
@@ -387,6 +398,7 @@ namespace node
 		//	list types
 		//
 		constexpr static obis	DEFINE_OBIS_CODE(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);
+		constexpr static obis	DEFINE_OBIS_CODE(99, 00, 00, 00, 00, 04, LIST_SERVICES);
 
 		//
 		//	source for log entries

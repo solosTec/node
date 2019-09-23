@@ -7,36 +7,32 @@
 
 
 #include "server.h"
-#include <smf/sml/srv_id_io.h>
-#include <cyng/object.h>
 #include "connection.h"
+
+#include <smf/sml/srv_id_io.h>
+#include <smf/shared/db_cfg.h>
+#include <smf/sml/obis_db.h>
+#include <smf/sml/status.h>
+
+#include <cyng/object.h>
 
 namespace node
 {
 	server::server(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, sml::status& status_word
 		, cyng::store::db& config_db
 		, boost::uuids::uuid tag
 		, ipt::master_config_t const& cfg
 		, std::string account
 		, std::string pwd
-		, std::string manufacturer
-		, std::string model
-		, std::uint32_t serial
-		, cyng::mac48 mac
 		, bool accept_all)
 	: mux_(mux)
 		, logger_(logger)
-		, status_word_(status_word)
 		, config_db_(config_db)
 		, cfg_(cfg)
+		, tag_(tag)
 		, account_(account)
 		, pwd_(pwd)
-		, manufacturer_(manufacturer)
-		, model_(model)
-		, serial_(serial)
-		, server_id_(mac)
 		, accept_all_(accept_all)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
@@ -62,7 +58,22 @@ namespace node
 
 		do_accept();
 
-		status_word_.set_service_if_available(true);
+		//
+		//	atomic status update
+		//
+		config_db_.access([&](cyng::store::table* tbl) {
+
+			auto word = cyng::value_cast<std::uint64_t>(get_config(tbl, node::sml::OBIS_CLASS_OP_LOG_STATUS_WORD.to_str()), 0u);
+			node::sml::status status(word);
+
+			//
+			//	Service interface is available 
+			//
+			status.set_service_if_available(true);
+			update_config(tbl, node::sml::OBIS_CLASS_OP_LOG_STATUS_WORD.to_str(), word, tag_);
+			CYNG_LOG_DEBUG(logger_, "status word: " << word);
+
+		}, cyng::store::write_access("_Config"));
 	}
 
 	void server::do_accept()
@@ -89,15 +100,10 @@ namespace node
 				std::make_shared<sml::connection>(std::move(socket)
 					, mux_
 					, logger_
-					, status_word_
 					, config_db_
 					, cfg_
 					, account_
 					, pwd_
-					, manufacturer_
-					, model_
-					, serial_
-					, server_id_
 					, accept_all_)->start();
 
 				do_accept();

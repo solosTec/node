@@ -46,7 +46,7 @@ namespace node
 		cyng::tuple_t msg;
 		msg = cyng::value_cast(frame.at(0), msg);
 
-		exporter.read(msg, idx);
+		exporter.read(msg);
 		//std::cout << "sml.msg: " << cyng::io::to_str(frame) << std::endl;
 	}
 	void sml_eom(cyng::context& ctx)
@@ -94,7 +94,7 @@ namespace node
 		std::ifstream ifile("C:\\projects\\node\\build\\Debug\\SML-GetListResponse.bin", std::ios::binary | std::ios::app);
 		if (ifile.is_open())
 		{
-			//	dont skip whitepsaces
+			//	dont skip whitespaces
 			ifile >> std::noskipws;
 			p.read(std::istream_iterator<std::uint8_t>(ifile), std::istream_iterator<uint8_t>());
 

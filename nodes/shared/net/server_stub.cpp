@@ -261,7 +261,7 @@ namespace node
 	{
 		CYNG_LOG_INFO(logger_, "close "
 			<< client_map_.size()
-			<< " ipt client(s)");
+			<< " client(s)");
 
 		if (!client_map_.empty()) {
 			for(auto& conn : client_map_)     {
@@ -308,7 +308,7 @@ namespace node
 			//const_cast<connection*>(cyng::object_cast<connection>((*r.first).second))->start();
 
 			CYNG_LOG_TRACE(logger_, client_map_.size()
-				<< " ipt sessions open with "
+				<< " sessions open with "
 				<< (connection_map_.size() / 2)
 				<< " connections");
 
@@ -444,6 +444,12 @@ namespace node
 		//	* sender
 		//	* data
 		//
+
+		//
+		//	get data pointer
+		//
+		auto dp = cyng::object_cast<cyng::buffer_t>(frame.at(1));
+
 		auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 		auto pos = connection_map_.find(tag);
 		if (pos != connection_map_.end())
@@ -461,7 +467,6 @@ namespace node
 			//
 			//	update meta data
 			//
-			auto dp = cyng::object_cast<cyng::buffer_t>(frame.at(1));
 			if (dp != nullptr)
 			{
 				ctx.queue(client_inc_throughput(tag
@@ -475,7 +480,10 @@ namespace node
 				<< tag
 				<< " is not member of connection map with "
 				<< connection_map_.size()
-				<< " entrie(s)");
+				<< " entrie(s) - "
+				<< dp->size()
+				<< " bytes get lost: "
+				<< cyng::io::to_hex(*dp));
 
 			for (auto const& m : connection_map_) {
 
@@ -550,7 +558,7 @@ namespace node
 			clear_connection_map_impl(tag);
 
 			CYNG_LOG_TRACE(logger_, client_map_.size()
-				<< " ipt sessions open with "
+				<< " sessions open with "
 				<< (connection_map_.size() / 2)
 				<< " connections");
 

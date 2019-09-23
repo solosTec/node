@@ -7,6 +7,9 @@
 
 #include "push_ops.h"
 #include <smf/sml/event.h>
+#include <smf/shared/db_cfg.h>
+#include <smf/sml/obis_db.h>
+#include <smf/sml/status.h>
 
 #include <cyng/async/task/base_task.h>
 #include <cyng/chrono.h>
@@ -22,14 +25,12 @@ namespace node
 	{
 		push_ops::push_ops(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
-			, node::sml::status& status_word
 			, cyng::store::db& config_db
 			, cyng::controller& vm
 			, cyng::table::key_type const& key
 			, boost::uuids::uuid tag)
 		: base_(*btp)
 			, logger_(logger)
-			, status_word_(status_word)
 			, config_db_(config_db)
 			, vm_(vm)
 			, key_(key)
@@ -126,7 +127,7 @@ namespace node
 
 					if (file.is_open())
 					{
-						//	dont skip whitepsaces
+						//	dont skip whitespaces
 						file >> std::noskipws;
 						cyng::buffer_t data;
 						data.insert(data.begin(), std::istream_iterator<char>(file), std::istream_iterator<char>());
@@ -148,12 +149,15 @@ namespace node
 							<< entry.path());
 						boost::filesystem::remove(entry.path());
 
+						auto const word = cyng::value_cast<std::uint64_t>(get_config(config_db_, node::sml::OBIS_CLASS_OP_LOG_STATUS_WORD.to_str()), 0u);
+						CYNG_LOG_DEBUG(logger_, "status word: " << word);
+
 						config_db_.insert("op.log"
 							, cyng::table::key_generator(0UL)
 							, cyng::table::data_generator(std::chrono::system_clock::now()
 								, static_cast<std::uint32_t>(900u)	//	reg period - 15 min
 								, std::chrono::system_clock::now()	//	val time
-								, static_cast<std::uint64_t>(status_word_.operator std::uint64_t())	//	status
+								, word	//	status
 								, node::sml::evt_push_succes()	//	event - push successful
 								, cyng::make_buffer({ 0x81, 0x46, 0x00, 0x00, 0x02, 0xFF })
 								, std::chrono::system_clock::now()	//	val time
@@ -247,7 +251,11 @@ namespace node
 
 		void push_ops::push()
 		{
-			if (status_word_.is_authorized()) {
+			auto word = cyng::value_cast<std::uint64_t>(get_config(config_db_, node::sml::OBIS_CLASS_OP_LOG_STATUS_WORD.to_str()), 0u);
+			CYNG_LOG_DEBUG(logger_, "status word: " << word);
+			node::sml::status status(word);
+
+			if (status.is_authorized()) {
 				config_db_.access([&](cyng::store::table const* tbl) {
 
 					auto rec = tbl->lookup(this->key_);

@@ -1812,10 +1812,10 @@ namespace node
 
 			void state_connected_task::get_proc_param_status_word(cyng::async::mux& mux, cyng::vector_t vec)
 			{
-				auto const word = cyng::numeric_cast<std::uint32_t>(vec.at(5), 0u);
+				node::sml::status_word_t word = cyng::numeric_cast<std::uint32_t>(vec.at(5), 0u);
 
-				node::sml::status stat;
-				stat.reset(word);
+				node::sml::status wrapper(word);
+				wrapper.reset(word);
 
 				mux.post(tsk_proxy_, 5, cyng::tuple_t{
 					vec.at(1),	//	trx
@@ -1823,7 +1823,7 @@ namespace node
 					vec.at(3),	//	server ID
 					vec.at(4),	//	OBIS code
 								//	status word
-					cyng::param_map_factory("word", node::sml::to_param_map(stat))()
+					cyng::param_map_factory("word", node::sml::to_param_map(wrapper))()
 				});
 
 			}
@@ -1913,12 +1913,12 @@ namespace node
 			{
 
 				//	[7dee1864-70a4-4029-9787-c5cae1ec52eb,4061719-2,0,,01E61E130900163C07,990000000003,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06988c71]
+				//	[8383656-2,,01A815743145040102,990000000003,%(("0100000009FF":%(("scaler":0),("unit":0),("valTime":null),("value":01A815743145040102))),("8181C78203FF":%(("scaler":0),("unit":0),("valTime":null),("value":EMH))),("8181C78205FF":%(("scaler":0),("unit":0),("valTime":null),("value":1C661D023F438BB639D3D95AA580F63DF78F2EA4692709F3D40209C35E98CDBC25B95A7C3A813F55E13AA2DC61020FA2)))),null,076278a2]]
 				mux.post(tsk_proxy_, 5, cyng::tuple_t{
 					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(4),	//	server ID - mostly empty
-					vec.at(5),	//	OBIS_CODE(99, 00, 00, 00, 00, 03)
-					vec.at(6)	//	last data record
+					vec.at(2),	//	server ID - mostly empty
+					vec.at(3),	//	OBIS_CODE(99, 00, 00, 00, 00, 03)
+					vec.at(4)	//	last data record
 					});
 			}
 

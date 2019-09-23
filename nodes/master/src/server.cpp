@@ -62,7 +62,7 @@ namespace node
 		stat_dir_ = cyng::value_cast(dom.get("stat-dir"), tmp.string());
 		CYNG_LOG_INFO(logger_, "store statistics data at " << stat_dir_);
 
-		CYNG_LOG_TRACE(logger_, "country code" << country_code);
+		CYNG_LOG_TRACE(logger_, "country code: " << country_code);
 
 		max_messages_ = cyng::value_cast<std::uint64_t>(dom.get("max-messages"), max_messages_);
 		CYNG_LOG_INFO(logger_, "store max. " << max_messages_ << " messages");

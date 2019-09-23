@@ -33,14 +33,14 @@ namespace node
 				, cyng::store::db& config_db);
 
 		private:
-			void sml_set_proc_push_source(cyng::context& ctx);
-			void sml_set_proc_push_interval(cyng::context& ctx);
-			void sml_set_proc_push_delay(cyng::context& ctx);
-			void sml_set_proc_push_name(cyng::context& ctx);
-			void sml_set_proc_push_profile(cyng::context& ctx);
-			void sml_set_proc_push_service(cyng::context& ctx);
-			void sml_set_proc_push_delete(cyng::context& ctx);
-			void sml_set_proc_push_reserve(cyng::context& ctx);
+			//void sml_set_proc_push_source(cyng::context& ctx);
+			//void sml_set_proc_push_interval(cyng::context& ctx);
+			//void sml_set_proc_push_delay(cyng::context& ctx);
+			//void sml_set_proc_push_name(cyng::context& ctx);
+			//void sml_set_proc_push_profile(cyng::context& ctx);
+			//void sml_set_proc_push_service(cyng::context& ctx);
+			//void sml_set_proc_push_delete(cyng::context& ctx);
+			//void sml_set_proc_push_reserve(cyng::context& ctx);
 
 			/**
 			 * @return true if new record was inserted successfully

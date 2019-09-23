@@ -79,7 +79,7 @@ namespace node
 		});
 
 		vm_.register_function("bus.res.login", 5, [this](cyng::context& ctx) {
-			const cyng::vector_t frame = ctx.get_frame();
+			auto const frame = ctx.get_frame();
 
 			//	[20,true,9a07da33-589f-442f-b927-f638531e41f3,0.4,2018-05-07 13:34:01.58677900,2018-05-07 13:34:01.68164700]
 			//	[true,435a75e4-b97d-4152-a9b7-cdc2e21e8599,0.2,2018-01-11 16:54:48.89934220,2018-01-11 16:54:48.91710660]

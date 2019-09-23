@@ -11,6 +11,10 @@ set (node_ipt_gateway_cpp
 	nodes/ipt/gateway/src/attention.cpp
 	nodes/ipt/gateway/src/cfg_push.cpp
 	nodes/ipt/gateway/src/cfg_ipt.cpp
+	nodes/ipt/gateway/src/cfg_ipt.cpp
+	nodes/ipt/gateway/src/get_proc_parameter.cpp
+	nodes/ipt/gateway/src/set_proc_parameter.cpp
+	nodes/ipt/gateway/src/get_profile_list.cpp
 )
 
 set (node_ipt_gateway_h
@@ -22,12 +26,17 @@ set (node_ipt_gateway_h
 	nodes/ipt/gateway/src/attention.h
 	nodes/ipt/gateway/src/cfg_push.h
 	nodes/ipt/gateway/src/cfg_ipt.h
+	nodes/ipt/gateway/src/get_proc_parameter.h
+	nodes/ipt/gateway/src/set_proc_parameter.h
+	nodes/ipt/gateway/src/get_profile_list.h
 )
 
 set (node_ipt_gateway_schemes
 
 	src/main/include/smf/shared/db_meta.h
 	nodes/shared/db/db_meta.cpp
+	src/main/include/smf/shared/db_cfg.h
+	nodes/shared/db/db_cfg.cpp
 )
 
 set (node_ipt_gateway_shared

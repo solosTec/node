@@ -29,9 +29,27 @@ namespace node
 		boost::filesystem::path get_abl_filename(std::string prefix
 			, std::string suffix
 			, std::string gw
-			, std::string server_id);
+			, std::string server_id
+			, std::chrono::system_clock::time_point now);
 
 		std::string get_manufacturer(cyng::buffer_t const&);
+
+		void emit_abl_header(std::ofstream& os
+			, cyng::buffer_t const&
+			, std::chrono::system_clock::time_point
+			, std::string eol);
+
+		void emit_value(std::ofstream& os
+			, obis code
+			, std::string val
+			, std::uint8_t unit
+			, std::string eol);
+
+		void emit_value(std::ofstream& os
+			, obis code
+			, std::string val
+			, std::string unit
+			, std::string eol);
 
 		/**
 		 * walk down SML message body recursively, collect data
@@ -62,18 +80,13 @@ namespace node
 			/**
 			 * read incoming input 
 			 */
-			void read(cyng::tuple_t const&, std::size_t idx);
-
-			/**
-			 * Write ABL file
-			 */
-			//bool write(boost::filesystem::path const&);
+			void read(cyng::tuple_t const&);
 
 		private:
 			/**
 			 * read SML message.
 			 */
-			void read_msg(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator, std::size_t idx);
+			void read_msg(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_body(cyng::object, cyng::object);
 			void read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
@@ -109,7 +122,6 @@ namespace node
 			const std::uint32_t source_;
 			const std::uint32_t channel_;
 			const std::string target_;
-			boost::uuids::random_generator rgn_;
 			readout ro_;
 		};
 

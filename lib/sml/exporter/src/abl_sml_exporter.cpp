@@ -39,8 +39,7 @@ namespace node
 			, source_(0)
 			, channel_(0)
 			, target_()
-			, rgn_()
-			, ro_(rgn_())
+			, ro_()
 		{
 			reset();
 		}
@@ -59,8 +58,8 @@ namespace node
 			, source_(source)
 			, channel_(channel)
 			, target_(target)
-			, rgn_()
-			, ro_(rgn_())
+			//, rgn_()
+			, ro_()
 		{
 			reset();
 		}
@@ -71,23 +70,18 @@ namespace node
 
 		void abl_exporter::reset()
 		{
-			ro_.reset(rgn_(), 0);
+			ro_.reset();
 		}
 
-		void abl_exporter::read(cyng::tuple_t const& msg, std::size_t idx)
+		void abl_exporter::read(cyng::tuple_t const& msg)
 		{
-			read_msg(msg.begin(), msg.end(), idx);
+			read_msg(msg.begin(), msg.end());
 		}
 
-		void abl_exporter::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end, std::size_t idx)
+		void abl_exporter::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
-
-			//
-			//	reset readout context
-			//
-			ro_.set_index(idx);
 
 			//
 			//	(1) - transaction id
@@ -127,7 +121,6 @@ namespace node
 		void abl_exporter::read_body(cyng::object type, cyng::object body)
 		{
 			auto code = cyng::value_cast<std::uint16_t>(type, 0);
-			//node.append_attribute("type").set_value(messages::name(code));
 
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(body, tpl);
@@ -311,8 +304,7 @@ namespace node
 			//
 			ro_.set_value("status", *pos++);
 
-			std::ofstream of((root_dir_ / get_abl_filename(prefix_, suffix_, gw_id, server_id)).string(), std::ios::app | std::ios::binary);
-			//ofstream_.open((root_dir_ / get_abl_filename(prefix_ + server_id, suffix_, source_, channel_, target_)).string());
+			std::ofstream of((root_dir_ / get_abl_filename(prefix_, suffix_, gw_id, server_id, std::chrono::system_clock::now())).string(), std::ios::app | std::ios::binary);
 
 			if (of.is_open()) {
 
@@ -320,51 +312,7 @@ namespace node
 				std::chrono::system_clock::time_point act_time = cyng::value_cast(obj, std::chrono::system_clock::now());
 				std::tm const act_utc = cyng::chrono::make_utc_tm(act_time);
 
-				of
-					<< "[HEADER]"
-					<< eol_	//	force windows format
-					<< "PROT = 0"
-					<< eol_	//	force windows format
-					<< "MAN1 = "
-					<< get_manufacturer(ro_.server_id_)
-					<< eol_	//	force windows format
-					<< "ZNR1 = "	//03685319"
-					<< get_serial(ro_.server_id_)
-					<< eol_	//	force windows format
-					<< "DATE = "	//18.12.18 UTC"
-					<< std::setfill('0')
-					<< std::setw(2)
-					<< cyng::chrono::day(act_utc)
-					<< "."
-					<< std::setw(2)
-					<< cyng::chrono::month(act_utc)
-					<< "."
-					<< std::setw(2)
-					<< (cyng::chrono::year(act_utc) - 2000)
-					<< " UTC"
-					<< eol_	//	force windows format
-					<< "TIME = "	//11.13.38 UTC"
-					<< std::setw(2)
-					<< cyng::chrono::hour(act_utc)
-					<< "."
-					<< std::setw(2)
-					<< cyng::chrono::minute(act_utc)
-					<< "."
-					<< std::setw(2)
-					<< cyng::chrono::second(act_utc)
-					<< " UTC"
-					<< eol_	//	force windows format
-					<< eol_	//	force windows format
-					<< "[DATA]"
-					<< eol_	//	force windows format
-					<< get_manufacturer(ro_.server_id_)
-					<< eol_	//	force windows format
-					<< OBIS_SERIAL_NR
-					<< '('
-					<< get_serial(ro_.server_id_)
-					<< ")"
-					<< eol_	//	force windows format
-					;
+				emit_abl_header(of, ro_.server_id_, act_time, eol_);
 			}
 
 			//	period-List (1)
@@ -560,27 +508,8 @@ namespace node
 				//	0-0:96.1.0*255 - 00 00 60 01 00 FF - manufacturer ID (OBIS_SERIAL_NR) - is explicitely written at start of file
 				//	0-0:96.1.1*255 - 00 00 60 01 01 FF - Seriennummer (OBIS_SERIAL_NR_SECOND)
 
-				of
-					<< to_string(code)
-					<< '('
-					<< cyng::value_cast<std::string>(ro_.get_value("value"), "0")
-					;
-
-				//	7-1:3.0.0*255(58634.69*m3)
-				//	0-1:97.97.0*255(0)
-				if (unit != node::mbus::COUNT)
-				{
-					of
-						<< '*'
-						<< node::mbus::get_unit_name(unit)
-						;
-				}
-
-				of
-					<< ')'
-					<< eol_	//	force windows format
-					<< std::flush
-					;
+				auto const val = cyng::value_cast<std::string>(ro_.get_value("value"), "0");
+				emit_value(of, code, val, unit, eol_);
 			}
 		}
 
@@ -852,12 +781,13 @@ namespace node
 		boost::filesystem::path get_abl_filename(std::string prefix
 			, std::string suffix
 			, std::string gw
-			, std::string server_id)
+			, std::string server_id
+			, std::chrono::system_clock::time_point now)
 		{
 			//	example: push_20181218T191428.0--0500153b018ee9--01-a815-90870704-01-02.abl
 			//	prefix datetime -- gateway ID -- server ID . suffix
 			
-			auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			auto tt = std::chrono::system_clock::to_time_t(now);
 			std::tm time = cyng::chrono::convert_utc(tt);
 
 			std::stringstream ss;
@@ -890,6 +820,95 @@ namespace node
 			return ss.str();
 		}
 
+		void emit_abl_header(std::ofstream& os
+			, cyng::buffer_t const& srv_id
+			, std::chrono::system_clock::time_point act
+			, std::string eol)
+		{
+			std::tm const act_utc = cyng::chrono::make_utc_tm(act);
+			os
+				<< "[HEADER]"
+				<< eol	//	force windows format
+				<< "PROT = 0"
+				<< eol	//	force windows format
+				<< "MAN1 = "
+				<< get_manufacturer(srv_id)
+				<< eol	//	force windows format
+				<< "ZNR1 = "	//03685319"
+				<< get_serial(srv_id)
+				<< eol	//	force windows format
+				<< "DATE = "	//18.12.18 UTC"
+				<< std::setfill('0')
+				<< std::setw(2)
+				<< cyng::chrono::day(act_utc)
+				<< "."
+				<< std::setw(2)
+				<< cyng::chrono::month(act_utc)
+				<< "."
+				<< std::setw(2)
+				<< (cyng::chrono::year(act_utc) - 2000)
+				<< " UTC"
+				<< eol	//	force windows format
+				<< "TIME = "	//11.13.38 UTC"
+				<< std::setw(2)
+				<< cyng::chrono::hour(act_utc)
+				<< "."
+				<< std::setw(2)
+				<< cyng::chrono::minute(act_utc)
+				<< "."
+				<< std::setw(2)
+				<< cyng::chrono::second(act_utc)
+				<< " UTC"
+				<< eol	//	force windows format
+				<< eol	//	force windows format
+				<< "[DATA]"
+				<< eol	//	force windows format
+				<< get_manufacturer(srv_id)
+				<< eol	//	force windows format
+				<< OBIS_SERIAL_NR
+				<< '('
+				<< get_serial(srv_id)
+				<< ")"
+				<< eol	//	force windows format
+				;
+
+		}
+
+		void emit_value(std::ofstream& os
+			, obis code
+			, std::string val
+			, std::uint8_t unit
+			, std::string eol)
+		{
+			std::string s;
+			if (unit != node::mbus::COUNT) {
+				s += '*';
+				s += node::mbus::get_unit_name(unit);
+			}
+
+			emit_value(os
+				, code
+				, val
+				, s
+				, eol);
+		}
+
+		void emit_value(std::ofstream& os
+			, obis code
+			, std::string val
+			, std::string unit
+			, std::string eol)
+		{
+			os
+				<< to_string(code)
+				<< '('
+				<< val
+				<< unit
+				<< ')'
+				<< eol	//	force windows format
+				<< std::flush
+				;
+		}
 
 	}	//	sml
 }

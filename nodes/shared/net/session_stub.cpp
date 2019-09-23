@@ -34,6 +34,7 @@ namespace node
 		, timeout_(timeout)
 #ifdef SMF_IO_LOG
 		, log_counter_{ 0u }
+		, sml_counter_{ 0u }
 #endif
 	{
 		//
@@ -199,15 +200,63 @@ namespace node
 					}
 				}
 
+				//ss.str("");
+				//ss
+				//	<< "ipt-rx-"
+				//	<< boost::uuids::to_string(vm_.tag())
+				//	<< "-"
+				//	<< std::setw(4)
+				//	<< std::setfill('0')
+				//	<< std::dec
+				//	<< log_counter_
+				//	<< ".sml.bin"
+				//	;
+				//{
+				//	std::string const file_name = (boost::filesystem::temp_directory_path() / ss.str()).string();
+				//	std::ofstream of(file_name, std::ios::out | std::ios::app | std::ios::binary);
+				//	if (of.is_open())
+				//	{
+				//		//
+				//		//	write binary data
+				//		//
+				//		of.write(buf.data(), buf.size());
+
+				//		CYNG_LOG_TRACE(logger_, "write debug log " << file_name);
+				//		of.close();
+				//	}
+				//}
+
+				if (buf.size() > 12 
+					&& buf.at(0) == 0x1b 
+					&& buf.at(1) == 0x1b 
+					&& buf.at(2) == 0x1b 
+					&& buf.at(3) == 0x1b
+					&& buf.at(4) == 0x1b
+					&& buf.at(5) == 0x1b
+					&& buf.at(6) == 0x1b
+					&& buf.at(7) == 0x1b
+
+					&& buf.at(8) == 0x01
+					&& buf.at(9) == 0x01
+					&& buf.at(10) == 0x01
+					&& buf.at(11) == 0x01) {
+
+					//
+					//	start of new SML message
+					//
+					++sml_counter_;
+				}
+
 				ss.str("");
 				ss
-					<< "ipt-rx-"
+					<< "ipt-sml-"
 					<< boost::uuids::to_string(vm_.tag())
 					<< "-"
 					<< std::setw(4)
 					<< std::setfill('0')
 					<< std::dec
-					<< ".sml"
+					<< sml_counter_
+					<< ".sml.bin"
 					;
 				{
 					std::string const file_name = (boost::filesystem::temp_directory_path() / ss.str()).string();
@@ -219,10 +268,11 @@ namespace node
 						//
 						of.write(buf.data(), buf.size());
 
-						CYNG_LOG_TRACE(logger_, "write debug log " << file_name);
+						CYNG_LOG_TRACE(logger_, "write SML debug log " << file_name);
 						of.close();
 					}
 				}
+
 
 #endif
 

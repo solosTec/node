@@ -52,7 +52,7 @@ namespace node
 			, serializer_(socket_, vm_, sk)
 			, timeout_(timeout)
 			, state_(this)
-			, proxy_comm_(state_)
+			, proxy_comm_(state_, vm_)
 #ifdef SMF_IO_LOG
 			, log_counter_(0)
 #endif
@@ -300,11 +300,6 @@ namespace node
 			CYNG_LOG_DEBUG(logger_, "~session(" << vm_.tag() << ")");
 		}
 
-		//void session::activity()
-		//{
-		//	if (watchdog_tsk_ != cyng::async::NO_TASK)	mux_.post(watchdog_tsk_, 0u, cyng::tuple_t());
-		//}
-
 		cyng::buffer_t session::parse(read_buffer_const_iterator begin, read_buffer_const_iterator end)
 		{
 			const auto bytes_transferred = std::distance(begin, end);
@@ -344,18 +339,6 @@ namespace node
 				//
 				CYNG_LOG_TRACE(logger_, vm_.tag() << " task #" << tsk.second.first << " will be stopped");
 				mux_.stop(tsk.second.first);
-
-				//
-				//	wait for task
-				//
-				//bool stopped{ false };
-				//while (!stopped) {
-				//	mux_.is_task(tsk.second.first, [&](bool b) {
-				//		stopped = !b;
-				//	});
-				//}
-				//CYNG_LOG_TRACE(logger_, vm_.tag() << " task #" << tsk.second.first << " stopped");
-
 			}
 
 			//
@@ -444,7 +427,6 @@ namespace node
 			}
 		}
 
-
 		void session::client_req_gateway_proxy(cyng::context& ctx)
 		{
 			//	[c469c819-8b75-4dd7-a7b2-d74e228488c7,9f773865-e4af-489a-8824-8f78a2311278,4,[df735c77-797f-4ce8-bb74-86280f9884a9],[{("section":[status:word,srv:visible,srv:active,firmware,memory,root-wMBus-status,IF_wMBUS,ipt-status,ipt-config])}],0500153B022980,operator,operator]
@@ -512,7 +494,6 @@ namespace node
 			//	Nothing more to do. Variosafe manager will close connection anyway.
 			//	But we can tell the server to close the IP connection intentionally
 			//
-			//bus_->vm_.async_run(cyng::generate_invoke("server.close.client", vm_.tag()));
 		}
 
 		void session::ipt_req_open_push_channel(cyng::context& ctx)

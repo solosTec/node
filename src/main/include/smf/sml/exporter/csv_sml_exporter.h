@@ -15,7 +15,6 @@
 #include <cyng/intrinsics/sets.h>
 #include <cyng/object.h>
 #include <fstream>
-#include <boost/uuid/random_generator.hpp>
 #include <boost/filesystem.hpp>
 
 namespace node
@@ -58,13 +57,13 @@ namespace node
 			 */
 			void reset();
 
-			void write(cyng::tuple_t const&, std::size_t idx);
+			void write(cyng::tuple_t const&);
 
 		private:
 			/**
 			 * read SML message.
 			 */
-			void read_msg(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator, std::size_t idx);
+			void read_msg(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_body(cyng::object, cyng::object);
 			void read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
@@ -104,7 +103,6 @@ namespace node
 			const std::uint32_t source_;
 			const std::uint32_t channel_;
 			const std::string target_;
-			boost::uuids::random_generator rgn_;
 			readout ro_;
 			std::ofstream	ofstream_;
 		};

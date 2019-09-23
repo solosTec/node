@@ -17,60 +17,105 @@ namespace node
 {
 	namespace sml
 	{
+		/**
+		 * @return length of type length field
+		 */
+		std::uint32_t get_shift_count(std::uint32_t length)
+		{
+			std::uint32_t shifts = 1;
+			for (;;) {
+				if ((length + shifts) < (std::uint32_t)(1 << 4 * shifts)) {
+					break;
+				}
+				shifts++;
+			}
+			return shifts;
+		}
+
 		void write_length_field(std::ostream& os, std::uint32_t length, std::uint8_t type)
 		{
 			BOOST_ASSERT_MSG((type == 0x70) || (type == 0x00), "invalid type mask");
 
-			if (length > 0xF)
-			{
-				//
-				// maximal count of shifts that are necesarry
-				//
-				int shifts = (sizeof(std::uint32_t) * 2) - 1;
+			//
+			//	get length of type length field
+			//
+			std::uint32_t const shifts = get_shift_count(length);
+			BOOST_ASSERT(shifts != 0);
 
-				//
-				//	get upper limit - this is log8()
-				//
-				std::uint32_t mask = 0xF0000000;
-				while (shifts != 0)
-				{
-					if ((length & mask) != 0)	break;
+			//
+			//	update total length
+			//
+			length += (0x70 == type) 
+				? (shifts - 1) 
+				: shifts;
 
-					mask >>= 4;
-					shifts--;
-				}
+			//
+			//	make a start mask to extract the length data
+			//	of each length segment
+			//
+			std::uint32_t mask = 0x0F << (4 * (shifts - 1));
 
-				//std::cout << std::dec << shifts << " shift(s) required, mask = " << std::hex << mask << std::endl;
-
-				while (shifts-- != 0)
-				{
-					//
-					//	get bits for TL field
-					//
-					std::uint8_t tl = (length & mask);
-					if (tl > 0x0F)
-					{
-						tl >>= 4;
-					}
-					tl |= 0x80;	//	continuation bit
-					//	ToDo: type mask 0x70 == list of..., 0x00 == octet
-					tl |= type;
-					os.put(tl);
-
-					//std::cout << "write " << std::hex << (+tl) << std::endl;
-
-					mask >>= 4;
-					length++;
-				}
+			for (auto pos = 1; pos < shifts; ++pos) {
+				auto n = (length & mask) >> (4 * (shifts - pos));
+				std::uint8_t c = 0x80 + type + n;	//	set type and continuation bit
+				os.put(c);
+				mask >>= 4;
 			}
+			auto n = (length & mask);
+			std::uint8_t c = type + n;
+			os.put(c);
 
-			//
-			//	write last element + type info
-			//
-			std::uint8_t tl = (length & 0x0000000F);
-			tl |= type;
-			os.put(tl);
-			//std::cout << "write " << std::hex << (+tl) << std::endl;
+
+			//if (length > 0xF)
+			//{
+			//	//
+			//	// maximal count of shifts that are necesarry
+			//	//
+			//	int shifts = (sizeof(std::uint32_t) * 2) - 1;
+
+			//	//
+			//	//	get upper limit - this is log8()
+			//	//
+			//	std::uint32_t mask = 0xF0000000;
+			//	while (shifts != 0)
+			//	{
+			//		if ((length & mask) != 0)	break;
+
+			//		mask >>= 4;
+			//		shifts--;
+			//	}
+
+			//	//std::cout << std::dec << shifts << " shift(s) required, mask = " << std::hex << mask << std::endl;
+
+			//	while (shifts-- != 0)
+			//	{
+			//		//
+			//		//	get bits for TL field
+			//		//
+			//		std::uint8_t tl = (length & mask);
+			//		if (tl > 0x0F)
+			//		{
+			//			tl >>= 4;
+			//		}
+			//		tl |= 0x80;	//	continuation bit
+			//		//	ToDo: type mask 0x70 == list of..., 0x00 == octet
+			//		tl |= type;
+			//		os.put(tl);
+
+			//		//std::cout << "write " << std::hex << (+tl) << std::endl;
+
+			//		mask >>= 4;
+			//		length++;
+			//	}
+			//}
+
+			////
+			////	write last element + type info
+			////
+			//std::uint8_t tl = (length & 0x0000000F);
+			//tl |= type;
+			//os.put(tl);
+			////std::cout << "write " << std::hex << (+tl) << std::endl;
 
 		}
 
@@ -199,7 +244,6 @@ namespace node
 			else
 			{
 				os.put(0x55);	//	TL field
-				//os.put(cyng::swap_num(v));
 				cyng::io::write_binary<std::int32_t, 4, 0>(os, cyng::swap_num(v));
 			}
 			return os;
@@ -214,7 +258,6 @@ namespace node
 			else
 			{
 				os.put(0x59);	//	TL field
-				//os.put(cyng::swap_num(v));
 				cyng::io::write_binary<std::int64_t, 8, 0>(os, cyng::swap_num(v));
 			}
 			return os;
@@ -223,7 +266,7 @@ namespace node
 		std::ostream& serializer <cyng::buffer_t> ::write(std::ostream& os, cyng::buffer_t const& v)
 		{
 			//	length field
-			write_length_field(os, v.size() + 1, 0x00);
+			write_length_field(os, static_cast<std::uint32_t>(v.size()), 0x00);
 
 			//	data
 			os.write(v.data(), v.size());
@@ -234,7 +277,7 @@ namespace node
 		std::ostream& serializer <std::string> ::write(std::ostream& os, std::string const& v)
 		{
 			//	length field
-			write_length_field(os, v.size() + 1, 0x00);
+			write_length_field(os, static_cast<std::uint32_t>(v.size()), 0x00);
 
 			//	data
 			os.write(v.data(), v.size());
@@ -251,14 +294,10 @@ namespace node
 
 		std::ostream& serializer <cyng::tuple_t> ::write(std::ostream& os, cyng::tuple_t const& v)
 		{
+			//
 			//	List of
-			//const std::uint32_t count = v.size();
-			//BOOST_ASSERT(count < 0xF);
-			//os.put(0x70 | (0x0F & count));
 			//
-			//	write TL field for lists
-			//
-			write_length_field(os, v.size(), 0x70);
+			write_length_field(os, static_cast<std::uint32_t>(v.size()), 0x70);
 
 			//	serialize each element from the tuple
 			for (const auto& obj : v)

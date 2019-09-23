@@ -24,7 +24,6 @@ namespace node
 		 * example: 02-e61e-03197715-3c-07
 		 */
 		bool is_mbus(std::string const&);
-		//bool is_mbus_radio(std::string const&);
 
 		bool is_mbus_wired(cyng::buffer_t const&);
 		bool is_mbus_radio(cyng::buffer_t const&);

@@ -10,7 +10,6 @@
 
 #include <NODE_project_info.h>
 #include <smf/sml/bus/serializer.h>
-#include <smf/sml/status.h>
 #include <smf/ipt/config.h>
 
 #include <cyng/object.h>
@@ -36,15 +35,10 @@ namespace node
 			explicit connection(boost::asio::ip::tcp::socket&&
 				, cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
-				, status& status_word
 				, cyng::store::db& config_db
 				, node::ipt::master_config_t const& cfg
 				, std::string const& account
 				, std::string const& pwd
-				, std::string manufacturer
-				, std::string model
-				, std::uint32_t serial
-				, cyng::mac48 mac
 				, bool accept_all);
 
 			/**

@@ -50,11 +50,6 @@ namespace node
 			virtual cyng::buffer_t parse(read_buffer_const_iterator, read_buffer_const_iterator) override;
 
 		private:
-			/**
-			 * signal activity to reset watchdog
-			 */
-			//void activity();
-
 			void ipt_req_login_public(cyng::context& ctx);
 			void ipt_req_login_scrambled(cyng::context& ctx);
 			void ipt_req_logout(cyng::context& ctx);
@@ -130,7 +125,7 @@ namespace node
 			/**
 			 * ipt serializer
 			 */
-			serializer		serializer_;
+			serializer	serializer_;
 
 			/**
 			 * response timeout

@@ -29,7 +29,7 @@ namespace node
 		BOOST_CHECK(ifile.is_open());
 		if (ifile.is_open())
 		{
-			//	dont skip whitepsaces
+			//	dont skip whitespaces
 			ifile.unsetf(std::ios_base::skipws);
 			p.read(std::istream_iterator<std::uint8_t>(ifile), std::istream_iterator<uint8_t>());
 

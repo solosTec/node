@@ -8,7 +8,6 @@
 #include "gateway_proxy.h"
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/protocol/generator.h>
-#include <smf/sml/protocol/reader.h>
 #include <smf/cluster/generator.h>
 #include <smf/sml/status.h>
 #include <smf/sml/obis_db.h>
@@ -21,7 +20,6 @@
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/numeric_cast.hpp>
-#include <cyng/dom/reader.h>
 #include <cyng/parser/buffer_parser.h>
 
 #ifdef SMF_IO_LOG
@@ -52,12 +50,15 @@ namespace node
 			//CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 
 			//
-			//	execute programm
+			//	execute SML programm
 			//
 			vm_.async_run(std::move(prg));
 
 		}, false, sml_log)	//	not verbose, no log instructions
-		, queue_()
+		, input_queue_()
+		, output_map_()
+		, open_requests_{ 0 }
+		, state_{ OFFLINE_ }
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -68,20 +69,27 @@ namespace node
 
 	cyng::continuation gateway_proxy::run()
 	{	
-		if (!queue_.empty() && queue_.front().is_waiting()) {
-
-			CYNG_LOG_INFO(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> queue size "
-				<< queue_.size());
-
+		switch (state_) {
+		case OFFLINE_:
+		case WAITING_:
 			//
 			//	waiting for an opportunity to open a connection. If session is ready
 			//	is signals OK on slot 0
 			//
-			vm_.async_run(cyng::generate_invoke("session.redirect", base_.get_id()));
+			if (!input_queue_.empty()) {
+				vm_.async_run(cyng::generate_invoke("session.redirect", base_.get_id()));
+			}
+			break;
+		case CONNECTED_:
+			if (!input_queue_.empty()) {
+				//
+				//	run input queue
+				//
+				run_queue();
+			}
+			break;
+		default:
+			break;
 		}
 
 		//
@@ -92,40 +100,54 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	//	slot 0 - ack
+	//	slot 0 - ack (connected to gateway)
 	cyng::continuation gateway_proxy::process()
 	{
-		if (!queue_.empty()) {
-
-			//
-			//	update data state
-			//
-			queue_.front().next();
+		BOOST_ASSERT_MSG(state_ == WAITING_, "wrong state");
+		if (!input_queue_.empty()) {
 
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> start processing ");
-
+				<< "> gain access and processing input queue with "
+				<< input_queue_.size()
+				<< " entries");
 
 			//
-			//	process commands
+			//	update state
 			//
-			execute_cmd();
+			state_ = CONNECTED_;
+
+			//
+			//	clear remaining entries
+			//
+			output_map_.clear();
+
+			//
+			//	run input queue and process commands
+			//
+			run_queue();
 
 		}
 		else {
 
-			CYNG_LOG_ERROR(logger_, "task #"
+			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> got acknowledge but queue is empty");
+				<< "> got connected but queue is empty - disconnect");
+
 
 			//
-			//	ToDo: reset connection state to NOT-CONNECTED == authorized
+			//	reset connection state to NOT-CONNECTED == authorized
 			//
+			vm_.async_run(cyng::generate_invoke("session.redirect", static_cast<std::size_t>(cyng::async::NO_TASK)));
+
+			//
+			//	update state
+			//
+			state_ = OFFLINE_;
 		}
 
 		//
@@ -141,10 +163,9 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> "
-			//<< sml::from_server_id(server_id_)
-			<< " EOM #"
+			<< "> EOM #"
 			<< midx);
+
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -168,110 +189,242 @@ namespace node
 	}
 
 	//	-- slot[3]
-	cyng::continuation gateway_proxy::process(cyng::buffer_t trx, std::uint8_t, std::uint8_t, cyng::tuple_t msg, std::uint16_t crc)
+	cyng::continuation gateway_proxy::process(std::string trx
+		, std::uint8_t group
+		, cyng::buffer_t srv_id
+		, cyng::buffer_t path
+		, cyng::param_t values)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> sml.msg "
+			<< "> get_proc_parameter "
 			<< std::string(trx.begin(), trx.end()));
 
-		sml::reader reader;
-		reader.set_trx(trx);
-		vm_.async_run(reader.read_choice(msg));
+		auto const pos = output_map_.find(trx);
+		if (pos != output_map_.end()) {
+
+			sml::obis const root(path);
+
+			auto const srv_str = (srv_id.empty())
+				? sml::from_server_id(pos->second.get_srv())
+				: sml::from_server_id(srv_id)
+				;
+
+			cyng::param_map_t params;
+			params = cyng::value_cast(values.second, params);
+
+			if (sml::OBIS_CLASS_OP_LOG_STATUS_WORD == root) {
+
+				sml::status_word_t word;
+				sml::status wrapper(word);
+				wrapper.reset(cyng::value_cast<std::uint32_t>(values.second, 0u));
+
+				params.emplace("word", cyng::make_object(sml::to_param_map(word)));
+			}
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> response "
+				<< trx
+				<< " - "
+				<< sml::get_name(root)
+				<< " from "
+				<< srv_str
+				<< "/"
+				<< sml::from_server_id(pos->second.get_srv())
+				<< " ["
+				<< pos->second.get_msg_type()
+				<< "]: "
+				<< cyng::io::to_str(params));
+
+			bus_->vm_.async_run(bus_res_com_sml(pos->second.get_tag_ident()
+				, pos->second.get_tag_source()
+				, pos->second.get_sequence()
+				, pos->second.get_key_gw()
+				, pos->second.get_tag_origin()
+				, pos->second.get_msg_type()
+				, srv_str
+				, root.to_str()
+				, params));
+
+			//
+			//	remove from map
+			//
+			output_map_.erase(pos);
+
+		}
+		else {
+
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> response "
+				<< trx
+				<< " not found");
+		}
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	//	-- slot[4]
-	cyng::continuation gateway_proxy::process(boost::uuids::uuid pk, cyng::buffer_t trx, std::size_t)
+	cyng::continuation gateway_proxy::process(boost::uuids::uuid pk, std::string trx, std::size_t)
 	{
+		//
+		//	current SML request is complete
+		//	sml_public_close_response
+		//
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> sml.public.close.response "
-			<< std::string(trx.begin(), trx.end()));
+			<< "> sml.public.close.response ["
+			<< trx
+			<< "] open requests: "
+			<< open_requests_
+			<< " , input queue size: "
+			<< input_queue_.size()
+			<< ", output map: "
+			<< output_map_.size());
 
 		//
-		//	current SML request is complete
+		//	update request counter
 		//
-		if (!queue_.empty()) {
-			queue_.pop();
+		--open_requests_;
+
+		if (open_requests_ == 0u) {
+
+			BOOST_ASSERT_MSG(input_queue_.empty(), "input queue is not empty");
+			//
+			//	update task state
+			//
+			state_ = OFFLINE_;
+
+			//
+			//	terminate redirection
+			//
+			vm_.async_run(cyng::generate_invoke("session.redirect", static_cast<std::size_t>(cyng::async::NO_TASK)));
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> cancel redirection");
 		}
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	//	-- slot[5]
-	cyng::continuation gateway_proxy::process(std::string trx,
-		std::size_t idx,
-		std::string server_id,
-		cyng::buffer_t code,
-		cyng::param_map_t params)
+	cyng::continuation gateway_proxy::process(std::string trx
+		, cyng::buffer_t srv_id
+		, cyng::buffer_t path
+		, cyng::param_map_t params)
 	{
-		BOOST_ASSERT(!queue_.empty());
+		//
+		//	There should be entries
+		//
+		//BOOST_ASSERT(!output_map_.empty());
+		auto const pos = output_map_.find(trx);
+		if (pos != output_map_.end()) {
 
-		CYNG_LOG_INFO(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> response #"
-			<< queue_.front().get_sequence()
-			<< " from "
-			<< server_id
-			<< "/"
-			<< sml::from_server_id(queue_.front().get_srv())
-			<< " ["
-			<< queue_.front().get_msg_type()
-			<< "]");
+			sml::obis const root(path);
 
-		if (server_id.empty()) {
-			server_id = sml::from_server_id(queue_.front().get_srv());
+			auto const srv_str = (srv_id.empty())
+				? sml::from_server_id(pos->second.get_srv())
+				: sml::from_server_id(srv_id)
+				;
+
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> response "
+				<< trx
+				<< " - "
+				<< sml::get_name(root)
+				<< " from "
+				<< srv_str
+				<< "/"
+				<< sml::from_server_id(pos->second.get_srv())
+				<< " ["
+				<< pos->second.get_msg_type()
+				<< "]: "
+				<< cyng::io::to_str(params));
+
+			bus_->vm_.async_run(bus_res_com_sml(pos->second.get_tag_ident()
+				, pos->second.get_tag_source()
+				, pos->second.get_sequence()
+				, pos->second.get_key_gw()
+				, pos->second.get_tag_origin()
+				, pos->second.get_msg_type()
+				, srv_str
+				, root.to_str()
+				, params));
+
+			//
+			//	remove from map
+			//
+			output_map_.erase(pos);
+
 		}
 		else {
-			//	in some cases this is the meter ident
-			//BOOST_ASSERT(sml::from_server_id(queue_.front().get_srv()) == server_id);
+
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> response "
+				<< trx
+				<< " not found");
 		}
-
-		bus_->vm_.async_run(bus_res_com_sml(queue_.front().get_tag_ident()
-			, queue_.front().get_tag_source()
-			, queue_.front().get_sequence()
-			, queue_.front().get_key_gw()
-			, queue_.front().get_tag_origin()
-			, queue_.front().get_msg_type()
-			, server_id
-			, sml::get_name(code)
-			, params));
-
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	cyng::continuation gateway_proxy::process(std::string srv
+	cyng::continuation gateway_proxy::process(std::string trx
+		, std::string srv
 		, cyng::buffer_t const& code)
 	{
-		sml::obis attention(code);
 
-		CYNG_LOG_INFO(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> response #"
-			<< queue_.front().get_sequence()
-			<< " from "
-			<< srv
-			<< " attention code "
-			<< sml::get_attention_name(attention));
+		auto const pos = output_map_.find(trx);
+		if (pos != output_map_.end()) {
 
-		bus_->vm_.async_run(bus_res_attention_code(queue_.front().get_tag_ident()
-			, queue_.front().get_tag_source()
-			, queue_.front().get_sequence()
-			, queue_.front().get_tag_origin()
-			, srv
-			, code
-			, sml::get_attention_name(attention)));
+			sml::obis attention(code);
 
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> response #"
+				<< pos->second.get_sequence()
+				<< " from "
+				<< srv
+				<< " attention code "
+				<< sml::get_attention_name(attention));
+
+			bus_->vm_.async_run(bus_res_attention_code(pos->second.get_tag_ident()
+				, pos->second.get_tag_source()
+				, pos->second.get_sequence()
+				, pos->second.get_tag_origin()
+				, srv
+				, code
+				, sml::get_attention_name(attention)));
+		}
+		else {
+
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> response "
+				<< trx
+				<< " not found");
+		}
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
@@ -291,26 +444,118 @@ namespace node
 		std::string	pwd				//	[10] pwd
 	)
 	{
-		queue_.emplace(tag, source, seq, origin, channel,code, gw, params, srv, name, pwd, queue_.size());
+		//
+		//	add new entry in work queue
+		//
+		input_queue_.emplace(tag, source, seq, origin, channel, code, gw, params, srv, name, pwd, input_queue_.size());
+
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> queue size "
-			<< queue_.size());
+			<< "> new input queue entry - size: "
+			<< input_queue_.size());
 
-		if (queue_.size() == 1) {
+		BOOST_ASSERT(!input_queue_.empty());
+
+		switch (state_) {
+		case OFFLINE_:
 
 			//
-			//	waiting for an opportunity to open a connection.If session is ready
-			//	is signals OK on slot 0
+			//	update state
+			//
+			state_ = WAITING_;
+
+			//
+			//	waiting for an opportunity to open a connection. If session is ready
+			//	is signals OK on slot [0]
 			vm_.async_run(cyng::generate_invoke("session.redirect", base_.get_id()));
+
+			break;
+		default:
+			break;
 		}
+
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
+	void gateway_proxy::run_queue()
+	{
+		//
+		//	this loop is atomic
+		//
+		while (!input_queue_.empty()) {
 
-	void gateway_proxy::execute_cmd()
+			auto const server_id = input_queue_.front().get_srv();
+			auto const user = input_queue_.front().get_user();
+			auto const pwd = input_queue_.front().get_pwd();
+			auto const source = input_queue_.front().get_tag_source();
+
+			//
+			//	generate public open request
+			//
+			node::sml::req_generator sml_gen;
+			sml_gen.public_open(get_mac(), server_id, user, pwd);
+
+			auto const data = input_queue_.front();
+			auto const params = cyng::make_reader(data.get_params());
+
+			//
+			//	execute top queue entry
+			//
+			execute_cmd(sml_gen, data, params);
+
+			//
+			//	generate close request
+			//
+			sml_gen.public_close();
+			cyng::buffer_t msg = sml_gen.boxing();
+
+
+			//
+			//	update data throughput (outgoing)
+			//
+			bus_->vm_.async_run(client_inc_throughput(vm_.tag()
+				, source
+				, msg.size()));
+
+			//
+			//	update request counter
+			//
+			++open_requests_;
+
+#ifdef SMF_IO_LOG
+			cyng::io::hex_dump hd;
+			hd(std::cerr, msg.begin(), msg.end());
+#else
+			CYNG_LOG_DEBUG(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> #"
+				<< open_requests_
+				<< " send "
+				<< cyng::bytes_to_str(msg.size())
+				<< " to gateway: "
+				<< cyng::io::to_hex(msg))
+#endif
+
+			//
+			//	send to gateway
+			//
+			vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", std::move(msg))
+				, cyng::generate_invoke("stream.flush") });
+
+			//
+			//	remove top queue entry
+			//
+			input_queue_.pop();
+		}
+	}
+
+	void gateway_proxy::execute_cmd(sml::req_generator& sml_gen
+		, ipt::proxy_data const& data
+		, cyng::tuple_reader const& params)
 	{
 		//	[{("section":[op-log-status-word,root-visible-devices,root-active-devices,firmware,memory,root-wMBus-status,IF_wMBUS,root-ipt-state,root-ipt-param])}]
 		//	[{("name":smf-form-gw-ipt-srv),("value":0500153B022980)},{("name":smf-gw-ipt-host-1),("value":waiting...)},{("name":smf-gw-ipt-local-1),("value":4)},{("name":smf-gw-ipt-remote-1),("value":3)},{("name":smf-gw-ipt-name-1),("value":waiting...)},{("name":smf-gw-ipt-pwd-1),("value":asdasd)},{("name":smf-gw-ipt-host-2),("value":waiting...)},{("name":smf-gw-ipt-local-2),("value":3)},{("name":smf-gw-ipt-remote-2),("value":3)},{("name":smf-gw-ipt-name-2),("value":holgär)},{("name":smf-gw-ipt-pwd-2),("value":asdasd)}]
@@ -320,9 +565,9 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> execute channel "
-			<< queue_.front().get_msg_type());
+			<< data.get_msg_type());
 		
-		switch (queue_.front().get_msg_code()) {
+		switch (data.get_msg_code()) {
 
 		case node::sml::BODY_GET_PROFILE_PACK_REQUEST:
 		//	fall through
@@ -332,20 +577,20 @@ namespace node
 				<< " <"
 				<< base_.get_class_name()
 				<< "> not implemented yet "
-				<< queue_.front().get_msg_type());
-			queue_.pop();
+				<< data.get_msg_type());
+			//execute_cmd_get_profile_list(sml_gen, data, params);
 			break;
 
 		case node::sml::BODY_GET_PROC_PARAMETER_REQUEST:
-			execute_cmd_get_proc_param();
+			execute_cmd_get_proc_param(sml_gen, data, params);
 			break;
 
 		case node::sml::BODY_SET_PROC_PARAMETER_REQUEST:
-			execute_cmd_set_proc_param();
+			execute_cmd_set_proc_param(sml_gen, data, params);
 			break;
 
 		case node::sml::BODY_GET_LIST_REQUEST:
-			execute_cmd_get_list_request();
+			execute_cmd_get_list_request(sml_gen, data, params);
 			break;
 
 		default:
@@ -354,37 +599,22 @@ namespace node
 				<< " <"
 				<< base_.get_class_name()
 				<< "> unknown channel "
-				<< queue_.front().get_msg_type());
+				<< data.get_msg_type());
 
-			//
-			//	remove queue entry
-			//
-			queue_.pop();
 			break;
 		}
 	}
 
-	void gateway_proxy::execute_cmd_get_proc_param()
+	void gateway_proxy::execute_cmd_get_proc_param(sml::req_generator& sml_gen
+		, ipt::proxy_data const& data
+		, cyng::tuple_reader const& params)
 	{
-		auto const server_id = queue_.front().get_srv();
-		auto const user = queue_.front().get_user();
-		auto const pwd = queue_.front().get_pwd();
-		auto const code = queue_.front().get_root();	//	OBIS root
-		auto const params = cyng::make_reader(queue_.front().get_params());
-
-		//
-		//	generate public open request
-		//
-		node::sml::req_generator sml_gen;
-
-		sml_gen.public_open(get_mac(), server_id, user, pwd);
-
 		//
 		//	generate get process parameter requests
 		//
-		if (sml::OBIS_CODE_ROOT_SENSOR_PARAMS == code || 
-			sml::OBIS_CODE_ROOT_DATA_COLLECTOR == code ||
-			sml::OBIS_PUSH_OPERATIONS == code) {
+		if (sml::OBIS_CODE_ROOT_SENSOR_PARAMS == data.get_root() ||
+			sml::OBIS_CODE_ROOT_DATA_COLLECTOR == data.get_root() ||
+			sml::OBIS_PUSH_OPERATIONS == data.get_root()) {
 
 			//
 			//	data mirror
@@ -393,69 +623,28 @@ namespace node
 			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
 			auto const r = sml::parse_srv_id(meter);
 			if (r.second) {
-				sml_gen.get_proc_parameter(r.first, code, user, pwd);
+				push_trx(sml_gen.get_proc_parameter(r.first, data.get_root(), data.get_user(), data.get_pwd()), data);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> invalid meter id: "
+					<< "> "
+					<< data.get_msg_type()
+					<< " - invalid meter id: "
 					<< meter);
 			}
 		}
 		else {
-			sml_gen.get_proc_parameter(server_id, code, user, pwd);
+			push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_root(), data.get_user(), data.get_pwd()), data);
 		}
-
-		//
-		//	generate close request
-		//
-		sml_gen.public_close();
-		cyng::buffer_t msg = sml_gen.boxing();
-
-		//
-		//	update data throughput (outgoing)
-		//
-		bus_->vm_.async_run(client_inc_throughput(vm_.tag()
-			, queue_.front().get_tag_source()
-			, msg.size()));
-
-#ifdef SMF_IO_LOG
-		cyng::io::hex_dump hd;
-		hd(std::cerr, msg.begin(), msg.end());
-#else
-		CYNG_LOG_DEBUG(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> \n"
-			<< cyng::io::to_hex(msg, ' '))
-#endif
-
-		//
-		//	send to gateway
-		//
-		vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", std::move(msg))
-			, cyng::generate_invoke("stream.flush") });
-
 	}
 
-	void gateway_proxy::execute_cmd_set_proc_param()
+	void gateway_proxy::execute_cmd_set_proc_param(sml::req_generator& sml_gen
+		, ipt::proxy_data const& data
+		, cyng::tuple_reader const& params)
 	{
-		auto const server_id = queue_.front().get_srv();
-		auto const user = queue_.front().get_user();
-		auto const pwd = queue_.front().get_pwd();
-		auto const code = queue_.front().get_root();	//	OBIS root
-		auto const params = cyng::make_reader(queue_.front().get_params());
-
-		//
-		//	generate public open request
-		//
-		node::sml::req_generator sml_gen;
-
-		sml_gen.public_open(get_mac(), server_id, user, pwd);
-
 		//
 		//	generate set process parameter requests
 		//
@@ -465,11 +654,11 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> set "
-			<< sml::from_server_id(server_id)
+			<< sml::from_server_id(data.get_srv())
 			<< " root "
-			<< code.to_str());
+			<< data.get_root().to_str());
 
-		if (sml::OBIS_CODE_ROOT_IPT_PARAM == code) {
+		if (sml::OBIS_CODE_ROOT_IPT_PARAM == data.get_root()) {
 
 			//
 			//	modify IP-T parameters
@@ -477,34 +666,34 @@ namespace node
 
 			cyng::vector_t vec;
 			vec = cyng::value_cast(params.get("ipt"), vec);
-			execute_cmd_set_proc_param_ipt(sml_gen, server_id, user, pwd, vec);
+			execute_cmd_set_proc_param_ipt(sml_gen, data, vec);
 		}
-		else if (sml::OBIS_CODE_IF_wMBUS == code) {
+		else if (sml::OBIS_CODE_IF_wMBUS == data.get_root()) {
 
 			//
 			//	modify wireless IEC parameters
 			//
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(params.get("wmbus"), tpl);
-			execute_cmd_set_proc_param_wmbus(sml_gen, server_id, user, pwd, tpl);
+			execute_cmd_set_proc_param_wmbus(sml_gen, data, tpl);
 		}
-		else if (sml::OBIS_CODE_IF_1107 == code) {
+		else if (sml::OBIS_CODE_IF_1107 == data.get_root()) {
 
 			//
 			//	modify wired IEC parameters
 			//
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(params.get("iec"), tpl);
-			execute_cmd_set_proc_param_iec(sml_gen, server_id, user, pwd, tpl);
+			execute_cmd_set_proc_param_iec(sml_gen, data, tpl);
 		}
-		else if (sml::OBIS_CODE_REBOOT == code) {
+		else if (sml::OBIS_CODE_REBOOT == data.get_root()) {
 
 			//
 			//	reboot the gateway
 			//
-			sml_gen.set_proc_parameter_restart(server_id, user, pwd);
+			sml_gen.set_proc_parameter_restart(data.get_srv(), data.get_user(), data.get_pwd());
 		}
-		else if (sml::OBIS_CODE_ACTIVATE_DEVICE == code) {
+		else if (sml::OBIS_CODE_ACTIVATE_DEVICE == data.get_root()) {
 
 			//
 			//	activate meter device
@@ -513,7 +702,7 @@ namespace node
 			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
 			auto const r = cyng::parse_hex_string(meter);
 			if (r.second) {
-				execute_cmd_set_proc_param_activate(sml_gen, server_id, user, pwd, nr, r.first);
+				execute_cmd_set_proc_param_activate(sml_gen, data, nr, r.first);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
@@ -524,7 +713,7 @@ namespace node
 					<< meter);
 			}
 		}
-		else if (sml::OBIS_CODE_DEACTIVATE_DEVICE == code) {
+		else if (sml::OBIS_CODE_DEACTIVATE_DEVICE == data.get_root()) {
 
 			//
 			//	deactivate meter device
@@ -533,7 +722,7 @@ namespace node
 			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
 			auto const r = cyng::parse_hex_string(meter);
 			if (r.second) {
-				execute_cmd_set_proc_param_activate(sml_gen, server_id, user, pwd, nr, r.first);
+				execute_cmd_set_proc_param_deactivate(sml_gen, data, nr, r.first);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
@@ -543,9 +732,8 @@ namespace node
 					<< "> invalid meter id: "
 					<< meter);
 			}
-			execute_cmd_set_proc_param_deactivate(sml_gen, server_id, user, pwd, nr, r.first);
 		}
-		else if (sml::OBIS_CODE_DELETE_DEVICE == code) {
+		else if (sml::OBIS_CODE_DELETE_DEVICE == data.get_root()) {
 
 			//
 			//	remove a meter device from list of visible meters
@@ -554,7 +742,7 @@ namespace node
 			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
 			auto const r = cyng::parse_hex_string(meter);
 			if (r.second) {
-				execute_cmd_set_proc_param_activate(sml_gen, server_id, user, pwd, nr, r.first);
+				execute_cmd_set_proc_param_delete(sml_gen, data, nr, r.first);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
@@ -564,15 +752,56 @@ namespace node
 					<< "> invalid meter id: "
 					<< meter);
 			}
-			execute_cmd_set_proc_param_delete(sml_gen, server_id, user, pwd, nr, r.first);
 		}
-		else if (sml::OBIS_CODE_ROOT_SENSOR_PARAMS == code) {
+		else if (sml::OBIS_CODE_ROOT_SENSOR_PARAMS == data.get_root()) {
+
+			CYNG_LOG_FATAL(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> OBIS_CODE_ROOT_SENSOR_PARAMS not implemented yet: "
+				<< sml::OBIS_CODE_ROOT_SENSOR_PARAMS.to_str());
 
 			//
 			//	change root parameters of meter
 			//
-			//auto const vec = queue_.front().get_params(sec);
-			//execute_cmd_set_proc_param_meter(sml_gen, server_id, user, pwd, vec);
+			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
+			auto const r = cyng::parse_hex_string(meter);
+			if (r.second) {
+				//	data: this.tabMeter.data
+                //	data: {
+                //	    devClass: '-',
+                //	    maker: '-',
+                //	    status: 0,
+                //	    bitmask: '00 00',
+                //	    interval: 0,
+                //	    lastRecord: "1964-04-20",
+                //	    pubKey: '',
+                //	    aesKey: '',
+                //	    user: '',
+                //	    pwd: '',
+                //	    timeRef: 0
+                //	}
+				
+
+				execute_cmd_set_proc_param_meter(sml_gen
+					, data
+					, r.first
+					, cyng::value_cast<std::string>(params["data"].get("user"), "")
+					, cyng::value_cast<std::string>(params["data"].get("pwd"), "")
+					, cyng::value_cast<std::string>(params["data"].get("pubKey"), "")
+					, cyng::value_cast<std::string>(params["data"].get("aesKey"), ""));
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> "
+					<< data.get_root().to_str()
+					<< " invalid meter id: "
+					<< meter);
+			}
 		}
 		else {
 
@@ -581,78 +810,36 @@ namespace node
 				<< " <"
 				<< base_.get_class_name()
 				<< "> unknown OBIS code for SetProcParameterRequest: "
-				<< code.to_str());
+				<< data.get_root().to_str());
 		}
-
-		//	generate close request
-		//
-		sml_gen.public_close();
-		cyng::buffer_t msg = sml_gen.boxing();
-
-		//
-		//	update data throughput (outgoing)
-		//
-		bus_->vm_.async_run(client_inc_throughput(vm_.tag()
-			, queue_.front().get_tag_source()
-			, msg.size()));
-
-#ifdef SMF_IO_LOG
-		cyng::io::hex_dump hd;
-		hd(std::cerr, msg.begin(), msg.end());
-#else
-		CYNG_LOG_DEBUG(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> emits \n"
-			<< cyng::io::to_hex(msg, ' '))
-#endif
-
-		//
-		//	send to gateway
-		//
-		vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", std::move(msg))
-			, cyng::generate_invoke("stream.flush") });
-
 	}
 
-	void gateway_proxy::execute_cmd_get_list_request()
+	void gateway_proxy::execute_cmd_get_list_request(sml::req_generator& sml_gen
+		, ipt::proxy_data const& data
+		, cyng::tuple_reader const& params)
 	{
-		auto const server_id = queue_.front().get_srv();
-		auto const user = queue_.front().get_user();
-		auto const pwd = queue_.front().get_pwd();
-		auto const code = queue_.front().get_root();	//	OBIS root
-		auto const params = cyng::make_reader(queue_.front().get_params());
-
-		//
-		//	generate public open request
-		//
-		node::sml::req_generator sml_gen;
-
-		sml_gen.public_open(get_mac(), server_id, user, pwd);
-
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
 			<< "> get "
-			<< sml::from_server_id(server_id)
+			<< sml::from_server_id(data.get_srv())
 			<< " GetListRequest: "
-			<< code.to_str());
+			<< data.get_root().to_str());
 
 		//
 		//	generate get process parameter requests
 		//
 
-		if (sml::OBIS_LIST_CURRENT_DATA_RECORD == code) {
+		if (sml::OBIS_LIST_CURRENT_DATA_RECORD == data.get_root()) {
 
 			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
 			auto const r = sml::parse_srv_id(meter);
 			if (r.second) {
-				sml_gen.get_list_last_data_record(get_mac().to_buffer()
+				push_trx(sml_gen.get_list_last_data_record(get_mac().to_buffer()
 					, r.first
-					, user
-					, pwd);
+					, data.get_user()
+					, data.get_pwd()), data);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
@@ -663,46 +850,13 @@ namespace node
 					<< meter);
 			}
 		}
-
-		//	generate close request
-		//
-		sml_gen.public_close();
-		cyng::buffer_t msg = sml_gen.boxing();
-
-		//
-		//	update data throughput (outgoing)
-		//
-		bus_->vm_.async_run(client_inc_throughput(vm_.tag()
-			, queue_.front().get_tag_source()
-			, msg.size()));
-
-#ifdef SMF_IO_LOG
-		cyng::io::hex_dump hd;
-		hd(std::cerr, msg.begin(), msg.end());
-#else
-		CYNG_LOG_DEBUG(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> \n"
-			<< cyng::io::to_hex(msg, ' '))
-#endif
-
-		//
-		//	send to gateway
-		//
-		vm_.async_run({ cyng::generate_invoke("ipt.transfer.data", std::move(msg))
-			, cyng::generate_invoke("stream.flush") });
-
 	}
 
 	void gateway_proxy::execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen
-		, cyng::buffer_t const& server_id
-		, std::string const& user
-		, std::string const& pwd
+		, ipt::proxy_data const& data
 		, cyng::vector_t vec)
 	{
-		std::size_t idx{ 1 };	//	index starts with 1
+		std::uint8_t idx{ 1u };	//	index starts with 1
 		for (auto const& p : vec) {
 
 			cyng::tuple_t tpl;
@@ -719,47 +873,47 @@ namespace node
 				if (boost::algorithm::equals(param.first, "host")) {
 
 					auto address = cyng::value_cast<std::string>(param.second, "0.0.0.0");
-					sml_gen.set_proc_parameter_ipt_host(server_id
-						, user
-						, pwd
+					push_trx(sml_gen.set_proc_parameter_ipt_host(data.get_srv()
+						, data.get_user()
+						, data.get_pwd()
 						, idx
-						, address);
-
+						, address), data);
 				}
 				else if (boost::algorithm::equals(param.first, "port")) {
 					auto port = cyng::numeric_cast<std::uint16_t>(param.second, 26862u);
-					sml_gen.set_proc_parameter_ipt_port_local(server_id
-						, user
-						, pwd
+					push_trx(sml_gen.set_proc_parameter_ipt_port_local(data.get_srv()
+						, data.get_user()
+						, data.get_pwd()
 						, idx
-						, port);
+						, port), data);
 				}
 				else if (boost::algorithm::equals(param.first, "user")) {
 					auto str = cyng::value_cast<std::string>(param.second, "");
-					sml_gen.set_proc_parameter_ipt_user(server_id
-						, user
-						, pwd
+					push_trx(sml_gen.set_proc_parameter_ipt_user(data.get_srv()
+						, data.get_user()
+						, data.get_pwd()
 						, idx
-						, str);
+						, str), data);
 				}
 				else if (boost::algorithm::equals(param.first, "pwd")) {
 					auto str = cyng::value_cast<std::string>(param.second, "");
-					sml_gen.set_proc_parameter_ipt_pwd(server_id
-						, user
-						, pwd
+					push_trx(sml_gen.set_proc_parameter_ipt_pwd(data.get_srv()
+						, data.get_user()
+						, data.get_pwd()
 						, idx
-						, str);
+						, str), data);
 				}
 			}
 
+			//
+			//	next IP-T server 
+			//
 			++idx;
 		}
 	}
 
 	void gateway_proxy::execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen
-		, cyng::buffer_t const& server_id
-		, std::string const& user
-		, std::string const& pwd
+		, ipt::proxy_data const& data
 		, cyng::tuple_t const& params)
 	{
 		for (auto const& obj : params) {
@@ -779,11 +933,11 @@ namespace node
 			if (boost::algorithm::equals(param.first, "active")) {
 
 				const auto b = cyng::value_cast(param.second, false);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_INSTALL_MODE }
-					, user
-					, pwd
-					, b);
+					, data.get_user()
+					, data.get_pwd()
+					, b), data);
 			}
 			else if (boost::algorithm::equals(param.first, "protocol")) {
 
@@ -792,9 +946,9 @@ namespace node
 				//
 				auto const val = cyng::value_cast<std::string>(param.second, "S");
 
-				sml_gen.set_proc_parameter_wmbus_protocol(server_id
-					, queue_.front().get_user()
-					, queue_.front().get_pwd()
+				push_trx(sml_gen.set_proc_parameter_wmbus_protocol(data.get_srv()
+					, data.get_user()
+					, data.get_pwd()
 					//
 					//	function to convert the character into a numeric value
 					//
@@ -809,43 +963,41 @@ namespace node
 							}
 						}
 						return 0;
-					}(val));
+					}(val)), data);
 
 			}
 			else if (boost::algorithm::equals(param.first, "reboot")) {
 
 				const auto val = cyng::numeric_cast<std::uint64_t>(param.second, 0u);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_REBOOT }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "sMode")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_MODE_S }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "tMode")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_MODE_T }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 		}
 	}
 
 	void gateway_proxy::execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen
-		, cyng::buffer_t const& server_id
-		, std::string const& user
-		, std::string const& pwd
+		, ipt::proxy_data const& data
 		, cyng::tuple_t const& params)
 	{
         //	active: false,
@@ -880,83 +1032,83 @@ namespace node
 			if (boost::algorithm::equals(param.first, "active")) {
 
 				const auto b = cyng::value_cast(param.second, false);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_ACTIVE }
-					, user
-					, pwd
-					, b);
+					, data.get_user()
+					, data.get_pwd()
+					, b), data);
 			}
 			else if (boost::algorithm::equals(param.first, "autoActivation")) {
 
 				const auto b = cyng::value_cast(param.second, false);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION }
-					, user
-					, pwd
-					, b);
+					, data.get_user()
+					, data.get_pwd()
+					, b), data);
 			}
 			else if (boost::algorithm::equals(param.first, "loopTime")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 60u);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_LOOP_TIME }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "maxDataRate")) {
 
 				const auto val = cyng::numeric_cast<std::uint64_t>(param.second, 0u);
-				sml_gen.set_proc_parameter(queue_.front().get_srv()
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MAX_DATA_RATE }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "minTimeout")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 200u);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MIN_TIMEOUT }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "maxTimeout")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 5000u);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MAX_TIMEOUT }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "maxVar")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 9u);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MAX_VARIATION }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "protocolMode")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 1u);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "retries")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 3u);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_RETRIES }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "rs485")) {
 				//	ignore
@@ -964,20 +1116,20 @@ namespace node
 			else if (boost::algorithm::equals(param.first, "timeGrid")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 900u);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_TIME_GRID }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "timeSync")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 14400u);
-				sml_gen.set_proc_parameter(server_id
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_TIME_SYNC }
-					, user
-					, pwd
-					, val);
+					, data.get_user()
+					, data.get_pwd()
+					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "devices")) {
 				
@@ -989,141 +1141,114 @@ namespace node
 	}
 
 	void gateway_proxy::execute_cmd_set_proc_param_meter(sml::req_generator& sml_gen
-		, cyng::buffer_t const& server_id
-		, std::string const& user
-		, std::string const& pwd
-		, cyng::vector_t vec)
+		, ipt::proxy_data const& data
+		, cyng::buffer_t const& meter
+		, std::string user
+		, std::string pwd
+		, std::string pubKey
+		, std::string aesKey)
 	{
-		if (vec.size() == 2) {
 
-			//
-			//	parameters are "meterId" and "data" with 
-			//	devClass: '-',
-			//	maker: '-',
-			//	status: 0,
-			//	bitmask: '00 00',
-			//	interval: 0,
-			//	lastRecord: "1964-04-20",
-			//	pubKey: '',
-			//	aesKey: '',
-			//	user: '',
-			//	pwd: ''
-			//	timeRef: 0
-			//
+		//
+		//	parameters are "meterId" and "data" with 
+		//	devClass: '-',
+		//	maker: '-',
+		//	status: 0,
+		//	bitmask: '00 00',
+		//	interval: 0,
+		//	lastRecord: "1964-04-20",
+		//	pubKey: '',
+		//	aesKey: '',
+		//	user: '',
+		//	pwd: ''
+		//	timeRef: 0
+		//
 
-			//
-			//	DOM/param_map_t reader
-			//
-			auto dom = cyng::make_reader(vec);
+		//
+		//	meter ID is used as server ID
+		//
 
-			//
-			//	extract meter: meter ID is used as server ID
-			//
-			auto const str = cyng::value_cast<std::string>(dom[0].get("meterId"), "");
-			std::pair<cyng::buffer_t, bool> const r = sml::parse_srv_id(str);
+		//
+		//	modify user name
+		//
+		push_trx(sml_gen.set_proc_parameter(meter
+			, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_NAME }
+			, data.get_user()
+			, data.get_pwd()
+			, user), data);
 
-			//
-			//	modify user name
-			//
-			auto const new_user = cyng::value_cast<std::string>(dom[1]["data"].get("user"), "");
-			sml_gen.set_proc_parameter(r.first
-				, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_NAME }
-				, user
-				, pwd
-				, new_user);
+		//
+		//	modify user password
+		//
+		push_trx(sml_gen.set_proc_parameter(meter
+			, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_PWD }
+			, data.get_user()
+			, data.get_pwd()
+			, pwd), data);
 
-			//
-			//	modify user password
-			//
-			auto const new_pwd = cyng::value_cast<std::string>(dom[1]["data"].get("pwd"), "");
-			sml_gen.set_proc_parameter(r.first
-				, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_PWD }
-				, user
-				, pwd
-				, new_pwd);
+		//
+		//	modify public key
+		//
+		//auto const new_pub_key = cyng::value_cast<std::string>(dom[1]["data"].get("pubKey"), "");
+		auto const r_pub_key = cyng::parse_hex_string(pubKey);
+		if (r_pub_key.second) {
 
-			//
-			//	modify public key
-			//
-			auto const new_pub_key = cyng::value_cast<std::string>(dom[1]["data"].get("pubKey"), "");
-			auto const r_pub_key = cyng::parse_hex_string(new_pub_key);
-			if (r_pub_key.second) {
-
-				sml_gen.set_proc_parameter(r.first
-					, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_PUBLIC_KEY }
-					, user
-					, pwd
-					, r_pub_key.first);
-
-			}
-
-			//
-			//	modify AES key
-			//
-			auto const new_aes_key = cyng::value_cast<std::string>(dom[1]["data"].get("aesKey"), "");
-			auto const r_aes_key = cyng::parse_hex_string(new_aes_key);
-			if (r_aes_key.second) {
-
-				sml_gen.set_proc_parameter(r.first
-					, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_AES_KEY }
-					, user
-					, pwd
-					, r_aes_key.first);
-			}
-
-		}
-		else {
-
-			CYNG_LOG_ERROR(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> set meter root properties "
-				<< sml::from_server_id(server_id)
-				<< " has no parameters");
+			push_trx(sml_gen.set_proc_parameter(meter
+				, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_PUBLIC_KEY }
+				, data.get_user()
+				, data.get_pwd()
+				, r_pub_key.first), data);
 		}
 
+		//
+		//	modify AES key
+		//
+		//auto const new_aes_key = cyng::value_cast<std::string>(dom[1]["data"].get("aesKey"), "");
+		auto const r_aes_key = cyng::parse_hex_string(aesKey);
+		if (r_aes_key.second) {
+
+			push_trx(sml_gen.set_proc_parameter(meter
+				, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_AES_KEY }
+				, data.get_user()
+				, data.get_pwd()
+				, r_aes_key.first), data);
+		}
 	}
 
 	void gateway_proxy::execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
-		, cyng::buffer_t const& server_id
-		, std::string const& user
-		, std::string const& pwd
+		, ipt::proxy_data const& data
 		, std::uint8_t nr
 		, cyng::buffer_t const& meter)
 	{
-		sml_gen.set_proc_parameter(server_id
+		push_trx(sml_gen.set_proc_parameter(data.get_srv()
 			, { sml::OBIS_CODE_ACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFB, nr), sml::OBIS_CODE_SERVER_ID }
-			, user
-			, pwd
-			, meter);
+			, data.get_user()
+			, data.get_pwd()
+			, meter), data);
 	}
 
 	void gateway_proxy::execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
-		, cyng::buffer_t const& server_id
-		, std::string const& user
-		, std::string const& pwd, std::uint8_t nr
-		, cyng::buffer_t const& meter)
-	{
-		sml_gen.set_proc_parameter(server_id
-			, { sml::OBIS_CODE_DEACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, nr), sml::OBIS_CODE_SERVER_ID }
-			, user
-			, pwd
-			, meter);
-	}
-
-	void gateway_proxy::execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
-		, cyng::buffer_t const& server_id
-		, std::string const& user
-		, std::string const& pwd
+		, ipt::proxy_data const& data
 		, std::uint8_t nr
 		, cyng::buffer_t const& meter)
 	{
-		sml_gen.set_proc_parameter(server_id
+		push_trx(sml_gen.set_proc_parameter(data.get_srv()
+			, { sml::OBIS_CODE_DEACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, nr), sml::OBIS_CODE_SERVER_ID }
+			, data.get_user()
+			, data.get_pwd()
+			, meter), data);
+	}
+
+	void gateway_proxy::execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
+		, ipt::proxy_data const& data
+		, std::uint8_t nr
+		, cyng::buffer_t const& meter)
+	{
+		push_trx(sml_gen.set_proc_parameter(data.get_srv()
 			, { sml::OBIS_CODE_DELETE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFD, nr), sml::OBIS_CODE_SERVER_ID }
-			, user
-			, pwd
-			, meter);
+			, data.get_user()
+			, data.get_pwd()
+			, meter), data);
 	}
 
 	void gateway_proxy::stop(bool shutdown)
@@ -1141,6 +1266,32 @@ namespace node
 			<< base_.get_class_name()
 			<< "> stopped after "
 			<< cyng::to_str(uptime));
+	}
+
+	void gateway_proxy::push_trx(std::string trx, ipt::proxy_data const& data)
+	{
+		auto const r = output_map_.emplace(trx, data);
+		if (r.second) {
+			CYNG_LOG_DEBUG(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> store trx "
+				<< trx
+				<< " => "
+				<< data.get_msg_type());
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> store trx "
+				<< trx
+				<< " => "
+				<< data.get_msg_type()
+				<< " failed");
+		}
 	}
 
 	cyng::mac48 gateway_proxy::get_mac() const

@@ -45,7 +45,7 @@ namespace node
 			//
 			//	data from SML parser after receiving a 0x7F frame (short SML header)
 			//
-			vm.register_function("sml.get.list.response", 9, std::bind(&data::sml_get_list_response, this, std::placeholders::_1));
+			vm.register_function("sml.get.list.response", 4, std::bind(&data::sml_get_list_response, this, std::placeholders::_1));
 
 			//
 			//	query last data record
@@ -76,9 +76,7 @@ namespace node
 			//		("8181C78205FF":%(("scaler":0),("unit":0),("valTime":null),("value":1C661D023F438BB639D3D95AA580F63DF78F2EA4692709F3D40209C35E98CDBC25B95A7C3A813F55E13AA2DC61020FA2)))),
 			//		null,null]
 			//
-			//	* [uuid] pk (meta data)
 			//	* [string] trx
-			//	* [size] idx
 			//	* [buffer] client id (empty)
 			//	* [buffer] server id
 			//	* [buffer] OBIS code
@@ -406,7 +404,7 @@ namespace node
 			//
 			//	get number of encrypted bytes
 			//
-			auto counter = hs.get_block_counter() * 16u;
+			auto counter = static_cast<std::size_t>(hs.get_block_counter() * 16u);
 
 			//
 			//	remove trailing 0x2F

@@ -7,6 +7,7 @@
 
 #include <smf/sml/protocol/readout.h>
 #include <smf/sml/obis_io.h>
+#include <smf/sml/srv_id_io.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
@@ -17,19 +18,15 @@ namespace node
 {
 	namespace sml
 	{
-		readout::readout(boost::uuids::uuid pk)
-			: pk_(pk)
-			, idx_(0)
-			, trx_()
+		readout::readout()
+			: trx_()
 			, server_id_()
 			, client_id_()
 			, values_()
 		{}
 
-		void readout::reset(boost::uuids::uuid pk, std::size_t idx)
+		void readout::reset()
 		{
-			pk_ = pk;
-			idx_ = idx;
 			trx_.clear();
 			server_id_.clear();
 			client_id_.clear();
@@ -39,12 +36,6 @@ namespace node
 		readout& readout::set_trx(cyng::buffer_t const& buffer)
 		{
 			trx_ = cyng::io::to_ascii(buffer);
-			return *this;
-		}
-
-		readout& readout::set_index(std::size_t idx)
-		{
-			idx_ = idx;
 			return *this;
 		}
 
@@ -122,6 +113,18 @@ namespace node
 			cyng::buffer_t buffer;
 			buffer = cyng::value_cast(obj, buffer);
 			return std::string(buffer.begin(), buffer.end());
+		}
+
+		std::string readout::read_server_id(cyng::object obj)
+		{
+			server_id_ = cyng::value_cast(obj, server_id_);
+			return from_server_id(server_id_);
+		}
+
+		std::string readout::read_client_id(cyng::object obj)
+		{
+			client_id_ = cyng::value_cast(obj, client_id_);
+			return from_server_id(client_id_);
 		}
 
 	}	//	sml

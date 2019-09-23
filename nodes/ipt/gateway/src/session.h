@@ -9,7 +9,6 @@
 #define NODE_IPT_GATEWAY_SESSION_H
 
 #include <smf/sml/protocol/parser.h>
-#include <smf/sml/status.h>
 #include <smf/sml/protocol/reader.h>
 #include "core.h"
 #include <cyng/async/mux.h>
@@ -27,15 +26,10 @@ namespace node
 		public:
 			session(cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
-				, status& status_word
 				, cyng::store::db& config_db
 				, node::ipt::master_config_t const& cfg
 				, std::string const& account
 				, std::string const& pwd
-				, std::string manufacturer
-				, std::string model
-				, std::uint32_t serial
-				, cyng::mac48 mac
 				, bool accept_all);
 
 			session(session const&) = delete;
@@ -66,15 +60,10 @@ namespace node
 
 		cyng::object make_session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, status& status_word
 			, cyng::store::db& config_db
 			, node::ipt::master_config_t const& cfg
 			, std::string const& account
 			, std::string const& pwd
-			, std::string manufacturer
-			, std::string model
-			, std::uint32_t serial
-			, cyng::mac48 mac
 			, bool accept_all);
 	}
 }

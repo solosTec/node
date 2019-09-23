@@ -11,6 +11,7 @@
 #include "tasks/network.h"
 #include "tasks/virtual_meter.h"
 #include <smf/shared/db_meta.h>
+#include <smf/shared/db_cfg.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/obis_db.h>
@@ -21,6 +22,7 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/factory/set_factory.h>
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_buffer.h>
 #include <cyng/parser/mac_parser.h>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
@@ -48,7 +50,6 @@ namespace node
 	//
 	void join_network(cyng::async::mux&
 		, cyng::logging::log_ptr
-		, sml::status&
 		, cyng::store::db&
 		, boost::uuids::uuid tag
 		, ipt::master_config_t const& cfg_ipt
@@ -57,16 +58,12 @@ namespace node
 		, cyng::tuple_t const& cfg_virtual_meter
 		, std::string account
 		, std::string pwd
-		, std::string manufacturer
-		, std::string model
-		, std::uint32_t serial
-		, cyng::mac48
 		, bool accept_all
 		, std::map<int, std::string> gpio_list);
+
 	void init_config(cyng::logging::log_ptr logger
 		, cyng::store::db&
 		, boost::uuids::uuid
-		, cyng::mac48
 		, cyng::reader<cyng::object> const&);
 
 	controller::controller(unsigned int pool_size, std::string const& json_path, std::string node_name)
@@ -122,11 +119,11 @@ namespace node
 
 				//	hardware
 				, cyng::param_factory("hardware", cyng::tuple_factory(
-					cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF)
+					cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF - OBIS_DATA_MANUFACTURER)
 					cyng::param_factory("model", "virtual.gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
 					cyng::param_factory("serial", sn),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
-					cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF) MUC-LAN/DSL
-					cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ...)
+					cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF - OBIS_CODE_DEVICE_CLASS) "2D 2D 2D"
+					cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ..., 81 81 C7 82 04 FF - OBIS_CODE_SERVER_ID)
 				))
 
 				//	wireless M-Bus
@@ -206,7 +203,13 @@ namespace node
 					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str(), 9)	//	max. variation in seconds
 
 				))
-
+				, cyng::param_factory("mbus", cyng::tuple_factory(
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_RO_INTERVAL.to_str(), 3600),	//	readout interval in seconds
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_SEARCH_INTERVAL.to_str(), 0),	//	search interval in seconds
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_SEARCH_DEVICE.to_str(), true),	//	search device now and by restart
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_AUTO_ACTICATE.to_str(), false),	//	automatic activation of meters 
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_BITRATE.to_str(), 82)	//	used baud rates(bitmap)
+				))
 				, cyng::param_factory("ipt", cyng::vector_factory({
 					cyng::tuple_factory(
 						cyng::param_factory("host", "127.0.0.1"),
@@ -240,12 +243,6 @@ namespace node
 
 	bool controller::start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag)
 	{
-		//
-		//	generate even distributed integers
-		//	reconnect to master on different times
-		//
-		cyng::crypto::rnd_num<int> rng(10, 120);
-
 		//
 		//  control push data logging
 		//
@@ -291,50 +288,6 @@ namespace node
 		auto const config_types = cyng::vector_cast<std::string>(cfg.get("output"), "");
 
 		//
-		//	get hardware info
-		//
-		std::string const manufacturer = cyng::value_cast<std::string>(cfg["hardware"].get("manufacturer"), "solosTec");
-		std::string const model = cyng::value_cast<std::string>(cfg["hardware"].get("model"), "Gateway");
-
-		//
-		//	serial number = 32 bit unsigned
-		//
-		auto const serial = cyng::value_cast(cfg["hardware"].get("serial"), rng());
-
-		std::string const dev_class = cyng::value_cast<std::string>(cfg["hardware"].get("class"), "129-129:199.130.83*255");
-
-		//
-		//	05 + MAC = server ID
-		//
-		std::string rnd_mac_str;
-		{
-			using cyng::io::operator<<;
-			std::stringstream ss;
-			ss << cyng::generate_random_mac48();
-			ss >> rnd_mac_str;
-		}
-		auto const mac = cyng::value_cast<std::string>(cfg["hardware"].get("mac"), rnd_mac_str);
-
-		std::pair<cyng::mac48, bool > const r = cyng::parse_mac48(mac);
-
-
-		CYNG_LOG_INFO(logger, "manufacturer: " << manufacturer);
-		CYNG_LOG_INFO(logger, "model: " << model);
-		CYNG_LOG_INFO(logger, "dev_class: " << dev_class);
-		CYNG_LOG_INFO(logger, "serial: " << serial);
-		CYNG_LOG_INFO(logger, "mac: " << mac);
-		
-
-		/**
-		 * Global status word
-		 * 459266:dec == ‭70202‬:hex == ‭01110000001000000010‬:bin
-		 */
-		sml::status status_word;
-#ifdef _DEBUG
-		status_word.set_mbus_if_available(true);
-#endif
-
-		//
 		//	get IP-T configuration
 		//
 		cyng::vector_t vec;
@@ -363,7 +316,10 @@ namespace node
 		 * global data cache
 		 */
 		cyng::store::db config_db;
-		init_config(logger, config_db, tag, r.first, cfg);
+		init_config(logger
+			, config_db
+			, tag
+			, cfg);
 
 		//
 		//	connect to ipt master
@@ -371,7 +327,6 @@ namespace node
 		cyng::vector_t tmp;
 		join_network(mux
 			, logger
-			, status_word
 			, config_db
 			, tag
 			, cfg_ipt
@@ -380,10 +335,6 @@ namespace node
 			, cfg_virtual_meter
 			, cyng::value_cast<std::string>(cfg["server"].get("account"), "")
 			, cyng::value_cast<std::string>(cfg["server"].get("pwd"), "")
-			, manufacturer
-			, model
-			, serial
-			, r.first
 			, accept_all
 			, gpio_paths);
 
@@ -392,16 +343,11 @@ namespace node
 		//
 		server srv(mux
 			, logger
-			, status_word
 			, config_db
 			, tag
 			, cfg_ipt
 			, cyng::value_cast<std::string>(cfg["server"].get("account"), "")
 			, cyng::value_cast<std::string>(cfg["server"].get("pwd"), "")
-			, manufacturer
-			, model
-			, serial
-			, r.first
 			, accept_all);
 
 		//
@@ -430,7 +376,6 @@ namespace node
 
 	void join_network(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, sml::status& status
 		, cyng::store::db& config_db
 		, boost::uuids::uuid tag
 		, ipt::master_config_t const& cfg_ipt
@@ -439,10 +384,6 @@ namespace node
 		, cyng::tuple_t const& cfg_virtual_meter
 		, std::string account
 		, std::string pwd
-		, std::string manufacturer
-		, std::string model
-		, std::uint32_t serial
-		, cyng::mac48 mac
 		, bool accept_all
 		, std::map<int, std::string> gpio_list)
 	{
@@ -451,7 +392,6 @@ namespace node
 		cyng::async::start_task_delayed<ipt::network>(mux
 			, std::chrono::seconds(1)
 			, logger
-			, status
 			, config_db
 			, tag
 			, cfg_ipt
@@ -459,10 +399,6 @@ namespace node
 			, cfg_wired_lmn
 			, account
 			, pwd
-			, manufacturer
-			, model
-			, serial
-			, mac
 			, accept_all
 			, gpio_list);
 
@@ -505,47 +441,43 @@ namespace node
 					//
 					std::uint8_t nr{ 0 };
 
-					config_db.insert("data.collector"
-						, cyng::table::key_generator(r.first, ++nr)	//	key
-						, cyng::table::data_generator(sml::OBIS_PROFILE_1_MINUTE.to_buffer(), false, static_cast<std::uint16_t>(1024u), std::chrono::seconds(0))
-						, 1
-						, tag);
-					config_db.insert("data.collector"
-						, cyng::table::key_generator(r.first, ++nr)	//	key
-						, cyng::table::data_generator(sml::OBIS_PROFILE_15_MINUTE.to_buffer(), true, static_cast<std::uint16_t>(512u), std::chrono::seconds(0))
-						, 1
-						, tag);
-					config_db.insert("data.collector"
-						, cyng::table::key_generator(r.first, ++nr)	//	key
-						, cyng::table::data_generator(sml::OBIS_PROFILE_60_MINUTE.to_buffer(), true, static_cast<std::uint16_t>(256u), std::chrono::seconds(0))
-						, 1
-						, tag);
-					config_db.insert("data.collector"
-						, cyng::table::key_generator(r.first, ++nr)	//	key
-						, cyng::table::data_generator(sml::OBIS_PROFILE_24_HOUR.to_buffer(), true, static_cast<std::uint16_t>(128u), std::chrono::seconds(0))
-						, 1
-						, tag);
-					config_db.insert("data.collector"
-						, cyng::table::key_generator(r.first, ++nr)	//	key
-						, cyng::table::data_generator(sml::OBIS_PROFILE_LAST_2_HOURS.to_buffer(), false, static_cast<std::uint16_t>(32u), std::chrono::seconds(0))
-						, 1
-						, tag);
-					config_db.insert("data.collector"
-						, cyng::table::key_generator(r.first, ++nr)	//	key
-						, cyng::table::data_generator(sml::OBIS_PROFILE_LAST_WEEK.to_buffer(), false, static_cast<std::uint16_t>(32u), std::chrono::seconds(0))
-						, 1
-						, tag);
-					config_db.insert("data.collector"
-						, cyng::table::key_generator(r.first, ++nr)	//	key
-						, cyng::table::data_generator(sml::OBIS_PROFILE_1_MONTH.to_buffer(), false, static_cast<std::uint16_t>(12u), std::chrono::seconds(0))
-						, 1
-						, tag);
-					config_db.insert("data.collector"
-						, cyng::table::key_generator(r.first, ++nr)	//	key
-						, cyng::table::data_generator(sml::OBIS_PROFILE_1_YEAR.to_buffer(), false, static_cast<std::uint16_t>(2u), std::chrono::seconds(0))
-						, 1
-						, tag);
+					config_db.access([&](cyng::store::table* tbl) {
 
+
+						tbl->insert(cyng::table::key_generator(r.first, ++nr)	//	key
+							, cyng::table::data_generator(sml::OBIS_PROFILE_1_MINUTE.to_buffer(), false, static_cast<std::uint16_t>(1024u), std::chrono::seconds(0))
+							, 1
+							, tag);
+						tbl->insert(cyng::table::key_generator(r.first, ++nr)	//	key
+							, cyng::table::data_generator(sml::OBIS_PROFILE_15_MINUTE.to_buffer(), true, static_cast<std::uint16_t>(512u), std::chrono::seconds(0))
+							, 1
+							, tag);
+						tbl->insert(cyng::table::key_generator(r.first, ++nr)	//	key
+							, cyng::table::data_generator(sml::OBIS_PROFILE_60_MINUTE.to_buffer(), true, static_cast<std::uint16_t>(256u), std::chrono::seconds(0))
+							, 1
+							, tag);
+						tbl->insert(cyng::table::key_generator(r.first, ++nr)	//	key
+							, cyng::table::data_generator(sml::OBIS_PROFILE_24_HOUR.to_buffer(), true, static_cast<std::uint16_t>(128u), std::chrono::seconds(0))
+							, 1
+							, tag);
+						tbl->insert(cyng::table::key_generator(r.first, ++nr)	//	key
+							, cyng::table::data_generator(sml::OBIS_PROFILE_LAST_2_HOURS.to_buffer(), false, static_cast<std::uint16_t>(32u), std::chrono::seconds(0))
+							, 1
+							, tag);
+						tbl->insert(cyng::table::key_generator(r.first, ++nr)	//	key
+							, cyng::table::data_generator(sml::OBIS_PROFILE_LAST_WEEK.to_buffer(), false, static_cast<std::uint16_t>(32u), std::chrono::seconds(0))
+							, 1
+							, tag);
+						tbl->insert(cyng::table::key_generator(r.first, ++nr)	//	key
+							, cyng::table::data_generator(sml::OBIS_PROFILE_1_MONTH.to_buffer(), false, static_cast<std::uint16_t>(12u), std::chrono::seconds(0))
+							, 1
+							, tag);
+						tbl->insert(cyng::table::key_generator(r.first, ++nr)	//	key
+							, cyng::table::data_generator(sml::OBIS_PROFILE_1_YEAR.to_buffer(), false, static_cast<std::uint16_t>(2u), std::chrono::seconds(0))
+							, 1
+							, tag);
+
+					}, cyng::store::write_access("data.collector"));
 
 					//
 					//	start virtual meter
@@ -574,7 +506,6 @@ namespace node
 	void init_config(cyng::logging::log_ptr logger
 		, cyng::store::db& config
 		, boost::uuids::uuid tag
-		, cyng::mac48 mac
 		, cyng::reader<cyng::object> const& dom)
 	{
 		CYNG_LOG_TRACE(logger, "init configuration db");
@@ -602,105 +533,269 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table _Config");
 		}
 		else {
-			config.insert("_Config", cyng::table::key_generator("local.ep"), cyng::table::data_generator(boost::asio::ip::tcp::endpoint()), 1, tag);
-			config.insert("_Config", cyng::table::key_generator("remote.ep"), cyng::table::data_generator(boost::asio::ip::tcp::endpoint()), 1, tag);
+			config.access([&](cyng::store::table * tbl) {
 
-			config.insert("_Config", cyng::table::key_generator("gpio.46"), cyng::table::data_generator(std::size_t(cyng::async::NO_TASK)), 1, tag);
-			config.insert("_Config", cyng::table::key_generator("gpio.47"), cyng::table::data_generator(std::size_t(cyng::async::NO_TASK)), 1, tag);
-			config.insert("_Config", cyng::table::key_generator("gpio.50"), cyng::table::data_generator(std::size_t(cyng::async::NO_TASK)), 1, tag);
-			config.insert("_Config", cyng::table::key_generator("gpio.53"), cyng::table::data_generator(std::size_t(cyng::async::NO_TASK)), 1, tag);
+				insert_config(tbl, "local.ep", boost::asio::ip::tcp::endpoint(), tag);
+				insert_config(tbl, "remote.ep", boost::asio::ip::tcp::endpoint(), tag);
 
-			//
-			//	get if-1107 default configuration
-			//
-			auto const active = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str()), true);
-			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_ACTIVE.to_str() << " (OBIS_CODE_IF_1107_ACTIVE): " << (active ? "true" : "false"));
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_ACTIVE.to_str()), cyng::table::data_generator(active), 1, tag);
+				insert_config(tbl, "gpio.46", std::size_t(cyng::async::NO_TASK), tag);
+				insert_config(tbl, "gpio.47", std::size_t(cyng::async::NO_TASK), tag);
+				insert_config(tbl, "gpio.50", std::size_t(cyng::async::NO_TASK), tag);
+				insert_config(tbl, "gpio.53", std::size_t(cyng::async::NO_TASK), tag);
 
-			auto const loop_time = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str()), 60u);
-			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str() << " (OBIS_CODE_IF_1107_LOOP_TIME): " << loop_time);
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str()), cyng::table::data_generator(loop_time), 1, tag);
+				//
+				//	get hardware info
+				//
+				auto const manufacturer = cyng::value_cast<std::string>(dom["hardware"].get("manufacturer"), "solosTec");
+				insert_config(tbl, sml::OBIS_DATA_MANUFACTURER.to_str(), manufacturer, tag);
 
-			auto const retries = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_RETRIES.to_str()), 3u);
-			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_RETRIES.to_str() << " (OBIS_CODE_IF_1107_RETRIES): " << retries);
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_RETRIES.to_str()), cyng::table::data_generator(retries), 1, tag);
+				auto const model = cyng::value_cast<std::string>(dom["hardware"].get("model"), "Gateway");
+				insert_config(tbl, OBIS_CODE(81, 81, c7, 82, 0a, 01).to_str(), model, tag);
 
-			auto const min_timeout = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str()), 200u);
-			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str() << " (OBIS_CODE_IF_1107_MIN_TIMEOUT): " << min_timeout << " milliseconds");
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str()), cyng::table::data_generator(min_timeout), 1, tag);
+				//
+				//	generate even distributed integers
+				//	reconnect to master on different times
+				//
+				cyng::crypto::rnd_num<int> rng(10, 120);
 
-			auto const max_timeout = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str()), 5000u);
-			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str() << " (OBIS_CODE_IF_1107_MAX_TIMEOUT): " << max_timeout << " milliseconds");
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str()), cyng::table::data_generator(max_timeout), 1, tag);
+				//
+				//	serial number = 32 bit unsigned
+				//
+				auto const serial = cyng::value_cast(dom["hardware"].get("serial"), rng());
+				insert_config(tbl, OBIS_CODE(81, 81, c7, 82, 0a, 02).to_str(), serial, tag);
 
-			auto const max_data_rate = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str()), 10240u);
-			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str() << " (OBIS_CODE_IF_1107_MAX_DATA_RATE): " << max_data_rate);
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str()), cyng::table::data_generator(max_data_rate), 1, tag);
+				std::string const dev_class = cyng::value_cast<std::string>(dom["hardware"].get("class"), "129-129:199.130.83*255");
+				insert_config(tbl, sml::OBIS_CODE_DEVICE_CLASS.to_str(), dev_class, tag);
 
-			auto const rs485 = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_RS485.to_str()), true);
-			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_RS485.to_str() << " (OBIS_CODE_IF_1107_RS485): " << (rs485 ? "true" : "false"));
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_RS485.to_str()), cyng::table::data_generator(rs485), 1, tag);
+				//
+				//	05 + MAC = server ID
+				//
+				std::string rnd_mac_str;
+				{
+					using cyng::io::operator<<;
+					std::stringstream ss;
+					ss << cyng::generate_random_mac48();
+					ss >> rnd_mac_str;
+				}
+				auto const mac = cyng::value_cast<std::string>(dom["hardware"].get("mac"), rnd_mac_str);
 
-			auto const protocol_mode = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str()), 2u);
-			if (protocol_mode > 4) {
-				CYNG_LOG_WARNING(logger, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str() << " (OBIS_CODE_IF_1107_PROTOCOL_MODE out of range): " << protocol_mode);
-			}
-			else {
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str() << " (OBIS_CODE_IF_1107_PROTOCOL_MODE): " << protocol_mode << " - " << char('A' + protocol_mode));
-			}
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str()), cyng::table::data_generator(protocol_mode), 1, tag);
-
-			auto const auto_activation = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str()), true);
-			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str() << " (OBIS_CODE_IF_1107_AUTO_ACTIVATION): " << (auto_activation ? "true" : "false"));
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str()), cyng::table::data_generator(auto_activation), 1, tag);
-
-			auto const time_grid = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str()), 900u);
-			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_TIME_GRID.to_str() << " (OBIS_CODE_IF_1107_TIME_GRID): " << time_grid << " seconds, " << (time_grid / 60) << " minutes");
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str()), cyng::table::data_generator(time_grid), 1, tag);
-
-			auto const time_sync = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str()), 14400u);
-			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str() << " (OBIS_CODE_IF_1107_TIME_SYNC): " << time_sync << " seconds, " << (time_sync / 3600) << " h");
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str()), cyng::table::data_generator(time_sync), 1, tag);
-
-			auto const max_variation = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str()), 9u);
-			CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str() << " (OBIS_CODE_IF_1107_MAX_VARIATION): " << max_variation << " seconds");
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str()), cyng::table::data_generator(max_variation), 1, tag);
-
-			//
-			//	get wireless M-Bus default configuration
-			//
-// 			auto const radio_protocol = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_PROTOCOL.to_str()), static_cast<std::uint8_t>(1));
-			auto const radio_protocol = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_PROTOCOL.to_str()), static_cast<std::uint8_t>(mbus::MODE_S));
-			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_PROTOCOL.to_str() << " (OBIS_W_MBUS_PROTOCOL): " << +radio_protocol);
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_PROTOCOL.to_str()), cyng::table::data_generator(radio_protocol), 1, tag);
-
-			auto const s_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_MODE_S.to_str()), 30u);
-			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_MODE_S.to_str() << " (OBIS_W_MBUS_MODE_S): " << s_mode << " seconds");
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_MODE_S.to_str()), cyng::table::data_generator(s_mode), 1, tag);
-
-			auto const t_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_MODE_T.to_str()), 20u);
-			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_MODE_T.to_str() << " (OBIS_W_MBUS_MODE_T): " << t_mode << " seconds");
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_MODE_T.to_str()), cyng::table::data_generator(t_mode), 1, tag);
-
-			auto const reboot = cyng::numeric_cast<std::uint32_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_REBOOT.to_str()), 20u);
-			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_REBOOT.to_str() << " (OBIS_W_MBUS_REBOOT): " << reboot << " seconds, " << (reboot / 3600) << " h");
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_REBOOT.to_str()), cyng::table::data_generator(reboot), 1, tag);
-
-// 			auto const radio_power = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_POWER.to_str()), static_cast<std::uint8_t>(3));
-			auto const radio_power = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_POWER.to_str()), static_cast<std::uint8_t>(mbus::STRONG));
-			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_POWER.to_str() << " (OBIS_W_MBUS_POWER): " << +radio_power);
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_POWER.to_str()), cyng::table::data_generator(radio_power), 1, tag);
-
-			auto const install_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_INSTALL_MODE.to_str()), true);
-			CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_INSTALL_MODE.to_str() << " (OBIS_W_MBUS_INSTALL_MODE): " << (install_mode ? "active" : "inactive"));
-			config.insert("_Config", cyng::table::key_generator(sml::OBIS_W_MBUS_INSTALL_MODE.to_str()), cyng::table::data_generator(install_mode), 1, tag);
+				std::pair<cyng::mac48, bool > const r = cyng::parse_mac48(mac);
 
 
+				CYNG_LOG_INFO(logger, "mac: " << mac);
+				cyng::buffer_t srv_id = sml::to_gateway_srv_id(r.second ? r.first : cyng::generate_random_mac48());
+				insert_config(tbl, sml::OBIS_CODE_SERVER_ID.to_str(), srv_id, tag);
+
+				CYNG_LOG_INFO(logger, "manufacturer: " << manufacturer);
+				CYNG_LOG_INFO(logger, "model: " << model);
+				CYNG_LOG_INFO(logger, "device class: " << dev_class);
+				CYNG_LOG_INFO(logger, "serial: " << serial);
+				CYNG_LOG_INFO(logger, "server id: " << cyng::io::to_hex(srv_id));
+
+				/**
+				 * Global status word
+				 * 459266:dec == ‭70202‬:hex == ‭01110000001000000010‬:bin
+				 * OBIS_CLASS_OP_LOG_STATUS_WORD - 81 00 60 05 00 00
+				 */
+				sml::status_word_t word;
+				sml::status status_word(word);
+#ifdef _DEBUG
+				status_word.set_mbus_if_available(true);
+#endif
+				insert_config(tbl, sml::OBIS_CLASS_OP_LOG_STATUS_WORD.to_str(), word, tag);
+
+
+				//
+				//	get if-1107 default configuration
+				//
+				auto const active = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str()), true);
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_ACTIVE.to_str() << " (OBIS_CODE_IF_1107_ACTIVE): " << (active ? "true" : "false"));
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_ACTIVE.to_str(), active, tag);
+
+				auto const loop_time = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str()), 60u);
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str() << " (OBIS_CODE_IF_1107_LOOP_TIME): " << loop_time);
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str(), loop_time, tag);
+
+				auto const retries = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_RETRIES.to_str()), 3u);
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_RETRIES.to_str() << " (OBIS_CODE_IF_1107_RETRIES): " << retries);
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_RETRIES.to_str(), retries, tag);
+
+				auto const min_timeout = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str()), 200u);
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str() << " (OBIS_CODE_IF_1107_MIN_TIMEOUT): " << min_timeout << " milliseconds");
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str(), min_timeout, tag);
+
+				auto const max_timeout = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str()), 5000u);
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str() << " (OBIS_CODE_IF_1107_MAX_TIMEOUT): " << max_timeout << " milliseconds");
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str(), max_timeout, tag);
+
+				auto const max_data_rate = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str()), 10240u);
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str() << " (OBIS_CODE_IF_1107_MAX_DATA_RATE): " << max_data_rate);
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str(), max_data_rate, tag);
+
+				auto const rs485 = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_RS485.to_str()), true);
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_RS485.to_str() << " (OBIS_CODE_IF_1107_RS485): " << (rs485 ? "true" : "false"));
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_RS485.to_str(), rs485, tag);
+
+				auto const protocol_mode = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str()), 2u);
+				if (protocol_mode > 4) {
+					CYNG_LOG_WARNING(logger, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str() << " (OBIS_CODE_IF_1107_PROTOCOL_MODE out of range): " << protocol_mode);
+				}
+				else {
+					CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str() << " (OBIS_CODE_IF_1107_PROTOCOL_MODE): " << protocol_mode << " - " << char('A' + protocol_mode));
+				}
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str(), protocol_mode, tag);
+
+				auto const auto_activation = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str()), true);
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str() << " (OBIS_CODE_IF_1107_AUTO_ACTIVATION): " << (auto_activation ? "true" : "false"));
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str(), auto_activation, tag);
+
+				auto const time_grid = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str()), 900u);
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_TIME_GRID.to_str() << " (OBIS_CODE_IF_1107_TIME_GRID): " << time_grid << " seconds, " << (time_grid / 60) << " minutes");
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_TIME_GRID.to_str(), time_grid, tag);
+
+				auto const time_sync = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str()), 14400u);
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str() << " (OBIS_CODE_IF_1107_TIME_SYNC): " << time_sync << " seconds, " << (time_sync / 3600) << " h");
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str(), time_sync, tag);
+
+				auto const max_variation = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str()), 9u);
+				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str() << " (OBIS_CODE_IF_1107_MAX_VARIATION): " << max_variation << " seconds");
+				insert_config(tbl, sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str(), max_variation, tag);
+
+				//
+				//	get wireless M-Bus default configuration
+				//
+	// 			auto const radio_protocol = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_PROTOCOL.to_str()), static_cast<std::uint8_t>(1));
+				auto const radio_protocol = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_PROTOCOL.to_str()), static_cast<std::uint8_t>(mbus::MODE_S));
+				CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_PROTOCOL.to_str() << " (OBIS_W_MBUS_PROTOCOL): " << +radio_protocol);
+				insert_config(tbl, sml::OBIS_W_MBUS_PROTOCOL.to_str(), radio_protocol, tag);
+
+				auto const s_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_MODE_S.to_str()), 30u);
+				CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_MODE_S.to_str() << " (OBIS_W_MBUS_MODE_S): " << s_mode << " seconds");
+				insert_config(tbl, sml::OBIS_W_MBUS_MODE_S.to_str(), s_mode, tag);
+
+				auto const t_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_MODE_T.to_str()), 20u);
+				CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_MODE_T.to_str() << " (OBIS_W_MBUS_MODE_T): " << t_mode << " seconds");
+				insert_config(tbl, sml::OBIS_W_MBUS_MODE_T.to_str(), t_mode, tag);
+
+				auto const reboot = cyng::numeric_cast<std::uint32_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_REBOOT.to_str()), 20u);
+				CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_REBOOT.to_str() << " (OBIS_W_MBUS_REBOOT): " << reboot << " seconds, " << (reboot / 3600) << " h");
+				insert_config(tbl, sml::OBIS_W_MBUS_REBOOT.to_str(), reboot, tag);
+
+				// 			auto const radio_power = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_POWER.to_str()), static_cast<std::uint8_t>(3));
+				auto const radio_power = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_POWER.to_str()), static_cast<std::uint8_t>(mbus::STRONG));
+				CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_POWER.to_str() << " (OBIS_W_MBUS_POWER): " << +radio_power);
+				insert_config(tbl, sml::OBIS_W_MBUS_POWER.to_str(), radio_power, tag);
+
+				auto const install_mode = cyng::numeric_cast<std::uint8_t>(dom["wired-LMN"].get(sml::OBIS_W_MBUS_INSTALL_MODE.to_str()), true);
+				CYNG_LOG_INFO(logger, sml::OBIS_W_MBUS_INSTALL_MODE.to_str() << " (OBIS_W_MBUS_INSTALL_MODE): " << (install_mode ? "active" : "inactive"));
+				insert_config(tbl, sml::OBIS_W_MBUS_INSTALL_MODE.to_str(), install_mode, tag);
+
+
+				//
+				//	get (wired) M-Bus default configuration
+				//
+				auto const ro_interval = cyng::numeric_cast<std::uint32_t>(dom["mbus"].get(sml::OBIS_CLASS_MBUS_RO_INTERVAL.to_str()), 3600);
+				insert_config(tbl, sml::OBIS_CLASS_MBUS_RO_INTERVAL.to_str(), ro_interval, tag);
+
+				auto const search_interval = cyng::numeric_cast<std::uint32_t>(dom["mbus"].get(sml::OBIS_CLASS_MBUS_SEARCH_INTERVAL.to_str()), 0);
+				insert_config(tbl, sml::OBIS_CLASS_MBUS_SEARCH_INTERVAL.to_str(), search_interval, tag);
+
+				auto const mbus_search_device = cyng::value_cast(dom["mbus"].get(sml::OBIS_CLASS_MBUS_SEARCH_DEVICE.to_str()), true);
+				insert_config(tbl, sml::OBIS_CLASS_MBUS_SEARCH_DEVICE.to_str(), mbus_search_device, tag);
+
+				auto const mbus_auto_activation = cyng::value_cast(dom["mbus"].get(sml::OBIS_CLASS_MBUS_AUTO_ACTICATE.to_str()), true);
+				insert_config(tbl, sml::OBIS_CLASS_MBUS_AUTO_ACTICATE.to_str(), mbus_auto_activation, tag);
+
+				auto const mbus_baud_rate = cyng::numeric_cast<std::uint32_t>(dom["mbus"].get(sml::OBIS_CLASS_MBUS_BITRATE.to_str()), 0);
+				insert_config(tbl, sml::OBIS_CLASS_MBUS_BITRATE.to_str(), mbus_baud_rate, tag);
+
+
+			}, cyng::store::write_access("_Config"));
 		}
 
 		if (!create_table(config, "readout"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table readout");
+		}
+
+		//
+		//	create load profiles
+		//
+		if (!create_table(config, "profile.8181C78610FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table profile.8181C78610FF");
+		}
+		if (!create_table(config, "profile.8181C78611FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table profile.8181C78611FF");
+		}
+		if (!create_table(config, "profile.8181C78612FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table profile.8181C78612FF");
+		}
+		if (!create_table(config, "profile.8181C78613FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table profile.8181C78613FF");
+		}
+		if (!create_table(config, "profile.8181C78614FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table profile.8181C78614FF");
+		}
+		if (!create_table(config, "profile.8181C78615FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table profile.8181C78615FF");
+		}
+		if (!create_table(config, "profile.8181C78616FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table profile.8181C78616FF");
+		}
+		if (!create_table(config, "profile.8181C78617FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table profile.8181C78617FF");
+		}
+		if (!create_table(config, "profile.8181C78618FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table profile.8181C78618FF");
+		}
+
+		//
+		//	create data storage
+		//
+		if (!create_table(config, "storage.8181C78610FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table storage.8181C78610FF");
+		}
+		if (!create_table(config, "storage.8181C78611FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table storage.8181C78611FF");
+		}
+		if (!create_table(config, "storage.8181C78612FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table storage.8181C78612FF");
+		}
+		if (!create_table(config, "storage.8181C78613FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table storage.8181C78613FF");
+		}
+		if (!create_table(config, "storage.8181C78614FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table storage.8181C78614FF");
+		}
+		if (!create_table(config, "storage.8181C78615FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table storage.8181C78615FF");
+		}
+		if (!create_table(config, "storage.8181C78616FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table storage.8181C78616FF");
+		}
+		if (!create_table(config, "storage.8181C78617FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table storage.8181C78617FF");
+		}
+		if (!create_table(config, "storage.8181C78618FF"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table storage.8181C78618FF");
 		}
 
 		if (!create_table(config, "data.collector"))

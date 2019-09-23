@@ -9,7 +9,6 @@
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/srv_id_io.h>
-//#include <smf/sml/units.h>
 #include <smf/sml/scaler.h>
 #include <smf/mbus/units.h>
 
@@ -39,8 +38,7 @@ namespace node
 			, source_(0)
 			, channel_(0)
 			, target_()
-			, rgn_()
-			, ro_(rgn_())
+			, ro_()
 			, ofstream_()
 		{
 			reset();
@@ -60,8 +58,7 @@ namespace node
 			, source_(source)
 			, channel_(channel)
 			, target_(target)
-			, rgn_()
-			, ro_(rgn_())
+			, ro_()
 			, ofstream_()
 		{
 			reset();
@@ -73,7 +70,7 @@ namespace node
 
 		void csv_exporter::reset()
 		{
-			ro_.reset(rgn_(), 0);
+			ro_.reset();
 		}
 
 		void csv_exporter::write_header()
@@ -84,20 +81,15 @@ namespace node
 				;
 		}
 
-		void csv_exporter::write(cyng::tuple_t const& msg, std::size_t idx)
+		void csv_exporter::write(cyng::tuple_t const& msg)
 		{
-			read_msg(msg.begin(), msg.end(), idx);
+			read_msg(msg.begin(), msg.end());
 		}
 
-		void csv_exporter::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end, std::size_t idx)
+		void csv_exporter::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
-
-			//
-			//	reset readout context
-			//
-			ro_.set_index(idx);
 
 			//
 			//	(1) - transaction id
@@ -137,7 +129,6 @@ namespace node
 		void csv_exporter::read_body(cyng::object type, cyng::object body)
 		{
 			auto code = cyng::value_cast<std::uint16_t>(type, 0);
-			//node.append_attribute("type").set_value(messages::name(code));
 
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(body, tpl);
@@ -505,8 +496,8 @@ namespace node
 
 
 			ofstream_
-				<< ro_.pk_
-				<< ";"
+				//<< ro_.pk_
+				//<< ";"
 				<< ro_.trx_
 				<< ";"
 				<< code

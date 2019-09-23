@@ -47,7 +47,7 @@ namespace node
 			/**
 			 * read incoming input
 			 */
-			void read(cyng::tuple_t const&, std::size_t idx);
+			void read(cyng::tuple_t const&);
 
 			/**
 			 * Write XML file
@@ -64,7 +64,7 @@ namespace node
 			/**
 			 * read SML message.
 			 */
-			void read_msg(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator, std::size_t idx);
+			void read_msg(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_body(pugi::xml_node, cyng::object, cyng::object);
 			void read_public_open_request(pugi::xml_node, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_public_open_response(pugi::xml_node, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);

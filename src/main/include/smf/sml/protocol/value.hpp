@@ -41,14 +41,18 @@ namespace node
 
 			/**
 			 * Catch all <T&>  
+			 * make a copy => && rvalue
 			 */
 			template<typename T>
 			struct factory_policy<T&>
 			{
 				using factory = factory_policy<T>;
-				static cyng::tuple_t create(T v)
+				static cyng::tuple_t create(T& v)
 				{
-					return factory::create(v);
+					//
+					//	make a copy => && rvalue
+					//
+					return factory::create(T(v));
 				}
 			};
 

@@ -39,18 +39,31 @@ namespace node
 		std::ostream& to_hex(std::ostream&, obis const&);
 
 		/**
-		 * The OBIS codes are separated by an arrow (=>).
+		 * Try to convert a textual OBIS representation into an valid
+		 * OBIS code. Accepts decimal and hexadescimal representations.
+		 * Returns a NULL OBIS code if conversion failed.
+		 */
+		obis to_obis(std::string const&);
+
+		/**
+		 * The OBIS codes are separated by a single SPACE.
 		 *
 		 * @return OBIS code path:
-		 * xx xx xx xx xx xx => xx xx xx xx xx xx
+		 * xx xx xx xx xx xx  xx xx xx xx xx xx
+		 */
+		std::ostream& to_hex(std::ostream&, obis_path const&);
+
+		/**
+		 * Convert OBIS codes into hexadescimal representation
+		 * separated by a single SPACE.
 		 */
 		std::string to_hex(obis_path const&);
 
 		/**
-		 * Try to convert a textual OBIS representation into an valid
-		 * OBIS code.
+		 * Try to convert a textual OBIS path representation into an valid
+		 * obis_path.
 		 */
-		obis to_obis(std::string const&);
+		obis_path to_obis_path(std::string const&);
 
 	}	//	sml
 }	//	node

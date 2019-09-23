@@ -40,15 +40,10 @@ namespace node
 				std::size_t				//	[11] queue size
 			);
 
-			/** 
-			 * @return a vector containing all affected sections
-			 */
-			//std::vector<std::string> get_section_names() const;
-
 			/**
-			 * Walks over parameter vector and build a parameter map
+			 * Copy constructor
 			 */
-			//cyng::vector_t get_params(std::string const& section) const;
+			proxy_data(proxy_data const&);
 
 			std::string const& get_msg_type() const;
 
@@ -61,9 +56,22 @@ namespace node
 			std::string const& get_user() const;
 			std::string const& get_pwd() const;
 			boost::uuids::uuid get_tag_ident() const;
+
+			/**
+			 * @return source session cluster tag
+			 */
 			boost::uuids::uuid get_tag_source() const;
+
+			/**
+			 * @return origin (web-socket) tag
+			 */
 			boost::uuids::uuid get_tag_origin() const;
+
+			/**
+			 * @return cluster message sequence
+			 */
 			std::size_t get_sequence() const;
+
 			cyng::vector_t get_key_gw() const;
 
 			cyng::tuple_t const& get_params() const;
@@ -73,23 +81,13 @@ namespace node
 			 */
 			node::sml::obis get_root() const;
 
-			/**
-			 * @return true if data not in processing state
-			 */
-			bool is_waiting() const;
-
-			/**
-			 * transit to next state
-			 */
-			void next();
-
 		private:
 			boost::uuids::uuid const tag_;		//	ident tag (target)
 			boost::uuids::uuid const source_;	//	source tag
 			std::uint64_t const seq_;			//	cluster seq
 			boost::uuids::uuid const origin_;	//	ws tag (origin)
 
-			std::string const msg_type_;			//	SML message type
+			std::string const msg_type_;		//	SML message type
 			cyng::buffer_t code_;				//	OBIS root code
 			cyng::vector_t const gw_;			//	TGateway/TDevice PK
 			cyng::tuple_t const params_;		//	parameters (optional)
@@ -98,10 +96,6 @@ namespace node
 			std::string const name_;			//	name
 			std::string const pwd_;				//	pwd
 
-			enum {
-				STATE_PROCESSING_,
-				STATE_WAITING_,
-			} state_;
 		};
 
 		/**

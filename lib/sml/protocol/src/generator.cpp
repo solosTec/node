@@ -61,7 +61,7 @@ namespace node
 			return ss.str();
 		}
 
-		std::size_t generator::append_msg(cyng::tuple_t&& msg)
+		std::size_t generator::append(cyng::tuple_t&& msg)
 		{
 #ifdef SMF_IO_DEBUG
 			CYNG_LOG_TRACE(logger_, "msg: " << cyng::io::to_str(msg));
@@ -86,13 +86,14 @@ namespace node
 			, trx_()
 		{}
 
-		std::size_t req_generator::public_open(cyng::mac48 client_id
+		std::string req_generator::public_open(cyng::mac48 client_id
 			, cyng::buffer_t const& server_id
 			, std::string const& name
 			, std::string const& pwd)
 		{
 			BOOST_ASSERT_MSG(msg_.empty(), "pending SML data");
-			return append_msg(message(cyng::make_object(*trx_)	//	trx
+			auto const trx = *trx_;
+			append(message(cyng::make_object(trx)	//	trx
 				, group_no_++	//	group
 				, 0 // abort code
 				, BODY_OPEN_REQUEST
@@ -109,12 +110,15 @@ namespace node
 					, cyng::make_object()	// sml-Version 
 				)
 			));
+
+			return trx;
 		}
 
-		std::size_t req_generator::public_close()
+		std::string req_generator::public_close()
 		{
 			++trx_;
-			return append_msg(message(cyng::make_object(*trx_)
+			auto const trx = *trx_;
+			append(message(cyng::make_object(trx)
 				, 0	//	group is 0 for CLOSE REQUEST
 				, 0 //	abort code
 				, BODY_CLOSE_REQUEST
@@ -125,6 +129,8 @@ namespace node
 				, close_response(cyng::make_object()
 				)
 			));
+
+			return trx;
 		}
 
 		std::size_t req_generator::set_proc_parameter_restart(cyng::buffer_t const& server_id
@@ -132,7 +138,7 @@ namespace node
 			, std::string const& password)
 		{
 			++trx_;
-			return append_msg(message(cyng::make_object(*trx_)
+			return append(message(cyng::make_object(*trx_)
 				, group_no_++	//	group
 				, 0 //	abort code
 				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600
@@ -149,7 +155,7 @@ namespace node
 			);
 		}
 
-		std::size_t req_generator::set_proc_parameter_ipt_host(cyng::buffer_t const& server_id
+		std::string req_generator::set_proc_parameter_ipt_host(cyng::buffer_t const& server_id
 			, std::string const& username
 			, std::string const& password
 			, std::uint8_t idx
@@ -162,7 +168,7 @@ namespace node
 				, address);
 		}
 
-		std::size_t req_generator::set_proc_parameter_ipt_port_local(cyng::buffer_t const& server_id
+		std::string req_generator::set_proc_parameter_ipt_port_local(cyng::buffer_t const& server_id
 			, std::string const& username
 			, std::string const& password
 			, std::uint8_t idx
@@ -175,7 +181,7 @@ namespace node
 				, port);
 		}
 
-		std::size_t req_generator::set_proc_parameter_ipt_port_remote(cyng::buffer_t const& server_id
+		std::string req_generator::set_proc_parameter_ipt_port_remote(cyng::buffer_t const& server_id
 			, std::string const& username
 			, std::string const& password
 			, std::uint8_t idx
@@ -188,7 +194,7 @@ namespace node
 				, port);
 		}
 
-		std::size_t req_generator::set_proc_parameter_ipt_user(cyng::buffer_t const& server_id
+		std::string req_generator::set_proc_parameter_ipt_user(cyng::buffer_t const& server_id
 			, std::string const& username
 			, std::string const& password
 			, std::uint8_t idx
@@ -201,7 +207,7 @@ namespace node
 				, user);
 		}
 
-		std::size_t req_generator::set_proc_parameter_ipt_pwd(cyng::buffer_t const& server_id
+		std::string req_generator::set_proc_parameter_ipt_pwd(cyng::buffer_t const& server_id
 			, std::string const& username
 			, std::string const& password
 			, std::uint8_t idx
@@ -214,11 +220,13 @@ namespace node
 				, pwd);
 		}
 
-		std::size_t req_generator::set_proc_parameter_wmbus_protocol(cyng::buffer_t const& server_id
+		std::string req_generator::set_proc_parameter_wmbus_protocol(cyng::buffer_t const& server_id
 			, std::string const& username
 			, std::string const& password
 			, std::uint8_t val)
 		{
+			BOOST_ASSERT_MSG(val < 4, "wireless M-Bus protocol type out of range");
+
 			return set_proc_parameter(server_id
 				, obis_path{ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }
 				, username
@@ -226,13 +234,14 @@ namespace node
 				, val);
 		}
 
-		std::size_t req_generator::get_proc_parameter(cyng::buffer_t const& server_id
+		std::string req_generator::get_proc_parameter(cyng::buffer_t const& server_id
 			, obis code
 			, std::string const& username
 			, std::string const& password)
 		{
 			++trx_;
-			return append_msg(message(cyng::make_object(*trx_)
+			auto const trx = *trx_;
+			append(message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
@@ -246,16 +255,18 @@ namespace node
 					, code)
 				)
 			);
+			return trx;
 		}
 
-		std::size_t req_generator::get_list(cyng::buffer_t const& client_id
+		std::string req_generator::get_list(cyng::buffer_t const& client_id
 			, cyng::buffer_t const& server_id
 			, std::string const& username
 			, std::string const& password
 			, obis code)
 		{
 			++trx_;
-			return append_msg(message(cyng::make_object(*trx_)
+			auto const trx = *trx_;
+			append(message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
 				, BODY_GET_LIST_REQUEST	//	0x700
@@ -270,9 +281,10 @@ namespace node
 					, code)
 				)
 			);
+			return trx;
 		}
 
-		std::size_t req_generator::get_list_last_data_record(cyng::buffer_t const& client_id
+		std::string req_generator::get_list_last_data_record(cyng::buffer_t const& client_id
 			, cyng::buffer_t const& server_id
 			, std::string const& username
 			, std::string const& password)
@@ -292,7 +304,7 @@ namespace node
 		{
 			BOOST_ASSERT_MSG(msg_.empty(), "pending SML data");
 
-			return append_msg(message(trx	//	trx
+			return append(message(trx	//	trx
 				, group_no_++	//	group
 				, 0 // abort code
 				, BODY_OPEN_RESPONSE
@@ -312,7 +324,7 @@ namespace node
 
 		std::size_t res_generator::public_close(cyng::object trx)
 		{
-			return append_msg(message(trx
+			return append(message(trx
 				, 0	//	group is 0 for CLOSE RESPONSE
 				, 0 //	abort code
 				, BODY_CLOSE_RESPONSE
@@ -325,9 +337,16 @@ namespace node
 			));
 		}
 
-		std::size_t res_generator::empty(cyng::object trx, cyng::object server_id, obis path)
+		std::size_t res_generator::empty(std::string trx, cyng::buffer_t server_id, obis root)
 		{
-			return append_msg(message(trx	//	trx
+			return append(empty_get_proc_param_response(trx, server_id, root));
+		}
+
+		cyng::tuple_t res_generator::empty_get_proc_param_response(std::string trx
+			, cyng::buffer_t server_id
+			, obis root)
+		{
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
@@ -336,90 +355,37 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(server_id
+					, root	//	root entry
+					, child_list_tree(root, {})));
+		}
+
+		cyng::tuple_t res_generator::empty_get_profile_list_response(std::string trx
+			, cyng::buffer_t client_id
+			, obis path
+			, std::chrono::system_clock::time_point act_time
+			, std::uint32_t reg_period
+			, std::chrono::system_clock::time_point val_time
+			, std::uint64_t status)
+		{
+			return message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROFILE_LIST_RESPONSE	//	0x0401
+
+				//
+				//	generate get process parameter response
+				//
+				, get_profile_list_response(client_id
+					, act_time
+					, reg_period
 					, path	//	path entry
-					, parameter_tree(path, empty_tree(path)))));
+					, val_time
+					, status
+					, cyng::tuple_t{}));
 		}
 
-		std::size_t res_generator::get_proc_parameter_status_word(cyng::object trx
-			, cyng::object server_id
-			, std::uint32_t status)
-		{
-			//	sets the following flags:
-			//	0x010070202 - 100000000000001110000001000000010
-			//	fataler Fehler              : false
-			//	am Funknetz angemeldet      : false
-			//	Endkundenschnittstelle      : true
-			//	Betriebsbereischaft erreicht: true
-			//	am IP-T Server angemeldet   : true
-			//	Erweiterungsschnittstelle   : true
-			//	DHCP Parameter erfasst      : true
-			//	Out of Memory erkannt       : false
-			//	Wireless M-Bus Schnittst.   : true
-			//	Ethernet-Link vorhanden     : true
-			//	Zeitbasis unsicher          : rot
-			//	PLC Schnittstelle           : false
-
-			//	0x000070202 - ‭0111 0000 0010 0000 0010‬
-			//	fataler Fehler              : false
-			//	am Funknetz angemeldet      : false
-			//	Endkundenschnittstelle      : true
-			//	Betriebsbereischaft erreicht: true
-			//	am IP-T Server angemeldet   : true
-			//	Erweiterungsschnittstelle   : true
-			//	DHCP Parameter erfasst      : true
-			//	Out of Memory erkannt       : false
-			//	Wireless M-Bus Schnittst.   : true
-			//	Ethernet-Link vorhanden     : true
-			//	Zeitbasis unsicher          : false
-			//	PLC Schnittstelle           : false
-
-			//	see also http://www.sagemcom.com/fileadmin/user_upload/Energy/Dr.Neuhaus/Support/ZDUE-MUC/Doc_communs/ZDUE-MUC_Anwenderhandbuch_V2_5.pdf
-			//	chapter Globales Statuswort
-
-			//	bit meaning
-			//	0	always 0
-			//	1	always 1
-			//	2-7	always 0
-			//	8	1 if fatal error was detected
-			//	9	1 if restart was triggered by watchdog reset
-			//	10	0 if IP address is available (DHCP)
-			//	11	0 if ethernet link is available
-			//	12	always 0 (authorized on WAN)
-			//	13	0 if authorized on IP-T server
-			//	14	1 in case of out of memory
-			//	15	always 0
-			//	16	1 if Service interface is available (Kundenschnittstelle)
-			//	17	1 if extension interface is available (Erweiterungs-Schnittstelle)
-			//	18	1 if Wireless M-Bus interface is available
-			//	19	1 if PLC is available
-			//	20-31	always 0
-			//	32	1 if time base is unsure
-
-			//	32.. 28.. 24.. 20.. 16.. 12.. 8..  4..
-			//	‭0001 0000 0000 0111 0000 0010 0000 0010‬ = 0x010070202
-
-			//	81 00 60 05 00 00 = OBIS_CLASS_OP_LOG_STATUS_WORD
-
-			//auto stat = cyng::swap_num(459266);
-			//std::uint32_t stat = 459266;
-
-
-			return append_msg(message(trx	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(server_id
-					, OBIS_CLASS_OP_LOG_STATUS_WORD	//	path entry
-					, parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(status)))));
-
-		}
-
-		std::size_t res_generator::get_proc_parameter_device_id(cyng::object trx
-			, cyng::object server_id
+		std::size_t res_generator::get_proc_parameter_device_id(std::string trx
+			, cyng::buffer_t server_id
 			, std::string const& manufacturer
 			, cyng::buffer_t const& server_id2
 			, std::string const& model_code
@@ -438,7 +404,7 @@ namespace node
 			
 			const auto os_name = cyng::sys::get_os_name();
 
-			return append_msg(message(trx	//	trx
+			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
@@ -490,8 +456,8 @@ namespace node
 
 		}
 
-		std::size_t res_generator::get_proc_mem_usage(cyng::object trx
-			, cyng::object server_id
+		std::size_t res_generator::get_proc_mem_usage(std::string trx
+			, cyng::buffer_t server_id
 			, std::uint8_t mirror
 			, std::uint8_t tmp)
 		{
@@ -524,7 +490,7 @@ namespace node
 			//  631AA8                                          crc16: 6824
 			//  00                                              endOfSmlMsg: 00 
 
-			return append_msg(message(trx	//	trx
+			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
@@ -543,12 +509,12 @@ namespace node
 
 						parameter_tree(OBIS_CODE(00, 80, 80, 00, 11, FF), make_value(mirror)),	//	mirror
 						parameter_tree(OBIS_CODE(00, 80, 80, 00, 12, FF), make_value(tmp))	// tmp
-			}))));
+				}))));
 
 		}
 
-		std::size_t res_generator::get_proc_device_time(cyng::object trx
-			, cyng::object server_id
+		std::size_t res_generator::get_proc_device_time(std::string trx
+			, cyng::buffer_t server_id
 			, std::chrono::system_clock::time_point now
 			, std::int32_t tz
 			, bool sync_active)
@@ -599,7 +565,7 @@ namespace node
 			//  633752                                          crc16: 14162
 			//  00                                              endOfSmlMsg: 00 
 
-			return append_msg(message(trx	//	trx
+			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
@@ -623,648 +589,8 @@ namespace node
 			}))));
 		}
 
-		std::size_t res_generator::get_proc_active_devices(cyng::object trx
-			, cyng::object server_id
-			, const cyng::store::table* tbl)
-		{
-			//	1.list: 81, 81, 11, 06, 01, FF
-			//	2.list: 81, 81, 11, 06, 02, FF
-			//	3.list: 81, 81, 11, 06, 03, FF
-			cyng::tuple_t list;	// list of lists
-			cyng::tuple_t tpl;	// current list
-			
-			const cyng::buffer_t tmp;
-			tbl->loop([&](cyng::table::record const& rec)->bool {
-
-				if (cyng::value_cast(rec["active"], false)) {
-
-					tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x11, 0x06, 0x01, tpl.size() + 1), {
-						parameter_tree(OBIS_CODE(81, 81, C7, 82, 04, FF), make_value(cyng::value_cast(rec["serverID"], tmp))),
-						parameter_tree(OBIS_CODE(81, 81, C7, 82, 02, FF), make_value(cyng::value_cast<std::string>(rec["class"], ""))),
-						//	timestamp (01 00 00 09 0B 00 )
-						parameter_tree(OBIS_CURRENT_UTC, make_value(cyng::value_cast(rec["lastSeen"], std::chrono::system_clock::now())))
-					})));
-
-					//
-					//	start new list
-					//
-					if (tpl.size() == 0xFE)
-					{
-						list.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x11, 0x06, list.size() + 1, 0xFF), tpl)));
-						tpl.clear();
-					}
-					BOOST_ASSERT_MSG(list.size() < 0xFA, "active device list to large");
-				}
-
-				//continue
-				return true;
-			});
-
-			//
-			//	append last pending list
-			//
-			list.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x11, 0x06, list.size() + 1, 0xFF), tpl)));
-
-
-			return append_msg(message(trx	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(server_id	//	server id
-					, OBIS_CODE_ROOT_ACTIVE_DEVICES		//	path entry
-
-					//
-					//	generate get process parameter response
-					//
-					, child_list_tree(OBIS_CODE_ROOT_ACTIVE_DEVICES, list)
-			)));
-		}
-
-		std::size_t res_generator::get_proc_visible_devices(cyng::object trx
-			, cyng::object server_id
-			, const cyng::store::table* tbl)
-		{
-
-			BOOST_ASSERT(tbl != nullptr);
-			BOOST_ASSERT(tbl->meta().get_name() == "mbus-devices");
-
-			//	1. list: 81, 81, 10, 06, 01, FF
-			//	2. list: 81, 81, 10, 06, 02, FF
-			//	3. list: 81, 81, 10, 06, 03, FF
-			cyng::tuple_t list;	// list of lists
-			cyng::tuple_t tpl;	// current list
-
-			const cyng::buffer_t tmp;
-			tbl->loop([&](cyng::table::record const& rec)->bool {
-
-
-				tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x10, 0x06, 0x01, tpl.size() + 1), {
-					parameter_tree(OBIS_CODE(81, 81, C7, 82, 04, FF), make_value(cyng::value_cast(rec["serverID"], tmp))),
-					parameter_tree(OBIS_CODE(81, 81, C7, 82, 02, FF), make_value(cyng::value_cast<std::string>(rec["class"], ""))),
-					//	timestamp (01 00 00 09 0B 00 )
-					parameter_tree(OBIS_CURRENT_UTC, make_value(cyng::value_cast(rec["lastSeen"], std::chrono::system_clock::now())))
-				})));
-
-				//
-				//	start new list
-				//
-				if (tpl.size() == 0xFE)
-				{
-					list.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x10, 0x06, list.size() + 1, 0xFF), tpl)));
-					tpl.clear();
-				}
-				BOOST_ASSERT_MSG(list.size() < 0xFA, "visible device list to large");
-				return true;	//	continue
-			});
-
-			//
-			//	append last pending list
-			//
-			list.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0x10, 0x06, list.size() + 1, 0xFF), tpl)));
-
-
-			return append_msg(message(trx	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(server_id	//	server id
-					, OBIS_CODE_ROOT_VISIBLE_DEVICES		//	path entry
-
-					//
-					//	generate get process parameter response
-					//
-					, child_list_tree(OBIS_CODE_ROOT_VISIBLE_DEVICES, list)
-				)));
-		}
-
-		std::size_t res_generator::get_proc_sensor_property(cyng::object trx
-			, cyng::object server_id
-			, const cyng::table::record& rec)
-		{
-			//	ServerId: 05 00 15 3B 02 29 7E 
-			//	ServerId: 01 E6 1E 13 09 00 16 3C 07 
-			//	81 81 C7 86 00 FF                Not set
-			//	   81 81 C7 82 04 FF             _______<_ (01 E6 1E 13 09 00 16 3C 07 )
-			//	   81 81 C7 82 02 FF              ()
-			//	   81 81 C7 82 03 FF             GWF (47 57 46 )
-			//	   81 00 60 05 00 00             _ (00 )
-			//	   81 81 C7 86 01 FF             0 (30 )
-			//	   81 81 C7 86 02 FF             26000 (32 36 30 30 30 )
-			//	   01 00 00 09 0B 00             1528100055 (timestamp)
-			//	   81 81 C7 82 05 FF             ___________5}_w_ (18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03 )
-			//	   81 81 C7 86 03 FF              ()
-			//	   81 81 61 3C 01 FF             Not set
-			//	   81 81 61 3C 02 FF             Not set
-
-			//
-			//	01 00 00 09 0B 00 : OBIS_CURRENT_UTC - last seen timestamp
-			//
-			std::chrono::system_clock::time_point const now = cyng::value_cast(rec["lastSeen"], std::chrono::system_clock::now());
-
-			//
-			//	81 81 C7 82 05 FF : OBIS_DATA_PUBLIC_KEY - public key
-			//
-			cyng::buffer_t public_key(16, 0u);
-			public_key = cyng::value_cast(rec["pubKey"], public_key);
-
-			//
-			//	81 81 C7 86 03 FF : OBIS_DATA_AES_KEY - AES key (128 bits)
-			//
-			cyng::crypto::aes_128_key	aes_key;
-			aes_key = cyng::value_cast(rec["aes"], aes_key);
-
-			//
-			//	 81 81 C7 82 03 FF : OBIS_DATA_MANUFACTURER - descr
-			//
-			std::string const descr = cyng::value_cast<std::string>(rec["descr"], "");
-
-			//
-			//	81 00 60 05 00 00 : OBIS_CLASS_OP_LOG_STATUS_WORD
-			//
-			cyng::buffer_t tmp;
-			const cyng::buffer_t status{ 0x00 };
-
-			//
-			//	81 81 C7 86 02 FF : OBIS_CODE_AVERAGE_TIME_MS - interval
-			//
-			std::uint64_t interval = cyng::numeric_cast<std::uint64_t>(rec["interval"], 0u);
-
-			//
-			//	81 81 61 3C 01 FF : OBIS_DATA_USER_NAME - user
-			//
-			std::string const user = cyng::value_cast<std::string>(rec["user"], "");
-
-			//
-			//	81 81 61 3C 02 FF : OBIS_DATA_USER_PWD - pwd
-			//
-			std::string const pwd = cyng::value_cast<std::string>(rec["pwd"], "");
-
-			//
-			//	81 81 C7 86 04 FF : OBIS_CODE_TIME_REFERENCE
-			//	[u8] 0 == UTC, 1 == UTC + time zone, 2 == local time
-			//
-			std::uint8_t const time_ref = 0;
-
-			return append_msg(message(trx	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(server_id	//	server id  
-					, OBIS_CODE_ROOT_SENSOR_PARAMS	//	path entry - 81 81 C7 86 00 FF
-					, child_list_tree(OBIS_CODE_ROOT_SENSOR_PARAMS, {
-
-						//	repeat server id
-						parameter_tree(OBIS_CODE_SERVER_ID, make_value(cyng::value_cast(server_id, tmp))),
-
-						//	Geräteklasse
-						parameter_tree(OBIS_CODE_DEVICE_CLASS, make_value(cyng::make_buffer({ 0x02 }))),
-
-						//	Manufacturer
-						parameter_tree(OBIS_DATA_MANUFACTURER, make_value(descr)),
-
-						//	Statuswort [octet string]
-						parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(status)),
-
-						//	Bitmaske zur Definition von Bits, deren Änderung zu einem Eintrag im Betriebslogbuch zum Datenspiegel führt
-						parameter_tree(OBIS_CODE_ROOT_SENSOR_BITMASK, make_value("00")),
-
-						//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
-						parameter_tree(OBIS_CODE_AVERAGE_TIME_MS, make_value(interval)),
-
-						//	aktuelle UTC-Zeit
-						parameter_tree(OBIS_CURRENT_UTC, make_value(now)),
-
-						//	public key
-						parameter_tree(OBIS_DATA_PUBLIC_KEY, make_value(public_key)),
-
-						//	AES Schlüssel für wireless M-Bus
-						parameter_tree(OBIS_DATA_AES_KEY, make_value(aes_key)),
-
-						//	user and password
-						parameter_tree(OBIS_DATA_USER_NAME, make_value(user)),
-						parameter_tree(OBIS_DATA_USER_PWD, make_value(pwd)),
-
-						//	time reference
-						parameter_tree(OBIS_CODE_TIME_REFERENCE, make_value(time_ref))
-
-			}))));
-
-		}
-
-		std::size_t res_generator::get_proc_1107_if(cyng::object trx
-			, cyng::object server_id
-			, cyng::store::table const* tbl
-			, cyng::object active
-			, cyng::object loop_time
-			, cyng::object retries
-			, cyng::object min_timeout
-			, cyng::object max_timeout
-			, cyng::object data_rate
-			, cyng::object rs485
-			, cyng::object protocol_mode
-			, cyng::object auto_activation
-			, cyng::object time_grid
-			, cyng::object time_sync
-			, cyng::object max_variation)
-		{
-			BOOST_ASSERT(tbl != nullptr);
-			BOOST_ASSERT(tbl->meta().get_name() == "iec62056-21-devices");
-
-			//
-			//	collect all IEC 62056 devices
-			//
-			cyng::tuple_t tpl;	// current list
-			tbl->loop([&](cyng::table::record const& rec)->bool {
-
-				BOOST_ASSERT(tpl.size() < 0x0a);	//	specification
-				tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, tpl.size() + 1), {
-					parameter_tree(OBIS_CODE(81, 81, C7, 93, 0A, FF), make_value(rec["meterID"])),	//	meter id
-					parameter_tree(OBIS_CODE(81, 81, C7, 93, 0B, FF), make_value(rec["baudrate"])),	//	baudrate
-					parameter_tree(OBIS_CODE(81, 81, C7, 93, 0C, FF), make_value(rec["address"])),
-					parameter_tree(OBIS_CODE(81, 81, C7, 93, 0D, FF), make_value(rec["p1"])),
-					parameter_tree(OBIS_CODE(81, 81, C7, 93, 0E, FF), make_value(rec["w5"]))
-				})));
-
-				return true;	//	continue
-			});
-
-			return append_msg(message(trx	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(server_id	//	server id  
-					, OBIS_CODE_IF_1107	//	path entry - 81 81 C7 93 01 FF
-					, child_list_tree(OBIS_CODE_IF_1107, {
-
-						parameter_tree(OBIS_CODE_IF_1107_ACTIVE, make_value(active)),	//	active
-						parameter_tree(OBIS_CODE_IF_1107_LOOP_TIME, make_value(loop_time)),
-						parameter_tree(OBIS_CODE_IF_1107_RETRIES, make_value(retries)),
-						parameter_tree(OBIS_CODE_IF_1107_MIN_TIMEOUT, make_value(min_timeout)),
-						parameter_tree(OBIS_CODE_IF_1107_MAX_TIMEOUT, make_value(max_timeout)),
-						parameter_tree(OBIS_CODE_IF_1107_MAX_DATA_RATE, make_value(data_rate)),
-						parameter_tree(OBIS_CODE_IF_1107_RS485, make_value(rs485)),
-						parameter_tree(OBIS_CODE_IF_1107_PROTOCOL_MODE, make_value(protocol_mode)),
-
-						//	81 81 C7 93 09 FF             
-						child_list_tree(OBIS_CODE_IF_1107_METER_LIST, tpl),
-
-						parameter_tree(OBIS_CODE_IF_1107_AUTO_ACTIVATION, make_value(auto_activation)),
-						parameter_tree(OBIS_CODE_IF_1107_TIME_GRID, make_value(time_grid)),	//	time grid of load profile readout in seconds
-						parameter_tree(OBIS_CODE_IF_1107_TIME_SYNC, make_value(time_sync)),	//	time sync in seconds
-						parameter_tree(OBIS_CODE_IF_1107_MAX_VARIATION, make_value(max_variation))	//	seconds
-
-			}))));
-
-		}
-
-		std::size_t res_generator::get_proc_push_ops(cyng::object trx
-			, cyng::buffer_t server_id
-			, const cyng::store::table* tbl)
-		{
-
-			BOOST_ASSERT(tbl != nullptr);
-			BOOST_ASSERT(tbl->meta().get_name() == "push.ops");
-
-			//	example:
-			//	ServerId: 05 00 15 3B 02 17 74 
-			//	ServerId: 01 A8 15 70 94 48 03 01 02 
-			//	81 81 C7 8A 01 FF                root for push operations
-			//	   81 81 C7 8A 01 [NN]           NN == index
-			//		  81 81 C7 8A 02 FF          900 - interval in seconds
-			//		  81 81 C7 8A 03 FF          12 - delay in seconds
-			//		  81 81 C7 8A 04 FF          (81 81 C7 8A 42 FF) - push source
-			//			 81 81 C7 8A 81 FF       (01 A8 15 70 94 48 03 01 02) - server/meter id
-			//			 81 81 C7 8A 83 FF       (81 81 C7 86 11 FF)
-			//			 81 81 C7 8A 82 FF       Not set
-			//		  81 47 17 07 00 FF          DataSink - name of push target
-			//		  81 49 00 00 10 FF          (81 81 C7 8A 21 FF) - push service (IP-T)
-
-			//	1. list: 81 81 C7 8A 01 01
-			//	2. list: 81 81 C7 8A 01 02
-			//	3. list: 81 81 C7 8A 01 03
-			cyng::tuple_t tpl;	// list 
-
-			//
-			//	generate list of push targets
-			//
-			tbl->loop([&](cyng::table::record const& rec)->bool {
-
-				cyng::buffer_t id;
-				id = cyng::value_cast(rec["serverID"], id);
-
-				if (server_id == id) {
-					auto idx = cyng::numeric_cast<std::uint8_t>(rec["idx"], 1);
-
-#ifdef _DEBUG
-					id = cyng::value_cast(rec["profile"], id);
-#endif
-
-					tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, idx), {
-
-						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 02, FF), make_value(rec["interval"])),		//	intervall (sec.) [uint16]
-						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 03, FF), make_value(rec["delay"])),		//	intervall (sec.) [uint8]
-						//	7.3.1.25 Liste möglicher Push-Quellen 
-						//	push source: 
-						//	* 81 81 C7 8A 42 FF == profile
-						//	* 81 81 C7 8A 43 FF == installation parameters
-						//	* 81 81 C7 8A 44 FF == list of visible sensors/actors
-						tree(OBIS_PUSH_SOURCE, make_value(OBIS_PUSH_SOURCE_PROFILE)
-							, {
-								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 81, FF), make_value(server_id)),
-								//	load profile (PROFILE_1_MINUTE ... PROFILE_1_YEAR)
-								parameter_tree(OBIS_PROFILE, make_value(rec["profile"])),
-								//	identifiers (of the channel) of a push source - this is a list of OBIS codes
-								//	to be delivered by the push source
-								parameter_tree(OBIS_CODE(81, 81, C7, 8A, 82, FF), make_value())	//	OBIS code 
-						}),
-						parameter_tree(OBIS_CODE_PUSH_TARGET, make_value(rec["target"])),		//	Targetname
-						//	push service: 
-						//	* 81 81 C7 8A 21 FF == IP-T
-						//	* 81 81 C7 8A 22 FF == SML client address
-						//	* 81 81 C7 8A 23 FF == KNX ID 
-						parameter_tree(OBIS_PUSH_SERVICE, make_value(OBIS_PUSH_SERVICE_IPT))
-
-					})));
-				}
-
-				return true;	//	continue
-			});
-
-			//
-			//	build response message
-			//
-			return append_msg(message(trx	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(server_id	//	server id
-					, OBIS_PUSH_OPERATIONS		//	path entry: 81 81 C7 8A 01 FF
-
-					//
-					//	generate get process parameter response
-					//
-					, child_list_tree(OBIS_PUSH_OPERATIONS, tpl)
-				)));
-
-		}
-
-		std::size_t res_generator::get_proc_ipt_params(cyng::object trx
-			, cyng::object server_id
-			, node::ipt::redundancy const& cfg)
-		{
-			//76                                                SML_Message(Sequence): 
-			//  81063137303531313136303831363537393537312D32    transactionId: 170511160816579571-2
-			//  6201                                            groupNo: 1
-			//  6200                                            abortOnError: 0
-			//  72                                              messageBody(Choice): 
-			//	630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
-			//	73                                            SML_GetProcParameter_Res(Sequence): 
-			//	  080500153B01EC46                            serverId: 05 00 15 3B 01 EC 46 
-			//	  71                                          parameterTreePath(SequenceOf): 
-			//		0781490D0700FF                            path_Entry: 81 49 0D 07 00 FF 
-			//	  73                                          parameterTree(Sequence): 
-			//		0781490D0700FF                            parameterName: 81 49 0D 07 00 FF 
-			//		01                                        parameterValue: not set
-			//		76                                        child_List(SequenceOf): 
-			//		  73                                      tree_Entry(Sequence): 
-			//			0781490D070001                        parameterName: 81 49 0D 07 00 01 
-			//			01                                    parameterValue: not set
-			//			75                                    child_List(SequenceOf): 
-			//			  73                                  tree_Entry(Sequence): 
-			//				07814917070001                    parameterName: 81 49 17 07 00 01 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  652A96A8C0                      smlValue: 714516672	;;; IP Address as integer: 192.168.150.101
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				0781491A070001                    parameterName: 81 49 1A 07 00 01 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  6368EF                          smlValue: 26863
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				07814919070001                    parameterName: 81 49 19 07 00 01 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  6200                            smlValue: 0
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				078149633C0101                    parameterName: 81 49 63 3C 01 01 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  094C534D5465737432              smlValue: LSMTest2
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				078149633C0201                    parameterName: 81 49 63 3C 02 01 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  094C534D5465737432              smlValue: LSMTest2
-			//				01                                child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			0781490D070002                        parameterName: 81 49 0D 07 00 02 
-			//			01                                    parameterValue: not set
-			//			75                                    child_List(SequenceOf): 
-			//			  73                                  tree_Entry(Sequence): 
-			//				07814917070002                    parameterName: 81 49 17 07 00 02 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  65B596A8C0                      smlValue: 3046549696
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				0781491A070002                    parameterName: 81 49 1A 07 00 02 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  6368F0                          smlValue: 26864
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				07814919070002                    parameterName: 81 49 19 07 00 02 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  6200                            smlValue: 0
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				078149633C0102                    parameterName: 81 49 63 3C 01 02 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  094C534D5465737432              smlValue: LSMTest2
-			//				01                                child_List: not set
-			//			  73                                  tree_Entry(Sequence): 
-			//				078149633C0202                    parameterName: 81 49 63 3C 02 02 
-			//				72                                parameterValue(Choice): 
-			//				  6201                            parameterValue: 1 => smlValue (0x01)
-			//				  094C534D5465737432              smlValue: LSMTest2
-			//				01                                child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			07814827320601                        parameterName: 81 48 27 32 06 01 
-			//			72                                    parameterValue(Choice): 
-			//			  6201                                parameterValue: 1 => smlValue (0x01)
-			//			  6201                                smlValue: 1
-			//			01                                    child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			07814831320201                        parameterName: 81 48 31 32 02 01 
-			//			72                                    parameterValue(Choice): 
-			//			  6201                                parameterValue: 1 => smlValue (0x01)
-			//			  6278                                smlValue: 120
-			//			01                                    child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			070080800003FF                        parameterName: 00 80 80 00 03 FF 
-			//			72                                    parameterValue(Choice): 
-			//			  6201                                parameterValue: 1 => smlValue (0x01)
-			//			  4200                                smlValue: False
-			//			01                                    child_List: not set
-			//		  73                                      tree_Entry(Sequence): 
-			//			070080800004FF                        parameterName: 00 80 80 00 04 FF 
-			//			01                                    parameterValue: not set
-			//			01                                    child_List: not set
-			//  63915D                                          crc16: 37213
-			//  00                                              endOfSmlMsg: 00 
-
-
-			cyng::tuple_t tpl;	// list 
-
-			//
-			//	generate list of IP-T parameters (2x)
-			//
-			std::uint8_t idx{ 1 };
-			for (auto const& rec : cfg.config_) {
-
-				try {
-					boost::system::error_code ec;
-					//auto address = boost::asio::ip::make_address(rec.host_, ec);
-					//std::uint32_t numeric_address = cyng::swap_num(address.to_v4().to_uint());	//	network ordering
-
-					std::uint16_t port = std::stoul(rec.service_);
-
-					tpl.push_back(cyng::make_object(child_list_tree(obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), {
-
-
-						parameter_tree(make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(rec.host_)),
-						//parameter_tree(make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx), make_value(numeric_address)),
-						parameter_tree(make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx), make_value(port)),
-						parameter_tree(make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx), make_value(0u)),
-						parameter_tree(make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx), make_value(rec.account_)),
-						parameter_tree(make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx), make_value(rec.pwd_))
-
-					})));
-
-					++idx;
-				}
-				catch (std::exception const& ex) {
-#ifdef _DEBUG
-					std::cerr
-						<< "***error: "
-						<< ex.what()
-						<< std::endl
-						;
-#else 
-					boost::ignore_unused(ex);
-#endif
-				}
-			}
-
-			//
-			//	fixed values
-			//
-			std::uint16_t const wait_time = 12;	//	minutes
-			std::uint16_t const repetitions = 120;	//	counter
-			bool const ssl = false;
-
-			//	waiting time (Wartezeit)
-			tpl.push_back(cyng::make_object(parameter_tree(OBIS_CODE(81, 48, 27, 32, 06, 01), make_value(wait_time))));
-
-			//	repetitions
-			tpl.push_back(cyng::make_object(parameter_tree(OBIS_CODE(81, 48, 31, 32, 02, 01), make_value(repetitions))));
-
-			//	SSL
-			tpl.push_back(cyng::make_object(parameter_tree(OBIS_CODE(00, 80, 80, 00, 03, FF), make_value(ssl))));
-
-			//	certificates (none)
-			tpl.push_back(cyng::make_object(empty_tree(OBIS_CODE(00, 80, 80, 00, 04, FF))));
-
-			return append_msg(message(trx	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(server_id	//	server id
-					, OBIS_CODE_ROOT_IPT_PARAM		//	path entry
-
-					//
-					//	generate get process parameter response
-					//
-					, child_list_tree(OBIS_CODE_ROOT_IPT_PARAM, tpl)
-				)));
-
-		}
-
-		std::size_t res_generator::get_proc_0080800000FF(cyng::object trx
-			, cyng::object server_id
-			, std::uint32_t value)
-		{
-			return append_msg(message(trx	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(server_id	
-					, OBIS_CODE(00, 80, 80, 00, 00, FF)	//	path entry - 00 80 80 00 00 FF
-					, child_list_tree(OBIS_CODE(00, 80, 80, 00, 00, FF), {
-
-						parameter_tree(OBIS_CODE(00, 80, 80, 00, 01, FF), make_value(value))
-
-				}))));
-		}
-
-
-		std::size_t res_generator::get_proc_990000000004(cyng::object trx
-			, cyng::object server_id
-			, std::string const& value)
-		{
-			return append_msg(message(trx	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(server_id	
-					, OBIS_CODE_ROOT_DEVICE_IDENT	//	path entry - 81 81 C7 82 01 FF (CODE_ROOT_DEVICE_IDENT)
-					, child_list_tree(OBIS_CODE(99, 00, 00, 00, 00, 04), {
-
-						parameter_tree(OBIS_CODE(99, 00, 00, 00, 00, 04), make_value(value))
-
-				}))));
-		}
-
-		std::size_t res_generator::get_proc_actuators(cyng::object trx
-			, cyng::object server_id)
+		std::size_t res_generator::get_proc_actuators(std::string trx
+			, cyng::buffer_t server_id)
 		{
 			//00 80 80 11 00 FF                Not set
 			//   00 80 80 11 01 FF             Not set
@@ -1283,9 +609,9 @@ namespace node
 			//		 00 80 80 11 15 FF       0 (30 )
 			//		 00 80 80 11 16 FF       Einschalten_Manuell 51-100% (45 69 6E 73 63 68 61 6C 74 65 6E 5F 4D 61 6E 75 65 6C 6C 20 35 31 2D 31 30 30 25 )
 
-			cyng::buffer_t actor_1{ 0x0A, (char)0xE0, 0x00, 0x01 }, actor_2{ 0x0A, (char)0xE0, 0x00, 0x02 };
+			//cyng::buffer_t actor_1{ 0x0A, (char)0xE0, 0x00, 0x01 }, actor_2{ 0x0A, (char)0xE0, 0x00, 0x02 };
 
-			return append_msg(message(trx	//	trx
+			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
@@ -1298,7 +624,7 @@ namespace node
 					, child_list_tree(OBIS_CODE(00, 80, 80, 11, 01, FF), {
 
 						child_list_tree(OBIS_CODE(00, 80, 80, 11, 01, 01), {
-							parameter_tree(OBIS_CODE(00, 80, 80, 11, 10, FF), make_value(actor_1)),
+							parameter_tree(OBIS_CODE(00, 80, 80, 11, 10, FF), make_value(cyng::make_buffer({10, 0xE0, 0x00, 0x01}))),
 							parameter_tree(OBIS_CODE(00, 80, 80, 11, 12, FF), make_value(11)),
 							parameter_tree(OBIS_CODE(00, 80, 80, 11, 13, FF), make_value(true)),
 							parameter_tree(OBIS_CODE(00, 80, 80, 11, 14, FF), make_value(30)),
@@ -1306,7 +632,7 @@ namespace node
 							parameter_tree(OBIS_CODE(00, 80, 80, 11, 16, FF), make_value("Einschalten Manuell 0-50%"))
 						}),
 						child_list_tree(OBIS_CODE(00, 80, 80, 11, 01, 02),{
-							parameter_tree(OBIS_CODE(00, 80, 80, 11, 10, FF), make_value(actor_2)),
+							parameter_tree(OBIS_CODE(00, 80, 80, 11, 10, FF), make_value(cyng::make_buffer({10, 0xE0, 0x00, 0x02}))),
 							parameter_tree(OBIS_CODE(00, 80, 80, 11, 12, FF), make_value(11)),
 							parameter_tree(OBIS_CODE(00, 80, 80, 11, 13, FF), make_value(true)),
 							parameter_tree(OBIS_CODE(00, 80, 80, 11, 14, FF), make_value(30)),
@@ -1318,8 +644,8 @@ namespace node
 
 		}
 
-		std::size_t res_generator::get_proc_parameter_ipt_state(cyng::object trx
-			, cyng::object server_id
+		std::size_t res_generator::get_proc_parameter_ipt_state(std::string trx
+			, cyng::buffer_t server_id
 			, boost::asio::ip::tcp::endpoint remote_ep
 			, boost::asio::ip::tcp::endpoint local_ep)
 		{
@@ -1367,7 +693,7 @@ namespace node
 			std::uint16_t const target_port = remote_ep.port()
 				, source_port = local_ep.port();
 
-			return append_msg(message(trx	//	trx
+			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
@@ -1386,8 +712,8 @@ namespace node
 		}
 
 
-		std::size_t res_generator::get_profile_op_log(cyng::object trx
-			, cyng::object client_id
+		std::size_t res_generator::get_profile_op_log(std::string trx
+			, cyng::buffer_t client_id
 			, std::chrono::system_clock::time_point act_time
 			, std::uint32_t reg_period
 			, std::chrono::system_clock::time_point val_time
@@ -1402,7 +728,7 @@ namespace node
 			//	seconds since epoch
 			std::uint64_t sec = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
 
-			return append_msg(message(trx	//	trx
+			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROFILE_LIST_RESPONSE	//	0x0401
@@ -1459,7 +785,6 @@ namespace node
 						//  5200                                    scaler: 0
 						//  655B8E3F04                              value: 1536048900
 						period_entry(OBIS_CURRENT_UTC, 0x07, 0, cyng::make_object(sec)),
-						//period_entry(OBIS_CURRENT_UTC, 0x07, 0, cyng::make_object(1536048900ULL)),
 
 						//  81 81 C7 82 04 FF                       objName:  CODE_SERVER_ID
 						//  62FF                                    unit: 255
@@ -1484,55 +809,14 @@ namespace node
      
 		}
 
-		std::size_t res_generator::get_profile_op_logs(cyng::object trx
-			, cyng::object client_id
-			, std::chrono::system_clock::time_point start_time
-			, std::chrono::system_clock::time_point end_time
-			, const cyng::store::table* tbl)
-		{
-			BOOST_ASSERT(tbl != nullptr);
-			BOOST_ASSERT(tbl->meta().get_name() == "op.log");
-
-			tbl->loop([&](cyng::table::record const& rec) {
-
-				//	[2018-09-05 14:00:34.04194950,00000384,2018-09-05 14:00:34.04194950,00062602,00800008,8146000002FF,2018-09-05 14:00:34.04194580,01A815743145040102,power@solostec,1]
-
-				cyng::buffer_t peer;
-				peer = cyng::value_cast(rec["peer"], peer);
-
-				cyng::buffer_t server;
-				server = cyng::value_cast(rec["serverId"], server);
-
-				get_profile_op_log(trx
-					, client_id
-					, cyng::value_cast(rec["actTime"], std::chrono::system_clock::now()) //	act_time
-					, cyng::value_cast<std::uint32_t>(rec["regPeriod"], 900u) //	reg_period
-					, cyng::value_cast(rec["valTime"], std::chrono::system_clock::now())
-					, cyng::value_cast<std::uint64_t>(rec["status"], 0u) //	status
-					, cyng::value_cast<std::uint32_t>(rec["event"], 0u) //	evt
-					, obis(peer) //	peer_address
-					, cyng::value_cast(rec["utc"], std::chrono::system_clock::now())
-					, server
-					, cyng::value_cast<std::string>(rec["target"], "")
-					, cyng::value_cast<std::uint8_t>(rec["pushNr"], 1u));
-
-				//
-				//	continue
-				//
-				return true;
-			});
-
-			return 0;
-		}
-
-		std::size_t res_generator::get_proc_w_mbus_status(cyng::object trx
-			, cyng::object server_id
+		std::size_t res_generator::get_proc_w_mbus_status(std::string trx
+			, cyng::buffer_t server_id
 			, std::string const& manufacturer	// manufacturer of w-mbus adapter
 			, cyng::buffer_t const&	id	//	adapter id (EN 13757-3/4)
 			, std::string const& firmware	//	firmware version of adapter
 			, std::string const& hardware)	//	hardware version of adapter);
 		{
-			return append_msg(message(trx	//	trx
+			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
@@ -1552,8 +836,8 @@ namespace node
 			}))));
 		}
 
-		std::size_t res_generator::get_proc_w_mbus_if(cyng::object trx
-			, cyng::object server_id
+		std::size_t res_generator::get_proc_w_mbus_if(std::string trx
+			, cyng::buffer_t server_id
 			, cyng::object protocol	// radio protocol
 			, cyng::object s_mode	// duration in seconds
 			, cyng::object t_mode	// duration in seconds
@@ -1561,7 +845,7 @@ namespace node
 			, cyng::object power	//	transmision power (transmission_power)
 			, cyng::object install_mode)
 		{
-			return append_msg(message(trx	//	trx
+			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_PROC_PARAMETER_RESPONSE
@@ -1591,7 +875,7 @@ namespace node
 			, cyng::tuple_t act_gateway_time
 			, cyng::tuple_t val_list)
 		{
-			return append_msg(message(trx	//	trx
+			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_GET_LIST_RESPONSE
@@ -1613,7 +897,7 @@ namespace node
 			, std::string attention_msg
 			, cyng::tuple_t attention_details)
 		{
-			return append_msg(message(trx	//	trx
+			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, BODY_ATTENTION_RESPONSE
@@ -1626,197 +910,6 @@ namespace node
 					, attention_msg
 					, attention_details)));
 		}
-
-		std::size_t res_generator::get_proc_data_collector(cyng::object trx
-			, cyng::object obj
-			, cyng::store::table const* tbl_dc
-			, cyng::store::table const* tbl_ro)
-		{
-			//	### Message ###
-			//	76                                                SML_Message(Sequence): 
-			//	  81063138303631393139343334353337383434352D32    transactionId: 180619194345378445-2
-			//	  6201                                            groupNo: 1
-			//	  6200                                            abortOnError: 0
-			//	  72                                              messageBody(Choice): 
-			//		630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
-			//		73                                            SML_GetProcParameter_Res(Sequence): 
-			//		  0A01E61E130900163C07                        serverId: 01 E6 1E 13 09 00 16 3C 07 
-			//		  71                                          parameterTreePath(SequenceOf): 
-			//			078181C78620FF                            path_Entry: ____ _
-			//		  73                                          parameterTree(Sequence): 
-			//			078181C78620FF                            parameterName: ____ _
-			//			01                                        parameterValue: not set
-			//			71                                        child_List(SequenceOf): 
-			//			  73                                      tree_Entry(Sequence): 
-			//				078181C7862001                        parameterName: 81 81 C7 86 20 01 
-			//				01                                    parameterValue: not set
-			//				75                                    child_List(SequenceOf): 
-			//				  73                                  tree_Entry(Sequence): 
-			//					078181C78621FF                    parameterName: ____!_
-			//					72                                parameterValue(Choice): 
-			//					  6201                            parameterValue: 1 => smlValue (0x01)
-			//					  4201                            smlValue: True
-			//					01                                child_List: not set
-			//				  73                                  tree_Entry(Sequence): 
-			//					078181C78622FF                    parameterName: ____"_
-			//					72                                parameterValue(Choice): 
-			//					  6201                            parameterValue: 1 => smlValue (0x01)
-			//					  6264                            smlValue: 100
-			//					01                                child_List: not set
-			//				  73                                  tree_Entry(Sequence): 
-			//					078181C78781FF                    parameterName: ______
-			//					72                                parameterValue(Choice): 
-			//					  6201                            parameterValue: 1 => smlValue (0x01)
-			//					  6200                            smlValue: 0
-			//					01                                child_List: not set
-			//				  73                                  tree_Entry(Sequence): 
-			//					078181C78A83FF                    parameterName: ______
-			//					72                                parameterValue(Choice): 
-			//					  6201                            parameterValue: 1 => smlValue (0x01)
-			//					  078181C78611FF                  smlValue: 81 81 C7 86 11 FF 
-			//					01                                child_List: not set
-			//				  73                                  tree_Entry(Sequence): 
-			//					078181C78A23FF                    parameterName: ____#_
-			//					01                                parameterValue: not set
-			//					71                                child_List(SequenceOf): 
-			//					  73                              tree_Entry(Sequence): 
-			//						078181C78A2301                parameterName: 81 81 C7 8A 23 01 
-			//						72                            parameterValue(Choice): 
-			//						  6201                        parameterValue: 1 => smlValue (0x01)
-			//						  070800010000FF              smlValue: 08 00 01 00 00 FF 
-			//						01                            child_List: not set
-			//	  63CBE4                                          crc16: 52196
-			//	  00                                              endOfSmlMsg: 00 
-
-			//	ClientId: 05 00 15 3B 02 29 7E 
-			//	ServerId: 01 E6 1E 13 09 00 16 3C 07 
-			//	81 81 C7 86 20 FF                Not set
-			//	   81 81 C7 86 20 01             Not set
-			//		  81 81 C7 86 21 FF          True (54 72 75 65 )	//	active
-			//		  81 81 C7 86 22 FF          100 (31 30 30 )		//	Einträge
-			//		  81 81 C7 87 81 FF          0 (30 )				//	Registerperiode
-			//		  81 81 C7 8A 83 FF          ______ (81 81 C7 86 11 FF )	//	OBIS
-			//		  81 81 C7 8A 23 FF          Not set
-			//			 81 81 C7 8A 23 01       ______ (08 00 01 00 00 FF )	Liste von Einträgen z.B. Zählerstand Wasser
-
-			cyng::buffer_t server_id;
-			server_id = cyng::value_cast(obj, server_id);
-
-			//
-			//	collect all available OBIS codes for this meter from "readout" table
-			//
-			std::uint8_t idx{ 0 };	//	OBIS counter
-			cyng::tuple_t obis_tpl;	//	hold all found OBIS codes
-			tbl_ro->loop([&](cyng::table::record const& rec) {
-
-				//
-				//	extract server/meter ID from record
-				//
-				cyng::buffer_t srv;
-				srv = cyng::value_cast(rec["serverID"], srv);
-
-				//if (srv == server_id) {
-
-					//
-					//	match - collect OBIS code
-					//
-					srv.clear();
-					obis const code(cyng::value_cast(rec["OBIS"], srv));
-					obis_tpl.push_back(cyng::make_object(parameter_tree(make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, ++idx), make_value(code))));
-
-				//}
-
-				//	continue
-				return true;
-			});
-
-			//
-			//	collect all available data collectors for this meter
-			//	from table "data.collector"
-			//
-			idx = 0;	//	data collector counter
-			cyng::tuple_t dc_tpl;	//	hold all found data collectors
-			tbl_dc->loop([&](cyng::table::record const& rec) {
-
-				//
-				//	extract server/meter ID from record
-				//
-				cyng::buffer_t srv;
-				srv = cyng::value_cast(rec["serverID"], srv);
-
-				//if (srv == server_id) {
-
-					//
-					//	match - build description of data collector
-					//
-
-					srv.clear();
-					obis const code(cyng::value_cast(rec["profile"], srv));
-
-					dc_tpl.push_back(cyng::make_object(child_list_tree(make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, ++idx), {
-						parameter_tree(OBIS_CODE(81, 81, C7, 86, 21, FF), make_value(rec["active"])),	//	active
-						parameter_tree(OBIS_CODE(81, 81, C7, 86, 22, FF), make_value(rec["maxSize"])),	//	Einträge
-						parameter_tree(OBIS_CODE(81, 81, C7, 87, 81, FF), make_value(rec["period"])),	//	Registerperiode (seconds)
-						//	profile
-						parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(code)),
-
-						//	
-						//	all data collectors using the same set of OBIS codes
-						//
-						child_list_tree(OBIS_CODE(81, 81, C7, 8A, 23, FF), obis_tpl)
-					})));
-				//}
-
-				//	continue
-				return true;
-			});
-
-			//
-			//
-			//
-			return append_msg(message(trx	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(obj
-					, OBIS_CODE_ROOT_DATA_COLLECTOR	//	path entry - 81 81 C7 86 20 FF 
-					, child_list_tree(OBIS_CODE_ROOT_DATA_COLLECTOR, dc_tpl))));
-
-			//sml_gen_.append_msg(message(trx	//	trx
-			//	, 2 //, ++group_no_	//	group
-			//	, 0 //	abort code
-			//	, BODY_GET_PROC_PARAMETER_RESPONSE
-
-			//	//
-			//	//	generate get process parameter response
-			//	//
-			//	, get_proc_parameter_response(server	//	server id  
-			//		, OBIS_CODE_ROOT_DATA_COLLECTOR	//	path entry - 81 81 C7 86 20 FF 
-			//		, child_list_tree(OBIS_CODE_ROOT_DATA_COLLECTOR, {
-
-			//			//	1. entry
-			//			child_list_tree(OBIS_CODE(81, 81, C7, 86, 20, 01),{
-			//				parameter_tree(OBIS_CODE(81, 81, C7, 86, 21, FF), make_value(true)),	//	active
-			//				parameter_tree(OBIS_CODE(81, 81, C7, 86, 22, FF), make_value(100)),		//	Einträge
-			//				parameter_tree(OBIS_CODE(81, 81, C7, 87, 81, FF), make_value(0)),		//	Registerperiode
-			//				//	15 min period
-			//				parameter_tree(OBIS_CODE(81, 81, C7, 8A, 83, FF), make_value(OBIS_PROFILE_15_MINUTE)),
-			//				//	Liste von Einträgen z.B. 08 00 01 00 00 FF := Zählerstand Wasser
-			//				child_list_tree(OBIS_CODE(81, 81, C7, 8A, 23, FF),{
-			//					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 23, 01), make_value(OBIS_CODE(08, 00, 01, 00, 00, FF))),
-			//					parameter_tree(OBIS_CODE(81, 81, C7, 8A, 23, 02), make_value(OBIS_CODE(08, 00, 01, 02, 00, FF)))
-			//					})
-			//				}),
-
-			//			}))));
-
-
-		}
-
 
 		trx::trx()
 			: rng_()
@@ -1859,14 +952,7 @@ namespace node
 
 		std::string trx::operator*() const
 		{
-			std::stringstream ss;
-			ss
-				<< value_
-				<< '-'
-				<< num_
-				;
-			return ss.str();
-
+			return value_ + "-" + std::to_string(num_);
 		}
 
 	}

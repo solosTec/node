@@ -157,7 +157,6 @@ namespace node
 
 	cyng::continuation sml_db_consumer::process(std::uint64_t line
 		, std::uint16_t code
-		, std::size_t idx
 		, cyng::tuple_t msg)
 	{
 		CYNG_LOG_TRACE(logger_, "task #"
@@ -166,9 +165,7 @@ namespace node
 			<< base_.get_class_name()
 			<< " line "
 			<< line
-			<< " received #"
-			<< idx
-			<< ':'
+			<< " received: "
 			<< sml::messages::name(code));
 
 		auto pos = lines_.find(line);
@@ -178,7 +175,7 @@ namespace node
 				//
 				//	write to DB
 				//
-				pos->second.write(pool_.get_session(), msg, idx);
+				pos->second.write(pool_.get_session(), msg);
 			}
 			catch (std::exception const& ex) {
 

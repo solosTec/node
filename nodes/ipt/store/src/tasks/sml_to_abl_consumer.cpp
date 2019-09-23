@@ -123,7 +123,6 @@ namespace node
 
 	cyng::continuation sml_abl_consumer::process(std::uint64_t line
 		, std::uint16_t code
-		, std::size_t idx
 		, cyng::tuple_t msg)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -132,15 +131,13 @@ namespace node
 			<< base_.get_class_name()
 			<< " line "
 			<< line
-			<< " received #"
-			<< idx
-			<< ':'
+			<< " received: "
 			<< sml::messages::name(code));
 
 		auto pos = lines_.find(line);
 		if (pos != lines_.end()) {
 
-			pos->second.read(msg, idx);
+			pos->second.read(msg);
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "task #"

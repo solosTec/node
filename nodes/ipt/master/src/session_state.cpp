@@ -18,6 +18,7 @@
 
 #include <cyng/dom/reader.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/set_cast.h>
 #include <cyng/numeric_cast.hpp>
 
 #include <boost/assert.hpp>
@@ -84,16 +85,17 @@ namespace node
 				idle_.watchdog_ = evt.watchdog_;
 			}
 
-			//sp_->vm_.register_function("session.update.connection.state", 2, std::bind(&session_state::update_connection_state, this, std::placeholders::_1));
 			sp_->vm_.register_function("session.redirect", 1, std::bind(&session_state::redirect, this, std::placeholders::_1));
 		}
 
 		void session_state::redirect(cyng::context& ctx)
 		{
+			const cyng::vector_t frame = ctx.get_frame();
+			auto const tsk = cyng::value_cast<std::size_t>(frame.at(0), cyng::async::NO_TASK);
+
 			if (S_AUTHORIZED == state_) {
 
-				const cyng::vector_t frame = ctx.get_frame();
-				auto tsk = cyng::value_cast<std::size_t>(frame.at(0), cyng::async::NO_TASK);
+				BOOST_ASSERT_MSG(tsk != cyng::async::NO_TASK, "no task specified");
 
 				//
 				//	update state
@@ -103,16 +105,30 @@ namespace node
 
 				CYNG_LOG_INFO(logger_, "session.redirect "
 					<< ctx.tag()
-					<< ": TASK");
+					<< ": connected to TASK #"
+					<< tsk);
+			}
+			else if (S_CONNECTED_TASK == state_) {
+
+				BOOST_ASSERT_MSG(tsk == cyng::async::NO_TASK, "task specified");
+
+				//
+				//	update state
+				//
+				transit(S_AUTHORIZED);
+
+				CYNG_LOG_INFO(logger_, "session.redirect "
+					<< ctx.tag()
+					<< ": disconnected from TASK#"
+					<< task_.tsk_proxy_);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "session.redirect "
 					<< ctx.tag()
-					<< " - session is busy: ");
-					//<< connect_state_);
+					<< " - session in wrong state: "
+					<< *this);
 			}
 		}
-
 
 		void session_state::react(state::evt_shutdown)
 		{
@@ -340,14 +356,14 @@ namespace node
 			if (evt.success_) {
 
 				//
-				//	update session state
-				//
-				transit(S_AUTHORIZED);
-
-				//
 				//	stop gatekeeper
 				//
 				idle_.stop(sp_->mux_);
+
+				//
+				//	update session state
+				//
+				transit(S_AUTHORIZED);
 
 				//
 				//	start watchdog
@@ -439,7 +455,7 @@ namespace node
 				//	init SML comm
 				//
 				CYNG_LOG_DEBUG(logger_, sp_->vm().tag() << " initialize SML comm");
-				sp_->proxy_comm_.register_this(sp_->vm());
+				//sp_->proxy_comm_.register_this(sp_->vm());
 
 			}
 			else {
@@ -839,7 +855,6 @@ namespace node
 			//	update state
 			//
 			transit(S_AUTHORIZED);
-			//wait_for_close_response_.reset();
 
 			//
 			//	update watchdog timer
@@ -943,316 +958,26 @@ namespace node
 			//
 			//	disconnect task from data stream
 			//
-			transit(S_AUTHORIZED);
-
+			//transit(S_AUTHORIZED);
 		}
 
-		void session_state::react(state::evt_sml_get_proc_param_srv_visible evt)
+		void session_state::react(state::evt_sml_get_proc_param_response evt)
 		{
 			switch (state_) {
 			case S_CONNECTED_TASK:
 				break;
 			default:
-				signal_wrong_state("evt_sml_get_proc_param_srv_visible");
+				signal_wrong_state("evt_sml_get_proc_param_response");
 				return;
 			}
 
 			//BOOST_ASSERT(evt.vec_.size() == 8);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_srv_visible to #" << task_.tsk_proxy_);
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_response to #" << task_.tsk_proxy_);
 
 			//
-			//	message slot (5)
+			//	message slot (3)
 			//
-			task_.get_proc_param_srv_device(sp_->mux_, evt.vec_);
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_srv_active evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_srv_active");
-				return;
-			}
-
-			BOOST_ASSERT(evt.vec_.size() == 9);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_srv_active to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_srv_device(sp_->mux_, evt.vec_);
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_firmware evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_firmware");
-				return;
-			}
-
-			BOOST_ASSERT(evt.vec_.size() == 9);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_firmware to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_srv_firmware(sp_->mux_, evt.vec_);
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_status_word evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_status_word");
-				return;
-			}
-
-			//BOOST_ASSERT(evt.vec_.size() == 8);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_status_word to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_status_word(sp_->mux_, evt.vec_);
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_memory evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_memory");
-				return;
-			}
-
-			BOOST_ASSERT(evt.vec_.size() == 7);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_memory to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_memory(sp_->mux_, evt.vec_);
-
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_wmbus_status evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_wmbus_status");
-				return;
-			}
-
-			//BOOST_ASSERT(evt.vec_.size() == 8);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_wmbus_status to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_wmbus_status(sp_->mux_, evt.vec_);
-
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_wmbus_config evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_wmbus_config");
-				return;
-			}
-
-			//BOOST_ASSERT(evt.vec_.size() == 8);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_wmbus_config to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_wmbus_config(sp_->mux_, evt.vec_);
-
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_iec_config evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_iec_config");
-				return;
-			}
-
-			//BOOST_ASSERT(evt.vec_.size() == 8);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_iec_config to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_iec_config(sp_->mux_, evt.vec_);
-
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_meter evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_meterg");
-				return;
-			}
-
-			//BOOST_ASSERT(evt.vec_.size() == 8);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_meter to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_meter(sp_->mux_, evt.vec_);
-
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_data_mirror evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_data_mirror");
-				return;
-			}
-
-			//BOOST_ASSERT(evt.vec_.size() == 8);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_data_mirror to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_data_mirror(sp_->mux_, evt.vec_);
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_push_target evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_push_target");
-				return;
-			}
-
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_push_target to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_push_target(sp_->mux_, evt.vec_);
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_ipt_status evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_ipt_status");
-				return;
-			}
-
-			//BOOST_ASSERT(evt.vec_.size() == 8);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_ipt_status to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_ipt_status(sp_->mux_, evt.vec_);
-
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_ipt_param evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_ipt_param");
-				return;
-			}
-
-			BOOST_ASSERT(evt.vec_.size() == 11);
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_ipt_param to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_ipt_param(sp_->mux_, evt.vec_);
-
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_device_class evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_device_class");
-				return;
-			}
-
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_device_class to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_device_class(sp_->mux_, evt.vec_);
-
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_manufacturer evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_manufacturer");
-				return;
-			}
-
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_manufacturer to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_manufacturer(sp_->mux_, evt.vec_);
-		}
-
-		void session_state::react(state::evt_sml_get_proc_param_server_id evt)
-		{
-			switch (state_) {
-			case S_CONNECTED_TASK:
-				break;
-			default:
-				signal_wrong_state("evt_sml_get_proc_param_server_id");
-				return;
-			}
-
-			CYNG_LOG_DEBUG(logger_, "evt_sml_get_proc_param_server_id to #" << task_.tsk_proxy_);
-
-			//
-			//	message slot (5)
-			//
-			task_.get_proc_param_server_id(sp_->mux_, evt.vec_);
+			task_.get_proc_parameter(sp_->mux_, evt.vec_);
 		}
 
 		void session_state::react(state::evt_sml_get_list_response evt)
@@ -1265,8 +990,8 @@ namespace node
 				return;
 			}
 
-			BOOST_ASSERT(evt.vec_.size() == 9);
-			//	[f19f5f61-5258-4275-9fcf-c82c17969e83,7876337-2,0,22D337BD776A,01A815743145050102,990000000003,%(("01 00 01 08 00 ff":%(("scaler":-2),("unit":1e),("valTime":2019-01-24 18:34:49.00000000),("value":4637.82))),("08 00 01 00 00 ff":%(("scaler":-3),("unit":d),("valTime":2019-01-24 18:34:49.00000000),("value":758))),("81 81 c7 82 03 ff":%(("scaler":0),("unit":0),("valTime":null),("value":solosTec)))),2019-01-24 18:34:49.00000000,2019-01-24 18:34:49.00000000]
+			//BOOST_ASSERT(evt.vec_.size() == 6);
+			//	[]
 			CYNG_LOG_DEBUG(logger_, "evt_sml_get_list_response to #" << task_.tsk_proxy_);
 			CYNG_LOG_DEBUG(logger_, "get_list_response: "	<< cyng::io::to_str(evt.vec_));
 
@@ -1582,115 +1307,10 @@ namespace node
 			{}
 
 			//
-			//	EVENT: sml_get_proc_param_srv_visible
+			//	EVENT: evt_sml_get_proc_param_response
 			//
-			evt_sml_get_proc_param_srv_visible::evt_sml_get_proc_param_srv_visible(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: sml_get_proc_param_srv_active
-			//
-			evt_sml_get_proc_param_srv_active::evt_sml_get_proc_param_srv_active(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: sml_get_proc_param_firmware
-			//
-			evt_sml_get_proc_param_firmware::evt_sml_get_proc_param_firmware(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: sml_get_proc_param_status_word
-			//
-			evt_sml_get_proc_param_status_word::evt_sml_get_proc_param_status_word(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-			
-			//
-			//	EVENT: sml_get_proc_param_memory
-			//
-			evt_sml_get_proc_param_memory::evt_sml_get_proc_param_memory(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: evt_sml_get_proc_param_wmbus_status
-			//
-			evt_sml_get_proc_param_wmbus_status::evt_sml_get_proc_param_wmbus_status(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: evt_sml_get_proc_param_wmbus_config
-			//
-			evt_sml_get_proc_param_wmbus_config::evt_sml_get_proc_param_wmbus_config(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: evt_sml_get_proc_param_iec_config
-			//
-			evt_sml_get_proc_param_iec_config::evt_sml_get_proc_param_iec_config(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: evt_sml_get_proc_param_ipt_status
-			//
-			evt_sml_get_proc_param_ipt_status::evt_sml_get_proc_param_ipt_status(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: evt_sml_get_proc_param_ipt_param
-			//
-			evt_sml_get_proc_param_ipt_param::evt_sml_get_proc_param_ipt_param(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: evt_sml_get_proc_param_device_class (sml_get_proc_param_simple)
-			//
-			evt_sml_get_proc_param_device_class::evt_sml_get_proc_param_device_class(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: evt_sml_get_proc_param_manufacturer (sml_get_proc_param_simple)
-			//
-			evt_sml_get_proc_param_manufacturer::evt_sml_get_proc_param_manufacturer(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: evt_sml_get_proc_param_server_id (sml_get_proc_param_simple)
-			//
-			evt_sml_get_proc_param_server_id::evt_sml_get_proc_param_server_id(cyng::vector_t vec)
-			: vec_(vec)
-			{}
-	
-			//
-			//	EVENT: evt_sml_get_proc_param_meter (sml_get_proc_param_simple)
-			//
-			evt_sml_get_proc_param_meter::evt_sml_get_proc_param_meter(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: evt_sml_get_proc_param_data_mirror
-			//
-			evt_sml_get_proc_param_data_mirror::evt_sml_get_proc_param_data_mirror(cyng::vector_t vec)
-				: vec_(vec)
-			{}
-
-			//
-			//	EVENT: evt_sml_get_proc_param_push_target
-			//
-			evt_sml_get_proc_param_push_target::evt_sml_get_proc_param_push_target(cyng::vector_t vec)
-				: vec_(vec)
+			evt_sml_get_proc_param_response::evt_sml_get_proc_param_response(cyng::vector_t&& vec)
+				: vec_(std::move(vec))
 			{}
 
 			//
@@ -1785,7 +1405,6 @@ namespace node
 			void state_wait_for_open_response::reset()
 			{
 				tsk_connection_open_ = cyng::async::NO_TASK;
-				//tag_ = boost::uuids::nil_uuid();
 				type_ = E_UNDEF;
 				seq_ = 0u;
 				master_params_.clear();
@@ -1802,7 +1421,6 @@ namespace node
 				, seq_(0u)
 				, master_params_()
 				, client_params_()
-				//, local_(false)
 			{}
 
 			void state_wait_for_close_response::init(std::size_t tsk
@@ -1907,324 +1525,37 @@ namespace node
 				mux.post(tsk_proxy_, 2, cyng::tuple_factory(obj));
 			}
 
-			void state_connected_task::get_proc_param_srv_device(cyng::async::mux& mux, cyng::vector_t vec)
+			void state_connected_task::get_proc_parameter(cyng::async::mux& mux, cyng::vector_t vec)
 			{
-				//
-				//	visible or active devices
-				//
-
-				cyng::buffer_t meter;
-				meter = cyng::value_cast(vec.at(6), meter);
-
-				auto const type = node::sml::get_srv_type(meter);
-				std::string maker;
-				if ((type == node::sml::SRV_MBUS_WIRED) || (type == node::sml::SRV_MBUS_RADIO)) {
-					auto const code = node::sml::get_manufacturer_code(meter);
-					maker = node::sml::decode(code);
-				}
-
 				//
 				//	post message to gateway proxy slot [5]
 				//
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	visible/active device
-					cyng::param_map_factory("number", vec.at(5))
-						("ident", node::sml::from_server_id(meter))
-						("meter", ((type < 2) ? node::sml::get_serial(meter) : node::sml::from_server_id(meter)))
-						("meterId", meter)
-						("class", vec.at(7))
-						("timestamp", vec.at(8))
-						("type", node::sml::get_srv_type(meter))
-						("maker", maker)
-					()
-				});
-
-			}
-
-			void state_connected_task::get_proc_param_srv_firmware(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	firmware
-					cyng::param_map_factory("number", vec.at(5))
-						("firmware", vec.at(6))
-						("version", vec.at(7))
-						("active", vec.at(8))
-					()
-				});
-
-			}
-
-			void state_connected_task::get_proc_param_status_word(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				auto const word = cyng::numeric_cast<std::uint32_t>(vec.at(5), 0u);
-
-				node::sml::status stat;
-				stat.reset(word);
-
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	status word
-					cyng::param_map_factory("word", node::sml::to_param_map(stat))()
-				});
-
-			}
-
-			void state_connected_task::get_proc_param_memory(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	status word
-					cyng::param_map_factory("mirror", vec.at(5))("tmp", vec.at(6)) ()
-				});
-			}
-
-
-			void state_connected_task::get_proc_param_wmbus_status(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	firmware
-					cyng::param_map_factory("manufacturer", vec.at(5))
-						("id", vec.at(6))
-						("firmware", vec.at(7))
-						("hardware", vec.at(8))
-					()
-				});
-			}
-
-			void state_connected_task::get_proc_param_wmbus_config(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	wired IEC configuration
-					cyng::param_map_factory("protocol", vec.at(5))
-						("sMode", cyng::numeric_cast<std::uint8_t>(vec.at(6), 0))
-						("tMode", cyng::numeric_cast<std::uint8_t>(vec.at(7), 0))
-						("reboot", vec.at(8))
-						("power", vec.at(9))
-						("installMode", vec.at(10))
-					()
-				});
-			}
-
-			void state_connected_task::get_proc_param_iec_config(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-
-				//
-				//	protocol mode
-				//
-				std::string const protol_mode(1, cyng::numeric_cast<std::int8_t>(vec.at(12), 0) + 'A');
-
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	wireless M-Bus configuration
-					cyng::param_map_factory("active", vec.at(5))
-						("loopTime", cyng::numeric_cast<std::uint16_t>(vec.at(6), 0))
-						("retries", cyng::numeric_cast<std::uint16_t>(vec.at(7), 0))
-						("minTimeout", cyng::numeric_cast<std::uint16_t>(vec.at(8), 0))
-						("maxTimeout", cyng::numeric_cast<std::uint16_t>(vec.at(9), 0))
-						("maxDataRate", cyng::numeric_cast<std::uint32_t>(vec.at(10), 0))
-						("rs485", vec.at(11))
-						("protocolMode", protol_mode)	//	A ... D
-						("devices", vec.at(13))
-						("autoActivation", vec.at(14))
-						("timeGrid", cyng::numeric_cast<std::uint32_t>(vec.at(15), 0))
-						("timeSync", cyng::numeric_cast<std::uint32_t>(vec.at(16), 0))
-						("maxVar", cyng::numeric_cast<std::uint32_t>(vec.at(17), 0))
-					()
-					});
-			}
-
-			void state_connected_task::get_proc_param_ipt_status(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	current IP-T address parameters
-					cyng::param_map_factory
-						("address", node::sml::to_ip_address_v4(vec.at(5)))
-						("local", cyng::numeric_cast<std::uint16_t>(vec.at(6), 0))
-						("remote", cyng::numeric_cast<std::uint16_t>(vec.at(7), 0))
-					()
-				});
-			}
-
-			void state_connected_task::get_proc_param_ipt_param(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	IP-T configuration record
-					cyng::param_map_factory("idx", vec.at(5))
-						("address", node::sml::ip_address_to_str(vec.at(6)))
-						("local", cyng::numeric_cast<std::uint16_t>(vec.at(7), 0))
-						("remote", cyng::numeric_cast<std::uint16_t>(vec.at(8), 0))
-						("name", vec.at(9))
-						("pwd", vec.at(10))
-					()
-				});
-			}
-
-			void state_connected_task::get_proc_param_device_class(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	IP-T configuration record
-					cyng::param_map_factory("value", vec.at(5))
-					()
-				});
-			}
-
-			void state_connected_task::get_proc_param_manufacturer(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	IP-T configuration record
-					cyng::param_map_factory("value", vec.at(5))
-					()
-				});
-			}
-
-			void state_connected_task::get_proc_param_server_id(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	IP-T configuration record
-					cyng::param_map_factory("value", vec.at(5))
-					()
-				});
-			}
-
-			void state_connected_task::get_proc_param_meter(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	meter configuration record
-					cyng::param_map_factory("devClass", vec.at(5))
-						("maker", vec.at(6))
-						("status", cyng::numeric_cast<std::uint64_t>(vec.at(7), 0))
-						("bitMask", vec.at(8))
-						("interval", cyng::numeric_cast<std::uint64_t>(vec.at(9), 0))
-						("lastRecord", vec.at(10))
-						("pubKey", vec.at(11))
-						("aesKey", vec.at(12))
-						("user", vec.at(13))
-						("pwd", vec.at(14))
-					()
-				});
-			}
-
-			void state_connected_task::get_proc_param_data_mirror(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				cyng::buffer_t tmp;
-				node::sml::obis code(cyng::value_cast(vec.at(9), tmp));
-				std::string const profile = (node::sml::is_profile(code))
-					? node::sml::get_name(code)
-					: "no-profile"
-					;
-
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	meter configuration record
-					cyng::param_map_factory("idx", vec.at(5))
-						("active", vec.at(6))
-						("size", cyng::numeric_cast<std::uint32_t>(vec.at(7), 0))
-						("period", cyng::numeric_cast<std::uint32_t>(vec.at(8), 0))
-						("OBIS", vec.at(9))
-						("profile", profile)
-						("registers", vec.at(10))
-					()
-				});
-			}
-
-			void state_connected_task::get_proc_param_push_target(cyng::async::mux& mux, cyng::vector_t vec)
-			{
-				//cyng::buffer_t tmp;
-				//node::sml::obis code(cyng::value_cast(vec.at(9), tmp));
-				//std::string const profile = (node::sml::is_profile(code))
-				//	? node::sml::get_name(code)
-				//	: "no-profile"
-				//	;
-
-				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(3),	//	server ID
-					vec.at(4),	//	OBIS code
-								//	meter configuration record
-					cyng::param_map_factory("idx", vec.at(5))
-						("interval",  cyng::numeric_cast<std::uint32_t>(vec.at(6), 0))
-						("delay", cyng::numeric_cast<std::uint32_t>(vec.at(7), 0))
-						("source", vec.at(8))
-						("target", vec.at(9))
-						("service", vec.at(10))
-					()
-					});
+				mux.post(tsk_proxy_, 3, cyng::to_tuple(vec));
 			}
 
 			void state_connected_task::get_list_response(cyng::async::mux& mux, cyng::vector_t vec)
 			{
 
-				//	[7dee1864-70a4-4029-9787-c5cae1ec52eb,4061719-2,0,,01E61E130900163C07,990000000003,%(("08 00 01 00 00 ff":0.758),("08 00 01 02 00 ff":0.758)),null,06988c71]
+				//	[]
 				mux.post(tsk_proxy_, 5, cyng::tuple_t{
-					vec.at(1),	//	trx
-					vec.at(2),	//	idx
-					vec.at(4),	//	server ID - mostly empty
-					vec.at(5),	//	OBIS_CODE(99, 00, 00, 00, 00, 03)
-					vec.at(6)	//	last data record
+					vec.at(0),	//	trx
+					vec.at(1),	//	server ID - mostly empty
+					vec.at(2),	//	OBIS_CODE(99, 00, 00, 00, 00, 03)
+					vec.at(3)	//	complete parameter list with values
 					});
 			}
 
 			void state_connected_task::attention_msg(cyng::async::mux& mux, cyng::vector_t vec)
 			{
-				mux.post(tsk_proxy_, 6, cyng::tuple_t{ vec.at(3), vec.at(4) });
+				//
+				//	send
+				//	* [string] trx
+				//	* [string] srv
+				//	* [buffer] OBIS code
+				//
+				mux.post(tsk_proxy_, 6, cyng::tuple_t{ vec.at(0), vec.at(1), vec.at(2) });
 			}
-
 		}
-
 	}
 }
 

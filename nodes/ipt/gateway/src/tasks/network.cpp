@@ -15,6 +15,7 @@
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/generator.h>
 #include <smf/sml/protocol/serializer.h>
+#include <smf/shared/db_cfg.h>
 
 #include <cyng/factory/set_factory.h>
 #include <cyng/async/task/task_builder.hpp>
@@ -35,7 +36,6 @@ namespace node
 	{
 		network::network(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
-			, node::sml::status& status_word
 			, cyng::store::db& config_db
 			, boost::uuids::uuid tag
 			, redundancy const& cfg
@@ -43,15 +43,11 @@ namespace node
 			, cyng::tuple_t const& cfg_wired_lmn
 			, std::string account
 			, std::string pwd
-			, std::string manufacturer
-			, std::string model
-			, std::uint32_t serial
-			, cyng::mac48 mac
 			, bool accept_all
 			, std::map<int, std::string> gpio_paths)
 		: bus(logger
 			, btp->mux_
-			, tag	//, boost::uuids::random_generator()()
+			, tag	
 			, cfg.get().sk_
 			, "ipt:gateway"
 			, 1u)
@@ -67,18 +63,13 @@ namespace node
 			}, false, false)
 			, core_(logger_
 				, vm_
-				, status_word
 				, config_db
 				, cfg
 				, false	//	client mode
 				, account
 				, pwd
-				, manufacturer
-				, model
-				, serial
-				, mac
 				, accept_all)
-			, exec_(logger, btp->mux_, status_word, config_db, vm_, mac)
+			, exec_(logger, btp->mux_, config_db, vm_)
 			, seq_open_channel_map_()
 			, task_gpio_(cyng::async::NO_TASK)
 		{
@@ -102,8 +93,8 @@ namespace node
 					<< " - "
 					<< cyng::io::to_str(frame));
 
-				config_db.modify("_Config", cyng::table::key_generator("remote.ep"), cyng::param_t("value", frame.at(0)), ctx.tag());
-				config_db.modify("_Config", cyng::table::key_generator("local.ep"), cyng::param_t("value", frame.at(1)), ctx.tag());
+				update_config(config_db, "remote.ep", frame.at(0), ctx.tag());
+				update_config(config_db, "local.ep", frame.at(1), ctx.tag());
 
 			});
 
@@ -122,7 +113,7 @@ namespace node
 			//	update status word
 			//
 			auto pos = tid_map.find(47);
-			status_word.set_mbus_if_available(start_wireless_lmn(config_db, cfg_wireless_lmn, (pos != tid_map.end()) ? pos->second : cyng::async::NO_TASK));
+			exec_.start_wireless_lmn(start_wireless_lmn(config_db, cfg_wireless_lmn, (pos != tid_map.end()) ? pos->second : cyng::async::NO_TASK));
 
 			//
 			// wired-LMN configuration
@@ -319,11 +310,6 @@ namespace node
 		//	slot [0] 0x4001/0x4002: response login
 		void network::on_login_response(std::uint16_t watchdog, std::string redirect)
 		{
-			//
-			//	authorization successful
-			//	update status word
-			//
-			core_.status_word_.set_authorized(true);
 
 			//
 			//	op log entry
@@ -346,11 +332,6 @@ namespace node
 		//	slot [1] - connection lost / reconnect
 		void network::on_logout()
 		{
-			//
-			//	update status word
-			//
-			core_.status_word_.set_authorized(false);
-
 			//
 			//	op log entry
 			//

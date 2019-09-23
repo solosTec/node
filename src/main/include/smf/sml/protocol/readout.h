@@ -14,21 +14,19 @@
 #include <cyng/object.h>
 #include <cyng/intrinsics/sets.h>
 
-#include <boost/uuid/uuid.hpp>
-
 namespace node
 {
 	namespace sml
 	{
 		struct readout
 		{
-			readout(boost::uuids::uuid);
+			readout();
 
-			void reset(boost::uuids::uuid, std::size_t);
+			void reset();
 
 			readout& set_trx(cyng::buffer_t const&);
-			readout& set_index(std::size_t);
 			readout& set_value(std::string const&, cyng::object);
+
 			/**
 			 * overwrite existing values
 			 */
@@ -40,8 +38,9 @@ namespace node
 			cyng::object get_value(obis) const;
 			std::string get_string(obis) const;
 
-			boost::uuids::uuid pk_;
-			std::size_t idx_;	//!< message index
+			std::string read_server_id(cyng::object obj);
+			std::string read_client_id(cyng::object obj);
+
 			std::string trx_;
 			cyng::buffer_t	server_id_;
 			cyng::buffer_t	client_id_;

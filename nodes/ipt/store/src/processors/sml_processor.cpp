@@ -200,7 +200,7 @@ namespace node
 		//	post data to all consumers
 		//
 		for (auto tid : consumers_) {
-			mux_.post(tid, CONSUMER_PUSH_DATA, cyng::tuple_factory(line_, code, idx, msg));
+			mux_.post(tid, CONSUMER_PUSH_DATA, cyng::tuple_factory(line_, code, msg));
 		}
 
 		//

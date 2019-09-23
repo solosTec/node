@@ -29,14 +29,15 @@ namespace node
 	namespace sml
 	{
 
-		db_exporter::db_exporter(cyng::table::mt_table const& mt, std::string const& schema)
-			: mt_(mt)
+		db_exporter::db_exporter(cyng::table::mt_table const& mt
+			, std::string const& schema)
+		: mt_(mt)
 			, schema_(schema)
 			, source_(0)
 			, channel_(0)
 			, target_()
 			, rgn_()
-			, ro_(rgn_())
+			, ro_()
 		{
 			reset();
 		}
@@ -52,7 +53,7 @@ namespace node
 			, channel_(channel)
 			, target_(target)
 			, rgn_()
-			, ro_(rgn_())
+			, ro_()
 		{
 			reset();
 		}
@@ -60,24 +61,19 @@ namespace node
 
 		void db_exporter::reset()
 		{
-			ro_.reset(rgn_(), 0);
+			ro_.reset();
 		}
 
-		void db_exporter::write(cyng::db::session sp, cyng::tuple_t const& msg, std::size_t idx)
+		void db_exporter::write(cyng::db::session sp, cyng::tuple_t const& msg)
 		{
-			read_msg(sp, msg.begin(), msg.end(), idx);
+			read_msg(sp, msg.begin(), msg.end());
 		}
 
-		void db_exporter::read_msg(cyng::db::session sp, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end, std::size_t idx)
+		void db_exporter::read_msg(cyng::db::session sp, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
 			if (count != 5)	return;
-
-			//
-			//	reset readout context
-			//
-			ro_.set_index(idx);
 
 			//
 			//	(1) - transaction id
@@ -315,9 +311,10 @@ namespace node
 			ro_.set_value("signature", *pos++);
 
 			return store_meta(sp
-				, ro_.pk_
+				, rgn_()
 				, ro_.trx_
-				, ro_.idx_
+				//, ro_.idx_
+				, 0u	//	ToDo: change database scheme
 				, ro_.get_value("roTime")
 				, ro_.get_value("actTime")
 				, ro_.get_value("valTime")
@@ -475,9 +472,10 @@ namespace node
 			ro_.set_value("signature", *pos++);
 
 			return store_data(sp
-				, ro_.pk_
+				, rgn_()
 				, ro_.trx_
-				, ro_.idx_
+				//, ro_.idx_
+				,  0u // ToDo: change database scheme
 				, code	//	.to_buffer()
 				, unit
 				, node::mbus::get_unit_name(unit)

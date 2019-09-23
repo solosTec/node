@@ -69,34 +69,30 @@ namespace node
 				std::stringstream ss;
 
 				ss
-					<< "next SML symbol: "
+					<< "SML symbol @"
+					<< std::hex << std::setw(2) << std::setfill('0')
+					<< pos_
+					<< " - "
+					<< std::dec << std::setw(2) << std::setfill('0')
 					<< +c
 					<< "/0x"
 					<< std::hex << std::setw(2) << std::setfill('0')
 					<< +(c & 0xff)
-					<< " - "
+					<< " <"
 					<< state_name()
-					<< '@'
-					<< pos_
+					<< "> "
 					;
 				if (!stack_.empty())
 				{
 					ss
 						<< "\t[list "
-						;
-
-					for (std::size_t pos{1u}; pos < stack_.size(); ++pos)
-					{
-						ss 
-							<< '.'
-							;
-					}
-					ss
+						<< std::string(stack_.size() - 1, '.')
 						<< stack_.top().values_.size()
 						<< "/"
 						<< stack_.top().target_
 						<< "]"
 						;
+
 				}
 				if (!data_only_)	cb_(cyng::generate_invoke("sml.log", ss.str()));
 			}
@@ -344,26 +340,6 @@ namespace node
 		{
 			if (s.push(c_))
 			{
-				//if ((parser_.verbose_ || parser_.log_) && !parser_.data_only_)
-				//{
-				//	std::stringstream ss;
-				//	ss
-				//		<< parser_.prefix()
-				//		<< "OCTET "
-				//		<< cyng::io::to_hex(s.octet_)
-				//		;
-				//	if (parser_.verbose_)
-				//	{
-				//		std::cerr
-				//			<< ss.rdbuf()
-				//			<< std::endl;
-				//	}
-				//	if (parser_.log_)
-				//	{
-				//		parser_.cb_(cyng::generate_invoke("sml.log", ss.str()));
-				//	}
-				//}
-
 				//	emit() is the same as push() but with optional logging
 				parser_.emit(std::move(s.octet_));
 				return STATE_START;
@@ -455,6 +431,14 @@ namespace node
 						<< std::hex
 						<< s.u_.n_
 						;
+
+					if (parser_.stack_.size() == 2) {
+						ss
+							<< " - "
+							<< node::sml::messages::name(s.u_.n_)
+							;
+					}
+
 					if (parser_.verbose_)
 					{
 						std::cerr

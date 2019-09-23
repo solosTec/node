@@ -10,6 +10,8 @@
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/event.h>
 #include <smf/sml/obis_db.h>
+#include <smf/shared/db_cfg.h>
+#include <smf/sml/status.h>
 
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/intrinsics/buffer.h>
@@ -25,13 +27,10 @@ namespace node
 
 		executor::executor(cyng::logging::log_ptr logger
 			, cyng::async::mux& mux
-			, status& status_word
 			, cyng::store::db& config_db
-			, cyng::controller& vm
-			, cyng::mac48 mac)
+			, cyng::controller& vm)
 		: logger_(logger)
 			, mux_(mux)
-			, status_word_(status_word)
 			, config_db_(config_db)
 			, vm_(vm)
 		{
@@ -39,35 +38,68 @@ namespace node
 			subscribe("push.ops");
 
 #ifdef _DEBUG
-			init_db(vm_.tag(), mac);
+			init_db(vm_.tag());
 #endif
 		}
 
 		void executor::ipt_access(bool success, std::string address)
 		{
 			//
-			//	auto key
+			//	authorization successful / failed
+			//	update status word atomically
 			//
-			auto pk = config_db_.size("op.log");
+			config_db_.access([&](cyng::store::table* tbl_cfg, cyng::store::table* tbl_log) {
 
-			config_db_.insert("op.log"
-				, cyng::table::key_generator(pk)
-				, cyng::table::data_generator(std::chrono::system_clock::now()
-					, static_cast<std::uint32_t>(900u)	//	reg period - 15 min
-					, std::chrono::system_clock::now()	//	val time
-					, status_word_.operator std::uint64_t()	//	status
-					, (success ? evt_ipt_connect() : evt_ipt_disconnect())	//	event: 1232076810/1232076814
-					, OBIS_CODE_PEER_ADDRESS_WANGSM.to_buffer()	//	81 81 00 00 00 13
-					, std::chrono::system_clock::now()	//	val time
-					, cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02 })
-					, address
-					, static_cast<std::uint8_t>(0u))		//	push_nr
-				, 1	//	generation
-				, vm_.tag());
+				auto word = cyng::value_cast<std::uint64_t>(get_config(tbl_cfg, OBIS_CLASS_OP_LOG_STATUS_WORD.to_str()), 0u);
+				status status(word);
 
+				status.set_authorized(success);
+				update_config(tbl_cfg, OBIS_CLASS_OP_LOG_STATUS_WORD.to_str(), word, vm_.tag());
 
+				CYNG_LOG_DEBUG(logger_, "status word: " << word);
+
+				//
+				//	auto key
+				//
+				auto pk = tbl_log->size();
+
+				tbl_log->insert(cyng::table::key_generator(pk)
+					, cyng::table::data_generator(std::chrono::system_clock::now()
+						, static_cast<std::uint32_t>(900u)	//	reg period - 15 min
+						, std::chrono::system_clock::now()	//	val time
+						, word	//	status
+						, (success ? evt_ipt_connect() : evt_ipt_disconnect())	//	event: 1232076810/1232076814
+						, OBIS_CODE_PEER_ADDRESS_WANGSM.to_buffer()	//	81 81 00 00 00 13
+						, std::chrono::system_clock::now()	//	val time
+						, cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02 })
+						, address
+						, static_cast<std::uint8_t>(0u))		//	push_nr
+					, 1	//	generation
+					, vm_.tag());
+
+			}	, cyng::store::write_access("_Config")
+				, cyng::store::write_access("op.log"));
 		}
 
+		void executor::start_wireless_lmn(bool available)
+		{
+			//
+			//	atomic status update
+			//
+			config_db_.access([&](cyng::store::table* tbl) {
+
+				auto word = cyng::value_cast<std::uint64_t>(get_config(tbl, node::sml::OBIS_CLASS_OP_LOG_STATUS_WORD.to_str()), 0u);
+				node::sml::status status(word);
+
+				//
+				//	Wireless M-Bus interface is available
+				//
+				status.set_mbus_if_available(available);
+				update_config(tbl, node::sml::OBIS_CLASS_OP_LOG_STATUS_WORD.to_str(), word, vm_.tag());
+				CYNG_LOG_DEBUG(logger_, "status word: " << word);
+
+			}, cyng::store::write_access("_Config"));
+		}
 
 		void executor::subscribe(std::string const& table)
 		{
@@ -107,7 +139,7 @@ namespace node
 				const auto r = cyng::async::start_task_delayed<ipt::push_ops>(mux_
 					, std::chrono::seconds(10)
 					, logger_
-					, status_word_
+					//, status_word_
 					, config_db_
 					, vm_
 					, key
@@ -189,15 +221,19 @@ namespace node
 			}
 		}
 
-		void executor::init_db(boost::uuids::uuid tag, cyng::mac48 mac)
+		void executor::init_db(boost::uuids::uuid tag)
 		{
 #ifdef _DEBUG
+
+			cyng::buffer_t server_id;
+			server_id = cyng::value_cast(get_config(config_db_, OBIS_CODE_SERVER_ID.to_str()), server_id);
+
 			cyng::crypto::aes_128_key aes_key;
 			cyng::crypto::aes::randomize(aes_key);
 
 			//	insert demo device
 			config_db_.insert("mbus-devices"
-				, cyng::table::key_generator(sml::to_gateway_srv_id(mac))
+				, cyng::table::key_generator(server_id)
 				, cyng::table::data_generator(std::chrono::system_clock::now()
 					, "---"
 					//, true	//	visible

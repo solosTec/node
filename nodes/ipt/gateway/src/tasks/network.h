@@ -11,7 +11,6 @@
 #include <smf/ipt/bus.h>
 #include <smf/ipt/config.h>
 #include <smf/sml/protocol/parser.h>
-#include <smf/sml/status.h>
 #include "../core.h"
 #include "../executor.h"
 
@@ -31,7 +30,6 @@ namespace node
 		public:
 			network(cyng::async::base_task* bt
 				, cyng::logging::log_ptr
-				, node::sml::status& status_word
 				, cyng::store::db& config_db
 				, boost::uuids::uuid tag
 				, redundancy const& cfg
@@ -39,10 +37,6 @@ namespace node
 				, cyng::tuple_t const& cfg_wired_lmn
 				, std::string account
 				, std::string pwd
-				, std::string manufacturer
-				, std::string model
-				, std::uint32_t serial
-				, cyng::mac48 mac
 				, bool accept_all
 				, std::map<int, std::string> gpio_paths);
 			cyng::continuation run();

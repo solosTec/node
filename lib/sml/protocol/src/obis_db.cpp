@@ -19,7 +19,7 @@ namespace node
 
 		const char* get_name(obis const& code)
 		{
-			auto const n = code.to_uint64();
+			//auto const n = code.to_uint64();
 			switch (code.to_uint64()) {
 
 			case 0x818100020000:	return "version";	//	CODE_VERSION

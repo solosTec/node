@@ -152,12 +152,7 @@ namespace node
 	 * @param tag_ws websocket session tag (origin)
 	 * @param key key for TGateway/TDevice table
 	 * @param channel channel name (get.proc.param, set.proc.param, ...)
-	 * @param vec vector of parameter requests
-	cyng::vector_t bus_req_com_sml(cyng::vector_t const& key
-		, boost::uuids::uuid tag_ws
-		, std::string channel
-		, cyng::vector_t sections
-		, cyng::vector_t params);
+	 * @param params tuple of parameter requests
 	 */
 	cyng::vector_t bus_req_com_sml(boost::uuids::uuid tag_ws
 		, std::string msg_type
@@ -179,7 +174,7 @@ namespace node
 		, std::string channel
 		, std::string srv
 		, std::string code
-		, cyng::param_map_t const&);
+		, cyng::param_map_t params);
 
 	/**
 	 * Send back attention codes
