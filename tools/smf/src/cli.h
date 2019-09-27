@@ -10,6 +10,7 @@
 
 #include "console.h"
 #include "convert.h"
+#include "tracking.h"
 #include <cyng/compatibility/io_service.h>
 
 namespace node
@@ -17,6 +18,7 @@ namespace node
 	class cli : public console
 	{
 		friend class convert;
+		friend class tracking;
 	public:
 		cli(cyng::io_service_t&, boost::uuids::uuid, std::ostream&, std::istream&);
 		virtual ~cli();
@@ -30,6 +32,7 @@ namespace node
 
 	private:
 		convert	plugin_convert_;
+		tracking	plugin_tracking_;
 	};
 }
 

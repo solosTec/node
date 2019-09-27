@@ -46,6 +46,8 @@ set (tool_smf_plugin
 
 	tools/smf/src/convert.h
 	tools/smf/src/convert.cpp
+	tools/smf/src/tracking.h
+	tools/smf/src/tracking.cpp
 
 )
 

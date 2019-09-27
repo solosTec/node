@@ -37,6 +37,11 @@ namespace node
 				, cyng::param_factory("country-code", "CH")
 				, cyng::param_factory("language-code", "EN")
 
+				, cyng::param_factory("tracking", cyng::tuple_factory(
+					cyng::param_factory("path", (cwd / "project-tracking.csv").string()),
+					cyng::param_factory("auto-save", 120)	//	seconds
+				))
+
 				, cyng::param_factory("cluster", cyng::tuple_factory(
 					cyng::param_factory("account", "root"),
 					cyng::param_factory("pwd", NODE_PWD),

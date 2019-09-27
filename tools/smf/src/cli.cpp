@@ -19,6 +19,7 @@ namespace node
 	cli::cli(cyng::io_service_t& ios, boost::uuids::uuid tag, std::ostream& out, std::istream& in)
 		: console(ios, tag, out, in)
 		, plugin_convert_(this)
+		, plugin_tracking_(this)
 	{
 	}
 
