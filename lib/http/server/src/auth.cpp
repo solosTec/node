@@ -9,7 +9,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
-#include <cyng/crypto/base64.h>
+#include <crypto/base64.h>
 #include <cyng/util/split.h>
 #include <boost/assert.hpp>
 #include <boost/algorithm/string/predicate.hpp>

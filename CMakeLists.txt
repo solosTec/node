@@ -182,6 +182,45 @@ message(STATUS "** CMake modules     : ${CMAKE_MODULE_PATH}")
 include(CPPFeatureSupport)
 
 #
+#	setup crypto library
+#   -DCRYPT_ROOT:path=...
+#	assume parallel installation - that is both projects share the same parent directory.
+#
+if(NOT CRYPT_ROOT)
+    set(CRYPT_ROOT "${PROJECT_SOURCE_DIR}/../crypto" CACHE PATH "CRYPT_ROOT")
+	message(STATUS "** Set CRYPT_ROOT: ${CRYPT_ROOT}")
+endif()
+
+get_filename_component(CRYPT_INCLUDE_DIR "${CRYPT_ROOT}/include" REALPATH)
+include_directories("${CRYPT_INCLUDE_DIR}")
+message(STATUS "** CRYPT include path : ${CRYPT_INCLUDE_DIR}")
+
+#
+#	setup cyng build directory
+#   -DCRYPT_BUILD:path=...
+#	assume parallel installation - that is both projects share the same parent directory.
+#
+if (NOT CRYPT_BUILD)
+    set(CRYPT_BUILD "${CRYPT_ROOT}/build" CACHE PATH "CRYPT_BUILD")
+	message(STATUS "** Set CRYPT_BUILD: ${CRYPT_BUILD}")
+endif()
+
+get_filename_component(CRYPT_LIBRARY_DIR ${CRYPT_BUILD} REALPATH)
+include_directories(${CRYPT_LIBRARY_DIR})
+message(STATUS "** CRYPT include path : ${CRYPT_LIBRARY_DIR}")
+
+if (UNIX)
+    link_directories(${CRYPT_LIBRARY_DIR})
+    message(STATUS "** CRYPT Libraries    : ${CRYPT_LIBRARY_DIR}")
+else()
+	#
+	#	$(ConfigurationName) is a variable used by the MS build system
+	#
+	link_directories(${CRYPT_LIBRARY_DIR}/$(ConfigurationName))
+    message(STATUS "** CRYPT Libraries    : ${CRYPT_LIBRARY_DIR}")
+endif()
+
+#
 #	setup C++ compiler
 #
 if (CMAKE_COMPILER_IS_GNUCXX)
@@ -528,7 +567,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
     include (nodes/dash/prg.cmake)
     add_executable(dash ${node_dash})
     # libraries to link
-    set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml cyng_csv smf_cluster smf_http_srv ${OPENSSL_LIBRARIES})
+    set(dashboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml cyng_csv smf_cluster smf_http_srv crypto ${OPENSSL_LIBRARIES})
 
 	message(STATUS "** dash auth support : ${${PROJECT_NAME}_SSL_SUPPORT}")
 	if(${PROJECT_NAME}_SSL_SUPPORT)
@@ -551,7 +590,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
     include (nodes/dashs/prg.cmake)
     add_executable(dashs ${node_dashs})
     # libraries to link
-    set(dashsboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml cyng_csv smf_cluster smf_https_srv ${OPENSSL_LIBRARIES})
+    set(dashsboard_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_store cyng_table cyng_sys cyng_xml cyng_csv smf_cluster smf_https_srv crypto ${OPENSSL_LIBRARIES})
     if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND dashsboard_link_libs "${Boost_LIBRARIES}")
         if (UNIX)
@@ -695,7 +734,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
     include (nodes/lora/prg.cmake)
     add_executable(lora ${node_lora})
     # libraries to link
-    set(lora_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_crypto cyng_xml smf_cluster smf_https_srv smf_lora smf_protocol_sml ${OPENSSL_LIBRARIES})
+    set(lora_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_domain cyng_sys cyng_crypto cyng_xml smf_cluster smf_https_srv smf_lora smf_protocol_sml crypto ${OPENSSL_LIBRARIES})
     if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND lora_link_libs cyng_store cyng_table "${Boost_LIBRARIES}")
         if (UNIX)
