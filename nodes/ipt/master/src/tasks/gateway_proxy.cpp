@@ -13,6 +13,7 @@
 #include <smf/sml/obis_db.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/parser/srv_id_parser.h>
+#include <smf/sml/event.h>
 
 #include <cyng/vm/generator.h>
 #include <cyng/sys/mac.h>
@@ -428,6 +429,80 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
+	//	slot [8]
+	cyng::continuation gateway_proxy::process(std::string trx
+		, std::uint32_t act_time
+		, std::uint32_t reg_period
+		, std::uint32_t val_time
+		, cyng::buffer_t path	//	OBIS
+		, cyng::buffer_t srv_id
+		, std::uint32_t	stat
+		, cyng::param_map_t params)
+	{
+		auto const pos = output_map_.find(trx);
+		if (pos != output_map_.end()) {
+
+			auto const srv_str = (srv_id.empty())
+				? sml::from_server_id(pos->second.get_srv())
+				: sml::from_server_id(srv_id)
+				;
+
+			sml::obis const root(path);
+
+			//
+			//	update params with specific SML_GetProfileList.Res data
+			//
+			params.emplace("actTime", cyng::make_object(act_time));
+			params.emplace("regPeriod", cyng::make_object(reg_period));
+			params.emplace("valTime", cyng::make_object(val_time));
+			params.emplace("status", cyng::make_object(stat));
+
+			//
+			//	provide more event type data
+			//
+			auto const evt = params.find(sml::OBIS_CLASS_EVENT.to_str());
+			if (evt != params.end()) {
+				auto const val = cyng::value_cast<std::uint32_t>(evt->second, 0u);
+				params.emplace("evtType", cyng::make_object(sml::evt_get_type(val)));
+				params.emplace("evtLevel", cyng::make_object(sml::evt_get_level(val)));
+				params.emplace("evtSource", cyng::make_object(sml::evt_get_source(val)));
+			}
+
+			//	[2159338-2,084e0f4a,0384,084dafce,<!18446744073709551615:user-defined>,0500153B021774,00070202,%(("010000090B00":{7,0,2019-10-10 15:23:50.00000000,null}),("81040D060000":{ff,0,0,null}),("810417070000":{ff,0,0,null}),("81041A070000":{ff,0,0,null}),("81042B070000":{fe,0,0,null}),("8181000000FF":{ff,0,818100000001,null}),("8181C789E2FF":{ff,0,00800000,null}))]]
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> response #"
+				<< pos->second.get_sequence()
+				<< " from "
+				<< srv_str
+				<< " status "
+				<< stat);
+
+			bus_->vm_.async_run(bus_res_com_sml(pos->second.get_tag_ident()
+				, pos->second.get_tag_source()
+				, pos->second.get_sequence()
+				, pos->second.get_key_gw()
+				, pos->second.get_tag_origin()
+				, pos->second.get_msg_type()
+				, srv_str
+				, root.to_str()
+				, params));
+
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> response "
+				<< trx
+				<< " not found");
+		}
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
 	cyng::continuation gateway_proxy::process(
 		boost::uuids::uuid tag,		//	[0] ident tag (target)
 		boost::uuids::uuid source,	//	[1] source tag
@@ -570,15 +645,15 @@ namespace node
 		switch (data.get_msg_code()) {
 
 		case node::sml::BODY_GET_PROFILE_PACK_REQUEST:
-		//	fall through
-		case node::sml::BODY_GET_PROFILE_LIST_REQUEST:
 			CYNG_LOG_ERROR(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> not implemented yet "
 				<< data.get_msg_type());
-			//execute_cmd_get_profile_list(sml_gen, data, params);
+			break;
+		case node::sml::BODY_GET_PROFILE_LIST_REQUEST:
+			execute_cmd_get_profile_list(sml_gen, data, params);
 			break;
 
 		case node::sml::BODY_GET_PROC_PARAMETER_REQUEST:
@@ -603,6 +678,43 @@ namespace node
 
 			break;
 		}
+	}
+
+	void gateway_proxy::execute_cmd_get_profile_list(sml::req_generator& sml_gen
+		, ipt::proxy_data const& data
+		, cyng::tuple_reader const& params)
+	{
+		CYNG_LOG_TRACE(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> "
+			<< data.get_msg_type()
+			<< " - range: "
+			<< cyng::io::to_str(params.get("range"))
+			<< " hours");
+
+		//	[
+		//		cb4d6c74-be4c-481b-8317-7b0c03191ed6,
+		//		9f773865-e4af-489a-8824-8f78a2311278,
+		//		75,
+		//		ad4d7f18-0968-4fd9-8904-dd9296cc8132,
+		//		GetProfileListRequest,
+		//		8181C789E1FF,
+		//		[bd065994-fe7b-4985-b2ab-d9d64082ecfe],
+		//		{("range":144)},
+		//		0500153B02297E,
+		//		operator,
+		//		operator
+		//	]
+		
+		push_trx(sml_gen.get_profile_list(data.get_srv()
+			, data.get_user()
+			, data.get_pwd()
+			, std::chrono::system_clock::now() - std::chrono::hours(24)
+			, std::chrono::system_clock::now()
+			, data.get_root()), data);	//	81 81 C7 89 E1 FF
+
 	}
 
 	void gateway_proxy::execute_cmd_get_proc_param(sml::req_generator& sml_gen

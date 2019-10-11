@@ -77,15 +77,9 @@ namespace node
 		node::sml::sml_messages_enum proxy_data::get_msg_code() const
 		{
 			//
-			//	only requests
+			//	only requests expected
 			//
-			if (boost::algorithm::equals(msg_type_, "GetProfileListRequest"))	return node::sml::BODY_GET_PROFILE_PACK_REQUEST;
-			else if (boost::algorithm::equals(msg_type_, "GetProfilePackRequest"))	return node::sml::BODY_GET_PROFILE_PACK_REQUEST;
-			else if (boost::algorithm::equals(msg_type_, "GetProcParameterRequest"))	return node::sml::BODY_GET_PROC_PARAMETER_REQUEST;
-			else if (boost::algorithm::equals(msg_type_, "SetProcParameterRequest"))	return node::sml::BODY_SET_PROC_PARAMETER_REQUEST;
-			else if (boost::algorithm::equals(msg_type_, "GetListRequest"))	return node::sml::BODY_GET_LIST_REQUEST;
-
-			return node::sml::BODY_UNKNOWN;
+			return node::sml::messages::get_msg_code(msg_type_);
 		}
 
 		cyng::buffer_t const& proxy_data::get_srv() const

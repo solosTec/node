@@ -19,6 +19,7 @@
 #include <type_traits>
 #include <exception>
 #include <string>
+#include <boost/algorithm/string.hpp>
 
 namespace node
 {
@@ -89,6 +90,38 @@ namespace node
 
 				return "";
 			}
+
+			inline sml_messages_enum get_msg_code(std::string const& name)
+			{
+				//
+				//	only requests
+				//
+				if (boost::algorithm::equals(name, "PublicOpenRequest")) return BODY_OPEN_REQUEST;
+				else if (boost::algorithm::equals(name, "PublicOpenResponse")) return BODY_OPEN_RESPONSE;
+
+				else if (boost::algorithm::equals(name, "PublicCloseRequest")) return BODY_CLOSE_REQUEST;
+				else if (boost::algorithm::equals(name, "PublicCloseResponse")) return BODY_CLOSE_RESPONSE;
+
+				else if (boost::algorithm::equals(name, "GetProfileListRequest"))	return BODY_GET_PROFILE_LIST_REQUEST;
+				else if (boost::algorithm::equals(name, "GetProfileListResponse")) return BODY_GET_PROFILE_LIST_RESPONSE;
+
+				else if (boost::algorithm::equals(name, "GetProfilePackRequest"))	return BODY_GET_PROFILE_PACK_REQUEST;
+				else if (boost::algorithm::equals(name, "GetProfilePackResponse")) return BODY_GET_PROFILE_PACK_RESPONSE;
+
+				else if (boost::algorithm::equals(name, "GetProcParameterRequest"))	return BODY_GET_PROC_PARAMETER_REQUEST;
+				else if (boost::algorithm::equals(name, "GetProcParameterResponse")) return BODY_GET_PROC_PARAMETER_RESPONSE;
+
+				else if (boost::algorithm::equals(name, "SetProcParameterRequest"))	return BODY_SET_PROC_PARAMETER_REQUEST;
+				else if (boost::algorithm::equals(name, "SetProcParameterResponse")) return BODY_SET_PROC_PARAMETER_RESPONSE;
+
+				else if (boost::algorithm::equals(name, "GetListRequest"))	return BODY_GET_LIST_REQUEST;
+				else if (boost::algorithm::equals(name, "GetListResponse"))	return BODY_GET_LIST_RESPONSE;
+
+				else if (boost::algorithm::equals(name, "Attention"))	return BODY_ATTENTION_RESPONSE;
+
+				return node::sml::BODY_UNKNOWN;
+			}
+
 		}
 
 		enum sml_token_enum

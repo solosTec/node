@@ -17,12 +17,12 @@ set (sml_protocol_cpp
 	lib/sml/protocol/src/ip_io.cpp
 	# moved from bus
 	lib/sml/protocol/src/status.cpp
+	lib/sml/protocol/src/event.cpp
 )
 
 set (sml_protocol_h
 	src/main/include/smf/sml/defs.h
 	src/main/include/smf/sml/crc16.h
-#	src/main/include/smf/sml/units.h
 	src/main/include/smf/sml/scaler.h
 	src/main/include/smf/sml/intrinsics/obis.h
 	src/main/include/smf/mbus/defs.h
@@ -30,7 +30,9 @@ set (sml_protocol_h
 	src/main/include/smf/sml/obis_io.h
 	src/main/include/smf/sml/srv_id_io.h
 	src/main/include/smf/sml/ip_io.h
+	# moved from bus
 	src/main/include/smf/sml/status.h
+	src/main/include/smf/sml/event.h
 )
 
 set (sml_generator

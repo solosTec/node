@@ -40,6 +40,7 @@ namespace node
 		void sml_public_close_response(cyng::context& ctx);
 		void sml_get_proc_param_response(cyng::context& ctx);
 		void sml_get_list_response(cyng::context& ctx);
+		void sml_get_profile_list_response(cyng::context& ctx);
 		void sml_attention_msg(cyng::context& ctx);
 
 		//void sml_get_proc_parameter(cyng::context& ctx);

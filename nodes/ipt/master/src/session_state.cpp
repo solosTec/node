@@ -990,15 +990,35 @@ namespace node
 				return;
 			}
 
-			//BOOST_ASSERT(evt.vec_.size() == 6);
 			//	[]
 			CYNG_LOG_DEBUG(logger_, "evt_sml_get_list_response to #" << task_.tsk_proxy_);
-			CYNG_LOG_DEBUG(logger_, "get_list_response: "	<< cyng::io::to_str(evt.vec_));
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_list_response: "	<< cyng::io::to_str(evt.vec_));
 
 			//
 			//	message slot (5)
 			//
 			task_.get_list_response(sp_->mux_, evt.vec_);
+
+		}
+
+		void session_state::react(state::evt_sml_get_profile_list_response evt)
+		{
+			switch (state_) {
+			case S_CONNECTED_TASK:
+				break;
+			default:
+				signal_wrong_state("evt_sml_get_profile_list_response");
+				return;
+			}
+
+			//	[]
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_profile_list_response to #" << task_.tsk_proxy_);
+			CYNG_LOG_DEBUG(logger_, "evt_sml_get_profile_list_response: " << cyng::io::to_str(evt.vec_));
+
+			//
+			//	message slot (?)
+			//
+			task_.get_profile_list_response(sp_->mux_, evt.vec_);
 
 		}
 
@@ -1321,6 +1341,13 @@ namespace node
 			{}
 
 			//
+			//	EVENT: evt_sml_get_profile_list_response
+			//
+			evt_sml_get_profile_list_response::evt_sml_get_profile_list_response(cyng::vector_t vec)
+				: vec_(vec)
+			{}
+
+			//
 			//	EVENT: evt_sml_attention_msg
 			//
 			evt_sml_attention_msg::evt_sml_attention_msg(cyng::vector_t vec)
@@ -1543,6 +1570,22 @@ namespace node
 					vec.at(2),	//	OBIS_CODE(99, 00, 00, 00, 00, 03)
 					vec.at(3)	//	complete parameter list with values
 					});
+			}
+
+			void state_connected_task::get_profile_list_response(cyng::async::mux& mux, cyng::vector_t vec)
+			{
+				//	[4076396-2,null,072ff3ff,072ff3d4,,0500153B02297E,00072202]
+				BOOST_ASSERT(vec.size() == 8);
+
+				//	* trx
+				//	* actTime
+				//	* regPeriod
+				//	* valTime
+				//	* path (OBIS)
+				//	* server id
+				//	* status
+				//	* params
+				mux.post(tsk_proxy_, 8, cyng::to_tuple(vec));
 			}
 
 			void state_connected_task::attention_msg(cyng::async::mux& mux, cyng::vector_t vec)

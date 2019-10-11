@@ -15,9 +15,7 @@ namespace node
 
 		status::status(status_word_t& word)
 		: word_(word)
-		{
-			reset();
-		}
+		{}
 
 		status::status(status const& other)
 			: word_(other.word_)

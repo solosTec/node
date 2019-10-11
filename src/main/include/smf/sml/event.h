@@ -8,6 +8,12 @@
 #ifndef NODE_SML_EVENT_H
 #define NODE_SML_EVENT_H
 
+/** @file event.h
+ * 
+ * OBIS code "81 81 C7 89 E2 FF" (OBIS_CLASS_EVENT) provides an u32 value that 
+ * encodes an event type with informations about event type (enum event_type)
+ * level and source.
+ */
 
 #include <cstdint>
 
@@ -89,6 +95,21 @@ namespace node
 		std::uint32_t evt_ipt_disconnect();
 		std::uint32_t evt_npt_connect();
 		std::uint32_t evt_npt_disconnect();
+
+		/**
+		 * @return event type
+		 */
+		std::uint32_t evt_get_type(std::uint32_t);
+
+		/**
+		 * @return event level
+		 */
+		std::uint32_t evt_get_level(std::uint32_t);
+
+		/**
+		 * @return event source
+		 */
+		std::uint32_t evt_get_source(std::uint32_t);
 
 	}	//	sml
 }

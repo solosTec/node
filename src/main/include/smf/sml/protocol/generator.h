@@ -276,6 +276,25 @@ namespace node
 				, std::string const& username
 				, std::string const& password);
 
+			/**
+			 * @param serverId Octet String OPTIONAL,
+			 * @param username Octet String OPTIONAL,
+			 * @param password Octet String OPTIONAL,
+			 * @param withRawdata Boolean OPTIONAL,
+			 * @param begin_time SML_Time OPTIONAL,
+			 * @param end_time SML_Time OPTIONAL,
+			 * @param parameterTreePath SML_TreePath,
+			 * @param object_List List_of_SML_ObjReqEntry OPTIONAL,
+			 * @param dasDetails SML_Tree OPTIONAL
+			 *
+			 */
+			std::string get_profile_list(cyng::buffer_t const& server_id
+				, std::string const& username
+				, std::string const& password
+				, std::chrono::system_clock::time_point begin_time
+				, std::chrono::system_clock::time_point end_time
+				, obis path);
+
 		private:
 			trx	trx_;
 		};

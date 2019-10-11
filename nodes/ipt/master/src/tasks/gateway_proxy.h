@@ -72,7 +72,20 @@ namespace node
 			std::string				//	[10] pwd
 		>;
 
-		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7>;
+		//	[4076396-2,null,072ff3ff,072ff3d4,,0500153B02297E,00072202]
+		//	get profile list response
+		using msg_8 = std::tuple <
+			std::string,	//	trx
+			std::uint32_t,	//	act_time
+			std::uint32_t,	//	reg_period
+			std::uint32_t,	//	val_time
+			cyng::buffer_t,	//	OBIS (path)
+			cyng::buffer_t,	//	server ID
+			std::uint32_t,	//	status
+			cyng::param_map_t	//	params
+		>;
+
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8>;
 
 	public:
 		gateway_proxy(cyng::async::base_task* btp
@@ -162,9 +175,26 @@ namespace node
 			std::string	pwd				//	[11] pwd
 		);
 
+		/**
+		 * @brief slot [8]
+		 *
+		 * get profile list response
+		 */
+		cyng::continuation process(std::string trx
+			, std::uint32_t act_time
+			, std::uint32_t reg_period
+			, std::uint32_t val_time
+			, cyng::buffer_t path	//	OBIS
+			, cyng::buffer_t srv_id
+			, std::uint32_t	stat
+			, cyng::param_map_t params);
+
 	private:
 		void run_queue();
 		void execute_cmd(sml::req_generator& sml_gen
+			, ipt::proxy_data const&
+			, cyng::tuple_reader const& params);
+		void execute_cmd_get_profile_list(sml::req_generator& sml_gen
 			, ipt::proxy_data const&
 			, cyng::tuple_reader const& params);
 		void execute_cmd_get_proc_param(sml::req_generator& sml_gen

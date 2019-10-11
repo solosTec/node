@@ -24,7 +24,8 @@ namespace node
 			EVT_SUCCESS = 8,	//	push, WAN, ethernet
 			EVT_FAILURE = 9,	//	push, WAN, ethernet
 			EVT_NETWORK_LOGIN = 10,	//	GSM, PLC
-			EVT_NETWORK_LOGOUT = 11	//	GSM, PLC
+			EVT_NETWORK_LOGOUT = 11,	//	GSM, PLC
+			EVT_NETWORK_IPT = 14	//	IP-T
 		};
 
 		struct op_event {
@@ -102,6 +103,27 @@ namespace node
 		}
 		std::uint32_t evt_npt_disconnect() {
 			return make_op_event(0x4A, 0x07, 0x0E);
+		}
+
+		std::uint32_t evt_get_type(std::uint32_t evt)
+		{
+			U u;
+			u.val_ = evt;
+			return u.evt_.evt;
+		}
+
+		std::uint32_t evt_get_level(std::uint32_t evt)
+		{
+			U u;
+			u.val_ = evt;
+			return u.evt_.level;
+		}
+
+		std::uint32_t evt_get_source(std::uint32_t evt)
+		{
+			U u;
+			u.val_ = evt;
+			return u.evt_.source;
 		}
 
 	}	//	sml

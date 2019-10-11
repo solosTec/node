@@ -36,6 +36,7 @@ namespace node
 		vm_.register_function("sml.public.close.response", 1, std::bind(&proxy_comm::sml_public_close_response, this, std::placeholders::_1));
 		vm_.register_function("sml.get.proc.param.response", 5, std::bind(&proxy_comm::sml_get_proc_param_response, this, std::placeholders::_1));
 		vm_.register_function("sml.get.list.response", 4, std::bind(&proxy_comm::sml_get_list_response, this, std::placeholders::_1));
+		vm_.register_function("sml.get.profile.list.response", 8, std::bind(&proxy_comm::sml_get_profile_list_response, this, std::placeholders::_1));
 		vm_.register_function("sml.attention.msg", 4, std::bind(&proxy_comm::sml_attention_msg, this, std::placeholders::_1));
 
 	}
@@ -140,6 +141,24 @@ namespace node
 		auto const frame = ctx.get_frame();
 		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
 		state_.react(ipt::state::evt_sml_get_list_response(frame));
+	}
+
+	void proxy_comm::sml_get_profile_list_response(cyng::context& ctx)
+	{
+		//	[2159338-2,084e0f4a,0384,084dafce,<!18446744073709551615:user-defined>,0500153B021774,00070202,%(("010000090B00":{7,0,2019-10-10 15:23:50.00000000,null}),("81040D060000":{ff,0,0,null}),("810417070000":{ff,0,0,null}),("81041A070000":{ff,0,0,null}),("81042B070000":{fe,0,0,null}),("8181000000FF":{ff,0,818100000001,null}),("8181C789E2FF":{ff,0,00800000,null}))]]
+
+		//	* trx
+		//	* actTime
+		//	* regPeriod
+		//	* valTime
+		//	* path (OBIS)
+		//	* server id
+		//	* status
+		//	* params
+
+		auto const frame = ctx.get_frame();
+		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
+		state_.react(ipt::state::evt_sml_get_profile_list_response(frame));
 	}
 
 	void proxy_comm::sml_attention_msg(cyng::context& ctx)

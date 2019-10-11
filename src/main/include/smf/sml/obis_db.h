@@ -163,6 +163,9 @@ namespace node
 		//constexpr static obis	DEFINE_OBIS_CODE(81, 49, 1A, 07, 00, NN, CODE_ROOT_IPT_STATE_PORT_LOCAL);	//	local port
 		//constexpr static obis	DEFINE_OBIS_CODE(81, 49, 19, 07, 00, NN, CODE_ROOT_IPT_STATE_PORT_REMOTE);	//	remote port
 
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, 01, CODE_PEER_OBISLOG);	//	peer address: OBISLOG
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, 02, CODE_PEER_SCM);	//	peer address: SCM (power)
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, 11, CODE_PEER_USERIF);	//	peer address: USERIF
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, 13, CODE_PEER_ADDRESS_WANGSM);	//	peer address: WAN/GSM
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, 00, 00, 00, FF, CODE_PEER_ADDRESS);	//	unit is 255
 
@@ -192,6 +195,7 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 81, 0F, FF, DATA_FILENAME_INDIRECT);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 81, 0D, FF, DATA_APPLICATION);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 81, 10, FF, DATA_APPLICATION_INDIRECT);
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 81, 23, FF, DATA_PUSH_DETAILS);	// string
 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 81, FF, DATA_IP_ADDRESS);
 
@@ -294,12 +298,12 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 01, FF, W_MBUS_PROTOCOL);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 02, FF, W_MBUS_MODE_S);	//	u8
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 03, FF, W_MBUS_MODE_T);	//	u8
-		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 04, FF, W_MBUS_MODE_C);	//	alternating
-		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 05, FF, W_MBUS_MODE_N);	//	parallel
-		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 06, FF, W_MBUS_MODE_S_SYN);	//	Used for synchronized messages in meters
+		//constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 04, FF, W_MBUS_MODE_C);	//	alternating
+		//constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 05, FF, W_MBUS_MODE_N);	//	parallel
+		//constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 06, FF, W_MBUS_MODE_S_SYN);	//	Used for synchronized messages in meters
 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 27, 32, 03, 01, W_MBUS_REBOOT);	//	u32
-		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 04, FF, W_MBUS_POWER);
+		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 04, FF, W_MBUS_POWER);		//	note: same code as W_MBUS_MODE_C
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 11, FF, W_MBUS_INSTALL_MODE);
 
 		//	Spannung - voltage
@@ -401,7 +405,7 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(99, 00, 00, 00, 00, 04, LIST_SERVICES);
 
 		//
-		//	source for log entries
+		//	source for log entries (OBIS-T)
 		//
 		constexpr static obis	DEFINE_OBIS_CODE(81, 01, 00, 00, 00, FF, LOG_SOURCE_ETH_AUX);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 02, 00, 00, 00, FF, LOG_SOURCE_ETH_CUSTOM);

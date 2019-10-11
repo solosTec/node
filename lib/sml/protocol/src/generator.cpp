@@ -292,6 +292,38 @@ namespace node
 			return get_list(client_id, server_id, username, password, OBIS_CODE(99, 00, 00, 00, 00, 03));
 		}
 
+		std::string req_generator::get_profile_list(cyng::buffer_t const& server_id
+			, std::string const& username
+			, std::string const& password
+			, std::chrono::system_clock::time_point begin_time
+			, std::chrono::system_clock::time_point end_time
+			, obis code)
+		{
+			++trx_;
+			auto const trx = *trx_;
+			append(message(cyng::make_object(trx)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_GET_PROFILE_LIST_REQUEST	//	0x400
+
+				//
+				//	generate get profile list request
+				//
+				, cyng::tuple_factory(server_id
+					, username
+					, password
+					, cyng::make_object()	// withRawdata 
+					, begin_time
+					, end_time
+					, cyng::tuple_factory(code.to_buffer())	//	path entry
+					, cyng::make_object()	// object_List
+					, cyng::make_object()	// dasDetails
+				)
+			));
+			return trx;
+
+		}
+
 
 		res_generator::res_generator()
 			: generator()
