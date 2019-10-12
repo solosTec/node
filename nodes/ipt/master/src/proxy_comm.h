@@ -48,7 +48,6 @@ namespace node
 	private:
 		ipt::session_state& state_;
 		cyng::controller& vm_;
-		std::size_t open_requests_;
 	};
 
 }

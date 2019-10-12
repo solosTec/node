@@ -327,8 +327,8 @@ namespace node
 
 			struct evt_sml_public_close_response
 			{
-				cyng::tuple_t tpl_;
-				evt_sml_public_close_response(cyng::tuple_t);
+				cyng::vector_t const vec_;
+				evt_sml_public_close_response(cyng::vector_t);
 			};
 
 			struct evt_sml_get_proc_param_response
@@ -430,6 +430,7 @@ namespace node
 				void get_list_response(cyng::async::mux&, cyng::vector_t);
 				void get_profile_list_response(cyng::async::mux&, cyng::vector_t);
 				void attention_msg(cyng::async::mux&, cyng::vector_t);
+				void close_response(cyng::async::mux&, cyng::vector_t);
 
 				/**
 				 * same as in state_authorized

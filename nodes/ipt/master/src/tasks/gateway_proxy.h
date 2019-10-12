@@ -46,7 +46,7 @@ namespace node
 			, cyng::buffer_t
 			, cyng::param_t>;
 
-		using msg_4 = std::tuple<boost::uuids::uuid, std::string, std::size_t>;
+		using msg_4 = std::tuple<std::string>;
 
 		using msg_5 = std::tuple<
 			std::string,	//	trx
@@ -72,7 +72,6 @@ namespace node
 			std::string				//	[10] pwd
 		>;
 
-		//	[4076396-2,null,072ff3ff,072ff3d4,,0500153B02297E,00072202]
 		//	get profile list response
 		using msg_8 = std::tuple <
 			std::string,	//	trx
@@ -134,7 +133,7 @@ namespace node
 		 *
 		 * sml.public.close.response
 		 */
-		cyng::continuation process(boost::uuids::uuid pk, std::string trx, std::size_t);
+		cyng::continuation process(std::string trx);
 
 		/**
 		 * @brief slot [5]
@@ -252,13 +251,12 @@ namespace node
 		sml::parser parser_;
 		input_queue		input_queue_;
 		output_map		output_map_;
-
-		/**
-		 * running SML requests that not answered yet (EOM)
-		 */
 		std::size_t		open_requests_;
 
-		enum {
+		/**
+		 * gateway proxy state
+		 */
+		enum class GPS {
 			OFFLINE_,
 			WAITING_,
 			CONNECTED_

@@ -11,7 +11,7 @@ namespace node
 {
 	namespace sml
 	{
-		enum event_type
+		enum event_nr
 		{
 			EVT_TIMER = 0,
 			EVT_POWER_ON = 1,
@@ -28,6 +28,12 @@ namespace node
 			EVT_NETWORK_IPT = 14	//	IP-T
 		};
 
+		/**
+		 * bits 31-24 source (Quelle)
+		 * bits 23-20 level (Ebene)
+		 * bits 29-8 reserved
+		 * bits 7-0 event (Ereignis-Nr.)
+		 */
 		struct op_event {
 			std::uint32_t evt : 8;
 			std::uint32_t res : 12;

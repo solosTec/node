@@ -20,7 +20,6 @@ namespace node
 	proxy_comm::proxy_comm(ipt::session_state& st, cyng::controller& vm)
 		: state_(st)
 		, vm_(vm)
-		, open_requests_{ 0 }
 	{
 		register_this();
 	}
@@ -81,7 +80,7 @@ namespace node
 		//
 
 		auto const frame = ctx.get_frame();
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), open_requests_, frame));
+		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
 		state_.react(ipt::state::evt_sml_eom(cyng::to_tuple(frame)));
 	}
 
@@ -94,12 +93,8 @@ namespace node
 		//	* serverId
 		//	* reqFileId
 
-		//
-		//	update open request counter
-		//
-		++open_requests_;
 		auto const frame = ctx.get_frame();
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), open_requests_, frame));
+		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
 	}
 
 	void proxy_comm::sml_public_close_response(cyng::context& ctx)
@@ -108,20 +103,18 @@ namespace node
 		//
 		//	* [buffer] trx
 
-		//
-		//	update open request counter
-		//
-		--open_requests_;
-		auto const frame = ctx.get_frame();
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), open_requests_, frame));
+		auto frame = ctx.get_frame();
+		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
+
+		state_.react(ipt::state::evt_sml_public_close_response(frame));
+
 	}
 
 	void proxy_comm::sml_get_proc_param_response(cyng::context& ctx)
 	{
 		//	[]
-		//	[]
 		auto const frame = ctx.get_frame();
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), open_requests_, frame));
+		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
 
 		//
 		// * [string] trx

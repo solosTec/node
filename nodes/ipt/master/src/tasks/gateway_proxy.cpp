@@ -59,7 +59,7 @@ namespace node
 		, input_queue_()
 		, output_map_()
 		, open_requests_{ 0 }
-		, state_{ OFFLINE_ }
+		, state_{ GPS::OFFLINE_ }
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -71,8 +71,8 @@ namespace node
 	cyng::continuation gateway_proxy::run()
 	{	
 		switch (state_) {
-		case OFFLINE_:
-		case WAITING_:
+		case GPS::OFFLINE_:
+		case GPS::WAITING_:
 			//
 			//	waiting for an opportunity to open a connection. If session is ready
 			//	is signals OK on slot 0
@@ -81,7 +81,7 @@ namespace node
 				vm_.async_run(cyng::generate_invoke("session.redirect", base_.get_id()));
 			}
 			break;
-		case CONNECTED_:
+		case GPS::CONNECTED_:
 			if (!input_queue_.empty()) {
 				//
 				//	run input queue
@@ -104,7 +104,7 @@ namespace node
 	//	slot 0 - ack (connected to gateway)
 	cyng::continuation gateway_proxy::process()
 	{
-		BOOST_ASSERT_MSG(state_ == WAITING_, "wrong state");
+		BOOST_ASSERT_MSG(state_ == GPS::WAITING_, "wrong state");
 		if (!input_queue_.empty()) {
 
 			CYNG_LOG_INFO(logger_, "task #"
@@ -118,7 +118,7 @@ namespace node
 			//
 			//	update state
 			//
-			state_ = CONNECTED_;
+			state_ = GPS::CONNECTED_;
 
 			//
 			//	clear remaining entries
@@ -148,7 +148,7 @@ namespace node
 			//
 			//	update state
 			//
-			state_ = OFFLINE_;
+			state_ = GPS::OFFLINE_;
 		}
 
 		//
@@ -273,7 +273,7 @@ namespace node
 	}
 
 	//	-- slot[4]
-	cyng::continuation gateway_proxy::process(boost::uuids::uuid pk, std::string trx, std::size_t)
+	cyng::continuation gateway_proxy::process(std::string trx)
 	{
 		//
 		//	current SML request is complete
@@ -297,13 +297,13 @@ namespace node
 		//
 		--open_requests_;
 
-		if (open_requests_ == 0u) {
+		if ((open_requests_ == 0u) && input_queue_.empty()) {
 
-			BOOST_ASSERT_MSG(input_queue_.empty(), "input queue is not empty");
+			//BOOST_ASSERT_MSG(input_queue_.empty(), "input queue is not empty");
 			//
 			//	update task state
 			//
-			state_ = OFFLINE_;
+			state_ = GPS::OFFLINE_;
 
 			//
 			//	terminate redirection
@@ -460,6 +460,7 @@ namespace node
 			//
 			//	provide more event type data
 			//
+#ifdef __DEBUG
 			auto const evt = params.find(sml::OBIS_CLASS_EVENT.to_str());
 			if (evt != params.end()) {
 				auto const val = cyng::value_cast<std::uint32_t>(evt->second, 0u);
@@ -467,6 +468,7 @@ namespace node
 				params.emplace("evtLevel", cyng::make_object(sml::evt_get_level(val)));
 				params.emplace("evtSource", cyng::make_object(sml::evt_get_source(val)));
 			}
+#endif
 
 			//	[2159338-2,084e0f4a,0384,084dafce,<!18446744073709551615:user-defined>,0500153B021774,00070202,%(("010000090B00":{7,0,2019-10-10 15:23:50.00000000,null}),("81040D060000":{ff,0,0,null}),("810417070000":{ff,0,0,null}),("81041A070000":{ff,0,0,null}),("81042B070000":{fe,0,0,null}),("8181000000FF":{ff,0,818100000001,null}),("8181C789E2FF":{ff,0,00800000,null}))]]
 			CYNG_LOG_INFO(logger_, "task #"
@@ -534,12 +536,12 @@ namespace node
 		BOOST_ASSERT(!input_queue_.empty());
 
 		switch (state_) {
-		case OFFLINE_:
+		case GPS::OFFLINE_:
 
 			//
 			//	update state
 			//
-			state_ = WAITING_;
+			state_ = GPS::WAITING_;
 
 			//
 			//	waiting for an opportunity to open a connection. If session is ready
@@ -570,7 +572,8 @@ namespace node
 			//	generate public open request
 			//
 			node::sml::req_generator sml_gen;
-			sml_gen.public_open(get_mac(), server_id, user, pwd);
+			auto trx = sml_gen.public_open(get_mac(), server_id, user, pwd);
+			boost::ignore_unused(trx);
 
 			auto const data = input_queue_.front();
 			auto const params = cyng::make_reader(data.get_params());
@@ -583,7 +586,8 @@ namespace node
 			//
 			//	generate close request
 			//
-			sml_gen.public_close();
+			trx = sml_gen.public_close();
+			boost::ignore_unused(trx);
 			cyng::buffer_t msg = sml_gen.boxing();
 
 
@@ -626,6 +630,8 @@ namespace node
 			//
 			input_queue_.pop();
 		}
+
+		BOOST_ASSERT(input_queue_.empty());
 	}
 
 	void gateway_proxy::execute_cmd(sml::req_generator& sml_gen
@@ -684,36 +690,56 @@ namespace node
 		, ipt::proxy_data const& data
 		, cyng::tuple_reader const& params)
 	{
-		CYNG_LOG_TRACE(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> "
-			<< data.get_msg_type()
-			<< " - range: "
-			<< cyng::io::to_str(params.get("range"))
-			<< " hours");
+		if (sml::OBIS_CLASS_OP_LOG == data.get_root()) {
 
-		//	[
-		//		cb4d6c74-be4c-481b-8317-7b0c03191ed6,
-		//		9f773865-e4af-489a-8824-8f78a2311278,
-		//		75,
-		//		ad4d7f18-0968-4fd9-8904-dd9296cc8132,
-		//		GetProfileListRequest,
-		//		8181C789E1FF,
-		//		[bd065994-fe7b-4985-b2ab-d9d64082ecfe],
-		//		{("range":144)},
-		//		0500153B02297E,
-		//		operator,
-		//		operator
-		//	]
-		
-		push_trx(sml_gen.get_profile_list(data.get_srv()
-			, data.get_user()
-			, data.get_pwd()
-			, std::chrono::system_clock::now() - std::chrono::hours(24)
-			, std::chrono::system_clock::now()
-			, data.get_root()), data);	//	81 81 C7 89 E1 FF
+			//
+			//	get time range
+			//
+			auto const hours = cyng::numeric_cast<std::uint32_t>(params.get("range"), 24u);
+
+			//
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< data.get_msg_type()
+				<< " - range: "
+				<< hours
+				<< " hours");
+
+			//	[
+			//		cb4d6c74-be4c-481b-8317-7b0c03191ed6,
+			//		9f773865-e4af-489a-8824-8f78a2311278,
+			//		75,
+			//		ad4d7f18-0968-4fd9-8904-dd9296cc8132,
+			//		GetProfileListRequest,
+			//		8181C789E1FF,
+			//		[bd065994-fe7b-4985-b2ab-d9d64082ecfe],
+			//		{("range":144)},
+			//		0500153B02297E,
+			//		operator,
+			//		operator
+			//	]
+
+			push_trx(sml_gen.get_profile_list(data.get_srv()
+				, data.get_user()
+				, data.get_pwd()
+				, std::chrono::system_clock::now() - std::chrono::hours(hours)
+				, std::chrono::system_clock::now()
+				, data.get_root()), data);	//	81 81 C7 89 E1 FF
+		}
+		else {
+
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< data.get_msg_type()
+				<< " - unknown path "
+				<< data.get_root().to_str());
+		}
 
 	}
 

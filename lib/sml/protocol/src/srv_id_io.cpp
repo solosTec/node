@@ -232,9 +232,11 @@ namespace node
 			else
 			{
 				//
-				//	something else like 31454d4830303035353133383935
+				//	something else like 31454d4830303035353133383935 (1EMH0005513895)
+				//	
+
 				//
-				if (cyng::is_ascii(buffer)) {
+				if ((buffer.size() > 10) && cyng::is_ascii(buffer)) {
 					cyng::io::to_ascii(os, buffer);
 				}
 				else {

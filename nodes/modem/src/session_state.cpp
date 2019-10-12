@@ -79,41 +79,71 @@ namespace node
 				//
 				idle_.tsk_gatekeeper_ = evt.tsk_;
 
-				//
-				//	watchdog in minutes
-				//
-				//idle_.watchdog_ = evt.watchdog_;
 			}
 
-			//sp_->vm_.register_function("session.update.connection.state", 2, std::bind(&session_state::update_connection_state, this, std::placeholders::_1));
 			sp_->vm_.register_function("session.redirect", 1, std::bind(&session_state::redirect, this, std::placeholders::_1));
 		}
 
 		void session_state::redirect(cyng::context& ctx)
 		{
-			if (S_AUTHORIZED == state_) {
+			const cyng::vector_t frame = ctx.get_frame();
+			auto tsk = cyng::value_cast<std::size_t>(frame.at(0), cyng::async::NO_TASK);
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
-				const cyng::vector_t frame = ctx.get_frame();
-				auto tsk = cyng::value_cast<std::size_t>(frame.at(0), cyng::async::NO_TASK);
+			switch (state_) {
+			case S_AUTHORIZED:
+				if (tsk != cyng::async::NO_TASK) {
+					//
+					//	update state
+					//
+					transit(S_CONNECTED_TASK);
+					task_.reset(sp_->mux_, tsk);
 
-				//
-				//	update state
-				//
-				transit(S_CONNECTED_TASK);
-				task_.reset(sp_->mux_, tsk);
+					CYNG_LOG_INFO(logger_, "session "
+						<< ctx.tag()
+						<< " connected to task #"
+						<< tsk);
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, "session "
+						<< ctx.tag()
+						<< " cannot dis-connected from task #"
+						<< tsk
+						<< " (already dis-connected)");
+				}
+				break;
+			case S_CONNECTED_TASK:
+				if (tsk == cyng::async::NO_TASK) {
+					//
+					//	update state
+					//
+					transit(S_AUTHORIZED);
+					task_.reset(sp_->mux_, tsk);
 
-				CYNG_LOG_INFO(logger_, "session.redirect "
-					<< ctx.tag()
-					<< ": TASK");
-			}
-			else {
+					CYNG_LOG_INFO(logger_, "session "
+						<< ctx.tag()
+						<< " dis-connected from task #"
+						<< tsk);
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, "session "
+						<< ctx.tag()
+						<< " cannot connected to task #"
+						<< tsk
+						<< " (already connected)");
+				}
+				break;
+			default:
+				//	S_WAIT_FOR_OPEN_RESPONSE:
+				//	S_WAIT_FOR_CLOSE_RESPONSE:
+				//	S_CONNECTED_LOCAL:
+				//	S_CONNECTED_REMOTE:
 				CYNG_LOG_WARNING(logger_, "session.redirect "
 					<< ctx.tag()
 					<< " - session is busy: ");
-					//<< connect_state_);
+				break;
 			}
 		}
-
 
 		void session_state::react(state::evt_shutdown)
 		{

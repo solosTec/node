@@ -91,42 +91,61 @@ namespace node
 		void session_state::redirect(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			auto const tsk = cyng::value_cast<std::size_t>(frame.at(0), cyng::async::NO_TASK);
+			auto tsk = cyng::value_cast<std::size_t>(frame.at(0), cyng::async::NO_TASK);
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
-			if (S_AUTHORIZED == state_) {
+			switch (state_) {
+			case S_AUTHORIZED:
+				if (tsk != cyng::async::NO_TASK) {
+					//
+					//	update state
+					//
+					transit(S_CONNECTED_TASK);
+					task_.reset(sp_->mux_, tsk);
 
-				BOOST_ASSERT_MSG(tsk != cyng::async::NO_TASK, "no task specified");
+					CYNG_LOG_INFO(logger_, "session "
+						<< ctx.tag()
+						<< " connected to task #"
+						<< tsk);
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, "session "
+						<< ctx.tag()
+						<< " cannot dis-connected from task #"
+						<< tsk
+						<< " (already dis-connected)");
+				}
+				break;
+			case S_CONNECTED_TASK:
+				if (tsk == cyng::async::NO_TASK) {
+					//
+					//	update state
+					//
+					transit(S_AUTHORIZED);
+					task_.reset(sp_->mux_, tsk);
 
-				//
-				//	update state
-				//
-				transit(S_CONNECTED_TASK);
-				task_.reset(sp_->mux_, tsk);
-
-				CYNG_LOG_INFO(logger_, "session.redirect "
-					<< ctx.tag()
-					<< ": connected to TASK #"
-					<< tsk);
-			}
-			else if (S_CONNECTED_TASK == state_) {
-
-				BOOST_ASSERT_MSG(tsk == cyng::async::NO_TASK, "task specified");
-
-				//
-				//	update state
-				//
-				transit(S_AUTHORIZED);
-
-				CYNG_LOG_INFO(logger_, "session.redirect "
-					<< ctx.tag()
-					<< ": disconnected from TASK#"
-					<< task_.tsk_proxy_);
-			}
-			else {
+					CYNG_LOG_INFO(logger_, "session "
+						<< ctx.tag()
+						<< " dis-connected from task #"
+						<< tsk);
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, "session "
+						<< ctx.tag()
+						<< " cannot connected to task #"
+						<< tsk
+						<< " (already connected)");
+				}
+				break;
+			default:
+				//	S_WAIT_FOR_OPEN_RESPONSE:
+				//	S_WAIT_FOR_CLOSE_RESPONSE:
+				//	S_CONNECTED_LOCAL:
+				//	S_CONNECTED_REMOTE:
 				CYNG_LOG_WARNING(logger_, "session.redirect "
 					<< ctx.tag()
-					<< " - session in wrong state: "
-					<< *this);
+					<< " - session is busy: ");
+				break;
 			}
 		}
 
@@ -952,13 +971,10 @@ namespace node
 			//
 			//	message slot (4)
 			//
-			BOOST_ASSERT_MSG(evt.tpl_.size() == 3, "evt_sml_public_close_response");
-			sp_->mux_.post(task_.tsk_proxy_, 4, std::move(evt.tpl_));
+			BOOST_ASSERT(evt.vec_.size() == 1);
+			//sp_->mux_.post(task_.tsk_proxy_, 4, cyng::tuple_factory(evt.vec_.at(0)));
+			task_.close_response(sp_->mux_, evt.vec_);
 
-			//
-			//	disconnect task from data stream
-			//
-			//transit(S_AUTHORIZED);
 		}
 
 		void session_state::react(state::evt_sml_get_proc_param_response evt)
@@ -1322,8 +1338,8 @@ namespace node
 			//
 			//	EVENT: sml_public_close_response
 			//
-			evt_sml_public_close_response::evt_sml_public_close_response(cyng::tuple_t tpl)
-				: tpl_(tpl)
+			evt_sml_public_close_response::evt_sml_public_close_response(cyng::vector_t vec)
+				: vec_(std::move(vec))
 			{}
 
 			//
@@ -1544,7 +1560,7 @@ namespace node
 			void state_connected_task::reset(cyng::async::mux& mux, std::size_t tsk)
 			{
 				tsk_proxy_ = tsk;
-				mux.post(tsk, 0, cyng::tuple_t{});
+				if (cyng::async::NO_TASK != tsk) mux.post(tsk, 0, cyng::tuple_t{});
 			}
 
 			void state_connected_task::transmit(cyng::async::mux& mux, cyng::object obj)
@@ -1598,6 +1614,13 @@ namespace node
 				//
 				mux.post(tsk_proxy_, 6, cyng::tuple_t{ vec.at(0), vec.at(1), vec.at(2) });
 			}
+
+			void state_connected_task::close_response(cyng::async::mux& mux, cyng::vector_t vec)
+			{
+				mux.post(tsk_proxy_, 4, cyng::to_tuple(vec));
+
+			}
+
 		}
 	}
 }

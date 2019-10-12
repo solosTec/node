@@ -1184,6 +1184,7 @@ namespace node
 				|| OBIS_CODE_IF_1107_ADDRESS == code
 				|| OBIS_CODE_IF_1107_P1 == code
 				|| OBIS_CODE_IF_1107_W5 == code
+				|| OBIS_CODE_PUSH_TARGET == code
 				|| code.is_matching(0x81, 0x81, 0xC7, 0x82, 0x0A).second) {
 				//	buffer to string
 				cyng::buffer_t buffer;
@@ -1303,6 +1304,12 @@ namespace node
 							//
 							auto const serial = get_serial(meter);
 							values.emplace("serial", cyng::make_object(serial));
+
+							//
+							//	update meter ident
+							//
+							std::string s = from_server_id(meter);
+							pos_srv->second = cyng::make_object(s);
 
 						}
 
