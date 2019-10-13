@@ -38,7 +38,6 @@ int main(int argc, char **argv)
     ("version,v", "print version string")
     ("build,b", "last built timestamp and platform")
     ("config,C", boost::program_options::value<std::string>(&config_file)->default_value(node::get_cfg_name("dashs")), "specify the configuration file")
-	("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
 	//	json, XML
 	("default,D", boost::program_options::value<std::string>()->default_value("")->implicit_value("json"), "generate a default configuration and exit. options are json and XML")
 	("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")

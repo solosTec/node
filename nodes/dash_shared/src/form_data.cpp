@@ -215,13 +215,13 @@ namespace node
 			}
 		}
 
-		if (boost::algorithm::equals(std::get<3>(tpl), "/config/upload.devices")) {
+		if (boost::algorithm::equals(std::get<3>(tpl), "/upload/config/device/")) {
 			ctx.queue(cyng::generate_invoke("cfg.upload.devices", std::get<0>(tpl), params));
 		}
-		else if (boost::algorithm::equals(std::get<3>(tpl), "/config/upload.gateways")) {
+		else if (boost::algorithm::equals(std::get<3>(tpl), "/upload/config/gw/")) {
 			ctx.queue(cyng::generate_invoke("cfg.upload.gateways", std::get<0>(tpl), params));
 		}
-		else if (boost::algorithm::equals(std::get<3>(tpl), "/config/upload.meters")) {
+		else if (boost::algorithm::equals(std::get<3>(tpl), "/upload/config/meter/")) {
 			ctx.queue(cyng::generate_invoke("cfg.upload.meter", std::get<0>(tpl), params));
 		}
 		else if (boost::algorithm::equals(std::get<3>(tpl), "/config/upload.LoRa")) {

@@ -9,7 +9,7 @@ echo create service node_gateway_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
 sc create node_gateway_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\gateway.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\gateway_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF gateway server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
 sc description node_gateway_v${${PROJECT_NAME}_VERSION_MAJOR} "Gateway server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
-sv failure node_gateway_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
+sc failure node_gateway_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
 REM
 REM Add a dependency to IP-T master service.
 REM Modify or remove this dependency if IP-T master is running on a different node.
