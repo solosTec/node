@@ -20,7 +20,10 @@ namespace cyng {
 }
 
 #include <cyng/table/meta_interface.h>
+#include <cyng/store/db.h>
+
 #include <cyng/value_cast.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace node 
 {

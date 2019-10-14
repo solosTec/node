@@ -8,7 +8,6 @@
 
 #include <smf/shared/db_cfg.h>
 #include <cyng/table/meta.hpp>
-#include <cyng/store/db.h>
 #include <boost/algorithm/string.hpp>
 
 namespace node
