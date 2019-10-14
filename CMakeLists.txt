@@ -669,6 +669,27 @@ endif(WIN32)
 target_link_libraries(gateway ${gateway_link_libs})
 
 #
+# IP-T SEGW
+#
+include (nodes/ipt/segw/prg.cmake)
+add_executable(segw ${node_ipt_segw})
+# libraries to link
+set(segw_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_store cyng_table cyng_domain cyng_sys cyng_rnd cyng_crypto smf_protocol_ipt smf_bus_ipt smf_bus_sml smf_bus_serial smf_protocol_mbus  ${OPENSSL_LIBRARIES})
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	list(APPEND segw_link_libs boost_thread boost_system boost_filesystem boost_program_options boost_random)
+    if (UNIX)
+        list(APPEND segw_link_libs pthread dl)
+    endif()
+endif()
+if(WIN32)
+	list(APPEND segw_link_libs odbc32.lib cyng_sqlite3 cyng_scm)
+else()
+	list(APPEND segw_link_libs ${SQLite3_LIBRARY})
+endif(WIN32)
+
+target_link_libraries(segw ${segw_link_libs})
+
+#
 # IP-T master
 #
 include (nodes/ipt/master/prg.cmake)
@@ -1006,6 +1027,15 @@ if(UNIX)
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.service.in"
 		  "${PROJECT_BINARY_DIR}/node-gateway.service")
 
+	# ipt segw
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.linux.cgf.in"
+		  "${PROJECT_BINARY_DIR}/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.service.in"
+		  "${PROJECT_BINARY_DIR}/node-segw.service")
+
 	# ipt master
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt.linux.cgf.in"
@@ -1242,6 +1272,27 @@ else()
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.rc.in"
 		  "${PROJECT_BINARY_DIR}/gateway.rc")
+
+	# ipt segw
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.windows.cgf.in"
+		  "${PROJECT_BINARY_DIR}/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/segw_create_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/segw_delete_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/segw_restart_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.rc.in"
+		  "${PROJECT_BINARY_DIR}/segw.rc")
 
 	# ipt master
 	configure_file (

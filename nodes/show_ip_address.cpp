@@ -9,13 +9,15 @@
 #include "show_ip_address.h"
 #include <cyng/sys/mac.h>
 #include <cyng/sys/info.h>
+#include <cyng/sys/ip.h>
+#include <cyng/sys/dns.h>
 #include <cyng/io/serializer.h>
 
 namespace node 
 {
 	int show_ip_address(std::ostream& os)
 	{
-		const std::string host = boost::asio::ip::host_name();
+		std::string const host = boost::asio::ip::host_name();
 		os
 			<< "host name: "
 			<< host
@@ -26,23 +28,17 @@ namespace node
 			;
 
 
+		auto addrs = cyng::sys::get_adapters();
+		for (auto const& a : addrs) {
+			os
+				<< (a.is_v4() ? "IPv4: " : "IPv6: ")
+				<< a.to_string()
+				<< std::endl
+				;
+
+		}
 		try
 		{
-			boost::asio::io_service io_service;
-			boost::asio::ip::tcp::resolver resolver(io_service);
-			boost::asio::ip::tcp::resolver::query query(host, "");
-			boost::asio::ip::tcp::resolver::iterator iter = resolver.resolve(query);
-			boost::asio::ip::tcp::resolver::iterator end; // End marker.
-			while (iter != end)
-			{
-				boost::asio::ip::tcp::endpoint ep = *iter++;
-				os
-					<< (ep.address().is_v4() ? "IPv4: " : "IPv6: ")
-					<< ep
-					<< std::endl
-					;
-			}
-
 			auto macs = cyng::sys::retrieve_mac48();
 			if (!macs.empty())
 			{
@@ -53,6 +49,21 @@ namespace node
 						<< m
 						<< std::endl;
 				}
+			}
+
+			std::cout
+				<< "WAN address: "
+				<< cyng::sys::get_WAN_address("8.8.8.8")
+				<< std::endl
+				;
+
+			auto dns = cyng::sys::get_dns_servers();
+			std::cout << dns.size() << " DNS server(s)" << std::endl;
+			for (auto const& srv : dns) {
+				std::cout
+					<< srv
+					<< std::endl
+					;
 			}
 
 			return EXIT_SUCCESS;

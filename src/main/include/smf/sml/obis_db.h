@@ -269,6 +269,13 @@ namespace node
 		//	Interfaces
 		//
 		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 17, 07, 00, FF, CODE_IF_LAN_DSL);	// see: 7.3.1.18 Datenstruktur zum Lesen / Setzen der LAN/DSL-Parameter
+		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 17, 07, 00, 00, CODE_IF_LAN_ADDRESS);	// IPv4 or IPv6 address
+		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 17, 07, 01, 00, CODE_IF_LAN_SUBNET_MASK);	// IPv4 or IPv6
+		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 17, 07, 02, 00, CODE_IF_LAN_GATEWAY);	// IPv4 or IPv6
+		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 17, 07, 04, 00, CODE_IF_LAN_DNS_PRIMARY);	// IPv4 or IPv6
+		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 17, 07, 05, 00, CODE_IF_LAN_DNS_SECONDARY);	// IPv4 or IPv6
+		constexpr static obis	DEFINE_OBIS_CODE(81, 48, 17, 07, 06, 00, CODE_IF_LAN_DNS_TERTIARY);	// IPv4 or IPv6
+
 		constexpr static obis	DEFINE_OBIS_CODE(81, 04, 02, 07, 00, FF, CODE_IF_GSM);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 04, 0D, 07, 00, FF, CODE_IF_GPRS);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 02, 00, 07, 00, FF, CODE_IF_USER);	//	Endkundenschnittstelle:

@@ -14,8 +14,11 @@
 
 #include <cyng/io/serializer.h>
 #include <cyng/sys/ntp.h>
+#include <cyng/sys/ip.h>
+#include <cyng/sys/dns.h>
 #include <cyng/sys/memory.h>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/intrinsics/buffer.h>
 
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/mgr.h>
@@ -320,7 +323,99 @@ namespace node
 		void get_proc_parameter::code_root_lan_dsl(std::string trx, cyng::buffer_t srv_id)
 		{
 			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_LAN_DSL not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_CODE_ROOT_LAN_DSL);	
+
+			//	81 48 0D 06 00 FF
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_ROOT_LAN_DSL);
+
+			//	81 48 17 07 00 00
+			auto rep = get_config_typed<boost::asio::ip::tcp::endpoint>(config_db_, "remote.ep", boost::asio::ip::tcp::endpoint());
+			auto lep = get_config_typed<boost::asio::ip::tcp::endpoint>(config_db_, "local.ep", boost::asio::ip::tcp::endpoint());
+
+			CYNG_LOG_TRACE(logger_, "remote endpoint " << rep.address().to_string());
+			CYNG_LOG_TRACE(logger_, "local endpoint " << lep.address().to_string());
+
+			boost::asio::ip::address wan = cyng::sys::get_WAN_address(rep.address().to_string());
+
+			if (wan.is_v4()) {
+				append_get_proc_response(msg, {
+					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_CODE_IF_LAN_ADDRESS
+					}, make_value(cyng::swap_num(wan.to_v4().to_uint())));
+			}
+			else {
+				auto v6 = wan.to_v6().to_bytes();
+				append_get_proc_response(msg, {
+					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_CODE_IF_LAN_ADDRESS
+					}, make_value(cyng::make_buffer(v6)));
+			}
+
+			//	81 48 17 07 01 00
+			append_get_proc_response(msg, {
+				OBIS_CODE_ROOT_LAN_DSL,
+				OBIS_CODE_IF_LAN_SUBNET_MASK
+				}, make_value(0xFFFFFF));	//	255.255.255.0 (fix!)
+
+			//	81 48 17 07 02 00
+			append_get_proc_response(msg, {
+				OBIS_CODE_ROOT_LAN_DSL,
+				OBIS_CODE_IF_LAN_GATEWAY
+				}, make_value(0x0101A8C0));	//	192.168.1.1 (fix!)
+
+			//
+			//	DNS server
+			//
+			auto const dns = cyng::sys::get_dns_servers();
+			switch (dns.size()) {
+			case 0:
+				break;
+			case 1:
+				append_get_proc_response(msg, {
+					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_CODE_IF_LAN_DNS_PRIMARY
+					}, make_value(cyng::swap_num(dns.at(0).to_v4().to_uint())));
+				append_get_proc_response(msg, {
+					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_CODE_IF_LAN_DNS_SECONDARY
+					}, make_value(0u));
+				append_get_proc_response(msg, {
+					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_CODE_IF_LAN_DNS_TERTIARY
+					}, make_value(0u));
+				break;
+			case 2:
+				append_get_proc_response(msg, {
+					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_CODE_IF_LAN_DNS_PRIMARY
+					}, make_value(cyng::swap_num(dns.at(0).to_v4().to_uint())));
+				append_get_proc_response(msg, {
+					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_CODE_IF_LAN_DNS_SECONDARY
+					}, make_value(cyng::swap_num(dns.at(1).to_v4().to_uint())));
+				append_get_proc_response(msg, {
+					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_CODE_IF_LAN_DNS_TERTIARY
+					}, make_value(0u));
+				break;
+			default:
+				append_get_proc_response(msg, {
+					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_CODE_IF_LAN_DNS_PRIMARY
+					}, make_value(cyng::swap_num(dns.at(0).to_v4().to_uint())));
+				append_get_proc_response(msg, {
+					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_CODE_IF_LAN_DNS_SECONDARY
+					}, make_value(cyng::swap_num(dns.at(1).to_v4().to_uint())));
+				append_get_proc_response(msg, {
+					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_CODE_IF_LAN_DNS_TERTIARY
+					}, make_value(cyng::swap_num(dns.at(1).to_v4().to_uint())));
+			}
+
+			//
+			//	append to message queue
+			//
+			sml_gen_.append(std::move(msg));
 		}
 
 		void get_proc_parameter::code_if_lan_dsl(std::string trx, cyng::buffer_t srv_id)
