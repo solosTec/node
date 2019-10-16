@@ -18,9 +18,10 @@
 namespace node 
 {
 	void set_start_options(boost::program_options::options_description&
-	, std::string const& name
-	, std::string& json_path
-    , unsigned int& pool_size
+		, std::string const& name
+		, std::string& json_path
+		, unsigned int& pool_size
+		, unsigned int& index
 #if BOOST_OS_LINUX
     , struct rlimit&
 #endif

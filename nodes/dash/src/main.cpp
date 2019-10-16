@@ -40,14 +40,15 @@ int main(int argc, char **argv)
 	//	json, XML
 	("default,D", boost::program_options::value<std::string>()->default_value("")->implicit_value("json"), "generate a default configuration and exit. options are json and XML")
 	("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
-    //("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
+    ("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
 	("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
     ;
 
     //	path to JSON configuration file
     std::string json_path;
-	unsigned int pool_size = 4;
+	unsigned int config_index = 0u;
+	unsigned int pool_size = 4u;
 
 #if BOOST_OS_LINUX
     struct rlimit rl;
@@ -63,6 +64,7 @@ int main(int argc, char **argv)
 		, "dash"
 		, json_path
 		, pool_size
+		, config_index
 #if BOOST_OS_LINUX
 		, rl
 #endif
@@ -144,7 +146,10 @@ int main(int argc, char **argv)
 		//	create a controller object
 		//  minimum pool size is 4
 		//
-		node::controller ctrl((pool_size < 4) ? 4 : pool_size, json_path, "smf::dash");
+		node::controller ctrl(config_index
+			, (pool_size < 4) ? 4 : pool_size
+			, json_path
+			, "smf::dash");
 
 		//
 		//	check start optiones
@@ -160,6 +165,12 @@ int main(int argc, char **argv)
 		{
 			//	show local IP adresses
 			return node::show_ip_address(std::cout);
+		}
+
+		if (vm["show"].as< bool >())
+		{
+			//	show configuration
+			return ctrl.ctl::print_config(std::cout);
 		}
 
 #if BOOST_OS_WINDOWS

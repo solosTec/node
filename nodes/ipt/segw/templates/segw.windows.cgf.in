@@ -10,3 +10,4 @@ name = node_segw_v${${PROJECT_NAME}_VERSION_MAJOR}
 [setup]
 json = $ENV{ProgramData}\solosTec\SMF\segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
 pool-size = ${${PROJECT_NAME}_POOL_SIZE}
+config-index = 0

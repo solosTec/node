@@ -154,12 +154,12 @@ namespace node
 			return obis();
 		}
 
-		std::ostream& to_hex(std::ostream& os, obis_path const& path)
+		std::ostream& to_hex(std::ostream& os, obis_path const& path, char sep)
 		{
 			bool initialized{ false };
 			for (auto const& code : path) {
 				if (initialized) {
-					os << ' ';
+					os << sep;
 				}
 				else {
 					initialized = true;
@@ -169,18 +169,19 @@ namespace node
 			return os;
 		}
 
-		std::string to_hex(obis_path const& path)
+		std::string to_hex(obis_path const& path, char sep)
 		{
 			std::stringstream ss;
-			to_hex(ss, path);
+			to_hex(ss, path, sep);
 			return ss.str();
 		}
 
-		obis_path to_obis_path(std::string const& path)
+		obis_path to_obis_path(std::string const& path, char sep)
 		{
 			obis_path result;
 			std::vector<std::string> parts;
-			boost::split(parts, path, boost::is_any_of("\t\n "));
+			std::string const range{ '\n', '\t', sep };
+			boost::split(parts, path, boost::is_any_of(range));
 			for (auto const& code : parts) {
 				result.push_back(to_obis(code));
 			}

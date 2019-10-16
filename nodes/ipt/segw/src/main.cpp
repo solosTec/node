@@ -13,16 +13,10 @@
 #if BOOST_OS_WINDOWS
 #include <boost/asio.hpp>
 #endif
-//#include "controller.h"
+#include "controller.h"
 #include <iostream>
 #include <fstream>
 
-//	test
-//#include <smf/mbus/header.h>
-//
-//#include <smf/sml/srv_id_io.h>
-//
-//#include <stdlib.h>
 
 /**
  * main entry point.
@@ -45,18 +39,20 @@ int main(int argc, char **argv)
 		("version,v", "print version string")
 		("build,b", "last built timestamp and platform")
 		("config,C", boost::program_options::value<std::string>(&config_file)->default_value(node::get_cfg_name("segw")), "specify the configuration file")
-		//("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
+		("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("fs,F", boost::program_options::bool_switch()->default_value(false), "show available drives")
-		//("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
+		("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
-
+		("transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")
 		;
 		
 	//	path to JSON configuration file
 	std::string json_path;
-	unsigned int pool_size = 1;
+	unsigned int config_index = 0u;
+	unsigned int pool_size = 2u;
+
 #if BOOST_OS_LINUX
 	struct rlimit rl;
 	int rc = ::getrlimit(RLIMIT_NOFILE, &rl);
@@ -71,6 +67,7 @@ int main(int argc, char **argv)
 		, "segw"
 		, json_path
 		, pool_size
+		, config_index
 #if BOOST_OS_LINUX
 		, rl
 #endif
@@ -151,24 +148,30 @@ int main(int argc, char **argv)
 		//
 		//	establish controller
 		//
-		//node::controller ctrl(pool_size, json_path, "ipt:segw");
+		node::controller ctrl(config_index, pool_size, json_path, "ipt:segw");
 
 		if (vm["default"].as< bool >())
 		{
 			//	write default configuration
-			//return ctrl.ctl::create_config();	//	base class method is hidden
+			return ctrl.ctl::create_config();	//	base class method is hidden
 		}
 
-		//if (vm["init"].as< bool >())
-		//{
-		//	//	initialize database
- 	//		return ctrl.init_db();
-		//}
+		if (vm["init"].as< bool >())
+		{
+			//	initialize database
+ 			return ctrl.init_config_db("DB");
+		}
 
 		if (vm["show"].as< bool >())
 		{
 			//	show configuration
-// 			return ctrl.show_config();
+ 			return ctrl.ctl::print_config(std::cout);
+		}
+
+		if (vm["transfer"].as< bool >())
+		{
+			//	transfer JSON configuration into database
+			return ctrl.transfer_config();
 		}
 
 #if BOOST_OS_WINDOWS

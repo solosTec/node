@@ -47,7 +47,8 @@ int main(int argc, char **argv)
 
     //	path to JSON configuration file
     std::string json_path;
-	unsigned int pool_size = 4;
+	unsigned int config_index = 0u;
+	unsigned int pool_size = 2u;
 
 #if BOOST_OS_LINUX
     struct rlimit rl;
@@ -63,6 +64,7 @@ int main(int argc, char **argv)
 		, "dashs"
 		, json_path
 		, pool_size
+		, config_index
 #if BOOST_OS_LINUX
 		, rl
 #endif
@@ -144,7 +146,10 @@ int main(int argc, char **argv)
 		//	create a controller object
 		//  minimum pool size is 4
 		//
-		node::controller ctrl((pool_size < 4) ? 4 : pool_size, json_path, "smf::dashs");
+		node::controller ctrl(config_index
+			, (pool_size < 4) ? 4 : pool_size
+			, json_path
+			, "smf::dashs");
 
 		//
 		//	check start optiones

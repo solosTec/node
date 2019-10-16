@@ -674,7 +674,7 @@ target_link_libraries(gateway ${gateway_link_libs})
 include (nodes/ipt/segw/prg.cmake)
 add_executable(segw ${node_ipt_segw})
 # libraries to link
-set(segw_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_store cyng_table cyng_domain cyng_sys cyng_rnd cyng_crypto smf_protocol_ipt smf_bus_ipt smf_bus_sml smf_bus_serial smf_protocol_mbus  ${OPENSSL_LIBRARIES})
+set(segw_link_libs cyng_core cyng_io cyng_async cyng_log cyng_json cyng_parser cyng_vm cyng_store cyng_table cyng_domain cyng_sys cyng_rnd cyng_crypto cyng_db cyng_sql smf_protocol_ipt smf_bus_ipt smf_bus_sml smf_bus_serial smf_protocol_mbus  ${OPENSSL_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND segw_link_libs boost_thread boost_system boost_filesystem boost_program_options boost_random)
     if (UNIX)

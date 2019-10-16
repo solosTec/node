@@ -322,7 +322,7 @@ namespace node
 
 		void get_proc_parameter::code_root_lan_dsl(std::string trx, cyng::buffer_t srv_id)
 		{
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_LAN_DSL not implemented yet");
+			//CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_LAN_DSL not implemented yet");
 
 			//	81 48 0D 06 00 FF
 			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_ROOT_LAN_DSL);

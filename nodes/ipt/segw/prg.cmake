@@ -4,9 +4,14 @@ set (node_ipt_segw)
 set (node_ipt_segw_cpp
 
 	nodes/ipt/segw/src/main.cpp	
+	nodes/ipt/segw/src/controller.cpp
+	nodes/ipt/segw/src/storage.cpp
 )
 
 set (node_ipt_segw_h
+
+	nodes/ipt/segw/src/controller.h
+	nodes/ipt/segw/src/storage.h
 
 )
 

@@ -47,8 +47,9 @@ int main(int argc, char **argv)
 
 	//	path to JSON configuration file
 	std::string json_path;
-	unsigned int pool_size = 1;
-		
+	unsigned int config_index = 0u;
+	unsigned int pool_size = 1u;
+
 #if BOOST_OS_LINUX
 	struct rlimit rl;
 	int rc = ::getrlimit(RLIMIT_NOFILE, &rl);
@@ -63,6 +64,7 @@ int main(int argc, char **argv)
 		, "collector"
 		, json_path
 		, pool_size
+		, config_index
 #if BOOST_OS_LINUX
 		, rl
 #endif
@@ -135,12 +137,18 @@ int main(int argc, char **argv)
 
 		}
 
- 		node::controller ctrl(pool_size, json_path, "ipt:collector");
+ 		node::controller ctrl(config_index, pool_size, json_path, "ipt:collector");
 
 		if (vm["default"].as< bool >())
 		{
 			//	write default configuration
 			return ctrl.ctl::create_config();	//	base class method is hidden
+		}
+
+		if (vm["show"].as< bool >())
+		{
+			//	show configuration
+			return ctrl.ctl::print_config(std::cout);
 		}
 
 #if BOOST_OS_WINDOWS

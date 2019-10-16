@@ -326,7 +326,7 @@ namespace node
 				cyng::param_t		//	[5] param
 			>(frame);
 
-			auto const path = to_obis_path(std::get<1>(tpl));
+			auto const path = to_obis_path(std::get<1>(tpl), ' ');
 
 			set_proc_parameter_.generate_response(path
 				, std::get<0>(tpl)

@@ -46,24 +46,24 @@ namespace node
 		obis to_obis(std::string const&);
 
 		/**
-		 * The OBIS codes are separated by a single SPACE.
+		 * The OBIS codes are separated by a single separator.
 		 *
 		 * @return OBIS code path:
 		 * xx xx xx xx xx xx  xx xx xx xx xx xx
 		 */
-		std::ostream& to_hex(std::ostream&, obis_path const&);
+		std::ostream& to_hex(std::ostream&, obis_path const&, char sep);
 
 		/**
 		 * Convert OBIS codes into hexadescimal representation
 		 * separated by a single SPACE.
 		 */
-		std::string to_hex(obis_path const&);
+		std::string to_hex(obis_path const&, char sep);
 
 		/**
 		 * Try to convert a textual OBIS path representation into an valid
 		 * obis_path.
 		 */
-		obis_path to_obis_path(std::string const&);
+		obis_path to_obis_path(std::string const&, char sep);
 
 	}	//	sml
 }	//	node

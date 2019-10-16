@@ -649,7 +649,7 @@ namespace node
 			auto const param = read_param_tree(0u, tpl.begin(), tpl.end());
 			prg << cyng::unwinder(cyng::generate_invoke("sml.set.proc.parameter.request"
 				, ro.trx_
-				, to_hex(path)	//	string
+				, to_hex(path, ' ')	//	string
 				, ro.server_id_
 				, ro.get_value("userName")
 				, ro.get_value("password")

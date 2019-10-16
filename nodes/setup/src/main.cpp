@@ -42,18 +42,19 @@ int main(int argc, char **argv)
 		("build,b", "last built timestamp and platform")
 		("config,C", boost::program_options::value<std::string>(&config_file)->default_value(node::get_cfg_name("setup")), "specify the configuration file")
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
-		//("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
 		("init,I", boost::program_options::value<std::size_t>()->default_value(std::numeric_limits<std::size_t>::max())->implicit_value(std::numeric_limits<std::size_t>::min()), "initialize database and exit. generate optional test configuration")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("fs,F", boost::program_options::bool_switch()->default_value(false), "show available drives")
-		//("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
+		("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
 		;
 		
 	//	path to JSON configuration file
 	std::string json_path;
-	unsigned int pool_size = 1;
+	unsigned int config_index = 0u;
+	unsigned int pool_size = 1u;
+
 #if BOOST_OS_LINUX
 	struct rlimit rl;
 	int rc = ::getrlimit(RLIMIT_NOFILE, &rl);
@@ -68,6 +69,7 @@ int main(int argc, char **argv)
 		, "setup"
 		, json_path
 		, pool_size
+		, config_index
 #if BOOST_OS_LINUX
 		, rl
 #endif
@@ -148,7 +150,7 @@ int main(int argc, char **argv)
 		//
 		//	establish controller
 		//
-		node::controller ctrl(pool_size, json_path, "smf:setup");
+		node::controller ctrl(config_index, pool_size, json_path, "smf:setup");
 
 		if (vm["default"].as< bool >())
 		{
@@ -161,6 +163,12 @@ int main(int argc, char **argv)
 		{
 			//	initialize database
  			return ctrl.init_db(conf_count);
+		}
+
+		if (vm["show"].as< bool >())
+		{
+			//	show configuration
+			return ctrl.ctl::print_config(std::cout);
 		}
 
 #if BOOST_OS_WINDOWS

@@ -40,15 +40,16 @@ int main(int argc, char **argv)
 		("config,C", boost::program_options::value<std::string>(&config_file)->default_value(node::get_cfg_name("e350")), "specify the configuration file")
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
-		("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
+		("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 
 		;
 		
 	//	path to JSON configuration file
 	std::string json_path;
-	unsigned int pool_size;
-		
+	unsigned int config_index = 0u;
+	unsigned int pool_size = 4u;
+
 #if BOOST_OS_LINUX
 	struct rlimit rl;
 	int rc = ::getrlimit(RLIMIT_NOFILE, &rl);
@@ -64,6 +65,7 @@ int main(int argc, char **argv)
 		, "e350"
 		, json_path
 		, pool_size
+		, config_index
 #if BOOST_OS_LINUX
 		, rl
 #endif
@@ -139,7 +141,7 @@ int main(int argc, char **argv)
 		//
 		//	establish controller
 		//
-		node::controller ctrl(pool_size, json_path, "smf:e350");
+		node::controller ctrl(config_index, pool_size, json_path, "smf:e350");
 
 		if (vm["default"].as< bool >())
 		{
@@ -150,7 +152,7 @@ int main(int argc, char **argv)
 		if (vm["show"].as< bool >())
 		{
 			//	show configuration
-// 			return ctrl.show_config();
+			return ctrl.ctl::print_config(std::cout);
 		}
 
 #if BOOST_OS_WINDOWS

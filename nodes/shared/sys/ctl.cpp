@@ -14,6 +14,7 @@
 #include <cyng/io/serializer.h>
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/factory/set_factory.h>
+#include <cyng/set_cast.h>
 
 #if BOOST_OS_LINUX
 #include <smf/shared/write_pid.h>
@@ -25,8 +26,12 @@
 namespace node
 {
 
-	ctl::ctl(unsigned int pool_size, std::string const& json_path, std::string node_name)
-		: pool_size_(pool_size)
+	ctl::ctl(unsigned int index
+		, unsigned int pool_size
+		, std::string const& json_path
+		, std::string node_name)
+	: config_index_(index)
+		, pool_size_(pool_size)
 		, json_path_(json_path)
 		, node_name_(node_name)
 		, uidgen_()
@@ -57,62 +62,46 @@ namespace node
 
 				//
 				//	read configuration file
+				//	start application
 				//
-				cyng::object config = cyng::json::read_file(json_path_);
-
-				if (config)
+				auto const r = read_config_section(json_path_, config_index_);
+				if (r.second)
 				{
-					//
-					//	start application
-					//
-					cyng::vector_t vec;
-					vec = cyng::value_cast(config, vec);
-					if (!vec.empty())
-					{
 #if BOOST_OS_LINUX
-						auto logger = cyng::logging::make_sys_logger(node_name_.c_str(), true);
+					auto logger = cyng::logging::make_sys_logger(node_name_.c_str(), true);
 #else
-						const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
-						auto dom = cyng::make_reader(vec[0]);
-						const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
+					const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
+					auto dom = cyng::make_reader(r.first);
+					const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
 
-						auto logger = (console)
-							? cyng::logging::make_console_logger(mux.get_io_service(), node_name_)
-							: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / get_logfile_name()))
-							;
+					auto logger = (console)
+						? cyng::logging::make_console_logger(mux.get_io_service(), node_name_)
+						: cyng::logging::make_file_logger(mux.get_io_service(), (log_dir / get_logfile_name()))
+						;
 #ifdef _DEBUG
-						if (!console) {
-							std::cout << "log file see: " << (log_dir / get_logfile_name()) << std::endl;
-						}
+					if (!console) {
+						std::cout << "log file see: " << (log_dir / get_logfile_name()) << std::endl;
+					}
 #endif
 #endif
 
-						CYNG_LOG_TRACE(logger, cyng::io::to_str(config));
-						CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
+					CYNG_LOG_TRACE(logger, cyng::io::to_str(r.first));
+					CYNG_LOG_INFO(logger, "pool size: " << this->pool_size_);
 
-						shutdown = pre_start(mux, logger, vec.at(0));
+					shutdown = pre_start(mux, logger, r.first);
 
-						//
-						//	stop all tasks
-						//
-						CYNG_LOG_INFO(logger, "stop all tasks");
-						mux.stop(std::chrono::milliseconds(100), 10);
+					//
+					//	stop all tasks
+					//
+					CYNG_LOG_INFO(logger, "stop all tasks");
+					mux.stop(std::chrono::milliseconds(100), 10);
 
-						//
-						//	print uptime
-						//
-						const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
-						CYNG_LOG_INFO(logger, "uptime " << cyng::to_str(duration));
+					//
+					//	print uptime
+					//
+					const auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tp_start);
+					CYNG_LOG_INFO(logger, "uptime " << cyng::to_str(duration));
 
-					}
-					else
-					{
-						std::cerr
-							<< "use option -D to generate a configuration file"
-							<< std::endl;
-
-						shutdown = true;
-					}
 				}
 				else
 				{
@@ -136,7 +125,6 @@ namespace node
 		}
 		catch (std::exception& ex)
 		{
-			// 			CYNG_LOG_FATAL(logger, ex.what());
 			std::cerr
 				<< ex.what()
 				<< std::endl;
@@ -200,7 +188,6 @@ namespace node
 				<< "unable to open file "
 				<< json_path_
 				<< std::endl;
-
 		}
 		return EXIT_FAILURE;
 	}
@@ -213,8 +200,36 @@ namespace node
 			, cyng::param_factory("tag", uidgen_())
 			, cyng::param_factory("generated", std::chrono::system_clock::now())
 			, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)))
-			});
+		});
+	}
 
+	int ctl::print_config(std::ostream& os) const
+	{
+		//
+		//	read configuration file
+		//
+		auto const r = read_config_section(json_path_, config_index_);
+		if (r.second)
+		{
+			os
+				<< "configuration index is [ "
+				<< config_index_
+				<< " ]"
+				<< std::endl;
+			cyng::json::pretty_print(os, r.first);
+			return EXIT_SUCCESS;
+		}
+		else
+		{
+			std::cout
+				<< "configuration file ["
+				<< json_path_
+				<< "] not found or configuration index ["
+				<< config_index_
+				<< "] out of range"
+				<< std::endl;
+		}
+		return EXIT_FAILURE;
 	}
 
 	std::string ctl::get_logfile_name() const
@@ -239,6 +254,39 @@ namespace node
 				return c; 
 		});
 		return logfile_name + ".log";
+	}
+
+	int ctl::init_config_db(std::string section)
+	{
+		//
+		//	read configuration file
+		//
+		auto const r = read_config_section(json_path_, config_index_);
+		if (r.second)
+		{
+			auto const dom = cyng::make_reader(r.first);
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(dom.get(section), tpl);
+
+			return prepare_config_db(cyng::to_param_map(tpl));
+		}
+		else 
+		{
+			std::cout
+				<< "configuration file ["
+				<< json_path_
+				<< "] not found or configuration index ["
+				<< config_index_
+				<< "] out of range"
+				<< std::endl;
+		}
+		return EXIT_FAILURE;
+	}
+
+	int ctl::prepare_config_db(cyng::param_map_t&&)
+	{
+		//	not implemented
+		return EXIT_FAILURE;
 	}
 
 #if BOOST_OS_WINDOWS
@@ -275,4 +323,26 @@ namespace node
 		return shutdown;
 	}
 
+	std::pair<cyng::object, bool> get_config_section(cyng::object config, unsigned int config_index)
+	{
+		cyng::vector_t vec;
+		vec = cyng::value_cast(config, vec);
+		if (!vec.empty() && !(vec.size() < config_index)) {
+
+			return std::make_pair(vec.at(config_index), true);
+		}
+		return std::make_pair(cyng::make_object(), false);
+	}
+
+	std::pair<cyng::object, bool> read_config_section(std::string const& json_path, unsigned int config_index)
+	{
+		//
+		//	read configuration file
+		//
+		cyng::object const config = cyng::json::read_file(json_path);
+		return (config)
+			? get_config_section(config, config_index)
+			: std::make_pair(cyng::make_object(), false)
+			;
+	}
 }

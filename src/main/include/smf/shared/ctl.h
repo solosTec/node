@@ -42,10 +42,14 @@ namespace node
 	{
 	public:
 		/**
+		 * @param index index of the configuration vector (mostly == 0)
 		 * @param pool_size thread pool size
 		 * @param json_path path to JSON configuration file
 		 */
-		ctl(unsigned int pool_size, std::string const& json_path, std::string node_name);
+		ctl(unsigned int index
+			, unsigned int pool_size
+			, std::string const& json_path
+			, std::string node_name);
 
 		/**
 		 * Start controller loop.
@@ -62,6 +66,20 @@ namespace node
 		 */
 		int create_config() const;
 
+		/**
+		 * Read JSON configuration file and prints content
+		 *
+		 * @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
+		 */
+		int print_config(std::ostream&) const;
+
+		/**
+		 * Connect to an database and create all required tables
+		 *
+		 * @param section section name that defines the connection string
+		 * @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
+		 */
+		int init_config_db(std::string section);
 
 #if BOOST_OS_WINDOWS
 		/**
@@ -75,12 +93,18 @@ namespace node
 		virtual bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid);
 		virtual cyng::vector_t create_config(std::fstream&, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const;
 
+		/**
+		 * Overwrite this method to implement a database initialization
+		 */
+		virtual int prepare_config_db(cyng::param_map_t&&);
+
 
 	private:
 		bool pre_start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object const&);
 		std::string get_logfile_name() const;
 
 	protected:
+		unsigned int const config_index_;
 		unsigned int const pool_size_;
 		std::string const json_path_;
 		std::string const node_name_;
@@ -156,6 +180,9 @@ namespace node
 	}
 
 #endif
+
+	std::pair<cyng::object, bool> get_config_section(cyng::object config, unsigned int config_index);
+	std::pair<cyng::object, bool> read_config_section(std::string const& json_path, unsigned int config_index);
 
 }
 #endif

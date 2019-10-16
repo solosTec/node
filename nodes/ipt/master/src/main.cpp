@@ -48,8 +48,9 @@ int main(int argc, char **argv)
 		
 	//	path to JSON configuration file
 	std::string json_path;
-	unsigned int pool_size = 1;
-		
+	unsigned int config_index = 0u;
+	unsigned int pool_size = 1u;
+
 #if BOOST_OS_LINUX
     struct rlimit rl;
     int rc = ::getrlimit(RLIMIT_NOFILE, &rl);
@@ -64,6 +65,7 @@ int main(int argc, char **argv)
 		, "ipt"
 		, json_path
 		, pool_size
+		, config_index
 #if BOOST_OS_LINUX
 		, rl
 #endif
@@ -138,7 +140,7 @@ int main(int argc, char **argv)
 		//
 		//	establish controller
 		//
- 		node::controller ctrl(pool_size, json_path, "ipt::master");
+ 		node::controller ctrl(config_index, pool_size, json_path, "ipt::master");
 
 		if (vm["default"].as< bool >())
 		{
@@ -149,7 +151,7 @@ int main(int argc, char **argv)
 		if (vm["show"].as< bool >())
 		{
 			//	show configuration
- 			//return ctrl.show_config();
+			return ctrl.ctl::print_config(std::cout);
 		}
 
 #if BOOST_OS_WINDOWS

@@ -21,8 +21,14 @@
 
 namespace node 
 {
-	controller::controller(unsigned int pool_size, std::string const& json_path, std::string node_name)
-	: ctl(pool_size, json_path, node_name)
+	controller::controller(unsigned int index
+		, unsigned int pool_size
+		, std::string const& json_path
+		, std::string node_name)
+	: ctl(index
+		, pool_size
+		, json_path
+		, node_name)
 	{}
 
 	cyng::vector_t controller::create_config(std::fstream& fout, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const
