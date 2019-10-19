@@ -16,10 +16,15 @@ namespace node
 	{
 	public:
 		/**
+		 * @param index index of the configuration vector (mostly == 0)
 		 * @param pool_size thread pool size
 		 * @param json_path path to JSON configuration file
 		 */
-		controller(unsigned int pool_size, std::string const& json_path, std::string node_name);
+		controller(unsigned int index
+			, unsigned int pool_size
+			, std::string const& json_path
+			, std::string node_name);
+        
 		int init_db();
 
 	protected:

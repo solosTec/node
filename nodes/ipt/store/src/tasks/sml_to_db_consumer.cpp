@@ -289,7 +289,7 @@ namespace node
 		base_.mux_.post(ntid_, STORE_EVENT_REGISTER_CONSUMER, cyng::tuple_factory("SML:DB", base_.get_id()));
 	}
 
-	cyng::table::mt_table sml_db_consumer::init_meta_map(std::string const& ver)
+	cyng::table::meta_map_t sml_db_consumer::init_meta_map(std::string const& ver)
 	{
 		//
 		//	SQL table schemes

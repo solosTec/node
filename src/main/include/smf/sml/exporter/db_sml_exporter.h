@@ -29,8 +29,8 @@ namespace node
 		{
 
 		public:
-			db_exporter(cyng::table::mt_table const&, std::string const& schema);
-			db_exporter(cyng::table::mt_table const&, std::string const& schema
+			db_exporter(cyng::table::meta_map_t const&, std::string const& schema);
+			db_exporter(cyng::table::meta_map_t const&, std::string const& schema
 				, std::uint32_t source
 				, std::uint32_t channel
 				, std::string const& target);
@@ -104,7 +104,7 @@ namespace node
 				, cyng::object value);
 
 		private:
-			const cyng::table::mt_table& mt_;
+			const cyng::table::meta_map_t& mt_;
 			const std::string schema_;
 			const std::uint32_t source_;
 			const std::uint32_t channel_;

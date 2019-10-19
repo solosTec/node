@@ -66,7 +66,7 @@ namespace node
 		/**
 		 * static method to create tables.
 		 */
-		static cyng::table::mt_table init_meta_map(std::string const&);
+		static cyng::table::meta_map_t init_meta_map(std::string const&);
 
 	private:
 		void generate_csv_15min(std::chrono::system_clock::time_point start
@@ -175,7 +175,7 @@ namespace node
 		cyng::param_map_t const cfg_clock_month_;
 
 		const std::string schema_;
-		cyng::table::mt_table	meta_map_;
+		cyng::table::meta_map_t	meta_map_;
 
 		/**
 		 * task state

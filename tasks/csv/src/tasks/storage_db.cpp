@@ -1333,7 +1333,7 @@ namespace node
 			, bus_->vm_.tag()));
 	}
 
-	cyng::table::mt_table storage_db::init_meta_map(std::string const& ver)
+	cyng::table::meta_map_t storage_db::init_meta_map(std::string const& ver)
 	{
 		//
 		//	SQL table schemes

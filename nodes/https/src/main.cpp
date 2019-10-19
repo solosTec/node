@@ -49,7 +49,8 @@ int main(int argc, char **argv)
 
     //	path to JSON configuration file
     std::string json_path;
-	unsigned int pool_size = 1;
+    unsigned int config_index = 0u;
+    unsigned int pool_size = 2;
 
 #if BOOST_OS_LINUX
     struct rlimit rl;
@@ -65,6 +66,7 @@ int main(int argc, char **argv)
 		, "https"
 		, json_path
 		, pool_size
+		, config_index
 #if BOOST_OS_LINUX
 		, rl
 #endif

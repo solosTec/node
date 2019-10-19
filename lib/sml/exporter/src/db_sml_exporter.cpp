@@ -29,7 +29,7 @@ namespace node
 	namespace sml
 	{
 
-		db_exporter::db_exporter(cyng::table::mt_table const& mt
+		db_exporter::db_exporter(cyng::table::meta_map_t const& mt
 			, std::string const& schema)
 		: mt_(mt)
 			, schema_(schema)
@@ -42,7 +42,7 @@ namespace node
 			reset();
 		}
 
-		db_exporter::db_exporter(cyng::table::mt_table const& mt
+		db_exporter::db_exporter(cyng::table::meta_map_t const& mt
 			, std::string const& schema
 			, std::uint32_t source
 			, std::uint32_t channel

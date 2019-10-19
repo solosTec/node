@@ -70,7 +70,7 @@ namespace node
 		 * static method to create tables.
 		 */
 		static int init_db(cyng::tuple_t);
-		static cyng::table::mt_table init_meta_map(std::string const&);
+		static cyng::table::meta_map_t init_meta_map(std::string const&);
 
 	private:
 		void register_consumer();
@@ -84,7 +84,7 @@ namespace node
 		const std::chrono::seconds period_;
 		const bool ignore_null_;	//!< don't store values equal to null
 		std::size_t total_count_, skipped_count_;
-		cyng::table::mt_table	meta_map_;
+		cyng::table::meta_map_t	meta_map_;
 		enum task_state {
 			TASK_STATE_INITIAL,
 			TASK_STATE_DB_OK,

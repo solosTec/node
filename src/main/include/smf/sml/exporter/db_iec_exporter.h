@@ -28,8 +28,8 @@ namespace node
 		class db_exporter
 		{
 		public:
-			db_exporter(cyng::table::mt_table const&, std::string const& schema);
-			db_exporter(cyng::table::mt_table const&, std::string const& schema
+			db_exporter(cyng::table::meta_map_t const&, std::string const& schema);
+			db_exporter(cyng::table::meta_map_t const&, std::string const& schema
 				, std::uint32_t source
 				, std::uint32_t channel
 				, std::string const& target);
@@ -56,11 +56,11 @@ namespace node
 				, std::size_t size);
 
 		private:
-			const cyng::table::mt_table& mt_;
-			const std::string schema_;
-			const std::uint32_t source_;
-			const std::uint32_t channel_;
-			const std::string target_;
+			cyng::table::meta_map_t const & mt_;
+			std::string const schema_;
+			std::uint32_t const source_;
+			std::uint32_t const channel_;
+			std::string const target_;
 
 			boost::uuids::random_generator rgn_;
 		};

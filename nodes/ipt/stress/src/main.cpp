@@ -48,7 +48,8 @@ int main(int argc, char **argv)
 
 	//	path to JSON configuration file
 	std::string json_path;
-	unsigned int pool_size = 1;
+    unsigned int config_index = 0u;
+	unsigned int pool_size = 4;
 		
 #if BOOST_OS_LINUX
 	struct rlimit rl;
@@ -64,6 +65,7 @@ int main(int argc, char **argv)
 		, "stress"
 		, json_path
 		, pool_size
+		, config_index
 #if BOOST_OS_LINUX
 		, rl
 #endif
@@ -135,7 +137,7 @@ int main(int argc, char **argv)
 
 		}
 
- 		node::controller ctrl(pool_size, json_path, "ipt:stress");
+ 		node::controller ctrl(config_index, pool_size, json_path, "ipt:stress");
 
 		if (vm["default"].as< bool >())
 		{
