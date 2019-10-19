@@ -116,6 +116,7 @@ namespace node
 			 * @return status word
 			 */
 			operator std::uint64_t() const;
+			std::uint64_t get() const;
 
 			void set_fatal_error(bool);
 			void set_authorized(bool);
@@ -124,6 +125,7 @@ namespace node
 			void set_service_if_available(bool);
 			void set_ext_if_available(bool);
 			void set_mbus_if_available(bool);
+			void set_flag(status_bits, bool);
 
 			/**
 			 * convinience function for:
@@ -171,6 +173,7 @@ namespace node
 			 */
 			bool is_timebase_uncertain() const;
 
+			static status_word_t get_initial_value();
 
 		private:
 			bool is_set(status_bits) const;

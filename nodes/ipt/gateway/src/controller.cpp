@@ -291,7 +291,7 @@ namespace node
 		//
 		//	get configuration type
 		//
-		auto const config_types = cyng::vector_cast<std::string>(cfg.get("output"), "");
+		//auto const config_types = cyng::vector_cast<std::string>(cfg.get("output"), "");
 
 		//
 		//	get IP-T configuration

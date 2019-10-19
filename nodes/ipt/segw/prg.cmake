@@ -6,21 +6,18 @@ set (node_ipt_segw_cpp
 	nodes/ipt/segw/src/main.cpp	
 	nodes/ipt/segw/src/controller.cpp
 	nodes/ipt/segw/src/storage.cpp
+	nodes/ipt/segw/src/cache.cpp
+	nodes/ipt/segw/src/bridge.cpp
+
 )
 
 set (node_ipt_segw_h
 
 	nodes/ipt/segw/src/controller.h
 	nodes/ipt/segw/src/storage.h
+	nodes/ipt/segw/src/cache.h
+	nodes/ipt/segw/src/bridge.h
 
-)
-
-set (node_ipt_segw_schemes
-
-	src/main/include/smf/shared/db_meta.h
-	nodes/shared/db/db_meta.cpp
-	src/main/include/smf/shared/db_cfg.h
-	nodes/shared/db/db_cfg.cpp
 )
 
 set (node_ipt_segw_shared
@@ -54,6 +51,9 @@ set (node_ipt_segw_tasks
 	
 set (node_ipt_segw_server
 
+	nodes/ipt/segw/src/server/server.h
+	nodes/ipt/segw/src/server/server.cpp	
+
 )
 
 if(WIN32)
@@ -86,7 +86,6 @@ source_group("tasks" FILES ${node_ipt_segw_tasks})
 source_group("service" FILES ${node_ipt_segw_service})
 source_group("shared" FILES ${node_ipt_segw_shared})
 source_group("server" FILES ${node_ipt_segw_server})
-source_group("schemes" FILES ${node_ipt_segw_schemes})
 
 
 # define the main program
@@ -97,7 +96,6 @@ set (node_ipt_segw
   ${node_ipt_segw_service}
   ${node_ipt_segw_shared}
   ${node_ipt_segw_server}
-  ${node_ipt_segw_schemes}
 )
 
 if(WIN32)

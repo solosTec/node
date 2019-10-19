@@ -9,6 +9,9 @@
 #include <smf/mbus/units.h>
 
 #include <cyng/io/io_buffer.h>
+
+#include <algorithm>
+
 #include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
 
@@ -263,14 +266,17 @@ namespace node
 
 		bool obis::is_nil() const
 		{
-			for (const auto c : value_)
-			{
-				if (c != 0U)
-				{
-					return false;
-				}
-			}
-			return true;
+			return std::all_of(value_.begin(), value_.end(), [](std::uint8_t c) {
+				return c == 0u;
+			});
+			//for (const auto c : value_)
+			//{
+			//	if (c != 0U)
+			//	{
+			//		return false;
+			//	}
+			//}
+			//return true;
 		}
 
 		bool obis::is_physical_unit() const

@@ -7,9 +7,10 @@
 
 #include "controller.h"
 #include "storage.h"
- //#include "server.h"
+#include "cache.h"
+#include "bridge.h"
+#include "server/server.h"
 #include <NODE_project_info.h>
-#include <smf/ipt/config.h>
 #include <smf/sml/obis_db.h>
 #include <smf/mbus/defs.h>
 
@@ -21,15 +22,8 @@
 #include <cyng/set_cast.h>
 #include <cyng/vector_cast.hpp>
 #include <cyng/sys/mac.h>
-#include <cyng/store/db.h>
-#include <cyng/table/meta.hpp>
-#include <cyng/sql.h>
 #include <cyng/rnd.h>
-
-#include <cyng/db/connection_types.h>
-#include <cyng/db/session.h>
-#include <cyng/db/interface_session.h>
-#include <cyng/db/sql_table.h>
+#include <cyng/async/mux.h>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -212,6 +206,12 @@ namespace node
 						cyng::param_factory("monitor", rnd_monitor()))
 					}))
 
+				, cyng::param_factory("ipt-param", cyng::tuple_factory(
+					cyng::param_factory(sml::OBIS_TCP_WAIT_TO_RECONNECT.to_str(), 1u),	//	minutes
+					cyng::param_factory(sml::OBIS_TCP_CONNECT_RETRIES.to_str(), 3u),
+					cyng::param_factory(sml::make_obis(0x00, 0x80, 0x80, 0x00, 0x03, 0x01).to_str(), 0u)
+				))
+
 				//	built-in meter
 				, cyng::param_factory("virtual-meter", cyng::tuple_factory(
 					cyng::param_factory("enabled", false),
@@ -266,45 +266,64 @@ namespace node
 			CYNG_LOG_WARNING(logger, "invalid count of gpios: " << gpio_paths.size());
 		}
 		
+		//
+		//	global data cache
+		//
+		cyng::store::db config_db;
 
 		//
-		//	get configuration type
+		//	create tables 
 		//
-		auto const config_types = cyng::vector_cast<std::string>(cfg.get("output"), "");
+		init_cache(config_db);
 
 		//
-		//	get IP-T configuration
+		//	setup cache manager
+		//	and initialize _Cfg table
 		//
-		cyng::vector_t vec;
-		vec = cyng::value_cast(cfg.get("ipt"), vec);
-		auto cfg_ipt = ipt::load_cluster_cfg(vec);
+		cache cm(config_db, tag);
 
 		//
-		//	get wireless-LMN configuration
+		//	setup storage manager
 		//
-		cyng::tuple_t cfg_wireless_lmn;
-		cfg_wireless_lmn = cyng::value_cast(cfg.get("wireless-LMN"), cfg_wireless_lmn);
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["DB"].get("type"), "SQLite"));
+		storage store(mux.get_io_service(), con_type);
 
 		//
-		//	get wired-LMN configuration
+		//	get database configuration and connect
 		//
-		cyng::tuple_t cfg_wired_lmn;
-		cfg_wired_lmn = cyng::value_cast(cfg.get("wired-LMN"), cfg_wired_lmn);
+		cyng::tuple_t tpl;
+		tpl = cyng::value_cast(cfg.get("DB"), tpl);
+		auto const db_cfg = cyng::to_param_map(tpl);
+
+		if (!store.start(db_cfg)) {
+
+			CYNG_LOG_FATAL(logger, "cannot start database connection pool");
+
+			//
+			//	shutdown
+			//
+			return true;
+		}
+
+		//
+		//	setup bridge
+		//
+		bridge br(cm, store);
+
+		//
+		//	log power return message
+		//
+		br.power_return();
+
+		//
+		//	ToDo: start task OBISLOG (15 min)
+		//
 
 		//
 		//	get virtual meter
 		//
-		cyng::tuple_t cfg_virtual_meter;
-		cfg_virtual_meter = cyng::value_cast(cfg.get("virtual-meter"), cfg_virtual_meter);
-
-		/**
-		 * global data cache
-		 */
-		cyng::store::db config_db;
-		//init_config(logger
-		//	, config_db
-		//	, tag
-		//	, cfg);
+		//cyng::tuple_t cfg_virtual_meter;
+		//cfg_virtual_meter = cyng::value_cast(cfg.get("virtual-meter"), cfg_virtual_meter);
 
 		//
 		//	connect to ipt master
@@ -326,14 +345,11 @@ namespace node
 		//
 		//	create server
 		//
-		//server srv(mux
-		//	, logger
-		//	, config_db
-		//	, tag
-		//	, cfg_ipt
-		//	, cyng::value_cast<std::string>(cfg["server"].get("account"), "")
-		//	, cyng::value_cast<std::string>(cfg["server"].get("pwd"), "")
-		//	, accept_all);
+		server srv(mux
+			, logger
+			, cm
+			, cyng::value_cast<std::string>(cfg["server"].get("account"), "")
+			, cyng::value_cast<std::string>(cfg["server"].get("pwd"), ""));
 
 		//
 		//	server runtime configuration
@@ -343,7 +359,7 @@ namespace node
 
 		CYNG_LOG_INFO(logger, "listener address: " << address);
 		CYNG_LOG_INFO(logger, "listener service: " << service);
-		//srv.run(address, service);
+		srv.run(address, service);
 
 		//
 		//	wait for system signals
@@ -354,63 +370,17 @@ namespace node
 		//	close acceptor
 		//
 		CYNG_LOG_INFO(logger, "close acceptor");
-		//srv.close();
+		srv.close();
 
 		return shutdown;
 	}
 
 	int controller::prepare_config_db(cyng::param_map_t&& cfg)
 	{
-		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
-		cyng::db::session s(con_type);
-		auto r = s.connect(cfg);
-		if (r.second) {
-
-			//
-			//	connect string
-			//
-#ifdef _DEBUG
-			std::cout 
-				<< "connect string: [" 
-				<< r.first 
-				<< "]"
-				<< std::endl
-				;
-#endif
-
-			auto meta_db = create_db_meta_data();
-			for (auto tbl : meta_db)
-			{
-#ifdef _DEBUG
-				std::cout
-					<< "create table  : ["
-					<< tbl->get_name()
-					<< "]"
-					<< std::endl
-					;
-#endif
-				cyng::sql::command cmd(tbl, s.get_dialect());
-				cmd.create();
-				std::string sql = cmd.to_str();
-#ifdef _DEBUG
-				std::cout 
-					<< sql 
-					<< std::endl;
-#endif
-				s.execute(sql);
-
-				return EXIT_SUCCESS;
-			}
-		}
-		else {
-			std::cerr
-				<< "connect ["
-				<< r.first
-				<< "] failed"
-				<< std::endl
-				;
-		}
-		return EXIT_FAILURE;
+		return (init_storage(std::move(cfg)))
+			? EXIT_SUCCESS
+			: EXIT_FAILURE
+			;
 	}
 
 	int controller::transfer_config()
@@ -433,30 +403,10 @@ namespace node
 			tpl = cyng::value_cast(dom.get("DB"), tpl);
 			auto db_cfg = cyng::to_param_map(tpl);
 
-			auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(db_cfg["type"], "SQLite"));
-			cyng::db::session s(con_type);
-			auto r = s.connect(db_cfg);
-			if (r.second) {
-
-				//
-				//	IP-T configuration
-				//
-				cyng::vector_t vec;
-				vec = cyng::value_cast(dom.get("ipt"), vec);
-				auto const cfg_ipt = ipt::load_cluster_cfg(vec);
-				for (auto const rec : cfg_ipt) {
-
-				}
-			}
-			else {
-				std::cerr
-					<< "connect ["
-					<< r.first
-					<< "] failed"
-					<< std::endl
-					;
-			}
-			return EXIT_SUCCESS;
+			return (transfer_config_to_storage(cyng::to_param_map(tpl), dom))
+				? EXIT_SUCCESS
+				: EXIT_FAILURE
+				;
 		}
 		else
 		{

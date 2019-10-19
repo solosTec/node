@@ -26,12 +26,17 @@ namespace node
 			//
 			//	reset status word
 			//
-			word_ = 0u;
-			word_ |= STATUS_BIT_ON;	//!< bit 1 is always ON
-			word_ |= STATUS_BIT_RESET_BY_WATCHDOG;	
-			//word_ |= STATUS_BIT_IP_ADDRESS_AVAILABLE;	//!< 1 if NOT available
-			word_ |= STATUS_BIT_EXT_IF_AVAILABLE;	//!< 1 if NOT available
-			word_ |= STATUS_BIT_AUTHORIZED_IPT;	//!< 1 if NOT authorized
+			word_ = get_initial_value();
+		}
+
+		status_word_t status::get_initial_value()
+		{
+			status_word_t w{ 0 };
+			w |= STATUS_BIT_ON;	//!< bit 1 is always ON
+			w |= STATUS_BIT_RESET_BY_WATCHDOG;
+			w |= STATUS_BIT_EXT_IF_AVAILABLE;	//!< 1 if NOT available
+			w |= STATUS_BIT_AUTHORIZED_IPT;	//!< 1 if NOT authorized
+			return w;
 		}
 
 		std::uint64_t status::reset(std::uint64_t word)
@@ -42,46 +47,56 @@ namespace node
 
 		status::operator std::uint64_t() const
 		{
+			return get();
+		}
+		std::uint64_t status::get() const
+		{
 			return word_;
 		}
 
 		void status::set_fatal_error(bool b)
 		{
-			(b) ? set(STATUS_BIT_FATAL_ERROR) : remove(STATUS_BIT_FATAL_ERROR);
+			set_flag(STATUS_BIT_FATAL_ERROR, b);
 		}
 
 		void status::set_authorized(bool b)
 		{
 			//	0 if authorized
-			(b) ? remove(STATUS_BIT_AUTHORIZED_IPT) : set(STATUS_BIT_AUTHORIZED_IPT);
+			set_flag(STATUS_BIT_AUTHORIZED_IPT, b);
 		}
 
 		void status::set_ip_address_available(bool b)
 		{
 			//	0 if IP address is available (DHCP)
-			(b) ? remove(STATUS_BIT_IP_ADDRESS_AVAILABLE) : set(STATUS_BIT_IP_ADDRESS_AVAILABLE);
+			set_flag(STATUS_BIT_IP_ADDRESS_AVAILABLE, b);
 		}
 
 		void status::set_ethernet_link_available(bool b)
 		{
 			//	0 if ethernet link / GSM network is available
-			b ? remove(STATUS_BIT_ETHERNET_AVAILABLE) : set(STATUS_BIT_ETHERNET_AVAILABLE);
+			set_flag(STATUS_BIT_ETHERNET_AVAILABLE, b);
 		}
 
 		void status::set_service_if_available(bool b)
 		{
-			(b) ? set(STATUS_BIT_SERVICE_IF_AVAILABLE) : remove(STATUS_BIT_SERVICE_IF_AVAILABLE);
+			set_flag(STATUS_BIT_SERVICE_IF_AVAILABLE, b);
 		}
 
 		void status::set_ext_if_available(bool b)
 		{
-			(b) ? set(STATUS_BIT_EXT_IF_AVAILABLE) : remove(STATUS_BIT_EXT_IF_AVAILABLE);
+			set_flag(STATUS_BIT_EXT_IF_AVAILABLE, b);
 		}
 
 		void status::set_mbus_if_available(bool b)
 		{
-			(b) ? set(STATUS_BIT_MBUS_IF_AVAILABLE) : remove(STATUS_BIT_MBUS_IF_AVAILABLE);
+			set_flag(STATUS_BIT_MBUS_IF_AVAILABLE, b);
 		}
+
+		void status::set_flag(status_bits e, bool b)
+		{
+			(b) ? set(e) : remove(e);
+		}
+
 
 		bool status::is_authorized() const
 		{

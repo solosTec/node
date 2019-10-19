@@ -181,7 +181,7 @@ int main(int argc, char **argv)
 
 			//	run as service 
 			const std::string srv_name = vm["service.name"].as< std::string >();
- 			//return node::run_as_service(std::move(ctrl), srv_name);
+ 			return node::run_as_service(std::move(ctrl), srv_name);
 		}
 #endif
 
@@ -191,7 +191,7 @@ int main(int argc, char **argv)
 #endif
 
 		BOOST_ASSERT_MSG(pool_size != 0, "empty thread pool");
-		//return ctrl.run(vm["console"].as< bool >());
+		return ctrl.run(vm["console"].as< bool >());
 	}
     catch (boost::program_options::error const& err)   {
         std::cerr
