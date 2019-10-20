@@ -1,12 +1,12 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Sylko Olzscher
+ * Copyright (c) 2019 Sylko Olzscher
  *
  */
 
-#ifndef NODE_IPT_GATEWAY_SERVER_H
-#define NODE_IPT_GATEWAY_SERVER_H
+#ifndef NODE_SEGW_SERVER_H
+#define NODE_SEGW_SERVER_H
 
 #include <cyng/async/mux.h>
 #include <cyng/log.h>

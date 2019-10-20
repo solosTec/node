@@ -15,6 +15,7 @@
 #include <cyng/db/sql_table.h>
 #include <cyng/intrinsics/traits.hpp>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/vector_cast.hpp>
 
 #include <cyng/sql/dsl/binary_expr.hpp>
 #include <cyng/sql/dsl/list_expr.hpp>
@@ -542,6 +543,41 @@ namespace node
 				}
 			}
 
+			//
+			//	SML login: accepting all/wrong server IDs
+			//
+			init_config_record(s, "accept-all-ids", dom.get("accept-all-ids"));
+
+			{
+
+				//
+				//	map all available GPIO paths
+				//
+				init_config_record(s, "gpio-path", dom.get("gpio-path"));
+
+				auto const gpio_list = cyng::vector_cast<int>(dom.get("gpio-list"), 0);
+				if (gpio_list.size() != 4) {
+					std::cerr 
+						<< "***warning: invalid count of gpios: " 
+						<< gpio_list.size()
+						<< std::endl;
+				}
+				std::stringstream ss;
+				bool initialized{ false };
+				for (auto const gpio : gpio_list) {
+					if (initialized) {
+						ss << ' ';
+					}
+					else {
+						initialized = true;
+					}
+					ss
+						<< gpio
+						;
+				}
+				init_config_record(s, "gpio-vector", cyng::make_object(ss.str()));
+
+			}
 			return true;
 		}
 

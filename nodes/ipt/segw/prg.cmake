@@ -53,6 +53,10 @@ set (node_ipt_segw_server
 
 	nodes/ipt/segw/src/server/server.h
 	nodes/ipt/segw/src/server/server.cpp	
+	nodes/ipt/segw/src/server/connection.h
+	nodes/ipt/segw/src/server/connection.cpp	
+	nodes/ipt/segw/src/server/session.h
+	nodes/ipt/segw/src/server/session.cpp	
 
 )
 

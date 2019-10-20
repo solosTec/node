@@ -1,14 +1,14 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2017 Sylko Olzscher
+ * Copyright (c) 2019 Sylko Olzscher
  *
  */
 
 
 #include "server.h"
 #include "../cache.h"
- //#include "connection.h"
+#include "connection.h"
 
 #include <cyng/object.h>
 
@@ -84,14 +84,16 @@ namespace node
 				//	Connections are managed by there own and are controlled
 				//	by a maintenance task.
 				//
-				//std::make_shared<sml::connection>(std::move(socket)
-				//	, mux_
-				//	, logger_
-				//	, config_db_
-				//	, cfg_
-				//	, account_
-				//	, pwd_
-				//	, accept_all_)->start();
+				
+				auto const accept_all = cache_.get_cfg("accept-all-ids", false);
+
+				std::make_shared<connection>(std::move(socket)
+					, mux_
+					, logger_
+					, cache_
+					, account_
+					, pwd_
+					, accept_all)->start();
 
 				do_accept();
 			}

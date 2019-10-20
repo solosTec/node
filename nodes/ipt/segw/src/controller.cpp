@@ -233,38 +233,6 @@ namespace node
 		//
 		auto const log_pushdata = cyng::value_cast(cfg.get("log-pushdata"), false);
 		boost::ignore_unused(log_pushdata);
-
-		//
-		//	SML login
-		//
-		auto const accept_all = cyng::value_cast(cfg.get("accept-all-ids"), false);
-		if (accept_all) {
-			CYNG_LOG_WARNING(logger, "Accepts all server IDs");
-		}
-
-		//
-		//	map all available GPIO paths
-		//
-		auto const gpio_path = cyng::value_cast<std::string>(cfg.get("gpio-path"), "/sys/class/gpio");
-		CYNG_LOG_INFO(logger, "gpio path: " << gpio_path);
-
-		auto const gpio_list = cyng::vector_cast<int>(cfg.get("gpio-list"), 0);
-		std::map<int, std::string> gpio_paths;
-		for (auto const gpio : gpio_list) {
-			std::stringstream ss;
-			ss
-				<< gpio_path
-				<< "/gpio"
-				<< gpio
-				;
-			auto const p = ss.str();
-			CYNG_LOG_TRACE(logger, "gpio: " << p);
-			gpio_paths.emplace(gpio, p);
-		}
-
-		if (gpio_paths.size() != 4) {
-			CYNG_LOG_WARNING(logger, "invalid count of gpios: " << gpio_paths.size());
-		}
 		
 		//
 		//	global data cache

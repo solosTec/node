@@ -56,6 +56,14 @@ namespace node
 		 */
 		std::uint64_t get_status_word();
 
+		/**
+		 * read a configuration value
+		 */
+		template <typename T >
+		T get_cfg(std::string name, T def) {
+			return cyng::value_cast(db_.get_value("_Cfg", name, std::string("val")), def);
+		}
+
 	private:
 		/**
 		 * build up meta data

@@ -5,8 +5,8 @@
  * 
  */ 
 
-#ifndef NODE_IPT_SEGW_STORAGE_H
-#define NODE_IPT_SEGW_STORAGE_H
+#ifndef NODE_SEGW_STORAGE_H
+#define NODE_SEGW_STORAGE_H
 
 #include <smf/sml/obis_io.h>
 
