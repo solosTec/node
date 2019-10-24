@@ -8,7 +8,16 @@
 #ifndef NODE_IPT_SEGW_BRIDGE_H
 #define NODE_IPT_SEGW_BRIDGE_H
 
+namespace cyng
+{
+	namespace async
+	{
+		class mux;
+	}
+}
+
 #include <cyng/store/db.h>
+#include <cyng/log.h>
 
 namespace node
 {
@@ -21,7 +30,7 @@ namespace node
 	{
 
 	public:
-		bridge(cache&, storage&);
+		bridge(cyng::async::mux& mux, cyng::logging::log_ptr, cache&, storage&);
 
 		/**
 		 * log power return message
@@ -53,7 +62,14 @@ namespace node
 			, std::uint64_t
 			, boost::uuids::uuid);
 
+		void start_task_obislog(cyng::async::mux& mux);
+		void start_task_gpio(cyng::async::mux& mux);
+
 	private:
+		/**
+		 * global logger
+		 */
+		cyng::logging::log_ptr logger_;
 
 		/**
 		 * global data cache

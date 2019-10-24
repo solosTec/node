@@ -47,6 +47,11 @@ endif(UNIX)
 
 set (node_ipt_segw_tasks
 
+	nodes/ipt/segw/src/tasks/gpio.h
+	nodes/ipt/segw/src/tasks/gpio.cpp
+	nodes/ipt/segw/src/tasks/obislog.h
+	nodes/ipt/segw/src/tasks/obislog.cpp
+
 )
 	
 set (node_ipt_segw_server

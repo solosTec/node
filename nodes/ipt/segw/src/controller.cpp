@@ -75,6 +75,7 @@ namespace node
 				, cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
 				, cyng::param_factory("gpio-path", "/sys/class/gpio")	//	accept only the specified MAC id
 				, cyng::param_factory("gpio-list", cyng::vector_factory({46, 47, 50, 53}))
+				, cyng::param_factory("obis-log", 15)	//	cycle time in minutes
 
 				, cyng::param_factory("DB", cyng::tuple_factory(
 					cyng::param_factory("type", "SQLite"),
@@ -276,16 +277,12 @@ namespace node
 		//
 		//	setup bridge
 		//
-		bridge br(cm, store);
+		bridge br(mux, logger, cm, store);
 
 		//
 		//	log power return message
 		//
 		br.power_return();
-
-		//
-		//	ToDo: start task OBISLOG (15 min)
-		//
 
 		//
 		//	get virtual meter

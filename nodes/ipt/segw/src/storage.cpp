@@ -384,6 +384,11 @@ namespace node
 		if (r.second) {
 
 			//
+			//	start transaction
+			//
+			s.begin();
+
+			//
 			//	transfer IP-T configuration
 			//
 			{
@@ -548,6 +553,11 @@ namespace node
 			//
 			init_config_record(s, "accept-all-ids", dom.get("accept-all-ids"));
 
+			//
+			//	OBIS logging cycle in minutes
+			//
+			init_config_record(s, "obis-log", dom.get("obis-log"));
+
 			{
 
 				//
@@ -577,6 +587,10 @@ namespace node
 				}
 				init_config_record(s, "gpio-vector", cyng::make_object(ss.str()));
 
+				//
+				//	commit
+				//
+				s.commit();
 			}
 			return true;
 		}

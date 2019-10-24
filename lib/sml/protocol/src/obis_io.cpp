@@ -102,7 +102,7 @@ namespace node
 				//	decimal representation
 				//	example: 1-1:1.8.1
 				//
-				const auto res = cyng::split(str, ".-:");
+				auto const res = cyng::split(str, ".-:");
 				if (res.size() == 6) {
 					try {
 						return obis(std::stoi(res.at(0))
