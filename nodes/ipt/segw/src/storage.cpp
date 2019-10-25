@@ -133,23 +133,129 @@ namespace node
 			;
 	}
 
-	bool storage::update(std::string tbl, std::string col, cyng::object obj)
+	bool storage::update(std::string tbl
+		, cyng::table::key_type const& key
+		, std::string col
+		, cyng::object obj
+		, std::uint64_t gen)
 	{
 		auto s = pool_.get_session();
 		auto cmd = create_cmd(tbl, s.get_dialect());
 		if (!cmd.is_valid())	return false;
 
-		cmd.update(cyng::sql::make_assign(col, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
+		//
+		//	precondition is that both tables use the same column names
+		//	that the key length is one.
+		//
+		auto tmp = cmd.update(cyng::sql::make_assign(col, cyng::sql::make_placeholder())).by_key();
+		boost::ignore_unused(tmp);
+
+		//cmd.update(cyng::sql::make_assign(col, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
+		std::string sql = cmd.to_str();
+		auto stmt = s.create_statement();
+		std::pair<int, bool> r = stmt->prepare(sql);
+		if (r.second) {
+
+			stmt->push(obj, 0);
+			for (auto idx = key.size(); idx < key.size(); ++idx) {
+				stmt->push(key.at(idx), 0);
+			}
+
+			if (!stmt->execute()) {
+				return false;
+			}
+
+			stmt->clear();
+
+			//
+			//	update gen(eration)
+			//
+			auto tmp = cmd.update(cyng::sql::make_assign("gen", cyng::sql::make_placeholder())).by_key();
+			//auto tmp = cmd.update(cyng::sql::make_assign("gen", cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
+			boost::ignore_unused(tmp);
+
+			sql = cmd.to_str();
+			r = stmt->prepare(sql);
+			if (r.second) {
+				//	UPDATE TCfg SET gen = ? WHERE (path = ?)
+				stmt->push(cyng::make_object(gen), 0);
+				for (auto idx = key.size(); idx < key.size(); ++idx) {
+					stmt->push(key.at(idx), 0);
+				}
+
+				if (!stmt->execute()) {
+					return false;
+				}
+
+				stmt->clear();
+			}
+		}
+
+		return false;
+	}
+
+	bool storage::insert(std::string tbl
+		, cyng::table::key_type const& key
+		, cyng::table::data_type const& body
+		, std::uint64_t gen
+		, boost::uuids::uuid source)
+	{
+		auto s = pool_.get_session();
+		auto cmd = create_cmd(tbl, s.get_dialect());
+		if (!cmd.is_valid())	return false;
+
+		auto tmp = cmd.insert();
+		boost::ignore_unused(tmp);
+
 		std::string const sql = cmd.to_str();
 		auto stmt = s.create_statement();
-		stmt->prepare(sql);
+		std::pair<int, bool> r = stmt->prepare(sql);
+		if (r.second) {
 
-		//
-		//	incomplete
-		//
-		BOOST_ASSERT_MSG(false, "incomplete - not implemented yet");
+			for (auto const& obj : key) {
+				stmt->push(obj, 0);
+			}
+			stmt->push(cyng::make_object(gen), 0);
+			for (auto const& obj : body) {
+				stmt->push(obj, 0);
+			}
+			if (stmt->execute())	return true;
+		}
 
-		return true;
+
+		return false;
+	}
+
+	bool storage::remove(std::string tbl
+		, cyng::table::key_type const& key
+		, boost::uuids::uuid source)
+	{
+		auto s = pool_.get_session();
+		auto cmd = create_cmd(tbl, s.get_dialect());
+		if (!cmd.is_valid())	return false;
+
+		auto tmp = cmd.remove().by_key();
+		boost::ignore_unused(tmp);
+
+		std::string const sql = cmd.to_str();
+		auto stmt = s.create_statement();
+		std::pair<int, bool> r = stmt->prepare(sql);
+		if (r.second) {
+
+			BOOST_ASSERT(r.first == key.size());
+
+			for (auto idx = key.size(); idx < key.size(); ++idx) {
+				stmt->push(key.at(idx), 0);
+			}
+			if (!stmt->execute())
+			{
+				//CYNG_LOG_ERROR(logger_, "sql delete failed: " << sql);
+				return false;
+			}
+			stmt->clear();
+		}
+
+		return false;
 	}
 
 	//

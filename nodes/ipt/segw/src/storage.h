@@ -87,9 +87,28 @@ namespace node
 		void loop(std::string name, loop_f);
 
 		/**
-		 * Update a single value
+		 * Update a single value.
+		 *
+		 * @param tbl table name
+		 * @param key key value(s)
+		 * @param col column to update
+		 * @param obj value
 		 */
-		bool update(std::string tbl, std::string col, cyng::object obj);
+		bool update(std::string tbl
+			, cyng::table::key_type const& key
+			, std::string col
+			, cyng::object obj
+			, std::uint64_t gen);
+
+		bool insert(std::string tbl
+			, cyng::table::key_type const& key
+			, cyng::table::data_type const& body
+			, std::uint64_t gen
+			, boost::uuids::uuid source);
+
+		bool remove(std::string tbl
+			, cyng::table::key_type const& key
+			, boost::uuids::uuid source);
 
 	private:
 		/**

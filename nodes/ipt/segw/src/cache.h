@@ -64,6 +64,16 @@ namespace node
 			return cyng::value_cast(db_.get_value("_Cfg", name, std::string("val")), def);
 		}
 
+		/**
+		 * set/insert a configuration value
+		 */
+		template <typename T >
+		bool set_cfg(std::string name, T val) {
+			return merge_cfg(name, cyng::make_object(val));
+		}
+
+		bool merge_cfg(std::string name, cyng::object obj);
+
 	private:
 		/**
 		 * build up meta data
@@ -90,7 +100,7 @@ namespace node
 		bool set_config_value(cyng::store::table* tbl, std::string name, T val) {
 
 			if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
-				return tbl->update(cyng::table::key_generator(name)
+				return tbl->merge(cyng::table::key_generator(name)
 					, cyng::table::data_generator(std::move(val))
 					, 1u	//	only needed for insert operations
 					, tag_);

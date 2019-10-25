@@ -106,7 +106,7 @@ namespace node
 				{
 					//
 					//	Convert SQL result to record
-					//	Note that the uses meta data are incorrect!
+					//	Note that the used meta data are incorrect!
 					//	Meta data from SQL table, but generated record has NO gen(eration) column.
 					//
 					cyng::table::record rec = cyng::to_record(meta, res);
@@ -450,7 +450,7 @@ namespace node
 
 			cmd.remove().by_key();	//	different key size
 			std::string sql = cmd.to_str();
-			CYNG_LOG_TRACE(logger_, sql);	//	update
+			CYNG_LOG_TRACE(logger_, sql);
 
 			auto stmt = s.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);

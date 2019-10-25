@@ -31,8 +31,9 @@ namespace node
 
 	cyng::table::meta_map_t cache::get_meta_map()
 	{
+		auto vec = create_cache_meta_data();
 		cyng::table::meta_map_t mm;
-		for (auto tbl : create_cache_meta_data()) {
+		for (auto tbl : vec) {
 			mm.emplace(tbl->get_name(), tbl);
 		}
 		return mm;
@@ -69,6 +70,21 @@ namespace node
 		return cyng::value_cast(db_.get_value("_Cfg", "status.word", std::string("val")), sml::status::get_initial_value());
 	}
 
+	bool cache::merge_cfg(std::string name, cyng::object obj)
+	{
+		bool r{ false };
+		db_.access([&](cyng::store::table* tbl) {
+
+			r = tbl->merge(cyng::table::key_generator(name)
+				, cyng::table::data_generator(obj)
+				, 1u	//	only needed for insert operations
+				, tag_);
+
+		}, cyng::store::write_access("_Cfg"));
+
+		return r;
+	}
+
 	//
 	//	initialize static member
 	//
@@ -79,22 +95,24 @@ namespace node
 		//
 		//	SQL table scheme
 		//
-		return 
+		cyng::table::meta_vec_t vec
 		{
 			//
 			//	Configuration table
 			//
-			cyng::table::make_meta_table_gen<1, 1>("_Cfg",
+			cyng::table::make_meta_table<1, 1>("_Cfg",
 			{ "path"	//	OBIS path, ':' separated values
 			, "val"		//	value
 			},
 			{ cyng::TC_STRING
-			, cyng::TC_STRING
+			, cyng::TC_STRING	//	may vary
 			},
 			{ 128
 			, 256
 			})
 		};
+
+		return vec;
 	}
 
 	void init_cache(cyng::store::db& db)

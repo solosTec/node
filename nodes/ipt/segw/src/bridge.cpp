@@ -18,6 +18,7 @@
 #include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/util/split.h>
+#include <cyng/table/meta.hpp>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -42,6 +43,12 @@ namespace node
 		connect_to_cache();
 
 		//
+		//	store boot time
+		//
+		//cache_.set_config_value(tbl, "boot.time", std::chrono::system_clock::now());
+		cache_.set_cfg("boot.time", std::chrono::system_clock::now());
+
+		//
 		//	start task OBISLOG (15 min)
 		//
 		start_task_obislog(mux);
@@ -60,65 +67,75 @@ namespace node
 			storage_.loop("TCfg", [&](cyng::table::record const& rec)->bool {
 
 				auto const name = cyng::value_cast<std::string>(rec["path"], "");
-				auto const type = cyng::value_cast(rec["type"], 15);
+				auto const type = cyng::value_cast(rec["type"], 15u);
 				auto const val = cyng::value_cast<std::string>(rec["val"], "");
 
 				switch (type) {
 				case cyng::TC_BOOL:
 					//	true is encoded as "1"
-					tbl->update(cyng::table::key_generator(name)
+					tbl->merge(cyng::table::key_generator(name)
 						, cyng::table::data_generator(boost::algorithm::equals("1", val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				//case cyng::TC_CHAR:
 				case cyng::TC_FLOAT:
-					tbl->update(cyng::table::key_generator(name)
+					tbl->merge(cyng::table::key_generator(name)
 						, cyng::table::data_generator(std::stof(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				case cyng::TC_DOUBLE:
-					tbl->update(cyng::table::key_generator(name)
+					tbl->merge(cyng::table::key_generator(name)
 						, cyng::table::data_generator(std::stod(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				case cyng::TC_FLOAT80:
-					tbl->update(cyng::table::key_generator(name)
+					tbl->merge(cyng::table::key_generator(name)
 						, cyng::table::data_generator(std::stold(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				//case cyng::TC_UINT8:
-				//case cyng::TC_UINT16:
+				case cyng::TC_UINT16:
+					tbl->merge(cyng::table::key_generator(name)
+						, cyng::table::data_generator(static_cast<std::uint16_t>(std::stoul(val)))
+						, 1u	//	only needed for insert operations
+						, cache_.get_tag());
+					break;
 				case cyng::TC_UINT32:
-					tbl->update(cyng::table::key_generator(name)
+					tbl->merge(cyng::table::key_generator(name)
 						, cyng::table::data_generator(std::stoul(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				case cyng::TC_UINT64:
-					tbl->update(cyng::table::key_generator(name)
+					tbl->merge(cyng::table::key_generator(name)
 						, cyng::table::data_generator(std::stoull(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				//case cyng::TC_INT8:
-				//case cyng::TC_INT16: 
-				case cyng::TC_INT32:
+				case cyng::TC_INT16: 
 					tbl->update(cyng::table::key_generator(name)
+						, cyng::table::data_generator(static_cast<std::int16_t>(std::stoi(val)))
+						, 1u	//	only needed for insert operations
+						, cache_.get_tag());
+					break;
+				case cyng::TC_INT32:
+					tbl->merge(cyng::table::key_generator(name)
 						, cyng::table::data_generator(std::stoi(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				case cyng::TC_INT64:
-					tbl->update(cyng::table::key_generator(name)
+					tbl->merge(cyng::table::key_generator(name)
 						, cyng::table::data_generator(std::stoll(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
-				//case cyng::TC_STRING:
+				//case cyng::TC_STRING:	//	default
 				//case cyng::TC_TIME_POINT: 
 				//case cyng::TC_NANO_SECOND:
 				//case cyng::TC_MICRO_SECOND: 
@@ -141,7 +158,7 @@ namespace node
 					break;
 
 				default:
-				tbl->update(cyng::table::key_generator(name)
+				tbl->merge(cyng::table::key_generator(name)
 					, cyng::table::data_generator(rec["val"])
 					, 1u	//	only needed for insert operations
 					, cache_.get_tag());
@@ -150,10 +167,10 @@ namespace node
 				return true;	//	continue
 			});
 
-			//
-			//	store boot time
-			//
-			cache_.set_config_value(tbl, "boot.time", std::chrono::system_clock::now());
+			////
+			////	store boot time
+			////
+			//cache_.set_config_value(tbl, "boot.time", std::chrono::system_clock::now());
 
 		}, cyng::store::write_access("_Cfg"));
 	}
@@ -171,22 +188,44 @@ namespace node
 			, "");	//	description
 	}
 
-	void bridge::sig_ins(cyng::store::table const*
-		, cyng::table::key_type const&
-		, cyng::table::data_type const&
-		, std::uint64_t
-		, boost::uuids::uuid)
+	void bridge::sig_ins(cyng::store::table const* tbl
+		, cyng::table::key_type const& key
+		, cyng::table::data_type const& body
+		, std::uint64_t gen
+		, boost::uuids::uuid source)
 	{
+		BOOST_ASSERT(tbl->meta().check_key(key));
+		BOOST_ASSERT(tbl->meta().check_body(body));
 
+		//
+		//	insert into SQL database
+		//
+		if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
+
+			BOOST_ASSERT(body.size() == 1);
+			storage_.insert("TCfg", key, cyng::table::data_generator(body.at(0), body.at(0), body.at(0).get_class().tag()), gen, source);
+		}
 	}
 
-	void bridge::sig_del(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid)
+	void bridge::sig_del(cyng::store::table const* tbl
+		, cyng::table::key_type const& key
+		, boost::uuids::uuid source)
 	{
+		//
+		//	delete from SQL database
+		//
+		if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
 
+			storage_.remove("TCfg", key, source);
+		}
 	}
 
 	void bridge::sig_clr(cyng::store::table const*, boost::uuids::uuid)
 	{
+		//
+		//	ToDo: clear SQL table
+		//
+
 
 	}
 
@@ -225,7 +264,11 @@ namespace node
 				//
 				//	Update "TCfg"
 				//
-				storage_.update("TCfg", name, attr.second);
+				storage_.update("TCfg"
+					, cyng::table::key_generator(name)
+					, "val"
+					, attr.second
+					, gen);
 			}
 		}
 	}
@@ -265,13 +308,14 @@ namespace node
 		//
 		auto const svec = cyng::split(gpio_vector, " ");
 		for (auto const& s : svec) {
-			auto tid = cyng::async::start_task_detached<gpio>(mux
+			auto const tid = cyng::async::start_task_detached<gpio>(mux
 				, logger_
 				, boost::filesystem::path(gpio_path) / ("/gpio" + s));
 
 			//
-			//	ToDo: store task id in cache DB
+			//	store task id in cache DB
 			//
+			cache_.set_cfg("gpio-task-" + s, tid);
 		}
 	}
 
