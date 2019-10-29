@@ -10,7 +10,7 @@
 
 #include <smf/sml/protocol/parser.h>
 #include <smf/sml/protocol/reader.h>
-//#include "core.h"
+#include "../router.h"
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
@@ -50,9 +50,9 @@ namespace node
 		sml::parser 	parser_;
 
 		/**
-		 * Provide core functions of an SML gateway
+		 * message dispatcher 
 		 */
-		//sml::kernel core_;
+		router router_;
 
 	};
 

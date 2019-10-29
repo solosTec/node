@@ -22,7 +22,7 @@ namespace node
 {
 	session::session(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cache& config_db
+		, cache& db
 		, std::string const& account
 		, std::string const& pwd
 		, bool accept_all)
@@ -34,14 +34,10 @@ namespace node
 			CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 			vm_.async_run(std::move(prg));
 		}, false, false)
-		//, core_(logger_
-		//	, vm_
-		//	, config_db
-		//	, cfg
-		//	, true	//	server mode
-		//	, account
-		//	, pwd
-		//	, accept_all)	//	check credendials
+		, router_(logger_
+			, false //	client mode
+			, vm_
+			, db)
 	{
 		//
 		//	register logger domain

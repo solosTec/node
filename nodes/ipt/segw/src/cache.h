@@ -8,10 +8,10 @@
 #ifndef NODE_IPT_SEGW_CACHE_H
 #define NODE_IPT_SEGW_CACHE_H
 
+#include <smf/sml/status.h>
 
 #include <cyng/store/db.h>
-
-#include <smf/sml/status.h>
+#include <cyng/io/serializer.h>
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/algorithm/string.hpp>
@@ -69,10 +69,10 @@ namespace node
 		 */
 		template <typename T >
 		bool set_cfg(std::string name, T val) {
-			return merge_cfg(name, cyng::make_object(val));
+			return merge_cfg(name, cyng::io::to_str(cyng::make_object(val)));
 		}
 
-		bool merge_cfg(std::string name, cyng::object obj);
+		bool merge_cfg(std::string name, std::string&& val);
 
 	private:
 		/**

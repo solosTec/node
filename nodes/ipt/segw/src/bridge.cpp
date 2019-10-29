@@ -265,7 +265,7 @@ namespace node
 				//	Update "TCfg"
 				//
 				storage_.update("TCfg"
-					, cyng::table::key_generator(name)
+					, key
 					, "val"
 					, attr.second
 					, gen);

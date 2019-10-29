@@ -157,7 +157,7 @@ namespace node
 		if (r.second) {
 
 			stmt->push(obj, 0);
-			for (auto idx = key.size(); idx < key.size(); ++idx) {
+			for (auto idx = 0; idx < key.size(); ++idx) {
 				stmt->push(key.at(idx), 0);
 			}
 

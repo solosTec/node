@@ -70,13 +70,13 @@ namespace node
 		return cyng::value_cast(db_.get_value("_Cfg", "status.word", std::string("val")), sml::status::get_initial_value());
 	}
 
-	bool cache::merge_cfg(std::string name, cyng::object obj)
+	bool cache::merge_cfg(std::string name, std::string&& val)
 	{
 		bool r{ false };
 		db_.access([&](cyng::store::table* tbl) {
 
 			r = tbl->merge(cyng::table::key_generator(name)
-				, cyng::table::data_generator(obj)
+				, cyng::table::data_generator(std::move(val))
 				, 1u	//	only needed for insert operations
 				, tag_);
 

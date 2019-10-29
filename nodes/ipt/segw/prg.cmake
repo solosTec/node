@@ -8,6 +8,7 @@ set (node_ipt_segw_cpp
 	nodes/ipt/segw/src/storage.cpp
 	nodes/ipt/segw/src/cache.cpp
 	nodes/ipt/segw/src/bridge.cpp
+	nodes/ipt/segw/src/router.cpp
 
 )
 
@@ -17,6 +18,7 @@ set (node_ipt_segw_h
 	nodes/ipt/segw/src/storage.h
 	nodes/ipt/segw/src/cache.h
 	nodes/ipt/segw/src/bridge.h
+	nodes/ipt/segw/src/router.h
 
 )
 
