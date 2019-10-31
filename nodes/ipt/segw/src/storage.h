@@ -45,16 +45,6 @@ namespace node
 	bool init_config_record(cyng::db::session&, std::string const& key, cyng::object obj);
 
 	/**
-	 * helper function to build a key for table TCfg
-	 */
-	std::string build_cfg_key(sml::obis_path path);
-
-	/**
-	 * helper function to build a key for table TCfg
-	 */
-	std::string build_cfg_key(sml::obis_path path, std::string leaf);
-
-	/**
 	 * manage SQL tables
 	 */
 	class storage

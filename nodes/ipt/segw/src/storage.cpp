@@ -6,9 +6,11 @@
  */
 
 #include "storage.h"
+#include "segw.h"
 #include <smf/sml/obis_db.h>
 #include <smf/ipt/config.h>
 #include <smf/ipt/scramble_key_format.h>
+#include <smf/sml/parser/obis_parser.h>
 
 #include <cyng/table/meta.hpp>
 #include <cyng/db/interface_statement.h>
@@ -16,6 +18,8 @@
 #include <cyng/intrinsics/traits.hpp>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/vector_cast.hpp>
+#include <cyng/parser/mac_parser.h>
+#include <cyng/io/serializer.h>
 
 #include <cyng/sql/dsl/binary_expr.hpp>
 #include <cyng/sql/dsl/list_expr.hpp>
@@ -58,7 +62,9 @@ namespace node
 		auto cmd = create_cmd("TOpLog", s.get_dialect());
 		if (!cmd.is_valid())	return;
 
-		cmd.insert();
+		auto tmp = cmd.insert();
+		boost::ignore_unused(tmp);
+
 		std::string const sql = cmd.to_str();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
@@ -102,7 +108,9 @@ namespace node
 		auto cmd = create_cmd(name, s.get_dialect());
 		if (!cmd.is_valid())	return;
 
-		cmd.select().all();
+		auto tmp = cmd.select().all();
+		boost::ignore_unused(tmp);
+
 		std::string const sql = cmd.to_str();
 		auto stmt = s.create_statement();
 		stmt->prepare(sql);
@@ -457,7 +465,9 @@ namespace node
 					;
 #endif
 				cyng::sql::command cmd(tbl.second, s.get_dialect());
-				cmd.create();
+				auto tmp = cmd.create();
+				boost::ignore_unused(tmp);
+
 				std::string sql = cmd.to_str();
 #ifdef _DEBUG
 				std::cout
@@ -655,6 +665,76 @@ namespace node
 			}
 
 			//
+			//	transfer hardware configuration
+			//
+			{
+				//	get a tuple/list of params
+				cyng::tuple_t tpl;
+				tpl = cyng::value_cast(dom.get("hardware"), tpl);
+				for (auto const& obj : tpl) {
+					cyng::param_t param;
+					param = cyng::value_cast(obj, param);
+
+					if (boost::algorithm::equals(param.first, "mac")) {
+
+						//	"mac": "00:ff:90:98:57:56"
+						//
+						//	05 + MAC = server ID
+						//
+						std::string rnd_mac_str;
+						{
+							using cyng::io::operator<<;
+							std::stringstream ss;
+							ss << cyng::generate_random_mac48();
+							ss >> rnd_mac_str;
+						}
+						auto const mac = cyng::value_cast<std::string>(param.second, rnd_mac_str);
+
+						std::pair<cyng::mac48, bool > const r = cyng::parse_mac48(mac);
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_CODE_SERVER_ID
+							}), cyng::make_object(r.second ? r.first : cyng::generate_random_mac48()));
+
+					}
+					else if (boost::algorithm::equals(param.first, "class")) {
+
+						//	"class": "129-129:199.130.83*255", (81 81 C7 82 53 FF)
+						auto const id = cyng::value_cast<std::string>(param.second, "129-129:199.130.83*255");
+						auto const r = sml::parse_obis(id);
+						if (r.second) {
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_CODE_DEVICE_CLASS
+							}), cyng::make_object(r.first.to_str()));
+						}
+						else {
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_CODE_DEVICE_CLASS
+								}), cyng::make_object(sml::OBIS_DEV_CLASS_MUC_LAN.to_str()));
+						}
+					}
+					else if (boost::algorithm::equals(param.first, "manufacturer")) {
+
+						//	"manufacturer": "ACME Inc.",
+						auto const id = cyng::value_cast<std::string>(param.second, "solosTec");
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_DATA_MANUFACTURER
+							}), cyng::make_object(id));
+
+					}
+					else if (boost::algorithm::equals(param.first, "serial")) {
+
+						//	"serial": 34287691,
+						std::uint32_t const serial = cyng::numeric_cast<std::uint32_t>(param.second, 10000000u);
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_SERIAL_NR
+							}), cyng::make_object(serial));
+
+					}
+
+				}
+			}
+
+			//
 			//	SML login: accepting all/wrong server IDs
 			//
 			init_config_record(s, "accept-all-ids", dom.get("accept-all-ids"));
@@ -662,7 +742,10 @@ namespace node
 			//
 			//	OBIS logging cycle in minutes
 			//
-			init_config_record(s, "obis-log", dom.get("obis-log"));
+			{
+				auto const val = cyng::value_cast(dom.get("obis-log"), 15);
+				init_config_record(s, "obis-log", cyng::make_minutes(val));
+			}
 
 			{
 
@@ -711,54 +794,22 @@ namespace node
 		//
 		cyng::table::meta_table_ptr meta = storage::mm_.at("TCfg");
 		cyng::sql::command cmd(meta, s.get_dialect());
-		cmd.insert();
+		auto tmp = cmd.insert();
+		boost::ignore_unused(tmp);
+
 		std::string const sql = cmd.to_str();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
 		if (r.second) {
+			//	repackaging as string
+			auto const val = cyng::make_object(cyng::io::to_str(obj));
 			stmt->push(cyng::make_object(key), 128);	//	pk
 			stmt->push(cyng::make_object(1u), 0);	//	gen
-			stmt->push(obj, 256);	//	val
-			stmt->push(obj, 256);	//	def
+			stmt->push(val, 256);	//	val
+			stmt->push(val, 256);	//	def
 			stmt->push(cyng::make_object(obj.get_class().tag()), 0);	//	type
 			if (stmt->execute())	return true;
 		}
 		return false;
 	}
-
-	//bool init_config_record_obj(cyng::db::session& s, sml::obis_path path, cyng::object obj)
-	//{
-	//	return init_config_record_obj(s, path, "", obj);
-	//}
-
-	//bool init_config_record_obj(cyng::db::session& s, sml::obis_path path, std::string leaf, cyng::object obj)
-	//{
-	//	//
-	//	//	ToDo: use already prepared statements
-	//	//
-	//	cyng::table::meta_table_ptr meta = mm_.at("TCfg");
-	//	cyng::sql::command cmd(meta, s.get_dialect());
-	//	cmd.insert();
-	//	std::string const sql = cmd.to_str();
-	//	auto stmt = s.create_statement();
-	//	std::pair<int, bool> r = stmt->prepare(sql);
-	//	if (r.second) {
-	//		stmt->push(cyng::make_object(sml::to_hex(path, ':') + ":" + leaf), 128);	//	pk
-	//		stmt->push(cyng::make_object(1u), 0);	//	gen
-	//		stmt->push(obj, 256);	//	val
-	//		stmt->push(obj, 256);	//	def
-	//		stmt->push(cyng::make_object(obj.get_class().tag()), 0);	//	type
-	//		if (stmt->execute())	return true;
-	//	}
-	//	return false;
-	//}
-
-	std::string build_cfg_key(sml::obis_path path) {
-		return sml::to_hex(path, ':');
-	}
-
-	std::string build_cfg_key(sml::obis_path path, std::string leaf) {
-		return sml::to_hex(path, ':') + ":" + leaf;
-	}
-
 }

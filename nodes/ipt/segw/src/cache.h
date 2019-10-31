@@ -57,11 +57,11 @@ namespace node
 		std::uint64_t get_status_word();
 
 		/**
-		 * read a configuration value
+		 * read a configuration value from table "_Cfg"
 		 */
 		template <typename T >
 		T get_cfg(std::string name, T def) {
-			return cyng::value_cast(db_.get_value("_Cfg", name, std::string("val")), def);
+			return cyng::value_cast(db_.get_value("_Cfg", std::string("val"), name), def);
 		}
 
 		/**
@@ -72,26 +72,25 @@ namespace node
 			return merge_cfg(name, cyng::io::to_str(cyng::make_object(val)));
 		}
 
+		/**
+		 * set/insert a configuration value
+		 */
 		bool merge_cfg(std::string name, std::string&& val);
+
+		void read_table(std::string const&, std::function<void(cyng::store::table const*)>);
+		void read_tables(std::string const&, std::string const&, std::function<void(cyng::store::table const*, cyng::store::table const*)>);
+		void write_table(std::string const&, std::function<void(cyng::store::table*)>);
+
+		/**
+		 * Convinience function to loop over one table with read access
+		 */
+		void loop(std::string const&, std::function<bool(cyng::table::record const&)>);
 
 	private:
 		/**
 		 * build up meta data
 		 */
 		static cyng::table::meta_map_t get_meta_map();
-
-		/**
-		 * @return the specified configuration value
-		 */
-		template <typename T >
-		T get_config_value(cyng::store::table* tbl, std::string name, T def) {
-
-			if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
-				auto const rec = tbl->lookup(cyng::table::key_generator(name));
-				if (!rec.empty())	return cyng::value_cast<T>(rec["val"], def);
-			}
-			return def;
-		}
 
 		/**
 		 * Insert/update a configuration value
@@ -121,6 +120,19 @@ namespace node
 		 */
 		boost::uuids::uuid const tag_;
 	};
+
+	/**
+	 * @return the specified configuration object
+	 */
+	cyng::object get_config_obj(cyng::store::table const* tbl, std::string name);
+
+	/**
+	 * @return the specified configuration value
+	 */
+	template <typename T >
+	T get_config_value(cyng::store::table const* tbl, std::string name, T def) {
+		return cyng::value_cast<T>(get_config_obj(tbl, name), def);
+	}
 
 
 }

@@ -25,7 +25,8 @@ namespace node
 		, cache& db
 		, std::string const& account
 		, std::string const& pwd
-		, bool accept_all)
+		, bool accept_all
+		, cyng::buffer_t const& id)
 	: mux_(mux)
 		, logger_(logger)
 		, vm_(mux.get_io_service(), boost::uuids::random_generator()())
@@ -35,9 +36,13 @@ namespace node
 			vm_.async_run(std::move(prg));
 		}, false, false)
 		, router_(logger_
-			, false //	client mode
+			, true	//	server mode
 			, vm_
-			, db)
+			, db
+			, account
+			, pwd
+			, accept_all
+			, id)
 	{
 		//
 		//	register logger domain
@@ -63,9 +68,10 @@ namespace node
 		, cache& config_db
 		, std::string const& account
 		, std::string const& pwd
-		, bool accept_all)
+		, bool accept_all
+		, cyng::buffer_t const& id)
 	{
-		return cyng::make_object<session>(mux, logger, config_db, account, pwd, accept_all);
+		return cyng::make_object<session>(mux, logger, config_db, account, pwd, accept_all, id);
 	}
 
 }

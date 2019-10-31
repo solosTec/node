@@ -12,6 +12,7 @@
 #include "server/server.h"
 #include <NODE_project_info.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/srv_id_io.h>
 #include <smf/mbus/defs.h>
 
 #include <cyng/factory/set_factory.h>
@@ -291,9 +292,28 @@ namespace node
 		//cfg_virtual_meter = cyng::value_cast(cfg.get("virtual-meter"), cfg_virtual_meter);
 
 		//
+		//	collect login credentials
+		//
+		auto const account = cyng::value_cast<std::string>(cfg["server"].get("account"), "");
+		auto const pwd = cyng::value_cast<std::string>(cfg["server"].get("pwd"), "");
+
+		//
+		//	"accept-all-ids" will never change during the session lifetime.
+		//	Changes require a reboot.
+		//
+		auto const accept_all = cm.get_cfg("accept-all-ids", false);
+
+		//
+		//	Server id (MAC) doesn't change so we take it as constant
+		//	from the start.
+		//
+		auto const mac = cm.get_cfg(sml::OBIS_CODE_SERVER_ID.to_str(), cyng::generate_random_mac48());
+		auto const srv_id = sml::to_gateway_srv_id(mac);
+
+		//
 		//	connect to ipt master
 		//
-		cyng::vector_t tmp;
+		//cyng::vector_t tmp;
 		//join_network(mux
 		//	, logger
 		//	, config_db
@@ -313,8 +333,10 @@ namespace node
 		server srv(mux
 			, logger
 			, cm
-			, cyng::value_cast<std::string>(cfg["server"].get("account"), "")
-			, cyng::value_cast<std::string>(cfg["server"].get("pwd"), ""));
+			, account
+			, pwd
+			, accept_all
+			, srv_id);
 
 		//
 		//	server runtime configuration

@@ -201,7 +201,7 @@ namespace node
 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 01, FF, CODE_ROOT_DEVICE_IDENT);	//	see: 7.3.2.9 Datenstruktur zur Abfrage der Geräte-Identifikation: firmware, file, application) 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 02, FF, CODE_DEVICE_CLASS);	//	Geräteklasse (OBIS code or '2D 2D 2D')
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 03, FF, DATA_MANUFACTURER);	//	[string]
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 03, FF, DATA_MANUFACTURER);	//	[string] FLAG
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 04, FF, CODE_SERVER_ID);		//	Server ID 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 05, FF, DATA_PUBLIC_KEY);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 06, FF, CODE_ROOT_FIRMWARE);	//	Firmware

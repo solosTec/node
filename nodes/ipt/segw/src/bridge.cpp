@@ -19,6 +19,8 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/util/split.h>
 #include <cyng/table/meta.hpp>
+#include <cyng/parser/chrono_parser.h>
+#include <cyng/parser/mac_parser.h>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -67,70 +69,72 @@ namespace node
 			storage_.loop("TCfg", [&](cyng::table::record const& rec)->bool {
 
 				auto const name = cyng::value_cast<std::string>(rec["path"], "");
+				auto const key = cyng::table::key_generator(name);
+
 				auto const type = cyng::value_cast(rec["type"], 15u);
 				auto const val = cyng::value_cast<std::string>(rec["val"], "");
 
 				switch (type) {
 				case cyng::TC_BOOL:
-					//	true is encoded as "1"
-					tbl->merge(cyng::table::key_generator(name)
-						, cyng::table::data_generator(boost::algorithm::equals("1", val))
+					//	true is encoded as "true"
+					tbl->merge(key
+						, cyng::table::data_generator(boost::algorithm::equals("true", val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				//case cyng::TC_CHAR:
 				case cyng::TC_FLOAT:
-					tbl->merge(cyng::table::key_generator(name)
+					tbl->merge(key
 						, cyng::table::data_generator(std::stof(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				case cyng::TC_DOUBLE:
-					tbl->merge(cyng::table::key_generator(name)
+					tbl->merge(key
 						, cyng::table::data_generator(std::stod(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				case cyng::TC_FLOAT80:
-					tbl->merge(cyng::table::key_generator(name)
+					tbl->merge(key
 						, cyng::table::data_generator(std::stold(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				//case cyng::TC_UINT8:
 				case cyng::TC_UINT16:
-					tbl->merge(cyng::table::key_generator(name)
+					tbl->merge(key
 						, cyng::table::data_generator(static_cast<std::uint16_t>(std::stoul(val)))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				case cyng::TC_UINT32:
-					tbl->merge(cyng::table::key_generator(name)
+					tbl->merge(key
 						, cyng::table::data_generator(std::stoul(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				case cyng::TC_UINT64:
-					tbl->merge(cyng::table::key_generator(name)
+					tbl->merge(key
 						, cyng::table::data_generator(std::stoull(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				//case cyng::TC_INT8:
 				case cyng::TC_INT16: 
-					tbl->update(cyng::table::key_generator(name)
+					tbl->update(key
 						, cyng::table::data_generator(static_cast<std::int16_t>(std::stoi(val)))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				case cyng::TC_INT32:
-					tbl->merge(cyng::table::key_generator(name)
+					tbl->merge(key
 						, cyng::table::data_generator(std::stoi(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
 					break;
 				case cyng::TC_INT64:
-					tbl->merge(cyng::table::key_generator(name)
+					tbl->merge(key
 						, cyng::table::data_generator(std::stoll(val))
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
@@ -138,10 +142,42 @@ namespace node
 				//case cyng::TC_STRING:	//	default
 				//case cyng::TC_TIME_POINT: 
 				//case cyng::TC_NANO_SECOND:
-				//case cyng::TC_MICRO_SECOND: 
+				case cyng::TC_MICRO_SECOND: 
+				{
+					auto const r = cyng::parse_timespan_microsec(val);
+					if (r.second) {
+						tbl->merge(key
+							, cyng::table::data_generator(r.first)
+							, 1u	//	only needed for insert operations
+							, cache_.get_tag());
+					}
+					else {
+						tbl->merge(key
+							, cyng::table::data_generator("error (microseconds)")
+							, 1u	//	only needed for insert operations
+							, cache_.get_tag());
+					}
+				}
+				break;
 				//case cyng::TC_MILLI_SECOND:
 				//case cyng::TC_SECOND:
-				//case cyng::TC_MINUTE:
+				case cyng::TC_MINUTE:
+				{
+					auto const r = cyng::parse_timespan_minutes(val);
+					if (r.second) {
+						tbl->merge(key
+							, cyng::table::data_generator(r.first)
+							, 1u	//	only needed for insert operations
+							, cache_.get_tag());
+					}
+					else {
+						tbl->merge(key
+							, cyng::table::data_generator("error (minutes)")
+							, 1u	//	only needed for insert operations
+							, cache_.get_tag());
+					}
+				}
+					break;
 				//case cyng::TC_HOUR:
 
 				//case cyng::TC_DBL_TP:
@@ -151,17 +187,49 @@ namespace node
 				//case cyng::TC_LABEL:
 				//case cyng::TC_SEVERITY:
 				//case cyng::TC_BUFFER:
-				//case cyng::TC_MAC48:
-				//case cyng::TC_MAC64:
+				case cyng::TC_MAC48:
+				{
+					auto const r = cyng::parse_mac48(val);
+					if (r.second) {
+						tbl->merge(key
+							, cyng::table::data_generator(r.first)
+							, 1u	//	only needed for insert operations
+							, cache_.get_tag());
+					}
+					else {
+						tbl->merge(key
+							, cyng::table::data_generator("error (mac48)")
+							, 1u	//	only needed for insert operations
+							, cache_.get_tag());
+					}
+				}
+				break;
+				case cyng::TC_MAC64:
+				{
+					auto const r = cyng::parse_mac64(val);
+					if (r.second) {
+						tbl->merge(key
+							, cyng::table::data_generator(r.first)
+							, 1u	//	only needed for insert operations
+							, cache_.get_tag());
+					}
+					else {
+						tbl->merge(key
+							, cyng::table::data_generator("error (mac64)")
+							, 1u	//	only needed for insert operations
+							, cache_.get_tag());
+					}
+				}
+				break;
 				//case cyng::TC_COLOR_8:
 				//case cyng::TC_COLOR_16:
 					break;
 
 				default:
-				tbl->merge(cyng::table::key_generator(name)
-					, cyng::table::data_generator(rec["val"])
-					, 1u	//	only needed for insert operations
-					, cache_.get_tag());
+					tbl->merge(key
+						, cyng::table::data_generator(rec["val"])
+						, 1u	//	only needed for insert operations
+						, cache_.get_tag());
 				break;
 				}
 				return true;	//	continue

@@ -9,10 +9,13 @@
 #include "cache.h"
 
 #include <smf/sml/protocol/reader.h>
+#include <smf/sml/obis_db.h>
+#include <smf/sml/obis_io.h>
 
 #include <cyng/vm/controller.h>
 #include <cyng/vm/context.h>
 #include <cyng/vm/generator.h>
+#include <cyng/tuple_cast.hpp>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -22,11 +25,22 @@ namespace node
 	router::router(cyng::logging::log_ptr logger
 		, bool const server_mode
 		, cyng::controller& vm
-		, cache& db)
+		, cache& db
+		, std::string const& account
+		, std::string const& pwd
+		, bool accept_all
+		, cyng::buffer_t const& id)
 	: logger_(logger)
 		, server_mode_(server_mode)
 		, cache_(db)
 		, sml_gen_()
+		, account_(account)
+		, pwd_(pwd)
+		, accept_all_(accept_all)
+		, server_id_(id)
+		, get_proc_parameter_(logger, sml_gen_, db, id)
+		, set_proc_parameter_(logger, sml_gen_, db)
+		, get_profile_list_(logger, sml_gen_, db)
 	{
 		//
 		//	SML transport
@@ -41,22 +55,19 @@ namespace node
 		//
 		//	SML data
 		//
-		//vm.register_function("sml.public.open.request", 6, std::bind(&router::sml_public_open_request, this, std::placeholders::_1));
-		//vm.register_function("sml.public.close.request", 1, std::bind(&router::sml_public_close_request, this, std::placeholders::_1));
-		//vm.register_function("sml.public.close.response", 1, std::bind(&router::sml_public_close_response, this, std::placeholders::_1));
+		vm.register_function("sml.public.open.request", 6, std::bind(&router::sml_public_open_request, this, std::placeholders::_1));
+		vm.register_function("sml.public.close.request", 1, std::bind(&router::sml_public_close_request, this, std::placeholders::_1));
+		vm.register_function("sml.public.close.response", 1, std::bind(&router::sml_public_close_response, this, std::placeholders::_1));
 
-		//vm.register_function("sml.get.proc.parameter.request", 6, std::bind(&router::sml_get_proc_parameter_request, this, std::placeholders::_1));
-		//vm.register_function("sml.set.proc.parameter.request", 6, std::bind(&router::sml_set_proc_parameter_request, this, std::placeholders::_1));
-		//vm.register_function("sml.get.profile.list.request", 8, std::bind(&router::sml_get_profile_list_request, this, std::placeholders::_1));
-
+		vm.register_function("sml.get.proc.parameter.request", 6, std::bind(&router::sml_get_proc_parameter_request, this, std::placeholders::_1));
+		vm.register_function("sml.set.proc.parameter.request", 6, std::bind(&router::sml_set_proc_parameter_request, this, std::placeholders::_1));
+		vm.register_function("sml.get.profile.list.request", 8, std::bind(&router::sml_get_profile_list_request, this, std::placeholders::_1));
 	}
 
 	void router::sml_msg(cyng::context& ctx)
 	{
-		//	[{31383035323232323535353231383235322D31,0,0,{0100,{null,005056C00008,3230313830353232323235353532,0500153B02297E,6F70657261746F72,6F70657261746F72,null}},9c91},0]
-		//	[{31383035323232323535353231383235322D32,1,0,{0500,{0500153B02297E,6F70657261746F72,6F70657261746F72,{810060050000},null}},f8b5},1]
-		//	[{31383035323232323535353231383235322D33,2,0,{0500,{0500153B02297E,6F70657261746F72,6F70657261746F72,{8181C78201FF},null}},4d37},2]
-		//	[{31383035323232323535353231383235322D34,0,0,{0200,{null}},e6e8},3]
+		//	example:
+		//	[]
 		//
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
@@ -75,7 +86,8 @@ namespace node
 
 	void router::sml_eom(cyng::context& ctx)
 	{
-		//[4aa5,4]
+		//	example:
+		//	[]
 		//
 		//	* CRC
 		//	* message counter
@@ -112,6 +124,219 @@ namespace node
 		//	reset generator
 		//
 		sml_gen_.reset();
+	}
+
+	void router::sml_public_open_request(cyng::context& ctx)
+	{
+		//	example:
+		//	[]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			std::string,		//	[0] trx
+			cyng::buffer_t,		//	[1] client ID
+			cyng::buffer_t,		//	[2] server ID
+			std::string,		//	[3] request file id
+			std::string,		//	[4] username
+			std::string			//	[5] password
+		>(frame);
+
+		//	sml.public.open.request - trx: 190131160312334117-1, msg id: 0, client id: , server id: , file id: 20190131160312, user: operator, pwd: operator
+		CYNG_LOG_INFO(logger_, "sml.public.open.request - trx: "
+			<< std::get<0>(tpl)
+			<< ", client id: "
+			<< cyng::io::to_hex(std::get<1>(tpl))
+			<< ", server id: "
+			<< cyng::io::to_hex(std::get<2>(tpl))
+			<< ", file id: "
+			<< std::get<3>(tpl)
+			<< ", user: "
+			<< std::get<4>(tpl)
+			<< ", pwd: "
+			<< std::get<5>(tpl))
+			;
+
+		if (!accept_all_) {
+
+			//
+			//	test server ID
+			//
+			if (!boost::algorithm::equals(server_id_, std::get<2>(tpl))) {
+
+				sml_gen_.attention_msg(frame.at(1)	// trx
+					, std::get<2>(tpl)	//	server ID
+					, sml::OBIS_ATTENTION_NO_SERVER_ID.to_buffer()
+					, "wrong server id"
+					, cyng::tuple_t());
+
+				CYNG_LOG_WARNING(logger_, "sml.public.open.request - wrong server ID: "
+					<< cyng::io::to_hex(std::get<2>(tpl))
+					<< " (expected "
+					<< cyng::io::to_hex(server_id_)
+					<< ")");
+
+				return;
+			}
+
+			//
+			//	test login credentials
+			//
+			if (!boost::algorithm::equals(account_, std::get<4>(tpl)) ||
+				!boost::algorithm::equals(pwd_, std::get<5>(tpl))) {
+
+				sml_gen_.attention_msg(frame.at(1)	// trx
+					, std::get<2>(tpl)	//	server ID
+					, sml::OBIS_ATTENTION_NOT_AUTHORIZED.to_buffer()
+					, "login failed"
+					, cyng::tuple_t());
+
+				CYNG_LOG_WARNING(logger_, "sml.public.open.request - login failed: "
+					<< std::get<4>(tpl)
+					<< ":"
+					<< std::get<5>(tpl))
+					;
+				return;
+			}
+		}
+
+		//
+		//	linearize and set CRC16
+		//	append to current SML message
+		//
+		sml_gen_.public_open(frame.at(1)	// trx
+			, frame.at(3)	//	client id
+			, frame.at(5)	//	req file id
+			, frame.at(4));
+
+	}
+
+	void router::sml_public_close_request(cyng::context& ctx)
+	{
+		//	example:
+		//	[]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		//
+		//	linearize and set CRC16
+		//	append to current SML message
+		//
+		sml_gen_.public_close(frame.at(0));
+	}
+
+	void router::sml_public_close_response(cyng::context& ctx)
+	{
+		//	example:
+		//	[]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		//
+		//	ignored
+		//
+	}
+
+	void router::sml_get_proc_parameter_request(cyng::context& ctx)
+	{
+		//	example:
+		//	[]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			std::string,		//	[0] trx
+			cyng::buffer_t,		//	[1] server id
+			std::string,		//	[2] user
+			std::string,		//	[3] password
+			cyng::buffer_t		//	[4] path (OBIS)
+		>(frame);
+
+		sml::obis const code(std::get<4>(tpl));
+
+		//
+		//	routed to "get proc parameter" handler
+		//
+		get_proc_parameter_.generate_response(code
+			, std::get<0>(tpl)
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl));
+
+	}
+
+	void router::sml_set_proc_parameter_request(cyng::context& ctx)
+	{
+		//	example:
+		//	[]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		//	* [string] trx - transaction id
+		//	* [string] path
+		//	* [buffer] server ID
+		//	* [string] username
+		//	* [string] password
+		//	* [param] attribute (should be null)
+
+		auto const tpl = cyng::tuple_cast<
+			std::string,		//	[0] trx
+			std::string,		//	[1] path
+			cyng::buffer_t,		//	[2] server id
+			std::string,		//	[3] user
+			std::string,		//	[4] password
+			cyng::param_t		//	[5] param
+		>(frame);
+
+		//
+		//	build a obis path from string
+		//
+		auto const path = sml::to_obis_path(std::get<1>(tpl), ' ');
+
+		set_proc_parameter_.generate_response(path
+			, std::get<0>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl)
+			, std::get<4>(tpl)
+			, std::get<5>(tpl));
+
+	}
+
+	void router::sml_get_profile_list_request(cyng::context& ctx)
+	{
+		//	example:
+		//	[]
+		//
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			std::string,		//	[0] trx
+			cyng::buffer_t,		//	[1] client id
+			cyng::buffer_t,		//	[2] server id
+			std::string,		//	[3] user
+			std::string,		//	[4] password
+			std::chrono::system_clock::time_point,		//	[5] start time
+			std::chrono::system_clock::time_point,		//	[6] end time
+			cyng::buffer_t		//	[7] path (OBIS)
+		>(frame);
+
+		sml::obis const code(std::get<7>(tpl));
+
+		get_profile_list_.generate_response(code
+			, std::get<0>(tpl)
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl)
+			, std::get<4>(tpl)
+			, std::get<5>(tpl)
+			, std::get<6>(tpl));
+
 	}
 
 }

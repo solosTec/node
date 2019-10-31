@@ -21,7 +21,9 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, cache& c
 			, std::string account
-			, std::string pwd);
+			, std::string pwd
+			, bool accept_all
+			, cyng::buffer_t const&);
 
 		/**
 		 * start listening
@@ -61,6 +63,9 @@ namespace node
 		 */
 		std::string const account_;
 		std::string const pwd_;
+
+		bool const accept_all_;
+		cyng::buffer_t const server_id_;
 
 		/** 
 		 * Acceptor used to listen for incoming connections.

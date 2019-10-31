@@ -4,6 +4,7 @@ set (node_ipt_segw)
 set (node_ipt_segw_cpp
 
 	nodes/ipt/segw/src/main.cpp	
+	nodes/ipt/segw/src/segw.cpp	
 	nodes/ipt/segw/src/controller.cpp
 	nodes/ipt/segw/src/storage.cpp
 	nodes/ipt/segw/src/cache.cpp
@@ -15,6 +16,7 @@ set (node_ipt_segw_cpp
 set (node_ipt_segw_h
 
 	nodes/ipt/segw/src/controller.h
+	nodes/ipt/segw/src/segw.h
 	nodes/ipt/segw/src/storage.h
 	nodes/ipt/segw/src/cache.h
 	nodes/ipt/segw/src/bridge.h
@@ -67,6 +69,17 @@ set (node_ipt_segw_server
 
 )
 
+set (node_ipt_segw_msg
+
+	nodes/ipt/segw/src/msg/get_proc_parameter.cpp
+	nodes/ipt/segw/src/msg/get_proc_parameter.h	
+	nodes/ipt/segw/src/msg/get_profile_list.h
+	nodes/ipt/segw/src/msg/get_profile_list.cpp	
+	nodes/ipt/segw/src/msg/set_proc_parameter.h
+	nodes/ipt/segw/src/msg/set_proc_parameter.cpp	
+
+)
+
 if(WIN32)
 
 	set (node_ipt_segw_service
@@ -97,6 +110,7 @@ source_group("tasks" FILES ${node_ipt_segw_tasks})
 source_group("service" FILES ${node_ipt_segw_service})
 source_group("shared" FILES ${node_ipt_segw_shared})
 source_group("server" FILES ${node_ipt_segw_server})
+source_group("messaging" FILES ${node_ipt_segw_msg})
 
 
 # define the main program
@@ -107,6 +121,7 @@ set (node_ipt_segw
   ${node_ipt_segw_service}
   ${node_ipt_segw_shared}
   ${node_ipt_segw_server}
+  ${node_ipt_segw_msg}
 )
 
 if(WIN32)

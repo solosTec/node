@@ -23,11 +23,12 @@ namespace node
 		, cache& config_db
 		, std::string const& account
 		, std::string const& pwd
-		, bool accept_all)
+		, bool accept_all
+		, cyng::buffer_t const& id)
 	: socket_(std::move(socket))
 		, logger_(logger)
 		, buffer_()
-		, session_(make_session(mux, logger, config_db, account, pwd, accept_all))
+		, session_(make_session(mux, logger, config_db, account, pwd, accept_all, id))
 		, serializer_(socket_, this->get_session()->vm_)
 	{
 		//

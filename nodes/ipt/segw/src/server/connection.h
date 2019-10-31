@@ -37,7 +37,8 @@ namespace node
 			, cache& config_db
 			, std::string const& account
 			, std::string const& pwd
-			, bool accept_all);
+			, bool accept_all
+			, cyng::buffer_t const& id);
 
 		/**
 		 * Start the first asynchronous operation for the connection.

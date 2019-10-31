@@ -28,7 +28,8 @@ namespace node
 			, cache& config_db
 			, std::string const& account
 			, std::string const& pwd
-			, bool accept_all);
+			, bool accept_all
+			, cyng::buffer_t const&);
 
 		session(session const&) = delete;
 		session& operator=(session const&) = delete;
@@ -61,7 +62,8 @@ namespace node
 		, cache& config_db
 		, std::string const& account
 		, std::string const& pwd
-		, bool accept_all);
+		, bool accept_all
+		, cyng::buffer_t const& id);
 }
 
 #include <cyng/intrinsics/traits.hpp>
