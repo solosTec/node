@@ -19,15 +19,17 @@ namespace node
 	{
 		struct master_record
 		{
-			std::string host_;
-			std::string service_;
-			std::string account_;
-			std::string pwd_;
-			scramble_key	sk_;	//!< default scramble key
-			bool scrambled_;
-			std::chrono::seconds monitor_;
 			master_record();
+			master_record(master_record const&) = default;
 			master_record(std::string const&, std::string const&, std::string const&, std::string const&, scramble_key const&, bool, int);
+
+			std::string const host_;
+			std::string const service_;
+			std::string const account_;
+			std::string const pwd_;
+			scramble_key const sk_;	//!< default scramble key
+			bool const scrambled_;
+			std::chrono::seconds const monitor_;
 		};
 
 		/**
@@ -38,7 +40,6 @@ namespace node
 		/**
 		 * Convinience function to read ipt master configuration
 		 */
-		master_config_t load_cluster_cfg(cyng::vector_t const& cfg);
 		master_record load_cluster_rec(cyng::tuple_t const& cfg);
 
 		/**
@@ -46,7 +47,8 @@ namespace node
 		 */
 		struct redundancy
 		{
-			redundancy(master_config_t const&);
+			//redundancy(master_config_t const&);
+			redundancy(master_config_t const&, std::uint8_t idx);
 			redundancy(redundancy const&);
 
 			/**
@@ -74,9 +76,14 @@ namespace node
 			/**
 			 * index of current ipt master configuration
 			 */
-			mutable std::size_t master_;
+			mutable std::uint8_t master_;
 			 
 		};
+
+		/**
+		 * Convinience function to read ipt master configuration
+		 */
+		redundancy load_cluster_cfg(cyng::vector_t const& cfg);
 	}
 }
 

@@ -10,6 +10,7 @@
 #include "cache.h"
 #include "bridge.h"
 #include "server/server.h"
+#include "tasks/network.h"
 #include <NODE_project_info.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/srv_id_io.h>
@@ -25,11 +26,21 @@
 #include <cyng/sys/mac.h>
 #include <cyng/rnd.h>
 #include <cyng/async/mux.h>
+#include <cyng/async/task/task_builder.hpp>
 
 #include <boost/core/ignore_unused.hpp>
 
 namespace node
 {
+	void join_network(cyng::async::mux&
+		, cyng::logging::log_ptr logger
+		, cache& c
+		, std::string account
+		, std::string pwd
+		, bool accept_all
+		, cyng::buffer_t const&
+		, boost::uuids::uuid tag);
+
 	controller::controller(unsigned int index
 		, unsigned int pool_size
 		, std::string const& json_path
@@ -313,19 +324,14 @@ namespace node
 		//
 		//	connect to ipt master
 		//
-		//cyng::vector_t tmp;
-		//join_network(mux
-		//	, logger
-		//	, config_db
-		//	, tag
-		//	, cfg_ipt
-		//	, cfg_wireless_lmn
-		//	, cfg_wired_lmn
-		//	, cfg_virtual_meter
-		//	, cyng::value_cast<std::string>(cfg["server"].get("account"), "")
-		//	, cyng::value_cast<std::string>(cfg["server"].get("pwd"), "")
-		//	, accept_all
-		//	, gpio_paths);
+		join_network(mux
+			, logger
+			, cm
+			, account
+			, pwd
+			, accept_all
+			, srv_id
+			, tag);
 
 		//
 		//	create server
@@ -406,6 +412,27 @@ namespace node
 				<< std::endl;
 		}
 		return EXIT_FAILURE;
+	}
+
+	void join_network(cyng::async::mux& mux
+		, cyng::logging::log_ptr logger
+		, cache& db
+		, std::string account
+		, std::string pwd
+		, bool accept_all
+		, cyng::buffer_t const& id
+		, boost::uuids::uuid tag)
+	{
+		cyng::async::start_task_delayed<ipt::network>(mux
+			, std::chrono::seconds(1)
+			, logger
+			, db
+			, account
+			, pwd
+			, accept_all
+			, id
+			, tag);
+
 	}
 
 }

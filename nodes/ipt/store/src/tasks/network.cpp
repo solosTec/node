@@ -30,7 +30,6 @@ namespace node
 			, bus(logger
 				, btp->mux_
 				, tag
-				, cfg.get().sk_
 				, "ipt:store"
 				, 1u)	//	1 retry
 			, logger_(logger)

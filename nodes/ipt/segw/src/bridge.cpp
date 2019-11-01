@@ -223,6 +223,12 @@ namespace node
 				break;
 				//case cyng::TC_COLOR_8:
 				//case cyng::TC_COLOR_16:
+				//case cyng::TC_IP_TCP_ENDPOINT:	//	missing parser for enpoints (address:port)
+				case cyng::TC_IP_ADDRESS:
+					tbl->merge(key
+						, cyng::table::data_generator(boost::asio::ip::make_address(val))
+						, 1u	//	only needed for insert operations
+						, cache_.get_tag());
 					break;
 
 				default:
@@ -230,15 +236,10 @@ namespace node
 						, cyng::table::data_generator(rec["val"])
 						, 1u	//	only needed for insert operations
 						, cache_.get_tag());
-				break;
+					break;
 				}
 				return true;	//	continue
 			});
-
-			////
-			////	store boot time
-			////
-			//cache_.set_config_value(tbl, "boot.time", std::chrono::system_clock::now());
 
 		}, cyng::store::write_access("_Cfg"));
 	}
@@ -271,7 +272,11 @@ namespace node
 		if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
 
 			BOOST_ASSERT(body.size() == 1);
-			storage_.insert("TCfg", key, cyng::table::data_generator(body.at(0), body.at(0), body.at(0).get_class().tag()), gen, source);
+			//
+			//	store values as string
+			//
+			auto val = cyng::io::to_str(body.at(0));
+			storage_.insert("TCfg", key, cyng::table::data_generator(val, val, body.at(0).get_class().tag()), gen, source);
 		}
 	}
 

@@ -18,12 +18,11 @@ namespace node
 
 		network::network(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
-			, redundancy const& cfg)
+			, redundancy cfg)
 		: base_(*btp)
 			, bus(logger
 				, btp->mux_
 				, boost::uuids::random_generator()()
-				, cfg.get().sk_
 				, "ipt:collector"
 				, 1u)
 			, logger_(logger)

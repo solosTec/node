@@ -512,7 +512,7 @@ namespace node
 				vec = cyng::value_cast(dom.get("ipt"), vec);
 				auto const cfg_ipt = ipt::load_cluster_cfg(vec);
 				std::uint8_t idx{ 1 };
-				for (auto const rec : cfg_ipt) {
+				for (auto const rec : cfg_ipt.config_) {
 					//	host
 					init_config_record(s, build_cfg_key({
 						sml::OBIS_CODE_ROOT_IPT_PARAM,
@@ -579,8 +579,15 @@ namespace node
 
 				init_config_record(s, build_cfg_key({
 					sml::OBIS_CODE_ROOT_IPT_PARAM,
-					sml::make_obis(0x00, 0x80, 0x80, 0x00, 0x03, 0x01)
+					OBIS_CODE(00, 80, 80, 00, 03, 01)
 					}), cyng::make_object(0u));
+
+				//
+				//	master index (0..1)
+				//
+				init_config_record(s, build_cfg_key({
+					sml::OBIS_CODE_ROOT_IPT_PARAM}, "master"), cyng::make_object(static_cast<std::uint8_t>(0u)));
+
 			}
 
 			//

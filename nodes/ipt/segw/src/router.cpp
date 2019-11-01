@@ -39,7 +39,7 @@ namespace node
 		, accept_all_(accept_all)
 		, server_id_(id)
 		, get_proc_parameter_(logger, sml_gen_, db, id)
-		, set_proc_parameter_(logger, sml_gen_, db)
+		, set_proc_parameter_(logger, sml_gen_, db, id)
 		, get_profile_list_(logger, sml_gen_, db)
 	{
 		//

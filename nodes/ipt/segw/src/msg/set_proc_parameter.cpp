@@ -20,10 +20,12 @@ namespace node
 	{
 		set_proc_parameter::set_proc_parameter(cyng::logging::log_ptr logger
 			, res_generator& sml_gen
-			, cache& cfg)
+			, cache& cfg
+			, cyng::buffer_t const& id)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
+			, config_ipt_(logger, sml_gen, cfg, id)
 		{}
 
 		void set_proc_parameter::generate_response(obis_path const& path
@@ -65,17 +67,15 @@ namespace node
 			, std::string pwd
 			, cyng::param_t	param)
 		{
-			BOOST_ASSERT_MSG(false, "ToDO: set_proc_parameter::_81490d0700ff()");
-
 			switch (pos->to_uint64()) {
 			case 0x81490D070001:
 			case 0x81490D070002:
-				//if (pos != end)	ipt_.set_param(*++pos, param);
+				if (pos != end)	config_ipt_.set_param(*++pos, param);
 				break;
 			case 0x814827320601:	//	WAIT_TO_RECONNECT
 			case 0x814831320201:	//	TCP_CONNECT_RETRIES
 			case 0x0080800003FF:	//	use SSL
-				//ipt_.set_param(*pos, param);
+				config_ipt_.set_param(*pos, param);
 				break;
 			default:
 				CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request <_81490d0700ff> - unknown OBIS code "
@@ -84,7 +84,6 @@ namespace node
 					<< cyng::io::to_hex(pos->to_buffer()));
 				break;
 			}
-
 		}
 
 		//void set_proc_parameter::_81490d070002(obis_path::const_iterator pos

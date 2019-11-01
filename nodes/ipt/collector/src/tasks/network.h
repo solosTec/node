@@ -26,7 +26,7 @@ namespace node
 		public:
 			network(cyng::async::base_task* bt
 				, cyng::logging::log_ptr
-				, redundancy const& cfg);
+				, redundancy cfg);
 			cyng::continuation run();
 			void stop(bool shutdown);
 

@@ -151,42 +151,42 @@ namespace node
 			switch (code.to_uint64()) {
 			case 0x814917070001:
 				if (param.second.get_class().tag() == cyng::TC_STRING) {
-					cfg_ipt_.config_.at(0).host_ = cyng::io::to_str(param.second);
+					const_cast<std::string&>(cfg_ipt_.config_.at(0).host_) = cyng::io::to_str(param.second);
 				}
 				else {
 					cyng::buffer_t tmp;
 					tmp = cyng::value_cast(param.second, tmp);
-					cfg_ipt_.config_.at(0).host_ = cyng::io::to_ascii(tmp);
+					const_cast<std::string&>(cfg_ipt_.config_.at(0).host_) = cyng::io::to_ascii(tmp);
 				}
 			break;
 			case 0x81491A070001:	//	target port
-				cfg_ipt_.config_.at(0).service_ = std::to_string(cyng::numeric_cast<std::uint16_t>(param.second, 26862));
+				const_cast<std::string&>(cfg_ipt_.config_.at(0).service_) = std::to_string(cyng::numeric_cast<std::uint16_t>(param.second, 26862));
 				break;
 			case 0x8149633C0101:	//	account
-				cfg_ipt_.config_.at(0).account_ = cyng::io::to_str(param.second);
+				const_cast<std::string&>(cfg_ipt_.config_.at(0).account_) = cyng::io::to_str(param.second);
 				break;
 			case 0x8149633C0201:	//	pwd
-				cfg_ipt_.config_.at(0).pwd_ = cyng::io::to_str(param.second);
+				const_cast<std::string&>(cfg_ipt_.config_.at(0).pwd_) = cyng::io::to_str(param.second);
 				break;
 
 			case 0x814917070002:	//	host
 				if (param.second.get_class().tag() == cyng::TC_STRING) {
-					cfg_ipt_.config_.at(1).host_ = cyng::io::to_str(param.second);
+					const_cast<std::string&>(cfg_ipt_.config_.at(1).host_) = cyng::io::to_str(param.second);
 				}
 				else {
 					cyng::buffer_t tmp;
 					tmp = cyng::value_cast(param.second, tmp);
-					cfg_ipt_.config_.at(1).host_ = cyng::io::to_ascii(tmp);
+					const_cast<std::string&>(cfg_ipt_.config_.at(1).host_) = cyng::io::to_ascii(tmp);
 				}
 				break;
 			case 0x81491A070002:	//	target port
-				cfg_ipt_.config_.at(1).service_ = std::to_string(cyng::numeric_cast<std::uint16_t>(param.second, 26862));
+				const_cast<std::string&>(cfg_ipt_.config_.at(1).service_) = std::to_string(cyng::numeric_cast<std::uint16_t>(param.second, 26862));
 				break;
 			case 0x8149633C0102:	//	account
-				cfg_ipt_.config_.at(1).account_ = cyng::io::to_str(param.second);
+				const_cast<std::string&>(cfg_ipt_.config_.at(1).account_) = cyng::io::to_str(param.second);
 				break;
 			case 0x8149633C0202:	//	pwd
-				cfg_ipt_.config_.at(1).pwd_ = cyng::io::to_str(param.second);
+				const_cast<std::string&>(cfg_ipt_.config_.at(1).pwd_) = cyng::io::to_str(param.second);
 				break;
 
 			case 0x814827320601:	//	WAIT_TO_RECONNECT

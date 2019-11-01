@@ -39,6 +39,7 @@ namespace node
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
 			, server_id_(id)
+			, config_ipt_(logger, sml_gen, cfg, id)
 		{}
 
 		void get_proc_parameter::generate_response(obis code
@@ -281,8 +282,7 @@ namespace node
 			//
 			//	IP-T access parameters
 			//
-			BOOST_ASSERT_MSG(false, "ToDO: get_proc_parameter::code_root_ipt_param()");
-			//ipt_.get_proc_ipt_params(trx, srv_id);
+			config_ipt_.get_proc_params(trx, srv_id);
 		}
 
 		void get_proc_parameter::code_root_w_mbus_status(std::string trx, cyng::buffer_t srv_id)

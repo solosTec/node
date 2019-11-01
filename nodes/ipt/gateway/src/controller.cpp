@@ -52,7 +52,7 @@ namespace node
 		, cyng::logging::log_ptr
 		, cyng::store::db&
 		, boost::uuids::uuid tag
-		, ipt::master_config_t const& cfg_ipt
+		, ipt::redundancy const& cfg_ipt
 		, cyng::tuple_t const& cfg_wireless_lmn
 		, cyng::tuple_t const& cfg_wired_lmn
 		, cyng::tuple_t const& cfg_virtual_meter
@@ -384,7 +384,7 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cyng::store::db& config_db
 		, boost::uuids::uuid tag
-		, ipt::master_config_t const& cfg_ipt
+		, ipt::redundancy const& cfg_ipt
 		, cyng::tuple_t const& cfg_wireless_lmn
 		, cyng::tuple_t const& cfg_wired_lmn
 		, cyng::tuple_t const& cfg_virtual_meter
@@ -393,7 +393,7 @@ namespace node
 		, bool accept_all
 		, std::map<int, std::string> gpio_list)
 	{
-		CYNG_LOG_TRACE(logger, "network redundancy: " << cfg_ipt.size());
+		//CYNG_LOG_TRACE(logger, "network redundancy: " << cfg_ipt.size());
 
 		cyng::async::start_task_delayed<ipt::network>(mux
 			, std::chrono::seconds(1)

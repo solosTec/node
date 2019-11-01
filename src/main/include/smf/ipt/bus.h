@@ -45,7 +45,7 @@ namespace node
 			bus(cyng::logging::log_ptr logger
 				, cyng::async::mux&
 				, boost::uuids::uuid tag
-				, scramble_key const&
+				//, scramble_key const&
 				, std::string const& model
 				, std::size_t retries);
 
@@ -151,7 +151,7 @@ namespace node
 			cyng::logging::log_ptr logger_;
 
 			/**
-			 * Interface to cyng VM
+			 * Instance of CYNG VM
 			 */
 			cyng::controller vm_;
 
@@ -185,12 +185,12 @@ namespace node
 			/**
 			 * device id - response device id request
 			 */
-			const std::string model_;
+			std::string const model_;
 
 			/**
 			 * connection open retries
 			 */
-			const std::size_t retries_;
+			std::size_t const retries_;
 
 			/** 
 			 * watchdog in minutes

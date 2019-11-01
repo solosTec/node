@@ -55,6 +55,8 @@ set (node_ipt_segw_tasks
 	nodes/ipt/segw/src/tasks/gpio.cpp
 	nodes/ipt/segw/src/tasks/obislog.h
 	nodes/ipt/segw/src/tasks/obislog.cpp
+	nodes/ipt/segw/src/tasks/network.h
+	nodes/ipt/segw/src/tasks/network.cpp
 
 )
 	
@@ -77,6 +79,8 @@ set (node_ipt_segw_msg
 	nodes/ipt/segw/src/msg/get_profile_list.cpp	
 	nodes/ipt/segw/src/msg/set_proc_parameter.h
 	nodes/ipt/segw/src/msg/set_proc_parameter.cpp	
+	nodes/ipt/segw/src/msg/config_ipt.h
+	nodes/ipt/segw/src/msg/config_ipt.cpp	
 
 )
 

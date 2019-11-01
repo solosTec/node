@@ -8,13 +8,11 @@
 #ifndef NODE_SEGW_GET_PROC_PARAMETER_H
 #define NODE_SEGW_GET_PROC_PARAMETER_H
 
+#include "config_ipt.h"
 
-#include <smf/sml/defs.h>
 #include <smf/sml/intrinsics/obis.h>
 
 #include <cyng/log.h>
-//#include <cyng/vm/controller.h>
-//#include <cyng/store/db.h>
 
 namespace node
 {
@@ -91,6 +89,8 @@ namespace node
 			 */
 			cache& cache_;
 			cyng::buffer_t const server_id_;
+
+			node::ipt::config_ipt	config_ipt_;
 
 		};
 	}	//	sml

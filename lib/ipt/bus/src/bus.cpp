@@ -35,7 +35,7 @@ namespace node
 		bus::bus(cyng::logging::log_ptr logger
 			, cyng::async::mux& mux
 			, boost::uuids::uuid tag
-			, scramble_key const& sk
+			//, scramble_key const& sk
 			, std::string const& model
 			, std::size_t retries)
 		: logger_(logger)
@@ -49,17 +49,17 @@ namespace node
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 #endif
 				vm_.async_run(std::move(prg));
-			}, sk)
-			, serializer_(socket_, vm_, sk)
+			}, scramble_key::default_scramble_key_)
+			, serializer_(socket_, vm_, scramble_key::default_scramble_key_)
 			, model_(model)
 			, retries_((retries == 0) ? 1 : retries)
 			, watchdog_(0u)
 			, state_(STATE_INITIAL_)
 			, task_db_()
 		{
-			if (scramble_key::default_scramble_key_ != sk.key()) {
-				CYNG_LOG_WARNING(logger_, "using a non-default scramble key ");
-			}
+			//if (scramble_key::default_scramble_key_ != sk.key()) {
+			//	CYNG_LOG_WARNING(logger_, "using a non-default scramble key ");
+			//}
 
 			//
 			//	register logger domain

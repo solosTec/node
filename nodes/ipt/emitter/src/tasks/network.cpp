@@ -23,7 +23,6 @@ namespace node
 			, bus(logger
 				, btp->mux_
 				, boost::uuids::random_generator()()
-				, cfg.get().sk_
 				, "ipt:emitter"
 				, 1u)
 			, logger_(logger)

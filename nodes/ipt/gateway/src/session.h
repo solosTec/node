@@ -27,7 +27,7 @@ namespace node
 			session(cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
 				, cyng::store::db& config_db
-				, node::ipt::master_config_t const& cfg
+				, node::ipt::redundancy const& cfg
 				, std::string const& account
 				, std::string const& pwd
 				, bool accept_all);
@@ -61,7 +61,7 @@ namespace node
 		cyng::object make_session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, cyng::store::db& config_db
-			, node::ipt::master_config_t const& cfg
+			, node::ipt::redundancy const& cfg
 			, std::string const& account
 			, std::string const& pwd
 			, bool accept_all);

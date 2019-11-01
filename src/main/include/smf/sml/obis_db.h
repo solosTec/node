@@ -16,8 +16,7 @@
 #define DEFINE_OBIS_CODE(p1, p2, p3, p4, p5, p6, name)	\
 	OBIS_##name (0x##p1, 0x##p2, 0x##p3, 0x##p4, 0x##p5, 0x##p6)
 
-#define OBIS_CODE(p1, p2, p3, p4, p5, p6)	\
-	node::sml::make_obis (0x##p1, 0x##p2, 0x##p3, 0x##p4, 0x##p5, 0x##p6)
+
 
 namespace node
 {
@@ -45,6 +44,8 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(00, 00, 61, 61, 00, FF, MBUS_STATE);   //	Status according to EN13757-3 (error register)
 
 		constexpr static obis	DEFINE_OBIS_CODE(00, 80, 80, 00, 00, FF, STORAGE_TIME_SHIFT);	//	root push operations
+		constexpr static obis	DEFINE_OBIS_CODE(00, 80, 80, 00, 03, 01, HAS_SSL_CONFIG);		//	SSL/TSL configuration available
+		constexpr static obis	DEFINE_OBIS_CODE(00, 80, 80, 00, 04, FF, SSL_CERTIFICATES);		//	list of SSL certificates
 		constexpr static obis	DEFINE_OBIS_CODE(00, 80, 80, 10, 00, 01, CLASS_OP_LSM_STATUS);	//	LSM status
 		constexpr static obis	DEFINE_OBIS_CODE(00, 80, 80, 11, 00, FF, ACTUATORS);	//	list of actuators
 		constexpr static obis	DEFINE_OBIS_CODE(00, 80, 80, 11, 10, FF, CLASS_OP_LSM_ACTOR_ID);	//	ServerID des Aktors (uint16)
@@ -302,7 +303,7 @@ namespace node
 		//	Wireless M-BUS config
 		//	81 06 19 07 00 FF, CODE_IF_wMBUS
 		//
-		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 01, FF, W_MBUS_PROTOCOL);
+		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 01, FF, W_MBUS_PROTOCOL);	
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 02, FF, W_MBUS_MODE_S);	//	u8
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 03, FF, W_MBUS_MODE_T);	//	u8
 		//constexpr static obis	DEFINE_OBIS_CODE(81, 06, 19, 07, 04, FF, W_MBUS_MODE_C);	//	alternating

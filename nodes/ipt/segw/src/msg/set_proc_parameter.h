@@ -9,12 +9,12 @@
 #define NODE_SEGW_SET_PROC_PARAMETER_H
 
 
-#include <smf/sml/defs.h>
+#include "config_ipt.h"
+
 #include <smf/sml/intrinsics/obis.h>
 
 #include <cyng/log.h>
-#include <cyng/vm/controller.h>
-#include <cyng/store/db.h>
+#include <cyng/intrinsics/sets.h>
 
 namespace node
 {
@@ -34,7 +34,8 @@ namespace node
 		public:
 			set_proc_parameter(cyng::logging::log_ptr
 				, res_generator& sml_gen
-				, cache& cfg);
+				, cache& cfg
+				, cyng::buffer_t const&);
 
 			void generate_response(obis_path const&
 				, std::string trx
@@ -81,6 +82,8 @@ namespace node
 			 * configuration db
 			 */
 			cache& cache_;
+
+			node::ipt::config_ipt	config_ipt_;
 
 		};
 	}	//	sml

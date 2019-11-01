@@ -25,7 +25,7 @@ namespace node
 				, cyng::value_cast(dom.get("monitor"), 12));
 		}
 
-		master_config_t load_cluster_cfg(cyng::vector_t const& cfg)
+		redundancy load_cluster_cfg(cyng::vector_t const& cfg)
 		{
 			master_config_t cluster_cfg;
 			cluster_cfg.reserve(cfg.size());
@@ -35,7 +35,7 @@ namespace node
 				cluster_cfg.push_back(load_cluster_rec(cyng::value_cast(obj, tmp)));
 			});
 
-			return cluster_cfg;
+			return redundancy(cluster_cfg, 0u);
 		}
 
 		master_record::master_record()
@@ -64,9 +64,9 @@ namespace node
 			, monitor_(monitor)
 		{}
 
-		redundancy::redundancy(master_config_t const& cfg)
+		redundancy::redundancy(master_config_t const& cfg, std::uint8_t idx)
 			: config_(cfg)
-			, master_(0)
+			, master_(idx)
 		{
 			BOOST_ASSERT(!config_.empty());
 		}

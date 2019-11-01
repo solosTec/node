@@ -22,7 +22,7 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cyng::store::db& config_db
 		, boost::uuids::uuid tag
-		, ipt::master_config_t const& cfg
+		, ipt::redundancy const& cfg
 		, std::string account
 		, std::string pwd
 		, bool accept_all)
