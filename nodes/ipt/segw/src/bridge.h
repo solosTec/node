@@ -81,7 +81,5 @@ namespace node
 		 */
 		storage& storage_;
 	};
-
-
 }
 #endif

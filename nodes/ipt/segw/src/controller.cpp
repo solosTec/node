@@ -9,6 +9,7 @@
 #include "storage.h"
 #include "cache.h"
 #include "bridge.h"
+#include "lmn.h"
 #include "server/server.h"
 #include "tasks/network.h"
 #include <NODE_project_info.h>
@@ -295,6 +296,12 @@ namespace node
 		//	log power return message
 		//
 		br.power_return();
+
+		//
+		//	data manager (serial and wireless data)
+		//
+		lmn d(mux, logger, uidgen_(), br);
+
 
 		//
 		//	get virtual meter
