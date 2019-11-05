@@ -86,26 +86,6 @@ namespace node
 			}
 		}
 
-		//void set_proc_parameter::_81490d070002(obis_path::const_iterator pos
-		//	, obis_path::const_iterator end
-		//	, std::string trx
-		//	, cyng::buffer_t srv_id
-		//	, std::string user
-		//	, std::string pwd
-		//	, cyng::param_t	param)
-		//{
-		//	BOOST_ASSERT(pos->to_str() == param.first);
-		//	//"81491A070002":68f0
-		//	ipt_.set_param(*pos, param);
-		//}
-
-		//
-		//	these functions are removed - compare "sml.get.proc.parameter.request"
-		//
-		//vm.register_function("sml.set.proc.activate", 7, std::bind(&kernel::sml_set_proc_activate, this, std::placeholders::_1));
-		//vm.register_function("sml.set.proc.deactivate", 7, std::bind(&kernel::sml_set_proc_deactivate, this, std::placeholders::_1));
-		//vm.register_function("sml.set.proc.delete", 7, std::bind(&kernel::sml_set_proc_delete, this, std::placeholders::_1));
-
 		//vm.register_function("sml.set.proc.if1107.param", 7, std::bind(&kernel::sml_set_proc_if1107_param, this, std::placeholders::_1));
 		//vm.register_function("sml.set.proc.if1107.device", 7, std::bind(&kernel::sml_set_proc_if1107_device, this, std::placeholders::_1));
 
