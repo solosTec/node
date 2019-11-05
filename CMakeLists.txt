@@ -131,6 +131,14 @@ if(NOT DEFINED ${PROJECT_NAME}_BUILD_TEST)
 endif()
 
 #
+# manage cross compiling: NODE_CROSS_COMPILE
+# default is OFF
+#
+if (NOT "${PROJECT_NAME}_CROSS_COMPILE")
+    set(${PROJECT_NAME}_CROSS_COMPILE OFF CACHE BOOL "cross compiling")
+endif()
+
+#
 #	The path to cmake modules
 #
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/src/modules/")
@@ -179,7 +187,11 @@ message(STATUS "** CRYPT include path : ${CRYPT_INCLUDE_DIR}")
 #	assume parallel installation - that is both projects share the same parent directory.
 #
 if (NOT CRYPT_BUILD)
-    set(CRYPT_BUILD "${CRYPT_ROOT}/build" CACHE PATH "CRYPT_BUILD")
+	if ("${PROJECT_NAME}_CROSS_COMPILE")
+		set(CRYPT_BUILD "${CRYPT_ROOT}/build/x64" CACHE PATH "CRYPT_BUILD")
+	else()
+		set(CRYPT_BUILD "${CRYPT_ROOT}/build" CACHE PATH "CRYPT_BUILD")
+	endif()
 	message(STATUS "** Set CRYPT_BUILD: ${CRYPT_BUILD}")
 endif()
 
@@ -311,7 +323,7 @@ endif()
 #
 # Included as 3party software
 #
-set(PUGIXML_INCLUDE_DIR "${CYNG_ROOT}/3party/pugixml-190")
+set(PUGIXML_INCLUDE_DIR "${CYNG_ROOT_DEV}/3party/pugixml-190")
 message(STATUS "** PugiXML Include   : ${PUGIXML_INCLUDE_DIR}")
 add_definitions(-D${PROJECT_NAME}_PUGIXML_INSTALLED)
 include_directories(${PUGIXML_INCLUDE_DIR})
@@ -1479,6 +1491,7 @@ include(GenerateDoxygenDoc)
 # fakeroot opkg/opkg-tools/opkg-buildpackage
 # Install with: opkg --force-space install /tmp/oecp-cyng_0.x_armel.ipk
 #
+
 if(${PROJECT_NAME}_CROSS_COMPILE)
 
 	configure_file (

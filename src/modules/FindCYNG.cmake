@@ -26,7 +26,12 @@ else(CYNG_PKG)
 
     set(__CYNG_DEVELOP_ROOT "${PROJECT_SOURCE_DIR}/../cyng" CACHE PATH "__CYNG_DEVELOP_ROOT")
     get_filename_component(CYNG_DEVELOP_ROOT ${__CYNG_DEVELOP_ROOT} REALPATH)
-    message(STATUS "** search for developer path (CYNG_DEVELOP_ROOT): ${CYNG_DEVELOP_ROOT}")
+    #message(STATUS "** search for developer path (CYNG_DEVELOP_ROOT): ${CYNG_DEVELOP_ROOT}")
+
+	if(NOT DEFINED CYNG_ROOT_DEV)
+		set(CYNG_ROOT_DEV ${CYNG_DEVELOP_ROOT} CACHE PATH "cyng develop root directory")
+	endif()
+	message(STATUS "** CYNG_ROOT_DEV: ${CYNG_ROOT_DEV}")
 
 	#
 	#	cyng header files
@@ -56,6 +61,7 @@ else(CYNG_PKG)
             CYNG_project_info.h
          HINTS
             "${CYNG_DEVELOP_ROOT}/build"
+            "${CYNG_DEVELOP_ROOT}/build/x64"
             /usr/include/
             /usr/local/include/
         DOC 
@@ -142,8 +148,8 @@ else(CYNG_PKG)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CYNG_MODULE_PATH}")
 #     message(STATUS "** CMake modules     : ${CMAKE_MODULE_PATH}")
 
-	message(STATUS "** CYNG_INCLUDE_DIRS     : ${CYNG_INCLUDE_DIRS}")
-	message(STATUS "** CYNG_LIBRARIES     : ${CYNG_LIBRARIES}")
+#	message(STATUS "** CYNG_INCLUDE_DIRS     : ${CYNG_INCLUDE_DIRS}")
+#	message(STATUS "** CYNG_LIBRARIES     : ${CYNG_LIBRARIES}")
 	if (CYNG_INCLUDE_DIRS AND CYNG_LIBRARIES)
 		set(CYNG_FOUND ON)
 	endif()
