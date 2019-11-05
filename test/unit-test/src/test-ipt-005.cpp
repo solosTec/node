@@ -39,7 +39,7 @@ namespace node
 
 		public:
 			client(cyng::async::base_task* btp, cyng::logging::log_ptr logger)
-				: bus(logger, btp->mux_, boost::uuids::random_generator()(), scramble_key::default_scramble_key_, "ipt:push", 1u)
+				: bus(logger, btp->mux_, boost::uuids::random_generator()(), "ipt:push", 1u)
 				, base_(*btp)
 				, logger_(logger)
 			{

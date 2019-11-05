@@ -31,7 +31,6 @@ namespace node
 			, bus(logger
 				, btp->mux_
 				, boost::uuids::random_generator()()
-				, cfg.get().sk_
 				, "ipt:stress:receiver"
 				, retries)
 			, logger_(logger)

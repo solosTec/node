@@ -172,14 +172,14 @@ namespace node
 			const auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
 			CYNG_LOG_INFO(logger, "boot up " << count * 2 << " tasks in mode " << mode);
 
-			const ipt::master_config_t cfg = ipt::load_cluster_cfg(cfg_ipt);
-			BOOST_ASSERT_MSG(!cfg.empty(), "no IP-T configuration available");
+			const auto cfg = ipt::load_cluster_cfg(cfg_ipt);
+			BOOST_ASSERT_MSG(!cfg.config_.empty(), "no IP-T configuration available");
 
 			//
 			//	connecting to the same IP-T master
 			//
-			auto vec = start_sender(mux, logger, cfg, count, prefix_sender, packet_size_min, packet_size_max, delay, retries);
-			start_receiver(mux, logger, cfg, vec, prefix_receiver, rec_limit, packet_size_min, packet_size_max, delay, retries);
+			auto vec = start_sender(mux, logger, cfg.config_, count, prefix_sender, packet_size_min, packet_size_max, delay, retries);
+			start_receiver(mux, logger, cfg.config_, vec, prefix_receiver, rec_limit, packet_size_min, packet_size_max, delay, retries);
 		}
 		else if (boost::algorithm::equals("distinct", mode)) {
 
@@ -187,19 +187,19 @@ namespace node
 			CYNG_LOG_INFO(logger, "boot up " << count << " sender tasks in mode " << mode);
 
 			//	std::vector<master_record>
-			const ipt::master_config_t cfg = ipt::load_cluster_cfg(cfg_ipt);
-			BOOST_ASSERT_MSG(cfg.size() > 1, "more IP-T configurations required");
+			const auto cfg = ipt::load_cluster_cfg(cfg_ipt);
+			BOOST_ASSERT_MSG(cfg.config_.size() > 1, "more IP-T configurations required");
 
 			//
 			//	build alternate configurations
 			//
 			ipt::master_config_t cfg_sender, cfg_receiver;
-			for (std::size_t idx = 0; idx < cfg.size(); ++idx) {
+			for (std::size_t idx = 0; idx < cfg.config_.size(); ++idx) {
 				if ((idx % 2) == 0) {
-					cfg_sender.push_back(cfg.at(idx));
+					cfg_sender.push_back(cfg.config_.at(idx));
 				}
 				else {
-					cfg_receiver.push_back(cfg.at(idx));
+					cfg_receiver.push_back(cfg.config_.at(idx));
 				}
 			}
 
@@ -214,20 +214,18 @@ namespace node
 			const auto count = cyng::value_cast<int>(dom.get("max-count"), 4);
 			CYNG_LOG_INFO(logger, "boot up " << count << " tasks in mode " << mode);
 
-			const ipt::master_config_t cfg = ipt::load_cluster_cfg(cfg_ipt);
-			BOOST_ASSERT_MSG(!cfg.empty(), "no IP-T configuration available");
+			auto const cfg = ipt::load_cluster_cfg(cfg_ipt);
+			BOOST_ASSERT_MSG(!cfg.config_.empty(), "no IP-T configuration available");
 
 			//
 			//	connecting to the same IP-T master with the same credentials
 			//
-			auto vec = start_sender_collision(mux, logger, cfg, count, prefix_sender, packet_size_min, packet_size_max, delay, retries);
+			auto vec = start_sender_collision(mux, logger, cfg.config_, count, prefix_sender, packet_size_min, packet_size_max, delay, retries);
 			//start_receiver(mux, logger, cfg, vec, prefix_receiver, rec_limit, packet_size_min, packet_size_max, delay, retries);
 		}
 		else {
 			CYNG_LOG_ERROR(logger, "unknown mode " << mode << " - use [same|distinct|collision]");
 		}
-
-
 	}
 
 	std::vector<std::size_t> start_sender(cyng::async::mux& mux
@@ -265,7 +263,7 @@ namespace node
 			auto r = cyng::async::start_task_delayed<ipt::sender>(mux
 				, std::chrono::milliseconds(idx + 1)
 				, logger
-				, ipt::redundancy(cfg)
+				, ipt::redundancy(cfg, 0u)
 				, boost::numeric_cast<std::size_t>((packet_size_min < 1) ? 1 : packet_size_min)
 				, boost::numeric_cast<std::size_t>((packet_size_max < packet_size_min) ? packet_size_min : packet_size_max)
 				, std::chrono::milliseconds(delay)
@@ -314,7 +312,7 @@ namespace node
 			auto r = cyng::async::start_task_delayed<ipt::receiver>(mux
 				, std::chrono::seconds((idx + 1) * 10)
 				, logger
-				, cfg
+				, ipt::redundancy(cfg, 0u)
 				, st
 				, idx
 				, boost::numeric_cast<std::size_t>((rec_limit < 1) ? 1 : rec_limit)
@@ -363,7 +361,7 @@ namespace node
 			auto r = cyng::async::start_task_delayed<ipt::sender>(mux
 				, std::chrono::milliseconds(idx)
 				, logger
-				, ipt::redundancy(cfg)
+				, ipt::redundancy(cfg, 0u)
 				, boost::numeric_cast<std::size_t>((packet_size_min < 1) ? 1 : packet_size_min)
 				, boost::numeric_cast<std::size_t>((packet_size_max < packet_size_min) ? packet_size_min : packet_size_max)
 				, std::chrono::milliseconds(delay)
