@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: solosTec <info@solostec.ch>
 Version: ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}
 Package: oecp-${PROJECT_NAME}
+Depends: oecp-CYNG
 Architecture: armel
 Installed-Size: 0
 Description: OECP package for ${PROJECT_NAME}
