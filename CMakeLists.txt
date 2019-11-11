@@ -238,6 +238,10 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 	
 	# only shared libraries
 	set(GLOBAL_LIBRARY_TYPE SHARED)
+
+	# since  CMake 3.1.0
+	set(THREADS_PREFER_PTHREAD_FLAG ON)
+	find_package(Threads REQUIRED)
 	
 elseif(MSVC)
 
@@ -315,7 +319,6 @@ else()
     message(WARNING "** no SSL support")
     
 endif()
-
 
 #
 # libpugixml-dev (v1.9)
@@ -596,6 +599,10 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
     if (UNIX)
         list(APPEND collector_link_libs pthread ${CMAKE_DL_LIBS})
     endif()
+else()
+    if (WIN32)
+        list(APPEND collector_link_libs odbc32.lib)
+    endif()
 endif()
 target_link_libraries(collector ${collector_link_libs})
 
@@ -610,6 +617,10 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND emitter_link_libs "${Boost_LIBRARIES}" ${OPENSSL_LIBRARIES})
     if (UNIX)
         list(APPEND emitter_link_libs pthread)
+    endif()
+else()
+    if (WIN32)
+        list(APPEND emitter_link_libs odbc32.lib)
     endif()
 endif()
 target_link_libraries(emitter ${emitter_link_libs})
@@ -825,7 +836,7 @@ include (tasks/csv/prg.cmake)
 add_executable(csv ${task_csv})
 
 # libraries to link
-set(csv_link_libs ${CYNG_LIBRARIES} smf_protocol_sml smf_cluster)
+set(csv_link_libs smf_protocol_sml smf_cluster ${CYNG_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND csv_link_libs "${Boost_LIBRARIES}")
     if (UNIX)

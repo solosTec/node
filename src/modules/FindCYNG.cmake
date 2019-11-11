@@ -15,6 +15,7 @@
 
 set(__CYNG_DEVELOP_ROOT "${PROJECT_SOURCE_DIR}/../cyng" CACHE PATH "__CYNG_DEVELOP_ROOT")
 get_filename_component(CYNG_DEVELOP_ROOT ${__CYNG_DEVELOP_ROOT} REALPATH)
+unset(__CYNG_DEVELOP_ROOT)
 
 #
 #	check path definition for CYNG development root directory
@@ -158,6 +159,9 @@ else(CYNG_PKG)
 		get_filename_component(CYNG_INCLUDE_DIR_1 "${CYNG_INCLUDE_DIR_1}/../" REALPATH)
 	endif()
 	set(CYNG_INCLUDE_DIRS "${CYNG_INCLUDE_DIR_1};${CYNG_INCLUDE_DIR_2};${CYNG_INCLUDE_DIR_3}")
+	unset(CYNG_INCLUDE_DIR_1)
+	unset(CYNG_INCLUDE_DIR_2)
+	unset(CYNG_INCLUDE_DIR_3)
     
     get_filename_component(CYNG_MODULE_PATH "${CYNG_ROOT_DEV}/src/modules/" REALPATH)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CYNG_MODULE_PATH}")
