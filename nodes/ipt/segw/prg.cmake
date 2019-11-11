@@ -59,6 +59,10 @@ set (node_ipt_segw_tasks
 	nodes/ipt/segw/src/tasks/obislog.cpp
 	nodes/ipt/segw/src/tasks/network.h
 	nodes/ipt/segw/src/tasks/network.cpp
+	nodes/ipt/segw/src/tasks/lmn_wired.h
+	nodes/ipt/segw/src/tasks/lmn_wired.cpp
+	nodes/ipt/segw/src/tasks/lmn_wireless.h
+	nodes/ipt/segw/src/tasks/lmn_wireless.cpp
 
 )
 	
