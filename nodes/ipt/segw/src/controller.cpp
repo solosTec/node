@@ -298,9 +298,10 @@ namespace node
 		br.power_return();
 
 		//
-		//	data manager (serial and wireless data)
+		//	data I/O manager (serial and wireless data)
 		//
-		lmn d(mux, logger, uidgen_(), br);
+		lmn io(mux, logger, uidgen_(), br);
+		io.start();	//	open serial and wireless communication ports
 
 
 		//

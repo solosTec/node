@@ -18,8 +18,15 @@ namespace node
 			, boost::uuids::uuid tag
 			, bridge&);
 
+		/**
+		 * Open serial and wireless communication ports
+		 */
+		void start();
+
 	private:
-		void wmbus_push_frame(cyng::context& ctx);
+		void start_lmn_wired();
+		void start_lmn_wireless();
+		//void wmbus_push_frame(cyng::context& ctx);
 
 	private:
 		cyng::async::mux& mux_;

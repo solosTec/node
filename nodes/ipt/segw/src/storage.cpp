@@ -621,6 +621,10 @@ namespace node
 			//	transfer M-Bus configuration
 			//
 			{
+				init_config_record(s, build_cfg_key({
+					sml::OBIS_CLASS_MBUS
+					}, "descr"), cyng::make_object("M-Bus Configuration"));
+
 				//	get a tuple/list of params
 				cyng::tuple_t tpl;
 				tpl = cyng::value_cast(dom.get("mbus"), tpl);
@@ -638,7 +642,7 @@ namespace node
 					}
 					else {
 						init_config_record(s, build_cfg_key({
-							sml::OBIS_CODE_IF_1107
+							sml::OBIS_CLASS_MBUS
 							}, param.first), param.second);
 					}
 				}
@@ -646,8 +650,13 @@ namespace node
 
 			//
 			//	transfer wireless-LMN configuration
+			//	81 06 19 07 01 FF
 			//
 			{
+				init_config_record(s, build_cfg_key({
+					sml::OBIS_W_MBUS_PROTOCOL
+					}, "descr"), cyng::make_object("wireless-LMN configuration (M-Bus)"));
+
 				//	get a tuple/list of params
 				cyng::tuple_t tpl;
 				tpl = cyng::value_cast(dom.get("wireless-LMN"), tpl);
@@ -662,6 +671,46 @@ namespace node
 							sml::OBIS_W_MBUS_PROTOCOL,
 							code
 							}), param.second);
+					}
+					else {
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_W_MBUS_PROTOCOL
+							}, param.first), param.second);
+					}
+				}
+			}
+
+			//
+			//	transfer wired-LMN configuration
+			//	as part of IEC 62506-21 configuration
+			//	81 81 C7 93 00 FF
+			//
+			{
+				init_config_record(s, build_cfg_key({
+					sml::OBIS_CODE_IF_1107
+					}, "descr"), cyng::make_object("wired-LMN configuration (IEC 62506-21)"));
+
+				//	get a tuple/list of params
+				cyng::tuple_t tpl;
+				tpl = cyng::value_cast(dom.get("wired-LMN"), tpl);
+				for (auto const& obj : tpl) {
+					cyng::param_t param;
+					param = cyng::value_cast(obj, param);
+
+					auto const code = sml::to_obis(param.first);
+					if (!code.is_nil()) {
+
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_CODE_IF_1107,
+							code
+							}), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "databits")) {
+						//	u8
+						auto const val = cyng::numeric_cast<std::uint8_t>(param.second, 8u);
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_CODE_IF_1107
+							}, param.first), cyng::make_object(val));
 					}
 					else {
 						init_config_record(s, build_cfg_key({

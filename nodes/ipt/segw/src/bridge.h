@@ -26,8 +26,10 @@ namespace node
 	 */
 	class storage;
 	class cache;
+	class lmn;
 	class bridge
 	{
+		friend class lmn;
 
 	public:
 		bridge(cyng::async::mux& mux, cyng::logging::log_ptr, cache&, storage&);
