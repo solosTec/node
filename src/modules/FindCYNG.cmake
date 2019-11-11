@@ -15,7 +15,7 @@
 
 set(__CYNG_DEVELOP_ROOT "${PROJECT_SOURCE_DIR}/../cyng" CACHE PATH "__CYNG_DEVELOP_ROOT")
 get_filename_component(CYNG_DEVELOP_ROOT ${__CYNG_DEVELOP_ROOT} REALPATH)
-unset(__CYNG_DEVELOP_ROOT)
+unset(__CYNG_DEVELOP_ROOT CACHE)
 
 #
 #	check path definition for CYNG development root directory
@@ -23,15 +23,15 @@ unset(__CYNG_DEVELOP_ROOT)
 if(NOT DEFINED CYNG_ROOT_DEV)
 	set(CYNG_ROOT_DEV ${CYNG_DEVELOP_ROOT} CACHE PATH "cyng develop root directory")
 endif()
-message(STATUS "** CYNG root d     : ${CYNG_ROOT_DEV}")
+message(STATUS "** CYNG root dev   : ${CYNG_ROOT_DEV}")
 
 #
 #	check path definition for CYNG build directory
 #
-if(NOT DEFINED CYNG_ROOT_BUILD)
-	set(CYNG_ROOT_BUILD "${CYNG_ROOT_BUILD}/build" CACHE PATH "CYNG_ROOT_BUILD")
+if(NOT DEFINED CYNG_ROOT_BUILD_SUBDIR)
+	set(CYNG_ROOT_BUILD_SUBDIR "build" CACHE PATH "CYNG_ROOT_BUILD_SUBDIR")
 endif()
-message(STATUS "** CYNG root build : ${CYNG_ROOT_BUILD}")
+message(STATUS "** CYNG root build : ${CYNG_ROOT_BUILD_SUBDIR}")
 
 find_package(PkgConfig)
 pkg_check_modules(PC_CYNG QUIET CYNG)
@@ -109,7 +109,7 @@ else(CYNG_PKG)
 		foreach(CYNG_LIB ${CYNG_LIB_LIST})
 			find_library("__${CYNG_LIB}" ${CYNG_LIB}
 				HINTS
-					${CYNG_ROOT_BUILD}
+					${CYNG_ROOT_BUILD_SUBDIR}
 				PATHS
 					/usr/lib/
 					/usr/local/lib
@@ -125,8 +125,8 @@ else(CYNG_PKG)
         #
         #	$(ConfigurationName) is a variable used by the MS build system
         #
-        set(__CYNG_BUILD_OPTIMIZED "${CYNG_ROOT_BUILD}/Release" CACHE PATH "__CYNG_BUILD_OPTIMIZED")
-        set(__CYNG_BUILD_DEBUG "${CYNG_ROOT_BUILD}/Debug" CACHE PATH "__CYNG_BUILD_DEBUG")
+        set(__CYNG_BUILD_OPTIMIZED "${CYNG_ROOT_DEV}/${CYNG_ROOT_BUILD_SUBDIR}/Release" CACHE PATH "__CYNG_BUILD_OPTIMIZED")
+        set(__CYNG_BUILD_DEBUG "${CYNG_ROOT_DEV}/${CYNG_ROOT_BUILD_SUBDIR}/Debug" CACHE PATH "__CYNG_BUILD_DEBUG")
 
 		foreach(CYNG_LIB ${CYNG_LIB_LIST})
 
@@ -149,6 +149,9 @@ else(CYNG_PKG)
 
 		endforeach()
 
+        unset(__CYNG_BUILD_OPTIMIZED CACHE)
+        unset(__CYNG_BUILD_DEBUG CACHE)
+
     endif(UNIX)
     
     
@@ -159,9 +162,9 @@ else(CYNG_PKG)
 		get_filename_component(CYNG_INCLUDE_DIR_1 "${CYNG_INCLUDE_DIR_1}/../" REALPATH)
 	endif()
 	set(CYNG_INCLUDE_DIRS "${CYNG_INCLUDE_DIR_1};${CYNG_INCLUDE_DIR_2};${CYNG_INCLUDE_DIR_3}")
-	unset(CYNG_INCLUDE_DIR_1)
-	unset(CYNG_INCLUDE_DIR_2)
-	unset(CYNG_INCLUDE_DIR_3)
+	unset(CYNG_INCLUDE_DIR_1 CACHE)
+	unset(CYNG_INCLUDE_DIR_2 CACHE)
+	unset(CYNG_INCLUDE_DIR_3 CACHE)
     
     get_filename_component(CYNG_MODULE_PATH "${CYNG_ROOT_DEV}/src/modules/" REALPATH)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CYNG_MODULE_PATH}")
