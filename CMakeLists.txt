@@ -220,19 +220,19 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 	#
 	
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "4.7")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
+		set(CMAKE_CXX_STANDARD 11)
 		message(STATUS "** C++ support     : C++11")
 	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "5.1")
 	# default since  GCC 6.1
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14") 
+		set(CMAKE_CXX_STANDARD 14)
 		message(STATUS "** C++ support     : C++14")
 	elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "8.1")
     # partly since 5.0
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") 
+		set(CMAKE_CXX_STANDARD 17)
 		message(STATUS "** C++ support     : C++17")
 	else()
     # partly since 8.0
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a") 
+		set(CMAKE_CXX_STANDARD 20)
 		message(STATUS "** C++ support     : C++2a")
 	endif()
 	
@@ -323,7 +323,7 @@ endif()
 #
 # Included as 3party software
 #
-set(PUGIXML_INCLUDE_DIR "${CYNG_ROOT_DEV}/3party/pugixml-190")
+set(PUGIXML_INCLUDE_DIR "${CYNG_ROOT_DEV}/lib/xml/pugixml/src")
 message(STATUS "** PugiXML Include   : ${PUGIXML_INCLUDE_DIR}")
 add_definitions(-D${PROJECT_NAME}_PUGIXML_INSTALLED)
 include_directories(${PUGIXML_INCLUDE_DIR})
@@ -358,73 +358,48 @@ add_executable(hello ${hello})
 #
 include (lib/cluster/lib.cmake)
 add_library(smf_cluster ${GLOBAL_LIBRARY_TYPE} ${cluster_lib})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-    target_link_libraries(smf_cluster ${CYNG_LIBRARIES})
-endif()
 
 #
 #	ipt protocol library
 #
 include (lib/ipt/protocol/lib.cmake)
 add_library(smf_protocol_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_protocol_lib})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-    target_link_libraries(smf_protocol_ipt ${CYNG_LIBRARIES})
-endif()
 
 #
 #	ipt bus library (client)
 #
 include (lib/ipt/bus/lib.cmake)
 add_library(smf_bus_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_bus_lib})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-    target_link_libraries(smf_bus_ipt ${CYNG_LIBRARIES})
-endif()
 
 #
 #	sml protocol library
 #
 include (lib/sml/protocol/lib.cmake)
 add_library(smf_protocol_sml ${GLOBAL_LIBRARY_TYPE} ${sml_protocol_lib})
-target_link_libraries(smf_protocol_sml ${CYNG_LIBRARIES})
 
 #
 #	sml bus library (client)
 #
 include (lib/sml/bus/lib.cmake)
 add_library(smf_bus_sml ${GLOBAL_LIBRARY_TYPE} ${sml_bus_lib})
-#set(sml_bus_link_libs smf_protocol_sml)
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-    target_link_libraries(smf_bus_sml ${CYNG_LIBRARIES})
-else()
-	target_link_libraries(smf_bus_sml ${sml_bus_link_libs})
-endif()
 
 #
 #	modem/AT protocol library
 #
 include (lib/modem/protocol/lib.cmake)
 add_library(smf_protocol_modem ${GLOBAL_LIBRARY_TYPE} ${modem_protocol_lib})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-    target_link_libraries(smf_protocol_modem ${CYNG_LIBRARIES})
-endif()
 
 #
 #	M-Bus/EN 13757-3 protocol/application layer library
 #
 include (lib/mbus/protocol/lib.cmake)
 add_library(smf_protocol_mbus ${GLOBAL_LIBRARY_TYPE} ${mbus_protocol_lib})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	target_link_libraries(smf_protocol_mbus ${OPENSSL_LIBRARIES})
-endif()
 
 #
 #	iMega/CU protocol library
 #
 include (lib/imega/protocol/lib.cmake)
 add_library(smf_protocol_imega ${GLOBAL_LIBRARY_TYPE} ${imega_protocol_lib})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-    target_link_libraries(smf_protocol_imega ${CYNG_LIBRARIES})
-endif()
 
 #
 #	IEC 62056-21 protocol library
@@ -438,7 +413,6 @@ add_library(smf_protocol_iec ${GLOBAL_LIBRARY_TYPE} ${iec_protocol_lib})
 #
 include (lib/serial/bus/lib.cmake)
 add_library(smf_bus_serial ${GLOBAL_LIBRARY_TYPE} ${serial_bus_lib})
-#set(serial_bus_link_libs smf_protocol_serial)
 
 #
 #	telnet protocol library
@@ -457,15 +431,6 @@ add_library(smf_lora ${GLOBAL_LIBRARY_TYPE} ${lora_payload_lib})
 #
 include (lib/http/server/lib.cmake)
 add_library(smf_http_srv ${GLOBAL_LIBRARY_TYPE} ${http_srv_lib})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-#    target_link_libraries(smf_http_srv ${CYNG_LIBRARIES})
-	if(${PROJECT_NAME}_SSL_SUPPORT)
-		target_link_libraries(smf_http_srv crypto)
-	endif()
-endif()
-install(TARGETS smf_http_srv smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_bus_sml smf_protocol_modem smf_protocol_mbus smf_protocol_imega smf_protocol_iec smf_bus_serial smf_protocol_telnet smf_http_srv
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib/static)
 
 #
 # https server library
@@ -473,8 +438,22 @@ install(TARGETS smf_http_srv smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_b
 if(${PROJECT_NAME}_SSL_SUPPORT)
 	include (lib/https/server/lib.cmake)
 	add_library(smf_https_srv ${GLOBAL_LIBRARY_TYPE} ${https_srv_lib})
-    target_link_libraries(smf_https_srv ${CYNG_LIBRARIES})
 endif()
+
+#
+#	install libraries
+#
+#
+# List of all SMF libraries
+#
+set(SMF_LIB_LIST smf_http_srv smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_bus_sml smf_protocol_modem smf_protocol_mbus smf_protocol_imega smf_protocol_iec smf_bus_serial smf_protocol_telnet smf_http_srv)
+if(${PROJECT_NAME}_SSL_SUPPORT)
+    list(APPEND SMF_LIB_LIST smf_https_srv)
+endif()
+install(TARGETS ${SMF_LIB_LIST}
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib/static)
+
 
 if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 #
@@ -484,8 +463,7 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 	include (nodes/http/prg.cmake)
 	add_executable(http ${node_http})
 	# libraries to link 
-	set(http_link_libs crypto ${OPENSSL_LIBRARIES} smf_http_srv)
-#	set(http_link_libs crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES} smf_http_srv)
+	set(http_link_libs ${CYNG_LIBRARIES} smf_http_srv crypto ${OPENSSL_LIBRARIES})
 	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 		list(APPEND http_link_libs "${Boost_LIBRARIES}")
 		if (UNIX)
@@ -574,7 +552,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
     include (nodes/dashs/prg.cmake)
     add_executable(dashs ${node_dashs})
     # libraries to link
-    set(dashsboard_link_libs ${CYNG_LIBRARIES} smf_cluster smf_https_srv crypto ${OPENSSL_LIBRARIES})
+    set(dashsboard_link_libs smf_cluster smf_https_srv crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
     if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND dashsboard_link_libs "${Boost_LIBRARIES}")
         if (UNIX)
@@ -597,7 +575,7 @@ set(e350_link_libs smf_cluster smf_protocol_imega ${CYNG_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND e350_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND e350_link_libs pthread dl)
+        list(APPEND e350_link_libs pthread ${CMAKE_DL_LIBS})
     endif()
 else()
     if (WIN32)
@@ -612,11 +590,11 @@ target_link_libraries(e350 ${e350_link_libs})
 include (nodes/ipt/collector/prg.cmake)
 add_executable(collector ${node_ipt_collector})
 # libraries to link
-set(collector_link_libs ${CYNG_LIBRARIES} smf_protocol_ipt smf_bus_ipt)
+set(collector_link_libs smf_protocol_ipt smf_bus_ipt ${CYNG_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND collector_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND collector_link_libs pthread dl)
+        list(APPEND collector_link_libs pthread ${CMAKE_DL_LIBS})
     endif()
 endif()
 target_link_libraries(collector ${collector_link_libs})
@@ -627,7 +605,7 @@ target_link_libraries(collector ${collector_link_libs})
 include (nodes/ipt/emitter/prg.cmake)
 add_executable(emitter ${node_ipt_emitter})
 # libraries to link
-set(emitter_link_libs ${CYNG_LIBRARIES} smf_protocol_ipt smf_bus_ipt)
+set(emitter_link_libs smf_protocol_ipt smf_bus_ipt ${CYNG_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND emitter_link_libs "${Boost_LIBRARIES}" ${OPENSSL_LIBRARIES})
     if (UNIX)
@@ -646,7 +624,7 @@ set(gateway_link_libs ${CYNG_LIBRARIES} smf_protocol_ipt smf_protocol_sml smf_bu
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND gateway_link_libs boost_thread boost_system boost_filesystem boost_program_options boost_random)
     if (UNIX)
-        list(APPEND gateway_link_libs pthread dl)
+        list(APPEND gateway_link_libs pthread ${CMAKE_DL_LIBS})
     endif()
 endif()
 if(WIN32)
@@ -667,7 +645,7 @@ set(segw_link_libs smf_protocol_ipt smf_bus_ipt smf_bus_sml smf_bus_serial smf_p
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND segw_link_libs boost_thread boost_system boost_filesystem boost_program_options boost_random)
     if (UNIX)
-        list(APPEND segw_link_libs pthread dl)
+        list(APPEND segw_link_libs pthread ${CMAKE_DL_LIBS})
     endif()
 endif()
 if(WIN32)
@@ -688,7 +666,7 @@ set(ipt_link_libs ${CYNG_LIBRARIES} smf_cluster smf_protocol_ipt smf_protocol_sm
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND ipt_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND ipt_link_libs pthread dl)
+        list(APPEND ipt_link_libs pthread ${CMAKE_DL_LIBS})
     endif()
 endif()
 #message(STATUS "** link ipt_master       : ${ipt_link_libs}")
@@ -700,7 +678,7 @@ target_link_libraries(ipt ${ipt_link_libs})
 include (nodes/ipt/store/prg.cmake)
 add_executable(store ${node_ipt_store})
 # libraries to link
-set(store_link_libs ${CYNG_LIBRARIES} smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_iec smf_protocol_mbus)
+set(store_link_libs smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_iec smf_protocol_mbus crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND store_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -726,7 +704,7 @@ if(${PROJECT_NAME}_BUILD_TEST)
 	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 		list(APPEND stress_link_libs "${Boost_LIBRARIES}")
 		if (UNIX)
-			list(APPEND stress_link_libs pthread)
+			list(APPEND stress_link_libs pthread ${CMAKE_DL_LIBS})
 		endif()
 	endif()
 	if(WIN32)
@@ -764,7 +742,7 @@ set(master_link_libs ${CYNG_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND master_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND master_link_libs pthread dl)
+        list(APPEND master_link_libs pthread ${CMAKE_DL_LIBS})
     endif()
 endif()
 target_link_libraries(master ${master_link_libs})
@@ -779,7 +757,7 @@ set(modem_link_libs ${CYNG_LIBRARIES} smf_cluster smf_protocol_sml smf_protocol_
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND modem_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND modem_link_libs pthread)
+        list(APPEND modem_link_libs pthread ${CMAKE_DL_LIBS} )
     endif()
 endif()
 #message(STATUS "** link modem            : ${modem_link_libs}")
@@ -815,7 +793,7 @@ set(iec_62056_link_libs smf_cluster ${CYNG_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND iec_62056_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
-        list(APPEND iec_62056_link_libs pthread dl)
+        list(APPEND iec_62056_link_libs pthread ${CMAKE_DL_LIBS})
     endif()
 endif()
 target_link_libraries(iec_62056 ${iec_62056_link_libs})
@@ -826,7 +804,7 @@ target_link_libraries(iec_62056 ${iec_62056_link_libs})
 include (nodes/setup/prg.cmake)
 add_executable(setup ${node_setup})
 # libraries to link
-set(setup_link_libs ${CYNG_LIBRARIES} smf_cluster)
+set(setup_link_libs smf_cluster ${CYNG_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND setup_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -866,7 +844,7 @@ target_link_libraries(csv ${csv_link_libs})
 #
 include (tasks/tsdb/prg.cmake)
 add_executable(tsdb ${task_tsdb})
-set(tsdb_link_libs ${CYNG_LIBRARIES} smf_cluster)
+set(tsdb_link_libs smf_cluster ${CYNG_LIBRARIES})
 if (UNIX)
 	list(APPEND tsdb_link_libs pthread ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})
 endif()
@@ -877,7 +855,7 @@ target_link_libraries(tsdb ${tsdb_link_libs})
 #
 include (tasks/stat/prg.cmake)
 add_executable(stat ${task_stat})
-set(stat_link_libs ${CYNG_LIBRARIES} smf_cluster)
+set(stat_link_libs smf_cluster ${CYNG_LIBRARIES})
 if (UNIX)
 	list(APPEND stat_link_libs pthread ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})
 endif()
@@ -894,11 +872,14 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 	add_executable(unit_test ${unit_test})
 		
 	# BOOST_TEST_DYN_LINK is required to build a main() function
-	set_property(
-		TARGET unit_test
-		PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
+	target_compile_definitions(unit_test
+        PRIVATE
+            BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
+# 	set_property(
+# 		TARGET unit_test
+# 		PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
 
-	set(unittest_link_libs ${CYNG_LIBRARIES} smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_mbus smf_bus_serial  ${OPENSSL_LIBRARIES})
+	set(unittest_link_libs smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_mbus smf_bus_serial ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
 
 	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 		list(APPEND unittest_link_libs pthread ${Boost_LIBRARIES})
