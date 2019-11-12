@@ -123,19 +123,26 @@ namespace node
 				//	stty -F /dev/ttyAPP0 115200 
 				//	cat /dev/ttyAPP0 | hexdump 
 				, cyng::param_factory("wireless-LMN", cyng::tuple_factory(
+					cyng::param_factory("monitor", rnd_monitor()),	//	seconds
 #if BOOST_OS_WINDOWS
+					//	iM871A
 					cyng::param_factory("enabled", false),
-					cyng::param_factory("port", "COM3"),	//	USB serial port
+					cyng::param_factory("port", "COM4"),	//	USB serial port
 					//	if port number is greater than 9 the following syntax is required: "\\\\.\\COM12"
+					cyng::param_factory("databits", 8),
+					cyng::param_factory("parity", "none"),	//	none, odd, even
+					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
+					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
+					cyng::param_factory("speed", 57600),
 #else
 					cyng::param_factory("enabled", true),
 					cyng::param_factory("port", "/dev/ttyAPP0"),
-#endif
 					cyng::param_factory("databits", 8),
 					cyng::param_factory("parity", "none"),	//	none, odd, even
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 					cyng::param_factory("speed", 115200),
+#endif
 
 					cyng::param_factory(sml::OBIS_W_MBUS_PROTOCOL.to_str(), static_cast<std::uint8_t>(mbus::MODE_S)),	//	0 = T-Mode, 1 = S-Mode, 2 = S/T Automatic
 					cyng::param_factory(sml::OBIS_W_MBUS_MODE_S.to_str(), 30),	//	seconds
@@ -149,6 +156,7 @@ namespace node
 				))
 
 				, cyng::param_factory("wired-LMN", cyng::tuple_factory(
+					cyng::param_factory("monitor", rnd_monitor()),	//	seconds
 #if BOOST_OS_WINDOWS
 					cyng::param_factory("enabled", false),
 					cyng::param_factory("port", "COM1"),
@@ -160,7 +168,7 @@ namespace node
 					cyng::param_factory("parity", "none"),	//	none, odd, even
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
-					cyng::param_factory("speed", 921600),
+					cyng::param_factory("speed", 115200),
 					cyng::param_factory("transparent-mode", false),
 					cyng::param_factory("transparent-port", 12002)
 				))

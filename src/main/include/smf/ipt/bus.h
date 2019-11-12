@@ -45,7 +45,6 @@ namespace node
 			bus(cyng::logging::log_ptr logger
 				, cyng::async::mux&
 				, boost::uuids::uuid tag
-				//, scramble_key const&
 				, std::string const& model
 				, std::size_t retries);
 

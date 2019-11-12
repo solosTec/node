@@ -57,10 +57,6 @@ namespace node
 			, state_(STATE_INITIAL_)
 			, task_db_()
 		{
-			//if (scramble_key::default_scramble_key_ != sk.key()) {
-			//	CYNG_LOG_WARNING(logger_, "using a non-default scramble key ");
-			//}
-
 			//
 			//	register logger domain
 			//

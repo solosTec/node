@@ -20,6 +20,7 @@ namespace node
 			else if (boost::algorithm::equals("even", s)) {
 				return boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::even);
 			}
+			//	none
 			return boost::asio::serial_port_base::parity();
 		}
 	}

@@ -9,8 +9,7 @@
 #include "lmn.h"
 #include "bridge.h"
 #include "cache.h"
-#include "tasks/lmn_wired.h"
-#include "tasks/lmn_wireless.h"
+#include "tasks/lmn_port.h"
 
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_db.h>
@@ -77,15 +76,19 @@ namespace node
 #endif
 			CYNG_LOG_INFO(logger_, "LMN wired is running on port: " << port);
 
-			cyng::async::start_task_delayed<lmn_wired>(mux_
+			std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "monitor"), 30));
+			auto const speed = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 115200);
+
+			cyng::async::start_task_delayed<lmn_port>(mux_
 				, std::chrono::seconds(1)
 				, logger_
+				, monitor
 				, port		//	port
 				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "databits"), 8u)		//	[u8] databits
 				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "parity"), "none")	//	[s] parity
 				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "flow_control"), "none")	//	[s] flow_control
 				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "stopbits"), "one")	//	[s] stopbits
-				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "speed"), 8u)		//	[u32] speed
+				, static_cast<std::uint32_t>(speed)		//	[u32] speed
 				, cyng::async::NO_TASK);
 		}
 		catch (boost::system::system_error const& ex) {
@@ -103,15 +106,19 @@ namespace node
 #endif
 			CYNG_LOG_INFO(logger_, "LMN wireless is running on port: " << port);
 
-			cyng::async::start_task_delayed<lmn_wireless>(mux_
+			std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "monitor"), 30));
+			auto const speed = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 57600);
+
+			cyng::async::start_task_delayed<lmn_port>(mux_
 				, std::chrono::seconds(1)
 				, logger_
+				, monitor
 				, port		//	port
 				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "databits"), 8u)		//	[u8] databits
 				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "parity"), "none")	//	[s] parity
 				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "flow_control"), "none")	//	[s] flow_control
 				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "stopbits"), "one")	//	[s] stopbits
-				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 8u)		//	[u32] speed
+				, static_cast<std::uint32_t>(speed)		//	[u32] speed
 				, cyng::async::NO_TASK);
 		}
 		catch (boost::system::system_error const& ex) {
