@@ -33,6 +33,17 @@ if(NOT DEFINED CYNG_ROOT_BUILD_SUBDIR)
 endif()
 message(STATUS "** CYNG root build : ${CYNG_ROOT_BUILD_SUBDIR}")
 
+
+# libcyng_async.so   libcyng_csv.so        libcyng_domain.so  libcyng_log.so   libcyng_parser.so  libcyng_store.so  libcyng_vm.so
+# libcyng_core.so    libcyng_db.so         libcyng_io.so      libcyng_mail.so  libcyng_rnd.so     libcyng_sys.so    libcyng_xml.so
+# libcyng_json.so    libcyng_meta.so       libcyng_sql.so     libcyng_table.so
+
+set(CYNG_LIB_LIST "cyng_async;cyng_csv;cyng_domain;cyng_log;cyng_parser;cyng_store;cyng_vm;cyng_core;cyng_db;cyng_io;cyng_crypto;cyng_mail;cyng_rnd;cyng_sys;cyng_xml;cyng_json;cyng_meta;cyng_sql;cyng_table;cyng_sqlite3")
+if(WIN32)
+	list(APPEND CYNG_LIB_LIST "cyng_scm")
+endif()
+
+
 find_package(PkgConfig)
 pkg_check_modules(PC_CYNG QUIET CYNG)
 
@@ -41,8 +52,11 @@ if(CYNG_PKG_FOUND)
     set(CYNG_VERSION ${PC_CYNG_VERSION})
     set(CYNG_INCLUDE_DIRS ${CYNG_PKG_INCLUDE_DIRS})
     set(CYNG_LIBRARIES ${CYNG_PKG_LIBRARIES})
+       
+endif(CYNG_PKG_FOUND)
 
-else(CYNG_PKG)
+
+if(NOT CYNG_FOUND)
 
 	#
 	#	cyng header files
@@ -94,22 +108,15 @@ else(CYNG_PKG)
     )
 
 #    message(STATUS "** found 2: ${CYNG_INCLUDE_DIR_2}")
-    # libcyng_async.so   libcyng_csv.so        libcyng_domain.so  libcyng_log.so   libcyng_parser.so  libcyng_store.so  libcyng_vm.so
-    # libcyng_core.so    libcyng_db.so         libcyng_io.so      libcyng_mail.so  libcyng_rnd.so     libcyng_sys.so    libcyng_xml.so
-    # libcyng_json.so    libcyng_meta.so       libcyng_sql.so     libcyng_table.so
-
-    set(CYNG_LIB_LIST "cyng_async;cyng_csv;cyng_domain;cyng_log;cyng_parser;cyng_store;cyng_vm;cyng_core;cyng_db;cyng_io;cyng_crypto;cyng_mail;cyng_rnd;cyng_sys;cyng_xml;cyng_json;cyng_meta;cyng_sql;cyng_table;cyng_sqlite3")
-	if(WIN32)
-		list(APPEND CYNG_LIB_LIST "cyng_scm")
-	endif()
 
     if (UNIX)
 #        set(__CYNG_BUILD "${CYNG_ROOT_DEV}/build" CACHE PATH "__CYNG_BUILD")
 
+ 		set(__CYNG_BUILD "${CYNG_ROOT_DEV}/${CYNG_ROOT_BUILD_SUBDIR}" CACHE PATH "__CYNG_BUILD")
 		foreach(CYNG_LIB ${CYNG_LIB_LIST})
 			find_library("__${CYNG_LIB}" ${CYNG_LIB}
 				HINTS
-					${CYNG_ROOT_BUILD_SUBDIR}
+					${__CYNG_BUILD}
 				PATHS
 					/usr/lib/
 					/usr/local/lib
@@ -125,8 +132,8 @@ else(CYNG_PKG)
         #
         #	$(ConfigurationName) is a variable used by the MS build system
         #
-        set(__CYNG_BUILD_OPTIMIZED "${CYNG_ROOT_DEV}/${CYNG_ROOT_BUILD_SUBDIR}/Release" CACHE PATH "__CYNG_BUILD_OPTIMIZED")
-        set(__CYNG_BUILD_DEBUG "${CYNG_ROOT_DEV}/${CYNG_ROOT_BUILD_SUBDIR}/Debug" CACHE PATH "__CYNG_BUILD_DEBUG")
+ 		set(__CYNG_BUILD_OPTIMIZED "${CYNG_ROOT_DEV}/${CYNG_ROOT_BUILD_SUBDIR}/Release" CACHE PATH "__CYNG_BUILD_OPTIMIZED")
+		set(__CYNG_BUILD_DEBUG "${CYNG_ROOT_DEV}/${CYNG_ROOT_BUILD_SUBDIR}/Debug" CACHE PATH "__CYNG_BUILD_DEBUG")
 
 		foreach(CYNG_LIB ${CYNG_LIB_LIST})
 
@@ -142,7 +149,7 @@ else(CYNG_PKG)
 			list(APPEND CYNG_LIBRARIES "debug")
 			list(APPEND CYNG_LIBRARIES "${__CYNG_BUILD_DEBUG}/${CYNG_LIB}.lib")
 
-			#message(STATUS "** CYNG_LIBRARIES    : ${CYNG_LIBRARIES}")
+		#	message(STATUS "** CYNG_LIBRARIES    : ${CYNG_LIBRARIES}")
 
 			#set(${CYNG_LIB} "optimized;${__CYNG_BUILD_OPTIMIZED}/${CYNG_LIB}.lib;debug;${__CYNG_BUILD_DEBUG}/${CYNG_LIB}.lib")
 			#message(STATUS "** CYNG_LIB    : ${CYNG_LIB}")
@@ -158,9 +165,9 @@ else(CYNG_PKG)
     #
     #  remove the cyng prefix - maybe there is a better solution
     #
-    if (UNIX)
-		get_filename_component(CYNG_INCLUDE_DIR_1 "${CYNG_INCLUDE_DIR_1}/../" REALPATH)
-	endif()
+#     if (UNIX)
+# 		get_filename_component(CYNG_INCLUDE_DIR_1 "${CYNG_INCLUDE_DIR_1}/../" REALPATH)
+# 	endif()
 	set(CYNG_INCLUDE_DIRS "${CYNG_INCLUDE_DIR_1};${CYNG_INCLUDE_DIR_2};${CYNG_INCLUDE_DIR_3}")
 	unset(CYNG_INCLUDE_DIR_1 CACHE)
 	unset(CYNG_INCLUDE_DIR_2 CACHE)
@@ -173,7 +180,7 @@ else(CYNG_PKG)
 		set(CYNG_FOUND ON)
 	endif()
     
-endif(CYNG_PKG_FOUND)
+endif(NOT CYNG_FOUND)
 
 
 mark_as_advanced(CYNG_FOUND CYNG_INCLUDE_DIRS CYNG_LIBRARIES)
@@ -186,6 +193,8 @@ if(UNIX)
 			CYNG_LIBRARIES
 		VERSION_VAR 
 			CYNG_VERSION
+		FAIL_MESSAGE
+			"Cannot provide CYNG library"
 	)
 endif(UNIX)
 
