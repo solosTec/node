@@ -9,7 +9,9 @@
 #include <smf/serial/parity.h>
 #include <smf/serial/stopbits.h>
 #include <smf/serial/flow_control.h>
+
 #include <cyng/io/hex_dump.hpp>
+#include <cyng/factory/set_factory.h>
 
 namespace node
 {
@@ -35,6 +37,7 @@ namespace node
 		, baud_rate_(speed)
 		, tid_(tid)
 		, buffer_()
+		, msg_counter_(0u)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -42,9 +45,6 @@ namespace node
 			<< base_.get_class_name()
 			<< "> "
 			<< port);
-
-		//boost::asio::serial_port_base::baud_rate baud_rate(speed_);
-		//port_.set_option(baud_rate);
 	}
 
 	cyng::continuation lmn_port::run()
@@ -124,7 +124,9 @@ namespace node
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> received "
+					<< "> "
+					<< name_
+					<< " received "
 					<< bytes_transferred
 					<< " bytes");
 
@@ -140,6 +142,7 @@ namespace node
 				CYNG_LOG_TRACE(logger_, "\n" << ss.str());
 
 //#endif
+				base_.mux_.post(tid_, 0u, cyng::tuple_factory(cyng::buffer_t(buffer_.cbegin(), buffer_.cbegin() + bytes_transferred), msg_counter_++));
 
 				//
 				//	continue reading

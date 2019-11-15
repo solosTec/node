@@ -10,6 +10,9 @@
 #include "bridge.h"
 #include "cache.h"
 #include "tasks/lmn_port.h"
+#include "tasks/parser_serial.h"
+#include "tasks/parser_wmbus.h"
+#include "tasks/parser_CP210x.h"
 
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_db.h>
@@ -69,27 +72,19 @@ namespace node
 	void lmn::start_lmn_wired()
 	{
 		try {
-#if BOOST_OS_WINDOWS
-			auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "port"), std::string("COM1"));
-#else
-			auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "port"), std::string("/dev/ttyAPP0"));
-#endif
-			CYNG_LOG_INFO(logger_, "LMN wired is running on port: " << port);
 
-			std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "monitor"), 30));
-			auto const speed = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 115200);
-
-			cyng::async::start_task_delayed<lmn_port>(mux_
-				, std::chrono::seconds(1)
+			//
+			//	start receiver
+			//
+			auto const receiver = cyng::async::start_task_sync<parser_serial>(mux_
 				, logger_
-				, monitor
-				, port		//	port
-				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "databits"), 8u)		//	[u8] databits
-				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "parity"), "none")	//	[s] parity
-				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "flow_control"), "none")	//	[s] flow_control
-				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "stopbits"), "one")	//	[s] stopbits
-				, static_cast<std::uint32_t>(speed)		//	[u32] speed
-				, cyng::async::NO_TASK);
+				, vm_);
+
+			if (receiver.second) {
+
+				auto const sender = start_lmn_port_wired(receiver.first);
+
+			}
 		}
 		catch (boost::system::system_error const& ex) {
 			CYNG_LOG_FATAL(logger_, ex.what() << ":" << ex.code());
@@ -99,32 +94,104 @@ namespace node
 	void lmn::start_lmn_wireless()
 	{
 		try {
-#if BOOST_OS_WINDOWS
-			auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "port"), std::string("COM3"));
-#else
-			auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "port"), std::string("/dev/ttyAPP1"));
-#endif
-			CYNG_LOG_INFO(logger_, "LMN wireless is running on port: " << port);
 
-			std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "monitor"), 30));
-			auto const speed = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 57600);
-
-			cyng::async::start_task_delayed<lmn_port>(mux_
-				, std::chrono::seconds(1)
+			//
+			//	start receiver
+			//
+			auto const receiver = cyng::async::start_task_sync<parser_wmbus>(mux_
 				, logger_
-				, monitor
-				, port		//	port
-				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "databits"), 8u)		//	[u8] databits
-				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "parity"), "none")	//	[s] parity
-				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "flow_control"), "none")	//	[s] flow_control
-				, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "stopbits"), "one")	//	[s] stopbits
-				, static_cast<std::uint32_t>(speed)		//	[u32] speed
-				, cyng::async::NO_TASK);
+				, vm_);
+
+			if (receiver.second) {
+
+
+				auto const hci = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "HCI"), std::string("none"));
+				if (boost::algorithm::equals(hci, "CP210x")) {
+
+					//
+					//	LMN port send incoming data to CP210x parser
+					//	which sends data to wmbus parser.
+					//
+					auto const unwrapper = cyng::async::start_task_sync<parser_CP210x>(mux_
+						, logger_
+						, vm_
+						, receiver.first);
+
+					if (unwrapper.second) {
+						auto const sender = start_lmn_port_wireless(unwrapper.first);
+					}
+					else {
+						CYNG_LOG_FATAL(logger_, "cannot start CP210x parser for HCI messages");
+					}
+				}
+				else {
+
+					//
+					//	LMN port send incoming data to wmbus parser
+					//
+					auto const sender = start_lmn_port_wireless(receiver.first);
+				}
+			}
+			else {
+				CYNG_LOG_FATAL(logger_, "cannot start receiver for wireless mbus data");
+			}
 		}
 		catch (boost::system::system_error const& ex) {
 			CYNG_LOG_FATAL(logger_, ex.what() << ":" << ex.code());
 		}
 	}
+
+	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(std::size_t receiver)
+	{
+#if BOOST_OS_WINDOWS
+		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "port"), std::string("COM3"));
+#else
+		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "port"), std::string("/dev/ttyAPP1"));
+#endif
+		CYNG_LOG_INFO(logger_, "LMN wireless is running on port: " << port);
+
+		std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "monitor"), 30));
+		auto const speed = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 57600);
+
+		return cyng::async::start_task_delayed<lmn_port>(mux_
+			, std::chrono::seconds(1)
+			, logger_
+			, monitor
+			, port		//	port
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "databits"), 8u)		//	[u8] databits
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "parity"), "none")	//	[s] parity
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "flow_control"), "none")	//	[s] flow_control
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "stopbits"), "one")	//	[s] stopbits
+			, static_cast<std::uint32_t>(speed)		//	[u32] speed
+			, receiver);
+	}
+
+	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(std::size_t receiver)
+	{
+#if BOOST_OS_WINDOWS
+		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "port"), std::string("COM1"));
+#else
+		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "port"), std::string("/dev/ttyAPP0"));
+#endif
+		CYNG_LOG_INFO(logger_, "LMN wired is running on port: " << port);
+
+		std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "monitor"), 30));
+		auto const speed = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 115200);
+
+		return cyng::async::start_task_delayed<lmn_port>(mux_
+			, std::chrono::seconds(1)
+			, logger_
+			, monitor
+			, port		//	port
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "databits"), 8u)		//	[u8] databits
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "parity"), "none")	//	[s] parity
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "flow_control"), "none")	//	[s] flow_control
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "stopbits"), "one")	//	[s] stopbits
+			, static_cast<std::uint32_t>(speed)		//	[u32] speed
+			, receiver);
+
+	}
+
 
 	//void lmn::wmbus_push_frame(cyng::context& ctx)
 	//{

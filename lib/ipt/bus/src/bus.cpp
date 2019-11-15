@@ -284,7 +284,7 @@ namespace node
 		{
 			BOOST_ASSERT(vm_.tag() == ctx.tag());
 
-			const cyng::vector_t frame = ctx.get_frame();
+			cyng::vector_t const frame = ctx.get_frame();
 
             //
             //  * [uuid] ident

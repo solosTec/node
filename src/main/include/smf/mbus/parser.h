@@ -82,11 +82,12 @@ namespace node
 			 * are different helper variables mostly
 			 * declared in the private section of this class.
 			 */
-			enum state
+			enum class state
 			{
-				STATE_START,
-				STATE_FRAME_SHORT,
-				STATE_FRAME,
+				INVALID_STATE,
+				START,
+				FRAME_SHORT,
+				FRAME,
 			};
 
 			struct base {
@@ -271,23 +272,23 @@ namespace node
 			 * are different helper variables mostly
 			 * declared in the private section of this class.
 			 */
-			enum state
+			enum class state
 			{
-				STATE_ERROR,
-				STATE_LENGTH,	//	first byte contains length
-				STATE_CTRL_FIELD,
-				STATE_MANUFACTURER,
-				STATE_DEV_ID,
-				STATE_DEV_VERSION,
-				STATE_DEV_TYPE,
+				INVALID_STATE,
+				LENGTH,	//	first byte contains length
+				CTRL_FIELD,
+				MANUFACTURER,
+				DEV_ID,
+				DEV_VERSION,
+				DEV_TYPE,
 				//STATE_CRC,
-				STATE_FRAME_TYPE,
+				FRAME_TYPE,
 				//	0x72: long data header
 				//	0x7A: short data header
 				//	0x78: no data header
-				STATE_HEADER_SHORT,
-				STATE_HEADER_LONG,
-				STATE_HEADER_NONE,
+				HEADER_SHORT,
+				HEADER_LONG,
+				HEADER_NONE,
 			};
 
 			struct error {

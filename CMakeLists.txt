@@ -405,6 +405,12 @@ include (lib/imega/protocol/lib.cmake)
 add_library(smf_protocol_imega ${GLOBAL_LIBRARY_TYPE} ${imega_protocol_lib})
 
 #
+#	HCI/CP210x protocol library
+#
+include (lib/hci/protocol/lib.cmake)
+add_library(smf_protocol_hci ${GLOBAL_LIBRARY_TYPE} ${hci_protocol_lib})
+
+#
 #	IEC 62056-21 protocol library
 #
 include (lib/iec/protocol/lib.cmake)
@@ -652,7 +658,7 @@ target_link_libraries(gateway ${gateway_link_libs})
 include (nodes/ipt/segw/prg.cmake)
 add_executable(segw ${node_ipt_segw})
 # libraries to link
-set(segw_link_libs smf_protocol_ipt smf_bus_ipt smf_bus_sml smf_bus_serial smf_protocol_sml smf_protocol_mbus ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
+set(segw_link_libs smf_protocol_ipt smf_bus_ipt smf_bus_sml smf_bus_serial smf_protocol_sml smf_protocol_mbus smf_protocol_hci ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND segw_link_libs boost_thread boost_system boost_filesystem boost_program_options boost_random)
     if (UNIX)

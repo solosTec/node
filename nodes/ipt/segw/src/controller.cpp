@@ -129,6 +129,7 @@ namespace node
 					cyng::param_factory("enabled", false),
 					cyng::param_factory("port", "COM4"),	//	USB serial port
 					//	if port number is greater than 9 the following syntax is required: "\\\\.\\COM12"
+					cyng::param_factory("HCI", "CP210x"),	//	iM871A mbus-USB converter
 					cyng::param_factory("databits", 8),
 					cyng::param_factory("parity", "none"),	//	none, odd, even
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
@@ -137,6 +138,7 @@ namespace node
 #else
 					cyng::param_factory("enabled", true),
 					cyng::param_factory("port", "/dev/ttyAPP0"),
+					cyng::param_factory("HCI", "none"),	
 					cyng::param_factory("databits", 8),
 					cyng::param_factory("parity", "none"),	//	none, odd, even
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware

@@ -61,7 +61,12 @@ set (node_ipt_segw_tasks
 	nodes/ipt/segw/src/tasks/network.cpp
 	nodes/ipt/segw/src/tasks/lmn_port.h
 	nodes/ipt/segw/src/tasks/lmn_port.cpp
-
+	nodes/ipt/segw/src/tasks/parser_wmbus.h
+	nodes/ipt/segw/src/tasks/parser_wmbus.cpp
+	nodes/ipt/segw/src/tasks/parser_serial.h
+	nodes/ipt/segw/src/tasks/parser_serial.cpp
+	nodes/ipt/segw/src/tasks/parser_CP210x.h
+	nodes/ipt/segw/src/tasks/parser_CP210x.cpp
 )
 	
 set (node_ipt_segw_server

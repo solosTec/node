@@ -28,6 +28,8 @@ namespace node
 		void start_lmn_wireless();
 		//void wmbus_push_frame(cyng::context& ctx);
 
+		std::pair<std::size_t, bool> start_lmn_port_wireless(std::size_t);
+		std::pair<std::size_t, bool> start_lmn_port_wired(std::size_t);
 	private:
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;

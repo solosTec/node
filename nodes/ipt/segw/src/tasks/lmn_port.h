@@ -80,6 +80,8 @@ namespace node
 		 */
 		std::array<char, NODE::PREFERRED_BUFFER_SIZE> buffer_;
 
+		std::size_t msg_counter_;
+
 	};
 
 }
