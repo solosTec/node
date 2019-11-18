@@ -53,18 +53,6 @@ namespace node
 				STATE_LAST,
 			};
 
-			//	doesn't work as expected
-			union CTRL_EP {
-				char raw_;
-				std::uint8_t 
-					msg_id : 4,
-					reserved : 1,
-					time_stamp_field : 1,
-					rssi_field : 1,
-					crc16_field : 1
-					;
-			};
-
 		public:
 			parser(vm_callback);
 			virtual ~parser();
@@ -95,6 +83,17 @@ namespace node
 			 */
 			void post_processing();
 
+			/**
+			 * Read a numeric value from input stream
+			 */
+			template <typename T>
+			T read_numeric()
+			{
+				static_assert(std::is_arithmetic<T>::value, "arithmetic type required");
+				T v{ 0 };
+				input_.read(reinterpret_cast<std::istream::char_type*>(&v), sizeof(v));
+				return v;
+			}
 
 		private:
 			/**
@@ -123,10 +122,12 @@ namespace node
 			 */
 			std::uint8_t length_;
 
-			std::uint8_t msg_id_;
+			std::uint8_t ep_;
 			bool crc16_field_;
 			bool rssi_field_;
 			bool time_stamp_field_;
+
+			std::size_t msg_counter_;
 
 			static const char sof = (char)0xA5;	//	0xA5 == -91;
 		};

@@ -13,7 +13,6 @@
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 
-//#include <boost/filesystem.hpp>
 
 namespace cyng
 {
@@ -68,7 +67,5 @@ namespace node
 	};
 
 }
-
-#pragma pack(pop)
 
 #endif

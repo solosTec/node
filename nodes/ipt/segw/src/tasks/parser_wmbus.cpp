@@ -9,6 +9,7 @@
 
 #include <cyng/vm/controller.h>
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_bytes.hpp>
 
 #include <iostream>
 
@@ -71,7 +72,9 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> received msg #"
-			<< msg_counter);
+			<< msg_counter
+			<< " with "
+			<< cyng::bytes_to_str(data.size()));
 
 		//
 		//  feed the parser

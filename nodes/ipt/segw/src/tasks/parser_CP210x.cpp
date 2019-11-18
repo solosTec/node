@@ -9,6 +9,9 @@
 
 #include <cyng/vm/controller.h>
 #include <cyng/io/serializer.h>
+#include <cyng/set_cast.h>
+#include <cyng/factory/set_factory.h>
+
 
 namespace node
 {
@@ -33,7 +36,7 @@ namespace node
 			<< base_.get_class_name()
 			<< ">");
 
-		vm.register_function("hci.payload", 1, [&](cyng::context& ctx) {
+		vm.register_function("hci.payload", 2, [&](cyng::context& ctx) {
 
 			cyng::vector_t const frame = ctx.get_frame();
 			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
@@ -41,7 +44,8 @@ namespace node
 			//
 			//	send data to receiver (parser)
 			//
-			base_.mux_.post(receiver_, 0, cyng::tuple_t{ frame.at(0) });
+			base_.mux_.post(receiver_, 0, cyng::to_tuple(frame));
+			//base_.mux_.post(receiver_, 0, cyng::tuple_factory(cyng::make_buffer({ 0x1, 0x2, 0x3 }), static_cast<std::size_t>(42u)));
 		});
 
 	}

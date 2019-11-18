@@ -283,9 +283,11 @@ namespace node
 				DEV_TYPE,
 				//STATE_CRC,
 				FRAME_TYPE,
+				//	0x70: report error
 				//	0x72: long data header
 				//	0x7A: short data header
 				//	0x78: no data header
+				APL_ERROR,
 				HEADER_SHORT,
 				HEADER_LONG,
 				HEADER_NONE,
@@ -414,6 +416,12 @@ namespace node
 			 * inform listener.
 			 */
 			void post_processing();
+
+			/**
+			 * handle CTRL field state
+			 */
+			std::pair<state, parser_state_t> ctrl_field(char);
+			std::pair<state, parser_state_t> frame_type(char);
 
 		private:
 			/**

@@ -372,7 +372,7 @@ namespace node
 			cyng::buffer_t read_data();
 
 			/**
-			 * Read a numeric value
+			 * Read a numeric value from input stream
 			 */
 			template <typename T>
 			T read_numeric()

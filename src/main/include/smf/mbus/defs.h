@@ -130,7 +130,7 @@ namespace node
 			FIELD_CI_TIME_SYNC_2 = 0x6D, //!<	Time synchronization (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
 			FIELD_CI_APL_ERROR_SHORT = 0x6E, //!<	Error from device with short header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
 			FIELD_CI_APL_ERROR_LONG = 0x6F, //!<	Error from device with long header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
-			FIELD_CI_APL_ERROR = 0x70, //!<		Report of application errors (EN 13757-3)
+			FIELD_CI_APL_ERROR = 0x70, //!<		Report of general application errors (EN 13757-3)
 			FIELD_CI_ALARM = 0x71, //!<		report of alarms (EN 13757-3)
 			FIELD_CI_HEADER_LONG = 0x72, //!<	12 byte header followed by variable format data (EN 13757-3)
 			FIELD_CI_APL_ALARM_SHORT = 0x74, //!	<Alarm from device with short header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)

@@ -244,25 +244,21 @@ namespace node
 			switch (stream_state_)
 			{
 			case state::LENGTH:
+				//
+				//	format A (S, T, R2 Mode): without CRC
+				//	format B (C Mode): including CRC
+				//
+				//	T, C1A Mode: max 245 bytes
+				//	C1B Mode: max 241 bytes
+				//	R/S Mode: max 213 bytes
+				//
 				packet_size_ = static_cast<std::size_t>(c) & 0xFF;
 				BOOST_ASSERT_MSG(packet_size_ > 9, "packet size to small");
 				stream_state_ = state::CTRL_FIELD;
 				break;
 			case state::CTRL_FIELD:
 				--packet_size_;
-				switch (c) {
-				case CTRL_FIELD_SND_NR:
-					//	0x44 == Indicates message from primary station, function send / no reply(SND - NR)
-					stream_state_ = state::MANUFACTURER;
-					parser_state_ = manufacturer();	//	2 bytes
-					break;
-				case CTRL_FIELD_SND_IR: 					//	0x46 == Send manually initiated installation data (Send Installation Request - SND_IR)					//	ED300L is sending 10 SND_IR packets after restart					break;
-				//case CTRL_FIELD_ACC_NR: 					//	0x47 == Contains no data – signals an empty transmission or provides the opportunity to access the bidirectional meter, between two application data transmissions				case CTRL_FIELD_ACC_DMD: 					//	0x48 == Access demand to master in order to request new important application data (alerts)					break;
-				default:
-					stream_state_ = state::INVALID_STATE;
-					cb_(cyng::generate_invoke("log.msg.error", "w-mbus: unknown control field", static_cast<unsigned>(c)));
-					break;
-				}
+				std::tie(stream_state_, parser_state_) = ctrl_field(c);
 				break;
 			case state::MANUFACTURER:
 				--packet_size_;
@@ -290,37 +286,9 @@ namespace node
 				stream_state_ = state::FRAME_TYPE;
 				break;
 			case state::FRAME_TYPE:
-				//	CI field of SND-NR frame
-				//	0x72, 0x78 or 0x7A expected
-				//	0x72: long data header
-				//	0x7A: short data header
-				//	0x78: no data header
-				frame_type_ = boost::numeric_cast<std::uint8_t>(c);
-				switch (frame_type_) {
-				case FIELD_CI_HEADER_LONG:	//	0x72
-					stream_state_ = state::HEADER_LONG;
-					//	secondary address (8 bytes) + short header
-					//
-					break;
-				case FIELD_CI_HEADER_SHORT:	//	0x7A
-					stream_state_ = state::HEADER_SHORT;
-					//	byte1: counter (EN 13757-)
-					//	byte2: status
-					//	byte3/4: configuration (encryption mode and number of encrypted bytes)
-					//
-					break;
-				case FIELD_CI_HEADER_NO:	//	 0x78
-					stream_state_ = state::HEADER_NONE;
-					break;
-				case FIELD_CI_NULL:	//	0xFF
-				default:
-					BOOST_ASSERT(c == 0x72 || c == 0x78 || c == 0x7A || c == 0x7F);
-					//stream_state_ = state::INVALID_STATE;
-					stream_state_ = state::HEADER_NONE;
-					break;
-				}
-				parser_state_ = frame_data(packet_size_);
+				std::tie(stream_state_, parser_state_) = frame_type(c);
 				break;
+			case state::APL_ERROR:
 			case state::HEADER_LONG:
 			case state::HEADER_SHORT:
 			case state::HEADER_NONE:
@@ -332,6 +300,70 @@ namespace node
 			}
 
 			return c;
+		}
+
+		std::pair<parser::state, parser::parser_state_t> parser::ctrl_field(char c)
+		{
+			switch (c) {
+			case CTRL_FIELD_SND_NR:
+				//	0x44 == Indicates message from primary station, function send / no reply(SND - NR)
+				//stream_state_ = state::MANUFACTURER;
+				//parser_state_ = manufacturer();	//	2 bytes
+				return std::make_pair(state::MANUFACTURER, manufacturer());
+
+			//case CTRL_FIELD_SND_IR:
+				//	0x46 == Send manually initiated installation data (Send Installation Request - SND_IR)
+				//	ED300L is sending 10 SND_IR packets after restart
+				//break;
+
+				//case CTRL_FIELD_ACC_NR: 
+					//	0x47 == Contains no data – signals an empty transmission or provides the opportunity to access the bidirectional meter, between two application data transmissions
+			//case CTRL_FIELD_ACC_DMD:
+				//	0x48 == Access demand to master in order to request new important application data (alerts)
+				//break;
+
+			default:
+				//stream_state_ = state::INVALID_STATE;
+				cb_(cyng::generate_invoke("log.msg.error", "w-mbus: unknown control field", static_cast<unsigned>(c)));
+				break;
+			}
+
+			return std::make_pair(state::INVALID_STATE, error());
+		}
+
+		std::pair<parser::state, parser::parser_state_t> parser::frame_type(char c)
+		{
+			//	CI field of SND-NR frame
+			//	0x72, 0x78 or 0x7A expected
+			//	0x72: long data header
+			//	0x7A: short data header
+			//	0x78: no data header
+
+			frame_type_ = boost::numeric_cast<std::uint8_t>(c);
+			cb_(cyng::generate_invoke("log.msg.trace", "frame type", frame_type_));
+
+			switch (frame_type_) {
+			case FIELD_CI_APL_ERROR:
+				//	RSP_UD telegram
+				return std::make_pair(state::APL_ERROR, frame_data(packet_size_));
+			case FIELD_CI_HEADER_LONG:	//	0x72
+				//	secondary address (8 bytes) + short header
+				//
+				return std::make_pair(state::HEADER_LONG, frame_data(packet_size_));
+			case FIELD_CI_HEADER_SHORT:	//	0x7A
+				//	byte1: counter (EN 13757-)
+				//	byte2: status
+				//	byte3/4: configuration (encryption mode and number of encrypted bytes)
+				//
+				return std::make_pair(state::HEADER_SHORT, frame_data(packet_size_));
+			case FIELD_CI_HEADER_NO:	//	 0x78
+				return std::make_pair(state::HEADER_NONE, frame_data(packet_size_));
+			case FIELD_CI_NULL:	//	0xFF
+			default:
+				BOOST_ASSERT(c == 0x70 || c == 0x72 || c == 0x78 || c == 0x7A || c == 0x7F);
+				break;
+			}
+			return std::make_pair(state::HEADER_NONE, frame_data(packet_size_));
 		}
 
 		void parser::post_processing()
@@ -356,20 +388,11 @@ namespace node
 			if (v.pos_ == v.data_.size()) {
 
 				this->parser_.manufacturer_ = node::sml::decode(v.data_.at(0), v.data_.at(1));
-				//std::cout << "manufacturer: " << this->parser_.manufacturer_ << std::endl;
+				this->parser_.cb_(cyng::generate_invoke("log.msg.trace", "manufacturer", this->parser_.manufacturer_));
 				return state::DEV_ID;
 			}
 			return state::MANUFACTURER;
 		}
-
-		//parser::state parser::state_visitor::operator()(dev_version& v) const
-		//{
-		//	v.u_.c_ = this->c_;
-		//	//std::cout << "protocol type: " << +v.u_.internal_.type_ << ", protocol version: " << +v.u_.internal_.ver_ << std::endl;
-		//	this->parser_.version_ = v.u_.internal_.ver_;
-		//	this->parser_.server_id_[7] = v.u_.internal_.ver_;
-		//	return state::DEV_TYPE;
-		//}
 
 		parser::state parser::state_visitor::operator()(dev_id& v) const
 		{
@@ -381,7 +404,6 @@ namespace node
 				//	get the device ID as u32 value
 				//
 				auto idp = reinterpret_cast<std::uint32_t*>(v.data_.data());
-				//this->parser_.dev_id_ = (idp != nullptr) ? *idp : 0u;
 
 				//
 				//	read this value as a hex value
@@ -389,13 +411,14 @@ namespace node
 				std::stringstream ss;
 				ss.fill('0');
 				ss << std::setw(8) << std::setbase(16) << *idp;
-				//std::cout << "device id: " << ss.str() << std::endl;
 
 				//
 				//	write this value as decimal value
 				//
 				ss >> std::setbase(10) >> this->parser_.dev_id_;
 #ifdef _DEBUG
+				this->parser_.cb_(cyng::generate_invoke("log.msg.trace", "device ID", this->parser_.dev_id_));
+
 				if (this->parser_.meter_set_.find(this->parser_.dev_id_) == this->parser_.meter_set_.end()) {
 					this->parser_.meter_set_.emplace(this->parser_.dev_id_);
 					std::cout
