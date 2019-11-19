@@ -269,6 +269,7 @@ namespace node
 				break;
 			case state::DEV_ID:
 				--packet_size_;
+				//	address
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 				break;
 			case state::DEV_VERSION:

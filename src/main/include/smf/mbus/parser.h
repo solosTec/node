@@ -278,7 +278,7 @@ namespace node
 				LENGTH,	//	first byte contains length
 				CTRL_FIELD,
 				MANUFACTURER,
-				DEV_ID,
+				DEV_ID,		//	address
 				DEV_VERSION,
 				DEV_TYPE,
 				//STATE_CRC,
@@ -291,6 +291,7 @@ namespace node
 				HEADER_SHORT,
 				HEADER_LONG,
 				HEADER_NONE,
+				CRC,
 			};
 
 			struct error {
@@ -451,7 +452,8 @@ namespace node
 			parser_state_t	parser_state_;
 
 			/**
-			 * packet size without CCR
+			 * packet size without CRC (S, T, R2 Mode)
+			 * packet size with CRC (C Mode)
 			 */
 			std::size_t	packet_size_;
 

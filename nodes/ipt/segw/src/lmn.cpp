@@ -220,10 +220,20 @@ namespace node
 		cyng::buffer_t const& server_id = std::get<0>(tpl);
 		cyng::buffer_t const& payload = std::get<6>(tpl);
 
-		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - server id: " << sml::from_server_id(server_id));
-		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - manufacturer: " << std::get<1>(tpl));
-		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - version: " << +std::get<2>(tpl));
-		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - media: " << +std::get<3>(tpl) << " - " << node::mbus::get_medium_name(std::get<3>(tpl)));
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
+			<< " - server id: " 
+			<< sml::from_server_id(server_id));
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
+			<< " - manufacturer: " 
+			<< std::get<1>(tpl));
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
+			<< " - version: " 
+			<< +std::get<2>(tpl));
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
+			<< " - media: " 
+			<< +std::get<3>(tpl) 
+			<< " - " 
+			<< node::mbus::get_medium_name(std::get<3>(tpl)));
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
 			<< " - device id: " 
 			<< std::setw(8)
@@ -273,20 +283,46 @@ namespace node
 			CYNG_LOG_WARNING(logger_, ctx.get_name()
 				<< ss.str());
 		}
-		//
-		// update device table
-		//
-		//update_device_table(std::get<0>(tpl)
-		//	, std::get<1>(tpl)
-		//	, std::get<2>(tpl)
-		//	, std::get<3>(tpl)
-		//	, std::get<5>(tpl)
-		//	, cyng::crypto::aes_128_key{}
-		//, ctx.tag());
 		break;
 		}
 
+		//
+		// update device table
+		//
+		update_device_table(std::get<0>(tpl)
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl)
+			, std::get<5>(tpl)
+			, cyng::crypto::aes_128_key{}
+		, ctx.tag());
+
 	}
 
+	void lmn::update_device_table(cyng::buffer_t const& dev_id
+		, std::string const& manufacturer
+		, std::uint8_t version
+		, std::uint8_t media
+		, std::uint8_t frame_type
+		, cyng::crypto::aes_128_key aes_key
+		, boost::uuids::uuid tag)
+	{
+		bridge_.cache_.write_table("_DeviceMBUS", [&](cyng::store::table* tbl) {
+			tbl->insert(cyng::table::key_generator(dev_id)
+				, cyng::table::data_generator(std::chrono::system_clock::now()
+					, "+++"	//	class
+					, false	//	active
+					, manufacturer	//	description
+					, 0ull	//	status
+					, cyng::buffer_t{ 0, 0 }	//	mask
+					, 26000ul	//	interval
+					, cyng::make_buffer({})	//	pubKey
+					, aes_key	//	 AES key 
+					, ""	//	user
+					, "")	//	password
+				, 1	//	generation
+				, tag);
+		});
+	}
 }
 

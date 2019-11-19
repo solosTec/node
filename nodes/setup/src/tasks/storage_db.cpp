@@ -202,7 +202,9 @@ namespace node
 				auto s = pool_.get_session();
 				cyng::table::meta_table_ptr meta = (*pos).second;
 				cyng::sql::command cmd(meta, s.get_dialect());
-				cmd.insert();
+				auto cmd = cmd.insert();
+				boost::ignore_unused(cmd);
+
 				std::string sql = cmd.to_str();
 				//CYNG_LOG_TRACE(logger_, sql);	//	insert
 

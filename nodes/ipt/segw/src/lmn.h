@@ -32,6 +32,18 @@ namespace node
 
 		void wmbus_push_frame(cyng::context& ctx);
 
+		/**
+		 * Lookup "_DeviceMBUS" table and insert device
+		 * if not found
+		 */
+		void update_device_table(cyng::buffer_t const& dev_id
+			, std::string const& manufacturer
+			, std::uint8_t version
+			, std::uint8_t media
+			, std::uint8_t frame_type
+			, cyng::crypto::aes_128_key
+			, boost::uuids::uuid tag);
+
 	private:
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;

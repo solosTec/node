@@ -90,6 +90,15 @@ namespace node
 			, cyng::object obj
 			, std::uint64_t gen);
 
+		/**
+		 * Update a record
+		 *
+		 * @param tbl table name
+		 * @param key key value(s)
+		 * @param body body value(s)
+		 * @param gen generation
+		 * @param source data source
+		 */
 		bool insert(std::string tbl
 			, cyng::table::key_type const& key
 			, cyng::table::data_type const& body

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2018 Sylko Olzscher
@@ -182,10 +182,10 @@ namespace node
 				//	---
 				, "status"	//	"Statusinformation: 00"
 				, "mask"	//	"Bitmaske: 00 00"
-				, "interval"	//	"Zeit zwischen zwei Datens�tzen: 49000"
+				, "interval"	//	"Zeit zwischen zwei Datensätzen: 49000"
 								//	--- optional data
 				, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
-				, "aes"		//	AES-Schl�ssel: 
+				, "aes"		//	AES-Key
 				, "user"
 				, "pwd"
 				},

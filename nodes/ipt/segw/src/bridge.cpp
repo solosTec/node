@@ -14,6 +14,7 @@
 #include <smf/sml/status.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/event.h>
+#include <smf/sml/srv_id_io.h>
 
 #include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>
@@ -38,6 +39,7 @@ namespace node
 		//	we would receive our own changes.
 		//
 		load_configuration();
+		load_devices_mbus();
 
 		//
 		//	register as listener
@@ -64,7 +66,7 @@ namespace node
 
 	void bridge::load_configuration()
 	{
-		cache_.db_.access([&](cyng::store::table* tbl) {
+		cache_.write_table("_Cfg", [&](cyng::store::table* tbl) {
 
 			storage_.loop("TCfg", [&](cyng::table::record const& rec)->bool {
 
@@ -241,7 +243,33 @@ namespace node
 				return true;	//	continue
 			});
 
-		}, cyng::store::write_access("_Cfg"));
+		});
+	}
+
+	void bridge::load_devices_mbus()
+	{
+		cache_.write_table("_DeviceMBUS", [&](cyng::store::table * tbl) {
+			storage_.loop("TDeviceMBUS", [&](cyng::table::record const& rec)->bool {
+
+				if (tbl->insert(rec.key(), rec.data(), rec.get_generation(), cache_.get_tag())) {
+
+					cyng::buffer_t srv;
+					srv = cyng::value_cast(rec.key().at(0), srv);
+					CYNG_LOG_TRACE(logger_, "load mbus device "
+						<< sml::from_server_id(srv));
+				}
+				else {
+
+					CYNG_LOG_ERROR(logger_, "insert into table TDeviceMBUS failed - key: "
+						<< cyng::io::to_str(rec.key())
+						<< ", body: "
+						<< cyng::io::to_str(rec.data()));
+
+				}
+
+				return true;	//	continue
+			});
+		});
 	}
 
 	void bridge::power_return()
@@ -277,6 +305,21 @@ namespace node
 			//
 			auto val = cyng::io::to_str(body.at(0));
 			storage_.insert("TCfg", key, cyng::table::data_generator(val, val, body.at(0).get_class().tag()), gen, source);
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DeviceMBUS")) {
+
+			if (!storage_.insert("TDeviceMBUS"
+				, key
+				, body
+				, gen
+				, source)) {
+
+				CYNG_LOG_ERROR(logger_, "Insert into table TDeviceMBUS failed - key: " 
+					<< cyng::io::to_str(key)
+					<< ", body: "
+					<< cyng::io::to_str(body));
+
+			}
 		}
 	}
 
@@ -349,7 +392,14 @@ namespace node
 
 	void bridge::connect_to_cache()
 	{
-		cache_.db_.get_listener("_Cfg"
+		auto l = cache_.db_.get_listener("_Cfg"
+			, std::bind(&bridge::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		boost::ignore_unused(l);
+
+		l = cache_.db_.get_listener("_DeviceMBUS"
 			, std::bind(&bridge::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
 			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)

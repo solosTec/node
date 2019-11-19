@@ -1,4 +1,4 @@
-/*
+﻿/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2019 Sylko Olzscher
@@ -272,6 +272,55 @@ namespace node
 			},
 			{ 128
 			, 256
+			}),
+
+			//
+			//	That an entry of a mbus devices exists means 
+			//	the device is visible
+			//
+			cyng::table::make_meta_table<1, 11>("_DeviceMBUS",
+			{ "serverID"	//	server/meter ID
+			, "lastSeen"	//	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
+			, "class"		//	device class (always "---" == 2D 2D 2D)
+			, "active"
+			, "descr"
+			//	---
+			, "status"	//	"Statusinformation: 00"
+			, "mask"	//	"Bitmaske: 00 00"
+			, "interval"	//	"Zeit zwischen zwei Datensätzen: 49000"
+							//	--- optional data
+			, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
+			, "aes"		//	AES-Key
+			, "user"
+			, "pwd"
+			},
+			{ cyng::TC_BUFFER		//	server ID
+			, cyng::TC_TIME_POINT	//	last seen
+			, cyng::TC_STRING		//	device class
+			, cyng::TC_BOOL			//	active
+			, cyng::TC_STRING		//	manufacturer/description
+
+			, cyng::TC_BUFFER		//	status (81 00 60 05 00 00)
+			, cyng::TC_BUFFER		//	bit mask (81 81 C7 86 01 FF)
+			, cyng::TC_UINT32		//	interval (milliseconds)
+			, cyng::TC_BUFFER		//	pubKey
+			, cyng::TC_AES128		//	AES 128 (16 bytes)
+			, cyng::TC_STRING		//	user
+			, cyng::TC_STRING		//	pwd
+			},
+			{ 9		//	serverID
+			, 0		//	lastSeen
+			, 16	//	device class
+			, 0		//	active
+			, 128	//	manufacturer/description
+
+			, 0		//	status
+			, 8		//	mask
+			, 0		//	interval
+			, 16	//	pubKey
+			, 32	//	aes
+			, 32	//	user
+			, 32	//	pwd
 			})
 		};
 
