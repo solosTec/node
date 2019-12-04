@@ -116,6 +116,8 @@ namespace node
 		 */
 		enum event_type : std::uint32_t
 		{
+			LOG_CODE_PW = 0x00010001,	//	Phasenwechsel - 81 81 C7 89 E2 FF
+			LOG_CODE_SA = 0x0001000F,	//	system clock "async"
 			LOG_CODE_01 = 0x00100001,	//	Spannungsausfall, Das Ereignis wird nach Wiederkehr der	Versorgungsspannung als erster Eintrag in das Betriebslogbuch eingetragen
 			LOG_CODE_02 = 0x00100002,	//	Spannungsausfall, Letzter Reset aufgrund eines Spannungsausfalls
 			LOG_CODE_03 = 0x00100003,	//	Firmware - Aktivierung
@@ -124,6 +126,7 @@ namespace node
 			LOG_CODE_06 = 0x00100006,	//	Firmware - Type - Error
 			LOG_CODE_07 = 0x00100007,	//	Firmware - Upload OK
 			LOG_CODE_08 = 0x00100008,	//	Ethernet PHY gestört
+			LOG_CODE_MD = 0x00010011,	//	manipulation detected
 			LOG_CODE_09 = 0x00100023,	//	Spannungswiederkehr
 			LOG_CODE_10 = 0x00800000,	//	Timer, Zyklischer Logbucheintrag
 			LOG_CODE_11 = 0x00800004,	//	Periodischer Reset

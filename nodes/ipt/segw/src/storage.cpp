@@ -56,7 +56,7 @@ namespace node
 		, cyng::buffer_t srv
 		, std::string target
 		, std::uint8_t nr
-		, std::string description)
+		, std::string details)
 	{
 		auto s = pool_.get_session();
 		auto cmd = create_cmd("TOpLog", s.get_dialect());
@@ -91,11 +91,12 @@ namespace node
 			stmt->push(cyng::make_object(0u), 0);	//	valTime
 			stmt->push(cyng::make_object(status), 0);	//	status
 			stmt->push(cyng::make_object(evt), 0);	//	evt
-			stmt->push(cyng::make_object(peer.to_buffer()), 0);	//	peer
+			stmt->push(cyng::make_object(peer.to_buffer()), 13);	//	peer
 			stmt->push(cyng::make_now(), 0);	//	utc
-			stmt->push(cyng::make_object(srv), 0);	//	serverId
-			stmt->push(cyng::make_object(target), 0);	//	target
+			stmt->push(cyng::make_object(srv), 23);	//	serverId
+			stmt->push(cyng::make_object(target), 64);	//	target
 			stmt->push(cyng::make_object(nr), 0);	//	pushNr
+			stmt->push(cyng::make_object(details), 128);	//	details
 
 			stmt->execute();
 		}
@@ -300,7 +301,7 @@ namespace node
 			//
 			//	operation log (81 81 C7 89 E1 FF)
 			//
-			cyng::table::make_meta_table_gen<1, 10>("TOpLog",
+			cyng::table::make_meta_table_gen<1, 11>("TOpLog",
 				{ "ROWID"		//	index - with SQLite this prevents creating a column
 								//	-- body
 				, "actTime"		//	actual time
@@ -313,6 +314,7 @@ namespace node
 				, "serverId"	//	server ID (meter)
 				, "target"		//	target name
 				, "pushNr"		//	operation number
+				, "details"		//	description (DATA_PUSH_DETAILS)
 				},
 				{ cyng::TC_UINT64		//	index 
 										//	-- body
@@ -326,7 +328,7 @@ namespace node
 				, cyng::TC_BUFFER		//	serverId
 				, cyng::TC_STRING		//	target
 				, cyng::TC_UINT8		//	push_nr
-
+				, cyng::TC_STRING		//	details
 				},
 				{ 0		//	index
 						//	-- body
@@ -340,6 +342,7 @@ namespace node
 				, 23	//	serverId
 				, 64	//	target
 				, 0		//	push_nr
+				, 128	//	string
 				}),
 
 			//

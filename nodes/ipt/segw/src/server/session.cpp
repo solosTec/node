@@ -22,7 +22,8 @@ namespace node
 {
 	session::session(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cache& db
+		, cache& cfg
+		, storage& db
 		, std::string const& account
 		, std::string const& pwd
 		, bool accept_all
@@ -38,6 +39,7 @@ namespace node
 		, router_(logger_
 			, true	//	server mode
 			, vm_
+			, cfg
 			, db
 			, account
 			, pwd
@@ -65,13 +67,14 @@ namespace node
 
 	cyng::object make_session(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cache& config_db
+		, cache& cfg
+		, storage& db
 		, std::string const& account
 		, std::string const& pwd
 		, bool accept_all
 		, cyng::buffer_t const& id)
 	{
-		return cyng::make_object<session>(mux, logger, config_db, account, pwd, accept_all, id);
+		return cyng::make_object<session>(mux, logger, cfg, db, account, pwd, accept_all, id);
 	}
 
 }

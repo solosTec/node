@@ -70,14 +70,13 @@ namespace node
 
 	std::uint8_t header_short::get_block_counter() const
 	{
-	  ucfg_fields cfg;
-	  cfg.raw_[0] = cfg_[0];
-	  cfg.raw_[1] = cfg_[1];
-
 	  switch (get_mode()) {
-	    case 5:	return cfg.cfg_field_5_.number_;
-	    case 7: return cfg.cfg_field_7_.number_;
-	    case 13: return cfg.cfg_field_D_.number_;
+	  case 0:
+	  case 5:	
+	  case 7:	
+		  return (cfg_[0] & 0xF0) >> 4;
+	  case 13: 
+		  return cfg_[0];
 
 	    default:
 	      break;
@@ -129,8 +128,8 @@ namespace node
 	{
 		std::size_t counter{ 0 };
 		if (!data_.empty()) {
-			while (data_.back() == 0x2F) {
-				data_.pop_back();
+			while (data_.front() == 0x2F) {
+				data_.erase(data_.begin());
 				++counter;
 			}
 		}

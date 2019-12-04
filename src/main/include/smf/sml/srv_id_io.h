@@ -22,6 +22,12 @@ namespace node
 	{
 		/**
 		 * example: 02-e61e-03197715-3c-07
+		 * format is:
+		 * 1 byte: Kennung (0x01 == wireless or 0x02 == wires)
+		 * 2 bytes: manufacturer code
+		 * 4 bytes: ident code
+		 * 1 byte: version
+		 * 1 byte: medium
 		 */
 		bool is_mbus(std::string const&);
 
@@ -95,10 +101,14 @@ namespace node
 		std::uint16_t get_manufacturer_code(cyng::buffer_t const&);
 
 		/**
-		 * Extract mdium code from M-Bus format.
+		 * Extract medium code from M-Bus format.
 		 */
 		std::uint8_t get_medium_code(cyng::buffer_t const&);
 
+		/**
+		 * Extract version from M-Bus format.
+		 */
+		std::uint8_t get_version(cyng::buffer_t const&);
 
 		/**
 		 * Build a server ID for a gateway by inserting 0x05 in front 

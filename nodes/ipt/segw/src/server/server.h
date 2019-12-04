@@ -14,12 +14,14 @@
 namespace node
 {
 	class cache;
+	class storage;
 	class server
 	{
 	public:
 		server(cyng::async::mux&
 			, cyng::logging::log_ptr logger
-			, cache& c
+			, cache& cfg
+			, storage& db
 			, std::string account
 			, std::string pwd
 			, bool accept_all
@@ -57,6 +59,10 @@ namespace node
 		 */
 		cache& cache_;
 
+		/**
+		 * SQL database
+		 */
+		storage& storage_;
 
 		/**
 		 * credentials

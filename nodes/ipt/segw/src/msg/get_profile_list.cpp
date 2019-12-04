@@ -6,8 +6,9 @@
  */
 
 #include "get_profile_list.h"
-#include "../cache.h"
 #include "../segw.h"
+#include "../cache.h"
+#include "../storage.h"
 
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/obis_io.h>
@@ -26,10 +27,12 @@ namespace node
 
 		get_profile_list::get_profile_list(cyng::logging::log_ptr logger
 			, res_generator& sml_gen
-			, cache& cfg)
+			, cache& cfg
+			, storage& db)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
+			, storage_(db)
 		{
 		}
 
@@ -92,13 +95,12 @@ namespace node
 			//
 			//	send operation logs - 81 81 C7 89 E1 FF 
 			//
-
 			cyng::buffer_t tmp;
-			cache_.loop("op.log", [&](cyng::table::record const& rec) {
-
+			storage_.loop("TOpLog", [&](cyng::table::record const& rec)->bool {
 
 				obis peer = cyng::value_cast(rec["peer"], tmp);
 				auto server = cyng::value_cast(rec["serverId"], tmp);
+				auto idx = cyng::value_cast<std::uint64_t>(rec["ROWID"], 0u);
 
 				sml_gen_.get_profile_op_log(trx
 					, client_id
@@ -111,7 +113,9 @@ namespace node
 					, cyng::value_cast(rec["utc"], std::chrono::system_clock::now())
 					, server
 					, cyng::value_cast<std::string>(rec["target"], "")
-					, cyng::value_cast<std::uint8_t>(rec["pushNr"], 1u));
+					, cyng::value_cast<std::uint8_t>(rec["pushNr"], 1u)
+					, cyng::value_cast<std::string>(rec["details"], "")
+				);
 
 				return true;	//	continue
 			});

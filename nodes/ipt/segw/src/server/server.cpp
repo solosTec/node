@@ -16,14 +16,16 @@ namespace node
 {
 	server::server(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cache& c
+		, cache& cfg
+		, storage& db
 		, std::string account
 		, std::string pwd
 		, bool accept_all
 		, cyng::buffer_t const& id)
 	: mux_(mux)
 		, logger_(logger)
-		, cache_(c)
+		, cache_(cfg)
+		, storage_(db)
 		, account_(account)
 		, pwd_(pwd)
 		, accept_all_(accept_all)
@@ -92,6 +94,7 @@ namespace node
 					, mux_
 					, logger_
 					, cache_
+					, storage_
 					, account_
 					, pwd_
 					, accept_all_

@@ -7,17 +7,16 @@
 
 #include "network.h"
 #include "../cache.h"
+#include "../storage.h"
 #include "../segw.h"
- //#include "wireless_lmn.h"
-//#include "wired_lmn.h"
-//#include "gpio.h"
+#include "../cfg_ipt.h"
 
 #include <smf/serial/baudrate.h>
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/generator.h>
 #include <smf/sml/protocol/serializer.h>
-//#include <smf/shared/db_cfg.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/event.h>
 
 #include <cyng/factory/set_factory.h>
 //#include <cyng/async/task/task_builder.hpp>
@@ -38,6 +37,7 @@ namespace node
 		network::network(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
 			, cache& cfg
+			, storage& db
 			, std::string account
 			, std::string pwd
 			, bool accept_all
@@ -51,6 +51,7 @@ namespace node
 			, base_(*btp)
 			, logger_(logger)
 			, cache_(cfg)
+			, storage_(db)
 			, parser_([this](cyng::vector_t&& prg) {
 				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
 #ifdef _DEBUG
@@ -62,6 +63,7 @@ namespace node
 				, false	//	client mode
 				, vm_
 				, cfg
+				, db
 				, account
 				, pwd
 				, accept_all
@@ -126,26 +128,32 @@ namespace node
 
 		cyng::continuation network::run()
 		{
+
+			//
+			//	get IP-T configuration
+			//
+			cfg_ipt ipt(cache_);
+
 			if (is_online())
 			{
 				//
 				//	re/start monitor
 				//
-				base_.suspend(cache_.get_ipt_tcp_wait_to_reconnect());
+				base_.suspend(ipt.get_ipt_tcp_wait_to_reconnect());
 			}
 			else
 			{
 				//
 				//	reset parser and serializer
 				//
-				auto const sk = cache_.get_ipt_sk();
+				auto const sk = ipt.get_ipt_sk();
 				vm_.async_run({ cyng::generate_invoke("ipt.reset.parser", sk)
 					, cyng::generate_invoke("ipt.reset.serializer", sk) });
 
 				//
 				//	login request
 				//
-				req_login(cache_.get_ipt_master());
+				req_login(ipt.get_ipt_master());
 			}
 
 			return cyng::continuation::TASK_CONTINUE;
@@ -179,8 +187,19 @@ namespace node
 			//
 			//	op log entry
 			//
-			//	ToDo: re-implement
-				//exec_.ipt_access(true, config_.get_address());
+			auto const sw = cache_.get_status_word();
+			auto srv = cache_.get_srv_id();
+
+			//LOG_CODE_61 = 0x4970000A,	//	IP-T - Zugang erfolgt
+
+			storage_.generate_op_log(sw
+				, sml::LOG_CODE_61	//	0x4970000A - IP-T - Zugang erfolgt
+				, sml::OBIS_CODE_PEER_ADDRESS_WANGSM	//	source is WANGSM (or LOG_SOURCE_ETH == 81, 04, 00, 00, 00, FF)
+				, srv	//	server ID
+				, ""	//	target
+				, 0		//	nr
+				, "IP-T login");	//	description
+
 
 			//
 			//	signal LED
@@ -201,15 +220,23 @@ namespace node
 			//
 			//	op log entry
 			//
-			//	ToDo: re-implement
-				//exec_.ipt_access(false, config_.get_address());
+			auto const sw = cache_.get_status_word();
+			auto srv = cache_.get_srv_id();
+
+			//LOG_CODE_65 = 0x4970000E,	//	IP-T - Zugang verloren, Verbindung unerwartet abgebrochen
+			storage_.generate_op_log(sw
+				, sml::LOG_CODE_65	//	0x4970000A - IP-T - Zugang erfolgt
+				, sml::OBIS_CODE_PEER_ADDRESS_WANGSM	//	source is WANGSM (or LOG_SOURCE_ETH == 81, 04, 00, 00, 00, FF)
+				, srv	//	server ID
+				, ""	//	target
+				, 0		//	nr
+				, "IP-T login");	//	description
 
 			//
 			//	signal LED
 			//
 			if (cyng::async::NO_TASK != task_gpio_) {
- 				//ToDo: re-implement
-				//base_.mux_.post(task_gpio_, 0, cyng::tuple_factory(false));
+				base_.mux_.post(task_gpio_, 0, cyng::tuple_factory(false));
 			}
 
 			//
@@ -359,9 +386,14 @@ namespace node
 		void network::reconfigure_impl()
 		{
 			//
+			//	get IP-T configuration
+			//
+			cfg_ipt ipt(cache_);
+
+			//
 			//	switch to other master
 			//
-			auto const rec = cache_.switch_ipt_redundancy();
+			auto const rec = ipt.switch_ipt_redundancy();
 
 			CYNG_LOG_INFO(logger_, "switch to redundancy ["
 				<< rec.host_

@@ -365,11 +365,20 @@ namespace node
 
 		std::uint8_t get_medium_code(cyng::buffer_t const& buffer)
 		{
-			if (is_mbus_wired(buffer) || is_mbus_radio(buffer)) {
-				return static_cast<std::uint8_t>(buffer[8]);
-			}
-			return 0u;
+			return (buffer.size() == 9)
+				? static_cast<std::uint8_t>(buffer.at(8))
+				: 0u
+				;
 		}
+
+		std::uint8_t get_version(cyng::buffer_t const& buffer)
+		{
+			return (buffer.size() == 9)
+				? static_cast<std::uint8_t>(buffer.at(7))
+				: 0u
+				;
+		}
+
 
 		cyng::buffer_t to_gateway_srv_id(cyng::mac48 mac)
 		{

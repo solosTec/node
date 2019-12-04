@@ -10,6 +10,7 @@
 #include <smf/mbus/bcd.h>
 
 #include <cyng/factory.h>
+#include <cyng/io/serializer.h>
 
 #include <iostream>
 #include <boost/assert.hpp>
@@ -71,6 +72,7 @@ namespace node
 			state_ = STATE_DIF_;
 			date_flag_ = false;
 			date_time_flag_ = false;
+			scaler_ = 0;
 
 			for( auto pos = data.begin() + offset; pos < data.end(); ++pos) {
 
@@ -118,7 +120,19 @@ namespace node
 					break;
 				}
 
-				if (STATE_COMPLETE == state_)	return offset;
+				if (STATE_COMPLETE == state_) {
+#ifdef _DEBUG
+					std::cout
+						<< mbus::get_unit_name(unit_)
+						<< ", "
+						<< cyng::io::to_str(value_)
+						<< ", scaler: "
+						<< +scaler_
+						<< std::endl
+						;
+#endif
+					return offset;
+				}
 			}
 		}
 
@@ -212,8 +226,9 @@ namespace node
 		}
 		else if ((val & 0x78) == 0x10) {
 			//	b0001 0000 = 0x10
-			//	 E001 0nnn
-			scaler_ = (val & 0x07) - 6;
+			//	E001 0nnn
+			//	Volume a 1 o(nnn-6) m3 
+			scaler_ = static_cast<std::int8_t>(val & 0x07) - 6;
 			unit_ = mbus::CUBIC_METRE;
 		}
 		else if ((val & 0x78) == 0x18) {
@@ -309,7 +324,7 @@ namespace node
 		}
 		else if ((val & 0x7E) == 0x6C) {
 			//	b0111 1110
-			//	b0110 1100 = 0x6C
+			//	b0110 1100 = 0x6C - Date (actual or associated data field =0010b, type G with a storage number / function)
 			//	 E110 110n (Time Point)
 			date_flag_ = ((val & 0x01) == 0);
 			date_time_flag_ = ((val & 0x01) == 1);
@@ -335,6 +350,7 @@ namespace node
 		else if ((val & 0x7C) == 0x74) {
 			//	b0111 0100 = 0x70
 			//	 E111 01nn (Actuality Duration)
+			//	Time since last radio telegram reception
 			decode_time_unit(val & 0x03);
 		}
 		else if (val == 0x78) {
@@ -355,6 +371,7 @@ namespace node
 		}
 		else if (val == 0x7D) {
 			//	E111 1101 Extension of VIF-codes (true VIF is given in the first VIFE)
+			//	Multiplicative correction factor for value (not unit)
 			return STATE_VIF_EXT_7D;
 		}
 		else if (val == 0x7F) {

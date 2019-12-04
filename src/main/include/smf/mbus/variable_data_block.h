@@ -22,8 +22,16 @@ namespace node
 	 * Each variable data block has three elements:
 	 * <ol>
 	 * <li>data information block (DIB)</li>
+	 *	<ol>
+	 *	<li>data information field (DIF) (1 byte)</li>
+	 *	<li>extended (DIFE) (0 .. 10 byte)</li>
+	 *	</ol>
 	 * <li>value information block (VIB)</li>
-	 * <li>data field (DF)</li>
+	 *	<ol>
+	 *	<li>value information field (VIF) (1 byte)</li>
+	 *	<li>extended (VIFE) (0 .. 10 byte)</li>
+	 *	</ol>
+	 * <li>data field (DF) (0 ... N byte)</li>
 	 * </ol>
 	 */
 	class vdb_reader
@@ -98,7 +106,6 @@ namespace node
 		bool date_flag_;
 		bool date_time_flag_;
 		cyng::object value_;
-		//sml::obis::data_type	code_;
 
 		//
 		//	temporary values

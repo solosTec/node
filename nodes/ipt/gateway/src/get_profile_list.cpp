@@ -111,7 +111,8 @@ namespace node
 						, cyng::value_cast(rec["utc"], std::chrono::system_clock::now())
 						, server
 						, cyng::value_cast<std::string>(rec["target"], "")
-						, cyng::value_cast<std::uint8_t>(rec["pushNr"], 1u));
+						, cyng::value_cast<std::uint8_t>(rec["pushNr"], 1u)
+						, "");
 
 					return true;	//	continue
 				});

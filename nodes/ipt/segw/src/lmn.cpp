@@ -40,6 +40,7 @@ namespace node
 		, logger_(logger)
 		, vm_(mux.get_io_service(), tag)
 		, bridge_(b)
+		, decoder_wmbus_(logger, b.cache_, tag)
 	{
 		cyng::register_logger(logger_, vm_);
 		vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
@@ -244,9 +245,18 @@ namespace node
 			<< std::hex
 			<< +std::get<5>(tpl));
 		CYNG_LOG_DEBUG(logger_, ctx.get_name()
-			<< " - data "
+			<< " - data: "
 			<< cyng::io::to_hex(std::get<6>(tpl)));
 
+		if (boost::algorithm::equals(sml::from_server_id(server_id), "01-e61e-79426800-02-0e")) {
+
+			//
+			//	gas meter
+			//
+			CYNG_LOG_DEBUG(logger_, ctx.get_name()
+				<< "\n\n GAS METER 01-e61e-79426800-02-0e\n\n");
+		}
+		
 		//
 		//	decoding depends on frame type and AES key from
 		//	device table
@@ -254,14 +264,14 @@ namespace node
 		switch (std::get<5>(tpl)) {
 		case node::mbus::FIELD_CI_HEADER_LONG:	//	0x72
 			//	e.g. HYD
-			//read_frame_header_long(ctx, server_id, payload);
+			decoder_wmbus_.read_frame_header_long(server_id, payload);
 			break;
 		case node::mbus::FIELD_CI_HEADER_SHORT:	//	0x7A
-			//read_frame_header_short(ctx, server_id, payload);
+			decoder_wmbus_.read_frame_header_short(server_id, payload);
 			break;
 		case node::mbus::FIELD_CI_RES_SHORT_SML:	//	0x7F
 			//	e.g. ED300L
-			//read_frame_header_short_sml(ctx, server_id, payload);
+			decoder_wmbus_.read_frame_header_short_sml(server_id, payload);
 			break;
 		default:
 		{
@@ -289,40 +299,18 @@ namespace node
 		//
 		// update device table
 		//
-		update_device_table(std::get<0>(tpl)
+		if (bridge_.cache_.update_device_table(std::get<0>(tpl)	
 			, std::get<1>(tpl)
+			, 0u	//	status
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
-			, std::get<5>(tpl)
 			, cyng::crypto::aes_128_key{}
-		, ctx.tag());
+			, ctx.tag())) {
 
+			CYNG_LOG_INFO(logger_, "new device: "
+				<< sml::from_server_id(server_id));
+		}
 	}
 
-	void lmn::update_device_table(cyng::buffer_t const& dev_id
-		, std::string const& manufacturer
-		, std::uint8_t version
-		, std::uint8_t media
-		, std::uint8_t frame_type
-		, cyng::crypto::aes_128_key aes_key
-		, boost::uuids::uuid tag)
-	{
-		bridge_.cache_.write_table("_DeviceMBUS", [&](cyng::store::table* tbl) {
-			tbl->insert(cyng::table::key_generator(dev_id)
-				, cyng::table::data_generator(std::chrono::system_clock::now()
-					, "+++"	//	class
-					, false	//	active
-					, manufacturer	//	description
-					, 0ull	//	status
-					, cyng::buffer_t{ 0, 0 }	//	mask
-					, 26000ul	//	interval
-					, cyng::make_buffer({})	//	pubKey
-					, aes_key	//	 AES key 
-					, ""	//	user
-					, "")	//	password
-				, 1	//	generation
-				, tag);
-		});
-	}
 }
 

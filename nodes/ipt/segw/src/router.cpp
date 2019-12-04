@@ -7,6 +7,7 @@
 
 #include "router.h"
 #include "cache.h"
+#include "storage.h"
 
 #include <smf/sml/protocol/reader.h>
 #include <smf/sml/obis_db.h>
@@ -25,22 +26,24 @@ namespace node
 	router::router(cyng::logging::log_ptr logger
 		, bool const server_mode
 		, cyng::controller& vm
-		, cache& db
+		, cache& cfg
+		, storage& db
 		, std::string const& account
 		, std::string const& pwd
 		, bool accept_all
 		, cyng::buffer_t const& id)
 	: logger_(logger)
 		, server_mode_(server_mode)
-		, cache_(db)
+		, cache_(cfg)
+		//, db_(db)
 		, sml_gen_()
 		, account_(account)
 		, pwd_(pwd)
 		, accept_all_(accept_all)
 		, server_id_(id)
-		, get_proc_parameter_(logger, sml_gen_, db, id)
-		, set_proc_parameter_(logger, sml_gen_, db, id)
-		, get_profile_list_(logger, sml_gen_, db)
+		, get_proc_parameter_(logger, sml_gen_, cfg, db, id)
+		, set_proc_parameter_(logger, sml_gen_, cfg, id)
+		, get_profile_list_(logger, sml_gen_, cfg, db)
 	{
 		//
 		//	SML transport

@@ -19,13 +19,15 @@ namespace node
 {
 	class connection;
 	class cache;
+	class storage;
 	class session
 	{
 		friend class connection;
 	public:
 		session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, cache& config_db
+			, cache& cfg
+			, storage& db
 			, std::string const& account
 			, std::string const& pwd
 			, bool accept_all
@@ -59,7 +61,8 @@ namespace node
 
 	cyng::object make_session(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cache& config_db
+		, cache& cfg
+		, storage& db
 		, std::string const& account
 		, std::string const& pwd
 		, bool accept_all

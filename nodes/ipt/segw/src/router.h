@@ -38,6 +38,7 @@ namespace node
 			, bool const server_mode
 			, cyng::controller& vm
 			, cache&
+			, storage& db
 			, std::string const& account
 			, std::string const& pwd
 			, bool accept_all

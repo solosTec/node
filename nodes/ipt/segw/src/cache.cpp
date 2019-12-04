@@ -9,6 +9,7 @@
 #include "segw.h"
 #include <smf/sml/obis_db.h>
 #include <smf/ipt/scramble_key_format.h>
+#include <smf/sml/srv_id_io.h>
 
 #include <cyng/table/meta.hpp>
 
@@ -60,12 +61,19 @@ namespace node
 			//
 			set_config_value(tbl, "status.word", word);
 
-		}, cyng::store::write_access("_Cfg"));
+			}, cyng::store::write_access("_Cfg"));
 	}
 
 	std::uint64_t cache::get_status_word()
 	{
 		return get_cfg("status.word", sml::status::get_initial_value());
+	}
+
+	cyng::buffer_t cache::get_srv_id()
+	{
+		//	81 81 C7 82 04 FF
+		auto mac = get_cfg(sml::OBIS_CODE_SERVER_ID.to_str(), cyng::generate_random_mac48());
+		return sml::to_gateway_srv_id(mac);
 	}
 
 	bool cache::merge_cfg(std::string name, cyng::object&& val)
@@ -78,7 +86,7 @@ namespace node
 				, 1u	//	only needed for insert operations
 				, tag_);
 
-		}, cyng::store::write_access("_Cfg"));
+			}, cyng::store::write_access("_Cfg"));
 
 		return r;
 	}
@@ -87,21 +95,21 @@ namespace node
 	{
 		db_.access([f](cyng::store::table const* tbl) {
 			f(tbl);
-		}, cyng::store::read_access(name));
+			}, cyng::store::read_access(name));
 	}
 
 	void cache::read_tables(std::string const& t1, std::string const& t2, std::function<void(cyng::store::table const*, cyng::store::table const*)> f)
 	{
 		db_.access([f](cyng::store::table const* tbl1, cyng::store::table const* tbl2) {
 			f(tbl1, tbl2);
-		}, cyng::store::read_access(t1), cyng::store::read_access(t2));
+			}, cyng::store::read_access(t1), cyng::store::read_access(t2));
 	}
 
 	void cache::write_table(std::string const& name, std::function<void(cyng::store::table*)> f)
 	{
 		db_.access([f](cyng::store::table* tbl) {
 			f(tbl);
-		}, cyng::store::write_access(name));
+			}, cyng::store::write_access(name));
 	}
 
 	void cache::loop(std::string const& name, std::function<bool(cyng::table::record const&)> f)
@@ -109,143 +117,88 @@ namespace node
 		db_.access([f](cyng::store::table const* tbl) {
 			tbl->loop([f](cyng::table::record const& rec)->bool {
 				return f(rec);
+				});
+			}, cyng::store::read_access(name));
+	}
+
+
+	cyng::crypto::aes_128_key cache::get_aes_key(cyng::buffer_t srv)
+	{
+		cyng::crypto::aes_128_key key;
+		read_table("_DeviceMBUS", [&](cyng::store::table const* tbl) -> void {
+			auto const obj = tbl->lookup(cyng::table::key_generator(srv), "aes");
+			if (obj.is_null()) {
+
+				auto const id = sml::from_server_id(srv);
+
+				//
+				//	preconfigured values
+				//
+				if (boost::algorithm::equals(id, "01-e61e-29436587-bf-03") ||
+					boost::algorithm::equals(id, "01-e61e-13090016-3c-07")) {
+					key.key_ = { 0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8, 0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8 };
+				}
+				else if (id == "01-a815-74314504-01-02") {
+					key.key_ = { 0x23, 0xA8, 0x4B, 0x07, 0xEB, 0xCB, 0xAF, 0x94, 0x88, 0x95, 0xDF, 0x0E, 0x91, 0x33, 0x52, 0x0D };
+				}
+				else if (boost::algorithm::equals(id, "01-e61e-79426800-02-0e") ||
+					boost::algorithm::equals(id, "01-e61e-57140621-36-03")) {
+					//	6140B8C066EDDE3773EDF7F8007A45AB
+					key.key_ = { 0x61, 0x40, 0xB8, 0xC0, 0x66, 0xED, 0xDE, 0x37, 0x73, 0xED, 0xF7, 0xF8, 0x00, 0x7A, 0x45, 0xAB };
+				}
+			}
+			else {
+				key = cyng::value_cast(obj, key);
+			}
 			});
-		}, cyng::store::read_access(name));
+
+		return key;
 	}
 
-	std::string cache::get_ipt_host(std::uint8_t idx)
-	{
-		return get_cfg<std::string>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
-			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
-			, sml::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) }), "");
-	}
-
-	std::uint16_t cache::get_ipt_port_target(std::uint8_t idx)
-	{
-		try {
-			auto const service = get_cfg<std::string>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
-				, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
-				, sml::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx) }), "26862");
-			return static_cast<std::uint16_t>(std::stoul(service));
-		}
-		catch (std::exception const&) {
-		}
-		return 26862u;
-	}
-
-	std::uint16_t cache::get_ipt_port_source(std::uint8_t idx)
-	{
-		return get_cfg<std::uint16_t>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
-			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
-			, sml::make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx) }), 0u);
-	}
-
-	std::string cache::get_ipt_user(std::uint8_t idx)
-	{
-		return get_cfg<std::string>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
-			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
-			, sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx) }), "");
-	}
-
-	std::string cache::get_ipt_pwd(std::uint8_t idx)
-	{
-		return get_cfg<std::string>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
-			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
-			, sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx) }), "");
-	}
-
-	bool cache::is_ipt_scrambled(std::uint8_t idx)
-	{
-		return get_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
-			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx) }
-			, "scrambled"), false);
-	}
-
-	ipt::scramble_key cache::get_ipt_sk(std::uint8_t idx)
-	{
-		auto const s = get_cfg<std::string>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
-			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx) }
-			, "sk"), "0102030405060708090001020304050607080900010203040506070809000001");
-
-		return ipt::from_string(s);
-	}
-
-	ipt::scramble_key cache::get_ipt_sk()
-	{
-		return get_ipt_sk(get_ipt_master_index() + 1);
-	}
-
-	std::chrono::minutes cache::get_ipt_tcp_wait_to_reconnect()
-	{
-		return std::chrono::minutes(get_cfg<std::uint8_t>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
-			, sml::OBIS_TCP_WAIT_TO_RECONNECT }), 1u));
-	}
-
-	std::uint32_t cache::get_ipt_tcp_connect_retries()
-	{
-		return get_cfg<std::uint32_t>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
-			, sml::OBIS_TCP_CONNECT_RETRIES }), 3u);
-	}
-
-	bool cache::has_ipt_ssl()
-	{
-		return get_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
-			, sml::OBIS_HAS_SSL_CONFIG }), false);
-	}
-
-	std::uint8_t cache::get_ipt_master_index()
-	{
-		return get_cfg<std::uint8_t>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM }, "master"), 0u);
-	}
-
-	ipt::master_record cache::switch_ipt_redundancy()
+	bool cache::update_device_table(cyng::buffer_t dev_id
+		, std::string manufacturer
+		, std::uint32_t status
+		, std::uint8_t version
+		, std::uint8_t media
+		//, std::uint8_t frame_type
+		, cyng::crypto::aes_128_key aes_key
+		, boost::uuids::uuid tag)
 	{
 		//
-		//	This reambles the logic from the class ipt::redundancy
+		//	true if device was inserted (new device)
 		//
-		auto const idx = (get_ipt_master_index() == 0)
-			? 1
-			: 0;
+		bool r = false;
+		write_table("_DeviceMBUS", [&](cyng::store::table* tbl) {
 
-		//
-		//	write back
-		//
-		set_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM }, "master"), idx);
+			auto const key = cyng::table::key_generator(dev_id);
+			auto const now = std::chrono::system_clock::now();
 
-		//
-		//	return new master config record
-		//
-		return get_ipt_cfg(idx + 1);
-	}
+			r = tbl->insert(key
+				, cyng::table::data_generator(now
+					, "+++"	//	class
+					, false	//	active
+					, manufacturer	//	description
+					, status	//	status
+					, cyng::buffer_t{ 0, 0 }	//	mask
+					, 26000ul	//	interval
+					, cyng::make_buffer({})	//	pubKey
+					, aes_key	//	 AES key 
+					, ""	//	user
+					, "")	//	password
+				, 1	//	generation
+				, tag);
 
-	ipt::master_record cache::get_ipt_cfg(std::uint8_t idx)
-	{
-		//81490D0700FF:81490D070001:814917070001|1|127.0.0.1|127.0.0.1|15
-		//81490D0700FF:81490D070001:81491A070001|1|26862|26862|15
-		//81490D0700FF:81490D070001:8149633C0101|1|gateway|gateway|15
-		//81490D0700FF:81490D070001:8149633C0201|1|gateway|gateway|15
-		//81490D0700FF:81490D070001:scrambled|1|true|true|1
-		//81490D0700FF:81490D070001:sk|1|0102030405060708090001020304050607080900010203040506070809000001|0102030405060708090001020304050607080900010203040506070809000001|15
-		
+			//
+			//	update lastSeen column
+			//
+			if (!r) {
+				tbl->modify(key, cyng::param_factory("lastSeen", now), tag);
+			}
 
-		return ipt::master_record(get_ipt_host(idx)
-			, std::to_string(get_ipt_port_target(idx))
-			, get_ipt_user(idx)
-			, get_ipt_pwd(idx)
-			, get_ipt_sk(idx)
-			, is_ipt_scrambled(idx)
-			, get_ipt_tcp_wait_to_reconnect().count());
-	}
+			});
 
-	ipt::redundancy cache::get_ipt_redundancy()
-	{
-		ipt::master_config_t const vec{ get_ipt_cfg(1) , get_ipt_cfg(2) };		
-		return ipt::redundancy(vec, get_ipt_master_index());
-	}
 
-	ipt::master_record cache::get_ipt_master()
-	{
-		return get_ipt_cfg(get_ipt_master_index() + 1);
+		return r;
 	}
 
 	//
@@ -300,7 +253,7 @@ namespace node
 			, cyng::TC_BOOL			//	active
 			, cyng::TC_STRING		//	manufacturer/description
 
-			, cyng::TC_BUFFER		//	status (81 00 60 05 00 00)
+			, cyng::TC_UINT32		//	status (81 00 60 05 00 00)
 			, cyng::TC_BUFFER		//	bit mask (81 81 C7 86 01 FF)
 			, cyng::TC_UINT32		//	interval (milliseconds)
 			, cyng::TC_BUFFER		//	pubKey
@@ -345,5 +298,4 @@ namespace node
 		}
 		return cyng::make_object();
 	}
-
 }

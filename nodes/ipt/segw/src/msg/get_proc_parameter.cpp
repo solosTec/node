@@ -6,8 +6,9 @@
  */
 
 #include "get_proc_parameter.h"
-#include "../cache.h"
 #include "../segw.h"
+#include "../cache.h"
+#include "../storage.h"
 
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/obis_io.h>
@@ -34,10 +35,12 @@ namespace node
 		get_proc_parameter::get_proc_parameter(cyng::logging::log_ptr logger
 			, res_generator& sml_gen
 			, cache& cfg
+			, storage& db
 			, cyng::buffer_t const& id)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
+			, storage_(db)
 			, server_id_(id)
 			, config_ipt_(logger, sml_gen, cfg, id)
 		{}
@@ -449,7 +452,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "get_used_virtual_memory " << cyng::sys::get_used_virtual_memory());
 			CYNG_LOG_INFO(logger_, "get_total_virtual_memory " << cyng::sys::get_total_virtual_memory());
 
-			//	m2m::OBIS_CODE_ROOT_MEMORY_USAGE
+			//	OBIS_CODE_ROOT_MEMORY_USAGE
 			const std::uint8_t mirror = cyng::sys::get_used_virtual_memory_in_percent()
 				, tmp = cyng::sys::get_used_physical_memory_in_percent();
 
@@ -479,7 +482,7 @@ namespace node
 			//
 
 			cyng::buffer_t tmp;
-			cache_.loop("mbus-devices", [&](cyng::table::record const& rec)->bool {
+			cache_.loop("_DeviceMBUS", [&](cyng::table::record const& rec)->bool {
 				//
 				//	set server ID
 				//
@@ -547,7 +550,7 @@ namespace node
 			//	list all active M-Bus devices
 			//
 			cyng::buffer_t tmp;
-			cache_.loop("mbus-devices", [&](cyng::table::record const& rec) {
+			cache_.loop("_DeviceMBUS", [&](cyng::table::record const& rec) {
 
 				//
 				//	set server ID
@@ -1039,8 +1042,10 @@ namespace node
 
 			//
 			//	81 81 C7 8A 01 FF - service push
+			//	read from SQLite database table "TOpLog"
 			//
-			cache_.loop("push.ops", [&](cyng::table::record const& rec) {
+			/*
+			storage_.loop("TPushOps", [&](cyng::table::record const& rec)->bool {
 
 				cyng::buffer_t id;
 				id = cyng::value_cast(rec["serverID"], id);
@@ -1103,7 +1108,7 @@ namespace node
 
 				return true;	//	continue
 			});
-
+			*/
 
 			//
 			//	append to message queue

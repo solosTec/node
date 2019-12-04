@@ -19,6 +19,7 @@
 namespace node
 {
 	class cache;
+	class storage;
 	namespace sml
 	{
 		//
@@ -34,7 +35,8 @@ namespace node
 		public:
 			get_profile_list(cyng::logging::log_ptr
 				, res_generator& sml_gen
-				, cache& cfg);
+				, cache& cfg
+				, storage& db);
 
 			void generate_response(obis code
 				, std::string		//	[0] trx
@@ -119,6 +121,11 @@ namespace node
 			 * configuration db
 			 */
 			cache& cache_;
+
+			/**
+			 * SQL database
+			 */
+			storage& storage_;
 
 		};
 	}	//	sml

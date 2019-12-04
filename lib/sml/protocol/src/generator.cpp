@@ -753,9 +753,10 @@ namespace node
 			, std::uint32_t evt
 			, obis peer_address
 			, std::chrono::system_clock::time_point tp
-			, cyng::buffer_t const& server_id
-			, std::string const& target
-			, std::uint8_t push_nr)
+			, cyng::buffer_t server_id
+			, std::string target
+			, std::uint8_t push_nr
+			, std::string details)
 		{
 			//	seconds since epoch
 			std::uint64_t sec = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
@@ -834,7 +835,12 @@ namespace node
 						//  62FF                                    unit: 255
 						//  5200                                    scaler: 0
 						//  6201                                    value: 1
-						period_entry(OBIS_PUSH_OPERATIONS, 0xFF, 0, cyng::make_object(push_nr))
+						period_entry(OBIS_PUSH_OPERATIONS, 0xFF, 0, cyng::make_object(push_nr)),
+
+						//	81 81 C7 81 23 FF
+						//  62FF                                    unit: 255
+						//  5200                                    scaler: 0
+						period_entry(OBIS_DATA_PUSH_DETAILS, 0xFF, 0, cyng::make_object(details))
 
 				})));
 

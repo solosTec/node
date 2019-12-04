@@ -1,8 +1,9 @@
 #ifndef NODE_LMN_H
 #define NODE_LMN_H
 
+#include "decoder.h"
 #include <cyng/async/mux.h>
-#include <cyng/log.h>
+//#include <cyng/log.h>
 #include <cyng/vm/controller.h>
 
 #include <boost/uuid/uuid.hpp>
@@ -35,20 +36,22 @@ namespace node
 		/**
 		 * Lookup "_DeviceMBUS" table and insert device
 		 * if not found
+		 * @return true if device was inserted (new device)
 		 */
-		void update_device_table(cyng::buffer_t const& dev_id
-			, std::string const& manufacturer
-			, std::uint8_t version
-			, std::uint8_t media
-			, std::uint8_t frame_type
-			, cyng::crypto::aes_128_key
-			, boost::uuids::uuid tag);
+		//bool update_device_table(cyng::buffer_t const& dev_id
+		//	, std::string const& manufacturer
+		//	, std::uint8_t version
+		//	, std::uint8_t media
+		//	, std::uint8_t frame_type
+		//	, cyng::crypto::aes_128_key
+		//	, boost::uuids::uuid tag);
 
 	private:
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
 		cyng::controller vm_;
 		bridge& bridge_;
+		decoder_wireless_mbus decoder_wmbus_;
 	};
 }
 #endif

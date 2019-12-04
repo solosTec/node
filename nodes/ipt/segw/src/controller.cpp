@@ -36,6 +36,7 @@ namespace node
 	void join_network(cyng::async::mux&
 		, cyng::logging::log_ptr logger
 		, cache& c
+		, storage& db
 		, std::string account
 		, std::string pwd
 		, bool accept_all
@@ -86,6 +87,11 @@ namespace node
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
 				, cyng::param_factory("log-pushdata", false)	//	log file for each channel
 				, cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
+#if BOOST_OS_WINDOWS
+				, cyng::param_factory("gpio-enabled", false)
+#else
+				, cyng::param_factory("gpio-enabled", true)
+#endif
 				, cyng::param_factory("gpio-path", "/sys/class/gpio")	//	accept only the specified MAC id
 				, cyng::param_factory("gpio-list", cyng::vector_factory({46, 47, 50, 53}))
 				, cyng::param_factory("obis-log", 15)	//	cycle time in minutes
@@ -114,6 +120,7 @@ namespace node
 					cyng::param_factory("model", "virtual.gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
 					cyng::param_factory("serial", sn),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
 					cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF - OBIS_CODE_DEVICE_CLASS) "2D 2D 2D"
+					//	configure server ID (MAC address)
 					cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ..., 81 81 C7 82 04 FF - OBIS_CODE_SERVER_ID)
 				))
 
@@ -345,6 +352,7 @@ namespace node
 		join_network(mux
 			, logger
 			, cm
+			, store
 			, account
 			, pwd
 			, accept_all
@@ -357,6 +365,7 @@ namespace node
 		server srv(mux
 			, logger
 			, cm
+			, store
 			, account
 			, pwd
 			, accept_all
@@ -434,7 +443,8 @@ namespace node
 
 	void join_network(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cache& db
+		, cache& c
+		, storage& db
 		, std::string account
 		, std::string pwd
 		, bool accept_all
@@ -444,6 +454,7 @@ namespace node
 		cyng::async::start_task_delayed<ipt::network>(mux
 			, std::chrono::seconds(1)
 			, logger
+			, c
 			, db
 			, account
 			, pwd

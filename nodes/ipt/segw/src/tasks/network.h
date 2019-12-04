@@ -9,10 +9,7 @@
 #define NODE_SEGW_TASK_NETWORK_H
 
 #include <smf/ipt/bus.h>
-//#include <smf/ipt/config.h>
 #include <smf/sml/protocol/parser.h>
-//#include "../core.h"
-//#include "../executor.h"
 #include "../router.h"
 
 #include <cyng/log.h>
@@ -31,9 +28,9 @@ namespace node
 
 		public:
 			network(cyng::async::base_task* btp
-				//, cyng::async::mux&
 				, cyng::logging::log_ptr logger
 				, cache& cfg
+				, storage& db
 				, std::string account
 				, std::string pwd
 				, bool accept_all
@@ -173,6 +170,11 @@ namespace node
 			cache& cache_;
 
 			/**
+			 * SQL database
+			 */
+			storage& storage_;
+
+			/**
 			 * SML parser
 			 */
 			node::sml::parser 	parser_;
@@ -181,11 +183,6 @@ namespace node
 			 * message dispatcher
 			 */
 			router router_;
-
-			/**
-			 * Apply changed configurations
-			 */
-			//sml::executor exec_;
 
 			/**
 			 * maintain relation between sequence and open push channel request

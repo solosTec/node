@@ -404,7 +404,7 @@ namespace node
 			//
 			//	get number of encrypted bytes
 			//
-			auto counter = static_cast<std::size_t>(hs.get_block_counter() * 16u);
+			auto counter = static_cast<std::size_t>(16u * hs.get_block_counter());
 
 			//
 			//	remove trailing 0x2F

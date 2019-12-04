@@ -1,4 +1,4 @@
-/*
+﻿/*
  * The MIT License (MIT)
  * 
  * Copyright (c) 2019 Sylko Olzscher 
@@ -6,19 +6,10 @@
  */ 
 #include "test-mbus-004.h"
 #include <NODE_project_info.h>
-//#include <smf/mbus/parser.h>
-//#include <smf/mbus/header.h>
-//#include <smf/sml/srv_id_io.h>
-//#include <smf/mbus/defs.h>
-//#include <smf/mbus/aes.h>
 #include <smf/mbus/variable_data_block.h>
-//
-//#include <cyng/io/serializer.h>
+//#include <smf/mbus/dif.h>
+
 #include <cyng/io/io_buffer.h>
-//#include <cyng/tuple_cast.hpp>
-//
-//#include <iostream>
-//#include <fstream>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/filesystem.hpp>
@@ -28,6 +19,46 @@ namespace node
 {
 	bool test_mbus_004()
 	{
+		{
+			std::uint8_t const val = 0x14;
+			std::int8_t scaler_ = static_cast<std::int8_t>(val & 0x07) - 6; 
+			scaler_ = -2;
+
+			//mbus::udif d;
+			//d.raw_ = 0xE8;	//	1110 1000
+			//auto length_ = d.dif_.code_;
+
+			////
+			////	see function_field_code
+			////
+			////	0 - instantaneous value
+			////	1 - maximum value
+			////	2 - minimum value
+			////	all other values signal an error
+			////
+			////
+			//auto function_field_ = d.dif_.ff_;
+			//BOOST_ASSERT(function_field_ != 3);
+
+			////
+			////	storage number
+			////
+			//auto storage_nr_ = d.dif_.sn_;
+
+			//auto ext = d.dif_.ext_;
+
+			//
+			//	{03 74} [14 00] 00 {04 14}[dbe618]00 {44 14}[dbe618] 00 {42 6c}7e2b02fd7442120f0100c8
+			//	1631963 - 2 m3(‭18E6DB‬) m3 == 13dez == 0Dhex
+			//
+			auto inp = cyng::make_buffer({ 0x03, 0x74, 0x14, 0x00, 0x00, 0x04, 0x14, 0xdb, 0xe6, 0x18, 0x00, 0x44, 0x14, 0xdb, 0xe6, 0x18, 0x00, 0x42, 0x6c, 0x7e, 0x2b, 0x02, 0xfd, 0x74, 0x42, 0x12, 0x0f, 0x01, 0x00, 0xc8 });
+			vdb_reader reader;
+			std::size_t offset{ 0 };
+			while (offset < inp.size()) {
+				offset = reader.decode(inp, offset);
+			}
+		}
+
 		{
 			//
 			//	68966.1 kWh

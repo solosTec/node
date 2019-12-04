@@ -8,6 +8,7 @@
 #include "config_ipt.h"
 #include "../cache.h"
 #include "../segw.h"
+#include "../cfg_ipt.h"
 
 #include <smf/sml/protocol/generator.h>
 //#include <smf/sml/obis_io.h>
@@ -47,7 +48,12 @@ namespace node
 			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, node::sml::OBIS_CODE_ROOT_IPT_PARAM);
 
 			std::uint8_t nr{ 1 };
-			auto const cfg = cache_.get_ipt_redundancy();
+
+			//
+			//	get IP-T configuration
+			//
+			cfg_ipt ipt(cache_);
+			auto const cfg = ipt.get_ipt_redundancy();
 
 			for (auto const& rec : cfg.config_) {
 				try {
@@ -116,7 +122,7 @@ namespace node
 			node::sml::append_get_proc_response(msg, {
 				node::sml::OBIS_CODE_ROOT_IPT_PARAM,
 				node::sml::OBIS_TCP_WAIT_TO_RECONNECT
-				}, node::sml::make_value(cache_.get_ipt_tcp_wait_to_reconnect().count()));
+				}, node::sml::make_value(ipt.get_ipt_tcp_wait_to_reconnect().count()));
 
 			//
 			//	repetitions
@@ -125,7 +131,7 @@ namespace node
 			node::sml::append_get_proc_response(msg, {
 				node::sml::OBIS_CODE_ROOT_IPT_PARAM,
 				node::sml::OBIS_TCP_CONNECT_RETRIES
-				}, node::sml::make_value(cache_.get_ipt_tcp_connect_retries()));
+				}, node::sml::make_value(ipt.get_ipt_tcp_connect_retries()));
 
 			//
 			//	SSL
@@ -133,7 +139,7 @@ namespace node
 			node::sml::append_get_proc_response(msg, {
 				node::sml::OBIS_CODE_ROOT_IPT_PARAM,
 				node::sml::OBIS_HAS_SSL_CONFIG
-				}, node::sml::make_value(cache_.has_ipt_ssl()));
+				}, node::sml::make_value(ipt.has_ipt_ssl()));
 
 			//
 			//	certificates (none)

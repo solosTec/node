@@ -10,7 +10,6 @@
 
 #include <NODE_project_info.h>
 #include <smf/sml/bus/serializer.h>
-//#include <smf/ipt/config.h>
 
 #include <cyng/object.h>
 #include <cyng/async/mux.h>
@@ -26,6 +25,7 @@ namespace node
 	 */
 	class session;
 	class cache;
+	class storage;
 	class connection : public std::enable_shared_from_this<connection>
 	{
 	public:
@@ -34,7 +34,8 @@ namespace node
 		explicit connection(boost::asio::ip::tcp::socket&&
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, cache& config_db
+			, cache& cfg
+			, storage& db
 			, std::string const& account
 			, std::string const& pwd
 			, bool accept_all

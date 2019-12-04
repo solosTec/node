@@ -275,14 +275,15 @@ namespace node
 	void bridge::power_return()
 	{
 		auto const sw = cache_.get_status_word();
+		auto srv = cache_.get_srv_id();		
 
 		storage_.generate_op_log(sw
 			, sml::LOG_CODE_09	//	0x00100023 - power return
 			, sml::OBIS_CODE_PEER_SCM	//	source is SCM
-			, cyng::make_buffer({ })	//	server ID
+			, srv	//	server ID
 			, ""	//	target
 			, 0		//	nr
-			, "");	//	description
+			, "power return");	//	description
 	}
 
 	void bridge::sig_ins(cyng::store::table const* tbl
@@ -417,28 +418,40 @@ namespace node
 
 	void bridge::start_task_gpio(cyng::async::mux& mux)
 	{
-		//
-		//	start one task for every GPIO
-		//
-		//gpio-path|1|/sys/class/gpio|/sys/class/gpio|15
-		//gpio-vector|1|46 47 50 53|46 47 50 53|15
-
-		auto const gpio_path = cache_.get_cfg<std::string>("gpio-path", "/sys/class/gpio");
-		auto const gpio_vector = cache_.get_cfg<std::string>("gpio-vector", "46 47 50 53");
-
-		//
-		//	Start a GPIO task for every GPIO
-		//
-		auto const svec = cyng::split(gpio_vector, " ");
-		for (auto const& s : svec) {
-			auto const tid = cyng::async::start_task_detached<gpio>(mux
-				, logger_
-				, boost::filesystem::path(gpio_path) / ("/gpio" + s));
+#if BOOST_OS_WINDOWS
+		auto const gpio_enabled = cache_.get_cfg("gpio-enabled", false);
+#else
+		auto const gpio_enabled = cache_.get_cfg("gpio-enabled", true);
+#endif
+		if (gpio_enabled) {
 
 			//
-			//	store task id in cache DB
+			//	start one task for every GPIO
 			//
-			cache_.set_cfg("gpio-task-" + s, tid);
+			//gpio-path|1|/sys/class/gpio|/sys/class/gpio|15
+			//gpio-vector|1|46 47 50 53|46 47 50 53|15
+
+			auto const gpio_path = cache_.get_cfg<std::string>("gpio-path", "/sys/class/gpio");
+			auto const gpio_vector = cache_.get_cfg<std::string>("gpio-vector", "46 47 50 53");
+
+			//
+			//	Start a GPIO task for every GPIO
+			//
+			auto const svec = cyng::split(gpio_vector, " ");
+			for (auto const& s : svec) {
+				auto const tid = cyng::async::start_task_detached<gpio>(mux
+					, logger_
+					, boost::filesystem::path(gpio_path) / ("/gpio" + s));
+
+				//
+				//	store task id in cache DB
+				//
+				cache_.set_cfg("gpio-task-" + s, tid);
+			}
+		}
+		else
+		{
+			CYNG_LOG_WARNING(logger_, "GPIO disabled");
 		}
 	}
 

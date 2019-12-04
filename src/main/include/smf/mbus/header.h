@@ -23,7 +23,9 @@ namespace node
 {
 
 	/**
-	 * 7.2.4 Configuration Field
+	 * @see 7.2.4 Configuration Field
+	 * in Open Metering System Specification (Volume 2)
+	 *
 	 * Containing 5 bytes defining the encryption mode
 	 * This is the 2. byte (MSB)
 	 * You can mask the first 5 bits with 0x1F.
@@ -77,14 +79,15 @@ namespace node
 	};
 
 #pragma pack(push, 1)	
-	union ucfg_fields
-	{
-		char		raw_[2];
-		cfg_field_5	cfg_field_5_;
-		cfg_field_7	cfg_field_7_;
-		cfg_field_D	cfg_field_D_;
-	};
+	//union ucfg_fields
+	//{
+	//	char		raw_[2];
+	//	cfg_field_5	cfg_field_5_;
+	//	cfg_field_7	cfg_field_7_;
+	//	cfg_field_D	cfg_field_D_;
+	//};
 #pragma pack(pop)
+
 	/**
 	 * Short header used only by wireless M-Bus.
 	 * Applied from master with CI = 0x5A, 0x61, 0x65
@@ -110,6 +113,7 @@ namespace node
 		 * method of data encryption
 		 *
 		 * 0 - no enryption
+		 * 4 - deprecated
 		 * 5 - symmetric enryption (AES128 with CBC)
 		 * 7 - advanced symmetric enryption
 		 * 13 - assymetric enryption
@@ -119,9 +123,11 @@ namespace node
 		std::uint8_t get_mode() const;
 
 		/*
-		 * Returns 0 for not-decrypted messages
+		 * A value of 0 means that this message is not encrypted
+		 * at all. A value of 0x0F specifies that partial encryption is disabled 
+		 * and no unencrypted data follow after the encrypted data
 		 * 
-		 * @return count of (encrypted) blocks
+		 * @return number of encrypted 16 Byte Blocks for CBC Mode.
 		 */
 		std::uint8_t get_block_counter() const;
 

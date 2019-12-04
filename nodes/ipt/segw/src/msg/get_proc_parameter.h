@@ -20,6 +20,7 @@ namespace node
 	//	forward declaration
 	//
 	class cache;
+	class storage;
 	namespace sml
 	{
 		//
@@ -36,6 +37,7 @@ namespace node
 			get_proc_parameter(cyng::logging::log_ptr
 				, res_generator& sml_gen
 				, cache& c
+				, storage& db
 				, cyng::buffer_t const&);
 
 			void generate_response(obis code
@@ -88,6 +90,12 @@ namespace node
 			 * configuration db
 			 */
 			cache& cache_;
+
+			/**
+			 * SQL database
+			 */
+			storage& storage_;
+
 			cyng::buffer_t const server_id_;
 
 			node::ipt::config_ipt	config_ipt_;

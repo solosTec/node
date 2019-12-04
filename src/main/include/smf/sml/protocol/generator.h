@@ -393,9 +393,10 @@ namespace node
 				, std::uint32_t evt
 				, obis peer_address
 				, std::chrono::system_clock::time_point tp
-				, cyng::buffer_t const& server_id
-				, std::string const& target
-				, std::uint8_t push_nr);
+				, cyng::buffer_t server_id
+				, std::string target
+				, std::uint8_t push_nr
+				, std::string details);
 
 			std::size_t get_proc_w_mbus_status(std::string trx
 				, cyng::buffer_t client_id

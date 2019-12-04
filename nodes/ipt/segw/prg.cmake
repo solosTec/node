@@ -8,9 +8,11 @@ set (node_ipt_segw_cpp
 	nodes/ipt/segw/src/controller.cpp
 	nodes/ipt/segw/src/storage.cpp
 	nodes/ipt/segw/src/cache.cpp
+	nodes/ipt/segw/src/cfg_ipt.cpp
 	nodes/ipt/segw/src/bridge.cpp
 	nodes/ipt/segw/src/router.cpp
 	nodes/ipt/segw/src/lmn.cpp
+	nodes/ipt/segw/src/decoder.cpp
 
 )
 
@@ -20,9 +22,11 @@ set (node_ipt_segw_h
 	nodes/ipt/segw/src/segw.h
 	nodes/ipt/segw/src/storage.h
 	nodes/ipt/segw/src/cache.h
+	nodes/ipt/segw/src/cfg_ipt.h
 	nodes/ipt/segw/src/bridge.h
 	nodes/ipt/segw/src/router.h
 	nodes/ipt/segw/src/lmn.h
+	nodes/ipt/segw/src/decoder.h
 
 )
 
