@@ -17,6 +17,19 @@ namespace node
 {
 	class dispatcher
 	{
+
+		struct tbl_channel_rel
+		{
+			tbl_channel_rel(std::string, std::string, std::string);
+
+			const std::string table_;
+			const std::string channel_;
+			const std::string counter_;
+
+			bool is_empty() const;
+			bool has_counter() const;
+		};
+
 	public:
 		dispatcher(cyng::logging::log_ptr, connection_manager_interface&);
 
@@ -63,17 +76,19 @@ namespace node
 		void display_loading_icon(boost::uuids::uuid tag, bool, std::string const&);
 		void display_loading_level(boost::uuids::uuid tag, std::size_t, std::string const&);
 
-		void subscribe_table_device_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
-		void subscribe_table_gateway_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
-		void subscribe_table_meter_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
-		void subscribe_table_session_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
-		void subscribe_table_target_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
-		void subscribe_table_connection_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
-		void subscribe_table_msg_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
-		void subscribe_table_tsdb_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag);
-		void subscribe_table_LoRa_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
-		void subscribe_table_uplink_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
-		void subscribe_table_cluster_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		void subscribe_table_count(cyng::store::db&, std::string const& channel, std::string const& table, boost::uuids::uuid tag);
+		//void subscribe_table_device_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		//void subscribe_table_gateway_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		//void subscribe_table_meter_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		//void subscribe_table_user_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		//void subscribe_table_session_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		//void subscribe_table_target_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		//void subscribe_table_connection_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		//void subscribe_table_msg_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		//void subscribe_table_tsdb_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag);
+		//void subscribe_table_LoRa_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		//void subscribe_table_uplink_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
+		//void subscribe_table_cluster_count(cyng::store::db&, std::string const&, boost::uuids::uuid);
 
 		void subscribe_web(cyng::store::db&, std::string const& channel, boost::uuids::uuid tag);
 		void subscribe_web(cyng::store::db&, std::string const& channel, boost::uuids::uuid tag, std::string);
@@ -90,10 +105,18 @@ namespace node
 		void res_attention_code(cyng::context& ctx);
 		void http_move(cyng::context& ctx);
 
+		/**
+		 * Search vector with table/channel relations for a table
+		 */
+		tbl_channel_rel find_rel_by_table(std::string) const;
+		tbl_channel_rel find_rel_by_channel(std::string) const;
+		tbl_channel_rel find_rel_by_counter(std::string) const;
+
 	private:
 		cyng::logging::log_ptr logger_;
 		connection_manager_interface & connection_manager_;
 
+		const std::vector< tbl_channel_rel >	rel_;
 	};
 }
 

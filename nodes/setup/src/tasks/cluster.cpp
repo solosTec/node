@@ -145,22 +145,20 @@ namespace node
 		//	* TGateway
 		//	* TLoRaDevice
 		//	* TMeter
+		//	* TGUIUser
 		//
-		if (boost::algorithm::equals(table, "TDevice"))
-		{
-			sync_table("TGateway");
-		}
-		else if (boost::algorithm::equals(table, "TGateway"))
-		{
-			sync_table("TLoRaDevice");
-		}
-		else if (boost::algorithm::equals(table, "TLoRaDevice"))
-		{
-			sync_table("TMeter");
-		}
-		else
-		{
-			CYNG_LOG_INFO(logger_, "*** sync phase completed ***");
+
+		auto pos = std::find(std::begin(tables_), std::end(tables_), table);
+		if (pos != std::end(tables_)) {
+			++pos;
+			if (pos != std::end(tables_)) {
+				sync_table(*pos);
+			}
+			else {
+				CYNG_LOG_INFO(logger_, "*** sync phase complete: " 
+					<< tables_.size()
+					<< " tables updated ***");
+			}
 		}
 
 		//
@@ -493,29 +491,24 @@ namespace node
 
 	void cluster::create_cache()
 	{
-		CYNG_LOG_TRACE(logger_, "create cache tables");
+		CYNG_LOG_TRACE(logger_, "create "
+			<< tables_.size()
+			<< " cache tables");
 
-		if (!create_table(cache_, "TDevice"))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table TDevice");
+		for (auto const& name : tables_) {
+			if (!create_table(cache_, name))
+			{
+				CYNG_LOG_FATAL(logger_, "cannot create table "	<< name);
+			}
 		}
-
-		if (!create_table(cache_, "TGateway")) 
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table TGateway");
-		}
-
-		if (!create_table(cache_, "TLoRaDevice"))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table TLoRaDevice");
-		}
-
-		if (!create_table(cache_, "TMeter"))
-		{
-			CYNG_LOG_FATAL(logger_, "cannot create table TMeter");
-		}
-
 	}
 
-
+	std::array<std::string, 5>	cluster::tables_ = 
+	{ 
+		"TDevice",
+		"TGateway",
+		"TLoRaDevice",
+		"TMeter",
+		"TGUIUser"
+	};
 }

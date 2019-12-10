@@ -171,6 +171,11 @@ namespace node
 
 		}
 
+		if (!create_table(db, "TGUIUser"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table TGUIUser");
+		}
+
 		//
 		//	The session tables uses the same tag as the remote client session
 		//	

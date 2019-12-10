@@ -22,6 +22,7 @@
 #include <cyng/sql/dsl/assign.hpp>
 #include <cyng/sql/dsl/aggregate.h>
 #include <cyng/table/meta.hpp>
+#include <cyng/crypto/hash/sha1.h>
 
 #include <boost/uuid/random_generator.hpp>
 #include <boost/core/ignore_unused.hpp>
@@ -224,7 +225,8 @@ namespace node
 				if (boost::algorithm::equals(name, "TDevice") || 
 					boost::algorithm::equals(name, "TMeter") ||
 					boost::algorithm::equals(name, "TLoRaDevice") ||
-					boost::algorithm::equals(name, "TGateway"))
+					boost::algorithm::equals(name, "TGateway") ||
+					boost::algorithm::equals(name, "TGUIUser"))
 				{
 					//	[763ae055-449c-4783-b383-8fc8cd52f44f]
 					//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
@@ -564,6 +566,31 @@ namespace node
 					stmt->execute();
 					stmt->clear();
 				}
+				else if (tbl.first == "TGUIUser")
+				{
+					cmd.insert();
+					sql = cmd.to_str();
+					auto stmt = s.create_statement();
+					std::pair<int, bool> r = stmt->prepare(sql);
+					//BOOST_ASSERT(r.first == 9);	//	3 parameters to bind
+					BOOST_ASSERT(r.second);
+
+					//cyng::crypto::digest_sha1::value_type sha1_hash(std::string const&);
+					auto digest = cyng::sha1_hash("secret");
+
+					//	bind parameters
+					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 36)
+						.push(cyng::make_object<std::uint64_t>(1u), 0)
+						.push(cyng::make_object("Alfred"), 32)
+						.push(cyng::make_object("device"), 16)
+						.push(cyng::make_object<std::uint32_t>(4u), 0)
+						.push(cyng::make_object("action"), 32)
+						.push(cyng::make_object(cyng::crypto::digest_sha1(digest)), 40)
+						.push(cyng::make_object(std::chrono::system_clock::now()), 0)
+						;
+					stmt->execute();
+					stmt->clear();
+				}
 #endif
 			}
 
@@ -861,6 +888,32 @@ namespace node
 			, cyng::TC_BOOL			//	CRC OK [bool]
 			},
 			{ 36, 0, 3, 8, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0 }));
+
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 6>("TGUIUser", 
+			{ "pk"
+			, "name"		//	[string] login name
+			, "module"		//	[string] aka page
+			, "priv"		//	[u32] privilege (access rights)
+			, "action"		//	[string] allowed action
+			, "pwd"			//	[SHA1] hash of password
+			, "lastAccess"	//	[ts] timestamp
+			},
+			{ cyng::TC_UUID			//	pk
+			, cyng::TC_STRING		//	name
+			, cyng::TC_STRING		//	module
+			, cyng::TC_UINT32		//	priv
+			, cyng::TC_STRING		//	action
+			, cyng::TC_DIGEST_SHA1	//	pwd
+			, cyng::TC_TIME_POINT	//	lastAccess
+			},
+			{ 36
+			, 32	//	name
+			, 16	//	module
+			, 0		//	priv
+			, 32	//	action
+			, 40	//	pwd
+			, 0		//	lastAccess
+			}));
 
 		return meta_map;
 	}

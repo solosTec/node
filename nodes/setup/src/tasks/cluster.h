@@ -85,6 +85,8 @@ namespace node
 		 * global data cache
 		 */
 		cyng::store::db& cache_;
+
+		static std::array<std::string, 5>	tables_;
 	};
 	
 }

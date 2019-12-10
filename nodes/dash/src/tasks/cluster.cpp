@@ -253,6 +253,7 @@ namespace node
 		sync_table("TGateway");
 		sync_table("TLoRaDevice");
 		sync_table("TMeter");
+		sync_table("TGUIUser");
 		sync_table("_Session");
 		sync_table("_Target");
 		sync_table("_Connection");

@@ -821,7 +821,7 @@ target_link_libraries(iec_62056 ${iec_62056_link_libs})
 include (nodes/setup/prg.cmake)
 add_executable(setup ${node_setup})
 # libraries to link
-set(setup_link_libs smf_cluster ${CYNG_LIBRARIES})
+set(setup_link_libs smf_cluster ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND setup_link_libs "${Boost_LIBRARIES}")
     if (UNIX)

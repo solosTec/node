@@ -144,6 +144,10 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
 		}
+
+		if (!create_table(db, "TGUIUser")) {
+			CYNG_LOG_FATAL(logger, "cannot create table TGUIUser");
+		}
 		
 		if (!create_table(db, "_Session"))
 		{
@@ -212,7 +216,9 @@ namespace node
 	{
 		db.clear("TDevice", tag);
 		db.clear("TGateway", tag);
+		db.clear("TLoRaDevice", tag);
 		db.clear("TMeter", tag);
+		db.clear("TGUIUser", tag);
 		db.clear("_Session", tag);
 		db.clear("_Target", tag);
 		db.clear("_Connection", tag);

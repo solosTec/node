@@ -19,6 +19,24 @@ namespace node
 	dispatcher::dispatcher(cyng::logging::log_ptr logger, connection_manager_interface& cm)
 		: logger_(logger)
 		, connection_manager_(cm)
+		, rel_ {
+				tbl_channel_rel("TDevice", "config.device", "table.device.count"),
+				tbl_channel_rel("TGateway", "config.gateway", "table.gateway.count"),
+				tbl_channel_rel("TMeter", "config.meter", "table.meter.count"),
+				tbl_channel_rel("TLoRaDevice", "config.lora", "table.LoRa.count"),
+				tbl_channel_rel("TGUIUser", "config.user", "table.user.count"),
+				tbl_channel_rel("_Session", "status.sessions", ""),
+				tbl_channel_rel("_Target", "status.target", "table.target.count"),
+				tbl_channel_rel("_Connection", "status.connection", ""),
+				tbl_channel_rel("_Config", "config.system", ""),
+				tbl_channel_rel("_SysMsg", "monitor.msg", "table.msg.count"),
+				//tbl_channel_rel("---", "config.web", ""),
+				tbl_channel_rel("_HTTPSession", "config.sessions", "table.session.count"),
+				tbl_channel_rel("_Cluster", "status.cluster", "table.cluster.count"),
+				tbl_channel_rel("_TimeSeries", "monitor.tsdb", ""),
+				tbl_channel_rel("_LoRaUplink", "monitor.lora", "table.uplink.count"),
+				tbl_channel_rel("_CSV", "task.csv", "")
+			} 
 	{}
 
 	void dispatcher::register_this(cyng::controller& vm)
@@ -118,84 +136,19 @@ namespace node
 
 	void dispatcher::subscribe(cyng::store::db& db)
 	{
-		db.get_listener("TDevice"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("TGateway"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("TLoRaDevice"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("TMeter"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("_Session"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("_Target"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("_Connection"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("_Cluster"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("_Config"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("_HTTPSession"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("_SysMsg"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("_TimeSeries"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		//db.get_listener("_TimeSeriesParams"
-		//	, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-		//	, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-		//	, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-		//	, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("_CSV"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-		db.get_listener("_LoRaUplink"
-			, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		for (auto const& rel : rel_) {
+
+			CYNG_LOG_INFO(logger_, "install DB slot " << rel.table_);
+			auto tmp = db.get_listener(rel.table_
+				, std::bind(&dispatcher::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+				, std::bind(&dispatcher::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+				, std::bind(&dispatcher::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+				, std::bind(&dispatcher::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+
+			boost::ignore_unused(tmp);
+		}
 
 		CYNG_LOG_INFO(logger_, "db has " << db.num_all_slots() << " connected slots");
-
 	}
 
 	void dispatcher::sig_insert(cyng::table::record const& rec, std::string channel)
@@ -217,90 +170,17 @@ namespace node
 	{
 		cyng::table::record rec(tbl->meta_ptr(), key, data, gen);
 
-		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
-		{
-			sig_insert(rec, "config.device");
-			update_channel("table.device.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
-		{
-			sig_insert(rec, "config.gateway");
-			update_channel("table.gateway.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TMeter"))
-		{
-			sig_insert(rec, "config.meter");
-			update_channel("table.meter.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
-		{
-			sig_insert(rec, "config.lora");
-			update_channel("table.LoRa.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
-		{
-			sig_insert(rec, "status.session");
-			update_channel("table.session.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Target"))
-		{
-			sig_insert(rec, "status.target");
-			update_channel("table.target.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Connection"))
-		{
-			sig_insert(rec, "status.connection");
-			update_channel("table.connection.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Cluster"))
-		{
-			sig_insert(rec, "status.cluster");
-			update_channel("table.cluster.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
-		{
-			sig_insert(rec, "config.sys");
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_HTTPSession"))
-		{
-			sig_insert(rec, "web.sessions");
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
-		{
-			sig_insert(rec, "monitor.msg");
-			update_channel("table.msg.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeries"))
-		{
-			sig_insert(rec, "monitor.tsdb");
-			update_channel("table.tsdb.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_LoRaUplink"))
-		{
-			sig_insert(rec, "monitor.lora");
-			update_channel("table.uplink.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
-		{
-			sig_insert(rec, "task.csv");
-			update_channel("table.csv.count", tbl->size());
-		}
-		//else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeriesParams"))
-		//{
-		//	auto tpl = cyng::tuple_factory(
-		//		cyng::param_factory("cmd", std::string("insert")),
-		//		cyng::param_factory("channel", "task.tsdb"),
-		//		cyng::param_factory("rec", rec.convert()));
+		auto const rel = find_rel_by_table(tbl->meta().get_name());
+		if (!rel.is_empty()) {
 
-		//	auto msg = cyng::json::to_string(tpl);
-		//	connection_manager_.push_event("task.tsdb", msg);
-
-		//	update_channel("table.tsdbtask.count", tbl->size());
-
-		//}
+			sig_insert(rec, rel.channel_);
+			if (rel.has_counter()) {
+				update_channel(rel.counter_, tbl->size());
+			}
+		}
 		else
 		{
-			CYNG_LOG_WARNING(logger_, "sig.ins - unknown table "
+			CYNG_LOG_ERROR(logger_, "sig.ins - unknown table "
 				<< tbl->meta().get_name());
 		}
 	}
@@ -318,76 +198,14 @@ namespace node
 
 	void dispatcher::sig_del(cyng::store::table const* tbl, cyng::table::key_type const& key, boost::uuids::uuid source)
 	{
-		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
-		{
-			sig_delete(key, "config.device");
-			update_channel("table.device.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
-		{
-			sig_delete(key, "config.gateway");
-			update_channel("table.gateway.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TMeter"))
-		{
-			sig_delete(key, "config.meter");
-			update_channel("table.meter.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
-		{
-			sig_delete(key, "config.lora");
-			update_channel("table.LoRa.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
-		{
-			sig_delete(key, "status.session");
-			update_channel("table.session.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Target"))
-		{
-			sig_delete(key, "status.target");
-			update_channel("table.target.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Connection"))
-		{
-			sig_delete(key, "status.connection");
-			update_channel("table.connection.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Cluster"))
-		{
-			sig_delete(key, "status.cluster");
-			update_channel("table.cluster.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
-		{
-			sig_delete(key, "monitor.msg");
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeries"))
-		{
-			sig_delete(key, "monitor.tsdb");
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_LoRaUplink"))
-		{
-			sig_delete(key, "monitor.lora");
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
-		{
-			sig_delete(key, "task.csv");
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_HTTPSession"))
-		{
-			sig_delete(key, "web.sessions");
-		}
-		//else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeriesParams"))
-		//{
-		//	auto tpl = cyng::tuple_factory(
-		//		cyng::param_factory("cmd", std::string("delete")),
-		//		cyng::param_factory("channel", "task.tsdb"),
-		//		cyng::param_factory("key", key));
+		auto const rel = find_rel_by_table(tbl->meta().get_name());
+		if (!rel.is_empty()) {
 
-		//	auto msg = cyng::json::to_string(tpl);
-		//	connection_manager_.push_event("task.tsdb", msg);
-		//}
+			sig_delete(key, rel.channel_);
+			if (rel.has_counter()) {
+				update_channel(rel.counter_, tbl->size());
+			}
+		}
 		else
 		{
 			CYNG_LOG_ERROR(logger_, "sig.del - unknown table "
@@ -407,70 +225,14 @@ namespace node
 
 	void dispatcher::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
 	{
-		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
-		{
-			sig_clear("config.device");
-			update_channel("table.device.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
-		{
-			sig_clear("config.gateway");
-			update_channel("table.gateway.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TMeter"))
-		{
-			sig_clear("config.meter");
-			update_channel("table.meter.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
-		{
-			sig_clear("status.session");
-			update_channel("table.session.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Target"))
-		{
-			sig_clear("status.target");
-			update_channel("table.target.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Connection"))
-		{
-			sig_clear("status.connection");
-			update_channel("table.connection.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Cluster"))
-		{
-			sig_clear("status.cluster");
-			update_channel("table.cluster.count", tbl->size());
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_SysMsg"))
-		{
-			sig_clear("monitor.msg");
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeries"))
-		{
-			sig_clear("monitor.tsdb");
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_LoRaUplink"))
-		{
-			sig_clear("monitor.lora");
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
-		{
-			//	ToDo: Are there listener of table _Config?
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
-		{
-			sig_clear("task.csv");
-		}
-		//else if (boost::algorithm::equals(tbl->meta().get_name(), "_TimeSeriesParams"))
-		//{
-		//	auto tpl = cyng::tuple_factory(
-		//		cyng::param_factory("cmd", std::string("clear")),
-		//		cyng::param_factory("channel", "task.tsdb"));
+		auto const rel = find_rel_by_table(tbl->meta().get_name());
+		if (!rel.is_empty()) {
 
-		//	auto msg = cyng::json::to_string(tpl);
-		//	connection_manager_.push_event("task.tsdb", msg);
-		//}
+			sig_clear(rel.channel_);
+			if (rel.has_counter()) {
+				update_channel(rel.counter_, tbl->size());
+			}
+		}
 		else
 		{
 			CYNG_LOG_ERROR(logger_, "sig.clr - unknown table "
@@ -491,132 +253,24 @@ namespace node
 		//
 		//	convert attribute to parameter (as map)
 		//
-		auto pm = tbl->meta().to_param_map(attr);		
+		auto pm = tbl->meta().to_param_map(attr);
 
-		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
-		{
+		auto const rel = find_rel_by_table(tbl->meta().get_name());
+		if (!rel.is_empty()) {
+
 			auto tpl = cyng::tuple_factory(
 				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "config.device"),
+				cyng::param_factory("channel", rel.channel_),
 				cyng::param_factory("key", key),
 				cyng::param_factory("value", std::move(pm)));
 
 			auto const msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.device", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TGateway"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "config.gateway"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", std::move(pm)));
+			connection_manager_.push_event(rel.channel_, msg);
 
-			auto const msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.gateway", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TMeter"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "config.meter"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", std::move(pm)));
-
-			auto const msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.meter", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "config.lora"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", std::move(pm)));
-
-			auto const msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.lora", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Session"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "status.session"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", std::move(pm)));
-
-			auto const msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.session", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Target"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "status.target"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", std::move(pm)));
-
-			auto const msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.target", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Connection"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "status.connection"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", std::move(pm)));
-
-			auto const msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.connection", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Cluster"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "status.cluster"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", std::move(pm)));
-
-			auto const msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("status.cluster", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Config"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "config.system"),
-				cyng::param_factory("key", key),
-				tbl->meta().to_param(attr));	//	don't send value.value
-
-			auto const msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("config.system", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_HTTPSession"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "web.sessions"),
-				cyng::param_factory("key", key),
-				tbl->meta().to_param(attr));	//	don't send value.value
-
-			auto const msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("web.sessions", msg);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_CSV"))
-		{
-			auto tpl = cyng::tuple_factory(
-				cyng::param_factory("cmd", std::string("modify")),
-				cyng::param_factory("channel", "task.csv"),
-				cyng::param_factory("key", key),
-				cyng::param_factory("value", std::move(pm)));
-
-			auto const msg = cyng::json::to_string(tpl);
-			connection_manager_.push_event("task.csv", msg);
 		}
 		else
 		{
-			CYNG_LOG_WARNING(logger_, "sig.mod - unknown table "
+			CYNG_LOG_ERROR(logger_, "sig.mod - unknown table "
 				<< tbl->meta().get_name());
 		}
 	}
@@ -634,117 +288,28 @@ namespace node
 
 	void dispatcher::subscribe_channel(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
 	{
-		if (boost::algorithm::starts_with(channel, "config.device"))
+		auto const rel = find_rel_by_channel(channel);
+		if (!rel.is_empty()) 
 		{
-			subscribe(db, "TDevice", channel, tag);
+
+			subscribe(db, rel.table_, channel, tag);
 		}
-		else if (boost::algorithm::starts_with(channel, "config.gateway"))
-		{
-			subscribe(db, "TGateway", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "config.meter"))
-		{
-			subscribe(db, "TMeter", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "config.lora"))
-		{
-			subscribe(db, "TLoRaDevice", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "config.system"))
-		{
-			subscribe(db, "_Config", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "config.web"))
-		{
-			subscribe_web(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "web.sessions"))
-		{
-			subscribe(db, "_HTTPSession", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "status.session"))
-		{
-			subscribe(db, "_Session", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "status.target"))
-		{
-			subscribe(db, "_Target", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "status.connection"))
-		{
-			subscribe(db, "_Connection", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "status.cluster"))
-		{
-			subscribe(db, "_Cluster", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "table.device.count"))
-		{
-			subscribe_table_device_count(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "table.gateway.count"))
-		{
-			subscribe_table_gateway_count(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "table.meter.count"))
-		{
-			subscribe_table_meter_count(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "table.session.count"))
-		{
-			subscribe_table_session_count(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "table.target.count"))
-		{
-			subscribe_table_target_count(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "table.connection.count"))
-		{
-			subscribe_table_connection_count(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "table.msg.count"))
-		{
-			subscribe_table_msg_count(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "table.tsdb.count"))
-		{
-			subscribe_table_tsdb_count(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "table.LoRa.count"))
-		{
-			subscribe_table_LoRa_count(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "table.uplink.count"))
-		{
-			subscribe_table_uplink_count(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "table.cluster.count"))
-		{
-			subscribe_table_cluster_count(db, channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "monitor.msg"))
-		{
-			subscribe(db, "_SysMsg", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "monitor.tsdb"))
-		{
-			subscribe(db, "_TimeSeries", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "monitor.lora"))
-		{
-			subscribe(db, "_LoRaUplink", channel, tag);
-		}
-		else if (boost::algorithm::starts_with(channel, "task.csv"))
-		{
-			subscribe(db, "_CSV", channel, tag);
-		}
-		//else if (boost::algorithm::starts_with(channel, "task.tsdb"))
-		//{
-		//	subscribe(db, "_TimeSeriesParams", channel, tag);
-		//}
-		else
-		{
-			CYNG_LOG_WARNING(logger_, "ws.read - unknown subscribe channel [" << channel << "]");
+		else {
+			auto const rel = find_rel_by_counter(channel);
+			if (!rel.is_empty()) 
+			{
+
+				subscribe_table_count(db, channel, rel.table_, tag);
+			}
+			else if (boost::algorithm::starts_with(channel, "config.web"))
+			{
+				subscribe_web(db, channel, tag);
+			}
+			else
+			{
+				CYNG_LOG_WARNING(logger_, "ws.read - unknown subscribe channel [" << channel << "]");
+			}
+
 		}
 	}
 
@@ -981,81 +546,12 @@ namespace node
 		}, cyng::store::read_access(table));
 	}
 
-	void dispatcher::subscribe_table_device_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	void dispatcher::subscribe_table_count(cyng::store::db& db, std::string const& channel, std::string const& table, boost::uuids::uuid tag)
 	{
 		connection_manager_.add_channel(tag, channel);
-		auto const size = db.size("TDevice");
+		auto const size = db.size(table);
 		update_channel(channel, size);
-	}
 
-	void dispatcher::subscribe_table_gateway_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
-	{
-		connection_manager_.add_channel(tag, channel);
-		auto const size = db.size("TGateway");
-		update_channel(channel, size);
-	}
-
-	void dispatcher::subscribe_table_meter_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
-	{
-		connection_manager_.add_channel(tag, channel);
-		auto const size = db.size("TMeter");
-		update_channel(channel, size);
-	}
-
-	void dispatcher::subscribe_table_session_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
-	{
-		connection_manager_.add_channel(tag, channel);
-		auto const size = db.size("_Session");
-		update_channel(channel, size);
-	}
-
-	void dispatcher::subscribe_table_target_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
-	{
-		connection_manager_.add_channel(tag, channel);
-		auto const size = db.size("_Target");
-		update_channel(channel, size);
-	}
-
-	void dispatcher::subscribe_table_connection_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
-	{
-		connection_manager_.add_channel(tag, channel);
-		auto const size = db.size("_Connection");
-		update_channel(channel, size);
-	}
-
-	void dispatcher::subscribe_table_msg_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
-	{
-		connection_manager_.add_channel(tag, channel);
-		auto const size = db.size("_SysMsg");
-		update_channel(channel, size);
-	}
-
-	void dispatcher::subscribe_table_tsdb_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
-	{
-		connection_manager_.add_channel(tag, channel);
-		auto const size = db.size("_TimeSeries");
-		update_channel(channel, size);
-	}
-
-	void dispatcher::subscribe_table_LoRa_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
-	{
-		connection_manager_.add_channel(tag, channel);
-		auto const size = db.size("TLoRaDevice");
-		update_channel(channel, size);
-	}
-
-	void dispatcher::subscribe_table_uplink_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
-	{
-		connection_manager_.add_channel(tag, channel);
-		auto const size = db.size("_LoRaUplink");
-		update_channel(channel, size);
-	}
-
-	void dispatcher::subscribe_table_cluster_count(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
-	{
-		connection_manager_.add_channel(tag, channel);
-		auto const size = db.size("_Cluster");
-		update_channel(channel, size);
 	}
 
 	void dispatcher::display_loading_icon(boost::uuids::uuid tag, bool b, std::string const& channel)
@@ -1088,4 +584,57 @@ namespace node
 		connection_manager_.http_moved(std::get<0>(tpl), std::get<1>(tpl));
 	}
 
+	dispatcher::tbl_channel_rel dispatcher::find_rel_by_table(std::string table) const
+	{
+		auto pos = std::find_if(rel_.begin(), rel_.end(), [table](tbl_channel_rel const& rel) {
+			return boost::algorithm::equals(table, rel.table_);
+			});
+
+		return (pos == rel_.end())
+			? tbl_channel_rel("", "", "")
+			: *pos
+			;
+	}
+
+	dispatcher::tbl_channel_rel dispatcher::find_rel_by_channel(std::string channel) const {
+
+		auto pos = std::find_if(rel_.begin(), rel_.end(), [channel](tbl_channel_rel const& rel) {
+			return boost::algorithm::equals(channel, rel.channel_);
+			});
+
+		return (pos == rel_.end())
+			? tbl_channel_rel("", "", "")
+			: *pos
+			;
+	}
+
+	dispatcher::tbl_channel_rel dispatcher::find_rel_by_counter(std::string counter) const
+	{
+		auto pos = std::find_if(rel_.begin(), rel_.end(), [counter](tbl_channel_rel const& rel) {
+			return boost::algorithm::equals(counter, rel.counter_);
+			});
+
+		return (pos == rel_.end())
+			? tbl_channel_rel("", "", "")
+			: *pos
+			;
+	}
+
+
+	//
+	//	tbl_channel_rel ----------------------------------------------+
+	//
+	dispatcher::tbl_channel_rel::tbl_channel_rel(std::string table, std::string channel, std::string counter)
+		: table_(table)
+		, channel_(channel)
+		, counter_(counter)
+	{}
+
+	bool dispatcher::tbl_channel_rel::is_empty() const {
+		return table_.empty();
+	}
+
+	bool dispatcher::tbl_channel_rel::has_counter() const {
+		return !counter_.empty();
+	}
 }

@@ -440,6 +440,36 @@ namespace node
 		//		, 0			//	threshold
 		//		, 128 });	//	action
 		//}
+		else if (boost::algorithm::equals(name, "TGUIUser")) {
+
+			//
+			//	User access rights to dash SPA
+			//
+			return cyng::table::make_meta_table<1, 6>(name, { "pk"
+				, "name"		//	[string] login name
+				, "module"		//	[string] aka page
+				, "priv"		//	[u32] privilege (access rights)
+				, "action"		//	[string] allowed action
+				, "lastAccess"	//	[ts] timestamp
+				, "pwd"			//	[SHA1] hash of password
+				},
+				{ cyng::TC_UUID			//	pk
+				, cyng::TC_STRING		//	name
+				, cyng::TC_STRING		//	module
+				, cyng::TC_UINT32		//	priv
+				, cyng::TC_STRING		//	action
+				, cyng::TC_TIME_POINT	//	lastAccess
+				, cyng::TC_DIGEST_SHA1	//	pwd
+				},
+				{ 36
+				, 32	//	name
+				, 16	//	module
+				, 0		//	priv
+				, 32	//	action
+				, 0		//	lastAccess
+				, 40	//	pwd
+				});
+		}
 
 		//
 		//	table name not defined
