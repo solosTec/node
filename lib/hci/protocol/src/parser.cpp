@@ -147,10 +147,12 @@ namespace node
 
 			case state::RSSI:
 				//vm_cb_(cyng::generate_invoke("log.msg.trace", "HCI RSSI", static_cast<std::uint8_t>(c), (-13.0 - (10.0 * std::log10(static_cast<std::uint8_t>(c))))));
-				vm_cb_(cyng::generate_invoke("log.msg.trace", "HCI RSSI", static_cast<std::uint8_t>(c), (-125.0 + (0.5 * (static_cast<std::uint8_t>(c))))));
+				//vm_cb_(cyng::generate_invoke("log.msg.trace", "HCI RSSI", static_cast<std::uint8_t>(c), (-125.0 + (0.5 * (static_cast<std::uint8_t>(c))))));
+				vm_cb_(cyng::generate_invoke("log.msg.trace", "HCI RSSI", static_cast<std::uint8_t>(c), (-130.0 + (2.0 * (static_cast<std::uint8_t>(c))))));
 				//vm_cb_(cyng::generate_invoke("hci.rssi", static_cast<std::uint8_t>(c)));
 				//	dBm = -13.0 - 10.0 x log10(RSSI)
 				//	dBm = -125 + 0.5 x RSSI 
+				//	dBm = -130 + 2.0 x RSSI 
 				//	0 => -125 dBm
 				//	1 => -124,5 dBm
 				if (crc16_field_) {

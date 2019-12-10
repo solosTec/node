@@ -32,6 +32,8 @@ namespace node
 		decoder_wireless_mbus(cyng::logging::log_ptr, cache& cfg, boost::uuids::uuid tag);
 
 		/**
+	     * The first 12 bytes of the user data consist of a block with a fixed length and structure.
+	     *
 		 * Applied from master with CI = 0x53, 0x55, 0x5B, 0x5F, 0x60, 0x64, 0x6Ch, 0x6D
 		 * Applied from slave with CI = 0x68, 0x6F, 0x72, 0x75, 0x7C, 0x7E, 0x9F
 		 */

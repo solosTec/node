@@ -200,7 +200,7 @@ namespace node
 		enum device_type : std::uint8_t {
 			DEV_TYPE_OTHER = 0x00,
 			DEV_TYPE_OIL = 0x01,	//!< Oil
-			DEV_TYPE_ELECTRICITY = 0x02U,	//!< Electricity
+			DEV_TYPE_ELECTRICITY = 0x02,	//!< Electricity
 			DEV_TYPE_GAS = 0x03, //!< Gas
 			DEV_TYPE_HEAT = 0x04, //!< Heat
 			DEV_TYPE_STEAM = 0x05, //!< Steam
@@ -214,7 +214,9 @@ namespace node
 			DEV_TYPE_HEAT_COOLING_LOAD_METER = 0x0D, //!< Heat / Cooling load meter
 			DEV_TYPE_BUS_SYSTEM_COMPONENT = 0x0E, //!< Bus / System component
 			DEV_TYPE_UNKNOWN_MEDIUM = 0x0F, //!< Unknwon medium
-			// 0x10 to 0x14 reserved
+
+			// 0x10 to 0x13 reserved
+			DEV_TYPE_CALORIFIC_VALUE = 0x14,	//! Calorific value
 			DEV_TYPE_HOT_WATER = 0x15, //!< Hot water (>=90C)
 			DEV_TYPE_COLD_WATER = 0x16, //!< Cold water
 			DEV_TYPE_DUAL_REGISTER_WATER_METER = 0x17, //!< Dual register (hot/cold) Water Meter
@@ -223,13 +225,28 @@ namespace node
 			DEV_TYPE_SMOKE_DETECTOR = 0x1A,	//!<	Room sensor  (e.g. temperature or humidity)
 			DEV_TYPE_ROOM_SENSOR = 0x1B,	//!<	Room sensor  (e.g. temperature or humidity)
 			DEV_TYPE_GAS_DETECTOR = 0x1C,	//!<	Gas detector
-			// 0x1A to 0x20 reserved
-			DEV_TYPE_VALVE = 0x21, //!< Reserved for valve
-			// 0x22 to 0xFF reserved
+
+			// 0x10 to 0x1F reserved
+			DEV_TYPE_BREAKER = 0x22,	//!< (electricity)
+			DEV_TYPE_VALVE = 0x21,		//!< Valve (gas or water)
+
+			// 0x22 to 0x24 reserved
 			DEV_TYPE_DISPLAY = 0x25, //!< Display device (OMS Vol.2 Issue 2.0.02009-07-20)
+
+			//	Reserved for customer units 0x26 to 0x27
+			DEV_TYPE_WASTE_WATER = 0x28,	//!<	Waste water
+			DEV_TYPE_GARBAGE = 0x29,		//!<	Garbage	(not the band)
+			DEV_TYPE_CO2 = 0x2A,		//	Reserved for Carbon dioxide
+			//	Reserved for environmental meter 0x2B to 0x2F
 			DEV_TYPE_MUC = 0x31, //!< OMS MUC (OMS Vol.2 Issue 2.0.02009-07-20)
 			DEV_TYPE_REPEATER_UNIDIRECTIONAL = 0x32, //!< OMS unidirectional repeater (OMS Vol.2 Issue 2.0.02009-07-20)
 			DEV_TYPE_REPEATER_BIDIRECTIONAL = 0x33, //!< OMS bidirectional repeater (OMS Vol.2 Issue 2.0.02009-07-20)
+
+			//	Reserved for system devices 0x34 to 0x35
+			DEV_TYPE_RADIO_CONVERTER_SYSTEM = 0x36,	//!< A radio converter at system side operates as radio master like a wireless communication partner
+			DEV_TYPE_RADIO_CONVERTER_METER = 0x37,	//!< A Radio converter at meter side operates as radio slave like a RF-meter
+
+			//	Reserved for system devices 0x38 to 0x3F
 			DEV_TYPE_SM_ELECTRICITY = 0x42, //!< Smart Metering Electricity Meter (OMS Vol.2 Issue 2.0.02009-07-20)
 			DEV_TYPE_SM_GAS = 0x43, //!< Smart Metering Gas Meter (OMS Vol.2 Issue 2.0.02009-07-20)
 			DEV_TYPE_SM_HEAT = 0x44, //!< Smart Metering Heat Meter (OMS Vol.2 Issue 2.0.02009-07-20)

@@ -8,6 +8,7 @@
 #include <NODE_project_info.h>
 #include <smf/mbus/variable_data_block.h>
 //#include <smf/mbus/dif.h>
+#include <smf/mbus/bcd.h>
 
 #include <cyng/io/io_buffer.h>
 
@@ -20,38 +21,94 @@ namespace node
 	bool test_mbus_004()
 	{
 		{
-			std::uint8_t const val = 0x14;
-			std::int8_t scaler_ = static_cast<std::int8_t>(val & 0x07) - 6; 
-			scaler_ = -2;
+			auto n = mbus::bcd_to_n<std::uint32_t>(cyng::make_buffer({ 0x76, 0x34, 0x70, 0x00 }));
+			BOOST_CHECK_EQUAL(n, 703476);
+		}
+		{
+			//
+			//	Example from Annex P
+			//	Table P.5 — SND-NR - Heat meter (wM-Bus) 
+			//
+			auto inp = cyng::make_buffer(
+				{ 0x0C	//	DIF (8 digit BCD)
+				, 0x06	//	VIE (Energy kWh)
+				, 0x27	//	Value LSB
+				, 0x04	//	Value ( = 2850427 ==  002b7e7b)
+				, 0x85	//	Value
+				, 0x02	//	Value MSB
 
-			//mbus::udif d;
-			//d.raw_ = 0xE8;	//	1110 1000
-			//auto length_ = d.dif_.code_;
+				//	-- record 2
+				, 0x0C	//	DIE (8 digit BCD)
+				, 0x13	//	VIE (Volume liter)
+				, 0x76	//	Value LSB
+				, 0x34	//	Value ( = 703476 == 000abbf4)
+				, 0x70	//	Value
+				, 0x00	//	Value MSB
 
-			////
-			////	see function_field_code
-			////
-			////	0 - instantaneous value
-			////	1 - maximum value
-			////	2 - minimum value
-			////	all other values signal an error
-			////
-			////
-			//auto function_field_ = d.dif_.ff_;
-			//BOOST_ASSERT(function_field_ != 3);
+				//	-- record 3
+				, 0x4C	//	DIF (8 digit BCD, StorageNo 1)
+				, 0x06	//	VIE (Energy kWh)
+				, 0x19	//	Value LSB
+				, 0x54	//	Value ( = 1445419 == 00160e2b)
+				, 0x44	//	Value
+				, 0x01	//	Value MSB
 
-			////
-			////	storage number
-			////
-			//auto storage_nr_ = d.dif_.sn_;
+				//	-- record 4
+				, 0x42	//	DIE (Data type G, StorageNo 1)
+				, 0x6C	//	VIE (Date)
+				, 0xFF	//	Value LSB
+				, 0x0C	//	Value MSB ( = 31.12.2007)
 
-			//auto ext = d.dif_.ext_;
+				//	-- record 5
+				, 0x0B	//	DIF (6 digit BCD)
+				, 0x3B	//	VIF (Volume flow l/h)
+				, 0x27	//	Value LSB	
+				, 0x01	//	Value ( = 127 == 0000007f)
+				, 0x00	//	Value MSB
+
+				//	-- record 6
+				, 0x0B	//	DIF (6 digit BCD)
+				, 0x2A	//	VIF (Power 100 mW)
+				, 0x97	//	Value LSB
+				, 0x32	//	Value ( = 3297 == 00000ce1)
+				, 0x00	//	Value MSB
+
+				//	-- record 7
+				, 0x0A	//	DIF (4 digit BCD)
+				, 0x5A	//	VIF (Flow Temp. °C)
+				, 0x43	//	Value LSB
+				, 0x04	//	Value MSB ( = 443 == 01bb)
+
+				//	-- record 8
+				, 0x0A	//	DIF (4 digit BCD)
+				, 0x5E	//	VIE (Return Temp. 100 m°C)
+				, 0x51	//	Value LSB
+				, 0x02	//	Value MSB ( = 251 == 00fb)
+
+				//	-- record 9
+				, 0x02	//	DIF (2 byte integer)
+				, 0xFD	//	VIF (FD-Table)
+				, 0x17	//	VIFE (error flag)
+				, 0x00	//	Value LSB
+				, 0x00	//	Value MSB ( = 0)
+				//, 0x27	//	Fill Byte due to AES
+				});
+
+			vdb_reader reader;
+			std::size_t offset{ 0 };
+			while (offset < inp.size()) {
+				offset = reader.decode(inp, offset);
+			}
+		}
+
+		{
 
 			//
 			//	{03 74} [14 00] 00 {04 14}[dbe618]00 {44 14}[dbe618] 00 {42 6c}7e2b02fd7442120f0100c8
 			//	1631963 - 2 m3(‭18E6DB‬) m3 == 13dez == 0Dhex
 			//
-			auto inp = cyng::make_buffer({ 0x03, 0x74, 0x14, 0x00, 0x00, 0x04, 0x14, 0xdb, 0xe6, 0x18, 0x00, 0x44, 0x14, 0xdb, 0xe6, 0x18, 0x00, 0x42, 0x6c, 0x7e, 0x2b, 0x02, 0xfd, 0x74, 0x42, 0x12, 0x0f, 0x01, 0x00, 0xc8 });
+			//auto inp = cyng::make_buffer({ 0x03, 0x74, 0x14, 0x00, 0x00, 0x04, 0x14, 0xdb, 0xe6, 0x18, 0x00, 0x44, 0x14, 0xdb, 0xe6, 0x18, 0x00, 0x42, 0x6c, 0x7e, 0x2b, 0x02, 0xfd, 0x74, 0x42, 0x12, 0x0f, 0x01, 0x00, 0xc8 });
+			auto inp = cyng::make_buffer({ 0x0f, 0x01, 0x00, 0xc8 });
 			vdb_reader reader;
 			std::size_t offset{ 0 };
 			while (offset < inp.size()) {

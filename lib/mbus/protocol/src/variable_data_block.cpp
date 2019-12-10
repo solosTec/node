@@ -73,6 +73,7 @@ namespace node
 			date_flag_ = false;
 			date_time_flag_ = false;
 			scaler_ = 0;
+			unit_ = mbus::UNDEFINED_;
 
 			for( auto pos = data.begin() + offset; pos < data.end(); ++pos) {
 
@@ -128,6 +129,8 @@ namespace node
 						<< cyng::io::to_str(value_)
 						<< ", scaler: "
 						<< +scaler_
+						<< ", storage: "
+						<< storage_nr_
 						<< std::endl
 						;
 #endif
@@ -801,10 +804,12 @@ namespace node
 			value_ = cyng::make_object(cyng::chrono::init_tp(year, month, day, 0, 0, 0));
 		}
 		else {
+#pragma pack(push, 1)	
 			union {
 				char inp_[2];
 				std::uint16_t out_;
 			} cnv;
+#pragma pack(pop)
 			std::copy(buffer_.begin(), buffer_.end(), std::begin(cnv.inp_));
 			value_ = cyng::make_object(cnv.out_);
 		}
@@ -825,10 +830,12 @@ namespace node
 		}
 		else {
 			//	positive
+#pragma pack(push, 1)	
 			union {
 				char inp_[3];
 				std::uint32_t out_;
 			} cnv;
+#pragma pack(pop)
 			cnv.out_ = 0u;
 			std::copy(buffer_.begin(), buffer_.end(), std::begin(cnv.inp_));
 			value_ = cyng::make_object(cnv.out_);
@@ -870,10 +877,12 @@ namespace node
 
 		}
 		else {
+#pragma pack(push, 1)	
 			union {
 				char inp_[4];
 				std::uint32_t out_;
 			} cnv;
+#pragma pack(pop)
 			std::copy(buffer_.begin(), buffer_.end(), std::begin(cnv.inp_));
 			value_ = cyng::make_object(cnv.out_);
 		}
@@ -891,15 +900,15 @@ namespace node
 			value_ = cyng::make_object(mbus::bcd_to_n<std::uint16_t>(buffer_));
 			break;
 		case 3:
-			//	ToDo: convert
-			value_ = cyng::make_object(buffer_);
+			//	There is no std::uint24_t
+			value_ = cyng::make_object(mbus::bcd_to_n<std::uint32_t>(buffer_));
 			break;
 		case 4:
 			value_ = cyng::make_object(mbus::bcd_to_n<std::uint32_t>(buffer_));
 			break;
 		case 6:
-			//	ToDo: convert
-			value_ = cyng::make_object(buffer_);
+			//	There is no std::uint40_t
+			value_ = cyng::make_object(mbus::bcd_to_n<std::uint64_t>(buffer_));
 			break;
 		default:
 			value_ = cyng::make_object(buffer_);

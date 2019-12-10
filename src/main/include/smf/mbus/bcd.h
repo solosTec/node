@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <boost/assert.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 
 namespace node
 {
@@ -20,19 +21,13 @@ namespace node
 		template <typename T>
 		T bcd_to_n(cyng::buffer_t const& buffer) {
 
-			BOOST_ASSERT_MSG(sizeof(T) == buffer.size(), "wrong buffer size");
-
-			T n{ 0u };
-			cyng::buffer_t tmp(buffer.size());
+			T n{ T() };
 
 			//
 			//	must start from the end
 			//
-			std::reverse_copy(buffer.begin(), buffer.end(), tmp.begin());
-			for (auto c : tmp) {
+			for (auto c : boost::adaptors::reverse(buffer)) {
 				n *= 100u;
-				//std::cout << unsigned((c >> 4) & 0x0F) << std::endl;
-				//std::cout << unsigned(c & 0x0F) << std::endl;
 				n += T((c >> 4) & 0x0F) * 10u;
 				n += T(c & 0x0F);
 			}
