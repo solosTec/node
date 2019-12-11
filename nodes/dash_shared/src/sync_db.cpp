@@ -1055,7 +1055,11 @@ namespace node
 			CYNG_LOG_WARNING(logger, "db.req.modify.by.param failed "
 				<< table		// table name
 				<< " - "
-				<< cyng::io::to_str(key));
+				<< cyng::io::to_str(key)
+				<< " => "
+				<< param.first
+				<< " := "
+				<< cyng::io::to_str(param.second));
 		}
 	}
 

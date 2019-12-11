@@ -154,6 +154,8 @@ namespace node
 			void trigger_download(boost::filesystem::path const& filename, std::string const& attachment);
 
 		private:
+			bool check_auth(boost::beast::http::request<boost::beast::http::string_body> const&);
+
 			void handle_request(boost::beast::http::request<boost::beast::http::string_body>&&);
 
 			boost::beast::http::response<boost::beast::http::string_body> send_bad_request(std::uint32_t version
@@ -182,7 +184,7 @@ namespace node
 			boost::beast::http::response<boost::beast::http::string_body> send_not_authorized(std::uint32_t version
 				, bool keep_alive
 				, std::string target
-				, std::string type
+				//, std::string type
 				, std::string realm);
 #endif
 
@@ -209,6 +211,7 @@ namespace node
 			// construct it from scratch it at the beginning of each new message.
 			boost::optional<boost::beast::http::request_parser<boost::beast::http::string_body>> parser_;
 #endif
+			std::chrono::nanoseconds timeout_;
 			connections& connection_manager_;
 			boost::beast::flat_buffer buffer_;
 			queue queue_;

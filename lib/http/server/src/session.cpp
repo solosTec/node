@@ -54,13 +54,14 @@ namespace node
 #else
 			, stream_(std::move(socket))
 #endif
+			, timeout_(timeout)	//	seconds => nanoseconds
 			, connection_manager_(cm)
 			, buffer_()
 			, queue_(*this)
             , shutdown_(false)
 			, authorized_(false)
 		{
-            stream_.expires_after(timeout);
+            stream_.expires_after(timeout_);
         }
 
 		session::~session()
@@ -101,7 +102,7 @@ namespace node
 			on_timer(boost::system::error_code{}, obj);
 #else
 			connection_manager_.vm().async_run(cyng::generate_invoke("http.session.launch", tag(), false, stream_.socket().remote_endpoint()));
-            stream_.expires_after(std::chrono::seconds(15));
+            //stream_.expires_after(std::chrono::seconds(15));
 #endif
 
 			do_read();
@@ -117,7 +118,7 @@ namespace node
 #if (BOOST_BEAST_VERSION < 248)
 
             // Set the timer
-			timer_.expires_after(std::chrono::seconds(15));
+			timer_.expires_after(timeout_);
 
 			// Make the request empty before reading,
 			// otherwise the operation behavior is undefined.
@@ -138,10 +139,9 @@ namespace node
 			// Apply a reasonable limit to the allowed size
 			// of the body in bytes to prevent abuse.
 			parser_->body_limit(this->max_upload_size_);
-			//parser_->body_limit((std::numeric_limits<std::uint64_t>::max)());
 
 			// Set the timeout.
-			stream_.expires_after(std::chrono::seconds(30));
+			stream_.expires_after(timeout_);
 
 			// Read a request using the parser-oriented interface
 			boost::beast::http::async_read(
@@ -208,12 +208,12 @@ namespace node
             //
             if (shutdown_)  return;
 
-            //CYNG_LOG_TRACE(logger_, "session read use count " << (this->shared_from_this().use_count() - 1));
-
-			// Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
 			{
-				CYNG_LOG_WARNING(logger_, tag() << " - timer aborted session");
+				//
+				// Happens when the timer closes the socket
+				//
+				CYNG_LOG_WARNING(logger_, "HTTP session " << tag() << " - timer aborted session during read");
 				auto obj = connection_manager_.stop_session(tag());
 				return;
 			}
@@ -221,7 +221,7 @@ namespace node
 			// This means they closed the connection
 			if (ec == boost::beast::http::error::end_of_stream)
 			{
-				CYNG_LOG_TRACE(logger_,  tag() << " session closed - read");
+				CYNG_LOG_TRACE(logger_, "HTTP session " << tag() << " session closed - read");
 				auto obj = connection_manager_.stop_session(tag());
 // 				queue_.items_.clear();
 				return;
@@ -229,13 +229,22 @@ namespace node
 
 			if (ec)
 			{
-				CYNG_LOG_ERROR(logger_, tag() << " read error: " << ec.message());
+				CYNG_LOG_ERROR(logger_, "HTTP session " << " read error: " << ec.message());
 				auto obj = connection_manager_.stop_session(tag());
 				return;
 			}
 
 			// See if it is a WebSocket Upgrade
 #if (BOOST_BEAST_VERSION < 248)
+
+			//
+			//	test authorization
+			//
+			if (!check_auth(req_)) {
+				do_read();
+				return;
+			}
+
 			if (boost::beast::websocket::is_upgrade(req_))
 			{
 				CYNG_LOG_TRACE(logger_, "update session " 
@@ -257,6 +266,15 @@ namespace node
 			CYNG_LOG_TRACE(logger_, "handle request " << socket_.remote_endpoint());
 			handle_request(std::move(req_));
 #else
+
+			//
+			//	test authorization
+			//
+			if (!check_auth(parser_->get())) {
+				do_read();
+				return;
+			}
+
 			boost::ignore_unused(bytes_transferred);
 			if (boost::beast::websocket::is_upgrade(parser_->get())) {
 
@@ -268,9 +286,9 @@ namespace node
 					<< " to websocket"
 					<< stream_.socket().remote_endpoint());
 
-				//std::make_shared<websocket_session>(
-				//	stream_.release_socket())->do_accept(parser_->release());
+				//
 				// Create a WebSocket websocket_session by transferring the socket
+				//
 				connection_manager_.upgrade(tag(), stream_.release_socket(), parser_->release());
 
 				return;
@@ -279,7 +297,6 @@ namespace node
 
 			// Send the response
 			CYNG_LOG_TRACE(logger_, "handle request " << stream_.socket().remote_endpoint());
-			//handle_request(*doc_root_, std::move(parser_->release()), queue_);
 			handle_request(parser_->release());
 #endif
 
@@ -331,111 +348,13 @@ namespace node
 					return queue_(send_redirect(req.version()
 						, req.keep_alive()
 						, (pos != req.end() ? pos->value().to_string() : "")
-						, req.target().to_string()));
+						, target));
 				}
 
-				//
-				//	test authorization
-				//
-
-#ifdef NODE_SSL_INSTALLED
-				for (auto const& ad : auth_dirs_) {
-					if (boost::algorithm::starts_with(target, ad.first)) {
-
-						//
-						//	Test auth token
-						//
-						auto pos = req.find("Authorization");
-						if (pos == req.end()) {
-
-							//
-							//	authorization required
-							//
-							CYNG_LOG_WARNING(logger_, "authorization required: "
-								<< ad.first
-								<< " / "
-								<< req.target());
-
-							//
-							//	send auth request
-							//
-							return queue_(send_not_authorized(req.version()
-								, req.keep_alive()
-								, req.target().to_string()
-								, ad.second.type_ 
-								, ad.second.realm_));
-						}
-						else {
-
-							//
-							//	authorized
-							//	Basic c29sOm1lbGlzc2E=
-							//
-							if (authorization_test(pos->value(), ad.second)) {
-								CYNG_LOG_DEBUG(logger_, "authorized with "
-									<< pos->value());
-
-								if (!authorized_) {
-									connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized"
-										, tag()
-										, true
-										, ad.second.type_
-										, ad.second.user_
-										, ad.first
-#if (BOOST_BEAST_VERSION < 248)
-										, socket_.remote_endpoint()
-#else
-										, stream_.socket().remote_endpoint()
-#endif
-									));
-
-									//
-									//	mark session as authorized
-									//
-									authorized_ = true;
-
-									//
-									//	update web session table
-									//
-									connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
-										, cyng::table::key_generator(tag())
-										, cyng::param_factory("authorized", authorized_)
-										, 0u
-										, tag()));
-								}
-							}
-							else {
-								CYNG_LOG_WARNING(logger_, "authorization failed "
-									<< pos->value());
-
-								connection_manager_.vm().async_run(cyng::generate_invoke("http.authorized"
-									, tag()
-									, false
-									, ad.second.type_
-									, ad.second.user_
-									, ad.first
-#if (BOOST_BEAST_VERSION < 248)
-									, socket_.remote_endpoint()
-#else 
-									, stream_.socket().remote_endpoint()
-#endif
-								));
-
-								//
-								//	send auth request
-								//
-								return queue_(send_not_authorized(req.version()
-									, req.keep_alive()
-									, req.target().to_string()
-									, ad.second.type_
-									, ad.second.realm_));
-
-							}
-						}
-						break;
-					}
-				}
-#endif
+				////
+				////	test authorization
+				////
+				//if (!check_auth(req, target)) return;
 
 				//	apply redirections
 				connection_manager_.redirect(target);
@@ -656,6 +575,92 @@ namespace node
 			return queue_(std::move(req));
 		}
 
+		bool session::check_auth(boost::beast::http::request<boost::beast::http::string_body> const& req)
+		{
+			auto const target = req.target().to_string();
+
+#ifdef NODE_SSL_INSTALLED
+
+			//
+			//	check resource/target if authorization is required
+			//
+			if (authorization_required(target, auth_dirs_)) {
+				//
+				//	Test auth token
+				//
+				auto pos = req.find("Authorization");
+				if (pos == req.end()) {
+
+					//
+					//	authorization required
+					//
+					CYNG_LOG_WARNING(logger_, "missing authorization for resource "
+						<< target);
+
+					//
+					//	send auth request
+					//
+					queue_(send_not_authorized(req.version()
+						, req.keep_alive()
+						, req.target().to_string()
+						, "solos::Tec"));
+					return false;
+				}
+				else {
+
+					//
+					//	authorized
+					//	Basic c29sOm1lbGlzc2E=
+					//
+					std::pair<auth, bool> r = authorization_test(pos->value(), auth_dirs_);
+					if (r.second) {
+
+						CYNG_LOG_DEBUG(logger_, "authorized as " << r.first.user_);
+						if (!authorized_) {
+
+							//
+							//	mark session as authorized
+							//
+							authorized_ = true;
+
+							//
+							//	update web session table "_HTTPSession"
+							//
+							connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+								, cyng::table::key_generator(tag())
+								, cyng::param_factory("authorized", authorized_)
+								, 0u
+								, tag()));
+
+							connection_manager_.vm().async_run(node::db::modify_by_param("_HTTPSession"
+								, cyng::table::key_generator(tag())
+								, cyng::param_factory("user", r.first.user_)
+								, 0u
+								, tag()));
+						}
+					}
+					else {
+						CYNG_LOG_WARNING(logger_, "authorization failed "
+							<< pos->value());
+
+						//
+						//	send auth request
+						//
+						queue_(send_not_authorized(req.version()
+							, req.keep_alive()
+							, req.target().to_string()
+							, "solos::Tec"));
+
+						return false;
+					}
+				}
+			}
+
+#endif
+			return true;
+		}
+
+
 		boost::beast::http::response<boost::beast::http::string_body> session::send_server_error(std::uint32_t version
 			, bool keep_alive
 			, boost::system::error_code ec)
@@ -749,7 +754,7 @@ namespace node
 		boost::beast::http::response<boost::beast::http::string_body> session::send_not_authorized(std::uint32_t version
 			, bool keep_alive
 			, std::string target
-			, std::string type
+			//, std::string type
 			, std::string realm)
 		{
 			CYNG_LOG_WARNING(logger_, "401 - unauthorized: " << target);
@@ -789,17 +794,19 @@ namespace node
             //
             if (shutdown_)  return;
 
-			// Happens when the timer closes the socket
 			if (ec == boost::asio::error::operation_aborted)
 			{
-				CYNG_LOG_WARNING(logger_, "session aborted - write");
+				//
+				// Happens when the timer closes the socket
+				//
+				CYNG_LOG_WARNING(logger_, "HTTP session " << tag() << " - timer aborted session during write");
 				connection_manager_.stop_session(tag());
 				return;
 			}
 
 			if (ec)
 			{
-				CYNG_LOG_ERROR(logger_, "write error: " << ec.message());
+				CYNG_LOG_WARNING(logger_, "HTTP session " << tag() << " - write error: " << ec.message());
 				connection_manager_.stop_session(tag());
 				return;
 			}
@@ -808,6 +815,7 @@ namespace node
 			{
 				// This means we should close the connection, usually because
 				// the response indicated the "Connection: close" semantic.
+				CYNG_LOG_WARNING(logger_, "HTTP session " << tag() << " - close");
 				connection_manager_.stop_session(tag());
 				return;
 			}

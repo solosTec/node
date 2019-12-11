@@ -306,7 +306,7 @@ namespace node
 				//
 				vm_.async_run(node::db::insert("_HTTPSession"
 					, cyng::table::key_generator(sp->tag())
-					, cyng::table::data_generator(rep, "HTTPS", std::chrono::system_clock::now(), false, "initial (HTTPS)")
+					, cyng::table::data_generator(rep, "HTTPS", std::chrono::system_clock::now(), false, "?", "initial (HTTPS)")
 					, 0u
 					, vm_.tag()));
 
@@ -348,7 +348,7 @@ namespace node
 				//
 				vm_.async_run(node::db::insert("_HTTPSession"
 					, cyng::table::key_generator(sp->tag())
-					, cyng::table::data_generator(rep, "HTTP", std::chrono::system_clock::now(), false, "initial (HTTPS)")
+					, cyng::table::data_generator(rep, "HTTP", std::chrono::system_clock::now(), false, "?", "initial (HTTPS)")
 					, 0u
 					, vm_.tag()));
 

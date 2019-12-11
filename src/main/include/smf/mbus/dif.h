@@ -35,6 +35,11 @@ namespace node
 			DFC_SPECIAL = 15,	// special functions
 		};
 
+		/**
+		 * Take a DIF value and returns the enum.
+		 */
+		data_field_code decode_dif(std::uint8_t);
+
 		enum function_field_code : std::uint8_t {
 			FFC_INSTANT = 0,	//	Instantaneous value
 			FFC_MAX_VALUE = 1,

@@ -34,16 +34,29 @@ namespace node
 		}
 	}	
 	
-	std::pair<auth, bool> authorization_required(boost::string_view path, auth_dirs const& ad)
+	//std::pair<auth_idents, bool> authorization_required(boost::string_view path, auth_dirs const& ad)
+	//{
+	//	auth_idents res;
+	//	for (auto dir : ad)
+	//	{
+	//		boost::string_view cmp(dir.first.c_str(), dir.first.size());
+	//		if (boost::algorithm::starts_with(path, cmp)) {
+	//			res.push_back(dir.second);
+	//		}
+	//	}
+	//	return std::make_pair(res, false);
+	//}
+	
+	bool authorization_required(boost::string_view path, auth_dirs const& ad)
 	{
 		for (auto dir : ad)
 		{
 			boost::string_view cmp(dir.first.c_str(), dir.first.size());
- 			if (boost::algorithm::starts_with(path, cmp))	return std::make_pair(dir.second, true);
+			if (boost::algorithm::starts_with(path, cmp)) return true;
 		}
-		return std::make_pair(auth(), false);
+		return false;
 	}
-	
+
 	bool authorization_test(boost::string_view value, auth const& ident)
 	{
 		std::vector<boost::string_view> parts = cyng::split(value, "\t ");
@@ -54,6 +67,22 @@ namespace node
 		}
 		return false;
 	}
+
+	std::pair<auth, bool> authorization_test(boost::string_view path, auth_dirs const& ad)
+	{
+		std::vector<boost::string_view> parts = cyng::split(path, "\t ");
+		BOOST_ASSERT_MSG(parts.size() == 2, "invalid authorization field");
+		if (parts.size() == 2 && (parts.at(0) == "Basic")) {
+			for (auto ident : ad) {
+				if (ident.second.basic_credentials() == parts.at(1)) {
+					return std::make_pair(ident.second, true);
+				}
+			}
+		}
+
+		return std::make_pair(auth(), false);
+	}
+
 	
 	auth::auth()
 	: type_()

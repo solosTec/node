@@ -96,9 +96,9 @@ namespace node
 
 			vdb_reader reader;
 			std::size_t offset{ 0 };
-			while (offset < inp.size()) {
-				offset = reader.decode(inp, offset);
-			}
+			//while (offset < inp.size()) {
+			//	offset = reader.decode(inp, offset);
+			//}
 		}
 
 		{

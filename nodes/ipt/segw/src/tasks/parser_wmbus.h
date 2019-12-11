@@ -56,11 +56,6 @@ namespace node
 		cyng::logging::log_ptr logger_;
 
 		/**
-		 * execution engine from LMN
-		 */
-		//cyng::controller& vm_;
-
-		/**
 		 * M-Bus parser
 		 */
 		wmbus::parser parser_;

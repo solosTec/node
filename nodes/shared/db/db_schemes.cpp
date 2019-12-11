@@ -400,12 +400,13 @@ namespace node
 				, 128 });	//	obj
 		}
 		else if (boost::algorithm::equals(name, "_HTTPSession")) {
-			return cyng::table::make_meta_table<1, 5>(name,
+			return cyng::table::make_meta_table<1, 6>(name,
 				{ "tag"			//	[uuid] client session - primary key 
 				, "ep"			//	[ep] remote endpoint
 				, "type"		//	[string] HTTP, HTTPS, WS, WSS
 				, "start"		//	[ts] start time
 				, "authorized"	//	[bool] authorized
+				, "user"		//	[string] user name
 				, "status"		//	[string] status text
 				},
 				{ cyng::TC_UUID				//	tag
@@ -413,6 +414,7 @@ namespace node
 				, cyng::TC_STRING			//	type
 				, cyng::TC_TIME_POINT		//	start
 				, cyng::TC_BOOL				//	authorized
+				, cyng::TC_STRING			//	user
 				, cyng::TC_STRING			//	status
 				},
 				{ 36	//	tag
@@ -420,8 +422,9 @@ namespace node
 				, 6		//	type
 				, 0		//	start
 				, 0 	//	authorized
+				, 64	//	user
 				, 128	//	status
-				});
+			});
 		}
 		//else if (boost::algorithm::equals(name, "_TimeSeriesParams")) {
 
@@ -444,30 +447,25 @@ namespace node
 
 			//
 			//	User access rights to dash SPA
+			//	[string] name - index
 			//
-			return cyng::table::make_meta_table<1, 6>(name, { "pk"
+			return cyng::table::make_meta_table<1, 4, 1>(name, { "pk"
 				, "name"		//	[string] login name
-				, "module"		//	[string] aka page
-				, "priv"		//	[u32] privilege (access rights)
-				, "action"		//	[string] allowed action
-				, "lastAccess"	//	[ts] timestamp
 				, "pwd"			//	[SHA1] hash of password
+				, "lastAccess"	//	[ts] timestamp
+				, "privs"		//	[string] JSON
 				},
 				{ cyng::TC_UUID			//	pk
 				, cyng::TC_STRING		//	name
-				, cyng::TC_STRING		//	module
-				, cyng::TC_UINT32		//	priv
-				, cyng::TC_STRING		//	action
-				, cyng::TC_TIME_POINT	//	lastAccess
 				, cyng::TC_DIGEST_SHA1	//	pwd
+				, cyng::TC_TIME_POINT	//	lastAccess
+				, cyng::TC_STRING		//	rights
 				},
 				{ 36
 				, 32	//	name
-				, 16	//	module
-				, 0		//	priv
-				, 32	//	action
-				, 0		//	lastAccess
 				, 40	//	pwd
+				, 0		//	lastAccess
+				, 2048	//	rights
 				});
 		}
 

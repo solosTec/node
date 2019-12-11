@@ -129,7 +129,7 @@ namespace node
 				//
 				vm_.async_run(node::db::insert("_HTTPSession"
 					, cyng::table::key_generator(sp->tag())
-					, cyng::table::data_generator(rep, "HTTP", std::chrono::system_clock::now(), false, "initial (HTTP)")
+					, cyng::table::data_generator(rep, "HTTP", std::chrono::system_clock::now(), false, "?", "initial (HTTP)")
 					, 0u
 					, vm_.tag()));				
 			}
@@ -192,6 +192,8 @@ namespace node
 			//	unique lock
 			//
 			cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[HTTP_PLAIN]);
+
+			CYNG_LOG_DEBUG(logger_, "connections: remove HTTP session " << tag << " /" << sessions_[HTTP_PLAIN].size());
 
 			auto pos = sessions_[HTTP_PLAIN].find(tag);
 			if (pos != sessions_[HTTP_PLAIN].end()) {

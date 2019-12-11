@@ -368,7 +368,8 @@ namespace node
 				//
 				//	update specific attribute
 				//
-				cmd.update(cyng::sql::make_assign(idx.first + 1, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
+				auto sql_cmd = cmd.update(cyng::sql::make_assign(idx.first + 1, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
+				boost::ignore_unused(sql_cmd);
 
 				std::string sql = cmd.to_str();
 				//CYNG_LOG_TRACE(logger_, sql);	//	update
@@ -582,11 +583,21 @@ namespace node
 					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 36)
 						.push(cyng::make_object<std::uint64_t>(1u), 0)
 						.push(cyng::make_object("Alfred"), 32)
-						.push(cyng::make_object("device"), 16)
-						.push(cyng::make_object<std::uint32_t>(4u), 0)
-						.push(cyng::make_object("action"), 32)
 						.push(cyng::make_object(cyng::crypto::digest_sha1(digest)), 40)
 						.push(cyng::make_object(std::chrono::system_clock::now()), 0)
+						//	{devices: ["view", "delete", "edit"], meters: ["view"]}
+						.push(cyng::make_object("{devices: [\"view\", \"delete\", \"edit\"], meters: [\"view\"]}"), 2048)
+						;
+					stmt->execute();
+					stmt->clear();
+
+					//	bind parameters
+					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 36)
+						.push(cyng::make_object<std::uint64_t>(1u), 0)
+						.push(cyng::make_object("Hugo"), 32)
+						.push(cyng::make_object(cyng::crypto::digest_sha1(digest)), 40)
+						.push(cyng::make_object(std::chrono::system_clock::now()), 0)
+						.push(cyng::make_object("{devices: [\"view\", \"delete\", \"edit\"], meters: [\"view\", \"edit\"]}"), 2048)
 						;
 					stmt->execute();
 					stmt->clear();
@@ -889,30 +900,24 @@ namespace node
 			},
 			{ 36, 0, 3, 8, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0 }));
 
-		insert(meta_map, cyng::table::make_meta_table_gen<1, 6>("TGUIUser", 
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 4>("TGUIUser", 
 			{ "pk"
 			, "name"		//	[string] login name
-			, "module"		//	[string] aka page
-			, "priv"		//	[u32] privilege (access rights)
-			, "action"		//	[string] allowed action
 			, "pwd"			//	[SHA1] hash of password
 			, "lastAccess"	//	[ts] timestamp
+			, "privs"		//	[string] JSON
 			},
 			{ cyng::TC_UUID			//	pk
 			, cyng::TC_STRING		//	name
-			, cyng::TC_STRING		//	module
-			, cyng::TC_UINT32		//	priv
-			, cyng::TC_STRING		//	action
 			, cyng::TC_DIGEST_SHA1	//	pwd
 			, cyng::TC_TIME_POINT	//	lastAccess
+			, cyng::TC_STRING		//	rights
 			},
 			{ 36
 			, 32	//	name
-			, 16	//	module
-			, 0		//	priv
-			, 32	//	action
 			, 40	//	pwd
 			, 0		//	lastAccess
+			, 2048	//	rights
 			}));
 
 		return meta_map;

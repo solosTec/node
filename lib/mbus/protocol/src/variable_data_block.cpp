@@ -20,6 +20,7 @@ namespace node
 
 	vdb_reader::vdb_reader()
 		: state_(STATE_DIF_)
+		//, dif_(mbus::DFC_NO_DATA)
 		, length_(0)
 		, function_field_(0)
 		, storage_nr_(0)
@@ -151,6 +152,7 @@ namespace node
 		//	see data_field_code
 		//
 		length_ = d.dif_.code_;
+		//dif_ = mbus::decode_dif(d.dif_.code_);
 
 		//
 		//	see function_field_code
@@ -333,6 +335,19 @@ namespace node
 			date_time_flag_ = ((val & 0x01) == 1);
 			unit_ = mbus::COUNT;
 		}
+		else if (val == 0x6C) {
+			//	E110 1100 Date (actual or associated with a storage number / function)
+			//	data field =0010b, type G
+		}
+		else if (val == 0x6D) {
+			//	E110 1101
+			//	Extended date and time Time and date to sec.data field = 0110b, type I point(actual or associated with a storage number / function)
+			//	Meaning depends on data field.
+			//	Time to s
+			//	data field= 0100b, type F
+			//	data field= 0011b, type J
+			//	data field= 0110b, type I
+		}
 		else if (val == 0x6E) {
 			//	 E110 1110 (Units for H.C.A.)
 			unit_ = mbus::UNIT_RESERVED;
@@ -361,9 +376,12 @@ namespace node
 		}
 		else if (val == 0x79) {
 			//	 E111 1001 (Enhanced Identification)
+			//	Data = Identification No. (8 digit BCD)
+			length_ = mbus::DFC_8_DIGIT_BCD;
 		}
 		else if (val == 0x7A) {
 			//	 E111 1010 (Bus Address)
+			//	For EN 13757-2: one byte link layer address, data type C(x = 8) For EN 13757 - 4: data field 110b(6 byte header - ID) or 111b(full 8 byte header)
 		}
 		else if (val == 0x7B) {
 			//	 E111 1011 Extension of VIF-codes (true VIF is given in the first VIFE)
@@ -524,7 +542,7 @@ namespace node
 		else if ((c & 0x7F) == 0x08) {
 			//	E000 1000	Access Number (transmission count)
 			//	2 data bytes
-			BOOST_ASSERT(length_ == 2);
+			BOOST_ASSERT(length_ == mbus::DFC_16_BIT_INT);
 			return STATE_DATA_7D_08;
 		}
 		//Enhanced Identification
@@ -547,7 +565,7 @@ namespace node
 		else if ((c & 0x7F) == 0x17) {
 			//	E001 0111	Error flags (binary)
 			//	2 data bytes
-			BOOST_ASSERT(length_ == 2);
+			BOOST_ASSERT(length_ == mbus::DFC_16_BIT_INT);
 			return STATE_DATA_7D_17;
 		}
 		//E001 1000	Error mask

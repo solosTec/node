@@ -10,9 +10,11 @@
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/sys/memory.h>
+#include <cyng/json/json_parser.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/core/ignore_unused.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node 
 {
@@ -25,13 +27,13 @@ namespace node
 				tbl_channel_rel("TMeter", "config.meter", "table.meter.count"),
 				tbl_channel_rel("TLoRaDevice", "config.lora", "table.LoRa.count"),
 				tbl_channel_rel("TGUIUser", "config.user", "table.user.count"),
-				tbl_channel_rel("_Session", "status.sessions", ""),
+				tbl_channel_rel("_Session", "status.session", "table.session.count"),
 				tbl_channel_rel("_Target", "status.target", "table.target.count"),
-				tbl_channel_rel("_Connection", "status.connection", ""),
+				tbl_channel_rel("_Connection", "status.connection", "table.connection.count"),
 				tbl_channel_rel("_Config", "config.system", ""),
 				tbl_channel_rel("_SysMsg", "monitor.msg", "table.msg.count"),
 				//tbl_channel_rel("---", "config.web", ""),
-				tbl_channel_rel("_HTTPSession", "config.sessions", "table.session.count"),
+				tbl_channel_rel("_HTTPSession", "web.sessions", "table.web.count"),
 				tbl_channel_rel("_Cluster", "status.cluster", "table.cluster.count"),
 				tbl_channel_rel("_TimeSeries", "monitor.tsdb", ""),
 				tbl_channel_rel("_LoRaUplink", "monitor.lora", "table.uplink.count"),
@@ -471,6 +473,80 @@ namespace node
 		//
 		connection_manager_.add_channel(tag, channel);
 
+		if (boost::algorithm::equals(table, "TGUIUser")) {
+			subscribe_TGUIUser(db, channel, tag);
+
+		}
+		else {
+			subscribe_with_loop(db, table, channel, tag);
+		}
+	}
+
+	void dispatcher::subscribe_TGUIUser(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
+	{
+		//
+		//	send initial data set of TGUIUser table
+		//
+		db.access([&](cyng::store::table const* tbl_hs, cyng::store::table const* tbl_user) {
+
+			auto rec_hs = tbl_hs->lookup(cyng::table::key_generator(tag));
+			if (!rec_hs.empty()) {
+
+				//
+				//	session found
+				//	lookup GUI user by name
+				//
+				auto const user_name = cyng::value_cast<std::string>(rec_hs["user"], "?");
+				CYNG_LOG_DEBUG(logger_, "(TGUIUser)lookup user " << user_name);
+				auto rec_user = tbl_user->lookup_by_index(rec_hs["user"]);
+				if (!rec_user.empty()) {
+
+					auto privs = cyng::value_cast<std::string>(rec_user["privs"], "{}");
+					CYNG_LOG_TRACE(logger_, "TGUIUser: " << privs);
+					try {
+						auto const r = cyng::parse_json(privs);
+						if (r.second) {
+
+							//cyng::table::record tmp(rec);
+							rec_user.set("privs", r.first);
+
+							auto tpl = cyng::tuple_factory(
+								cyng::param_factory("cmd", std::string("insert")),
+								cyng::param_factory("channel", channel),
+								cyng::param_factory("rec", rec_user.convert()));
+
+							auto msg = cyng::json::to_string(tpl);
+							connection_manager_.ws_msg(tag, msg);
+						}
+						else {
+							CYNG_LOG_WARNING(logger_, "invalid privs: " << privs);
+						}
+					}
+					catch (std::exception const& ex) {
+						CYNG_LOG_ERROR(logger_, ex.what()
+							<< " - converting TGUIUser to JSON failed ");
+
+					}
+				}
+				else {
+
+					CYNG_LOG_ERROR(logger_, "(TGUIUser) user " << user_name << " not found");
+
+				}
+			}
+			else {
+
+				CYNG_LOG_ERROR(logger_, "(_HTTPSession) user of session " << tag << " not found");
+
+			}
+
+		}	, cyng::store::read_access("_HTTPSession")
+			, cyng::store::read_access("TGUIUser"));
+
+	}
+
+	void dispatcher::subscribe_with_loop(cyng::store::db& db, std::string table, std::string const& channel, boost::uuids::uuid tag)
+	{
 		//
 		//	send initial data set of device table
 		//
@@ -520,21 +596,21 @@ namespace node
 						//
 						//	give GUI a chance to refresh
 						//
-						std::this_thread::sleep_for(std::chrono::milliseconds(12));
+						//std::this_thread::sleep_for(std::chrono::milliseconds(12));
 					}
 				}
 				catch (std::exception const& ex) {
 					CYNG_LOG_ERROR(logger_, ex.what()
-						<< " - insert into "
+						<< " - converting "
 						<< table
-						<< " failed "
+						<< " to JSON failed "
 						<< cyng::io::to_str(tpl));
-					//ctx.queue(bus_insert_msg((std::get<1>(tpl) ? cyng::logging::severity::LEVEL_TRACE : cyng::logging::severity::LEVEL_WARNING), ss.str()));
 
 				}
 
 				return true;	//	continue
 			});
+
 			BOOST_ASSERT(counter == 0);
 			boost::ignore_unused(counter);	//	release version
 			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");

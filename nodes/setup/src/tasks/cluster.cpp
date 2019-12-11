@@ -56,6 +56,7 @@ namespace node
 		bus_->vm_.register_function("db.res.insert", 4, std::bind(&cluster::db_res_insert, this, std::placeholders::_1));
 		bus_->vm_.register_function("db.req.modify.by.attr", 3, std::bind(&cluster::db_req_modify_by_attr, this, std::placeholders::_1));
 		bus_->vm_.register_function("db.req.modify.by.param", 3, std::bind(&cluster::db_req_modify_by_param, this, std::placeholders::_1));
+		//	ToDo: check if "db.req.remove" requires 3 instead of 2 parameters
 		bus_->vm_.register_function("db.req.remove", 2, std::bind(&cluster::db_remove, this, std::placeholders::_1));
 
 		//

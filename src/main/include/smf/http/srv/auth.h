@@ -37,16 +37,25 @@ namespace node
 		std::string basic_credentials() const;
 	};
 	
-	using auth_dirs = std::map<std::string, auth>;
+	/**
+	 * The same path can use multiple authorizations
+	 */
+	using auth_dirs = std::multimap<std::string, auth>;
+	using auth_idents = std::vector<auth>;
 	
 	/**
 	 * read user credentials from configuration
 	 */
 	void init(cyng::object, auth_dirs&);
 	
-	std::pair<auth, bool> authorization_required(boost::string_view, auth_dirs const&);
-	
+	/**
+	 * Returns all credentials associated with the specified resource
+	 */
+	//std::pair<auth_idents, bool> authorization_required(boost::string_view, auth_dirs const&);
+	bool authorization_required(boost::string_view, auth_dirs const&);
+
 	bool authorization_test(boost::string_view, auth const&);
+	std::pair<auth, bool> authorization_test(boost::string_view, auth_dirs const&);
 }
 
 #endif
