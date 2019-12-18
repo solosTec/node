@@ -61,6 +61,8 @@ set (node_ipt_segw_tasks
 	nodes/ipt/segw/src/tasks/gpio.cpp
 	nodes/ipt/segw/src/tasks/obislog.h
 	nodes/ipt/segw/src/tasks/obislog.cpp
+	nodes/ipt/segw/src/tasks/readout.h
+	nodes/ipt/segw/src/tasks/readout.cpp
 	nodes/ipt/segw/src/tasks/network.h
 	nodes/ipt/segw/src/tasks/network.cpp
 	nodes/ipt/segw/src/tasks/lmn_port.h

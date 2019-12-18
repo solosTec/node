@@ -409,7 +409,7 @@ namespace node
 				, cyng::TC_BOOL			//	active
 				, cyng::TC_STRING		//	manufacturer/description
 
-				, cyng::TC_BUFFER		//	status (81 00 60 05 00 00)
+				, cyng::TC_UINT32		//	status (81 00 60 05 00 00)
 				, cyng::TC_BUFFER		//	bit mask (81 81 C7 86 01 FF)
 				, cyng::TC_UINT32		//	interval (milliseconds)
 				, cyng::TC_BUFFER		//	pubKey

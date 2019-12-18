@@ -298,6 +298,8 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 00, 03, 00, W_MBUS_ADAPTER_ID);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 00, 00, W_MBUS_FIRMWARE);	//	[string]
 		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 03, FF, W_MBUS_HARDWARE);	//	[string]
+		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 02, 04, FF, W_MBUS_FIELD_STRENGTH);	//	[u16] dbm
+		constexpr static obis	DEFINE_OBIS_CODE(81, 06, 00, 03, 74, FF, W_MBUS_LAST_RECEPTION);	//	[seconds] Time since last radio telegram reception
 
 		//
 		//	Wireless M-BUS config

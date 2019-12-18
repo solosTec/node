@@ -881,7 +881,7 @@ namespace node
 			, std::string eol)
 		{
 			std::string s;
-			if (unit != node::mbus::COUNT) {
+			if (unit != static_cast<std::uint8_t>(node::mbus::units::COUNT)) {
 				s += '*';
 				s += node::mbus::get_unit_name(unit);
 			}

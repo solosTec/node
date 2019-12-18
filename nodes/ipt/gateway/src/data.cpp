@@ -371,7 +371,7 @@ namespace node
 					//
 					//	remove trailing 0x2F
 					//
-					r.first.remove_aes_trailer();
+					//r.first.remove_aes_trailer();
 
 					//
 					//	start SML parser
@@ -399,7 +399,7 @@ namespace node
 			}
 		}
 
-		void data::read_variable_data_block(cyng::buffer_t const& server_id, header_short& hs)
+		void data::read_variable_data_block(cyng::buffer_t const& server_id, header_short const& hs)
 		{
 			//
 			//	get number of encrypted bytes
@@ -409,7 +409,7 @@ namespace node
 			//
 			//	remove trailing 0x2F
 			//
-			counter -= hs.remove_aes_trailer();
+			//counter -= hs.remove_aes_trailer();
 
 			CYNG_LOG_DEBUG(logger_, "read_variable_data_block("
 				<< counter
@@ -418,7 +418,7 @@ namespace node
 				<< ")");
 
 
-			vdb_reader reader;
+			vdb_reader reader(server_id);
 			std::size_t offset{ 0 };
 			while (offset < counter) {
 
@@ -527,12 +527,13 @@ namespace node
 					//
 					//	decode payload data
 					//
-					if (!hl.decode(key)) {
-						CYNG_LOG_WARNING(logger_, "meter "
-							<< sml::from_server_id(server_id)
-							<< " has invalid AES key: "
-							<< cyng::io::to_hex(key.to_buffer(), ' '));
-					}
+					auto r = decode(hl, key);
+					//if (!hl.decode(key)) {
+					//	CYNG_LOG_WARNING(logger_, "meter "
+					//		<< sml::from_server_id(server_id)
+					//		<< " has invalid AES key: "
+					//		<< cyng::io::to_hex(key.to_buffer(), ' '));
+					//}
 				}
 				else {
 					CYNG_LOG_WARNING(logger_, "meter " << sml::from_server_id(server_id) << " is not configured");
@@ -549,12 +550,13 @@ namespace node
 					//
 					//	decode payload data
 					//
-					if (!hl.decode(key)) {
-						CYNG_LOG_WARNING(logger_, "meter "
-							<< sml::from_server_id(server_id)
-							<< " has invalid AES key: "
-							<< cyng::io::to_hex(key.to_buffer(), ' '));
-					}
+					auto r = decode(hl, key);
+					//if (!hl.decode(key)) {
+					//	CYNG_LOG_WARNING(logger_, "meter "
+					//		<< sml::from_server_id(server_id)
+					//		<< " has invalid AES key: "
+					//		<< cyng::io::to_hex(key.to_buffer(), ' '));
+					//}
 
 					//
 					//	update meter table
@@ -606,12 +608,13 @@ namespace node
 					//
 					//	decode payload data
 					//
-					if (!hs.decode(key, iv)) {
-						CYNG_LOG_WARNING(logger_, "meter "
-							<< sml::from_server_id(server_id)
-							<< " has invalid AES key: "
-							<< cyng::io::to_hex(key.to_buffer(), ' '));
-					}
+					decode(hs, key, iv);
+					//if (!hs.decode(key, iv)) {
+					//	CYNG_LOG_WARNING(logger_, "meter "
+					//		<< sml::from_server_id(server_id)
+					//		<< " has invalid AES key: "
+					//		<< cyng::io::to_hex(key.to_buffer(), ' '));
+					//}
 				}
 				else {
 					CYNG_LOG_WARNING(logger_, "meter " << sml::from_server_id(server_id) << " is not configured");
@@ -629,12 +632,13 @@ namespace node
 					//
 					//	decode payload data
 					//
-					if (!hs.decode(key, iv)) {
-						CYNG_LOG_WARNING(logger_, "meter "
-							<< sml::from_server_id(server_id)
-							<< " has invalid AES key: "
-							<< cyng::io::to_hex(key.to_buffer(), ' '));
-					}
+					decode(hs, key, iv);
+					//if (!hs.decode(key, iv)) {
+					//	CYNG_LOG_WARNING(logger_, "meter "
+					//		<< sml::from_server_id(server_id)
+					//		<< " has invalid AES key: "
+					//		<< cyng::io::to_hex(key.to_buffer(), ' '));
+					//}
 
 					//
 					//	update meter table

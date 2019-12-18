@@ -10,7 +10,7 @@
 
 #include <smf/mbus/defs.h>
 #include <smf/mbus/units.h>
-//#include <smf/sml/intrinsics/obis.h>
+#include <smf/sml/intrinsics/obis.h>
 
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/object.h>
@@ -37,7 +37,7 @@ namespace node
 	class vdb_reader
 	{
 	public:
-		vdb_reader();
+		vdb_reader(cyng::buffer_t const& server_id);
 		std::size_t decode(cyng::buffer_t const&, std::size_t offset);
 
 		/**
@@ -46,15 +46,13 @@ namespace node
 		cyng::object get_value() const;
 
 		std::int8_t get_scaler() const;
-		mbus::unit_code	get_unit() const;
+		mbus::units	get_unit() const;
 
-		std::uint64_t get_storage_nr() const;
-		std::uint32_t get_tariff() const;
-		std::uint16_t get_sub_unit() const;
-
+		bool is_valid() const;
+		sml::obis get_code() const;
 
 	private:
-		enum state {
+		enum class state {
 			STATE_ERROR_,
 			STATE_DIF_,
 			STATE_DIF_EXT_,
@@ -95,14 +93,30 @@ namespace node
 		state make_i32_value();
 		state make_bcd_value(std::size_t);
 
+		void reset();
+		std::uint8_t get_medium() const;
+
 	private:
+		cyng::buffer_t const server_id_;
 		std::uint8_t length_;
 		std::uint8_t function_field_;
+
+		/**
+		 * The storage number 0 signals an actual value.
+		 */
 		std::uint64_t storage_nr_;	//!< max value 0x20000000000
+
+		/**
+		 * Tariff 0 is usually the sum of all other tariffs.
+		 */
 		std::uint32_t tariff_;	//!< max value 0x100000000
 		std::uint16_t sub_unit_;	//	max value 0x10000
 		std::int8_t scaler_;
-		mbus::unit_code	unit_;
+
+		/**
+		 * unit of the data value.
+		 */
+		mbus::units	unit_;
 		bool date_flag_;
 		bool date_time_flag_;
 		cyng::object value_;
@@ -111,6 +125,12 @@ namespace node
 		//	temporary values
 		//
 		cyng::buffer_t buffer_;	//	bcd, etc...
+		typename sml::obis::data_type code_;	//	std::array< std::uint8_t, 6 >
+
+		/**
+		 * If parser was successfull, we have valid data
+		 */
+		bool valid_;
 	};
 
 }	//	node

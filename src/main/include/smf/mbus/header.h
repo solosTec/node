@@ -78,16 +78,6 @@ namespace node
 		std::uint16_t c_ : 2;	//	Content of Message
 	};
 
-#pragma pack(push, 1)	
-	//union ucfg_fields
-	//{
-	//	char		raw_[2];
-	//	cfg_field_5	cfg_field_5_;
-	//	cfg_field_7	cfg_field_7_;
-	//	cfg_field_D	cfg_field_D_;
-	//};
-#pragma pack(pop)
-
 	/**
 	 * Short header used only by wireless M-Bus.
 	 * Applied from master with CI = 0x5A, 0x61, 0x65
@@ -96,15 +86,23 @@ namespace node
 	class header_short
 	{
 		friend std::pair<header_short, bool> make_header_short(cyng::buffer_t const&);
-		friend bool reset_header_short(header_short&, cyng::buffer_t const& inp);
+		friend std::pair<header_short, bool> decode(header_short const& hs, cyng::crypto::aes_128_key const& key, cyng::crypto::aes::iv_t const& iv);
+
+		//friend std::pair<header_short, bool> reset_header_short(cyng::buffer_t const& inp);
 
 	public:
 		header_short();
 		header_short(header_short const&);
-		header_short(header_short&&);
+		header_short(header_short&&) noexcept;
+		header_short(std::uint8_t access_no
+			, std::uint8_t status
+			, std::uint8_t mode
+			, std::uint8_t block_counter
+			, cyng::buffer_t&& data);
+
 		virtual ~header_short();
 		
-		header_short& operator=(header_short const&);
+		header_short& operator=(header_short const&) = delete;
 
 		std::uint8_t get_access_no() const;
 		std::uint8_t get_status() const;
@@ -137,43 +135,38 @@ namespace node
 		cyng::buffer_t data() const;
 
 		/**
-		 * Decode data with AES CBC (mode 5)
-		 * @return true if encryption was successful (first two bytes are 0x2F)
+		 * encoded data (with verification bytes)
 		 */
-		bool decode(cyng::crypto::aes_128_key const&, cyng::crypto::aes::iv_t const& iv);
+		cyng::buffer_t const& data_raw() const;
 
 		/**
 		 * Test for AES bytes
 		 */
 		bool verify_encryption() const;
 
-		/**
-		 * Remove all elements with value 0x2F from end of data vector
-		 */
-		std::size_t remove_aes_trailer();
-
 	private:
 		/**
 		 * Access Number (From master initiated session uses Gateway Access	Number.
 		 * From slave initiated session uses Meter Access Number.)
 		 */
-		std::uint8_t access_no_;
+		std::uint8_t const access_no_;
 
 		/**
 		 * Status (from master to slave) used for gateway status (RSSI)
 		 * (from slave to master) used for meter status
 		 */
-		std::uint8_t status_;
+		std::uint8_t const status_;
 
 		/**
 		 * Configuration Field / Configuration Field Extension
 		 */
-		std::array<char, 2>   cfg_;
+		std::uint8_t const mode_;
+		std::uint8_t const block_counter_;
 
 		/**
 		 * raw data
 		 */
-		cyng::buffer_t data_;
+		cyng::buffer_t const data_;
 
 	};
 
@@ -185,15 +178,16 @@ namespace node
 	class header_long
 	{
 		friend std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const&);
-		friend bool reset_header_long(header_long&, char type, cyng::buffer_t const&);
+		friend std::pair<header_long, bool> decode(header_long const& hl, cyng::crypto::aes_128_key const& key);
 
 	public:
 		header_long();
 		header_long(header_long const&);
-		header_long(header_long&&);
+		header_long(header_long&&) noexcept;
+		header_long(std::array<char, 9> const&, header_short&&);
 		virtual ~header_long();
 
-		header_long& operator=(header_long const&);
+		header_long& operator=(header_long const&) = delete;
 		
 		cyng::buffer_t get_srv_id() const;
 
@@ -201,33 +195,37 @@ namespace node
 		 * @return short part of header
 		 */
 		header_short const& header() const;
-		header_short& header();
 
 		/**
 		 * @return initial vector for AES CBC decoding
 		 */
 		cyng::crypto::aes::iv_t get_iv() const;
 
-		/**
-		 * Decode data with AES CBC (mode 5)
-		 * @return true if encryption was successful (first two bytes are 0x2F)
-		 */
-		bool decode(cyng::crypto::aes_128_key const&);
-
 	private:
 		/**
 		 * M-Bus type + meter address
 		 */
-		std::array<char, 9>	server_id_;
+		std::array<char, 9>	const server_id_;
 
-		header_short	hs_;
+		header_short const hs_;
 	};
 
 
 	std::pair<header_short, bool> make_header_short(cyng::buffer_t const& inp);
-	bool reset_header_short(header_short&, cyng::buffer_t const& inp);
+
+	/**
+	 * Decode data with AES CBC (mode 5)
+	 * @return true if encryption was successful (first two bytes are 0x2F)
+	 */
+	std::pair<header_short, bool> decode(header_short const&, cyng::crypto::aes_128_key const&, cyng::crypto::aes::iv_t const& iv);
+
 	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const&);
-	bool reset_header_long(header_long&, char type, cyng::buffer_t const&);
+
+	/**
+	 * Decode data with AES CBC (mode 5)
+	 * @return true if encryption was successful (first two bytes are 0x2F)
+	 */
+	std::pair<header_long, bool> decode(header_long const& hl, cyng::crypto::aes_128_key const&);
 
 	/**
 	 * @return true is buffer is longer then 2 bytes and first two bytes are 0x2F

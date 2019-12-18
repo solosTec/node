@@ -7,6 +7,8 @@
 
 #include "decoder.h"
 #include "cache.h"
+
+#include <smf/mbus/defs.h>
 #include <smf/mbus/header.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/mbus/aes.h>
@@ -14,17 +16,20 @@
 
 #include <cyng/crypto/aes_keys.h>
 #include <cyng/io/io_buffer.h>
+#include <cyng/io/serializer.h>
 
 namespace node
 {
 	decoder_wired_mbus::decoder_wired_mbus(cyng::logging::log_ptr logger)
 		: logger_(logger)
+		, uuidgen_()
 	{}
 
 	decoder_wireless_mbus::decoder_wireless_mbus(cyng::logging::log_ptr logger, cache& cfg, boost::uuids::uuid tag)
 		: logger_(logger)
 		, cache_(cfg)
 		, tag_(tag)
+		, uuidgen_()
 	{}
 
 	/*
@@ -35,23 +40,25 @@ namespace node
 	 */
 	bool decoder_wireless_mbus::read_frame_header_long(cyng::buffer_t const& srv, cyng::buffer_t const& data)
 	{
-		auto r = make_header_long(1, data);
-		if (r.second) {
+		auto r1 = make_header_long(1, data);
+		if (r1.second) {
 
-			CYNG_LOG_DEBUG(logger_, "access nr   : " << +r.first.header().get_access_no());
+			CYNG_LOG_DEBUG(logger_, "access nr   : " << +r1.first.header().get_access_no());
 
-			auto const server_id = r.first.get_srv_id();
+			auto const server_id = r1.first.get_srv_id();
 			auto const manufacturer = sml::get_manufacturer_code(server_id);
-			auto const mbus_status = r.first.header().get_status();
+			auto const mbus_status = r1.first.header().get_status();	//	OBIS_MBUS_STATE (00 00 61 61 00 FF)
 
 			//
 			//	0, 5, 7, or 13
 			//	currently only 0 (== no encryption) and 5 (== AES CBC) is supported
 			//
-			auto const aes_mode = r.first.header().get_mode();
+			auto const aes_mode = r1.first.header().get_mode();
 
-			CYNG_LOG_DEBUG(logger_, "server ID   : " << sml::from_server_id(server_id));
-			CYNG_LOG_DEBUG(logger_, "manufacturer: " << sml::decode(manufacturer));
+			CYNG_LOG_DEBUG(logger_, "server ID   : " << sml::from_server_id(server_id));	//	OBIS_SERIAL_NR - 00 00 60 01 00 FF
+			CYNG_LOG_DEBUG(logger_, "medium      : " << mbus::get_medium_name(sml::get_medium_code(server_id)));
+			CYNG_LOG_DEBUG(logger_, "manufacturer: " << sml::decode(manufacturer));	//	OBIS_DATA_MANUFACTURER - 81 81 C7 82 03 FF
+			CYNG_LOG_DEBUG(logger_, "device id   : " << sml::get_serial(server_id));
 			CYNG_LOG_DEBUG(logger_, "status      : " << +mbus_status);
 			CYNG_LOG_DEBUG(logger_, "mode        : " << +aes_mode);
 
@@ -70,24 +77,40 @@ namespace node
 					<< sml::from_server_id(server_id));
 			}
 
-			if (decode_data(aes_mode, server_id, r.first)) {
+			auto r2 = this->decode_data(aes_mode, server_id, r1.first);
+			if (r2.second) {
+
+				//
+				//	populate cache with new readout
+				//
+				auto const pk = uuidgen_();
 
 				//
 				//	read data block
 				//
 				CYNG_LOG_DEBUG(logger_, "decoded data: "
-					<< cyng::io::to_hex(r.first.header().data()));
+					<< cyng::io::to_hex(r2.first.header().data_raw()));
 
-				read_variable_data_block(server_id, r.first.header());
+				read_variable_data_block(server_id, r2.first.header(), pk);
 
+				//
+				//	"_Readout"
+				//
+				cache_.write_table("_Readout", [&](cyng::store::table* tbl) {
+					tbl->insert(cyng::table::key_generator(pk)
+						, cyng::table::data_generator(server_id, std::chrono::system_clock::now(), mbus_status)
+						, 1u	//	generation
+						, cache_.get_tag());
+				});
 
 			}
 			else {
 
 				CYNG_LOG_WARNING(logger_, "cannot read long header of " << sml::from_server_id(srv));
 			}
+			return r2.second;
 		}
-		return r.second;
+		return false;
 	}
 
 	/**
@@ -95,38 +118,44 @@ namespace node
 	 */
 	bool decoder_wireless_mbus::read_frame_header_short(cyng::buffer_t const& srv, cyng::buffer_t const& data)
 	{
-		auto r = make_header_short(data);
-		if (r.second) {
-			CYNG_LOG_DEBUG(logger_, "access nr: " << +r.first.get_access_no());
+		auto r1 = make_header_short(data);
+		if (r1.second) {
+			CYNG_LOG_DEBUG(logger_, "access nr: " << +r1.first.get_access_no());
 
 			auto const manufacturer = sml::get_manufacturer_code(srv);
-			auto const mbus_status = r.first.get_status();
+			auto const mbus_status = r1.first.get_status();
 
 			//
 			//	0, 5, 7, or 13
 			//	currently only 0 (== no encryption) and 5 (== AES CBC) is supported
 			//
-			auto const aes_mode = r.first.get_mode();
+			auto const aes_mode = r1.first.get_mode();
 
 			CYNG_LOG_DEBUG(logger_, "manufacturer: " << manufacturer);
 			CYNG_LOG_DEBUG(logger_, "status      : " << +mbus_status);
 			CYNG_LOG_DEBUG(logger_, "mode        : " << +aes_mode);
 
-			if (decode_data(aes_mode, srv, r.first)) {
+			auto r2 = decode_data(aes_mode, srv, r1.first);
+			if (r2.second) {
 
 				//
 				//	read data block
 				//
 				CYNG_LOG_DEBUG(logger_, "decoded data: "
-					<< cyng::io::to_hex(r.first.data()));
+					<< cyng::io::to_hex(r2.first.data()));
+
+				//
+				//	ToDo: read
+				//
 			}
 			else {
 
 				CYNG_LOG_WARNING(logger_, "cannot read short header of " << sml::from_server_id(srv));
 			}
 
+			return r2.second;
 		}
-		return r.second;
+		return false;
 	}
 
 	bool decoder_wireless_mbus::read_frame_header_short_sml(cyng::buffer_t const& srv, cyng::buffer_t const& data)
@@ -163,10 +192,10 @@ namespace node
 		return r.second;
 	}
 
-	bool decoder_wireless_mbus::decode_data(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_long& hl)
+	std::pair<header_long, bool> decoder_wireless_mbus::decode_data(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_long& hl)
 	{
 		switch (aes_mode) {
-		case 0:	return true;	//	not decrypted
+		case 0:	return std::make_pair(header_long(std::move(hl)), true);	//	not decrypted
 		case 5:	return decode_data_mode_5(aes_mode, server_id, hl);
 		case 7:
 		case 13:
@@ -179,13 +208,13 @@ namespace node
 			<< " is not supported - server ID: "
 			<< sml::from_server_id(server_id));
 
-		return false;
+		return std::make_pair(header_long(std::move(hl)), false);
 	}
 
-	bool decoder_wireless_mbus::decode_data(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_short& hs)
+	std::pair<header_short, bool> decoder_wireless_mbus::decode_data(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_short& hs)
 	{
 		switch (aes_mode) {
-		case 0:	return true;	//	not decrypted
+		case 0:	return std::make_pair(header_short(std::move(hs)), true);	//	not decrypted
 		case 5:	return decode_data_mode_5(aes_mode, server_id, hs);
 		case 7:
 		case 13:
@@ -198,10 +227,10 @@ namespace node
 			<< " is not supported - server ID: "
 			<< sml::from_server_id(server_id));
 
-		return false;
+		return std::make_pair(header_short(std::move(hs)), false);
 	}
 
-	bool decoder_wireless_mbus::decode_data_mode_5(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_long& hl)
+	std::pair<header_long, bool> decoder_wireless_mbus::decode_data_mode_5(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_long& hl)
 	{
 		//
 		//	get AES key and decrypt content (AES CBC - mode 5)
@@ -211,17 +240,21 @@ namespace node
 		//
 		//	decode payload data
 		//
-		if (!hl.decode(key)) {
+		auto r = decode(hl, key);
+		if (!r.second) {
 			CYNG_LOG_WARNING(logger_, "meter "
 				<< sml::from_server_id(server_id)
 				<< " has invalid AES key: "
 				<< cyng::io::to_hex(key.to_buffer(), ' '));
+
+			return std::make_pair(header_long(), false);
 		}
 
-		return hl.header().verify_encryption();
+		bool const b = r.first.header().verify_encryption();
+		return std::make_pair(header_long(std::move(r.first)), b);
 	}
 
-	bool decoder_wireless_mbus::decode_data_mode_5(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_short& hs)
+	std::pair<header_short, bool> decoder_wireless_mbus::decode_data_mode_5(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_short& hs)
 	{
 		//
 		//	get AES key and decrypt content (AES CBC - mode 5)
@@ -236,18 +269,23 @@ namespace node
 		//
 		//	decode payload data
 		//
-		if (!hs.decode(key, iv)) {
+		auto r = decode(hs, key, iv);
+		if (!r.second) {
 			CYNG_LOG_WARNING(logger_, "meter "
 				<< sml::from_server_id(server_id)
 				<< " has invalid AES key: "
 				<< cyng::io::to_hex(key.to_buffer(), ' '));
+
+			return std::make_pair(hs, false);
 		}
 
-		return hs.verify_encryption();
-
+		bool const b = r.first.verify_encryption();
+		return std::make_pair(std::move(r.first), b);
 	}
 
-	void decoder_wireless_mbus::read_variable_data_block(cyng::buffer_t const& server_id, header_short const& hs)
+	void decoder_wireless_mbus::read_variable_data_block(cyng::buffer_t const& server_id
+		, header_short const& hs
+		, boost::uuids::uuid pk)
 	{
 		//
 		//	get number of encrypted bytes
@@ -261,43 +299,46 @@ namespace node
 			// partial encryption disabled
 		}
 		else {
-			auto length = static_cast<std::size_t>(16u * size);
-
 			//
-			//	remove trailing 0x2F
+			//	multiples of 16
 			//
-			//length -= hs.remove_aes_trailer();
+			auto length = 16u * static_cast<std::size_t>(size);
 
 			CYNG_LOG_DEBUG(logger_, "read_variable_data_block("
 				<< length
+				<< "/"
+				<< hs.data_raw().size()
 				<< " bytes, meter "
 				<< sml::from_server_id(server_id)
 				<< ")");
 
-			vdb_reader reader;
-			std::size_t offset{ 0 };
+			vdb_reader reader(server_id);
+			std::size_t offset{ 2 };	//	2 x 0x2F
 			while (offset < length) {
 
 				//
 				//	read block
 				//
-				std::size_t const new_offset = reader.decode(hs.data(), offset);
-				if (new_offset > offset) {
-				}
-				else {
+				offset = reader.decode(hs.data_raw(), offset);
 
-					//
-					//	no more data blocks
-					//
-					//offset = length;
-					break;
+				//
+				//	cache: "_ReadoutData"
+				//
+				if (reader.is_valid()) {
 
+					cache_.write_table("_ReadoutData", [&](cyng::store::table* tbl) {
+
+						auto val = cyng::io::to_str(reader.get_value());
+						auto type = reader.get_value().get_class().tag();
+
+						tbl->insert(cyng::table::key_generator(pk, reader.get_code().to_buffer())
+							, cyng::table::data_generator(val, type, reader.get_scaler(), static_cast<std::uint8_t>(reader.get_unit()))
+							, 1u	//	generation
+							, cache_.get_tag());
+					});
 				}
 			}
-
 		}
-
 	}
-
 }
 

@@ -119,14 +119,15 @@ namespace node
 						cyng::crypto::aes_128_key aes_key;
 						aes_key.key_ = { 0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8, 0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8 };
 
-						r.first.decode(aes_key);
+						auto r2 = decode(r.first, aes_key);
+						//r.first.decode(aes_key);
 
 						std::cout << cyng::io::to_hex(r.first.header().data(), ' ') << std::endl;
 
-						auto counter = r.first.header().get_block_counter() * 16;
-						counter -= r.first.header().remove_aes_trailer();
+						auto counter = r2.first.header().get_block_counter() * 16;
+						//counter -= r.first.header().remove_aes_trailer();
 
-						node::vdb_reader reader;
+						node::vdb_reader reader(cyng::make_buffer({ 0x01, 0xE6, 0x1E, 0x57, 0x14, 0x06, 0x21, 0x36, 0x03 }));
 						std::size_t offset{ 0 };
 
 						while (offset < counter) {
@@ -134,7 +135,7 @@ namespace node
 							//
 							//	decode block
 							//
-							std::size_t new_offset = reader.decode(r.first.header().data(), offset);
+							std::size_t new_offset = reader.decode(r2.first.header().data(), offset);
 							if (new_offset > offset) {
 
 								offset = new_offset;
@@ -197,13 +198,14 @@ namespace node
 
 						auto const iv = mbus::build_initial_vector(server_id, r.first.get_access_no());
 
-						r.first.decode(aes_key, iv);
-						std::cout << cyng::io::to_hex(r.first.data(), ' ') << std::endl;
+						auto r2 = decode(r.first, aes_key, iv);
+						//r.first.decode(aes_key, iv);
+						std::cout << cyng::io::to_hex(r2.first.data(), ' ') << std::endl;
 
 						//
 						//	remove 0x2F from end of data buffer
 						//
-						r.first.remove_aes_trailer();
+						//r.first.remove_aes_trailer();
 
 						//
 						//	start SML parser
@@ -215,7 +217,7 @@ namespace node
 
 						}, true, false);	//	verbose, no logging
 
-						auto const data = r.first.data();
+						auto const data = r2.first.data();
 						sml_parser.read(data.begin(), data.end());
 					}
 				}

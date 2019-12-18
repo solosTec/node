@@ -91,7 +91,7 @@ namespace node
 
 			//	01 00 01 08 00 FF
 			tbl->merge(cyng::table::key_generator(server_id_, sml::OBIS_REG_POS_AE_NO_TARIFF.to_buffer()),
-				cyng::table::data_generator(static_cast<std::uint8_t>(mbus::WATT_HOUR)	//	unit code
+				cyng::table::data_generator(static_cast<std::uint8_t>(mbus::units::WATT_HOUR)	//	unit code
 					, static_cast<std::int8_t>(0)	//	scaler
 					, p_value_	//	raw value
 					, std::to_string(p_value_)	//	formatted value
@@ -101,7 +101,7 @@ namespace node
 
 			//	01 00 10 07 00 FF
 			tbl->merge(cyng::table::key_generator(server_id_, sml::OBIS_REG_CUR_AP.to_buffer()),
-				cyng::table::data_generator(static_cast<std::uint8_t>(mbus::WATT)	//	unit code
+				cyng::table::data_generator(static_cast<std::uint8_t>(mbus::units::WATT)	//	unit code
 					, static_cast<std::int8_t>(0)	//	scaler
 					, val	//	raw value
 					, std::to_string(val)	//	formatted value

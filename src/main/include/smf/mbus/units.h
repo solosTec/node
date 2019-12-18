@@ -18,7 +18,7 @@ namespace node
 		/**
 		 *	DLMS-Unit-List, can be found in IEC 62056-62.
 		 */
-		enum unit_code : std::uint8_t
+		enum class units : std::uint8_t
 		{
 			UNDEFINED_ = 0,
 			YEAR = 1,
@@ -102,6 +102,7 @@ namespace node
 		 * @return the name of the specified unit
 		 */
 		const char* get_unit_name(std::uint8_t u);
+		const char* get_unit_name(units);
 
 	}
 }

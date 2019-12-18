@@ -28,12 +28,12 @@ namespace node
 			typedef std::array< std::uint8_t, 6 >	data_type;
 
 			enum value_group {
-				VG_MEDIUM = 0,
-				VG_CHANNEL = 1,
-				VG_INDICATOR = 2,
-				VG_MODE = 3,
-				VG_QUANTITY = 4,	//	tariff
-				VG_STORAGE = 5
+				VG_MEDIUM = 0,		//	A
+				VG_CHANNEL = 1,		//	B
+				VG_INDICATOR = 2,	//	C - metric
+				VG_MODE = 3,		//	D - measurement mode
+				VG_QUANTITY = 4,	//	E - tariff
+				VG_STORAGE = 5		//	F
 			};
 
 		public:
@@ -101,6 +101,13 @@ namespace node
 			 */
 			constexpr std::size_t size() const {
 				return std::tuple_size< data_type >::value;
+			}
+
+			/**
+			 * @return the internal data array
+			 */
+			inline data_type const& get_data() const {
+				return value_;
 			}
 
 			/**
@@ -190,6 +197,12 @@ namespace node
 				auto const n = cyng::slicer<std::uint64_t, 0u>(value_) & 0x0000FFFFFFFFFFFF;
 				return cyng::swap_num(n * 0x10000);
 			}
+
+		private:
+			const char* get_indicator_name_abstract() const;
+			const char* get_indicator_name_electricity() const;
+			const char* get_indicator_name_hca() const;
+			const char* get_indicator_name_gas() const;
 
 		private:
 			data_type	value_;

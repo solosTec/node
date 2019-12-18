@@ -10,7 +10,9 @@
 
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/log.h>
+
 #include <boost/uuid/uuid.hpp>
+#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
@@ -24,6 +26,7 @@ namespace node
 
 	private:
 		cyng::logging::log_ptr logger_;
+		boost::uuids::random_generator_mt19937 uuidgen_;
 	};
 
 	class decoder_wireless_mbus
@@ -50,17 +53,18 @@ namespace node
 		bool read_frame_header_short_sml(cyng::buffer_t const&, cyng::buffer_t const&);
 
 	private:
-		bool decode_data(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_long& hl);
-		bool decode_data(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_short&);
-		bool decode_data_mode_5(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_long&);
-		bool decode_data_mode_5(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_short&);
+		std::pair<header_long, bool> decode_data(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_long& hl);
+		std::pair<header_long, bool> decode_data_mode_5(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_long&);
+		std::pair<header_short, bool> decode_data(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_short&);
+		std::pair<header_short, bool> decode_data_mode_5(std::uint8_t aes_mode, cyng::buffer_t const& server_id, header_short&);
 
-		void read_variable_data_block(cyng::buffer_t const& server_id, header_short const& hs);
+		void read_variable_data_block(cyng::buffer_t const& server_id, header_short const& hs, boost::uuids::uuid pk);
 
 	private:
 		cyng::logging::log_ptr logger_;
 		cache& cache_;
 		boost::uuids::uuid const tag_;
+		boost::uuids::random_generator_mt19937 uuidgen_;
 	};
 
 }

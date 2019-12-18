@@ -10,6 +10,7 @@
 #include "storage.h"
 #include "tasks/gpio.h"
 #include "tasks/obislog.h"
+#include "tasks/readout.h"
 
 #include <smf/sml/status.h>
 #include <smf/sml/obis_db.h>
@@ -20,8 +21,7 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/util/split.h>
 #include <cyng/table/meta.hpp>
-#include <cyng/parser/chrono_parser.h>
-#include <cyng/parser/mac_parser.h>
+#include <cyng/table/restore.h>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -58,10 +58,14 @@ namespace node
 		start_task_obislog(mux);
 
 		//
-		//	start task GPIO task
+		//	start GPIO task
 		//
 		start_task_gpio(mux);
 
+		//
+		//	start readout task
+		//
+		start_task_readout(mux);
 	}
 
 	void bridge::load_configuration()
@@ -76,170 +80,14 @@ namespace node
 				auto const type = cyng::value_cast(rec["type"], 15u);
 				auto const val = cyng::value_cast<std::string>(rec["val"], "");
 
-				switch (type) {
-				case cyng::TC_BOOL:
-					//	true is encoded as "true"
-					tbl->merge(key
-						, cyng::table::data_generator(boost::algorithm::equals("true", val))
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-				//case cyng::TC_CHAR:
-				case cyng::TC_FLOAT:
-					tbl->merge(key
-						, cyng::table::data_generator(std::stof(val))
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-				case cyng::TC_DOUBLE:
-					tbl->merge(key
-						, cyng::table::data_generator(std::stod(val))
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-				case cyng::TC_FLOAT80:
-					tbl->merge(key
-						, cyng::table::data_generator(std::stold(val))
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-				//case cyng::TC_UINT8:
-				case cyng::TC_UINT16:
-					tbl->merge(key
-						, cyng::table::data_generator(static_cast<std::uint16_t>(std::stoul(val)))
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-				case cyng::TC_UINT32:
-					tbl->merge(key
-						, cyng::table::data_generator(std::stoul(val))
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-				case cyng::TC_UINT64:
-					tbl->merge(key
-						, cyng::table::data_generator(std::stoull(val))
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-				//case cyng::TC_INT8:
-				case cyng::TC_INT16: 
-					tbl->update(key
-						, cyng::table::data_generator(static_cast<std::int16_t>(std::stoi(val)))
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-				case cyng::TC_INT32:
-					tbl->merge(key
-						, cyng::table::data_generator(std::stoi(val))
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-				case cyng::TC_INT64:
-					tbl->merge(key
-						, cyng::table::data_generator(std::stoll(val))
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-				//case cyng::TC_STRING:	//	default
-				//case cyng::TC_TIME_POINT: 
-				//case cyng::TC_NANO_SECOND:
-				case cyng::TC_MICRO_SECOND: 
-				{
-					auto const r = cyng::parse_timespan_microsec(val);
-					if (r.second) {
-						tbl->merge(key
-							, cyng::table::data_generator(r.first)
-							, 1u	//	only needed for insert operations
-							, cache_.get_tag());
-					}
-					else {
-						tbl->merge(key
-							, cyng::table::data_generator("error (microseconds)")
-							, 1u	//	only needed for insert operations
-							, cache_.get_tag());
-					}
-				}
-				break;
-				//case cyng::TC_MILLI_SECOND:
-				//case cyng::TC_SECOND:
-				case cyng::TC_MINUTE:
-				{
-					auto const r = cyng::parse_timespan_minutes(val);
-					if (r.second) {
-						tbl->merge(key
-							, cyng::table::data_generator(r.first)
-							, 1u	//	only needed for insert operations
-							, cache_.get_tag());
-					}
-					else {
-						tbl->merge(key
-							, cyng::table::data_generator("error (minutes)")
-							, 1u	//	only needed for insert operations
-							, cache_.get_tag());
-					}
-				}
-					break;
-				//case cyng::TC_HOUR:
+				//
+				//	restore original data type from string and a type information
+				//
+				tbl->merge(key
+					, cyng::table::data_generator(cyng::table::restore(val, type))
+					, 1u	//	only needed for insert operations
+					, cache_.get_tag());
 
-				//case cyng::TC_DBL_TP:
-				//case cyng::TC_VERSION:
-				//case cyng::TC_REVISION:
-				//case cyng::TC_CODE:
-				//case cyng::TC_LABEL:
-				//case cyng::TC_SEVERITY:
-				//case cyng::TC_BUFFER:
-				case cyng::TC_MAC48:
-				{
-					auto const r = cyng::parse_mac48(val);
-					if (r.second) {
-						tbl->merge(key
-							, cyng::table::data_generator(r.first)
-							, 1u	//	only needed for insert operations
-							, cache_.get_tag());
-					}
-					else {
-						tbl->merge(key
-							, cyng::table::data_generator("error (mac48)")
-							, 1u	//	only needed for insert operations
-							, cache_.get_tag());
-					}
-				}
-				break;
-				case cyng::TC_MAC64:
-				{
-					auto const r = cyng::parse_mac64(val);
-					if (r.second) {
-						tbl->merge(key
-							, cyng::table::data_generator(r.first)
-							, 1u	//	only needed for insert operations
-							, cache_.get_tag());
-					}
-					else {
-						tbl->merge(key
-							, cyng::table::data_generator("error (mac64)")
-							, 1u	//	only needed for insert operations
-							, cache_.get_tag());
-					}
-				}
-				break;
-				//case cyng::TC_COLOR_8:
-				//case cyng::TC_COLOR_16:
-				//case cyng::TC_IP_TCP_ENDPOINT:	//	missing parser for enpoints (address:port)
-				case cyng::TC_IP_ADDRESS:
-					tbl->merge(key
-						, cyng::table::data_generator(boost::asio::ip::make_address(val))
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-
-				default:
-					tbl->merge(key
-						, cyng::table::data_generator(rec["val"])
-						, 1u	//	only needed for insert operations
-						, cache_.get_tag());
-					break;
-				}
 				return true;	//	continue
 			});
 
@@ -309,6 +157,13 @@ namespace node
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DeviceMBUS")) {
 
+#ifdef _DEBUG
+			//CYNG_LOG_TRACE(logger_, "Insert into table TDeviceMBUS key: "
+			//	<< cyng::io::to_str(key)
+			//	<< ", body: "
+			//	<< cyng::io::to_str(body));
+#endif
+
 			if (!storage_.insert("TDeviceMBUS"
 				, key
 				, body
@@ -322,6 +177,21 @@ namespace node
 
 			}
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Readout")) {
+
+			CYNG_LOG_TRACE(logger_, "readout complete - key: "
+				<< cyng::io::to_str(key)
+				<< ", body: "
+				<< cyng::io::to_str(body));
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_ReadoutData")) {
+
+			CYNG_LOG_TRACE(logger_, "readout data - key: "
+				<< cyng::io::to_str(key)
+				<< ", body: "
+				<< cyng::io::to_str(body));
+		}
+		
 	}
 
 	void bridge::sig_del(cyng::store::table const* tbl
@@ -405,6 +275,20 @@ namespace node
 			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+
+#ifdef _DEBUG
+		l = cache_.db_.get_listener("_Readout"
+			, std::bind(&bridge::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+
+		l = cache_.db_.get_listener("_ReadoutData"
+			, std::bind(&bridge::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+#endif
 	}
 
 	void bridge::start_task_obislog(cyng::async::mux& mux)
@@ -418,41 +302,18 @@ namespace node
 
 	void bridge::start_task_gpio(cyng::async::mux& mux)
 	{
-#if BOOST_OS_WINDOWS
-		auto const gpio_enabled = cache_.get_cfg("gpio-enabled", false);
-#else
-		auto const gpio_enabled = cache_.get_cfg("gpio-enabled", true);
-#endif
-		if (gpio_enabled) {
+		auto const interval = cache_.get_cfg("readout-interval", 122);
+		auto const tid = cyng::async::start_task_detached<readout>(mux
+			, logger_
+			, cache_
+			, storage_
+			, std::chrono::seconds(interval));
 
-			//
-			//	start one task for every GPIO
-			//
-			//gpio-path|1|/sys/class/gpio|/sys/class/gpio|15
-			//gpio-vector|1|46 47 50 53|46 47 50 53|15
+	}
 
-			auto const gpio_path = cache_.get_cfg<std::string>("gpio-path", "/sys/class/gpio");
-			auto const gpio_vector = cache_.get_cfg<std::string>("gpio-vector", "46 47 50 53");
+	void bridge::start_task_readout(cyng::async::mux& mux)
+	{
 
-			//
-			//	Start a GPIO task for every GPIO
-			//
-			auto const svec = cyng::split(gpio_vector, " ");
-			for (auto const& s : svec) {
-				auto const tid = cyng::async::start_task_detached<gpio>(mux
-					, logger_
-					, boost::filesystem::path(gpio_path) / ("/gpio" + s));
-
-				//
-				//	store task id in cache DB
-				//
-				cache_.set_cfg("gpio-task-" + s, tid);
-			}
-		}
-		else
-		{
-			CYNG_LOG_WARNING(logger_, "GPIO disabled");
-		}
 	}
 
 

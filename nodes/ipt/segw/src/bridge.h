@@ -67,6 +67,7 @@ namespace node
 
 		void start_task_obislog(cyng::async::mux& mux);
 		void start_task_gpio(cyng::async::mux& mux);
+		void start_task_readout(cyng::async::mux& mux);
 
 	private:
 		/**

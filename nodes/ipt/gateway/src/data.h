@@ -68,7 +68,7 @@ namespace node
 			void read_frame_header_long(cyng::context& ctx, cyng::buffer_t const&, cyng::buffer_t const&);
 			void read_frame_header_short(cyng::context& ctx, cyng::buffer_t const&, cyng::buffer_t const&);
 
-			void read_variable_data_block(cyng::buffer_t const&, header_short&);
+			void read_variable_data_block(cyng::buffer_t const&, header_short const&);
 
 			/**
 			 * frame type 0x7F

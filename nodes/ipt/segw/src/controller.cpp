@@ -95,6 +95,7 @@ namespace node
 				, cyng::param_factory("gpio-path", "/sys/class/gpio")	//	accept only the specified MAC id
 				, cyng::param_factory("gpio-list", cyng::vector_factory({46, 47, 50, 53}))
 				, cyng::param_factory("obis-log", 15)	//	cycle time in minutes
+				, cyng::param_factory("readout-interval", 121)	//	cycle time in seconds
 
 				, cyng::param_factory("DB", cyng::tuple_factory(
 					cyng::param_factory("type", "SQLite"),

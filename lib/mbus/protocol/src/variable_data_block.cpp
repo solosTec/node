@@ -8,6 +8,8 @@
 #include <smf/mbus/dif.h>
 #include <smf/mbus/vif.h>
 #include <smf/mbus/bcd.h>
+#include <smf/sml/srv_id_io.h>
+#include <smf/sml/obis_db.h>
 
 #include <cyng/factory.h>
 #include <cyng/io/serializer.h>
@@ -18,19 +20,22 @@
 namespace node
 {
 
-	vdb_reader::vdb_reader()
-		: state_(STATE_DIF_)
-		//, dif_(mbus::DFC_NO_DATA)
+	vdb_reader::vdb_reader(cyng::buffer_t const& server_id)
+	: server_id_(server_id)
+		, state_(state::STATE_DIF_)
 		, length_(0)
 		, function_field_(0)
 		, storage_nr_(0)
 		, tariff_(0)
 		, sub_unit_(0)
 		, scaler_(0)
-		, unit_(mbus::UNDEFINED_)
+		, unit_(mbus::units::UNDEFINED_)
 		, date_flag_(false)
 		, date_time_flag_(false)
 		, value_()
+		, buffer_()
+		, code_()
+		, valid_(false)
 	{}
 
 	cyng::object vdb_reader::get_value() const
@@ -43,24 +48,52 @@ namespace node
 		return scaler_;
 	}
 
-	mbus::unit_code	vdb_reader::get_unit() const
+	mbus::units	vdb_reader::get_unit() const
 	{
 		return unit_;
 	}
 
-	std::uint64_t vdb_reader::get_storage_nr() const
+	bool vdb_reader::is_valid() const
 	{
-		return storage_nr_;
+		return valid_;
 	}
 
-	std::uint32_t vdb_reader::get_tariff() const
+	sml::obis vdb_reader::get_code() const
 	{
-		return tariff_;
+		return sml::obis(code_);
 	}
 
-	std::uint16_t vdb_reader::get_sub_unit() const
+	//std::uint64_t vdb_reader::get_storage_nr() const
+	//{
+	//	return storage_nr_;
+	//}
+
+	//std::uint32_t vdb_reader::get_tariff() const
+	//{
+	//	return tariff_;
+	//}
+
+	//std::uint16_t vdb_reader::get_sub_unit() const
+	//{
+	//	return sub_unit_;
+	//}
+
+	void vdb_reader::reset()
 	{
-		return sub_unit_;
+		state_ = state::STATE_DIF_;
+		length_ = 0;
+		function_field_ = 0;
+		storage_nr_ = 0;
+		tariff_ = 0;
+		sub_unit_ = 0;
+		scaler_ = 0;
+		unit_ = mbus::units::UNDEFINED_;
+		date_flag_ = false;
+		date_time_flag_ = false;
+		value_.clear();
+		buffer_.clear();
+		code_.fill(0u);
+		valid_ = false;
 	}
 
 	std::size_t vdb_reader::decode(cyng::buffer_t const& data, std::size_t offset)
@@ -70,11 +103,7 @@ namespace node
 			//
 			//	reset parser state
 			//
-			state_ = STATE_DIF_;
-			date_flag_ = false;
-			date_time_flag_ = false;
-			scaler_ = 0;
-			unit_ = mbus::UNDEFINED_;
+			reset();
 
 			for( auto pos = data.begin() + offset; pos < data.end(); ++pos) {
 
@@ -84,37 +113,37 @@ namespace node
 				++offset;
 
 				switch (state_) {
-				case STATE_DIF_:
+				case state::STATE_DIF_:
 					state_ = state_dif(*pos);
 					break;
-				case STATE_DIF_EXT_:
+				case state::STATE_DIF_EXT_:
 					state_ = state_dif_ext(*pos);
 					break;
-				case STATE_VIF_:
+				case state::STATE_VIF_:
 					state_ = state_vif(*pos);
 					break;
-				case STATE_VIF_EXT_:
+				case state::STATE_VIF_EXT_:
 					state_ = state_vif_ext(*pos);
 					break;
-				case STATE_VIF_EXT_7B:
+				case state::STATE_VIF_EXT_7B:
 					state_ = state_vife_7b(*pos);
 					break;
-				case STATE_VIF_EXT_7D:
+				case state::STATE_VIF_EXT_7D:
 					state_ = state_vife_7d(*pos);
 					break;
-				case STATE_DATA_:
+				case state::STATE_DATA_:
 					state_ = state_data(*pos);
 					break;
-				case STATE_DATA_ASCII_:
+				case state::STATE_DATA_ASCII_:
 					state_ = state_data_ascii(*pos);
 					break;
 					//STATE_DATA_BCD_POSITIVE_,	//	2 bytes
 				//STATE_DATA_BCD_NEGATIVE_,	//	2 bytes
 				//STATE_DATA_BINARY_,
-				case STATE_DATA_7D_08:
+				case state::STATE_DATA_7D_08:
 					state_ = state_data_7d_08(*pos);
 					break;
-				case STATE_DATA_7D_17:
+				case state::STATE_DATA_7D_17:
 					state_ = state_data_7d_17(*pos);
 					break;
 
@@ -122,18 +151,18 @@ namespace node
 					break;
 				}
 
-				if (STATE_COMPLETE == state_) {
+				if (state::STATE_COMPLETE == state_) {
 #ifdef _DEBUG
-					std::cout
-						<< mbus::get_unit_name(unit_)
-						<< ", "
-						<< cyng::io::to_str(value_)
-						<< ", scaler: "
-						<< +scaler_
-						<< ", storage: "
-						<< storage_nr_
-						<< std::endl
-						;
+					//std::cout
+					//	<< mbus::get_unit_name(static_cast<std::uint8_t>(unit_))
+					//	<< ", "
+					//	<< cyng::io::to_str(value_)
+					//	<< ", scaler: "
+					//	<< +scaler_
+					//	<< ", storage: "
+					//	<< storage_nr_
+					//	<< std::endl
+					//	;
 #endif
 					return offset;
 				}
@@ -170,10 +199,11 @@ namespace node
 		//	storage number
 		//
 		storage_nr_ = d.dif_.sn_;
+		//code_[]
 
 		return (d.dif_.ext_ == 1)
-			? STATE_DIF_EXT_
-			: STATE_VIF_
+			? state::STATE_DIF_EXT_
+			: state::STATE_VIF_
 			;
 	}
 
@@ -187,15 +217,25 @@ namespace node
 		//
 		sub_unit_ += de.dife_.du_;
 		tariff_ += de.dife_.tariff_;
-		storage_nr_ += de.dife_.sn_;
 
-		BOOST_ASSERT(storage_nr_ <= 0x20000000000);
+		//
+		//	storage number
+		//	0 => 0xFF
+		//	1 => 0x01
+		//
+		storage_nr_ += de.dife_.sn_;
+		code_[sml::obis::VG_STORAGE] = (storage_nr_ == 0)
+			? 0xFF
+			: storage_nr_
+			;
+
+		//BOOST_ASSERT(storage_nr_ <= 0x20000000000);
 		BOOST_ASSERT(tariff_ <= 0x100000000);
 		BOOST_ASSERT(sub_unit_ <= 0x10000);
 
 		return (de.dife_.ext_ == 1)
-			? STATE_DIF_EXT_
-			: STATE_VIF_
+			? state::STATE_DIF_EXT_
+			: state::STATE_VIF_
 			;
 	}
 
@@ -219,7 +259,7 @@ namespace node
 			//	E000 0nnn
 			//	Energy
 			scaler_ = (val & 0x07) - 3;
-			unit_ = mbus::WATT_HOUR;
+			unit_ = mbus::units::WATT_HOUR;
 
 		}
 		else if ((val & 0x78) == 0x8) {
@@ -227,20 +267,25 @@ namespace node
 			//	0x08 = 0b0000 1000
 			//	E000 1nnn
 			scaler_ = (val & 0x07);
-			unit_ = mbus::JOULE;
+			unit_ = mbus::units::JOULE;
 		}
 		else if ((val & 0x78) == 0x10) {
 			//	b0001 0000 = 0x10
 			//	E001 0nnn
 			//	Volume a 1 o(nnn-6) m3 
 			scaler_ = static_cast<std::int8_t>(val & 0x07) - 6;
-			unit_ = mbus::CUBIC_METRE;
+			unit_ = mbus::units::CUBIC_METRE;
+			code_[sml::obis::VG_MEDIUM] = get_medium();	//	comes from server ID
+			code_[sml::obis::VG_INDICATOR] = 0x03;	//	single value Betriebsvolumen Ausspeisung
+			code_[sml::obis::VG_MODE] = 0x01;	//	temperaturkompensiert
+			code_[sml::obis::VG_QUANTITY] = tariff_;
+			valid_ = true;
 		}
 		else if ((val & 0x78) == 0x18) {
 			//	b0001 1000 = 0x18
 			//	 E001 1nnn (mass)
 			scaler_ = (val & 0x07) - 3;
-			unit_ = mbus::KILOGRAM;
+			unit_ = mbus::units::KILOGRAM;
 		}
 		else if ((val & 0x7C) == 0x20) {
 			//	b0111 1100 = 0x7C
@@ -261,37 +306,37 @@ namespace node
 			//	b0010 1000 = 0x28
 			//	 E010 1nnn (Power)
 			scaler_ = (val & 0x07) - 3;
-			unit_ = mbus::WATT;
+			unit_ = mbus::units::WATT;
 		}
 		else if ((val & 0x78) == 0x30) {
 			//	b0011 0000 = 0x30 
 			//	 E011 0nnn (Power)
 			scaler_ = (val & 0x07);
-			unit_ = mbus::JOULE_PER_HOUR;
+			unit_ = mbus::units::JOULE_PER_HOUR;
 		}
 		else if ((val & 0x78) == 0x38) {
 			//	b0011 1000 = 0x38
 			//	 E011 1nnn (Volume Flow)
 			scaler_ = (val & 0x07) - 6;
-			unit_ = mbus::CUBIC_METRE_PER_HOUR;
+			unit_ = mbus::units::CUBIC_METRE_PER_HOUR;
 		}
 		else if ((val & 0x78) == 0x40) {
 			//	b0100 0000 = 0x40
 			//	 E100 0nnn (Volume Flow ext.)
 			scaler_ = (val & 0x07) - 7;
-			unit_ = mbus::CUBIC_METRE_PER_MINUTE;
+			unit_ = mbus::units::CUBIC_METRE_PER_MINUTE;
 		}
 		else if ((val & 0x78) == 0x48) {
 			//	b0100 1000 = 0x48
 			//	 E100 1nnn (Volume Flow ext.)
 			scaler_ = (val & 0x07) - 9;
-			unit_ = mbus::CUBIC_METRE_PER_SECOND;
+			unit_ = mbus::units::CUBIC_METRE_PER_SECOND;
 		}
 		else if ((val & 0x78) == 0x50) {
 			//	b0101 0000 = 0x50
 			//	 E101 0nnn (Mass flow)
 			scaler_ = (val & 0x07) - 3;
-			unit_ = mbus::KILOGRAM_PER_HOUR;
+			unit_ = mbus::units::KILOGRAM_PER_HOUR;
 		}
 
 		//
@@ -301,31 +346,31 @@ namespace node
 			//	b0101 1000 = 0x58
 			//	 E101 10nn (Flow Temperature)
 			scaler_ = (val & 0x03) - 3;
-			unit_ = mbus::DEGREE_CELSIUS;
+			unit_ = mbus::units::DEGREE_CELSIUS;
 		}
 		else if ((val & 0x7C) == 0x5C) {
 			//	b0101 1100 = 0x5C
 			//	 E101 11nn (Return Temperature)
 			scaler_ = (val & 0x03) - 3;
-			unit_ = mbus::DEGREE_CELSIUS;
+			unit_ = mbus::units::DEGREE_CELSIUS;
 		}
 		else if ((val & 0x7C) == 0x40) {
 			//	b0100 0000 = 0x40
 			//	 E110 00nn (Temperature Difference)
 			scaler_ = (val & 0x03) - 3;
-			unit_ = mbus::KELVIN;
+			unit_ = mbus::units::KELVIN;
 		}
 		else if ((val & 0x7C) == 0x34) {
 			//	b0110 0100 = 0x34
 			//	 E110 01nn (External Temperature)
 			scaler_ = (val & 0x03) - 3;
-			unit_ = mbus::DEGREE_CELSIUS;
+			unit_ = mbus::units::DEGREE_CELSIUS;
 		}
 		else if ((val & 0x7C) == 0x68) {
 			//	b0110 1000 = 0x68
 			//	 E110 10nn (Pressure)
 			scaler_ = (val & 0x03) - 3;
-			unit_ = mbus::BAR;
+			unit_ = mbus::units::BAR;
 		}
 		else if ((val & 0x7E) == 0x6C) {
 			//	b0111 1110
@@ -333,7 +378,7 @@ namespace node
 			//	 E110 110n (Time Point)
 			date_flag_ = ((val & 0x01) == 0);
 			date_time_flag_ = ((val & 0x01) == 1);
-			unit_ = mbus::COUNT;
+			unit_ = mbus::units::COUNT;
 		}
 		else if (val == 0x6C) {
 			//	E110 1100 Date (actual or associated with a storage number / function)
@@ -350,7 +395,7 @@ namespace node
 		}
 		else if (val == 0x6E) {
 			//	 E110 1110 (Units for H.C.A.)
-			unit_ = mbus::UNIT_RESERVED;
+			unit_ = mbus::units::UNIT_RESERVED;
 			//return "HCA";
 		}
 		else if (val == 0x6F) {
@@ -369,7 +414,12 @@ namespace node
 			//	b0111 0100 = 0x70
 			//	 E111 01nn (Actuality Duration)
 			//	Time since last radio telegram reception
+			//	see Open Metering System Specification Vol.2 – Primary Communication Issue 3.0.1 / 2011-01-29 (Release)
+			//	2.2.2.1 Synchronous versus asynchronous transmission  
 			decode_time_unit(val & 0x03);
+			code_ = sml::OBIS_W_MBUS_LAST_RECEPTION.get_data();
+			valid_ = true;
+			//
 		}
 		else if (val == 0x78) {
 			//	 E111 1000 (Fabrication No)
@@ -385,7 +435,7 @@ namespace node
 		}
 		else if (val == 0x7B) {
 			//	 E111 1011 Extension of VIF-codes (true VIF is given in the first VIFE)
-			return STATE_VIF_EXT_7B;
+			return state::STATE_VIF_EXT_7B;
 		}
 		else if (val == 0x7C) {
 			//	E111 1100 (VIF in following string (length in first byte))
@@ -393,7 +443,7 @@ namespace node
 		else if (val == 0x7D) {
 			//	E111 1101 Extension of VIF-codes (true VIF is given in the first VIFE)
 			//	Multiplicative correction factor for value (not unit)
-			return STATE_VIF_EXT_7D;
+			return state::STATE_VIF_EXT_7D;
 		}
 		else if (val == 0x7F) {
 			//	 E111 1111 (Manufacturer Specific)
@@ -405,8 +455,8 @@ namespace node
 
 
 		return (v.vif_.ext_ == 1)
-			? STATE_VIF_EXT_
-			: STATE_DATA_
+			? state::STATE_VIF_EXT_
+			: state::STATE_DATA_
 			;
 	}
 
@@ -485,8 +535,8 @@ namespace node
 		//E111 1111	next VIFE's and data of this block are maufacturer specific	127
 
 		return (v.vif_.ext_ == 1)
-			? STATE_VIF_EXT_
-			: STATE_DATA_
+			? state::STATE_VIF_EXT_
+			: state::STATE_DATA_
 			;
 	}
 
@@ -528,7 +578,7 @@ namespace node
 		//E111 01nn	Cold / Warm Temperature Limit	10nn-3 °C	0.001°C to 1°C
 		//E111 1nnn	cumul. count max power	10nnn-3 W	0.001W to 10000W
 
-		return STATE_DATA_;
+		return state::STATE_DATA_;
 	}
 
 	vdb_reader::state vdb_reader::state_vife_7d(char c)
@@ -543,7 +593,7 @@ namespace node
 			//	E000 1000	Access Number (transmission count)
 			//	2 data bytes
 			BOOST_ASSERT(length_ == mbus::DFC_16_BIT_INT);
-			return STATE_DATA_7D_08;
+			return state::STATE_DATA_7D_08;
 		}
 		//Enhanced Identification
 		//E000 1001	Medium (as in fixed header)
@@ -566,7 +616,7 @@ namespace node
 			//	E001 0111	Error flags (binary)
 			//	2 data bytes
 			BOOST_ASSERT(length_ == mbus::DFC_16_BIT_INT);
-			return STATE_DATA_7D_17;
+			return state::STATE_DATA_7D_17;
 		}
 		//E001 1000	Error mask
 		//E001 1001	Reserved
@@ -585,16 +635,16 @@ namespace node
 		//E010 01nn	Storage interval [sec..day] 
 		else if ((c & 0x7F) == 0x28) {
 			//	E010 1000	Storage interval month(s)
-			unit_ = mbus::MONTH;
+			unit_ = mbus::units::MONTH;
 		}
 		else if ((c & 0x7F) == 0x29) {
 			//	E010 1001	Storage interval year(s)
-			unit_ = mbus::YEAR;
+			unit_ = mbus::units::YEAR;
 		}
 		//E010 1010	Reserved
 		else if (c == 0x2b) {
 			//E010 1011	Reserved
-			unit_ = mbus::SECOND;
+			unit_ = mbus::units::SECOND;
 		}
 		//E010 11nn	Duration since last readout [sec..days] 
 		//Enhanced tariff management
@@ -603,11 +653,11 @@ namespace node
 		//E011 01nn	Period of tariff [sec to days] 
 		else if ((c & 0x7F) == 0x38) {
 			//	E011 1000	Period of tariff months
-			unit_ = mbus::MONTH;
+			unit_ = mbus::units::MONTH;
 		}
 		else if ((c & 0x7F) == 0x39) {
 			//	E011 1001	Period of tariff years
-			unit_ = mbus::YEAR;
+			unit_ = mbus::units::YEAR;
 		}
 		//E011 1010	dimensionless / no VIF
 		//E011 1011	Reserved
@@ -616,12 +666,12 @@ namespace node
 		else if ((c & 0x7F) == 0x40) {
 			//	E100 nnnn	10nnnn-9 Volts
 			scaler_ = (c & 0x0f) - 9;
-			unit_ = mbus::VOLT;
+			unit_ = mbus::units::VOLT;
 		}
 		else if ((c & 0x7F) == 0x50) {
 			//	E101 nnnn	10nnnn-12 Ampere
 			scaler_ = (c & 0x0f) - 12;
-			unit_ = mbus::AMPERE;
+			unit_ = mbus::units::AMPERE;
 		}
 		//E110 0000	Reset counter
 		//E110 0001	Cumulation counter
@@ -636,9 +686,9 @@ namespace node
 		//E111 0000	Date and time of battery change
 		else if ((c & 0x7F) == 0x74) {
 			// E111 0100 remaining battery life time
-			unit_ = mbus::DAY;
+			unit_ = mbus::units::DAY;
 		}
-		return STATE_DATA_;
+		return state::STATE_DATA_;
 	}
 
 
@@ -653,12 +703,12 @@ namespace node
 		case mbus::DFC_NO_DATA:
 			//	no data 
 			value_ = cyng::make_object();
-			return STATE_COMPLETE;
+			return state::STATE_COMPLETE;
 
 		case mbus::DFC_8_BIT_INT://	8 Bit Integer
 			BOOST_ASSERT(buffer_.size() == 1);
 			value_ = cyng::make_object(c);
-			return STATE_COMPLETE;
+			return state::STATE_COMPLETE;
 
 		case mbus::DFC_16_BIT_INT:	//	16 Bit Integer
 			if (buffer_.size() == 2)	return make_i16_value();
@@ -671,19 +721,19 @@ namespace node
 			break;
 		case mbus::DFC_32_BIT_REAL:	//	32 Bit Real
 			//	ToDo: implement
-			if (buffer_.size() == 4)	return STATE_COMPLETE;
+			if (buffer_.size() == 4)	return state::STATE_COMPLETE;
 			break;
 		case mbus::DFC_48_BIT_INT:	//	48 Bit Integer
 			//	ToDo: implement
-			if (buffer_.size() == 6)	return STATE_COMPLETE;
+			if (buffer_.size() == 6)	return state::STATE_COMPLETE;
 			break;
 		case mbus::DFC_64_BIT_INT:	//	64 Bit Integer
 			//	ToDo: implement
-			if (buffer_.size() == 8)	return STATE_COMPLETE;
+			if (buffer_.size() == 8)	return state::STATE_COMPLETE;
 			break;
 
 		case mbus::DFC_READOUT:	//	Selection for Readout
-			if (buffer_.size() == length_)	return STATE_COMPLETE;
+			if (buffer_.size() == length_)	return state::STATE_COMPLETE;
 			break;
 
 		case mbus::DFC_2_DIGIT_BCD:	//	2 digit BCD
@@ -707,34 +757,34 @@ namespace node
 			if (c < 0xC0) {
 				//	max 192 characters
 				length_ = c;
-				return STATE_DATA_ASCII_;
+				return state::STATE_DATA_ASCII_;
 			}
 			else if (c < 0xD0) {
 				length_ = (c - 0xC0) * 2;
-				return STATE_DATA_BCD_POSITIVE_;
+				return state::STATE_DATA_BCD_POSITIVE_;
 			}
 			else if (c < 0xE0) {
 				length_ = (c - 0xD0) * 2;
-				return STATE_DATA_BCD_NEGATIVE_;
+				return state::STATE_DATA_BCD_NEGATIVE_;
 			}
 			else if (c < 0xF0) {
 				length_ = c - 0xE0;
-				return STATE_DATA_BINARY_;
+				return state::STATE_DATA_BINARY_;
 			}
 			else if (c < 0xFB) {
 				length_ = 8;
-				return STATE_DATA_FP_;
+				return state::STATE_DATA_FP_;
 			}
 			//else reserved
 			length_ = c - 0xFB;
-			return STATE_COMPLETE;
+			return state::STATE_COMPLETE;
 
 		case mbus::DFC_12_DIGIT_BCD:	// 12 digit BCD
 			if (buffer_.size() == 6)	return make_bcd_value(buffer_.size());
 			break;
 		case mbus::DFC_SPECIAL:	// special functions
 			//	ToDo: implement
-			if (buffer_.size() == length_)	return STATE_COMPLETE;
+			if (buffer_.size() == length_)	return state::STATE_COMPLETE;
 			break;
 
 		default:
@@ -752,7 +802,7 @@ namespace node
 
 		if (buffer_.size() == length_) {
 			value_ = cyng::make_object(buffer_);
-			return STATE_COMPLETE;
+			return state::STATE_COMPLETE;
 		}
 		return state_;
 
@@ -782,16 +832,16 @@ namespace node
 		//	3 = days
 		switch (code) {
 		case 0:
-			unit_ = mbus::SECOND;
+			unit_ = mbus::units::SECOND;
 			break;
 		case 1:
-			unit_ = mbus::MIN;
+			unit_ = mbus::units::MIN;
 			break;
 		case 2:
-			unit_ = mbus::HOUR;
+			unit_ = mbus::units::HOUR;
 			break;
 		case 3:
-			unit_ = mbus::DAY;
+			unit_ = mbus::units::DAY;
 			break;
 		default:
 			break;
@@ -831,7 +881,7 @@ namespace node
 			std::copy(buffer_.begin(), buffer_.end(), std::begin(cnv.inp_));
 			value_ = cyng::make_object(cnv.out_);
 		}
-		return STATE_COMPLETE;
+		return state::STATE_COMPLETE;
 	}
 
 	vdb_reader::state vdb_reader::make_i24_value()
@@ -858,7 +908,7 @@ namespace node
 			std::copy(buffer_.begin(), buffer_.end(), std::begin(cnv.inp_));
 			value_ = cyng::make_object(cnv.out_);
 		}
-		return STATE_COMPLETE;
+		return state::STATE_COMPLETE;
 	}
 
 	vdb_reader::state vdb_reader::make_i32_value()
@@ -904,7 +954,7 @@ namespace node
 			std::copy(buffer_.begin(), buffer_.end(), std::begin(cnv.inp_));
 			value_ = cyng::make_object(cnv.out_);
 		}
-		return STATE_COMPLETE;
+		return state::STATE_COMPLETE;
 	}
 
 	vdb_reader::state vdb_reader::make_bcd_value(std::size_t size)
@@ -933,7 +983,75 @@ namespace node
 			break;
 		}
 
-		return STATE_COMPLETE;
+		return state::STATE_COMPLETE;
+	}
+
+	std::uint8_t vdb_reader::get_medium() const
+	{
+		switch (sml::get_medium_code(server_id_))
+		{
+		case mbus::DEV_TYPE_OTHER:	return 0;
+		case mbus::DEV_TYPE_OIL:	return 16;	//	OIL
+		case mbus::DEV_TYPE_ELECTRICITY:	return 1;
+		case mbus::DEV_TYPE_GAS:	return 7;
+		case mbus::DEV_TYPE_HEAT:	return 6;
+		case mbus::DEV_TYPE_STEAM:	return 17;	//	? 
+		case mbus::DEV_TYPE_WARM_WATER:	return 9;
+		case mbus::DEV_TYPE_WATER:	return 8;
+		case mbus::DEV_TYPE_HEAT_COST_ALLOCATOR:	return 4;
+		case mbus::DEV_TYPE_COMPRESSED_AIR:	return 17;	//	Compressed air
+
+		case mbus::DEV_TYPE_CLM_OUTLET:	
+		case mbus::DEV_TYPE_CLM_INLET:
+		case mbus::DEV_TYPE_HEAT_INLET:
+		case mbus::DEV_TYPE_HEAT_COOLING_LOAD_METER:
+		case mbus::DEV_TYPE_BUS_SYSTEM_COMPONENT:
+		case mbus::DEV_TYPE_UNKNOWN_MEDIUM:
+			return 15;	//	?
+
+				// 0x10 to 0x13 reserved
+		case mbus::DEV_TYPE_CALORIFIC_VALUE:
+		case mbus::DEV_TYPE_HOT_WATER:	return 9;
+		case mbus::DEV_TYPE_COLD_WATER:	return 8;
+		case mbus::DEV_TYPE_DUAL_REGISTER_WATER_METER:	return 8;
+		case mbus::DEV_TYPE_PRESSURE:	return 17;
+		case mbus::DEV_TYPE_AD_CONVERTER:
+		case mbus::DEV_TYPE_SMOKE_DETECTOR:
+		case mbus::DEV_TYPE_ROOM_SENSOR:
+		case mbus::DEV_TYPE_GAS_DETECTOR:
+
+				// 0x10 to 0x1F reserved
+		case mbus::DEV_TYPE_BREAKER:
+		case mbus::DEV_TYPE_VALVE:
+
+				// 0x22 to 0x24 reserved
+		case mbus::DEV_TYPE_DISPLAY:
+
+				//	Reserved for customer units 0x26 to 0x27
+		case mbus::DEV_TYPE_WASTE_WATER:
+		case mbus::DEV_TYPE_GARBAGE:
+		case mbus::DEV_TYPE_CO2:
+				//	Reserved for environmental meter 0x2B to 0x2F
+		case mbus::DEV_TYPE_MUC:
+		case mbus::DEV_TYPE_REPEATER_UNIDIRECTIONAL:
+		case mbus::DEV_TYPE_REPEATER_BIDIRECTIONAL:
+
+				//	Reserved for system devices 0x34 to 0x35
+		case mbus::DEV_TYPE_RADIO_CONVERTER_SYSTEM:
+		case mbus::DEV_TYPE_RADIO_CONVERTER_METER:
+			return 15;	//	?
+
+				//	Reserved for system devices 0x38 to 0x3F
+		case mbus::DEV_TYPE_SM_ELECTRICITY:	return 1;
+		case mbus::DEV_TYPE_SM_GAS:	return 7;
+		case mbus::DEV_TYPE_SM_HEAT:	return 6;
+		case mbus::DEV_TYPE_SM_WATER:	return 8;
+		case mbus::DEV_TYPE_SM_HCALLOC:	return 4;
+		default:
+			break;
+		}
+
+		return 0;
 	}
 
 }	//	node

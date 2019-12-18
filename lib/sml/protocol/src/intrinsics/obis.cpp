@@ -118,12 +118,17 @@ namespace node
 			{
 				case 0:	return "Abstract objects";
 				case 1:	return "Electricity";
-				case 4:	return "Heat Cost Allocators";
+					//	HCA
+				case 4:	return "Heat Cost Allocators";	
+
+					//	termal energy related objects
 				case 5:	return "Cooling";
 				case 6:	return "Heat";
+
 				case 7:	return "Gas";
 				case 8:	return "Water (cold)";
 				case 9:	return "Water (hot)";
+				case 15: return "other";
 				case 16: return "Oil";
 				case 17: return "Compressed air";
 				case 18: return "Nitrogen";
@@ -184,6 +189,26 @@ namespace node
 
 		const char* obis::get_indicator_name() const
 		{
+			switch (get_medium()) {
+			case 0:	return get_indicator_name_abstract();
+			case 1:	return get_indicator_name_electricity();
+			case 4:	return get_indicator_name_hca();	
+			case 5:	return "Cooling";
+			case 6:	return "Heat";
+			case 7:	return get_indicator_name_gas();
+			case 8:	return "Water (cold)";
+			case 9:	return "Water (hot)";
+			case 16: return "Oil";
+			case 17: return "Compressed air";
+			case 18: return "Nitrogen";
+			default:
+				break;
+			}
+			return "reserved";
+		}
+
+		const char* obis::get_indicator_name_abstract() const
+		{
 			switch (get_indicator()) {
 			case 0:	return "General purpose COSEM objects";
 			case 1: return "Instances of IC Clock";
@@ -218,7 +243,79 @@ namespace node
 			default:
 				break;
 			}
-			return "reserved";
+			return "reserved (abstract)";
+		}
+
+		const char* obis::get_indicator_name_electricity() const
+		{
+			switch (get_indicator()) {
+			case 1:	return "Active power+ (QI+QIV)";
+			case 2:	return "Active power- (QII+QIII)";
+			case 3:	return "Reactive power+ (QI+QII)";
+			case 4:	return "Reactive power- (QIII+QIV)";
+			case 5:	return "Reactive power QI";
+			case 6:	return "Reactive power QII";
+			case 7:	return "Reactive power QIII";
+			case 8:	return "Reactive power QVI";
+
+			case 100: return "Reactive Power inductive (QI+QIII)";
+			case 104: return "Reactive Power capacitiv (QI+QIII)";
+			default:
+				break;
+			}
+			return "reserved (electricity)";
+		}
+
+		const char* obis::get_indicator_name_hca() const
+		{
+			switch (get_indicator()) {
+			case 0:	return "General purpose obejcts";
+			case 1:	return "Unrated integral";
+			case 2:	return "Rated integral";
+			case 3:	return "Radiator surface temperature";
+			case 4:	return "Heating medium temperature";
+			case 5:	return "Flow (forward) temperature";
+			case 6:	return "Return remperature";
+			case 7:	return "Room temmerature";
+
+			case 93: return "Consortia specific indentifiers";
+			case 94: return "Country specific indentifiers";
+			default:
+				break;
+			}
+			return "reserved (HCA)";
+		}
+
+		const char* obis::get_indicator_name_gas() const
+		{
+			switch (get_indicator()) {
+			case 0:	return "General purpose objects";
+			case 1: return "Forward undisturbed meter volume";
+			case 2: return "Forward disturbed meter volume";
+			case 3: return "Forward absolute meter volume";
+			case 4: return "ToDo";
+			case 5: return "ToDo";
+			case 6: return "ToDo";
+			case 7: return "ToDo";
+			case 8: return "ToDo";
+
+			case 11: return "ToDo";
+			case 12: return "ToDo";
+			case 13: return "ToDo";
+			case 14: return "ToDo";
+			case 15: return "ToDo";
+			case 16: return "ToDo";
+
+			case 21: return "ToDo";
+			case 22: return "ToDo";
+			case 23: return "ToDo";
+			case 24: return "ToDo";
+			case 25: return "ToDo";
+			case 26: return "ToDo";
+			default:
+				break;
+			}
+			return "reserved (gas)";
 		}
 
 		std::uint32_t obis::get_mode() const 
@@ -281,7 +378,7 @@ namespace node
 
 		bool obis::is_physical_unit() const
 		{
-			return (get_medium() < node::mbus::UNIT_RESERVED) && (get_medium() != 0);
+			return (get_medium() < static_cast<std::uint8_t>(node::mbus::units::UNIT_RESERVED)) && (get_medium() != 0);
 		}
 
 		octet_type obis::to_buffer() const

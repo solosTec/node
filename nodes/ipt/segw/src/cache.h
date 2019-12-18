@@ -19,7 +19,6 @@
 
 namespace node
 {
-
 	/**
 	 * create a map with all table meta data.
 	 */
@@ -87,6 +86,7 @@ namespace node
 		void read_table(std::string const&, std::function<void(cyng::store::table const*)>);
 		void read_tables(std::string const&, std::string const&, std::function<void(cyng::store::table const*, cyng::store::table const*)>);
 		void write_table(std::string const&, std::function<void(cyng::store::table*)>);
+		void clear_table(std::string const&);
 
 		/**
 		 * Convinience function to loop over one table with read access

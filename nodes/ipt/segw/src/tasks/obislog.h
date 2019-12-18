@@ -11,8 +11,6 @@
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 
-#include <boost/filesystem.hpp>
-
 namespace node
 {
 	/**
