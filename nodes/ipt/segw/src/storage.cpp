@@ -203,6 +203,18 @@ namespace node
 		return false;
 	}
 
+	bool storage::update(std::string tbl
+		, cyng::table::key_type const& key
+		, cyng::param_t const& param
+		, std::uint64_t gen)
+	{
+		return update(tbl
+			, key
+			, param.first
+			, param.second
+			, gen);
+	}
+
 	bool storage::insert(std::string tbl
 		, cyng::table::key_type const& key
 		, cyng::table::data_type const& body

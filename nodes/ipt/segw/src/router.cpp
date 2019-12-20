@@ -44,6 +44,7 @@ namespace node
 		, get_proc_parameter_(logger, sml_gen_, cfg, db, id)
 		, set_proc_parameter_(logger, sml_gen_, cfg, id)
 		, get_profile_list_(logger, sml_gen_, cfg, db)
+		, attention_(logger, sml_gen_, cfg)
 	{
 		//
 		//	SML transport
@@ -65,6 +66,8 @@ namespace node
 		vm.register_function("sml.get.proc.parameter.request", 6, std::bind(&router::sml_get_proc_parameter_request, this, std::placeholders::_1));
 		vm.register_function("sml.set.proc.parameter.request", 6, std::bind(&router::sml_set_proc_parameter_request, this, std::placeholders::_1));
 		vm.register_function("sml.get.profile.list.request", 8, std::bind(&router::sml_get_profile_list_request, this, std::placeholders::_1));
+
+		attention_.register_this(vm);
 	}
 
 	void router::sml_msg(cyng::context& ctx)

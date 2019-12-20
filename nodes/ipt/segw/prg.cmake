@@ -96,6 +96,8 @@ set (node_ipt_segw_msg
 	nodes/ipt/segw/src/msg/set_proc_parameter.cpp	
 	nodes/ipt/segw/src/msg/config_ipt.h
 	nodes/ipt/segw/src/msg/config_ipt.cpp	
+	nodes/ipt/segw/src/msg/attention.h
+	nodes/ipt/segw/src/msg/attention.cpp	
 
 )
 

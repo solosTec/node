@@ -215,17 +215,17 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 41, FF, DEV_CLASS_BASIC_DIRECT);	//	3 x 230 /400 V and 5 (100) A 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 42, FF, DEV_CLASS_BASIC_SEMI);	//	3 x 230 /400 V and 1 (6) A
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 43, FF, DEV_CLASS_BASIC_INDIRECT);	//	3 x  58 / 100 V and 1 (6) A 
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 45, FF, DEV_CLASS_IW);	//	IW module
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 46, FF, DEV_CLASS_PSTN);	//	PSTN
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 47, FF, DEV_CLASS_GPRS); //	or PLC
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 45, FF, DEV_CLASS_IW);		//	IW module
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 46, FF, DEV_CLASS_PSTN);	//	PSTN/GPRS
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 47, FF, DEV_CLASS_GPRS);	//	GPRS/PLC
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 48, FF, DEV_CLASS_KM);		//	KM module (LAN/DSL)
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 49, FF, DEV_CLASS_NK);		//	NK/HS
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 4A, FF, DEV_CLASS_EXTERN);		//	external load profile collector 
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 4A, FF, DEV_CLASS_EXTERN);	//	external load profile collector 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 4B, FF, DEV_CLASS_RESERVED);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 4F, FF, DEV_CLASS_LAN);	//	see DEV_CLASS_MUC_LAN
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 50, FF, DEV_CLASS_eHZ);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 52, FF, DEV_CLASS_3HZ);
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 53, FF, DEV_CLASS_MUC_LAN);	// (MUC - LAN / DSL)
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 53, FF, DEV_CLASS_MUC_LAN);	// (MUC-LAN/DSL)
 		
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 83, 82, 01, CODE_REBOOT);	//	request reboot
 

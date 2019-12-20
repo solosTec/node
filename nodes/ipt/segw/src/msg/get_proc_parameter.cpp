@@ -603,6 +603,7 @@ namespace node
 
 		void get_proc_parameter::code_root_device_info(std::string trx, cyng::buffer_t srv_id)
 		{
+			//	see ZDUE-MUC_Anwenderhandbuch_V2_5.pdf (Chapter 21.19)
 			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_DEVICE_INFO not implemented yet");
 			sml_gen_.empty(trx, srv_id, OBIS_CODE_ROOT_DEVICE_INFO);
 		}
@@ -613,12 +614,12 @@ namespace node
 				//	81 81 C7 86 00 FF
 				//	"srv_id" is the meter ID
 				//
-				cache_.read_table("mbus-devices", [&](cyng::store::table const* tbl) {
+				cache_.read_table("_DeviceMBUS", [&](cyng::store::table const* tbl) {
 
 					//
 					//	list parameters of a specific device/meter
 					//
-					CYNG_LOG_TRACE(logger_, tbl->size() << " mbus-devices");
+					CYNG_LOG_TRACE(logger_, tbl->size() << " M-Bus devices");
 
 					auto rec = tbl->lookup(cyng::table::key_generator(srv_id));
 					if (rec.empty())
@@ -633,7 +634,7 @@ namespace node
 						auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_ROOT_SENSOR_PARAMS);
 
 						//
-						//	repeat server id
+						//	repeat server id (81 81 C7 82 04 FF)
 						//
 						append_get_proc_response(msg, {
 							OBIS_CODE_ROOT_SENSOR_PARAMS,
@@ -641,15 +642,17 @@ namespace node
 							}, make_value(srv_id));
 
 						//
-						//	device class
+						//	device class (always "---" or empty)
+						//	81 81 C7 82 02 FF
 						//
 						append_get_proc_response(msg, {
 							OBIS_CODE_ROOT_SENSOR_PARAMS,
 							OBIS_CODE_DEVICE_CLASS
-							}, make_value(cyng::make_buffer({ 0x2D, 0x2D, 0x2D })));
-
+						}, make_value(cyng::make_buffer({ })));
+					
 						//
-						//	 81 81 C7 82 03 FF : OBIS_DATA_MANUFACTURER - descr
+						//	81 81 C7 82 03 FF : OBIS_DATA_MANUFACTURER - descr
+						//	FLAG code
 						//
 						append_get_proc_response(msg, {
 							OBIS_CODE_ROOT_SENSOR_PARAMS,
@@ -666,11 +669,12 @@ namespace node
 
 						//
 						//	Bitmaske zur Definition von Bits, deren Änderung zu einem Eintrag im Betriebslogbuch zum Datenspiegel führt
+						//	81 81 C7 86 00 FF
 						//
 						append_get_proc_response(msg, {
 							OBIS_CODE_ROOT_SENSOR_PARAMS,
 							OBIS_CODE_ROOT_SENSOR_BITMASK
-							}, make_value("00"));
+							}, make_value(rec["mask"]));
 
 						//
 						//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
@@ -736,7 +740,7 @@ namespace node
 						append_get_proc_response(msg, {
 							OBIS_CODE_ROOT_SENSOR_PARAMS,
 							OBIS_CODE_TIME_REFERENCE
-							}, make_value(rec["user"]));
+							}, make_value(time_ref));
 
 						//
 						//	append to message queue

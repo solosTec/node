@@ -13,6 +13,7 @@
 #include <smf/sml/obis_io.h>
 
 #include <cyng/io/serializer.h>
+#include <cyng/buffer_cast.h>
 
 namespace node
 {
@@ -45,6 +46,10 @@ namespace node
 				switch (pos->to_uint64()) {
 				case 0x81490D0700FF:	//	IP-T
 					if (pos != end)	_81490d0700ff(++pos, end, trx, srv_id, user, pwd, param);
+					break;
+				case 0x8181C78600FF:	//	OBIS_CODE_ROOT_SENSOR_PARAMS
+					BOOST_ASSERT(pos != end);
+					code_root_sensor_params(++pos, end, trx, srv_id, user, pwd, param);
 					break;
 				default:
 					CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request - unknown OBIS code "
@@ -84,6 +89,30 @@ namespace node
 					<< cyng::io::to_hex(pos->to_buffer()));
 				break;
 			}
+		}
+
+		void set_proc_parameter::code_root_sensor_params(obis_path::const_iterator pos
+			, obis_path::const_iterator end
+			, std::string trx
+			, cyng::buffer_t srv_id
+			, std::string user
+			, std::string pwd
+			, cyng::param_t	param)
+		{
+			//CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request <8181C78600FF> - incomplete "
+			//	<< param.first
+			//	<< " ="
+			//	<< cyng::io::to_str(param.second));
+
+			BOOST_ASSERT(pos->to_str() == param.first);
+			auto const bitmask = cyng::to_buffer(param.second);
+			cache_.write_table("_DeviceMBUS", [&](cyng::store::table* tbl) {
+
+				auto const key = cyng::table::key_generator(srv_id);
+				tbl->modify(key, cyng::param_t("mask", param.second), cache_.get_tag());
+
+			});
+
 		}
 
 		//vm.register_function("sml.set.proc.if1107.param", 7, std::bind(&kernel::sml_set_proc_if1107_param, this, std::placeholders::_1));

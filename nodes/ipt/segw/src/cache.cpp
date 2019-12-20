@@ -340,8 +340,33 @@ namespace node
 			, 0		//	type
 			, 0		//	scaler
 			, 0		//	unit
-			})
+			}),
 
+				//
+				//	Transaction ID
+				//	example: "19041816034914837-2"
+				//	Server ID
+				//	example:  01 EC 4D 01 00 00 10 3C 02
+				//
+			cyng::table::make_meta_table<1, 3>("_trx",
+			{ "trx"		//	transaction ID
+			//	-- body
+			, "code"		//	OBIS code
+			, "serverID"	//	server ID
+			, "msg"			//	optional message
+			},
+			{ cyng::TC_STRING		//	trx
+									//	-- body
+			, cyng::TC_BUFFER		//	code
+			, cyng::TC_BUFFER		//	serverID
+			, cyng::TC_STRING		//	msg
+			},
+			{ 24	//	trx
+					//	-- body
+			, 24	//	OBIS
+			, 9		//	serverID
+			, 32	//	msg
+			})
 		};
 
 		return vec;

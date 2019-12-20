@@ -249,7 +249,7 @@ namespace node
 		auto const name = tbl->meta().get_name(attr.first);
 
 		if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
-			
+
 			if (boost::algorithm::equals(name, "status.word")) {
 
 				//LOG_CODE_24 = 0x02100008,	//	Ethernet - Link an KundenSchnittstelle aktiviert
@@ -286,8 +286,17 @@ namespace node
 				, attr.second
 				, gen);
 		}
-	}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DeviceMBUS")) {
 
+			//
+			//	Update "TDeviceMBUS"
+			//
+			storage_.update("TDeviceMBUS"
+				, key
+				, tbl->meta().to_param(attr)
+				, gen);
+		}
+	}
 
 	void bridge::connect_to_cache()
 	{
