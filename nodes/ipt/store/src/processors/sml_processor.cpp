@@ -57,7 +57,7 @@ namespace node
 			//
 			vm_.async_run(std::move(prg));
 
-		}, false, false)	//	not verbose, no log instructions
+		}, false, false, false)	//	not verbose, no log instructions
 		, shutdown_(false)
 		, last_activity_(std::chrono::system_clock::now())
 	{
@@ -72,7 +72,7 @@ namespace node
 		//	vm_.run() could assert since there is a small chance that the VM controller detects
 		//	running_in_this_thread()
 		//
-		vm_.register_function("sml.msg", 2, std::bind(&sml_processor::sml_msg, this, std::placeholders::_1));
+		vm_.register_function("sml.msg", 3, std::bind(&sml_processor::sml_msg, this, std::placeholders::_1));
 		vm_.register_function("sml.eom", 2, std::bind(&sml_processor::sml_eom, this, std::placeholders::_1));
 		vm_.register_function("sml.log", 1, std::bind(&sml_processor::sml_log, this, std::placeholders::_1));
 
@@ -171,8 +171,7 @@ namespace node
 		//
 		//	get message body
 		//
-		cyng::tuple_t msg;
-		msg = cyng::value_cast(frame.at(0), msg);
+		cyng::tuple_t const msg = cyng::to_tuple(frame.at(0));
 
 		//
 		//	get SML message type

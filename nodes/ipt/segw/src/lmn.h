@@ -3,7 +3,6 @@
 
 #include "decoder.h"
 #include <cyng/async/mux.h>
-//#include <cyng/log.h>
 #include <cyng/vm/controller.h>
 
 #include <boost/uuid/uuid.hpp>
@@ -32,19 +31,9 @@ namespace node
 		std::pair<std::size_t, bool> start_lmn_port_wired(std::size_t);
 
 		void wmbus_push_frame(cyng::context& ctx);
-
-		/**
-		 * Lookup "_DeviceMBUS" table and insert device
-		 * if not found
-		 * @return true if device was inserted (new device)
-		 */
-		//bool update_device_table(cyng::buffer_t const& dev_id
-		//	, std::string const& manufacturer
-		//	, std::uint8_t version
-		//	, std::uint8_t media
-		//	, std::uint8_t frame_type
-		//	, cyng::crypto::aes_128_key
-		//	, boost::uuids::uuid tag);
+		void sml_msg(cyng::context& ctx);
+		void sml_eom(cyng::context& ctx);
+		void sml_get_list_response(cyng::context& ctx);
 
 	private:
 		cyng::async::mux& mux_;

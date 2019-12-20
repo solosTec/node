@@ -29,12 +29,12 @@ namespace node
 		//
 		//	SML communication
 		//
-		vm_.register_function("sml.msg", 2, std::bind(&proxy_comm::sml_msg, this, std::placeholders::_1));
+		vm_.register_function("sml.msg", 3, std::bind(&proxy_comm::sml_msg, this, std::placeholders::_1));
 		vm_.register_function("sml.eom", 2, std::bind(&proxy_comm::sml_eom, this, std::placeholders::_1));
 		vm_.register_function("sml.public.open.response", 4, std::bind(&proxy_comm::sml_public_open_response, this, std::placeholders::_1));
 		vm_.register_function("sml.public.close.response", 1, std::bind(&proxy_comm::sml_public_close_response, this, std::placeholders::_1));
 		vm_.register_function("sml.get.proc.param.response", 5, std::bind(&proxy_comm::sml_get_proc_param_response, this, std::placeholders::_1));
-		vm_.register_function("sml.get.list.response", 4, std::bind(&proxy_comm::sml_get_list_response, this, std::placeholders::_1));
+		vm_.register_function("sml.get.list.response", 5, std::bind(&proxy_comm::sml_get_list_response, this, std::placeholders::_1));
 		vm_.register_function("sml.get.profile.list.response", 8, std::bind(&proxy_comm::sml_get_profile_list_response, this, std::placeholders::_1));
 		vm_.register_function("sml.attention.msg", 4, std::bind(&proxy_comm::sml_attention_msg, this, std::placeholders::_1));
 

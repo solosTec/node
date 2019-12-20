@@ -11,8 +11,11 @@
 
 #include <smf/sml/defs.h>
 #include <smf/sml/intrinsics/obis.h>
+
 #include <cyng/object.h>
 #include <cyng/intrinsics/sets.h>
+
+#include <boost/uuid/uuid.hpp>
 
 namespace node
 {
@@ -26,6 +29,7 @@ namespace node
 
 			readout& set_trx(cyng::buffer_t const&);
 			readout& set_value(std::string const&, cyng::object);
+			readout& set_pk(boost::uuids::uuid);
 
 			/**
 			 * overwrite existing values

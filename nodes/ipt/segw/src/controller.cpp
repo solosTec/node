@@ -308,7 +308,7 @@ namespace node
 		//
 		//	setup bridge
 		//
-		bridge br(mux, logger, cm, store);
+		bridge& br = bridge::get_instance(mux, logger, cm, store);
 
 		//
 		//	log power return message

@@ -16,6 +16,8 @@
 #include <iostream>
 #include <ios>
 
+#include <boost/uuid/nil_generator.hpp>
+
 namespace node 
 {
 	namespace sml
@@ -23,16 +25,44 @@ namespace node
 		//
 		//	parser
 		//
-		parser::parser(parser_callback cb, bool verbose, bool log, bool data_only)
-			: cb_(cb)
+		parser::parser(parser_callback cb
+			, bool verbose
+			, bool log
+			, bool data_only)
+		: cb_(cb)
 			, verbose_(verbose)
 			, log_(log)
 			, data_only_(data_only)
+			, pk_(boost::uuids::nil_uuid())	//	null UUID
 			, pos_(0)
 			, code_()
 			, tl_()
 			, offset_(0)
-			, stream_state_(STATE_START)
+			, stream_state_(state::START)
+			, parser_state_(sml_start())
+			, crc_(crc_init())
+			, crc_on_(true)
+			, counter_(0)
+			, stack_()
+		{
+			BOOST_ASSERT_MSG(cb_, "no callback specified");
+		}
+
+		parser::parser(parser_callback cb
+			, bool verbose
+			, bool log
+			, bool data_only
+			, boost::uuids::uuid pk)
+		: cb_(cb)
+			, verbose_(verbose)
+			, log_(log)
+			, data_only_(data_only)
+			, pk_(pk)
+			, pos_(0)
+			, code_()
+			, tl_()
+			, offset_(0)
+			, stream_state_(state::START)
 			, parser_state_(sml_start())
 			, crc_(crc_init())
 			, crc_on_(true)
@@ -50,7 +80,7 @@ namespace node
 
 		void parser::reset()
 		{
-			stream_state_ = STATE_START;
+			stream_state_ = state::START;
 			parser_state_ = sml_start();
 			pos_ = 0;
 			crc_on_ = true;
@@ -103,81 +133,81 @@ namespace node
 			{
 				switch (stream_state_)
 				{
-				case STATE_START:
+				case state::START:
 					parser_state_ = sml_start();
 					break;
-				case STATE_LENGTH:
+				case state::LENGTH:
 					parser_state_ = sml_length();
 					break;
-				case STATE_STRING:
+				case state::STRING:
 					parser_state_ = sml_string(tl_.length_ - offset_);
 					break;
-				case STATE_BOOLEAN:
+				case state::BOOLEAN:
 					parser_state_ = sml_bool();
 					break;
-				case STATE_UINT8:
+				case state::UINT8:
 					BOOST_ASSERT(offset_ == 1);
 					parser_state_ = sml_uint8(tl_.length_ - offset_);
 					break;
-				case STATE_UINT16:
+				case state::UINT16:
 					BOOST_ASSERT(offset_ == 1);
 					parser_state_ = sml_uint16(tl_.length_ - offset_);
 					break;
-				case STATE_UINT32:
+				case state::UINT32:
 					BOOST_ASSERT(offset_ == 1);
 					parser_state_ = sml_uint32(tl_.length_ - offset_);
 					break;
-				case STATE_UINT64:
+				case state::UINT64:
 					BOOST_ASSERT(offset_ == 1);
 					parser_state_ = sml_uint64(tl_.length_ - offset_);
 					break;
-				case STATE_INT8:
+				case state::INT8:
 					BOOST_ASSERT(offset_ == 1);
 					parser_state_ = sml_int8(tl_.length_ - offset_);
 					break;
-				case STATE_INT16:
+				case state::INT16:
 					BOOST_ASSERT(offset_ == 1);
 					parser_state_ = sml_int16(tl_.length_ - offset_);
 					break;
-				case STATE_INT32:
+				case state::INT32:
 					BOOST_ASSERT(offset_ == 1);
 					parser_state_ = sml_int32(tl_.length_ - offset_);
 					break;
-				case STATE_INT64:
+				case state::INT64:
 					BOOST_ASSERT(offset_ == 1);
 					parser_state_ = sml_int64(tl_.length_ - offset_);
 					break;
-				case STATE_ESC:
+				case state::ESC:
 					parser_state_ = sml_esc();
 					break;
-				case STATE_PROPERTY:
+				case state::PROPERTY:
 					parser_state_ = sml_prop();
 					break;
-				case STATE_START_STREAM:
+				case state::START_STREAM:
 					parser_state_ = sml_start_stream();
 					break;
-				case STATE_START_BLOCK:
+				case state::START_BLOCK:
 					parser_state_ = sml_start_block();
 					break;
-				case STATE_TIMEOUT:
+				case state::TIMEOUT:
 					parser_state_ = sml_timeout();
 					break;
-				case STATE_BLOCK_SIZE:
+				case state::BLOCK_SIZE:
 					parser_state_ = sml_block_size();
 					break;
-				case STATE_EOM:
+				case state::EOM:
 					parser_state_ = sml_eom();
 					break;
 
 				default:
-					{
+					if (!data_only_) {
 						std::stringstream ss;
 						ss
-							<< stream_state_ 
+							<< get_state_name(stream_state_)
 							<< '@' 
 							<< pos_
 							;
-						if (!data_only_)	cb_(cyng::generate_invoke("log.msg.error", ss.str()));
+						cb_(cyng::generate_invoke("log.msg.error", ss.str()));
 					}
 					break;
 				}
@@ -192,27 +222,27 @@ namespace node
 		char const * parser::state_name() const
 		{
 			switch (stream_state_) {
-			case STATE_ERROR:	break;
-			case STATE_START:	return "START";
-			case STATE_LENGTH:	return "LENGTH";
-			case STATE_STRING:	return "STRING";
-			case STATE_OCTET:	return "OCTECT";
-			case STATE_BOOLEAN:	return "BOOLEAN";
-			case STATE_INT8:	return "INT8";
-			case STATE_INT16:	return "UNT16";
-			case STATE_INT32:	return "INT32";
-			case STATE_INT64:	return "INT64";
-			case STATE_UINT8:	return "UINT8";
-			case STATE_UINT16:	return "UINT16";
-			case STATE_UINT32:	return "UINT32";
-			case STATE_UINT64:	return "UINT64";
-			case STATE_ESC:	return "ESC";
-			case STATE_PROPERTY:	return "PROPERTY";
-			case STATE_START_STREAM:	return "START_STREAM";
-			case STATE_START_BLOCK:	return "START_BLOCK";
-			case STATE_TIMEOUT:	return "TIMEOUT";
-			case STATE_BLOCK_SIZE:  return "BLOCK_SIZE";
-			case STATE_EOM:	return "EOM";
+			case state::PARSE_ERROR:	break;
+			case state::START:	return "START";
+			case state::LENGTH:	return "LENGTH";
+			case state::STRING:	return "STRING";
+			case state::OCTET:	return "OCTECT";
+			case state::BOOLEAN:	return "BOOLEAN";
+			case state::INT8:	return "INT8";
+			case state::INT16:	return "UNT16";
+			case state::INT32:	return "INT32";
+			case state::INT64:	return "INT64";
+			case state::UINT8:	return "UINT8";
+			case state::UINT16:	return "UINT16";
+			case state::UINT32:	return "UINT32";
+			case state::UINT64:	return "UINT64";
+			case state::ESC:	return "ESC";
+			case state::PROPERTY:	return "PROPERTY";
+			case state::START_STREAM:	return "START_STREAM";
+			case state::START_BLOCK:	return "START_BLOCK";
+			case state::TIMEOUT:	return "TIMEOUT";
+			case state::BLOCK_SIZE:  return "BLOCK_SIZE";
+			case state::EOM:	return "EOM";
 			default:
 				break;
 			}
@@ -228,7 +258,7 @@ namespace node
 		{
 			if (c_ == ESCAPE_SIGN)
 			{
-				return STATE_ESC;
+				return state::ESC;
 			}
 			else if (c_ == 0)
 			{
@@ -286,7 +316,7 @@ namespace node
 
 				if ((c_ & 0x80) == 0x80)
 				{
-					return STATE_LENGTH;
+					return state::LENGTH;
 				}
 				else
 				{
@@ -294,7 +324,7 @@ namespace node
 				}
 			}
 
-			return STATE_START;
+			return state::START;
 		}
 
 		parser::state parser::state_visitor::operator()(sml_length& s) const
@@ -317,7 +347,7 @@ namespace node
 			//			<< std::endl;
 			//	}
 
-			//	return STATE_START;
+			//	return state::START;
 			//}
 
 			//
@@ -342,9 +372,9 @@ namespace node
 			{
 				//	emit() is the same as push() but with optional logging
 				parser_.emit(std::move(s.octet_));
-				return STATE_START;
+				return state::START;
 			}
-			return STATE_STRING;
+			return state::STRING;
 		}
 		parser::sml_string::sml_string(std::size_t size)
 			: size_(size)
@@ -383,7 +413,7 @@ namespace node
 
 			//	anything but zero is true
 			parser_.push(cyng::make_object<bool>(c_ != 0));
-			return STATE_START;
+			return state::START;
 		}
 
 		parser::state parser::state_visitor::operator()(sml_uint8& s) const
@@ -411,7 +441,7 @@ namespace node
 					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
-				return STATE_START;
+				return state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -451,7 +481,7 @@ namespace node
 					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
-				return STATE_START;
+				return state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -484,7 +514,7 @@ namespace node
 					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
-				return STATE_START;
+				return state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -516,7 +546,7 @@ namespace node
 					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
-				return STATE_START;
+				return state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -545,7 +575,7 @@ namespace node
 					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
-				return STATE_START;
+				return state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -573,7 +603,7 @@ namespace node
 					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
-				return STATE_START;
+				return state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -601,7 +631,7 @@ namespace node
 					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
-				return STATE_START;
+				return state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -629,7 +659,7 @@ namespace node
 					}
 				}
 				parser_.push(cyng::make_object(s.u_.n_));
-				return STATE_START;
+				return state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -641,12 +671,12 @@ namespace node
 				s.counter_++;
 				if (s.counter_ == 4)
 				{
-					return STATE_PROPERTY;
+					return state::PROPERTY;
 				}
 			}
 			else
 			{
-				if (parser_.verbose_)
+				if (parser_.verbose_ && !parser_.data_only_)
 				{
 					std::stringstream ss;
 					ss
@@ -654,13 +684,13 @@ namespace node
 						<< std::hex
 						<< parser_.pos_
 						;
-					if (!parser_.data_only_)	parser_.cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
+					parser_.cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
 				}
 
 				//
 				//	invalid TL field
 				//
-				return STATE_START;
+				return state::START;
 
 			}
 			return parser_.stream_state_;
@@ -673,21 +703,21 @@ namespace node
 		{
 			switch (c_)
 			{
-			case 0x01:	return STATE_START_STREAM;
-			case 0x02:	return STATE_START_BLOCK;
-			case 0x03:	return STATE_TIMEOUT;
-			case 0x04:	return STATE_BLOCK_SIZE;
-			case 0x1a:	return STATE_EOM;
+			case 0x01:	return state::START_STREAM;
+			case 0x02:	return state::START_BLOCK;
+			case 0x03:	return state::TIMEOUT;
+			case 0x04:	return state::BLOCK_SIZE;
+			case 0x1a:	return state::EOM;
 			default:
-			{
-				std::stringstream ss;
-				ss
-					<< "escape property "
-					<< +c_
-					<< " not supported"
-					;
-				if (!parser_.data_only_) parser_.cb_(cyng::generate_invoke("log.msg.error", ss.str()));
-			}
+				if (!parser_.data_only_) {
+					std::stringstream ss;
+					ss
+						<< "escape property "
+						<< +c_
+						<< " not supported"
+						;
+					parser_.cb_(cyng::generate_invoke("log.msg.error", ss.str()));
+				}
 				break;
 			}
 
@@ -711,7 +741,7 @@ namespace node
 				//
 				//	start new message
 				//
-				return STATE_START;
+				return state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -731,7 +761,7 @@ namespace node
 						<< parser_.pos_
 						<< std::endl;
 				}
-				return  STATE_START;
+				return  state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -758,7 +788,7 @@ namespace node
 						<< parser_.pos_
 						<< std::endl;
 				}
-				return  STATE_START;
+				return  state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -784,7 +814,7 @@ namespace node
 						<< parser_.pos_
 						<< std::endl;
 				}
-				return  STATE_START;
+				return  state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -830,7 +860,7 @@ namespace node
 
 				parser_.crc_on_ = true;
 				parser_.finalize(s.crc_, s.pads_);
-				return STATE_START;
+				return state::START;
 			}
 			return parser_.stream_state_;
 		}
@@ -864,19 +894,19 @@ namespace node
 		{
 			switch (tl_.type_)
 			{
-			case SML_STRING:	return STATE_STRING;
-			case SML_BOOLEAN:	return STATE_BOOLEAN;
+			case SML_STRING:	return state::STRING;
+			case SML_BOOLEAN:	return state::BOOLEAN;
 			case SML_INTEGER:
 				switch (tl_.length_)
 				{
 				case 2:	
-					return STATE_INT8;
+					return state::INT8;
 				case 3:	
-					return STATE_INT16;
+					return state::INT16;
 				case 4: case 5: 
-					return STATE_INT32;
+					return state::INT32;
 				case 6: case 7: case 8: case 9:
-					return STATE_INT64;
+					return state::INT64;
 				default:
 					//BOOST_ASSERT_MSG(false, "invalid integer length");
 					if (!data_only_)
@@ -898,13 +928,13 @@ namespace node
 				switch (tl_.length_)
 				{
 				case 2:
-					return STATE_UINT8;
+					return state::UINT8;
 				case 3:
-					return STATE_UINT16;
+					return state::UINT16;
 				case 4: case 5:
-					return STATE_UINT32;
+					return state::UINT32;
 				case 6: case 7: case 8: case 9:
-					return STATE_UINT64;
+					return state::UINT64;
 				default:
 					//BOOST_ASSERT_MSG(false, "invalid unsigned length");
 					if (!data_only_)
@@ -977,7 +1007,7 @@ namespace node
 				else {
 					stack_.push(list(tl_.length_));
 				}
-				return STATE_START;
+				return state::START;
 			default:
 				if (!data_only_) {
 					std::stringstream ss;
@@ -1024,29 +1054,31 @@ namespace node
 
 			if (!stack_.empty())
 			{
-				//
-				//	generate SML message
-				//
-				BOOST_ASSERT_MSG(stack_.top().values_.size() == 5, "sml.msg");
-				cyng::vector_t prg{ cyng::generate_invoke("sml.msg", stack_.top().values_, counter_) };
+				if (!data_only_)
+				{
+					//
+					//	generate SML message
+					//
+					BOOST_ASSERT_MSG(stack_.top().values_.size() == 5, "sml.msg");
+					cyng::vector_t prg{ cyng::generate_invoke("sml.msg", stack_.top().values_, counter_, pk_) };
+
+					if (verbose_)
+					{
+						std::cerr
+							<< "*** SML message complete"
+							<< std::endl;
+					}
+
+					//
+					//	message complete
+					//
+					cb_(std::move(prg));
+				}
 
 				//
 				//	remove accumulated values from stack
 				//
 				stack_.pop();
-
-				if (verbose_)
-				{
-					std::cerr 
-						<< "*** SML message complete"
-						<< std::endl;
-
-				}
-
-				//
-				//	message complete
-				//
-				if (!data_only_) cb_(std::move(prg));
 				counter_++;
 			}
 		}
@@ -1077,19 +1109,6 @@ namespace node
 
 		void parser::emit(cyng::buffer_t&& octet)
 		{
-			//if (verbose_)
-			//{
-			//	cyng::io::hex_dump hd(8);
-			//	std::stringstream ss;
-			//	hd(ss, octet.data(), octet.data() + octet.size());
-			//	std::cerr 
-			//		<< prefix()
-			//		<< "STRING: "
-			//		<< tl_.length_
-			//		<< " bytes\t"
-			//		<< ss.str()
-			//	;
-			//}
 			if (verbose_ || log_)
 			{
 				std::stringstream ss;
@@ -1122,7 +1141,7 @@ namespace node
 		{
 			if (!stack_.empty())
 			{
-				if (stack_.top().target_ < stack_.top().values_.size())	{
+				if (stack_.top().target_ < stack_.top().values_.size() && !data_only_)	{
 					std::stringstream ss;
 					ss
 						<< std::dec
@@ -1135,7 +1154,7 @@ namespace node
 						<< "> exceeds expected size "
 						<< stack_.top().target_
 						;
-					if (!data_only_)	cb_(cyng::generate_invoke("log.msg.error", ss.str()));
+					cb_(cyng::generate_invoke("log.msg.error", ss.str()));
 				}
 
 				//
@@ -1145,7 +1164,6 @@ namespace node
 					auto const tpl = cyng::tuple_factory(pos_
 						, stack_.size()
 						, ((!stack_.empty()) ? stack_.top().values_.size() : 1u)
-						//, ((!stack_.empty()) ? stack_.top().pos() : 0u)
 						, obj);
 					cb_(cyng::to_vector(tpl));
 				}
@@ -1205,7 +1223,7 @@ namespace node
 				cb_(cyng::to_vector(tpl));
 			}
 			else {
-				cb_(cyng::generate_invoke("sml.eom", this->crc_, counter_));
+				cb_(cyng::generate_invoke("sml.eom", this->crc_, counter_, pk_));
 			}
 			counter_ = 0;
 			pos_ = 0;
@@ -1234,6 +1252,36 @@ namespace node
 				}
 			}
 			return ss.str();
+		}
+
+		const char* parser::get_state_name(state e)
+		{
+			switch (e) {
+			case state::PARSE_ERROR:	return "PARSE_ERROR";
+			case state::START:	return "START";
+			case state::LENGTH:	return "LENGTH";
+			case state::STRING:	return "STRING";
+			case state::OCTET:	return "OCTET";
+			case state::BOOLEAN:	return "BOOLEAN";
+			case state::INT8:	return "INT8";
+			case state::INT16:	return "INT16";
+			case state::INT32:	return "INT32";
+			case state::INT64:	return "INT64";
+			case state::UINT8:	return "UINT8";
+			case state::UINT16:	return "UINT16";
+			case state::UINT32:	return "UINT32";
+			case state::UINT64:	return "UINT64";
+			case state::ESC:	return "ESC";
+			case state::PROPERTY:	return "PROPERTY";
+			case state::START_STREAM:	return "START_STREAM";
+			case state::START_BLOCK:	return "START_BLOCK";
+			case state::TIMEOUT:	return "TIMEOUT";
+			case state::BLOCK_SIZE:	return "BLOCK_SIZE";
+			case state::EOM:	return "EOM";
+			default:
+				break;
+			}
+			return "undefined state";
 		}
 
 		parser::list::list(std::size_t size)

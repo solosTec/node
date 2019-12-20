@@ -39,9 +39,14 @@ namespace node
 			return *this;
 		}
 
+		readout& readout::set_pk(boost::uuids::uuid pk)
+		{
+			return set_value("pk", cyng::make_object(pk));
+		}
+
 		readout& readout::set_value(std::string const& name, cyng::object obj)
 		{
-			values_[name] = obj;
+			values_.emplace(name, obj);
 			return *this;
 		}
 

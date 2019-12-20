@@ -83,7 +83,7 @@ namespace node
 			//cyng::vector_t r = std::move(prg);
 			//std::cout << cyng::io::to_str(r) << std::endl;
 			ctrl.async_run(std::move(prg));
-		}, false, true);
+		}, false, true, false);
 
 		//	GetProfileListResponse
 		//std::ifstream ifile("C:\\projects\\workplace\\node\\Debug\\push-data-3586334585-418932835.bin", std::ios::binary | std::ios::app);

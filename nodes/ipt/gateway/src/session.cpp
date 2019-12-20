@@ -35,7 +35,7 @@ namespace node
 				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 				vm_.async_run(std::move(prg));
-			}, false, false)
+			}, false, false, false)
 			, core_(logger_
 				, vm_
 				, config_db

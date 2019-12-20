@@ -269,8 +269,8 @@ namespace node
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
 
-			const std::string server_id = from_server_id(ro_.server_id_);
-			const std::string gw_id = cyng::io::to_hex(ro_.client_id_);	//	gateway ID (e.g. 0500153b021774)
+			std::string const server_id = from_server_id(ro_.server_id_);
+			std::string const gw_id = cyng::io::to_hex(ro_.client_id_);	//	gateway ID (e.g. 0500153b021774)
 			
 
 			//

@@ -10,9 +10,11 @@
 #include <smf/sml/defs.h>
 #include <cyng/intrinsics/sets.h>
 
-#include <boost/variant.hpp>
 #include <functional>
 #include <stack>
+
+#include <boost/variant.hpp>
+#include <boost/uuid/uuid.hpp>
 
 namespace node 
 {
@@ -33,29 +35,29 @@ namespace node
 			 * are different helper variables mostly
 			 * declared in the private section of this class.
 			 */
-			enum state
+			enum class state
 			{
-				STATE_ERROR,
-				STATE_START,
-				STATE_LENGTH,	//!<	check MSB
-				STATE_STRING,
-				STATE_OCTET,
-				STATE_BOOLEAN,
-				STATE_INT8,
-				STATE_INT16,
-				STATE_INT32,
-				STATE_INT64,
-				STATE_UINT8,
-				STATE_UINT16,
-				STATE_UINT32,
-				STATE_UINT64,
-				STATE_ESC,
-				STATE_PROPERTY,
-				STATE_START_STREAM,
-				STATE_START_BLOCK,
-				STATE_TIMEOUT,
-				STATE_BLOCK_SIZE,
-				STATE_EOM
+				PARSE_ERROR,
+				START,
+				LENGTH,	//!<	check MSB
+				STRING,
+				OCTET,
+				BOOLEAN,
+				INT8,
+				INT16,
+				INT32,
+				INT64,
+				UINT8,
+				UINT16,
+				UINT32,
+				UINT64,
+				ESC,
+				PROPERTY,
+				START_STREAM,
+				START_BLOCK,
+				TIMEOUT,
+				BLOCK_SIZE,
+				EOM
 			};
 
 			char const * state_name() const;
@@ -210,7 +212,16 @@ namespace node
 			 * @param log send log data with "sml.log" callback
 			 * @param data_only send data blocks instead of instructions
 			 */
-			parser(parser_callback cb, bool verbose, bool log, bool data_only = false);
+			parser(parser_callback cb
+				, bool verbose
+				, bool log
+				, bool data_only);
+
+			parser(parser_callback cb
+				, bool verbose
+				, bool log
+				, bool data_only
+				, boost::uuids::uuid pk);
 
 			/**
 			 * The destructor is required since the unique_ptr
@@ -278,15 +289,18 @@ namespace node
 			 */
 			void finalize(std::uint16_t crc, std::uint8_t gap);
 
+			static const char* get_state_name(state);
+
 		private:
 			/**
 			 * call this method if parsing is complete
 			 */
 			parser_callback	cb_;
 
-			const bool verbose_;
-			const bool log_;	//!< generate log instructions
-			const bool data_only_;
+			bool const verbose_;
+			bool const log_;	//!< generate log instructions
+			bool const data_only_;
+			boost::uuids::uuid const pk_;	//!< optional tag for produced SML messages
 			std::size_t pos_;	//!< position index
 
 			/**

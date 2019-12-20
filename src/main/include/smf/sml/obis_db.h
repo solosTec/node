@@ -112,13 +112,13 @@ namespace node
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 11, FF, PROFILE_15_MINUTE);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 12, FF, PROFILE_60_MINUTE);
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 13, FF, PROFILE_24_HOUR);
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 14, FF, PROFILE_LAST_2_HOURS);
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 15, FF, PROFILE_LAST_WEEK);
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 16, FF, PROFILE_1_MONTH);
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 17, FF, PROFILE_1_YEAR);
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 18, FF, PROFILE_INITIAL);
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 14, FF, PROFILE_LAST_2_HOURS);	//	past two hours
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 15, FF, PROFILE_LAST_WEEK);	//	weekly (on day change from Sunday to Monday)
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 16, FF, PROFILE_1_MONTH);	//	monthly recorded meter readings
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 17, FF, PROFILE_1_YEAR);	//	annually recorded meter readings
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 18, FF, PROFILE_INITIAL);	//	81, 81, C7, 86, 18, NN with NN = 01 .. 0A for open registration periods
 
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 01, FF, PUSH_OPERATIONS);	//	7.3.1.26 Datenstruktur zum Transport der Eigenschaften von Push-Vorgängen. 
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 01, FF, PUSH_OPERATIONS);	//	push root element 
 
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 02, FF, PUSH_INTERVAL);	//	in seconds
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 8A, 03, FF, PUSH_DELAY);	//	in seconds
@@ -229,10 +229,10 @@ namespace node
 		
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 83, 82, 01, CODE_REBOOT);	//	request reboot
 
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 00, FF, CODE_ROOT_SENSOR_PARAMS);	//	properties of data sensor/actor (Eigenschaften eines Datenspiegels)
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 00, FF, CODE_ROOT_SENSOR_PARAMS);	//	data mirror root element (Eigenschaften eines Datenspiegels)
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 01, FF, CODE_ROOT_SENSOR_BITMASK);	//	Bitmask to define bits that will be transferred into log
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 02, FF, CODE_AVERAGE_TIME_MS);	//	average time between two received data records (milliseconds)
-		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 20, FF, CODE_ROOT_DATA_COLLECTOR);	//	properties of data collector (Eigenschaften eines Datensammlers)
+		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 20, FF, CODE_ROOT_DATA_COLLECTOR);	//	data collector root element (Eigenschaften eines Datensammlers)
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 21, FF, DATA_COLLECTOR_ACTIVE);	//	true/false
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 22, FF, DATA_COLLECTOR_SIZE);		//	max. table size
 		constexpr static obis	DEFINE_OBIS_CODE(81, 81, C7, 86, 04, FF, CODE_TIME_REFERENCE);	//	[u8] 0 == UTC, 1 == UTC + time zone, 2 == local time
@@ -411,7 +411,7 @@ namespace node
 		//
 		//	list types
 		//
-		constexpr static obis	DEFINE_OBIS_CODE(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);
+		constexpr static obis	DEFINE_OBIS_CODE(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);	//	current data set
 		constexpr static obis	DEFINE_OBIS_CODE(99, 00, 00, 00, 00, 04, LIST_SERVICES);
 
 		//

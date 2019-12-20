@@ -27,6 +27,14 @@
 
 namespace node
 {
+	bridge& bridge::get_instance(cyng::async::mux& mux, cyng::logging::log_ptr logger, cache& db, storage& store)
+	{
+		//
+		//	no need to be threadsafe 
+		//
+		static bridge instance(mux, logger, db, store);
+		return instance;
+	}
 
 	bridge::bridge(cyng::async::mux& mux, cyng::logging::log_ptr logger, cache& db, storage& store)
 		: logger_(logger)
@@ -88,6 +96,16 @@ namespace node
 					, 1u	//	only needed for insert operations
 					, cache_.get_tag());
 
+				if (boost::algorithm::equals(name, sml::OBIS_CODE_SERVER_ID.to_str())) {
+
+					//
+					//	init server ID in cache
+					//
+					CYNG_LOG_INFO(logger_, "init server id with " << val);
+					auto mac = cyng::value_cast(cyng::table::restore(val, type), cyng::generate_random_mac48());
+					cache_.server_id_ = sml::to_gateway_srv_id(mac);
+				}
+
 				return true;	//	continue
 			});
 
@@ -148,12 +166,15 @@ namespace node
 		//
 		if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
 
+			BOOST_ASSERT(key.size() == 1);
 			BOOST_ASSERT(body.size() == 1);
+
 			//
 			//	store values as string
 			//
 			auto val = cyng::io::to_str(body.at(0));
 			storage_.insert("TCfg", key, cyng::table::data_generator(val, val, body.at(0).get_class().tag()), gen, source);
+
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DeviceMBUS")) {
 
@@ -246,17 +267,24 @@ namespace node
 					, 0		//	nr
 					, "");	//	description
 			}
-			else {
+			else if (boost::algorithm::equals(name, sml::OBIS_CODE_SERVER_ID.to_str())) {
 
 				//
-				//	Update "TCfg"
+				//	update server ID in cache
 				//
-				storage_.update("TCfg"
-					, key
-					, "val"
-					, attr.second
-					, gen);
+				auto mac = cyng::value_cast(attr.second, cyng::generate_random_mac48());
+				cache_.server_id_ = sml::to_gateway_srv_id(mac);
 			}
+
+
+			//
+			//	Update "TCfg"
+			//
+			storage_.update("TCfg"
+				, key
+				, "val"
+				, attr.second
+				, gen);
 		}
 	}
 
@@ -293,11 +321,29 @@ namespace node
 
 	void bridge::start_task_obislog(cyng::async::mux& mux)
 	{
-		auto const cycle_time = cache_.get_cfg("obis-log", 15);
-		cyng::async::start_task_detached<obislog>(mux
-			, logger_
-			, std::chrono::minutes(cycle_time));
+		//
+		//	start one task for every GPIO
+		//
+		//gpio-path|1|/sys/class/gpio|/sys/class/gpio|15
+		//gpio-vector|1|46 47 50 53|46 47 50 53|15
 
+		auto const gpio_path = cache_.get_cfg<std::string>("gpio-path", "/sys/class/gpio");
+		auto const gpio_vector = cache_.get_cfg<std::string>("gpio-vector", "46 47 50 53");
+
+		//
+		//	Start a GPIO task for every GPIO
+		//
+		auto const svec = cyng::split(gpio_vector, " ");
+		for (auto const& s : svec) {
+			auto const tid = cyng::async::start_task_detached<gpio>(mux
+				, logger_
+				, boost::filesystem::path(gpio_path) / ("/gpio" + s));
+
+			//
+			//	store task id in cache DB
+			//
+			cache_.set_cfg("gpio-task-" + s, tid);
+		}
 	}
 
 	void bridge::start_task_gpio(cyng::async::mux& mux)
@@ -313,8 +359,30 @@ namespace node
 
 	void bridge::start_task_readout(cyng::async::mux& mux)
 	{
-
+		auto const interval = cache_.get_cfg("readout-interval", 122);
+		auto const tid = cyng::async::start_task_detached<readout>(mux
+			, logger_
+			, cache_
+			, storage_
+			, std::chrono::seconds(interval));
 	}
 
+	void bridge::generate_op_log(sml::obis peer
+		, std::uint32_t evt
+		, std::string target
+		, std::uint8_t nr
+		, std::string details)
+	{
+		auto const sw = cache_.get_status_word();
+		auto srv = cache_.get_srv_id();
+
+		storage_.generate_op_log(sw
+			, evt
+			, peer	//	source
+			, srv	//	server ID
+			, target
+			, nr	
+			, details);	
+	}
 
 }

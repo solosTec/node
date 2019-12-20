@@ -17,6 +17,7 @@
 #include <cyng/vm/context.h>
 #include <cyng/vm/generator.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/set_cast.h>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -35,7 +36,6 @@ namespace node
 	: logger_(logger)
 		, server_mode_(server_mode)
 		, cache_(cfg)
-		//, db_(db)
 		, sml_gen_()
 		, account_(account)
 		, pwd_(pwd)
@@ -48,7 +48,7 @@ namespace node
 		//
 		//	SML transport
 		//
-		vm.register_function("sml.msg", 2, std::bind(&router::sml_msg, this, std::placeholders::_1));
+		vm.register_function("sml.msg", 3, std::bind(&router::sml_msg, this, std::placeholders::_1));
 		vm.register_function("sml.eom", 2, std::bind(&router::sml_eom, this, std::placeholders::_1));
 		vm.register_function("sml.log", 1, [this](cyng::context& ctx) {
 			cyng::vector_t const frame = ctx.get_frame();
@@ -78,8 +78,7 @@ namespace node
 		//
 		//	get message body
 		//
-		cyng::tuple_t msg;
-		msg = cyng::value_cast(frame.at(0), msg);
+		cyng::tuple_t const msg = cyng::to_tuple(frame.at(0));
 
 		//
 		//	add generated instruction vector

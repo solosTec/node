@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_LIB_READER_H
-#define NODE_LIB_READER_H
+#ifndef NODE_SML_READER_H
+#define NODE_SML_READER_H
 
 
 #include <smf/sml/defs.h>
@@ -16,7 +16,8 @@
 #include <cyng/vm/context.h>
 #include <cyng/intrinsics/sets.h>
 #include <cyng/object.h>
-#include <boost/uuid/random_generator.hpp>
+
+#include <boost/uuid/uuid.hpp>
 
 namespace node
 {
@@ -28,6 +29,7 @@ namespace node
 			 * read a complete SML message
 			 */
 			cyng::vector_t read(cyng::tuple_t const&);
+			cyng::vector_t read(cyng::tuple_t const&, boost::uuids::uuid);
 			cyng::vector_t read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
 			/**
@@ -39,7 +41,6 @@ namespace node
 			//	helper
 			//
 
-			obis read_obis(cyng::object);
 
 			/**
 			 * A SML parameter consists of a type (PROC_PAR_VALUE, PROC_PAR_TIME, ...) and a value.
@@ -69,6 +70,7 @@ namespace node
 
 			std::int8_t read_scaler(cyng::object);
 			std::uint8_t read_unit(cyng::object);
+			//std::uint8_t read_status(cyng::object);
 
 			std::vector<obis> read_param_tree_path(cyng::object);
 

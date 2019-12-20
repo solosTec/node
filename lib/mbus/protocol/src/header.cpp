@@ -103,7 +103,16 @@ namespace node
 		//
 		//	check success
 		//
-		if (test_aes(data))	{
+		if (test_aes(data)) {
+
+			//
+			//	remove trailing 0x2F
+			//
+			if (!data.empty()) {
+				auto index = data.size();
+				for (; index > 0 && data.at(index - 1) == 0x2F; --index);
+				data.resize(index);
+			}
 
 			//
 			//	substitute encrypted by decrypted data

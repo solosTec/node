@@ -44,7 +44,7 @@ namespace node
 				sml::parser p([](cyng::vector_t&& prg) {
 					cyng::vector_t r = std::move(prg);
 					//std::cout << cyng::io::to_str(r) << std::endl;
-				}, true, false);
+				}, true, false, false);
 
 				ifile.unsetf(std::ios_base::skipws);
 				p.read(std::istream_iterator<std::uint8_t>(ifile), std::istream_iterator<uint8_t>());

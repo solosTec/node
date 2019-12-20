@@ -45,7 +45,7 @@ namespace node
 			//
 			//	data from SML parser after receiving a 0x7F frame (short SML header)
 			//
-			vm.register_function("sml.get.list.response", 4, std::bind(&data::sml_get_list_response, this, std::placeholders::_1));
+			vm.register_function("sml.get.list.response", 5, std::bind(&data::sml_get_list_response, this, std::placeholders::_1));
 
 			//
 			//	query last data record
@@ -383,7 +383,7 @@ namespace node
 						//
 						ctx.queue(std::move(prg));
 
-					}, false, false);	//	not verbose, no logging
+					}, false, false, false);	//	not verbose, no logging
 
 					auto const sml = r.first.data();
 					sml_parser.read(sml.begin(), sml.end());

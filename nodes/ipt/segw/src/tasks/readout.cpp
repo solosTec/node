@@ -10,8 +10,6 @@
 #include "../storage.h"
 
 #include <cyng/io/io_chrono.hpp>
-//#include <fstream>
-//#include <iostream>
 
 namespace node
 {

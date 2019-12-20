@@ -58,7 +58,7 @@ namespace node
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 #endif
 				vm_.async_run(std::move(prg));
-			}, false, false)
+			}, false, false, false)
 			, router_(logger_
 				, false	//	client mode
 				, vm_
@@ -97,8 +97,8 @@ namespace node
 				>(frame);
 
 				//	with IP-T prefix
-				cfg.set_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM }, "ep.remote"), std::get<0>(tpl));
-				cfg.set_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM }, "ep.local"), std::get<1>(tpl));
+				this->cache_.set_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM }, "ep.remote"), std::get<0>(tpl));
+				this->cache_.set_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM }, "ep.local"), std::get<1>(tpl));
 
 			});
 
@@ -197,7 +197,7 @@ namespace node
 				, sml::OBIS_CODE_PEER_ADDRESS_WANGSM	//	source is WANGSM (or LOG_SOURCE_ETH == 81, 04, 00, 00, 00, FF)
 				, srv	//	server ID
 				, ""	//	target
-				, 0		//	nr
+				, 0		//	push nr
 				, "IP-T login");	//	description
 
 

@@ -461,7 +461,6 @@ namespace node
 			std::uint8_t version_;
 			std::uint8_t medium_;
 			std::uint32_t dev_id_;
-			//std::uint16_t crc_;
 			std::uint8_t frame_type_;
 			/**
 			 * [0] 1 byte 01/02 01 == wireless, 02 == wired

@@ -61,7 +61,7 @@ namespace node
 			//
 			//	SML transport
 			//
-			vm.register_function("sml.msg", 2, std::bind(&kernel::sml_msg, this, std::placeholders::_1));
+			vm.register_function("sml.msg", 3, std::bind(&kernel::sml_msg, this, std::placeholders::_1));
 			vm.register_function("sml.eom", 2, std::bind(&kernel::sml_eom, this, std::placeholders::_1));
 			vm.register_function("sml.log", 1, [this](cyng::context& ctx){
 				const cyng::vector_t frame = ctx.get_frame();

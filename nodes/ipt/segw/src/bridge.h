@@ -8,6 +8,11 @@
 #ifndef NODE_IPT_SEGW_BRIDGE_H
 #define NODE_IPT_SEGW_BRIDGE_H
 
+#include <smf/sml/intrinsics/obis.h>
+
+#include <cyng/store/db.h>
+#include <cyng/log.h>
+
 namespace cyng
 {
 	namespace async
@@ -16,13 +21,11 @@ namespace cyng
 	}
 }
 
-#include <cyng/store/db.h>
-#include <cyng/log.h>
-
 namespace node
 {
 	/**
-	 * Manage communication between cache and permanent storage
+	 * Manage communication between cache and permanent storage.
+	 * This is a singleton. Only one instance is allowed.
 	 */
 	class storage;
 	class cache;
@@ -32,12 +35,25 @@ namespace node
 		friend class lmn;
 
 	public:
-		bridge(cyng::async::mux& mux, cyng::logging::log_ptr, cache&, storage&);
+		static bridge& get_instance(cyng::async::mux& mux, cyng::logging::log_ptr, cache&, storage&);
 
+	private:
+		bridge(cyng::async::mux& mux, cyng::logging::log_ptr, cache&, storage&);
+		~bridge() = default;
+		bridge(const bridge&) = delete;
+		bridge& operator=(const bridge&) = delete;
+
+	public:
 		/**
 		 * log power return message
 		 */
 		void power_return();
+
+		void generate_op_log(sml::obis peer
+			, std::uint32_t evt
+			, std::string target
+			, std::uint8_t nr
+			, std::string details);
 
 	private:
 		/**

@@ -16,6 +16,7 @@ namespace node
 	/**
 	 * write cyclic OBISLOG entries
 	 */
+	class bridge;
 	class obislog
 	{
 	public:
@@ -28,6 +29,7 @@ namespace node
 	public:
 		obislog(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
+			, bridge&
 			, std::chrono::minutes);
 
 		cyng::continuation run();
@@ -47,7 +49,12 @@ namespace node
 		 */
 		cyng::logging::log_ptr logger_;
 
-		std::chrono::minutes cycle_time_;
+		/**
+		 * permanent storage
+		 */
+		bridge& bridge_;
+
+		std::chrono::minutes interval_time_;
 	};
 
 }

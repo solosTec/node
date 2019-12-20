@@ -17,10 +17,10 @@
 
 namespace node
 {
-
 	cache::cache(cyng::store::db& db, boost::uuids::uuid tag)
 		: db_(db)
 		, tag_(tag)
+		, server_id_()
 	{}
 
 	boost::uuids::uuid const cache::get_tag() const
@@ -71,9 +71,9 @@ namespace node
 
 	cyng::buffer_t cache::get_srv_id()
 	{
-		//	81 81 C7 82 04 FF
-		auto mac = get_cfg(sml::OBIS_CODE_SERVER_ID.to_str(), cyng::generate_random_mac48());
-		return sml::to_gateway_srv_id(mac);
+		//	OBIS_CODE_SERVER_ID (81 81 C7 82 04 FF)
+		//	this is a cached value
+		return server_id_;
 	}
 
 	bool cache::merge_cfg(std::string name, cyng::object&& val)

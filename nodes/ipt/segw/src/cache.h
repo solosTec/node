@@ -148,6 +148,11 @@ namespace node
 		 * source tag
 		 */
 		boost::uuids::uuid const tag_;
+
+		/**
+		 * fast access to OBIS_CODE_SERVER_ID (81 81 C7 82 04 FF)
+		 */
+		cyng::buffer_t server_id_;
 	};
 
 	/**

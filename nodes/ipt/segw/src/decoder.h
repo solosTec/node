@@ -10,6 +10,7 @@
 
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/log.h>
+#include <cyng/vm/controller.h>
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -32,7 +33,10 @@ namespace node
 	class decoder_wireless_mbus
 	{
 	public:
-		decoder_wireless_mbus(cyng::logging::log_ptr, cache& cfg, boost::uuids::uuid tag);
+		decoder_wireless_mbus(cyng::logging::log_ptr
+			, cache& cfg
+			, cyng::controller&);
+			//, boost::uuids::uuid tag);
 
 		/**
 	     * The first 12 bytes of the user data consist of a block with a fixed length and structure.
@@ -63,7 +67,7 @@ namespace node
 	private:
 		cyng::logging::log_ptr logger_;
 		cache& cache_;
-		boost::uuids::uuid const tag_;
+		cyng::controller& vm_;
 		boost::uuids::random_generator_mt19937 uuidgen_;
 	};
 
