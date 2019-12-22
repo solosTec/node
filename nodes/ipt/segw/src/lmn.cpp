@@ -61,7 +61,7 @@ namespace node
 
 	void lmn::start()
 	{
-		auto const wired = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "enabled"), false);
+		auto const wired = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "enabled"), false);
 		if (wired) {
 			start_lmn_wired();
 		}
@@ -159,7 +159,7 @@ namespace node
 #endif
 		CYNG_LOG_INFO(logger_, "LMN wireless is running on port: " << port);
 
-		std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "monitor"), 30));
+		std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "monitor"), 30));
 		auto const speed = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 57600);
 
 		return cyng::async::start_task_delayed<lmn_port>(mux_
@@ -178,13 +178,13 @@ namespace node
 	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(std::size_t receiver)
 	{
 #if BOOST_OS_WINDOWS
-		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "port"), std::string("COM1"));
+		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "port"), std::string("COM1"));
 #else
-		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "port"), std::string("/dev/ttyAPP0"));
+		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "port"), std::string("/dev/ttyAPP0"));
 #endif
 		CYNG_LOG_INFO(logger_, "LMN wired is running on port: " << port);
 
-		std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "monitor"), 30));
+		std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "monitor"), 30));
 		auto const speed = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 115200);
 
 		return cyng::async::start_task_delayed<lmn_port>(mux_
@@ -192,10 +192,10 @@ namespace node
 			, logger_
 			, monitor
 			, port		//	port
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "databits"), 8u)		//	[u8] databits
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "parity"), "none")	//	[s] parity
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "flow_control"), "none")	//	[s] flow_control
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_IF_1107 }, "stopbits"), "one")	//	[s] stopbits
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "databits"), 8u)		//	[u8] databits
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "parity"), "none")	//	[s] parity
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "flow_control"), "none")	//	[s] flow_control
+			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "stopbits"), "one")	//	[s] stopbits
 			, static_cast<std::uint32_t>(speed)		//	[u32] speed
 			, receiver);
 

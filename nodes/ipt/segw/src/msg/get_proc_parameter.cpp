@@ -6,6 +6,8 @@
  */
 
 #include "get_proc_parameter.h"
+#include "config_ipt.h"
+#include "config_sensor_params.h"
 #include "../segw.h"
 #include "../cache.h"
 #include "../storage.h"
@@ -36,13 +38,14 @@ namespace node
 			, res_generator& sml_gen
 			, cache& cfg
 			, storage& db
-			, cyng::buffer_t const& id)
+			, node::ipt::config_ipt& config_ipt
+			, config_sensor_params& config_sensor_params)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
 			, storage_(db)
-			, server_id_(id)
-			, config_ipt_(logger, sml_gen, cfg, id)
+			, config_ipt_(config_ipt)
+			, config_sensor_params_(config_sensor_params)
 		{}
 
 		void get_proc_parameter::generate_response(obis code
@@ -52,91 +55,91 @@ namespace node
 			, std::string pwd)
 		{
 			switch (code.to_uint64()) {
-			case 0x810060050000:	//	OBIS_CLASS_OP_LOG_STATUS_WORD
+			case CODE_CLASS_OP_LOG_STATUS_WORD:	//	OBIS_CLASS_OP_LOG_STATUS_WORD
 				class_op_log_status_word(trx, srv_id);
 				break;
-			case 0x8181C78201FF:	//	OBIS_CODE_ROOT_DEVICE_IDENT
+			case CODE_ROOT_DEVICE_IDENT:	//	0x8181C78201FF
 				code_root_device_ident(trx, srv_id);
 				break;
-			case 0x8181C78810FF:	//	OBIS_CODE_ROOT_DEVICE_TIME
+			case CODE_ROOT_DEVICE_TIME:	//	0x8181C78810FF
 				code_root_device_time(trx, srv_id);
 				break;
-			case 0x8181C78801FF:	//	OBIS_CODE_ROOT_NTP
+			case CODE_ROOT_NTP:	//	0x8181C78801FF
 				code_root_ntp(trx, srv_id);
 				break;
-			case 0x81818160FFFF:	//	OBIS_CODE_ROOT_ACCESS_RIGHTS
+			case CODE_ROOT_ACCESS_RIGHTS:	//	0x81818160FFFF
 				code_root_access_rights(trx, srv_id);
 				break;
-			case 0x8102000700FF:	//	OBIS_CODE_ROOT_CUSTOM_INTERFACE
+			case CODE_ROOT_CUSTOM_INTERFACE:	//	0x8102000700FF
 				code_root_custom_interface(trx, srv_id);
 				break;
-			case 0x8102000710FF:	//	OBIS_CODE_ROOT_CUSTOM_PARAM
+			case CODE_ROOT_CUSTOM_PARAM:	//	0x8102000710FF
 				code_root_custom_param(trx, srv_id);
 				break;
-			case 0x8104000610FF:	//	OBIS_CODE_ROOT_WAN
+			case CODE_ROOT_WAN:	//	0x8104000610FF
 				code_root_wan(trx, srv_id);
 				break;
-			case 0x8104020700FF:	//	OBIS_CODE_ROOT_GSM
+			case CODE_ROOT_GSM:	//	0x8104020700FF
 				code_root_gsm(trx, srv_id);
 				break;
-			case 0x81040D0700FF:	//	OBIS_CODE_ROOT_GPRS_PARAM
+			case CODE_ROOT_GPRS_PARAM:	//	0x81040D0700FF
 				code_root_gprs_param(trx, srv_id);
 				break;
-			case 0x81490D0600FF:	//	OBIS_CODE_ROOT_IPT_STATE
+			case CODE_ROOT_IPT_STATE:	//	0x81490D0600FF
 				code_root_ipt_state(trx, srv_id);
 				break;
-			case 0x81490D0700FF:	//	OBIS_CODE_ROOT_IPT_PARAM
+			case CODE_ROOT_IPT_PARAM:	//	0x81490D0700FF
 				code_root_ipt_param(trx, srv_id);
 				break;
-			case 0x81060F0600FF:	//	OBIS_CODE_ROOT_W_MBUS_STATUS
+			case CODE_ROOT_W_MBUS_STATUS:	//	0x81060F0600FF
 				code_root_w_mbus_status(trx, srv_id);
 				break;
-			case 0x8106190700FF:	//	OBIS_CODE_IF_wMBUS
+			case CODE_IF_wMBUS:	//	0x8106190700FF
 				code_if_wmbus(trx, srv_id);
 				break;
-			case 0x81480D0600FF:	//	OBIS_CODE_ROOT_LAN_DSL
+			case CODE_ROOT_LAN_DSL:	//	0x81480D0600FF
 				code_root_lan_dsl(trx, srv_id);
 				break;
-			case 0x8148170700FF:	//	OBIS_CODE_IF_LAN_DSL
+			case CODE_IF_LAN_DSL:	//	0x8148170700FF
 				code_if_lan_dsl(trx, srv_id);
 				break;
-			case 0x0080800010FF:	//	OBIS_CODE_ROOT_MEMORY_USAGE
+			case CODE_ROOT_MEMORY_USAGE:	//	0x0080800010FF
 				code_root_memory_usage(trx, srv_id);
 				break;
-			case 0x81811106FFFF:	//	OBIS_CODE_ROOT_ACTIVE_DEVICES
+			case CODE_ROOT_ACTIVE_DEVICES:	//	0x81811106FFFF
 				code_root_active_devices(trx, srv_id);
 				break;
-			case 0x81811006FFFF:	//	OBIS_CODE_ROOT_VISIBLE_DEVICES
+			case CODE_ROOT_VISIBLE_DEVICES:	//	0x81811006FFFF
 				code_root_visible_devices(trx, srv_id);
 				break;
-			case 0x81811206FFFF:	//	OBIS_CODE_ROOT_DEVICE_INFO
+			case CODE_ROOT_DEVICE_INFO:	//	0x81811206FFFF
 				code_root_device_info(trx, srv_id);
 				break;
-			case 0x8181C78600FF:	//	OBIS_CODE_ROOT_SENSOR_PARAMS
-				code_root_sensor_params(trx, srv_id);
+			case CODE_ROOT_SENSOR_PARAMS:	//	0x8181C78600FF
+				config_sensor_params_.get_proc_params(trx, srv_id);
 				break;
-			case 0x8181C78620FF:	//	CODE_ROOT_DATA_COLLECTOR (Datenspiegel)
+			case CODE_ROOT_DATA_COLLECTOR:	//	 0x8181C78620FF (Datenspiegel)
 				code_root_data_collector(trx, srv_id);
 				break;
-			case 0x8181C79300FF:	//	CODE_IF_1107
+			case CODE_IF_1107:	//	0x8181C79300FF
 				code_if_1107(trx, srv_id);
 				break;
-			case 0x0080800000FF:	//	STORAGE_TIME_SHIFT
+			case CODE_STORAGE_TIME_SHIFT:	//	0x0080800000FF
 				storage_time_shift(trx, srv_id);
 				break;
-			case 0x8181C78A01FF:	//	PUSH_OPERATIONS
+			case CODE_PUSH_OPERATIONS:	//	0x8181C78A01FF
 				push_operations(trx, srv_id);
 				break;
-			case 0x990000000004:	//	LIST_SERVICES
+			case CODE_LIST_SERVICES:	//	0x990000000004
 				list_services(trx, srv_id);
 				break;
-			case 0x0080801100FF:	//	ACTUATORS
+			case CODE_ACTUATORS:	//	0x0080801100FF
 				actuators(trx, srv_id);
 				break;
-			case 0x81050D0700FF:	//	CODE_IF_EDL - M-Bus EDL (RJ10)
+			case CODE_CODE_IF_EDL:	//	0x81050D0700FF - M-Bus EDL (RJ10)
 				code_if_edl(trx, srv_id);
 				break;
-			case 0x00B000020000:	//	CLASS_MBUS
+			case CODE_CLASS_MBUS:	//	0x00B000020000
 				class_mbus(trx, srv_id);
 				break;
 			default:
@@ -176,7 +179,7 @@ namespace node
 			sml_gen_.get_proc_parameter_device_id(trx
 				, srv_id	//	server id
 				, manufacturer
-				, server_id_
+				, cache_.get_srv_id()
 				, "VSES-1KW-221-1F0"
 				, serial);
 		}
@@ -206,15 +209,15 @@ namespace node
 			const bool ntp_active = true;
 			const std::uint16_t ntp_tz = 3600;
 
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_ROOT_NTP);
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_NTP);
 
-			append_get_proc_response(msg, { OBIS_CODE_ROOT_NTP, OBIS_CODE_NTP_PORT }, make_value(ntp_port));
-			append_get_proc_response(msg, { OBIS_CODE_ROOT_NTP, OBIS_CODE_NTP_ACTIVE }, make_value(ntp_active));
-			append_get_proc_response(msg, { OBIS_CODE_ROOT_NTP, OBIS_CODE_NTP_TZ }, make_value(ntp_tz));
+			append_get_proc_response(msg, { OBIS_ROOT_NTP, OBIS_CODE_NTP_PORT }, make_value(ntp_port));
+			append_get_proc_response(msg, { OBIS_ROOT_NTP, OBIS_CODE_NTP_ACTIVE }, make_value(ntp_active));
+			append_get_proc_response(msg, { OBIS_ROOT_NTP, OBIS_CODE_NTP_TZ }, make_value(ntp_tz));
 
 			for (std::uint8_t nr = 0; nr < ntp_servers.size(); ++nr) {
 				auto srv = ntp_servers.at(nr);
-				append_get_proc_response(msg, { OBIS_CODE_ROOT_NTP, OBIS_CODE_NTP_SERVER, make_obis(0x81, 0x81, 0xC7, 0x88, 0x02, nr + 1) }, make_value(srv));
+				append_get_proc_response(msg, { OBIS_ROOT_NTP, OBIS_CODE_NTP_SERVER, make_obis(0x81, 0x81, 0xC7, 0x88, 0x02, nr + 1) }, make_value(srv));
 			}
 
 			sml_gen_.append(std::move(msg));
@@ -227,37 +230,37 @@ namespace node
 			//
 			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_ACCESS_RIGHTS not implemented yet");
 
-			sml_gen_.empty(trx, srv_id, OBIS_CODE_ROOT_ACCESS_RIGHTS);
+			sml_gen_.empty(trx, srv_id, OBIS_ROOT_ACCESS_RIGHTS);
 		}
 
 		void get_proc_parameter::code_root_custom_interface(std::string trx, cyng::buffer_t srv_id)
 		{
 			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_CUSTOM_INTERFACE not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_CODE_ROOT_CUSTOM_INTERFACE);
+			sml_gen_.empty(trx, srv_id, OBIS_ROOT_CUSTOM_INTERFACE);
 		}
 
 		void get_proc_parameter::code_root_custom_param(std::string trx, cyng::buffer_t srv_id)
 		{
 			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_CUSTOM_PARAM not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_CODE_ROOT_CUSTOM_PARAM);
+			sml_gen_.empty(trx, srv_id, OBIS_ROOT_CUSTOM_PARAM);
 		}
 
 		void get_proc_parameter::code_root_wan(std::string trx, cyng::buffer_t srv_id)
 		{
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_OBIS_CODE_ROOT_WAN not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_CODE_ROOT_WAN);	
+			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_OBIS_ROOT_WAN not implemented yet");
+			sml_gen_.empty(trx, srv_id, OBIS_ROOT_WAN);	
 		}
 
 		void get_proc_parameter::code_root_gsm(std::string trx, cyng::buffer_t srv_id)
 		{
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_GSM not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_CODE_ROOT_GSM);
+			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_ROOT_GSM not implemented yet");
+			sml_gen_.empty(trx, srv_id, OBIS_ROOT_GSM);
 		}
 
 		void get_proc_parameter::code_root_gprs_param(std::string trx, cyng::buffer_t srv_id)
 		{
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_GPRS_PARAM not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_CODE_ROOT_GPRS_PARAM);			
+			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_ROOT_GPRS_PARAM not implemented yet");
+			sml_gen_.empty(trx, srv_id, OBIS_ROOT_GPRS_PARAM);			
 		}
 
 		void get_proc_parameter::code_root_ipt_state(std::string trx, cyng::buffer_t srv_id)
@@ -312,22 +315,22 @@ namespace node
 			cache_.read_table("_Cfg", [&](cyng::store::table const* tbl_cfg) {
 				sml_gen_.get_proc_w_mbus_if(trx
 					, srv_id
-					, tbl_cfg->lookup(cfg_key({ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }), "val")	//	protocol
-					, tbl_cfg->lookup(cfg_key({ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_MODE_S }), "val")	//	duration in seconds
-					, tbl_cfg->lookup(cfg_key({ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_MODE_T }), "val")	//	duration in seconds
-					, tbl_cfg->lookup(cfg_key({ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_REBOOT }), "val")	//	duration in seconds
-					, tbl_cfg->lookup(cfg_key({ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_POWER }), "val")	//	transmision power (transmission_power)
-					, tbl_cfg->lookup(cfg_key({ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_INSTALL_MODE }), "val")
+					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }), "val")	//	protocol
+					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_MODE_S }), "val")	//	duration in seconds
+					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_MODE_T }), "val")	//	duration in seconds
+					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_REBOOT }), "val")	//	duration in seconds
+					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_POWER }), "val")	//	transmision power (transmission_power)
+					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_INSTALL_MODE }), "val")
 				);
 			});
 		}
 
 		void get_proc_parameter::code_root_lan_dsl(std::string trx, cyng::buffer_t srv_id)
 		{
-			//CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_LAN_DSL not implemented yet");
+			//CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_ROOT_LAN_DSL not implemented yet");
 
 			//	81 48 0D 06 00 FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_ROOT_LAN_DSL);
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_LAN_DSL);
 
 			//	81 48 17 07 00 00
 			auto rep = cache_.get_cfg<boost::asio::ip::tcp::endpoint>("remote.ep", boost::asio::ip::tcp::endpoint());
@@ -340,27 +343,27 @@ namespace node
 
 			if (wan.is_v4()) {
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_ROOT_LAN_DSL,
 					OBIS_CODE_IF_LAN_ADDRESS
 					}, make_value(cyng::swap_num(wan.to_v4().to_uint())));
 			}
 			else {
 				auto v6 = wan.to_v6().to_bytes();
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_ROOT_LAN_DSL,
 					OBIS_CODE_IF_LAN_ADDRESS
 					}, make_value(cyng::make_buffer(v6)));
 			}
 
 			//	81 48 17 07 01 00
 			append_get_proc_response(msg, {
-				OBIS_CODE_ROOT_LAN_DSL,
+				OBIS_ROOT_LAN_DSL,
 				OBIS_CODE_IF_LAN_SUBNET_MASK
 				}, make_value(0xFFFFFF));	//	255.255.255.0 (fix!)
 
 			//	81 48 17 07 02 00
 			append_get_proc_response(msg, {
-				OBIS_CODE_ROOT_LAN_DSL,
+				OBIS_ROOT_LAN_DSL,
 				OBIS_CODE_IF_LAN_GATEWAY
 				}, make_value(0x0101A8C0));	//	192.168.1.1 (fix!)
 
@@ -373,43 +376,43 @@ namespace node
 				break;
 			case 1:
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_ROOT_LAN_DSL,
 					OBIS_CODE_IF_LAN_DNS_PRIMARY
 					}, make_value(cyng::swap_num(dns.at(0).to_v4().to_uint())));
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_ROOT_LAN_DSL,
 					OBIS_CODE_IF_LAN_DNS_SECONDARY
 					}, make_value(0u));
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_ROOT_LAN_DSL,
 					OBIS_CODE_IF_LAN_DNS_TERTIARY
 					}, make_value(0u));
 				break;
 			case 2:
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_ROOT_LAN_DSL,
 					OBIS_CODE_IF_LAN_DNS_PRIMARY
 					}, make_value(cyng::swap_num(dns.at(0).to_v4().to_uint())));
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_ROOT_LAN_DSL,
 					OBIS_CODE_IF_LAN_DNS_SECONDARY
 					}, make_value(cyng::swap_num(dns.at(1).to_v4().to_uint())));
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_ROOT_LAN_DSL,
 					OBIS_CODE_IF_LAN_DNS_TERTIARY
 					}, make_value(0u));
 				break;
 			default:
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_ROOT_LAN_DSL,
 					OBIS_CODE_IF_LAN_DNS_PRIMARY
 					}, make_value(cyng::swap_num(dns.at(0).to_v4().to_uint())));
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_ROOT_LAN_DSL,
 					OBIS_CODE_IF_LAN_DNS_SECONDARY
 					}, make_value(cyng::swap_num(dns.at(1).to_v4().to_uint())));
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_LAN_DSL,
+					OBIS_ROOT_LAN_DSL,
 					OBIS_CODE_IF_LAN_DNS_TERTIARY
 					}, make_value(cyng::swap_num(dns.at(1).to_v4().to_uint())));
 			}
@@ -423,19 +426,19 @@ namespace node
 		void get_proc_parameter::code_if_lan_dsl(std::string trx, cyng::buffer_t srv_id)
 		{
 			//	81 48 17 07 00 FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_IF_LAN_DSL);
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_IF_LAN_DSL);
 
 			//
 			//	81 48 00 00 00 00 - computer name 
 			//
 			append_get_proc_response(msg, {
-				OBIS_CODE_IF_LAN_DSL,
+				OBIS_IF_LAN_DSL,
 				OBIS_COMPUTER_NAME
 				}, make_value(boost::asio::ip::host_name()));
 
 			//	81 48 00 32 02 01 - LAN_DHCP_ENABLED
 			append_get_proc_response(msg, {
-				OBIS_CODE_IF_LAN_DSL,
+				OBIS_IF_LAN_DSL,
 				OBIS_LAN_DHCP_ENABLED
 				}, make_value(true));
 
@@ -452,7 +455,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "get_used_virtual_memory " << cyng::sys::get_used_virtual_memory());
 			CYNG_LOG_INFO(logger_, "get_total_virtual_memory " << cyng::sys::get_total_virtual_memory());
 
-			//	OBIS_CODE_ROOT_MEMORY_USAGE
+			//	OBIS_ROOT_MEMORY_USAGE
 			const std::uint8_t mirror = cyng::sys::get_used_virtual_memory_in_percent()
 				, tmp = cyng::sys::get_used_physical_memory_in_percent();
 
@@ -466,7 +469,7 @@ namespace node
 		void get_proc_parameter::code_root_active_devices(std::string trx, cyng::buffer_t srv_id)
 		{
 			//	81 81 11 06 FF FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_ROOT_ACTIVE_DEVICES);
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_ACTIVE_DEVICES);
 
 			//append_get_proc_response(msg, { OBIS_CODE_ROOT_NTP, OBIS_CODE_NTP_PORT }, make_value(ntp_port));
 
@@ -487,27 +490,27 @@ namespace node
 				//	set server ID
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_ACTIVE_DEVICES,
+					OBIS_ROOT_ACTIVE_DEVICES,
 					make_obis(0x81, 0x81, 0x11, 0x06, quant, 0xFF),
 					make_obis(0x81, 0x81, 0x11, 0x06, quant, store),
-					OBIS_CODE_SERVER_ID
+					OBIS_SERVER_ID
 					}, make_value(cyng::value_cast(rec["serverID"], tmp)));
 
 				//
 				//	device class
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_ACTIVE_DEVICES,
+					OBIS_ROOT_ACTIVE_DEVICES,
 					make_obis(0x81, 0x81, 0x11, 0x06, quant, 0xFF),
 					make_obis(0x81, 0x81, 0x11, 0x06, quant, store),
-					OBIS_CODE_DEVICE_CLASS
+					OBIS_DEVICE_CLASS
 					}, make_value(cyng::value_cast<std::string>(rec["class"], "")));
 
 				//
 				//	timestamp (last seen)
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_ACTIVE_DEVICES,
+					OBIS_ROOT_ACTIVE_DEVICES,
 					make_obis(0x81, 0x81, 0x11, 0x06, quant, 0xFF),
 					make_obis(0x81, 0x81, 0x11, 0x06, quant, store),
 					OBIS_CURRENT_UTC
@@ -537,7 +540,7 @@ namespace node
 		void get_proc_parameter::code_root_visible_devices(std::string trx, cyng::buffer_t srv_id)
 		{
 			//	81 81 10 06 FF FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_ROOT_VISIBLE_DEVICES);
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_VISIBLE_DEVICES);
 
 			std::uint8_t
 				quant{ 1 }, //	outer loop counter (0x01 - 0xFA)
@@ -556,27 +559,27 @@ namespace node
 				//	set server ID
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_VISIBLE_DEVICES,
+					OBIS_ROOT_VISIBLE_DEVICES,
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, 0xFF),
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, store),
-					OBIS_CODE_SERVER_ID
+					OBIS_SERVER_ID
 					}, make_value(cyng::value_cast(rec["serverID"], tmp)));
 
 				//
 				//	device class
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_VISIBLE_DEVICES,
+					OBIS_ROOT_VISIBLE_DEVICES,
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, 0xFF),
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, store),
-					OBIS_CODE_DEVICE_CLASS
+					OBIS_DEVICE_CLASS
 					}, make_value(cyng::value_cast<std::string>(rec["class"], "")));
 
 				//
 				//	timestamp (last seen)
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_ROOT_VISIBLE_DEVICES,
+					OBIS_ROOT_VISIBLE_DEVICES,
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, 0xFF),
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, store),
 					OBIS_CURRENT_UTC
@@ -604,151 +607,8 @@ namespace node
 		void get_proc_parameter::code_root_device_info(std::string trx, cyng::buffer_t srv_id)
 		{
 			//	see ZDUE-MUC_Anwenderhandbuch_V2_5.pdf (Chapter 21.19)
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_DEVICE_INFO not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_CODE_ROOT_DEVICE_INFO);
-		}
-
-		void get_proc_parameter::code_root_sensor_params(std::string trx, cyng::buffer_t srv_id)
-		{
-				//
-				//	81 81 C7 86 00 FF
-				//	"srv_id" is the meter ID
-				//
-				cache_.read_table("_DeviceMBUS", [&](cyng::store::table const* tbl) {
-
-					//
-					//	list parameters of a specific device/meter
-					//
-					CYNG_LOG_TRACE(logger_, tbl->size() << " M-Bus devices");
-
-					auto rec = tbl->lookup(cyng::table::key_generator(srv_id));
-					if (rec.empty())
-					{
-						sml_gen_.empty(trx
-							, srv_id	//	server/meter id
-							, OBIS_CODE_ROOT_SENSOR_PARAMS);
-					}
-					else
-					{
-						//	81 81 C7 86 00 FF
-						auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_ROOT_SENSOR_PARAMS);
-
-						//
-						//	repeat server id (81 81 C7 82 04 FF)
-						//
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_CODE_SERVER_ID
-							}, make_value(srv_id));
-
-						//
-						//	device class (always "---" or empty)
-						//	81 81 C7 82 02 FF
-						//
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_CODE_DEVICE_CLASS
-						}, make_value(cyng::make_buffer({ })));
-					
-						//
-						//	81 81 C7 82 03 FF : OBIS_DATA_MANUFACTURER - descr
-						//	FLAG code
-						//
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_DATA_MANUFACTURER
-							}, make_value(rec["descr"]));
-
-						//
-						//	81 00 60 05 00 00 : OBIS_CLASS_OP_LOG_STATUS_WORD
-						//
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_CLASS_OP_LOG_STATUS_WORD
-							}, make_value(cyng::make_buffer({ 0x00 })));
-
-						//
-						//	Bitmaske zur Definition von Bits, deren Änderung zu einem Eintrag im Betriebslogbuch zum Datenspiegel führt
-						//	81 81 C7 86 00 FF
-						//
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_CODE_ROOT_SENSOR_BITMASK
-							}, make_value(rec["mask"]));
-
-						//
-						//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
-						//
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_CODE_AVERAGE_TIME_MS
-							}, make_value(cyng::numeric_cast<std::uint64_t>(rec["interval"], 0u)));
-
-						//
-						//	current time (UTC)
-						//	01 00 00 09 0B 00 : OBIS_CURRENT_UTC - last seen timestamp
-						//
-						std::chrono::system_clock::time_point const now = cyng::value_cast(rec["lastSeen"], std::chrono::system_clock::now());
-
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_CURRENT_UTC
-							}, make_value(now));
-
-						//
-						//	81 81 C7 82 05 FF : OBIS_DATA_PUBLIC_KEY - public key
-						//
-						cyng::buffer_t public_key(16, 0u);
-						public_key = cyng::value_cast(rec["pubKey"], public_key);
-
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_DATA_PUBLIC_KEY
-							}, make_value(public_key));
-
-						//
-						//	81 81 C7 86 03 FF : OBIS_DATA_AES_KEY - AES key (128 bits)
-						//
-						cyng::crypto::aes_128_key	aes_key;
-						aes_key = cyng::value_cast(rec["aes"], aes_key);
-
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_DATA_AES_KEY
-							}, make_value(aes_key));
-
-						//
-						//	user and password
-						//
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_DATA_USER_NAME
-							}, make_value(rec["user"]));
-
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_DATA_USER_PWD
-							}, make_value(rec["pwd"]));
-
-						//
-						//
-						//	81 81 C7 86 04 FF : OBIS_CODE_TIME_REFERENCE
-						//	[u8] 0 == UTC, 1 == UTC + time zone, 2 == local time
-						//
-						std::uint8_t const time_ref = 0;
-						
-						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_SENSOR_PARAMS,
-							OBIS_CODE_TIME_REFERENCE
-							}, make_value(time_ref));
-
-						//
-						//	append to message queue
-						//
-						sml_gen_.append(std::move(msg));
-
-					}
-				});
+			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_ROOT_DEVICE_INFO not implemented yet");
+			sml_gen_.empty(trx, srv_id, OBIS_ROOT_DEVICE_INFO);
 		}
 
 		void get_proc_parameter::code_root_data_collector(std::string trx, cyng::buffer_t srv_id)
@@ -758,7 +618,7 @@ namespace node
 			//
 			//	81 81 C7 86 20 FF - table "data.collector"
 			//
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_ROOT_DATA_COLLECTOR);
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_DATA_COLLECTOR);
 
 			cache_.read_tables("data.collector", "readout", [&](cyng::store::table const* tbl_dc, cyng::store::table const* tbl_ro) {
 
@@ -769,7 +629,7 @@ namespace node
 					//	81 81 C7 86 21 FF - active
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_ROOT_DATA_COLLECTOR,
+						OBIS_ROOT_DATA_COLLECTOR,
 						make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
 						OBIS_DATA_COLLECTOR_ACTIVE
 						}, make_value(rec["active"]));
@@ -778,7 +638,7 @@ namespace node
 					//	81 81 C7 86 22 FF - Einträge
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_ROOT_DATA_COLLECTOR,
+						OBIS_ROOT_DATA_COLLECTOR,
 						make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
 						OBIS_DATA_COLLECTOR_SIZE
 						}, make_value(rec["maxSize"]));
@@ -787,7 +647,7 @@ namespace node
 					//	81 81 C7 87 81 FF  - Registerperiode (seconds)
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_ROOT_DATA_COLLECTOR,
+						OBIS_ROOT_DATA_COLLECTOR,
 						make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
 						OBIS_DATA_COLLECTOR_PERIOD
 						}, make_value(rec["period"]));
@@ -796,7 +656,7 @@ namespace node
 					//	81 81 C7 8A 83 FF - profile
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_ROOT_DATA_COLLECTOR,
+						OBIS_ROOT_DATA_COLLECTOR,
 						make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
 						OBIS_PROFILE
 						}, make_value(rec["period"]));
@@ -822,7 +682,7 @@ namespace node
 						obis const code(cyng::value_cast(rec["OBIS"], srv));
 
 						append_get_proc_response(msg, {
-							OBIS_CODE_ROOT_DATA_COLLECTOR,
+							OBIS_ROOT_DATA_COLLECTOR,
 							make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
 							OBIS_PROFILE,
 							make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, idx)
@@ -854,7 +714,7 @@ namespace node
 
 		void get_proc_parameter::code_if_1107(std::string trx, cyng::buffer_t srv_id)
 		{
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_IF_1107);
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_IF_1107);
 
 			//
 			//	Configuration of IEC interface (wired)
@@ -869,57 +729,57 @@ namespace node
 				//
 				;
 				append_get_proc_response(msg, {
-					OBIS_CODE_IF_1107,
-					OBIS_CODE_IF_1107_ACTIVE
-					}, make_value(get_config_value(tbl_cfg, OBIS_CODE_IF_1107_ACTIVE.to_str(), false)));
+					OBIS_IF_1107,
+					OBIS_IF_1107_ACTIVE
+					}, make_value(get_config_value(tbl_cfg, OBIS_IF_1107_ACTIVE.to_str(), false)));
 
 				//
 				//	81 81 C7 93 02 FF - Loop timeout in seconds
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_IF_1107,
-					OBIS_CODE_IF_1107_LOOP_TIME
-					}, make_value(get_config_obj(tbl_cfg, OBIS_CODE_IF_1107_LOOP_TIME.to_str())));
+					OBIS_IF_1107,
+					OBIS_IF_1107_LOOP_TIME
+					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_LOOP_TIME.to_str())));
 
 				//
 				//	81 81 C7 93 03 FF - Retry count
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_IF_1107,
-					OBIS_CODE_IF_1107_RETRIES
-					}, make_value(get_config_obj(tbl_cfg, OBIS_CODE_IF_1107_RETRIES.to_str())));
+					OBIS_IF_1107,
+					OBIS_IF_1107_RETRIES
+					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_RETRIES.to_str())));
 
 				//
 				//	81 81 C7 93 04 FF - Minimal answer timeout(300)
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_IF_1107,
-					OBIS_CODE_IF_1107_MIN_TIMEOUT
-					}, make_value(get_config_obj(tbl_cfg, OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str())));
+					OBIS_IF_1107,
+					OBIS_IF_1107_MIN_TIMEOUT
+					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_MIN_TIMEOUT.to_str())));
 
 				//
 				//	81 81 C7 93 05 FF - Maximal answer timeout(5000)
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_IF_1107,
-					OBIS_CODE_IF_1107_MAX_TIMEOUT
-					}, make_value(get_config_obj(tbl_cfg, OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str())));
+					OBIS_IF_1107,
+					OBIS_IF_1107_MAX_TIMEOUT
+					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_MAX_TIMEOUT.to_str())));
 
 				//
 				//	81 81 C7 93 06 FF - Maximum data bytes(10240)
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_IF_1107,
-					OBIS_CODE_IF_1107_MAX_DATA_RATE
-					}, make_value(get_config_obj(tbl_cfg, OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str())));
+					OBIS_IF_1107,
+					OBIS_IF_1107_MAX_DATA_RATE
+					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_MAX_DATA_RATE.to_str())));
 
 				//
 				//	81 81 C7 93 08 FF - Protocol mode(A ... D)
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_IF_1107,
-					OBIS_CODE_IF_1107_PROTOCOL_MODE
-					}, make_value(get_config_obj(tbl_cfg, OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str())));
+					OBIS_IF_1107,
+					OBIS_IF_1107_PROTOCOL_MODE
+					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_PROTOCOL_MODE.to_str())));
 
 				//
 				//	81 81 C7 93 09 FF - Liste der abzufragenden 1107 Zähler
@@ -931,50 +791,50 @@ namespace node
 					//	81 81 C7 93 0A FF - meter id
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_IF_1107,
-						OBIS_CODE_IF_1107_METER_LIST,
+						OBIS_IF_1107,
+						OBIS_IF_1107_METER_LIST,
 						make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
-						OBIS_CODE_IF_1107_METER_ID
+						OBIS_IF_1107_METER_ID
 						}, make_value(rec["meterID"]));
 
 					//
 					//	81 81 C7 93 0B FF - baudrate
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_IF_1107,
-						OBIS_CODE_IF_1107_METER_LIST,
+						OBIS_IF_1107,
+						OBIS_IF_1107_METER_LIST,
 						make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
-						OBIS_CODE_IF_1107_BAUDRATE
+						OBIS_IF_1107_BAUDRATE
 						}, make_value(rec["baudrate"]));
 
 					//
 					//	81 81 C7 93 0C FF - address
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_IF_1107,
-						OBIS_CODE_IF_1107_METER_LIST,
+						OBIS_IF_1107,
+						OBIS_IF_1107_METER_LIST,
 						make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
-						OBIS_CODE_IF_1107_ADDRESS
+						OBIS_IF_1107_ADDRESS
 						}, make_value(rec["address"]));
 
 					//
 					//	81 81 C7 93 0D FF - P1
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_IF_1107,
-						OBIS_CODE_IF_1107_METER_LIST,
+						OBIS_IF_1107,
+						OBIS_IF_1107_METER_LIST,
 						make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
-						OBIS_CODE_IF_1107_P1
+						OBIS_IF_1107_P1
 						}, make_value(rec["p1"]));
 
 					//
 					//	81 81 C7 93 0E FF - W5
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_IF_1107,
-						OBIS_CODE_IF_1107_METER_LIST,
+						OBIS_IF_1107,
+						OBIS_IF_1107_METER_LIST,
 						make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
-						OBIS_CODE_IF_1107_W5
+						OBIS_IF_1107_W5
 						}, make_value(rec["w5"]));
 
 					//
@@ -988,33 +848,33 @@ namespace node
 				//	81 81 C7 93 10 FF - auto activation
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_IF_1107,
-					OBIS_CODE_IF_1107_AUTO_ACTIVATION
-					}, make_value(get_config_value(tbl_cfg, OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str(), false)));
+					OBIS_IF_1107,
+					OBIS_IF_1107_AUTO_ACTIVATION
+					}, make_value(get_config_value(tbl_cfg, OBIS_IF_1107_AUTO_ACTIVATION.to_str(), false)));
 
 				//
 				//	81 81 C7 93 11 FF - time grid of load profile readout in seconds
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_IF_1107,
-					OBIS_CODE_IF_1107_TIME_GRID
-					}, make_value(get_config_obj(tbl_cfg, OBIS_CODE_IF_1107_TIME_GRID.to_str())));
+					OBIS_IF_1107,
+					OBIS_IF_1107_TIME_GRID
+					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_TIME_GRID.to_str())));
 
 				//
 				//	81 81 C7 93 13 FF - time sync in seconds
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_IF_1107,
-					OBIS_CODE_IF_1107_TIME_SYNC
-					}, make_value(get_config_obj(tbl_cfg, OBIS_CODE_IF_1107_TIME_SYNC.to_str())));
+					OBIS_IF_1107,
+					OBIS_IF_1107_TIME_SYNC
+					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_TIME_SYNC.to_str())));
 
 				//
 				//	81 81 C7 93 14 FF - seconds
 				//
 				append_get_proc_response(msg, {
-					OBIS_CODE_IF_1107,
-					OBIS_CODE_IF_1107_MAX_VARIATION
-					}, make_value(get_config_obj(tbl_cfg, OBIS_CODE_IF_1107_MAX_VARIATION.to_str())));
+					OBIS_IF_1107,
+					OBIS_IF_1107_MAX_VARIATION
+					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_MAX_VARIATION.to_str())));
 
 			});
 

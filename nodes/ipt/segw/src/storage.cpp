@@ -422,7 +422,7 @@ namespace node
 				, cyng::TC_STRING		//	manufacturer/description
 
 				, cyng::TC_UINT32		//	status (81 00 60 05 00 00)
-				, cyng::TC_BUFFER		//	bit mask (81 81 C7 86 01 FF)
+				, cyng::TC_UINT16		//	bit mask (81 81 C7 86 01 FF)
 				, cyng::TC_UINT32		//	interval (milliseconds)
 				, cyng::TC_BUFFER		//	pubKey
 				, cyng::TC_AES128		//	AES 128 (16 bytes)
@@ -436,7 +436,7 @@ namespace node
 				, 128	//	manufacturer/description
 
 				, 0		//	status
-				, 8		//	mask
+				, 0		//	mask
 				, 0		//	interval
 				, 16	//	pubKey
 				, 32	//	aes
@@ -583,48 +583,48 @@ namespace node
 				for (auto const rec : cfg_ipt.config_) {
 					//	host
 					init_config_record(s, build_cfg_key({
-						sml::OBIS_CODE_ROOT_IPT_PARAM,
+						sml::OBIS_ROOT_IPT_PARAM,
 						sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 						sml::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx)
 						}), cyng::make_object(rec.host_));
 
 					//	target port
 					init_config_record(s, build_cfg_key({
-						sml::OBIS_CODE_ROOT_IPT_PARAM,
+						sml::OBIS_ROOT_IPT_PARAM,
 						sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 						sml::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx)
 						}), cyng::make_object(rec.service_));
 
 					//	source port (unused)
 					init_config_record(s, build_cfg_key({
-						sml::OBIS_CODE_ROOT_IPT_PARAM,
+						sml::OBIS_ROOT_IPT_PARAM,
 						sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 						sml::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx)
 						}), cyng::make_object(static_cast<std::uint16_t>(0u)));
 
 					//	account
 					init_config_record(s, build_cfg_key({
-						sml::OBIS_CODE_ROOT_IPT_PARAM,
+						sml::OBIS_ROOT_IPT_PARAM,
 						sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 						sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx)
 						}), cyng::make_object(rec.account_));
 
 					//	password
 					init_config_record(s, build_cfg_key({
-						sml::OBIS_CODE_ROOT_IPT_PARAM,
+						sml::OBIS_ROOT_IPT_PARAM,
 						sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 						sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx)
 						}), cyng::make_object(rec.pwd_));
 
 					//	scrambled
 					init_config_record(s, build_cfg_key({
-						sml::OBIS_CODE_ROOT_IPT_PARAM,
+						sml::OBIS_ROOT_IPT_PARAM,
 						sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
 						}, "scrambled"), cyng::make_object(rec.scrambled_));
 
 					//	scramble key
 					init_config_record(s, build_cfg_key({
-						sml::OBIS_CODE_ROOT_IPT_PARAM,
+						sml::OBIS_ROOT_IPT_PARAM,
 						sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
 						}, "sk"), cyng::make_object(ipt::to_string(rec.sk_)));
 
@@ -635,18 +635,18 @@ namespace node
 				//	ip-t reconnect time in minutes
 				auto reconnect = cyng::numeric_cast<std::uint8_t>(dom["ipt-param"].get(sml::OBIS_TCP_WAIT_TO_RECONNECT.to_str()), 1u);
 				init_config_record(s, build_cfg_key({
-					sml::OBIS_CODE_ROOT_IPT_PARAM,
+					sml::OBIS_ROOT_IPT_PARAM,
 					sml::OBIS_TCP_WAIT_TO_RECONNECT
 					}), cyng::make_object(reconnect));
 
 				auto retries = cyng::numeric_cast<std::uint32_t>(dom["ipt-param"].get(sml::OBIS_TCP_CONNECT_RETRIES.to_str()), 3u);
 				init_config_record(s, build_cfg_key({
-					sml::OBIS_CODE_ROOT_IPT_PARAM,
+					sml::OBIS_ROOT_IPT_PARAM,
 					sml::OBIS_TCP_CONNECT_RETRIES
 					}), cyng::make_object(retries));
 
 				init_config_record(s, build_cfg_key({
-					sml::OBIS_CODE_ROOT_IPT_PARAM,
+					sml::OBIS_ROOT_IPT_PARAM,
 					OBIS_CODE(00, 80, 80, 00, 03, 01)
 					}), cyng::make_object(0u));
 
@@ -654,7 +654,7 @@ namespace node
 				//	master index (0..1)
 				//
 				init_config_record(s, build_cfg_key({
-					sml::OBIS_CODE_ROOT_IPT_PARAM}, "master"), cyng::make_object(static_cast<std::uint8_t>(0u)));
+					sml::OBIS_ROOT_IPT_PARAM}, "master"), cyng::make_object(static_cast<std::uint8_t>(0u)));
 
 			}
 
@@ -673,13 +673,13 @@ namespace node
 					if (!code.is_nil()) {
 
 						init_config_record(s, build_cfg_key({
-							sml::OBIS_CODE_IF_1107,
+							sml::OBIS_IF_1107,
 							code
 							}), param.second);
 					}
 					else {
 						init_config_record(s, build_cfg_key({
-							sml::OBIS_CODE_IF_1107
+							sml::OBIS_IF_1107
 							}, param.first), param.second);
 					}
 				}
@@ -755,7 +755,7 @@ namespace node
 			//
 			{
 				init_config_record(s, build_cfg_key({
-					sml::OBIS_CODE_IF_1107
+					sml::OBIS_IF_1107
 					}, "descr"), cyng::make_object("wired-LMN configuration (IEC 62506-21)"));
 
 				//	get a tuple/list of params
@@ -769,7 +769,7 @@ namespace node
 					if (!code.is_nil()) {
 
 						init_config_record(s, build_cfg_key({
-							sml::OBIS_CODE_IF_1107,
+							sml::OBIS_IF_1107,
 							code
 							}), param.second);
 					}
@@ -777,12 +777,12 @@ namespace node
 						//	u8
 						auto const val = cyng::numeric_cast<std::uint8_t>(param.second, 8u);
 						init_config_record(s, build_cfg_key({
-							sml::OBIS_CODE_IF_1107
+							sml::OBIS_IF_1107
 							}, param.first), cyng::make_object(val));
 					}
 					else {
 						init_config_record(s, build_cfg_key({
-							sml::OBIS_CODE_IF_1107
+							sml::OBIS_IF_1107
 							}, param.first), param.second);
 					}
 				}
@@ -816,8 +816,8 @@ namespace node
 
 						std::pair<cyng::mac48, bool > const r = cyng::parse_mac48(mac);
 						init_config_record(s, build_cfg_key({
-							sml::OBIS_CODE_SERVER_ID
-							}), cyng::make_object(r.second ? r.first : cyng::generate_random_mac48()));
+							sml::OBIS_SERVER_ID
+						}), cyng::make_object(r.second ? r.first : cyng::generate_random_mac48()));
 
 					}
 					else if (boost::algorithm::equals(param.first, "class")) {
@@ -827,12 +827,12 @@ namespace node
 						auto const r = sml::parse_obis(id);
 						if (r.second) {
 							init_config_record(s, build_cfg_key({
-								sml::OBIS_CODE_DEVICE_CLASS
+								sml::OBIS_DEVICE_CLASS
 							}), cyng::make_object(r.first.to_str()));
 						}
 						else {
 							init_config_record(s, build_cfg_key({
-								sml::OBIS_CODE_DEVICE_CLASS
+								sml::OBIS_DEVICE_CLASS
 								}), cyng::make_object(sml::OBIS_DEV_CLASS_MUC_LAN.to_str()));
 						}
 					}
@@ -867,8 +867,8 @@ namespace node
 			//	OBIS logging cycle in minutes
 			//
 			{
-				auto const val = cyng::value_cast(dom.get("obis-log"), 15);
-				init_config_record(s, "obis-log", cyng::make_minutes(val));
+				auto const val = cyng::value_cast(dom.get(sml::OBIS_OBISLOG_INTERVAL.to_str()), 15);
+				init_config_record(s, sml::OBIS_OBISLOG_INTERVAL.to_str(), cyng::make_minutes(val));
 			}
 
 			{

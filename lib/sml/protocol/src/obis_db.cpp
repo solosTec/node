@@ -19,18 +19,17 @@ namespace node
 
 		const char* get_name(obis const& code)
 		{
-			//auto const n = code.to_uint64();
 			switch (code.to_uint64()) {
 
-			case 0x818100020000:	return "version";	//	CODE_VERSION
-			case 0x818100020002:	return "file-name";	//	CODE_FILE_NAME
-			case 0x818100020003:	return "msg-counter";	// CODE_MSG_COUNTER [u32]
-			case 0x818100020004:	return "msg-last";		// CODE_MSG_LAST [u32]
+			case CODE_CODE_VERSION:		return "version";	//	CODE_VERSION
+			case CODE_CODE_FILE_NAME:	return "file-name";	//	CODE_FILE_NAME
+			case CODE_CODE_MSG_COUNTER:	return "msg-counter";	// CODE_MSG_COUNTER [u32]
+			case CODE_CODE_MSG_LAST:	return "msg-last";		// CODE_MSG_LAST [u32]
 			case 0x818100020005:	return "msg-number";	//	CODE_MSG_NUMBER
 			case 0x8181000202FF:	return "block-number";	//	CODE_BLOCK_NUMBER
 			case 0x8181000203FF:	return "binary-data";	//	CODE_BINARY_DATA
 
-			case 0x8181C78203FF:	return "manufacturer";
+			case CODE_DATA_MANUFACTURER:	return "manufacturer";
 			case 0x8181C78205FF:	return "public-key";
 			case 0x8181C78610FF:	return "profile-1min";
 			case 0x8181C78611FF:	return "profile-15min";
@@ -47,7 +46,7 @@ namespace node
 			case 0x8181C789E1FF:	return "class-operation-log";	//	CLASS_OP_LOG
 			case 0x8181C789E2FF:	return "class-event";			//	CLASS_EVENT
 
-			case 0x8181C78101FF:	return "root-file-transfer";	//	CODE_ROOT_FILE_TRANSFER
+			case CODE_CODE_ROOT_FILE_TRANSFER:	return "root-file-transfer";	//	CODE_ROOT_FILE_TRANSFER
 			case 0x8181C7810EFF:	return "firmware-indirect";	//	DATA_FIRMWARE
 			case 0x8181C7810CFF: 	return "fw-file";	//	DATA_FILENAME);
 			case 0x8181C7810FFF: 	return "fw-file-indirect";	//	DATA_FILENAME_INDIRECT);
@@ -97,51 +96,51 @@ namespace node
 			//
 			//	root elements
 			//
-			else if (code == OBIS_CODE_ROOT_NTP)				return "root-NTP";
-			else if (code == OBIS_CODE_ROOT_DEVICE_IDENT)		return "root-device-id";
-			else if (code == OBIS_CODE_DEVICE_CLASS)			return "device-class";
-			else if (code == OBIS_CODE_SERVER_ID)				return "server-id-visible";
+			else if (code == OBIS_ROOT_NTP)				return "root-NTP";
+			else if (code == OBIS_ROOT_DEVICE_IDENT)		return "root-device-id";
+			else if (code == OBIS_DEVICE_CLASS)			return "device-class";
+			else if (code == OBIS_SERVER_ID)				return "server-id-visible";
 			else if (OBIS_CODE_ROOT_FIRMWARE == code)			return "root-firmware";
 			else if (OBIS_CODE_DEVICE_KERNEL == code)			return "device-kernel";
 			else if (OBIS_CODE_DEVICE_ACTIVATED == code)		return "device-activated";
-			else if (code == OBIS_CODE_ROOT_ACCESS_RIGHTS)		return "root-auth";
-			else if (code == OBIS_CODE_ROOT_CUSTOM_INTERFACE)	return "root-custom-interface";
-			else if (code == OBIS_CODE_ROOT_CUSTOM_PARAM)		return "root-custom-param";
-			else if (code == OBIS_CODE_ROOT_WAN)				return "root-WAN-state";
-			//else if (code == OBIS_CODE_ROOT_WAN_PARAM)			return "root-WAN-param";
-			else if (code == OBIS_CODE_ROOT_GSM)				return "root-GSM";
-			else if (OBIS_CODE_ROOT_IPT_STATE == code)			return "root-ipt-state";
-			else if (OBIS_CODE_ROOT_IPT_PARAM == code)			return "root-ipt-param";
+			else if (code == OBIS_ROOT_ACCESS_RIGHTS)		return "root-auth";
+			else if (code == OBIS_ROOT_CUSTOM_INTERFACE)	return "root-custom-interface";
+			else if (code == OBIS_ROOT_CUSTOM_PARAM)		return "root-custom-param";
+			else if (code == OBIS_ROOT_WAN)				return "root-WAN-state";
+			//else if (code == OBIS_ROOT_WAN_PARAM)			return "root-WAN-param";
+			else if (code == OBIS_ROOT_GSM)				return "root-GSM";
+			else if (OBIS_ROOT_IPT_STATE == code)			return "root-ipt-state";
+			else if (OBIS_ROOT_IPT_PARAM == code)			return "root-ipt-param";
 			else if (OBIS_CODE_PEER_ADDRESS_WANGSM == code)		return "peer-address-wangsm";
 			else if (OBIS_CODE_PEER_ADDRESS == code)			return "peer-address";
 			//else if (OBIS_CODE_VERSION == code)					return "version";
-			else if (code == OBIS_CODE_ROOT_GPRS_PARAM)			return "root-GPRS";
-			else if (OBIS_CODE_ROOT_W_MBUS_STATUS == code)		return "root-wMBus-status";
-			else if (code == OBIS_CODE_ROOT_LAN_DSL)			return "root-LAN";
-			else if (code == OBIS_CODE_ROOT_MEMORY_USAGE)		return "root-memory-usage";
+			else if (code == OBIS_ROOT_GPRS_PARAM)			return "root-GPRS";
+			else if (OBIS_ROOT_W_MBUS_STATUS == code)		return "root-wMBus-status";
+			else if (code == OBIS_ROOT_LAN_DSL)			return "root-LAN";
+			else if (code == OBIS_ROOT_MEMORY_USAGE)		return "root-memory-usage";
 			else if (OBIS_CODE_ROOT_MEMORY_MIRROR == code)		return "memory-mirror";
 			else if (OBIS_CODE_ROOT_MEMORY_TMP == code)			return "memory-tmp";
-			else if (code == OBIS_CODE_ROOT_DEVICE_TIME)		return "root-device-time";
-			else if (code == OBIS_CODE_ROOT_ACTIVE_DEVICES)		return "root-active-devices";
+			else if (code == OBIS_ROOT_DEVICE_TIME)		return "root-device-time";
+			else if (code == OBIS_ROOT_ACTIVE_DEVICES)		return "root-active-devices";
 			else if (code == OBIS_CODE_ROOT_NEW_DEVICES)		return "root-new-devices";
 			else if (code == OBIS_CODE_ROOT_INVISIBLE_DEVICES)	return "root-lost-devices";
-			else if (code == OBIS_CODE_ROOT_DEVICE_INFO)		return "root-device-info";
-			else if (code == OBIS_CODE_ROOT_VISIBLE_DEVICES)	return "root-visible-devices";
-			else if (code == OBIS_CODE_ROOT_SENSOR_PARAMS)		return "root-sensor-prop";
-			else if (code == OBIS_CODE_ROOT_DATA_COLLECTOR)		return "root-data-prop";
+			else if (code == OBIS_ROOT_DEVICE_INFO)		return "root-device-info";
+			else if (code == OBIS_ROOT_VISIBLE_DEVICES)	return "root-visible-devices";
+			else if (code == OBIS_ROOT_SENSOR_PARAMS)		return "root-sensor-prop";
+			else if (code == OBIS_ROOT_DATA_COLLECTOR)		return "root-data-prop";
 			else if (code == OBIS_STORAGE_TIME_SHIFT)			return "storage-time-shift";	//	?
 			
 
-			else if (OBIS_CODE_IF_LAN_DSL == code)	return "IF_LAN_DSL";
+			else if (OBIS_IF_LAN_DSL == code)	return "IF_LAN_DSL";
 			else if (OBIS_CODE_IF_GSM == code)		return "IF_GSM";
 			else if (OBIS_CODE_IF_GPRS == code)		return "IF_GPRS";
 			else if (OBIS_CODE_IF_USER == code)		return "IF_USER";
 			//else if (OBIS_CODE_IF_IPT == code)		return "IF_IPT";
 			else if (OBIS_CODE_IF_EDL == code)		return "IF_EDL";
-			else if (OBIS_CODE_IF_wMBUS == code)	return "IF-wireless-mbus";
+			else if (OBIS_IF_wMBUS == code)	return "IF-wireless-mbus";
 			else if (OBIS_CODE_IF_PLC == code)		return "IF_PLC";
 			//else if (OBIS_CODE_IF_SyM2 == code)		return "IF_SyM2";
-			else if (OBIS_CODE_IF_1107 == code)		return "IF-IEC-62505-21";	//	wired M-Bus
+			else if (OBIS_IF_1107 == code)		return "IF-IEC-62505-21";	//	wired M-Bus
 
 			else if (OBIS_W_MBUS_ADAPTER_MANUFACTURER == code)		return "W_MBUS_ADAPTER_MANUFACTURER";
 			else if (OBIS_W_MBUS_ADAPTER_ID == code)				return "W_MBUS_ADAPTER_ID";
@@ -157,7 +156,7 @@ namespace node
 			else if (OBIS_POWER_OUTAGES == code)		return "power-outages";
 			else if (OBIS_MBUS_STATE == code)			return "status-EN13757-3";
 			else if (OBIS_DATE_TIME_PARAMETERISATION == code)	return "date-time-parameterisation";
-			else if (OBIS_CONFIG_OVERVIEW == code)		return "config-overview";
+			else if (OBIS_SECONDS_INDEX == code)		return "seconds-index";
 			else if (OBIS_HARDWARE_TYPE == code)		return "hardware-type";
 
 			//	Identifikationsnummer 1.1 - comes as unsigned int with 3 bytes (this is the server ID)

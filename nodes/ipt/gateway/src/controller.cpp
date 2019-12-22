@@ -128,8 +128,8 @@ namespace node
 					cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF - OBIS_DATA_MANUFACTURER)
 					cyng::param_factory("model", "virtual.gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
 					cyng::param_factory("serial", sn),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
-					cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF - OBIS_CODE_DEVICE_CLASS) "2D 2D 2D"
-					cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ..., 81 81 C7 82 04 FF - OBIS_CODE_SERVER_ID)
+					cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF - OBIS_DEVICE_CLASS) "2D 2D 2D"
+					cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ..., 81 81 C7 82 04 FF - OBIS_SERVER_ID)
 				))
 
 				//	wireless M-Bus
@@ -182,31 +182,31 @@ namespace node
 
 				, cyng::param_factory("if-1107", cyng::tuple_factory(
 #ifdef _DEBUG
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_ACTIVE.to_str() + "-descr", "OBIS_CODE_IF_1107_ACTIVE"),	//	active
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str() + "-descr", "OBIS_CODE_IF_1107_LOOP_TIME"),	//	loop timeout in seconds
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_RETRIES.to_str() + "-descr", "OBIS_CODE_IF_1107_RETRIES"),	//	retries
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str() + "-descr", "OBIS_CODE_IF_1107_MIN_TIMEOUT"),	//	min. timeout (milliseconds)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str() + "-descr", "OBIS_CODE_IF_1107_MAX_TIMEOUT"),	//	max. timeout (milliseconds)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str() + "-descr", "OBIS_CODE_IF_1107_MAX_DATA_RATE"),	//	max. databytes
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_RS485.to_str() + "-descr", "OBIS_CODE_IF_1107_RS485"),	//	 true = RS485, false = RS232
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str() + "-descr", "OBIS_CODE_IF_1107_PROTOCOL_MODE"),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str() + "-descr", "OBIS_CODE_IF_1107_AUTO_ACTIVATION"),	//	auto activation
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str() + "-descr", "OBIS_CODE_IF_1107_TIME_GRID"),
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str() + "-descr", "OBIS_CODE_IF_1107_TIME_SYNC"),
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str() + "-descr", "OBIS_CODE_IF_1107_MAX_VARIATION"),	//	max. variation in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str() + "-descr", "OBIS_IF_1107_ACTIVE"),	//	active
+					cyng::param_factory(sml::OBIS_IF_1107_LOOP_TIME.to_str() + "-descr", "OBIS_IF_1107_LOOP_TIME"),	//	loop timeout in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_RETRIES.to_str() + "-descr", "OBIS_IF_1107_RETRIES"),	//	retries
+					cyng::param_factory(sml::OBIS_IF_1107_MIN_TIMEOUT.to_str() + "-descr", "OBIS_IF_1107_MIN_TIMEOUT"),	//	min. timeout (milliseconds)
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_TIMEOUT.to_str() + "-descr", "OBIS_IF_1107_MAX_TIMEOUT"),	//	max. timeout (milliseconds)
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_DATA_RATE.to_str() + "-descr", "OBIS_IF_1107_MAX_DATA_RATE"),	//	max. databytes
+					cyng::param_factory(sml::OBIS_IF_1107_RS485.to_str() + "-descr", "OBIS_IF_1107_RS485"),	//	 true = RS485, false = RS232
+					cyng::param_factory(sml::OBIS_IF_1107_PROTOCOL_MODE.to_str() + "-descr", "OBIS_IF_1107_PROTOCOL_MODE"),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
+					cyng::param_factory(sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str() + "-descr", "OBIS_IF_1107_AUTO_ACTIVATION"),	//	auto activation
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_GRID.to_str() + "-descr", "OBIS_IF_1107_TIME_GRID"),
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str() + "-descr", "OBIS_IF_1107_TIME_SYNC"),
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str() + "-descr", "OBIS_IF_1107_MAX_VARIATION"),	//	max. variation in seconds
 #endif
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_ACTIVE.to_str(), true),	//	active
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str(), 60),	//	loop timeout in seconds
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_RETRIES.to_str(), 3),	//	retries
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str(), 200),	//	min. timeout (milliseconds)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str(), 5000),	//	max. timeout (milliseconds)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str(), 10240),	//	max. databytes
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_RS485.to_str(), true),	//	 true = RS485, false = RS232
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str(), 2),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str(), true),	//	auto activation
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str(), 900),
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str(), 14400),
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str(), 9)	//	max. variation in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str(), true),	//	active
+					cyng::param_factory(sml::OBIS_IF_1107_LOOP_TIME.to_str(), 60),	//	loop timeout in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_RETRIES.to_str(), 3),	//	retries
+					cyng::param_factory(sml::OBIS_IF_1107_MIN_TIMEOUT.to_str(), 200),	//	min. timeout (milliseconds)
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_TIMEOUT.to_str(), 5000),	//	max. timeout (milliseconds)
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_DATA_RATE.to_str(), 10240),	//	max. databytes
+					cyng::param_factory(sml::OBIS_IF_1107_RS485.to_str(), true),	//	 true = RS485, false = RS232
+					cyng::param_factory(sml::OBIS_IF_1107_PROTOCOL_MODE.to_str(), 2),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
+					cyng::param_factory(sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str(), true),	//	auto activation
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_GRID.to_str(), 900),
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str(), 14400),
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str(), 9)	//	max. variation in seconds
 
 				))
 				, cyng::param_factory("mbus", cyng::tuple_factory(
@@ -571,7 +571,7 @@ namespace node
 				insert_config(tbl, OBIS_CODE(81, 81, c7, 82, 0a, 02).to_str(), serial, tag);
 
 				std::string const dev_class = cyng::value_cast<std::string>(dom["hardware"].get("class"), "129-129:199.130.83*255");
-				insert_config(tbl, sml::OBIS_CODE_DEVICE_CLASS.to_str(), dev_class, tag);
+				insert_config(tbl, sml::OBIS_DEVICE_CLASS.to_str(), dev_class, tag);
 
 				//
 				//	05 + MAC = server ID
@@ -590,7 +590,7 @@ namespace node
 
 				CYNG_LOG_INFO(logger, "mac: " << mac);
 				cyng::buffer_t srv_id = sml::to_gateway_srv_id(r.second ? r.first : cyng::generate_random_mac48());
-				insert_config(tbl, sml::OBIS_CODE_SERVER_ID.to_str(), srv_id, tag);
+				insert_config(tbl, sml::OBIS_SERVER_ID.to_str(), srv_id, tag);
 
 				CYNG_LOG_INFO(logger, "manufacturer: " << manufacturer);
 				CYNG_LOG_INFO(logger, "model: " << model);
@@ -614,58 +614,58 @@ namespace node
 				//
 				//	get if-1107 default configuration
 				//
-				auto const active = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str()), true);
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_ACTIVE.to_str() << " (OBIS_CODE_IF_1107_ACTIVE): " << (active ? "true" : "false"));
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_ACTIVE.to_str(), active, tag);
+				auto const active = cyng::value_cast(dom["if-1107"].get(sml::OBIS_IF_1107_MAX_TIMEOUT.to_str()), true);
+				CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_ACTIVE.to_str() << " (OBIS_IF_1107_ACTIVE): " << (active ? "true" : "false"));
+				insert_config(tbl, sml::OBIS_IF_1107_ACTIVE.to_str(), active, tag);
 
-				auto const loop_time = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str()), 60u);
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str() << " (OBIS_CODE_IF_1107_LOOP_TIME): " << loop_time);
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str(), loop_time, tag);
+				auto const loop_time = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_IF_1107_LOOP_TIME.to_str()), 60u);
+				CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_LOOP_TIME.to_str() << " (OBIS_IF_1107_LOOP_TIME): " << loop_time);
+				insert_config(tbl, sml::OBIS_IF_1107_LOOP_TIME.to_str(), loop_time, tag);
 
-				auto const retries = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_RETRIES.to_str()), 3u);
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_RETRIES.to_str() << " (OBIS_CODE_IF_1107_RETRIES): " << retries);
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_RETRIES.to_str(), retries, tag);
+				auto const retries = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_IF_1107_RETRIES.to_str()), 3u);
+				CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_RETRIES.to_str() << " (OBIS_IF_1107_RETRIES): " << retries);
+				insert_config(tbl, sml::OBIS_IF_1107_RETRIES.to_str(), retries, tag);
 
-				auto const min_timeout = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str()), 200u);
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str() << " (OBIS_CODE_IF_1107_MIN_TIMEOUT): " << min_timeout << " milliseconds");
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str(), min_timeout, tag);
+				auto const min_timeout = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_IF_1107_MIN_TIMEOUT.to_str()), 200u);
+				CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_MIN_TIMEOUT.to_str() << " (OBIS_IF_1107_MIN_TIMEOUT): " << min_timeout << " milliseconds");
+				insert_config(tbl, sml::OBIS_IF_1107_MIN_TIMEOUT.to_str(), min_timeout, tag);
 
-				auto const max_timeout = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str()), 5000u);
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str() << " (OBIS_CODE_IF_1107_MAX_TIMEOUT): " << max_timeout << " milliseconds");
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str(), max_timeout, tag);
+				auto const max_timeout = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_IF_1107_MAX_TIMEOUT.to_str()), 5000u);
+				CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_MAX_TIMEOUT.to_str() << " (OBIS_IF_1107_MAX_TIMEOUT): " << max_timeout << " milliseconds");
+				insert_config(tbl, sml::OBIS_IF_1107_MAX_TIMEOUT.to_str(), max_timeout, tag);
 
-				auto const max_data_rate = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str()), 10240u);
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str() << " (OBIS_CODE_IF_1107_MAX_DATA_RATE): " << max_data_rate);
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str(), max_data_rate, tag);
+				auto const max_data_rate = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_IF_1107_MAX_DATA_RATE.to_str()), 10240u);
+				CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_MAX_DATA_RATE.to_str() << " (OBIS_IF_1107_MAX_DATA_RATE): " << max_data_rate);
+				insert_config(tbl, sml::OBIS_IF_1107_MAX_DATA_RATE.to_str(), max_data_rate, tag);
 
-				auto const rs485 = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_RS485.to_str()), true);
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_RS485.to_str() << " (OBIS_CODE_IF_1107_RS485): " << (rs485 ? "true" : "false"));
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_RS485.to_str(), rs485, tag);
+				auto const rs485 = cyng::value_cast(dom["if-1107"].get(sml::OBIS_IF_1107_RS485.to_str()), true);
+				CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_RS485.to_str() << " (OBIS_IF_1107_RS485): " << (rs485 ? "true" : "false"));
+				insert_config(tbl, sml::OBIS_IF_1107_RS485.to_str(), rs485, tag);
 
-				auto const protocol_mode = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str()), 2u);
+				auto const protocol_mode = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_IF_1107_PROTOCOL_MODE.to_str()), 2u);
 				if (protocol_mode > 4) {
-					CYNG_LOG_WARNING(logger, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str() << " (OBIS_CODE_IF_1107_PROTOCOL_MODE out of range): " << protocol_mode);
+					CYNG_LOG_WARNING(logger, sml::OBIS_IF_1107_PROTOCOL_MODE.to_str() << " (OBIS_IF_1107_PROTOCOL_MODE out of range): " << protocol_mode);
 				}
 				else {
-					CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str() << " (OBIS_CODE_IF_1107_PROTOCOL_MODE): " << protocol_mode << " - " << char('A' + protocol_mode));
+					CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_PROTOCOL_MODE.to_str() << " (OBIS_IF_1107_PROTOCOL_MODE): " << protocol_mode << " - " << char('A' + protocol_mode));
 				}
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str(), protocol_mode, tag);
+				insert_config(tbl, sml::OBIS_IF_1107_PROTOCOL_MODE.to_str(), protocol_mode, tag);
 
-				auto const auto_activation = cyng::value_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str()), true);
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str() << " (OBIS_CODE_IF_1107_AUTO_ACTIVATION): " << (auto_activation ? "true" : "false"));
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str(), auto_activation, tag);
+				auto const auto_activation = cyng::value_cast(dom["if-1107"].get(sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str()), true);
+				CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str() << " (OBIS_IF_1107_AUTO_ACTIVATION): " << (auto_activation ? "true" : "false"));
+				insert_config(tbl, sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str(), auto_activation, tag);
 
-				auto const time_grid = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str()), 900u);
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_TIME_GRID.to_str() << " (OBIS_CODE_IF_1107_TIME_GRID): " << time_grid << " seconds, " << (time_grid / 60) << " minutes");
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_TIME_GRID.to_str(), time_grid, tag);
+				auto const time_grid = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_IF_1107_TIME_GRID.to_str()), 900u);
+				CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_TIME_GRID.to_str() << " (OBIS_IF_1107_TIME_GRID): " << time_grid << " seconds, " << (time_grid / 60) << " minutes");
+				insert_config(tbl, sml::OBIS_IF_1107_TIME_GRID.to_str(), time_grid, tag);
 
-				auto const time_sync = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str()), 14400u);
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str() << " (OBIS_CODE_IF_1107_TIME_SYNC): " << time_sync << " seconds, " << (time_sync / 3600) << " h");
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str(), time_sync, tag);
+				auto const time_sync = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_IF_1107_TIME_SYNC.to_str()), 14400u);
+				CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_TIME_SYNC.to_str() << " (OBIS_IF_1107_TIME_SYNC): " << time_sync << " seconds, " << (time_sync / 3600) << " h");
+				insert_config(tbl, sml::OBIS_IF_1107_TIME_SYNC.to_str(), time_sync, tag);
 
-				auto const max_variation = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str()), 9u);
-				CYNG_LOG_INFO(logger, sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str() << " (OBIS_CODE_IF_1107_MAX_VARIATION): " << max_variation << " seconds");
-				insert_config(tbl, sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str(), max_variation, tag);
+				auto const max_variation = cyng::numeric_cast(dom["if-1107"].get(sml::OBIS_IF_1107_MAX_VARIATION.to_str()), 9u);
+				CYNG_LOG_INFO(logger, sml::OBIS_IF_1107_MAX_VARIATION.to_str() << " (OBIS_IF_1107_MAX_VARIATION): " << max_variation << " seconds");
+				insert_config(tbl, sml::OBIS_IF_1107_MAX_VARIATION.to_str(), max_variation, tag);
 
 				//
 				//	get wireless M-Bus default configuration

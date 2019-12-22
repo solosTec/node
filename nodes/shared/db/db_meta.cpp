@@ -513,7 +513,7 @@ namespace node
 
 			//
 			//	Defines how the data is to be stored. 
-			//	81 81 C7 86 20 FF - OBIS_CODE_ROOT_DATA_COLLECTOR
+			//	81 81 C7 86 20 FF - OBIS_ROOT_DATA_COLLECTOR
 			//
 			return cyng::table::make_meta_table<2, 4>(name,
 				{ "serverID"	//	server/meter/sensor ID

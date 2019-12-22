@@ -8,6 +8,8 @@
 #ifndef NODE_IPT_SEGW_ROUTER_H
 #define NODE_IPT_SEGW_ROUTER_H
 
+#include "msg/config_ipt.h"
+#include "msg/config_sensor_params.h"
 #include "msg/get_proc_parameter.h"
 #include "msg/set_proc_parameter.h"
 #include "msg/get_profile_list.h"
@@ -42,8 +44,7 @@ namespace node
 			, storage& db
 			, std::string const& account
 			, std::string const& pwd
-			, bool accept_all
-			, cyng::buffer_t const&);
+			, bool accept_all);
 
 
 	private:
@@ -85,8 +86,9 @@ namespace node
 		std::string const account_;
 		std::string const pwd_;
 		bool const accept_all_;
-		cyng::buffer_t const server_id_;
 
+		ipt::config_ipt	config_ipt_;
+		sml::config_sensor_params config_sensor_params_;
 		sml::get_proc_parameter get_proc_parameter_;
 		sml::set_proc_parameter set_proc_parameter_;
 		sml::get_profile_list get_profile_list_;

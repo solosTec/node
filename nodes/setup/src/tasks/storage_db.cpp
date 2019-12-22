@@ -626,7 +626,7 @@ namespace node
 		insert(meta_map, cyng::table::make_meta_table_gen<1, 9>("TDevice",
 			{ "pk", "name", "pwd", "msisdn", "descr", "id", "vFirmware", "enabled", "creationTime", "query" },
 			{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT, cyng::TC_UINT32 },
-			{ 36, 128, 16, 128, 512, 64, 64, 0, 0, 0 }));
+			{ 36, 128, 64, 128, 512, 64, 64, 0, 0, 0 }));
 
 		insert(meta_map, cyng::table::make_meta_table_gen<1, 5>("TUser",
 			{ "pk", "name", "team", "priv_read", "priv_write", "priv_delete" },

@@ -226,7 +226,7 @@ namespace node
 #ifdef _DEBUG
 
 			cyng::buffer_t server_id;
-			server_id = cyng::value_cast(get_config(config_db_, OBIS_CODE_SERVER_ID.to_str()), server_id);
+			server_id = cyng::value_cast(get_config(config_db_, OBIS_SERVER_ID.to_str()), server_id);
 
 			cyng::crypto::aes_128_key aes_key;
 			cyng::crypto::aes::randomize(aes_key);

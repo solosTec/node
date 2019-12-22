@@ -6,11 +6,14 @@
  */
 
 #include "set_proc_parameter.h"
+#include "config_ipt.h"
+#include "config_sensor_params.h"
 #include "../cache.h"
 #include "../segw.h"
 
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/obis_io.h>
+#include <smf/sml/obis_db.h>
 
 #include <cyng/io/serializer.h>
 #include <cyng/buffer_cast.h>
@@ -22,11 +25,13 @@ namespace node
 		set_proc_parameter::set_proc_parameter(cyng::logging::log_ptr logger
 			, res_generator& sml_gen
 			, cache& cfg
-			, cyng::buffer_t const& id)
+			, node::ipt::config_ipt& config_ipt
+			, config_sensor_params& config_sensor_params)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
-			, config_ipt_(logger, sml_gen, cfg, id)
+			, config_ipt_(config_ipt)
+			, config_sensor_params_(config_sensor_params)
 		{}
 
 		void set_proc_parameter::generate_response(obis_path const& path
@@ -44,10 +49,10 @@ namespace node
 				auto end = path.end();
 
 				switch (pos->to_uint64()) {
-				case 0x81490D0700FF:	//	IP-T
+				case CODE_ROOT_IPT_PARAM:	//	IP-T (0x81490D0700FF)
 					if (pos != end)	_81490d0700ff(++pos, end, trx, srv_id, user, pwd, param);
 					break;
-				case 0x8181C78600FF:	//	OBIS_CODE_ROOT_SENSOR_PARAMS
+				case CODE_ROOT_SENSOR_PARAMS:	//	0x8181C78600FF
 					BOOST_ASSERT(pos != end);
 					code_root_sensor_params(++pos, end, trx, srv_id, user, pwd, param);
 					break;
@@ -99,19 +104,15 @@ namespace node
 			, std::string pwd
 			, cyng::param_t	param)
 		{
-			//CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request <8181C78600FF> - incomplete "
-			//	<< param.first
-			//	<< " ="
-			//	<< cyng::io::to_str(param.second));
+			CYNG_LOG_DEBUG(logger_, "sml.set.proc.parameter.request <8181C78600FF> - sensor parameters "
+				<< param.first
+				<< " ="
+				<< cyng::io::to_str(param.second));
 
 			BOOST_ASSERT(pos->to_str() == param.first);
-			auto const bitmask = cyng::to_buffer(param.second);
-			cache_.write_table("_DeviceMBUS", [&](cyng::store::table* tbl) {
+			//auto const code = ++pos;
 
-				auto const key = cyng::table::key_generator(srv_id);
-				tbl->modify(key, cyng::param_t("mask", param.second), cache_.get_tag());
-
-			});
+			config_sensor_params_.set_param(*pos, srv_id, param);
 
 		}
 
@@ -322,11 +323,11 @@ namespace node
 		//			//
 		//			cyng::buffer_t tmp;
 		//			auto const reader = cyng::make_reader(std::get<6>(tpl));
-		//			auto const meter = cyng::value_cast(reader.get(OBIS_CODE_IF_1107_METER_ID.to_str()), tmp);
-		//			auto const address = cyng::value_cast(reader.get(OBIS_CODE_IF_1107_ADDRESS.to_str()), tmp);
-		//			auto const baudrate = cyng::numeric_cast(reader.get(OBIS_CODE_IF_1107_BAUDRATE.to_str()), 9600u);
-		//			auto const p1 = cyng::value_cast(reader.get(OBIS_CODE_IF_1107_P1.to_str()), tmp);
-		//			auto const w5 = cyng::value_cast(reader.get(OBIS_CODE_IF_1107_W5.to_str()), tmp);
+		//			auto const meter = cyng::value_cast(reader.get(OBIS_IF_1107_METER_ID.to_str()), tmp);
+		//			auto const address = cyng::value_cast(reader.get(OBIS_IF_1107_ADDRESS.to_str()), tmp);
+		//			auto const baudrate = cyng::numeric_cast(reader.get(OBIS_IF_1107_BAUDRATE.to_str()), 9600u);
+		//			auto const p1 = cyng::value_cast(reader.get(OBIS_IF_1107_P1.to_str()), tmp);
+		//			auto const w5 = cyng::value_cast(reader.get(OBIS_IF_1107_W5.to_str()), tmp);
 
 		//			auto const b = tbl->insert(cyng::table::key_generator(meter)
 		//				, cyng::table::data_generator(address
@@ -349,16 +350,16 @@ namespace node
 		//			//
 		//			auto const rec = tbl->nth_record(std::get<2>(tpl) - 1);
 		//			for (auto const& p : std::get<6>(tpl)) {
-		//				if (p.first == OBIS_CODE_IF_1107_ADDRESS.to_str()) {
+		//				if (p.first == OBIS_IF_1107_ADDRESS.to_str()) {
 		//					tbl->modify(rec.key(), cyng::param_t("address", p.second), ctx.tag());
 		//				}
-		//				else if (p.first == OBIS_CODE_IF_1107_BAUDRATE.to_str()) {
+		//				else if (p.first == OBIS_IF_1107_BAUDRATE.to_str()) {
 		//					tbl->modify(rec.key(), cyng::param_t("baudrate", p.second), ctx.tag());
 		//				}
-		//				else if (p.first == OBIS_CODE_IF_1107_P1.to_str()) {
+		//				else if (p.first == OBIS_IF_1107_P1.to_str()) {
 		//					tbl->modify(rec.key(), cyng::param_t("p1", p.second), ctx.tag());
 		//				}
-		//				else if (p.first == OBIS_CODE_IF_1107_W5.to_str()) {
+		//				else if (p.first == OBIS_IF_1107_W5.to_str()) {
 		//					tbl->modify(rec.key(), cyng::param_t("w5", p.second), ctx.tag());
 		//				}
 		//			}
@@ -440,7 +441,7 @@ namespace node
 		//		else if (OBIS_DATA_AES_KEY == code) {
 		//			tbl->modify(key, cyng::param_t("aes", frame.at(6)), ctx.tag());
 		//		}
-		//		else if (OBIS_CODE_ROOT_SENSOR_BITMASK == code) {
+		//		else if (OBIS_ROOT_SENSOR_BITMASK == code) {
 		//			tbl->modify(key, cyng::param_t("mask", frame.at(6)), ctx.tag());
 		//		}
 		//	}, cyng::store::write_access("mbus-devices"));

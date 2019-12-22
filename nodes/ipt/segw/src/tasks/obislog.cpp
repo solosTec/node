@@ -40,11 +40,11 @@ namespace node
 		//
 		//	write cyclic log entry
 		//
-		bridge_.generate_op_log(sml::OBIS_CODE_PEER_OBISLOG	//	source is WANGSM (or LOG_SOURCE_ETH == 81, 04, 00, 00, 00, FF)
+		bridge_.generate_op_log(sml::OBIS_CODE_PEER_OBISLOG	//	81 81 00 00 00 01 
 			, sml::LOG_CODE_10	//	0x00800000 - Timer, Zyklischer Logbucheintrag
 			, ""	//	target
 			, 0		//	nr
-			, "IP-T login");	//	description
+			, "");	//	description
 
 		//
 		//	start/restart timer

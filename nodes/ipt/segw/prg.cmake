@@ -98,7 +98,8 @@ set (node_ipt_segw_msg
 	nodes/ipt/segw/src/msg/config_ipt.cpp	
 	nodes/ipt/segw/src/msg/attention.h
 	nodes/ipt/segw/src/msg/attention.cpp	
-
+	nodes/ipt/segw/src/msg/config_sensor_params.h
+	nodes/ipt/segw/src/msg/config_sensor_params.cpp
 )
 
 if(WIN32)

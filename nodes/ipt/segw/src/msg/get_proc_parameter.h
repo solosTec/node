@@ -8,7 +8,6 @@
 #ifndef NODE_SEGW_GET_PROC_PARAMETER_H
 #define NODE_SEGW_GET_PROC_PARAMETER_H
 
-#include "config_ipt.h"
 
 #include <smf/sml/intrinsics/obis.h>
 
@@ -19,18 +18,19 @@ namespace node
 	//
 	//	forward declaration
 	//
+	namespace ipt
+	{
+		class config_ipt;
+	}
 	class cache;
 	class storage;
 	namespace sml
 	{
-		//
-		//	forward declaration
-		//
-		class res_generator;
-
 		/**
-		 * 
+		 * forward declaration
 		 */
+		class res_generator;
+		class config_sensor_params;
 		class get_proc_parameter
 		{
 		public:
@@ -38,7 +38,8 @@ namespace node
 				, res_generator& sml_gen
 				, cache& c
 				, storage& db
-				, cyng::buffer_t const&);
+				, node::ipt::config_ipt&
+				, config_sensor_params&);
 
 			void generate_response(obis code
 				, std::string trx
@@ -67,7 +68,6 @@ namespace node
 			void code_root_active_devices(std::string trx, cyng::buffer_t srv_id);
 			void code_root_visible_devices(std::string trx, cyng::buffer_t srv_id);
 			void code_root_device_info(std::string trx, cyng::buffer_t srv_id);
-			void code_root_sensor_params(std::string trx, cyng::buffer_t srv_id);
 			void code_root_data_collector(std::string trx, cyng::buffer_t srv_id);
 			void code_if_1107(std::string trx, cyng::buffer_t srv_id);
 			void storage_time_shift(std::string trx, cyng::buffer_t srv_id);
@@ -79,7 +79,6 @@ namespace node
 
 		private:
 			cyng::logging::log_ptr logger_;
-
 
 			/**
 			 * buffer for current SML message
@@ -96,9 +95,8 @@ namespace node
 			 */
 			storage& storage_;
 
-			cyng::buffer_t const server_id_;
-
-			node::ipt::config_ipt	config_ipt_;
+			node::ipt::config_ipt&	config_ipt_;
+			config_sensor_params& config_sensor_params_;
 
 		};
 	}	//	sml

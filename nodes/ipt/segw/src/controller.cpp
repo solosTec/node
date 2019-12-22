@@ -40,7 +40,6 @@ namespace node
 		, std::string account
 		, std::string pwd
 		, bool accept_all
-		, cyng::buffer_t const&
 		, boost::uuids::uuid tag);
 
 	controller::controller(unsigned int index
@@ -94,7 +93,7 @@ namespace node
 #endif
 				, cyng::param_factory("gpio-path", "/sys/class/gpio")	//	accept only the specified MAC id
 				, cyng::param_factory("gpio-list", cyng::vector_factory({46, 47, 50, 53}))
-				, cyng::param_factory("obis-log", 15)	//	cycle time in minutes
+				, cyng::param_factory(sml::OBIS_OBISLOG_INTERVAL.to_str(), 15)	//	cycle time in minutes OBISLOG_INTERVAL
 				, cyng::param_factory("readout-interval", 121)	//	cycle time in seconds
 
 				, cyng::param_factory("DB", cyng::tuple_factory(
@@ -120,9 +119,9 @@ namespace node
 					cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF - OBIS_DATA_MANUFACTURER)
 					cyng::param_factory("model", "virtual.gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
 					cyng::param_factory("serial", sn),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
-					cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF - OBIS_CODE_DEVICE_CLASS) "2D 2D 2D"
+					cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF - OBIS_DEVICE_CLASS) "2D 2D 2D"
 					//	configure server ID (MAC address)
-					cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ..., 81 81 C7 82 04 FF - OBIS_CODE_SERVER_ID)
+					cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ..., 81 81 C7 82 04 FF - OBIS_SERVER_ID)
 				))
 
 				//	wireless M-Bus
@@ -185,31 +184,31 @@ namespace node
 
 				, cyng::param_factory("if-1107", cyng::tuple_factory(
 #ifdef _DEBUG
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_ACTIVE.to_str() + "-descr", "OBIS_CODE_IF_1107_ACTIVE"),	//	active
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str() + "-descr", "OBIS_CODE_IF_1107_LOOP_TIME"),	//	loop timeout in seconds
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_RETRIES.to_str() + "-descr", "OBIS_CODE_IF_1107_RETRIES"),	//	retries
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str() + "-descr", "OBIS_CODE_IF_1107_MIN_TIMEOUT"),	//	min. timeout (milliseconds)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str() + "-descr", "OBIS_CODE_IF_1107_MAX_TIMEOUT"),	//	max. timeout (milliseconds)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str() + "-descr", "OBIS_CODE_IF_1107_MAX_DATA_RATE"),	//	max. databytes
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_RS485.to_str() + "-descr", "OBIS_CODE_IF_1107_RS485"),	//	 true = RS485, false = RS232
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str() + "-descr", "OBIS_CODE_IF_1107_PROTOCOL_MODE"),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str() + "-descr", "OBIS_CODE_IF_1107_AUTO_ACTIVATION"),	//	auto activation
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str() + "-descr", "OBIS_CODE_IF_1107_TIME_GRID"),
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str() + "-descr", "OBIS_CODE_IF_1107_TIME_SYNC"),
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str() + "-descr", "OBIS_CODE_IF_1107_MAX_VARIATION"),	//	max. variation in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str() + "-descr", "OBIS_IF_1107_ACTIVE"),	//	active
+					cyng::param_factory(sml::OBIS_IF_1107_LOOP_TIME.to_str() + "-descr", "OBIS_IF_1107_LOOP_TIME"),	//	loop timeout in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_RETRIES.to_str() + "-descr", "OBIS_IF_1107_RETRIES"),	//	retries
+					cyng::param_factory(sml::OBIS_IF_1107_MIN_TIMEOUT.to_str() + "-descr", "OBIS_IF_1107_MIN_TIMEOUT"),	//	min. timeout (milliseconds)
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_TIMEOUT.to_str() + "-descr", "OBIS_IF_1107_MAX_TIMEOUT"),	//	max. timeout (milliseconds)
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_DATA_RATE.to_str() + "-descr", "OBIS_IF_1107_MAX_DATA_RATE"),	//	max. databytes
+					cyng::param_factory(sml::OBIS_IF_1107_RS485.to_str() + "-descr", "OBIS_IF_1107_RS485"),	//	 true = RS485, false = RS232
+					cyng::param_factory(sml::OBIS_IF_1107_PROTOCOL_MODE.to_str() + "-descr", "OBIS_IF_1107_PROTOCOL_MODE"),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
+					cyng::param_factory(sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str() + "-descr", "OBIS_IF_1107_AUTO_ACTIVATION"),	//	auto activation
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_GRID.to_str() + "-descr", "OBIS_IF_1107_TIME_GRID"),
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str() + "-descr", "OBIS_IF_1107_TIME_SYNC"),
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str() + "-descr", "OBIS_IF_1107_MAX_VARIATION"),	//	max. variation in seconds
 #endif
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_ACTIVE.to_str(), true),	//	active
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_LOOP_TIME.to_str(), 60),	//	loop timeout in seconds
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_RETRIES.to_str(), 3),	//	retries
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MIN_TIMEOUT.to_str(), 200),	//	min. timeout (milliseconds)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_TIMEOUT.to_str(), 5000),	//	max. timeout (milliseconds)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_DATA_RATE.to_str(), 10240),	//	max. databytes
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_RS485.to_str(), true),	//	 true = RS485, false = RS232
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_PROTOCOL_MODE.to_str(), 2),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION.to_str(), true),	//	auto activation
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_GRID.to_str(), 900),
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_TIME_SYNC.to_str(), 14400),
-					cyng::param_factory(sml::OBIS_CODE_IF_1107_MAX_VARIATION.to_str(), 9)	//	max. variation in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str(), true),	//	active
+					cyng::param_factory(sml::OBIS_IF_1107_LOOP_TIME.to_str(), 60),	//	loop timeout in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_RETRIES.to_str(), 3),	//	retries
+					cyng::param_factory(sml::OBIS_IF_1107_MIN_TIMEOUT.to_str(), 200),	//	min. timeout (milliseconds)
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_TIMEOUT.to_str(), 5000),	//	max. timeout (milliseconds)
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_DATA_RATE.to_str(), 10240),	//	max. databytes
+					cyng::param_factory(sml::OBIS_IF_1107_RS485.to_str(), true),	//	 true = RS485, false = RS232
+					cyng::param_factory(sml::OBIS_IF_1107_PROTOCOL_MODE.to_str(), 2),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
+					cyng::param_factory(sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str(), true),	//	auto activation
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_GRID.to_str(), 900),
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str(), 14400),
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str(), 9)	//	max. variation in seconds
 
 				))
 				, cyng::param_factory("mbus", cyng::tuple_factory(
@@ -344,8 +343,8 @@ namespace node
 		//	Server id (MAC) doesn't change so we take it as constant
 		//	from the start.
 		//
-		auto const mac = cm.get_cfg(sml::OBIS_CODE_SERVER_ID.to_str(), cyng::generate_random_mac48());
-		auto const srv_id = sml::to_gateway_srv_id(mac);
+		//auto const mac = cm.get_cfg(sml::OBIS_SERVER_ID.to_str(), cyng::generate_random_mac48());
+		//auto const srv_id = sml::to_gateway_srv_id(mac);
 
 		//
 		//	connect to ipt master
@@ -357,7 +356,6 @@ namespace node
 			, account
 			, pwd
 			, accept_all
-			, srv_id
 			, tag);
 
 		//
@@ -369,8 +367,7 @@ namespace node
 			, store
 			, account
 			, pwd
-			, accept_all
-			, srv_id);
+			, accept_all);
 
 		//
 		//	server runtime configuration
@@ -449,7 +446,6 @@ namespace node
 		, std::string account
 		, std::string pwd
 		, bool accept_all
-		, cyng::buffer_t const& id
 		, boost::uuids::uuid tag)
 	{
 		cyng::async::start_task_delayed<ipt::network>(mux
@@ -460,7 +456,6 @@ namespace node
 			, account
 			, pwd
 			, accept_all
-			, id
 			, tag);
 
 	}

@@ -41,7 +41,6 @@ namespace node
 			, std::string account
 			, std::string pwd
 			, bool accept_all
-			, cyng::buffer_t const& id
 			, boost::uuids::uuid tag)
 		: bus(logger
 				, btp->mux_
@@ -66,8 +65,7 @@ namespace node
 				, db
 				, account
 				, pwd
-				, accept_all
-				, id)
+				, accept_all)
 			, seq_open_channel_map_()
 			, task_gpio_(cyng::async::NO_TASK)
 		{
@@ -97,8 +95,8 @@ namespace node
 				>(frame);
 
 				//	with IP-T prefix
-				this->cache_.set_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM }, "ep.remote"), std::get<0>(tpl));
-				this->cache_.set_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM }, "ep.local"), std::get<1>(tpl));
+				this->cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "ep.remote"), std::get<0>(tpl));
+				this->cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "ep.local"), std::get<1>(tpl));
 
 			});
 

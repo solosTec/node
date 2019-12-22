@@ -167,7 +167,7 @@ namespace node
 		if (std::get<3>(tpl).size() != 1)	return;
 
 		//
-		//	update specific data in TGateway and TMeter table (81 81 11 06 FF FF == OBIS_CODE_ROOT_ACTIVE_DEVICES)
+		//	update specific data in TGateway and TMeter table (81 81 11 06 FF FF == OBIS_ROOT_ACTIVE_DEVICES)
 		//	We don't include <smf/sml/obis_db.h> otherwise we had to link agains the whole
 		//	SML library.
 		//
@@ -189,7 +189,7 @@ namespace node
 			return;
 
 		}
-		//	81, 06, 0F, 06, 00, FF, CODE_ROOT_W_MBUS_STATUS
+		//	81, 06, 0F, 06, 00, FF, ROOT_W_MBUS_STATUS
 		else if (boost::algorithm::equals(std::get<4>(tpl), "81060F0600FF")) {
 
 			//

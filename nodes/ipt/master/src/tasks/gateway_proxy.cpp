@@ -750,8 +750,8 @@ namespace node
 		//
 		//	generate get process parameter requests
 		//
-		if (sml::OBIS_CODE_ROOT_SENSOR_PARAMS == data.get_root() ||
-			sml::OBIS_CODE_ROOT_DATA_COLLECTOR == data.get_root() ||
+		if (sml::OBIS_ROOT_SENSOR_PARAMS == data.get_root() ||
+			sml::OBIS_ROOT_DATA_COLLECTOR == data.get_root() ||
 			sml::OBIS_PUSH_OPERATIONS == data.get_root()) {
 
 			//
@@ -796,7 +796,7 @@ namespace node
 			<< " root "
 			<< data.get_root().to_str());
 
-		if (sml::OBIS_CODE_ROOT_IPT_PARAM == data.get_root()) {
+		if (sml::OBIS_ROOT_IPT_PARAM == data.get_root()) {
 
 			//
 			//	modify IP-T parameters
@@ -806,7 +806,7 @@ namespace node
 			vec = cyng::value_cast(params.get("ipt"), vec);
 			execute_cmd_set_proc_param_ipt(sml_gen, data, vec);
 		}
-		else if (sml::OBIS_CODE_IF_wMBUS == data.get_root()) {
+		else if (sml::OBIS_IF_wMBUS == data.get_root()) {
 
 			//
 			//	modify wireless IEC parameters
@@ -815,7 +815,7 @@ namespace node
 			tpl = cyng::value_cast(params.get("wmbus"), tpl);
 			execute_cmd_set_proc_param_wmbus(sml_gen, data, tpl);
 		}
-		else if (sml::OBIS_CODE_IF_1107 == data.get_root()) {
+		else if (sml::OBIS_IF_1107 == data.get_root()) {
 
 			//
 			//	modify wired IEC parameters
@@ -891,14 +891,14 @@ namespace node
 					<< meter);
 			}
 		}
-		else if (sml::OBIS_CODE_ROOT_SENSOR_PARAMS == data.get_root()) {
+		else if (sml::OBIS_ROOT_SENSOR_PARAMS == data.get_root()) {
 
 			CYNG_LOG_FATAL(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> OBIS_CODE_ROOT_SENSOR_PARAMS not implemented yet: "
-				<< sml::OBIS_CODE_ROOT_SENSOR_PARAMS.to_str());
+				<< "> OBIS_ROOT_SENSOR_PARAMS not implemented yet: "
+				<< sml::OBIS_ROOT_SENSOR_PARAMS.to_str());
 
 			//
 			//	change root parameters of meter
@@ -1072,7 +1072,7 @@ namespace node
 
 				const auto b = cyng::value_cast(param.second, false);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_INSTALL_MODE }
+					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_INSTALL_MODE }
 					, data.get_user()
 					, data.get_pwd()
 					, b), data);
@@ -1108,7 +1108,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint64_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_REBOOT }
+					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_REBOOT }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1117,7 +1117,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_MODE_S }
+					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_MODE_S }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1126,7 +1126,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_wMBUS, sml::OBIS_W_MBUS_MODE_T }
+					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_MODE_T }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1171,7 +1171,7 @@ namespace node
 
 				const auto b = cyng::value_cast(param.second, false);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_ACTIVE }
+					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_ACTIVE }
 					, data.get_user()
 					, data.get_pwd()
 					, b), data);
@@ -1180,7 +1180,7 @@ namespace node
 
 				const auto b = cyng::value_cast(param.second, false);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_AUTO_ACTIVATION }
+					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_AUTO_ACTIVATION }
 					, data.get_user()
 					, data.get_pwd()
 					, b), data);
@@ -1189,7 +1189,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 60u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_LOOP_TIME }
+					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_LOOP_TIME }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1198,7 +1198,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint64_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MAX_DATA_RATE }
+					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_DATA_RATE }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1207,7 +1207,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 200u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MIN_TIMEOUT }
+					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MIN_TIMEOUT }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1216,7 +1216,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 5000u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MAX_TIMEOUT }
+					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_TIMEOUT }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1225,7 +1225,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 9u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_MAX_VARIATION }
+					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_VARIATION }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1234,7 +1234,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 1u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_PROTOCOL_MODE }
+					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_PROTOCOL_MODE }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1243,7 +1243,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 3u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_RETRIES }
+					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_RETRIES }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1255,7 +1255,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 900u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_TIME_GRID }
+					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_TIME_GRID }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1264,7 +1264,7 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 14400u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_CODE_IF_1107, sml::OBIS_CODE_IF_1107_TIME_SYNC }
+					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_TIME_SYNC }
 					, data.get_user()
 					, data.get_pwd()
 					, val), data);
@@ -1310,7 +1310,7 @@ namespace node
 		//	modify user name
 		//
 		push_trx(sml_gen.set_proc_parameter(meter
-			, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_NAME }
+			, { sml::OBIS_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_NAME }
 			, data.get_user()
 			, data.get_pwd()
 			, user), data);
@@ -1319,7 +1319,7 @@ namespace node
 		//	modify user password
 		//
 		push_trx(sml_gen.set_proc_parameter(meter
-			, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_PWD }
+			, { sml::OBIS_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_PWD }
 			, data.get_user()
 			, data.get_pwd()
 			, pwd), data);
@@ -1332,7 +1332,7 @@ namespace node
 		if (r_pub_key.second) {
 
 			push_trx(sml_gen.set_proc_parameter(meter
-				, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_PUBLIC_KEY }
+				, { sml::OBIS_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_PUBLIC_KEY }
 				, data.get_user()
 				, data.get_pwd()
 				, r_pub_key.first), data);
@@ -1346,7 +1346,7 @@ namespace node
 		if (r_aes_key.second) {
 
 			push_trx(sml_gen.set_proc_parameter(meter
-				, { sml::OBIS_CODE_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_AES_KEY }
+				, { sml::OBIS_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_AES_KEY }
 				, data.get_user()
 				, data.get_pwd()
 				, r_aes_key.first), data);
@@ -1359,7 +1359,7 @@ namespace node
 		, cyng::buffer_t const& meter)
 	{
 		push_trx(sml_gen.set_proc_parameter(data.get_srv()
-			, { sml::OBIS_CODE_ACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFB, nr), sml::OBIS_CODE_SERVER_ID }
+			, { sml::OBIS_CODE_ACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFB, nr), sml::OBIS_SERVER_ID }
 			, data.get_user()
 			, data.get_pwd()
 			, meter), data);
@@ -1371,7 +1371,7 @@ namespace node
 		, cyng::buffer_t const& meter)
 	{
 		push_trx(sml_gen.set_proc_parameter(data.get_srv()
-			, { sml::OBIS_CODE_DEACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, nr), sml::OBIS_CODE_SERVER_ID }
+			, { sml::OBIS_CODE_DEACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, nr), sml::OBIS_SERVER_ID }
 			, data.get_user()
 			, data.get_pwd()
 			, meter), data);
@@ -1383,7 +1383,7 @@ namespace node
 		, cyng::buffer_t const& meter)
 	{
 		push_trx(sml_gen.set_proc_parameter(data.get_srv()
-			, { sml::OBIS_CODE_DELETE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFD, nr), sml::OBIS_CODE_SERVER_ID }
+			, { sml::OBIS_CODE_DELETE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFD, nr), sml::OBIS_SERVER_ID }
 			, data.get_user()
 			, data.get_pwd()
 			, meter), data);

@@ -20,8 +20,7 @@ namespace node
 		, storage& db
 		, std::string account
 		, std::string pwd
-		, bool accept_all
-		, cyng::buffer_t const& id)
+		, bool accept_all)
 	: mux_(mux)
 		, logger_(logger)
 		, cache_(cfg)
@@ -29,7 +28,6 @@ namespace node
 		, account_(account)
 		, pwd_(pwd)
 		, accept_all_(accept_all)
-		, server_id_(id)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
 		, socket_(io_ctx_)
@@ -97,8 +95,7 @@ namespace node
 					, storage_
 					, account_
 					, pwd_
-					, accept_all_
-					, server_id_)->start();
+					, accept_all_)->start();
 
 				do_accept();
 			}

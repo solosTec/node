@@ -162,7 +162,7 @@ namespace node
 			, std::string const& address)
 		{
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) }
+				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) }
 				, username
 				, password
 				, address);
@@ -175,7 +175,7 @@ namespace node
 			, std::uint16_t port)
 		{
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx) }
+				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx) }
 				, username
 				, password
 				, port);
@@ -188,7 +188,7 @@ namespace node
 			, std::uint16_t port)
 		{
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx) }
+				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx) }
 				, username
 				, password
 				, port);
@@ -201,7 +201,7 @@ namespace node
 			, std::string const& user)
 		{
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx) }
+				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx) }
 				, username
 				, password
 				, user);
@@ -214,7 +214,7 @@ namespace node
 			, std::string const& pwd)
 		{
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_CODE_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx) }
+				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx) }
 				, username
 				, password
 				, pwd);
@@ -228,7 +228,7 @@ namespace node
 			BOOST_ASSERT_MSG(val < 4, "wireless M-Bus protocol type out of range");
 
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_CODE_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }
+				, obis_path{ OBIS_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }
 				, username
 				, password
 				, val);
@@ -445,19 +445,19 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(server_id	//	server id
-					, OBIS_CODE_ROOT_DEVICE_IDENT	//	path entry - 81 81 C7 82 01 FF
+					, OBIS_ROOT_DEVICE_IDENT	//	path entry - 81 81 C7 82 01 FF
 
 					//
 					//	generate get process parameter response
 					//	const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 01, FF, CODE_ROOT_DEVICE_IDENT);	
 					//	see: 7.3.2.9 Datenstruktur zur Abfrage der Geräte-Identifikation) 
 					//
-					, child_list_tree(OBIS_CODE_ROOT_DEVICE_IDENT, {
+					, child_list_tree(OBIS_ROOT_DEVICE_IDENT, {
 
 						//	device class (81 81 C7 82 53 FF == MUC-LAN/DSL)
-						parameter_tree(OBIS_CODE_DEVICE_CLASS, make_value(OBIS_CODE(81, 81, C7, 82, 53, FF))),
+						parameter_tree(OBIS_DEVICE_CLASS, make_value(OBIS_CODE(81, 81, C7, 82, 53, FF))),
 						parameter_tree(OBIS_DATA_MANUFACTURER, make_value(manufacturer)),	// manufacturer
-						parameter_tree(OBIS_CODE_SERVER_ID, make_value(server_id2)),	// server id
+						parameter_tree(OBIS_SERVER_ID, make_value(server_id2)),	// server id
 
 						//	firmware
 						child_list_tree(OBIS_CODE_ROOT_FIRMWARE, {
@@ -531,13 +531,13 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(server_id	//	server id
-					, OBIS_CODE_ROOT_MEMORY_USAGE		//	path entry
+					, OBIS_ROOT_MEMORY_USAGE		//	path entry
 
 					//
 					//	generate get process parameter response
 					//	2 uint8 values 
 					//
-					, child_list_tree(OBIS_CODE_ROOT_MEMORY_USAGE, {
+					, child_list_tree(OBIS_ROOT_MEMORY_USAGE, {
 
 						parameter_tree(OBIS_CODE(00, 80, 80, 00, 11, FF), make_value(mirror)),	//	mirror
 						parameter_tree(OBIS_CODE(00, 80, 80, 00, 12, FF), make_value(tmp))	// tmp
@@ -606,13 +606,13 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(server_id	//	server id
-					, OBIS_CODE_ROOT_DEVICE_TIME		//	path entry
+					, OBIS_ROOT_DEVICE_TIME		//	path entry
 
 					//
 					//	generate get process parameter response
 					//	2 uint8 values 
 					//
-					, child_list_tree(OBIS_CODE_ROOT_DEVICE_TIME, {
+					, child_list_tree(OBIS_ROOT_DEVICE_TIME, {
 
 						parameter_tree(OBIS_CURRENT_UTC, make_value(now)),	//	timestamp (01 00 00 09 0B 00 )
 						parameter_tree(OBIS_CODE(00, 00, 60, 08, 00, FF), make_sec_index_value(now)),
@@ -734,8 +734,8 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(server_id	//	server id  
-					, OBIS_CODE_ROOT_IPT_STATE	//	path entry - 81 49 0D 06 00 FF 
-					, child_list_tree(OBIS_CODE_ROOT_IPT_STATE, {
+					, OBIS_ROOT_IPT_STATE	//	path entry - 81 49 0D 06 00 FF 
+					, child_list_tree(OBIS_ROOT_IPT_STATE, {
 
 						parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 00), make_value(ip_address)),
 						parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 00), make_value(target_port)),
@@ -819,11 +819,11 @@ namespace node
 						//  655B8E3F04                              value: 1536048900
 						period_entry(OBIS_CURRENT_UTC, 0x07, 0, cyng::make_object(sec)),
 
-						//  81 81 C7 82 04 FF                       objName:  CODE_SERVER_ID
+						//  81 81 C7 82 04 FF                       objName:  SERVER_ID
 						//  62FF                                    unit: 255
 						//  5200                                    scaler: 0
 						//  0A01A815743145040102                    value: 01 A8 15 74 31 45 04 01 02 
-						period_entry(OBIS_CODE_SERVER_ID, 0xFF, 0, cyng::make_object(server_id)),
+						period_entry(OBIS_SERVER_ID, 0xFF, 0, cyng::make_object(server_id)),
 
 						//  81 47 17 07 00 FF                       objName:  CODE_PUSH_TARGET
 						//  62FF                                    unit: 255
@@ -863,8 +863,8 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(server_id
-					, OBIS_CODE_ROOT_W_MBUS_STATUS	//	path entry - 81 06 0F 06 00 FF
-					, child_list_tree(OBIS_CODE_ROOT_W_MBUS_STATUS, {
+					, OBIS_ROOT_W_MBUS_STATUS	//	path entry - 81 06 0F 06 00 FF
+					, child_list_tree(OBIS_ROOT_W_MBUS_STATUS, {
 
 						parameter_tree(OBIS_W_MBUS_ADAPTER_MANUFACTURER, make_value(manufacturer)),
 						parameter_tree(OBIS_W_MBUS_ADAPTER_ID, make_value(id)),
@@ -892,8 +892,8 @@ namespace node
 				//	generate get process parameter response
 				//
 				, get_proc_parameter_response(server_id
-					, OBIS_CODE_IF_wMBUS	//	path entry - 81 06 19 07 00 FF
-					, child_list_tree(OBIS_CODE_IF_wMBUS, {
+					, OBIS_IF_wMBUS	//	path entry - 81 06 19 07 00 FF
+					, child_list_tree(OBIS_IF_wMBUS, {
 
 						parameter_tree(OBIS_W_MBUS_PROTOCOL, make_value(protocol)),
 						parameter_tree(OBIS_W_MBUS_MODE_S, make_value(s_mode)),

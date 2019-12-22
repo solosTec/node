@@ -24,8 +24,7 @@ namespace node
 			, storage& db
 			, std::string account
 			, std::string pwd
-			, bool accept_all
-			, cyng::buffer_t const&);
+			, bool accept_all);
 
 		/**
 		 * start listening
@@ -71,7 +70,6 @@ namespace node
 		std::string const pwd_;
 
 		bool const accept_all_;
-		cyng::buffer_t const server_id_;
 
 		/** 
 		 * Acceptor used to listen for incoming connections.

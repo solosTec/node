@@ -31,8 +31,7 @@ namespace node
 		, storage& db
 		, std::string const& account
 		, std::string const& pwd
-		, bool accept_all
-		, cyng::buffer_t const& id)
+		, bool accept_all)
 	: logger_(logger)
 		, server_mode_(server_mode)
 		, cache_(cfg)
@@ -40,9 +39,19 @@ namespace node
 		, account_(account)
 		, pwd_(pwd)
 		, accept_all_(accept_all)
-		, server_id_(id)
-		, get_proc_parameter_(logger, sml_gen_, cfg, db, id)
-		, set_proc_parameter_(logger, sml_gen_, cfg, id)
+		, config_ipt_(logger, sml_gen_, cfg)
+		, config_sensor_params_(logger, sml_gen_, cfg)
+		, get_proc_parameter_(logger
+			, sml_gen_
+			, cfg
+			, db
+			, config_ipt_
+			, config_sensor_params_)
+		, set_proc_parameter_(logger
+			, sml_gen_
+			, cfg
+			, config_ipt_
+			, config_sensor_params_)
 		, get_profile_list_(logger, sml_gen_, cfg, db)
 		, attention_(logger, sml_gen_, cfg)
 	{
@@ -168,7 +177,7 @@ namespace node
 			//
 			//	test server ID
 			//
-			if (!boost::algorithm::equals(server_id_, std::get<2>(tpl))) {
+			if (!boost::algorithm::equals(cache_.get_srv_id(), std::get<2>(tpl))) {
 
 				sml_gen_.attention_msg(frame.at(1)	// trx
 					, std::get<2>(tpl)	//	server ID
@@ -179,7 +188,7 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "sml.public.open.request - wrong server ID: "
 					<< cyng::io::to_hex(std::get<2>(tpl))
 					<< " (expected "
-					<< cyng::io::to_hex(server_id_)
+					<< cyng::io::to_hex(cache_.get_srv_id())
 					<< ")");
 
 				return;

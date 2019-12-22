@@ -26,8 +26,7 @@ namespace node
 		, storage& db
 		, std::string const& account
 		, std::string const& pwd
-		, bool accept_all
-		, cyng::buffer_t const& id)
+		, bool accept_all)
 	: mux_(mux)
 		, logger_(logger)
 		, vm_(mux.get_io_service(), boost::uuids::random_generator()())
@@ -43,8 +42,7 @@ namespace node
 			, db
 			, account
 			, pwd
-			, accept_all
-			, id)
+			, accept_all)
 	{
 		//
 		//	register logger domain
@@ -71,12 +69,10 @@ namespace node
 		, storage& db
 		, std::string const& account
 		, std::string const& pwd
-		, bool accept_all
-		, cyng::buffer_t const& id)
+		, bool accept_all)
 	{
-		return cyng::make_object<session>(mux, logger, cfg, db, account, pwd, accept_all, id);
+		return cyng::make_object<session>(mux, logger, cfg, db, account, pwd, accept_all);
 	}
-
 }
 
 namespace cyng

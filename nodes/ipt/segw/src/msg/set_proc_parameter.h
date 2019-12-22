@@ -9,8 +9,6 @@
 #define NODE_SEGW_SET_PROC_PARAMETER_H
 
 
-#include "config_ipt.h"
-
 #include <smf/sml/intrinsics/obis.h>
 
 #include <cyng/log.h>
@@ -18,24 +16,26 @@
 
 namespace node
 {
+	namespace ipt
+	{
+		class config_ipt;
+	}
 	class cache;
 	namespace sml
 	{
-		//
-		//	forward declaration
-		//
-		class res_generator;
-
 		/**
-		 * 
+		 * forward declaration
 		 */
+		class config_sensor_params;
+		class res_generator;
 		class set_proc_parameter
 		{
 		public:
 			set_proc_parameter(cyng::logging::log_ptr
 				, res_generator& sml_gen
 				, cache& cfg
-				, cyng::buffer_t const&);
+				, node::ipt::config_ipt&
+				, config_sensor_params&);
 
 			void generate_response(obis_path const&
 				, std::string trx
@@ -91,7 +91,8 @@ namespace node
 			 */
 			cache& cache_;
 
-			node::ipt::config_ipt	config_ipt_;
+			node::ipt::config_ipt&	config_ipt_;
+			config_sensor_params& config_sensor_params_;
 
 		};
 	}	//	sml

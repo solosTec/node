@@ -96,7 +96,7 @@ namespace node
 					, 1u	//	only needed for insert operations
 					, cache_.get_tag());
 
-				if (boost::algorithm::equals(name, sml::OBIS_CODE_SERVER_ID.to_str())) {
+				if (boost::algorithm::equals(name, sml::OBIS_SERVER_ID.to_str())) {
 
 					//
 					//	init server ID in cache
@@ -267,7 +267,7 @@ namespace node
 					, 0		//	nr
 					, "");	//	description
 			}
-			else if (boost::algorithm::equals(name, sml::OBIS_CODE_SERVER_ID.to_str())) {
+			else if (boost::algorithm::equals(name, sml::OBIS_SERVER_ID.to_str())) {
 
 				//
 				//	update server ID in cache
@@ -330,6 +330,16 @@ namespace node
 
 	void bridge::start_task_obislog(cyng::async::mux& mux)
 	{
+		auto const interval = cache_.get_cfg(sml::OBIS_OBISLOG_INTERVAL.to_str(), 15);
+		
+		auto const tid = cyng::async::start_task_detached<obislog>(mux
+			, logger_
+			, *this
+			, std::chrono::minutes(interval));
+	}
+
+	void bridge::start_task_gpio(cyng::async::mux& mux)
+	{
 		//
 		//	start one task for every GPIO
 		//
@@ -353,17 +363,6 @@ namespace node
 			//
 			cache_.set_cfg("gpio-task-" + s, tid);
 		}
-	}
-
-	void bridge::start_task_gpio(cyng::async::mux& mux)
-	{
-		auto const interval = cache_.get_cfg("readout-interval", 122);
-		auto const tid = cyng::async::start_task_detached<readout>(mux
-			, logger_
-			, cache_
-			, storage_
-			, std::chrono::seconds(interval));
-
 	}
 
 	void bridge::start_task_readout(cyng::async::mux& mux)

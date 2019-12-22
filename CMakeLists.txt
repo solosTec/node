@@ -257,10 +257,11 @@ elseif(MSVC)
 	# only static libraries
 	set(GLOBAL_LIBRARY_TYPE STATIC)
 
-	#	This is Windows 7 (and rules out windows vista)
+	#
+	#	Target is Windows 10
+	#
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /bigobj /std:c++latest /MP")	
-	add_definitions(-D_WIN32_WINNT=0x0601 -D_SCL_SECURE_NO_WARNINGS -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
-	
+	add_definitions(-D_WIN32_WINNT=0x0A00 -D_SCL_SECURE_NO_WARNINGS -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
 	
 	#
 	# help CMake to find OpenSSL

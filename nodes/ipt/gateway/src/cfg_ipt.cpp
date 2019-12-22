@@ -42,7 +42,7 @@ namespace node
 		{
 
 			//	81 81 11 06 FF FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CODE_ROOT_IPT_PARAM);
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_IPT_PARAM);
 
 			std::uint8_t nr{ 1 };
 			for (auto const& rec : cfg_ipt_.config_) {
@@ -53,7 +53,7 @@ namespace node
 					//	host
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_ROOT_IPT_PARAM,
+						OBIS_ROOT_IPT_PARAM,
 						make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
 						make_obis(0x81, 0x49, 0x17, 0x07, 0x00, nr)
 						}, make_value(rec.host_));
@@ -63,7 +63,7 @@ namespace node
 					//
 					std::uint16_t const port = static_cast<std::uint16_t>(std::stoul(rec.service_));
 					append_get_proc_response(msg, {
-						OBIS_CODE_ROOT_IPT_PARAM,
+						OBIS_ROOT_IPT_PARAM,
 						make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
 						make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, nr)
 						}, make_value(port));
@@ -73,7 +73,7 @@ namespace node
 					//	0 == free choice
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_ROOT_IPT_PARAM,
+						OBIS_ROOT_IPT_PARAM,
 						make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
 						make_obis(0x81, 0x49, 0x19, 0x07, 0x00, nr)
 						}, make_value(0u));
@@ -82,7 +82,7 @@ namespace node
 					//	user
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_ROOT_IPT_PARAM,
+						OBIS_ROOT_IPT_PARAM,
 						make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
 						make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, nr)
 						}, make_value(rec.account_));
@@ -91,7 +91,7 @@ namespace node
 					//	password
 					//
 					append_get_proc_response(msg, {
-						OBIS_CODE_ROOT_IPT_PARAM,
+						OBIS_ROOT_IPT_PARAM,
 						make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
 						make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, nr)
 						}, make_value(rec.pwd_));
@@ -111,7 +111,7 @@ namespace node
 			//	81 48 27 32 06 01 - TCP_WAIT_TO_RECONNECT
 			//
 			append_get_proc_response(msg, {
-				OBIS_CODE_ROOT_IPT_PARAM,
+				OBIS_ROOT_IPT_PARAM,
 				OBIS_TCP_WAIT_TO_RECONNECT
 				}, make_value(wait_time_));
 
@@ -120,7 +120,7 @@ namespace node
 			//	81 48 31 32 02 01 TCP_CONNECT_RETRIES
 			//
 			append_get_proc_response(msg, {
-				OBIS_CODE_ROOT_IPT_PARAM,
+				OBIS_ROOT_IPT_PARAM,
 				OBIS_TCP_CONNECT_RETRIES
 				}, make_value(repetitions_));
 
@@ -128,7 +128,7 @@ namespace node
 			//	SSL
 			//
 			append_get_proc_response(msg, {
-				OBIS_CODE_ROOT_IPT_PARAM,
+				OBIS_ROOT_IPT_PARAM,
 				OBIS_CODE(00, 80, 80, 00, 03, FF)
 				}, make_value(ssl_));
 			
@@ -136,7 +136,7 @@ namespace node
 			//	certificates (none)
 			//
 			append_get_proc_response(msg, {
-				OBIS_CODE_ROOT_IPT_PARAM,
+				OBIS_ROOT_IPT_PARAM,
 				OBIS_CODE(00, 80, 80, 00, 04, FF)
 				}, make_value());
 

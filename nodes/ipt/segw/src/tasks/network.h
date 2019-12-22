@@ -34,7 +34,6 @@ namespace node
 				, std::string account
 				, std::string pwd
 				, bool accept_all
-				, cyng::buffer_t const&
 				, boost::uuids::uuid tag);
 			cyng::continuation run();
 			void stop(bool shutdown);

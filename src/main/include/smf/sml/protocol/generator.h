@@ -357,7 +357,7 @@ namespace node
 				, std::uint32_t serial);
 
 			/**
-			 * OBIS_CODE_ROOT_MEMORY_USAGE - 00 80 80 00 10 FF
+			 * OBIS_ROOT_MEMORY_USAGE - 00 80 80 00 10 FF
 			 */
 			std::size_t get_proc_mem_usage(std::string trx
 				, cyng::buffer_t server_id
@@ -374,7 +374,7 @@ namespace node
 				, cyng::buffer_t server_id);
 
 			/**
-			 * get current IP-T status - 81 49 0D 06 00 FF (OBIS_CODE_ROOT_IPT_STATE)
+			 * get current IP-T status - 81 49 0D 06 00 FF (OBIS_ROOT_IPT_STATE)
 			 */
 			std::size_t get_proc_parameter_ipt_state(std::string trx
 				, cyng::buffer_t server_id

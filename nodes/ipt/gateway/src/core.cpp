@@ -197,7 +197,7 @@ namespace node
 			if (!accept_all_) {
 
 				cyng::buffer_t server_id;
-				server_id = cyng::value_cast(get_config(config_db_, OBIS_CODE_SERVER_ID.to_str()), server_id);
+				server_id = cyng::value_cast(get_config(config_db_, OBIS_SERVER_ID.to_str()), server_id);
 
 				//
 				//	test server ID

@@ -58,7 +58,7 @@ namespace node
 		std::uint64_t get_status_word();
 
 		/**
-		 * get configured server ID (OBIS_CODE_SERVER_ID)
+		 * get configured server ID (OBIS_SERVER_ID:)
 		 */
 		cyng::buffer_t get_srv_id();
 
@@ -150,7 +150,7 @@ namespace node
 		boost::uuids::uuid const tag_;
 
 		/**
-		 * fast access to OBIS_CODE_SERVER_ID (81 81 C7 82 04 FF)
+		 * fast access to OBIS_SERVER_ID: (81 81 C7 82 04 FF)
 		 */
 		cyng::buffer_t server_id_;
 	};

@@ -313,10 +313,12 @@ namespace node
 			//boost::ignore_unused(size);	//	release version
 
 #ifdef SMF_IO_DEBUG
-			cyng::io::hex_dump hd;
-			std::stringstream ss;
-			hd(ss, buffer.begin(), buffer.end());
-			CYNG_LOG_TRACE(logger_, "ipt input dump \n" << ss.str());
+			{
+				cyng::io::hex_dump hd;
+				std::stringstream ss;
+				hd(ss, buffer.begin(), buffer.end());
+				CYNG_LOG_TRACE(logger_, "ipt input dump \n" << ss.str());
+			}
 #endif
 			return buffer;
 		}
@@ -635,7 +637,7 @@ namespace node
 
 		void session::ipt_req_transmit_data(cyng::context& ctx)
 		{
-			//	[ipt.req.transmit.data,
+			//	[ipt.req.transmit.data,
 			//	[c5eae235-d5f5-413f-a008-5d317d8baab7,1B1B1B1B01010101768106313830313...1B1B1B1B1A034276]]
 			const cyng::vector_t frame = ctx.get_frame();
 

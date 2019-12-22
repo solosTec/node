@@ -71,7 +71,7 @@ namespace node
 
 	cyng::buffer_t cache::get_srv_id()
 	{
-		//	OBIS_CODE_SERVER_ID (81 81 C7 82 04 FF)
+		//	OBIS_SERVER_ID (81 81 C7 82 04 FF)
 		//	this is a cached value
 		return server_id_;
 	}
@@ -260,8 +260,8 @@ namespace node
 			, "active"
 			, "descr"
 			//	---
-			, "status"	//	"Statusinformation: 00"
-			, "mask"	//	"Bitmaske: 00 00"
+			, "status"		//	"Statusinformation: 00"
+			, "mask"		//	OBIS_ROOT_SENSOR_BITMASK - "Bitmaske: 00 00"
 			, "interval"	//	"Zeit zwischen zwei Datensätzen: 49000"
 							//	--- optional data
 			, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"

@@ -128,7 +128,7 @@ namespace node
 			LOG_CODE_08 = 0x00100008,	//	Ethernet PHY gestört
 			LOG_CODE_MD = 0x00010011,	//	manipulation detected
 			LOG_CODE_09 = 0x00100023,	//	Spannungswiederkehr
-			LOG_CODE_10 = 0x00800000,	//	Timer, Zyklischer Logbucheintrag
+			LOG_CODE_10 = 0x00800000,	//	Timer, Zyklischer Logbucheintrag (8388608dec)
 			LOG_CODE_11 = 0x00800004,	//	Periodischer Reset
 			LOG_CODE_12 = 0x00800005,	//	Watchdog, Watchdog aufgetreten
 			LOG_CODE_13 = 0x00800006,	//	Sync - Token erzeugt (reserved)

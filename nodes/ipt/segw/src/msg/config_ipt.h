@@ -34,13 +34,10 @@ namespace node
 		public:
 			config_ipt(cyng::logging::log_ptr
 				, node::sml::res_generator& sml_gen
-				, cache& c
-				, cyng::buffer_t const&);
+				, cache& c);
 
 			void get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
 			void set_param(node::sml::obis code, cyng::param_t const& param);
-
-		private:
 
 		private:
 			cyng::logging::log_ptr logger_;
@@ -55,7 +52,6 @@ namespace node
 			 * configuration db
 			 */
 			cache& cache_;
-			cyng::buffer_t const server_id_;
 
 		};
 	}	//	sml

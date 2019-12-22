@@ -1081,14 +1081,14 @@ namespace node
 				tpl = cyng::value_cast(*pos, tpl);
 				//BOOST_ASSERT(!tpl.empty()); -> empty trees are possible e.g. 00, 80, 80, 00, 04, FF (certificates)
 
-				if ((OBIS_CODE_ROOT_VISIBLE_DEVICES == code) || (OBIS_CODE_ROOT_ACTIVE_DEVICES == code)) {
+				if ((OBIS_ROOT_VISIBLE_DEVICES == code) || (OBIS_ROOT_ACTIVE_DEVICES == code)) {
 
 					//
 					//	build a vector of devices
 					//
 					return collect_devices(code, tpl);
 				}
-				else if (OBIS_CODE_IF_1107_METER_LIST == code) {
+				else if (OBIS_IF_1107_METER_LIST == code) {
 					//
 					//	build a vector of devices
 					//	81 81 C7 93 09 FF
@@ -1134,7 +1134,7 @@ namespace node
 					params.emplace(cyng::param_factory("idx", code.get_storage()));
 				}
 				else if (OBIS_DATA_PUBLIC_KEY == code
-					|| OBIS_CODE_ROOT_SENSOR_BITMASK == code
+					|| OBIS_ROOT_SENSOR_BITMASK == code
 					|| OBIS_DATA_USER_NAME == code
 					|| OBIS_DATA_USER_PWD == code) {
 					return cyng::param_factory(code.to_str(), "");
@@ -1166,10 +1166,10 @@ namespace node
 					|| OBIS_CODE_DEVICE_KERNEL == code
 					|| OBIS_CODE_VERSION == code
 					|| OBIS_CODE_FILE_NAME == code
-					|| OBIS_CODE_IF_1107_METER_ID == code
-					|| OBIS_CODE_IF_1107_ADDRESS == code
-					|| OBIS_CODE_IF_1107_P1 == code
-					|| OBIS_CODE_IF_1107_W5 == code
+					|| OBIS_IF_1107_METER_ID == code
+					|| OBIS_IF_1107_ADDRESS == code
+					|| OBIS_IF_1107_P1 == code
+					|| OBIS_IF_1107_W5 == code
 					|| OBIS_CODE_PUSH_TARGET == code
 					|| code.is_matching(0x81, 0x81, 0xC7, 0x82, 0x0A).second) {
 					//	buffer to string
@@ -1179,7 +1179,7 @@ namespace node
 				else if (OBIS_CODE(81, 49, 17, 07, 00, 00) == code) {
 					return cyng::param_factory(code.to_str(), to_ip_address_v4(obj));
 				}
-				else if (OBIS_CODE_DEVICE_CLASS == code
+				else if (OBIS_DEVICE_CLASS == code
 					|| OBIS_DATA_AES_KEY == code) {
 
 					if (obj.is_null()) {
@@ -1246,7 +1246,7 @@ namespace node
 							//	* 81 81 C7 82 02 FF: device class (mostly 2D 2D 2D)
 							//	* 01 00 00 09 0B 00: timestamp
 							//
-							auto const pos_srv = values.find(OBIS_CODE_SERVER_ID.to_str());
+							auto const pos_srv = values.find(OBIS_SERVER_ID.to_str());
 							if (pos_srv != values.end()) {
 
 								//
@@ -1343,7 +1343,7 @@ namespace node
 						vec.push_back(cyng::make_object(values));
 					}
 				}
-				return cyng::param_factory(OBIS_CODE_IF_1107_METER_LIST.to_str(), vec);
+				return cyng::param_factory(OBIS_IF_1107_METER_LIST.to_str(), vec);
 			}
 
 			obis read_obis(cyng::object obj)

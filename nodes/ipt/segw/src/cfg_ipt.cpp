@@ -32,25 +32,25 @@ namespace node
 
 	std::chrono::minutes cfg_ipt::get_ipt_tcp_wait_to_reconnect()
 	{
-		return std::chrono::minutes(cache_.get_cfg<std::uint8_t>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
+		return std::chrono::minutes(cache_.get_cfg<std::uint8_t>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 			, sml::OBIS_TCP_WAIT_TO_RECONNECT }), 1u));
 	}
 
 	std::uint32_t cfg_ipt::get_ipt_tcp_connect_retries()
 	{
-		return cache_.get_cfg<std::uint32_t>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
+		return cache_.get_cfg<std::uint32_t>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 			, sml::OBIS_TCP_CONNECT_RETRIES }), 3u);
 	}
 
 	bool cfg_ipt::has_ipt_ssl()
 	{
-		return cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
+		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 			, sml::OBIS_HAS_SSL_CONFIG }), false);
 	}
 
 	std::uint8_t cfg_ipt::get_ipt_master_index()
 	{
-		return cache_.get_cfg<std::uint8_t>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM }, "master"), 0u);
+		return cache_.get_cfg<std::uint8_t>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "master"), 0u);
 	}
 
 	ipt::master_record cfg_ipt::switch_ipt_redundancy()
@@ -65,7 +65,7 @@ namespace node
 		//
 		//	write back
 		//
-		cache_.set_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM }, "master"), idx);
+		cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "master"), idx);
 
 		//
 		//	return new master config record
@@ -105,7 +105,7 @@ namespace node
 
 	std::string cfg_ipt::get_ipt_host(std::uint8_t idx)
 	{
-		return cache_.get_cfg<std::string>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
+		return cache_.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
 			, sml::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) }), "");
 	}
@@ -113,7 +113,7 @@ namespace node
 	std::uint16_t cfg_ipt::get_ipt_port_target(std::uint8_t idx)
 	{
 		try {
-			auto const service = cache_.get_cfg<std::string>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
+			auto const service = cache_.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 				, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
 				, sml::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx) }), "26862");
 			return static_cast<std::uint16_t>(std::stoul(service));
@@ -125,35 +125,35 @@ namespace node
 
 	std::uint16_t cfg_ipt::get_ipt_port_source(std::uint8_t idx)
 	{
-		return cache_.get_cfg<std::uint16_t>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
+		return cache_.get_cfg<std::uint16_t>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
 			, sml::make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx) }), 0u);
 	}
 
 	std::string cfg_ipt::get_ipt_user(std::uint8_t idx)
 	{
-		return cache_.get_cfg<std::string>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
+		return cache_.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
 			, sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx) }), "");
 	}
 
 	std::string cfg_ipt::get_ipt_pwd(std::uint8_t idx)
 	{
-		return cache_.get_cfg<std::string>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
+		return cache_.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
 			, sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx) }), "");
 	}
 
 	bool cfg_ipt::is_ipt_scrambled(std::uint8_t idx)
 	{
-		return cache_.get_cfg(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
+		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx) }
 		, "scrambled"), false);
 	}
 
 	ipt::scramble_key cfg_ipt::get_ipt_sk(std::uint8_t idx)
 	{
-		auto const s = cache_.get_cfg<std::string>(build_cfg_key({ sml::OBIS_CODE_ROOT_IPT_PARAM
+		auto const s = cache_.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx) }
 		, "sk"), "0102030405060708090001020304050607080900010203040506070809000001");
 
