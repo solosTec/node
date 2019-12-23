@@ -1,0 +1,182 @@
+﻿/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2019 Sylko Olzscher
+ *
+ */
+
+#include "config_data_collector.h"
+#include "../cache.h"
+
+#include <smf/sml/protocol/generator.h>
+#include <smf/sml/obis_db.h>
+#include <smf/sml/srv_id_io.h>
+
+#include <cyng/numeric_cast.hpp>
+#include <cyng/buffer_cast.h>
+//#include <cyng/io/io_buffer.h>
+
+namespace node
+{
+	namespace sml
+	{
+		config_data_collector::config_data_collector(cyng::logging::log_ptr logger
+			, res_generator& sml_gen
+			, cache& cfg)
+		: logger_(logger)
+			, sml_gen_(sml_gen)
+			, cache_(cfg)
+		{}
+
+		void config_data_collector::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
+		{
+			//	81 81 C7 86 20 FF
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_DATA_COLLECTOR);
+
+			cache_.read_table("_DataCollector", [&](cyng::store::table const* tbl_dc) {
+
+				std::uint8_t nr{ 1 };	//	data collector index
+				tbl_dc->loop([&](cyng::table::record const& rec) {
+
+					auto const id = cyng::to_buffer(rec["serverID"]);
+					if (id == srv_id) {
+
+						nr = cyng::numeric_cast<std::uint8_t>(rec["nr"], nr);
+
+						//
+						//	81 81 C7 86 21 FF - active
+						//
+						append_get_proc_response(msg, {
+							OBIS_ROOT_DATA_COLLECTOR,
+							make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
+							OBIS_DATA_COLLECTOR_ACTIVE
+							}, make_value(rec["active"]));
+
+						//
+						//	81 81 C7 86 22 FF - Einträge
+						//
+						append_get_proc_response(msg, {
+							OBIS_ROOT_DATA_COLLECTOR,
+							make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
+							OBIS_DATA_COLLECTOR_SIZE
+							}, make_value(rec["maxSize"]));
+
+						//
+						//	81 81 C7 87 81 FF  - Registerperiode (seconds)
+						//
+						append_get_proc_response(msg, {
+							OBIS_ROOT_DATA_COLLECTOR,
+							make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
+							OBIS_DATA_REGISTER_PERIOD
+							}, make_value(rec["regPeriod"]));
+
+						//
+						//	81 81 C7 8A 83 FF - profile
+						//
+						append_get_proc_response(msg, {
+							OBIS_ROOT_DATA_COLLECTOR,
+							make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
+							OBIS_PROFILE
+							}, make_value(rec["profile"]));
+
+						//
+						//	collect all available OBIS codes for this meter from "readout" table
+						//
+						std::uint8_t idx{ 1 };	//	OBIS counter
+						//tbl_ro->loop([&](cyng::table::record const& rec) {
+
+						//	//
+						//	//	extract server/meter ID from record
+						//	//
+						//	cyng::buffer_t srv;
+						//	srv = cyng::value_cast(rec["serverID"], srv);
+
+						//	//
+						//	//	ToDo: use only matching records
+						//	//
+						//	if (srv == srv_id) {
+						//	}
+
+						//	obis const code(cyng::value_cast(rec["OBIS"], srv));
+
+						//	append_get_proc_response(msg, {
+						//		OBIS_ROOT_DATA_COLLECTOR,
+						//		make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
+						//		OBIS_PROFILE,
+						//		make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, idx)
+						//		}, make_value(code));
+
+						//	//
+						//	//	update OBIS counter
+						//	//
+						//	++idx;
+
+						//	return true;	//	continue
+						//	});
+
+						//
+						//	update data collector index
+						//
+						++nr;
+					}
+					return true;	//	continue
+					});
+
+				});
+
+			//
+			//	append to message queue
+			//
+			sml_gen_.append(std::move(msg));
+
+		}
+
+		void config_data_collector::set_param(cyng::buffer_t srv_id
+			, std::uint8_t nr
+			, cyng::param_map_t&& params)
+		{
+
+			cache_.write_table("_DataCollector", [&](cyng::store::table* tbl) {
+
+				auto const key = cyng::table::key_generator(srv_id, nr);
+				auto const rec = tbl->lookup(key);
+				if (rec.empty()) {
+					insert_data_collector(tbl, key, params, cache_.get_tag());
+				}
+				else {
+					update_data_collector(tbl, key, params, cache_.get_tag());
+				}
+			});
+		}
+
+		void insert_data_collector(cyng::store::table* tbl, cyng::table::key_type const& key, cyng::param_map_t const& params, boost::uuids::uuid source)
+		{
+			//	[19122321172417116-2,8181C78620FF 8181C7862001,01A815743145040102,operator,operator,("8181C7862001":%(("8181C78621FF":true),("8181C78622FF":64),("8181C78781FF":0),("8181C78A23FF":%(("8181C78A2301":070003010001),("8181C78A2302":0700030100FF))),("8181C78A83FF":8181C78611FF)))]
+
+			//%(("8181C78621FF":true),("8181C78622FF":64),("8181C78781FF":0),("8181C78A23FF":%(("8181C78A2301":070003010001),("8181C78A2302":0700030100FF))),("8181C78A83FF":8181C78611FF))
+
+			tbl->insert(key
+				, cyng::table::data_generator(lookup(params, OBIS_PROFILE), lookup(params, OBIS_DATA_COLLECTOR_ACTIVE), lookup(params, OBIS_DATA_COLLECTOR_SIZE), lookup(params, OBIS_DATA_REGISTER_PERIOD))
+				, 0u
+				, source);
+
+		}
+
+		void update_data_collector(cyng::store::table*, cyng::table::key_type const& key, cyng::param_map_t const& params, boost::uuids::uuid source)
+		{
+
+		}
+
+		cyng::object lookup(cyng::param_map_t const& params, obis code)
+		{
+			auto const pos = params.find(code.to_str());
+			return (pos != params.end())
+				? pos->second
+				: cyng::make_object()
+				;
+		}
+
+
+	}	//	sml
+}
+

@@ -246,7 +246,7 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, C7, 86, 21, FF, DATA_COLLECTOR_ACTIVE);	//	true/false
 		OBIS_CODE_DEFINITION(81, 81, C7, 86, 22, FF, DATA_COLLECTOR_SIZE);		//	max. table size
 		OBIS_CODE_DEFINITION(81, 81, C7, 86, 04, FF, TIME_REFERENCE);	//	[u8] 0 == UTC, 1 == UTC + time zone, 2 == local time
-		OBIS_CODE_DEFINITION(81, 81, C7, 87, 81, FF, DATA_COLLECTOR_PERIOD);	//	 (u32) register period in seconds (0 == event driven)
+		OBIS_CODE_DEFINITION(81, 81, C7, 87, 81, FF, DATA_REGISTER_PERIOD);	//	 (u32) register period in seconds (0 == event driven)
 		OBIS_CODE_DEFINITION(81, 81, C7, 88, 01, FF, ROOT_NTP);	//	NTP configuration
 		OBIS_CODE_DEFINITION(81, 81, C7, 88, 02, FF, CODE_NTP_SERVER);	//	List of NTP servers
 		OBIS_CODE_DEFINITION(81, 81, C7, 88, 03, FF, CODE_NTP_PORT);	//	[u16] NTP port (123)

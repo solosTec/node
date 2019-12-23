@@ -871,6 +871,14 @@ namespace node
 				init_config_record(s, sml::OBIS_OBISLOG_INTERVAL.to_str(), cyng::make_minutes(val));
 			}
 
+			//
+			//	shifting storage time in seconds (affects all meters)
+			//
+			{
+				auto const val = cyng::numeric_cast<std::int32_t>(dom.get(sml::OBIS_STORAGE_TIME_SHIFT.to_str()), 0);
+				init_config_record(s, sml::OBIS_STORAGE_TIME_SHIFT.to_str(), cyng::make_object(val));
+			}
+
 			{
 
 				//

@@ -809,7 +809,7 @@ namespace node
 					append_get_proc_response(msg, {
 						OBIS_ROOT_DATA_COLLECTOR,
 						make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
-						OBIS_DATA_COLLECTOR_PERIOD
+						OBIS_DATA_REGISTER_PERIOD
 						}, make_value(rec["period"]));
 
 					//

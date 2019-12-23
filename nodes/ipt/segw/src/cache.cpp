@@ -342,12 +342,12 @@ namespace node
 			, 0		//	unit
 			}),
 
-				//
-				//	Transaction ID
-				//	example: "19041816034914837-2"
-				//	Server ID
-				//	example:  01 EC 4D 01 00 00 10 3C 02
-				//
+			//
+			//	Transaction ID
+			//	example: "19041816034914837-2"
+			//	Server ID
+			//	example:  01 EC 4D 01 00 00 10 3C 02
+			//
 			cyng::table::make_meta_table<1, 3>("_trx",
 			{ "trx"		//	transaction ID
 			//	-- body
@@ -366,7 +366,38 @@ namespace node
 			, 24	//	OBIS
 			, 9		//	serverID
 			, 32	//	msg
+			}),
+
+			//
+			//	Controls which data are stored.
+			//	81 81 C7 86 20 FF - OBIS_ROOT_DATA_COLLECTOR
+			//
+			cyng::table::make_meta_table<2, 4>("_DataCollector",
+			{ "serverID"	//	server/meter/sensor ID
+			, "nr"			//	position/number - starts with 1
+							//	-- body
+			, "profile"		//	[OBIS] type 1min, 15min, 1h, ... (OBIS_PROFILE)
+			, "active"		//	[bool] turned on/off (OBIS_DATA_COLLECTOR_ACTIVE)
+			, "maxSize"		//	[u32] max entry count (OBIS_DATA_COLLECTOR_SIZE)
+			, "regPeriod"	//	[seconds] register period - if 0, recording is event-driven (OBIS_DATA_REGISTER_PERIOD)
+			},
+			{ cyng::TC_BUFFER		//	serverID
+			, cyng::TC_UINT8		//	nr
+									//	-- body
+			, cyng::TC_BUFFER		//	profile
+			, cyng::TC_BOOL			//	active
+			, cyng::TC_UINT16		//	maxSize
+			, cyng::TC_SECOND		//	regPeriod
+			},
+			{ 9		//	serverID
+			, 0		//	nr
+					//	-- body
+			, 24	//	profile
+			, 0		//	active
+			, 0		//	maxSize
+			, 0		//	regPeriod
 			})
+
 		};
 
 		return vec;

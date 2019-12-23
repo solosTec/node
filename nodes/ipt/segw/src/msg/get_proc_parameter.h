@@ -31,6 +31,7 @@ namespace node
 		 */
 		class res_generator;
 		class config_sensor_params;
+		class config_data_collector;
 		class get_proc_parameter
 		{
 		public:
@@ -39,7 +40,8 @@ namespace node
 				, cache& c
 				, storage& db
 				, node::ipt::config_ipt&
-				, config_sensor_params&);
+				, config_sensor_params&
+				, config_data_collector&);
 
 			void generate_response(obis code
 				, std::string trx
@@ -59,7 +61,6 @@ namespace node
 			void code_root_gsm(std::string trx, cyng::buffer_t srv_id);
 			void code_root_gprs_param(std::string trx, cyng::buffer_t srv_id);
 			void code_root_ipt_state(std::string trx, cyng::buffer_t srv_id);
-			void code_root_ipt_param(std::string trx, cyng::buffer_t srv_id);
 			void code_root_w_mbus_status(std::string trx, cyng::buffer_t srv_id);
 			void code_if_wmbus(std::string trx, cyng::buffer_t srv_id);
 			void code_root_lan_dsl(std::string trx, cyng::buffer_t srv_id);
@@ -68,7 +69,6 @@ namespace node
 			void code_root_active_devices(std::string trx, cyng::buffer_t srv_id);
 			void code_root_visible_devices(std::string trx, cyng::buffer_t srv_id);
 			void code_root_device_info(std::string trx, cyng::buffer_t srv_id);
-			void code_root_data_collector(std::string trx, cyng::buffer_t srv_id);
 			void code_if_1107(std::string trx, cyng::buffer_t srv_id);
 			void storage_time_shift(std::string trx, cyng::buffer_t srv_id);
 			void push_operations(std::string trx, cyng::buffer_t srv_id);
@@ -97,6 +97,7 @@ namespace node
 
 			node::ipt::config_ipt&	config_ipt_;
 			config_sensor_params& config_sensor_params_;
+			config_data_collector& config_data_collector_;
 
 		};
 	}	//	sml

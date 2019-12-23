@@ -8,6 +8,7 @@
 #include "get_proc_parameter.h"
 #include "config_ipt.h"
 #include "config_sensor_params.h"
+#include "config_data_collector.h"
 #include "../segw.h"
 #include "../cache.h"
 #include "../storage.h"
@@ -39,13 +40,15 @@ namespace node
 			, cache& cfg
 			, storage& db
 			, node::ipt::config_ipt& config_ipt
-			, config_sensor_params& config_sensor_params)
+			, config_sensor_params& config_sensor_params
+			, config_data_collector& config_data_collector)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
 			, storage_(db)
 			, config_ipt_(config_ipt)
 			, config_sensor_params_(config_sensor_params)
+			, config_data_collector_(config_data_collector)
 		{}
 
 		void get_proc_parameter::generate_response(obis code
@@ -89,7 +92,7 @@ namespace node
 				code_root_ipt_state(trx, srv_id);
 				break;
 			case CODE_ROOT_IPT_PARAM:	//	0x81490D0700FF
-				code_root_ipt_param(trx, srv_id);
+				config_ipt_.get_proc_params(trx, srv_id);
 				break;
 			case CODE_ROOT_W_MBUS_STATUS:	//	0x81060F0600FF
 				code_root_w_mbus_status(trx, srv_id);
@@ -119,7 +122,7 @@ namespace node
 				config_sensor_params_.get_proc_params(trx, srv_id);
 				break;
 			case CODE_ROOT_DATA_COLLECTOR:	//	 0x8181C78620FF (Datenspiegel)
-				code_root_data_collector(trx, srv_id);
+				config_data_collector_.get_proc_params(trx, srv_id);
 				break;
 			case CODE_IF_1107:	//	0x8181C79300FF
 				code_if_1107(trx, srv_id);
@@ -281,14 +284,6 @@ namespace node
 				, srv_id
 				, rep
 				, lep);
-		}
-
-		void get_proc_parameter::code_root_ipt_param(std::string trx, cyng::buffer_t srv_id)
-		{
-			//
-			//	IP-T access parameters
-			//
-			config_ipt_.get_proc_params(trx, srv_id);
 		}
 
 		void get_proc_parameter::code_root_w_mbus_status(std::string trx, cyng::buffer_t srv_id)
@@ -611,106 +606,6 @@ namespace node
 			sml_gen_.empty(trx, srv_id, OBIS_ROOT_DEVICE_INFO);
 		}
 
-		void get_proc_parameter::code_root_data_collector(std::string trx, cyng::buffer_t srv_id)
-		{
-			//
-			//	Comes up when clicked "Datenspiegel"
-			//
-			//	81 81 C7 86 20 FF - table "data.collector"
-			//
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_DATA_COLLECTOR);
-
-			cache_.read_tables("data.collector", "readout", [&](cyng::store::table const* tbl_dc, cyng::store::table const* tbl_ro) {
-
-				std::uint8_t nr{ 1 };	//	data collector index
-				tbl_dc->loop([&](cyng::table::record const& rec) {
-
-					//
-					//	81 81 C7 86 21 FF - active
-					//
-					append_get_proc_response(msg, {
-						OBIS_ROOT_DATA_COLLECTOR,
-						make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
-						OBIS_DATA_COLLECTOR_ACTIVE
-						}, make_value(rec["active"]));
-
-					//
-					//	81 81 C7 86 22 FF - Einträge
-					//
-					append_get_proc_response(msg, {
-						OBIS_ROOT_DATA_COLLECTOR,
-						make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
-						OBIS_DATA_COLLECTOR_SIZE
-						}, make_value(rec["maxSize"]));
-
-					//
-					//	81 81 C7 87 81 FF  - Registerperiode (seconds)
-					//
-					append_get_proc_response(msg, {
-						OBIS_ROOT_DATA_COLLECTOR,
-						make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
-						OBIS_DATA_COLLECTOR_PERIOD
-						}, make_value(rec["period"]));
-
-					//
-					//	81 81 C7 8A 83 FF - profile
-					//
-					append_get_proc_response(msg, {
-						OBIS_ROOT_DATA_COLLECTOR,
-						make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
-						OBIS_PROFILE
-						}, make_value(rec["period"]));
-
-					//
-					//	collect all available OBIS codes for this meter from "readout" table
-					//
-					std::uint8_t idx{ 1 };	//	OBIS counter
-					tbl_ro->loop([&](cyng::table::record const& rec) {
-
-						//
-						//	extract server/meter ID from record
-						//
-						cyng::buffer_t srv;
-						srv = cyng::value_cast(rec["serverID"], srv);
-
-						//
-						//	ToDo: use only matching records
-						//
-						if (srv == srv_id) {
-						}
-
-						obis const code(cyng::value_cast(rec["OBIS"], srv));
-
-						append_get_proc_response(msg, {
-							OBIS_ROOT_DATA_COLLECTOR,
-							make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
-							OBIS_PROFILE,
-							make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, idx)
-							}, make_value(code));
-
-						//
-						//	update OBIS counter
-						//
-						++idx;
-
-						return true;	//	continue
-					});
-
-					//
-					//	update data collector index
-					//
-					++nr;
-					return true;	//	continue
-				});
-
-			});
-
-			//
-			//	append to message queue
-			//
-			sml_gen_.append(std::move(msg));
-
-		}
 
 		void get_proc_parameter::code_if_1107(std::string trx, cyng::buffer_t srv_id)
 		{
@@ -720,6 +615,7 @@ namespace node
 			//	Configuration of IEC interface (wired)
 			//	deliver IEC 62056-21 (aka interface 1107) configuration and all defined meters
 			//
+			/*
 			cache_.read_tables("_Cfg", "iec62056-21-devices", [&](cyng::store::table const* tbl_cfg, cyng::store::table const* tbl_dev) {
 
 				CYNG_LOG_INFO(logger_, tbl_dev->size() << " IEC devices");
@@ -877,7 +773,7 @@ namespace node
 					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_MAX_VARIATION.to_str())));
 
 			});
-
+			*/
 			//
 			//	append to message queue
 			//
@@ -889,10 +785,11 @@ namespace node
 		{
 			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_STORAGE_TIME_SHIFT);
 
+			auto sts = cache_.get_cfg<std::int32_t>(sml::OBIS_STORAGE_TIME_SHIFT.to_str(), 0);
 			append_get_proc_response(msg, {
 				OBIS_STORAGE_TIME_SHIFT,
 				OBIS_CODE(00, 80, 80, 00, 01, FF)
-				}, make_value(0u));
+				}, make_value(sts));
 
 			//
 			//	append to message queue

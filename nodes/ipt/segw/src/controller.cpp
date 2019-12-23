@@ -95,6 +95,7 @@ namespace node
 				, cyng::param_factory("gpio-list", cyng::vector_factory({46, 47, 50, 53}))
 				, cyng::param_factory(sml::OBIS_OBISLOG_INTERVAL.to_str(), 15)	//	cycle time in minutes OBISLOG_INTERVAL
 				, cyng::param_factory("readout-interval", 121)	//	cycle time in seconds
+				, cyng::param_factory(sml::OBIS_STORAGE_TIME_SHIFT.to_str(), 0)	//	shifting storage time in seconds (affects all meters)
 
 				, cyng::param_factory("DB", cyng::tuple_factory(
 					cyng::param_factory("type", "SQLite"),
