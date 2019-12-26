@@ -37,8 +37,12 @@ namespace node
 				, cache& c);
 
 			void get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
+
 			void set_param(cyng::buffer_t srv_id
 				, std::uint8_t nr
+				, cyng::param_map_t&& params);
+
+			void clear_data_collector(cyng::buffer_t srv_id
 				, cyng::param_map_t&& params);
 
 		private:
@@ -68,8 +72,6 @@ namespace node
 			, cyng::table::key_type const&
 			, cyng::param_map_t const& params
 			, boost::uuids::uuid tag);
-
-		cyng::object lookup(cyng::param_map_t const&, obis);
 
 	}	//	sml
 }

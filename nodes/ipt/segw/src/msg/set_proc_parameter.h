@@ -55,22 +55,6 @@ namespace node
 				, std::string pwd
 				, cyng::param_t	param);
 
-			void code_root_sensor_params(obis_path::const_iterator
-				, obis_path::const_iterator
-				, std::string trx
-				, cyng::buffer_t srv_id
-				, std::string user
-				, std::string pwd
-				, cyng::param_t	param);
-
-			void code_root_data_collector(obis_path::const_iterator
-				, obis_path::const_iterator
-				, std::string trx
-				, cyng::buffer_t srv_id
-				, std::string user
-				, std::string pwd
-				, cyng::param_t	param);
-
 			void storage_time_shift(obis_path::const_iterator
 				, obis_path::const_iterator
 				, std::string trx

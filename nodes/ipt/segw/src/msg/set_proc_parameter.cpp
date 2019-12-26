@@ -52,20 +52,25 @@ namespace node
 
 				auto pos = path.begin();
 				auto end = path.end();
+				obis const code(*pos);
+				++pos;
 
-				switch (pos->to_uint64()) {
+				switch (code.to_uint64()) {
 				case CODE_ROOT_IPT_PARAM:	//	IP-T (0x81490D0700FF)
-					if (pos != end)	_81490d0700ff(++pos, end, trx, srv_id, user, pwd, param);
+					if (pos != end)	_81490d0700ff(pos, end, trx, srv_id, user, pwd, param);
 					break;
 				case CODE_ROOT_SENSOR_PARAMS:	//	0x8181C78600FF
-					BOOST_ASSERT(pos != end);
-					code_root_sensor_params(++pos, end, trx, srv_id, user, pwd, param);
+					if (pos != end)	config_sensor_params_.set_param(*pos, srv_id, param);
 					break;
 				case CODE_ROOT_DATA_COLLECTOR:	//	 0x8181C78620FF (Datenspiegel)
-					code_root_data_collector(++pos, end, trx, srv_id, user, pwd, param);
+					BOOST_ASSERT(pos->to_str() == param.first);
+					if (pos != end)	config_data_collector_.set_param(srv_id, obis(*pos).get_data().at(obis::VG_STORAGE), cyng::to_param_map(param.second));
+					break;
+				case CODE_CLEAR_DATA_COLLECTOR:	//	8181C7838205
+					config_data_collector_.clear_data_collector(srv_id, cyng::to_param_map(param.second));
 					break;
 				case CODE_STORAGE_TIME_SHIFT:	//	0x0080800000FF
-					storage_time_shift(++pos, end, trx, srv_id, user, pwd, param);
+					storage_time_shift(pos, end, trx, srv_id, user, pwd, param);
 					break;
 				default:
 					CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request - unknown OBIS code "
@@ -105,44 +110,6 @@ namespace node
 					<< cyng::io::to_hex(pos->to_buffer()));
 				break;
 			}
-		}
-
-		void set_proc_parameter::code_root_sensor_params(obis_path::const_iterator pos
-			, obis_path::const_iterator end
-			, std::string trx
-			, cyng::buffer_t srv_id
-			, std::string user
-			, std::string pwd
-			, cyng::param_t	param)
-		{
-			BOOST_ASSERT(pos->to_str() == param.first);
-			//CYNG_LOG_DEBUG(logger_, "sml.set.proc.parameter.request <8181C78600FF> - sensor parameters "
-			//	<< param.first
-			//	<< " = "
-			//	<< cyng::io::to_str(param.second));
-
-			config_sensor_params_.set_param(*pos, srv_id, param);
-
-		}
-
-		void set_proc_parameter::code_root_data_collector(obis_path::const_iterator pos
-			, obis_path::const_iterator end
-			, std::string trx
-			, cyng::buffer_t srv_id
-			, std::string user
-			, std::string pwd
-			, cyng::param_t	param)
-		{
-			BOOST_ASSERT(pos->to_str() == param.first);
-			obis const code(*pos);
-			//CYNG_LOG_DEBUG(logger_, "sml.set.proc.parameter.request <8181C78620FF> - data collector "
-			//	<< param.first
-			//	<< " "
-			//	<< code.to_str()
-			//	<< " = "
-			//	<< cyng::io::to_str(param.second));
-
-			config_data_collector_.set_param(srv_id, code.get_data().at(obis::VG_STORAGE), cyng::to_param_map(param.second));
 		}
 
 		void set_proc_parameter::storage_time_shift(obis_path::const_iterator
