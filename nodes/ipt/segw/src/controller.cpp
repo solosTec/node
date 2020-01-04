@@ -97,6 +97,11 @@ namespace node
 				, cyng::param_factory("readout-interval", 121)	//	cycle time in seconds
 				, cyng::param_factory(sml::OBIS_STORAGE_TIME_SHIFT.to_str(), 0)	//	shifting storage time in seconds (affects all meters)
 
+				, cyng::param_factory("SSL", cyng::tuple_factory(
+					cyng::param_factory("cert", "client.crt"),
+					cyng::param_factory("dh", "dh2048.pem")
+				))
+
 				, cyng::param_factory("DB", cyng::tuple_factory(
 					cyng::param_factory("type", "SQLite"),
 					cyng::param_factory("file-name", (cwd / "segw.database").string()),

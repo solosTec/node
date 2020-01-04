@@ -442,6 +442,32 @@ namespace node
 				, 32	//	aes
 				, 32	//	user
 				, 32	//	pwd
+				}),
+
+			cyng::table::make_meta_table_gen<2, 4>("TDataCollector",
+				{ "serverID"	//	server/meter/sensor ID
+				, "nr"			//	position/number - starts with 1
+								//	-- body
+				, "profile"		//	[OBIS] type 1min, 15min, 1h, ... (OBIS_PROFILE)
+				, "active"		//	[bool] turned on/off (OBIS_DATA_COLLECTOR_ACTIVE)
+				, "maxSize"		//	[u32] max entry count (OBIS_DATA_COLLECTOR_SIZE)
+				, "regPeriod"	//	[seconds] register period - if 0, recording is event-driven (OBIS_DATA_REGISTER_PERIOD)
+				},
+				{ cyng::TC_BUFFER		//	serverID
+				, cyng::TC_UINT8		//	nr
+										//	-- body
+				, cyng::TC_BUFFER		//	profile
+				, cyng::TC_BOOL			//	active
+				, cyng::TC_UINT16		//	maxSize
+				, cyng::TC_SECOND		//	regPeriod
+				},
+				{ 9		//	serverID
+				, 0		//	nr
+						//	-- body
+				, 24	//	profile
+				, 0		//	active
+				, 0		//	maxSize
+				, 0		//	regPeriod
 				})
 
 		};
@@ -521,7 +547,12 @@ namespace node
 				;
 #endif
 
-			//auto meta_db = create_storage_meta_data();
+			//
+			//	start transaction
+			//
+			s.begin();
+
+
 			for (auto const& tbl : storage::mm_)
 			{
 #ifdef _DEBUG
@@ -544,6 +575,12 @@ namespace node
 #endif
 				s.execute(sql);
 			}
+
+			//
+			//	commit
+			//
+			s.commit();
+
 			return true;
 		}
 		else {
