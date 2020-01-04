@@ -62,6 +62,7 @@ namespace node
 		 */
 		void load_configuration();
 		void load_devices_mbus();
+		void load_data_collectors();
 
 		/**
 		 * Tracking all changes in the cache tables.

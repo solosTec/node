@@ -10,12 +10,13 @@
 
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/obis_io.h>
 #include <smf/sml/srv_id_io.h>
 
 #include <cyng/numeric_cast.hpp>
 #include <cyng/buffer_cast.h>
-//#include <cyng/io/io_buffer.h>
-
+#include <cyng/set_cast.h>
+ 
 namespace node
 {
 	namespace sml
@@ -85,39 +86,29 @@ namespace node
 							}, make_value(rec["profile"]));
 
 						//
-						//	collect all available OBIS codes for this meter from "readout" table
+						//	collect all available OBIS codes for this meter
 						//
+
 						std::uint8_t idx{ 1 };	//	OBIS counter
-						//tbl_ro->loop([&](cyng::table::record const& rec) {
+						//
+						//	81 81 C7 8A 23 FF - entries
+						//
+						auto const entries = cyng::value_cast<std::string>(rec["entries"], "");
+						auto const vec = to_obis_path(entries, ':');
+						for (auto const& code : vec) {
 
-						//	//
-						//	//	extract server/meter ID from record
-						//	//
-						//	cyng::buffer_t srv;
-						//	srv = cyng::value_cast(rec["serverID"], srv);
+							append_get_proc_response(msg, {
+								OBIS_ROOT_DATA_COLLECTOR,
+								make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
+								OBIS_PROFILE,
+								make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, idx)
+								}, make_value(code));
 
-						//	//
-						//	//	ToDo: use only matching records
-						//	//
-						//	if (srv == srv_id) {
-						//	}
-
-						//	obis const code(cyng::value_cast(rec["OBIS"], srv));
-
-						//	append_get_proc_response(msg, {
-						//		OBIS_ROOT_DATA_COLLECTOR,
-						//		make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
-						//		OBIS_PROFILE,
-						//		make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, idx)
-						//		}, make_value(code));
-
-						//	//
-						//	//	update OBIS counter
-						//	//
-						//	++idx;
-
-						//	return true;	//	continue
-						//	});
+							//
+							//	update OBIS counter
+							//
+							++idx;
+						}
 
 						//
 						//	update data collector index
@@ -186,8 +177,11 @@ namespace node
 
 			//%(("8181C78621FF":true),("8181C78622FF":64),("8181C78781FF":0),("8181C78A23FF":%(("8181C78A2301":070003010001),("8181C78A2302":0700030100FF))),("8181C78A83FF":8181C78611FF))
 
+			auto const obj = lookup(params, OBIS_DATA_COLLECTOR_OBIS);
+			
+
 			tbl->insert(key
-				, cyng::table::data_generator(lookup(params, OBIS_PROFILE), lookup(params, OBIS_DATA_COLLECTOR_ACTIVE), lookup(params, OBIS_DATA_COLLECTOR_SIZE), lookup(params, OBIS_DATA_REGISTER_PERIOD))
+				, cyng::table::data_generator(lookup(params, OBIS_PROFILE), lookup(params, OBIS_DATA_COLLECTOR_ACTIVE), lookup(params, OBIS_DATA_COLLECTOR_SIZE), lookup(params, OBIS_DATA_REGISTER_PERIOD), get_entries(obj))
 				, 0u
 				, source);
 
@@ -205,6 +199,11 @@ namespace node
 				else if (boost::algorithm::equals(param.first, OBIS_DATA_REGISTER_PERIOD.to_str())) {
 					tbl->modify(key, cyng::param_t("regPeriod", param.second), source);
 				}
+				else if (boost::algorithm::equals(param.first, OBIS_DATA_COLLECTOR_OBIS.to_str())) {
+					//
+					//	update entries
+					//
+				}
 			}
 		}
 
@@ -215,6 +214,16 @@ namespace node
 				? pos->second
 				: cyng::make_object()
 				;
+		}
+
+		std::string get_entries(cyng::object obj)
+		{
+			obis_path vec;
+			auto const params = cyng::to_param_map(obj);
+			std::transform(params.begin(), params.end(), std::back_inserter(vec), [](cyng::param_t const& p) {
+				return obis(cyng::to_buffer(p.second));
+				});
+			return to_hex(vec, ':');
 		}
 
 

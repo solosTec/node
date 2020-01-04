@@ -444,7 +444,7 @@ namespace node
 				, 32	//	pwd
 				}),
 
-			cyng::table::make_meta_table_gen<2, 4>("TDataCollector",
+			cyng::table::make_meta_table_gen<2, 5>("TDataCollector",
 				{ "serverID"	//	server/meter/sensor ID
 				, "nr"			//	position/number - starts with 1
 								//	-- body
@@ -452,6 +452,7 @@ namespace node
 				, "active"		//	[bool] turned on/off (OBIS_DATA_COLLECTOR_ACTIVE)
 				, "maxSize"		//	[u32] max entry count (OBIS_DATA_COLLECTOR_SIZE)
 				, "regPeriod"	//	[seconds] register period - if 0, recording is event-driven (OBIS_DATA_REGISTER_PERIOD)
+				, "entries"		//	OBIS codes
 				},
 				{ cyng::TC_BUFFER		//	serverID
 				, cyng::TC_UINT8		//	nr
@@ -460,6 +461,7 @@ namespace node
 				, cyng::TC_BOOL			//	active
 				, cyng::TC_UINT16		//	maxSize
 				, cyng::TC_SECOND		//	regPeriod
+				, cyng::TC_STRING		//	entries
 				},
 				{ 9		//	serverID
 				, 0		//	nr
@@ -468,6 +470,7 @@ namespace node
 				, 0		//	active
 				, 0		//	maxSize
 				, 0		//	regPeriod
+				, 512	//	entries
 				})
 
 		};

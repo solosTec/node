@@ -55,7 +55,7 @@ namespace node
 
 		/**
 		 * Convert OBIS codes into hexadescimal representation
-		 * separated by a single SPACE.
+		 * separated by a single character (sep).
 		 */
 		std::string to_hex(obis_path const&, char sep);
 

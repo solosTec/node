@@ -72,6 +72,7 @@ namespace node
 			, cyng::table::key_type const&
 			, cyng::param_map_t const& params
 			, boost::uuids::uuid tag);
+		std::string get_entries(cyng::object);
 
 	}	//	sml
 }

@@ -48,6 +48,7 @@ namespace node
 		//
 		load_configuration();
 		load_devices_mbus();
+		load_data_collectors();
 
 		//
 		//	register as listener
@@ -136,6 +137,32 @@ namespace node
 				return true;	//	continue
 			});
 		});
+	}
+
+	void bridge::load_data_collectors()
+	{
+		cache_.write_table("_DataCollector", [&](cyng::store::table* tbl) {
+			storage_.loop("TDataCollector", [&](cyng::table::record const& rec)->bool {
+
+				if (tbl->insert(rec.key(), rec.data(), rec.get_generation(), cache_.get_tag())) {
+
+					cyng::buffer_t srv;
+					srv = cyng::value_cast(rec.key().at(0), srv);
+					CYNG_LOG_TRACE(logger_, "load data collector "
+						<< sml::from_server_id(srv));
+				}
+				else {
+
+					CYNG_LOG_ERROR(logger_, "insert into table TDataCollector failed - key: "
+						<< cyng::io::to_str(rec.key())
+						<< ", body: "
+						<< cyng::io::to_str(rec.data()));
+
+				}
+
+				return true;	//	continue
+				});
+			});
 	}
 
 	void bridge::power_return()
