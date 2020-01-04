@@ -198,6 +198,7 @@ namespace node
 
 			}
 		}
+#ifdef _DEBUG
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_Readout")) {
 
 			CYNG_LOG_TRACE(logger_, "readout complete - key: "
@@ -205,6 +206,7 @@ namespace node
 				<< ", body: "
 				<< cyng::io::to_str(body));
 		}
+#endif
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_ReadoutData")) {
 
 			CYNG_LOG_TRACE(logger_, "readout data - key: "
@@ -212,7 +214,21 @@ namespace node
 				<< ", body: "
 				<< cyng::io::to_str(body));
 		}
-		
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataCollector")) {
+
+			if (!storage_.insert("TDataCollector"
+				, key
+				, body
+				, gen
+				, source)) {
+
+				CYNG_LOG_ERROR(logger_, "Insert into table TDataCollector failed - key: "
+					<< cyng::io::to_str(key)
+					<< ", body: "
+					<< cyng::io::to_str(body));
+
+			}
+		}
 	}
 
 	void bridge::sig_del(cyng::store::table const* tbl
@@ -226,6 +242,11 @@ namespace node
 
 			storage_.remove("TCfg", key, source);
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataCollector")) {
+
+			storage_.remove("TDataCollector", key, source);
+		}
+
 	}
 
 	void bridge::sig_clr(cyng::store::table const*, boost::uuids::uuid)
@@ -296,6 +317,14 @@ namespace node
 				, tbl->meta().to_param(attr)
 				, gen);
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataCollector")) {
+
+			storage_.update("TDataCollector"
+				, key
+				, tbl->meta().to_param(attr)
+				, gen);
+		}
+
 	}
 
 	void bridge::connect_to_cache()
@@ -326,6 +355,13 @@ namespace node
 			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 #endif
+
+		l = cache_.db_.get_listener("_DataCollector"
+			, std::bind(&bridge::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+
 	}
 
 	void bridge::start_task_obislog(cyng::async::mux& mux)
