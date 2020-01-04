@@ -422,6 +422,15 @@ namespace node
 			tpl = cyng::value_cast(dom.get("DB"), tpl);
 			auto db_cfg = cyng::to_param_map(tpl);
 
+			std::cout
+				<< "read configuration file "
+				<< json_path_
+				<< " with index ["
+				<< config_index_
+				<< "] into database "
+				<< cyng::io::to_str(db_cfg)
+				<< std::endl;
+
 			return (transfer_config_to_storage(cyng::to_param_map(tpl), dom))
 				? EXIT_SUCCESS
 				: EXIT_FAILURE
