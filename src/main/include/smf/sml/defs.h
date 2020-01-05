@@ -59,6 +59,15 @@ namespace node
 			BODY_SET_PROC_PARAMETER_RESPONSE = 0x00000601,
 			BODY_GET_LIST_REQUEST = 0x00000700,
 			BODY_GET_LIST_RESPONSE = 0x00000701,
+
+			//	since v1.04
+			BODY_GET_COSEM_REQUEST = 0x00000800, //!<	SML_GETCOSEM.REQ
+			BODY_GET_COSEM_RESPONSE = 0x00000801, //!<	SML_GETCOSEM.RES
+			BODY_SET_COSEM_REQUEST = 0x00000900, //!<	SML_SETCOSEM.REQ
+			BODY_SET_COSEM_RESPONSE = 0x00000901, //!<	SML_SETCOSEM.RES
+			BODY_ACTION_COSEM_REQUEST = 0x00000A00, //!<	SML_ACTIONCOSEM.REQ
+			BODY_ACTION_COSEM_RESPONSE = 0x00000A01, //!<	SML_ACTIONCOSEM.RES
+
 			BODY_ATTENTION_RESPONSE = 0x0000FF01,
 			BODY_UNKNOWN,
 		};
@@ -83,6 +92,14 @@ namespace node
 				case BODY_SET_PROC_PARAMETER_RESPONSE:	return "SetProcParameterResponse";
 				case BODY_GET_LIST_REQUEST:	return "GetListRequest";
 				case BODY_GET_LIST_RESPONSE:	return "GetListResponse";
+
+				case BODY_GET_COSEM_REQUEST:	return "GetCOSEMRequest";
+				case BODY_GET_COSEM_RESPONSE:	return "GetCOSEMResponse";
+				case BODY_SET_COSEM_REQUEST:	return "SetCOSEMRequest";
+				case BODY_SET_COSEM_RESPONSE:	return "SetCOSEMResponse";
+				case BODY_ACTION_COSEM_REQUEST: return "ActionCOSEMRequest";
+				case BODY_ACTION_COSEM_RESPONSE: return "ActionCOSEMResponse";
+
 				case BODY_ATTENTION_RESPONSE:	return "Attention";
 				default:
 					break;
@@ -116,6 +133,13 @@ namespace node
 
 				else if (boost::algorithm::equals(name, "GetListRequest"))	return BODY_GET_LIST_REQUEST;
 				else if (boost::algorithm::equals(name, "GetListResponse"))	return BODY_GET_LIST_RESPONSE;
+
+				else if (boost::algorithm::equals(name, "GetCOSEMRequest"))		return BODY_GET_COSEM_REQUEST;
+				else if (boost::algorithm::equals(name, "GetCOSEMResponse"))	return BODY_GET_COSEM_RESPONSE;
+				else if (boost::algorithm::equals(name, "SetCOSEMRequest"))		return BODY_SET_COSEM_REQUEST;
+				else if (boost::algorithm::equals(name, "SetCOSEMResponse"))	return BODY_SET_COSEM_RESPONSE;
+				else if (boost::algorithm::equals(name, "ActionCOSEMRequest"))	return BODY_ACTION_COSEM_REQUEST;
+				else if (boost::algorithm::equals(name, "ActionCOSEMResponse"))	return BODY_ACTION_COSEM_RESPONSE;
 
 				else if (boost::algorithm::equals(name, "Attention"))	return BODY_ATTENTION_RESPONSE;
 

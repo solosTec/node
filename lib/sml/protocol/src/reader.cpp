@@ -97,6 +97,13 @@ namespace node
 			 */
 			cyng::vector_t read_get_list_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
+			cyng::vector_t  read_get_cosem_request(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t  read_get_cosem_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t  read_set_cosem_request(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t  read_set_cosem_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t  read_action_cosem_request(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			cyng::vector_t  read_action_cosem_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+
 			/** @brief BODY_ATTENTION_RESPONSE (65281)
 			 */
 			cyng::vector_t read_attention_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
@@ -254,6 +261,20 @@ namespace node
 					return read_get_list_request(ro, tpl.begin(), tpl.end());
 				case BODY_GET_LIST_RESPONSE:
 					return read_get_list_response(ro, tpl.begin(), tpl.end());
+
+				case BODY_GET_COSEM_REQUEST:	
+					return read_get_cosem_request(ro, tpl.begin(), tpl.end());
+				case BODY_GET_COSEM_RESPONSE:
+					return read_get_cosem_response(ro, tpl.begin(), tpl.end());
+				case BODY_SET_COSEM_REQUEST:
+					return read_set_cosem_request(ro, tpl.begin(), tpl.end());
+				case BODY_SET_COSEM_RESPONSE:
+					return read_set_cosem_response(ro, tpl.begin(), tpl.end());
+				case BODY_ACTION_COSEM_REQUEST:
+					return read_action_cosem_request(ro, tpl.begin(), tpl.end());
+				case BODY_ACTION_COSEM_RESPONSE:
+					return read_action_cosem_response(ro, tpl.begin(), tpl.end());
+
 				case BODY_ATTENTION_RESPONSE:
 					return read_attention_response(ro, tpl.begin(), tpl.end());
 				default:
@@ -773,6 +794,309 @@ namespace node
 					, ro.values_
 					, ro.get_value("pk"));
 			}
+
+			cyng::vector_t  read_get_cosem_request(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+			{
+				std::size_t count = std::distance(pos, end);
+				BOOST_ASSERT_MSG(count == 8, "Get COSEM Request");
+				if (count != 8) return cyng::generate_invoke("log.msg.error", "Get COSEM Request", count);
+
+				//
+				//	clientId
+				//
+				auto const client_id = ro.read_client_id(*pos++);
+
+				//
+				//	serverId - meter ID (optional)
+				//
+				auto const server_id = ro.read_server_id(*pos++);
+
+				//
+				//	username
+				//
+				auto const user = read_string(*pos++);
+
+				//
+				//	password
+				//
+				auto const pwd = read_string(*pos++);
+
+				//
+				//	object name
+				//
+				obis const code = read_obis(*pos++);
+
+				//
+				//	classId
+				//
+				auto const class_id = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				//
+				//	classVersion
+				//
+				auto const class_version = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				auto const index_list = *pos++;
+
+				return cyng::generate_invoke("sml.get.cosem.request"
+					, ro.trx_
+					, ro.client_id_
+					, ro.server_id_
+					, user
+					, pwd
+					, code.to_buffer()
+					, class_id
+					, class_version
+					, index_list);
+
+			}
+
+			cyng::vector_t  read_get_cosem_response(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+			{
+				std::size_t count = std::distance(pos, end);
+				BOOST_ASSERT_MSG(count == 6, "Get COSEM Response");
+				if (count != 6) return cyng::generate_invoke("log.msg.error", "Get COSEM Response", count);
+
+				//
+				//	clientId
+				//
+				auto const client_id = ro.read_client_id(*pos++);
+
+				//
+				//	serverId - meter ID (optional)
+				//
+				auto const server_id = ro.read_server_id(*pos++);
+
+				//
+				//	object name
+				//
+				obis const code = read_obis(*pos++);
+
+				//
+				//	classId
+				//
+				auto const class_id = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				//
+				//	classVersion
+				//
+				auto const class_version = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				auto const attr_list = *pos++;
+
+				return cyng::generate_invoke("sml.get.cosem.response"
+					, ro.trx_
+					, ro.client_id_
+					, ro.server_id_
+					, code.to_buffer()
+					, class_id
+					, class_version
+					, attr_list);
+
+			}
+
+			cyng::vector_t  read_set_cosem_request(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+			{
+				std::size_t count = std::distance(pos, end);
+				BOOST_ASSERT_MSG(count == 8, "Set COSEM Request");
+				if (count != 8) return cyng::generate_invoke("log.msg.error", "Set COSEM Request", count);
+
+				//
+				//	clientId
+				//
+				auto const client_id = ro.read_client_id(*pos++);
+
+				//
+				//	serverId - meter ID (optional)
+				//
+				auto const server_id = ro.read_server_id(*pos++);
+
+				//
+				//	username
+				//
+				auto const user = read_string(*pos++);
+
+				//
+				//	password
+				//
+				auto const pwd = read_string(*pos++);
+
+				//
+				//	object name
+				//
+				obis const code = read_obis(*pos++);
+
+				//
+				//	classId
+				//
+				auto const class_id = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				//
+				//	classVersion
+				//
+				auto const class_version = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				auto const attr_list = *pos++;
+
+				return cyng::generate_invoke("sml.set.cosem.request"
+					, ro.trx_
+					, ro.client_id_
+					, ro.server_id_
+					, user
+					, pwd
+					, code.to_buffer()
+					, class_id
+					, class_version
+					, attr_list);
+			}
+
+			cyng::vector_t  read_set_cosem_response(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+			{
+				std::size_t count = std::distance(pos, end);
+				BOOST_ASSERT_MSG(count == 6, "Set COSEM Response");
+				if (count != 6) return cyng::generate_invoke("log.msg.error", "Set COSEM Response", count);
+
+				//
+				//	clientId
+				//
+				auto const client_id = ro.read_client_id(*pos++);
+
+				//
+				//	serverId - meter ID (optional)
+				//
+				auto const server_id = ro.read_server_id(*pos++);
+
+				//
+				//	object name
+				//
+				obis const code = read_obis(*pos++);
+
+				//
+				//	classId
+				//
+				auto const class_id = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				//
+				//	classVersion
+				//
+				auto const class_version = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				auto const attr_list = *pos++;
+
+				return cyng::generate_invoke("sml.set.cosem.response"
+					, ro.trx_
+					, ro.client_id_
+					, ro.server_id_
+					, code.to_buffer()
+					, class_id
+					, class_version
+					, attr_list);
+			}
+
+			cyng::vector_t  read_action_cosem_request(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+			{
+				std::size_t count = std::distance(pos, end);
+				BOOST_ASSERT_MSG(count == 9, "Action COSEM Request");
+				if (count != 9) return cyng::generate_invoke("log.msg.error", "Action COSEM Request", count);
+
+				//
+				//	clientId
+				//
+				auto const client_id = ro.read_client_id(*pos++);
+
+				//
+				//	serverId - meter ID (optional)
+				//
+				auto const server_id = ro.read_server_id(*pos++);
+
+				//
+				//	username
+				//
+				auto const user = read_string(*pos++);
+
+				//
+				//	password
+				//
+				auto const pwd = read_string(*pos++);
+
+				//
+				//	object name
+				//
+				obis const code = read_obis(*pos++);
+
+				//
+				//	classId
+				//
+				auto const class_id = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				//
+				//	classVersion
+				//
+				auto const class_version = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				//
+				//	serviceIndex
+				//
+				auto const service_index = cyng::numeric_cast<std::int8_t>(*pos++, 0);
+
+				auto const service_parameter = *pos++;
+
+				return cyng::generate_invoke("sml.action.cosem.request"
+					, ro.trx_
+					, ro.client_id_
+					, ro.server_id_
+					, user
+					, pwd
+					, code.to_buffer()
+					, class_id
+					, class_version
+					, service_index
+					, service_parameter);
+			}
+
+			cyng::vector_t  read_action_cosem_response(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+			{
+				std::size_t count = std::distance(pos, end);
+				BOOST_ASSERT_MSG(count == 6, "Action COSEM Response");
+				if (count != 6) return cyng::generate_invoke("log.msg.error", "Action COSEM Response", count);
+
+				//
+				//	clientId
+				//
+				auto const client_id = ro.read_client_id(*pos++);
+
+				//
+				//	serverId - meter ID (optional)
+				//
+				auto const server_id = ro.read_server_id(*pos++);
+
+				//
+				//	object name
+				//
+				obis const code = read_obis(*pos++);
+
+				//
+				//	classId
+				//
+				auto const class_id = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				//
+				//	classVersion
+				//
+				auto const class_version = cyng::numeric_cast<std::int16_t>(*pos++, 0);
+
+				auto const attr_list = *pos++;
+
+				return cyng::generate_invoke("sml.action.cosem.response"
+					, ro.trx_
+					, ro.client_id_
+					, ro.server_id_
+					, code.to_buffer()
+					, class_id
+					, class_version
+					, attr_list);
+			}
+
 
 			cyng::vector_t read_attention_response(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 			{

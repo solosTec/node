@@ -71,7 +71,7 @@ namespace node
 			void code_root_device_info(std::string trx, cyng::buffer_t srv_id);
 			void code_if_1107(std::string trx, cyng::buffer_t srv_id);
 			void storage_time_shift(std::string trx, cyng::buffer_t srv_id);
-			void push_operations(std::string trx, cyng::buffer_t srv_id);
+			//void push_operations(std::string trx, cyng::buffer_t srv_id);
 			void list_services(std::string trx, cyng::buffer_t srv_id);
 			void actuators(std::string trx, cyng::buffer_t srv_id);
 			void code_if_edl(std::string trx, cyng::buffer_t srv_id);

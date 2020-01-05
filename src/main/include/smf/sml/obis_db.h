@@ -140,6 +140,7 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 44, FF, PUSH_SOURCE_SENSOR_LIST);	//!< list of visible meters changed
 
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 81, FF, PUSH_SERVER_ID);
+		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 82, FF, PUSH_IDENTIFIERS);	//	list of identifiers of the values to be delivered by the push source
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 83, FF, PROFILE);	//	encode profiles
 
 		/**

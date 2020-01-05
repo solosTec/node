@@ -37,6 +37,7 @@ namespace node
 				, cache& c);
 
 			void get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
+			void get_push_operations(std::string trx, cyng::buffer_t srv_id) const;
 
 			void set_param(cyng::buffer_t srv_id
 				, std::uint8_t nr

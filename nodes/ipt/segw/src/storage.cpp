@@ -466,11 +466,44 @@ namespace node
 				{ 9		//	serverID
 				, 0		//	nr
 						//	-- body
-				, 24	//	profile
+				, 6		//	profile
 				, 0		//	active
 				, 0		//	maxSize
 				, 0		//	regPeriod
 				, 512	//	entries
+				}),
+
+			//
+			//	Push operations
+			//	81 81 C7 8A 01 FF - OBIS_PUSH_OPERATIONS
+			//
+			cyng::table::make_meta_table<2, 5>("TPushOps",
+				{ "serverID"	//	server/meter/sensor ID
+				, "nr"			//	position/number - starts with 1
+								//	-- body
+				, "interval"	//	[u32] (81 18 C7 8A 02 FF) push interval in seconds
+				, "delay"		//	[u32] (81 18 C7 8A 03 FF) push delay in seconds 
+				, "source"		//	[OBIS] (81 81 C7 8A 04 FF) push source
+				, "target"		//	[string] (81 47 17 07 00 FF) target name
+				, "service"		//	[OBIS] (81 49 00 00 10 FF) push service
+				},
+				{ cyng::TC_BUFFER		//	serverID
+				, cyng::TC_UINT8		//	nr
+										//	-- body
+				, cyng::TC_UINT32		//	interval
+				, cyng::TC_UINT32		//	delay
+				, cyng::TC_BUFFER		//	source
+				, cyng::TC_STRING		//	target
+				, cyng::TC_BUFFER		//	service
+				},
+				{ 9		//	serverID
+				, 0		//	nr
+						//	-- body
+				, 0		//	interval
+				, 0		//	delay
+				, 6		//	source
+				, 32	//	target
+				, 6		//	service
 				})
 
 		};

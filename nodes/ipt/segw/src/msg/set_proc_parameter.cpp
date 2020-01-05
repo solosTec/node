@@ -72,6 +72,10 @@ namespace node
 				case CODE_STORAGE_TIME_SHIFT:	//	0x0080800000FF
 					storage_time_shift(pos, end, trx, srv_id, user, pwd, param);
 					break;
+				case CODE_PUSH_OPERATIONS:	//	0x8181C78A01FF
+					BOOST_ASSERT(pos->to_str() == param.first);
+					//if (pos != end)	config_data_collector_.set_push_operations(*pos, srv_id, param);
+					break;
 				default:
 					CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request - unknown OBIS code "
 						<< to_string(*pos)

@@ -131,7 +131,7 @@ namespace node
 				storage_time_shift(trx, srv_id);
 				break;
 			case CODE_PUSH_OPERATIONS:	//	0x8181C78A01FF
-				push_operations(trx, srv_id);
+				config_data_collector_.get_push_operations(trx, srv_id);
 				break;
 			case CODE_LIST_SERVICES:	//	0x990000000004
 				list_services(trx, srv_id);
@@ -795,87 +795,6 @@ namespace node
 			//	append to message queue
 			//
 			sml_gen_.append(std::move(msg));
-		}
-
-		void get_proc_parameter::push_operations(std::string trx, cyng::buffer_t srv_id)
-		{
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_PUSH_OPERATIONS);
-
-			//
-			//	81 81 C7 8A 01 FF - service push
-			//	read from SQLite database table "TOpLog"
-			//
-			/*
-			storage_.loop("TPushOps", [&](cyng::table::record const& rec)->bool {
-
-				cyng::buffer_t id;
-				id = cyng::value_cast(rec["serverID"], id);
-
-				//
-				//	only matching records
-				//
-				if (srv_id == id) {
-
-					auto const nr = cyng::numeric_cast<std::uint8_t>(rec["idx"], 1);
-
-					//
-					//	81 81 C7 8A 02 FF - push interval in seconds
-					//
-					append_get_proc_response(msg, {
-						OBIS_PUSH_OPERATIONS,
-						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
-						OBIS_PUSH_INTERVAL
-						}, make_value(rec["interval"]));
-
-					//
-					//	81 81 C7 8A 03 FF - push delay in seconds
-					//
-					append_get_proc_response(msg, {
-						OBIS_PUSH_OPERATIONS,
-						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
-						OBIS_PUSH_DELAY
-						}, make_value(rec["delay"]));
-
-					//
-					//	81 47 17 07 00 FF - target name
-					//
-					append_get_proc_response(msg, {
-						OBIS_PUSH_OPERATIONS,
-						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
-						OBIS_CODE_PUSH_TARGET
-						}, make_value(rec["target"]));
-
-					//	push service: 
-					//	* 81 81 C7 8A 21 FF == IP-T
-					//	* 81 81 C7 8A 22 FF == SML client address
-					//	* 81 81 C7 8A 23 FF == KNX ID 
-					append_get_proc_response(msg, {
-						OBIS_PUSH_OPERATIONS,
-						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
-						OBIS_PUSH_SERVICE
-						}, make_value(OBIS_PUSH_SERVICE_IPT));
-
-					//	push source: 
-					//	* 81 81 C7 8A 42 FF == profile (PUSH_SOURCE_PROFILE)
-					//	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
-					//	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_SENSOR_LIST)
-					append_get_proc_response(msg, {
-						OBIS_PUSH_OPERATIONS,
-						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
-						OBIS_PUSH_SOURCE
-						}, make_value(OBIS_PUSH_SOURCE_PROFILE));
-
-				}
-
-				return true;	//	continue
-			});
-			*/
-
-			//
-			//	append to message queue
-			//
-			sml_gen_.append(std::move(msg));
-
 		}
 
 		void get_proc_parameter::list_services(std::string trx, cyng::buffer_t srv_id)

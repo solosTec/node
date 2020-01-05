@@ -11,6 +11,7 @@
 #include <smf/sml/obis_db.h>
 
 #include <cyng/factory.h>
+#include <cyng/buffer_cast.h>
 
 namespace node
 {
@@ -238,9 +239,13 @@ namespace node
 			, cyng::tuple_t::iterator cl_end
 			, cyng::tuple_t&& val)
 		{
+			BOOST_ASSERT(obis_begin != nullptr);
+			BOOST_ASSERT(obis_end != nullptr);
 			BOOST_ASSERT(obis_begin != obis_end);
 			BOOST_ASSERT(cl_begin != cl_end);
 
+			if (obis_begin == nullptr)	return false;
+			if (obis_end == nullptr)	return false;
 			if (obis_begin == obis_end)	return false;
 			if (cl_begin == cl_end) return false;
 
@@ -254,8 +259,7 @@ namespace node
 				//
 				//	parameter name
 				//
-				cyng::buffer_t code;
-				code = cyng::value_cast(*cl_begin, code);
+				cyng::buffer_t const code = cyng::to_buffer(*cl_begin);
 
 				BOOST_ASSERT(*obis_begin == obis(code));
 				if ((obis_begin + 1) != obis_end) ++obis_begin;
@@ -290,7 +294,7 @@ namespace node
 						auto tpl = cyng::tuple_factory(empty_tree(*obis_begin));
 						*cl_begin = cyng::make_object(tpl);
 
-						merge_child_list(obis_begin
+						return merge_child_list(obis_begin
 							, obis_end
 							, tpl
 							, std::move(val));
@@ -318,7 +322,7 @@ namespace node
 						//
 						//	walk down the child list
 						//
-						merge_child_list(obis_begin
+						return merge_child_list(obis_begin
 							, obis_end
 							, *child_list
 							, std::move(val));
@@ -335,10 +339,9 @@ namespace node
 			if (val.size() != 2u)	return false;
 
 			auto & child_list = locate_child_list(msg);
-			if (child_list.size() == 3) {
-				return merge_child_list(path.begin(), path.end(), child_list.begin(), child_list.end(), std::move(val));
-			}
-			return false;
+			return (child_list.size() == 3)
+				? merge_child_list(path.begin(), path.end(), child_list.begin(), child_list.end(), std::move(val))
+				: false;
 		}
 
 		void append_period_entry(cyng::tuple_t& msg
