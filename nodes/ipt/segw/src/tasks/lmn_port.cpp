@@ -80,6 +80,11 @@ namespace node
 				set_all_options();
 
 				//
+				//	update status.word
+				//
+				base_.mux_.post(tid_, 1u, cyng::tuple_factory(true));
+
+				//
 				//	start reading
 				//
 				do_read();
@@ -157,6 +162,12 @@ namespace node
 					<< base_.get_class_name()
 					<< "> connection closed "
 					<< ec.message());
+
+				//
+				//	update status.word
+				//
+				base_.mux_.post(tid_, 1u, cyng::tuple_factory(false));
+
 			}
 		});
 	}

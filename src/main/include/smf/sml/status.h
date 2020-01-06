@@ -36,8 +36,8 @@ namespace node
 			//	ethernet link is available
 			STATUS_BIT_ETHERNET_AVAILABLE = (1ull << 11),
 
-			//	authorized on IP-T server
-			STATUS_BIT_AUTHORIZED_IPT = (1ull << 13),
+			//	not authorized on IP-T server
+			STATUS_BIT_NOT_AUTHORIZED_IPT = (1ull << 13),
 
 			//	out of mememory
 			STATUS_BIT_OUT_OF_MEMORY = (1ull << 14),

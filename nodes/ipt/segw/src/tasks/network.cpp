@@ -19,7 +19,6 @@
 #include <smf/sml/event.h>
 
 #include <cyng/factory/set_factory.h>
-//#include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
 #include <cyng/io/serializer.h>
@@ -181,14 +180,16 @@ namespace node
 		//	slot [0] 0x4001/0x4002: response login
 		void network::on_login_response(std::uint16_t watchdog, std::string redirect)
 		{
+			//
+			//	update status word
+			//
+			cache_.set_status_word(sml::STATUS_BIT_NOT_AUTHORIZED_IPT, false);
 
 			//
 			//	op log entry
 			//
 			auto const sw = cache_.get_status_word();
-			auto srv = cache_.get_srv_id();
-
-			//LOG_CODE_61 = 0x4970000A,	//	IP-T - Zugang erfolgt
+			auto const srv = cache_.get_srv_id();
 
 			storage_.generate_op_log(sw
 				, sml::LOG_CODE_61	//	0x4970000A - IP-T - Zugang erfolgt
@@ -215,6 +216,11 @@ namespace node
 		//	slot [1] - connection lost / reconnect
 		void network::on_logout()
 		{
+			//
+			//	update status word
+			//
+			cache_.set_status_word(sml::STATUS_BIT_NOT_AUTHORIZED_IPT, true);
+
 			//
 			//	op log entry
 			//

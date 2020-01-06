@@ -87,7 +87,8 @@ namespace node
 			//
 			auto const receiver = cyng::async::start_task_sync<parser_serial>(mux_
 				, logger_
-				, vm_);
+				, vm_
+				, bridge_.cache_);
 
 			if (receiver.second) {
 
@@ -109,7 +110,8 @@ namespace node
 			//
 			auto const receiver = cyng::async::start_task_sync<parser_wmbus>(mux_
 				, logger_
-				, vm_);
+				, vm_
+				, bridge_.cache_);
 
 			if (receiver.second) {
 

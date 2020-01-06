@@ -6,6 +6,7 @@
  */
 
 #include "parser_wmbus.h"
+#include "../cache.h"
 
 #include <cyng/vm/controller.h>
 #include <cyng/io/serializer.h>
@@ -17,9 +18,11 @@ namespace node
 {
 	parser_wmbus::parser_wmbus(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, cyng::controller& vm)
+		, cyng::controller& vm
+		, cache& cfg)
 	: base_(*btp) 
 		, logger_(logger)
+		, cache_(cfg)
 		, parser_([&](cyng::vector_t&& prg) {
 
 			CYNG_LOG_DEBUG(logger_, prg.size() << " m-bus instructions received");
@@ -88,6 +91,31 @@ namespace node
 		//if (cyng::async::NO_TASK != task_gpio_) {
 		//	base_.mux_.post(task_gpio_, 1, cyng::tuple_factory(std::uint32_t(150), std::size_t(bytes_transferred / 10)));
 		//}
+
+		//
+		//	continue task
+		//
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	cyng::continuation parser_wmbus::process(bool b)
+	{
+		cache_.set_status_word(sml::STATUS_BIT_MBUS_IF_AVAILABLE, b);
+
+		if (b) {
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> wireless M-Bus interface available");
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> wireless M-Bus interface closed");
+		}
 
 		//
 		//	continue task

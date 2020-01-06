@@ -25,18 +25,22 @@ namespace node
 	/**
 	 * receiver and parser for wireless mbus data
 	 */
+	class cache;
 	class parser_wmbus
 	{
 	public:
 		//	[0] receive data
 		using msg_0 = std::tuple<cyng::buffer_t, std::size_t>;
+		//	[1] status (open/closed)
+		using msg_1 = std::tuple<bool>;
 
-		using signatures_t = std::tuple<msg_0>;
+		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
 		parser_wmbus(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, cyng::controller&);
+			, cyng::controller&
+			, cache& cfg);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -47,6 +51,12 @@ namespace node
 		 */
 		cyng::continuation process(cyng::buffer_t, std::size_t);
 
+		/**
+		 * @brief slot [1] - status (open/closed)
+		 *
+		 */
+		cyng::continuation process(bool);
+
 	private:
 		cyng::async::base_task& base_;
 
@@ -54,6 +64,11 @@ namespace node
 		 * global logger
 		 */
 		cyng::logging::log_ptr logger_;
+
+		/**
+		 * configuration management
+		 */
+		cache& cache_;
 
 		/**
 		 * M-Bus parser

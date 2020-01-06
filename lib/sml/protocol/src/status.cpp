@@ -35,7 +35,7 @@ namespace node
 			w |= STATUS_BIT_ON;	//!< bit 1 is always ON
 			w |= STATUS_BIT_RESET_BY_WATCHDOG;
 			w |= STATUS_BIT_EXT_IF_AVAILABLE;	//!< 1 if NOT available
-			w |= STATUS_BIT_AUTHORIZED_IPT;	//!< 1 if NOT authorized
+			w |= STATUS_BIT_NOT_AUTHORIZED_IPT;	//!< 1 if NOT authorized
 			return w;
 		}
 
@@ -62,7 +62,7 @@ namespace node
 		void status::set_authorized(bool b)
 		{
 			//	0 if authorized
-			set_flag(STATUS_BIT_AUTHORIZED_IPT, b);
+			set_flag(STATUS_BIT_NOT_AUTHORIZED_IPT, !b);
 		}
 
 		void status::set_ip_address_available(bool b)
@@ -100,7 +100,7 @@ namespace node
 
 		bool status::is_authorized() const
 		{
-			return !is_set(STATUS_BIT_AUTHORIZED_IPT);
+			return !is_set(STATUS_BIT_NOT_AUTHORIZED_IPT);
 		}
 
 		bool status::is_fatal_error() const
@@ -156,7 +156,7 @@ namespace node
 		cyng::attr_map_t to_attr_map(status const& word)
 		{
 			return cyng::attr_map_factory
-                (sml::STATUS_BIT_AUTHORIZED_IPT, word.is_authorized())
+                (sml::STATUS_BIT_NOT_AUTHORIZED_IPT, word.is_authorized())
 				(sml::STATUS_BIT_FATAL_ERROR, word.is_fatal_error())
 				(sml::STATUS_BIT_OUT_OF_MEMORY, word.is_out_of_memory())
 				(sml::STATUS_BIT_SERVICE_IF_AVAILABLE, word.is_service_if_available())

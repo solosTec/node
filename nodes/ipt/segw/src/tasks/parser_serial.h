@@ -22,19 +22,22 @@ namespace node
 	/**
 	 * receiver and parser for serial data (RS485) aka IEC
 	 */
+	class cache;
 	class parser_serial
 	{
 	public:
 		//	[0] write entry
 		using msg_0 = std::tuple<>;
+		//	[1] status (open/closed)
+		using msg_1 = std::tuple<bool>;
 
-
-		using signatures_t = std::tuple<msg_0>;
+		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
 		parser_serial(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, cyng::controller&);
+			, cyng::controller&
+			, cache& cfg);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -45,6 +48,12 @@ namespace node
 		 */
 		cyng::continuation process();
 
+		/**
+		 * @brief slot [1] - status (open/closed)
+		 *
+		 */
+		cyng::continuation process(bool);
+
 	private:
 		cyng::async::base_task& base_;
 
@@ -52,6 +61,11 @@ namespace node
 		 * global logger
 		 */
 		cyng::logging::log_ptr logger_;
+
+		/**
+		 * configuration management
+		 */
+		cache& cache_;
 
 	};
 
