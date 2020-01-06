@@ -100,7 +100,6 @@ namespace node
 
 			stmt->execute();
 		}
-
 	}
 
 	void storage::loop(std::string name, loop_f f)
@@ -167,7 +166,7 @@ namespace node
 
 			stmt->push(obj, 0);
 			for (auto idx = 0; idx < key.size(); ++idx) {
-				stmt->push(key.at(idx), 0);
+				stmt->push(key.at(idx), cmd.get_meta()->get_width(idx));
 			}
 
 			if (!stmt->execute()) {
@@ -188,8 +187,8 @@ namespace node
 			if (r.second) {
 				//	UPDATE TCfg SET gen = ? WHERE (path = ?)
 				stmt->push(cyng::make_object(gen), 0);
-				for (auto idx = key.size(); idx < key.size(); ++idx) {
-					stmt->push(key.at(idx), 0);
+				for (auto idx = 0; idx < key.size(); ++idx) {
+					stmt->push(key.at(idx), cmd.get_meta()->get_width(idx));
 				}
 
 				if (!stmt->execute()) {
@@ -233,12 +232,13 @@ namespace node
 		std::pair<int, bool> r = stmt->prepare(sql);
 		if (r.second) {
 
+			std::size_t idx{ 0 };
 			for (auto const& obj : key) {
-				stmt->push(obj, 0);
+				stmt->push(obj, cmd.get_meta()->get_width(idx++));
 			}
-			stmt->push(cyng::make_object(gen), 0);
+			stmt->push(cyng::make_object(gen), cmd.get_meta()->get_width(idx++));
 			for (auto const& obj : body) {
-				stmt->push(obj, 0);
+				stmt->push(obj, cmd.get_meta()->get_width(idx++));
 			}
 			if (stmt->execute())	return true;
 		}
@@ -264,12 +264,11 @@ namespace node
 
 			BOOST_ASSERT(r.first == key.size());
 
-			for (auto idx = key.size(); idx < key.size(); ++idx) {
-				stmt->push(key.at(idx), 0);
+			for (auto idx = 0u; idx < key.size(); ++idx) {
+				stmt->push(key.at(idx), cmd.get_meta()->get_width(idx));
 			}
 			if (!stmt->execute())
 			{
-				//CYNG_LOG_ERROR(logger_, "sql delete failed: " << sql);
 				return false;
 			}
 			stmt->clear();
@@ -444,7 +443,7 @@ namespace node
 				, 32	//	pwd
 				}),
 
-			cyng::table::make_meta_table_gen<2, 5>("TDataCollector",
+			cyng::table::make_meta_table_gen<2, 4>("TDataCollector",
 				{ "serverID"	//	server/meter/sensor ID
 				, "nr"			//	position/number - starts with 1
 								//	-- body
@@ -452,7 +451,6 @@ namespace node
 				, "active"		//	[bool] turned on/off (OBIS_DATA_COLLECTOR_ACTIVE)
 				, "maxSize"		//	[u32] max entry count (OBIS_DATA_COLLECTOR_SIZE)
 				, "regPeriod"	//	[seconds] register period - if 0, recording is event-driven (OBIS_DATA_REGISTER_PERIOD)
-				, "entries"		//	OBIS codes
 				},
 				{ cyng::TC_BUFFER		//	serverID
 				, cyng::TC_UINT8		//	nr
@@ -461,7 +459,6 @@ namespace node
 				, cyng::TC_BOOL			//	active
 				, cyng::TC_UINT16		//	maxSize
 				, cyng::TC_SECOND		//	regPeriod
-				, cyng::TC_STRING		//	entries
 				},
 				{ 9		//	serverID
 				, 0		//	nr
@@ -470,14 +467,13 @@ namespace node
 				, 0		//	active
 				, 0		//	maxSize
 				, 0		//	regPeriod
-				, 512	//	entries
 				}),
 
 			//
 			//	Push operations
 			//	81 81 C7 8A 01 FF - OBIS_PUSH_OPERATIONS
 			//
-			cyng::table::make_meta_table<2, 5>("TPushOps",
+			cyng::table::make_meta_table_gen<2, 5>("TPushOps",
 				{ "serverID"	//	server/meter/sensor ID
 				, "nr"			//	position/number - starts with 1
 								//	-- body
@@ -504,6 +500,33 @@ namespace node
 				, 6		//	source
 				, 32	//	target
 				, 6		//	service
+				}),
+
+			//
+			//	data mirror - list of OBIS codes
+			//	81 81 C7 8A 23 FF - DATA_COLLECTOR_OBIS
+			//
+			cyng::table::make_meta_table_gen<3, 2>("TDataMirror",
+				{ "serverID"	//	server/meter/sensor ID
+				, "nr"			//	reference to TDataCollector.nr
+				, "reg"			//	index
+								//	-- body
+				, "code"		//	OBIS code
+				, "active"		//	[bool] turned on/off
+				},
+				{ cyng::TC_BUFFER		//	serverID
+				, cyng::TC_UINT8		//	nr
+				, cyng::TC_UINT8		//	reg
+										//	-- body
+				, cyng::TC_BUFFER		//	code
+				, cyng::TC_BOOL			//	active
+				},
+				{ 9		//	serverID
+				, 0		//	nr
+				, 0		//	reg
+						//	-- body
+				, 6		//	code
+				, 0		//	active
 				})
 
 		};

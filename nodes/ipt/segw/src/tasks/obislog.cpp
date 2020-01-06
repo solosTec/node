@@ -40,7 +40,7 @@ namespace node
 		//
 		//	write cyclic log entry
 		//
-		bridge_.generate_op_log(sml::OBIS_CODE_PEER_OBISLOG	//	81 81 00 00 00 01 
+		bridge_.generate_op_log(sml::OBIS_PEER_OBISLOG	//	81 81 00 00 00 01 
 			, sml::LOG_CODE_10	//	0x00800000 - Timer, Zyklischer Logbucheintrag
 			, ""	//	target
 			, 0		//	nr

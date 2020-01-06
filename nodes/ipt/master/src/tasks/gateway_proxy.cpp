@@ -824,14 +824,14 @@ namespace node
 			tpl = cyng::value_cast(params.get("iec"), tpl);
 			execute_cmd_set_proc_param_iec(sml_gen, data, tpl);
 		}
-		else if (sml::OBIS_CODE_REBOOT == data.get_root()) {
+		else if (sml::OBIS_REBOOT == data.get_root()) {
 
 			//
 			//	reboot the gateway
 			//
 			sml_gen.set_proc_parameter_restart(data.get_srv(), data.get_user(), data.get_pwd());
 		}
-		else if (sml::OBIS_CODE_ACTIVATE_DEVICE == data.get_root()) {
+		else if (sml::OBIS_ACTIVATE_DEVICE == data.get_root()) {
 
 			//
 			//	activate meter device
@@ -851,7 +851,7 @@ namespace node
 					<< meter);
 			}
 		}
-		else if (sml::OBIS_CODE_DEACTIVATE_DEVICE == data.get_root()) {
+		else if (sml::OBIS_DEACTIVATE_DEVICE == data.get_root()) {
 
 			//
 			//	deactivate meter device
@@ -871,7 +871,7 @@ namespace node
 					<< meter);
 			}
 		}
-		else if (sml::OBIS_CODE_DELETE_DEVICE == data.get_root()) {
+		else if (sml::OBIS_DELETE_DEVICE == data.get_root()) {
 
 			//
 			//	remove a meter device from list of visible meters
@@ -1359,7 +1359,7 @@ namespace node
 		, cyng::buffer_t const& meter)
 	{
 		push_trx(sml_gen.set_proc_parameter(data.get_srv()
-			, { sml::OBIS_CODE_ACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFB, nr), sml::OBIS_SERVER_ID }
+			, { sml::OBIS_ACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFB, nr), sml::OBIS_SERVER_ID }
 			, data.get_user()
 			, data.get_pwd()
 			, meter), data);
@@ -1371,7 +1371,7 @@ namespace node
 		, cyng::buffer_t const& meter)
 	{
 		push_trx(sml_gen.set_proc_parameter(data.get_srv()
-			, { sml::OBIS_CODE_DEACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, nr), sml::OBIS_SERVER_ID }
+			, { sml::OBIS_DEACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, nr), sml::OBIS_SERVER_ID }
 			, data.get_user()
 			, data.get_pwd()
 			, meter), data);
@@ -1383,7 +1383,7 @@ namespace node
 		, cyng::buffer_t const& meter)
 	{
 		push_trx(sml_gen.set_proc_parameter(data.get_srv()
-			, { sml::OBIS_CODE_DELETE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFD, nr), sml::OBIS_SERVER_ID }
+			, { sml::OBIS_DELETE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFD, nr), sml::OBIS_SERVER_ID }
 			, data.get_user()
 			, data.get_pwd()
 			, meter), data);

@@ -152,8 +152,8 @@ namespace node
 		//	root elements
 		//81, 81, C7, 81, 0E, FF 
 		OBIS_CODE_DEFINITION(00, 80, 80, 00, 10, FF, ROOT_MEMORY_USAGE);	//	request memory usage
-		OBIS_CODE_DEFINITION(00, 80, 80, 00, 11, FF, CODE_ROOT_MEMORY_MIRROR);	
-		OBIS_CODE_DEFINITION(00, 80, 80, 00, 12, FF, CODE_ROOT_MEMORY_TMP);
+		OBIS_CODE_DEFINITION(00, 80, 80, 00, 11, FF, ROOT_MEMORY_MIRROR);	
+		OBIS_CODE_DEFINITION(00, 80, 80, 00, 12, FF, ROOT_MEMORY_TMP);
 
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 00, FF, ROOT_CUSTOM_INTERFACE);	//	see: 7.3.1.3 Datenstruktur zum Lesen / Setzen der Parameter für die Kundenschnittstelle
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 10, FF, ROOT_CUSTOM_PARAM);	//	see: 7.3.1.4 Datenstruktur für dynamischen Eigenschaften der Endkundenschnittstelle 
@@ -163,8 +163,8 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 04, 0D, 07, 00, FF, ROOT_GPRS_PARAM);	//	see: Datenstruktur zum Lesen / Setzen der Provider-abhängigen GPRS-Parameter 
 
 		OBIS_CODE_DEFINITION(81, 06, 0F, 06, 00, FF, ROOT_W_MBUS_STATUS);	//	see: 7.3.1.23 Datenstruktur zum Lesen des W-MBUS-Status 
-		OBIS_CODE_DEFINITION(81, 46, 00, 00, 02, FF, CODE_ADDRESSED_PROFILE);
-		OBIS_CODE_DEFINITION(81, 47, 17, 07, 00, FF, CODE_PUSH_TARGET);	//	push target name
+		OBIS_CODE_DEFINITION(81, 46, 00, 00, 02, FF, PROFILE_ADDRESS);
+		OBIS_CODE_DEFINITION(81, 47, 17, 07, 00, FF, PUSH_TARGET);	//	push target name
 		OBIS_CODE_DEFINITION(81, 48, 00, 00, 00, 00, COMPUTER_NAME);	
 		OBIS_CODE_DEFINITION(81, 48, 00, 32, 02, 01, LAN_DHCP_ENABLED);	//	[bool]
 		OBIS_CODE_DEFINITION(81, 48, 0D, 06, 00, FF, ROOT_LAN_DSL);	//	see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter
@@ -176,33 +176,33 @@ namespace node
 		//OBIS_CODE_DEFINITION(81, 49, 1A, 07, 00, NN, ROOT_IPT_STATE_PORT_LOCAL);	//	local port
 		//OBIS_CODE_DEFINITION(81, 49, 19, 07, 00, NN, ROOT_IPT_STATE_PORT_REMOTE);	//	remote port
 
-		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 01, CODE_PEER_OBISLOG);	//	peer address: OBISLOG
-		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 02, CODE_PEER_SCM);	//	peer address: SCM (power)
-		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 11, CODE_PEER_USERIF);	//	peer address: USERIF
-		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 13, CODE_PEER_ADDRESS_WANGSM);	//	peer address: WAN/GSM
-		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, FF, CODE_PEER_ADDRESS);	//	unit is 255
+		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 01, PEER_OBISLOG);	//	peer address: OBISLOG
+		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 02, PEER_SCM);	//	peer address: SCM (power)
+		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 11, PEER_USERIF);	//	peer address: USERIF
+		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 13, PEER_ADDRESS_WANGSM);	//	peer address: WAN/GSM
+		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, FF, PEER_ADDRESS);	//	unit is 255
 
-		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 00, CODE_VERSION);		//	[string]
-		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 02, CODE_FILE_NAME);	//	[string]
-		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 03, CODE_MSG_COUNTER);	//	[u32] Anzahl aller Nachrichten zur Übertragung des Binary
-		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 04, CODE_MSG_LAST);	//	[u32] Nummer der zuletzt erfolgreich übertragenen Nachricht des	Binary
-		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 05, CODE_MSG_NUMBER);
-		OBIS_CODE_DEFINITION(81, 81, 00, 02, 02, FF, CODE_BLOCK_NUMBER);
-		OBIS_CODE_DEFINITION(81, 81, 00, 02, 03, FF, CODE_BINARY_DATA);
+		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 00, VERSION);		//	[string]
+		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 02, FILE_NAME);	//	[string]
+		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 03, MSG_COUNTER);	//	[u32] Anzahl aller Nachrichten zur Übertragung des Binary
+		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 04, LAST_MSG);	//	[u32] Nummer der zuletzt erfolgreich übertragenen Nachricht des	Binary
+		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 05, MSG_NUMBER);
+		OBIS_CODE_DEFINITION(81, 81, 00, 02, 02, FF, BLOCK_NUMBER);
+		OBIS_CODE_DEFINITION(81, 81, 00, 02, 03, FF, BINARY_DATA);
 
-		OBIS_CODE_DEFINITION(81, 81, 01, 16, FF, FF, CODE_ROOT_NEW_DEVICES);	//	new active devices
-		OBIS_CODE_DEFINITION(81, 81, 10, 26, FF, FF, CODE_ROOT_INVISIBLE_DEVICES);	//	not longer visible devices
+		OBIS_CODE_DEFINITION(81, 81, 01, 16, FF, FF, ROOT_NEW_DEVICES);	//	new active devices
+		OBIS_CODE_DEFINITION(81, 81, 10, 26, FF, FF, ROOT_INVISIBLE_DEVICES);	//	not longer visible devices
 		OBIS_CODE_DEFINITION(81, 81, 10, 06, FF, FF, ROOT_VISIBLE_DEVICES);	//	visible devices (Liste der sichtbaren Sensoren)
 		OBIS_CODE_DEFINITION(81, 81, 10, 06, 01, FF, CODE_LIST_1_VISIBLE_DEVICES);	//	1. Liste der sichtbaren Sensoren
 		OBIS_CODE_DEFINITION(81, 81, 11, 06, FF, FF, ROOT_ACTIVE_DEVICES);	//	active devices (Liste der aktiven Sensoren)
 		OBIS_CODE_DEFINITION(81, 81, 11, 06, 01, FF, CODE_LIST_1_ACTIVE_DEVICES);	//	1. Liste der aktiven Sensoren)
-		OBIS_CODE_DEFINITION(81, 81, 11, 06, FB, FF, CODE_ACTIVATE_DEVICE);	//	activate meter/sensor
-		OBIS_CODE_DEFINITION(81, 81, 11, 06, FC, FF, CODE_DEACTIVATE_DEVICE);	//	deactivate meter/sensor
-		OBIS_CODE_DEFINITION(81, 81, 11, 06, FD, FF, CODE_DELETE_DEVICE);	//	delete meter/sensor
+		OBIS_CODE_DEFINITION(81, 81, 11, 06, FB, FF, ACTIVATE_DEVICE);	//	activate meter/sensor
+		OBIS_CODE_DEFINITION(81, 81, 11, 06, FC, FF, DEACTIVATE_DEVICE);	//	deactivate meter/sensor
+		OBIS_CODE_DEFINITION(81, 81, 11, 06, FD, FF, DELETE_DEVICE);	//	delete meter/sensor
 		OBIS_CODE_DEFINITION(81, 81, 12, 06, FF, FF, ROOT_DEVICE_INFO);	//	extended device information
 		OBIS_CODE_DEFINITION(81, 81, 81, 60, FF, FF, ROOT_ACCESS_RIGHTS);	//	see: 7.3.1.2 Datenstruktur zur Parametrierung der Rollen / Benutzerrechte 
 
-		OBIS_CODE_DEFINITION(81, 81, C7, 81, 01, FF, CODE_ROOT_FILE_TRANSFER);	//	7.3.2.28 Datenstruktur zum remote Firmware-/Datei-Download (Übertragung) 
+		OBIS_CODE_DEFINITION(81, 81, C7, 81, 01, FF, ROOT_FILE_TRANSFER);	//	7.3.2.28 Datenstruktur zum remote Firmware-/Datei-Download (Übertragung) 
 		OBIS_CODE_DEFINITION(81, 81, C7, 81, 0E, FF, DATA_FIRMWARE);
 		OBIS_CODE_DEFINITION(81, 81, C7, 81, 0C, FF, DATA_FILENAME);
 		OBIS_CODE_DEFINITION(81, 81, C7, 81, 0F, FF, DATA_FILENAME_INDIRECT);
@@ -217,11 +217,11 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, C7, 82, 03, FF, DATA_MANUFACTURER);	//	[string] FLAG
 		OBIS_CODE_DEFINITION(81, 81, C7, 82, 04, FF, SERVER_ID);		//	Server ID 
 		OBIS_CODE_DEFINITION(81, 81, C7, 82, 05, FF, DATA_PUBLIC_KEY);
-		OBIS_CODE_DEFINITION(81, 81, C7, 82, 06, FF, CODE_ROOT_FIRMWARE);	//	Firmware
-		OBIS_CODE_DEFINITION(81, 81, C7, 82, 09, FF, CODE_HARDWARE);		//	hardware equipment (charge, type, ...)
+		OBIS_CODE_DEFINITION(81, 81, C7, 82, 06, FF, ROOT_FIRMWARE);	//	Firmware
+		OBIS_CODE_DEFINITION(81, 81, C7, 82, 09, FF, HARDWARE_FEATURES);	//	hardware equipment (charge, type, ...) 81 81 C7 82 0A NN
 
-		OBIS_CODE_DEFINITION(81, 81, C7, 82, 08, FF, CODE_DEVICE_KERNEL);	//	[string]
-		OBIS_CODE_DEFINITION(81, 81, C7, 82, 0E, FF, CODE_DEVICE_ACTIVATED);
+		OBIS_CODE_DEFINITION(81, 81, C7, 82, 08, FF, DEVICE_KERNEL);	//	[string]
+		OBIS_CODE_DEFINITION(81, 81, C7, 82, 0E, FF, DEVICE_ACTIVATED);
 
 		//	device classes
 		OBIS_CODE_DEFINITION(81, 81, C7, 82, 41, FF, DEV_CLASS_BASIC_DIRECT);	//	3 x 230 /400 V and 5 (100) A 
@@ -239,7 +239,7 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, C7, 82, 52, FF, DEV_CLASS_3HZ);
 		OBIS_CODE_DEFINITION(81, 81, C7, 82, 53, FF, DEV_CLASS_MUC_LAN);	// (MUC-LAN/DSL)
 		
-		OBIS_CODE_DEFINITION(81, 81, C7, 83, 82, 01, CODE_REBOOT);	//	request reboot
+		OBIS_CODE_DEFINITION(81, 81, C7, 83, 82, 01, REBOOT);	//	request reboot
 
 		OBIS_CODE_DEFINITION(81, 81, C7, 86, 00, FF, ROOT_SENSOR_PARAMS);	//	data mirror root element (Eigenschaften eines Datenspiegels)
 		OBIS_CODE_DEFINITION(81, 81, C7, 86, 01, FF, ROOT_SENSOR_BITMASK);	//	[u16] Bitmask to define bits that will be transferred into log

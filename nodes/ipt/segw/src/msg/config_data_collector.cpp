@@ -39,15 +39,14 @@ namespace node
 			//	81 81 C7 86 20 FF
 			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_DATA_COLLECTOR);
 
-			cache_.read_table("_DataCollector", [&](cyng::store::table const* tbl_dc) {
+			cache_.read_tables("_DataCollector", "_DataMirror", [&](cyng::store::table const* tbl_dc, cyng::store::table const* tbl_reg) {
 
-				std::uint8_t nr{ 1 };	//	data collector index
 				tbl_dc->loop([&](cyng::table::record const& rec) {
 
 					auto const id = cyng::to_buffer(rec["serverID"]);
 					if (id == srv_id) {
 
-						nr = cyng::numeric_cast<std::uint8_t>(rec["nr"], nr);
+						auto const nr = cyng::numeric_cast<std::uint8_t>(rec["nr"], 1);
 
 						//
 						//	81 81 C7 86 21 FF - active
@@ -88,37 +87,13 @@ namespace node
 						//
 						//	collect all available OBIS codes for this meter
 						//
+						loop_data_mirror(tbl_reg, msg, srv_id, nr);
 
-						std::uint8_t idx{ 1 };	//	OBIS counter
-						//
-						//	81 81 C7 8A 23 FF - entries
-						//
-						auto const entries = cyng::value_cast<std::string>(rec["entries"], "");
-						auto const vec = to_obis_path(entries, ':');
-						for (auto const& code : vec) {
-
-							append_get_proc_response(msg, {
-								OBIS_ROOT_DATA_COLLECTOR,
-								make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
-								OBIS_PROFILE,
-								make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, idx)
-								}, make_value(code));
-
-							//
-							//	update OBIS counter
-							//
-							++idx;
-						}
-
-						//
-						//	update data collector index
-						//
-						++nr;
 					}
 					return true;	//	continue
-					});
-
 				});
+
+			});
 
 			//
 			//	append to message queue
@@ -134,7 +109,7 @@ namespace node
 			//	81 81 C7 8A 01 FF - service push
 			//	read from SQLite database table "TPushOps"
 			//
-			cache_.loop("TPushOps", [&](cyng::table::record const& rec) {
+			cache_.loop("_PushOps", [&](cyng::table::record const& rec) {
 
 				cyng::buffer_t const id = cyng::to_buffer(rec["serverID"]);
 
@@ -169,7 +144,7 @@ namespace node
 					append_get_proc_response(msg, {
 						OBIS_PUSH_OPERATIONS,
 						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
-						OBIS_CODE_PUSH_TARGET
+						OBIS_PUSH_TARGET
 						}, make_value(rec["target"]));
 
 					//	push service:
@@ -197,7 +172,12 @@ namespace node
 						OBIS_PUSH_OPERATIONS,
 						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
 						OBIS_PUSH_SOURCE
-						}, make_value(OBIS_PUSH_SOURCE_PROFILE));
+						}
+						, make_value(OBIS_PUSH_SOURCE_PROFILE)
+						, cyng::tuple_factory(
+							child_list_tree(OBIS_PUSH_SERVER_ID, make_value(srv_id)),
+							empty_tree(OBIS_PUSH_IDENTIFIERS),
+							child_list_tree(OBIS_PROFILE, make_value(OBIS_PROFILE_15_MINUTE))));
 
 				}
 
@@ -211,21 +191,47 @@ namespace node
 
 		}
 
+		void config_data_collector::set_push_operations(cyng::buffer_t srv_id
+			, std::string user
+			, std::string pwd
+			, std::uint8_t nr
+			, cyng::param_map_t&& params)
+		{
+			cache_.write_table("_PushOps", [&](cyng::store::table* tbl) {
+				auto const key = cyng::table::key_generator(srv_id, nr);
+				auto const rec = tbl->lookup(key);
+				if (rec.empty()) {
+					insert_push_ops(tbl, key, params, cache_.get_tag());
+				}
+				else {
+					if (params.empty()) {
+
+						//
+						//	an empty parameter set indicates that the record hast be removed
+						//
+						tbl->erase(key, cache_.get_tag());
+					}
+					else {
+						update_push_ops(tbl, key, params, cache_.get_tag());
+					}
+				}
+			});
+		}
 
 		void config_data_collector::set_param(cyng::buffer_t srv_id
 			, std::uint8_t nr
 			, cyng::param_map_t&& params)
 		{
 
-			cache_.write_table("_DataCollector", [&](cyng::store::table* tbl) {
+			cache_.write_tables("_DataCollector", "_DataMirror", [&](cyng::store::table* tbl_dc, cyng::store::table* tbl_reg) {
 
 				auto const key = cyng::table::key_generator(srv_id, nr);
-				auto const rec = tbl->lookup(key);
+				auto const rec = tbl_dc->lookup(key);
 				if (rec.empty()) {
-					insert_data_collector(tbl, key, params, cache_.get_tag());
+					insert_data_collector(tbl_dc, key, params, tbl_reg, cache_.get_tag());
 				}
 				else {
-					update_data_collector(tbl, key, params, cache_.get_tag());
+					update_data_collector(tbl_dc, key, params, tbl_reg, cache_.get_tag());
 				}
 			});
 		}
@@ -246,48 +252,104 @@ namespace node
 						keys.push_back(rec.key());
 					}
 					return true;
-					});
+				});
 
 				for (auto const key : keys) {
 					tbl_dc->erase(key, cache_.get_tag());
 				}
 
-				});
+			});
 		}
 
 
-		void insert_data_collector(cyng::store::table* tbl, cyng::table::key_type const& key, cyng::param_map_t const& params, boost::uuids::uuid source)
+		void insert_data_collector(cyng::store::table* tbl_dc
+			, cyng::table::key_type const& key
+			, cyng::param_map_t const& params
+			, cyng::store::table* tbl_reg
+			, boost::uuids::uuid source)
 		{
 			//	[19122321172417116-2,8181C78620FF 8181C7862001,01A815743145040102,operator,operator,("8181C7862001":%(("8181C78621FF":true),("8181C78622FF":64),("8181C78781FF":0),("8181C78A23FF":%(("8181C78A2301":070003010001),("8181C78A2302":0700030100FF))),("8181C78A83FF":8181C78611FF)))]
 
-			//%(("8181C78621FF":true),("8181C78622FF":64),("8181C78781FF":0),("8181C78A23FF":%(("8181C78A2301":070003010001),("8181C78A2302":0700030100FF))),("8181C78A83FF":8181C78611FF))
+			//%(("8181C78621FF":true),("8181C78622FF":64),("8181C78781FF":0),("8181C78A23FF":%(("8181C78A2301":070003010001),("8181C78A2302":0700030100FF))),("8181C78A83FF":8181C78611FF))	
 
-			auto const obj = lookup(params, OBIS_DATA_COLLECTOR_OBIS);
-			
-
-			tbl->insert(key
-				, cyng::table::data_generator(lookup(params, OBIS_PROFILE), lookup(params, OBIS_DATA_COLLECTOR_ACTIVE), lookup(params, OBIS_DATA_COLLECTOR_SIZE), lookup(params, OBIS_DATA_REGISTER_PERIOD), get_entries(obj))
+			//
+			//	data collector
+			//
+			tbl_dc->insert(key
+				, cyng::table::data_generator(lookup(params, OBIS_PROFILE)
+					, lookup(params, OBIS_DATA_COLLECTOR_ACTIVE)
+					, lookup(params, OBIS_DATA_COLLECTOR_SIZE)
+					, lookup(params, OBIS_DATA_REGISTER_PERIOD))
 				, 0u
 				, source);
 
+			//
+			//	data mirror / registers
+			//
+			auto const obj = lookup(params, OBIS_DATA_COLLECTOR_OBIS);
+			auto const regs = cyng::to_param_map(obj);
+			for (auto const& p : regs) {
+				obis const code(to_obis(p.first));
+				obis const reg(cyng::to_buffer(p.second));
+				tbl_reg->insert(
+					cyng::table::key_generator(key.at(0), key.at(1), code.get_data().at(obis::VG_STORAGE)), 
+					cyng::table::data_generator(reg.to_buffer(), true), 0u, source);
+			}
 		}
 
-		void update_data_collector(cyng::store::table* tbl, cyng::table::key_type const& key, cyng::param_map_t const& params, boost::uuids::uuid source)
+		void update_data_collector(cyng::store::table* tbl_dc
+			, cyng::table::key_type const& key
+			, cyng::param_map_t const& params
+			, cyng::store::table* tbl_reg
+			, boost::uuids::uuid source)
 		{
 			for (auto const& param : params) {
 				if (boost::algorithm::equals(param.first, OBIS_DATA_COLLECTOR_ACTIVE.to_str())) {
-					tbl->modify(key, cyng::param_t("active", param.second), source);
+					tbl_dc->modify(key, cyng::param_t("active", param.second), source);
 				}
 				else if (boost::algorithm::equals(param.first, OBIS_DATA_COLLECTOR_SIZE.to_str())) {
-					tbl->modify(key, cyng::param_t("maxSize", param.second), source);
+					tbl_dc->modify(key, cyng::param_t("maxSize", param.second), source);
 				}
 				else if (boost::algorithm::equals(param.first, OBIS_DATA_REGISTER_PERIOD.to_str())) {
-					tbl->modify(key, cyng::param_t("regPeriod", param.second), source);
+					tbl_dc->modify(key, cyng::param_t("regPeriod", param.second), source);
 				}
 				else if (boost::algorithm::equals(param.first, OBIS_DATA_COLLECTOR_OBIS.to_str())) {
+
 					//
-					//	update entries
+					//	update register entries / data mirror
 					//
+					auto const regs = cyng::to_param_map(param.second);
+					update_data_mirror(tbl_reg, key.at(0), key.at(1), regs, source);
+
+				}
+			}
+		}
+
+		void update_data_mirror(cyng::store::table* tbl
+			, cyng::object srv_id
+			, cyng::object nr
+			, cyng::param_map_t const& params
+			, boost::uuids::uuid source)
+		{
+			//	("8181C78A2301":070003010001),("8181C78A2302":0700030100FF)
+
+			for (auto const& p : params) {
+				obis const code = to_obis(p.first);
+				auto const key = cyng::table::key_generator(srv_id, nr, code.get_data().at(obis::VG_STORAGE));
+				auto const rec = tbl->lookup(key);
+				if (rec.empty()) {
+
+					//
+					//	insert
+					//
+					tbl->insert(key, cyng::table::data_generator(p.second, true), 0u, source);
+				}
+				else {
+
+					//
+					//	delete
+					//
+					tbl->erase(key, source);
 				}
 			}
 		}
@@ -301,17 +363,76 @@ namespace node
 				;
 		}
 
-		std::string get_entries(cyng::object obj)
+		void loop_data_mirror(cyng::store::table const* tbl
+			, cyng::tuple_t& msg
+			, cyng::buffer_t srv_id
+			, std::uint8_t nr)
 		{
-			obis_path vec;
-			auto const params = cyng::to_param_map(obj);
-			std::transform(params.begin(), params.end(), std::back_inserter(vec), [](cyng::param_t const& p) {
-				return obis(cyng::to_buffer(p.second));
-				});
-			return to_hex(vec, ':');
+			tbl->loop([&](cyng::table::record const& rec) {
+
+				auto const id = cyng::to_buffer(rec["serverID"]);
+				auto const idx = cyng::numeric_cast<std::uint8_t>(rec["nr"], 1u);
+
+				//
+				//	select matching registers
+				//
+				if ((id == srv_id) && (nr == idx)) {
+
+					obis const code(cyng::to_buffer(rec["code"]));
+					auto const reg = cyng::numeric_cast<std::uint8_t>(rec["reg"], 1);
+
+					append_get_proc_response(msg, {
+						OBIS_ROOT_DATA_COLLECTOR,
+						make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
+						OBIS_PROFILE,
+						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, reg)
+						}, make_value(code));
+
+				}
+				return true;	//	continue
+			});
+
 		}
 
+		void insert_push_ops(cyng::store::table* tbl
+			, cyng::table::key_type const& key
+			, cyng::param_map_t const& params
+			, boost::uuids::uuid source)
+		{
+			tbl->insert(key
+				, cyng::table::data_generator(lookup(params, OBIS_PUSH_INTERVAL)
+					, lookup(params, OBIS_PUSH_DELAY)
+					, lookup(params, OBIS_PUSH_SOURCE)
+					, lookup(params, OBIS_PUSH_TARGET)
+					, lookup(params, OBIS_PUSH_SERVICE))
+				, 0u
+				, source);
 
+		}
+
+		void update_push_ops(cyng::store::table* tbl
+			, cyng::table::key_type const& key
+			, cyng::param_map_t const& params
+			, boost::uuids::uuid source)
+		{
+			for (auto const& param : params) {
+				if (boost::algorithm::equals(param.first, OBIS_PUSH_INTERVAL.to_str())) {
+					tbl->modify(key, cyng::param_t("interval", param.second), source);
+				}
+				else if (boost::algorithm::equals(param.first, OBIS_PUSH_DELAY.to_str())) {
+					tbl->modify(key, cyng::param_t("delay", param.second), source);
+				}
+				else if (boost::algorithm::equals(param.first, OBIS_PUSH_SOURCE.to_str())) {
+					tbl->modify(key, cyng::param_t("source", param.second), source);
+				}
+				else if (boost::algorithm::equals(param.first, OBIS_PUSH_TARGET.to_str())) {
+					tbl->modify(key, cyng::param_t("target", param.second), source);
+				}
+				else if (boost::algorithm::equals(param.first, OBIS_PUSH_SERVICE.to_str())) {
+					tbl->modify(key, cyng::param_t("service", param.second), source);
+				}
+			}
+		}
 	}	//	sml
 }
 

@@ -192,7 +192,7 @@ namespace node
 
 			storage_.generate_op_log(sw
 				, sml::LOG_CODE_61	//	0x4970000A - IP-T - Zugang erfolgt
-				, sml::OBIS_CODE_PEER_ADDRESS_WANGSM	//	source is WANGSM (or LOG_SOURCE_ETH == 81, 04, 00, 00, 00, FF)
+				, sml::OBIS_PEER_ADDRESS_WANGSM	//	source is WANGSM (or LOG_SOURCE_ETH == 81, 04, 00, 00, 00, FF)
 				, srv	//	server ID
 				, ""	//	target
 				, 0		//	push nr
@@ -224,7 +224,7 @@ namespace node
 			//LOG_CODE_65 = 0x4970000E,	//	IP-T - Zugang verloren, Verbindung unerwartet abgebrochen
 			storage_.generate_op_log(sw
 				, sml::LOG_CODE_65	//	0x4970000A - IP-T - Zugang erfolgt
-				, sml::OBIS_CODE_PEER_ADDRESS_WANGSM	//	source is WANGSM (or LOG_SOURCE_ETH == 81, 04, 00, 00, 00, FF)
+				, sml::OBIS_PEER_ADDRESS_WANGSM	//	source is WANGSM (or LOG_SOURCE_ETH == 81, 04, 00, 00, 00, FF)
 				, srv	//	server ID
 				, ""	//	target
 				, 0		//	nr

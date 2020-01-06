@@ -149,8 +149,8 @@ namespace node
 				, set_proc_parameter_request(cyng::make_object(server_id)
 					, username
 					, password
-					, OBIS_CODE_REBOOT
-					, empty_tree(OBIS_CODE_REBOOT))
+					, OBIS_REBOOT
+					, empty_tree(OBIS_REBOOT))
 				)
 			);
 		}
@@ -460,7 +460,7 @@ namespace node
 						parameter_tree(OBIS_SERVER_ID, make_value(server_id2)),	// server id
 
 						//	firmware
-						child_list_tree(OBIS_CODE_ROOT_FIRMWARE, {
+						child_list_tree(OBIS_ROOT_FIRMWARE, {
 							//	section 1
 							child_list_tree(OBIS_CODE(81, 81, c7, 82, 07, 01), {
 									parameter_tree(OBIS_CODE(81, 81, c7, 82, 08, ff), make_value("CURRENT_VERSION")),
@@ -783,11 +783,11 @@ namespace node
 						//  64800008                                value: 8388616
 						period_entry(OBIS_CLASS_EVENT, 0xFF, 0, cyng::make_object(evt)),
 
-						//	81 81 00 00 00 FF - CODE_PEER_ADDRESS
+						//	81 81 00 00 00 FF - PEER_ADDRESS
 						//  62FF                                    unit: 255
 						//  5200                                    scaler: 0
 						//  078146000002FF                          value: 81 46 00 00 02 FF 
-						period_entry(OBIS_CODE_PEER_ADDRESS, 0xFF, 0, cyng::make_object(peer_address.to_buffer())),
+						period_entry(OBIS_PEER_ADDRESS, 0xFF, 0, cyng::make_object(peer_address.to_buffer())),
 
 						//  0781042B070000                          objName: 81 04 2B 07 00 00 
 						//  62FE                                    unit: 254
@@ -825,11 +825,11 @@ namespace node
 						//  0A01A815743145040102                    value: 01 A8 15 74 31 45 04 01 02 
 						period_entry(OBIS_SERVER_ID, 0xFF, 0, cyng::make_object(server_id)),
 
-						//  81 47 17 07 00 FF                       objName:  CODE_PUSH_TARGET
+						//  81 47 17 07 00 FF                       objName:  PUSH_TARGET
 						//  62FF                                    unit: 255
 						//  5200                                    scaler: 0
 						//  0F706F77657240736F6C6F73746563          value: power@solostec
-						period_entry(OBIS_CODE_PUSH_TARGET, 0xFF, 0, cyng::make_object(target)),
+						period_entry(OBIS_PUSH_TARGET, 0xFF, 0, cyng::make_object(target)),
 
 						//  81 81 C7 8A 01 FF                       objName:  PUSH_OPERATIONS
 						//  62FF                                    unit: 255

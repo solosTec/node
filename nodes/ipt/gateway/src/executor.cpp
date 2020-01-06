@@ -69,7 +69,7 @@ namespace node
 						, std::chrono::system_clock::now()	//	val time
 						, word	//	status
 						, (success ? evt_ipt_connect() : evt_ipt_disconnect())	//	event: 1232076810/1232076814
-						, OBIS_CODE_PEER_ADDRESS_WANGSM.to_buffer()	//	81 81 00 00 00 13
+						, OBIS_PEER_ADDRESS_WANGSM.to_buffer()	//	81 81 00 00 00 13
 						, std::chrono::system_clock::now()	//	val time
 						, cyng::make_buffer({ 0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02 })
 						, address

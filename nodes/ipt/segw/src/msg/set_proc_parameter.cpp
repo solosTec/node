@@ -74,7 +74,7 @@ namespace node
 					break;
 				case CODE_PUSH_OPERATIONS:	//	0x8181C78A01FF
 					BOOST_ASSERT(pos->to_str() == param.first);
-					//if (pos != end)	config_data_collector_.set_push_operations(*pos, srv_id, param);
+					if (pos != end)	config_data_collector_.set_push_operations(srv_id, user, pwd, obis(*pos).get_data().at(obis::VG_STORAGE), cyng::to_param_map(param.second));
 					break;
 				default:
 					CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request - unknown OBIS code "

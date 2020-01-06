@@ -21,15 +21,15 @@ namespace node
 		{
 			switch (code.to_uint64()) {
 
-			case CODE_CODE_VERSION:		return "version";	//	CODE_VERSION
-			case CODE_CODE_FILE_NAME:	return "file-name";	//	CODE_FILE_NAME
-			case CODE_CODE_MSG_COUNTER:	return "msg-counter";	// CODE_MSG_COUNTER [u32]
-			case CODE_CODE_MSG_LAST:	return "msg-last";		// CODE_MSG_LAST [u32]
-			case 0x818100020005:	return "msg-number";	//	CODE_MSG_NUMBER
-			case 0x8181000202FF:	return "block-number";	//	CODE_BLOCK_NUMBER
-			case 0x8181000203FF:	return "binary-data";	//	CODE_BINARY_DATA
+			case CODE_VERSION:		return "VERSION";		//
+			case CODE_FILE_NAME:	return "FILE_NAME";		//
+			case CODE_MSG_COUNTER:	return "MSG_COUNTER";	// [u32]
+			case CODE_LAST_MSG:		return "LAST_MSG";		// [u32]
+			case CODE_MSG_NUMBER:	return "MSG_NUMBER";	//
+			case CODE_BLOCK_NUMBER:	return "BLOCK_NUMBER";	//
+			case CODE_BINARY_DATA:	return "BINARY_DATA";	//
 
-			case CODE_DATA_MANUFACTURER:	return "manufacturer";
+			case CODE_DATA_MANUFACTURER:	return "DATA_MANUFACTURER";
 			case 0x8181C78205FF:	return "public-key";
 			case 0x8181C78610FF:	return "profile-1min";
 			case 0x8181C78611FF:	return "profile-15min";
@@ -46,14 +46,14 @@ namespace node
 			case 0x8181C789E1FF:	return "class-operation-log";	//	CLASS_OP_LOG
 			case 0x8181C789E2FF:	return "class-event";			//	CLASS_EVENT
 
-			case CODE_CODE_ROOT_FILE_TRANSFER:	return "root-file-transfer";	//	CODE_ROOT_FILE_TRANSFER
-			case 0x8181C7810EFF:	return "firmware-indirect";	//	DATA_FIRMWARE
-			case 0x8181C7810CFF: 	return "fw-file";	//	DATA_FILENAME);
-			case 0x8181C7810FFF: 	return "fw-file-indirect";	//	DATA_FILENAME_INDIRECT);
-			case 0x8181C7810DFF: 	return "application";	//	DATA_APPLICATION);
-			case 0x8181C78110FF: 	return "application-indirect";	//	DATA_APPLICATION_INDIRECT);
+			case CODE_ROOT_FILE_TRANSFER:		return "ROOT_FILE_TRANSFER";	
+			case CODE_DATA_FIRMWARE:			return "DATA_FIRMWARE";
+			case CODE_DATA_FILENAME: 			return "DATA_FILENAME";	
+			case CODE_DATA_FILENAME_INDIRECT: 	return "DATA_FILENAME_INDIRECT";
+			case CODE_DATA_APPLICATION: 		return "DATA_APPLICATION";
+			case CODE_DATA_APPLICATION_INDIRECT: 	return "DATA_APPLICATION_INDIRECT";
 
-			case 0x8181C7838201:	return "reboot";	//	CODE_REBOOT
+			case CODE_REBOOT:	return "REBOOT";	//	REBOOT
 
 			case 0x8101000000FF:	return "log-source-ETH_AUX";	//	OBIS_LOG_SOURCE_ETH_AUX
 			case 0x8102000000FF:	return "log-source-ETH-CUSTOM";	//	OBIS_LOG_SOURCE_ETH_CUSTOM
@@ -66,18 +66,18 @@ namespace node
 			case 0x814200000001:	return "log-source-SML-ext";	//	OBIS_LOG_SOURCE_SML_EXT
 			case 0x814200000002:	return "log-source-SML_custom";	//else if (OBIS_LOG_SOURCE_SML_CUSTOM == code)			
 			case 0x814200000003:	return "log-source-SML-service";	//else if (OBIS_LOG_SOURCE_SML_SERVICE == code)			
-			case 0x814200000004:	return "log-source-SML-WAN";	//else if (OBIS_LOG_SOURCE_SML_WAN == code)				
-			case 0x814200000005:	return "log-source-SML-eHZ";	//else if (OBIS_LOG_SOURCE_SML_eHZ == code)				
-			case 0x814200000006:	return "log-source-SML-wMBus";	//else if (OBIS_LOG_SOURCE_SML_wMBUS == code)				
-			case 0x8145000000FF:	return "log-source-push-SML";	//else if (OBIS_LOG_SOURCE_PUSH_SML == code)
-			case 0x8146000000FF:	return "log-source-push-IPT-source";	//else if (OBIS_LOG_SOURCE_PUSH_IPT_SOURCE == code)	
-			case 0x8147000000FF:	return "log-source-push-IPT-sink";	//else if (OBIS_LOG_SOURCE_PUSH_IPT_SINK == code)			
-			case 0x814800000001:	return "log-source-WAN-DHCP";	//else if (OBIS_LOG_SOURCE_WAN_DHCP == code)				
-			case 0x814800000002:	return "log-source-WAN-IP";	//else if (OBIS_LOG_SOURCE_WAN_IP == code)				
-			case 0x814800000003:	return "log-source-WAN-PPPoE";	//else if (OBIS_LOG_SOURCE_WAN_PPPoE == code)				
-			case 0x814900000001:	return "log-source-IPT-controller";	//else if (OBIS_LOG_SOURCE_WAN_IPT_CONTROLLER == code)	
-			case 0x814900000002:	return "log-source-WAN-IPT";	//else if (OBIS_LOG_SOURCE_WAN_IPT == code)				
-			case 0x814A000000FF:	return "log-source-WAN-NTP";	//else if (OBIS_LOG_SOURCE_WAN_NTP == code)				
+			case CODE_LOG_SOURCE_SML_WAN:	return "LOG_SOURCE_SML_WAN";	//else if (OBIS_LOG_SOURCE_SML_WAN == code)				
+			case CODE_LOG_SOURCE_SML_eHZ:	return "LOG_SOURCE_SML_eHZ";
+			case CODE_LOG_SOURCE_SML_wMBUS:	return "LOG_SOURCE_SML_wMBUS";
+			case CODE_LOG_SOURCE_PUSH_SML:	return "LOG_SOURCE_PUSH_SML";
+			case CODE_LOG_SOURCE_PUSH_IPT_SOURCE:	return "LOG_SOURCE_PUSH_IPT_SOURCE";
+			case CODE_LOG_SOURCE_PUSH_IPT_SINK:	return "LOG_SOURCE_PUSH_IPT_SINK";
+			case CODE_LOG_SOURCE_WAN_DHCP:	return "LOG_SOURCE_WAN_DHCP";
+			case CODE_LOG_SOURCE_WAN_IP:	return "LOG_SOURCE_WAN_IP";
+			case CODE_LOG_SOURCE_WAN_PPPoE:	return "LOG_SOURCE_WAN_PPPoE";
+			case CODE_LOG_SOURCE_WAN_IPT_CONTROLLER:	return "LOG_SOURCE_WAN_IPT_CONTROLLER";	
+			case CODE_LOG_SOURCE_WAN_IPT:	return "LOG_SOURCE_WAN_IPT";
+			case CODE_LOG_SOURCE_WAN_NTP:	return "LOG_SOURCE_WAN_NTP";
 
 
 			default:
@@ -100,9 +100,9 @@ namespace node
 			else if (code == OBIS_ROOT_DEVICE_IDENT)		return "root-device-id";
 			else if (code == OBIS_DEVICE_CLASS)			return "device-class";
 			else if (code == OBIS_SERVER_ID)				return "server-id-visible";
-			else if (OBIS_CODE_ROOT_FIRMWARE == code)			return "root-firmware";
-			else if (OBIS_CODE_DEVICE_KERNEL == code)			return "device-kernel";
-			else if (OBIS_CODE_DEVICE_ACTIVATED == code)		return "device-activated";
+			else if (OBIS_ROOT_FIRMWARE == code)			return "root-firmware";
+			else if (OBIS_DEVICE_KERNEL == code)			return "device-kernel";
+			else if (OBIS_DEVICE_ACTIVATED == code)		return "device-activated";
 			else if (code == OBIS_ROOT_ACCESS_RIGHTS)		return "root-auth";
 			else if (code == OBIS_ROOT_CUSTOM_INTERFACE)	return "root-custom-interface";
 			else if (code == OBIS_ROOT_CUSTOM_PARAM)		return "root-custom-param";
@@ -111,19 +111,19 @@ namespace node
 			else if (code == OBIS_ROOT_GSM)				return "root-GSM";
 			else if (OBIS_ROOT_IPT_STATE == code)			return "root-ipt-state";
 			else if (OBIS_ROOT_IPT_PARAM == code)			return "root-ipt-param";
-			else if (OBIS_CODE_PEER_ADDRESS_WANGSM == code)		return "peer-address-wangsm";
-			else if (OBIS_CODE_PEER_ADDRESS == code)			return "peer-address";
-			//else if (OBIS_CODE_VERSION == code)					return "version";
+			else if (OBIS_PEER_ADDRESS_WANGSM == code)		return "peer-address-wangsm";
+			else if (OBIS_PEER_ADDRESS == code)			return "peer-address";
+			//else if (OBIS_VERSION == code)					return "version";
 			else if (code == OBIS_ROOT_GPRS_PARAM)			return "root-GPRS";
 			else if (OBIS_ROOT_W_MBUS_STATUS == code)		return "root-wMBus-status";
 			else if (code == OBIS_ROOT_LAN_DSL)			return "root-LAN";
 			else if (code == OBIS_ROOT_MEMORY_USAGE)		return "root-memory-usage";
-			else if (OBIS_CODE_ROOT_MEMORY_MIRROR == code)		return "memory-mirror";
-			else if (OBIS_CODE_ROOT_MEMORY_TMP == code)			return "memory-tmp";
+			else if (OBIS_ROOT_MEMORY_MIRROR == code)		return "memory-mirror";
+			else if (OBIS_ROOT_MEMORY_TMP == code)			return "memory-tmp";
 			else if (code == OBIS_ROOT_DEVICE_TIME)		return "root-device-time";
 			else if (code == OBIS_ROOT_ACTIVE_DEVICES)		return "root-active-devices";
-			else if (code == OBIS_CODE_ROOT_NEW_DEVICES)		return "root-new-devices";
-			else if (code == OBIS_CODE_ROOT_INVISIBLE_DEVICES)	return "root-lost-devices";
+			else if (code == OBIS_ROOT_NEW_DEVICES)		return "root-new-devices";
+			else if (code == OBIS_ROOT_INVISIBLE_DEVICES)	return "root-lost-devices";
 			else if (code == OBIS_ROOT_DEVICE_INFO)		return "root-device-info";
 			else if (code == OBIS_ROOT_VISIBLE_DEVICES)	return "root-visible-devices";
 			else if (code == OBIS_ROOT_SENSOR_PARAMS)		return "root-sensor-prop";

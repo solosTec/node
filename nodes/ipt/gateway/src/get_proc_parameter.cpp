@@ -1108,7 +1108,7 @@ namespace node
 						append_get_proc_response(msg, {
 							OBIS_PUSH_OPERATIONS,
 							make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
-							OBIS_CODE_PUSH_TARGET
+							OBIS_PUSH_TARGET
 							}, make_value(rec["target"]));
 
 						//	push service: 

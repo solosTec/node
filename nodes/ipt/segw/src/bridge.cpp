@@ -22,6 +22,7 @@
 #include <cyng/util/split.h>
 #include <cyng/table/meta.hpp>
 #include <cyng/table/restore.h>
+#include <cyng/buffer_cast.h>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -49,6 +50,8 @@ namespace node
 		load_configuration();
 		load_devices_mbus();
 		load_data_collectors();
+		load_push_ops();
+		load_data_mirror();
 
 		//
 		//	register as listener
@@ -120,8 +123,7 @@ namespace node
 
 				if (tbl->insert(rec.key(), rec.data(), rec.get_generation(), cache_.get_tag())) {
 
-					cyng::buffer_t srv;
-					srv = cyng::value_cast(rec.key().at(0), srv);
+					cyng::buffer_t const srv = cyng::to_buffer(rec.key().at(0));
 					CYNG_LOG_TRACE(logger_, "load mbus device "
 						<< sml::from_server_id(srv));
 				}
@@ -146,14 +148,63 @@ namespace node
 
 				if (tbl->insert(rec.key(), rec.data(), rec.get_generation(), cache_.get_tag())) {
 
-					cyng::buffer_t srv;
-					srv = cyng::value_cast(rec.key().at(0), srv);
+					cyng::buffer_t const srv = cyng::to_buffer(rec.key().at(0));
 					CYNG_LOG_TRACE(logger_, "load data collector "
 						<< sml::from_server_id(srv));
 				}
 				else {
 
 					CYNG_LOG_ERROR(logger_, "insert into table TDataCollector failed - key: "
+						<< cyng::io::to_str(rec.key())
+						<< ", body: "
+						<< cyng::io::to_str(rec.data()));
+
+				}
+
+				return true;	//	continue
+				});
+			});
+	}
+
+	void bridge::load_push_ops()
+	{
+		cache_.write_table("_PushOps", [&](cyng::store::table* tbl) {
+			storage_.loop("TPushOps", [&](cyng::table::record const& rec)->bool {
+
+				if (tbl->insert(rec.key(), rec.data(), rec.get_generation(), cache_.get_tag())) {
+
+					cyng::buffer_t const srv = cyng::to_buffer(rec.key().at(0));
+					CYNG_LOG_TRACE(logger_, "load push op "
+						<< sml::from_server_id(srv));
+				}
+				else {
+
+					CYNG_LOG_ERROR(logger_, "insert into table TPushOps failed - key: "
+						<< cyng::io::to_str(rec.key())
+						<< ", body: "
+						<< cyng::io::to_str(rec.data()));
+
+				}
+
+				return true;	//	continue
+				});
+			});
+	}
+
+	void bridge::load_data_mirror()
+	{
+		cache_.write_table("_DataMirror", [&](cyng::store::table* tbl) {
+			storage_.loop("TDataMirror", [&](cyng::table::record const& rec)->bool {
+
+				if (tbl->insert(rec.key(), rec.data(), rec.get_generation(), cache_.get_tag())) {
+
+					cyng::buffer_t const srv = cyng::to_buffer(rec.key().at(0));
+					CYNG_LOG_TRACE(logger_, "load register "
+						<< sml::from_server_id(srv));
+				}
+				else {
+
+					CYNG_LOG_ERROR(logger_, "insert into table TDataMirror failed - key: "
 						<< cyng::io::to_str(rec.key())
 						<< ", body: "
 						<< cyng::io::to_str(rec.data()));
@@ -172,7 +223,7 @@ namespace node
 
 		storage_.generate_op_log(sw
 			, sml::LOG_CODE_09	//	0x00100023 - power return
-			, sml::OBIS_CODE_PEER_SCM	//	source is SCM
+			, sml::OBIS_PEER_SCM	//	source is SCM
 			, srv	//	server ID
 			, ""	//	target
 			, 0		//	nr
@@ -256,6 +307,36 @@ namespace node
 
 			}
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_PushOps")) {
+
+			if (!storage_.insert("TPushOps"
+				, key
+				, body
+				, gen
+				, source)) {
+
+				CYNG_LOG_ERROR(logger_, "Insert into table TPushOps failed - key: "
+					<< cyng::io::to_str(key)
+					<< ", body: "
+					<< cyng::io::to_str(body));
+
+			}
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataMirror")) {
+
+			if (!storage_.insert("TDataMirror"
+				, key
+				, body
+				, gen
+				, source)) {
+
+				CYNG_LOG_ERROR(logger_, "Insert into table TDataMirror failed - key: "
+					<< cyng::io::to_str(key)
+					<< ", body: "
+					<< cyng::io::to_str(body));
+
+			}
+		}
 	}
 
 	void bridge::sig_del(cyng::store::table const* tbl
@@ -273,7 +354,14 @@ namespace node
 
 			storage_.remove("TDataCollector", key, source);
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_PushOps")) {
 
+			storage_.remove("TPushOps", key, source);
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataMirror")) {
+
+			storage_.remove("TDataMirror", key, source);
+		}
 	}
 
 	void bridge::sig_clr(cyng::store::table const*, boost::uuids::uuid)
@@ -309,7 +397,7 @@ namespace node
 				std::uint64_t sw = cyng::value_cast(attr.second, sml::status::get_initial_value());
 				storage_.generate_op_log(sw
 					, 0x800008	//	evt
-					, sml::OBIS_CODE_PEER_USERIF	//	source
+					, sml::OBIS_PEER_USERIF	//	source
 					, cyng::make_buffer({ 0x81, 0x81, 0x00, 0x00, 0x00, 0x11 })	//	server ID
 					, ""	//	target
 					, 0		//	nr
@@ -347,6 +435,20 @@ namespace node
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataCollector")) {
 
 			storage_.update("TDataCollector"
+				, key
+				, tbl->meta().to_param(attr)
+				, gen);
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_PushOps")) {
+
+			storage_.update("TPushOps"
+				, key
+				, tbl->meta().to_param(attr)
+				, gen);
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataMirror")) {
+
+			storage_.update("TDataMirror"
 				, key
 				, tbl->meta().to_param(attr)
 				, gen);
@@ -389,6 +491,17 @@ namespace node
 			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 
+		l = cache_.db_.get_listener("_PushOps"
+			, std::bind(&bridge::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+
+		l = cache_.db_.get_listener("_DataMirror"
+			, std::bind(&bridge::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 	}
 
 	void bridge::start_task_obislog(cyng::async::mux& mux)

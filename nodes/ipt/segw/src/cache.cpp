@@ -112,6 +112,13 @@ namespace node
 			}, cyng::store::write_access(name));
 	}
 
+	void cache::write_tables(std::string const& t1, std::string const& t2, std::function<void(cyng::store::table*, cyng::store::table*)> f)
+	{
+		db_.access([f](cyng::store::table* tbl1, cyng::store::table* tbl2) {
+			f(tbl1, tbl2);
+			}, cyng::store::write_access(t1), cyng::store::write_access(t2));
+	}
+
 	void cache::clear_table(std::string const& name) {
 		db_.clear(name, tag_);
 	}
@@ -372,7 +379,7 @@ namespace node
 			//	Controls which data are stored.
 			//	81 81 C7 86 20 FF - OBIS_ROOT_DATA_COLLECTOR
 			//
-			cyng::table::make_meta_table<2, 5>("_DataCollector",
+			cyng::table::make_meta_table<2, 4>("_DataCollector",
 			{ "serverID"	//	server/meter/sensor ID
 			, "nr"			//	position/number - starts with 1
 							//	-- body
@@ -380,7 +387,7 @@ namespace node
 			, "active"		//	[bool] turned on/off (OBIS_DATA_COLLECTOR_ACTIVE)
 			, "maxSize"		//	[u32] max entry count (OBIS_DATA_COLLECTOR_SIZE)
 			, "regPeriod"	//	[seconds] register period - if 0, recording is event-driven (OBIS_DATA_REGISTER_PERIOD)
-			, "entries"		//	OBIS codes
+			//, "entries"		//	OBIS codes
 			},
 			{ cyng::TC_BUFFER		//	serverID
 			, cyng::TC_UINT8		//	nr
@@ -389,7 +396,7 @@ namespace node
 			, cyng::TC_BOOL			//	active
 			, cyng::TC_UINT16		//	maxSize
 			, cyng::TC_SECOND		//	regPeriod
-			, cyng::TC_STRING		//	entries
+			//, cyng::TC_STRING		//	entries
 			},
 			{ 9		//	serverID
 			, 0		//	nr
@@ -398,7 +405,7 @@ namespace node
 			, 0		//	active
 			, 0		//	maxSize
 			, 0		//	regPeriod
-			, 512	//	entries
+			//, 512	//	entries
 			}),
 
 			//
@@ -409,11 +416,11 @@ namespace node
 			{ "serverID"	//	server/meter/sensor ID
 			, "nr"			//	position/number - starts with 1
 							//	-- body
-			, "interval"	//	[u32] (81 18 C7 8A 02 FF) push interval in seconds
-			, "delay"		//	[u32] (81 18 C7 8A 03 FF) push delay in seconds 
-			, "source"		//	[OBIS] (81 81 C7 8A 04 FF) push source
-			, "target"		//	[string] (81 47 17 07 00 FF) target name
-			, "service"		//	[OBIS] (81 49 00 00 10 FF) push service
+			, "interval"	//	[u32] (81 81 C7 8A 02 FF - PUSH_INTERVAL) push interval in seconds
+			, "delay"		//	[u32] (81 81 C7 8A 03 FF - PUSH_DELAY) push delay in seconds 
+			, "source"		//	[OBIS] (81 81 C7 8A 04 FF - PUSH_SOURCE) push source
+			, "target"		//	[string] (81 47 17 07 00 FF - PUSH_TARGET) target name
+			, "service"		//	[OBIS] (81 49 00 00 10 FF - PUSH_SERVICE) push service
 			},
 			{ cyng::TC_BUFFER		//	serverID
 			, cyng::TC_UINT8		//	nr
@@ -432,6 +439,33 @@ namespace node
 			, 6		//	source
 			, 32	//	target
 			, 6		//	service
+			}),
+
+			//
+			//	data mirror / register - list of OBIS codes
+			//	81 81 C7 8A 23 FF - DATA_COLLECTOR_OBIS
+			//
+			cyng::table::make_meta_table<3, 2>("_DataMirror",
+			{ "serverID"	//	server/meter/sensor ID
+			, "nr"			//	reference to _DataCollector.nr
+			, "reg"			//	index
+							//	-- body
+			, "code"		//	OBIS code
+			, "active"		//	[bool] turned on/off
+			},
+			{ cyng::TC_BUFFER		//	serverID
+			, cyng::TC_UINT8		//	nr
+			, cyng::TC_UINT8		//	reg
+									//	-- body
+			, cyng::TC_BUFFER		//	code
+			, cyng::TC_BOOL			//	active
+			},
+			{ 9		//	serverID
+			, 0		//	nr
+			, 0		//	reg
+					//	-- body
+			, 6		//	code
+			, 0		//	active
 			})
 
 

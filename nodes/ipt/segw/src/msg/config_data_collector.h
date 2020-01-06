@@ -43,6 +43,12 @@ namespace node
 				, std::uint8_t nr
 				, cyng::param_map_t&& params);
 
+			void set_push_operations(cyng::buffer_t srv_id
+				, std::string user
+				, std::string pwd
+				, std::uint8_t nr
+				, cyng::param_map_t&& params);
+
 			void clear_data_collector(cyng::buffer_t srv_id
 				, cyng::param_map_t&& params);
 
@@ -68,12 +74,36 @@ namespace node
 		void insert_data_collector(cyng::store::table*
 			, cyng::table::key_type const&
 			, cyng::param_map_t const& params
+			, cyng::store::table*
 			, boost::uuids::uuid tag);
+
 		void update_data_collector(cyng::store::table*
 			, cyng::table::key_type const&
 			, cyng::param_map_t const& params
+			, cyng::store::table*
 			, boost::uuids::uuid tag);
-		std::string get_entries(cyng::object);
+
+		void update_data_mirror(cyng::store::table*
+			, cyng::object srv_id
+			, cyng::object nr
+			, cyng::param_map_t const& params
+			, boost::uuids::uuid tag);
+
+		void insert_push_ops(cyng::store::table*
+			, cyng::table::key_type const&
+			, cyng::param_map_t const& params
+			, boost::uuids::uuid tag);
+
+		void update_push_ops(cyng::store::table*
+			, cyng::table::key_type const&
+			, cyng::param_map_t const& params
+			, boost::uuids::uuid tag);
+
+		void loop_data_mirror(cyng::store::table const*
+			, cyng::tuple_t& msg
+			, cyng::buffer_t srv_id
+			, std::uint8_t nr);
+
 
 	}	//	sml
 }

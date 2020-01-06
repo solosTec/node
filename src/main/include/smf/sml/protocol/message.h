@@ -105,14 +105,28 @@ namespace node
 		 *
 		 * @param msg SML_GetProcParameter.Res
 		 * @param code path
+		 * @param val SML_ProcParValue (value, periodEntry, tupleENtry, time or listEntry)
 		 */
 		bool append_get_proc_response(cyng::tuple_t& msg
 			, std::initializer_list<obis> path
 			, cyng::tuple_t&& val);
 
 		/**
-		 * msg must be of type SML_GetProfileList.Res 
-		 * 
+		 * msg must be of type SML_GetProcParameter.Res
+		 *
+		 * @param msg SML_GetProcParameter.Res
+		 * @param code path
+		 * @param val SML_ProcParValue (value, periodEntry, tupleENtry, time or listEntry)
+		 * @param child List_of_SML_Tree
+		 */
+		bool append_get_proc_response(cyng::tuple_t& msg
+			, std::initializer_list<obis> path
+			, cyng::tuple_t&& val
+			, cyng::tuple_t&& child);
+
+		/**
+		 * msg must be of type SML_GetProfileList.Res
+		 *
 		 * @param msg SML_GetProfileList.Res 
 		 * @param code path
 		 * @param obj result of period_entry() function

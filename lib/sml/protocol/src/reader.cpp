@@ -1258,7 +1258,7 @@ namespace node
 				//
 				//vec.push_back(*pos);
 
-				//if (OBIS_CODE_PUSH_TARGET == code) {
+				//if (OBIS_PUSH_TARGET == code) {
 
 				//}
 
@@ -1274,7 +1274,7 @@ namespace node
 				//	write value
 				//
 				if (OBIS_DATA_MANUFACTURER == code
-					|| OBIS_CODE_PUSH_TARGET == code
+					|| OBIS_PUSH_TARGET == code
 					|| OBIS_DATA_PUSH_DETAILS == code)
 				{
 					return read_string(obj);
@@ -1315,7 +1315,7 @@ namespace node
 					auto const state = cyng::numeric_cast<std::int32_t>(obj, 0);
 					return cyng::make_object(state);
 				}
-				else if (OBIS_CODE_PEER_ADDRESS == code) {
+				else if (OBIS_PEER_ADDRESS == code) {
 					//	OBIS-T-Kennzahl der Ereignisquelle
 					cyng::buffer_t const buffer = cyng::to_buffer(obj);
 					return (buffer.size() == 6)
@@ -1487,14 +1487,14 @@ namespace node
 					|| OBIS_W_MBUS_FIRMWARE == code
 					|| OBIS_W_MBUS_HARDWARE == code
 					|| OBIS_DATA_MANUFACTURER == code
-					|| OBIS_CODE_DEVICE_KERNEL == code
-					|| OBIS_CODE_VERSION == code
-					|| OBIS_CODE_FILE_NAME == code
+					|| OBIS_DEVICE_KERNEL == code
+					|| OBIS_VERSION == code
+					|| OBIS_FILE_NAME == code
 					|| OBIS_IF_1107_METER_ID == code
 					|| OBIS_IF_1107_ADDRESS == code
 					|| OBIS_IF_1107_P1 == code
 					|| OBIS_IF_1107_W5 == code
-					|| OBIS_CODE_PUSH_TARGET == code
+					|| OBIS_PUSH_TARGET == code
 					|| code.is_matching(0x81, 0x81, 0xC7, 0x82, 0x0A).second) {
 					//	buffer to string
 					cyng::buffer_t const buffer = cyng::to_buffer(obj);
