@@ -42,19 +42,22 @@ namespace node
 		, config_ipt_(logger, sml_gen_, cfg)
 		, config_sensor_params_(logger, sml_gen_, cfg)
 		, config_data_collector_(logger, sml_gen_, cfg)
+		, config_security_(logger, sml_gen_, cfg)
 		, get_proc_parameter_(logger
 			, sml_gen_
 			, cfg
 			, db
 			, config_ipt_
 			, config_sensor_params_
-			, config_data_collector_)
+			, config_data_collector_
+			, config_security_)
 		, set_proc_parameter_(logger
 			, sml_gen_
 			, cfg
 			, config_ipt_
 			, config_sensor_params_
-			, config_data_collector_)
+			, config_data_collector_
+			, config_security_)
 		, get_profile_list_(logger, sml_gen_, cfg, db)
 		, attention_(logger, sml_gen_, cfg)
 	{

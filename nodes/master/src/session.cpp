@@ -895,10 +895,10 @@ namespace node
 						std::size_t counter{ 0 };
 						db_.access([&](cyng::store::table const* tbl_session, cyng::store::table* tbl_ts)->void {
 
-							const auto size = tbl_session->size();
+							auto const size = tbl_session->size();
 							tbl_session->loop([&](cyng::table::record const& rec) -> bool {
-								const auto tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
-								const auto name = cyng::value_cast<std::string>(rec["name"], "");
+								auto const tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+								auto const name = cyng::value_cast<std::string>(rec["name"], "");
 
 								//
 								//	read max number of events from config table

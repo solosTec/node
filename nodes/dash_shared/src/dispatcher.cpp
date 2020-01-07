@@ -252,19 +252,40 @@ namespace node
 		//CYNG_LOG_DEBUG(logger_, "sig.mod - "
 		//	<< tbl->meta().get_name());
 
-		//
-		//	convert attribute to parameter (as map)
-		//
-		auto pm = tbl->meta().to_param_map(attr);
+#ifdef _DEBUG
+		//if (boost::algorithm::equals(tbl->meta().get_name(), "_Config")) {
+
+		//	CYNG_LOG_DEBUG(logger_, "sig.mod - "
+		//		<< cyng::io::to_str(attr.second));
+
+		//}
+#endif
 
 		auto const rel = find_rel_by_table(tbl->meta().get_name());
 		if (!rel.is_empty()) {
+
+			//
+			//	convert attribute to parameter (as map)
+			//
+			auto val = [&]()->cyng::object {
+
+				auto pm = tbl->meta().to_param_map(attr);
+
+				if (boost::algorithm::equals(tbl->meta().get_name(), "_Config")) {
+
+					return (pm.empty())
+						? cyng::make_object()
+						: pm.begin()->second
+						;
+				}
+				return cyng::make_object(std::move(pm));
+			};
 
 			auto tpl = cyng::tuple_factory(
 				cyng::param_factory("cmd", std::string("modify")),
 				cyng::param_factory("channel", rel.channel_),
 				cyng::param_factory("key", key),
-				cyng::param_factory("value", std::move(pm)));
+				cyng::param_t("value", val()));
 
 			auto const msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event(rel.channel_, msg);
@@ -291,9 +312,7 @@ namespace node
 	void dispatcher::subscribe_channel(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
 	{
 		auto const rel = find_rel_by_channel(channel);
-		if (!rel.is_empty()) 
-		{
-
+		if (!rel.is_empty())	{
 			subscribe(db, rel.table_, channel, tag);
 		}
 		else {
@@ -311,7 +330,6 @@ namespace node
 			{
 				CYNG_LOG_WARNING(logger_, "ws.read - unknown subscribe channel [" << channel << "]");
 			}
-
 		}
 	}
 
@@ -380,7 +398,7 @@ namespace node
 			cyng::param_factory("channel", channel),
 			cyng::param_factory("value", std::thread::hardware_concurrency()));
 
-		auto msg = cyng::json::to_string(tpl);
+		auto const msg = cyng::json::to_string(tpl);
 
 		connection_manager_.ws_msg(tag, msg);
 
@@ -396,7 +414,7 @@ namespace node
 			cyng::param_factory("channel", channel),
 			cyng::param_factory("value", cyng::sys::get_total_virtual_memory()));
 
-		auto msg = cyng::json::to_string(tpl);
+		auto const msg = cyng::json::to_string(tpl);
 
 		connection_manager_.ws_msg(tag, msg);
 	}
@@ -411,7 +429,7 @@ namespace node
 			cyng::param_factory("channel", channel),
 			cyng::param_factory("value", cyng::sys::get_used_virtual_memory()));
 
-		auto msg = cyng::json::to_string(tpl);
+		auto const msg = cyng::json::to_string(tpl);
 
 		connection_manager_.ws_msg(tag, msg);
 	}
@@ -429,7 +447,7 @@ namespace node
 			cyng::param_factory("channel", channel),
 			cyng::param_factory("value", cyng::param_map_factory("total", total)("used", used)("percent", (used * 100.0) / total)()));
 
-		auto msg = cyng::json::to_string(tpl);
+		auto const msg = cyng::json::to_string(tpl);
 
 		connection_manager_.ws_msg(tag, msg);
 	}

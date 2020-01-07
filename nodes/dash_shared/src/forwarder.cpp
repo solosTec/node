@@ -240,9 +240,9 @@ namespace node
 
 		std::stringstream ss;
 		ss
-			<< "system configuration changed "
+			<< "system configuration for "
 			<< name
-			<< " ["
+			<< " has changed ["
 			<< value.get_class().type_name()
 			<< "] = "
 			<< cyng::io::to_str(value)

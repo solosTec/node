@@ -20,28 +20,37 @@
 
 namespace node 
 {
+	/**
+	 * Incoming insert request from web application
+	 */
 	void fwd_insert(cyng::logging::log_ptr
 		, cyng::context& ctx
 		, cyng::reader<cyng::object> const&
 		, boost::uuids::uuid);
 
+	/**
+	 * Incoming delete request from web application
+	 */
 	void fwd_delete(cyng::logging::log_ptr
 		, cyng::context& ctx
 		, cyng::reader<cyng::object> const&);
 
+	/**
+	 * Incoming modify request from web application
+	 */
 	void fwd_modify(cyng::logging::log_ptr
 		, cyng::context& ctx
 		, cyng::reader<cyng::object> const&);
 
 	/**
-	 * Stop a running session
+	 * Incoming request from web application to stop a running session.
 	 */
 	void fwd_stop(cyng::logging::log_ptr
 		, cyng::context& ctx
 		, cyng::reader<cyng::object> const&);
 
 	/**
-	 * communicate with the IP-T proxy
+	 * Incoming request from web application to communicate with the IP-T proxy
 	 */
 	void fwd_com_sml(cyng::logging::log_ptr
 		, cyng::context& ctx
@@ -50,7 +59,7 @@ namespace node
 		, cyng::reader<cyng::object> const&);
 
 	/**
-	 * communicate with a task
+	 * Incoming request from web application to communicate with a task
 	 */
 	void fwd_com_task(cyng::logging::log_ptr
 		, cyng::context& ctx
@@ -59,7 +68,7 @@ namespace node
 		, cyng::reader<cyng::object> const&);
 
 	/**
-	 * communicate with a node
+	 * Incoming request from web application to communicate with a node
 	 */
 	void fwd_com_node(cyng::logging::log_ptr
 		, cyng::context& ctx

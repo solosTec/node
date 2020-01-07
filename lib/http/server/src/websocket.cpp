@@ -314,7 +314,7 @@ namespace node
 			std::string const str = msg.str();
 #endif
 			
-			CYNG_LOG_TRACE(logger_, "ws " << tag() << " read - " << str);
+			CYNG_LOG_TRACE(logger_, "ws.read.json " << tag() << ": " << str);
 
 			//
 			//	update session status
@@ -441,12 +441,12 @@ namespace node
 
             if (ws_.is_open())
 			{
-			    CYNG_LOG_TRACE(logger_, "ws.send.json: " << msg);
+			    CYNG_LOG_TRACE(logger_, "ws.write.json " << tag() << ": " << msg);
 				//ws_.lowest_layer().wait(boost::asio::ip::tcp::socket::wait_write);
 			    ws_.write(boost::asio::buffer(msg));
 				return true;
 			}
-		    CYNG_LOG_WARNING(logger_, "ws.send.json - closed " << msg);
+		    CYNG_LOG_WARNING(logger_, "ws.write.json " << tag() << " closed " << msg);
 			return false;
 		}
 	}

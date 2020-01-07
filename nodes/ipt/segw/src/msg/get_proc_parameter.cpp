@@ -9,6 +9,7 @@
 #include "config_ipt.h"
 #include "config_sensor_params.h"
 #include "config_data_collector.h"
+#include "config_security.h"
 #include "../segw.h"
 #include "../cache.h"
 #include "../storage.h"
@@ -41,7 +42,8 @@ namespace node
 			, storage& db
 			, node::ipt::config_ipt& config_ipt
 			, config_sensor_params& config_sensor_params
-			, config_data_collector& config_data_collector)
+			, config_data_collector& config_data_collector
+			, config_security& config_security)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
@@ -49,6 +51,7 @@ namespace node
 			, config_ipt_(config_ipt)
 			, config_sensor_params_(config_sensor_params)
 			, config_data_collector_(config_data_collector)
+			, config_security_(config_security)
 		{}
 
 		void get_proc_parameter::generate_response(obis code
@@ -144,6 +147,9 @@ namespace node
 				break;
 			case CODE_CLASS_MBUS:	//	0x00B000020000
 				class_mbus(trx, srv_id);
+				break;
+			case CODE_ROOT_SECURITY:	//	00 80 80 01 00 FF
+				config_security_.get_proc_params(trx, srv_id);
 				break;
 			default:
 				CYNG_LOG_ERROR(logger_, "sml.get.proc.parameter.request - unknown OBIS code "

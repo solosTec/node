@@ -951,8 +951,9 @@ namespace node
 
 			//
 			//	message slot (1)
+			//	CRC, counter, pk
 			//
-			BOOST_ASSERT_MSG(evt.tpl_.size() == 2, "evt_sml_eom");
+			BOOST_ASSERT_MSG(evt.tpl_.size() == 3, "evt_sml_eom");
 			sp_->mux_.post(task_.tsk_proxy_, 1, std::move(evt.tpl_));
 		}
 
