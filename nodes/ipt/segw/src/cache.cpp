@@ -12,6 +12,7 @@
 #include <smf/sml/srv_id_io.h>
 
 #include <cyng/table/meta.hpp>
+#include <cyng/value_cast.hpp>
 
 #include <boost/core/ignore_unused.hpp>
 
