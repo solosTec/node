@@ -17,14 +17,14 @@
 namespace node 
 {
 	class session;
+	class cache;
 	class cluster
 	{
 
 	public:
 		cluster(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, cyng::store::db&
-			, std::atomic<std::uint64_t>& global_configuration);
+			, cache&);
 
 		cluster(cluster const&) = delete;
 		cluster& operator=(cluster const&) = delete;
@@ -81,8 +81,7 @@ namespace node
 	private:
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
-		cyng::store::db& db_;
-		std::atomic<std::uint64_t>& global_configuration_;
+		cache& cache_;
 
 		/**
 		 * generate meter tags

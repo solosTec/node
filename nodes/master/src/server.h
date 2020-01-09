@@ -8,9 +8,10 @@
 #ifndef NODE_MASTER_SERVER_H
 #define NODE_MASTER_SERVER_H
 
+#include "db.h"
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
-#include <cyng/store/db.h>
+//#include <cyng/store/db.h>
 #include <unordered_map>
 #include <atomic>
 #include <boost/version.hpp>
@@ -56,20 +57,11 @@ namespace node
 		 */
 		cyng::logging::log_ptr logger_;
 
-		//	master tag
-		boost::uuids::uuid const tag_;
-		std::string const country_code_;
-		std::string const language_code_;
 
 		//	credentials (default)
 		std::string const account_;
 		std::string const pwd_;
-		std::chrono::seconds const monitor_;	//!< cluster monitor
-
-		//	global configuration parameters
-		std::atomic<std::uint64_t>	global_configuration_;
-		boost::filesystem::path stat_dir_;
-		std::uint64_t max_messages_, max_events_;
+		//std::chrono::seconds const monitor_;	//!< cluster monitor
 
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor acceptor_;		
@@ -82,6 +74,7 @@ namespace node
 		 * database
 		 */
 		cyng::store::db	db_;
+		cache cache_;
 
 		/**
 		 * generate session tags

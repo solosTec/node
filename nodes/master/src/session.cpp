@@ -33,18 +33,13 @@ namespace node
 {
 	session::session(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, boost::uuids::uuid mtag // master tag
-		, cyng::store::db& db
+		, cache& cfg
 		, std::string const& account
 		, std::string const& pwd
-		, boost::uuids::uuid stag
-		, std::chrono::seconds monitor
-		, std::atomic<std::uint64_t>& global_configuration
-		, boost::filesystem::path stat_dir )
+		, boost::uuids::uuid stag)
 	: mux_(mux)
 		, logger_(logger)
-		, mtag_(mtag)
-		, db_(db)
+		, cache_(cfg)
 		, vm_(mux.get_io_service(), stag)
 		, parser_([this](cyng::vector_t&& prg) {
 			CYNG_LOG_TRACE(logger_, prg.size() 
@@ -56,10 +51,9 @@ namespace node
 		})
 		, account_(account)
 		, pwd_(pwd)
-		, cluster_monitor_(monitor)
 		, seq_(0)
-		, client_(mux, logger, db, global_configuration, stag, stat_dir)
-		, cluster_(mux, logger, db, global_configuration)
+		, client_(mux, logger, cfg, stag)
+		, cluster_(mux, logger, cfg)
 		, subscriptions_()
 		, tsk_watchdog_(cyng::async::NO_TASK)
 		, group_(0)
@@ -93,6 +87,11 @@ namespace node
 		//	session shutdown - initiated by connection
 		//
 		vm_.register_function("session.cleanup", 2, std::bind(&session::cleanup, this, std::placeholders::_1));
+
+		//
+		//	start/stop time series
+		//
+		vm_.register_function("session.time.series", 1, std::bind(&session::time_series, this, std::placeholders::_1));
 
 		//
 		//	register request handler
@@ -159,27 +158,27 @@ namespace node
 		//
 		//	remove affected targets
 		//
-		db_.access([&](cyng::store::table* tbl_target)->void {
-			const auto count = cyng::erase(tbl_target, get_targets_by_peer(tbl_target, ctx.tag()), ctx.tag());
+		cache_.write_table("_Target", [&](cyng::store::table* tbl_target)->void {
+			auto const count = cyng::erase(tbl_target, get_targets_by_peer(tbl_target, ctx.tag()), ctx.tag());
 			CYNG_LOG_WARNING(logger_, "cluster member "
 				<< ctx.tag()
 				<< " removed "
 				<< count
 				<< " targets");
-		}, cyng::store::write_access("_Target"));
+		});
 
 		//
 		//	remove affected channels.
 		//	Channels are 2-way: There is an owner session and a target session. Both could be different.
 		//
-		db_.access([&](cyng::store::table* tbl_channel)->void {
-			const auto count = cyng::erase(tbl_channel, get_channels_by_peer(tbl_channel, ctx.tag()), ctx.tag());
+		cache_.write_table("_Channel", [&](cyng::store::table* tbl_channel)->void {
+			auto const count = cyng::erase(tbl_channel, get_channels_by_peer(tbl_channel, ctx.tag()), ctx.tag());
 			CYNG_LOG_WARNING(logger_, "cluster member "
 				<< ctx.tag()
 				<< " removed "
 				<< count
 				<< " channels");
-		}, cyng::store::write_access("_Channel"));
+		});
 
 		//
 		//	remove all open subscriptions
@@ -192,18 +191,17 @@ namespace node
 		cyng::store::close_subscription(subscriptions_);
 		
 		//
+		//	get max event limit
+		//
+		auto const max_events = cache_.get_max_events();
+
+		//
 		//	remove all client sessions of this node and close open connections
 		//
-		db_.access([&](cyng::store::table* tbl_session
+		cache_.db_.access([&](cyng::store::table* tbl_session
 			, cyng::store::table* tbl_connection
-			, const cyng::store::table* tbl_device
-			, cyng::store::table* tbl_tsdb
-			, cyng::store::table const* tbl_cfg)->void {
-
-			//
-			//	get max event limit
-			//
-			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
+			, cyng::store::table const* tbl_device
+			, cyng::store::table* tbl_tsdb)->void {
 
 			cyng::table::key_list_t pks;
 			tbl_session->loop([&](cyng::table::record const& rec) -> bool {
@@ -259,7 +257,6 @@ namespace node
 						//
 						connection_erase(tbl_connection, cyng::table::key_generator(tag, rtag), tag);
 					}
-
 				}
 
 				//	continue
@@ -269,20 +266,18 @@ namespace node
 			//
 			//	remove all session records
 			//
-			//ctx.queue(cyng::generate_invoke("log.msg.info", "session.cleanup", pks.size()));
 			cyng::erase(tbl_session, pks, ctx.tag());
 
 		}	, cyng::store::write_access("_Session")
 			, cyng::store::write_access("_Connection")
 			, cyng::store::read_access("TDevice")
-			, cyng::store::write_access("_TimeSeries")
-			, cyng::store::read_access("_Config"));
+			, cyng::store::write_access("_TimeSeries"));
 
 		//
 		//	cluster table
 		//
 		std::string node_class;
-		db_.access([&](cyng::store::table* tbl_cluster, cyng::store::table* tbl_csv)->void {
+		cache_.write_tables("_Cluster", "_CSV", [&](cyng::store::table* tbl_cluster, cyng::store::table* tbl_csv)->void {
 
 			//
 			//	get node class
@@ -312,7 +307,7 @@ namespace node
 			//
 			//	update master record
 			//
-			tbl_cluster->modify(cyng::table::key_generator(mtag_), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
+			tbl_cluster->modify(cyng::table::key_generator(cache_.get_tag()), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
 
 			//
 			//	check CSV table
@@ -324,10 +319,7 @@ namespace node
 				//
 				tbl_csv->erase(key, ctx.tag());
 			}
-			
-
-		}	, cyng::store::write_access("_Cluster")
-			, cyng::store::write_access("_CSV"));
+		});
 
 		//
 		//	emit a system message
@@ -340,8 +332,7 @@ namespace node
 			<< ctx.tag()
 			<< " closed"
 			;
-		insert_msg(db_
-			, cyng::logging::severity::LEVEL_WARNING
+		cache_.insert_msg(cyng::logging::severity::LEVEL_WARNING
 			, ss.str()
 			, ctx.tag());
 
@@ -485,7 +476,7 @@ namespace node
 			//
 			//	register additional request handler for database access
 			//
-			cyng::register_store(this->db_, ctx);
+			cyng::register_store(this->cache_.db_, ctx);
 
 			//
 			//	register client functions
@@ -554,8 +545,7 @@ namespace node
 				<< '@'
 				<< ep
 				;
-			insert_msg(db_
-				, cyng::logging::severity::LEVEL_ERROR
+			cache_.insert_msg(cyng::logging::severity::LEVEL_ERROR
 				, ss.str()
 				, ctx.tag());
 
@@ -579,9 +569,10 @@ namespace node
 			boost::uuids::uuid		//	[2] source
 		>(frame);
 
+		//
 		//	stop a client session
 		//
-		db_.access([&](const cyng::store::table* tbl_session)->void {
+		cache_.write_table("_Session", [&](const cyng::store::table* tbl_session)->void {
 			cyng::table::record rec = tbl_session->lookup(std::get<1>(tpl));
 			if (!rec.empty())
 			{
@@ -601,7 +592,7 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "bus.req.stop.client not found " << cyng::io::to_str(frame));
 
 			}
-		}, cyng::store::read_access("_Session"));
+		});
 	}
 
 
@@ -623,10 +614,7 @@ namespace node
 		//
 		//	insert into cluster table
 		//
-		//
-		//	cluster table
-		//
-		db_.access([&](cyng::store::table* tbl_cluster)->void {
+		cache_.write_table("_Cluster", [&](cyng::store::table* tbl_cluster)->void {
 
 			//
 			//	insert into cluster table
@@ -646,10 +634,10 @@ namespace node
 				//
 				//	update master record
 				//
-				tbl_cluster->modify(cyng::table::key_generator(mtag_), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
+				tbl_cluster->modify(cyng::table::key_generator(cache_.get_tag()), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
 			}
 
-		}, cyng::store::write_access("_Cluster"));
+		});
 
 		//
 		//	build message strings
@@ -659,14 +647,17 @@ namespace node
 		//
 		//	start watchdog task
 		//
-		if (cluster_monitor_.count() > 5)
+		auto const monitor = cache_.get_cluster_hartbeat();
+		if (monitor.count() > 5)
 		{
 			tsk_watchdog_ = cyng::async::start_task_delayed<watchdog>(mux_, std::chrono::seconds(30)
 				, logger_
-				, db_
-				, frame.at(4)
-				, cluster_monitor_).first;
+				, frame.at(4)	//	session object
+				, monitor).first;
 
+			//
+			//	system message
+			//
 			ss
 				<< "start watchdog task #"
 				<< tsk_watchdog_
@@ -675,11 +666,10 @@ namespace node
 				<< ':'
 				<< ctx.tag()
 				<< " with "
-				<< cluster_monitor_.count()
+				<< monitor.count()
 				<< " seconds"
 				;
-			insert_msg(db_
-				, cyng::logging::severity::LEVEL_INFO
+			cache_.insert_msg(cyng::logging::severity::LEVEL_INFO
 				, ss.str()
 				, ctx.tag());
 
@@ -692,11 +682,10 @@ namespace node
 				<< ':'
 				<< ctx.tag()
 				<< " - watchdog timer is "
-				<< cluster_monitor_.count()
+				<< monitor.count()
 				<< " second(s)"
 				;
-			insert_msg(db_
-				, cyng::logging::severity::LEVEL_WARNING
+			cache_.insert_msg(cyng::logging::severity::LEVEL_WARNING
 				, ss.str()
 				, ctx.tag());
 		}
@@ -713,8 +702,7 @@ namespace node
 			<< ctx.tag()
 			<< " joined"
 			;
-		insert_msg(db_
-			, cyng::logging::severity::LEVEL_INFO
+		cache_.insert_msg(cyng::logging::severity::LEVEL_INFO
 			, ss.str()
 			, ctx.tag());
 
@@ -741,7 +729,7 @@ namespace node
 			<< " - ping time " 
 			<< cyng::to_str(ping));
 
-		db_.modify("_Cluster"
+		cache_.db_.modify("_Cluster"
 			, cyng::table::key_generator(std::get<0>(tpl))
 			, cyng::param_factory("ping", ping)
 			, ctx.tag());
@@ -865,66 +853,34 @@ namespace node
 
 					if (boost::algorithm::equals(name, "connection-auto-login"))
 					{
-						client_.set_connection_auto_login(attr.second);
+						cache_.set_connection_auto_login(cyng::value_cast(attr.second, false));
 					}
 					else if (boost::algorithm::equals(name, "connection-auto-enabled"))
 					{
-						client_.set_connection_auto_enabled(attr.second);
+						cache_.set_connection_auto_enabled(cyng::value_cast(attr.second, false));
 					}
 					else if (boost::algorithm::equals(name, "connection-superseed"))
 					{
-						client_.set_connection_superseed(attr.second);
+						cache_.set_connection_superseed(cyng::value_cast(attr.second, false));
 					}
 					else if (boost::algorithm::equals(name, "catch-meters"))
 					{
-						client_.set_catch_meters(attr.second);
+						cache_.set_catch_meters(cyng::value_cast(attr.second, false));
 					}
 					else if (boost::algorithm::equals(name, "catch-lora"))
 					{
-						client_.set_catch_lora(attr.second);
+						cache_.set_catch_lora(cyng::value_cast(attr.second, false));
 					}
 					else if (boost::algorithm::equals(name, "generate-time-series"))
 					{
-						client_.set_generate_time_series(attr.second);
+						auto const b = cyng::value_cast(attr.second, false);
+						cache_.set_generate_time_series(b);
 
 						//
 						//	generate a time series event.
 						//	We have to be carefull to avoid a deadlock with tables.
 						//
-
-						std::size_t counter{ 0 };
-						db_.access([&](cyng::store::table const* tbl_session, cyng::store::table* tbl_ts)->void {
-
-							auto const size = tbl_session->size();
-							tbl_session->loop([&](cyng::table::record const& rec) -> bool {
-								auto const tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
-								auto const name = cyng::value_cast<std::string>(rec["name"], "");
-
-								//
-								//	read max number of events from config table
-								//
-								std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
-
-								//
-								//	create a time series event
-								//
-								std::stringstream ss;
-									ss
-									<< ++counter
-									<< "/"
-									<< size
-									;
-								if (client_.is_generate_time_series()) {
-									insert_ts_event(tbl_ts, tag, name, "start recording...", cyng::make_object(ss.str()), max_events);
-								}
-								else {
-									insert_ts_event(tbl_ts, tag, name, "...stop recording", cyng::make_object(ss.str()), max_events);
-								}
-
-								return true;
-							});
-						}	, cyng::store::read_access("_Session")
-							, cyng::store::write_access("_TimeSeries"));
+						vm_.async_run(cyng::generate_invoke("session.time.series", b));
 						
 					}
 					else {
@@ -946,6 +902,47 @@ namespace node
 		}
 	}
 
+	void session::time_series(cyng::context& ctx)
+	{
+		cyng::vector_t const frame = ctx.get_frame();
+		auto const ts_on = cyng::value_cast(frame.at(0), false);
+
+		//
+		//	read max number of events from config table
+		//
+		auto const max_events = cache_.get_max_events();
+
+		std::size_t counter{ 0 };
+		cache_.db_.access([&](cyng::store::table const* tbl_session, cyng::store::table* tbl_ts)->void {
+
+			auto const size = tbl_session->size();
+			tbl_session->loop([&](cyng::table::record const& rec) -> bool {
+
+				auto const tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
+				auto const name = cyng::value_cast<std::string>(rec["name"], "");
+
+				//
+				//	create a time series event
+				//
+				std::stringstream ss;
+				ss
+					<< ++counter
+					<< "/"
+					<< size
+					;
+				if (ts_on) {
+					insert_ts_event(tbl_ts, tag, name, "start recording...", cyng::make_object(ss.str()), max_events);
+				}
+				else {
+					insert_ts_event(tbl_ts, tag, name, "...stop recording", cyng::make_object(ss.str()), max_events);
+				}
+
+				return true;
+				});
+			}, cyng::store::read_access("_Session")
+				, cyng::store::write_access("_TimeSeries"));
+	}
+
 	void session::bus_req_subscribe(cyng::context& ctx)
 	{
 		//
@@ -965,7 +962,7 @@ namespace node
 
 		ctx.queue(cyng::generate_invoke("log.msg.info", "bus.req.subscribe", std::get<0>(tpl), std::get<1>(tpl)));
 
-		db_.access([&](cyng::store::table const* tbl)->void {
+		cache_.db_.access([&](cyng::store::table const* tbl)->void {
 
 			CYNG_LOG_INFO(logger_, tbl->meta().get_name() << "->size(" << tbl->size() << ")");
 			tbl->loop([&](cyng::table::record const& rec) -> bool {
@@ -989,7 +986,7 @@ namespace node
 
 		}, cyng::store::read_access(std::get<0>(tpl)));
 
-		db_.access([&](cyng::store::table* tbl)->void {
+		cache_.write_table(std::get<0>(tpl), [&](cyng::store::table* tbl)->void {
 			//
 			//	One set of callbacks for multiple tables.
 			//	Store connections array for clean disconnect
@@ -1000,7 +997,7 @@ namespace node
 					, std::bind(&session::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 					, std::bind(&session::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 					, std::bind(&session::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)));
-		}, cyng::store::write_access(std::get<0>(tpl)));
+		});
 
 	}
 
@@ -1050,8 +1047,7 @@ namespace node
 			std::string					//	[2] msg
 		>(frame);
 
-		insert_msg(db_
-			, std::get<1>(tpl)
+		cache_.insert_msg(std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, ctx.tag());
 	}
@@ -1075,7 +1071,7 @@ namespace node
 			boost::uuids::uuid				//	[10] tag
 		>(frame);
 
-		insert_lora_uplink(db_
+		insert_lora_uplink(cache_.db_
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
@@ -1120,7 +1116,7 @@ namespace node
 		//	search for requested class
 		//
 		std::size_t counter{ 0 };
-		db_.access([&](cyng::store::table const* tbl_cluster)->void {
+		cache_.read_table("_Cluster", [&](cyng::store::table const* tbl_cluster)->void {
 			tbl_cluster->loop([&](cyng::table::record const& rec) -> bool {
 
 				//
@@ -1152,7 +1148,7 @@ namespace node
 				//	continue
 				return true;
 			});
-		}, cyng::store::read_access("_Cluster"));
+		});
 
 		ctx.queue(node::bus_res_push_data(std::get<0>(tpl)	//	seq
 			, std::get<1>(tpl)
@@ -1162,17 +1158,12 @@ namespace node
 
 	cyng::object make_session(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, boost::uuids::uuid mtag
-		, cyng::store::db& db
+		, cache& db
 		, std::string const& account
 		, std::string const& pwd
-		, boost::uuids::uuid stag
-		, std::chrono::seconds monitor //	cluster watchdog
-		, std::atomic<std::uint64_t>& global_configuration
-		, boost::filesystem::path stat_dir)
+		, boost::uuids::uuid stag)
 	{
-		return cyng::make_object<session>(mux, logger, mtag, db, account, pwd, stag, monitor
-			, global_configuration, stat_dir);
+		return cyng::make_object<session>(mux, logger, db, account, pwd, stag);
 	}
 
 }

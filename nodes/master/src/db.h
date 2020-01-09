@@ -10,24 +10,13 @@
 
 #include <cyng/log.h>
 #include <cyng/store/db.h>
+
 #include <boost/uuid/uuid.hpp>
 
 namespace node 
 {
-	void init(cyng::logging::log_ptr logger
+	void create_tables(cyng::logging::log_ptr logger
 		, cyng::store::db&
-		, boost::uuids::uuid tag
-		, std::string country_code
-		, std::string language_code
-		, boost::asio::ip::tcp::endpoint
-		, std::uint64_t global_config
-		, boost::filesystem::path stat_dir
-		, std::uint64_t max_messages
-		, std::uint64_t max_events);
-
-	void insert_msg(cyng::store::db&
-		, cyng::logging::severity
-		, std::string const&
 		, boost::uuids::uuid tag);
 
 	void insert_msg(cyng::store::table* tbl
@@ -35,12 +24,6 @@ namespace node
 		, std::string const&
 		, boost::uuids::uuid tag
 		, std::uint64_t max_messages);
-
-	void insert_ts_event(cyng::store::db&
-		, boost::uuids::uuid tag
-		, std::string const& account
-		, std::string const& evt
-		, cyng::object);
 
 	void insert_ts_event(cyng::store::table* tbl
 		, boost::uuids::uuid tag
@@ -93,19 +76,6 @@ namespace node
 		SMF_GENERATE_CATCH_LORA		= (1 << 5),
 	};
 
-	bool is_connection_auto_login(std::uint64_t);
-	bool is_connection_auto_enabled(std::uint64_t);
-	bool is_connection_superseed(std::uint64_t);
-	bool is_generate_time_series(std::uint64_t);
-	bool is_catch_meters(std::uint64_t);
-	bool is_catch_lora(std::uint64_t);
-
-	bool set_connection_auto_login(std::atomic<std::uint64_t>&, bool);
-	bool set_connection_auto_enabled(std::atomic<std::uint64_t>&, bool);
-	bool set_connection_superseed(std::atomic<std::uint64_t>&, bool);
-	bool set_generate_time_series(std::atomic<std::uint64_t>&, bool);
-	bool set_catch_meters(std::atomic<std::uint64_t>&, bool);
-	bool set_catch_lora(std::atomic<std::uint64_t>&, bool);
 
 	/** @brief lookup meter
 	 * 
@@ -116,6 +86,131 @@ namespace node
 	 * @todo optimize
 	 */
 	cyng::table::record lookup_meter(cyng::store::table const* tbl, std::string const& ident, boost::uuids::uuid gw_tag);
+
+	/**
+	 * manage cached tables
+	 */
+	class cache
+	{
+
+	public:
+		cache(cyng::store::db&, boost::uuids::uuid tag);
+
+		void init(std::string country_code
+			, std::string language_code
+			, boost::filesystem::path stat_dir
+			, std::uint64_t max_messages
+			, std::uint64_t max_events
+			, std::chrono::seconds);
+
+		/**
+		 * @return itentity/source tag
+		 */
+		boost::uuids::uuid const get_tag() const;
+
+		void read_table(std::string const&, std::function<void(cyng::store::table const*)>);
+		void read_tables(std::string const&, std::string const&, std::function<void(cyng::store::table const*, cyng::store::table const*)>);
+		void write_table(std::string const&, std::function<void(cyng::store::table*)>);
+		void write_tables(std::string const&, std::string const&, std::function<void(cyng::store::table*, cyng::store::table*)>);
+		void clear_table(std::string const&);
+
+		/**
+		 * Convinience function to loop over one table with read access
+		 */
+		void loop(std::string const&, std::function<bool(cyng::table::record const&)>);
+
+
+		bool is_connection_auto_login() const;
+		bool is_connection_auto_enabled() const;
+		bool is_connection_superseed() const;
+		/**
+		 * @return true if generating time series is on.
+		 */
+		bool is_generate_time_series() const;
+		bool is_catch_meters() const;
+		bool is_catch_lora() const;
+
+		bool set_connection_auto_login(bool);
+		bool set_connection_auto_enabled(bool);
+		bool set_connection_superseed(bool);
+		/**
+		 * Turn generating time series on or off
+		 *
+		 * @return previous value
+		 */
+		bool set_generate_time_series(bool);
+		bool set_catch_meters(bool);
+		bool set_catch_lora(bool);
+
+		/**
+		 * read a configuration value from table "_Cfg"
+		 */
+		template <typename T >
+		T get_cfg(std::string name, T def) {
+			return cyng::value_cast(db_.get_value("_Config", std::string("value"), name), def);
+		}
+
+		/**
+		 * set/insert a configuration value
+		 */
+		template <typename T >
+		bool set_cfg(std::string name, T val) {
+			return merge_cfg(name, cyng::make_object(val));
+		}
+
+		/**
+		 * set/insert a configuration value
+		 */
+		bool merge_cfg(std::string name, cyng::object&& obj);
+
+		/**
+		 * insert master record into cluster table
+		 */
+		void create_master_record(boost::asio::ip::tcp::endpoint);
+
+		void insert_msg(cyng::logging::severity
+			, std::string const&
+			, boost::uuids::uuid tag);
+
+		//void insert_ts_event(boost::uuids::uuid tag
+		//	, std::string const& account
+		//	, std::string const& evt
+		//	, cyng::object);
+
+
+		/**
+		 * @return cluster heartbeat in seconds
+		 */
+		std::chrono::seconds get_cluster_hartbeat();
+
+		/**
+		 * read max number of events from config table
+		 */
+		std::uint64_t get_max_events();
+
+		/**
+		 *	read max number of messages from config table
+		 */
+		std::uint64_t get_max_messages();
+
+	public:
+		/**
+		 * global data cache
+		 */
+		cyng::store::db& db_;
+
+	private:
+		/**
+		 * source tag
+		 */
+		boost::uuids::uuid const tag_;
+
+		/**
+		 * sstem wide configuration flags
+		 */
+		std::atomic<std::uint64_t> sys_conf_;
+
+	};
 }
 
 #endif

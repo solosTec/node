@@ -25,16 +25,9 @@
 
 namespace node 
 {
-	void init(cyng::logging::log_ptr logger
+	void create_tables(cyng::logging::log_ptr logger
 		, cyng::store::db& db
-		, boost::uuids::uuid tag
-		, std::string country_code
-		, std::string language_code
-		, boost::asio::ip::tcp::endpoint ep
-		, std::uint64_t global_config
-		, boost::filesystem::path stat_dir
-		, std::uint64_t max_messages
-		, std::uint64_t max_events)
+		, boost::uuids::uuid tag)
 	{
 		CYNG_LOG_INFO(logger, "initialize database as node " << tag);
 
@@ -242,18 +235,6 @@ namespace node
 		}
 		else
 		{
-			db.insert("_Cluster"
-				, cyng::table::key_generator(tag)
-				, cyng::table::data_generator("master"
-					, std::chrono::system_clock::now()
-					, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)
-					, 0u	//	no clients yet
-					, std::chrono::microseconds(0)
-					, ep
-					, boost::this_process::get_id()
-					, cyng::null())	//	no session instance
-				, 1
-				, tag);
 
 		}
 
@@ -263,80 +244,12 @@ namespace node
 		}
 		else
 		{
-			bool const connection_auto_login = is_connection_auto_login(global_config);
-			bool const connection_auto_enabled = is_connection_auto_enabled(global_config);
-			bool const connection_superseed = is_connection_superseed(global_config);
-			bool const generate_time_series = is_generate_time_series(global_config);
-			bool const catch_meters = is_catch_meters(global_config);
-			bool const catch_lora = is_catch_lora(global_config);
-
-			db.insert("_Config", cyng::table::key_generator("startup"), cyng::table::data_generator(std::chrono::system_clock::now()), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("master-tag"), cyng::table::data_generator(tag), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("connection-auto-login"), cyng::table::data_generator(connection_auto_login), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("connection-auto-enabled"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("connection-superseed"), cyng::table::data_generator(connection_superseed), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("generate-time-series"), cyng::table::data_generator(generate_time_series), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("catch-meters"), cyng::table::data_generator(catch_meters), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("catch-lora"), cyng::table::data_generator(catch_lora), 1, tag);
-
-			db.insert("_Config", cyng::table::key_generator("connection-auto-login-default"), cyng::table::data_generator(connection_auto_login), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("connection-auto-enabled-default"), cyng::table::data_generator(connection_auto_enabled), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("connection-superseed-default"), cyng::table::data_generator(connection_superseed), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("generate-time-series-default"), cyng::table::data_generator(generate_time_series), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("catch-meters-default"), cyng::table::data_generator(catch_meters), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("catch-lora-default"), cyng::table::data_generator(catch_lora), 1, tag);
-
-			db.insert("_Config", cyng::table::key_generator("generate-time-series-dir"), cyng::table::data_generator(stat_dir.string()), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("country-code"), cyng::table::data_generator(country_code), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("country-code-default"), cyng::table::data_generator(country_code), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("language-code"), cyng::table::data_generator(language_code), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("language-code-default"), cyng::table::data_generator(language_code), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("max-messages"), cyng::table::data_generator(max_messages), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("max-messages-default"), cyng::table::data_generator(max_messages), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("max-events"), cyng::table::data_generator(max_events), 1, tag);
-			db.insert("_Config", cyng::table::key_generator("max-events-default"), cyng::table::data_generator(max_events), 1, tag);
-
-
-			//	get hostname
-			boost::system::error_code ec;
-			const auto host_name = boost::asio::ip::host_name(ec);
-			if (!ec) {
-				db.insert("_Config", cyng::table::key_generator("host-name"), cyng::table::data_generator(host_name), 1, tag);
-			}
-			else {
-				db.insert("_Config", cyng::table::key_generator("host-name"), cyng::table::data_generator(ec.message()), 1, tag);
-			}
-
-			db.insert("_Config", cyng::table::key_generator("smf-version"), cyng::table::data_generator(NODE_SUFFIX), 1, tag);
 
 		}
 
 		if (!create_table(db, "_SysMsg"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _SysMsg");
-		}
-		else
-		{
-			std::stringstream ss;
-			boost::system::error_code ec;
-			auto host = boost::asio::ip::host_name(ec);
-			if (!ec)
-			{ 
-				ss
-					<< "startup master node "
-					<< tag
-					<< " on "
-					<< host
-					;
-			}
-			else
-			{
-				ss
-					<< "startup master node "
-					<< tag
-					;
-			}
-			insert_msg(db, cyng::logging::severity::LEVEL_INFO, ss.str(), tag);
 		}
 
 		//
@@ -362,25 +275,6 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _TimeSeries");
 		}
-
-	}
-
-	void insert_msg(cyng::store::db& db
-		, cyng::logging::severity level
-		, std::string const& msg
-		, boost::uuids::uuid tag)
-	{
-		db.access([&](cyng::store::table* tbl, cyng::store::table const* tbl_cfg)->void {
-
-			//
-			//	read max number of messages from config table
-			//
-			std::uint64_t const max_messages = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-messages"), "value"), 1000u);
-
-			insert_msg(tbl, level, msg, tag, max_messages);
-
-		}	, cyng::store::write_access("_SysMsg")
-			, cyng::store::read_access("_Config"));
 
 	}
 
@@ -421,25 +315,6 @@ namespace node
 					, static_cast<std::uint8_t>(level), msg)
 				, 1, tag);
 		}
-	}
-
-	void insert_ts_event(cyng::store::db& db
-		, boost::uuids::uuid tag
-		, std::string const& account
-		, std::string const& evt
-		, cyng::object obj)
-	{
-		db.access([&](cyng::store::table* tbl_ts, cyng::store::table const* tbl_cfg)->void {
-
-			//
-			//	read max number of events from config table
-			//
-			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
-
-			insert_ts_event(tbl_ts, tag, account, evt, obj, max_events);
-
-		}	, cyng::store::write_access("_TimeSeries")
-			, cyng::store::read_access("_Config"));
 	}
 
 	void insert_ts_event(cyng::store::table* tbl
@@ -583,73 +458,6 @@ namespace node
 		return tbl->erase(key, tag);
 	}
 
-	bool is_connection_auto_login(std::uint64_t cfg)
-	{
-		return (cfg & SMF_CONNECTION_AUTO_LOGIN) == SMF_CONNECTION_AUTO_LOGIN;
-	}
-	bool is_connection_auto_enabled(std::uint64_t cfg)
-	{
-		return (cfg & SMF_CONNECTION_AUTO_ENABLED) == SMF_CONNECTION_AUTO_ENABLED;
-	}
-	bool is_connection_superseed(std::uint64_t cfg)
-	{
-		return (cfg & SMF_CONNECTION_SUPERSEDED) == SMF_CONNECTION_SUPERSEDED;
-	}
-	bool is_generate_time_series(std::uint64_t cfg)
-	{
-		return (cfg & SMF_GENERATE_TIME_SERIES) == SMF_GENERATE_TIME_SERIES;
-	}
-	bool is_catch_meters(std::uint64_t cfg)
-	{
-		return (cfg & SMF_GENERATE_CATCH_METERS) == SMF_GENERATE_CATCH_METERS;
-	}
-	bool is_catch_lora(std::uint64_t cfg)
-	{
-		return (cfg & SMF_GENERATE_CATCH_LORA) == SMF_GENERATE_CATCH_LORA;
-	}
-
-	bool set_connection_auto_login(std::atomic<std::uint64_t>& cfg, bool b)
-	{
-		return is_connection_auto_login(b
-			? cfg.fetch_or(SMF_CONNECTION_AUTO_LOGIN)
-			: cfg.fetch_and(~SMF_CONNECTION_AUTO_LOGIN));
-	}
-
-	bool set_connection_auto_enabled(std::atomic<std::uint64_t>& cfg, bool b)
-	{
-		return is_connection_auto_enabled(b
-			? cfg.fetch_or(SMF_CONNECTION_AUTO_ENABLED)
-			: cfg.fetch_and(~SMF_CONNECTION_AUTO_ENABLED));
-	}
-
-	bool set_connection_superseed(std::atomic<std::uint64_t>& cfg, bool b)
-	{
-		return is_connection_superseed(b
-			? cfg.fetch_or(SMF_CONNECTION_SUPERSEDED)
-			: cfg.fetch_and(~SMF_CONNECTION_SUPERSEDED));
-	}
-
-	bool set_generate_time_series(std::atomic<std::uint64_t>& cfg, bool b)
-	{
-		return is_generate_time_series(b
-			? cfg.fetch_or(SMF_GENERATE_TIME_SERIES)
-			: cfg.fetch_and(~SMF_GENERATE_TIME_SERIES));
-	}
-
-	bool set_catch_meters(std::atomic<std::uint64_t>& cfg, bool b)
-	{
-		return is_catch_meters(b
-			? cfg.fetch_or(SMF_GENERATE_CATCH_METERS)
-			: cfg.fetch_and(~SMF_GENERATE_CATCH_METERS));
-	}
-
-	bool set_catch_lora(std::atomic<std::uint64_t>& cfg, bool b)
-	{
-		return is_catch_lora(b
-			? cfg.fetch_or(SMF_GENERATE_CATCH_LORA)
-			: cfg.fetch_and(~SMF_GENERATE_CATCH_LORA));
-	}
-
 	cyng::table::record lookup_meter(cyng::store::table const* tbl, std::string const& ident, boost::uuids::uuid gw_tag)
 	{
 		cyng::table::record result(tbl->meta_ptr());
@@ -683,6 +491,264 @@ namespace node
 		});
 
 		return result;
+	}
+
+	cache::cache(cyng::store::db& db, boost::uuids::uuid tag)
+		: db_(db)
+		, tag_(tag)
+		, sys_conf_(0)
+	{}
+
+	boost::uuids::uuid const cache::get_tag() const
+	{
+		return tag_;
+	}
+
+	void cache::init(std::string country_code
+		, std::string language_code
+		, boost::filesystem::path stat_dir
+		, std::uint64_t max_messages
+		, std::uint64_t max_events
+		, std::chrono::seconds heartbeat)
+	{
+		set_cfg("startup", std::chrono::system_clock::now());
+
+		set_cfg("connection-auto-login", is_connection_auto_login());
+		set_cfg("connection-auto-enabled", is_connection_auto_enabled());
+		set_cfg("connection-superseed", is_connection_superseed());
+		set_cfg("generate-time-series", is_generate_time_series());
+		set_cfg("catch-meters", is_catch_meters());
+		set_cfg("catch-lora", is_catch_lora());
+
+		set_cfg("generate-time-series-dir", stat_dir.string());
+		set_cfg("country-code", country_code);
+		set_cfg("country-code-default", country_code);
+		set_cfg("language-code", language_code);
+		set_cfg("language-code-default", language_code);
+		set_cfg("max-messages", max_messages);
+		set_cfg("max-messages-default", max_messages);
+		set_cfg("max-events", max_events);
+		set_cfg("max-events-default", max_events);
+		set_cfg("cluster-heartbeat", heartbeat);
+
+
+		//	get hostname
+		boost::system::error_code ec;
+		auto host_name = boost::asio::ip::host_name(ec);
+		if (ec) {
+			host_name = ec.message();
+		}
+		set_cfg("host-name", host_name);
+
+		set_cfg("smf-version", NODE_SUFFIX);
+
+		//
+		//	system message
+		//
+		std::stringstream ss;
+		ss
+			<< "startup master node "
+			<< tag_
+			<< " on "
+			<< host_name
+			;
+		insert_msg(cyng::logging::severity::LEVEL_INFO, ss.str(), tag_);
+
+	}
+
+	bool cache::merge_cfg(std::string name, cyng::object&& val)
+	{
+		bool r{ false };
+		db_.access([&](cyng::store::table* tbl) {
+
+			r = tbl->merge(cyng::table::key_generator(name)
+				, cyng::table::data_generator(std::move(val))
+				, 1u	//	only needed for insert operations
+				, tag_);
+
+			}, cyng::store::write_access("_Config"));
+
+		return r;
+	}
+
+	void cache::read_table(std::string const& name, std::function<void(cyng::store::table const*)> f)
+	{
+		db_.access([f](cyng::store::table const* tbl) {
+			f(tbl);
+			}, cyng::store::read_access(name));
+	}
+
+	void cache::read_tables(std::string const& t1, std::string const& t2, std::function<void(cyng::store::table const*, cyng::store::table const*)> f)
+	{
+		db_.access([f](cyng::store::table const* tbl1, cyng::store::table const* tbl2) {
+			f(tbl1, tbl2);
+			}, cyng::store::read_access(t1), cyng::store::read_access(t2));
+	}
+
+	void cache::write_table(std::string const& name, std::function<void(cyng::store::table*)> f)
+	{
+		db_.access([f](cyng::store::table* tbl) {
+			f(tbl);
+			}, cyng::store::write_access(name));
+	}
+
+	void cache::write_tables(std::string const& t1, std::string const& t2, std::function<void(cyng::store::table*, cyng::store::table*)> f)
+	{
+		db_.access([f](cyng::store::table* tbl1, cyng::store::table* tbl2) {
+			f(tbl1, tbl2);
+			}, cyng::store::write_access(t1), cyng::store::write_access(t2));
+	}
+
+	void cache::clear_table(std::string const& name) {
+		db_.clear(name, tag_);
+	}
+
+	void cache::loop(std::string const& name, std::function<bool(cyng::table::record const&)> f)
+	{
+		db_.access([f](cyng::store::table const* tbl) {
+			tbl->loop([f](cyng::table::record const& rec)->bool {
+				return f(rec);
+				});
+			}, cyng::store::read_access(name));
+	}
+
+
+	bool cache::is_connection_auto_login() const
+	{
+		return (sys_conf_ & SMF_CONNECTION_AUTO_LOGIN) == SMF_CONNECTION_AUTO_LOGIN;
+	}
+	bool cache::is_connection_auto_enabled() const
+	{
+		return (sys_conf_ & SMF_CONNECTION_AUTO_ENABLED) == SMF_CONNECTION_AUTO_ENABLED;
+	}
+	bool cache::is_connection_superseed() const
+	{
+		return (sys_conf_ & SMF_CONNECTION_SUPERSEDED) == SMF_CONNECTION_SUPERSEDED;
+	}
+	bool cache::is_generate_time_series() const
+	{
+		return (sys_conf_ & SMF_GENERATE_TIME_SERIES) == SMF_GENERATE_TIME_SERIES;
+	}
+	bool cache::is_catch_meters() const
+	{
+		return (sys_conf_ & SMF_GENERATE_CATCH_METERS) == SMF_GENERATE_CATCH_METERS;
+	}
+	bool cache::is_catch_lora() const
+	{
+		return (sys_conf_ & SMF_GENERATE_CATCH_LORA) == SMF_GENERATE_CATCH_LORA;
+	}
+
+	bool cache::set_connection_auto_login(bool b)
+	{
+		b
+			? sys_conf_.fetch_or(SMF_CONNECTION_AUTO_LOGIN)
+			: sys_conf_.fetch_and(~SMF_CONNECTION_AUTO_LOGIN);
+		return is_connection_auto_login();
+	}
+
+	bool cache::set_connection_auto_enabled(bool b)
+	{
+		b
+			? sys_conf_.fetch_or(SMF_CONNECTION_AUTO_ENABLED)
+			: sys_conf_.fetch_and(~SMF_CONNECTION_AUTO_ENABLED);
+		return is_connection_auto_enabled();
+	}
+
+	bool cache::set_connection_superseed(bool b)
+	{
+		b
+			? sys_conf_.fetch_or(SMF_CONNECTION_SUPERSEDED)
+			: sys_conf_.fetch_and(~SMF_CONNECTION_SUPERSEDED);
+		return is_connection_superseed();
+	}
+
+	bool cache::set_generate_time_series(bool b)
+	{
+		b
+			? sys_conf_.fetch_or(SMF_GENERATE_TIME_SERIES)
+			: sys_conf_.fetch_and(~SMF_GENERATE_TIME_SERIES);
+		return is_generate_time_series();
+	}
+
+	bool cache::set_catch_meters(bool b)
+	{
+		b
+			? sys_conf_.fetch_or(SMF_GENERATE_CATCH_METERS)
+			: sys_conf_.fetch_and(~SMF_GENERATE_CATCH_METERS);
+		return is_catch_meters();
+	}
+
+	bool cache::set_catch_lora(bool b)
+	{
+		b
+			? sys_conf_.fetch_or(SMF_GENERATE_CATCH_LORA)
+			: sys_conf_.fetch_and(~SMF_GENERATE_CATCH_LORA);
+		return is_catch_lora();
+	}
+
+	void cache::create_master_record(boost::asio::ip::tcp::endpoint ep)
+	{
+		db_.insert("_Cluster"
+			, cyng::table::key_generator(tag_)
+			, cyng::table::data_generator("master"
+				, std::chrono::system_clock::now()
+				, cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)
+				, 0u	//	no clients yet
+				, std::chrono::microseconds(0)
+				, ep
+				, boost::this_process::get_id()
+				, cyng::null())	//	no session instance
+			, 1
+			, tag_);
+
+	}
+
+	void cache::insert_msg(cyng::logging::severity level
+		, std::string const& msg
+		, boost::uuids::uuid tag)
+	{
+		//
+		//	read max number of messages from config table
+		//
+		auto const max_messages = get_max_messages();
+
+		write_table("_SysMsg",[&](cyng::store::table* tbl) {
+
+			node::insert_msg(tbl, level, msg, tag, max_messages);
+
+		});
+	}
+
+	//void cache::insert_ts_event(boost::uuids::uuid tag
+	//	, std::string const& account
+	//	, std::string const& evt
+	//	, cyng::object obj)
+	//{
+	//	//
+	//	//	read max number of events from config table
+	//	//
+	//	auto const max_events = get_max_events();
+
+	//	write_table("_TimeSeries", [&](cyng::store::table* tbl_ts) {
+
+	//		node::insert_ts_event(tbl_ts, tag, account, evt, obj, max_events);
+
+	//	});
+	//}
+
+	std::chrono::seconds cache::get_cluster_hartbeat()
+	{
+		return get_cfg("cluster-heartbeat", std::chrono::seconds(57));
+	}
+
+	std::uint64_t cache::get_max_events()
+	{
+		return get_cfg<std::uint64_t>("max-events", 2000u);
+	}
+
+	std::uint64_t cache::get_max_messages()
+	{
+		return get_cfg<std::uint64_t>("max-messages", 1000u);
 	}
 
 }

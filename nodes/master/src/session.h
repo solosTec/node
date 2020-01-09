@@ -22,6 +22,7 @@ namespace node
 {
 	class connection;
 	class watchdog;
+	class cache;
 	class session
 	{
 		friend class connection;
@@ -32,14 +33,10 @@ namespace node
 	public:
 		session(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, boost::uuids::uuid mtag
-			, cyng::store::db&
+			, cache&
 			, std::string const& account
 			, std::string const& pwd
-			, boost::uuids::uuid stag
-			, std::chrono::seconds monitor
-			, std::atomic<std::uint64_t>& global_configuration
-			, boost::filesystem::path);
+			, boost::uuids::uuid stag);
 
 		session(session const&) = delete;
 		session& operator=(session const&) = delete;
@@ -81,6 +78,7 @@ namespace node
 
 
 		void cleanup(cyng::context& ctx);
+		void time_series(cyng::context& ctx);
 		void bus_insert_msg(cyng::context& ctx);
 		void bus_req_push_data(cyng::context& ctx);
 		void bus_insert_lora_uplink(cyng::context& ctx);
@@ -106,8 +104,8 @@ namespace node
 	private:
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
-		boost::uuids::uuid mtag_;	// master tag
-		cyng::store::db& db_;
+		//boost::uuids::uuid mtag_;	// master tag
+		cache& cache_;
 		cyng::controller vm_;
 		
 		/**
@@ -115,10 +113,8 @@ namespace node
 		 */
 		cyng::parser 	parser_;
 		
-		const std::string account_;
-		const std::string pwd_;
-		const std::chrono::seconds cluster_monitor_;
-
+		std::string const account_;
+		std::string const pwd_;
 
 		/**
 		 * cluster bus sequence
@@ -160,14 +156,10 @@ namespace node
 
 	cyng::object make_session(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, boost::uuids::uuid mtag
-		, cyng::store::db&
+		, cache&
 		, std::string const& account
 		, std::string const& pwd
-		, boost::uuids::uuid stag
-		, std::chrono::seconds monitor //	cluster watchdog
-		, std::atomic<std::uint64_t>& global_configuration
-		, boost::filesystem::path);
+		, boost::uuids::uuid stag);
 }
 
 #include <cyng/intrinsics/traits.hpp>

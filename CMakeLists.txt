@@ -89,7 +89,7 @@ if(UNIX)
 # has no meaning on VS
 # set default cmake build type to RelWithDebInfo (None Debug Release RelWithDebInfo MinSizeRel)
 if( NOT CMAKE_BUILD_TYPE )
-	set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE "Build Type")
+	set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Build Type")
 	message(STATUS "** Set build type  : ${CMAKE_BUILD_TYPE}")
 endif()
 message(STATUS "** Build type      : ${CMAKE_BUILD_TYPE}")

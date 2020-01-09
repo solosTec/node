@@ -20,6 +20,7 @@ namespace node
 	/**
 	 * Cluster member connection
 	 */
+	class cache;
 	class connection : public std::enable_shared_from_this<connection>
 	{
 	public:
@@ -32,14 +33,10 @@ namespace node
 		explicit connection(boost::asio::ip::tcp::socket&&
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, boost::uuids::uuid mtag //	master tag
-			, cyng::store::db&
+			, cache&
 			, std::string const& account
 			, std::string const& pwd
-			, boost::uuids::uuid stag
-			, std::chrono::seconds monitor
-			, std::atomic<std::uint64_t>& global_configuration
-			, boost::filesystem::path);
+			, boost::uuids::uuid stag);
 		
 		/**
 		 * Start the first asynchronous operation for the connection.

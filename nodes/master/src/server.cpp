@@ -7,7 +7,7 @@
 
 
 #include "server.h"
-#include "db.h"
+//#include "db.h"
 #include "connection.h"
 #include <cyng/dom/reader.h>
 
@@ -24,21 +24,15 @@ namespace node
 		, cyng::tuple_t cfg_session)
 	: mux_(mux)
 		, logger_(logger)
-		, tag_(tag)
-		, country_code_(country_code)
-		, language_code_(language_code)
 		, account_(account)
 		, pwd_(pwd)
-		, monitor_(monitor)
-		, global_configuration_(0)
-		, stat_dir_()
-		, max_messages_(1000u)
-		, max_events_(2000u)
+		//, monitor_(monitor)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
 		, socket_(io_ctx_)
 #endif
 		, db_()
+		, cache_(db_, tag)
 		, uidgen_()
 	{
 		//
@@ -47,28 +41,31 @@ namespace node
 		auto dom = cyng::make_reader(cfg_session);
 
 		//
-		//	set global configuration bitmask
+		//	create cache tables
 		//
-		set_connection_auto_login(global_configuration_, cyng::value_cast(dom.get("auto-login"), false));
-		set_connection_auto_enabled(global_configuration_, cyng::value_cast(dom.get("auto-enabled"), true));
-		set_connection_superseed(global_configuration_, cyng::value_cast(dom.get("supersede"), true));
-		set_generate_time_series(global_configuration_, cyng::value_cast(dom.get("generate-time-series"), false));
-		set_catch_meters(global_configuration_, cyng::value_cast(dom.get("catch-meters"), false));
-		set_catch_lora(global_configuration_, cyng::value_cast(dom.get("catch-lora"), false));
+		create_tables(logger, db_, tag);
 
-		CYNG_LOG_TRACE(logger_, "global configuration bitmask: " << global_configuration_.load());
-
+		//
+		//	initialize global configuration data
+		//
 		const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
-		stat_dir_ = cyng::value_cast(dom.get("stat-dir"), tmp.string());
-		CYNG_LOG_INFO(logger_, "store statistics data at " << stat_dir_);
+		auto stat_dir = cyng::value_cast(dom.get("stat-dir"), tmp.string());
+		CYNG_LOG_INFO(logger_, "store statistics data at " << stat_dir);
 
 		CYNG_LOG_TRACE(logger_, "country code: " << country_code);
 
-		max_messages_ = cyng::value_cast<std::uint64_t>(dom.get("max-messages"), max_messages_);
-		CYNG_LOG_INFO(logger_, "store max. " << max_messages_ << " messages");
+		auto max_messages = cyng::value_cast<std::uint64_t>(dom.get("max-messages"), 1000);
+		CYNG_LOG_INFO(logger_, "store max. " << max_messages << " messages");
 
-		max_events_ = cyng::value_cast<std::uint64_t>(dom.get("max-events"), max_events_);
-		CYNG_LOG_INFO(logger_, "store max. " << max_events_ << " events");
+		auto max_events = cyng::value_cast<std::uint64_t>(dom.get("max-events"), 2000);
+		CYNG_LOG_INFO(logger_, "store max. " << max_events << " events");
+
+		cache_.init(country_code
+			, language_code
+			, stat_dir
+			, max_messages
+			, max_events
+			, std::chrono::seconds(monitor));
 	}
 	
 	void server::run(std::string const& address, std::string const& service)
@@ -93,20 +90,13 @@ namespace node
 			acceptor_.listen();
 
 			//
-			//	initialize database
+			//	create master node record
 			//	
-			CYNG_LOG_TRACE(logger_, "init database");
-			init(logger_
-				, db_
-				, tag_
-				, country_code_
-				, language_code_
-				, acceptor_.local_endpoint()
-				, global_configuration_.load()
-				, stat_dir_
-				, max_messages_
-				, max_events_);
+			cache_.create_master_record(acceptor_.local_endpoint());
 
+			//
+			//	start reading
+			//
 			do_accept();
 		}
 		catch (std::exception const& ex) {
@@ -148,14 +138,10 @@ namespace node
 				std::make_shared<connection>(std::move(socket)
 					, mux_
 					, logger_
-					, tag_
-					, db_
+					, cache_
 					, account_
 					, pwd_
-					, tag
-					, monitor_ // cluster watchdog
-					, global_configuration_
-					, stat_dir_)->start();
+					, tag)->start();
 
 				do_accept();
 			}
@@ -195,12 +181,11 @@ namespace node
 		std::stringstream ss;
 		ss
 			<< "shutdown cluster master "
-			<< tag_
+			<< cache_.get_tag()
 			;
-		insert_msg(db_
-			, cyng::logging::severity::LEVEL_FATAL
+		cache_.insert_msg(cyng::logging::severity::LEVEL_FATAL
 			, ss.str()
-			, tag_);
+			, cache_.get_tag());
 
 		CYNG_LOG_WARNING(logger_, "close server");
 
@@ -212,7 +197,7 @@ namespace node
 		//
 		//	terminate all sessions
 		//
-		mux_.post("node::watchdog", 0, cyng::tuple_factory(tag_));
+		mux_.post("node::watchdog", 0, cyng::tuple_factory(cache_.get_tag()));
 
 		//
 		//	wait for all watchdog tasks to terminate

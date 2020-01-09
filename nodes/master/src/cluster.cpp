@@ -24,12 +24,10 @@ namespace node
 {
 	cluster::cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cyng::store::db& db
-		, std::atomic<std::uint64_t>& global_configuration)
+		, cache& cfg)
 	: mux_(mux)
 		, logger_(logger)
-		, db_(db)
-		, global_configuration_(global_configuration)
+		, cache_(cfg)
 		, uidgen_()
 	{}
 
@@ -77,7 +75,7 @@ namespace node
 		//
 		//	send process parameter request to an gateway
 		//
-		db_.access([&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
+		cache_.read_tables("_Session", "TGateway", [&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
 
 			//
 			//	Since TGateway and TDevice share the same primary key, we can search for a session 
@@ -124,9 +122,7 @@ namespace node
 					<< std::get<3>(tpl));
 			}
 
-		}	, cyng::store::read_access("_Session")
-			, cyng::store::read_access("TGateway"));
-
+		});
 	}
 
 	void cluster::bus_res_com_sml(cyng::context& ctx)
@@ -200,10 +196,10 @@ namespace node
 			const auto id = cyng::find_value(std::get<8>(tpl), "id", tmp);
 			CYNG_LOG_INFO(logger_, "Update M-Bus ID: " << cyng::io::to_hex(id));
 
-			db_.access([&](cyng::store::table* tbl_gw)->void {
+			cache_.write_table("TGateway", [&](cyng::store::table* tbl_gw)->void {
 				//	update "mbus" W-Mbus ID
 				tbl_gw->modify(std::get<3>(tpl), cyng::param_factory("mbus", id), std::get<1>(tpl));
-			}, cyng::store::write_access("TGateway"));
+			});
 		}
 
 		//
@@ -231,7 +227,7 @@ namespace node
 		, std::string code
 		, cyng::param_map_t params)
 	{
-		db_.access([&](cyng::store::table const* tbl_cluster)->void {
+		cache_.read_table("_Cluster", [&](cyng::store::table const* tbl_cluster)->void {
 
 			auto rec = tbl_cluster->lookup(cyng::table::key_generator(source));
 			if (!rec.empty()) {
@@ -265,8 +261,7 @@ namespace node
 			else {
 				CYNG_LOG_WARNING(logger_, "bus.res.query.gateway - peer not found " << source);
 			}
-		}	, cyng::store::read_access("_Cluster"));
-
+		});
 	}
 
 	void cluster::routing_back_active_devices(boost::uuids::uuid ident
@@ -311,10 +306,10 @@ namespace node
 				CYNG_LOG_TRACE(logger_, "search for "
 					<< cyng::io::to_hex(ident)
 					<< " in TMeter table with "
-					<< db_.size("TMeter")
+					<< cache_.db_.size("TMeter")
 					<< " record(s)");
 
-				db_.access([&](cyng::store::table* tbl_meter, cyng::store::table const* tbl_cfg) -> void {
+				cache_.db_.access([&](cyng::store::table* tbl_meter, cyng::store::table const* tbl_cfg) -> void {
 
 					//
 					//	search for meter on this gateway
@@ -357,7 +352,7 @@ namespace node
 						CYNG_LOG_INFO(logger_, "auto insert TMeter " << tag << " : " << meter << " mc: " << mc);
 
 						//	auto insert meters is true
-						if (is_catch_meters(global_configuration_)) {
+						if (cache_.is_catch_meters()) {
 							tbl_meter->insert(cyng::table::key_generator(tag)
 								, cyng::table::data_generator(ident, meter, mc, maker, age, "", "", "", "", class_name, gw_tag)
 								, 0
@@ -438,15 +433,14 @@ namespace node
 		//
 		//	emit system message
 		//
-		insert_msg(db_
-			, cyng::logging::severity::LEVEL_INFO
+		cache_.insert_msg(cyng::logging::severity::LEVEL_INFO
 			, ("attention message from " + std::get<4>(tpl) + ": " + std::get<6>(tpl))
 			, std::get<1>(tpl));
 
 		//
 		//	routing back - forward to receiver
 		//
-		db_.access([&](const cyng::store::table* tbl_cluster)->void {
+		cache_.read_table("_Cluster", [&](cyng::store::table const* tbl_cluster)->void {
 
 			auto rec = tbl_cluster->lookup(cyng::table::key_generator(std::get<1>(tpl)));
 			if (!rec.empty()) {
@@ -474,8 +468,7 @@ namespace node
 			else {
 				CYNG_LOG_WARNING(logger_, "bus.res.attention.code - peer not found " << std::get<1>(tpl));
 			}
-		}, cyng::store::read_access("_Cluster"));
-
+		});
 	}
 
 	void cluster::bus_req_com_task(cyng::context& ctx)

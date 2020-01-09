@@ -33,6 +33,7 @@ namespace node
 	cyng::table::key_list_t get_targets_by_peer(cyng::store::table const* tbl_target, boost::uuids::uuid);
 	cyng::table::key_list_t get_channels_by_peer(cyng::store::table const* tbl_channel, boost::uuids::uuid);
 
+	class cache;
 	class client
 	{
 		friend class connection;
@@ -40,10 +41,8 @@ namespace node
 	public:
 		client(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, cyng::store::db&
-			, std::atomic<std::uint64_t>& global_configuration
-			, boost::uuids::uuid stag
-			, boost::filesystem::path stat_dir);
+			, cache&
+			, boost::uuids::uuid stag);
 
 		client(client const&) = delete;
 		client& operator=(client const&) = delete;
@@ -184,44 +183,13 @@ namespace node
 
 		void inc_throughput(cyng::context& ctx);
 
-		bool set_connection_auto_login(cyng::object);
-		bool set_connection_auto_enabled(cyng::object);
-		bool set_connection_superseed(cyng::object);
-		bool set_catch_meters(cyng::object obj);
-		bool set_catch_lora(cyng::object obj);
-
-		/**
-		 * Turn generating time series on or off
-		 *
-		 * @return previous value
-		 */
-		bool set_generate_time_series(cyng::object);
-
-		/**
-		 * @return true if generating time series is on.
-		 */
-		bool is_generate_time_series() const;
-
 		void set_class(std::string const&);
 		std::string get_class();
 
 		template <typename T>
-		void write_stat(boost::uuids::uuid tag, std::string const& account, std::string const& evt, T&& value)
-		{
-			if (is_generate_time_series())
-			{
-				node::insert_ts_event(db_
-					, tag
-					, account
-					, evt
-					, cyng::make_object(value));
-			}
-		}
-
-		template <typename T>
 		void write_stat(cyng::store::table* tbl, boost::uuids::uuid tag, std::string const& account, std::string const& evt, T&& value, std::uint64_t max_events)
 		{
-			if (is_generate_time_series())
+			if (cache_.is_generate_time_series())
 			{
 				insert_ts_event(tbl
 					, tag
@@ -262,10 +230,8 @@ namespace node
 	private:
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
-		cyng::store::db& db_;
-		std::atomic<std::uint64_t>& global_configuration_;
+		cache& cache_;
 		boost::uuids::uuid const stag_;
-		boost::filesystem::path const stat_dir_;
 
 		/**
 		 * transport layer

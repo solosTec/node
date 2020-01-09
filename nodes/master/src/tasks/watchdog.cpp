@@ -14,7 +14,6 @@ namespace node
 {
 	watchdog::watchdog(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, cyng::store::db&
 		, cyng::object obj
 		, std::chrono::seconds monitor)
 	: base_(*btp)

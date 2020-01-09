@@ -19,27 +19,19 @@ namespace node
 	connection::connection(boost::asio::ip::tcp::socket&& socket
 		, cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, boost::uuids::uuid mtag // master tag
-		, cyng::store::db& db
+		, cache& cfg
 		, std::string const& account
 		, std::string const& pwd
-		, boost::uuids::uuid stag
-		, std::chrono::seconds monitor //	cluster watchdog
-		, std::atomic<std::uint64_t>& global_configuration
-		, boost::filesystem::path stat_dir)
+		, boost::uuids::uuid stag)
 	: socket_(std::move(socket))
 		, logger_(logger)
 		, buffer_()
 		, session_(make_session(mux
 			, logger
-			, mtag
-			, db
+			, cfg
 			, account
 			, pwd
-			, stag
-			, monitor
-			, global_configuration
-			, stat_dir))
+			, stag))
 		, serializer_(socket_, this->get_session()->vm_)
 	{
 		//

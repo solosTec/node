@@ -31,15 +31,11 @@ namespace node
 {
 	client::client(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cyng::store::db& db
-		, std::atomic<std::uint64_t>& global_configuration
-		, boost::uuids::uuid stag
-		, boost::filesystem::path stat_dir)
+		, cache& cfg
+		, boost::uuids::uuid stag)
 	: mux_(mux)
 		, logger_(logger)
-		, db_(db)
-		, global_configuration_(global_configuration)
-		, stat_dir_(stat_dir)
+		, cache_(cfg)
 		, stag_(stag)
 		, node_class_("undefined")
 		, rng_(std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max())
@@ -64,41 +60,6 @@ namespace node
 		ctx.queue(cyng::register_function("client.req.transmit.data", 5, std::bind(&client::req_transmit_data, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("client.inc.throughput", 3, std::bind(&client::inc_throughput, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("client.update.attr", 6, std::bind(&client::update_attr, this, std::placeholders::_1)));
-	}
-
-	bool client::set_connection_auto_login(cyng::object obj)
-	{
-		return node::set_connection_auto_login(global_configuration_, cyng::value_cast(obj, false));
-	}
-
-	bool client::set_connection_auto_enabled(cyng::object obj)
-	{
-		return node::set_connection_auto_enabled(global_configuration_, cyng::value_cast(obj, true));
-	}
-
-	bool client::set_connection_superseed(cyng::object obj)
-	{
-		return node::set_connection_superseed(global_configuration_, cyng::value_cast(obj, true));
-	}
-
-	bool client::set_catch_meters(cyng::object obj)
-	{
-		return node::set_catch_meters(global_configuration_, cyng::value_cast(obj, true));
-	}
-
-	bool client::set_catch_lora(cyng::object obj)
-	{
-		return node::set_catch_lora(global_configuration_, cyng::value_cast(obj, true));
-	}
-
-	bool client::set_generate_time_series(cyng::object obj)
-	{
-		return node::set_generate_time_series(global_configuration_, cyng::value_cast(obj, false));
-	}
-
-	bool client::is_generate_time_series() const
-	{
-		return node::is_generate_time_series(global_configuration_.load());
 	}
 
 	void client::set_class(std::string const& node_class)
@@ -163,16 +124,16 @@ namespace node
 		//
 		bool found{ false };
 		bool wrong_pwd{ false };
-		db_.access([&](const cyng::store::table* tbl_device
+
+		//
+		//	get max event limit
+		//
+		auto const max_events = cache_.get_max_events();
+
+		cache_.db_.access([&](const cyng::store::table* tbl_device
 			, cyng::store::table* tbl_session
 			, cyng::store::table* tbl_cluster
-			, cyng::store::table* tbl_tsdb
-			, cyng::store::table const* tbl_cfg)->void {
-
-			//
-			//	get max event limit
-			//
-			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
+			, cyng::store::table* tbl_tsdb)->void {
 
 			//
 			// check if session is already authorized
@@ -256,8 +217,7 @@ namespace node
 							//
 							//	update cluster table
 							//
-							//auto tag_cluster = cyng::object_cast<session>(self)->vm_.tag();
-							auto key_cluster = cyng::table::key_generator(cluster_tag);
+							auto const key_cluster = cyng::table::key_generator(cluster_tag);
 							auto list = get_clients_by_peer(tbl_session, cluster_tag);
 							tbl_cluster->modify(key_cluster, cyng::param_factory("clients", static_cast<std::uint64_t>(list.size())), tag);
 
@@ -308,8 +268,7 @@ namespace node
 		}	, cyng::store::read_access("TDevice")
 			, cyng::store::write_access("_Session")
 			, cyng::store::write_access("_Cluster")
-			, cyng::store::write_access("_TimeSeries")
-			, cyng::store::read_access("_Config"));
+			, cyng::store::write_access("_TimeSeries"));
 
 		if (!found)
 		{
@@ -321,12 +280,12 @@ namespace node
 				, 0
 				, bag));
 
-			if (!wrong_pwd && is_connection_auto_login(global_configuration_.load()))
+			if (!wrong_pwd && cache_.is_connection_auto_login())
 			{
 				//
 				//	create new device record
 				//
-				if (!db_.insert("TDevice"
+				if (!cache_.db_.insert("TDevice"
 					, cyng::table::key_generator(uuid_gen_())	//	new pk
 					, cyng::table::data_generator(account
 						, pwd
@@ -334,7 +293,7 @@ namespace node
 						, "auto"	//	comment
 						, ""	//	device id
 						, NODE_VERSION	//	firmware version
-						, is_connection_auto_enabled(global_configuration_.load())	//	enabled
+						, cache_.is_connection_auto_enabled()	//	enabled
 						, std::chrono::system_clock::now()
 						, 6u)
 					, 1
@@ -365,12 +324,12 @@ namespace node
 			//
 			if (wrong_pwd)
 			{
-				insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
+				cache_.insert_msg(cyng::logging::severity::LEVEL_WARNING
 					, "login of [" + account + "] failed (cause: incorrect password)"
 					, tag);
 			}
 			else {
-				insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
+				cache_.insert_msg(cyng::logging::severity::LEVEL_WARNING
 					, "login of [" + account + "] failed (cause: unknown device)"
 					, tag);
 			}
@@ -468,7 +427,7 @@ namespace node
 				online = true;
 				const auto rec_tag = cyng::value_cast(rec["tag"], boost::uuids::nil_uuid());
 
-				if (is_connection_superseed(global_configuration_.load()))
+				if (cache_.is_connection_superseed())
 				{
 					//
 					//	ToDo: probably not the same peer!
@@ -562,17 +521,17 @@ namespace node
 		//	remove session record
 		//
 		bool success{ false };
-		db_.access([&](cyng::store::table* tbl_session
+
+		//
+		//	get max event limit
+		//
+		auto const max_events = cache_.get_max_events();
+
+		cache_.db_.access([&](cyng::store::table* tbl_session
 			, cyng::store::table* tbl_target
 			, cyng::store::table* tbl_cluster
 			, cyng::store::table* tbl_connection
-			, cyng::store::table* tbl_tsdb
-			, cyng::store::table const* tbl_cfg)->void {
-
-			//
-			//	get max event limit
-			//
-			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
+			, cyng::store::table* tbl_tsdb)->void {
 
 			//
 			//	generate table key for
@@ -729,8 +688,7 @@ namespace node
 			, cyng::store::write_access("_Target")
 			, cyng::store::write_access("_Cluster")
 			, cyng::store::write_access("_Connection")
-			, cyng::store::write_access("_TimeSeries")
-			, cyng::store::read_access("_Config"));
+			, cyng::store::write_access("_TimeSeries"));
 
 		if (req)
 		{
@@ -791,10 +749,15 @@ namespace node
 		options["local-peer"] = cyng::make_object(peer);	//	and this peer
 															
 		bool success{ false };
-		db_.access([&](cyng::store::table const* tbl_device
+
+		//
+		//	get max event limit
+		//
+		auto const max_events = cache_.get_max_events();
+
+		cache_.db_.access([&](cyng::store::table const* tbl_device
 			, cyng::store::table* tbl_session
-			, cyng::store::table* tbl_tsdb
-			, cyng::store::table const* tbl_cfg)->void {
+			, cyng::store::table* tbl_tsdb)->void {
 
 			//
 			//	generate statistics
@@ -802,11 +765,6 @@ namespace node
 			//
 			cyng::table::record rec = tbl_session->lookup(cyng::table::key_generator(tag));
 			const std::string account = cyng::value_cast<std::string>(rec["name"], "");
-
-			//
-			//	get max event limit
-			//
-			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
 
 			//
 			//	search device with the given number
@@ -935,7 +893,7 @@ namespace node
 						//
 						//	write statistics
 						//
-						if (is_generate_time_series()) {
+						if (cache_.is_generate_time_series()) {
 							write_stat(tbl_tsdb, tag, account, "dialup", dev_number.c_str(), max_events);
 							write_stat(tbl_tsdb, tag, callee, "called by", account.c_str(), max_events);
 						}
@@ -951,8 +909,7 @@ namespace node
 
 		}	, cyng::store::read_access("TDevice")
 			, cyng::store::write_access("_Session")
-			, cyng::store::write_access("_TimeSeries")
-			, cyng::store::read_access("_Config"));
+			, cyng::store::write_access("_TimeSeries"));
 
 		if (!success)
 		{
@@ -970,7 +927,7 @@ namespace node
 			//
 			//	place a system message
 			//
-			insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
+			cache_.insert_msg(cyng::logging::severity::LEVEL_WARNING
 				, "cannot open connection: device #" + number + " not found"
 				, tag);
 		}
@@ -1030,12 +987,16 @@ namespace node
 			<< rtag);
 
 		//
+		//	get max event limit
+		//
+		auto const max_events = cache_.get_max_events();
+
+		//
 		//	insert connection record
 		//
-		db_.access([&](cyng::store::table* tbl_session
+		cache_.db_.access([&](cyng::store::table* tbl_session
 			, cyng::store::table* tbl_connection
-			, cyng::store::table* tbl_tsdb
-			, cyng::store::table const* tbl_cfg)->void {
+			, cyng::store::table* tbl_tsdb)->void {
 
 			//
 			//	generate statistics
@@ -1057,11 +1018,6 @@ namespace node
 
 			BOOST_ASSERT_MSG(!caller_rec.empty(), "no caller record");
 			BOOST_ASSERT_MSG(!callee_rec.empty(), "no callee record");
-
-			//
-			//	get max event limit
-			//
-			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
 
 			if (!caller_rec.empty() && !callee_rec.empty())
 			{
@@ -1167,8 +1123,7 @@ namespace node
 
 		}	, cyng::store::write_access("_Session")
 			, cyng::store::write_access("_Connection")
-			, cyng::store::write_access("_TimeSeries")
-			, cyng::store::read_access("_Config"));
+			, cyng::store::write_access("_TimeSeries"));
 
 	}
 
@@ -1217,15 +1172,15 @@ namespace node
 		//	%(("local-connect":true),("local-peer":bdc31cf8-e18e-4d95-ad31-ad821661e857)),
 		//	%(("tp-layer":modem),("origin-tag":5afa7628-caa3-484d-b1de-a4730b53a656))]
 		//
-		db_.access([&](cyng::store::table* tbl_session
-			, cyng::store::table* tbl_connection
-			, cyng::store::table* tbl_tsdb
-			, cyng::store::table const* tbl_cfg)->void {
 
-			//
-			//	get max event limit
-			//
-			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
+		//
+		//	get max event limit
+		//
+		auto const max_events = cache_.get_max_events();
+
+		cache_.db_.access([&](cyng::store::table* tbl_session
+			, cyng::store::table* tbl_connection
+			, cyng::store::table* tbl_tsdb)->void {
 
 			//
 			//	send response back to "origin-tag"
@@ -1354,8 +1309,7 @@ namespace node
 
 		}	, cyng::store::write_access("_Session")
 			, cyng::store::write_access("_Connection")
-			, cyng::store::write_access("_TimeSeries")
-			, cyng::store::read_access("_Config"));
+			, cyng::store::write_access("_TimeSeries"));
 	}
 
 	void client::req_transmit_data(cyng::context& ctx)
@@ -1394,7 +1348,7 @@ namespace node
 		//
 		//	transmit data
 		//
-		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection)->void {
+		cache_.db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection)->void {
 
 			//
 			//	generate session table key
@@ -1427,7 +1381,7 @@ namespace node
 				//
 				//	transfer data
 				//
-				boost::uuids::uuid link = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+				auto const link = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
 
 				auto local_peer = cyng::object_cast<session>(rec["local"]);
 				auto remote_peer = cyng::object_cast<session>(rec["remote"]);
@@ -1573,7 +1527,7 @@ namespace node
 		//	[5afa7628-caa3-484d-b1de-a4730b53a656,bdc31cf8-e18e-4d95-ad31-ad821661e857,false,8,%(("tp-layer":modem))]
 		//
 
-		db_.access([&](cyng::store::table* tbl_session)->void {
+		cache_.write_table("_Session", [&](cyng::store::table* tbl_session)->void {
 
 			cyng::param_map_t options;
 			options["local-peer"] = cyng::make_object(peer);	//	and this peer
@@ -1646,9 +1600,10 @@ namespace node
 						, options
 						, bag));
 
-					insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
-						, "[" + name + "] has no open connection to close"
-						, tag);
+					//	possible dead lock
+					//insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
+					//	, "[" + name + "] has no open connection to close"
+					//	, tag);
 				}
 			}
 			else
@@ -1657,7 +1612,7 @@ namespace node
 				CYNG_LOG_ERROR(logger_, "no session record: " << tag);
 			}
 
-		}, cyng::store::write_access("_Session"));
+		});
 	}
 
 	void client::req_open_push_channel(cyng::context& ctx)
@@ -1702,7 +1657,6 @@ namespace node
 			, std::get<7>(tpl)
 			, std::get<8>(tpl)
 			, std::get<9>(tpl));
-			//, ctx.tag());
 	}
 
 	void client::req_open_push_channel_impl(cyng::context& ctx,
@@ -1719,7 +1673,7 @@ namespace node
 	{
 		if (name.empty())
 		{
-			insert_msg(db_, cyng::logging::severity::LEVEL_WARNING
+			cache_.insert_msg(cyng::logging::severity::LEVEL_WARNING
 				, "no target specified"
 				, tag);
 			req_open_push_channel_empty(ctx, tag, seq, bag);
@@ -1730,7 +1684,7 @@ namespace node
 		//	find matching target
 		//  To much parameters for gcc 5.4.0 - upper limit is 5
 		//
-		db_.access([&](cyng::store::table const* tbl_target
+		cache_.db_.access([&](cyng::store::table const* tbl_target
 			, cyng::store::table* tbl_channel
 			, cyng::store::table const* tbl_session
 			, cyng::store::table* tbl_msg
@@ -1808,7 +1762,7 @@ namespace node
 			//
 			//	new (random) channel id
 			//
-			const std::uint32_t channel = rng_();
+			std::uint32_t const channel = rng_();
 
 			//
 			//	create push channels
@@ -2018,14 +1972,13 @@ namespace node
 	{
 		cyng::table::key_list_t pks;
 
-		db_.access([&](cyng::store::table* tbl_channel
-			, cyng::store::table* tbl_tsdb
-			, cyng::store::table const* tbl_cfg)->void {
+		//
+		//	get max event limit
+		//
+		auto const max_events = cache_.get_max_events();
 
-			//
-			//	get max event limit
-			//
-			std::uint64_t const max_events = cyng::value_cast<std::uint64_t>(tbl_cfg->lookup(cyng::table::key_generator("max-events"), "value"), 2000u);
+		cache_.write_tables("_Channel", "_TimeSeries", [&](cyng::store::table* tbl_channel
+			, cyng::store::table* tbl_tsdb) {
 
 			tbl_channel->loop([&](cyng::table::record const& rec) -> bool {
 				if (channel == cyng::value_cast<std::uint32_t>(rec["channel"], 0u))
@@ -2065,9 +2018,7 @@ namespace node
 			//
 			cyng::erase(tbl_channel, pks, tag);
 
-		}	, cyng::store::write_access("_Channel")
-			, cyng::store::write_access("_TimeSeries")
-			, cyng::store::read_access("_Config"));
+		});
 
 		//
 		//	send response
@@ -2132,7 +2083,7 @@ namespace node
 		//	push data to target(s)
 		//
 		std::size_t counter{ 0 };
-		db_.access([&](cyng::store::table* tbl_channel)->void {
+		cache_.write_table("_Channel", [&](cyng::store::table* tbl_channel)->void {
 
 			tbl_channel->loop([&](cyng::table::record const& rec) -> bool {
 
@@ -2212,7 +2163,7 @@ namespace node
 				return true;
 			});
 
-		}, cyng::store::write_access("_Channel"));
+		});
 
 		if (counter == 0)
 		{
@@ -2224,8 +2175,7 @@ namespace node
 				<< source
 				<< "==> no target ");
 
-			insert_msg(db_
-				, cyng::logging::severity::LEVEL_WARNING
+			cache_.insert_msg(cyng::logging::severity::LEVEL_WARNING
 				, "transfer.push.data without target"
 				, tag);
 		}
@@ -2239,7 +2189,7 @@ namespace node
 			//
 			//	update px value of session
 			//
-			db_.access([&](cyng::store::table* tbl_session)->void {
+			cache_.write_table("_Session", [&](cyng::store::table* tbl_session)->void {
 
 				//
 				//	generate table key
@@ -2257,12 +2207,12 @@ namespace node
 					std::uint64_t px = cyng::value_cast<std::uint64_t>(rec["px"], 0);
 					tbl_session->modify(rec.key(), cyng::param_factory("px", static_cast<std::uint64_t>(px + size)), tag);
 				}
-			}, cyng::store::write_access("_Session"));
+			});
 
 			//
 			//	update px value and msg counter of targets
 			//
-			db_.access([&](cyng::store::table* tbl_target)->void {
+			cache_.write_table("_Target", [&](cyng::store::table* tbl_target)->void {
 
 				for (const auto& key : targets)
 				{
@@ -2276,7 +2226,7 @@ namespace node
 						tbl_target->modify(rec.key(), cyng::param_factory("counter", static_cast<std::uint64_t>(counter + 1)), tag);
 					}
 				}
-			}, cyng::store::write_access("_Target"));
+			});
 		}
 		ctx.queue(client_res_transfer_pushdata(tag
 			, seq
@@ -2359,7 +2309,7 @@ namespace node
 		//
 		const auto channel = rng_();
 		bool success{ false };
-		db_.access([&](const cyng::store::table* tbl_session, cyng::store::table* tbl_target)->void {
+		cache_.write_tables("_Session", "_Target", [&](const cyng::store::table* tbl_session, cyng::store::table* tbl_target)->void {
 
 			auto session_rec = tbl_session->lookup(cyng::table::key_generator(tag));
 			if (!session_rec.empty())
@@ -2437,8 +2387,7 @@ namespace node
 					<< " not found");
 			}
 
-		}	, cyng::store::read_access("_Session")
-			, cyng::store::write_access("_Target"));
+		});
 
 		options["response-code"] = cyng::make_object<std::uint8_t>(success
 			? ipt::ctrl_res_register_target_policy::OK
@@ -2494,7 +2443,7 @@ namespace node
 		cyng::param_map_t options;
 
 		bool success{ false };
-		db_.access([&](const cyng::store::table* tbl_session, cyng::store::table* tbl_target)->void {
+		cache_.write_tables("_Session", "_Target", [&](const cyng::store::table* tbl_session, cyng::store::table* tbl_target)->void {
 
 			auto session_rec = tbl_session->lookup(cyng::table::key_generator(tag));
 			if (!session_rec.empty())
@@ -2535,8 +2484,7 @@ namespace node
 					<< tag
 					<< " not found");
 			}
-		}	, cyng::store::read_access("_Session")
-			, cyng::store::write_access("_Target"));
+		});
 
 		options["response-code"] = cyng::make_object<std::uint8_t>(success
 			? ipt::ctrl_res_deregister_target_policy::OK
@@ -2561,7 +2509,7 @@ namespace node
 			std::uint64_t			//	[3] bytes transferred
 		>(frame);
 
-		db_.access([&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection)->void {
+		cache_.write_tables("_Session", "_Connection", [&](cyng::store::table* tbl_session, cyng::store::table* tbl_connection)->void {
 
 			cyng::table::record rec_origin = tbl_session->lookup(cyng::table::key_generator(std::get<0>(tpl)));
 			if (!rec_origin.empty())
@@ -2583,8 +2531,7 @@ namespace node
 				const std::uint64_t throughput = cyng::value_cast<std::uint64_t>(rec_conn["throughput"], 0u);
 				tbl_connection->modify(rec_conn.key(), cyng::param_factory("throughput", static_cast<std::uint64_t>(throughput + std::get<3>(tpl))), std::get<2>(tpl));
 			}
-		}	, cyng::store::write_access("_Session")
-			, cyng::store::write_access("_Connection"));
+		});
 	}
 
 	void client::update_attr(cyng::context& ctx)
@@ -2632,7 +2579,7 @@ namespace node
 
 		if (boost::algorithm::equals(name, "TDevice.vFirmware") || boost::algorithm::equals(name, "TDevice.id"))
 		{
-			db_.access([&](cyng::store::table const* tbl_session, cyng::store::table* tbl_device, cyng::store::table* tbl_gw)->void {
+			cache_.db_.access([&](cyng::store::table const* tbl_session, cyng::store::table* tbl_device, cyng::store::table* tbl_gw)->void {
 
 				auto session_rec = tbl_session->lookup(cyng::table::key_generator(tag));
 				if (!session_rec.empty())

@@ -26,7 +26,6 @@ namespace node
 	public:
 		watchdog(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, cyng::store::db&
 			, cyng::object obj
 			, std::chrono::seconds monitor);
 		cyng::continuation run();
