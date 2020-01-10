@@ -36,6 +36,7 @@ namespace node
 			boost::spirit::qi::rule<InputIterator, obis()> r_obis_hex;
 			boost::spirit::qi::rule<InputIterator, obis()> r_obis_short;
 			boost::spirit::qi::rule<InputIterator, obis()> r_obis_medium;
+			//boost::spirit::qi::int_parser<unsigned char, 16, 2, 2 >	r_byte;
 			boost::spirit::qi::int_parser<unsigned short, 16, 2, 2 >	r_byte;
 		};
 

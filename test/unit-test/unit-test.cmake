@@ -30,11 +30,13 @@ set (unit_test_sml
 	test/unit-test/src/test-sml-003.h
 	test/unit-test/src/test-sml-004.h
 	test/unit-test/src/test-sml-005.h
+	test/unit-test/src/test-sml-006.h
 	test/unit-test/src/test-sml-001.cpp
 	test/unit-test/src/test-sml-002.cpp
 	test/unit-test/src/test-sml-003.cpp
 	test/unit-test/src/test-sml-004.cpp
 	test/unit-test/src/test-sml-005.cpp
+	test/unit-test/src/test-sml-006.cpp
 )
 
 set (unit_test_ipt

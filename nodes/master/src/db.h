@@ -206,7 +206,7 @@ namespace node
 		boost::uuids::uuid const tag_;
 
 		/**
-		 * sstem wide configuration flags
+		 * system wide configuration flags
 		 */
 		std::atomic<std::uint64_t> sys_conf_;
 
