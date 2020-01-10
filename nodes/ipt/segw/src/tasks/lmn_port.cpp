@@ -24,7 +24,8 @@ namespace node
 		, std::string flow_control
 		, std::string stopbits
 		, std::uint32_t speed
-		, std::size_t tid)
+		, std::size_t receiver_data
+		, std::size_t receiver_status)
 	: base_(*btp) 
 		, logger_(logger)
 		, port_(btp->mux_.get_io_service())
@@ -35,7 +36,8 @@ namespace node
 		, flow_control_(serial::to_flow_control(flow_control))
 		, stopbits_(serial::to_stopbits(stopbits))
 		, baud_rate_(speed)
-		, tid_(tid)
+		, receiver_data_(receiver_data)
+		, receiver_status_(receiver_status)
 		, buffer_()
 		, msg_counter_(0u)
 	{
@@ -82,7 +84,7 @@ namespace node
 				//
 				//	update status.word
 				//
-				base_.mux_.post(tid_, 1u, cyng::tuple_factory(true));
+				base_.mux_.post(receiver_status_, 1u, cyng::tuple_factory(true));
 
 				//
 				//	start reading
@@ -147,7 +149,9 @@ namespace node
 				CYNG_LOG_TRACE(logger_, "\n" << ss.str());
 
 //#endif
-				base_.mux_.post(tid_, 0u, cyng::tuple_factory(cyng::buffer_t(buffer_.cbegin(), buffer_.cbegin() + bytes_transferred), msg_counter_++));
+				base_.mux_.post(receiver_data_
+					, 0u
+					, cyng::tuple_factory(cyng::buffer_t(buffer_.cbegin(), buffer_.cbegin() + bytes_transferred), msg_counter_++));
 
 				//
 				//	continue reading
@@ -166,7 +170,7 @@ namespace node
 				//
 				//	update status.word
 				//
-				base_.mux_.post(tid_, 1u, cyng::tuple_factory(false));
+				base_.mux_.post(receiver_status_, 1u, cyng::tuple_factory(false));
 
 			}
 		});

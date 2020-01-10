@@ -115,6 +115,11 @@ namespace node
 			, cyng::crypto::aes_128_key aes_key
 			, boost::uuids::uuid tag);
 
+		/**
+		 * Direct access to memory database.
+		 * Be carefull.
+		 */
+		cyng::store::db& get_db();
 
 	private:
 		/**

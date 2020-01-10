@@ -35,7 +35,8 @@ namespace node
 			, std::string flow_control
 			, std::string stopbits
 			, std::uint32_t speed
-			, std::size_t tid);
+			, std::size_t receiver_data
+			, std::size_t receiver_status);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -73,7 +74,8 @@ namespace node
 		boost::asio::serial_port_base::flow_control flow_control_;
 		boost::asio::serial_port_base::stop_bits stopbits_;
 		boost::asio::serial_port_base::baud_rate baud_rate_;
-		std::size_t const tid_;
+		std::size_t const receiver_data_;
+		std::size_t const receiver_status_;
 
 		/**
 		 * Buffer for incoming data.

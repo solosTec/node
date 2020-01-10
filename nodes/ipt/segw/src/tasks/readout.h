@@ -10,6 +10,8 @@
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
+#include <cyng/store/store_fwd.h>
+#include <cyng/table/table_fwd.h>
 
 namespace node
 {
@@ -48,6 +50,18 @@ namespace node
 		void distribute();
 		void distribute(cyng::buffer_t const& srv);
 
+		void process_readout_data(cyng::store::table const*
+			, cyng::store::table const*
+			, cyng::table::key_list_t const&
+			, cyng::table::record const&
+			, cyng::table::record const&);
+
+		/**
+		 * Remove all inactive collectors
+		 */
+		static void cleanup_collectors(cyng::store::table const*
+			, cyng::table::key_list_t&);
+
 	private:
 		cyng::async::base_task& base_;
 
@@ -66,6 +80,9 @@ namespace node
 		 */
 		storage& storage_;
 
+		/**
+		 * interval time to backup data to SQL database
+		 */
 		std::chrono::seconds const interval_;
 	};
 

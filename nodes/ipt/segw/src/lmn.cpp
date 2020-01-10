@@ -115,7 +115,6 @@ namespace node
 
 			if (receiver.second) {
 
-
 				auto const hci = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "HCI"), std::string("none"));
 				if (boost::algorithm::equals(hci, "CP210x")) {
 
@@ -129,7 +128,7 @@ namespace node
 						, receiver.first);
 
 					if (unwrapper.second) {
-						auto const sender = start_lmn_port_wireless(unwrapper.first);
+						auto const sender = start_lmn_port_wireless(unwrapper.first, receiver.first);
 					}
 					else {
 						CYNG_LOG_FATAL(logger_, "cannot start CP210x parser for HCI messages");
@@ -140,7 +139,7 @@ namespace node
 					//
 					//	LMN port send incoming data to wmbus parser
 					//
-					auto const sender = start_lmn_port_wireless(receiver.first);
+					auto const sender = start_lmn_port_wireless(receiver.first, receiver.first);
 				}
 			}
 			else {
@@ -152,7 +151,7 @@ namespace node
 		}
 	}
 
-	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(std::size_t receiver)
+	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(std::size_t receiver_data, std::size_t receiver_status)
 	{
 #if BOOST_OS_WINDOWS
 		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "port"), std::string("COM3"));
@@ -174,7 +173,8 @@ namespace node
 			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "flow_control"), "none")	//	[s] flow_control
 			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "stopbits"), "one")	//	[s] stopbits
 			, static_cast<std::uint32_t>(speed)		//	[u32] speed
-			, receiver);
+			, receiver_data
+			, receiver_status);
 	}
 
 	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(std::size_t receiver)
@@ -199,10 +199,10 @@ namespace node
 			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "flow_control"), "none")	//	[s] flow_control
 			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "stopbits"), "one")	//	[s] stopbits
 			, static_cast<std::uint32_t>(speed)		//	[u32] speed
+			, receiver
 			, receiver);
 
 	}
-
 
 	void lmn::wmbus_push_frame(cyng::context& ctx)
 	{

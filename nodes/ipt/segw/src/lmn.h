@@ -27,7 +27,7 @@ namespace node
 		void start_lmn_wired();
 		void start_lmn_wireless();
 
-		std::pair<std::size_t, bool> start_lmn_port_wireless(std::size_t);
+		std::pair<std::size_t, bool> start_lmn_port_wireless(std::size_t, std::size_t);
 		std::pair<std::size_t, bool> start_lmn_port_wired(std::size_t);
 
 		void wmbus_push_frame(cyng::context& ctx);

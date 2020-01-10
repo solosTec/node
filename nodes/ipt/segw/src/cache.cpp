@@ -231,6 +231,11 @@ namespace node
 		return r;
 	}
 
+	cyng::store::db& cache::get_db()
+	{
+		return this->db_;
+	}
+
 	//
 	//	initialize static member
 	//
@@ -388,7 +393,6 @@ namespace node
 			, "active"		//	[bool] turned on/off (OBIS_DATA_COLLECTOR_ACTIVE)
 			, "maxSize"		//	[u32] max entry count (OBIS_DATA_COLLECTOR_SIZE)
 			, "regPeriod"	//	[seconds] register period - if 0, recording is event-driven (OBIS_DATA_REGISTER_PERIOD)
-			//, "entries"		//	OBIS codes
 			},
 			{ cyng::TC_BUFFER		//	serverID
 			, cyng::TC_UINT8		//	nr
@@ -397,7 +401,6 @@ namespace node
 			, cyng::TC_BOOL			//	active
 			, cyng::TC_UINT16		//	maxSize
 			, cyng::TC_SECOND		//	regPeriod
-			//, cyng::TC_STRING		//	entries
 			},
 			{ 9		//	serverID
 			, 0		//	nr
@@ -406,7 +409,6 @@ namespace node
 			, 0		//	active
 			, 0		//	maxSize
 			, 0		//	regPeriod
-			//, 512	//	entries
 			}),
 
 			//
@@ -468,8 +470,6 @@ namespace node
 			, 6		//	code
 			, 0		//	active
 			})
-
-
 		};
 
 		return vec;
@@ -478,7 +478,7 @@ namespace node
 	void init_cache(cyng::store::db& db)
 	{
 		//
-		//	create all tables
+		//	create all cache(d) tables
 		//
 		for (auto const& tbl : cache::mm_) {
 			db.create_table(tbl.second);
