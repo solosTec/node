@@ -366,7 +366,7 @@ namespace node
 			//
 			//	buffer size
 			//
-			std::uniform_int_distribution<int> dist_buffer_size(packet_size_min_, packet_size_max_);
+			std::uniform_int_distribution<std::size_t> dist_buffer_size(packet_size_min_, packet_size_max_);
 			cyng::buffer_t buffer(dist_buffer_size(rnd_device_));
 			BOOST_ASSERT(!buffer.empty());
 

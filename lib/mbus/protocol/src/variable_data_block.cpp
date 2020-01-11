@@ -226,7 +226,7 @@ namespace node
 		storage_nr_ += de.dife_.sn_;
 		code_[sml::obis::VG_STORAGE] = (storage_nr_ == 0)
 			? 0xFF
-			: storage_nr_
+			: static_cast<std::uint8_t>(storage_nr_)
 			;
 
 		//BOOST_ASSERT(storage_nr_ <= 0x20000000000);

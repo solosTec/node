@@ -56,6 +56,23 @@ namespace node
 			, cyng::table::record const&
 			, cyng::table::record const&);
 
+		void profile_1_minute(cyng::store::table const* tbl_mirror
+			, cyng::table::record const& rec_collector
+			, cyng::table::record const& rec_meta
+			, cyng::table::record const& rec_data);
+		void profile_15_minute(cyng::store::table const* tbl_mirror
+			, cyng::table::record const& rec_collector
+			, cyng::table::record const& rec_meta
+			, cyng::table::record const& rec_data);
+		void profile_60_minute(cyng::store::table const* tbl_mirror
+			, cyng::table::record const& rec_collector
+			, cyng::table::record const& rec_meta
+			, cyng::table::record const& rec_data);
+		void profile_24_hour(cyng::store::table const* tbl_mirror
+			, cyng::table::record const& rec_collector
+			, cyng::table::record const& rec_meta
+			, cyng::table::record const& rec_data);
+
 		/**
 		 * Remove all inactive collectors
 		 */

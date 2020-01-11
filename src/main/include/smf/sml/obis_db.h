@@ -495,9 +495,14 @@ namespace node
 		const char* get_attention_name(obis const&);
 
 		/**
-		 * @return name of teh LSM event
+		 * @return name of the LSM event
 		 */
 		const char* get_LSM_event_name(std::uint32_t);
+
+		/**
+		 * @return profile name
+		 */
+		const char* get_profile_name(obis const&);
 
 	}	//	sml
 }	//	node
