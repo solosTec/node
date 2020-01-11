@@ -358,6 +358,12 @@ include (test/hello/hello.cmake)
 add_executable(hello ${hello})
 
 #
+#	programm info info
+#
+include (lib/info/lib.cmake)
+add_library(smf_info ${GLOBAL_LIBRARY_TYPE} ${info_lib})
+
+#
 #	cluster library (client side)
 #
 include (lib/cluster/lib.cmake)
@@ -456,7 +462,7 @@ endif()
 #
 # List of all SMF libraries
 #
-set(SMF_LIB_LIST smf_http_srv smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_bus_sml smf_protocol_modem smf_protocol_mbus smf_protocol_imega smf_protocol_iec smf_bus_serial smf_protocol_telnet smf_http_srv)
+set(SMF_LIB_LIST smf_info smf_http_srv smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_bus_sml smf_protocol_modem smf_protocol_mbus smf_protocol_imega smf_protocol_iec smf_bus_serial smf_protocol_telnet smf_http_srv)
 if(${PROJECT_NAME}_SSL_SUPPORT)
     list(APPEND SMF_LIB_LIST smf_https_srv)
 endif()
@@ -466,14 +472,16 @@ install(TARGETS ${SMF_LIB_LIST}
 
 
 if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
+
+	include (nodes/www/prg.cmake)
 #
 # This program is only for testing puposes
 # generic HTTP server
 #
-	include (nodes/http/prg.cmake)
+
 	add_executable(http ${node_http})
 	# libraries to link 
-	set(http_link_libs ${CYNG_LIBRARIES} smf_http_srv crypto ${OPENSSL_LIBRARIES})
+	set(http_link_libs ${CYNG_LIBRARIES} smf_info smf_http_srv crypto ${OPENSSL_LIBRARIES})
 	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 		list(APPEND http_link_libs "${Boost_LIBRARIES}")
 		if (UNIX)
@@ -481,17 +489,14 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 		endif()
 	endif()
 	target_link_libraries(http ${http_link_libs})
-endif()
 
-if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 #
 # This program is only for testing puposes
 # generic HTTPS server
 #
-	include (nodes/https/prg.cmake)
 	add_executable(https ${node_https})
 	# libraries to link 
-	set(https_link_libs ${CYNG_LIBRARIES} smf_https_srv crypto ${OPENSSL_LIBRARIES})
+	set(https_link_libs ${CYNG_LIBRARIES} smf_info smf_https_srv crypto ${OPENSSL_LIBRARIES})
 	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 		list(APPEND https_link_libs "${Boost_LIBRARIES}")
 		if (UNIX)
@@ -533,14 +538,14 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 	endif()
 endif()
 
+if(${PROJECT_NAME}_SSL_SUPPORT)
 #
 # dashboard (HTTP)
 #
-if(${PROJECT_NAME}_SSL_SUPPORT)
-    include (nodes/dash/prg.cmake)
+    include (nodes/admin/prg.cmake)
     add_executable(dash ${node_dash})
     # libraries to link
-    set(dashboard_link_libs smf_cluster smf_http_srv crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
+    set(dashboard_link_libs smf_info smf_cluster smf_http_srv crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
 
     if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND dashboard_link_libs "${Boost_LIBRARIES}")
@@ -553,16 +558,13 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 		endif()
     endif()
     target_link_libraries(dash ${dashboard_link_libs})
-endif()
 
 #
 # dashboard (HTTPS)
 #
-if(${PROJECT_NAME}_SSL_SUPPORT)
-    include (nodes/dashs/prg.cmake)
     add_executable(dashs ${node_dashs})
     # libraries to link
-    set(dashsboard_link_libs smf_cluster smf_https_srv crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
+    set(dashsboard_link_libs smf_info smf_cluster smf_https_srv crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
     if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
         list(APPEND dashsboard_link_libs "${Boost_LIBRARIES}")
         if (UNIX)
@@ -680,7 +682,7 @@ target_link_libraries(segw ${segw_link_libs})
 include (nodes/ipt/master/prg.cmake)
 add_executable(ipt ${node_ipt_master})
 # libraries to link
-set(ipt_link_libs ${CYNG_LIBRARIES} smf_cluster smf_protocol_ipt smf_protocol_sml)
+set(ipt_link_libs ${CYNG_LIBRARIES} smf_info smf_cluster smf_protocol_ipt smf_protocol_sml)
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND ipt_link_libs "${Boost_LIBRARIES}")
     if (UNIX)
@@ -689,6 +691,20 @@ if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 endif()
 #message(STATUS "** link ipt_master       : ${ipt_link_libs}")
 target_link_libraries(ipt ${ipt_link_libs})
+
+#
+# IP-Ts master
+#
+add_executable(ipts ${node_ipts_master})
+# libraries to link
+set(ipts_link_libs ${CYNG_LIBRARIES} smf_info smf_cluster smf_protocol_ipt smf_protocol_sml)
+if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+	list(APPEND ipts_link_libs "${Boost_LIBRARIES}")
+    if (UNIX)
+        list(APPEND ipts_link_libs pthread ${CMAKE_DL_LIBS})
+    endif()
+endif()
+target_link_libraries(ipts ${ipts_link_libs})
 
 #
 # IP-T store
@@ -941,38 +957,38 @@ if(UNIX)
 
 	# http
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http.linux.cgf.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http.linux.cgf.in"
 		  "${PROJECT_BINARY_DIR}/http_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http.service.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http.service.in"
 		  "${PROJECT_BINARY_DIR}/node-http.service")
 
 	# https
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https.linux.cgf.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https.linux.cgf.in"
 		  "${PROJECT_BINARY_DIR}/https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https.service.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https.service.in"
 		  "${PROJECT_BINARY_DIR}/node-https.service")
 
 	# dash
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash.linux.cgf.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash.linux.cgf.in"
 		  "${PROJECT_BINARY_DIR}/dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash.service.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash.service.in"
 		  "${PROJECT_BINARY_DIR}/node-dash.service")
 
 	# dashs
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs.linux.cgf.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs.linux.cgf.in"
 		  "${PROJECT_BINARY_DIR}/dashs_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs.service.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs.service.in"
 		  "${PROJECT_BINARY_DIR}/node-dashs.service")
 
 	# e355
@@ -1028,6 +1044,15 @@ if(UNIX)
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt.service.in"
 		  "${PROJECT_BINARY_DIR}/node-ipt.service")
+
+	# ipts master
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts.linux.cgf.in"
+		  "${PROJECT_BINARY_DIR}/ipts_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts.service.in"
+		  "${PROJECT_BINARY_DIR}/node-ipts.service")
 
 	# ipt store
 	configure_file (
@@ -1099,86 +1124,86 @@ else()
 
 	# http
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http.windows.cgf.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http.windows.cgf.in"
 		  "${PROJECT_BINARY_DIR}/http_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http_create_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http_create_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/http_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http_delete_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http_delete_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/http_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http_restart_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/http_restart_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/http/templates/http.rc.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http.rc.in"
 		  "${PROJECT_BINARY_DIR}/http.rc")
 
 	# https
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https.windows.cgf.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https.windows.cgf.in"
 		  "${PROJECT_BINARY_DIR}/https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https_create_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https_create_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/https_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https_delete_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https_delete_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/https_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https_restart_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/https_restart_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/https/templates/https.rc.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https.rc.in"
 		  "${PROJECT_BINARY_DIR}/https.rc")
 
 	# dash
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash.windows.cgf.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash.windows.cgf.in"
 		  "${PROJECT_BINARY_DIR}/dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash_create_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash_create_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/dash_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash_delete_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash_delete_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/dash_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash_restart_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/dash_restart_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dash/templates/dash.rc.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash.rc.in"
 		  "${PROJECT_BINARY_DIR}/dash.rc")
 
 	# dashs
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs.windows.cgf.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs.windows.cgf.in"
 		  "${PROJECT_BINARY_DIR}/dashs_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs_create_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs_create_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/dashs_create_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs_delete_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs_delete_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/dashs_delete_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs_restart_service.cmd.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs_restart_service.cmd.in"
 		  "${PROJECT_BINARY_DIR}/dashs_restart_service.cmd")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/nodes/dashs/templates/dashs.rc.in"
+		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs.rc.in"
 		  "${PROJECT_BINARY_DIR}/dashs.rc")
 
 	# e355
@@ -1298,6 +1323,27 @@ else()
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt.rc.in"
 		  "${PROJECT_BINARY_DIR}/ipt.rc")
+
+	# ipts master
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts.windows.cgf.in"
+		  "${PROJECT_BINARY_DIR}/ipts_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts_create_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/ipts_create_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts_delete_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/ipts_delete_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts_restart_service.cmd.in"
+		  "${PROJECT_BINARY_DIR}/ipts_restart_service.cmd")
+
+	configure_file (
+		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts.rc.in"
+		  "${PROJECT_BINARY_DIR}/ipts.rc")
 
 	# ipt store
 	configure_file (
