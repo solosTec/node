@@ -217,8 +217,7 @@ namespace node
 	bool storage::insert(std::string tbl
 		, cyng::table::key_type const& key
 		, cyng::table::data_type const& body
-		, std::uint64_t gen
-		, boost::uuids::uuid source)
+		, std::uint64_t gen)
 	{
 		auto s = pool_.get_session();
 		auto cmd = create_cmd(tbl, s.get_dialect());
@@ -247,8 +246,7 @@ namespace node
 	}
 
 	bool storage::remove(std::string tbl
-		, cyng::table::key_type const& key
-		, boost::uuids::uuid source)
+		, cyng::table::key_type const& key)
 	{
 		auto s = pool_.get_session();
 		auto cmd = create_cmd(tbl, s.get_dialect());
@@ -275,6 +273,85 @@ namespace node
 		}
 
 		return false;
+	}
+
+	std::uint64_t storage::count(std::string tbl)
+	{
+		auto s = pool_.get_session();
+		auto cmd = create_cmd(tbl, s.get_dialect());
+		if (!cmd.is_valid())	return false;
+
+		auto tmp = cmd.select().count();
+		boost::ignore_unused(tmp);
+
+		std::string const sql = cmd.to_str();
+		auto stmt = s.create_statement();
+		std::pair<int, bool> r = stmt->prepare(sql);
+		if (r.second) {
+
+			auto res = stmt->get_result();
+			if (res) {
+				auto const obj = res->get(1, cyng::TC_UINT64, 0);
+				auto const count = cyng::numeric_cast<std::uint64_t>(obj, 0);
+				return count;
+			}
+		}
+
+		return 0u;
+	}
+
+	bool storage::exists(std::string tbl
+		, cyng::table::key_type const& key)
+	{
+		auto s = pool_.get_session();
+		auto cmd = create_cmd(tbl, s.get_dialect());
+		if (!cmd.is_valid())	return false;
+
+		auto tmp = cmd.select().count().by_key();
+		boost::ignore_unused(tmp);
+
+		std::string const sql = cmd.to_str();
+		auto stmt = s.create_statement();
+		std::pair<int, bool> r = stmt->prepare(sql);
+		if (r.second) {
+
+			BOOST_ASSERT(r.first == key.size());
+
+			for (auto idx = 0u; idx < key.size(); ++idx) {
+				stmt->push(key.at(idx), cmd.get_meta()->get_width(idx));
+			}
+			auto res = stmt->get_result();
+			if (res) {
+				auto const obj = res->get(1, cyng::TC_UINT64, 0);
+				auto const count = cyng::numeric_cast<std::uint64_t>(obj, 0);
+				return count != 0;
+			}
+		}
+
+		return false;
+	}
+
+	void storage::merge_profile_meta_8181C78612FF(cyng::buffer_t srv_id
+		, std::uint64_t hours
+		, std::chrono::system_clock::time_point ts
+		, std::uint32_t status)
+	{
+		auto const key = cyng::table::key_generator(srv_id, hours);
+		auto const b = exists("TProfile_8181C78612FF", key);
+		if (b) {
+			//
+			//	update
+			//
+		}
+		else {
+			//
+			//	insert
+			//
+			insert("TProfile_8181C78612FF"
+				, key
+				, cyng::table::data_generator(ts, 0, status)
+				, 1);
+		}
 	}
 
 	//
@@ -367,28 +444,28 @@ namespace node
 			//
 			//	Profile Configurations
 			//
-			create_meta_load_profile("TProfile_8181C78610FF"),	//	PROFILE_1_MINUTE
-			create_meta_load_profile("TProfile_8181C78611FF"),	//	PROFILE_15_MINUTE
-			create_meta_load_profile("TProfile_8181C78612FF"),	//	PROFILE_60_MINUTE
-			create_meta_load_profile("TProfile_8181C78613FF"),	//	PROFILE_24_HOUR
-			create_meta_load_profile("TProfile_8181C78614FF"),	//	PROFILE_LAST_2_HOURS
-			create_meta_load_profile("TProfile_8181C78615FF"),	//	PROFILE_LAST_WEEK
-			create_meta_load_profile("TProfile_8181C78616FF"),	//	PROFILE_1_MONTH
-			create_meta_load_profile("TProfile_8181C78617FF"),	//	PROFILE_1_YEAR
-			create_meta_load_profile("TProfile_8181C78618FF"),	//	PROFILE_INITIAL
+			create_profile_meta("TProfile_8181C78610FF"),	//	PROFILE_1_MINUTE
+			create_profile_meta("TProfile_8181C78611FF"),	//	PROFILE_15_MINUTE
+			create_profile_meta("TProfile_8181C78612FF"),	//	PROFILE_60_MINUTE
+			create_profile_meta("TProfile_8181C78613FF"),	//	PROFILE_24_HOUR
+			//create_meta_load_profile("TProfile_8181C78614FF"),	//	PROFILE_LAST_2_HOURS
+			//create_meta_load_profile("TProfile_8181C78615FF"),	//	PROFILE_LAST_WEEK
+			//create_meta_load_profile("TProfile_8181C78616FF"),	//	PROFILE_1_MONTH
+			//create_meta_load_profile("TProfile_8181C78617FF"),	//	PROFILE_1_YEAR
+			//create_meta_load_profile("TProfile_8181C78618FF"),	//	PROFILE_INITIAL
 
 			//
 			//	Readout data (one for each profile)
 			//
-			create_meta_data_storage("TStorage_8181C78610FF"),	//	PROFILE_1_MINUTE
-			create_meta_data_storage("TStorage_8181C78611FF"),	//	PROFILE_15_MINUTE
-			create_meta_data_storage("TStorage_8181C78612FF"),	//	PROFILE_60_MINUTE
-			create_meta_data_storage("TStorage_8181C78613FF"),	//	PROFILE_24_HOUR
-			create_meta_data_storage("TStorage_8181C78614FF"),	//	PROFILE_LAST_2_HOURS
-			create_meta_data_storage("TStorage_8181C78615FF"),	//	PROFILE_LAST_WEEK
-			create_meta_data_storage("TStorage_8181C78616FF"),	//	PROFILE_1_MONTH
-			create_meta_data_storage("TStorage_8181C78617FF"),	//	PROFILE_1_YEAR
-			create_meta_data_storage("TStorage_8181C78618FF"),	//	PROFILE_INITIAL
+			//create_meta_data_storage("TStorage_8181C78610FF"),	//	PROFILE_1_MINUTE
+			//create_meta_data_storage("TStorage_8181C78611FF"),	//	PROFILE_15_MINUTE
+			//create_meta_data_storage("TStorage_8181C78612FF"),	//	PROFILE_60_MINUTE
+			//create_meta_data_storage("TStorage_8181C78613FF"),	//	PROFILE_24_HOUR
+			//create_meta_data_storage("TStorage_8181C78614FF"),	//	PROFILE_LAST_2_HOURS
+			//create_meta_data_storage("TStorage_8181C78615FF"),	//	PROFILE_LAST_WEEK
+			//create_meta_data_storage("TStorage_8181C78616FF"),	//	PROFILE_1_MONTH
+			//create_meta_data_storage("TStorage_8181C78617FF"),	//	PROFILE_1_YEAR
+			//create_meta_data_storage("TStorage_8181C78618FF"),	//	PROFILE_INITIAL
 
 			//
 			//	Configuration/Status
@@ -529,63 +606,61 @@ namespace node
 				, 0		//	active
 				})
 
+
 		};
 	}
 
-	cyng::table::meta_table_ptr create_meta_load_profile(std::string name)
+	cyng::table::meta_table_ptr create_profile_meta(std::string name)
 	{
-		return cyng::table::make_meta_table_gen<2, 4>(name,
+		return cyng::table::make_meta_table_gen<2, 3>(name,
 			{ "clientID"	//	server/meter/sensor ID
-			, "trx"			//	transaction ID
+			, "tsidx"		//	time stamp index
 							//	-- body
 			, "actTime"		//
 			, "valTime"		//	signed integer
-			, "regPeriod"	//	capture period (seconds)
 			, "status"		//	status
 			},
 			{ cyng::TC_BUFFER		//	clientID
-			, cyng::TC_STRING		//	trx
+			, cyng::TC_UINT64		//	tsidx
 									//	-- body
 			, cyng::TC_TIME_POINT	//	actTime
-			, cyng::TC_TIME_POINT	//	valTime
-			, cyng::TC_UINT32		//	regPeriod
+			, cyng::TC_UINT32		//	valTime
 			, cyng::TC_UINT32		//	status
 			},
 			{ 9		//	serverID
-			, 24	//	trx
+			, 0		//	tsidx
 					//	-- body
 			, 0		//	actTime
 			, 0		//	valTime
-			, 0		//	regPeriod
 			, 0		//	status
 			});
 	}
 
-	cyng::table::meta_table_ptr create_meta_data_storage(std::string name)
-	{
-		return cyng::table::make_meta_table_gen<2, 3>(name,
-			{ "trx"			//	transaction ID - reference to load profile table
-			, "OBIS"		//	register
-							//	-- body
-			, "unit"		//
-			, "scale"		//	signed integer
-			, "value"		//	capture period (seconds)
-			},
-			{ cyng::TC_STRING		//	trx
-			, cyng::TC_STRING		//	OBIS
-									//	-- body
-			, cyng::TC_UINT8		//	unit
-			, cyng::TC_INT8			//	scale
-			, cyng::TC_INT64		//	value
-			},
-			{ 24	//	trx
-			, 24	//	OBIS
-					//	-- body
-			, 0		//	unit
-			, 0		//	scale
-			, 0		//	value
-			});
-	}
+	//cyng::table::meta_table_ptr create_meta_data_storage(std::string name)
+	//{
+	//	return cyng::table::make_meta_table_gen<2, 3>(name,
+	//		{ "trx"			//	transaction ID - reference to load profile table
+	//		, "OBIS"		//	register
+	//						//	-- body
+	//		, "unit"		//
+	//		, "scale"		//	signed integer
+	//		, "value"		//	capture period (seconds)
+	//		},
+	//		{ cyng::TC_STRING		//	trx
+	//		, cyng::TC_STRING		//	OBIS
+	//								//	-- body
+	//		, cyng::TC_UINT8		//	unit
+	//		, cyng::TC_INT8			//	scale
+	//		, cyng::TC_INT64		//	value
+	//		},
+	//		{ 24	//	trx
+	//		, 24	//	OBIS
+	//				//	-- body
+	//		, 0		//	unit
+	//		, 0		//	scale
+	//		, 0		//	value
+	//		});
+	//}
 
 	bool init_storage(cyng::param_map_t&& cfg)
 	{

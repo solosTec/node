@@ -50,28 +50,31 @@ namespace node
 		void distribute();
 		void distribute(cyng::buffer_t const& srv);
 
-		void process_readout_data(cyng::store::table const*
-			, cyng::store::table const*
-			, cyng::table::key_list_t const&
-			, cyng::table::record const&
-			, cyng::table::record const&);
+		void profile_1_minute(cyng::store::table const* tbl_data
+			, cyng::store::table const* tbl_mirror
+			, cyng::table::record const& rec_collector
+			, cyng::table::record const& rec_meta
+			, cyng::table::key_list_t const& result);
+		void profile_15_minute(cyng::store::table const* tbl_data
+			, cyng::store::table const* tbl_mirror
+			, cyng::table::record const& rec_collector
+			, cyng::table::record const& rec_meta
+			, cyng::table::key_list_t const& result);
 
-		void profile_1_minute(cyng::store::table const* tbl_mirror
+		/**
+		 * 60 minute profile
+		 */
+		void profile_8181C78612FF(cyng::store::table const* tbl_data
+			, cyng::store::table const* tbl_mirror
 			, cyng::table::record const& rec_collector
 			, cyng::table::record const& rec_meta
-			, cyng::table::record const& rec_data);
-		void profile_15_minute(cyng::store::table const* tbl_mirror
+			, cyng::table::key_list_t const& result);
+
+		void profile_24_hour(cyng::store::table const* tbl_data
+			, cyng::store::table const* tbl_mirror
 			, cyng::table::record const& rec_collector
 			, cyng::table::record const& rec_meta
-			, cyng::table::record const& rec_data);
-		void profile_60_minute(cyng::store::table const* tbl_mirror
-			, cyng::table::record const& rec_collector
-			, cyng::table::record const& rec_meta
-			, cyng::table::record const& rec_data);
-		void profile_24_hour(cyng::store::table const* tbl_mirror
-			, cyng::table::record const& rec_collector
-			, cyng::table::record const& rec_meta
-			, cyng::table::record const& rec_data);
+			, cyng::table::key_list_t const& result);
 
 		/**
 		 * Remove all inactive collectors

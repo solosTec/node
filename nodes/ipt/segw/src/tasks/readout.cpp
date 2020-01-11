@@ -13,6 +13,7 @@
 
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/buffer_cast.h>
+#include <cyng/numeric_cast.hpp>
 
 namespace node
 {
@@ -115,10 +116,11 @@ namespace node
 				auto const result = tbl_data->find_all(cyng::param_t("pk", pk));
 
 				//
-				//	Hint: an optimization could be to check if there is any
+				//	An optimization could be to check if there is any
 				//	data collector with this serverID and to skip to skip
 				//	the loop is not.
 				//
+				auto const srv_id = cyng::to_buffer(rec_meta["serverID"]);
 
 				//
 				//	look for matching and active data mirrors
@@ -130,38 +132,71 @@ namespace node
 				//
 				cleanup_collectors(tbl_collector, collectors);
 
-				if (!collectors.empty()) {
-
-					//
-					//	processing readout data
-					//
-					for (auto const& key : result) {
-						auto const rec_data = tbl_data->lookup(key);
-						BOOST_ASSERT(!rec_data.empty());
-
-						CYNG_LOG_TRACE(logger_, "task #"
-							<< base_.get_id()
-							<< " <"
-							<< base_.get_class_name()
-							<< "> data "
-							<< cyng::io::to_str(rec_data.convert()));
-
-						process_readout_data(tbl_collector
-							, tbl_mirror
-							, collectors
-							, rec_meta
-							, rec_data);
-					}
-				}
-				else {
-					auto const srv_id = cyng::to_buffer(rec_meta["serverID"]);
-					
+				if (collectors.empty()) {
 					CYNG_LOG_WARNING(logger_, "task #"
 						<< base_.get_id()
 						<< " <"
 						<< base_.get_class_name()
 						<< "> no data collector defined for "
 						<< sml::from_server_id(srv_id));
+				}
+
+				for (auto const& key_collector : collectors) {
+					auto const rec_collector = tbl_collector->lookup(key_collector);
+					BOOST_ASSERT(!rec_collector.empty());
+
+					//
+					//	get profile and make readout data permanent
+					//
+					sml::obis const profile = cyng::to_buffer(rec_collector["profile"]);
+
+					CYNG_LOG_TRACE(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> profile "
+						<< sml::get_profile_name(profile)
+						<< " of "
+						<< sml::from_server_id(srv_id));
+
+					//
+					//	processing readout data
+					//
+
+					switch (profile.to_uint64()) {
+					case sml::CODE_PROFILE_1_MINUTE:
+						profile_1_minute(tbl_data, tbl_mirror, rec_collector, rec_meta, result);
+						break;
+					case sml::CODE_PROFILE_15_MINUTE:
+						profile_15_minute(tbl_data, tbl_mirror, rec_collector, rec_meta, result);
+						break;
+					case sml::CODE_PROFILE_60_MINUTE:
+						profile_8181C78612FF(tbl_data, tbl_mirror, rec_collector, rec_meta, result);
+						break;
+					case sml::CODE_PROFILE_24_HOUR:
+						profile_24_hour(tbl_data, tbl_mirror, rec_collector, rec_meta, result);
+						break;
+					case sml::CODE_PROFILE_LAST_2_HOURS:
+						break;
+					case sml::CODE_PROFILE_LAST_WEEK:
+						break;
+					case sml::CODE_PROFILE_1_MONTH:
+						break;
+					case sml::CODE_PROFILE_1_YEAR:
+						break;
+					case sml::CODE_PROFILE_INITIAL:
+						break;
+					default:
+						CYNG_LOG_ERROR(logger_, "task #"
+							<< base_.get_id()
+							<< " <"
+							<< base_.get_class_name()
+							<< "> unknown profile "
+							<< profile.to_str()
+							<< " for "
+							<< sml::from_server_id(srv_id));
+						break;
+					}
 				}
 
 				//
@@ -205,95 +240,95 @@ namespace node
 		});
 	}
 
-	void readout::process_readout_data(cyng::store::table const* tbl_collector
+	void readout::profile_1_minute(cyng::store::table const* tbl_data
 		, cyng::store::table const* tbl_mirror
-		, cyng::table::key_list_t const& collectors
+		, cyng::table::record const& rec_collector
 		, cyng::table::record const& rec_meta
-		, cyng::table::record const& rec_data)
+		, cyng::table::key_list_t const& result)
 	{
-		auto const srv_id = cyng::to_buffer(rec_meta["serverID"]);
-
-		for (auto const& key_collector : collectors) {
-			auto const rec_collector = tbl_collector->lookup(key_collector);
-			BOOST_ASSERT(!rec_collector.empty());
-
-			//
-			//	get profile and make readout data permanent
-			//
-			sml::obis const profile = cyng::to_buffer(rec_collector["profile"]);
-			//const char* get_profile_name(obis const& code)
+		for (auto const& key : result) {
+			auto const rec_data = tbl_data->lookup(key);
+			BOOST_ASSERT(!rec_data.empty());
 
 			CYNG_LOG_TRACE(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> profile "
-				<< sml::get_profile_name(profile)
-				<< " of " 
-				<< sml::from_server_id(srv_id));
-
-			switch (profile.to_uint64()) {
-			case sml::CODE_PROFILE_1_MINUTE:
-				profile_1_minute(tbl_mirror, rec_collector, rec_meta, rec_data);
-				break;
-			case sml::CODE_PROFILE_15_MINUTE:
-				profile_15_minute(tbl_mirror, rec_collector, rec_meta, rec_data);
-				break;
-			case sml::CODE_PROFILE_60_MINUTE:
-				profile_60_minute(tbl_mirror, rec_collector, rec_meta, rec_data);
-				break;
-			case sml::CODE_PROFILE_24_HOUR:
-				profile_24_hour(tbl_mirror, rec_collector, rec_meta, rec_data);
-				break;
-			case sml::CODE_PROFILE_LAST_2_HOURS:
-				break;
-			case sml::CODE_PROFILE_LAST_WEEK:
-				break;
-			case sml::CODE_PROFILE_1_MONTH:
-				break;
-			case sml::CODE_PROFILE_1_YEAR:
-				break;
-			case sml::CODE_PROFILE_INITIAL:
-				break;
-			default:
-				CYNG_LOG_ERROR(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> unknown profile "
-					<< profile.to_str()
-					<< " for "
-					<< sml::from_server_id(srv_id));
-				break;
-			}
+				<< "> data "
+				<< cyng::io::to_str(rec_data.convert()));
 		}
 	}
 
-	void readout::profile_1_minute(cyng::store::table const* tbl_mirror
+	void readout::profile_15_minute(cyng::store::table const* tbl_data
+		, cyng::store::table const* tbl_mirror
 		, cyng::table::record const& rec_collector
 		, cyng::table::record const& rec_meta
-		, cyng::table::record const& rec_data)
+		, cyng::table::key_list_t const& result)
 	{
+		for (auto const& key : result) {
+			auto const rec_data = tbl_data->lookup(key);
+			BOOST_ASSERT(!rec_data.empty());
+
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> data "
+				<< cyng::io::to_str(rec_data.convert()));
+		}
 	}
 
-	void readout::profile_15_minute(cyng::store::table const* tbl_mirror
+	void readout::profile_8181C78612FF(cyng::store::table const* tbl_data
+		, cyng::store::table const* tbl_mirror
 		, cyng::table::record const& rec_collector
 		, cyng::table::record const& rec_meta
-		, cyng::table::record const& rec_data)
-	{}
-
-	void readout::profile_60_minute(cyng::store::table const* tbl_mirror
-		, cyng::table::record const& rec_collector
-		, cyng::table::record const& rec_meta
-		, cyng::table::record const& rec_data)
+		, cyng::table::key_list_t const& result)
 	{
+		//
+		//	store meta data
+		//	{("key":%(("pk":a56eddad-34a6-470d-a305-a19726556a0a))),("data":%(("gen":1),("serverID":01E61E571406213603),("status":0),("ts":2020-01-11 14:24:19.84926560)))}
+		//
+		auto const srv_id = cyng::to_buffer(rec_meta["serverID"]);
+		auto const ts = cyng::value_cast(rec_meta["ts"], std::chrono::system_clock::now());
+		auto const hours = cyng::chrono::hours_since_epoch(ts);
+		auto const status = cyng::numeric_cast<std::uint32_t>(rec_meta["status"], 0);
+
+		storage_.merge_profile_meta_8181C78612FF(srv_id, hours, ts, status);
+
+		//
+		//	store readout data
+		//
+		for (auto const& key : result) {
+			auto const rec_data = tbl_data->lookup(key);
+			BOOST_ASSERT(!rec_data.empty());
+
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> data "
+				<< cyng::io::to_str(rec_data.convert()));
+		}
 	}
 
-	void readout::profile_24_hour(cyng::store::table const* tbl_mirror
+	void readout::profile_24_hour(cyng::store::table const* tbl_data
+		, cyng::store::table const* tbl_mirror
 		, cyng::table::record const& rec_collector
 		, cyng::table::record const& rec_meta
-		, cyng::table::record const& rec_data)
-	{}
+		, cyng::table::key_list_t const& result)
+	{
+		for (auto const& key : result) {
+			auto const rec_data = tbl_data->lookup(key);
+			BOOST_ASSERT(!rec_data.empty());
+
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> data "
+				<< cyng::io::to_str(rec_data.convert()));
+		}
+	}
 
 }
 

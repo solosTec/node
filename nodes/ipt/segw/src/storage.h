@@ -17,8 +17,8 @@
 
 namespace node
 {
-	cyng::table::meta_table_ptr create_meta_load_profile(std::string name);
-	cyng::table::meta_table_ptr create_meta_data_storage(std::string name);
+	cyng::table::meta_table_ptr create_profile_meta(std::string name);
+	//cyng::table::meta_table_ptr create_meta_data_storage(std::string name);
 
 	/**
 	 * create a map with all table meta data.
@@ -107,12 +107,20 @@ namespace node
 		bool insert(std::string tbl
 			, cyng::table::key_type const& key
 			, cyng::table::data_type const& body
-			, std::uint64_t gen
-			, boost::uuids::uuid source);
+			, std::uint64_t gen);
 
 		bool remove(std::string tbl
-			, cyng::table::key_type const& key
-			, boost::uuids::uuid source);
+			, cyng::table::key_type const& key);
+
+		std::uint64_t count(std::string tbl);
+
+		bool exists(std::string tbl
+			, cyng::table::key_type const& key);
+
+		void merge_profile_meta_8181C78612FF(cyng::buffer_t srv_id
+			, std::uint64_t hours
+			, std::chrono::system_clock::time_point ts
+			, std::uint32_t status);
 
 	private:
 		/**
