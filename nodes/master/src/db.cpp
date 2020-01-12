@@ -13,6 +13,7 @@
 #include <cyng/intrinsics/traits/tag.hpp>
 #include <cyng/intrinsics/traits.hpp>
 #include <cyng/io/serializer.h>
+#include <cyng/value_cast.hpp>
 
 #include <algorithm>
 
