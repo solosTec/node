@@ -159,6 +159,7 @@ namespace node
 			FIELD_CI_RES_TLS_LONG = 0x9F,	//!<	Security Management (TLS-Handshake)
 
 				
+			FIELD_CI_MANU_SPEC = 0xA0, //!<	Manufacture specific CI-Field
 			FIELD_CI_MANU_NO = 0xA1, //!<	Manufacture specific CI-Field with no header
 			FIELD_CI_MANU_SHORT = 0xA2, //!<	Manufacture specific CI-Field with short header
 			FIELD_CI_MANU_LONG = 0xA3, //!<	Manufacture specific CI-Field with long header

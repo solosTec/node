@@ -172,9 +172,11 @@ namespace node
 
 			cyng::vector_t read_msg(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 			{
-				std::size_t count = std::distance(pos, end);
-				BOOST_ASSERT_MSG(count == 5, "SML message");
-				if (count != 5)	return cyng::generate_invoke("log.msg.error", "SMLMsg", count);
+				std::size_t const count = std::distance(pos, end);
+				//BOOST_ASSERT_MSG(count == 5, "SML message");
+				BOOST_ASSERT_MSG(count > 3 && count < 6, "SML message");
+				//if (count == 4)	return cyng::generate_invoke("log.msg.warning", "SMLMsg to short", count);
+				if (count < 4)	return cyng::generate_invoke("log.msg.error", "SMLMsg", count);
 
 				//
 				//	(1) - transaction id
@@ -201,7 +203,9 @@ namespace node
 				//
 				//	(6) CRC16
 				//
-				ro.set_value("crc16", *pos);
+				if (count > 4) {
+					ro.set_value("crc16", *pos);
+				}
 
 				//
 				//	Read the SML message.

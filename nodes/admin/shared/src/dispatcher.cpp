@@ -549,7 +549,13 @@ namespace node
 				else {
 
 					CYNG_LOG_ERROR(logger_, "(TGUIUser) user " << user_name << " not found");
+					if (boost::algorithm::equals(user_name, "?")) {
 
+						//
+						//	The server config file contains no "auth" section.
+						//	Deliver some bogus values.
+						//
+					}
 				}
 			}
 			else {

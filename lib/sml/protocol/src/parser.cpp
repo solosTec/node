@@ -1059,7 +1059,7 @@ namespace node
 					//
 					//	generate SML message
 					//
-					BOOST_ASSERT_MSG(stack_.top().values_.size() == 5, "sml.msg");
+					//BOOST_ASSERT_MSG(stack_.top().values_.size() == 5, "sml.msg");
 					cyng::vector_t prg{ cyng::generate_invoke("sml.msg", stack_.top().values_, counter_, pk_) };
 
 					if (verbose_)

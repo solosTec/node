@@ -275,14 +275,14 @@ namespace node
 			case state::DEV_VERSION:
 				//	Version (or Generation number) 
 				--packet_size_;
-				version_ = boost::numeric_cast<std::uint8_t>(c);
+				version_ = static_cast<std::uint8_t>(c);
 				server_id_[7] = version_;
 				stream_state_ = state::DEV_TYPE;
 				break;
 			case state::DEV_TYPE:
 				//	Device type/Medium
 				--packet_size_;
-				medium_ = boost::numeric_cast<std::uint8_t>(c);
+				medium_ = static_cast<std::uint8_t>(c);
 				server_id_[8] = medium_;
 				stream_state_ = state::FRAME_TYPE;
 				break;
@@ -340,7 +340,7 @@ namespace node
 			//	0x7A: short data header
 			//	0x78: no data header
 
-			frame_type_ = boost::numeric_cast<std::uint8_t>(c);
+			frame_type_ = static_cast<std::uint8_t>(c);
 			cb_(cyng::generate_invoke("log.msg.trace", "frame type", frame_type_));
 
 			switch (frame_type_) {
@@ -359,7 +359,14 @@ namespace node
 				return std::make_pair(state::HEADER_SHORT, frame_data(packet_size_));
 			case FIELD_CI_HEADER_NO:	//	 0x78
 				return std::make_pair(state::HEADER_NONE, frame_data(packet_size_));
+			case FIELD_CI_EXT_DLL_I:	//	0x8C
+				break;
 			case FIELD_CI_NULL:	//	0xFF
+				cb_(cyng::generate_invoke("log.msg.warning", "unsupported frame type FIELD_CI_NULL", frame_type_));
+				break;
+			case FIELD_CI_MANU_SPEC:	//	0xA0
+				cb_(cyng::generate_invoke("log.msg.warning", "unsupported frame type FIELD_CI_MANU_SPEC", frame_type_));
+				break;
 			default:
 				BOOST_ASSERT(c == 0x70 || c == 0x72 || c == 0x78 || c == 0x7A || c == 0x7F);
 				break;
