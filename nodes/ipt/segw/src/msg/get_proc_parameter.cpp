@@ -603,6 +603,9 @@ namespace node
 			//
 			sml_gen_.append(std::move(msg));
 
+			CYNG_LOG_TRACE(logger_, "code_root_visible_devices: "
+				<< cyng::io::to_str(msg));
+
 		}
 
 		void get_proc_parameter::code_root_device_info(std::string trx, cyng::buffer_t srv_id)

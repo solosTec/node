@@ -206,6 +206,9 @@ namespace node
 				if (count > 4) {
 					ro.set_value("crc16", *pos);
 				}
+				else {
+					ro.set_value("crc16", cyng::make_object<std::uint16_t>(0));
+				}
 
 				//
 				//	Read the SML message.

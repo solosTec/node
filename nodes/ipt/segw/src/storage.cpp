@@ -152,13 +152,11 @@ namespace node
 		if (!cmd.is_valid())	return false;
 
 		//
-		//	precondition is that both tables use the same column names
-		//	that the key length is one.
+		//	precondition is that both tables (in memory and SQL) use the same column names
 		//
 		auto tmp = cmd.update(cyng::sql::make_assign(col, cyng::sql::make_placeholder())).by_key();
 		boost::ignore_unused(tmp);
 
-		//cmd.update(cyng::sql::make_assign(col, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
 		std::string sql = cmd.to_str();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
@@ -179,7 +177,6 @@ namespace node
 			//	update gen(eration)
 			//
 			auto tmp = cmd.update(cyng::sql::make_assign("gen", cyng::sql::make_placeholder())).by_key();
-			//auto tmp = cmd.update(cyng::sql::make_assign("gen", cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
 			boost::ignore_unused(tmp);
 
 			sql = cmd.to_str();

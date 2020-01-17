@@ -420,6 +420,15 @@ namespace node
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DeviceMBUS")) {
 
+#ifdef _DEBUG
+			CYNG_LOG_TRACE(logger_, "Update TDeviceMBUS key: "
+				<< cyng::io::to_str(key)
+				<< ", "
+				<< attr.first
+				<< ": "
+				<< cyng::io::to_str(attr.second));
+#endif
+
 			//
 			//	Update "TDeviceMBUS"
 			//
