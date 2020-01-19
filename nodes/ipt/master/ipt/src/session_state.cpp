@@ -1572,7 +1572,7 @@ namespace node
 			void state_connected_task::get_proc_parameter(cyng::async::mux& mux, cyng::vector_t vec)
 			{
 				//
-				//	post message to gateway proxy slot [5]
+				//	post message to gateway proxy slot [3]
 				//
 				mux.post(tsk_proxy_, 3, cyng::to_tuple(vec));
 			}

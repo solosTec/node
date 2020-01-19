@@ -298,14 +298,14 @@ namespace node
 
 			CYNG_LOG_INFO(logger_, "meter configuration - " << cyng::io::to_str(*data_ptr));
 
-			const auto ident = cyng::find_value<cyng::buffer_t>(*data_ptr, "8181C78204FF", cyng::buffer_t{});
+			const auto ident = cyng::find_value(*data_ptr, "8181C78204FF", std::string{});
 			const auto type = cyng::find_value<std::uint32_t>(*data_ptr, "type", 0u);
 
 			if (type < 4)	//	 meter type is SRV_MBUS_WIRED, SRV_MBUS_RADIO, SRV_W_MBUS or SRV_SERIAL
 			{
-				CYNG_LOG_TRACE(logger_, "search for "
-					<< cyng::io::to_hex(ident)
-					<< " in TMeter table with "
+				CYNG_LOG_TRACE(logger_, "lookup TMeter for "
+					<< ident
+					<< " with "
 					<< cache_.db_.size("TMeter")
 					<< " record(s)");
 
@@ -314,7 +314,7 @@ namespace node
 					//
 					//	search for meter on this gateway
 					//
-					auto const rec = lookup_meter(tbl_meter, cyng::io::to_hex(ident), gw_tag);
+					auto const rec = lookup_meter(tbl_meter, ident, gw_tag);
 
 					//
 					//	insert meter if not found

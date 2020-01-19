@@ -1758,13 +1758,6 @@ namespace node
 					return read_obis(obj);
 					});
 
-				//for (auto obj : tpl)
-				//{
-
-				//	const obis object_type = read_obis(obj);
-				//	result.push_back(object_type);
-
-				//}
 				return result;
 			}
 		}	//	reader

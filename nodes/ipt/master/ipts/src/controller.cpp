@@ -60,7 +60,13 @@ namespace node
 				cyng::param_factory("service", "26862"),
 				cyng::param_factory("sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 				cyng::param_factory("watchdog", 30),	//	for IP-T connection (minutes)
-				cyng::param_factory("timeout", 10)		//	connection timeout in seconds
+				cyng::param_factory("timeout", 10),		//	connection timeout in seconds
+				cyng::param_factory("tls", cyng::tuple_factory(
+					cyng::param_factory("pwd", "test"),
+					cyng::param_factory("certificate-chain", "demo.cert"),
+					cyng::param_factory("private-key", "priv.key"),
+					cyng::param_factory("dh", "demo.dh")	//	diffie-hellman
+				))
 			))
 			, cyng::param_factory("sml-log", false)		//	log SML parser
 			, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
