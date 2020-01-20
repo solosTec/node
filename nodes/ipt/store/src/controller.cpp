@@ -175,7 +175,7 @@ namespace node
 			});
 	}
 
-	int controller::init_db()
+	int controller::init_db(std::size_t idx)
 	{
 		//
 		//	read configuration file

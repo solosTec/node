@@ -87,7 +87,7 @@ namespace node
 		});
 	}
 
-	int controller::init_db(std::size_t count)
+	int controller::init_db(std::size_t idx)
 	{
 		//
 		//	read configuration file
@@ -96,13 +96,14 @@ namespace node
 
 		cyng::vector_t vec;
 		vec = cyng::value_cast(config, vec);
-		BOOST_ASSERT_MSG(!vec.empty(), "invalid configuration");
+		//BOOST_ASSERT_MSG(!vec.empty(), "invalid configuration");
+		//if (vec.size() < idx)
 
 		if (!vec.empty())
 		{
 			auto dom = cyng::make_reader(vec[0]);
 			cyng::tuple_t tpl;
-			return storage_db::init_db(cyng::value_cast(dom.get("DB"), tpl), count);
+			return storage_db::init_db(cyng::value_cast(dom.get("DB"), tpl), idx);
 		}
 		return EXIT_FAILURE;
 	}

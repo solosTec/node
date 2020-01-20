@@ -15,7 +15,6 @@
 #include <boost/asio.hpp>
 #endif
 #include "controller.h"
-#include "controller.h"
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <limits>

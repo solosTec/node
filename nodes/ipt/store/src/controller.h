@@ -24,7 +24,7 @@ namespace node
 			, unsigned int pool_size
 			, std::string const& json_path
 			, std::string node_name);
-		int init_db();
+		int init_db(std::size_t count);
 
 	protected:
 		virtual bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag);

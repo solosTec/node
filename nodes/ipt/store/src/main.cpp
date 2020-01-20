@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 		("build,b", "last built timestamp and platform")
 		("config,C", boost::program_options::value<std::string>(&config_file)->default_value(node::get_cfg_name("store")), "specify the configuration file")
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
-		("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
+		("init,I", boost::program_options::value<std::size_t>()->default_value(std::numeric_limits<std::size_t>::max())->implicit_value(std::numeric_limits<std::size_t>::min()), "initialize database and exit. generate optional test configuration")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("fs,F", boost::program_options::bool_switch()->default_value(false), "show available drives")
 		("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
@@ -154,10 +154,11 @@ int main(int argc, char **argv)
 			return ctrl.ctl::create_config();	//	base class method is hidden
 		}
 
-		if (vm["init"].as< bool >())
+		const auto conf_count = vm["init"].as< std::size_t >();
+		if (conf_count != std::numeric_limits<std::size_t>::max())
 		{
 			//	initialize database
- 			return ctrl.init_db();
+ 			return ctrl.init_db(conf_count);
 		}
 
 		if (vm["show"].as< bool >())
