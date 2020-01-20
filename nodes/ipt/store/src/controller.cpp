@@ -186,12 +186,27 @@ namespace node
 		vec = cyng::value_cast(config, vec);
 		BOOST_ASSERT_MSG(!vec.empty(), "invalid configuration");
 
-		if (!vec.empty())
+		if (vec.size() > idx)
 		{
-			auto dom = cyng::make_reader(vec[0]);
+			std::cerr
+				<< "***info: configuration index #"
+				<< idx
+				<< '/'
+				<< vec.size()
+				<< std::endl;
+
+			auto dom = cyng::make_reader(vec[idx]);
 			cyng::tuple_t tpl;
 			return (EXIT_SUCCESS == sml_db_consumer::init_db(cyng::value_cast(dom.get("SML:DB"), tpl)))
 				&& (EXIT_SUCCESS == iec_db_consumer::init_db(cyng::value_cast(dom.get("IEC:DB"), tpl)));
+		}
+		else {
+			std::cerr
+				<< "***error: index of configuration vector is out of range "
+				<< idx
+				<< '/'
+				<< vec.size()
+				<< std::endl;
 		}
 		return EXIT_FAILURE;
 	}

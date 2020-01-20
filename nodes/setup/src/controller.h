@@ -24,7 +24,12 @@ namespace node
 			, unsigned int pool_size
 			, std::string const& json_path
 			, std::string node_name);
-		int init_db(std::size_t count);
+
+		/**
+		 * @param idx index of configuration vector
+		 * @param conf_count number of default devices to insert
+		 */
+		int init_db(std::size_t idx, std::size_t conf_count);
 
 	protected:
 		virtual bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag);

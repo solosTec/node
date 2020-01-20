@@ -327,7 +327,7 @@ namespace node
 	{
 		cyng::vector_t vec;
 		vec = cyng::value_cast(config, vec);
-		if (!vec.empty() && !(vec.size() < config_index)) {
+		if (vec.size() > config_index) {
 
 			return std::make_pair(vec.at(config_index), true);
 		}

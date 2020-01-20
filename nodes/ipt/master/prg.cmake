@@ -38,7 +38,6 @@ set (node_ipt_master_shared
 	nodes/show_ip_address.h
 
 	src/main/include/smf/shared/ctl.h
-	nodes/shared/sys/ctl.cpp
 )
 
 set (node_ipt_master_tasks
@@ -70,7 +69,6 @@ if(WIN32)
 		src/main/resources/logo.ico
 		nodes/ipt/master/templates/ipt.exe.manifest
 	)
-
  
 else()
 
@@ -137,7 +135,6 @@ set (node_ipts_master_shared
 	nodes/show_ip_address.h
 
 	src/main/include/smf/shared/ctl.h
-	nodes/shared/sys/ctl.cpp
 )
 
 set (node_ipts_master_tasks

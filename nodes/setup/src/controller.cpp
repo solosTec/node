@@ -87,7 +87,7 @@ namespace node
 		});
 	}
 
-	int controller::init_db(std::size_t idx)
+	int controller::init_db(std::size_t idx, std::size_t conf_count)
 	{
 		//
 		//	read configuration file
@@ -96,15 +96,27 @@ namespace node
 
 		cyng::vector_t vec;
 		vec = cyng::value_cast(config, vec);
-		//BOOST_ASSERT_MSG(!vec.empty(), "invalid configuration");
-		//if (vec.size() < idx)
 
-		if (!vec.empty())
+		if (vec.size() > idx)
 		{
-			auto dom = cyng::make_reader(vec[0]);
+			std::cout
+				<< "***info: configuration index #"
+				<< idx
+				<< std::endl;
+
+			auto dom = cyng::make_reader(vec[idx]);
 			cyng::tuple_t tpl;
-			return storage_db::init_db(cyng::value_cast(dom.get("DB"), tpl), idx);
+			return storage_db::init_db(cyng::value_cast(dom.get("DB"), tpl), conf_count);
 		}
+		else {
+			std::cerr
+				<< "***error: index of configuration vector is out of range "
+				<< idx
+				<< '/'
+				<< vec.size()
+				<< std::endl;
+		}
+
 		return EXIT_FAILURE;
 	}
 

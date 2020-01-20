@@ -26,13 +26,7 @@ set (tool_smf_shared
 	nodes/show_ip_address.h
 	tools/set_start_options.h
 
-	nodes/print_build_info.cpp
-	nodes/print_version_info.cpp
-	nodes/show_ip_address.cpp
-	tools/set_start_options.cpp
-
 	src/main/include/smf/shared/ctl.h
-	nodes/shared/sys/ctl.cpp
 
 	lib/sml/exporter/src/abl_sml_exporter.cpp
 )

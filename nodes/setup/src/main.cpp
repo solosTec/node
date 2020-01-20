@@ -161,7 +161,7 @@ int main(int argc, char **argv)
 		if (conf_count != std::numeric_limits<std::size_t>::max())
 		{
 			//	initialize database
- 			return ctrl.init_db(conf_count);
+ 			return ctrl.init_db(config_index, conf_count);
 		}
 
 		if (vm["show"].as< bool >())
