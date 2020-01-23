@@ -523,28 +523,6 @@ namespace node
 		else {
 			CYNG_LOG_ERROR(logger, "\"sml:com\" from ws: " << tag_ws << " with empty gateway PK");
 		}
-
-		//cyng::vector_t key;
-		//key = cyng::value_cast(reader.get("key"), key);
-		//CYNG_LOG_INFO(logger, "\"sml:com\" from ws: " << tag_ws << " to TGateway " << cyng::io::to_str(key));
-		//BOOST_ASSERT_MSG(!key.empty(), "TGateway key is empty");
-		//if (!key.empty()) {
-
-		//	cyng::vector_t sections, params;
-		//	sections = cyng::value_cast(reader.get("section"), sections);
-		//	params = cyng::value_cast(reader.get("params"), params);
-
-		//	for (auto const& sec : sections) {
-		//		CYNG_LOG_TRACE(logger, "\"sml:com\" to TGateway " << cyng::io::to_str(key) << " [" << cyng::io::to_str(sec) << "]");
-		//	}
-
-		//	ctx.queue(bus_req_com_sml(key	//	key into TGateway and TDevice table
-		//		, tag_ws	//	web-socket tag
-		//		, channel
-		//		, sections
-		//		, params));	//	parameters, requests, commands
-
-		//}
 	}
 
 	void fwd_com_task(cyng::logging::log_ptr logger
@@ -562,7 +540,6 @@ namespace node
 			, channel
 			, cyng::value_cast(reader.get("section"), vec)
 			, cyng::value_cast(reader.get("params"), vec)));	//	parameters, requests, commands
-
 	}
 
 	void fwd_com_node(cyng::logging::log_ptr logger

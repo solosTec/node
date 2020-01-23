@@ -64,10 +64,10 @@ namespace node
 			std::string,			//	[5] channel (message type)
 			std::string,			//	[6] server id
 			std::string,			//	[7] "OBIS code" as text (see obis_db.cpp)
-			cyng::param_map_t		//	[8] params
+			cyng::param_map_t&		//	[8] params
 		);
 
-		void routing_back_active_devices(boost::uuids::uuid,		//	[0] ident
+		void routing_back_meters(boost::uuids::uuid,	//	[0] ident
 			boost::uuids::uuid,		//	[1] source
 			std::uint64_t,			//	[2] sequence
 			cyng::vector_t,			//	[3] gw key
@@ -75,7 +75,7 @@ namespace node
 			std::string,			//	[5] channel (message type)
 			std::string,			//	[6] server id
 			std::string,			//	[7] "OBIS code" as text (see obis_db.cpp)
-			cyng::param_map_t		//	[8] params
+			cyng::param_map_t&		//	[8] params
 		);
 
 	private:
