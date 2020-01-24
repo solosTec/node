@@ -29,7 +29,7 @@ message(STATUS "** CYNG root dev   : ${CYNG_ROOT_DEV}")
 #	check path definition for CYNG build directory
 #
 if(NOT DEFINED CYNG_ROOT_BUILD_SUBDIR)
-	set(CYNG_ROOT_BUILD_SUBDIR "build" CACHE PATH "CYNG_ROOT_BUILD_SUBDIR")
+	set(CYNG_ROOT_BUILD_SUBDIR "build" CACHE STRING "CYNG_ROOT_BUILD_SUBDIR")
 endif()
 message(STATUS "** CYNG root build : ${CYNG_ROOT_BUILD_SUBDIR}")
 
