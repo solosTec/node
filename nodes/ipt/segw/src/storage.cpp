@@ -62,10 +62,7 @@ namespace node
 		auto cmd = create_cmd("TOpLog", s.get_dialect());
 		if (!cmd.is_valid())	return;
 
-		auto tmp = cmd.insert();
-		boost::ignore_unused(tmp);
-
-		std::string const sql = cmd.to_str();
+		auto const sql = cmd.insert()();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
 
@@ -108,10 +105,7 @@ namespace node
 		auto cmd = create_cmd(name, s.get_dialect());
 		if (!cmd.is_valid())	return;
 
-		auto tmp = cmd.select().all();
-		boost::ignore_unused(tmp);
-
-		std::string const sql = cmd.to_str();
+		auto const sql = cmd.select().all()();
 		auto stmt = s.create_statement();
 		stmt->prepare(sql);
 
@@ -282,10 +276,7 @@ namespace node
 		auto cmd = create_cmd(tbl, s.get_dialect());
 		if (!cmd.is_valid())	return false;
 
-		auto tmp = cmd.insert();
-		boost::ignore_unused(tmp);
-
-		std::string const sql = cmd.to_str();
+		auto const sql = cmd.insert()();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
 		if (r.second) {
@@ -311,10 +302,7 @@ namespace node
 		auto cmd = create_cmd(tbl, s.get_dialect());
 		if (!cmd.is_valid())	return false;
 
-		auto tmp = cmd.remove().by_key();
-		boost::ignore_unused(tmp);
-
-		std::string const sql = cmd.to_str();
+		auto const sql = cmd.remove().by_key()();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
 		if (r.second) {
@@ -340,10 +328,7 @@ namespace node
 		auto cmd = create_cmd(tbl, s.get_dialect());
 		if (!cmd.is_valid())	return false;
 
-		auto tmp = cmd.select().count();
-		boost::ignore_unused(tmp);
-
-		std::string const sql = cmd.to_str();
+		auto const sql = cmd.select().count()();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
 		if (r.second) {
@@ -366,10 +351,7 @@ namespace node
 		auto cmd = create_cmd(tbl, s.get_dialect());
 		if (!cmd.is_valid())	return false;
 
-		auto tmp = cmd.select().count().by_key();
-		boost::ignore_unused(tmp);
-
-		std::string const sql = cmd.to_str();
+		auto const sql = cmd.select().count().by_key()();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
 		if (r.second) {
@@ -440,7 +422,7 @@ namespace node
 		, std::uint64_t hours
 		, std::chrono::system_clock::time_point ts
 		, std::uint32_t status)
-	{
+	{	//	60 min profile meta data
 		auto const key = cyng::table::key_generator(srv_id, hours);
 		auto const b = exists("TProfile_8181C78612FF", key);
 		if (b) {
@@ -463,6 +445,34 @@ namespace node
 		}
 	}
 
+	void storage::merge_profile_meta_8181C78613FF(cyng::buffer_t srv_id
+		, std::uint64_t days
+		, std::chrono::system_clock::time_point ts
+		, std::uint32_t status)
+	{	//	24 h profile meta data
+		auto const key = cyng::table::key_generator(srv_id, days);
+		auto const b = exists("TProfile_8181C78613FF", key);
+		if (b) {
+			//
+			//	update
+			//
+			update("TProfile_8181C78613FF"
+				, key
+				, cyng::table::data_generator(ts, 0, status)
+				, 2);
+		}
+		else {
+			//
+			//	insert
+			//
+			insert("TProfile_8181C78613FF"
+				, key
+				, cyng::table::data_generator(ts, 0, status)
+				, 1);
+		}
+	}
+
+
 	void storage::merge_profile_storage_8181C78611FF(cyng::buffer_t srv_id
 		, std::uint64_t hours
 		, cyng::buffer_t code
@@ -470,7 +480,7 @@ namespace node
 		, cyng::object scaler
 		, cyng::object unit
 		, cyng::object type)
-	{
+	{	//	15 min profile readout data
 		auto const key = cyng::table::key_generator(srv_id, hours, code);
 		auto const b = exists("TStorage_8181C78611FF", key);
 
@@ -480,6 +490,10 @@ namespace node
 			//
 			//	update
 			//
+			update("TStorage_8181C78611FF"
+				, key
+				, cyng::table::data_generator(s, scaler, unit, type)
+				, 2);
 		}
 		else {
 			//
@@ -500,7 +514,7 @@ namespace node
 		, cyng::object scaler
 		, cyng::object unit
 		, cyng::object type)
-	{
+	{	//	60 min profile readout data
 		auto const key = cyng::table::key_generator(srv_id, hours, code);
 		auto const b = exists("TStorage_8181C78612FF", key);
 
@@ -510,6 +524,13 @@ namespace node
 			//
 			//	update
 			//
+			//
+			//	update
+			//
+			update("TStorage_8181C78612FF"
+				, key
+				, cyng::table::data_generator(s, scaler, unit, type)
+				, 2);
 		}
 		else {
 			//
@@ -520,8 +541,44 @@ namespace node
 				, cyng::table::data_generator(s, scaler, unit, type)
 				, 1);
 		}
-
 	}
+
+	void storage::merge_profile_storage_8181C78613FF(cyng::buffer_t srv_id
+		, std::uint64_t days
+		, cyng::buffer_t code
+		, cyng::object val
+		, cyng::object scaler
+		, cyng::object unit
+		, cyng::object type)
+	{	//	24 h profile readout data
+		auto const key = cyng::table::key_generator(srv_id, days, code);
+		auto const b = exists("TStorage_8181C78613FF", key);
+
+		auto const s = cyng::io::to_str(val);
+
+		if (b) {
+			//
+			//	update
+			//
+			//
+			//	update
+			//
+			update("TStorage_8181C78613FF"
+				, key
+				, cyng::table::data_generator(s, scaler, unit, type)
+				, 2);
+		}
+		else {
+			//
+			//	insert
+			//
+			insert("TStorage_8181C78613FF"
+				, key
+				, cyng::table::data_generator(s, scaler, unit, type)
+				, 1);
+		}
+	}
+
 
 	//
 	//	initialize static member

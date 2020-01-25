@@ -163,6 +163,14 @@ namespace node
 			, std::uint32_t status);
 
 		/**
+		 * meta data of 24 hour profile
+		 */
+		void merge_profile_meta_8181C78613FF(cyng::buffer_t srv_id
+			, std::uint64_t days
+			, std::chrono::system_clock::time_point ts
+			, std::uint32_t status);
+
+		/**
 		 * readout data of 15 minute profile
 		 */
 		void merge_profile_storage_8181C78611FF(cyng::buffer_t srv_id
@@ -178,6 +186,17 @@ namespace node
 		 */
 		void merge_profile_storage_8181C78612FF(cyng::buffer_t srv_id
 			, std::uint64_t hours
+			, cyng::buffer_t code
+			, cyng::object val
+			, cyng::object scaler
+			, cyng::object unit
+			, cyng::object type);
+
+		/**
+		 * readout data of 24 hour profile
+		 */
+		void merge_profile_storage_8181C78613FF(cyng::buffer_t srv_id
+			, std::uint64_t days
 			, cyng::buffer_t code
 			, cyng::object val
 			, cyng::object scaler

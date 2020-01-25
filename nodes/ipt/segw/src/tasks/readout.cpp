@@ -361,16 +361,40 @@ namespace node
 		, cyng::table::record const& rec_meta
 		, cyng::table::key_list_t const& result)
 	{
+		//
+		//	store meta data
+		//
+		auto const srv_id = cyng::to_buffer(rec_meta["serverID"]);
+		auto const ts = cyng::value_cast(rec_meta["ts"], std::chrono::system_clock::now());
+		auto const days = cyng::chrono::days_since_epoch(ts);
+		auto const status = cyng::numeric_cast<std::uint32_t>(rec_meta["status"], 0);
+
+		storage_.merge_profile_meta_8181C78613FF(srv_id, days, ts, status);
+
+
 		for (auto const& key : result) {
 			auto const rec_data = tbl_data->lookup(key);
 			BOOST_ASSERT(!rec_data.empty());
+
+			auto const code = cyng::to_buffer(rec_data["OBIS"]);
 
 			CYNG_LOG_TRACE(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> data "
+				<< sml::obis(code).to_str()
+				<< " - "
 				<< cyng::io::to_str(rec_data.convert()));
+
+			storage_.merge_profile_storage_8181C78613FF(srv_id
+				, days
+				, code
+				, rec_data["val"]
+				, rec_data["scaler"]
+				, rec_data["unit"]
+				, rec_data["type"]);
+
 		}
 	}
 
