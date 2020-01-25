@@ -85,8 +85,7 @@ namespace node
 			auto s = pool_.get_session();
 			cyng::table::meta_table_ptr meta = (*pos).second;
 			cyng::sql::command cmd(meta, s.get_dialect());
-			cmd.select().all();
-			std::string sql = cmd.to_str();
+			auto const sql = cmd.select().all()();
 			CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
 
 			auto stmt = s.create_statement();
@@ -203,10 +202,7 @@ namespace node
 				auto s = pool_.get_session();
 				cyng::table::meta_table_ptr meta = (*pos).second;
 				cyng::sql::command cmd(meta, s.get_dialect());
-				auto sql_cmd = cmd.insert();
-				boost::ignore_unused(sql_cmd);
-
-				std::string sql = cmd.to_str();
+				auto const sql = cmd.insert()();
 				//CYNG_LOG_TRACE(logger_, sql);	//	insert
 
 				auto stmt = s.create_statement();
@@ -368,10 +364,7 @@ namespace node
 				//
 				//	update specific attribute
 				//
-				auto sql_cmd = cmd.update(cyng::sql::make_assign(idx.first + 1, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
-				boost::ignore_unused(sql_cmd);
-
-				std::string sql = cmd.to_str();
+				auto sql = cmd.update(cyng::sql::make_assign(idx.first + 1, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder())();
 				//CYNG_LOG_TRACE(logger_, sql);	//	update
 
 				auto stmt = s.create_statement();
@@ -397,8 +390,7 @@ namespace node
 				//
 				//	update gen(eration)
 				//
-				cmd.update(cyng::sql::make_assign(2, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder());
-				sql = cmd.to_str();
+				sql = cmd.update(cyng::sql::make_assign(2, cyng::sql::make_placeholder())).where(cyng::sql::column(1) == cyng::sql::make_placeholder())();
 				//CYNG_LOG_TRACE(logger_, sql);	//	update
 
 				//stmt = s.create_statement();
@@ -453,8 +445,7 @@ namespace node
 			cyng::table::meta_table_ptr meta = (*pos).second;
 			cyng::sql::command cmd(meta, s.get_dialect());
 
-			cmd.remove().by_key();	//	different key size
-			std::string sql = cmd.to_str();
+			auto const sql = cmd.remove().by_key()();	//	different key size
 			CYNG_LOG_TRACE(logger_, sql);
 
 			auto stmt = s.create_statement();
@@ -500,17 +491,15 @@ namespace node
 			for (auto tbl : meta_map)
 			{
 				cyng::sql::command cmd(tbl.second, s.get_dialect());
-				cmd.create();
-				std::string sql = cmd.to_str();
-				std::cout << sql << std::endl;
+				auto sql = cmd.create()();
+				//std::cout << sql << std::endl;
 				s.execute(sql);
 
 				if (tbl.first == "TDevice")
 				{
 					for (std::size_t idx = 0; idx < count; ++idx)
 					{
-						cmd.insert();
-						sql = cmd.to_str();
+						sql = cmd.insert()();
 						auto stmt = s.create_statement();
 						std::pair<int, bool> r = stmt->prepare(sql);
 						BOOST_ASSERT(r.first == 11);	//	11 parameters to bind

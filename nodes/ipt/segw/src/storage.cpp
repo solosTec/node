@@ -154,10 +154,7 @@ namespace node
 		//
 		//	precondition is that both tables (in memory and SQL) use the same column names
 		//
-		auto tmp = cmd.update(cyng::sql::make_assign(col, cyng::sql::make_placeholder())).by_key();
-		boost::ignore_unused(tmp);
-
-		std::string sql = cmd.to_str();
+		auto sql = cmd.update(cyng::sql::make_assign(col, cyng::sql::make_placeholder())).by_key()();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
 		if (r.second) {
@@ -176,10 +173,7 @@ namespace node
 			//
 			//	update gen(eration)
 			//
-			auto tmp = cmd.update(cyng::sql::make_assign("gen", cyng::sql::make_placeholder())).by_key();
-			boost::ignore_unused(tmp);
-
-			sql = cmd.to_str();
+			auto sql = cmd.update(cyng::sql::make_assign("gen", cyng::sql::make_placeholder())).by_key()();
 			r = stmt->prepare(sql);
 			if (r.second) {
 				//	UPDATE TCfg SET gen = ? WHERE (path = ?)
@@ -209,6 +203,74 @@ namespace node
 			, param.first
 			, param.second
 			, gen);
+	}
+
+	bool storage::update(std::string tbl
+		, cyng::table::key_type const& key
+		, cyng::table::data_type const& body
+		, std::uint64_t gen)
+	{
+		auto s = pool_.get_session();
+		auto cmd = create_cmd(tbl, s.get_dialect());
+		if (!cmd.is_valid())	return false;
+
+		//
+		//	precondition is that both tables (in memory and SQL) use the same column names
+		//	sql_update update();
+		//
+
+		auto sql = cmd.update().by_key()();
+		auto stmt = s.create_statement();
+		std::pair<int, bool> r = stmt->prepare(sql);
+		if (r.second) {
+
+			//
+			//	table data 
+			//	UPDATE table SET col1 = x1, col2 = x2) WHERE key0 = x0;
+			//
+			auto meta = cmd.get_meta();
+
+			auto idx = 0;
+			stmt->push(cyng::make_object(gen), 0);
+			meta->loop_body([&](cyng::table::column&& col) {
+				stmt->push(body.at(idx), col.width_);
+				++idx;
+			});
+
+			//
+			//	table key
+			//
+			for (auto idx = 0; idx < key.size(); ++idx) {
+				stmt->push(key.at(idx), cmd.get_meta()->get_width(idx));
+			}
+
+			if (!stmt->execute()) {
+				return false;
+			}
+
+			stmt->clear();
+
+			//
+			//	update gen(eration)
+			//
+			auto sql = cmd.update(cyng::sql::make_assign("gen", cyng::sql::make_placeholder())).by_key()();
+			r = stmt->prepare(sql);
+			if (r.second) {
+				//	UPDATE TCfg SET gen = ? WHERE (path = ?)
+				stmt->push(cyng::make_object(gen), 0);
+				for (auto idx = 0; idx < key.size(); ++idx) {
+					stmt->push(key.at(idx), cmd.get_meta()->get_width(idx));
+				}
+
+				if (!stmt->execute()) {
+					return false;
+				}
+
+				stmt->clear();
+			}
+		}
+
+		return false;
 	}
 
 	bool storage::insert(std::string tbl
@@ -328,6 +390,52 @@ namespace node
 		return false;
 	}
 
+	void storage::merge_profile_meta_8181C78610FF(cyng::buffer_t srv_id
+		, std::uint64_t minutes
+		, std::chrono::system_clock::time_point ts
+		, std::uint32_t status)
+	{
+		auto const key = cyng::table::key_generator(srv_id, minutes);
+		auto const b = exists("TProfile_8181C78610FF", key);
+		if (b) {
+			//
+			//	update
+			//
+		}
+		else {
+			//
+			//	insert
+			//
+			insert("TProfile_8181C78610FF"
+				, key
+				, cyng::table::data_generator(ts, 0, status)
+				, 1);
+		}
+	}
+
+	void storage::merge_profile_meta_8181C78611FF(cyng::buffer_t srv_id
+		, std::uint64_t quarters	//	quarter hours
+		, std::chrono::system_clock::time_point ts
+		, std::uint32_t status)
+	{
+		auto const key = cyng::table::key_generator(srv_id, quarters);
+		auto const b = exists("TProfile_8181C78611FF", key);
+		if (b) {
+			//
+			//	update
+			//
+		}
+		else {
+			//
+			//	insert
+			//
+			insert("TProfile_8181C78611FF"
+				, key
+				, cyng::table::data_generator(ts, 0, status)
+				, 1);
+		}
+	}
+
 	void storage::merge_profile_meta_8181C78612FF(cyng::buffer_t srv_id
 		, std::uint64_t hours
 		, std::chrono::system_clock::time_point ts
@@ -339,6 +447,10 @@ namespace node
 			//
 			//	update
 			//
+			update("TProfile_8181C78612FF"
+				, key
+				, cyng::table::data_generator(ts, 0, status)
+				, 2);
 		}
 		else {
 			//
@@ -349,6 +461,66 @@ namespace node
 				, cyng::table::data_generator(ts, 0, status)
 				, 1);
 		}
+	}
+
+	void storage::merge_profile_storage_8181C78611FF(cyng::buffer_t srv_id
+		, std::uint64_t hours
+		, cyng::buffer_t code
+		, cyng::object val
+		, cyng::object scaler
+		, cyng::object unit
+		, cyng::object type)
+	{
+		auto const key = cyng::table::key_generator(srv_id, hours, code);
+		auto const b = exists("TStorage_8181C78611FF", key);
+
+		auto const s = cyng::io::to_str(val);
+
+		if (b) {
+			//
+			//	update
+			//
+		}
+		else {
+			//
+			//	insert
+			//
+			insert("TStorage_8181C78611FF"
+				, key
+				, cyng::table::data_generator(s, scaler, unit, type)
+				, 1);
+		}
+
+	}
+
+	void storage::merge_profile_storage_8181C78612FF(cyng::buffer_t srv_id
+		, std::uint64_t hours
+		, cyng::buffer_t code
+		, cyng::object val
+		, cyng::object scaler
+		, cyng::object unit
+		, cyng::object type)
+	{
+		auto const key = cyng::table::key_generator(srv_id, hours, code);
+		auto const b = exists("TStorage_8181C78612FF", key);
+
+		auto const s = cyng::io::to_str(val);
+
+		if (b) {
+			//
+			//	update
+			//
+		}
+		else {
+			//
+			//	insert
+			//
+			insert("TStorage_8181C78612FF"
+				, key
+				, cyng::table::data_generator(s, scaler, unit, type)
+				, 1);
+		}
+
 	}
 
 	//
@@ -454,10 +626,10 @@ namespace node
 			//
 			//	Readout data (one for each profile)
 			//
-			//create_meta_data_storage("TStorage_8181C78610FF"),	//	PROFILE_1_MINUTE
-			//create_meta_data_storage("TStorage_8181C78611FF"),	//	PROFILE_15_MINUTE
-			//create_meta_data_storage("TStorage_8181C78612FF"),	//	PROFILE_60_MINUTE
-			//create_meta_data_storage("TStorage_8181C78613FF"),	//	PROFILE_24_HOUR
+			create_profile_storage("TStorage_8181C78610FF"),	//	PROFILE_1_MINUTE
+			create_profile_storage("TStorage_8181C78611FF"),	//	PROFILE_15_MINUTE
+			create_profile_storage("TStorage_8181C78612FF"),	//	PROFILE_60_MINUTE
+			create_profile_storage("TStorage_8181C78613FF"),	//	PROFILE_24_HOUR
 			//create_meta_data_storage("TStorage_8181C78614FF"),	//	PROFILE_LAST_2_HOURS
 			//create_meta_data_storage("TStorage_8181C78615FF"),	//	PROFILE_LAST_WEEK
 			//create_meta_data_storage("TStorage_8181C78616FF"),	//	PROFILE_1_MONTH
@@ -633,31 +805,36 @@ namespace node
 			});
 	}
 
-	//cyng::table::meta_table_ptr create_meta_data_storage(std::string name)
-	//{
-	//	return cyng::table::make_meta_table_gen<2, 3>(name,
-	//		{ "trx"			//	transaction ID - reference to load profile table
-	//		, "OBIS"		//	register
-	//						//	-- body
-	//		, "unit"		//
-	//		, "scale"		//	signed integer
-	//		, "value"		//	capture period (seconds)
-	//		},
-	//		{ cyng::TC_STRING		//	trx
-	//		, cyng::TC_STRING		//	OBIS
-	//								//	-- body
-	//		, cyng::TC_UINT8		//	unit
-	//		, cyng::TC_INT8			//	scale
-	//		, cyng::TC_INT64		//	value
-	//		},
-	//		{ 24	//	trx
-	//		, 24	//	OBIS
-	//				//	-- body
-	//		, 0		//	unit
-	//		, 0		//	scale
-	//		, 0		//	value
-	//		});
-	//}
+	cyng::table::meta_table_ptr create_profile_storage(std::string name)
+	{
+		return cyng::table::make_meta_table_gen<3, 4>(name,
+			{ "clientID"	//	server/meter/sensor ID
+			, "tsidx"		//	time stamp index
+			, "OBIS"		//	server/meter ID
+			, "val"			//	readout value
+			, "type"		//	cyng data type
+			, "scaler"		//	decimal place
+			, "unit"		//	physical unit
+			},
+			{ cyng::TC_BUFFER	//	clientID
+			, cyng::TC_UINT64	//	tsidx
+			, cyng::TC_BUFFER	//	OBIS
+								//	-- body
+			, cyng::TC_STRING	//	val
+			, cyng::TC_INT32	//	type code
+			, cyng::TC_INT8		//	scaler
+			, cyng::TC_UINT8	//	unit
+			},
+			{ 9		//	serverID
+			, 0		//	tsidx
+			, 6		//	OBIS
+					//	-- body
+			, 128	//	val
+			, 0		//	type
+			, 0		//	scaler
+			, 0		//	unit
+			});
+	}
 
 	bool init_storage(cyng::param_map_t&& cfg)
 	{
@@ -695,10 +872,7 @@ namespace node
 					;
 #endif
 				cyng::sql::command cmd(tbl.second, s.get_dialect());
-				auto tmp = cmd.create();
-				boost::ignore_unused(tmp);
-
-				std::string sql = cmd.to_str();
+				auto sql = cmd.create()();
 #ifdef _DEBUG
 				std::cout
 					<< sql
@@ -1094,10 +1268,7 @@ namespace node
 		//
 		cyng::table::meta_table_ptr meta = storage::mm_.at("TCfg");
 		cyng::sql::command cmd(meta, s.get_dialect());
-		auto tmp = cmd.insert();
-		boost::ignore_unused(tmp);
-
-		std::string const sql = cmd.to_str();
+		auto const sql = cmd.insert()();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
 		if (r.second) {

@@ -74,8 +74,7 @@ namespace node
 			//, "status" },
 
 			cyng::sql::command cmd(mt_.find("TIECData")->second, sp.get_dialect());
-			cmd.insert();
-			auto sql = cmd.to_str();
+			auto const sql = cmd.insert()();
 			//CYNG_LOG_INFO(logger_, "db.insert.data " << sql);
 			auto stmt = sp.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);
@@ -107,8 +106,7 @@ namespace node
 			, std::size_t size)
 		{
 			cyng::sql::command cmd(mt_.find("TIECMeta")->second, sp.get_dialect());
-			cmd.insert();
-			auto sql = cmd.to_str();
+			auto const sql = cmd.insert()();
 			//CYNG_LOG_INFO(logger_, "db.insert.data " << sql);
 			auto stmt = sp.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);

@@ -1005,11 +1005,10 @@ namespace node
 		//	example:
 		//	SELECT server FROM TSMLMeta WHERE ((actTime > julianday('2018-08-08 00:00:00')) AND (actTime < julianday('2018-08-09 00:00:00'))) GROUP BY server
 		//
-		cmd.select()[cyng::sql::column(8)]
+		auto const sql = cmd.select()[cyng::sql::column(8)]
 			.where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end) && cyng::sql::column(13) == cyng::sql::make_constant(profile))
-			.group_by(cyng::sql::column(8));
+			.group_by(cyng::sql::column(8))();
 
-		std::string sql = cmd.to_str();
 		CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
 
 		std::pair<int, bool> r = stmt->prepare(sql);

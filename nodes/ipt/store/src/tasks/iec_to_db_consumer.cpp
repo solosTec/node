@@ -329,9 +329,8 @@ namespace node
 			for (auto tbl : meta_map)
 			{
 				cyng::sql::command cmd(tbl.second, s.get_dialect());
-				cmd.create();
-				std::string sql = cmd.to_str();
-				std::cout << sql << std::endl;
+				auto const sql = cmd.create()();
+				//std::cout << sql << std::endl;
 				s.execute(sql);
 			}
 

@@ -745,8 +745,7 @@ namespace node
 		{
 
 			cyng::sql::command cmd(mt_.find("TSMLMeta")->second, sp.get_dialect());
-			cmd.insert();
-			auto sql = cmd.to_str();
+			auto const sql = cmd.insert()();
 			auto stmt = sp.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);
 			BOOST_ASSERT(r.second);
@@ -839,8 +838,7 @@ namespace node
 				, cyng::object value)
 		{
 			cyng::sql::command cmd(mt_.find("TSMLData")->second, sp.get_dialect());
-			cmd.insert();
-			auto sql = cmd.to_str();
+			auto const sql = cmd.insert()();
 			//CYNG_LOG_INFO(logger_, "db.insert.data " << sql);
 			auto stmt = sp.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);

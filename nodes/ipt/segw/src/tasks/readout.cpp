@@ -171,7 +171,7 @@ namespace node
 						profile_15_minute(tbl_data, tbl_mirror, rec_collector, rec_meta, result);
 						break;
 					case sml::CODE_PROFILE_60_MINUTE:
-						profile_8181C78612FF(tbl_data, tbl_mirror, rec_collector, rec_meta, result);
+						profile_60_min(tbl_data, tbl_mirror, rec_collector, rec_meta, result);
 						break;
 					case sml::CODE_PROFILE_24_HOUR:
 						profile_24_hour(tbl_data, tbl_mirror, rec_collector, rec_meta, result);
@@ -246,6 +246,13 @@ namespace node
 		, cyng::table::record const& rec_meta
 		, cyng::table::key_list_t const& result)
 	{
+		auto const srv_id = cyng::to_buffer(rec_meta["serverID"]);
+		auto const ts = cyng::value_cast(rec_meta["ts"], std::chrono::system_clock::now());
+		auto const minutes = cyng::chrono::minutes_since_epoch(ts);
+		auto const status = cyng::numeric_cast<std::uint32_t>(rec_meta["status"], 0);
+
+		storage_.merge_profile_meta_8181C78610FF(srv_id, minutes, ts, status);
+
 		for (auto const& key : result) {
 			auto const rec_data = tbl_data->lookup(key);
 			BOOST_ASSERT(!rec_data.empty());
@@ -265,20 +272,40 @@ namespace node
 		, cyng::table::record const& rec_meta
 		, cyng::table::key_list_t const& result)
 	{
+		auto const srv_id = cyng::to_buffer(rec_meta["serverID"]);
+		auto const ts = cyng::value_cast(rec_meta["ts"], std::chrono::system_clock::now());
+		auto const quarters = cyng::chrono::minutes_since_epoch(ts) / 4;
+		auto const status = cyng::numeric_cast<std::uint32_t>(rec_meta["status"], 0);
+
+		storage_.merge_profile_meta_8181C78611FF(srv_id, quarters, ts, status);
+
 		for (auto const& key : result) {
 			auto const rec_data = tbl_data->lookup(key);
 			BOOST_ASSERT(!rec_data.empty());
+
+			auto const code = cyng::to_buffer(rec_data["OBIS"]);
 
 			CYNG_LOG_TRACE(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> data "
+				<< sml::obis(code).to_str()
+				<< " - "
 				<< cyng::io::to_str(rec_data.convert()));
+
+			storage_.merge_profile_storage_8181C78611FF(srv_id
+				, quarters
+				, code
+				, rec_data["val"]
+				, rec_data["scaler"]
+				, rec_data["unit"]
+				, rec_data["type"]);
+
 		}
 	}
 
-	void readout::profile_8181C78612FF(cyng::store::table const* tbl_data
+	void readout::profile_60_min(cyng::store::table const* tbl_data
 		, cyng::store::table const* tbl_mirror
 		, cyng::table::record const& rec_collector
 		, cyng::table::record const& rec_meta
@@ -286,11 +313,10 @@ namespace node
 	{
 		//
 		//	store meta data
-		//	{("key":%(("pk":a56eddad-34a6-470d-a305-a19726556a0a))),("data":%(("gen":1),("serverID":01E61E571406213603),("status":0),("ts":2020-01-11 14:24:19.84926560)))}
 		//
 		auto const srv_id = cyng::to_buffer(rec_meta["serverID"]);
 		auto const ts = cyng::value_cast(rec_meta["ts"], std::chrono::system_clock::now());
-		auto const hours = cyng::chrono::hours_since_epoch(ts);
+		auto const hours = cyng::chrono::minutes_since_epoch(ts);
 		auto const status = cyng::numeric_cast<std::uint32_t>(rec_meta["status"], 0);
 
 		storage_.merge_profile_meta_8181C78612FF(srv_id, hours, ts, status);
@@ -302,12 +328,30 @@ namespace node
 			auto const rec_data = tbl_data->lookup(key);
 			BOOST_ASSERT(!rec_data.empty());
 
+			auto const code = cyng::to_buffer(rec_data["OBIS"]);
+
 			CYNG_LOG_TRACE(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> data "
+				<< sml::obis(code).to_str()
+				<< " - "
 				<< cyng::io::to_str(rec_data.convert()));
+
+				//	[2020-01-24 14:26:03.09515740] TRACE  2084 -- task #2 <node::readout> profile PROFILE_60_MINUTE of 01-e61e-57140621-36-03
+				//	[2020-01-24 14:26:03.09344180] TRACE  2084 -- task #2 <node::readout> meta {("key":%(("pk":07979b37-afb8-4c16-8bbd-cd1e8564c0c5))),("data":%(("gen":1),("serverID":01E61E571406213603),("status":0),("ts":2020-01-24 14:25:58.10786690)))}
+				//	[2020-01-24 14:26:03.09678630] TRACE  2084 -- task #2 <node::readout> data {("key":%(("OBIS":070003010000),("pk":07979b37-afb8-4c16-8bbd-cd1e8564c0c5))),("data":%(("gen":1),("scaler":-2),("type":9),("unit":d),("val":0018e6db)))}
+				//	[2020-01-24 14:26:03.09865190] TRACE  2084 -- task #2 <node::readout> data {("key":%(("OBIS":8106000374FF),("pk":07979b37-afb8-4c16-8bbd-cd1e8564c0c5))),("data":%(("gen":1),("scaler":0),("type":9),("unit":7),("val":0000011e)))}
+
+			storage_.merge_profile_storage_8181C78612FF(srv_id
+				, hours
+				, code
+				, rec_data["val"]
+				, rec_data["scaler"]
+				, rec_data["unit"]
+				, rec_data["type"]);
+
 		}
 	}
 

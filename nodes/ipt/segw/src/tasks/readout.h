@@ -64,7 +64,7 @@ namespace node
 		/**
 		 * 60 minute profile
 		 */
-		void profile_8181C78612FF(cyng::store::table const* tbl_data
+		void profile_60_min(cyng::store::table const* tbl_data
 			, cyng::store::table const* tbl_mirror
 			, cyng::table::record const& rec_collector
 			, cyng::table::record const& rec_meta

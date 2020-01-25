@@ -18,7 +18,8 @@
 namespace node
 {
 	cyng::table::meta_table_ptr create_profile_meta(std::string name);
-	//cyng::table::meta_table_ptr create_meta_data_storage(std::string name);
+	cyng::table::meta_table_ptr create_profile_storage(std::string name);
+
 
 	/**
 	 * create a map with all table meta data.
@@ -90,9 +91,29 @@ namespace node
 			, cyng::object obj
 			, std::uint64_t gen);
 
+		/**
+		 * Update a single parameter.
+		 *
+		 * @param tbl table name
+		 * @param key key value(s)
+		 * @param param parameter to update
+		 */
 		bool update(std::string tbl
 			, cyng::table::key_type const& key
-			, cyng::param_t const&
+			, cyng::param_t const& param
+			, std::uint64_t gen);
+
+		/**
+		 * Update a complete record
+		 *
+		 * @param tbl table name
+		 * @param key key value(s)
+		 * @param col column to update
+		 * @param obj value
+		 */
+		bool update(std::string tbl
+			, cyng::table::key_type const& key
+			, cyng::table::data_type const& body
 			, std::uint64_t gen);
 
 		/**
@@ -117,10 +138,51 @@ namespace node
 		bool exists(std::string tbl
 			, cyng::table::key_type const& key);
 
+		/**
+		 * meta data of 1 minute profile
+		 */
+		void merge_profile_meta_8181C78610FF(cyng::buffer_t srv_id
+			, std::uint64_t minutes
+			, std::chrono::system_clock::time_point ts
+			, std::uint32_t status);
+
+		/**
+		 * meta data of 15 minute profile
+		 */
+		void merge_profile_meta_8181C78611FF(cyng::buffer_t srv_id
+			, std::uint64_t quarters	//	quarter hours
+			, std::chrono::system_clock::time_point ts
+			, std::uint32_t status);
+
+		/**
+		 * meta data of 60 minute profile
+		 */
 		void merge_profile_meta_8181C78612FF(cyng::buffer_t srv_id
 			, std::uint64_t hours
 			, std::chrono::system_clock::time_point ts
 			, std::uint32_t status);
+
+		/**
+		 * readout data of 15 minute profile
+		 */
+		void merge_profile_storage_8181C78611FF(cyng::buffer_t srv_id
+			, std::uint64_t hours
+			, cyng::buffer_t code
+			, cyng::object val
+			, cyng::object scaler
+			, cyng::object unit
+			, cyng::object type);
+
+		/**
+		 * readout data of 60 minute profile
+		 */
+		void merge_profile_storage_8181C78612FF(cyng::buffer_t srv_id
+			, std::uint64_t hours
+			, cyng::buffer_t code
+			, cyng::object val
+			, cyng::object scaler
+			, cyng::object unit
+			, cyng::object type);
 
 	private:
 		/**
