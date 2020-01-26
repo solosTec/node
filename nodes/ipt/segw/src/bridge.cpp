@@ -11,6 +11,7 @@
 #include "tasks/gpio.h"
 #include "tasks/obislog.h"
 #include "tasks/readout.h"
+#include "tasks/push.h"
 
 #include <smf/sml/status.h>
 #include <smf/sml/obis_db.h>
@@ -50,7 +51,7 @@ namespace node
 		load_configuration();
 		load_devices_mbus();
 		load_data_collectors();
-		load_push_ops();
+		load_push_ops(mux);
 		load_data_mirror();
 
 		//
@@ -166,12 +167,32 @@ namespace node
 			});
 	}
 
-	void bridge::load_push_ops()
+	void bridge::load_push_ops(cyng::async::mux& mux)
 	{
-		cache_.write_table("_PushOps", [&](cyng::store::table* tbl) {
+		cache_.write_tables("_PushOps", "_DataCollector", [&](cyng::store::table* tbl_po, cyng::store::table* tbl_dc) {
 			storage_.loop("TPushOps", [&](cyng::table::record const& rec)->bool {
 
-				if (tbl->insert(rec.key(), rec.data(), rec.get_generation(), cache_.get_tag())) {
+				//
+				//	add PushOps task
+				//
+				cyng::table::record r(tbl_po->meta_ptr());
+				r.read_data(rec);
+
+				//
+				//	get profile type
+				//
+				auto const rec_dc = tbl_dc->lookup(rec.key());	//	same key
+				BOOST_ASSERT_MSG(!rec_dc.empty(), "no data collector found");
+
+				auto const tsk = start_task_push(mux
+					, cyng::to_buffer(rec["serverID"])
+					, cyng::to_buffer(rec_dc["profile"])
+					, cyng::value_cast<std::uint32_t>(rec["interval"], 0)
+					, cyng::value_cast<std::uint32_t>(rec["delay"], 0)
+					, cyng::value_cast<std::string>(rec["target"], ""));
+				r.set("tsk", cyng::make_object(static_cast<std::uint64_t>(tsk)));
+
+				if (tbl_po->insert(rec.key(), r.data(), rec.get_generation(), cache_.get_tag())) {
 
 					cyng::buffer_t const srv = cyng::to_buffer(rec.key().at(0));
 					CYNG_LOG_TRACE(logger_, "load push op "
@@ -307,9 +328,14 @@ namespace node
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_PushOps")) {
 
+			//
+			//	remove "tsk"
+			//
+			cyng::table::record rec(tbl->meta_ptr(), key, body, gen);
+
 			if (!storage_.insert("TPushOps"
 				, key
-				, body
+				, rec.shrink_data({ "tsk" })	//	remove "tsk" cell
 				, gen)) {
 
 				CYNG_LOG_ERROR(logger_, "Insert into table TPushOps failed - key: "
@@ -378,10 +404,11 @@ namespace node
 		//
 		//	Get the name of the column to be modified.
 		//
-		auto const name = tbl->meta().get_name(attr.first);
+		//auto const name = tbl->meta().get_name(attr.first);
 
 		if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
 
+			auto const name = cyng::value_cast<std::string>(key.at(0), "");
 			if (boost::algorithm::equals(name, "status.word")) {
 
 				//LOG_CODE_24 = 0x02100008,	//	Ethernet - Link an KundenSchnittstelle aktiviert
@@ -446,10 +473,17 @@ namespace node
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_PushOps")) {
 
-			storage_.update("TPushOps"
-				, key
-				, tbl->meta().to_param(attr)
-				, gen);
+			auto const name = tbl->meta().get_body_name(attr.first);
+
+			//
+			//	skip "tsk" attribute
+			//
+			if (!boost::algorithm::equals(name, "tsk")) {
+				storage_.update("TPushOps"
+					, key
+					, tbl->meta().to_param(attr)
+					, gen);
+			}
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataMirror")) {
 
@@ -560,6 +594,27 @@ namespace node
 			, cache_
 			, storage_
 			, std::chrono::seconds(interval));
+	}
+
+	std::size_t bridge::start_task_push(cyng::async::mux& mux
+		, cyng::buffer_t srv_id
+		, cyng::buffer_t profile
+		, std::uint32_t interval
+		, std::uint32_t delay
+		, std::string target)
+	{
+		BOOST_ASSERT(srv_id.size() == 9);
+		BOOST_ASSERT(profile.size() == 6);
+
+		return cyng::async::start_task_detached<push>(mux
+			, logger_
+			, cache_
+			//, storage_
+			, srv_id
+			, profile
+			, std::chrono::seconds(interval)
+			, std::chrono::seconds(delay)
+			, target);
 	}
 
 	void bridge::generate_op_log(sml::obis peer

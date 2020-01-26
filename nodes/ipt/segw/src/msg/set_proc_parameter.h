@@ -29,6 +29,7 @@ namespace node
 		class config_sensor_params;
 		class config_data_collector;
 		class config_security;
+		class config_access;
 		class res_generator;
 		class set_proc_parameter
 		{
@@ -39,7 +40,8 @@ namespace node
 				, node::ipt::config_ipt&
 				, config_sensor_params&
 				, config_data_collector&
-				, config_security&);
+				, config_security&
+				, config_access&);
 
 			void generate_response(obis_path const&
 				, std::string trx
@@ -99,6 +101,7 @@ namespace node
 			config_sensor_params& config_sensor_params_;
 			config_data_collector& config_data_collector_;
 			config_security& config_security_;
+			config_access& config_access_;
 
 		};
 	}	//	sml

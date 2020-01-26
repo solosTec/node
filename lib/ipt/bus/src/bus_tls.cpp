@@ -274,7 +274,7 @@ namespace node
 				}
 				else
 				{
-					CYNG_LOG_WARNING(logger_, vm_.tag() << " lost connection intentially <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
+					CYNG_LOG_WARNING(logger_, vm_.tag() << " lost connection intentionally <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
 					//
 					//	The connection was closed intentionally.
 					//

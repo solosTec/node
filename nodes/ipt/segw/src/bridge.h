@@ -63,7 +63,7 @@ namespace node
 		void load_configuration();
 		void load_devices_mbus();
 		void load_data_collectors();
-		void load_push_ops();
+		void load_push_ops(cyng::async::mux& mux);
 		void load_data_mirror();
 
 		/**
@@ -87,6 +87,12 @@ namespace node
 		void start_task_obislog(cyng::async::mux& mux);
 		void start_task_gpio(cyng::async::mux& mux);
 		void start_task_readout(cyng::async::mux& mux);
+		std::size_t start_task_push(cyng::async::mux& mux
+			, cyng::buffer_t
+			, cyng::buffer_t profile
+			, std::uint32_t interval
+			, std::uint32_t delay
+			, std::string target);
 
 	private:
 		/**

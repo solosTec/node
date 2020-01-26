@@ -282,15 +282,15 @@ namespace node
 		const char* get_profile_name(obis const& code)
 		{
 			switch (code.to_uint64()) {
-			case CODE_PROFILE_1_MINUTE:	return "PROFILE_1_MINUTE";
-			case CODE_PROFILE_15_MINUTE:	return "PROFILE_15_MINUTE";
-			case CODE_PROFILE_60_MINUTE:	return "PROFILE_60_MINUTE";
-			case CODE_PROFILE_24_HOUR:	return "PROFILE_24_HOUR";
-			case CODE_PROFILE_LAST_2_HOURS:	return "PROFILE_LAST_2_HOURS";
-			case CODE_PROFILE_LAST_WEEK:	return "PROFILE_LAST_WEEK";
-			case CODE_PROFILE_1_MONTH:	return "PROFILE_1_MONTH";
-			case CODE_PROFILE_1_YEAR:	return "PROFILE_1_YEAR";
-			case CODE_PROFILE_INITIAL:	return "PROFILE_INITIAL";
+			case CODE_PROFILE_1_MINUTE:	return "PROFILE-1-MINUTE";
+			case CODE_PROFILE_15_MINUTE:	return "PROFILE-15-MINUTE";
+			case CODE_PROFILE_60_MINUTE:	return "PROFILE-60-MINUTE";
+			case CODE_PROFILE_24_HOUR:	return "PROFILE-24-HOUR";
+			case CODE_PROFILE_LAST_2_HOURS:	return "PROFILE-LAST-2-HOURS";
+			case CODE_PROFILE_LAST_WEEK:	return "PROFILE-LAST-WEEK";
+			case CODE_PROFILE_1_MONTH:	return "PROFILE-1-MONTH";
+			case CODE_PROFILE_1_YEAR:	return "PROFILE-1-YEAR";
+			case CODE_PROFILE_INITIAL:	return "PROFILE-INITIAL";
 			default:
 				break;
 			}

@@ -73,6 +73,8 @@ set (node_ipt_segw_tasks
 	nodes/ipt/segw/src/tasks/parser_serial.cpp
 	nodes/ipt/segw/src/tasks/parser_CP210x.h
 	nodes/ipt/segw/src/tasks/parser_CP210x.cpp
+	nodes/ipt/segw/src/tasks/push.h
+	nodes/ipt/segw/src/tasks/push.cpp
 )
 	
 set (node_ipt_segw_server
@@ -104,6 +106,8 @@ set (node_ipt_segw_msg
 	nodes/ipt/segw/src/msg/config_data_collector.cpp
 	nodes/ipt/segw/src/msg/config_security.h
 	nodes/ipt/segw/src/msg/config_security.cpp
+	nodes/ipt/segw/src/msg/config_access.h
+	nodes/ipt/segw/src/msg/config_access.cpp
 )
 
 if(WIN32)

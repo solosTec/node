@@ -10,6 +10,8 @@
 #include <smf/sml/event.h>
 #include <smf/sml/obis_db.h>
 
+#include <cyng/io/io_chrono.hpp>
+
 namespace node
 {
 	obislog::obislog(cyng::async::base_task* btp
@@ -25,7 +27,9 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< ">");
+			<< "> with "
+			<< cyng::to_str(interval_time_)
+			<< " interval");
 	}
 
 	cyng::continuation obislog::run()

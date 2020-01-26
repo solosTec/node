@@ -415,7 +415,7 @@ namespace node
 			//	Push operations
 			//	81 81 C7 8A 01 FF - OBIS_PUSH_OPERATIONS
 			//
-			cyng::table::make_meta_table<2, 5>("_PushOps",
+			cyng::table::make_meta_table<2, 6>("_PushOps",
 			{ "serverID"	//	server/meter/sensor ID
 			, "nr"			//	position/number - starts with 1
 							//	-- body
@@ -424,6 +424,7 @@ namespace node
 			, "source"		//	[OBIS] (81 81 C7 8A 04 FF - PUSH_SOURCE) push source
 			, "target"		//	[string] (81 47 17 07 00 FF - PUSH_TARGET) target name
 			, "service"		//	[OBIS] (81 49 00 00 10 FF - PUSH_SERVICE) push service
+			, "tsk"			//	[u64] task ID
 			},
 			{ cyng::TC_BUFFER		//	serverID
 			, cyng::TC_UINT8		//	nr
@@ -433,6 +434,7 @@ namespace node
 			, cyng::TC_BUFFER		//	source
 			, cyng::TC_STRING		//	target
 			, cyng::TC_BUFFER		//	service
+			, cyng::TC_UINT64,		//	tsk
 			},
 			{ 9		//	serverID
 			, 0		//	nr
@@ -442,6 +444,7 @@ namespace node
 			, 6		//	source
 			, 32	//	target
 			, 6		//	service
+			, 0		//	tsk
 			}),
 
 			//

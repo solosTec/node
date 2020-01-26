@@ -9,7 +9,7 @@
 #include "config_ipt.h"
 #include "config_sensor_params.h"
 #include "config_data_collector.h"
-#include "config_security.h"
+#include "config_access.h"
 #include "../cache.h"
 #include "../segw.h"
 
@@ -29,17 +29,19 @@ namespace node
 		set_proc_parameter::set_proc_parameter(cyng::logging::log_ptr logger
 			, res_generator& sml_gen
 			, cache& cfg
-			, node::ipt::config_ipt& config_ipt
-			, config_sensor_params& config_sensor_params
-			, config_data_collector& config_data_collector
-			, config_security& config_security)
+			, node::ipt::config_ipt& ipt
+			, config_sensor_params& sensor_params
+			, config_data_collector& data_collector
+			, config_security& security
+			, config_access& access)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
-			, config_ipt_(config_ipt)
-			, config_sensor_params_(config_sensor_params)
-			, config_data_collector_(config_data_collector)
-			, config_security_(config_security)
+			, config_ipt_(ipt)
+			, config_sensor_params_(sensor_params)
+			, config_data_collector_(data_collector)
+			, config_security_(security)
+			, config_access_(access)
 		{}
 
 		void set_proc_parameter::generate_response(obis_path const& path
