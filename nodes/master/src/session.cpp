@@ -878,7 +878,7 @@ namespace node
 
 						//
 						//	generate a time series event.
-						//	We have to be carefull to avoid a deadlock with tables.
+						//	We have to be careful to avoid a deadlock with tables.
 						//
 						vm_.async_run(cyng::generate_invoke("session.time.series", b));
 						

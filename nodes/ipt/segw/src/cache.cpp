@@ -22,6 +22,7 @@ namespace node
 		: db_(db)
 		, tag_(tag)
 		, server_id_()
+		, status_word_(sml::status::get_initial_value())
 	{}
 
 	boost::uuids::uuid const cache::get_tag() const
@@ -49,25 +50,32 @@ namespace node
 			//
 			//	get current status word
 			//
-			auto word = get_config_value(tbl, "status.word", sml::status::get_initial_value());
+			//auto word = get_config_value(tbl, "status.word", sml::status::get_initial_value());
 
 			//
 			//	set/remove flag
 			//
-			node::sml::status status(word);
+			sml::status status(status_word_);
 			status.set_flag(code, b);
 
 			//
 			//	write back to cache
 			//
-			set_config_value(tbl, "status.word", word);
+			set_config_value(tbl, "status.word", status_word_);
 
 			}, cyng::store::write_access("_Cfg"));
 	}
 
-	std::uint64_t cache::get_status_word()
+	std::uint64_t cache::get_status_word() const
 	{
-		return get_cfg("status.word", sml::status::get_initial_value());
+		return status_word_;
+	}
+
+	bool cache::is_authorized() const
+	{	
+		auto copy = status_word_;
+		sml::status status(copy);
+		return status.is_authorized();
 	}
 
 	cyng::buffer_t cache::get_srv_id()
@@ -472,7 +480,21 @@ namespace node
 					//	-- body
 			, 6		//	code
 			, 0		//	active
-			})
+			}),
+
+			cyng::table::make_meta_table<1, 1>("_PushReq",
+			{ "pk"		//	pk
+						//	-- body
+			, "data"	//	
+			},
+			{ cyng::TC_UINT8		//	pk
+									//	-- body
+			, cyng::TC_BUFFER		//	data
+			},
+			{ 9		//	pk
+					//	-- body
+			, 64		//	data
+			}),
 		};
 
 		return vec;

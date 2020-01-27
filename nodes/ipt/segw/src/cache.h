@@ -55,7 +55,14 @@ namespace node
 		/**
 		 * read status word from "_Cfg" cache 
 		 */
-		std::uint64_t get_status_word();
+		std::uint64_t get_status_word() const;
+
+		/**
+		 * not thread safe.
+		 *
+		 * @return true if STATUS_BIT_NOT_AUTHORIZED_IPT is false
+		 */
+		bool is_authorized() const;
 
 		/**
 		 * get configured server ID (OBIS_SERVER_ID:)
@@ -117,7 +124,7 @@ namespace node
 
 		/**
 		 * Direct access to memory database.
-		 * Be carefull.
+		 * Be careful.
 		 */
 		cyng::store::db& get_db();
 
@@ -159,6 +166,11 @@ namespace node
 		 * fast access to OBIS_SERVER_ID: (81 81 C7 82 04 FF)
 		 */
 		cyng::buffer_t server_id_;
+
+		/**
+		 * cached status word
+		 */
+		sml::status_word_t status_word_;
 	};
 
 	/**

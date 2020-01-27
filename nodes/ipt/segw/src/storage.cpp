@@ -18,6 +18,7 @@
 #include <cyng/intrinsics/traits.hpp>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/vector_cast.hpp>
+#include <cyng/set_cast.h>
 #include <cyng/parser/mac_parser.h>
 #include <cyng/io/serializer.h>
 
@@ -1062,8 +1063,7 @@ namespace node
 			//
 			{
 				//	get a tuple/list of params
-				cyng::tuple_t tpl;
-				tpl = cyng::value_cast(dom.get("if-1107"), tpl);
+				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("if-1107"));
 				for (auto const& obj : tpl) {
 					cyng::param_t param;
 					param = cyng::value_cast(obj, param);
@@ -1093,8 +1093,7 @@ namespace node
 					}, "descr"), cyng::make_object("M-Bus Configuration"));
 
 				//	get a tuple/list of params
-				cyng::tuple_t tpl;
-				tpl = cyng::value_cast(dom.get("mbus"), tpl);
+				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("mbus"));
 				for (auto const& obj : tpl) {
 					cyng::param_t param;
 					param = cyng::value_cast(obj, param);
@@ -1125,8 +1124,7 @@ namespace node
 					}, "descr"), cyng::make_object("wireless-LMN configuration (M-Bus)"));
 
 				//	get a tuple/list of params
-				cyng::tuple_t tpl;
-				tpl = cyng::value_cast(dom.get("wireless-LMN"), tpl);
+				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("wireless-LMN"));
 				for (auto const& obj : tpl) {
 					cyng::param_t param;
 					param = cyng::value_cast(obj, param);
@@ -1158,8 +1156,7 @@ namespace node
 					}, "descr"), cyng::make_object("wired-LMN configuration (IEC 62506-21)"));
 
 				//	get a tuple/list of params
-				cyng::tuple_t tpl;
-				tpl = cyng::value_cast(dom.get("wired-LMN"), tpl);
+				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("wired-LMN"));
 				for (auto const& obj : tpl) {
 					cyng::param_t param;
 					param = cyng::value_cast(obj, param);
@@ -1192,8 +1189,7 @@ namespace node
 			//
 			{
 				//	get a tuple/list of params
-				cyng::tuple_t tpl;
-				tpl = cyng::value_cast(dom.get("hardware"), tpl);
+				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("hardware"));
 				for (auto const& obj : tpl) {
 					cyng::param_t param;
 					param = cyng::value_cast(obj, param);
@@ -1306,12 +1302,43 @@ namespace node
 						;
 				}
 				init_config_record(s, "gpio-vector", cyng::make_object(ss.str()));
-
-				//
-				//	commit
-				//
-				s.commit();
 			}
+
+			//
+			//	transfer server configuration
+			//	"server"
+			//
+			{
+				//	get a tuple/list of params
+				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("server"));
+				for (auto const& obj : tpl) {
+
+					cyng::param_t param;
+					param = cyng::value_cast(obj, param);
+
+					if (boost::algorithm::equals(param.first, "address")) {
+						init_config_record(s, "server:address", param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "service")) {
+						init_config_record(s, "server:service", param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "discover")) {
+						init_config_record(s, "server:discover", param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "account")) {
+						init_config_record(s, "server:account", param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "pwd")) {
+						init_config_record(s, "server:pwd", param.second);
+					}
+				}
+			}
+
+			//
+			//	commit
+			//
+			s.commit();
+
 			return true;
 		}
 

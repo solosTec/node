@@ -335,6 +335,7 @@ namespace node
 
 		//
 		//	collect login credentials
+		//	ToDo: use data from config db
 		//
 		auto const account = cyng::value_cast<std::string>(cfg["server"].get("account"), "");
 		auto const pwd = cyng::value_cast<std::string>(cfg["server"].get("pwd"), "");
@@ -344,13 +345,6 @@ namespace node
 		//	Changes require a reboot.
 		//
 		auto const accept_all = cm.get_cfg("accept-all-ids", false);
-
-		//
-		//	Server id (MAC) doesn't change so we take it as constant
-		//	from the start.
-		//
-		//auto const mac = cm.get_cfg(sml::OBIS_SERVER_ID.to_str(), cyng::generate_random_mac48());
-		//auto const srv_id = sml::to_gateway_srv_id(mac);
 
 		//
 		//	connect to ipt master
@@ -377,9 +371,10 @@ namespace node
 
 		//
 		//	server runtime configuration
+		//	ToDo: use data from config db
 		//
-		const auto address = cyng::io::to_str(cfg["server"].get("address"));
-		const auto service = cyng::io::to_str(cfg["server"].get("service"));
+		auto const address = cyng::io::to_str(cfg["server"].get("address"));
+		auto const service = cyng::io::to_str(cfg["server"].get("service"));
 
 		CYNG_LOG_INFO(logger, "listener address: " << address);
 		CYNG_LOG_INFO(logger, "listener service: " << service);

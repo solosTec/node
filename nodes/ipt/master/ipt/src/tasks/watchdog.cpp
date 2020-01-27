@@ -77,7 +77,7 @@ namespace node
 	void watchdog::stop(bool shutdown)
 	{
 		//
-		//	Be carefull when using resources from the session like vm_, 
+		//	Be careful when using resources from the session like vm_, 
 		//	they may be already be invalid.
 		//
 

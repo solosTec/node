@@ -62,7 +62,6 @@ namespace node
 		//
 		//	store boot time
 		//
-		//cache_.set_config_value(tbl, "boot.time", std::chrono::system_clock::now());
 		cache_.set_cfg("boot.time", std::chrono::system_clock::now());
 
 		//
@@ -186,6 +185,7 @@ namespace node
 
 				auto const tsk = start_task_push(mux
 					, cyng::to_buffer(rec["serverID"])
+					, cyng::value_cast<std::uint8_t>(rec["nr"], 0)
 					, cyng::to_buffer(rec_dc["profile"])
 					, cyng::value_cast<std::uint32_t>(rec["interval"], 0)
 					, cyng::value_cast<std::uint32_t>(rec["delay"], 0)
@@ -240,7 +240,7 @@ namespace node
 	void bridge::power_return()
 	{
 		auto const sw = cache_.get_status_word();
-		auto srv = cache_.get_srv_id();		
+		auto const srv = cache_.get_srv_id();		
 
 		storage_.generate_op_log(sw
 			, sml::LOG_CODE_09	//	0x00100023 - power return
@@ -598,6 +598,7 @@ namespace node
 
 	std::size_t bridge::start_task_push(cyng::async::mux& mux
 		, cyng::buffer_t srv_id
+		, std::uint8_t nr
 		, cyng::buffer_t profile
 		, std::uint32_t interval
 		, std::uint32_t delay
@@ -609,8 +610,9 @@ namespace node
 		return cyng::async::start_task_detached<push>(mux
 			, logger_
 			, cache_
-			//, storage_
+			, storage_
 			, srv_id
+			, nr
 			, profile
 			, std::chrono::seconds(interval)
 			, std::chrono::seconds(delay)

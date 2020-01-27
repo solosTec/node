@@ -89,6 +89,7 @@ namespace node
 		void start_task_readout(cyng::async::mux& mux);
 		std::size_t start_task_push(cyng::async::mux& mux
 			, cyng::buffer_t
+			, std::uint8_t nr
 			, cyng::buffer_t profile
 			, std::uint32_t interval
 			, std::uint32_t delay

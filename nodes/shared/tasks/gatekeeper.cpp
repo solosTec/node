@@ -91,7 +91,7 @@ namespace node
 		//
 		//	terminate task
 		//
-		//	Be carefull when using resources from the session like vm_, 
+		//	Be careful when using resources from the session like vm_, 
 		//	they may already be invalid.
 		//
 		const auto uptime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_);

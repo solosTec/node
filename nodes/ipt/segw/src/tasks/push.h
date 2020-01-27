@@ -19,6 +19,7 @@ namespace node
 	 * write cyclic OBISLOG entries
 	 */
 	class cache;
+	class storage;
 	class push
 	{
 	public:
@@ -31,8 +32,10 @@ namespace node
 	public:
 		push(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, cache& cfg
+			, cache&
+			, storage&
 			, cyng::buffer_t srv_id
+			, std::uint8_t nr
 			, cyng::buffer_t profile
 			, std::chrono::seconds interval
 			, std::chrono::seconds delay
@@ -48,6 +51,9 @@ namespace node
 		cyng::continuation process();
 
 	private:
+		void send_push_data();
+
+	private:
 		cyng::async::base_task& base_;
 
 		/**
@@ -60,7 +66,13 @@ namespace node
 		 */
 		cache& cache_;
 
+		/**
+		 * permanent storage
+		 */
+		storage& storage_;
+
 		cyng::buffer_t const srv_id_;
+		std::uint8_t const nr_;
 		sml::obis const profile_;
 		std::chrono::seconds interval_;
 		std::chrono::seconds delay_;

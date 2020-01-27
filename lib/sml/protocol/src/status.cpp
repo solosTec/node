@@ -14,7 +14,7 @@ namespace node
 	{
 
 		status::status(status_word_t& word)
-		: word_(word)
+			: word_(word)
 		{}
 
 		status::status(status const& other)
@@ -49,6 +49,7 @@ namespace node
 		{
 			return get();
 		}
+
 		std::uint64_t status::get() const
 		{
 			return word_;
