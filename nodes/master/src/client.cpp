@@ -352,7 +352,7 @@ namespace node
 		auto const rec = tbl->lookup_by_index(cyng::make_object(account));
 		if (!rec.empty()) {
 
-			ctx.queue(cyng::generate_invoke("log.msg.trace", "account match [", account, "] OK"));
+			ctx.queue(cyng::generate_invoke("log.msg.trace", "account match [", account, " #", rec["msisdn"], "OK"));
 
 			//
 			//	matching name

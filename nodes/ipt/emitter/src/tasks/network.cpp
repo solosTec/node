@@ -208,7 +208,7 @@ namespace node
 			if (config_.next())
 			{
 				CYNG_LOG_INFO(logger_, "switch to redundancy ["
-					<< config_.master_
+					<< +config_.master_
 					<< '/'
 					<< config_.config_.size()
 					<< "] "
