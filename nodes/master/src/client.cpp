@@ -141,7 +141,7 @@ namespace node
 			const bool auth = check_auth_state(tbl_session, tag);
 			if (auth)
 			{
-				ctx.queue(cyng::generate_invoke("log.msg.warning", "[" + account + "] already authorized", tag));
+				ctx.queue(cyng::generate_invoke("log.msg.warning", "[", account, "] already authorized - ", tag));
 				ctx.queue(client_res_login(tag
 					, seq
 					, false
