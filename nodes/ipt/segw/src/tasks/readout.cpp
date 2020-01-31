@@ -316,7 +316,7 @@ namespace node
 		//
 		auto const srv_id = cyng::to_buffer(rec_meta["serverID"]);
 		auto const ts = cyng::value_cast(rec_meta["ts"], std::chrono::system_clock::now());
-		auto const hours = cyng::chrono::minutes_since_epoch(ts);
+		auto const hours = cyng::chrono::hours_since_epoch(ts);
 		auto const status = cyng::numeric_cast<std::uint32_t>(rec_meta["status"], 0);
 
 		storage_.merge_profile_meta_8181C78612FF(srv_id, hours, ts, status);

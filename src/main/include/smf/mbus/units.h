@@ -9,6 +9,7 @@
 #define NODE_SML_MBUS_UNITS_H
 
 #include <cstdint>
+#include <string>
 
 namespace node
 {
@@ -102,7 +103,8 @@ namespace node
 		 * @return the name of the specified unit
 		 */
 		const char* get_unit_name(std::uint8_t u);
-		const char* get_unit_name(units);
+		std::u8string get_unit_name_u8(std::uint8_t u);
+		std::u8string get_unit_name_u8(units);
 
 	}
 }

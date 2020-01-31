@@ -11,6 +11,8 @@
 #include <smf/ipt/config.h>
 #include <smf/ipt/scramble_key_format.h>
 #include <smf/sml/parser/obis_parser.h>
+#include <smf/sml/srv_id_io.h>
+#include <smf/mbus/units.h>
 
 #include <cyng/table/meta.hpp>
 #include <cyng/db/interface_statement.h>
@@ -19,6 +21,7 @@
 #include <cyng/numeric_cast.hpp>
 #include <cyng/vector_cast.hpp>
 #include <cyng/set_cast.h>
+#include <cyng/buffer_cast.h>
 #include <cyng/parser/mac_parser.h>
 #include <cyng/io/serializer.h>
 
@@ -184,6 +187,12 @@ namespace node
 				stmt->clear();
 			}
 		}
+		else {
+			//
+			//	syntax error
+			//
+
+		}
 
 		return false;
 	}
@@ -226,9 +235,13 @@ namespace node
 			auto meta = cmd.get_meta();
 
 			auto idx = 0;
-			stmt->push(cyng::make_object(gen), 0);
 			meta->loop_body([&](cyng::table::column&& col) {
-				stmt->push(body.at(idx), col.width_);
+				if (idx == 0) {
+					stmt->push(cyng::make_object(gen), 0);
+				}
+				else {
+					stmt->push(body.at(idx - 1), col.width_);
+				}
 				++idx;
 			});
 
@@ -493,7 +506,7 @@ namespace node
 			//
 			update("TStorage_8181C78611FF"
 				, key
-				, cyng::table::data_generator(s, scaler, unit, type)
+				, cyng::table::data_generator(s, type, scaler, unit)
 				, 2);
 		}
 		else {
@@ -502,7 +515,7 @@ namespace node
 			//
 			insert("TStorage_8181C78611FF"
 				, key
-				, cyng::table::data_generator(s, scaler, unit, type)
+				, cyng::table::data_generator(s, type, scaler, unit)
 				, 1);
 		}
 
@@ -525,12 +538,9 @@ namespace node
 			//
 			//	update
 			//
-			//
-			//	update
-			//
 			update("TStorage_8181C78612FF"
 				, key
-				, cyng::table::data_generator(s, scaler, unit, type)
+				, cyng::table::data_generator(s, type, scaler, unit)
 				, 2);
 		}
 		else {
@@ -539,7 +549,7 @@ namespace node
 			//
 			insert("TStorage_8181C78612FF"
 				, key
-				, cyng::table::data_generator(s, scaler, unit, type)
+				, cyng::table::data_generator(s, type, scaler, unit)
 				, 1);
 		}
 	}
@@ -566,7 +576,7 @@ namespace node
 			//
 			update("TStorage_8181C78613FF"
 				, key
-				, cyng::table::data_generator(s, scaler, unit, type)
+				, cyng::table::data_generator(s, type, scaler, unit)
 				, 2);
 		}
 		else {
@@ -575,7 +585,7 @@ namespace node
 			//
 			insert("TStorage_8181C78613FF"
 				, key
-				, cyng::table::data_generator(s, scaler, unit, type)
+				, cyng::table::data_generator(s, type, scaler, unit)
 				, 1);
 		}
 	}
@@ -747,6 +757,9 @@ namespace node
 				, 32	//	pwd
 				}),
 
+			//
+			//	select hex(serverID), nr, gen, hex(profile), active, maxSize, regPeriod from TDataCollector;
+			//
 			cyng::table::make_meta_table_gen<2, 4>("TDataCollector",
 				{ "serverID"	//	server/meter/sensor ID
 				, "nr"			//	position/number - starts with 1
@@ -776,6 +789,7 @@ namespace node
 			//
 			//	Push operations
 			//	81 81 C7 8A 01 FF - OBIS_PUSH_OPERATIONS
+			//	select hex(serverID), nr, gen, interval, delay, hex(source), target, hex(service) from TPushOps;
 			//
 			cyng::table::make_meta_table_gen<2, 5>("TPushOps",
 				{ "serverID"	//	server/meter/sensor ID
@@ -809,6 +823,7 @@ namespace node
 			//
 			//	data mirror - list of OBIS codes
 			//	81 81 C7 8A 23 FF - DATA_COLLECTOR_OBIS
+			//	select hex(serverID), nr, reg, gen, hex(code), active from TDataMirror;
 			//
 			cyng::table::make_meta_table_gen<3, 2>("TDataMirror",
 				{ "serverID"	//	server/meter/sensor ID
@@ -1343,6 +1358,131 @@ namespace node
 		}
 
 		return false;
+	}
+
+	bool dump_profile_data(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom, std::uint32_t profile)
+	{
+		//
+		//	create a database session
+		//
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		cyng::db::session s(con_type);
+		auto r = s.connect(cfg);
+		if (r.second) {
+
+			std::string sql, name;
+				
+			//
+			//	get table meta data
+			//
+			std::tie(name, sql) = [&]() {
+				switch (profile) {
+				case 10:	return std::make_pair("1 minute", "SELECT P10.clientID, P10.tsidx, datetime(P10.actTime), status, S10.OBIS, S10.val, S10.type, S10.scaler, S10.unit from TProfile_8181C78610FF P10 JOIN TStorage_8181C78610FF S10 ON P10.clientID = S10.clientID AND P10.tsidx = S10.tsidx;");
+				case 11:	return std::make_pair("15 minute", "SELECT P11.clientID, P11.tsidx, datetime(P11.actTime), status, S11.OBIS, S11.val, S11.type, S11.scaler, S11.unit from TProfile_8181C78611FF P11 JOIN TStorage_8181C78611FF S11 ON P11.clientID = S11.clientID AND P11.tsidx = S11.tsidx;");
+				case 12:	return std::make_pair("60 minute", "SELECT P12.clientID, P12.tsidx, datetime(P12.actTime), status, S12.OBIS, S12.val, S12.type, S12.scaler, S12.unit from TProfile_8181C78612FF P12 JOIN TStorage_8181C78612FF S12 ON P12.clientID = S12.clientID AND P12.tsidx = S12.tsidx;");
+				case 13:	return std::make_pair("24 hour", "SELECT P13.clientID, P13.tsidx, datetime(P13.actTime), status, S13.OBIS, S13.val, S13.type, S13.scaler, S13.unit from TProfile_8181C78613FF P13 JOIN TStorage_8181C78613FF S13 ON P13.clientID = S13.clientID AND P13.tsidx = S13.tsidx;");
+				case 14:	return std::make_pair("last 2 hours", "SELECT P14.clientID, P14.tsidx, datetime(P14.actTime), status, S14.OBIS, S14.val, S14.type, S14.scaler, S14.unit from TProfile_8181C78614FF P14 JOIN TStorage_8181C78614FF S14 ON P14.clientID = S14.clientID AND P14.tsidx = S14.tsidx;");
+				case 15:	return std::make_pair("last week", "SELECT P15.clientID, P15.tsidx, datetime(P15.actTime), status, S15.OBIS, S15.val, S15.type, S15.scaler, S15.unit from TProfile_8181C78615FF P15 JOIN TStorage_8181C78615FF S15 ON P15.clientID = S15.clientID AND P15.tsidx = S15.tsidx;");
+				case 16:	return std::make_pair("1 month", "SELECT P16.clientID, P16.tsidx, datetime(P16.actTime), status, S16.OBIS, S16.val, S16.type, S16.scaler, S16.unit from TProfile_8181C78616FF P16 JOIN TStorage_8181C78616FF S16 ON P16.clientID = S16.clientID AND P16.tsidx = S16.tsidx;");
+				case 17:	return std::make_pair("1 year", "SELECT P17.clientID, P17.tsidx, datetime(P17.actTime), status, S17.OBIS, S17.val, S17.type, S17.scaler, S17.unit from TProfile_8181C78617FF P17 JOIN TStorage_8181C78617FF S17 ON P17.clientID = S17.clientID AND P17.tsidx = S17.tsidx;");
+				case 18:	return std::make_pair("initial", "SELECT P18.clientID, P18.tsidx, datetime(P18.actTime), status, S18.OBIS, S18.val, S18.type, S18.scaler, S18.unit from TProfile_8181C78618FF P18 JOIN TStorage_8181C78618FF S18 ON P18.clientID = S18.clientID AND P18.tsidx = S18.tsidx;");
+				default:
+					std::cerr << "unknown profile: " << profile << std::endl;
+					return std::make_pair("unknown profile", "");
+				}
+			}();
+
+			auto get_ts = [&](std::uint64_t tsidx)->std::chrono::system_clock::time_point {
+				switch (profile) {
+				case 10:	return cyng::chrono::ts_since_passed_minutes(tsidx);
+				case 11:	return cyng::chrono::ts_since_passed_minutes(tsidx / 15u);
+				case 12:	return cyng::chrono::ts_since_passed_hours(tsidx);
+				case 13:	return cyng::chrono::ts_since_passed_days(tsidx);
+				case 14:	return cyng::chrono::ts_since_passed_minutes(profile);
+				case 15:	return cyng::chrono::ts_since_passed_minutes(profile);
+				case 16:	return cyng::chrono::ts_since_passed_minutes(profile);
+				case 17:	return cyng::chrono::ts_since_passed_minutes(profile);
+				case 18:	return cyng::chrono::ts_since_passed_minutes(profile);
+				default:
+					std::cerr << "unknown profile: " << profile << std::endl;
+					return std::chrono::system_clock::now();
+				}
+			};
+
+			std::cout
+				<< "List "
+				<< name
+				<< " profile ("
+				<< profile
+				<< ")"
+				<< std::endl;
+
+			if (!sql.empty()) {
+				auto stmt = s.create_statement();
+				std::pair<int, bool> r = stmt->prepare(sql);
+				if (r.second) {
+
+					//
+					//	read all results
+					//
+					std::size_t counter{ 0 };
+					while (auto res = stmt->get_result()) {
+
+						//
+						//	Convert SQL result to record
+						//
+						//	"SELECT P18.clientID, P18.tsidx, datetime(P18.actTime), status, S18.OBIS, S18.val, S18.type, S18.scaler, S18.unit from TProfile_8181C78618FF P18 JOIN TStorage_8181C78618FF S18 ON P18.clientID = S18.clientID AND P18.tsidx = S18.tsidx;");
+						auto const size = res->column_count();
+						BOOST_ASSERT(size == 9);
+						auto const srv_id = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
+						auto const tsdix = cyng::value_cast<std::uint64_t>(res->get(2, cyng::TC_UINT64, 0), 0);
+						//	3. actTime
+						//	4. status
+						sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
+						//	6. val
+						//	7. type
+						auto const scaler = cyng::value_cast<std::int8_t>(res->get(8, cyng::TC_INT8, 0), 0);
+						auto const unit = cyng::value_cast<std::uint8_t>(res->get(9, cyng::TC_UINT8, 0), 0);
+						
+						std::cout
+							<< sml::from_server_id(srv_id)
+							<< ", "
+							<< tsdix
+							<< " - "
+							<< cyng::to_str(get_ts(tsdix))
+							<< ", "				
+							<< cyng::io::to_str(res->get(3, cyng::TC_TIME_POINT, 0)).substr(0, 19)
+							<< ", "
+							<< cyng::value_cast<std::uint32_t>(res->get(4, cyng::TC_UINT32, 0), -1)
+							<< ", "
+							<< code.to_str()
+							<< ", "
+							<< cyng::io::to_str(res->get(6, cyng::TC_STRING, 0))
+							<< ", "
+							<< +scaler
+							<< ", "
+							<< +unit
+							<< ", "
+							<< mbus::get_unit_name(unit)
+							<< std::endl;
+
+						++counter;
+
+					}
+
+					std::cout
+						<< counter
+						<< " records of "
+						<< name
+						<< " #"
+						<< profile
+						<< " profile found"
+						<< std::endl;
+
+				}
+			}
+		}
+		return r.second;
 	}
 
 	bool init_config_record(cyng::db::session& s, std::string const& key, cyng::object obj)

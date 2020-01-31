@@ -402,7 +402,7 @@ namespace node
 			;
 	}
 
-	int controller::transfer_config()
+	int controller::transfer_config() const
 	{
 		//
 		//	read configuration file
@@ -432,6 +432,53 @@ namespace node
 				<< std::endl;
 
 			return (transfer_config_to_storage(cyng::to_param_map(tpl), dom))
+				? EXIT_SUCCESS
+				: EXIT_FAILURE
+				;
+		}
+		else
+		{
+			std::cout
+				<< "configuration file ["
+				<< json_path_
+				<< "] not found or index ["
+				<< config_index_
+				<< "] is out of range"
+				<< std::endl;
+		}
+		return EXIT_FAILURE;
+	}
+
+	int controller::dump_profile(std::uint32_t profile) const
+	{
+		//
+		//	read configuration file
+		//
+		auto const r = read_config_section(json_path_, config_index_);
+		if (r.second) {
+
+			//
+			//	get a DOM reader
+			//
+			auto const dom = cyng::make_reader(r.first);
+
+			//
+			//	get database configuration and connect
+			//
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(dom.get("DB"), tpl);
+			auto db_cfg = cyng::to_param_map(tpl);
+
+			std::cout
+				<< "read configuration file "
+				<< json_path_
+				<< " with index ["
+				<< config_index_
+				<< "] into database "
+				<< cyng::io::to_str(db_cfg)
+				<< std::endl;
+
+			return (dump_profile_data(cyng::to_param_map(tpl), dom, profile))
 				? EXIT_SUCCESS
 				: EXIT_FAILURE
 				;

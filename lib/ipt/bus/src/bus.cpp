@@ -245,7 +245,7 @@ namespace node
 				if (!ec)
 				{
 					//CYNG_LOG_TRACE(logger_, bytes_transferred << " bytes read");
-					vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt client received", bytes_transferred, "bytes"));
+					vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt client received ", bytes_transferred, " bytes"));
 					const auto buffer = parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
 
 #ifdef SMF_IO_DEBUG

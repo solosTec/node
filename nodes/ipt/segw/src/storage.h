@@ -40,6 +40,11 @@ namespace node
 	bool transfer_config_to_storage(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
 
 	/**
+	 * Read the specified profile data and print it on screen
+	 */
+	bool dump_profile_data(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom, std::uint32_t profile);
+
+	/**
 	 * Table TCfg
 	 * Initialize a configuration record
 	 */
@@ -52,6 +57,7 @@ namespace node
 	{
 		friend bool init_storage(cyng::param_map_t&&);
 		friend bool init_config_record(cyng::db::session&, std::string const&, cyng::object);
+		friend bool dump_profile_data(cyng::param_map_t&&, cyng::reader<cyng::object> const&, std::uint32_t);
 
 	public:
 		using loop_f = std::function<bool(cyng::table::record const&)>;

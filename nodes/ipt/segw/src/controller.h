@@ -25,7 +25,8 @@ namespace node
 			, std::string const& json_path
 			, std::string node_name);
 
-		int transfer_config();
+		int transfer_config() const;
+		int dump_profile(std::uint32_t) const;
 
 	protected:
 		virtual bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag);

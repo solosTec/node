@@ -28,7 +28,8 @@ int main(int argc, char **argv)
 	
 	//	will contain the path to an optional configuration file
 	std::string config_file;
-	
+	std::uint32_t profile{ 0 };
+
 	//
 	//	generic options
 	//
@@ -43,11 +44,12 @@ int main(int argc, char **argv)
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("fs,F", boost::program_options::bool_switch()->default_value(false), "show available drives")
-		("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
+		("show,s", boost::program_options::bool_switch()->default_value(false), "show JSON configuration")
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 		("transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")
+		("dump", boost::program_options::value<std::uint32_t>(&profile)->default_value(0)->implicit_value(11), "dump profile data (11 .. 18")
 		;
-		
+
 	//	path to JSON configuration file
 	std::string json_path;
 	unsigned int config_index = 0u;
@@ -172,6 +174,12 @@ int main(int argc, char **argv)
 		{
 			//	transfer JSON configuration into database
 			return ctrl.transfer_config();
+		}
+
+		auto const dump = vm["dump"].as< std::uint32_t >();
+		if (dump != 0) {
+			//	dump profile data
+			return ctrl.dump_profile(dump);
 		}
 
 #if BOOST_OS_WINDOWS

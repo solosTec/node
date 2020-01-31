@@ -12,6 +12,7 @@
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
+#include <cyng/table/table_fwd.h>
 
 namespace node
 {
@@ -51,7 +52,18 @@ namespace node
 		cyng::continuation process();
 
 	private:
-		void send_push_data();
+		bool send_push_data();
+		std::vector<sml::obis> collect_obis_codes(cyng::store::table const* tbl_dm);
+
+		void collect_profile_8181C78610FF(cyng::store::table* tbl);
+		void collect_profile_8181C78611FF(cyng::store::table* tbl);
+		void collect_profile_8181C78612FF(cyng::store::table* tbl);
+		void collect_profile_8181C78613FF(cyng::store::table* tbl);
+		void collect_profile_8181C78614FF(cyng::store::table* tbl);
+		void collect_profile_8181C78615FF(cyng::store::table* tbl);
+		void collect_profile_8181C78616FF(cyng::store::table* tbl);
+		void collect_profile_8181C78617FF(cyng::store::table* tbl);
+		void collect_profile_8181C78618FF(cyng::store::table* tbl);
 
 	private:
 		cyng::async::base_task& base_;
@@ -71,9 +83,17 @@ namespace node
 		 */
 		storage& storage_;
 
+		/** 
+		 * srv_id_ and nr_ are the key for table "_DataCollector"
+		 */
 		cyng::buffer_t const srv_id_;
 		std::uint8_t const nr_;
-		sml::obis const profile_;
+
+		/**
+		 * as stored in table "_DataCollector"
+		 */
+		sml::obis const profile_;	
+
 		std::chrono::seconds interval_;
 		std::chrono::seconds delay_;
 		std::string target_;
