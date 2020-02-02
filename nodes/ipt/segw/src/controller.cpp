@@ -33,10 +33,9 @@
 
 namespace node
 {
-	void join_network(cyng::async::mux&
+	std::pair<std::size_t, bool> join_network(cyng::async::mux&
 		, cyng::logging::log_ptr logger
-		, cache& c
-		, storage& db
+		, bridge& br
 		, std::string account
 		, std::string pwd
 		, bool accept_all
@@ -311,23 +310,6 @@ namespace node
 		}
 
 		//
-		//	setup bridge
-		//
-		bridge& br = bridge::get_instance(mux, logger, cm, store);
-
-		//
-		//	log power return message
-		//
-		br.power_return();
-
-		//
-		//	data I/O manager (serial and wireless data)
-		//
-		lmn io(mux, logger, uidgen_(), br);
-		io.start();	//	open serial and wireless communication ports
-
-
-		//
 		//	get virtual meter
 		//
 		//cyng::tuple_t cfg_virtual_meter;
@@ -347,51 +329,71 @@ namespace node
 		auto const accept_all = cm.get_cfg("accept-all-ids", false);
 
 		//
+		//	setup bridge
+		//
+		bridge& br = bridge::get_instance(logger, cm, store);
+
+		//
 		//	connect to ipt master
 		//
-		join_network(mux
+		auto res_ret = join_network(mux
 			, logger
-			, cm
-			, store
+			, br
 			, account
 			, pwd
 			, accept_all
 			, tag);
 
-		//
-		//	create server
-		//
-		server srv(mux
-			, logger
-			, cm
-			, store
-			, account
-			, pwd
-			, accept_all);
+		if (res_ret.second) {
 
-		//
-		//	server runtime configuration
-		//	ToDo: use data from config db
-		//
-		auto const address = cyng::io::to_str(cfg["server"].get("address"));
-		auto const service = cyng::io::to_str(cfg["server"].get("service"));
+			//
+			//	create server
+			//
+			server srv(mux
+				, logger
+				, cm
+				, store
+				, account
+				, pwd
+				, accept_all);
 
-		CYNG_LOG_INFO(logger, "listener address: " << address);
-		CYNG_LOG_INFO(logger, "listener service: " << service);
-		srv.run(address, service);
+			//
+			//	server runtime configuration
+			//	ToDo: use data from config db
+			//
+			auto const address = cyng::io::to_str(cfg["server"].get("address"));
+			auto const service = cyng::io::to_str(cfg["server"].get("service"));
 
-		//
-		//	wait for system signals
-		//
-		bool const shutdown = wait(logger);
+			CYNG_LOG_INFO(logger, "listener address: " << address);
+			CYNG_LOG_INFO(logger, "listener service: " << service);
+			srv.run(address, service);
 
-		//
-		//	close acceptor
-		//
-		CYNG_LOG_INFO(logger, "close acceptor");
-		srv.close();
+			//
+			//	data I/O manager (serial and wireless data)
+			//
+			lmn io(mux.get_io_service(), logger, cm, uidgen_());
+			io.start(mux);	//	open serial and wireless communication ports
 
-		return shutdown;
+			//
+			//	wait for system signals
+			//
+			bool const shutdown = wait(logger);
+
+			//
+			//	close acceptor
+			//
+			CYNG_LOG_INFO(logger, "close acceptor");
+			srv.close();
+		
+			return shutdown;
+		}
+		else {
+
+			CYNG_LOG_FATAL(logger, "cannot start network task");
+
+		}
+
+		return true;	//	shutdown
 	}
 
 	int controller::prepare_config_db(cyng::param_map_t&& cfg)
@@ -496,20 +498,17 @@ namespace node
 		return EXIT_FAILURE;
 	}
 
-	void join_network(cyng::async::mux& mux
+	std::pair<std::size_t, bool> join_network(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, cache& c
-		, storage& db
+		, bridge& br
 		, std::string account
 		, std::string pwd
 		, bool accept_all
 		, boost::uuids::uuid tag)
 	{
-		cyng::async::start_task_delayed<ipt::network>(mux
-			, std::chrono::seconds(1)
+		return cyng::async::start_task_sync<ipt::network>(mux
 			, logger
-			, c
-			, db
+			, br
 			, account
 			, pwd
 			, accept_all

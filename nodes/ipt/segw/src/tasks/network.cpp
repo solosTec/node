@@ -6,8 +6,10 @@
  */
 
 #include "network.h"
+#include "push.h"
 #include "../cache.h"
 #include "../storage.h"
+#include "../bridge.h"
 #include "../segw.h"
 #include "../cfg_ipt.h"
 
@@ -17,6 +19,7 @@
 #include <smf/sml/protocol/serializer.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/event.h>
+#include <smf/sml/srv_id_io.h>
 
 #include <cyng/factory/set_factory.h>
 #include <cyng/io/serializer.h>
@@ -24,6 +27,8 @@
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/buffer_cast.h>
+#include <cyng/async/task/task_builder.hpp>
 
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
@@ -35,8 +40,7 @@ namespace node
 	{
 		network::network(cyng::async::base_task* btp
 			, cyng::logging::log_ptr logger
-			, cache& cfg
-			, storage& db
+			, bridge& b
 			, std::string account
 			, std::string pwd
 			, bool accept_all
@@ -48,10 +52,11 @@ namespace node
 				, 1u)
 			, base_(*btp)
 			, logger_(logger)
-			, cache_(cfg)
-			, storage_(db)
+			, bridge_(b)
+			, cache_(b.cache_)
+			, storage_(b.storage_)
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_INFO(logger_, prg.size() << " instructions received");
+				CYNG_LOG_INFO(logger_, prg.size() << " SML instructions received");
 #ifdef _DEBUG
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 #endif
@@ -60,8 +65,8 @@ namespace node
 			, router_(logger_
 				, false	//	client mode
 				, vm_
-				, cfg
-				, db
+				, b.cache_
+				, b.storage_
 				, account
 				, pwd
 				, accept_all)
@@ -105,22 +110,19 @@ namespace node
 			vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
 
 			//
+			//	load and start push tasks
+			//
+			load_push_ops();
+
+			//
+			//	connect cache and db
+			//
+			bridge_.finalize(this->base_.mux_);
+
+
+			//
 			//	ToDo: set task_gpio_
 			//
-
-			//
-			//	wireless-LMN configuration
-			//	update status word
-			//
-			//auto pos = tid_map.find(47);
-			//exec_.start_wireless_lmn(start_wireless_lmn(config_db, cfg_wireless_lmn, (pos != tid_map.end()) ? pos->second : cyng::async::NO_TASK));
-
-			//
-			// wired-LMN configuration
-			//
-			//pos = tid_map.find(50);
-			//start_wired_lmn(config_db, cfg_wired_lmn, (pos != tid_map.end()) ? pos->second : cyng::async::NO_TASK);
-
 		}
 
 		cyng::continuation network::run()
@@ -437,5 +439,72 @@ namespace node
 				;
 		}
 
+		void network::load_push_ops()
+		{
+			cache_.write_tables("_PushOps", "_DataCollector", [&](cyng::store::table* tbl_po, cyng::store::table* tbl_dc) {
+				storage_.loop("TPushOps", [&](cyng::table::record const& rec)->bool {
+
+					//
+					//	add PushOps task
+					//
+					cyng::table::record r(tbl_po->meta_ptr());
+					r.read_data(rec);
+
+					//
+					//	get profile type
+					//
+					auto const rec_dc = tbl_dc->lookup(rec.key());	//	same key
+					BOOST_ASSERT_MSG(!rec_dc.empty(), "no data collector found");
+
+					auto const tsk = start_task_push(cyng::to_buffer(rec["serverID"])
+						, cyng::value_cast<std::uint8_t>(rec["nr"], 0)
+						, cyng::to_buffer(rec_dc["profile"])
+						, cyng::value_cast<std::uint32_t>(rec["interval"], 0)
+						, cyng::value_cast<std::uint32_t>(rec["delay"], 0)
+						, cyng::value_cast<std::string>(rec["target"], ""));
+					r.set("tsk", cyng::make_object(static_cast<std::uint64_t>(tsk)));
+
+					if (tbl_po->insert(rec.key(), r.data(), rec.get_generation(), cache_.get_tag())) {
+
+						cyng::buffer_t const srv = cyng::to_buffer(rec.key().at(0));
+						CYNG_LOG_TRACE(logger_, "load push op "
+							<< node::sml::from_server_id(srv));
+					}
+					else {
+
+						CYNG_LOG_ERROR(logger_, "insert into table TPushOps failed - key: "
+							<< cyng::io::to_str(rec.key())
+							<< ", body: "
+							<< cyng::io::to_str(rec.data()));
+
+					}
+
+					return true;	//	continue
+					});
+				});
+		}
+
+		std::size_t network::start_task_push(cyng::buffer_t srv_id
+			, std::uint8_t nr
+			, cyng::buffer_t profile
+			, std::uint32_t interval
+			, std::uint32_t delay
+			, std::string target)
+		{
+			BOOST_ASSERT(srv_id.size() == 9);
+			BOOST_ASSERT(profile.size() == 6);
+
+			return cyng::async::start_task_detached<push>(this->base_.mux_
+				, logger_
+				, cache_
+				, storage_
+				, srv_id
+				, nr
+				, profile
+				, std::chrono::seconds(interval)
+				, std::chrono::seconds(delay)
+				, target
+				, base_.get_id());
+		}
 	}
 }

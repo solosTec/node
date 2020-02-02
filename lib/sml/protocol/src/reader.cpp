@@ -123,11 +123,6 @@ namespace node
 			 */
 			cyng::param_t collect_iec_devices(cyng::tuple_t const& tpl);
 
-			/**
-			 * @param use_vector if false the value is noted as a single object otherwise
-			 * a vector of obis code / value pairs is notes. This is usefufull to distinguish between several values in a list.
-			 */
-			cyng::object read_value(obis, std::int8_t, std::uint8_t, cyng::object);
 			obis read_obis(cyng::object);
 
 			void read_sml_list(readout& ro, obis, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
@@ -1303,7 +1298,6 @@ namespace node
 				{
 					auto const tm = cyng::value_cast<std::uint32_t>(obj, 0);
 					auto const tp = std::chrono::system_clock::from_time_t(tm);
-					//ro.set_value(get_name(code), cyng::make_object(tp));
 					return cyng::make_object(tp);
 				}
 				else if (OBIS_SERIAL_NR == code)

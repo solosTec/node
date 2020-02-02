@@ -13,10 +13,12 @@
 #include <smf/sml/parser/obis_parser.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/mbus/units.h>
+#include <smf/sml/protocol/reader.h>
 
 #include <cyng/table/meta.hpp>
 #include <cyng/db/interface_statement.h>
 #include <cyng/db/sql_table.h>
+#include <cyng/table/restore.h>
 #include <cyng/intrinsics/traits.hpp>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/vector_cast.hpp>
@@ -52,6 +54,11 @@ namespace node
 	bool storage::start(cyng::param_map_t cfg)
 	{
 		return pool_.start(cfg);
+	}
+
+	cyng::db::session storage::get_session()
+	{
+		return pool_.get_session();
 	}
 
 	void storage::generate_op_log(std::uint64_t status
@@ -391,7 +398,7 @@ namespace node
 		, std::chrono::system_clock::time_point ts
 		, std::uint32_t status)
 	{
-		auto const key = cyng::table::key_generator(srv_id, minutes);
+		auto const key = cyng::table::key_generator(srv_id, minutes + 1);
 		auto const b = exists("TProfile_8181C78610FF", key);
 		if (b) {
 			//
@@ -414,7 +421,7 @@ namespace node
 		, std::chrono::system_clock::time_point ts
 		, std::uint32_t status)
 	{
-		auto const key = cyng::table::key_generator(srv_id, quarters);
+		auto const key = cyng::table::key_generator(srv_id, quarters + 1);
 		auto const b = exists("TProfile_8181C78611FF", key);
 		if (b) {
 			//
@@ -437,7 +444,7 @@ namespace node
 		, std::chrono::system_clock::time_point ts
 		, std::uint32_t status)
 	{	//	60 min profile meta data
-		auto const key = cyng::table::key_generator(srv_id, hours);
+		auto const key = cyng::table::key_generator(srv_id, hours + 1);
 		auto const b = exists("TProfile_8181C78612FF", key);
 		if (b) {
 			//
@@ -464,7 +471,7 @@ namespace node
 		, std::chrono::system_clock::time_point ts
 		, std::uint32_t status)
 	{	//	24 h profile meta data
-		auto const key = cyng::table::key_generator(srv_id, days);
+		auto const key = cyng::table::key_generator(srv_id, days + 1);
 		auto const b = exists("TProfile_8181C78613FF", key);
 		if (b) {
 			//
@@ -488,14 +495,14 @@ namespace node
 
 
 	void storage::merge_profile_storage_8181C78611FF(cyng::buffer_t srv_id
-		, std::uint64_t hours
+		, std::uint64_t quarters
 		, cyng::buffer_t code
 		, cyng::object val
 		, cyng::object scaler
 		, cyng::object unit
 		, cyng::object type)
 	{	//	15 min profile readout data
-		auto const key = cyng::table::key_generator(srv_id, hours, code);
+		auto const key = cyng::table::key_generator(srv_id, quarters + 1, code);
 		auto const b = exists("TStorage_8181C78611FF", key);
 
 		auto const s = cyng::io::to_str(val);
@@ -529,7 +536,7 @@ namespace node
 		, cyng::object unit
 		, cyng::object type)
 	{	//	60 min profile readout data
-		auto const key = cyng::table::key_generator(srv_id, hours, code);
+		auto const key = cyng::table::key_generator(srv_id, hours + 1, code);
 		auto const b = exists("TStorage_8181C78612FF", key);
 
 		auto const s = cyng::io::to_str(val);
@@ -562,7 +569,7 @@ namespace node
 		, cyng::object unit
 		, cyng::object type)
 	{	//	24 h profile readout data
-		auto const key = cyng::table::key_generator(srv_id, days, code);
+		auto const key = cyng::table::key_generator(srv_id, days + 1, code);
 		auto const b = exists("TStorage_8181C78613FF", key);
 
 		auto const s = cyng::io::to_str(val);
@@ -1398,11 +1405,11 @@ namespace node
 				case 11:	return cyng::chrono::ts_since_passed_minutes(tsidx / 15u);
 				case 12:	return cyng::chrono::ts_since_passed_hours(tsidx);
 				case 13:	return cyng::chrono::ts_since_passed_days(tsidx);
-				case 14:	return cyng::chrono::ts_since_passed_minutes(profile);
-				case 15:	return cyng::chrono::ts_since_passed_minutes(profile);
-				case 16:	return cyng::chrono::ts_since_passed_minutes(profile);
-				case 17:	return cyng::chrono::ts_since_passed_minutes(profile);
-				case 18:	return cyng::chrono::ts_since_passed_minutes(profile);
+				//case 14:	return cyng::chrono::ts_since_passed_minutes(profile);
+				//case 15:	return cyng::chrono::ts_since_passed_minutes(profile);
+				case 16:	return cyng::chrono::ts_since_passed_days(tsidx / 30);
+				case 17:	return cyng::chrono::ts_since_passed_days(tsidx / 365u);
+				//case 18:	return cyng::chrono::ts_since_passed_minutes(profile);
 				default:
 					std::cerr << "unknown profile: " << profile << std::endl;
 					return std::chrono::system_clock::now();
@@ -1440,9 +1447,17 @@ namespace node
 						//	4. status
 						sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
 						//	6. val
+						auto const val = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
 						//	7. type
+						auto const type = cyng::value_cast<std::uint32_t>(res->get(7, cyng::TC_UINT32, 0), 0);
 						auto const scaler = cyng::value_cast<std::int8_t>(res->get(8, cyng::TC_INT8, 0), 0);
 						auto const unit = cyng::value_cast<std::uint8_t>(res->get(9, cyng::TC_UINT8, 0), 0);
+
+						//
+						//	restore object from string and type info
+						//
+						auto const obj = cyng::table::restore(val, type);
+						auto const read_out = sml::reader::read_value(code, scaler, unit, obj);
 						
 						std::cout
 							<< sml::from_server_id(srv_id)
@@ -1457,12 +1472,10 @@ namespace node
 							<< ", "
 							<< code.to_str()
 							<< ", "
-							<< cyng::io::to_str(res->get(6, cyng::TC_STRING, 0))
+							<< val
 							<< ", "
-							<< +scaler
-							<< ", "
-							<< +unit
-							<< ", "
+							<< cyng::io::to_str(read_out)
+							<< ' '
 							<< mbus::get_unit_name(unit)
 							<< std::endl;
 
@@ -1474,9 +1487,9 @@ namespace node
 						<< counter
 						<< " records of "
 						<< name
-						<< " #"
+						<< " profile (#"
 						<< profile
-						<< " profile found"
+						<< ") found"
 						<< std::endl;
 
 				}

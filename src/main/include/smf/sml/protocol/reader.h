@@ -70,12 +70,18 @@ namespace node
 
 			std::int8_t read_scaler(cyng::object);
 			std::uint8_t read_unit(cyng::object);
-			//std::uint8_t read_status(cyng::object);
 
 			std::vector<obis> read_param_tree_path(cyng::object);
 
 			cyng::param_t read_param_tree(std::size_t, cyng::object);
 			cyng::param_t read_param_tree(std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+
+			/**
+			 * Takes the type information (code, scaler, unit) and transform the obj parameter
+			 * in a meaningfull string. All calculations for positionioning the decimal point
+			 * will done.
+			 */
+			cyng::object read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj);
 
 		}
 	}	//	sml

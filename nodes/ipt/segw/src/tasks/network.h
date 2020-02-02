@@ -18,7 +18,7 @@
 
 namespace node
 {
-	class cache;
+	class bridge;
 	namespace ipt
 	{
 		class network : public bus
@@ -29,8 +29,7 @@ namespace node
 		public:
 			network(cyng::async::base_task* btp
 				, cyng::logging::log_ptr logger
-				, cache& cfg
-				, storage& db
+				, bridge& b
 				, std::string account
 				, std::string pwd
 				, bool accept_all
@@ -159,6 +158,18 @@ namespace node
 			void reconfigure_impl();
 			void insert_seq_open_channel_rel(cyng::context& ctx);
 
+			/**
+			 * load and start all configured push ops
+			 */
+			void load_push_ops();
+
+			std::size_t start_task_push(cyng::buffer_t srv_id
+				, std::uint8_t nr
+				, cyng::buffer_t profile
+				, std::uint32_t interval
+				, std::uint32_t delay
+				, std::string target);
+
 		private:
 			cyng::async::base_task& base_;
 			cyng::logging::log_ptr logger_;
@@ -166,6 +177,7 @@ namespace node
 			/**
 			 * configuration management
 			 */
+			bridge& bridge_;
 			cache& cache_;
 
 			/**

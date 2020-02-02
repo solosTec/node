@@ -49,6 +49,7 @@ namespace node
 			, std::string const& pwd
 			, bool accept_all);
 
+		virtual ~router();
 
 	private:
 		void sml_msg(cyng::context& ctx);

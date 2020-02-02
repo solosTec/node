@@ -32,8 +32,9 @@ namespace node
 				//<< " instructions received (including "
 				//<< cyng::op_counter(prg, cyng::code::INVOKE)
 				//<< " invoke(s))");
-#ifdef SMF_IO_DEBUG
-            CYNG_LOG_DEBUG(logger_, "exec: " << cyng::io::to_str(prg));
+//#ifdef SMF_IO_DEBUG
+#ifdef _DEBUG
+			CYNG_LOG_DEBUG(logger_, "cluster: " << cyng::io::to_str(prg));
 #endif
 			vm_.async_run(std::move(prg));
 	})

@@ -286,7 +286,7 @@ namespace node
 		, std::string channel
 		, std::string server_id
 		, std::string code
-		, cyng::param_map_t& params)
+		, cyng::param_map_t& meters)
 	{
 		//
 		//	preconditions are
@@ -303,8 +303,8 @@ namespace node
 		//
 		//	Use the incoming active meter devices to populate TMeter table
 		//
-		for (auto pos = params.begin(); pos != params.end(); ) {
-		//for (auto & p : params) {
+		for (auto pos = meters.begin(); pos != meters.end(); ) {
+		//for (auto & meter : meters) {
 
 			auto data_ptr = const_cast<cyng::param_map_t*>(cyng::object_cast<cyng::param_map_t>(pos->second));
 			BOOST_ASSERT(data_ptr != nullptr);
@@ -387,12 +387,20 @@ namespace node
 					}
 					else {
 
+						auto const code = cyng::value_cast<std::string>(rec["code"], "");
 						CYNG_LOG_TRACE(logger_, "bus.res.query.gateway - found pk " 
 							<< cyng::io::to_str(rec.key())
 							<< " for meter "
-							<< ident);
+							<< ident
+							<< ", mc: "
+							<< code);
 						data_ptr->emplace("pk", cyng::make_object(rec.key()));
-						data_ptr->emplace("mc", rec["code"]);	//	metering code
+						if (code.empty()) {
+							data_ptr->emplace("mc", cyng::make_object("MC00000000000000000000000000"));	//	metering code
+						}
+						else {
+							data_ptr->emplace("mc", rec["code"]);	//	metering code
+						}
 					}
 
 				}	, cyng::store::write_access("TMeter")
@@ -413,7 +421,7 @@ namespace node
 					<< " of type "
 					<< type);
 
-				pos = params.erase(pos);
+				pos = meters.erase(pos);
 			}
 		}	//	for(...
 
@@ -426,7 +434,7 @@ namespace node
 			, channel
 			, server_id
 			, code
-			, params);
+			, meters);
 
 	}
 

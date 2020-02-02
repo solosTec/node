@@ -17,7 +17,7 @@
 namespace node
 {
 	/**
-	 * write cyclic OBISLOG entries
+	 * If data available send it to tsk
 	 */
 	class cache;
 	class storage;
@@ -40,7 +40,8 @@ namespace node
 			, cyng::buffer_t profile
 			, std::chrono::seconds interval
 			, std::chrono::seconds delay
-			, std::string target);
+			, std::string target
+			, std::size_t tsk);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -57,7 +58,7 @@ namespace node
 
 		void collect_profile_8181C78610FF(cyng::store::table* tbl);
 		void collect_profile_8181C78611FF(cyng::store::table* tbl);
-		void collect_profile_8181C78612FF(cyng::store::table* tbl);
+		void collect_profile_8181C78612FF();
 		void collect_profile_8181C78613FF(cyng::store::table* tbl);
 		void collect_profile_8181C78614FF(cyng::store::table* tbl);
 		void collect_profile_8181C78615FF(cyng::store::table* tbl);
@@ -98,6 +99,8 @@ namespace node
 		std::chrono::seconds delay_;
 		std::string target_;
 	};
+
+	std::chrono::system_clock::time_point get_ts(sml::obis profile, std::uint64_t tsidx);
 
 }
 

@@ -23,39 +23,48 @@ namespace cyng
 
 namespace node
 {
+	namespace ipt {
+		class network;
+	}
+	class storage;
+	class cache;
+	class bridge
+
 	/**
 	 * Manage communication between cache and permanent storage.
 	 * This is a singleton. Only one instance is allowed.
 	 */
-	class storage;
-	class cache;
-	class lmn;
-	class bridge
 	{
-		friend class lmn;
+		friend class ipt::network;
 
 	public:
-		static bridge& get_instance(cyng::async::mux& mux, cyng::logging::log_ptr, cache&, storage&);
+		static bridge& get_instance(cyng::logging::log_ptr
+			, cache&
+			, storage&);
 
 	private:
-		bridge(cyng::async::mux& mux, cyng::logging::log_ptr, cache&, storage&);
+		bridge(cyng::logging::log_ptr
+			, cache&
+			, storage&);
 		~bridge() = default;
 		bridge(const bridge&) = delete;
 		bridge& operator=(const bridge&) = delete;
 
 	public:
-		/**
-		 * log power return message
-		 */
-		void power_return();
-
 		void generate_op_log(sml::obis peer
 			, std::uint32_t evt
 			, std::string target
 			, std::uint8_t nr
 			, std::string details);
 
+		void finalize(cyng::async::mux& mux);
+
 	private:
+		/**
+		 * log power return message
+		 */
+		void power_return();
+
 		/**
 		 *	Preload cache with configuration data
 		 *	from database.
@@ -63,7 +72,6 @@ namespace node
 		void load_configuration();
 		void load_devices_mbus();
 		void load_data_collectors();
-		void load_push_ops(cyng::async::mux& mux);
 		void load_data_mirror();
 
 		/**
@@ -87,13 +95,6 @@ namespace node
 		void start_task_obislog(cyng::async::mux& mux);
 		void start_task_gpio(cyng::async::mux& mux);
 		void start_task_readout(cyng::async::mux& mux);
-		std::size_t start_task_push(cyng::async::mux& mux
-			, cyng::buffer_t
-			, std::uint8_t nr
-			, cyng::buffer_t profile
-			, std::uint32_t interval
-			, std::uint32_t delay
-			, std::string target);
 
 	private:
 		/**
@@ -110,6 +111,7 @@ namespace node
 		 * permanent storage
 		 */
 		storage& storage_;
+
 	};
 }
 #endif

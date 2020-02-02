@@ -34,15 +34,14 @@
 
 namespace node
 {
-	lmn::lmn(cyng::async::mux& mux
+	lmn::lmn(cyng::io_service_t&  ios
 		, cyng::logging::log_ptr logger
-		, boost::uuids::uuid tag
-		, bridge& b)
-	: mux_(mux)
-		, logger_(logger)
-		, vm_(mux.get_io_service(), tag)
-		, bridge_(b)
-		, decoder_wmbus_(logger, b.cache_, vm_)
+		, cache& cfg
+		, boost::uuids::uuid tag)
+	: logger_(logger)
+		, vm_(ios, tag)
+		, cache_(cfg)
+		, decoder_wmbus_(logger, cfg, vm_)
 	{
 		cyng::register_logger(logger_, vm_);
 		vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
@@ -59,40 +58,40 @@ namespace node
 
 	}
 
-	void lmn::start()
+	void lmn::start(cyng::async::mux& mux)
 	{
-		auto const wired = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "enabled"), false);
+		auto const wired = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "enabled"), false);
 		if (wired) {
-			start_lmn_wired();
+			start_lmn_wired(mux);
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "LMN wired (IF_1107) is disabled");
 		}
 
-		auto const wireless = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "enabled"), false);
+		auto const wireless = cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "enabled"), false);
 		if (wireless) {
-			start_lmn_wireless();
+			start_lmn_wireless(mux);
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "LMN wireless (M-Bus) is disabled");
 		}
 	}
 
-	void lmn::start_lmn_wired()
+	void lmn::start_lmn_wired(cyng::async::mux& mux)
 	{
 		try {
 
 			//
 			//	start receiver
 			//
-			auto const receiver = cyng::async::start_task_sync<parser_serial>(mux_
+			auto const receiver = cyng::async::start_task_sync<parser_serial>(mux
 				, logger_
 				, vm_
-				, bridge_.cache_);
+				, cache_);
 
 			if (receiver.second) {
 
-				auto const sender = start_lmn_port_wired(receiver.first);
+				auto const sender = start_lmn_port_wired(mux, receiver.first);
 
 			}
 		}
@@ -101,34 +100,34 @@ namespace node
 		}
 	}
 
-	void lmn::start_lmn_wireless()
+	void lmn::start_lmn_wireless(cyng::async::mux& mux)
 	{
 		try {
 
 			//
 			//	start receiver
 			//
-			auto const receiver = cyng::async::start_task_sync<parser_wmbus>(mux_
+			auto const receiver = cyng::async::start_task_sync<parser_wmbus>(mux
 				, logger_
 				, vm_
-				, bridge_.cache_);
+				, cache_);
 
 			if (receiver.second) {
 
-				auto const hci = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "HCI"), std::string("none"));
+				auto const hci = cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "HCI"), std::string("none"));
 				if (boost::algorithm::equals(hci, "CP210x")) {
 
 					//
 					//	LMN port send incoming data to HCI (CP210x) parser
 					//	which sends data to wmbus parser.
 					//
-					auto const unwrapper = cyng::async::start_task_sync<parser_CP210x>(mux_
+					auto const unwrapper = cyng::async::start_task_sync<parser_CP210x>(mux
 						, logger_
 						, vm_
 						, receiver.first);
 
 					if (unwrapper.second) {
-						auto const sender = start_lmn_port_wireless(unwrapper.first, receiver.first);
+						auto const sender = start_lmn_port_wireless(mux, unwrapper.first, receiver.first);
 					}
 					else {
 						CYNG_LOG_FATAL(logger_, "cannot start CP210x parser for HCI messages");
@@ -139,7 +138,7 @@ namespace node
 					//
 					//	LMN port send incoming data to wmbus parser
 					//
-					auto const sender = start_lmn_port_wireless(receiver.first, receiver.first);
+					auto const sender = start_lmn_port_wireless(mux, receiver.first, receiver.first);
 				}
 			}
 			else {
@@ -151,53 +150,53 @@ namespace node
 		}
 	}
 
-	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(std::size_t receiver_data, std::size_t receiver_status)
+	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(cyng::async::mux& mux, std::size_t receiver_data, std::size_t receiver_status)
 	{
 #if BOOST_OS_WINDOWS
-		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "port"), std::string("COM3"));
+		auto const port = cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "port"), std::string("COM3"));
 #else
-		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "port"), std::string("/dev/ttyAPP1"));
+		auto const port = cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "port"), std::string("/dev/ttyAPP1"));
 #endif
 		CYNG_LOG_INFO(logger_, "LMN wireless is running on port: " << port);
 
-		std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "monitor"), 30));
-		auto const speed = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 57600);
+		std::chrono::seconds const monitor(cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "monitor"), 30));
+		auto const speed = cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 57600);
 
-		return cyng::async::start_task_delayed<lmn_port>(mux_
+		return cyng::async::start_task_delayed<lmn_port>(mux
 			, std::chrono::seconds(1)
 			, logger_
 			, monitor
 			, port		//	port
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "databits"), 8u)		//	[u8] databits
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "parity"), "none")	//	[s] parity
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "flow_control"), "none")	//	[s] flow_control
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "stopbits"), "one")	//	[s] stopbits
+			, cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "databits"), 8u)		//	[u8] databits
+			, cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "parity"), "none")	//	[s] parity
+			, cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "flow_control"), "none")	//	[s] flow_control
+			, cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "stopbits"), "one")	//	[s] stopbits
 			, static_cast<std::uint32_t>(speed)		//	[u32] speed
 			, receiver_data
 			, receiver_status);
 	}
 
-	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(std::size_t receiver)
+	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(cyng::async::mux& mux, std::size_t receiver)
 	{
 #if BOOST_OS_WINDOWS
-		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "port"), std::string("COM1"));
+		auto const port = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "port"), std::string("COM1"));
 #else
-		auto const port = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "port"), std::string("/dev/ttyAPP0"));
+		auto const port = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "port"), std::string("/dev/ttyAPP0"));
 #endif
 		CYNG_LOG_INFO(logger_, "LMN wired is running on port: " << port);
 
-		std::chrono::seconds const monitor(bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "monitor"), 30));
-		auto const speed = bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 115200);
+		std::chrono::seconds const monitor(cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "monitor"), 30));
+		auto const speed = cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 115200);
 
-		return cyng::async::start_task_delayed<lmn_port>(mux_
+		return cyng::async::start_task_delayed<lmn_port>(mux
 			, std::chrono::seconds(1)
 			, logger_
 			, monitor
 			, port		//	port
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "databits"), 8u)		//	[u8] databits
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "parity"), "none")	//	[s] parity
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "flow_control"), "none")	//	[s] flow_control
-			, bridge_.cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "stopbits"), "one")	//	[s] stopbits
+			, cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "databits"), 8u)		//	[u8] databits
+			, cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "parity"), "none")	//	[s] parity
+			, cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "flow_control"), "none")	//	[s] flow_control
+			, cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_1107 }, "stopbits"), "one")	//	[s] stopbits
 			, static_cast<std::uint32_t>(speed)		//	[u32] speed
 			, receiver
 			, receiver);
@@ -308,7 +307,7 @@ namespace node
 		//
 		// update device table
 		//
-		if (bridge_.cache_.update_device_table(std::get<0>(tpl)	
+		if (cache_.update_device_table(std::get<0>(tpl)	
 			, std::get<1>(tpl)
 			, 0u	//	status
 			, std::get<2>(tpl)
@@ -403,7 +402,7 @@ namespace node
 		if (pos != params.end()) {
 
 			auto const values = cyng::to_param_map(pos->second);
-			bridge_.cache_.write_table("_ReadoutData", [&](cyng::store::table* tbl) {
+			cache_.write_table("_ReadoutData", [&](cyng::store::table* tbl) {
 
 				for (auto const& val : values) {
 
@@ -420,7 +419,7 @@ namespace node
 						tbl->insert(cyng::table::key_generator(pk, code.first.to_buffer())
 							, cyng::table::data_generator(raw, type, data.at("scaler"), data.at("unit"))
 							, 1u	//	generation
-							, bridge_.cache_.get_tag());
+							, cache_.get_tag());
 					}
 					else {
 						//	invalid OBIS code

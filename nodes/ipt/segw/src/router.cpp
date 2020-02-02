@@ -86,7 +86,11 @@ namespace node
 		vm.register_function("sml.get.profile.list.request", 8, std::bind(&router::sml_get_profile_list_request, this, std::placeholders::_1));
 
 		attention_.register_this(vm);
+
 	}
+
+	router::~router()
+	{}
 
 	void router::sml_msg(cyng::context& ctx)
 	{
@@ -361,5 +365,6 @@ namespace node
 			, std::get<6>(tpl));
 
 	}
+
 
 }

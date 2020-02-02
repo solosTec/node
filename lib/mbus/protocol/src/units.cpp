@@ -184,8 +184,8 @@ namespace node
 			return u8"not-a-unit";
 		}
 		
-		std::u8string get_unit_name_u8(units u) {
-			return get_unit_name_u8(static_cast<std::uint8_t>(u));
+		const char* get_unit_name(units u) {
+			return get_unit_name(static_cast<std::uint8_t>(u));
 		}
 
 	}

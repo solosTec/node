@@ -11,7 +11,6 @@
 #include "tasks/gpio.h"
 #include "tasks/obislog.h"
 #include "tasks/readout.h"
-#include "tasks/push.h"
 
 #include <smf/sml/status.h>
 #include <smf/sml/obis_db.h>
@@ -29,17 +28,21 @@
 
 namespace node
 {
-	bridge& bridge::get_instance(cyng::async::mux& mux, cyng::logging::log_ptr logger, cache& db, storage& store)
+	bridge& bridge::get_instance(cyng::logging::log_ptr logger
+		, cache& db
+		, storage& store)
 	{
 		//
 		//	no need to be threadsafe 
 		//
-		static bridge instance(mux, logger, db, store);
+		static bridge instance(logger, db, store);
 		return instance;
 	}
 
-	bridge::bridge(cyng::async::mux& mux, cyng::logging::log_ptr logger, cache& db, storage& store)
-		: logger_(logger)
+	bridge::bridge(cyng::logging::log_ptr logger
+		, cache& db
+		, storage& store)
+	: logger_(logger)
 		, cache_(db)
 		, storage_(store)
 	{
@@ -51,13 +54,20 @@ namespace node
 		load_configuration();
 		load_devices_mbus();
 		load_data_collectors();
-		load_push_ops(mux);
 		load_data_mirror();
+	}
 
+	void bridge::finalize(cyng::async::mux& mux)
+	{
 		//
 		//	register as listener
 		//
 		connect_to_cache();
+
+		//
+		//	log power return message
+		//
+		power_return();
 
 		//
 		//	store boot time
@@ -155,52 +165,6 @@ namespace node
 				else {
 
 					CYNG_LOG_ERROR(logger_, "insert into table TDataCollector failed - key: "
-						<< cyng::io::to_str(rec.key())
-						<< ", body: "
-						<< cyng::io::to_str(rec.data()));
-
-				}
-
-				return true;	//	continue
-				});
-			});
-	}
-
-	void bridge::load_push_ops(cyng::async::mux& mux)
-	{
-		cache_.write_tables("_PushOps", "_DataCollector", [&](cyng::store::table* tbl_po, cyng::store::table* tbl_dc) {
-			storage_.loop("TPushOps", [&](cyng::table::record const& rec)->bool {
-
-				//
-				//	add PushOps task
-				//
-				cyng::table::record r(tbl_po->meta_ptr());
-				r.read_data(rec);
-
-				//
-				//	get profile type
-				//
-				auto const rec_dc = tbl_dc->lookup(rec.key());	//	same key
-				BOOST_ASSERT_MSG(!rec_dc.empty(), "no data collector found");
-
-				auto const tsk = start_task_push(mux
-					, cyng::to_buffer(rec["serverID"])
-					, cyng::value_cast<std::uint8_t>(rec["nr"], 0)
-					, cyng::to_buffer(rec_dc["profile"])
-					, cyng::value_cast<std::uint32_t>(rec["interval"], 0)
-					, cyng::value_cast<std::uint32_t>(rec["delay"], 0)
-					, cyng::value_cast<std::string>(rec["target"], ""));
-				r.set("tsk", cyng::make_object(static_cast<std::uint64_t>(tsk)));
-
-				if (tbl_po->insert(rec.key(), r.data(), rec.get_generation(), cache_.get_tag())) {
-
-					cyng::buffer_t const srv = cyng::to_buffer(rec.key().at(0));
-					CYNG_LOG_TRACE(logger_, "load push op "
-						<< sml::from_server_id(srv));
-				}
-				else {
-
-					CYNG_LOG_ERROR(logger_, "insert into table TPushOps failed - key: "
 						<< cyng::io::to_str(rec.key())
 						<< ", body: "
 						<< cyng::io::to_str(rec.data()));
@@ -594,29 +558,6 @@ namespace node
 			, cache_
 			, storage_
 			, std::chrono::seconds(interval));
-	}
-
-	std::size_t bridge::start_task_push(cyng::async::mux& mux
-		, cyng::buffer_t srv_id
-		, std::uint8_t nr
-		, cyng::buffer_t profile
-		, std::uint32_t interval
-		, std::uint32_t delay
-		, std::string target)
-	{
-		BOOST_ASSERT(srv_id.size() == 9);
-		BOOST_ASSERT(profile.size() == 6);
-
-		return cyng::async::start_task_detached<push>(mux
-			, logger_
-			, cache_
-			, storage_
-			, srv_id
-			, nr
-			, profile
-			, std::chrono::seconds(interval)
-			, std::chrono::seconds(delay)
-			, target);
 	}
 
 	void bridge::generate_op_log(sml::obis peer

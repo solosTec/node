@@ -35,7 +35,6 @@ namespace node
 		bus::bus(cyng::logging::log_ptr logger
 			, cyng::async::mux& mux
 			, boost::uuids::uuid tag
-			//, scramble_key const& sk
 			, std::string const& model
 			, std::size_t retries)
 		: logger_(logger)
@@ -44,7 +43,7 @@ namespace node
 			, socket_(mux.get_io_service())
 			, buffer_()
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_DEBUG(logger_, prg.size() << " ipt instructions received");
+				CYNG_LOG_DEBUG(logger_, prg.size() << " IPT instructions received");
 #ifdef SMF_IO_DEBUG
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 #endif

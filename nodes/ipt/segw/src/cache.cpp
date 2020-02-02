@@ -480,21 +480,7 @@ namespace node
 					//	-- body
 			, 6		//	code
 			, 0		//	active
-			}),
-
-			cyng::table::make_meta_table<1, 1>("_PushReq",
-			{ "pk"		//	pk
-						//	-- body
-			, "data"	//	
-			},
-			{ cyng::TC_UINT8		//	pk
-									//	-- body
-			, cyng::TC_BUFFER		//	data
-			},
-			{ 9		//	pk
-					//	-- body
-			, 64		//	data
-			}),
+			})
 		};
 
 		return vec;

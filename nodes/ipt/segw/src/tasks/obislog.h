@@ -23,7 +23,6 @@ namespace node
 		//	[0] write entry
 		using msg_0 = std::tuple<>;
 
-
 		using signatures_t = std::tuple<msg_0>;
 
 	public:

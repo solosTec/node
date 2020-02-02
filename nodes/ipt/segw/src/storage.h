@@ -79,6 +79,11 @@ namespace node
 			, std::string description);
 
 		/**
+		 * @return an database session
+		 */
+		cyng::db::session get_session();
+
+		/**
 		 * loop over all records in the specified table
 		 */
 		void loop(std::string name, loop_f);
