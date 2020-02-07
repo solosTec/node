@@ -105,7 +105,7 @@ namespace node
 		//
 		//	statistical data
 		//
-		vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+		vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), " callbacks registered"));
 	}
 
 
@@ -753,24 +753,30 @@ namespace node
 		if (boost::algorithm::equals(tbl->meta().get_name(), "TDevice"))
 		{
 			vm_.async_run(cyng::generate_invoke("log.msg.debug"	
-				, "sig.ins"
+				, "sig.ins(source: "
 				, source
+				, ", table: "
 				, tbl->meta().get_name()
+				, ", type: "
 				, ((source != vm_.tag()) ? "req" : "res")
+				, ", key: "
 				, key
+				, ", data: "
 				, data
 			));
 		}
 		else
 		{
 			vm_.async_run(cyng::generate_invoke("log.msg.debug"
-				, "sig.ins"
+				, "sig.ins(source: "
 				, source
+				, ", table: "
 				, tbl->meta().get_name()
+				, ", type: "
 				, ((source != vm_.tag()) ? "req" : "res")));
 		}
 #else
-		vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.ins", source, tbl->meta().get_name()));
+		vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.ins(source:", source, ", table: ", tbl->meta().get_name()));
 #endif
 
 		//
@@ -797,7 +803,7 @@ namespace node
 
 	void session::sig_del(cyng::store::table const* tbl, cyng::table::key_type const& key, boost::uuids::uuid source)
 	{
-		vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.del", tbl->meta().get_name(), source));
+		vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.del(table: ", tbl->meta().get_name(), ", source: ", source, ")"));
 
 		//
 		//	don't send data back to sender
@@ -820,7 +826,7 @@ namespace node
 		//
 		if (source != vm_.tag())
 		{
-			vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.clr", tbl->meta().get_name(), source));
+			vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.clr(table: ", tbl->meta().get_name(), ", source: ", source, ")"));
 			vm_.async_run(bus_db_clear(tbl->meta().get_name()));
 		}
 	}
@@ -831,7 +837,7 @@ namespace node
 		, std::uint64_t gen
 		, boost::uuids::uuid source)
 	{
-		vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.mod", tbl->meta().get_name(), source));
+		vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.mod(table: ", tbl->meta().get_name(), ", source: ", source, ")"));
 
 		if (source != vm_.tag())
 		{
@@ -960,7 +966,7 @@ namespace node
 			std::size_t				//	[2] task id
 		>(frame);
 
-		ctx.queue(cyng::generate_invoke("log.msg.info", "bus.req.subscribe", std::get<0>(tpl), std::get<1>(tpl)));
+		ctx.queue(cyng::generate_invoke("log.msg.info", "bus.req.subscribe(table: ", std::get<0>(tpl), ", tag: ", std::get<1>(tpl), ")" ));
 
 		cache_.db_.access([&](cyng::store::table const* tbl)->void {
 
@@ -1039,7 +1045,7 @@ namespace node
 		//	* severity
 		//	* message
 		const cyng::vector_t frame = ctx.get_frame();
-		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), frame));
+		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), ", ", frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,			//	[0] origin client tag
@@ -1055,7 +1061,7 @@ namespace node
 	void session::bus_insert_lora_uplink(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), frame));
+		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), ", ", frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,			//	[0] origin client tag
@@ -1100,7 +1106,7 @@ namespace node
 		//	* data
 		//	* source
 		const cyng::vector_t frame = ctx.get_frame();
-		ctx.run(cyng::generate_invoke("log.msg.trace", "bus.req.push.data", frame));
+		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), ", ", frame));
 
 		auto const tpl = cyng::tuple_cast<
 			std::uint64_t,		//	[0] sequence number

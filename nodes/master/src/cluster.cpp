@@ -540,58 +540,91 @@ namespace node
 		, const cyng::store::table* tbl_session
 		, const cyng::store::table* tbl_gw)
 	{
+#ifdef _DEBUG
+		CYNG_LOG_TRACE(logger_, "find_peer("
+			<< cyng::value_cast(key_gw.at(0), boost::uuids::nil_uuid())
+			<< " in "
+			<< tbl_session->size()
+			<< " sessions)");
+#endif
+
 		//
 		//	get gateway record
 		//
 		auto rec_gw = tbl_gw->lookup(key_gw);
-
-		//
-		//	gateway and (associated) device share the same key
-		//
-		auto rec_session = tbl_session->find_first(cyng::param_t("device", key_gw.at(0)));
-		if (!rec_gw.empty() && !rec_session.empty())
+		BOOST_ASSERT(!rec_gw.empty());
+		if (!rec_gw.empty())
 		{
-			auto peer = cyng::object_cast<session>(rec_session["local"]);
-			if (peer && (key_gw.size() == 1))
+			//
+			//	gateway and (associated) device share the same key
+			//
+			auto rec_session = tbl_session->find_first(cyng::param_t("device", key_gw.at(0)));
+			if (!rec_session.empty())
 			{
-				//
-				//	get remote session tag
-				//
-				auto tag = cyng::value_cast(rec_session.key().at(0), boost::uuids::nil_uuid());
-				//BOOST_ASSERT(tag == peer->vm_.tag());
-
-				//
-				//	get login parameters
-				//
-				const auto server = cyng::value_cast<std::string>(rec_gw["serverId"], "05000000000000");
-				const auto name = cyng::value_cast<std::string>(rec_gw["userName"], "");
-				const auto pwd = cyng::value_cast<std::string>(rec_gw["userPwd"], "");
-
-				const auto id = cyng::parse_hex_string(server);
-				if (id.second)
+				auto peer = cyng::object_cast<session>(rec_session["local"]);
+				if (peer && (key_gw.size() == 1))
 				{
-					CYNG_LOG_TRACE(logger_, "gateway "
-						<< cyng::io::to_str(rec_session["name"])
-						<< ": "
-						<< server
-						<< ", user: "
-						<< name
-						<< ", pwd: "
-						<< pwd
-						<< " has peer: "
-						<< peer->vm_.tag());
+					//
+					//	get remote session tag
+					//
+					auto const tag = cyng::value_cast(rec_session.key().at(0), boost::uuids::nil_uuid());
+					//BOOST_ASSERT(tag == peer->vm_.tag());
 
-					return std::make_tuple(peer, rec_gw, id.first, tag);
-				}
-				else
-				{
-					CYNG_LOG_WARNING(logger_, "client "
-						<< tag
-						<< " has an invalid server id: "
-						<< server);
+					//
+					//	get login parameters
+					//
+					const auto server = cyng::value_cast<std::string>(rec_gw["serverId"], "05000000000000");
+					const auto name = cyng::value_cast<std::string>(rec_gw["userName"], "");
+					const auto pwd = cyng::value_cast<std::string>(rec_gw["userPwd"], "");
+
+					const auto id = cyng::parse_hex_string(server);
+					if (id.second)
+					{
+						CYNG_LOG_TRACE(logger_, "gateway "
+							<< cyng::io::to_str(rec_session["name"])
+							<< ": "
+							<< server
+							<< ", user: "
+							<< name
+							<< ", pwd: "
+							<< pwd
+							<< " has peer: "
+							<< peer->vm_.tag());
+
+						return std::make_tuple(peer, rec_gw, id.first, tag);
+					}
+					else
+					{
+						CYNG_LOG_WARNING(logger_, "client "
+							<< tag
+							<< " has an invalid server id: "
+							<< server);
+					}
 				}
 			}
 		}
+		else
+		{
+			CYNG_LOG_ERROR(logger_, "find_peer(gateway "
+				<< cyng::value_cast(key_gw.at(0), boost::uuids::nil_uuid())
+				<< " not found, "
+				<< tbl_gw->size()
+				<< " gateways configured)");
+		}
+
+#ifdef _DEBUG
+		//std::size_t counter{ 0 };
+		//tbl_session->loop([&](cyng::table::record const& rec) -> bool {
+
+		//	CYNG_LOG_TRACE(logger_, "session #"
+		//		<< counter
+		//		<< " - "
+		//		<< cyng::io::to_str(rec.convert()));
+
+		//	counter++;
+		//	return true;
+		//});
+#endif
 
 		//
 		//	not found - peer is a null pointer

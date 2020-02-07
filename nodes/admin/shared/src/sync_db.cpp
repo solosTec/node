@@ -683,6 +683,10 @@ namespace node
 				}
 				else {
 
+					//
+					//	don't insert this gateway because there is no device information available
+					//
+
 					std::stringstream ss;
 					ss
 						<< "gateway "

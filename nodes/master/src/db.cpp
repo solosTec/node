@@ -461,7 +461,7 @@ namespace node
 
 	cyng::table::record lookup_meter(cyng::store::table const* tbl, std::string const& ident, boost::uuids::uuid gw_tag)
 	{
-		cyng::table::record result(tbl->meta_ptr());
+		cyng::table::record result = cyng::table::make_empty_record(tbl->meta_ptr());
 
 		//
 		//	"ident" + "gw" have to be unique
