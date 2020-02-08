@@ -54,7 +54,7 @@ namespace node
 		//	print sml message number and data frame
 		//
 		std::size_t const idx = cyng::value_cast<std::size_t>(frame.at(1), 0);
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), idx, frame));
+		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), "(idx: ", idx, ", frame: ", frame, ")"));
 
 		//
 		//	get message body
@@ -80,7 +80,7 @@ namespace node
 		//
 
 		auto const frame = ctx.get_frame();
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
+		ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 		state_.react(ipt::state::evt_sml_eom(cyng::to_tuple(frame)));
 	}
 
@@ -94,7 +94,7 @@ namespace node
 		//	* reqFileId
 
 		auto const frame = ctx.get_frame();
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
+		ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 	}
 
 	void proxy_comm::sml_public_close_response(cyng::context& ctx)
@@ -103,8 +103,8 @@ namespace node
 		//
 		//	* [buffer] trx
 
-		auto frame = ctx.get_frame();
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
+		auto const frame = ctx.get_frame();
+		ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 
 		state_.react(ipt::state::evt_sml_public_close_response(frame));
 
@@ -114,7 +114,7 @@ namespace node
 	{
 		//	[]
 		auto const frame = ctx.get_frame();
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
+		ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 
 		//
 		// * [string] trx
@@ -132,7 +132,7 @@ namespace node
 		//	[]
 
 		auto const frame = ctx.get_frame();
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
+		ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 		state_.react(ipt::state::evt_sml_get_list_response(frame));
 	}
 
@@ -150,7 +150,7 @@ namespace node
 		//	* params
 
 		auto const frame = ctx.get_frame();
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
+		ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 		state_.react(ipt::state::evt_sml_get_profile_list_response(frame));
 	}
 
@@ -158,7 +158,7 @@ namespace node
 	{
 		//	[]
 		auto const frame = ctx.get_frame();
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), frame));
+		ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 		state_.react(ipt::state::evt_sml_attention_msg(frame));
 	}
 }

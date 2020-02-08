@@ -6,6 +6,7 @@
  */
 
 #include <smf/sml/protocol/reader.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/units.h>
@@ -552,8 +553,8 @@ namespace node
 				//	parameterTreePath (OBIS)
 				//
 				std::vector<obis> path = read_param_tree_path(*pos++);
-				BOOST_ASSERT(path.size() == 1);
-				if (path.size() != 1)	return cyng::generate_invoke("log.msg.error", "SML Get Proc Parameter Response - wrong path size: ", path.size());
+				//BOOST_ASSERT(path.size() == 1);
+				//if (path.size() != 1)	return cyng::generate_invoke("log.msg.error", "SML Get Proc Parameter Response - wrong path size: ", path.size());
 
 				//
 				//	parameterTree
@@ -565,11 +566,12 @@ namespace node
 				//	this is a parameter tree
 				//
 				auto const param = read_param_tree(0u, tpl.begin(), tpl.end());
+				//auto const param = cyng::param_factory(path.front().to_str(), tpl);
 				return cyng::generate_invoke("sml.get.proc.param.response"
 					, ro.trx_
 					, ro.get_value("groupNo")
 					, ro.server_id_	//	binary
-					, path.front().to_buffer()
+					, path.front().to_buffer()	//	ToDo: send complete path
 					, param);
 
 			}
@@ -1395,15 +1397,33 @@ namespace node
 				//	2. parameterValue SML_ProcParValue OPTIONAL,
 				//
 				auto const attr = read_parameter(*pos++);
+				cyng::tuple_t const tpl = cyng::to_tuple(*pos++);
+				if (tpl.empty()) {
+					return (attr.first != PROC_PAR_UNDEF)  
+						? customize_value(code, attr.second)
+						: cyng::param_factory(code.to_str(), cyng::make_object())
+						;
+				}
+
+				//
+				//	collect all optional values in a parameter map
+				//
+				cyng::param_map_t params;
+
+				//
+				//	if attr contains some valuable information 
+				//	put it into the result set - but flattended.
+				//	Note thate there is posible collision with
+				//	OBIS codes in the child list. Until now
+				//	no collisions are known.
+				//
 				if (attr.first != PROC_PAR_UNDEF) {
-					return customize_value(code, attr.second);
+					params.emplace(customize_value(code, attr.second));
 				}
 
 				//
 				//	3. child_List List_of_SML_Tree OPTIONAL
 				//
-				cyng::tuple_t tpl;
-				tpl = cyng::value_cast(*pos, tpl);
 				//BOOST_ASSERT(!tpl.empty()); -> empty trees are possible e.g. 00, 80, 80, 00, 04, FF (certificates)
 
 				if ((OBIS_ROOT_VISIBLE_DEVICES == code) || (OBIS_ROOT_ACTIVE_DEVICES == code)) {
@@ -1420,11 +1440,6 @@ namespace node
 					//
 					return collect_iec_devices(tpl);
 				}
-
-				//
-				//	collect all optional values in a parameter map
-				//
-				cyng::param_map_t params;
 
 				for (auto const child : tpl)
 				{
@@ -1496,7 +1511,8 @@ namespace node
 					|| OBIS_IF_1107_P1 == code
 					|| OBIS_IF_1107_W5 == code
 					|| OBIS_PUSH_TARGET == code
-					|| code.is_matching(0x81, 0x81, 0xC7, 0x82, 0x0A).second) {
+					|| code.is_matching(0x81, 0x81, 0xC7, 0x82, 0x0A).second
+					|| OBIS_ACCESS_USER_NAME == code) {
 					//	buffer to string
 					cyng::buffer_t const buffer = cyng::to_buffer(obj);
 					return cyng::param_factory(code.to_str(), std::string(buffer.begin(), buffer.end()));

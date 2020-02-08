@@ -257,6 +257,10 @@ namespace node
 				, obis
 				, std::string const& username
 				, std::string const& password);
+			std::string get_proc_parameter(cyng::buffer_t const& server_id
+				, obis_path
+				, std::string const& username
+				, std::string const& password);
 
 			/**
 			 * List query - BODY_GET_LIST_REQUEST (0x700)

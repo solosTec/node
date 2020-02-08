@@ -14,6 +14,7 @@
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/parser/srv_id_parser.h>
 #include <smf/sml/event.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 
 #include <cyng/vm/generator.h>
 #include <cyng/sys/mac.h>
@@ -750,9 +751,10 @@ namespace node
 		//
 		//	generate get process parameter requests
 		//
-		if (sml::OBIS_ROOT_SENSOR_PARAMS == data.get_root() ||
-			sml::OBIS_ROOT_DATA_COLLECTOR == data.get_root() ||
-			sml::OBIS_PUSH_OPERATIONS == data.get_root()) {
+		node::sml::obis const root(data.get_root());
+		if (sml::OBIS_ROOT_SENSOR_PARAMS == root ||
+			sml::OBIS_ROOT_DATA_COLLECTOR == root ||
+			sml::OBIS_PUSH_OPERATIONS == root) {
 
 			//
 			//	data mirror
@@ -761,7 +763,7 @@ namespace node
 			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
 			auto const r = sml::parse_srv_id(meter);
 			if (r.second) {
-				push_trx(sml_gen.get_proc_parameter(r.first, data.get_root(), data.get_user(), data.get_pwd()), data);
+				push_trx(sml_gen.get_proc_parameter(r.first, root, data.get_user(), data.get_pwd()), data);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
@@ -774,8 +776,22 @@ namespace node
 					<< meter);
 			}
 		}
+		else if (sml::OBIS_ROOT_ACCESS_RIGHTS == root) {
+
+			
+			auto const role_nr = cyng::numeric_cast<std::uint8_t>(params.get("roleNr"), 1);		//	81 81 81 60 rr FF
+			auto const user_nr = cyng::numeric_cast<std::uint8_t>(params.get("userNr"), 1);		//	81 81 81 60 rr uu
+			auto const meter_nr = cyng::numeric_cast<std::uint8_t>(params.get("meterNr"), 1);	//	81 81 81 64 01 mm
+			sml::obis_path path({ root
+				, sml::make_obis(0x81, 0x81, 0x81, 0x60, role_nr, 0xFF) 
+				, sml::make_obis(0x81, 0x81, 0x81, 0x60, role_nr, user_nr)
+				, sml::make_obis(0x81, 0x81, 0x81, 0x64, 0x01, meter_nr)
+				});
+			push_trx(sml_gen.get_proc_parameter(data.get_srv(), path, data.get_user(), data.get_pwd()), data);
+			//push_trx(sml_gen.get_proc_parameter(data.get_srv(), root, data.get_user(), data.get_pwd()), data);
+		}
 		else {
-			push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_root(), data.get_user(), data.get_pwd()), data);
+			push_trx(sml_gen.get_proc_parameter(data.get_srv(), root, data.get_user(), data.get_pwd()), data);
 		}
 	}
 

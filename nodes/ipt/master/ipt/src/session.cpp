@@ -666,20 +666,38 @@ namespace node
 			ctx.run(cyng::generate_invoke("log.msg.info", ctx.get_name(), frame));
 		
 #ifdef SMF_IO_LOG
+		
 			std::stringstream ss;
 			ss
-				<< "ipt-sx-"
+				<< "ipt-"
 				<< boost::uuids::to_string(ctx.tag())
-				<< "-"
+				;
+			boost::filesystem::path const sub_dir(ss.str());
+			boost::filesystem::path const dir_out(boost::filesystem::temp_directory_path() / sub_dir);
+
+			if (!boost::filesystem::is_directory(dir_out)) {
+
+				//
+				//	create directory if not exist
+				//
+				boost::system::error_code ec;
+				boost::filesystem::create_directory(dir_out, ec);
+			}
+
+			ss.str("");
+			ss
+				<< "sx-"
 				<< std::setw(4)
 				<< std::setfill('0')
 				<< std::dec
 				<< ++log_counter_
 				<< ".log"
 				;
-			
-			const std::string file_name = (boost::filesystem::temp_directory_path() / ss.str()).string();
-			std::ofstream of(file_name, std::ios::out | std::ios::app);
+
+			boost::filesystem::path const file_name(ss.str());
+
+			std::string const path = (dir_out / file_name).string();
+			std::ofstream of(path, std::ios::out | std::ios::app);
 			if (of.is_open())
 			{
 				cyng::io::hex_dump hd;

@@ -9,7 +9,6 @@ set (sml_protocol_cpp
 	lib/sml/protocol/src/writer.hpp
 	lib/sml/protocol/src/writer.cpp
 	lib/sml/protocol/src/readout.cpp
-	lib/sml/protocol/src/intrinsics/obis.cpp
 	lib/sml/protocol/src/mbus_defs.cpp
 	lib/sml/protocol/src/obis_db.cpp
 	lib/sml/protocol/src/obis_io.cpp
@@ -24,7 +23,6 @@ set (sml_protocol_h
 	src/main/include/smf/sml/defs.h
 	src/main/include/smf/sml/crc16.h
 	src/main/include/smf/sml/scaler.h
-	src/main/include/smf/sml/intrinsics/obis.h
 	src/main/include/smf/mbus/defs.h
 	src/main/include/smf/sml/obis_db.h
 	src/main/include/smf/sml/obis_io.h
@@ -62,8 +60,16 @@ set (sml_parser
 	lib/sml/protocol/src/parser/srv_id_parser.hpp
 )
 
+set (sml_intrinsics
+	src/main/include/smf/sml/intrinsics/obis.h
+	lib/sml/protocol/src/intrinsics/obis.cpp
+	src/main/include/smf/sml/intrinsics/obis_factory.hpp
+	lib/sml/protocol/src/intrinsics/obis_factory.cpp
+)
+
 source_group("generator" FILES ${sml_generator})
 source_group("parser" FILES ${sml_parser})
+source_group("intrinsics" FILES ${sml_intrinsics})
 
 
 # define the main program
@@ -72,5 +78,6 @@ set (sml_protocol_lib
   ${sml_protocol_h}
   ${sml_generator}
   ${sml_parser}
+  ${sml_intrinsics}
 )
 

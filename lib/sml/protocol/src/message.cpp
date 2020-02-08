@@ -9,10 +9,12 @@
 #include <smf/sml/protocol/value.hpp>
 #include <smf/sml/crc16.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 
 #include <cyng/factory.h>
 #include <cyng/buffer_cast.h>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/factory/set_factory.h>
 
 namespace node
 {
@@ -409,6 +411,29 @@ namespace node
 				, username
 				, password
 				, cyng::tuple_factory(code.to_buffer())	//	path entry
+				, cyng::make_object());
+
+		}
+
+		cyng::tuple_t get_proc_parameter_request(cyng::object server_id
+			, std::string const& username
+			, std::string const& password
+			, obis_path path)
+		{
+			//
+			//	5 elements:
+			//
+			//	* server ID
+			//	* username
+			//	* password
+			//	* parameter tree (OBIS)
+			//	* attribute (not set = 01)
+			//
+			cyng::tuple_t tpl;
+			return cyng::tuple_factory(server_id
+				, username
+				, password
+				, tuple_from_path(path)	//	path
 				, cyng::make_object());
 
 		}

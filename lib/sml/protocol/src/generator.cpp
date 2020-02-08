@@ -7,6 +7,7 @@
 
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/protocol/serializer.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/sml/crc16.h>
 #include <smf/sml/obis_db.h>
 #include <NODE_project_info.h>
@@ -254,6 +255,30 @@ namespace node
 					, password
 					, code)
 				)
+			);
+			return trx;
+		}
+
+		std::string req_generator::get_proc_parameter(cyng::buffer_t const& server_id
+			, obis_path path
+			, std::string const& username
+			, std::string const& password)
+		{
+			++trx_;
+			auto const trx = *trx_;
+			append(message(cyng::make_object(trx)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
+
+				//
+				//	generate get process parameter request
+				//
+				, get_proc_parameter_request(cyng::make_object(server_id)
+					, username
+					, password
+					, path)
+			)
 			);
 			return trx;
 		}

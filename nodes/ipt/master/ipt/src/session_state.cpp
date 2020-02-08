@@ -1579,8 +1579,6 @@ namespace node
 
 			void state_connected_task::get_list_response(cyng::async::mux& mux, cyng::vector_t vec)
 			{
-
-				//	[]
 				mux.post(tsk_proxy_, 5, cyng::tuple_t{
 					vec.at(0),	//	trx
 					vec.at(1),	//	server ID - mostly empty

@@ -9,6 +9,7 @@
 #define NODE_LIB_SML_OBIS_PARSER_HPP
 
 #include <smf/sml/parser/obis_parser.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 #include <boost/spirit/home/support/attributes.hpp>	//	transform_attribute
 #include <boost/spirit/include/phoenix.hpp>	//	enable assignment of values like cyy::object
 

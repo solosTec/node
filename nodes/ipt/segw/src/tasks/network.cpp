@@ -30,9 +30,9 @@
 #include <cyng/buffer_cast.h>
 #include <cyng/async/task/task_builder.hpp>
 
-#ifdef SMF_IO_DEBUG
+//#ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
-#endif
+//#endif
 
 namespace node
 {
@@ -374,6 +374,13 @@ namespace node
 				CYNG_LOG_DEBUG(logger_, "answer with hey!");
 				return cyng::make_buffer({ 'h', 'e', 'y', '!' });
 			}
+
+#ifdef _DEBUG
+			std::stringstream ss;
+			cyng::io::hex_dump hd;
+			hd(ss, data.begin(), data.end());
+			CYNG_LOG_DEBUG(logger_, ss.str());
+#endif
 
 			//
 			//	parse incoming data

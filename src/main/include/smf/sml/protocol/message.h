@@ -144,6 +144,10 @@ namespace node
 			, std::string const& username
 			, std::string const& password
 			, obis code);
+		cyng::tuple_t get_proc_parameter_request(cyng::object server_id
+			, std::string const& username
+			, std::string const& password
+			, obis_path path);
 
 		/**
 		 * @param server_id
