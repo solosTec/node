@@ -8,6 +8,7 @@
 #include "storage.h"
 #include "segw.h"
 #include <smf/sml/obis_db.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/ipt/config.h>
 #include <smf/ipt/scramble_key_format.h>
 #include <smf/sml/parser/obis_parser.h>

@@ -12,6 +12,7 @@
 
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 
 #include <cyng/numeric_cast.hpp>
 

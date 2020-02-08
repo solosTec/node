@@ -8,6 +8,7 @@
 #include <smf/sml/exporter/xml_sml_exporter.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/scaler.h>
 #include <smf/mbus/defs.h>

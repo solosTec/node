@@ -11,6 +11,7 @@
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/sml/srv_id_io.h>
 
 #include <cyng/numeric_cast.hpp>

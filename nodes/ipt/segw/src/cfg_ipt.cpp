@@ -9,10 +9,8 @@
 #include "segw.h"
 #include "cache.h"
 #include <smf/sml/obis_db.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/ipt/scramble_key_format.h>
-//#include <smf/sml/srv_id_io.h>
-//
-//#include <cyng/table/meta.hpp>
 
 #include <boost/core/ignore_unused.hpp>
 

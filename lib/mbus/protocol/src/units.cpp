@@ -98,7 +98,8 @@ namespace node
 
 		}
 
-		std::u8string get_unit_name_u8(std::uint8_t u)
+#ifdef __CPP_SUPPORT_P0482R6
+        std::u8string get_unit_name_u8(std::uint8_t u)
 		{
 			switch (u)
 			{
@@ -183,6 +184,7 @@ namespace node
 			//	not-a-unit
 			return u8"not-a-unit";
 		}
+#endif
 		
 		const char* get_unit_name(units u) {
 			return get_unit_name(static_cast<std::uint8_t>(u));

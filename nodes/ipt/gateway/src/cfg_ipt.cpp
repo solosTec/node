@@ -9,6 +9,7 @@
 #include <smf/mbus/defs.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/sml/protocol/message.h>
 
 #include <cyng/tuple_cast.hpp>

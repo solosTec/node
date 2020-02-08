@@ -10,6 +10,7 @@
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/shared/db_cfg.h>
 
 #include <cyng/io/serializer.h>

@@ -25,4 +25,11 @@ namespace node
 	}	//	sml
 }	//	node
 
+//
+//	macro to create OBIS codes without the 0x prefix
+//
+
+#define OBIS_CODE(p1, p2, p3, p4, p5, p6)	\
+	node::sml::make_obis (0x##p1, 0x##p2, 0x##p3, 0x##p4, 0x##p5, 0x##p6)
+
 #endif

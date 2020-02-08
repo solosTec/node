@@ -104,8 +104,11 @@ namespace node
 		 */
 		const char* get_unit_name(std::uint8_t u);
 		const char* get_unit_name(units);
+        
+#ifdef __CPP_SUPPORT_P0482R6
 		std::u8string get_unit_name_u8(std::uint8_t u);
-
+#endif
+        
 	}
 }
 

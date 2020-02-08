@@ -15,6 +15,7 @@
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/sml/status.h>
 #include <smf/sml/parser/srv_id_parser.h>
 #include <smf/mbus/defs.h>
