@@ -66,7 +66,7 @@ namespace node
 			vm_.async_run({ cyng::generate_invoke("req.register.push.target", name_, packet_size_, window_size_)
 				, cyng::generate_invoke("bus.store.relation", cyng::invoke("ipt.seq.push"), base_.get_id())
 				, cyng::generate_invoke("stream.flush")
-				, cyng::generate_invoke("log.msg.info", "send req.register.push.target", cyng::invoke("ipt.seq.push"), name_) });
+				, cyng::generate_invoke("log.msg.info", "send req.register.push.target(seq: ", cyng::invoke("ipt.seq.push"), ", target: ", name_, ")") });
 
 			//
 			//	start monitor
@@ -97,16 +97,15 @@ namespace node
 			, 0
 			, name_);
 
-		//
-		//	remove from task db
-		//
-		vm_.async_run(cyng::generate_invoke("bus.remove.relation", base_.get_id()));
-
 		return cyng::continuation::TASK_STOP;
 	}
 
 	void register_target::stop(bool shutdown)
 	{
+		//
+		//	remove from task db
+		//
+		vm_.async_run(cyng::generate_invoke("bus.remove.relation", base_.get_id()));
 
 		//
 		//	terminate task

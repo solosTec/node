@@ -156,7 +156,7 @@ namespace node
 			void reconfigure(cyng::context& ctx);
 
 			void reconfigure_impl();
-			void insert_seq_open_channel_rel(cyng::context& ctx);
+			//void insert_seq_open_channel_rel(cyng::context& ctx);
 
 			/**
 			 * load and start all configured push ops
@@ -198,7 +198,7 @@ namespace node
 			/**
 			 * maintain relation between sequence and open push channel request
 			 */
-			std::map<sequence_type, std::pair<std::size_t, std::string>>	seq_open_channel_map_;
+			//std::map<sequence_type, std::pair<std::size_t, std::string>>	seq_open_channel_map_;
 
 			/**
 			 * GPIO to signal IP-T online state

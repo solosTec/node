@@ -572,8 +572,8 @@ namespace node
 			//
 			//	generate public open request
 			//
-			node::sml::req_generator sml_gen;
-			auto trx = sml_gen.public_open(get_mac(), server_id, user, pwd);
+			node::sml::req_generator sml_gen(user, pwd);
+			auto trx = sml_gen.public_open(get_mac(), server_id);
 			boost::ignore_unused(trx);
 
 			auto const data = input_queue_.front();
@@ -724,8 +724,8 @@ namespace node
 			//	]
 
 			push_trx(sml_gen.get_profile_list(data.get_srv()
-				, data.get_user()
-				, data.get_pwd()
+				//, data.get_user()
+				//, data.get_pwd()
 				, std::chrono::system_clock::now() - std::chrono::hours(hours)
 				, std::chrono::system_clock::now()
 				, data.get_root()), data);	//	81 81 C7 89 E1 FF
@@ -762,7 +762,12 @@ namespace node
 			auto const meter = cyng::value_cast<std::string>(params.get("meter"), "");
 			auto const r = sml::parse_srv_id(meter);
 			if (r.second) {
-				push_trx(sml_gen.get_proc_parameter(r.first, data.get_root(), data.get_user(), data.get_pwd()), data);
+				push_trx(sml_gen.get_proc_parameter(r.first
+					, data.get_root()
+					//, data.get_user()
+					//, data.get_pwd()
+					)
+					, data);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
@@ -776,7 +781,11 @@ namespace node
 			}
 		}
 		else {
-			push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_root(), data.get_user(), data.get_pwd()), data);
+			push_trx(sml_gen.get_proc_parameter(data.get_srv()
+				, data.get_root()
+				//, data.get_user()
+				//, data.get_pwd()
+				), data);
 		}
 	}
 
@@ -830,7 +839,7 @@ namespace node
 			//
 			//	reboot the gateway
 			//
-			sml_gen.set_proc_parameter_restart(data.get_srv(), data.get_user(), data.get_pwd());
+			sml_gen.set_proc_parameter_restart(data.get_srv());
 		}
 		else if (sml::OBIS_ACTIVATE_DEVICE == data.get_root()) {
 
@@ -976,9 +985,7 @@ namespace node
 			auto const r = sml::parse_srv_id(meter);
 			if (r.second) {
 				push_trx(sml_gen.get_list_last_data_record(get_mac().to_buffer()
-					, r.first
-					, data.get_user()
-					, data.get_pwd()), data);
+					, r.first), data);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
@@ -1013,32 +1020,24 @@ namespace node
 
 					auto address = cyng::value_cast<std::string>(param.second, "0.0.0.0");
 					push_trx(sml_gen.set_proc_parameter_ipt_host(data.get_srv()
-						, data.get_user()
-						, data.get_pwd()
 						, idx
 						, address), data);
 				}
 				else if (boost::algorithm::equals(param.first, "port")) {
 					auto port = cyng::numeric_cast<std::uint16_t>(param.second, 26862u);
 					push_trx(sml_gen.set_proc_parameter_ipt_port_local(data.get_srv()
-						, data.get_user()
-						, data.get_pwd()
 						, idx
 						, port), data);
 				}
 				else if (boost::algorithm::equals(param.first, "user")) {
 					auto str = cyng::value_cast<std::string>(param.second, "");
 					push_trx(sml_gen.set_proc_parameter_ipt_user(data.get_srv()
-						, data.get_user()
-						, data.get_pwd()
 						, idx
 						, str), data);
 				}
 				else if (boost::algorithm::equals(param.first, "pwd")) {
 					auto str = cyng::value_cast<std::string>(param.second, "");
 					push_trx(sml_gen.set_proc_parameter_ipt_pwd(data.get_srv()
-						, data.get_user()
-						, data.get_pwd()
 						, idx
 						, str), data);
 				}
@@ -1074,8 +1073,6 @@ namespace node
 				const auto b = cyng::value_cast(param.second, false);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_INSTALL_MODE }
-					, data.get_user()
-					, data.get_pwd()
 					, b), data);
 			}
 			else if (boost::algorithm::equals(param.first, "protocol")) {
@@ -1086,8 +1083,6 @@ namespace node
 				auto const val = cyng::value_cast<std::string>(param.second, "S");
 
 				push_trx(sml_gen.set_proc_parameter_wmbus_protocol(data.get_srv()
-					, data.get_user()
-					, data.get_pwd()
 					//
 					//	function to convert the character into a numeric value
 					//
@@ -1110,8 +1105,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint64_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_REBOOT }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "sMode")) {
@@ -1119,8 +1112,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_MODE_S }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "tMode")) {
@@ -1128,8 +1119,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_MODE_T }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 		}
@@ -1173,8 +1162,6 @@ namespace node
 				const auto b = cyng::value_cast(param.second, false);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_ACTIVE }
-					, data.get_user()
-					, data.get_pwd()
 					, b), data);
 			}
 			else if (boost::algorithm::equals(param.first, "autoActivation")) {
@@ -1182,8 +1169,6 @@ namespace node
 				const auto b = cyng::value_cast(param.second, false);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_AUTO_ACTIVATION }
-					, data.get_user()
-					, data.get_pwd()
 					, b), data);
 			}
 			else if (boost::algorithm::equals(param.first, "loopTime")) {
@@ -1191,8 +1176,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 60u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_LOOP_TIME }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "maxDataRate")) {
@@ -1200,8 +1183,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint64_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_DATA_RATE }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "minTimeout")) {
@@ -1209,8 +1190,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 200u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MIN_TIMEOUT }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "maxTimeout")) {
@@ -1218,8 +1197,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 5000u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_TIMEOUT }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "maxVar")) {
@@ -1227,8 +1204,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 9u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_VARIATION }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "protocolMode")) {
@@ -1236,8 +1211,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 1u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_PROTOCOL_MODE }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "retries")) {
@@ -1245,8 +1218,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 3u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_RETRIES }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "rs485")) {
@@ -1257,8 +1228,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 900u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_TIME_GRID }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "timeSync")) {
@@ -1266,8 +1235,6 @@ namespace node
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 14400u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
 					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_TIME_SYNC }
-					, data.get_user()
-					, data.get_pwd()
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "devices")) {
@@ -1312,8 +1279,6 @@ namespace node
 		//
 		push_trx(sml_gen.set_proc_parameter(meter
 			, { sml::OBIS_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_NAME }
-			, data.get_user()
-			, data.get_pwd()
 			, user), data);
 
 		//
@@ -1321,8 +1286,6 @@ namespace node
 		//
 		push_trx(sml_gen.set_proc_parameter(meter
 			, { sml::OBIS_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_USER_PWD }
-			, data.get_user()
-			, data.get_pwd()
 			, pwd), data);
 
 		//
@@ -1334,8 +1297,6 @@ namespace node
 
 			push_trx(sml_gen.set_proc_parameter(meter
 				, { sml::OBIS_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_PUBLIC_KEY }
-				, data.get_user()
-				, data.get_pwd()
 				, r_pub_key.first), data);
 		}
 
@@ -1348,8 +1309,6 @@ namespace node
 
 			push_trx(sml_gen.set_proc_parameter(meter
 				, { sml::OBIS_ROOT_SENSOR_PARAMS, sml::OBIS_DATA_AES_KEY }
-				, data.get_user()
-				, data.get_pwd()
 				, r_aes_key.first), data);
 		}
 	}
@@ -1361,8 +1320,6 @@ namespace node
 	{
 		push_trx(sml_gen.set_proc_parameter(data.get_srv()
 			, { sml::OBIS_ACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFB, nr), sml::OBIS_SERVER_ID }
-			, data.get_user()
-			, data.get_pwd()
 			, meter), data);
 	}
 
@@ -1373,8 +1330,6 @@ namespace node
 	{
 		push_trx(sml_gen.set_proc_parameter(data.get_srv()
 			, { sml::OBIS_DEACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, nr), sml::OBIS_SERVER_ID }
-			, data.get_user()
-			, data.get_pwd()
 			, meter), data);
 	}
 
@@ -1385,8 +1340,6 @@ namespace node
 	{
 		push_trx(sml_gen.set_proc_parameter(data.get_srv()
 			, { sml::OBIS_DELETE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFD, nr), sml::OBIS_SERVER_ID }
-			, data.get_user()
-			, data.get_pwd()
 			, meter), data);
 	}
 

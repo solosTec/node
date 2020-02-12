@@ -70,7 +70,7 @@ namespace node
 		//
 		//	statistical data
 		//
-		bus_->vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+		bus_->vm_.async_run(cyng::generate_invoke("log.msg.debug", cyng::invoke("lib.size"), " callbacks registered"));
 	}
 
 	void server_stub::run(std::string const& address, std::string const& service)

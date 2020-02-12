@@ -87,7 +87,7 @@ namespace node
 			vm.register_function("res.login.public", 3, std::bind(&serializer::res_login_public, this, std::placeholders::_1));
 			vm.register_function("res.login.scrambled", 3, std::bind(&serializer::res_login_scrambled, this, std::placeholders::_1));
 
-			vm.register_function("req.open.push.channel", 1, std::bind(&serializer::req_open_push_channel, this, std::placeholders::_1));
+			vm.register_function("req.open.push.channel", 6, std::bind(&serializer::req_open_push_channel, this, std::placeholders::_1));
 			vm.register_function("res.open.push.channel", 8, std::bind(&serializer::res_open_push_channel, this, std::placeholders::_1));
 
 			vm.register_function("req.close.push.channel", 1, std::bind(&serializer::req_close_push_channel, this, std::placeholders::_1));
@@ -209,7 +209,7 @@ namespace node
 			write(data);
 
 #ifdef _DEBUG
-			ctx.queue(cyng::generate_invoke("log.msg.info", data.size(), "bytes transferred"));
+			ctx.queue(cyng::generate_invoke("log.msg.trace", data.size(), cyng::invoke("log.fmt.byte"), " transferred"));
 #endif
 		}
 
@@ -307,16 +307,22 @@ namespace node
 			>(frame);
 
 			last_seq_ = sgen_();
-
+			std::size_t const length = std::get<0>(tpl).size() 
+				+ std::get<1>(tpl).size() 
+				+ std::get<2>(tpl).size() 
+				+ std::get<3>(tpl).size() 
+				+ std::get<4>(tpl).size() 
+				+ sizeof(std::get<5>(tpl))
+				+ 5;	//	one \0 for each string
 			write_header(code::TP_REQ_OPEN_PUSH_CHANNEL
 				, last_seq_
-				, std::get<0>(tpl).size() + std::get<1>(tpl).size() + std::get<2>(tpl).size() + std::get<3>(tpl).size() + std::get<4>(tpl).size() + sizeof(std::get<5>(tpl) + 5));
+				, length);
 			write(std::get<0>(tpl));
 			write(std::get<1>(tpl));
 			write(std::get<2>(tpl));
 			write(std::get<3>(tpl));
 			write(std::get<4>(tpl));
-			write_numeric(std::get<5>(tpl));
+			write_numeric<std::uint16_t>(std::get<5>(tpl));
 		}
 
 		void serializer::res_open_push_channel(cyng::context& ctx)
@@ -333,17 +339,15 @@ namespace node
 				std::uint32_t		//	[7] count
 			>(frame);
 
-			//static_assert(17 == sizeof(res)
-			//		+ sizeof(channel)
-			//		+ sizeof(source)
-			//		+ sizeof(packet_size)
-			//		+ sizeof(window_size)
-			//		+ sizeof(status)
-			//		+ sizeof(count), "res_open_push_channel(length assumption invalid)");
-
-			//static_assert(18 == sizeof(tpl), "res_open_push_channel(length assumption invalid)");
-			//	== 32
-			//std::cout << sizeof(tpl) << std::endl;
+#ifdef _DEBUG
+			static_assert(17 == sizeof(get<1>(tpl))
+					+ sizeof(get<2>(tpl))
+					+ sizeof(get<3>(tpl))
+					+ sizeof(get<4>(tpl))
+					+ sizeof(get<5>(tpl))
+					+ sizeof(get<6>(tpl))
+					+ sizeof(get<7>(tpl)), "res_open_push_channel(length assumption invalid)");
+#endif
 
 			write_header(code::TP_RES_OPEN_PUSH_CHANNEL, std::get<0>(tpl), 17);
 			write_numeric(std::get<1>(tpl));

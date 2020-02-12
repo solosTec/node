@@ -21,11 +21,18 @@ namespace node
 	 */
 	class cache;
 	class storage;
+	namespace ipt {
+		class bus;
+	}
+	namespace sml {
+		class res_generator;
+		class trx;
+	}
 	class push
 	{
 	public:
 		//	[0] write entry
-		using msg_0 = std::tuple<>;
+		using msg_0 = std::tuple<bool, std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t>;
 
 
 		using signatures_t = std::tuple<msg_0>;
@@ -41,6 +48,7 @@ namespace node
 			, std::chrono::seconds interval
 			, std::chrono::seconds delay
 			, std::string target
+			, ipt::bus*
 			, std::size_t tsk);
 
 		cyng::continuation run();
@@ -50,21 +58,28 @@ namespace node
 		 * @brief slot [0] - write an entry
 		 *
 		 */
-		cyng::continuation process();
+		cyng::continuation process(bool success
+			, std::uint32_t channel
+			, std::uint32_t source
+			, std::uint16_t status
+			, std::uint32_t count);
 
 	private:
-		bool send_push_data();
+		bool send_push_data(sml::res_generator&
+			, sml::trx&
+			, std::uint32_t channel
+			, std::uint32_t source);
 		std::vector<sml::obis> collect_obis_codes(cyng::store::table const* tbl_dm);
 
-		void collect_profile_8181C78610FF(cyng::store::table* tbl);
-		void collect_profile_8181C78611FF(cyng::store::table* tbl);
-		void collect_profile_8181C78612FF();
-		void collect_profile_8181C78613FF(cyng::store::table* tbl);
-		void collect_profile_8181C78614FF(cyng::store::table* tbl);
-		void collect_profile_8181C78615FF(cyng::store::table* tbl);
-		void collect_profile_8181C78616FF(cyng::store::table* tbl);
-		void collect_profile_8181C78617FF(cyng::store::table* tbl);
-		void collect_profile_8181C78618FF(cyng::store::table* tbl);
+		void collect_profile_8181C78610FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
+		void collect_profile_8181C78611FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
+		void collect_profile_8181C78612FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
+		void collect_profile_8181C78613FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
+		void collect_profile_8181C78614FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
+		void collect_profile_8181C78615FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
+		void collect_profile_8181C78616FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
+		void collect_profile_8181C78617FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
+		void collect_profile_8181C78618FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
 
 	private:
 		cyng::async::base_task& base_;
@@ -98,6 +113,8 @@ namespace node
 		std::chrono::seconds interval_;
 		std::chrono::seconds delay_;
 		std::string target_;
+
+		ipt::bus* ipt_bus_;
 	};
 
 	std::chrono::system_clock::time_point get_ts(sml::obis profile, std::uint64_t tsidx);

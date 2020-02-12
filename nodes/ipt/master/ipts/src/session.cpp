@@ -18,6 +18,7 @@
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/scramble_key_io.hpp>
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_bytes.hpp>
 #include <cyng/value_cast.hpp>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>
@@ -281,7 +282,7 @@ namespace node
 			//
 			//	statistical data
 			//
-			vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+			vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), " callbacks registered"));
 
 			//
 			//	initialize state engine
@@ -303,7 +304,7 @@ namespace node
 		cyng::buffer_t session::parse(read_buffer_const_iterator begin, read_buffer_const_iterator end)
 		{
 			const auto bytes_transferred = std::distance(begin, end);
-			vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt connection received", bytes_transferred, "bytes"));
+			vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt connection received ", bytes_transferred, cyng::invoke("log.fmt.byte")));
 
 			//
 			//	size == parsed bytes
@@ -517,7 +518,7 @@ namespace node
 
 			if (bus_->is_online())
 			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.open.push.channel", frame));
+				ctx.run(cyng::generate_invoke("log.msg.info", ctx.get_name(), " - ", frame));
 
 				cyng::param_map_t bag;
 				bag["tp-layer"] = cyng::make_object("ipt");
@@ -558,7 +559,7 @@ namespace node
 			//CYNG_LOG_INFO(logger_, "ipt.res.open.push.channel " << cyng::io::to_str(frame));
 			if (bus_->is_online())
 			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.res.open.push.channel", frame));
+				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.res.open.push.channel ", frame));
 
 				cyng::param_map_t bag, options;
 				bag["tp-layer"] = cyng::make_object("ipt");

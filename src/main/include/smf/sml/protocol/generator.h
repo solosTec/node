@@ -129,12 +129,11 @@ namespace node
 		class req_generator : public generator
 		{
 		public:
-			req_generator();
+			req_generator(std::string const& name
+				, std::string const& pwd);
 
 			std::string public_open(cyng::mac48 client_id
-				, cyng::buffer_t const& server_id
-				, std::string const& name
-				, std::string const& pwd);
+				, cyng::buffer_t const& server_id);
 
 			std::string public_close();
 
@@ -146,8 +145,6 @@ namespace node
 			template< typename T >
 			std::string set_proc_parameter(cyng::buffer_t const& server_id
 				, obis_path tree_path
-				, std::string const& username
-				, std::string const& password
 				, T&& val)
 			{
 				++trx_;
@@ -161,8 +158,8 @@ namespace node
 					//	generate process parameter request
 					//
 					, set_proc_parameter_request(cyng::make_object(server_id)
-						, username
-						, password
+						, name_
+						, pwd_
 						, tree_path
 						, parameter_tree(tree_path.back(), make_value(val)))
 					)
@@ -174,9 +171,7 @@ namespace node
 			/**
 			 * Restart system - 81 81 C7 83 82 01
 			 */
-			std::size_t set_proc_parameter_restart(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+			std::size_t set_proc_parameter_restart(cyng::buffer_t const& server_id);
 
 			/**
 			 * IP-T Host - 81 49 0D 07 00 FF
@@ -184,8 +179,6 @@ namespace node
 			 * @return transaction ID
 			 */
 			std::string set_proc_parameter_ipt_host(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password
 				, std::uint8_t idx
 				, std::string const& address);
 
@@ -195,8 +188,6 @@ namespace node
 			 * @return transaction ID
 			 */
 			std::string set_proc_parameter_ipt_port_local(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password
 				, std::uint8_t idx
 				, std::uint16_t);
 
@@ -206,8 +197,6 @@ namespace node
 			 * @return transaction ID
 			 */
 			std::string set_proc_parameter_ipt_port_remote(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password
 				, std::uint8_t idx
 				, std::uint16_t);
 
@@ -217,8 +206,6 @@ namespace node
 			 * @return transaction ID
 			 */
 			std::string set_proc_parameter_ipt_user(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password
 				, std::uint8_t idx
 				, std::string const&);
 
@@ -228,8 +215,6 @@ namespace node
 			 * @return transaction ID
 			 */
 			std::string set_proc_parameter_ipt_pwd(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password
 				, std::uint8_t idx
 				, std::string const&);
 
@@ -245,8 +230,6 @@ namespace node
 			 * @return transaction ID
 			 */
 			std::string set_proc_parameter_wmbus_protocol(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password
 				, std::uint8_t);
 
 			/**
@@ -254,21 +237,15 @@ namespace node
 			 * @return transaction ID
 			 */
 			std::string get_proc_parameter(cyng::buffer_t const& server_id
-				, obis
-				, std::string const& username
-				, std::string const& password);
+				, obis);
 			std::string get_proc_parameter(cyng::buffer_t const& server_id
-				, obis_path
-				, std::string const& username
-				, std::string const& password);
+				, obis_path);
 
 			/**
 			 * List query - BODY_GET_LIST_REQUEST (0x700)
 			 */
 			std::string get_list(cyng::buffer_t const& client_id
 				, cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password
 				, obis);
 
 			/**
@@ -276,9 +253,7 @@ namespace node
 			 *  SML_GetList_Req
 			 */
 			std::string get_list_last_data_record(cyng::buffer_t const& client_id
-				, cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password);
+				, cyng::buffer_t const& server_id);
 
 			/**
 			 * @param serverId Octet String OPTIONAL,
@@ -293,14 +268,14 @@ namespace node
 			 *
 			 */
 			std::string get_profile_list(cyng::buffer_t const& server_id
-				, std::string const& username
-				, std::string const& password
 				, std::chrono::system_clock::time_point begin_time
 				, std::chrono::system_clock::time_point end_time
 				, obis path);
 
 		private:
 			trx	trx_;
+			std::string const name_;
+			std::string const pwd_;
 		};
 
 		/**
@@ -342,13 +317,22 @@ namespace node
 			 *
 			 * @return message tuple
 			 */
-			cyng::tuple_t empty_get_profile_list_response(std::string trx
+			cyng::tuple_t empty_get_profile_list(std::string trx
 				, cyng::buffer_t client_id
 				, obis path
 				, std::chrono::system_clock::time_point act_time
 				, std::uint32_t reg_period
 				, std::chrono::system_clock::time_point val_time
 				, std::uint64_t status);
+
+			std::size_t get_profile_list(std::string trx
+				, cyng::buffer_t client_id
+				, obis path
+				, std::chrono::system_clock::time_point act_time
+				, std::uint32_t reg_period
+				, std::chrono::system_clock::time_point val_time
+				, std::uint64_t status
+				, cyng::tuple_t&& period_list);
 
 			/**
 			 * OBIS_CODE_ROOT_DEVICE_IDENT - 81 81 C7 82 01 FF

@@ -82,15 +82,16 @@ namespace node
 		}
 
 
-		req_generator::req_generator()
-			: generator()
+		req_generator::req_generator(std::string const& name
+			, std::string const& pwd)
+		: generator()
 			, trx_()
+			, name_(name)
+			, pwd_(pwd)
 		{}
 
 		std::string req_generator::public_open(cyng::mac48 client_id
-			, cyng::buffer_t const& server_id
-			, std::string const& name
-			, std::string const& pwd)
+			, cyng::buffer_t const& server_id)
 		{
 			BOOST_ASSERT_MSG(msg_.empty(), "pending SML data");
 			auto const trx = *trx_;
@@ -106,8 +107,8 @@ namespace node
 					, cyng::make_object(client_id.to_buffer())	// clientId
 					, cyng::make_object(gen_file_id())	//	req file id
 					, cyng::make_object(server_id)	//	server id
-					, cyng::make_object(name)	//	name
-					, cyng::make_object(pwd)	//	pwd
+					, cyng::make_object(name_)	//	name
+					, cyng::make_object(pwd_)	//	pwd
 					, cyng::make_object()	// sml-Version 
 				)
 			));
@@ -134,9 +135,7 @@ namespace node
 			return trx;
 		}
 
-		std::size_t req_generator::set_proc_parameter_restart(cyng::buffer_t const& server_id
-			, std::string const& username
-			, std::string const& password)
+		std::size_t req_generator::set_proc_parameter_restart(cyng::buffer_t const& server_id)
 		{
 			++trx_;
 			return append(message(cyng::make_object(*trx_)
@@ -148,8 +147,8 @@ namespace node
 				//	generate reboot request
 				//
 				, set_proc_parameter_request(cyng::make_object(server_id)
-					, username
-					, password
+					, name_
+					, pwd_
 					, OBIS_REBOOT
 					, empty_tree(OBIS_REBOOT))
 				)
@@ -157,88 +156,62 @@ namespace node
 		}
 
 		std::string req_generator::set_proc_parameter_ipt_host(cyng::buffer_t const& server_id
-			, std::string const& username
-			, std::string const& password
 			, std::uint8_t idx
 			, std::string const& address)
 		{
 			return set_proc_parameter(server_id
 				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) }
-				, username
-				, password
 				, address);
 		}
 
 		std::string req_generator::set_proc_parameter_ipt_port_local(cyng::buffer_t const& server_id
-			, std::string const& username
-			, std::string const& password
 			, std::uint8_t idx
 			, std::uint16_t port)
 		{
 			return set_proc_parameter(server_id
 				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx) }
-				, username
-				, password
 				, port);
 		}
 
 		std::string req_generator::set_proc_parameter_ipt_port_remote(cyng::buffer_t const& server_id
-			, std::string const& username
-			, std::string const& password
 			, std::uint8_t idx
 			, std::uint16_t port)
 		{
 			return set_proc_parameter(server_id
 				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx) }
-				, username
-				, password
 				, port);
 		}
 
 		std::string req_generator::set_proc_parameter_ipt_user(cyng::buffer_t const& server_id
-			, std::string const& username
-			, std::string const& password
 			, std::uint8_t idx
 			, std::string const& user)
 		{
 			return set_proc_parameter(server_id
 				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx) }
-				, username
-				, password
 				, user);
 		}
 
 		std::string req_generator::set_proc_parameter_ipt_pwd(cyng::buffer_t const& server_id
-			, std::string const& username
-			, std::string const& password
 			, std::uint8_t idx
 			, std::string const& pwd)
 		{
 			return set_proc_parameter(server_id
 				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx) }
-				, username
-				, password
 				, pwd);
 		}
 
 		std::string req_generator::set_proc_parameter_wmbus_protocol(cyng::buffer_t const& server_id
-			, std::string const& username
-			, std::string const& password
 			, std::uint8_t val)
 		{
 			BOOST_ASSERT_MSG(val < 4, "wireless M-Bus protocol type out of range");
 
 			return set_proc_parameter(server_id
 				, obis_path{ OBIS_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }
-				, username
-				, password
 				, val);
 		}
 
 		std::string req_generator::get_proc_parameter(cyng::buffer_t const& server_id
-			, obis code
-			, std::string const& username
-			, std::string const& password)
+			, obis code)
 		{
 			++trx_;
 			auto const trx = *trx_;
@@ -251,8 +224,8 @@ namespace node
 				//	generate get process parameter request
 				//
 				, get_proc_parameter_request(cyng::make_object(server_id)
-					, username
-					, password
+					, name_
+					, pwd_
 					, code)
 				)
 			);
@@ -260,9 +233,7 @@ namespace node
 		}
 
 		std::string req_generator::get_proc_parameter(cyng::buffer_t const& server_id
-			, obis_path path
-			, std::string const& username
-			, std::string const& password)
+			, obis_path path)
 		{
 			++trx_;
 			auto const trx = *trx_;
@@ -275,18 +246,16 @@ namespace node
 				//	generate get process parameter request
 				//
 				, get_proc_parameter_request(cyng::make_object(server_id)
-					, username
-					, password
+					, name_
+					, pwd_
 					, path)
-			)
+				)
 			);
 			return trx;
 		}
 
 		std::string req_generator::get_list(cyng::buffer_t const& client_id
 			, cyng::buffer_t const& server_id
-			, std::string const& username
-			, std::string const& password
 			, obis code)
 		{
 			++trx_;
@@ -301,8 +270,8 @@ namespace node
 				//
 				, get_list_request(cyng::make_object(client_id)
 					, cyng::make_object(server_id)
-					, username
-					, password
+					, name_
+					, pwd_
 					, code)
 				)
 			);
@@ -310,16 +279,12 @@ namespace node
 		}
 
 		std::string req_generator::get_list_last_data_record(cyng::buffer_t const& client_id
-			, cyng::buffer_t const& server_id
-			, std::string const& username
-			, std::string const& password)
+			, cyng::buffer_t const& server_id)
 		{
-			return get_list(client_id, server_id, username, password, OBIS_CODE(99, 00, 00, 00, 00, 03));
+			return get_list(client_id, server_id, OBIS_CODE(99, 00, 00, 00, 00, 03));
 		}
 
 		std::string req_generator::get_profile_list(cyng::buffer_t const& server_id
-			, std::string const& username
-			, std::string const& password
 			, std::chrono::system_clock::time_point begin_time
 			, std::chrono::system_clock::time_point end_time
 			, obis code)
@@ -335,8 +300,8 @@ namespace node
 				//	generate get profile list request
 				//
 				, cyng::tuple_factory(server_id
-					, username
-					, password
+					, name_
+					, pwd_
 					, cyng::make_object()	// withRawdata 
 					, begin_time
 					, end_time
@@ -346,7 +311,6 @@ namespace node
 				)
 			));
 			return trx;
-
 		}
 
 
@@ -416,7 +380,7 @@ namespace node
 					, child_list_tree(root, {})));
 		}
 
-		cyng::tuple_t res_generator::empty_get_profile_list_response(std::string trx
+		cyng::tuple_t res_generator::empty_get_profile_list(std::string trx
 			, cyng::buffer_t client_id
 			, obis path
 			, std::chrono::system_clock::time_point act_time
@@ -439,6 +403,32 @@ namespace node
 					, val_time
 					, status
 					, cyng::tuple_t{}));
+		}
+
+		std::size_t res_generator::get_profile_list(std::string trx
+			, cyng::buffer_t client_id
+			, obis path
+			, std::chrono::system_clock::time_point act_time
+			, std::uint32_t reg_period
+			, std::chrono::system_clock::time_point val_time
+			, std::uint64_t status
+			, cyng::tuple_t&& period_list)
+		{
+			return append(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, BODY_GET_PROFILE_LIST_RESPONSE	//	0x0401
+
+				//
+				//	generate get process parameter response
+				//
+				, get_profile_list_response(client_id
+					, act_time
+					, reg_period
+					, path	//	path entry
+					, val_time
+					, status
+					, std::move(period_list))));
 		}
 
 		std::size_t res_generator::get_proc_parameter_device_id(std::string trx

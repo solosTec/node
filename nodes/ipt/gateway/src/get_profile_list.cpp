@@ -9,6 +9,7 @@
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/shared/db_cfg.h>
 
 #include <cyng/io/serializer.h>
@@ -144,7 +145,7 @@ namespace node
 			auto val = rndi();
 
 			for (auto pos = 0; pos < 100; ++pos) {
-				auto msg = sml_gen_.empty_get_profile_list_response(trx
+				auto msg = sml_gen_.empty_get_profile_list(trx
 					, client_id
 					, OBIS_PROFILE_15_MINUTE
 					, std::chrono::system_clock::now()	// act_time

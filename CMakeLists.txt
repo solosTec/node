@@ -712,7 +712,7 @@ target_link_libraries(ipts ${ipts_link_libs})
 include (nodes/ipt/store/prg.cmake)
 add_executable(store ${node_ipt_store})
 # libraries to link
-set(store_link_libs smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_iec smf_protocol_mbus crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
+set(store_link_libs smf_info smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_iec smf_protocol_mbus crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
 if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 	list(APPEND store_link_libs "${Boost_LIBRARIES}")
     if (UNIX)

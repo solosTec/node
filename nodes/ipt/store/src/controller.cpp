@@ -170,7 +170,7 @@ namespace node
 				}))
 				, cyng::param_factory("targets", cyng::vector_factory({ 
 					cyng::param_factory("data.sink.sml", "SML"),
-					cyng::param_factory("data.sink.iec", "IEC") }))	//	list of targets and there data type
+					cyng::param_factory("data.sink.iec", "IEC") }))	//	list of targets and their data type
 				)
 			});
 	}

@@ -185,7 +185,14 @@ namespace node
 				//
 				//	write XML file
 				//
-				pos->second.write(filename);
+				if (!pos->second.write(filename)) {
+					CYNG_LOG_WARNING(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< " XML file already exist "
+						<< filename);
+				}
 			}
 			catch (std::exception const& ex) {
 

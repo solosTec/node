@@ -193,7 +193,8 @@ namespace node
 			//
 			//	clientId (MAC)
 			//	Typically 7 bytes to identify gateway/MUC
-			read_client_id(*pos++);
+			auto const client_id = read_client_id(*pos++);
+			boost::ignore_unused(client_id);
 
 			//
 			//	reqFileId
@@ -203,17 +204,20 @@ namespace node
 			//
 			//	serverId
 			//
-			read_server_id(*pos++);
+			auto const srv_id = read_server_id(*pos++);
+			boost::ignore_unused(srv_id);
 
 			//
 			//	username
 			//
-			read_string("userName", *pos++);
+			auto const user = read_string("userName", *pos++);
+			boost::ignore_unused(user);
 
 			//
 			//	password
 			//
-			read_string("password", *pos++);
+			auto const pwd = read_string("password", *pos++);
+			boost::ignore_unused(pwd);
 
 			//
 			//	sml-Version: default = 1
@@ -239,17 +243,20 @@ namespace node
 			//
 			//	clientId (MAC)
 			//	Typically 7 bytes to identify gateway/MUC
-			read_client_id(*pos++);
+			auto const client_id = read_client_id(*pos++);
+			boost::ignore_unused(client_id);
 
 			//
 			//	reqFileId
 			//
-			read_string("reqFileId", *pos++);
+			auto const file_id = read_string("reqFileId", *pos++);
+			boost::ignore_unused(file_id);
 
 			//
 			//	serverId
 			//
-			read_server_id(*pos++);
+			auto const srv_id = read_server_id(*pos++);
+			boost::ignore_unused(srv_id);
 
 			//
 			//	refTime
@@ -270,7 +277,8 @@ namespace node
 			//
 			//	serverId
 			//
-			read_server_id(*pos++);
+			auto const srv_id = read_server_id(*pos++);
+			boost::ignore_unused(srv_id);
 
 			//
 			//	actTime
@@ -335,7 +343,8 @@ namespace node
 			//
 			//	serverId
 			//
-			read_server_id(*pos++);
+			auto const srv_id = read_server_id(*pos++);
+			boost::ignore_unused(srv_id);
 
 			//
 			//	parameterTreePath (OBIS)
@@ -360,7 +369,8 @@ namespace node
 			//
 			//	serverId
 			//
-			read_server_id(*pos++);
+			auto const srv_id = read_server_id(*pos++);
+			boost::ignore_unused(srv_id);
 
 			//
 			//	attentionNo (OBIS)
@@ -454,17 +464,17 @@ namespace node
 			//
 			//	unit (see sml_unit_enum)
 			//
-			const auto unit = read_unit("SMLUnit", *pos++);
+			auto const unit = read_unit("SMLUnit", *pos++);
 
 			//
 			//	scaler
 			//
-			const auto scaler = read_scaler(*pos++);
+			auto const scaler = read_scaler(*pos++);
 
 			//
 			//	value
 			//
-			const auto type_tag = read_value(code, scaler, unit, *pos++);
+			auto const type_tag = read_value(code, scaler, unit, *pos++);
 
 			//
 			//	valueSignature

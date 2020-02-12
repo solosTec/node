@@ -84,7 +84,7 @@ namespace node
 		//
 		//	statistics
 		//
-		vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+		vm_.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), " callbacks registered"));
 
 		//
 		//	Initial message to create a new line.

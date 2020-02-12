@@ -40,7 +40,7 @@ namespace node
 
 			vm.register_function("ws.read", 2, std::bind(&logic::ws_read, this, std::placeholders::_1));
 
-			vm.async_run(cyng::generate_invoke("log.msg.info", cyng::invoke("lib.size"), "callbacks registered"));
+			vm.async_run(cyng::generate_invoke("log.msg.debug", cyng::invoke("lib.size"), " callbacks registered"));
 
 		}
 

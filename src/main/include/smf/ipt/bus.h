@@ -109,6 +109,28 @@ namespace node
 				, std::chrono::seconds);
 
 			/**
+			 * send a channel open request with an timeout
+			 *
+			 * @param tsk task to send response event, if tsk == NO_TASK.
+			 * @return true if bus is online
+			 */
+			bool req_channel_open(std::string const& target
+				, std::string const& account
+				, std::string const& msisdn
+				, std::string const& version
+				, std::string const& device
+				, std::uint16_t time_out
+				, std::size_t tsk);
+
+			bool req_channel_close(std::uint32_t channel);
+
+			bool bus::req_transfer_push_data(std::uint32_t channel
+				, std::uint32_t source
+				, std::uint8_t status
+				, std::uint8_t block
+				, cyng::buffer_t const& data);
+
+			/**
 			 * @return a textual description of the bus/connection state
 			 */
 			std::string get_state() const;

@@ -49,8 +49,8 @@ namespace node
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		cyng::controller& vm_;	//!< ipt device
-		const std::string number_;
-		const std::chrono::seconds timeout_;
+		std::string const msisdn_;
+		std::chrono::seconds const timeout_;
 		std::size_t retries_;
 		ipt::bus_interface& bus_;
 		ipt::sequence_type seq_;

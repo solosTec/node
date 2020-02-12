@@ -123,11 +123,14 @@ namespace node
 
 		bool xml_exporter::write(boost::filesystem::path const& p)
 		{
-			BOOST_ASSERT_MSG(!boost::filesystem::exists(p), "file already exists");
+			//BOOST_ASSERT_MSG(!boost::filesystem::exists(p), "file already exists");
 			// Save XML tree to file.
 			// Remark: second optional param is indent string to be used;
 			// default indentation is tab character.
-			return doc_.save_file(p.c_str(), PUGIXML_TEXT("  "));
+			return (!boost::filesystem::exists(p))
+				? doc_.save_file(p.c_str(), PUGIXML_TEXT("  "))
+				: false
+				;
 		}
 
 		void xml_exporter::read(cyng::tuple_t const& msg)
