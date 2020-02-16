@@ -332,7 +332,7 @@ namespace node
 		//
 		//	setup bridge
 		//
-		bridge& br = bridge::get_instance(logger, cm, store);
+		bridge& br = bridge::get_instance(logger, mux, cm, store);
 
 		//
 		//	connect to ipt master

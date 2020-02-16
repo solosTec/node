@@ -194,13 +194,11 @@ namespace node
 
 				stmt->clear();
 			}
+			return true;
 		}
-		else {
-			//
-			//	syntax error
-			//
-
-		}
+		//
+		//	syntax error
+		//
 
 		return false;
 	}
@@ -799,7 +797,7 @@ namespace node
 			//	81 81 C7 8A 01 FF - OBIS_PUSH_OPERATIONS
 			//	select hex(serverID), nr, gen, interval, delay, hex(source), target, hex(service) from TPushOps;
 			//
-			cyng::table::make_meta_table_gen<2, 5>("TPushOps",
+			cyng::table::make_meta_table_gen<2, 6>("TPushOps",
 				{ "serverID"	//	server/meter/sensor ID
 				, "nr"			//	position/number - starts with 1
 								//	-- body
@@ -808,6 +806,7 @@ namespace node
 				, "source"		//	[OBIS] (81 81 C7 8A 04 FF) push source
 				, "target"		//	[string] (81 47 17 07 00 FF) target name
 				, "service"		//	[OBIS] (81 49 00 00 10 FF) push service
+				, "lowerBound"	//	[u64] last time index with successfull push
 				},
 				{ cyng::TC_BUFFER		//	serverID
 				, cyng::TC_UINT8		//	nr
@@ -817,6 +816,7 @@ namespace node
 				, cyng::TC_BUFFER		//	source
 				, cyng::TC_STRING		//	target
 				, cyng::TC_BUFFER		//	service
+				, cyng::TC_UINT64		//	lowerBound
 				},
 				{ 9		//	serverID
 				, 0		//	nr
@@ -826,6 +826,7 @@ namespace node
 				, 6		//	source
 				, 32	//	target
 				, 6		//	service
+				, 0		//	lowerBound
 				}),
 
 			//

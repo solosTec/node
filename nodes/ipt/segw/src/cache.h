@@ -128,6 +128,11 @@ namespace node
 		 */
 		cyng::store::db& get_db();
 
+		/**
+		 * @return the target name of the specified push op
+		 */
+		std::string get_target(cyng::buffer_t const& srv_id, std::uint8_t nr);
+
 	private:
 		/**
 		 * build up meta data

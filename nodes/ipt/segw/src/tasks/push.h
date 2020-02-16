@@ -14,6 +14,8 @@
 #include <cyng/async/mux.h>
 #include <cyng/table/table_fwd.h>
 
+#include <boost/predef.h>	//	requires Boost 1.55
+
 namespace node
 {
 	/**
@@ -33,9 +35,11 @@ namespace node
 	public:
 		//	[0] write entry
 		using msg_0 = std::tuple<bool, std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t>;
+		using msg_1 = std::tuple<std::string>;	//	target
+		using msg_2 = std::tuple<std::string, std::uint32_t>;	//	interval, delay
 
 
-		using signatures_t = std::tuple<msg_0>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
 
 	public:
 		push(cyng::async::base_task* bt
@@ -61,8 +65,20 @@ namespace node
 		cyng::continuation process(bool success
 			, std::uint32_t channel
 			, std::uint32_t source
-			, std::uint16_t status
+			, std::uint16_t status	//	u8!
 			, std::uint32_t count);
+
+		/**
+		 * @brief slot [1] - target name changed
+		 *
+		 */
+		cyng::continuation process(std::string);
+
+		/**
+		 * @brief slot [2] - interval/delay changed
+		 *
+		 */
+		cyng::continuation process(std::string, std::uint32_t);
 
 	private:
 		bool send_push_data(sml::res_generator&
@@ -119,6 +135,34 @@ namespace node
 
 	std::chrono::system_clock::time_point get_ts(sml::obis profile, std::uint64_t tsidx);
 
+}
+#if BOOST_COMP_GNUC
+namespace cyng {
+	namespace async {
+
+		//
+		//	initialize static slot names
+		//
+		template <>
+		std::map<std::string, std::size_t> cyng::async::task<node::push>::slot_names_;
+	}
+}
+#endif
+namespace cyng {
+	namespace async {
+
+		//
+		//	initialize static slot names
+		//
+		template <>
+		std::map<std::string, std::size_t> task<node::push>::slot_names_({
+			{ "target", 1 },
+			{ "interval", 2 },
+			{ "delay", 2 },
+			{ "service", 3 }
+			});
+
+	}
 }
 
 #endif

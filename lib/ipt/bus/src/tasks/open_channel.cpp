@@ -105,7 +105,7 @@ namespace node
 			//
 			//	forward event
 			//
-			base_.mux_.post(task_, 0u, cyng::tuple_factory(false, 0, 0, 0, 0));
+			base_.mux_.post(task_, 0u, cyng::tuple_factory(false, 0u, 0u, 0u, 0u));
 		}
 		bus_.on_res_open_push_channel(seq_, false, 0, 0, 0, 0);
 

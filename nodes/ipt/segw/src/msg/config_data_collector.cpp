@@ -405,7 +405,9 @@ namespace node
 					, lookup(params, OBIS_PUSH_DELAY)
 					, lookup(params, OBIS_PUSH_SOURCE)
 					, lookup(params, OBIS_PUSH_TARGET)
-					, lookup(params, OBIS_PUSH_SERVICE))
+					, lookup(params, OBIS_PUSH_SERVICE)
+					, static_cast<std::uint64_t>(0)		//	lowerBound
+					, static_cast<std::uint64_t>(0))	//	task
 				, 0u
 				, source);
 
@@ -418,13 +420,27 @@ namespace node
 		{
 			for (auto const& param : params) {
 				if (boost::algorithm::equals(param.first, OBIS_PUSH_INTERVAL.to_str())) {
-					tbl->modify(key, cyng::param_t("interval", param.second), source);
+					tbl->modify(key, cyng::param_factory("interval", cyng::numeric_cast<std::uint32_t>(param.second, 0)), source);
 				}
 				else if (boost::algorithm::equals(param.first, OBIS_PUSH_DELAY.to_str())) {
-					tbl->modify(key, cyng::param_t("delay", param.second), source);
+					tbl->modify(key, cyng::param_factory("delay", cyng::numeric_cast<std::uint32_t>(param.second, 0)), source);
 				}
 				else if (boost::algorithm::equals(param.first, OBIS_PUSH_SOURCE.to_str())) {
-					tbl->modify(key, cyng::param_t("source", param.second), source);
+					auto const soure_params = cyng::to_param_map(param.second);
+					for (auto const& soure_param : soure_params) {
+						if (boost::algorithm::equals(soure_param.first, OBIS_PUSH_SOURCE.to_str())) {
+							tbl->modify(key, cyng::param_t("source", soure_param.second), source);
+						}
+						else if (boost::algorithm::equals(soure_param.first, OBIS_PUSH_SERVER_ID.to_str())) {
+							//CYNG_LOG_TRACE(logger_, "modify push.ops OBIS_PUSH_SERVER_ID "
+							//	<< soure_param.first
+							//	<< " = "
+							//	<< cyng::io::to_str(soure_param.second));
+						}
+						else if (boost::algorithm::equals(soure_param.first, OBIS_PROFILE.to_str())) {
+
+						}
+					}
 				}
 				else if (boost::algorithm::equals(param.first, OBIS_PUSH_TARGET.to_str())) {
 					tbl->modify(key, cyng::param_t("target", param.second), source);

@@ -117,7 +117,7 @@ namespace node
 			//
 			//	connect cache and db
 			//
-			bridge_.finalize(this->base_.mux_);
+			bridge_.finalize();
 
 
 			//
@@ -399,29 +399,6 @@ namespace node
 
 			base_.suspend(rec.monitor_);
 		}
-
-		//void network::insert_seq_open_channel_rel(cyng::context& ctx)
-		//{
-		//	const cyng::vector_t frame = ctx.get_frame();
-
-		//	auto const tpl = cyng::tuple_cast<
-		//		sequence_type,		//	[0] ipt seq
-		//		std::size_t,		//	[1] task id
-		//		std::string			//	[2] target name
-		//	>(frame);
-
-		//	CYNG_LOG_TRACE(logger_, "ipt sequence "
-		//		<< +std::get<0>(tpl)
-		//		<< " ==> "
-		//		<< std::get<1>(tpl)
-		//		<< ':'
-		//		<< std::get<2>(tpl));
-
-		//	seq_open_channel_map_.emplace(std::piecewise_construct
-		//		, std::forward_as_tuple(std::get<0>(tpl))
-		//		, std::forward_as_tuple(std::get<1>(tpl), std::get<2>(tpl)))
-		//		;
-		//}
 
 		void network::load_push_ops()
 		{

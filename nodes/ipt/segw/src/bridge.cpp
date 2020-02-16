@@ -29,20 +29,23 @@
 namespace node
 {
 	bridge& bridge::get_instance(cyng::logging::log_ptr logger
+		, cyng::async::mux& mux
 		, cache& db
 		, storage& store)
 	{
 		//
 		//	no need to be threadsafe 
 		//
-		static bridge instance(logger, db, store);
+		static bridge instance(logger, mux, db, store);
 		return instance;
 	}
 
 	bridge::bridge(cyng::logging::log_ptr logger
+		, cyng::async::mux& mux
 		, cache& db
 		, storage& store)
 	: logger_(logger)
+		, mux_(mux)
 		, cache_(db)
 		, storage_(store)
 	{
@@ -57,7 +60,7 @@ namespace node
 		load_data_mirror();
 	}
 
-	void bridge::finalize(cyng::async::mux& mux)
+	void bridge::finalize()
 	{
 		//
 		//	register as listener
@@ -77,17 +80,17 @@ namespace node
 		//
 		//	start task OBISLOG (15 min)
 		//
-		start_task_obislog(mux);
+		start_task_obislog();
 
 		//
 		//	start GPIO task
 		//
-		start_task_gpio(mux);
+		start_task_gpio();
 
 		//
 		//	start readout task
 		//
-		start_task_readout(mux);
+		start_task_readout();
 	}
 
 	void bridge::load_configuration()
@@ -443,10 +446,33 @@ namespace node
 			//	skip "tsk" attribute
 			//
 			if (!boost::algorithm::equals(name, "tsk")) {
-				storage_.update("TPushOps"
+				if (storage_.update("TPushOps"
 					, key
 					, tbl->meta().to_param(attr)
-					, gen);
+					, gen)) {
+
+					//
+					//	update task
+					//
+					auto const rec = tbl->lookup(key);
+					auto const tsk = cyng::value_cast<std::size_t>(rec["tsk"], cyng::async::NO_TASK);
+					if (tsk != cyng::async::NO_TASK) {
+						if (boost::algorithm::equals(name, "target")) {
+							mux_.post(tsk, name, cyng::tuple_t({ attr.second }));
+						}
+						else if (boost::algorithm::equals(name, "interval") || boost::algorithm::equals(name, "delay")) {
+							mux_.post(tsk, name, cyng::tuple_factory(name, attr.second));
+
+						}
+					}
+				}
+				else {
+					CYNG_LOG_ERROR(logger_, "to update table _PushOps failed: "
+						<< name
+						<< " = "
+						<< cyng::io::to_str(attr.second));
+
+				}
 			}
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataMirror")) {
@@ -507,17 +533,17 @@ namespace node
 			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 	}
 
-	void bridge::start_task_obislog(cyng::async::mux& mux)
+	void bridge::start_task_obislog()
 	{
 		auto const interval = cache_.get_cfg(sml::OBIS_OBISLOG_INTERVAL.to_str(), 15);
 		
-		auto const tid = cyng::async::start_task_detached<obislog>(mux
+		auto const tid = cyng::async::start_task_detached<obislog>(mux_
 			, logger_
 			, *this
 			, std::chrono::minutes(interval));
 	}
 
-	void bridge::start_task_gpio(cyng::async::mux& mux)
+	void bridge::start_task_gpio()
 	{
 		//
 		//	start one task for every GPIO
@@ -535,7 +561,7 @@ namespace node
 			//
 			auto const svec = cyng::split(gpio_vector, " ");
 			for (auto const& s : svec) {
-				auto const tid = cyng::async::start_task_detached<gpio>(mux
+				auto const tid = cyng::async::start_task_detached<gpio>(mux_
 					, logger_
 					, boost::filesystem::path(gpio_path) / ("/gpio" + s));
 
@@ -550,10 +576,10 @@ namespace node
 		}
 	}
 
-	void bridge::start_task_readout(cyng::async::mux& mux)
+	void bridge::start_task_readout()
 	{
 		auto const interval = cache_.get_cfg("readout-interval", 122);
-		auto const tid = cyng::async::start_task_detached<readout>(mux
+		auto const tid = cyng::async::start_task_detached<readout>(mux_
 			, logger_
 			, cache_
 			, storage_

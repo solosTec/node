@@ -12,14 +12,15 @@
 
 #include <cyng/store/db.h>
 #include <cyng/log.h>
+#include <cyng/async/task_fwd.h>
 
-namespace cyng
-{
-	namespace async
-	{
-		class mux;
-	}
-}
+//namespace cyng
+//{
+//	namespace async
+//	{
+//		class mux;
+//	}
+//}
 
 namespace node
 {
@@ -39,11 +40,13 @@ namespace node
 
 	public:
 		static bridge& get_instance(cyng::logging::log_ptr
+			, cyng::async::mux& mux
 			, cache&
 			, storage&);
 
 	private:
 		bridge(cyng::logging::log_ptr
+			, cyng::async::mux& mux
 			, cache&
 			, storage&);
 		~bridge() = default;
@@ -57,7 +60,7 @@ namespace node
 			, std::uint8_t nr
 			, std::string details);
 
-		void finalize(cyng::async::mux& mux);
+		void finalize();
 
 	private:
 		/**
@@ -92,15 +95,20 @@ namespace node
 			, std::uint64_t
 			, boost::uuids::uuid);
 
-		void start_task_obislog(cyng::async::mux& mux);
-		void start_task_gpio(cyng::async::mux& mux);
-		void start_task_readout(cyng::async::mux& mux);
+		void start_task_obislog();
+		void start_task_gpio();
+		void start_task_readout();
 
 	private:
 		/**
 		 * global logger
 		 */
 		cyng::logging::log_ptr logger_;
+
+		/**
+		 * task manager
+		 */
+		cyng::async::mux& mux_;
 
 		/**
 		 * global data cache

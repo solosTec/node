@@ -67,6 +67,9 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> is running");
+
+		//BOOST_ASSERT_MSG(!cyng::async::task<gateway_proxy>::slot_names_.empty(), "slot names not initialized");
+
 	}
 
 	cyng::continuation gateway_proxy::run()
@@ -1407,7 +1410,7 @@ namespace cyng {
 		//	initialize static slot names
 		//
 		template <>
-		std::map<std::string, std::size_t> cyng::async::task<node::gateway_proxy>::slot_names_({ 
+		std::map<std::string, std::size_t> task<node::gateway_proxy>::slot_names_({ 
 			{ "ack", 0 },
 			{ "shutdown", 1 }
 		});

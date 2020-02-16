@@ -24,6 +24,9 @@
 #include <cyng/db/interface_statement.h>
 #include <cyng/table/restore.h>
 
+#include <cyng/async/task/task.hpp>
+
+
 namespace node
 {
 	push::push(cyng::async::base_task* btp
@@ -61,10 +64,15 @@ namespace node
 			<< " delay to ["
 			<< target_	//	push target name
 			<< "]");
+
+		//BOOST_ASSERT_MSG(!cyng::async::task<push>::slot_names_.empty(), "slotnames not initialized");
 	}
 
 	cyng::continuation push::run()
 	{
+		//
+		//	get target name
+		//
 #ifdef _DEBUG
 		CYNG_LOG_TRACE(logger_, "task #"
 			<< base_.get_id()
@@ -143,7 +151,7 @@ namespace node
 	cyng::continuation push::process(bool success
 		, std::uint32_t channel
 		, std::uint32_t source
-		, std::uint16_t status
+		, std::uint16_t status	//	u8!
 		, std::uint32_t count)
 	{
 
@@ -167,7 +175,7 @@ namespace node
 			gen.public_open(cyng::make_object(*trx++)
 				, cyng::make_object(cache_.get_srv_id())	//	client id
 				, cyng::make_object(sml::res_generator::gen_file_id())	//	req file id gen_file_id
-				, cyng::make_object()	//	server/meter id
+				, cyng::make_object(srv_id_)	//	server/meter id
 			);
 
 			//
@@ -357,8 +365,9 @@ namespace node
 			//	read all results
 			//
 			std::uint8_t counter{ 0 };
-			auto tsidx_prev = 0;
+			std::uint64_t tsidx_prev = 0;
 			cyng::buffer_t srv_id;
+			std::chrono::system_clock::time_point act_time = std::chrono::system_clock::now();
 			while (auto res = stmt->get_result()) {
 
 				//
@@ -367,11 +376,13 @@ namespace node
 				auto const size = res->column_count();
 				BOOST_ASSERT(size == 9);
 				auto srv_id = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
+				BOOST_ASSERT(srv_id_ == srv_id);
 				auto const tsidx = cyng::value_cast<std::uint64_t>(res->get(2, cyng::TC_UINT64, 0), 0);
 				if (tsidx_prev == 0) {
 					tsidx_prev = tsidx;
 				}
-				//	3. actTime
+				//	(3) P12.actTime
+				act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
 				//	4. status
 				sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
 				//	6. val
@@ -421,7 +432,7 @@ namespace node
 					gen.get_profile_list(*trx++
 						, srv_id
 						, sml::OBIS_PROFILE_1_MINUTE
-						, std::chrono::system_clock::now() //	act_time
+						, act_time //	act_time
 						, 0 //	reg_period
 						, std::chrono::system_clock::now() //	val_time
 						, 0		//	status
@@ -439,7 +450,7 @@ namespace node
 			gen.get_profile_list(*trx++
 				, srv_id
 				, sml::OBIS_PROFILE_1_MINUTE
-				, std::chrono::system_clock::now() //	act_time
+				, act_time //	act_time
 				, 0 //	reg_period
 				, std::chrono::system_clock::now() //	val_time
 				, 0		//	status
@@ -464,7 +475,8 @@ namespace node
 			//	read all results
 			//
 			std::uint8_t counter{ 0 };
-			auto tsidx_prev = 0;
+			std::uint64_t tsidx_prev = 0;
+			std::chrono::system_clock::time_point act_time = std::chrono::system_clock::now();
 			while (auto res = stmt->get_result()) {
 
 				//
@@ -473,11 +485,13 @@ namespace node
 				auto const size = res->column_count();
 				BOOST_ASSERT(size == 9);
 				auto const srv_id = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
+				BOOST_ASSERT(srv_id_ == srv_id);
 				auto const tsidx = cyng::value_cast<std::uint64_t>(res->get(2, cyng::TC_UINT64, 0), 0);
 				if (tsidx_prev == 0) {
 					tsidx_prev = tsidx;
 				}
-				//	3. actTime
+				//	(3) P12.actTime
+				act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
 				//	4. status
 				sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
 				//	6. val
@@ -527,7 +541,7 @@ namespace node
 					gen.get_profile_list(*trx++
 						, cache_.get_srv_id()
 						, sml::OBIS_PROFILE_15_MINUTE
-						, std::chrono::system_clock::now() //	act_time
+						, act_time //	act_time
 						, 0 //	reg_period
 						, std::chrono::system_clock::now() //	val_time
 						, 0		//	status
@@ -545,7 +559,7 @@ namespace node
 			gen.get_profile_list(*trx++
 				, cache_.get_srv_id()
 				, sml::OBIS_PROFILE_15_MINUTE
-				, std::chrono::system_clock::now() //	act_time
+				, act_time //	act_time
 				, 0 //	reg_period
 				, std::chrono::system_clock::now() //	val_time
 				, 0		//	status
@@ -570,7 +584,8 @@ namespace node
 			//	read all results
 			//
 			std::uint8_t counter{ 0 };
-			auto tsidx_prev = 0;
+			std::uint64_t tsidx_prev = 0;
+			std::chrono::system_clock::time_point act_time = std::chrono::system_clock::now();
 			while (auto res = stmt->get_result()) {
 
 				//
@@ -578,19 +593,26 @@ namespace node
 				//
 				auto const size = res->column_count();
 				BOOST_ASSERT(size == 9);
+				//	(1) P12.clientID
 				auto const srv_id = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
+				BOOST_ASSERT(srv_id_ == srv_id);
+				//	(2) P12.tsidx
 				auto const tsidx = cyng::value_cast<std::uint64_t>(res->get(2, cyng::TC_UINT64, 0), 0);
 				if (tsidx_prev == 0) {
 					tsidx_prev = tsidx;
 				}
-				//	3. actTime
+				//	(3) P12.actTime
+				act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
 				//	4. status
+				//	(5) S12.OBIS
 				sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
-				//	6. val
+				//	(6) S12.val
 				auto const val = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
-				//	7. type
+				//	(7) S12.type
 				auto const type = cyng::value_cast<std::uint32_t>(res->get(7, cyng::TC_UINT32, 0), 0);
+				//	(8) S12.scaler
 				auto const scaler = cyng::value_cast<std::int8_t>(res->get(8, cyng::TC_INT8, 0), 0);
+				//	(9) S12.unit
 				auto const unit = cyng::value_cast<std::uint8_t>(res->get(9, cyng::TC_UINT8, 0), 0);
 
 				//
@@ -619,21 +641,15 @@ namespace node
 					<< " "
 					<< mbus::get_unit_name(unit));
 
-				period_list.push_back(sml::period_entry(code
-						, unit
-						, scaler
-						, obj));
-
-
 				if (tsidx_prev != tsidx) {
 					tsidx_prev = tsidx;
 					//
 					//	build push msg
 					//
 					gen.get_profile_list(*trx++
-						, cache_.get_srv_id()
+						, srv_id_
 						, sml::OBIS_PROFILE_60_MINUTE
-						, std::chrono::system_clock::now() //	act_time
+						, act_time //	act_time
 						, 0 //	reg_period
 						, std::chrono::system_clock::now() //	val_time
 						, 0		//	status
@@ -641,17 +657,25 @@ namespace node
 
 					BOOST_ASSERT(period_list.empty());
 				}
-				++counter;
 
+				period_list.push_back(sml::period_entry(code
+					, unit
+					, scaler
+					, obj));
+
+				//
+				//	update counter
+				//
+				++counter;
 			}
 
 			//
 			//	build push msg
 			//
 			gen.get_profile_list(*trx++
-				, cache_.get_srv_id()
+				, srv_id_
 				, sml::OBIS_PROFILE_60_MINUTE
-				, std::chrono::system_clock::now() //	act_time
+				, act_time //	act_time
 				, 0 //	reg_period
 				, std::chrono::system_clock::now() //	val_time
 				, 0		//	status
@@ -710,6 +734,49 @@ namespace node
 		, std::uint32_t source)
 	{	//	initial
 
+	}
+
+	cyng::continuation push::process(std::string target)
+	{
+		this->target_ = target;
+		CYNG_LOG_TRACE(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> modified target name "
+			<< target);
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	cyng::continuation push::process(std::string pname, std::uint32_t value)
+	{
+		if (boost::algorithm::equals(pname, "interval")) {
+
+			interval_ = std::chrono::seconds(value);
+
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> modified \"interval\" of target "
+				<< target_
+				<< " to "
+				<< cyng::to_str(interval_));
+		}
+		else if (boost::algorithm::equals(pname, "delay")) {
+
+			delay_ = std::chrono::seconds(value);
+
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> modified \"delay\" of target "
+				<< target_
+				<< " to "
+				<< cyng::to_str(delay_));
+		}
+		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	std::chrono::system_clock::time_point get_ts(sml::obis profile, std::uint64_t tsidx)

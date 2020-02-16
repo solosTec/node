@@ -113,7 +113,7 @@ namespace node
 			vm_.register_function("ipt.req.deregister.push.target", 3, std::bind(&bus::ipt_req_deregister_push_target, this, std::placeholders::_1));
 			vm_.register_function("ipt.res.open.push.channel", 8, std::bind(&bus::ipt_res_open_channel, this, std::placeholders::_1));
 			vm_.register_function("ipt.res.close.push.channel", 4, std::bind(&bus::ipt_res_close_channel, this, std::placeholders::_1));
-			vm_.register_function("ipt.res.transfer.pushdata", 0, std::bind(&bus::ipt_res_transfer_push_data, this, std::placeholders::_1));
+			vm_.register_function("ipt.res.transfer.pushdata", 7, std::bind(&bus::ipt_res_transfer_push_data, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.transmit.data", 1, std::bind(&bus::ipt_req_transmit_data, this, std::placeholders::_1));
 			vm_.register_function("ipt.req.open.connection", 1, std::bind(&bus::ipt_req_open_connection, this, std::placeholders::_1));
 			vm_.register_function("ipt.res.open.connection", 2, std::bind(&bus::ipt_res_open_connection, this, std::placeholders::_1));
@@ -609,8 +609,18 @@ namespace node
 
 		void bus::ipt_res_transfer_push_data(cyng::context& ctx)
 		{
+			//	[0fa1b1e9-ab1c-4b15-b7d7-f0ab23d8a90b,2,1,107f6cde,88c9f426,20,1]
+
+			//	[uuid] ident
+			//	[u8] sequence
+			//	[u8] response code
+			//	[u32] channel id
+			//	[u32] source id (session tag)
+			//	[u8] status
+			//	[u8] block
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
+
 
 			//
 			//	ToDo: forward to client
@@ -1159,14 +1169,22 @@ namespace node
 			, cyng::buffer_t const& data)
 		{
 			if (is_online()) {
-				vm_.async_run({ cyng::generate_invoke("req.transfer.push.data"
-					, channel	//	channel
-					, source	//	source
-					, status
-					, block
-					, data),
+				//
+				//	ToDo: write optional callback task
+				//
 
-					cyng::generate_invoke("stream.flush") });
+				//
+				//	serialize and send push data
+				//
+				vm_.async_run({ 
+					cyng::generate_invoke("req.transfer.push.data"
+						, channel	//	channel
+						, source	//	source
+						, status
+						, block
+						, data),
+					cyng::generate_invoke("stream.flush") 
+				});
 				return true;
 			}
 			return false;
