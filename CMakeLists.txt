@@ -909,19 +909,18 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 # 		TARGET unit_test
 # 		PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
 
+	# BOOST_TEST_DYN_LINK is required to build a main() function
+	target_compile_definitions(unit_test
+		PRIVATE
+			BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
+
 	set(unittest_link_libs smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_mbus smf_bus_serial ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
 
 	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
 		# BOOST_TEST_DYN_LINK is required to build a main() function
-		target_compile_definitions(unit_test
-			PRIVATE
-				BOOST_ASIO_HAS_MOVE)
+		message(STATUS "** UT Library        : ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}")
 		list(APPEND unittest_link_libs pthread ${Boost_LIBRARIES})
 	else()
-		# BOOST_TEST_DYN_LINK is required to build a main() function
-		target_compile_definitions(unit_test
-			PRIVATE
-				BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
 		if(WIN32)
 			list(APPEND unittest_link_libs odbc32.lib)
 		else()

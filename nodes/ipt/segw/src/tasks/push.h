@@ -136,20 +136,18 @@ namespace node
 	std::chrono::system_clock::time_point get_ts(sml::obis profile, std::uint64_t tsidx);
 
 }
-#if BOOST_COMP_GNUC
+
 namespace cyng {
 	namespace async {
+		
+#if BOOST_COMP_GNUC
 
 		//
 		//	initialize static slot names
 		//
 		template <>
 		std::map<std::string, std::size_t> cyng::async::task<node::push>::slot_names_;
-	}
-}
-#endif
-namespace cyng {
-	namespace async {
+#else
 
 		//
 		//	initialize static slot names
@@ -162,6 +160,7 @@ namespace cyng {
 			{ "service", 3 }
 			});
 
+#endif
 	}
 }
 

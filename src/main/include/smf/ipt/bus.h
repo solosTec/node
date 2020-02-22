@@ -124,7 +124,7 @@ namespace node
 
 			bool req_channel_close(std::uint32_t channel);
 
-			bool bus::req_transfer_push_data(std::uint32_t channel
+			bool req_transfer_push_data(std::uint32_t channel
 				, std::uint32_t source
 				, std::uint8_t status
 				, std::uint8_t block
