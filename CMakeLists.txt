@@ -203,7 +203,7 @@ else()
 	#	$(ConfigurationName) is a variable used by the MS build system
 	#
 #	link_directories(${CRYPT_LIBRARY_DIR}/$(ConfigurationName))
-    set(SMF_CRYPTO_LIBRARY "${CRYPT_LIBRARY_DIR}/crypto.lib")
+    set(SMF_CRYPTO_LIBRARY "${CRYPT_LIBRARY_DIR}/$(ConfigurationName)/crypto.lib")
     message(STATUS "** CRYPT Libraries    : ${CRYPT_LIBRARY_DIR}/crypto.lib")
 endif()
 
@@ -421,6 +421,7 @@ target_include_directories(smf_protocol_sml
 	PRIVATE
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
 		${CYNG_INCLUDE_DIRS}
+		${OPENSSL_INCLUDE_DIR}
 )
 
 #
@@ -454,6 +455,7 @@ target_include_directories(smf_protocol_mbus
 	PRIVATE
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
 		${CYNG_INCLUDE_DIRS}
+		${OPENSSL_INCLUDE_DIR}
 )
 
 #
@@ -547,6 +549,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
 			${CYNG_INCLUDE_DIRS}
 			${BOOST_INCLUDE_DIR}
+			${OPENSSL_INCLUDE_DIR}
 			${CRYPT_INCLUDE_DIR}
 	)
 	
@@ -601,12 +604,13 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 		PRIVATE
 			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
 			${CYNG_INCLUDE_DIRS}
+			${OPENSSL_INCLUDE_DIR}
 			${CRYPT_INCLUDE_DIR}
 			${BOOST_INCLUDE_DIR}
 	)
 	target_link_libraries(https 
 		smf_info 
-		smf_http_srv
+		smf_https_srv
 		${CYNG_LIBRARIES} 
 		${OPENSSL_LIBRARIES}
 		${SMF_CRYPTO_LIBRARY}
@@ -636,6 +640,12 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 # This program is only for testing purposes
 	include (nodes/assl/prg.cmake)
 	add_executable(assl ${node_assl})
+	target_include_directories(assl
+		PRIVATE
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+			${OPENSSL_INCLUDE_DIR}
+#			${BOOST_INCLUDE_DIR}
+	)
 	target_link_libraries(assl 
 		${OPENSSL_LIBRARIES}
 #		${SMF_CRYPTO_LIBRARY}
@@ -676,6 +686,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 		PRIVATE
 			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
 			${CYNG_INCLUDE_DIRS}
+			${OPENSSL_INCLUDE_DIR}
 			${CRYPT_INCLUDE_DIR}
 			${BOOST_INCLUDE_DIR}
 			${PUGIXML_INCLUDE_DIR}
@@ -683,7 +694,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 	target_link_libraries(dashs 
 		smf_info 
 		smf_cluster
-		smf_http_srv
+		smf_https_srv
 		${SMF_CRYPTO_LIBRARY}
 		${CYNG_LIBRARIES} 
 		${OPENSSL_LIBRARIES}
@@ -762,6 +773,7 @@ if(${PROJECT_NAME}_BUILD_TEST)
 		PRIVATE
 			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
 			${CYNG_INCLUDE_DIRS}
+			${OPENSSL_INCLUDE_DIR}
 			${BOOST_INCLUDE_DIR}
 	)
 	target_link_libraries(gateway 
@@ -789,6 +801,7 @@ target_include_directories(segw
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
 		${CYNG_INCLUDE_DIRS}
 		${CRYPT_INCLUDE_DIR}
+		${OPENSSL_INCLUDE_DIR}
 		${BOOST_INCLUDE_DIR}
 )
 target_link_libraries(segw 
@@ -856,15 +869,16 @@ target_include_directories(store
 		${CYNG_INCLUDE_DIRS}
 		${BOOST_INCLUDE_DIR}
 )
-target_link_libraries(ipts 
+target_link_libraries(store 
 	smf_info 
 	smf_protocol_ipt 
 	smf_bus_ipt 
 	smf_protocol_sml 
 	smf_protocol_iec 
 	smf_protocol_mbus 
-	crypto
+	${CYNG_LIBRARIES} 
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 	
 if(${PROJECT_NAME}_BUILD_TEST)
@@ -874,20 +888,20 @@ if(${PROJECT_NAME}_BUILD_TEST)
 #
 	include (nodes/ipt/stress/prg.cmake)
 	add_executable(stress ${node_ipt_stress})
-	# libraries to link
-	set(stress_link_libs smf_protocol_ipt smf_bus_ipt smf_protocol_sml ${CYNG_LIBRARIES})
-	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-		list(APPEND stress_link_libs "${Boost_LIBRARIES}")
-		if (UNIX)
-			list(APPEND stress_link_libs pthread ${CMAKE_DL_LIBS})
-		endif()
-	endif()
-	if(WIN32)
-		list(APPEND stress_link_libs odbc32.lib)
-	else()
-		list(APPEND stress_link_libs ${SQLite3_LIBRARY})
-	endif(WIN32)
-	target_link_libraries(stress ${stress_link_libs})
+	target_include_directories(stress
+		PRIVATE
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+			${CYNG_INCLUDE_DIRS}
+			${BOOST_INCLUDE_DIR}
+	)
+	target_link_libraries(stress 
+		smf_protocol_ipt 
+		smf_bus_ipt 
+		smf_protocol_sml
+		${CYNG_LIBRARIES} 
+		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+	)
 endif()
 
 #
@@ -901,6 +915,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 		PRIVATE
 			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
 			${CYNG_INCLUDE_DIRS}
+			${OPENSSL_INCLUDE_DIR}
 			${BOOST_INCLUDE_DIR}
 	)
 	target_link_libraries(lora 
@@ -909,6 +924,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 		smf_https_srv 
 		smf_lora 
 		smf_protocol_sml
+		${OPENSSL_LIBRARIES}
 		${SMF_CRYPTO_LIBRARY}
 		${CYNG_LIBRARIES} 
 		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
@@ -999,6 +1015,7 @@ target_include_directories(setup
 	PRIVATE
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
 		${CYNG_INCLUDE_DIRS}
+		${OPENSSL_INCLUDE_DIR}
 		${BOOST_INCLUDE_DIR}
 )
 target_link_libraries(setup 
@@ -1082,6 +1099,7 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
 			${CYNG_INCLUDE_DIRS}
 			${BOOST_INCLUDE_DIR}
+			${OPENSSL_INCLUDE_DIR}
 			${CRYPT_INCLUDE_DIR}
 			${PUGIXML_INCLUDE_DIR}
 	)
@@ -1102,6 +1120,7 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 		smf_protocol_mbus 
 		smf_bus_serial
 		${CYNG_LIBRARIES}
+		${OPENSSL_LIBRARIES}
 		"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_UNIT_TEST_FRAMEWORK_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
 		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 	)

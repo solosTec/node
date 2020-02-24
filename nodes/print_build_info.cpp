@@ -103,8 +103,9 @@ namespace node
         << NODE_ADDRESS_MODEL
         << " bit"
         << std::endl
-		
-		<< "C++2a features:"
+		<< std::endl
+
+		<< "features      : C++2a"
 		<< std::endl
 		
 #ifdef __CPP_SUPPORT_P0409R2
@@ -296,7 +297,7 @@ namespace node
 // 	g++ -std=c++17
 // 	cl /std:c++latest
 // 
-		<< "C++17 features:"
+		<< "features      : C++17"
 		<< std::endl
 
 #ifdef __CPP_SUPPORT_N3291
@@ -473,7 +474,7 @@ namespace node
 // 	g++ -std=c++14
 // 	cl /std:c++latest
 
-		<< "C++14 features:"
+		<< "features      : C++14"
 		<< std::endl
 
 #ifdef __CPP_SUPPORT_N3323
@@ -486,96 +487,96 @@ namespace node
 		<< "N3638: decltype(auto), Return type deduction for normal functions" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3648
-		<< "Initialized/Generalized lambda captures (init-capture)" << std::endl
+		<< "N3648: Initialized/Generalized lambda captures (init-capture)" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3649
-		<< "Generic (polymorphic) lambda expressions" << std::endl
+		<< "N3649: Generic (polymorphic) lambda expressions" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3651
-		<< "Variable templates" << std::endl
+		<< "N3651: Variable templates" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3652
-		<< "Extended constexpr" << std::endl
+		<< "N3652: Extended constexpr" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3653
-		<< "Member initializers and aggregates (NSDMI)" << std::endl
+		<< "N3653: Member initializers and aggregates (NSDMI)" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3664
-		<< "Clarifying memory allocation (avoiding/fusing allocations)" << std::endl
+		<< "N3664: Clarifying memory allocation (avoiding/fusing allocations)" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3760
-		<< "[[deprecated]] attribute" << std::endl
+		<< "N3760: [[deprecated]] attribute" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3778
-		<< "Sized deallocation" << std::endl
+		<< "N3778: Sized deallocation" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3781
-		<< "Single quote as digit separator" << std::endl
+		<< "N3781: Single quote as digit separator" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3302
-		<< "constexpr for <complex>" << std::endl
+		<< "N3302: constexpr for <complex>" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3462
-		<< "std::result_of and SFINAE" << std::endl
+		<< "N3462: std::result_of and SFINAE" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3469
-		<< "constexpr for <chrono>" << std::endl
+		<< "N3469: constexpr for <chrono>" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3470
-		<< "constexpr for <array>" << std::endl
+		<< "N3470: constexpr for <array>" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3471
-		<< "constexpr for <initializer_list>, <utility> and <tuple>" << std::endl
+		<< "N3471: constexpr for <initializer_list>, <utility> and <tuple>" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3545
-		<< "Improved std::integral_constant" << std::endl
+		<< "N3545: Improved std::integral_constant" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3642
-		<< "User-defined literals for <chrono> and <string>" << std::endl
+		<< "N3642: User-defined literals for <chrono> and <string>" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3644
-		<< "Null forward iterators" << std::endl
+		<< "N3644: Null forward iterators" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3654
-		<< "std::quoted" << std::endl
+		<< "N3654: std::quoted" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3657
-		<< "Heterogeneous associative lookup" << std::endl
+		<< "N3657: Heterogeneous associative lookup" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3658
-		<< "std::integer_sequence" << std::endl
+		<< "N3658: std::integer_sequence" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3658
-		<< "integer_sequence, index_sequence, make_index_sequence etc., to allow tag dispatch on integer packs." << std::endl
+		<< "N3658: integer_sequence, index_sequence, make_index_sequence etc., to allow tag dispatch on integer packs." << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3659
-		<< "std::shared_timed_mutex" << std::endl
+		<< "N3659: std::shared_timed_mutex" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3668
-		<< "std::exchange" << std::endl
+		<< "N3668: std::exchange" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3669
-		<< "fixing constexpr member functions without const" << std::endl
+		<< "N3669: fixing constexpr member functions without const" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3670
-		<< "std::get<T>()" << std::endl
+		<< "N3670: std::get<T>()" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3671
-		<< "Dual-Range std::equal, std::is_permutation, std::mismatch" << std::endl
+		<< "N3671: Dual-Range std::equal, std::is_permutation, std::mismatch" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3656
-		<< "make_unique (Revision 1)" << std::endl
+		<< "N3656: make_unique (Revision 1)" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3857
-		<< "std::promise" << std::endl
+		<< "N3857: std::promise" << std::endl
 #endif
 
 //
 //   C++11 features
 //
 
-	<< "C++11 features:"
-	<< std::endl
+		<< "features      : C++11"
+		<< std::endl
 
 #ifdef __CPP_SUPPORT_N2341
 		<< "N2341: alignas" << std::endl
