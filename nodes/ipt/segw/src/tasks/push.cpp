@@ -798,3 +798,21 @@ namespace node
 	}
 }
 
+#if BOOST_COMP_GNUC
+namespace cyng {
+	namespace async {
+		
+		//
+		//	initialize static slot names
+		//
+ 		template <>
+		std::map<std::string, std::size_t> task<node::push>::slot_names_({
+			{ "target", 1 },
+			{ "interval", 2 },
+			{ "delay", 2 },
+			{ "service", 3 }
+		});
+	}
+}
+#endif
+

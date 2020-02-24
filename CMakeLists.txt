@@ -80,6 +80,7 @@ endif()
 message(STATUS "** CMake           : v${CMAKE_VERSION}")
 message(STATUS "** Generator       : ${CMAKE_GENERATOR}")
 message(STATUS "** Platform        : ${CMAKE_SYSTEM}")
+message(STATUS "** System          : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "** Compiler        : ${CMAKE_CXX_COMPILER_ID} v${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "** Timestamp       : ${${PROJECT_NAME}_NOW_UTC}")
 message(STATUS "** CPU Cores       : ${${PROJECT_NAME}_CPU_COUNT}")
@@ -154,18 +155,12 @@ if(CYNG_FOUND)
 
 #     get_filename_component(CYNG_INCLUDE_DIRS "${CYNG_INCLUDE_DIRS}/../" REALPATH)
     
-    include_directories(${CYNG_INCLUDE_DIRS})
-    link_directories(${CYNG_LIBRARIES})
+#    include_directories(${CYNG_INCLUDE_DIRS})
+#    link_directories(${CYNG_LIBRARIES})
 
     message(STATUS "** CYNG include path : ${CYNG_INCLUDE_DIRS}")
     message(STATUS "** CYNG Libraries    : ${CYNG_LIBRARIES}")
 endif()
-
-#
-#	setup compiler features
-#   ToDo: currently only available if CYNG library is installed for developers
-#
-include(CPPFeatureSupport)
 
 #
 #	setup crypto library
@@ -174,12 +169,12 @@ include(CPPFeatureSupport)
 #
 if(NOT CRYPT_ROOT)
     set(CRYPT_ROOT "${PROJECT_SOURCE_DIR}/../crypto" CACHE PATH "CRYPT_ROOT")
-	message(STATUS "** Set CRYPT_ROOT: ${CRYPT_ROOT}")
 endif()
+message(STATUS "** CRYPT_ROOT        : ${CRYPT_ROOT}")
 
 get_filename_component(CRYPT_INCLUDE_DIR "${CRYPT_ROOT}/include" REALPATH)
-include_directories("${CRYPT_INCLUDE_DIR}")
-message(STATUS "** CRYPT include path : ${CRYPT_INCLUDE_DIR}")
+#include_directories("${CRYPT_INCLUDE_DIR}")
+message(STATUS "** CRYPT include path: ${CRYPT_INCLUDE_DIR}")
 
 #
 #	setup cyng build directory
@@ -188,27 +183,35 @@ message(STATUS "** CRYPT include path : ${CRYPT_INCLUDE_DIR}")
 #
 if (NOT CRYPT_BUILD)
 	if ("${PROJECT_NAME}_CROSS_COMPILE")
-		set(CRYPT_BUILD "${CRYPT_ROOT}/build/x64" CACHE PATH "CRYPT_BUILD")
+		set(CRYPT_BUILD "${CRYPT_ROOT}/build/v5te" CACHE PATH "CRYPT_BUILD")
 	else()
 		set(CRYPT_BUILD "${CRYPT_ROOT}/build" CACHE PATH "CRYPT_BUILD")
 	endif()
-	message(STATUS "** Set CRYPT_BUILD: ${CRYPT_BUILD}")
+	message(STATUS "** Set CRYPT_BUILD   : ${CRYPT_BUILD}")
 endif()
 
 get_filename_component(CRYPT_LIBRARY_DIR ${CRYPT_BUILD} REALPATH)
-include_directories(${CRYPT_LIBRARY_DIR})
-message(STATUS "** CRYPT include path : ${CRYPT_LIBRARY_DIR}")
+#include_directories(${CRYPT_LIBRARY_DIR})
+message(STATUS "** CRYPT library path: ${CRYPT_LIBRARY_DIR}")
 
 if (UNIX)
-    link_directories(${CRYPT_LIBRARY_DIR})
-    message(STATUS "** CRYPT Libraries    : ${CRYPT_LIBRARY_DIR}")
+#    link_directories(${CRYPT_LIBRARY_DIR})
+    set(SMF_CRYPTO_LIBRARY "${CRYPT_LIBRARY_DIR}/libcrypto.so")
+    message(STATUS "** CRYPT Libraries   : ${CRYPT_LIBRARY_DIR}/libcrypto.so")
 else()
 	#
 	#	$(ConfigurationName) is a variable used by the MS build system
 	#
-	link_directories(${CRYPT_LIBRARY_DIR}/$(ConfigurationName))
-    message(STATUS "** CRYPT Libraries    : ${CRYPT_LIBRARY_DIR}")
+#	link_directories(${CRYPT_LIBRARY_DIR}/$(ConfigurationName))
+    set(SMF_CRYPTO_LIBRARY "${CRYPT_LIBRARY_DIR}/crypto.lib")
+    message(STATUS "** CRYPT Libraries    : ${CRYPT_LIBRARY_DIR}/crypto.lib")
 endif()
+
+#
+#	setup compiler features
+#   ToDo: currently only available if CYNG library is installed for developers
+#
+include(CPPFeatureSupport)
 
 #
 #	setup C++ compiler
@@ -232,8 +235,16 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 		message(STATUS "** C++ support     : C++17")
 	else()
     # partly since 8.0
-		set(CMAKE_CXX_STANDARD 20)
-		message(STATUS "** C++ support     : C++2a")
+		if(${CMAKE_VERSION} VERSION_LESS "3.12.4") 
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a")			
+			message(STATUS "** C++ support     : C++2a")
+		else()
+			set(CMAKE_CXX_STANDARD 20 CACHE STRING "C++ standard to be used")
+			message(STATUS "** C++ support     : C++2a")
+		endif()
+		
+		#	suppress messages about ABI incompatibilities
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")	
 	endif()
 	
 	# only shared libraries
@@ -307,8 +318,8 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
         message(STATUS "** openSSL SSL library   : ${OPENSSL_SSL_LIBRARY}")
         message(STATUS "** openSSL Libraries     : ${OPENSSL_LIBRARIES}")
     
-        include_directories(${OPENSSL_INCLUDE_DIR})
-        link_directories(${OPENSSL_LIBRARIES})
+#        include_directories(${OPENSSL_INCLUDE_DIR})
+#        link_directories(${OPENSSL_LIBRARIES})
         set(${PROJECT_NAME}_SSL_VERSION ${OPENSSL_VERSION})
     #
     else()
@@ -330,12 +341,12 @@ endif()
 set(PUGIXML_INCLUDE_DIR "${CYNG_ROOT_DEV}/lib/xml/pugixml/src")
 message(STATUS "** PugiXML Include   : ${PUGIXML_INCLUDE_DIR}")
 add_definitions(-D${PROJECT_NAME}_PUGIXML_INSTALLED)
-include_directories(${PUGIXML_INCLUDE_DIR})
+#include_directories(${PUGIXML_INCLUDE_DIR})
 
 #
 # include directories for all C/C++ projects
 #
-include_directories(src/main/include)
+#include_directories(src/main/include)
 
 #
 # configure a header file to pass some of the CMake settings
@@ -345,7 +356,7 @@ configure_file (
   "${PROJECT_SOURCE_DIR}/src/main/templates/project_info.h.in"
   "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h"
 )
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+#include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 #
 # minimal test program
@@ -362,66 +373,121 @@ add_executable(hello ${hello})
 #
 include (lib/info/lib.cmake)
 add_library(smf_info ${GLOBAL_LIBRARY_TYPE} ${info_lib})
+target_include_directories(smf_info
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	cluster library (client side)
 #
 include (lib/cluster/lib.cmake)
 add_library(smf_cluster ${GLOBAL_LIBRARY_TYPE} ${cluster_lib})
+target_include_directories(smf_cluster
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	ipt protocol library
 #
 include (lib/ipt/protocol/lib.cmake)
 add_library(smf_protocol_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_protocol_lib})
+target_include_directories(smf_protocol_ipt
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	ipt bus library (client)
 #
 include (lib/ipt/bus/lib.cmake)
 add_library(smf_bus_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_bus_lib})
+target_include_directories(smf_bus_ipt
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	sml protocol library
 #
 include (lib/sml/protocol/lib.cmake)
 add_library(smf_protocol_sml ${GLOBAL_LIBRARY_TYPE} ${sml_protocol_lib})
+target_include_directories(smf_protocol_sml
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	sml bus library (client)
 #
 include (lib/sml/bus/lib.cmake)
 add_library(smf_bus_sml ${GLOBAL_LIBRARY_TYPE} ${sml_bus_lib})
+target_include_directories(smf_bus_sml
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	modem/AT protocol library
 #
 include (lib/modem/protocol/lib.cmake)
 add_library(smf_protocol_modem ${GLOBAL_LIBRARY_TYPE} ${modem_protocol_lib})
+target_include_directories(smf_protocol_modem
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	M-Bus/EN 13757-3 protocol/application layer library
 #
 include (lib/mbus/protocol/lib.cmake)
 add_library(smf_protocol_mbus ${GLOBAL_LIBRARY_TYPE} ${mbus_protocol_lib})
+target_include_directories(smf_protocol_mbus
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	iMega/CU protocol library
 #
 include (lib/imega/protocol/lib.cmake)
 add_library(smf_protocol_imega ${GLOBAL_LIBRARY_TYPE} ${imega_protocol_lib})
+target_include_directories(smf_protocol_imega
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	HCI/CP210x protocol library
 #
 include (lib/hci/protocol/lib.cmake)
 add_library(smf_protocol_hci ${GLOBAL_LIBRARY_TYPE} ${hci_protocol_lib})
+target_include_directories(smf_protocol_hci
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	IEC 62056-21 protocol library
 #
 include (lib/iec/protocol/lib.cmake)
 add_library(smf_protocol_iec ${GLOBAL_LIBRARY_TYPE} ${iec_protocol_lib})
+target_include_directories(smf_protocol_iec
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	serial bus library (client)
@@ -429,24 +495,46 @@ add_library(smf_protocol_iec ${GLOBAL_LIBRARY_TYPE} ${iec_protocol_lib})
 #
 include (lib/serial/bus/lib.cmake)
 add_library(smf_bus_serial ${GLOBAL_LIBRARY_TYPE} ${serial_bus_lib})
+target_include_directories(smf_bus_serial
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	telnet protocol library
 #
 include (lib/telnet/protocol/lib.cmake)
 add_library(smf_protocol_telnet ${GLOBAL_LIBRARY_TYPE} ${telnet_protocol_lib})
+target_include_directories(smf_protocol_telnet
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	LoRa payload library
 #
 include (lib/lora/payload/lib.cmake)
 add_library(smf_lora ${GLOBAL_LIBRARY_TYPE} ${lora_payload_lib})
+target_include_directories(smf_lora
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+)
 
 #
 #	http server library
 #
 include (lib/http/server/lib.cmake)
 add_library(smf_http_srv ${GLOBAL_LIBRARY_TYPE} ${http_srv_lib})
+target_include_directories(smf_http_srv
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${BOOST_INCLUDE_DIR}
+		${CYNG_INCLUDE_DIRS}
+		${CRYPT_INCLUDE_DIR}
+)
 
 #
 # https server library
@@ -454,6 +542,14 @@ add_library(smf_http_srv ${GLOBAL_LIBRARY_TYPE} ${http_srv_lib})
 if(${PROJECT_NAME}_SSL_SUPPORT)
 	include (lib/https/server/lib.cmake)
 	add_library(smf_https_srv ${GLOBAL_LIBRARY_TYPE} ${https_srv_lib})
+	target_include_directories(smf_https_srv
+		PRIVATE
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+			${CYNG_INCLUDE_DIRS}
+			${BOOST_INCLUDE_DIR}
+			${CRYPT_INCLUDE_DIR}
+	)
+	
 endif()
 
 #
@@ -480,30 +576,42 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 #
 
 	add_executable(http ${node_http})
-	# libraries to link 
-	set(http_link_libs smf_info smf_http_srv crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
-	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-		list(APPEND http_link_libs "${Boost_LIBRARIES}")
-		if (UNIX)
-			list(APPEND http_link_libs pthread)
-		endif()
-	endif()
-	target_link_libraries(http ${http_link_libs})
-
+	target_include_directories(http
+		PRIVATE
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+			${BOOST_INCLUDE_DIR}
+			${CYNG_INCLUDE_DIRS}
+			${CRYPT_INCLUDE_DIR}
+	)
+	target_link_libraries(http 
+		smf_info 
+		smf_http_srv
+		${CYNG_LIBRARIES} 
+		${OPENSSL_LIBRARIES}
+		${SMF_CRYPTO_LIBRARY}
+		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+	)
+	
 #
 # This program is only for testing puposes
 # generic HTTPS server
 #
 	add_executable(https ${node_https})
-	# libraries to link 
-	set(https_link_libs smf_info smf_https_srv crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
-	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-		list(APPEND https_link_libs "${Boost_LIBRARIES}")
-		if (UNIX)
-			list(APPEND https_link_libs pthread)
-		endif()
-	endif()
-	target_link_libraries(https ${https_link_libs})
+	target_include_directories(https
+		PRIVATE
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+			${CYNG_INCLUDE_DIRS}
+			${CRYPT_INCLUDE_DIR}
+			${BOOST_INCLUDE_DIR}
+	)
+	target_link_libraries(https 
+		smf_info 
+		smf_http_srv
+		${CYNG_LIBRARIES} 
+		${OPENSSL_LIBRARIES}
+		${SMF_CRYPTO_LIBRARY}
+		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+	)
 endif()
 
 
@@ -528,14 +636,11 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 # This program is only for testing purposes
 	include (nodes/assl/prg.cmake)
 	add_executable(assl ${node_assl})
-	target_link_libraries(assl ${OPENSSL_LIBRARIES})
-	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-		if (UNIX)
-			target_link_libraries(assl ${Boost_LIBRARIES} pthread)
-		else()
-			target_link_libraries(assl ${Boost_LIBRARIES})
-		endif()
-	endif()
+	target_link_libraries(assl 
+		${OPENSSL_LIBRARIES}
+#		${SMF_CRYPTO_LIBRARY}
+		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+	)	
 endif()
 
 if(${PROJECT_NAME}_SSL_SUPPORT)
@@ -544,37 +649,47 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 #
     include (nodes/admin/prg.cmake)
     add_executable(dash ${node_dash})
-    # libraries to link
-    set(dashboard_link_libs smf_info smf_cluster smf_http_srv crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
-
-    if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-        list(APPEND dashboard_link_libs "${Boost_LIBRARIES}")
-        if (UNIX)
-            list(APPEND dashboard_link_libs pthread)
-        endif()
-	else()
-        if (WIN32)
-            list(APPEND dashboard_link_libs odbc32.lib)
-		endif()
-    endif()
-    target_link_libraries(dash ${dashboard_link_libs})
+	target_include_directories(dash
+		PRIVATE
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+			${CYNG_INCLUDE_DIRS}
+			${CRYPT_INCLUDE_DIR}
+			${BOOST_INCLUDE_DIR}
+			${PUGIXML_INCLUDE_DIR}
+	)
+	target_link_libraries(dash 
+		smf_info 
+		smf_cluster
+		smf_http_srv
+		${SMF_CRYPTO_LIBRARY}
+		${CYNG_LIBRARIES} 
+		${OPENSSL_LIBRARIES}
+		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+	)
 
 #
 # dashboard (HTTPS)
 #
     add_executable(dashs ${node_dashs})
-    # libraries to link
-    set(dashsboard_link_libs smf_info smf_cluster smf_https_srv crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
-    if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-        list(APPEND dashsboard_link_libs "${Boost_LIBRARIES}")
-        if (UNIX)
-            list(APPEND dashsboard_link_libs pthread)
-        endif()
-    endif()
-    if (WIN32)
-        list(APPEND dashsboard_link_libs odbc32.lib)
-    endif()
-    target_link_libraries(dashs ${dashsboard_link_libs})
+	target_include_directories(dashs
+		PRIVATE
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+			${CYNG_INCLUDE_DIRS}
+			${CRYPT_INCLUDE_DIR}
+			${BOOST_INCLUDE_DIR}
+			${PUGIXML_INCLUDE_DIR}
+	)
+	target_link_libraries(dashs 
+		smf_info 
+		smf_cluster
+		smf_http_srv
+		${SMF_CRYPTO_LIBRARY}
+		${CYNG_LIBRARIES} 
+		${OPENSSL_LIBRARIES}
+		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+	)
 endif()
 
 #
@@ -582,149 +697,175 @@ endif()
 #
 include (nodes/e350/prg.cmake)
 add_executable(e350 ${node_e350})
-# libraries to link
-set(e350_link_libs smf_info smf_cluster smf_protocol_imega ${CYNG_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND e350_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND e350_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-else()
-    if (WIN32)
-        list(APPEND e350_link_libs odbc32.lib)
-    endif()
-endif()
-target_link_libraries(e350 ${e350_link_libs})
+target_include_directories(e350
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(e350 
+	smf_info 
+	smf_cluster
+	smf_protocol_imega
+	${CYNG_LIBRARIES} 
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+)
 
 #
 # IP-T collector
 #
 include (nodes/ipt/collector/prg.cmake)
 add_executable(collector ${node_ipt_collector})
-# libraries to link
-set(collector_link_libs smf_protocol_ipt smf_bus_ipt ${CYNG_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND collector_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND collector_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-else()
-    if (WIN32)
-        list(APPEND collector_link_libs odbc32.lib)
-    endif()
-endif()
-target_link_libraries(collector ${collector_link_libs})
+target_include_directories(collector
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(collector 
+	smf_info 
+	smf_protocol_ipt
+	smf_bus_ipt
+	${CYNG_LIBRARIES} 
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+)
 
 #
 # IP-T emitter
 #
 include (nodes/ipt/emitter/prg.cmake)
 add_executable(emitter ${node_ipt_emitter})
-# libraries to link
-set(emitter_link_libs smf_protocol_ipt smf_bus_ipt ${CYNG_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND emitter_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND emitter_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-else()
-    if (WIN32)
-        list(APPEND emitter_link_libs odbc32.lib)
-    endif()
-endif()
-target_link_libraries(emitter ${emitter_link_libs})
+target_include_directories(emitter
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(emitter 
+	smf_info 
+	smf_protocol_ipt
+	smf_bus_ipt
+	${CYNG_LIBRARIES} 
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+)
 
 #
 # IP-T gateway
 #
-include (nodes/ipt/gateway/prg.cmake)
-add_executable(gateway ${node_ipt_gateway})
-# libraries to link
-set(gateway_link_libs smf_protocol_ipt smf_protocol_sml smf_bus_ipt smf_bus_sml smf_bus_serial smf_protocol_mbus ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND gateway_link_libs boost_thread boost_system boost_filesystem boost_program_options boost_random)
-    if (UNIX)
-        list(APPEND gateway_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
+if(${PROJECT_NAME}_BUILD_TEST)
+	include (nodes/ipt/gateway/prg.cmake)
+	add_executable(gateway ${node_ipt_gateway})
+	target_include_directories(gateway
+		PRIVATE
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+			${CYNG_INCLUDE_DIRS}
+			${BOOST_INCLUDE_DIR}
+	)
+	target_link_libraries(gateway 
+		smf_protocol_ipt 
+		smf_protocol_sml 
+		smf_bus_ipt 
+		smf_bus_sml 
+		smf_bus_serial 
+		smf_protocol_mbus 
+		${CYNG_LIBRARIES} 
+		${OPENSSL_LIBRARIES}
+		"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+	)
 endif()
-if(WIN32)
-	list(APPEND gateway_link_libs odbc32.lib)
-else()
-	list(APPEND gateway_link_libs ${SQLite3_LIBRARY})
-endif(WIN32)
 
-target_link_libraries(gateway ${gateway_link_libs})
 
 #
 # IP-T SEGW
 #
 include (nodes/ipt/segw/prg.cmake)
 add_executable(segw ${node_ipt_segw})
-# libraries to link
-set(segw_link_libs smf_protocol_ipt smf_bus_ipt smf_bus_sml smf_bus_serial smf_protocol_sml smf_protocol_mbus smf_protocol_hci ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND segw_link_libs boost_thread boost_system boost_filesystem boost_program_options boost_random)
-    if (UNIX)
-        list(APPEND segw_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-endif()
-if(WIN32)
-	list(APPEND segw_link_libs odbc32.lib)
-else()
-	list(APPEND segw_link_libs ${SQLite3_LIBRARY})
-endif(WIN32)
-
-target_link_libraries(segw ${segw_link_libs})
+target_include_directories(segw
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${CRYPT_INCLUDE_DIR}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(segw 
+	smf_protocol_ipt 
+	smf_bus_ipt 
+	smf_bus_sml 
+	smf_bus_serial 
+	smf_protocol_sml 
+	smf_protocol_mbus 
+	smf_protocol_hci 
+	${CYNG_LIBRARIES} 
+	${OPENSSL_LIBRARIES}
+	"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+)
 
 #
 # IP-T master
 #
 include (nodes/ipt/master/prg.cmake)
 add_executable(ipt ${node_ipt_master})
-# libraries to link
-set(ipt_link_libs smf_info smf_cluster smf_protocol_ipt smf_protocol_sml ${CYNG_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND ipt_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND ipt_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-endif()
-#message(STATUS "** link ipt_master       : ${ipt_link_libs}")
-target_link_libraries(ipt ${ipt_link_libs})
+target_include_directories(ipt
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(ipt 
+	smf_info 
+	smf_cluster 
+	smf_protocol_ipt 
+	smf_protocol_sml
+	${CYNG_LIBRARIES} 
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+)
 
 #
 # IP-Ts master
 #
 add_executable(ipts ${node_ipts_master})
-# libraries to link
-set(ipts_link_libs smf_info smf_cluster smf_protocol_ipt smf_protocol_sml ${CYNG_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND ipts_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND ipts_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-endif()
-target_link_libraries(ipts ${ipts_link_libs})
+target_include_directories(ipts
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(ipts 
+	smf_info 
+	smf_cluster 
+	smf_protocol_ipt 
+	smf_protocol_sml
+#	${SMF_CRYPTO_LIBRARY}
+	${CYNG_LIBRARIES} 
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+)
 
 #
 # IP-T store
 #
 include (nodes/ipt/store/prg.cmake)
 add_executable(store ${node_ipt_store})
-# libraries to link
-set(store_link_libs smf_info smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_iec smf_protocol_mbus crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND store_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND store_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-endif()
-if(WIN32)
-	list(APPEND store_link_libs odbc32.lib)
-else()
-	list(APPEND store_link_libs ${SQLite3_LIBRARY})
-endif(WIN32)
-target_link_libraries(store ${store_link_libs})
+target_include_directories(store
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(ipts 
+	smf_info 
+	smf_protocol_ipt 
+	smf_bus_ipt 
+	smf_protocol_sml 
+	smf_protocol_iec 
+	smf_protocol_mbus 
+	crypto
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+)
 	
 if(${PROJECT_NAME}_BUILD_TEST)
 #
@@ -753,17 +894,25 @@ endif()
 # LoRa
 #
 if(${PROJECT_NAME}_SSL_SUPPORT)
+
     include (nodes/lora/prg.cmake)
     add_executable(lora ${node_lora})
-    # libraries to link
-    set(lora_link_libs smf_info smf_cluster smf_https_srv smf_lora smf_protocol_sml crypto ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
-    if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-        list(APPEND lora_link_libs "${Boost_LIBRARIES}")
-        if (UNIX)
-            list(APPEND lora_link_libs pthread)
-        endif()
-    endif()
-    target_link_libraries(lora ${lora_link_libs})
+	target_include_directories(lora
+		PRIVATE
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+			${CYNG_INCLUDE_DIRS}
+			${BOOST_INCLUDE_DIR}
+	)
+	target_link_libraries(lora 
+		smf_info 
+		smf_cluster 
+		smf_https_srv 
+		smf_lora 
+		smf_protocol_sml
+		${SMF_CRYPTO_LIBRARY}
+		${CYNG_LIBRARIES} 
+		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+	)
 endif()
 
 #
@@ -771,31 +920,37 @@ endif()
 #
 include (nodes/master/prg.cmake)
 add_executable(master ${node_master})
-# libraries to link
-set(master_link_libs smf_info ${CYNG_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND master_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND master_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-endif()
-target_link_libraries(master ${master_link_libs})
+target_include_directories(master
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(master 
+	smf_info 
+	${CYNG_LIBRARIES} 
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+)
 
 #
 # modem node
 #
 include (nodes/modem/prg.cmake)
 add_executable(modem ${node_modem})
-# libraries to link
-set(modem_link_libs smf_info smf_cluster smf_protocol_sml smf_protocol_modem ${CYNG_LIBRARIES} )
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND modem_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND modem_link_libs pthread ${CMAKE_DL_LIBS} )
-    endif()
-endif()
-#message(STATUS "** link modem            : ${modem_link_libs}")
-target_link_libraries(modem ${modem_link_libs})
+target_include_directories(modem
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(modem 
+	smf_info 
+	smf_cluster 
+	smf_protocol_sml 
+	smf_protocol_modem 
+	${CYNG_LIBRARIES}
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+)
 
 #
 # mqtt
@@ -822,78 +977,96 @@ endif(MSVC)
 #
 include (nodes/iec-62056/prg.cmake)
 add_executable(iec_62056 ${node_iec_62056})
-# libraries to link
-set(iec_62056_link_libs smf_cluster ${CYNG_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND iec_62056_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND iec_62056_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-endif()
-target_link_libraries(iec_62056 ${iec_62056_link_libs})
+target_include_directories(iec_62056
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(iec_62056 
+	smf_info 
+	smf_cluster 
+	${CYNG_LIBRARIES}
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+)
 
 #
 # setup
 #
 include (nodes/setup/prg.cmake)
 add_executable(setup ${node_setup})
-# libraries to link
-set(setup_link_libs smf_info smf_cluster ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND setup_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND setup_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-endif()
-if(WIN32)
-	list(APPEND setup_link_libs odbc32.lib)
-else()
-	list(APPEND setup_link_libs ${SQLite3_LIBRARY})
-endif(WIN32)
-target_link_libraries(setup ${setup_link_libs})
+target_include_directories(setup
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(setup 
+	smf_info 
+	smf_cluster 
+	${CYNG_LIBRARIES}
+	${OPENSSL_LIBRARIES}
+	"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+)
 
 #
 # task: csv
 #
 include (tasks/csv/prg.cmake)
 add_executable(csv ${task_csv})
-
-# libraries to link
-set(csv_link_libs smf_protocol_sml smf_cluster ${CYNG_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND csv_link_libs "${Boost_LIBRARIES}")
-    if (UNIX)
-        list(APPEND csv_link_libs pthread ${CMAKE_DL_LIBS})
-    endif()
-endif()
-if(WIN32)
-	list(APPEND csv_link_libs odbc32.lib)
-else()
-	list(APPEND csv_link_libs ${SQLite3_LIBRARY})
-endif(WIN32)
-target_link_libraries(csv ${csv_link_libs})
+target_include_directories(csv
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(csv 
+#	smf_info 
+	smf_protocol_sml
+	smf_cluster 
+	${CYNG_LIBRARIES}
+	${OPENSSL_LIBRARIES}
+	"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+)
 
 #
 # task: tsdb (time series database)
 #
 include (tasks/tsdb/prg.cmake)
 add_executable(tsdb ${task_tsdb})
-set(tsdb_link_libs smf_cluster ${CYNG_LIBRARIES})
-if (UNIX)
-	list(APPEND tsdb_link_libs pthread ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})
-endif()
-target_link_libraries(tsdb ${tsdb_link_libs})
+target_include_directories(tsdb
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(tsdb 
+#	smf_info 
+	smf_cluster 
+	${CYNG_LIBRARIES}
+	${OPENSSL_LIBRARIES}
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+)
 
 #
 # task: stat (statistics - detecting gaps, etc)
 #
 include (tasks/stat/prg.cmake)
 add_executable(stat ${task_stat})
-set(stat_link_libs smf_cluster ${CYNG_LIBRARIES})
-if (UNIX)
-	list(APPEND stat_link_libs pthread ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})
-endif()
-target_link_libraries(stat ${stat_link_libs})
+target_include_directories(stat
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+)
+target_link_libraries(stat 
+#	smf_info 
+	smf_cluster 
+	${CYNG_LIBRARIES}
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+)
 
 #
 # test unit using Boost.Test
@@ -904,33 +1077,34 @@ target_link_libraries(stat ${stat_link_libs})
 if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 	include (test/unit-test/unit-test.cmake)
 	add_executable(unit_test ${unit_test})
+	target_include_directories(unit_test
+		PRIVATE
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+			${CYNG_INCLUDE_DIRS}
+			${BOOST_INCLUDE_DIR}
+			${CRYPT_INCLUDE_DIR}
+			${PUGIXML_INCLUDE_DIR}
+	)
 		
 # 	set_property(
 # 		TARGET unit_test
 # 		PROPERTY COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
 
-	set(unittest_link_libs smf_protocol_ipt smf_bus_ipt smf_protocol_sml smf_protocol_mbus smf_bus_serial ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
+	# BOOST_TEST_DYN_LINK is required to build a main() function
+	target_compile_definitions(unit_test
+		PRIVATE
+			BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
 
-	if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-		# BOOST_TEST_DYN_LINK is required to build a main() function
-		target_compile_definitions(unit_test
-			PRIVATE
-				BOOST_ASIO_HAS_MOVE)
-		list(APPEND unittest_link_libs pthread ${Boost_LIBRARIES})
-	else()
-		# BOOST_TEST_DYN_LINK is required to build a main() function
-		target_compile_definitions(unit_test
-			PRIVATE
-				BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
-		if(WIN32)
-			list(APPEND unittest_link_libs odbc32.lib)
-		else()
-			list(APPEND unittest_link_libs pthread ${CMAKE_DL_LIBS} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${SQLite3_LIBRARY})
-		endif()
-	endif()
-
-	message(STATUS "** link unit-test        : ${unittest_link_libs}")
-	target_link_libraries(unit_test ${unittest_link_libs})
+	target_link_libraries(unit_test 
+		smf_protocol_ipt 
+		smf_bus_ipt 
+		smf_protocol_sml 
+		smf_protocol_mbus 
+		smf_bus_serial
+		${CYNG_LIBRARIES}
+		"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_UNIT_TEST_FRAMEWORK_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+	)
 endif()
 
 #
@@ -938,15 +1112,32 @@ endif()
 #
 include (tools/smf/prg.cmake)
 add_executable(smf ${tool_smf})
+target_include_directories(smf
+	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+		${CYNG_INCLUDE_DIRS}
+		${BOOST_INCLUDE_DIR}
+		${CRYPT_INCLUDE_DIR}
+		${PUGIXML_INCLUDE_DIR}
+)
 # libraries to link 
-set(smf_link_libs smf_info smf_protocol_sml smf_protocol_mbus ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
-if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-	list(APPEND smf_link_libs "${Boost_LIBRARIES}")
-	if (UNIX)
-		list(APPEND smf_link_libs pthread readline)
-	endif()
-endif()
-target_link_libraries(smf ${smf_link_libs})
+target_link_libraries(smf 
+	smf_info 
+	smf_protocol_sml 
+	smf_protocol_mbus 
+	${CYNG_LIBRARIES} 
+	${OPENSSL_LIBRARIES}
+	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;readline>"
+)
+
+# set(smf_link_libs smf_info smf_protocol_sml smf_protocol_mbus ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
+# if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
+# 	list(APPEND smf_link_libs "${Boost_LIBRARIES}")
+# 	if (UNIX)
+# 		list(APPEND smf_link_libs pthread readline)
+# 	endif()
+# endif()
+# target_link_libraries(smf ${smf_link_libs})
 
 #
 #   Generate configuration files
@@ -962,165 +1153,165 @@ if(UNIX)
 	# http
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/http_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/http_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http.service.in"
-		  "${PROJECT_BINARY_DIR}/node-http.service")
+		  "${PROJECT_BINARY_DIR}/config/node-http.service")
 
 	# https
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https.service.in"
-		  "${PROJECT_BINARY_DIR}/node-https.service")
+		  "${PROJECT_BINARY_DIR}/config/node-https.service")
 
 	# dash
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash.service.in"
-		  "${PROJECT_BINARY_DIR}/node-dash.service")
+		  "${PROJECT_BINARY_DIR}/config/node-dash.service")
 
 	# dashs
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/dashs_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/dashs_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs.service.in"
-		  "${PROJECT_BINARY_DIR}/node-dashs.service")
+		  "${PROJECT_BINARY_DIR}/config/node-dashs.service")
 
 	# e355
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/e350_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/e350_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350.service.in"
-		  "${PROJECT_BINARY_DIR}/node-e350.service")
+		  "${PROJECT_BINARY_DIR}/config/node-e350.service")
 
 	# ipt collector 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/collector_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/collector_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector.service.in"
-		  "${PROJECT_BINARY_DIR}/node-collector.service")
+		  "${PROJECT_BINARY_DIR}/config/node-collector.service")
 
 	# ipt emitter 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/emitter_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/emitter_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter.service.in"
-		  "${PROJECT_BINARY_DIR}/node-emitter.service")
+		  "${PROJECT_BINARY_DIR}/config/node-emitter.service")
 	  
 	# ipt gateway
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/gateway_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/gateway_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.service.in"
-		  "${PROJECT_BINARY_DIR}/node-gateway.service")
+		  "${PROJECT_BINARY_DIR}/config/node-gateway.service")
 
 	# ipt segw
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.service.in"
-		  "${PROJECT_BINARY_DIR}/node-segw.service")
+		  "${PROJECT_BINARY_DIR}/config/node-segw.service")
 
 	# ipt master
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt.service.in"
-		  "${PROJECT_BINARY_DIR}/node-ipt.service")
+		  "${PROJECT_BINARY_DIR}/config/node-ipt.service")
 
 	# ipts master
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/ipts_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/ipts_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts.service.in"
-		  "${PROJECT_BINARY_DIR}/node-ipts.service")
+		  "${PROJECT_BINARY_DIR}/config/node-ipts.service")
 
 	# ipt store
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/store_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/store_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store.service.in"
-		  "${PROJECT_BINARY_DIR}/node-store.service")
+		  "${PROJECT_BINARY_DIR}/config/node-store.service")
 
 	# lora
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/lora_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/lora_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora.service.in"
-		  "${PROJECT_BINARY_DIR}/node-lora.service")
+		  "${PROJECT_BINARY_DIR}/config/node-lora.service")
 	  
 	# master
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/master_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/master_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master.service.in"
-		  "${PROJECT_BINARY_DIR}/node-master.service")
+		  "${PROJECT_BINARY_DIR}/config/node-master.service")
 
 	# modem
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/modem_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/modem_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem.service.in"
-		  "${PROJECT_BINARY_DIR}/node-modem.service")
+		  "${PROJECT_BINARY_DIR}/config/node-modem.service")
 
 	# mqtt
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt.service.in"
-		  "${PROJECT_BINARY_DIR}/node-mqtt.service")
+		  "${PROJECT_BINARY_DIR}/config/node-mqtt.service")
 
 
 	# setup
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup.linux.cgf.in"
-		  "${PROJECT_BINARY_DIR}/setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup.service.in"
-		  "${PROJECT_BINARY_DIR}/node-setup.service")
+		  "${PROJECT_BINARY_DIR}/config/node-setup.service")
 	  
       # csv
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.linux.cgf.in"
-            "${PROJECT_BINARY_DIR}/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+            "${PROJECT_BINARY_DIR}/config/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.service.in"
-            "${PROJECT_BINARY_DIR}/task-csv.service")
+            "${PROJECT_BINARY_DIR}/config/task-csv.service")
 
 
 else()
@@ -1129,403 +1320,403 @@ else()
 	# http
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/http_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/http_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/http_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/http_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/http_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/http_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/http_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/http_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http.rc.in"
-		  "${PROJECT_BINARY_DIR}/http.rc")
+		  "${PROJECT_BINARY_DIR}/config/http.rc")
 
 	# https
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/https_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/https_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/https_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/https_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/https_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/https_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/https_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https.rc.in"
-		  "${PROJECT_BINARY_DIR}/https.rc")
+		  "${PROJECT_BINARY_DIR}/config/https.rc")
 
 	# dash
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/dash_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/dash_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/dash_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/dash_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/dash_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/dash_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash.rc.in"
-		  "${PROJECT_BINARY_DIR}/dash.rc")
+		  "${PROJECT_BINARY_DIR}/config/dash.rc")
 
 	# dashs
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/dashs_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/dashs_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/dashs_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/dashs_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/dashs_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/dashs_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/dashs_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/dashs_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs.rc.in"
-		  "${PROJECT_BINARY_DIR}/dashs.rc")
+		  "${PROJECT_BINARY_DIR}/config/dashs.rc")
 
 	# e355
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/e350_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/e350_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/e350_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/e350_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/e350_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/e350_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/e350_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/e350_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350.rc.in"
-		  "${PROJECT_BINARY_DIR}/e350.rc")
+		  "${PROJECT_BINARY_DIR}/config/e350.rc")
 
 	# ipt collector 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/collector_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/collector_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/collector_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/collector_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/collector_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/collector_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/collector_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/collector_restart_service.cmd")
 
 	# ipt emitter 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/emitter_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/emitter_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/emitter_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/emitter_create_service.cmd")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/emitter_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/emitter_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/emitter_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/emitter_restart_service.cmd")
 
 	# ipt gateway
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/gateway_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/gateway_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/gateway_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/gateway_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/gateway_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/gateway_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/gateway_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/gateway_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.rc.in"
-		  "${PROJECT_BINARY_DIR}/gateway.rc")
+		  "${PROJECT_BINARY_DIR}/config/gateway.rc")
 
 	# ipt segw
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/segw_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/segw_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/segw_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/segw_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/segw_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/segw_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.rc.in"
-		  "${PROJECT_BINARY_DIR}/segw.rc")
+		  "${PROJECT_BINARY_DIR}/config/segw.rc")
 
 	# ipt master
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/ipt_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/ipt_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/ipt_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/ipt_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/ipt_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/ipt_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt.rc.in"
-		  "${PROJECT_BINARY_DIR}/ipt.rc")
+		  "${PROJECT_BINARY_DIR}/config/ipt.rc")
 
 	# ipts master
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/ipts_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/ipts_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/ipts_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/ipts_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/ipts_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/ipts_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/ipts_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/ipts_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts.rc.in"
-		  "${PROJECT_BINARY_DIR}/ipts.rc")
+		  "${PROJECT_BINARY_DIR}/config/ipts.rc")
 
 	# ipt store
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/store_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/store_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/store_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/store_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/store_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/store_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/store_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/store_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store.rc.in"
-		  "${PROJECT_BINARY_DIR}/store.rc")
+		  "${PROJECT_BINARY_DIR}/config/store.rc")
 
 	# lora
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/lora_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/lora_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/lora_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/lora_create_service.cmd")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/lora_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/lora_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/lora_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/lora_restart_service.cmd")
 
 	# master
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/master_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/master_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/master_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/master_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/master_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/master_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/master_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/master_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master.rc.in"
-		  "${PROJECT_BINARY_DIR}/master.rc")
+		  "${PROJECT_BINARY_DIR}/config/master.rc")
 
 	# modem
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/modem_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/modem_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/modem_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/modem_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/modem_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/modem_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/modem_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/modem_restart_service.cmd")
 
 	# mqtt
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/mqtt_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/mqtt_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/mqtt_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/mqtt_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/mqtt_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/mqtt_restart_service.cmd")
 
 	# setup
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup.windows.cgf.in"
-		  "${PROJECT_BINARY_DIR}/setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		  "${PROJECT_BINARY_DIR}/config/setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup_create_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/setup_create_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/setup_create_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup_delete_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/setup_delete_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/setup_delete_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup_restart_service.cmd.in"
-		  "${PROJECT_BINARY_DIR}/setup_restart_service.cmd")
+		  "${PROJECT_BINARY_DIR}/config/setup_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup.rc.in"
-		  "${PROJECT_BINARY_DIR}/setup.rc")
+		  "${PROJECT_BINARY_DIR}/config/setup.rc")
 
       # csv
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.windows.cgf.in"
-            "${PROJECT_BINARY_DIR}/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+            "${PROJECT_BINARY_DIR}/config/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv_create_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/csv_create_service.cmd")
+            "${PROJECT_BINARY_DIR}/config/csv_create_service.cmd")
 
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv_delete_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/csv_delete_service.cmd")
+            "${PROJECT_BINARY_DIR}/config/csv_delete_service.cmd")
 
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv_restart_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/csv_restart_service.cmd")
+            "${PROJECT_BINARY_DIR}/config/csv_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.rc.in"
-		  "${PROJECT_BINARY_DIR}/csv.rc")
+		  "${PROJECT_BINARY_DIR}/config/csv.rc")
 
       # stat
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.windows.cgf.in"
-            "${PROJECT_BINARY_DIR}/stat_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+            "${PROJECT_BINARY_DIR}/config/stat_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_create_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/stat_create_service.cmd")
+            "${PROJECT_BINARY_DIR}/config/stat_create_service.cmd")
 
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_delete_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/stat_delete_service.cmd")
+            "${PROJECT_BINARY_DIR}/config/stat_delete_service.cmd")
 
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_restart_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/stat_restart_service.cmd")
+            "${PROJECT_BINARY_DIR}/config/stat_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.rc.in"
-		  "${PROJECT_BINARY_DIR}/stat.rc")
+		  "${PROJECT_BINARY_DIR}/config/stat.rc")
 
 
       # tsdb
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb.windows.cgf.in"
-            "${PROJECT_BINARY_DIR}/tsdb_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+            "${PROJECT_BINARY_DIR}/config/tsdb_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb_create_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/tsdb_create_service.cmd")
+            "${PROJECT_BINARY_DIR}/config/tsdb_create_service.cmd")
 
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb_delete_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/tsdb_delete_service.cmd")
+            "${PROJECT_BINARY_DIR}/config/tsdb_delete_service.cmd")
 
       configure_file (
             "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb_restart_service.cmd.in"
-            "${PROJECT_BINARY_DIR}/tsdb_restart_service.cmd")
+            "${PROJECT_BINARY_DIR}/config/tsdb_restart_service.cmd")
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb.rc.in"
-		  "${PROJECT_BINARY_DIR}/tsdb.rc")
+		  "${PROJECT_BINARY_DIR}/config/tsdb.rc")
 
 endif(UNIX)
 

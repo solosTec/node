@@ -9,6 +9,7 @@
 
 #include <cyng/object.h>
 #include <map>
+#include <vector>
 #include <string>
 #include <boost/utility/string_view.hpp>
 
