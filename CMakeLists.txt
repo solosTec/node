@@ -739,6 +739,7 @@ target_link_libraries(collector
 	smf_protocol_ipt
 	smf_bus_ipt
 	${CYNG_LIBRARIES} 
+	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
@@ -759,6 +760,7 @@ target_link_libraries(emitter
 	smf_protocol_ipt
 	smf_bus_ipt
 	${CYNG_LIBRARIES} 
+	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
@@ -945,7 +947,8 @@ target_include_directories(master
 target_link_libraries(master 
 	smf_info 
 	${CYNG_LIBRARIES} 
-	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	${OPENSSL_LIBRARIES}
+	"$<$<PLATFORM_ID:Linux>:atomic;${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
 )
 
 #
@@ -1003,6 +1006,7 @@ target_link_libraries(iec_62056
 	smf_info 
 	smf_cluster 
 	${CYNG_LIBRARIES}
+	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
 )
 
@@ -1079,8 +1083,9 @@ target_include_directories(stat
 		${BOOST_INCLUDE_DIR}
 )
 target_link_libraries(stat 
-#	smf_info 
+	smf_info 
 	smf_cluster 
+	${OPENSSL_LIBRARIES}
 	${CYNG_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
 )
@@ -1129,25 +1134,27 @@ endif()
 #
 # SMF tool
 #
-include (tools/smf/prg.cmake)
-add_executable(smf ${tool_smf})
-target_include_directories(smf
-	PRIVATE
-		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
-		${CYNG_INCLUDE_DIRS}
-		${BOOST_INCLUDE_DIR}
-		${CRYPT_INCLUDE_DIR}
-		${PUGIXML_INCLUDE_DIR}
-)
-# libraries to link 
-target_link_libraries(smf 
-	smf_info 
-	smf_protocol_sml 
-	smf_protocol_mbus 
-	${CYNG_LIBRARIES} 
-	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;readline>"
-)
+if(NOT ${PROJECT_NAME}_CROSS_COMPILE)
+	include (tools/smf/prg.cmake)
+	add_executable(smf ${tool_smf})
+	target_include_directories(smf
+		PRIVATE
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+			${CYNG_INCLUDE_DIRS}
+			${BOOST_INCLUDE_DIR}
+			${CRYPT_INCLUDE_DIR}
+			${PUGIXML_INCLUDE_DIR}
+	)
+	# libraries to link 
+	target_link_libraries(smf 
+		smf_info 
+		smf_protocol_sml 
+		smf_protocol_mbus 
+		${CYNG_LIBRARIES} 
+		${OPENSSL_LIBRARIES}
+		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;readline>"
+	)
+endif()
 
 # set(smf_link_libs smf_info smf_protocol_sml smf_protocol_mbus ${CYNG_LIBRARIES} ${OPENSSL_LIBRARIES})
 # if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
@@ -1767,16 +1774,18 @@ include(GenerateDoxygenDoc)
 
 if(${PROJECT_NAME}_CROSS_COMPILE)
 
+	string(TOLOWER ${PROJECT_NAME} OECP_NAME)
+
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/src/main/templates/opkg/control"
+		  "${PROJECT_SOURCE_DIR}/src/main/templates/opkg/control.in"
 		  "${PROJECT_BINARY_DIR}/opkg/control")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/src/main/templates/opkg/postinst"
+		  "${PROJECT_SOURCE_DIR}/src/main/templates/opkg/postinst.in"
 		  "${PROJECT_BINARY_DIR}/opkg/postinst")
 
 	configure_file (
-		  "${PROJECT_SOURCE_DIR}/src/main/templates/opkg/rules"
+		  "${PROJECT_SOURCE_DIR}/src/main/templates/opkg/rules.in"
 		  "${PROJECT_BINARY_DIR}/opkg/rules")
 		  
 endif()

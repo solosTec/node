@@ -26,13 +26,7 @@ set (task_stat_shared
 	tasks/set_start_options.h
 	nodes/show_ip_address.h
 
-	nodes/print_build_info.cpp
-	tasks/print_version_info.cpp
-	tasks/set_start_options.cpp
-	nodes/show_ip_address.cpp
-
 	src/main/include/smf/shared/ctl.h
-	nodes/shared/sys/ctl.cpp
 )
 
 if (UNIX)
