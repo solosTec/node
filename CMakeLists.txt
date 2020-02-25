@@ -1355,7 +1355,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/http.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/http.rc")
+		  "${PROJECT_BINARY_DIR}/http.rc")
 
 	# https
 	configure_file (
@@ -1376,7 +1376,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/www/templates/https.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/https.rc")
+		  "${PROJECT_BINARY_DIR}/https.rc")
 
 	# dash
 	configure_file (
@@ -1397,7 +1397,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/dash.rc")
+		  "${PROJECT_BINARY_DIR}/dash.rc")
 
 	# dashs
 	configure_file (
@@ -1418,7 +1418,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/dashs.rc")
+		  "${PROJECT_BINARY_DIR}/dashs.rc")
 
 	# e355
 	configure_file (
@@ -1439,7 +1439,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/e350.rc")
+		  "${PROJECT_BINARY_DIR}/e350.rc")
 
 	# ipt collector 
 	configure_file (
@@ -1494,7 +1494,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/gateway.rc")
+		  "${PROJECT_BINARY_DIR}/gateway.rc")
 
 	# ipt segw
 	configure_file (
@@ -1515,7 +1515,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/segw.rc")
+		  "${PROJECT_BINARY_DIR}/segw.rc")
 
 	# ipt master
 	configure_file (
@@ -1536,7 +1536,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/ipt.rc")
+		  "${PROJECT_BINARY_DIR}/ipt.rc")
 
 	# ipts master
 	configure_file (
@@ -1557,7 +1557,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/ipts.rc")
+		  "${PROJECT_BINARY_DIR}/ipts.rc")
 
 	# ipt store
 	configure_file (
@@ -1578,7 +1578,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/store.rc")
+		  "${PROJECT_BINARY_DIR}/store.rc")
 
 	# lora
 	configure_file (
@@ -1616,7 +1616,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/master/templates/master.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/master.rc")
+		  "${PROJECT_BINARY_DIR}/master.rc")
 
 	# modem
 	configure_file (
@@ -1671,7 +1671,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/setup.rc")
+		  "${PROJECT_BINARY_DIR}/setup.rc")
 
       # csv
       configure_file (
@@ -1692,7 +1692,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/csv.rc")
+		  "${PROJECT_BINARY_DIR}/csv.rc")
 
       # stat
       configure_file (
@@ -1713,7 +1713,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/stat.rc")
+		  "${PROJECT_BINARY_DIR}/stat.rc")
 
 
       # tsdb
@@ -1735,7 +1735,7 @@ else()
 
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb.rc.in"
-		  "${PROJECT_BINARY_DIR}/config/tsdb.rc")
+		  "${PROJECT_BINARY_DIR}/tsdb.rc")
 
 endif(UNIX)
 
