@@ -47,6 +47,15 @@ namespace node
 
 		<< "Compiler      : "
 		<< BOOST_COMPILER
+#if BOOST_OS_WINDOWS
+		<< " ("
+		<< (_MSC_FULL_VER / 10000000)		//	major version
+		<< '.'
+		<< ((_MSC_FULL_VER / 100000) % 100)	//	minor version
+		<< '.'
+		<< (_MSC_FULL_VER % 100000)	//	patch level
+		<< ")"
+#endif
 		<< std::endl
 
 		<< "StdLib        : "
@@ -108,6 +117,10 @@ namespace node
 		<< "features      : C++2a"
 		<< std::endl
 		
+			
+#ifdef __CPP_SUPPORT_P1099R5
+		<< "P1099R5: using enums" << std::endl
+#endif
 #ifdef __CPP_SUPPORT_P0409R2
 		<< "P0409R2: Allow lambda-capture [=, this]" << std::endl
 #endif
@@ -310,163 +323,163 @@ namespace node
 		<< "N3915: apply() call a function with arguments from a tuple" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3922
-		<< "New auto rules for direct-list-initialization" << std::endl
+		<< "N3922: New auto rules for direct-list-initialization" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3928
-		<< "static_assert with no message" << std::endl
+		<< "N3928: static_assert with no message" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4051
-		<< "typename in a template template parameter" << std::endl
+		<< "N4051: typename in a template template parameter" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4086
-		<< "Removing trigraphs" << std::endl
+		<< "N4086: Removing trigraphs" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4230
-		<< "Nested namespace definition" << std::endl
+		<< "N4230: Nested namespace definition" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4266
-		<< "Attributes for namespaces and enumerators" << std::endl
+		<< "N4230: Attributes for namespaces and enumerators" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4267
-		<< "u8 character literals" << std::endl
+		<< "N4267: u8 character literals" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4268
-		<< "Allow constant evaluation for all non-type template arguments" << std::endl
+		<< "N4268: Allow constant evaluation for all non-type template arguments" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4295
-		<< "Fold Expressions" << std::endl
+		<< "N4295: Fold Expressions" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0036R0
-		<< "Unary fold expressions and empty parameter packs" << std::endl
+		<< "P0036R0: Unary fold expressions and empty parameter packs" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0012R1
-		<< "Make exception specifications part of the type system" << std::endl
+		<< "P0012R1: Make exception specifications part of the type system" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0017R1
-		<< "Aggregate initialization of classes with base classes" << std::endl
+		<< "P0017R1: Aggregate initialization of classes with base classes" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0061R1
-		<< "__has_include in preprocessor conditionals" << std::endl
+		<< "P0061R1: __has_include in preprocessor conditionals" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0136R1
-		<< "New specification for inheriting constructors (DR1941 et al)" << std::endl
+		<< "P0136R1: New specification for inheriting constructors (DR1941 et al)" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0018R3
-		<< "Lambda capture of *this" << std::endl
+		<< "P0018R3: Lambda capture of *this" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0138R2
-		<< "Direct-list-initialization of enumerations" << std::endl
+		<< "P0138R2: Direct-list-initialization of enumerations" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0170R1
-		<< "constexpr lambda expressions" << std::endl
+		<< "P0170R1: constexpr lambda expressions" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0184R0
-		<< "Differing begin and end types in range-based for" << std::endl
+		<< "P0184R0: Differing begin and end types in range-based for" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0188R1
-		<< "[[fallthrough]] attribute" << std::endl
+		<< "P0188R1: [[fallthrough]] attribute" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0189R1
-		<< "[[nodiscard]] attribute" << std::endl
+		<< "P0189R1: [[nodiscard]] attribute" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0212R1
-		<< "[[maybe_unused]] attribute" << std::endl
+		<< "P0212R1: [[maybe_unused]] attribute" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0245R1
-		<< "Hexadecimal floating-point literals" << std::endl
+		<< "P0245R1: Hexadecimal floating-point literals" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0028R4
-		<< "Using attribute namespaces without repetition" << std::endl
+		<< "P0028R4: Using attribute namespaces without repetition" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0035R4
-		<< "Dynamic memory allocation for over-aligned data" << std::endl
+		<< "P0035R4: Dynamic memory allocation for over-aligned data" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0091R3
-		<< "Class template argument deduction" << std::endl
+		<< "P0091R3: Class template argument deduction" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0127R2
-		<< "Non-type template parameters with auto type" << std::endl
+		<< "P0127R2: Non-type template parameters with auto type" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0135R1
-		<< "Guaranteed copy elision" << std::endl
+		<< "P0135R1: Guaranteed copy elision" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0137R1
-		<< "Replacement of class objects containing reference members" << std::endl
+		<< "P0137R1: Replacement of class objects containing reference members" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0145R3
-		<< "Stricter expression evaluation order" << std::endl
+		<< "P0145R3: Stricter expression evaluation order" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0217R3
-		<< "Structured Bindings (like auto [...] = f())" << std::endl
+		<< "P0217R3: Structured Bindings (like auto [...] = f())" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0283R2
-		<< "Ignore unknown attributes" << std::endl
+		<< "P0283R2: Ignore unknown attributes" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0292R2
-		<< "constexpr if statements" << std::endl
+		<< "P0292R2: constexpr if statements" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0305R1
-		<< "init-statements for if and switch" << std::endl
+		<< "P0305R1: init-statements for if and switch" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0386R2
-		<< "Inline variables" << std::endl
+		<< "P0386R2: Inline variables" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0003R5
-		<< "Removing Deprecated Exception Specifications from C++17" << std::endl
+		<< "P0003R5: Removing Deprecated Exception Specifications from C++17" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0195R2
-		<< "Pack expansions in using-declarations" << std::endl
+		<< "P0195R2: Pack expansions in using-declarations" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0522R0
-		<< "DR: Matching of template template-arguments excludes compatible templates" << std::endl
+		<< "P0522R0: DR: Matching of template template-arguments excludes compatible templates" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3921
-		<< "std::string_view" << std::endl
+		<< "N3921 : std::string_view" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4259
-		<< "std::uncaught_exceptions()" << std::endl
+		<< "N4259 : std::uncaught_exceptions()" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4387
-		<< "Improving std::pair and std::tuple" << std::endl
+		<< "N4387 : Improving std::pair and std::tuple" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4391
-		<< "Library Fundamentals 2 TS - make_array" << std::endl
+		<< "N4391 : Library Fundamentals 2 TS - make_array" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4508
-		<< "std::shared_mutex (untimed)" << std::endl
+		<< "N4508 : std::shared_mutex (untimed)" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0024R2
-		<< "Standardization of Parallelism TS" << std::endl
+		<< "P0024R2: Standardization of Parallelism TS" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0154R1
-		<< "Hardware interference size" << std::endl
+		<< "P0154R1: Hardware interference size" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0218R1
-		<< "File system library" << std::endl
+		<< "P0218R1: File system library" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0220R1
-		<< "std::any / std::optional" << std::endl
+		<< "P0220R1: std::any / std::optional" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0226R1
-		<< "Mathematical special functions" << std::endl
+		<< "P0226R1: Mathematical special functions" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0063R3
-		<< "C++17 should refer to C11 instead of C99" << std::endl
+		<< "P0063R3: C++17 should refer to C11 instead of C99" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0083R3
-		<< "Splicing Maps and Sets" << std::endl
+		<< "P0083R3: Splicing Maps and Sets" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0088R3
-		<< "std::variant" << std::endl
+		<< "P0088R3: std::variant" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0067R5
-		<< "Elementary string conversions" << std::endl
+		<< "P0067R5: Elementary string conversions" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0298R3
-		<< "std::byte" << std::endl
+		<< "P0298R3: std::byte" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0156R0
-		<< "std::scoped_lock" << std::endl
+		<< "P0156R0: std::scoped_lock" << std::endl
 #endif
 
 
@@ -591,43 +604,43 @@ namespace node
 		<< "N1984: auto" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N1653
-		<< "C99 preprocessor" << std::endl
+		<< "N1653: C99 preprocessor" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N2235
-		<< "constexpr" << std::endl
+		<< "N2235: constexpr" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N2343
-		<< "decltype" << std::endl
+		<< "N2343: decltype" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N2346
-		<< "Defaulted and deleted functions" << std::endl
+		<< "N2346: Defaulted and deleted functions" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N1986
-		<< "Delegating constructors" << std::endl
+		<< "N1986: Delegating constructors" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N2437
-		<< "Explicit conversion operators" << std::endl
+		<< "N2437: Explicit conversion operators" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N1791
-		<< "Extended friend declarations" << std::endl
+		<< "N1791: Extended friend declarations" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N1987
-		<< "extern template" << std::endl
+		<< "N1987: extern template" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N2764
-		<< "Forward enum declarations" << std::endl
+		<< "N2764: Forward enum declarations" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N2540
-		<< "Inheriting constructors" << std::endl
+		<< "N2540: Inheriting constructors" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N2672
-		<< "Initializer lists" << std::endl
+		<< "N2672: Initializer lists" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N2550
-		<< "Lambda expressions" << std::endl
+		<< "N2550: Lambda expressions" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N2657
-		<< "Local and unnamed types as template parameters" << std::endl
+		<< "N2657: Local and unnamed types as template parameters" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N1811
 		<< "N1811: long long" << std::endl
@@ -660,7 +673,7 @@ namespace node
 		<< "N2844: RValue references v2.0" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N1720
-		<< "N1720:: static_assert" << std::endl
+		<< "N1720: static_assert" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N2347
 		<< "N2347: Strongly-typed enum" << std::endl
@@ -672,7 +685,7 @@ namespace node
 		<< "N2659: Thread-local storage" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N2544
-		<< "Unrestricted unions" << std::endl
+		<< "N2544: Unrestricted unions" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N1836
 		<< "N1836: Type traits" << std::endl

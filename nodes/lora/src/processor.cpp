@@ -323,8 +323,8 @@ namespace node
 		//	lookup configured LoRa devices
 		//
 		if (r.second) {
-//#if defined _WIN32 || (defined __GNUC__ && __GNUC_PREREQ(5,0))
-#if defined __GNUC__ && __GNUC_PREREQ(6,0)
+#if defined(__CPP_SUPPORT_P1091R3)
+			//	structured binding 
 			auto const [aes_key, driver, found] = lookup(r.first);
 #else
             std::string aes_key;

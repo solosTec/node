@@ -152,12 +152,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/src/modules/")
 find_package(CYNG REQUIRED)
 
 if(CYNG_FOUND)
-
-#     get_filename_component(CYNG_INCLUDE_DIRS "${CYNG_INCLUDE_DIRS}/../" REALPATH)
-    
-#    include_directories(${CYNG_INCLUDE_DIRS})
-#    link_directories(${CYNG_LIBRARIES})
-
     message(STATUS "** CYNG include path : ${CYNG_INCLUDE_DIRS}")
     message(STATUS "** CYNG Libraries    : ${CYNG_LIBRARIES}")
 endif()
@@ -173,7 +167,6 @@ endif()
 message(STATUS "** CRYPT_ROOT        : ${CRYPT_ROOT}")
 
 get_filename_component(CRYPT_INCLUDE_DIR "${CRYPT_ROOT}/include" REALPATH)
-#include_directories("${CRYPT_INCLUDE_DIR}")
 message(STATUS "** CRYPT include path: ${CRYPT_INCLUDE_DIR}")
 
 #
@@ -191,18 +184,15 @@ if (NOT CRYPT_BUILD)
 endif()
 
 get_filename_component(CRYPT_LIBRARY_DIR ${CRYPT_BUILD} REALPATH)
-#include_directories(${CRYPT_LIBRARY_DIR})
 message(STATUS "** CRYPT library path: ${CRYPT_LIBRARY_DIR}")
 
 if (UNIX)
-#    link_directories(${CRYPT_LIBRARY_DIR})
     set(SMF_CRYPTO_LIBRARY "${CRYPT_LIBRARY_DIR}/libcrypto.so")
     message(STATUS "** CRYPT Libraries   : ${CRYPT_LIBRARY_DIR}/libcrypto.so")
 else()
 	#
 	#	$(ConfigurationName) is a variable used by the MS build system
 	#
-#	link_directories(${CRYPT_LIBRARY_DIR}/$(ConfigurationName))
     set(SMF_CRYPTO_LIBRARY "${CRYPT_LIBRARY_DIR}/$(ConfigurationName)/crypto.lib")
     message(STATUS "** CRYPT Libraries    : ${CRYPT_LIBRARY_DIR}/crypto.lib")
 endif()
@@ -325,8 +315,6 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
         message(STATUS "** openSSL SSL library   : ${OPENSSL_SSL_LIBRARY}")
         message(STATUS "** openSSL Libraries     : ${OPENSSL_LIBRARIES}")
     
-#        include_directories(${OPENSSL_INCLUDE_DIR})
-#        link_directories(${OPENSSL_LIBRARIES})
         set(${PROJECT_NAME}_SSL_VERSION ${OPENSSL_VERSION})
     #
     else()
@@ -348,12 +336,6 @@ endif()
 set(PUGIXML_INCLUDE_DIR "${CYNG_ROOT_DEV}/lib/xml/pugixml/src")
 message(STATUS "** PugiXML Include   : ${PUGIXML_INCLUDE_DIR}")
 add_definitions(-D${PROJECT_NAME}_PUGIXML_INSTALLED)
-#include_directories(${PUGIXML_INCLUDE_DIR})
-
-#
-# include directories for all C/C++ projects
-#
-#include_directories(src/main/include)
 
 #
 # configure a header file to pass some of the CMake settings
@@ -363,7 +345,6 @@ configure_file (
   "${PROJECT_SOURCE_DIR}/src/main/templates/project_info.h.in"
   "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h"
 )
-#include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 #
 # minimal test program
@@ -991,17 +972,24 @@ target_link_libraries(modem
 if(MSVC)
     include (nodes/mqtt/prg.cmake)
     add_executable(mqtt ${node_mqtt})
-    target_compile_options(mqtt PRIVATE "-DMQTT_NO_TLS")
-    target_include_directories(mqtt PRIVATE "${PROJECT_SOURCE_DIR}/3party")
+
+    target_compile_options(mqtt 
+		PRIVATE 
+			"-DMQTT_NO_TLS")
+
+    target_include_directories(mqtt 
+		PRIVATE 
+			"${PROJECT_SOURCE_DIR}/3party"
+			${CYNG_INCLUDE_DIRS}
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
+	)
     # libraries to link
-    set(mqtt_link_libs smf_info smf_cluster ${CYNG_LIBRARIES} )
-    if (${GLOBAL_LIBRARY_TYPE} STREQUAL "SHARED")
-        list(APPEND mqtt_link_libs "${Boost_LIBRARIES}")
-        if (UNIX)
-            list(APPEND mqtt_link_libs pthread)
-        endif()
-    endif()
-    target_link_libraries(mqtt ${mqtt_link_libs})
+    target_link_libraries(mqtt 
+		smf_info 
+		smf_cluster 
+		${CYNG_LIBRARIES}
+		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+	)
 endif(MSVC)
 
 #
