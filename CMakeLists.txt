@@ -272,7 +272,7 @@ elseif(MSVC)
 	#	Target is Windows 10
 	#
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /bigobj /std:c++latest /MP")	
-	add_definitions(-D_WIN32_WINNT=0x0A00 -D_SCL_SECURE_NO_WARNINGS -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
+	add_compile_definitions(_WIN32_WINNT=0x0A00 _SCL_SECURE_NO_WARNINGS _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
 	
 	#
 	# help CMake to find OpenSSL
@@ -285,6 +285,13 @@ else()
 
 	message( FATAL_ERROR "Unknown or missing compiler: ${CMAKE_CXX_COMPILER_ID}" )
 	
+endif()
+
+#
+#	add NODE_ADDRESS_MODEL=N (since CMake 3.12.4)
+#
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.4") 
+	add_compile_definitions(${PROJECT_NAME}_ADDRESS_MODEL=${${PROJECT_NAME}_ADDRESS_MODEL})
 endif()
 
 #
@@ -719,6 +726,7 @@ target_link_libraries(e350
 	smf_cluster
 	smf_protocol_imega
 	${CYNG_LIBRARIES} 
+	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
@@ -807,6 +815,7 @@ target_include_directories(segw
 		${BOOST_INCLUDE_DIR}
 )
 target_link_libraries(segw 
+	smf_info
 	smf_protocol_ipt 
 	smf_bus_ipt 
 	smf_bus_sml 
@@ -837,6 +846,7 @@ target_link_libraries(ipt
 	smf_protocol_ipt 
 	smf_protocol_sml
 	${CYNG_LIBRARIES} 
+	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
 )
 
@@ -857,6 +867,7 @@ target_link_libraries(ipts
 	smf_protocol_sml
 #	${SMF_CRYPTO_LIBRARY}
 	${CYNG_LIBRARIES} 
+	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
 )
 
@@ -879,6 +890,7 @@ target_link_libraries(store
 	smf_protocol_iec 
 	smf_protocol_mbus 
 	${CYNG_LIBRARIES} 
+	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
@@ -968,6 +980,7 @@ target_link_libraries(modem
 	smf_protocol_sml 
 	smf_protocol_modem 
 	${CYNG_LIBRARIES}
+	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
 )
 

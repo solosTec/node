@@ -110,7 +110,6 @@ if(NOT CYNG_FOUND)
 #    message(STATUS "** found 2: ${CYNG_INCLUDE_DIR_2}")
 
     if (UNIX)
-#        set(__CYNG_BUILD "${CYNG_ROOT_DEV}/build" CACHE PATH "__CYNG_BUILD")
 
  		set(__CYNG_BUILD "${CYNG_ROOT_DEV}/${CYNG_ROOT_BUILD_SUBDIR}" CACHE PATH "__CYNG_BUILD")
 		foreach(CYNG_LIB ${CYNG_LIB_LIST})
@@ -126,6 +125,10 @@ if(NOT CYNG_FOUND)
         
 			list(APPEND CYNG_LIBRARIES ${__${CYNG_LIB}})
 			#message(STATUS "** __CYNG_LIB    : ${__${CYNG_LIB}}")
+			
+			#
+			# ToDo: define some variables for install script
+			#
 		endforeach()
 
     else()

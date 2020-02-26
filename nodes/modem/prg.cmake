@@ -35,7 +35,6 @@ set (node_modem_shared
 
 if (UNIX)
 	list(APPEND node_modem_shared src/main/include/smf/shared/write_pid.h)
-	list(APPEND node_modem_shared nodes/shared/sys/write_pid.cpp)
 endif(UNIX)
 
 set (node_modem_tasks

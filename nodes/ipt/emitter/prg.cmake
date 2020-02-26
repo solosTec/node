@@ -24,7 +24,6 @@ set (node_ipt_emitter_shared
 
 if (UNIX)
 	list(APPEND node_ipt_emitter_shared src/main/include/smf/shared/write_pid.h)
-	list(APPEND node_ipt_emitter_shared nodes/shared/sys/write_pid.cpp)
 endif(UNIX)
 
 set (node_ipt_emitter_tasks

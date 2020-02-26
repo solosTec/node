@@ -1,20 +1,46 @@
 #!/usr/bin/make -f
 
-INSTALLDIR := /tmp/oecp-cyng
+INSTALLDIR := /tmp/@OECP_NAME@
 
 build: build-stamp
-	make -j8 -C @PROJECT_BINARY_DIR@
+	make segw -j4 -C @PROJECT_BINARY_DIR@
 
 build-stamp:
 	touch build-stamp
 
 clean:
-	make -C @PROJECT_BINARY_DIR@ clean
+#	make -C @PROJECT_BINARY_DIR@ clean
 	rm -f build-stamp
 	rm -rf $(INSTALLDIR)
 
 install: build
 	install -d $(INSTALLDIR)/usr/local/lib
 	install -m 644 @PROJECT_BINARY_DIR@/lib*.so $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_async@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_csv@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_domain@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_log@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_parser@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_store@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_vm@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_core@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_db@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_io@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_crypto@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_mail@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_rnd@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_sys@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_xml@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_json@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_meta@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_sql@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @__cyng_table@ $(INSTALLDIR)/usr/local/lib
+	install -m 644 @CRYPT_BUILD@/libcrypto.so $(INSTALLDIR)/usr/local/lib
+	
+	install -d $(INSTALLDIR)/usr/local/sbin
+	install -m 755 @PROJECT_BINARY_DIR@/segw $(INSTALLDIR)/usr/local/sbin
 
+	install -d $(INSTALLDIR)/usr/local/etc
+	install -m 644 @PROJECT_BINARY_DIR@/config/segw_v0.8.cfg $(INSTALLDIR)/usr/local/etc
+	
 .PHONY: build clean install

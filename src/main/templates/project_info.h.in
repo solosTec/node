@@ -12,7 +12,8 @@ namespace @PROJECT_NAME@
 	const char project_name[] = "@PROJECT_NAME@";
 	const char version_string[] = "${PROJECT_NAME}/v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}";
 	const char SALT[]  =	"${${PROJECT_NAME}_SALT_STRING}";
-	constexpr unsigned PREFERRED_BUFFER_SIZE = ${${PROJECT_NAME}_PREFERRED_BUFFER_SIZE};
+	constexpr unsigned ADDRESS_MODEL = ${${PROJECT_NAME}_ADDRESS_MODEL};	//	bits
+	constexpr unsigned PREFERRED_BUFFER_SIZE = ${${PROJECT_NAME}_PREFERRED_BUFFER_SIZE};	//	bytes
 }
 
 #define @PROJECT_NAME@_PLATFORM	 	"@CMAKE_SYSTEM@"

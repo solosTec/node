@@ -1,5 +1,5 @@
 #!/bin/sh
 
-echo "${PROJECT_NAME} library is installed"
+echo "${PROJECT_NAME} library (SMF project) is installed"
 
 
