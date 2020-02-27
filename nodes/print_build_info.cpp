@@ -314,40 +314,40 @@ namespace node
 		<< std::endl
 
 #ifdef __CPP_SUPPORT_N3291
-		<< "N3291: reverse_copy" << std::endl
+		<< "N3291  : reverse_copy" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3911
-		<< "N3911: std::void_t" << std::endl
+		<< "N3911  : std::void_t" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3915
-		<< "N3915: apply() call a function with arguments from a tuple" << std::endl
+		<< "N3915  : apply() call a function with arguments from a tuple" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3922
-		<< "N3922: New auto rules for direct-list-initialization" << std::endl
+		<< "N3922  : New auto rules for direct-list-initialization" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3928
-		<< "N3928: static_assert with no message" << std::endl
+		<< "N3928  : static_assert with no message" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4051
-		<< "N4051: typename in a template template parameter" << std::endl
+		<< "N4051  : typename in a template template parameter" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4086
-		<< "N4086: Removing trigraphs" << std::endl
+		<< "N4086  : Removing trigraphs" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4230
-		<< "N4230: Nested namespace definition" << std::endl
+		<< "N4230  : Nested namespace definition" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4266
-		<< "N4230: Attributes for namespaces and enumerators" << std::endl
+		<< "N4230  : Attributes for namespaces and enumerators" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4267
-		<< "N4267: u8 character literals" << std::endl
+		<< "N4267  : u8 character literals" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4268
-		<< "N4268: Allow constant evaluation for all non-type template arguments" << std::endl
+		<< "N4268  : Allow constant evaluation for all non-type template arguments" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4295
-		<< "N4295: Fold Expressions" << std::endl
+		<< "N4295  : Fold Expressions" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0036R0
 		<< "P0036R0: Unary fold expressions and empty parameter packs" << std::endl
@@ -434,19 +434,19 @@ namespace node
 		<< "P0522R0: DR: Matching of template template-arguments excludes compatible templates" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N3921
-		<< "N3921 : std::string_view" << std::endl
+		<< "N3921  : std::string_view" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4259
-		<< "N4259 : std::uncaught_exceptions()" << std::endl
+		<< "N4259  : std::uncaught_exceptions()" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4387
-		<< "N4387 : Improving std::pair and std::tuple" << std::endl
+		<< "N4387  : Improving std::pair and std::tuple" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4391
-		<< "N4391 : Library Fundamentals 2 TS - make_array" << std::endl
+		<< "N4391  : Library Fundamentals 2 TS - make_array" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_N4508
-		<< "N4508 : std::shared_mutex (untimed)" << std::endl
+		<< "N4508  : std::shared_mutex (untimed)" << std::endl
 #endif
 #ifdef __CPP_SUPPORT_P0024R2
 		<< "P0024R2: Standardization of Parallelism TS" << std::endl
