@@ -514,6 +514,10 @@ namespace node
 	{
 		set_cfg("startup", std::chrono::system_clock::now());
 
+		set_cfg("sys-version", NODE::version_string);
+		set_cfg("boost-version", NODE_BOOST_VERSION);
+		set_cfg("ssl-version", NODE_SSL_VERSION);
+
 		set_cfg("connection-auto-login", is_connection_auto_login());
 		set_cfg("connection-auto-enabled", is_connection_auto_enabled());
 		set_cfg("connection-superseed", is_connection_superseed());

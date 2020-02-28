@@ -37,16 +37,6 @@ namespace node
 	{
 		return false;
 	}
-
-
-	//bool update_config(cyng::store::db& db, std::string key, cyng::object obj)
-	//{
-	//	return false;
-	//}
-	//bool update_config(cyng::store::table const* tbl, std::string key, cyng::object obj)
-	//{
-	//	return false;
-	//}
 }
 
 
