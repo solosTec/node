@@ -7,6 +7,7 @@ set (node_ipt_segw_cpp
 	nodes/ipt/segw/src/segw.cpp	
 	nodes/ipt/segw/src/controller.cpp
 	nodes/ipt/segw/src/storage.cpp
+	nodes/ipt/segw/src/storage_global.cpp
 	nodes/ipt/segw/src/cache.cpp
 	nodes/ipt/segw/src/cfg_ipt.cpp
 	nodes/ipt/segw/src/bridge.cpp
@@ -21,6 +22,7 @@ set (node_ipt_segw_h
 	nodes/ipt/segw/src/controller.h
 	nodes/ipt/segw/src/segw.h
 	nodes/ipt/segw/src/storage.h
+	nodes/ipt/segw/src/storage_global.h
 	nodes/ipt/segw/src/cache.h
 	nodes/ipt/segw/src/cfg_ipt.h
 	nodes/ipt/segw/src/bridge.h
@@ -68,6 +70,8 @@ set (node_ipt_segw_tasks
 	nodes/ipt/segw/src/tasks/parser_CP210x.cpp
 	nodes/ipt/segw/src/tasks/push.h
 	nodes/ipt/segw/src/tasks/push.cpp
+	nodes/ipt/segw/src/tasks/limiter.h
+	nodes/ipt/segw/src/tasks/limiter.cpp
 )
 	
 set (node_ipt_segw_server

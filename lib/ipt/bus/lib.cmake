@@ -31,6 +31,8 @@ set (ipt_bus_tasks
 	lib/ipt/bus/src/tasks/register_target.cpp
 	lib/ipt/bus/src/tasks/open_channel.h
 	lib/ipt/bus/src/tasks/open_channel.cpp
+	lib/ipt/bus/src/tasks/transfer_data.h
+	lib/ipt/bus/src/tasks/transfer_data.cpp
 	lib/ipt/bus/src/tasks/watchdog.h
 	lib/ipt/bus/src/tasks/watchdog.cpp
 )

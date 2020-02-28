@@ -11,6 +11,7 @@
 #include "tasks/gpio.h"
 #include "tasks/obislog.h"
 #include "tasks/readout.h"
+#include "tasks/limiter.h"
 
 #include <smf/sml/status.h>
 #include <smf/sml/obis_db.h>
@@ -83,6 +84,12 @@ namespace node
 		start_task_obislog();
 
 		//
+		//	get maximum size of all data collectors and shrink tables
+		//	if maximum size was exceeded.
+		//
+		start_task_limiter();
+
+		//
 		//	start GPIO task
 		//
 		start_task_gpio();
@@ -91,6 +98,24 @@ namespace node
 		//	start readout task
 		//
 		start_task_readout();
+	}
+
+	void bridge::shrink()
+	{
+		cache_.loop("_DataCollector", [&](cyng::table::record const& rec)->bool {
+
+			auto const max_size = cyng::value_cast<std::uint16_t>(rec["maxSize"], 100);
+			auto const srv_id = cyng::to_buffer(rec["serverID"]);
+			sml::obis const profile = cyng::to_buffer(rec["profile"]);
+			auto const count = storage_.shrink(max_size, srv_id, profile);
+			CYNG_LOG_INFO(logger_, "profile "
+				<< profile.to_str()
+				<< " shrinked by "
+				<< count
+				<< " rows");
+
+			return true;	//	continue
+		});
 	}
 
 	void bridge::load_configuration()
@@ -541,6 +566,16 @@ namespace node
 			, logger_
 			, *this
 			, std::chrono::minutes(interval));
+		boost::ignore_unused(tid);
+	}
+
+	void bridge::start_task_limiter()
+	{
+		auto const tid = cyng::async::start_task_detached<limiter>(mux_
+			, logger_
+			, *this
+			, std::chrono::hours(1));
+		boost::ignore_unused(tid);
 	}
 
 	void bridge::start_task_gpio()

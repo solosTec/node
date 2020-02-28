@@ -52,6 +52,7 @@ namespace node
 		, delay_(delay)
 		, target_(target)
 		, ipt_bus_(ipt_bus)
+		, tsidx_{ 0 }
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -151,7 +152,7 @@ namespace node
 	cyng::continuation push::process(bool success
 		, std::uint32_t channel
 		, std::uint32_t source
-		, std::uint16_t status	//	u8!
+		, std::uint8_t status	
 		, std::uint32_t count)
 	{
 
@@ -188,11 +189,14 @@ namespace node
 			//	SML close request
 			//
 			gen.public_close(cyng::make_object(*trx++));
+
+			//
+			//	sending all data
+			//
 			ipt_bus_->req_transfer_push_data(channel
 				, source
-				, status
-				, 1
-				, gen.boxing());
+				, gen.boxing()
+				, base_.get_id());
 
 			ipt_bus_->req_channel_close(channel);
 
@@ -353,7 +357,7 @@ namespace node
 		, std::uint32_t channel
 		, std::uint32_t source)
 	{	//	1 minute
-		std::string sql = "SELECT P10.clientID, P10.tsidx, datetime(P10.actTime), status, S10.OBIS, S10.val, S10.type, S10.scaler, S10.unit from TProfile_8181C78610FF P10 JOIN TStorage_8181C78610FF S10 ON P10.clientID = S10.clientID AND P10.tsidx = S10.tsidx;";
+		std::string const sql = "SELECT P10.clientID, P10.tsidx, datetime(P10.actTime), status, S10.OBIS, S10.val, S10.type, S10.scaler, S10.unit from TProfile_8181C78610FF P10 JOIN TStorage_8181C78610FF S10 ON P10.clientID = S10.clientID AND P10.tsidx = S10.tsidx;";
 		auto s = storage_.get_session();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
@@ -365,7 +369,8 @@ namespace node
 			//	read all results
 			//
 			std::uint8_t counter{ 0 };
-			std::uint64_t tsidx_prev = 0;
+			//std::uint64_t tsidx_prev = 0;
+			tsidx_ = 0;
 			cyng::buffer_t srv_id;
 			std::chrono::system_clock::time_point act_time = std::chrono::system_clock::now();
 			while (auto res = stmt->get_result()) {
@@ -378,8 +383,8 @@ namespace node
 				auto srv_id = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
 				BOOST_ASSERT(srv_id_ == srv_id);
 				auto const tsidx = cyng::value_cast<std::uint64_t>(res->get(2, cyng::TC_UINT64, 0), 0);
-				if (tsidx_prev == 0) {
-					tsidx_prev = tsidx;
+				if (tsidx_ == 0) {
+					tsidx_ = tsidx;
 				}
 				//	(3) P12.actTime
 				act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
@@ -424,8 +429,8 @@ namespace node
 					, obj));
 
 
-				if (tsidx_prev != tsidx) {
-					tsidx_prev = tsidx;
+				if (tsidx_ != tsidx) {
+					tsidx_ = tsidx;
 					//
 					//	build push msg
 					//
@@ -475,7 +480,8 @@ namespace node
 			//	read all results
 			//
 			std::uint8_t counter{ 0 };
-			std::uint64_t tsidx_prev = 0;
+			//std::uint64_t tsidx_prev = 0;
+			tsidx_ = 0;
 			std::chrono::system_clock::time_point act_time = std::chrono::system_clock::now();
 			while (auto res = stmt->get_result()) {
 
@@ -487,8 +493,8 @@ namespace node
 				auto const srv_id = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
 				BOOST_ASSERT(srv_id_ == srv_id);
 				auto const tsidx = cyng::value_cast<std::uint64_t>(res->get(2, cyng::TC_UINT64, 0), 0);
-				if (tsidx_prev == 0) {
-					tsidx_prev = tsidx;
+				if (tsidx_ == 0) {
+					tsidx_ = tsidx;
 				}
 				//	(3) P12.actTime
 				act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
@@ -533,8 +539,8 @@ namespace node
 					, obj));
 
 
-				if (tsidx_prev != tsidx) {
-					tsidx_prev = tsidx;
+				if (tsidx_ != tsidx) {
+					tsidx_ = tsidx;
 					//
 					//	build push msg
 					//
@@ -584,7 +590,8 @@ namespace node
 			//	read all results
 			//
 			std::uint8_t counter{ 0 };
-			std::uint64_t tsidx_prev = 0;
+			//std::uint64_t tsidx_prev = 0;
+			tsidx_ = 0;
 			std::chrono::system_clock::time_point act_time = std::chrono::system_clock::now();
 			while (auto res = stmt->get_result()) {
 
@@ -598,8 +605,8 @@ namespace node
 				BOOST_ASSERT(srv_id_ == srv_id);
 				//	(2) P12.tsidx
 				auto const tsidx = cyng::value_cast<std::uint64_t>(res->get(2, cyng::TC_UINT64, 0), 0);
-				if (tsidx_prev == 0) {
-					tsidx_prev = tsidx;
+				if (tsidx_ == 0) {
+					tsidx_ = tsidx;
 				}
 				//	(3) P12.actTime
 				act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
@@ -641,8 +648,8 @@ namespace node
 					<< " "
 					<< mbus::get_unit_name(unit));
 
-				if (tsidx_prev != tsidx) {
-					tsidx_prev = tsidx;
+				if (tsidx_ != tsidx) {
+					tsidx_ = tsidx;
 					//
 					//	build push msg
 					//
@@ -775,6 +782,27 @@ namespace node
 				<< target_
 				<< " to "
 				<< cyng::to_str(delay_));
+		}
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	cyng::continuation push::process(bool success, std::uint32_t channel, std::uint32_t source, std::uint8_t blocks)
+	{
+		//
+		//	update last time index with successfull push
+		//	"_PushOps" "lowerBound"
+		//
+		if (tsidx_ != 0) {
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> update \"lowerBound\" of "
+				<< target_
+				<< " to "
+				<< cyng::to_str(get_ts(profile_, tsidx_)));
+
+			cache_.update_ts_index(srv_id_, nr_, tsidx_);
 		}
 		return cyng::continuation::TASK_CONTINUE;
 	}

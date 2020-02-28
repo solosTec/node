@@ -124,11 +124,13 @@ namespace node
 
 			bool req_channel_close(std::uint32_t channel);
 
-			bool req_transfer_push_data(std::uint32_t channel
+			/**
+			 * transfer push data in "chunks"
+			 */
+			channel_response req_transfer_push_data(std::uint32_t channel
 				, std::uint32_t source
-				, std::uint8_t status
-				, std::uint8_t block
-				, cyng::buffer_t const& data);
+				, cyng::buffer_t const& data
+				, std::size_t tsk);
 
 			/**
 			 * @return a textual description of the bus/connection state
@@ -164,6 +166,12 @@ namespace node
 
 			void store_relation(cyng::context& ctx);
 			void remove_relation(cyng::context& ctx);
+
+			/**
+			 * lookup channel db and test if data size exceeds 
+			 * allowed package size.
+			 */
+			std::pair<std::uint16_t, bool> test_channel_size(std::uint32_t, std::size_t) const;
 
 		protected:
 			/**
@@ -234,14 +242,19 @@ namespace node
 			std::atomic<state>	state_;
 
 			/**
+			 * Check if transition to new state is valid.
+			 */
+			bool transition(state evt);
+
+			/**
 			 * bookkeeping of ip-t sequence to task relation
 			 */
 			std::map<sequence_type, std::size_t>	task_db_;
 
 			/**
-			 * Check if transition to new state is valid.
+			 * manage package size of push channels
 			 */
-			bool transition(state evt);
+			std::map<std::uint32_t, std::uint16_t>	channel_db_;
 		};
 	}
 }

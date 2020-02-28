@@ -14,14 +14,6 @@
 #include <cyng/log.h>
 #include <cyng/async/task_fwd.h>
 
-//namespace cyng
-//{
-//	namespace async
-//	{
-//		class mux;
-//	}
-//}
-
 namespace node
 {
 	namespace ipt {
@@ -60,7 +52,15 @@ namespace node
 			, std::uint8_t nr
 			, std::string details);
 
+		/**
+		 * finalize startup process
+		 */
 		void finalize();
+
+		/**
+		 * check the level of data in the data collectors
+		 */
+		void shrink();
 
 	private:
 		/**
@@ -96,6 +96,7 @@ namespace node
 			, boost::uuids::uuid);
 
 		void start_task_obislog();
+		void start_task_limiter();
 		void start_task_gpio();
 		void start_task_readout();
 

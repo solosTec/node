@@ -240,8 +240,10 @@ namespace node
 			EVT_SOURCE_40 = 0x818100000012,	//	WMBUS(Interne MUC - SW - Funktion)
 			EVT_SOURCE_41 = 0x818100000013,	//	WANGSM(Interne MUC - SW - Funktion)
 			EVT_SOURCE_42 = 0x818100000014,	//	WANPLC(Interne MUC - SW - Funktion)
+			EVT_SOURCE_43 = 0x8181000000FF,	//	addressed Profile (PEER_ADDRESS)
 			//
-			EVT_SOURCE_43 = 0x8146000012FF,	//	Load switch module status
+			EVTS_SOURCE_01 = 0x8146000011FF, //	Load switch module events
+			EVTS_SOURCE_02 = 0x8146000012FF,	//	Load switch module status
 		};
 
 	}	//	sml

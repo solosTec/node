@@ -136,6 +136,12 @@ namespace node
 		 */
 		std::uint64_t build_line(std::uint32_t channel, std::uint32_t source);
 
+		enum class channel_response {
+			SEND_OK,		//	sent immediately
+			SEND_FAILED,	//	send failed
+			SEND_CHUNCKED,	//	a task was started to send data "chunk encoded"
+		};
+
 	}
 }
 

@@ -8,48 +8,10 @@
 #ifndef NODE_SEGW_STORAGE_H
 #define NODE_SEGW_STORAGE_H
 
-#include <smf/sml/obis_io.h>
-
-#include <cyng/store/db.h>
-#include <cyng/sql.h>
-#include <cyng/db/session_pool.h>
-#include <cyng/dom/reader.h>
+#include "storage_global.h"
 
 namespace node
 {
-	cyng::table::meta_table_ptr create_profile_meta(std::string name);
-	cyng::table::meta_table_ptr create_profile_storage(std::string name);
-
-
-	/**
-	 * create a map with all table meta data.
-	 */
-	cyng::table::meta_vec_t create_storage_meta_data();
-
-	/**
-	 * create all required SQL tables
-	 */
-	bool init_storage(cyng::param_map_t&& cfg);
-
-	/**
-	 * Transfer configuration data available through the DOM reader
-	 * into the database. 
-	 *
-	 * Precondition: Table "TCfg" must exist.
-	 */
-	bool transfer_config_to_storage(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
-
-	/**
-	 * Read the specified profile data and print it on screen
-	 */
-	bool dump_profile_data(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom, std::uint32_t profile);
-
-	/**
-	 * Table TCfg
-	 * Initialize a configuration record
-	 */
-	bool init_config_record(cyng::db::session&, std::string const& key, cyng::object obj);
-
 	/**
 	 * manage SQL tables
 	 */
@@ -87,6 +49,13 @@ namespace node
 		 * loop over all records in the specified table
 		 */
 		void loop(std::string name, loop_f);
+
+		/** 
+		 * Query all operation logs of the specified time range
+		 */
+		void loop_oplog(std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end
+			, loop_f);
 
 		/**
 		 * Update a single value.
@@ -144,8 +113,14 @@ namespace node
 		bool remove(std::string tbl
 			, cyng::table::key_type const& key);
 
+		/**
+		 * @return size of specified table
+		 */
 		std::uint64_t count(std::string tbl);
 
+		/**
+		 * @return true if specified key in table exists
+		 */
 		bool exists(std::string tbl
 			, cyng::table::key_type const& key);
 
@@ -214,6 +189,11 @@ namespace node
 			, cyng::object unit
 			, cyng::object type);
 
+		/**
+		 * @return count of deleted rows
+		 */
+		std::uint64_t shrink(std::uint16_t max_size, cyng::buffer_t srv_id, sml::obis profile);
+
 	private:
 		/**
 		 * build up meta data
@@ -225,11 +205,11 @@ namespace node
 		 */
 		cyng::sql::command create_cmd(std::string, cyng::sql::dialect);
 
+		std::uint64_t shrink(std::uint16_t max_size, cyng::buffer_t srv_id, std::string, std::string);
+
 	private:
 		static cyng::table::meta_map_t const mm_;
 		cyng::db::session_pool pool_;
 	};
-
-
 }
 #endif

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2018 Sylko Olzscher
@@ -28,6 +28,7 @@
 #include "tasks/register_target.h"
 #include "tasks/watchdog.h"
 #include "tasks/open_channel.h"
+#include "tasks/transfer_data.h"
 
 namespace node
 {
@@ -56,6 +57,7 @@ namespace node
 			, watchdog_(0u)
 			, state_(STATE_INITIAL_)
 			, task_db_()
+			, channel_db_()
 		{
 			//
 			//	register logger domain
@@ -494,7 +496,7 @@ namespace node
 			//	* source
 			//	* packet size
 			//	* window size
-			//	* status
+			//	* status (reserved)
 			//	* target count
 			//
 			const cyng::vector_t frame = ctx.get_frame();
@@ -507,11 +509,11 @@ namespace node
 				std::uint32_t,		//	[4] source
 				std::uint16_t,		//	[5] packet size
 				std::uint8_t,		//	[6] window size
-				std::uint16_t,		//	[7] status
+				std::uint8_t,		//	[7] status (reserved)
 				std::size_t			//	[8] count
 			>(frame);
 
-			const response_type res = std::get<2>(tpl);
+			response_type const res = std::get<2>(tpl);
 			
 			ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), "(channel: "
 				, frame.at(3)
@@ -521,20 +523,27 @@ namespace node
 				, tp_res_open_push_channel_policy::get_response_name(res)));
 
 			//
-			//	* [u8] seq
-			//	* [u8] res
-			//	* [u32] channel
-			//	* [u32] source
-			//	* [u16] packet size
-			//	* [size] target count
-			//	
-			//on_res_open_push_channel(std::get<1>(tpl)
-			//	, tp_res_open_push_channel_policy::is_success(res)
-			//	, std::get<3>(tpl)
-			//	, std::get<4>(tpl)
-			//	, std::get<7>(tpl)
-			//	, std::get<8>(tpl));
+			//	check packet size
+			//
+			BOOST_ASSERT_MSG(std::get<5>(tpl) != 0, "invalid packet size");
 
+			BOOST_ASSERT_MSG(std::get<7>(tpl) == 0, "status is reserved and must be zero");
+
+			//
+			//	test window size
+			//
+			if (std::get<6>(tpl) != 1) {
+				ctx.queue(cyng::generate_invoke("log.msg.warning", ctx.get_name(), "(channel: "
+					, frame.at(3)
+					, ", source: "
+					, frame.at(4)
+					, ", has invalid window size: "
+					, std::get<6>(tpl)));
+			}
+
+			//
+			//	lookup in task db
+			//
 			auto pos = task_db_.find(std::get<1>(tpl));
 			if (pos != task_db_.end())
 			{
@@ -546,16 +555,25 @@ namespace node
 					<< " => #"
 					<< tsk);
 
-				mux_.post(tsk, 0, cyng::tuple_factory(tp_res_open_push_channel_policy::is_success(res)
-					, std::get<3>(tpl)
-					, std::get<4>(tpl)
-					, std::get<7>(tpl)
-					, std::get<8>(tpl)));
+				mux_.post(tsk, 0
+					//	[bool] success
+					, cyng::tuple_factory(tp_res_open_push_channel_policy::is_success(res)
+					, std::get<3>(tpl)	//	[u32] channel
+					, std::get<4>(tpl)	//	[u32] source
+					, std::get<7>(tpl)	//	[u16] status
+					, std::get<8>(tpl)	//	[size] count
+				));	
 
 				//
 				//	remove entry
 				//
 				task_db_.erase(pos);
+
+				//
+				//	manage channel db
+				//	channel => packet size
+				//
+				channel_db_.emplace(std::get<3>(tpl), std::get<5>(tpl));
 			}
 			else
 			{
@@ -567,7 +585,6 @@ namespace node
 					<< " - "
 					<< msg);
 			}
-
 		}
 
 		void bus::ipt_res_close_channel(cyng::context& ctx)
@@ -587,7 +604,7 @@ namespace node
 				std::uint32_t
 			>(frame);
 
-			const response_type res = std::get<2>(tpl);
+			response_type const res = std::get<2>(tpl);
 
 			ctx.queue(cyng::generate_invoke("log.msg.trace"
 				, ctx.get_name()
@@ -621,10 +638,57 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,	//	[0] session tag
+				sequence_type,		//	[1] ipt seq
+				response_type,		//	[2] ipt response
+				std::uint32_t,		//	[3] channel
+				std::uint32_t,		//	[4] source
+				std::uint8_t,		//	[5] status
+				std::uint8_t		//	[6] block
+			>(frame);
+
+			response_type const res = std::get<2>(tpl);
 
 			//
-			//	ToDo: forward to client
+			//	lookup in task db
 			//
+			auto pos = task_db_.find(std::get<1>(tpl));
+			if (pos != task_db_.end())
+			{
+				const auto tsk = pos->second;
+
+				CYNG_LOG_DEBUG(logger_, ctx.get_name()
+					<< " "
+					<< +pos->first
+					<< " => #"
+					<< tsk);
+
+				mux_.post(tsk, 0
+					//	[bool] success
+					, cyng::tuple_factory(tp_res_pushdata_transfer_policy::is_success(res)
+						, std::get<3>(tpl)	//	[u32] channel
+						, std::get<4>(tpl)	//	[u32] source
+						, std::get<5>(tpl)	//	[u8] status
+						, std::get<6>(tpl)	//	[u8] block
+					));
+
+				//
+				//	remove entry
+				//
+				task_db_.erase(pos);
+
+			}
+			else
+			{
+				auto msg = tp_res_pushdata_transfer_policy::get_response_name(res);
+				CYNG_LOG_WARNING(logger_, "ipt.res.transfer.pushdata - no task entry for ipt channel "
+					<< +std::get<3>(tpl)
+					<< ":"
+					<< std::get<4>(tpl)
+					<< " - "
+					<< msg);
+			}
 		}
 
 		void bus::ipt_req_transmit_data(cyng::context& ctx)
@@ -1153,6 +1217,14 @@ namespace node
 
 		bool bus::req_channel_close(std::uint32_t channel)
 		{
+			//
+			//	manage channel db
+			//
+			channel_db_.erase(channel);
+
+			//
+			//	send channel close request - if online
+			//
 			if (is_online()) {
 				vm_.async_run({ cyng::generate_invoke("req.close.push.channel", channel)
 								, cyng::generate_invoke("stream.flush")
@@ -1162,34 +1234,71 @@ namespace node
 			return false;
 		}
 
-		bool bus::req_transfer_push_data(std::uint32_t channel
+		channel_response bus::req_transfer_push_data(std::uint32_t channel
 			, std::uint32_t source
-			, std::uint8_t status
-			, std::uint8_t block
-			, cyng::buffer_t const& data)
+			, cyng::buffer_t const& data
+			, std::size_t tsk)
 		{
 			if (is_online()) {
-				//
-				//	ToDo: write optional callback task
-				//
 
 				//
-				//	serialize and send push data
+				//	check package size
 				//
-				vm_.async_run({ 
-					cyng::generate_invoke("req.transfer.push.data"
+				auto const r = test_channel_size(channel, data.size());
+				if (r.second) {
+
+					std::uint8_t const status{ 0xc0 };	//	set FIN/SYN flag 
+
+					//
+					//	serialize and send push data immediately
+					//
+					vm_.async_run({
+						cyng::generate_invoke("req.transfer.push.data"
+							, channel	//	channel
+							, source	//	source
+							, status
+							, static_cast<std::uint8_t>(1)	//	block
+							, data),
+						cyng::generate_invoke("stream.flush")
+						});
+					mux_.post(tsk, 3u, cyng::tuple_factory(true, channel, source, static_cast<std::uint8_t>(1)));
+					return channel_response::SEND_OK;
+				}
+				else {
+
+					//
+					//	start a task to send the full message
+					//
+					cyng::async::start_task_sync<transfer_data>(mux_
+						, logger_
+						, vm_
 						, channel	//	channel
 						, source	//	source
-						, status
-						, block
-						, data),
-					cyng::generate_invoke("stream.flush") 
-				});
-				return true;
+						, data
+						, r.first
+						, *this
+						, tsk);
+
+					return channel_response::SEND_CHUNCKED;
+				}
 			}
-			return false;
+			return channel_response::SEND_FAILED;
 		}
 
+		std::pair<std::uint16_t, bool> bus::test_channel_size(std::uint32_t channel, std::size_t size) const
+		{
+			auto const pos = channel_db_.find(channel);
+			if (pos != channel_db_.end()) {
+				return std::pair{ pos->second, pos->second >= size };
+			}
+
+			//
+			//	channel not found
+			//	‭65535‬ is the max size for a data package
+			//
+			return std::pair{ 0xFFFF, size <= 0xFFFF };
+			//return std::pair{ 0xFF, false };
+		}
 
 		void bus::store_relation(cyng::context& ctx)
 		{

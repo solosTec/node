@@ -34,12 +34,13 @@ namespace node
 	{
 	public:
 		//	[0] write entry
-		using msg_0 = std::tuple<bool, std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t>;
+		using msg_0 = std::tuple<bool, std::uint32_t, std::uint32_t, std::uint8_t, std::uint32_t>;
 		using msg_1 = std::tuple<std::string>;	//	target
 		using msg_2 = std::tuple<std::string, std::uint32_t>;	//	interval, delay
+		using msg_3 = std::tuple<bool, std::uint32_t, std::uint32_t, std::uint8_t>;
 
 
-		using signatures_t = std::tuple<msg_0, msg_1, msg_2>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3>;
 
 	public:
 		push(cyng::async::base_task* bt
@@ -65,7 +66,7 @@ namespace node
 		cyng::continuation process(bool success
 			, std::uint32_t channel
 			, std::uint32_t source
-			, std::uint16_t status	//	u8!
+			, std::uint8_t status	
 			, std::uint32_t count);
 
 		/**
@@ -79,6 +80,12 @@ namespace node
 		 *
 		 */
 		cyng::continuation process(std::string, std::uint32_t);
+
+		/**
+		 * @brief slot [3] - push data transfer complete
+		 *
+		 */
+		cyng::continuation process(bool, std::uint32_t, std::uint32_t, std::uint8_t);
 
 	private:
 		bool send_push_data(sml::res_generator&
@@ -131,8 +138,17 @@ namespace node
 		std::string target_;
 
 		ipt::bus* ipt_bus_;
+
+		/**
+		 * global time stamp index
+		 */
+		std::uint64_t tsidx_;
+
 	};
 
+	/**
+	 * Restore the time stamp from index.
+	 */
 	std::chrono::system_clock::time_point get_ts(sml::obis profile, std::uint64_t tsidx);
 
 }

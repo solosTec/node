@@ -133,6 +133,11 @@ namespace node
 		 */
 		std::string get_target(cyng::buffer_t const& srv_id, std::uint8_t nr);
 
+		/**
+		 * set lower bound time stamp index in table "_TPushOps"
+		 */
+		bool update_ts_index(cyng::buffer_t const& srv_id, std::uint8_t nr, std::uint64_t tsidx);
+
 	private:
 		/**
 		 * build up meta data

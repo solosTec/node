@@ -249,6 +249,15 @@ namespace node
 		return cyng::value_cast<std::string>(db_.get_value("_PushOps", "target", srv_id, nr), "");
 	}
 
+	bool cache::update_ts_index(cyng::buffer_t const& srv_id, std::uint8_t nr, std::uint64_t tsidx)
+	{
+		return db_.modify("_PushOps"
+			, cyng::table::key_generator(srv_id, nr)
+			, cyng::param_factory("lowerBound", tsidx)
+			, tag_);
+	}
+
+
 	//
 	//	initialize static member
 	//
@@ -404,7 +413,7 @@ namespace node
 							//	-- body
 			, "profile"		//	[OBIS] type 1min, 15min, 1h, ... (OBIS_PROFILE)
 			, "active"		//	[bool] turned on/off (OBIS_DATA_COLLECTOR_ACTIVE)
-			, "maxSize"		//	[u32] max entry count (OBIS_DATA_COLLECTOR_SIZE)
+			, "maxSize"		//	[u16] max entry count (OBIS_DATA_COLLECTOR_SIZE)
 			, "regPeriod"	//	[seconds] register period - if 0, recording is event-driven (OBIS_DATA_REGISTER_PERIOD)
 			},
 			{ cyng::TC_BUFFER		//	serverID

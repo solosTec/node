@@ -7,8 +7,8 @@
 
 #include "open_channel.h"
 #include <smf/ipt/response.hpp>
+
 #include <cyng/vm/generator.h>
-#include <cyng/intrinsics/op.h>
 
 namespace node
 {
@@ -134,7 +134,7 @@ namespace node
 	cyng::continuation open_channel::process(bool success
 		, std::uint32_t channel
 		, std::uint32_t source
-		, std::uint16_t status
+		, std::uint8_t status
 		, std::uint32_t count)
 	{
 		CYNG_LOG_INFO(logger_, "task #"

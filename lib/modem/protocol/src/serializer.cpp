@@ -267,11 +267,11 @@ namespace node
 
 		void serializer::req_transfer_push_data(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
-			const std::uint32_t channel = cyng::value_cast<std::uint32_t>(frame.at(0), 0);
-			const std::uint32_t source = cyng::value_cast<std::uint32_t>(frame.at(1), 0);
-			const std::uint8_t status = cyng::value_cast<std::uint8_t>(frame.at(2), 0);
-			const std::uint8_t block = cyng::value_cast<std::uint8_t>(frame.at(3), 0);
+			cyng::vector_t const frame = ctx.get_frame();
+			std::uint32_t const channel = cyng::value_cast<std::uint32_t>(frame.at(0), 0);
+			std::uint32_t const source = cyng::value_cast<std::uint32_t>(frame.at(1), 0);
+			std::uint8_t const status = cyng::value_cast<std::uint8_t>(frame.at(2), 0);
+			std::uint8_t const block = cyng::value_cast<std::uint8_t>(frame.at(3), 0);
 			//const std::uint32_t size = cyng::value_cast<std::uint32_t>(frame.at(4), 0);
 			cyng::buffer_t data;
 			data = cyng::value_cast<cyng::buffer_t>(frame.at(4), data);
@@ -282,7 +282,6 @@ namespace node
             boost::ignore_unused(status);
             boost::ignore_unused(block);
             boost::ignore_unused(size);
-
 		}
 
 		void serializer::res_transfer_push_data(cyng::context& ctx)

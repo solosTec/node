@@ -1,11 +1,11 @@
 ﻿/*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 Sylko Olzscher
+ * Copyright (c) 2020 Sylko Olzscher
  *
  */
 
-#include "obislog.h"
+#include "limiter.h"
 #include "../bridge.h"
 #include <smf/sml/event.h>
 #include <smf/sml/obis_db.h>
@@ -14,10 +14,10 @@
 
 namespace node
 {
-	obislog::obislog(cyng::async::base_task* btp
+	limiter::limiter(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, bridge& com
-		, std::chrono::minutes interval_time)
+		, std::chrono::hours interval_time)
 	: base_(*btp) 
 		, logger_(logger)
 		, bridge_(com)
@@ -32,7 +32,7 @@ namespace node
 			<< " interval");
 	}
 
-	cyng::continuation obislog::run()
+	cyng::continuation limiter::run()
 	{
 #ifdef _DEBUG
 		CYNG_LOG_TRACE(logger_, "task #"
@@ -41,24 +41,22 @@ namespace node
 			<< base_.get_class_name()
 			<< ">");
 #endif
+
 		//
 		//	start/restart timer
 		//
 		base_.suspend(interval_time_);
 
 		//
-		//	write cyclic log entry
+		//	get maximum size of all data collectors and shrink tables
+		//	if maximum size was exceeded.
 		//
-		bridge_.generate_op_log(sml::OBIS_PEER_OBISLOG	//	81 81 00 00 00 01 
-			, sml::LOG_CODE_10	//	0x00800000 - Timer, Zyklischer Logbucheintrag
-			, ""	//	target
-			, 0		//	nr
-			, "");	//	description
+		bridge_.shrink();
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void obislog::stop(bool shutdown)
+	void limiter::stop(bool shutdown)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -67,7 +65,7 @@ namespace node
 			<< "> is stopped");
 	}
 
-	cyng::continuation obislog::process()
+	cyng::continuation limiter::process()
 	{
 
 		//

@@ -17,6 +17,7 @@
 #include <smf/shared/db_cfg.h>
 
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_chrono.hpp>
 #ifdef _DEBUG
 #include <cyng/rnd.h>
 #endif
@@ -93,12 +94,17 @@ namespace node
 			, std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end)
 		{
+			CYNG_LOG_TRACE(logger_, "query op log from "
+				<< cyng::to_str(start)
+				<< " to "
+				<< cyng::to_str(end));
+
 			//
 			//	send operation logs - 81 81 C7 89 E1 FF 
 			//
-			cyng::buffer_t tmp;
-			storage_.loop("TOpLog", [&](cyng::table::record const& rec)->bool {
+			storage_.loop_oplog(start, end, [&](cyng::table::record const& rec)->bool {
 
+				cyng::buffer_t tmp;
 				obis peer = cyng::value_cast(rec["peer"], tmp);
 				auto server = cyng::value_cast(rec["serverId"], tmp);
 				auto idx = cyng::value_cast<std::uint64_t>(rec["ROWID"], 0u);
@@ -120,6 +126,33 @@ namespace node
 
 				return true;	//	continue
 			});
+
+
+
+			//storage_.loop("TOpLog", [&](cyng::table::record const& rec)->bool {
+
+			//	cyng::buffer_t tmp;
+			//	obis peer = cyng::value_cast(rec["peer"], tmp);
+			//	auto server = cyng::value_cast(rec["serverId"], tmp);
+			//	auto idx = cyng::value_cast<std::uint64_t>(rec["ROWID"], 0u);
+
+			//	sml_gen_.get_profile_op_log(trx
+			//		, client_id
+			//		, cyng::value_cast(rec["actTime"], std::chrono::system_clock::now()) //	act_time
+			//		, cyng::value_cast<std::uint32_t>(rec["regPeriod"], 900u) //	reg_period
+			//		, cyng::value_cast(rec["valTime"], std::chrono::system_clock::now())
+			//		, cyng::value_cast<std::uint64_t>(rec["status"], 0u) //	status
+			//		, cyng::value_cast<std::uint32_t>(rec["event"], 0u) //	evt
+			//		, obis(peer) //	peer_address
+			//		, cyng::value_cast(rec["utc"], std::chrono::system_clock::now())
+			//		, server
+			//		, cyng::value_cast<std::string>(rec["target"], "")
+			//		, cyng::value_cast<std::uint8_t>(rec["pushNr"], 1u)
+			//		, cyng::value_cast<std::string>(rec["details"], "")
+			//	);
+
+			//	return true;	//	continue
+			//});
 		}
 
 		void get_profile_list::profile_1_minute(std::string trx

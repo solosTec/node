@@ -7,9 +7,12 @@
 
 #include <smf/ipt/serializer.h>
 #include <smf/ipt/codes.h>
+
 #include <cyng/vm/generator.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/io/serializer.h>
+#include <cyng/buffer_cast.h>
+
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
 #endif
@@ -204,8 +207,7 @@ namespace node
 		void serializer::transfer_data(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			cyng::buffer_t data;
-			data = cyng::value_cast(frame.at(0), data);
+			cyng::buffer_t const data = cyng::to_buffer(frame.at(0));
 			write(data);
 
 #ifdef _DEBUG
@@ -371,10 +373,10 @@ namespace node
 
 		void serializer::res_close_push_channel(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
-			const sequence_type seq = cyng::value_cast<sequence_type>(frame.at(0), 0);
-			const response_type res = cyng::value_cast<response_type>(frame.at(1), 0);
-			const std::uint32_t channel = cyng::value_cast<std::uint32_t>(frame.at(2), 0);
+			cyng::vector_t const frame = ctx.get_frame();
+			sequence_type const seq = cyng::value_cast<sequence_type>(frame.at(0), 0);
+			response_type const res = cyng::value_cast<response_type>(frame.at(1), 0);
+			std::uint32_t const channel = cyng::value_cast<std::uint32_t>(frame.at(2), 0);
 
 			write_header(code::TP_RES_CLOSE_PUSH_CHANNEL, seq, sizeof(res) + sizeof(channel));
 			write_numeric(res);
@@ -383,23 +385,30 @@ namespace node
 
 		void serializer::req_transfer_push_data(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
-			const std::uint32_t channel = cyng::value_cast<std::uint32_t>(frame.at(0), 0);
-			const std::uint32_t source = cyng::value_cast<std::uint32_t>(frame.at(1), 0);
-			const std::uint8_t status = cyng::value_cast<std::uint8_t>(frame.at(2), 0);
-			const std::uint8_t block = cyng::value_cast<std::uint8_t>(frame.at(3), 0);
-			cyng::buffer_t data;
-			data = cyng::value_cast<cyng::buffer_t>(frame.at(4), data);
+			cyng::vector_t const frame = ctx.get_frame();
+			auto const tpl = cyng::tuple_cast<
+				std::uint32_t,		//	[0] channel
+				std::uint32_t,		//	[1] source
+				std::uint8_t,		//	[2] status
+				std::uint8_t		//	[3] block
+			>(frame);
+
+			cyng::buffer_t const data = cyng::to_buffer(frame.at(4));
 			std::uint32_t const size = static_cast<std::uint32_t>(data.size());
 
 			last_seq_ = sgen_();
 			write_header(code::TP_REQ_PUSHDATA_TRANSFER
 				, last_seq_
-				, sizeof(channel) + sizeof(source) + sizeof(status) + sizeof(block) + sizeof(size) + data.size());
-			write_numeric(channel);
-			write_numeric(source);
-			write_numeric(status);
-			write_numeric(block);
+				, sizeof(std::get<0>(tpl)) 
+					+ sizeof(std::get<1>(tpl)) 
+					+ sizeof(std::get<2>(tpl)) 
+					+ sizeof(std::get<3>(tpl)) 
+					+ sizeof(size) 
+					+ data.size());
+			write_numeric(std::get<0>(tpl));
+			write_numeric(std::get<1>(tpl));
+			write_numeric(std::get<2>(tpl));
+			write_numeric(std::get<3>(tpl));
 			write_numeric(size);
 			put(data.data(), data.size());	//	no escaping
 		}
