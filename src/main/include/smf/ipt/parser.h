@@ -12,7 +12,7 @@
 #include <smf/ipt/scramble_key.h>
 
 #include <cyng/intrinsics/sets.h>
-#include <cyng/crypto/scrambler.hpp>
+#include <cyng/util/scrambler.hpp>
 #include <cyng/vm/generator.h>
 
 #include <boost/asio.hpp>

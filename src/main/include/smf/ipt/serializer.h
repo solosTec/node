@@ -11,9 +11,9 @@
 #include <smf/ipt/defs.h>
 #include <smf/ipt/scramble_key.h>
 #include <NODE_project_info.h>
-#include <cyng/crypto/scrambler.hpp>
+#include <cyng/util/scrambler.hpp>
 #include <cyng/vm/controller.h>
-#include <cyng/crypto/rotating_counter.hpp>
+#include <cyng/util/rotating_counter.hpp>
 #include <type_traits>
 #include <boost/asio.hpp>
 
