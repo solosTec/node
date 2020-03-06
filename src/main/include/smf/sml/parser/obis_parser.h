@@ -46,6 +46,15 @@ namespace node
 		 */
 		std::pair<obis, bool> parse_obis(std::string const&);
 
+		/**
+		 * Parse concatenated OBIS strings
+		 */
+		obis_path parse_obis_path(std::string const&, char sep = ':');
+
+		/**
+		 * substitute valid OBIS codes with textual description from database
+		 */
+		std::string translate_obis_path(std::string const&, char sep = ':');
 
 	}
 }

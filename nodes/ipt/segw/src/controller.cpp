@@ -499,6 +499,53 @@ namespace node
 		return EXIT_FAILURE;
 	}
 
+	int controller::list_config(std::ostream& os) const
+	{
+		//
+		//	read configuration file
+		//
+		auto const r = read_config_section(json_path_, config_index_);
+		if (r.second) {
+
+			//
+			//	get a DOM reader
+			//
+			auto const dom = cyng::make_reader(r.first);
+
+			//
+			//	get database configuration and connect
+			//
+			cyng::tuple_t tpl;
+			tpl = cyng::value_cast(dom.get("DB"), tpl);
+			auto db_cfg = cyng::to_param_map(tpl);
+
+			std::cout
+				<< "read configuration file "
+				<< json_path_
+				<< " with index ["
+				<< config_index_
+				<< "] into database "
+				<< cyng::io::to_str(db_cfg)
+				<< std::endl;
+
+			return (list_config_data(os, cyng::to_param_map(tpl), dom))
+				? EXIT_SUCCESS
+				: EXIT_FAILURE
+				;
+		}
+		else
+		{
+			std::cout
+				<< "configuration file ["
+				<< json_path_
+				<< "] not found or index ["
+				<< config_index_
+				<< "] is out of range"
+				<< std::endl;
+		}
+		return EXIT_FAILURE;
+	}
+
 	std::pair<std::size_t, bool> join_network(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, bridge& br

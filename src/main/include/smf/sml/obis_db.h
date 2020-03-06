@@ -490,12 +490,12 @@ namespace node
 		/**
 		 * @return a short description of the OBIS code if available
 		 */
-		const char* get_name(obis const&);
+		std::string get_name(obis const&);
 
 		/**
 		 * @return a short description of the OBIS code if available
 		 */
-		const char* get_attention_name(obis const&);
+		std::string get_attention_name(obis const&);
 
 		/**
 		 * @return name of the LSM event

@@ -17,7 +17,7 @@ namespace node
 			return code.is_matching(0x81, 0x81, 0xC7, 0x86);
 		}
 
-		const char* get_name(obis const& code)
+		std::string get_name(obis const& code)
 		{
 			switch (code.to_uint64()) {
 
@@ -79,6 +79,74 @@ namespace node
 			case CODE_LOG_SOURCE_WAN_IPT:	return "LOG_SOURCE_WAN_IPT";
 			case CODE_LOG_SOURCE_WAN_NTP:	return "LOG_SOURCE_WAN_NTP";
 
+			case CODE_CLASS_MBUS:	return "CLASS_MBUS";
+			case CODE_CLASS_MBUS_RO_INTERVAL:	return "CLASS_MBUS_RO_INTERVAL";
+			case CODE_CLASS_MBUS_SEARCH_INTERVAL:	return "CLASS_MBUS_SEARCH_INTERVAL";
+			case CODE_CLASS_MBUS_SEARCH_DEVICE:	return "CLASS_MBUS_SEARCH_DEVICE";
+			case CODE_CLASS_MBUS_AUTO_ACTICATE:	return "CLASS_MBUS_AUTO_ACTICATE";
+			case CODE_CLASS_MBUS_BITRATE:	return "CLASS_MBUS_BITRATE";
+
+			case CODE_W_MBUS_PROTOCOL:	return "W_MBUS_PROTOCOL";
+			case CODE_W_MBUS_MODE_S: return "W_MBUS_MODE_S";
+			case CODE_W_MBUS_MODE_T: return "W_MBUS_MODE_T";
+
+			case CODE_W_MBUS_REBOOT: return "W_MBUS_REBOOT";
+			case CODE_W_MBUS_POWER: return "W_MBUS_POWER";
+			case CODE_W_MBUS_INSTALL_MODE: return "W_MBUS_INSTALL_MODE";
+
+			//
+			//	root elements
+			//
+			case CODE_ROOT_NTP:						return "ROOT_NTP";
+			case CODE_ROOT_DEVICE_IDENT:			return "ROOT_DEVICE_IDENT";
+			case CODE_DEVICE_CLASS:					return "DEVICE_CLASS";
+			case CODE_SERVER_ID:					return "SERVER_ID";
+			case CODE_ROOT_FIRMWARE:				return "ROOT_FIRMWARE";
+			case CODE_DEVICE_KERNEL:				return "DEVICE_KERNEL";
+			case CODE_DEVICE_ACTIVATED:				return "DEVICE_ACTIVATED";
+			case CODE_ROOT_ACCESS_RIGHTS:			return "ROOT_ACCESS_RIGHTS";
+			case CODE_ROOT_CUSTOM_INTERFACE:		return "ROOT_CUSTOM_INTERFACE";
+			case CODE_ROOT_CUSTOM_PARAM:			return "ROOT_CUSTOM_PARAM";
+			case CODE_ROOT_WAN:						return "ROOT_WAN";
+			case CODE_ROOT_GSM:						return "ROOT_GSM";
+			case CODE_ROOT_IPT_STATE:				return "ROOT_IPT_STATE";
+			case CODE_ROOT_IPT_PARAM:				return "ROOT_IPT_PARAM";
+			case CODE_PEER_ADDRESS_WANGSM:			return "EER_ADDRESS_WANGSM";
+			case CODE_PEER_ADDRESS:					return "PEER_ADDRESS";
+
+			case CODE_ROOT_GPRS_PARAM:				return "ROOT_GPRS_PARAM";
+			case CODE_ROOT_W_MBUS_STATUS:			return "ROOT_W_MBUS_STATUS";
+			case CODE_ROOT_LAN_DSL:					return "ROOT_LAN_DSL";
+			case CODE_ROOT_MEMORY_USAGE:			return "ROOT_MEMORY_USAGE";
+			case CODE_ROOT_MEMORY_MIRROR:			return "ROOT_MEMORY_MIRROR";
+			case CODE_ROOT_MEMORY_TMP:				return "ROOT_MEMORY_TMP";
+			case CODE_ROOT_DEVICE_TIME:				return "ROOT_DEVICE_TIME";
+			case CODE_ROOT_ACTIVE_DEVICES:			return "ROOT_ACTIVE_DEVICES";
+			case CODE_ROOT_NEW_DEVICES:				return "ROOT_NEW_DEVICES";
+			case CODE_ROOT_INVISIBLE_DEVICES:		return "ROOT_INVISIBLE_DEVICES";
+			case CODE_ROOT_DEVICE_INFO:				return "ROOT_DEVICE_INFO";
+			case CODE_ROOT_VISIBLE_DEVICES:			return "OOT_VISIBLE_DEVICES";
+			case CODE_ROOT_SENSOR_PARAMS:			return "ROOT_SENSOR_PARAMS";
+			case CODE_ROOT_DATA_COLLECTOR:			return "ROOT_DATA_COLLECTOR";
+			case CODE_STORAGE_TIME_SHIFT:			return "STORAGE_TIME_SHIFT";	//	?
+
+			case CODE_TCP_WAIT_TO_RECONNECT:		return "TCP_WAIT_TO_RECONNECT";
+			case CODE_TCP_CONNECT_RETRIES:			return "TCP_CONNECT_RETRIES";
+
+			case CODE_IF_1107:						return "IF_1107";
+			case CODE_IF_1107_ACTIVE:				return "IF_1107_ACTIVE";
+			case CODE_IF_1107_LOOP_TIME:			return "IF_1107_LOOP_TIME";
+			case CODE_IF_1107_RETRIES:				return "IF_1107_RETRIES";
+			case CODE_IF_1107_MIN_TIMEOUT:			return "IF_1107_MIN_TIMEOUT";
+			case CODE_IF_1107_MAX_TIMEOUT:			return "IF_1107_MAX_TIMEOUT";
+			case CODE_IF_1107_MAX_DATA_RATE:		return "IF_1107_MAX_DATA_RATE";
+			case CODE_IF_1107_RS485:				return "IF_1107_RS485";
+			case CODE_IF_1107_PROTOCOL_MODE:		return "IF_1107_PROTOCOL_MODE";
+			case CODE_IF_1107_METER_LIST:			return "IF_1107_METER_LIST";
+			case CODE_IF_1107_AUTO_ACTIVATION:		return "IF_1107_AUTO_ACTIVATION";
+			case CODE_IF_1107_TIME_GRID:			return "IF_1107_TIME_GRID";
+			case CODE_IF_1107_TIME_SYNC:			return "IF_1107_TIME_SYNC";
+			case CODE_IF_1107_MAX_VARIATION:		return "IF_1107_MAX_VARIATION";
 
 			default:
 				break;
@@ -92,44 +160,6 @@ namespace node
 			else if (OBIS_PUSH_SOURCE_INSTALL == code)	return "push-source-install";	//!< configuration changed
 			else if (OBIS_PUSH_SOURCE_SENSOR_LIST == code)		return "push-source-sensor-list";	//!< list of visible meters changed
 			else if (OBIS_PUSH_SERVER_ID == code)		return "push-server-id";
-
-			//
-			//	root elements
-			//
-			else if (code == OBIS_ROOT_NTP)				return "root-NTP";
-			else if (code == OBIS_ROOT_DEVICE_IDENT)		return "root-device-id";
-			else if (code == OBIS_DEVICE_CLASS)			return "device-class";
-			else if (code == OBIS_SERVER_ID)				return "server-id-visible";
-			else if (OBIS_ROOT_FIRMWARE == code)			return "root-firmware";
-			else if (OBIS_DEVICE_KERNEL == code)			return "device-kernel";
-			else if (OBIS_DEVICE_ACTIVATED == code)		return "device-activated";
-			else if (code == OBIS_ROOT_ACCESS_RIGHTS)		return "root-auth";
-			else if (code == OBIS_ROOT_CUSTOM_INTERFACE)	return "root-custom-interface";
-			else if (code == OBIS_ROOT_CUSTOM_PARAM)		return "root-custom-param";
-			else if (code == OBIS_ROOT_WAN)				return "root-WAN-state";
-			//else if (code == OBIS_ROOT_WAN_PARAM)			return "root-WAN-param";
-			else if (code == OBIS_ROOT_GSM)				return "root-GSM";
-			else if (OBIS_ROOT_IPT_STATE == code)			return "root-ipt-state";
-			else if (OBIS_ROOT_IPT_PARAM == code)			return "root-ipt-param";
-			else if (OBIS_PEER_ADDRESS_WANGSM == code)		return "peer-address-wangsm";
-			else if (OBIS_PEER_ADDRESS == code)			return "peer-address";
-			//else if (OBIS_VERSION == code)					return "version";
-			else if (code == OBIS_ROOT_GPRS_PARAM)			return "root-GPRS";
-			else if (OBIS_ROOT_W_MBUS_STATUS == code)		return "root-wMBus-status";
-			else if (code == OBIS_ROOT_LAN_DSL)			return "root-LAN";
-			else if (code == OBIS_ROOT_MEMORY_USAGE)		return "root-memory-usage";
-			else if (OBIS_ROOT_MEMORY_MIRROR == code)		return "memory-mirror";
-			else if (OBIS_ROOT_MEMORY_TMP == code)			return "memory-tmp";
-			else if (code == OBIS_ROOT_DEVICE_TIME)		return "root-device-time";
-			else if (code == OBIS_ROOT_ACTIVE_DEVICES)		return "root-active-devices";
-			else if (code == OBIS_ROOT_NEW_DEVICES)		return "root-new-devices";
-			else if (code == OBIS_ROOT_INVISIBLE_DEVICES)	return "root-lost-devices";
-			else if (code == OBIS_ROOT_DEVICE_INFO)		return "root-device-info";
-			else if (code == OBIS_ROOT_VISIBLE_DEVICES)	return "root-visible-devices";
-			else if (code == OBIS_ROOT_SENSOR_PARAMS)		return "root-sensor-prop";
-			else if (code == OBIS_ROOT_DATA_COLLECTOR)		return "root-data-prop";
-			else if (code == OBIS_STORAGE_TIME_SHIFT)			return "storage-time-shift";	//	?
-			
 
 			else if (OBIS_IF_LAN_DSL == code)	return "IF_LAN_DSL";
 			else if (OBIS_CODE_IF_GSM == code)		return "IF_GSM";
@@ -226,7 +256,7 @@ namespace node
 			return get_attention_name(code);
 		}
 
-		const char* get_attention_name(obis const& code)
+		std::string get_attention_name(obis const& code)
 		{
 			if (OBIS_ATTENTION_UNKNOWN_ERROR == code)		return "UNKNOWN ERROR";
 			else if (OBIS_ATTENTION_UNKNOWN_SML_ID == code) return "UNKNOWN SML ID";
@@ -252,7 +282,7 @@ namespace node
 			else if (OBIS_ATTENTION_MISSING_CLOSE_MSG == code)		return "MISSING CLOSE MSG";
 			else if (OBIS_ATTENTION_OK == code)						return "OK";
 			else if (OBIS_ATTENTION_JOB_IS_RUNNINNG == code)		return "JOB IS RUNNINNG";
-			return "no-entry";
+			return code.to_str();
 		}
 
 		const char* get_LSM_event_name(std::uint32_t evt)

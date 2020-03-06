@@ -45,6 +45,7 @@ int main(int argc, char **argv)
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("fs,F", boost::program_options::bool_switch()->default_value(false), "show available drives")
 		("show,s", boost::program_options::bool_switch()->default_value(false), "show JSON configuration")
+		("list,l", boost::program_options::bool_switch()->default_value(false), "list configuration from database")
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 		("transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")
 		("dump", boost::program_options::value<std::uint32_t>(&profile)->default_value(0)->implicit_value(11), "dump profile data (11 .. 18")
@@ -166,8 +167,14 @@ int main(int argc, char **argv)
 
 		if (vm["show"].as< bool >())
 		{
-			//	show configuration
+			//	show JSON configuration
  			return ctrl.ctl::print_config(std::cout);
+		}
+
+		if (vm["list"].as< bool >())
+		{
+			//	show database configuration
+			return ctrl.list_config(std::cout);
 		}
 
 		if (vm["transfer"].as< bool >())

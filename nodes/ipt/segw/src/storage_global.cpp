@@ -930,6 +930,66 @@ namespace node
 		return r.second;
 	}
 
+	std::ostream& list_value(std::ostream& os, std::string val, std::string def)
+	{
+		if (boost::algorithm::equals(val, def)) {
+			os << val;
+		}
+		else {
+			os
+				<< '['
+				<< val
+				<< '/'
+				<< def
+				<< ']'
+				;
+		}
+		return os;
+	}
+
+	bool list_config_data(std::ostream& os, cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom)
+	{
+		//
+		//	create a database session
+		//
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		cyng::db::session s(con_type);
+		auto r = s.connect(cfg);
+		if (r.second) {
+
+			cyng::table::meta_table_ptr meta = storage::mm_.at("TCfg");
+			cyng::sql::command cmd(meta, s.get_dialect());
+			auto const sql = cmd.select().all().skip().order_by("path")();
+			auto stmt = s.create_statement();
+			std::pair<int, bool> r = stmt->prepare(sql);
+			if (r.second) {
+				while (auto res = stmt->get_result()) {
+					auto const path = cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 0), "");
+					auto const val = cyng::value_cast<std::string>(res->get(3, cyng::TC_STRING, 0), "");
+					auto const def = cyng::value_cast<std::string>(res->get(4, cyng::TC_STRING, 0), "");
+					auto const type = cyng::value_cast<std::uint32_t>(res->get(5, cyng::TC_UINT32, 0), 0);
+					auto const obj = cyng::table::restore(val, type);
+					os
+						<< std::setfill(' ') 
+						<< std::setw(42)
+						<< sml::translate_obis_path(path)
+						<< ": "
+						;
+					list_value(os, val, def);
+					os
+						<< " ("
+						<< cyng::io::to_str(obj)
+						<< ':'
+						<< obj.get_class().type_name()
+						<< ")"
+						<< std::endl;
+				}
+			}
+		}
+		return r.second;
+	}
+
+
 	bool init_config_record(cyng::db::session& s, std::string const& key, cyng::object obj)
 	{
 		//

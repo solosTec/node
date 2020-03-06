@@ -45,6 +45,11 @@ namespace node
 	bool dump_profile_data(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom, std::uint32_t profile);
 
 	/**
+	 * List configuration to console
+	 */
+	bool list_config_data(std::ostream& os, cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
+
+	/**
 	 * Table TCfg
 	 * Initialize a configuration record
 	 */
