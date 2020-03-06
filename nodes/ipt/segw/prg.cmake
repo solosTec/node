@@ -91,6 +91,8 @@ set (node_ipt_segw_msg
 	nodes/ipt/segw/src/msg/get_proc_parameter.h	
 	nodes/ipt/segw/src/msg/get_profile_list.h
 	nodes/ipt/segw/src/msg/get_profile_list.cpp	
+	nodes/ipt/segw/src/msg/get_list.h
+	nodes/ipt/segw/src/msg/get_list.cpp	
 	nodes/ipt/segw/src/msg/set_proc_parameter.h
 	nodes/ipt/segw/src/msg/set_proc_parameter.cpp	
 	nodes/ipt/segw/src/msg/config_ipt.h

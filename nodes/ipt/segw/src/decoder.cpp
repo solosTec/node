@@ -386,7 +386,7 @@ namespace node
 					cache_.write_table("_ReadoutData", [&](cyng::store::table* tbl) {
 
 						auto val = cyng::io::to_str(reader.get_value());
-						auto type = reader.get_value().get_class().tag();
+						auto type = static_cast<std::uint32_t>(reader.get_value().get_class().tag());
 
 						tbl->insert(cyng::table::key_generator(pk, reader.get_code().to_buffer())
 							, cyng::table::data_generator(val, type, reader.get_scaler(), static_cast<std::uint8_t>(reader.get_unit()))

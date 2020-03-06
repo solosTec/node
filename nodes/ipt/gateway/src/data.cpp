@@ -757,13 +757,13 @@ namespace node
 
 			if (OBIS_LIST_CURRENT_DATA_RECORD == code) {
 				CYNG_LOG_TRACE(logger_, "sml.get.list.request - current data record");
-				sml_gen_.get_list(frame.at(1)	//	trx
-					, std::get<3>(tpl)	//	client id 
-					, std::get<4>(tpl)	//	server id
-					, OBIS_LIST_CURRENT_DATA_RECORD
-					, make_timestamp(std::chrono::system_clock::now())
-					, make_timestamp(std::chrono::system_clock::now())
-					, val_list);
+				//sml_gen_.get_list(frame.at(1)	//	trx
+				//	, std::get<3>(tpl)	//	client id 
+				//	, std::get<4>(tpl)	//	server id
+				//	, OBIS_LIST_CURRENT_DATA_RECORD
+				//	, make_timestamp(std::chrono::system_clock::now())
+				//	, make_timestamp(std::chrono::system_clock::now())
+				//	, val_list);
 
 			}
 			else {

@@ -282,8 +282,8 @@ namespace node
 			//
 			//	get TCP/IP endpoint from _Config table
 			//
-			auto rep = cache_.get_cfg<boost::asio::ip::tcp::endpoint>("remote.ep", boost::asio::ip::tcp::endpoint());
-			auto lep = cache_.get_cfg<boost::asio::ip::tcp::endpoint>("local.ep", boost::asio::ip::tcp::endpoint());
+			auto rep = cache_.get_cfg<boost::asio::ip::tcp::endpoint>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "ep.remote"), boost::asio::ip::tcp::endpoint());
+			auto lep = cache_.get_cfg<boost::asio::ip::tcp::endpoint>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "ep.local"), boost::asio::ip::tcp::endpoint());
 
 			CYNG_LOG_TRACE(logger_, "remote endpoint " << rep);
 			CYNG_LOG_TRACE(logger_, "local endpoint " << lep);

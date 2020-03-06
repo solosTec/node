@@ -16,6 +16,7 @@
 #include "msg/get_proc_parameter.h"
 #include "msg/set_proc_parameter.h"
 #include "msg/get_profile_list.h"
+#include "msg/get_list.h"
 #include "msg/attention.h"
 
 #include <smf/sml/protocol/generator.h>
@@ -65,6 +66,7 @@ namespace node
 		void sml_get_proc_parameter_request(cyng::context& ctx);
 		void sml_set_proc_parameter_request(cyng::context& ctx);
 		void sml_get_profile_list_request(cyng::context& ctx);
+		void sml_get_ist_request(cyng::context& ctx);
 
 	private:
 		/**
@@ -99,6 +101,7 @@ namespace node
 		sml::get_proc_parameter get_proc_parameter_;
 		sml::set_proc_parameter set_proc_parameter_;
 		sml::get_profile_list get_profile_list_;
+		sml::get_list get_list_;
 		sml::attention attention_;
 
 	};

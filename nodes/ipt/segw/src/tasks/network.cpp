@@ -70,7 +70,6 @@ namespace node
 				, account
 				, pwd
 				, accept_all)
-			//, seq_open_channel_map_()
 			, task_gpio_(cyng::async::NO_TASK)
 		{
 			CYNG_LOG_INFO(logger_, "initialize task #"
@@ -119,10 +118,6 @@ namespace node
 			//
 			bridge_.finalize();
 
-
-			//
-			//	ToDo: set task_gpio_
-			//
 		}
 
 		cyng::continuation network::run()

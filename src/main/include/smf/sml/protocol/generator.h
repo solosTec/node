@@ -418,7 +418,7 @@ namespace node
 			 * generate act_sensor_time and act_gateway_time with make_timestamp()
 			 * or make_sec_index() from value.hpp
 			 */
-			std::size_t get_list(cyng::object trx
+			std::size_t get_list(std::string trx
 				, cyng::buffer_t const& client_id
 				, cyng::buffer_t const& server_id
 				, obis list_name

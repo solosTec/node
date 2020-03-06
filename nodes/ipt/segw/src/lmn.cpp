@@ -413,11 +413,15 @@ namespace node
 
 						auto const data = cyng::to_param_map(val.second);
 						auto const raw = data.at("raw");
-						auto type = raw.get_class().tag();
-						CYNG_LOG_DEBUG(logger_, val.first << " = " << cyng::io::to_str(data.at("value")));
+						auto type = static_cast<std::uint32_t>(raw.get_class().tag());
+						CYNG_LOG_DEBUG(logger_, val.first
+							<< " = " 
+							<< cyng::io::to_str(data.at("value"))
+							<< ':'
+							<< raw.get_class().type_name());
 
 						tbl->insert(cyng::table::key_generator(pk, code.first.to_buffer())
-							, cyng::table::data_generator(raw, type, data.at("scaler"), data.at("unit"))
+							, cyng::table::data_generator(cyng::io::to_str(raw), type, data.at("scaler"), data.at("unit"))
 							, 1u	//	generation
 							, cache_.get_tag());
 					}

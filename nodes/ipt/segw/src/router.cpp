@@ -62,6 +62,7 @@ namespace node
 			, config_security_
 			, config_access_)
 		, get_profile_list_(logger, sml_gen_, cfg, db)
+		, get_list_(logger, sml_gen_, cfg, db)
 		, attention_(logger, sml_gen_, cfg)
 	{
 		//
@@ -84,6 +85,7 @@ namespace node
 		vm.register_function("sml.get.proc.parameter.request", 6, std::bind(&router::sml_get_proc_parameter_request, this, std::placeholders::_1));
 		vm.register_function("sml.set.proc.parameter.request", 6, std::bind(&router::sml_set_proc_parameter_request, this, std::placeholders::_1));
 		vm.register_function("sml.get.profile.list.request", 8, std::bind(&router::sml_get_profile_list_request, this, std::placeholders::_1));
+		vm.register_function("sml.get.list.request", 7, std::bind(&router::sml_get_ist_request, this, std::placeholders::_1));
 
 		attention_.register_this(vm);
 
@@ -185,27 +187,27 @@ namespace node
 			<< std::get<5>(tpl))
 			;
 
-		if (!accept_all_) {
 
-			//
-			//	test server ID
-			//
-			if (!boost::algorithm::equals(cache_.get_srv_id(), std::get<2>(tpl))) {
+		//
+		//	test server ID
+		//
+		if (!boost::algorithm::equals(cache_.get_srv_id(), std::get<2>(tpl))) {
 
-				sml_gen_.attention_msg(frame.at(1)	// trx
-					, std::get<2>(tpl)	//	server ID
-					, sml::OBIS_ATTENTION_NO_SERVER_ID.to_buffer()
-					, "wrong server id"
-					, cyng::tuple_t());
+			CYNG_LOG_INFO(logger_, "sml.public.open.request - server ID: "
+				<< cyng::io::to_hex(std::get<2>(tpl))
+				<< " (expected "
+				<< cyng::io::to_hex(cache_.get_srv_id())
+				<< ")");
 
-				CYNG_LOG_WARNING(logger_, "sml.public.open.request - wrong server ID: "
-					<< cyng::io::to_hex(std::get<2>(tpl))
-					<< " (expected "
-					<< cyng::io::to_hex(cache_.get_srv_id())
-					<< ")");
+			//if (!accept_all_) {
+			//	sml_gen_.attention_msg(frame.at(0)	// trx
+			//		, std::get<2>(tpl)	//	server ID
+			//		, sml::OBIS_ATTENTION_NO_SERVER_ID.to_buffer()
+			//		, "wrong server id"
+			//		, cyng::tuple_t());
 
-				return;
-			}
+			//	return;
+			//}
 
 			//
 			//	test login credentials
@@ -232,10 +234,10 @@ namespace node
 		//	linearize and set CRC16
 		//	append to current SML message
 		//
-		sml_gen_.public_open(frame.at(1)	// trx
-			, frame.at(3)	//	client id
-			, frame.at(5)	//	req file id
-			, frame.at(4));
+		sml_gen_.public_open(frame.at(0)	// trx
+			, frame.at(1)	//	client id
+			, frame.at(3)	//	req file id
+			, frame.at(2));
 
 	}
 
@@ -366,5 +368,29 @@ namespace node
 
 	}
 
+	void router::sml_get_ist_request(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
+		auto const tpl = cyng::tuple_cast<
+			std::string,		//	[0] trx
+			cyng::buffer_t,		//	[1] client id
+			cyng::buffer_t,		//	[2] server id <- meter/sensor ID with the requested data
+			std::string,		//	[3] reqFileId
+			std::string,		//	[4] user
+			std::string,		//	[5] password
+			cyng::buffer_t		//	[6] path (OBIS)
+		>(frame);
+
+		sml::obis const code(std::get<6>(tpl));
+
+		get_list_.generate_response(sml::obis(std::get<6>(tpl))
+			, std::get<0>(tpl)
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl)
+			, std::get<4>(tpl)
+			, std::get<5>(tpl));
+	}
 }
