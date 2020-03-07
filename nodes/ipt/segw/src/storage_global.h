@@ -54,5 +54,33 @@ namespace node
 	 * Initialize a configuration record
 	 */
 	bool init_config_record(cyng::db::session&, std::string const& key, cyng::object obj);
+
+	/**
+	 * @return an SQL select for the specified profile to get
+	 * all data.
+	 */
+	std::string get_sql_select_all(std::uint32_t profile);
+
+	/**
+	 * @return an SQL select for the specified profile to get
+	 * all data from a specified time range
+	 */
+	std::string get_sql_select(std::uint32_t profile
+		, std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end);
+
+
+	/**
+	 * Takes the time index and calculate the related time point
+	 * depending from the specified profile.
+	 */
+	std::chrono::system_clock::time_point time_index_to_time_point(std::uint32_t profile
+		, std::uint64_t tsidx);
+
+	/**
+	 * @return profile name
+	 */
+	std::string get_profile_name(std::uint32_t profile);
+
 }
 #endif

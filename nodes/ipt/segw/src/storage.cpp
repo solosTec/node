@@ -13,6 +13,8 @@
 #include <cyng/db/sql_table.h>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/io/serializer.h>
+#include <cyng/buffer_cast.h>
+#include <cyng/table/restore.h>
 
 #include <cyng/sql.h>
 #include <cyng/sql/dsl/binary_expr.hpp>
@@ -155,6 +157,59 @@ namespace node
 			if (!f(rec))	break;
 		}
 	}
+
+	void storage::loop_profile(sml::obis profile
+		, std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end
+		, profile_f cb)
+	{
+		auto s = pool_.get_session();
+		auto const q = profile.get_quantities();
+		std::string const sql = get_sql_select_all(q);
+		if (sql.empty())	return;
+
+		auto stmt = s.create_statement();
+		std::pair<int, bool> r = stmt->prepare(sql);
+		if (r.second) {
+
+			//
+			//	read all results
+			//
+			while (auto res = stmt->get_result()) {
+				BOOST_ASSERT(res->column_count() == 9);
+
+				auto const srv_id = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
+				auto const tsdix = cyng::value_cast<std::uint64_t>(res->get(2, cyng::TC_UINT64, 0), 0);
+				//	3. actTime
+				auto const act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
+				//	4. status
+				auto const status = cyng::value_cast<std::uint32_t>(res->get(4, cyng::TC_UINT32, 0), 0u);
+				sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
+				//	6. val
+				auto const val = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
+				//	7. type
+				auto const type = cyng::value_cast<std::uint32_t>(res->get(7, cyng::TC_UINT32, 0), 0);
+				auto const scaler = cyng::value_cast<std::int8_t>(res->get(8, cyng::TC_INT8, 0), 0);
+				auto const unit = cyng::value_cast<std::uint8_t>(res->get(9, cyng::TC_UINT8, 0), 0);
+
+				//
+				//	callback
+				//	false terminates the loop
+				//
+				if (!cb(srv_id
+					, tsdix
+					, time_index_to_time_point(q, tsdix)
+					, act_time
+					, status
+					, code
+					, scaler
+					, unit
+					//	restore object from string and type info
+					, cyng::table::restore(val, type)))	break;
+			}
+		}
+	}
+
 
 	cyng::sql::command storage::create_cmd(std::string name, cyng::sql::dialect d)
 	{

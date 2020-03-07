@@ -24,6 +24,15 @@ namespace node
 
 	public:
 		using loop_f = std::function<bool(cyng::table::record const&)>;
+		using profile_f = std::function<bool(cyng::buffer_t
+			, std::uint64_t idx
+			, std::chrono::system_clock::time_point
+			, std::chrono::system_clock::time_point
+			, std::uint32_t
+			, sml::obis
+			, std::int8_t
+			, std::uint8_t
+			, cyng::object&&)>;
 
 	public:
 		storage(boost::asio::io_service&, cyng::db::connection_type);
@@ -57,6 +66,11 @@ namespace node
 		void loop_oplog(std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end
 			, loop_f);
+
+		void loop_profile(sml::obis profile
+			, std::chrono::system_clock::time_point start
+			, std::chrono::system_clock::time_point end
+			, profile_f);
 
 		/**
 		 * Update a single value.

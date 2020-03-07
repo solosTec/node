@@ -54,55 +54,17 @@ namespace node
 				, std::chrono::system_clock::time_point start
 				, std::chrono::system_clock::time_point end);
 
-			void profile_1_minute(std::string trx
-				, cyng::buffer_t client_id
-				, cyng::buffer_t srv_id
-				, std::chrono::system_clock::time_point start
-				, std::chrono::system_clock::time_point end);
-
+#ifdef _DEBUG
+			//	demo
 			void profile_15_minute(std::string trx
 				, cyng::buffer_t client_id
 				, cyng::buffer_t srv_id
 				, std::chrono::system_clock::time_point start
 				, std::chrono::system_clock::time_point end);
+#endif
 
-			void profile_60_minute(std::string trx
-				, cyng::buffer_t client_id
-				, cyng::buffer_t srv_id
-				, std::chrono::system_clock::time_point start
-				, std::chrono::system_clock::time_point end);
-
-			void profile_24_hour(std::string trx
-				, cyng::buffer_t client_id
-				, cyng::buffer_t srv_id
-				, std::chrono::system_clock::time_point start
-				, std::chrono::system_clock::time_point end);
-
-			void profile_last_2_hours(std::string trx
-				, cyng::buffer_t client_id
-				, cyng::buffer_t srv_id
-				, std::chrono::system_clock::time_point start
-				, std::chrono::system_clock::time_point end);
-
-			void profile_last_week(std::string trx
-				, cyng::buffer_t client_id
-				, cyng::buffer_t srv_id
-				, std::chrono::system_clock::time_point start
-				, std::chrono::system_clock::time_point end);
-
-			void profile_1_month(std::string trx
-				, cyng::buffer_t client_id
-				, cyng::buffer_t srv_id
-				, std::chrono::system_clock::time_point start
-				, std::chrono::system_clock::time_point end);
-
-			void profile_1_year(std::string trx
-				, cyng::buffer_t client_id
-				, cyng::buffer_t srv_id
-				, std::chrono::system_clock::time_point start
-				, std::chrono::system_clock::time_point end);
-
-			void profile_initial(std::string trx
+			void get_profile(obis code
+				, std::string trx
 				, cyng::buffer_t client_id
 				, cyng::buffer_t srv_id
 				, std::chrono::system_clock::time_point start

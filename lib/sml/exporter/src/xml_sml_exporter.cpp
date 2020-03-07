@@ -584,7 +584,7 @@ namespace node
 			{
 				child.append_attribute("gotIt").set_value("ActorID");
 			}
-			child.append_attribute("type").set_value(get_name(code));
+			child.append_attribute("type").set_value(get_name(code).c_str());
 			child.append_attribute("obis").set_value(name_hex.c_str());
 			child.append_child(pugi::node_pcdata).set_value(name_dec.c_str());
 

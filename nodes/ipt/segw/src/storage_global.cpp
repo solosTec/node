@@ -809,48 +809,14 @@ namespace node
 		auto r = s.connect(cfg);
 		if (r.second) {
 
-			std::string sql, name;
+			//
+			//	get SQL select
+			//
+			std::string const sql = get_sql_select_all(profile);
 				
-			//
-			//	get table meta data
-			//
-			std::tie(name, sql) = [&]() {
-				switch (profile) {
-				case 10:	return std::make_pair("1 minute", "SELECT P10.clientID, P10.tsidx, datetime(P10.actTime), status, S10.OBIS, S10.val, S10.type, S10.scaler, S10.unit from TProfile_8181C78610FF P10 JOIN TStorage_8181C78610FF S10 ON P10.clientID = S10.clientID AND P10.tsidx = S10.tsidx;");
-				case 11:	return std::make_pair("15 minute", "SELECT P11.clientID, P11.tsidx, datetime(P11.actTime), status, S11.OBIS, S11.val, S11.type, S11.scaler, S11.unit from TProfile_8181C78611FF P11 JOIN TStorage_8181C78611FF S11 ON P11.clientID = S11.clientID AND P11.tsidx = S11.tsidx;");
-				case 12:	return std::make_pair("60 minute", "SELECT P12.clientID, P12.tsidx, datetime(P12.actTime), status, S12.OBIS, S12.val, S12.type, S12.scaler, S12.unit from TProfile_8181C78612FF P12 JOIN TStorage_8181C78612FF S12 ON P12.clientID = S12.clientID AND P12.tsidx = S12.tsidx;");
-				case 13:	return std::make_pair("24 hour", "SELECT P13.clientID, P13.tsidx, datetime(P13.actTime), status, S13.OBIS, S13.val, S13.type, S13.scaler, S13.unit from TProfile_8181C78613FF P13 JOIN TStorage_8181C78613FF S13 ON P13.clientID = S13.clientID AND P13.tsidx = S13.tsidx;");
-				case 14:	return std::make_pair("last 2 hours", "SELECT P14.clientID, P14.tsidx, datetime(P14.actTime), status, S14.OBIS, S14.val, S14.type, S14.scaler, S14.unit from TProfile_8181C78614FF P14 JOIN TStorage_8181C78614FF S14 ON P14.clientID = S14.clientID AND P14.tsidx = S14.tsidx;");
-				case 15:	return std::make_pair("last week", "SELECT P15.clientID, P15.tsidx, datetime(P15.actTime), status, S15.OBIS, S15.val, S15.type, S15.scaler, S15.unit from TProfile_8181C78615FF P15 JOIN TStorage_8181C78615FF S15 ON P15.clientID = S15.clientID AND P15.tsidx = S15.tsidx;");
-				case 16:	return std::make_pair("1 month", "SELECT P16.clientID, P16.tsidx, datetime(P16.actTime), status, S16.OBIS, S16.val, S16.type, S16.scaler, S16.unit from TProfile_8181C78616FF P16 JOIN TStorage_8181C78616FF S16 ON P16.clientID = S16.clientID AND P16.tsidx = S16.tsidx;");
-				case 17:	return std::make_pair("1 year", "SELECT P17.clientID, P17.tsidx, datetime(P17.actTime), status, S17.OBIS, S17.val, S17.type, S17.scaler, S17.unit from TProfile_8181C78617FF P17 JOIN TStorage_8181C78617FF S17 ON P17.clientID = S17.clientID AND P17.tsidx = S17.tsidx;");
-				case 18:	return std::make_pair("initial", "SELECT P18.clientID, P18.tsidx, datetime(P18.actTime), status, S18.OBIS, S18.val, S18.type, S18.scaler, S18.unit from TProfile_8181C78618FF P18 JOIN TStorage_8181C78618FF S18 ON P18.clientID = S18.clientID AND P18.tsidx = S18.tsidx;");
-				default:
-					std::cerr << "unknown profile: " << profile << std::endl;
-					return std::make_pair("unknown profile", "");
-				}
-			}();
-
-			auto get_ts = [&](std::uint64_t tsidx)->std::chrono::system_clock::time_point {
-				switch (profile) {
-				case 10:	return cyng::chrono::ts_since_passed_minutes(tsidx);
-				case 11:	return cyng::chrono::ts_since_passed_minutes(tsidx / 15u);
-				case 12:	return cyng::chrono::ts_since_passed_hours(tsidx);
-				case 13:	return cyng::chrono::ts_since_passed_days(tsidx);
-				//case 14:	return cyng::chrono::ts_since_passed_minutes(profile);
-				//case 15:	return cyng::chrono::ts_since_passed_minutes(profile);
-				case 16:	return cyng::chrono::ts_since_passed_days(tsidx / 30);
-				case 17:	return cyng::chrono::ts_since_passed_days(tsidx / 365u);
-				//case 18:	return cyng::chrono::ts_since_passed_minutes(profile);
-				default:
-					std::cerr << "unknown profile: " << profile << std::endl;
-					return std::chrono::system_clock::now();
-				}
-			};
-
 			std::cout
 				<< "List "
-				<< name
+				<< get_profile_name(profile)
 				<< " profile ("
 				<< profile
 				<< ")"
@@ -870,7 +836,6 @@ namespace node
 						//
 						//	Convert SQL result to record
 						//
-						//	"SELECT P18.clientID, P18.tsidx, datetime(P18.actTime), status, S18.OBIS, S18.val, S18.type, S18.scaler, S18.unit from TProfile_8181C78618FF P18 JOIN TStorage_8181C78618FF S18 ON P18.clientID = S18.clientID AND P18.tsidx = S18.tsidx;");
 						auto const size = res->column_count();
 						BOOST_ASSERT(size == 9);
 						auto const srv_id = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
@@ -896,7 +861,7 @@ namespace node
 							<< ", "
 							<< tsdix
 							<< " - "
-							<< cyng::to_str(get_ts(tsdix))
+							<< cyng::to_str(time_index_to_time_point(profile, tsdix))
 							<< ", "				
 							<< cyng::io::to_str(res->get(3, cyng::TC_TIME_POINT, 0)).substr(0, 19)
 							<< ", "
@@ -918,7 +883,7 @@ namespace node
 					std::cout
 						<< counter
 						<< " records of "
-						<< name
+						<< get_profile_name(profile)
 						<< " profile (#"
 						<< profile
 						<< ") found"
@@ -1012,4 +977,81 @@ namespace node
 		}
 		return false;
 	}
+
+	std::string get_profile_name(std::uint32_t profile)
+	{
+		switch (profile) {
+		case 0x10:	return "1 minute";
+		case 0x11:	return "15 minute";
+		case 0x12:	return "60 minute";
+		case 0x13:	return "24 hour";
+		case 0x14:	return "last 2 hours";
+		case 0x15:	return "last week";
+		case 0x16:	return "1 month";
+		case 0x17:	return "1 year";
+		case 0x18:	return "initial";
+		default:
+			break;
+		}
+		return "";
+	}
+
+	std::string get_sql_select_all(std::uint32_t profile)
+	{
+		switch (profile) {
+		case 0x10:	return "SELECT P10.clientID, P10.tsidx, datetime(P10.actTime), status, S10.OBIS, S10.val, S10.type, S10.scaler, S10.unit FROM TProfile_8181C78610FF P10 JOIN TStorage_8181C78610FF S10 ON P10.clientID = S10.clientID AND P10.tsidx = S10.tsidx ORDER BY S10.tsidx;";
+		case 0x11:	return "SELECT P11.clientID, P11.tsidx, datetime(P11.actTime), status, S11.OBIS, S11.val, S11.type, S11.scaler, S11.unit FROM TProfile_8181C78611FF P11 JOIN TStorage_8181C78611FF S11 ON P11.clientID = S11.clientID AND P11.tsidx = S11.tsidx ORDER BY S11.tsidx;";
+		case 0x12:	return "SELECT P12.clientID, P12.tsidx, datetime(P12.actTime), status, S12.OBIS, S12.val, S12.type, S12.scaler, S12.unit FROM TProfile_8181C78612FF P12 JOIN TStorage_8181C78612FF S12 ON P12.clientID = S12.clientID AND P12.tsidx = S12.tsidx ORDER BY S12.tsidx;";
+		case 0x13:	return "SELECT P13.clientID, P13.tsidx, datetime(P13.actTime), status, S13.OBIS, S13.val, S13.type, S13.scaler, S13.unit FROM TProfile_8181C78613FF P13 JOIN TStorage_8181C78613FF S13 ON P13.clientID = S13.clientID AND P13.tsidx = S13.tsidx ORDER BY S13.tsidx;";
+		case 0x14:	return "SELECT P14.clientID, P14.tsidx, datetime(P14.actTime), status, S14.OBIS, S14.val, S14.type, S14.scaler, S14.unit FROM TProfile_8181C78614FF P14 JOIN TStorage_8181C78614FF S14 ON P14.clientID = S14.clientID AND P14.tsidx = S14.tsidx ORDER BY S14.tsidx;";
+		case 0x15:	return "SELECT P15.clientID, P15.tsidx, datetime(P15.actTime), status, S15.OBIS, S15.val, S15.type, S15.scaler, S15.unit FROM TProfile_8181C78615FF P15 JOIN TStorage_8181C78615FF S15 ON P15.clientID = S15.clientID AND P15.tsidx = S15.tsidx ORDER BY S15.tsidx;";
+		case 0x16:	return "SELECT P16.clientID, P16.tsidx, datetime(P16.actTime), status, S16.OBIS, S16.val, S16.type, S16.scaler, S16.unit FROM TProfile_8181C78616FF P16 JOIN TStorage_8181C78616FF S16 ON P16.clientID = S16.clientID AND P16.tsidx = S16.tsidx ORDER BY S16.tsidx;";
+		case 0x17:	return "SELECT P17.clientID, P17.tsidx, datetime(P17.actTime), status, S17.OBIS, S17.val, S17.type, S17.scaler, S17.unit FROM TProfile_8181C78617FF P17 JOIN TStorage_8181C78617FF S17 ON P17.clientID = S17.clientID AND P17.tsidx = S17.tsidx ORDER BY S17.tsidx;";
+		case 0x18:	return "SELECT P18.clientID, P18.tsidx, datetime(P18.actTime), status, S18.OBIS, S18.val, S18.type, S18.scaler, S18.unit FROM TProfile_8181C78618FF P18 JOIN TStorage_8181C78618FF S18 ON P18.clientID = S18.clientID AND P18.tsidx = S18.tsidx ORDER BY S18.tsidx;";
+		default:
+			//	unknown profile
+			break;
+		}
+		return "";
+	};
+
+	std::string get_sql_select(std::uint32_t profile
+		, std::chrono::system_clock::time_point start
+		, std::chrono::system_clock::time_point end)
+	{
+		switch (profile) {
+		case 0x10:	return "SELECT P10.clientID, P10.tsidx, datetime(P10.actTime), status, S10.OBIS, S10.val, S10.type, S10.scaler, S10.unit FROM TProfile_8181C78610FF P10 JOIN TStorage_8181C78610FF S10 ON P10.clientID = S10.clientID AND P10.tsidx = S10.tsidx ORDER BY S10.tsidx;";
+		case 0x11:	return "SELECT P11.clientID, P11.tsidx, datetime(P11.actTime), status, S11.OBIS, S11.val, S11.type, S11.scaler, S11.unit FROM TProfile_8181C78611FF P11 JOIN TStorage_8181C78611FF S11 ON P11.clientID = S11.clientID AND P11.tsidx = S11.tsidx ORDER BY S11.tsidx;";
+		case 0x12:	return "SELECT P12.clientID, P12.tsidx, datetime(P12.actTime), status, S12.OBIS, S12.val, S12.type, S12.scaler, S12.unit FROM TProfile_8181C78612FF P12 JOIN TStorage_8181C78612FF S12 ON P12.clientID = S12.clientID AND P12.tsidx = S12.tsidx ORDER BY S12.tsidx;";
+		case 0x13:	return "SELECT P13.clientID, P13.tsidx, datetime(P13.actTime), status, S13.OBIS, S13.val, S13.type, S13.scaler, S13.unit FROM TProfile_8181C78613FF P13 JOIN TStorage_8181C78613FF S13 ON P13.clientID = S13.clientID AND P13.tsidx = S13.tsidx ORDER BY S13.tsidx;";
+		case 0x14:	return "SELECT P14.clientID, P14.tsidx, datetime(P14.actTime), status, S14.OBIS, S14.val, S14.type, S14.scaler, S14.unit FROM TProfile_8181C78614FF P14 JOIN TStorage_8181C78614FF S14 ON P14.clientID = S14.clientID AND P14.tsidx = S14.tsidx ORDER BY S14.tsidx;";
+		case 0x15:	return "SELECT P15.clientID, P15.tsidx, datetime(P15.actTime), status, S15.OBIS, S15.val, S15.type, S15.scaler, S15.unit FROM TProfile_8181C78615FF P15 JOIN TStorage_8181C78615FF S15 ON P15.clientID = S15.clientID AND P15.tsidx = S15.tsidx ORDER BY S15.tsidx;";
+		case 0x16:	return "SELECT P16.clientID, P16.tsidx, datetime(P16.actTime), status, S16.OBIS, S16.val, S16.type, S16.scaler, S16.unit FROM TProfile_8181C78616FF P16 JOIN TStorage_8181C78616FF S16 ON P16.clientID = S16.clientID AND P16.tsidx = S16.tsidx ORDER BY S16.tsidx;";
+		case 0x17:	return "SELECT P17.clientID, P17.tsidx, datetime(P17.actTime), status, S17.OBIS, S17.val, S17.type, S17.scaler, S17.unit FROM TProfile_8181C78617FF P17 JOIN TStorage_8181C78617FF S17 ON P17.clientID = S17.clientID AND P17.tsidx = S17.tsidx ORDER BY S17.tsidx;";
+		case 0x18:	return "SELECT P18.clientID, P18.tsidx, datetime(P18.actTime), status, S18.OBIS, S18.val, S18.type, S18.scaler, S18.unit FROM TProfile_8181C78618FF P18 JOIN TStorage_8181C78618FF S18 ON P18.clientID = S18.clientID AND P18.tsidx = S18.tsidx ORDER BY S18.tsidx;";
+		default:
+			//	unknown profile
+			break;
+		}
+		return "";
+	}
+
+	std::chrono::system_clock::time_point time_index_to_time_point(std::uint32_t profile, std::uint64_t tsidx)
+	{
+		switch (profile) {
+		case 0x10:	return cyng::chrono::ts_since_passed_minutes(tsidx);
+		case 0x11:	return cyng::chrono::ts_since_passed_minutes(tsidx / 15u);
+		case 0x12:	return cyng::chrono::ts_since_passed_hours(tsidx);
+		case 0x13:	return cyng::chrono::ts_since_passed_days(tsidx);
+			//case 14:	return cyng::chrono::ts_since_passed_minutes(profile);
+			//case 15:	return cyng::chrono::ts_since_passed_minutes(profile);
+		case 0x16:	return cyng::chrono::ts_since_passed_days(tsidx / 30);
+		case 0x17:	return cyng::chrono::ts_since_passed_days(tsidx / 365u);
+			//case 18:	return cyng::chrono::ts_since_passed_minutes(profile);
+		default:
+			break;
+		}
+		return std::chrono::system_clock::now();
+	};
+
 }
