@@ -7,7 +7,7 @@
 #include <smf/iec/parser.h>
 #include <smf/iec/defs.h>
 #include <smf/sml/obis_io.h>
-//#include <smf/sml/parser/obis_parser.h>
+#include <smf/sml/parser/obis_parser.h>
 
 #include <cyng/vm/generator.h>
 #include <boost/algorithm/string.hpp>

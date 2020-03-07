@@ -170,7 +170,7 @@ get_filename_component(CRYPT_INCLUDE_DIR "${CRYPT_ROOT}/include" REALPATH)
 message(STATUS "** CRYPT include path: ${CRYPT_INCLUDE_DIR}")
 
 #
-#	setup cyng build directory
+#	setup crypt build directory
 #   -DCRYPT_BUILD:path=...
 #	assume parallel installation - that is both projects share the same parent directory.
 #
