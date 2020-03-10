@@ -34,11 +34,7 @@ endif()
 message(STATUS "** CYNG root build : ${CYNG_ROOT_BUILD_SUBDIR}")
 
 
-# libcyng_async.so   libcyng_csv.so        libcyng_domain.so  libcyng_log.so   libcyng_parser.so  libcyng_store.so  libcyng_vm.so
-# libcyng_core.so    libcyng_db.so         libcyng_io.so      libcyng_mail.so  libcyng_rnd.so     libcyng_sys.so    libcyng_xml.so
-# libcyng_json.so    libcyng_meta.so       libcyng_sql.so     libcyng_table.so
-
-set(CYNG_LIB_LIST "cyng_async;cyng_csv;cyng_domain;cyng_log;cyng_parser;cyng_store;cyng_vm;cyng_core;cyng_db;cyng_io;cyng_crypto;cyng_mail;cyng_rnd;cyng_sys;cyng_xml;cyng_json;cyng_meta;cyng_sql;cyng_table;cyng_sqlite3")
+set(CYNG_LIB_LIST "cyng_async;cyng_csv;cyng_domain;cyng_log;cyng_parser;cyng_store;cyng_vm;cyng_core;cyng_db;cyng_io;cyng_rnd;cyng_sys;cyng_xml;cyng_json;cyng_meta;cyng_sql;cyng_table;cyng_sqlite3")
 if(WIN32)
 	list(APPEND CYNG_LIB_LIST "cyng_scm")
 endif()

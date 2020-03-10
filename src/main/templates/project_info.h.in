@@ -39,6 +39,7 @@ namespace @PROJECT_NAME@
 #define  ${PROJECT_NAME}_SALT		${${PROJECT_NAME}_SALT_VALUE}
 #define  ${PROJECT_NAME}_PWD		"${${PROJECT_NAME}_PWD}"
 
+#cmakedefine NODE_CROSS_COMPILE
 
 //
 //	Source directory during compile time

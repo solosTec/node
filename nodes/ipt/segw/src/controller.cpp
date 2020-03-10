@@ -78,6 +78,11 @@ namespace node
 		{
 			macs.push_back(cyng::generate_random_mac48());
 		}
+		
+		//
+		//	get hostname
+		//
+		auto const host = boost::asio::ip::host_name();
 
 		return cyng::vector_factory({
 			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
@@ -104,7 +109,11 @@ namespace node
 
 				, cyng::param_factory("DB", cyng::tuple_factory(
 					cyng::param_factory("type", "SQLite"),
+#if defined(NODE_CROSS_COMPILE) && defined(BOOST_OS_LINUX)
+					cyng::param_factory("file-name", "/usr/local/etc/smf/segw.database"),
+#else
 					cyng::param_factory("file-name", (cwd / "segw.database").string()),
+#endif
 					cyng::param_factory("busy-timeout", 12),		//	seconds
 					cyng::param_factory("watchdog", 30),		//	for database connection
 					cyng::param_factory("pool-size", 1)		//	no pooling for SQLite
@@ -190,7 +199,7 @@ namespace node
 
 				, cyng::param_factory("if-1107", cyng::tuple_factory(
 #ifdef _DEBUG
-					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str() + "-descr", "OBIS_IF_1107_ACTIVE"),	//	active
+/*					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str() + "-descr", "OBIS_IF_1107_ACTIVE"),	//	active
 					cyng::param_factory(sml::OBIS_IF_1107_LOOP_TIME.to_str() + "-descr", "OBIS_IF_1107_LOOP_TIME"),	//	loop timeout in seconds
 					cyng::param_factory(sml::OBIS_IF_1107_RETRIES.to_str() + "-descr", "OBIS_IF_1107_RETRIES"),	//	retries
 					cyng::param_factory(sml::OBIS_IF_1107_MIN_TIMEOUT.to_str() + "-descr", "OBIS_IF_1107_MIN_TIMEOUT"),	//	min. timeout (milliseconds)
@@ -201,7 +210,8 @@ namespace node
 					cyng::param_factory(sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str() + "-descr", "OBIS_IF_1107_AUTO_ACTIVATION"),	//	auto activation
 					cyng::param_factory(sml::OBIS_IF_1107_TIME_GRID.to_str() + "-descr", "OBIS_IF_1107_TIME_GRID"),
 					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str() + "-descr", "OBIS_IF_1107_TIME_SYNC"),
-					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str() + "-descr", "OBIS_IF_1107_MAX_VARIATION"),	//	max. variation in seconds
+																	 cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str() + "-descr", "OBIS_IF_1107_MAX_VARIATION"),	//	max. variation in seconds
+*/
 #endif
 					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str(), true),	//	active
 					cyng::param_factory(sml::OBIS_IF_1107_LOOP_TIME.to_str(), 60),	//	loop timeout in seconds
@@ -226,18 +236,30 @@ namespace node
 				))
 				, cyng::param_factory("ipt", cyng::vector_factory({
 					cyng::tuple_factory(
-						cyng::param_factory("host", "127.0.0.1"),
+#if defined(NODE_CROSS_COMPILE) && defined(BOOST_OS_LINUX)
+						cyng::param_factory("host", "segw.ch"),
+						cyng::param_factory("account", host),
 						cyng::param_factory("service", "26862"),
-						cyng::param_factory("account", "gateway"),
-						cyng::param_factory("pwd", "to-define"),
+#else
+						cyng::param_factory("host", "127.0.0.1"),
+						cyng::param_factory("account", "segw"),
+						cyng::param_factory("service", "26862"),
+#endif
+						cyng::param_factory("pwd", NODE_PWD),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", true),
 						cyng::param_factory("monitor", rnd_monitor())),	//	seconds
 					cyng::tuple_factory(
+#if defined(NODE_CROSS_COMPILE) && defined(BOOST_OS_LINUX)
+						cyng::param_factory("host", "192.168.1.100"),
+						cyng::param_factory("account", host),
+						cyng::param_factory("service", "26862"),
+#else
 						cyng::param_factory("host", "127.0.0.1"),
 						cyng::param_factory("service", "26863"),
-						cyng::param_factory("account", "gateway"),
-						cyng::param_factory("pwd", "to-define"),
+						cyng::param_factory("account", "segw"),
+#endif
+						cyng::param_factory("pwd", NODE_PWD),
 						cyng::param_factory("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::param_factory("scrambled", false),
 						cyng::param_factory("monitor", rnd_monitor()))

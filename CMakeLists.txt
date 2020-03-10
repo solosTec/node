@@ -536,7 +536,11 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 		PRIVATE
 			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
 			${CYNG_INCLUDE_DIRS}
-			${BOOST_INCLUDE_DIR}
+			"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY}>"
+			"$<$<PLATFORM_ID:Linux>:${Boost_SYSTEM_LIBRARY}>"
+			"$<$<PLATFORM_ID:Linux>:${Boost_FILESYSTEM_LIBRARY}>"
+			"$<$<PLATFORM_ID:Linux>:${Boost_PROGRAM_OPTIONS_LIBRARY}>"
+			"$<$<PLATFORM_ID:Linux>:${Boost_RANDOM_LIBRARY}>"
 			${OPENSSL_INCLUDE_DIR}
 			${CRYPT_INCLUDE_DIR}
 	)
@@ -662,7 +666,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 		${SMF_CRYPTO_LIBRARY}
 		${CYNG_LIBRARIES} 
 		${OPENSSL_LIBRARIES}
-		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};pthread>"
 		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 	)
 
@@ -686,7 +690,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 		${SMF_CRYPTO_LIBRARY}
 		${CYNG_LIBRARIES} 
 		${OPENSSL_LIBRARIES}
-		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};pthread>"
 		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 	)
 endif()
@@ -708,7 +712,7 @@ target_link_libraries(e350
 	smf_protocol_imega
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};pthread>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -729,7 +733,7 @@ target_link_libraries(collector
 	smf_bus_ipt
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};pthread>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -750,7 +754,7 @@ target_link_libraries(emitter
 	smf_bus_ipt
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};pthread>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -776,7 +780,7 @@ if(${PROJECT_NAME}_BUILD_TEST)
 		smf_protocol_mbus 
 		${CYNG_LIBRARIES} 
 		${OPENSSL_LIBRARIES}
-		"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${SQLite3_LIBRARY};${CMAKE_DL_LIBS};pthread>"
 		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 	)
 endif()
@@ -806,7 +810,9 @@ target_link_libraries(segw
 	smf_protocol_hci 
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${SQLite3_LIBRARY};${CMAKE_DL_LIBS};pthread>"
+#		${Boost_REGEX_LIBRARY}
+	
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -828,7 +834,7 @@ target_link_libraries(ipt
 	smf_protocol_sml
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 )
 
 #
@@ -846,10 +852,9 @@ target_link_libraries(ipts
 	smf_cluster 
 	smf_protocol_ipt 
 	smf_protocol_sml
-#	${SMF_CRYPTO_LIBRARY}
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 )
 
 #
@@ -872,7 +877,7 @@ target_link_libraries(store
 	smf_protocol_mbus 
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 	
@@ -894,7 +899,7 @@ if(${PROJECT_NAME}_BUILD_TEST)
 		smf_bus_ipt 
 		smf_protocol_sml
 		${CYNG_LIBRARIES} 
-		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 	)
 endif()
@@ -922,7 +927,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 		${OPENSSL_LIBRARIES}
 		${SMF_CRYPTO_LIBRARY}
 		${CYNG_LIBRARIES} 
-		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 	)
 endif()
 
@@ -941,7 +946,7 @@ target_link_libraries(master
 	smf_info 
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:atomic;${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 )
 
 #
@@ -962,7 +967,7 @@ target_link_libraries(modem
 	smf_protocol_modem 
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 )
 
 #
@@ -988,7 +993,7 @@ if(MSVC)
 		smf_info 
 		smf_cluster 
 		${CYNG_LIBRARIES}
-		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread>"
+		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 	)
 endif(MSVC)
 
@@ -1008,7 +1013,7 @@ target_link_libraries(iec_62056
 	smf_cluster 
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 )
 
 #
@@ -1028,7 +1033,7 @@ target_link_libraries(setup
 	smf_cluster 
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};${SQLite3_LIBRARY};pthread>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -1049,7 +1054,7 @@ target_link_libraries(csv
 	smf_cluster 
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};${SQLite3_LIBRARY};pthread>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -1069,7 +1074,7 @@ target_link_libraries(tsdb
 	smf_cluster 
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 )
 
 #
