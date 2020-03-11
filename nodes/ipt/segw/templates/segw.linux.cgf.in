@@ -1,5 +1,5 @@
 #
-#	startup configuration for http node
+#	startup configuration for smart energy gateway (segw)
 #	created : ${${PROJECT_NAME}_NOW_UTC}
 #	platform: @CMAKE_SYSTEM@
 #

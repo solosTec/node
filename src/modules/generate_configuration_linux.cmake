@@ -76,13 +76,25 @@ configure_file (
 		"${PROJECT_BINARY_DIR}/config/node-gateway.service")
 
 # ipt segw
-configure_file (
-		"${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.linux.cgf.in"
-		"${PROJECT_BINARY_DIR}/config/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+if (${${PROJECT_NAME}_CROSS_COMPILE})
+	configure_file (
+			"${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.oecp.cgf.in"
+			"${PROJECT_BINARY_DIR}/config/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+			
+	configure_file (
+			"${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/oecp.service.in"
+			"${PROJECT_BINARY_DIR}/config/node-segw.service")
+else()
+	configure_file (
+			"${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.linux.cgf.in"
+			"${PROJECT_BINARY_DIR}/config/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+			
+	configure_file (
+			"${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.service.in"
+			"${PROJECT_BINARY_DIR}/config/node-segw.service")
+			
+endif()
 	  
-configure_file (
-		"${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-segw.service")
 
 # ipt master
 configure_file (

@@ -1,4 +1,41 @@
 #!/bin/sh
+echo "remove obsolete symbolic links"
+
+rm  /usr/lib/libboost_chrono.so
+rm  /usr/lib/libboost_date_time.so
+rm  /usr/lib/libboost_filesystem.so
+rm  /usr/lib/libboost_prg_exec_monitor.so
+rm  /usr/lib/libboost_program_options.so
+rm  /usr/lib/libboost_random.so
+rm  /usr/lib/libboost_regex.so
+rm  /usr/lib/libboost_system.so
+rm  /usr/lib/libboost_thread.so
+rm  /usr/lib/libboost_timer.so
+rm  /usr/lib/libboost_unit_test_framework.so
+
+echo "remove obsolete libraries"
+
+rm /usr/lib/libboost_chrono.so.1.69.0               
+rm /usr/lib/libboost_program_options.so.1.69.0      
+rm /usr/lib/libboost_thread.so.1.69.0
+rm /usr/lib/libboost_date_time.so.1.69.0            
+rm /usr/lib/libboost_random.so.1.69.0               
+rm /usr/lib/libboost_timer.so.1.69.0
+rm /usr/lib/libboost_filesystem.so.1.69.0           
+rm /usr/lib/libboost_regex.so.1.69.0                
+rm /usr/lib/libboost_unit_test_framework.so.1.69.0
+rm /usr/lib/libboost_prg_exec_monitor.so.1.69.0     
+rm /usr/lib/libboost_system.so.1.69.0
+
+
+echo "set symbolic links to Boost library"
+
+ln -s /usr/local/lib/libboost_program_options.so   	/usr/local/lib/libboost_program_options.so.1.72.0
+ln -s /usr/local/lib/libboost_thread.so 			/usr/local/lib/libboost_thread.so.1.72.0
+ln -s /usr/local/lib/libboost_random.so 			/usr/local/lib/libboost_random.so.1.72.0
+ln -s /usr/local/lib/libboost_filesystem.so 		/usr/local/lib/libboost_filesystem.so.1.72.0
+#ln -s /usr/local/lib/libboost_regex.so 			/usr/local/lib/libboost_regex.so.1.72.0
+ln -s /usr/local/lib/libboost_system.so 			/usr/local/lib/libboost_system.so.1.72.0
 
 echo "${PROJECT_NAME} library (SMF project) is installed"
 
