@@ -148,6 +148,9 @@ namespace node
 			case CODE_IF_1107_TIME_SYNC:			return "IF_1107_TIME_SYNC";
 			case CODE_IF_1107_MAX_VARIATION:		return "IF_1107_MAX_VARIATION";
 
+			case CODE_OBISLOG_INTERVAL:				return "OBISLOG_INTERVAL";
+			case CODE_HAS_SSL_CONFIG:				return "HAS_SSL_CONFIG";
+
 			default:
 				break;
 			}

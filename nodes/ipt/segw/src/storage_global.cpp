@@ -26,6 +26,7 @@
 #include <cyng/buffer_cast.h>
 #include <cyng/parser/mac_parser.h>
 #include <cyng/io/serializer.h>
+#include <cyng/util/split.h>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -453,7 +454,7 @@ namespace node
 					init_config_record(s, build_cfg_key({
 						sml::OBIS_ROOT_IPT_PARAM,
 						sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
-						sml::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx)
+						sml::make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx)
 						}), cyng::make_object(static_cast<std::uint16_t>(0u)));
 
 					//	account
@@ -487,11 +488,11 @@ namespace node
 				}
 
 				//	ip-t reconnect time in minutes
-				auto reconnect = cyng::numeric_cast<std::uint8_t>(dom["ipt-param"].get(sml::OBIS_TCP_WAIT_TO_RECONNECT.to_str()), 1u);
+				auto reconnect = cyng::numeric_cast<std::uint32_t>(dom["ipt-param"].get(sml::OBIS_TCP_WAIT_TO_RECONNECT.to_str()), 1u);
 				init_config_record(s, build_cfg_key({
 					sml::OBIS_ROOT_IPT_PARAM,
 					sml::OBIS_TCP_WAIT_TO_RECONNECT
-					}), cyng::make_object(reconnect));
+					}), cyng::make_minutes(reconnect));
 
 				auto retries = cyng::numeric_cast<std::uint32_t>(dom["ipt-param"].get(sml::OBIS_TCP_CONNECT_RETRIES.to_str()), 3u);
 				init_config_record(s, build_cfg_key({
@@ -499,10 +500,11 @@ namespace node
 					sml::OBIS_TCP_CONNECT_RETRIES
 					}), cyng::make_object(retries));
 
+				//	has SSL/TLS
 				init_config_record(s, build_cfg_key({
 					sml::OBIS_ROOT_IPT_PARAM,
-					OBIS_CODE(00, 80, 80, 00, 03, 01)
-					}), cyng::make_object(0u));
+					sml::OBIS_HAS_SSL_CONFIG
+					}), cyng::make_object(false));
 
 				//
 				//	master index (0..1)
@@ -799,6 +801,29 @@ namespace node
 		return false;
 	}
 
+	int clear_config_from_storage(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom)
+	{
+		//
+		//	clear table TCfg
+		//
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		cyng::db::session s(con_type);
+		auto r = s.connect(cfg);
+		if (r.second) {
+			cyng::table::meta_table_ptr meta = storage::mm_.at("TCfg");
+			cyng::sql::command cmd(meta, s.get_dialect());
+			auto const sql = cmd.remove()();
+			auto stmt = s.create_statement();
+			auto const r = stmt->prepare(sql);
+			if (r.second) {
+				if (stmt->execute()) {
+					return stmt->changes();
+				}
+			}
+		}
+		return 0;
+	}
+
 	bool dump_profile_data(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom, std::uint32_t profile)
 	{
 		//
@@ -928,16 +953,34 @@ namespace node
 			auto stmt = s.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);
 			if (r.second) {
+				std::string section{ "000000000000" };
 				while (auto res = stmt->get_result()) {
 					auto const path = cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 0), "");
 					auto const val = cyng::value_cast<std::string>(res->get(3, cyng::TC_STRING, 0), "");
 					auto const def = cyng::value_cast<std::string>(res->get(4, cyng::TC_STRING, 0), "");
 					auto const type = cyng::value_cast<std::uint32_t>(res->get(5, cyng::TC_UINT32, 0), 0);
 					auto const obj = cyng::table::restore(val, type);
+
+					//
+					//	insert split lines between sections
+					//
+					auto const opath = sml::translate_obis_path(path);
+					auto section_new = get_first_section(opath, ':');
+					if (!boost::algorithm::equals(section_new, section)) {
+						section = section_new;
+						os
+							<< std::string(42, '-')
+							<< "  ["
+							<< section_new
+							<< ']'
+							<< std::endl;
+					}
+
 					os
-						<< std::setfill(' ') 
+						<< std::setfill('.') 
 						<< std::setw(42)
-						<< sml::translate_obis_path(path)
+						<< std::left
+						<< opath
 						<< ": "
 						;
 					list_value(os, val, def);
@@ -954,6 +997,15 @@ namespace node
 		return r.second;
 	}
 
+	std::string get_first_section(std::string path, char sep)
+	{
+		std::string op;
+		auto const r = cyng::split(path, std::string(1, sep));
+		return (r.empty())
+			? path
+			: r.at(0)
+			;
+	}
 
 	bool init_config_record(cyng::db::session& s, std::string const& key, cyng::object obj)
 	{

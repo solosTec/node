@@ -50,6 +50,13 @@ namespace node
 	bool list_config_data(std::ostream& os, cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
 
 	/**
+	 * Clear table "TCfg"
+	 *
+	 * @return count of affected rows.
+	 */
+	int clear_config_from_storage(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
+
+	/**
 	 * Table TCfg
 	 * Initialize a configuration record
 	 */
@@ -82,5 +89,9 @@ namespace node
 	 */
 	std::string get_profile_name(std::uint32_t profile);
 
+	/**
+	 * @return first section of the string
+	 */
+	std::string get_first_section(std::string, char sep);
 }
 #endif

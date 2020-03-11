@@ -14,7 +14,10 @@
 namespace node
 {
 	/**
-	 * write cyclic limiter entries
+	 * Monitors the size of all data collector tables. If the specified
+	 * maximum size is exeeded the oldest entries are deleted.
+	 *
+	 * All required logic is implemented in bridge::shrink()
 	 */
 	class bridge;
 	class limiter

@@ -48,6 +48,7 @@ int main(int argc, char **argv)
 		("list,l", boost::program_options::bool_switch()->default_value(false), "list configuration from database")
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 		("transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")
+		("clear", boost::program_options::bool_switch()->default_value(false), "delete configuration from database")
 		("dump", boost::program_options::value<std::uint32_t>(&profile)->default_value(0)->implicit_value(11), "dump profile data (11 .. 18")
 		;
 
@@ -182,6 +183,13 @@ int main(int argc, char **argv)
 			//	transfer JSON configuration into database
 			return ctrl.transfer_config();
 		}
+
+		if (vm["clear"].as< bool >())
+		{
+			//	clear configuration from database
+			return ctrl.clear_config();
+		}
+		
 
 		auto const dump = vm["dump"].as< std::uint32_t >();
 		if (dump != 0) {
