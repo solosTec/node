@@ -779,6 +779,7 @@ if(${PROJECT_NAME}_BUILD_TEST)
 		smf_bus_serial 
 		smf_protocol_mbus 
 		${CYNG_LIBRARIES} 
+		${SMF_CRYPTO_LIBRARY}
 		${OPENSSL_LIBRARIES}
 		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${SQLite3_LIBRARY};${CMAKE_DL_LIBS};pthread>"
 		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
@@ -809,10 +810,9 @@ target_link_libraries(segw
 	smf_protocol_mbus 
 	smf_protocol_hci 
 	${CYNG_LIBRARIES} 
+	${SMF_CRYPTO_LIBRARY}
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${SQLite3_LIBRARY};${CMAKE_DL_LIBS};pthread>"
-#		${Boost_REGEX_LIBRARY}
-	
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -1033,6 +1033,7 @@ target_link_libraries(setup
 	smf_cluster 
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
+	${SMF_CRYPTO_LIBRARY}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};${SQLite3_LIBRARY};pthread>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
