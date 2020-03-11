@@ -90,7 +90,6 @@ namespace node
 				, cyng::param_factory("tag", uidgen_())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
 				, cyng::param_factory("log-pushdata", false)	//	log file for each channel
-				, cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
 #if BOOST_OS_WINDOWS
 				, cyng::param_factory("gpio-enabled", false)
 #else
@@ -126,7 +125,8 @@ namespace node
 					cyng::param_factory("service", "7259"),
 					cyng::param_factory("discover", "5798"),	//	UDP
 					cyng::param_factory("account", "operator"),
-					cyng::param_factory("pwd", "operator")
+					cyng::param_factory("pwd", "operator"),
+					cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
 				))
 
 				//	hardware
@@ -333,28 +333,21 @@ namespace node
 		}
 
 		//
-		//	get virtual meter
+		//	setup bridge
 		//
-		//cyng::tuple_t cfg_virtual_meter;
-		//cfg_virtual_meter = cyng::value_cast(cfg.get("virtual-meter"), cfg_virtual_meter);
+		bridge& br = bridge::get_instance(logger, mux, cm, store);
 
 		//
-		//	collect login credentials
-		//	ToDo: use data from config db
+		//	read login credentials
 		//
-		auto const account = cyng::value_cast<std::string>(cfg["server"].get("account"), "");
-		auto const pwd = cyng::value_cast<std::string>(cfg["server"].get("pwd"), "");
+		auto const account = cm.get_cfg<std::string>("server:account", "");
+		auto const pwd = cm.get_cfg<std::string>("server:pwd", "");
 
 		//
 		//	"accept-all-ids" will never change during the session lifetime.
 		//	Changes require a reboot.
 		//
-		auto const accept_all = cm.get_cfg("accept-all-ids", false);
-
-		//
-		//	setup bridge
-		//
-		bridge& br = bridge::get_instance(logger, mux, cm, store);
+		auto const accept_all = cm.get_cfg("server:accept-all-ids", false);
 
 		//
 		//	connect to ipt master
@@ -382,10 +375,9 @@ namespace node
 
 			//
 			//	server runtime configuration
-			//	ToDo: use data from config db
 			//
-			auto const address = cyng::io::to_str(cfg["server"].get("address"));
-			auto const service = cyng::io::to_str(cfg["server"].get("service"));
+			auto const address = cm.get_cfg<std::string>("server:address", "");
+			auto const service = cm.get_cfg<std::string>("server:service", "");
 
 			CYNG_LOG_INFO(logger, "listener address: " << address);
 			CYNG_LOG_INFO(logger, "listener service: " << service);

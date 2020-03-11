@@ -19,7 +19,7 @@ namespace node
 			{
 				cyng::vector_t prg;
 				return prg
-					<< cyng::generate_invoke_unwinded("log.msg.info", "resolve address", config.host_, config.service_)
+					<< cyng::generate_invoke_unwinded("log.msg.info", "resolve address ", config.host_, ':', config.service_)
 					<< cyng::generate_invoke_unwinded("ip.tcp.socket.resolve", config.host_, config.service_)
 					<< ":SEND-LOGIN-REQUEST"			//	label
 					<< cyng::code::JNE					//	jump if no error
@@ -28,7 +28,7 @@ namespace node
 					<< ":STOP"							//	label
 					<< cyng::code::JA					//	jump always
 					<< cyng::label(":SEND-LOGIN-REQUEST")
-					<< cyng::generate_invoke_unwinded("log.msg.debug", "public login", config.account_, config.pwd_)
+					<< cyng::generate_invoke_unwinded("log.msg.debug", "public login ", config.account_, ':', config.pwd_)
 					<< cyng::generate_invoke_unwinded("ipt.start")		//	start reading ipt network
 					<< cyng::generate_invoke_unwinded("req.login.public", config.account_, config.pwd_)
 					<< cyng::generate_invoke_unwinded("stream.flush")

@@ -12,6 +12,7 @@
 #include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/ipt/scramble_key_format.h>
 
+#include <cyng/value_cast.hpp>
 #include <boost/core/ignore_unused.hpp>
 
 namespace node
@@ -30,8 +31,8 @@ namespace node
 
 	std::chrono::minutes cfg_ipt::get_ipt_tcp_wait_to_reconnect()
 	{
-		return std::chrono::minutes(cache_.get_cfg<std::uint8_t>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
-			, sml::OBIS_TCP_WAIT_TO_RECONNECT }), 1u));
+		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
+			, sml::OBIS_TCP_WAIT_TO_RECONNECT }), std::chrono::minutes(1u));
 	}
 
 	std::uint32_t cfg_ipt::get_ipt_tcp_connect_retries()

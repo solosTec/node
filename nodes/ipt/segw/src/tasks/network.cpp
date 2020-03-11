@@ -392,7 +392,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "reconnect to network in "
 				<< cyng::to_str(rec.monitor_));
 
-			base_.suspend(rec.monitor_);
+			base_.suspend(ipt.get_ipt_tcp_wait_to_reconnect());
 		}
 
 		void network::load_push_ops()
