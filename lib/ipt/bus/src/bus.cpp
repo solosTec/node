@@ -610,6 +610,7 @@ namespace node
 				, ctx.get_name()
 				, " - "
 				, std::get<3>(tpl)
+				, ": "
 				, tp_res_close_push_channel_policy::get_response_name(res)));
 
 
@@ -699,7 +700,7 @@ namespace node
 			auto bp = cyng::object_cast<cyng::buffer_t>(frame.at(1));
 			BOOST_ASSERT_MSG(bp != nullptr, "no data");
 			if (STATE_CONNECTED_ != state_) {
-				ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.req.transmit.data - wrong state ", get_state()));
+				ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.req.transmit.data - wrong state: ", get_state()));
 			}
 
 			if (bp != nullptr) {
@@ -793,7 +794,7 @@ namespace node
 			const auto success = tp_res_open_connection_policy::is_success(std::get<2>(tpl));
 			const auto msg = tp_res_open_connection_policy::get_response_name(std::get<2>(tpl));
 
-			ctx.queue(cyng::generate_invoke("log.msg.trace", "ipt.res.open.connection ", msg));
+			ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), ": ", msg));
 
 			auto pos = task_db_.find(std::get<1>(tpl));
 			if (pos != task_db_.end())
@@ -822,11 +823,11 @@ namespace node
 
 					break;
 				case STATE_CONNECTED_:
-					ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection already connected", frame));
+					ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection already connected ", frame));
 					mux_.post(tsk, 0, cyng::tuple_factory(std::get<2>(tpl), false));
 					break;
 				default:
-					ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection in wrong state", get_state()));
+					ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection in wrong state ", get_state()));
 					state_ = STATE_ERROR_;
 					mux_.post(tsk, 0, cyng::tuple_factory(std::get<2>(tpl), false));
 					break;
@@ -842,7 +843,7 @@ namespace node
 					? STATE_AUTHORIZED_
 					: STATE_ERROR_
 					;
-				ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection: empty sequence/task relation (timeout)", +std::get<1>(tpl)));
+				ctx.queue(cyng::generate_invoke("log.msg.warning", "ipt.res.open.connection: empty sequence/task relation (timeout) ", +std::get<1>(tpl)));
 			}
 		}
 
@@ -877,11 +878,11 @@ namespace node
 				}
 				break;
 			case STATE_WAIT_FOR_CLOSE_RESPONSE_:
-				ctx.queue(cyng::generate_invoke("log.msg.error", "received ipt.req.close.connection - invalid state", get_state()));
+				ctx.queue(cyng::generate_invoke("log.msg.error", "received ipt.req.close.connection - invalid state: ", get_state()));
 				state_ = STATE_AUTHORIZED_;	//	try to fix this 
 				break;
 			default:
-				ctx.queue(cyng::generate_invoke("log.msg.error", "received ipt.req.close.connection - invalid state", get_state()));
+				ctx.queue(cyng::generate_invoke("log.msg.error", "received ipt.req.close.connection - invalid state: ", get_state()));
 				break;
 			}
 
