@@ -192,7 +192,7 @@ namespace node
 			auto const key = cyng::table::key_generator(dev_id);
 			auto const now = std::chrono::system_clock::now();
 
-#ifdef _DEBUG
+#if defined(NODE_CROSS_COMPILE) || defined(_DEBUG)
 			//
 			//	start with some known AES keys
 			//
