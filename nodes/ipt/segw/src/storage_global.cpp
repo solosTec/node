@@ -593,7 +593,13 @@ namespace node
 							code
 							}), param.second);
 					}
+					else if (boost::algorithm::equals(param.first, "monitor")) {
+						//	int
+						auto const val = cyng::numeric_cast(param.second, 30);
+						init_config_record(s, build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, param.first ), cyng::make_seconds(val));
+					}
 					else {
+
 						init_config_record(s, build_cfg_key({
 							sml::OBIS_W_MBUS_PROTOCOL
 							}, param.first), param.second);
@@ -608,8 +614,8 @@ namespace node
 			//
 			{
 				init_config_record(s, build_cfg_key({
-					sml::OBIS_IF_1107
-					}, "descr"), cyng::make_object("wired-LMN configuration (IEC 62506-21)"));
+					"rs485", "descr" 
+					}), cyng::make_object("RS485 interface"));
 
 				//	get a tuple/list of params
 				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("wired-LMN"));
@@ -617,25 +623,18 @@ namespace node
 					cyng::param_t param;
 					param = cyng::value_cast(obj, param);
 
-					auto const code = sml::to_obis(param.first);
-					if (!code.is_nil()) {
-
-						init_config_record(s, build_cfg_key({
-							sml::OBIS_IF_1107,
-							code
-							}), param.second);
-					}
-					else if (boost::algorithm::equals(param.first, "databits")) {
+					if (boost::algorithm::equals(param.first, "databits")) {
 						//	u8
 						auto const val = cyng::numeric_cast<std::uint8_t>(param.second, 8u);
-						init_config_record(s, build_cfg_key({
-							sml::OBIS_IF_1107
-							}, param.first), cyng::make_object(val));
+						init_config_record(s, build_cfg_key({ "rs485", param.first }), cyng::make_object(val));
+					}
+					else if (boost::algorithm::equals(param.first, "monitor")) {
+						//	int
+						auto const val = cyng::numeric_cast(param.second, 30);
+						init_config_record(s, build_cfg_key({ "rs485", param.first }), cyng::make_seconds(val));
 					}
 					else {
-						init_config_record(s, build_cfg_key({
-							sml::OBIS_IF_1107
-							}, param.first), param.second);
+						init_config_record(s, build_cfg_key({ "rs485", param.first }), param.second);
 					}
 				}
 			}

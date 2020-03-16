@@ -124,10 +124,17 @@ BOOST_AUTO_TEST_CASE(mbus_004)
 BOOST_AUTO_TEST_SUITE_END()	//	MBUS
 
 #include "test-serial-001.h"
+#include "test-serial-002.h"
+
 BOOST_AUTO_TEST_SUITE(SERIAL)
 BOOST_AUTO_TEST_CASE(serial_001)
 {
 	using namespace node;
 	BOOST_CHECK(test_serial_001());
+}
+BOOST_AUTO_TEST_CASE(serial_002)
+{
+	using namespace node;
+	BOOST_CHECK(test_serial_002());
 }
 BOOST_AUTO_TEST_SUITE_END()	//	SERIAL

@@ -320,7 +320,7 @@ namespace node
 			//
 			//	buffer size
 			//
-			std::uniform_int_distribution<int> dist_buffer_size(packet_size_min_, packet_size_max_);
+			std::uniform_int_distribution<std::size_t> dist_buffer_size(packet_size_min_, packet_size_max_);
 			cyng::buffer_t buffer(dist_buffer_size(rnd_device_));
 
 			//
@@ -335,7 +335,7 @@ namespace node
 
 		std::size_t receiver::next_tsk()
 		{
-			std::uniform_int_distribution<int> dist(0, tsk_vec_.size() - 1);
+			std::uniform_int_distribution<std::size_t> dist(0, tsk_vec_.size() - 1);
 			const std::size_t tsk = dist(rnd_device_);
 			if (tsk == tsk_sender_) {
 				CYNG_LOG_WARNING(logger_, "same task #"	<< tsk);

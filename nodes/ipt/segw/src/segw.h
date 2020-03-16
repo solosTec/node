@@ -24,6 +24,11 @@ namespace node
 	std::string build_cfg_key(sml::obis_path path, std::string leaf);
 
 	/**
+	 * helper function to build a key for table TCfg
+	 */
+	std::string build_cfg_key(std::initializer_list<std::string> slist);
+
+	/**
 	 * build a key for internal table "_Cfg" 
 	 */
 	cyng::vector_t cfg_key(sml::obis_path path);

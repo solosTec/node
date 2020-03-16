@@ -28,7 +28,7 @@ namespace node
 			case BR_2400:	return 2400u;
 			case BR_4800:	return 4800u;
 			case BR_9600:	return 9600u;
-			case BR_19200:	return 1920u;
+			case BR_19200:	return 19200u;
 			case BR_38400:	return 38400u;
 
 			case BR_57600:	return 57600u;

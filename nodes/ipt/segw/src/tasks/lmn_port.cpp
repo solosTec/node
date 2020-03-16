@@ -19,11 +19,11 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, std::chrono::seconds monitor
 		, std::string port
-		, std::uint8_t databits
-		, std::string parity
-		, std::string flow_control
-		, std::string stopbits
-		, std::uint32_t speed
+		, boost::asio::serial_port_base::character_size databits
+		, boost::asio::serial_port_base::parity parity
+		, boost::asio::serial_port_base::flow_control flow_control
+		, boost::asio::serial_port_base::stop_bits stopbits
+		, boost::asio::serial_port_base::baud_rate speed
 		, std::size_t receiver_data
 		, std::size_t receiver_status)
 	: base_(*btp) 
@@ -32,9 +32,9 @@ namespace node
 		, monitor_(monitor)
 		, name_(port)
 		, databits_(databits)
-		, parity_(serial::to_parity(parity))
-		, flow_control_(serial::to_flow_control(flow_control))
-		, stopbits_(serial::to_stopbits(stopbits))
+		, parity_(parity)
+		, flow_control_(flow_control)
+		, stopbits_(stopbits)
 		, baud_rate_(speed)
 		, receiver_data_(receiver_data)
 		, receiver_status_(receiver_status)
@@ -181,7 +181,7 @@ namespace node
 		try {
 			port_.set_option(parity_);	// default none
 			port_.set_option(databits_);
-			port_.set_option(databits_);	// default one
+			port_.set_option(stopbits_);	// default one
 			port_.set_option(baud_rate_);
 			port_.set_option(flow_control_);
 		}
@@ -196,8 +196,21 @@ namespace node
 		}
 	}
 
-	cyng::continuation lmn_port::process(bool on)
+	cyng::continuation lmn_port::process(cyng::buffer_t data)
 	{
+		boost::system::error_code ec;
+		boost::asio::write(port_, boost::asio::buffer(data, data.size()), ec);
+
+		if (ec) {
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> write to port "
+				<< name_ 
+				<< " failed: "
+				<< ec.message());
+		}
 
 		//
 		//	continue task

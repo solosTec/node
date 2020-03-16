@@ -1,3 +1,9 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2020 Sylko Olzscher
+ *
+ */
 #ifndef NODE_LMN_H
 #define NODE_LMN_H
 
@@ -13,7 +19,7 @@ namespace node
 	class lmn
 	{
 	public:
-		lmn(cyng::io_service_t& ios
+		lmn(cyng::async::mux&
 			, cyng::logging::log_ptr logger
 			, cache&
 			, boost::uuids::uuid tag);
@@ -21,14 +27,19 @@ namespace node
 		/**
 		 * Open serial and wireless communication ports
 		 */
-		void start(cyng::async::mux& mux);
+		void start();
 
 	private:
-		void start_lmn_wired(cyng::async::mux& mux);
-		void start_lmn_wireless(cyng::async::mux& mux);
+		void start_lmn_wired();
+		void start_lmn_wireless();
 
-		std::pair<std::size_t, bool> start_lmn_port_wireless(cyng::async::mux& mux, std::size_t, std::size_t);
-		std::pair<std::size_t, bool> start_lmn_port_wired(cyng::async::mux& mux, std::size_t);
+		std::pair<std::size_t, bool> start_lmn_port_wireless(std::size_t, std::size_t);
+		std::pair<std::size_t, bool> start_lmn_port_wired(std::size_t);
+
+		/**
+		 * Start RS485 interface manager
+		 */
+		std::pair<std::size_t, bool> start_rs485_mgr(std::size_t, std::chrono::seconds);
 
 		void wmbus_push_frame(cyng::context& ctx);
 		void sml_msg(cyng::context& ctx);
@@ -37,6 +48,7 @@ namespace node
 
 	private:
 		cyng::logging::log_ptr logger_;
+		cyng::async::mux& mux_;
 		cyng::controller vm_;
 		cache& cache_;
 		decoder_wireless_mbus decoder_wmbus_;

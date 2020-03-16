@@ -78,6 +78,14 @@ namespace node
 		}
 
 		/**
+		 * Solves the problem with "defs".
+		 * The non-template function wins.
+		 */
+		std::string get_cfg(std::string name, const char* def) {
+			return cyng::value_cast<std::string>(db_.get_value("_Cfg", std::string("val"), name), def);
+		}
+
+		/**
 		 * set/insert a configuration value
 		 */
 		template <typename T >

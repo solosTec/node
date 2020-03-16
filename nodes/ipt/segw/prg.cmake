@@ -10,6 +10,9 @@ set (node_ipt_segw_cpp
 	nodes/ipt/segw/src/storage_global.cpp
 	nodes/ipt/segw/src/cache.cpp
 	nodes/ipt/segw/src/cfg_ipt.cpp
+	nodes/ipt/segw/src/cfg_rs485.cpp
+	nodes/ipt/segw/src/cfg_wmbus.cpp
+	nodes/ipt/segw/src/cfg_mbus.cpp
 	nodes/ipt/segw/src/bridge.cpp
 	nodes/ipt/segw/src/router.cpp
 	nodes/ipt/segw/src/lmn.cpp
@@ -25,6 +28,9 @@ set (node_ipt_segw_h
 	nodes/ipt/segw/src/storage_global.h
 	nodes/ipt/segw/src/cache.h
 	nodes/ipt/segw/src/cfg_ipt.h
+	nodes/ipt/segw/src/cfg_rs485.h
+	nodes/ipt/segw/src/cfg_wmbus.h
+	nodes/ipt/segw/src/cfg_mbus.h
 	nodes/ipt/segw/src/bridge.h
 	nodes/ipt/segw/src/router.h
 	nodes/ipt/segw/src/lmn.h
@@ -72,6 +78,8 @@ set (node_ipt_segw_tasks
 	nodes/ipt/segw/src/tasks/push.cpp
 	nodes/ipt/segw/src/tasks/limiter.h
 	nodes/ipt/segw/src/tasks/limiter.cpp
+	nodes/ipt/segw/src/tasks/rs485.h
+	nodes/ipt/segw/src/tasks/rs485.cpp
 )
 	
 set (node_ipt_segw_server

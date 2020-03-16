@@ -183,21 +183,24 @@ namespace node
 					cyng::param_factory("monitor", rnd_monitor()),	//	seconds
 #if BOOST_OS_WINDOWS
 					cyng::param_factory("enabled", false),
-					cyng::param_factory("port", "COM1"),
+					cyng::param_factory("port", "COM6"),
+					cyng::param_factory("parity", "even"),	//	none, odd, even
 #else
 					cyng::param_factory("enabled", true),
 					cyng::param_factory("port", "/dev/ttyAPP1"),
-#endif
-					cyng::param_factory("databits", 8),
 					cyng::param_factory("parity", "none"),	//	none, odd, even
+#endif
+					//	8N1
+					cyng::param_factory("databits", 8),
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
-					cyng::param_factory("speed", 115200),
+					cyng::param_factory("speed", 2400),		//	initial
 					cyng::param_factory("transparent-mode", false),
 					cyng::param_factory("transparent-port", 12002)
 				))
 
 				, cyng::param_factory("if-1107", cyng::tuple_factory(
+					//	IEC 62056-21
 #ifdef _DEBUG
 /*					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str() + "-descr", "OBIS_IF_1107_ACTIVE"),	//	active
 					cyng::param_factory(sml::OBIS_IF_1107_LOOP_TIME.to_str() + "-descr", "OBIS_IF_1107_LOOP_TIME"),	//	loop timeout in seconds
@@ -386,8 +389,8 @@ namespace node
 			//
 			//	data I/O manager (serial and wireless data)
 			//
-			lmn io(mux.get_io_service(), logger, cm, uidgen_());
-			io.start(mux);	//	open serial and wireless communication ports
+			lmn io(mux, logger, cm, uidgen_());
+			io.start();	//	open serial and wireless communication ports
 
 			//
 			//	wait for system signals

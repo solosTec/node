@@ -6,10 +6,12 @@ set (unit_test)
 set (unit_test_cpp
 	test/unit-test/src/main.cpp
 	test/unit-test/src/test-serial-001.cpp
+	test/unit-test/src/test-serial-002.cpp
 )
     
 set (unit_test_h
 	test/unit-test/src/test-serial-001.h
+	test/unit-test/src/test-serial-002.h
 )
 
 set (sml_exporter

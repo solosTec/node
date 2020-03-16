@@ -20,8 +20,8 @@ namespace node
 	class lmn_port
 	{
 	public:
-		//	[0] static switch ON/OFF
-		using msg_0 = std::tuple<bool>;
+		//	[0] send data
+		using msg_0 = std::tuple<cyng::buffer_t>;
 
 		using signatures_t = std::tuple<msg_0>;
 
@@ -30,11 +30,11 @@ namespace node
 			, cyng::logging::log_ptr
 			, std::chrono::seconds
 			, std::string port
-			, std::uint8_t databits
-			, std::string parity
-			, std::string flow_control
-			, std::string stopbits
-			, std::uint32_t speed
+			, boost::asio::serial_port_base::character_size databits
+			, boost::asio::serial_port_base::parity parity
+			, boost::asio::serial_port_base::flow_control flow_control
+			, boost::asio::serial_port_base::stop_bits stopbits
+			, boost::asio::serial_port_base::baud_rate speed
 			, std::size_t receiver_data
 			, std::size_t receiver_status);
 
@@ -42,10 +42,10 @@ namespace node
 		void stop(bool shutdown);
 
 		/**
-		 * @brief slot [0] - static switch ON/OFF
+		 * @brief slot [0] - send data
 		 *
 		 */
-		cyng::continuation process(bool);
+		cyng::continuation process(cyng::buffer_t);
 
 	private:
 		void do_read();
