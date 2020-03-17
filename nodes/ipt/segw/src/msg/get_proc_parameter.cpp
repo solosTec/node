@@ -282,8 +282,8 @@ namespace node
 			//
 			//	get TCP/IP endpoint from _Config table
 			//
-			auto rep = cache_.get_cfg<boost::asio::ip::tcp::endpoint>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "ep.remote"), boost::asio::ip::tcp::endpoint());
-			auto lep = cache_.get_cfg<boost::asio::ip::tcp::endpoint>(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "ep.local"), boost::asio::ip::tcp::endpoint());
+			auto const rep = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "ep.remote"), boost::asio::ip::tcp::endpoint());
+			auto const lep = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "ep.local"), boost::asio::ip::tcp::endpoint());
 
 			CYNG_LOG_TRACE(logger_, "remote endpoint " << rep);
 			CYNG_LOG_TRACE(logger_, "local endpoint " << lep);
@@ -867,13 +867,59 @@ namespace node
 
 		void get_proc_parameter::class_mbus(std::string trx, cyng::buffer_t srv_id)
 		{
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CLASS_MBUS not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_CLASS_MBUS);
-			//constexpr static obis	DEFINE_OBIS_CODE(00, B0, 00, 02, 00, 01, CLASS_MBUS_RO_INTERVAL);	//	readout interval in seconds % 3600 (33 36 30 30)
-			//constexpr static obis	DEFINE_OBIS_CODE(00, B0, 00, 02, 00, 02, CLASS_MBUS_SEARCH_INTERVAL);	//	search interval in seconds % 0 (30)
-			//constexpr static obis	DEFINE_OBIS_CODE(00, B0, 00, 02, 00, 03, CLASS_MBUS_SEARCH_DEVICE);	//	search device now and by restart	% True(54 72 75 65)
-			//constexpr static obis	DEFINE_OBIS_CODE(00, B0, 00, 02, 00, 04, CLASS_MBUS_AUTO_ACTICATE);	//	automatic activation of meters     % False(46 61 6C 73 65)
-			//constexpr static obis	DEFINE_OBIS_CODE(00, B0, 00, 02, 00, 05, CLASS_MBUS_BITRATE);		//	used baud rates(bitmap) % 82 (38 32)
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CLASS_MBUS);
+
+
+			//
+			//	readout interval 
+			//
+			auto const ro_interval = cache_.get_cfg(build_cfg_key({ OBIS_CLASS_MBUS, OBIS_CLASS_MBUS_RO_INTERVAL }), std::chrono::seconds(7200u));
+			append_get_proc_response(msg, {
+				OBIS_CLASS_MBUS,
+				OBIS_CLASS_MBUS_RO_INTERVAL
+				}, make_value(ro_interval));
+
+
+			//
+			//	search interval
+			//
+			auto const search_interval = cache_.get_cfg(build_cfg_key({ OBIS_CLASS_MBUS, OBIS_CLASS_MBUS_SEARCH_INTERVAL }), std::chrono::seconds(0));
+			append_get_proc_response(msg, {
+				OBIS_CLASS_MBUS,
+				OBIS_CLASS_MBUS_SEARCH_INTERVAL
+				}, make_value(search_interval));
+
+			//
+			//	[bool] search device now and by restart
+			//
+			auto const search = cache_.get_cfg(build_cfg_key({ OBIS_CLASS_MBUS, OBIS_CLASS_MBUS_SEARCH_DEVICE }), true);
+			append_get_proc_response(msg, {
+				OBIS_CLASS_MBUS,
+				OBIS_CLASS_MBUS_SEARCH_DEVICE
+				}, make_value(search));
+
+			//
+			//	[bool] automatic activation of meters
+			//
+			auto const auto_activate = cache_.get_cfg(build_cfg_key({ OBIS_CLASS_MBUS, OBIS_CLASS_MBUS_AUTO_ACTICATE }), false);
+			append_get_proc_response(msg, {
+				OBIS_CLASS_MBUS,
+				OBIS_CLASS_MBUS_AUTO_ACTICATE
+				}, make_value(auto_activate));
+
+			//
+			//	[u32] baudrate
+			//
+			auto const baudrate = cache_.get_cfg(build_cfg_key({ OBIS_CLASS_MBUS, OBIS_CLASS_MBUS_BITRATE }), 2400u);
+			append_get_proc_response(msg, {
+				OBIS_CLASS_MBUS,
+				OBIS_CLASS_MBUS_BITRATE
+				}, make_value(baudrate));
+
+			//
+			//	append to message queue
+			//
+			sml_gen_.append(std::move(msg));
 
 		}
 

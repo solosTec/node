@@ -151,6 +151,12 @@ namespace node
 			case CODE_OBISLOG_INTERVAL:				return "OBISLOG_INTERVAL";
 			case CODE_HAS_SSL_CONFIG:				return "HAS_SSL_CONFIG";
 
+			case CODE_PUSH_SOURCE:					return "PUSH_SOURCE";
+			case CODE_PUSH_SOURCE_PROFILE:			return "PUSH_SOURCE_PROFILE";
+			case CODE_PUSH_SOURCE_INSTALL:			return "PUSH_SOURCE_INSTALL";
+			case CODE_PUSH_SOURCE_VISIBLE_SENSORS:	return "PUSH_SOURCE_VISIBLE_SENSORS";
+			case CODE_PUSH_SOURCE_ACTIVE_SENSORS:	return "PUSH_SOURCE_ACTIVE_SENSORS";
+
 			default:
 				break;
 			}
@@ -161,7 +167,6 @@ namespace node
 			else if (OBIS_PUSH_SOURCE == code)			return "push-source";	//	options are PUSH_SOURCE_PROFILE, PUSH_SOURCE_INSTALL and PUSH_SOURCE_SENSOR_LIST
 			else if (OBIS_PUSH_SOURCE_PROFILE == code)	return "push-source-profile";	//!< new meter/sensor data
 			else if (OBIS_PUSH_SOURCE_INSTALL == code)	return "push-source-install";	//!< configuration changed
-			else if (OBIS_PUSH_SOURCE_SENSOR_LIST == code)		return "push-source-sensor-list";	//!< list of visible meters changed
 			else if (OBIS_PUSH_SERVER_ID == code)		return "push-server-id";
 
 			else if (OBIS_IF_LAN_DSL == code)	return "IF_LAN_DSL";

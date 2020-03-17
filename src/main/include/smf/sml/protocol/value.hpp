@@ -107,6 +107,11 @@ namespace node
 				static cyng::tuple_t create(std::chrono::system_clock::time_point v);
 			};
 			template<>
+			struct factory_policy<std::chrono::seconds>
+			{
+				static cyng::tuple_t create(std::chrono::seconds v);
+			};
+			template<>
 			struct factory_policy<cyng::buffer_t>
 			{
 				static cyng::tuple_t create(cyng::buffer_t&& v);

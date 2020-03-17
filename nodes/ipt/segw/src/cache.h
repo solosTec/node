@@ -70,11 +70,16 @@ namespace node
 		cyng::buffer_t get_srv_id();
 
 		/**
+		 * read a configuration object from table "_Cfg"
+		 */
+		cyng::object get_obj(std::string name);
+
+		/**
 		 * read a configuration value from table "_Cfg"
 		 */
 		template <typename T >
 		T get_cfg(std::string name, T def) {
-			return cyng::value_cast(db_.get_value("_Cfg", std::string("val"), name), def);
+			return cyng::value_cast(get_obj(name), def);
 		}
 
 		/**
@@ -82,7 +87,7 @@ namespace node
 		 * The non-template function wins.
 		 */
 		std::string get_cfg(std::string name, const char* def) {
-			return cyng::value_cast<std::string>(db_.get_value("_Cfg", std::string("val"), name), def);
+			return cyng::value_cast<std::string>(get_obj(name), def);
 		}
 
 		/**

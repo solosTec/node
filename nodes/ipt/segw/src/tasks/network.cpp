@@ -398,6 +398,12 @@ namespace node
 		void network::load_push_ops()
 		{
 			cache_.write_tables("_PushOps", "_DataCollector", [&](cyng::store::table* tbl_po, cyng::store::table* tbl_dc) {
+
+				//
+				//	PushOps to remove
+				//
+				cyng::table::key_list_t to_remove;
+
 				storage_.loop("TPushOps", [&](cyng::table::record const& rec)->bool {
 
 					//
@@ -410,21 +416,33 @@ namespace node
 					//	get profile type
 					//
 					auto const rec_dc = tbl_dc->lookup(rec.key());	//	same key
-					BOOST_ASSERT_MSG(!rec_dc.empty(), "no data collector found");
+					if (!rec_dc.empty()) {
 
-					auto const tsk = start_task_push(cyng::to_buffer(rec["serverID"])
-						, cyng::value_cast<std::uint8_t>(rec["nr"], 0)
-						, cyng::to_buffer(rec_dc["profile"])
-						, cyng::value_cast<std::uint32_t>(rec["interval"], 0)
-						, cyng::value_cast<std::uint32_t>(rec["delay"], 0)
-						, cyng::value_cast<std::string>(rec["target"], ""));
-					r.set("tsk", cyng::make_object(static_cast<std::uint64_t>(tsk)));
+						auto const tsk = start_task_push(cyng::to_buffer(rec["serverID"])
+							, cyng::value_cast<std::uint8_t>(rec["nr"], 0)
+							, cyng::to_buffer(rec_dc["profile"])
+							, cyng::value_cast<std::uint32_t>(rec["interval"], 0)
+							, cyng::value_cast<std::uint32_t>(rec["delay"], 0)
+							, cyng::value_cast<std::string>(rec["target"], ""));
+						r.set("tsk", cyng::make_object(static_cast<std::uint64_t>(tsk)));
 
-					if (tbl_po->insert(rec.key(), r.data(), rec.get_generation(), cache_.get_tag())) {
+						if (tbl_po->insert(rec.key(), r.data(), rec.get_generation(), cache_.get_tag())) {
 
-						cyng::buffer_t const srv = cyng::to_buffer(rec.key().at(0));
-						CYNG_LOG_TRACE(logger_, "load push op "
-							<< node::sml::from_server_id(srv));
+							cyng::buffer_t const srv = cyng::to_buffer(rec.key().at(0));
+							CYNG_LOG_TRACE(logger_, "load push op "
+								<< node::sml::from_server_id(srv));
+						}
+						else {
+
+							//
+							//	There is no data collector defined.
+							//	Remove this entry.
+							//
+							CYNG_LOG_ERROR(logger_, "no data collector configured for PushOps: "
+								<< cyng::io::to_str(rec.convert()));
+
+							to_remove.push_back(rec.key());
+						}
 					}
 					else {
 
@@ -437,7 +455,16 @@ namespace node
 
 					return true;	//	continue
 					});
-				});
+
+				//
+				//	remove dangling push ops
+				//
+				for (auto const& key : to_remove) {
+					tbl_po->erase(key, cache_.get_tag());
+				}
+
+			});
+
 		}
 
 		std::size_t network::start_task_push(cyng::buffer_t srv_id
@@ -448,7 +475,13 @@ namespace node
 			, std::string target)
 		{
 			BOOST_ASSERT(srv_id.size() == 9);
-			BOOST_ASSERT(profile.size() == 6);
+			//BOOST_ASSERT(profile.size() == 6);
+			if (profile.size() != 6) {
+				CYNG_LOG_ERROR(logger_, "try to start push task for target "
+					<< target
+					<< " with invalid profile");
+				return cyng::async::NO_TASK;
+			}
 
 			return cyng::async::start_task_detached<push>(this->base_.mux_
 				, logger_

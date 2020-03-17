@@ -557,10 +557,40 @@ namespace node
 					auto const code = sml::to_obis(param.first);
 					if (!code.is_nil()) {
 
-						init_config_record(s, build_cfg_key({
-							sml::OBIS_CLASS_MBUS,
-							code
-							}), param.second);
+						if (sml::OBIS_CLASS_MBUS_RO_INTERVAL == code) {
+							//	[u32/seconds]
+							auto const val = cyng::numeric_cast<std::uint32_t> (param.second, 3600u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_CLASS_MBUS,
+								code
+								}), cyng::make_seconds(val));
+						}
+						else if (sml::OBIS_CLASS_MBUS_SEARCH_INTERVAL == code) {
+							//	[u32/seconds]
+							auto const val = cyng::numeric_cast<std::uint32_t> (param.second, 0u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_CLASS_MBUS,
+								code
+								}), cyng::make_seconds(val));
+						}
+						else if (sml::OBIS_CLASS_MBUS_BITRATE == code) {
+							//	[u32] bismask
+							//	bit 1 = 150 baud
+							//	bit 2 = 300 baud
+							//	bit 5 = 2400 baud
+							//	bit 7 = 9600 baud
+							auto const val = cyng::numeric_cast<std::uint32_t> (param.second, 0u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_CLASS_MBUS,
+								code
+								}), cyng::make_object(val));
+						}
+						else {
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_CLASS_MBUS,
+								code
+								}), param.second);
+						}
 					}
 					else {
 						init_config_record(s, build_cfg_key({

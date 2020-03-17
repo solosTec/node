@@ -67,22 +67,9 @@ namespace node
 				, std::string pwd
 				, cyng::param_t	param);
 
-			//void _81490d070002(obis_path::const_iterator
-			//	, obis_path::const_iterator
-			//	, std::string trx
-			//	, cyng::buffer_t srv_id
-			//	, std::string user
-			//	, std::string pwd
-			//	, cyng::param_t	param);
-			//void sml_set_proc_activate(cyng::context& ctx);
-			//void sml_set_proc_deactivate(cyng::context& ctx);
-			//void sml_set_proc_delete(cyng::context& ctx);
+			void class_mbus(obis code
+					, cyng::param_t param);
 
-			//void sml_set_proc_if1107_param(cyng::context& ctx);
-			//void sml_set_proc_if1107_device(cyng::context& ctx);
-
-			//void sml_set_proc_mbus_param(cyng::context& ctx);
-			//void sml_set_proc_sensor(cyng::context& ctx);
 		private:
 			cyng::logging::log_ptr logger_;
 

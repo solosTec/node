@@ -201,10 +201,7 @@ namespace node
 			cache_.write_table("_PushOps", [&](cyng::store::table* tbl) {
 				auto const key = cyng::table::key_generator(srv_id, nr);
 				auto const rec = tbl->lookup(key);
-				if (rec.empty()) {
-					insert_push_ops(tbl, key, params, cache_.get_tag());
-				}
-				else {
+				if (!rec.empty()) {
 					if (params.empty()) {
 
 						//
@@ -215,6 +212,10 @@ namespace node
 					else {
 						update_push_ops(tbl, key, params, cache_.get_tag());
 					}
+				}
+				else {
+					BOOST_ASSERT(params.size() == 5);
+					insert_push_ops(tbl, key, params, cache_.get_tag());
 				}
 			});
 		}
@@ -249,14 +250,25 @@ namespace node
 
 				cyng::table::key_list_t keys;
 				tbl_dc->loop([&](cyng::table::record const& rec) {
-					if (cyng::to_buffer(rec["serverID"]) == id && cyng::to_buffer(rec["profile"]) == profile) {
-						keys.push_back(rec.key());
+					if (!rec.empty()) {
+						if (cyng::to_buffer(rec["serverID"]) == id && cyng::to_buffer(rec["profile"]) == profile) {
+							keys.push_back(rec.key());
+						}
 					}
-					return true;
+					else {
+						CYNG_LOG_ERROR(logger_, "cannot clear data collector "
+							<< node::sml::from_server_id(id));
+					}
+					return true;	//	continue
 				});
 
 				for (auto const key : keys) {
+
+					CYNG_LOG_WARNING(logger_, "delete data collector / push op: "
+						<< cyng::io::to_str(key));
+
 					tbl_dc->erase(key, cache_.get_tag());
+
 				}
 
 			});

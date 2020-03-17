@@ -24,6 +24,7 @@
 #include <cyng/table/meta.hpp>
 #include <cyng/table/restore.h>
 #include <cyng/buffer_cast.h>
+#include <cyng/numeric_cast.hpp>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -102,20 +103,47 @@ namespace node
 
 	void bridge::shrink()
 	{
+		//
+		//	data collectors to remove
+		//
+		cyng::table::key_list_t to_remove;
+
 		cache_.loop("_DataCollector", [&](cyng::table::record const& rec)->bool {
 
 			auto const max_size = cyng::value_cast<std::uint16_t>(rec["maxSize"], 100);
 			auto const srv_id = cyng::to_buffer(rec["serverID"]);
-			sml::obis const profile = cyng::to_buffer(rec["profile"]);
-			auto const count = storage_.shrink(max_size, srv_id, profile);
-			CYNG_LOG_INFO(logger_, "profile "
-				<< profile.to_str()
-				<< " shrinked by "
-				<< count
-				<< " rows");
+			auto const buffer = cyng::to_buffer(rec["profile"]);
+			if (buffer.empty()) {
 
+				CYNG_LOG_ERROR(logger_, "data collector #"
+					<< cyng::numeric_cast(rec["nr"], 0)
+					<< " of server "
+					<< sml::from_server_id(srv_id)
+					<< " has no profile");
+
+				to_remove.push_back(rec.key());
+
+			}
+			else {
+				sml::obis const profile(buffer);
+				auto const count = storage_.shrink(max_size, srv_id, profile);
+				CYNG_LOG_INFO(logger_, "profile "
+					<< profile.to_str()
+					<< " shrinked by "
+					<< count
+					<< " rows");
+			}
 			return true;	//	continue
 		});
+
+		//
+		//	remove flagged data collectors
+		//
+		for (auto const& key : to_remove) {
+			CYNG_LOG_WARNING(logger_, "delete data collector: "
+				<< cyng::io::to_str(key));
+			cache_.db_.erase("_DataCollector", key, cache_.get_tag());
+		}
 	}
 
 	void bridge::load_configuration()

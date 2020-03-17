@@ -146,7 +146,8 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 04, FF, PUSH_SOURCE);	//	options are PUSH_SOURCE_PROFILE, PUSH_SOURCE_INSTALL and PUSH_SOURCE_SENSOR_LIST
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 42, FF, PUSH_SOURCE_PROFILE);	//!< new meter/sensor data
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 43, FF, PUSH_SOURCE_INSTALL);	//!< configuration changed
-		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 44, FF, PUSH_SOURCE_SENSOR_LIST);	//!< list of visible meters changed
+		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 44, FF, PUSH_SOURCE_VISIBLE_SENSORS);	//!< list of visible meters changed
+		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 45, FF, PUSH_SOURCE_ACTIVE_SENSORS);	//!< list of active meters changed
 
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 81, FF, PUSH_SERVER_ID);
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 82, FF, PUSH_IDENTIFIERS);	//	list of identifiers of the values to be delivered by the push source

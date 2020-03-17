@@ -46,12 +46,6 @@ namespace node
 		//	atomic status update
 		//
 		db_.access([&](cyng::store::table* tbl) {
-
-			//
-			//	get current status word
-			//
-			//auto word = get_config_value(tbl, "status.word", sml::status::get_initial_value());
-
 			//
 			//	set/remove flag
 			//
@@ -83,6 +77,10 @@ namespace node
 		//	OBIS_SERVER_ID (81 81 C7 82 04 FF)
 		//	this is a cached value
 		return server_id_;
+	}
+
+	cyng::object cache::get_obj(std::string name) {
+		return db_.get_value("_Cfg", std::string("val"), name);
 	}
 
 	bool cache::merge_cfg(std::string name, cyng::object&& val)
