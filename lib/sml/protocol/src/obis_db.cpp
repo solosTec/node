@@ -157,6 +157,19 @@ namespace node
 			case CODE_PUSH_SOURCE_VISIBLE_SENSORS:	return "PUSH_SOURCE_VISIBLE_SENSORS";
 			case CODE_PUSH_SOURCE_ACTIVE_SENSORS:	return "PUSH_SOURCE_ACTIVE_SENSORS";
 
+			case CODE_IF_EDL:						return "IF_EDL";
+			case CODE_IF_EDL_PROTOCOL:				return "IF_EDL_PROTOCOL";
+			case CODE_IF_EDL_BAUDRATE:				return "IF_EDL_BAUDRATE";
+
+			case CODE_W_MBUS_ADAPTER_MANUFACTURER:	return "W_MBUS_ADAPTER_MANUFACTURER";
+			case CODE_W_MBUS_ADAPTER_ID:			return "W_MBUS_ADAPTER_ID";
+			case CODE_W_MBUS_FIRMWARE:				return "W_MBUS_FIRMWARE";
+			case CODE_W_MBUS_HARDWARE:				return "W_MBUS_HARDWARE";
+
+			case CODE_IF_LAN_DSL:					return "IF_LAN_DSL";
+			case CODE_IF_wMBUS:						return "IF_wMBUS";
+			case CODE_IF_PLC:						return "IF_PLC";
+
 			default:
 				break;
 			}
@@ -168,22 +181,6 @@ namespace node
 			else if (OBIS_PUSH_SOURCE_PROFILE == code)	return "push-source-profile";	//!< new meter/sensor data
 			else if (OBIS_PUSH_SOURCE_INSTALL == code)	return "push-source-install";	//!< configuration changed
 			else if (OBIS_PUSH_SERVER_ID == code)		return "push-server-id";
-
-			else if (OBIS_IF_LAN_DSL == code)	return "IF_LAN_DSL";
-			else if (OBIS_CODE_IF_GSM == code)		return "IF_GSM";
-			else if (OBIS_CODE_IF_GPRS == code)		return "IF_GPRS";
-			else if (OBIS_CODE_IF_USER == code)		return "IF_USER";
-			//else if (OBIS_CODE_IF_IPT == code)		return "IF_IPT";
-			else if (OBIS_CODE_IF_EDL == code)		return "IF_EDL";
-			else if (OBIS_IF_wMBUS == code)	return "IF-wireless-mbus";
-			else if (OBIS_CODE_IF_PLC == code)		return "IF_PLC";
-			//else if (OBIS_CODE_IF_SyM2 == code)		return "IF_SyM2";
-			else if (OBIS_IF_1107 == code)		return "IF-IEC-62505-21";	//	wired M-Bus
-
-			else if (OBIS_W_MBUS_ADAPTER_MANUFACTURER == code)		return "W_MBUS_ADAPTER_MANUFACTURER";
-			else if (OBIS_W_MBUS_ADAPTER_ID == code)				return "W_MBUS_ADAPTER_ID";
-			else if (OBIS_W_MBUS_FIRMWARE == code)					return "W_MBUS_FIRMWARE";
-			else if (OBIS_W_MBUS_HARDWARE == code)					return "W_MBUS_HARDWARE";
 
 			else if (code == OBIS_CLASS_STATUS)			return "class-status";
 

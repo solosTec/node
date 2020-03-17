@@ -172,6 +172,11 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 04, 02, 07, 00, FF, ROOT_GSM);	//	see: Datenstruktur zum Lesen/Setzen der GSM Parameter 
 		OBIS_CODE_DEFINITION(81, 04, 0D, 07, 00, FF, ROOT_GPRS_PARAM);	//	see: Datenstruktur zum Lesen / Setzen der Provider-abhängigen GPRS-Parameter 
 
+		//OBIS_CODE_DEFINITION(81, 06, 00, 00, 01, 00, W_MBUS_STATUS_MANUFACTURER);	//	[string] manufacturer of wireless M-Bus adapter
+		//OBIS_CODE_DEFINITION(81, 06, 00, 00, 03, 00, W_MBUS_STATUS_ID);	//	[string] adapter ID - see EN 13757-3/4
+		//OBIS_CODE_DEFINITION(81, 06, 00, 02, 00, 00, W_MBUS_STATUS_FIRMWARE);	//	[string] adapter firmware version
+		//OBIS_CODE_DEFINITION(81, 06, 00, 02, 03, 00, W_MBUS_STATUS_HARDWARE);	//	[string] adapter hardware version
+
 		OBIS_CODE_DEFINITION(81, 06, 0F, 06, 00, FF, ROOT_W_MBUS_STATUS);	//	see: 7.3.1.23 Datenstruktur zum Lesen des W-MBUS-Status 
 		OBIS_CODE_DEFINITION(81, 46, 00, 00, 02, FF, PROFILE_ADDRESS);
 		OBIS_CODE_DEFINITION(81, 47, 17, 07, 00, FF, PUSH_TARGET);	//	push target name
@@ -302,14 +307,18 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 48, 17, 07, 05, 00, CODE_IF_LAN_DNS_SECONDARY);	// IPv4 or IPv6
 		OBIS_CODE_DEFINITION(81, 48, 17, 07, 06, 00, CODE_IF_LAN_DNS_TERTIARY);	// IPv4 or IPv6
 
-		OBIS_CODE_DEFINITION(81, 04, 02, 07, 00, FF, CODE_IF_GSM);
-		OBIS_CODE_DEFINITION(81, 04, 0D, 07, 00, FF, CODE_IF_GPRS);
+		//OBIS_CODE_DEFINITION(81, 04, 02, 07, 00, FF, CODE_IF_GSM);
+		//OBIS_CODE_DEFINITION(81, 04, 0D, 07, 00, FF, CODE_IF_GPRS);
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 00, FF, CODE_IF_USER);	//	Endkundenschnittstelle:
 		//OBIS_CODE_DEFINITION(81, 49, 0D, 07, 00, FF, CODE_IF_IPT);	//	 same as OBIS_ROOT_IPT_PARAM
-		OBIS_CODE_DEFINITION(81, 05, 0D, 07, 00, FF, CODE_IF_EDL);		//	M-Bus EDL (RJ10)
+		OBIS_CODE_DEFINITION(81, 05, 0D, 07, 00, FF, IF_EDL);		//	M-Bus EDL (RJ10)
+
+		OBIS_CODE_DEFINITION(81, 05, 0D, 07, 00, 01, IF_EDL_PROTOCOL);	//	[u8] always 1
+		OBIS_CODE_DEFINITION(81, 05, 0D, 07, 00, 02, IF_EDL_BAUDRATE);	//	0 = auto, 6 = 9600, 10 = 115200 baud
+
 		OBIS_CODE_DEFINITION(81, 06, 19, 07, 00, FF, IF_wMBUS);	//	Wireless M-BUS:
-		OBIS_CODE_DEFINITION(81, 04, 18, 07, 00, FF, CODE_IF_PLC);
-		//OBIS_CODE_DEFINITION(81, 05, 0D, 07, 00, FF, CODE_IF_SyM2);	//	same as CODE_IF_EDL
+		OBIS_CODE_DEFINITION(81, 04, 18, 07, 00, FF, IF_PLC);
+		//OBIS_CODE_DEFINITION(81, 05, 0D, 07, 00, FF, CODE_IF_SyM2);	//	same as IF_EDL
 		OBIS_CODE_DEFINITION(81, 00, 00, 09, 0B, 00, ACT_SENSOR_TIME);	//	[SML_Time] actSensorTime - current UTC time
 		OBIS_CODE_DEFINITION(81, 00, 00, 09, 0B, 01, TZ_OFFSET);	//	[u16] offset to actual time zone in minutes (-720 .. +720)
 
@@ -343,7 +352,7 @@ namespace node
 		//OBIS_CODE_DEFINITION(81, 06, 19, 07, 05, FF, W_MBUS_MODE_N);	//	parallel
 		//OBIS_CODE_DEFINITION(81, 06, 19, 07, 06, FF, W_MBUS_MODE_S_SYN);	//	Used for synchronized messages in meters
 
-		OBIS_CODE_DEFINITION(81, 06, 27, 32, 03, 01, W_MBUS_REBOOT);	//	u32
+		OBIS_CODE_DEFINITION(81, 06, 27, 32, 03, 01, W_MBUS_REBOOT);	//	u32 (seconds)
 		OBIS_CODE_DEFINITION(81, 06, 19, 07, 04, FF, W_MBUS_POWER);		//	note: same code as W_MBUS_MODE_C
 		OBIS_CODE_DEFINITION(81, 06, 19, 07, 11, FF, W_MBUS_INSTALL_MODE);
 

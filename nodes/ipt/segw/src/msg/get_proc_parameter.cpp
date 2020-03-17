@@ -28,6 +28,7 @@
 #include <cyng/sys/memory.h>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/intrinsics/buffer.h>
+#include <cyng/parser/chrono_parser.h>
 
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/mgr.h>
@@ -147,7 +148,7 @@ namespace node
 			case CODE_ACTUATORS:	//	0x0080801100FF
 				actuators(trx, srv_id);
 				break;
-			case CODE_CODE_IF_EDL:	//	0x81050D0700FF - M-Bus EDL (RJ10)
+			case CODE_IF_EDL:	//	0x81050D0700FF - M-Bus EDL (RJ10)
 				code_if_edl(trx, srv_id);
 				break;
 			case CODE_CLASS_MBUS:	//	0x00B000020000
@@ -319,14 +320,25 @@ namespace node
 			//
 			
 			cache_.read_table("_Cfg", [&](cyng::store::table const* tbl_cfg) {
+
+				std::uint32_t reboot = 86400u;	//	seconds
+				auto const obj = get_obj(tbl_cfg, cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_REBOOT }));
+				if (obj.get_class().tag() == cyng::TC_STRING) {
+					auto const r = cyng::parse_timespan_seconds(cyng::value_cast<std::string>(obj, "24:00:0.000000"));
+					if (r.second) {
+						reboot = r.first.count();
+					}
+				}
+
 				sml_gen_.get_proc_w_mbus_if(trx
 					, srv_id
-					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }), "val")	//	protocol
-					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_MODE_S }), "val")	//	duration in seconds
-					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_MODE_T }), "val")	//	duration in seconds
-					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_REBOOT }), "val")	//	duration in seconds
-					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_POWER }), "val")	//	transmision power (transmission_power)
-					, tbl_cfg->lookup(cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_INSTALL_MODE }), "val")
+					, get_obj(tbl_cfg, cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }))	//	protocol
+					, get_obj(tbl_cfg, cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_MODE_S }))	//	duration in seconds
+					, get_obj(tbl_cfg, cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_MODE_T }))	//	duration in seconds
+					//, get_obj(tbl_cfg, cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_REBOOT }))	//	
+					, cyng::make_object(reboot)	//	OBIS_W_MBUS_REBOOT (seconds)
+					, get_obj(tbl_cfg, cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_POWER }))	//	transmision power (transmission_power)
+					, get_obj(tbl_cfg, cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_INSTALL_MODE }))
 				);
 			});
 		}
@@ -861,8 +873,29 @@ namespace node
 
 		void get_proc_parameter::code_if_edl(std::string trx, cyng::buffer_t srv_id)
 		{
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_IF_EDL not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_CODE_IF_EDL);
+			//sml_gen_.empty(trx, srv_id, OBIS_IF_EDL);
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_IF_EDL);
+
+			//
+			//	protocol (always 1)
+			//
+			append_get_proc_response(msg, {
+				OBIS_IF_EDL,
+				OBIS_IF_EDL_PROTOCOL
+				}, make_value(1u));
+
+			//
+			//	baudrate
+			//
+			append_get_proc_response(msg, {
+				OBIS_IF_EDL,
+				OBIS_IF_EDL_BAUDRATE
+				}, make_value(0u));	//	auto
+
+			//
+			//	append to message queue
+			//
+			sml_gen_.append(std::move(msg));
 		}
 
 		void get_proc_parameter::class_mbus(std::string trx, cyng::buffer_t srv_id)

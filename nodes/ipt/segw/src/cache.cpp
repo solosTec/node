@@ -519,4 +519,14 @@ namespace node
 		}
 		return cyng::make_object();
 	}
+
+	cyng::object get_obj(cyng::store::table const* tbl_cfg, cyng::table::key_type&& key)
+	{
+		BOOST_ASSERT(tbl_cfg != nullptr);
+		if (boost::algorithm::equals(tbl_cfg->meta().get_name(), "_Cfg")) {
+			return tbl_cfg->lookup(key, std::string("val"));
+		}
+		return cyng::make_object();
+	}
+
 }

@@ -129,7 +129,7 @@ namespace node
 			case 0x0080801100FF:	//	ACTUATORS
 				actuators(trx, srv_id);
 				break;
-			case 0x81050D0700FF:	//	CODE_IF_EDL - M-Bus EDL (RJ10)
+			case 0x81050D0700FF:	//	IF_EDL - M-Bus EDL (RJ10)
 				code_if_edl(trx, srv_id);
 				break;
 			case 0x00B000020000:	//	CLASS_MBUS
@@ -307,18 +307,18 @@ namespace node
 			//
 			//	wireless M-Bus interface
 			//
-			config_db_.access([&](cyng::store::table const* tbl_cfg) {
+			//config_db_.access([&](cyng::store::table const* tbl_cfg) {
 
-				sml_gen_.get_proc_w_mbus_if(trx
-					, srv_id
-					, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_PROTOCOL.to_str()), "value")	//	protocol
-					, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_MODE_S.to_str()), "value")	//	duration in seconds
-					, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_MODE_T.to_str()), "value")	//	duration in seconds
-					, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_REBOOT.to_str()), "value")	//	duration in seconds
-					, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_POWER.to_str()), "value")	//	transmision power (transmission_power)
-					, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_INSTALL_MODE.to_str()), "value")
-				);
-			}, cyng::store::read_access("_Config"));
+			//	sml_gen_.get_proc_w_mbus_if(trx
+			//		, srv_id
+			//		, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_PROTOCOL.to_str()), "value")	//	protocol
+			//		, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_MODE_S.to_str()), "value")	//	duration in seconds
+			//		, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_MODE_T.to_str()), "value")	//	duration in seconds
+			//		, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_REBOOT.to_str()), "value")	//	duration in seconds
+			//		, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_POWER.to_str()), "value")	//	transmision power (transmission_power)
+			//		, tbl_cfg->lookup(cyng::table::key_generator(sml::OBIS_W_MBUS_INSTALL_MODE.to_str()), "value")
+			//	);
+			//}, cyng::store::read_access("_Config"));
 		}
 
 		void get_proc_parameter::code_root_lan_dsl(std::string trx, cyng::buffer_t srv_id)
@@ -1196,8 +1196,8 @@ namespace node
 
 		void get_proc_parameter::code_if_edl(std::string trx, cyng::buffer_t srv_id)
 		{
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_IF_EDL not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_CODE_IF_EDL);
+			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_IF_EDL not implemented yet");
+			sml_gen_.empty(trx, srv_id, OBIS_IF_EDL);
 		}
 
 		void get_proc_parameter::class_mbus(std::string trx, cyng::buffer_t srv_id)

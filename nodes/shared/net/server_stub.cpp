@@ -8,8 +8,11 @@
 
 #include <smf/cluster/server_stub.h>
 #include <smf/cluster/generator.h>
+
 #include <cyng/vm/generator.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/io/io_bytes.hpp>
+
 #include <boost/uuid/nil_generator.hpp>
 
 namespace node 
@@ -450,7 +453,7 @@ namespace node
 		//
 		auto dp = cyng::object_cast<cyng::buffer_t>(frame.at(1));
 
-		auto tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+		auto const tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 		auto pos = connection_map_.find(tag);
 		if (pos != connection_map_.end())
 		{
@@ -459,7 +462,9 @@ namespace node
 			CYNG_LOG_TRACE(logger_, "transfer data local "
 				<< tag
 				<< " ==> "
-				<< receiver);
+				<< receiver
+				<< " "
+				<< cyng::bytes_to_str(dp->size()));
 
 			propagate("ipt.transfer.data", receiver, cyng::vector_t({ frame.at(1) }));
 			propagate("stream.flush", receiver, cyng::vector_t({}));

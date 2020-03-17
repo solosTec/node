@@ -139,6 +139,14 @@ namespace node
 					cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ..., 81 81 C7 82 04 FF - OBIS_SERVER_ID)
 				))
 
+				//	wireless M-Bus adapter
+				, cyng::param_factory("adapter", cyng::tuple_factory(
+					cyng::param_factory(sml::OBIS_W_MBUS_ADAPTER_MANUFACTURER.to_str(), "RC1180-MBUS3"),	//	manufacturer (81 06 00 00 01 00)
+					cyng::param_factory(sml::OBIS_W_MBUS_ADAPTER_ID.to_str(), "A8 15 17 45 89 03 01 31"),	//	adapter ID (81 06 00 00 03 00)
+					cyng::param_factory(sml::OBIS_W_MBUS_FIRMWARE.to_str(), "3.08"),	//	firmware (81 06 00 02 00 00)
+					cyng::param_factory(sml::OBIS_W_MBUS_HARDWARE.to_str(), "2.00")	//	hardware (81 06 00 02 03 FF)
+				))
+
 				//	wireless M-Bus
 				//	stty -F /dev/ttyAPP0 raw
 				//	stty -F /dev/ttyAPP0  -echo -echoe -echok
@@ -171,7 +179,7 @@ namespace node
 					cyng::param_factory(sml::OBIS_W_MBUS_PROTOCOL.to_str(), static_cast<std::uint8_t>(mbus::MODE_S)),	//	0 = T-Mode, 1 = S-Mode, 2 = S/T Automatic
 					cyng::param_factory(sml::OBIS_W_MBUS_MODE_S.to_str(), 30),	//	seconds
 					cyng::param_factory(sml::OBIS_W_MBUS_MODE_T.to_str(), 20),	//	seconds
-					cyng::param_factory(sml::OBIS_W_MBUS_REBOOT.to_str(), 0),	//	0 = no reboot
+					cyng::param_factory(sml::OBIS_W_MBUS_REBOOT.to_str(), 86400),	//	0 = no reboot (seconds)
 					cyng::param_factory(sml::OBIS_W_MBUS_POWER.to_str(), static_cast<std::uint8_t>(mbus::STRONG)),	//	low, basic, average, strong (unused)
 					cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str(), true),	//	install mode
 
@@ -201,21 +209,6 @@ namespace node
 
 				, cyng::param_factory("if-1107", cyng::tuple_factory(
 					//	IEC 62056-21
-#ifdef _DEBUG
-/*					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str() + "-descr", "OBIS_IF_1107_ACTIVE"),	//	active
-					cyng::param_factory(sml::OBIS_IF_1107_LOOP_TIME.to_str() + "-descr", "OBIS_IF_1107_LOOP_TIME"),	//	loop timeout in seconds
-					cyng::param_factory(sml::OBIS_IF_1107_RETRIES.to_str() + "-descr", "OBIS_IF_1107_RETRIES"),	//	retries
-					cyng::param_factory(sml::OBIS_IF_1107_MIN_TIMEOUT.to_str() + "-descr", "OBIS_IF_1107_MIN_TIMEOUT"),	//	min. timeout (milliseconds)
-					cyng::param_factory(sml::OBIS_IF_1107_MAX_TIMEOUT.to_str() + "-descr", "OBIS_IF_1107_MAX_TIMEOUT"),	//	max. timeout (milliseconds)
-					cyng::param_factory(sml::OBIS_IF_1107_MAX_DATA_RATE.to_str() + "-descr", "OBIS_IF_1107_MAX_DATA_RATE"),	//	max. databytes
-					cyng::param_factory(sml::OBIS_IF_1107_RS485.to_str() + "-descr", "OBIS_IF_1107_RS485"),	//	 true = RS485, false = RS232
-					cyng::param_factory(sml::OBIS_IF_1107_PROTOCOL_MODE.to_str() + "-descr", "OBIS_IF_1107_PROTOCOL_MODE"),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
-					cyng::param_factory(sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str() + "-descr", "OBIS_IF_1107_AUTO_ACTIVATION"),	//	auto activation
-					cyng::param_factory(sml::OBIS_IF_1107_TIME_GRID.to_str() + "-descr", "OBIS_IF_1107_TIME_GRID"),
-					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str() + "-descr", "OBIS_IF_1107_TIME_SYNC"),
-																	 cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str() + "-descr", "OBIS_IF_1107_MAX_VARIATION"),	//	max. variation in seconds
-*/
-#endif
 					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str(), true),	//	active
 					cyng::param_factory(sml::OBIS_IF_1107_LOOP_TIME.to_str(), 60),	//	loop timeout in seconds
 					cyng::param_factory(sml::OBIS_IF_1107_RETRIES.to_str(), 3),	//	retries

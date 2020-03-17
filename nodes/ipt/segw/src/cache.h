@@ -29,6 +29,18 @@ namespace node
 	 */
 	void init_cache(cyng::store::db&);
 
+	/**
+	 * read a configuration object from table "_Cfg"
+	 */
+	cyng::object get_obj(cyng::store::table const* tbl, cyng::table::key_type&&);
+
+	/**
+	 * read a configuration value from table "_Cfg"
+	 */
+	template <typename T >
+	T get_cfg(cyng::store::table const* tbl, std::string name, T def) {
+		return cyng::value_cast(get_obj(tbl, name), def);
+	}
 
 	/**
 	 * manage cached tables

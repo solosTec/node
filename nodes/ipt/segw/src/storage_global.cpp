@@ -606,7 +606,7 @@ namespace node
 			//
 			{
 				init_config_record(s, build_cfg_key({
-					sml::OBIS_W_MBUS_PROTOCOL
+					sml::OBIS_IF_wMBUS
 					}, "descr"), cyng::make_object("wireless-LMN configuration (M-Bus)"));
 
 				//	get a tuple/list of params
@@ -618,25 +618,66 @@ namespace node
 					auto const code = sml::to_obis(param.first);
 					if (!code.is_nil()) {
 
-						init_config_record(s, build_cfg_key({
-							sml::OBIS_W_MBUS_PROTOCOL,
-							code
-							}), param.second);
+						if (sml::OBIS_W_MBUS_REBOOT == code) {
+							//	[u32] / seconds
+							auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 0u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_wMBUS,
+								code
+								}), cyng::make_seconds(val));
+						}
+						else {
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_wMBUS,
+								code
+								}), param.second);
+						}
 					}
 					else if (boost::algorithm::equals(param.first, "monitor")) {
 						//	int
 						auto const val = cyng::numeric_cast(param.second, 30);
-						init_config_record(s, build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, param.first ), cyng::make_seconds(val));
+						init_config_record(s, build_cfg_key({ sml::OBIS_IF_wMBUS }, param.first ), cyng::make_seconds(val));
 					}
 					else {
 
 						init_config_record(s, build_cfg_key({
-							sml::OBIS_W_MBUS_PROTOCOL
+							sml::OBIS_IF_wMBUS
 							}, param.first), param.second);
 					}
 				}
 			}
 
+
+			//
+			//	transfer wireless-LMN status
+			//	81 06 0F 06 00 FF (ROOT_W_MBUS_STATUS)
+			//
+			{
+				init_config_record(s, build_cfg_key({
+					sml::OBIS_ROOT_W_MBUS_STATUS
+					}, "descr"), cyng::make_object("wireless-LMN adapter"));
+
+				//	get a tuple/list of params
+				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("adapter"));
+				for (auto const& obj : tpl) {
+					cyng::param_t param;
+					param = cyng::value_cast(obj, param);
+					auto const code = sml::to_obis(param.first);
+					if (!code.is_nil()) {
+
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_ROOT_W_MBUS_STATUS,
+							code
+							}), param.second);
+					}
+					else {
+
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_ROOT_W_MBUS_STATUS
+							}, param.first), param.second);
+					}
+				}
+			}
 			//
 			//	transfer wired-LMN configuration
 			//	as part of IEC 62506-21 configuration

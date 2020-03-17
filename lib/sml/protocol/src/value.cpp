@@ -146,8 +146,7 @@ namespace node
 				case cyng::TC_TIME_POINT:
 					return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_TIME), obj);
 				case cyng::TC_SECOND:	//	convert to [uint]
-					//return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), cyng::make_object(900));
-					return factory_policy<std::int64_t>::create(cyng::value_cast(obj, std::chrono::seconds(900)).count());
+					return factory_policy<std::uint32_t>::create(cyng::value_cast(obj, std::chrono::seconds(900)).count());
 				default:
 					break;
 				}
