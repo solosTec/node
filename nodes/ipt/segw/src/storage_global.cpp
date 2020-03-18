@@ -292,7 +292,7 @@ namespace node
 			//	ToDo: use an u8 data type as index and maintain the index to avoid
 			//	gaps between the indexes and to start 0.
 			//
-			cyng::table::make_meta_table_gen<1, 6>("TIECDevs",
+			cyng::table::make_meta_table_gen<1, 6, 1>("TIECDevs",
 				{ "nr"			//	[u8]
 				, "meterID"		//	max. 32 bytes (8181C7930AFF)
 				, "address"		//	mostly the same as meterID (8181C7930CFF)
