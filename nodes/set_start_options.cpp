@@ -25,11 +25,7 @@ namespace node
 	)
 	{
 		//	get the working directory
-#if defined(NODE_CROSS_COMPILE) && defined(BOOST_OS_LINUX)
-		boost::filesystem::path const cwd = "/usr/local/etc";
-#else
 		auto const cwd = boost::filesystem::current_path();
-#endif
 
 #if BOOST_OS_WINDOWS
 		//

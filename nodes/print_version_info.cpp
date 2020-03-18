@@ -28,7 +28,11 @@ namespace node
 	
     std::string get_cfg_name(std::string const& node)
     {
-       return node + "_" + NODE_SUFFIX + ".cfg";
+#if defined(NODE_CROSS_COMPILE) && defined(BOOST_OS_LINUX)
+		return "/usr/local/etc/" + node + "_" + NODE_SUFFIX + ".cfg";
+#else
+		return node + "_" + NODE_SUFFIX + ".cfg";
+#endif
     }
 	
 }

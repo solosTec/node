@@ -10,6 +10,7 @@
 #include "../../../set_start_options.h"
 #include "../../../show_ip_address.h"
 #include "../../../show_fs_drives.h"
+#include "../../../show_ports.h"
 #if BOOST_OS_WINDOWS
 #include <boost/asio.hpp>
 #endif
@@ -44,6 +45,7 @@ int main(int argc, char **argv)
 		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("fs,F", boost::program_options::bool_switch()->default_value(false), "show available drives")
+		("ports", boost::program_options::bool_switch()->default_value(false), "show available serial ports")
 		("show,s", boost::program_options::bool_switch()->default_value(false), "show JSON configuration")
 		("list,l", boost::program_options::bool_switch()->default_value(false), "list configuration from database")
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
@@ -130,6 +132,12 @@ int main(int argc, char **argv)
 			return node::show_fs_drives(std::cout);
 		}
 
+		if (vm["ports"].as< bool >())
+		{
+			//	show available ports
+			return node::show_ports(std::cout);
+		}
+		
 		//	read parameters from config file
 		const std::string cfg = vm["config"].as< std::string >();
 		std::ifstream ifs(cfg);
