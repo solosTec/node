@@ -8,6 +8,7 @@
 #include "print_version_info.h"
 #include <NODE_project_info.h>
 #include <string>
+#include <boost/predef.h>
 
 namespace node 
 {
