@@ -286,8 +286,38 @@ namespace node
 						//	-- body
 				, 6		//	code
 				, 0		//	active
-				})
+				}),
 
+			//
+			//	ToDo: use an u8 data type as index and maintain the index to avoid
+			//	gaps between the indexes and to start 0.
+			//
+			cyng::table::make_meta_table_gen<1, 6>("TIECDevs",
+				{ "nr"			//	[u8]
+				, "meterID"		//	max. 32 bytes (8181C7930AFF)
+				, "address"		//	mostly the same as meterID (8181C7930CFF)
+				, "descr"
+				, "baudrate"	//	9600, ... (in opening sequence) (8181C7930BFF)
+				, "p1"			//	login password (8181C7930DFF)
+				//, "p2"		//	login password
+				, "w5"			//	W5 password (reserved for national applications) (8181C7930EFF)
+				},
+				{ cyng::TC_UINT8		//	nr
+				, cyng::TC_BUFFER		//	meterID (max. 32)
+				, cyng::TC_BUFFER		//	address
+				, cyng::TC_STRING		//	description
+				, cyng::TC_UINT32		//	speed
+				, cyng::TC_STRING		//	pwd
+				, cyng::TC_STRING		//	w5
+				},
+				{ 0		//	nr
+				, 32	//	meterID
+				, 32	//	address
+				, 128	//	description
+				, 0		//	speed
+				, 32	//	pwd
+				, 32	//	w5
+				})
 
 		};
 	}
@@ -527,10 +557,76 @@ namespace node
 					auto const code = sml::to_obis(param.first);
 					if (!code.is_nil()) {
 
-						init_config_record(s, build_cfg_key({
-							sml::OBIS_IF_1107,
-							code
-							}), param.second);
+						if (sml::OBIS_IF_1107_LOOP_TIME == code) {
+							//	[u32/seconds]
+							auto const val = cyng::numeric_cast<std::uint32_t> (param.second, 60u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_1107,
+								code
+								}), cyng::make_seconds(val));
+						}
+						else if (sml::OBIS_IF_1107_MIN_TIMEOUT == code) {
+							//	[u32/milliseconds]
+							auto const val = cyng::numeric_cast<std::uint32_t> (param.second, 200u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_1107,
+								code
+								}), cyng::make_milliseconds(val));
+						}
+						else if (sml::OBIS_IF_1107_MAX_TIMEOUT == code) {
+							//	[u32/milliseconds]
+							auto const val = cyng::numeric_cast<std::uint32_t> (param.second, 5000u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_1107,
+								code
+								}), cyng::make_milliseconds(val));
+						}
+						else if (sml::OBIS_IF_1107_MAX_DATA_RATE == code) {
+							//	[u32]
+							auto const val = cyng::numeric_cast<std::uint32_t> (param.second, 10240u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_1107,
+								code
+								}), cyng::make_object(val));
+						}
+						else if (sml::OBIS_IF_1107_PROTOCOL_MODE == code) {
+							//	[u8]
+							auto const val = cyng::numeric_cast<std::uint8_t> (param.second, 2u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_1107,
+								code
+								}), cyng::make_object(val));
+						}
+						else if (sml::OBIS_IF_1107_TIME_GRID == code) {
+							//	[u32/seconds]
+							auto const val = cyng::numeric_cast<std::uint32_t> (param.second, 900u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_1107,
+								code
+								}), cyng::make_seconds(val));
+						}
+						else if (sml::OBIS_IF_1107_TIME_SYNC == code) {
+							//	[u32/seconds]
+							auto const val = cyng::numeric_cast<std::uint32_t> (param.second, 14400u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_1107,
+								code
+								}), cyng::make_seconds(val));
+						}
+						else if (sml::OBIS_IF_1107_MAX_VARIATION == code) {
+							//	[u32/seconds]
+							auto const val = cyng::numeric_cast<std::uint32_t> (param.second, 9u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_1107,
+								code
+								}), cyng::make_seconds(val));
+						}
+						else {
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_1107,
+								code
+								}), param.second);
+						}
 					}
 					else {
 						init_config_record(s, build_cfg_key({
@@ -754,7 +850,7 @@ namespace node
 						else {
 							init_config_record(s, build_cfg_key({
 								sml::OBIS_DEVICE_CLASS
-								}), cyng::make_object(sml::OBIS_DEV_CLASS_MUC_LAN.to_str()));
+							}), cyng::make_object(sml::OBIS_DEV_CLASS_MUC_LAN.to_str()));
 						}
 					}
 					else if (boost::algorithm::equals(param.first, "manufacturer")) {

@@ -60,6 +60,7 @@ namespace node
 		load_devices_mbus();
 		load_data_collectors();
 		load_data_mirror();
+		load_iec_devices();
 	}
 
 	void bridge::finalize()
@@ -249,6 +250,31 @@ namespace node
 						<< cyng::io::to_str(rec.key())
 						<< ", body: "
 						<< cyng::io::to_str(rec.data()));
+
+				}
+
+				return true;	//	continue
+				});
+			});
+	}
+
+	void bridge::load_iec_devices()
+	{
+		cache_.write_table("_IECDevs", [&](cyng::store::table* tbl) {
+			storage_.loop("TIECDevs", [&](cyng::table::record const& rec)->bool {
+
+				if (tbl->insert(rec.key(), rec.data(), rec.get_generation(), cache_.get_tag())) {
+
+				//	cyng::buffer_t const srv = cyng::to_buffer(rec.key().at(0));
+				//	CYNG_LOG_TRACE(logger_, "load register "
+				//		<< sml::from_server_id(srv));
+				//}
+				//else {
+
+				//	CYNG_LOG_ERROR(logger_, "insert into table TDataMirror failed - key: "
+				//		<< cyng::io::to_str(rec.key())
+				//		<< ", body: "
+				//		<< cyng::io::to_str(rec.data()));
 
 				}
 

@@ -29,6 +29,7 @@
 #include <cyng/numeric_cast.hpp>
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/parser/chrono_parser.h>
+#include <cyng/rnd.h>
 
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/mgr.h>
@@ -638,168 +639,165 @@ namespace node
 			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_IF_1107);
 
 			//
-			//	Configuration of IEC interface (wired)
-			//	deliver IEC 62056-21 (aka interface 1107) configuration and all defined meters
+			//	81 81 C7 93 01 FF - if true 1107 interface active otherwise SML interface active
 			//
-			/*
-			cache_.read_tables("_Cfg", "iec62056-21-devices", [&](cyng::store::table const* tbl_cfg, cyng::store::table const* tbl_dev) {
+			auto const active = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_ACTIVE }), false);
+			append_get_proc_response(msg, {
+				OBIS_IF_1107,
+				OBIS_IF_1107_ACTIVE
+				}, make_value(active));
 
-				CYNG_LOG_INFO(logger_, tbl_dev->size() << " IEC devices");
+			//
+			//	81 81 C7 93 02 FF - Loop timeout in seconds
+			//
+			auto const loop_time = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_LOOP_TIME }), std::chrono::seconds(60));
+			append_get_proc_response(msg, {
+				OBIS_IF_1107,
+				OBIS_IF_1107_LOOP_TIME
+				}, make_value(loop_time));
 
-				//
-				//	81 81 C7 93 01 FF - if true 1107 interface active otherwise SML interface active
-				//
-				;
-				append_get_proc_response(msg, {
-					OBIS_IF_1107,
-					OBIS_IF_1107_ACTIVE
-					}, make_value(get_config_value(tbl_cfg, OBIS_IF_1107_ACTIVE.to_str(), false)));
+			//
+			//	81 81 C7 93 03 FF - Retry count
+			//
+			auto const retries = cache_.get_cfg<std::uint32_t>(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_RETRIES }), 3u);
+			append_get_proc_response(msg, {
+				OBIS_IF_1107,
+				OBIS_IF_1107_RETRIES
+				}, make_value(retries));
 
-				//
-				//	81 81 C7 93 02 FF - Loop timeout in seconds
-				//
-				append_get_proc_response(msg, {
-					OBIS_IF_1107,
-					OBIS_IF_1107_LOOP_TIME
-					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_LOOP_TIME.to_str())));
+			//
+			//	81 81 C7 93 04 FF - Minimal answer timeout(300) in milliseconds
+			//
+			auto const min_timeout = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_MIN_TIMEOUT }), std::chrono::milliseconds(200u));
+			append_get_proc_response(msg, {
+				OBIS_IF_1107,
+				OBIS_IF_1107_MIN_TIMEOUT
+				}, make_value(min_timeout));
 
-				//
-				//	81 81 C7 93 03 FF - Retry count
-				//
-				append_get_proc_response(msg, {
-					OBIS_IF_1107,
-					OBIS_IF_1107_RETRIES
-					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_RETRIES.to_str())));
+			//
+			//	81 81 C7 93 05 FF - Maximal answer timeout(5000) in milliseconds
+			//
+			auto const max_timeout = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_MAX_TIMEOUT }), std::chrono::milliseconds(5000u));
+			append_get_proc_response(msg, {
+				OBIS_IF_1107,
+				OBIS_IF_1107_MAX_TIMEOUT
+				}, make_value(max_timeout));
 
-				//
-				//	81 81 C7 93 04 FF - Minimal answer timeout(300)
-				//
-				append_get_proc_response(msg, {
-					OBIS_IF_1107,
-					OBIS_IF_1107_MIN_TIMEOUT
-					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_MIN_TIMEOUT.to_str())));
+			//
+			//	81 81 C7 93 06 FF - Maximum data bytes(10240)
+			//
+			auto const max_bytes = cache_.get_cfg<std::uint32_t>(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_MAX_DATA_RATE }), 10240u);
+			append_get_proc_response(msg, {
+				OBIS_IF_1107,
+				OBIS_IF_1107_MAX_DATA_RATE
+				}, make_value(max_bytes));
 
-				//
-				//	81 81 C7 93 05 FF - Maximal answer timeout(5000)
-				//
-				append_get_proc_response(msg, {
-					OBIS_IF_1107,
-					OBIS_IF_1107_MAX_TIMEOUT
-					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_MAX_TIMEOUT.to_str())));
+			//
+			//	81 81 C7 93 08 FF - Protocol mode(A ... D)
+			//
+			auto const mode = cache_.get_cfg<std::uint8_t>(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_PROTOCOL_MODE }), 2u);
+			append_get_proc_response(msg, {
+				OBIS_IF_1107,
+				OBIS_IF_1107_PROTOCOL_MODE
+				}, make_value(mode));
 
-				//
-				//	81 81 C7 93 06 FF - Maximum data bytes(10240)
-				//
-				append_get_proc_response(msg, {
-					OBIS_IF_1107,
-					OBIS_IF_1107_MAX_DATA_RATE
-					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_MAX_DATA_RATE.to_str())));
+			//
+			//	81 81 C7 93 10 FF - auto activation
+			//
+			auto const auto_activation = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_AUTO_ACTIVATION }), false);
+			append_get_proc_response(msg, {
+				OBIS_IF_1107,
+				OBIS_IF_1107_AUTO_ACTIVATION
+				}, make_value(auto_activation));
 
-				//
-				//	81 81 C7 93 08 FF - Protocol mode(A ... D)
-				//
-				append_get_proc_response(msg, {
-					OBIS_IF_1107,
-					OBIS_IF_1107_PROTOCOL_MODE
-					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_PROTOCOL_MODE.to_str())));
+			//
+			//	81 81 C7 93 11 FF - time grid of load profile readout in seconds
+			//
+			auto const time_grid = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_TIME_GRID }), std::chrono::seconds(900u));
+			append_get_proc_response(msg, {
+				OBIS_IF_1107,
+				OBIS_IF_1107_TIME_GRID
+				}, make_value(time_grid));
 
-				//
-				//	81 81 C7 93 09 FF - Liste der abzufragenden 1107 Zähler
-				//
-				std::uint8_t nr{ 1 };	//	device number
-				tbl_dev->loop([&](cyng::table::record const& rec)->bool {
+			//
+			//	81 81 C7 93 13 FF - time sync in seconds
+			//
+			auto const time_sync = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_TIME_SYNC }), std::chrono::seconds(14400u));
+			append_get_proc_response(msg, {
+				OBIS_IF_1107,
+				OBIS_IF_1107_TIME_SYNC
+				}, make_value(time_sync));
 
-					//
-					//	81 81 C7 93 0A FF - meter id
-					//
-					append_get_proc_response(msg, {
-						OBIS_IF_1107,
-						OBIS_IF_1107_METER_LIST,
-						make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
-						OBIS_IF_1107_METER_ID
-						}, make_value(rec["meterID"]));
+			//
+			//	81 81 C7 93 14 FF - seconds
+			//
+			auto const max_var = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_MAX_VARIATION }), std::chrono::seconds(14400u));
+			append_get_proc_response(msg, {
+				OBIS_IF_1107,
+				OBIS_IF_1107_MAX_VARIATION
+				}, make_value(max_var));
 
-					//
-					//	81 81 C7 93 0B FF - baudrate
-					//
-					append_get_proc_response(msg, {
-						OBIS_IF_1107,
-						OBIS_IF_1107_METER_LIST,
-						make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
-						OBIS_IF_1107_BAUDRATE
-						}, make_value(rec["baudrate"]));
+#ifdef _DEBUG
+			//
+			//	return some IEC devices
+			//
+			auto rnd  = cyng::crypto::make_rnd_hex();
+			for (std::uint8_t nr = 1; nr < 10; ++nr) {
 
-					//
-					//	81 81 C7 93 0C FF - address
-					//
-					append_get_proc_response(msg, {
-						OBIS_IF_1107,
-						OBIS_IF_1107_METER_LIST,
-						make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
-						OBIS_IF_1107_ADDRESS
-						}, make_value(rec["address"]));
-
-					//
-					//	81 81 C7 93 0D FF - P1
-					//
-					append_get_proc_response(msg, {
-						OBIS_IF_1107,
-						OBIS_IF_1107_METER_LIST,
-						make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
-						OBIS_IF_1107_P1
-						}, make_value(rec["p1"]));
-
-					//
-					//	81 81 C7 93 0E FF - W5
-					//
-					append_get_proc_response(msg, {
-						OBIS_IF_1107,
-						OBIS_IF_1107_METER_LIST,
-						make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
-						OBIS_IF_1107_W5
-						}, make_value(rec["w5"]));
-
-					//
-					//	update device number
-					//
-					++nr;
-					return true;	//	continue
-				});
+				auto const meter = rnd(8);
 
 				//
-				//	81 81 C7 93 10 FF - auto activation
+				//	81 81 C7 93 0A FF - meter id
 				//
 				append_get_proc_response(msg, {
 					OBIS_IF_1107,
-					OBIS_IF_1107_AUTO_ACTIVATION
-					}, make_value(get_config_value(tbl_cfg, OBIS_IF_1107_AUTO_ACTIVATION.to_str(), false)));
+					OBIS_IF_1107_METER_LIST,
+					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
+					OBIS_IF_1107_METER_ID
+					}, make_value(meter));
 
 				//
-				//	81 81 C7 93 11 FF - time grid of load profile readout in seconds
+				//	81 81 C7 93 0B FF - baudrate
 				//
 				append_get_proc_response(msg, {
 					OBIS_IF_1107,
-					OBIS_IF_1107_TIME_GRID
-					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_TIME_GRID.to_str())));
+					OBIS_IF_1107_METER_LIST,
+					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
+					OBIS_IF_1107_BAUDRATE
+					}, make_value(2400u));
 
 				//
-				//	81 81 C7 93 13 FF - time sync in seconds
+				//	81 81 C7 93 0C FF - address
 				//
 				append_get_proc_response(msg, {
 					OBIS_IF_1107,
-					OBIS_IF_1107_TIME_SYNC
-					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_TIME_SYNC.to_str())));
+					OBIS_IF_1107_METER_LIST,
+					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
+					OBIS_IF_1107_ADDRESS
+					}, make_value(meter));
 
 				//
-				//	81 81 C7 93 14 FF - seconds
+				//	81 81 C7 93 0D FF - P1
 				//
 				append_get_proc_response(msg, {
 					OBIS_IF_1107,
-					OBIS_IF_1107_MAX_VARIATION
-					}, make_value(get_config_obj(tbl_cfg, OBIS_IF_1107_MAX_VARIATION.to_str())));
+					OBIS_IF_1107_METER_LIST,
+					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
+					OBIS_IF_1107_P1
+					}, make_value("p1"));
 
-			});
-			*/
+				//
+				//	81 81 C7 93 0E FF - W5
+				//
+				append_get_proc_response(msg, {
+					OBIS_IF_1107,
+					OBIS_IF_1107_METER_LIST,
+					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
+					OBIS_IF_1107_W5
+					}, make_value("w5"));
+
+			}
+#endif
 			//
 			//	append to message queue
 			//
@@ -901,7 +899,6 @@ namespace node
 		void get_proc_parameter::class_mbus(std::string trx, cyng::buffer_t srv_id)
 		{
 			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CLASS_MBUS);
-
 
 			//
 			//	readout interval 
