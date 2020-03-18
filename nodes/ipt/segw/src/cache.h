@@ -38,8 +38,8 @@ namespace node
 	 * read a configuration value from table "_Cfg"
 	 */
 	template <typename T >
-	T get_cfg(cyng::store::table const* tbl, std::string name, T def) {
-		return cyng::value_cast(get_obj(tbl, name), def);
+	T get_cfg(cyng::store::table const* tbl, cyng::table::key_type&& key, T def) {
+		return cyng::value_cast(get_obj(tbl, std::move(key)), def);
 	}
 
 	/**
