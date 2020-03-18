@@ -346,7 +346,7 @@ namespace node
 		{
 			if (path.size() == 0u)	return false;
 			if (val.size() != 2u)	return false;	//	 SML_ProcParValue (value, periodEntry, tupleENtry, time or listEntry)
-			BOOST_ASSERT(cyng::numeric_cast<std::uint8_t>(val.front(), -1) < 6u);
+			BOOST_ASSERT(cyng::numeric_cast<std::uint8_t>(val.front(), 0xFF) < 6u);
 
 			auto & child_list = locate_child_list(msg);
 			return (child_list.size() == 3)
@@ -602,8 +602,8 @@ namespace node
 			//	CRC calculation over complete buffer
 			//
 			crc_16_data crc;
-			//crc.crc_ = sml_crc16_calculate(buf);
-			crc.crc_ = sml_crc16_calculate((const unsigned char*)buf.data(), buf.size());
+			BOOST_ASSERT(buf.size() < std::numeric_limits<int>::max());
+			crc.crc_ = sml_crc16_calculate((const unsigned char*)buf.data(), static_cast<int>(buf.size()));
 
 			//	network order
 			buf.push_back(crc.data_[1]);
