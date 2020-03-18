@@ -8,6 +8,7 @@ set (segw_info_cpp
 	nodes/set_start_options.cpp
 	nodes/show_ip_address.cpp
 	nodes/show_fs_drives.cpp
+	nodes/show_ports.cpp
 
 	nodes/shared/sys/ctl.cpp
 
@@ -20,6 +21,7 @@ set (segw_info_h
 	nodes/set_start_options.h
 	nodes/show_ip_address.h
 	nodes/show_fs_drives.h
+	nodes/show_ports.h
 
 	src/main/include/smf/shared/ctl.h
 )
