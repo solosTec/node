@@ -13,6 +13,7 @@
 #include "msg/config_data_collector.h"
 #include "msg/config_security.h"
 #include "msg/config_access.h"
+#include "msg/config_iec.h"
 #include "msg/get_proc_parameter.h"
 #include "msg/set_proc_parameter.h"
 #include "msg/get_profile_list.h"
@@ -98,6 +99,8 @@ namespace node
 		sml::config_data_collector config_data_collector_;
 		sml::config_security config_security_;
 		sml::config_access config_access_;
+		sml::config_iec config_iec_;
+
 		sml::get_proc_parameter get_proc_parameter_;
 		sml::set_proc_parameter set_proc_parameter_;
 		sml::get_profile_list get_profile_list_;

@@ -34,6 +34,7 @@ namespace node
 		class config_data_collector;
 		class config_security;
 		class config_access;
+		class config_iec;
 		class get_proc_parameter
 		{
 		public:
@@ -45,7 +46,8 @@ namespace node
 				, config_sensor_params&
 				, config_data_collector&
 				, config_security&
-				, config_access&);
+				, config_access&
+				, config_iec&);
 
 			void generate_response(obis code
 				, std::string trx
@@ -73,7 +75,7 @@ namespace node
 			void code_root_active_devices(std::string trx, cyng::buffer_t srv_id);
 			void code_root_visible_devices(std::string trx, cyng::buffer_t srv_id);
 			void code_root_device_info(std::string trx, cyng::buffer_t srv_id);
-			void code_if_1107(std::string trx, cyng::buffer_t srv_id);
+			//void code_if_1107(std::string trx, cyng::buffer_t srv_id);
 			void storage_time_shift(std::string trx, cyng::buffer_t srv_id);
 			//void push_operations(std::string trx, cyng::buffer_t srv_id);
 			void list_services(std::string trx, cyng::buffer_t srv_id);
@@ -104,7 +106,7 @@ namespace node
 			config_data_collector& config_data_collector_;
 			config_security& config_security_;
 			config_access& config_access_;
-
+			config_iec& config_iec_;
 		};
 	}	//	sml
 }

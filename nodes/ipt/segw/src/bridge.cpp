@@ -405,6 +405,20 @@ namespace node
 
 			}
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_IECDevs")) {
+
+			if (!storage_.insert("TIECDevs"
+				, key
+				, body
+				, gen)) {
+
+				CYNG_LOG_ERROR(logger_, "Insert into table TIECDevs failed - key: "
+					<< cyng::io::to_str(key)
+					<< ", body: "
+					<< cyng::io::to_str(body));
+
+			}
+		}
 	}
 
 	void bridge::sig_del(cyng::store::table const* tbl
@@ -429,6 +443,10 @@ namespace node
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataMirror")) {
 
 			storage_.remove("TDataMirror", key);
+		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_IECDevs")) {
+
+			storage_.remove("TIECDevs", key);
 		}
 	}
 
@@ -561,7 +579,13 @@ namespace node
 				, tbl->meta().to_param(attr)
 				, gen);
 		}
+		else if (boost::algorithm::equals(tbl->meta().get_name(), "_IECDevs")) {
 
+			storage_.update("TIECDevs"
+				, key
+				, tbl->meta().to_param(attr)
+				, gen);
+		}
 	}
 
 	void bridge::connect_to_cache()
@@ -606,6 +630,12 @@ namespace node
 			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 
 		l = cache_.db_.get_listener("_DataMirror"
+			, std::bind(&bridge::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+
+		l = cache_.db_.get_listener("_IECDevs"
 			, std::bind(&bridge::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
 			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)

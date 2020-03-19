@@ -218,8 +218,8 @@ namespace node
 					cyng::param_factory(sml::OBIS_IF_1107_RS485.to_str(), true),	//	 true = RS485, false = RS232
 					cyng::param_factory(sml::OBIS_IF_1107_PROTOCOL_MODE.to_str(), 2),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
 					cyng::param_factory(sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str(), true),	//	auto activation
-					cyng::param_factory(sml::OBIS_IF_1107_TIME_GRID.to_str(), 900),
-					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str(), 14400),
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_GRID.to_str(), 900),	//	900 sec = 15 min
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str(), 14400),	//	14400 sec = 4 h
 					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str(), 9)	//	max. variation in seconds
 
 				))

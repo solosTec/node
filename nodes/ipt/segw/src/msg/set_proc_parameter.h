@@ -30,6 +30,7 @@ namespace node
 		class config_data_collector;
 		class config_security;
 		class config_access;
+		class config_iec;
 		class res_generator;
 		class set_proc_parameter
 		{
@@ -41,7 +42,8 @@ namespace node
 				, config_sensor_params&
 				, config_data_collector&
 				, config_security&
-				, config_access&);
+				, config_access&
+				, config_iec&);
 
 			void generate_response(obis_path const&
 				, std::string trx
@@ -67,8 +69,9 @@ namespace node
 				, std::string pwd
 				, cyng::param_t	param);
 
-			void class_mbus(obis code
-					, cyng::param_t param);
+			void class_mbus(obis&& code, cyng::param_t param);
+			//void if_1107(obis&& code, cyng::param_t param);
+			//void iec_meter(std::uint8_t nr, cyng::param_map_t&& map);
 
 		private:
 			cyng::logging::log_ptr logger_;
@@ -89,7 +92,7 @@ namespace node
 			config_data_collector& config_data_collector_;
 			config_security& config_security_;
 			config_access& config_access_;
-
+			config_iec& config_iec_;
 		};
 	}	//	sml
 }

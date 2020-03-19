@@ -10,6 +10,7 @@
 #include "config_sensor_params.h"
 #include "config_data_collector.h"
 #include "config_access.h"
+#include "config_iec.h"
 #include "../cache.h"
 #include "../segw.h"
 
@@ -34,7 +35,8 @@ namespace node
 			, config_sensor_params& sensor_params
 			, config_data_collector& data_collector
 			, config_security& security
-			, config_access& access)
+			, config_access& access
+			, config_iec& iec)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
@@ -43,6 +45,7 @@ namespace node
 			, config_data_collector_(data_collector)
 			, config_security_(security)
 			, config_access_(access)
+			, config_iec_(iec)
 		{}
 
 		void set_proc_parameter::generate_response(obis_path const& path
@@ -90,11 +93,31 @@ namespace node
 					BOOST_ASSERT(pos->to_str() == param.first);
 					class_mbus(obis(*pos), param);
 					break;
+				case CODE_IF_1107:	//	81 81 C7 93 00 FF
+					BOOST_ASSERT(pos != end);
+					if (OBIS_IF_1107_METER_LIST == obis(*pos)) {
+						//
+						//	add/modify meter list
+						//
+						++pos;
+						auto const nr = obis(*pos).get_data().at(obis::VG_STORAGE);
+						BOOST_ASSERT(pos != end);
+						BOOST_ASSERT(pos->to_str() == param.first);
+						//iec_meter(nr, cyng::to_param_map(param.second));
+						config_iec_.set_meter(nr, cyng::to_param_map(param.second));
+					}
+					else {
+						BOOST_ASSERT(pos->to_str() == param.first);
+						config_iec_.set_param(obis(*pos), param);
+					}
+					break;
 				default:
 					CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request - unknown OBIS code "
+						<< code.to_str()
+						<< " : "
 						<< to_string(*pos)
 						<< " / "
-						<< cyng::io::to_hex(pos->to_buffer()));
+						<< get_name(code));
 					break;
 				}
 			}
@@ -147,9 +170,14 @@ namespace node
 			cache_.set_cfg(sml::OBIS_STORAGE_TIME_SHIFT.to_str(), sts);
 		}
 
-		void set_proc_parameter::class_mbus(obis code
+		void set_proc_parameter::class_mbus(obis&& code
 			, cyng::param_t param)
 		{
+			CYNG_LOG_DEBUG(logger_, "sml.set.proc.parameter.request (m-bus) "
+				<< param.first
+				<< " = "
+				<< cyng::io::to_str(param.second));
+
 			if (OBIS_CLASS_MBUS_RO_INTERVAL == code) {
 				auto const val = cyng::numeric_cast<std::uint32_t> (param.second, 3600u);
 				cache_.set_cfg(build_cfg_key({ OBIS_CLASS_MBUS, code }), std::chrono::seconds(val));
@@ -171,7 +199,6 @@ namespace node
 				cache_.set_cfg(build_cfg_key({ OBIS_CLASS_MBUS, code }), param.second);
 			}
 		}
-
 	}	//	sml
 }
 

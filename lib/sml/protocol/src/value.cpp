@@ -67,6 +67,10 @@ namespace node
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), static_cast<std::uint32_t>(v.count()));
 			}
+			cyng::tuple_t factory_policy<std::chrono::minutes>::create(std::chrono::minutes v)
+			{
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), static_cast<std::uint32_t>(v.count()));
+			}
 			cyng::tuple_t factory_policy<cyng::buffer_t>::create(cyng::buffer_t&& v)
 			{
 				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), std::forward<cyng::buffer_t>(v));

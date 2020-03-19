@@ -115,6 +115,8 @@ set (node_ipt_segw_msg
 	nodes/ipt/segw/src/msg/config_security.cpp
 	nodes/ipt/segw/src/msg/config_access.h
 	nodes/ipt/segw/src/msg/config_access.cpp
+	nodes/ipt/segw/src/msg/config_iec.h
+	nodes/ipt/segw/src/msg/config_iec.cpp
 )
 
 if(WIN32)
