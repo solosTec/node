@@ -94,7 +94,10 @@ namespace node
 
 		enum c_field_slave : std::uint8_t {
 			CTRL_FIELD_SND_NR = 0x44,	//	Send spontaneous/periodical application data without request (S1 mode)
-			CTRL_FIELD_SND_IR = 0x46,	//	Send manually initiated installation data (Send Installation Request)			CTRL_FIELD_ACC_NR = 0x47,	//	Contains no data – signals an empty transmission or provides the opportunity to access the bidirectional meter, between two application data transmissions			CTRL_FIELD_ACC_DMD = 0x48,	//	Access demand to master in order to request new important application data (alerts)
+			CTRL_FIELD_SND_IR = 0x46,	//	Send manually initiated installation data (Send Installation Request)
+			CTRL_FIELD_ACC_NR = 0x47,	//	Contains no data – signals an empty transmission or provides the opportunity to access the bidirectional meter, between two application data transmissions
+			CTRL_FIELD_ACC_DMD = 0x48,	//	Access demand to master in order to request new important application data (alerts)
+
 			//	Acknowledge the reception of a SND-UD (acknowledgement of transmission only); It shall also be used as a response to an REQ-UD1, when no alert happened
 			//CTRL_FIELD_ACK = 0x00, 
 			CTRL_FIELD_ACK_1 = 0x10,

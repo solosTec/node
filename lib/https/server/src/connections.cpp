@@ -729,7 +729,7 @@ namespace node
 			}
 		}
 
-		void connections::trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment)
+		bool connections::trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment)
 		{
 			//
 			//	lock both http container
@@ -742,13 +742,14 @@ namespace node
 			switch (res.second) {
 			case HTTP_PLAIN:
 				const_cast<plain_session*>(cyng::object_cast<plain_session>(res.first))->trigger_download(res.first, filename, attachment);
-				break;
+				return true;
 			case HTTP_SSL:
 				const_cast<ssl_session*>(cyng::object_cast<ssl_session>(res.first))->trigger_download(res.first, filename, attachment);
-				break;
+				return true;
 			default:
 				break;
 			}
+			return false;
 		}
 	}
 }

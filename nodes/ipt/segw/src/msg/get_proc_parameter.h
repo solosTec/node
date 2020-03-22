@@ -49,7 +49,7 @@ namespace node
 				, config_access&
 				, config_iec&);
 
-			void generate_response(obis code
+			void generate_response(obis_path path
 				, std::string trx
 				, cyng::buffer_t srv_id
 				, std::string user
@@ -60,7 +60,7 @@ namespace node
 			void code_root_device_ident(std::string trx, cyng::buffer_t srv_id);
 			void code_root_device_time(std::string trx, cyng::buffer_t srv_id);
 			void code_root_ntp(std::string trx, cyng::buffer_t srv_id);
-			void code_root_access_rights(std::string trx, cyng::buffer_t srv_id);
+			//void code_root_access_rights(std::string trx, cyng::buffer_t srv_id);
 			void code_root_custom_interface(std::string trx, cyng::buffer_t srv_id);
 			void code_root_custom_param(std::string trx, cyng::buffer_t srv_id);
 			void code_root_wan(std::string trx, cyng::buffer_t srv_id);

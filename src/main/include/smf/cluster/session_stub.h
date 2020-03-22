@@ -19,6 +19,9 @@ namespace node
 {
 	/**
 	 * base class for sessions on cluster clients.
+	 *
+	 * Compile with SMF_IO_LOG to generate full I/O log files.
+	 * Compile with SMF_IO_DEBUG to dump I/O to console
 	 */
 	class session_stub
 	{

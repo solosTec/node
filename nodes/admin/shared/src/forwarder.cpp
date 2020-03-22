@@ -510,6 +510,16 @@ namespace node
 				cyng::tuple_t params;
 				params = cyng::value_cast(reader.get("params"), params);
 
+#ifdef _DEBUG
+				CYNG_LOG_DEBUG(logger, "\"sml:com\" ws: " 
+					<< tag_ws 
+					<< " channel " 
+					<< channel
+					<< " ==> " 
+					<< cyng::io::to_str(params));
+
+#endif
+
 				ctx.queue(bus_req_com_sml(tag_ws	//	web-socket tag (origin)
 					, msg_type
 					, r.first	//	OBIS root code
@@ -1179,20 +1189,23 @@ namespace node
 			});
 			BOOST_ASSERT(counter == 0);
 			boost::ignore_unused(counter);	//	release version
-			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " XML records created");
 
 		}, cyng::store::read_access(table));
 
 		//
 		//	write XML file
 		//
-		auto out = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.xml");
+		auto const out = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.xml");
 		if (doc_.save_file(out.c_str(), PUGIXML_TEXT("  "))) {
 
 			//
 			//	trigger download
 			//
-			connection_manager_.trigger_download(tag, out.string(), filename);
+			if (!connection_manager_.trigger_download(tag, out.string(), filename)) {
+
+				CYNG_LOG_WARNING(logger_, "HTTP session " << tag << " not found");
+			}
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "cannot open file " << out);
@@ -1213,6 +1226,7 @@ namespace node
 			if (of.is_open()) {
 				auto vec = tbl->convert(true);
 				cyng::csv::write(of, make_object(vec));
+				CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " CSV records created");
 			}
 			else {
 				CYNG_LOG_ERROR(logger_, "cannot open file " << out);
@@ -1248,7 +1262,6 @@ namespace node
 				//
 				//	write record
 				//
-				//cyng::xml::write(root.append_child("record"), rec.convert());
 				vec.push_back(cyng::make_object(rec.convert()));
 
 				//	continue
@@ -1256,7 +1269,7 @@ namespace node
 			});
 			BOOST_ASSERT(counter == 0);
 			boost::ignore_unused(counter);	//	release version
-			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
+			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " JSON records created");
 
 		}, cyng::store::read_access(table));
 

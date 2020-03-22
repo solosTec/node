@@ -140,8 +140,10 @@ namespace node
 
 			/**
 			 * Push browser/client to start a download
+			 *
+			 * @return false if session was noot found
 			 */
-			virtual void trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment) override;
+			virtual bool trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment) override;
 
 		private:
 			void modify_config(cyng::context& ctx);

@@ -18,6 +18,9 @@ namespace node
 {
 	namespace ipt
 	{
+		/**
+		 * compile with SMF_IO_LOG to generate full I/O logs
+		 */
 		class session : public session_stub
 		{
 			//

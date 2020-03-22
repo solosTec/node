@@ -453,6 +453,7 @@ namespace node
 		//
 		OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);	//	current data set
 		OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 04, LIST_SERVICES);
+		OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 05, FTP_UPDATE);
 
 		//
 		//	source for log entries (OBIS-T)

@@ -210,6 +210,20 @@ namespace node
 			OTHER
 		};
 
+		/**
+		 * Access roles on gateway
+		 */
+		enum class role : std::uint8_t
+		{
+			GUEST = 1,
+			USER,	//	end user
+			GW_OPERATOR,
+			DEV_OPERATOR,
+			SERVICE_PROVIDER,
+			SUPPLIER,
+			MANUFACTURER,
+			RESERVED
+		};
 
 	}	//	sml
 }	//	node

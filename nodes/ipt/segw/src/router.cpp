@@ -12,6 +12,7 @@
 #include <smf/sml/protocol/reader.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 
 #include <cyng/vm/controller.h>
 #include <cyng/vm/context.h>
@@ -285,15 +286,16 @@ namespace node
 			cyng::buffer_t,		//	[1] server id
 			std::string,		//	[2] user
 			std::string,		//	[3] password
-			cyng::buffer_t		//	[4] path (OBIS)
+			cyng::vector_t		//	[4] path (OBIS)
 		>(frame);
 
-		sml::obis const code(std::get<4>(tpl));
+		auto const path = sml::vector_to_path(std::get<4>(tpl));
+		BOOST_ASSERT(!path.empty());
 
 		//
 		//	routed to "get proc parameter" handler
 		//
-		get_proc_parameter_.generate_response(code
+		get_proc_parameter_.generate_response(path
 			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)

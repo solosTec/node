@@ -22,6 +22,8 @@
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/set_cast.h>
+//#include <cyng/vector_cast.hpp>
 #include <cyng/parser/buffer_parser.h>
 
 #ifdef SMF_IO_LOG
@@ -776,16 +778,27 @@ namespace node
 		}
 		else if (sml::OBIS_ROOT_ACCESS_RIGHTS == root) {
 
-			
-			auto const role_nr = cyng::numeric_cast<std::uint8_t>(params.get("roleNr"), 1);		//	81 81 81 60 rr FF
-			auto const user_nr = cyng::numeric_cast<std::uint8_t>(params.get("userNr"), 1);		//	81 81 81 60 rr uu
-			auto const meter_nr = cyng::numeric_cast<std::uint8_t>(params.get("meterNr"), 1);	//	81 81 81 64 01 mm
-			sml::obis_path path({ root
-				, sml::make_obis(0x81, 0x81, 0x81, 0x60, role_nr, 0xFF) 
-				, sml::make_obis(0x81, 0x81, 0x81, 0x60, role_nr, user_nr)
-				, sml::make_obis(0x81, 0x81, 0x81, 0x64, 0x01, meter_nr)
-				});
-			push_trx(sml_gen.get_proc_parameter(data.get_srv(), path), data);
+			auto const obj_path = cyng::to_vector(params.get("path"));
+			//auto const role_nr = cyng::numeric_cast<std::uint8_t>(params.get("roleNr"), 1);		//	81 81 81 60 rr FF
+			//auto const user_nr = cyng::numeric_cast<std::uint8_t>(params.get("userNr"), 1);		//	81 81 81 60 rr uu
+			//auto const meter_nr = cyng::numeric_cast<std::uint8_t>(params.get("meterNr"), 1);	//	81 81 81 64 01 mm
+			if (obj_path.size() == 3) {
+				//auto const vec = cyng::vector_cast(obj_path, static_cast<std::uint8_t>(1));
+
+				auto const role = cyng::numeric_cast<std::uint8_t>(obj_path.at(0), 1);
+				auto const user = cyng::numeric_cast<std::uint8_t>(obj_path.at(1), 1);
+				auto const meter = cyng::numeric_cast<std::uint8_t>(obj_path.at(2), 1);
+				sml::obis_path path({ root
+					, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, 0xFF)
+					, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, user)
+					, sml::make_obis(0x81, 0x81, 0x81, 0x64, 0x01, meter)
+					});
+				push_trx(sml_gen.get_proc_parameter(data.get_srv(), path), data);
+			}
+			else {
+				//sml::obis_path path({ root });
+				push_trx(sml_gen.get_proc_parameter(data.get_srv(), { root }), data);
+			}
 		}
 		else {
 			push_trx(sml_gen.get_proc_parameter(data.get_srv(), root), data);

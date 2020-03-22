@@ -7,6 +7,7 @@
 
 #include <smf/sml/intrinsics/obis_factory.hpp>
 #include <cyng/factory/factory.hpp>
+#include <cyng/buffer_cast.h>
 
 namespace node
 {
@@ -28,13 +29,47 @@ namespace node
 				, static_cast<std::uint8_t>(f & 0xFF));
 		}
 
+		namespace {
+			template<typename C>
+			C C_from_path(obis_path path)
+			{
+				C container;
+				std::transform(path.begin(), path.end(), std::back_inserter(container), [](obis const& v) {
+					return cyng::make_object(v.to_buffer());
+					});
+				return container;
+			}
+
+			template<typename C>
+			obis_path C_to_path(C container)
+			{
+				obis_path path;
+				std::transform(container.begin(), container.end(), std::back_inserter(path), [](cyng::object obj) {
+					return cyng::to_buffer(obj);
+					});
+				return path;
+			}
+
+		}
+
 		cyng::tuple_t tuple_from_path(obis_path path)
 		{
-			cyng::tuple_t tpl;
-			std::transform(path.begin(), path.end(), std::back_inserter(tpl), [](obis const& v) {
-				return cyng::make_object(v.to_buffer());
-				});
-			return tpl;
+			return C_from_path<cyng::tuple_t>(path);
+		}
+
+		cyng::vector_t vector_from_path(obis_path path)
+		{
+			return C_from_path<cyng::vector_t>(path);
+		}
+
+		obis_path tuple_to_path(cyng::tuple_t tpl)
+		{
+			return C_to_path<cyng::tuple_t>(tpl);
+		}
+
+		obis_path vector_to_path(cyng::vector_t vec)
+		{
+			return C_to_path<cyng::vector_t>(vec);
 		}
 
 	}	//	sml

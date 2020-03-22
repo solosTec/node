@@ -28,9 +28,11 @@
 #include <cyng/sys/dns.h>
 #include <cyng/sys/memory.h>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/buffer_cast.h>
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/parser/chrono_parser.h>
 #include <cyng/rnd.h>
+#include <cyng/io/io_buffer.h>
 
 #if BOOST_OS_WINDOWS
 #include <cyng/scm/mgr.h>
@@ -63,13 +65,15 @@ namespace node
 			, config_iec_(iec)
 		{}
 
-		void get_proc_parameter::generate_response(obis code
+		void get_proc_parameter::generate_response(obis_path path
 			, std::string trx
 			, cyng::buffer_t srv_id
 			, std::string user
 			, std::string pwd)
 		{
-			switch (code.to_uint64()) {
+			BOOST_ASSERT(!path.empty());
+
+			switch (path.front().to_uint64()) {
 			case CODE_CLASS_OP_LOG_STATUS_WORD:	//	OBIS_CLASS_OP_LOG_STATUS_WORD
 				class_op_log_status_word(trx, srv_id);
 				break;
@@ -82,11 +86,10 @@ namespace node
 			case CODE_ROOT_NTP:	//	0x8181C78801FF
 				code_root_ntp(trx, srv_id);
 				break;
-			case CODE_ROOT_ACCESS_RIGHTS:	//	0x81818160FFFF
-				//config_access_.get_proc_params(trx, srv_id);
-				code_root_access_rights(trx, srv_id);
+			case CODE_ROOT_ACCESS_RIGHTS:	//	81 81 81 60 FF FF
+				config_access_.get_proc_params(trx, srv_id, path);
 				break;
-			case CODE_ROOT_CUSTOM_INTERFACE:	//	0x8102000700FF
+			case CODE_ROOT_CUSTOM_INTERFACE:	//	81 02 00 07 00 FF
 				code_root_custom_interface(trx, srv_id);
 				break;
 			case CODE_ROOT_CUSTOM_PARAM:	//	0x8102000710FF
@@ -163,9 +166,9 @@ namespace node
 				break;
 			default:
 				CYNG_LOG_ERROR(logger_, "sml.get.proc.parameter.request - unknown OBIS code "
-					<< to_string(code)
+					<< path.front().to_str()
 					<< " / "
-					<< cyng::io::to_hex(code.to_buffer()));
+					<< to_hex(path, ':'));
 				break;
 			}
 		}
@@ -242,15 +245,15 @@ namespace node
 			sml_gen_.append(std::move(msg));
 		}
 
-		void get_proc_parameter::code_root_access_rights(std::string trx, cyng::buffer_t srv_id)
-		{
-			//
-			//	ToDo: implement
-			//
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_ACCESS_RIGHTS not implemented yet");
+		//void get_proc_parameter::code_root_access_rights(std::string trx, cyng::buffer_t srv_id)
+		//{
+		//	//
+		//	//	ToDo: implement
+		//	//
+		//	CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_ACCESS_RIGHTS not implemented yet");
 
-			sml_gen_.empty(trx, srv_id, OBIS_ROOT_ACCESS_RIGHTS);
-		}
+		//	sml_gen_.empty(trx, srv_id, OBIS_ROOT_ACCESS_RIGHTS);
+		//}
 
 		void get_proc_parameter::code_root_custom_interface(std::string trx, cyng::buffer_t srv_id)
 		{
@@ -514,12 +517,16 @@ namespace node
 				//
 				//	set server ID
 				//
+				auto const srv_id = cyng::to_buffer(rec["serverID"]);
 				append_get_proc_response(msg, {
 					OBIS_ROOT_ACTIVE_DEVICES,
 					make_obis(0x81, 0x81, 0x11, 0x06, quant, 0xFF),
 					make_obis(0x81, 0x81, 0x11, 0x06, quant, store),
 					OBIS_SERVER_ID
-					}, make_value(cyng::value_cast(rec["serverID"], tmp)));
+					}, make_value(srv_id));
+
+				CYNG_LOG_TRACE(logger_, "list active device: "
+					<< cyng::io::to_hex(srv_id));
 
 				//
 				//	device class
@@ -553,8 +560,8 @@ namespace node
 				return true;	//	continue
 			});
 
-			CYNG_LOG_TRACE(logger_, "code_root_active_devices: "
-				<< cyng::io::to_str(msg));
+			//CYNG_LOG_TRACE(logger_, "code_root_active_devices: "
+			//	<< cyng::io::to_str(msg));
 
 			//
 			//	append to message queue

@@ -398,7 +398,7 @@ namespace node
 			return false;
 		}
 
-		void connections::trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment)
+		bool connections::trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment)
 		{
 			cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[HTTP_PLAIN]);
 			auto pos = sessions_[HTTP_PLAIN].find(tag);
@@ -406,8 +406,10 @@ namespace node
 				auto ptr = cyng::object_cast<session>(pos->second);
 				if (ptr != nullptr) {
 					const_cast<session*>(ptr)->trigger_download(filename, attachment);
+					return true;
 				}
 			}
+			return false;
 		}
 	}
 }

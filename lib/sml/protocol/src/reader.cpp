@@ -566,8 +566,7 @@ namespace node
 				//	this is a parameter tree
 				//
 				auto const param = read_param_tree(0u, tpl.begin(), tpl.end());
-				//auto const param = cyng::param_factory(path.front().to_str(), tpl);
-				return cyng::generate_invoke("sml.get.proc.param.response"
+				return cyng::generate_invoke("sml.get.proc.parameter.response"
 					, ro.trx_
 					, ro.get_value("groupNo")
 					, ro.server_id_	//	binary
@@ -579,8 +578,8 @@ namespace node
 			cyng::vector_t read_get_proc_parameter_request(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 			{
 				std::size_t count = std::distance(pos, end);
-				BOOST_ASSERT_MSG(count == 5, "Get Profile List Request");
-				if (count != 5)	return cyng::generate_invoke("log.msg.error", "SML Get Profile List Request", count);
+				BOOST_ASSERT_MSG(count == 5, "Get Proc Parameter Request");
+				if (count != 5)	return cyng::generate_invoke("log.msg.error", "SML Get Proc Parameter Request", count);
 
 				//
 				//	serverId
@@ -600,34 +599,24 @@ namespace node
 
 				//
 				//	parameterTreePath == parameter address
+				//	std::vector<obis>
 				//
-				std::vector<obis> path = read_param_tree_path(*pos++);
-				BOOST_ASSERT(!path.empty());
+				auto const path = read_param_tree_path(*pos++);
+				BOOST_ASSERT_MSG(!path.empty(), "no OBIS path");
 
 				//
 				//	attribute/constraints
 				//
 				//	*pos
 
-				if (path.size() == 1)
-				{
-					return cyng::generate_invoke("sml.get.proc.parameter.request"
-						, ro.trx_
-						, ro.server_id_
-						, ro.get_value("userName")
-						, ro.get_value("password")
-						, path.at(0).to_buffer()
-						, *pos);
-
-				}
-
 				return cyng::generate_invoke("sml.get.proc.parameter.request"
 					, ro.trx_
 					, ro.server_id_
 					, ro.get_value("userName")
 					, ro.get_value("password")
-					, to_hex(path.at(0))	//	ToDo: send complete path
-					, *pos);	//	attribute
+					, vector_from_path(path)
+					, *pos);
+
 			}
 
 			cyng::vector_t read_set_proc_parameter_request(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
