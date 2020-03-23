@@ -14,8 +14,10 @@
 #include "tasks/sml_to_json_consumer.h"
 #include "tasks/sml_to_log_consumer.h"
 #include "tasks/sml_to_csv_consumer.h"
+#include "tasks/sml_to_influxdb_consumer.h"
 #include "tasks/iec_to_db_consumer.h"
 #include "tasks/network.h"
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/factory/set_factory.h>
 #include <cyng/io/serializer.h>
@@ -88,7 +90,7 @@ namespace node
 				cyng::param_factory("watchdog", 30),	//	for database connection
 				cyng::param_factory("pool-size", 1),	//	no pooling for SQLite
 				cyng::param_factory("db-schema", NODE_SUFFIX),		//	use "v4.0" for compatibility to version 4.x
-				cyng::param_factory("period", rng())	//	seconds
+				cyng::param_factory("interval", rng())	//	seconds
 			))
 			, cyng::param_factory("IEC:DB", cyng::tuple_factory(
 				cyng::param_factory("type", "SQLite"),
@@ -97,28 +99,28 @@ namespace node
 				cyng::param_factory("watchdog", 30),	//	for database connection
 				cyng::param_factory("pool-size", 1),	//	no pooling for SQLite
 				cyng::param_factory("db-schema", NODE_SUFFIX),
-				cyng::param_factory("period", rng()),	//	seconds
+				cyng::param_factory("interval", rng()),	//	seconds
 				cyng::param_factory("ignore-null", false)	//	don't write values equal 0
 			))
 			, cyng::param_factory("SML:XML", cyng::tuple_factory(
 				cyng::param_factory("root-dir", (cwd / "xml").string()),
 				cyng::param_factory("root-name", "SML"),
 				cyng::param_factory("endcoding", "UTF-8"),
-				cyng::param_factory("period", rng())	//	seconds
+				cyng::param_factory("interval", rng())	//	seconds
 			))
 			, cyng::param_factory("SML:JSON", cyng::tuple_factory(
 				cyng::param_factory("root-dir", (cwd / "json").string()),
 				cyng::param_factory("prefix", "smf"),
 				cyng::param_factory("suffix", "json"),
 				cyng::param_factory("version", NODE_SUFFIX),
-				cyng::param_factory("period", rng())	//	seconds
+				cyng::param_factory("interval", rng())	//	seconds
 			))
 			, cyng::param_factory("SML:ABL", cyng::tuple_factory(
 				cyng::param_factory("root-dir", (cwd / "abl").string()),
 				cyng::param_factory("prefix", "smf"),
 				cyng::param_factory("suffix", "abl"),
 				cyng::param_factory("version", NODE_SUFFIX),
-				cyng::param_factory("period", rng()),	//	seconds
+				cyng::param_factory("interval", rng()),	//	seconds
 				cyng::param_factory("line-ending", "DOS")	//	DOS/UNIX
 			))
 			, cyng::param_factory("ALL:BIN", cyng::tuple_factory(
@@ -126,21 +128,21 @@ namespace node
 				cyng::param_factory("prefix", "smf"),
 				cyng::param_factory("suffix", "sml"),
 				cyng::param_factory("version", NODE_SUFFIX),
-				cyng::param_factory("period", rng())
+				cyng::param_factory("interval", rng())
 			))
 			, cyng::param_factory("SML:LOG", cyng::tuple_factory(
 				cyng::param_factory("root-dir", (cwd / "log").string()),
 				cyng::param_factory("prefix", "sml"),
 				cyng::param_factory("suffix", "log"),
 				cyng::param_factory("version", NODE_SUFFIX),
-				cyng::param_factory("period", rng())	//	seconds
+				cyng::param_factory("interval", rng())	//	seconds
 			))
 			, cyng::param_factory("IEC:LOG", cyng::tuple_factory(
 				cyng::param_factory("root-dir", (cwd / "log").string()),
 				cyng::param_factory("prefix", "iec"),
 				cyng::param_factory("suffix", "log"),
 				cyng::param_factory("version", NODE_SUFFIX),
-				cyng::param_factory("period", rng())	//	seconds
+				cyng::param_factory("interval", rng())	//	seconds
 			))
 			, cyng::param_factory("SML:CSV", cyng::tuple_factory(
 				cyng::param_factory("root-dir", (cwd / "csv").string()),
@@ -148,7 +150,14 @@ namespace node
 				cyng::param_factory("suffix", "csv"),
 				cyng::param_factory("header", true),
 				cyng::param_factory("version", NODE_SUFFIX),
-				cyng::param_factory("period", rng())	//	seconds
+				cyng::param_factory("interval", rng())	//	seconds
+			))
+			, cyng::param_factory("SML:influxdb", cyng::tuple_factory(
+				cyng::param_factory("host", "localhost"),
+				cyng::param_factory("port", "8086"),
+				cyng::param_factory("tls", false),
+				cyng::param_factory("cert", (cwd / "cert.pem").string()),
+				cyng::param_factory("interval", rng())	//	seconds
 			))
 			, cyng::param_factory("ipt", cyng::vector_factory({
 				cyng::tuple_factory(
@@ -169,8 +178,10 @@ namespace node
 					cyng::param_factory("monitor", rng()))
 				}))
 				, cyng::param_factory("targets", cyng::vector_factory({ 
-					cyng::param_factory("data.sink.sml", "SML"),
-					cyng::param_factory("data.sink.iec", "IEC") }))	//	list of targets and their data type
+					cyng::param_factory("water@solostec", "SML"),
+					cyng::param_factory("gas@solostec", "SML"),
+					cyng::param_factory("power@solostec", "SML"),
+					cyng::param_factory("LZQJ", "IEC") }))	//	list of targets and their data type
 				)
 			});
 	}
@@ -227,7 +238,7 @@ namespace node
 			, tag
 			, log_pushdata
 			, cyng::value_cast(cfg.get("ipt"), tmp)
-			, cyng::to_param_map(cyng::value_cast(cfg.get("targets"), tmp)));
+			, cyng::to_param_map(cyng::to_vector(cfg.get("targets"))));
 
 		//
 		//	get configuration type
@@ -262,123 +273,90 @@ namespace node
 		, cyng::reader<cyng::object> const& cfg)
 	{
 		std::vector<std::size_t> tsks;
-		cyng::tuple_t tpl;
-		const boost::filesystem::path pwd = boost::filesystem::current_path();
+		auto const pwd = boost::filesystem::current_path();
 
 		for (const auto& config_type : config_types)
 		{
+			//
+			//	get configuration tuple
+			//
+			auto const tpl = cyng::to_tuple(cfg.get(config_type));
+
+			CYNG_LOG_INFO(logger, "start consumer: " << config_type);
+			CYNG_LOG_TRACE(logger, config_type << ": " << cyng::io::to_str(tpl));
+
+			//
+			//	convert to configuration map
+			//
+			auto const cm = cyng::to_param_map(tpl);
+
 			if (boost::algorithm::iequals(config_type, "SML:DB"))
 			{
-				CYNG_LOG_INFO(logger, "start database adapter for SML protocol");
-
-				tpl = cyng::value_cast(cfg.get(config_type), tpl);
-
 				tsks.push_back(cyng::async::start_task_delayed<sml_db_consumer>(mux
 					, std::chrono::seconds(1)
 					, logger
 					, ntid
-					, cyng::to_param_map(tpl)).first);
+					, cm).first);
 			}
 			else if (boost::algorithm::iequals(config_type, "IEC:DB"))
 			{
-				CYNG_LOG_INFO(logger, "start database adapter for IEC 62056-21 protocol (readout mode)");
-
-				tpl = cyng::value_cast(cfg.get(config_type), tpl);
-
 				tsks.push_back(cyng::async::start_task_delayed<iec_db_consumer>(mux
 					, std::chrono::seconds(1)
 					, logger
 					, ntid
-					, cyng::to_param_map(tpl)).first);
+					, cm).first);
 			}
 			else if (boost::algorithm::iequals(config_type, "SML:XML"))
 			{
-				CYNG_LOG_INFO(logger, "start SML:XML consumer");
-
-				tpl = cyng::value_cast(cfg.get(config_type), tpl);
-
-				boost::filesystem::path root_dir = cyng::value_cast(cfg[config_type].get("root-dir"), (pwd / "xml").string());
-				auto root_name = cyng::value_cast<std::string>(cfg[config_type].get("root-name"), "SML");
-				auto encoding = cyng::value_cast<std::string>(cfg[config_type].get("endcoding"), "UTF-8");
-				auto period = cyng::value_cast(cfg[config_type].get("period"), 16);	//	seconds
-
 				tsks.push_back(cyng::async::start_task_delayed<sml_xml_consumer>(mux
 					, std::chrono::seconds(1)
 					, logger
 					, ntid
-					, root_dir
-					, root_name
-					, encoding
-					, std::chrono::seconds(period)).first);
+					, cyng::from_param_map<std::string>(cm, "root-dir", (pwd / "xml").string())
+					, cyng::from_param_map<std::string>(cm, "root-name", "SML")
+					, cyng::from_param_map<std::string>(cm, "endcoding", "UTF-8")
+					, std::chrono::seconds(cyng::from_param_map(cm, "interval", 18))).first);
 			}
 			else if (boost::algorithm::iequals(config_type, "SML:JSON"))
 			{
-				CYNG_LOG_INFO(logger, "start SML:JSON consumer");
-
-				tpl = cyng::value_cast(cfg.get(config_type), tpl);
-
-				boost::filesystem::path root_dir = cyng::value_cast(cfg[config_type].get("root-dir"), (pwd / "json").string());
-				auto prefix = cyng::value_cast<std::string>(cfg[config_type].get("prefix"), "sml");
-				auto suffix = cyng::value_cast<std::string>(cfg[config_type].get("suffix"), "json");
-
 				tsks.push_back(cyng::async::start_task_delayed<sml_json_consumer>(mux
 					, std::chrono::seconds(1)
 					, logger
 					, ntid
-					, root_dir
-					, prefix
-					, suffix).first);
+					, cyng::from_param_map<std::string>(cm, "root-dir", (pwd / "json").string())
+					, cyng::from_param_map<std::string>(cm, "prefix", "sml")
+					, cyng::from_param_map<std::string>(cm, "suffix", "json")).first);
 			}
 			else if (boost::algorithm::iequals(config_type, "SML:ABL"))
 			{
-				CYNG_LOG_INFO(logger, "start SML:ABL consumer");
-
-				tpl = cyng::value_cast(cfg.get(config_type), tpl);
-
-				boost::filesystem::path root_dir = cyng::value_cast(cfg[config_type].get("root-dir"), (pwd / "abl").string());
-				auto prefix = cyng::value_cast<std::string>(cfg[config_type].get("prefix"), "sml");
-				auto suffix = cyng::value_cast<std::string>(cfg[config_type].get("suffix"), "abl");
-				auto version = cyng::value_cast<std::string>(cfg[config_type].get("version"), NODE_SUFFIX);
+				auto const version = cyng::from_param_map<std::string>(cm, "version", NODE_SUFFIX);
 				auto r = cyng::parse_ver(version);
-				auto period = cyng::value_cast(cfg[config_type].get("period"), 16);	//	seconds
-				auto eol = cyng::value_cast<std::string>(cfg[config_type].get("line-ending"), "DOS");
-				
+				auto const eol = cyng::from_param_map<std::string>(cm, "line-ending", "DOS");
 
 				tsks.push_back(cyng::async::start_task_delayed<sml_abl_consumer>(mux
 					, std::chrono::seconds(1)
 					, logger
 					, ntid
-					, root_dir
-					, prefix
-					, suffix
-					, std::chrono::seconds(period)
+					, cyng::from_param_map<std::string>(cm, "root-dir", (pwd / "abl").string())
+					, cyng::from_param_map<std::string>(cm, "prefix", "sml")
+					, cyng::from_param_map<std::string>(cm, "suffix", "json")
+					, std::chrono::seconds(cyng::from_param_map(cm, "interval", 11))
 					, boost::algorithm::equals(eol, "DOS")
 					, r.second ? r.first : cyng::make_object<cyng::version>(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)).first);
 			}
 			else if (boost::algorithm::iequals(config_type, "ALL:BIN"))
 			{
-				CYNG_LOG_INFO(logger, "start ALL:BIN consumer");
-
-				auto root_dir = cyng::value_cast(cfg[config_type].get("root-dir"), (pwd / "sml").string());
-				auto prefix = cyng::value_cast<std::string>(cfg[config_type].get("prefix"), "sml");
-				auto suffix = cyng::value_cast<std::string>(cfg[config_type].get("suffix"), "sml");
-				auto period = cyng::value_cast(cfg[config_type].get("period"), 16);	//	seconds
-
 				tsks.push_back(cyng::async::start_task_delayed<binary_consumer>(mux
 					, std::chrono::seconds(1)
 					, logger
 					, ntid
-					, root_dir
-					, prefix
-					, suffix
-					, std::chrono::seconds(period)).first);
+					, cyng::from_param_map<std::string>(cm, "root-dir", (pwd / "sml").string())
+					, cyng::from_param_map<std::string>(cm, "prefix", "sml")
+					, cyng::from_param_map<std::string>(cm, "suffix", "json")
+					, std::chrono::seconds(cyng::from_param_map(cm, "interval", 17))).first);
 			}
 			else if (boost::algorithm::iequals(config_type, "SML:LOG"))
 			{
-				CYNG_LOG_INFO(logger, "start SML:LOG consumer");
-
-				tpl = cyng::value_cast(cfg.get(config_type), tpl);
-
 				tsks.push_back(cyng::async::start_task_delayed<sml_log_consumer>(mux
 					, std::chrono::seconds(1)
 					, logger
@@ -387,31 +365,32 @@ namespace node
 			}
 			else if (boost::algorithm::iequals(config_type, "SML:CSV"))
 			{
-				CYNG_LOG_INFO(logger, "start SML:CSV storage");
-
-				//auto version = cyng::value_cast(dom[config_type].get("version"), cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR).to_double());
-				boost::filesystem::path root_dir = cyng::value_cast(cfg[config_type].get("root-dir"), (pwd / "csv").string());
-				auto prefix = cyng::value_cast<std::string>(cfg[config_type].get("prefix"), "smf");
-				auto suffix = cyng::value_cast<std::string>(cfg[config_type].get("suffix"), "csv");
-				auto header = cyng::value_cast(cfg[config_type].get("header"), true);
-				auto period = cyng::value_cast(cfg[config_type].get("period"), 16);	//	seconds
-
 				tsks.push_back(cyng::async::start_task_delayed<sml_csv_consumer>(mux
 					, std::chrono::seconds(1)
 					, logger
 					, ntid
-					, root_dir
-					, prefix
-					, suffix
-					, header
-					, std::chrono::seconds(period)).first);
+					, cyng::from_param_map<std::string>(cm, "root-dir", (pwd / "csv").string())
+					, cyng::from_param_map<std::string>(cm, "prefix", "sml")
+					, cyng::from_param_map<std::string>(cm, "suffix", "json")
+					, cyng::from_param_map(cm, "header", true)
+					, std::chrono::seconds(cyng::from_param_map(cm, "interval", 16))).first);
+			}
+			else if (boost::algorithm::iequals(config_type, "SML:influxdb"))
+			{
+				tsks.push_back(cyng::async::start_task_delayed<sml_influxdb_consumer>(mux
+					, std::chrono::seconds(1)
+					, logger
+					, ntid
+					, cyng::from_param_map<std::string>(cm, "host", "localhost")
+					, cyng::from_param_map<std::string>(cm, "port", "8086")
+					, cyng::from_param_map(cm, "tls", false)
+					, cyng::from_param_map(cm, "cert", "cert.pem")
+					, std::chrono::seconds(cyng::from_param_map(cm, "interval", 32))).first);
 			}
 			else
 			{
 				CYNG_LOG_ERROR(logger, "unknown config type " << config_type);
 			}
-
-			tpl.clear();
 		}
 		return tsks;
 	}

@@ -741,7 +741,7 @@ namespace node
 					}
 					break;
 				case PROC_PAR_PERIODENTRY:
-					//node.append_attribute("parameter").set_value("period");
+					//node.append_attribute("parameter").set_value("interval");
 					//cyng::xml::write(node, tpl.back());
 					break;
 				case PROC_PAR_TUPELENTRY:

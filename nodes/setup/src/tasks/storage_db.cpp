@@ -701,21 +701,6 @@ namespace node
 			{ 36, 23, 64, 0, 8, 18, 18, 32, 32, 16, 32, 32 }));
 
 
-		//meta_map.emplace("TGWSnapshot", cyng::table::make_meta_table_gen<1, 2>("TGWSnapshot",
-		//	{ "pk"			//	primary key - same as TGateway
-		//	, "name"		//	optional name (serverID)
-		//	, "lastUpdate"	//	last updated
-		//	},
-		//	{ cyng::TC_UUID
-		//	, cyng::TC_STRING	//	name
-		//	, cyng::TC_TIME_POINT
-		//	},
-		//	{ 36	//	pk
-		//	, 23	//	name
-		//	, 0		//	lastUpdate
-		//}));
-	
-
 		//	id: (i.e. 1EMH0006441734)
 		//	vParam: parameterization software version (i.e. 16A098828.pse)
 		//	vFirmware: (i.e. 11600000)

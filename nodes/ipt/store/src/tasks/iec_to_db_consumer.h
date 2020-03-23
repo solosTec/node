@@ -85,10 +85,10 @@ namespace node
 		const bool ignore_null_;	//!< don't store values equal to null
 		std::size_t total_count_, skipped_count_;
 		cyng::table::meta_map_t	meta_map_;
-		enum task_state {
-			TASK_STATE_INITIAL,
-			TASK_STATE_DB_OK,
-			TASK_STATE_REGISTERED,
+		enum class task_state {
+			INITIAL,
+			DB_OK,
+			REGISTERED,
 		} task_state_;
 		std::unordered_map<std::uint64_t, iec::db_exporter>	lines_;
 	};

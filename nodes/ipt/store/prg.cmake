@@ -52,6 +52,8 @@ set (node_ipt_store_tasks
 	nodes/ipt/store/src/tasks/sml_to_log_consumer.cpp
 	nodes/ipt/store/src/tasks/sml_to_csv_consumer.h
 	nodes/ipt/store/src/tasks/sml_to_csv_consumer.cpp
+	nodes/ipt/store/src/tasks/sml_to_influxdb_consumer.h
+	nodes/ipt/store/src/tasks/sml_to_influxdb_consumer.cpp
 	nodes/ipt/store/src/tasks/binary_consumer.h
 	nodes/ipt/store/src/tasks/binary_consumer.cpp
 	nodes/ipt/store/src/tasks/iec_to_db_consumer.h

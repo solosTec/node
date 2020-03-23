@@ -38,11 +38,11 @@ namespace node
 	: base_(*btp)
 		, logger_(logger)
 		, ntid_(ntid)
-		, pool_(base_.mux_.get_io_service(), cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite")))
-		, schema_(cyng::value_cast<std::string>(cfg["db-schema"], NODE_SUFFIX))
-		, period_(cyng::value_cast(cfg["period"], 12))
+		, pool_(base_.mux_.get_io_service(), cyng::db::get_connection_type(cyng::from_param_map<std::string>(cfg, "type", "SQLite")))
+		, schema_(cyng::from_param_map<std::string>(cfg, "db-schema", NODE_SUFFIX))
+		, period_(cyng::from_param_map(cfg, "interval", 12))
 		, meta_map_(init_meta_map(schema_))
-		, task_state_(TASK_STATE_INITIAL)
+		, task_state_(task_state::INITIAL)
 		, lines_()
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
@@ -77,7 +77,7 @@ namespace node
 	{
 		BOOST_ASSERT(pool_.get_pool_size() != 0);
 		switch (task_state_) {
-		case TASK_STATE_INITIAL:
+		case task_state::INITIAL:
 
 			//
 			//	test connection pool
@@ -86,16 +86,16 @@ namespace node
 				CYNG_LOG_FATAL(logger_, "DB connection pool is empty");
 				return cyng::continuation::TASK_STOP;
 			}
-			task_state_ = TASK_STATE_DB_OK;
+			task_state_ = task_state::DB_OK;
 			break;
 
-		case TASK_STATE_DB_OK:
+		case task_state::DB_OK:
 
 			//
 			//	register as SML:XML consumer 
 			//
 			register_consumer();
-			task_state_ = TASK_STATE_REGISTERED;
+			task_state_ = task_state::REGISTERED;
 			break;
 
 		default:

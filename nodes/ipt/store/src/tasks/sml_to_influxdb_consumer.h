@@ -1,25 +1,25 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Sylko Olzscher
+ * Copyright (c) 2020 Sylko Olzscher
  *
  */
 
-#ifndef NODE_IPT_STORE_TASK_SML_DB_CONSUMER_H
-#define NODE_IPT_STORE_TASK_SML_DB_CONSUMER_H
+#ifndef NODE_IPT_STORE_TASK_SML_INFLUXDB_CONSUMER_H
+#define NODE_IPT_STORE_TASK_SML_INFLUXDB_CONSUMER_H
 
-#include <smf/sml/exporter/db_sml_exporter.h>
+//#include <smf/sml/exporter/db_sml_exporter.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
-#include <cyng/db/session_pool.h>
-#include <cyng/table/meta_interface.h>
+//#include <cyng/db/session_pool.h>
+//#include <cyng/table/meta_interface.h>
 #include <cyng/vm/context.h>
 #include <unordered_map>
 
 namespace node
 {
-	class sml_db_consumer
+	class sml_influxdb_consumer
 	{
 	public:
 		using msg_0 = std::tuple<std::uint64_t, std::string>;
@@ -29,10 +29,14 @@ namespace node
 		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3>;
 
 	public:
-		sml_db_consumer(cyng::async::base_task* bt
+		sml_influxdb_consumer(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, std::size_t ntid	//	network task id
-			, cyng::param_map_t);
+			, std::string host 
+			, std::string service
+			, bool tls
+			, std::string cert
+			, std::chrono::seconds interval);
 		cyng::continuation run();
 		void stop(bool shutdown);
 
@@ -66,29 +70,18 @@ namespace node
 		 */
 		cyng::continuation process(std::uint64_t line, std::size_t idx, std::uint16_t crc);
 
-		/**
-		 * static method to create tables.
-		 */
-		static int init_db(cyng::tuple_t);
-		static cyng::table::meta_map_t init_meta_map(std::string const&);
-
 	private:
-		void register_consumer();
 
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
-		const std::size_t ntid_;
-		cyng::db::session_pool pool_;
-		const std::string schema_;
-		const std::chrono::seconds period_;
-		cyng::table::meta_map_t	meta_map_;
-		enum class task_state {
-			INITIAL,
-			DB_OK,
-			REGISTERED,
-		} task_state_;
-		std::unordered_map<std::uint64_t, sml::db_exporter>	lines_;
+		std::size_t const ntid_;
+		std::string const host_;
+		std::string const service_;
+		bool const tls_;
+		std::string const cert_;
+		std::chrono::seconds const interval_;
+		//std::unordered_map<std::uint64_t, sml::db_exporter>	lines_;
 	};
 }
 
