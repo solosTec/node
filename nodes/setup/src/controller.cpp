@@ -120,6 +120,38 @@ namespace node
 		return EXIT_FAILURE;
 	}
 
+	int controller::generate_access_rights(std::size_t idx, std::size_t conf_count, std::string user)
+	{
+		//
+		//	read configuration file
+		//
+		cyng::object config = cyng::json::read_file(json_path_);
+
+		cyng::vector_t vec;
+		vec = cyng::value_cast(config, vec);
+
+		if (vec.size() > idx)
+		{
+			std::cout
+				<< "***info: configuration index #"
+				<< idx
+				<< std::endl;
+
+			auto dom = cyng::make_reader(vec[idx]);
+			cyng::tuple_t tpl;
+			return storage_db::generate_access_rights(cyng::value_cast(dom.get("DB"), tpl), conf_count, user);
+		}
+		else {
+			std::cerr
+				<< "***error: index of configuration vector is out of range "
+				<< idx
+				<< '/'
+				<< vec.size()
+				<< std::endl;
+		}
+		return EXIT_FAILURE;
+	}
+
 	bool controller::start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag)
 	{
 		//

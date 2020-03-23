@@ -492,7 +492,9 @@ namespace node
 			{
 				cyng::sql::command cmd(tbl.second, s.get_dialect());
 				auto sql = cmd.create()();
-				//std::cout << sql << std::endl;
+#ifdef _DEBUG
+				std::cout << sql << std::endl;
+#endif
 				s.execute(sql);
 
 				if (tbl.first == "TDevice")
@@ -526,8 +528,7 @@ namespace node
 #ifdef _DEBUG
 				else if (tbl.first == "TLL")
 				{
-					cmd.insert();
-					sql = cmd.to_str();
+					sql = cmd.insert()();
 					auto stmt = s.create_statement();
 					std::pair<int, bool> r = stmt->prepare(sql);
 					//BOOST_ASSERT(r.first == 9);	//	3 parameters to bind
@@ -558,8 +559,7 @@ namespace node
 				}
 				else if (tbl.first == "TGUIUser")
 				{
-					cmd.insert();
-					sql = cmd.to_str();
+					sql = cmd.insert()();
 					auto stmt = s.create_statement();
 					std::pair<int, bool> r = stmt->prepare(sql);
 					//BOOST_ASSERT(r.first == 9);	//	3 parameters to bind
@@ -594,11 +594,52 @@ namespace node
 #endif
 			}
 
-
-
 			return EXIT_SUCCESS;
 		}
 		std::cerr << "connect to database failed" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	int storage_db::generate_access_rights(cyng::tuple_t tpl, std::size_t count, std::string user)
+	{
+		auto cfg = cyng::to_param_map(tpl);
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		cyng::db::session s(con_type);
+		auto r = s.connect(cfg);
+		if (r.second)
+		{
+			//
+			//	connect string
+			//
+			std::cout << "connect string: " << r.first << std::endl;
+
+			auto meta_map = storage_db::init_meta_map();
+			auto pos = meta_map.find("TGUIUser");
+			if (pos != meta_map.end()) {
+
+				cyng::sql::command cmd(pos->second, s.get_dialect());
+				auto const sql = cmd.insert()();
+				auto stmt = s.create_statement();
+				std::pair<int, bool> r = stmt->prepare(sql);
+				//BOOST_ASSERT(r.first == 9);	//	3 parameters to bind
+				BOOST_ASSERT(r.second);
+
+				auto digest = cyng::sha1_hash("secret");
+
+				//	bind parameters
+				stmt->push(cyng::make_object(boost::uuids::random_generator()()), 36)
+					.push(cyng::make_object<std::uint64_t>(1u), 0)
+					.push(cyng::make_object(user), 32)
+					.push(cyng::make_object(cyng::crypto::digest_sha1(digest)), 40)
+					.push(cyng::make_object(std::chrono::system_clock::now()), 0)
+					.push(cyng::make_object("{devices: [\"view\", \"delete\", \"edit\"], meters: [\"view\", \"edit\"], gateways: [\"view\", \"delete\", \"edit\"]}"), 2048)
+					;
+				stmt->execute();
+				stmt->clear();
+				return EXIT_SUCCESS;
+			}
+			std::cout << "*** error: table TGUIUser not found" << std::endl;
+		}
 		return EXIT_FAILURE;
 	}
 
@@ -822,7 +863,7 @@ namespace node
 			},
 			{ 36, 0, 0, 0, 0, 0, 0, 0, 40, 8, 0, 0, 8, 8, 8, 0, 8, 16, 0, 0 }));
 
-		insert(meta_map, cyng::table::make_meta_table_gen<1, 13>("TLoraLocation",
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 12>("TLoraLocation",
 			{ "pk"
 			, "DevEUI"
 			, "DevAddr"
@@ -854,7 +895,7 @@ namespace node
 			},
 			{ 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16 }));
 
-		insert(meta_map, cyng::table::make_meta_table_gen<1, 15>("TLoraPayload",
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 14>("TLoraPayload",
 			{ "pk"		
 			, "type"	//	version
 			, "manufacturer"

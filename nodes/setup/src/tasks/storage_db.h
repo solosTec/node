@@ -70,6 +70,8 @@ namespace node
 		static int init_db(cyng::tuple_t, std::size_t count);
 		static std::map<std::string, cyng::table::meta_table_ptr> init_meta_map();
 
+		static int generate_access_rights(cyng::tuple_t, std::size_t count, std::string user);
+
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;

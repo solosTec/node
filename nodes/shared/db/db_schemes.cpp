@@ -426,28 +426,12 @@ namespace node
 				, 128	//	status
 			});
 		}
-		//else if (boost::algorithm::equals(name, "_TimeSeriesParams")) {
-
-		//	return cyng::table::make_meta_table<1, 3>(name, 
-		//		{ "tag"			//	[uuid] client session - primary key 
-		//		, "rule"		//	rule name
-		//		, "threshold"	//	limit
-		//		, "action"		//	function name
-		//		},
-		//		{ cyng::TC_UUID			//	tag
-		//		, cyng::TC_STRING		//	rule
-		//		, cyng::TC_STRING		//	threshold
-		//		, cyng::TC_STRING },	//	action
-		//		{ 64		//	tag
-		//		, 64		//	rule
-		//		, 0			//	threshold
-		//		, 128 });	//	action
-		//}
 		else if (boost::algorithm::equals(name, "TGUIUser")) {
 
 			//
 			//	User access rights to dash SPA
 			//	[string] name - index
+			//	The rights are stored as JSON string e.g. {devices: ["view","edit"], meters:[]}
 			//
 			return cyng::table::make_meta_table<1, 4, 1>(name, { "pk"
 				, "name"		//	[string] login name

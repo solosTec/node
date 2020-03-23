@@ -46,6 +46,7 @@ int main(int argc, char **argv)
 		("fs,F", boost::program_options::bool_switch()->default_value(false), "show available drives")
 		("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
+		("user,U", boost::program_options::value<std::string>()->default_value("")->implicit_value("user"), "create a set of default access rights and exit")
 
 		;
 		
@@ -169,6 +170,14 @@ int main(int argc, char **argv)
 			//	show configuration
 			return ctrl.ctl::print_config(std::cout);
 		}
+
+		auto const user = vm["user"].as< std::string >();
+		if (!user.empty())
+		{
+			//	generate a set of default access rights
+			return ctrl.generate_access_rights(config_index, conf_count, user);
+		}
+		
 
 #if BOOST_OS_WINDOWS
 		if (vm["service.enabled"].as< bool >())
