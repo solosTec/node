@@ -49,6 +49,7 @@ namespace node
 		bool cmd_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 		bool cmd_list(boost::filesystem::path const&);
 		bool cmd_ip() const;
+		//bool cmd_pwd(unsigned);
 
 	protected:
 		std::ostream& out_;

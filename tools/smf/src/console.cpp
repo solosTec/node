@@ -9,6 +9,8 @@
 #include <cyng/parser/bom_parser.h>
 #include <cyng/io/io_bytes.hpp>
 #include <cyng/io/serializer.h>
+#include <cyng/rnd.h>
+#include <cyng/numeric_cast.hpp>
 
 #include <boost/predef.h>	//	requires Boost 1.55
 #if BOOST_OS_LINUX
@@ -34,9 +36,27 @@ namespace node
 	{
 		vm_.register_function("help", 0, [this](cyng::context& ctx) {
 			auto const frame = ctx.get_frame();
-			out_ << cyng::io::to_str(frame);
+			//out_ << cyng::io::to_str(frame);
+			if (frame.empty()) {
+				out_
+					<< "help" << std::endl
+					<< "quit" << std::endl
+					<< "history" << std::endl
+					<< "!" << std::endl
+					<< "nl" << std::endl
+					<< "echo ..." << std::endl
+					<< "run ..." << std::endl
+					<< "ip" << std::endl
+					<< "ls" << std::endl
+					<< "pwd" << std::endl
+					;
+			}
+			else {
+				out_ 
+					<< cyng::io::to_str(frame);
+			}
 
-			});
+		});
 
 		vm_.register_function("!", 1, [this](cyng::context& ctx) {
 			auto const frame = ctx.get_frame();
@@ -79,6 +99,27 @@ namespace node
 			out_ << std::endl;
 #endif
 			});
+
+		vm_.register_function("pwd", 0, [this](cyng::context& ctx) {
+			auto const frame = ctx.get_frame();
+			static auto pwd = cyng::crypto::make_rnd_pwd();	//	password generator
+			if (frame.empty()) {
+				out_
+					<< pwd(8u)
+					;
+			}
+			else {
+				out_
+					<< pwd(cyng::numeric_cast<std::uint32_t>(frame.at(0), 8))
+					;
+			}
+		});
+
+		vm_.register_function("run", 1, [this](cyng::context& ctx) {
+			auto const frame = ctx.get_frame();
+			auto const file_name = cyng::value_cast<std::string>(frame.at(0), "this.script");
+			cmd_run_script(file_name);
+		});
 
 	}
 
@@ -246,7 +287,7 @@ namespace node
 		//
 		//	update call depth
 		//
-		call_depth_++;
+		++call_depth_;
 
 		std::cerr
 			<< "***Info: "
@@ -338,7 +379,7 @@ namespace node
 		//
 		//	update call depth
 		//
-		call_depth_++;
+		--call_depth_;
 
 		std::cerr
 			<< "***Info: "

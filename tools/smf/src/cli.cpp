@@ -43,7 +43,7 @@ namespace node
 
 				//
 				//	print all parsed elements.
-				//	usfull for script.
+				//	usefull for scripts.
 				//
 				std::size_t counter{ 0 };
 				for (auto const& s : rv) {
@@ -73,23 +73,22 @@ namespace node
 
 	void cli::call(std::string cmd, std::vector<std::string> const& params)
 	{
-		switch (params.size()) {
-		case 0:
-			vm_.async_run(cyng::generate_invoke(cmd));
-			break;
-		case 1:
-			vm_.async_run(cyng::generate_invoke(cmd, params.at(0)));
-			break;
-		case 2:
-			vm_.async_run(cyng::generate_invoke(cmd, params.at(0), params.at(1)));
-			break;
-		case 3:
-			vm_.async_run(cyng::generate_invoke(cmd, params.at(0), params.at(1), params.at(2)));
-			break;
-		default:
-			out_ << "***error: to much arguments " << params.size() << std::endl;
-			break;
+		//
+		//	build a call frame
+		//
+		cyng::vector_t prg;
+		{
+			cyng::call_frame cf(prg);
+			prg
+				<< params
+				<< cyng::invoke(cmd)
+				;
 		}
+		vm_.async_run(std::move(prg));
+
+		//
+		//	emit a NL
+		//
 		vm_.async_run(cyng::generate_invoke("nl"));
 	}
 
