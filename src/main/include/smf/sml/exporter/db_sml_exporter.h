@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_SML_EXPORTER_DB_SML_H
-#define NODE_SML_EXPORTER_DB_SML_H
+#ifndef NODE_SML_EXPORTER_DB_H
+#define NODE_SML_EXPORTER_DB_H
 
 #include <smf/sml/defs.h>
 #include <smf/sml/units.h>
@@ -47,10 +47,7 @@ namespace node
 			/**
 			 * read SML message.
 			 */
-			void read_msg(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_body(cyng::db::session, cyng::object, cyng::object);
-			void read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			void read_body(cyng::db::session, std::uint16_t code, cyng::tuple_t const& tpl);
 			bool read_get_profile_list_response(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_get_proc_parameter_response(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_attention_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
@@ -59,7 +56,6 @@ namespace node
 			std::vector<obis> read_param_tree_path(cyng::object);
 			obis read_obis(cyng::object);
 			std::uint8_t read_unit(std::string const&, cyng::object);
-			std::int8_t read_scaler(cyng::object);
 			std::string read_string(std::string const&, cyng::object);
 
 			/**
@@ -84,9 +80,7 @@ namespace node
 				, cyng::object ro_ime
 				, cyng::object act_ime
 				, cyng::object val_time
-				//, cyng::object client		//	gateway
 				, cyng::buffer_t const& client_id	//	gateway - formatted
-				//, cyng::object server		//	server
 				, cyng::buffer_t const& server_id	//	server - formatted
 				, cyng::object status
 				, obis profile);

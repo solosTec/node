@@ -17,6 +17,7 @@
 #include "tasks/sml_to_influxdb_consumer.h"
 #include "tasks/iec_to_db_consumer.h"
 #include "tasks/network.h"
+#include <smf/sml/exporter/influxdb_sml_exporter.h>
 
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/factory/set_factory.h>
@@ -72,6 +73,8 @@ namespace node
 	cyng::vector_t controller::create_config(std::fstream& fout, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const
 	{
 		cyng::crypto::rnd_num<int> rng(10, 60);
+		auto pwd = cyng::crypto::make_rnd_pwd();	//	password generator
+
 
 		return cyng::vector_factory({
 			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
@@ -154,9 +157,14 @@ namespace node
 			))
 			, cyng::param_factory("SML:influxdb", cyng::tuple_factory(
 				cyng::param_factory("host", "localhost"),
-				cyng::param_factory("port", "8086"),
-				cyng::param_factory("tls", false),
+				cyng::param_factory("port", "8086"),	//	8094 for udp
+				cyng::param_factory("protocol", "http"),	//	http, https, udp, unix
 				cyng::param_factory("cert", (cwd / "cert.pem").string()),
+				cyng::param_factory("db", "SMF"),
+				cyng::param_factory("series", "SML"),
+				cyng::param_factory("auth-enabled", false),
+				cyng::param_factory("user", "user"),
+				cyng::param_factory("pwd", pwd(8)),
 				cyng::param_factory("interval", rng())	//	seconds
 			))
 			, cyng::param_factory("ipt", cyng::vector_factory({
@@ -222,6 +230,106 @@ namespace node
 		return EXIT_FAILURE;
 	}
 
+	int controller::create_influx_dbs(std::size_t idx, std::string cmd)
+	{
+		//
+		//	read configuration file
+		//
+		cyng::object config = cyng::json::read_file(json_path_);
+
+		cyng::vector_t vec;
+		vec = cyng::value_cast(config, vec);
+		BOOST_ASSERT_MSG(!vec.empty(), "invalid configuration");
+
+		if (vec.size() > idx)
+		{
+			std::cerr
+				<< "***info : configuration index #"
+				<< idx
+				<< '/'
+				<< vec.size()
+				<< std::endl
+				<< "***info : command: "
+				<< cmd
+				<< std::endl
+				;
+
+			auto dom = cyng::make_reader(vec[idx]);
+
+
+			//
+			//	get configuration tuple
+			//
+			auto const tpl = cyng::to_tuple(dom.get("SML:influxdb"));
+			auto const cm = cyng::to_param_map(tpl);
+
+			std::cerr 
+				<< "***trace: "
+				<< cyng::io::to_str(tpl) 
+				<< std::endl;
+
+			//
+			//	establish I/O context
+			//
+			cyng::async::mux mux{ this->pool_size_ };
+
+			if (boost::algorithm::equals(cmd, "create")) {
+
+				//
+				//	create database
+				//
+				return sml::influxdb_exporter::create_db(mux.get_io_service()
+					, cyng::from_param_map<std::string>(cm, "host", "localhost")
+					, cyng::from_param_map<std::string>(cm, "port", "8086")
+					, cyng::from_param_map(cm, "protocol", "http")
+					, cyng::from_param_map(cm, "cert", "cert.pem")
+					, cyng::from_param_map<std::string>(cm, "db", "SMF"));
+			}
+			else if (boost::algorithm::equals(cmd, "show")) {
+				//
+				//	show database
+				//
+				return sml::influxdb_exporter::show_db(mux.get_io_service()
+					, cyng::from_param_map<std::string>(cm, "host", "localhost")
+					, cyng::from_param_map<std::string>(cm, "port", "8086")
+					, cyng::from_param_map(cm, "protocol", "http")
+					, cyng::from_param_map(cm, "cert", "cert.pem"));
+			}
+			else if (boost::algorithm::equals(cmd, "drop")) {
+				//
+				//	drop database
+				//
+				return sml::influxdb_exporter::drop_db(mux.get_io_service()
+					, cyng::from_param_map<std::string>(cm, "host", "localhost")
+					, cyng::from_param_map<std::string>(cm, "port", "8086")
+					, cyng::from_param_map(cm, "protocol", "http")
+					, cyng::from_param_map(cm, "cert", "cert.pem")
+					, cyng::from_param_map<std::string>(cm, "db", "SMF"));
+			}
+			else {
+				std::cerr
+					<< "***error: unknown command "
+					<< cmd
+					<< std::endl;
+			}
+
+			//
+			//	shutdown scheduler
+			//
+			mux.shutdown();
+
+		}
+		else {
+			std::cerr
+				<< "***error: index of configuration vector is out of range "
+				<< idx
+				<< '/'
+				<< vec.size()
+				<< std::endl;
+		}
+		return EXIT_FAILURE;
+	}
+
 	bool controller::start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag)
 	{
         //
@@ -248,7 +356,7 @@ namespace node
 		//
 		//	start all consumer tasks
 		//
-		cyng::tuple_t tpl;
+		//cyng::tuple_t tpl;
 		auto tsks = connect_data_store(mux, logger, config_types, ntid, cfg);
 		if (tsks.empty())
 		{
@@ -383,8 +491,13 @@ namespace node
 					, ntid
 					, cyng::from_param_map<std::string>(cm, "host", "localhost")
 					, cyng::from_param_map<std::string>(cm, "port", "8086")
-					, cyng::from_param_map(cm, "tls", false)
+					, cyng::from_param_map(cm, "protocol", "http")
 					, cyng::from_param_map(cm, "cert", "cert.pem")
+					, cyng::from_param_map<std::string>(cm, "db", "SMF")
+					, cyng::from_param_map(cm, "series", "SML")
+					//, cyng::from_param_map(cm, "auth-enabled", false)
+					//, cyng::from_param_map<std::string>(cm, "user", "user")
+					//, cyng::from_param_map<std::string>(cm, "pwd", "secret")
 					, std::chrono::seconds(cyng::from_param_map(cm, "interval", 32))).first);
 			}
 			else

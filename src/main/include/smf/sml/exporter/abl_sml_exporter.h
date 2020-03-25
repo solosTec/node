@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_SML_EXPORTER_ABL_SML_H
-#define NODE_SML_EXPORTER_ABL_SML_H
+#ifndef NODE_SML_EXPORTER_ABL_H
+#define NODE_SML_EXPORTER_ABL_H
 
 
 #include <smf/sml/defs.h>
@@ -87,9 +87,9 @@ namespace node
 			 * read SML message.
 			 */
 			void read_msg(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_body(cyng::object, cyng::object);
-			void read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			void read_body(std::uint16_t code, cyng::tuple_t const& tpl);
+			//void read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			//void read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_get_profile_list_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_get_proc_parameter_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_attention_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);

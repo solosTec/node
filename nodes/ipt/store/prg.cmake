@@ -74,11 +74,13 @@ set (node_ipt_store_exporter
 	lib/sml/exporter/src/db_sml_exporter.cpp
 	src/main/include/smf/sml/exporter/csv_sml_exporter.h
 	lib/sml/exporter/src/csv_sml_exporter.cpp
-	src/main/include/smf/sml/exporter/db_iec_exporter.h
-	lib/sml/exporter/src/db_iec_exporter.cpp
 	src/main/include/smf/sml/exporter/abl_sml_exporter.h
 	lib/sml/exporter/src/abl_sml_exporter.cpp
-
+	src/main/include/smf/sml/exporter/influxdb_sml_exporter.h
+	lib/sml/exporter/src/influxdb_sml_exporter.cpp
+# maybe an IEC library should be used
+	src/main/include/smf/sml/exporter/db_iec_exporter.h
+	lib/sml/exporter/src/db_iec_exporter.cpp
 )
 	
 if(WIN32)

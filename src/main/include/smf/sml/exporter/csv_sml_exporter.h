@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef NODE_SML_EXPORTER_CSV_SML_H
-#define NODE_SML_EXPORTER_CSV_SML_H
+#ifndef NODE_SML_EXPORTER_CSV_H
+#define NODE_SML_EXPORTER_CSV_H
 
 
 #include <smf/sml/defs.h>
@@ -64,9 +64,9 @@ namespace node
 			 * read SML message.
 			 */
 			void read_msg(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_body(cyng::object, cyng::object);
-			void read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-			void read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			void read_body(std::uint16_t code, cyng::tuple_t tpl);
+			//void read_public_open_request(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
+			//void read_public_open_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_get_profile_list_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_get_proc_parameter_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_attention_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
@@ -96,13 +96,15 @@ namespace node
 			void write_header();
 
 		private:
-			const boost::filesystem::path root_dir_;
-			const std::string prefix_;
-			const std::string suffix_;
+			boost::filesystem::path const root_dir_;
+			std::string const prefix_;
+			std::string const suffix_;
 			bool header_;
-			const std::uint32_t source_;
-			const std::uint32_t channel_;
-			const std::string target_;
+
+			std::uint32_t const source_;
+			std::uint32_t const channel_;
+			std::string const target_;
+
 			readout ro_;
 			std::ofstream	ofstream_;
 		};

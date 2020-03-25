@@ -80,9 +80,9 @@ namespace node
 		const std::string root_name_;
 		const std::string endcoding_;
 		const std::chrono::seconds period_;
-		enum task_state {
-			TASK_STATE_INITIAL,
-			TASK_STATE_REGISTERED,
+		enum class task_state {
+			INITIAL,
+			REGISTERED,
 		} task_state_;
 		std::unordered_map<std::uint64_t, sml::xml_exporter>	lines_;
 	};

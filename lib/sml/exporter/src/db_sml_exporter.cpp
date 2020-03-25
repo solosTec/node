@@ -66,62 +66,21 @@ namespace node
 
 		void db_exporter::write(cyng::db::session sp, cyng::tuple_t const& msg)
 		{
-			read_msg(sp, msg.begin(), msg.end());
+			//std::pair<std::uint16_t, cyng::tuple_t> 
+			auto const choice = ro_.read_msg(msg.begin(), msg.end());
+			read_body(sp, choice.first, choice.second);
 		}
 
-		void db_exporter::read_msg(cyng::db::session sp, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		void db_exporter::read_body(cyng::db::session sp, std::uint16_t code, cyng::tuple_t const& tpl)
 		{
-			std::size_t count = std::distance(pos, end);
-			BOOST_ASSERT_MSG(count == 5, "SML message");
-			if (count != 5)	return;
-
-			//
-			//	(1) - transaction id
-			//	This is typically a printable sequence of 6 up to 9 ASCII values
-			//
-			cyng::buffer_t buffer;
-			ro_.set_trx(cyng::value_cast(*pos++, buffer));
-
-			//
-			//	(2) groupNo
-			//
-			ro_.set_value("groupNo", *pos++);
-
-			//
-			//	(3) abortOnError
-			//
-			ro_.set_value("abortOnError", *pos++);
-
-			//
-			//	(4/5) CHOICE - msg type
-			//
-			cyng::tuple_t choice;
-			choice = cyng::value_cast(*pos++, choice);
-			BOOST_ASSERT_MSG(choice.size() == 2, "CHOICE");
-			if (choice.size() == 2)
-			{
-				ro_.set_value("code", choice.front());
-				read_body(sp, choice.front(), choice.back());
-			}
-
-			//
-			//	(6) CRC16
-			//
-			ro_.set_value("crc16", *pos);
-		}
-
-		void db_exporter::read_body(cyng::db::session sp, cyng::object type, cyng::object body)
-		{
-			auto code = cyng::value_cast<std::uint16_t>(type, 0);
-			//node.append_attribute("type").set_value(messages::name(code));
-
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(body, tpl);
-
 			switch (code)
 			{
 			case BODY_OPEN_REQUEST:
-				read_public_open_request(tpl.begin(), tpl.end());
+				//
+				//	reset context
+				//
+				reset();
+				ro_.read_public_open_request(tpl.begin(), tpl.end());
 				break;
 			case BODY_OPEN_RESPONSE:
 
@@ -129,147 +88,46 @@ namespace node
 				//	set default readout time
 				//
 				ro_.set_value("roTime", cyng::make_now());
-				read_public_open_response(tpl.begin(), tpl.end());
+				ro_.read_public_open_response(tpl.begin(), tpl.end());
 				break;
 			case BODY_CLOSE_REQUEST:
-				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_CLOSE_RESPONSE:
-				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_GET_PROFILE_PACK_REQUEST:
-				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_GET_PROFILE_PACK_RESPONSE:
-				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_GET_PROFILE_LIST_REQUEST:
-				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_GET_PROFILE_LIST_RESPONSE:
 				read_get_profile_list_response(sp, tpl.begin(), tpl.end());
 				break;
 			case BODY_GET_PROC_PARAMETER_REQUEST:
-				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_GET_PROC_PARAMETER_RESPONSE:
 				read_get_proc_parameter_response(sp, tpl.begin(), tpl.end());
 				break;
 			case BODY_SET_PROC_PARAMETER_REQUEST:
-				//cyng::xml::write(node, body);
 				break;
 			case BODY_SET_PROC_PARAMETER_RESPONSE:
-				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_GET_LIST_REQUEST:
-				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_GET_LIST_RESPONSE:
-				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			case BODY_ATTENTION_RESPONSE:
 				read_attention_response(tpl.begin(), tpl.end());
 				break;
 			default:
-				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			}
 		}
 
-		void db_exporter::read_public_open_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
-		{
-			std::size_t count = std::distance(pos, end);
-			BOOST_ASSERT_MSG(count == 7, "Public Open Request");
-			if (count != 7)	return;
-			
-			//
-			//	reset context
-			//
-			reset();
-			
-			//	codepage "ISO 8859-15"
-			ro_.set_value("codepage", *pos++);
-
-			//
-			//	clientId (MAC)
-			//	Typically 7 bytes to identify gateway/MUC
-			auto const client_id = read_client_id(*pos++);
-			boost::ignore_unused(client_id);
-
-			//
-			//	reqFileId
-			//
-			ro_.set_value("reqFileId", *pos++);
-
-			//
-			//	serverId
-			//
-			auto const srv_id = read_server_id(*pos++);
-			boost::ignore_unused(srv_id);
-
-			//
-			//	username
-			//
-			auto const user = read_string("userName", *pos++);
-			boost::ignore_unused(user);
-
-			//
-			//	password
-			//
-			auto const pwd = read_string("password", *pos++);
-			boost::ignore_unused(pwd);
-
-			//
-			//	sml-Version: default = 1
-			//
-			ro_.set_value("SMLVersion", *pos++);
-
-		}
-
-		void db_exporter::read_public_open_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
-		{
-			std::size_t count = std::distance(pos, end);
-			BOOST_ASSERT_MSG(count == 6, "Public Open Response");
-			if (count != 6)	return;
-			
-			//
-			//	reset context
-			//
-			reset();
-			
-			//	codepage "ISO 8859-15"
-			ro_.set_value("codepage", *pos++);
-
-			//
-			//	clientId (MAC)
-			//	Typically 7 bytes to identify gateway/MUC
-			auto const client_id = read_client_id(*pos++);
-			boost::ignore_unused(client_id);
-
-			//
-			//	reqFileId
-			//
-			auto const file_id = read_string("reqFileId", *pos++);
-			boost::ignore_unused(file_id);
-
-			//
-			//	serverId
-			//
-			auto const srv_id = read_server_id(*pos++);
-			boost::ignore_unused(srv_id);
-
-			//
-			//	refTime
-			//
-			ro_.set_value("refTime", *pos++);
-
-			//	sml-Version: default = 1
-			ro_.set_value("SMLVersion", *pos++);
-
-		}
-
 		bool db_exporter::read_get_profile_list_response(cyng::db::session sp, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
+			////	std::pair<obis_path, cyng::param_map_t>
+			//auto const r = ro_.read_get_profile_list_response(pos, end);
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
 			if (count != 9)	return false;
@@ -321,14 +179,11 @@ namespace node
 			return store_meta(sp
 				, rgn_()
 				, ro_.trx_
-				//, ro_.idx_
 				, 0u	//	ToDo: change database scheme
 				, ro_.get_value("roTime")
 				, ro_.get_value("actTime")
 				, ro_.get_value("valTime")
-				//, ro_.get_value("client")	//	gateway
 				, ro_.client_id_	//	gateway - formatted (00:15:3b:02:29:7e)
-				//, ro_.get_value("server")	//	server
 				, ro_.server_id_	//	server - formatted
 				, ro_.get_value("status")
 				, path.empty() ? obis() : path.front());
@@ -484,7 +339,6 @@ namespace node
 			return store_data(sp
 				, rgn_()
 				, ro_.trx_
-				//, ro_.idx_
 				,  0u // ToDo: change database scheme
 				, code	//	.to_buffer()
 				, unit
@@ -549,8 +403,6 @@ namespace node
 		std::uint8_t db_exporter::read_unit(std::string const& name, cyng::object obj)
 		{
 			std::uint8_t unit = cyng::value_cast<std::uint8_t>(obj, 0);
-			//node.append_attribute("type").set_value(get_unit_name(unit));
-			//node.append_child(pugi::node_pcdata).set_value(std::to_string(+unit).c_str());
 			ro_.set_value(name, obj);
 			return unit;
 		}
@@ -574,12 +426,6 @@ namespace node
 		{
 			ro_.client_id_ = cyng::value_cast(obj, ro_.client_id_);
 			return from_server_id(ro_.client_id_);
-		}
-
-		std::int8_t db_exporter::read_scaler(cyng::object obj)
-		{
-// 			return cyng::value_cast<std::int8_t>(obj, 0);
- 			return cyng::numeric_cast<std::int8_t>(obj, 0);
 		}
 
 		std::size_t db_exporter::read_value(obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj)

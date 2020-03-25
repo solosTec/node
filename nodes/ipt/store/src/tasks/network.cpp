@@ -8,6 +8,7 @@
 #include "network.h"
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/generator.h>
+
 #include <cyng/factory/set_factory.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
@@ -15,6 +16,7 @@
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/io/io_chrono.hpp>
+#include <cyng/io/io_bytes.hpp>
 
 namespace node
 {
@@ -73,7 +75,7 @@ namespace node
 					<< base_.get_class_name()
 					<< "> test line activity with a "
 					<< cyng::to_str(config_.get().monitor_)
-					<< " period");
+					<< " interval");
 
 				//
 				//	test for inactive lines
@@ -242,8 +244,8 @@ namespace node
 					<< ':'
 					<< pos->second.second
 					<< " received "
-					<< data.size()
-					<< " bytes of protocol "
+					<< cyng::bytes_to_str(data.size())
+					<< " of protocol "
 					<< pos->second.first);
 
 				distribute(channel, source, pos->second.first, pos->second.second, data);

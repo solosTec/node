@@ -36,7 +36,7 @@ namespace node
 		, root_name_(root_name)
 		, endcoding_(endocing)
 		, period_(period)
-		, task_state_(TASK_STATE_INITIAL)
+		, task_state_(task_state::INITIAL)
 		, lines_()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -49,7 +49,7 @@ namespace node
 	cyng::continuation sml_xml_consumer::run()
 	{
 		switch (task_state_) {
-		case TASK_STATE_INITIAL:
+		case task_state::INITIAL:
 			if (!boost::filesystem::exists(root_dir_)) {
 
 				CYNG_LOG_FATAL(logger_, "task #"
@@ -67,7 +67,7 @@ namespace node
 			//	register as SML:XML consumer 
 			//
 			register_consumer();
-			task_state_ = TASK_STATE_REGISTERED;
+			task_state_ = task_state::REGISTERED;
 			break;
 		default:
 			//CYNG_LOG_TRACE(logger_, base_.get_class_name()
@@ -107,6 +107,9 @@ namespace node
 			<< ':'
 			<< target);
 
+		//
+		//	establish an new exporter
+		//
 		lines_.emplace(std::piecewise_construct,
 			std::forward_as_tuple(line),
 			std::forward_as_tuple(endcoding_
@@ -238,7 +241,6 @@ namespace node
 	{
 		return cyng::continuation::TASK_CONTINUE;
 	}
-
 
 	void sml_xml_consumer::register_consumer()
 	{

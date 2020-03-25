@@ -14,7 +14,6 @@
 #include <smf/sml/units.h>
 #include <cyng/intrinsics/sets.h>
 #include <cyng/object.h>
-#include <smf/sml/intrinsics/obis.h>
 
 #include <pugixml.hpp>
 #include <boost/filesystem.hpp>
@@ -94,11 +93,12 @@ namespace node
 			pugi::xml_document doc_;
 			pugi::xml_node root_;
 
-			const  std::string encoding_;
-			const  std::string root_name_;
-			const std::uint32_t source_;
-			const std::uint32_t channel_;
-			const std::string target_;
+			std::string const encoding_;
+			std::string const root_name_;
+
+			std::uint32_t const source_;
+			std::uint32_t const channel_;
+			std::string const target_;
 
 		};
 

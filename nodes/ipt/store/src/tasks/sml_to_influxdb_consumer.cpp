@@ -7,27 +7,16 @@
 
 #include "sml_to_influxdb_consumer.h"
 #include "../message_ids.h"
-#include <smf/shared/db_meta.h>
+#include <NODE_project_info.h>
 
 #include <smf/sml/defs.h>
-#include <NODE_project_info.h>
 
 #include <cyng/async/task/base_task.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
-#include <cyng/db/connection_types.h>
-#include <cyng/db/session.h>
-#include <cyng/db/interface_session.h>
-#include <cyng/db/sql_table.h>
 #include <cyng/value_cast.hpp>
 #include <cyng/set_cast.h>
-#include <cyng/sql.h>
-#include <cyng/table/meta.hpp>
-#include <cyng/vm/generator.h>
-
-#include <boost/uuid/random_generator.hpp>
-#include <boost/uuid/nil_generator.hpp>
-#include <boost/uuid/uuid_io.hpp>
+#include <cyng/factory.h>
 
 namespace node
 {
@@ -36,28 +25,44 @@ namespace node
 		, std::size_t ntid	//	network task id
 		, std::string host
 		, std::string service
-		, bool tls
+		, std::string protocol
 		, std::string cert
+		, std::string db
+		, std::string series
 		, std::chrono::seconds interval)
 	: base_(*btp)
 		, logger_(logger)
 		, ntid_(ntid)
 		, host_(host)
 		, service_(service)
-		, tls_(tls)
+		, protocol_(protocol)
 		, cert_(cert)
+		, db_(db)
+		, series_(series)
 		, interval_(interval)
+		, task_state_(task_state::INITIAL)
+		, lines_()
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< ">");
-
+			<< "> initialized");
 	}
 
 	cyng::continuation sml_influxdb_consumer::run()
 	{
+		switch (task_state_) {
+		case task_state::INITIAL:
+			//
+			//	register as SML:influxdb consumer 
+			//
+			register_consumer();
+			task_state_ = task_state::REGISTERED;
+			break;
+		default:
+			break;
+		}
 
 		base_.suspend(interval_);
 		return cyng::continuation::TASK_CONTINUE;
@@ -68,7 +73,7 @@ namespace node
 		//
 		//	remove all open lines
 		//
-		//lines_.clear();
+		lines_.clear();
 
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -89,21 +94,26 @@ namespace node
 			<< ':'
 			<< target);
 
-		//lines_.emplace(std::piecewise_construct,
-		//	std::forward_as_tuple(line),
-		//	std::forward_as_tuple(meta_map_
-		//		, schema_
-		//		, (std::uint32_t)((line & 0xFFFFFFFF00000000LL) >> 32)
-		//		, (std::uint32_t)(line & 0xFFFFFFFFLL)
-		//		, target));
+		lines_.emplace(std::piecewise_construct,
+			std::forward_as_tuple(line),
+			std::forward_as_tuple(base_.mux_.get_io_service()
+				, host_
+				, service_
+				, protocol_
+				, cert_
+				, db_
+				, series_
+				, (std::uint32_t)((line & 0xFFFFFFFF00000000LL) >> 32)
+				, (std::uint32_t)(line & 0xFFFFFFFFLL)
+				, target));
 
-		//CYNG_LOG_TRACE(logger_, "task #"
-		//	<< base_.get_id()
-		//	<< " <"
-		//	<< base_.get_class_name()
-		//	<< "> has "
-		//	<< lines_.size()
-		//	<< " active lines");
+		CYNG_LOG_TRACE(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> has "
+			<< lines_.size()
+			<< " active lines");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -121,37 +131,37 @@ namespace node
 			<< " received: "
 			<< sml::messages::name(code));
 
-		//auto pos = lines_.find(line);
-		//if (pos != lines_.end()) {
+		auto pos = lines_.find(line);
+		if (pos != lines_.end()) {
 
-		//	try {
-		//		//
-		//		//	write to DB
-		//		//
-		//		pos->second.write(pool_.get_session(), msg);
-		//	}
-		//	catch (std::exception const& ex) {
+			try {
+				//
+				//	read message and write data to influxdb
+				//
+				pos->second.read(msg);
+			}
+			catch (std::exception const& ex) {
 
-		//		CYNG_LOG_ERROR(logger_, "task #"
-		//			<< base_.get_id()
-		//			<< " <"
-		//			<< base_.get_class_name()
-		//			<< " line "
-		//			<< line
-		//			<< " error: "
-		//			<< ex.what());
-		//	}
-		//}
-		//else {
+				CYNG_LOG_ERROR(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< " line "
+					<< line
+					<< " error: "
+					<< ex.what());
+			}
+		}
+		else {
 
-		//	CYNG_LOG_ERROR(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< " line "
-		//		<< line
-		//		<< " not found");
-		//}
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< " line "
+				<< line
+				<< " not found");
+		}
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -166,32 +176,32 @@ namespace node
 			<< " close line "
 			<< line);
 
-		//auto pos = lines_.find(line);
-		//if (pos != lines_.end()) {
+		auto pos = lines_.find(line);
+		if (pos != lines_.end()) {
 
-		//	//
-		//	//	remove this line
-		//	//
-		//	lines_.erase(pos);
-		//}
-		//else {
+			//
+			//	remove this line
+			//
+			lines_.erase(pos);
+		}
+		else {
 
-		//	CYNG_LOG_ERROR(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< " line "
-		//		<< line
-		//		<< " not found");
-		//}
+			CYNG_LOG_ERROR(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< " line "
+				<< line
+				<< " not found");
+		}
 
-		//CYNG_LOG_TRACE(logger_, "task #"
-		//	<< base_.get_id()
-		//	<< " <"
-		//	<< base_.get_class_name()
-		//	<< "> has "
-		//	<< lines_.size()
-		//	<< " active lines");
+		CYNG_LOG_TRACE(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> has "
+			<< lines_.size()
+			<< " active lines");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -201,4 +211,10 @@ namespace node
 	{
 		return cyng::continuation::TASK_CONTINUE;
 	}
+
+	void sml_influxdb_consumer::register_consumer()
+	{
+		base_.mux_.post(ntid_, STORE_EVENT_REGISTER_CONSUMER, cyng::tuple_factory("SML:influxdb", base_.get_id()));
+	}
+
 }

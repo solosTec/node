@@ -43,6 +43,7 @@ int main(int argc, char **argv)
 		("fs,F", boost::program_options::bool_switch()->default_value(false), "show available drives")
 		("show", boost::program_options::bool_switch()->default_value(false), "show configuration")
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
+		("influxdb", boost::program_options::value<std::string>()->default_value("")->implicit_value("create"), "execute influxdb command (create, show, drop)")
 
 		;
 		
@@ -164,6 +165,13 @@ int main(int argc, char **argv)
 		{
 			//	show configuration
 			return ctrl.ctl::print_config(std::cout);
+		}
+
+		auto const cmd = vm["influxdb"].as< std::string >();
+		if (!cmd.empty())
+		{
+			//	generate a set of default access rights
+			return ctrl.create_influx_dbs(config_index, cmd);
 		}
 
 #if BOOST_OS_WINDOWS

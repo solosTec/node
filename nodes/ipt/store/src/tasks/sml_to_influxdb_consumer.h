@@ -8,12 +8,10 @@
 #ifndef NODE_IPT_STORE_TASK_SML_INFLUXDB_CONSUMER_H
 #define NODE_IPT_STORE_TASK_SML_INFLUXDB_CONSUMER_H
 
-//#include <smf/sml/exporter/db_sml_exporter.h>
+#include <smf/sml/exporter/influxdb_sml_exporter.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
-//#include <cyng/db/session_pool.h>
-//#include <cyng/table/meta_interface.h>
 #include <cyng/vm/context.h>
 #include <unordered_map>
 
@@ -34,8 +32,10 @@ namespace node
 			, std::size_t ntid	//	network task id
 			, std::string host 
 			, std::string service
-			, bool tls
+			, std::string protocol
 			, std::string cert
+			, std::string db
+			, std::string series
 			, std::chrono::seconds interval);
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -71,6 +71,7 @@ namespace node
 		cyng::continuation process(std::uint64_t line, std::size_t idx, std::uint16_t crc);
 
 	private:
+		void register_consumer();
 
 	private:
 		cyng::async::base_task& base_;
@@ -78,10 +79,16 @@ namespace node
 		std::size_t const ntid_;
 		std::string const host_;
 		std::string const service_;
-		bool const tls_;
+		std::string const protocol_;
 		std::string const cert_;
+		std::string const db_;
+		std::string const series_;
 		std::chrono::seconds const interval_;
-		//std::unordered_map<std::uint64_t, sml::db_exporter>	lines_;
+		enum class task_state {
+			INITIAL,
+			REGISTERED,
+		} task_state_;
+		std::unordered_map<std::uint64_t, sml::influxdb_exporter>	lines_;
 	};
 }
 

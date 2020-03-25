@@ -145,16 +145,12 @@ namespace node
 			boost::ignore_unused(count);	//	release version
 			
 			auto msg = root_.append_child("msg");
-			//msg.append_attribute("idx").set_value(idx);
 
 			//
 			//	(1) - transaction id
 			//	This is typically a printable sequence of 6 up to 9 ASCII values
 			//
-			//std::cout << cyng::io::to_ascii(cyng::value_cast<cyng::buffer_t>(*pos, cyng::buffer_t())) << std::endl;
 			read_string(msg.append_child("trx"), *pos++);
-			//const std::string trx = cyng::io::to_ascii(cyng::value_cast<cyng::buffer_t>(*pos, cyng::buffer_t()));
-			//cyng::xml::write(msg.append_child("trx"), *pos++).append_attribute("ascii").set_value(trx.c_str());
 
 			//
 			//	(2) groupNo
@@ -385,7 +381,7 @@ namespace node
 			//
 			//	parameterTreePath (OBIS)
 			//
-			std::vector<obis> path = read_param_tree_path(node.append_child("profiles"), *pos++);
+			auto const path = read_param_tree_path(node.append_child("profiles"), *pos++);
 
 			//
 			//	parameterTree
@@ -499,7 +495,7 @@ namespace node
 			//
 			//	object name
 			//
-			obis code = read_obis(node, *pos++);
+			auto const code = read_obis(node, *pos++);
 			//if (code == OBIS_CODE(01, 00, 01, 08, 00, ff)) {
 			//	std::string msg("things get interesting here");
 			//	//	scaler = 0, value = 2746916 expected

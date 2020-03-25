@@ -13,7 +13,6 @@ namespace node
 {
 	namespace sml
 	{
-
 		obis make_obis(std::uint32_t a
 			, std::uint32_t b
 			, std::uint32_t c
@@ -49,7 +48,6 @@ namespace node
 					});
 				return path;
 			}
-
 		}
 
 		cyng::tuple_t tuple_from_path(obis_path path)

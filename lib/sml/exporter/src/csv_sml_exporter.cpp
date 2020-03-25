@@ -111,14 +111,8 @@ namespace node
 			//
 			//	(4/5) CHOICE - msg type
 			//
-			cyng::tuple_t choice;
-			choice = cyng::value_cast(*pos++, choice);
-			BOOST_ASSERT_MSG(choice.size() == 2, "CHOICE");
-			if (choice.size() == 2)
-			{
-				ro_.set_value("code", choice.front());
-				read_body(choice.front(), choice.back());
-			}
+			auto const choice = ro_.read_choice(*pos++);
+			read_body(choice.first, choice.second);
 
 			//
 			//	(6) CRC16
@@ -126,17 +120,12 @@ namespace node
 			ro_.set_value("crc16", *pos);
 		}
 
-		void csv_exporter::read_body(cyng::object type, cyng::object body)
+		void csv_exporter::read_body(std::uint16_t code, cyng::tuple_t tpl)
 		{
-			auto code = cyng::value_cast<std::uint16_t>(type, 0);
-
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(body, tpl);
-
 			switch (code)
 			{
 			case BODY_OPEN_REQUEST:
-				read_public_open_request(tpl.begin(), tpl.end());
+				ro_.read_public_open_request(tpl.begin(), tpl.end());
 				break;
 
 			case BODY_OPEN_RESPONSE:
@@ -145,7 +134,7 @@ namespace node
 				//	set default readout time
 				//
 				ro_.set_value("roTime", cyng::make_now());
-				read_public_open_response(tpl.begin(), tpl.end());
+				ro_.read_public_open_response(tpl.begin(), tpl.end());
 				break;
 
 			case BODY_CLOSE_REQUEST:
@@ -192,84 +181,6 @@ namespace node
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
 			}
-		}
-
-		void csv_exporter::read_public_open_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
-		{
-			std::size_t count = std::distance(pos, end);
-			BOOST_ASSERT_MSG(count == 7, "Public Open Request");
-
-		
-			//	codepage "ISO 8859-15"
-			ro_.set_value("codepage", *pos++);
-
-			//
-			//	clientId (MAC)
-			//	Typically 7 bytes to identify gateway/MUC
-			read_client_id(*pos++);
-
-			//
-			//	reqFileId
-			//
-			ro_.set_value("reqFileId", *pos++);
-
-			//
-			//	serverId
-			//
-			read_server_id(*pos++);
-
-			//
-			//	username
-			//
-			read_string("userName", *pos++);
-
-			//
-			//	password
-			//
-			read_string("password", *pos++);
-
-			//
-			//	sml-Version: default = 1
-			//
-			ro_.set_value("SMLVersion", *pos++);
-
-		}
-
-		void csv_exporter::read_public_open_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
-		{
-			std::size_t count = std::distance(pos, end);
-			BOOST_ASSERT_MSG(count == 6, "Public Open Response");
-
-	
-			//	codepage "ISO 8859-15"
-			ro_.set_value("codepage", *pos++);
-
-			//
-			//	clientId (MAC)
-			//	Typically 7 bytes to identify gateway/MUC
-			//	"client", "clientId"
-			//
-			read_client_id(*pos++);
-
-			//
-			//	reqFileId
-			//
-			read_string("reqFileId", *pos++);
-
-			//
-			//	serverId
-			//	"server", "serverId"
-			//
-			read_server_id(*pos++);
-
-			//
-			//	refTime
-			//
-			ro_.set_value("refTime", *pos++);
-
-			//	sml-Version: default = 1
-			ro_.set_value("SMLVersion", *pos++);
-
 		}
 
 		void csv_exporter::read_get_profile_list_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
