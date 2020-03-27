@@ -80,7 +80,7 @@ namespace node
 		{
 			cyng::call_frame cf(prg);
 			prg
-				<< params
+				<< cyng::unwinder(params)
 				<< cyng::invoke(cmd)
 				;
 		}

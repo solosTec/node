@@ -1045,7 +1045,7 @@ namespace node
 						//	restore object from string and type info
 						//
 						auto const obj = cyng::table::restore(val, type);
-						auto const read_out = sml::reader::read_value(code, scaler, unit, obj);
+						auto const read_out = sml::read_value(code, scaler, unit, obj);
 						
 						std::cout
 							<< sml::from_server_id(srv_id)

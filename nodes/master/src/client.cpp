@@ -487,7 +487,7 @@ namespace node
 		//	* [bool] success flag
 		//
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "client.res.close " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] remote client tag
@@ -1952,7 +1952,7 @@ namespace node
 		//	* channel
 		//	* bag
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "client.req.close.push.channel " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] remote client tag
@@ -2465,7 +2465,8 @@ namespace node
 						//
 						//	target and owner found
 						//
-						CYNG_LOG_INFO(logger_, "client.req.deregister.push.target - "
+						CYNG_LOG_INFO(logger_, ctx.get_name()
+							<< " - "
 							<< target_name
 							<< " of owner  "
 							<< tag);

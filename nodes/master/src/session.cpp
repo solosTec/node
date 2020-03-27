@@ -555,7 +555,7 @@ namespace node
 	void session::bus_req_stop_client_impl(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "bus.req.stop.client " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		//	[2,[1ca8529b-9b95-4a3a-ba2f-26c7280aa878],ac70b95e-76b9-463a-a961-bb02f70e86c8]
 		//
@@ -599,7 +599,7 @@ namespace node
 	void session::bus_start_watchdog(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "bus.start.watchdog " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		//	[setup,2018-05-02 09:55:02.49315500,0.4,00:00:0.034161,<!259:session>,127.0.0.1:53116,10984]
 		//
@@ -712,7 +712,7 @@ namespace node
 	void session::res_watchdog(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		//CYNG_LOG_INFO(logger_, "bus.res.watchdog " << cyng::io::to_str(frame));
+		//CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] session tag
@@ -1010,7 +1010,7 @@ namespace node
 	void session::bus_req_unsubscribe(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, "unsubscribe " << cyng::io::to_str(frame));
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			std::string,			//	[0] table name
@@ -1045,7 +1045,7 @@ namespace node
 		//	* severity
 		//	* message
 		const cyng::vector_t frame = ctx.get_frame();
-		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), ", ", frame));
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,			//	[0] origin client tag
@@ -1061,7 +1061,7 @@ namespace node
 	void session::bus_insert_lora_uplink(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), ", ", frame));
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,			//	[0] origin client tag
@@ -1106,7 +1106,7 @@ namespace node
 		//	* data
 		//	* source
 		const cyng::vector_t frame = ctx.get_frame();
-		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), ", ", frame));
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			std::uint64_t,		//	[0] sequence number

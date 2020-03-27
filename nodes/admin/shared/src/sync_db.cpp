@@ -237,6 +237,13 @@ namespace node
 		, boost::uuids::uuid origin		//	[4] origin session id
 		, std::size_t tsk)
 	{
+		if (key.empty()) {
+			CYNG_LOG_FATAL(logger, "res_subscribe("
+				<< table
+				<< ") has no key");
+			return;
+		}
+
 		//
 		//	Boost gateway records with additional data from TDevice and _Session table
 		//
