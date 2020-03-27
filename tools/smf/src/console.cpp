@@ -16,6 +16,8 @@
 #if BOOST_OS_LINUX
 #include <readline/readline.h>
 #include <readline/history.h>
+//#include <unistd.h>
+//#include <term.h>
 #endif
 #include <sstream>
 #include <iomanip>
@@ -50,7 +52,7 @@ namespace node
 					<< "ls\t\tlist file system" << std::endl
 					<< "pwd [N]\t\tgenerate a password of length N" << std::endl
 					<< "convert\t\toffers some file conversions" << std::endl
-					<< "tracking\t\tkeep a track of your time" << std::endl
+					<< "tracking\tkeep a track of your time" << std::endl
 					;
 			}
 			else {
@@ -99,6 +101,47 @@ namespace node
 			::SendInput(1, &ip, sizeof(INPUT));
 #else
 			out_ << std::endl;
+#endif
+			});
+
+		vm_.register_function("cls", 0, [this](cyng::context& ctx) {
+#if BOOST_OS_WINDOWS
+			HANDLE h_out = ::GetStdHandle(STD_OUTPUT_HANDLE);
+			if (h_out == INVALID_HANDLE_VALUE) return;
+
+			CONSOLE_SCREEN_BUFFER_INFO csbi_info;	//!<	save current text colors
+			::GetConsoleScreenBufferInfo(h_out, &csbi_info);
+
+			COORD coord_screen{ 0, 0 };    // home for the cursor 
+			DWORD chars_written = 0;
+			DWORD con_size = csbi_info.dwSize.X * csbi_info.dwSize.Y;
+
+			if (!::FillConsoleOutputCharacter(h_out,        // Handle to console screen buffer 
+				0x20,		// UTF-8 SPACE
+				//'.',		// Character to write to the buffer
+				con_size,			// Number of cells to write 
+				coord_screen,		// Coordinates of first cell 
+				&chars_written))	// Receive number of characters written
+			{
+				return;
+			}
+
+			if (!::FillConsoleOutputAttribute(h_out,         // Handle to console screen buffer 
+				csbi_info.wAttributes,	// Character attributes to use
+				con_size,			// Number of cells to set attribute 
+				coord_screen,      // Coordinates of first cell 
+				&chars_written))	// Receive number of characters written
+			{
+				return;
+			}
+
+			//	reset cursor
+			::SetConsoleCursorPosition(h_out, coord_screen);
+#else
+			//	POSIX version
+			std::cerr
+				<< "\033[2J"	//	may not work in every terminal
+				;
 #endif
 			});
 

@@ -66,6 +66,24 @@ namespace node
 		else if (boost::algorithm::equals(cmd, "stop")) {
 			stop();
 		}
+		else if (boost::algorithm::equals(cmd, "help")) {
+			std::cout 
+				<< "help\t\tprint this page" << std::endl
+				<< "list" << std::endl
+				<< "status" << std::endl
+				<< "ammed" << std::endl
+				<< "load" << std::endl
+				<< "flush" << std::endl
+				<< "start" << std::endl
+				<< "stop" << std::endl
+				;
+		}
+		else {
+			std::cout <<
+				"TRACKING - unknown command: " 
+				<< cmd 
+				<< std::endl;
+		}
 	}
 
 	std::string tracking::get_status() const

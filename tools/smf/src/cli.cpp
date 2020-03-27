@@ -20,6 +20,7 @@ namespace node
 		: console(ios, tag, out, in)
 		, plugin_convert_(this)
 		, plugin_tracking_(this)
+		, plugin_cleanup_(this)
 	{
 	}
 

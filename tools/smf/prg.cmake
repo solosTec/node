@@ -43,7 +43,8 @@ set (tool_smf_plugin
 	tools/smf/src/plugins/convert.cpp
 	tools/smf/src/plugins/tracking.h
 	tools/smf/src/plugins/tracking.cpp
-
+	tools/smf/src/plugins/cleanup-v4.h
+	tools/smf/src/plugins/cleanup-v4.cpp
 )
 
 source_group("shared" FILES ${tool_smf_shared})
