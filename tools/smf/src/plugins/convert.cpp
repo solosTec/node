@@ -6,7 +6,7 @@
  */
 
 #include "convert.h"
-#include "cli.h"
+#include "../cli.h"
 #include <smf/sml/exporter/abl_sml_exporter.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_io.h>

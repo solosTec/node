@@ -39,16 +39,18 @@ namespace node
 			//out_ << cyng::io::to_str(frame);
 			if (frame.empty()) {
 				out_
-					<< "help" << std::endl
-					<< "quit" << std::endl
-					<< "history" << std::endl
-					<< "!" << std::endl
-					<< "nl" << std::endl
-					<< "echo ..." << std::endl
-					<< "run ..." << std::endl
-					<< "ip" << std::endl
-					<< "ls" << std::endl
-					<< "pwd" << std::endl
+					<< "help\t\tprint this page" << std::endl
+					<< "q[uit]\t\tquit this program" << std::endl
+					<< "history\t\tlist command history" << std::endl
+					<< "! N\t\trepeat command #N" << std::endl
+					<< "nl\t\tprint new line" << std::endl
+					<< "echo ...\tprint all parameters to console (commas are treated as separators)" << std::endl
+					<< "run ...\t\trun a script" << std::endl
+					<< "ip\t\tlist network configuration" << std::endl
+					<< "ls\t\tlist file system" << std::endl
+					<< "pwd [N]\t\tgenerate a password of length N" << std::endl
+					<< "convert\t\toffers some file conversions" << std::endl
+					<< "tracking\t\tkeep a track of your time" << std::endl
 					;
 			}
 			else {

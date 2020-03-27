@@ -6,7 +6,7 @@
  */
 
 #include "tracking.h"
-#include "cli.h"
+#include "../cli.h"
 
 #include <cyng/vm/generator.h>
 #include <cyng/io/serializer.h>

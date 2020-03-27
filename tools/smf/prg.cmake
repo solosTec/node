@@ -38,10 +38,11 @@ endif(UNIX)
 
 set (tool_smf_plugin
 
-	tools/smf/src/convert.h
-	tools/smf/src/convert.cpp
-	tools/smf/src/tracking.h
-	tools/smf/src/tracking.cpp
+	tools/smf/src/plugins/convert.h
+	tools/smf/src/plugins/convert_csv_abl.h
+	tools/smf/src/plugins/convert.cpp
+	tools/smf/src/plugins/tracking.h
+	tools/smf/src/plugins/tracking.cpp
 
 )
 

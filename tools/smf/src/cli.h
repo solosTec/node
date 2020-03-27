@@ -9,8 +9,8 @@
 #define NODE_TOOL_SMF_CLI_H
 
 #include "console.h"
-#include "convert.h"
-#include "tracking.h"
+#include "plugins/convert.h"
+#include "plugins/tracking.h"
 #include <cyng/compatibility/io_service.h>
 
 namespace node
