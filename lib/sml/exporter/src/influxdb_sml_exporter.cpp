@@ -257,8 +257,8 @@ namespace node
 				<< ' '
 				<< "status="
 				<< to_line_protocol(status)
-				<< ",valTime="
-				<< to_line_protocol(valTime)
+// 				<< ",valTime="
+// 				<< to_line_protocol(valTime)
 				;
 			for (auto const& v : pmap) {
 				ss
@@ -549,8 +549,15 @@ namespace node
 				case 'a':
 				case 'b':
 				case 'c':
+				case 'd':
 				case 'e':
 				case 'f':
+				case 'A':
+				case 'B':
+				case 'C':
+				case 'E':
+				case 'D':
+				case 'F':
 					return true;
 				default:
 					break;

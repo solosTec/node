@@ -69,7 +69,7 @@ namespace node
 				//
 				base_.suspend(config_.get().monitor_);
 
-				CYNG_LOG_INFO(logger_, "task #"
+				CYNG_LOG_TRACE(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
