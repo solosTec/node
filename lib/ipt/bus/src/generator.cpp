@@ -44,7 +44,7 @@ namespace node
 				//cyng::generate_invoke("log.msg.info", "log domain is running")
 				cyng::vector_t prg;
 				return prg
-					<< cyng::generate_invoke_unwinded("log.msg.info", "resolve address", config.host_, config.service_)
+					<< cyng::generate_invoke_unwinded("log.msg.info", "resolve address", config.host_, ':', config.service_)
 					<< cyng::generate_invoke_unwinded("ip.tcp.socket.resolve", config.host_, config.service_)
 					<< ":SEND-LOGIN-REQUEST"			//	label
 					<< cyng::code::JNE					//	jump if no error
@@ -53,7 +53,7 @@ namespace node
 					<< ":STOP"							//	label
 					<< cyng::code::JA					//	jump always
 					<< cyng::label(":SEND-LOGIN-REQUEST")
-					<< cyng::generate_invoke_unwinded("log.msg.debug", "scrambled login", config.account_, config.pwd_)
+					<< cyng::generate_invoke_unwinded("log.msg.debug", "scrambled login ", config.account_, ':', config.pwd_)
 					<< cyng::generate_invoke_unwinded("ipt.start")		//	start reading ipt network
 					<< cyng::generate_invoke_unwinded("ipt.set.sk", sk)	//	set new scramble key for parser
 					<< cyng::generate_invoke_unwinded("req.login.scrambled", config.account_, config.pwd_, sk)

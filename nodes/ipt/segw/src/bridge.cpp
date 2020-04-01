@@ -159,22 +159,38 @@ namespace node
 				auto const type = cyng::value_cast(rec["type"], 15u);
 				auto const val = cyng::value_cast<std::string>(rec["val"], "");
 
-				//
-				//	restore original data type from string and a type information
-				//
-				tbl->merge(key
-					, cyng::table::data_generator(cyng::table::restore(val, type))
-					, 1u	//	only needed for insert operations
-					, cache_.get_tag());
+				try {
+					auto obj = cyng::table::restore(val, type);
 
-				if (boost::algorithm::equals(name, sml::OBIS_SERVER_ID.to_str())) {
+					CYNG_LOG_TRACE(logger_, "load - "
+						<< name
+						<< " = "
+						<< cyng::io::to_str(obj));
 
 					//
-					//	init server ID in cache
+					//	restore original data type from string and a type information
 					//
-					CYNG_LOG_INFO(logger_, "init server id with " << val);
-					auto mac = cyng::value_cast(cyng::table::restore(val, type), cyng::generate_random_mac48());
-					cache_.server_id_ = sml::to_gateway_srv_id(mac);
+					tbl->merge(key
+						, cyng::table::data_generator(obj)
+						, 1u	//	only needed for insert operations
+						, cache_.get_tag());
+
+					if (boost::algorithm::equals(name, sml::OBIS_SERVER_ID.to_str())) {
+
+						//
+						//	init server ID in cache
+						//
+						CYNG_LOG_INFO(logger_, "init server id with " << val);
+						auto mac = cyng::value_cast(cyng::table::restore(val, type), cyng::generate_random_mac48());
+						cache_.server_id_ = sml::to_gateway_srv_id(mac);
+					}
+				}
+				catch (std::exception const& ex) {
+
+					CYNG_LOG_ERROR(logger_, "cannot load "
+						<< name
+						<< ": "
+						<< ex.what());
 				}
 
 				return true;	//	continue
@@ -430,23 +446,46 @@ namespace node
 		//
 		if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
 
-			storage_.remove("TCfg", key);
+			if (!storage_.remove("TCfg", key)) {
+
+				CYNG_LOG_ERROR(logger_, "delete from TCfg failed: "
+					<< cyng::io::to_str(key));
+			}
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataCollector")) {
 
-			storage_.remove("TDataCollector", key);
+			if (!storage_.remove("TDataCollector", key)) {
+
+				CYNG_LOG_ERROR(logger_, "delete from TDataCollector failed: "
+					<< cyng::io::to_str(key));
+
+			}
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_PushOps")) {
 
-			storage_.remove("TPushOps", key);
+			if (!storage_.remove("TPushOps", key)) {
+
+				CYNG_LOG_ERROR(logger_, "delete from TPushOps failed: "
+					<< cyng::io::to_str(key));
+
+			}
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataMirror")) {
 
-			storage_.remove("TDataMirror", key);
+			if (!storage_.remove("TDataMirror", key)) {
+
+				CYNG_LOG_ERROR(logger_, "delete from TDataMirror failed: "
+					<< cyng::io::to_str(key));
+			}
 		}
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_IECDevs")) {
 
-			storage_.remove("TIECDevs", key);
+			if (!storage_.remove("TIECDevs", key)) {
+
+				CYNG_LOG_ERROR(logger_, "delete from TIECDevs failed: "
+					<< cyng::io::to_str(key));
+
+			}
 		}
 	}
 
@@ -588,6 +627,23 @@ namespace node
 		}
 	}
 
+	void bridge::sig_trx(cyng::store::trx_type trx)
+	{
+		switch(trx) {
+		case cyng::store::trx_type::START:
+			//storage_.trx_start();
+			break;
+		case cyng::store::trx_type::COMMIT:
+			//storage_.trx_commit();
+			break;
+			//case cyng::store::trx_type::ROLLBACK:
+		default:
+			//storage_.trx_rollback();
+			break;
+		}
+
+	}
+
 	void bridge::connect_to_cache()
 	{
 		auto l = cache_.db_.get_listener("_Cfg"
@@ -640,6 +696,9 @@ namespace node
 			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+
+		cache_.db_.get_trx_listener(std::bind(&bridge::sig_trx, this, std::placeholders::_1));
+
 	}
 
 	void bridge::start_task_obislog()

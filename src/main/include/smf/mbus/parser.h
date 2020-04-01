@@ -399,7 +399,7 @@ namespace node
 			}
 
 			/**
-			 * Reset parser (default scramble key)
+			 * Reset parser
 			 */
 			void reset();
 

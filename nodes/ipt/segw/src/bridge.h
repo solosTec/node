@@ -95,6 +95,7 @@ namespace node
 			, cyng::attr_t const&
 			, std::uint64_t
 			, boost::uuids::uuid);
+		void sig_trx(cyng::store::trx_type);
 
 		void start_task_obislog();
 		void start_task_limiter();

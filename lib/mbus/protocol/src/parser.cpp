@@ -296,7 +296,7 @@ namespace node
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 				break;
 			default:
-				//cb_(cyng::generate_invoke("log.msg.error", "invalid w-mbus parser state"));
+				cb_(cyng::generate_invoke("log.msg.warning", "invalid w-mbus parser state"));
 				break;
 			}
 
@@ -341,7 +341,7 @@ namespace node
 			//	0x78: no data header
 
 			frame_type_ = static_cast<std::uint8_t>(c);
-			cb_(cyng::generate_invoke("log.msg.trace", "frame type", frame_type_));
+			cb_(cyng::generate_invoke("log.msg.trace", "frame type: ", frame_type_));
 
 			switch (frame_type_) {
 			case FIELD_CI_APL_ERROR:
@@ -376,7 +376,10 @@ namespace node
 
 		void parser::post_processing()
 		{
-			cyng::buffer_t buffer(std::istreambuf_iterator<char>(input_), {});
+			//cyng::buffer_t const buffer(std::istreambuf_iterator<char>(input_), {});
+			if (state::INVALID_STATE == stream_state_) {
+				reset();
+			}
 		}
 
 		parser::state_visitor::state_visitor(parser& p, char c)

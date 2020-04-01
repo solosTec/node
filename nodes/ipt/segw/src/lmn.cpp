@@ -73,7 +73,7 @@ namespace node
 			CYNG_LOG_WARNING(logger_, "LMN wired (RS485) is disabled");
 		}
 
-		auto const wireless = cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "enabled"), false);
+		auto const wireless = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "enabled"), false);	
 		if (wireless) {
 			start_lmn_wireless();
 		}
@@ -118,7 +118,7 @@ namespace node
 
 			if (receiver.second) {
 
-				auto const hci = cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "HCI"), std::string("none"));
+				auto const hci = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "HCI"), std::string("none"));
 				if (boost::algorithm::equals(hci, "CP210x")) {
 
 					//
@@ -139,6 +139,7 @@ namespace node
 				}
 				else {
 
+					BOOST_ASSERT(boost::algorithm::equals("none", hci));
 					//
 					//	LMN port send incoming data to wmbus parser
 					//

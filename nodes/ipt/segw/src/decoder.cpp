@@ -12,6 +12,7 @@
 #include <smf/mbus/header.h>
 #include <smf/mbus/aes.h>
 #include <smf/mbus/variable_data_block.h>
+#include <smf/mbus/units.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/protocol/parser.h>
 
@@ -385,11 +386,20 @@ namespace node
 
 					cache_.write_table("_ReadoutData", [&](cyng::store::table* tbl) {
 
-						auto val = cyng::io::to_str(reader.get_value());
-						auto type = static_cast<std::uint32_t>(reader.get_value().get_class().tag());
+						auto const val = cyng::io::to_str(reader.get_value());
+						auto const type = static_cast<std::uint32_t>(reader.get_value().get_class().tag());
+						auto const unit = static_cast<std::uint8_t>(reader.get_unit());
+
+						CYNG_LOG_TRACE(logger_, "_ReadoutData from "
+							<< sml::from_server_id(server_id)
+							<< " value: "
+							<< val
+							<< " "
+							<< mbus::get_unit_name(unit));
+
 
 						tbl->insert(cyng::table::key_generator(pk, reader.get_code().to_buffer())
-							, cyng::table::data_generator(val, type, reader.get_scaler(), static_cast<std::uint8_t>(reader.get_unit()))
+							, cyng::table::data_generator(val, type, reader.get_scaler(), unit)
 							, 1u	//	generation
 							, cache_.get_tag());
 					});

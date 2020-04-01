@@ -350,7 +350,7 @@ namespace node
 
 			cyng::table::make_meta_table<2, 4>("_ReadoutData",
 			{ "pk"			//	UUID => "_Readout"
-			, "OBIS"		//	server/meter ID
+			, "OBIS"		//	register
 			, "val"			//	readout value (as string!)
 			, "type"		//	cyng data type
 			, "scaler"		//	decimal place

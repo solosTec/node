@@ -246,31 +246,72 @@ namespace node
 			auto const id = cyng::to_buffer(lookup(params, OBIS_SERVER_ID));
 			obis const profile(cyng::to_buffer(lookup(params, OBIS_PROFILE)));
 
-			cache_.write_table("_DataCollector", [&](cyng::store::table* tbl_dc) {
+			CYNG_LOG_INFO(logger_, sml::from_server_id(srv_id)
+				<< " - delete data collector "
+				<< sml::from_server_id(id)
+				<< ", profile: "
+				<< sml::get_profile_name(profile));
 
-				cyng::table::key_list_t keys;
+			cache_.write_tables("_DataCollector", "_DataMirror", [&](cyng::store::table* tbl_dc, cyng::store::table* tbl_mirr) {
+
+				//
+				//	clear _DataCollector
+				//
+				cyng::table::key_type pk;
 				tbl_dc->loop([&](cyng::table::record const& rec) {
 					if (!rec.empty()) {
 						if (cyng::to_buffer(rec["serverID"]) == id && cyng::to_buffer(rec["profile"]) == profile) {
-							keys.push_back(rec.key());
+							pk = rec.key();
+							return false;	//	data collector found - stop searching
 						}
-					}
-					else {
-						CYNG_LOG_ERROR(logger_, "cannot clear data collector "
-							<< node::sml::from_server_id(id));
 					}
 					return true;	//	continue
 				});
 
-				for (auto const key : keys) {
+				if (pk.size() == 2) {
 
-					CYNG_LOG_WARNING(logger_, "delete data collector / push op: "
-						<< cyng::io::to_str(key));
+					if (!tbl_dc->erase(pk, cache_.get_tag())) {
+						CYNG_LOG_WARNING(logger_, "cannot delete data collector: "
+							<< sml::from_server_id(id)
+							<< ", profile: "
+							<< sml::get_profile_name(profile));
+					}
 
-					tbl_dc->erase(key, cache_.get_tag());
+					//
+					//	find attached _DataMirror
+					//
+					cyng::table::key_list_t keys;
+					auto const nr = cyng::value_cast<std::uint8_t>(pk.at(1), 0);
+					BOOST_ASSERT(nr != 0);
+					tbl_mirr->loop([&](cyng::table::record const& rec) {
+						if (!rec.empty()) {
+							if (nr == cyng::value_cast<std::uint8_t>(rec["nr"], 0) && cyng::to_buffer(rec["serverID"]) == id) {
+								keys.push_back(rec.key());
+							}
+						}
+						return true;
+						});
+
+					//
+					//	clear _DataMirror
+					//
+					CYNG_LOG_TRACE(logger_, sml::from_server_id(srv_id)
+						<< " - delete "
+						<< keys.size()
+						<< " data mirrors "
+						<< sml::from_server_id(id)
+						<< ", profile: "
+						<< sml::get_profile_name(profile));
+
+					for (auto const& key : keys) {
+						tbl_mirr->erase(key, cache_.get_tag());
+					}
+				}
+				else {
+					CYNG_LOG_ERROR(logger_, "primary key has invalid size: "
+						<< pk.size());
 
 				}
-
 			});
 		}
 

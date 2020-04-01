@@ -8,6 +8,7 @@
 #include "readout.h"
 #include "../cache.h"
 #include "../storage.h"
+#include "../segw.h"
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_db.h>
 
@@ -80,6 +81,11 @@ namespace node
 	void readout::distribute()
 	{
 		//
+		//	all servers with data but without a data collector
+		//
+		std::map<cyng::buffer_t, sml::obis_path>	srv_without_dc;
+
+		//
 		//	Collect all cached readout data and store all records
 		//	into SQL database that are listed in the data collector.
 		//
@@ -139,6 +145,30 @@ namespace node
 						<< base_.get_class_name()
 						<< "> no data collector defined for "
 						<< sml::from_server_id(srv_id));
+
+					if (cache_.get_cfg<bool>(build_cfg_key({ sml::OBIS_IF_wMBUS }, "autogen-data-collector"), 
+#ifdef _DEBUG
+						true
+#else
+						false
+#endif
+						)) {
+
+						//
+						//	collect all OBIS codes
+						//
+						sml::obis_path entries;
+						std::transform(result.begin(), result.end(), std::back_inserter(entries), [&](cyng::table::key_type const& pk) {
+							auto const rec = tbl_data->lookup(pk);
+							return sml::obis(cyng::to_buffer(rec["OBIS"]));
+						});
+
+						//
+						//	add OBIS entries in "_DataMirror/TDataMirror" too
+						//
+						srv_without_dc.emplace(srv_id, entries);
+
+					}
 				}
 
 				for (auto const& key_collector : collectors) {
@@ -217,6 +247,11 @@ namespace node
 			, cyng::store::read_access("_DataCollector")
 			, cyng::store::read_access("_DataMirror"));
 
+
+		//
+		//	auto generate data collectors
+		//
+		if (!srv_without_dc.empty())	auto_configure_data_collector(srv_without_dc, sml::OBIS_PROFILE_15_MINUTE);
 	}
 
 	void readout::distribute(cyng::buffer_t const& srv)
@@ -396,6 +431,58 @@ namespace node
 				, rec_data["type"]);
 
 		}
+	}
+
+	void readout::auto_configure_data_collector(std::map<cyng::buffer_t, sml::obis_path>& servers, sml::obis profile)
+	{
+		cache_.write_tables("_DataCollector", "_DataMirror", [&](cyng::store::table* tbl_coll, cyng::store::table* tbl_mirr) {
+
+			//
+			//	There should no data collector defined for this servers
+			//	so we can start with "nr" = 1
+			//
+			std::uint8_t const nr{ 1u };
+			std::uint16_t const max_size{ 256u };
+			std::chrono::seconds reg_period{ 0 };
+
+			for (auto const& srv : servers) {
+
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> auto configuration of data collector for "
+					<< sml::from_server_id(srv.first))
+
+				if (!tbl_coll->insert(cyng::table::key_generator(srv.first, nr)
+					, cyng::table::data_generator(profile.to_buffer(), true, max_size, reg_period)
+					, 1u
+					, cache_.get_tag())) {
+
+					CYNG_LOG_WARNING(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> auto configuration of data collector for "
+						<< sml::from_server_id(srv.first)
+						<< " failed")
+
+				}
+				else {
+					//
+					//	add entries in table "TDataMirror"
+					//
+					std::uint8_t reg{ 1u };
+					for (auto const& code : srv.second) {
+						tbl_mirr->insert(cyng::table::key_generator(srv.first, nr, reg)
+							, cyng::table::data_generator(code.to_buffer(), true)
+							, 1u
+							, cache_.get_tag());
+						++reg;
+					}
+				}
+			}
+		});
 	}
 
 }

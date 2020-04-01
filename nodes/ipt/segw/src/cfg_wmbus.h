@@ -17,43 +17,47 @@ namespace node
 {
 
 	class cache;
+	/**
+	 * wireless mbus configuration
+	 */
 	class cfg_wmbus
 	{
 	public:
 		cfg_wmbus(cache&);
 
 		/**
-		 * @return "rs485:port"
+		 * OBIS_IF_wMBUS:...
+		 * @return "8106190700FF:port"
 		 */
 		std::string get_port() const;
 
 		/**
-		 * @return "rs485:monitor"
+		 * @return "8106190700FF:monitor"
 		 */
 		std::chrono::seconds get_monitor() const;
 
 		/**
-		 * @return "rs485:speed"
+		 * @return "8106190700FF:speed"
 		 */
 		boost::asio::serial_port_base::baud_rate get_baud_rate() const;
 
 		/**
-		 * @return "rs485:parity"
+		 * @return "8106190700FF:parity"
 		 */
 		boost::asio::serial_port_base::parity get_parity() const;
 
 		/**
-		 * @return "rs485:flow_control"
+		 * @return "8106190700FF:flow_control"
 		 */
 		boost::asio::serial_port_base::flow_control get_flow_control() const;
 
 		/**
-		 * @return "rs485:stopbits"
+		 * @return "8106190700FF:stopbits"
 		 */
 		boost::asio::serial_port_base::stop_bits get_stopbits() const;
 
 		/**
-		 * @return "rs485:databits"
+		 * @return "8106190700FF:databits"
 		 */
 		boost::asio::serial_port_base::character_size get_databits() const;
 

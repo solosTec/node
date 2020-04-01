@@ -12,6 +12,7 @@
 #include <cyng/async/mux.h>
 #include <cyng/store/store_fwd.h>
 #include <cyng/table/table_fwd.h>
+#include <smf/sml/intrinsics/obis.h>
 
 namespace node
 {
@@ -75,6 +76,11 @@ namespace node
 			, cyng::table::record const& rec_collector
 			, cyng::table::record const& rec_meta
 			, cyng::table::key_list_t const& result);
+
+		/**
+		 * Configure a data collector for the specified profile.
+		 */
+		void auto_configure_data_collector(std::map<cyng::buffer_t, sml::obis_path>&, sml::obis profile);
 
 		/**
 		 * Remove all inactive collectors

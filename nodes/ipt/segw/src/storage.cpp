@@ -354,6 +354,7 @@ namespace node
 				}
 
 				stmt->clear();
+				return true;
 			}
 		}
 
@@ -410,6 +411,7 @@ namespace node
 				return false;
 			}
 			stmt->clear();
+			return true;
 		}
 
 		return false;

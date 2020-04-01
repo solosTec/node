@@ -184,8 +184,10 @@ namespace node
 					cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str(), true),	//	install mode
 
 					cyng::param_factory("transparent-mode", false),
-					cyng::param_factory("transparent-port", 12001)
-				))
+					cyng::param_factory("transparent-port", 12001),
+					//	if task <readout> receives data and there is no data collector/mirror defined, create one
+					cyng::param_factory("autogen-data-collector", true)
+					))
 
 				, cyng::param_factory("wired-LMN", cyng::tuple_factory(
 					cyng::param_factory("monitor", rnd_monitor()),	//	seconds
@@ -318,6 +320,13 @@ namespace node
 		tpl = cyng::value_cast(cfg.get("DB"), tpl);
 		auto const db_cfg = cyng::to_param_map(tpl);
 
+		for (auto const& p : db_cfg) {
+			CYNG_LOG_TRACE(logger, "db - "
+				<< p.first
+				<< " = "
+				<< cyng::io::to_str(p.second));
+
+		}
 		if (!store.start(db_cfg)) {
 
 			CYNG_LOG_FATAL(logger, "cannot start database connection pool");
