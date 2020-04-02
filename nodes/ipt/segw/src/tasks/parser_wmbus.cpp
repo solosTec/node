@@ -25,8 +25,8 @@ namespace node
 		, cache_(cfg)
 		, parser_([&](cyng::vector_t&& prg) {
 
-			CYNG_LOG_DEBUG(logger_, prg.size() << " m-bus instructions received");
-			CYNG_LOG_TRACE(logger_, vm.tag() << ": " << cyng::io::to_str(prg));
+			//CYNG_LOG_DEBUG(logger_, prg.size() << " m-bus instructions received");
+			//CYNG_LOG_TRACE(logger_, vm.tag() << ": " << cyng::io::to_str(prg));
 			vm.async_run(std::move(prg));
 
 		})

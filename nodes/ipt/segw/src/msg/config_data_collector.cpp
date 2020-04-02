@@ -230,7 +230,7 @@ namespace node
 				auto const key = cyng::table::key_generator(srv_id, nr);
 				auto const rec = tbl_dc->lookup(key);
 				if (rec.empty()) {
-					insert_data_collector(tbl_dc, key, params, tbl_reg, cache_.get_tag());
+					if (! params.empty())	insert_data_collector(tbl_dc, key, params, tbl_reg, cache_.get_tag());
 				}
 				else {
 					update_data_collector(tbl_dc, key, params, tbl_reg, cache_.get_tag());
@@ -246,13 +246,13 @@ namespace node
 			auto const id = cyng::to_buffer(lookup(params, OBIS_SERVER_ID));
 			obis const profile(cyng::to_buffer(lookup(params, OBIS_PROFILE)));
 
-			CYNG_LOG_INFO(logger_, sml::from_server_id(srv_id)
-				<< " - delete data collector "
-				<< sml::from_server_id(id)
-				<< ", profile: "
-				<< sml::get_profile_name(profile));
-
 			cache_.write_tables("_DataCollector", "_DataMirror", [&](cyng::store::table* tbl_dc, cyng::store::table* tbl_mirr) {
+
+				CYNG_LOG_INFO(logger_, sml::from_server_id(srv_id)
+					<< ": delete data collector "
+					<< sml::from_server_id(id)
+					<< ", profile: "
+					<< sml::get_profile_name(profile));
 
 				//
 				//	clear _DataCollector
@@ -296,7 +296,7 @@ namespace node
 					//	clear _DataMirror
 					//
 					CYNG_LOG_TRACE(logger_, sml::from_server_id(srv_id)
-						<< " - delete "
+						<< ": delete "
 						<< keys.size()
 						<< " data mirrors "
 						<< sml::from_server_id(id)

@@ -210,6 +210,18 @@ namespace node
 		 */
 		std::uint64_t shrink(std::uint16_t max_size, cyng::buffer_t srv_id, sml::obis profile);
 
+		/**
+		 * transaction management
+		 */
+		void trx_start();
+		void trx_commit();
+		void trx_rollback();
+
+	private:
+#ifdef _DEBUG
+		bool test_for_entry(cyng::db::session s, std::string tbl, cyng::table::key_type const& key);
+#endif
+
 	private:
 		/**
 		 * build up meta data

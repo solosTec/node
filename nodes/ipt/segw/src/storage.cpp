@@ -370,6 +370,14 @@ namespace node
 		auto cmd = create_cmd(tbl, s.get_dialect());
 		if (!cmd.is_valid())	return false;
 
+#ifdef _DEBUG
+		if (boost::algorithm::equals(tbl, "TDataCollector")) {
+			if (test_for_entry(s, tbl, key)) {
+				return false;
+			}
+		}
+#endif
+
 		auto const sql = cmd.insert()();
 		auto stmt = s.create_statement();
 		std::pair<int, bool> r = stmt->prepare(sql);
@@ -383,7 +391,18 @@ namespace node
 			for (auto const& obj : body) {
 				stmt->push(obj, cmd.get_meta()->get_width(idx++));
 			}
-			if (stmt->execute())	return true;
+			if (!stmt->execute())	return false;
+			stmt->clear();
+
+#ifdef _DEBUG
+			if (boost::algorithm::equals(tbl, "TDataCollector")) {
+				if (!test_for_entry(s, tbl, key)) {
+					return false;
+				}
+			}
+#endif
+			return true;
+
 		}
 
 		return false;
@@ -395,6 +414,14 @@ namespace node
 		auto s = pool_.get_session();
 		auto cmd = create_cmd(tbl, s.get_dialect());
 		if (!cmd.is_valid())	return false;
+
+#ifdef _DEBUG
+		if (boost::algorithm::equals(tbl, "TDataCollector")) {
+			if (!test_for_entry(s, tbl, key)) {
+				return false;
+			}
+		}
+#endif
 
 		auto const sql = cmd.remove().by_key()();
 		auto stmt = s.create_statement();
@@ -411,11 +438,48 @@ namespace node
 				return false;
 			}
 			stmt->clear();
+
+#ifdef _DEBUG
+			if (boost::algorithm::equals(tbl, "TDataCollector")) {
+				if (test_for_entry(s, tbl, key)) {
+					return false;
+				}
+			}
+#endif
+
 			return true;
 		}
 
 		return false;
 	}
+
+#ifdef _DEBUG
+	bool storage::test_for_entry(cyng::db::session s, std::string tbl, cyng::table::key_type const& key)
+	{
+		auto cmd = create_cmd(tbl, s.get_dialect());
+		if (!cmd.is_valid())	return false;
+
+		auto const sql = cmd.select().count().by_key()();
+		auto stmt = s.create_statement();
+		std::pair<int, bool> r = stmt->prepare(sql);
+		if (r.second) {
+
+			BOOST_ASSERT(r.first == key.size());
+
+			for (auto idx = 0u; idx < key.size(); ++idx) {
+				stmt->push(key.at(idx), cmd.get_meta()->get_width(idx));
+			}
+			auto res = stmt->get_result();
+			if (res) {
+				auto const obj = res->get(1, cyng::TC_UINT64, 0);
+				auto const count = cyng::numeric_cast<std::uint64_t>(obj, 0);
+				return count != 0;
+			}
+		}
+
+		return false;
+	}
+#endif
 
 	std::uint64_t storage::count(std::string tbl)
 	{
@@ -785,6 +849,21 @@ namespace node
 			}
 		}
 		return 0;
+	}
+
+	void storage::trx_start()
+	{
+		get_session().begin();
+	}
+
+	void storage::trx_commit()
+	{
+		get_session().commit();
+	}
+
+	void storage::trx_rollback()
+	{
+		get_session().rollback();
 	}
 
 	//

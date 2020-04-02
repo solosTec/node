@@ -631,17 +631,19 @@ namespace node
 	{
 		switch(trx) {
 		case cyng::store::trx_type::START:
-			//storage_.trx_start();
+			CYNG_LOG_TRACE(logger_, "trx begin");
+			storage_.trx_start();
 			break;
 		case cyng::store::trx_type::COMMIT:
-			//storage_.trx_commit();
+			CYNG_LOG_TRACE(logger_, "trx commit");
+			storage_.trx_commit();
 			break;
 			//case cyng::store::trx_type::ROLLBACK:
 		default:
-			//storage_.trx_rollback();
+			CYNG_LOG_TRACE(logger_, "trx rollback");
+			storage_.trx_rollback();
 			break;
 		}
-
 	}
 
 	void bridge::connect_to_cache()

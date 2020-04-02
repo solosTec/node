@@ -114,15 +114,19 @@ namespace node
 
 	void cache::write_table(std::string const& name, std::function<void(cyng::store::table*)> f)
 	{
-		db_.access([f](cyng::store::table* tbl) {
+		db_.access([f, this](cyng::store::table* tbl) {
+			db_.set_trx_state(cyng::store::trx_type::START);
 			f(tbl);
+			db_.set_trx_state(cyng::store::trx_type::COMMIT);
 			}, cyng::store::write_access(name));
 	}
 
 	void cache::write_tables(std::string const& t1, std::string const& t2, std::function<void(cyng::store::table*, cyng::store::table*)> f)
 	{
-		db_.access([f](cyng::store::table* tbl1, cyng::store::table* tbl2) {
+		db_.access([f, this](cyng::store::table* tbl1, cyng::store::table* tbl2) {
+			db_.set_trx_state(cyng::store::trx_type::START);
 			f(tbl1, tbl2);
+			db_.set_trx_state(cyng::store::trx_type::COMMIT);
 			}, cyng::store::write_access(t1), cyng::store::write_access(t2));
 	}
 
