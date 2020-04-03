@@ -391,7 +391,8 @@ namespace node
 		else if (boost::algorithm::equals(tbl->meta().get_name(), "_PushOps")) {
 
 			//
-			//	remove "tsk"
+			//	ToDo: start "tsk"
+			//	We have to manage some communication with the <network> task
 			//
 			cyng::table::record rec(tbl->meta_ptr(), key, body, gen);
 

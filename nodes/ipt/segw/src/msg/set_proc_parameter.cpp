@@ -17,7 +17,6 @@
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/obis_io.h>
 #include <smf/sml/obis_db.h>
-//#include <smf/sml/parser/obis_parser.h>
 
 #include <cyng/io/serializer.h>
 #include <cyng/buffer_cast.h>

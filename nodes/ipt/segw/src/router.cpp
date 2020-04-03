@@ -42,7 +42,7 @@ namespace node
 		, accept_all_(accept_all)
 		, config_ipt_(logger, sml_gen_, cfg)
 		, config_sensor_params_(logger, sml_gen_, cfg)
-		, config_data_collector_(logger, sml_gen_, cfg)
+		, config_data_collector_(logger, sml_gen_, cfg, vm)
 		, config_security_(logger, sml_gen_, cfg)
 		, config_access_(logger, sml_gen_, cfg)
 		, config_iec_(logger, sml_gen_, cfg)

@@ -53,8 +53,7 @@ namespace node
 			, std::chrono::seconds interval
 			, std::chrono::seconds delay
 			, std::string target
-			, ipt::bus*
-			, std::size_t tsk);
+			, ipt::bus*);
 
 		cyng::continuation run();
 		void stop(bool shutdown);

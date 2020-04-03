@@ -17,7 +17,9 @@
 #include <cyng/numeric_cast.hpp>
 #include <cyng/buffer_cast.h>
 #include <cyng/set_cast.h>
- 
+#include <cyng/vm/controller.h>
+#include <cyng/vm/generator.h>
+
 namespace node
 {
 	namespace sml
@@ -29,10 +31,12 @@ namespace node
 
 		config_data_collector::config_data_collector(cyng::logging::log_ptr logger
 			, res_generator& sml_gen
-			, cache& cfg)
+			, cache& cfg
+			, cyng::controller& vm)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
+			, vm_(vm)
 		{}
 
 		void config_data_collector::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
@@ -198,26 +202,94 @@ namespace node
 			, std::uint8_t nr
 			, cyng::param_map_t&& params)
 		{
-			cache_.write_table("_PushOps", [&](cyng::store::table* tbl) {
+			cache_.get_db().access([&](cyng::store::table* tbl_po, cyng::store::table const* tbl_dc) {
+
 				auto const key = cyng::table::key_generator(srv_id, nr);
-				auto const rec = tbl->lookup(key);
+				auto const rec = tbl_po->lookup(key);
 				if (!rec.empty()) {
 					if (params.empty()) {
 
 						//
+						//	stop "tsk"
+						//
+						auto const rec = tbl_po->lookup(key);
+						BOOST_ASSERT(!rec.empty());
+						auto const tsk = cyng::value_cast<std::uint64_t>(rec["tsk"], 0);
+						//BOOST_ASSERT(tsk != cyng::async::NO_TASK);
+
+						CYNG_LOG_INFO(logger_, "stop <push> task #" << tsk);
+						vm_.async_run(cyng::generate_invoke("tsk.stop", tsk));
+
+						//
 						//	an empty parameter set indicates that the record hast be removed
 						//
-						tbl->erase(key, cache_.get_tag());
+						tbl_po->erase(key, cache_.get_tag());
 					}
 					else {
-						update_push_ops(tbl, key, params, cache_.get_tag());
+						update_push_ops(tbl_po, key, params, cache_.get_tag());
 					}
 				}
 				else {
-					BOOST_ASSERT(params.size() == 5);
-					insert_push_ops(tbl, key, params, cache_.get_tag());
+					//
+					//	If params is empty we received the delete request for this PushOp a second time.
+					//
+					if (!params.empty()) {
+						BOOST_ASSERT(params.size() == 5);
+
+						//
+						//	Annotation: To insert a PushOp requires to start a start a <push> task. 
+						//	The task has the specified interval and collects and push data from the data collector
+						//	to the target on the IP-T master.
+						//	Therefore a data collector must exists (with the same) key. And the <push> tasks
+						//	requires also the profile OBIS code from the data collector. So a missing data collector
+						//	is a failure.
+						//	In this case the <push> task configuration will be written into the database 
+						//	but the task itself will not be started.
+						//
+
+						//
+						//	get profile type
+						//
+						auto const rec_dc = tbl_dc->lookup(key);	//	same key
+						if (rec_dc.empty()) {
+
+							CYNG_LOG_WARNING(logger_, "push op for "
+								<< sml::from_server_id(srv_id)
+								<< " without data collector");
+
+							insert_push_ops(tbl_po, key, params, cache_.get_tag());
+						}
+						else {
+							auto const profile = cyng::to_buffer(rec_dc["profile"]);
+							BOOST_ASSERT(!profile.empty());
+
+							//	OBIS_PUSH_INTERVAL - cyng::TC_UINT32
+							//	OBIS_PUSH_DELAY - cyng::TC_UINT32
+							//	OBIS_PUSH_SOURCE - cyng::TC_BUFFER
+							//	OBIS_PUSH_TARGET - cyng::TC_STRING
+							//	OBIS_PUSH_SERVICE - cyng::TC_BUFFER
+
+							//
+							//	fix data type
+							//
+							auto const interval = cyng::numeric_cast<std::uint32_t>(lookup(params, OBIS_PUSH_INTERVAL), 900u);
+							auto const delay = cyng::numeric_cast<std::uint32_t>(lookup(params, OBIS_PUSH_DELAY), 2u);
+
+							vm_.async_run(cyng::generate_invoke("net.start.tsk.push"
+								, cyng::to_buffer(key.at(0))
+								, cyng::value_cast<std::uint8_t>(key.at(1), 0)
+								, profile
+								, ((interval < 300u) ? static_cast<std::uint32_t>(300u) : interval)
+								, delay
+								, lookup(params, OBIS_PUSH_SOURCE)
+								, lookup(params, OBIS_PUSH_TARGET)
+								, lookup(params, OBIS_PUSH_SERVICE)));
+						}
+					}
 				}
-			});
+
+			}	, cyng::store::write_access("_PushOps")
+				, cyng::store::read_access("_DataCollector"));
 		}
 
 		void config_data_collector::set_param(cyng::buffer_t srv_id
@@ -453,6 +525,8 @@ namespace node
 			, cyng::param_map_t const& params
 			, boost::uuids::uuid source)
 		{
+			BOOST_ASSERT_MSG(boost::algorithm::equals(tbl->meta().get_name(), "_PushOps"), "table _PushOps expected");
+
 			tbl->insert(key
 				, cyng::table::data_generator(lookup(params, OBIS_PUSH_INTERVAL)
 					, lookup(params, OBIS_PUSH_DELAY)
@@ -463,7 +537,6 @@ namespace node
 					, static_cast<std::uint64_t>(0))	//	task
 				, 0u
 				, source);
-
 		}
 
 		void update_push_ops(cyng::store::table* tbl

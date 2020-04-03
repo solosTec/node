@@ -13,8 +13,8 @@
 
 #include <cyng/log.h>
 #include <cyng/intrinsics/sets.h>
-//#include <cyng/store/store_fwd.h>
 #include <cyng/store/table.h>
+#include <cyng/vm/controller_fwd.h>
 
 namespace node
 {
@@ -34,7 +34,8 @@ namespace node
 		public:
 			config_data_collector(cyng::logging::log_ptr
 				, res_generator& sml_gen
-				, cache& c);
+				, cache& c
+				, cyng::controller& vm);
 
 			void get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
 			void get_push_operations(std::string trx, cyng::buffer_t srv_id) const;
@@ -43,6 +44,16 @@ namespace node
 				, std::uint8_t nr
 				, cyng::param_map_t&& params);
 
+			/**
+			 *	To insert a PushOp requires to start a start a <push> task.
+			 *	The task has the specified interval and collects and push data from the data collector
+			 *	to the target on the IP-T master.
+			 *	Therefore a data collector must exists (with the same) key. And the <push> tasks
+			 *	requires also the profile OBIS code from the data collector. So a missing data collector
+			 *	is a failure.
+			 *	In this case the <push> task configuration will be written into the database
+			 *	but the task itself will not be started.
+			 */
 			void set_push_operations(cyng::buffer_t srv_id
 				, std::string user
 				, std::string pwd
@@ -55,7 +66,6 @@ namespace node
 		private:
 			cyng::logging::log_ptr logger_;
 
-
 			/**
 			 * buffer for current SML message
 			 */
@@ -65,6 +75,11 @@ namespace node
 			 * configuration db
 			 */
 			cache& cache_;
+
+			/**
+			 * network/session VM
+			 */
+			cyng::controller& vm_;
 
 		};
 

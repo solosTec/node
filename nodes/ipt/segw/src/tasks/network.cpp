@@ -23,8 +23,9 @@
 
 #include <cyng/factory/set_factory.h>
 #include <cyng/io/serializer.h>
-#include <cyng/vm/generator.h>
 #include <cyng/io/serializer.h>
+#include <cyng/vm/generator.h>
+#include <cyng/vm/domain/task_domain.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/buffer_cast.h>
@@ -56,15 +57,13 @@ namespace node
 			, cache_(b.cache_)
 			, storage_(b.storage_)
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_INFO(logger_, prg.size() << " SML instructions received");
-#ifdef _DEBUG
-				CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
-#endif
+				CYNG_LOG_INFO(logger_, prg.size() << " SML instructions received (client)");
+				//CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 				vm_.async_run(std::move(prg));
 			}, false, false, false)
 			, router_(logger_
 				, false	//	client mode
-				, vm_
+				, this->bus::vm_
 				, b.cache_
 				, b.storage_
 				, account
@@ -79,15 +78,19 @@ namespace node
 				<< ">");
 
 			//
+			//	register the task manager on this VM
+			//
+			cyng::register_task(btp->mux_, vm_);
+
+			//
 			//	request handler
 			//
 			vm_.register_function("bus.reconfigure", 1, std::bind(&network::reconfigure, this, std::placeholders::_1));
-			//vm_.register_function("bus.store.rel.channel.open", 3, std::bind(&network::insert_seq_open_channel_rel, this, std::placeholders::_1));
 
 			vm_.register_function("update.status.ip", 2, [&](cyng::context& ctx) {
 
 				//	 [192.168.1.200:59536,192.168.1.100:26862]
-				const cyng::vector_t frame = ctx.get_frame();
+				auto const frame = ctx.get_frame();
 				CYNG_LOG_INFO(logger_, ctx.get_name()
 					<< " - "
 					<< cyng::io::to_str(frame));
@@ -101,6 +104,60 @@ namespace node
 				this->cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "ep.remote"), std::get<0>(tpl));
 				this->cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "ep.local"), std::get<1>(tpl));
 
+			});
+
+			vm_.register_function("net.start.tsk.push", 8, [&](cyng::context& ctx) {
+
+				//
+				//	start <push> task
+				//
+				auto const frame = ctx.get_frame();
+				CYNG_LOG_INFO(logger_, ctx.get_name()
+					<< " - "
+					<< cyng::io::to_str(frame));
+
+				auto const tpl = cyng::tuple_cast<
+					cyng::buffer_t,		//	[0] srv_id
+					std::uint8_t,		//	[1] nr
+					cyng::buffer_t,		//	[2] profile
+					std::uint32_t,		//	[3] interval
+					std::uint32_t,		//	[4] delay
+					cyng::buffer_t,		//	[5] source
+					std::string,		//	[6] target
+					cyng::buffer_t		//	[7] service
+				>(frame);
+
+				//	OBIS_PUSH_INTERVAL - cyng::TC_UINT32
+				//	OBIS_PUSH_DELAY - cyng::TC_UINT32
+				//	OBIS_PUSH_SOURCE - cyng::TC_BUFFER
+				//	OBIS_PUSH_TARGET - cyng::TC_STRING
+				//	OBIS_PUSH_SERVICE - cyng::TC_BUFFER
+
+				//cache_.read_table("_DataCollector");
+
+				auto const tsk = start_task_push(std::get<0>(tpl)	//	srv_id
+					, std::get<1>(tpl)	//	nr
+					, std::get<2>(tpl)	//	profile/service
+					, std::get<3>(tpl)	//	interval
+					, std::get<4>(tpl)	//	delay
+					, std::get<6>(tpl)	//	target
+					);
+
+				cache_.write_table("_PushOps", [&](cyng::store::table* tbl) {
+
+					auto const key = cyng::table::key_generator(std::get<0>(tpl), std::get<1>(tpl));
+
+					tbl->insert(key
+						, cyng::table::data_generator(std::get<3>(tpl)	//	interval
+							, std::get<4>(tpl)	//	delay
+							, std::get<5>(tpl)	//	source
+							, std::get<6>(tpl)	//	target
+							, std::get<7>(tpl)	//	service
+							, static_cast<std::uint64_t>(0)	//	lowerBound
+							, static_cast<std::uint64_t>(tsk))
+						, 0u
+						, ctx.tag());
+				});
 			});
 
 			//
@@ -397,10 +454,11 @@ namespace node
 
 		void network::load_push_ops()
 		{
+			std::size_t counter{ 0 };
 			cache_.write_tables("_PushOps", "_DataCollector", [&](cyng::store::table* tbl_po, cyng::store::table* tbl_dc) {
 
 				//
-				//	PushOps to remove
+				//	PushOps to remove, because there is no corresponding data collector.
 				//
 				cyng::table::key_list_t to_remove;
 
@@ -416,14 +474,26 @@ namespace node
 					//	get profile type
 					//
 					auto const rec_dc = tbl_dc->lookup(rec.key());	//	same key
-					if (!rec_dc.empty()) {
+					if (rec_dc.empty()) {
 
-						auto const tsk = start_task_push(cyng::to_buffer(rec["serverID"])
-							, cyng::value_cast<std::uint8_t>(rec["nr"], 0)
-							, cyng::to_buffer(rec_dc["profile"])
-							, cyng::value_cast<std::uint32_t>(rec["interval"], 0)
-							, cyng::value_cast<std::uint32_t>(rec["delay"], 0)
-							, cyng::value_cast<std::string>(rec["target"], ""));
+						CYNG_LOG_WARNING(logger_, "PushOp "
+							<< cyng::io::to_str(rec.convert())
+							<< " without data collector");
+
+						//
+						//	remove this configuration
+						//
+						to_remove.push_back(rec.key());
+
+						return true;	//	continue
+					}
+					auto const profile = cyng::to_buffer(rec_dc["profile"]);
+					auto const tsk = start_task_push(rec, profile);
+					if (tsk != cyng::async::NO_TASK) {
+						
+						//
+						//	store task ID as [u64] in cache table "_PushOps"
+						//
 						r.set("tsk", cyng::make_object(static_cast<std::uint64_t>(tsk)));
 
 						if (tbl_po->insert(rec.key(), r.data(), rec.get_generation(), cache_.get_tag())) {
@@ -431,17 +501,20 @@ namespace node
 							cyng::buffer_t const srv = cyng::to_buffer(rec.key().at(0));
 							CYNG_LOG_TRACE(logger_, "load push op "
 								<< node::sml::from_server_id(srv));
+
+							++counter;
 						}
 						else {
 
 							//
-							//	There is no data collector defined.
-							//	Remove this entry.
+							//	Insert failed - stop task
 							//
-							CYNG_LOG_ERROR(logger_, "no data collector configured for PushOps: "
-								<< cyng::io::to_str(rec.convert()));
+							CYNG_LOG_ERROR(logger_, "transfer TPushOps config to _PushOp failed for: "
+								<< cyng::io::to_str(rec.convert())
+								<< " - stop task #"
+								<< tsk);
 
-							to_remove.push_back(rec.key());
+							this->base_.mux_.stop(tsk);
 						}
 					}
 					else {
@@ -465,6 +538,28 @@ namespace node
 
 			});
 
+			CYNG_LOG_INFO(logger_, counter
+				<< " PushOps started");
+
+		}
+
+		std::size_t network::start_task_push(cyng::table::record const& rec, cyng::buffer_t profile)
+		{
+			if (!rec.empty()) {
+
+				auto const srv_id = cyng::to_buffer(rec["serverID"]);
+				auto const target = cyng::value_cast<std::string>(rec["target"], "");
+				auto const interval = cyng::value_cast<std::uint32_t>(rec["interval"], 0);
+				auto const delay = cyng::value_cast<std::uint32_t>(rec["delay"], 0);
+
+				return start_task_push(srv_id
+					, cyng::value_cast<std::uint8_t>(rec["nr"], 0)
+					, profile
+					, interval
+					, delay
+					, target);
+			}
+			return cyng::async::NO_TASK;
 		}
 
 		std::size_t network::start_task_push(cyng::buffer_t srv_id
@@ -475,7 +570,6 @@ namespace node
 			, std::string target)
 		{
 			BOOST_ASSERT(srv_id.size() == 9);
-			//BOOST_ASSERT(profile.size() == 6);
 			if (profile.size() != 6) {
 				CYNG_LOG_ERROR(logger_, "try to start push task for target "
 					<< target
@@ -493,8 +587,7 @@ namespace node
 				, std::chrono::seconds(interval)
 				, std::chrono::seconds(delay)
 				, target
-				, this
-				, base_.get_id());
+				, this);
 		}
 	}
 }

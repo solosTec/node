@@ -148,7 +148,6 @@ namespace node
 			 */
 			virtual cyng::buffer_t on_transmit_data(cyng::buffer_t const&) override;
 
-
 		private:
 			/** 
 			 * Callback when resolving IP adress failed (no IP connect)
@@ -156,12 +155,16 @@ namespace node
 			void reconfigure(cyng::context& ctx);
 
 			void reconfigure_impl();
-			//void insert_seq_open_channel_rel(cyng::context& ctx);
 
 			/**
 			 * load and start all configured push ops
 			 */
 			void load_push_ops();
+
+			/**
+			 * Start a push task. Record has to be from "TPushOps"/"_PushOps"
+			 */
+			std::size_t start_task_push(cyng::table::record const&, cyng::buffer_t profile);
 
 			std::size_t start_task_push(cyng::buffer_t srv_id
 				, std::uint8_t nr

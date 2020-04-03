@@ -39,8 +39,7 @@ namespace node
 		, std::chrono::seconds interval
 		, std::chrono::seconds delay
 		, std::string target
-		, ipt::bus* ipt_bus
-		, std::size_t tsk)
+		, ipt::bus* ipt_bus)
 	: base_(*btp) 
 		, logger_(logger)
 		, cache_(db)
@@ -66,7 +65,7 @@ namespace node
 			<< target_	//	push target name
 			<< "]");
 
-		//BOOST_ASSERT_MSG(!cyng::async::task<push>::slot_names_.empty(), "slotnames not initialized");
+		BOOST_ASSERT_MSG(interval_ > std::chrono::seconds(12), "the interval is too short");
 	}
 
 	cyng::continuation push::run()
@@ -100,17 +99,8 @@ namespace node
 		//	push data
 		//	timeout is 30 seconds
 		//
-		if (ipt_bus_->req_channel_open(target_, "", "", "", "", 30, base_.get_id())) {
+		if (!ipt_bus_->req_channel_open(target_, "", "", "", "", 30, base_.get_id())) {
 
-			//if (send_push_data()) {
-
-			//	//
-			//	//	inconsistent data - stop task
-			//	//
-			//	return cyng::continuation::TASK_STOP;
-			//}
-		}
-		else {
 			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
@@ -146,7 +136,9 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> is stopped");
+			<< "> "
+			<< target_
+			<< " is stopped");
 	}
 
 	cyng::continuation push::process(bool success

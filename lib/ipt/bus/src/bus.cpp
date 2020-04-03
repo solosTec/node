@@ -499,7 +499,7 @@ namespace node
 			//	* status (reserved)
 			//	* target count
 			//
-			const cyng::vector_t frame = ctx.get_frame();
+			auto const frame = ctx.get_frame();
 
 			auto const tpl = cyng::tuple_cast<
 				boost::uuids::uuid,	//	[0] session tag
@@ -510,7 +510,7 @@ namespace node
 				std::uint16_t,		//	[5] packet size
 				std::uint8_t,		//	[6] window size
 				std::uint8_t,		//	[7] status (reserved)
-				std::size_t			//	[8] count
+				std::uint32_t		//	[8] count
 			>(frame);
 
 			response_type const res = std::get<2>(tpl);
@@ -1212,7 +1212,9 @@ namespace node
 				return true;
 			}
 
-			CYNG_LOG_WARNING(logger_, vm_.tag() << " try to open channel but is not authorized: " << get_state());
+			CYNG_LOG_WARNING(logger_, vm_.tag() << " tries to open channel "
+				<< target
+				<< " but is not authorized: " << get_state());
 			return false;
 		}
 

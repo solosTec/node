@@ -24,12 +24,7 @@
 
 #include <cyng/store/db.h>
 #include <cyng/log.h>
-
-namespace cyng
-{
-	class controller;
-	class context;
-}
+#include <cyng/vm/controller_fwd.h>
 
 namespace node
 {
@@ -42,6 +37,10 @@ namespace node
 	{
 
 	public:
+		/**
+		 * @param tsk_net network task id. This is the task that manage all communication 
+		 * regarding the IP-T master.
+		 */
 		router(cyng::logging::log_ptr
 			, bool const server_mode
 			, cyng::controller& vm
