@@ -399,7 +399,7 @@ namespace node
 			if (v.pos_ == v.data_.size()) {
 
 				this->parser_.manufacturer_ = node::sml::decode(v.data_.at(0), v.data_.at(1));
-				this->parser_.cb_(cyng::generate_invoke("log.msg.trace", "manufacturer", this->parser_.manufacturer_));
+				this->parser_.cb_(cyng::generate_invoke("log.msg.trace", "manufacturer: ", this->parser_.manufacturer_));
 				return state::DEV_ID;
 			}
 			return state::MANUFACTURER;

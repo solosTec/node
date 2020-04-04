@@ -44,7 +44,7 @@ namespace node
 				//cyng::generate_invoke("log.msg.info", "log domain is running")
 				cyng::vector_t prg;
 				return prg
-					<< cyng::generate_invoke_unwinded("log.msg.info", "resolve address", config.host_, ':', config.service_)
+					<< cyng::generate_invoke_unwinded("log.msg.info", "resolve address ", config.host_, ':', config.service_)
 					<< cyng::generate_invoke_unwinded("ip.tcp.socket.resolve", config.host_, config.service_)
 					<< ":SEND-LOGIN-REQUEST"			//	label
 					<< cyng::code::JNE					//	jump if no error
