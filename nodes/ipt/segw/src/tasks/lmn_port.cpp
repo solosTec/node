@@ -179,10 +179,50 @@ namespace node
 	void lmn_port::set_all_options()
 	{
 		try {
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> set parity "
+				<< serial::to_str(parity_));
+
 			port_.set_option(parity_);	// default none
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> set data bits "
+				<< +databits_.value());
+
 			port_.set_option(databits_);
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> set stopbits "
+				<< serial::to_str(stopbits_));
+
 			port_.set_option(stopbits_);	// default one
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> set baud rate "
+				<< baud_rate_.value());
+
 			port_.set_option(baud_rate_);
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> set flow control "
+				<< serial::to_str(flow_control_));
+
 			port_.set_option(flow_control_);
 		}
 		catch (std::exception const& ex) {

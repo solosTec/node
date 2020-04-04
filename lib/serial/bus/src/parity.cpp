@@ -21,7 +21,19 @@ namespace node
 				return boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::even);
 			}
 			//	none
-			return boost::asio::serial_port_base::parity();
+			return boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none);
 		}
+
+		std::string to_str(boost::asio::serial_port_base::parity p)
+		{
+			switch (p.value()) {
+			case boost::asio::serial_port_base::parity::odd:	return "odd";
+			case boost::asio::serial_port_base::parity::even:	return "even";
+			default:
+				break;
+			}
+			return "none";
+		}
+
 	}
 }

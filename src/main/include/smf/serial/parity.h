@@ -21,6 +21,7 @@ namespace node
 		 *	If no name is matching function returns boost::asio::serial_port_base::parity::none
 		 */
 		boost::asio::serial_port_base::parity to_parity(std::string);
+		std::string to_str(boost::asio::serial_port_base::parity);
 	}
 }	//	node
 

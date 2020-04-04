@@ -21,6 +21,7 @@ namespace node
 		 *	If no name is matching function returns boost::asio::serial_port_base::flow_control::none
 		 */
 		boost::asio::serial_port_base::flow_control to_flow_control(std::string);
+		std::string to_str(boost::asio::serial_port_base::flow_control);
 	}
 }	//	node
 

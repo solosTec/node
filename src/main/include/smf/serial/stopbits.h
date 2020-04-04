@@ -21,6 +21,7 @@ namespace node
 		 *	If no name is matching function returns boost::asio::serial_port_base::stop_bits::one
 		 */
 		boost::asio::serial_port_base::stop_bits to_stopbits(std::string);
+		std::string to_str(boost::asio::serial_port_base::stop_bits);
 	}
 }	//	node
 

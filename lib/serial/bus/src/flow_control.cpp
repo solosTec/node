@@ -20,7 +20,20 @@ namespace node
 			else if (boost::algorithm::equals("hardware", s)) {
 				return boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::hardware);
 			}
+			//	none
 			return boost::asio::serial_port_base::flow_control();
 		}
+
+		std::string to_str(boost::asio::serial_port_base::flow_control f)
+		{
+			switch (f.value()) {
+			case boost::asio::serial_port_base::flow_control::software: "software";
+			case boost::asio::serial_port_base::flow_control::hardware: "hardware";
+			default:
+				break;
+			}
+			return "none";
+		}
+
 	}
 }

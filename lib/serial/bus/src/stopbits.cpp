@@ -20,7 +20,20 @@ namespace node
 			else if (boost::algorithm::equals("two", s)) {
 				return boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::two);
 			}
+			//	one
 			return boost::asio::serial_port_base::stop_bits();
+		}
+
+		std::string to_str(boost::asio::serial_port_base::stop_bits s)
+		{
+			//	(t != one && t != onepointfive && t != two
+			switch (s.value()) {
+			case boost::asio::serial_port_base::stop_bits::onepointfive: return "onepointfive";
+			case boost::asio::serial_port_base::stop_bits::two: return "two";
+			default:
+				break;
+			}
+			return "one";
 		}
 
 	}
