@@ -14,7 +14,9 @@
 #include <smf/sml/obis_db.h>
 
 #include <cyng/value_cast.hpp>
+
 #include <boost/core/ignore_unused.hpp>
+#include <boost/predef.h>
 
 namespace node
 {
@@ -42,7 +44,13 @@ namespace node
 
 	boost::asio::serial_port_base::baud_rate cfg_wmbus::get_baud_rate() const
 	{
-		return boost::asio::serial_port_base::baud_rate(cache_.get_cfg(build_cfg_key({ sml::OBIS_W_MBUS_PROTOCOL }, "speed"), 57600u));
+		return boost::asio::serial_port_base::baud_rate(cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "speed"), 
+#if BOOST_OS_WINDOWS
+			57600u
+#else
+			115200u
+#endif
+		));
 	}
 
 	boost::asio::serial_port_base::parity cfg_wmbus::get_parity() const
