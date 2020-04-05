@@ -8,6 +8,7 @@
 #include "push.h"
 #include "../cache.h"
 #include "../storage.h"
+#include "../profiles.h"
 #include <smf/sml/event.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/srv_id_io.h>
@@ -75,6 +76,24 @@ namespace node
 		//	get target name
 		//
 #ifdef _DEBUG
+		//CYNG_LOG_TRACE(logger_, "task #"
+		//	<< base_.get_id()
+		//	<< " <"
+		//	<< base_.get_class_name()
+		//	<< "> "
+		//	<< sml::from_server_id(srv_id_)
+		//	<< ":"
+		//	<< sml::get_profile_name(profile_)
+		//	<< " ==> "
+		//	<< target_);
+#endif
+		//
+		//	recalibrate start time dependent from profile type
+		//
+		auto const next = sml::next(interval_, profile_);
+		auto const span = next - std::chrono::system_clock::now();
+
+#ifdef _DEBUG
 		CYNG_LOG_TRACE(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -84,18 +103,17 @@ namespace node
 			<< ":"
 			<< sml::get_profile_name(profile_)
 			<< " ==> "
-			<< target_);
+			<< target_
+			<< " next event at "
+			<< cyng::to_str(next));
 #endif
-		//
-		//	recalibrate start time dependent from profile type
-		//
-		align_interval();
-		BOOST_ASSERT_MSG(interval_ >= std::chrono::seconds(60), "the interval is too short");
+		//align_interval();
+		//BOOST_ASSERT_MSG(interval_ >= std::chrono::seconds(60), "the interval is too short");
 
 		//
 		//	start/restart timer
 		//
-		base_.suspend(interval_ + delay_);
+		base_.suspend(span + delay_);
 
 		//
 		//	push data
@@ -833,190 +851,6 @@ namespace node
 			cache_.update_ts_index(srv_id_, nr_, tsidx_);
 		}
 		return cyng::continuation::TASK_CONTINUE;
-	}
-
-	void push::align_interval()
-	{
-		switch (profile_.to_uint64()) {
-		case sml::CODE_PROFILE_1_MINUTE:
-			align_interval_8181C78610FF();
-			break;
-		case sml::CODE_PROFILE_15_MINUTE:
-			align_interval_8181C78611FF();
-			break;
-		case sml::CODE_PROFILE_60_MINUTE:
-			align_interval_8181C78612FF();
-			break;
-		case sml::CODE_PROFILE_24_HOUR:
-			align_interval_8181C78613FF();
-			break;
-		case sml::CODE_PROFILE_LAST_2_HOURS:
-			//align_interval_8181C78614FF(tbl_req);
-			break;
-		case sml::CODE_PROFILE_LAST_WEEK:
-			//align_interval_8181C78615FF(tbl_req);
-			break;
-		case sml::CODE_PROFILE_1_MONTH:
-			//align_interval_8181C78616FF(tbl_req);
-			break;
-		case sml::CODE_PROFILE_1_YEAR:
-			//align_interval_8181C78617FF(tbl_req);
-			break;
-		case sml::CODE_PROFILE_INITIAL:
-			//align_interval_8181C78618FF(tbl_req);
-			break;
-		default:
-			BOOST_ASSERT_MSG(false, "undefined profile");
-			break;
-		}
-	}
-
-	void push::align_interval_8181C78610FF()
-	{	//	1 minute
-		//	Intervals start at any minute and last at least 60 seconds.
-		auto count = interval_.count();
-
-		//	guarantee that interval has at least 1 minute
-		if (count < 60u) {
-			count = 60u;
-		}
-
-		//	alignment
-		count -= (count % 60u);
-
-		//	offset
-		auto const minutes = cyng::chrono::minutes_since_epoch(std::chrono::system_clock::now());
-		auto const next = cyng::chrono::ts_since_passed_minutes(minutes + (count / 60u));
-
-#ifdef _DEBUG
-		CYNG_LOG_TRACE(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> "
-			<< sml::from_server_id(srv_id_)
-			<< ":"
-			<< sml::get_profile_name(profile_)
-			<< " ==> "
-			<< target_
-			<< " next event at "
-			<< cyng::to_str(next));
-#endif
-
-		interval_ = std::chrono::duration_cast<std::chrono::seconds>(next - std::chrono::system_clock::now());
-
-	}
-
-	void push::align_interval_8181C78611FF()
-	{	//	15 minute
-		//	intervals start with every quarter hour and last at least 15 minutes.
-
-		//	interval is in seconds, each 15 minutes have 900 seconds
-		auto count = interval_.count();
-
-		//	guarantee that interval has at least 15 minutes
-		if (count < 900u) {
-			count = 900u;
-		}
-
-		//	alignment
-		count -= (count % 900);
-
-		//	offset
-		auto const quarters = cyng::chrono::minutes_since_epoch(std::chrono::system_clock::now()) / 15u;
-		auto const next = cyng::chrono::ts_since_passed_minutes((quarters * 15u) + (count / 60u));
-
-#ifdef _DEBUG
-		CYNG_LOG_TRACE(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> "
-			<< sml::from_server_id(srv_id_)
-			<< ":"
-			<< sml::get_profile_name(profile_)
-			<< " ==> "
-			<< target_
-			<< " next event at "
-			<< cyng::to_str(next));
-#endif
-
-		interval_ = std::chrono::duration_cast<std::chrono::seconds>(next - std::chrono::system_clock::now());
-	}
-
-	void push::align_interval_8181C78612FF()
-	{	//	60 minute
-		//	Intervals start on the hour and last at least 60 minutes.
-
-		//	interval is in seconds, each hours has 3600u seconds
-		auto count = interval_.count();
-
-		//	guarantee that interval has at least 60 minutes
-		if (count < 3600u) {
-			count = 3600u;
-		}
-
-		//	alignment
-		count -= (count % 3600u);
-
-		//	offset
-		auto const hours = cyng::chrono::hours_since_epoch(std::chrono::system_clock::now());
-		auto const next = cyng::chrono::ts_since_passed_hours(hours + (count / 3600u));
-
-#ifdef _DEBUG
-		CYNG_LOG_TRACE(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> "
-			<< sml::from_server_id(srv_id_)
-			<< ":"
-			<< sml::get_profile_name(profile_)
-			<< " ==> "
-			<< target_
-			<< " next event at "
-			<< cyng::to_str(next));
-#endif
-
-		interval_ = std::chrono::duration_cast<std::chrono::seconds>(next - std::chrono::system_clock::now());
-	}
-
-	void push::align_interval_8181C78613FF()
-	{	//	24 hours
-		//	Intervals start on the hour and last at least 24 hours.
-
-		//	interval is in seconds, each days has 86400u seconds
-		auto count = interval_.count();
-
-		//	guarantee that interval has at least 24 hours
-		if (count < 86400u) {
-			count = 86400u;
-		}
-
-		//	alignment (to hour)
-		count -= (count % 3600u);
-
-		//	offset
-		auto const hours = cyng::chrono::hours_since_epoch(std::chrono::system_clock::now());
-		auto const next = cyng::chrono::ts_since_passed_hours(hours + (count / 3600u));
-
-#ifdef _DEBUG
-		CYNG_LOG_TRACE(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> "
-			<< sml::from_server_id(srv_id_)
-			<< ":"
-			<< sml::get_profile_name(profile_)
-			<< " ==> "
-			<< target_
-			<< " next event at "
-			<< cyng::to_str(next));
-#endif
-
-		interval_ = std::chrono::duration_cast<std::chrono::seconds>(next - std::chrono::system_clock::now());
-
 	}
 
 	std::chrono::system_clock::time_point get_ts(sml::obis profile, std::uint64_t tsidx)

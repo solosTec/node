@@ -103,31 +103,6 @@ namespace node
 		void collect_profile_8181C78617FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
 		void collect_profile_8181C78618FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
 
-		/**
-		 * align the interval to profile
-		 */
-		void align_interval();
-
-		/**
-		 * Intervals start at any minute and last at least 60 seconds.
-		 */
-		void align_interval_8181C78610FF();
-
-		/**
-		 * Intervals start with every quarter hour and last at least 15 minutes.
-		 */
-		void align_interval_8181C78611FF();
-
-		/**
-		 * Intervals start on the hour and last at least 60 minutes.
-		 */
-		void align_interval_8181C78612FF();
-
-		/**
-		 * Intervals start on the hour and last at least 24 hours.
-		 */
-		void align_interval_8181C78613FF();
-
 	private:
 		cyng::async::base_task& base_;
 

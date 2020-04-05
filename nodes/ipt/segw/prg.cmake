@@ -17,6 +17,7 @@ set (node_ipt_segw_cpp
 	nodes/ipt/segw/src/router.cpp
 	nodes/ipt/segw/src/lmn.cpp
 	nodes/ipt/segw/src/decoder.cpp
+	nodes/ipt/segw/src/profiles.cpp
 
 )
 
@@ -35,6 +36,7 @@ set (node_ipt_segw_h
 	nodes/ipt/segw/src/router.h
 	nodes/ipt/segw/src/lmn.h
 	nodes/ipt/segw/src/decoder.h
+	nodes/ipt/segw/src/profiles.h
 
 )
 

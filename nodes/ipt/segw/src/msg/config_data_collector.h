@@ -45,7 +45,7 @@ namespace node
 				, cyng::param_map_t&& params);
 
 			/**
-			 *	To insert a PushOp requires to start a start a <push> task.
+			 *	Inserting a PushOp requires to start a start a <push> task.
 			 *	The task has the specified interval and collects and push data from the data collector
 			 *	to the target on the IP-T master.
 			 *	Therefore a data collector must exists (with the same) key. And the <push> tasks

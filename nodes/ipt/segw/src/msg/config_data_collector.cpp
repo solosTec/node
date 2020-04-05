@@ -7,6 +7,7 @@
 
 #include "config_data_collector.h"
 #include "../cache.h"
+#include "../profiles.h"
 
 #include <smf/sml/protocol/generator.h>
 #include <smf/sml/obis_db.h>
@@ -237,7 +238,7 @@ namespace node
 						BOOST_ASSERT(params.size() == 5);
 
 						//
-						//	Annotation: To insert a PushOp requires to start a start a <push> task. 
+						//	Annotation: Inserting a PushOp requires to start a start a <push> task. 
 						//	The task has the specified interval and collects and push data from the data collector
 						//	to the target on the IP-T master.
 						//	Therefore a data collector must exists (with the same) key. And the <push> tasks
@@ -279,7 +280,7 @@ namespace node
 								, cyng::to_buffer(key.at(0))
 								, cyng::value_cast<std::uint8_t>(key.at(1), 0)
 								, profile
-								, ((interval < 300u) ? static_cast<std::uint32_t>(300u) : interval)
+								, rasterize_interval(interval, profile)
 								, delay
 								, lookup(params, OBIS_PUSH_SOURCE)
 								, lookup(params, OBIS_PUSH_TARGET)
