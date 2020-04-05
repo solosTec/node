@@ -45,6 +45,11 @@ namespace node
 	bool dump_profile_data(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom, std::uint32_t profile);
 
 	/**
+	 * List all configured PushOps
+	 */
+	bool dump_push_ops(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
+
+	/**
 	 * List configuration to console
 	 */
 	bool list_config_data(std::ostream& os, cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);

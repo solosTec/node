@@ -1086,6 +1086,58 @@ namespace node
 		return r.second;
 	}
 
+	bool dump_push_ops(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom)
+	{
+		//
+		//	create a database session
+		//
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		cyng::db::session s(con_type);
+		auto r = s.connect(cfg);
+		if (r.second) {
+
+			std::string const sql =
+				"SELECT TP.serverID, TP.nr, TP.interval, TP.delay, TP.source, TP.target, TP.service, TP.lowerBound, TD.profile "
+				"FROM TPushOps as TP INNER JOIN TDataCollector as TD "
+				" ON TP.serverID = TD.serverID AND TP.nr = TD.nr";
+
+			auto stmt = s.create_statement();
+			std::pair<int, bool> r = stmt->prepare(sql);
+			if (r.second) {
+
+				//
+				//	read all results
+				//
+				std::size_t counter{ 0 };
+				while (auto res = stmt->get_result()) {
+
+					//	TP.serverID
+					auto const srv_id = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
+					auto const nr = cyng::value_cast<std::uint8_t>(res->get(2, cyng::TC_UINT8, 0), 0);
+					auto const interval = cyng::value_cast<std::uint32_t>(res->get(3, cyng::TC_UINT32, 0), 0);
+					auto const delay = cyng::value_cast<std::uint32_t>(res->get(4, cyng::TC_UINT32, 0), 0);
+					//sml::obis const source(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
+					auto const target = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
+					sml::obis const service(cyng::to_buffer(res->get(7, cyng::TC_BUFFER, 6)));
+					auto const tsdix = cyng::value_cast<std::uint64_t>(res->get(8, cyng::TC_UINT64, 0), 0);	//	lowerBound
+					sml::obis const profile(cyng::to_buffer(res->get(9, cyng::TC_BUFFER, 6)));
+
+					std::cout
+						<< sml::from_server_id(srv_id)
+						<< ", target: "
+						<< target
+						<< ", profile: "
+						<< get_profile_name(profile)
+						<< ", last event at: "
+						<< cyng::to_str(time_index_to_time_point(profile.get_quantities(), tsdix))
+						<< std::endl
+						;
+				}
+				return true;
+			}
+		}
+		return false;
+	}
 	std::ostream& list_value(std::ostream& os, std::string val, std::string def)
 	{
 		if (boost::algorithm::equals(val, def)) {

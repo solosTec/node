@@ -500,6 +500,10 @@ namespace node
 				<< cyng::io::to_str(db_cfg)
 				<< std::endl;
 
+			if (1 == profile)	return (dump_push_ops(cyng::to_param_map(tpl), dom))
+				? EXIT_SUCCESS
+				: EXIT_FAILURE
+				;
 			return (dump_profile_data(cyng::to_param_map(tpl), dom, profile))
 				? EXIT_SUCCESS
 				: EXIT_FAILURE

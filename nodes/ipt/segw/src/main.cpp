@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 		("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
 		("transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")
 		("clear", boost::program_options::bool_switch()->default_value(false), "delete configuration from database")
-		("dump", boost::program_options::value<std::uint32_t>(&profile)->default_value(0)->implicit_value(11), "dump profile data (11 .. 18")
+		("dump", boost::program_options::value<std::uint32_t>(&profile)->default_value(0)->implicit_value(11), "dump profile data (11 .. 18) 1 == PushOps")
 		;
 
 	//	path to JSON configuration file
