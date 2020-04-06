@@ -28,6 +28,7 @@ namespace node
 		void intersection();
 		void import_data();
 		void dump_result();
+		void generate_sql();
 	private:
 		cli& cli_;
 		boost::filesystem::path root_dir_;

@@ -49,12 +49,13 @@ namespace node
 		if (boost::algorithm::equals(cmd, "help")) {
 			std::cout
 				<< "help\t\tprint this page" << std::endl
-				<< "import" << std::endl
-				<< "list" << std::endl
+				<< "import\timport all configured data from " << root_dir_ / "device.csv" << std::endl
+				<< "list\tdump all imported devices to screen" << std::endl
 				<< "e350\tcollect e350 devices" << std::endl
 				<< "ipt\tcollect IP-T devices" << std::endl
 				<< "inter[section]\tdetermine inactive devices" << std::endl
 				<< "dump\tdump all inactive devices on screen and into a file" << std::endl
+				<< "sql\tgenerate an SQL script to delete all inactive devices" << std::endl
 				<< "all\tdo all steps at once" << std::endl
 				;
 		}
@@ -78,11 +79,15 @@ namespace node
 		else if (boost::algorithm::equals(cmd, "dump")) {
 			dump_result();
 		}
+		else if (boost::algorithm::equals(cmd, "sql")) {
+			generate_sql();
+		}
 		else if (boost::algorithm::equals(cmd, "all")) {
 			import_data();
 			read_log();
 			intersection();
 			dump_result();
+			generate_sql();
 		}
 		else {
 			std::cout <<
@@ -472,7 +477,68 @@ namespace node
 				<< std::endl;
 
 		}
+	}
 
+	void cleanup::generate_sql()
+	{
+		auto const file_name = root_dir_ / "result.csv";
+		std::cout
+			<< "read result list from " << file_name << std::endl
+			;
+
+		devices_ = cyng::csv::read_file(file_name.string());
+
+		std::cout
+			<< (devices_.size() - 1)
+			<< " inactice devices imported"
+			<< std::endl
+			;
+
+
+		auto const dump = root_dir_ / "result.sql";
+		std::ofstream fout(dump.string(), std::ios::trunc);
+		if (fout.is_open()) {
+
+			std::cout <<
+				"CLEANUP - write "
+				<< inactive_devs_.size()
+				<< " SQL commands into "
+				<< dump
+				<< std::endl;
+
+
+			bool first_line{ true };
+			for (auto const& dev : devices_) {
+				if (first_line) {
+					first_line = false;
+				}
+				else {
+					auto const tpl = cyng::to_tuple(dev);
+					if (tpl.size() == 3) {
+						auto const name = cyng::value_cast<std::string>(cyng::find(tpl, 0), "");
+						//auto const msisdn = cyng::value_cast<std::string>(cyng::find(tpl, 1), "");
+						auto const id = cyng::value_cast<std::string>(cyng::find(tpl, 2), "");
+						if (!name.empty()) {
+							fout
+								<< "DELETE FROM TDevice WHERE name = "
+								<< "'"
+								<< name
+								<< "' AND id = '"
+								<< id
+								<< "';"
+								<< std::endl;
+						}
+					}
+				}
+			}
+		}
+		else {
+			std::cout <<
+				"CLEANUP - cannot open output file "
+				<< dump
+				<< std::endl;
+
+		}
 	}
 
 }

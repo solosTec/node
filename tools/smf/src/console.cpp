@@ -53,6 +53,7 @@ namespace node
 					<< "pwd [N]\t\tgenerate a password of length N" << std::endl
 					<< "convert\t\toffers some file conversions" << std::endl
 					<< "tracking\tkeep a track of your time" << std::endl
+					<< "cleanup\tanalyse log files to find inactive devices" << std::endl
 					;
 			}
 			else {
@@ -436,18 +437,18 @@ namespace node
 		return true;
 	}
 
-	bool console::cmd_echo(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
-	{
-		for (; pos != end; ++pos)
-		{
-			out_
-				<< cyng::io::to_str(*pos)
-				<< ' '
-				;
-		}
-		out_ << std::endl;
-		return true;
-	}
+	//bool console::cmd_echo(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+	//{
+	//	for (; pos != end; ++pos)
+	//	{
+	//		out_
+	//			<< cyng::io::to_str(*pos)
+	//			<< ' '
+	//			;
+	//	}
+	//	out_ << std::endl;
+	//	return true;
+	//}
 
 	bool console::cmd_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 	{

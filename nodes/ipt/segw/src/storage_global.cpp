@@ -1122,6 +1122,7 @@ namespace node
 					auto const tsdix = cyng::value_cast<std::uint64_t>(res->get(8, cyng::TC_UINT64, 0), 0);	//	lowerBound
 					sml::obis const profile(cyng::to_buffer(res->get(9, cyng::TC_BUFFER, 6)));
 
+					//return cyng::chrono::ts_since_passed_minutes(tsidx * 15u)
 					std::cout
 						<< sml::from_server_id(srv_id)
 						<< ", target: "
@@ -1129,7 +1130,8 @@ namespace node
 						<< ", profile: "
 						<< get_profile_name(profile)
 						<< ", last event at: "
-						<< cyng::to_str(time_index_to_time_point(profile.get_quantities(), tsdix))
+						<< cyng::to_str(cyng::chrono::ts_since_passed_minutes(tsdix * 4))	//	why 4?
+						//<< cyng::to_str(time_index_to_time_point(profile.get_quantities(), tsdix))
 						<< std::endl
 						;
 				}

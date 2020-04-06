@@ -15,6 +15,7 @@
 #include <cyng/parser/chrono_parser.h>
 #include <cyng/parser/buffer_parser.h>
 #include <cyng/io/io_chrono.hpp>
+#include <cyng/set_cast.h>
 
 #include <fstream>
 #include <boost/algorithm/string.hpp>
@@ -23,9 +24,11 @@ namespace node
 {
 	tracking::tracking(cli* cp)
 		: cli_(*cp)
-		, status_(TRACKING_INITIAL)
+		, status_(status::INITIAL)
 		, data_()
+		, af_(boost::filesystem::current_path() / "project-tracking.csv")
 	{
+		
 		cli_.vm_.register_function("tracking", 1, std::bind(&tracking::cmd, this, std::placeholders::_1));
 	}
 
@@ -35,18 +38,19 @@ namespace node
 	void tracking::cmd(cyng::context& ctx)
 	{
 		auto const frame = ctx.get_frame();
-		std::cout <<
-			"TRACKING " << cyng::io::to_str(frame) << std::endl;
+		//std::cout <<
+		//	"TRACKING " << cyng::io::to_str(frame) << std::endl;
 
 		auto const cmd = cyng::value_cast<std::string>(frame.at(0), "list");
 
 		if (boost::algorithm::equals(cmd, "list")) {
 			list();
 		}
+		else if (boost::algorithm::equals(cmd, "init")) {
+			init(get_filename(1, frame));
+		}
 		else if (boost::algorithm::equals(cmd, "status")) {
-			cli_.out_
-				<< get_status()
-				<< std::endl;
+			status();
 		}
 		else if (boost::algorithm::equals(cmd, "ammed")) {
 
@@ -61,7 +65,28 @@ namespace node
 			flush(get_filename(1, frame));
 		}
 		else if (boost::algorithm::equals(cmd, "start")) {
-			start(get_parameter(1, frame, "ToDo"));
+
+			//
+			//	collect all parameters
+			//
+			std::string str;
+			std::size_t counter{ 0 };
+			for (auto obj : frame) {
+				switch (counter) {
+				case 0:
+					break;
+				case 1:
+					str += cyng::io::to_str(obj);
+					break;
+				default:
+					str += ' ';
+					str += cyng::io::to_str(obj);
+					break;
+				}
+				++counter;
+			}
+
+			start(str);
 		}
 		else if (boost::algorithm::equals(cmd, "stop")) {
 			stop();
@@ -69,13 +94,14 @@ namespace node
 		else if (boost::algorithm::equals(cmd, "help")) {
 			std::cout 
 				<< "help\t\tprint this page" << std::endl
-				<< "list" << std::endl
-				<< "status" << std::endl
-				<< "ammed" << std::endl
-				<< "load" << std::endl
-				<< "flush" << std::endl
-				<< "start" << std::endl
-				<< "stop" << std::endl
+				<< "init\t\tinitialize tracking file" << std::endl
+				<< "list\t\tlist all entries" << std::endl
+				<< "status\t\tshow status" << std::endl
+				<< "ammed\t\tchange current or last entry" << std::endl
+				<< "load [file]\t\tload the specified file" << std::endl
+				<< "flush\t\tsave current state to file" << std::endl
+				<< "start [comment]\t\tstart a new entry" << std::endl
+				<< "stop\t\tstop running item" << std::endl
 				;
 		}
 		else {
@@ -89,41 +115,167 @@ namespace node
 	std::string tracking::get_status() const
 	{
 		switch (status_) {
-		case TRACKING_INITIAL:	return "CLOSED";
-		case TRACKING_OPEN:	return "OPEN";
-		case TRACKING_RUNNING:	return "RUNNING";
+		case status::INITIAL:	return "CLOSED";
+		case status::OPEN:		return "OPEN";
+		case status::RUNNING:	return "RUNNING";
 		default:
 			break;
 		}
 		return "ERROR";
 	}
 
-	void tracking::load(std::string filename)
+	void tracking::status()
 	{
-		if (boost::filesystem::exists(filename) && boost::filesystem::is_regular_file(filename)) {
-			status_ = TRACKING_OPEN;
-			data_ = cyng::csv::read_file(filename);
+		cli_.out_
+			<< get_status()
+			<< std::endl;
+
+		if (status_ == status::RUNNING) {
+			if (data_.empty()) {
+				cli_.out_
+					<< "***error: no data set found"
+					<< std::endl;
+			}
+			else {
+				auto & current = data_.back();
+				cyng::tuple_t tpl = cyng::to_tuple(current);
+				if (tpl.size() == 3) {
+
+					//
+					//	current entry
+					//
+					auto const now = std::chrono::system_clock::now();
+					auto pos = tpl.begin();	//	start time
+					auto const start = cyng::value_cast(*pos, now);
+
+					//
+					//	update
+					//
+					std::advance(pos, 1);
+					auto const duration = std::chrono::duration_cast<std::chrono::seconds>(now - start);
+					*pos = cyng::make_object(duration);
+
+					current = cyng::make_object(tpl);
+
+					cli_.out_
+						<< cyng::io::to_str(current)
+						<< std::endl;
+
+				}
+			}
+		}
+		else if (status_ == status::OPEN) {
 			cli_.out_
-				<< get_status()
-				<< " <"
-				<< filename
-				<< "> contains "
+				<< "["
+				<< af_
+				<< "] is loaded with "
 				<< data_.size()
 				<< " entries"
 				<< std::endl;
+		}
+	}
+
+	void tracking::init(std::string filename)
+	{
+		if (!boost::filesystem::exists(filename)) {
+			std::ofstream fout(filename, std::ios::trunc);
+			if (fout.is_open()) {
+				//fout
+				//	<< "\"start\",\"duration\",\"msg\""
+				//	<< std::endl
+				//	;
+				af_ = filename;
+			}
+			else {
+				cli_.out_
+					<< "***error: cannot open "
+					<< filename
+					<< std::endl;
+			}
+		}
+		else {
+			cli_.out_
+				<< "***error: "
+				<< filename
+				<< " already exists"
+				<< std::endl;
+		}
+	}
+
+	void tracking::load(std::string filename)
+	{
+		if (status::RUNNING == status_) {
+			cli_.out_
+				<< "***warning: current state is "
+				<< get_status()
+				<< " - stop running item or data get lost"
+				<< std::endl;
+			return;
+		}
+
+		if (boost::filesystem::exists(filename) && boost::filesystem::is_regular_file(filename)) {
+			status_ = status::OPEN;
+			af_ = filename;
+			data_ = cyng::csv::read_file(filename);
+
+			//
+			//	convert string => duration
+			//
+			std::chrono::seconds total_duration(0);
+			for (auto& rec : data_) {
+				cyng::tuple_t tpl = cyng::to_tuple(rec);
+				if (tpl.size() == 3) {
+					auto pos = tpl.begin();
+					++pos;
+					auto s = cyng::value_cast<std::string>(*pos, "");
+					auto const r = cyng::parse_timespan_seconds(s);
+					if (r.second) {
+						total_duration += r.first;
+						*pos = cyng::make_object(r.first);
+						rec = cyng::make_object(tpl);
+					}
+				}
+			}
+
+			cli_.out_
+				<< "["
+				<< filename
+				<< "] contains "
+				<< data_.size()
+				<< " entries with a total duration of "
+				<< cyng::to_str(total_duration)
+				<< std::endl;
+
 		}
 		else {
 			cli_.out_
 				<< "***error: cannot open "
 				<< filename
 				<< std::endl;
-
 		}
 	}
 
 	void tracking::start(std::string msg)
 	{
+		if (status::OPEN != status_) {
+			cli_.out_
+				<< "***warning: current state is "
+				<< get_status()
+				<< " - no project is loaded"
+				<< std::endl;
+			return;
+		}
 		data_.push_back(cyng::make_object(create_record(msg)));
+
+		//
+		//	update status
+		//
+		status_ = status::RUNNING;
+		cli_.out_
+			<< "item #"
+			<< data_.size()
+			<< " is running"
+			<< std::endl;
 	}
 
 	void tracking::stop()
@@ -131,28 +283,31 @@ namespace node
 		if (!data_.empty()) {
 
 			//
-			//	get timestamp
-			//
-			auto const now = std::chrono::system_clock::now();
-			auto const time = get_time(now);
-
-			//
 			//	get current entry
 			//
-			auto current = data_.back();
+			auto & current = data_.back();
+			cyng::tuple_t tpl = cyng::to_tuple(current);
 
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(current, tpl);
-
-			if (tpl.size() == 4) {
+			if (tpl.size() == 3) {
 
 				//
-				//	update timestamp
+				//	current entry
 				//
-				auto pos = tpl.begin();
-				std::advance(pos, 2);
+				auto const now = std::chrono::system_clock::now();
+				auto pos = tpl.begin();	//	start time
 
-				*pos = cyng::make_object(time);
+				//
+				//	get start time
+				//
+				auto const start = cyng::value_cast(*pos, now);
+
+				//
+				//	update duration
+				//
+				std::advance(pos, 1);
+
+				auto const duration = std::chrono::duration_cast<std::chrono::seconds>(now - start);
+				*pos = cyng::make_object(duration);
 
 				cli_.out_
 					<< cyng::io::to_str(tpl)
@@ -162,8 +317,10 @@ namespace node
 				//
 				//	replace existing entry
 				//
-				data_.pop_back();
-				data_.push_back(cyng::make_object(tpl));
+				current = cyng::make_object(tpl);
+
+				//data_.pop_back();
+				//data_.push_back(cyng::make_object(tpl));
 
 			}
 		}
@@ -207,25 +364,14 @@ namespace node
 			;
 	}
 
-	std::string get_filename(std::size_t idx, cyng::vector_t const& frame)
+	std::string tracking::get_filename(std::size_t idx, cyng::vector_t const& frame)
 	{
-		return get_parameter(idx, frame, "project-tracking.csv");
+		return get_parameter(idx, frame, af_.string());
 	}
 
 	cyng::tuple_t create_record(std::string msg)
 	{
-		auto const now = std::chrono::system_clock::now();
-		auto const date = cyng::date_to_str(now);
-		auto const start = get_time(now);
-		BOOST_ASSERT(start.size() == 8);
-		return cyng::tuple_factory(date, start, start, msg);
+		return cyng::tuple_factory(std::chrono::system_clock::now(), std::chrono::seconds(0), msg);
 	}
-
-	std::string get_time(std::chrono::system_clock::time_point tp)
-	{
-		auto const time = cyng::chrono::duration_of_day(tp);
-		return cyng::ts_to_str(time);	//	format hh:mm:ss
-	}
-
 
 }

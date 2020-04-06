@@ -45,7 +45,7 @@ namespace node
 		//	commands
 		bool cmd_run(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 		bool cmd_run_script(boost::filesystem::path const&);
-		bool cmd_echo(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
+		//bool cmd_echo(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 		bool cmd_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 		bool cmd_list(boost::filesystem::path const&);
 		bool cmd_ip() const;
