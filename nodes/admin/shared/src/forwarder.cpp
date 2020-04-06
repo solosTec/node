@@ -10,8 +10,9 @@
 #include <smf/cluster/generator.h>
 #include <cyng/table/key.hpp>
 #include <cyng/io/serializer.h>
-#include <cyng/vector_cast.hpp>
+//#include <cyng/vector_cast.hpp>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/set_cast.h>
 #include <cyng/parser/buffer_parser.h>
 #include <cyng/parser/mac_parser.h>
 #include <cyng/json/json_parser.h>
@@ -463,13 +464,13 @@ namespace node
 			//
 			try {
 
-				cyng::vector_t vec;
-				vec = cyng::value_cast(reader.get("key"), vec);
+				auto const vec = cyng::to_vector(reader.get("key"));
 				BOOST_ASSERT_MSG(vec.size() == 1, "*Session key has wrong size");
 
-				//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-				//CYNG_LOG_DEBUG(logger, "*Session key [" << str << "]");
-				//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
+				//
+				//	This should be effectively the same as vec
+				//	(key == vec)
+				//	
 				auto key = cyng::table::key_generator(vec.at(0));
 				ctx.queue(bus_req_stop_client(key, ctx.tag()));
 
@@ -498,8 +499,7 @@ namespace node
         //	gw: [vector: gateway PK]
         //	params: [tuple: optional params]
 
-		cyng::vector_t gw;
-		gw = cyng::value_cast(reader.get("gw"), gw);
+		auto const gw = cyng::to_vector(reader.get("gw"));
 		if (!gw.empty()) {
 
 			auto const msg_type = cyng::value_cast<std::string>(reader.get("msgType"), "");
@@ -507,8 +507,7 @@ namespace node
 			auto const r = cyng::parse_hex_string(channel);
 			if (r.second) {
 
-				cyng::tuple_t params;
-				params = cyng::value_cast(reader.get("params"), params);
+				auto const params = cyng::to_tuple(reader.get("params"));
 
 #ifdef _DEBUG
 				CYNG_LOG_DEBUG(logger, "\"sml:com\" ws: " 
@@ -519,7 +518,7 @@ namespace node
 					<< cyng::io::to_str(params));
 
 #endif
-
+				//	"bus.req.proxy.gateway"
 				ctx.queue(bus_req_com_sml(tag_ws	//	web-socket tag (origin)
 					, msg_type
 					, r.first	//	OBIS root code
@@ -535,6 +534,37 @@ namespace node
 		}
 	}
 
+	void fwd_com_proxy(cyng::logging::log_ptr logger
+		, cyng::context& ctx
+		, boost::uuids::uuid tag_ws
+		, std::string const& job
+		, cyng::reader<cyng::object> const& reader)
+	{
+		auto const gw = cyng::to_vector(reader.get("gw"));
+		if (!gw.empty()) {
+			//auto const sections = cyng::vector_cast<std::string>(reader.get("sections"), "");
+			auto const sections = cyng::to_vector(reader.get("sections"));
+#ifdef _DEBUG
+			CYNG_LOG_DEBUG(logger, "\"sml:proxy\" ws: "
+				<< tag_ws
+				<< " job "
+				<< job
+				<< " ==> "
+				<< cyng::io::to_str(sections));
+
+#endif
+			//	"bus.req.proxy.job"
+			ctx.queue(bus_req_com_proxy(tag_ws	//	web-socket tag (origin)
+				, job
+				, gw
+				, sections));	
+
+		}
+		else {
+			CYNG_LOG_ERROR(logger, "\"sml:proxy\" from ws: " << tag_ws << " with empty gateway PK");
+		}
+	}
+
 	void fwd_com_task(cyng::logging::log_ptr logger
 		, cyng::context& ctx
 		, boost::uuids::uuid tag_ws
@@ -544,12 +574,11 @@ namespace node
 		auto const tag = cyng::value_cast(reader.get("key"), boost::uuids::nil_uuid());
 		CYNG_LOG_WARNING(logger, "ws tag: " << tag_ws << " - TASK key" << tag);
 
-		cyng::vector_t vec;
 		ctx.queue(bus_req_com_task(tag	//	key 
 			, tag_ws	//	web-socket tag
 			, channel
-			, cyng::value_cast(reader.get("section"), vec)
-			, cyng::value_cast(reader.get("params"), vec)));	//	parameters, requests, commands
+			, cyng::to_vector(reader.get("section"))
+			, cyng::to_vector(reader.get("params"))));
 	}
 
 	void fwd_com_node(cyng::logging::log_ptr logger
@@ -561,12 +590,11 @@ namespace node
 		auto const tag = cyng::value_cast(reader.get("key"), boost::uuids::nil_uuid());
 		CYNG_LOG_WARNING(logger, "ws tag: " << tag_ws << " - NODE key" << tag);
 
-		cyng::vector_t vec;
 		ctx.queue(bus_req_com_node(tag	//	key
 			, tag_ws	//	web-socket tag
 			, channel
-			, cyng::value_cast(reader.get("section"), vec)
-			, cyng::value_cast(reader.get("params"), vec)));	//	parameters, requests, commands
+			, cyng::to_vector(reader.get("section"))
+			, cyng::to_vector(reader.get("params"))));
 	}
 
 
@@ -602,7 +630,7 @@ namespace node
 		//		("target":/config/upload.devices),
 		//		("version":v50))]
 		//
-		const cyng::vector_t frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
 		CYNG_LOG_TRACE(logger_, "cfg.upload.device - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<

@@ -36,6 +36,10 @@ namespace node
 		void register_this(cyng::context& ctx);
 
 	private:
+		/**
+		 * In most cases this request is triggered from the dash GUI.
+		 * @see forwarder.h
+		 */
 		void bus_req_com_sml(cyng::context& ctx);
 
 		/**
@@ -43,6 +47,11 @@ namespace node
 		 * to the sender (cluster member).
 		 */
 		void bus_res_com_sml(cyng::context& ctx);
+
+		/**
+		 * Request to communicate with the proxy itself (and not the gateway)
+		 */
+		void bus_req_com_proxy(cyng::context& ctx);
 
 		void bus_res_attention_code(cyng::context& ctx);
 

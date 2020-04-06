@@ -74,7 +74,7 @@ namespace node
 				
 			});
 
-			vm_.register_function("client.req.gateway.proxy", 11, std::bind(&session::client_req_gateway_proxy, this, std::placeholders::_1));
+			vm_.register_function("client.req.gateway", 11, std::bind(&session::client_req_gateway, this, std::placeholders::_1));
 			
 			vm_.register_function("session.start.proxy", 0, [this, sml_log](cyng::context& ctx) {
 
@@ -430,7 +430,7 @@ namespace node
 			}
 		}
 
-		void session::client_req_gateway_proxy(cyng::context& ctx)
+		void session::client_req_gateway(cyng::context& ctx)
 		{
 			//	[c469c819-8b75-4dd7-a7b2-d74e228488c7,9f773865-e4af-489a-8824-8f78a2311278,4,[df735c77-797f-4ce8-bb74-86280f9884a9],[{("section":[status:word,srv:visible,srv:active,firmware,memory,root-wMBus-status,IF_wMBUS,ipt-status,ipt-config])}],0500153B022980,operator,operator]
 			//	[c469c819-8b75-4dd7-a7b2-d74e228488c7,9f773865-e4af-489a-8824-8f78a2311278,5,[df735c77-797f-4ce8-bb74-86280f9884a9],[{("name":smf-form-gw-ipt-srv),("value":0500153B022980)},{("name":smf-gw-ipt-host-1),("value":waiting...)},{("name":smf-gw-ipt-local-1),("value":4)},{("name":smf-gw-ipt-remote-1),("value":3)},{("name":smf-gw-ipt-name-1),("value":waiting...)},{("name":smf-gw-ipt-pwd-1),("value":asdasd)},{("name":smf-gw-ipt-host-2),("value":waiting...)},{("name":smf-gw-ipt-local-2),("value":3)},{("name":smf-gw-ipt-remote-2),("value":3)},{("name":smf-gw-ipt-name-2),("value":holgär)},{("name":smf-gw-ipt-pwd-2),("value":asdasd)},{("section":[ipt])}],0500153B022980,operator,operator]

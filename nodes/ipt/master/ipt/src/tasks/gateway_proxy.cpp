@@ -63,6 +63,7 @@ namespace node
 		, output_map_()
 		, open_requests_{ 0 }
 		, state_{ GPS::OFFLINE_ }
+		, config_cache_()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

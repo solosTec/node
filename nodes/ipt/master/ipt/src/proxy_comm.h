@@ -31,10 +31,15 @@ namespace node
 	private:
 		void register_this();
 
+		/**
+		 * This effectively converts the SML message into function calls
+		 * into the VM.
+		 */
+		void sml_msg(cyng::context& ctx);
+
 		//
 		//	SML data
 		//
-		void sml_msg(cyng::context& ctx);
 		void sml_eom(cyng::context& ctx);
 		void sml_public_open_response(cyng::context& ctx);
 		void sml_public_close_response(cyng::context& ctx);
@@ -42,8 +47,6 @@ namespace node
 		void sml_get_list_response(cyng::context& ctx);
 		void sml_get_profile_list_response(cyng::context& ctx);
 		void sml_attention_msg(cyng::context& ctx);
-
-		//void sml_get_proc_parameter(cyng::context& ctx);
 
 	private:
 		ipt::session_state& state_;

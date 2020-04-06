@@ -33,8 +33,9 @@ namespace node
 
 	void cluster::register_this(cyng::context& ctx)
 	{
-		ctx.queue(cyng::register_function("bus.req.gateway.proxy", 7, std::bind(&cluster::bus_req_com_sml, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.req.proxy.gateway", 7, std::bind(&cluster::bus_req_com_sml, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("bus.res.gateway.proxy", 9, std::bind(&cluster::bus_res_com_sml, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.req.proxy.job", 6, std::bind(&cluster::bus_req_com_proxy, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("bus.res.attention.code", 7, std::bind(&cluster::bus_res_attention_code, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("bus.req.com.task", 7, std::bind(&cluster::bus_req_com_task, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("bus.req.com.node", 7, std::bind(&cluster::bus_req_com_node, this, std::placeholders::_1)));
@@ -42,7 +43,7 @@ namespace node
 
 	void cluster::bus_req_com_sml(cyng::context& ctx)
 	{
-		const cyng::vector_t frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
 		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 		
 		//	[]
@@ -94,12 +95,10 @@ namespace node
 
 			if (peer != nullptr && !rec.empty()) {
 
-				CYNG_LOG_INFO(logger_, "bus.req.gateway.proxy " << cyng::io::to_str(frame));
-
 				const auto name = cyng::value_cast<std::string>(rec["userName"], "operator");
 				const auto pwd = cyng::value_cast<std::string>(rec["userPwd"], "operator");
 
-				peer->vm_.async_run(node::client_req_gateway_proxy(tag	//	ipt session tag
+				peer->vm_.async_run(client_req_gateway(tag	//	ipt session tag
 					, std::get<0>(tpl)	//	source tag
 					, std::get<1>(tpl)	//	cluster sequence
 					, std::get<2>(tpl)	//	websocket tag (origin)
@@ -116,7 +115,8 @@ namespace node
 				//
 				//	peer/node not found
 				//
-				CYNG_LOG_WARNING(logger_, "bus.req.gateway.proxy - peer/node not found " 
+				CYNG_LOG_WARNING(logger_, ctx.get_name()
+					<< " - peer/node not found "
 					<< cyng::io::to_str(std::get<5>(tpl))
 					<< ", channel: "
 					<< std::get<3>(tpl));
@@ -141,7 +141,7 @@ namespace node
 		//	* [str] server id (e.g. "00:15:3b:02:29:7e")
 		//	* [str] "OBIS code" as text
 		//	* [param_map_t] params
-		const cyng::vector_t frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
 		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto tpl = cyng::tuple_cast<
@@ -435,6 +435,68 @@ namespace node
 			, server_id
 			, code
 			, meters);
+
+	}
+
+	void cluster::bus_req_com_proxy(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] source
+			std::uint64_t,			//	[1] sequence
+			boost::uuids::uuid,		//	[2] websocket tag (origin)
+			std::string,			//	[3] job to execute
+			cyng::vector_t,			//	[4] TGateway/TDevice key
+			cyng::vector_t			//	[5] vector of strings that describe the data areas involved
+		>(frame);
+
+		//
+		//	send process parameter request to an gateway
+		//
+		cache_.read_tables("_Session", "TGateway", [&](const cyng::store::table* tbl_session, const cyng::store::table* tbl_gw)->void {
+
+			//
+			//	Since TGateway and TDevice share the same primary key, we can search for a session 
+			//	of that device/gateway. Additionally we get the required access data like
+			//	server ID, user and password.
+			//
+#if defined __CPP_SUPPORT_P0217R3
+			auto const[peer, rec, server, tag] = find_peer(std::get<4>(tpl), tbl_session, tbl_gw);
+#else            
+			static_assert(false, "P0217R3");
+#endif
+
+			if (peer != nullptr && !rec.empty()) {
+
+				const auto name = cyng::value_cast<std::string>(rec["userName"], "operator");
+				const auto pwd = cyng::value_cast<std::string>(rec["userPwd"], "operator");
+
+				peer->vm_.async_run(node::client_req_proxy(tag	//	ipt session tag
+					, std::get<0>(tpl)	//	source tag
+					, std::get<1>(tpl)	//	cluster sequence
+					, std::get<2>(tpl)	//	websocket tag (origin)
+					, std::get<3>(tpl)	//	job to execute
+					, std::get<4>(tpl)	//	TGateway/TDevice key
+					, std::get<5>(tpl)	//	sections
+					, server			//	server
+					, name
+					, pwd));
+			}
+			else {
+
+				//
+				//	peer/node not found
+				//
+				CYNG_LOG_WARNING(logger_, ctx.get_name()
+					<< " - peer/node not found "
+					<< cyng::io::to_str(std::get<4>(tpl))
+					<< ", job: "
+					<< std::get<3>(tpl));
+			}
+
+		});
 
 	}
 

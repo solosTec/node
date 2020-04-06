@@ -9,6 +9,8 @@
 #define NODE_IP_MASTER_TASK_GATEWAY_PROXY_H
 
 #include "../proxy_data.h"
+#include "../config_cache.h"
+
 #include <smf/cluster/bus.h>
 #include <smf/ipt/defs.h>
 #include <smf/sml/protocol/parser.h>
@@ -159,7 +161,9 @@ namespace node
 		/**
 		 * @brief slot [7]
 		 *
-		 * add new entry in work queue
+		 * Add new entry in work queue. 
+		 * These requests are routed via the master node and originate, 
+		 * for example, from the dash GUI.
 		 */
 		cyng::continuation process(boost::uuids::uuid tag,		//	[0] ident tag (target)
 			boost::uuids::uuid source,	//	[1] source tag
@@ -261,6 +265,8 @@ namespace node
 			WAITING_,
 			CONNECTED_
 		}	state_;
+
+		config_cache	config_cache_;
 	};
 
 

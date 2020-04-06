@@ -457,6 +457,14 @@ namespace node
 				, channel
 				, reader);
 		}
+		else if (boost::algorithm::equals(cmd, "com:proxy"))
+		{
+			node::fwd_com_proxy(logger_
+				, ctx
+				, tag_ws
+				, channel
+				, reader);
+		}
 		else if (boost::algorithm::equals(cmd, "com:task"))
 		{
 			node::fwd_com_task(logger_

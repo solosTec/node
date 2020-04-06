@@ -11,6 +11,7 @@ set (node_ipt_master_cpp
 	nodes/ipt/master/ipt/src/session_state.cpp
 	nodes/ipt/master/ipt/src/proxy_data.cpp
 	nodes/ipt/master/ipt/src/proxy_comm.cpp
+	nodes/ipt/master/ipt/src/config_cache.cpp
 
 	nodes/shared/net/server_stub.cpp
 	nodes/shared/net/session_stub.cpp
@@ -24,6 +25,7 @@ set (node_ipt_master_h
 	nodes/ipt/master/ipt/src/session_state.h
 	nodes/ipt/master/ipt/src/proxy_data.h
 	nodes/ipt/master/ipt/src/proxy_comm.h
+	nodes/ipt/master/ipt/src/config_cache.h
 
 	src/main/include/smf/cluster/server_stub.h
 	src/main/include/smf/cluster/session_stub.h

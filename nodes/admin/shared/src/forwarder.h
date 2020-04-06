@@ -50,9 +50,21 @@ namespace node
 		, cyng::reader<cyng::object> const&);
 
 	/**
-	 * Incoming request from web application to communicate with the IP-T proxy
+	 * Incoming request from web application to communicate with the IP-T proxy.
+	 * This is a "bus.req.proxy.gateway" command.
 	 */
 	void fwd_com_sml(cyng::logging::log_ptr
+		, cyng::context& ctx
+		, boost::uuids::uuid tag_ws
+		, std::string const& channel
+		, cyng::reader<cyng::object> const&);
+
+	/**
+	 * Communicate with the gateway proxy. This allows to
+	 * start more complicated sequences that that are executed 
+	 * on the proxy.
+	 */
+	void fwd_com_proxy(cyng::logging::log_ptr
 		, cyng::context& ctx
 		, boost::uuids::uuid tag_ws
 		, std::string const& channel

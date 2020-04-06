@@ -225,7 +225,7 @@ namespace node
 		//
 		//	get blacklisted addresses
 		//
-		const auto blacklist_str = cyng::vector_cast<std::string>(dom.get("blacklist"), "");
+		auto const blacklist_str = cyng::vector_cast<std::string>(dom.get("blacklist"), "");
 		CYNG_LOG_INFO(logger, blacklist_str.size() << " adresses are blacklisted");
 		std::set<boost::asio::ip::address>	blacklist;
 		for (auto const& a : blacklist_str) {

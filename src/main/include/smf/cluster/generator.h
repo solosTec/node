@@ -70,19 +70,9 @@ namespace node
 		, std::uint64_t generation
 		, boost::uuids::uuid source);
 
-	cyng::vector_t bus_req_db_modify(std::string const&
-		, cyng::vector_t const&
-		, cyng::attr_t const&
-		, boost::uuids::uuid source);
-
 	cyng::vector_t bus_res_db_modify(std::string const&
 		, cyng::vector_t const&
 		, cyng::attr_t const&
-		, std::uint64_t gen);
-
-	cyng::vector_t bus_res_db_modify(std::string const&
-		, cyng::vector_t const&
-		, cyng::param_t&&
 		, std::uint64_t gen);
 
 	cyng::vector_t bus_req_db_modify(std::string const&
@@ -159,6 +149,19 @@ namespace node
 		, cyng::buffer_t code
 		, cyng::vector_t const& gw
 		, cyng::tuple_t params);
+
+	/**
+	 * Send a process parameter request to an proxy
+	 *
+	 * @param tag_ws websocket session tag (origin)
+	 * @param job job to execute
+	 * @param key key for TGateway/TDevice table
+	 * @param sections vector of strings that describe the data areas involved
+	 */
+	cyng::vector_t bus_req_com_proxy(boost::uuids::uuid tag_ws
+		, std::string job
+		, cyng::vector_t const& gw
+		, cyng::vector_t sections);
 
 	/**
 	 * Response for bus_req_com_sml()
@@ -273,7 +276,7 @@ namespace node
 	cyng::vector_t client_res_close(boost::uuids::uuid tag, std::uint64_t seq, bool success);
 
 	/**
-	 * Send a request to the IP-T proxy
+	 * Send a request to an gateway over the IP-T proxy
 	 *
 	 * @param tag target (IP-T) session
 	 * @param source source session tag
@@ -286,7 +289,7 @@ namespace node
 	 * @param user login name / account
 	 * @param pwd password
 	 */
-	cyng::vector_t client_req_gateway_proxy(boost::uuids::uuid tag
+	cyng::vector_t client_req_gateway(boost::uuids::uuid tag
 		, boost::uuids::uuid source
 		, std::uint64_t seq
 		, boost::uuids::uuid origin
@@ -295,6 +298,33 @@ namespace node
 		, cyng::buffer_t const& code
 		, cyng::vector_t gw
 		, cyng::tuple_t params
+
+		, cyng::buffer_t const& server
+		, std::string const& user
+		, std::string const& pwd);
+
+	/**
+	 * Send a request to an gateway itself
+	 *
+	 * @param tag target (IP-T) session
+	 * @param source source session tag
+	 * @param seq cluster sequence
+	 * @param origin web session (sender)
+	 * @param job job to execute
+	 * @param gw PK from table TGateway/TDevice
+	 * @param sections vector of strings that describe the data areas involved
+	 * @param server server id
+	 * @param user login name / account
+	 * @param pwd password
+	 */
+	cyng::vector_t client_req_proxy(boost::uuids::uuid tag
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, boost::uuids::uuid origin
+
+		, std::string const& job
+		, cyng::vector_t gw
+		, cyng::vector_t sections
 
 		, cyng::buffer_t const& server
 		, std::string const& user

@@ -48,7 +48,7 @@ namespace node
 		//
 
 		//	[{303637373732342D31,0,0,{0101,{null,E3D360ED0B1D,3230313930393035313531353230,0500153B02297E,null,null}},86e8},0]
-		cyng::vector_t const frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
 
 		//
 		//	print sml message number and data frame
@@ -59,15 +59,13 @@ namespace node
 		//
 		//	get message body
 		//
-		cyng::tuple_t msg;
-		msg = cyng::value_cast(frame.at(0), msg);
+		cyng::tuple_t const msg = cyng::to_tuple(frame.at(0));
 
 		//
-		//	reader calls callbacks from this proxy-comm
+		//	This effectively converts the SML message into function calls
+		//	into the VM.
 		//
-		//sml::reader reader;
-		auto prg = sml::reader::read(msg);
-		vm_.async_run(std::move(prg));
+		ctx.queue(sml::reader::read(msg));
 
 	}
 
