@@ -23,6 +23,8 @@ namespace node
 	 */
 	class config_cache
 	{
+		using sections_t = std::map<sml::obis, cyng::param_map_t>;
+
 	public:
 		config_cache(cyng::buffer_t srv, sml::obis_path&&);
 
@@ -33,10 +35,25 @@ namespace node
 		 */
 		bool update(sml::obis root, cyng::param_map_t const& params);
 
+		/**
+		 * @return server as string
+		 */
+		std::string get_server() const;
+
+		/**
+		 * @return true if OBIS code is a cached root path.
+		 */
+		bool is_cached(sml::obis code) const;
+
+	private:
+		static sections_t init_sections(sml::obis_path&&);
+
 	private:
 		cyng::buffer_t const srv_;
-		sml::obis_path const sections_;
+		sections_t sections_;
 	};
+
+
 
 }
 

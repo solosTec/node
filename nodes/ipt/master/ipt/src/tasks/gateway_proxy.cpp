@@ -6,6 +6,8 @@
  */
 
 #include "gateway_proxy.h"
+#include "job_access_rights.h"
+
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/protocol/generator.h>
 #include <smf/cluster/generator.h>
@@ -25,6 +27,7 @@
 #include <cyng/set_cast.h>
 #include <cyng/vector_cast.hpp>
 #include <cyng/parser/buffer_parser.h>
+#include <cyng/async/task/task_builder.hpp>
 
 #ifdef SMF_IO_LOG
 #include <cyng/io/hex_dump.hpp>
@@ -608,6 +611,10 @@ namespace node
 		std::string name,			
 		std::string pwd)			
 	{
+		//
+		//	expecting obis codes
+		//
+		auto secs = cyng::vector_cast<std::string>(sections, "");
 
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -616,15 +623,10 @@ namespace node
 			<< "> execute job: "
 			<< job
 			<< " with "
-			<< sections.size()
+			<< secs.size()
 			<< " section(s)");
 
-		if (boost::algorithm::equals(job, "enable.cache")) {
-
-			//
-			//	expecting obis codes
-			//
-			auto secs = cyng::vector_cast<std::string>(sections, "");
+		if (boost::algorithm::equals(job, "cache.create")) {
 
 #if	defined(__CPP_SUPPORT_N3656)
 			config_cache_ = std::make_unique<config_cache>(srv_id, sml::vector_to_path(secs));
@@ -632,8 +634,50 @@ namespace node
 			config_cache_.reset(new config_cache(srv_id));
 #endif
 		}
-		else if (boost::algorithm::equals(job, "disable.cache")) {
+		else if (boost::algorithm::equals(job, "cache.delete")) {
 			config_cache_.reset();
+		}
+		else if (boost::algorithm::equals(job, "cache.update")) {
+
+			//
+			//	get root paths to update
+			//
+			auto const roots = sml::vector_to_path(secs);
+			for (auto const& code : roots) {
+
+				CYNG_LOG_TRACE(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> update section "
+					<< sml::get_name(code));
+
+				switch (code.to_uint64()) {
+				case sml::CODE_ROOT_ACCESS_RIGHTS:
+					//
+					//	start task to collect all access configuration
+					//
+					start_job_access_rights();
+					break;
+				default:
+					//	root path not supported
+					CYNG_LOG_WARNING(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> update section "
+						<< sml::get_name(code)
+						<< " is not supported");
+					break;
+				}
+
+			}
+		}
+		else if (boost::algorithm::equals(job, "cache.sync")) {
+
+			//
+			//	synchronize configuration cache to master node
+			//
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "task #"
@@ -1496,9 +1540,36 @@ namespace node
 		, cyng::param_map_t const& params)
 	{
 		if (config_cache_) {
-			config_cache_->update(root, params);
+			if (config_cache_->update(root, params)) {
+
+				CYNG_LOG_TRACE(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> cache updated "
+					<< sml::get_name(root)
+					<< " => "
+					<< cyng::io::to_str(params));
+			}
+			else {
+				CYNG_LOG_TRACE(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> "
+					<< sml::get_name(root)
+					<< " is not cached");
+
+			}
 		}
 	}
+
+	void gateway_proxy::start_job_access_rights()
+	{
+		auto const tsk = cyng::async::start_task_detached<job_access_rights>(this->base_.mux_
+			, logger_);
+	}
+
 
 	cyng::mac48 get_mac()
 	{

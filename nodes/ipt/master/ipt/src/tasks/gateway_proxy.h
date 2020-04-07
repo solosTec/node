@@ -300,6 +300,8 @@ namespace node
 			, ipt::proxy_data const& pd
 			, cyng::param_map_t const& params);
 
+		void start_job_access_rights();
+
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
@@ -311,7 +313,7 @@ namespace node
 
 		/**
 		 * All incoming requests from the network are first
-		 * queued in this inout queue.
+		 * queued in this input queue.
 		 */
 		input_queue		input_queue_;
 

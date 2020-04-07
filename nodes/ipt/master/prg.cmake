@@ -55,6 +55,8 @@ set (node_ipt_master_tasks
 	nodes/ipt/master/ipt/src/tasks/watchdog.cpp
 	nodes/ipt/master/ipt/src/tasks/gateway_proxy.h
 	nodes/ipt/master/ipt/src/tasks/gateway_proxy.cpp
+	nodes/ipt/master/ipt/src/tasks/job_access_rights.h
+	nodes/ipt/master/ipt/src/tasks/job_access_rights.cpp
 )
 	
 if(WIN32)

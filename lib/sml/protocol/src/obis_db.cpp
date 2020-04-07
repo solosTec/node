@@ -170,6 +170,12 @@ namespace node
 			case CODE_IF_wMBUS:						return "IF_wMBUS";
 			case CODE_IF_PLC:						return "IF_PLC";
 
+			case CODE_CLASS_OP_LOG_STATUS_WORD:		return "CLASS_OP_LOG_STATUS_WORD";
+			case CODE_CLASS_OP_LOG_FIELD_STRENGTH:	return "CLASS_OP_LOG_FIELD_STRENGTH";
+			case CODE_CLASS_OP_LOG_CELL:			return "CLASS_OP_LOG_CELL";
+			case CODE_CLASS_OP_LOG_AREA_CODE:		return "CLASS_OP_LOG_AREA_CODE";
+			case CODE_CLASS_OP_LOG_PROVIDER:		return "CLASS_OP_LOG_PROVIDER";
+
 			default:
 				break;
 			}
@@ -229,14 +235,6 @@ namespace node
 			//																				//		const static obis	OBIS_CLASS_OP_LOG_EVENT(0x81, 0x81, 0xC7, 0x89, 0xE2, 0xFF);	//	Ereignis (uint32)
 			//const static obis	OBIS_CLASS_OP_LOG_PEER_ADDRESS(0x81, 0x81, 0x00, 0x00, 0x00, 0xFF);	//	Peer Adresse (octet string)
 			//const static obis	OBIS_CLASS_OP_MONITORING_STATUS(0x00, 0x80, 0x80, 0x11, 0x13, 0x01);	//	Überwachungsstatus (uint8) - tatsächlich i32
-			//																							/**
-			//																							*	Statuswort (per Schreiben ist das Rücksetzen ausgewählter Statusbits) Unsigned64
-			//																							*/
-			else if (OBIS_CLASS_OP_LOG_STATUS_WORD == code)			return "op-log-status-word";
-			else if (OBIS_CLASS_OP_LOG_FIELD_STRENGTH == code)		return "op-log-field-strength";
-			else if (OBIS_CLASS_OP_LOG_CELL == code)				return "op-log-cell-code";
-			else if (OBIS_CLASS_OP_LOG_AREA_CODE == code)			return "op-log-area-code";
-			else if (OBIS_CLASS_OP_LOG_PROVIDER == code)			return "op-log-provider";
 
 			else if (code == OBIS_CLASS_OP_LSM_STATUS)					return "LSM-status";
 			else if (code == OBIS_CLASS_OP_LSM_ACTOR_ID)				return "LSM-actor-id";

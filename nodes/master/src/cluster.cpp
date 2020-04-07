@@ -614,7 +614,6 @@ namespace node
 		//	get gateway record
 		//
 		auto rec_gw = tbl_gw->lookup(key_gw);
-		BOOST_ASSERT(!rec_gw.empty());
 		if (!rec_gw.empty())
 		{
 			//
@@ -673,20 +672,6 @@ namespace node
 				<< tbl_gw->size()
 				<< " gateways configured)");
 		}
-
-#ifdef _DEBUG
-		//std::size_t counter{ 0 };
-		//tbl_session->loop([&](cyng::table::record const& rec) -> bool {
-
-		//	CYNG_LOG_TRACE(logger_, "session #"
-		//		<< counter
-		//		<< " - "
-		//		<< cyng::io::to_str(rec.convert()));
-
-		//	counter++;
-		//	return true;
-		//});
-#endif
 
 		//
 		//	not found - peer is a null pointer
