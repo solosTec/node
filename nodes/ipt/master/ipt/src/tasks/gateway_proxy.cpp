@@ -23,7 +23,7 @@
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/set_cast.h>
-//#include <cyng/vector_cast.hpp>
+#include <cyng/vector_cast.hpp>
 #include <cyng/parser/buffer_parser.h>
 
 #ifdef SMF_IO_LOG
@@ -62,7 +62,7 @@ namespace node
 		, input_queue_()
 		, output_map_()
 		, open_requests_{ 0 }
-		, state_{ GPS::OFFLINE_ }
+		, state_{ GWPS::OFFLINE_ }
 		, config_cache_()
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -75,8 +75,8 @@ namespace node
 	cyng::continuation gateway_proxy::run()
 	{	
 		switch (state_) {
-		case GPS::OFFLINE_:
-		case GPS::WAITING_:
+		case GWPS::OFFLINE_:
+		case GWPS::WAITING_:
 			//
 			//	waiting for an opportunity to open a connection. If session is ready
 			//	is signals OK on slot 0
@@ -85,7 +85,7 @@ namespace node
 				vm_.async_run(cyng::generate_invoke("session.redirect", base_.get_id()));
 			}
 			break;
-		case GPS::CONNECTED_:
+		case GWPS::CONNECTED_:
 			if (!input_queue_.empty()) {
 				//
 				//	run input queue
@@ -108,7 +108,7 @@ namespace node
 	//	slot 0 - ack (connected to gateway)
 	cyng::continuation gateway_proxy::process()
 	{
-		BOOST_ASSERT_MSG(state_ == GPS::WAITING_, "wrong state");
+		BOOST_ASSERT_MSG(state_ == GWPS::WAITING_, "wrong state");
 		if (!input_queue_.empty()) {
 
 			CYNG_LOG_INFO(logger_, "task #"
@@ -122,7 +122,7 @@ namespace node
 			//
 			//	update state
 			//
-			state_ = GPS::CONNECTED_;
+			state_ = GWPS::CONNECTED_;
 
 			//
 			//	clear remaining entries
@@ -152,7 +152,7 @@ namespace node
 			//
 			//	update state
 			//
-			state_ = GPS::OFFLINE_;
+			state_ = GWPS::OFFLINE_;
 		}
 
 		//
@@ -210,15 +210,23 @@ namespace node
 		auto const pos = output_map_.find(trx);
 		if (pos != output_map_.end()) {
 
+			//
+			//	get root path
+			//
 			sml::obis const root(path);
 
+			//
+			//	get server ID as string
+			//
 			auto const srv_str = (srv_id.empty())
 				? sml::from_server_id(pos->second.get_srv())
 				: sml::from_server_id(srv_id)
 				;
 
-			cyng::param_map_t params;
-			params = cyng::value_cast(values.second, params);
+			//
+			//	extract the relevant data 
+			//
+			cyng::param_map_t params = cyng::to_param_map(values.second);
 
 			if (sml::OBIS_CLASS_OP_LOG_STATUS_WORD == root) {
 
@@ -255,6 +263,11 @@ namespace node
 				, srv_str
 				, root.to_str()
 				, params));
+
+			//
+			//	update configuration cache
+			//
+			update_cfg_cache(srv_str, root, pos->second, params);
 
 			//
 			//	remove from map
@@ -307,7 +320,7 @@ namespace node
 			//
 			//	update task state
 			//
-			state_ = GPS::OFFLINE_;
+			state_ = GWPS::OFFLINE_;
 
 			//
 			//	terminate redirection
@@ -333,12 +346,17 @@ namespace node
 		//
 		//	There should be entries
 		//
-		//BOOST_ASSERT(!output_map_.empty());
 		auto const pos = output_map_.find(trx);
 		if (pos != output_map_.end()) {
 
+			//
+			//	get root path
+			//
 			sml::obis const root(path);
 
+			//
+			//	get server ID as string
+			//
 			auto const srv_str = (srv_id.empty())
 				? sml::from_server_id(pos->second.get_srv())
 				: sml::from_server_id(srv_id)
@@ -362,6 +380,9 @@ namespace node
 				<< "]: "
 				<< cyng::io::to_str(params));
 
+			//
+			//	send response to requester
+			//
 			bus_->vm_.async_run(bus_res_com_sml(pos->second.get_tag_ident()
 				, pos->second.get_tag_source()
 				, pos->second.get_sequence()
@@ -371,6 +392,11 @@ namespace node
 				, srv_str
 				, root.to_str()
 				, params));
+
+			//
+			//	update configuration cache
+			//
+			update_cfg_cache(srv_str, root, pos->second, params);
 
 			//
 			//	remove from map
@@ -446,12 +472,18 @@ namespace node
 		auto const pos = output_map_.find(trx);
 		if (pos != output_map_.end()) {
 
+			//
+			//	get root path
+			//
+			sml::obis const root(path);
+
+			//
+			//	get server ID as string
+			//
 			auto const srv_str = (srv_id.empty())
 				? sml::from_server_id(pos->second.get_srv())
 				: sml::from_server_id(srv_id)
 				;
-
-			sml::obis const root(path);
 
 			//
 			//	update params with specific SML_GetProfileList.Res data
@@ -495,6 +527,11 @@ namespace node
 				, srv_str
 				, root.to_str()
 				, params));
+
+			//
+			//	update configuration cache
+			//
+			update_cfg_cache(srv_str, root, pos->second, params);
 
 		}
 		else {
@@ -540,12 +577,12 @@ namespace node
 		BOOST_ASSERT(!input_queue_.empty());
 
 		switch (state_) {
-		case GPS::OFFLINE_:
+		case GWPS::OFFLINE_:
 
 			//
 			//	update state
 			//
-			state_ = GPS::WAITING_;
+			state_ = GWPS::WAITING_;
 
 			//
 			//	waiting for an opportunity to open a connection. If session is ready
@@ -557,6 +594,56 @@ namespace node
 			break;
 		}
 
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	cyng::continuation gateway_proxy::process(boost::uuids::uuid tag,
+		boost::uuids::uuid source,
+		std::uint64_t seq,			
+		boost::uuids::uuid ws,		
+		std::string job,			
+		cyng::vector_t pk,			
+		cyng::vector_t sections,	
+		cyng::buffer_t srv_id,		
+		std::string name,			
+		std::string pwd)			
+	{
+
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> execute job: "
+			<< job
+			<< " with "
+			<< sections.size()
+			<< " section(s)");
+
+		if (boost::algorithm::equals(job, "enable.cache")) {
+
+			//
+			//	expecting obis codes
+			//
+			auto secs = cyng::vector_cast<std::string>(sections, "");
+
+#if	defined(__CPP_SUPPORT_N3656)
+			config_cache_ = std::make_unique<config_cache>(srv_id, sml::vector_to_path(secs));
+#else
+			config_cache_.reset(new config_cache(srv_id));
+#endif
+		}
+		else if (boost::algorithm::equals(job, "disable.cache")) {
+			config_cache_.reset();
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> unknown job: "
+				<< job);
+
+		}
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
@@ -1403,7 +1490,17 @@ namespace node
 		}
 	}
 
-	cyng::mac48 gateway_proxy::get_mac() const
+	void gateway_proxy::update_cfg_cache(std::string srv
+		, sml::obis root
+		, ipt::proxy_data const& pd
+		, cyng::param_map_t const& params)
+	{
+		if (config_cache_) {
+			config_cache_->update(root, params);
+		}
+	}
+
+	cyng::mac48 get_mac()
 	{
 		auto const macs = cyng::sys::retrieve_mac48();
 

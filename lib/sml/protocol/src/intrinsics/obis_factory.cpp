@@ -5,7 +5,9 @@
  *
  */
 
+#include <smf/sml/parser/obis_parser.h>
 #include <smf/sml/intrinsics/obis_factory.hpp>
+
 #include <cyng/factory/factory.hpp>
 #include <cyng/buffer_cast.h>
 
@@ -68,6 +70,19 @@ namespace node
 		obis_path vector_to_path(cyng::vector_t vec)
 		{
 			return C_to_path<cyng::vector_t>(vec);
+		}
+
+		obis_path vector_to_path(std::vector<std::string> const& vec)
+		{
+			obis_path path;
+			std::transform(vec.begin(), vec.end(), std::back_inserter(path), [](std::string const& s) {
+				auto const r = parse_obis(s);
+				return (r.second)
+					? r.first
+					: obis();
+				});
+			return path;
+
 		}
 
 	}	//	sml

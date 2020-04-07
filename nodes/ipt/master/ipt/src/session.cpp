@@ -75,7 +75,8 @@ namespace node
 			});
 
 			vm_.register_function("client.req.gateway", 11, std::bind(&session::client_req_gateway, this, std::placeholders::_1));
-			
+			vm_.register_function("client.req.proxy", 10, std::bind(&session::client_req_proxy, this, std::placeholders::_1));
+
 			vm_.register_function("session.start.proxy", 0, [this, sml_log](cyng::context& ctx) {
 
 				//
@@ -443,14 +444,42 @@ namespace node
 			//	* [str] channel
 			//	* [vec] sections
 			//	* [vec] parameter
+			//	* [buffer] server
+			//	* [string] user
+			//	* [string] pwd
 			//
-			const cyng::vector_t frame = ctx.get_frame();
+			auto const frame = ctx.get_frame();
+			CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+			//
+			//	update proxy queue
+			//
+			state_.react(state::evt_gateway(cyng::to_tuple(frame)));
+		}
+
+		void session::client_req_proxy(cyng::context& ctx)
+		{
+			//	[88342aae-0408-43b0-8608-7689cc673a85,9f773865-e4af-489a-8824-8f78a2311278,12,b930b77f-6dd5-4664-a8de-d797acb846f7,disable.cache,[ec563e58-f0d6-4d6a-8a13-63f639f6c9a7],[access,meter],0500153B0223B3,operator,operator]
+			//
+			//	* [uuid] ident
+			//	* [uuid] source
+			//	* [u64] seq
+			//	* [uuid] origin (web-socket)
+			//	* [str] job
+			//	* [vec] gateway pk
+			//	* [vec] sections
+			//	* [buffer] server
+			//	* [string] user
+			//	* [string] pwd
+			//
+			auto const frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 			//
 			//	update proxy queue
 			//
 			state_.react(state::evt_proxy(cyng::to_tuple(frame)));
+
 		}
 
 		void session::ipt_req_login_public(cyng::context& ctx)

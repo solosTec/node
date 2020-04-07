@@ -319,8 +319,11 @@ namespace node
 				//
 				current = cyng::make_object(tpl);
 
-				//data_.pop_back();
-				//data_.push_back(cyng::make_object(tpl));
+				//
+				//	update status and flush
+				//
+				status_ = status::OPEN;
+				this->flush(af_.string());
 
 			}
 		}

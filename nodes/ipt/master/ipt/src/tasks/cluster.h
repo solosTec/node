@@ -61,11 +61,24 @@ namespace node
 
 	private:
 		cyng::async::base_task& base_;
+
+		/**
+		 * cluster bus - communication to master node
+		 */
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-		const cluster_redundancy	config_;
-		const std::string ipt_address_;
-		const std::string ipt_service_;
+
+		/**
+		 * cluster configuration
+		 */
+		cluster_redundancy	const config_;
+
+		std::string const ipt_address_;
+		std::string const ipt_service_;
+
+		/**
+		 * The IP-T master
+		 */
 		ipt::server	server_;
 	};
 	

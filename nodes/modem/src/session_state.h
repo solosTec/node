@@ -280,9 +280,9 @@ namespace node
 				evt_proxy_started(std::pair<std::size_t, bool>);
 			};
 
-			struct evt_proxy
+			struct evt_gateway
 			{
-				evt_proxy(cyng::tuple_t&&);
+				evt_gateway(cyng::tuple_t&&);
 				cyng::tuple_t tpl_;
 			};
 
@@ -469,7 +469,7 @@ namespace node
 			void react(state::evt_init_complete);
 			void react(state::evt_shutdown);
 			void react(state::evt_activity);
-			void react(state::evt_proxy);
+			void react(state::evt_gateway);
 			void react(state::evt_data);
 			void react(state::evt_watchdog_started);
 			void react(state::evt_proxy_started);

@@ -396,20 +396,21 @@ namespace node
 		//	
 		//	* session tag
 		//	* json object
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "ws.read - " << cyng::io::to_str(frame));
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		//
 		//	get session tag of websocket
 		//
 		auto tag_ws = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
+		BOOST_ASSERT_MSG(!tag_ws.is_nil(), "no websocket");
 
 		//
 		//	reader for JSON data
 		//
-		auto reader = cyng::make_reader(frame.at(1));
-		const std::string cmd = cyng::value_cast<std::string>(reader.get("cmd"), "");
-		const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "generic");
+		auto const reader = cyng::make_reader(frame.at(1));
+		auto const cmd = cyng::value_cast<std::string>(reader.get("cmd"), "");
+		auto const channel = cyng::value_cast<std::string>(reader.get("channel"), "generic");
 
 		if (boost::algorithm::equals(cmd, "subscribe")) {
 
@@ -483,7 +484,10 @@ namespace node
 		}
 		else
 		{
-			CYNG_LOG_WARNING(logger_, "ws.read - unknown command " << cmd);
+			CYNG_LOG_WARNING(logger_, ctx.get_name() 
+				<< " unknown command [" 
+				<< cmd
+				<< "]");
 		}
 	}
 }

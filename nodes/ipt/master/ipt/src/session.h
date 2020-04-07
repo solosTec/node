@@ -117,6 +117,7 @@ namespace node
 			void remove_relation(cyng::context& ctx);
 
 			void client_req_gateway(cyng::context& ctx);
+			void client_req_proxy(cyng::context& ctx);
 
 		private:
 

@@ -234,7 +234,6 @@ namespace node
 		cache_.clear("_LoRaUplink", bus_->vm_.tag());
 		sync_table("_LoRaUplink");
 		sync_table("_CSV");
-		//sync_table("_TimeSeriesParams");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -336,7 +335,7 @@ namespace node
 
 	void cluster::res_subscribe(cyng::context& ctx)
 	{
-		const cyng::vector_t frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
 		//
 		//	* table name
 		//	* record key
@@ -386,7 +385,8 @@ namespace node
 		//	* session tag
 		//	* ws object
 		//	* json object
-		const cyng::vector_t frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		//
 		//	get session tag of websocket
@@ -397,9 +397,9 @@ namespace node
 		//
 		//	reader for JSON data
 		//
-		auto reader = cyng::make_reader(frame.at(1));
-		const std::string cmd = cyng::value_cast<std::string>(reader.get("cmd"), "");
-		const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "generic");
+		auto const reader = cyng::make_reader(frame.at(1));
+		auto const cmd = cyng::value_cast<std::string>(reader.get("cmd"), "");
+		auto const channel = cyng::value_cast<std::string>(reader.get("channel"), "generic");
 
 		if (boost::algorithm::equals(cmd, "subscribe"))
 		{
@@ -441,10 +441,17 @@ namespace node
 				, ctx
 				, reader);
 		}
-		//else if (boost::algorithm::equals(cmd, "config:gateway"))
 		else if (boost::algorithm::equals(cmd, "com:sml"))
 		{
 			node::fwd_com_sml(logger_
+				, ctx
+				, tag_ws
+				, channel
+				, reader);
+		}
+		else if (boost::algorithm::equals(cmd, "com:proxy"))
+		{
+			node::fwd_com_proxy(logger_
 				, ctx
 				, tag_ws
 				, channel
@@ -468,7 +475,10 @@ namespace node
 		}
 		else
 		{
-			CYNG_LOG_WARNING(logger_, "ws.read - unknown command " << cmd);
+			CYNG_LOG_WARNING(logger_, ctx.get_name()
+				<< " unknown command ["
+				<< cmd
+				<< "]");
 		}
 	}
 }

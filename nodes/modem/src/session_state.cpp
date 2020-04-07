@@ -195,7 +195,7 @@ namespace node
 			}
 		}
 
-		void session_state::react(state::evt_proxy evt)
+		void session_state::react(state::evt_gateway evt)
 		{
 			switch (state_) {
 				//case S_IDLE:
@@ -208,7 +208,7 @@ namespace node
 			//case S_CONNECTED_REMOTE:
 			case S_CONNECTED_TASK:
 				if (authorized_.tsk_proxy_ != cyng::async::NO_TASK) {
-					BOOST_ASSERT_MSG(evt.tpl_.size() == 11, "evt_proxy");
+					BOOST_ASSERT_MSG(evt.tpl_.size() == 11, "evt_gateway");
 					sp_->mux_.post(authorized_.tsk_proxy_, 7u, std::move(evt.tpl_));
 				}
 				else {
@@ -216,7 +216,7 @@ namespace node
 				}
 				break;
 			default:
-				signal_wrong_state("evt_proxy");
+				signal_wrong_state("evt_gateway");
 				break;
 			}
 		}
@@ -1484,7 +1484,7 @@ namespace node
 			//
 			//	EVENT: proxy
 			//
-			evt_proxy::evt_proxy(cyng::tuple_t&& tpl)
+			evt_gateway::evt_gateway(cyng::tuple_t&& tpl)
 				: tpl_(std::forward<cyng::tuple_t>(tpl))
 			{}
 

@@ -256,7 +256,7 @@ namespace node
 		/**
 		 * gateway proxy state
 		 */
-		enum class GPS {
+		enum class GWPS {
 			OFFLINE_,
 			WAITING_,
 			CONNECTED_

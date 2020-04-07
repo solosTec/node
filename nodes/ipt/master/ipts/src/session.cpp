@@ -450,7 +450,7 @@ namespace node
 			//
 			//	update proxy queue
 			//
-			state_.react(state::evt_proxy(cyng::to_tuple(frame)));
+			state_.react(state::evt_gateway(cyng::to_tuple(frame)));
 		}
 
 		void session::ipt_req_login_public(cyng::context& ctx)

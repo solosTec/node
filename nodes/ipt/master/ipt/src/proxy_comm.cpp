@@ -59,7 +59,7 @@ namespace node
 		//
 		//	get message body
 		//
-		cyng::tuple_t const msg = cyng::to_tuple(frame.at(0));
+		auto const msg = cyng::to_tuple(frame.at(0));
 
 		//
 		//	This effectively converts the SML message into function calls

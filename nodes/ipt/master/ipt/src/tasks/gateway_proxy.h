@@ -86,7 +86,31 @@ namespace node
 			cyng::param_map_t	//	params
 		>;
 
-		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8>;
+		//	communicate with this proxy tasks
+		//	* [uuid] ident
+		//	* [uuid] source
+		//	* [u64] seq
+		//	* [uuid] origin (web-socket)
+		//	* [str] job
+		//	* [vec] gateway pk
+		//	* [vec] sections
+		//	* [buffer] server
+		//	* [string] user
+		//	* [string] pwd
+
+		using msg_9 = std::tuple <
+			boost::uuids::uuid,		//	[0] ident tag
+			boost::uuids::uuid,		//	[1] source tag
+			std::uint64_t,			//	[2] cluster seq
+			boost::uuids::uuid,		//	[3] ws tag (origin)
+			std::string,			//	[4] job
+			cyng::vector_t,			//	[5] TGateway/TDevice pk
+			cyng::vector_t,			//	[6] sections
+			cyng::buffer_t,			//	[7] server id
+			std::string,			//	[8] name
+			std::string				//	[9] pwd
+		>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8, msg_9>;
 
 	public:
 		gateway_proxy(cyng::async::base_task* btp
@@ -109,13 +133,20 @@ namespace node
 		 * @brief slot [1]
 		 *
 		 * session closed - eom
+		 *
+		 * @param crc CRC16 of the whole SMS message
+		 * @param midx message index (sequential counter)
 		 */
-		cyng::continuation process(std::uint16_t, std::size_t);
+		cyng::continuation process(std::uint16_t crc, std::size_t midx);
 
 		/**
 		 * @brief slot [2]
 		 *
-		 * get response (SML)
+		 * Get an SML message. The SML parser will read this message
+		 * and produce VM calls ("sml.msg" and "sml.eom") that will be executed 
+		 * in the proxy communication class (proxy_comm).
+		 *
+		 * @see proxy_comm.h
 		 */
 		cyng::continuation process(cyng::buffer_t const&);
 
@@ -134,6 +165,8 @@ namespace node
 		 * @brief slot [4]
 		 *
 		 * sml.public.close.response
+		 *
+		 * @param trx transaction id as string
 		 */
 		cyng::continuation process(std::string trx);
 
@@ -141,7 +174,7 @@ namespace node
 		 * @brief slot [5]
 		 * Incoming message from gateway.
 		 *
-		 *  GetList.Res
+		 * GetList.Res
 		 * @see session_state
 		 */
 		cyng::continuation process(std::string trx
@@ -192,6 +225,22 @@ namespace node
 			, std::uint32_t	stat
 			, cyng::param_map_t params);
 
+		/**
+		 * @brief slot [9]
+		 *
+		 * communication with this task
+		 */
+		cyng::continuation process(boost::uuids::uuid,		//	[0] ident tag
+			boost::uuids::uuid,		//	[1] source tag
+			std::uint64_t,			//	[2] cluster seq
+			boost::uuids::uuid,		//	[3] ws tag (origin)
+			std::string,			//	[4] job
+			cyng::vector_t,			//	[5] TGateway/TDevice pk
+			cyng::vector_t,			//	[6] sections
+			cyng::buffer_t,			//	[7] server id
+			std::string,			//	[8] name
+			std::string);			//	[9] pwd
+
 	private:
 		void run_queue();
 		void execute_cmd(sml::req_generator& sml_gen
@@ -238,37 +287,68 @@ namespace node
 			, std::string
 			, std::string);
 
-		cyng::mac48 get_mac() const;
-
 		/**
-		 * Store proxy data in transaction map
+		 * Store proxy data in transaction/output map
 		 */
 		void push_trx(std::string, ipt::proxy_data const&);
+
+		/**
+		 * update configuration cache
+		 */
+		void update_cfg_cache(std::string srv
+			, sml::obis root
+			, ipt::proxy_data const& pd
+			, cyng::param_map_t const& params);
 
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		bus::shared_type bus_;
 		cyng::controller& vm_;
-		const std::chrono::seconds timeout_;
-		const std::chrono::system_clock::time_point start_;
+		std::chrono::seconds const timeout_;
+		std::chrono::system_clock::time_point const start_;
 		sml::parser parser_;
+
+		/**
+		 * All incoming requests from the network are first
+		 * queued in this inout queue.
+		 */
 		input_queue		input_queue_;
+
+		/**
+		 * The output map stores the relation between a sent SML message
+		 * and the original sender profile (proxy data) using the transaction ID.
+		 * The transaction ID of the request is returned in the response.
+		 * The output helps to redirect the responses from the gateway
+		 * to the origin requester.
+		 */
 		output_map		output_map_;
+
+		/**
+		 * This is an counter for all pending requests sent
+		 * to the gateway.
+		 * If an element is removed from the input queue the counter
+		 * will be incremented. After receiving an "sml.public.close.response"
+		 * the counter will be decremented.
+		 */
 		std::size_t		open_requests_;
 
 		/**
 		 * gateway proxy state
 		 */
-		enum class GPS {
+		enum class GWPS {
 			OFFLINE_,
 			WAITING_,
 			CONNECTED_
 		}	state_;
 
-		config_cache	config_cache_;
+		/**
+		 * Maintaining an configuration cache is optional
+		 */
+		std::unique_ptr<config_cache>	config_cache_;
 	};
 
+	cyng::mac48 get_mac();
 
 }
 

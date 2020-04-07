@@ -306,6 +306,12 @@ namespace node
 				evt_proxy_started(std::pair<std::size_t, bool>);
 			};
 
+			struct evt_gateway
+			{
+				evt_gateway(cyng::tuple_t&&);
+				cyng::tuple_t tpl_;
+			};
+
 			struct evt_proxy
 			{
 				evt_proxy(cyng::tuple_t&&);
@@ -448,6 +454,7 @@ namespace node
 			void react(state::evt_init_complete);
 			void react(state::evt_shutdown);
 			void react(state::evt_activity);
+			void react(state::evt_gateway);
 			void react(state::evt_proxy);
 			void react(state::evt_data);
 			void react(state::evt_watchdog_started);
@@ -486,16 +493,16 @@ namespace node
 		private:
 			session* sp_;
 			cyng::logging::log_ptr logger_;
-			enum internal_state {
-				S_IDLE,	//	TCP/IP connection accepted
-				S_ERROR,
-				S_SHUTDOWN,
-				S_AUTHORIZED,
-				S_WAIT_FOR_OPEN_RESPONSE,
-				S_WAIT_FOR_CLOSE_RESPONSE,
-				S_CONNECTED_LOCAL,
-				S_CONNECTED_REMOTE,
-				S_CONNECTED_TASK,
+			enum class internal_state {
+				IDLE,	//	TCP/IP connection accepted
+				FAILURE,
+				SHUTDOWN,
+				AUTHORIZED,
+				WAIT_FOR_OPEN_RESPONSE,
+				WAIT_FOR_CLOSE_RESPONSE,
+				CONNECTED_LOCAL,
+				CONNECTED_REMOTE,
+				CONNECTED_TASK,
 			} state_;
 			void transit(internal_state);
 

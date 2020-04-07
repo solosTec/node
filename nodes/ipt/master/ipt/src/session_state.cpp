@@ -32,7 +32,7 @@ namespace node
 		session_state::session_state(session* sp)
 			: sp_(sp)
 			, logger_(sp->logger_)
-			, state_(S_IDLE)
+			, state_(internal_state::IDLE)
 			, idle_()
 			, authorized_()
 			, wait_for_open_response_()
@@ -62,7 +62,7 @@ namespace node
 		void session_state::react(state::evt_init_complete evt)
 		{
 			switch (state_) {
-			case S_IDLE:
+			case internal_state::IDLE:
 				break;
 			default:
 				signal_wrong_state("evt_init_complete");
@@ -95,12 +95,12 @@ namespace node
 			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 			switch (state_) {
-			case S_AUTHORIZED:
+			case internal_state::AUTHORIZED:
 				if (tsk != cyng::async::NO_TASK) {
 					//
 					//	update state
 					//
-					transit(S_CONNECTED_TASK);
+					transit(internal_state::CONNECTED_TASK);
 					task_.reset(sp_->mux_, tsk);
 
 					CYNG_LOG_INFO(logger_, "session "
@@ -116,12 +116,12 @@ namespace node
 						<< " (already dis-connected)");
 				}
 				break;
-			case S_CONNECTED_TASK:
+			case internal_state::CONNECTED_TASK:
 				if (tsk == cyng::async::NO_TASK) {
 					//
 					//	update state
 					//
-					transit(S_AUTHORIZED);
+					transit(internal_state::AUTHORIZED);
 					task_.reset(sp_->mux_, tsk);
 
 					CYNG_LOG_INFO(logger_, "session "
@@ -138,10 +138,10 @@ namespace node
 				}
 				break;
 			default:
-				//	S_WAIT_FOR_OPEN_RESPONSE:
-				//	S_WAIT_FOR_CLOSE_RESPONSE:
-				//	S_CONNECTED_LOCAL:
-				//	S_CONNECTED_REMOTE:
+				//	internal_state::WAIT_FOR_OPEN_RESPONSE:
+				//	internal_state::WAIT_FOR_CLOSE_RESPONSE:
+				//	internal_state::CONNECTED_LOCAL:
+				//	internal_state::CONNECTED_REMOTE:
 				CYNG_LOG_WARNING(logger_, "session.redirect "
 					<< ctx.tag()
 					<< " - session is busy: ");
@@ -152,10 +152,10 @@ namespace node
 		void session_state::react(state::evt_shutdown)
 		{
 			switch (state_) {
-			case S_CONNECTED_LOCAL:
-			case S_CONNECTED_REMOTE:
-			case S_CONNECTED_TASK:
-			case S_WAIT_FOR_CLOSE_RESPONSE:	//	still in connection 
+			case internal_state::CONNECTED_LOCAL:
+			case internal_state::CONNECTED_REMOTE:
+			case internal_state::CONNECTED_TASK:
+			case internal_state::WAIT_FOR_CLOSE_RESPONSE:	//	still in connection 
 
 				//
 				//	clear connection map
@@ -165,14 +165,16 @@ namespace node
 				//
 				//	note: NO BREAK here - continue with AUTHORIZED state
 				//
-				//break;
+#if	defined(__CPP_SUPPORT_P0188R1)
+				[[fallthrough]];
+#endif
 
-			case S_WAIT_FOR_OPEN_RESPONSE:
-			case S_AUTHORIZED:
+			case internal_state::WAIT_FOR_OPEN_RESPONSE:
+			case internal_state::AUTHORIZED:
 				authorized_.stop(sp_->mux_);
 				break;
 
-			case S_IDLE:
+			case internal_state::IDLE:
 				idle_.stop(sp_->mux_);
 				break;
 
@@ -185,18 +187,48 @@ namespace node
 		void session_state::react(state::evt_activity)
 		{
 			switch (state_) {
-			//case S_IDLE:
-			case S_ERROR:
-			//case S_SHUTDOWN:
-			case S_AUTHORIZED:
-			case S_WAIT_FOR_OPEN_RESPONSE:
-			case S_WAIT_FOR_CLOSE_RESPONSE:
-			case S_CONNECTED_LOCAL:
-			case S_CONNECTED_REMOTE:
-			case S_CONNECTED_TASK:
+			case internal_state::FAILURE:
+			case internal_state::AUTHORIZED:
+			case internal_state::WAIT_FOR_OPEN_RESPONSE:
+			case internal_state::WAIT_FOR_CLOSE_RESPONSE:
+			case internal_state::CONNECTED_LOCAL:
+			case internal_state::CONNECTED_REMOTE:
+			case internal_state::CONNECTED_TASK:
 				authorized_.activity(sp_->mux_);
 				break;
+			//case internal_state::IDLE:
+			//case internal_state::SHUTDOWN:
 			default:
+				break;
+			}
+		}
+
+		void session_state::react(state::evt_gateway evt)
+		{
+			switch (state_) {
+			case internal_state::AUTHORIZED:
+			case internal_state::CONNECTED_TASK:
+				if (cyng::async::NO_TASK != authorized_.tsk_proxy_) {
+					BOOST_ASSERT_MSG(evt.tpl_.size() == 11, "evt_gateway");
+
+					//
+					//	push new entry into (income) queue
+					//
+					sp_->mux_.post(authorized_.tsk_proxy_, 7u, std::move(evt.tpl_));
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, sp_->vm().tag() << " no task (gateway)");
+				}
+				break;
+			//case internal_state::WAIT_FOR_OPEN_RESPONSE:
+			//case internal_state::WAIT_FOR_CLOSE_RESPONSE:
+			//case internal_state::CONNECTED_LOCAL:
+			//case internal_state::CONNECTED_REMOTE:
+			//case internal_state::IDLE:
+			//case internal_state::ERROR:
+			//case internal_state::SHUTDOWN:
+			default:
+				signal_wrong_state("evt_gateway");
 				break;
 			}
 		}
@@ -204,25 +236,28 @@ namespace node
 		void session_state::react(state::evt_proxy evt)
 		{
 			switch (state_) {
-				//case S_IDLE:
-			//case S_ERROR:
-				//case S_SHUTDOWN:
-			case S_AUTHORIZED:
-			//case S_WAIT_FOR_OPEN_RESPONSE:
-			//case S_WAIT_FOR_CLOSE_RESPONSE:
-			//case S_CONNECTED_LOCAL:
-			//case S_CONNECTED_REMOTE:
-			case S_CONNECTED_TASK:
-				if (authorized_.tsk_proxy_ != cyng::async::NO_TASK) {
-					BOOST_ASSERT_MSG(evt.tpl_.size() == 11, "evt_proxy");
-					sp_->mux_.post(authorized_.tsk_proxy_, 7u, std::move(evt.tpl_));
+			case internal_state::AUTHORIZED:
+			case internal_state::CONNECTED_TASK:
+				if (cyng::async::NO_TASK != authorized_.tsk_proxy_) {
+					BOOST_ASSERT_MSG(evt.tpl_.size() == 10, "evt_proxy");
+					//
+					//	communicate with proxy itself
+					//
+					sp_->mux_.post(authorized_.tsk_proxy_, 9u, std::move(evt.tpl_));
 				}
 				else {
-					CYNG_LOG_WARNING(logger_, sp_->vm().tag() << " no proxy task");
+					CYNG_LOG_WARNING(logger_, sp_->vm().tag() << " no task (proxy)");
 				}
 				break;
+				//case internal_state::WAIT_FOR_OPEN_RESPONSE:
+				//case internal_state::WAIT_FOR_CLOSE_RESPONSE:
+				//case internal_state::CONNECTED_LOCAL:
+				//case internal_state::CONNECTED_REMOTE:
+				//case internal_state::IDLE:
+				//case internal_state::ERROR:
+				//case internal_state::SHUTDOWN:
 			default:
-				signal_wrong_state("evt_proxy");
+				signal_wrong_state("evt_gateway");
 				break;
 			}
 		}
@@ -258,10 +293,10 @@ namespace node
 #endif
 
 			switch (state_) {
-				//case S_IDLE:
-				//case S_ERROR:
-				//case S_SHUTDOWN:
-			case S_AUTHORIZED:
+				//case internal_state::IDLE:
+				//case internal_state::ERROR:
+				//case internal_state::SHUTDOWN:
+			case internal_state::AUTHORIZED:
 				CYNG_LOG_WARNING(logger_, sp_->vm().tag()
 					<< " transmit "
 					<< ptr->size()
@@ -269,15 +304,15 @@ namespace node
 				local_.transmit(sp_->bus_, sp_->vm().tag(), evt.obj_);
 				break;
 
-				//case S_WAIT_FOR_OPEN_RESPONSE:
-			case S_WAIT_FOR_CLOSE_RESPONSE:
+				//case internal_state::WAIT_FOR_OPEN_RESPONSE:
+			case internal_state::WAIT_FOR_CLOSE_RESPONSE:
 				CYNG_LOG_WARNING(logger_, sp_->vm().tag()
 					<< " received "
 					<< ptr->size()
 					<< " bytes while waiting for close response");
 				break;
 
-			case S_CONNECTED_LOCAL:
+			case internal_state::CONNECTED_LOCAL:
 				CYNG_LOG_DEBUG(logger_, sp_->vm().tag()
 					<< " transmit "
 					<< ptr->size()
@@ -285,7 +320,7 @@ namespace node
 				local_.transmit(sp_->bus_, sp_->vm().tag(), evt.obj_);
 				break;
 
-			case S_CONNECTED_REMOTE:
+			case internal_state::CONNECTED_REMOTE:
 
 				if (sp_->bus_->is_online()) {
 					CYNG_LOG_DEBUG(logger_, sp_->vm().tag()
@@ -305,7 +340,7 @@ namespace node
 				}
 				break;
 
-			case S_CONNECTED_TASK:
+			case internal_state::CONNECTED_TASK:
 				//	send data to task
 				CYNG_LOG_DEBUG(logger_, sp_->vm().tag()
 					<< " transmit "
@@ -339,7 +374,7 @@ namespace node
 			cyng::vector_t prg;
 
 			switch (state_) {
-			case S_IDLE:
+			case internal_state::IDLE:
 				break;
 			default:
 				signal_wrong_state("evt_res_login");
@@ -382,7 +417,7 @@ namespace node
 				//
 				//	update session state
 				//
-				transit(S_AUTHORIZED);
+				transit(internal_state::AUTHORIZED);
 
 				//
 				//	start watchdog
@@ -487,7 +522,7 @@ namespace node
 			cyng::vector_t prg;
 
 			switch (state_) {
-			case S_IDLE:
+			case internal_state::IDLE:
 				break;
 			default:
 				signal_wrong_state("evt_req_login_public");
@@ -543,7 +578,7 @@ namespace node
 			cyng::vector_t prg;
 
 			switch (state_) {
-			case S_IDLE:
+			case internal_state::IDLE:
 				break;
 			default:
 				signal_wrong_state("evt_req_login_scrambled");
@@ -599,7 +634,7 @@ namespace node
 			cyng::vector_t prg;
 
 			switch (state_) {
-			case S_AUTHORIZED:
+			case internal_state::AUTHORIZED:
 				break;
 			default:
 				signal_wrong_state("evt_client_req_open_connection");
@@ -611,7 +646,7 @@ namespace node
 				//
 				//	update state
 				//
-				transit(S_WAIT_FOR_OPEN_RESPONSE);
+				transit(internal_state::WAIT_FOR_OPEN_RESPONSE);
 				wait_for_open_response_.init(evt.tsk_, /*evt.origin_tag_, */evt.local_, evt.seq_, evt.master_, evt.client_);
 			}
 
@@ -623,7 +658,7 @@ namespace node
 			cyng::vector_t prg;
 
 			switch (state_) {
-			case S_WAIT_FOR_CLOSE_RESPONSE:
+			case internal_state::WAIT_FOR_CLOSE_RESPONSE:
 				break;
 			default:
 				signal_wrong_state("evt_client_res_close_connection");
@@ -670,7 +705,7 @@ namespace node
 			//
 			//	reset connection state
 			//
-			transit(S_AUTHORIZED);
+			transit(internal_state::AUTHORIZED);
 			wait_for_close_response_.reset();
 
 			return prg;
@@ -681,8 +716,8 @@ namespace node
 			cyng::vector_t prg;
 
 			switch (state_) {
-			//case S_WAIT_FOR_OPEN_RESPONSE:
-			case S_AUTHORIZED:
+			//case internal_state::WAIT_FOR_OPEN_RESPONSE:
+			case internal_state::AUTHORIZED:
 				break;
 			default:
 				signal_wrong_state("evt_client_res_open_connection");
@@ -726,7 +761,7 @@ namespace node
 				//
 				//	update state
 				//
-				transit(local ? S_CONNECTED_LOCAL : S_CONNECTED_REMOTE);
+				transit(local ? internal_state::CONNECTED_LOCAL : internal_state::CONNECTED_REMOTE);
 				prg << cyng::generate_invoke_unwinded("res.open.connection", seq, static_cast<response_type>(tp_res_open_connection_policy::DIALUP_SUCCESS));
 			}
 			else
@@ -736,7 +771,7 @@ namespace node
 				//	To reset the session state to AUTHORIZED reflect the fact that this session is no longer part in any
 				//	attempt to establish a connection.
 				//
-				transit(S_AUTHORIZED);
+				transit(internal_state::AUTHORIZED);
 				prg << cyng::generate_invoke_unwinded("res.open.connection", seq, static_cast<response_type>(tp_res_open_connection_policy::DIALUP_FAILED));
 			}
 
@@ -750,9 +785,9 @@ namespace node
 			cyng::vector_t prg;
 
 			switch (state_) {
-			case S_CONNECTED_LOCAL:
-			case S_CONNECTED_REMOTE:
-				transit(S_WAIT_FOR_CLOSE_RESPONSE);
+			case internal_state::CONNECTED_LOCAL:
+			case internal_state::CONNECTED_REMOTE:
+				transit(internal_state::WAIT_FOR_CLOSE_RESPONSE);
 				break;
 			default:
 				signal_wrong_state("evt_ipt_req_close_connection");
@@ -788,7 +823,7 @@ namespace node
 			cyng::vector_t prg;
 
 			switch (state_) {
-			case S_WAIT_FOR_OPEN_RESPONSE:
+			case internal_state::WAIT_FOR_OPEN_RESPONSE:
 				break;
 			default:
 				signal_wrong_state("evt_ipt_res_open_connection");
@@ -808,10 +843,10 @@ namespace node
 				switch (wait_for_open_response_.type_) {
 				case state::state_wait_for_open_response::E_LOCAL:
 					sp_->bus_->vm_.async_run(wait_for_open_response_.establish_local_connection());
-					transit(S_CONNECTED_LOCAL);
+					transit(internal_state::CONNECTED_LOCAL);
 					break;
 				case state::state_wait_for_open_response::E_REMOTE:
-					transit(S_CONNECTED_REMOTE);
+					transit(internal_state::CONNECTED_REMOTE);
 					break;
 				default:
 					BOOST_ASSERT_MSG(false, "undefined connection state");
@@ -823,7 +858,7 @@ namespace node
 				//
 				//	fallback to authorized
 				//
-				transit(S_AUTHORIZED);
+				transit(internal_state::AUTHORIZED);
 			}
 			
 			if (sp_->bus_->is_online()) {
@@ -852,7 +887,7 @@ namespace node
 			cyng::vector_t prg;
 
 			switch (state_) {
-			case S_WAIT_FOR_CLOSE_RESPONSE:
+			case internal_state::WAIT_FOR_CLOSE_RESPONSE:
 				break;
 			default:
 				signal_wrong_state("evt_ipt_res_close_connection");
@@ -873,7 +908,7 @@ namespace node
 			//
 			//	update state
 			//
-			transit(S_AUTHORIZED);
+			transit(internal_state::AUTHORIZED);
 
 			//
 			//	update watchdog timer
@@ -888,8 +923,8 @@ namespace node
 			cyng::vector_t prg;
 
 			switch (state_) {
-			case S_CONNECTED_LOCAL:
-			case S_CONNECTED_REMOTE:
+			case internal_state::CONNECTED_LOCAL:
+			case internal_state::CONNECTED_REMOTE:
 				break;
 			default:
 				signal_wrong_state("evt_client_req_close_connection");
@@ -901,12 +936,12 @@ namespace node
 				//
 				//	initialize next state
 				//
-				wait_for_close_response_.init(evt.tsk_, evt.tag_, evt.shutdown_, evt.seq_, evt.master_, evt.client_, state_ == S_CONNECTED_LOCAL);
+				wait_for_close_response_.init(evt.tsk_, evt.tag_, evt.shutdown_, evt.seq_, evt.master_, evt.client_, state_ == internal_state::CONNECTED_LOCAL);
 
 				//
 				//	update state
 				//
-				transit(S_WAIT_FOR_CLOSE_RESPONSE);
+				transit(internal_state::WAIT_FOR_CLOSE_RESPONSE);
 			}
 			else {
 				CYNG_LOG_FATAL(logger_, "cannot start close_connection");
@@ -918,7 +953,7 @@ namespace node
 		void session_state::react(state::evt_sml_msg evt)
 		{
 			switch (state_) {
-			case S_CONNECTED_TASK:
+			case internal_state::CONNECTED_TASK:
 				break;
 			default:
 				signal_wrong_state("evt_sml_msg");
@@ -931,7 +966,7 @@ namespace node
 				<< cyng::io::to_str(evt.msg_));
 
 			//
-			//	message slot (3)
+			//	message slot (3) - get_proc_parameter
 			//
 			BOOST_ASSERT_MSG(evt.msg_.size() == 5, "evt_sml_msg");
 			sp_->mux_.post(task_.tsk_proxy_, 3, std::move(evt.msg_));
@@ -940,7 +975,7 @@ namespace node
 		void session_state::react(state::evt_sml_eom evt)
 		{
 			switch (state_) {
-			case S_CONNECTED_TASK:
+			case internal_state::CONNECTED_TASK:
 				break;
 			default:
 				signal_wrong_state("evt_sml_eom");
@@ -960,7 +995,7 @@ namespace node
 		void session_state::react(state::evt_sml_public_close_response evt)
 		{
 			switch (state_) {
-			case S_CONNECTED_TASK:
+			case internal_state::CONNECTED_TASK:
 				break;
 			default:
 				signal_wrong_state("evt_sml_public_close_response");
@@ -981,7 +1016,7 @@ namespace node
 		void session_state::react(state::evt_sml_get_proc_param_response evt)
 		{
 			switch (state_) {
-			case S_CONNECTED_TASK:
+			case internal_state::CONNECTED_TASK:
 				break;
 			default:
 				signal_wrong_state("evt_sml_get_proc_param_response");
@@ -1000,7 +1035,7 @@ namespace node
 		void session_state::react(state::evt_sml_get_list_response evt)
 		{
 			switch (state_) {
-			case S_CONNECTED_TASK:
+			case internal_state::CONNECTED_TASK:
 				break;
 			default:
 				signal_wrong_state("evt_sml_get_list_response");
@@ -1021,7 +1056,7 @@ namespace node
 		void session_state::react(state::evt_sml_get_profile_list_response evt)
 		{
 			switch (state_) {
-			case S_CONNECTED_TASK:
+			case internal_state::CONNECTED_TASK:
 				break;
 			default:
 				signal_wrong_state("evt_sml_get_profile_list_response");
@@ -1042,7 +1077,7 @@ namespace node
 		void session_state::react(state::evt_sml_attention_msg evt)
 		{
 			switch (state_) {
-			case S_CONNECTED_TASK:
+			case internal_state::CONNECTED_TASK:
 				break;
 			default:
 				signal_wrong_state("evt_sml_attention_msg");
@@ -1062,31 +1097,31 @@ namespace node
 		std::ostream& operator<<(std::ostream& os, session_state const& st)
 		{
 			switch (st.state_) {
-			case session_state::S_IDLE:
+			case session_state::internal_state::IDLE:
 				os << "IDLE";
 				break;
-			case session_state::S_ERROR:
-				os << "ERROR";
+			case session_state::internal_state::FAILURE:
+				os << "FAILURE";
 				break;
-			case session_state::S_SHUTDOWN:
+			case session_state::internal_state::SHUTDOWN:
 				os << "SHUTDOWN";
 				break;
-			case session_state::S_AUTHORIZED:
+			case session_state::internal_state::AUTHORIZED:
 				os << "AUTHORIZED";
 				break;
-			case session_state::S_WAIT_FOR_OPEN_RESPONSE:
+			case session_state::internal_state::WAIT_FOR_OPEN_RESPONSE:
 				os << "WAIT_FOR_OPEN_RESPONSE";
 				break;
-			case session_state::S_WAIT_FOR_CLOSE_RESPONSE:
+			case session_state::internal_state::WAIT_FOR_CLOSE_RESPONSE:
 				os << "WAIT_FOR_CLOSE_RESPONSE";
 				break;
-			case session_state::S_CONNECTED_LOCAL:
+			case session_state::internal_state::CONNECTED_LOCAL:
 				os << "CONNECTED_LOCAL";
 				break;
-			case session_state::S_CONNECTED_REMOTE:
+			case session_state::internal_state::CONNECTED_REMOTE:
 				os << "CONNECTED_REMOTE";
 				break;
-			case session_state::S_CONNECTED_TASK:
+			case session_state::internal_state::CONNECTED_TASK:
 				os << "CONNECTED_TASK";
 				break;
 			default:
@@ -1312,6 +1347,13 @@ namespace node
 			//	EVENT: activity
 			//
 			evt_activity::evt_activity()
+			{}
+
+			//
+			//	EVENT: gateway
+			//
+			evt_gateway::evt_gateway(cyng::tuple_t&& tpl)
+				: tpl_(std::forward<cyng::tuple_t>(tpl))
 			{}
 
 			//

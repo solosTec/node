@@ -147,7 +147,7 @@ namespace node
 			//
 			//	parse OBIS code
 			//
-			std::pair<node::sml::obis, bool> r = node::sml::parse_obis(val);
+			auto const r = node::sml::parse_obis(val);
 			if (r.second) {
 				this->id_ = r.first;
 				if (verbose_) {

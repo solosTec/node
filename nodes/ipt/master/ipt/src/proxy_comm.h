@@ -21,7 +21,13 @@ namespace node
 	}
 
 	/**
-	 * pre-process incoming SML messages
+	 * Pre-process incoming SML messages.
+	 * This is helper class for the geateway proxy and implements
+	 * a preprocessing of incoming SML messages from an gateway (or an other device).
+	 * 
+	 * The registered callbacks are triggered by the SML parser from the gateway proxy.
+	 * With help of the session state object the resulting messages are bounced back to 
+	 * gateway proxy.
 	 */
 	class proxy_comm
 	{

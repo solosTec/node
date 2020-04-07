@@ -24,12 +24,12 @@ namespace node
 		, int timeout
 		, bool sml_log)
 	: base_(*btp)
-	, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
-	, logger_(logger)
-	, config_(cfg_cls)
-	, ipt_address_(address)
-	, ipt_service_(service)
-	, server_(btp->mux_, logger_, bus_, std::chrono::seconds(timeout), sk, watchdog, sml_log)
+		, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
+		, logger_(logger)
+		, config_(cfg_cls)
+		, ipt_address_(address)
+		, ipt_service_(service)
+		, server_(btp->mux_, logger_, bus_, std::chrono::seconds(timeout), sk, watchdog, sml_log)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

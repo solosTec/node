@@ -60,7 +60,7 @@ namespace node
 		, input_queue_()
 		, output_map_()
 		, open_requests_{ 0 }
-		, state_{ GPS::OFFLINE_ }
+		, state_{ GWPS::OFFLINE_ }
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -75,8 +75,8 @@ namespace node
 	cyng::continuation gateway_proxy::run()
 	{	
 		switch (state_) {
-		case GPS::OFFLINE_:
-		case GPS::WAITING_:
+		case GWPS::OFFLINE_:
+		case GWPS::WAITING_:
 			//
 			//	waiting for an opportunity to open a connection. If session is ready
 			//	is signals OK on slot 0
@@ -85,7 +85,7 @@ namespace node
 				vm_.async_run(cyng::generate_invoke("session.redirect", base_.get_id()));
 			}
 			break;
-		case GPS::CONNECTED_:
+		case GWPS::CONNECTED_:
 			if (!input_queue_.empty()) {
 				//
 				//	run input queue
@@ -108,7 +108,7 @@ namespace node
 	//	slot 0 - ack (connected to gateway)
 	cyng::continuation gateway_proxy::process()
 	{
-		BOOST_ASSERT_MSG(state_ == GPS::WAITING_, "wrong state");
+		BOOST_ASSERT_MSG(state_ == GWPS::WAITING_, "wrong state");
 		if (!input_queue_.empty()) {
 
 			CYNG_LOG_INFO(logger_, "task #"
@@ -122,7 +122,7 @@ namespace node
 			//
 			//	update state
 			//
-			state_ = GPS::CONNECTED_;
+			state_ = GWPS::CONNECTED_;
 
 			//
 			//	clear remaining entries
@@ -152,7 +152,7 @@ namespace node
 			//
 			//	update state
 			//
-			state_ = GPS::OFFLINE_;
+			state_ = GWPS::OFFLINE_;
 		}
 
 		//
@@ -307,7 +307,7 @@ namespace node
 			//
 			//	update task state
 			//
-			state_ = GPS::OFFLINE_;
+			state_ = GWPS::OFFLINE_;
 
 			//
 			//	terminate redirection
@@ -540,12 +540,12 @@ namespace node
 		BOOST_ASSERT(!input_queue_.empty());
 
 		switch (state_) {
-		case GPS::OFFLINE_:
+		case GWPS::OFFLINE_:
 
 			//
 			//	update state
 			//
-			state_ = GPS::WAITING_;
+			state_ = GWPS::WAITING_;
 
 			//
 			//	waiting for an opportunity to open a connection. If session is ready

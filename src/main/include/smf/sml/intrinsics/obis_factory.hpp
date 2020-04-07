@@ -42,6 +42,11 @@ namespace node
 		 */
 		obis_path vector_to_path(cyng::vector_t vec);
 
+		/**
+		 * @brief converts a vector of objects into a obis path.
+		 * The precondition is that all objects of type buffer_t.
+		 */
+		obis_path vector_to_path(std::vector<std::string> const& vec);
 
 	}	//	sml
 }	//	node
