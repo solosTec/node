@@ -38,7 +38,7 @@ namespace node
 		cyng::tuple_t message(cyng::object trx
 			, std::uint8_t group_no
 			, std::uint8_t abort_code
-			, sml_messages_enum type
+			, sml_message type
 			, cyng::tuple_t body)
 		{
 			return cyng::tuple_factory( trx	//	transaction id
@@ -53,7 +53,7 @@ namespace node
 		cyng::tuple_t message(std::string trx
 			, std::uint8_t group_no
 			, std::uint8_t abort_code
-			, sml_messages_enum type
+			, sml_message type
 			, cyng::tuple_t body)
 		{
 			return message(cyng::make_object(trx), group_no, abort_code, type, body);
@@ -127,7 +127,7 @@ namespace node
 						//
 						pos = body->begin();
 						auto const msg_type = cyng::value_cast<std::uint16_t>(*pos, 0u);
-						if (msg_type == BODY_GET_PROC_PARAMETER_RESPONSE) {
+						if (msg_type == static_cast<std::uint16_t>(sml_message::GET_PROC_PARAMETER_RESPONSE)) {
 
 							//
 							//	navigate to message body
@@ -159,7 +159,7 @@ namespace node
 						//
 						//	navigate to SML_GetProfileList.Res
 						//
-						else if (msg_type == BODY_GET_PROFILE_LIST_RESPONSE) {
+						else if (msg_type == static_cast<std::uint16_t>(sml_message::GET_PROFILE_LIST_RESPONSE)) {
 
 							//
 							//	navigate to message body

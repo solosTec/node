@@ -45,6 +45,17 @@ namespace node
 		 */
 		bool is_cached(sml::obis code) const;
 
+		/**
+		 * extend cache of specified root slots if required
+		 */
+		void add(sml::obis_path&&);
+		void remove(sml::obis_path&&);
+
+		/**
+		 * remove all root slots
+		 */
+		void clear();
+
 	private:
 		static sections_t init_sections(sml::obis_path&&);
 

@@ -132,7 +132,7 @@ namespace node
 			<< " line "
 			<< line
 			<< " received: "
-			<< sml::messages::name(code));
+			<< sml::messages::name_from_value(code));
 
 		auto pos = lines_.find(line);
 		if (pos != lines_.end()) {

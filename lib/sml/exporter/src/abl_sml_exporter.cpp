@@ -111,15 +111,15 @@ namespace node
 			ro_.set_value("crc16", *pos);
 		}
 
-		void abl_exporter::read_body(std::uint16_t code, cyng::tuple_t const& tpl)
+		void abl_exporter::read_body(sml_message code, cyng::tuple_t const& tpl)
 		{
 			switch (code)
 			{
-			case BODY_OPEN_REQUEST:
+			case sml_message::OPEN_REQUEST:
 				ro_.read_public_open_request(tpl.begin(), tpl.end());
 				break;
 
-			case BODY_OPEN_RESPONSE:
+			case sml_message::OPEN_RESPONSE:
 
 				//
 				//	set default readout time
@@ -128,23 +128,23 @@ namespace node
 				ro_.read_public_open_response(tpl.begin(), tpl.end());
 				break;
 
-			//case BODY_CLOSE_REQUEST:
-			//case BODY_CLOSE_RESPONSE:
-			//case BODY_GET_PROFILE_PACK_REQUEST:
-			//case BODY_GET_PROFILE_PACK_RESPONSE:
-			//case BODY_GET_PROFILE_LIST_REQUEST:
-			//case BODY_GET_PROFILE_LIST_RESPONSE:
-			//case BODY_GET_PROC_PARAMETER_REQUEST:
+			//case sml_message::CLOSE_REQUEST:
+			//case sml_message::CLOSE_RESPONSE:
+			//case sml_message::GET_PROFILE_PACK_REQUEST:
+			//case sml_message::GET_PROFILE_PACK_RESPONSE:
+			//case sml_message::GET_PROFILE_LIST_REQUEST:
+			//case sml_message::GET_PROFILE_LIST_RESPONSE:
+			//case sml_message::GET_PROC_PARAMETER_REQUEST:
 			//	break;
-			case BODY_GET_PROC_PARAMETER_RESPONSE:
+			case sml_message::GET_PROC_PARAMETER_RESPONSE:
 				read_get_proc_parameter_response(tpl.begin(), tpl.end());
 				break;
-			//case BODY_SET_PROC_PARAMETER_REQUEST:
-			//case BODY_SET_PROC_PARAMETER_RESPONSE:
-			//case BODY_GET_LIST_REQUEST:
-			//case BODY_GET_LIST_RESPONSE:
+			//case sml_message::SET_PROC_PARAMETER_REQUEST:
+			//case sml_message::SET_PROC_PARAMETER_RESPONSE:
+			//case sml_message::GET_LIST_REQUEST:
+			//case sml_message::GET_LIST_RESPONSE:
 			//	break;
-			case BODY_ATTENTION_RESPONSE:
+			case sml_message::ATTENTION_RESPONSE:
 				read_attention_response(tpl.begin(), tpl.end());
 				break;
 			default:

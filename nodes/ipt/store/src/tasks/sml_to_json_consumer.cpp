@@ -80,7 +80,7 @@ namespace node
 			<< " line "
 			<< line
 			<< " received: "
-			<< sml::messages::name(code));
+			<< sml::messages::name_from_value(code));
 		return cyng::continuation::TASK_CONTINUE;
 	}
 

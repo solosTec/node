@@ -37,20 +37,22 @@ namespace node
 				cyng::buffer_t,			//	[8] server id
 				std::string,			//	[9] name
 				std::string,			//	[10] pwd
-				std::size_t				//	[11] queue size
+
+				bool					//	job - true if running as job
 			);
 
 			/**
 			 * Copy constructor
 			 */
-			proxy_data(proxy_data const&);
+			proxy_data(proxy_data const&) = default;
+			proxy_data(proxy_data&&) noexcept = default;
 
-			std::string const& get_msg_type() const;
+			//std::string get_msg_type() const;
 
 			/**
 			 * Turns the message type string into the SML message type code
 			 */
-			node::sml::sml_messages_enum get_msg_code() const;
+			node::sml::sml_message get_msg_code() const;
 
 			cyng::buffer_t const& get_srv() const;
 			std::string const& get_user() const;
@@ -77,9 +79,11 @@ namespace node
 			cyng::tuple_t const& get_params() const;
 
 			/**
-			 * OBIS code (root)
+			 * OBIS code (root path)
 			 */
 			node::sml::obis get_root() const;
+
+			bool is_job() const;
 
 		private:
 			boost::uuids::uuid const tag_;		//	ident tag (target)
@@ -87,8 +91,9 @@ namespace node
 			std::uint64_t const seq_;			//	cluster seq
 			boost::uuids::uuid const origin_;	//	ws tag (origin)
 
-			std::string const msg_type_;		//	SML message type
-			cyng::buffer_t code_;				//	OBIS root code
+			node::sml::sml_message const msg_type_;	//!<	SML message type
+			//std::string const msg_type_;		
+			node::sml::obis code_;				//	OBIS root code
 			cyng::vector_t const gw_;			//	TGateway/TDevice PK
 			cyng::tuple_t const params_;		//	parameters (optional)
 
@@ -96,6 +101,7 @@ namespace node
 			std::string const name_;			//	name
 			std::string const pwd_;				//	pwd
 
+			bool const job_;
 		};
 
 		/**

@@ -6,7 +6,6 @@
  */
 
 #include "gateway_proxy.h"
-#include "job_access_rights.h"
 
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/protocol/generator.h>
@@ -240,37 +239,63 @@ namespace node
 				params.emplace("word", cyng::make_object(sml::to_param_map(word)));
 			}
 
-			CYNG_LOG_INFO(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> response "
-				<< trx
-				<< " - "
-				<< sml::get_name(root)
-				<< " from "
-				<< srv_str
-				<< "/"
-				<< sml::from_server_id(pos->second.get_srv())
-				<< " ["
-				<< pos->second.get_msg_type()
-				<< "]: "
-				<< cyng::io::to_str(params));
-
-			bus_->vm_.async_run(bus_res_com_sml(pos->second.get_tag_ident()
-				, pos->second.get_tag_source()
-				, pos->second.get_sequence()
-				, pos->second.get_key_gw()
-				, pos->second.get_tag_origin()
-				, pos->second.get_msg_type()
-				, srv_str
-				, root.to_str()
-				, params));
 
 			//
 			//	update configuration cache
 			//
 			update_cfg_cache(srv_str, root, pos->second, params);
+
+			if (pos->second.is_job()) {
+
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> job result for trx "
+					<< trx
+					<< " - "
+					<< sml::get_name(root)
+					<< " from "
+					<< srv_str
+					<< "/"
+					<< sml::from_server_id(pos->second.get_srv())
+					<< " ["
+					<< sml::messages::name(pos->second.get_msg_code())
+					<< "]: "
+					<< cyng::io::to_str(params));
+
+				process_job_result(pos->second, params);
+
+			}
+			else {
+
+				CYNG_LOG_TRACE(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> response "
+					<< trx
+					<< " - "
+					<< sml::get_name(root)
+					<< " from "
+					<< srv_str
+					<< "/"
+					<< sml::from_server_id(pos->second.get_srv())
+					<< " ["
+					<< sml::messages::name(pos->second.get_msg_code())
+					<< "]: "
+					<< cyng::io::to_str(params));
+
+				bus_->vm_.async_run(bus_res_com_sml(pos->second.get_tag_ident()
+					, pos->second.get_tag_source()
+					, pos->second.get_sequence()
+					, pos->second.get_key_gw()
+					, pos->second.get_tag_origin()
+					, sml::messages::name(pos->second.get_msg_code())
+					, srv_str
+					, root.to_str()
+					, params));
+			}
 
 			//
 			//	remove from map
@@ -379,7 +404,7 @@ namespace node
 				<< "/"
 				<< sml::from_server_id(pos->second.get_srv())
 				<< " ["
-				<< pos->second.get_msg_type()
+				<< sml::messages::name(pos->second.get_msg_code())
 				<< "]: "
 				<< cyng::io::to_str(params));
 
@@ -391,7 +416,7 @@ namespace node
 				, pos->second.get_sequence()
 				, pos->second.get_key_gw()
 				, pos->second.get_tag_origin()
-				, pos->second.get_msg_type()
+				, sml::messages::name(pos->second.get_msg_code())
 				, srv_str
 				, root.to_str()
 				, params));
@@ -526,7 +551,7 @@ namespace node
 				, pos->second.get_sequence()
 				, pos->second.get_key_gw()
 				, pos->second.get_tag_origin()
-				, pos->second.get_msg_type()
+				, sml::messages::name(pos->second.get_msg_code())
 				, srv_str
 				, root.to_str()
 				, params));
@@ -568,7 +593,7 @@ namespace node
 		//
 		//	add new entry in work queue
 		//
-		input_queue_.emplace(tag, source, seq, origin, channel, code, gw, params, srv, name, pwd, input_queue_.size());
+		input_queue_.emplace(tag, source, seq, origin, channel, code, gw, params, srv, name, pwd, false);
 
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -603,7 +628,7 @@ namespace node
 	cyng::continuation gateway_proxy::process(boost::uuids::uuid tag,
 		boost::uuids::uuid source,
 		std::uint64_t seq,			
-		boost::uuids::uuid ws,		
+		boost::uuids::uuid origin,
 		std::string job,			
 		cyng::vector_t pk,			
 		cyng::vector_t sections,	
@@ -627,12 +652,7 @@ namespace node
 			<< " section(s)");
 
 		if (boost::algorithm::equals(job, "cache.create")) {
-
-#if	defined(__CPP_SUPPORT_N3656)
-			config_cache_ = std::make_unique<config_cache>(srv_id, sml::vector_to_path(secs));
-#else
-			config_cache_.reset(new config_cache(srv_id));
-#endif
+			adjust_cache(srv_id, sml::vector_to_path(secs));
 		}
 		else if (boost::algorithm::equals(job, "cache.delete")) {
 			config_cache_.reset();
@@ -645,32 +665,27 @@ namespace node
 			auto const roots = sml::vector_to_path(secs);
 			for (auto const& code : roots) {
 
-				CYNG_LOG_TRACE(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> update section "
-					<< sml::get_name(code));
-
 				switch (code.to_uint64()) {
 				case sml::CODE_ROOT_ACCESS_RIGHTS:
-					//
-					//	start task to collect all access configuration
-					//
-					start_job_access_rights();
+					start_job_access_rights(tag, source, seq, origin, pk, srv_id, name, pwd);
 					break;
 				default:
-					//	root path not supported
-					CYNG_LOG_WARNING(logger_, "task #"
+					//
+					//	using the same input queue as for other requests
+					//
+					input_queue_.emplace(tag, source, seq, origin, "GetProcParameterRequest", code.to_buffer(), pk, cyng::tuple_t{}, srv_id, name, pwd, true);
+
+					CYNG_LOG_TRACE(logger_, "task #"
 						<< base_.get_id()
 						<< " <"
 						<< base_.get_class_name()
 						<< "> update section "
 						<< sml::get_name(code)
-						<< " is not supported");
+						<< " new input queue entry - size: "
+						<< input_queue_.size());
+
 					break;
 				}
-
 			}
 		}
 		else if (boost::algorithm::equals(job, "cache.sync")) {
@@ -689,6 +704,20 @@ namespace node
 
 		}
 		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	void gateway_proxy::adjust_cache(cyng::buffer_t srv_id, sml::obis_path&& path)
+	{
+		if (!config_cache_) {
+#if	defined(__CPP_SUPPORT_N3656)
+			config_cache_ = std::make_unique<config_cache>(srv_id, std::move(path));
+#else
+			config_cache_.reset(new config_cache(srv_id, std::move(path)));
+#endif
+		}
+		else {
+			config_cache_->add(std::move(path));
+		}
 	}
 
 	void gateway_proxy::run_queue()
@@ -710,7 +739,8 @@ namespace node
 			auto trx = sml_gen.public_open(get_mac(), server_id);
 			boost::ignore_unused(trx);
 
-			auto const data = input_queue_.front();
+			//	note that we take a reference
+			auto const& data = input_queue_.front();
 			auto const params = cyng::make_reader(data.get_params());
 
 			//
@@ -781,31 +811,31 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> execute channel "
-			<< data.get_msg_type());
+			<< sml::messages::name(data.get_msg_code()));
 		
 		switch (data.get_msg_code()) {
 
-		case node::sml::BODY_GET_PROFILE_PACK_REQUEST:
+		case sml::sml_message::GET_PROFILE_PACK_REQUEST:
 			CYNG_LOG_ERROR(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> not implemented yet "
-				<< data.get_msg_type());
+				<< sml::messages::name(data.get_msg_code()));
 			break;
-		case node::sml::BODY_GET_PROFILE_LIST_REQUEST:
+		case sml::sml_message::GET_PROFILE_LIST_REQUEST:
 			execute_cmd_get_profile_list(sml_gen, data, params);
 			break;
 
-		case node::sml::BODY_GET_PROC_PARAMETER_REQUEST:
+		case sml::sml_message::GET_PROC_PARAMETER_REQUEST:
 			execute_cmd_get_proc_param(sml_gen, data, params);
 			break;
 
-		case node::sml::BODY_SET_PROC_PARAMETER_REQUEST:
+		case sml::sml_message::SET_PROC_PARAMETER_REQUEST:
 			execute_cmd_set_proc_param(sml_gen, data, params);
 			break;
 
-		case node::sml::BODY_GET_LIST_REQUEST:
+		case sml::sml_message::GET_LIST_REQUEST:
 			execute_cmd_get_list_request(sml_gen, data, params);
 			break;
 
@@ -815,7 +845,7 @@ namespace node
 				<< " <"
 				<< base_.get_class_name()
 				<< "> unknown channel "
-				<< data.get_msg_type());
+				<< sml::messages::name(data.get_msg_code()));
 
 			break;
 		}
@@ -838,7 +868,7 @@ namespace node
 				<< " <"
 				<< base_.get_class_name()
 				<< "> "
-				<< data.get_msg_type()
+				<< sml::messages::name(data.get_msg_code())
 				<< " - range: "
 				<< hours
 				<< " hours");
@@ -869,7 +899,7 @@ namespace node
 				<< " <"
 				<< base_.get_class_name()
 				<< "> "
-				<< data.get_msg_type()
+				<< sml::messages::name(data.get_msg_code())
 				<< " - unknown path "
 				<< data.get_root().to_str());
 		}
@@ -883,7 +913,7 @@ namespace node
 		//
 		//	generate get process parameter requests
 		//
-		node::sml::obis const root(data.get_root());
+		sml::obis const root(data.get_root());
 		if (sml::OBIS_ROOT_SENSOR_PARAMS == root ||
 			sml::OBIS_ROOT_DATA_COLLECTOR == root ||
 			sml::OBIS_PUSH_OPERATIONS == root) {
@@ -903,7 +933,7 @@ namespace node
 					<< " <"
 					<< base_.get_class_name()
 					<< "> "
-					<< data.get_msg_type()
+					<< sml::messages::name(data.get_msg_code())
 					<< " - invalid meter id: "
 					<< meter);
 			}
@@ -1519,7 +1549,7 @@ namespace node
 				<< "> store trx "
 				<< trx
 				<< " => "
-				<< data.get_msg_type());
+				<< sml::messages::name(data.get_msg_code()));
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "task #"
@@ -1529,7 +1559,7 @@ namespace node
 				<< "> store trx "
 				<< trx
 				<< " => "
-				<< data.get_msg_type()
+				<< sml::messages::name(data.get_msg_code())
 				<< " failed");
 		}
 	}
@@ -1564,10 +1594,39 @@ namespace node
 		}
 	}
 
-	void gateway_proxy::start_job_access_rights()
+	void gateway_proxy::start_job_access_rights(boost::uuids::uuid tag,
+		boost::uuids::uuid source,
+		std::uint64_t seq,
+		boost::uuids::uuid origin,
+		cyng::vector_t pk,
+		cyng::buffer_t srv_id,
+		std::string name,
+		std::string pwd)
 	{
-		auto const tsk = cyng::async::start_task_detached<job_access_rights>(this->base_.mux_
-			, logger_);
+		//
+		//	activate configuration cache
+		//
+		adjust_cache(srv_id, sml::obis_path{sml::OBIS_ROOT_ACTIVE_DEVICES, sml::OBIS_ROOT_ACCESS_RIGHTS });
+
+		//
+		//	query all active sensors/meters
+		//
+		input_queue_.emplace(tag, source, seq, origin, "GetProcParameterRequest", sml::OBIS_ROOT_ACTIVE_DEVICES.to_buffer(), pk, cyng::tuple_t{}, srv_id, name, pwd, true);
+
+		//
+		//	query access rights of gateway
+		//
+		input_queue_.emplace(tag, source, seq, origin, "GetProcParameterRequest", sml::OBIS_ROOT_ACCESS_RIGHTS.to_buffer(), pk, cyng::tuple_t{}, srv_id, name, pwd, true);
+
+		//
+		//	after receiving the access rights of the gateway query
+		//	individual rights on sensor/meters
+		//
+	}
+
+	void gateway_proxy::process_job_result(ipt::proxy_data const&, cyng::param_map_t const& params)
+	{
+
 	}
 
 

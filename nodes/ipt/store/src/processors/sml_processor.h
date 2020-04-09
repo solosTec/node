@@ -65,7 +65,7 @@ namespace node
 	/**
 	 * @return SML message type
 	 */
-	std::uint16_t get_msg_type(cyng::tuple_t const&);
+	sml::sml_message get_msg_type(cyng::tuple_t const&);
 
 }
 

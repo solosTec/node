@@ -300,7 +300,18 @@ namespace node
 			, ipt::proxy_data const& pd
 			, cyng::param_map_t const& params);
 
-		void start_job_access_rights();
+		void start_job_access_rights(boost::uuids::uuid tag,
+			boost::uuids::uuid source,
+			std::uint64_t seq,
+			boost::uuids::uuid origin,
+			cyng::vector_t pk,
+			cyng::buffer_t srv_id,
+			std::string name,
+			std::string pwd);
+
+		void process_job_result(ipt::proxy_data const&, cyng::param_map_t const& params);
+
+		void adjust_cache(cyng::buffer_t srv_id, sml::obis_path&&);
 
 	private:
 		cyng::async::base_task& base_;
@@ -341,7 +352,7 @@ namespace node
 		enum class GWPS {
 			OFFLINE_,
 			WAITING_,
-			CONNECTED_
+			CONNECTED_,
 		}	state_;
 
 		/**

@@ -141,24 +141,24 @@ namespace node
 			return from_server_id(client_id_);
 		}
 
-		std::pair<std::uint16_t, cyng::tuple_t> readout::read_choice(cyng::object obj)
+		std::pair<sml_message, cyng::tuple_t> readout::read_choice(cyng::object obj)
 		{
 			auto const choice = cyng::to_tuple(obj);
 			BOOST_ASSERT_MSG(choice.size() == 2, "CHOICE");
 			if (choice.size() == 2)
 			{
 				set_value("code", choice.front());
-				auto const code = cyng::value_cast<std::uint16_t>(choice.front(), 0);
+				auto const code = static_cast<sml_message>(cyng::value_cast<std::uint16_t>(choice.front(), 0));
 				return std::make_pair(code, cyng::to_tuple(choice.back()));
 			}
-			return std::make_pair(BODY_UNKNOWN, cyng::tuple_t{});
+			return std::make_pair(sml_message::UNKNOWN, cyng::tuple_t{});
 		}
 
-		std::pair<std::uint16_t, cyng::tuple_t> readout::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		std::pair<sml_message, cyng::tuple_t> readout::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			auto const count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
-			if (count != 5)	return std::make_pair(BODY_UNKNOWN, cyng::tuple_t{});
+			if (count != 5)	return std::make_pair(sml_message::UNKNOWN, cyng::tuple_t{});
 
 			//
 			//	(1) - transaction id

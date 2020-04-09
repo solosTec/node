@@ -465,7 +465,7 @@ namespace node
 					if (parser_.stack_.size() == 2) {
 						ss
 							<< " - "
-							<< node::sml::messages::name(s.u_.n_)
+							<< messages::name_from_value(s.u_.n_)
 							;
 					}
 

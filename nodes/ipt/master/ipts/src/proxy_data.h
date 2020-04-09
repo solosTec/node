@@ -50,7 +50,7 @@ namespace node
 			/**
 			 * Turns the message type string into the SML message type code
 			 */
-			node::sml::sml_messages_enum get_msg_code() const;
+			node::sml::sml_message get_msg_code() const;
 
 			cyng::buffer_t const& get_srv() const;
 			std::string const& get_user() const;

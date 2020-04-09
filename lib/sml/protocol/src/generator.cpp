@@ -98,7 +98,7 @@ namespace node
 			append(message(cyng::make_object(trx)	//	trx
 				, group_no_++	//	group
 				, 0 // abort code
-				, BODY_OPEN_REQUEST
+				, sml_message::OPEN_REQUEST
 
 				//
 				//	generate public open request
@@ -123,7 +123,7 @@ namespace node
 			append(message(cyng::make_object(trx)
 				, 0	//	group is 0 for CLOSE REQUEST
 				, 0 //	abort code
-				, BODY_CLOSE_REQUEST
+				, sml_message::CLOSE_REQUEST
 
 				//
 				//	generate public open response
@@ -141,7 +141,7 @@ namespace node
 			return append(message(cyng::make_object(*trx_)
 				, group_no_++	//	group
 				, 0 //	abort code
-				, BODY_SET_PROC_PARAMETER_REQUEST	//	0x600
+				, sml_message::SET_PROC_PARAMETER_REQUEST	//	0x600
 
 				//
 				//	generate reboot request
@@ -218,7 +218,7 @@ namespace node
 			append(message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
+				, sml_message::GET_PROC_PARAMETER_REQUEST	//	0x500
 
 				//
 				//	generate get process parameter request
@@ -240,7 +240,7 @@ namespace node
 			append(message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_REQUEST	//	0x500
+				, sml_message::GET_PROC_PARAMETER_REQUEST	//	0x500
 
 				//
 				//	generate get process parameter request
@@ -263,7 +263,7 @@ namespace node
 			append(message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
-				, BODY_GET_LIST_REQUEST	//	0x700
+				, sml_message::GET_LIST_REQUEST	//	0x700
 
 				//
 				//	generate get list request
@@ -294,7 +294,7 @@ namespace node
 			append(message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
-				, BODY_GET_PROFILE_LIST_REQUEST	//	0x400
+				, sml_message::GET_PROFILE_LIST_REQUEST	//	0x400
 
 				//
 				//	generate get profile list request
@@ -328,7 +328,7 @@ namespace node
 			return append(message(trx	//	trx
 				, group_no_++	//	group
 				, 0 // abort code
-				, BODY_OPEN_RESPONSE
+				, sml_message::OPEN_RESPONSE
 
 				//
 				//	generate public open response
@@ -348,7 +348,7 @@ namespace node
 			return append(message(trx
 				, 0	//	group is 0 for CLOSE RESPONSE
 				, 0 //	abort code
-				, BODY_CLOSE_RESPONSE
+				, sml_message::CLOSE_RESPONSE
 
 				//
 				//	generate public open response
@@ -370,7 +370,7 @@ namespace node
 			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+				, sml_message::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -391,7 +391,7 @@ namespace node
 			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_PROFILE_LIST_RESPONSE	//	0x0401
+				, sml_message::GET_PROFILE_LIST_RESPONSE	//	0x0401
 
 				//
 				//	generate get process parameter response
@@ -417,7 +417,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_PROFILE_LIST_RESPONSE	//	0x0401
+				, sml_message::GET_PROFILE_LIST_RESPONSE	//	0x0401
 
 				//
 				//	generate get process parameter response
@@ -454,7 +454,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+				, sml_message::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -540,7 +540,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+				, sml_message::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -615,7 +615,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+				, sml_message::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -661,7 +661,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+				, sml_message::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -743,7 +743,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+				, sml_message::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -779,7 +779,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_PROFILE_LIST_RESPONSE	//	0x0401
+				, sml_message::GET_PROFILE_LIST_RESPONSE	//	0x0401
 
 				//
 				//	generate get process parameter response
@@ -872,7 +872,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+				, sml_message::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -901,7 +901,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_PROC_PARAMETER_RESPONSE
+				, sml_message::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -931,7 +931,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_GET_LIST_RESPONSE
+				, sml_message::GET_LIST_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -953,7 +953,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, BODY_ATTENTION_RESPONSE
+				, sml_message::ATTENTION_RESPONSE
 
 				//
 				//	generate get process parameter response

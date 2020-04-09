@@ -654,7 +654,7 @@ namespace node
 		
 		switch (data.get_msg_code()) {
 
-		case node::sml::BODY_GET_PROFILE_PACK_REQUEST:
+		case sml::sml_message::GET_PROFILE_PACK_REQUEST:
 			CYNG_LOG_ERROR(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
@@ -662,19 +662,19 @@ namespace node
 				<< "> not implemented yet "
 				<< data.get_msg_type());
 			break;
-		case node::sml::BODY_GET_PROFILE_LIST_REQUEST:
+		case sml::sml_message::GET_PROFILE_LIST_REQUEST:
 			execute_cmd_get_profile_list(sml_gen, data, params);
 			break;
 
-		case node::sml::BODY_GET_PROC_PARAMETER_REQUEST:
+		case sml::sml_message::GET_PROC_PARAMETER_REQUEST:
 			execute_cmd_get_proc_param(sml_gen, data, params);
 			break;
 
-		case node::sml::BODY_SET_PROC_PARAMETER_REQUEST:
+		case sml::sml_message::SET_PROC_PARAMETER_REQUEST:
 			execute_cmd_set_proc_param(sml_gen, data, params);
 			break;
 
-		case node::sml::BODY_GET_LIST_REQUEST:
+		case sml::sml_message::GET_LIST_REQUEST:
 			execute_cmd_get_list_request(sml_gen, data, params);
 			break;
 

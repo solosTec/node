@@ -30,10 +30,10 @@ namespace node
         return false;
     }
 
-    config_cache::sections_t config_cache::init_sections(sml::obis_path&& path)
+    config_cache::sections_t config_cache::init_sections(sml::obis_path&& slots)
     {
         sections_t secs;
-        for (auto const& code : path) {
+        for (auto const& code : slots) {
             secs.emplace(code, cyng::param_map_t());
         }
         return secs;
@@ -47,6 +47,29 @@ namespace node
     bool config_cache::is_cached(sml::obis code) const
     {
         return sections_.find(code) != sections_.end();
+    }
+
+    void config_cache::add(sml::obis_path&& slots)
+    {
+        for (auto const& code : slots) {
+            if (!is_cached(code)) {
+                sections_.emplace(code, cyng::param_map_t());
+            }
+        }
+    }
+
+    void config_cache::remove(sml::obis_path&& slots)
+    {
+        for (auto const& code : slots) {
+            if (is_cached(code)) {
+                sections_.erase(code);
+            }
+        }
+    }
+
+    void config_cache::clear()
+    {
+        sections_.clear();
     }
 
 }

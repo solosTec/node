@@ -53,8 +53,8 @@ namespace node
 			 * SML message types (like BODY_OPEN_REQUEST, BODY_OPEN_RESPONSE, ...)
 			 * and the following body as tuple.
 			 */
-			std::pair<std::uint16_t, cyng::tuple_t> read_choice(cyng::object obj);
-			std::pair<std::uint16_t, cyng::tuple_t> read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
+			std::pair<sml_message, cyng::tuple_t> read_choice(cyng::object obj);
+			std::pair<sml_message, cyng::tuple_t> read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
 			bool read_public_open_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 			bool read_public_open_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);

@@ -79,7 +79,7 @@ namespace node
 			 * read SML message.
 			 */
 			void read_msg(readout&, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
-			void read_body(readout& ro, std::uint16_t code, cyng::tuple_t const& tpl);
+			void read_body(readout& ro, sml_message code, cyng::tuple_t const& tpl);
 			void read_get_proc_parameter_response(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 			void read_get_profile_list_response(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 

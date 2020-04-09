@@ -76,54 +76,54 @@ namespace node
 
 		}
 
-		void influxdb_exporter::read_body(readout& ro, std::uint16_t code, cyng::tuple_t const& tpl)
+		void influxdb_exporter::read_body(readout& ro, sml_message code, cyng::tuple_t const& tpl)
 		{
 			switch (code)
 			{
-			case BODY_OPEN_REQUEST:
+			case sml_message::OPEN_REQUEST:
 				break;
-			case BODY_OPEN_RESPONSE:
+			case sml_message::OPEN_RESPONSE:
 				break;
-			case BODY_CLOSE_REQUEST:
+			case sml_message::CLOSE_REQUEST:
 				break;
-			case BODY_CLOSE_RESPONSE:
+			case sml_message::CLOSE_RESPONSE:
 				break;
-			case BODY_GET_PROFILE_PACK_REQUEST:
+			case sml_message::GET_PROFILE_PACK_REQUEST:
 				break;
-			case BODY_GET_PROFILE_PACK_RESPONSE:
+			case sml_message::GET_PROFILE_PACK_RESPONSE:
 				break;
-			case BODY_GET_PROFILE_LIST_REQUEST:
+			case sml_message::GET_PROFILE_LIST_REQUEST:
 				break;
-			case BODY_GET_PROFILE_LIST_RESPONSE:
+			case sml_message::GET_PROFILE_LIST_RESPONSE:
 				read_get_profile_list_response(ro, tpl.begin(), tpl.end());
 				break;
-			case BODY_GET_PROC_PARAMETER_REQUEST:
+			case sml_message::GET_PROC_PARAMETER_REQUEST:
 				break;
-			case BODY_GET_PROC_PARAMETER_RESPONSE:
+			case sml_message::GET_PROC_PARAMETER_RESPONSE:
 				read_get_proc_parameter_response(ro, tpl.begin(), tpl.end());
 				break;
-			case BODY_SET_PROC_PARAMETER_REQUEST:
+			case sml_message::SET_PROC_PARAMETER_REQUEST:
 				break;
-			case BODY_SET_PROC_PARAMETER_RESPONSE:
+			case sml_message::SET_PROC_PARAMETER_RESPONSE:
 				break;
-			case BODY_GET_LIST_REQUEST:
+			case sml_message::GET_LIST_REQUEST:
 				break;
-			case BODY_GET_LIST_RESPONSE:
+			case sml_message::GET_LIST_RESPONSE:
 				break;
-			case BODY_GET_COSEM_REQUEST:
+			case sml_message::GET_COSEM_REQUEST:
 				break;
-			case BODY_GET_COSEM_RESPONSE:
+			case sml_message::GET_COSEM_RESPONSE:
 				break;
-			case BODY_SET_COSEM_REQUEST:
+			case sml_message::SET_COSEM_REQUEST:
 				break;
-			case BODY_SET_COSEM_RESPONSE:
+			case sml_message::SET_COSEM_RESPONSE:
 				break;
-			case BODY_ACTION_COSEM_REQUEST:
+			case sml_message::ACTION_COSEM_REQUEST:
 				break;
-			case BODY_ACTION_COSEM_RESPONSE:
+			case sml_message::ACTION_COSEM_RESPONSE:
 				break;
 
-			case BODY_ATTENTION_RESPONSE:
+			case sml_message::ATTENTION_RESPONSE:
 				break;
 			default:
 				break;

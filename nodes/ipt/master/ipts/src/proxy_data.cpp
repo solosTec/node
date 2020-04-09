@@ -74,7 +74,7 @@ namespace node
 			return msg_type_;
 		}
 
-		node::sml::sml_messages_enum proxy_data::get_msg_code() const
+		node::sml::sml_message proxy_data::get_msg_code() const
 		{
 			//
 			//	only requests expected

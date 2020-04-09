@@ -28,14 +28,14 @@ namespace node
 		, logger_(logger)
 		, task_(tsk)
 		, parser_([this](cyng::vector_t&& prg) {
-			//  CYNG_LOG_TRACE(logger_, prg.size()
+//  CYNG_LOG_TRACE(logger_, prg.size()
 				//<< " instructions received (including "
 				//<< cyng::op_counter(prg, cyng::code::INVOKE)
 				//<< " invoke(s))");
 //#ifdef SMF_IO_DEBUG
-#ifdef _DEBUG
-			CYNG_LOG_DEBUG(logger_, "cluster: " << cyng::io::to_str(prg));
-#endif
+//#ifdef _DEBUG
+//			CYNG_LOG_DEBUG(logger_, "cluster: " << cyng::io::to_str(prg));
+//#endif
 			vm_.async_run(std::move(prg));
 	})
 		, serializer_(socket_, vm_)
@@ -197,7 +197,7 @@ namespace node
 		{
 			if (!ec)
 			{
-				CYNG_LOG_TRACE(logger_, "cluster bus " << vm_.tag() << " received " << bytes_transferred << " bytes");
+				//CYNG_LOG_TRACE(logger_, "cluster bus " << vm_.tag() << " received " << bytes_transferred << " bytes");
 #ifdef SMF_IO_DEBUG
 				cyng::io::hex_dump hd;
 				std::stringstream ss;

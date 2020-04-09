@@ -11,9 +11,13 @@
 namespace node
 {
 	job_access_rights::job_access_rights(cyng::async::base_task* btp
-		, cyng::logging::log_ptr logger)
+		, cyng::logging::log_ptr logger
+		, std::size_t tsk_proxy
+		, ipt::proxy_data&& proxy_data)
 	: base_(*btp)
 		, logger_(logger)
+		, tsk_proxy_(tsk_proxy)
+		, proxy_data_(std::move(proxy_data))
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
