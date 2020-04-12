@@ -165,6 +165,7 @@ namespace node
 			//
 			//	(4/5) CHOICE - msg type
 			//
+//             std::pair<sml_message, cyng::tuple_t> readout::read_choice(*pos++);
 			cyng::tuple_t choice;
 			choice = cyng::value_cast(*pos++, choice);
 			BOOST_ASSERT_MSG(choice.size() == 2, "CHOICE");
@@ -188,7 +189,7 @@ namespace node
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(body, tpl);
 
-			switch (code)
+			switch (static_cast<sml_message>(code))
 			{
 			case sml_message::OPEN_REQUEST:		
 				read_public_open_request(node, tpl.begin(), tpl.end());
