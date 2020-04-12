@@ -1068,7 +1068,7 @@ namespace node
 			CYNG_LOG_DEBUG(logger_, "evt_sml_get_profile_list_response: " << cyng::io::to_str(evt.vec_));
 
 			//
-			//	message slot (?)
+			//	message slot [8]
 			//
 			task_.get_profile_list_response(sp_->mux_, evt.vec_);
 

@@ -443,14 +443,64 @@ namespace node
 			a.swap(b);
 		}
 
+		//bool operator==(const obis_path& x, const obis_path& y)
+		//{
+		//	//return x == y;
+		//	return false;
+		//}
+
+		bool operator!= (const obis_path& x, const obis_path& y)
+		{
+			return !(x == y);
+		}
+
+		bool operator< (const obis_path& lhs, const obis_path& rhs)
+		{
+			return std::less<obis_path>()(lhs, rhs);
+		}
+
+		bool operator> (const obis_path& lhs, const obis_path& rhs)
+		{
+			return std::less<obis_path>()(rhs, lhs);
+		}
+
+		bool operator<= (const obis_path& lhs, const obis_path& rhs)
+		{
+			return !std::less<obis_path>()(rhs, lhs);
+		}
+
+		bool operator>= (const obis_path& lhs, const obis_path& rhs)
+		{
+			return !std::less<obis_path>()(lhs, rhs);
+		}
+
+		void swap(obis_path& a, obis_path& b) {
+			a.swap(b);
+		}
 
 	}	//	sml
 }	//	node
 
 #pragma pack()
 
+namespace cyng
+{
+	namespace traits
+	{
+
+#if !defined(__CPP_SUPPORT_N2235)
+		const char type_tag<node::sml::obis>::name[] = "OBIS";
+		const char type_tag<node::sml::obis_path>::name[] = "path";
+#endif
+	}	// traits	
+}
+
 namespace std
 {
+	//
+	//	obis
+	//
+
 	size_t hash<node::sml::obis>::operator()(node::sml::obis const& code) const noexcept
 	{
 		return code.hash();
@@ -464,6 +514,31 @@ namespace std
 	bool less<node::sml::obis>::operator()(node::sml::obis const& c1, node::sml::obis const& c2) const noexcept
 	{
 		return c1.less(c2);
+	}
+
+	//
+	//	obis path
+	//
+
+	size_t hash<node::sml::obis_path>::operator()(node::sml::obis_path const& path) const noexcept
+	{
+		std::size_t seed = 0;
+		for (auto code : path) {
+			boost::hash_combine(seed, code.hash());
+		}
+		return seed;
+	}
+
+	bool equal_to<node::sml::obis_path>::operator()(node::sml::obis_path const& c1, node::sml::obis_path const& c2) const noexcept
+	{
+		return c1 == c2;
+	}
+
+	bool less<node::sml::obis_path>::operator()(node::sml::obis_path const& c1, node::sml::obis_path const& c2) const noexcept
+	{
+		return lexicographical_compare(c1.begin(), c1.end(), c2.begin(), c2.end(), [](node::sml::obis const& o1, node::sml::obis const& o2) {
+			return o1.less(o2);
+			});
 	}
 
 }

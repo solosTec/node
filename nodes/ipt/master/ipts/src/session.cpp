@@ -10,8 +10,8 @@
 #include "tasks/open_connection.h"
 #include "tasks/close_connection.h"
 #include "../../../../shared/tasks/gatekeeper.h"
-#include "tasks/gateway_proxy.h"
-#include "tasks/watchdog.h"
+#include "../../shared/tasks/gateway_proxy.h"
+#include "../../shared/tasks/watchdog.h"
 #include <NODE_project_info.h>
 
 #include <smf/cluster/generator.h>

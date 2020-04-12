@@ -9,9 +9,7 @@ set (node_ipt_master_cpp
 	nodes/ipt/master/ipt/src/server.cpp
 	nodes/ipt/master/ipt/src/session.cpp
 	nodes/ipt/master/ipt/src/session_state.cpp
-	nodes/ipt/master/ipt/src/proxy_data.cpp
 	nodes/ipt/master/ipt/src/proxy_comm.cpp
-	nodes/ipt/master/ipt/src/config_cache.cpp
 
 	nodes/shared/net/server_stub.cpp
 	nodes/shared/net/session_stub.cpp
@@ -23,15 +21,20 @@ set (node_ipt_master_h
 	nodes/ipt/master/ipt/src/server.h
 	nodes/ipt/master/ipt/src/session.h
 	nodes/ipt/master/ipt/src/session_state.h
-	nodes/ipt/master/ipt/src/proxy_data.h
 	nodes/ipt/master/ipt/src/proxy_comm.h
-	nodes/ipt/master/ipt/src/config_cache.h
 
 	src/main/include/smf/cluster/server_stub.h
 	src/main/include/smf/cluster/session_stub.h
 )
 
 set (node_ipt_master_shared
+	nodes/ipt/master/shared/proxy_data.h
+	nodes/ipt/master/shared/proxy_data.cpp
+	nodes/ipt/master/shared/config_cache.h
+	nodes/ipt/master/shared/config_cache.cpp
+)
+
+set (node_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
@@ -51,12 +54,11 @@ set (node_ipt_master_tasks
 	nodes/ipt/master/ipt/src/tasks/open_connection.cpp
 	nodes/ipt/master/ipt/src/tasks/close_connection.h
 	nodes/ipt/master/ipt/src/tasks/close_connection.cpp
-	nodes/ipt/master/ipt/src/tasks/watchdog.h
-	nodes/ipt/master/ipt/src/tasks/watchdog.cpp
-	nodes/ipt/master/ipt/src/tasks/gateway_proxy.h
-	nodes/ipt/master/ipt/src/tasks/gateway_proxy.cpp
-	nodes/ipt/master/ipt/src/tasks/job_access_rights.h
-	nodes/ipt/master/ipt/src/tasks/job_access_rights.cpp
+
+	nodes/ipt/master/shared/tasks/gateway_proxy.h
+	nodes/ipt/master/shared/tasks/gateway_proxy.cpp
+	nodes/ipt/master/shared/tasks/watchdog.h
+	nodes/ipt/master/shared/tasks/watchdog.cpp
 )
 	
 if(WIN32)
@@ -85,7 +87,8 @@ endif()
 
 source_group("tasks" FILES ${node_ipt_master_tasks})
 source_group("service" FILES ${node_ipt_master_service})
-source_group("shared" FILES ${node_ipt_master_shared})
+source_group("shared" FILES ${node_shared})
+source_group("ipt" FILES ${node_ipt_master_shared})
 
 
 # define the main program
@@ -95,6 +98,7 @@ set (node_ipt_master
   ${node_ipt_master_tasks}
   ${node_ipt_master_service}
   ${node_ipt_master_shared}
+  ${node_shared}
 )
 
 if(WIN32)
@@ -110,7 +114,6 @@ set (node_ipts_master_cpp
 	nodes/ipt/master/ipts/src/server.cpp
 	nodes/ipt/master/ipts/src/session.cpp
 	nodes/ipt/master/ipts/src/session_state.cpp
-	nodes/ipt/master/ipts/src/proxy_data.cpp
 	nodes/ipt/master/ipts/src/proxy_comm.cpp
 
 	nodes/shared/net/server_stub.cpp
@@ -123,22 +126,10 @@ set (node_ipts_master_h
 	nodes/ipt/master/ipts/src/server.h
 	nodes/ipt/master/ipts/src/session.h
 	nodes/ipt/master/ipts/src/session_state.h
-	nodes/ipt/master/ipts/src/proxy_data.h
 	nodes/ipt/master/ipts/src/proxy_comm.h
 
 	src/main/include/smf/cluster/server_stub.h
 	src/main/include/smf/cluster/session_stub.h
-)
-
-set (node_ipts_master_shared
-	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
-
-	nodes/print_build_info.h
-	nodes/print_version_info.h
-	nodes/set_start_options.h
-	nodes/show_ip_address.h
-
-	src/main/include/smf/shared/ctl.h
 )
 
 set (node_ipts_master_tasks
@@ -150,10 +141,11 @@ set (node_ipts_master_tasks
 	nodes/ipt/master/ipts/src/tasks/open_connection.cpp
 	nodes/ipt/master/ipts/src/tasks/close_connection.h
 	nodes/ipt/master/ipts/src/tasks/close_connection.cpp
-	nodes/ipt/master/ipts/src/tasks/watchdog.h
-	nodes/ipt/master/ipts/src/tasks/watchdog.cpp
-	nodes/ipt/master/ipts/src/tasks/gateway_proxy.h
-	nodes/ipt/master/ipts/src/tasks/gateway_proxy.cpp
+
+	nodes/ipt/master/shared/tasks/gateway_proxy.h
+	nodes/ipt/master/shared/tasks/gateway_proxy.cpp
+	nodes/ipt/master/shared/tasks/watchdog.h
+	nodes/ipt/master/shared/tasks/watchdog.cpp
 )
 	
 if(WIN32)
@@ -187,7 +179,8 @@ set (node_ipts_master
   ${node_ipts_master_h}
   ${node_ipts_master_tasks}
   ${node_ipts_master_service}
-  ${node_ipts_master_shared}
+  ${node_ipt_master_shared}
+  ${node_shared}
 )
 
 if(WIN32)

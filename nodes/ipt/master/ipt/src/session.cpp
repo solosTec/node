@@ -10,8 +10,8 @@
 #include "tasks/open_connection.h"
 #include "tasks/close_connection.h"
 #include "../../../../shared/tasks/gatekeeper.h"
-#include "tasks/gateway_proxy.h"
-#include "tasks/watchdog.h"
+#include "../../shared/tasks/gateway_proxy.h"
+#include "../../shared/tasks/watchdog.h"
 #include <NODE_project_info.h>
 
 #include <smf/cluster/generator.h>
@@ -1142,20 +1142,21 @@ namespace node
 
 			if (bus_->is_online())
 			{
-				ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
+				CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
-				bag["pSize"] = frame.at(3);
-				bag["wSize"] = frame.at(4);
+				auto bag = cyng::param_map_factory("tp-layer", "ipt")
+					("seq", frame.at(1))
+					("pSize", frame.at(3))
+					("wSize", frame.at(4))
+					.operator cyng::param_map_t();
+
 				bus_->vm_.async_run(client_req_register_push_target(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")	//	target name
 					, bag));
 			}
 			else
 			{
-				CYNG_LOG_ERROR(logger_, "ipt.req.register.push.target - no master " << cyng::io::to_str(frame));
+				CYNG_LOG_ERROR(logger_, ctx.get_name() << " - no master " << cyng::io::to_str(frame));
 				ctx	.queue(cyng::generate_invoke("res.register.push.target"
 					, frame.at(1)
 					, static_cast<response_type>(ctrl_res_register_target_policy::GENERAL_ERROR)
@@ -1175,18 +1176,19 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			if (bus_->is_online())
 			{
-				ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
+				CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
+				auto bag = cyng::param_map_factory("tp-layer", "ipt")
+					("seq", frame.at(1))
+					.operator cyng::param_map_t();
+
 				bus_->vm_.async_run(client_req_deregister_push_target(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")	//	target name
 					, bag));
 			}
 			else
 			{
-				CYNG_LOG_ERROR(logger_, "ipt.req.deregister.push.target - no master " << cyng::io::to_str(frame));
+				CYNG_LOG_ERROR(logger_, ctx.get_name() << " - no master " << cyng::io::to_str(frame));
 				ctx	.queue(cyng::generate_invoke("res.deregister.push.target"
 					, frame.at(1)		//	seq
 					, static_cast<response_type>(ctrl_res_deregister_target_policy::GENERAL_ERROR)
@@ -1212,7 +1214,7 @@ namespace node
 			//	* bag
 			//	
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 			//
 			//	dom reader
@@ -1241,7 +1243,7 @@ namespace node
 			//	* bag
 			//	
 			const cyng::vector_t frame = ctx.get_frame();
-			ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 			//
 			//	dom reader
@@ -1262,7 +1264,7 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			if (bus_->is_online())
 			{
-				ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
+				CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 				bus_->vm_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")	//	number
@@ -1335,8 +1337,8 @@ namespace node
 		{
 			//
 			//
-			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
+			auto const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 			//	[	86e6f4a5-fb44-49cd-ac25-96677e9f2e8a,8,c439ade5-f75f-4a28-a69b-aa9e5827a1f9,false,
 			//		%(("local-connect":true),("local-peer":9462fd76-02e8-4494-ac3c-ee96e0011604)),
@@ -1398,7 +1400,6 @@ namespace node
 				cyng::param_map_t,		//	[3] options
 				cyng::param_map_t		//	[4] bag
 			>(ctx.get_frame()))));
-
 		}
 
 		void session::client_res_open_connection_forward(cyng::context& ctx)
@@ -1414,7 +1415,6 @@ namespace node
 			//	* success
 			//	* options
 			//	* bag - original data
-			//ctx.run(cyng::generate_invoke("log.msg.trace", "client.res.open.connection.forward", ctx.get_frame()));
 
 			ctx.queue(state_.react(state::evt_client_res_open_connection(cyng::tuple_cast<
 				boost::uuids::uuid,		//	[0] peer
@@ -1438,7 +1438,7 @@ namespace node
 			//	* channel
 			//	* count
 			//	* bag
-			const cyng::vector_t frame = ctx.get_frame();
+			auto const frame = ctx.get_frame();
 
 			auto const tpl = cyng::tuple_cast<
 				//boost::uuids::uuid,		//	[0] tag
@@ -1464,7 +1464,8 @@ namespace node
 			if (status != 0xc1)
 			{
 				ctx.queue(cyng::generate_invoke("log.msg.warning"
-					, "client.res.transfer.pushdata - status"
+					, ctx.get_name()
+					, " - status: 0x"
 					, status));
 
 			}
@@ -1473,25 +1474,27 @@ namespace node
 			//
 			//	response
 			//
-			response_type res = (std::get<4>(tpl) != 0)
+			response_type const res = (std::get<4>(tpl) != 0)
 				? tp_res_pushdata_transfer_policy::SUCCESS
 				: tp_res_pushdata_transfer_policy::BROKEN
 				;
 
 			if (std::get<4>(tpl) != 0)
 			{
-				ctx.queue(cyng::generate_invoke("log.msg.debug"
-					, "client.res.transfer.pushdata - source"
-					, std::get<2>(tpl)
-					, "channel"
-					, std::get<3>(tpl)
-					, "count"
-					, std::get<4>(tpl)
-					, "OK"));
+				CYNG_LOG_DEBUG(logger_, ctx.get_name() 
+					<< " - source: "
+					<< std::get<2>(tpl)
+					<< ", channel: "
+					<< std::get<3>(tpl)
+					<< ", count: "
+					<< std::get<4>(tpl)
+					<< " OK")
 			}
 			else
 			{
-				ctx.queue(cyng::generate_invoke("log.msg.warning", "client.res.transfer.pushdata - failed", frame));
+				CYNG_LOG_WARNING(logger_, ctx.get_name() 
+					<< " - failed: " 
+					<< cyng::io::to_str(frame));
 			}
 
 			ctx	.queue(cyng::generate_invoke("res.transfer.push.data"
@@ -1534,7 +1537,8 @@ namespace node
 				cyng::buffer_t			//	[7] data
 			>(frame);
 
-			ctx.queue(cyng::generate_invoke("log.msg.debug", "client.req.transfer.pushdata.forward - channel "
+			ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name()
+				, " - channel "
 				, std::get<2>(tpl)
 				, ", source "
 				, std::get<3>(tpl)
@@ -1641,7 +1645,7 @@ namespace node
 			else
 			{
 				//ctx.queue(cyng::generate_invoke("log.msg.error", "ipt.res.open.connection - empty sequence/task relation", seq));
-				CYNG_LOG_ERROR(logger_, vm().tag() << " ipt.res.open.connection - empty sequence/task relation" << +seq);
+				CYNG_LOG_ERROR(logger_, vm().tag() << " - " << ctx.get_name() << ": empty sequence/task relation" << +seq);
 
 			}
 		}
@@ -1723,11 +1727,12 @@ namespace node
 				//
 				//ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.transfer.pushdata", frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
-				bag["status"] = frame.at(4);
-				bag["block"] = frame.at(5);
+				auto bag = cyng::param_map_factory("tp-layer", "ipt")
+					("seq", frame.at(1))
+					("status", frame.at(4))
+					("block", frame.at(5))
+					.operator cyng::param_map_t();
+
 				bus_->vm_.async_run(client_req_transfer_pushdata(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::uint32_t>(frame.at(2), 0)
 					, cyng::value_cast<std::uint32_t>(frame.at(3), 0)
@@ -1769,14 +1774,14 @@ namespace node
 			{
 				ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
-				bag["status"] = frame.at(4);
-				bag["block"] = frame.at(5);
+				auto bag = cyng::param_map_factory("tp-layer", "ipt")
+					("seq", frame.at(1))
+					("status", frame.at(4))
+					("block", frame.at(5))
+					.operator cyng::param_map_t();
 
 				//
-				//	master generates response already
+				//	master generates already response 
 				//
 
 				//bus_->vm_.async_run(node::client_res_transfer_pushdata(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())

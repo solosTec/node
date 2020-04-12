@@ -110,7 +110,7 @@ namespace node
 
 	void proxy_comm::sml_get_proc_param_response(cyng::context& ctx)
 	{
-		//	[]
+		//	slot [3]
 		auto const frame = ctx.get_frame();
 		ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 
@@ -118,7 +118,7 @@ namespace node
 		// * [string] trx
 		// * [u8] group number
 		// * [buffer] server id
-		// * [buffer] path (OBIS)
+		// * [path] path (OBIS)
 		// * [tuple] SML tree
 		//
 
@@ -127,7 +127,7 @@ namespace node
 
 	void proxy_comm::sml_get_list_response(cyng::context& ctx)
 	{
-		//	[]
+		//	slot [5]
 
 		auto const frame = ctx.get_frame();
 		ctx.queue(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));

@@ -95,9 +95,9 @@ namespace cyng
 		template <>
 		struct reverse_type <
 #if defined(__CPP_SUPPORT_N2347)
-			static_cast<std::size_t>(traits::predef_type_code::PREDEF_CUSTOM) + 1
+			static_cast<std::size_t>(traits::predef_type_code::PREDEF_CUSTOM_01)
 #else
-			PREDEF_CUSTOM + 1
+			PREDEF_CUSTOM_01
 #endif
 		>
 		{

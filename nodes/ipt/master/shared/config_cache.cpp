@@ -22,7 +22,7 @@ namespace node
         //
         //  selective update
         //
-        auto pos = sections_.find(root);
+        auto pos = sections_.find(sml::obis_path{ root });
         if (pos != sections_.end()) {
             pos->second = params;
             return true;
@@ -30,11 +30,25 @@ namespace node
         return false;
     }
 
+    bool config_cache::update(sml::obis_path path, cyng::param_map_t const& params)
+    {
+        //
+        //  selective update
+        //
+        auto pos = sections_.find(path);
+        if (pos != sections_.end()) {
+            pos->second = params;
+            return true;
+        }
+        return false;
+    }
+
+    //  static
     config_cache::sections_t config_cache::init_sections(sml::obis_path&& slots)
     {
         sections_t secs;
         for (auto const& code : slots) {
-            secs.emplace(code, cyng::param_map_t());
+            secs.emplace(sml::obis_path{ code }, cyng::param_map_t());
         }
         return secs;
     }
@@ -46,15 +60,19 @@ namespace node
 
     bool config_cache::is_cached(sml::obis code) const
     {
-        return sections_.find(code) != sections_.end();
+        return is_cached(sml::obis_path{ code });
     }
 
-    void config_cache::add(sml::obis_path&& slots)
+    bool config_cache::is_cached(sml::obis_path const& path) const
     {
-        for (auto const& code : slots) {
-            if (!is_cached(code)) {
-                sections_.emplace(code, cyng::param_map_t());
-            }
+        return sections_.find(path) != sections_.end();
+    }
+
+
+    void config_cache::add(sml::obis_path&& path)
+    {
+        if (!is_cached(path)) {
+            sections_.emplace(path, cyng::param_map_t());
         }
     }
 
@@ -62,7 +80,7 @@ namespace node
     {
         for (auto const& code : slots) {
             if (is_cached(code)) {
-                sections_.erase(code);
+                sections_.erase(sml::obis_path{ code });
             }
         }
     }
@@ -70,6 +88,15 @@ namespace node
     void config_cache::clear()
     {
         sections_.clear();
+    }
+
+    cyng::param_map_t config_cache::get_section(sml::obis_path const& path) const
+    {
+        auto const pos = sections_.find(path);
+        return (pos != sections_.end())
+            ? pos->second 
+            : cyng::param_map_t{}
+        ;
     }
 
 }

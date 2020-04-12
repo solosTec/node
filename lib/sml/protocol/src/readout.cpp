@@ -845,6 +845,7 @@ namespace node
 							//
 							BOOST_ASSERT(pos_srv->second.get_class().tag() == cyng::TC_BUFFER);
 							cyng::buffer_t const meter = cyng::to_buffer(pos_srv->second);
+							values.emplace("meter", cyng::make_object(meter));	//	binary format
 
 							//
 							//	get server type

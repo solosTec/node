@@ -764,7 +764,15 @@ namespace node
 
 	std::uint64_t storage::shrink(std::uint16_t max_size, cyng::buffer_t srv_id, std::string tbl_meta, std::string tbl_data)
 	{
+		//
+		//	NOTE: this function produces sometimes an "bad parameter or other API misuse" error
+		//
+
 		auto s = get_session();
+
+		//
+		//	get the size of the table: SELECT COUNT(*) FROM ... WHERE 
+		//
 		auto cmd = create_cmd(tbl_meta, s.get_dialect());
 		auto sql = cmd.select().count().where(cyng::sql::column(1) == cyng::sql::make_placeholder())();
 		auto stmt = s.create_statement();
@@ -773,8 +781,14 @@ namespace node
 
 			stmt->push(cyng::make_object(srv_id), 9);
 			if (auto res = stmt->get_result()) {
+
+				//
+				//	size of the table 
+				//
 				auto const obj = res->get(1, cyng::TC_UINT64, 0);
 				auto const count = cyng::numeric_cast<std::uint64_t>(obj, 0);
+				stmt->close();	//	destroy prepared statement
+
 				if (count > max_size) {
 
 					//
@@ -806,6 +820,8 @@ namespace node
 							--counter;
 						}
 
+						stmt->close();	//	destroy prepared statement
+
 						//
 						//	delete collected keys
 						//	in one transaction
@@ -820,9 +836,14 @@ namespace node
 							for (auto const& pk : keys) {
 								stmt->push(pk.front(), 9);
 								stmt->push(pk.back(), 0);
-								stmt->execute();
+								if (stmt->execute()) {
+									stmt->clear();
+								}
+								else {
+									//	error
+									break;
+								}
 							}
-							stmt->clear();
 							s.commit();
 						}
 
@@ -836,12 +857,16 @@ namespace node
 							for (auto const& pk : keys) {
 								stmt->push(pk.front(), 9);
 								stmt->push(pk.back(), 0);
-								stmt->execute();
+								if (stmt->execute()) {
+									stmt->clear();
+								}
+								else {
+									//	error
+									break;
+								}
 							}
-							stmt->clear();
 							s.commit();
 						}
-
 					}
 
 					return count - max_size;	//	rows deleted

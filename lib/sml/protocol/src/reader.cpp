@@ -254,12 +254,17 @@ namespace node
 				//std::pair<obis_path, cyng::param_map_t> readout::
 				auto const r = ro.read_get_profile_list_response(pos, end);
 
+				//
+				//	slot [8] of gateway proxy
+				//
+
 				return cyng::generate_invoke("sml.get.profile.list.response"
 					, ro.trx_
 					, ro.get_value("actTime")
 					, ro.get_value("regPeriod")
 					, ro.get_value("valTime")
-					, (r.first.empty() ? obis().to_buffer() : r.first.at(0).to_buffer())
+					//, (r.first.empty() ? obis().to_buffer() : r.first.at(0).to_buffer())
+					, r.first
 					, ro.server_id_
 					, ro.get_value("status")
 					, r.second);
@@ -291,11 +296,15 @@ namespace node
 				//	std::pair<obis_path, cyng::param_t> 
 				auto const r = ro.read_get_proc_parameter_response(pos, end);
 
+				//
+				//	slot [3] of gateway proxy
+				//
+
 				return cyng::generate_invoke("sml.get.proc.parameter.response"
 					, ro.trx_
 					, ro.get_value("groupNo")
 					, ro.server_id_	//	binary
-					, r.first.front().to_buffer()	//	ToDo: send complete path
+					, r.first	//	send complete path
 					, r.second);
 			}
 
@@ -407,7 +416,7 @@ namespace node
 				//
 				//	list name - optional
 				//
-				obis code = read_obis(*pos++);
+				auto code = read_obis(*pos++);
 				if (code.is_nil()) {
 					code = sml::OBIS_LIST_CURRENT_DATA_RECORD;	//	last data set (99 00 00 00 00 03)
 				}
@@ -436,7 +445,7 @@ namespace node
 				return cyng::generate_invoke("sml.get.list.response"
 					, ro.trx_
 					, ro.server_id_
-					, code.to_buffer()
+					, obis_path{ code }
 					, ro.values_
 					, ro.get_value("pk"));
 			}

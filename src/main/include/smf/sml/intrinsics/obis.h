@@ -210,8 +210,8 @@ namespace node
 
 		// comparisons
 	 	bool operator== (const obis&, const obis&);
-	 	bool operator< (const obis&, const obis&);
-	 	bool operator!= (const obis&, const obis&);
+		bool operator!= (const obis&, const obis&);
+		bool operator< (const obis&, const obis&);
 	 	bool operator> (const obis&, const obis&);
 	 	bool operator<= (const obis&, const obis&);
 	 	bool operator>= (const obis&, const obis&);
@@ -224,11 +224,100 @@ namespace node
 		 */
 		using obis_path = std::vector<obis>;
 
+		// comparisons
+		//bool operator== (const obis_path&, const obis_path&);
+		bool operator!= (const obis_path&, const obis_path&);
+		bool operator< (const obis_path&, const obis_path&);
+		bool operator> (const obis_path&, const obis_path&);
+		bool operator<= (const obis_path&, const obis_path&);
+		bool operator>= (const obis_path&, const obis_path&);
+
+		//P0515R3
+		// global swap()
+		void swap(obis_path&, obis_path&);
+
 	}	//	sml
 }	//	node
 
+#include <cyng/intrinsics/traits.hpp>
+#include <cyng/intrinsics/traits/tag.hpp>
+
+namespace cyng
+{
+	namespace traits
+	{
+		template <>
+		struct type_tag<node::sml::obis>
+		{
+			using type = node::sml::obis;
+			using tag = std::integral_constant<std::size_t,
+#if defined(__CPP_SUPPORT_N2347)
+				static_cast<std::size_t>(traits::predef_type_code::PREDEF_CUSTOM_02)
+#else
+				PREDEF_CUSTOM_02
+#endif
+			>;
+
+#if defined(__CPP_SUPPORT_N2235)
+			constexpr static char name[] = "OBIS";
+#else
+			const static char name[];
+#endif
+		};
+
+		template <>
+		struct reverse_type <
+#if defined(__CPP_SUPPORT_N2347)
+			static_cast<std::size_t>(traits::predef_type_code::PREDEF_CUSTOM_02)
+#else
+			PREDEF_CUSTOM_02
+#endif
+		>
+		{
+			using type = node::sml::obis;
+		};
+
+		template <>
+		struct type_tag<node::sml::obis_path>
+		{
+			using type = node::sml::obis_path;
+			using tag = std::integral_constant<std::size_t,
+#if defined(__CPP_SUPPORT_N2347)
+				static_cast<std::size_t>(traits::predef_type_code::PREDEF_CUSTOM_03)
+#else
+				PREDEF_CUSTOM_03
+#endif
+			>;
+
+#if defined(__CPP_SUPPORT_N2235)
+			constexpr static char name[] = "path";
+#else
+			const static char name[];
+#endif
+		};
+
+		template <>
+		struct reverse_type <
+#if defined(__CPP_SUPPORT_N2347)
+			static_cast<std::size_t>(traits::predef_type_code::PREDEF_CUSTOM_03)
+#else
+			PREDEF_CUSTOM_03
+#endif
+		>
+		{
+			using type = node::sml::obis_path;
+		};
+	}
+}
+
+#include <functional>
+
 namespace std
 {
+	//
+	//	obis
+	//
+
 	template<>
 	struct hash<node::sml::obis>
 	{
@@ -253,6 +342,35 @@ namespace std
 		using second_argument_type = node::sml::obis;
 
 		bool operator()(node::sml::obis const& t1, node::sml::obis const& t2) const noexcept;
+	};
+
+	//
+	//	obis path
+	//
+	template<>
+	struct hash<node::sml::obis_path>
+	{
+		size_t operator()(node::sml::obis_path const& sk) const noexcept;
+	};
+
+	template<>
+	struct equal_to<node::sml::obis_path>
+	{
+		using result_type = bool;
+		using first_argument_type = node::sml::obis_path;
+		using second_argument_type = node::sml::obis_path;
+
+		bool operator()(node::sml::obis_path const& t1, node::sml::obis_path const& t2) const noexcept;
+	};
+
+	template<>
+	struct less<node::sml::obis_path>
+	{
+		using result_type = bool;
+		using first_argument_type = node::sml::obis_path;
+		using second_argument_type = node::sml::obis_path;
+
+		bool operator()(node::sml::obis_path const& t1, node::sml::obis_path const& t2) const noexcept;
 	};
 
 }

@@ -9,6 +9,8 @@
 #define NODE_IP_MASTER_TASK_GATEWAY_PROXY_H
 
 #include "../proxy_data.h"
+#include "../config_cache.h"
+
 #include <smf/cluster/bus.h>
 #include <smf/ipt/defs.h>
 #include <smf/sml/protocol/parser.h>
@@ -32,8 +34,8 @@ namespace node
 	 */
 	class gateway_proxy
 	{
-		using input_queue = std::queue< ipt::proxy_data >;
-		using output_map = std::map<std::string, ipt::proxy_data>;
+		using input_queue = std::queue< proxy_data >;
+		using output_map = std::map<std::string, proxy_data>;
 
 	public:
 		using msg_0 = std::tuple<>;
@@ -43,7 +45,7 @@ namespace node
 		using msg_3 = std::tuple<std::string
 			, std::uint8_t
 			, cyng::buffer_t
-			, cyng::buffer_t
+			, sml::obis_path
 			, cyng::param_t>;
 
 		using msg_4 = std::tuple<std::string>;
@@ -51,7 +53,7 @@ namespace node
 		using msg_5 = std::tuple<
 			std::string,	//	trx
 			cyng::buffer_t,	//	server ID
-			cyng::buffer_t,	//	OBIS
+			sml::obis_path,	//	OBIS (path)
 			cyng::param_map_t	//	data
 		>;
 
@@ -78,13 +80,37 @@ namespace node
 			std::uint32_t,	//	act_time
 			std::uint32_t,	//	reg_period
 			std::uint32_t,	//	val_time
-			cyng::buffer_t,	//	OBIS (path)
+			sml::obis_path,	//	OBIS (path)
 			cyng::buffer_t,	//	server ID
 			std::uint32_t,	//	status
 			cyng::param_map_t	//	params
 		>;
 
-		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8>;
+		//	communicate with this proxy tasks
+		//	* [uuid] ident
+		//	* [uuid] source
+		//	* [u64] seq
+		//	* [uuid] origin (web-socket)
+		//	* [str] job
+		//	* [vec] gateway pk
+		//	* [vec] sections
+		//	* [buffer] server
+		//	* [string] user
+		//	* [string] pwd
+
+		using msg_9 = std::tuple <
+			boost::uuids::uuid,		//	[0] ident tag
+			boost::uuids::uuid,		//	[1] source tag
+			std::uint64_t,			//	[2] cluster seq
+			boost::uuids::uuid,		//	[3] ws tag (origin)
+			std::string,			//	[4] job
+			cyng::vector_t,			//	[5] TGateway/TDevice pk
+			cyng::vector_t,			//	[6] sections
+			cyng::buffer_t,			//	[7] server id
+			std::string,			//	[8] name
+			std::string				//	[9] pwd
+		>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8, msg_9>;
 
 	public:
 		gateway_proxy(cyng::async::base_task* btp
@@ -107,13 +133,20 @@ namespace node
 		 * @brief slot [1]
 		 *
 		 * session closed - eom
+		 *
+		 * @param crc CRC16 of the whole SMS message
+		 * @param midx message index (sequential counter)
 		 */
-		cyng::continuation process(std::uint16_t, std::size_t);
+		cyng::continuation process(std::uint16_t crc, std::size_t midx);
 
 		/**
 		 * @brief slot [2]
 		 *
-		 * get response (SML)
+		 * Get an SML message. The SML parser will read this message
+		 * and produce VM calls ("sml.msg" and "sml.eom") that will be executed 
+		 * in the proxy communication class (proxy_comm).
+		 *
+		 * @see proxy_comm.h
 		 */
 		cyng::continuation process(cyng::buffer_t const&);
 
@@ -125,13 +158,15 @@ namespace node
 		cyng::continuation process(std::string trx
 			, std::uint8_t group
 			, cyng::buffer_t srv_id
-			, cyng::buffer_t path
+			, sml::obis_path
 			, cyng::param_t values);
 
 		/**
 		 * @brief slot [4]
 		 *
 		 * sml.public.close.response
+		 *
+		 * @param trx transaction id as string
 		 */
 		cyng::continuation process(std::string trx);
 
@@ -139,12 +174,12 @@ namespace node
 		 * @brief slot [5]
 		 * Incoming message from gateway.
 		 *
-		 *  GetList.Res
+		 * GetList.Res
 		 * @see session_state
 		 */
 		cyng::continuation process(std::string trx
 			, cyng::buffer_t srv_id
-			, cyng::buffer_t root
+			, sml::obis_path	//	OBIS (path)
 			, cyng::param_map_t);
 
 		/**
@@ -159,7 +194,9 @@ namespace node
 		/**
 		 * @brief slot [7]
 		 *
-		 * add new entry in work queue
+		 * Add new entry in work queue. 
+		 * These requests are routed via the master node and originate, 
+		 * for example, from the dash GUI.
 		 */
 		cyng::continuation process(boost::uuids::uuid tag,		//	[0] ident tag (target)
 			boost::uuids::uuid source,	//	[1] source tag
@@ -183,74 +220,157 @@ namespace node
 			, std::uint32_t act_time
 			, std::uint32_t reg_period
 			, std::uint32_t val_time
-			, cyng::buffer_t path	//	OBIS
+			, sml::obis_path
 			, cyng::buffer_t srv_id
 			, std::uint32_t	stat
 			, cyng::param_map_t params);
 
+		/**
+		 * @brief slot [9]
+		 *
+		 * communication with this task
+		 */
+		cyng::continuation process(boost::uuids::uuid,		//	[0] ident tag
+			boost::uuids::uuid,		//	[1] source tag
+			std::uint64_t,			//	[2] cluster seq
+			boost::uuids::uuid,		//	[3] ws tag (origin)
+			std::string,			//	[4] job
+			cyng::vector_t,			//	[5] TGateway/TDevice pk
+			cyng::vector_t,			//	[6] sections
+			cyng::buffer_t,			//	[7] server id
+			std::string,			//	[8] name
+			std::string);			//	[9] pwd
+
 	private:
 		void run_queue();
 		void execute_cmd(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
+			, proxy_data const&
 			, cyng::tuple_reader const& params);
 		void execute_cmd_get_profile_list(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
+			, proxy_data const&
 			, cyng::tuple_reader const& params);
 		void execute_cmd_get_proc_param(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
+			, proxy_data const&
 			, cyng::tuple_reader const& params);
 		void execute_cmd_set_proc_param(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
+			, proxy_data const&
 			, cyng::tuple_reader const& params);
 		void execute_cmd_get_list_request(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
+			, proxy_data const&
 			, cyng::tuple_reader const& params);
 		void execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
+			, proxy_data const&
 			, cyng::vector_t vec);
 		void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
+			, proxy_data const&
 			, cyng::tuple_t const& params);
 		void execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
+			, proxy_data const&
 			, cyng::tuple_t const& params);
-		void execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
-			, std::uint8_t nr
-			, cyng::buffer_t const&);
-		void execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
-			, std::uint8_t nr
-			, cyng::buffer_t const&);
-		void execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
-			, std::uint8_t nr
-			, cyng::buffer_t const&);
+		//void execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, std::uint8_t nr
+		//	, cyng::buffer_t const&);
+		//void execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, std::uint8_t nr
+		//	, cyng::buffer_t const&);
+		//void execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, std::uint8_t nr
+		//	, cyng::buffer_t const&);
 		void execute_cmd_set_proc_param_meter(sml::req_generator& sml_gen
-			, ipt::proxy_data const&
+			, proxy_data const&
 			, cyng::buffer_t const&
 			, std::string 
 			, std::string
 			, std::string
 			, std::string);
 
-		cyng::mac48 get_mac() const;
+		/**
+		 * Store proxy data in transaction/output map
+		 */
+		void push_trx(std::string, proxy_data const&);
 
 		/**
-		 * Store proxy data in transaction map
+		 * update configuration cache
 		 */
-		void push_trx(std::string, ipt::proxy_data const&);
+		void update_cfg_cache(std::string srv
+			, sml::obis_path root
+			, proxy_data const& pd
+			, cyng::param_map_t const& params);
+
+		/**
+		 * Make configuration cache ready to store the specfied paths.
+		 */
+		void adjust_cache(cyng::buffer_t srv_id, sml::obis_path&&);
+
+		/**
+		 * prepare cache to store store all active devices and 
+		 * queue the required queries.
+		 */
+		void start_job_access_rights(boost::uuids::uuid tag,
+			boost::uuids::uuid source,
+			std::uint64_t seq,
+			boost::uuids::uuid origin,
+			cyng::vector_t pk,
+			cyng::buffer_t srv_id,
+			std::string name,
+			std::string pwd);
+
+		/**
+		 * now the responses to the queries for access rights are coming in
+		 * the next bunch of queries has to generated.
+		 */
+		void process_job_result(sml::obis_path path
+			, proxy_data const&
+			, cyng::param_map_t const& params);
+
+		void queue_access_right_queries(proxy_data const& prx, cyng::param_map_t const& params);
+
+		void place_access_right_request(boost::uuids::uuid tag
+			, boost::uuids::uuid source
+			, std::uint64_t seq
+			, boost::uuids::uuid origin
+			, std::uint8_t role
+			, std::uint8_t	user
+			, std::uint8_t meter
+			, cyng::vector_t gw
+			, cyng::buffer_t srv_id
+			, std::string name
+			, std::string pwd);
 
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		bus::shared_type bus_;
 		cyng::controller& vm_;
-		const std::chrono::seconds timeout_;
-		const std::chrono::system_clock::time_point start_;
+		std::chrono::seconds const timeout_;
+		std::chrono::system_clock::time_point const start_;
 		sml::parser parser_;
+
+		/**
+		 * All incoming requests from the network are first
+		 * queued in this input queue.
+		 */
 		input_queue		input_queue_;
+
+		/**
+		 * The output map stores the relation between a sent SML message
+		 * and the original sender profile (proxy data) using the transaction ID.
+		 * The transaction ID of the request is returned in the response.
+		 * The output helps to redirect the responses from the gateway
+		 * to the origin requester.
+		 */
 		output_map		output_map_;
+
+		/**
+		 * This is an counter for all pending requests sent
+		 * to the gateway.
+		 * If an element is removed from the input queue the counter
+		 * will be incremented. After receiving an "sml.public.close.response"
+		 * the counter will be decremented.
+		 */
 		std::size_t		open_requests_;
 
 		/**
@@ -259,10 +379,16 @@ namespace node
 		enum class GWPS {
 			OFFLINE_,
 			WAITING_,
-			CONNECTED_
+			CONNECTED_,
 		}	state_;
+
+		/**
+		 * Maintaining an configuration cache is optional
+		 */
+		std::unique_ptr<config_cache>	config_cache_;
 	};
 
+	cyng::mac48 get_mac();
 
 }
 

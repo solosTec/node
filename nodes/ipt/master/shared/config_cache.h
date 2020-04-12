@@ -23,9 +23,12 @@ namespace node
 	 */
 	class config_cache
 	{
-		using sections_t = std::map<sml::obis, cyng::param_map_t>;
+		using sections_t = std::map<sml::obis_path, cyng::param_map_t>;
 
 	public:
+		/**
+		 * Take each section of the obis path as a full obis path itself
+		 */
 		config_cache(cyng::buffer_t srv, sml::obis_path&&);
 
 		/**
@@ -34,6 +37,7 @@ namespace node
 		 * @return true if root is part of the actice sections
 		 */
 		bool update(sml::obis root, cyng::param_map_t const& params);
+		bool update(sml::obis_path root, cyng::param_map_t const& params);
 
 		/**
 		 * @return server as string
@@ -44,6 +48,7 @@ namespace node
 		 * @return true if OBIS code is a cached root path.
 		 */
 		bool is_cached(sml::obis code) const;
+		bool is_cached(sml::obis_path const&) const;
 
 		/**
 		 * extend cache of specified root slots if required
@@ -56,7 +61,16 @@ namespace node
 		 */
 		void clear();
 
+		/**
+		 * @return data of the cached section. Data set will be empty
+		 * if no data were cached.
+		 */
+		cyng::param_map_t get_section(sml::obis_path const&) const;
+
 	private:
+		/**
+		 * Take each section of the obis path as a full obis path itself
+		 */
 		static sections_t init_sections(sml::obis_path&&);
 
 	private:
