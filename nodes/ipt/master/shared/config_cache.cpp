@@ -7,8 +7,13 @@
 
 #include "config_cache.h"
 #include <smf/sml/srv_id_io.h>
+#include <smf/sml/obis_db.h>
+#include <smf/sml/parser/obis_parser.h>
+#include <smf/sml/srv_id_io.h>
 
 #include <cyng/object.h>
+#include <cyng/set_cast.h>
+#include <cyng/buffer_cast.h>
 
 namespace node 
 {
@@ -97,6 +102,125 @@ namespace node
             ? pos->second 
             : cyng::param_map_t{}
         ;
+    }
+
+    cyng::param_map_t config_cache::get_section(sml::obis root) const
+    {
+        return get_section(sml::obis_path({ root }));
+    }
+
+
+    void config_cache::loop_access_rights(cb_access_rights cb) const
+    {
+        auto const section = get_section(sml::OBIS_ROOT_ACCESS_RIGHTS);
+
+        //
+        //  loop over all "roles"
+        //
+        for (auto const& rec_role : section) {
+
+            //  convert name to OBIS code
+            auto const r = sml::parse_obis(rec_role.first);
+            if (r.second) {
+
+                //
+                //  get role
+                //
+                std::uint8_t const role = r.first.get_quantities();
+                auto const pm = cyng::to_param_map(rec_role.second);
+                if (!pm.empty()) {
+
+                    //
+                    //  loop over all "user" of this "role"
+                    //
+                    for (auto const& rec_user : pm) {
+
+                        //  convert name to OBIS code
+                        auto const r = sml::parse_obis(rec_user.first);
+                        if (r.second) {
+
+                            BOOST_ASSERT(role == r.first.get_quantities());
+
+                            //
+                            //  get user
+                            //
+                            std::uint8_t const user = r.first.get_storage();
+                            auto params = cyng::to_param_map(rec_user.second);
+
+                            //
+                            //  get devices/server
+                            //  walk over the parameter list an select all devices
+                            //
+                            auto const devices = split_list_of_access_rights(params);
+
+                            //
+                            // get value 81818161FFFF
+                            //
+                            auto const name = get_user_name(params);
+
+                            //
+                            //  callback
+                            //
+                            cb(role, user, name, devices);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    config_cache::device_map_t split_list_of_access_rights(cyng::param_map_t& params)
+    {
+        config_cache::device_map_t devices;
+
+        for (auto pos = params.begin(); pos != params.end(); ) {
+            auto const r = sml::parse_obis(pos->first);
+            if (r.second) {
+                //  81 81 81 64 01 SS (SS == server identifier)
+                if (r.first.is_matching(0x81, 0x81, 0x81, 0x64, 0x01).second) {
+
+                    auto const srv = cyng::to_buffer(pos->second);
+                    if (!srv.empty()) {
+
+                        //
+                        //  get devices type
+                        //
+                        if (sml::get_srv_type(srv) < 4) {
+
+                            //
+                            //  ignore other server types, especially actors
+                            //
+                            //devices.insert(*pos);
+                            devices.emplace(r.first, srv);
+                        }
+                    }
+
+                    //
+                    //  remove parameter
+                    //
+                    pos = params.erase(pos);
+                }
+                else {
+                    //  next parameter
+                    ++pos;
+                }
+            }
+            else {
+                //  next parameter
+                ++pos;
+            }
+        }
+
+        return devices;
+    }
+
+    std::string get_user_name(cyng::param_map_t const& params)
+    {
+        auto const pos = params.find(sml::OBIS_ACCESS_USER_NAME.to_str());
+        return (pos != params.end())
+            ? cyng::value_cast<std::string>(pos->second, "")
+            : ""
+            ;
     }
 
 }

@@ -153,7 +153,8 @@ namespace node
 		/**
 		 * @brief slot [3]
 		 *
-		 * get get_proc_parameter()
+		 * get_proc_parameter() response from gateway. 
+		 * If not in job-mode the response will be forwarded to the requester.
 		 */
 		cyng::continuation process(std::string trx
 			, std::uint8_t group
@@ -267,18 +268,18 @@ namespace node
 		void execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen
 			, proxy_data const&
 			, cyng::tuple_t const& params);
-		//void execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, std::uint8_t nr
-		//	, cyng::buffer_t const&);
-		//void execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, std::uint8_t nr
-		//	, cyng::buffer_t const&);
-		//void execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, std::uint8_t nr
-		//	, cyng::buffer_t const&);
+		void execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
+			, proxy_data const&
+			, std::uint8_t nr
+			, cyng::buffer_t const&);
+		void execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
+			, proxy_data const&
+			, std::uint8_t nr
+			, cyng::buffer_t const&);
+		void execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
+			, proxy_data const&
+			, std::uint8_t nr
+			, cyng::buffer_t const&);
 		void execute_cmd_set_proc_param_meter(sml::req_generator& sml_gen
 			, proxy_data const&
 			, cyng::buffer_t const&
@@ -310,6 +311,15 @@ namespace node
 		 * queue the required queries.
 		 */
 		void start_job_access_rights(boost::uuids::uuid tag,
+			boost::uuids::uuid source,
+			std::uint64_t seq,
+			boost::uuids::uuid origin,
+			cyng::vector_t pk,
+			cyng::buffer_t srv_id,
+			std::string name,
+			std::string pwd);
+
+		void send_access_rights_from_cache(boost::uuids::uuid tag,
 			boost::uuids::uuid source,
 			std::uint64_t seq,
 			boost::uuids::uuid origin,

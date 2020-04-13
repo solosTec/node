@@ -436,7 +436,7 @@ namespace node
 		cyng::buffer_t parser::read_data()
 		{
 			auto const size = read_numeric<std::uint32_t>();
-			BOOST_ASSERT_MSG(size < 0xFFFF, "buffer size too big");
+			BOOST_ASSERT_MSG(size < 0x10000, "buffer size too big");
 
 			//	allocate data buffer
 			cyng::buffer_t data(size);

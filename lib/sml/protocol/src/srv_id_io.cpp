@@ -84,7 +84,7 @@ namespace node
 				&& (buffer.at(0) == 10);
 		}
 
-		std::uint32_t get_srv_type(cyng::buffer_t const& buffer)
+		srv_type get_srv_type(cyng::buffer_t const& buffer)
 		{
 			if (is_w_mbus(buffer))	return SRV_W_MBUS;
 			else if (is_mbus_wired(buffer))	return SRV_MBUS_WIRED;

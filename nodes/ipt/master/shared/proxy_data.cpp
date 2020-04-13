@@ -156,6 +156,12 @@ namespace node
 		return job_;
 	}
 
+
+	//
+	//	helper functions:
+	//
+
+
 	cyng::object read_server_id(cyng::object obj)
 	{
 		auto const inp = cyng::value_cast<std::string>(obj, "");
@@ -320,8 +326,8 @@ namespace node
 		switch (pd.get_msg_code()) {
 		case sml::sml_message::GET_PROC_PARAMETER_REQUEST:
 			return finalize_get_proc_parameter_request(std::move(pd));
-		case sml::sml_message::SET_PROC_PARAMETER_REQUEST:
-			return finalize_set_proc_parameter_request(std::move(pd));
+		//case sml::sml_message::SET_PROC_PARAMETER_REQUEST:
+		//	return finalize_set_proc_parameter_request(std::move(pd));
 		default:
 			break;
 		}

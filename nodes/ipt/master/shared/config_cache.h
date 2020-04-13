@@ -26,6 +26,14 @@ namespace node
 		using sections_t = std::map<sml::obis_path, cyng::param_map_t>;
 
 	public:
+		using device_map_t = std::map<sml::obis, cyng::buffer_t>;
+
+		/**
+		 * Parameters are role (1..8), user (1..0xFE), user, device list
+		 */
+		using cb_access_rights = std::function<void(std::uint8_t, std::uint8_t, std::string, device_map_t)>;
+
+	public:
 		/**
 		 * Take each section of the obis path as a full obis path itself
 		 */
@@ -66,6 +74,12 @@ namespace node
 		 * if no data were cached.
 		 */
 		cyng::param_map_t get_section(sml::obis_path const&) const;
+		cyng::param_map_t get_section(sml::obis) const;
+
+		/**
+		 * Loop over access rights (81 81 81 60 FF FF)
+		 */
+		void loop_access_rights(cb_access_rights) const;
 
 	private:
 		/**
@@ -79,7 +93,15 @@ namespace node
 	};
 
 
+	/**
+	 * filtering devices from list of access rights
+	 */
+	config_cache::device_map_t split_list_of_access_rights(cyng::param_map_t& params);
 
+	/**
+	 * @return value 81818161FFFF
+	 */
+	std::string get_user_name(cyng::param_map_t const& params);
 }
 
 

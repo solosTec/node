@@ -151,19 +151,6 @@ namespace node
 		, cyng::tuple_t params);
 
 	/**
-	 * Send a process parameter request to an proxy
-	 *
-	 * @param tag_ws websocket session tag (origin)
-	 * @param job job to execute
-	 * @param key key for TGateway/TDevice table
-	 * @param sections vector of strings that describe the data areas involved
-	 */
-	cyng::vector_t bus_req_com_proxy(boost::uuids::uuid tag_ws
-		, std::string job
-		, cyng::vector_t const& gw
-		, cyng::vector_t sections);
-
-	/**
 	 * Response for bus_req_com_sml()
 	 *
 	 * @param source source tag
@@ -177,6 +164,35 @@ namespace node
 		, std::string channel
 		, std::string srv
 		, std::string code
+		, cyng::param_map_t params);
+
+	/**
+	 * Send a process parameter request to an proxy
+	 *
+	 * @param tag_ws websocket session tag (origin)
+	 * @param job job to execute
+	 * @param key key for TGateway/TDevice table
+	 * @param sections vector of strings that describe the data areas involved
+	 */
+	cyng::vector_t bus_req_com_proxy(boost::uuids::uuid tag_ws
+		, std::string job
+		, cyng::vector_t const& gw
+		, cyng::vector_t sections);
+
+	/**
+	 * Response for bus_req_com_proxy()
+	 *
+	 * @param source source tag
+	 * @param srv server id
+	 */
+	cyng::vector_t bus_res_com_proxy(boost::uuids::uuid ident
+		, boost::uuids::uuid source
+		, std::uint64_t seq
+		, cyng::vector_t key
+		, boost::uuids::uuid tag_ws
+		, std::string channel
+		, cyng::buffer_t srv	//	string?
+		, cyng::buffer_t code
 		, cyng::param_map_t params);
 
 	/**

@@ -73,7 +73,7 @@ namespace node
 		/**
 		 * @return server type a compact enum
 		 */
-		std::uint32_t get_srv_type(cyng::buffer_t const&);
+		srv_type get_srv_type(cyng::buffer_t const&);
 
 		/**
 		 * Find a textual representation for all server types

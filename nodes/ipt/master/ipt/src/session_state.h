@@ -493,6 +493,16 @@ namespace node
 		private:
 			session* sp_;
 			cyng::logging::log_ptr logger_;
+
+			/**
+			 * After digging with zillions of differnt state machine implementations
+			 * and frameworks I came up with this extremely low solution.
+			 * But after all it works without any hassle.
+			 * Best worked "Boost Statechart Library" for me. But after a while I found
+			 * it too costly to maintain for such a simple use case. 
+			 * If compilers and libraries are ready I dream to implement this
+			 * based on std::variant.
+			 */
 			enum class internal_state {
 				IDLE,	//	TCP/IP connection accepted
 				FAILURE,
