@@ -280,7 +280,8 @@ namespace node
 		, std::string code
 		, cyng::param_map_t params)
 	{
-		return cyng::vector_t() << cyng::generate_invoke_unwinded("stream.serialize"
+		cyng::vector_t vec{};
+		return vec << cyng::generate_invoke_unwinded("stream.serialize"
 			, cyng::generate_invoke_remote_unwinded("bus.res.gateway.proxy", ident, source, seq, key, tag_ws, channel, srv, code, params))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
@@ -315,7 +316,6 @@ namespace node
 			;
 
 	}
-
 
 	cyng::vector_t bus_res_attention_code(boost::uuids::uuid ident
 		, boost::uuids::uuid source
