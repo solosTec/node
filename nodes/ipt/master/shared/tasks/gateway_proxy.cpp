@@ -251,11 +251,11 @@ namespace node
 				params.emplace("word", cyng::make_object(sml::to_param_map(word)));
 			}
 
-
 			//
 			//	update configuration cache
 			//
-			update_cfg_cache(srv_str, path, pos->second, params);
+			update_cfg_cache(srv_str, path, pos->second, params, pos->second.is_job());
+
 
 			if (pos->second.is_job()) {
 
@@ -436,7 +436,7 @@ namespace node
 			//
 			//	update configuration cache
 			//
-			update_cfg_cache(srv_str, path, pos->second, params);
+			update_cfg_cache(srv_str, path, pos->second, params, false);
 
 			//
 			//	remove from map
@@ -581,7 +581,7 @@ namespace node
 			//
 			//	update configuration cache
 			//
-			update_cfg_cache(srv_str, path, pos->second, params);
+			update_cfg_cache(srv_str, path, pos->second, params, false);
 
 		}
 		else {
@@ -1583,10 +1583,11 @@ namespace node
 	void gateway_proxy::update_cfg_cache(std::string srv
 		, sml::obis_path path
 		, proxy_data const& pd
-		, cyng::param_map_t const& params)
+		, cyng::param_map_t const& params
+		, bool force)
 	{
 		if (config_cache_) {
-			if (config_cache_->update(path, params)) {
+			if (config_cache_->update(path, params, force)) {
 
 				CYNG_LOG_TRACE(logger_, "task #"
 					<< base_.get_id()
@@ -1598,7 +1599,7 @@ namespace node
 					<< cyng::io::to_str(params));
 			}
 			else {
-				CYNG_LOG_TRACE(logger_, "task #"
+				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()

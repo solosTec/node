@@ -123,6 +123,29 @@ namespace node
 #endif
 
 		};
+
+		// 
+		//	Adjust settings on the stream
+		//
+		template<class NextLayer>
+		void setup_stream(boost::beast::websocket::stream<NextLayer>& ws)
+		{
+			// These values are tuned for Autobahn|Testsuite, and
+			// should also be generally helpful for increased performance.
+
+			boost::beast::websocket::permessage_deflate pmd;
+			pmd.client_enable = true;
+			pmd.server_enable = true;
+			pmd.compLevel = 3;
+			ws.set_option(pmd);
+
+			ws.auto_fragment(false);
+
+			// Autobahn|Testsuite needs this
+			ws.read_message_max(64 * 1024 * 1024);
+		}
+
+
 	}
 }
 

@@ -27,7 +27,9 @@ namespace node
 		: websocket_session<plain_websocket>(logger, cm, tag)
 			, ws_(std::move(stream))
 #endif
-		{}
+		{
+			setup_stream(ws_);
+		}
 
 		// Called by the base class
 #if (BOOST_BEAST_VERSION < 248)

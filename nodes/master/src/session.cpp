@@ -773,10 +773,11 @@ namespace node
 				, ", table: "
 				, tbl->meta().get_name()
 				, ", type: "
-				, ((source != vm_.tag()) ? "req" : "res")));
+				, ((source != vm_.tag()) ? "req" : "res")
+				, ")"));
 		}
 #else
-		vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.ins(source:", source, ", table: ", tbl->meta().get_name()));
+		vm_.async_run(cyng::generate_invoke("log.msg.debug", "sig.ins(source:", source, ", table: ", tbl->meta().get_name(), ")"));
 #endif
 
 		//

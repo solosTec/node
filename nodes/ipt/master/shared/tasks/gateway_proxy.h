@@ -299,7 +299,8 @@ namespace node
 		void update_cfg_cache(std::string srv
 			, sml::obis_path root
 			, proxy_data const& pd
-			, cyng::param_map_t const& params);
+			, cyng::param_map_t const& params
+			, bool force);
 
 		/**
 		 * Make configuration cache ready to store the specfied paths.

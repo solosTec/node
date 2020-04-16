@@ -35,7 +35,7 @@ namespace node
         return false;
     }
 
-    bool config_cache::update(sml::obis_path path, cyng::param_map_t const& params)
+    bool config_cache::update(sml::obis_path path, cyng::param_map_t const& params, bool force)
     {
         //
         //  selective update
@@ -43,6 +43,10 @@ namespace node
         auto pos = sections_.find(path);
         if (pos != sections_.end()) {
             pos->second = params;
+            return true;
+        }
+        if (force) {
+            sections_.emplace(path, params);
             return true;
         }
         return false;

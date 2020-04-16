@@ -45,7 +45,7 @@ namespace node
 		 * @return true if root is part of the actice sections
 		 */
 		bool update(sml::obis root, cyng::param_map_t const& params);
-		bool update(sml::obis_path root, cyng::param_map_t const& params);
+		bool update(sml::obis_path root, cyng::param_map_t const& params, bool force);
 
 		/**
 		 * @return server as string

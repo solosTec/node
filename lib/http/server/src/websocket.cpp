@@ -39,7 +39,9 @@ namespace node
 			, ping_cb_()
 #endif
             , shutdown_(false)
-		{}
+		{
+			setup_stream(ws_);
+		}
 
 		websocket_session::~websocket_session()
 		{
