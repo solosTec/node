@@ -443,38 +443,38 @@ namespace node
 			a.swap(b);
 		}
 
-		//bool operator==(const obis_path& x, const obis_path& y)
+		//bool operator==(const obis_path_t& x, const obis_path_t& y)
 		//{
 		//	//return x == y;
 		//	return false;
 		//}
 
-		bool operator!= (const obis_path& x, const obis_path& y)
+		bool operator!= (const obis_path_t& x, const obis_path_t& y)
 		{
 			return !(x == y);
 		}
 
-		bool operator< (const obis_path& lhs, const obis_path& rhs)
+		bool operator< (const obis_path_t& lhs, const obis_path_t& rhs)
 		{
-			return std::less<obis_path>()(lhs, rhs);
+			return std::less<obis_path_t>()(lhs, rhs);
 		}
 
-		bool operator> (const obis_path& lhs, const obis_path& rhs)
+		bool operator> (const obis_path_t& lhs, const obis_path_t& rhs)
 		{
-			return std::less<obis_path>()(rhs, lhs);
+			return std::less<obis_path_t>()(rhs, lhs);
 		}
 
-		bool operator<= (const obis_path& lhs, const obis_path& rhs)
+		bool operator<= (const obis_path_t& lhs, const obis_path_t& rhs)
 		{
-			return !std::less<obis_path>()(rhs, lhs);
+			return !std::less<obis_path_t>()(rhs, lhs);
 		}
 
-		bool operator>= (const obis_path& lhs, const obis_path& rhs)
+		bool operator>= (const obis_path_t& lhs, const obis_path_t& rhs)
 		{
-			return !std::less<obis_path>()(lhs, rhs);
+			return !std::less<obis_path_t>()(lhs, rhs);
 		}
 
-		void swap(obis_path& a, obis_path& b) {
+		void swap(obis_path_t& a, obis_path_t& b) {
 			a.swap(b);
 		}
 
@@ -490,7 +490,7 @@ namespace cyng
 
 #if !defined(__CPP_SUPPORT_N2235)
 		const char type_tag<node::sml::obis>::name[] = "OBIS";
-		const char type_tag<node::sml::obis_path>::name[] = "path";
+		const char type_tag<node::sml::obis_path_t>::name[] = "path";
 #endif
 	}	// traits	
 }
@@ -520,7 +520,7 @@ namespace std
 	//	obis path
 	//
 
-	size_t hash<node::sml::obis_path>::operator()(node::sml::obis_path const& path) const noexcept
+	size_t hash<node::sml::obis_path_t>::operator()(node::sml::obis_path_t const& path) const noexcept
 	{
 		std::size_t seed = 0;
 		for (auto code : path) {
@@ -529,12 +529,12 @@ namespace std
 		return seed;
 	}
 
-	bool equal_to<node::sml::obis_path>::operator()(node::sml::obis_path const& c1, node::sml::obis_path const& c2) const noexcept
+	bool equal_to<node::sml::obis_path_t>::operator()(node::sml::obis_path_t const& c1, node::sml::obis_path_t const& c2) const noexcept
 	{
 		return c1 == c2;
 	}
 
-	bool less<node::sml::obis_path>::operator()(node::sml::obis_path const& c1, node::sml::obis_path const& c2) const noexcept
+	bool less<node::sml::obis_path_t>::operator()(node::sml::obis_path_t const& c1, node::sml::obis_path_t const& c2) const noexcept
 	{
 		return lexicographical_compare(c1.begin(), c1.end(), c2.begin(), c2.end(), [](node::sml::obis const& o1, node::sml::obis const& o2) {
 			return o1.less(o2);

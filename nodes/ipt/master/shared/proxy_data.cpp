@@ -30,7 +30,7 @@ namespace node
 		boost::uuids::uuid origin,	//	[3] ws tag (origin)
 
 		std::string msg_type,		//	[4] SML message type
-		sml::obis_path path,				//	[5] OBIS root code
+		sml::obis_path_t path,				//	[5] OBIS root code
 		cyng::vector_t gw,			//	[6] TGateway/TDevice PK
 		cyng::tuple_t params,		//	[7] parameters
 
@@ -62,7 +62,7 @@ namespace node
 		boost::uuids::uuid origin,	//	[3] ws tag (origin)
 
 		sml::sml_message msg_code,	//	[4] SML message type
-		sml::obis_path path,				//	[5] OBIS root code
+		sml::obis_path_t path,				//	[5] OBIS root code
 		cyng::vector_t gw,			//	[6] TGateway/TDevice PK
 		cyng::tuple_t params,		//	[7] parameters
 
@@ -146,7 +146,7 @@ namespace node
 		return path_.front();
 	}
 
-	sml::obis_path proxy_data::get_path() const
+	sml::obis_path_t proxy_data::get_path() const
 	{
 		return path_;
 	}
@@ -201,7 +201,7 @@ namespace node
 					, pd.get_sequence()
 					, pd.get_tag_origin()
 					, pd.get_msg_code()
-					, sml::obis_path({ root
+					, sml::obis_path_t({ root
 						, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, 0xFF)
 						, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, user)
 						, sml::make_obis(0x81, 0x81, 0x81, 0x64, 0x01, meter) })
@@ -226,7 +226,7 @@ namespace node
 					, pd.get_sequence()
 					, pd.get_tag_origin()
 					, pd.get_msg_code()
-					, sml::obis_path({ root })
+					, sml::obis_path_t({ root })
 					, pd.get_key_gw()
 					, pd.get_params()
 					, r.first	//	instead of server
@@ -257,7 +257,7 @@ namespace node
 					, pd.get_sequence()
 					, pd.get_tag_origin()
 					, pd.get_msg_code()
-					, sml::obis_path({ root
+					, sml::obis_path_t({ root
 						, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFB, nr)
 						, sml::OBIS_SERVER_ID })
 					, pd.get_key_gw()
@@ -282,7 +282,7 @@ namespace node
 					, pd.get_sequence()
 					, pd.get_tag_origin()
 					, pd.get_msg_code()
-					, sml::obis_path({ root
+					, sml::obis_path_t({ root
 						, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, nr)
 						, sml::OBIS_SERVER_ID })
 					, pd.get_key_gw()
@@ -307,7 +307,7 @@ namespace node
 					, pd.get_sequence()
 					, pd.get_tag_origin()
 					, pd.get_msg_code()
-					, sml::obis_path({ root
+					, sml::obis_path_t({ root
 						, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFD, nr)
 						, sml::OBIS_SERVER_ID })
 					, pd.get_key_gw()

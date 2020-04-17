@@ -222,19 +222,24 @@ namespace node
 		/**
 		 *	define an OBIS path
 		 */
-		using obis_path = std::vector<obis>;
+		using obis_path_t = std::vector<obis>;
 
 		// comparisons
-		//bool operator== (const obis_path&, const obis_path&);
-		bool operator!= (const obis_path&, const obis_path&);
-		bool operator< (const obis_path&, const obis_path&);
-		bool operator> (const obis_path&, const obis_path&);
-		bool operator<= (const obis_path&, const obis_path&);
-		bool operator>= (const obis_path&, const obis_path&);
+		//bool operator== (const obis_path_t&, const obis_path_t&);
+		bool operator!= (const obis_path_t&, const obis_path_t&);
+		bool operator< (const obis_path_t&, const obis_path_t&);
+		bool operator> (const obis_path_t&, const obis_path_t&);
+		bool operator<= (const obis_path_t&, const obis_path_t&);
+		bool operator>= (const obis_path_t&, const obis_path_t&);
 
-		//P0515R3
 		// global swap()
-		void swap(obis_path&, obis_path&);
+		void swap(obis_path_t&, obis_path_t&);
+
+		/**
+		 * Define a vector of OBIS paths
+		 */
+		using path_vec_t = std::vector<obis_path_t>;
+
 
 	}	//	sml
 }	//	node
@@ -278,9 +283,9 @@ namespace cyng
 		};
 
 		template <>
-		struct type_tag<node::sml::obis_path>
+		struct type_tag<node::sml::obis_path_t>
 		{
-			using type = node::sml::obis_path;
+			using type = node::sml::obis_path_t;
 			using tag = std::integral_constant<std::size_t,
 #if defined(__CPP_SUPPORT_N2347)
 				static_cast<std::size_t>(traits::predef_type_code::PREDEF_CUSTOM_03)
@@ -305,7 +310,7 @@ namespace cyng
 #endif
 		>
 		{
-			using type = node::sml::obis_path;
+			using type = node::sml::obis_path_t;
 		};
 	}
 }
@@ -348,29 +353,29 @@ namespace std
 	//	obis path
 	//
 	template<>
-	struct hash<node::sml::obis_path>
+	struct hash<node::sml::obis_path_t>
 	{
-		size_t operator()(node::sml::obis_path const& sk) const noexcept;
+		size_t operator()(node::sml::obis_path_t const& sk) const noexcept;
 	};
 
 	template<>
-	struct equal_to<node::sml::obis_path>
+	struct equal_to<node::sml::obis_path_t>
 	{
 		using result_type = bool;
-		using first_argument_type = node::sml::obis_path;
-		using second_argument_type = node::sml::obis_path;
+		using first_argument_type = node::sml::obis_path_t;
+		using second_argument_type = node::sml::obis_path_t;
 
-		bool operator()(node::sml::obis_path const& t1, node::sml::obis_path const& t2) const noexcept;
+		bool operator()(node::sml::obis_path_t const& t1, node::sml::obis_path_t const& t2) const noexcept;
 	};
 
 	template<>
-	struct less<node::sml::obis_path>
+	struct less<node::sml::obis_path_t>
 	{
 		using result_type = bool;
-		using first_argument_type = node::sml::obis_path;
-		using second_argument_type = node::sml::obis_path;
+		using first_argument_type = node::sml::obis_path_t;
+		using second_argument_type = node::sml::obis_path_t;
 
-		bool operator()(node::sml::obis_path const& t1, node::sml::obis_path const& t2) const noexcept;
+		bool operator()(node::sml::obis_path_t const& t1, node::sml::obis_path_t const& t2) const noexcept;
 	};
 
 }

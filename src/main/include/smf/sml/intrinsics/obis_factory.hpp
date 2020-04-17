@@ -23,30 +23,37 @@ namespace node
 		/**
 		 * @return a tuple of buffer_t objects
 		 */
-		cyng::tuple_t tuple_from_path(obis_path path);
+		cyng::tuple_t tuple_from_path(obis_path_t path);
 
 		/**
 		 * @return a vector of buffer_t objects
 		 */
-		cyng::vector_t vector_from_path(obis_path path);
+		cyng::vector_t vector_from_path(obis_path_t path);
 
 		/**
 		 * @brief converts a vector of objects into a obis path.
 		 * The precondition is that all objects of type buffer_t.
 		 */
-		obis_path tuple_to_path(cyng::tuple_t tpl);
+		obis_path_t tuple_to_path(cyng::tuple_t tpl);
 
 		/**
 		 * @brief converts a vector of objects into a obis path. 
 		 * The precondition is that all objects of type buffer_t.
 		 */
-		obis_path vector_to_path(cyng::vector_t vec);
+		obis_path_t vector_to_path(cyng::vector_t vec);
 
 		/**
 		 * @brief converts a vector of objects into a obis path.
 		 * The precondition is that all objects of type buffer_t.
 		 */
-		obis_path vector_to_path(std::vector<std::string> const& vec);
+		obis_path_t vector_to_path(std::vector<std::string> const& vec);
+
+		/**
+		 * Convert an OBIS path to a vector of strings.
+		 * Each element of the path will be handled as separate entity.
+		 */
+		cyng::vector_t path_to_vector(obis_path_t path);
+
 
 	}	//	sml
 }	//	node

@@ -49,7 +49,7 @@ namespace node
 		/**
 		 * Parse concatenated OBIS strings
 		 */
-		obis_path parse_obis_path(std::string const&, char sep = ':');
+		obis_path_t parse_obis_path(std::string const&, char sep = ':');
 
 		/**
 		 * substitute valid OBIS codes with textual description from database

@@ -144,7 +144,7 @@ namespace node
 			 */
 			template< typename T >
 			std::string set_proc_parameter(cyng::buffer_t const& server_id
-				, obis_path tree_path
+				, obis_path_t tree_path
 				, T&& val)
 			{
 				++trx_;
@@ -239,7 +239,7 @@ namespace node
 			std::string get_proc_parameter(cyng::buffer_t const& server_id
 				, obis);
 			std::string get_proc_parameter(cyng::buffer_t const& server_id
-				, obis_path);
+				, obis_path_t);
 
 			/**
 			 * List query - BODY_GET_LIST_REQUEST (0x700)

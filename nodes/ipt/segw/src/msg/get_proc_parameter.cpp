@@ -65,7 +65,7 @@ namespace node
 			, config_iec_(iec)
 		{}
 
-		void get_proc_parameter::generate_response(obis_path path
+		void get_proc_parameter::generate_response(obis_path_t path
 			, std::string trx
 			, cyng::buffer_t srv_id
 			, std::string user

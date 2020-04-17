@@ -184,6 +184,7 @@ namespace node
 	 *
 	 * @param source source tag
 	 * @param srv server id
+	 * @param sections vector of OBIS paths
 	 */
 	cyng::vector_t bus_res_com_proxy(boost::uuids::uuid ident
 		, boost::uuids::uuid source
@@ -191,8 +192,8 @@ namespace node
 		, cyng::vector_t key
 		, boost::uuids::uuid tag_ws
 		, std::string channel
-		, cyng::buffer_t srv	//	string?
-		, cyng::buffer_t code
+		, std::string srv
+		, cyng::vector_t sections	//	vector of paths
 		, cyng::param_map_t params);
 
 	/**
@@ -317,7 +318,9 @@ namespace node
 
 		, cyng::buffer_t const& server
 		, std::string const& user
-		, std::string const& pwd);
+		, std::string const& pwd
+	
+		, bool cache_enabled);
 
 	/**
 	 * Send a request to an gateway itself

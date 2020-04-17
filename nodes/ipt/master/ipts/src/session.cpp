@@ -74,7 +74,7 @@ namespace node
 				
 			});
 
-			vm_.register_function("client.req.gateway", 11, std::bind(&session::client_req_gateway, this, std::placeholders::_1));
+			vm_.register_function("client.req.gateway", 12, std::bind(&session::client_req_gateway, this, std::placeholders::_1));
 			
 			vm_.register_function("session.start.proxy", 0, [this, sml_log](cyng::context& ctx) {
 

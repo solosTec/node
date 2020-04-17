@@ -54,7 +54,7 @@ namespace node
 		//	print sml message number and data frame
 		//
 		std::size_t const idx = cyng::value_cast<std::size_t>(frame.at(1), 0);
-		ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), "(idx: ", idx, ", frame: ", frame, ")"));
+		//ctx.queue(cyng::generate_invoke("log.msg.debug", ctx.get_name(), "(idx: ", idx, ", frame: ", frame, ")"));
 
 		//
 		//	get message body

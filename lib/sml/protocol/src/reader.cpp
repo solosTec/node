@@ -251,7 +251,7 @@ namespace node
 
 			cyng::vector_t read_get_profile_list_response(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 			{
-				//std::pair<obis_path, cyng::param_map_t> readout::
+				//std::pair<obis_path_t, cyng::param_map_t> readout::
 				auto const r = ro.read_get_profile_list_response(pos, end);
 
 				//
@@ -293,7 +293,7 @@ namespace node
 
 			cyng::vector_t read_get_proc_parameter_response(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 			{
-				//	std::pair<obis_path, cyng::param_t> 
+				//	std::pair<obis_path_t, cyng::param_t> 
 				auto const r = ro.read_get_proc_parameter_response(pos, end);
 
 				//
@@ -310,7 +310,7 @@ namespace node
 
 			cyng::vector_t read_get_proc_parameter_request(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 			{
-				// std::pair<obis_path, cyng::object>
+				// std::pair<obis_path_t, cyng::object>
 				auto const r = ro.read_get_proc_parameter_request(pos, end);
 
 				return cyng::generate_invoke("sml.get.proc.parameter.request"
@@ -324,7 +324,7 @@ namespace node
 
 			cyng::vector_t read_set_proc_parameter_request(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 			{
-				//std::pair<obis_path, cyng::param_t> 
+				//std::pair<obis_path_t, cyng::param_t> 
 				auto const r = ro.read_set_proc_parameter_request(pos, end);
 
 				cyng::vector_t prg;
@@ -445,7 +445,7 @@ namespace node
 				return cyng::generate_invoke("sml.get.list.response"
 					, ro.trx_
 					, ro.server_id_
-					, obis_path{ code }
+					, obis_path_t{ code }
 					, ro.values_
 					, ro.get_value("pk"));
 			}

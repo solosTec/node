@@ -17,17 +17,24 @@
 
 namespace node 
 {
-	config_cache::config_cache(cyng::buffer_t srv, sml::obis_path&& sections)
+	config_cache::config_cache(cyng::buffer_t srv, sml::obis_path_t&& sections)
         : srv_(srv)
         , sections_(init_sections(std::move(sections)))
 	{ }
+
+    void config_cache::reset(cyng::buffer_t srv, sml::obis_path_t&& sections)
+    {
+        srv_ = srv;
+        sections_.clear();
+        sections_ = init_sections(std::move(sections));
+    }
 
     bool config_cache::update(sml::obis root, cyng::param_map_t const& params)
     {
         //
         //  selective update
         //
-        auto pos = sections_.find(sml::obis_path{ root });
+        auto pos = sections_.find(sml::obis_path_t{ root });
         if (pos != sections_.end()) {
             pos->second = params;
             return true;
@@ -35,7 +42,7 @@ namespace node
         return false;
     }
 
-    bool config_cache::update(sml::obis_path path, cyng::param_map_t const& params, bool force)
+    bool config_cache::update(sml::obis_path_t path, cyng::param_map_t const& params, bool force)
     {
         //
         //  selective update
@@ -53,11 +60,11 @@ namespace node
     }
 
     //  static
-    config_cache::sections_t config_cache::init_sections(sml::obis_path&& slots)
+    config_cache::sections_t config_cache::init_sections(sml::obis_path_t&& slots)
     {
         sections_t secs;
         for (auto const& code : slots) {
-            secs.emplace(sml::obis_path{ code }, cyng::param_map_t());
+            secs.emplace(sml::obis_path_t{ code }, cyng::param_map_t());
         }
         return secs;
     }
@@ -69,37 +76,33 @@ namespace node
 
     bool config_cache::is_cached(sml::obis code) const
     {
-        return is_cached(sml::obis_path{ code });
+        return is_cached(sml::obis_path_t{ code });
     }
 
-    bool config_cache::is_cached(sml::obis_path const& path) const
+    bool config_cache::is_cached(sml::obis_path_t const& path) const
     {
         return sections_.find(path) != sections_.end();
     }
 
 
-    void config_cache::add(sml::obis_path&& path)
+    void config_cache::add(cyng::buffer_t srv, sml::obis_path_t&& path)
     {
         if (!is_cached(path)) {
+            srv_ = srv;
             sections_.emplace(path, cyng::param_map_t());
         }
     }
 
-    void config_cache::remove(sml::obis_path&& slots)
+    void config_cache::remove(sml::obis_path_t&& slots)
     {
         for (auto const& code : slots) {
             if (is_cached(code)) {
-                sections_.erase(sml::obis_path{ code });
+                sections_.erase(sml::obis_path_t{ code });
             }
         }
     }
 
-    void config_cache::clear()
-    {
-        sections_.clear();
-    }
-
-    cyng::param_map_t config_cache::get_section(sml::obis_path const& path) const
+    cyng::param_map_t config_cache::get_section(sml::obis_path_t const& path) const
     {
         auto const pos = sections_.find(path);
         return (pos != sections_.end())
@@ -110,7 +113,7 @@ namespace node
 
     cyng::param_map_t config_cache::get_section(sml::obis root) const
     {
-        return get_section(sml::obis_path({ root }));
+        return get_section(sml::obis_path_t({ root }));
     }
 
 
@@ -171,6 +174,17 @@ namespace node
                 }
             }
         }
+    }
+
+    sml::obis_path_t config_cache::get_root_sections() const
+    {
+        sml::obis_path_t path;
+        for (auto const& value : sections_) {
+            if (value.first.size() == 1) {
+                path.push_back(value.first.front());
+            }
+        }
+        return path;
     }
 
     config_cache::device_map_t split_list_of_access_rights(cyng::param_map_t& params)

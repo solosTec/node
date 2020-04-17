@@ -47,7 +47,7 @@ namespace node
 			, config_iec_(iec)
 		{}
 
-		void set_proc_parameter::generate_response(obis_path const& path
+		void set_proc_parameter::generate_response(obis_path_t const& path
 			, std::string trx
 			, cyng::buffer_t srv_id
 			, std::string user
@@ -125,8 +125,8 @@ namespace node
 			}
 		}
 
-		void set_proc_parameter::_81490d0700ff(obis_path::const_iterator pos
-			, obis_path::const_iterator end
+		void set_proc_parameter::_81490d0700ff(obis_path_t::const_iterator pos
+			, obis_path_t::const_iterator end
 			, std::string trx
 			, cyng::buffer_t srv_id
 			, std::string user
@@ -152,8 +152,8 @@ namespace node
 			}
 		}
 
-		void set_proc_parameter::storage_time_shift(obis_path::const_iterator
-			, obis_path::const_iterator
+		void set_proc_parameter::storage_time_shift(obis_path_t::const_iterator
+			, obis_path_t::const_iterator
 			, std::string trx
 			, cyng::buffer_t srv_id
 			, std::string user

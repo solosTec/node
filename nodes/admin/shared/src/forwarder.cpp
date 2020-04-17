@@ -10,7 +10,6 @@
 #include <smf/cluster/generator.h>
 #include <cyng/table/key.hpp>
 #include <cyng/io/serializer.h>
-//#include <cyng/vector_cast.hpp>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/parser/buffer_parser.h>
@@ -542,7 +541,7 @@ namespace node
 	{
 		auto const gw = cyng::to_vector(reader.get("gw"));
 		if (!gw.empty()) {
-			//auto const sections = cyng::vector_cast<std::string>(reader.get("sections"), "");
+
 			auto const sections = cyng::to_vector(reader.get("sections"));
 #ifdef _DEBUG
 			CYNG_LOG_DEBUG(logger, "\"sml:proxy\" ws: "

@@ -53,6 +53,11 @@ namespace node
 		 */
 		void bus_req_com_proxy(cyng::context& ctx);
 
+		/**
+		 * Response from proxy
+		 */
+		void bus_res_com_proxy(cyng::context& ctx);
+
 		void bus_res_attention_code(cyng::context& ctx);
 
 		void bus_req_com_task(cyng::context& ctx);
@@ -86,6 +91,20 @@ namespace node
 			std::string,			//	[7] "OBIS code" as text (see obis_db.cpp)
 			cyng::param_map_t&		//	[8] params
 		);
+
+		/**
+		 * Routing back proxy messages
+		 */
+		void routing_back(boost::uuids::uuid,		//	[0] ident
+			boost::uuids::uuid,		//	[1] source
+			std::uint64_t,			//	[2] sequence
+			cyng::vector_t,			//	[3] gw key
+			boost::uuids::uuid,		//	[4] websocket tag (origin)
+			std::string,			//	[5] channel (message type)
+			std::string,			//	[6] server id
+			cyng::vector_t,			//	[7] vector of root paths
+			cyng::param_map_t);		//	[8] params
+
 
 	private:
 		cyng::async::mux& mux_;

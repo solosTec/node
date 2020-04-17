@@ -44,7 +44,8 @@ namespace node
 	void dispatcher::register_this(cyng::controller& vm)
 	{
 		vm.register_function("store.relation", 2, std::bind(&dispatcher::store_relation, this, std::placeholders::_1));
-		vm.register_function("bus.res.gateway.proxy", 9, std::bind(&dispatcher::res_gateway_proxy, this, std::placeholders::_1));
+		vm.register_function("bus.res.proxy.gateway", 9, std::bind(&dispatcher::res_proxy_gateway, this, std::placeholders::_1));
+		vm.register_function("bus.res.proxy.job", 9, std::bind(&dispatcher::res_proxy_job, this, std::placeholders::_1));
 		vm.register_function("bus.res.attention.code", 7, std::bind(&dispatcher::res_attention_code, this, std::placeholders::_1));
 
 		vm.register_function("http.move", 2, std::bind(&dispatcher::http_move, this, std::placeholders::_1));
@@ -57,7 +58,7 @@ namespace node
 		//	cluster seq => ws tag
 	}
 
-	void dispatcher::res_gateway_proxy(cyng::context& ctx)
+	void dispatcher::res_proxy_gateway(cyng::context& ctx)
 	{
 		//	[a7114557-b0f4-4269-82be-5c46f1e9f75b,9f773865-e4af-489a-8824-8f78a2311278,6,[f72f7307-40e6-483b-8106-115290f8f1fe],2697aa30-ec69-4766-9e4d-b312c7b29c25,get.proc.param,01-e61e-29436587-bf-03,root-data-prop,%(("active":true),("idx":2),("period":00000000),("profile":null),("registers":[8181C78203FF,0700030000FF,0000616100FF,0000600101FF,0000600100FF,0000616100FF]),("size":00000064))]
 		const cyng::vector_t frame = ctx.get_frame();
@@ -94,6 +95,42 @@ namespace node
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " JSON: " << msg);
 #endif
 		connection_manager_.ws_msg(std::get<4>(tpl), msg);
+	}
+
+	void dispatcher::res_proxy_job(cyng::context& ctx)
+	{
+		//	[71dca95e-7765-4ecf-af8b-078c42ec8afe,9f773865-e4af-489a-8824-8f78a2311278,2,[2c0fc607-95d6-4843-a8d5-fec087780447],8db233d3-2652-4ee5-856c-bfcb1ee640ef,cache.sections,0500153B01EC46,[810060050000,81490D0700FF,81811006FFFF,81811106FFFF,81818160FFFF],%()]
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		auto tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] ident
+			boost::uuids::uuid,		//	[1] source
+			std::uint64_t,			//	[2] sequence
+			cyng::vector_t,			//	[3] gw key
+			boost::uuids::uuid,		//	[4] websocket tag (origin)
+			std::string,			//	[5] channel (message type)
+			std::string,			//	[6] server id
+			cyng::vector_t,			//	[7] vector of root paths
+			cyng::param_map_t		//	[8] params
+		>(frame);
+
+		auto data = cyng::tuple_factory(
+			cyng::param_factory("cmd", std::string("update")),
+			cyng::param_factory("channel", std::get<5>(tpl)),
+			cyng::param_factory("section", std::get<7>(tpl)),
+			cyng::param_factory("rec", cyng::tuple_factory(
+				cyng::param_factory("srv", std::get<6>(tpl)),
+				cyng::param_factory("gw", std::get<3>(tpl).at(0)),
+				cyng::param_factory("values", std::get<8>(tpl))
+			)));
+
+		//	{"cmd": "update", "channel": "cache.sections", "section": ["810060050000", "81490D0700FF", "81811006FFFF", "81811106FFFF", "81818160FFFF"], "rec": {"srv": "0500153b01ec46", "gw": "2c0fc607-95d6-4843-a8d5-fec087780447", "values": {}}}
+		auto msg = cyng::json::to_string(data);
+#ifdef _DEBUG
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " JSON: " << msg);
+#endif
+		connection_manager_.ws_msg(std::get<4>(tpl), msg);
+
 	}
 
 	void dispatcher::res_attention_code(cyng::context& ctx)

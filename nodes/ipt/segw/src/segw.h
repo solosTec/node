@@ -16,12 +16,12 @@ namespace node
 	/**
 	 * helper function to build a key for table TCfg
 	 */
-	std::string build_cfg_key(sml::obis_path path);
+	std::string build_cfg_key(sml::obis_path_t path);
 
 	/**
 	 * helper function to build a key for table TCfg
 	 */
-	std::string build_cfg_key(sml::obis_path path, std::string leaf);
+	std::string build_cfg_key(sml::obis_path_t path, std::string leaf);
 
 	/**
 	 * helper function to build a key for table TCfg
@@ -31,7 +31,7 @@ namespace node
 	/**
 	 * build a key for internal table "_Cfg" 
 	 */
-	cyng::vector_t cfg_key(sml::obis_path path);
+	cyng::vector_t cfg_key(sml::obis_path_t path);
 
 }
 #endif

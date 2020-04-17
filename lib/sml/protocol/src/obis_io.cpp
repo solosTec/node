@@ -154,7 +154,7 @@ namespace node
 			return obis();
 		}
 
-		std::ostream& to_hex(std::ostream& os, obis_path const& path, char sep)
+		std::ostream& to_hex(std::ostream& os, obis_path_t const& path, char sep)
 		{
 			bool initialized{ false };
 			for (auto const& code : path) {
@@ -169,16 +169,16 @@ namespace node
 			return os;
 		}
 
-		std::string to_hex(obis_path const& path, char sep)
+		std::string to_hex(obis_path_t const& path, char sep)
 		{
 			std::stringstream ss;
 			to_hex(ss, path, sep);
 			return ss.str();
 		}
 
-		obis_path to_obis_path(std::string const& path, char sep)
+		obis_path_t to_obis_path(std::string const& path, char sep)
 		{
-			obis_path result;
+			obis_path_t result;
 			std::vector<std::string> parts;
 			std::string const range{ '\n', '\t', sep };
 			boost::split(parts, path, boost::is_any_of(range));

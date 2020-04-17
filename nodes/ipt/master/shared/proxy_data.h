@@ -29,7 +29,7 @@ namespace node
 			boost::uuids::uuid,		//	[3] ws tag (origin)
 
 			std::string msg_type,	//	[4] SML message type
-			sml::obis_path,				//	[5] OBIS root code
+			sml::obis_path_t,				//	[5] OBIS root code
 			cyng::vector_t,			//	[6] TGateway/Device PK
 			cyng::tuple_t,			//	[7] parameters (optional)
 
@@ -47,7 +47,7 @@ namespace node
 			boost::uuids::uuid,		//	[3] ws tag (origin)
 
 			sml::sml_message msg_code,	//	[4] SML message type
-			sml::obis_path,				//	[5] OBIS root code
+			sml::obis_path_t,				//	[5] OBIS root code
 			cyng::vector_t,			//	[6] TGateway/Device PK
 			cyng::tuple_t,			//	[7] parameters (optional)
 
@@ -99,7 +99,7 @@ namespace node
 		 * OBIS code (root path)
 		 */
 		sml::obis get_root() const;
-		sml::obis_path get_path() const;
+		sml::obis_path_t get_path() const;
 
 		bool is_job() const;
 
@@ -110,7 +110,7 @@ namespace node
 		boost::uuids::uuid const origin_;	//	ws tag (origin)
 
 		sml::sml_message const msg_type_;	//!<	SML message type
-		sml::obis_path const path_;
+		sml::obis_path_t const path_;
 		cyng::vector_t const gw_;			//	TGateway/TDevice PK
 		cyng::tuple_t const params_;		//	parameters (optional)
 

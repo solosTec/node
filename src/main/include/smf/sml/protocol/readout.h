@@ -61,13 +61,13 @@ namespace node
 			bool read_public_close_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 			bool read_public_close_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
-			std::pair<obis_path, cyng::param_t> read_get_proc_parameter_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
-			std::pair<obis_path, cyng::object> read_get_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
+			std::pair<obis_path_t, cyng::param_t> read_get_proc_parameter_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
+			std::pair<obis_path_t, cyng::object> read_get_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
-			std::pair<obis_path, cyng::param_map_t> read_get_profile_list_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
-			obis_path read_get_profile_list_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
+			std::pair<obis_path_t, cyng::param_map_t> read_get_profile_list_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
+			obis_path_t read_get_profile_list_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
-			std::pair<obis_path, cyng::param_t> read_set_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
+			std::pair<obis_path_t, cyng::param_t> read_set_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
 
 			std::string trx_;
@@ -102,7 +102,7 @@ namespace node
 		 * Expects an tuple of buffers that will be converted 
 		 * into an OBIS path
 		 */
-		obis_path read_param_tree_path(cyng::object);
+		obis_path_t read_param_tree_path(cyng::object);
 
 		cyng::param_t read_param_tree(std::size_t, cyng::object);
 		cyng::param_t read_param_tree(std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);

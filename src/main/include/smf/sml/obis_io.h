@@ -51,19 +51,19 @@ namespace node
 		 * @return OBIS code path:
 		 * xx xx xx xx xx xx  xx xx xx xx xx xx
 		 */
-		std::ostream& to_hex(std::ostream&, obis_path const&, char sep);
+		std::ostream& to_hex(std::ostream&, obis_path_t const&, char sep);
 
 		/**
 		 * Convert OBIS codes into hexadescimal representation
 		 * separated by a single character (sep).
 		 */
-		std::string to_hex(obis_path const&, char sep);
+		std::string to_hex(obis_path_t const&, char sep);
 
 		/**
 		 * Try to convert a textual OBIS path representation into an valid
-		 * obis_path.
+		 * obis_path_t. Accepts hexadeximal and decimal formats.
 		 */
-		obis_path to_obis_path(std::string const&, char sep);
+		obis_path_t to_obis_path(std::string const&, char sep);
 
 	}	//	sml
 }	//	node

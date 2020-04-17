@@ -27,9 +27,9 @@ namespace node
 			return std::make_pair(result, b);
 		}
 
-		obis_path parse_obis_path(std::string const& path, char sep)
+		obis_path_t parse_obis_path(std::string const& path, char sep)
 		{
-			obis_path op;
+			obis_path_t op;
 			auto const r =  cyng::split(path, std::string(1, sep));
 			op.reserve(r.size());
 			for (auto const& segment : r) {

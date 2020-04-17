@@ -49,7 +49,7 @@ namespace node
 				, config_access&
 				, config_iec&);
 
-			void generate_response(obis_path path
+			void generate_response(obis_path_t path
 				, std::string trx
 				, cyng::buffer_t srv_id
 				, std::string user

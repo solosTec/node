@@ -34,8 +34,9 @@ namespace node
 	void cluster::register_this(cyng::context& ctx)
 	{
 		ctx.queue(cyng::register_function("bus.req.proxy.gateway", 7, std::bind(&cluster::bus_req_com_sml, this, std::placeholders::_1)));
-		ctx.queue(cyng::register_function("bus.res.gateway.proxy", 9, std::bind(&cluster::bus_res_com_sml, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.res.proxy.gateway", 9, std::bind(&cluster::bus_res_com_sml, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("bus.req.proxy.job", 6, std::bind(&cluster::bus_req_com_proxy, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("bus.res.proxy.job", 9, std::bind(&cluster::bus_res_com_proxy, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("bus.res.attention.code", 7, std::bind(&cluster::bus_res_attention_code, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("bus.req.com.task", 7, std::bind(&cluster::bus_req_com_task, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("bus.req.com.node", 7, std::bind(&cluster::bus_req_com_node, this, std::placeholders::_1)));
@@ -108,7 +109,8 @@ namespace node
 					, std::get<6>(tpl)	//	optional parameters
 					, server			//	server
 					, name
-					, pwd));
+					, pwd
+					, cache_.is_gw_cache_enabled()));
 			}
 			else {
 
@@ -248,7 +250,7 @@ namespace node
 				auto peer = cyng::object_cast<session>(rec["self"]);
 				if (peer != nullptr) {
 
-					CYNG_LOG_INFO(logger_, "bus.res.gateway.proxy - send to peer "
+					CYNG_LOG_INFO(logger_, "bus.res.proxy.gateway - send to peer "
 						<< cyng::value_cast<std::string>(rec["class"], "")
 						<< '@'
 						<< peer->vm_.tag()
@@ -273,7 +275,7 @@ namespace node
 				}
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "bus.res.query.gateway - peer not found " << source);
+				CYNG_LOG_WARNING(logger_, "bus.res.proxy.gateway - peer not found " << source);
 			}
 		});
 	}
@@ -380,7 +382,7 @@ namespace node
 								, source);
 						}
 
-						CYNG_LOG_TRACE(logger_, "bus.res.query.gateway - meter pk " << tag);
+						CYNG_LOG_TRACE(logger_, "bus.res.proxy.gateway - meter pk " << tag);
 						data_ptr->emplace("pk", cyng::make_object(key));
 						data_ptr->emplace("mc", cyng::make_object(mc));	//	metering code
 
@@ -388,7 +390,7 @@ namespace node
 					else {
 
 						auto const code = cyng::value_cast<std::string>(rec["code"], "");
-						CYNG_LOG_TRACE(logger_, "bus.res.query.gateway - found pk " 
+						CYNG_LOG_TRACE(logger_, "bus.res.proxy.gateway - found pk " 
 							<< cyng::io::to_str(rec.key())
 							<< " for meter "
 							<< ident
@@ -416,7 +418,7 @@ namespace node
 				//
 				//	dont't forward unknown device types
 				//
-				CYNG_LOG_WARNING(logger_, "bus.res.query.gateway - skip meter " 
+				CYNG_LOG_WARNING(logger_, "bus.res.proxy.gateway - skip meter " 
 					<< ident
 					<< " of type "
 					<< type);
@@ -436,6 +438,53 @@ namespace node
 			, code
 			, meters);
 
+	}
+
+	void cluster::routing_back(boost::uuids::uuid ident
+		, boost::uuids::uuid source
+		, std::uint64_t sequence
+		, cyng::vector_t gw_key
+		, boost::uuids::uuid ws
+		, std::string channel			//	[5] channel (message type)
+		, std::string srv_id			//	[6] server id
+		, cyng::vector_t sections		//	[7] vector of root paths
+		, cyng::param_map_t params)		//	[8] params
+	{
+		cache_.read_table("_Cluster", [&](cyng::store::table const* tbl_cluster)->void {
+
+			auto rec = tbl_cluster->lookup(cyng::table::key_generator(source));
+			if (!rec.empty()) {
+				auto peer = cyng::object_cast<session>(rec["self"]);
+				if (peer != nullptr) {
+
+					CYNG_LOG_INFO(logger_, "bus.res.proxy.job - send to peer "
+						<< cyng::value_cast<std::string>(rec["class"], "")
+						<< '@'
+						<< peer->vm_.tag()
+						<< " ["
+						<< channel
+						<< "]");
+
+
+					//
+					//	forward data
+					//
+					peer->vm_.async_run(node::bus_res_com_proxy(
+						ident
+						, source
+						, sequence
+						, gw_key
+						, ws
+						, channel
+						, srv_id
+						, sections
+						, params));			
+				}
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "bus.res.proxy.job - peer not found " << source);
+			}
+		});
 	}
 
 	void cluster::bus_req_com_proxy(cyng::context& ctx)
@@ -502,8 +551,52 @@ namespace node
 			}
 
 		});
-
 	}
+
+	void cluster::bus_res_com_proxy(cyng::context& ctx)
+	{
+		//	bus.res.proxy.job - 
+		//	* c9eb1203-85a3-4dbb-8000-59aa7c3c8316
+		//	* 9f773865-e4af-489a-8824-8f78a2311278
+		//	* 11,
+		//	* [2c0fc607-95d6-4843-a8d5-fec087780447]
+		//	* 3cbcea48-8b2e-4e8c-a1eb-3105b629d7fe
+		//	* cache.reset
+		//	* 0500153B01EC46
+		//	* [81811006FFFF,81811106FFFF,81818160FFFF,81490D0700FF,810060050000]
+		//	* %()
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] ident
+			boost::uuids::uuid,		//	[1] source
+			std::uint64_t,			//	[2] sequence
+			cyng::vector_t,			//	[3] gw key
+			boost::uuids::uuid,		//	[4] websocket tag (origin)
+			std::string,			//	[5] channel (message type)
+			std::string,			//	[6] server id
+			cyng::vector_t,			//	[7] vector of root paths
+			cyng::param_map_t		//	[8] params
+		>(frame);
+
+		//
+		//	get the tag from the TGateway table key
+		//
+		BOOST_ASSERT_MSG(!std::get<3>(tpl).empty(), "no TGateway key");
+		if (std::get<3>(tpl).size() != 1)	return;
+
+		routing_back(std::get<0>(tpl)
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl)
+			, std::get<4>(tpl)
+			, std::get<5>(tpl)
+			, std::get<6>(tpl)
+			, std::get<7>(tpl)
+			, std::get<8>(tpl));
+	}
+
 
 	void cluster::bus_res_attention_code(cyng::context& ctx)
 	{

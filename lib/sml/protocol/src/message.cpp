@@ -418,7 +418,7 @@ namespace node
 		cyng::tuple_t get_proc_parameter_request(cyng::object server_id
 			, std::string const& username
 			, std::string const& password
-			, obis_path path)
+			, obis_path_t path)
 		{
 			//
 			//	5 elements:
@@ -454,7 +454,7 @@ namespace node
 		cyng::tuple_t set_proc_parameter_request(cyng::object server_id
 			, std::string const& username
 			, std::string const& password
-			, obis_path tree_path
+			, obis_path_t tree_path
 			, cyng::tuple_t params)
 		{
 			cyng::tuple_t seq;

@@ -132,7 +132,7 @@ namespace node
 
 		void influxdb_exporter::read_get_proc_parameter_response(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
-			//	std::pair<obis_path, cyng::param_t>
+			//	std::pair<obis_path_t, cyng::param_t>
 			auto const r = ro.read_get_proc_parameter_response(pos, end);
 
 #ifdef __DEBUG

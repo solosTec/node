@@ -12,11 +12,11 @@
 
 namespace node
 {
-	std::string build_cfg_key(sml::obis_path path) {
+	std::string build_cfg_key(sml::obis_path_t path) {
 		return sml::to_hex(path, ':');
 	}
 
-	std::string build_cfg_key(sml::obis_path path, std::string leaf) {
+	std::string build_cfg_key(sml::obis_path_t path, std::string leaf) {
 		return sml::to_hex(path, ':') + ":" + leaf;
 	}
 
@@ -30,7 +30,7 @@ namespace node
 		});
 	}
 
-	cyng::vector_t cfg_key(sml::obis_path path)
+	cyng::vector_t cfg_key(sml::obis_path_t path)
 	{
 		return cyng::table::key_generator(build_cfg_key(path));
 	}

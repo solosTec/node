@@ -211,7 +211,7 @@ namespace node
 	cyng::continuation gateway_proxy::process(std::string trx
 		, std::uint8_t group
 		, cyng::buffer_t srv_id
-		, sml::obis_path path
+		, sml::obis_path_t path
 		, cyng::param_t values)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -380,7 +380,7 @@ namespace node
 	//	-- slot[5]
 	cyng::continuation gateway_proxy::process(std::string trx
 		, cyng::buffer_t srv_id
-		, sml::obis_path path	//	OBIS (path)
+		, sml::obis_path_t path	//	OBIS (path)
 		, cyng::param_map_t params)
 	{
 		//
@@ -512,7 +512,7 @@ namespace node
 		, std::uint32_t act_time
 		, std::uint32_t reg_period
 		, std::uint32_t val_time
-		, sml::obis_path path
+		, sml::obis_path_t path
 		, cyng::buffer_t srv_id
 		, std::uint32_t	stat
 		, cyng::param_map_t params)
@@ -608,57 +608,86 @@ namespace node
 		cyng::vector_t gw,			//	[6] TGateway/TDevice PK
 		cyng::tuple_t params,		//	[7] parameters
 
-		cyng::buffer_t srv,			//	[8] server id
+		cyng::buffer_t srv_id,			//	[8] server id
 		std::string name,			//	[9] name
-		std::string	pwd				//	[10] pwd
+		std::string	pwd,			//	[10] pwd
+		bool cache_enabled			//	[11] use cache
 	)
 	{
+		//
+		//	get root path
+		//
 		sml::obis const root(code);
-		input_queue_.emplace(finalize(proxy_data(tag
-			, source
-			, seq
-			, origin
-			, channel
-			, sml::obis_path({ root })
-			, gw
-			, params
-			, srv
-			, name
-			, pwd
-			, false)));	//	no job
 
-
-		//
-		//	preprocessing
-		//
-
-		CYNG_LOG_INFO(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> new input queue entry - size: "
-			<< input_queue_.size());
-
-		BOOST_ASSERT(!input_queue_.empty());
-
-		switch (state_) {
-		case GWPS::OFFLINE_:
+		if (cache_enabled && config_cache_.is_cached(root)) {
 
 			//
-			//	update state
+			//	get data from cache
 			//
-			state_ = GWPS::WAITING_;
 
-			//
-			//	waiting for an opportunity to open a connection. If session is ready
-			//	is signals OK on slot [0]
-			vm_.async_run(cyng::generate_invoke("session.redirect", base_.get_id()));
+			bus_->vm_.async_run(bus_res_com_sml(tag
+				, source
+				, seq
+				, gw
+				, origin
+				, channel
+				, sml::from_server_id(srv_id)
+				, root.to_str()
+				, config_cache_.get_section(root)));
 
-			break;
-		default:
-			break;
 		}
+		else {
 
+			config_cache_.add(srv_id, sml::obis_path_t({ root }));
+
+			//
+			//	get data from gateway
+			//
+			input_queue_.emplace(finalize(proxy_data(tag
+				, source
+				, seq
+				, origin
+				, channel
+				, sml::obis_path_t({ root })
+				, gw
+				, params
+				, srv_id
+				, name
+				, pwd
+				, false)));	//	no job
+
+
+			//
+			//	preprocessing
+			//
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> new input queue entry - size: "
+				<< input_queue_.size());
+
+			BOOST_ASSERT(!input_queue_.empty());
+
+			switch (state_) {
+			case GWPS::OFFLINE_:
+
+				//
+				//	update state
+				//
+				state_ = GWPS::WAITING_;
+
+				//
+				//	waiting for an opportunity to open a connection. If session is ready
+				//	is signals OK on slot [0]
+				vm_.async_run(cyng::generate_invoke("session.redirect", base_.get_id()));
+
+				break;
+			default:
+				break;
+			}
+		}
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
@@ -689,11 +718,40 @@ namespace node
 			<< secs.size()
 			<< " section(s)");
 
-		if (boost::algorithm::equals(job, "cache.create")) {
-			adjust_cache(srv_id, sml::vector_to_path(secs));
+		if (boost::algorithm::equals(job, "cache.reset")) {
+
+			/*
+			 * Make configuration cache ready to store the specfied paths.
+			 */
+			config_cache_.reset(srv_id, sml::vector_to_path(secs));
+
+			bus_->vm_.async_run(bus_res_com_proxy(tag
+				, source
+				, seq
+				, pk
+				, origin
+				, job
+				, sml::from_server_id(srv_id)
+				, sections
+				, cyng::param_map_factory()));
+
 		}
-		else if (boost::algorithm::equals(job, "cache.delete")) {
-			config_cache_.reset();
+		else if (boost::algorithm::equals(job, "cache.sections")) {
+
+			//
+			//	get all root sections
+			//
+			auto const roots = config_cache_.get_root_sections();
+
+			bus_->vm_.async_run(bus_res_com_proxy(tag
+				, source
+				, seq
+				, pk
+				, origin
+				, job
+				, sml::from_server_id(srv_id)
+				, sml::path_to_vector(roots)
+				, cyng::param_map_factory()));
 		}
 		else if (boost::algorithm::equals(job, "cache.update")) {
 
@@ -716,7 +774,7 @@ namespace node
 						, seq
 						, origin
 						, "GetProcParameterRequest"
-						, sml::obis_path({ code })
+						, sml::obis_path_t({ code })
 						, pk
 						, cyng::tuple_t{}
 						, srv_id
@@ -774,20 +832,6 @@ namespace node
 
 		}
 		return cyng::continuation::TASK_CONTINUE;
-	}
-
-	void gateway_proxy::adjust_cache(cyng::buffer_t srv_id, sml::obis_path&& path)
-	{
-		if (!config_cache_) {
-#if	defined(__CPP_SUPPORT_N3656)
-			config_cache_ = std::make_unique<config_cache>(srv_id, std::move(path));
-#else
-			config_cache_.reset(new config_cache(srv_id, std::move(path)));
-#endif
-		}
-		else {
-			config_cache_->add(std::move(path));
-		}
 	}
 
 	void gateway_proxy::run_queue()
@@ -1266,7 +1310,7 @@ namespace node
 
 				const auto b = cyng::value_cast(param.second, false);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_INSTALL_MODE }
+					, sml::obis_path_t{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_INSTALL_MODE }
 					, b), data);
 			}
 			else if (boost::algorithm::equals(param.first, "protocol")) {
@@ -1298,21 +1342,21 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint64_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_REBOOT }
+					, sml::obis_path_t{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_REBOOT }
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "sMode")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_MODE_S }
+					, sml::obis_path_t{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_MODE_S }
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "tMode")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_MODE_T }
+					, sml::obis_path_t{ sml::OBIS_IF_wMBUS, sml::OBIS_W_MBUS_MODE_T }
 					, val), data);
 			}
 		}
@@ -1355,63 +1399,63 @@ namespace node
 
 				const auto b = cyng::value_cast(param.second, false);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_ACTIVE }
+					, sml::obis_path_t{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_ACTIVE }
 					, b), data);
 			}
 			else if (boost::algorithm::equals(param.first, "autoActivation")) {
 
 				const auto b = cyng::value_cast(param.second, false);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_AUTO_ACTIVATION }
+					, sml::obis_path_t{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_AUTO_ACTIVATION }
 					, b), data);
 			}
 			else if (boost::algorithm::equals(param.first, "loopTime")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 60u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_LOOP_TIME }
+					, sml::obis_path_t{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_LOOP_TIME }
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "maxDataRate")) {
 
 				const auto val = cyng::numeric_cast<std::uint64_t>(param.second, 0u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_DATA_RATE }
+					, sml::obis_path_t{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_DATA_RATE }
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "minTimeout")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 200u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MIN_TIMEOUT }
+					, sml::obis_path_t{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MIN_TIMEOUT }
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "maxTimeout")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 5000u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_TIMEOUT }
+					, sml::obis_path_t{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_TIMEOUT }
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "maxVar")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 9u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_VARIATION }
+					, sml::obis_path_t{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_MAX_VARIATION }
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "protocolMode")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 1u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_PROTOCOL_MODE }
+					, sml::obis_path_t{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_PROTOCOL_MODE }
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "retries")) {
 
 				const auto val = cyng::numeric_cast<std::uint8_t>(param.second, 3u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_RETRIES }
+					, sml::obis_path_t{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_RETRIES }
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "rs485")) {
@@ -1421,14 +1465,14 @@ namespace node
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 900u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_TIME_GRID }
+					, sml::obis_path_t{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_TIME_GRID }
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "timeSync")) {
 
 				const auto val = cyng::numeric_cast<std::uint32_t>(param.second, 14400u);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, sml::obis_path{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_TIME_SYNC }
+					, sml::obis_path_t{ sml::OBIS_IF_1107, sml::OBIS_IF_1107_TIME_SYNC }
 					, val), data);
 			}
 			else if (boost::algorithm::equals(param.first, "devices")) {
@@ -1581,33 +1625,31 @@ namespace node
 	}
 
 	void gateway_proxy::update_cfg_cache(std::string srv
-		, sml::obis_path path
+		, sml::obis_path_t path
 		, proxy_data const& pd
 		, cyng::param_map_t const& params
 		, bool force)
 	{
-		if (config_cache_) {
-			if (config_cache_->update(path, params, force)) {
+		if (config_cache_.update(path, params, force)) {
 
-				CYNG_LOG_TRACE(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> cache updated "
-					<< sml::to_hex(path, ':')
-					<< " => "
-					<< cyng::io::to_str(params));
-			}
-			else {
-				CYNG_LOG_WARNING(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> "
-					<< sml::to_hex(path, ':')
-					<< " is not cached");
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> cache updated "
+				<< sml::to_hex(path, ':')
+				<< " => "
+				<< cyng::io::to_str(params));
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< sml::to_hex(path, ':')
+				<< " is not cached");
 
-			}
 		}
 	}
 
@@ -1623,7 +1665,7 @@ namespace node
 		//
 		//	activate configuration cache
 		//
-		adjust_cache(srv_id, sml::obis_path{sml::OBIS_ROOT_ACTIVE_DEVICES, sml::OBIS_ROOT_ACCESS_RIGHTS });
+		config_cache_.add(srv_id, sml::obis_path_t{ sml::OBIS_ROOT_ACTIVE_DEVICES, sml::OBIS_ROOT_ACCESS_RIGHTS });
 
 		//
 		//	query all active sensors/meters
@@ -1633,7 +1675,7 @@ namespace node
 			, seq
 			, origin
 			, "GetProcParameterRequest"
-			, sml::obis_path({ sml::OBIS_ROOT_ACTIVE_DEVICES })
+			, sml::obis_path_t({ sml::OBIS_ROOT_ACTIVE_DEVICES })
 			, pk
 			, cyng::tuple_t{}
 			, srv_id
@@ -1649,7 +1691,7 @@ namespace node
 			, seq
 			, origin
 			, "GetProcParameterRequest"
-			, sml::obis_path({ sml::OBIS_ROOT_ACCESS_RIGHTS })
+			, sml::obis_path_t({ sml::OBIS_ROOT_ACCESS_RIGHTS })
 			, pk
 			, cyng::tuple_t{}
 			, srv_id
@@ -1663,10 +1705,8 @@ namespace node
 		//
 	}
 
-	void gateway_proxy::process_job_result(sml::obis_path path, proxy_data const& prx, cyng::param_map_t const& params)
+	void gateway_proxy::process_job_result(sml::obis_path_t path, proxy_data const& prx, cyng::param_map_t const& params)
 	{
-		BOOST_ASSERT(config_cache_);
-
 		switch (path.front().to_uint64()) {
 		case sml::CODE_ROOT_ACTIVE_DEVICES:
 			if (params.empty()) {
@@ -1675,7 +1715,7 @@ namespace node
 					<< " <"
 					<< base_.get_class_name()
 					<< "> no active devices on "
-					<< config_cache_->get_server());
+					<< config_cache_.get_server());
 			}
 			break;
 		case sml::CODE_ROOT_ACCESS_RIGHTS:
@@ -1686,7 +1726,7 @@ namespace node
 					<< " <"
 					<< base_.get_class_name()
 					<< "> query rights now of "
-					<< config_cache_->get_server());
+					<< config_cache_.get_server());
 				//
 				//	send a message to this task (to synchronise access to input queue)
 				//
@@ -1698,29 +1738,46 @@ namespace node
 					<< " <"
 					<< base_.get_class_name()
 					<< "> received access rights of "
-					<< config_cache_->get_server()
-					<< ": "
-					<< cyng::io::to_str(params));
-
+					<< config_cache_.get_server()
+					<< ", "
+					<< output_map_.size()
+					<< "/"
+					<< open_requests_
+					<< " request(s) are pending");
 			}
 			break;
 		default:
 			break;
 		}
+
+		if (path.size() == 1) {
+			//
+			//	response complete
+			//
+			bus_->vm_.async_run(bus_res_com_proxy(prx.get_tag_ident()
+				, prx.get_tag_source()
+				, prx.get_sequence()
+				, prx.get_key_gw()
+				, prx.get_tag_origin()
+				, "cache.update"
+				, sml::from_server_id(prx.get_srv())
+				, sml::path_to_vector(path)
+				, cyng::param_map_factory("open", open_requests_)));
+		}
 	}
 
 	void gateway_proxy::queue_access_right_queries(proxy_data const& prx, cyng::param_map_t const& params)
 	{
-		auto const data = config_cache_->get_section(sml::obis_path{ sml::OBIS_ROOT_ACTIVE_DEVICES });
-		CYNG_LOG_TRACE(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> get all access rights now of "
-			<< data.size()
-			<< " devices");
+		//auto const data = config_cache_.get_section(sml::obis_path_t{ sml::OBIS_ROOT_ACTIVE_DEVICES });
+		//CYNG_LOG_TRACE(logger_, "task #"
+		//	<< base_.get_id()
+		//	<< " <"
+		//	<< base_.get_class_name()
+		//	<< "> get all access rights now of "
+		//	<< data.size()
+		//	<< " devices");
 
-		config_cache_->loop_access_rights([&](std::uint8_t role, std::uint8_t user, std::string name, config_cache::device_map_t devices) {
+		config_cache_.loop_access_rights([&](std::uint8_t role, std::uint8_t user, std::string name, config_cache::device_map_t devices) {
 
 			for (auto const& dev : devices) {
 
@@ -1772,7 +1829,7 @@ namespace node
 			, seq
 			, origin
 			, "GetProcParameterRequest"
-			, sml::obis_path({ sml::OBIS_ROOT_ACCESS_RIGHTS	//	81 81 81 60 FF FF
+			, sml::obis_path_t({ sml::OBIS_ROOT_ACCESS_RIGHTS	//	81 81 81 60 FF FF
 				, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, 0xFF)
 				, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, user)
 				, sml::make_obis(0x81, 0x81, 0x81, 0x64, 0x01, meter)
@@ -1794,52 +1851,55 @@ namespace node
 		std::string name,
 		std::string pwd)
 	{
-		if (config_cache_) {
-			config_cache_->loop_access_rights([&](std::uint8_t role, std::uint8_t user, std::string name, config_cache::device_map_t devices) {
+		config_cache_.loop_access_rights([&](std::uint8_t role, std::uint8_t user, std::string name, config_cache::device_map_t devices) {
 
-				for (auto const& dev : devices) {
+			std::uint16_t counter{ 0 };
+			for (auto const& dev : devices) {
 
-					CYNG_LOG_TRACE(logger_, "task #"
-						<< base_.get_id()
-						<< " <"
-						<< base_.get_class_name()
-						<< "> send access right of role #"
-						<< +role
-						<< ", user #"
-						<< +user
-						<< " ("
-						<< name
-						<< "), meter: #"
-						<< dev.first.get_storage()
-						<< " - "
-						<< sml::from_server_id(dev.second));
+				CYNG_LOG_TRACE(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> send access right of role #"
+					<< +role
+					<< ", user #"
+					<< +user
+					<< " ("
+					<< name
+					<< "), meter: #"
+					<< dev.first.get_storage()
+					<< " - "
+					<< sml::from_server_id(dev.second));
 
-					auto section = config_cache_->get_section(sml::obis_path({ sml::OBIS_ROOT_ACCESS_RIGHTS	//	81 81 81 60 FF FF
-						, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, 0xFF)
-						, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, user)
-						, sml::make_obis(0x81, 0x81, 0x81, 0x64, 0x01, dev.first.get_storage())
+				auto section = config_cache_.get_section(sml::obis_path_t({ sml::OBIS_ROOT_ACCESS_RIGHTS	//	81 81 81 60 FF FF
+					, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, 0xFF)
+					, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, user)
+					, sml::make_obis(0x81, 0x81, 0x81, 0x64, 0x01, dev.first.get_storage())
 					}));
 
-					if (!section.empty()) {
+				if (!section.empty()) {
 
-						section["81818161FFFF"] = cyng::make_object(name);
-						section["role"] = cyng::make_object(role);
-						section["nr"] = cyng::make_object(dev.first.get_storage());
+					//	"81818161FFFF"
+					section[sml::OBIS_ACCESS_USER_NAME.to_str()] = cyng::make_object(name);
+					section["role"] = cyng::make_object(role);
+					section["nr"] = cyng::make_object(dev.first.get_storage());
+					section["counter"] = cyng::make_object(counter);
+					section["total"] = cyng::make_object(devices.size());
 
-						bus_->vm_.async_run(bus_res_com_proxy(tag
-							, source
-							, seq
-							, pk
-							, origin
-							, "cache.query"
-							, srv_id
-							, sml::OBIS_ROOT_ACCESS_RIGHTS.to_buffer()
-							, section));
-					}
+					bus_->vm_.async_run(bus_res_com_proxy(tag
+						, source
+						, seq
+						, pk
+						, origin
+						, "cache.query"
+						, sml::from_server_id(srv_id)
+						, sml::path_to_vector(sml::obis_path_t({ sml::OBIS_ROOT_ACCESS_RIGHTS }))
+						, section));
 
+					++counter;
 				}
-			});
-		}
+			}
+		});
 	}
 
 	cyng::mac48 get_mac()

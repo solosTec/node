@@ -45,7 +45,7 @@ namespace node
 		using msg_3 = std::tuple<std::string
 			, std::uint8_t
 			, cyng::buffer_t
-			, sml::obis_path
+			, sml::obis_path_t
 			, cyng::param_t>;
 
 		using msg_4 = std::tuple<std::string>;
@@ -53,7 +53,7 @@ namespace node
 		using msg_5 = std::tuple<
 			std::string,	//	trx
 			cyng::buffer_t,	//	server ID
-			sml::obis_path,	//	OBIS (path)
+			sml::obis_path_t,	//	OBIS (path)
 			cyng::param_map_t	//	data
 		>;
 
@@ -71,7 +71,8 @@ namespace node
 			cyng::tuple_t,			//	[7] parameters
 			cyng::buffer_t,			//	[8] server id
 			std::string,			//	[9] name
-			std::string				//	[10] pwd
+			std::string,			//	[10] pwd
+			bool					//	[11] use cache
 		>;
 
 		//	get profile list response
@@ -80,7 +81,7 @@ namespace node
 			std::uint32_t,	//	act_time
 			std::uint32_t,	//	reg_period
 			std::uint32_t,	//	val_time
-			sml::obis_path,	//	OBIS (path)
+			sml::obis_path_t,	//	OBIS (path)
 			cyng::buffer_t,	//	server ID
 			std::uint32_t,	//	status
 			cyng::param_map_t	//	params
@@ -159,7 +160,7 @@ namespace node
 		cyng::continuation process(std::string trx
 			, std::uint8_t group
 			, cyng::buffer_t srv_id
-			, sml::obis_path
+			, sml::obis_path_t
 			, cyng::param_t values);
 
 		/**
@@ -180,7 +181,7 @@ namespace node
 		 */
 		cyng::continuation process(std::string trx
 			, cyng::buffer_t srv_id
-			, sml::obis_path	//	OBIS (path)
+			, sml::obis_path_t	//	OBIS (path)
 			, cyng::param_map_t);
 
 		/**
@@ -206,10 +207,11 @@ namespace node
 			std::string channel,		//	[4] channel
 			cyng::buffer_t code,		//	[5] OBIS root code
 			cyng::vector_t key,			//	[6] TGateway/TDevice PK
-			cyng::tuple_t params,		//	[8] parameters
-			cyng::buffer_t srv,			//	[9] server id
-			std::string name,			//	[10] name
-			std::string	pwd				//	[11] pwd
+			cyng::tuple_t params,		//	[7] parameters
+			cyng::buffer_t srv,			//	[8] server id
+			std::string name,			//	[9] name
+			std::string	pwd,			//	[10] pwd
+			bool cache_enabled			//	[11] use cache
 		);
 
 		/**
@@ -221,7 +223,7 @@ namespace node
 			, std::uint32_t act_time
 			, std::uint32_t reg_period
 			, std::uint32_t val_time
-			, sml::obis_path
+			, sml::obis_path_t
 			, cyng::buffer_t srv_id
 			, std::uint32_t	stat
 			, cyng::param_map_t params);
@@ -229,7 +231,7 @@ namespace node
 		/**
 		 * @brief slot [9]
 		 *
-		 * communication with this task
+		 * communication with this task (cache)
 		 */
 		cyng::continuation process(boost::uuids::uuid,		//	[0] ident tag
 			boost::uuids::uuid,		//	[1] source tag
@@ -297,15 +299,10 @@ namespace node
 		 * update configuration cache
 		 */
 		void update_cfg_cache(std::string srv
-			, sml::obis_path root
+			, sml::obis_path_t root
 			, proxy_data const& pd
 			, cyng::param_map_t const& params
 			, bool force);
-
-		/**
-		 * Make configuration cache ready to store the specfied paths.
-		 */
-		void adjust_cache(cyng::buffer_t srv_id, sml::obis_path&&);
 
 		/**
 		 * prepare cache to store store all active devices and 
@@ -333,7 +330,7 @@ namespace node
 		 * now the responses to the queries for access rights are coming in
 		 * the next bunch of queries has to generated.
 		 */
-		void process_job_result(sml::obis_path path
+		void process_job_result(sml::obis_path_t path
 			, proxy_data const&
 			, cyng::param_map_t const& params);
 
@@ -396,7 +393,7 @@ namespace node
 		/**
 		 * Maintaining an configuration cache is optional
 		 */
-		std::unique_ptr<config_cache>	config_cache_;
+		config_cache	config_cache_;
 	};
 
 	cyng::mac48 get_mac();

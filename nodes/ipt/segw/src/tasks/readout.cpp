@@ -83,7 +83,7 @@ namespace node
 		//
 		//	all servers with data but without a data collector
 		//
-		std::map<cyng::buffer_t, sml::obis_path>	srv_without_dc;
+		std::map<cyng::buffer_t, sml::obis_path_t>	srv_without_dc;
 
 		//
 		//	Collect all cached readout data and store all records
@@ -157,7 +157,7 @@ namespace node
 						//
 						//	collect all OBIS codes
 						//
-						sml::obis_path entries;
+						sml::obis_path_t entries;
 						std::transform(result.begin(), result.end(), std::back_inserter(entries), [&](cyng::table::key_type const& pk) {
 							auto const rec = tbl_data->lookup(pk);
 							return sml::obis(cyng::to_buffer(rec["OBIS"]));
@@ -433,7 +433,7 @@ namespace node
 		}
 	}
 
-	void readout::auto_configure_data_collector(std::map<cyng::buffer_t, sml::obis_path>& servers, sml::obis profile)
+	void readout::auto_configure_data_collector(std::map<cyng::buffer_t, sml::obis_path_t>& servers, sml::obis profile)
 	{
 		cache_.write_tables("_DataCollector", "_DataMirror", [&](cyng::store::table* tbl_coll, cyng::store::table* tbl_mirr) {
 

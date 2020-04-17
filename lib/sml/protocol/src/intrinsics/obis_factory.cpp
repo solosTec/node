@@ -7,8 +7,10 @@
 
 #include <smf/sml/parser/obis_parser.h>
 #include <smf/sml/intrinsics/obis_factory.hpp>
+#include <smf/sml/obis_io.h>
 
 #include <cyng/factory/factory.hpp>
+#include <cyng/factory/set_factory.h>
 #include <cyng/buffer_cast.h>
 
 namespace node
@@ -32,7 +34,7 @@ namespace node
 
 		namespace {
 			template<typename C>
-			C C_from_path(obis_path path)
+			C C_from_path(obis_path_t path)
 			{
 				C container;
 				std::transform(path.begin(), path.end(), std::back_inserter(container), [](obis const& v) {
@@ -42,9 +44,9 @@ namespace node
 			}
 
 			template<typename C>
-			obis_path C_to_path(C container)
+			obis_path_t C_to_path(C container)
 			{
-				obis_path path;
+				obis_path_t path;
 				std::transform(container.begin(), container.end(), std::back_inserter(path), [](cyng::object obj) {
 					return cyng::to_buffer(obj);
 					});
@@ -52,29 +54,29 @@ namespace node
 			}
 		}
 
-		cyng::tuple_t tuple_from_path(obis_path path)
+		cyng::tuple_t tuple_from_path(obis_path_t path)
 		{
 			return C_from_path<cyng::tuple_t>(path);
 		}
 
-		cyng::vector_t vector_from_path(obis_path path)
+		cyng::vector_t vector_from_path(obis_path_t path)
 		{
 			return C_from_path<cyng::vector_t>(path);
 		}
 
-		obis_path tuple_to_path(cyng::tuple_t tpl)
+		obis_path_t tuple_to_path(cyng::tuple_t tpl)
 		{
 			return C_to_path<cyng::tuple_t>(tpl);
 		}
 
-		obis_path vector_to_path(cyng::vector_t vec)
+		obis_path_t vector_to_path(cyng::vector_t vec)
 		{
 			return C_to_path<cyng::vector_t>(vec);
 		}
 
-		obis_path vector_to_path(std::vector<std::string> const& vec)
+		obis_path_t vector_to_path(std::vector<std::string> const& vec)
 		{
-			obis_path path;
+			obis_path_t path;
 			std::transform(vec.begin(), vec.end(), std::back_inserter(path), [](std::string const& s) {
 				auto const r = parse_obis(s);
 				return (r.second)
@@ -82,7 +84,15 @@ namespace node
 					: obis();
 				});
 			return path;
+		}
 
+		cyng::vector_t path_to_vector(obis_path_t path)
+		{
+			std::vector<std::string> vec;
+			std::transform(path.begin(), path.end(), std::back_inserter(vec), [](obis const& code) {
+				return code.to_str();
+				});
+			return cyng::vector_factory<std::string>(vec);
 		}
 
 	}	//	sml

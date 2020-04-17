@@ -282,7 +282,7 @@ namespace node
 	{
 		cyng::vector_t vec{};
 		return vec << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("bus.res.gateway.proxy", ident, source, seq, key, tag_ws, channel, srv, code, params))
+			, cyng::generate_invoke_remote_unwinded("bus.res.proxy.gateway", ident, source, seq, key, tag_ws, channel, srv, code, params))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}
@@ -305,13 +305,13 @@ namespace node
 		, cyng::vector_t key
 		, boost::uuids::uuid tag_ws
 		, std::string channel
-		, cyng::buffer_t srv	//	string?
-		, cyng::buffer_t code
+		, std::string srv	//	string
+		, cyng::vector_t sections	//	vector of root paths
 		, cyng::param_map_t params)
 	{
 		cyng::vector_t vec{};
 		return vec << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("bus.res.proxy.job", ident, source, seq, key, tag_ws, channel, srv, code, params))
+			, cyng::generate_invoke_remote_unwinded("bus.res.proxy.job", ident, source, seq, key, tag_ws, channel, srv, sections, params))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 
@@ -487,11 +487,12 @@ namespace node
 		, cyng::tuple_t params
 		, cyng::buffer_t const& server
 		, std::string const& user
-		, std::string const& pwd)
+		, std::string const& pwd
+		, bool cache_enabled)
 	{
         cyng::vector_t vec{};
 		return vec << cyng::generate_invoke_unwinded("stream.serialize"
-				, cyng::generate_invoke_remote_unwinded("client.req.gateway", tag, cyng::code::IDENT, source, seq, origin, channel, code, gw, params, server, user, pwd))
+				, cyng::generate_invoke_remote_unwinded("client.req.gateway", tag, cyng::code::IDENT, source, seq, origin, channel, code, gw, params, server, user, pwd, cache_enabled))
 				<< cyng::generate_invoke_unwinded("stream.flush")
 				;
 	}

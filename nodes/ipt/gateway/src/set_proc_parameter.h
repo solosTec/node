@@ -37,7 +37,7 @@ namespace node
 				, cyng::store::db& config_db
 				, cfg_ipt&);
 
-			void generate_response(obis_path const&
+			void generate_response(obis_path_t const&
 				, std::string trx
 				, cyng::buffer_t srv_id
 				, std::string user
@@ -45,16 +45,16 @@ namespace node
 				, cyng::param_t	param);
 
 		private:
-			void _81490d0700ff(obis_path::const_iterator
-				, obis_path::const_iterator
+			void _81490d0700ff(obis_path_t::const_iterator
+				, obis_path_t::const_iterator
 				, std::string trx
 				, cyng::buffer_t srv_id
 				, std::string user
 				, std::string pwd
 				, cyng::param_t	param);
 
-			//void _81490d070002(obis_path::const_iterator
-			//	, obis_path::const_iterator
+			//void _81490d070002(obis_path_t::const_iterator
+			//	, obis_path_t::const_iterator
 			//	, std::string trx
 			//	, cyng::buffer_t srv_id
 			//	, std::string user

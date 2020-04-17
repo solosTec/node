@@ -209,7 +209,7 @@ namespace node
 			case internal_state::AUTHORIZED:
 			case internal_state::CONNECTED_TASK:
 				if (cyng::async::NO_TASK != authorized_.tsk_proxy_) {
-					BOOST_ASSERT_MSG(evt.tpl_.size() == 11, "evt_gateway");
+					BOOST_ASSERT_MSG(evt.tpl_.size() == 12, "evt_gateway");
 
 					//
 					//	push new entry into (income) queue

@@ -80,7 +80,7 @@ namespace node
 		/**
 		 * Configure a data collector for the specified profile.
 		 */
-		void auto_configure_data_collector(std::map<cyng::buffer_t, sml::obis_path>&, sml::obis profile);
+		void auto_configure_data_collector(std::map<cyng::buffer_t, sml::obis_path_t>&, sml::obis profile);
 
 		/**
 		 * Remove all inactive collectors

@@ -126,7 +126,7 @@ namespace node
 
 		bool db_exporter::read_get_profile_list_response(cyng::db::session sp, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
-			////	std::pair<obis_path, cyng::param_map_t>
+			////	std::pair<obis_path_t, cyng::param_map_t>
 			//auto const r = ro_.read_get_profile_list_response(pos, end);
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");

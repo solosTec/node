@@ -74,7 +74,7 @@ namespace node
 				
 			});
 
-			vm_.register_function("client.req.gateway", 11, std::bind(&session::client_req_gateway, this, std::placeholders::_1));
+			vm_.register_function("client.req.gateway", 12, std::bind(&session::client_req_gateway, this, std::placeholders::_1));
 			vm_.register_function("client.req.proxy", 10, std::bind(&session::client_req_proxy, this, std::placeholders::_1));
 
 			vm_.register_function("session.start.proxy", 0, [this, sml_log](cyng::context& ctx) {
@@ -447,12 +447,13 @@ namespace node
 			//	* [buffer] server
 			//	* [string] user
 			//	* [string] pwd
+			//	* [bool] cache
 			//
 			auto const frame = ctx.get_frame();
 			CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 			//
-			//	update proxy queue
+			//	update proxy queue - slot [7]
 			//
 			state_.react(state::evt_gateway(cyng::to_tuple(frame)));
 		}

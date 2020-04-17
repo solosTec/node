@@ -291,11 +291,11 @@ namespace node
 			return true;
 		}
 
-		std::pair<obis_path, cyng::param_t> readout::read_get_proc_parameter_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		std::pair<obis_path_t, cyng::param_t> readout::read_get_proc_parameter_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			auto const count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 3, "Get Proc Parameter Response");
-			if (count != 3)	return std::make_pair(obis_path{}, cyng::param_t{});
+			if (count != 3)	return std::make_pair(obis_path_t{}, cyng::param_t{});
 
 			//
 			//	serverId
@@ -322,11 +322,11 @@ namespace node
 			return std::make_pair(path, param);
 		}
 
-		std::pair<obis_path, cyng::object> readout::read_get_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		std::pair<obis_path_t, cyng::object> readout::read_get_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Get Proc Parameter Request");
-			if (count != 5)	return std::make_pair(obis_path{}, cyng::make_object());
+			if (count != 5)	return std::make_pair(obis_path_t{}, cyng::make_object());
 
 			//
 			//	serverId
@@ -359,11 +359,11 @@ namespace node
 
 		}
 
-		std::pair<obis_path, cyng::param_map_t> readout::read_get_profile_list_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		std::pair<obis_path_t, cyng::param_map_t> readout::read_get_profile_list_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Response");
-			if (count != 9)	return std::make_pair(obis_path{}, cyng::param_map_t{});
+			if (count != 9)	return std::make_pair(obis_path_t{}, cyng::param_map_t{});
 
 			//
 			//	serverId
@@ -412,11 +412,11 @@ namespace node
 
 		}
 
-		obis_path readout::read_get_profile_list_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		obis_path_t readout::read_get_profile_list_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			std::size_t count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 9, "Get Profile List Request");
-			if (count != 9)	return obis_path{};
+			if (count != 9)	return obis_path_t{};
 
 			//
 			//	serverId
@@ -466,11 +466,11 @@ namespace node
 			return path;
 		}
 
-		std::pair<obis_path, cyng::param_t> readout::read_set_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		std::pair<obis_path_t, cyng::param_t> readout::read_set_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			auto const count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "Set Proc Parameter Request");
-			if (count != 5) return std::make_pair(obis_path{}, cyng::param_t{});; //cyng::generate_invoke("log.msg.error", "SML Set Proc Parameter Request", count);
+			if (count != 5) return std::make_pair(obis_path_t{}, cyng::param_t{});; //cyng::generate_invoke("log.msg.error", "SML Set Proc Parameter Request", count);
 
 			//
 			//	serverId
@@ -552,7 +552,7 @@ namespace node
 			return cyng::value_cast<std::uint8_t>(obj, 0);
 		}
 
-		obis_path read_param_tree_path(cyng::object obj)
+		obis_path_t read_param_tree_path(cyng::object obj)
 		{
 			std::vector<obis> result;
 

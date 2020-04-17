@@ -31,7 +31,7 @@ namespace node
 
 		void config_access::get_proc_params(std::string trx
 			, cyng::buffer_t srv_id
-			, obis_path path) const
+			, obis_path_t path) const
 		{
 			CYNG_LOG_DEBUG(logger_, "get access rights: " 
 				<< from_server_id(srv_id)

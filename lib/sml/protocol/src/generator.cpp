@@ -160,7 +160,7 @@ namespace node
 			, std::string const& address)
 		{
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) }
+				, obis_path_t{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) }
 				, address);
 		}
 
@@ -169,7 +169,7 @@ namespace node
 			, std::uint16_t port)
 		{
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx) }
+				, obis_path_t{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx) }
 				, port);
 		}
 
@@ -178,7 +178,7 @@ namespace node
 			, std::uint16_t port)
 		{
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx) }
+				, obis_path_t{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx) }
 				, port);
 		}
 
@@ -187,7 +187,7 @@ namespace node
 			, std::string const& user)
 		{
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx) }
+				, obis_path_t{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx) }
 				, user);
 		}
 
@@ -196,7 +196,7 @@ namespace node
 			, std::string const& pwd)
 		{
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx) }
+				, obis_path_t{ OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx) }
 				, pwd);
 		}
 
@@ -206,7 +206,7 @@ namespace node
 			BOOST_ASSERT_MSG(val < 4, "wireless M-Bus protocol type out of range");
 
 			return set_proc_parameter(server_id
-				, obis_path{ OBIS_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }
+				, obis_path_t{ OBIS_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }
 				, val);
 		}
 
@@ -233,7 +233,7 @@ namespace node
 		}
 
 		std::string req_generator::get_proc_parameter(cyng::buffer_t const& server_id
-			, obis_path path)
+			, obis_path_t path)
 		{
 			++trx_;
 			auto const trx = *trx_;
