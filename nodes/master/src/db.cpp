@@ -505,36 +505,13 @@ namespace node
 		return tag_;
 	}
 
-	void cache::init(std::string country_code
-		, std::string language_code
-		, boost::filesystem::path stat_dir
-		, std::uint64_t max_messages
-		, std::uint64_t max_events
-		, std::chrono::seconds heartbeat)
+	void cache::init()
 	{
 		set_cfg("startup", std::chrono::system_clock::now());
 
 		set_cfg("sys-version", NODE::version_string);
 		set_cfg("boost-version", NODE_BOOST_VERSION);
 		set_cfg("ssl-version", NODE_SSL_VERSION);
-
-		set_cfg("connection-auto-login", is_connection_auto_login());
-		set_cfg("connection-auto-enabled", is_connection_auto_enabled());
-		set_cfg("connection-superseed", is_connection_superseed());
-		set_cfg("generate-time-series", is_generate_time_series());
-		set_cfg("catch-meters", is_catch_meters());
-		set_cfg("catch-lora", is_catch_lora());
-
-		set_cfg("generate-time-series-dir", stat_dir.string());
-		set_cfg("country-code", country_code);
-		set_cfg("country-code-default", country_code);
-		set_cfg("language-code", language_code);
-		set_cfg("language-code-default", language_code);
-		set_cfg("max-messages", max_messages);
-		set_cfg("max-messages-default", max_messages);
-		set_cfg("max-events", max_events);
-		set_cfg("max-events-default", max_events);
-		set_cfg("cluster-heartbeat", heartbeat);
 
 
 		//	get hostname
@@ -558,7 +535,41 @@ namespace node
 			<< host_name
 			;
 		insert_msg(cyng::logging::severity::LEVEL_INFO, ss.str(), tag_);
+	}
 
+	void cache::init_sys_cfg(
+		bool auto_login,
+		bool auto_enabled,
+		bool supersede,
+		bool gw_cache,
+		bool generate_time_series,
+		bool catch_meters,
+		bool catch_lora) 
+	{
+		set_connection_auto_login(auto_login);
+		set_connection_auto_enabled(auto_enabled);
+		set_connection_superseed(supersede);
+		set_gw_cache_enabled(gw_cache);
+
+		/**
+		 * Turn generating time series on or off
+		 *
+		 * @return previous value
+		 */
+		set_generate_time_series(generate_time_series);
+		set_catch_meters(catch_meters);
+		set_catch_lora(catch_lora);
+
+		//
+		//	backup to cache
+		//
+		set_cfg("connection-auto-login", auto_login);
+		set_cfg("connection-auto-enabled", auto_enabled);
+		set_cfg("connection-superseed", supersede);
+		set_cfg("gw-cache", gw_cache);
+		set_cfg("generate-time-series", generate_time_series);
+		set_cfg("catch-meters", catch_meters);
+		set_cfg("catch-lora", catch_lora);
 	}
 
 	bool cache::merge_cfg(std::string name, cyng::object&& val)
@@ -630,6 +641,10 @@ namespace node
 	{
 		return (sys_conf_ & SMF_CONNECTION_SUPERSEDED) == SMF_CONNECTION_SUPERSEDED;
 	}
+	bool cache::is_gw_cache_enabled() const
+	{
+		return (sys_conf_ & SMF_GW_CACHE_ENABLED) == SMF_GW_CACHE_ENABLED;
+	}
 	bool cache::is_generate_time_series() const
 	{
 		return (sys_conf_ & SMF_GENERATE_TIME_SERIES) == SMF_GENERATE_TIME_SERIES;
@@ -665,6 +680,14 @@ namespace node
 			? sys_conf_.fetch_or(SMF_CONNECTION_SUPERSEDED)
 			: sys_conf_.fetch_and(~SMF_CONNECTION_SUPERSEDED);
 		return is_connection_superseed();
+	}
+
+	bool cache::set_gw_cache_enabled(bool b)
+	{
+		b
+			? sys_conf_.fetch_or(SMF_GW_CACHE_ENABLED)
+			: sys_conf_.fetch_and(~SMF_GW_CACHE_ENABLED);
+		return is_gw_cache_enabled();
 	}
 
 	bool cache::set_generate_time_series(bool b)
@@ -724,22 +747,6 @@ namespace node
 		});
 	}
 
-	//void cache::insert_ts_event(boost::uuids::uuid tag
-	//	, std::string const& account
-	//	, std::string const& evt
-	//	, cyng::object obj)
-	//{
-	//	//
-	//	//	read max number of events from config table
-	//	//
-	//	auto const max_events = get_max_events();
-
-	//	write_table("_TimeSeries", [&](cyng::store::table* tbl_ts) {
-
-	//		node::insert_ts_event(tbl_ts, tag, account, evt, obj, max_events);
-
-	//	});
-	//}
 
 	std::chrono::seconds cache::get_cluster_hartbeat()
 	{

@@ -47,6 +47,7 @@ namespace node
 					cyng::param_factory("auto-login", false),
 					cyng::param_factory("auto-enabled", true),
 					cyng::param_factory("supersede", true),
+					cyng::param_factory("gw-cache", true),
 					cyng::param_factory("generate-time-series", false),
 					cyng::param_factory("catch-meters", false),
 					cyng::param_factory("catch-lora", true),

@@ -26,7 +26,6 @@ namespace node
 		, logger_(logger)
 		, account_(account)
 		, pwd_(pwd)
-		//, monitor_(monitor)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
 		, socket_(io_ctx_)
@@ -46,26 +45,51 @@ namespace node
 		create_tables(logger, db_, tag);
 
 		//
+		//	set some basic values
+		//
+		cache_.init();
+
+		//
 		//	initialize global configuration data
 		//
 		const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
 		auto stat_dir = cyng::value_cast(dom.get("stat-dir"), tmp.string());
 		CYNG_LOG_INFO(logger_, "store statistics data at " << stat_dir);
+		cache_.set_cfg("generate-time-series-dir", stat_dir);
 
 		CYNG_LOG_TRACE(logger_, "country code: " << country_code);
+		cache_.set_cfg("country-code", country_code);
+		cache_.set_cfg("country-code-default", country_code);
+
+		CYNG_LOG_TRACE(logger_, "language code: " << language_code);
+		cache_.set_cfg("language-code", language_code);
+		cache_.set_cfg("language-code-default", language_code);
 
 		auto max_messages = cyng::value_cast<std::uint64_t>(dom.get("max-messages"), 1000);
 		CYNG_LOG_INFO(logger_, "store max. " << max_messages << " messages");
+		cache_.set_cfg("max-messages", max_messages);
+		cache_.set_cfg("max-messages-default", max_messages);
 
 		auto max_events = cyng::value_cast<std::uint64_t>(dom.get("max-events"), 2000);
 		CYNG_LOG_INFO(logger_, "store max. " << max_events << " events");
+		cache_.set_cfg("max-events", max_events);
+		cache_.set_cfg("max-events-default", max_events);
 
-		cache_.init(country_code
-			, language_code
-			, stat_dir
-			, max_messages
-			, max_events
-			, std::chrono::seconds(monitor));
+		CYNG_LOG_INFO(logger_, "cluster heartbeat " << cyng::to_str(std::chrono::seconds(monitor)));
+		cache_.set_cfg("cluster-heartbeat", std::chrono::seconds(monitor));
+
+		//
+		//	set several boolean flags in a kind of bit vector
+		//
+		cache_.init_sys_cfg(
+			cyng::value_cast(dom.get("auto-login"), false),
+			cyng::value_cast(dom.get("auto-enabled"), true),
+			cyng::value_cast(dom.get("supersede"), true),
+			cyng::value_cast(dom.get("gw-cache"), true),
+			cyng::value_cast(dom.get("generate-time-series"), false),
+			cyng::value_cast(dom.get("catch-meters"), false),
+			cyng::value_cast(dom.get("catch-lora"), true)
+		);
 	}
 	
 	void server::run(std::string const& address, std::string const& service)

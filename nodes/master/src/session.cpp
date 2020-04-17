@@ -866,6 +866,10 @@ namespace node
 					{
 						cache_.set_connection_auto_enabled(cyng::value_cast(attr.second, false));
 					}
+					else if (boost::algorithm::equals(name, "gw-cache"))
+					{
+						cache_.set_gw_cache_enabled(cyng::value_cast(attr.second, false));
+					}
 					else if (boost::algorithm::equals(name, "connection-superseed"))
 					{
 						cache_.set_connection_superseed(cyng::value_cast(attr.second, false));

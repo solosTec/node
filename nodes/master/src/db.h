@@ -63,20 +63,6 @@ namespace node
 	bool connection_erase(cyng::store::table* tbl, cyng::table::key_type&& key, boost::uuids::uuid tag);
 
 
-	/**
-	 * Define configuration bits
-	 */
-	enum system_config : std::uint64_t
-	{
-		SMF_CONNECTION_AUTO_LOGIN	= (1 << 0),
-		SMF_CONNECTION_AUTO_ENABLED = (1 << 1),
-		SMF_CONNECTION_SUPERSEDED	= (1 << 2),
-		SMF_GENERATE_TIME_SERIES	= (1 << 3),
-		SMF_GENERATE_CATCH_METERS	= (1 << 4),
-		SMF_GENERATE_CATCH_LORA		= (1 << 5),
-	};
-
-
 	/** @brief lookup meter
 	 * 
 	 * "ident" + "gw" have to be unique
@@ -92,16 +78,41 @@ namespace node
 	 */
 	class cache
 	{
+		/**
+		 * Define configuration bits
+		 */
+		enum system_config : std::uint64_t
+		{
+			SMF_CONNECTION_AUTO_LOGIN = (1 << 0),
+			SMF_CONNECTION_AUTO_ENABLED = (1 << 1),
+			SMF_CONNECTION_SUPERSEDED = (1 << 2),
+			SMF_GW_CACHE_ENABLED = (1 << 3),
+			SMF_GENERATE_TIME_SERIES = (1 << 4),
+			SMF_GENERATE_CATCH_METERS = (1 << 5),
+			SMF_GENERATE_CATCH_LORA = (1 << 6),
+		};
 
 	public:
 		cache(cyng::store::db&, boost::uuids::uuid tag);
 
-		void init(std::string country_code
-			, std::string language_code
-			, boost::filesystem::path stat_dir
-			, std::uint64_t max_messages
-			, std::uint64_t max_events
-			, std::chrono::seconds);
+		/**
+		 * initialize cache with some basic data like
+		 * version ids, startup time, etc.
+		 */
+		void init();
+
+		/**
+		 * Initialize sys_conf_
+		 */
+		void init_sys_cfg(
+			bool auto_login,
+			bool auto_enabled,
+			bool supersede,
+			bool gw_cache,
+			bool generate_time_series,
+			bool catch_meters,
+			bool catch_lora
+		);
 
 		/**
 		 * @return itentity/source tag
@@ -123,6 +134,8 @@ namespace node
 		bool is_connection_auto_login() const;
 		bool is_connection_auto_enabled() const;
 		bool is_connection_superseed() const;
+		bool is_gw_cache_enabled() const;
+
 		/**
 		 * @return true if generating time series is on.
 		 */
@@ -133,6 +146,8 @@ namespace node
 		bool set_connection_auto_login(bool);
 		bool set_connection_auto_enabled(bool);
 		bool set_connection_superseed(bool);
+		bool set_gw_cache_enabled(bool);
+
 		/**
 		 * Turn generating time series on or off
 		 *
@@ -172,12 +187,6 @@ namespace node
 			, std::string const&
 			, boost::uuids::uuid tag);
 
-		//void insert_ts_event(boost::uuids::uuid tag
-		//	, std::string const& account
-		//	, std::string const& evt
-		//	, cyng::object);
-
-
 		/**
 		 * @return cluster heartbeat in seconds
 		 */
@@ -206,7 +215,8 @@ namespace node
 		boost::uuids::uuid const tag_;
 
 		/**
-		 * system wide configuration flags
+		 * system wide configuration flags (kind of bit vector)
+		 * @see enum system_config
 		 */
 		std::atomic<std::uint64_t> sys_conf_;
 
