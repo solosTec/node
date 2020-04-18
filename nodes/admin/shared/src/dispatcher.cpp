@@ -37,8 +37,9 @@ namespace node
 				tbl_channel_rel("_Cluster", "status.cluster", "table.cluster.count"),
 				tbl_channel_rel("_TimeSeries", "monitor.tsdb", ""),
 				tbl_channel_rel("_LoRaUplink", "monitor.lora", "table.uplink.count"),
-				tbl_channel_rel("_CSV", "task.csv", "")
-			} 
+				tbl_channel_rel("_CSV", "task.csv", ""),
+				tbl_channel_rel("TGWSnapshot", "monitor.snapshot", "table.snapshot.count")
+		}
 	{}
 
 	void dispatcher::register_this(cyng::controller& vm)
@@ -356,7 +357,6 @@ namespace node
 			auto const rel = find_rel_by_counter(channel);
 			if (!rel.is_empty()) 
 			{
-
 				subscribe_table_count(db, channel, rel.table_, tag);
 			}
 			else if (boost::algorithm::starts_with(channel, "config.web"))
@@ -530,7 +530,6 @@ namespace node
 
 		if (boost::algorithm::equals(table, "TGUIUser")) {
 			subscribe_TGUIUser(db, channel, tag);
-
 		}
 		else {
 			subscribe_with_loop(db, table, channel, tag);
@@ -606,7 +605,10 @@ namespace node
 
 	}
 
-	void dispatcher::subscribe_with_loop(cyng::store::db& db, std::string table, std::string const& channel, boost::uuids::uuid tag)
+	void dispatcher::subscribe_with_loop(cyng::store::db& db
+		, std::string table
+		, std::string const& channel
+		, boost::uuids::uuid tag)
 	{
 		//
 		//	send initial data set of device table

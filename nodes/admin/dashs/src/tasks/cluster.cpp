@@ -246,6 +246,7 @@ namespace node
 		cache_.clear("_SysMsg", bus_->vm_.tag());
 		sync_table("_SysMsg");
 		sync_table("_CSV");
+		sync_table("TGWSnapshot");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

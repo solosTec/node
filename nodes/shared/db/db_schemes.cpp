@@ -324,17 +324,20 @@ namespace node
 		}
 		else if (boost::algorithm::equals(name, "TGWSnapshot")) {
 
-			return cyng::table::make_meta_table<1, 2>(name, 
+			return cyng::table::make_meta_table<1, 3>(name, 
 				{ "pk"			//	primary key - same as TGateway
-				, "name"		//	optional name (serverID)
+				, "gw"			//	gateway ID
+				, "remark"		//	short description
 				, "lastUpdate"	//	last updated
 				},
 				{ cyng::TC_UUID
-				, cyng::TC_STRING	//	name
+				, cyng::TC_STRING
+				, cyng::TC_STRING	//	remark
 				, cyng::TC_TIME_POINT
 				},
 				{ 36	//	pk
-				, 23	//	name
+				, 23	//	gw
+				, 128	//	remark
 				, 0		//	lastUpdate
 				});
 		}

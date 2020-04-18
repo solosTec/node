@@ -234,6 +234,7 @@ namespace node
 		cache_.clear("_LoRaUplink", bus_->vm_.tag());
 		sync_table("_LoRaUplink");
 		sync_table("_CSV");
+		sync_table("TGWSnapshot");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

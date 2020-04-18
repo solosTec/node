@@ -206,6 +206,13 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table _HTTPSession");
 		}
 
+		//	snapshot of gateway configuration
+		//
+		if (!create_table(db, "TGWSnapshot"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table TGWSnapshot");
+		}
+
 		//
 		//	all tables created
 		//
@@ -226,6 +233,7 @@ namespace node
 		db.clear("_Config", tag);
 		db.insert("_Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, tag);
 		//cache_.clear("_SysMsg", bus_->vm_.tag());
+		db.clear("TGWSnapshot", tag);
 	}
 
 	void res_subscribe(cyng::logging::log_ptr logger

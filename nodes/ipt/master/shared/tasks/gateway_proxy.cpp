@@ -800,6 +800,15 @@ namespace node
 			//
 			//	synchronize configuration cache to master node
 			//
+			bus_->vm_.async_run(bus_res_com_proxy(tag
+				, source
+				, seq
+				, pk
+				, origin
+				, job
+				, sml::from_server_id(srv_id)
+				, sections
+				, cyng::param_map_factory("status", "not implemented yet")));
 		}
 		else if (boost::algorithm::equals(job, "cache.query")) {
 
@@ -1708,16 +1717,6 @@ namespace node
 	void gateway_proxy::process_job_result(sml::obis_path_t path, proxy_data const& prx, cyng::param_map_t const& params)
 	{
 		switch (path.front().to_uint64()) {
-		case sml::CODE_ROOT_ACTIVE_DEVICES:
-			if (params.empty()) {
-				CYNG_LOG_WARNING(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> no active devices on "
-					<< config_cache_.get_server());
-			}
-			break;
 		case sml::CODE_ROOT_ACCESS_RIGHTS:
 
 			if (path.size() == 1) {
@@ -1744,15 +1743,33 @@ namespace node
 					<< "/"
 					<< open_requests_
 					<< " request(s) are pending");
+
+				//
+				//	send data back
+				//
+				bus_->vm_.async_run(bus_res_com_proxy(prx.get_tag_ident()
+					, prx.get_tag_source()
+					, prx.get_sequence()
+					, prx.get_key_gw()
+					, prx.get_tag_origin()
+					, "cache.update"
+					, sml::from_server_id(prx.get_srv())
+					, sml::path_to_vector(path)
+					, params));
+
 			}
 			break;
 		default:
-			break;
-		}
-
-		if (path.size() == 1) {
+			if (params.empty()) {
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> no active devices on "
+					<< config_cache_.get_server());
+			}
 			//
-			//	response complete
+			//	send data back
 			//
 			bus_->vm_.async_run(bus_res_com_proxy(prx.get_tag_ident()
 				, prx.get_tag_source()
@@ -1762,21 +1779,13 @@ namespace node
 				, "cache.update"
 				, sml::from_server_id(prx.get_srv())
 				, sml::path_to_vector(path)
-				, cyng::param_map_factory("open", open_requests_)));
+				, params));
+			break;
 		}
 	}
 
 	void gateway_proxy::queue_access_right_queries(proxy_data const& prx, cyng::param_map_t const& params)
 	{
-		//auto const data = config_cache_.get_section(sml::obis_path_t{ sml::OBIS_ROOT_ACTIVE_DEVICES });
-		//CYNG_LOG_TRACE(logger_, "task #"
-		//	<< base_.get_id()
-		//	<< " <"
-		//	<< base_.get_class_name()
-		//	<< "> get all access rights now of "
-		//	<< data.size()
-		//	<< " devices");
-
 		config_cache_.loop_access_rights([&](std::uint8_t role, std::uint8_t user, std::string name, config_cache::device_map_t devices) {
 
 			for (auto const& dev : devices) {

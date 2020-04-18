@@ -277,6 +277,26 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table _TimeSeries");
 		}
 
+		//
+		//	snapshot of gateway configuration
+		//
+		if (!create_table(db, "TGWSnapshot"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table TGWSnapshot");
+		}
+#ifdef _DEBUG
+		else
+		{
+			db.insert("TGWSnapshot"
+				, cyng::table::key_generator(tag)
+				, cyng::table::data_generator("0500153B02517E"
+					, "works like a charm"
+					, std::chrono::system_clock::now())
+				, 5
+				, tag);
+		}
+#endif
+
 	}
 
 	void insert_msg(cyng::store::table* tbl
