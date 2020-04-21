@@ -108,12 +108,67 @@ namespace node
 				}),
 
 			//
-			//	Communication Profile
+			//	User
+			//	"nr" is index
 			//
+			cyng::table::make_meta_table_gen<1, 2, 2>("TUser",
+			{ "user"	//	max 255
+			, "pwd"		//	SHA256
+			, "nr"
+			},
+			{ cyng::TC_STRING	//	user - max 255 
+			, cyng::TC_AES256	//	AES 256 (32 bytes)
+			, cyng::TC_UINT8
+			},
+			{ 64	//	user - max 255 
+			, 32	//	role
+			, 0		//	nr
+			}),
 
 			//
 			//	Access Rights (User)
 			//
+			cyng::table::make_meta_table_gen<11, 1>("TAccessRights",
+			{ "user"	//	max 255
+			, "rGuest"	//	role: guest
+			, "rUser"	//	role: user
+			, "rGWOp"	//	role: gateway operator
+			, "rdevOp"	//	role: device operator
+			, "rProv"	//	role: service provider
+			, "rSupp"	//	role: service supplier
+			, "rMan"	//	role: manufacturer
+			, "rRes"	//	role: reserved
+			, "meter"	//	meter/sensor/device
+			, "reg"		//	register
+			, "priv"	//	access right
+			},
+			{ cyng::TC_UINT8	//	user - max 255 
+			, cyng::TC_BOOL		//	role: guest
+			, cyng::TC_BOOL		//	role: user
+			, cyng::TC_BOOL		//	role: gateway operator
+			, cyng::TC_BOOL		//	role: device operator
+			, cyng::TC_BOOL		//	role: service provider
+			, cyng::TC_BOOL		//	role: service supplier
+			, cyng::TC_BOOL		//	role: manufacturer
+			, cyng::TC_BOOL		//	role: reserved
+			, cyng::TC_BUFFER	//	meter/sensor
+			, cyng::TC_BUFFER	//	register
+			, cyng::TC_UINT8
+			},
+			{ 0		//	user - max 255 
+			, 0		//	role: guest
+			, 0		//	role: user
+			, 0		//	role: gateway operator
+			, 0		//	role: device operator
+			, 0		//	role: service provider
+			, 0		//	role: service supplier
+			, 0		//	role: manufacturer
+			, 0		//	role: reserved
+			, 9		//	meter
+			, 6		//	reg
+			, 0
+			}),
+
 
 			//
 			//	Profile Configurations
@@ -421,7 +476,27 @@ namespace node
 					<< sql
 					<< std::endl;
 #endif
-				s.execute(sql);
+				if (s.execute(sql)) {
+
+					//
+					//	insert user "operator"
+					//	pwd: operator => 06e55b633481f7bb072957eabcf110c972e86691c3cfedabe088024bffe42f23
+					//
+					if (boost::algorithm::equals(tbl.first, "TUser")) {
+
+						sql = cmd.insert()();
+						auto stmt = s.create_statement();
+						std::pair<int, bool> r = stmt->prepare(sql);
+						if (r.second) {
+							stmt->push(cyng::make_object("operator"), 0);	//	name
+							stmt->push(cyng::make_object(1u), 0);	//	gen
+							stmt->push(cyng::make_object(cyng::make_buffer({ 0x06, 0xe5, 0x5b, 0x63, 0x34, 0x81, 0xf7, 0xbb, 0x07, 0x29, 0x57, 0xea, 0xbc, 0xf1, 0x10, 0xc9, 0x72, 0xe8, 0x66, 0x91, 0xc3, 0xcf, 0xed, 0xab, 0xe0, 0x88, 0x02, 0x4b, 0xff, 0xe4, 0x2f, 0x23 })), 0);	//	password hash (SHA256)
+							stmt->push(cyng::make_object<std::uint8_t>(1), 0);	//	nr
+							stmt->execute();
+							stmt->close();
+						}
+					}
+				}
 			}
 
 			//

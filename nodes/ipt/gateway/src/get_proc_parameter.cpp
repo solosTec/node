@@ -60,7 +60,7 @@ namespace node
 			case 0x8181C78801FF:	//	OBIS_CODE_ROOT_NTP
 				code_root_ntp(trx, srv_id);
 				break;
-			case 0x81818160FFFF:	//	OBIS_CODE_ROOT_ACCESS_RIGHTS
+			case CODE_ROOT_ACCESS_RIGHTS:	//	81 81 81 60 FF FF
 				code_root_access_rights(trx, srv_id);
 				break;
 			case 0x8102000700FF:	//	OBIS_CODE_ROOT_CUSTOM_INTERFACE
@@ -224,7 +224,7 @@ namespace node
 			//
 			//	ToDo: implement
 			//
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_ACCESS_RIGHTS not implemented yet");
+			//CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_ACCESS_RIGHTS not implemented yet");
 
 			sml_gen_.empty(trx, srv_id, OBIS_ROOT_ACCESS_RIGHTS);
 		}
