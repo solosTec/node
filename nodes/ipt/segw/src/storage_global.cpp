@@ -111,24 +111,7 @@ namespace node
 			//	User
 			//	"nr" is index
 			//
-			cyng::table::make_meta_table_gen<1, 2, 2>("TUser",
-			{ "user"	//	max 255
-			, "pwd"		//	SHA256
-			, "nr"
-			},
-			{ cyng::TC_STRING	//	user - max 255 
-			, cyng::TC_AES256	//	AES 256 (32 bytes)
-			, cyng::TC_UINT8
-			},
-			{ 64	//	user - max 255 
-			, 32	//	role
-			, 0		//	nr
-			}),
-
-			//
-			//	Access Rights (User)
-			//
-			cyng::table::make_meta_table_gen<11, 1>("TAccessRights",
+			cyng::table::make_meta_table_gen<1, 10, 10>("TUser",
 			{ "user"	//	max 255
 			, "rGuest"	//	role: guest
 			, "rUser"	//	role: user
@@ -138,11 +121,10 @@ namespace node
 			, "rSupp"	//	role: service supplier
 			, "rMan"	//	role: manufacturer
 			, "rRes"	//	role: reserved
-			, "meter"	//	meter/sensor/device
-			, "reg"		//	register
-			, "priv"	//	access right
+			, "pwd"		//	SHA256
+			, "nr"
 			},
-			{ cyng::TC_UINT8	//	user - max 255 
+			{ cyng::TC_STRING	//	user - max 255 
 			, cyng::TC_BOOL		//	role: guest
 			, cyng::TC_BOOL		//	role: user
 			, cyng::TC_BOOL		//	role: gateway operator
@@ -151,11 +133,10 @@ namespace node
 			, cyng::TC_BOOL		//	role: service supplier
 			, cyng::TC_BOOL		//	role: manufacturer
 			, cyng::TC_BOOL		//	role: reserved
-			, cyng::TC_BUFFER	//	meter/sensor
-			, cyng::TC_BUFFER	//	register
+			, cyng::TC_AES256	//	AES 256 (32 bytes)
 			, cyng::TC_UINT8
 			},
-			{ 0		//	user - max 255 
+			{ 64	//	user - max 255 
 			, 0		//	role: guest
 			, 0		//	role: user
 			, 0		//	role: gateway operator
@@ -164,9 +145,28 @@ namespace node
 			, 0		//	role: service supplier
 			, 0		//	role: manufacturer
 			, 0		//	role: reserved
+			, 32	//	pwd
+			, 0		//	nr
+			}),
+
+			//
+			//	Access Rights (User)
+			//
+			cyng::table::make_meta_table_gen<3, 1>("TPrivileges",
+			{ "user"	//	max 255
+			, "meter"	//	meter/sensor/device/gateway
+			, "reg"		//	register
+			, "priv"	//	access right
+			},
+			{ cyng::TC_UINT8	//	user - max 255 
+			, cyng::TC_BUFFER	//	meter/sensor
+			, cyng::TC_BUFFER	//	register
+			, cyng::TC_UINT8	//	priv
+			},
+			{ 0		//	user - max 255 
 			, 9		//	meter
 			, 6		//	reg
-			, 0
+			, 0		//	priv
 			}),
 
 
@@ -434,12 +434,19 @@ namespace node
 			});
 	}
 
-	bool init_storage(cyng::param_map_t&& cfg)
+	bool init_storage(cyng::param_map_t&& cfg, cyng::object obj)
 	{
 		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
 		cyng::db::session s(con_type);
 		auto r = s.connect(cfg);
 		if (r.second) {
+
+			//
+			//	get server ID
+			//
+			auto const srv_id = to_gateway_srv_id(obj);
+			BOOST_ASSERT(srv_id.size() == 7);
+			BOOST_ASSERT(srv_id.at(0) == 0x05);
 
 			//
 			//	connect string
@@ -486,13 +493,61 @@ namespace node
 
 						sql = cmd.insert()();
 						auto stmt = s.create_statement();
-						std::pair<int, bool> r = stmt->prepare(sql);
+						auto r = stmt->prepare(sql);
 						if (r.second) {
 							stmt->push(cyng::make_object("operator"), 0);	//	name
-							stmt->push(cyng::make_object(1u), 0);	//	gen
+							stmt->push(cyng::make_object(1u), 0);		//	gen
+							stmt->push(cyng::make_object(false), 0);	//	rGuest
+							stmt->push(cyng::make_object(false), 0);	//	rUser
+							stmt->push(cyng::make_object(true), 0);		//	rGWOp
+							stmt->push(cyng::make_object(true), 0);		//	rdevOp
+							stmt->push(cyng::make_object(false), 0);	//	rProv
+							stmt->push(cyng::make_object(false), 0);	//	rSupp
+							stmt->push(cyng::make_object(true), 0);		//	rMan
+							stmt->push(cyng::make_object(false), 0);	//	rRes
 							stmt->push(cyng::make_object(cyng::make_buffer({ 0x06, 0xe5, 0x5b, 0x63, 0x34, 0x81, 0xf7, 0xbb, 0x07, 0x29, 0x57, 0xea, 0xbc, 0xf1, 0x10, 0xc9, 0x72, 0xe8, 0x66, 0x91, 0xc3, 0xcf, 0xed, 0xab, 0xe0, 0x88, 0x02, 0x4b, 0xff, 0xe4, 0x2f, 0x23 })), 0);	//	password hash (SHA256)
-							stmt->push(cyng::make_object<std::uint8_t>(1), 0);	//	nr
+							stmt->push(cyng::make_object<std::uint8_t>(1), 0);	//	nr 1
 							stmt->execute();
+							stmt->close();
+						}
+					}
+					else if (boost::algorithm::equals(tbl.first, "TPrivileges")) {
+						sql = cmd.insert()();
+						auto stmt = s.create_statement();
+						std::pair<int, bool> r = stmt->prepare(sql);
+						if (r.second) {
+
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_SECONDS_INDEX, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_CURRENT_UTC, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_TZ_OFFSET, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_CLASS_OP_LOG_STATUS_WORD, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_CUSTOM_INTERFACE, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_CUSTOM_PARAM, 1u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_WAN, 1u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_WAN_PARAM, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_GSM, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_GSM_ADMISSIBLE_OPERATOR, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_GPRS_PARAM, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_PLC_STATUS, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_IF_PLC, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_W_MBUS_STATUS, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_IF_wMBUS, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_IPT_STATE, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_IPT_PARAM, 1u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_VISIBLE_DEVICES, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ACTIVATE_DEVICE, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_OBISLOG_INTERVAL, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_ACCESS_RIGHTS, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_DEVICE_IDENT, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_REBOOT, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_UPDATE_FW, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_NTP, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_DEVICE_TIME, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_CLASS_OP_LOG, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_PUSH_OPERATIONS, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_IF, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_FTP_UPDATE, 7u);
+
 							stmt->close();
 						}
 					}
@@ -906,7 +961,7 @@ namespace node
 						}
 						auto const mac = cyng::value_cast<std::string>(param.second, rnd_mac_str);
 
-						std::pair<cyng::mac48, bool > const r = cyng::parse_mac48(mac);
+						auto const r = cyng::parse_mac48(mac);
 						init_config_record(s, build_cfg_key({
 							sml::OBIS_SERVER_ID
 						}), cyng::make_object(r.second ? r.first : cyng::generate_random_mac48()));
@@ -1400,5 +1455,43 @@ namespace node
 		}
 		return std::chrono::system_clock::now();
 	};
+
+	cyng::buffer_t to_gateway_srv_id(cyng::object obj)
+	{
+		//	"mac": "00:ff:90:98:57:56"
+		//
+		//	05 + MAC = server ID
+		//
+		std::string rnd_mac_str;
+		{
+			using cyng::io::operator<<;
+			std::stringstream ss;
+			ss << cyng::generate_random_mac48();
+			ss >> rnd_mac_str;
+		}
+		auto const mac = cyng::value_cast<std::string>(obj, rnd_mac_str);
+		auto const r = cyng::parse_mac48(mac);
+		return (r.second)
+			? sml::to_gateway_srv_id(r.first)
+			: cyng::make_buffer({ 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, })
+			;
+
+	}
+
+	void insert_priv(cyng::db::statement_ptr stmt
+		, std::uint8_t nr
+		, cyng::buffer_t srv_id
+		, sml::obis code
+		, std::uint8_t priv)
+	{
+		stmt->push(cyng::make_object(nr), 0);	//	user nr
+		stmt->push(cyng::make_object(srv_id), 0);	//	meter
+		stmt->push(cyng::make_object(code.to_buffer()), 0);	//	register
+		stmt->push(cyng::make_object(1u), 0);		//	gen
+		stmt->push(cyng::make_object(priv), 0);	//	priv
+		stmt->execute();
+		stmt->clear();
+
+	}
 
 }

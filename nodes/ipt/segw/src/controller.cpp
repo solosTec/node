@@ -416,9 +416,9 @@ namespace node
 		return true;	//	shutdown
 	}
 
-	int controller::prepare_config_db(cyng::param_map_t&& cfg)
+	int controller::prepare_config_db(cyng::param_map_t&& cfg, cyng::object mac)
 	{
-		return (init_storage(std::move(cfg)))
+		return (init_storage(std::move(cfg), mac))
 			? EXIT_SUCCESS
 			: EXIT_FAILURE
 			;

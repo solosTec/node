@@ -167,10 +167,13 @@ namespace node
 
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 00, FF, ROOT_CUSTOM_INTERFACE);	//	see: 7.3.1.3 Datenstruktur zum Lesen / Setzen der Parameter für die Kundenschnittstelle
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 10, FF, ROOT_CUSTOM_PARAM);	//	see: 7.3.1.4 Datenstruktur für dynamischen Eigenschaften der Endkundenschnittstelle 
-		OBIS_CODE_DEFINITION(81, 04, 00, 06, 10, FF, ROOT_WAN);	//	see: 7.3.1.5 Datenstruktur zur Abfrage des WAN Status 
-		//OBIS_CODE_DEFINITION(81, 04, 00, 06, 10, FF, ROOT_WAN_PARAM);	//	see: 7.3.1.6 Datenstruktur zum Lesen/Setzen der WAN Parameter 
+		OBIS_CODE_DEFINITION(81, 04, 00, 06, 00, FF, ROOT_WAN);	//	see: 7.3.1.5 Datenstruktur zur Abfrage des WAN Status 
+		OBIS_CODE_DEFINITION(81, 04, 00, 07, 00, FF, ROOT_WAN_PARAM);	//	see: 7.3.1.6 Datenstruktur zum Lesen/Setzen der WAN Parameter 
 		OBIS_CODE_DEFINITION(81, 04, 02, 07, 00, FF, ROOT_GSM);	//	see: Datenstruktur zum Lesen/Setzen der GSM Parameter 
 		OBIS_CODE_DEFINITION(81, 04, 0D, 07, 00, FF, ROOT_GPRS_PARAM);	//	see: Datenstruktur zum Lesen / Setzen der Provider-abhängigen GPRS-Parameter 
+		OBIS_CODE_DEFINITION(81, 04, 0D, 08, 00, FF, ROOT_GSM_STATUS);
+		OBIS_CODE_DEFINITION(81, 04, 0E, 06, 00, FF, PLC_STATUS);
+		//OBIS_CODE_DEFINITION(81, 04, 0E, 06, 00, FF, PLC_STATUS);
 
 		//OBIS_CODE_DEFINITION(81, 06, 00, 00, 01, 00, W_MBUS_STATUS_MANUFACTURER);	//	[string] manufacturer of wireless M-Bus adapter
 		//OBIS_CODE_DEFINITION(81, 06, 00, 00, 03, 00, W_MBUS_STATUS_ID);	//	[string] adapter ID - see EN 13757-3/4
@@ -258,6 +261,7 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, C7, 82, 53, FF, DEV_CLASS_MUC_LAN);	// (MUC-LAN/DSL)
 		
 		OBIS_CODE_DEFINITION(81, 81, C7, 83, 82, 01, REBOOT);	//	request reboot
+		OBIS_CODE_DEFINITION(81, 81, C7, 83, 82, 07, UPDATE_FW);	//	activate firmware
 
 		OBIS_CODE_DEFINITION(81, 81, C7, 86, 00, FF, ROOT_SENSOR_PARAMS);	//	data mirror root element (Eigenschaften eines Datenspiegels)
 		OBIS_CODE_DEFINITION(81, 81, C7, 86, 01, FF, ROOT_SENSOR_BITMASK);	//	[u16] Bitmask to define bits that will be transferred into log
@@ -274,6 +278,10 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, C7, 88, 05, FF, CODE_NTP_OFFSET);	//	[sec] Offset to transmission of the signal for synchronization
 		OBIS_CODE_DEFINITION(81, 81, C7, 88, 06, FF, CODE_NTP_ACTIVE);	//	[bool] NTP enabled/disables
 		OBIS_CODE_DEFINITION(81, 81, C7, 88, 10, FF, ROOT_DEVICE_TIME);	//	device time
+
+		OBIS_CODE_DEFINITION(81, 81, C7, 90, 00, FF, ROOT_IF);	 //	root of all interfaces
+		//OBIS_CODE_DEFINITION(81, 81, C7, 91, 00, FF, ROOT_IF_?);	
+		//OBIS_CODE_DEFINITION(81, 81, C7, 92, 00, FF, ROOT_IF_?);	
 
 		OBIS_CODE_DEFINITION(81, 81, C7, 93, 00, FF, IF_1107);	 //	1107 interface (IEC 62056-21)
 		OBIS_CODE_DEFINITION(81, 81, C7, 93, 01, FF, IF_1107_ACTIVE); //	(bool) - if true 1107 interface active otherwise SML interface active
@@ -419,6 +427,8 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 04, 1A, 07, 00, 00, CLASS_OP_LOG_CELL);	//	aktuelle Zelleninformation (uint16)
 		OBIS_CODE_DEFINITION(81, 04, 17, 07, 00, 00, CLASS_OP_LOG_AREA_CODE);	//	aktueller Location - oder Areacode(uint16)
 		OBIS_CODE_DEFINITION(81, 04, 0D, 06, 00, 00, CLASS_OP_LOG_PROVIDER);	//	aktueller Provider-Identifier(uint32)
+
+		OBIS_CODE_DEFINITION(81, 04, 0D, 06, 00, FF, GSM_ADMISSIBLE_OPERATOR);
 
 		//
 		//	attention codes

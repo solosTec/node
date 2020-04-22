@@ -31,30 +31,36 @@ namespace node
 
     bool config_cache::update(sml::obis root, cyng::param_map_t const& params)
     {
-        //
-        //  selective update
-        //
-        auto pos = sections_.find(sml::obis_path_t{ root });
-        if (pos != sections_.end()) {
-            pos->second = params;
-            return true;
+        if (is_cache_allowed(root))
+        {
+            //
+            //  selective update
+            //
+            auto pos = sections_.find(sml::obis_path_t{ root });
+            if (pos != sections_.end()) {
+                pos->second = params;
+                return true;
+            }
         }
         return false;
     }
 
     bool config_cache::update(sml::obis_path_t path, cyng::param_map_t const& params, bool force)
     {
-        //
-        //  selective update
-        //
-        auto pos = sections_.find(path);
-        if (pos != sections_.end()) {
-            pos->second = params;
-            return true;
-        }
-        if (force) {
-            sections_.emplace(path, params);
-            return true;
+        if (is_cache_allowed(path))
+        {
+            //
+            //  selective update
+            //
+            auto pos = sections_.find(path);
+            if (pos != sections_.end()) {
+                pos->second = params;
+                return true;
+            }
+            if (force) {
+                sections_.emplace(path, params);
+                return true;
+            }
         }
         return false;
     }
@@ -64,7 +70,9 @@ namespace node
     {
         sections_t secs;
         for (auto const& code : slots) {
-            secs.emplace(sml::obis_path_t{ code }, cyng::param_map_t());
+            if (is_cache_allowed(code)) {
+                secs.emplace(sml::obis_path_t{ code }, cyng::param_map_t());
+            }
         }
         return secs;
     }
@@ -76,14 +84,15 @@ namespace node
 
     bool config_cache::is_cached(sml::obis code) const
     {
+        //BOOST_ASSERT_MSG(is_cache_allowed(code), "should not be cached");
         return is_cached(sml::obis_path_t{ code });
     }
 
     bool config_cache::is_cached(sml::obis_path_t const& path) const
     {
+        //BOOST_ASSERT_MSG(is_cache_allowed(path), "should not be cached");
         return sections_.find(path) != sections_.end();
     }
-
 
     void config_cache::add(cyng::buffer_t srv, sml::obis_path_t&& path)
     {
@@ -240,5 +249,37 @@ namespace node
             : ""
             ;
     }
+
+    bool is_cache_allowed(sml::obis code)
+    {
+        switch (code.to_uint64()) {
+        case sml::CODE_ROOT_SECURITY:
+        case sml::CODE_PUSH_OPERATIONS:
+        case sml::CODE_ROOT_GPRS_PARAM:
+        case sml::CODE_ROOT_IPT_PARAM:
+        case sml::CODE_ROOT_INVISIBLE_DEVICES:
+        case sml::CODE_ROOT_VISIBLE_DEVICES:
+        case sml::CODE_ROOT_NEW_DEVICES:
+        case sml::CODE_ROOT_ACTIVE_DEVICES:
+        case sml::CODE_ROOT_DEVICE_INFO:
+        case sml::CODE_ROOT_ACCESS_RIGHTS:
+        case sml::CODE_ROOT_FIRMWARE:
+        case sml::CODE_ROOT_DATA_COLLECTOR:
+        case sml::CODE_ROOT_NTP:
+            return true;
+        default:
+            break;
+        }
+        return false;
+    }
+
+    bool is_cache_allowed(sml::obis_path_t const& path)
+    {
+        //
+        //  only the root element is relevant
+        //
+        return is_cache_allowed(path.front());
+    }
+
 
 }

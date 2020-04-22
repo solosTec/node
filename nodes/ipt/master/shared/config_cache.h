@@ -85,7 +85,7 @@ namespace node
 		void loop_access_rights(cb_access_rights) const;
 
 		/**
-		 * 
+		 * Get a list of all root sections. All other sub-sections are ignored.
 		 */
 		sml::obis_path_t get_root_sections() const;
 
@@ -117,6 +117,16 @@ namespace node
 	 * @return value 81818161FFFF
 	 */
 	std::string get_user_name(cyng::param_map_t const& params);
+
+	/**
+	 * For many sections caching is pointless or even dangerous.
+	 * e.g. the status word should not be cached because it's volatile.
+	 * The log journal should also no be cached because it's changing with every
+	 * new event.
+	 */
+	bool is_cache_allowed(sml::obis code);
+	bool is_cache_allowed(sml::obis_path_t const&);
+
 }
 
 

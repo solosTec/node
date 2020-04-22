@@ -96,7 +96,7 @@ namespace node
 		/**
 		 * Overwrite this method to implement a database initialization
 		 */
-		virtual int prepare_config_db(cyng::param_map_t&&);
+		virtual int prepare_config_db(cyng::param_map_t&&, cyng::object);
 
 
 	private:

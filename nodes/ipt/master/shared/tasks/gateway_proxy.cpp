@@ -207,7 +207,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	//	-- slot[3]
+	//	-- slot[3]: GetProcParam.Re
 	cyng::continuation gateway_proxy::process(std::string trx
 		, std::uint8_t group
 		, cyng::buffer_t srv_id
@@ -240,7 +240,7 @@ namespace node
 			//
 			//	extract the relevant data 
 			//
-			cyng::param_map_t params = cyng::to_param_map(values.second);
+			auto params = cyng::to_param_map(values.second);
 
 			if (sml::OBIS_CLASS_OP_LOG_STATUS_WORD == root) {
 
@@ -377,7 +377,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	//	-- slot[5]
+	//	-- slot[5]: GetList.Res
 	cyng::continuation gateway_proxy::process(std::string trx
 		, cyng::buffer_t srv_id
 		, sml::obis_path_t path	//	OBIS (path)
@@ -507,7 +507,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	//	slot [8]
+	//	slot [8]: GetProfileList.Res
 	cyng::continuation gateway_proxy::process(std::string trx
 		, std::uint32_t act_time
 		, std::uint32_t reg_period
@@ -608,7 +608,7 @@ namespace node
 		cyng::vector_t gw,			//	[6] TGateway/TDevice PK
 		cyng::tuple_t params,		//	[7] parameters
 
-		cyng::buffer_t srv_id,			//	[8] server id
+		cyng::buffer_t srv_id,		//	[8] server id
 		std::string name,			//	[9] name
 		std::string	pwd,			//	[10] pwd
 		bool cache_enabled			//	[11] use cache
@@ -638,7 +638,12 @@ namespace node
 		}
 		else {
 
-			config_cache_.add(srv_id, sml::obis_path_t({ root }));
+			//
+			//	add to active cache sections id global caching flag is set
+			//
+			if (cache_enabled) {
+				config_cache_.add(srv_id, sml::obis_path_t({ root }));
+			}
 
 			//
 			//	get data from gateway
@@ -655,7 +660,6 @@ namespace node
 				, name
 				, pwd
 				, false)));	//	no job
-
 
 			//
 			//	preprocessing
@@ -712,7 +716,9 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> execute job: "
+			<< "> "
+			<< sml::from_server_id(srv_id)
+			<< " executes job: "
 			<< job
 			<< " with "
 			<< secs.size()
@@ -786,7 +792,9 @@ namespace node
 						<< base_.get_id()
 						<< " <"
 						<< base_.get_class_name()
-						<< "> update section "
+						<< "> "
+						<< sml::from_server_id(srv_id)
+						<< " update section "
 						<< sml::get_name(code)
 						<< " new input queue entry - size: "
 						<< input_queue_.size());
@@ -1062,24 +1070,25 @@ namespace node
 			cyng::vector_t vec;
 			vec = cyng::value_cast(params.get("ipt"), vec);
 			execute_cmd_set_proc_param_ipt(sml_gen, data, vec);
+			push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
 		}
 		else if (sml::OBIS_IF_wMBUS == data.get_root()) {
 
 			//
 			//	modify wireless IEC parameters
 			//
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(params.get("wmbus"), tpl);
+			cyng::tuple_t const tpl = cyng::to_tuple(params.get("wmbus"));
 			execute_cmd_set_proc_param_wmbus(sml_gen, data, tpl);
+			push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
 		}
 		else if (sml::OBIS_IF_1107 == data.get_root()) {
 
 			//
 			//	modify wired IEC parameters
 			//
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(params.get("iec"), tpl);
+			cyng::tuple_t const tpl = cyng::to_tuple(params.get("iec"));
 			execute_cmd_set_proc_param_iec(sml_gen, data, tpl);
+			push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
 		}
 		else if (sml::OBIS_REBOOT == data.get_root()) {
 
@@ -1098,6 +1107,7 @@ namespace node
 			auto const r = cyng::parse_hex_string(meter);
 			if (r.second) {
 				execute_cmd_set_proc_param_activate(sml_gen, data, nr, r.first);
+				push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
@@ -1118,6 +1128,7 @@ namespace node
 			auto const r = cyng::parse_hex_string(meter);
 			if (r.second) {
 				execute_cmd_set_proc_param_deactivate(sml_gen, data, nr, r.first);
+				push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
@@ -1138,6 +1149,7 @@ namespace node
 			auto const r = cyng::parse_hex_string(meter);
 			if (r.second) {
 				execute_cmd_set_proc_param_delete(sml_gen, data, nr, r.first);
+				push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
@@ -1186,6 +1198,7 @@ namespace node
 					, cyng::value_cast<std::string>(params["data"].get("pwd"), "")
 					, cyng::value_cast<std::string>(params["data"].get("pubKey"), "")
 					, cyng::value_cast<std::string>(params["data"].get("aesKey"), ""));
+				push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "task #"
@@ -1674,23 +1687,23 @@ namespace node
 		//
 		//	activate configuration cache
 		//
-		config_cache_.add(srv_id, sml::obis_path_t{ sml::OBIS_ROOT_ACTIVE_DEVICES, sml::OBIS_ROOT_ACCESS_RIGHTS });
+		config_cache_.add(srv_id, sml::obis_path_t{ sml::OBIS_ROOT_ACCESS_RIGHTS });
 
 		//
 		//	query all active sensors/meters
 		//
-		input_queue_.emplace(tag
-			, source
-			, seq
-			, origin
-			, "GetProcParameterRequest"
-			, sml::obis_path_t({ sml::OBIS_ROOT_ACTIVE_DEVICES })
-			, pk
-			, cyng::tuple_t{}
-			, srv_id
-			, name
-			, pwd
-			, true);
+		//input_queue_.emplace(tag
+		//	, source
+		//	, seq
+		//	, origin
+		//	, "GetProcParameterRequest"
+		//	, sml::obis_path_t({ sml::OBIS_ROOT_ACTIVE_DEVICES })
+		//	, pk
+		//	, cyng::tuple_t{}
+		//	, srv_id
+		//	, name
+		//	, pwd
+		//	, true);
 
 		//
 		//	query access rights of gateway

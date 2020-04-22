@@ -33,7 +33,7 @@ namespace node
 	protected:
 		virtual bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag);
 		virtual cyng::vector_t create_config(std::fstream&, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const;
-		virtual int prepare_config_db(cyng::param_map_t&&);
+		virtual int prepare_config_db(cyng::param_map_t&&, cyng::object);
 
 	};
 }

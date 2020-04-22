@@ -265,10 +265,9 @@ namespace node
 		if (r.second)
 		{
 			auto const dom = cyng::make_reader(r.first);
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(dom.get(section), tpl);
-
-			return prepare_config_db(cyng::to_param_map(tpl));
+			auto const tpl = cyng::to_tuple(dom.get(section));
+			auto const mac = dom["hardware"].get("mac");
+			return prepare_config_db(cyng::to_param_map(tpl), mac);
 		}
 		else 
 		{
@@ -283,7 +282,7 @@ namespace node
 		return EXIT_FAILURE;
 	}
 
-	int ctl::prepare_config_db(cyng::param_map_t&&)
+	int ctl::prepare_config_db(cyng::param_map_t&&, cyng::object)
 	{
 		//	not implemented
 		return EXIT_FAILURE;

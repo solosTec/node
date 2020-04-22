@@ -29,7 +29,7 @@ namespace node
 	/**
 	 * create all required SQL tables
 	 */
-	bool init_storage(cyng::param_map_t&& cfg);
+	bool init_storage(cyng::param_map_t&& cfg, cyng::object mac);
 
 	/**
 	 * Transfer configuration data available through the DOM reader
@@ -98,5 +98,17 @@ namespace node
 	 * @return first section of the string
 	 */
 	std::string get_first_section(std::string, char sep);
+
+	/**
+	 * Assume that obj is of type mac48 ("00:ff:90:98:57:56")
+	 */
+	cyng::buffer_t to_gateway_srv_id(cyng::object obj);
+
+	void insert_priv(cyng::db::statement_ptr stmt
+		, std::uint8_t nr
+		, cyng::buffer_t srv_id
+		, sml::obis code
+		, std::uint8_t priv);
+
 }
 #endif

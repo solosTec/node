@@ -154,7 +154,7 @@ namespace node
 		/**
 		 * @brief slot [3]
 		 *
-		 * get_proc_parameter() response from gateway. 
+		 * GetProcParam.Res from gateway. 
 		 * If not in job-mode the response will be forwarded to the requester.
 		 */
 		cyng::continuation process(std::string trx
@@ -176,7 +176,7 @@ namespace node
 		 * @brief slot [5]
 		 * Incoming message from gateway.
 		 *
-		 * GetList.Res
+		 * GetList.Res from gateway
 		 * @see session_state
 		 */
 		cyng::continuation process(std::string trx
@@ -217,7 +217,7 @@ namespace node
 		/**
 		 * @brief slot [8]
 		 *
-		 * get profile list response
+		 * GetProfileList.Res from gateway
 		 */
 		cyng::continuation process(std::string trx
 			, std::uint32_t act_time
@@ -383,6 +383,7 @@ namespace node
 
 		/**
 		 * gateway proxy state
+		 * This doesn't make sense
 		 */
 		enum class GWPS {
 			OFFLINE_,
