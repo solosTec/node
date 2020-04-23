@@ -61,6 +61,7 @@ namespace node
 		load_data_collectors();
 		load_data_mirror();
 		load_iec_devices();
+		load_privileges();
 	}
 
 	void bridge::finalize()
@@ -212,7 +213,7 @@ namespace node
 				}
 				else {
 
-					CYNG_LOG_ERROR(logger_, "insert into table TDeviceMBUS failed - key: "
+					CYNG_LOG_ERROR(logger_, "loading TDeviceMBUS failed: "
 						<< cyng::io::to_str(rec.key())
 						<< ", body: "
 						<< cyng::io::to_str(rec.data()));
@@ -237,7 +238,7 @@ namespace node
 				}
 				else {
 
-					CYNG_LOG_ERROR(logger_, "insert into table TDataCollector failed - key: "
+					CYNG_LOG_ERROR(logger_, "loading TDataCollector failed: "
 						<< cyng::io::to_str(rec.key())
 						<< ", body: "
 						<< cyng::io::to_str(rec.data()));
@@ -262,7 +263,7 @@ namespace node
 				}
 				else {
 
-					CYNG_LOG_ERROR(logger_, "insert into table TDataMirror failed - key: "
+					CYNG_LOG_ERROR(logger_, "loading TDataMirror failed - key: "
 						<< cyng::io::to_str(rec.key())
 						<< ", body: "
 						<< cyng::io::to_str(rec.data()));
@@ -287,7 +288,7 @@ namespace node
 				}
 				else {
 
-					CYNG_LOG_ERROR(logger_, "insert into table TIECDevs failed - key: "
+					CYNG_LOG_ERROR(logger_, "loading TIECDevs failed - key: "
 						<< cyng::io::to_str(rec.key())
 						<< ", body: "
 						<< cyng::io::to_str(rec.data()));
@@ -297,6 +298,92 @@ namespace node
 				return true;	//	continue
 				});
 			});
+	}
+
+	void bridge::load_privileges()
+	{
+		cache_.write_table("_User", [&](cyng::store::table* tbl) {
+			storage_.loop("TUser", [&](cyng::table::record const& rec)->bool {
+
+				//
+				//	build a role bitmask 
+				//
+				std::uint8_t role{ 0 };
+				if (cyng::value_cast(rec["rGuest"], false)) {
+					role |= (1u << static_cast<std::uint8_t>(sml::role::GUEST));
+				}
+				if (cyng::value_cast(rec["rUser"], false)) {
+					role |= (1u << static_cast<std::uint8_t>(sml::role::USER));
+				}
+				if (cyng::value_cast(rec["rGWOp"], false)) {
+					role |= (1u << static_cast<std::uint8_t>(sml::role::GW_OPERATOR));
+				}
+				if (cyng::value_cast(rec["rdevOp"], false)) {
+					role |= (1u << static_cast<std::uint8_t>(sml::role::DEV_OPERATOR));
+				}
+				if (cyng::value_cast(rec["rProv"], false)) {
+					role |= (1u << static_cast<std::uint8_t>(sml::role::SERVICE_PROVIDER));
+				}
+				if (cyng::value_cast(rec["rSupp"], false)) {
+					role |= (1u << static_cast<std::uint8_t>(sml::role::SUPPLIER));
+				}
+				if (cyng::value_cast(rec["rMan"], false)) {
+					role |= (1u << static_cast<std::uint8_t>(sml::role::MANUFACTURER));
+				}
+				if (cyng::value_cast(rec["rRes"], false)) {
+					role |= (1u << static_cast<std::uint8_t>(sml::role::RESERVED));
+				}
+
+				
+
+				if (tbl->insert(rec.key()
+					, cyng::table::data_generator(role, rec["pwd"], rec["nr"])
+					, rec.get_generation()
+					, cache_.get_tag())) {
+
+					CYNG_LOG_TRACE(logger_, "load user "
+						<< cyng::io::to_str(rec["user"]));
+				}
+				else {
+
+					CYNG_LOG_ERROR(logger_, "loading TUser failed: "
+						<< cyng::io::to_str(rec.key())
+						<< ", body: "
+						<< cyng::io::to_str(rec.data()));
+				}
+
+				return true;	//	continue
+				});
+			});
+
+		cache_.write_table("_Privileges", [&](cyng::store::table* tbl) {
+			storage_.loop("TPrivileges", [&](cyng::table::record const& rec)->bool {
+
+				if (tbl->insert(rec.key(), rec.data(), rec.get_generation(), cache_.get_tag())) {
+
+					auto const srv = cyng::to_buffer(rec["meter"]);
+					sml::obis const code(cyng::to_buffer(rec["reg"]));
+					auto const priv = cyng::value_cast<std::uint8_t>(rec["priv"], 0);
+					CYNG_LOG_TRACE(logger_, "load priv "
+						<< sml::from_server_id(srv)
+						<< " - "
+						<< code.to_str()
+						<< " - "
+						<< +priv);
+				}
+				else {
+
+					CYNG_LOG_ERROR(logger_, "loading TPrivileges failed - key: "
+						<< cyng::io::to_str(rec.key())
+						<< ", body: "
+						<< cyng::io::to_str(rec.data()));
+
+				}
+
+				return true;	//	continue
+				});
+			});
+
 	}
 
 	void bridge::power_return()

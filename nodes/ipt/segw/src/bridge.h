@@ -77,6 +77,7 @@ namespace node
 		void load_data_collectors();
 		void load_data_mirror();
 		void load_iec_devices();
+		void load_privileges();
 
 		/**
 		 * Tracking all changes in the cache tables.

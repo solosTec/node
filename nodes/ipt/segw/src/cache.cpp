@@ -530,7 +530,47 @@ namespace node
 			, 0		//	speed
 			, 32	//	pwd
 			, 32	//	w5
-			})
+			}),
+
+			//	User
+			//	"nr" is index
+			//
+			cyng::table::make_meta_table<1, 3, 3>("_User",
+				{ "user"	//	max 255
+				, "role"	//	role: guest
+				, "pwd"		//	SHA256
+				, "nr"
+				},
+				{ cyng::TC_STRING	//	user - max 255 
+				, cyng::TC_UINT8	//	role
+				, cyng::TC_DIGEST_SHA256	//	SHA 256 (32 bytes)
+				, cyng::TC_UINT8
+				},
+				{ 64	//	user - max 255 
+				, 0		//	role
+				, 32	//	pwd
+				, 0		//	nr
+				}),
+
+			//
+			//	Access Rights (User)
+			//
+			cyng::table::make_meta_table<3, 1>("_Privileges",
+				{ "user"	//	max 255
+				, "meter"	//	meter/sensor/device/gateway
+				, "reg"		//	register
+				, "priv"	//	access right
+				},
+				{ cyng::TC_UINT8	//	user - max 255 
+				, cyng::TC_BUFFER	//	meter/sensor
+				, cyng::TC_BUFFER	//	register
+				, cyng::TC_UINT8	//	priv
+				},
+				{ 0		//	user - max 255 
+				, 9		//	meter
+				, 6		//	reg
+				, 0		//	priv
+				})
 
 
 		};

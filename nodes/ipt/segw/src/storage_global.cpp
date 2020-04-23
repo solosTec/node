@@ -133,7 +133,7 @@ namespace node
 			, cyng::TC_BOOL		//	role: service supplier
 			, cyng::TC_BOOL		//	role: manufacturer
 			, cyng::TC_BOOL		//	role: reserved
-			, cyng::TC_AES256	//	AES 256 (32 bytes)
+			, cyng::TC_DIGEST_SHA256	//	SHA256 (32 bytes)
 			, cyng::TC_UINT8
 			},
 			{ 64	//	user - max 255 
@@ -145,7 +145,7 @@ namespace node
 			, 0		//	role: service supplier
 			, 0		//	role: manufacturer
 			, 0		//	role: reserved
-			, 32	//	pwd
+			, 64	//	pwd
 			, 0		//	nr
 			}),
 
@@ -505,7 +505,8 @@ namespace node
 							stmt->push(cyng::make_object(false), 0);	//	rSupp
 							stmt->push(cyng::make_object(true), 0);		//	rMan
 							stmt->push(cyng::make_object(false), 0);	//	rRes
-							stmt->push(cyng::make_object(cyng::make_buffer({ 0x06, 0xe5, 0x5b, 0x63, 0x34, 0x81, 0xf7, 0xbb, 0x07, 0x29, 0x57, 0xea, 0xbc, 0xf1, 0x10, 0xc9, 0x72, 0xe8, 0x66, 0x91, 0xc3, 0xcf, 0xed, 0xab, 0xe0, 0x88, 0x02, 0x4b, 0xff, 0xe4, 0x2f, 0x23 })), 0);	//	password hash (SHA256)
+							//stmt->push(cyng::make_object(cyng::make_buffer({ 0x06, 0xe5, 0x5b, 0x63, 0x34, 0x81, 0xf7, 0xbb, 0x07, 0x29, 0x57, 0xea, 0xbc, 0xf1, 0x10, 0xc9, 0x72, 0xe8, 0x66, 0x91, 0xc3, 0xcf, 0xed, 0xab, 0xe0, 0x88, 0x02, 0x4b, 0xff, 0xe4, 0x2f, 0x23 })), 0);	//	password hash (SHA256)
+							stmt->push(cyng::make_object("06e55b633481f7bb072957eabcf110c972e86691c3cfedabe088024bffe42f23"), 64);	//	password hash (SHA256)
 							stmt->push(cyng::make_object<std::uint8_t>(1), 0);	//	nr 1
 							stmt->execute();
 							stmt->close();
