@@ -514,7 +514,7 @@ namespace node
 #if defined __CPP_SUPPORT_P0217R3
 			auto const[peer, rec, server, tag] = find_peer(std::get<4>(tpl), tbl_session, tbl_gw);
 #else            
-            std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> r = find_peer(std::get<5>(tpl), tbl_session, tbl_gw);
+            std::tuple<session const*, cyng::table::record, cyng::buffer_t, boost::uuids::uuid> r = find_peer(std::get<4>(tpl), tbl_session, tbl_gw);
             session const* peer = std::get<0>(r);
             cyng::table::record const rec = std::get<1>(r);
             cyng::buffer_t const server = std::get<2>(r);
@@ -765,7 +765,8 @@ namespace node
 		else
 		{
 			CYNG_LOG_ERROR(logger_, "find_peer(gateway "
-				<< cyng::value_cast(key_gw.at(0), boost::uuids::nil_uuid())
+// 				<< cyng::value_cast(key_gw.at(0), boost::uuids::nil_uuid())
+                << cyng::io::to_str(key_gw)
 				<< " not found, "
 				<< tbl_gw->size()
 				<< " gateways configured)");
