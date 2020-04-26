@@ -120,7 +120,7 @@ namespace node
 			case 0x0080800000FF:	//	STORAGE_TIME_SHIFT
 				storage_time_shift(trx, srv_id);
 				break;
-			case 0x8181C78A01FF:	//	PUSH_OPERATIONS
+			case CODE_ROOT_PUSH_OPERATIONS:	//	0x8181C78A01FF
 				push_operations(trx, srv_id);
 				break;
 			case 0x990000000004:	//	LIST_SERVICES
@@ -1064,7 +1064,7 @@ namespace node
 
 		void get_proc_parameter::push_operations(std::string trx, cyng::buffer_t srv_id)
 		{
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_PUSH_OPERATIONS);
+			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_PUSH_OPERATIONS);
 
 			//
 			//	81 81 C7 8A 01 FF - service push
@@ -1089,7 +1089,7 @@ namespace node
 						//	81 81 C7 8A 02 FF - push interval in seconds
 						//
 						append_get_proc_response(msg, {
-							OBIS_PUSH_OPERATIONS,
+							OBIS_ROOT_PUSH_OPERATIONS,
 							make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
 							OBIS_PUSH_INTERVAL
 							}, make_value(rec["interval"]));
@@ -1098,7 +1098,7 @@ namespace node
 						//	81 81 C7 8A 03 FF - push delay in seconds
 						//
 						append_get_proc_response(msg, {
-							OBIS_PUSH_OPERATIONS,
+							OBIS_ROOT_PUSH_OPERATIONS,
 							make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
 							OBIS_PUSH_DELAY
 							}, make_value(rec["delay"]));
@@ -1107,7 +1107,7 @@ namespace node
 						//	81 47 17 07 00 FF - target name
 						//
 						append_get_proc_response(msg, {
-							OBIS_PUSH_OPERATIONS,
+							OBIS_ROOT_PUSH_OPERATIONS,
 							make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
 							OBIS_PUSH_TARGET
 							}, make_value(rec["target"]));
@@ -1117,7 +1117,7 @@ namespace node
 						//	* 81 81 C7 8A 22 FF == SML client address
 						//	* 81 81 C7 8A 23 FF == KNX ID 
 						append_get_proc_response(msg, {
-							OBIS_PUSH_OPERATIONS,
+							OBIS_ROOT_PUSH_OPERATIONS,
 							make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
 							OBIS_PUSH_SERVICE
 							}, make_value(OBIS_PUSH_SERVICE_IPT));
@@ -1127,7 +1127,7 @@ namespace node
 						//	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
 						//	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_SENSOR_LIST)
 						append_get_proc_response(msg, {
-							OBIS_PUSH_OPERATIONS,
+							OBIS_ROOT_PUSH_OPERATIONS,
 							make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
 							OBIS_PUSH_SOURCE
 							}, make_value(OBIS_PUSH_SOURCE_PROFILE));

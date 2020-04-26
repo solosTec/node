@@ -103,6 +103,15 @@ namespace node
 				, params);
 		}
 
+		cyng::tuple_t get_proc_parameter_response(cyng::buffer_t server_id
+			, obis_path_t path
+			, cyng::tuple_t params)
+		{
+			return cyng::tuple_factory(server_id
+				, tuple_from_path(path)	//	path entry
+				, params);
+		}
+
 		/**
 		 * locale the child list in a GetProcParameter.Res or SML_GetProfileList.Res message
 		 */
@@ -206,10 +215,9 @@ namespace node
 					//
 					//	parameter name
 					//
-					cyng::buffer_t code;
-					code = cyng::value_cast(entry->front(), code);
+					obis const code(cyng::to_buffer(entry->front()));
 
-					if (*obis_begin == obis(code)) {
+					if (*obis_begin == code) {
 
 						//
 						//	tree entry exists
@@ -233,7 +241,7 @@ namespace node
 				, entry.begin()
 				, entry.end()
 				, fgen);
-				//, std::move(val));
+
 			tpl.push_back(cyng::make_object(entry));
 			return b;
 		}
@@ -286,7 +294,6 @@ namespace node
 						//
 						//	make the final attribute entry
 						//
-						//auto attr = parameter_tree(*obis_begin, std::move(val));
 						auto attr = fgen(*obis_begin);
 						auto tpl = cyng::tuple_factory(attr);
 						*cl_begin = cyng::make_object(tpl);
@@ -304,7 +311,6 @@ namespace node
 							, obis_end
 							, tpl
 							, fgen);
-							//, std::move(val));
 					}
 				}
 				else {
@@ -321,7 +327,6 @@ namespace node
 						//	make the final attribute entry
 						//
 						auto attr = fgen(*obis_begin);
-						//auto attr = parameter_tree(*obis_begin, std::move(val));
 						child_list->push_back(cyng::make_object(attr));
 						return true;
 					}
@@ -330,12 +335,13 @@ namespace node
 						//
 						//	walk down the child list
 						//
-						return merge_child_list(obis_begin
-							, obis_end
-							, *child_list
-							, fgen);
-							//, std::move(val));
-
+						return (child_list != nullptr)
+							? merge_child_list(obis_begin
+								, obis_end
+								, *child_list
+								, fgen)
+							: false
+							;
 					}
 				}
 			}
@@ -345,7 +351,7 @@ namespace node
 		bool append_get_proc_response(cyng::tuple_t& msg, std::initializer_list<obis> path, cyng::tuple_t&& val)
 		{
 			if (path.size() == 0u)	return false;
-			if (val.size() != 2u)	return false;	//	 SML_ProcParValue (value, periodEntry, tupleENtry, time or listEntry)
+			if (val.size() != 2u)	return false;	//	 SML_ProcParValue (value, periodEntry, tupleEntry, time or listEntry)
 			BOOST_ASSERT(cyng::numeric_cast<std::uint8_t>(val.front(), 0xFF) < 6u);
 
 			auto & child_list = locate_child_list(msg);
@@ -364,7 +370,7 @@ namespace node
 		{
 			if (path.size() == 0u)	return false;
 			if (val.size() != 2u)	return false;	//	 SML_ProcParValue (value, periodEntry, tupleENtry, time or listEntry)
-			BOOST_ASSERT(cyng::numeric_cast<std::uint8_t>(val.front(), -1) < 6u);
+			BOOST_ASSERT(cyng::numeric_cast<std::uint8_t>(val.front(), 0xFF) < 6u);
 
 			auto & child_list = locate_child_list(msg);
 			return (child_list.size() == 3)
@@ -373,16 +379,92 @@ namespace node
 					//
 					//	build a SML_Tree with a parameterName (code), parameterValue (val) and a child_List (child)
 					//
-					return 	cyng::tuple_t({ cyng::make_object(code.to_buffer())
-							, cyng::make_object(std::move(val))
-							, cyng::make_object(std::move(child)) })
-						;
+					return cyng::tuple_factory(code.to_buffer(), std::move(val), std::move(child));
 					})
 				: false
 				;
-
 		}
 
+		bool set_attribute(obis const* obis_begin
+			, obis const* obis_end
+			, cyng::tuple_t::iterator cl_begin
+			, cyng::tuple_t::iterator cl_end
+			, cyng::tuple_t&& val)
+		{
+			BOOST_ASSERT(obis_begin != nullptr);
+			BOOST_ASSERT(obis_end != nullptr);
+			BOOST_ASSERT(obis_begin != obis_end);
+			BOOST_ASSERT(cl_begin != cl_end);
+
+			if (obis_begin == nullptr)	return false;
+			if (obis_end == nullptr)	return false;
+			if (obis_begin == obis_end)	return false;
+			if (cl_begin == cl_end) return false;
+
+			//
+			//	tree entry expected (OBIS, attribute, child list)
+			//
+			auto const size = std::distance(cl_begin, cl_end);
+			BOOST_ASSERT(size == 3);
+			if (size == 3) {
+
+				//
+				//	parameter name
+				//
+				obis const code = cyng::to_buffer(*cl_begin);
+
+				BOOST_ASSERT(*obis_begin == code);
+				if ((obis_begin + 1) == obis_end)
+				{
+					//	end of OBIS path
+					//	we expect here a match - otherwise this assumption was wrong.
+					//	set_attribute() will no create new nodes (yet) if requested.
+					BOOST_ASSERT(code == *obis_begin);	//	see comment above
+					if (code == *obis_begin) {
+
+						std::advance(cl_begin, 1);
+						*cl_begin = cyng::make_object(std::move(val));
+						return true;
+					}
+				}
+				else {
+
+					//
+					//	walk down the path
+					//
+					++obis_begin;
+
+					//
+					//	navigate to child list
+					//
+					std::advance(cl_begin, 2);
+					auto child_list = const_cast<cyng::tuple_t*>(cyng::object_cast<cyng::tuple_t>(*cl_begin));
+					BOOST_ASSERT(child_list != nullptr);
+					
+					return set_attribute(obis_begin
+						, obis_end
+						, child_list->begin()
+						, child_list->end()
+						, std::move(val));
+				}
+			}
+
+			return false;
+		}
+
+		bool set_get_proc_response_attribute(cyng::tuple_t& msg
+			, std::initializer_list<obis> path
+			, cyng::tuple_t&& val)
+		{
+			if (val.size() != 2u)	return false;	//	 SML_ProcParValue (value, periodEntry, tupleENtry, time or listEntry)
+			BOOST_ASSERT(cyng::numeric_cast<std::uint8_t>(val.front(), 0xFF) < 6u);
+
+			auto& child_list = locate_child_list(msg);
+			if (child_list.size() == 3) {
+				return set_attribute(path.begin(), path.end(), child_list.begin(), child_list.end(), std::move(val));
+			}
+			return false;
+		}
 
 		void append_period_entry(cyng::tuple_t& msg
 			, obis code
@@ -614,35 +696,39 @@ namespace node
 
 		cyng::tuple_t empty_tree(obis code)
 		{
-			return cyng::tuple_t({ cyng::make_object(code.to_buffer())
+			return cyng::tuple_factory(code.to_buffer()
 				, cyng::make_object()
-				, cyng::make_object() });
+				, cyng::make_object());
 		}
 
 		cyng::tuple_t parameter_tree(obis code, cyng::tuple_t&& value)
 		{
-			return cyng::tuple_t({ cyng::make_object(code.to_buffer())
-				, cyng::make_object(std::move(value))
-				, cyng::make_object() });
+			return cyng::tuple_factory(code.to_buffer()
+				, std::move(value)
+				, cyng::make_object());
 		}
 
 		cyng::tuple_t child_list_tree(obis code, cyng::tuple_t value)
 		{
-			return cyng::tuple_t({ cyng::make_object(code.to_buffer())
+			return cyng::tuple_factory(code.to_buffer()
 				, cyng::make_object()
-				, cyng::make_object(value) });
+				, value);
 		}
 
 		cyng::tuple_t child_list_tree(obis code, std::initializer_list<cyng::tuple_t> list)
 		{
-			cyng::tuple_t tpl;
-			std::for_each(list.begin(), list.end(), [&tpl](cyng::tuple_t const& e) {
-				tpl.push_back(cyng::make_object(e));
-			});
+			return cyng::tuple_factory(code.to_buffer()
+				, cyng::make_object()
+				, to_tuple(list));
+		}
 
-			return cyng::tuple_t({ cyng::make_object(code.to_buffer())
-				, cyng::make_object()	//	no attribute
-				, cyng::make_object(tpl) });
+		cyng::tuple_t to_tuple(std::initializer_list<cyng::tuple_t> list)
+		{
+			cyng::tuple_t tpl;
+			std::transform(list.begin(), list.end(), std::back_inserter(tpl), [](cyng::tuple_t const& tpl) {
+				return cyng::make_object(tpl);
+			});
+			return tpl;
 		}
 
 		cyng::object period_entry(obis code

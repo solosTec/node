@@ -118,10 +118,16 @@ namespace node
 		void stop(boost::system::error_code ec);
 		void do_read();
 
+#ifdef SMF_IO_LOG
+		void update_io_log(cyng::buffer_t const&);
+#endif
+
+
 	private:
 #ifdef SMF_IO_LOG
 		std::size_t log_counter_;
 		std::size_t sml_counter_;
+		boost::filesystem::path dir_out_;
 #endif
 
 	};

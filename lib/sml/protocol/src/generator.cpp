@@ -380,6 +380,26 @@ namespace node
 					, child_list_tree(root, {})));
 		}
 
+		cyng::tuple_t res_generator::empty_get_proc_param_response(std::string trx
+			, cyng::buffer_t server_id
+			, obis_path_t path)
+		{
+			BOOST_ASSERT(!path.empty());
+
+			return message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, sml_message::GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id
+					, path	//	path
+					//, cyng::tuple_factory()));
+					, child_list_tree(path.back(), {})));
+		}
+
 		cyng::tuple_t res_generator::empty_get_profile_list(std::string trx
 			, cyng::buffer_t client_id
 			, obis path
@@ -846,11 +866,11 @@ namespace node
 						//  0F706F77657240736F6C6F73746563          value: power@solostec
 						period_entry(OBIS_PUSH_TARGET, 0xFF, 0, cyng::make_object(target)),
 
-						//  81 81 C7 8A 01 FF                       objName:  PUSH_OPERATIONS
+						//  81 81 C7 8A 01 FF                       objName:  ROOT_PUSH_OPERATIONS
 						//  62FF                                    unit: 255
 						//  5200                                    scaler: 0
 						//  6201                                    value: 1
-						period_entry(OBIS_PUSH_OPERATIONS, 0xFF, 0, cyng::make_object(push_nr)),
+						period_entry(OBIS_ROOT_PUSH_OPERATIONS, 0xFF, 0, cyng::make_object(push_nr)),
 
 						//	81 81 C7 81 23 FF
 						//  62FF                                    unit: 255

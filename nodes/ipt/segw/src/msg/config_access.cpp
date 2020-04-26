@@ -41,134 +41,101 @@ namespace node
 			BOOST_ASSERT(path.front() == OBIS_ROOT_ACCESS_RIGHTS);
 
 			//	81 81 81 60 FF FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_ACCESS_RIGHTS);
+			cyng::tuple_t msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, path);
 
 			if (path.size() == 1) {
 
 				//
-				//	ToDo: check server ID
+				//	deliver an overview of all roles, users and meters 
 				//
+				cache_.read_tables("_User", "_Privileges", [&](cyng::store::table const* tblUser, cyng::store::table const* tblPriv) {
 
+					collect_role(msg, role::GUEST, tblUser, tblPriv);
+					collect_role(msg,role::USER, tblUser, tblPriv);
+					collect_role(msg,role::GW_OPERATOR, tblUser, tblPriv);
+					collect_role(msg,role::DEV_OPERATOR, tblUser, tblPriv);
+					collect_role(msg,role::SERVICE_PROVIDER, tblUser, tblPriv);
+					collect_role(msg,role::SUPPLIER, tblUser, tblPriv);
+					collect_role(msg,role::MANUFACTURER, tblUser, tblPriv);
+					collect_role(msg,role::RESERVED, tblUser, tblPriv);
 
-				//
-				//	GUEST
-				//
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::GUEST), 0xFF)
-					}, make_value());
-
-				//
-				//	USER - end user
-				//
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::USER), 0xFF)
-					}, make_value());
-
+				});
+			}
+			else if (path.size() == 4) {
 
 				//
-				//	GW_OPERATOR,
-				//	get the special rights of the gateway operator
+				//	get role
 				//
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::GW_OPERATOR), 0xFF),
-					make_obis(0x81, 0x81, 0x81, 0x60, 0x03, 0x01),
-					OBIS_ACCESS_USER_NAME
-					}, make_value("operator"));
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::GW_OPERATOR), 0xFF),
-					make_obis(0x81, 0x81, 0x81, 0x60, 0x03, 0x01),
-					OBIS_ACCESS_PASSWORD
-					}, make_value("06e55b633481f7bb072957eabcf110c972e86691c3cfedabe088024bffe42f23"));
-
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::GW_OPERATOR), 0xFF),
-					make_obis(0x81, 0x81, 0x81, 0x60, 0x03, 0x01),
-					make_obis(0x81, 0x81, 0x81, 0x63, 0xFF, 0xFF)
-					}, make_value());	//	no certificate
-
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::GW_OPERATOR), 0xFF),
-					make_obis(0x81, 0x81, 0x81, 0x60, 0x03, 0x01),
-					make_obis(0x81, 0x81, 0x81, 0x64, 0x01, 0x01)
-					}, make_value(cache_.get_srv_id()));	//	this server ID
+				auto const role = path.at(1).get_quantities();
+				BOOST_ASSERT(path.at(2).get_quantities() == role);
 
 				//
-				//	list of server/meter
+				//	get user
 				//
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::GW_OPERATOR), 0xFF),
-					make_obis(0x81, 0x81, 0x81, 0x60, 0x03, 0x01),
-					make_obis(0x81, 0x81, 0x81, 0x64, 0x01, 0x02)
-					}, make_value("04045057"));	//	
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::GW_OPERATOR), 0xFF),
-					make_obis(0x81, 0x81, 0x81, 0x60, 0x03, 0x01),
-					make_obis(0x81, 0x81, 0x81, 0x64, 0x01, 0x01)
-					}, make_value(srv_id));	//	gateway itself as server #1
+				auto const user = path.at(2).get_storage();
 
+				//
+				//	get meter
+				//
+				auto const meter = path.at(3).get_storage();
+				BOOST_ASSERT(meter != 0);
 
-				//	DEV_OPERATOR,
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::DEV_OPERATOR), 0xFF)
-					}, make_value());
+				//
+				//	get meter id
+				//
+				auto const id = cache_.get_meter_by_id(meter);
 
-				//	SERVICE_PROVIDER,
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::SERVICE_PROVIDER), 0xFF)
-					}, make_value());
+				cache_.read_tables("_User", "_Privileges", [&](cyng::store::table const* tblUser, cyng::store::table const* tblPriv) {
 
-				//	SUPPLIER,
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::SUPPLIER), 0xFF)
-					}, make_value());
+					//
+					//	set server ID / meter
+					//
+					set_get_proc_response_attribute(msg, { path.at(3) }, make_value(srv_id));
 
-				//	MANUFACTURER,
-				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::MANUFACTURER), 0xFF)
-					}, make_value());
+					//collect_privs(msg, role, user, meter, tblUser, tblPriv);
 
-				//	RESERVED
+				});
+
+				//CYNG_LOG_DEBUG(logger_, "get access rights (2-long-path) "
+				//	<< cyng::io::to_str(msg));
+
 				append_get_proc_response(msg, {
-					OBIS_ROOT_ACCESS_RIGHTS,
-					make_obis(0x81, 0x81, 0x81, 0x60, static_cast<std::uint32_t>(role::RESERVED), 0xFF)
-					}, make_value());
+						path.at(3),
+						OBIS_SECONDS_INDEX
+					}, make_value(7));
+
+				//CYNG_LOG_DEBUG(logger_, "get access rights (3-long-path) "
+				//	<< cyng::io::to_str(msg));
+
+				append_get_proc_response(msg, {
+						path.at(3),
+						OBIS_CURRENT_UTC
+					}, make_value(7));
+
+				append_get_proc_response(msg, {
+						path.at(3),
+						OBIS_TZ_OFFSET
+					}, make_value(7));
+
+				append_get_proc_response(msg, {
+						path.at(3),
+						OBIS_CLASS_OP_LOG_STATUS_WORD
+					}, make_value(7));
+
+				append_get_proc_response(msg, {
+						path.at(3),
+						OBIS_ROOT_CUSTOM_PARAM
+					}, make_value(1));
+
+				//CYNG_LOG_DEBUG(logger_, "get access rights (4-long-path) "
+				//	<< cyng::io::to_str(msg));
 			}
 			else {
-				//
-				//	81 81 81 60 NN FF - role
-				//
-				
-				//append_get_proc_response(msg, {
-				//	path.back(),
-				//	OBIS_FTP_UPDATE	//	99, 00, 00, 00, 00, 05
-				//	}, make_value(7));
 
-				//append_get_proc_response(msg, {
-				//	path.back(),
-				//	OBIS_OBISLOG_INTERVAL	//	81, 81, 27, 32, 07, 01
-				//	}, make_value(7));
-				//
-				//append_get_proc_response(msg, {
-				//	path.back(),
-				//	OBIS_ROOT_CUSTOM_INTERFACE	//	81 02 00 07 00 FF
-				//	}, make_value(7));
-
-				//append_get_proc_response(msg, {
-				//	path.back(),
-				//	OBIS_ROOT_CUSTOM_PARAM	//	81 02 00 07 10 FF
-				//	}, make_value(1));
+				CYNG_LOG_WARNING(logger_, "get access rights - invalid path: "
+					<< from_server_id(srv_id)
+					<< " - "
+					<< to_hex(path, ':'));
 
 			}
 
@@ -178,6 +145,125 @@ namespace node
 			sml_gen_.append(std::move(msg));
 
 		}
+
+		void config_access::collect_role(cyng::tuple_t& msg
+			//, std::uint8_t role
+			, role e
+			, cyng::store::table const* tblUser
+			, cyng::store::table const* tblPriv) const
+		{
+			auto const bitpos = get_bit_position(e);
+			auto const rn = static_cast<std::uint8_t>(e);
+
+			std::size_t counter{ 0 };
+			tblUser->loop([&](cyng::table::record const& rec) {
+
+				auto const mask = cyng::value_cast<std::uint8_t>(rec["role"], 0u);
+				if ((mask & bitpos) == bitpos) {
+
+					//
+					//	user with the specified role found - collect more data
+					//
+
+					auto const nr = cyng::value_cast<std::uint8_t>(rec["nr"], 1u);
+					auto const name = cyng::value_cast<std::string>(rec["user"], "");
+					auto const pwd = cyng::value_cast(rec["pwd"], cyng::crypto::digest_sha256());
+					auto const h = cyng::io::to_str(pwd);	//	hash as string
+
+					CYNG_LOG_DEBUG(logger_, "get access rights (1-"
+						<< +nr
+						<< ") "
+						<< cyng::io::to_str(msg));
+
+					append_get_proc_response(msg, {
+						OBIS_ROOT_ACCESS_RIGHTS,
+						make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
+						make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
+						OBIS_ACCESS_USER_NAME
+						}, make_value(name));
+
+					CYNG_LOG_DEBUG(logger_, "get access rights (2-"
+						<< +nr
+						<< ") "
+						<< cyng::io::to_str(msg));
+
+
+					append_get_proc_response(msg, {
+						OBIS_ROOT_ACCESS_RIGHTS,
+						make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
+						make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
+						OBIS_ACCESS_PASSWORD
+						}, make_value(h));
+
+					CYNG_LOG_DEBUG(logger_, "get access rights (3-"
+						<< +nr
+						<< ") "
+						<< cyng::io::to_str(msg));
+
+					append_get_proc_response(msg, {
+						OBIS_ROOT_ACCESS_RIGHTS,
+						make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
+						make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
+						OBIS_ACCESS_PUBLIC_KEY
+						}, make_value());	//	no certificate
+
+					CYNG_LOG_DEBUG(logger_, "get access rights (4-"
+						<< +nr
+						<< ") "
+						<< cyng::io::to_str(msg));
+
+					//
+					//	list of devices
+					//
+					auto const meters = collect_meters_of_user(tblPriv, nr);
+
+					CYNG_LOG_DEBUG(logger_, "get access rights (X-"
+						<< +nr
+						<< ") + "
+						<< meters.size()
+						<< " meter(s)");
+
+					std::uint8_t idx{ 1 };
+					for(auto const& id: meters) {
+
+						append_get_proc_response(msg, {
+							OBIS_ROOT_ACCESS_RIGHTS,
+							make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
+							make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
+							make_obis(0x81, 0x81, 0x81, 0x64, 0x01, idx)
+							}, make_value(id));	
+
+						++idx;
+					}
+
+					//
+					//	update counter
+					//
+					++counter;
+				}
+
+				return true;
+			});
+
+			if (counter == 0u) {
+
+				CYNG_LOG_DEBUG(logger_, "get access rights (A) "
+					<< cyng::io::to_str(msg));
+
+				//
+				//	there is no user with this role configured
+				//
+				append_get_proc_response(msg, {
+					OBIS_ROOT_ACCESS_RIGHTS,
+					make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF)
+					}, cyng::tuple_factory());	//	NULL
+					//}, make_value());	//	NULL
+
+				CYNG_LOG_DEBUG(logger_, "get access rights (B) "
+					<< cyng::io::to_str(msg));
+			}
+		}
+
 
 		void config_access::set_param(node::sml::obis code
 			, cyng::buffer_t srv_id

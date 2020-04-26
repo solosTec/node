@@ -35,6 +35,7 @@ namespace node
 #ifdef SMF_IO_LOG
 		, log_counter_{ 0u }
 		, sml_counter_{ 0u }
+		, dir_out_()
 #endif
 	{
 		//
@@ -56,6 +57,17 @@ namespace node
 			pending_ = true;
 			CYNG_LOG_DEBUG(logger_, vm_.tag() << " session.state.pending ON");
 		});
+
+#ifdef SMF_IO_LOG
+		std::stringstream ss;
+		ss
+			<< "ipt-"
+			<< boost::uuids::to_string(vm_.tag())
+			;
+		boost::filesystem::path const sub_dir(ss.str());
+		dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
+#endif
+
 	}
 
 	session_stub::~session_stub()
@@ -144,6 +156,87 @@ namespace node
 		vm_.halt();
 	}
 
+#ifdef SMF_IO_LOG
+	void session_stub::update_io_log(cyng::buffer_t const& buffer)
+	{
+		if (buffer.size() > 12
+			&& buffer.at(0) == 0x1b
+			&& buffer.at(1) == 0x1b
+			&& buffer.at(2) == 0x1b
+			&& buffer.at(3) == 0x1b
+			&& buffer.at(4) == 0x1b
+			&& buffer.at(5) == 0x1b
+			&& buffer.at(6) == 0x1b
+			&& buffer.at(7) == 0x1b
+
+			&& buffer.at(8) == 0x01
+			&& buffer.at(9) == 0x01
+			&& buffer.at(10) == 0x01
+			&& buffer.at(11) == 0x01) {
+
+			//
+			//	start of new SML message
+			//
+			++sml_counter_;
+
+			if (buffer.size() > 0x4a) {
+
+				//
+				//	search for MAC starting with 05 00 15 3B
+				//
+				auto const mac = cyng::make_buffer({ 0x08, 0x05, 0x00, 0x15, 0x3B });
+				//cyng::buffer_t const mac({ 0x62, 0x01, 0x62, 0x00, 0x72, 0x63 });
+				auto pos = std::search(buffer.begin(), buffer.end(), mac.begin(), mac.end());
+				if (pos != buffer.end()) {
+					//
+					//	update dir_out_
+					//
+					//++pos;
+					pos += mac.size();
+
+					auto name = cyng::io::to_hex(pos, pos + 7);
+					boost::algorithm::to_upper(name);
+
+					std::stringstream ss;
+					ss
+						<< "ipt-"
+						<< boost::uuids::to_string(vm_.tag()) 
+						<< "-"
+						<< name
+						;
+					boost::filesystem::path const sub_dir(ss.str());
+					dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
+
+				}
+				else {
+					auto const mac = cyng::make_buffer({ 0x05, 0x00, 0xFF, 0xB0, 0x4B, 0x94, 0xF8 });
+					auto pos = std::search(buffer.begin(), buffer.end(), mac.begin(), mac.end());
+					if (pos != buffer.end()) {
+						//
+						//	update dir_out_
+						//
+						//pos += mac.size();
+
+						auto name = cyng::io::to_hex(pos, pos + 7);
+						boost::algorithm::to_upper(name);
+
+						std::stringstream ss;
+						ss
+							<< "ipt-"
+							<< boost::uuids::to_string(vm_.tag())
+							<< "-"
+							<< name
+							;
+						boost::filesystem::path const sub_dir(ss.str());
+						dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
+					}
+				}
+			}
+		}
+	}
+
+#endif
+
 	void session_stub::do_read()
 	{
 		socket_.async_read_some(boost::asio::buffer(buffer_),
@@ -178,21 +271,20 @@ namespace node
 #endif
 #ifdef SMF_IO_LOG
 				{
-					std::stringstream ss;
-					ss
-						<< "ipt-"
-						<< boost::uuids::to_string(vm_.tag())
-						;
-					boost::filesystem::path const sub_dir(ss.str());
-					boost::filesystem::path const dir_out(boost::filesystem::temp_directory_path() / sub_dir);
+					//
+					//	update sml_counter_ and dir_out_
+					//	if necessary
+					//
+					update_io_log(buf);
 
-					if (!boost::filesystem::is_directory(dir_out)) {
+					std::stringstream ss;
+					if (!boost::filesystem::is_directory(dir_out_)) {
 
 						//
 						//	create directory if not exist
 						//
 						boost::system::error_code ec;
-						boost::filesystem::create_directory(dir_out, ec);
+						boost::filesystem::create_directory(dir_out_, ec);
 					}
 
 					ss.str("");
@@ -207,7 +299,7 @@ namespace node
 					boost::filesystem::path const file_name(ss.str());
 
 					{
-						std::string const path = (dir_out / file_name).string();
+						std::string const path = (dir_out_ / file_name).string();
 						std::ofstream of(path, std::ios::out | std::ios::app);
 						if (of.is_open())
 						{
@@ -219,37 +311,17 @@ namespace node
 						}
 					}
 
-					if (buf.size() > 12
-						&& buf.at(0) == 0x1b
-						&& buf.at(1) == 0x1b
-						&& buf.at(2) == 0x1b
-						&& buf.at(3) == 0x1b
-						&& buf.at(4) == 0x1b
-						&& buf.at(5) == 0x1b
-						&& buf.at(6) == 0x1b
-						&& buf.at(7) == 0x1b
-
-						&& buf.at(8) == 0x01
-						&& buf.at(9) == 0x01
-						&& buf.at(10) == 0x01
-						&& buf.at(11) == 0x01) {
-
-						//
-						//	start of new SML message
-						//
-						++sml_counter_;
-					}
-
 					ss.str("");
 					ss
 						<< std::setw(4)
 						<< std::setfill('0')
 						<< std::dec
 						<< sml_counter_
-						<< ".sml.bin"
+						<< ".sml"
+						//<< ".sml.bin"
 						;
 					{
-						std::string const file_name = (dir_out / ss.str()).string();
+						std::string const file_name = (dir_out_ / ss.str()).string();
 						std::ofstream of(file_name, std::ios::out | std::ios::app | std::ios::binary);
 						if (of.is_open())
 						{

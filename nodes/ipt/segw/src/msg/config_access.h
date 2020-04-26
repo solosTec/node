@@ -79,6 +79,11 @@ namespace node
 				, cyng::param_t const& param);
 
 		private:
+			void collect_role(cyng::tuple_t& msg
+				, role
+				//, std::uint8_t role
+				, cyng::store::table const* tblUser
+				, cyng::store::table const* tblPriv) const;
 
 		private:
 			cyng::logging::log_ptr logger_;

@@ -41,10 +41,10 @@ namespace node
 			case 0x8181C78617FF:	return "profile-1y";
 			case 0x8181C78618FF:	return "profile-initial";
 
-			case 0x8181C78A83FF:	return "encode-profile";	//	OBIS_PROFILE
+			case CODE_PROFILE:	return "PROFILE";	//	encode profile
 
-			case 0x8181C789E1FF:	return "class-operation-log";	//	CLASS_OP_LOG
-			case 0x8181C789E2FF:	return "class-event";			//	CLASS_EVENT
+			case CODE_CLASS_OP_LOG:	return "CLASS_OP_LOG";	//	81 81 C7 89 E1 FF
+			case CODE_CLASS_EVENT:	return "CLASS_EVENT";	//	81 81 C7 89 E2 FF
 
 			case CODE_ROOT_FILE_TRANSFER:		return "ROOT_FILE_TRANSFER";	
 			case CODE_DATA_FIRMWARE:			return "DATA_FIRMWARE";
@@ -156,6 +156,10 @@ namespace node
 			case CODE_PUSH_SOURCE_INSTALL:			return "PUSH_SOURCE_INSTALL";
 			case CODE_PUSH_SOURCE_VISIBLE_SENSORS:	return "PUSH_SOURCE_VISIBLE_SENSORS";
 			case CODE_PUSH_SOURCE_ACTIVE_SENSORS:	return "PUSH_SOURCE_ACTIVE_SENSORS";
+			case CODE_ROOT_PUSH_OPERATIONS:			return "ROOT_PUSH_OPERATIONS";	//	7.3.1.26 Datenstruktur zum Transport der Eigenschaften von Push-Vorgängen. 
+			case CODE_PUSH_INTERVAL:				return "PUSH_INTERVAL";	//	in seconds
+			case CODE_PUSH_DELAY:					return "PUSH_DELAY";	//	in seconds
+			case CODE_PUSH_SERVER_ID:				return "PUSH_SERVER_ID";
 
 			case CODE_IF_EDL:						return "IF_EDL";
 			case CODE_IF_EDL_PROTOCOL:				return "IF_EDL_PROTOCOL";
@@ -176,21 +180,29 @@ namespace node
 			case CODE_CLASS_OP_LOG_AREA_CODE:		return "CLASS_OP_LOG_AREA_CODE";
 			case CODE_CLASS_OP_LOG_PROVIDER:		return "CLASS_OP_LOG_PROVIDER";
 
+			case CODE_CLASS_STATUS:					return "CODE_CLASS_STATUS";
+
+			case CODE_ROOT_IF:						return "ROOT_IF";
+
+			case CODE_CURRENT_UTC:					return "CURRENT_UTC";
+			case CODE_PUSH_SERVICE:					return "PUSH_SERVICE";
+			case CODE_PUSH_SERVICE_IPT:				return "PUSH_SERVICE_IPT";
+			case CODE_PUSH_SERVICE_SML:				return "PUSH_SERVICE_SML";
+			case CODE_DATA_COLLECTOR_OBIS:			return "DATA_COLLECTOR_OBIS";
+			case CODE_DATA_IP_ADDRESS:				return "DATA_IP_ADDRESS";
+			case CODE_DATA_AES_KEY:					return "DATA_AES_KEY";
+			case CODE_DATA_USER_NAME:				return "DATA_USER_NAME";
+			case CODE_DATA_USER_PWD:				return "DATA_USER_PWD";
+			case CODE_SET_ACTIVATE_FW:				return "SET_ACTIVATE_FW";
+			case CODE_SET_START_FW_UPDATE:			return "ET_START_FW_UPDATE";
+			case CODE_SET_DISPATCH_FW_UPDATE:		return "SET_DISPATCH_FW_UPDATE";
+
 			default:
 				break;
 			}
 
-			if (OBIS_PUSH_OPERATIONS == code)		return "root-push-ops";	//	7.3.1.26 Datenstruktur zum Transport der Eigenschaften von Push-Vorgängen. 
-			else if (OBIS_PUSH_INTERVAL == code)		return "push-interval";	//	in seconds
-			else if (OBIS_PUSH_DELAY == code)			return "push-delay";	//	in seconds
-			else if (OBIS_PUSH_SOURCE == code)			return "push-source";	//	options are PUSH_SOURCE_PROFILE, PUSH_SOURCE_INSTALL and PUSH_SOURCE_SENSOR_LIST
-			else if (OBIS_PUSH_SOURCE_PROFILE == code)	return "push-source-profile";	//!< new meter/sensor data
-			else if (OBIS_PUSH_SOURCE_INSTALL == code)	return "push-source-install";	//!< configuration changed
-			else if (OBIS_PUSH_SERVER_ID == code)		return "push-server-id";
 
-			else if (code == OBIS_CLASS_STATUS)			return "class-status";
-
-			else if (OBIS_ACT_SENSOR_TIME == code)		return "act-sensor-time";
+			if (OBIS_ACT_SENSOR_TIME == code)		return "act-sensor-time";
 			else if (OBIS_SERIAL_NR == code)			return "serial-number-I";
 			else if (OBIS_SERIAL_NR_SECOND == code)		return "serial-number-II";
 			else if (OBIS_FABRICATION_NR == code)		return "fabrication-number";
@@ -208,20 +220,6 @@ namespace node
 			else if (code == OBIS_DEVICE_ID)			return "device-id";
 			else if (OBIS_SOFTWARE_ID == code)			return "software_id";
 
-			else if (code == OBIS_CURRENT_UTC)			return "readout-utc";
-			else if (code == OBIS_PUSH_SERVICE)			return "push-service";
-			else if (code == OBIS_PUSH_SERVICE_IPT)		return "push-service:IPT";
-			else if (code == OBIS_PUSH_SERVICE_SML)		return "push-service:SML";
-			else if (code == OBIS_DATA_COLLECTOR_OBIS)	return "list-of-OBIS-codes";
-			else if (code == OBIS_DATA_MANUFACTURER)	return "manufacturer";
-			else if (code == OBIS_DATA_PUBLIC_KEY)		return "public-key";
-			else if (code == OBIS_DATA_IP_ADDRESS)		return "IP-address";
-			else if (code == OBIS_DATA_AES_KEY)			return "AES-key";
-			else if (code == OBIS_DATA_USER_NAME)		return "user-name";
-			else if (code == OBIS_DATA_USER_PWD)		return "user-pwd";
-			else if (code == OBIS_SET_ACTIVATE_FW)		return "SET-activate-FW";
-			else if (code == OBIS_SET_START_FW_UPDATE)	return "SET-update-FW";
-			else if (code == OBIS_SET_DISPATCH_FW_UPDATE)	return "SET-dispatch-FW";
 
 			else if (code == OBIS_REG_POS_AE_NO_TARIFF)			return "pos-act-energy-no-tariff";
 			else if (code == OBIS_REG_POS_AE_T1)				return "pos-act-energy-tariff-1";

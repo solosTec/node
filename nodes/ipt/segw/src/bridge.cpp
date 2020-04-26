@@ -310,31 +310,29 @@ namespace node
 				//
 				std::uint8_t role{ 0 };
 				if (cyng::value_cast(rec["rGuest"], false)) {
-					role |= (1u << static_cast<std::uint8_t>(sml::role::GUEST));
+					role |= get_bit_position(sml::role::GUEST);
 				}
 				if (cyng::value_cast(rec["rUser"], false)) {
-					role |= (1u << static_cast<std::uint8_t>(sml::role::USER));
+					role |= get_bit_position(sml::role::USER);
 				}
 				if (cyng::value_cast(rec["rGWOp"], false)) {
-					role |= (1u << static_cast<std::uint8_t>(sml::role::GW_OPERATOR));
+					role |= get_bit_position(sml::role::GW_OPERATOR);
 				}
 				if (cyng::value_cast(rec["rdevOp"], false)) {
-					role |= (1u << static_cast<std::uint8_t>(sml::role::DEV_OPERATOR));
+					role |= get_bit_position(sml::role::DEV_OPERATOR);
 				}
 				if (cyng::value_cast(rec["rProv"], false)) {
-					role |= (1u << static_cast<std::uint8_t>(sml::role::SERVICE_PROVIDER));
+					role |= get_bit_position(sml::role::SERVICE_PROVIDER);
 				}
 				if (cyng::value_cast(rec["rSupp"], false)) {
-					role |= (1u << static_cast<std::uint8_t>(sml::role::SUPPLIER));
+					role |= get_bit_position(sml::role::SUPPLIER);
 				}
 				if (cyng::value_cast(rec["rMan"], false)) {
-					role |= (1u << static_cast<std::uint8_t>(sml::role::MANUFACTURER));
+					role |= get_bit_position(sml::role::MANUFACTURER);
 				}
 				if (cyng::value_cast(rec["rRes"], false)) {
-					role |= (1u << static_cast<std::uint8_t>(sml::role::RESERVED));
+					role |= get_bit_position(sml::role::RESERVED);
 				}
-
-				
 
 				if (tbl->insert(rec.key()
 					, cyng::table::data_generator(role, rec["pwd"], rec["nr"])

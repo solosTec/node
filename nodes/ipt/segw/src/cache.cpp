@@ -13,6 +13,7 @@
 
 #include <cyng/table/meta.hpp>
 #include <cyng/value_cast.hpp>
+#include <cyng/buffer_cast.h>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -98,14 +99,14 @@ namespace node
 		return r;
 	}
 
-	void cache::read_table(std::string const& name, std::function<void(cyng::store::table const*)> f)
+	void cache::read_table(std::string const& name, std::function<void(cyng::store::table const*)> f) const
 	{
 		db_.access([f](cyng::store::table const* tbl) {
 			f(tbl);
 			}, cyng::store::read_access(name));
 	}
 
-	void cache::read_tables(std::string const& t1, std::string const& t2, std::function<void(cyng::store::table const*, cyng::store::table const*)> f)
+	void cache::read_tables(std::string const& t1, std::string const& t2, std::function<void(cyng::store::table const*, cyng::store::table const*)> f) const
 	{
 		db_.access([f](cyng::store::table const* tbl1, cyng::store::table const* tbl2) {
 			f(tbl1, tbl2);
@@ -257,6 +258,27 @@ namespace node
 			, cyng::table::key_generator(srv_id, nr)
 			, cyng::param_factory("lowerBound", tsidx)
 			, tag_);
+	}
+
+	cyng::buffer_t cache::get_meter_by_id(std::uint8_t idx) const
+	{
+		BOOST_ASSERT_MSG(idx != 0, "meter index starts with one");
+		if (idx == 1) {
+			return server_id_;
+		}
+
+		auto id = cyng::make_buffer({});
+
+		read_table("_DeviceMBUS", [&](cyng::store::table const* tbl) {
+
+			auto const rec = tbl->nth_record(idx - 1);
+			if (!rec.empty()) {
+				id = cyng::to_buffer(rec["serverID"]);
+			}
+
+			});
+
+		return id;
 	}
 
 
@@ -537,7 +559,7 @@ namespace node
 			//
 			cyng::table::make_meta_table<1, 3, 3>("_User",
 				{ "user"	//	max 255
-				, "role"	//	role: guest
+				, "role"	//	role bitmask
 				, "pwd"		//	SHA256
 				, "nr"
 				},
@@ -597,13 +619,39 @@ namespace node
 		return cyng::make_object();
 	}
 
-	cyng::object get_obj(cyng::store::table const* tbl_cfg, cyng::table::key_type&& key)
+	cyng::object get_obj(cyng::store::table const* tbl, cyng::table::key_type&& key)
 	{
-		BOOST_ASSERT(tbl_cfg != nullptr);
-		if (boost::algorithm::equals(tbl_cfg->meta().get_name(), "_Cfg")) {
-			return tbl_cfg->lookup(key, std::string("val"));
+		BOOST_ASSERT(tbl != nullptr);
+		if (tbl && boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
+			return tbl->lookup(key, std::string("val"));
 		}
 		return cyng::make_object();
+	}
+
+	std::vector<cyng::buffer_t> collect_meters_of_user(cyng::store::table const* tbl, std::uint8_t nr)
+	{
+		//
+		//	a set gives the guarantie that all entries are unique
+		//
+		std::set<cyng::buffer_t> r;
+		if (tbl && boost::algorithm::equals(tbl->meta().get_name(), "_Privileges")) {
+
+			tbl->loop([&](cyng::table::record const& rec) {
+
+				auto const user = cyng::value_cast<std::uint8_t>(rec["user"], 1u);
+				if (user == nr) {
+
+					auto const id = cyng::to_buffer(rec["meter"]);
+					r.emplace(id);
+				}
+				return true;
+			});
+		}
+
+		//
+		//	convert to vector
+		//
+		return std::vector<cyng::buffer_t>(r.begin(), r.end());
 	}
 
 }

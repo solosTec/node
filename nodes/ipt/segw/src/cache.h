@@ -115,8 +115,8 @@ namespace node
 		 */
 		bool merge_cfg(std::string name, cyng::object&& obj);
 
-		void read_table(std::string const&, std::function<void(cyng::store::table const*)>);
-		void read_tables(std::string const&, std::string const&, std::function<void(cyng::store::table const*, cyng::store::table const*)>);
+		void read_table(std::string const&, std::function<void(cyng::store::table const*)>) const;
+		void read_tables(std::string const&, std::string const&, std::function<void(cyng::store::table const*, cyng::store::table const*)>) const;
 		void write_table(std::string const&, std::function<void(cyng::store::table*)>);
 		void write_tables(std::string const&, std::string const&, std::function<void(cyng::store::table*, cyng::store::table*)>);
 		void clear_table(std::string const&);
@@ -162,6 +162,11 @@ namespace node
 		 * set lower bound time stamp index in table "_TPushOps"
 		 */
 		bool update_ts_index(cyng::buffer_t const& srv_id, std::uint8_t nr, std::uint64_t tsidx);
+
+		/**
+		 * The complete list of meters requires a virtual, unique index.
+		 */
+		cyng::buffer_t get_meter_by_id(std::uint8_t) const;
 
 	private:
 		/**
@@ -220,5 +225,10 @@ namespace node
 	T get_config_value(cyng::store::table const* tbl, std::string name, T def) {
 		return cyng::value_cast<T>(get_config_obj(tbl, name), def);
 	}
+
+	/**
+	 * Collect all meters that available for the specified user
+	 */
+	std::vector<cyng::buffer_t> collect_meters_of_user(cyng::store::table const* tbl, std::uint8_t);
 }
 #endif

@@ -94,8 +94,10 @@ namespace node
 				bool push(char c)
 				{
 					BOOST_ASSERT(pos_ != 0);
-					pos_--;
-					u_.a_[pos_] = c;
+					if (pos_ != 0) {
+						pos_--;
+						u_.a_[pos_] = c;
+					}
 					return pos_ == 0;
 				}
 			};
@@ -289,6 +291,13 @@ namespace node
 			 */
 			void finalize(std::uint16_t crc, std::uint8_t gap);
 
+			/**
+			 * Analyse stack to detect end of message frame.
+			 * A message is complete is the stack contains one LIST
+			 * element with a size of 5 and the list is full.
+			 */
+			bool is_msg_complete() const;
+
 			static const char* get_state_name(state);
 
 		private:
@@ -339,6 +348,12 @@ namespace node
 			 * Collect nested data
 			 */
 			std::stack<list>	stack_;
+
+			/**
+			 * message started with a 1B1B1B1B sequence. So all messages
+			 * have to aligned (mod 4)
+			 */
+			bool has_frame_;
 		};
 	}
 }	//	node

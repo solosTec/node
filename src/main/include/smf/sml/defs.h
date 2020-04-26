@@ -229,6 +229,25 @@ namespace node
 			RESERVED
 		};
 
+		constexpr std::uint8_t get_bit_position(role r)
+		{
+			switch (r) {
+
+			case role::GUEST:	return 1u;
+			case role::USER:	return 2u;
+			case role::GW_OPERATOR:	return 4u;
+			case role::DEV_OPERATOR:	return 8u;
+			case role::SERVICE_PROVIDER:	return 16u;
+			case role::SUPPLIER:	return 32u;
+			case role::MANUFACTURER:	return 64u;
+			case role::RESERVED:	return 128u;
+			default:
+				break;
+			}
+
+			return 0u;	//	invalid value
+		}
+
 	}	//	sml
 }	//	node
 

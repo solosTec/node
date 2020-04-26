@@ -100,7 +100,13 @@ namespace node
 			, obis code
 			, cyng::tuple_t params);
 
-		/**
+		cyng::tuple_t get_proc_parameter_response(cyng::buffer_t server_id
+			, obis_path_t path
+			, cyng::tuple_t params);
+
+
+		/** @brief append a child list (SML_Tree) at the specified path.
+		 *
 		 * msg must be of type SML_GetProcParameter.Res
 		 *
 		 * @param msg SML_GetProcParameter.Res
@@ -111,7 +117,8 @@ namespace node
 			, std::initializer_list<obis> path
 			, cyng::tuple_t&& val);
 
-		/**
+		/** @brief append a child list (SML_Tree) at the specified path.
+		 *
 		 * msg must be of type SML_GetProcParameter.Res
 		 *
 		 * @param msg SML_GetProcParameter.Res
@@ -123,6 +130,10 @@ namespace node
 			, std::initializer_list<obis> path
 			, cyng::tuple_t&& val
 			, cyng::tuple_t&& child);
+
+		bool set_get_proc_response_attribute(cyng::tuple_t& msg
+			, std::initializer_list<obis> path
+			, cyng::tuple_t&& val);
 
 		/**
 		 * msg must be of type SML_GetProfileList.Res
@@ -238,8 +249,11 @@ namespace node
 		cyng::tuple_t child_list_tree(obis, cyng::tuple_t value);
 		cyng::tuple_t child_list_tree(obis, std::initializer_list<cyng::tuple_t> list);
 
-		//cyng::tuple_t tree(obis code, cyng::tuple_t param, cyng::tuple_t list);
-		//cyng::tuple_t tree(obis code, cyng::tuple_t param, std::initializer_list<cyng::tuple_t> list);
+		/**
+		 * Helper function to transform a list of tuples into an single tuple
+		 * of objects.
+		 */
+		cyng::tuple_t to_tuple(std::initializer_list<cyng::tuple_t> list);
 
 		cyng::object period_entry(obis
 			, std::uint8_t unit

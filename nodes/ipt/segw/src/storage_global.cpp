@@ -280,7 +280,7 @@ namespace node
 
 			//
 			//	Push operations
-			//	81 81 C7 8A 01 FF - OBIS_PUSH_OPERATIONS
+			//	81 81 C7 8A 01 FF - ROOT_PUSH_OPERATIONS
 			//	select hex(serverID), nr, gen, interval, delay, hex(source), target, hex(service) from TPushOps;
 			//
 			cyng::table::make_meta_table_gen<2, 6>("TPushOps",
@@ -545,7 +545,7 @@ namespace node
 							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_NTP, 7u);
 							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_DEVICE_TIME, 7u);
 							insert_priv(stmt, 1u, srv_id, sml::OBIS_CLASS_OP_LOG, 7u);
-							insert_priv(stmt, 1u, srv_id, sml::OBIS_PUSH_OPERATIONS, 7u);
+							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_PUSH_OPERATIONS, 7u);
 							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_IF, 7u);
 							insert_priv(stmt, 1u, srv_id, sml::OBIS_FTP_UPDATE, 7u);
 

@@ -44,6 +44,7 @@ namespace node
 			, crc_on_(true)
 			, counter_(0)
 			, stack_()
+			, has_frame_(false)
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
 		}
@@ -68,6 +69,7 @@ namespace node
 			, crc_on_(true)
 			, counter_(0)
 			, stack_()
+			, has_frame_(false)
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
 		}
@@ -256,6 +258,14 @@ namespace node
 
 		parser::state parser::state_visitor::operator()(sml_start& s) const
 		{
+			//if (parser_.is_msg_complete()) {
+
+			//	//
+			//	//	ignore CRC data as long as pos_ is not aligned
+			//	//
+			//	return state::START;
+			//}
+
 			if (c_ == ESCAPE_SIGN)
 			{
 				return state::ESC;
@@ -671,6 +681,7 @@ namespace node
 				s.counter_++;
 				if (s.counter_ == 4)
 				{
+					parser_.has_frame_ = true;
 					return state::PROPERTY;
 				}
 			}
@@ -1008,6 +1019,17 @@ namespace node
 					stack_.push(list(tl_.length_));
 				}
 				return state::START;
+			case SML_EOM:
+				if (verbose_)
+				{
+					std::cerr << prefix()
+						<< "unexpected EOM (depth: "
+						<< stack_.size()
+						<< ")"
+						<< std::endl
+						;
+				}
+				return state::START;
 			default:
 				if (!data_only_) {
 					std::stringstream ss;
@@ -1252,6 +1274,22 @@ namespace node
 				}
 			}
 			return ss.str();
+		}
+
+		bool parser::is_msg_complete() const
+		{
+			if (stack_.size() == 1) {
+				if ((stack_.top().target_ == 6) && (stack_.top().values_.size() == 5)) {
+					//
+					//	pos_ has to be aligned of boundary (mod 4)
+					//
+					return (has_frame_)
+						? ((pos_ + 2) % 4 != 0)
+						: true
+						;
+				}
+			}
+			return false;
 		}
 
 		const char* parser::get_state_name(state e)

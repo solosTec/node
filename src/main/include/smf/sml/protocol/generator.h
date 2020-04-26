@@ -312,6 +312,11 @@ namespace node
 				, cyng::buffer_t server_id
 				, obis);
 
+			cyng::tuple_t empty_get_proc_param_response(std::string trx
+				, cyng::buffer_t server_id
+				, obis_path_t);
+
+
 			/**
 			 * Generate an empty SML_GetProfileList_Res with the specified tree path
 			 *

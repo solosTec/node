@@ -146,7 +146,7 @@ namespace node
 			case CODE_STORAGE_TIME_SHIFT:	//	0x0080800000FF
 				storage_time_shift(trx, srv_id);
 				break;
-			case CODE_PUSH_OPERATIONS:	//	0x8181C78A01FF
+			case CODE_ROOT_PUSH_OPERATIONS:	//	0x8181C78A01FF
 				config_data_collector_.get_push_operations(trx, srv_id);
 				break;
 			case CODE_LIST_SERVICES:	//	0x990000000004

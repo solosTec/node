@@ -80,7 +80,7 @@ namespace node
 				case CODE_STORAGE_TIME_SHIFT:	//	0x0080800000FF
 					storage_time_shift(pos, end, trx, srv_id, user, pwd, param);
 					break;
-				case CODE_PUSH_OPERATIONS:	//	0x8181C78A01FF
+				case CODE_ROOT_PUSH_OPERATIONS:	//	0x8181C78A01FF
 					BOOST_ASSERT(pos->to_str() == param.first);
 					if (pos != end)	config_data_collector_.set_push_operations(srv_id, user, pwd, obis(*pos).get_data().at(obis::VG_STORAGE), cyng::to_param_map(param.second));
 					break;

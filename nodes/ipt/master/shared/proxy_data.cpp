@@ -215,7 +215,7 @@ namespace node
 		}
 		else if (sml::OBIS_ROOT_SENSOR_PARAMS == root
 			|| sml::OBIS_ROOT_DATA_COLLECTOR == root
-			|| sml::OBIS_PUSH_OPERATIONS == root) {
+			|| sml::OBIS_ROOT_PUSH_OPERATIONS == root) {
 
 			auto const meter = cyng::value_cast<std::string>(reader.get("meter"), "");
 			auto const r = sml::parse_srv_id(meter);

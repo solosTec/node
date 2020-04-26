@@ -254,7 +254,7 @@ namespace node
     {
         switch (code.to_uint64()) {
         case sml::CODE_ROOT_SECURITY:
-        case sml::CODE_PUSH_OPERATIONS:
+        case sml::CODE_ROOT_PUSH_OPERATIONS:
         case sml::CODE_ROOT_GPRS_PARAM:
         case sml::CODE_ROOT_IPT_PARAM:
         case sml::CODE_ROOT_INVISIBLE_DEVICES:

@@ -138,7 +138,7 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, C7, 86, 17, FF, PROFILE_1_YEAR);	//	annually recorded meter readings
 		OBIS_CODE_DEFINITION(81, 81, C7, 86, 18, FF, PROFILE_INITIAL);	//	81, 81, C7, 86, 18, NN with NN = 01 .. 0A for open registration periods
 
-		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 01, FF, PUSH_OPERATIONS);	//	push root element 
+		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 01, FF, ROOT_PUSH_OPERATIONS);	//	push root element 
 
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 02, FF, PUSH_INTERVAL);	//	in seconds
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 03, FF, PUSH_DELAY);	//	in seconds
@@ -221,7 +221,8 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, 81, 60, FF, FF, ROOT_ACCESS_RIGHTS);	//	see: 7.3.1.2 Datenstruktur zur Parametrierung der Rollen / Benutzerrechte 
 
 		OBIS_CODE_DEFINITION(81, 81, 81, 61, FF, FF, ACCESS_USER_NAME);	//	user name for access
-		OBIS_CODE_DEFINITION(81, 81, 81, 62, FF, FF, ACCESS_PASSWORD);	//	encrypted
+		OBIS_CODE_DEFINITION(81, 81, 81, 62, FF, FF, ACCESS_PASSWORD);	//	SHA256 encrypted
+		OBIS_CODE_DEFINITION(81, 81, 81, 63, FF, FF, ACCESS_PUBLIC_KEY);
 
 		OBIS_CODE_DEFINITION(81, 81, C7, 81, 01, FF, ROOT_FILE_TRANSFER);	//	7.3.2.28 Datenstruktur zum remote Firmware-/Datei-Download (Übertragung) 
 		OBIS_CODE_DEFINITION(81, 81, C7, 81, 0E, FF, DATA_FIRMWARE);
