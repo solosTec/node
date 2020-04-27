@@ -48,16 +48,16 @@ namespace node
 			, std::string pwd)
 		{
 			switch (code.to_uint64()) {
-			case 0x810060050000:	//	OBIS_CLASS_OP_LOG_STATUS_WORD
+			case CODE_CLASS_OP_LOG_STATUS_WORD:	//	81 00 60 05 00 00
 				class_op_log_status_word(trx, srv_id);
 				break;
-			case 0x8181C78201FF:	//	OBIS_CODE_ROOT_DEVICE_IDENT
+			case CODE_ROOT_DEVICE_IDENT:	//	81 81 C7 82 01 FF
 				code_root_device_ident(trx, srv_id);
 				break;
-			case 0x8181C78810FF:	//	OBIS_CODE_ROOT_DEVICE_TIME
+			case CODE_ROOT_DEVICE_TIME:	//	81 81 C7 88 10 FF
 				code_root_device_time(trx, srv_id);
 				break;
-			case 0x8181C78801FF:	//	OBIS_CODE_ROOT_NTP
+			case CODE_ROOT_NTP:	//	81 81 C7 88 01 FF
 				code_root_ntp(trx, srv_id);
 				break;
 			case CODE_ROOT_ACCESS_RIGHTS:	//	81 81 81 60 FF FF
@@ -99,11 +99,11 @@ namespace node
 			case 0x0080800010FF:	//	OBIS_ROOT_MEMORY_USAGE
 				code_root_memory_usage(trx, srv_id);
 				break;
-			case 0x81811106FFFF:	//	OBIS_ROOT_ACTIVE_DEVICES
-				code_root_active_devices(trx, srv_id);
-				break;
-			case 0x81811006FFFF:	//	OBIS_ROOT_VISIBLE_DEVICES
+			case CODE_ROOT_VISIBLE_DEVICES:	//	81 81 10 06 FF FF
 				code_root_visible_devices(trx, srv_id);
+				break;
+			case CODE_ROOT_ACTIVE_DEVICES:	//	81 81 11 06 FF FF
+				code_root_active_devices(trx, srv_id);
 				break;
 			case 0x81811206FFFF:	//	OBIS_ROOT_DEVICE_INFO
 				code_root_device_info(trx, srv_id);
@@ -120,7 +120,7 @@ namespace node
 			case 0x0080800000FF:	//	STORAGE_TIME_SHIFT
 				storage_time_shift(trx, srv_id);
 				break;
-			case CODE_ROOT_PUSH_OPERATIONS:	//	0x8181C78A01FF
+			case CODE_ROOT_PUSH_OPERATIONS:	//	81 81 C7 8A 01 FF
 				push_operations(trx, srv_id);
 				break;
 			case 0x990000000004:	//	LIST_SERVICES
@@ -132,7 +132,7 @@ namespace node
 			case 0x81050D0700FF:	//	IF_EDL - M-Bus EDL (RJ10)
 				code_if_edl(trx, srv_id);
 				break;
-			case 0x00B000020000:	//	CLASS_MBUS
+			case CODE_CLASS_MBUS:	//	00 B0 00 02 00 00 
 				class_mbus(trx, srv_id);
 				break;
 			default:

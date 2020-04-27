@@ -81,8 +81,13 @@ namespace node
 		private:
 			void collect_role(cyng::tuple_t& msg
 				, role
-				//, std::uint8_t role
 				, cyng::store::table const* tblUser
+				, cyng::store::table const* tblPriv) const;
+
+			void collect_privs(cyng::tuple_t& msg
+				, obis code
+				, std::uint8_t user
+				, cyng::buffer_t id
 				, cyng::store::table const* tblPriv) const;
 
 		private:

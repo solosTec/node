@@ -267,20 +267,45 @@ namespace node
 			return server_id_;
 		}
 
-		auto id = cyng::make_buffer({});
+#ifdef __DEBUG
+		if (idx == 2) return cyng::make_buffer({ 0x01, 0xe6, 0x1e, 0x79, 0x42, 0x68, 0x00, 0x02, 0x0e });
+#endif
+
+		std::set<cyng::buffer_t> s;
 
 		read_table("_DeviceMBUS", [&](cyng::store::table const* tbl) {
 
-			auto const rec = tbl->nth_record(idx - 1);
-			if (!rec.empty()) {
-				id = cyng::to_buffer(rec["serverID"]);
-			}
+			tbl->loop([&](cyng::table::record const& rec) {
+				s.insert(cyng::to_buffer(rec["serverID"]));
+				return true;
+				});
 
 			});
 
-		return id;
+		return (idx < s.size())
+			? reshuffle(std::vector<cyng::buffer_t>(s.begin(), s.end())).at(idx - 1)
+			: cyng::make_buffer({})
+			;
 	}
 
+	std::vector<cyng::buffer_t> cache::reshuffle(std::vector<cyng::buffer_t>&& vec) const
+	{
+		//
+		//	move server id to last position
+		//
+		auto const pos = std::find(std::begin(vec), std::end(vec), server_id_);
+		if (pos != vec.end()) {
+			//	server at first position in vector
+			std::iter_swap(pos, vec.begin());
+		}
+
+		//
+		// reverse ordering
+		//
+		std::reverse(std::begin(vec), std::end(vec));
+
+		return vec;
+	}
 
 	//
 	//	initialize static member
@@ -633,7 +658,7 @@ namespace node
 		//
 		//	a set gives the guarantie that all entries are unique
 		//
-		std::set<cyng::buffer_t> r;
+		std::set<cyng::buffer_t> s;
 		if (tbl && boost::algorithm::equals(tbl->meta().get_name(), "_Privileges")) {
 
 			tbl->loop([&](cyng::table::record const& rec) {
@@ -642,7 +667,7 @@ namespace node
 				if (user == nr) {
 
 					auto const id = cyng::to_buffer(rec["meter"]);
-					r.emplace(id);
+					s.emplace(id);
 				}
 				return true;
 			});
@@ -651,7 +676,7 @@ namespace node
 		//
 		//	convert to vector
 		//
-		return std::vector<cyng::buffer_t>(r.begin(), r.end());
+		return std::vector<cyng::buffer_t>(s.begin(), s.end());
 	}
 
 }

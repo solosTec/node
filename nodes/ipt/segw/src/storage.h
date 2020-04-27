@@ -223,10 +223,6 @@ namespace node
 #endif
 
 	private:
-		/**
-		 * build up meta data
-		 */
-		static cyng::table::meta_map_t get_meta_map();
 
 		/**
 		 * create command for specified table
@@ -239,5 +235,11 @@ namespace node
 		static cyng::table::meta_map_t const mm_;
 		cyng::db::session_pool pool_;
 	};
+
+	/**
+	 * build up meta data
+	 */
+	cyng::table::meta_map_t get_meta_map();
+
 }
 #endif

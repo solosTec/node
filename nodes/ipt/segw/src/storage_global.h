@@ -50,6 +50,11 @@ namespace node
 	bool dump_push_ops(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
 
 	/**
+	 * List all visible and activated devices
+	 */
+	bool dump_devices(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
+
+	/**
 	 * List configuration to console
 	 */
 	bool list_config_data(std::ostream& os, cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);

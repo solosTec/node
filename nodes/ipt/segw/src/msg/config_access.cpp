@@ -85,50 +85,17 @@ namespace node
 				//
 				auto const id = cache_.get_meter_by_id(meter);
 
+				//
+				//	set server ID / meter
+				//
+				set_get_proc_response_attribute(msg, { path.at(3) }, make_value(id));
+
 				cache_.read_tables("_User", "_Privileges", [&](cyng::store::table const* tblUser, cyng::store::table const* tblPriv) {
 
-					//
-					//	set server ID / meter
-					//
-					set_get_proc_response_attribute(msg, { path.at(3) }, make_value(srv_id));
-
-					//collect_privs(msg, role, user, meter, tblUser, tblPriv);
+					collect_privs(msg, path.at(3), user, id, tblPriv);
 
 				});
 
-				//CYNG_LOG_DEBUG(logger_, "get access rights (2-long-path) "
-				//	<< cyng::io::to_str(msg));
-
-				append_get_proc_response(msg, {
-						path.at(3),
-						OBIS_SECONDS_INDEX
-					}, make_value(7));
-
-				//CYNG_LOG_DEBUG(logger_, "get access rights (3-long-path) "
-				//	<< cyng::io::to_str(msg));
-
-				append_get_proc_response(msg, {
-						path.at(3),
-						OBIS_CURRENT_UTC
-					}, make_value(7));
-
-				append_get_proc_response(msg, {
-						path.at(3),
-						OBIS_TZ_OFFSET
-					}, make_value(7));
-
-				append_get_proc_response(msg, {
-						path.at(3),
-						OBIS_CLASS_OP_LOG_STATUS_WORD
-					}, make_value(7));
-
-				append_get_proc_response(msg, {
-						path.at(3),
-						OBIS_ROOT_CUSTOM_PARAM
-					}, make_value(1));
-
-				//CYNG_LOG_DEBUG(logger_, "get access rights (4-long-path) "
-				//	<< cyng::io::to_str(msg));
 			}
 			else {
 
@@ -146,8 +113,31 @@ namespace node
 
 		}
 
+		void config_access::collect_privs(cyng::tuple_t& msg
+			, obis code
+			, std::uint8_t user
+			, cyng::buffer_t id
+			, cyng::store::table const* tblPriv) const
+		{
+			tblPriv->loop([&](cyng::table::record const& rec) {
+				auto const u = cyng::value_cast<std::uint8_t>(rec["user"], 0);
+				auto const m = cyng::to_buffer(rec["meter"]);
+				if ((u == user) && (m == id)) {
+
+					obis const reg(cyng::to_buffer(rec["reg"]));
+					auto const priv = cyng::value_cast<std::uint8_t>(rec["priv"], 0);
+
+					append_get_proc_response(msg, {
+							code,
+							reg
+						}, make_value(priv));
+				}
+				return true;
+			});
+		}
+
+
 		void config_access::collect_role(cyng::tuple_t& msg
-			//, std::uint8_t role
 			, role e
 			, cyng::store::table const* tblUser
 			, cyng::store::table const* tblPriv) const
@@ -212,10 +202,31 @@ namespace node
 						<< ") "
 						<< cyng::io::to_str(msg));
 
+#ifdef _DEBUG
+					//	demo code
+
+					std::uint8_t idx{ 2 };
+					append_get_proc_response(msg, {
+						OBIS_ROOT_ACCESS_RIGHTS,
+						make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
+						make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
+						make_obis(0x81, 0x81, 0x81, 0x64, 0x01, idx)
+						}, make_value(cyng::make_buffer({ 0x01, 0xe6, 0x1e, 0x79, 0x42, 0x68, 0x00, 0x02, 0x0e })));
+
+					--idx;
+					append_get_proc_response(msg, {
+						OBIS_ROOT_ACCESS_RIGHTS,
+						make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
+						make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
+						make_obis(0x81, 0x81, 0x81, 0x64, 0x01, idx)
+						}, make_value(cache_.get_srv_id()));
+#endif
+
 					//
 					//	list of devices
 					//
-					auto const meters = collect_meters_of_user(tblPriv, nr);
+					/*
+					auto const meters = cache_.reshuffle(collect_meters_of_user(tblPriv, nr));
 
 					CYNG_LOG_DEBUG(logger_, "get access rights (X-"
 						<< +nr
@@ -223,7 +234,7 @@ namespace node
 						<< meters.size()
 						<< " meter(s)");
 
-					std::uint8_t idx{ 1 };
+					std::uint8_t idx{ static_cast<std::uint8_t>(meters.size()) };
 					for(auto const& id: meters) {
 
 						append_get_proc_response(msg, {
@@ -233,9 +244,9 @@ namespace node
 							make_obis(0x81, 0x81, 0x81, 0x64, 0x01, idx)
 							}, make_value(id));	
 
-						++idx;
+						--idx;
 					}
-
+					*/
 					//
 					//	update counter
 					//

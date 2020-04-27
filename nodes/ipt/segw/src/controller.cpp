@@ -504,6 +504,10 @@ namespace node
 				? EXIT_SUCCESS
 				: EXIT_FAILURE
 				;
+			else if (2 == profile)	return (dump_devices(cyng::to_param_map(tpl), dom))
+				? EXIT_SUCCESS
+				: EXIT_FAILURE
+				;
 			return (dump_profile_data(cyng::to_param_map(tpl), dom, profile))
 				? EXIT_SUCCESS
 				: EXIT_FAILURE

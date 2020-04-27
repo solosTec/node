@@ -549,6 +549,9 @@ namespace node
 							insert_priv(stmt, 1u, srv_id, sml::OBIS_ROOT_IF, 7u);
 							insert_priv(stmt, 1u, srv_id, sml::OBIS_FTP_UPDATE, 7u);
 
+#ifdef _DEBUG
+							insert_priv(stmt, 1u, cyng::make_buffer({ 0x01, 0xe6, 0x1e, 0x79, 0x42, 0x68, 0x00, 0x02, 0x0e }), sml::OBIS_DATA_COLLECTOR_OBIS, 7u);
+#endif
 							stmt->close();
 						}
 					}
@@ -1247,7 +1250,6 @@ namespace node
 					auto const nr = cyng::value_cast<std::uint8_t>(res->get(2, cyng::TC_UINT8, 0), 0);
 					auto const interval = cyng::value_cast<std::uint32_t>(res->get(3, cyng::TC_UINT32, 0), 0);
 					auto const delay = cyng::value_cast<std::uint32_t>(res->get(4, cyng::TC_UINT32, 0), 0);
-					//sml::obis const source(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
 					auto const target = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
 					sml::obis const service(cyng::to_buffer(res->get(7, cyng::TC_BUFFER, 6)));
 					auto const tsdix = cyng::value_cast<std::uint64_t>(res->get(8, cyng::TC_UINT64, 0), 0);	//	lowerBound
@@ -1271,6 +1273,68 @@ namespace node
 		}
 		return false;
 	}
+
+	bool dump_devices(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom)
+	{
+		//
+		//	create a database session
+		//
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		cyng::db::session s(con_type);
+		auto r = s.connect(cfg);
+		if (r.second) {
+
+			auto const mm = get_meta_map();
+
+			cyng::table::meta_table_ptr meta = mm.at("TDeviceMBUS");
+			cyng::sql::command cmd(meta, s.get_dialect());
+			auto const sql = cmd.select().all().skip().order_by("serverId")();
+
+			auto stmt = s.create_statement();
+			std::pair<int, bool> r = stmt->prepare(sql);
+			if (r.second) {
+
+				//
+				//	read all results
+				//
+				std::size_t counter{ 0 };
+				while (auto res = stmt->get_result()) {
+
+					//	serverID
+					auto const srv_id = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
+					//	gen
+					//	lastSeen
+					auto const lastSeen = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
+					//	class
+					auto const devClass = cyng::value_cast<std::string>(res->get(4, cyng::TC_STRING, 0), "");
+					//	active
+					auto const active = cyng::value_cast(res->get(5, cyng::TC_BOOL, 0), false);
+					//	descr
+					auto const descr = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
+					//	status
+					auto const status = cyng::value_cast<std::uint32_t>(res->get(7, cyng::TC_UINT32, 0), 0);
+
+					std::cout
+						<< sml::from_server_id(srv_id)
+						<< ", active: "
+						<< (active ? "Y" : "N")
+						<< ", last seen @"
+						<< cyng::to_str(lastSeen)
+						<< ", status: "
+						<< status
+						<< " - "
+						<< descr
+						<< std::endl
+						;
+
+				}
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	std::ostream& list_value(std::ostream& os, std::string val, std::string def)
 	{
 		if (boost::algorithm::equals(val, def)) {

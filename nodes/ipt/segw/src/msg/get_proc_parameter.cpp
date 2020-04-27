@@ -125,16 +125,16 @@ namespace node
 			case CODE_ROOT_MEMORY_USAGE:	//	0x0080800010FF
 				code_root_memory_usage(trx, srv_id);
 				break;
-			case CODE_ROOT_ACTIVE_DEVICES:	//	0x81811106FFFF
-				code_root_active_devices(trx, srv_id);
-				break;
-			case CODE_ROOT_VISIBLE_DEVICES:	//	0x81811006FFFF
+			case CODE_ROOT_VISIBLE_DEVICES:	//	81 81 10 06 FF FF
 				code_root_visible_devices(trx, srv_id);
 				break;
-			case CODE_ROOT_DEVICE_INFO:	//	0x81811206FFFF
+			case CODE_ROOT_ACTIVE_DEVICES:	//	81 81 11 06 FF FF
+				code_root_active_devices(trx, srv_id);
+				break;
+			case CODE_ROOT_DEVICE_INFO:	//	81 81 12 06 FF FF
 				code_root_device_info(trx, srv_id);
 				break;
-			case CODE_ROOT_SENSOR_PARAMS:	//	0x8181C78600FF
+			case CODE_ROOT_SENSOR_PARAMS:	//	81 81 C7 86 00 FF
 				config_sensor_params_.get_proc_params(trx, srv_id);
 				break;
 			case CODE_ROOT_DATA_COLLECTOR:	//	 0x8181C78620FF (Datenspiegel)
@@ -584,7 +584,6 @@ namespace node
 			//
 			//	list all active M-Bus devices
 			//
-			cyng::buffer_t tmp;
 			cache_.loop("_DeviceMBUS", [&](cyng::table::record const& rec) {
 
 				//
@@ -595,7 +594,7 @@ namespace node
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, 0xFF),
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, store),
 					OBIS_SERVER_ID
-					}, make_value(cyng::value_cast(rec["serverID"], tmp)));
+					}, make_value(cyng::to_buffer(rec["serverID"])));
 
 				//
 				//	device class
@@ -634,7 +633,7 @@ namespace node
 			//
 			sml_gen_.append(std::move(msg));
 
-			CYNG_LOG_TRACE(logger_, "code_root_visible_devices: "
+			CYNG_LOG_TRACE(logger_, "ROOT_VISIBLE_DEVICES: "
 				<< cyng::io::to_str(msg));
 
 		}

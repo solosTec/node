@@ -32,15 +32,6 @@ namespace node
 		: pool_(ios, type)
 	{}
 
-	cyng::table::meta_map_t storage::get_meta_map()
-	{
-		cyng::table::meta_map_t mm;
-		for (auto tbl : create_storage_meta_data()) {
-			mm.emplace(tbl->get_name(), tbl);
-		}
-		return mm;
-	}
-
 	bool storage::start(cyng::param_map_t cfg)
 	{
 		return pool_.start(cfg);
@@ -891,9 +882,19 @@ namespace node
 		get_session().rollback();
 	}
 
+	cyng::table::meta_map_t get_meta_map()
+	{
+		auto const md = create_storage_meta_data();
+		cyng::table::meta_map_t mm;
+		std::transform(md.begin(), md.end(), std::inserter(mm, std::end(mm)), [](cyng::table::meta_table_ptr tbl) {
+			return cyng::table::meta_map_t::value_type{ tbl->get_name(), tbl };
+			});
+		return mm;
+	}
+
 	//
 	//	initialize static member
 	//
-	cyng::table::meta_map_t const storage::mm_(storage::get_meta_map());
+	cyng::table::meta_map_t const storage::mm_(get_meta_map());
 
 }

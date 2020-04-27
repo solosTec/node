@@ -168,6 +168,8 @@ namespace node
 		 */
 		cyng::buffer_t get_meter_by_id(std::uint8_t) const;
 
+		std::vector<cyng::buffer_t> reshuffle(std::vector<cyng::buffer_t>&&) const;
+
 	private:
 		/**
 		 * build up meta data
@@ -227,7 +229,9 @@ namespace node
 	}
 
 	/**
-	 * Collect all meters that available for the specified user
+	 * Collect all meters that available for the specified user.
+	 * The vector has to provide a special ordering with the gateway
+	 * as last element.
 	 */
 	std::vector<cyng::buffer_t> collect_meters_of_user(cyng::store::table const* tbl, std::uint8_t);
 }
