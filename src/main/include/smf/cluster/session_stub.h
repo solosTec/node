@@ -129,6 +129,10 @@ namespace node
 		std::size_t sml_counter_;
 		boost::filesystem::path dir_out_;
 #endif
+		/**
+		 * device name
+		 */
+		std::string name_;
 
 	};
 }

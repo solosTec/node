@@ -6,8 +6,11 @@
  */ 
 
 #include <smf/cluster/session_stub.h>
+
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/asio_domain.h>
+#include <cyng/tuple_cast.hpp>
+
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
 #endif
@@ -37,6 +40,7 @@ namespace node
 		, sml_counter_{ 0u }
 		, dir_out_()
 #endif
+		, name_(boost::uuids::to_string(tag))
 	{
 		//
 		//	register logger domain
@@ -58,11 +62,36 @@ namespace node
 			CYNG_LOG_DEBUG(logger_, vm_.tag() << " session.state.pending ON");
 		});
 
+		vm_.register_function("session.update.name", 1, [&](cyng::context& ctx) {
+
+			auto const frame = ctx.get_frame();
+			auto const tpl = cyng::tuple_cast<
+				std::string			//	[0] device name
+			>(frame);
+
+			//
+			//	set session name
+			//
+			name_ = std::get<0>(tpl);
+			CYNG_LOG_DEBUG(logger_, vm_.tag() << " - " << name_);
+
+#ifdef SMF_IO_LOG
+			std::stringstream ss;
+			ss
+				<< "ipt-"
+				<< name_
+				;
+			boost::filesystem::path const sub_dir(ss.str());
+			dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
+#endif
+
+		});
+
 #ifdef SMF_IO_LOG
 		std::stringstream ss;
 		ss
 			<< "ipt-"
-			<< boost::uuids::to_string(vm_.tag())
+			<< name_
 			;
 		boost::filesystem::path const sub_dir(ss.str());
 		dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
@@ -200,7 +229,7 @@ namespace node
 					std::stringstream ss;
 					ss
 						<< "ipt-"
-						<< boost::uuids::to_string(vm_.tag()) 
+						<< name_
 						<< "-"
 						<< name
 						;
@@ -223,7 +252,7 @@ namespace node
 						std::stringstream ss;
 						ss
 							<< "ipt-"
-							<< boost::uuids::to_string(vm_.tag())
+							<< name_
 							<< "-"
 							<< name
 							;
@@ -326,9 +355,25 @@ namespace node
 						if (of.is_open())
 						{
 							//
-							//	write binary data
+							//	Write binary data and remove escaped characters.
+							//	This simplifies analysing with an SML parser.
 							//
-							of.write(buf.data(), buf.size());
+							bool esc{ false };
+							for (auto const c : buf) {
+								if (c == 0x1b) {
+									if (esc) {
+										esc = false;
+										of.put(c);
+									}
+									else {
+										esc = true;
+									}
+								}
+								else {
+									of.put(c);
+								}
+							}
+							//of.write(buf.data(), buf.size());
 
 							CYNG_LOG_TRACE(logger_, "write SML debug log " << file_name);
 							of.close();

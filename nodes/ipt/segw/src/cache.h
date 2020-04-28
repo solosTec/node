@@ -168,6 +168,11 @@ namespace node
 		 */
 		cyng::buffer_t get_meter_by_id(std::uint8_t) const;
 
+		/**
+		 * This method reverses the ordering of the vector. If the vector
+		 * contains the server/gateway ID it will be moved to the end 
+		 * of the vector.
+		 */
 		std::vector<cyng::buffer_t> reshuffle(std::vector<cyng::buffer_t>&&) const;
 
 	private:
@@ -229,7 +234,7 @@ namespace node
 	}
 
 	/**
-	 * Collect all meters that available for the specified user.
+	 * Collects all meters that are available for the specified user.
 	 * The vector has to provide a special ordering with the gateway
 	 * as last element.
 	 */

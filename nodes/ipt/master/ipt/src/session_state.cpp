@@ -437,6 +437,10 @@ namespace node
 				//
 				prg << cyng::generate_invoke_unwinded("session.start.proxy");
 
+				//
+				//	update device/account name
+				//
+				prg << cyng::generate_invoke_unwinded("session.update.name", evt.name_);
 			}
 
 			//

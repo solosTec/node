@@ -380,7 +380,8 @@ namespace node
 
 			if (task_db_.find(std::get<0>(tpl)) != task_db_.end()) {
 
-				CYNG_LOG_WARNING(logger_, "session.store.relation - slot "
+				CYNG_LOG_WARNING(logger_, ctx.get_name() 
+					<< " - slot "
 					<< +std::get<0>(tpl)
 					<< " already occupied with #"
 					<< std::get<1>(tpl)
@@ -393,7 +394,8 @@ namespace node
 					, std::forward_as_tuple(std::get<0>(tpl))
 					, std::forward_as_tuple(std::get<1>(tpl), std::get<2>(tpl)));
 
-				CYNG_LOG_INFO(logger_, "session.store.relation "
+				CYNG_LOG_INFO(logger_, ctx.get_name()
+					<< " - "
 					<< +std::get<0>(tpl)
 					<< " => #"
 					<< std::get<1>(tpl)
@@ -406,7 +408,7 @@ namespace node
 
 		void session::remove_relation(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
+			auto const frame = ctx.get_frame();
 			auto const tpl = cyng::tuple_cast<
 				std::size_t			//	[0] task id
 			>(frame);

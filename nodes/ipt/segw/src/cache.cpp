@@ -267,10 +267,6 @@ namespace node
 			return server_id_;
 		}
 
-#ifdef __DEBUG
-		if (idx == 2) return cyng::make_buffer({ 0x01, 0xe6, 0x1e, 0x79, 0x42, 0x68, 0x00, 0x02, 0x0e });
-#endif
-
 		std::set<cyng::buffer_t> s;
 
 		read_table("_DeviceMBUS", [&](cyng::store::table const* tbl) {
