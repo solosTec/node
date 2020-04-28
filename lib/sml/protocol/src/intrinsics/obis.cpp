@@ -107,7 +107,7 @@ namespace node
 			return *this;
 		}
 
-		std::uint32_t obis::get_medium() const	
+		std::uint8_t obis::get_medium() const
 		{
 			return value_.at(VG_MEDIUM);
 		}
@@ -143,7 +143,7 @@ namespace node
 			return get_medium() == 0;
 		}
 
-		std::uint32_t obis::get_channel() const
+		std::uint8_t obis::get_channel() const
 		{
 				return value_.at(VG_CHANNEL);
 		}
@@ -182,7 +182,7 @@ namespace node
 			return "reserved";
 		}
 
-		std::uint32_t obis::get_indicator() const 
+		std::uint8_t obis::get_indicator() const
 		{
 			return value_.at(VG_INDICATOR);
 		}
@@ -318,17 +318,17 @@ namespace node
 			return "reserved (gas)";
 		}
 
-		std::uint32_t obis::get_mode() const 
+		std::uint8_t obis::get_mode() const
 		{
 			return value_.at(VG_MODE);
 		}
 
-		std::uint32_t obis::get_quantities() const 
+		std::uint8_t obis::get_quantities() const
 		{
 			return value_.at(VG_QUANTITY);
 		}
 
-		std::uint32_t obis::get_storage() const 
+		std::uint8_t obis::get_storage() const
 		{
 			return value_.at(VG_STORAGE);
 		}

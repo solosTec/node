@@ -207,7 +207,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	//	-- slot[3]: GetProcParam.Re
+	//	-- slot[3]: GetProcParam.Res
 	cyng::continuation gateway_proxy::process(std::string trx
 		, std::uint8_t group
 		, cyng::buffer_t srv_id
@@ -223,6 +223,15 @@ namespace node
 
 		auto const pos = output_map_.find(trx);
 		if (pos != output_map_.end()) {
+
+			CYNG_LOG_DEBUG(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> GetProcParam.Res "
+				<< trx
+				<< " - "
+				<< cyng::io::to_str(pos->second.get_params()));
 
 			//
 			//	get root path
@@ -1752,14 +1761,14 @@ namespace node
 					<< "> received access rights of "
 					<< config_cache_.get_server()
 					<< ", "
-					<< output_map_.size()
-					<< "/"
-					<< open_requests_
-					<< " request(s) are pending");
+					//	contains the parameters index / total size / device nr 
+					//	{("complete":true),("idx":5),("load":100),("nr":10),("total":6)}
+					<< cyng::io::to_str(prx.get_params()));
 
 				//
 				//	send data back
 				//
+				auto const pm = cyng::to_param_map(prx.get_params());
 				bus_->vm_.async_run(bus_res_com_proxy(prx.get_tag_ident()
 					, prx.get_tag_source()
 					, prx.get_sequence()
@@ -1768,8 +1777,23 @@ namespace node
 					, "cache.update"
 					, sml::from_server_id(prx.get_srv())
 					, sml::path_to_vector(path)
-					, params));
+					, pm));
 
+				auto const complete = cyng::from_param_map(pm, "complete", false);
+				if (complete) {
+
+					//
+					//	send complete data record
+					//
+					send_access_rights_from_cache(prx.get_tag_ident()
+						, prx.get_tag_source()
+						, prx.get_sequence()
+						, prx.get_tag_origin()
+						, prx.get_key_gw()
+						, prx.get_srv()
+						, prx.get_user()
+						, prx.get_pwd());
+				}
 			}
 			break;
 		default:
@@ -1801,6 +1825,7 @@ namespace node
 	{
 		config_cache_.loop_access_rights([&](std::uint8_t role, std::uint8_t user, std::string name, config_cache::device_map_t devices) {
 
+			std::size_t counter{ 0 };
 			for (auto const& dev : devices) {
 
 				CYNG_LOG_TRACE(logger_, "task #"
@@ -1813,11 +1838,16 @@ namespace node
 					<< +user
 					<< " ("
 					<< name
-					<< "), server: #"
+					<< "), sensor: #"
 					<< dev.first.get_storage()
 					<< " - "
 					<< sml::from_server_id(dev.second));
 
+				auto const pm = cyng::param_map_factory("idx", counter)
+					("total", devices.size())
+					("complete", ((counter + 1) == devices.size()))
+					("load", (((counter + 1) *100) /  devices.size()))
+					("nr", dev.first.get_storage()).operator cyng::param_map_t();
 				place_access_right_request(prx.get_tag_ident()
 					, prx.get_tag_source()
 					, prx.get_sequence()
@@ -1828,7 +1858,10 @@ namespace node
 					, prx.get_key_gw()
 					, prx.get_srv()
 					, prx.get_user()
-					, prx.get_pwd());
+					, prx.get_pwd()
+					, cyng::to_tuple(pm));
+
+				++counter;
 			}
 		});
 	}
@@ -1843,9 +1876,9 @@ namespace node
 		, cyng::vector_t gw
 		, cyng::buffer_t srv_id
 		, std::string name
-		, std::string pwd)
+		, std::string pwd
+		, cyng::tuple_t&& params)
 	{
-		//"path"
 		input_queue_.emplace(tag
 			, source
 			, seq
@@ -1857,7 +1890,7 @@ namespace node
 				, sml::make_obis(0x81, 0x81, 0x81, 0x64, 0x01, meter)
 				})
 			, gw
-			, cyng::tuple_t{}
+			, params
 			, srv_id
 			, name
 			, pwd

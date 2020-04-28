@@ -346,7 +346,8 @@ namespace node
 			, cyng::vector_t gw
 			, cyng::buffer_t srv_id
 			, std::string name
-			, std::string pwd);
+			, std::string pwd
+			, cyng::tuple_t&&);
 
 	private:
 		cyng::async::base_task& base_;

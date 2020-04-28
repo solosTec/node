@@ -113,7 +113,7 @@ namespace node
 			/**
 			 *	@return value group A
 			 */
-			std::uint32_t get_medium() const;
+			std::uint8_t get_medium() const;
 			const char* get_medium_name() const;
 
 			/**
@@ -124,31 +124,31 @@ namespace node
 			/**
 			 *	@return value group B
 			 */
-			std::uint32_t get_channel() const;
+			std::uint8_t get_channel() const;
 			const char* get_channel_name() const;
 
 			/**
 			 *	@return value group C
 			 */
-			std::uint32_t get_indicator() const;
+			std::uint8_t get_indicator() const;
 			const char* get_indicator_name() const;
 
 			/**
 			 *	@return value group D
 			 */
-			std::uint32_t get_mode() const;
+			std::uint8_t get_mode() const;
 
 			/**
 			 *	A value of 0xFF means "don't care".
 			 *	@return value group E
 			 */
-			std::uint32_t get_quantities() const;
+			std::uint8_t get_quantities() const;
 
 			/**
 			 *	A value of 0xFF means "don't care".
 			 *	@return value group F
 			 */
-			std::uint32_t get_storage() const;
+			std::uint8_t get_storage() const;
 
 			/**
 			 * @return a combination of the last two values (group E and F)

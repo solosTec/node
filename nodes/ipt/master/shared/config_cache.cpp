@@ -144,41 +144,39 @@ namespace node
                 //
                 std::uint8_t const role = r.first.get_quantities();
                 auto const pm = cyng::to_param_map(rec_role.second);
-                if (!pm.empty()) {
 
-                    //
-                    //  loop over all "user" of this "role"
-                    //
-                    for (auto const& rec_user : pm) {
+                //
+                //  loop over all "user" of this "role"
+                //
+                for (auto const& rec_user : pm) {
 
-                        //  convert name to OBIS code
-                        auto const r = sml::parse_obis(rec_user.first);
-                        if (r.second) {
+                    //  convert name to OBIS code
+                    auto const r = sml::parse_obis(rec_user.first);
+                    if (r.second) {
 
-                            BOOST_ASSERT(role == r.first.get_quantities());
+                        BOOST_ASSERT(role == r.first.get_quantities());
 
-                            //
-                            //  get user
-                            //
-                            std::uint8_t const user = r.first.get_storage();
-                            auto params = cyng::to_param_map(rec_user.second);
+                        //
+                        //  get user
+                        //
+                        std::uint8_t const user = r.first.get_storage();
+                        auto params = cyng::to_param_map(rec_user.second);
 
-                            //
-                            //  get devices/server
-                            //  walk over the parameter list an select all devices
-                            //
-                            auto const devices = split_list_of_access_rights(params);
+                        //
+                        //  get devices/server
+                        //  walk over the parameter list an select all devices
+                        //
+                        auto const devices = split_list_of_access_rights(params);
 
-                            //
-                            // get value 81818161FFFF
-                            //
-                            auto const name = get_user_name(params);
+                        //
+                        // get value 81818161FFFF
+                        //
+                        auto const name = get_user_name(params);
 
-                            //
-                            //  callback
-                            //
-                            cb(role, user, name, devices);
-                        }
+                        //
+                        //  callback
+                        //
+                        cb(role, user, name, devices);
                     }
                 }
             }
