@@ -71,18 +71,18 @@ namespace node
 			read_body(sp, choice.first, choice.second);
 		}
 
-		void db_exporter::read_body(cyng::db::session sp, sml_message code, cyng::tuple_t const& tpl)
+		void db_exporter::read_body(cyng::db::session sp, message_e code, cyng::tuple_t const& tpl)
 		{
 			switch (code)
 			{
-			case sml_message::OPEN_REQUEST:
+			case message_e::OPEN_REQUEST:
 				//
 				//	reset context
 				//
 				reset();
 				ro_.read_public_open_request(tpl.begin(), tpl.end());
 				break;
-			case sml_message::OPEN_RESPONSE:
+			case message_e::OPEN_RESPONSE:
 
 				//
 				//	set default readout time
@@ -90,33 +90,33 @@ namespace node
 				ro_.set_value("roTime", cyng::make_now());
 				ro_.read_public_open_response(tpl.begin(), tpl.end());
 				break;
-			case sml_message::CLOSE_REQUEST:
+			case message_e::CLOSE_REQUEST:
 				break;
-			case sml_message::CLOSE_RESPONSE:
+			case message_e::CLOSE_RESPONSE:
 				break;
-			case sml_message::GET_PROFILE_PACK_REQUEST:
+			case message_e::GET_PROFILE_PACK_REQUEST:
 				break;
-			case sml_message::GET_PROFILE_PACK_RESPONSE:
+			case message_e::GET_PROFILE_PACK_RESPONSE:
 				break;
-			case sml_message::GET_PROFILE_LIST_REQUEST:
+			case message_e::GET_PROFILE_LIST_REQUEST:
 				break;
-			case sml_message::GET_PROFILE_LIST_RESPONSE:
+			case message_e::GET_PROFILE_LIST_RESPONSE:
 				read_get_profile_list_response(sp, tpl.begin(), tpl.end());
 				break;
-			case sml_message::GET_PROC_PARAMETER_REQUEST:
+			case message_e::GET_PROC_PARAMETER_REQUEST:
 				break;
-			case sml_message::GET_PROC_PARAMETER_RESPONSE:
+			case message_e::GET_PROC_PARAMETER_RESPONSE:
 				read_get_proc_parameter_response(sp, tpl.begin(), tpl.end());
 				break;
-			case sml_message::SET_PROC_PARAMETER_REQUEST:
+			case message_e::SET_PROC_PARAMETER_REQUEST:
 				break;
-			case sml_message::SET_PROC_PARAMETER_RESPONSE:
+			case message_e::SET_PROC_PARAMETER_RESPONSE:
 				break;
-			case sml_message::GET_LIST_REQUEST:
+			case message_e::GET_LIST_REQUEST:
 				break;
-			case sml_message::GET_LIST_RESPONSE:
+			case message_e::GET_LIST_RESPONSE:
 				break;
-			case sml_message::ATTENTION_RESPONSE:
+			case message_e::ATTENTION_RESPONSE:
 				read_attention_response(tpl.begin(), tpl.end());
 				break;
 			default:

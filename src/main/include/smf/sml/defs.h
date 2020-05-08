@@ -43,7 +43,7 @@ namespace node
 			SML_UNKNOWN,
 		};
 
-		enum class sml_message : std::uint16_t
+		enum class message_e : std::uint16_t
 		{
 			OPEN_REQUEST = 0x00000100,
 			OPEN_RESPONSE = 0x00000101,
@@ -74,33 +74,33 @@ namespace node
 
 		namespace messages
 		{
-			inline const char* name(sml_message code) noexcept
+			inline const char* name(message_e code) noexcept
 			{
 				switch (code)
 				{
-				case sml_message::OPEN_REQUEST:	return "PublicOpenRequest";
-				case sml_message::OPEN_RESPONSE:	return "PublicOpenResponse";
-				case sml_message::CLOSE_REQUEST:	return "PublicCloseRequest";
-				case sml_message::CLOSE_RESPONSE:	return "PublicCloseResponse";
-				case sml_message::GET_PROFILE_PACK_REQUEST:	return "GetProfilePackRequest";
-				case sml_message::GET_PROFILE_PACK_RESPONSE:	return "GetProfilePackResponse";
-				case sml_message::GET_PROFILE_LIST_REQUEST:	return "GetProfileListRequest";
-				case sml_message::GET_PROFILE_LIST_RESPONSE:	return "GetProfileListResponse";
-				case sml_message::GET_PROC_PARAMETER_REQUEST:	return "GetProcParameterRequest";
-				case sml_message::GET_PROC_PARAMETER_RESPONSE:	return "GetProcParameterResponse";
-				case sml_message::SET_PROC_PARAMETER_REQUEST:	return "SetProcParameterRequest";
-				case sml_message::SET_PROC_PARAMETER_RESPONSE:	return "SetProcParameterResponse";
-				case sml_message::GET_LIST_REQUEST:	return "GetListRequest";
-				case sml_message::GET_LIST_RESPONSE:	return "GetListResponse";
+				case message_e::OPEN_REQUEST:	return "PublicOpenRequest";
+				case message_e::OPEN_RESPONSE:	return "PublicOpenResponse";
+				case message_e::CLOSE_REQUEST:	return "PublicCloseRequest";
+				case message_e::CLOSE_RESPONSE:	return "PublicCloseResponse";
+				case message_e::GET_PROFILE_PACK_REQUEST:	return "GetProfilePackRequest";
+				case message_e::GET_PROFILE_PACK_RESPONSE:	return "GetProfilePackResponse";
+				case message_e::GET_PROFILE_LIST_REQUEST:	return "GetProfileListRequest";
+				case message_e::GET_PROFILE_LIST_RESPONSE:	return "GetProfileListResponse";
+				case message_e::GET_PROC_PARAMETER_REQUEST:	return "GetProcParameterRequest";
+				case message_e::GET_PROC_PARAMETER_RESPONSE:	return "GetProcParameterResponse";
+				case message_e::SET_PROC_PARAMETER_REQUEST:	return "SetProcParameterRequest";
+				case message_e::SET_PROC_PARAMETER_RESPONSE:	return "SetProcParameterResponse";
+				case message_e::GET_LIST_REQUEST:	return "GetListRequest";
+				case message_e::GET_LIST_RESPONSE:	return "GetListResponse";
 
-				case sml_message::GET_COSEM_REQUEST:	return "GetCOSEMRequest";
-				case sml_message::GET_COSEM_RESPONSE:	return "GetCOSEMResponse";
-				case sml_message::SET_COSEM_REQUEST:	return "SetCOSEMRequest";
-				case sml_message::SET_COSEM_RESPONSE:	return "SetCOSEMResponse";
-				case sml_message::ACTION_COSEM_REQUEST: return "ActionCOSEMRequest";
-				case sml_message::ACTION_COSEM_RESPONSE: return "ActionCOSEMResponse";
+				case message_e::GET_COSEM_REQUEST:	return "GetCOSEMRequest";
+				case message_e::GET_COSEM_RESPONSE:	return "GetCOSEMResponse";
+				case message_e::SET_COSEM_REQUEST:	return "SetCOSEMRequest";
+				case message_e::SET_COSEM_RESPONSE:	return "SetCOSEMResponse";
+				case message_e::ACTION_COSEM_REQUEST: return "ActionCOSEMRequest";
+				case message_e::ACTION_COSEM_RESPONSE: return "ActionCOSEMResponse";
 
-				case sml_message::ATTENTION_RESPONSE:	return "Attention";
+				case message_e::ATTENTION_RESPONSE:	return "Attention";
 				default:
 					break;
 				}
@@ -109,45 +109,45 @@ namespace node
 			}
 			inline const char* name_from_value(std::uint16_t code)
 			{
-				return name(static_cast<sml_message>(code));
+				return name(static_cast<message_e>(code));
 			}
 
-			inline sml_message get_msg_code(std::string const& name) noexcept
+			inline message_e get_msg_code(std::string const& name) noexcept
 			{
 				//
 				//	only requests
 				//
-				if (boost::algorithm::equals(name, "PublicOpenRequest")) return sml_message::OPEN_REQUEST;
-				else if (boost::algorithm::equals(name, "PublicOpenResponse")) return sml_message::OPEN_RESPONSE;
+				if (boost::algorithm::equals(name, "PublicOpenRequest")) return message_e::OPEN_REQUEST;
+				else if (boost::algorithm::equals(name, "PublicOpenResponse")) return message_e::OPEN_RESPONSE;
 
-				else if (boost::algorithm::equals(name, "PublicCloseRequest")) return sml_message::CLOSE_REQUEST;
-				else if (boost::algorithm::equals(name, "PublicCloseResponse")) return sml_message::CLOSE_RESPONSE;
+				else if (boost::algorithm::equals(name, "PublicCloseRequest")) return message_e::CLOSE_REQUEST;
+				else if (boost::algorithm::equals(name, "PublicCloseResponse")) return message_e::CLOSE_RESPONSE;
 
-				else if (boost::algorithm::equals(name, "GetProfileListRequest"))	return sml_message::GET_PROFILE_LIST_REQUEST;
-				else if (boost::algorithm::equals(name, "GetProfileListResponse")) return sml_message::GET_PROFILE_LIST_RESPONSE;
+				else if (boost::algorithm::equals(name, "GetProfileListRequest"))	return message_e::GET_PROFILE_LIST_REQUEST;
+				else if (boost::algorithm::equals(name, "GetProfileListResponse")) return message_e::GET_PROFILE_LIST_RESPONSE;
 
-				else if (boost::algorithm::equals(name, "GetProfilePackRequest"))	return sml_message::GET_PROFILE_PACK_REQUEST;
-				else if (boost::algorithm::equals(name, "GetProfilePackResponse")) return sml_message::GET_PROFILE_PACK_RESPONSE;
+				else if (boost::algorithm::equals(name, "GetProfilePackRequest"))	return message_e::GET_PROFILE_PACK_REQUEST;
+				else if (boost::algorithm::equals(name, "GetProfilePackResponse")) return message_e::GET_PROFILE_PACK_RESPONSE;
 
-				else if (boost::algorithm::equals(name, "GetProcParameterRequest"))	return sml_message::GET_PROC_PARAMETER_REQUEST;
-				else if (boost::algorithm::equals(name, "GetProcParameterResponse")) return sml_message::GET_PROC_PARAMETER_RESPONSE;
+				else if (boost::algorithm::equals(name, "GetProcParameterRequest"))	return message_e::GET_PROC_PARAMETER_REQUEST;
+				else if (boost::algorithm::equals(name, "GetProcParameterResponse")) return message_e::GET_PROC_PARAMETER_RESPONSE;
 
-				else if (boost::algorithm::equals(name, "SetProcParameterRequest"))	return sml_message::SET_PROC_PARAMETER_REQUEST;
-				else if (boost::algorithm::equals(name, "SetProcParameterResponse")) return sml_message::SET_PROC_PARAMETER_RESPONSE;
+				else if (boost::algorithm::equals(name, "SetProcParameterRequest"))	return message_e::SET_PROC_PARAMETER_REQUEST;
+				else if (boost::algorithm::equals(name, "SetProcParameterResponse")) return message_e::SET_PROC_PARAMETER_RESPONSE;
 
-				else if (boost::algorithm::equals(name, "GetListRequest"))	return sml_message::GET_LIST_REQUEST;
-				else if (boost::algorithm::equals(name, "GetListResponse"))	return sml_message::GET_LIST_RESPONSE;
+				else if (boost::algorithm::equals(name, "GetListRequest"))	return message_e::GET_LIST_REQUEST;
+				else if (boost::algorithm::equals(name, "GetListResponse"))	return message_e::GET_LIST_RESPONSE;
 
-				else if (boost::algorithm::equals(name, "GetCOSEMRequest"))		return sml_message::GET_COSEM_REQUEST;
-				else if (boost::algorithm::equals(name, "GetCOSEMResponse"))	return sml_message::GET_COSEM_RESPONSE;
-				else if (boost::algorithm::equals(name, "SetCOSEMRequest"))		return sml_message::SET_COSEM_REQUEST;
-				else if (boost::algorithm::equals(name, "SetCOSEMResponse"))	return sml_message::SET_COSEM_RESPONSE;
-				else if (boost::algorithm::equals(name, "ActionCOSEMRequest"))	return sml_message::ACTION_COSEM_REQUEST;
-				else if (boost::algorithm::equals(name, "ActionCOSEMResponse"))	return sml_message::ACTION_COSEM_RESPONSE;
+				else if (boost::algorithm::equals(name, "GetCOSEMRequest"))		return message_e::GET_COSEM_REQUEST;
+				else if (boost::algorithm::equals(name, "GetCOSEMResponse"))	return message_e::GET_COSEM_RESPONSE;
+				else if (boost::algorithm::equals(name, "SetCOSEMRequest"))		return message_e::SET_COSEM_REQUEST;
+				else if (boost::algorithm::equals(name, "SetCOSEMResponse"))	return message_e::SET_COSEM_RESPONSE;
+				else if (boost::algorithm::equals(name, "ActionCOSEMRequest"))	return message_e::ACTION_COSEM_REQUEST;
+				else if (boost::algorithm::equals(name, "ActionCOSEMResponse"))	return message_e::ACTION_COSEM_RESPONSE;
 
-				else if (boost::algorithm::equals(name, "Attention"))	return sml_message::ATTENTION_RESPONSE;
+				else if (boost::algorithm::equals(name, "Attention"))	return message_e::ATTENTION_RESPONSE;
 
-				return node::sml::sml_message::UNKNOWN;
+				return node::sml::message_e::UNKNOWN;
 			}
 
 		}

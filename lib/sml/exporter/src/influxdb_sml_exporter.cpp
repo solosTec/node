@@ -76,54 +76,54 @@ namespace node
 
 		}
 
-		void influxdb_exporter::read_body(readout& ro, sml_message code, cyng::tuple_t const& tpl)
+		void influxdb_exporter::read_body(readout& ro, message_e code, cyng::tuple_t const& tpl)
 		{
 			switch (code)
 			{
-			case sml_message::OPEN_REQUEST:
+			case message_e::OPEN_REQUEST:
 				break;
-			case sml_message::OPEN_RESPONSE:
+			case message_e::OPEN_RESPONSE:
 				break;
-			case sml_message::CLOSE_REQUEST:
+			case message_e::CLOSE_REQUEST:
 				break;
-			case sml_message::CLOSE_RESPONSE:
+			case message_e::CLOSE_RESPONSE:
 				break;
-			case sml_message::GET_PROFILE_PACK_REQUEST:
+			case message_e::GET_PROFILE_PACK_REQUEST:
 				break;
-			case sml_message::GET_PROFILE_PACK_RESPONSE:
+			case message_e::GET_PROFILE_PACK_RESPONSE:
 				break;
-			case sml_message::GET_PROFILE_LIST_REQUEST:
+			case message_e::GET_PROFILE_LIST_REQUEST:
 				break;
-			case sml_message::GET_PROFILE_LIST_RESPONSE:
+			case message_e::GET_PROFILE_LIST_RESPONSE:
 				read_get_profile_list_response(ro, tpl.begin(), tpl.end());
 				break;
-			case sml_message::GET_PROC_PARAMETER_REQUEST:
+			case message_e::GET_PROC_PARAMETER_REQUEST:
 				break;
-			case sml_message::GET_PROC_PARAMETER_RESPONSE:
+			case message_e::GET_PROC_PARAMETER_RESPONSE:
 				read_get_proc_parameter_response(ro, tpl.begin(), tpl.end());
 				break;
-			case sml_message::SET_PROC_PARAMETER_REQUEST:
+			case message_e::SET_PROC_PARAMETER_REQUEST:
 				break;
-			case sml_message::SET_PROC_PARAMETER_RESPONSE:
+			case message_e::SET_PROC_PARAMETER_RESPONSE:
 				break;
-			case sml_message::GET_LIST_REQUEST:
+			case message_e::GET_LIST_REQUEST:
 				break;
-			case sml_message::GET_LIST_RESPONSE:
+			case message_e::GET_LIST_RESPONSE:
 				break;
-			case sml_message::GET_COSEM_REQUEST:
+			case message_e::GET_COSEM_REQUEST:
 				break;
-			case sml_message::GET_COSEM_RESPONSE:
+			case message_e::GET_COSEM_RESPONSE:
 				break;
-			case sml_message::SET_COSEM_REQUEST:
+			case message_e::SET_COSEM_REQUEST:
 				break;
-			case sml_message::SET_COSEM_RESPONSE:
+			case message_e::SET_COSEM_RESPONSE:
 				break;
-			case sml_message::ACTION_COSEM_REQUEST:
+			case message_e::ACTION_COSEM_REQUEST:
 				break;
-			case sml_message::ACTION_COSEM_RESPONSE:
+			case message_e::ACTION_COSEM_RESPONSE:
 				break;
 
-			case sml_message::ATTENTION_RESPONSE:
+			case message_e::ATTENTION_RESPONSE:
 				break;
 			default:
 				break;

@@ -141,24 +141,24 @@ namespace node
 			return from_server_id(client_id_);
 		}
 
-		std::pair<sml_message, cyng::tuple_t> readout::read_choice(cyng::object obj)
+		std::pair<message_e, cyng::tuple_t> readout::read_choice(cyng::object obj)
 		{
 			auto const choice = cyng::to_tuple(obj);
 			BOOST_ASSERT_MSG(choice.size() == 2, "CHOICE");
 			if (choice.size() == 2)
 			{
 				set_value("code", choice.front());
-				auto const code = static_cast<sml_message>(cyng::value_cast<std::uint16_t>(choice.front(), 0));
+				auto const code = static_cast<message_e>(cyng::value_cast<std::uint16_t>(choice.front(), 0));
 				return std::make_pair(code, cyng::to_tuple(choice.back()));
 			}
-			return std::make_pair(sml_message::UNKNOWN, cyng::tuple_t{});
+			return std::make_pair(message_e::UNKNOWN, cyng::tuple_t{});
 		}
 
-		std::pair<sml_message, cyng::tuple_t> readout::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
+		std::pair<message_e, cyng::tuple_t> readout::read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 		{
 			auto const count = std::distance(pos, end);
 			BOOST_ASSERT_MSG(count == 5, "SML message");
-			if (count != 5)	return std::make_pair(sml_message::UNKNOWN, cyng::tuple_t{});
+			if (count != 5)	return std::make_pair(message_e::UNKNOWN, cyng::tuple_t{});
 
 			//
 			//	(1) - transaction id
@@ -767,7 +767,7 @@ namespace node
 				cyng::buffer_t const buffer = cyng::to_buffer(obj);
 				return cyng::param_factory(code.to_str(), std::string(buffer.begin(), buffer.end()));
 			}
-			else if (OBIS_CODE(81, 49, 17, 07, 00, 00) == code) {
+			else if (OBIS_TARGET_IP_ADDRESS == code) {
 				return cyng::param_factory(code.to_str(), to_ip_address_v4(obj));
 			}
 			else if (OBIS_DEVICE_CLASS == code

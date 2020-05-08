@@ -61,7 +61,7 @@ namespace node
 		std::uint64_t seq,			//	[2] cluster seq
 		boost::uuids::uuid origin,	//	[3] ws tag (origin)
 
-		sml::sml_message msg_code,	//	[4] SML message type
+		sml::message_e msg_code,	//	[4] SML message type
 		sml::obis_path_t path,				//	[5] OBIS root code
 		cyng::vector_t gw,			//	[6] TGateway/TDevice PK
 		cyng::tuple_t params,		//	[7] parameters
@@ -87,7 +87,7 @@ namespace node
 		, job_(job)
 	{}
 
-	sml::sml_message proxy_data::get_msg_code() const
+	sml::message_e proxy_data::get_msg_code() const
 	{
 		//
 		//	only requests expected
@@ -324,9 +324,9 @@ namespace node
 	proxy_data finalize(proxy_data&& pd)
 	{
 		switch (pd.get_msg_code()) {
-		case sml::sml_message::GET_PROC_PARAMETER_REQUEST:
+		case sml::message_e::GET_PROC_PARAMETER_REQUEST:
 			return finalize_get_proc_parameter_request(std::move(pd));
-		//case sml::sml_message::SET_PROC_PARAMETER_REQUEST:
+		//case sml::message_e::SET_PROC_PARAMETER_REQUEST:
 		//	return finalize_set_proc_parameter_request(std::move(pd));
 		default:
 			break;

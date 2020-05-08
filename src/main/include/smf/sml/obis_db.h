@@ -166,6 +166,18 @@ namespace node
 		OBIS_CODE_DEFINITION(00, 80, 80, 00, 12, FF, ROOT_MEMORY_TMP);
 
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 00, FF, ROOT_CUSTOM_INTERFACE);	//	see: 7.3.1.3 Datenstruktur zum Lesen / Setzen der Parameter für die Kundenschnittstelle
+
+		OBIS_CODE_DEFINITION(81, 02, 00, 07, 01, FF, CUSTOM_IF_IP_REF);	//	[u8] 0 == manual, 1 == DHCP
+		OBIS_CODE_DEFINITION(81, 02, 17, 07, 00, 01, CUSTOM_IF_IP_ADDRESS_1);	//	[IPv4/IPv6] first manual set IP address
+		OBIS_CODE_DEFINITION(81, 02, 17, 07, 01, 01, CUSTOM_IF_IP_MASK_1);	//	[IPv4/IPv6] 
+		OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, FF, CUSTOM_IF_DHCP);	//	[bool] use a DHSCP server
+		OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 01, CUSTOM_IF_DHCP_LOCAL_IP_MASK);	//	[IPv4/IPv6] 
+		OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 02, CUSTOM_IF_DHCP_DEFAULT_GW);	//	[IPv4/IPv6] 
+		OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 03, CUSTOM_IF_DHCP_DNS);	//	[IPv4/IPv6] 
+		OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 04, CUSTOM_IF_DHCP_START_ADDRESS);	//	[IPv4/IPv6] 
+		OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 05, CUSTOM_IF_DHCP_END_ADDRESS);	//	[IPv4/IPv6] 
+		OBIS_CODE_DEFINITION(81, 02, 17, 07, 00, 02, CUSTOM_IF_IP_ADDRESS_2);	//	[IPv4/IPv6] second manual set IP address
+
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 10, FF, ROOT_CUSTOM_PARAM);	//	see: 7.3.1.4 Datenstruktur für dynamischen Eigenschaften der Endkundenschnittstelle 
 		OBIS_CODE_DEFINITION(81, 04, 00, 06, 00, FF, ROOT_WAN);	//	see: 7.3.1.5 Datenstruktur zur Abfrage des WAN Status 
 		OBIS_CODE_DEFINITION(81, 04, 00, 07, 00, FF, ROOT_WAN_PARAM);	//	see: 7.3.1.6 Datenstruktur zum Lesen/Setzen der WAN Parameter 
@@ -190,9 +202,9 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 49, 0D, 07, 00, FF, ROOT_IPT_PARAM);	//	see: 7.3.1.9 Datenstruktur zur Lesen/Setzen der IPT Parameter 
 
 		//	ip-t status
-		//OBIS_CODE_DEFINITION(81, 49, 17, 07, 00, NN, ROOT_IPT_STATE_ADDRESS);	//	IP adress
-		//OBIS_CODE_DEFINITION(81, 49, 1A, 07, 00, NN, ROOT_IPT_STATE_PORT_LOCAL);	//	local port
-		//OBIS_CODE_DEFINITION(81, 49, 19, 07, 00, NN, ROOT_IPT_STATE_PORT_REMOTE);	//	remote port
+		OBIS_CODE_DEFINITION(81, 49, 17, 07, 00, 00, TARGET_IP_ADDRESS);	//	[ip] ip address of IP-T master 
+		OBIS_CODE_DEFINITION(81, 49, 19, 07, 00, 00, SOURCE_PORT_ADDRESS);	//	[u16] target port of IP-T master 
+		OBIS_CODE_DEFINITION(81, 49, 1A, 07, 00, 00, TARGET_PORT_ADDRESS);	//	[u16] source port of IP-T master 
 
 		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 01, PEER_OBISLOG);	//	peer address: OBISLOG
 		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 02, PEER_SCM);	//	peer address: SCM (power)
@@ -316,10 +328,6 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 48, 17, 07, 05, 00, CODE_IF_LAN_DNS_SECONDARY);	// IPv4 or IPv6
 		OBIS_CODE_DEFINITION(81, 48, 17, 07, 06, 00, CODE_IF_LAN_DNS_TERTIARY);	// IPv4 or IPv6
 
-		//OBIS_CODE_DEFINITION(81, 04, 02, 07, 00, FF, CODE_IF_GSM);
-		//OBIS_CODE_DEFINITION(81, 04, 0D, 07, 00, FF, CODE_IF_GPRS);
-		OBIS_CODE_DEFINITION(81, 02, 00, 07, 00, FF, CODE_IF_USER);	//	Endkundenschnittstelle:
-		//OBIS_CODE_DEFINITION(81, 49, 0D, 07, 00, FF, CODE_IF_IPT);	//	 same as OBIS_ROOT_IPT_PARAM
 		OBIS_CODE_DEFINITION(81, 05, 0D, 07, 00, FF, IF_EDL);		//	M-Bus EDL (RJ10)
 
 		OBIS_CODE_DEFINITION(81, 05, 0D, 07, 00, 01, IF_EDL_PROTOCOL);	//	[u8] always 1

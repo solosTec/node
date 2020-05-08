@@ -79,6 +79,8 @@ namespace node
 			std::stringstream ss;
 			ss
 				<< "ipt-"
+				<< boost::uuids::to_string(ctx.tag())
+				<< "-"
 				<< name_
 				;
 			boost::filesystem::path const sub_dir(ss.str());
@@ -208,59 +210,59 @@ namespace node
 			//
 			++sml_counter_;
 
-			if (buffer.size() > 0x4a) {
+			//if (buffer.size() > 0x4a) {
 
-				//
-				//	search for MAC starting with 05 00 15 3B
-				//
-				auto const mac = cyng::make_buffer({ 0x08, 0x05, 0x00, 0x15, 0x3B });
-				//cyng::buffer_t const mac({ 0x62, 0x01, 0x62, 0x00, 0x72, 0x63 });
-				auto pos = std::search(buffer.begin(), buffer.end(), mac.begin(), mac.end());
-				if (pos != buffer.end()) {
-					//
-					//	update dir_out_
-					//
-					//++pos;
-					pos += mac.size();
+			//	//
+			//	//	search for MAC starting with 05 00 15 3B
+			//	//
+			//	auto const mac = cyng::make_buffer({ 0x08, 0x05, 0x00, 0x15, 0x3B });
+			//	//cyng::buffer_t const mac({ 0x62, 0x01, 0x62, 0x00, 0x72, 0x63 });
+			//	auto pos = std::search(buffer.begin(), buffer.end(), mac.begin(), mac.end());
+			//	if (pos != buffer.end()) {
+			//		//
+			//		//	update dir_out_
+			//		//
+			//		//++pos;
+			//		pos += mac.size();
 
-					auto name = cyng::io::to_hex(pos, pos + 7);
-					boost::algorithm::to_upper(name);
+			//		auto name = cyng::io::to_hex(pos, pos + 7);
+			//		boost::algorithm::to_upper(name);
 
-					std::stringstream ss;
-					ss
-						<< "ipt-"
-						<< name_
-						<< "-"
-						<< name
-						;
-					boost::filesystem::path const sub_dir(ss.str());
-					dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
+			//		std::stringstream ss;
+			//		ss
+			//			<< "ipt-"
+			//			<< name_
+			//			<< "-"
+			//			<< name
+			//			;
+			//		boost::filesystem::path const sub_dir(ss.str());
+			//		dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
 
-				}
-				else {
-					auto const mac = cyng::make_buffer({ 0x05, 0x00, 0xFF, 0xB0, 0x4B, 0x94, 0xF8 });
-					auto pos = std::search(buffer.begin(), buffer.end(), mac.begin(), mac.end());
-					if (pos != buffer.end()) {
-						//
-						//	update dir_out_
-						//
-						//pos += mac.size();
+			//	}
+			//	else {
+			//		auto const mac = cyng::make_buffer({ 0x05, 0x00, 0xFF, 0xB0, 0x4B, 0x94, 0xF8 });
+			//		auto pos = std::search(buffer.begin(), buffer.end(), mac.begin(), mac.end());
+			//		if (pos != buffer.end()) {
+			//			//
+			//			//	update dir_out_
+			//			//
+			//			//pos += mac.size();
 
-						auto name = cyng::io::to_hex(pos, pos + 7);
-						boost::algorithm::to_upper(name);
+			//			auto name = cyng::io::to_hex(pos, pos + 7);
+			//			boost::algorithm::to_upper(name);
 
-						std::stringstream ss;
-						ss
-							<< "ipt-"
-							<< name_
-							<< "-"
-							<< name
-							;
-						boost::filesystem::path const sub_dir(ss.str());
-						dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
-					}
-				}
-			}
+			//			std::stringstream ss;
+			//			ss
+			//				<< "ipt-"
+			//				<< name_
+			//				<< "-"
+			//				<< name
+			//				;
+			//			boost::filesystem::path const sub_dir(ss.str());
+			//			dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
+			//		}
+			//	}
+			//}
 		}
 	}
 

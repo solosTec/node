@@ -120,15 +120,15 @@ namespace node
 			ro_.set_value("crc16", *pos);
 		}
 
-		void csv_exporter::read_body(sml_message code, cyng::tuple_t tpl)
+		void csv_exporter::read_body(message_e code, cyng::tuple_t tpl)
 		{
 			switch (code)
 			{
-			case sml_message::OPEN_REQUEST:
+			case message_e::OPEN_REQUEST:
 				ro_.read_public_open_request(tpl.begin(), tpl.end());
 				break;
 
-			case sml_message::OPEN_RESPONSE:
+			case message_e::OPEN_RESPONSE:
 
 				//
 				//	set default readout time
@@ -137,44 +137,44 @@ namespace node
 				ro_.read_public_open_response(tpl.begin(), tpl.end());
 				break;
 
-			case sml_message::CLOSE_REQUEST:
+			case message_e::CLOSE_REQUEST:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::CLOSE_RESPONSE:
+			case message_e::CLOSE_RESPONSE:
 				//cyng::xml::write(node.append_child("data"), body);
 				if (ofstream_.is_open())	ofstream_.close();
 				break;
-			case sml_message::GET_PROFILE_PACK_REQUEST:
+			case message_e::GET_PROFILE_PACK_REQUEST:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_PROFILE_PACK_RESPONSE:
+			case message_e::GET_PROFILE_PACK_RESPONSE:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_PROFILE_LIST_REQUEST:
+			case message_e::GET_PROFILE_LIST_REQUEST:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_PROFILE_LIST_RESPONSE:
+			case message_e::GET_PROFILE_LIST_RESPONSE:
 				read_get_profile_list_response(tpl.begin(), tpl.end());
 				break;
-			case sml_message::GET_PROC_PARAMETER_REQUEST:
+			case message_e::GET_PROC_PARAMETER_REQUEST:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_PROC_PARAMETER_RESPONSE:
+			case message_e::GET_PROC_PARAMETER_RESPONSE:
 				read_get_proc_parameter_response(tpl.begin(), tpl.end());
 				break;
-			case sml_message::SET_PROC_PARAMETER_REQUEST:
+			case message_e::SET_PROC_PARAMETER_REQUEST:
 				//cyng::xml::write(node, body);
 				break;
-			case sml_message::SET_PROC_PARAMETER_RESPONSE:
+			case message_e::SET_PROC_PARAMETER_RESPONSE:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_LIST_REQUEST:
+			case message_e::GET_LIST_REQUEST:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_LIST_RESPONSE:
+			case message_e::GET_LIST_RESPONSE:
 				//cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::ATTENTION_RESPONSE:
+			case message_e::ATTENTION_RESPONSE:
 				read_attention_response(tpl.begin(), tpl.end());
 				break;
 			default:

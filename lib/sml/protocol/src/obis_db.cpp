@@ -170,6 +170,7 @@ namespace node
 			case CODE_W_MBUS_FIRMWARE:				return "W_MBUS_FIRMWARE";
 			case CODE_W_MBUS_HARDWARE:				return "W_MBUS_HARDWARE";
 
+			case CODE_ROOT_IF:						return "ROOT_IF";
 			case CODE_IF_LAN_DSL:					return "IF_LAN_DSL";
 			case CODE_IF_wMBUS:						return "IF_wMBUS";
 			case CODE_IF_PLC:						return "IF_PLC";
@@ -181,8 +182,6 @@ namespace node
 			case CODE_CLASS_OP_LOG_PROVIDER:		return "CLASS_OP_LOG_PROVIDER";
 
 			case CODE_CLASS_STATUS:					return "CODE_CLASS_STATUS";
-
-			case CODE_ROOT_IF:						return "ROOT_IF";
 
 			case CODE_CURRENT_UTC:					return "CURRENT_UTC";
 			case CODE_PUSH_SERVICE:					return "PUSH_SERVICE";
@@ -196,6 +195,21 @@ namespace node
 			case CODE_SET_ACTIVATE_FW:				return "SET_ACTIVATE_FW";
 			case CODE_SET_START_FW_UPDATE:			return "ET_START_FW_UPDATE";
 			case CODE_SET_DISPATCH_FW_UPDATE:		return "SET_DISPATCH_FW_UPDATE";
+
+			case CODE_TARGET_IP_ADDRESS:			return "TARGET_IP_ADDRESS";
+			case CODE_SOURCE_PORT_ADDRESS:			return "SOURCE_PORT_ADDRESS";
+			case CODE_TARGET_PORT_ADDRESS:			return "TARGET_PORT_ADDRESS";
+
+			case CODE_CUSTOM_IF_IP_REF:				return "CUSTOM_IF_IP_REF";
+			case CODE_CUSTOM_IF_IP_ADDRESS_1:		return "CODE_CUSTOM_IF_IP_ADDRESS_1";
+			case CODE_CUSTOM_IF_IP_MASK_1:			return "CODE_CUSTOM_IF_IP_MASK_1";
+			case CODE_CUSTOM_IF_DHCP:				return "CODE_CUSTOM_IF_DHCP";
+			case CODE_CUSTOM_IF_DHCP_LOCAL_IP_MASK:	return "CODE_CUSTOM_IF_DHCP_LOCAL_IP_MASK";
+			case CODE_CUSTOM_IF_DHCP_DEFAULT_GW:	return "CODE_CUSTOM_IF_DHCP_DEFAULT_GW";
+			case CODE_CUSTOM_IF_DHCP_DNS:			return "CODE_CUSTOM_IF_DHCP_DNS";
+			case CODE_CUSTOM_IF_DHCP_START_ADDRESS:	return "CODE_CUSTOM_IF_DHCP_START_ADDRESS";
+			case CODE_CUSTOM_IF_DHCP_END_ADDRESS:	return "CODE_CUSTOM_IF_DHCP_END_ADDRESS";
+			case CODE_CUSTOM_IF_IP_ADDRESS_2:		return "CODE_CUSTOM_IF_IP_ADDRESS_2";
 
 			default:
 				break;

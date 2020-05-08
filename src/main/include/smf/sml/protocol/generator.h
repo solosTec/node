@@ -152,7 +152,7 @@ namespace node
 				append(message(cyng::make_object(trx)
 					, group_no_++	//	group
 					, 0 //	abort code
-					, sml_message::SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+					, message_e::SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
 
 					//
 					//	generate process parameter request

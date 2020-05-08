@@ -501,9 +501,9 @@ namespace node
 		auto const gw = cyng::to_vector(reader.get("gw"));
 		if (!gw.empty()) {
 
-			auto const msg_type = cyng::value_cast<std::string>(reader.get("msgType"), "");
 			auto const channel = cyng::value_cast<std::string>(reader.get("channel"), "");
-			auto const r = cyng::parse_hex_string(channel);
+			auto const section = cyng::value_cast<std::string>(reader.get("section"), "");
+			auto const r = cyng::parse_hex_string(section);
 			if (r.second) {
 
 				auto const params = cyng::to_tuple(reader.get("params"));
@@ -511,21 +511,21 @@ namespace node
 #ifdef _DEBUG
 				CYNG_LOG_DEBUG(logger, "\"sml:com\" ws: " 
 					<< tag_ws 
-					<< " channel " 
-					<< channel
+					<< ", section " 
+					<< section
 					<< " ==> " 
 					<< cyng::io::to_str(params));
 
 #endif
 				//	"bus.req.proxy.gateway"
 				ctx.queue(bus_req_com_sml(tag_ws	//	web-socket tag (origin)
-					, msg_type
+					, channel
 					, r.first	//	OBIS root code
 					, gw	//	key into TGateway and TDevice table
 					, params));	//	parameters, requests, commands
 			}
 			else {
-				CYNG_LOG_ERROR(logger, "\"sml:com\" from ws: " << tag_ws << " with invalid channel " << channel);
+				CYNG_LOG_ERROR(logger, "\"sml:com\" from ws: " << tag_ws << " with invalid section " << section);
 			}
 		}
 		else {

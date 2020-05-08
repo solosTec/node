@@ -98,7 +98,7 @@ namespace node
 			append(message(cyng::make_object(trx)	//	trx
 				, group_no_++	//	group
 				, 0 // abort code
-				, sml_message::OPEN_REQUEST
+				, message_e::OPEN_REQUEST
 
 				//
 				//	generate public open request
@@ -123,7 +123,7 @@ namespace node
 			append(message(cyng::make_object(trx)
 				, 0	//	group is 0 for CLOSE REQUEST
 				, 0 //	abort code
-				, sml_message::CLOSE_REQUEST
+				, message_e::CLOSE_REQUEST
 
 				//
 				//	generate public open response
@@ -141,7 +141,7 @@ namespace node
 			return append(message(cyng::make_object(*trx_)
 				, group_no_++	//	group
 				, 0 //	abort code
-				, sml_message::SET_PROC_PARAMETER_REQUEST	//	0x600
+				, message_e::SET_PROC_PARAMETER_REQUEST	//	0x600
 
 				//
 				//	generate reboot request
@@ -218,7 +218,7 @@ namespace node
 			append(message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROC_PARAMETER_REQUEST	//	0x500
+				, message_e::GET_PROC_PARAMETER_REQUEST	//	0x500
 
 				//
 				//	generate get process parameter request
@@ -240,7 +240,7 @@ namespace node
 			append(message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROC_PARAMETER_REQUEST	//	0x500
+				, message_e::GET_PROC_PARAMETER_REQUEST	//	0x500
 
 				//
 				//	generate get process parameter request
@@ -263,7 +263,7 @@ namespace node
 			append(message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
-				, sml_message::GET_LIST_REQUEST	//	0x700
+				, message_e::GET_LIST_REQUEST	//	0x700
 
 				//
 				//	generate get list request
@@ -294,7 +294,7 @@ namespace node
 			append(message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROFILE_LIST_REQUEST	//	0x400
+				, message_e::GET_PROFILE_LIST_REQUEST	//	0x400
 
 				//
 				//	generate get profile list request
@@ -328,7 +328,7 @@ namespace node
 			return append(message(trx	//	trx
 				, group_no_++	//	group
 				, 0 // abort code
-				, sml_message::OPEN_RESPONSE
+				, message_e::OPEN_RESPONSE
 
 				//
 				//	generate public open response
@@ -348,7 +348,7 @@ namespace node
 			return append(message(trx
 				, 0	//	group is 0 for CLOSE RESPONSE
 				, 0 //	abort code
-				, sml_message::CLOSE_RESPONSE
+				, message_e::CLOSE_RESPONSE
 
 				//
 				//	generate public open response
@@ -370,7 +370,7 @@ namespace node
 			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROC_PARAMETER_RESPONSE
+				, message_e::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -389,7 +389,7 @@ namespace node
 			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROC_PARAMETER_RESPONSE
+				, message_e::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -411,7 +411,7 @@ namespace node
 			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROFILE_LIST_RESPONSE	//	0x0401
+				, message_e::GET_PROFILE_LIST_RESPONSE	//	0x0401
 
 				//
 				//	generate get process parameter response
@@ -437,7 +437,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROFILE_LIST_RESPONSE	//	0x0401
+				, message_e::GET_PROFILE_LIST_RESPONSE	//	0x0401
 
 				//
 				//	generate get process parameter response
@@ -474,7 +474,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROC_PARAMETER_RESPONSE
+				, message_e::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -560,7 +560,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROC_PARAMETER_RESPONSE
+				, message_e::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -635,7 +635,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROC_PARAMETER_RESPONSE
+				, message_e::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -681,7 +681,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROC_PARAMETER_RESPONSE
+				, message_e::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -763,7 +763,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROC_PARAMETER_RESPONSE
+				, message_e::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -799,7 +799,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROFILE_LIST_RESPONSE	//	0x0401
+				, message_e::GET_PROFILE_LIST_RESPONSE	//	0x0401
 
 				//
 				//	generate get process parameter response
@@ -892,7 +892,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROC_PARAMETER_RESPONSE
+				, message_e::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -921,7 +921,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_PROC_PARAMETER_RESPONSE
+				, message_e::GET_PROC_PARAMETER_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -951,7 +951,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::GET_LIST_RESPONSE
+				, message_e::GET_LIST_RESPONSE
 
 				//
 				//	generate get process parameter response
@@ -973,7 +973,7 @@ namespace node
 			return append(message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
-				, sml_message::ATTENTION_RESPONSE
+				, message_e::ATTENTION_RESPONSE
 
 				//
 				//	generate get process parameter response

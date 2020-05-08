@@ -33,55 +33,55 @@ namespace node
 			/**
 			 * Read the SML message body a selected by message type code
 			 */
-			cyng::vector_t read_body(readout& ro, sml_message code, cyng::tuple_t const& tpl);
+			cyng::vector_t read_body(readout& ro, message_e code, cyng::tuple_t const& tpl);
 
-			/** @brief sml_message::OPEN_REQUEST (256)
+			/** @brief message_e::OPEN_REQUEST (256)
 			 */
 			cyng::vector_t read_public_open_request(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::OPEN_RESPONSE (257)
+			/** @brief message_e::OPEN_RESPONSE (257)
 			 */
 			cyng::vector_t read_public_open_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::CLOSE_REQUEST (512)
+			/** @brief message_e::CLOSE_REQUEST (512)
 			 */
 			cyng::vector_t read_public_close_request(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::CLOSE_RESPONSE (513)
+			/** @brief message_e::CLOSE_RESPONSE (513)
 			 */
 			cyng::vector_t read_public_close_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::GET_PROFILE_LIST_REQUEST (1024)
+			/** @brief message_e::GET_PROFILE_LIST_REQUEST (1024)
 			 */
 			cyng::vector_t read_get_profile_list_request(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::GET_PROFILE_LIST_RESPONSE (1025)
+			/** @brief message_e::GET_PROFILE_LIST_RESPONSE (1025)
 			 */
 			cyng::vector_t read_get_profile_list_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::GET_PROC_PARAMETER_RESPONSE (1281)
+			/** @brief message_e::GET_PROC_PARAMETER_RESPONSE (1281)
 			 */
 			cyng::vector_t read_get_proc_parameter_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::GET_PROC_PARAMETER_REQUEST (1280)
+			/** @brief message_e::GET_PROC_PARAMETER_REQUEST (1280)
 			 */
 			cyng::vector_t read_get_proc_parameter_request(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::SET_PROC_PARAMETER_REQUEST (1536)
+			/** @brief message_e::SET_PROC_PARAMETER_REQUEST (1536)
 			 */
 			cyng::vector_t read_set_proc_parameter_request(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::SET_PROC_PARAMETER_RESPONSE (1537)
+			/** @brief message_e::SET_PROC_PARAMETER_RESPONSE (1537)
 			 *
 			 * This message type is undefined
 			 */
 			cyng::vector_t read_set_proc_parameter_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::GET_LIST_REQUEST (1792)
+			/** @brief message_e::GET_LIST_REQUEST (1792)
 			 */
 			cyng::vector_t read_get_list_request(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::GET_LIST_RESPONSE (1793)
+			/** @brief message_e::GET_LIST_RESPONSE (1793)
 			 */
 			cyng::vector_t read_get_list_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
@@ -92,7 +92,7 @@ namespace node
 			cyng::vector_t  read_action_cosem_request(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			cyng::vector_t  read_action_cosem_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
-			/** @brief sml_message::ATTENTION_RESPONSE (65281)
+			/** @brief message_e::ATTENTION_RESPONSE (65281)
 			 */
 			cyng::vector_t read_attention_response(readout& ro, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
@@ -130,7 +130,7 @@ namespace node
 
 			cyng::vector_t read_msg(readout& ro, cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 			{
-				//	std::pair<sml_message, cyng::tuple_t>
+				//	std::pair<message_e, cyng::tuple_t>
 				auto const r = ro.read_msg(pos, end);
 
 				//
@@ -139,55 +139,55 @@ namespace node
 				return read_body(ro, r.first, r.second);
 			}
 
-			cyng::vector_t read_body(readout& ro, sml_message code, cyng::tuple_t const& tpl)
+			cyng::vector_t read_body(readout& ro, message_e code, cyng::tuple_t const& tpl)
 			{
 				switch (code)
 				{
-				case sml_message::OPEN_REQUEST:
+				case message_e::OPEN_REQUEST:
 					return read_public_open_request(ro, tpl.begin(), tpl.end());
-				case sml_message::OPEN_RESPONSE:
+				case message_e::OPEN_RESPONSE:
 					return read_public_open_response(ro, tpl.begin(), tpl.end());
-				case sml_message::CLOSE_REQUEST:
+				case message_e::CLOSE_REQUEST:
 					return read_public_close_request(ro, tpl.begin(), tpl.end());
-				case sml_message::CLOSE_RESPONSE:
+				case message_e::CLOSE_RESPONSE:
 					return read_public_close_response(ro, tpl.begin(), tpl.end());
-				case sml_message::GET_PROFILE_PACK_REQUEST:
+				case message_e::GET_PROFILE_PACK_REQUEST:
 					//cyng::xml::write(node.append_child("data"), body);
 					break;
-				case sml_message::GET_PROFILE_PACK_RESPONSE:
+				case message_e::GET_PROFILE_PACK_RESPONSE:
 					//cyng::xml::write(node.append_child("data"), body);
 					break;
-				case sml_message::GET_PROFILE_LIST_REQUEST:
+				case message_e::GET_PROFILE_LIST_REQUEST:
 					return read_get_profile_list_request(ro, tpl.begin(), tpl.end());
-				case sml_message::GET_PROFILE_LIST_RESPONSE:
+				case message_e::GET_PROFILE_LIST_RESPONSE:
 					return read_get_profile_list_response(ro, tpl.begin(), tpl.end());
-				case sml_message::GET_PROC_PARAMETER_REQUEST:
+				case message_e::GET_PROC_PARAMETER_REQUEST:
 					return read_get_proc_parameter_request(ro, tpl.begin(), tpl.end());
-				case sml_message::GET_PROC_PARAMETER_RESPONSE:
+				case message_e::GET_PROC_PARAMETER_RESPONSE:
 					return read_get_proc_parameter_response(ro, tpl.begin(), tpl.end());
-				case sml_message::SET_PROC_PARAMETER_REQUEST:
+				case message_e::SET_PROC_PARAMETER_REQUEST:
 					return read_set_proc_parameter_request(ro, tpl.begin(), tpl.end());
-				case sml_message::SET_PROC_PARAMETER_RESPONSE:
+				case message_e::SET_PROC_PARAMETER_RESPONSE:
 					return read_set_proc_parameter_response(ro, tpl.begin(), tpl.end());
-				case sml_message::GET_LIST_REQUEST:
+				case message_e::GET_LIST_REQUEST:
 					return read_get_list_request(ro, tpl.begin(), tpl.end());
-				case sml_message::GET_LIST_RESPONSE:
+				case message_e::GET_LIST_RESPONSE:
 					return read_get_list_response(ro, tpl.begin(), tpl.end());
 
-				case sml_message::GET_COSEM_REQUEST:	
+				case message_e::GET_COSEM_REQUEST:	
 					return read_get_cosem_request(ro, tpl.begin(), tpl.end());
-				case sml_message::GET_COSEM_RESPONSE:
+				case message_e::GET_COSEM_RESPONSE:
 					return read_get_cosem_response(ro, tpl.begin(), tpl.end());
-				case sml_message::SET_COSEM_REQUEST:
+				case message_e::SET_COSEM_REQUEST:
 					return read_set_cosem_request(ro, tpl.begin(), tpl.end());
-				case sml_message::SET_COSEM_RESPONSE:
+				case message_e::SET_COSEM_RESPONSE:
 					return read_set_cosem_response(ro, tpl.begin(), tpl.end());
-				case sml_message::ACTION_COSEM_REQUEST:
+				case message_e::ACTION_COSEM_REQUEST:
 					return read_action_cosem_request(ro, tpl.begin(), tpl.end());
-				case sml_message::ACTION_COSEM_RESPONSE:
+				case message_e::ACTION_COSEM_RESPONSE:
 					return read_action_cosem_response(ro, tpl.begin(), tpl.end());
 
-				case sml_message::ATTENTION_RESPONSE:
+				case message_e::ATTENTION_RESPONSE:
 					return read_attention_response(ro, tpl.begin(), tpl.end());
 				default:
 					break;

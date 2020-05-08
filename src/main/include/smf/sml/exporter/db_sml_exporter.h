@@ -47,7 +47,7 @@ namespace node
 			/**
 			 * read SML message.
 			 */
-			void read_body(cyng::db::session, sml_message code, cyng::tuple_t const& tpl);
+			void read_body(cyng::db::session, message_e code, cyng::tuple_t const& tpl);
 			bool read_get_profile_list_response(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_get_proc_parameter_response(cyng::db::session, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 			void read_attention_response(cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);

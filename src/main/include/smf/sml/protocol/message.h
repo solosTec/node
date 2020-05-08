@@ -29,7 +29,7 @@ namespace node
 		cyng::tuple_t message(cyng::object trx
 			, std::uint8_t group_no
 			, std::uint8_t abort_code
-			, sml_message type
+			, message_e type
 			, cyng::tuple_t value);
 
 		/**
@@ -42,7 +42,7 @@ namespace node
 		cyng::tuple_t message(std::string trx
 			, std::uint8_t group_no
 			, std::uint8_t abort_code
-			, sml_message type
+			, message_e type
 			, cyng::tuple_t value);
 
 		/**

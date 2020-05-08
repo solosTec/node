@@ -177,7 +177,7 @@ namespace node
 		//	get SML message type
 		//
 		auto code = get_msg_type(msg);
-		shutdown_ = sml::sml_message::CLOSE_RESPONSE == code;
+		shutdown_ = sml::message_e::CLOSE_RESPONSE == code;
 
 		if (shutdown_) {
 
@@ -263,7 +263,7 @@ namespace node
 		}
 	}
 
-	sml::sml_message get_msg_type(cyng::tuple_t const& tpl)
+	sml::message_e get_msg_type(cyng::tuple_t const& tpl)
 	{
 		if (tpl.size() == 5)
 		{
@@ -278,11 +278,11 @@ namespace node
 			BOOST_ASSERT_MSG(choice.size() == 2, "CHOICE");
 			if (choice.size() == 2)
 			{
-				return static_cast<sml::sml_message>(cyng::value_cast<std::uint16_t>(choice.front(), 0x0000FF02));
+				return static_cast<sml::message_e>(cyng::value_cast<std::uint16_t>(choice.front(), 0x0000FF02));
 			}
 		}
 
-		return sml::sml_message::UNKNOWN;
+		return sml::message_e::UNKNOWN;
 	}
 
 

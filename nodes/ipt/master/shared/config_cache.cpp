@@ -98,7 +98,9 @@ namespace node
     {
         if (!is_cached(path)) {
             srv_ = srv;
-            sections_.emplace(path, cyng::param_map_t());
+            if (is_cache_allowed(path)) {
+                sections_.emplace(path, cyng::param_map_t());
+            }
         }
     }
 
@@ -264,6 +266,7 @@ namespace node
         case sml::CODE_ROOT_FIRMWARE:
         case sml::CODE_ROOT_DATA_COLLECTOR:
         case sml::CODE_ROOT_NTP:
+        case sml::CODE_ROOT_DEVICE_IDENT:
             return true;
         default:
             break;

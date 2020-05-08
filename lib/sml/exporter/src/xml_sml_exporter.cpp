@@ -165,7 +165,7 @@ namespace node
 			//
 			//	(4/5) CHOICE - msg type
 			//
-//             std::pair<sml_message, cyng::tuple_t> readout::read_choice(*pos++);
+//             std::pair<message_e, cyng::tuple_t> readout::read_choice(*pos++);
 			cyng::tuple_t choice;
 			choice = cyng::value_cast(*pos++, choice);
 			BOOST_ASSERT_MSG(choice.size() == 2, "CHOICE");
@@ -189,51 +189,51 @@ namespace node
 			cyng::tuple_t tpl;
 			tpl = cyng::value_cast(body, tpl);
 
-			switch (static_cast<sml_message>(code))
+			switch (static_cast<message_e>(code))
 			{
-			case sml_message::OPEN_REQUEST:		
+			case message_e::OPEN_REQUEST:		
 				read_public_open_request(node, tpl.begin(), tpl.end());
 				break;
-			case sml_message::OPEN_RESPONSE:	
+			case message_e::OPEN_RESPONSE:	
 				read_public_open_response(node, tpl.begin(), tpl.end());
 				break;
-			case sml_message::CLOSE_REQUEST:
+			case message_e::CLOSE_REQUEST:
 				cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::CLOSE_RESPONSE:
+			case message_e::CLOSE_RESPONSE:
 				cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_PROFILE_PACK_REQUEST:
+			case message_e::GET_PROFILE_PACK_REQUEST:
 				cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_PROFILE_PACK_RESPONSE:
+			case message_e::GET_PROFILE_PACK_RESPONSE:
 				cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_PROFILE_LIST_REQUEST:
+			case message_e::GET_PROFILE_LIST_REQUEST:
 				cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_PROFILE_LIST_RESPONSE:
+			case message_e::GET_PROFILE_LIST_RESPONSE:
 				read_get_profile_list_response(node, tpl.begin(), tpl.end());
 				break;
-			case sml_message::GET_PROC_PARAMETER_REQUEST:
+			case message_e::GET_PROC_PARAMETER_REQUEST:
 				cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_PROC_PARAMETER_RESPONSE:
+			case message_e::GET_PROC_PARAMETER_RESPONSE:
 				read_get_proc_parameter_response(node, tpl.begin(), tpl.end());
 				break;
-			case sml_message::SET_PROC_PARAMETER_REQUEST:
+			case message_e::SET_PROC_PARAMETER_REQUEST:
 				cyng::xml::write(node, body);
 				break;
-			case sml_message::SET_PROC_PARAMETER_RESPONSE:
+			case message_e::SET_PROC_PARAMETER_RESPONSE:
 				cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_LIST_REQUEST:
+			case message_e::GET_LIST_REQUEST:
 				cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::GET_LIST_RESPONSE:
+			case message_e::GET_LIST_RESPONSE:
 				cyng::xml::write(node.append_child("data"), body);
 				break;
-			case sml_message::ATTENTION_RESPONSE:
+			case message_e::ATTENTION_RESPONSE:
 				read_attention_response(node, tpl.begin(), tpl.end());
 				break;
 			default:

@@ -46,8 +46,8 @@ namespace node
 			std::uint64_t,			//	[2] cluster seq
 			boost::uuids::uuid,		//	[3] ws tag (origin)
 
-			sml::sml_message msg_code,	//	[4] SML message type
-			sml::obis_path_t,				//	[5] OBIS root code
+			sml::message_e msg_code,	//	[4] SML message type
+			sml::obis_path_t,		//	[5] OBIS root code
 			cyng::vector_t,			//	[6] TGateway/Device PK
 			cyng::tuple_t,			//	[7] parameters (optional)
 
@@ -69,7 +69,7 @@ namespace node
 		/**
 		 * Turns the message type string into the SML message type code
 		 */
-		node::sml::sml_message get_msg_code() const;
+		node::sml::message_e get_msg_code() const;
 
 		cyng::buffer_t const& get_srv() const;
 		std::string const& get_user() const;
@@ -109,7 +109,7 @@ namespace node
 		std::uint64_t const seq_;			//	cluster seq
 		boost::uuids::uuid const origin_;	//	ws tag (origin)
 
-		sml::sml_message const msg_type_;	//!<	SML message type
+		sml::message_e const msg_type_;	//!<	SML message type
 		sml::obis_path_t const path_;
 		cyng::vector_t const gw_;			//	TGateway/TDevice PK
 		cyng::tuple_t const params_;		//	parameters (optional)

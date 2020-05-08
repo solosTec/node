@@ -303,7 +303,7 @@ namespace node
 					<< "/"
 					<< sml::from_server_id(pos->second.get_srv())
 					<< " ["
-					<< sml::messages::name(pos->second.get_msg_code())
+					<< sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 					<< "]: "
 					<< cyng::io::to_str(params));
 
@@ -312,7 +312,7 @@ namespace node
 					, pos->second.get_sequence()
 					, pos->second.get_key_gw()
 					, pos->second.get_tag_origin()
-					, sml::messages::name(pos->second.get_msg_code())
+					, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 					, srv_str
 					, root.to_str()
 					, params));
@@ -639,7 +639,7 @@ namespace node
 				, seq
 				, gw
 				, origin
-				, channel
+				, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 				, sml::from_server_id(srv_id)
 				, root.to_str()
 				, config_cache_.get_section(root)));
@@ -955,7 +955,7 @@ namespace node
 		
 		switch (data.get_msg_code()) {
 
-		case sml::sml_message::GET_PROFILE_PACK_REQUEST:
+		case sml::message_e::GET_PROFILE_PACK_REQUEST:
 			CYNG_LOG_ERROR(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
@@ -963,19 +963,19 @@ namespace node
 				<< "> not implemented yet "
 				<< sml::messages::name(data.get_msg_code()));
 			break;
-		case sml::sml_message::GET_PROFILE_LIST_REQUEST:
+		case sml::message_e::GET_PROFILE_LIST_REQUEST:
 			execute_cmd_get_profile_list(sml_gen, data, params);
 			break;
 
-		case sml::sml_message::GET_PROC_PARAMETER_REQUEST:
+		case sml::message_e::GET_PROC_PARAMETER_REQUEST:
 			execute_cmd_get_proc_param(sml_gen, data, params);
 			break;
 
-		case sml::sml_message::SET_PROC_PARAMETER_REQUEST:
+		case sml::message_e::SET_PROC_PARAMETER_REQUEST:
 			execute_cmd_set_proc_param(sml_gen, data, params);
 			break;
 
-		case sml::sml_message::GET_LIST_REQUEST:
+		case sml::message_e::GET_LIST_REQUEST:
 			execute_cmd_get_list_request(sml_gen, data, params);
 			break;
 
