@@ -297,6 +297,11 @@ namespace node
 		}
 #endif
 
+		if (!create_table(db, "TNodeNames"))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table TNodeNames");
+		}
+
 	}
 
 	void insert_msg(cyng::store::table* tbl

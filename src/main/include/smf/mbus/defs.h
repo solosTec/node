@@ -76,11 +76,11 @@ namespace node
 		//constexpr std::uint8_t CTRL_FIELD_RSP_UD = 0x00;	//	Response of application data after a request from master
 
 		enum c_field_master : std::uint8_t {
-			CTRL_FIELD_SND_NKE = 0x40,	//	Link reset after communication
+			CTRL_FIELD_SND_NKE = 0x40,	//	Link reset after communication - SND_NKE
 
 			CTRL_FIELD_SND_UD2 = 0x43,	//	Send command with subsequent response - RSP_UD
-			CTRL_FIELD_SND_UD_CMD1 = 0x53,	//	Send command (Send User Data) - ACK
-			CTRL_FIELD_SND_UD_CMD2 = 0x73,	//	Send command (Send User Data) - ACK
+			CTRL_FIELD_SND_UD_CMD1 = 0x53,	//	Send command (send user data to slave) - ACK
+			CTRL_FIELD_SND_UD_CMD2 = 0x73,	//	Send command (send user data to slave) - ACK
 
 			CTRL_FIELD_REQ_UD1_ACK = 0x5A,	//	Request User Data
 			CTRL_FIELD_REQ_UD1_RSP_UD = 0x7A,	//	Request User Data

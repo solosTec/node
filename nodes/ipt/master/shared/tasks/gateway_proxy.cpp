@@ -963,12 +963,13 @@ namespace node
 				<< "> not implemented yet "
 				<< sml::messages::name(data.get_msg_code()));
 			break;
+
 		case sml::message_e::GET_PROFILE_LIST_REQUEST:
 			execute_cmd_get_profile_list(sml_gen, data, params);
 			break;
 
 		case sml::message_e::GET_PROC_PARAMETER_REQUEST:
-			execute_cmd_get_proc_param(sml_gen, data, params);
+			push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
 			break;
 
 		case sml::message_e::SET_PROC_PARAMETER_REQUEST:
@@ -1046,12 +1047,6 @@ namespace node
 
 	}
 
-	void gateway_proxy::execute_cmd_get_proc_param(sml::req_generator& sml_gen
-		, proxy_data const& data
-		, cyng::tuple_reader const& params)
-	{
-		push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
-	}
 
 	void gateway_proxy::execute_cmd_set_proc_param(sml::req_generator& sml_gen
 		, proxy_data const& data

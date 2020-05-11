@@ -252,9 +252,9 @@ namespace node
 		void execute_cmd_get_profile_list(sml::req_generator& sml_gen
 			, proxy_data const&
 			, cyng::tuple_reader const& params);
-		void execute_cmd_get_proc_param(sml::req_generator& sml_gen
-			, proxy_data const&
-			, cyng::tuple_reader const& params);
+		//void execute_cmd_get_proc_param(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, cyng::tuple_reader const& params);
 		void execute_cmd_set_proc_param(sml::req_generator& sml_gen
 			, proxy_data const&
 			, cyng::tuple_reader const& params);

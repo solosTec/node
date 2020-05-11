@@ -217,24 +217,13 @@ namespace node
 		//
 		//	sync tables
 		//
-		sync_table("TDevice");
-		sync_table("TGateway");
-		sync_table("TLoRaDevice");
-		sync_table("TMeter");
-		sync_table("TGUIUser");
-		sync_table("_Session");
-		sync_table("_Target");
-		sync_table("_Connection");
-		sync_table("_Cluster");
-		sync_table("_Config");
 		cache_.clear("_SysMsg", bus_->vm_.tag());
-		sync_table("_SysMsg");
 		cache_.clear("_TimeSeries", bus_->vm_.tag());
-		sync_table("_TimeSeries");
 		cache_.clear("_LoRaUplink", bus_->vm_.tag());
-		sync_table("_LoRaUplink");
-		sync_table("_CSV");
-		sync_table("TGWSnapshot");
+
+		for (auto const& tbl : db_sync::tables_) {
+			sync_table(tbl.name_);
+		}
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

@@ -88,15 +88,17 @@ namespace node
 				START,
 				FRAME_SHORT,
 				FRAME,
+				FRAME_CTRL,
+				FRAME_LONG
 			};
 
 			struct base {
-				std::size_t pos_;
-				std::uint8_t checksum_;
+				std::uint8_t pos_;
+				std::uint8_t cs_;	//	checksum
 				bool ok_;	//	checksum ok
 				base()
 					: pos_(0)
-					, checksum_(0)
+					, cs_(0)
 					, ok_(false)
 				{}
 			};
@@ -105,20 +107,46 @@ namespace node
 				ack() : base() {}
 			};
 			struct short_frame : base {
-				short_frame() : base() {}
+				std::uint8_t c_, a_;
+				short_frame() 
+					: base() 
+					, c_(0)
+					, a_(0)
+				{}
 			};
 			struct long_frame : base {
-				long_frame() : base() {}
+				std::uint8_t c_, a_, ci_;
+				cyng::buffer_t data_;
+				long_frame() 
+					: base() 
+					, c_(0)
+					, a_(0)
+					, ci_(0)
+					, data_()
+				{}
 			};
 			struct ctrl_frame : base {
-				ctrl_frame() : base() {}
+				std::uint8_t c_, a_, ci_;
+				ctrl_frame()
+					: base() 
+					, c_(0)
+					, a_(0)
+					, ci_(0)
+				{}
+			};
+			struct test_frame  {
+				test_frame() 
+					: lfield_()
+				{}
+				cyng::buffer_t lfield_;
 			};
 
 
 			using parser_state_t = boost::variant<ack,
 				short_frame,	//	0x10
 				long_frame,	//	0x68
-				ctrl_frame	//	0x68
+				ctrl_frame,	//	0x68
+				test_frame	//	check frame type (control/long)
 			>;
 
 			//
@@ -131,6 +159,7 @@ namespace node
 				state operator()(short_frame&) const;
 				state operator()(long_frame&) const;
 				state operator()(ctrl_frame&) const;
+				state operator()(test_frame&) const;
 
 				parser& parser_;
 				const char c_;
@@ -213,7 +242,7 @@ namespace node
 			/**
 			 * instruction buffer
 			 */
-			cyng::vector_t	code_;
+			//cyng::vector_t	code_;
 
 			/**
 			 *	input stream buffer
@@ -231,12 +260,15 @@ namespace node
 			state	stream_state_;
 			parser_state_t	parser_state_;
 
-			//
-			//	to prevent statement ordering we have to use
-			//	function objects instead of function results
-			//	in the argument list
-			//
-			//std::function<std::uint8_t()> f_read_uint8;
+			/**
+			 * checksum
+			 */
+			std::uint8_t checksum_;
+
+			/**
+			 * length - result from last length field
+			 */
+			std::uint8_t length_;
 
 		};
 

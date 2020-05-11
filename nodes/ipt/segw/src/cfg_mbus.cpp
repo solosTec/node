@@ -5,9 +5,6 @@
  *
  */
 
-
-
-
 #include "cfg_mbus.h"
 #include "segw.h"
 #include "cache.h"

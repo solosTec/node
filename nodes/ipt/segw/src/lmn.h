@@ -15,7 +15,16 @@
 
 namespace node
 {
+	//
+	//	forward declaration
+	//
 	class cache;
+
+	/**
+	 * Read configuration and starts all required
+	 * tasks to read data from serial ports and connects
+	 * this data stream to a parser.
+	 */
 	class lmn
 	{
 	public:
@@ -46,12 +55,25 @@ namespace node
 		void sml_eom(cyng::context& ctx);
 		void sml_get_list_response(cyng::context& ctx);
 
+		void mbus_ack(cyng::context& ctx);
+		void mbus_frame_short(cyng::context& ctx);
+		void mbus_frame_ctrl(cyng::context& ctx);
+		void mbus_frame_long(cyng::context& ctx);
+
 	private:
 		cyng::logging::log_ptr logger_;
 		cyng::async::mux& mux_;
 		cyng::controller vm_;
 		cache& cache_;
 		decoder_wireless_mbus decoder_wmbus_;
+
+		std::size_t serial_parser_;	//	wired mbus
+		std::size_t serial_mgr_;
+		std::size_t serial_port_;	//	incoming data
+
+		std::size_t radio_parser_;	//	wireless mbus
+		std::size_t radio_port_;	//	incoming data
 	};
+
 }
 #endif

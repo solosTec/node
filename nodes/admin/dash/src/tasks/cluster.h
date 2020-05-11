@@ -75,6 +75,10 @@ namespace node
 
 		void res_subscribe(cyng::context& ctx);
 
+		/**
+		 * This function receives all incoming data from
+		 * the web app.
+		 */
 		void ws_read(cyng::context& ctx);
 
 		void sync_table(std::string const&);

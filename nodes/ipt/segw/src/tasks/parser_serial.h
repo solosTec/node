@@ -8,6 +8,8 @@
 #ifndef NODE_SEGW_TASK_PARSER_SERIAL_H
 #define NODE_SEGW_TASK_PARSER_SERIAL_H
 
+#include <smf/mbus/parser.h>
+
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 
@@ -19,15 +21,15 @@ namespace cyng
 }
 namespace node
 {
-	/**
-	 * receiver and parser for serial data (RS485) aka IEC
-	 */
 	class cache;
+	/**
+	 * receiver and parser for serial data (RS485) aka M-Bus/(IEC)
+	 */
 	class parser_serial
 	{
 	public:
-		//	[0] write entry
-		using msg_0 = std::tuple<>;
+		//	[0] receive data
+		using msg_0 = std::tuple<cyng::buffer_t, std::size_t>;
 		//	[1] status (open/closed)
 		using msg_1 = std::tuple<bool>;
 
@@ -43,10 +45,10 @@ namespace node
 		void stop(bool shutdown);
 
 		/**
-		 * @brief slot [0] - write an entry
+		 * @brief slot [0] - receive data
 		 *
 		 */
-		cyng::continuation process();
+		cyng::continuation process(cyng::buffer_t, std::size_t);
 
 		/**
 		 * @brief slot [1] - status (open/closed)
@@ -66,6 +68,11 @@ namespace node
 		 * configuration management
 		 */
 		cache& cache_;
+
+		/**
+		 * M-Bus parser
+		 */
+		mbus::parser parser_;
 
 	};
 

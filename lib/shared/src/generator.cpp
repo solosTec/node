@@ -21,7 +21,7 @@ namespace node
 	{
 		cyng::vector_t prg;
 		return prg
-			<< cyng::generate_invoke("log.msg.debug", "resolve", host)	// debug
+			<< cyng::generate_invoke("log.msg.debug", "resolve: ", host)	// debug
 			<< cyng::generate_invoke("ip.tcp.socket.resolve", host, service)
 			<< ":SEND-LOGIN-REQUEST"			//	label
 			<< cyng::code::JNE					//	jump if no error

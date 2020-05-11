@@ -20,10 +20,16 @@ namespace node
 {
 	void create_cache(cyng::logging::log_ptr logger, cyng::store::db& db)
 	{
-		CYNG_LOG_TRACE(logger, "create cache tables");
+		CYNG_LOG_TRACE(logger, "create "
+			<< db_sync::tables_.size()
+			<< " cache tables");
 
-		if (!create_table(db, "TDevice")) {
-			CYNG_LOG_FATAL(logger, "cannot create table TDevice");
+		for (auto const& tbl : db_sync::tables_) {
+			if (!tbl.custom_) {
+				if (!create_table(db, tbl.name_)) {
+					CYNG_LOG_FATAL(logger, "cannot create table: " << tbl.name_);
+				}
+			}
 		}
 
 		//
@@ -87,29 +93,21 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
 		}
 
-		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices
-		//	DevEUI - 64 bit end-device identifier, EUI-64 (unique)
-		//	DevAddr - 32 bit device address (non-unique)
-		if (!create_table(db, "TLoRaDevice"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table TLoRaDevice");
-		}
-
 		if (!db.create_table(cyng::table::make_meta_table<1, 13>("TMeter", { "pk"
-			, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-			, "meter"		//	meter number (i.e. 16000913) 4 bytes 
-			, "code"		//	metering code - changed at 2019-01-31
-			, "maker"		//	manufacturer
-			, "tom"			//	time of manufacture
-			, "vFirmware"	//	firmwareversion (i.e. 11600000)
-			, "vParam"		//	parametrierversion (i.e. 16A098828.pse)
-			, "factoryNr"	//	fabrik nummer (i.e. 06441734)
-			, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
-			, "mClass"		//	Metrological Class: A, B, C, Q3/Q1, ...
-			, "gw"			//	optional gateway pk
-			//	-- additional columns
-			, "serverId"	//	optional gateway server ID
-			, "online"		//	gateway online state (1,2,3)
+					, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+					, "meter"		//	meter number (i.e. 16000913) 4 bytes 
+					, "code"		//	metering code - changed at 2019-01-31
+					, "maker"		//	manufacturer
+					, "tom"			//	time of manufacture
+					, "vFirmware"	//	firmwareversion (i.e. 11600000)
+					, "vParam"		//	parametrierversion (i.e. 16A098828.pse)
+					, "factoryNr"	//	fabrik nummer (i.e. 06441734)
+					, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+					, "mClass"		//	Metrological Class: A, B, C, Q3/Q1, ...
+					, "gw"			//	optional gateway pk
+					//	-- additional columns
+					, "serverId"	//	optional gateway server ID
+					, "online"		//	gateway online state (1,2,3)
 			},
 			{ cyng::TC_UUID
 			, cyng::TC_STRING		//	ident
@@ -140,77 +138,13 @@ namespace node
 			, 36	//	gw
 			, 23 	//	serverId
 			, 0		//	on/offline state
-		})))
+			})))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
 		}
-
-		if (!create_table(db, "TGUIUser")) {
-			CYNG_LOG_FATAL(logger, "cannot create table TGUIUser");
-		}
-		
-		if (!create_table(db, "_Session"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _Session");
-		}
-
-		if (!create_table(db, "_Target"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _Target");
-		}
-
-		if (!create_table(db, "_Connection"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _Connection");
-		}
-
-		if (!create_table(db, "_Cluster"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _Cluster");
-		}
-
-		if (!create_table(db, "_Config"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _Config");
-		}
-		else
-		{
-			//
-			//	set initial value
-			//
-			//db.insert("_Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, bus_->vm_.tag());
-		}
-
-		if (!create_table(db, "_SysMsg"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _SysMsg");
-		}
-
-		if (!create_table(db, "_TimeSeries"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _TimeSeries");
-		}
-
-		if (!create_table(db, "_CSV"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _CSV");
-		}
-
-		if (!create_table(db, "_LoRaUplink"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _LoRaUplink");
-		}
-
 		if (!create_table(db, "_HTTPSession"))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _HTTPSession");
-		}
-
-		//	snapshot of gateway configuration
-		//
-		if (!create_table(db, "TGWSnapshot"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table TGWSnapshot");
 		}
 
 		//
@@ -221,19 +155,11 @@ namespace node
 
 	void clear_cache(cyng::store::db& db, boost::uuids::uuid tag)
 	{
-		db.clear("TDevice", tag);
-		db.clear("TGateway", tag);
-		db.clear("TLoRaDevice", tag);
-		db.clear("TMeter", tag);
-		db.clear("TGUIUser", tag);
-		db.clear("_Session", tag);
-		db.clear("_Target", tag);
-		db.clear("_Connection", tag);
-		db.clear("_Cluster", tag);
-		db.clear("_Config", tag);
+		for (auto const& tbl : db_sync::tables_) {
+			db.clear(tbl.name_, tag);
+
+		}
 		db.insert("_Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, tag);
-		//cache_.clear("_SysMsg", bus_->vm_.tag());
-		db.clear("TGWSnapshot", tag);
 	}
 
 	void res_subscribe(cyng::logging::log_ptr logger
@@ -400,6 +326,29 @@ namespace node
 			}
 		}
 	}
+
+	/** 
+	 * Initialize all used table names
+	 */
+	const std::array<db_sync::tbl_descr, 16>	db_sync::tables_ =
+	{
+		tbl_descr{"TDevice", false},
+		tbl_descr{"TGateway", true},
+		tbl_descr{"TLoRaDevice", false},
+		tbl_descr{"TMeter", true},
+		tbl_descr{"TGUIUser", false},
+		tbl_descr{"TGWSnapshot", false},
+		tbl_descr{"TNodeNames", false},
+		tbl_descr{"_Session", false},
+		tbl_descr{"_Target", false},
+		tbl_descr{"_Connection", false},
+		tbl_descr{"_Cluster", false},
+		tbl_descr{"_Config", false},
+		tbl_descr{"_SysMsg", false},
+		tbl_descr{"_TimeSeries", false},
+		tbl_descr{"_LoRaUplink", false},
+		tbl_descr{"_CSV", false},
+	};
 
 	db_sync::db_sync(cyng::logging::log_ptr logger, cyng::store::db& db)
 		: logger_(logger)

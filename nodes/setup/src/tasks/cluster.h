@@ -86,7 +86,7 @@ namespace node
 		 */
 		cyng::store::db& cache_;
 
-		static std::array<std::string, 5>	tables_;
+		static const std::array<std::string, 6>	tables_;
 	};
 	
 }

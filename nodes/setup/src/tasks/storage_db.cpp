@@ -935,6 +935,17 @@ namespace node
 			, 2048	//	rights
 			}));
 
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 1>("TNodeNames", 
+			{ "pk"
+			, "name"		//	[string] module name
+			},
+			{ cyng::TC_UUID			//	pk
+			, cyng::TC_STRING		//	name
+			},
+			{ 36
+			, 64	//	name
+			}));
+
 		return meta_map;
 	}
 

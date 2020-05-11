@@ -504,12 +504,13 @@ namespace node
 		}
 	}
 
-	std::array<std::string, 5>	cluster::tables_ = 
+	const std::array<std::string, 6>	cluster::tables_ = 
 	{ 
 		"TDevice",
 		"TGateway",
 		"TLoRaDevice",
 		"TMeter",
-		"TGUIUser"
+		"TGUIUser",
+		"TNodeNames"
 	};
 }

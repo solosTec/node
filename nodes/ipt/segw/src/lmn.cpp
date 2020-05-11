@@ -47,6 +47,13 @@ namespace node
 		, vm_(m.get_io_service(), tag)
 		, cache_(cfg)
 		, decoder_wmbus_(logger, cfg, vm_)
+
+		, serial_parser_(cyng::async::NO_TASK)
+		, serial_mgr_(cyng::async::NO_TASK)
+		, serial_port_(cyng::async::NO_TASK)
+
+		, radio_parser_(cyng::async::NO_TASK)
+		, radio_port_(cyng::async::NO_TASK)
 	{
 		cyng::register_logger(logger_, vm_);
 		vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
@@ -60,6 +67,11 @@ namespace node
 		//vm.register_function("sml.eom", 2, std::bind(&lmn::sml_eom, this, std::placeholders::_1));
 
 		vm_.register_function("sml.get.list.response", 5, std::bind(&lmn::sml_get_list_response, this, std::placeholders::_1));
+
+		vm_.register_function("mbus.ack", 0, std::bind(&lmn::mbus_ack, this, std::placeholders::_1));
+		vm_.register_function("mbus.short.frame", 5, std::bind(&lmn::mbus_frame_short, this, std::placeholders::_1));
+		vm_.register_function("mbus.ctrl.frame", 6, std::bind(&lmn::mbus_frame_ctrl, this, std::placeholders::_1));
+		vm_.register_function("mbus.long.frame", 7, std::bind(&lmn::mbus_frame_long, this, std::placeholders::_1));
 
 	}
 
@@ -96,7 +108,15 @@ namespace node
 
 			if (receiver.second) {
 
+				serial_parser_ = receiver.first;
+
+				//
+				//	open port and start manager
+				//
 				auto const sender = start_lmn_port_wired(receiver.first);
+				if (sender.second) {
+					serial_mgr_ = sender.first;
+				}
 			}
 		}
 		catch (boost::system::system_error const& ex) {
@@ -118,6 +138,8 @@ namespace node
 
 			if (receiver.second) {
 
+				radio_parser_ = receiver.first;
+
 				auto const hci = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "HCI"), std::string("none"));
 				if (boost::algorithm::equals(hci, "CP210x")) {
 
@@ -132,6 +154,9 @@ namespace node
 
 					if (unwrapper.second) {
 						auto const sender = start_lmn_port_wireless(unwrapper.first, receiver.first);
+						if (sender.second) {
+							radio_port_ = sender.first;
+						}
 					}
 					else {
 						CYNG_LOG_FATAL(logger_, "cannot start CP210x parser for HCI messages");
@@ -203,6 +228,7 @@ namespace node
 
 	std::pair<std::size_t, bool> lmn::start_rs485_mgr(std::size_t tsk, std::chrono::seconds delay)
 	{
+		serial_port_ = tsk;
 		return cyng::async::start_task_delayed<rs485>(mux_
 			, delay
 			, logger_
@@ -327,12 +353,43 @@ namespace node
 		}
 	}
 
+	void lmn::mbus_ack(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		//
+		//	forward ACK to mbus manager
+		//
+		mux_.post(serial_mgr_, 0, cyng::tuple_factory());
+	}
+
+	void lmn::mbus_frame_short(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+	}
+	void lmn::mbus_frame_ctrl(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+	}
+	void lmn::mbus_frame_long(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+	}
+
+
 	void lmn::sml_msg(cyng::context& ctx)
 	{
 		//	example:
 		//	[]
 		//
-		const cyng::vector_t frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
 		//CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		//
@@ -444,5 +501,7 @@ namespace node
 		}
 
 	}
+
+
 }
 

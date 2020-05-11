@@ -20,6 +20,22 @@ namespace node
 	class db_sync
 	{
 	public:
+		struct tbl_descr {
+			std::string const name_;
+			bool const custom_;
+			inline tbl_descr(std::string name, bool custom)
+				: name_(name)
+				, custom_(custom)
+			{}
+		};
+
+
+		/**
+		 * List of all used table names
+		 */
+		const static std::array<tbl_descr, 16>	tables_;
+
+	public:
 		db_sync(cyng::logging::log_ptr, cyng::store::db&);
 
 		/**
@@ -51,8 +67,8 @@ namespace node
 	private:
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
-	};
 
+	};
 	void res_subscribe(cyng::logging::log_ptr
 		, cyng::store::db&
 		, std::string const&		//	[0] table name

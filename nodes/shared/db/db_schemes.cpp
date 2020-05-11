@@ -455,6 +455,22 @@ namespace node
 				, 2048	//	rights
 				});
 		}
+		else if (boost::algorithm::equals(name, "TNodeNames")) {
+
+			//
+			//	This tables stores a relation between a node UUID
+			//	and an optional name
+			//
+			return cyng::table::make_meta_table<1, 1>(name, { "pk"
+				, "name"		//	[string] module name
+				},
+				{ cyng::TC_UUID			//	pk
+				, cyng::TC_STRING		//	name
+				},
+				{ 36
+				, 64	//	name
+				});
+		}
 
 		//
 		//	table name not defined

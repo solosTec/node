@@ -24,11 +24,13 @@ namespace node
 		//
 		parser::parser(parser_callback cb)
 			: cb_(cb)
-			, code_()
+			//, code_()
 			, stream_buffer_()
 			, input_(&stream_buffer_)
 			, stream_state_(state::START)
 			, parser_state_()
+			, checksum_{ 0 }
+			, length_{ 0 }
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
 			parser_state_ = ack();
@@ -55,32 +57,46 @@ namespace node
                 switch (static_cast<unsigned char>(c)) {
 				case 0xE5:
 					//	ack
+					cb_(cyng::generate_invoke("mbus.ack", +c));
 					break;
 				case 0x10:
+					checksum_ = 0;
 					parser_state_ = short_frame();
 					stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 					break;
 				case 0x68:
+					//	check frame type (control/long)
+					checksum_ = 0;
+					parser_state_ = test_frame();
+					stream_state_ = state::FRAME;
 					break;
 				default:
 					//	error
 					BOOST_ASSERT_MSG(false, "m bus invalid start sequence");
+					cb_(cyng::generate_invoke("log.msg.trace", "invalid start sequence: ", +c));
 					break;
 				}
 				break;
-			case state::FRAME_SHORT:
+			case state::FRAME:
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
-				if (state::START == stream_state_) {
-					cb_(std::move(code_));
+				switch (stream_state_) {
+				case state::FRAME_CTRL:
+					parser_state_ = ctrl_frame();
+					break;
+				case state::FRAME_LONG:
+					parser_state_ = long_frame();
+					break;
+				default:
+					break;
 				}
+				checksum_ += c;
 				break;
-			//case state::SHORT_START:
-			//	stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
-			//	break;
-			//case state::CONTROL_START:
-			//	stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
-			//	break;
 			default:
+				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
+				checksum_ += c;
+				if (state::START == stream_state_) {
+					parser_state_ = ack();
+				}
 				break;
 			}
 
@@ -116,26 +132,24 @@ namespace node
 				BOOST_ASSERT(c_ == 0x10);
 				break;
 			case 1:	//	C-field
-				parser_.input_.put(c_);
-				frm.checksum_ += c_;
+				frm.c_ = c_;
 				break;
 			case 2:	//	A-field	
-				parser_.input_.put(c_);
-				frm.checksum_ += c_;
+				frm.a_ = c_;
 				break;
 			case 3:	//	check sum
-				frm.ok_ = c_ == frm.checksum_;
-				BOOST_ASSERT(c_ == frm.checksum_);
+				frm.cs_ = c_;
+				frm.ok_ = c_ == parser_.checksum_;
+				//BOOST_ASSERT(c_ == frm.checksum_);
 				break;
 			case 4:
 				BOOST_ASSERT(c_ == 0x16);
-				parser_.code_ << cyng::generate_invoke("mbus.short.frame"
+				parser_.cb_(cyng::generate_invoke("mbus.short.frame"
 					, cyng::code::IDENT
 					, frm.ok_	//	OK
-					, parser_.get_read_uint8_f()	//	C-field
-					, parser_.get_read_uint8_f()	//	A-field
-					, parser_.get_read_uint8_f())	//	check sum
-					<< cyng::unwind_vec();
+					, frm.c_	//	C-field
+					, frm.a_	//	A-field
+					, frm.cs_));
 				return state::START;
 			default:
 				return state::START;
@@ -146,15 +160,109 @@ namespace node
 		}
 		parser::state parser::state_visitor::operator()(long_frame& frm) const
 		{
+			switch (frm.pos_) {
+			case 0:
+				BOOST_ASSERT(c_ == 0x68);
+				break;
+			case 1:	//	C-field
+				frm.c_ = c_;
+				break;
+			case 2:	//	A-field	
+				frm.a_ = c_;
+				break;
+			case 3:	//	CI-field
+				frm.ci_ = c_;
+				break;
+			default:
+				//	collect user data
+				if (frm.pos_ <= parser_.length_) {
+					//	user data 
+					frm.data_.push_back(c_);
+				}
+				else if (parser_.length_ + 1 == frm.pos_) {
+					//	
+					//	check sum
+					//	
+					frm.cs_ = c_;
+					frm.ok_ = c_ == parser_.checksum_;
+					//BOOST_ASSERT(c_ == frm.checksum_);
+
+					parser_.cb_(cyng::generate_invoke("mbus.long.frame"
+						, cyng::code::IDENT
+						, frm.ok_	//	OK
+						, frm.c_	//	C-field
+						, frm.a_	//	A-field
+						, frm.ci_	//	CI-field
+						, frm.cs_	//	check sum
+						, frm.data_));	
+				}
+				else if (parser_.length_ + 2u == frm.pos_) {
+					BOOST_ASSERT(c_ == 0x16);
+					return state::START;
+				}
+			}
+
 			frm.pos_++;
-			parser_.input_.put(c_);
-			return state::START;
+			return state::FRAME_LONG;
 		}
 		parser::state parser::state_visitor::operator()(ctrl_frame& frm) const
 		{
+			switch (frm.pos_) {
+			case 0:
+				BOOST_ASSERT(c_ == 0x68);
+				break;
+			case 1:	//	C-field
+				frm.c_ = c_;
+				break;
+			case 2:	//	A-field	
+				frm.a_ = c_;
+				break;
+			case 3:	//	CI-field
+				frm.ci_ = c_;
+				break;
+			case 4:	//	check sum
+				frm.cs_ = c_;
+				frm.ok_ = c_ == parser_.checksum_;
+				//BOOST_ASSERT(c_ == frm.checksum_);
+				break;
+			case 5:
+				BOOST_ASSERT(c_ == 0x16);
+				parser_.cb_(cyng::generate_invoke("mbus.ctrl.frame"
+					, cyng::code::IDENT
+					, frm.ok_	//	OK
+					, frm.c_	//	C-field
+					, frm.a_	//	A-field
+					, frm.ci_	//	CI-field
+					, frm.cs_));	//	check sum
+				return state::START;
+			default:
+				return state::START;
+			}
+
 			frm.pos_++;
-			parser_.input_.put(c_);
-			return state::START;
+			return state::FRAME_CTRL;
+		}
+		parser::state parser::state_visitor::operator()(test_frame& frm) const
+		{
+			frm.lfield_.push_back(c_);
+			if (2 == frm.lfield_.size()) {
+				
+				//	the length field (L field) is transmitted twice.
+				BOOST_ASSERT(std::all_of(frm.lfield_.cbegin(), frm.lfield_.cend(), [&](char c) {
+					return c == c_;
+					}));
+
+				if (std::all_of(frm.lfield_.cbegin(), frm.lfield_.cend(), [](char c) { 
+					return c == 0x03; 
+					})) {
+
+					return 	parser::state::FRAME_CTRL;
+				}
+
+				parser_.length_ = c_;
+				return parser::state::FRAME_LONG;
+			}
+			return parser::state::FRAME;
 		}
 
 		std::function<std::uint8_t()> parser::get_read_uint8_f()
@@ -325,7 +433,7 @@ namespace node
 
 			default:
 				//stream_state_ = state::INVALID_STATE;
-				cb_(cyng::generate_invoke("log.msg.error", "w-mbus: unknown control field", static_cast<unsigned>(c)));
+				cb_(cyng::generate_invoke("log.msg.error", "w-mbus: unknown control field: ", +c));
 				break;
 			}
 
