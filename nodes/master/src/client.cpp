@@ -2340,7 +2340,8 @@ namespace node
 							//
 							//	duplicate target name
 							//
-							CYNG_LOG_WARNING(logger_, "client.req.register.push.target - session "
+							CYNG_LOG_WARNING(logger_, ctx.get_name()
+								<< " - session "
 								<< tag
 								<< " already registered "
 								<< target_name);
@@ -2352,7 +2353,8 @@ namespace node
 						}
 						else
 						{
-							CYNG_LOG_TRACE(logger_, "client.req.register.push.target - session "
+							CYNG_LOG_TRACE(logger_, ctx.get_name()
+								<< " - session "
 								<< rec_tag
 								<< " registered "
 								<< target_name

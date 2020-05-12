@@ -6,6 +6,7 @@
  */
 
 #include "storage_db.h"
+#include "tables.h"
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
@@ -218,11 +219,7 @@ namespace node
 				BOOST_ASSERT(r.second);
 				BOOST_ASSERT_MSG(r.first == pos->second->size(), "invalid key or data");
 
-				if (boost::algorithm::equals(name, "TDevice") || 
-					boost::algorithm::equals(name, "TMeter") ||
-					boost::algorithm::equals(name, "TLoRaDevice") ||
-					boost::algorithm::equals(name, "TGateway") ||
-					boost::algorithm::equals(name, "TGUIUser"))
+				if (!tables::is_custom(name)) 
 				{
 					//	[763ae055-449c-4783-b383-8fc8cd52f44f]
 					//	[2018-01-23 15:10:47.65306710,true,vFirmware,id,descr,number,name]
@@ -944,6 +941,29 @@ namespace node
 			},
 			{ 36
 			, 64	//	name
+			}));
+
+		
+
+		//
+		//	This table contains addition information about 
+		//	meters with IEC communiction.
+		//
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 3>("TIECBridge",
+			{ "pk"		//	same key as in TMeter table
+			, "ep"		//	[ip] incoming/outgoing IP connection
+			, "direction"	//	[bool] incoming/outgoing
+			, "interval"	//	[seconds] pull cycle
+			},
+			{ cyng::TC_UUID			//	pk
+			, cyng::TC_IP_TCP_ENDPOINT	//	ep
+			, cyng::TC_BOOL
+			, cyng::TC_SECOND
+			},
+			{ 36
+			, 0	//	ep
+			, 0	//	direction
+			, 0
 			}));
 
 		return meta_map;

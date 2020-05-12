@@ -754,7 +754,6 @@ namespace node
 		boost::beast::http::response<boost::beast::http::string_body> session::send_not_authorized(std::uint32_t version
 			, bool keep_alive
 			, std::string target
-			//, std::string type
 			, std::string realm)
 		{
 			CYNG_LOG_WARNING(logger_, "401 - unauthorized: " << target);
@@ -762,12 +761,22 @@ namespace node
 			std::string body =
 				"<!DOCTYPE html>\n"
 				"<html lang=en>\n"
-				"\t<head>\n"
-				"\t\t<title>not authorized</title>\n"
-				"\t</head>\n"
-				"\t<body style=\"font-family:'Courier New', Arial, sans-serif\">\n"
-				"\t\t<h1>&#x1F6AB; " + target + "</h1>\n"
-				"\t</body>\n"
+
+				"<head>\n"
+				"\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n"
+				"\t<title>401 not authorized</title>\n"
+				"</head>\n"
+
+				"<body style=\"color: #444; margin:0;font: normal 14px/20px Arial, Helvetica, sans-serif; height:100%; background-color: #fff;\">\n"
+				"\t<div style=\"height:auto; min-height:100%; \">"
+				"\t\t<div style=\"text-align: center; width:800px; margin-left: -400px; position:absolute; top: 30%; left:50%;\">\n"
+				"\t\t\t<h1 style=\"margin:0; font-size:150px; line-height:150px; font-weight:bold;\">401</h1>\n"
+				"\t\t\t<h2 style=\"margin-top:20px;font-size: 30px;\">Not Authorized</h2>\n"
+				"\t\t\t<p>You are not authorized</p>\n"
+				"\t\t</div>\n"
+				"\t</div>\n"
+
+				"</body>\n"
 				"</html>\n"
 				;
 

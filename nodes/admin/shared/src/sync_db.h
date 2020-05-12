@@ -20,22 +20,6 @@ namespace node
 	class db_sync
 	{
 	public:
-		struct tbl_descr {
-			std::string const name_;
-			bool const custom_;
-			inline tbl_descr(std::string name, bool custom)
-				: name_(name)
-				, custom_(custom)
-			{}
-		};
-
-
-		/**
-		 * List of all used table names
-		 */
-		const static std::array<tbl_descr, 16>	tables_;
-
-	public:
 		db_sync(cyng::logging::log_ptr, cyng::store::db&);
 
 		/**
@@ -69,6 +53,7 @@ namespace node
 		cyng::store::db& db_;
 
 	};
+
 	void res_subscribe(cyng::logging::log_ptr
 		, cyng::store::db&
 		, std::string const&		//	[0] table name
@@ -111,6 +96,30 @@ namespace node
 		, cyng::param_t			//	[2] parameter
 		, std::uint64_t			//	[3] generation
 		, boost::uuids::uuid);
+
+	/**
+	 * Take data from TMeter table to make
+	 * IEC data complete
+	 */
+	bool complete_data_iec(cyng::store::db& db
+		, cyng::table::key_type const& key
+		, cyng::table::data_type& data);
+
+	/**
+	 * Take data from TGateway table to make
+	 * meter data complete
+	 */
+	bool complete_data_meter(cyng::store::db& db
+		, cyng::table::key_type const& key
+		, cyng::table::data_type& data);
+
+	/**
+	 * Take data from TDevice and _Session table to make
+	 * gateway data complete
+	 */
+	bool complete_data_gw(cyng::store::db& db
+		, cyng::table::key_type const& key
+		, cyng::table::data_type& data);
 
 	/**
 	 * helper function to find all meters of gateway

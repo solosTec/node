@@ -14,7 +14,6 @@
 #include <cyng/db/session_pool.h>
 #include <cyng/table/meta_interface.h>
 #include <cyng/store/db.h>
-#include <map>
 
 namespace node
 {

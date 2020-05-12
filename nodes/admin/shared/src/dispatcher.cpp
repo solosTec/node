@@ -25,6 +25,7 @@ namespace node
 				tbl_channel_rel("TDevice", "config.device", "table.device.count"),
 				tbl_channel_rel("TGateway", "config.gateway", "table.gateway.count"),
 				tbl_channel_rel("TMeter", "config.meter", "table.meter.count"),
+				tbl_channel_rel("TIECBridge", "config.iec", "table.iec.count"),
 				tbl_channel_rel("TLoRaDevice", "config.lora", "table.LoRa.count"),
 				tbl_channel_rel("TGUIUser", "config.user", "table.user.count"),
 				tbl_channel_rel("_Session", "status.session", "table.session.count"),

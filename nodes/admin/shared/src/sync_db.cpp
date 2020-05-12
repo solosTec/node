@@ -6,6 +6,7 @@
  */ 
 
 #include "sync_db.h"
+#include "tables.h"
 #include <smf/shared/db_schemes.h>
 #include <smf/cluster/generator.h>
 
@@ -21,13 +22,16 @@ namespace node
 	void create_cache(cyng::logging::log_ptr logger, cyng::store::db& db)
 	{
 		CYNG_LOG_TRACE(logger, "create "
-			<< db_sync::tables_.size()
+			<< tables::list_.size()
 			<< " cache tables");
 
-		for (auto const& tbl : db_sync::tables_) {
+		for (auto const& tbl : tables::list_) {
 			if (!tbl.custom_) {
 				if (!create_table(db, tbl.name_)) {
 					CYNG_LOG_FATAL(logger, "cannot create table: " << tbl.name_);
+				}
+				else {
+					CYNG_LOG_DEBUG(logger, "create table: " << tbl.name_);
 				}
 			}
 		}
@@ -142,9 +146,33 @@ namespace node
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
 		}
-		if (!create_table(db, "_HTTPSession"))
+
+
+		//
+		//	TIECBridge is supplementary table to TMeter.
+		//
+		if (!db.create_table(cyng::table::make_meta_table<1, 4>("TIECBridge",
+			{ "pk"		//	same key as in TMeter table
+			, "ep"		//	[ip] incoming/outgoing IP connection
+			, "direction"	//	[bool] incoming/outgoing
+			, "interval"	//	[seconds] pull cycle
+					//	-- additional columns
+			, "meter"
+			},
+			{ cyng::TC_UUID			//	pk
+			, cyng::TC_IP_TCP_ENDPOINT	//	ep
+			, cyng::TC_BOOL
+			, cyng::TC_SECOND
+			, cyng::TC_STRING
+			},
+			{ 36
+			, 0	//	ep
+			, 0	//	direction
+			, 0
+			, 8
+			})))
 		{
-			CYNG_LOG_FATAL(logger, "cannot create table _HTTPSession");
+			CYNG_LOG_FATAL(logger, "cannot create table TIECBridge");
 		}
 
 		//
@@ -155,9 +183,10 @@ namespace node
 
 	void clear_cache(cyng::store::db& db, boost::uuids::uuid tag)
 	{
-		for (auto const& tbl : db_sync::tables_) {
-			db.clear(tbl.name_, tag);
-
+		for (auto const& tbl : tables::list_) {
+			if (!tbl.local_) {
+				db.clear(tbl.name_, tag);
+			}
 		}
 		db.insert("_Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, tag);
 	}
@@ -183,46 +212,12 @@ namespace node
 		//
 		if (boost::algorithm::equals(table, "TGateway"))
 		{
-			//
-			//	Additional values for TGateway
-			//
-			db.access([&](const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
+			if (!complete_data_gw(db, key, data)) {
 
-				//
-				//	Gateway and Device table share the same table key
-				//	look for a session of this device
-				//
-				auto dev_rec = tbl_dev->lookup(key);
-				auto ses_rec = tbl_ses->find_first(cyng::param_t("device", key.at(0)));
-
-				//
-				//	set device name
-				//	set model
-				//	set firmware
-				//	set online state
-				//
-				if (!dev_rec.empty())
-				{
-					data.push_back(dev_rec["name"]);
-					data.push_back(dev_rec["descr"]);
-					data.push_back(dev_rec["id"]);
-					data.push_back(dev_rec["vFirmware"]);
-					if (ses_rec.empty()) {
-						data.push_back(cyng::make_object(0));
-					}
-					else {
-						const auto peer = cyng::value_cast(ses_rec["rtag"], boost::uuids::nil_uuid());
-						data.push_back(cyng::make_object(peer.is_nil() ? 1 : 2));
-					}
-				}
-				else
-				{
-					CYNG_LOG_WARNING(logger, "res.subscribe - gateway"
-						<< cyng::io::to_str(key)
-						<< " has no associated device");
-				}
-			}	, cyng::store::read_access("TDevice")
-				, cyng::store::read_access("_Session"));
+				CYNG_LOG_WARNING(logger, "gateway"
+					<< cyng::io::to_str(key)
+					<< " has no associated device");
+			}
 		}
 		
 		//
@@ -230,35 +225,25 @@ namespace node
 		//
 		else if (boost::algorithm::equals(table, "TMeter"))
 		{
-			//
-			//	Additional values for TMeter
-			//
-			db.access([&](const cyng::store::table* tbl_gw) {
-				
-				//
-				//	TMeter contains an optional reference to TGateway table
-				//
-				auto key = cyng::table::key_generator(data.at(10));
-				auto dev_gw = tbl_gw->lookup(key);
-				
-				//
-				//	set serverId and online state
-				//
-				if (!dev_gw.empty())
-				{
-					data.push_back(dev_gw["serverId"]);
-					data.push_back(dev_gw["online"]);
-				}
-				else
-				{
-					data.push_back(cyng::make_object("05000000000000"));
-					data.push_back(cyng::make_object(-1));
+			if (!complete_data_meter(db, key, data)) {
 
-					CYNG_LOG_WARNING(logger, "res.subscribe - meter"
+				CYNG_LOG_WARNING(logger, "meter"
 					<< cyng::io::to_str(key)
 					<< " has no associated gateway");
-				}
-			}, cyng::store::read_access("TGateway"));
+			}
+		}
+
+		//
+		//	Boost IEC records with additional data from TMeter
+		//
+		else if (boost::algorithm::equals(table, "TIECBridge"))
+		{
+			if (!complete_data_iec(db, key, data)) {
+
+				CYNG_LOG_WARNING(logger, "IEC device "
+					<< cyng::io::to_str(key)
+					<< " has no associated meter");
+			}
 		}
 
 		//
@@ -326,29 +311,6 @@ namespace node
 			}
 		}
 	}
-
-	/** 
-	 * Initialize all used table names
-	 */
-	const std::array<db_sync::tbl_descr, 16>	db_sync::tables_ =
-	{
-		tbl_descr{"TDevice", false},
-		tbl_descr{"TGateway", true},
-		tbl_descr{"TLoRaDevice", false},
-		tbl_descr{"TMeter", true},
-		tbl_descr{"TGUIUser", false},
-		tbl_descr{"TGWSnapshot", false},
-		tbl_descr{"TNodeNames", false},
-		tbl_descr{"_Session", false},
-		tbl_descr{"_Target", false},
-		tbl_descr{"_Connection", false},
-		tbl_descr{"_Cluster", false},
-		tbl_descr{"_Config", false},
-		tbl_descr{"_SysMsg", false},
-		tbl_descr{"_TimeSeries", false},
-		tbl_descr{"_LoRaUplink", false},
-		tbl_descr{"_CSV", false},
-	};
 
 	db_sync::db_sync(cyng::logging::log_ptr logger, cyng::store::db& db)
 		: logger_(logger)
@@ -600,122 +562,37 @@ namespace node
 	{
 		if (boost::algorithm::equals(table, "TGateway"))
 		{
-			db_.access([&](cyng::store::table* tbl_gw, const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
+			if (!complete_data_gw(db_, key, data)) {
 
-				//
-				//	search session with this device/GW tag
-				//
-				auto dev_rec = tbl_dev->lookup(key);
-
-				//
-				//	set device name
-				//	set model
-				//	set vFirmware
-				//	set online state
-				//
-				if (!dev_rec.empty())
-				{
-					data.push_back(dev_rec["name"]);
-					data.push_back(dev_rec["descr"]);
-					data.push_back(dev_rec["id"]);
-					data.push_back(dev_rec["vFirmware"]);
-
-					//
-					//	get online state
-					//
-					auto ses_rec = tbl_ses->find_first(cyng::param_t("device", key.at(0)));
-					if (ses_rec.empty()) {
-						data.push_back(cyng::make_object(0));
-					}
-					else {
-						const auto rtag = cyng::value_cast(ses_rec["rtag"], boost::uuids::nil_uuid());
-						data.push_back(cyng::make_object(rtag.is_nil() ? 1 : 2));
-					}
-
-					if (!tbl_gw->insert(key, data, gen, origin))
-					{
-
-						CYNG_LOG_WARNING(logger_, ctx.get_name()
-							<< " failed "
-							<< table		// table name
-							<< " - "
-							<< cyng::io::to_str(key)
-							<< " => "
-							<< cyng::io::to_str(data));
-
-					}
-				}
-				else {
-
-					//
-					//	don't insert this gateway because there is no device information available
-					//
-
-					std::stringstream ss;
-					ss
-						<< "gateway "
-						<< cyng::io::to_str(key)
-						<< " has no associated device"
-						;
-
-					CYNG_LOG_WARNING(logger_, ss.str());
-
-					ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
-
-				}
-			}	, cyng::store::write_access("TGateway")
-				, cyng::store::read_access("TDevice")
-				, cyng::store::read_access("_Session"));
+				CYNG_LOG_WARNING(logger_, "gateway"
+					<< cyng::io::to_str(key)
+					<< " has no associated device");
+			}
 		}
+
 		else if (boost::algorithm::equals(table, "TMeter"))
 		{
-			//
-			//	Additional values for TMeter
-			//
-			db_.access([&](cyng::store::table* tbl_meter, cyng::store::table const* tbl_gw) {
+			if (!complete_data_meter(db_, key, data)) {
 
-				//
-				//	TMeter contains an optional reference to TGateway table
-				//
-				auto const key_gw = cyng::table::key_generator(data.at(10));
-				auto const dev_gw = tbl_gw->lookup(key_gw);
-
-				//
-				//	set serverId
-				//
-				if (!dev_gw.empty())
-				{
-					data.push_back(dev_gw["serverId"]);
-					data.push_back(dev_gw["online"]);
-				}
-				else
-				{
-					data.push_back(cyng::make_object("00000000000000"));
-					data.push_back(cyng::make_object(-1));
-
-					CYNG_LOG_WARNING(logger_, "res.subscribe - meter"
-						<< cyng::io::to_str(key)
-						<< " has no associated gateway");
-				}
-
-				if (!tbl_meter->insert(key, data, gen, origin))
-				{
-
-					CYNG_LOG_WARNING(logger_, ctx.get_name()
-						<< " failed "
-						<< table		// table name
-						<< " - "
-						<< cyng::io::to_str(key)
-						<< " => "
-						<< cyng::io::to_str(data));
-
-				}
-
-			}	, cyng::store::write_access("TMeter")
-				, cyng::store::read_access("TGateway"));
-
+				CYNG_LOG_WARNING(logger_, "meter"
+					<< cyng::io::to_str(key)
+					<< " has no associated gateway");
+			}
 		}
-		else if (!db_.insert(table
+		else if (boost::algorithm::equals(table, "TIECBridge"))
+		{
+			if (!complete_data_iec(db_, key, data)) {
+
+				CYNG_LOG_WARNING(logger_, "IEC device "
+					<< cyng::io::to_str(key)
+					<< " has no associated meter");
+			}
+		}
+
+		//
+		//	insert
+		//
+		if (!db_.insert(table
 			, key
 			, data
 			, gen
@@ -1048,4 +925,125 @@ namespace node
 		});
 		return result;
 	}
+
+	bool complete_data_iec(cyng::store::db& db
+		, cyng::table::key_type const& key
+		, cyng::table::data_type& data)
+	{
+		bool rc{ false };
+
+		//
+		//	Additional values for TMeter from TMeter
+		//
+		db.access([&](const cyng::store::table* tbl_meter) {
+				
+			//
+			//	TIECBridge shares the primary key with TMeter table
+			//
+			auto rec = tbl_meter->lookup(key);
+				
+			//
+			//	set meter ID
+			//
+			if (!rec.empty())
+			{
+				data.push_back(rec["meter"]);
+				rc = true;
+			}
+			else
+			{
+				data.push_back(cyng::make_object("-???-"));
+
+				//CYNG_LOG_WARNING(logger, "res.subscribe - IEC device "
+				//<< cyng::io::to_str(key)
+				//<< " has no associated meter");
+			}
+		}, cyng::store::read_access("TMeter"));
+
+		return rc;
+	}
+
+	bool complete_data_meter(cyng::store::db& db
+		, cyng::table::key_type const& key
+		, cyng::table::data_type& data)
+	{
+		bool rc{ false };
+
+		//
+		//	Additional values for TMeter
+		//
+		db.access([&](cyng::store::table const* tbl_gw) {
+
+			//
+			//	TMeter contains an optional reference to TGateway table
+			//
+			auto const key_gw = cyng::table::key_generator(data.at(10));
+			auto const dev_gw = tbl_gw->lookup(key_gw);
+
+			//
+			//	set serverId
+			//
+			if (!dev_gw.empty())
+			{
+				data.push_back(dev_gw["serverId"]);
+				data.push_back(dev_gw["online"]);
+				rc = true;
+			}
+			else
+			{
+				data.push_back(cyng::make_object("00000000000000"));
+				data.push_back(cyng::make_object(-1));
+			}
+
+		} , cyng::store::read_access("TGateway"));
+
+		return rc;
+	}
+
+	bool complete_data_gw(cyng::store::db& db
+		, cyng::table::key_type const& key
+		, cyng::table::data_type& data)
+	{
+		bool rc{ false };
+			//
+			//	Additional values for TGateway
+			//
+			db.access([&](const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
+
+				//
+				//	Gateway and Device table share the same table key
+				//	look for a session of this device
+				//
+				auto dev_rec = tbl_dev->lookup(key);
+				auto ses_rec = tbl_ses->find_first(cyng::param_t("device", key.at(0)));
+
+				//
+				//	set device name
+				//	set model
+				//	set firmware
+				//	set online state
+				//
+				if (!dev_rec.empty())
+				{
+					data.push_back(dev_rec["name"]);
+					data.push_back(dev_rec["descr"]);
+					data.push_back(dev_rec["id"]);
+					data.push_back(dev_rec["vFirmware"]);
+					if (ses_rec.empty()) {
+						data.push_back(cyng::make_object(0));
+					}
+					else {
+						const auto peer = cyng::value_cast(ses_rec["rtag"], boost::uuids::nil_uuid());
+						data.push_back(cyng::make_object(peer.is_nil() ? 1 : 2));
+					}
+
+					rc = true;
+				}
+			}	, cyng::store::read_access("TDevice")
+				, cyng::store::read_access("_Session"));
+
+		return rc;
+	}
+
+
 }

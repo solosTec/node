@@ -4,14 +4,15 @@ set (node_setup)
 set (node_setup_cpp
 
 	nodes/setup/src/main.cpp	
-	nodes/setup/src/controller.cpp
+	nodes/setup/src/controller.cpp 
+	nodes/setup/src/tasks/tables.cpp
 )
 
 set (node_setup_h
 
 	nodes/setup/src/controller.h
 	nodes/setup/src/tasks/setup_defs.h
-
+	nodes/setup/src/tasks/tables.h
 )
 
 set (node_setup_shared

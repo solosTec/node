@@ -10,6 +10,7 @@
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
+
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -86,7 +87,6 @@ namespace node
 		 */
 		cyng::store::db& cache_;
 
-		static const std::array<std::string, 6>	tables_;
 	};
 	
 }

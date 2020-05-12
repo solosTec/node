@@ -7,6 +7,7 @@
 
 #include "cluster.h"
 #include "system.h"
+#include "../../../shared/src/tables.h"
 #include <smf/cluster/generator.h>
 
 #include <cyng/async/task/task_builder.hpp>
@@ -221,8 +222,10 @@ namespace node
 		cache_.clear("_TimeSeries", bus_->vm_.tag());
 		cache_.clear("_LoRaUplink", bus_->vm_.tag());
 
-		for (auto const& tbl : db_sync::tables_) {
-			sync_table(tbl.name_);
+		for (auto const& tbl : tables::list_) {
+			if (!tbl.local_) {
+				sync_table(tbl.name_);
+			}
 		}
 
 		return cyng::continuation::TASK_CONTINUE;

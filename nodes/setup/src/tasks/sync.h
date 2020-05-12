@@ -9,6 +9,7 @@
 #define NODE_SETUP_TASK_SYNC_H
 
 #include <smf/cluster/bus.h>
+
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>

@@ -7,9 +7,11 @@
 
 #include "cluster.h"
 #include "sync.h"
+#include "tables.h"
 #include "setup_defs.h"
 #include <smf/shared/db_schemes.h>
 #include <smf/cluster/generator.h>
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
@@ -114,6 +116,9 @@ namespace node
 			CYNG_LOG_ERROR(logger_, "insufficient cluster protocol version: "	<< v);
 		}
 
+		//
+		//	start syncing with table TDevice
+		//
 		sync_table("TDevice");
 
 		return cyng::continuation::TASK_CONTINUE;
@@ -149,16 +154,27 @@ namespace node
 		//	* TGUIUser
 		//
 
-		auto pos = std::find(std::begin(tables_), std::end(tables_), table);
-		if (pos != std::end(tables_)) {
+		//
+		//	get next table to synchronize
+		//
+
+		auto pos = tables::find(table);
+
+		while (pos != std::end(tables::list_)) {
 			++pos;
-			if (pos != std::end(tables_)) {
-				sync_table(*pos);
-			}
-			else {
-				CYNG_LOG_INFO(logger_, "*** sync phase complete: " 
-					<< tables_.size()
-					<< " tables updated ***");
+			if (pos != std::end(tables::list_) && pos->cache_) {
+
+				CYNG_LOG_INFO(logger_, "sync table "
+					<< pos->name_
+					<< "["
+					<< std::distance(std::begin(tables::list_), pos)
+					<< "/"
+					<< tables::list_.size()
+					<< "]");
+
+				sync_table(pos->name_);
+
+				break;
 			}
 		}
 
@@ -183,7 +199,9 @@ namespace node
 		//
 		if (r.second)
 		{
-			base_.mux_.post(storage_tsk_, 0, cyng::tuple_factory(table, r.first, bus_->vm_.tag()));
+			base_.mux_.post(storage_tsk_
+				, 0	//	slot[0]
+				, cyng::tuple_factory(table, r.first, bus_->vm_.tag()));
 		}
 		else
 		{
@@ -493,24 +511,16 @@ namespace node
 	void cluster::create_cache()
 	{
 		CYNG_LOG_TRACE(logger_, "create "
-			<< tables_.size()
+			<< tables::list_.size()
 			<< " cache tables");
 
-		for (auto const& name : tables_) {
-			if (!create_table(cache_, name))
-			{
-				CYNG_LOG_FATAL(logger_, "cannot create table "	<< name);
+		for (auto const& tbl : tables::list_) {
+			if (tbl.cache_) {
+				if (!create_table(cache_, tbl.name_))
+				{
+					CYNG_LOG_FATAL(logger_, "cannot create table " << tbl.name_);
+				}
 			}
 		}
 	}
-
-	const std::array<std::string, 6>	cluster::tables_ = 
-	{ 
-		"TDevice",
-		"TGateway",
-		"TLoRaDevice",
-		"TMeter",
-		"TGUIUser",
-		"TNodeNames"
-	};
 }

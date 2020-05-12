@@ -32,162 +32,26 @@ namespace node
 	{
 		CYNG_LOG_INFO(logger, "initialize database as node " << tag);
 
-		//
-		//	TDevice table
-		//
-		//	(1) tag (UUID) - pk
-		//	+-----------------
-		//	(2) name [std::string]
-		//	(3) number [std::string]
-		//	(4) [std::string] description 
-		//	(5) [std::string] identifier (device identifier/type)
-		//	(6) [std::string] firmware version 
-		//	(7) [bool] enabled (only login allowed)
-		//	(8) [std::chrono::system_clock::time_stamp] created 
-		//	(9) [std::uint32] query
+		CYNG_LOG_TRACE(logger, "create "
+			<< cache::tables_.size()
+			<< " cache tables");
 
-		if (!create_table(db, "TDevice"))	{
-			CYNG_LOG_FATAL(logger, "cannot create table TDevice");
-		}
-
-		//	(1) tag (UUID) - pk
-		//	+-----------------
-		//	(1) id (server/gateway ID) - unique
-		//	(2) manufacturer (i.e. EMH)
-		//	(3) Typbezeichnung (i.e. Variomuc ETHERNET)
-		//	(4) production date/time
-		//	(5) firmwareversion (i.e. 11600000)
-		//	(6) fabrik nummer (i.e. 06441734)
-		//	(7) MAC of service interface
-		//	(8) MAC od data interface
-		//	(9) Default PW
-		//	(10) root PW
-		//	(11) W-Mbus ID (i.e. A815408943050131)
-		//	(12) source (UUID) - usefull to detect multiple configuration uploads
-		if (!create_table(db, "TGateway")) {
-			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
-		}
-		else
-		{
-#ifdef _DEBUG
-			db.insert("TGateway"
-				, cyng::table::key_generator(tag)
-				, cyng::table::data_generator("0500153B02517E"
-					, "EMH"
-					, std::chrono::system_clock::now()
-					, "06441734"
-					, cyng::mac48(0, 1, 2, 3, 4, 5)
-					, cyng::mac48(0, 1, 2, 3, 4, 6)
-					, "secret"
-					, "secret"
-					, "mbus"
-					, "operator"
-					, "operator")
-				, 94
-				, tag);
-#endif
-		}
-
-		//	(1) tag (UUID) - pk
-		//	+-----------------
-		//	(1) id (server/gateway ID) - unique
-		//	(2) AESKey (128 bit encryption)
-		//	(3) driver
-		//	(4) activation
-		//	(5) DevAddr
-		//	(6) AppEUI - provided by the owner of the application server
-		//	(7) GatewayEUI
-		if (!create_table(db, "TLoRaDevice"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table TLoRaDevice");
-		}
-#ifdef _DEBUG
-		else
-		{
-			db.insert("TLoRaDevice"
-				, cyng::table::key_generator(tag)
-				, cyng::table::data_generator(cyng::mac64(0, 1, 2, 3, 4, 5, 6, 7)
-					, "1122334455667788990011223344556677889900112233445566778899001122"
-					, "demo"	//	driver
-					, true	//	OTAA
-					, 0x64	//	DevAddr
-					, cyng::mac64(0, 1, 2, 3, 4, 6, 7, 8)
-					, cyng::mac64(0, 1, 2, 3, 4, 6, 7, 8))
-				, 8
-				, tag);
-		}
-#endif
-
-
-		if (!create_table(db, "TMeter"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
-		}
-#ifdef _DEBUG
-		else
-		{
-			db.insert("TMeter"
-				, cyng::table::key_generator(tag)
-				, cyng::table::data_generator("01-e61e-13090016-3c-07"
-					, "16000913"
-					, "CH9876501234500A7T839KH38O2D78R45"
-					, "ACME"	//	manufacturer
-					, std::chrono::system_clock::now()
-					, "11600000"
-					, "16A098828.pse"
-					, "06441734"
-					, "NXT4-S20EW-6N00-4000-5020-E50/Q"
-					, "Q3"
-					, boost::uuids::string_generator()("8d04b8e0-0faf-44ea-b32b-8405d407f2c1"))	//	reference to TGateway 8d04b8e0-0faf-44ea-b32b-8405d407f2c1
-				, 5
-				, tag);
-		}
-#endif
-		//
-		//	TLL table - leased lines
-		//
-		//	(1) first (UUID) - pk
-		//	(2) second (UUID) - pk
-		//	+-----------------
-		//	(3) description [std::string]
-		//	(4) creation-time [std::chrono::system_clock::time_stamp]
-		if (!create_table(db, "TLL"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table TLL");
-		}
-		else
-		{
-			//db.insert("TLL"
-			//	, cyng::table::key_generator(tag)
-			//	, cyng::table::data_generator("name", "number", "descr", "id", "vFirmware", true, std::chrono::system_clock::now())
-			//	, 72
-			//	, tag);
-
-		}
-
-		if (!create_table(db, "TGUIUser"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table TGUIUser");
-		}
-
-		//
-		//	The session tables uses the same tag as the remote client session
-		//	
-		if (!create_table(db, "_Session"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _Session");
-		}
-
-		if (!create_table(db, "_Target"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _Target");
+		for (auto const& tbl : cache::tables_) {
+			if (!tbl.custom_) {
+				if (!create_table(db, tbl.name_)) {
+					CYNG_LOG_FATAL(logger, "cannot create table: " << tbl.name_);
+				}
+				else {
+					CYNG_LOG_TRACE(logger, "create table: " << tbl.name_);
+				}
+			}
 		}
 
 		//
 		//	ack-time: the time interval (in seconds) in which a Push Data Transfer Response is expected
 		//	after the transmission of the last character of a Push Data Transfer Request.
 		//
-		if (!db.create_table(cyng::table::make_meta_table<3, 8>("_Channel", 
+		if (!db.create_table(cyng::table::make_meta_table<3, 8>("_Channel",
 			{ "channel"		//	[uint32] primary key 
 			, "source"		//	[uint32] primary key 
 			, "target"		//	[uint32] primary key 
@@ -200,21 +64,21 @@ namespace node
 			, "owner"		//	[string] owner name of the channel
 			, "name"		//	[string] name of push target
 			},
-			{	
-				cyng::TC_UINT32, 
-				cyng::TC_UINT32, 
-				cyng::TC_UINT32, 
-				cyng::TC_UUID, 
+			{
+				cyng::TC_UINT32,
+				cyng::TC_UINT32,
+				cyng::TC_UINT32,
+				cyng::TC_UUID,
 #if defined(__CPP_SUPPORT_N2347)
 				static_cast<std::size_t>(cyng::traits::predef_type_code::PREDEF_SESSION),
 #else
 				cyng::traits::PREDEF_SESSION,
 #endif
-				cyng::TC_UUID, 
-				cyng::TC_UINT16, 
-				cyng::TC_UINT32, 
-				cyng::TC_UINT64, 
-				cyng::TC_STRING, 
+				cyng::TC_UUID,
+				cyng::TC_UINT16,
+				cyng::TC_UINT32,
+				cyng::TC_UINT64,
+				cyng::TC_STRING,
 				cyng::TC_STRING
 			},
 			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 64 })))
@@ -222,85 +86,77 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table _Channel");
 		}
 
-		//
-		//	All dial-up connections. Leased Lines have to be incorporated.
-		//
-		if (!create_table(db, "_Connection"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _Connection");
-		}
-
-		if (!create_table(db, "_Cluster"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _Cluster");
-		}
-		else
-		{
-
-		}
-
-		if (!create_table(db, "_Config"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _Config");
-		}
-		else
-		{
-
-		}
-
-		if (!create_table(db, "_SysMsg"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _SysMsg");
-		}
-
-		//
-		//	CSV task
-		//
-		if (!create_table(db, "_CSV"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _CSV");
-		}
-
-		//
-		//	LoRa Uplink
-		//
-		if (!create_table(db, "_LoRaUplink"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _LoRaUplink");
-		}
-
-		//
-		//	time series
-		//
-		if (!create_table(db, "_TimeSeries"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table _TimeSeries");
-		}
-
-		//
-		//	snapshot of gateway configuration
-		//
-		if (!create_table(db, "TGWSnapshot"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table TGWSnapshot");
-		}
 #ifdef _DEBUG
-		else
-		{
-			db.insert("TGWSnapshot"
-				, cyng::table::key_generator(tag)
-				, cyng::table::data_generator("0500153B02517E"
-					, "works like a charm"
-					, std::chrono::system_clock::now())
-				, 5
-				, tag);
-		}
-#endif
+		db.insert("TGateway"
+			, cyng::table::key_generator(tag)
+			, cyng::table::data_generator("0500153B02517E"
+				, "EMH"
+				, std::chrono::system_clock::now()
+				, "06441734"
+				, cyng::mac48(0, 1, 2, 3, 4, 5)
+				, cyng::mac48(0, 1, 2, 3, 4, 6)
+				, "secret"
+				, "secret"
+				, "mbus"
+				, "operator"
+				, "operator")
+			, 94
+			, tag);
 
-		if (!create_table(db, "TNodeNames"))
-		{
-			CYNG_LOG_FATAL(logger, "cannot create table TNodeNames");
-		}
+		db.insert("TLoRaDevice"
+			, cyng::table::key_generator(tag)
+			, cyng::table::data_generator(cyng::mac64(0, 1, 2, 3, 4, 5, 6, 7)
+				, "1122334455667788990011223344556677889900112233445566778899001122"
+				, "demo"	//	driver
+				, true	//	OTAA
+				, 0x64	//	DevAddr
+				, cyng::mac64(0, 1, 2, 3, 4, 6, 7, 8)
+				, cyng::mac64(0, 1, 2, 3, 4, 6, 7, 8))
+			, 8
+			, tag);
+
+		db.insert("TMeter"
+			, cyng::table::key_generator(tag)
+			, cyng::table::data_generator("01-e61e-13090016-3c-07"
+				, "16000913"
+				, "CH9876501234500A7T839KH38O2D78R45"
+				, "ACME"	//	manufacturer
+				, std::chrono::system_clock::now()
+				, "11600000"
+				, "16A098828.pse"
+				, "06441734"
+				, "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				, "Q3"
+				, boost::uuids::string_generator()("8d04b8e0-0faf-44ea-b32b-8405d407f2c1"))	//	reference to TGateway 8d04b8e0-0faf-44ea-b32b-8405d407f2c1
+			, 5
+			, tag);
+
+		//	segw.ch
+		auto const host = cyng::make_address("138.201.95.180");
+
+		db.insert("TIECBridge"
+			, cyng::table::key_generator(tag)
+			, cyng::table::data_generator(boost::asio::ip::tcp::endpoint{host, 4004}
+				, true
+				, std::chrono::seconds(60))
+			, 12
+			, tag);
+
+		db.insert("TGWSnapshot"
+			, cyng::table::key_generator(tag)
+			, cyng::table::data_generator("0500153B02517E"
+				, "works like a charm"
+				, std::chrono::system_clock::now())
+			, 5
+			, tag);
+
+		db.insert("TNodeNames"
+			, cyng::table::key_generator(tag)
+			, cyng::table::data_generator("master")
+			, 3
+			, tag);
+
+#endif
 
 	}
 
@@ -518,6 +374,32 @@ namespace node
 
 		return result;
 	}
+
+	/**
+	 * Initialize all used table names
+	 */
+	const std::array<cache::tbl_descr, 19>	cache::tables_ =
+	{
+		tbl_descr{"TDevice", false},
+		tbl_descr{"TGateway", false},
+		tbl_descr{"TLoRaDevice", false},
+		tbl_descr{"TMeter", false},
+		tbl_descr{"TLL", false},
+		tbl_descr{"TGUIUser", false},
+		tbl_descr{"TGWSnapshot", false},
+		tbl_descr{"TNodeNames", false},
+		tbl_descr{"TIECBridge", false},
+		tbl_descr{"_Session", false},
+		tbl_descr{"_Channel", true},	//	custom
+		tbl_descr{"_Target", false},
+		tbl_descr{"_Connection", false},
+		tbl_descr{"_Cluster", false},
+		tbl_descr{"_Config", false},
+		tbl_descr{"_SysMsg", false},
+		tbl_descr{"_TimeSeries", false},
+		tbl_descr{"_LoRaUplink", false},
+		tbl_descr{"_CSV", false},
+	};
 
 	cache::cache(cyng::store::db& db, boost::uuids::uuid tag)
 		: db_(db)

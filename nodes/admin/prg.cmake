@@ -31,6 +31,9 @@ set (node_admin_shared
 	nodes/admin/shared/src/form_data.h
 	nodes/admin/shared/src/form_data.cpp
 
+	nodes/admin/shared/src/tables.h
+	nodes/admin/shared/src/tables.cpp
+
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
@@ -43,7 +46,7 @@ set (node_admin_shared
 
 )
 
-set (node_dash_schemes
+set (node_schemes
 
 	src/main/include/smf/shared/db_schemes.h
 	nodes/shared/db/db_schemes.cpp
@@ -75,8 +78,8 @@ endif()
 
 source_group("dash/tasks" FILES ${node_dash_tasks})
 source_group("dash/service" FILES ${node_dash_service})
-source_group("dash/shared" FILES ${node_admin_shared})
-source_group("dash/schemes" FILES ${node_dash_schemes})
+source_group("admin" FILES ${node_admin_shared})
+source_group("schemes" FILES ${node_schemes})
 
 
 # define the main program
@@ -86,7 +89,7 @@ set (node_dash
   ${node_dash_tasks}
   ${node_dash_service}
   ${node_admin_shared}
-  ${node_dash_schemes}
+  ${node_schemes}
 )
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)
@@ -156,7 +159,6 @@ endif()
 
 source_group("dashs/tasks" FILES ${node_dashs_tasks})
 source_group("dashs/service" FILES ${node_dashs_service})
-source_group("dashs/schemes" FILES ${node_dashs_schemes})
 
 
 # define the main program
@@ -166,7 +168,7 @@ set (node_dashs
   ${node_dashs_tasks}
   ${node_dashs_service}
   ${node_admin_shared}
-  ${node_dashs_schemes}
+  ${node_schemes}
 )
 
 if (${PROJECT_NAME}_PUGIXML_INSTALLED)

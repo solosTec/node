@@ -471,6 +471,29 @@ namespace node
 				, 64	//	name
 				});
 		}
+		else if (boost::algorithm::equals(name, "TIECBridge")) {
+
+			//
+			//	This table contains addition information about 
+			//	meters with IEC communiction.
+			//
+			return cyng::table::make_meta_table<1, 3>(name, 
+				{ "pk"		//	same key as in TMeter table
+				, "ep"		//	[ip] incoming/outgoing IP connection
+				, "direction"	//	[bool] incoming/outgoing
+				, "interval"	//	[seconds] pull cycle
+				},
+				{ cyng::TC_UUID			//	pk
+				, cyng::TC_IP_TCP_ENDPOINT	//	ep
+				, cyng::TC_BOOL
+				, cyng::TC_SECOND
+				},
+				{ 36
+				, 0	//	ep
+				, 0	//	direction
+				, 0
+				});
+		}
 
 		//
 		//	table name not defined

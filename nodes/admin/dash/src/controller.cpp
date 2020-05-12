@@ -109,6 +109,7 @@ namespace node
 						cyng::param_factory("/config/device", "/index.html"),
 						cyng::param_factory("/config/gateway", "/index.html"),
 						cyng::param_factory("/config/meter", "/index.html"),
+						cyng::param_factory("/config/iec", "/index.html"),
 						cyng::param_factory("/config/lora", "/index.html"),
 						cyng::param_factory("/config/upload", "/index.html"),
 						cyng::param_factory("/config/download", "/index.html"),
@@ -125,7 +126,7 @@ namespace node
 						cyng::param_factory("/monitor/lora", "/index.html"),
 
 						cyng::param_factory("/task/csv", "/index.html"),
-						cyng::param_factory("/task/tsdb", "/index.html"),
+						//cyng::param_factory("/task/tsdb", "/index.html"),
 						cyng::param_factory("/task/plausibility", "/index.html")
 					})),
 					cyng::param_factory("https-rewrite", false)	//	301 - Moved Permanently

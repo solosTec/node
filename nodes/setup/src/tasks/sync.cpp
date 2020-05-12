@@ -8,6 +8,7 @@
 #include "sync.h"
 #include "setup_defs.h"
 #include <smf/cluster/generator.h>
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>
