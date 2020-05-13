@@ -124,7 +124,6 @@ int main(int argc, char **argv)
         }
     
 		//	read parameters from config file
-		//	read parameters from config file
 		const std::string cfg = vm["config"].as< std::string >();
 		std::ifstream ifs(cfg);
 		if (ifs.is_open())

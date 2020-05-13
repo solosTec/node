@@ -73,7 +73,7 @@ namespace node
 		void reconfigure(cyng::context& ctx);
 		void reconfigure_impl();
 
-		void res_subscribe(cyng::context& ctx);
+		//void res_subscribe(cyng::context& ctx);
 
 		/**
 		 * This function receives all incoming data from
@@ -81,6 +81,9 @@ namespace node
 		 */
 		void ws_read(cyng::context& ctx);
 
+		/**
+		 * subscribe a table
+		 */
 		void sync_table(std::string const&);
 
         void start_sys_task();
@@ -95,7 +98,7 @@ namespace node
 		 */
 		bus::shared_type bus_;
 		cyng::logging::log_ptr logger_;
-		const cluster_redundancy config_;
+		cluster_redundancy const config_;
 
 		/**
 		 * global data cache

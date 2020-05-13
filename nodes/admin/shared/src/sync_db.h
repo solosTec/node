@@ -28,6 +28,8 @@ namespace node
 		void register_this(cyng::controller&);
 
 	private:
+		void res_subscribe(cyng::context& ctx);
+
 		void db_res_insert(cyng::context& ctx);
 		void db_res_remove(cyng::context& ctx);
 		void db_res_modify_by_attr(cyng::context& ctx);

@@ -238,6 +238,17 @@ namespace node
 		//
 		else if (boost::algorithm::equals(table, "TIECBridge"))
 		{
+//#ifdef _DEBUG
+			//
+			//	hunting a bug on linux: IP address is NULL
+			//
+			CYNG_LOG_DEBUG(logger, "IEC device "
+				<< cyng::io::to_str(key)
+				<< " - "
+				<< cyng::io::to_str(data));
+
+//#endif
+
 			if (!complete_data_iec(db, key, data)) {
 
 				CYNG_LOG_WARNING(logger, "IEC device "
@@ -326,6 +337,9 @@ namespace node
 		vm.register_function("db.req.insert", 4, std::bind(&db_sync::db_req_insert, this, std::placeholders::_1));
 		vm.register_function("db.req.remove", 3, std::bind(&db_sync::db_req_remove, this, std::placeholders::_1));
 		vm.register_function("db.req.modify.by.param", 5, std::bind(&db_sync::db_req_modify_by_param, this, std::placeholders::_1));
+
+		vm.register_function("bus.res.subscribe", 6, std::bind(&db_sync::res_subscribe, this, std::placeholders::_1));
+
 	}
 
 	void db_sync::db_res_insert(cyng::context& ctx)
@@ -678,6 +692,50 @@ namespace node
 		}
 	}
 
+	void db_sync::res_subscribe(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		//
+		//	* table name
+		//	* record key
+		//	* record data
+		//	* generation
+		//	* origin session id
+		//	* optional task id
+		//	
+		//CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto tpl = cyng::tuple_cast<
+			std::string,			//	[0] table name
+			cyng::table::key_type,	//	[1] table key
+			cyng::table::data_type,	//	[2] record
+			std::uint64_t,			//	[3] generation
+			boost::uuids::uuid,		//	[4] origin session id
+			std::size_t				//	[5] optional task id
+		>(frame);
+
+		CYNG_LOG_TRACE(logger_, ctx.get_name()
+			<< ": "
+			<< std::get<0>(tpl)		// table name
+			<< " - "
+			<< cyng::io::to_str(std::get<1>(tpl)));
+
+		//
+		//	reorder vectors
+		//
+		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
+		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
+
+		node::res_subscribe(logger_
+			, db_
+			, std::get<0>(tpl)	//	[0] table name
+			, std::get<1>(tpl)	//	[1] table key
+			, std::get<2>(tpl)	//	[2] record
+			, std::get<3>(tpl)	//	[3] generation
+			, std::get<4>(tpl)	//	[4] origin session id
+			, std::get<5>(tpl));
+	}
+
 	void db_req_remove(cyng::logging::log_ptr logger
 		, cyng::store::db& db
 		, std::string const& table		//	[0] table name
@@ -952,11 +1010,7 @@ namespace node
 			}
 			else
 			{
-				data.push_back(cyng::make_object("-???-"));
-
-				//CYNG_LOG_WARNING(logger, "res.subscribe - IEC device "
-				//<< cyng::io::to_str(key)
-				//<< " has no associated meter");
+				data.push_back(cyng::make_object("00000000"));
 			}
 		}, cyng::store::read_access("TMeter"));
 

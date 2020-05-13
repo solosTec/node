@@ -23,6 +23,8 @@ namespace node
 		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 		, logger_(logger)
 		, config_(cfg)
+		, cache_()
+		, db_sync_(logger, cache_)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -35,6 +37,17 @@ namespace node
 		//
 		bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1));
 		bus_->vm_.async_run(cyng::generate_invoke("log.msg.debug", cyng::invoke("lib.size"), " callbacks registered"));
+
+		//
+		//	data handling
+		//
+		bus_->vm_.register_function("db.trx.start", 0, [this](cyng::context& ctx) {
+			CYNG_LOG_TRACE(logger_, "db.trx.start");
+			});
+		bus_->vm_.register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
+			CYNG_LOG_TRACE(logger_, "db.trx.commit");
+			});
+		db_sync_.register_this(bus_->vm_);
 
 	}
 
@@ -80,11 +93,34 @@ namespace node
 		}
 
 		//
-		//	start http server
+		//	start IEC server
 		//
 // 		server_.run();
 
+		//
+		//	sync tables
+		//
+		sync_table("TMeter");
+		sync_table("TIECBridge");
+
 		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	void cluster::sync_table(std::string const& name)
+	{
+		CYNG_LOG_INFO(logger_, "sync table " << name);
+
+		//
+		//	manage table state
+		//
+		cache_.set_state(name, 0);
+
+		//
+		//	Get existing records from master. This could be setup data
+		//	from another redundancy or data collected during a line disruption.
+		//
+		bus_->vm_.async_run(bus_req_subscribe(name, base_.get_id()));
+
 	}
 
 	cyng::continuation cluster::process()
@@ -105,7 +141,7 @@ namespace node
 			, config_.get().pwd_
 			, config_.get().auto_config_
 			, config_.get().group_
-			, "lora"));
+			, "IEC-62056-21:2002"));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
 			<< config_.get().host_

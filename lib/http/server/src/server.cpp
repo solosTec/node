@@ -120,7 +120,18 @@ namespace node
 			//
 			if (acceptor_.is_open() && !is_listening_.exchange(true))
 			{
+#if (BOOST_BEAST_VERSION < 293)
 				do_accept();
+#else
+				// We need to be executing within a strand to perform async operations
+				// on the I/O objects in this session. Although not strictly necessary
+				// for single-threaded contexts, this example code is written to be
+				// thread-safe by default.
+				boost::asio::dispatch(
+					acceptor_.get_executor(),
+					boost::beast::bind_front_handler(
+						&server::do_accept,	this));
+#endif
 			}
 			else
 			{

@@ -66,7 +66,6 @@ namespace node
 
 		session::~session()
 		{
-			//std::cerr << "session::~session()" << std::endl;
 			CYNG_LOG_DEBUG(logger_, "~session("
 				<< tag()
 				<< ")");
@@ -102,10 +101,21 @@ namespace node
 			on_timer(boost::system::error_code{}, obj);
 #else
 			connection_manager_.vm().async_run(cyng::generate_invoke("http.session.launch", tag(), false, stream_.socket().remote_endpoint()));
-            //stream_.expires_after(std::chrono::seconds(15));
 #endif
 
+#if (BOOST_BEAST_VERSION < 293)
 			do_read();
+#else
+			// We need to be executing within a strand to perform async operations
+			// on the I/O objects in this session. Although not strictly necessary
+			// for single-threaded contexts, this example code is written to be
+			// thread-safe by default.
+			boost::asio::dispatch(
+				stream_.get_executor(),
+				boost::beast::bind_front_handler(
+					&session::do_read,
+					this));
+#endif
 		}
 
 		void session::do_read()

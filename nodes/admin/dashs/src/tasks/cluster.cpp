@@ -96,7 +96,6 @@ namespace node
 		bus_->vm_.register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
 			CYNG_LOG_TRACE(logger_, "db.trx.commit");
 		});
-		bus_->vm_.register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1));
 		db_sync_.register_this(bus_->vm_);
 
 		forward_.register_this(bus_->vm_);
@@ -315,53 +314,6 @@ namespace node
 			<< config_.get().monitor_.count()
 			<< " seconds");
 		base_.suspend(config_.get().monitor_);
-	}
-
-	void cluster::res_subscribe(cyng::context& ctx)
-	{
-		const cyng::vector_t frame = ctx.get_frame();
-		//
-		//	examples:
-		//	[TDevice,[911fc4a1-8d9b-4d18-97f7-84a1cd576139],[00000006,2018-02-04 15:31:37.00000000,true,v88,ID,comment #88,1088,secret,device-88],88,dfa6b9a1-4170-41bd-8945-80b936059231,1]
-		//	[TGateway,[dca135f3-ff2b-4bf7-8371-a9904c74522b],[operator,operator,mbus,pwd,user,00:01:02:03:04:06,00:01:02:03:04:05,factory-nr,VSES-1.13_1133000038X025d,2018-06-05 16:01:06.29959300,EMH-VSES,EMH,05000000000000],0,e197fc51-0f13-4643-968d-8d0332bae068,1]
-		//	[*SysMsg,[14],[cluster member dash:63efc328-218a-4635-a582-1cb4ddc7af25 closed,4,2018-06-05 16:17:50.88472100],1,e197fc51-0f13-4643-968d-8d0332bae068,1]
-		//
-		//	* table name
-		//	* record key
-		//	* record data
-		//	* generation
-		//	* origin session id
-		//	* optional task id
-		//	
-
-		auto tpl = cyng::tuple_cast<
-			std::string,			//	[0] table name
-			cyng::table::key_type,	//	[1] table key
-			cyng::table::data_type,	//	[2] record
-			std::uint64_t,			//	[3] generation
-			boost::uuids::uuid,		//	[4] origin session id
-			std::size_t				//	[5] optional task id
-		>(frame);
-
-		CYNG_LOG_TRACE(logger_, "res.subscribe " 
-			<< std::get<0>(tpl)		// table name
-			<< " - "
-			<< cyng::io::to_str(std::get<1>(tpl)));
-
-		//
-		//	reorder vectors
-		//
-		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
-		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
-
-		node::res_subscribe(logger_
-			, cache_
-			, std::get<0>(tpl)	//	[0] table name
-			, std::get<1>(tpl)	//	[1] table key
-			, std::get<2>(tpl)	//	[2] record
-			, std::get<3>(tpl)	//	[3] generation
-			, std::get<4>(tpl)	//	[4] origin session id
-			, std::get<5>(tpl));
 	}
 
 	void cluster::ws_read(cyng::context& ctx)

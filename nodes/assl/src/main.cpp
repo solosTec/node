@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -9,8 +9,7 @@
 
 //------------------------------------------------------------------------------
 //
-/// Example: Advanced server, flex (plain + SSL)
-
+// Example: Advanced server, flex (plain + SSL)
 //
 //------------------------------------------------------------------------------
 
@@ -22,6 +21,7 @@
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/asio/bind_executor.hpp>
+#include <boost/asio/dispatch.hpp>
 #include <boost/asio/signal_set.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/strand.hpp>
@@ -51,31 +51,31 @@ mime_type(beast::string_view path)
     auto const ext = [&path]
     {
         auto const pos = path.rfind(".");
-        if(pos == beast::string_view::npos)
+        if (pos == beast::string_view::npos)
             return beast::string_view{};
         return path.substr(pos);
     }();
-    if(iequals(ext, ".htm"))  return "text/html";
-    if(iequals(ext, ".html")) return "text/html";
-    if(iequals(ext, ".php"))  return "text/html";
-    if(iequals(ext, ".css"))  return "text/css";
-    if(iequals(ext, ".txt"))  return "text/plain";
-    if(iequals(ext, ".js"))   return "application/javascript";
-    if(iequals(ext, ".json")) return "application/json";
-    if(iequals(ext, ".xml"))  return "application/xml";
-    if(iequals(ext, ".swf"))  return "application/x-shockwave-flash";
-    if(iequals(ext, ".flv"))  return "video/x-flv";
-    if(iequals(ext, ".png"))  return "image/png";
-    if(iequals(ext, ".jpe"))  return "image/jpeg";
-    if(iequals(ext, ".jpeg")) return "image/jpeg";
-    if(iequals(ext, ".jpg"))  return "image/jpeg";
-    if(iequals(ext, ".gif"))  return "image/gif";
-    if(iequals(ext, ".bmp"))  return "image/bmp";
-    if(iequals(ext, ".ico"))  return "image/vnd.microsoft.icon";
-    if(iequals(ext, ".tiff")) return "image/tiff";
-    if(iequals(ext, ".tif"))  return "image/tiff";
-    if(iequals(ext, ".svg"))  return "image/svg+xml";
-    if(iequals(ext, ".svgz")) return "image/svg+xml";
+    if (iequals(ext, ".htm"))  return "text/html";
+    if (iequals(ext, ".html")) return "text/html";
+    if (iequals(ext, ".php"))  return "text/html";
+    if (iequals(ext, ".css"))  return "text/css";
+    if (iequals(ext, ".txt"))  return "text/plain";
+    if (iequals(ext, ".js"))   return "application/javascript";
+    if (iequals(ext, ".json")) return "application/json";
+    if (iequals(ext, ".xml"))  return "application/xml";
+    if (iequals(ext, ".swf"))  return "application/x-shockwave-flash";
+    if (iequals(ext, ".flv"))  return "video/x-flv";
+    if (iequals(ext, ".png"))  return "image/png";
+    if (iequals(ext, ".jpe"))  return "image/jpeg";
+    if (iequals(ext, ".jpeg")) return "image/jpeg";
+    if (iequals(ext, ".jpg"))  return "image/jpeg";
+    if (iequals(ext, ".gif"))  return "image/gif";
+    if (iequals(ext, ".bmp"))  return "image/bmp";
+    if (iequals(ext, ".ico"))  return "image/vnd.microsoft.icon";
+    if (iequals(ext, ".tiff")) return "image/tiff";
+    if (iequals(ext, ".tif"))  return "image/tiff";
+    if (iequals(ext, ".svg"))  return "image/svg+xml";
+    if (iequals(ext, ".svgz")) return "image/svg+xml";
     return "application/text";
 }
 
@@ -86,20 +86,20 @@ path_cat(
     beast::string_view base,
     beast::string_view path)
 {
-    if(base.empty())
+    if (base.empty())
         return std::string(path);
     std::string result(base);
 #ifdef BOOST_MSVC
     char constexpr path_separator = '\\';
-    if(result.back() == path_separator)
+    if (result.back() == path_separator)
         result.resize(result.size() - 1);
     result.append(path.data(), path.size());
-    for(auto& c : result)
-        if(c == '/')
+    for (auto& c : result)
+        if (c == '/')
             c = path_separator;
 #else
     char constexpr path_separator = '/';
-    if(result.back() == path_separator)
+    if (result.back() == path_separator)
         result.resize(result.size() - 1);
     result.append(path.data(), path.size());
 #endif
@@ -113,17 +113,17 @@ path_cat(
 template<
     class Body, class Allocator,
     class Send>
-void
-handle_request(
-    beast::string_view doc_root,
-    http::request<Body, http::basic_fields<Allocator>>&& req,
-    Send&& send)
+    void
+    handle_request(
+        beast::string_view doc_root,
+        http::request<Body, http::basic_fields<Allocator>>&& req,
+        Send&& send)
 {
     // Returns a bad request response
     auto const bad_request =
-    [&req](beast::string_view why)
+        [&req](beast::string_view why)
     {
-        http::response<http::string_body> res{http::status::bad_request, req.version()};
+        http::response<http::string_body> res{ http::status::bad_request, req.version() };
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(http::field::content_type, "text/html");
         res.keep_alive(req.keep_alive());
@@ -134,9 +134,9 @@ handle_request(
 
     // Returns a not found response
     auto const not_found =
-    [&req](beast::string_view target)
+        [&req](beast::string_view target)
     {
-        http::response<http::string_body> res{http::status::not_found, req.version()};
+        http::response<http::string_body> res{ http::status::not_found, req.version() };
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(http::field::content_type, "text/html");
         res.keep_alive(req.keep_alive());
@@ -147,9 +147,9 @@ handle_request(
 
     // Returns a server error response
     auto const server_error =
-    [&req](beast::string_view what)
+        [&req](beast::string_view what)
     {
-        http::response<http::string_body> res{http::status::internal_server_error, req.version()};
+        http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(http::field::content_type, "text/html");
         res.keep_alive(req.keep_alive());
@@ -159,19 +159,19 @@ handle_request(
     };
 
     // Make sure we can handle the method
-    if( req.method() != http::verb::get &&
+    if (req.method() != http::verb::get &&
         req.method() != http::verb::head)
         return send(bad_request("Unknown HTTP-method"));
 
     // Request path must be absolute and not contain "..".
-    if( req.target().empty() ||
+    if (req.target().empty() ||
         req.target()[0] != '/' ||
         req.target().find("..") != beast::string_view::npos)
         return send(bad_request("Illegal request-target"));
 
     // Build the path to the requested file
     std::string path = path_cat(doc_root, req.target());
-    if(req.target().back() == '/')
+    if (req.target().back() == '/')
         path.append("index.html");
 
     // Attempt to open the file
@@ -180,20 +180,20 @@ handle_request(
     body.open(path.c_str(), beast::file_mode::scan, ec);
 
     // Handle the case where the file doesn't exist
-    if(ec == beast::errc::no_such_file_or_directory)
+    if (ec == beast::errc::no_such_file_or_directory)
         return send(not_found(req.target()));
 
     // Handle an unknown error
-    if(ec)
+    if (ec)
         return send(server_error(ec.message()));
 
     // Cache the size since we need it after the move
     auto const size = body.size();
 
     // Respond to HEAD request
-    if(req.method() == http::verb::head)
+    if (req.method() == http::verb::head)
     {
-        http::response<http::empty_body> res{http::status::ok, req.version()};
+        http::response<http::empty_body> res{ http::status::ok, req.version() };
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(http::field::content_type, mime_type(path));
         res.content_length(size);
@@ -205,7 +205,7 @@ handle_request(
     http::response<http::file_body> res{
         std::piecewise_construct,
         std::make_tuple(std::move(body)),
-        std::make_tuple(http::status::ok, req.version())};
+        std::make_tuple(http::status::ok, req.version()) };
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
     res.set(http::field::content_type, mime_type(path));
     res.content_length(size);
@@ -236,7 +236,7 @@ fail(beast::error_code ec, char const* what)
     // Therefore, if we see a short read here, it has occurred
     // after the message has been completed, so it is safe to ignore it.
 
-    if(ec == net::ssl::error::stream_truncated)
+    if (ec == net::ssl::error::stream_truncated)
         return;
 
     std::cerr << what << ": " << ec.message() << "\n";
@@ -253,7 +253,7 @@ class websocket_session
     // Access the derived class, this is part of
     // the Curiously Recurring Template Pattern idiom.
     Derived&
-    derived()
+        derived()
     {
         return static_cast<Derived&>(*this);
     }
@@ -263,7 +263,7 @@ class websocket_session
     // Start the asynchronous operation
     template<class Body, class Allocator>
     void
-    do_accept(http::request<Body, http::basic_fields<Allocator>> req)
+        do_accept(http::request<Body, http::basic_fields<Allocator>> req)
     {
         // Set suggested timeout settings for the websocket
         derived().ws().set_option(
@@ -273,12 +273,12 @@ class websocket_session
         // Set a decorator to change the Server of the handshake
         derived().ws().set_option(
             websocket::stream_base::decorator(
-            [](websocket::response_type& res)
-            {
-                res.set(http::field::server,
-                    std::string(BOOST_BEAST_VERSION_STRING) +
+                [](websocket::response_type& res)
+                {
+                    res.set(http::field::server,
+                        std::string(BOOST_BEAST_VERSION_STRING) +
                         " advanced-server-flex");
-            }));
+                }));
 
         // Accept the websocket handshake
         derived().ws().async_accept(
@@ -289,9 +289,9 @@ class websocket_session
     }
 
     void
-    on_accept(beast::error_code ec)
+        on_accept(beast::error_code ec)
     {
-        if(ec)
+        if (ec)
             return fail(ec, "accept");
 
         // Read a message
@@ -299,7 +299,7 @@ class websocket_session
     }
 
     void
-    do_read()
+        do_read()
     {
         // Read a message into our buffer
         derived().ws().async_read(
@@ -310,17 +310,17 @@ class websocket_session
     }
 
     void
-    on_read(
-        beast::error_code ec,
-        std::size_t bytes_transferred)
+        on_read(
+            beast::error_code ec,
+            std::size_t bytes_transferred)
     {
         boost::ignore_unused(bytes_transferred);
 
         // This indicates that the websocket_session was closed
-        if(ec == websocket::error::closed)
+        if (ec == websocket::error::closed)
             return;
 
-        if(ec)
+        if (ec)
             fail(ec, "read");
 
         // Echo the message
@@ -333,13 +333,13 @@ class websocket_session
     }
 
     void
-    on_write(
-        beast::error_code ec,
-        std::size_t bytes_transferred)
+        on_write(
+            beast::error_code ec,
+            std::size_t bytes_transferred)
     {
         boost::ignore_unused(bytes_transferred);
 
-        if(ec)
+        if (ec)
             return fail(ec, "write");
 
         // Clear the buffer
@@ -353,7 +353,7 @@ public:
     // Start the asynchronous operation
     template<class Body, class Allocator>
     void
-    run(http::request<Body, http::basic_fields<Allocator>> req)
+        run(http::request<Body, http::basic_fields<Allocator>> req)
     {
         // Accept the WebSocket upgrade request
         do_accept(std::move(req));
@@ -372,15 +372,15 @@ class plain_websocket_session
 public:
     // Create the session
     explicit
-    plain_websocket_session(
-        beast::tcp_stream&& stream)
+        plain_websocket_session(
+            beast::tcp_stream&& stream)
         : ws_(std::move(stream))
     {
     }
 
     // Called by the base class
     websocket::stream<beast::tcp_stream>&
-    ws()
+        ws()
     {
         return ws_;
     }
@@ -399,8 +399,8 @@ class ssl_websocket_session
 public:
     // Create the ssl_websocket_session
     explicit
-    ssl_websocket_session(
-        beast::ssl_stream<beast::tcp_stream>&& stream)
+        ssl_websocket_session(
+            beast::ssl_stream<beast::tcp_stream>&& stream)
         : ws_(std::move(stream))
     {
     }
@@ -408,7 +408,7 @@ public:
     // Called by the base class
     websocket::stream<
         beast::ssl_stream<beast::tcp_stream>>&
-    ws()
+        ws()
     {
         return ws_;
     }
@@ -447,7 +447,7 @@ class http_session
     // Access the derived class, this is part of
     // the Curiously Recurring Template Pattern idiom.
     Derived&
-    derived()
+        derived()
     {
         return static_cast<Derived&>(*this);
     }
@@ -473,7 +473,7 @@ class http_session
 
     public:
         explicit
-        queue(http_session& self)
+            queue(http_session& self)
             : self_(self)
         {
             static_assert(limit > 0, "queue limit must be positive");
@@ -482,7 +482,7 @@ class http_session
 
         // Returns `true` if we have reached the queue limit
         bool
-        is_full() const
+            is_full() const
         {
             return items_.size() >= limit;
         }
@@ -490,12 +490,12 @@ class http_session
         // Called when a message finishes sending
         // Returns `true` if the caller should initiate a read
         bool
-        on_write()
+            on_write()
         {
-            BOOST_ASSERT(! items_.empty());
+            BOOST_ASSERT(!items_.empty());
             auto const was_full = is_full();
             items_.erase(items_.begin());
-            if(! items_.empty())
+            if (!items_.empty())
                 (*items_.front())();
             return was_full;
         }
@@ -503,7 +503,7 @@ class http_session
         // Called by the HTTP handler to send a response.
         template<bool isRequest, class Body, class Fields>
         void
-        operator()(http::message<isRequest, Body, Fields>&& msg)
+            operator()(http::message<isRequest, Body, Fields>&& msg)
         {
             // This holds a work item
             struct work_impl : work
@@ -520,7 +520,7 @@ class http_session
                 }
 
                 void
-                operator()()
+                    operator()()
                 {
                     http::async_write(
                         self_.derived().stream(),
@@ -537,7 +537,7 @@ class http_session
                 boost::make_unique<work_impl>(self_, std::move(msg)));
 
             // If there was no previous work, start this one
-            if(items_.size() == 1)
+            if (items_.size() == 1)
                 (*items_.front())();
         }
     };
@@ -564,7 +564,7 @@ public:
     }
 
     void
-    do_read()
+        do_read()
     {
         // Construct a new parser for each message
         parser_.emplace();
@@ -588,19 +588,19 @@ public:
     }
 
     void
-    on_read(beast::error_code ec, std::size_t bytes_transferred)
+        on_read(beast::error_code ec, std::size_t bytes_transferred)
     {
         boost::ignore_unused(bytes_transferred);
 
         // This means they closed the connection
-        if(ec == http::error::end_of_stream)
+        if (ec == http::error::end_of_stream)
             return derived().do_eof();
 
-        if(ec)
+        if (ec)
             return fail(ec, "read");
 
         // See if it is a WebSocket Upgrade
-        if(websocket::is_upgrade(parser_->get()))
+        if (websocket::is_upgrade(parser_->get()))
         {
             // Disable the timeout.
             // The websocket::stream uses its own timeout settings.
@@ -617,19 +617,19 @@ public:
         handle_request(*doc_root_, parser_->release(), queue_);
 
         // If we aren't at the queue limit, try to pipeline another request
-        if(! queue_.is_full())
+        if (!queue_.is_full())
             do_read();
     }
 
     void
-    on_write(bool close, beast::error_code ec, std::size_t bytes_transferred)
+        on_write(bool close, beast::error_code ec, std::size_t bytes_transferred)
     {
         boost::ignore_unused(bytes_transferred);
 
-        if(ec)
+        if (ec)
             return fail(ec, "write");
 
-        if(close)
+        if (close)
         {
             // This means we should close the connection, usually because
             // the response indicated the "Connection: close" semantic.
@@ -637,7 +637,7 @@ public:
         }
 
         // Inform the queue that a write completed
-        if(queue_.on_write())
+        if (queue_.on_write())
         {
             // Read another request
             do_read();
@@ -669,28 +669,28 @@ public:
 
     // Start the session
     void
-    run()
+        run()
     {
         this->do_read();
     }
 
     // Called by the base class
     beast::tcp_stream&
-    stream()
+        stream()
     {
         return stream_;
     }
 
     // Called by the base class
     beast::tcp_stream
-    release_stream()
+        release_stream()
     {
         return std::move(stream_);
     }
 
     // Called by the base class
     void
-    do_eof()
+        do_eof()
     {
         // Send a TCP shutdown
         beast::error_code ec;
@@ -725,7 +725,7 @@ public:
 
     // Start the session
     void
-    run()
+        run()
     {
         // Set the timeout.
         beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));
@@ -742,21 +742,21 @@ public:
 
     // Called by the base class
     beast::ssl_stream<beast::tcp_stream>&
-    stream()
+        stream()
     {
         return stream_;
     }
 
     // Called by the base class
     beast::ssl_stream<beast::tcp_stream>
-    release_stream()
+        release_stream()
     {
         return std::move(stream_);
     }
 
     // Called by the base class
     void
-    do_eof()
+        do_eof()
     {
         // Set the timeout.
         beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));
@@ -770,11 +770,11 @@ public:
 
 private:
     void
-    on_handshake(
-        beast::error_code ec,
-        std::size_t bytes_used)
+        on_handshake(
+            beast::error_code ec,
+            std::size_t bytes_used)
     {
-        if(ec)
+        if (ec)
             return fail(ec, "handshake");
 
         // Consume the portion of the buffer used by the handshake
@@ -784,9 +784,9 @@ private:
     }
 
     void
-    on_shutdown(beast::error_code ec)
+        on_shutdown(beast::error_code ec)
     {
-        if(ec)
+        if (ec)
             return fail(ec, "shutdown");
 
         // At this point the connection is closed gracefully
@@ -805,10 +805,10 @@ class detect_session : public std::enable_shared_from_this<detect_session>
 
 public:
     explicit
-    detect_session(
-        tcp::socket&& socket,
-        ssl::context& ctx,
-        std::shared_ptr<std::string const> const& doc_root)
+        detect_session(
+            tcp::socket&& socket,
+            ssl::context& ctx,
+            std::shared_ptr<std::string const> const& doc_root)
         : stream_(std::move(socket))
         , ctx_(ctx)
         , doc_root_(doc_root)
@@ -817,7 +817,21 @@ public:
 
     // Launch the detector
     void
-    run()
+        run()
+    {
+        // We need to be executing within a strand to perform async operations
+        // on the I/O objects in this session. Although not strictly necessary
+        // for single-threaded contexts, this example code is written to be
+        // thread-safe by default.
+        net::dispatch(
+            stream_.get_executor(),
+            beast::bind_front_handler(
+                &detect_session::on_run,
+                this->shared_from_this()));
+    }
+
+    void
+        on_run()
     {
         // Set the timeout.
         stream_.expires_after(std::chrono::seconds(30));
@@ -831,12 +845,12 @@ public:
     }
 
     void
-    on_detect(beast::error_code ec, boost::tribool result)
+        on_detect(beast::error_code ec, bool result)
     {
-        if(ec)
+        if (ec)
             return fail(ec, "detect");
 
-        if(result)
+        if (result)
         {
             // Launch SSL session
             std::make_shared<ssl_http_session>(
@@ -878,7 +892,7 @@ public:
 
         // Open the acceptor
         acceptor_.open(endpoint.protocol(), ec);
-        if(ec)
+        if (ec)
         {
             fail(ec, "open");
             return;
@@ -886,7 +900,7 @@ public:
 
         // Allow address reuse
         acceptor_.set_option(net::socket_base::reuse_address(true), ec);
-        if(ec)
+        if (ec)
         {
             fail(ec, "set_option");
             return;
@@ -894,7 +908,7 @@ public:
 
         // Bind to the server address
         acceptor_.bind(endpoint, ec);
-        if(ec)
+        if (ec)
         {
             fail(ec, "bind");
             return;
@@ -903,7 +917,7 @@ public:
         // Start listening for connections
         acceptor_.listen(
             net::socket_base::max_listen_connections, ec);
-        if(ec)
+        if (ec)
         {
             fail(ec, "listen");
             return;
@@ -912,14 +926,14 @@ public:
 
     // Start accepting incoming connections
     void
-    run()
+        run()
     {
         do_accept();
     }
 
 private:
     void
-    do_accept()
+        do_accept()
     {
         // The new connection gets its own strand
         acceptor_.async_accept(
@@ -930,9 +944,9 @@ private:
     }
 
     void
-    on_accept(beast::error_code ec, tcp::socket socket)
+        on_accept(beast::error_code ec, tcp::socket socket)
     {
-        if(ec)
+        if (ec)
         {
             fail(ec, "accept");
         }
@@ -969,10 +983,10 @@ int main(int argc, char* argv[])
     auto const threads = std::max<int>(1, std::atoi(argv[4]));
 
     // The io_context is required for all I/O
-    net::io_context ioc{threads};
+    net::io_context ioc{ threads };
 
     // The SSL context is required, and holds certificates
-    ssl::context ctx{ssl::context::tlsv12};
+    ssl::context ctx{ ssl::context::tlsv12 };
 
     // This holds the self-signed certificate used by the server
     load_server_certificate(ctx);
@@ -981,7 +995,7 @@ int main(int argc, char* argv[])
     std::make_shared<listener>(
         ioc,
         ctx,
-        tcp::endpoint{address, port},
+        tcp::endpoint{ address, port },
         doc_root)->run();
 
     // Capture SIGINT and SIGTERM to perform a clean shutdown
@@ -998,18 +1012,18 @@ int main(int argc, char* argv[])
     // Run the I/O service on the requested number of threads
     std::vector<std::thread> v;
     v.reserve(threads - 1);
-    for(auto i = threads - 1; i > 0; --i)
+    for (auto i = threads - 1; i > 0; --i)
         v.emplace_back(
-        [&ioc]
-        {
-            ioc.run();
-        });
+            [&ioc]
+            {
+                ioc.run();
+            });
     ioc.run();
 
     // (If we get here, it means we got a SIGINT or SIGTERM)
 
     // Block until all the threads exit
-    for(auto& t : v)
+    for (auto& t : v)
         t.join();
 
     return EXIT_SUCCESS;

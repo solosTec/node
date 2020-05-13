@@ -36,6 +36,9 @@ namespace node
 
 		private:
 			void on_detect(boost::system::error_code ec, boost::tribool result);
+#if (BOOST_BEAST_VERSION > 292)
+			void on_run();
+#endif
 
 		private:
 			cyng::logging::log_ptr logger_;

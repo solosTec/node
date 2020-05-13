@@ -184,7 +184,6 @@ namespace node
 			boost::beast::http::response<boost::beast::http::string_body> send_not_authorized(std::uint32_t version
 				, bool keep_alive
 				, std::string target
-				//, std::string type
 				, std::string realm);
 #endif
 

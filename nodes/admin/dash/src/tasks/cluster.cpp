@@ -102,7 +102,7 @@ namespace node
 		bus_->vm_.register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
 			CYNG_LOG_TRACE(logger_, "db.trx.commit");
 		});
-		bus_->vm_.register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1));
+		//bus_->vm_.register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1));
 		db_sync_.register_this(bus_->vm_);
 
 		forward_.register_this(bus_->vm_);
@@ -326,49 +326,6 @@ namespace node
 
 	}
 
-	void cluster::res_subscribe(cyng::context& ctx)
-	{
-		auto const frame = ctx.get_frame();
-		//
-		//	* table name
-		//	* record key
-		//	* record data
-		//	* generation
-		//	* origin session id
-		//	* optional task id
-		//	
-		//CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
-
-		auto tpl = cyng::tuple_cast<
-			std::string,			//	[0] table name
-			cyng::table::key_type,	//	[1] table key
-			cyng::table::data_type,	//	[2] record
-			std::uint64_t,			//	[3] generation
-			boost::uuids::uuid,		//	[4] origin session id
-			std::size_t				//	[5] optional task id
-		>(frame);
-
-		CYNG_LOG_TRACE(logger_, ctx.get_name()
-			<< ": "
-			<< std::get<0>(tpl)		// table name
-			<< " - "
-			<< cyng::io::to_str(std::get<1>(tpl)));
-
-		//
-		//	reorder vectors
-		//
-		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
-		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
-
-		node::res_subscribe(logger_
-			, cache_
-			, std::get<0>(tpl)	//	[0] table name
-			, std::get<1>(tpl)	//	[1] table key
-			, std::get<2>(tpl)	//	[2] record
-			, std::get<3>(tpl)	//	[3] generation
-			, std::get<4>(tpl)	//	[4] origin session id
-			, std::get<5>(tpl));
-	}
 
 
 	void cluster::ws_read(cyng::context& ctx)

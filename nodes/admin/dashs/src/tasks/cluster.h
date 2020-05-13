@@ -69,7 +69,6 @@ namespace node
 		void reconfigure_impl();
 
 		void sync_table(std::string const&);
-		void res_subscribe(cyng::context& ctx);
 
 		void ws_read(cyng::context& ctx);
 
