@@ -41,6 +41,31 @@ namespace node
         static bool is_local(std::string);
     };
 
+    struct channel 
+    {
+        struct rel
+        {
+            rel(std::string, std::string, std::string);
+
+            const std::string table_;
+            const std::string channel_;
+            const std::string counter_;
+
+            bool is_empty() const;
+            bool has_counter() const;
+        };
+
+        /**
+         * Search vector with table/channel relations for a table
+         */
+        static rel find_rel_by_table(std::string);
+        static rel find_rel_by_channel(std::string);
+        static rel find_rel_by_counter(std::string);
+
+        using array_t = std::array<rel, 18>;
+        static array_t const rel_;
+
+    };
 }
 
 #endif

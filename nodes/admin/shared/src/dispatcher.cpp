@@ -6,6 +6,7 @@
  */ 
 
 #include "dispatcher.h"
+#include "tables.h"
 #include <cyng/json.h>
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
@@ -18,29 +19,10 @@
 
 namespace node 
 {
+
 	dispatcher::dispatcher(cyng::logging::log_ptr logger, connection_manager_interface& cm)
 		: logger_(logger)
 		, connection_manager_(cm)
-		, rel_ {
-				tbl_channel_rel("TDevice", "config.device", "table.device.count"),
-				tbl_channel_rel("TGateway", "config.gateway", "table.gateway.count"),
-				tbl_channel_rel("TMeter", "config.meter", "table.meter.count"),
-				tbl_channel_rel("TIECBridge", "config.iec", "table.iec.count"),
-				tbl_channel_rel("TLoRaDevice", "config.lora", "table.LoRa.count"),
-				tbl_channel_rel("TGUIUser", "config.user", "table.user.count"),
-				tbl_channel_rel("_Session", "status.session", "table.session.count"),
-				tbl_channel_rel("_Target", "status.target", "table.target.count"),
-				tbl_channel_rel("_Connection", "status.connection", "table.connection.count"),
-				tbl_channel_rel("_Config", "config.system", ""),
-				tbl_channel_rel("_SysMsg", "monitor.msg", "table.msg.count"),
-				//tbl_channel_rel("---", "config.web", ""),
-				tbl_channel_rel("_HTTPSession", "web.sessions", "table.web.count"),
-				tbl_channel_rel("_Cluster", "status.cluster", "table.cluster.count"),
-				tbl_channel_rel("_TimeSeries", "monitor.tsdb", ""),
-				tbl_channel_rel("_LoRaUplink", "monitor.lora", "table.uplink.count"),
-				tbl_channel_rel("_CSV", "task.csv", ""),
-				tbl_channel_rel("TGWSnapshot", "monitor.snapshot", "table.snapshot.count")
-		}
 	{}
 
 	void dispatcher::register_this(cyng::controller& vm)
@@ -177,7 +159,7 @@ namespace node
 
 	void dispatcher::subscribe(cyng::store::db& db)
 	{
-		for (auto const& rel : rel_) {
+		for (auto const& rel : channel::rel_) {
 
 			CYNG_LOG_INFO(logger_, "install DB slot " << rel.table_);
 			auto tmp = db.get_listener(rel.table_
@@ -211,7 +193,7 @@ namespace node
 	{
 		cyng::table::record rec(tbl->meta_ptr(), key, data, gen);
 
-		auto const rel = find_rel_by_table(tbl->meta().get_name());
+		auto const rel = channel::find_rel_by_table(tbl->meta().get_name());
 		if (!rel.is_empty()) {
 
 			sig_insert(rec, rel.channel_);
@@ -239,7 +221,7 @@ namespace node
 
 	void dispatcher::sig_del(cyng::store::table const* tbl, cyng::table::key_type const& key, boost::uuids::uuid source)
 	{
-		auto const rel = find_rel_by_table(tbl->meta().get_name());
+		auto const rel = channel::find_rel_by_table(tbl->meta().get_name());
 		if (!rel.is_empty()) {
 
 			sig_delete(key, rel.channel_);
@@ -266,7 +248,7 @@ namespace node
 
 	void dispatcher::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
 	{
-		auto const rel = find_rel_by_table(tbl->meta().get_name());
+		auto const rel = channel::find_rel_by_table(tbl->meta().get_name());
 		if (!rel.is_empty()) {
 
 			sig_clear(rel.channel_);
@@ -300,7 +282,7 @@ namespace node
 		//}
 #endif
 
-		auto const rel = find_rel_by_table(tbl->meta().get_name());
+		auto const rel = channel::find_rel_by_table(tbl->meta().get_name());
 		if (!rel.is_empty()) {
 
 			//
@@ -350,12 +332,12 @@ namespace node
 
 	void dispatcher::subscribe_channel(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
 	{
-		auto const rel = find_rel_by_channel(channel);
+		auto const rel = channel::find_rel_by_channel(channel);
 		if (!rel.is_empty())	{
 			subscribe(db, rel.table_, channel, tag);
 		}
 		else {
-			auto const rel = find_rel_by_counter(channel);
+			auto const rel = channel::find_rel_by_counter(channel);
 			if (!rel.is_empty()) 
 			{
 				subscribe_table_count(db, channel, rel.table_, tag);
@@ -724,57 +706,4 @@ namespace node
 		connection_manager_.http_moved(std::get<0>(tpl), std::get<1>(tpl));
 	}
 
-	dispatcher::tbl_channel_rel dispatcher::find_rel_by_table(std::string table) const
-	{
-		auto pos = std::find_if(rel_.begin(), rel_.end(), [table](tbl_channel_rel const& rel) {
-			return boost::algorithm::equals(table, rel.table_);
-			});
-
-		return (pos == rel_.end())
-			? tbl_channel_rel("", "", "")
-			: *pos
-			;
-	}
-
-	dispatcher::tbl_channel_rel dispatcher::find_rel_by_channel(std::string channel) const {
-
-		auto pos = std::find_if(rel_.begin(), rel_.end(), [channel](tbl_channel_rel const& rel) {
-			return boost::algorithm::equals(channel, rel.channel_);
-			});
-
-		return (pos == rel_.end())
-			? tbl_channel_rel("", "", "")
-			: *pos
-			;
-	}
-
-	dispatcher::tbl_channel_rel dispatcher::find_rel_by_counter(std::string counter) const
-	{
-		auto pos = std::find_if(rel_.begin(), rel_.end(), [counter](tbl_channel_rel const& rel) {
-			return boost::algorithm::equals(counter, rel.counter_);
-			});
-
-		return (pos == rel_.end())
-			? tbl_channel_rel("", "", "")
-			: *pos
-			;
-	}
-
-
-	//
-	//	tbl_channel_rel ----------------------------------------------+
-	//
-	dispatcher::tbl_channel_rel::tbl_channel_rel(std::string table, std::string channel, std::string counter)
-		: table_(table)
-		, channel_(channel)
-		, counter_(counter)
-	{}
-
-	bool dispatcher::tbl_channel_rel::is_empty() const {
-		return table_.empty();
-	}
-
-	bool dispatcher::tbl_channel_rel::has_counter() const {
-		return !counter_.empty();
-	}
 }

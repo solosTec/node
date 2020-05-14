@@ -6,8 +6,10 @@
  */ 
 
 #include "forwarder.h"
+#include "tables.h"
 #include <smf/shared/db_schemes.h>
 #include <smf/cluster/generator.h>
+
 #include <cyng/table/key.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
@@ -62,50 +64,74 @@ namespace node
 
 	void fwd_delete_device(cyng::logging::log_ptr logger
 		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader)
+		, cyng::reader<cyng::object> const& reader
+		, std::string const& tbl_name)
 	{
+		BOOST_ASSERT(tbl_name == "TDevice");
+
 		//
 		//	TDevice key is of type UUID
 		//
-		cyng::vector_t vec;
-		vec = cyng::value_cast(reader["key"].get("tag"), vec);
+		cyng::vector_t const vec = cyng::to_vector(reader["key"].get("tag"));
 		BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
 		auto key = cyng::table::key_generator(vec.at(0));
-		ctx.queue(bus_req_db_remove("TDevice", key, ctx.tag()));
+		ctx.queue(bus_req_db_remove(tbl_name, key, ctx.tag()));
 	}
 
 	void fwd_delete_gateway(cyng::logging::log_ptr logger
 		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader)
+		, cyng::reader<cyng::object> const& reader
+		, std::string const& tbl_name)
 	{
+		BOOST_ASSERT(tbl_name == "TGateway");
+
 		//
 		//	TGateway key is of type UUID
 		//
-		cyng::vector_t vec;
-		vec = cyng::value_cast(reader["key"].get("tag"), vec);
+		cyng::vector_t const vec = cyng::to_vector(reader["key"].get("tag"));
 		BOOST_ASSERT_MSG(vec.size() == 1, "TGateway key has wrong size");
 		auto key = cyng::table::key_generator(vec.at(0));
-		ctx.queue(bus_req_db_remove("TGateway", key, ctx.tag()));
+		ctx.queue(bus_req_db_remove(tbl_name, key, ctx.tag()));
 	}
 
 	void fwd_delete_meter(cyng::logging::log_ptr logger
 		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader)
+		, cyng::reader<cyng::object> const& reader
+		, std::string const& tbl_name)
 	{
+		BOOST_ASSERT(tbl_name == "TMeter");
+
 		//
 		//	TDevice key is of type UUID
 		//
-		cyng::vector_t vec;
-		vec = cyng::value_cast(reader["key"].get("tag"), vec);
+		cyng::vector_t const vec = cyng::to_vector(reader["key"].get("tag"));
 		BOOST_ASSERT_MSG(vec.size() == 1, "TMeter key has wrong size");
 		auto key = cyng::table::key_generator(vec.at(0));
-		ctx.queue(bus_req_db_remove("TMeter", key, ctx.tag()));
+		ctx.queue(bus_req_db_remove(tbl_name, key, ctx.tag()));
+	}
+
+	void fwd_delete_iec(cyng::logging::log_ptr logger
+		, cyng::context& ctx
+		, cyng::reader<cyng::object> const& reader
+		, std::string const& tbl_name)
+	{
+		BOOST_ASSERT(tbl_name == "TIECBridge");
+
+		//
+		//	TIECBridge key is of type UUID
+		//
+		cyng::vector_t const vec = cyng::to_vector(reader["key"].get("tag"));
+		BOOST_ASSERT_MSG(vec.size() == 1, "TIECBridge key has wrong size");
+		auto key = cyng::table::key_generator(vec.at(0));
+		ctx.queue(bus_req_db_remove(tbl_name, key, ctx.tag()));
 	}
 
 	void fwd_delete_lora(cyng::logging::log_ptr logger
 		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader)
+		, cyng::reader<cyng::object> const& reader
+		, std::string const& tbl_name)
 	{
+		BOOST_ASSERT(tbl_name == "TLoRaDevice");
 		//
 		//	TLoRaDevice key is of type UUID
 		//
@@ -113,7 +139,7 @@ namespace node
 		vec = cyng::value_cast(reader["key"].get("tag"), vec);
 		BOOST_ASSERT_MSG(vec.size() == 1, "TLoRaDevice key has wrong size");
 		auto key = cyng::table::key_generator(vec.at(0));
-		ctx.queue(bus_req_db_remove("TLoRaDevice", key, ctx.tag()));
+		ctx.queue(bus_req_db_remove(tbl_name, key, ctx.tag()));
 	}
 
 	void fwd_delete(cyng::logging::log_ptr logger
@@ -124,21 +150,28 @@ namespace node
 		const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
 		CYNG_LOG_TRACE(logger, "ws.read - delete channel [" << channel << "]");
 		try {
+
+			auto const rel = channel::find_rel_by_channel(channel);
+
 			if (boost::algorithm::starts_with(channel, "config.device"))
 			{
-				fwd_delete_device(logger, ctx, reader);
+				fwd_delete_device(logger, ctx, reader, rel.table_);
 			}
 			else if (boost::algorithm::starts_with(channel, "config.gateway"))
 			{
-				fwd_delete_gateway(logger, ctx, reader);
+				fwd_delete_gateway(logger, ctx, reader, rel.table_);
 			}
 			else if (boost::algorithm::starts_with(channel, "config.meter"))
 			{
-				fwd_delete_meter(logger, ctx, reader);
+				fwd_delete_meter(logger, ctx, reader, rel.table_);
+			}
+			else if (boost::algorithm::starts_with(channel, "config.iec"))
+			{
+				fwd_delete_iec(logger, ctx, reader, rel.table_);
 			}
 			else if (boost::algorithm::starts_with(channel, "config.lora"))
 			{
-				fwd_delete_lora(logger, ctx, reader);
+				fwd_delete_lora(logger, ctx, reader, rel.table_);
 			}
 			else
 			{
@@ -155,24 +188,25 @@ namespace node
 
 	void fwd_modify_device(cyng::logging::log_ptr logger
 		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader)
+		, cyng::reader<cyng::object> const& reader
+		, std::string const& tbl_name)
 	{
+		BOOST_ASSERT(tbl_name == "TDevice");
+
 		//
 		//	TDevice key is of type UUID
 		//	all values have the same key
 		//
-		cyng::vector_t vec;
-		vec = cyng::value_cast(reader["rec"].get("key"), vec);
+		auto const vec = cyng::to_vector(reader["rec"].get("key"));
 		BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
 
 		auto key = cyng::table::key_generator(vec.at(0));
 
-		cyng::tuple_t tpl;
-		tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
+		auto const tpl = cyng::to_tuple(reader["rec"].get("data"));
 		for (auto p : tpl)
 		{
 			cyng::param_t param;
-			ctx.queue(bus_req_db_modify("TDevice"
+			ctx.queue(bus_req_db_modify(tbl_name
 				, key
 				, cyng::value_cast(p, param)
 				, 0
@@ -182,19 +216,20 @@ namespace node
 
 	void fwd_modify_gateway(cyng::logging::log_ptr logger
 		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader)
+		, cyng::reader<cyng::object> const& reader
+		, std::string const& tbl_name)
 	{
+		BOOST_ASSERT(tbl_name == "TGateway");
+
 		//
 		//	TGateway key is of type UUID
 		//	all values have the same key
 		//
-		cyng::vector_t vec;
-		vec = cyng::value_cast(reader["rec"].get("key"), vec);
+		auto const vec = cyng::to_vector(reader["rec"].get("key"));
 		BOOST_ASSERT_MSG(vec.size() == 1, "TGateway key has wrong size");
 		auto key = cyng::table::key_generator(vec.at(0));
 
-		cyng::tuple_t tpl;
-		tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
+		auto const tpl = cyng::to_tuple(reader["rec"].get("data"));
 		for (auto p : tpl)
 		{
 			cyng::param_t param;
@@ -207,14 +242,14 @@ namespace node
 				std::string server_id;
 				server_id = cyng::value_cast(param.second, server_id);
 				boost::algorithm::to_upper(server_id);
-				ctx.queue(bus_req_db_modify("TGateway"
+				ctx.queue(bus_req_db_modify(tbl_name
 					, key
 					, cyng::param_factory("serverId", server_id)
 					, 0
 					, ctx.tag()));
 			}
 			else {
-				ctx.queue(bus_req_db_modify("TGateway"
+				ctx.queue(bus_req_db_modify(tbl_name
 					, key
 					, cyng::value_cast(p, param)
 					, 0
@@ -225,12 +260,15 @@ namespace node
 
 	void fwd_modify_system(cyng::logging::log_ptr logger
 		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader)
+		, cyng::reader<cyng::object> const& reader
+		, std::string const& tbl_name)
 	{
+		BOOST_ASSERT(tbl_name == "_Config");
+
 		//	{"cmd":"modify","channel":"config.system","rec":{"key":{"name":"connection-auto-login"},"data":{"value":true}}}
-		const std::string name = cyng::value_cast<std::string>(reader["rec"]["key"].get("name"), "?");
-		const cyng::object value = reader["rec"]["data"].get("value");
-		ctx.queue(bus_req_db_modify("_Config"
+		std::string const name = cyng::value_cast<std::string>(reader["rec"]["key"].get("name"), "?");
+		cyng::object const value = reader["rec"]["data"].get("value");
+		ctx.queue(bus_req_db_modify(tbl_name
 			//	generate new key
 			, cyng::table::key_generator(reader["rec"]["key"].get("name"))
 			//	build parameter
@@ -253,23 +291,45 @@ namespace node
 
 	void fwd_modify_meter(cyng::logging::log_ptr logger
 		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader)
+		, cyng::reader<cyng::object> const& reader
+		, std::string const& tbl_name)
 	{
-		cyng::vector_t vec;
-		vec = cyng::value_cast(reader["rec"].get("key"), vec);
+		BOOST_ASSERT(tbl_name == "TMeter");
+
+		auto const vec = cyng::to_vector(reader["rec"].get("key"));
 		BOOST_ASSERT_MSG(vec.size() == 1, "TMeter key has wrong size");
 
-		//const std::string str = cyng::value_cast<std::string>(vec.at(0), "");
-		//CYNG_LOG_DEBUG(logger, "TDevice key [" << str << "]");
-		//auto key = cyng::table::key_generator(boost::uuids::string_generator()(str));
-		auto key = cyng::table::key_generator(vec.at(0));
+		auto const key = cyng::table::key_generator(vec.at(0));
 
-		cyng::tuple_t tpl;
-		tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
+		auto const tpl = cyng::to_tuple(reader["rec"].get("data"));
 		for (auto p : tpl)
 		{
 			cyng::param_t param;
-			ctx.queue(bus_req_db_modify("TMeter"
+			ctx.queue(bus_req_db_modify(tbl_name
+				, key
+				, cyng::value_cast(p, param)
+				, 0
+				, ctx.tag()));
+		}
+	}
+
+	void fwd_modify_iec(cyng::logging::log_ptr logger
+		, cyng::context& ctx
+		, cyng::reader<cyng::object> const& reader
+		, std::string const& tbl_name)
+	{
+		BOOST_ASSERT(tbl_name == "TIECBridge");
+
+		auto const vec = cyng::to_vector(reader["rec"].get("key"));
+		BOOST_ASSERT_MSG(vec.size() == 1, "TIECBridge key has wrong size");
+
+		auto key = cyng::table::key_generator(vec.at(0));
+
+		auto const tpl = cyng::to_tuple(reader["rec"].get("data"));
+		for (auto p : tpl)
+		{
+			cyng::param_t param;
+			ctx.queue(bus_req_db_modify(tbl_name
 				, key
 				, cyng::value_cast(p, param)
 				, 0
@@ -280,10 +340,10 @@ namespace node
 	void fwd_modify_lora(cyng::logging::log_ptr logger
 		, cyng::context& ctx
 		, cyng::reader<cyng::object> const& reader
-		, std::string const& channel)
+		, std::string const& channel
+		, std::string const& tbl_name)
 	{
-		//	smf-form-lora-pk=96c24827-2847-4612-9982-ab5cb1e8dee7&smf-form-lora-address=&smf-form-lora-appuid=&smf-form-lora-gwuid=&smf-form-lora-DevEUI=0100%3A0302%3A0504%3A0706&smf-form-lora-aes=0000000000000000000000000000000000000000000000000000000000000000&smf-form-lora-driver%20=raw&smf-form-lora-activation=on&smf-form-lora-devaddr=&smf-form-lora-appeui=&smf-form-lora-gweui=
-		//	 {"cmd":"modify","channel":"config.lora","rec":{"key":["96c24827-2847-4612-9982-ab5cb1e8dee7"],"data":{"DevEUI":"0100:0302:0504:0706","AESKey":"0000000000000000000000000000000000000000000000000000000000000000","driver":"raw","activation":"ABP","DevAddr":"20","AppEUI":"0100:0302:0604:0807","GatewayEUI":"0100:0302:0604:0807"}}}
+		BOOST_ASSERT(tbl_name == "TLoRaDevice");
 
 		cyng::vector_t vec;
 		vec = cyng::value_cast(reader["rec"].get("key"), vec);
@@ -291,8 +351,7 @@ namespace node
 
 		auto key = cyng::table::key_generator(vec.at(0));
 
-		cyng::tuple_t tpl;
-		tpl = cyng::value_cast(reader["rec"].get("data"), tpl);
+		auto const tpl = cyng::to_tuple(reader["rec"].get("data"));
 		for (auto p : tpl)
 		{
 			cyng::param_t param;
@@ -307,7 +366,7 @@ namespace node
 				//
 				auto const activation = cyng::value_cast<std::string>(reader["rec"]["data"].get("activation"), "OTAA");
 
-				ctx.queue(bus_req_db_modify("TLoRaDevice"
+				ctx.queue(bus_req_db_modify(tbl_name
 					, key
 					, cyng::param_factory(param.first, boost::algorithm::equals(activation, "OTAA"))
 					, 0
@@ -322,7 +381,7 @@ namespace node
 				auto const eui = cyng::value_cast<std::string>(reader["rec"]["data"].get(param.first), "0000:0000:0000:0000");
 				std::pair<cyng::mac64, bool > r = cyng::parse_mac64(eui);
 				if (r.second) {
-					ctx.queue(bus_req_db_modify("TLoRaDevice"
+					ctx.queue(bus_req_db_modify(tbl_name
 						, key
 						, cyng::param_factory(param.first, r.first)
 						, 0
@@ -345,7 +404,7 @@ namespace node
 				auto const eui = cyng::value_cast<std::string>(reader["rec"]["data"].get(param.first), "0000:0000:0000:0000");
 				std::pair<cyng::mac64, bool > r = cyng::parse_mac64(eui);
 				if (r.second) {
-					ctx.queue(bus_req_db_modify("TLoRaDevice"
+					ctx.queue(bus_req_db_modify(tbl_name
 						, key
 						, cyng::param_factory(param.first, r.first)
 						, 0
@@ -368,7 +427,7 @@ namespace node
 				auto const eui = cyng::value_cast<std::string>(reader["rec"]["data"].get(param.first), "0000:0000:0000:0000");
 				std::pair<cyng::mac64, bool > r = cyng::parse_mac64(eui);
 				if (r.second) {
-					ctx.queue(bus_req_db_modify("TLoRaDevice"
+					ctx.queue(bus_req_db_modify(tbl_name
 						, key
 						, cyng::param_factory(param.first, r.first)
 						, 0
@@ -384,7 +443,7 @@ namespace node
 				}
 			}
 			else {
-				ctx.queue(bus_req_db_modify("TLoRaDevice"
+				ctx.queue(bus_req_db_modify(tbl_name
 					, key
 					, param
 					, 0
@@ -412,25 +471,32 @@ namespace node
 		const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
 		CYNG_LOG_TRACE(logger, "ws.read - modify channel [" << channel << "]");
 		try {
+
+			auto const rel = channel::find_rel_by_channel(channel);
+
 			if (boost::algorithm::starts_with(channel, "config.device"))
 			{
-				fwd_modify_device(logger, ctx, reader);
+				fwd_modify_device(logger, ctx, reader, rel.table_);
 			}
 			else if (boost::algorithm::starts_with(channel, "config.gateway"))
 			{
-				fwd_modify_gateway(logger, ctx, reader);
+				fwd_modify_gateway(logger, ctx, reader, rel.table_);
 			}
 			else if (boost::algorithm::starts_with(channel, "config.meter"))
 			{
-				fwd_modify_meter(logger, ctx, reader);
+				fwd_modify_meter(logger, ctx, reader, rel.table_);
+			}
+			else if (boost::algorithm::starts_with(channel, "config.iec"))
+			{
+				fwd_modify_iec(logger, ctx, reader, rel.table_);
 			}
 			else if (boost::algorithm::starts_with(channel, "config.lora"))
 			{
-				fwd_modify_lora(logger, ctx, reader, channel);
+				fwd_modify_lora(logger, ctx, reader, channel, rel.table_);
 			}
 			else if (boost::algorithm::starts_with(channel, "config.system"))
 			{
-				fwd_modify_system(logger, ctx, reader);
+				fwd_modify_system(logger, ctx, reader, rel.table_);
 			}
 			else if (boost::algorithm::starts_with(channel, "config.web"))
 			{

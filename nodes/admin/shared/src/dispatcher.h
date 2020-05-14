@@ -17,19 +17,6 @@ namespace node
 {
 	class dispatcher
 	{
-
-		struct tbl_channel_rel
-		{
-			tbl_channel_rel(std::string, std::string, std::string);
-
-			const std::string table_;
-			const std::string channel_;
-			const std::string counter_;
-
-			bool is_empty() const;
-			bool has_counter() const;
-		};
-
 	public:
 		dispatcher(cyng::logging::log_ptr, connection_manager_interface&);
 
@@ -95,18 +82,10 @@ namespace node
 		void res_attention_code(cyng::context& ctx);
 		void http_move(cyng::context& ctx);
 
-		/**
-		 * Search vector with table/channel relations for a table
-		 */
-		tbl_channel_rel find_rel_by_table(std::string) const;
-		tbl_channel_rel find_rel_by_channel(std::string) const;
-		tbl_channel_rel find_rel_by_counter(std::string) const;
-
 	private:
 		cyng::logging::log_ptr logger_;
 		connection_manager_interface & connection_manager_;
 
-		const std::vector< tbl_channel_rel >	rel_;
 	};
 }
 

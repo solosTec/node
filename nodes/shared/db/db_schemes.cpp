@@ -135,7 +135,8 @@ namespace node
 			//
 			//	"ident" + "gw" have to be unique
 			//
-			return cyng::table::make_meta_table<1, 11>(name, { "pk"
+			return cyng::table::make_meta_table<1, 11>(name, 
+				{ "pk"
 				, "ident"		//	[string] ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 				, "meter"		//	[string] meter number (i.e. 16000913) 4 bytes 
 				, "code"		//	[string] metering code - changed at 2019-01-31
@@ -492,6 +493,62 @@ namespace node
 				, 0	//	ep
 				, 0	//	direction
 				, 0
+				});
+		}
+
+		else if (boost::algorithm::equals(name, "TCSVReport")) {
+
+			//
+			//	Configuration data for CSV reports
+			//
+			return cyng::table::make_meta_table<1, 4>(name,
+				{ "profile"		//	profile name (OBIS code)
+				, "rootDir"		//	[string] root directory
+				, "prefix"		//	[string] 
+				, "suffix"		//	[string] 
+				, "header"		//	[bool] 
+				},
+				{ cyng::TC_STRING	//	profile
+				, cyng::TC_STRING	//	rootDir
+				, cyng::TC_STRING	//	prefix
+				, cyng::TC_STRING	//	suffix
+				, cyng::TC_BOOL		//	header
+				},
+				{ 12
+				, 0	//	rootDir
+				, 0	//	prefix
+				, 0	//	suffix
+				, 0	//	header
+				});
+		}
+
+		//	Configurable Validation, Estimation and Editing (VEE) rules provide maximum flexibility
+		else if (boost::algorithm::equals(name, "TValidationReport")) {
+
+			//
+			//	Contains data of validation report
+			//
+			return cyng::table::make_meta_table<1, 5>(name,
+				{ "pk"			//	[uuid] same key as TMeter
+				, "from"		//	[ts] start time
+				, "to"			//	[ts] end time
+				, "type"		//	[u32] type of validation (missing, implausible)
+				, "quantity"	//	[u32] number of missing records
+				, "edited"		//	[bool]
+				},
+				{ cyng::TC_STRING	//	profile
+				, cyng::TC_TIME_POINT	//	from
+				, cyng::TC_TIME_POINT	//	to
+				, cyng::TC_UINT32	//	type
+				, cyng::TC_UINT32	//	quantity
+				, cyng::TC_BOOL		//	edited
+				},
+				{ 36
+				, 0	//	from
+				, 0	//	to
+				, 0	//	type
+				, 0	//	quantity
+				, 0	//	edited
 				});
 		}
 
