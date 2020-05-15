@@ -35,6 +35,7 @@ namespace node
 			, std::chrono::seconds timeout
 			, std::uint64_t max_upload_size
 			, std::string const& doc_root
+			, std::string const& nickname
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs const& ad
 #endif
@@ -43,6 +44,7 @@ namespace node
 			, tag_(tag)
 			, max_upload_size_(max_upload_size)
 			, doc_root_(doc_root)
+			, nickname_(nickname)
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs_(ad)
 #endif
@@ -707,11 +709,35 @@ namespace node
 			, std::string target)
 		{
 			CYNG_LOG_WARNING(logger_, "404 - not found: " << target);
+
+			std::string body =
+				"<!DOCTYPE html>\n"
+				"<html lang=en>\n"
+
+				"<head>\n"
+				"\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n"
+				"\t<title>401 not authorized</title>\n"
+				"</head>\n"
+
+				"<body style=\"color: #444; margin:0;font: normal 14px/20px Arial, Helvetica, sans-serif; height:100%; background-color: #fff;\">\n"
+				"\t<div style=\"height:auto; min-height:100%; \">"
+				"\t\t<div style=\"text-align: center; width:800px; margin-left: -400px; position:absolute; top: 30%; left:50%;\">\n"
+				"\t\t\t<h1 style=\"margin:0; font-size:150px; line-height:150px; font-weight:bold;\">404</h1>\n"
+				"\t\t\t<h2 style=\"margin-top:20px;font-size: 30px;\">Not Found</h2>\n"
+				"\t\t\t<p>The resource '" + target + "' was not found.</p>\n"
+				"\t\t</div>\n"
+				"\t</div>\n"
+
+				"</body>\n"
+				"</html>\n"
+				;
+
 			boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::not_found, version };
 			res.set(boost::beast::http::field::server, NODE::version_string);
 			res.set(boost::beast::http::field::content_type, "text/html");
 			res.keep_alive(keep_alive);
-			res.body() = "The resource '" + target + "' was not found.";
+			res.body() = body;
+			//res.body() = "The resource '" + target + "' was not found.";
 			res.prepare_payload();
 			return res;
 		}
@@ -741,6 +767,7 @@ namespace node
 				std::make_tuple(boost::beast::http::status::ok, version) };
 			res.set(boost::beast::http::field::server, NODE::version_string);
 			res.set(boost::beast::http::field::content_type, mime_type(path));
+			res.insert("X-ServerNickName", nickname_);
 			res.content_length(size);
 			res.keep_alive(keep_alive);
 			return res;

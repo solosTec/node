@@ -40,6 +40,7 @@ namespace node
 			, timeout
 			, max_upload_size
 			, doc_root
+			, "LoRy"
 			, ad
 			, blacklist
 			, redirects

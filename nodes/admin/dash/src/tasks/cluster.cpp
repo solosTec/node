@@ -40,6 +40,7 @@ namespace node
 		, std::size_t timeout
 		, std::uint64_t max_upload_size
 		, std::string const& doc_root
+		, std::string const& nickname
 #ifdef NODE_SSL_INSTALLED
 		, auth_dirs const& ad
 #endif
@@ -59,6 +60,7 @@ namespace node
 			, max_upload_size
 			, doc_root
 			, ""	//	no blog
+			, nickname
 #ifdef NODE_SSL_INSTALLED
 			, ad
 #endif

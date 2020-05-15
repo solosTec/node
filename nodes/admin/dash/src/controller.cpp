@@ -33,8 +33,8 @@ namespace node
 	void join_cluster(cyng::async::mux&
 		, cyng::logging::log_ptr
 		, boost::uuids::uuid
-		, cyng::vector_t const&
-		, cyng::tuple_t const&);
+		, cyng::vector_t
+		, cyng::tuple_t);
 
 	controller::controller(unsigned int index
 		, unsigned int pool_size
@@ -70,8 +70,9 @@ namespace node
 					cyng::param_factory("timeout", "15"),	//	seconds
 					cyng::param_factory("max-upload-size", 1024 * 1024 * 10),	//	10 MB
 					cyng::param_factory("document-root", root.string()),
+					cyng::param_factory("server-nickname", "Coraline"),	//	x-servernickname
 #ifdef NODE_SSL_INSTALLED
-						cyng::param_factory("auth", cyng::vector_factory({
+					cyng::param_factory("auth", cyng::vector_factory({
 						//	directory: /
 						//	authType:
 						//	user:
@@ -151,13 +152,11 @@ namespace node
 		//
 		//	connect to cluster
 		//
-		cyng::vector_t tmp_vec;
-		cyng::tuple_t tmp_tpl;
 		join_cluster(mux
 			, logger
 			, tag
-			, cyng::value_cast(cfg.get("cluster"), tmp_vec)
-			, cyng::value_cast(cfg.get("server"), tmp_tpl));
+			, cyng::to_vector(cfg.get("cluster"))
+			, cyng::to_tuple(cfg.get("server")));
 
 		//
 		//	wait for system signals
@@ -169,8 +168,8 @@ namespace node
 	void join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid cluster_tag
-		, cyng::vector_t const& cfg_cls
-		, cyng::tuple_t const& cfg_srv)
+		, cyng::vector_t cfg_cls
+		, cyng::tuple_t cfg_srv)
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cls.size());
 
@@ -187,6 +186,7 @@ namespace node
 		auto const port = static_cast<unsigned short>(std::stoi(service));
 		auto const timeout = cyng::numeric_cast<std::size_t>(dom.get("timeout"), 15u);
 		auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(dom.get("max-upload-size"), 1024u * 1024 * 10u);
+		auto const nickname = cyng::value_cast<std::string>(dom.get("server-nickname"), "Coraline");
 
 		boost::system::error_code ec;
 		if (boost::filesystem::exists(doc_root, ec)) {
@@ -262,6 +262,7 @@ namespace node
 			, timeout
 			, max_upload_size
 			, doc_root
+			, nickname
 #ifdef NODE_SSL_INSTALLED
 			, ad
 #endif

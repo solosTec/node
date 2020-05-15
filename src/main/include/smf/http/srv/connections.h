@@ -43,6 +43,7 @@ namespace node
 			connections(cyng::logging::log_ptr
 				, cyng::controller& vm
 				, std::string const& doc_root
+				, std::string const& nickname
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs const& ad
 #endif
@@ -138,6 +139,8 @@ namespace node
 			 * document root
 			 */
 			std::string const doc_root_;
+
+			std::string const nickname_;
 
 #ifdef NODE_SSL_INSTALLED
 			auth_dirs const auth_dirs_;

@@ -373,6 +373,7 @@ namespace node
 				, timeout
 				, max_upload_size
 				, doc_root
+				, "Solid SolosTec"
 				, ad
 				, blacklist
 				, redirects

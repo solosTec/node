@@ -349,6 +349,7 @@ namespace node
 			, max_upload_size
 			, doc_root
 			, blog_root
+			, "Unimproved HTTP"
 #ifdef NODE_SSL_INSTALLED
 			, ad
 #endif

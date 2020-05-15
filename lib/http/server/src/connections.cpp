@@ -28,6 +28,7 @@ namespace node
 		connections::connections(cyng::logging::log_ptr logger
 			, cyng::controller& vm
 			, std::string const& doc_root
+			, std::string const& nickname
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs const& ad
 #endif
@@ -38,6 +39,7 @@ namespace node
 		: logger_(logger)
 			, vm_(vm)
 			, doc_root_(doc_root)
+			, nickname_(nickname)
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs_(ad)
 #endif
@@ -111,6 +113,7 @@ namespace node
                 , timeout_
 				, max_upload_size_
 				, doc_root_
+				, nickname_
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs_
 #endif

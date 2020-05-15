@@ -38,6 +38,7 @@ namespace node
 				, std::uint64_t max_upload_size
 				, std::string const& doc_root
 				, std::string const& blog_root
+				, std::string const& nickname
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs const& ad
 #endif

@@ -123,6 +123,7 @@ namespace node
 				, std::chrono::seconds timeout
 				, std::uint64_t max_upload_size
 				, std::string const& doc_root
+				, std::string const& nickname
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs const& ad
 #endif
@@ -193,6 +194,7 @@ namespace node
 			boost::uuids::uuid const tag_;
 			std::uint64_t const max_upload_size_;
 			std::string const doc_root_;
+			std::string const nickname_;
 #ifdef NODE_SSL_INSTALLED
 			auth_dirs const& auth_dirs_;
 #endif

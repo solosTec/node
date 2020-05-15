@@ -25,6 +25,7 @@ namespace node
 			, std::uint64_t max_upload_size
 			, std::string const& doc_root
 			, std::string const& blog_root
+			, std::string const& nickname
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs const& ad
 #endif
@@ -39,6 +40,7 @@ namespace node
 			, connection_manager_(logger
 				, vm
 				, doc_root
+				, nickname
 #ifdef NODE_SSL_INSTALLED
 				, ad
 #endif
@@ -124,9 +126,7 @@ namespace node
 				do_accept();
 #else
 				// We need to be executing within a strand to perform async operations
-				// on the I/O objects in this session. Although not strictly necessary
-				// for single-threaded contexts, this example code is written to be
-				// thread-safe by default.
+				// on the I/O objects in this session. 
 				boost::asio::dispatch(
 					acceptor_.get_executor(),
 					boost::beast::bind_front_handler(

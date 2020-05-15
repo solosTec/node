@@ -34,6 +34,7 @@ namespace node
                 , std::size_t timeout
 				, std::uint64_t max_upload_size
 				, std::string const& doc_root
+				, std::string const& nickname
 				, auth_dirs const& ad
 				, std::set<boost::asio::ip::address> const& blacklist
 				, std::map<std::string, std::string> const& redirects

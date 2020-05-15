@@ -32,8 +32,9 @@ namespace node
 	void join_cluster(cyng::logging::log_ptr
 		, cyng::async::mux&
 		, boost::asio::ssl::context& ctx
-		, cyng::vector_t const&
-		, cyng::tuple_t const&);
+		, cyng::vector_t
+		, cyng::tuple_t);
+
 	bool load_server_certificate(boost::asio::ssl::context& ctx
 		, cyng::logging::log_ptr
 		, std::string const& tls_pwd
@@ -74,6 +75,7 @@ namespace node
 					cyng::param_factory("timeout", "15"),	//	seconds
 					cyng::param_factory("max-upload-size", 1024 * 1024 * 10),	//	10 MB
 					cyng::param_factory("document-root", root.string()),
+					cyng::param_factory("server-nickname", "SCoraline"),	//	x-servernickname
 					cyng::param_factory("tls-pwd", "test"),
 					cyng::param_factory("tls-certificate-chain", "demo.cert"),
                     cyng::param_factory("tls-private-key", "priv.key"),
@@ -161,13 +163,11 @@ namespace node
 		//
 		//	connect to cluster
 		//
-		cyng::vector_t tmp_vec;
-		cyng::tuple_t tmp_tpl;
 		join_cluster(logger
 			, mux
 			, ctx
-			, cyng::value_cast(cfg.get("cluster"), tmp_vec)
-			, cyng::value_cast(cfg.get("server"), tmp_tpl));
+			, cyng::to_vector(cfg.get("cluster"))
+			, cyng::to_tuple(cfg.get("server")));
 
 		//
 		//	wait for system signals
@@ -179,8 +179,8 @@ namespace node
 	void join_cluster(cyng::logging::log_ptr logger
 		, cyng::async::mux& mux
 		, boost::asio::ssl::context& ctx
-		, cyng::vector_t const& cfg_cls
-		, cyng::tuple_t const& cfg_srv)
+		, cyng::vector_t cfg_cls
+		, cyng::tuple_t cfg_srv)
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cls.size());
 
@@ -196,6 +196,7 @@ namespace node
 		auto const port = static_cast<unsigned short>(std::stoi(service));
 		auto const timeout = cyng::numeric_cast<std::size_t>(dom.get("timeout"), 15u);
 		auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(dom.get("max-upload-size"), 1024u * 1024 * 10u);
+		auto const nickname = cyng::value_cast<std::string>(dom.get("server-nickname"), "SCoraline");
 
 		boost::system::error_code ec;
 		if (boost::filesystem::exists(doc_root, ec)) {
@@ -275,6 +276,7 @@ namespace node
 				, timeout
 				, max_upload_size
 				, doc_root
+				, nickname
 				, ad
 				, blacklist
 				, redirects);
