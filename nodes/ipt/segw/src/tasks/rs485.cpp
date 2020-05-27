@@ -18,12 +18,12 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cache& cfg
 		, std::size_t tsk)
-	: base_(*btp) 
+	: base_(*btp)
 		, logger_(logger)
 		, cache_(cfg)
 		, cfg_(cfg)
-		, tsk_(tsk)
 		, state_(cfg_.get_search_device() ? state::REMOVE_SECONDARY_ADDRESS : state::READOUT)
+		, tsk_(tsk)
 		, search_idx_(0)
 		, response_(false)
 	{
@@ -42,7 +42,8 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< ">");
+			<< "> "
+			<< get_state());
 #endif
 
 		switch (state_) {
@@ -58,22 +59,12 @@ namespace node
 			response_ = false;
 			break;
 		case state::SEARCH:
-			if (response_) {
-				search_idx_ = 0;
-				state_ = state::READOUT;
-				break;
-			}
+			//if (response_) {
+			//	search_idx_ = 0;
+			//	state_ = state::READOUT;
+			//	break;
+			//}
 			search();
-			if (search_idx_ == 0xFA) {
-				search_idx_ = 0;
-				state_ = state::READOUT;
-
-				CYNG_LOG_INFO(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> slave primary search finished");
-			}
 			//	slave has to wait between 11 bit times and (330 bit times + 50ms) before answering 
 			base_.suspend(std::chrono::seconds(12));
 			break;
@@ -127,6 +118,90 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
+	//	slot [1] - short frame
+	cyng::continuation rs485::process(
+		boost::uuids::uuid,	//	[0] tag
+		bool,				//	[1] OK
+		std::uint8_t,		//	[2] C-field
+		std::uint8_t,		//	[3] A-field
+		std::uint8_t,		//	[5] checksum
+		cyng::buffer_t		//	[6] payload
+	)
+	{
+		CYNG_LOG_DEBUG(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> short frame");
+
+		//
+		//	continue task
+		//
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	slot [2] - long frame
+	cyng::continuation rs485::process(
+		boost::uuids::uuid,	//	[0] tag
+		bool,				//	[1] OK
+		std::uint8_t,		//	[2] C-field
+		std::uint8_t,		//	[3] A-field
+		std::uint8_t,		//	[4] CI-field
+		std::uint8_t,		//	[5] checksum
+		cyng::buffer_t		//	[6] payload
+	)
+	{
+		CYNG_LOG_DEBUG(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> long frame");
+
+		switch (state_) {
+		case state::QUERY:
+			//response_ = true;
+			state_ = state::SEARCH;
+			//base_.mux_.post(tsk_, 0, cyng::tuple_factory(mbus_read_data_by_primary_address(true, search_idx_)));
+			search();
+			break;
+		default:
+			//	ignore ACK
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> ignore long frame");
+			break;
+		}
+
+
+		//
+		//	continue task
+		//
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	slot [3] - ctrl frame
+	cyng::continuation rs485::process(
+		boost::uuids::uuid,	//	[0] tag
+		bool,				//	[1] OK
+		std::uint8_t,		//	[2] C-field
+		std::uint8_t,		//	[3] A-field
+		std::uint8_t,		//	[4] CI-field
+		std::uint8_t		//	[5] checksum
+	)
+	{
+		CYNG_LOG_DEBUG(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> ctrl frame");
+		//
+		//	continue task
+		//
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
 	void rs485::search()
 	{
 
@@ -143,6 +218,18 @@ namespace node
 			<< base_.get_class_name()
 			<< "> initialize slave "
 			<< +search_idx_);
+
+		if (search_idx_ == 0xFA) {
+			search_idx_ = 0;
+			state_ = state::READOUT;
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> slave primary search finished");
+		}
+
 
 		//	Remove the secondary address matching symbol of all the meters on BUS.
 		//	10 40 FD 3D 16
@@ -187,7 +274,24 @@ namespace node
 	}
 
 	void rs485::readout()
-	{}
+	{
+		//	read address 9
+		auto cmd = cyng::make_buffer({ 0x10, 0x7B, 0x09, 0x84, 0x16 });
+		base_.mux_.post(tsk_, 0, cyng::tuple_factory(cmd));
+	}
+
+
+	std::string rs485::get_state() const
+	{
+		switch(state_) {
+		case state::REMOVE_SECONDARY_ADDRESS:	return "REMOVE_SECONDARY_ADDRESS";
+		case state::INITIALIZE_ALL_METERS:	return "INITIALIZE_ALL_METERS";
+		case state::SEARCH:	return "SEARCH";
+		case state::QUERY:	return "QUERY";
+		case state::READOUT:	return "READOUT";
+		}
+		return "";
+	}
 
 	cyng::buffer_t mbus_initialize_slave(std::uint8_t address)
 	{

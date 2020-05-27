@@ -24,7 +24,6 @@ namespace node
 		//
 		parser::parser(parser_callback cb)
 			: cb_(cb)
-			//, code_()
 			, stream_buffer_()
 			, input_(&stream_buffer_)
 			, stream_state_(state::START)

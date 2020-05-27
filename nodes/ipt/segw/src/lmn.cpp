@@ -368,18 +368,34 @@ namespace node
 	{
 		auto const frame = ctx.get_frame();
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		mux_.post(serial_mgr_, 1, cyng::to_tuple(frame));
 
 	}
 	void lmn::mbus_frame_ctrl(cyng::context& ctx)
 	{
 		auto const frame = ctx.get_frame();
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		mux_.post(serial_mgr_, 3, cyng::to_tuple(frame));
 
 	}
 	void lmn::mbus_frame_long(cyng::context& ctx)
 	{
 		auto const frame = ctx.get_frame();
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		//	[77604552-8a5d-4575-a09c-08fb8c7c3fdf,false,8,9,72,96,55010019E61E3C07 25 000000 0C78550100190C1326000000]
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] tag
+			bool,				//	[1] OK
+			std::uint8_t,		//	[2] C-field
+			std::uint8_t,		//	[3] A-field
+			std::uint8_t,		//	[4] CI-field
+			std::uint8_t,		//	[5] checksum
+			cyng::buffer_t		//	[6] payload
+		>(frame);
+
+		
+		mux_.post(serial_mgr_, 2, cyng::to_tuple(frame));
 
 	}
 

@@ -23,8 +23,33 @@ namespace node
 	public:
 		//	[0] write entry
 		using msg_0 = std::tuple<>;
+		using msg_1 = std::tuple<
+			boost::uuids::uuid,	//	[0] tag
+			bool,				//	[1] OK
+			std::uint8_t,		//	[2] C-field
+			std::uint8_t,		//	[3] A-field
+			std::uint8_t,		//	[5] checksum
+			cyng::buffer_t		//	[6] payload
+		>;
+		using msg_2 = std::tuple<
+			boost::uuids::uuid,	//	[0] tag
+			bool,				//	[1] OK
+			std::uint8_t,		//	[2] C-field
+			std::uint8_t,		//	[3] A-field
+			std::uint8_t,		//	[4] CI-field
+			std::uint8_t,		//	[5] checksum
+			cyng::buffer_t		//	[6] payload
+		>;
+		using msg_3 = std::tuple<
+			boost::uuids::uuid,	//	[0] tag
+			bool,				//	[1] OK
+			std::uint8_t,		//	[2] C-field
+			std::uint8_t,		//	[3] A-field
+			std::uint8_t,		//	[4] CI-field
+			std::uint8_t		//	[5] checksum
+		>;
 
-		using signatures_t = std::tuple<msg_0>;
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3>;
 
 	public:
 		rs485(cyng::async::base_task* bt
@@ -41,11 +66,52 @@ namespace node
 		 */
 		cyng::continuation process();
 
+		/**
+		 * @brief slot [1] - short frame
+		 *
+		 */
+		cyng::continuation process(
+			boost::uuids::uuid,	//	[0] tag
+			bool,				//	[1] OK
+			std::uint8_t,		//	[2] C-field
+			std::uint8_t,		//	[3] A-field
+			std::uint8_t,		//	[5] checksum
+			cyng::buffer_t		//	[6] payload
+		);
+
+		/**
+		 * @brief slot [2] - long frame
+		 *
+		 */
+		cyng::continuation process(
+			boost::uuids::uuid,	//	[0] tag
+			bool,				//	[1] OK
+			std::uint8_t,		//	[2] C-field
+			std::uint8_t,		//	[3] A-field
+			std::uint8_t,		//	[4] CI-field
+			std::uint8_t,		//	[5] checksum
+			cyng::buffer_t		//	[6] payload
+		);
+
+		/**
+		 * @brief slot [3] - ctrl frame
+		 *
+		 */
+		cyng::continuation process(
+			boost::uuids::uuid,	//	[0] tag
+			bool,				//	[1] OK
+			std::uint8_t,		//	[2] C-field
+			std::uint8_t,		//	[3] A-field
+			std::uint8_t,		//	[4] CI-field
+			std::uint8_t		//	[5] checksum
+		);
+
 	private:
 		void search();
 		void readout();
 		void remove_secondary_address();
 		void initialize_all_meters();
+		std::string get_state() const;
 
 	private:
 		cyng::async::base_task& base_;
@@ -61,11 +127,6 @@ namespace node
 		cache& cache_;
 		cfg_mbus cfg_;
 
-		/**
-		 *  LMN task
-		 */
-		std::size_t const tsk_;
-
 		enum class state {
 			REMOVE_SECONDARY_ADDRESS,
 			INITIALIZE_ALL_METERS,
@@ -73,6 +134,11 @@ namespace node
 			QUERY,
 			READOUT,
 		} state_;
+
+		/**
+		 *  LMN task
+		 */
+		std::size_t const tsk_;
 
 		/**
 		 * Used in state SEARCH to pick up the next

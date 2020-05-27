@@ -27,34 +27,45 @@ namespace node
 			//	restart triggered by watchdog reset - 0b00000011000000000
 			STATUS_BIT_RESET_BY_WATCHDOG = (1ull << 9),
 
-			//	restart triggered by watchdog reset
-			STATUS_BIT_RESTART = (1ull << 9),
-
 			//	IP address is available (DHCP)
+			//	0 if address available
 			STATUS_BIT_IP_ADDRESS_AVAILABLE = (1ull << 10),
 
 			//	ethernet link is available
+			//	0 if WAN is available
 			STATUS_BIT_ETHERNET_AVAILABLE = (1ull << 11),
 
+			//	0 if radio network is available
+			STATUS_BIT_RADIO_AVAILABLE = (1ull << 12),
+
 			//	not authorized on IP-T server
+			//	0 if authorized
 			STATUS_BIT_NOT_AUTHORIZED_IPT = (1ull << 13),
 
 			//	out of mememory
+			//	1 if OoM occured
 			STATUS_BIT_OUT_OF_MEMORY = (1ull << 14),
 
+			//	bit 15 is reserved
+
 			//	 Service interface is available (Kundenschnittstelle)
+			//	1 if available
 			STATUS_BIT_SERVICE_IF_AVAILABLE = (1ull << 16),
 
 			//	  extension interface is available (Erweiterungs-Schnittstelle)
+			//	1 if available
 			STATUS_BIT_EXT_IF_AVAILABLE = (1ull << 17),
 
 			//	 Wireless M-Bus interface is available
+			//	1 if available
 			STATUS_BIT_MBUS_IF_AVAILABLE = (1ull << 18),
 
 			//	PLC is available
+			//	1 if available
 			STATUS_BIT_PLC_AVAILABLE = (1ull << 19),
 
 			//	time base is unsure
+			//	1 if unsafe
 			STATUS_BIT_NO_TIMEBASE = (1ull << 32),
 		};
 
