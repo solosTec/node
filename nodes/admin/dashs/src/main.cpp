@@ -14,7 +14,7 @@
 #include <boost/asio.hpp>
 #endif
 #include "controller.h"
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 #include <iostream>
 
 /**

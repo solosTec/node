@@ -14,7 +14,7 @@
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller_fwd.h>
 
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node
 {

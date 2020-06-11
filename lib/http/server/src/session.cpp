@@ -917,7 +917,7 @@ namespace node
 			queue_(std::move(res));
 		}
 
-		void session::trigger_download(boost::filesystem::path const& path, std::string const& attachment)
+		void session::trigger_download(cyng::filesystem::path const& path, std::string const& attachment)
 		{
 
 			boost::beast::error_code ec;

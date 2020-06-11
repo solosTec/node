@@ -12,7 +12,7 @@
 #include "controller.h"
 #include <iostream>
 #include <fstream>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 #ifdef _MSC_VER 
 #include <Windows.h>
 #endif

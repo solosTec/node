@@ -1289,7 +1289,7 @@ namespace node
 		//
 		//	write XML file
 		//
-		auto const out = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.xml");
+		auto const out = cyng::filesystem::temp_directory_path() / cyng::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.xml");
 		if (doc_.save_file(out.c_str(), PUGIXML_TEXT("  "))) {
 
 			//
@@ -1310,7 +1310,7 @@ namespace node
 		//
 		//	generate CSV download file
 		//
-		auto out = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.csv");
+		auto out = cyng::filesystem::temp_directory_path() / cyng::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.csv");
 
 		db_.access([&](cyng::store::table const* tbl) {
 
@@ -1344,7 +1344,7 @@ namespace node
 		//
 		//	generate JSON download file
 		//
-		auto out = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.json");
+		auto out = cyng::filesystem::temp_directory_path() / cyng::filesystem::unique_path("record-%%%%-%%%%-%%%%-%%%%.json");
 
 		cyng::vector_t vec;
 		db_.access([&](cyng::store::table const* tbl) {

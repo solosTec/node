@@ -11,7 +11,7 @@
 #include "../../../show_ip_address.h"
 #include "controller.h"
 #include <iostream>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 /**
  * main entry point.
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 		;
 		
 	//	get the working directory
-	const boost::filesystem::path cwd = boost::filesystem::current_path();
+	const cyng::filesystem::path cwd = cyng::filesystem::current_path();
 
 	//	path to JSON configuration file
 	std::string json_path;

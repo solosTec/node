@@ -68,7 +68,7 @@ namespace node
 			reset();
 		}
 
-		boost::filesystem::path xml_exporter::get_filename() const
+		cyng::filesystem::path xml_exporter::get_filename() const
 		{
 			auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			std::tm time = cyng::chrono::convert_utc(tt);
@@ -121,13 +121,13 @@ namespace node
 			meta.append_child(pugi::node_pcdata).set_value(target_.c_str());
 		}
 
-		bool xml_exporter::write(boost::filesystem::path const& p)
+		bool xml_exporter::write(cyng::filesystem::path const& p)
 		{
-			//BOOST_ASSERT_MSG(!boost::filesystem::exists(p), "file already exists");
+			//BOOST_ASSERT_MSG(!cyng::filesystem::exists(p), "file already exists");
 			// Save XML tree to file.
 			// Remark: second optional param is indent string to be used;
 			// default indentation is tab character.
-			return (!boost::filesystem::exists(p))
+			return (!cyng::filesystem::exists(p))
 				? doc_.save_file(p.c_str(), PUGIXML_TEXT("  "))
 				: false
 				;

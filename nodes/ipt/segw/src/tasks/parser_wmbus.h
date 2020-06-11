@@ -13,7 +13,7 @@
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace cyng
 {

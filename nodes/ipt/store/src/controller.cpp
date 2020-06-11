@@ -70,7 +70,7 @@ namespace node
 		, node_name)
 	{}
 
-	cyng::vector_t controller::create_config(std::fstream& fout, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const
+	cyng::vector_t controller::create_config(std::fstream& fout, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd) const
 	{
 		cyng::crypto::rnd_num<int> rng(10, 60);
 		auto pwd = cyng::crypto::make_rnd_pwd();	//	password generator
@@ -381,7 +381,7 @@ namespace node
 		, cyng::reader<cyng::object> const& cfg)
 	{
 		std::vector<std::size_t> tsks;
-		auto const pwd = boost::filesystem::current_path();
+		auto const pwd = cyng::filesystem::current_path();
 
 		for (const auto& config_type : config_types)
 		{

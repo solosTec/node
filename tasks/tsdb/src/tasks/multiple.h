@@ -31,7 +31,7 @@ namespace node
 	public:
 		multiple(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, boost::filesystem::path out
+			, cyng::filesystem::path out
 			, std::string prefix
 			, std::string suffix
 			, std::chrono::seconds period);
@@ -54,13 +54,13 @@ namespace node
 
 
 	private:
-		void test_file_size(boost::filesystem::path p);
-		void create_backup_file(boost::filesystem::path p);
+		void test_file_size(cyng::filesystem::path p);
+		void create_backup_file(cyng::filesystem::path p);
 
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
-		boost::filesystem::path const out_;
+		cyng::filesystem::path const out_;
 		std::string const prefix_;
 		std::string const suffix_;
 		std::chrono::seconds const period_;

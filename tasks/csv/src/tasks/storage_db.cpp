@@ -1085,7 +1085,7 @@ namespace node
 		auto tt_end = std::chrono::system_clock::to_time_t(end);
 		std::tm time_end = cyng::chrono::convert_utc(tt_end);
 
-		boost::filesystem::path root_dir = cyng::find_value<std::string>(cfg_clock_day_, "root-dir", ".");
+		cyng::filesystem::path root_dir = cyng::find_value<std::string>(cfg_clock_day_, "root-dir", ".");
 		auto prefix = cyng::find_value<std::string>(cfg_clock_day_, "prefix", "smf-day-");
 		auto suffix = cyng::find_value<std::string>(cfg_clock_day_, "suffix", "csv");
 		auto header = cyng::find_value(cfg_clock_day_, "header", true);
@@ -1156,7 +1156,7 @@ namespace node
 		auto tt_end = std::chrono::system_clock::to_time_t(end);
 		std::tm time_end = cyng::chrono::convert_utc(tt_end);
 
-		boost::filesystem::path root_dir = cyng::find_value<std::string>(cfg_clock_hour_, "root-dir", ".");
+		cyng::filesystem::path root_dir = cyng::find_value<std::string>(cfg_clock_hour_, "root-dir", ".");
 		auto prefix = cyng::find_value<std::string>(cfg_clock_hour_, "prefix", "smf-1h-report-");
 		auto suffix = cyng::find_value<std::string>(cfg_clock_hour_, "suffix", "csv");
 		auto header = cyng::find_value(cfg_clock_hour_, "header", true);
@@ -1222,7 +1222,7 @@ namespace node
 		, std::chrono::system_clock::time_point start
 		, std::chrono::system_clock::time_point end)
 	{
-		boost::filesystem::path root_dir = cyng::find_value<std::string>(cfg_clock_month_, "root-dir", ".");
+		cyng::filesystem::path root_dir = cyng::find_value<std::string>(cfg_clock_month_, "root-dir", ".");
 		auto prefix = cyng::find_value<std::string>(cfg_clock_month_, "prefix", "smf-month-");
 		auto suffix = cyng::find_value<std::string>(cfg_clock_month_, "suffix", "csv");
 		auto header = cyng::find_value(cfg_clock_month_, "header", true);

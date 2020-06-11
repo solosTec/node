@@ -152,7 +152,7 @@ namespace node
 			void do_close();
 
 			void send_moved(std::string const& location);
-			void trigger_download(boost::filesystem::path const& filename, std::string const& attachment);
+			void trigger_download(cyng::filesystem::path const& filename, std::string const& attachment);
 
 		private:
 			bool check_auth(boost::beast::http::request<boost::beast::http::string_body> const&);

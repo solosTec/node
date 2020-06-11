@@ -49,7 +49,7 @@ namespace node
 			, node_name)
 	{}
 
-	cyng::vector_t controller::create_config(std::fstream& fout, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const
+	cyng::vector_t controller::create_config(std::fstream& fout, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd) const
 	{
 		cyng::crypto::rnd_num<int> rng(10, 60);
 

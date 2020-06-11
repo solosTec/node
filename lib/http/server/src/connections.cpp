@@ -85,7 +85,7 @@ namespace node
 
 		bool connections::redirect(std::string& path) const
 		{
-			if (boost::filesystem::is_directory(path)) {
+			if (cyng::filesystem::is_directory(path)) {
 				path.append("/index.html");
 			}
 
@@ -401,7 +401,7 @@ namespace node
 			return false;
 		}
 
-		bool connections::trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment)
+		bool connections::trigger_download(boost::uuids::uuid tag, cyng::filesystem::path const& filename, std::string const& attachment)
 		{
 			cyng::async::unique_lock<cyng::async::shared_mutex> lock(mutex_[HTTP_PLAIN]);
 			auto pos = sessions_[HTTP_PLAIN].find(tag);

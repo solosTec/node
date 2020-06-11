@@ -52,7 +52,7 @@ namespace node
 		//
 		//	initialize global configuration data
 		//
-		const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
+		const cyng::filesystem::path tmp = cyng::filesystem::temp_directory_path();
 		auto stat_dir = cyng::value_cast(dom.get("stat-dir"), tmp.string());
 		CYNG_LOG_INFO(logger_, "store statistics data at " << stat_dir);
 		cache_.set_cfg("generate-time-series-dir", stat_dir);

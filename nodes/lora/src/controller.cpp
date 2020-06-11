@@ -46,7 +46,7 @@ namespace node
 			, node_name)
 	{}
 
-	cyng::vector_t controller::create_config(std::fstream& fout, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const
+	cyng::vector_t controller::create_config(std::fstream& fout, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd) const
 	{
 		cyng::crypto::rnd_num<int> rng(10, 120);
 
@@ -158,7 +158,7 @@ namespace node
 
 		auto dom = cyng::make_reader(cfg_srv);
 
-		const boost::filesystem::path wd = boost::filesystem::current_path();
+		const cyng::filesystem::path wd = cyng::filesystem::current_path();
 
 		//	http::server build a string view
 		static auto doc_root = cyng::value_cast(dom.get("document-root"), (wd / "htdocs").string());

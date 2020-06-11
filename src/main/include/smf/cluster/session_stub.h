@@ -127,7 +127,7 @@ namespace node
 #ifdef SMF_IO_LOG
 		std::size_t log_counter_;
 		std::size_t sml_counter_;
-		boost::filesystem::path dir_out_;
+		cyng::filesystem::path dir_out_;
 #endif
 		/**
 		 * device name

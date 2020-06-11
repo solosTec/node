@@ -28,7 +28,7 @@ namespace node
 	namespace sml
 	{
 
-		abl_exporter::abl_exporter(boost::filesystem::path root_dir
+		abl_exporter::abl_exporter(cyng::filesystem::path root_dir
 			, std::string prefix
 			, std::string suffix
 			, bool eol)
@@ -44,7 +44,7 @@ namespace node
 			reset();
 		}
 
-		abl_exporter::abl_exporter(boost::filesystem::path root_dir
+		abl_exporter::abl_exporter(cyng::filesystem::path root_dir
 			, std::string prefix
 			, std::string suffix
 			, bool eol
@@ -664,7 +664,7 @@ namespace node
 			return "/EMH6\\M01GWF-ED300L";
 		}
 
-		boost::filesystem::path get_abl_filename(std::string prefix
+		cyng::filesystem::path get_abl_filename(std::string prefix
 			, std::string suffix
 			, std::string gw
 			, std::string server_id

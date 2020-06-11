@@ -21,7 +21,7 @@ namespace node
 	sml_json_consumer::sml_json_consumer(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, std::size_t ntid	//	network task id
-		, boost::filesystem::path root_dir
+		, cyng::filesystem::path root_dir
 		, std::string prefix
 		, std::string suffix)
 	: base_(*btp)

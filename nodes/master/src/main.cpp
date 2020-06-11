@@ -14,7 +14,7 @@
 #endif
 #include "controller.h"
 #include <iostream>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 /**
  * main entry point.

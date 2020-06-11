@@ -9,7 +9,7 @@
 
 #include <string>
 #include <boost/uuid/uuid.hpp>
-#include <boost/filesystem/path.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node 
 {
@@ -41,7 +41,7 @@ namespace node
 		 *
 		 * @return false if session was noot found
 		 */
-		virtual bool trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment) = 0;
+		virtual bool trigger_download(boost::uuids::uuid tag, cyng::filesystem::path const& filename, std::string const& attachment) = 0;
 
 	};
 }

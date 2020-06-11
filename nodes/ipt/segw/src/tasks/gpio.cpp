@@ -13,7 +13,7 @@ namespace node
 {
 	gpio::gpio(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, boost::filesystem::path path)
+		, cyng::filesystem::path path)
 	: base_(*btp) 
 		, logger_(logger)
 		, path_(path)

@@ -17,7 +17,7 @@
 #include <iostream>
 #include <list>
 
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node
 {
@@ -44,10 +44,10 @@ namespace node
 
 		//	commands
 		bool cmd_run(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
-		bool cmd_run_script(boost::filesystem::path const&);
+		bool cmd_run_script(cyng::filesystem::path const&);
 		//bool cmd_echo(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 		bool cmd_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
-		bool cmd_list(boost::filesystem::path const&);
+		bool cmd_list(cyng::filesystem::path const&);
 		bool cmd_ip() const;
 		//bool cmd_pwd(unsigned);
 
@@ -63,7 +63,7 @@ namespace node
 	/**
 	 * Sets the specified extension if the file name doesn't contains one.
 	 */
-	boost::filesystem::path verify_extension(boost::filesystem::path p, std::string const& ext);
+	cyng::filesystem::path verify_extension(cyng::filesystem::path p, std::string const& ext);
 
 }
 

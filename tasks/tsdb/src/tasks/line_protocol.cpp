@@ -16,7 +16,7 @@ namespace node
 {
 	line_protocol::line_protocol(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, boost::filesystem::path root
+		, cyng::filesystem::path root
 		, std::string prefix
 		, std::string suffix
 		, std::chrono::seconds period)
@@ -108,7 +108,7 @@ namespace node
 	void line_protocol::test_file_size()
 	{
 		boost::system::error_code ec;
-		const auto fs = boost::filesystem::file_size(file_name_.string());
+		const auto fs = cyng::filesystem::file_size(file_name_.string());
 		if (!ec && (fs > 0x800000))
 		{	//	8 MB
 
@@ -138,10 +138,10 @@ namespace node
 			;
 
 		const std::string tag = ss.str();
-		const boost::filesystem::path backup
+		const cyng::filesystem::path backup
 			= file_name_.parent_path() / ((file_name_.stem().string() + "_backup_" + tag) + file_name_.extension().string());
 
-		boost::filesystem::rename(file_name_, backup);
+		cyng::filesystem::rename(file_name_, backup);
 	}
 
 	std::string line_protocol::escape(std::string const& str)

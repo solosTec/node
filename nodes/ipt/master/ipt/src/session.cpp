@@ -705,16 +705,16 @@ namespace node
 				<< "ipt-"
 				<< boost::uuids::to_string(ctx.tag())
 				;
-			boost::filesystem::path const sub_dir(ss.str());
-			boost::filesystem::path const dir_out(boost::filesystem::temp_directory_path() / sub_dir);
+			cyng::filesystem::path const sub_dir(ss.str());
+			cyng::filesystem::path const dir_out(cyng::filesystem::temp_directory_path() / sub_dir);
 
-			if (!boost::filesystem::is_directory(dir_out)) {
+			if (!cyng::filesystem::is_directory(dir_out)) {
 
 				//
 				//	create directory if not exist
 				//
 				boost::system::error_code ec;
-				boost::filesystem::create_directory(dir_out, ec);
+				cyng::filesystem::create_directory(dir_out, ec);
 			}
 
 			ss.str("");
@@ -727,7 +727,7 @@ namespace node
 				<< ".log"
 				;
 
-			boost::filesystem::path const file_name(ss.str());
+			cyng::filesystem::path const file_name(ss.str());
 
 			std::string const path = (dir_out / file_name).string();
 			std::ofstream of(path, std::ios::out | std::ios::app);

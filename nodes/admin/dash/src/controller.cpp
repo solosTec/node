@@ -46,7 +46,7 @@ namespace node
 		, node_name)
 	{}
 
-	cyng::vector_t controller::create_config(std::fstream& fout, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const
+	cyng::vector_t controller::create_config(std::fstream& fout, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd) const
 	{
 		auto const root = (cwd / ".." / "dash" / "dist").lexically_normal();
 		boost::uuids::random_generator uidgen;
@@ -175,7 +175,7 @@ namespace node
 
 		auto dom = cyng::make_reader(cfg_srv);
 
-		auto const pwd = boost::filesystem::current_path();
+		auto const pwd = cyng::filesystem::current_path();
 		auto const root = (pwd / ".." / "dash" / "dist").lexically_normal();
 
 		//	http::server build a string view
@@ -188,8 +188,8 @@ namespace node
 		auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(dom.get("max-upload-size"), 1024u * 1024 * 10u);
 		auto const nickname = cyng::value_cast<std::string>(dom.get("server-nickname"), "Coraline");
 
-		boost::system::error_code ec;
-		if (boost::filesystem::exists(doc_root, ec)) {
+		cyng::error_code ec;
+		if (cyng::filesystem::exists(doc_root, ec)) {
 			CYNG_LOG_INFO(logger, "document root: " << doc_root);
 		}
 		else {

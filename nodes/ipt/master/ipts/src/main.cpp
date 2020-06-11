@@ -14,7 +14,7 @@
 //#pragma comment(linker, "\"/manifestdependency:type='Win32' name='smf.ipt' version='6.0.0.0' processorArchitecture='X86' publicKeyToken='0000000000000000' language='*'\"")
 #endif
 #include "controller.h"
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 #include <iostream>
 
 

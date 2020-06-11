@@ -614,7 +614,7 @@ namespace node
 				<< ".bin"
 				;
 
-			const boost::filesystem::path tmp = boost::filesystem::temp_directory_path() / ss.str();
+			const cyng::filesystem::path tmp = cyng::filesystem::temp_directory_path() / ss.str();
 			std::ofstream of(tmp.string(), std::ios::out | std::ios::binary | std::ios::app);
 			if (of.is_open())	{
 				of.write(data.data(), data.size());

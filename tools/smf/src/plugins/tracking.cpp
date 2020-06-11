@@ -26,7 +26,7 @@ namespace node
 		: cli_(*cp)
 		, status_(status::INITIAL)
 		, data_()
-		, af_(boost::filesystem::current_path() / "project-tracking.csv")
+		, af_(cyng::filesystem::current_path() / "project-tracking.csv")
 	{
 		
 		cli_.vm_.register_function("tracking", 1, std::bind(&tracking::cmd, this, std::placeholders::_1));
@@ -177,7 +177,7 @@ namespace node
 
 	void tracking::init(std::string filename)
 	{
-		if (!boost::filesystem::exists(filename)) {
+		if (!cyng::filesystem::exists(filename)) {
 			std::ofstream fout(filename, std::ios::trunc);
 			if (fout.is_open()) {
 				//fout
@@ -213,7 +213,7 @@ namespace node
 			return;
 		}
 
-		if (boost::filesystem::exists(filename) && boost::filesystem::is_regular_file(filename)) {
+		if (cyng::filesystem::exists(filename) && cyng::filesystem::is_regular_file(filename)) {
 			status_ = status::OPEN;
 			af_ = filename;
 			data_ = cyng::csv::read_file(filename);

@@ -48,10 +48,10 @@ namespace node
 		//out_ <<
 		//	"CONVERT " << cyng::io::to_str(frame) << std::endl;
 
-		boost::filesystem::path const p(cyng::value_cast<std::string>(frame.at(0), "D:\\installations\\EBS\\incident-sep-2019\\SK-26-0500153B018EEB-01A815155368030102.csv"));
-		if (boost::filesystem::exists(p)) {
+		cyng::filesystem::path const p(cyng::value_cast<std::string>(frame.at(0), "D:\\installations\\EBS\\incident-sep-2019\\SK-26-0500153B018EEB-01A815155368030102.csv"));
+		if (cyng::filesystem::exists(p)) {
 
-			if (boost::filesystem::is_directory(p)) {
+			if (cyng::filesystem::is_directory(p)) {
 				csv_abl_dir(p);
 			}
 		}
@@ -64,7 +64,7 @@ namespace node
 		}
 	}
 
-	void convert::csv_abl_file(boost::filesystem::path p)
+	void convert::csv_abl_file(cyng::filesystem::path p)
 	{
 		//
 		//	analyse file name
@@ -108,11 +108,11 @@ namespace node
 		}
 	}
 
-	void convert::csv_abl_dir(boost::filesystem::path dir)
+	void convert::csv_abl_dir(cyng::filesystem::path dir)
 	{
-		std::for_each(boost::filesystem::directory_iterator(dir)
-			, boost::filesystem::directory_iterator()
-			, [&](boost::filesystem::path const& p) {
+		std::for_each(cyng::filesystem::directory_iterator(dir)
+			, cyng::filesystem::directory_iterator()
+			, [&](cyng::filesystem::path const& p) {
 
 				if (boost::algorithm::equals(p.extension().string(), ".csv")) {
 					csv_abl_file(p);
@@ -122,7 +122,7 @@ namespace node
 
 	}
 
-	void convert::csv_abl_data(boost::filesystem::path p, std::string gw, cyng::buffer_t const& srv_id)
+	void convert::csv_abl_data(cyng::filesystem::path p, std::string gw, cyng::buffer_t const& srv_id)
 	{
 		auto const vec = cyng::csv::read_file(p.string());
 		if (vec.size() > 2) {
@@ -168,7 +168,7 @@ namespace node
 					<< std::endl
 					;
 
-				boost::filesystem::path out("D:\\installations\\EBS\\incident-sep-2019\\restored");
+				cyng::filesystem::path out("D:\\installations\\EBS\\incident-sep-2019\\restored");
 				std::ofstream of((out / path).string(), std::ios::app | std::ios::binary);
 
 				//

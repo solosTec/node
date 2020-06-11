@@ -435,7 +435,7 @@ namespace node
 				}
 				
 				std::string file_name_pattern = dev_eui + "--" + node::lora::meter_id(payload) + "--%%%%-%%%%-%%%%-%%%%.xml";
-				const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
+				const auto p = cyng::filesystem::temp_directory_path() / cyng::filesystem::unique_path(file_name_pattern);
 				CYNG_LOG_TRACE(logger_, "write " << p.string());
 				//root.append_attribute("xmlns") = "http://uri.actility.com/lora";
 				doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
@@ -444,7 +444,7 @@ namespace node
 		else
 		{
 			std::string file_name_pattern = "LoRa--invalid.payload--%%%%-%%%%-%%%%-%%%%.xml";
-			const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
+			const auto p = cyng::filesystem::temp_directory_path() / cyng::filesystem::unique_path(file_name_pattern);
 			CYNG_LOG_TRACE(logger_, "write " << p.string());
 
 			//
@@ -475,7 +475,7 @@ namespace node
 			//	write XML file to disk
 			//
 			std::string file_name_pattern = dev_eui + "--ASCII--%%%%-%%%%-%%%%-%%%%.xml";
-			const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
+			const auto p = cyng::filesystem::temp_directory_path() / cyng::filesystem::unique_path(file_name_pattern);
 			doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
 		}
 	}
@@ -493,7 +493,7 @@ namespace node
 			//	write XML file to disk
 			//
 			std::string file_name_pattern = dev_eui + "--RAW--%%%%-%%%%-%%%%-%%%%.xml";
-			const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path(file_name_pattern);
+			const auto p = cyng::filesystem::temp_directory_path() / cyng::filesystem::unique_path(file_name_pattern);
 			doc.save_file(p.c_str(), PUGIXML_TEXT("  "));
 		}
 	}

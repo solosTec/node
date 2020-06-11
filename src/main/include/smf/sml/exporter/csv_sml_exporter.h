@@ -15,7 +15,7 @@
 #include <cyng/intrinsics/sets.h>
 #include <cyng/object.h>
 #include <fstream>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node
 {
@@ -25,7 +25,7 @@ namespace node
 		 * To build a usefull filename constructor with source,
 		 * channel and target info is required,
 		 */
-		boost::filesystem::path get_csv_filename(std::string prefix
+		cyng::filesystem::path get_csv_filename(std::string prefix
 			, std::string suffix
 			, std::uint32_t source
 			, std::uint32_t channel
@@ -38,11 +38,11 @@ namespace node
 		class csv_exporter
 		{
 		public:
-			csv_exporter(boost::filesystem::path root_dir
+			csv_exporter(cyng::filesystem::path root_dir
 				, std::string prefix
 				, std::string suffix
 				, bool header);
-			csv_exporter(boost::filesystem::path root_dir
+			csv_exporter(cyng::filesystem::path root_dir
 				, std::string prefix
 				, std::string suffix
 				, bool header
@@ -94,7 +94,7 @@ namespace node
 			void write_header();
 
 		private:
-			boost::filesystem::path const root_dir_;
+			cyng::filesystem::path const root_dir_;
 			std::string const prefix_;
 			std::string const suffix_;
 			bool header_;

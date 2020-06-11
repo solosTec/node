@@ -10,7 +10,7 @@
 
 #include <smf/sml/intrinsics/obis.h>
 #include <cyng/vm/context.h>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node
 {
@@ -23,9 +23,9 @@ namespace node
 
 	private:
 		void csv_abl(cyng::context& ctx);
-		void csv_abl_file(boost::filesystem::path);
-		void csv_abl_dir(boost::filesystem::path);
-		void csv_abl_data(boost::filesystem::path, std::string, cyng::buffer_t const&);
+		void csv_abl_file(cyng::filesystem::path);
+		void csv_abl_dir(cyng::filesystem::path);
+		void csv_abl_data(cyng::filesystem::path, std::string, cyng::buffer_t const&);
 
 	private:
 		cli& cli_;

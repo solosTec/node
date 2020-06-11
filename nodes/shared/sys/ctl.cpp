@@ -20,7 +20,7 @@
 #include <smf/shared/write_pid.h>
 #endif
 
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
 namespace node
@@ -70,9 +70,9 @@ namespace node
 #if BOOST_OS_LINUX
 					auto logger = cyng::logging::make_sys_logger(node_name_.c_str(), true);
 #else
-					const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
+					const cyng::filesystem::path tmp = cyng::filesystem::temp_directory_path();
 					auto dom = cyng::make_reader(r.first);
-					const boost::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
+					const cyng::filesystem::path log_dir = cyng::value_cast(dom.get("log-dir"), tmp.string());
 
 					auto logger = (console)
 						? cyng::logging::make_console_logger(mux.get_io_service(), node_name_)
@@ -155,7 +155,7 @@ namespace node
 		logger->set_severity(cyng::logging::to_severity(cyng::value_cast<std::string>(dom.get("log-level"), "INFO")));
 
 #if BOOST_OS_LINUX
-		const boost::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
+		const cyng::filesystem::path log_dir = cyng::value_cast<std::string>(dom.get("log-dir"), ".");
 		write_pid(log_dir, tag);
 #endif
 
@@ -175,7 +175,7 @@ namespace node
 			//
 			//	get default values
 			//
-			auto obj = cyng::make_object(create_config(fout, boost::filesystem::temp_directory_path(), boost::filesystem::current_path()));
+			auto obj = cyng::make_object(create_config(fout, cyng::filesystem::temp_directory_path(), cyng::filesystem::current_path()));
 			cyng::json::write(std::cout, obj);
 			std::cout << std::endl;
 			cyng::json::write(fout, obj);
@@ -192,7 +192,7 @@ namespace node
 		return EXIT_FAILURE;
 	}
 
-	cyng::vector_t ctl::create_config(std::fstream&, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const
+	cyng::vector_t ctl::create_config(std::fstream&, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd) const
 	{
 		return cyng::vector_factory({
 			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())

@@ -36,7 +36,7 @@ namespace node
 		, node_name)
 	{}
 
-	cyng::vector_t controller::create_config(std::fstream& fout, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const
+	cyng::vector_t controller::create_config(std::fstream& fout, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd) const
 	{
 		//
 		//	generate even distributed integers
@@ -106,7 +106,7 @@ namespace node
 
 		auto dom = cyng::make_reader(cfg_srv);
 
-		const boost::filesystem::path wd = boost::filesystem::current_path();
+		const cyng::filesystem::path wd = cyng::filesystem::current_path();
 
 		//	http::server build a string view
 		auto address = cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0");

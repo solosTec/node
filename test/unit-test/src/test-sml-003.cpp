@@ -55,9 +55,9 @@ namespace node
 		const cyng::vector_t frame = ctx.get_frame();
 		//CYNG_LOG_INFO(logger_, "client.req.login " << cyng::io::to_str(frame));
 		std::cout << "sml.eom: " << cyng::io::to_str(frame) << std::endl;
-		//const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("unit-test-%%%%-%%%%-%%%%-%%%%.xml");
-		const auto p = boost::filesystem::temp_directory_path() / boost::filesystem::path("unit-test.xml");
-		boost::filesystem::remove(p);
+		//const auto p = cyng::filesystem::temp_directory_path() / cyng::filesystem::unique_path("unit-test-%%%%-%%%%-%%%%-%%%%.xml");
+		const auto p = cyng::filesystem::temp_directory_path() / cyng::filesystem::path("unit-test.xml");
+		cyng::filesystem::remove(p);
 		exporter.write(p);
 		exporter.reset();
 	}

@@ -7,7 +7,7 @@
 
 #include "set_start_options.h"
 #include <NODE_project_info.h>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 #include <boost/config.hpp>
 #include <boost/version.hpp>
 #include <thread>
@@ -25,7 +25,7 @@ namespace node
 	)
 	{
 		//	get the working directory
-		auto const cwd = boost::filesystem::current_path();
+		auto const cwd = cyng::filesystem::current_path();
 
 #if BOOST_OS_WINDOWS
 		//

@@ -13,7 +13,7 @@
 #include <boost/asio.hpp>
 #endif
 #include "controller.h"
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 #include <iostream>
 
 /**
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 		;
 		
 	//	get the working directory
-// 	const boost::filesystem::path cwd = boost::filesystem::current_path();
+// 	const cyng::filesystem::path cwd = cyng::filesystem::current_path();
 
 	//	path to JSON configuration file
 	std::string json_path;

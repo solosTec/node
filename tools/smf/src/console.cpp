@@ -288,8 +288,8 @@ namespace node
 		if (pos != end)
 		{
 			const std::string file_name = cyng::io::to_str(*pos);
-			const boost::filesystem::path p = verify_extension(file_name, ".script");
-			if (boost::filesystem::exists(p))
+			const cyng::filesystem::path p = verify_extension(file_name, ".script");
+			if (cyng::filesystem::exists(p))
 			{
 				return cmd_run_script(p);
 			}
@@ -298,7 +298,7 @@ namespace node
 				std::cerr
 					<< "***Warning: "
 					<< "script file ["
-					<< boost::filesystem::absolute(p, boost::filesystem::current_path())
+					<< cyng::filesystem::absolute(p)
 					<< "] not found"
 					<< std::endl
 					;
@@ -314,7 +314,7 @@ namespace node
 		return false;
 	}
 
-	bool console::cmd_run_script(boost::filesystem::path const& p)
+	bool console::cmd_run_script(cyng::filesystem::path const& p)
 	{
 
 		std::ifstream infile(p.string(), std::ios::in);
@@ -455,36 +455,36 @@ namespace node
 		if (pos != end)
 		{
 			const std::string dir = cyng::io::to_str(*pos);
-			if (boost::filesystem::exists(dir))
+			if (cyng::filesystem::exists(dir))
 			{
 				return cmd_list(dir);
 			}
 			return false;
 		}
-		cmd_list(boost::filesystem::current_path());
+		cmd_list(cyng::filesystem::current_path());
 		return true;
 	}
 
-	bool console::cmd_list(boost::filesystem::path const& p)
+	bool console::cmd_list(cyng::filesystem::path const& p)
 	{
-		if (boost::filesystem::is_directory(p))
+		if (cyng::filesystem::is_directory(p))
 		{
 			std::uint64_t total_size{ 0 };
-			std::for_each(boost::filesystem::directory_iterator(p)
-				, boost::filesystem::directory_iterator()
-				, [&total_size](boost::filesystem::path const& p)
+			std::for_each(cyng::filesystem::directory_iterator(p)
+				, cyng::filesystem::directory_iterator()
+				, [&total_size](cyng::filesystem::path const& p)
 				{
 
-					if (boost::filesystem::is_directory(p))
+					if (cyng::filesystem::is_directory(p))
 					{
 						//
 						//	get folder size
 						//
 						;
-						std::uint64_t const count = std::accumulate(boost::filesystem::recursive_directory_iterator(p), boost::filesystem::recursive_directory_iterator(), 0ULL, [](std::size_t sum, boost::filesystem::path const& wd) {
-							return boost::filesystem::is_directory(wd)
+						std::uint64_t const count = std::accumulate(cyng::filesystem::recursive_directory_iterator(p), cyng::filesystem::recursive_directory_iterator(), 0ULL, [](std::size_t sum, cyng::filesystem::path const& wd) {
+							return cyng::filesystem::is_directory(wd)
 								? sum
-								: sum + boost::filesystem::file_size(wd)
+								: sum + cyng::filesystem::file_size(wd)
 								;
 							});
 
@@ -506,7 +506,7 @@ namespace node
 					}
 					else
 					{
-						auto const count(boost::filesystem::file_size(p));
+						auto const count(cyng::filesystem::file_size(p));
 
 						std::cout
 							<< std::setw(12)
@@ -586,7 +586,7 @@ namespace node
 		return false;
 	}
 
-	boost::filesystem::path verify_extension(boost::filesystem::path p, std::string const& ext)
+	cyng::filesystem::path verify_extension(cyng::filesystem::path p, std::string const& ext)
 	{
 		if (!p.has_extension())
 		{

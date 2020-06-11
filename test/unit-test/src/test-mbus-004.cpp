@@ -12,7 +12,7 @@
 #include <cyng/io/io_buffer.h>
 
 #include <boost/test/unit_test.hpp>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 #include <boost/algorithm/string.hpp>
 
 namespace node 

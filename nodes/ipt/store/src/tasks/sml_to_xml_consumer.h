@@ -31,7 +31,7 @@ namespace node
 		sml_xml_consumer(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, std::size_t ntid	//	network task id
-			, boost::filesystem::path
+			, cyng::filesystem::path
 			, std::string
 			, std::string
 			, std::chrono::seconds);
@@ -76,7 +76,7 @@ namespace node
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
 		const std::size_t ntid_;
-		const boost::filesystem::path root_dir_;
+		const cyng::filesystem::path root_dir_;
 		const std::string root_name_;
 		const std::string endcoding_;
 		const std::chrono::seconds period_;

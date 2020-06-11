@@ -23,7 +23,7 @@
 #include <fstream>
 
 #include <boost/test/unit_test.hpp>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 #include <boost/algorithm/string.hpp>
 
 namespace node 
@@ -35,11 +35,11 @@ namespace node
 
 
 		//	get data
-		//auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-003.bin";
-		//auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-004.bin";
-		//auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-005.bin";
-		//auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-snd-nr.bin";
-		auto p = boost::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "out.bin";
+		//auto p = cyng::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-003.bin";
+		//auto p = cyng::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-004.bin";
+		//auto p = cyng::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-005.bin";
+		//auto p = cyng::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "mbus-snd-nr.bin";
+		auto p = cyng::filesystem::path(NODE_SOURCE_DIRECTORY) / "test" / "unit-test" / "src" / "samples" / "out.bin";
 		std::ifstream ifs(p.string(), std::ios::binary | std::ios::app);
 		if (ifs.is_open())
 		{

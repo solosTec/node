@@ -16,7 +16,7 @@
 #include <cyng/object.h>
 
 #include <pugixml.hpp>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node	
 {
@@ -51,13 +51,13 @@ namespace node
 			/**
 			 * Write XML file
 			 */
-			bool write(boost::filesystem::path const&);
+			bool write(cyng::filesystem::path const&);
 
 			/**
 			 * To build a usefull filename constructor with source,
 			 * channel and target info is required,
 			 */
-			boost::filesystem::path get_filename() const;
+			cyng::filesystem::path get_filename() const;
 
 		private:
 			/**

@@ -17,7 +17,7 @@
 #include <cyng/factory/set_factory.h>
 #include <fstream>
 #include <sstream>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node
 {
@@ -129,7 +129,7 @@ namespace node
 			<< suffix_
 			;
 
-		boost::filesystem::path file = boost::filesystem::path(root_dir_) / ss.str();
+		cyng::filesystem::path file = cyng::filesystem::path(root_dir_) / ss.str();
 
 		std::ofstream of(file.string(), std::ios::out | std::ios::binary | std::ios::app);
 		if (of.is_open())

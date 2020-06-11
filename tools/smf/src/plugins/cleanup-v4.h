@@ -9,7 +9,7 @@
 #define NODE_TOOL_SMF_PLUGIN_CLEANUP_V4_H
 
 #include <cyng/vm/context.h>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node
 {
@@ -23,15 +23,15 @@ namespace node
 	private:
 		void cmd(cyng::context& ctx);
 		void read_log();
-		void read_e350(boost::filesystem::path);
-		void read_ipt(boost::filesystem::path);
+		void read_e350(cyng::filesystem::path);
+		void read_ipt(cyng::filesystem::path);
 		void intersection();
 		void import_data();
 		void dump_result();
 		void generate_sql();
 	private:
 		cli& cli_;
-		boost::filesystem::path root_dir_;
+		cyng::filesystem::path root_dir_;
 		cyng::vector_t	devices_;
 		std::map<std::string, std::string>	active_e350_;
 		std::map<std::string, std::string>	active_ipt_;

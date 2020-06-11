@@ -27,7 +27,7 @@ namespace node
 	namespace sml
 	{
 
-		csv_exporter::csv_exporter(boost::filesystem::path root_dir
+		csv_exporter::csv_exporter(cyng::filesystem::path root_dir
 			, std::string prefix
 			, std::string suffix
 			, bool header)
@@ -44,7 +44,7 @@ namespace node
 			reset();
 		}
 
-		csv_exporter::csv_exporter(boost::filesystem::path root_dir
+		csv_exporter::csv_exporter(cyng::filesystem::path root_dir
 			, std::string prefix
 			, std::string suffix
 			, bool header
@@ -675,7 +675,7 @@ namespace node
 			}
 		}
 
-		boost::filesystem::path get_csv_filename(std::string prefix
+		cyng::filesystem::path get_csv_filename(std::string prefix
 			, std::string suffix
 			, std::uint32_t source
 			, std::uint32_t channel

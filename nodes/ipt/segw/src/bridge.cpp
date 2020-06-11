@@ -876,7 +876,7 @@ namespace node
 			for (auto const& s : svec) {
 				auto const tid = cyng::async::start_task_detached<gpio>(mux_
 					, logger_
-					, boost::filesystem::path(gpio_path) / ("/gpio" + s));
+					, cyng::filesystem::path(gpio_path) / ("/gpio" + s));
 
 				//
 				//	store task id in cache DB

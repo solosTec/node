@@ -117,7 +117,7 @@ namespace node
 
 	void cleanup::read_log()
 	{
-		if (boost::filesystem::is_directory(root_dir_))
+		if (cyng::filesystem::is_directory(root_dir_))
 		{
 			//
 			//	reset maps
@@ -126,11 +126,11 @@ namespace node
 			active_e350_.clear();
 
 			std::uint64_t counter{ 0 };
-			std::for_each(boost::filesystem::directory_iterator(root_dir_)
-				, boost::filesystem::directory_iterator()
-				, [&](boost::filesystem::path const& p) {
+			std::for_each(cyng::filesystem::directory_iterator(root_dir_)
+				, cyng::filesystem::directory_iterator()
+				, [&](cyng::filesystem::path const& p) {
 
-					if (boost::filesystem::is_regular_file(p)) {
+					if (cyng::filesystem::is_regular_file(p)) {
 						auto const fn = p.filename().string();
 						auto const ext = p.extension().string();
 						if ((boost::algorithm::starts_with(fn, "smf-e350")) && boost::algorithm::equals(ext, ".log")) {
@@ -184,7 +184,7 @@ namespace node
 		}
 	}
 
-	void cleanup::read_e350(boost::filesystem::path p)
+	void cleanup::read_e350(cyng::filesystem::path p)
 	{
 		std::ifstream finp(p.string());
 		if (finp.is_open()) {
@@ -265,7 +265,7 @@ namespace node
 		}
 	}
 
-	void cleanup::read_ipt(boost::filesystem::path p)
+	void cleanup::read_ipt(cyng::filesystem::path p)
 	{
 		std::ifstream finp(p.string());
 		if (finp.is_open()) {

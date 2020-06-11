@@ -10,7 +10,7 @@
 
 #include <smf/sml/intrinsics/obis.h>
 #include <cyng/vm/context.h>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node
 {
@@ -42,7 +42,7 @@ namespace node
 			RUNNING
 		} status_;
 		cyng::vector_t data_;
-		boost::filesystem::path af_;	//	active file
+		cyng::filesystem::path af_;	//	active file
 	};
 
 	std::string get_parameter(std::size_t, cyng::vector_t const&, std::string);

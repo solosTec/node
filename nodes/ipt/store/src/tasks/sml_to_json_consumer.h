@@ -29,7 +29,7 @@ namespace node
 		sml_json_consumer(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, std::size_t ntid	//	network task id
-			, boost::filesystem::path root_dir
+			, cyng::filesystem::path root_dir
 			, std::string prefix
 			, std::string suffix);
 		cyng::continuation run();
@@ -68,7 +68,7 @@ namespace node
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
-		const boost::filesystem::path root_dir_;
+		const cyng::filesystem::path root_dir_;
 		const std::string prefix_;
 		const std::string suffix_;
 		std::map<std::uint64_t, std::size_t>	lines_;

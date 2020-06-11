@@ -16,7 +16,7 @@ namespace node
 {
 	multiple::multiple(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, boost::filesystem::path out
+		, cyng::filesystem::path out
 		, std::string prefix
 		, std::string suffix
 		, std::chrono::seconds period)
@@ -113,10 +113,10 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void multiple::test_file_size(boost::filesystem::path p)
+	void multiple::test_file_size(cyng::filesystem::path p)
 	{
-		boost::system::error_code ec;
-		const auto fs = boost::filesystem::file_size(p.string(), ec);
+		cyng::error_code ec;
+		const auto fs = cyng::filesystem::file_size(p.string(), ec);
 		if (!ec && (fs > 0x2000000))
 		{	//	32 MB
 
@@ -128,7 +128,7 @@ namespace node
 		}
 	}
 
-	void multiple::create_backup_file(boost::filesystem::path p)
+	void multiple::create_backup_file(cyng::filesystem::path p)
 	{
 		std::pair<std::time_t, double> r = cyng::chrono::to_dbl_time_point(std::chrono::system_clock::now());
 		std::tm tm = cyng::chrono::convert_utc(r.first);
@@ -147,7 +147,7 @@ namespace node
 			<< p.string()
 			;
 
-		boost::filesystem::rename(p, ss.str());
+		cyng::filesystem::rename(p, ss.str());
 	}
 
 }

@@ -29,7 +29,7 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/nil_generator.hpp>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 #include <boost/assert.hpp>
 
 namespace node 
@@ -172,8 +172,8 @@ namespace node
 			//
 			//	get default values
 			//
-			const boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
-			const boost::filesystem::path pwd = boost::filesystem::current_path();
+			const cyng::filesystem::path tmp = cyng::filesystem::temp_directory_path();
+			const cyng::filesystem::path pwd = cyng::filesystem::current_path();
 			boost::uuids::random_generator uidgen;
 			
 			//

@@ -83,8 +83,8 @@ namespace node
 				<< "-"
 				<< name_
 				;
-			boost::filesystem::path const sub_dir(ss.str());
-			dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
+			cyng::filesystem::path const sub_dir(ss.str());
+			dir_out_ = cyng::filesystem::temp_directory_path() / sub_dir;
 #endif
 
 		});
@@ -95,8 +95,8 @@ namespace node
 			<< "ipt-"
 			<< name_
 			;
-		boost::filesystem::path const sub_dir(ss.str());
-		dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
+		cyng::filesystem::path const sub_dir(ss.str());
+		dir_out_ = cyng::filesystem::temp_directory_path() / sub_dir;
 #endif
 
 	}
@@ -235,8 +235,8 @@ namespace node
 			//			<< "-"
 			//			<< name
 			//			;
-			//		boost::filesystem::path const sub_dir(ss.str());
-			//		dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
+			//		cyng::filesystem::path const sub_dir(ss.str());
+			//		dir_out_ = cyng::filesystem::temp_directory_path() / sub_dir;
 
 			//	}
 			//	else {
@@ -258,8 +258,8 @@ namespace node
 			//				<< "-"
 			//				<< name
 			//				;
-			//			boost::filesystem::path const sub_dir(ss.str());
-			//			dir_out_ = boost::filesystem::temp_directory_path() / sub_dir;
+			//			cyng::filesystem::path const sub_dir(ss.str());
+			//			dir_out_ = cyng::filesystem::temp_directory_path() / sub_dir;
 			//		}
 			//	}
 			//}
@@ -309,13 +309,13 @@ namespace node
 					update_io_log(buf);
 
 					std::stringstream ss;
-					if (!boost::filesystem::is_directory(dir_out_)) {
+					if (!cyng::filesystem::is_directory(dir_out_)) {
 
 						//
 						//	create directory if not exist
 						//
 						boost::system::error_code ec;
-						boost::filesystem::create_directory(dir_out_, ec);
+						cyng::filesystem::create_directory(dir_out_, ec);
 					}
 
 					ss.str("");
@@ -327,7 +327,7 @@ namespace node
 						<< ++log_counter_
 						<< ".log"
 						;
-					boost::filesystem::path const file_name(ss.str());
+					cyng::filesystem::path const file_name(ss.str());
 
 					{
 						std::string const path = (dir_out_ / file_name).string();

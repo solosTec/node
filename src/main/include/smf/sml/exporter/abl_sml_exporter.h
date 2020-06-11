@@ -16,7 +16,7 @@
 #include <cyng/object.h>
 #include <fstream>
 #include <boost/uuid/random_generator.hpp>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node
 {
@@ -26,7 +26,7 @@ namespace node
 		 * To build a usefull filename constructor with source,
 		 * channel and target info is required,
 		 */
-		boost::filesystem::path get_abl_filename(std::string prefix
+		cyng::filesystem::path get_abl_filename(std::string prefix
 			, std::string suffix
 			, std::string gw
 			, std::string server_id
@@ -58,11 +58,11 @@ namespace node
 		class abl_exporter
 		{
 		public:
-			abl_exporter(boost::filesystem::path root_dir
+			abl_exporter(cyng::filesystem::path root_dir
 				, std::string prefix
 				, std::string suffix
 				, bool);
-			abl_exporter(boost::filesystem::path root_dir
+			abl_exporter(cyng::filesystem::path root_dir
 				, std::string prefix
 				, std::string suffix
 				, bool
@@ -115,7 +115,7 @@ namespace node
 
 
 		private:
-			const boost::filesystem::path root_dir_;
+			const cyng::filesystem::path root_dir_;
 			const std::string prefix_;
 			const std::string suffix_;
 			const std::string eol_;	//	true is DOS, otherwise UNIX

@@ -115,7 +115,7 @@ namespace node
 			 *
 			 * @return false if session was noot found
 			 */
-			virtual bool trigger_download(boost::uuids::uuid tag, boost::filesystem::path const& filename, std::string const& attachment) override;
+			virtual bool trigger_download(boost::uuids::uuid tag, cyng::filesystem::path const& filename, std::string const& attachment) override;
 
 		private:
 			void modify_config(cyng::context& ctx);

@@ -391,7 +391,7 @@ namespace node
 
 			}
 
-			void trigger_download(cyng::object obj, boost::filesystem::path const& path, std::string const& attachment)
+			void trigger_download(cyng::object obj, cyng::filesystem::path const& path, std::string const& attachment)
 			{
 
 				boost::beast::error_code ec;

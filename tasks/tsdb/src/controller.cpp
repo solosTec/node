@@ -51,7 +51,7 @@ namespace node
 		, node_name)
 	{}
 
-	cyng::vector_t controller::create_config(std::fstream& fout, boost::filesystem::path&& tmp, boost::filesystem::path&& cwd) const
+	cyng::vector_t controller::create_config(std::fstream& fout, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd) const
 	{
 		//
 		//	generate even distributed integers
@@ -181,7 +181,7 @@ namespace node
 		)
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cluster.size());
-		auto const tmp = boost::filesystem::temp_directory_path();
+		auto const tmp = cyng::filesystem::temp_directory_path();
 
 		//
 		//	all storage tasks
@@ -202,12 +202,12 @@ namespace node
 			//
 			//	test output directory
 			//
-			boost::filesystem::path const dir = cyng::value_cast(dom_single.get("root-dir"), tmp.string());
+			cyng::filesystem::path const dir = cyng::value_cast(dom_single.get("root-dir"), tmp.string());
 			if (force_mkdir) {
-				boost::system::error_code ec;
-				if (!boost::filesystem::exists(dir, ec)) {
+				cyng::error_code ec;
+				if (!cyng::filesystem::exists(dir, ec)) {
 					CYNG_LOG_WARNING(logger, "create directory: " << dir);
-					boost::filesystem::create_directory(dir, ec);
+					cyng::filesystem::create_directory(dir, ec);
 				}
 			}
 
@@ -232,12 +232,12 @@ namespace node
 			//
 			//	test output directory
 			//
-			boost::filesystem::path const dir = cyng::value_cast(dom_single.get("root-dir"), tmp.string());
+			cyng::filesystem::path const dir = cyng::value_cast(dom_single.get("root-dir"), tmp.string());
 			if (force_mkdir) {
-				boost::system::error_code ec;
-				if (!boost::filesystem::exists(dir, ec)) {
+				cyng::error_code ec;
+				if (!cyng::filesystem::exists(dir, ec)) {
 					CYNG_LOG_WARNING(logger, "create directory: " << dir);
-					boost::filesystem::create_directory(dir, ec);
+					cyng::filesystem::create_directory(dir, ec);
 				}
 			}
 
@@ -262,12 +262,12 @@ namespace node
 			//
 			//	test output directory
 			//
-			boost::filesystem::path const dir = cyng::value_cast(dom_line_protocol.get("root-dir"), tmp.string());
+			cyng::filesystem::path const dir = cyng::value_cast(dom_line_protocol.get("root-dir"), tmp.string());
 			if (force_mkdir) {
-				boost::system::error_code ec;
-				if (!boost::filesystem::exists(dir, ec)) {
+				cyng::error_code ec;
+				if (!cyng::filesystem::exists(dir, ec)) {
 					CYNG_LOG_WARNING(logger, "create directory: " << dir);
-					boost::filesystem::create_directory(dir, ec);
+					cyng::filesystem::create_directory(dir, ec);
 				}
 			}
 

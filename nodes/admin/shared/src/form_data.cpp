@@ -93,7 +93,7 @@ namespace node
 			//
 			//	write temporary file
 			//
-			auto p = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("smf-dash-%%%%-%%%%-%%%%-%%%%.tmp");
+			auto p = cyng::filesystem::temp_directory_path() / cyng::filesystem::unique_path("smf-dash-%%%%-%%%%-%%%%-%%%%.tmp");
 			auto ptr = cyng::object_cast<cyng::buffer_t>(frame.at(4));
 			std::ofstream of(p.string());
 			if (of.is_open() && ptr != nullptr) {

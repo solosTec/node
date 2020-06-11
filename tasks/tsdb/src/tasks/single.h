@@ -32,7 +32,7 @@ namespace node
 	public:
 		single(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, boost::filesystem::path root
+			, cyng::filesystem::path root
 			, std::string prefix
 			, std::string suffix
 			, std::chrono::seconds period);
@@ -61,7 +61,7 @@ namespace node
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
-		boost::filesystem::path const file_name_;
+		cyng::filesystem::path const file_name_;
 		std::chrono::seconds const period_;
 		std::ofstream ofs_;
 	};	

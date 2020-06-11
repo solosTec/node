@@ -11,7 +11,7 @@
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node
 {
@@ -32,7 +32,7 @@ namespace node
 	public:
 		gpio(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, boost::filesystem::path path);
+			, cyng::filesystem::path path);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -65,7 +65,7 @@ namespace node
 		 * access path.
 		 * example: /sys/class/gpio/gpio50
 		 */
-		boost::filesystem::path	path_;
+		cyng::filesystem::path	path_;
 
 		std::size_t counter_;
 		std::chrono::milliseconds ms_;
