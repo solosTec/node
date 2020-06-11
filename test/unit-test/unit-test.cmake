@@ -59,10 +59,12 @@ set (unit_test_mbus
 	test/unit-test/src/test-mbus-002.h
 	test/unit-test/src/test-mbus-003.h
 	test/unit-test/src/test-mbus-004.h
+	test/unit-test/src/test-mbus-005.h
 	test/unit-test/src/test-mbus-001.cpp
 	test/unit-test/src/test-mbus-002.cpp
 	test/unit-test/src/test-mbus-003.cpp
 	test/unit-test/src/test-mbus-004.cpp
+	test/unit-test/src/test-mbus-005.cpp
 )
 
 

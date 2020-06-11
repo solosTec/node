@@ -66,8 +66,15 @@ namespace node
 		vm_.register_function("sml.msg", 3, std::bind(&lmn::sml_msg, this, std::placeholders::_1));
 		//vm.register_function("sml.eom", 2, std::bind(&lmn::sml_eom, this, std::placeholders::_1));
 
+		//
+		//	Comes from SML reader
+		//	This is the only message that wmBus can generate
+		//
 		vm_.register_function("sml.get.list.response", 5, std::bind(&lmn::sml_get_list_response, this, std::placeholders::_1));
 
+		//
+		//	callback from wired LMN
+		//
 		vm_.register_function("mbus.ack", 0, std::bind(&lmn::mbus_ack, this, std::placeholders::_1));
 		vm_.register_function("mbus.short.frame", 5, std::bind(&lmn::mbus_frame_short, this, std::placeholders::_1));
 		vm_.register_function("mbus.ctrl.frame", 6, std::bind(&lmn::mbus_frame_ctrl, this, std::placeholders::_1));
@@ -146,14 +153,42 @@ namespace node
 					//
 					//	LMN port send incoming data to HCI (CP210x) parser
 					//	which sends data to wmbus parser.
+					//	CP210x hst to bi initialized with:
+					//	
+					//	Device Mode: Other (0)
+					//	Link Mode: T1 (3)
+					//	Ctrl Field: 0x00
+					//	Man ID: 0x25B3
+					//	Device ID: 0x00101851
+					//	Version: 0x01
+					//	Device Type: 0x00
+					//	Radio Channel: 1 (1..8)
+					//	Radio Power Level: 13db (7) [0=-8dB,1=-5dB,2=-2dB,3=1dB,4=4dB,5=7dB,6=10dB,7=13dB]
+					//	Rx Window (ms): 50 (0x32)
+					//	Power Saving Mode: 0
+					//	RSSI Attachment: 1
+					//	Rx Timestamp: 1
+					//	LED Control: 2
+					//	RTC: 1
+					//	Store NVM: 0
+					//	
+					//	[A5 81 03 17 00 FF] 00 03 00 [B3 25] [51 18 10 00] 01
+					//	00 01 FD 07 32 00 01 01 02 01 00 [83 C9]
+					//
+					//	Fletcher Checksum (https://www.silabs.com/documents/public/application-notes/AN978-cp210x-usb-to-uart-api-specification.pdf)
+
+					auto init = cyng::make_buffer({ 0xA5, 0x81, 0x03, 0x17, 0x00, 0xFF, 0x00, 0x03, 0x00, 0xB3, 0x25, 0x51, 0x18, 0x10, 0x00, 0x01, 0x00, 0x01, 0xFD, 0x07, 0x32, 0x00, 0x01, 0x01, 0x02, 0x01, 0x00, 0x83, 0xC9 });
+
 					//
 					auto const unwrapper = cyng::async::start_task_sync<parser_CP210x>(mux_
 						, logger_
 						, vm_
-						, receiver.first);
+						, radio_parser_);
 
 					if (unwrapper.second) {
-						auto const sender = start_lmn_port_wireless(unwrapper.first, receiver.first);
+						auto const sender = start_lmn_port_wireless(unwrapper.first
+							, radio_parser_
+							, std::move(init));
 						if (sender.second) {
 							radio_port_ = sender.first;
 						}
@@ -168,7 +203,7 @@ namespace node
 					//
 					//	LMN port send incoming data to wmbus parser
 					//
-					auto const sender = start_lmn_port_wireless(receiver.first, receiver.first);
+					auto const sender = start_lmn_port_wireless(receiver.first, receiver.first, cyng::make_buffer({}));
 				}
 			}
 			else {
@@ -180,7 +215,9 @@ namespace node
 		}
 	}
 
-	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(std::size_t receiver_data, std::size_t receiver_status)
+	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(std::size_t receiver_data
+		, std::size_t receiver_status
+		, cyng::buffer_t&& init)
 	{
 		cfg_wmbus cfg(cache_);
 
@@ -196,8 +233,9 @@ namespace node
 			, cfg.get_flow_control()	//	[s] flow_control
 			, cfg.get_stopbits()		//	[s] stopbits
 			, cfg.get_baud_rate()		//	[u32] speed
-			, receiver_data
-			, receiver_status);
+			, receiver_data				//	optional unwrapper
+			, receiver_status			//	receive status change
+			, std::move(init));					//	initialization message
 	}
 
 	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(std::size_t receiver)
@@ -217,8 +255,9 @@ namespace node
 			, cfg.get_flow_control()	//	[s] flow_control
 			, cfg.get_stopbits()		//	[s] stopbits
 			, cfg.get_baud_rate()		//	[u32] speed
+			, receiver					//	receive data
 			, receiver
-			, receiver);
+			, cyng::make_buffer({}));				//	receive status change
 
 		return (r.second)
 			? start_rs485_mgr(r.first, cfg.get_monitor() + std::chrono::seconds(2))
@@ -232,6 +271,7 @@ namespace node
 		return cyng::async::start_task_delayed<rs485>(mux_
 			, delay
 			, logger_
+			, vm_
 			, cache_
 			, tsk);
 	}
@@ -329,7 +369,7 @@ namespace node
 				;
 
 			cyng::io::hex_dump hd;
-			hd(ss, std::get<6>(tpl).cbegin(), std::get<6>(tpl).cend());
+ 			hd(ss, std::get<6>(tpl).cbegin(), std::get<6>(tpl).cend());
 
 			CYNG_LOG_WARNING(logger_, ctx.get_name()
 				<< ss.str());

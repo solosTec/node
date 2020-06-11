@@ -219,33 +219,11 @@ namespace node
 			, cyng::buffer_t srv_id
 			, cyng::object obj)
 		{
-			auto const key = cyng::table::key_generator(srv_id);
+			//	The bit mask defines the bits of the status word, that if changed
+			//	will result in an entry in the log-book.
 
-			//
-			//	We get a buffer with hex values and have to convert to an unsigned integer.
-			//
-			auto buffer = cyng::to_buffer(obj);
-			std::reverse(buffer.begin(), buffer.end());
-			switch (buffer.size()) {
-			case 1:
-				tbl->modify(key, cyng::param_factory("mask", cyng::to_numeric<std::uint8_t>(buffer)), cache_.get_tag());
-				break;
-			case 2:
-				tbl->modify(key, cyng::param_factory("mask", cyng::to_numeric<std::uint16_t>(buffer)), cache_.get_tag());
-				break;
-			case 3:
-			case 4:
-				tbl->modify(key, cyng::param_factory("mask", cyng::to_numeric<std::uint32_t>(buffer)), cache_.get_tag());
-				break;
-			case 5:
-			case 6:
-			case 7:
-			case 8:
-				tbl->modify(key, cyng::param_factory("mask", cyng::to_numeric<std::uint64_t>(buffer)), cache_.get_tag());
-				break;
-			default:
-				break;
-			}
+			auto const key = cyng::table::key_generator(srv_id);
+			tbl->modify(key, cyng::param_factory("mask", obj), cache_.get_tag());
 		}
 
 	}	//	sml

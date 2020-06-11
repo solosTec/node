@@ -181,6 +181,9 @@ namespace node
 				, "descr"
 				//	---
 				, "status"	//	"Statusinformation: 00"
+
+				//	The bit mask defines the bits of the status word, that if changed
+				//	will result in an entry in the log-book.
 				, "mask"	//	"Bitmaske: 00 00"
 				, "interval"	//	"Zeit zwischen zwei Datensätzen: 49000"
 								//	--- optional data

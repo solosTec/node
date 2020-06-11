@@ -7,7 +7,6 @@
 #include "test-mbus-004.h"
 #include <NODE_project_info.h>
 #include <smf/mbus/variable_data_block.h>
-//#include <smf/mbus/dif.h>
 #include <smf/mbus/bcd.h>
 
 #include <cyng/io/io_buffer.h>

@@ -12,13 +12,10 @@
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
+#include <cyng/vm/controller_fwd.h>
 
 #include <boost/filesystem.hpp>
 
-namespace cyng
-{
-	class controller;
-}
 namespace node
 {
 	class cache;

@@ -8,7 +8,6 @@
 #include <boost/asio.hpp>
 #include "show_ports.h"
 #include <cyng/sys/port.h>
-// #include <cyng/io/serializer.h>
 
 namespace node 
 {

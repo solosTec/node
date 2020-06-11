@@ -29,6 +29,8 @@
 #include <cyng/rnd.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>
+#include <cyng/util/split.h>
+
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -487,8 +489,7 @@ namespace node
 			//
 			//	get database configuration and connect
 			//
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(dom.get("DB"), tpl);
+			auto const tpl = cyng::to_tuple(dom.get("DB"));
 			auto db_cfg = cyng::to_param_map(tpl);
 
 			std::cout
@@ -512,6 +513,82 @@ namespace node
 				? EXIT_SUCCESS
 				: EXIT_FAILURE
 				;
+		}
+		else
+		{
+			std::cout
+				<< "configuration file ["
+				<< json_path_
+				<< "] not found or index ["
+				<< config_index_
+				<< "] is out of range"
+				<< std::endl;
+		}
+		return EXIT_FAILURE;
+	}
+
+	int controller::set_value(std::string kv) const
+	{
+		//
+		//	read configuration file
+		//
+		auto const r = read_config_section(json_path_, config_index_);
+		if (r.second) {
+
+			//
+			//	get a DOM reader
+			//
+			auto const dom = cyng::make_reader(r.first);
+
+			//
+			//	get database configuration and connect
+			//
+			auto const tpl = cyng::to_tuple(dom.get("DB"));
+			//auto db_cfg = cyng::to_param_map(tpl);
+
+			//std::cout << kv << std::endl;
+			auto const vec = cyng::split(kv, ":");
+			if (vec.size() > 2) {
+
+				//
+				//	produce a subvector
+				//
+				auto const sub = cyng::slice(vec, 1, vec.size() - 2);
+
+				if (boost::algorithm::equals(vec.front(), "bool")) {
+					if (node::set_value(cyng::to_param_map(tpl), sub, boost::algorithm::equals(vec.back(), "true"))) {
+						return EXIT_SUCCESS;
+					}
+					std::cout << "failed" << std::endl;
+				}
+				else if (boost::algorithm::equals(vec.front(), "u32")) {
+					if (node::set_value(cyng::to_param_map(tpl), sub, static_cast<std::uint32_t>(std::stoul(vec.back())))) {
+						return EXIT_SUCCESS;
+					}
+					std::cout << "failed" << std::endl;
+				}
+				else if (boost::algorithm::equals(vec.front(), "str")) {
+					if (node::set_value(cyng::to_param_map(tpl), sub, vec.back())) {
+						return EXIT_SUCCESS;
+					}
+					std::cout << "failed" << std::endl;
+				}
+				else {
+					std::cout
+						<< "insufficient parameter count - syntax is [type:key:value]"
+						<< std::endl;
+				}
+			}
+			else
+			{
+				std::cout
+					<< "configuration file ["
+					<< json_path_
+					<< "] not found or index ["
+					<< config_index_
+					<< "] is out of range"
+					<< std::endl;
+			}
 		}
 		else
 		{

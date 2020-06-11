@@ -69,9 +69,9 @@ namespace node
 				{
 					std::bitset<8> const bs(c);
 					ep_ = c & 0x0F;
-					crc16_field_ = bs.test(5);
+					crc16_field_ = bs.test(7);
 					rssi_field_ = bs.test(6);
-					time_stamp_field_ = bs.test(7);
+					time_stamp_field_ = bs.test(5);
 					vm_cb_(cyng::generate_invoke("log.msg.trace", "HCI EP", ep_));
 				}
 				break;
@@ -89,14 +89,20 @@ namespace node
 			 */
 			case state::LENGTH:
 				length_ = static_cast<std::uint8_t>(c);
-				BOOST_ASSERT(length_ != 0u);
 				if (length_ != 0u) {
 					stream_state_ = state::PAYLOAD;
 					//	is part of the payload
 					input_.put(c);
 				}
 				else {
-					stream_state_ = state::SOF;
+					//	This happens after sending an initilaization string
+					if (crc16_field_) {
+						length_ = 2;	//	2 bytes
+						stream_state_ = state::FCS;
+					}
+					else {
+						stream_state_ = state::SOF;
+					}
 				}
 				break;
 
@@ -120,9 +126,16 @@ namespace node
 						stream_state_ = state::TIME_STAMP;
 						length_ = 4;	//	4 bytes
 					}
-					else if (rssi_field_)	stream_state_ = state::RSSI;
-					else if (crc16_field_)	stream_state_ = state::FCS;
-					else stream_state_ = state::SOF;
+					else if (rssi_field_) {
+						stream_state_ = state::RSSI;
+					}
+					else if (crc16_field_) {
+						length_ = 2;	//	2 bytes
+						stream_state_ = state::FCS;
+					}
+					else {
+						stream_state_ = state::SOF;
+					}
 				}
 				break;
 
@@ -139,22 +152,25 @@ namespace node
 					auto ts = read_numeric<std::uint32_t>();
 					vm_cb_(cyng::generate_invoke("log.msg.trace", "HCI timestamp", ts));
 
-					if (rssi_field_)	stream_state_ = state::RSSI;
-					else if (crc16_field_)	stream_state_ = state::FCS;
-					else stream_state_ = state::SOF;
+					if (rssi_field_) {
+						stream_state_ = state::RSSI;
+					}
+					else if (crc16_field_) {
+						length_ = 2;	//	2 bytes
+						stream_state_ = state::FCS;
+					}
+					else {
+						stream_state_ = state::SOF;
+					}
 				}
 				break;
 
 			case state::RSSI:
-				//vm_cb_(cyng::generate_invoke("log.msg.trace", "HCI RSSI", static_cast<std::uint8_t>(c), (-13.0 - (10.0 * std::log10(static_cast<std::uint8_t>(c))))));
-				//vm_cb_(cyng::generate_invoke("log.msg.trace", "HCI RSSI", static_cast<std::uint8_t>(c), (-125.0 + (0.5 * (static_cast<std::uint8_t>(c))))));
-				vm_cb_(cyng::generate_invoke("log.msg.trace", "HCI RSSI", static_cast<std::uint8_t>(c), (-130.0 + (2.0 * (static_cast<std::uint8_t>(c))))));
-				//vm_cb_(cyng::generate_invoke("hci.rssi", static_cast<std::uint8_t>(c)));
-				//	dBm = -13.0 - 10.0 x log10(RSSI)
-				//	dBm = -125 + 0.5 x RSSI 
-				//	dBm = -130 + 2.0 x RSSI 
-				//	0 => -125 dBm
-				//	1 => -124,5 dBm
+				//	98=-45.3dBm
+				//	91=-49.3dBm
+				//	81=-57.9dBm	
+				//	approximation f(x)=3/4
+				vm_cb_(cyng::generate_invoke("log.msg.trace", "HCI RSSI", static_cast<std::uint8_t>(c), (-120.0 + (0.75 * (static_cast<std::uint8_t>(c))))));
 				if (crc16_field_) {
 					length_ = 2;	//	2 bytes
 					stream_state_ = state::FCS;

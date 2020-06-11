@@ -115,5 +115,10 @@ namespace node
 		, sml::obis code
 		, std::uint8_t priv);
 
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const&, bool value);
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const&, std::uint32_t value);
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const&, std::string value);
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const&, cyng::object value);
+
 }
 #endif

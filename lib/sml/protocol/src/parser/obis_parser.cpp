@@ -59,5 +59,22 @@ namespace node
 			return op;
 		}
 
+		std::string translate_obis_names(std::vector<std::string> const& vec, char sep)
+		{
+			std::string op;
+			op.reserve(vec.size());
+			for (auto const& s : vec) {
+				auto const r = from_str(s);
+				if (!op.empty())	op += ':';
+				if (r.second) {
+					op.append(r.first.to_str());
+				}
+				else {
+					op.append(s);
+				}
+			}
+			return op;
+		}
+
 	}	
 }	//	namespace node

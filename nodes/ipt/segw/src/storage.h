@@ -22,6 +22,7 @@ namespace node
 		friend bool dump_profile_data(cyng::param_map_t&&, cyng::reader<cyng::object> const&, std::uint32_t);
 		friend bool list_config_data(std::ostream& os, cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
 		friend int clear_config_from_storage(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
+		friend bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, cyng::object value);
 
 	public:
 		using loop_f = std::function<bool(cyng::table::record const&)>;

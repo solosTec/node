@@ -9,8 +9,11 @@
 #define NODE_SEGW_TASK_RS485_H
 
 #include "../cfg_mbus.h"
+#include "../decoder.h"
+
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
+#include <cyng/vm/controller_fwd.h>
 
 namespace node
 {
@@ -54,6 +57,7 @@ namespace node
 	public:
 		rs485(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
+			, cyng::controller&
 			, cache&
 			, std::size_t);
 
@@ -127,6 +131,8 @@ namespace node
 		cache& cache_;
 		cfg_mbus cfg_;
 
+		decoder_wired_mbus decoder_mbus_;
+
 		enum class state {
 			REMOVE_SECONDARY_ADDRESS,
 			INITIALIZE_ALL_METERS,
@@ -172,7 +178,17 @@ namespace node
 	 */
 	cyng::buffer_t mbus_read_data_by_primary_address(bool fcb, std::uint8_t);
 
-	cyng::buffer_t mbus_check_secondary_address(std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t);
+	/**
+	 * select a slave by ID
+	 */
+	cyng::buffer_t mbus_select_slave_by_id(std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t);
+
+	/**
+	 * set primary address.
+	 * @note: the slave must be selected previously with mbus_select_slave_by_id()
+	 */
+	cyng::buffer_t mbus_set_address(std::uint8_t);
+
 }
 
 #endif

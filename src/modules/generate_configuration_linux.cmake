@@ -66,15 +66,6 @@ configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter.service.in"
 		"${PROJECT_BINARY_DIR}/config/node-emitter.service")
 	  
-# ipt gateway
-configure_file (
-		"${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.linux.cgf.in"
-		"${PROJECT_BINARY_DIR}/config/gateway_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
-	  
-configure_file (
-		"${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-gateway.service")
-
 # ipt segw
 if (${${PROJECT_NAME}_CROSS_COMPILE})
 	configure_file (

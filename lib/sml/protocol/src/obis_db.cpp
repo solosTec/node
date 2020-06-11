@@ -12,6 +12,391 @@ namespace node
 {
 	namespace sml
 	{
+		using obis_map_t = std::map< obis, obis_type >;
+
+		static obis_map_t obis_map {
+			{ OBIS_METER_ADDRESS, {"METER_ADDRESS", cyng::TC_NULL }},
+			{ OBIS_IDENTITY_NR_1, {"IDENTITY_NR_1", cyng::TC_NULL }},
+			{ OBIS_IDENTITY_NR_2, {"IDENTITY_NR_2", cyng::TC_NULL }},
+			{ OBIS_IDENTITY_NR_3, {"IDENTITY_NR_3", cyng::TC_NULL }},
+			{ OBIS_RESET_COUNTER, {"RESET_COUNTER", cyng::TC_NULL }},
+			{ OBIS_REAL_TIME_CLOCK, {"REAL_TIME_CLOCK", cyng::TC_NULL }},	//	current time
+			{ OBIS_SERIAL_NR, {"SERIAL_NR", cyng::TC_NULL }},
+			{ OBIS_SERIAL_NR_SECOND, {"SERIAL_NR_SECOND", cyng::TC_NULL }},
+			{ OBIS_FABRICATION_NR, {"FABRICATION_NR", cyng::TC_NULL }},
+			{ OBIS_DATE_TIME_PARAMETERISATION, {"DATE_TIME_PARAMETERISATION", cyng::TC_NULL }},
+			{ OBIS_POWER_OUTAGES, {"POWER_OUTAGES", cyng::TC_NULL }},
+			{ OBIS_SECONDS_INDEX, {"SECONDS_INDEX", cyng::TC_NULL }},
+			{ OBIS_LOGICAL_NAME, {"LOGICAL_NAME", cyng::TC_NULL }},
+			{ OBIS_HARDWARE_TYPE, {"HARDWARE_TYPE", cyng::TC_NULL }},
+			{ OBIS_MBUS_STATE, {"MBUS_STATE", cyng::TC_NULL }},
+			{ OBIS_STORAGE_TIME_SHIFT, {"STORAGE_TIME_SHIFT", cyng::TC_NULL }},
+			{ OBIS_HAS_SSL_CONFIG, {"HAS_SSL_CONFIG", cyng::TC_NULL }},
+			{ OBIS_SSL_CERTIFICATES, {"SSL_CERTIFICATES", cyng::TC_NULL }},
+			  
+			{ OBIS_ROOT_SECURITY, 	{"ROOT_SECURITY", cyng::TC_NULL }},
+			{ OBIS_SECURITY_SERVER_ID, 	{"SECURITY_SERVER_ID", cyng::TC_NULL }},
+			{ OBIS_SECURITY_OWNER, 	{"SECURITY_OWNER", cyng::TC_NULL }},
+			{ OBIS_SECURITY_05, 	{"SECURITY_05", cyng::TC_NULL }},
+			{ OBIS_SECURITY_06, 	{"SECURITY_06", cyng::TC_NULL }},
+			{ OBIS_SECURITY_06_10, 	{"SECURITY_06_10", cyng::TC_NULL }},
+			{ OBIS_SECURITY_07, 	{"SECURITY_07", cyng::TC_NULL }},
+			  
+			{ OBIS_CLASS_OP_LSM_STATUS, 	{"CLASS_OP_LSM_STATUS", cyng::TC_NULL }},
+			{ OBIS_ACTUATORS, 	{"ACTUATORS", cyng::TC_NULL }},
+			{ OBIS_CLASS_OP_LSM_ACTOR_ID, 	{"CLASS_OP_LSM_ACTOR_ID", cyng::TC_NULL }},
+			{ OBIS_CLASS_OP_LSM_CONNECT, 	{"CLASS_OP_LSM_CONNECT", cyng::TC_NULL }},
+			{ OBIS_CLASS_OP_LSM_SWITCH, 	{"CLASS_OP_LSM_SWITCH", cyng::TC_NULL }},
+			{ OBIS_CLASS_OP_LSM_FEEDBACK, 	{"CLASS_OP_LSM_FEEDBACK", cyng::TC_NULL }},
+			{ OBIS_CLASS_OP_LSM_LOAD, 	{"CLASS_OP_LSM_LOAD", cyng::TC_NULL }},
+			{ OBIS_CLASS_OP_LSM_POWER, 	{"CLASS_OP_LSM_POWER", cyng::TC_NULL }},
+			{ OBIS_CLASS_STATUS, 	{"CLASS_STATUS", cyng::TC_NULL }},
+			{ OBIS_CLASS_OP_LSM_VERSION, 	{"CLASS_OP_LSM_VERSION", cyng::TC_NULL }},
+			{ OBIS_CLASS_OP_LSM_TYPE, 	{"CLASS_OP_LSM_TYPE", cyng::TC_NULL }},
+			{ OBIS_CLASS_OP_LSM_ACTIVE_RULESET, 	{"CLASS_OP_LSM_ACTIVE_RULESET", cyng::TC_NULL }},
+			{ OBIS_CLASS_RADIO_KEY, 	{"CLASS_RADIO_KEY", cyng::TC_NULL }},
+			{ OBIS_CLASS_OP_LSM_PASSIVE_RULESET, 	{"CLASS_OP_LSM_PASSIVE_RULESET", cyng::TC_NULL }},
+			{ OBIS_CLASS_OP_LSM_JOB, 	{"CLASS_OP_LSM_JOB", cyng::TC_STRING }},
+			{ OBIS_CLASS_OP_LSM_POSITION, 	{"CLASS_OP_LSM_POSITION", cyng::TC_NULL }},
+			  
+			{ OBIS_CLASS_MBUS, {"CLASS_MBUS", cyng::TC_NULL }},
+			{ OBIS_CLASS_MBUS_RO_INTERVAL, {"CLASS_MBUS_RO_INTERVAL", cyng::TC_UINT32 }},	//	seconds
+			{ OBIS_CLASS_MBUS_SEARCH_INTERVAL, {"CLASS_MBUS_SEARCH_INTERVAL", cyng::TC_UINT32 }},	//	seconds
+			{ OBIS_CLASS_MBUS_SEARCH_DEVICE, {"CLASS_MBUS_SEARCH_DEVICE", cyng::TC_BOOL }},
+			{ OBIS_CLASS_MBUS_AUTO_ACTICATE, {"CLASS_MBUS_AUTO_ACTICATE", cyng::TC_BOOL }},
+			{ OBIS_CLASS_MBUS_BITRATE, {"CLASS_MBUS_BITRATE", cyng::TC_NULL }},
+			  
+			{ OBIS_SERVER_ID_1_1, {"SERVER_ID_1_1", cyng::TC_NULL }},
+			{ OBIS_SERVER_ID_1_2, {"SERVER_ID_1_2", cyng::TC_NULL }},
+			{ OBIS_SERVER_ID_1_3, {"SERVER_ID_1_3", cyng::TC_NULL }},
+			{ OBIS_SERVER_ID_1_4, {"SERVER_ID_1_4", cyng::TC_NULL }},
+			{ OBIS_DEVICE_ID, {"DEVICE_ID", cyng::TC_NULL }},
+			{ OBIS_SOFTWARE_ID, {"SOFTWARE_ID", cyng::TC_BUFFER }},
+			  
+			{ OBIS_CURRENT_UTC, {"CURRENT_UTC", cyng::TC_NULL }},
+			  
+			{ OBIS_TCP_WAIT_TO_RECONNECT, {"TCP_WAIT_TO_RECONNECT", cyng::TC_UINT8 }},
+			{ OBIS_TCP_CONNECT_RETRIES, {"TCP_CONNECT_RETRIES", cyng::TC_UINT32 }},
+			  
+			{ OBIS_PUSH_SERVICE, {"PUSH_SERVICE", cyng::TC_BUFFER }},	//	obis code
+			  
+			{ OBIS_OBISLOG_INTERVAL, {"OBISLOG_INTERVAL", cyng::TC_NULL }},
+			  
+			{ OBIS_PUSH_SERVICE_IPT, {"PUSH_SERVICE_IPT", cyng::TC_NULL }},
+			{ OBIS_PUSH_SERVICE_SML, {"PUSH_SERVICE_SML", cyng::TC_NULL }},
+			{ OBIS_DATA_COLLECTOR_OBIS, {"DATA_COLLECTOR_OBIS", cyng::TC_NULL }},
+			  
+			{ OBIS_DATA_USER_NAME, {"DATA_USER_NAME", cyng::TC_STRING }},
+			{ OBIS_DATA_USER_PWD, {"DATA_USER_PWD", cyng::TC_NULL }},
+			  
+			{ OBIS_CLEAR_DATA_COLLECTOR, {"CLEAR_DATA_COLLECTOR", cyng::TC_NULL }},
+			{ OBIS_SET_ACTIVATE_FW, {"SET_ACTIVATE_FW", cyng::TC_NULL }},
+			{ OBIS_DATA_AES_KEY, {"DATA_AES_KEY", cyng::TC_NULL }},
+			  
+			{ OBIS_PROFILE_1_MINUTE, {"PROFILE_1_MINUTE", cyng::TC_NULL }},
+			{ OBIS_PROFILE_15_MINUTE, {"PROFILE_15_MINUTE", cyng::TC_NULL }},
+			{ OBIS_PROFILE_60_MINUTE, {"PROFILE_60_MINUTE", cyng::TC_NULL }},
+			{ OBIS_PROFILE_24_HOUR, {"PROFILE_24_HOUR", cyng::TC_NULL }},
+			{ OBIS_PROFILE_LAST_2_HOURS, {"PROFILE_LAST_2_HOURS", cyng::TC_NULL }},
+			{ OBIS_PROFILE_LAST_WEEK, {"PROFILE_LAST_WEEK", cyng::TC_NULL }},
+			{ OBIS_PROFILE_1_MONTH, {"PROFILE_1_MONTH", cyng::TC_NULL }},
+			{ OBIS_PROFILE_1_YEAR, {"PROFILE_1_YEAR", cyng::TC_NULL }},
+			{ OBIS_PROFILE_INITIAL, {"PROFILE_INITIAL", cyng::TC_NULL }},
+			  
+			{ OBIS_ROOT_PUSH_OPERATIONS, {"ROOT_PUSH_OPERATIONS", cyng::TC_NULL }},
+			  
+			{ OBIS_PUSH_INTERVAL, {"PUSH_INTERVAL", cyng::TC_UINT32 }},	//	seconds
+			{ OBIS_PUSH_DELAY, {"PUSH_DELAY", cyng::TC_UINT32 }},	//	seconds
+			  
+			{ OBIS_PUSH_SOURCE, {"PUSH_SOURCE", cyng::TC_NULL }},
+			{ OBIS_PUSH_SOURCE_PROFILE, {"PUSH_SOURCE_PROFILE", cyng::TC_NULL }},
+			{ OBIS_PUSH_SOURCE_INSTALL, {"PUSH_SOURCE_INSTALL", cyng::TC_NULL }},
+			{ OBIS_PUSH_SOURCE_VISIBLE_SENSORS, {"PUSH_SOURCE_VISIBLE_SENSORS", cyng::TC_NULL }},
+
+			{ OBIS_PUSH_SERVER_ID, {"PUSH_SERVER_ID", cyng::TC_NULL }},
+			{ OBIS_PUSH_IDENTIFIERS, {"PUSH_IDENTIFIERS", cyng::TC_NULL }},
+			{ OBIS_PROFILE, {"PROFILE", cyng::TC_NULL }},
+
+			{ OBIS_ROOT_MEMORY_USAGE, {"ROOT_MEMORY_USAGE", cyng::TC_NULL } },
+			{ OBIS_ROOT_MEMORY_MIRROR, {"ROOT_MEMORY_MIRROR", cyng::TC_NULL } },
+			{ OBIS_ROOT_MEMORY_TMP, {"ROOT_MEMORY_TMP", cyng::TC_NULL } },
+
+			{ OBIS_ROOT_CUSTOM_INTERFACE, {"ROOT_CUSTOM_INTERFACE", cyng::TC_NULL } },
+
+			{ OBIS_CUSTOM_IF_IP_REF, {"CUSTOM_IF_IP_REF", cyng::TC_UINT8 } },
+			{ OBIS_CUSTOM_IF_IP_ADDRESS_1, {"CUSTOM_IF_IP_ADDRESS_1", cyng::TC_NULL } },
+			{ OBIS_CUSTOM_IF_IP_MASK_1, {"CUSTOM_IF_IP_MASK_1", cyng::TC_NULL } },
+			{ OBIS_CUSTOM_IF_DHCP, {"CUSTOM_IF_DHCP", cyng::TC_BOOL } },
+			{ OBIS_CUSTOM_IF_DHCP_LOCAL_IP_MASK, {"CUSTOM_IF_DHCP_LOCAL_IP_MASK", cyng::TC_NULL } },
+			{ OBIS_CUSTOM_IF_DHCP_DEFAULT_GW, {"CUSTOM_IF_DHCP_DEFAULT_GW", cyng::TC_NULL } },
+			{ OBIS_CUSTOM_IF_DHCP_DNS, {"CUSTOM_IF_DHCP_DNS", cyng::TC_NULL } },
+			{ OBIS_CUSTOM_IF_DHCP_START_ADDRESS, {"CUSTOM_IF_DHCP_START_ADDRESS", cyng::TC_NULL } },
+			{ OBIS_CUSTOM_IF_DHCP_END_ADDRESS, {"CUSTOM_IF_DHCP_END_ADDRESS", cyng::TC_NULL } },
+			{ OBIS_CUSTOM_IF_IP_ADDRESS_2, {"CUSTOM_IF_IP_ADDRESS_2", cyng::TC_NULL } },
+
+			{ OBIS_ROOT_CUSTOM_PARAM, {"ROOT_CUSTOM_PARAM", cyng::TC_NULL } },
+			{ OBIS_ROOT_WAN, {"ROOT_WAN", cyng::TC_NULL } },
+			{ OBIS_ROOT_WAN_PARAM, {"ROOT_WAN_PARAM", cyng::TC_NULL } },
+			{ OBIS_ROOT_GSM, {"ROOT_GSM", cyng::TC_NULL } },
+			{ OBIS_ROOT_GPRS_PARAM, {"ROOT_GPRS_PARAM", cyng::TC_NULL } },
+			{ OBIS_ROOT_GSM_STATUS, {"ROOT_GSM_STATUS", cyng::TC_NULL } },
+			{ OBIS_PLC_STATUS, {"PLC_STATUS", cyng::TC_NULL } },
+
+			{ OBIS_ROOT_W_MBUS_STATUS, {"ROOT_W_MBUS_STATUS", cyng::TC_NULL } },
+			{ OBIS_PROFILE_ADDRESS, {"PROFILE_ADDRESS", cyng::TC_NULL } },
+			{ OBIS_PUSH_TARGET, {"PUSH_TARGET", cyng::TC_STRING } },
+			{ OBIS_COMPUTER_NAME, {"COMPUTER_NAME", cyng::TC_STRING } },
+			{ OBIS_LAN_DHCP_ENABLED, {"LAN_DHCP_ENABLED", cyng::TC_BOOL } },
+			{ OBIS_ROOT_LAN_DSL, {"ROOT_LAN_DSL", cyng::TC_NULL } },
+			{ OBIS_ROOT_IPT_STATE, {"ROOT_IPT_STATE", cyng::TC_NULL } },
+			{ OBIS_ROOT_IPT_PARAM, {"ROOT_IPT_PARAM", cyng::TC_NULL } },
+
+			{ OBIS_TARGET_IP_ADDRESS, {"TARGET_IP_ADDRESS", cyng::TC_NULL } },
+			{ OBIS_SOURCE_PORT_ADDRESS, {"SOURCE_PORT_ADDRESS", cyng::TC_UINT16 } },
+			{ OBIS_TARGET_PORT_ADDRESS, {"TARGET_PORT_ADDRESS", cyng::TC_UINT16 } },
+
+			{ OBIS_PEER_OBISLOG, {"PEER_OBISLOG", cyng::TC_NULL } },
+			{ OBIS_PEER_SCM, {"PEER_SCM", cyng::TC_NULL } },
+			{ OBIS_PEER_USERIF, {"PEER_USERIF", cyng::TC_NULL } },
+			{ OBIS_PEER_ADDRESS_WANGSM, {"PEER_ADDRESS_WANGSM", cyng::TC_NULL } },
+			{ OBIS_PEER_ADDRESS, {"PEER_ADDRESS", cyng::TC_NULL } },
+
+			{ OBIS_VERSION, {"VERSION", cyng::TC_STRING } },
+			{ OBIS_FILE_NAME, {"FILE_NAME", cyng::TC_STRING } },
+			{ OBIS_MSG_COUNTER, {"MSG_COUNTER", cyng::TC_UINT32 } },
+			{ OBIS_LAST_MSG, {"LAST_MSG", cyng::TC_UINT32 } },
+			{ OBIS_MSG_NUMBER, {"MSG_NUMBER", cyng::TC_NULL } },
+			{ OBIS_BLOCK_NUMBER, {"BLOCK_NUMBER", cyng::TC_NULL } },
+			{ OBIS_BINARY_DATA, {"BINARY_DATA", cyng::TC_NULL } },
+
+			{ OBIS_ROOT_NEW_DEVICES, {"ROOT_NEW_DEVICES", cyng::TC_NULL } },
+			{ OBIS_ROOT_INVISIBLE_DEVICES, {"ROOT_INVISIBLE_DEVICES", cyng::TC_NULL } },
+			{ OBIS_ROOT_VISIBLE_DEVICES, {"ROOT_VISIBLE_DEVICES", cyng::TC_NULL } },
+			{ OBIS_CODE_LIST_1_VISIBLE_DEVICES, {"CODE_LIST_1_VISIBLE_DEVICES", cyng::TC_NULL } },
+			{ OBIS_ROOT_ACTIVE_DEVICES, {"ROOT_ACTIVE_DEVICES", cyng::TC_NULL } },
+			{ OBIS_CODE_LIST_1_ACTIVE_DEVICES, {"CODE_LIST_1_ACTIVE_DEVICES", cyng::TC_NULL } },
+			{ OBIS_ACTIVATE_DEVICE, {"ACTIVATE_DEVICE", cyng::TC_NULL } },
+			{ OBIS_DEACTIVATE_DEVICE, {"DEACTIVATE_DEVICE", cyng::TC_NULL } },
+			{ OBIS_DELETE_DEVICE, {"DELETE_DEVICE", cyng::TC_NULL } },
+			{ OBIS_ROOT_DEVICE_INFO, {"ROOT_DEVICE_INFO", cyng::TC_NULL } },
+			{ OBIS_ROOT_ACCESS_RIGHTS, {"ROOT_ACCESS_RIGHTS", cyng::TC_NULL } },
+
+			{ OBIS_ACCESS_USER_NAME, {"ACCESS_USER_NAME", cyng::TC_NULL } },
+			{ OBIS_ACCESS_PASSWORD, {"ACCESS_PASSWORD", cyng::TC_NULL } },
+			{ OBIS_ACCESS_PUBLIC_KEY, {"ACCESS_PUBLIC_KEY", cyng::TC_NULL } },
+
+			{ OBIS_ROOT_FILE_TRANSFER, {"ROOT_FILE_TRANSFER", cyng::TC_NULL } },
+			{ OBIS_DATA_FIRMWARE, {"DATA_FIRMWARE", cyng::TC_NULL } },
+			{ OBIS_DATA_FILENAME, {"DATA_FILENAME", cyng::TC_NULL } },
+			{ OBIS_DATA_FILENAME_INDIRECT, {"DATA_FILENAME_INDIRECT", cyng::TC_NULL } },
+			{ OBIS_DATA_APPLICATION, {"DATA_APPLICATION", cyng::TC_NULL } },
+			{ OBIS_DATA_APPLICATION_INDIRECT, {"DATA_APPLICATION_INDIRECT", cyng::TC_NULL } },
+			{ OBIS_DATA_PUSH_DETAILS, {"DATA_PUSH_DETAILS", cyng::TC_STRING } },
+
+			{ OBIS_DATA_IP_ADDRESS, {"DATA_IP_ADDRESS", cyng::TC_NULL } },
+
+			{ OBIS_ROOT_DEVICE_IDENT, {"ROOT_DEVICE_IDENT", cyng::TC_NULL } },
+			{ OBIS_DEVICE_CLASS, {"DEVICE_CLASS", cyng::TC_NULL } },
+			{ OBIS_DATA_MANUFACTURER, {"DATA_MANUFACTURER", cyng::TC_STRING } },
+			{ OBIS_SERVER_ID, {"SERVER_ID", cyng::TC_BUFFER } },
+			{ OBIS_DATA_PUBLIC_KEY, {"DATA_PUBLIC_KEY", cyng::TC_NULL } },
+			{ OBIS_ROOT_FIRMWARE, {"ROOT_FIRMWARE", cyng::TC_NULL } },
+			{ OBIS_HARDWARE_FEATURES, {"HARDWARE_FEATURES", cyng::TC_NULL } },
+
+			{ OBIS_DEVICE_KERNEL, {"DEVICE_KERNEL", cyng::TC_STRING } },
+			{ OBIS_DEVICE_ACTIVATED, {"DEVICE_ACTIVATED", cyng::TC_NULL } },
+
+			{ OBIS_DEV_CLASS_BASIC_DIRECT, {"DEV_CLASS_BASIC_DIRECT", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_BASIC_SEMI, {"DEV_CLASS_BASIC_SEMI", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_BASIC_INDIRECT, {"DEV_CLASS_BASIC_INDIRECT", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_IW, {"DEV_CLASS_IW", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_PSTN, {"DEV_CLASS_PSTN", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_GPRS, {"DEV_CLASS_GPRS", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_KM, {"DEV_CLASS_KM", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_NK, {"DEV_CLASS_NK", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_EXTERN, {"DEV_CLASS_EXTERN", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_GW, {"DEV_CLASS_GW", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_LAN, {"DEV_CLASS_LAN", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_eHZ, {"DEV_CLASS_eHZ", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_3HZ, {"DEV_CLASS_3HZ", cyng::TC_NULL } },
+			{ OBIS_DEV_CLASS_MUC_LAN, {"DEV_CLASS_MUC_LAN", cyng::TC_NULL } },
+
+			{ OBIS_REBOOT, {"REBOOT", cyng::TC_NULL } },
+			{ OBIS_UPDATE_FW, {"UPDATE_FW", cyng::TC_NULL } },
+
+			{ OBIS_ROOT_SENSOR_PARAMS, {"ROOT_SENSOR_PARAMS", cyng::TC_NULL } },
+			{ OBIS_ROOT_SENSOR_BITMASK, {"ROOT_SENSOR_BITMASK", cyng::TC_UINT16 } },
+			{ OBIS_AVERAGE_TIME_MS, {"AVERAGE_TIME_MS", cyng::TC_NULL } },
+			{ OBIS_ROOT_DATA_COLLECTOR, {"ROOT_DATA_COLLECTOR", cyng::TC_NULL } },
+			{ OBIS_DATA_COLLECTOR_ACTIVE, {"DATA_COLLECTOR_ACTIVE", cyng::TC_BOOL } },
+			{ OBIS_DATA_COLLECTOR_SIZE, {"DATA_COLLECTOR_SIZE", cyng::TC_NULL } },
+			{ OBIS_TIME_REFERENCE, {"TIME_REFERENCE", cyng::TC_UINT8 } },
+			{ OBIS_DATA_REGISTER_PERIOD, {"DATA_REGISTER_PERIOD", cyng::TC_UINT32 } },	//	seconds
+			{ OBIS_ROOT_NTP, {"ROOT_NTP", cyng::TC_NULL } },
+			{ OBIS_CODE_NTP_SERVER, {"CODE_NTP_SERVER", cyng::TC_TUPLE } },	//	list
+			{ OBIS_CODE_NTP_PORT, {"CODE_NTP_PORT", cyng::TC_UINT16 } },
+			{ OBIS_CODE_NTP_TZ, {"CODE_NTP_TZ", cyng::TC_UINT32 } },	//	timezone
+			{ OBIS_CODE_NTP_OFFSET, {"CODE_NTP_OFFSET", cyng::TC_NULL } },
+			{ OBIS_CODE_NTP_ACTIVE, {"CODE_NTP_ACTIVE", cyng::TC_BOOL } },
+			{ OBIS_ROOT_DEVICE_TIME, {"ROOT_DEVICE_TIME", cyng::TC_NULL } },
+
+			{ OBIS_ROOT_IF, {"ROOT_IF", cyng::TC_NULL } },
+
+			{ OBIS_IF_1107, {"IF_1107", cyng::TC_NULL } },
+			{ OBIS_IF_1107_ACTIVE, {"IF_1107_ACTIVE", cyng::TC_BOOL } },
+			{ OBIS_IF_1107_LOOP_TIME, {"IF_1107_LOOP_TIME", cyng::TC_NULL } },
+			{ OBIS_IF_1107_RETRIES, {"IF_1107_RETRIES", cyng::TC_NULL } },
+			{ OBIS_IF_1107_MIN_TIMEOUT, {"IF_1107_MIN_TIMEOUT", cyng::TC_NULL } },
+			{ OBIS_IF_1107_MAX_TIMEOUT, {"IF_1107_MAX_TIMEOUT", cyng::TC_NULL } },
+			{ OBIS_IF_1107_MAX_DATA_RATE, {"IF_1107_MAX_DATA_RATE", cyng::TC_NULL } },
+			{ OBIS_IF_1107_RS485, {"IF_1107_RS485", cyng::TC_NULL } },
+			{ OBIS_IF_1107_PROTOCOL_MODE, {"IF_1107_PROTOCOL_MODE", cyng::TC_NULL } },
+			{ OBIS_IF_1107_METER_LIST, {"IF_1107_METER_LIST", cyng::TC_TUPLE } },
+			{ OBIS_IF_1107_AUTO_ACTIVATION, {"IF_1107_AUTO_ACTIVATION", cyng::TC_BOOL } },
+			{ OBIS_IF_1107_TIME_GRID, {"IF_1107_TIME_GRID", cyng::TC_NULL } },
+			{ OBIS_IF_1107_TIME_SYNC, {"IF_1107_TIME_SYNC", cyng::TC_NULL } },
+			{ OBIS_IF_1107_MAX_VARIATION, {"IF_1107_MAX_VARIATION", cyng::TC_UINT32 } },	//	seconds
+
+			{ OBIS_IF_1107_METER_ID, {"IF_1107_METER_ID", cyng::TC_NULL } },
+			{ OBIS_IF_1107_BAUDRATE, {"IF_1107_BAUDRATE", cyng::TC_NULL } },
+			{ OBIS_IF_1107_ADDRESS, {"IF_1107_ADDRESS", cyng::TC_NULL } },
+			{ OBIS_IF_1107_P1, {"IF_1107_P1", cyng::TC_STRING } },
+			{ OBIS_IF_1107_W5, {"IF_1107_W5", cyng::TC_STRING } },
+
+			{ OBIS_IF_LAN_DSL, {"IF_LAN_DSL", cyng::TC_NULL } },
+			{ OBIS_CODE_IF_LAN_ADDRESS, {"CODE_IF_LAN_ADDRESS", cyng::TC_NULL } },
+			{ OBIS_CODE_IF_LAN_SUBNET_MASK, {"CODE_IF_LAN_SUBNET_MASK", cyng::TC_NULL } },
+			{ OBIS_CODE_IF_LAN_GATEWAY, {"CODE_IF_LAN_GATEWAY", cyng::TC_NULL } },
+			{ OBIS_CODE_IF_LAN_DNS_PRIMARY, {"CODE_IF_LAN_DNS_PRIMARY", cyng::TC_NULL } },
+			{ OBIS_CODE_IF_LAN_DNS_SECONDARY, {"CODE_IF_LAN_DNS_SECONDARY", cyng::TC_NULL } },
+			{ OBIS_CODE_IF_LAN_DNS_TERTIARY, {"CODE_IF_LAN_DNS_TERTIARY", cyng::TC_NULL } },
+
+			{ OBIS_IF_EDL, {"IF_EDL", cyng::TC_NULL } },
+			{ OBIS_IF_EDL_PROTOCOL, {"IF_EDL_PROTOCOL", cyng::TC_NULL } },
+			{ OBIS_IF_EDL_BAUDRATE, {"IF_EDL_BAUDRATE", cyng::TC_NULL } },
+
+			{ OBIS_IF_wMBUS, {"IF_wMBUS", cyng::TC_NULL } },
+			{ OBIS_IF_PLC, {"IF_PLC", cyng::TC_NULL } },
+			{ OBIS_ACT_SENSOR_TIME, {"ACT_SENSOR_TIME", cyng::TC_NULL } },
+			{ OBIS_TZ_OFFSET, {"TZ_OFFSET", cyng::TC_NULL } },
+
+			{ OBIS_CLASS_OP_LOG, {"CLASS_OP_LOG", cyng::TC_NULL } },
+			{ OBIS_CLASS_EVENT, {"CLASS_EVENT", cyng::TC_UINT32 } },
+
+			{ OBIS_INTERFACE_01_NAME, {"INTERFACE_01_NAME", cyng::TC_STRING } },
+			{ OBIS_INTERFACE_02_NAME, {"INTERFACE_02_NAME", cyng::TC_STRING } },
+			{ OBIS_INTERFACE_03_NAME, {"INTERFACE_03_NAME", cyng::TC_STRING } },
+			{ OBIS_INTERFACE_04_NAME, {"INTERFACE_04_NAME", cyng::TC_STRING } },
+
+			{ OBIS_W_MBUS_ADAPTER_MANUFACTURER, {"W_MBUS_ADAPTER_MANUFACTURER", cyng::TC_STRING } },
+			{ OBIS_W_MBUS_ADAPTER_ID, {"W_MBUS_ADAPTER_ID", cyng::TC_NULL } },
+			{ OBIS_W_MBUS_FIRMWARE, {"W_MBUS_FIRMWARE", cyng::TC_STRING } },
+			{ OBIS_W_MBUS_HARDWARE, {"W_MBUS_HARDWARE", cyng::TC_STRING } },
+			{ OBIS_W_MBUS_FIELD_STRENGTH, {"W_MBUS_FIELD_STRENGTH", cyng::TC_NULL } },
+			{ OBIS_W_MBUS_LAST_RECEPTION, {"W_MBUS_LAST_RECEPTION", cyng::TC_NULL } },
+
+			{ OBIS_W_MBUS_PROTOCOL, {"W_MBUS_PROTOCOL", cyng::TC_NULL } },
+			{ OBIS_W_MBUS_MODE_S, {"W_MBUS_MODE_S", cyng::TC_UINT8 } },
+			{ OBIS_W_MBUS_MODE_T, {"W_MBUS_MODE_T", cyng::TC_UINT8 } },
+
+			{ OBIS_W_MBUS_REBOOT, {"W_MBUS_REBOOT", cyng::TC_UINT32 } },	//	seconds
+			{ OBIS_W_MBUS_POWER, {"W_MBUS_POWER", cyng::TC_NULL } },
+			{ OBIS_W_MBUS_INSTALL_MODE, {"W_MBUS_INSTALL_MODE", cyng::TC_NULL } },
+
+			//	current
+			{ OBIS_REG_POS_AE_NO_TARIFF, {"REG_POS_AE_NO_TARIFF", cyng::TC_NULL } },
+			{ OBIS_REG_POS_AE_T1, {"REG_POS_AE_T1", cyng::TC_NULL } },
+			{ OBIS_REG_POS_AE_T2, {"REG_POS_AE_T2", cyng::TC_NULL } },
+			{ OBIS_REG_NEG_AE_NO_TARIFF, {"REG_NEG_AE_NO_TARIFF", cyng::TC_NULL } },
+			{ OBIS_REG_NEG_AE_T1, {"REG_NEG_AE_T1", cyng::TC_NULL } },
+			{ OBIS_REG_NEG_AE_T2, {"REG_NEG_AE_T2", cyng::TC_NULL } },
+			{ OBIS_REG_CUR_POS_AE, {"REG_CUR_POS_AE", cyng::TC_NULL } },
+			{ OBIS_REG_CUR_AP, {"REG_CUR_AP", cyng::TC_NULL } },
+
+			{ OBIS_REG_CURRENT_L1, {"REG_CURRENT_L1", cyng::TC_NULL } },
+			{ OBIS_REG_VOLTAGE_L1, {"REG_VOLTAGE_L1", cyng::TC_NULL } },
+			{ OBIS_REG_CURRENT_L2, {"REG_CURRENT_L2", cyng::TC_NULL } },
+			{ OBIS_REG_VOLTAGE_L2, {"REG_VOLTAGE_L2", cyng::TC_NULL } },
+			{ OBIS_REG_CURRENT_L3, {"REG_CURRENT_L3", cyng::TC_NULL } },
+			{ OBIS_REG_VOLTAGE_L3, {"REG_VOLTAGE_L3", cyng::TC_NULL } },
+			{ OBIS_REG_VOLTAGE_MIN, {"REG_VOLTAGE_MIN", cyng::TC_NULL } },
+			{ OBIS_REG_VOLTAGE_MAX, {"REG_VOLTAGE_MAX", cyng::TC_NULL } },
+
+			{ OBIS_CLASS_OP_LOG_STATUS_WORD, {"CLASS_OP_LOG_STATUS_WORD", cyng::TC_UINT32 } },
+			{ OBIS_CLASS_OP_LOG_FIELD_STRENGTH, {"CLASS_OP_LOG_FIELD_STRENGTH", cyng::TC_NULL } },
+			{ OBIS_CLASS_OP_LOG_CELL, {"CLASS_OP_LOG_CELL", cyng::TC_NULL } },
+			{ OBIS_CLASS_OP_LOG_AREA_CODE, {"CLASS_OP_LOG_AREA_CODE", cyng::TC_NULL } },
+			{ OBIS_CLASS_OP_LOG_PROVIDER, {"CLASS_OP_LOG_PROVIDER", cyng::TC_NULL } },
+
+			{ OBIS_GSM_ADMISSIBLE_OPERATOR, {"GSM_ADMISSIBLE_OPERATOR", cyng::TC_NULL } },
+
+			//
+			//	attention codes
+			//
+			{ OBIS_ATTENTION_UNKNOWN_ERROR, {"ATTENTION_UNKNOWN_ERROR", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_UNKNOWN_SML_ID, {"ATTENTION_UNKNOWN_SML_ID", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_NOT_AUTHORIZED, {"ATTENTION_NOT_AUTHORIZED", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_NO_SERVER_ID, {"ATTENTION_NO_SERVER_ID", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_NO_REQ_FIELD, {"ATTENTION_NO_REQ_FIELD", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_CANNOT_WRITE, {"ATTENTION_CANNOT_WRITE", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_CANNOT_READ, {"ATTENTION_CANNOT_READ", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_COMM_ERROR, {"ATTENTION_COMM_ERROR", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_PARSER_ERROR, {"ATTENTION_PARSER_ERROR", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_OUT_OF_RANGE, {"ATTENTION_OUT_OF_RANGE", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_NOT_EXECUTED, {"ATTENTION_NOT_EXECUTED", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_INVALID_CRC, {"ATTENTION_INVALID_CRC", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_NO_BROADCAST, {"ATTENTION_NO_BROADCAST", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_UNEXPECTED_MSG, {"ATTENTION_UNEXPECTED_MSG", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_UNKNOWN_OBIS_CODE, {"ATTENTION_UNKNOWN_OBIS_CODE", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_UNSUPPORTED_DATA_TYPE, {"ATTENTION_UNSUPPORTED_DATA_TYPE", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_ELEMENT_NOT_OPTIONAL, {"ATTENTION_ELEMENT_NOT_OPTIONAL", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_NO_ENTRIES, {"ATTENTION_NO_ENTRIES", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_END_LIMIT_BEFORE_START, {"ATTENTION_END_LIMIT_BEFORE_START", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_NO_ENTRIES_IN_RANGE, {"ATTENTION_NO_ENTRIES_IN_RANGE", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_MISSING_CLOSE_MSG, {"ATTENTION_MISSING_CLOSE_MSG", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_OK, {"ATTENTION_OK", cyng::TC_NULL } },
+			{ OBIS_ATTENTION_JOB_IS_RUNNINNG, {"ATTENTION_JOB_IS_RUNNINNG", cyng::TC_NULL } },
+
+			{ OBIS_LIST_CURRENT_DATA_RECORD, {"LIST_CURRENT_DATA_RECORD", cyng::TC_NULL } },
+			{ OBIS_LIST_SERVICES, {"LIST_SERVICES", cyng::TC_NULL } },
+			{ OBIS_FTP_UPDATE, {"FTP_UPDATE", cyng::TC_NULL } },
+
+			{ OBIS_LOG_SOURCE_ETH_AUX, {"LOG_SOURCE_ETH_AUX", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_ETH_CUSTOM, {"LOG_SOURCE_ETH_CUSTOM", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_RS232, {"LOG_SOURCE_RS232", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_ETH, {"LOG_SOURCE_ETH", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_eHZ, {"LOG_SOURCE_eHZ", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_wMBUS, {"LOG_SOURCE_wMBUS", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_IP, {"LOG_SOURCE_IP", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_SML_EXT, {"LOG_SOURCE_SML_EXT", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_SML_CUSTOM, {"LOG_SOURCE_SML_CUSTOM", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_SML_SERVICE, {"LOG_SOURCE_SML_SERVICE", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_SML_WAN, {"LOG_SOURCE_SML_WAN", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_SML_eHZ, {"LOG_SOURCE_SML_eHZ", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_SML_wMBUS, {"LOG_SOURCE_SML_wMBUS", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_PUSH_SML, {"LOG_SOURCE_PUSH_SML", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_PUSH_IPT_SOURCE, {"LOG_SOURCE_PUSH_IPT_SOURCE", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_PUSH_IPT_SINK, {"LOG_SOURCE_PUSH_IPT_SINK", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_WAN_DHCP, {"LOG_SOURCE_WAN_DHCP", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_WAN_IP, {"LOG_SOURCE_WAN_IP", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_WAN_PPPoE, {"LOG_SOURCE_WAN_PPPoE", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_WAN_IPT_CONTROLLER, {"LOG_SOURCE_WAN_IPT_CONTROLLER", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_WAN_IPT, {"LOG_SOURCE_WAN_IPT", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_WAN_NTP, {"LOG_SOURCE_WAN_NTP", cyng::TC_NULL } },
+
+			{ OBIS_SET_START_FW_UPDATE, {"SET_START_FW_UPDATE", cyng::TC_NULL } },
+			{ OBIS_SET_DISPATCH_FW_UPDATE, {"SET_DISPATCH_FW_UPDATE", cyng::TC_NULL } },
+
+			{ OBIS_LOG_SOURCE_LOG, {"LOG_SOURCE_LOG", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_SCM, {"LOG_SOURCE_SCM", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_UPDATE, {"LOG_SOURCE_UPDATE", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_SMLC, {"LOG_SOURCE_SMLC", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_LEDIO, {"LOG_SOURCE_LEDIO", cyng::TC_NULL } },
+			{ OBIS_LOG_SOURCE_WANPLC, {"LOG_SOURCE_WANPLC", cyng::TC_NULL } },
+
+			//{ OBIS_, {"", cyng::TC_NULL } },
+		};
+
 		bool is_profile(obis const& code)
 		{
 			return code.is_matching(0x81, 0x81, 0xC7, 0x86);
@@ -19,256 +404,23 @@ namespace node
 
 		std::string get_name(obis const& code)
 		{
-			switch (code.to_uint64()) {
+			auto const pos = obis_map.find(code);
+			return (pos != obis_map.end())
+				? pos->second.get_name()
+				: code.to_str()
+				;
+		}
 
-			case CODE_VERSION:		return "VERSION";		//
-			case CODE_FILE_NAME:	return "FILE_NAME";		//
-			case CODE_MSG_COUNTER:	return "MSG_COUNTER";	// [u32]
-			case CODE_LAST_MSG:		return "LAST_MSG";		// [u32]
-			case CODE_MSG_NUMBER:	return "MSG_NUMBER";	//
-			case CODE_BLOCK_NUMBER:	return "BLOCK_NUMBER";	//
-			case CODE_BINARY_DATA:	return "BINARY_DATA";	//
+		std::pair<obis, bool> from_str(std::string name)
+		{
+			auto const pos = std::find_if(obis_map.begin(), obis_map.end(), [name](typename obis_map_t::value_type const& v) {
+				return boost::algorithm::equals(name, v.second.get_name());
+				});
 
-			case CODE_DATA_MANUFACTURER:	return "DATA_MANUFACTURER";
-			case 0x8181C78205FF:	return "public-key";
-			case 0x8181C78610FF:	return "profile-1min";
-			case 0x8181C78611FF:	return "profile-15min";
-			case 0x8181C78612FF:	return "profile-1h";
-			case 0x8181C78613FF:	return "profile-1d";
-			case 0x8181C78614FF:	return "profile-last-2h";
-			case 0x8181C78615FF:	return "profile-last-week";
-			case 0x8181C78616FF:	return "profile-1month";
-			case 0x8181C78617FF:	return "profile-1y";
-			case 0x8181C78618FF:	return "profile-initial";
-
-			case CODE_PROFILE:	return "PROFILE";	//	encode profile
-
-			case CODE_CLASS_OP_LOG:	return "CLASS_OP_LOG";	//	81 81 C7 89 E1 FF
-			case CODE_CLASS_EVENT:	return "CLASS_EVENT";	//	81 81 C7 89 E2 FF
-
-			case CODE_ROOT_FILE_TRANSFER:		return "ROOT_FILE_TRANSFER";	
-			case CODE_DATA_FIRMWARE:			return "DATA_FIRMWARE";
-			case CODE_DATA_FILENAME: 			return "DATA_FILENAME";	
-			case CODE_DATA_FILENAME_INDIRECT: 	return "DATA_FILENAME_INDIRECT";
-			case CODE_DATA_APPLICATION: 		return "DATA_APPLICATION";
-			case CODE_DATA_APPLICATION_INDIRECT: 	return "DATA_APPLICATION_INDIRECT";
-
-			case CODE_REBOOT:	return "REBOOT";	//	REBOOT
-
-			case 0x8101000000FF:	return "log-source-ETH_AUX";	//	OBIS_LOG_SOURCE_ETH_AUX
-			case 0x8102000000FF:	return "log-source-ETH-CUSTOM";	//	OBIS_LOG_SOURCE_ETH_CUSTOM
-			case 0x8103000000FF:	return "log-source-RS232";		//	OBIS_LOG_SOURCE_RS232
-			case 0x8104000000FF:	return "log-source-WAN";		//	OBIS_LOG_SOURCE_ETH
-			case 0x8105000000FF:	return "log-source-eHZ";		//	OBIS_LOG_SOURCE_eHZ 
-			case 0x8106000000FF:	return "log-source-wMBus";		//	OBIS_LOG_SOURCE_wMBUS
-
-			case 0x8141000000FF:	return "log-source-IP";			//	OBIS_LOG_SOURCE_IP
-			case 0x814200000001:	return "log-source-SML-ext";	//	OBIS_LOG_SOURCE_SML_EXT
-			case 0x814200000002:	return "log-source-SML_custom";	//else if (OBIS_LOG_SOURCE_SML_CUSTOM == code)			
-			case 0x814200000003:	return "log-source-SML-service";	//else if (OBIS_LOG_SOURCE_SML_SERVICE == code)			
-			case CODE_LOG_SOURCE_SML_WAN:	return "LOG_SOURCE_SML_WAN";	//else if (OBIS_LOG_SOURCE_SML_WAN == code)				
-			case CODE_LOG_SOURCE_SML_eHZ:	return "LOG_SOURCE_SML_eHZ";
-			case CODE_LOG_SOURCE_SML_wMBUS:	return "LOG_SOURCE_SML_wMBUS";
-			case CODE_LOG_SOURCE_PUSH_SML:	return "LOG_SOURCE_PUSH_SML";
-			case CODE_LOG_SOURCE_PUSH_IPT_SOURCE:	return "LOG_SOURCE_PUSH_IPT_SOURCE";
-			case CODE_LOG_SOURCE_PUSH_IPT_SINK:	return "LOG_SOURCE_PUSH_IPT_SINK";
-			case CODE_LOG_SOURCE_WAN_DHCP:	return "LOG_SOURCE_WAN_DHCP";
-			case CODE_LOG_SOURCE_WAN_IP:	return "LOG_SOURCE_WAN_IP";
-			case CODE_LOG_SOURCE_WAN_PPPoE:	return "LOG_SOURCE_WAN_PPPoE";
-			case CODE_LOG_SOURCE_WAN_IPT_CONTROLLER:	return "LOG_SOURCE_WAN_IPT_CONTROLLER";	
-			case CODE_LOG_SOURCE_WAN_IPT:	return "LOG_SOURCE_WAN_IPT";
-			case CODE_LOG_SOURCE_WAN_NTP:	return "LOG_SOURCE_WAN_NTP";
-
-			case CODE_CLASS_MBUS:	return "CLASS_MBUS";
-			case CODE_CLASS_MBUS_RO_INTERVAL:	return "CLASS_MBUS_RO_INTERVAL";
-			case CODE_CLASS_MBUS_SEARCH_INTERVAL:	return "CLASS_MBUS_SEARCH_INTERVAL";
-			case CODE_CLASS_MBUS_SEARCH_DEVICE:	return "CLASS_MBUS_SEARCH_DEVICE";
-			case CODE_CLASS_MBUS_AUTO_ACTICATE:	return "CLASS_MBUS_AUTO_ACTICATE";
-			case CODE_CLASS_MBUS_BITRATE:	return "CLASS_MBUS_BITRATE";
-
-			case CODE_W_MBUS_PROTOCOL:	return "W_MBUS_PROTOCOL";
-			case CODE_W_MBUS_MODE_S: return "W_MBUS_MODE_S";
-			case CODE_W_MBUS_MODE_T: return "W_MBUS_MODE_T";
-
-			case CODE_W_MBUS_REBOOT: return "W_MBUS_REBOOT";
-			case CODE_W_MBUS_POWER: return "W_MBUS_POWER";
-			case CODE_W_MBUS_INSTALL_MODE: return "W_MBUS_INSTALL_MODE";
-
-			//
-			//	root elements
-			//
-			case CODE_ROOT_NTP:						return "ROOT_NTP";
-			case CODE_ROOT_DEVICE_IDENT:			return "ROOT_DEVICE_IDENT";
-			case CODE_DEVICE_CLASS:					return "DEVICE_CLASS";
-			case CODE_SERVER_ID:					return "SERVER_ID";
-			case CODE_ROOT_FIRMWARE:				return "ROOT_FIRMWARE";
-			case CODE_DEVICE_KERNEL:				return "DEVICE_KERNEL";
-			case CODE_DEVICE_ACTIVATED:				return "DEVICE_ACTIVATED";
-			case CODE_ROOT_ACCESS_RIGHTS:			return "ROOT_ACCESS_RIGHTS";
-			case CODE_ROOT_CUSTOM_INTERFACE:		return "ROOT_CUSTOM_INTERFACE";
-			case CODE_ROOT_CUSTOM_PARAM:			return "ROOT_CUSTOM_PARAM";
-			case CODE_ROOT_WAN:						return "ROOT_WAN";
-			case CODE_ROOT_GSM:						return "ROOT_GSM";
-			case CODE_ROOT_IPT_STATE:				return "ROOT_IPT_STATE";
-			case CODE_ROOT_IPT_PARAM:				return "ROOT_IPT_PARAM";
-			case CODE_PEER_ADDRESS_WANGSM:			return "EER_ADDRESS_WANGSM";
-			case CODE_PEER_ADDRESS:					return "PEER_ADDRESS";
-
-			case CODE_ROOT_GPRS_PARAM:				return "ROOT_GPRS_PARAM";
-			case CODE_ROOT_W_MBUS_STATUS:			return "ROOT_W_MBUS_STATUS";
-			case CODE_ROOT_LAN_DSL:					return "ROOT_LAN_DSL";
-			case CODE_ROOT_MEMORY_USAGE:			return "ROOT_MEMORY_USAGE";
-			case CODE_ROOT_MEMORY_MIRROR:			return "ROOT_MEMORY_MIRROR";
-			case CODE_ROOT_MEMORY_TMP:				return "ROOT_MEMORY_TMP";
-			case CODE_ROOT_DEVICE_TIME:				return "ROOT_DEVICE_TIME";
-			case CODE_ROOT_ACTIVE_DEVICES:			return "ROOT_ACTIVE_DEVICES";
-			case CODE_ROOT_NEW_DEVICES:				return "ROOT_NEW_DEVICES";
-			case CODE_ROOT_INVISIBLE_DEVICES:		return "ROOT_INVISIBLE_DEVICES";
-			case CODE_ROOT_DEVICE_INFO:				return "ROOT_DEVICE_INFO";
-			case CODE_ROOT_VISIBLE_DEVICES:			return "OOT_VISIBLE_DEVICES";
-			case CODE_ROOT_SENSOR_PARAMS:			return "ROOT_SENSOR_PARAMS";
-			case CODE_ROOT_DATA_COLLECTOR:			return "ROOT_DATA_COLLECTOR";
-			case CODE_STORAGE_TIME_SHIFT:			return "STORAGE_TIME_SHIFT";	//	?
-
-			case CODE_TCP_WAIT_TO_RECONNECT:		return "TCP_WAIT_TO_RECONNECT";
-			case CODE_TCP_CONNECT_RETRIES:			return "TCP_CONNECT_RETRIES";
-
-			case CODE_IF_1107:						return "IF_1107";
-			case CODE_IF_1107_ACTIVE:				return "IF_1107_ACTIVE";
-			case CODE_IF_1107_LOOP_TIME:			return "IF_1107_LOOP_TIME";
-			case CODE_IF_1107_RETRIES:				return "IF_1107_RETRIES";
-			case CODE_IF_1107_MIN_TIMEOUT:			return "IF_1107_MIN_TIMEOUT";
-			case CODE_IF_1107_MAX_TIMEOUT:			return "IF_1107_MAX_TIMEOUT";
-			case CODE_IF_1107_MAX_DATA_RATE:		return "IF_1107_MAX_DATA_RATE";
-			case CODE_IF_1107_RS485:				return "IF_1107_RS485";
-			case CODE_IF_1107_PROTOCOL_MODE:		return "IF_1107_PROTOCOL_MODE";
-			case CODE_IF_1107_METER_LIST:			return "IF_1107_METER_LIST";
-			case CODE_IF_1107_AUTO_ACTIVATION:		return "IF_1107_AUTO_ACTIVATION";
-			case CODE_IF_1107_TIME_GRID:			return "IF_1107_TIME_GRID";
-			case CODE_IF_1107_TIME_SYNC:			return "IF_1107_TIME_SYNC";
-			case CODE_IF_1107_MAX_VARIATION:		return "IF_1107_MAX_VARIATION";
-
-			case CODE_OBISLOG_INTERVAL:				return "OBISLOG_INTERVAL";
-			case CODE_HAS_SSL_CONFIG:				return "HAS_SSL_CONFIG";
-
-			case CODE_PUSH_SOURCE:					return "PUSH_SOURCE";
-			case CODE_PUSH_SOURCE_PROFILE:			return "PUSH_SOURCE_PROFILE";
-			case CODE_PUSH_SOURCE_INSTALL:			return "PUSH_SOURCE_INSTALL";
-			case CODE_PUSH_SOURCE_VISIBLE_SENSORS:	return "PUSH_SOURCE_VISIBLE_SENSORS";
-			case CODE_PUSH_SOURCE_ACTIVE_SENSORS:	return "PUSH_SOURCE_ACTIVE_SENSORS";
-			case CODE_ROOT_PUSH_OPERATIONS:			return "ROOT_PUSH_OPERATIONS";	//	7.3.1.26 Datenstruktur zum Transport der Eigenschaften von Push-Vorgängen. 
-			case CODE_PUSH_INTERVAL:				return "PUSH_INTERVAL";	//	in seconds
-			case CODE_PUSH_DELAY:					return "PUSH_DELAY";	//	in seconds
-			case CODE_PUSH_SERVER_ID:				return "PUSH_SERVER_ID";
-
-			case CODE_IF_EDL:						return "IF_EDL";
-			case CODE_IF_EDL_PROTOCOL:				return "IF_EDL_PROTOCOL";
-			case CODE_IF_EDL_BAUDRATE:				return "IF_EDL_BAUDRATE";
-
-			case CODE_W_MBUS_ADAPTER_MANUFACTURER:	return "W_MBUS_ADAPTER_MANUFACTURER";
-			case CODE_W_MBUS_ADAPTER_ID:			return "W_MBUS_ADAPTER_ID";
-			case CODE_W_MBUS_FIRMWARE:				return "W_MBUS_FIRMWARE";
-			case CODE_W_MBUS_HARDWARE:				return "W_MBUS_HARDWARE";
-
-			case CODE_ROOT_IF:						return "ROOT_IF";
-			case CODE_IF_LAN_DSL:					return "IF_LAN_DSL";
-			case CODE_IF_wMBUS:						return "IF_wMBUS";
-			case CODE_IF_PLC:						return "IF_PLC";
-
-			case CODE_CLASS_OP_LOG_STATUS_WORD:		return "CLASS_OP_LOG_STATUS_WORD";
-			case CODE_CLASS_OP_LOG_FIELD_STRENGTH:	return "CLASS_OP_LOG_FIELD_STRENGTH";
-			case CODE_CLASS_OP_LOG_CELL:			return "CLASS_OP_LOG_CELL";
-			case CODE_CLASS_OP_LOG_AREA_CODE:		return "CLASS_OP_LOG_AREA_CODE";
-			case CODE_CLASS_OP_LOG_PROVIDER:		return "CLASS_OP_LOG_PROVIDER";
-
-			case CODE_CLASS_STATUS:					return "CODE_CLASS_STATUS";
-
-			case CODE_CURRENT_UTC:					return "CURRENT_UTC";
-			case CODE_PUSH_SERVICE:					return "PUSH_SERVICE";
-			case CODE_PUSH_SERVICE_IPT:				return "PUSH_SERVICE_IPT";
-			case CODE_PUSH_SERVICE_SML:				return "PUSH_SERVICE_SML";
-			case CODE_DATA_COLLECTOR_OBIS:			return "DATA_COLLECTOR_OBIS";
-			case CODE_DATA_IP_ADDRESS:				return "DATA_IP_ADDRESS";
-			case CODE_DATA_AES_KEY:					return "DATA_AES_KEY";
-			case CODE_DATA_USER_NAME:				return "DATA_USER_NAME";
-			case CODE_DATA_USER_PWD:				return "DATA_USER_PWD";
-			case CODE_SET_ACTIVATE_FW:				return "SET_ACTIVATE_FW";
-			case CODE_SET_START_FW_UPDATE:			return "ET_START_FW_UPDATE";
-			case CODE_SET_DISPATCH_FW_UPDATE:		return "SET_DISPATCH_FW_UPDATE";
-
-			case CODE_TARGET_IP_ADDRESS:			return "TARGET_IP_ADDRESS";
-			case CODE_SOURCE_PORT_ADDRESS:			return "SOURCE_PORT_ADDRESS";
-			case CODE_TARGET_PORT_ADDRESS:			return "TARGET_PORT_ADDRESS";
-
-			case CODE_CUSTOM_IF_IP_REF:				return "CUSTOM_IF_IP_REF";
-			case CODE_CUSTOM_IF_IP_ADDRESS_1:		return "CODE_CUSTOM_IF_IP_ADDRESS_1";
-			case CODE_CUSTOM_IF_IP_MASK_1:			return "CODE_CUSTOM_IF_IP_MASK_1";
-			case CODE_CUSTOM_IF_DHCP:				return "CODE_CUSTOM_IF_DHCP";
-			case CODE_CUSTOM_IF_DHCP_LOCAL_IP_MASK:	return "CODE_CUSTOM_IF_DHCP_LOCAL_IP_MASK";
-			case CODE_CUSTOM_IF_DHCP_DEFAULT_GW:	return "CODE_CUSTOM_IF_DHCP_DEFAULT_GW";
-			case CODE_CUSTOM_IF_DHCP_DNS:			return "CODE_CUSTOM_IF_DHCP_DNS";
-			case CODE_CUSTOM_IF_DHCP_START_ADDRESS:	return "CODE_CUSTOM_IF_DHCP_START_ADDRESS";
-			case CODE_CUSTOM_IF_DHCP_END_ADDRESS:	return "CODE_CUSTOM_IF_DHCP_END_ADDRESS";
-			case CODE_CUSTOM_IF_IP_ADDRESS_2:		return "CODE_CUSTOM_IF_IP_ADDRESS_2";
-
-			default:
-				break;
-			}
-
-
-			if (OBIS_ACT_SENSOR_TIME == code)		return "act-sensor-time";
-			else if (OBIS_SERIAL_NR == code)			return "serial-number-I";
-			else if (OBIS_SERIAL_NR_SECOND == code)		return "serial-number-II";
-			else if (OBIS_FABRICATION_NR == code)		return "fabrication-number";
-			else if (OBIS_POWER_OUTAGES == code)		return "power-outages";
-			else if (OBIS_MBUS_STATE == code)			return "status-EN13757-3";
-			else if (OBIS_DATE_TIME_PARAMETERISATION == code)	return "date-time-parameterisation";
-			else if (OBIS_SECONDS_INDEX == code)		return "seconds-index";
-			else if (OBIS_HARDWARE_TYPE == code)		return "hardware-type";
-
-			//	Identifikationsnummer 1.1 - comes as unsigned int with 3 bytes (this is the server ID)
-			else if (code == OBIS_SERVER_ID_1_1)		return "identifier-1-1";
-			else if (code == OBIS_SERVER_ID_1_2)		return "identifier-1-2";
-			else if (code == OBIS_SERVER_ID_1_3)		return "identifier-1-3";
-			else if (code == OBIS_SERVER_ID_1_4)		return "identifier-1-4";
-			else if (code == OBIS_DEVICE_ID)			return "device-id";
-			else if (OBIS_SOFTWARE_ID == code)			return "software_id";
-
-
-			else if (code == OBIS_REG_POS_AE_NO_TARIFF)			return "pos-act-energy-no-tariff";
-			else if (code == OBIS_REG_POS_AE_T1)				return "pos-act-energy-tariff-1";
-			else if (code == OBIS_REG_POS_AE_T2)				return "pos-act-energy-tariff-2";
-			else if (code == OBIS_REG_NEG_AE_NO_TARIFF)			return "neg-act-energy-no-tariff";
-			else if (code == OBIS_REG_NEG_AE_T1)				return "neg-act-energy-tariff-1";
-			else if (code == OBIS_REG_NEG_AE_T2)				return "neg-act-energy-tariff-2";
-			else if (code == OBIS_REG_CUR_POS_AE)				return "pos-act-energy-current";
-			else if (code == OBIS_REG_CUR_AP)					return "act-power-current";
-
-			//																				//		const static obis	OBIS_CLASS_OP_LOG_EVENT(0x81, 0x81, 0xC7, 0x89, 0xE2, 0xFF);	//	Ereignis (uint32)
-			//const static obis	OBIS_CLASS_OP_LOG_PEER_ADDRESS(0x81, 0x81, 0x00, 0x00, 0x00, 0xFF);	//	Peer Adresse (octet string)
-			//const static obis	OBIS_CLASS_OP_MONITORING_STATUS(0x00, 0x80, 0x80, 0x11, 0x13, 0x01);	//	Überwachungsstatus (uint8) - tatsächlich i32
-
-			else if (code == OBIS_CLASS_OP_LSM_STATUS)					return "LSM-status";
-			else if (code == OBIS_CLASS_OP_LSM_ACTOR_ID)				return "LSM-actor-id";
-			else if (code == OBIS_CLASS_OP_LSM_CONNECT)					return "LSM-connection-status";
-			else if (code == OBIS_CLASS_OP_LSM_SWITCH)					return "LSM-switch";
-			else if (code == OBIS_CLASS_OP_LSM_FEEDBACK)				return "LSM-feedback";
-			else if (code == OBIS_CLASS_OP_LSM_LOAD)					return "LSM-load-count";
-			else if (code == OBIS_CLASS_OP_LSM_POWER)					return "LSM-total-power";
-			else if (code == OBIS_CLASS_OP_LSM_VERSION)					return "LSM-version";
-			else if (code == OBIS_CLASS_OP_LSM_TYPE)					return "LSM-type";
-			else if (code == OBIS_CLASS_OP_LSM_ACTIVE_RULESET)			return "LSM-active-ruleset";
-			else if (code == OBIS_CLASS_OP_LSM_PASSIVE_RULESET)			return "LSM-passive-ruleset";
-			else if (code == OBIS_CLASS_OP_LSM_JOB)						return "LSM-job-name";
-			else if (code == OBIS_CLASS_OP_LSM_POSITION)				return "LSM-position";
-
-			else if (OBIS_LIST_CURRENT_DATA_RECORD == code)				return "current-data-record";
-
-
-			//
-			//	attention codes
-			//
-			return get_attention_name(code);
+			return (pos != obis_map.end())
+				? std::make_pair(pos->first, true)
+				: std::make_pair(obis(), false)
+				;
 		}
 
 		std::string get_attention_name(obis const& code)
@@ -340,6 +492,15 @@ namespace node
 				break;
 			}
 			return "not-a-profile";
+		}
+
+		obis_type::obis_type(char const* name, std::size_t type)
+			: name_(name)
+			, type_(type)
+		{}
+		std::string obis_type::get_name() const
+		{
+			return name_;
 		}
 
 	}

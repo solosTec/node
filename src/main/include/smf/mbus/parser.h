@@ -240,11 +240,6 @@ namespace node
 			parser_callback	cb_;
 
 			/**
-			 * instruction buffer
-			 */
-			//cyng::vector_t	code_;
-
-			/**
 			 *	input stream buffer
 			 */
 			boost::asio::streambuf	stream_buffer_;
@@ -341,7 +336,6 @@ namespace node
 			};
 			struct manufacturer : base<2> {};
 			struct dev_id : base<4> {};
-			//struct crc : base<2> {};
 
 			/**
 			 * Transport Layer (TPL)

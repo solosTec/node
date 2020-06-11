@@ -27,6 +27,7 @@
 #include <cyng/parser/mac_parser.h>
 #include <cyng/io/serializer.h>
 #include <cyng/util/split.h>
+#include <cyng/sql/dsl/assign.hpp>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -212,6 +213,8 @@ namespace node
 				, "descr"
 				//	---
 				, "status"	//	"Statusinformation: 00"
+				//	Contains a bit mask to define the bits of the status word, that if changed
+				//	will result in an entry in the log-book.
 				, "mask"	//	"Bitmaske: 00 00"
 				, "interval"	//	"Zeit zwischen zwei Datensätzen: 49000"
 								//	--- optional data
@@ -227,7 +230,7 @@ namespace node
 				, cyng::TC_STRING		//	manufacturer/description
 
 				, cyng::TC_UINT32		//	status (81 00 60 05 00 00)
-				, cyng::TC_UINT16		//	bit mask (81 81 C7 86 01 FF)
+				, cyng::TC_BUFFER		//	bit mask (81 81 C7 86 01 FF)
 				, cyng::TC_UINT32		//	interval (milliseconds)
 				, cyng::TC_BUFFER		//	pubKey
 				, cyng::TC_AES128		//	AES 128 (16 bytes)
@@ -1557,6 +1560,63 @@ namespace node
 		stmt->execute();
 		stmt->clear();
 
+	}
+
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, bool value)
+	{
+		return set_value(std::move(cfg), vec, cyng::make_object(value ? "true" : "false"));
+	}
+
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, std::uint32_t value)
+	{
+		return set_value(std::move(cfg), vec, cyng::make_object(value));
+	}
+
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, std::string value)
+	{
+		return set_value(std::move(cfg), vec, cyng::make_object(value));
+	}
+
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, cyng::object value)
+	{
+		//
+		//	get OBIS path
+		//
+		auto const op = sml::translate_obis_names(vec);
+		std::cout 
+			<< op 
+			<< " = "
+			<< cyng::io::to_str(value)
+			<< std::endl;
+
+		//
+		//	create a database session
+		//
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		cyng::db::session s(con_type);
+		auto r = s.connect(cfg);
+		if (r.second) {
+
+			cyng::table::meta_table_ptr meta = storage::mm_.at("TCfg");
+			cyng::sql::command cmd(meta, s.get_dialect());
+
+			auto sql = cmd.update(cyng::sql::make_assign(meta->get_name(2), cyng::sql::make_placeholder())).by_key()();
+			//std::cout << sql << std::endl;
+			auto stmt = s.create_statement();
+			std::pair<int, bool> r = stmt->prepare(sql);
+			if (r.second) {
+
+				stmt->push(cyng::make_object(value), 256);	//	val
+				stmt->push(cyng::make_object(op), 128);	//	path
+
+				if (!stmt->execute()) {
+					return false;
+				}
+				stmt->clear();
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

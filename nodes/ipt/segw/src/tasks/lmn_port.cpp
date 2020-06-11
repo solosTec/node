@@ -12,6 +12,7 @@
 
 #include <cyng/io/hex_dump.hpp>
 #include <cyng/factory/set_factory.h>
+#include <cyng/io/io_bytes.hpp>
 
 namespace node
 {
@@ -25,7 +26,8 @@ namespace node
 		, boost::asio::serial_port_base::stop_bits stopbits
 		, boost::asio::serial_port_base::baud_rate speed
 		, std::size_t receiver_data
-		, std::size_t receiver_status)
+		, std::size_t receiver_status
+		, cyng::buffer_t&& init)
 	: base_(*btp) 
 		, logger_(logger)
 		, port_(btp->mux_.get_io_service())
@@ -38,6 +40,7 @@ namespace node
 		, baud_rate_(speed)
 		, receiver_data_(receiver_data)
 		, receiver_status_(receiver_status)
+		, init_(std::move(init))
 		, buffer_()
 		, msg_counter_(0u)
 	{
@@ -81,6 +84,24 @@ namespace node
 				//
 				set_all_options();
 
+				//
+				//	send initialization string init_
+				//	only once
+				//
+				if (!init_.empty()) {
+
+					CYNG_LOG_INFO(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> send "
+						<< cyng::bytes_to_str(init_.size())
+						<< " initialization data");
+
+					process(init_);
+					init_.clear();
+				}
+					
 				//
 				//	update status.word
 				//

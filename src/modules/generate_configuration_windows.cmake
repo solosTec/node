@@ -142,26 +142,6 @@ configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter_restart_service.cmd.in"
 		"${PROJECT_BINARY_DIR}/config/emitter_restart_service.cmd")
 
-# ipt gateway
-configure_file (
-		"${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.windows.cgf.in"
-		"${PROJECT_BINARY_DIR}/config/gateway_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
-	  
-configure_file (
-		"${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_create_service.cmd.in"
-		"${PROJECT_BINARY_DIR}/config/gateway_create_service.cmd")
-
-configure_file (
-		"${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_delete_service.cmd.in"
-		"${PROJECT_BINARY_DIR}/config/gateway_delete_service.cmd")
-
-configure_file (
-		"${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway_restart_service.cmd.in"
-		"${PROJECT_BINARY_DIR}/config/gateway_restart_service.cmd")
-
-configure_file (
-		"${PROJECT_SOURCE_DIR}/nodes/ipt/gateway/templates/gateway.rc.in"
-		"${PROJECT_BINARY_DIR}/gateway.rc")
 
 # ipt segw
 configure_file (

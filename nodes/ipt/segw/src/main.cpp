@@ -30,6 +30,7 @@ int main(int argc, char **argv)
 	//	will contain the path to an optional configuration file
 	std::string config_file;
 	std::uint32_t profile{ 0 };
+	std::string value{ "bool:rs485:enabled:true" };
 
 	//
 	//	generic options
@@ -52,6 +53,7 @@ int main(int argc, char **argv)
 		("transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")
 		("clear", boost::program_options::bool_switch()->default_value(false), "delete configuration from database")
 		("dump", boost::program_options::value<std::uint32_t>(&profile)->default_value(0)->implicit_value(11), "dump profile data (11 .. 18), 1 == PushOps, 2 == Devices")
+		("set-value", boost::program_options::value<std::string>(&value), "set configuration value")
 		;
 
 	//	path to JSON configuration file
@@ -139,7 +141,7 @@ int main(int argc, char **argv)
 		}
 		
 		//	read parameters from config file
-		const std::string cfg = vm["config"].as< std::string >();
+		auto const cfg = vm["config"].as< std::string >();
 		std::ifstream ifs(cfg);
 		if (ifs.is_open())
 		{
@@ -203,6 +205,12 @@ int main(int argc, char **argv)
 		if (dump != 0) {
 			//	dump profile data
 			return ctrl.dump_profile(dump);
+		}
+
+		if (vm.count("set-value"))
+		{
+			auto const kv = vm["set-value"].as< std::string >();
+			return ctrl.set_value(kv);
 		}
 
 #if BOOST_OS_WINDOWS

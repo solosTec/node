@@ -16,12 +16,14 @@ namespace node
 {
 	rs485::rs485(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, cyng::controller& vm
 		, cache& cfg
 		, std::size_t tsk)
 	: base_(*btp)
 		, logger_(logger)
 		, cache_(cfg)
 		, cfg_(cfg)
+		, decoder_mbus_(logger, cfg, vm)
 		, state_(cfg_.get_search_device() ? state::REMOVE_SECONDARY_ADDRESS : state::READOUT)
 		, tsk_(tsk)
 		, search_idx_(0)
@@ -121,11 +123,11 @@ namespace node
 	//	slot [1] - short frame
 	cyng::continuation rs485::process(
 		boost::uuids::uuid,	//	[0] tag
-		bool,				//	[1] OK
-		std::uint8_t,		//	[2] C-field
-		std::uint8_t,		//	[3] A-field
-		std::uint8_t,		//	[5] checksum
-		cyng::buffer_t		//	[6] payload
+		bool ok,			//	[1] OK
+		std::uint8_t c,		//	[2] C-field
+		std::uint8_t a,		//	[3] A-field
+		std::uint8_t cs,	//	[5] checksum
+		cyng::buffer_t payload	//	[6] payload
 	)
 	{
 		CYNG_LOG_DEBUG(logger_, "task #"
@@ -133,6 +135,10 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> short frame");
+
+		if (ok) {
+			decoder_mbus_.read_short_frame(c, a, cs, payload);
+		}
 
 		//
 		//	continue task
@@ -143,19 +149,22 @@ namespace node
 	//	slot [2] - long frame
 	cyng::continuation rs485::process(
 		boost::uuids::uuid,	//	[0] tag
-		bool,				//	[1] OK
-		std::uint8_t,		//	[2] C-field
-		std::uint8_t,		//	[3] A-field
-		std::uint8_t,		//	[4] CI-field
-		std::uint8_t,		//	[5] checksum
-		cyng::buffer_t		//	[6] payload
-	)
+		bool ok,			//	[1] OK
+		std::uint8_t c,		//	[2] C-field
+		std::uint8_t a,		//	[3] A-field
+		std::uint8_t ci,	//	[4] CI-field
+		std::uint8_t cs,	//	[5] checksum
+		cyng::buffer_t payload)
 	{
 		CYNG_LOG_DEBUG(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
 			<< "> long frame");
+
+		//if (ok) {
+			decoder_mbus_.read_long_frame(c, a, ci, cs, payload);
+		//}
 
 		switch (state_) {
 		case state::QUERY:
@@ -184,11 +193,11 @@ namespace node
 	//	slot [3] - ctrl frame
 	cyng::continuation rs485::process(
 		boost::uuids::uuid,	//	[0] tag
-		bool,				//	[1] OK
-		std::uint8_t,		//	[2] C-field
-		std::uint8_t,		//	[3] A-field
-		std::uint8_t,		//	[4] CI-field
-		std::uint8_t		//	[5] checksum
+		bool ok,			//	[1] OK
+		std::uint8_t c,		//	[2] C-field
+		std::uint8_t a,		//	[3] A-field
+		std::uint8_t ci,	//	[4] CI-field
+		std::uint8_t cs		//	[5] checksum
 	)
 	{
 		CYNG_LOG_DEBUG(logger_, "task #"
@@ -196,6 +205,11 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> ctrl frame");
+
+		if (ok) {
+			decoder_mbus_.read_ctrl_frame(c, a, ci, cs);
+		}
+
 		//
 		//	continue task
 		//
@@ -304,18 +318,24 @@ namespace node
 	{
 		//	10 7B AD CS 16 (example: 10 7B 01 7C 16)
 		std::uint8_t const cfield = fcb ? 0x7B : 0x5B;
-		auto cmd = cyng::make_buffer({ 0x10, cfield, address, 0x0, 0x16 });
+		auto cmd = cyng::make_buffer({ 0x10, cfield, address, 0x00, 0x16 });
 		mbus_calculate_checksum(cmd);
 		return cmd;
 	}
 
-	cyng::buffer_t mbus_check_secondary_address(std::uint8_t a, std::uint8_t b, std::uint8_t c, std::uint8_t d)
+	cyng::buffer_t mbus_select_slave_by_id(std::uint8_t a, std::uint8_t b, std::uint8_t c, std::uint8_t d)
 	{
 		auto cmd = cyng::make_buffer({ 0x68, 0x0B, 0x0B, 0x68, 0x73, 0xFD, 0x52, a, b, c, d, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x16 });
 		mbus_calculate_checksum(cmd);
 		return cmd;
 	}
 
+	cyng::buffer_t mbus_set_address(std::uint8_t a)
+	{
+		auto cmd = cyng::make_buffer({ 0x68, 0x06, 0x06, 0x68, 0x73, 0xFD, 0x51, 0xF1, 0x7A, a, 0x00, 0x16 });
+		mbus_calculate_checksum(cmd);
+		return cmd;
+	}
 
 	void mbus_calculate_checksum(cyng::buffer_t& cmd)
 	{

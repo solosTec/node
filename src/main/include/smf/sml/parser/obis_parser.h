@@ -53,8 +53,15 @@ namespace node
 
 		/**
 		 * substitute valid OBIS codes with textual description from database
+		 * and build a new string
 		 */
 		std::string translate_obis_path(std::string const&, char sep = ':');
+
+		/**
+		 * Take a vector of OBIS names, search the matching OBIS codes
+		 * and build an OBIS path. Unkown OBIS names will be skipped.
+		 */
+		std::string translate_obis_names(std::vector<std::string> const& vec, char sep = ':');
 
 	}
 }

@@ -90,7 +90,7 @@ namespace node
 		unit_ = mbus::units::UNDEFINED_;
 		date_flag_ = false;
 		date_time_flag_ = false;
-		value_.clear();
+		value_.reset();
 		buffer_.clear();
 		code_.fill(0u);
 		valid_ = false;

@@ -23,92 +23,134 @@ namespace node
 {
 
 	/**
-	 * @see 7.2.4 Configuration Field
-	 * in Open Metering System Specification (Volume 2)
-	 *
-	 * Containing 5 bytes defining the encryption mode
-	 * This is the 2. byte (MSB)
-	 * You can mask the first 5 bits with 0x1F.
+	 * define an array that contains the server ID
 	 */
-	struct cfg_field_mode
-	{
-		std::uint16_t mode_ : 5;	//	mode (0, 5, 7, or 13)
-		std::uint16_t x1_ : 3;	//	mode specific
-	};
-
-	/** @brief 7.2.4.3 Configuration Field for Security Mode 5
-	 *
-	 * Security Mode 5 is a symmetric encryption method using AES128 with CBC, a special
-	 * Initialisation Vector and a persistent key.
-	 */
-	struct cfg_field_5 
-	{
-		std::uint16_t hops_ : 1;	//	hop counter
-		std::uint16_t r_ : 1;	//	Repeated Access
-		std::uint16_t content_ : 2;	//	content of message
-		std::uint16_t number_ : 4;	//	number of encrypted blocks
-
-		std::uint16_t mode_ : 5;	//	mode (== 5)
-		std::uint16_t s_ : 1;	//	synchronous
-		std::uint16_t a_ : 1;	//	accessibility
-		std::uint16_t b_ : 1;	//	bidrectional communication (static/dynamic)
-	};
-
-	/** @brief 7.2.4.4 Configuration Field for Security Mode 7
-	 * Security Mode 7 is a symmetric encryption method using AES128 with CBC and an ephemeral key
-	 */
-	struct cfg_field_7
-	{
-		std::uint16_t r2_ : 4;	//	reserved
-		std::uint16_t number_ : 4;	//	number of encrypted blocks
-		std::uint16_t mode_ : 5;	//	mode (== 7)
-		std::uint16_t r1_ : 1;	//	reserved
-		std::uint16_t c_ : 2;	//	Content of Message
-	};
-
-	/** @brief 7.2.4.5 Configuration Field for Security Mode 13
-	 *
-	 * Security Mode 13 is an asymmetric encryption method using TLS
-	 */
-	struct cfg_field_D
-	{
-		std::uint16_t number_ : 8;	//	number of encrypted blocks
-		std::uint16_t mode_ : 5;	//	mode (== 13)
-		std::uint16_t r1_ : 1;	//	reserved
-		std::uint16_t c_ : 2;	//	Content of Message
-	};
+	using srv_id_t = std::array<char, 9>;
 
 	/**
-	 * Short header used only by wireless M-Bus.
-	 * Applied from master with CI = 0x5A, 0x61, 0x65
-	 * Applied from slave with CI = 67, 0x6E, 0x74, 0x7A, 0x7D, 0x7F, 0x9Eh
+	 * Provide a base class for wired and wireless header data.
+	 * Both mBus header share some information like server ID.
+	 * access number, status and the payload data
 	 */
-	class header_short
+	class header_base
 	{
-		friend std::pair<header_short, bool> make_header_short(cyng::buffer_t const&);
-		friend std::pair<header_short, bool> decode(header_short const& hs, cyng::crypto::aes_128_key const& key, cyng::crypto::aes::iv_t const& iv);
-
-		//friend std::pair<header_short, bool> reset_header_short(cyng::buffer_t const& inp);
-
 	public:
-		header_short();
-		header_short(header_short const&);
-		header_short(header_short&&) noexcept;
-		header_short(std::uint8_t access_no
+		header_base();
+		header_base(srv_id_t const&
+			, std::uint8_t access_no
 			, std::uint8_t status
-			, std::uint8_t mode
-			, std::uint8_t block_counter
-			, cyng::buffer_t&& data);
+			, cyng::buffer_t&& payload);
 
-		virtual ~header_short();
-		
-		header_short& operator=(header_short const&) = delete;
+		virtual cyng::buffer_t get_srv_id() const = 0;
+
+		/**
+		 * @return a copy of the (decoded) data
+		 */
+		virtual cyng::buffer_t data() const = 0;
 
 		std::uint8_t get_access_no() const;
 		std::uint8_t get_status() const;
 
+	protected:
 		/**
-		 * method of data encryption
+		 * The server ID contains the identification number (secondary address),
+		 * manufacturer ID, generation/version and media type.
+		 */
+		srv_id_t const server_id_;
+
+		/**
+		 * Access Number (From master initiated session uses Gateway Access	Number.
+		 * From slave initiated session uses Meter Access Number.)
+		 */
+		std::uint8_t const access_no_;
+
+		/**
+		 * Status (from master to slave) used for gateway status (RSSI)
+		 * (from slave to master) used for meter status
+		 */
+		std::uint8_t const status_;
+
+		/**
+		 * raw data / payload
+		 */
+		cyng::buffer_t const data_;
+
+	};
+
+	/**
+	 * Context data required to decrypt wireless mBus data.
+	 * Part of the mBus wireless header.
+	 */
+	class wireless_prefix
+	{
+	public:
+		wireless_prefix();
+		wireless_prefix(std::uint8_t access_no
+		, std::uint8_t status
+		, std::uint8_t aes_mode
+		, std::uint8_t block_counter
+		, cyng::buffer_t&&);
+
+		std::uint8_t get_access_no() const;
+		std::uint8_t get_status() const;
+		std::uint8_t get_mode() const;
+		std::uint8_t get_block_counter() const;
+
+		//	block counter * 16
+		std::uint8_t blocks() const;
+		cyng::buffer_t get_data() const;
+
+		std::pair<cyng::buffer_t, bool> decode_mode_5(cyng::buffer_t const& server_id
+			, cyng::crypto::aes_128_key const& key) const;
+
+		/**
+		 * @return initial vector for AES CBC decoding
+		 */
+		cyng::crypto::aes::iv_t get_iv(cyng::buffer_t const& server_id) const;
+
+	private:
+		std::uint8_t const access_no_;
+		std::uint8_t const status_;
+		std::uint8_t const aes_mode_;
+		std::uint8_t const block_counter_;
+		cyng::buffer_t const data_;
+	};
+
+	/**
+	 * Long header used by wireless M-Bus.
+	 * Applied from master with CI = 0x53, 0x55, 0x5B, 0x5F, 0x60, 0x64, 0x6Ch, 0x6D
+	 * Applied from slave with CI = 0x68, 0x6F, 0x72, 0x75, 0x7C, 0x7E, 0x9F
+	 */
+	class header_long_wireless : public header_base
+	{
+		friend std::pair<header_long_wireless, bool> make_header_long_wireless(cyng::buffer_t const&);
+
+	public:
+		header_long_wireless();
+		header_long_wireless(srv_id_t const& id
+			, std::uint8_t access_no
+			, std::uint8_t status
+			, std::uint8_t mode
+			, std::uint8_t block_counter
+			, cyng::buffer_t&&);
+
+		header_long_wireless(srv_id_t const& id
+			, wireless_prefix const&);
+
+		header_long_wireless& operator=(header_long_wireless const&) = delete;
+		
+		/**
+		 * @return server ID
+		 */
+		virtual cyng::buffer_t get_srv_id() const override;
+
+		/**
+		 * @return exncryption context
+		 */
+		wireless_prefix get_prefix() const;
+
+		/**
+		 * method of data encryption (AES mode)
 		 *
 		 * 0 - no enryption
 		 * 4 - deprecated
@@ -132,7 +174,7 @@ namespace node
 		/**
 		 * encoded data (without verification bytes)
 		 */
-		cyng::buffer_t data() const;
+		virtual cyng::buffer_t data() const override;
 
 		/**
 		 * encoded data (with verification bytes)
@@ -144,94 +186,91 @@ namespace node
 		 */
 		bool verify_encryption() const;
 
-	private:
-		/**
-		 * Access Number (From master initiated session uses Gateway Access	Number.
-		 * From slave initiated session uses Meter Access Number.)
-		 */
-		std::uint8_t const access_no_;
-
-		/**
-		 * Status (from master to slave) used for gateway status (RSSI)
-		 * (from slave to master) used for meter status
-		 */
-		std::uint8_t const status_;
-
-		/**
-		 * Configuration Field / Configuration Field Extension
-		 */
-		std::uint8_t const mode_;
-		std::uint8_t const block_counter_;
-
-		/**
-		 * raw data
-		 */
-		cyng::buffer_t const data_;
-
-	};
-
-	/**
-	 * Long header used by wired and wireless M-Bus.
-	 * Applied from master with CI = 0x53, 0x55, 0x5B, 0x5F, 0x60, 0x64, 0x6Ch, 0x6D
-	 * Applied from slave with CI = 0x68, 0x6F, 0x72, 0x75, 0x7C, 0x7E, 0x9F
-	 */
-	class header_long
-	{
-		friend std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const&);
-		friend std::pair<header_long, bool> decode(header_long const& hl, cyng::crypto::aes_128_key const& key);
-
-	public:
-		header_long();
-		header_long(header_long const&);
-		header_long(header_long&&) noexcept;
-		header_long(std::array<char, 9> const&, header_short&&);
-		virtual ~header_long();
-
-		header_long& operator=(header_long const&) = delete;
-		
-		cyng::buffer_t get_srv_id() const;
-
-		/** 
-		 * @return short part of header
-		 */
-		header_short const& header() const;
-
 		/**
 		 * @return initial vector for AES CBC decoding
 		 */
 		cyng::crypto::aes::iv_t get_iv() const;
 
+
 	private:
 		/**
-		 * M-Bus type + meter address
+		 * Configuration Field / Configuration Field Extension
 		 */
-		std::array<char, 9>	const server_id_;
-
-		header_short const hs_;
+		std::uint8_t const mode_;	//	AES mode
+		std::uint8_t const block_counter_;
 	};
 
+	/**
+	 * Long header used by wired M-Bus.
+	 */
+	class header_long_wired : public header_base
+	{
+		friend std::pair<header_long_wired, bool> make_header_long_wired(cyng::buffer_t const&);
+	public:
+		header_long_wired();
+		header_long_wired(srv_id_t const& id
+			, std::uint8_t access_no
+			, std::uint8_t status
+			, std::uint16_t signature
+			, cyng::buffer_t&&);
 
-	std::pair<header_short, bool> make_header_short(cyng::buffer_t const& inp);
+
+		virtual cyng::buffer_t get_srv_id() const override;
+		virtual cyng::buffer_t data() const override;
+
+		std::uint16_t get_signature() const;
+
+	private:
+		std::uint16_t const signature_;
+
+	};
 
 	/**
-	 * Decode data with AES CBC (mode 5)
-	 * @return true if encryption was successful (first two bytes are 0x2F)
+	 * read first 9 bytes to get the server ID
+	 *
+	 * @return true if range was sufficient.
 	 */
-	std::pair<header_short, bool> decode(header_short const&, cyng::crypto::aes_128_key const&, cyng::crypto::aes::iv_t const& iv);
-
-	std::pair<header_long, bool> make_header_long(char type, cyng::buffer_t const&);
+	cyng::buffer_t::const_iterator read_server_id(srv_id_t&, cyng::buffer_t::const_iterator, cyng::buffer_t::const_iterator);
 
 	/**
-	 * Decode data with AES CBC (mode 5)
-	 * @return true if encryption was successful (first two bytes are 0x2F)
+	 * The wireless prefix is part of the wireless mBus header
+	 *
+	 * @return wireless prefix and success flag
 	 */
-	std::pair<header_long, bool> decode(header_long const& hl, cyng::crypto::aes_128_key const&);
+	std::pair<wireless_prefix
+		, bool> make_wireless_prefix(cyng::buffer_t::const_iterator, cyng::buffer_t::const_iterator);
+
+	/**
+	 * The wireless prefix is part of the wireless mBus header
+	 *
+	 * @return wireless prefix and success flag
+	 */
+	std::pair<wireless_prefix
+		, bool> make_wireless_prefix(cyng::buffer_t const&);
+
+	/**
+	 * @return wireless mBus header and success flag
+	 */
+	std::pair<header_long_wireless, bool> make_header_long_wireless(cyng::buffer_t const&);
+
+	/**
+	 * @return wired mBus header and success flag
+	 */
+	std::pair<header_long_wired, bool> make_header_long_wired(cyng::buffer_t const&);
+
 
 	/**
 	 * @return true is buffer is longer then 2 bytes and first two bytes are 0x2F
 	 */
 	bool test_aes(cyng::buffer_t const&);
 
+	/**
+	 * Decode data with AES CBC (mode 5)
+	 * @return true if encryption was successful (first two bytes are 0x2F)
+	 */
+	std::pair<cyng::buffer_t, bool> decode(cyng::buffer_t const& data
+		, cyng::crypto::aes_128_key const& key
+		, cyng::crypto::aes::iv_t const& iv);
 	
 }	//	node
 

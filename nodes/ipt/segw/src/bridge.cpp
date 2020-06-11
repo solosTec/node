@@ -25,6 +25,7 @@
 #include <cyng/table/restore.h>
 #include <cyng/buffer_cast.h>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/sys/port.h>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -161,6 +162,10 @@ namespace node
 				auto const val = cyng::value_cast<std::string>(rec["val"], "");
 
 				try {
+
+					//
+					//	restore original data type from string
+					//
 					auto obj = cyng::table::restore(val, type);
 
 					CYNG_LOG_TRACE(logger_, "load - "
@@ -196,8 +201,51 @@ namespace node
 
 				return true;	//	continue
 			});
-
 		});
+
+		//
+		//	check configuration
+		//	"rs485.enabled" && "rs485.port"
+		//	"IF_wMBUS:enabled" && "IF_wMBUS:port"
+		//
+		auto const ports = cyng::sys::get_ports();
+
+		if (cache_.get_cfg("rs485.enabled", false)) {
+			auto const port = cache_.get_cfg("rs485.port", "COM");
+			if (std::none_of(ports.begin(), ports.end(), [port](std::string const& p) {
+				return boost::algorithm::equals(port, p);
+				})) {
+
+				CYNG_LOG_ERROR(logger_, "port "
+					<< port
+					<< " is not available");
+
+			}
+			else {
+				CYNG_LOG_TRACE(logger_, "port "
+					<< port
+					<< " is available");
+			}
+		}
+
+		if (cache_.get_cfg("8106190700FF:enabled", false)) {
+			auto const port = cache_.get_cfg("8106190700FF:port", "COM");
+			if (std::none_of(ports.begin(), ports.end(), [port](std::string const& p) {
+				return boost::algorithm::equals(port, p);
+				})) {
+
+				CYNG_LOG_ERROR(logger_, "port "
+					<< port
+					<< " is not available");
+
+			}
+			else {
+				CYNG_LOG_TRACE(logger_, "port "
+					<< port
+					<< " is available");
+			}
+		}
+
 	}
 
 	void bridge::load_devices_mbus()

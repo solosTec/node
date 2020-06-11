@@ -122,6 +122,7 @@ namespace node
 			FIELD_CI_DATA_SEND = 0x51, //!<	Data send - mode 1 (EN 13757-3)
 			FIELD_CI_SLAVE_SELECT = 0x52,	//!<	Slave select - mode 1 (EN 13757-3)
 			FIELD_CI_APPLICATION_RESET = 0x53,	//!<	Application reset or select (EN 13757-3).
+			FIELD_CI_SYNC = 0x54,	//!< syncronize action
 			FIELD_CI_CMD_TO_DEVICE_SHORT = 0x5A,	//!<	CMD to device with short header (OMS Vol.2 Issue 2.0.0/2009-07-20)								
 			FIELD_CI_CMD_TO_DEVICE_LONG = 0x5B,	//!<	CMD to device with long header (OMS Vol.2 Issue 2.0.0/2009-07-20)
 			FIELD_CI_CMD_TLS_HANDSHAKE = 0x5F,	//!<	Security Management (TLS-Handshake)

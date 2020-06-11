@@ -537,6 +537,25 @@ namespace node
 		 */
 		const char* get_profile_name(obis const&);
 
+		/**
+		 * Search time is O(N)
+		 *
+		 * @return obis code with specified name.
+		 */
+		std::pair<obis, bool> from_str(std::string);
+
+		/**
+		 * internal class to describe an OBIS code
+		 */
+		class obis_type {
+		public:
+			obis_type(char const*, std::size_t);
+			std::string get_name() const;
+		private:
+			char const* name_;
+			std::size_t const type_;
+		};
+
 	}	//	sml
 }	//	node
 

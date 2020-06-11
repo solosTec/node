@@ -36,7 +36,8 @@ namespace node
 			, boost::asio::serial_port_base::stop_bits stopbits
 			, boost::asio::serial_port_base::baud_rate speed
 			, std::size_t receiver_data
-			, std::size_t receiver_status);
+			, std::size_t receiver_status
+			, cyng::buffer_t&& init);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -50,6 +51,7 @@ namespace node
 	private:
 		void do_read();
 		void set_all_options();
+		void init();
 
 	private:
 		cyng::async::base_task& base_;
@@ -76,6 +78,7 @@ namespace node
 		boost::asio::serial_port_base::baud_rate baud_rate_;
 		std::size_t const receiver_data_;
 		std::size_t const receiver_status_;
+		cyng::buffer_t init_;
 
 		/**
 		 * Buffer for incoming data.

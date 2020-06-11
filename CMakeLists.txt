@@ -753,37 +753,9 @@ target_link_libraries(emitter
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
-#
-# IP-T gateway
-#
-if(${PROJECT_NAME}_BUILD_TEST)
-	include (nodes/ipt/gateway/prg.cmake)
-	add_executable(gateway ${node_ipt_gateway})
-	target_include_directories(gateway
-		PRIVATE
-			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
-			${CYNG_INCLUDE_DIRS}
-			${OPENSSL_INCLUDE_DIR}
-			${BOOST_INCLUDE_DIR}
-	)
-	target_link_libraries(gateway 
-		smf_protocol_ipt 
-		smf_protocol_sml 
-		smf_bus_ipt 
-		smf_bus_sml 
-		smf_bus_serial 
-		smf_protocol_mbus 
-		${CYNG_LIBRARIES} 
-		${SMF_CRYPTO_LIBRARY}
-		${OPENSSL_LIBRARIES}
-		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${SQLite3_LIBRARY};${CMAKE_DL_LIBS};pthread>"
-		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
-	)
-endif()
-
 
 #
-# IP-T SEGW
+# IP-T SEGW (gateway)
 #
 include (nodes/ipt/segw/prg.cmake)
 add_executable(segw ${node_ipt_segw})
