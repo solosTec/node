@@ -10,6 +10,8 @@
 
 #include <array>
 #include <functional>	//	hash
+#include <iostream>
+#include <string>
 
 namespace node
 {

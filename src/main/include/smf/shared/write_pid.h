@@ -9,11 +9,11 @@
 #define NODE_WRITE_PID_H
 
 #include <boost/uuid/uuid.hpp>
-#include <boost/filesystem.hpp>
+#include <cyng/compatibility/file_system.hpp>
 
 namespace node 
 {
-	bool write_pid(boost::filesystem::path const& log_dir, boost::uuids::uuid tag);
+        bool write_pid(cyng::filesystem::path const& log_dir, boost::uuids::uuid tag);
 }
 
 #endif

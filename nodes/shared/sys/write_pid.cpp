@@ -12,7 +12,7 @@
 
 namespace node 
 {
-	bool write_pid(boost::filesystem::path const& log_dir, boost::uuids::uuid tag)
+	bool write_pid(cyng::filesystem::path const& log_dir, boost::uuids::uuid tag)
 	{
 		const auto pid = (log_dir / boost::uuids::to_string(tag)).replace_extension(".pid").string();
 		std::fstream fout(pid, std::ios::trunc | std::ios::out);
