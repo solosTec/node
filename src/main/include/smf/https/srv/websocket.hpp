@@ -107,6 +107,12 @@ namespace node
 				//
 				// Accept the websocket handshake
 				//
+				//
+				// async_accept_ex is deprecated since BOOST_BEAST_VERSION 296
+				//
+
+#if (BOOST_BEAST_VERSION < 296)
+
 				derived().ws().async_accept_ex(req, [&req, this, obj](boost::beast::websocket::response_type& res) {
 
 					//
@@ -143,6 +149,39 @@ namespace node
 						this,
 						obj));
 #endif
+#else
+				//
+				//	newest approach
+				//
+
+				//	check subprotocols
+				//
+				const auto pos = req.find(boost::beast::http::field::sec_websocket_protocol);
+				if (pos != req.end())
+				{
+					CYNG_LOG_TRACE(logger_, "ws subprotocol(s) available: " << pos->value());
+					//std::cout << "name :" << it->name() << std::endl;
+					//std::cout << "value:" << it->value() << std::endl;
+					derived().ws().set_option(
+						
+						boost::beast::websocket::stream_base::decorator(
+							[name = pos->name(), value = pos->value()]
+							 (boost::beast::websocket::response_type& res) {
+								res.set(name, value);
+							}
+						)
+					);
+				}
+
+				derived().ws().async_accept(
+					req,
+					boost::beast::bind_front_handler(
+						&websocket_session::on_accept,
+						this,
+						obj));
+
+#endif //	(BOOST_BEAST_VERSION < 296)
+
 			}
 
 			void on_accept(cyng::object obj, boost::system::error_code ec)

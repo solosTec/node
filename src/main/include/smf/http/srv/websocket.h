@@ -86,6 +86,12 @@ namespace node
 					boost::beast::websocket::stream_base::timeout::suggested(boost::beast::role_type::server));
 #endif
 				//
+				// async_accept_ex is deprecated since BOOST_BEAST_VERSION 296
+				//
+
+#if (BOOST_BEAST_VERSION < 296)
+
+				//
 				//	check subprotocols
 				//
 				const auto pos = req.find(boost::beast::http::field::sec_websocket_protocol);
@@ -139,6 +145,35 @@ namespace node
 						boost::beast::bind_front_handler(&websocket_session::on_accept, this));
 #endif
 				}
+#else 
+				//
+				//	This is the newest approach (BOOST_BEAST_VERSION >= 296)
+				//
+
+				//	check subprotocols
+				//
+				const auto pos = req.find(boost::beast::http::field::sec_websocket_protocol);
+				if (pos != req.end())
+				{
+					CYNG_LOG_TRACE(logger_, "ws subprotocol(s) available: " << pos->value());
+					//std::cout << "name :" << it->name() << std::endl;
+					//std::cout << "value:" << it->value() << std::endl;
+					ws_.set_option(
+						
+						boost::beast::websocket::stream_base::decorator(
+							[name = pos->name(), value = pos->value()]
+							 (boost::beast::websocket::response_type& res) {
+								res.set(name, value);
+							}
+						)
+					);
+				}
+
+				ws_.async_accept(
+					req,
+					boost::beast::bind_front_handler(&websocket_session::on_accept, this));
+
+#endif	//	(BOOST_BEAST_VERSION < 296)
 			}
 
 			void on_accept(boost::system::error_code ec);
