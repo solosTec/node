@@ -437,6 +437,8 @@ namespace node
 				, pos->second.get_sequence()
 				, pos->second.get_key_gw()
 				, pos->second.get_tag_origin()
+				//	substitute request with response name
+				//, sml::messages::name(sml::message_e::GET_PROFILE_LIST_RESPONSE)
 				, sml::messages::name(pos->second.get_msg_code())
 				, srv_str
 				, root.to_str()
@@ -582,7 +584,9 @@ namespace node
 				, pos->second.get_sequence()
 				, pos->second.get_key_gw()
 				, pos->second.get_tag_origin()
-				, sml::messages::name(pos->second.get_msg_code())
+				//	replace request with response name
+				, sml::messages::name(sml::message_e::GET_PROFILE_LIST_RESPONSE)
+				//, sml::messages::name(pos->second.get_msg_code())
 				, srv_str
 				, root.to_str()
 				, params));
