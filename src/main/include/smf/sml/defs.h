@@ -252,4 +252,25 @@ namespace node
 }	//	node
 
 
+//
+//  This is some kind of weird code and shouldn't be really be necessary.
+//  But there are compiler error (gcc 7.5) /home/sol/projects/node/lib/sml/protocol/src/reader.cpp
+//
+//
+
+
+#include <cyng/intrinsics/policy/hash.h>
+
+namespace std
+{
+	template<> 
+	struct hash<node::sml::message_e>
+	{
+		size_t operator()(node::sml::message_e e) const noexcept
+		{
+            return static_cast<std::uint16_t>(e);
+        }
+	};
+}
+
 #endif	//	NODE_SML_DEFS_H

@@ -6,6 +6,7 @@
  */
 
 #include <smf/sml/protocol/reader.h>
+#include <smf/sml/defs.h>
 #include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/obis_io.h>
@@ -15,9 +16,12 @@
 #include <cyng/vm/generator.h>
 #include <cyng/vm/manip.h>
 
+
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/core/ignore_unused.hpp>
 
+
+    
 namespace node
 {
 	namespace sml

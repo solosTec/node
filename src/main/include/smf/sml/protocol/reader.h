@@ -9,10 +9,11 @@
 #define NODE_SML_READER_H
 
 
-#include <smf/sml/defs.h>
+
 #include <smf/sml/intrinsics/obis.h>
 #include <smf/sml/units.h>
 #include <smf/sml/protocol/readout.h>
+
 #include <cyng/vm/context.h>
 #include <cyng/intrinsics/sets.h>
 #include <cyng/object.h>

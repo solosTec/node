@@ -1292,14 +1292,14 @@ namespace node
 		{
 			auto const pos = channel_db_.find(channel);
 			if (pos != channel_db_.end()) {
-				return std::pair{ pos->second, pos->second >= size };
+				return std::make_pair( pos->second, pos->second >= size );
 			}
 
 			//
 			//	channel not found
 			//	‭65535‬ is the max size for a data package
 			//
-			return std::pair{ 0xFFFF, size <= 0xFFFF };
+			return std::make_pair( 0xFFFF, size <= 0xFFFF );
 			//return std::pair{ 0xFF, false };
 		}
 

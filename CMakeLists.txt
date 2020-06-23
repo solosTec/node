@@ -27,7 +27,7 @@ cmake_minimum_required (VERSION 3.5)
 string(TIMESTAMP THIS_YEAR "%Y")
 # Patch level as year + day of the year
 string(TIMESTAMP PATCH_LEVEL "%j")	# day of the year
-math(EXPR PATCH_LEVEL "(${THIS_YEAR} * 1000) + ${PATCH_LEVEL}")
+math(EXPR PATCH_LEVEL "((${THIS_YEAR} - 2018) * 1000) + ${PATCH_LEVEL}")
 
 #
 # set project name/properties
@@ -84,6 +84,7 @@ message(STATUS "** System          : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "** Compiler        : ${CMAKE_CXX_COMPILER_ID} v${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "** Timestamp       : ${${PROJECT_NAME}_NOW_UTC}")
 message(STATUS "** CPU Cores       : ${${PROJECT_NAME}_CPU_COUNT}")
+message(STATUS "** Crosscompiling  : ${CMAKE_CROSSCOMPILING}")
 message(STATUS "** Pool Size       : ${${PROJECT_NAME}_POOL_SIZE}")
 message(STATUS "** Patchlevel      : ${PROJECT_VERSION_PATCH}")
 if(UNIX)
@@ -662,6 +663,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 		${CYNG_LIBRARIES} 
 		${OPENSSL_LIBRARIES}
 		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};pthread>"
+        $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 	)
 
@@ -686,6 +688,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 		${CYNG_LIBRARIES} 
 		${OPENSSL_LIBRARIES}
 		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};pthread>"
+        $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 	)
 endif()
@@ -708,6 +711,7 @@ target_link_libraries(e350
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};pthread>"
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -729,6 +733,8 @@ target_link_libraries(collector
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};pthread>"
+	$<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -750,6 +756,7 @@ target_link_libraries(emitter
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};pthread>"
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -780,6 +787,7 @@ target_link_libraries(segw
 	${SMF_CRYPTO_LIBRARY}
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${SQLite3_LIBRARY};${CMAKE_DL_LIBS};pthread>"
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -802,6 +810,7 @@ target_link_libraries(ipt
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 
 #
@@ -822,6 +831,7 @@ target_link_libraries(ipts
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 
 #
@@ -845,6 +855,7 @@ target_link_libraries(store
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 	
@@ -867,6 +878,7 @@ if(${PROJECT_NAME}_BUILD_TEST)
 		smf_protocol_sml
 		${CYNG_LIBRARIES} 
 		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
+        $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 	)
 endif()
@@ -895,6 +907,7 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 		${SMF_CRYPTO_LIBRARY}
 		${CYNG_LIBRARIES} 
 		"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
+        $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 	)
 endif()
 
@@ -914,6 +927,7 @@ target_link_libraries(master
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 
 #
@@ -935,6 +949,7 @@ target_link_libraries(modem
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 
 #
@@ -981,6 +996,7 @@ target_link_libraries(iec_62056
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 
 #
@@ -1002,6 +1018,7 @@ target_link_libraries(setup
 	${OPENSSL_LIBRARIES}
 	${SMF_CRYPTO_LIBRARY}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};${SQLite3_LIBRARY};pthread>"
+	$<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -1023,6 +1040,7 @@ target_link_libraries(csv
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};${SQLite3_LIBRARY};pthread>"
+	$<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
@@ -1043,6 +1061,7 @@ target_link_libraries(tsdb
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 
 #
@@ -1062,6 +1081,7 @@ target_link_libraries(stat
 	${OPENSSL_LIBRARIES}
 	${CYNG_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
+    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 
 #
@@ -1102,6 +1122,7 @@ if(${PROJECT_NAME}_BUILD_TEST AND ${PROJECT_NAME}_SSL_SUPPORT)
 		${OPENSSL_LIBRARIES}
 		"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_UNIT_TEST_FRAMEWORK_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
 		"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
+        $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 	)
 endif()
 
@@ -1127,6 +1148,7 @@ if(NOT ${PROJECT_NAME}_CROSS_COMPILE)
 		${CYNG_LIBRARIES} 
 		${OPENSSL_LIBRARIES}
 		"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;readline>"
+        $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 	)
 endif()
 

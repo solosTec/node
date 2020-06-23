@@ -54,7 +54,8 @@ namespace node
 			 * and the following body as tuple.
 			 */
 			std::pair<message_e, cyng::tuple_t> read_choice(cyng::object obj);
-			std::pair<message_e, cyng::tuple_t> read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
+			std::pair<message_e, cyng::tuple_t> 
+			read_msg(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
 			bool read_public_open_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 			bool read_public_open_response(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
