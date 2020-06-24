@@ -23,7 +23,8 @@
 #include <cyng/sql/dsl/assign.hpp>
 #include <cyng/sql/dsl/aggregate.h>
 #include <cyng/table/meta.hpp>
-#include <cyng/crypto/hash/sha1.h>
+#include <crypto/hash/sha1.h>
+
 
 #include <boost/uuid/random_generator.hpp>
 #include <boost/core/ignore_unused.hpp>
@@ -562,7 +563,6 @@ namespace node
 					//BOOST_ASSERT(r.first == 9);	//	3 parameters to bind
 					BOOST_ASSERT(r.second);
 
-					//cyng::crypto::digest_sha1::value_type sha1_hash(std::string const&);
 					auto digest = cyng::sha1_hash("secret");
 
 					//	bind parameters

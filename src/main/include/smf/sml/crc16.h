@@ -8,11 +8,12 @@
 #ifndef NODE_SML_CRC16_H
 #define NODE_SML_CRC16_H
 
-#pragma pack(push,1)
 
 #include <cstdint>
 #include <cstddef>	//	std::size_t on windows
 #include <smf/sml/defs.h>
+
+#pragma pack(push,1)
 
 namespace node
 {

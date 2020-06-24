@@ -16,7 +16,7 @@
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/protocol/parser.h>
 
-#include <cyng/crypto/aes_keys.h>
+#include <crypto/aes.h>
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/controller.h>

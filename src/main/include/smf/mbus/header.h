@@ -13,7 +13,7 @@
 
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/object.h>
-#include <cyng/crypto/aes.h>
+#include <crypto/aes.h>
 
 #include <array>
 
