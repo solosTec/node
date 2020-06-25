@@ -267,6 +267,8 @@ namespace node
         case sml::CODE_ROOT_DATA_COLLECTOR:
         case sml::CODE_ROOT_NTP:
         case sml::CODE_ROOT_DEVICE_IDENT:
+        case sml::CODE_ROOT_W_MBUS_STATUS:
+        case sml::CODE_IF_wMBUS:
             return true;
         default:
             break;

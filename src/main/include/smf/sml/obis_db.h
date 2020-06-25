@@ -347,7 +347,7 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 03, 00, 00, 01, 00, INTERFACE_03_NAME);	//	[string] interface name
 		OBIS_CODE_DEFINITION(81, 04, 00, 00, 01, 00, INTERFACE_04_NAME);	//	[string] interface name
 
-																					//
+		//
 		//	wMBus - 81 06 0F 06 00 FF
 		//	7.3.1.23 Datenstruktur zum Lesen des W-MBUS-Status 
 		//
@@ -365,13 +365,15 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 06, 19, 07, 01, FF, W_MBUS_PROTOCOL);	
 		OBIS_CODE_DEFINITION(81, 06, 19, 07, 02, FF, W_MBUS_MODE_S);	//	u8
 		OBIS_CODE_DEFINITION(81, 06, 19, 07, 03, FF, W_MBUS_MODE_T);	//	u8
-		//OBIS_CODE_DEFINITION(81, 06, 19, 07, 04, FF, W_MBUS_MODE_C);	//	alternating
-		//OBIS_CODE_DEFINITION(81, 06, 19, 07, 05, FF, W_MBUS_MODE_N);	//	parallel
-		//OBIS_CODE_DEFINITION(81, 06, 19, 07, 06, FF, W_MBUS_MODE_S_SYN);	//	Used for synchronized messages in meters
 
 		OBIS_CODE_DEFINITION(81, 06, 27, 32, 03, 01, W_MBUS_REBOOT);	//	u32 (seconds)
-		OBIS_CODE_DEFINITION(81, 06, 19, 07, 04, FF, W_MBUS_POWER);		//	note: same code as W_MBUS_MODE_C
+		OBIS_CODE_DEFINITION(81, 06, 19, 07, 04, FF, W_MBUS_POWER);		//	0 = default, 1 = low, 2 = medium, 3 = high
 		OBIS_CODE_DEFINITION(81, 06, 19, 07, 11, FF, W_MBUS_INSTALL_MODE);
+		OBIS_CODE_DEFINITION(81, 06, 64, 3C, 01, 01, W_MBUS_MAX_MSG_TIMEOUT);	//	u8 (seconds)
+		//	u16 (seconds) max timeout between SML close request and SML open response from device to gateway
+		OBIS_CODE_DEFINITION(81, 06, 64, 3C, 01, 04, W_MBUS_MAX_SML_TIMEOUT_IN);	
+		//	u16 (seconds) max timeout between SML close request and SML open response from gateway to device
+		OBIS_CODE_DEFINITION(81, 06, 64, 3C, 01, 05, W_MBUS_MAX_SML_TIMEOUT_OUT);
 
 		//	Spannung - voltage
 		//	Strom - current

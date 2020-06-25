@@ -295,13 +295,16 @@ namespace node
 			{ OBIS_W_MBUS_FIELD_STRENGTH, {"W_MBUS_FIELD_STRENGTH", cyng::TC_NULL } },
 			{ OBIS_W_MBUS_LAST_RECEPTION, {"W_MBUS_LAST_RECEPTION", cyng::TC_NULL } },
 
-			{ OBIS_W_MBUS_PROTOCOL, {"W_MBUS_PROTOCOL", cyng::TC_NULL } },
-			{ OBIS_W_MBUS_MODE_S, {"W_MBUS_MODE_S", cyng::TC_UINT8 } },
-			{ OBIS_W_MBUS_MODE_T, {"W_MBUS_MODE_T", cyng::TC_UINT8 } },
+			{ OBIS_W_MBUS_PROTOCOL, {"W_MBUS_PROTOCOL", cyng::TC_UINT8 } },
+			{ OBIS_W_MBUS_MODE_S, {"W_MBUS_MODE_S", cyng::TC_UINT8 } },	//	seconds
+			{ OBIS_W_MBUS_MODE_T, {"W_MBUS_MODE_T", cyng::TC_UINT8 } },	//	seconds
 
-			{ OBIS_W_MBUS_REBOOT, {"W_MBUS_REBOOT", cyng::TC_UINT32 } },	//	seconds
-			{ OBIS_W_MBUS_POWER, {"W_MBUS_POWER", cyng::TC_NULL } },
+			{ OBIS_W_MBUS_REBOOT, {"W_MBUS_REBOOT", cyng::TC_UINT32 } },	//	seconds (0 == no reboot)
+			{ OBIS_W_MBUS_POWER, {"W_MBUS_POWER", cyng::TC_UINT8 } },	
 			{ OBIS_W_MBUS_INSTALL_MODE, {"W_MBUS_INSTALL_MODE", cyng::TC_NULL } },
+			{ OBIS_W_MBUS_MAX_MSG_TIMEOUT, {"W_MBUS_MAX_MSG_TIMEOUT", cyng::TC_UINT8 } },
+			{ OBIS_W_MBUS_MAX_SML_TIMEOUT_IN, {"W_MBUS_MAX_SML_TIMEOUT_IN", cyng::TC_UINT16 } },
+			{ OBIS_W_MBUS_MAX_SML_TIMEOUT_IN, {"W_MBUS_MAX_SML_TIMEOUT_IN", cyng::TC_UINT16 } },
 
 			//	current
 			{ OBIS_REG_POS_AE_NO_TARIFF, {"REG_POS_AE_NO_TARIFF", cyng::TC_NULL } },
