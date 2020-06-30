@@ -105,6 +105,12 @@ namespace node
 			cyng::vector_t,			//	[7] vector of root paths
 			cyng::param_map_t);		//	[8] params
 
+		void update_meter_tbl(cyng::param_map_t& data
+			, std::string const& ident
+			, std::uint32_t type
+			, boost::uuids::uuid gw_tag
+			, boost::uuids::uuid source
+			, bool active);
 
 	private:
 		cyng::async::mux& mux_;

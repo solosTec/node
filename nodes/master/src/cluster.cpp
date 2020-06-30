@@ -299,14 +299,14 @@ namespace node
 		//
 		//	Additionally:
 		//	* meters from gateways are unique by meter number ("meter") AND gateway (gw)
+		//	* only active meters will be added
 		//
 		auto const gw_tag = cyng::value_cast(gw_key.at(0), boost::uuids::nil_uuid());
 
 		//
-		//	Use the incoming active meter devices to populate TMeter table
+		//	Use the incoming **active** meter devices to populate TMeter table
 		//
 		for (auto pos = meters.begin(); pos != meters.end(); ) {
-		//for (auto & meter : meters) {
 
 			auto data_ptr = const_cast<cyng::param_map_t*>(cyng::object_cast<cyng::param_map_t>(pos->second));
 			BOOST_ASSERT(data_ptr != nullptr);
@@ -314,119 +314,47 @@ namespace node
 
 			CYNG_LOG_INFO(logger_, "meter configuration - " << cyng::io::to_str(*data_ptr));
 
+			auto const active = boost::algorithm::equals(code, "81811106FFFF");
 			const auto ident = cyng::find_value(*data_ptr, "8181C78204FF", std::string{});
 			const auto type = cyng::find_value<std::uint32_t>(*data_ptr, "type", 0u);
 
-			if (type < 4)	//	 meter type is SRV_MBUS_WIRED, SRV_MBUS_RADIO, SRV_W_MBUS or SRV_SERIAL
-			{
+			switch (type) {
+			case 0:	//	SRV_MBUS_WIRED
+			case 1:	//	SRV_MBUS_RADIO
+			case 2:	//	SRV_W_MBUS
+			case 3:	//	SRV_SERIAL
+			//case 12:	//	SRV_OTHER
+
 				CYNG_LOG_TRACE(logger_, "lookup TMeter for "
 					<< ident
 					<< " with "
 					<< cache_.db_.size("TMeter")
 					<< " record(s)");
 
-				cache_.db_.access([&](cyng::store::table* tbl_meter, cyng::store::table const* tbl_cfg) -> void {
-
-					//
-					//	search for meter on this gateway
-					//
-					auto const rec = lookup_meter(tbl_meter, ident, gw_tag);
-
-					//
-					//	insert meter if not found
-					//
-					if (rec.empty()) {
-
-						//
-						//	no entry in TMeter table - create one
-						//
-						const auto tag = uidgen_();
-
-						const auto meter = cyng::find_value<std::string>(*data_ptr, "serial", "");
-						const auto maker = cyng::find_value<std::string>(*data_ptr, "maker", "");
-						const auto class_name = cyng::find_value<cyng::buffer_t>(*data_ptr, "8181C78202FF", cyng::buffer_t{});
-						const auto age = cyng::find_value(*data_ptr, "010000090B00", std::chrono::system_clock::now());
-
-						//
-						//	generate meter code
-						//
-						std::stringstream ss;
-						ss
-							<< cyng::value_cast<std::string>(get_config(tbl_cfg, "country-code"), "AU")
-							<< std::setfill('0')
-							<< std::setw(5)
-							<< 0	//	1 .. 5
-							<< +tag.data[15]	//	6
-							<< +tag.data[14]	//	7
-							<< +tag.data[13]	//	8
-							<< +tag.data[12]	//	9
-							<< +tag.data[11]	//	10
-							<< +tag.data[10]	//	11
-							<< std::setw(20)
-							<< meter
-							;
-						const auto mc = ss.str();
-
-						auto const key = cyng::table::key_generator(tag);
-
-						if (cache_.is_catch_meters()) {
-
-							CYNG_LOG_INFO(logger_, "auto insert TMeter " << tag << " : " << meter << " mc: " << mc);
-
-							//
-							//	catch meters automatically
-							//
-							tbl_meter->insert(key
-								, cyng::table::data_generator(ident, meter, mc, maker, age, "", "", "", "", class_name, gw_tag)
-								, 0
-								, source);
-						}
-
-						CYNG_LOG_TRACE(logger_, "bus.res.proxy.gateway - meter pk " << tag);
-						data_ptr->emplace("pk", cyng::make_object(key));
-						data_ptr->emplace("mc", cyng::make_object(mc));	//	metering code
-
-					}
-					else {
-
-						auto const code = cyng::value_cast<std::string>(rec["code"], "");
-						CYNG_LOG_TRACE(logger_, "bus.res.proxy.gateway - found pk " 
-							<< cyng::io::to_str(rec.key())
-							<< " for meter "
-							<< ident
-							<< ", mc: "
-							<< code);
-						data_ptr->emplace("pk", cyng::make_object(rec.key()));
-						if (code.empty()) {
-							data_ptr->emplace("mc", cyng::make_object("MC00000000000000000000000000"));	//	metering code
-						}
-						else {
-							data_ptr->emplace("mc", rec["code"]);	//	metering code
-						}
-					}
-
-				}	, cyng::store::write_access("TMeter")
-					, cyng::store::read_access("_Config"));
+				update_meter_tbl(*data_ptr, ident, type, gw_tag, source, active);
 
 				//
 				//	next device
 				//
 				++pos;
-			}
-			else {
 
+				break;
+			default:
 				//
 				//	dont't forward unknown device types
 				//
-				CYNG_LOG_WARNING(logger_, "bus.res.proxy.gateway - skip meter " 
+				CYNG_LOG_WARNING(logger_, "bus.res.proxy.gateway - skip meter "
 					<< ident
 					<< " of type "
 					<< type);
 
+				//
+				//	next device
+				//
 				pos = meters.erase(pos);
+				break;
 			}
 		}	//	for(...
-
 
 		routing_back(pk
 			, source
@@ -437,6 +365,98 @@ namespace node
 			, server_id
 			, code
 			, meters);
+
+	}
+
+	void cluster::update_meter_tbl(cyng::param_map_t& data
+		, std::string const& ident
+		, std::uint32_t type
+		, boost::uuids::uuid gw_tag
+		, boost::uuids::uuid source
+		, bool active)
+	{
+		cache_.db_.access([&](cyng::store::table* tbl_meter, cyng::store::table const* tbl_cfg) -> void {
+
+			//
+			//	search for meter on this gateway
+			//
+			auto const rec = lookup_meter(tbl_meter, ident, gw_tag);
+
+			//
+			//	insert meter if not found
+			//
+			if (rec.empty()) {
+
+				//
+				//	no entry in TMeter table - create one
+				//
+				const auto tag = uidgen_();
+
+				const auto meter = cyng::find_value<std::string>(data, "serial", "");
+				const auto maker = cyng::find_value<std::string>(data, "maker", "");
+				const auto class_name = cyng::find_value<cyng::buffer_t>(data, "8181C78202FF", cyng::buffer_t{});
+				const auto age = cyng::find_value(data, "010000090B00", std::chrono::system_clock::now());
+
+				//
+				//	generate meter code
+				//
+				std::stringstream ss;
+				ss
+					<< cyng::value_cast<std::string>(get_config(tbl_cfg, "country-code"), "AU")
+					<< std::setfill('0')
+					<< std::setw(5)
+					<< 0	//	1 .. 5
+					<< +tag.data[15]	//	6
+					<< +tag.data[14]	//	7
+					<< +tag.data[13]	//	8
+					<< +tag.data[12]	//	9
+					<< +tag.data[11]	//	10
+					<< +tag.data[10]	//	11
+					<< std::setw(20)
+					<< meter
+					;
+				const auto mc = ss.str();
+
+				auto const key = cyng::table::key_generator(tag);
+
+				if (cache_.is_catch_meters() && active) {
+
+					CYNG_LOG_INFO(logger_, "auto insert TMeter " << tag << " : " << meter << " mc: " << mc);
+
+					//
+					//	catch meters automatically
+					//
+					tbl_meter->insert(key
+						, cyng::table::data_generator(ident, meter, mc, maker, age, "", "", "", "", class_name, gw_tag)
+						, 0
+						, source);
+				}
+
+				CYNG_LOG_TRACE(logger_, "bus.res.proxy.gateway - meter pk " << tag);
+				data.emplace("pk", cyng::make_object(key));
+				data.emplace("mc", cyng::make_object(mc));	//	metering code
+
+			}
+			else {
+
+				auto const code = cyng::value_cast<std::string>(rec["code"], "");
+				CYNG_LOG_TRACE(logger_, "bus.res.proxy.gateway - found pk "
+					<< cyng::io::to_str(rec.key())
+					<< " for meter "
+					<< ident
+					<< ", mc: "
+					<< code);
+				data.emplace("pk", cyng::make_object(rec.key()));
+				if (code.empty()) {
+					data.emplace("mc", cyng::make_object("MC00000000000000000000000000"));	//	metering code
+				}
+				else {
+					data.emplace("mc", rec["code"]);	//	metering code
+				}
+			}
+
+		}	, cyng::store::write_access("TMeter")
+			, cyng::store::read_access("_Config"));
 
 	}
 

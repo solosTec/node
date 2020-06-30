@@ -220,10 +220,10 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, 00, 02, 02, FF, BLOCK_NUMBER);
 		OBIS_CODE_DEFINITION(81, 81, 00, 02, 03, FF, BINARY_DATA);
 
-		OBIS_CODE_DEFINITION(81, 81, 01, 16, FF, FF, ROOT_NEW_DEVICES);	//	new active devices
-		OBIS_CODE_DEFINITION(81, 81, 10, 26, FF, FF, ROOT_INVISIBLE_DEVICES);	//	not longer visible devices
 		OBIS_CODE_DEFINITION(81, 81, 10, 06, FF, FF, ROOT_VISIBLE_DEVICES);	//	visible devices (Liste der sichtbaren Sensoren)
 		OBIS_CODE_DEFINITION(81, 81, 10, 06, 01, FF, CODE_LIST_1_VISIBLE_DEVICES);	//	1. Liste der sichtbaren Sensoren
+		OBIS_CODE_DEFINITION(81, 81, 10, 16, FF, FF, ROOT_NEW_DEVICES);	//	new active devices
+		OBIS_CODE_DEFINITION(81, 81, 10, 26, FF, FF, ROOT_INVISIBLE_DEVICES);	//	not longer visible devices
 		OBIS_CODE_DEFINITION(81, 81, 11, 06, FF, FF, ROOT_ACTIVE_DEVICES);	//	active devices (Liste der aktiven Sensoren)
 		OBIS_CODE_DEFINITION(81, 81, 11, 06, 01, FF, CODE_LIST_1_ACTIVE_DEVICES);	//	1. Liste der aktiven Sensoren)
 		OBIS_CODE_DEFINITION(81, 81, 11, 06, FB, FF, ACTIVATE_DEVICE);	//	activate meter/sensor

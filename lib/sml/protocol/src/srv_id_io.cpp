@@ -49,14 +49,10 @@ namespace node
 
 		bool is_serial(cyng::buffer_t const& buffer)
 		{
-			if (buffer.size() == 8)
-			{
-				return std::all_of(buffer.begin(), buffer.end(), [](char c) {
-					return ((c >= '0') && (c <= '9'))
-						|| ((c >= 'A') && (c <= 'Z'));
-				});
-			}
-			return false;
+			return std::all_of(buffer.begin(), buffer.end(), [](char c) {
+				return ((c >= '0') && (c <= '9'))
+					|| ((c >= 'A') && (c <= 'Z'));
+			});
 		}
 
 		bool is_gateway(cyng::buffer_t const& buffer)
@@ -89,13 +85,13 @@ namespace node
 			if (is_w_mbus(buffer))	return SRV_W_MBUS;
 			else if (is_mbus_wired(buffer))	return SRV_MBUS_WIRED;
 			else if (is_mbus_radio(buffer))	return SRV_MBUS_RADIO;
-			else if (is_serial(buffer))	return SRV_SERIAL;
 			else if (is_gateway(buffer))	return SRV_GW;
 			else if (buffer.size() == 10 && buffer.at(1) == '3')	return SRV_BCD;
 			else if (buffer.size() == 8 && buffer.at(2) == '4')	return SRV_EON;
 			else if (is_dke_1(buffer))	return SRV_DKE_1;
 			else if (is_dke_2(buffer))	return SRV_DKE_2;
 			else if (is_switch(buffer))	return SRV_SWITCH;
+			else if (is_serial(buffer))	return SRV_SERIAL;
 
 			return SRV_OTHER;
 		}

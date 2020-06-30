@@ -150,6 +150,32 @@ namespace node
 				return node::sml::message_e::UNKNOWN;
 			}
 
+			/**
+			 * @return the response code of the sprecified request
+			 */
+			inline message_e get_response(message_e code) noexcept
+			{
+				switch (code)
+				{
+				case message_e::OPEN_REQUEST:	return message_e::OPEN_RESPONSE;
+				case message_e::CLOSE_REQUEST:	return message_e::CLOSE_RESPONSE;
+				case message_e::GET_PROFILE_PACK_REQUEST:	return  message_e::GET_PROFILE_PACK_RESPONSE;
+				case message_e::GET_PROFILE_LIST_REQUEST:	return message_e::GET_PROFILE_LIST_RESPONSE;
+				case message_e::GET_PROC_PARAMETER_REQUEST:	return message_e::GET_PROC_PARAMETER_RESPONSE;
+				case message_e::SET_PROC_PARAMETER_REQUEST:	return message_e::SET_PROC_PARAMETER_RESPONSE;
+				case message_e::GET_LIST_REQUEST:	return message_e::GET_LIST_RESPONSE;
+
+				case message_e::GET_COSEM_REQUEST:	return message_e::GET_COSEM_RESPONSE;
+				case message_e::SET_COSEM_REQUEST:	return message_e::SET_COSEM_RESPONSE;
+				case message_e::ACTION_COSEM_REQUEST: return message_e::ACTION_COSEM_RESPONSE;
+
+				case message_e::ATTENTION_RESPONSE:	return code;
+				default:
+					break;
+				}
+
+				return message_e::UNKNOWN;
+			}
 		}
 
 		enum sml_token_enum

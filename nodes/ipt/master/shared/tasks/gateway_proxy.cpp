@@ -224,6 +224,11 @@ namespace node
 		auto const pos = output_map_.find(trx);
 		if (pos != output_map_.end()) {
 
+			//
+			//	get root path
+			//
+			sml::obis const root(path.front());
+
 			CYNG_LOG_DEBUG(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
@@ -231,12 +236,9 @@ namespace node
 				<< "> GetProcParam.Res "
 				<< trx
 				<< " - "
+				<< sml::get_name(root)
+				<< " - "
 				<< cyng::io::to_str(pos->second.get_params()));
-
-			//
-			//	get root path
-			//
-			sml::obis const root(path.front());
 
 			//
 			//	get server ID as string
@@ -438,8 +440,7 @@ namespace node
 				, pos->second.get_key_gw()
 				, pos->second.get_tag_origin()
 				//	substitute request with response name
-				//, sml::messages::name(sml::message_e::GET_PROFILE_LIST_RESPONSE)
-				, sml::messages::name(pos->second.get_msg_code())
+				, sml::messages::name(sml::messages::get_response(pos->second.get_msg_code()))
 				, srv_str
 				, root.to_str()
 				, params));
@@ -585,8 +586,7 @@ namespace node
 				, pos->second.get_key_gw()
 				, pos->second.get_tag_origin()
 				//	replace request with response name
-				, sml::messages::name(sml::message_e::GET_PROFILE_LIST_RESPONSE)
-				//, sml::messages::name(pos->second.get_msg_code())
+				, sml::messages::name(sml::messages::get_response(pos->second.get_msg_code()))
 				, srv_str
 				, root.to_str()
 				, params));
@@ -682,7 +682,9 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> new input queue entry - size: "
+				<< "> new input queue entry "
+				<< sml::get_name(root)
+				<< " - size: "
 				<< input_queue_.size());
 
 			BOOST_ASSERT(!input_queue_.empty());
