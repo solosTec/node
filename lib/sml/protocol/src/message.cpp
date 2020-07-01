@@ -511,7 +511,6 @@ namespace node
 			//	* parameter tree (OBIS)
 			//	* attribute (not set = 01)
 			//
-			cyng::tuple_t tpl;
 			return cyng::tuple_factory(server_id
 				, username
 				, password

@@ -652,16 +652,9 @@ namespace node
 		else {
 
 			//
-			//	add to active cache sections id global caching flag is set
+			//	make some adjustments
 			//
-			if (cache_enabled) {
-				config_cache_.add(srv_id, sml::obis_path_t({ root }));
-			}
-
-			//
-			//	get data from gateway
-			//
-			input_queue_.emplace(finalize(proxy_data(tag
+			auto pd = finalize(proxy_data(tag
 				, source
 				, seq
 				, origin
@@ -672,20 +665,35 @@ namespace node
 				, srv_id
 				, name
 				, pwd
-				, false)));	//	no job
+				, false));	//	no job
+
 
 			//
-			//	preprocessing
+			//	add to active cache sections id global caching flag is set
 			//
+			if (cache_enabled) {
+				config_cache_.add(srv_id, pd.get_path());
+			}
 
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
 				<< "> new input queue entry "
+				<< sml::to_hex(pd.get_path(), ':')
 				<< sml::get_name(root)
 				<< " - size: "
 				<< input_queue_.size());
+
+			//
+			//	get data from gateway
+			//
+			input_queue_.emplace(std::move(pd));
+
+			//
+			//	preprocessing
+			//
+
 
 			BOOST_ASSERT(!input_queue_.empty());
 

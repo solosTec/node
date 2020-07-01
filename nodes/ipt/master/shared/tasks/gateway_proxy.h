@@ -197,7 +197,7 @@ namespace node
 		 * @brief slot [7]
 		 *
 		 * Add new entry in work queue. 
-		 * These requests are routed via the master node and originate, 
+		 * These requests (GetProcParameterRequest) are routed via the master node and originate, 
 		 * for example, from the dash GUI.
 		 */
 		cyng::continuation process(boost::uuids::uuid tag,		//	[0] ident tag (target)
