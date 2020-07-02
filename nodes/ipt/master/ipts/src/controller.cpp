@@ -9,12 +9,16 @@
 #include "tasks/cluster.h"
 #include <NODE_project_info.h>
 #include <smf/ipt/scramble_key_io.hpp>
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/factory/set_factory.h>
 #include <cyng/io/serializer.h>
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/rnd.h>
+#include <cyng/vector_cast.hpp>
+#include <cyng/set_cast.h>
+
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/random.hpp>
 
@@ -26,8 +30,8 @@ namespace node
 	std::pair<std::size_t, bool> join_cluster(cyng::async::mux&
 		, cyng::logging::log_ptr
 		, boost::uuids::uuid cluster_tag
-		, cyng::vector_t const&
-		, cyng::tuple_t const&
+		, cyng::vector_t&&
+		, cyng::tuple_t&&
 		, bool sml_log);
 
 	controller::controller(unsigned int index
@@ -66,7 +70,16 @@ namespace node
 					cyng::param_factory("certificate-chain", "demo.cert"),
 					cyng::param_factory("private-key", "priv.key"),
 					cyng::param_factory("dh", "demo.dh")	//	diffie-hellman
-				))
+				)),
+				cyng::param_factory("blacklist", cyng::vector_factory({
+					cyng::make_address("185.244.25.187"),	//	KV Solutions B.V. scans for "login.cgi"
+					cyng::make_address("139.219.100.104"),	//	ISP Microsoft (China) Co. Ltd. - 2018-07-31T21:14
+					cyng::make_address("194.147.32.109"),	//	Udovikhin Evgenii - 2019-02-01 15:23:08.13699453
+					cyng::make_address("185.209.0.12"),		//	2019-03-27 11:23:39
+					cyng::make_address("42.236.101.234"),	//	hn.kd.ny.adsl (china)
+					cyng::make_address("185.104.184.126"),	//	M247 Ltd
+					cyng::make_address("185.162.235.56")	//	SILEX malware
+				}))	//	blacklist
 			))
 			, cyng::param_factory("sml-log", false)		//	log SML parser
 			, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
@@ -99,13 +112,11 @@ namespace node
 		//
 		//	connect to cluster
 		//
-		cyng::vector_t tmp_vec;
-		cyng::tuple_t tmp_tpl;
 		std::pair<std::size_t, bool> const r = join_cluster(mux
 			, logger
 			, tag
-			, cyng::value_cast(cfg.get("cluster"), tmp_vec)
-			, cyng::value_cast(cfg.get("server"), tmp_tpl)
+			, cyng::to_vector(cfg.get("cluster"))
+			, cyng::to_tuple(cfg.get("server"))
 			, log_sml);
 
 		bool shutdown{ true };
@@ -134,8 +145,8 @@ namespace node
 	std::pair<std::size_t, bool> join_cluster(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid cluster_tag
-		, cyng::vector_t const& cfg_cls
-		, cyng::tuple_t const& cfg_srv
+		, cyng::vector_t&& cfg_cls
+		, cyng::tuple_t&& cfg_srv
 		, bool sml_log)
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cls.size());
@@ -150,6 +161,22 @@ namespace node
 		ss << cyng::value_cast<std::string>(dom.get("sk"), "0102030405060708090001020304050607080900010203040506070809000001");
 		ss >> sk;
 
+		//
+		//	get blacklisted addresses
+		//
+		const auto blacklist_str = cyng::vector_cast<std::string>(dom.get("blacklist"), "");
+		CYNG_LOG_INFO(logger, blacklist_str.size() << " addresses are blacklisted");
+		std::set<boost::asio::ip::address>	blacklist;
+		for (auto const& a : blacklist_str) {
+			auto r = blacklist.insert(boost::asio::ip::make_address(a));
+			if (r.second) {
+				CYNG_LOG_TRACE(logger, *r.first);
+			}
+			else {
+				CYNG_LOG_WARNING(logger, "cannot insert " << a);
+			}
+		}
+
 		return cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
@@ -160,6 +187,7 @@ namespace node
 			, sk
 			, cyng::value_cast<int>(dom.get("watchdog"), 30)
 			, cyng::value_cast<int>(dom.get("timeout"), 12)
+			, blacklist
 			, sml_log);
 
 	}

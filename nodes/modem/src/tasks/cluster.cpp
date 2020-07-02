@@ -21,14 +21,15 @@ namespace node
 		, std::string const& service
 		, int timeout
 		, bool auto_answer
-		, std::chrono::milliseconds guard_time)
+		, std::chrono::milliseconds guard_time
+		, std::set<boost::asio::ip::address> const& blacklist)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
 		, logger_(logger)
 		, config_(cfg_cluster)
 		, address_(address)
 		, service_(service)
-		, server_(btp->mux_, logger_, bus_, std::chrono::seconds(timeout), auto_answer, guard_time)
+		, server_(btp->mux_, logger_, bus_, std::chrono::seconds(timeout), blacklist, auto_answer, guard_time)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

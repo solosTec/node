@@ -173,6 +173,8 @@ else()
 
 endif()
 
+source_group("taskss" FILES ${node_ipts_master_tasks})
+
 # define the main program
 set (node_ipts_master
   ${node_ipts_master_cpp}

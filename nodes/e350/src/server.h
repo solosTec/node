@@ -21,6 +21,7 @@ namespace node
 				, cyng::logging::log_ptr logger
 				, bus::shared_type
 				, std::chrono::seconds timeout
+				, std::set<boost::asio::ip::address> const& blacklist
 				, std::string pwd_policy
 				, std::string const& global_pwd);
 

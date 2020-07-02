@@ -9,7 +9,7 @@
 #define NODE_SML_IP_IO_H
 
  /** @file ip_io.h
-  * Conversion of IP adresses and names
+  * Conversion of IP addresses and names
   */
 
 #include <cyng/object.h>

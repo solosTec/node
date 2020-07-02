@@ -20,11 +20,13 @@ namespace node
 	server_stub::server_stub(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, bus::shared_type bus
-		, std::chrono::seconds timeout)
+		, std::chrono::seconds timeout
+		, std::set<boost::asio::ip::address> const& blacklist)
 	: mux_(mux)
 		, logger_(logger)
 		, bus_(bus)
 		, timeout_(timeout)
+		, blacklist_(blacklist)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
         , socket_(mux_.get_io_service())
@@ -149,10 +151,21 @@ namespace node
 
 			if (!ec)	{
 
-				//
-				//	create a new session and insert into client_map_
-				//
-				create_client(std::move(socket));
+				auto pos = blacklist_.find(socket.remote_endpoint().address());
+				if (pos != blacklist_.end()) {
+
+					CYNG_LOG_WARNING(logger_, "address "
+						<< socket.remote_endpoint()
+						<< " is blacklisted");
+					socket.close();
+				}
+				else {
+
+					//
+					//	create a new session and insert into client_map_
+					//
+					create_client(std::move(socket));
+				}
 
 				//
 				//

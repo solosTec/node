@@ -16,9 +16,10 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
 			, std::chrono::seconds timeout
+			, std::set<boost::asio::ip::address> const& blacklist
 			, std::string pwd_policy
 			, std::string const& global_pwd)
-		: server_stub(mux, logger, bus, timeout)
+		: server_stub(mux, logger, bus, timeout, blacklist)
 			, pwd_policy_(pwd_policy)
 			, global_pwd_(global_pwd)
 		{}

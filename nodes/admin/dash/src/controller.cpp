@@ -95,7 +95,7 @@ namespace node
 #else
 						cyng::param_factory("auth-support", false),
 #endif
-						cyng::param_factory("blacklist", cyng::vector_factory({
+					cyng::param_factory("blacklist", cyng::vector_factory({
 						//	https://bl.isx.fr/raw
 						cyng::make_address("185.244.25.187"),	//	KV Solutions B.V. scans for "login.cgi"
 						cyng::make_address("139.219.100.104"),	//	ISP Microsoft (China) Co. Ltd. - 2018-07-31T21:14
@@ -224,7 +224,7 @@ namespace node
 		//	get blacklisted addresses
 		//
 		const auto blacklist_str = cyng::vector_cast<std::string>(dom.get("blacklist"), "");
-		CYNG_LOG_INFO(logger, blacklist_str.size() << " adresses are blacklisted");
+		CYNG_LOG_INFO(logger, blacklist_str.size() << " addresses are blacklisted");
 		std::set<boost::asio::ip::address>	blacklist;
 		for (auto const& a : blacklist_str) {
 			auto r = blacklist.insert(boost::asio::ip::make_address(a));

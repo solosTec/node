@@ -183,7 +183,7 @@ namespace node
 			else
 			{
 				//
-				//	test for blacklisted IP adresses
+				//	test for blacklisted IP addresses
 				//	since C++20 use contains()
 				//
 

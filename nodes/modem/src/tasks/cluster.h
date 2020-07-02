@@ -34,7 +34,8 @@ namespace node
 			, std::string const& service
 			, int timeout
 			, bool auto_answer
-			, std::chrono::milliseconds guard_time);
+			, std::chrono::milliseconds guard_time
+			, std::set<boost::asio::ip::address> const& blacklist);
 		cyng::continuation run();
 		void stop(bool shutdown);
 

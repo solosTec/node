@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 
         if (vm["ip"].as< bool >())
         {
-            //	show local IP adresses
+            //	show local IP addresses
             return node::show_ip_address(std::cout);
         }
     

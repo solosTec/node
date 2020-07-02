@@ -25,7 +25,8 @@ namespace node
 		server_stub(cyng::async::mux&
 			, cyng::logging::log_ptr logger
 			, bus::shared_type
-			, std::chrono::seconds);
+			, std::chrono::seconds
+			, std::set<boost::asio::ip::address> const& blacklist);
 
 		/**
 		 * start listening
@@ -131,6 +132,12 @@ namespace node
 		 * A timeout is required to detect missing responses.
 		 */
 		const std::chrono::seconds timeout_;
+
+		/**
+		 * blacklistet IP adresses
+		 */
+		std::set<boost::asio::ip::address> const blacklist_;
+
 
 	private:
 		/** 

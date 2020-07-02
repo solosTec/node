@@ -35,6 +35,7 @@ namespace node
 			, ipt::scramble_key const& sk
 			, uint16_t watchdog
 			, int timeout
+			, std::set<boost::asio::ip::address> const&
 			, bool sml_log);
 		cyng::continuation run();
 		void stop(bool shutdown);

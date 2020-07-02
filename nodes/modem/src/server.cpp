@@ -17,9 +17,10 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, bus::shared_type bus
 			, std::chrono::seconds timeout
+			, std::set<boost::asio::ip::address> const& blacklist
 			, bool auto_answer
 			, std::chrono::milliseconds guard_time)
-		: server_stub(mux, logger, bus, timeout)
+		: server_stub(mux, logger, bus, timeout, blacklist)
 			, auto_answer_(auto_answer)
 			, guard_time_(guard_time)
 		{}

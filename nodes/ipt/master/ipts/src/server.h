@@ -24,6 +24,7 @@ namespace node
 				, std::chrono::seconds timeout
 				, scramble_key const& sk
 				, uint16_t watchdog
+				, std::set<boost::asio::ip::address> const&
 				, bool sml_log);
 
 		protected:

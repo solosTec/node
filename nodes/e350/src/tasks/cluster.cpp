@@ -20,6 +20,7 @@ namespace node
 		, std::string const& address
 		, std::string const& service
 		, std::chrono::seconds timeout
+		, std::set<boost::asio::ip::address> const& blacklist
 		, std::string pwd_policy
 		, std::string global_pwd)
 	: base_(*btp)
@@ -28,7 +29,7 @@ namespace node
 		, config_(cfg)
 		, address_(address)
 		, service_(service)
-		, server_(btp->mux_, logger_, bus_, timeout, pwd_policy, global_pwd)
+		, server_(btp->mux_, logger_, bus_, timeout, blacklist, pwd_policy, global_pwd)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
