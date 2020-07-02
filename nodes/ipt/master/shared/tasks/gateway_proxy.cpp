@@ -1935,11 +1935,12 @@ namespace node
 					<< " - "
 					<< sml::from_server_id(dev.second));
 
-				auto section = config_cache_.get_section(sml::obis_path_t({ sml::OBIS_ROOT_ACCESS_RIGHTS	//	81 81 81 60 FF FF
+				auto const path = sml::obis_path_t({ sml::OBIS_ROOT_ACCESS_RIGHTS	//	81 81 81 60 FF FF
 					, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, 0xFF)
 					, sml::make_obis(0x81, 0x81, 0x81, 0x60, role, user)
 					, sml::make_obis(0x81, 0x81, 0x81, 0x64, 0x01, dev.first.get_storage())
-					}));
+					});
+				auto section = config_cache_.get_section(path);
 
 				if (!section.empty()) {
 
@@ -1957,7 +1958,7 @@ namespace node
 						, origin
 						, "cache.query"
 						, sml::from_server_id(srv_id)
-						, sml::path_to_vector(sml::obis_path_t({ sml::OBIS_ROOT_ACCESS_RIGHTS }))
+						, sml::path_to_vector(path)
 						, section));
 
 					++counter;
