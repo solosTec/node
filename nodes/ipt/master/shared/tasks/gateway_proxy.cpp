@@ -663,7 +663,7 @@ namespace node
 				, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 				, sml::from_server_id(srv_id)
 				, root.to_str()
-				, config_cache_.get_section(root)));
+				, config_cache_.get_section(pd.get_path())));
 
 		}
 		else {
