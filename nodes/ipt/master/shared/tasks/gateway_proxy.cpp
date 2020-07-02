@@ -627,12 +627,29 @@ namespace node
 		bool cache_enabled			//	[11] use cache
 	)
 	{
+
 		//
 		//	get root path
 		//
 		sml::obis const root(code);
 
-		if (cache_enabled && config_cache_.is_cached(root)) {
+		//
+		//	make some adjustments
+		//
+		auto pd = finalize(proxy_data(tag
+			, source
+			, seq
+			, origin
+			, channel
+			, sml::obis_path_t({ root })
+			, gw
+			, params
+			, srv_id
+			, name
+			, pwd
+			, false));	//	no job
+
+		if (cache_enabled && config_cache_.is_cached(pd.get_path())) {
 
 			//
 			//	get data from cache
@@ -650,23 +667,6 @@ namespace node
 
 		}
 		else {
-
-			//
-			//	make some adjustments
-			//
-			auto pd = finalize(proxy_data(tag
-				, source
-				, seq
-				, origin
-				, channel
-				, sml::obis_path_t({ root })
-				, gw
-				, params
-				, srv_id
-				, name
-				, pwd
-				, false));	//	no job
-
 
 			//
 			//	add to active cache sections id global caching flag is set
