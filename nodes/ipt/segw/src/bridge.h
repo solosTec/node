@@ -98,6 +98,7 @@ namespace node
 			, boost::uuids::uuid);
 		void sig_trx(cyng::store::trx_type);
 
+		void start_task_clock();
 		void start_task_obislog();
 		void start_task_limiter();
 		void start_task_gpio();

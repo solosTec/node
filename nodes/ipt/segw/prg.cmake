@@ -82,6 +82,8 @@ set (node_ipt_segw_tasks
 	nodes/ipt/segw/src/tasks/limiter.cpp
 	nodes/ipt/segw/src/tasks/rs485.h
 	nodes/ipt/segw/src/tasks/rs485.cpp
+	nodes/ipt/segw/src/tasks/clock.h
+	nodes/ipt/segw/src/tasks/clock.cpp
 )
 	
 set (node_ipt_segw_server

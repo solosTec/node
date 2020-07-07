@@ -10,6 +10,7 @@
 #include "storage.h"
 #include "tasks/gpio.h"
 #include "tasks/obislog.h"
+#include "tasks/clock.h"
 #include "tasks/readout.h"
 #include "tasks/limiter.h"
 
@@ -26,10 +27,6 @@
 #include <cyng/buffer_cast.h>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/sys/port.h>
-#include <cyng/parser/chrono_parser.h>
-#if BOOST_OS_LINUX
-#include <cyng/sys/rtc.h>
-#endif
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -85,6 +82,11 @@ namespace node
 		//	store boot time
 		//
 		cache_.set_cfg("boot.time", std::chrono::system_clock::now());
+
+		//
+		//	start task clock
+		//
+		start_task_clock();
 
 		//
 		//	start task OBISLOG (15 min)
@@ -155,7 +157,6 @@ namespace node
 
 	void bridge::load_configuration()
 	{
-		bool tos_exists = true;
 		cache_.write_table("_Cfg", [&](cyng::store::table* tbl) {
 
 			storage_.loop("TCfg", [&](cyng::table::record const& rec)->bool {
@@ -207,27 +208,6 @@ namespace node
 				return true;	//	continue
 			});
 
-			//
-			//	check time-offset
-			//
-			auto const tof_key = cyng::table::key_generator("time-offset");
-			if (!tbl->exist(tof_key)) {
-
-				//
-				//	if this entry doesn't exist, we have to create one.
-				//
-
-				auto const r = cyng::parse_rfc3339_timestamp(NODE_BUILD_DATE);
-
-				CYNG_LOG_WARNING(logger_, "merge time-offset "
-					<< cyng::to_str(r.second ? r.first : std::chrono::system_clock::now()));
-
-				tbl->merge(tof_key
-					, cyng::table::data_generator(r.second ? r.first : std::chrono::system_clock::now())
-					, 1u
-					, cache_.get_tag());
-
-			}
 		});
 
 		//
@@ -272,41 +252,6 @@ namespace node
 					<< " is available");
 			}
 		}
-
-		//
-		//	check system clock
-		//
-		auto const tof = cache_.get_cfg("time-offset", std::chrono::system_clock::now());
-		auto const now = std::chrono::system_clock::now();
-		if (now < tof) {
-
-			//
-			//	System clock has a time before the last time tag.
-			//	Set a more recent timestamp.
-			//
-			CYNG_LOG_WARNING(logger_, "RTC is slow/wrong: "
-				<< cyng::to_str(now)
-				<< " < "
-				<< cyng::to_str(tof)		);
-
-		}
-#if defined(NODE_CROSS_COMPILE)
-		if (!cyng::sys::write_hw_clock(tof, 0)) {
-			CYNG_LOG_ERROR(logger_, "set RTC failed: "
-				<< cyng::to_str(tof));
-            
-            //
-            //  synchronize RTC to system clock
-            //  hwclock --hctosys --utc
-            //
-            system("hwclock --hctosys --utc");
-		}
-		else {
-			CYNG_LOG_INFO(logger_, "set RTC: "
-				<< cyng::to_str(tof));
-		}
-#endif
-
 	}
 
 	void bridge::load_devices_mbus()
@@ -895,6 +840,15 @@ namespace node
 
 		cache_.db_.get_trx_listener(std::bind(&bridge::sig_trx, this, std::placeholders::_1));
 
+	}
+
+	void bridge::start_task_clock()
+	{
+		auto const tid = cyng::async::start_task_detached<clock>(mux_
+			, logger_
+			, this->cache_
+			, std::chrono::minutes(2));
+		boost::ignore_unused(tid);
 	}
 
 	void bridge::start_task_obislog()
