@@ -64,7 +64,7 @@ message(STATUS "**")
 #
 # Collect and dump some basic information
 #
-string(TIMESTAMP NOW_UTC "%Y-%m-%dT%H:%M:%SZ")
+string(TIMESTAMP NOW_UTC "%Y-%m-%dT%H:%M:%SZ" UTC)
 set (${PROJECT_NAME}_NOW_UTC ${NOW_UTC})
 
 include(ProcessorCount)

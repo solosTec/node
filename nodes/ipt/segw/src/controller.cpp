@@ -30,7 +30,7 @@
 #include <cyng/async/mux.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/util/split.h>
-
+#include <cyng/parser/chrono_parser.h>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -81,6 +81,9 @@ namespace node
 			macs.push_back(cyng::generate_random_mac48());
 		}
 		
+		//std::pair<std::chrono::system_clock::time_point, bool >
+		auto const r = cyng::parse_rfc3339_timestamp(NODE_BUILD_DATE);
+
 		//
 		//	get hostname
 		//
@@ -91,6 +94,7 @@ namespace node
 				, cyng::param_factory("log-level", "INFO")
 				, cyng::param_factory("tag", uidgen_())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
+				, cyng::param_factory("time-offset", r.second ? r.first : std::chrono::system_clock::now())
 				, cyng::param_factory("log-pushdata", false)	//	log file for each channel
 #if BOOST_OS_WINDOWS
 				, cyng::param_factory("gpio-enabled", false)
@@ -567,7 +571,7 @@ namespace node
 					}
 					std::cout << "failed" << std::endl;
 				}
-				else if (boost::algorithm::equals(vec.front(), "str")) {
+				else if (boost::algorithm::equals(vec.front(), "s")) {
 					if (node::set_value(cyng::to_param_map(tpl), sub, vec.back())) {
 						return EXIT_SUCCESS;
 					}
@@ -575,18 +579,14 @@ namespace node
 				}
 				else {
 					std::cout
-						<< "insufficient parameter count - syntax is [type:key:value]"
+						<< "data type not supported - use [bool, u32, s]"
 						<< std::endl;
 				}
 			}
 			else
 			{
 				std::cout
-					<< "configuration file ["
-					<< json_path_
-					<< "] not found or index ["
-					<< config_index_
-					<< "] is out of range"
+					<< "insufficient parameter count - syntax is [type:key:value]"
 					<< std::endl;
 			}
 		}
