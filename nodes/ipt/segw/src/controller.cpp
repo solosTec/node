@@ -189,8 +189,9 @@ namespace node
 					cyng::param_factory(sml::OBIS_W_MBUS_POWER.to_str(), static_cast<std::uint8_t>(mbus::STRONG)),	//	low, basic, average, strong (unused)
 					cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str(), true),	//	install mode
 
-					cyng::param_factory("transparent-mode", false),
-					cyng::param_factory("transparent-port", 12001),
+					cyng::param_factory("broker-mode", false),
+					cyng::param_factory("broker-address", "segw.ch"),
+					cyng::param_factory("broker-port", 12001),
 					//	if task <readout> receives data and there is no data collector/mirror defined, create one
 					cyng::param_factory("autogen-data-collector", true)
 					))
@@ -211,8 +212,9 @@ namespace node
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 					cyng::param_factory("speed", 2400),		//	initial
-					cyng::param_factory("transparent-mode", false),
-					cyng::param_factory("transparent-port", 12002)
+					cyng::param_factory("broker-mode", false),
+					cyng::param_factory("broker-address", "segw.ch"),
+					cyng::param_factory("broker-port", 12002)
 				))
 
 				, cyng::param_factory("if-1107", cyng::tuple_factory(

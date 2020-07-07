@@ -19,6 +19,7 @@ namespace node
 	//	forward declaration
 	//
 	class cache;
+	class cfg_wmbus;
 
 	/**
 	 * Read configuration and starts all required
@@ -52,6 +53,12 @@ namespace node
 		 * Start RS485 interface manager
 		 */
 		std::pair<std::size_t, bool> start_rs485_mgr(std::size_t, std::chrono::seconds);
+
+		/**
+		 * Starts the wireless mBus reciver. This could be the wireless mBus parse
+		 * or a server connected via TCP/IP.
+		 */
+		std::pair<std::size_t, bool> start_mbus_receiver(bool transparent);
 
 		void wmbus_push_frame(cyng::context& ctx);
 		void sml_msg(cyng::context& ctx);

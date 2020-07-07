@@ -17,6 +17,7 @@
 #include "tasks/parser_wmbus.h"
 #include "tasks/parser_CP210x.h"
 #include "tasks/rs485.h"
+#include "tasks/broker_wmbus.h"
 
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_db.h>
@@ -136,18 +137,22 @@ namespace node
 		try {
 
 			//
-			//	start receiver
+			//	config reader
 			//
-			auto const receiver = cyng::async::start_task_sync<parser_wmbus>(mux_
-				, logger_
-				, vm_
-				, cache_);
+			cfg_wmbus cfg(cache_);
+
+			//
+			//	start receiver
+			//	if  "broker-mode" is true, the receiver is remote server
+			//	ready to get all raw data.
+			//
+			auto const receiver = start_mbus_receiver(cfg.is_broker_mode());
 
 			if (receiver.second) {
 
 				radio_parser_ = receiver.first;
 
-				auto const hci = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "HCI"), std::string("none"));
+				auto const hci = cfg.get_hci();
 				if (boost::algorithm::equals(hci, "CP210x")) {
 
 					//
@@ -213,6 +218,19 @@ namespace node
 		catch (boost::system::system_error const& ex) {
 			CYNG_LOG_FATAL(logger_, ex.what() << ":" << ex.code());
 		}
+	}
+
+	std::pair<std::size_t, bool> lmn::start_mbus_receiver(bool transparent)
+	{
+		return (transparent)
+			? cyng::async::start_task_sync<broker_wmbus>(mux_
+				, logger_
+				, vm_
+				, cache_)
+			: cyng::async::start_task_sync<parser_wmbus>(mux_
+				, logger_
+				, vm_
+				, cache_);
 	}
 
 	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(std::size_t receiver_data

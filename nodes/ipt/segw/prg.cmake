@@ -84,6 +84,8 @@ set (node_ipt_segw_tasks
 	nodes/ipt/segw/src/tasks/rs485.cpp
 	nodes/ipt/segw/src/tasks/clock.h
 	nodes/ipt/segw/src/tasks/clock.cpp
+	nodes/ipt/segw/src/tasks/broker_wmbus.h
+	nodes/ipt/segw/src/tasks/broker_wmbus.cpp
 )
 	
 set (node_ipt_segw_server

@@ -686,7 +686,7 @@ namespace node
 			//
 			{
 				//	get a tuple/list of params
-				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("if-1107"));
+				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("IF-1107"));
 				for (auto const& obj : tpl) {
 					cyng::param_t param;
 					param = cyng::value_cast(obj, param);
@@ -766,9 +766,17 @@ namespace node
 						}
 					}
 					else {
-						init_config_record(s, build_cfg_key({
-							sml::OBIS_IF_1107
-							}, param.first), param.second);
+						if (boost::algorithm::equals(param.first, "broker-port")) {
+							auto const val = cyng::numeric_cast<std::uint16_t> (param.second, 12002u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_1107
+								}, param.first), cyng::make_seconds(val));
+						}
+						else {
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_IF_1107
+								}, param.first), param.second);
+						}
 					}
 				}
 			}
@@ -870,6 +878,10 @@ namespace node
 						//	int
 						auto const val = cyng::numeric_cast(param.second, 30);
 						init_config_record(s, build_cfg_key({ sml::OBIS_IF_wMBUS }, param.first ), cyng::make_seconds(val));
+					}
+					else if (boost::algorithm::equals(param.first, "broker-port")) {
+						auto const val = cyng::numeric_cast<std::uint16_t> (param.second, 12002u);
+						init_config_record(s, build_cfg_key({ sml::OBIS_IF_wMBUS }, param.first), cyng::make_object(val));
 					}
 					else {
 

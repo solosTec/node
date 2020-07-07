@@ -26,7 +26,7 @@ namespace node
 		cfg_wmbus(cache&);
 
 		/**
-		 * OBIS_IF_wMBUS:...
+		 * OBIS_IF_wMBUS:... ("wireless-LMN")
 		 * @return "8106190700FF:port"
 		 */
 		std::string get_port() const;
@@ -47,7 +47,7 @@ namespace node
 		boost::asio::serial_port_base::parity get_parity() const;
 
 		/**
-		 * @return "8106190700FF:flow_control"
+		 * @return "8106190700FF:flow-control"
 		 */
 		boost::asio::serial_port_base::flow_control get_flow_control() const;
 
@@ -60,6 +60,30 @@ namespace node
 		 * @return "8106190700FF:databits"
 		 */
 		boost::asio::serial_port_base::character_size get_databits() const;
+
+		/**
+		 * @return W_MBUS_PROTOCOL:broker-mode..........: [true/false] (true:bool)
+		 */
+		bool is_broker_mode() const;
+
+		/**
+		 * W_MBUS_PROTOCOL:broker-port.......... : 12001 (12001:i16)
+		 * 
+		 * @return return address of TCP/IP server
+		 */
+		std::uint16_t get_broker_port() const;
+
+		/**
+		 * W_MBUS_PROTOCOL:broker-address....... : segw.ch (segw.ch:s)
+		 *
+		 * @return return address of TCP/IP server
+		 */
+		std::string get_broker_address() const;
+
+		/**
+		 * @return HCI: W_MBUS_PROTOCOL:HCI.......................: CP210x (CP210x:s)
+		 */
+		std::string get_hci() const;
 
 	private:
 		cache& cache_;
