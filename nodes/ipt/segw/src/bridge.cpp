@@ -291,9 +291,15 @@ namespace node
 
 		}
 #if defined(NODE_CROSS_COMPILE)
-		if (!write_hw_clock(tof, 0)) {
+		if (!cyng::sys::write_hw_clock(tof, 0)) {
 			CYNG_LOG_ERROR(logger_, "set RTC failed: "
 				<< cyng::to_str(tof));
+            
+            //
+            //  synchronize RTC to system clock
+            //  hwclock --hctosys --utc
+            //
+            system("hwclock --hctosys --utc");
 		}
 		else {
 			CYNG_LOG_INFO(logger_, "set RTC: "
