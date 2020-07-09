@@ -194,7 +194,7 @@ namespace node
 					cyng::param_factory("broker-port", 12001),
 					//	if task <readout> receives data and there is no data collector/mirror defined, create one
 					cyng::param_factory("autogen-data-collector", true)
-					))
+				))
 
 				, cyng::param_factory("wired-LMN", cyng::tuple_factory(
 					cyng::param_factory("monitor", rnd_monitor()),	//	seconds

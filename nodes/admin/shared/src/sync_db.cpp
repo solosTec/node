@@ -151,22 +151,25 @@ namespace node
 		//
 		//	TIECBridge is supplementary table to TMeter.
 		//
-		if (!db.create_table(cyng::table::make_meta_table<1, 4>("TIECBridge",
+		if (!db.create_table(cyng::table::make_meta_table<1, 5>("TIECBridge",
 			{ "pk"		//	same key as in TMeter table
-			, "ep"		//	[ip] incoming/outgoing IP connection
+			, "address"		//	[ip address] incoming/outgoing IP connection
+			, "port"		//	[u16] port
 			, "direction"	//	[bool] incoming/outgoing
 			, "interval"	//	[seconds] pull cycle
 					//	-- additional columns
 			, "meter"
 			},
 			{ cyng::TC_UUID			//	pk
-			, cyng::TC_IP_TCP_ENDPOINT	//	ep
+			, cyng::TC_IP_ADDRESS	//	host address
+			, cyng::TC_UINT16		//	TCP/IP port
 			, cyng::TC_BOOL
 			, cyng::TC_SECOND
 			, cyng::TC_STRING
 			},
 			{ 36
-			, 0	//	ep
+			, 0	//	address
+			, 0	//	port
 			, 0	//	direction
 			, 0
 			, 8

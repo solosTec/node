@@ -478,19 +478,22 @@ namespace node
 			//	This table contains addition information about 
 			//	meters with IEC communiction.
 			//
-			return cyng::table::make_meta_table<1, 3>(name, 
+			return cyng::table::make_meta_table<1, 4>(name, 
 				{ "pk"		//	same key as in TMeter table
-				, "ep"		//	[ip] incoming/outgoing IP connection
+				, "address"		//	[ip] incoming/outgoing IP connection
+				, "port"		//	[ip] incoming/outgoing IP connection
 				, "direction"	//	[bool] incoming/outgoing
 				, "interval"	//	[seconds] pull cycle
 				},
 				{ cyng::TC_UUID			//	pk
-				, cyng::TC_IP_TCP_ENDPOINT	//	ep
+				, cyng::TC_IP_ADDRESS	//	host address
+				, cyng::TC_UINT16		//	TCP/IP port
 				, cyng::TC_BOOL
 				, cyng::TC_SECOND
 				},
 				{ 36
-				, 0	//	ep
+				, 0	//	address
+				, 0	//	port
 				, 0	//	direction
 				, 0
 				});

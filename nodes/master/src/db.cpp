@@ -133,10 +133,12 @@ namespace node
 
 		//	segw.ch
 		auto const host = cyng::make_address("138.201.95.180");
+		auto const ep = boost::asio::ip::tcp::endpoint{ host, 4004 };
 
 		db.insert("TIECBridge"
 			, cyng::table::key_generator(tag)
-			, cyng::table::data_generator(boost::asio::ip::tcp::endpoint{host, 4004}
+			, cyng::table::data_generator(host.to_string()
+				, ep.port()
 				, true
 				, std::chrono::seconds(60))
 			, 12
