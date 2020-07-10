@@ -64,7 +64,7 @@ namespace node
 			 * @return true if watchdog is requested
 			 */
 			bool has_watchdog() const;
-			std::uint16_t get_watchdog() const;
+			//std::uint16_t get_watchdog() const;
 
 			boost::asio::ip::tcp::endpoint local_endpoint() const;
 			boost::asio::ip::tcp::endpoint remote_endpoint() const;
@@ -75,7 +75,7 @@ namespace node
 			 * @return true if bus/session is not authorized yet and login request
 			 * was emitted.
 			 */
-			bool req_login(master_record const&);
+			bool req_login(master_record);
 
 			/**
 			 * send connection open request and starts a monitor tasks

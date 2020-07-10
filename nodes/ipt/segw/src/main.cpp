@@ -211,13 +211,13 @@ int main(int argc, char **argv)
 
 		if (vm.count("set-value"))
 		{
-			auto const kv = vm["set-value"].as< std::string >();
-			return ctrl.set_value(kv);
+			//auto const kv = vm["set-value"].as< std::string >();
+			return ctrl.set_value(value);
 		}
 
 		if (vm.count("connect"))
 		{
-// 			return ctrl.dry_connect(connect);
+ 			return ctrl.dry_connect(connect);
 		}
 		
 #if BOOST_OS_WINDOWS

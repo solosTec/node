@@ -68,6 +68,8 @@ set (node_ipt_segw_tasks
 	nodes/ipt/segw/src/tasks/readout.cpp
 	nodes/ipt/segw/src/tasks/network.h
 	nodes/ipt/segw/src/tasks/network.cpp
+	nodes/ipt/segw/src/tasks/connect.h
+	nodes/ipt/segw/src/tasks/connect.cpp
 	nodes/ipt/segw/src/tasks/lmn_port.h
 	nodes/ipt/segw/src/tasks/lmn_port.cpp
 	nodes/ipt/segw/src/tasks/parser_wmbus.h

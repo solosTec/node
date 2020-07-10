@@ -31,6 +31,7 @@ namespace node
 		int dump_profile(std::uint32_t) const;
 
 		int set_value(std::string) const;
+		int dry_connect(std::string) const;
 
 	protected:
 		virtual bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag);

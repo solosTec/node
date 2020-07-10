@@ -12,6 +12,7 @@
 #include "lmn.h"
 #include "server/server.h"
 #include "tasks/network.h"
+#include "tasks/connect.h"
 #include <NODE_project_info.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/srv_id_io.h>
@@ -550,7 +551,6 @@ namespace node
 			//	get database configuration and connect
 			//
 			auto const tpl = cyng::to_tuple(dom.get("DB"));
-			//auto db_cfg = cyng::to_param_map(tpl);
 
 			//std::cout << kv << std::endl;
 			auto const vec = cyng::split(kv, ":");
@@ -600,6 +600,67 @@ namespace node
 				<< "] not found or index ["
 				<< config_index_
 				<< "] is out of range"
+				<< std::endl;
+		}
+		return EXIT_FAILURE;
+	}
+
+	int controller::dry_connect(std::string connect) const
+	{
+		//	syntax: "demo:demo@segw.ch:26862" 
+
+		auto const vec = cyng::split(connect, "@");
+		if (vec.size() == 2) {
+			auto const cred = cyng::split(vec.at(0), ":");
+			auto const address = cyng::split(vec.at(1), ":");
+			if (cred.size() == 2 && address.size() == 2) {
+
+				//
+				//	establish I/O context
+				//
+				cyng::async::mux mux{ this->pool_size_ };
+
+#if BOOST_OS_LINUX
+				auto logger = cyng::logging::make_sys_logger("dry connect", true);
+#else
+				auto logger = cyng::logging::make_console_logger(mux.get_io_service(), "dry connect");
+#endif
+
+				auto const tsk = cyng::async::start_task_sync<ipt::connect>(mux
+					, logger
+					, cred.at(0)	//	usr
+					, cred.at(1)	//	pwd
+					, address.at(0)		//	host
+					, address.at(1)		//	service
+					, uidgen_());		//	tag
+
+
+				std::this_thread::sleep_for(std::chrono::seconds(30));
+
+				//
+				//	terminate task
+				//
+				mux.stop(std::chrono::milliseconds(100), 10);
+
+				//
+				//	shutdown scheduler
+				//
+				mux.shutdown();
+
+
+			}
+			else {
+				std::cerr
+					<< "invalid syntax is [user:pwd@host:port]"
+					<< std::endl;
+			}
+		}
+		else {
+			//
+			//	invalid syntax
+			//
+			std::cerr
+				<< "invalid syntax is [user:pwd@host:port]"
 				<< std::endl;
 		}
 		return EXIT_FAILURE;

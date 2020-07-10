@@ -57,7 +57,7 @@ namespace node
 			, cfg_(cache_)
 			, storage_(b.storage_)
 			, parser_([this](cyng::vector_t&& prg) {
-				CYNG_LOG_INFO(logger_, prg.size() << " SML instructions received (client)");
+				//CYNG_LOG_INFO(logger_, prg.size() << " SML instructions received (client)");
 				//CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
 				vm_.async_run(std::move(prg));
 			}, false, false, false)
@@ -180,11 +180,6 @@ namespace node
 		cyng::continuation network::run()
 		{
 
-			//
-			//	get IP-T configuration
-			//
-			//cfg_ipt ipt(cache_);
-
 			if (is_online())
 			{
 				//
@@ -281,7 +276,6 @@ namespace node
 			auto const sw = cache_.get_status_word();
 			auto const srv = cache_.get_srv_id();
 
-			//cfg_ipt ipt(cache_);
 			auto const rec = cfg_.get_ipt_master();
 
 
@@ -431,11 +425,6 @@ namespace node
 
 		void network::reconfigure_impl()
 		{
-			//
-			//	get IP-T configuration
-			//
-			//cfg_ipt ipt(cache_);
-
 			//
 			//	switch to other master
 			//

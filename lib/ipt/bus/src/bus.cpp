@@ -218,10 +218,10 @@ namespace node
 			return watchdog_ != 0u;
 		}
 
-		std::uint16_t bus::get_watchdog() const
-		{
-			return watchdog_;
-		}
+		//std::uint16_t bus::get_watchdog() const
+		//{
+		//	return watchdog_;
+		//}
 
 		boost::asio::ip::tcp::endpoint bus::local_endpoint() const
 		{
@@ -1074,7 +1074,7 @@ namespace node
 				, std::get<6>(tpl));	//	data
 		}
 
-		bool bus::req_login(master_record const& rec)
+		bool bus::req_login(master_record rec)
 		{
 			if (!transition(STATE_INITIAL_)) {
 				CYNG_LOG_WARNING(logger_, rec.account_ 
