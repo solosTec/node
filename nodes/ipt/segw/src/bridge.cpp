@@ -385,7 +385,7 @@ namespace node
 					role |= get_bit_position(sml::role::MANUFACTURER);
 				}
 				if (cyng::value_cast(rec["rRes"], false)) {
-					role |= get_bit_position(sml::role::RESERVED);
+					role |= get_bit_position(sml::role::ROLE_RESERVED);
 				}
 
 				if (tbl->insert(rec.key()

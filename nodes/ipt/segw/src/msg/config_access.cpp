@@ -57,7 +57,7 @@ namespace node
 					collect_role(msg,role::SERVICE_PROVIDER, tblUser, tblPriv);
 					collect_role(msg,role::SUPPLIER, tblUser, tblPriv);
 					collect_role(msg,role::MANUFACTURER, tblUser, tblPriv);
-					collect_role(msg,role::RESERVED, tblUser, tblPriv);
+					collect_role(msg,role::ROLE_RESERVED, tblUser, tblPriv);
 
 				});
 			}
