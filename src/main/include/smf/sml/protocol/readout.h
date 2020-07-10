@@ -108,6 +108,13 @@ namespace node
 		cyng::param_t read_param_tree(std::size_t, cyng::object);
 		cyng::param_t read_param_tree(std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
+
+		/**
+		 * After collecting an OBIS tree there is a chance for renaming and restructuring 
+		 * the tree.
+		 */
+		cyng::param_t post_processing(sml::obis_path_t const&, cyng::param_t&&);
+
 		/**
 		 * A SML parameter consists of a type (PROC_PAR_VALUE, PROC_PAR_TIME, ...) and a value.
 		 * This functions read the parameter and creates an attribute that contains these
@@ -131,7 +138,8 @@ namespace node
 		/**
 		 * Convert data types of some specific OBIS values
 		 */
-		cyng::param_t customize_value(obis code, cyng::object);
+		//cyng::param_t customize_value(obis code, cyng::object);
+		cyng::object customize_value(obis code, cyng::object);
 
 		/**
 		 * build a vector of devices
@@ -142,6 +150,13 @@ namespace node
 		 * build a vector of devices
 		 */
 		cyng::param_t collect_iec_devices(cyng::tuple_t const& tpl);
+
+		/**
+		 * collect all access rights (roles)
+		 */
+		cyng::param_t collect_access_rights(cyng::tuple_t const& tpl);
+		cyng::param_map_t collect_user_rights(std::uint8_t, cyng::tuple_t const& tpl);
+		void collect_user_rights(cyng::param_map_t&, cyng::tuple_t const& tpl);
 
 		/**
 		 * read a listor period entries

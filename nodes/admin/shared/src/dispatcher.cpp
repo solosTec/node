@@ -56,7 +56,7 @@ namespace node
 			boost::uuids::uuid,		//	[4] websocket tag
 			std::string,			//	[5] channel
 			std::string,			//	[6] server id
-			std::string,			//	[7] section / "OBIS code" as text
+			std::string,			//	[7] section / "OBIS root" as text
 			cyng::param_map_t		//	[8] params
 		>(frame);
 

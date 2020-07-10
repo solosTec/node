@@ -317,9 +317,30 @@ namespace node
 			//
 			//	this is a parameter tree
 			//
-			auto const param = read_param_tree(0u, tpl.begin(), tpl.end());
+			auto const param = post_processing(path, read_param_tree(0u, tpl.begin(), tpl.end()));
+			//auto const param = read_param_tree(0u, tpl.begin(), tpl.end());
 
 			return std::make_pair(path, param);
+		}
+
+		cyng::param_t post_processing(sml::obis_path_t const& path, cyng::param_t&& param)
+		{
+			
+			if (path.size() == 4 && path.front() == OBIS_ROOT_ACCESS_RIGHTS) {
+				//	81818160FFFF : 81818160[03]FF : 81818160[03][01] : 8181816401[02]
+				auto const role = path.at(2).get_quantities();	//	role
+				auto const user = path.at(2).get_storage();	//	user
+				auto const nr = path.at(3).get_storage();	//	device
+
+				//cyng::param_map_t data;
+				auto p = const_cast<cyng::param_map_t*>(cyng::object_cast<cyng::param_map_t>(param.second));
+				if (p != nullptr) {
+					(*p).emplace("role", cyng::make_object(role));
+					(*p).emplace("user", cyng::make_object(user));
+					(*p).emplace("nr", cyng::make_object(nr));
+				}
+			}
+			return param;
 		}
 
 		std::pair<obis_path_t, cyng::object> readout::read_get_proc_parameter_request(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
@@ -605,7 +626,7 @@ namespace node
 			cyng::tuple_t const tpl = cyng::to_tuple(*pos++);
 			if (tpl.empty()) {
 				return (attr.first != PROC_PAR_UNDEF)
-					? customize_value(code, attr.second)
+					? cyng::param_factory(code.to_str(), customize_value(code, attr.second))
 					: cyng::param_factory(code.to_str(), cyng::make_object())
 					;
 			}
@@ -623,7 +644,7 @@ namespace node
 			//	no collisions are known.
 			//
 			if (attr.first != PROC_PAR_UNDEF) {
-				params.emplace(customize_value(code, attr.second));
+				params.emplace(code.to_str(), customize_value(code, attr.second));
 			}
 
 			//
@@ -645,6 +666,10 @@ namespace node
 				//
 				return collect_iec_devices(tpl);
 			}
+			else if (OBIS_ROOT_ACCESS_RIGHTS == code) {
+				return collect_access_rights(tpl);
+			}
+
 
 			for (auto const child : tpl)
 			{
@@ -660,7 +685,6 @@ namespace node
 				//
 				BOOST_ASSERT(params.find(param.first) == params.end());
 				params.emplace(param.first, param.second);
-
 			}
 
 			//
@@ -733,19 +757,19 @@ namespace node
 			return cyng::make_object();
 		}
 
-		cyng::param_t customize_value(obis code, cyng::object obj)
+		cyng::object customize_value(obis code, cyng::object obj)
 		{
 			if (OBIS_CODE(81, 49, 17, 07, 00, 01) == code
 				|| OBIS_CODE(81, 49, 17, 07, 00, 02) == code) {
-				return cyng::param_factory(code.to_str(), ip_address_to_str(obj));
+				return cyng::make_object(ip_address_to_str(obj));
 			}
 			else if (code.is_matching(0x81, 0x49, 0x1A, 0x07, 0x00).second
 				|| OBIS_W_MBUS_MODE_S == code
 				|| OBIS_W_MBUS_MODE_T == code) {
-				return cyng::param_factory(code.to_str(), cyng::numeric_cast<std::uint16_t>(obj, 0u));
+				return cyng::make_object(cyng::numeric_cast<std::uint16_t>(obj, 0u));
 			}
 			else if (code.is_matching(0x81, 0x49, 0x19, 0x07, 0x00).second) {
-				return cyng::param_factory(code.to_str(), cyng::numeric_cast<std::uint16_t>(obj, 0u));
+				return cyng::make_object(cyng::numeric_cast<std::uint16_t>(obj, 0u));
 			}
 			else if (code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x01).second
 				|| code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x02).second
@@ -765,22 +789,22 @@ namespace node
 				|| OBIS_ACCESS_USER_NAME == code) {
 				//	buffer to string
 				cyng::buffer_t const buffer = cyng::to_buffer(obj);
-				return cyng::param_factory(code.to_str(), std::string(buffer.begin(), buffer.end()));
+				return cyng::make_object(std::string(buffer.begin(), buffer.end()));
 			}
 			else if (OBIS_TARGET_IP_ADDRESS == code) {
-				return cyng::param_factory(code.to_str(), to_ip_address_v4(obj));
+				return cyng::make_object(to_ip_address_v4(obj));
 			}
 			else if (OBIS_DEVICE_CLASS == code
 				|| OBIS_DATA_AES_KEY == code) {
 
 				if (obj.is_null()) {
-					return cyng::param_factory(code.to_str(), "");
+					return cyng::make_object("");
 				}
 			}
 			else if (OBIS_CURRENT_UTC == code) {
-				return cyng::param_factory(code.to_str(), std::chrono::system_clock::now());
+				return cyng::make_object(std::chrono::system_clock::now());
 			}
-			return cyng::param_t(code.to_str(), obj);
+			return obj;
 		}
 
 		cyng::param_t collect_devices(obis code, cyng::tuple_t const& tpl)
@@ -937,6 +961,120 @@ namespace node
 			}
 			return cyng::param_factory(OBIS_IF_1107_METER_LIST.to_str(), vec);
 		}
+
+		cyng::param_t collect_access_rights(cyng::tuple_t const& tpl)
+		{
+			cyng::param_map_t data;
+
+			for (auto const& obj_roles : tpl) {
+				cyng::tuple_t const roles = cyng::to_tuple(obj_roles);
+				if (roles.size() == 3) {
+					auto pos = roles.begin();
+
+					//
+					//	1. parameterName Octet String,
+					//
+					auto const code = read_obis(*pos++);
+
+					//
+					//	2. parameterValue SML_ProcParValue OPTIONAL,
+					//
+					auto const attr = read_parameter(*pos++);
+					boost::ignore_unused(attr);
+
+
+					auto const q = code.get_quantities();
+
+					//
+					//	3. list of all users
+					//
+					auto const users = collect_user_rights(q, cyng::to_tuple(*pos));
+
+					data.emplace(sml::get_role_name(q), cyng::make_object(users));
+				}
+			}
+			return cyng::param_factory(OBIS_ROOT_ACCESS_RIGHTS.to_str(), data);
+		}
+
+		cyng::param_map_t collect_user_rights(std::uint8_t q, cyng::tuple_t const& tpl)
+		{
+			cyng::param_map_t data;
+			data.emplace("role", cyng::make_object(q));
+
+			for (auto const& obj_user : tpl) {
+				cyng::tuple_t const user = cyng::to_tuple(obj_user);
+				if (user.size() == 3) {
+
+					auto pos = user.begin();
+
+					//
+					//	1. parameterName Octet String,
+					//
+					auto const code = read_obis(*pos++);
+					auto const s = code.get_storage();	//	user index
+					data.emplace("user", cyng::make_object(s));
+
+					//
+					//	2. parameterValue SML_ProcParValue OPTIONAL,
+					//
+					auto const attr = read_parameter(*pos++);
+					boost::ignore_unused(attr);
+
+					cyng::tuple_t const rights = cyng::to_tuple(*pos);
+
+					//
+					//	edit data structure
+					//
+					collect_user_rights(data, rights);
+				}
+			}
+			return data;
+		}
+
+		void collect_user_rights(cyng::param_map_t& data, cyng::tuple_t const& tpl)
+		{
+			cyng::vector_t devices;
+			for (auto const& obj : tpl) {
+
+				cyng::tuple_t const entry = cyng::to_tuple(obj);
+				if (entry.size() == 3) {
+					auto pos = entry.begin();
+					auto const code = read_obis(*pos++);
+					auto const attr = read_parameter(*pos++);
+					switch (code.to_uint64()) {
+					case CODE_ACCESS_USER_NAME:
+					case CODE_ACCESS_PASSWORD:
+					case CODE_ACCESS_PUBLIC_KEY:
+						data.emplace(sml::get_name(code), customize_value(code, attr.second));
+						break;
+					default:
+						if (code.is_matching(0x81, 0x81, 0x81, 0x64, 0x01).second) {
+							//	access rights (81 81 81 64 01 NN) on devices
+							//	reduce OBIS code to one integer ind the range from 0x01 - 0xFE		
+							auto const s = code.get_storage();
+							auto const buf = cyng::to_buffer(attr.second);
+
+							auto const name = from_server_id(buf);
+							auto const type = get_srv_type(buf);
+
+							auto dev = cyng::param_map_factory("nr", s)("raw", attr.second)("id", name)("type", static_cast<std::uint32_t>(type))();
+							devices.push_back(dev);
+						}
+						else {
+							data.emplace(code.to_str(), customize_value(code, attr.second));
+						}
+						break;
+					}
+				}
+			}
+
+			//
+			//	add device list
+			//
+			data.emplace("devices", cyng::make_object(devices));
+
+		}
+
 
 		cyng::param_map_t read_period_list(cyng::tuple_t::const_iterator pos
 			, cyng::tuple_t::const_iterator end)

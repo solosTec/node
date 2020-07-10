@@ -12,7 +12,6 @@
 
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
-// #include <cyng/store/db.h>
 #include <cyng/table/key.hpp>
 #include <cyng/vm/context.h>
 #include <cyng/io/serializer.h>

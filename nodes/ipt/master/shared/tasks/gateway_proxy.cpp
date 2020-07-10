@@ -218,7 +218,8 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> get_proc_parameter "
+			<< "> "
+			<< sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 			<< std::string(trx.begin(), trx.end()));
 
 		auto const pos = output_map_.find(trx);
@@ -233,7 +234,9 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> GetProcParam.Res "
+				<< "> "
+				<< sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
+				<< " #"
 				<< trx
 				<< " - "
 				<< sml::get_name(root)
@@ -299,7 +302,7 @@ namespace node
 					<< "> response "
 					<< trx
 					<< " - "
-					<< sml::get_name(root)
+					<< sml::to_hex(path, ':')
 					<< " from "
 					<< srv_str
 					<< "/"
@@ -316,7 +319,7 @@ namespace node
 					, pos->second.get_tag_origin()
 					, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 					, srv_str
-					, root.to_str()
+					, sml::to_hex(path, ':')
 					, params));
 			}
 
@@ -662,7 +665,8 @@ namespace node
 				, origin
 				, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 				, sml::from_server_id(srv_id)
-				, root.to_str()
+				, sml::to_hex(pd.get_path(), ':')
+				//, root.to_str()
 				, config_cache_.get_section(pd.get_path())));
 
 		}

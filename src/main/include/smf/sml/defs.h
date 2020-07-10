@@ -243,7 +243,7 @@ namespace node
 		/**
 		 * Access roles on gateway
 		 */
-		enum class role : std::uint8_t
+		enum /*class*/ role : std::uint8_t
 		{
 			GUEST = 1,
 			USER,	//	end user
@@ -252,7 +252,7 @@ namespace node
 			SERVICE_PROVIDER,
 			SUPPLIER,
 			MANUFACTURER,
-			RESERVED
+			ROLE_RESERVED
 		};
 
 		constexpr std::uint8_t get_bit_position(role r)
@@ -266,12 +266,30 @@ namespace node
 			case role::SERVICE_PROVIDER:	return 16u;
 			case role::SUPPLIER:	return 32u;
 			case role::MANUFACTURER:	return 64u;
-			case role::RESERVED:	return 128u;
+			case role::ROLE_RESERVED:	return 128u;
 			default:
 				break;
 			}
 
 			return 0u;	//	invalid value
+		}
+
+		inline std::string get_role_name(std::uint8_t r) noexcept
+		{
+			switch (r) {
+
+			case role::GUEST:	return "guest";
+			case role::USER:	return "user";
+			case role::GW_OPERATOR:	return "gw-operator";
+			case role::DEV_OPERATOR:	return "dev-operator";
+			case role::SERVICE_PROVIDER:	return "service-provider";
+			case role::SUPPLIER:	return "supplier";
+			case role::MANUFACTURER:	return "manufacturer";
+			default:
+				break;
+			}
+
+			return "reserved";
 		}
 
 	}	//	sml

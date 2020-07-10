@@ -122,6 +122,10 @@ namespace node
 					<< cyng::io::to_str(std::get<5>(tpl))
 					<< ", channel: "
 					<< std::get<3>(tpl));
+
+				//
+				//	ToDo: produce an attention message as answer
+				//
 			}
 
 		});
@@ -141,7 +145,7 @@ namespace node
 		//	* [uuid] web-socket tag
 		//	* [str] channel (e.g. "GetProcParameterRequest")
 		//	* [str] server id (e.g. "00:15:3b:02:29:7e")
-		//	* [str] "OBIS code" as text
+		//	* [str] "OBIS root" as text
 		//	* [param_map_t] params
 		auto const frame = ctx.get_frame();
 		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
@@ -154,7 +158,7 @@ namespace node
 			boost::uuids::uuid,		//	[4] websocket tag (origin)
 			std::string,			//	[5] channel (message type)
 			std::string,			//	[6] server id
-			std::string,			//	[7] "OBIS code" as text (see obis_db.cpp)
+			std::string,			//	[7] "OBIS root" as text (see obis_db.cpp)
 			cyng::param_map_t		//	[8] params
 		>(frame);
 
@@ -752,11 +756,11 @@ namespace node
 					//
 					//	get login parameters
 					//
-					const auto server = cyng::value_cast<std::string>(rec_gw["serverId"], "05000000000000");
-					const auto name = cyng::value_cast<std::string>(rec_gw["userName"], "");
-					const auto pwd = cyng::value_cast<std::string>(rec_gw["userPwd"], "");
+					auto const server = cyng::value_cast<std::string>(rec_gw["serverId"], "05000000000000");
+					auto const name = cyng::value_cast<std::string>(rec_gw["userName"], "");
+					auto const pwd = cyng::value_cast<std::string>(rec_gw["userPwd"], "");
 
-					const auto id = cyng::parse_hex_string(server);
+					auto const id = cyng::parse_hex_string(server);
 					if (id.second)
 					{
 						CYNG_LOG_TRACE(logger_, "gateway "
