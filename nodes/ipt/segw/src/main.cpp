@@ -31,7 +31,8 @@ int main(int argc, char **argv)
 	std::string config_file;
 	std::uint32_t profile{ 0 };
 	std::string value{ "bool:rs485:enabled:true" };
-
+	std::string connect{ "demo:demo@segw.ch:26862" };
+	
 	//
 	//	generic options
 	//
@@ -54,6 +55,7 @@ int main(int argc, char **argv)
 		("clear", boost::program_options::bool_switch()->default_value(false), "delete configuration from database")
 		("dump", boost::program_options::value<std::uint32_t>(&profile)->default_value(0)->implicit_value(11), "dump profile data (11 .. 18), 1 == PushOps, 2 == Devices")
 		("set-value", boost::program_options::value<std::string>(&value), "set configuration value")
+		("connect", boost::program_options::value<std::string>(&connect), "test connection to IP-T server")
 		;
 
 	//	path to JSON configuration file
@@ -213,6 +215,11 @@ int main(int argc, char **argv)
 			return ctrl.set_value(kv);
 		}
 
+		if (vm.count("connect"))
+		{
+// 			return ctrl.dry_connect(connect);
+		}
+		
 #if BOOST_OS_WINDOWS
 		if (vm["service.enabled"].as< bool >())
 		{

@@ -27,7 +27,7 @@ namespace node
 		, std::uint64_t max_upload_size
 		, std::string const& doc_root
 		, auth_dirs const& ad
-		, std::set<boost::asio::ip::address> const& blacklist
+		, std::set<boost::asio::ip::address> const& blocklist
 		, std::map<std::string, std::string> const& redirects)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
@@ -42,7 +42,7 @@ namespace node
 			, doc_root
 			, "LoRy"
 			, ad
-			, blacklist
+			, blocklist
 			, redirects
 			, bus_->vm_)
 		, cache_()

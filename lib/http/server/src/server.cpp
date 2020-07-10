@@ -29,14 +29,14 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs const& ad
 #endif
-			, std::set<boost::asio::ip::address> const& blacklist
+			, std::set<boost::asio::ip::address> const& blocklist
 			, std::map<std::string, std::string> const& redirects
 			, cyng::controller& vm
 			, bool https_rewrite)
 		: logger_(logger)
 			, acceptor_(ioc)
 			, socket_(ioc)
-			, blacklist_(blacklist)
+			, blocklist_(blocklist)
 			, connection_manager_(logger
 				, vm
 				, doc_root
@@ -183,32 +183,32 @@ namespace node
 			else
 			{
 				//
-				//	test for blacklisted IP addresses
+				//	test for blocklisted IP addresses
 				//	since C++20 use contains()
 				//
 
 #if (BOOST_BEAST_VERSION < 248)
-				auto pos = blacklist_.find(socket_.remote_endpoint().address());
-				if (pos != blacklist_.end()) {
+				auto pos = blocklist_.find(socket_.remote_endpoint().address());
+				if (pos != blocklist_.end()) {
 
 					CYNG_LOG_WARNING(logger_, "address "
 						<< socket_.remote_endpoint()
-						<< " is blacklisted");
+						<< " is blocklisted");
 					socket_.close();
 #else
-				auto pos = blacklist_.find(socket.remote_endpoint().address());
-				if (pos != blacklist_.end()) {
+				auto pos = blocklist_.find(socket.remote_endpoint().address());
+				if (pos != blocklist_.end()) {
 
 					CYNG_LOG_WARNING(logger_, "address "
 						<< socket.remote_endpoint()
-						<< " is blacklisted");
+						<< " is blocklisted");
 					socket.close();
 #endif
 					
 					
 					std::stringstream ss;
 					ss
-						<< "access from blacklisted address: "
+						<< "access from blocklisted address: "
 						<< *pos
 						;
 					connection_manager_.vm().async_run(cyng::generate_invoke("log.msg.warning", ss.str()));					

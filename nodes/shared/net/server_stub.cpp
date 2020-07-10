@@ -21,12 +21,12 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, bus::shared_type bus
 		, std::chrono::seconds timeout
-		, std::set<boost::asio::ip::address> const& blacklist)
+		, std::set<boost::asio::ip::address> const& blocklist)
 	: mux_(mux)
 		, logger_(logger)
 		, bus_(bus)
 		, timeout_(timeout)
-		, blacklist_(blacklist)
+		, blocklist_(blocklist)
 		, acceptor_(mux.get_io_service())
 #if (BOOST_VERSION < 106600)
         , socket_(mux_.get_io_service())
@@ -151,12 +151,12 @@ namespace node
 
 			if (!ec)	{
 
-				auto pos = blacklist_.find(socket.remote_endpoint().address());
-				if (pos != blacklist_.end()) {
+				auto pos = blocklist_.find(socket.remote_endpoint().address());
+				if (pos != blocklist_.end()) {
 
 					CYNG_LOG_WARNING(logger_, "address "
 						<< socket.remote_endpoint()
-						<< " is blacklisted");
+						<< " is blocklisted");
 					socket.close();
 				}
 				else {

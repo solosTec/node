@@ -218,7 +218,7 @@ namespace node
 							cyng::param_factory("/", "/index.html")
 						})),
 						cyng::param_factory("https-rewrite", false),	//	301 - Moved Permanently
-						cyng::param_factory("blacklist", cyng::vector_factory({
+						cyng::param_factory("blocklist", cyng::vector_factory({
 							//	https://bl.isx.fr/raw
 							cyng::make_address("185.244.25.187"),	//	KV Solutions B.V. scans for "login.cgi"
 							cyng::make_address("139.219.100.104"),	//	ISP Microsoft (China) Co. Ltd. - 2018-07-31T21:14
@@ -227,7 +227,7 @@ namespace node
 							cyng::make_address("42.236.101.234"),	//	hn.kd.ny.adsl (china)
 							cyng::make_address("185.104.184.126"),	//	M247 Ltd
 							cyng::make_address("185.162.235.56")	//	SILEX malware
-						}))	//	blacklist
+						}))	//	blocklist
 					))
 					, cyng::param_factory("mail", cyng::tuple_factory(
 						cyng::param_factory("host", "smtp.gmail.com"),
@@ -303,13 +303,13 @@ namespace node
 		auto const address = cyng::make_address(host);
 
 		//
-		//	get blacklisted addresses
+		//	get blocklisted addresses
 		//
-		const auto blacklist_str = cyng::vector_cast<std::string>(dom["http"].get("blacklist"), "");
-		CYNG_LOG_INFO(logger, blacklist_str.size() << " addresses are blacklisted");
-		std::set<boost::asio::ip::address>	blacklist;
-		for (auto const& a : blacklist_str) {
-			auto r = blacklist.insert(boost::asio::ip::make_address(a));
+		const auto blocklist_str = cyng::vector_cast<std::string>(dom["http"].get("blocklist"), "");
+		CYNG_LOG_INFO(logger, blocklist_str.size() << " addresses are blocklisted");
+		std::set<boost::asio::ip::address>	blocklist;
+		for (auto const& a : blocklist_str) {
+			auto r = blocklist.insert(boost::asio::ip::make_address(a));
 			if (r.second) {
 				CYNG_LOG_TRACE(logger, *r.first);
 			}
@@ -353,7 +353,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 			, ad
 #endif
-			, blacklist
+			, blocklist
 			, redirects
 			, vm
 			, https_rewrite);

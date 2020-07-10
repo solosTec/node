@@ -36,7 +36,7 @@ namespace node
 				, std::string const& doc_root
 				, std::string const& nickname
 				, auth_dirs const& ad
-				, std::set<boost::asio::ip::address> const& blacklist
+				, std::set<boost::asio::ip::address> const& blocklist
 				, std::map<std::string, std::string> const& redirects
 				, cyng::controller& vm);
 
@@ -78,9 +78,9 @@ namespace node
 			connections connection_manager_;
 
 			/**
-			 * all blacklisted addresses
+			 * all blocklisted addresses
 			 */
-			const std::set<boost::asio::ip::address>	blacklist_;
+			const std::set<boost::asio::ip::address>	blocklist_;
 
 			/**
 			 *	set to true when the server is listening for new connections

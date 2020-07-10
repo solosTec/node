@@ -44,7 +44,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 		, auth_dirs const& ad
 #endif
-		, std::set<boost::asio::ip::address> const& blacklist
+		, std::set<boost::asio::ip::address> const& blocklist
 		, std::map<std::string, std::string> const& redirects
 		, bool https_rewrite)
 	: base_(*btp)
@@ -64,7 +64,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 			, ad
 #endif
-			, blacklist
+			, blocklist
 			, redirects
 			, bus_->vm_
 			, https_rewrite)

@@ -23,7 +23,7 @@ namespace node
 			, std::string const& doc_root
 			, std::string const& nickname
 			, auth_dirs const& ad
-			, std::set<boost::asio::ip::address> const& blacklist
+			, std::set<boost::asio::ip::address> const& blocklist
 			, std::map<std::string, std::string> const& redirects
 			, cyng::controller& vm)
 		: logger_(logger)
@@ -41,7 +41,7 @@ namespace node
 				, redirects
 				, max_upload_size
 				, timeout)
-			, blacklist_(blacklist)
+			, blocklist_(blocklist)
 			, is_listening_(false)
 			, shutdown_complete_()
 			, mutex_()
@@ -156,25 +156,25 @@ namespace node
 			{
 				//	since C++20 use contains()
 #if (BOOST_BEAST_VERSION < 248)
-				auto pos = blacklist_.find(socket_.remote_endpoint().address());
-				if (pos != blacklist_.end()) {
+				auto pos = blocklist_.find(socket_.remote_endpoint().address());
+				if (pos != blocklist_.end()) {
 
 					CYNG_LOG_WARNING(logger_, "address "
 						<< socket_.remote_endpoint()
-						<< " is blacklisted");
+						<< " is blocklisted");
 					socket_.close();
 #else
-				auto pos = blacklist_.find(socket.remote_endpoint().address());
-				if (pos != blacklist_.end()) {
+				auto pos = blocklist_.find(socket.remote_endpoint().address());
+				if (pos != blocklist_.end()) {
 
 					CYNG_LOG_WARNING(logger_, "address "
 						<< socket.remote_endpoint()
-						<< " is blacklisted");
+						<< " is blocklisted");
 					socket.close();
 #endif
 					std::stringstream ss;
 					ss
-					 << "access from blacklisted address: "
+					 << "access from blocklisted address: "
 					 << *pos
 					 ;
 					connection_manager_.vm().async_run(cyng::generate_invoke("log.msg.warning", ss.str()));

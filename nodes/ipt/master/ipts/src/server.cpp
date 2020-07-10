@@ -20,9 +20,9 @@ namespace node
 			, std::chrono::seconds timeout
 			, scramble_key const& sk
 			, uint16_t watchdog
-			, std::set<boost::asio::ip::address> const& blacklist
+			, std::set<boost::asio::ip::address> const& blocklist
 			, bool sml_log)
-		: server_stub(mux, logger, bus, timeout, blacklist)
+		: server_stub(mux, logger, bus, timeout, blocklist)
 			, sk_(sk)
 			, watchdog_(watchdog)
 			, sml_log_(sml_log)

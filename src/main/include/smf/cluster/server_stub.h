@@ -26,7 +26,7 @@ namespace node
 			, cyng::logging::log_ptr logger
 			, bus::shared_type
 			, std::chrono::seconds
-			, std::set<boost::asio::ip::address> const& blacklist);
+			, std::set<boost::asio::ip::address> const& blocklist);
 
 		/**
 		 * start listening
@@ -134,9 +134,9 @@ namespace node
 		const std::chrono::seconds timeout_;
 
 		/**
-		 * blacklistet IP adresses
+		 * blocklistet IP adresses
 		 */
-		std::set<boost::asio::ip::address> const blacklist_;
+		std::set<boost::asio::ip::address> const blocklist_;
 
 
 	private:

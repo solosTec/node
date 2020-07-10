@@ -33,7 +33,7 @@ namespace node
 			, std::string const& address
 			, std::string const& service
 			, std::chrono::seconds timeout
-			, std::set<boost::asio::ip::address> const& blacklist
+			, std::set<boost::asio::ip::address> const& blocklist
 			, std::string pwd_policy
 			, std::string);
 		cyng::continuation run();

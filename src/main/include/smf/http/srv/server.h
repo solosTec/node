@@ -42,7 +42,7 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs const& ad
 #endif
-				, std::set<boost::asio::ip::address> const& blacklist
+				, std::set<boost::asio::ip::address> const& blocklist
 				, std::map<std::string, std::string> const& redirects
 				, cyng::controller& vm
 				, bool https_rewrite);
@@ -73,7 +73,7 @@ namespace node
 			cyng::logging::log_ptr logger_;
 			boost::asio::ip::tcp::acceptor acceptor_;
 			boost::asio::ip::tcp::socket socket_;
-			std::set<boost::asio::ip::address> const blacklist_;
+			std::set<boost::asio::ip::address> const blocklist_;
 
 			/**
 			 * The connection manager which owns all live connections.

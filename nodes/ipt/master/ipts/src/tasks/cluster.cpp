@@ -22,7 +22,7 @@ namespace node
 		, ipt::scramble_key const& sk
 		, uint16_t watchdog
 		, int timeout
-		, std::set<boost::asio::ip::address> const& blacklist
+		, std::set<boost::asio::ip::address> const& blocklist
 		, bool sml_log)
 	: base_(*btp)
 	, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
@@ -30,7 +30,7 @@ namespace node
 	, config_(cfg_cls)
 	, ipt_address_(address)
 	, ipt_service_(service)
-	, server_(btp->mux_, logger_, bus_, std::chrono::seconds(timeout), sk, watchdog, blacklist, sml_log)
+	, server_(btp->mux_, logger_, bus_, std::chrono::seconds(timeout), sk, watchdog, blocklist, sml_log)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

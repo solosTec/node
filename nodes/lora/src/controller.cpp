@@ -89,13 +89,13 @@ namespace node
 						) } )),	//	auth
 
 					//185.244.25.187
-					cyng::param_factory("blacklist", cyng::vector_factory({
+					cyng::param_factory("blocklist", cyng::vector_factory({
 						cyng::make_address("185.244.25.187"),	//	KV Solutions B.V. scans for login.cgi
 						cyng::make_address("139.219.100.104"),	//	ISP Microsoft (China) Co. Ltd. - 2018-07-31T21:14
 						cyng::make_address("194.147.32.109"),	//	Udovikhin Evgenii - 2019-02-01 15:23:08.13699453
 						cyng::make_address("184.105.247.196")	//	Hurricane Electric LLC, scan-15.shadowserver.org - 2019-02-01 16:13:13.81835055
 						//cyng::make_address("178.38.88.91")
-						})),	//	blacklist
+						})),	//	blocklist
 
 					cyng::param_factory("redirect", cyng::vector_factory({
 						cyng::param_factory("/", "/index.html")
@@ -186,13 +186,13 @@ namespace node
 		}
 
 		//
-		//	get blacklisted addresses
+		//	get blocklisted addresses
 		//
-		const auto blacklist_str = cyng::vector_cast<std::string>(dom.get("blacklist"), "");
-		CYNG_LOG_INFO(logger, blacklist_str.size() << " addresses are blacklisted");
-		std::set<boost::asio::ip::address>	blacklist;
-		for (auto const& a : blacklist_str) {
-			auto r = blacklist.insert(boost::asio::ip::make_address(a));
+		const auto blocklist_str = cyng::vector_cast<std::string>(dom.get("blocklist"), "");
+		CYNG_LOG_INFO(logger, blocklist_str.size() << " addresses are blocklisted");
+		std::set<boost::asio::ip::address>	blocklist;
+		for (auto const& a : blocklist_str) {
+			auto r = blocklist.insert(boost::asio::ip::make_address(a));
 			if (r.second) {
 				CYNG_LOG_TRACE(logger, *r.first);
 			}
@@ -247,7 +247,7 @@ namespace node
 			, max_upload_size
 			, doc_root
 			, ad
-			, blacklist
+			, blocklist
 			, redirects);
 
 		if (r.second)	return r.first;

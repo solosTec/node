@@ -42,7 +42,7 @@ namespace node
 		, std::string const& doc_root
 		, std::string const& nickname
 		, auth_dirs const& ad
-		, std::set<boost::asio::ip::address> const& blacklist
+		, std::set<boost::asio::ip::address> const& blocklist
 		, std::map<std::string, std::string> const& redirects)
 	: base_(*btp)
 		, uidgen_()
@@ -59,7 +59,7 @@ namespace node
 			, doc_root
 			, nickname
 			, ad
-			, blacklist
+			, blocklist
 			, redirects
 			, bus_->vm_)
 		, dispatcher_(logger, server_.get_cm())
