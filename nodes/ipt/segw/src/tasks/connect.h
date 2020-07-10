@@ -150,6 +150,7 @@ namespace node
 			virtual cyng::buffer_t on_transmit_data(cyng::buffer_t const&) override;
 
 		private:
+			void reconfigure(cyng::context& ctx);
 
 		private:
 			cyng::async::base_task& base_;

@@ -80,6 +80,8 @@ namespace node
 
 			});
 
+			vm_.register_function("bus.reconfigure", 1, std::bind(&connect::reconfigure, this, std::placeholders::_1));
+
 			//
 			//	statistics
 			//
@@ -127,6 +129,12 @@ namespace node
 				<< " <"
 				<< base_.get_class_name()
 				<< "> is stopped");
+		}
+
+		void connect::reconfigure(cyng::context& ctx)
+		{
+			const cyng::vector_t frame = ctx.get_frame();
+			CYNG_LOG_WARNING(logger_, "bus.reconfigure " << cyng::io::to_str(frame));
 		}
 
 		//	slot [0] 0x4001/0x4002: response login
