@@ -11,7 +11,6 @@
 #include "../storage.h"
 #include "../bridge.h"
 #include "../segw.h"
-#include "../cfg_ipt.h"
 
 #include <smf/serial/baudrate.h>
 #include <smf/ipt/response.hpp>
@@ -55,6 +54,7 @@ namespace node
 			, logger_(logger)
 			, bridge_(b)
 			, cache_(b.cache_)
+			, cfg_(cache_)
 			, storage_(b.storage_)
 			, parser_([this](cyng::vector_t&& prg) {
 				CYNG_LOG_INFO(logger_, prg.size() << " SML instructions received (client)");
@@ -183,28 +183,28 @@ namespace node
 			//
 			//	get IP-T configuration
 			//
-			cfg_ipt ipt(cache_);
+			//cfg_ipt ipt(cache_);
 
 			if (is_online())
 			{
 				//
 				//	re/start monitor
 				//
-				base_.suspend(ipt.get_ipt_tcp_wait_to_reconnect());
+				base_.suspend(cfg_.get_ipt_tcp_wait_to_reconnect());
 			}
 			else
 			{
 				//
 				//	reset parser and serializer
 				//
-				auto const sk = ipt.get_ipt_sk();
+				auto const sk = cfg_.get_ipt_sk();
 				vm_.async_run({ cyng::generate_invoke("ipt.reset.parser", sk)
 					, cyng::generate_invoke("ipt.reset.serializer", sk) });
 
 				//
 				//	login request
 				//
-				req_login(ipt.get_ipt_master());
+				req_login(cfg_.get_ipt_master());
 			}
 
 			return cyng::continuation::TASK_CONTINUE;
@@ -279,14 +279,18 @@ namespace node
 			//	op log entry
 			//
 			auto const sw = cache_.get_status_word();
-			auto srv = cache_.get_srv_id();
+			auto const srv = cache_.get_srv_id();
+
+			//cfg_ipt ipt(cache_);
+			auto const rec = cfg_.get_ipt_master();
+
 
 			//LOG_CODE_65 = 0x4970000E,	//	IP-T - Zugang verloren, Verbindung unerwartet abgebrochen
 			storage_.generate_op_log(sw
 				, sml::LOG_CODE_65	//	0x4970000A - IP-T - Zugang erfolgt
 				, sml::OBIS_PEER_ADDRESS_WANGSM	//	source is WANGSM (or LOG_SOURCE_ETH == 81, 04, 00, 00, 00, FF)
 				, srv	//	server ID
-				, ""	//	target
+				, rec.host_	//	target
 				, 0		//	nr
 				, "IP-T login");	//	description
 
@@ -430,12 +434,12 @@ namespace node
 			//
 			//	get IP-T configuration
 			//
-			cfg_ipt ipt(cache_);
+			//cfg_ipt ipt(cache_);
 
 			//
 			//	switch to other master
 			//
-			auto const rec = ipt.switch_ipt_redundancy();
+			auto const rec = cfg_.switch_ipt_redundancy();
 
 			CYNG_LOG_INFO(logger_, "switch to redundancy ["
 				<< rec.host_
@@ -449,7 +453,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "reconnect to network in "
 				<< cyng::to_str(rec.monitor_));
 
-			base_.suspend(ipt.get_ipt_tcp_wait_to_reconnect());
+			base_.suspend(cfg_.get_ipt_tcp_wait_to_reconnect());
 		}
 
 		void network::load_push_ops()

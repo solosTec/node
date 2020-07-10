@@ -14,6 +14,7 @@
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/asio_domain.h>
 #include <cyng/value_cast.hpp>
+#include <cyng/numeric_cast.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/async/task/task_builder.hpp>
@@ -305,7 +306,7 @@ namespace node
 			//
 			//	update watchdog
 			//
-			watchdog_ = cyng::value_cast(frame.at(2), std::uint16_t(23));
+			watchdog_ = cyng::numeric_cast<std::uint16_t>(frame.at(2), 23u);
 			const std::string redirect = cyng::value_cast<std::string>(frame.at(3), "");
 
 			if (scrambled) {

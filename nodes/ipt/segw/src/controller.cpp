@@ -274,7 +274,7 @@ namespace node
 				, cyng::param_factory("ipt-param", cyng::tuple_factory(
 					cyng::param_factory(sml::OBIS_TCP_WAIT_TO_RECONNECT.to_str(), 1u),	//	minutes
 					cyng::param_factory(sml::OBIS_TCP_CONNECT_RETRIES.to_str(), 3u),
-					cyng::param_factory(sml::make_obis(0x00, 0x80, 0x80, 0x00, 0x03, 0x01).to_str(), 0u)
+					cyng::param_factory(sml::make_obis(0x00, 0x80, 0x80, 0x00, 0x03, 0x01).to_str(), 0u)	//	has SSL configuration
 				))
 
 				//	built-in meter

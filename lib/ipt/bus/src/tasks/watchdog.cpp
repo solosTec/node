@@ -8,8 +8,10 @@
 #include "watchdog.h"
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/bus.h>
+
 #include <cyng/vm/generator.h>
 #include <cyng/intrinsics/op.h>
+#include <cyng/io/io_chrono.hpp>
 
 namespace node
 {
@@ -20,7 +22,7 @@ namespace node
 	: base_(*btp)
 		, logger_(logger)
 		, vm_(vm)
-		, watchdog_(watchdog)
+		, watchdog_((watchdog * 60) - 4)	//	send 4 seconds earlier
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -29,8 +31,8 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> with "
-			<< watchdog_
-			<< " minutes");
+			<< cyng::to_str(watchdog_)
+			<< " watchdog");
 	}
 
 	cyng::continuation watchdog::run()
@@ -45,7 +47,7 @@ namespace node
 		//
 		//	re/start monitor
 		//
-		base_.suspend(std::chrono::minutes(watchdog_));
+		base_.suspend(watchdog_);
 
 		//
 		//	send watchdog

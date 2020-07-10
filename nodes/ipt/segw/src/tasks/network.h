@@ -11,6 +11,7 @@
 #include <smf/ipt/bus.h>
 #include <smf/sml/protocol/parser.h>
 #include "../router.h"
+#include "../cfg_ipt.h"
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -182,6 +183,7 @@ namespace node
 			 */
 			bridge& bridge_;
 			cache& cache_;
+			cfg_ipt cfg_;
 
 			/**
 			 * SQL database
@@ -199,15 +201,9 @@ namespace node
 			router router_;
 
 			/**
-			 * maintain relation between sequence and open push channel request
-			 */
-			//std::map<sequence_type, std::pair<std::size_t, std::string>>	seq_open_channel_map_;
-
-			/**
 			 * GPIO to signal IP-T online state
 			 */
 			std::size_t task_gpio_;
-
 
 		};
 	}
