@@ -763,13 +763,13 @@ namespace node
 				|| OBIS_CODE(81, 49, 17, 07, 00, 02) == code) {
 				return cyng::make_object(ip_address_to_str(obj));
 			}
-			else if (code.is_matching(0x81, 0x49, 0x1A, 0x07, 0x00).second
-				|| OBIS_W_MBUS_MODE_S == code
-				|| OBIS_W_MBUS_MODE_T == code) {
+			else if (code.is_matching(0x81, 0x49, 0x1A, 0x07, 0x00).second	//	TARGET_PORT_ADDRESS
+				|| code.is_matching(0x81, 0x49, 0x19, 0x07, 0x00).second) {	//	SOURCE_PORT_ADDRESS
 				return cyng::make_object(cyng::numeric_cast<std::uint16_t>(obj, 0u));
 			}
-			else if (code.is_matching(0x81, 0x49, 0x19, 0x07, 0x00).second) {
-				return cyng::make_object(cyng::numeric_cast<std::uint16_t>(obj, 0u));
+			else if (OBIS_W_MBUS_MODE_S == code
+				|| OBIS_W_MBUS_MODE_T == code) {	
+				return cyng::make_object(cyng::numeric_cast<std::uint8_t>(obj, 0u));
 			}
 			else if (code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x01).second
 				|| code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x02).second
@@ -786,7 +786,8 @@ namespace node
 				|| OBIS_IF_1107_W5 == code
 				|| OBIS_PUSH_TARGET == code
 				|| code.is_matching(0x81, 0x81, 0xC7, 0x82, 0x0A).second
-				|| OBIS_ACCESS_USER_NAME == code) {
+				|| OBIS_ACCESS_USER_NAME == code
+				|| OBIS_ACCESS_PASSWORD == code) {
 				//	buffer to string
 				cyng::buffer_t const buffer = cyng::to_buffer(obj);
 				return cyng::make_object(std::string(buffer.begin(), buffer.end()));
