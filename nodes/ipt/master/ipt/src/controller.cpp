@@ -18,6 +18,7 @@
 #include <cyng/rnd.h>
 #include <cyng/vector_cast.hpp>
 #include <cyng/set_cast.h>
+#include <cyng/numeric_cast.hpp>
 
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/random.hpp>
@@ -171,6 +172,17 @@ namespace node
 			}
 		}
 
+		//
+		//	get watchdog in minutes
+		//
+		auto const watchdog = cyng::numeric_cast<std::uint16_t>(dom.get("watchdog"), 30u);
+		if (watchdog == 0) {
+			CYNG_LOG_WARNING(logger, "watchdog is disabled");
+		}
+		else {
+			CYNG_LOG_INFO(logger, "watchdog is " << watchdog << " minutes");
+		}
+
 		return cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
 			, logger
@@ -179,7 +191,7 @@ namespace node
 			, cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0")
 			, cyng::value_cast<std::string>(dom.get("service"), "26862")
 			, sk
-			, cyng::value_cast<int>(dom.get("watchdog"), 30)
+			, watchdog
 			, cyng::value_cast<int>(dom.get("timeout"), 12)
 			, blocklist
 			, sml_log);
