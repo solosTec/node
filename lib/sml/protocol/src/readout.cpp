@@ -335,7 +335,7 @@ namespace node
 				//cyng::param_map_t data;
 				auto p = const_cast<cyng::param_map_t*>(cyng::object_cast<cyng::param_map_t>(param.second));
 				if (p != nullptr) {
-					(*p).emplace("role", cyng::make_object(role));
+					(*p).emplace("role", cyng::make_object(get_role_name(role)));
 					(*p).emplace("user", cyng::make_object(user));
 					(*p).emplace("nr", cyng::make_object(nr));
 				}

@@ -312,6 +312,7 @@ namespace node
 					<< "]: "
 					<< cyng::io::to_str(params));
 
+// 				cyng::vector_t transform_to_vector(obis_path_t const&, bool translate);
 				bus_->vm_.async_run(bus_res_com_sml(pos->second.get_tag_ident()
 					, pos->second.get_tag_source()
 					, pos->second.get_sequence()
@@ -319,7 +320,8 @@ namespace node
 					, pos->second.get_tag_origin()
 					, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 					, srv_str
-					, sml::to_hex(path, ':')
+// 					, path
+					, transform_to_str_vector(path, false)	//	vector of string
 					, params));
 			}
 
@@ -445,7 +447,8 @@ namespace node
 				//	substitute request with response name
 				, sml::messages::name(sml::messages::get_response(pos->second.get_msg_code()))
 				, srv_str
-				, root.to_str()
+// 				, path
+				, transform_to_str_vector(path, false)	//	vector of string
 				, params));
 
 			//
@@ -591,7 +594,7 @@ namespace node
 				//	replace request with response name
 				, sml::messages::name(sml::messages::get_response(pos->second.get_msg_code()))
 				, srv_str
-				, root.to_str()
+				, transform_to_str_vector(path, false)	//	vector of string
 				, params));
 
 			//
@@ -665,8 +668,7 @@ namespace node
 				, origin
 				, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 				, sml::from_server_id(srv_id)
-				, sml::to_hex(pd.get_path(), ':')
-				//, root.to_str()
+				, transform_to_str_vector(pd.get_path(), false)	//	vector of string
 				, config_cache_.get_section(pd.get_path())));
 
 		}

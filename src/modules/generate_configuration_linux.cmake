@@ -74,7 +74,7 @@ if (${${PROJECT_NAME}_CROSS_COMPILE})
 			
 	configure_file (
 			"${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/oecp.service.in"
-			"${PROJECT_BINARY_DIR}/config/node-segw.service")
+			"${PROJECT_BINARY_DIR}/config/segw.service")
 else()
 	configure_file (
 			"${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.linux.cgf.in"

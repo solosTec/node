@@ -48,7 +48,7 @@ namespace node
 		: bus(logger
 				, btp->mux_
 				, tag	
-				, "ipt:gateway"
+				, "SMF-GW:ETH"
 				, 1u)
 			, base_(*btp)
 			, logger_(logger)

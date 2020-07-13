@@ -2622,7 +2622,7 @@ namespace node
 						const std::string model = cyng::value_cast<std::string>(value, "");
 						if (boost::algorithm::starts_with(model, "EMH-")	//	this excludes EMHcomBase
 							|| boost::algorithm::istarts_with(model, "variomuc")
-							|| boost::algorithm::equals(model, "ipt:gateway"))
+							|| boost::algorithm::equals(model, "SMF-GW:ETH"))
 						{
 							auto dev_rec = tbl_device->lookup(dev_pk);
 
@@ -2645,7 +2645,7 @@ namespace node
 
 								tbl_gw->insert(dev_pk
 									, cyng::table::data_generator(server_id
-										, (boost::algorithm::equals(model, "ipt:gateway") ? "solosTec" : "EMH")
+										, (boost::algorithm::equals(model, "SMF-GW:ETH") ? "solosTec" : "EMH")
 										, std::chrono::system_clock::now()
 										, "factory-nr"
 										, cyng::mac48(0, 1, 2, 3, 4, 5)

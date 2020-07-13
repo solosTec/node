@@ -9,6 +9,7 @@
 #define NODE_CLUSTER_GENERATOR_H
 
 #include <NODE_project_info.h>
+
 #include <cyng/intrinsics/sets.h>
 #include <cyng/vm/generator.h>
 
@@ -163,7 +164,7 @@ namespace node
 		, boost::uuids::uuid tag_ws
 		, std::string channel
 		, std::string srv
-		, std::string code
+		, std::vector<std::string> const& path
 		, cyng::param_map_t params);
 
 	/**

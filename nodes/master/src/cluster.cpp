@@ -14,6 +14,7 @@
 #include <smf/shared/db_cfg.h>
 
 #include <cyng/tuple_cast.hpp>
+#include <cyng/vector_cast.hpp>
 #include <cyng/parser/buffer_parser.h>
 #include <cyng/dom/algorithm.h>
 #include <cyng/io/io_buffer.h>
@@ -158,7 +159,7 @@ namespace node
 			boost::uuids::uuid,		//	[4] websocket tag (origin)
 			std::string,			//	[5] channel (message type)
 			std::string,			//	[6] server id
-			std::string,			//	[7] "OBIS root" as text (see obis_db.cpp)
+			cyng::vector_t,			//	[7] "OBIS path"
 			cyng::param_map_t		//	[8] params
 		>(frame);
 
@@ -168,13 +169,15 @@ namespace node
 		BOOST_ASSERT_MSG(!std::get<3>(tpl).empty(), "no TGateway key");
 		if (std::get<3>(tpl).size() != 1)	return;
 
+		auto const path = cyng::vector_cast<std::string>(std::get<7>(tpl), "");	//	convert to vector of strings
+		
 		//
 		//	update specific data in TGateway and TMeter table (81 81 11 06 FF FF == OBIS_ROOT_ACTIVE_DEVICES)
 		//	We don't include <smf/sml/obis_db.h> otherwise we had to link agains the whole
 		//	SML library.
 		//
-		if (boost::algorithm::equals(std::get<7>(tpl), "81811006FFFF") 
-			|| boost::algorithm::equals(std::get<7>(tpl), "81811106FFFF")) {
+		if (boost::algorithm::equals(path.front(), "81811006FFFF") 
+			|| boost::algorithm::equals(path.front(), "81811106FFFF")) {
 
 			routing_back_meters(std::get<0>(tpl)
 				, std::get<1>(tpl)
@@ -183,7 +186,7 @@ namespace node
 				, std::get<4>(tpl)
 				, std::get<5>(tpl)
 				, std::get<6>(tpl)
-				, std::get<7>(tpl)
+				, path
 				, std::get<8>(tpl));
 
 			//
@@ -192,7 +195,7 @@ namespace node
 
 		}
 		//	81, 06, 0F, 06, 00, FF, ROOT_W_MBUS_STATUS
-		else if (boost::algorithm::equals(std::get<7>(tpl), "81060F0600FF")) {
+		else if (boost::algorithm::equals(path.front(), "81060F0600FF")) {
 
 			//
 			//	update TGateway table
@@ -217,7 +220,7 @@ namespace node
 				, std::get<4>(tpl)
 				, std::get<5>(tpl)
 				, std::get<6>(tpl)
-				, std::get<7>(tpl)
+				, path
 				, std::get<8>(tpl));
 		}
 		else {
@@ -232,7 +235,7 @@ namespace node
 				, std::get<4>(tpl)
 				, std::get<5>(tpl)
 				, std::get<6>(tpl)
-				, std::get<7>(tpl)
+				, path
 				, std::get<8>(tpl));
 		}
 	}
@@ -244,8 +247,8 @@ namespace node
 		, boost::uuids::uuid ws
 		, std::string channel
 		, std::string server_id
-		, std::string code
-		, cyng::param_map_t& params)
+		, std::vector<std::string> path
+		, cyng::param_map_t const& params)
 	{
 		cache_.read_table("_Cluster", [&](cyng::store::table const* tbl_cluster)->void {
 
@@ -274,7 +277,7 @@ namespace node
 						, ws
 						, channel
 						, server_id
-						, code
+						, path
 						, params));	//	params						
 				}
 			}
@@ -291,7 +294,7 @@ namespace node
 		, boost::uuids::uuid ws
 		, std::string channel
 		, std::string server_id
-		, std::string code
+		, std::vector<std::string> path
 		, cyng::param_map_t& meters)
 	{
 		//
@@ -318,7 +321,7 @@ namespace node
 
 			CYNG_LOG_INFO(logger_, "meter configuration - " << cyng::io::to_str(*data_ptr));
 
-			auto const active = boost::algorithm::equals(code, "81811106FFFF");
+			auto const active = boost::algorithm::equals(path.front(), "81811106FFFF");
 			const auto ident = cyng::find_value(*data_ptr, "8181C78204FF", std::string{});
 			const auto type = cyng::find_value<std::uint32_t>(*data_ptr, "type", 0u);
 
@@ -367,7 +370,7 @@ namespace node
 			, ws
 			, channel
 			, server_id
-			, code
+			, path
 			, meters);
 
 	}
@@ -464,14 +467,14 @@ namespace node
 
 	}
 
-	void cluster::routing_back(boost::uuids::uuid ident
+	void cluster::routing_back_msg(boost::uuids::uuid ident
 		, boost::uuids::uuid source
 		, std::uint64_t sequence
 		, cyng::vector_t gw_key
 		, boost::uuids::uuid ws
 		, std::string channel			//	[5] channel (message type)
 		, std::string srv_id			//	[6] server id
-		, cyng::vector_t sections		//	[7] vector of root paths
+		, cyng::vector_t path			//	[7] vector of root paths
 		, cyng::param_map_t params)		//	[8] params
 	{
 		cache_.read_table("_Cluster", [&](cyng::store::table const* tbl_cluster)->void {
@@ -501,7 +504,8 @@ namespace node
 						, ws
 						, channel
 						, srv_id
-						, sections
+						, path
+// 						, cyng::vector_cast<std::string>(path, "")
 						, params));			
 				}
 			}
@@ -610,7 +614,7 @@ namespace node
 		BOOST_ASSERT_MSG(!std::get<3>(tpl).empty(), "no TGateway key");
 		if (std::get<3>(tpl).size() != 1)	return;
 
-		routing_back(std::get<0>(tpl)
+		routing_back_msg(std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)

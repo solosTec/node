@@ -77,8 +77,8 @@ namespace node
 			boost::uuids::uuid,		//	[4] websocket tag (origin)
 			std::string,			//	[5] channel (message type)
 			std::string,			//	[6] server id
-			std::string,			//	[7] "OBIS code" as text (see obis_db.cpp)
-			cyng::param_map_t&		//	[8] params
+			std::vector<std::string>,	//	[7] "OBIS path"
+			cyng::param_map_t const&		//	[8] params
 		);
 
 		void routing_back_meters(boost::uuids::uuid,	//	[0] ident
@@ -88,14 +88,14 @@ namespace node
 			boost::uuids::uuid,		//	[4] websocket tag (origin)
 			std::string,			//	[5] channel (message type)
 			std::string,			//	[6] server id
-			std::string,			//	[7] "OBIS code" as text (see obis_db.cpp)
+			std::vector<std::string>,	//	[7] "OBIS path"
 			cyng::param_map_t&		//	[8] params
 		);
 
 		/**
 		 * Routing back proxy messages
 		 */
-		void routing_back(boost::uuids::uuid,		//	[0] ident
+		void routing_back_msg(boost::uuids::uuid,		//	[0] ident
 			boost::uuids::uuid,		//	[1] source
 			std::uint64_t,			//	[2] sequence
 			cyng::vector_t,			//	[3] gw key

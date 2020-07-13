@@ -47,4 +47,7 @@ ln -s /usr/local/lib/libboost_system.so 			/usr/local/lib/libboost_system.so.1.7
 
 echo "${PROJECT_NAME} library (SMF project) is installed"
 
+systemctl daemon-reload
+#systemctl start segw
 
+echo "service configuration updated"

@@ -6,6 +6,7 @@
  */
 
 #include <smf/cluster/generator.h>
+
 #include <cyng/chrono.h>
 #include <cyng/intrinsics/label.h>
 
@@ -277,12 +278,21 @@ namespace node
 		, boost::uuids::uuid tag_ws
 		, std::string channel
 		, std::string srv
-		, std::string code
+		, std::vector<std::string> const& path
 		, cyng::param_map_t params)
 	{
 		cyng::vector_t vec{};
 		return vec << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("bus.res.proxy.gateway", ident, source, seq, key, tag_ws, channel, srv, code, params))
+			, cyng::generate_invoke_remote_unwinded("bus.res.proxy.gateway"
+				, ident
+				, source
+				, seq
+				, key
+				, tag_ws
+				, channel
+				, srv
+				, path
+				, params))
 			<< cyng::generate_invoke_unwinded("stream.flush")
 			;
 	}
