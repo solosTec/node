@@ -37,10 +37,12 @@ namespace node
 		obis_path_t tuple_to_path(cyng::tuple_t tpl);
 
 		/**
-		 * @brief converts a vector of objects into a obis path. 
-		 * The precondition is that all objects of type buffer_t.
+		 * Converts a vector of OBIS objects into an OBIS path.
+		 * The object have be of type buffer, string or obis.
+		 *
+		 * @brief converts a vector of objects into a obis path.
 		 */
-		obis_path_t vector_to_path(cyng::vector_t vec);
+		obis_path_t vector_to_path(cyng::vector_t const& vec);
 
 		/**
 		 * @brief converts a vector of objects into a obis path.
@@ -53,6 +55,20 @@ namespace node
 		 * Each element of the path will be handled as separate entity.
 		 */
 		cyng::vector_t path_to_vector(obis_path_t path);
+
+		/**
+		 * @param translate if true all known OBIS codes will be substituted to
+		 * human readable form.
+		 * @return vector of strings
+		 */
+		std::vector<std::string> transform_to_str_vector(obis_path_t const&, bool translate);
+
+		/**
+		 * @param translate if true all known OBIS codes will be substituted to
+		 * human readable form.
+		 * @return vector of objects of type string
+		 */
+		cyng::vector_t transform_to_obj_vector(obis_path_t const&, bool translate);
 
 
 	}	//	sml

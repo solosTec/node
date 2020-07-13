@@ -190,31 +190,8 @@ namespace node
 			std::transform(parts.begin(), parts.end(), std::back_inserter(result), [](std::string code){
 				return to_obis(code);
 			});
-// 			for (auto const& code : parts) {
-			// 				result.push_back(to_obis(code));
-// 			}
 			return result;
 		}
 		
-		cyng::vector_t transform_to_obj_vector(obis_path_t const& path, bool translate)
-		{
-			auto const sv = transform_to_str_vector(path, translate);
-			cyng::vector_t vec;
-			std::transform(sv.begin(), sv.end(), std::back_inserter(vec), [](std::string code){
-				return cyng::make_object(code);
-			});
-			return vec;
-		}
-		
-		std::vector<std::string> transform_to_str_vector(obis_path_t const& path, bool translate)
-		{
-			std::vector<std::string> vec;
-			std::transform(path.begin(), path.end(), std::back_inserter(vec), [&](obis code){
-				return (translate)
-				? get_name(code)
-				: code.to_str();
-			});
-			return vec;
-		}
 	}
 }

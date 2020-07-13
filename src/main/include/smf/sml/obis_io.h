@@ -64,20 +64,7 @@ namespace node
 		 * obis_path_t. Accepts hexadeximal and decimal formats.
 		 */
 		obis_path_t to_obis_path(std::string const&, char sep);
-		
-		/**
-		 * @param translate if true all known OBIS codes will be substituted to
-		 * human readable form.
-		 * @return vector of strings
-		 */
-		std::vector<std::string> transform_to_str_vector(obis_path_t const&, bool translate);
 
-		/**
-		 * @param translate if true all known OBIS codes will be substituted to
-		 * human readable form.
-		 * @return vector of objects of type string
-		 */
-		cyng::vector_t transform_to_obj_vector(obis_path_t const&, bool translate);
 		
 	}	//	sml
 }	//	node

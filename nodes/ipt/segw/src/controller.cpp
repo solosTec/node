@@ -325,8 +325,7 @@ namespace node
 		//
 		//	get database configuration and connect
 		//
-		cyng::tuple_t tpl;
-		tpl = cyng::value_cast(cfg.get("DB"), tpl);
+		auto const tpl = cyng::to_tuple(cfg.get("DB"));
 		auto const db_cfg = cyng::to_param_map(tpl);
 
 		for (auto const& p : db_cfg) {

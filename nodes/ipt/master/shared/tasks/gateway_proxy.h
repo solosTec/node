@@ -45,16 +45,15 @@ namespace node
 		using msg_3 = std::tuple<std::string
 			, std::uint8_t
 			, cyng::buffer_t
-			, sml::obis_path_t
+			, cyng::vector_t	//	sml::obis_path_t
 			, cyng::param_t>;
 
 		using msg_4 = std::tuple<std::string>;
 
-		using msg_5 = std::tuple<
-			std::string,	//	trx
-			cyng::buffer_t,	//	server ID
-			sml::obis_path_t,	//	OBIS (path)
-			cyng::param_map_t	//	data
+		using msg_5 = std::tuple<std::string	//	trx
+			, cyng::buffer_t	//	server ID
+			, cyng::vector_t	//	sml::obis_path_t
+			, cyng::param_map_t	//	data
 		>;
 
 		using msg_6 = std::tuple<std::string, std::string, cyng::buffer_t>;
@@ -81,7 +80,7 @@ namespace node
 			std::uint32_t,	//	act_time
 			std::uint32_t,	//	reg_period
 			std::uint32_t,	//	val_time
-			sml::obis_path_t,	//	OBIS (path)
+			cyng::vector_t,	//	sml::obis_path_t
 			cyng::buffer_t,	//	server ID
 			std::uint32_t,	//	status
 			cyng::param_map_t	//	params
@@ -160,7 +159,7 @@ namespace node
 		cyng::continuation process(std::string trx
 			, std::uint8_t group
 			, cyng::buffer_t srv_id
-			, sml::obis_path_t
+			, cyng::vector_t	//	sml::obis_path_t
 			, cyng::param_t values);
 
 		/**
@@ -181,7 +180,7 @@ namespace node
 		 */
 		cyng::continuation process(std::string trx
 			, cyng::buffer_t srv_id
-			, sml::obis_path_t	//	OBIS (path)
+			, cyng::vector_t	//	sml::obis_path_t
 			, cyng::param_map_t);
 
 		/**
@@ -223,7 +222,7 @@ namespace node
 			, std::uint32_t act_time
 			, std::uint32_t reg_period
 			, std::uint32_t val_time
-			, sml::obis_path_t
+			, cyng::vector_t	//	sml::obis_path_t
 			, cyng::buffer_t srv_id
 			, std::uint32_t	stat
 			, cyng::param_map_t params);
@@ -252,9 +251,6 @@ namespace node
 		void execute_cmd_get_profile_list(sml::req_generator& sml_gen
 			, proxy_data const&
 			, cyng::tuple_reader const& params);
-		//void execute_cmd_get_proc_param(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, cyng::tuple_reader const& params);
 		void execute_cmd_set_proc_param(sml::req_generator& sml_gen
 			, proxy_data const&
 			, cyng::tuple_reader const& params);

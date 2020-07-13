@@ -303,12 +303,11 @@ namespace node
 				//
 				//	slot [3] of gateway proxy
 				//
-
 				return cyng::generate_invoke("sml.get.proc.parameter.response"
 					, ro.trx_
 					, ro.get_value("groupNo")
 					, ro.server_id_	//	binary
-					, r.first	//	send complete path
+					, r.first		//	the OBIS path will be converted into a vector of OBIS objects
 					, r.second);
 			}
 

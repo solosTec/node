@@ -211,7 +211,7 @@ namespace node
 	cyng::continuation gateway_proxy::process(std::string trx
 		, std::uint8_t group
 		, cyng::buffer_t srv_id
-		, sml::obis_path_t path
+		, cyng::vector_t vec
 		, cyng::param_t values)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -221,6 +221,8 @@ namespace node
 			<< "> "
 			<< sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 			<< std::string(trx.begin(), trx.end()));
+
+		auto const path = sml::vector_to_path(vec);
 
 		auto const pos = output_map_.find(trx);
 		if (pos != output_map_.end()) {
@@ -396,9 +398,11 @@ namespace node
 	//	-- slot[5]: GetList.Res
 	cyng::continuation gateway_proxy::process(std::string trx
 		, cyng::buffer_t srv_id
-		, sml::obis_path_t path	//	OBIS (path)
+		, cyng::vector_t vec	//	OBIS (path)
 		, cyng::param_map_t params)
 	{
+		auto const path = sml::vector_to_path(vec);
+
 		//
 		//	There should be entries
 		//
@@ -530,11 +534,13 @@ namespace node
 		, std::uint32_t act_time
 		, std::uint32_t reg_period
 		, std::uint32_t val_time
-		, sml::obis_path_t path
+		, cyng::vector_t vec
 		, cyng::buffer_t srv_id
 		, std::uint32_t	stat
 		, cyng::param_map_t params)
 	{
+		auto const path = sml::vector_to_path(vec);
+
 		auto const pos = output_map_.find(trx);
 		if (pos != output_map_.end()) {
 

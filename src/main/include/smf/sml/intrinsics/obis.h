@@ -257,7 +257,7 @@ namespace cyng
 			using type = node::sml::obis;
 			using tag = std::integral_constant<std::size_t,
 #if defined(__CPP_SUPPORT_N2347)
-				static_cast<std::size_t>(traits::predef_type_code::PREDEF_CUSTOM_02)
+				static_cast<std::size_t>(predef_type_code::PREDEF_CUSTOM_02)
 #else
 				PREDEF_CUSTOM_02
 #endif
@@ -273,7 +273,7 @@ namespace cyng
 		template <>
 		struct reverse_type <
 #if defined(__CPP_SUPPORT_N2347)
-			static_cast<std::size_t>(traits::predef_type_code::PREDEF_CUSTOM_02)
+			static_cast<std::size_t>(predef_type_code::PREDEF_CUSTOM_02)
 #else
 			PREDEF_CUSTOM_02
 #endif
@@ -288,7 +288,7 @@ namespace cyng
 			using type = node::sml::obis_path_t;
 			using tag = std::integral_constant<std::size_t,
 #if defined(__CPP_SUPPORT_N2347)
-				static_cast<std::size_t>(traits::predef_type_code::PREDEF_CUSTOM_03)
+				static_cast<std::size_t>(predef_type_code::PREDEF_CUSTOM_03)
 #else
 				PREDEF_CUSTOM_03
 #endif
@@ -304,7 +304,7 @@ namespace cyng
 		template <>
 		struct reverse_type <
 #if defined(__CPP_SUPPORT_N2347)
-			static_cast<std::size_t>(traits::predef_type_code::PREDEF_CUSTOM_03)
+			static_cast<std::size_t>(predef_type_code::PREDEF_CUSTOM_03)
 #else
 			PREDEF_CUSTOM_03
 #endif
