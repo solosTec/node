@@ -560,8 +560,8 @@ namespace node
 				return true;	//	continue
 			});
 
-			//CYNG_LOG_TRACE(logger_, "code_root_active_devices: "
-			//	<< cyng::io::to_str(msg));
+			CYNG_LOG_TRACE(logger_, "code_root_active_devices: "
+				<< cyng::io::to_str(msg));
 
 			//
 			//	append to message queue
@@ -582,20 +582,24 @@ namespace node
 			auto const now = std::chrono::system_clock::now();
 
 			//
-			//	list all active M-Bus devices
+			//	list all visible M-Bus devices
 			//
 			cache_.loop("_DeviceMBUS", [&](cyng::table::record const& rec) {
 
 				//
 				//	set server ID
 				//
+				auto const srv_id = cyng::to_buffer(rec["serverID"]);
 				append_get_proc_response(msg, {
 					OBIS_ROOT_VISIBLE_DEVICES,
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, 0xFF),
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, store),
 					OBIS_SERVER_ID
-					}, make_value(cyng::to_buffer(rec["serverID"])));
+				}, make_value(srv_id));
 
+				CYNG_LOG_TRACE(logger_, "list visible device: "
+				<< cyng::io::to_hex(srv_id));
+				
 				//
 				//	device class
 				//
