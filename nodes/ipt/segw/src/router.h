@@ -91,6 +91,11 @@ namespace node
 
 		std::string const account_;
 		std::string const pwd_;
+
+		/**
+		 * Accept all incoming request and don't check server ID or 
+		 * credentials.
+		 */
 		bool const accept_all_;
 
 		ipt::config_ipt	config_ipt_;

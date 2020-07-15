@@ -484,7 +484,7 @@ namespace node
 
 					//
 					//	generate get process parameter response
-					//	const static obis	DEFINE_OBIS_CODE(81, 81, C7, 82, 01, FF, CODE_ROOT_DEVICE_IDENT);	
+					//	81, 81, C7, 82, 01, FF
 					//	see: 7.3.2.9 Datenstruktur zur Abfrage der Geräte-Identifikation) 
 					//
 					, child_list_tree(OBIS_ROOT_DEVICE_IDENT, {
@@ -498,23 +498,22 @@ namespace node
 						child_list_tree(OBIS_ROOT_FIRMWARE, {
 							//	section 1
 							child_list_tree(OBIS_CODE(81, 81, c7, 82, 07, 01), {
-									parameter_tree(OBIS_CODE(81, 81, c7, 82, 08, ff), make_value("CURRENT_VERSION")),
-									parameter_tree(OBIS_CODE(81, 81, 00, 02, 00, 00), make_value(NODE_VERSION)),
-									parameter_tree(OBIS_CODE(81, 81, c7, 82, 0e, ff), make_value(true)) 	//	activated
+									parameter_tree(OBIS_DEVICE_KERNEL, make_value("CURRENT_VERSION")),
+									parameter_tree(OBIS_VERSION, make_value(NODE_VERSION)),
+									parameter_tree(OBIS_DEVICE_ACTIVATED, make_value(true)) 	//	activated
 								}),
 							//	section 2
 							child_list_tree(OBIS_CODE(81, 81, c7, 82, 07, 02),	{
-									parameter_tree(OBIS_CODE(81, 81, c7, 82, 08, ff), make_value("KERNEL")),
-									parameter_tree(OBIS_CODE(81, 81, 00, 02, 00, 00), make_value(os_name)),
-// 									parameter_tree(OBIS_CODE(81, 81, 00, 02, 00, 00), make_value(NODE_PLATFORM)),
-									parameter_tree(OBIS_CODE(81, 81, c7, 82, 0e, ff), make_value(true)) 	//	activated
+									parameter_tree(OBIS_DEVICE_KERNEL, make_value("KERNEL")),
+									parameter_tree(OBIS_VERSION, make_value(os_name)),
+									parameter_tree(OBIS_DEVICE_ACTIVATED, make_value(true)) 	//	activated
 								})
 
 							}),
 
 						//	hardware
 						child_list_tree(OBIS_CODE(81, 81, c7, 82, 09, ff), {
-							//	Typenschlüssel
+							//	producer specific hardware features
 							parameter_tree(OBIS_CODE(81, 81, c7, 82, 0a, 01), make_value(model_code)),
 							parameter_tree(OBIS_CODE(81, 81, c7, 82, 0a, 02), make_value(serial_str))
 							//parameter_tree(OBIS_CODE(81, 81, c7, 82, 0a, 02), make_value(serial))	// works too

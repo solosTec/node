@@ -259,7 +259,8 @@ namespace node
 			, cyng::tuple_reader const& params);
 		void execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen
 			, proxy_data const&
-			, cyng::vector_t vec);
+			, std::uint8_t idx
+			, cyng::tuple_t tpl);
 		void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen
 			, proxy_data const&
 			, cyng::tuple_t const& params);

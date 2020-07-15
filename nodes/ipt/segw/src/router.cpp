@@ -104,12 +104,12 @@ namespace node
 		//	[]
 		//
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 		//
 		//	get message body
 		//
-		cyng::tuple_t const msg = cyng::to_tuple(frame.at(0));
+		auto const msg = cyng::to_tuple(frame.at(0));
 
 		//
 		//	add generated instruction vector
@@ -192,57 +192,74 @@ namespace node
 			;
 
 
-		//
-		//	test server ID
-		//
-		if (!boost::algorithm::equals(cache_.get_srv_id(), std::get<2>(tpl))) {
+		if (accept_all_) {
 
-			CYNG_LOG_INFO(logger_, "sml.public.open.request - server ID: "
-				<< cyng::io::to_hex(std::get<2>(tpl))
-				<< " (expected "
-				<< cyng::io::to_hex(cache_.get_srv_id())
-				<< ")");
-
-			//if (!accept_all_) {
-			//	sml_gen_.attention_msg(frame.at(0)	// trx
-			//		, std::get<2>(tpl)	//	server ID
-			//		, sml::OBIS_ATTENTION_NO_SERVER_ID.to_buffer()
-			//		, "wrong server id"
-			//		, cyng::tuple_t());
-
-			//	return;
-			//}
+			CYNG_LOG_WARNING(logger_, "sml.public.open.request - Login is disabled for "
+				<< cyng::io::to_hex(cache_.get_srv_id()))
+				;
 
 			//
-			//	test login credentials
+			//	linearize and set CRC16
+			//	append to current SML message
 			//
-			if (!boost::algorithm::equals(account_, std::get<4>(tpl)) ||
-				!boost::algorithm::equals(pwd_, std::get<5>(tpl))) {
+			sml_gen_.public_open(frame.at(0)	// trx
+				, frame.at(1)	//	client id
+				, frame.at(3)	//	req file id
+				, frame.at(2));
 
-				sml_gen_.attention_msg(frame.at(1)	// trx
+		}
+		else {
+
+			//
+			//	test server ID
+			//
+			if (cache_.get_srv_id() == std::get<2>(tpl)) {
+
+				//
+				//	test login credentials
+				//
+				if (!boost::algorithm::equals(account_, std::get<4>(tpl)) ||
+					!boost::algorithm::equals(pwd_, std::get<5>(tpl))) {
+
+					sml_gen_.attention_msg(frame.at(1)	// trx
+						, std::get<2>(tpl)	//	server ID
+						, sml::OBIS_ATTENTION_NOT_AUTHORIZED.to_buffer()
+						, "login failed"
+						, cyng::tuple_t());
+
+					CYNG_LOG_WARNING(logger_, "sml.public.open.request - login failed: "
+						<< std::get<4>(tpl)
+						<< ":"
+						<< std::get<5>(tpl))
+						;
+				}
+				else {
+
+					//
+					//	linearize and set CRC16
+					//	append to current SML message
+					//
+					sml_gen_.public_open(frame.at(0)	// trx
+						, frame.at(1)	//	client id
+						, frame.at(3)	//	req file id
+						, frame.at(2));
+				}
+			}
+			else
+			{
+				CYNG_LOG_INFO(logger_, "sml.public.open.request - server ID: "
+					<< cyng::io::to_hex(std::get<2>(tpl))
+					<< " (expected "
+					<< cyng::io::to_hex(cache_.get_srv_id())
+					<< ")");
+
+				sml_gen_.attention_msg(frame.at(0)	// trx
 					, std::get<2>(tpl)	//	server ID
-					, sml::OBIS_ATTENTION_NOT_AUTHORIZED.to_buffer()
-					, "login failed"
+					, sml::OBIS_ATTENTION_NO_SERVER_ID.to_buffer()
+					, "wrong server id"
 					, cyng::tuple_t());
-
-				CYNG_LOG_WARNING(logger_, "sml.public.open.request - login failed: "
-					<< std::get<4>(tpl)
-					<< ":"
-					<< std::get<5>(tpl))
-					;
-				return;
 			}
 		}
-
-		//
-		//	linearize and set CRC16
-		//	append to current SML message
-		//
-		sml_gen_.public_open(frame.at(0)	// trx
-			, frame.at(1)	//	client id
-			, frame.at(3)	//	req file id
-			, frame.at(2));
-
 	}
 
 	void router::sml_public_close_request(cyng::context& ctx)

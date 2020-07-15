@@ -34,6 +34,10 @@
 #include <boost/uuid/uuid_io.hpp>
 #endif
 
+#ifdef _DEBUG
+#include <cyng/io/hex_dump.hpp>
+#endif
+
 namespace node
 {
 	gateway_proxy::gateway_proxy(cyng::async::base_task* btp
@@ -199,6 +203,14 @@ namespace node
 			<< "> received "
 			<< cyng::bytes_to_str(data.size()));
 
+#ifdef _DEBUG
+		std::stringstream ss;
+		ss << "SML response:" << std::endl;
+		cyng::io::hex_dump hd;
+		hd(ss, data.begin(), data.end());
+		CYNG_LOG_DEBUG(logger_, ss.str());
+#endif
+
 		//
 		//	parse SML data stream
 		//
@@ -220,6 +232,7 @@ namespace node
 			<< base_.get_class_name()
 			<< "> "
 			<< sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
+			<< " #"
 			<< std::string(trx.begin(), trx.end()));
 
 		auto const path = sml::vector_to_path(vec);
@@ -314,7 +327,6 @@ namespace node
 					<< "]: "
 					<< cyng::io::to_str(params));
 
-// 				cyng::vector_t transform_to_vector(obis_path_t const&, bool translate);
 				bus_->vm_.async_run(bus_res_com_sml(pos->second.get_tag_ident()
 					, pos->second.get_tag_source()
 					, pos->second.get_sequence()
@@ -322,7 +334,6 @@ namespace node
 					, pos->second.get_tag_origin()
 					, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 					, srv_str
-// 					, path
 					, transform_to_str_vector(path, false)	//	vector of string
 					, params));
 			}
@@ -451,7 +462,6 @@ namespace node
 				//	substitute request with response name
 				, sml::messages::name(sml::messages::get_response(pos->second.get_msg_code()))
 				, srv_str
-// 				, path
 				, transform_to_str_vector(path, false)	//	vector of string
 				, params));
 
@@ -969,9 +979,6 @@ namespace node
 		, proxy_data const& data
 		, cyng::tuple_reader const& params)
 	{
-		//	[{("section":[op-log-status-word,root-visible-devices,root-active-devices,firmware,memory,root-wMBus-status,IF_wMBUS,root-ipt-state,root-ipt-param])}]
-		//	[{("name":smf-form-gw-ipt-srv),("value":0500153B022980)},{("name":smf-gw-ipt-host-1),("value":waiting...)},{("name":smf-gw-ipt-local-1),("value":4)},{("name":smf-gw-ipt-remote-1),("value":3)},{("name":smf-gw-ipt-name-1),("value":waiting...)},{("name":smf-gw-ipt-pwd-1),("value":asdasd)},{("name":smf-gw-ipt-host-2),("value":waiting...)},{("name":smf-gw-ipt-local-2),("value":3)},{("name":smf-gw-ipt-remote-2),("value":3)},{("name":smf-gw-ipt-name-2),("value":holgär)},{("name":smf-gw-ipt-pwd-2),("value":asdasd)}]
-
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -1097,9 +1104,9 @@ namespace node
 			//	modify IP-T parameters
 			//
 
-			cyng::vector_t vec;
-			vec = cyng::value_cast(params.get("ipt"), vec);
-			execute_cmd_set_proc_param_ipt(sml_gen, data, vec);
+			auto const index = cyng::numeric_cast<std::uint8_t>(params.get("index"), 0u);
+			auto const cfg = cyng::to_tuple(params.get("ipt"));
+			execute_cmd_set_proc_param_ipt(sml_gen, data, index, cfg);
 			push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
 		}
 		else if (sml::OBIS_IF_wMBUS == data.get_root()) {
@@ -1290,53 +1297,42 @@ namespace node
 
 	void gateway_proxy::execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen
 		, proxy_data const& data
-		, cyng::vector_t vec)
+		, std::uint8_t idx
+		, cyng::tuple_t tpl)
 	{
-		std::uint8_t idx{ 1u };	//	index starts with 1
-		for (auto const& p : vec) {
+		for (auto const& val : tpl) {
 
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(p, tpl);
-			for (auto const& val : tpl) {
+			//	host
+			//	port
+			//	user
+			//	pwd
+			auto const param = cyng::to_param(val);
 
-				//	host
-				//	port
-				//	user
-				//	pwd
-				cyng::param_t param;
-				param = cyng::value_cast(val, param);
+			if (boost::algorithm::equals(param.first, "host")) {
 
-				if (boost::algorithm::equals(param.first, "host")) {
-
-					auto address = cyng::value_cast<std::string>(param.second, "0.0.0.0");
-					push_trx(sml_gen.set_proc_parameter_ipt_host(data.get_srv()
-						, idx
-						, address), data);
-				}
-				else if (boost::algorithm::equals(param.first, "port")) {
-					auto port = cyng::numeric_cast<std::uint16_t>(param.second, 26862u);
-					push_trx(sml_gen.set_proc_parameter_ipt_port_local(data.get_srv()
-						, idx
-						, port), data);
-				}
-				else if (boost::algorithm::equals(param.first, "user")) {
-					auto str = cyng::value_cast<std::string>(param.second, "");
-					push_trx(sml_gen.set_proc_parameter_ipt_user(data.get_srv()
-						, idx
-						, str), data);
-				}
-				else if (boost::algorithm::equals(param.first, "pwd")) {
-					auto str = cyng::value_cast<std::string>(param.second, "");
-					push_trx(sml_gen.set_proc_parameter_ipt_pwd(data.get_srv()
-						, idx
-						, str), data);
-				}
+				auto address = cyng::value_cast<std::string>(param.second, "0.0.0.0");
+				push_trx(sml_gen.set_proc_parameter_ipt_host(data.get_srv()
+					, idx
+					, address), data);
 			}
-
-			//
-			//	next IP-T server 
-			//
-			++idx;
+			else if (boost::algorithm::equals(param.first, "port")) {
+				auto port = cyng::numeric_cast<std::uint16_t>(param.second, 26862u);
+				push_trx(sml_gen.set_proc_parameter_ipt_port_local(data.get_srv()
+					, idx
+					, port), data);
+			}
+			else if (boost::algorithm::equals(param.first, "user")) {
+				auto str = cyng::value_cast<std::string>(param.second, "");
+				push_trx(sml_gen.set_proc_parameter_ipt_user(data.get_srv()
+					, idx
+					, str), data);
+			}
+			else if (boost::algorithm::equals(param.first, "pwd")) {
+				auto str = cyng::value_cast<std::string>(param.second, "");
+				push_trx(sml_gen.set_proc_parameter_ipt_pwd(data.get_srv()
+					, idx
+					, str), data);
+			}
 		}
 	}
 
