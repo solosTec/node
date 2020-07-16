@@ -221,7 +221,7 @@ namespace node
 			//
 			//	ToDo: this has to be executed later
 			//
-			system("reboot.sh");
+			system("/usr/sbin/reboot.sh");
 #else 
 			sml_gen_.attention_msg(cyng::make_object(trx)
 				, srv_id	//	server ID
