@@ -46,6 +46,7 @@ namespace node
 		, config_security_(logger, sml_gen_, cfg)
 		, config_access_(logger, sml_gen_, cfg)
 		, config_iec_(logger, sml_gen_, cfg)
+		, config_broker_(logger, sml_gen_, cfg)
 		, get_proc_parameter_(logger
 			, sml_gen_
 			, cfg
@@ -55,7 +56,8 @@ namespace node
 			, config_data_collector_
 			, config_security_
 			, config_access_
-			, config_iec_)
+			, config_iec_
+			, config_broker_)
 		, set_proc_parameter_(logger
 			, sml_gen_
 			, cfg
@@ -64,7 +66,8 @@ namespace node
 			, config_data_collector_
 			, config_security_
 			, config_access_
-			, config_iec_)
+			, config_iec_
+			, config_broker_)
 		, get_profile_list_(logger, sml_gen_, cfg, db)
 		, get_list_(logger, sml_gen_, cfg, db)
 		, attention_(logger, sml_gen_, cfg)

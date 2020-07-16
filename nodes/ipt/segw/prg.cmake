@@ -13,6 +13,7 @@ set (node_ipt_segw_cpp
 	nodes/ipt/segw/src/cfg_rs485.cpp
 	nodes/ipt/segw/src/cfg_wmbus.cpp
 	nodes/ipt/segw/src/cfg_mbus.cpp
+	nodes/ipt/segw/src/cfg_broker.cpp
 	nodes/ipt/segw/src/bridge.cpp
 	nodes/ipt/segw/src/router.cpp
 	nodes/ipt/segw/src/lmn.cpp
@@ -32,6 +33,7 @@ set (node_ipt_segw_h
 	nodes/ipt/segw/src/cfg_rs485.h
 	nodes/ipt/segw/src/cfg_wmbus.h
 	nodes/ipt/segw/src/cfg_mbus.h
+	nodes/ipt/segw/src/cfg_broker.h
 	nodes/ipt/segw/src/bridge.h
 	nodes/ipt/segw/src/router.h
 	nodes/ipt/segw/src/lmn.h
@@ -125,6 +127,8 @@ set (node_ipt_segw_msg
 	nodes/ipt/segw/src/msg/config_access.cpp
 	nodes/ipt/segw/src/msg/config_iec.h
 	nodes/ipt/segw/src/msg/config_iec.cpp
+	nodes/ipt/segw/src/msg/config_broker.h
+	nodes/ipt/segw/src/msg/config_broker.cpp
 )
 
 if(WIN32)

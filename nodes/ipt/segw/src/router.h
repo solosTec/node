@@ -14,6 +14,7 @@
 #include "msg/config_security.h"
 #include "msg/config_access.h"
 #include "msg/config_iec.h"
+#include "msg/config_broker.h"
 #include "msg/get_proc_parameter.h"
 #include "msg/set_proc_parameter.h"
 #include "msg/get_profile_list.h"
@@ -104,6 +105,7 @@ namespace node
 		sml::config_security config_security_;
 		sml::config_access config_access_;
 		sml::config_iec config_iec_;
+		sml::config_broker config_broker_;
 
 		sml::get_proc_parameter get_proc_parameter_;
 		sml::set_proc_parameter set_proc_parameter_;

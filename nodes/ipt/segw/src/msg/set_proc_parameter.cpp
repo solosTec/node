@@ -35,7 +35,8 @@ namespace node
 			, config_data_collector& data_collector
 			, config_security& security
 			, config_access& access
-			, config_iec& iec)
+			, config_iec& iec
+			, config_broker& broker)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
@@ -45,6 +46,7 @@ namespace node
 			, config_security_(security)
 			, config_access_(access)
 			, config_iec_(iec)
+			, config_broker_(broker)
 		{}
 
 		void set_proc_parameter::generate_response(obis_path_t const& path
@@ -61,7 +63,7 @@ namespace node
 				auto pos = path.begin();
 				auto end = path.end();
 				obis const code(*pos);
-				++pos;
+				if (pos != end)	++pos;
 
 				switch (code.to_uint64()) {
 				case CODE_ROOT_IPT_PARAM:	//	IP-T (0x81490D0700FF)
@@ -110,11 +112,15 @@ namespace node
 						config_iec_.set_param(obis(*pos), param);
 					}
 					break;
+				case CODE_REBOOT:
+					CYNG_LOG_WARNING(logger_, "sml.set.proc.parameter.request - reboot");
+					reboot(trx, srv_id);
+					break;
+				case CODE_ROOT_BROKER:
+					break;
 				default:
 					CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request - unknown OBIS code "
 						<< code.to_str()
-						<< " : "
-						<< to_string(*pos)
 						<< " / "
 						<< get_name(code));
 					break;
@@ -198,6 +204,33 @@ namespace node
 				cache_.set_cfg(build_cfg_key({ OBIS_CLASS_MBUS, code }), param.second);
 			}
 		}
+
+		void set_proc_parameter::reboot(std::string trx
+			, cyng::buffer_t srv_id)
+		{
+#if defined(NODE_CROSS_COMPILE)
+			//
+			//	generate an attention as response
+			//
+			sml_gen_.attention_msg(cyng::make_object(trx)
+				, srv_id	//	server ID
+				, sml::OBIS_ATTENTION_OK.to_buffer()
+				, "reboot"
+				, cyng::tuple_t());
+
+			//
+			//	ToDo: this has to be executed later
+			//
+			system("reboot.sh");
+#else 
+			sml_gen_.attention_msg(cyng::make_object(trx)
+				, srv_id	//	server ID
+				, sml::OBIS_ATTENTION_NOT_EXECUTED.to_buffer()
+				, "reboot"
+				, cyng::tuple_t());
+#endif
+		}
+
 	}	//	sml
 }
 

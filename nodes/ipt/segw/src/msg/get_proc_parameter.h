@@ -35,6 +35,7 @@ namespace node
 		class config_security;
 		class config_access;
 		class config_iec;
+		class config_broker;
 		class get_proc_parameter
 		{
 		public:
@@ -47,7 +48,8 @@ namespace node
 				, config_data_collector&
 				, config_security&
 				, config_access&
-				, config_iec&);
+				, config_iec&
+				, config_broker&);
 
 			void generate_response(obis_path_t path
 				, std::string trx
@@ -107,6 +109,7 @@ namespace node
 			config_security& config_security_;
 			config_access& config_access_;
 			config_iec& config_iec_;
+			config_broker& config_broker_;
 		};
 	}	//	sml
 }

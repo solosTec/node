@@ -12,6 +12,7 @@
 #include "config_security.h"
 #include "config_access.h"
 #include "config_iec.h"
+#include "config_broker.h"
 #include "../segw.h"
 #include "../cache.h"
 #include "../storage.h"
@@ -52,7 +53,8 @@ namespace node
 			, config_data_collector& data_collector
 			, config_security& security
 			, config_access& access
-			, config_iec& iec)
+			, config_iec& iec
+			, config_broker& broker)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
@@ -63,6 +65,7 @@ namespace node
 			, config_security_(security)
 			, config_access_(access)
 			, config_iec_(iec)
+			, config_broker_(broker)
 		{}
 
 		void get_proc_parameter::generate_response(obis_path_t path
@@ -163,6 +166,9 @@ namespace node
 				break;
 			case CODE_ROOT_SECURITY:	//	00 80 80 01 00 FF
 				config_security_.get_proc_params(trx, srv_id);
+				break;
+			case CODE_ROOT_BROKER:
+				config_broker_.get_proc_params(trx, srv_id);
 				break;
 			default:
 				CYNG_LOG_ERROR(logger_, "sml.get.proc.parameter.request - unknown OBIS code "

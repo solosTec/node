@@ -32,6 +32,7 @@ namespace node
 		class config_access;
 		class config_iec;
 		class res_generator;
+		class config_broker;
 		class set_proc_parameter
 		{
 		public:
@@ -43,7 +44,8 @@ namespace node
 				, config_data_collector&
 				, config_security&
 				, config_access&
-				, config_iec&);
+				, config_iec&
+				, config_broker&);
 
 			void generate_response(obis_path_t const&
 				, std::string trx
@@ -70,8 +72,12 @@ namespace node
 				, cyng::param_t	param);
 
 			void class_mbus(obis&& code, cyng::param_t param);
-			//void if_1107(obis&& code, cyng::param_t param);
-			//void iec_meter(std::uint8_t nr, cyng::param_map_t&& map);
+
+			/**
+			 * Only implemented for OECP hardware
+			 */
+			void reboot(std::string trx
+				, cyng::buffer_t srv_id);
 
 		private:
 			cyng::logging::log_ptr logger_;
@@ -93,6 +99,7 @@ namespace node
 			config_security& config_security_;
 			config_access& config_access_;
 			config_iec& config_iec_;
+			config_broker& config_broker_;
 		};
 	}	//	sml
 }

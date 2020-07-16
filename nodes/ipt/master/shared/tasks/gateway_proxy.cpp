@@ -1248,6 +1248,24 @@ namespace node
 					<< meter);
 			}
 		}
+		else if (sml::OBIS_ROOT_BROKER == data.get_root()) {
+
+			auto const port = cyng::value_cast<std::string>(params.get("port"), "");
+			auto const broker = cyng::to_tuple(params.get("broker"));
+
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< port
+				<< " - "
+				<< cyng::io::to_type(broker));
+
+			//execute_cmd_set_proc_param_broker(sml_gen, data, port, broker);
+			push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
+
+		}
 		else {
 
 			CYNG_LOG_WARNING(logger_, "task #"

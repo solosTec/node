@@ -773,6 +773,7 @@ namespace node
 			}
 			else if (code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x01).second
 				|| code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x02).second
+				|| code.is_matching(0x90, 0x00, 0x00, 0x00, 0x02).second
 				|| OBIS_W_MBUS_ADAPTER_MANUFACTURER == code
 				|| OBIS_W_MBUS_FIRMWARE == code
 				|| OBIS_W_MBUS_HARDWARE == code

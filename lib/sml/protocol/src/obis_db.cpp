@@ -397,6 +397,8 @@ namespace node
 			{ OBIS_LOG_SOURCE_LEDIO, {"LOG_SOURCE_LEDIO", cyng::TC_NULL } },
 			{ OBIS_LOG_SOURCE_WANPLC, {"LOG_SOURCE_WANPLC", cyng::TC_NULL } },
 
+			{ OBIS_ROOT_BROKER, {"OBIS_ROOT_BROKER", cyng::TC_NULL } },
+
 			//{ OBIS_, {"", cyng::TC_NULL } },
 		};
 

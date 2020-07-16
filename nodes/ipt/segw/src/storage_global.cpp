@@ -1579,6 +1579,11 @@ namespace node
 		return set_value(std::move(cfg), vec, cyng::make_object(value ? "true" : "false"));
 	}
 
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, std::uint16_t value)
+	{
+		return set_value(std::move(cfg), vec, cyng::make_object(value));
+	}
+
 	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, std::uint32_t value)
 	{
 		return set_value(std::move(cfg), vec, cyng::make_object(value));

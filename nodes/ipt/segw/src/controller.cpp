@@ -566,6 +566,12 @@ namespace node
 					}
 					std::cout << "failed" << std::endl;
 				}
+				else if (boost::algorithm::equals(vec.front(), "u16")) {
+					if (node::set_value(cyng::to_param_map(tpl), sub, static_cast<std::uint16_t>(std::stoul(vec.back())))) {
+						return EXIT_SUCCESS;
+					}
+					std::cout << "failed" << std::endl;
+				}
 				else if (boost::algorithm::equals(vec.front(), "u32")) {
 					if (node::set_value(cyng::to_param_map(tpl), sub, static_cast<std::uint32_t>(std::stoul(vec.back())))) {
 						return EXIT_SUCCESS;
@@ -580,7 +586,7 @@ namespace node
 				}
 				else {
 					std::cout
-						<< "data type not supported - use [bool, u32, s]"
+						<< "data type not supported - use [bool, u16, u32, s]"
 						<< std::endl;
 				}
 			}
