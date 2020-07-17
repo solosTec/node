@@ -981,24 +981,14 @@ if(MSVC)
 endif(MSVC)
 
 #
-# iec_62056
+# broker iec_62056
 #
-include (nodes/iec-62056/prg.cmake)
-add_executable(iec_62056 ${node_iec_62056})
-target_include_directories(iec_62056
-	PRIVATE
-		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/main/include;${CMAKE_CURRENT_BINARY_DIR}>"
-		${CYNG_INCLUDE_DIRS}
-		${BOOST_INCLUDE_DIR}
-)
-target_link_libraries(iec_62056 
-	smf_info 
-	smf_cluster 
-	${CYNG_LIBRARIES}
-	${OPENSSL_LIBRARIES}
-	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
-    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
-)
+add_subdirectory(nodes/broker/iec-62056)
+
+#
+# broker mbus radio
+#
+add_subdirectory(nodes/broker/mbus-radio)
 
 #
 # setup

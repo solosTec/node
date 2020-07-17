@@ -5,10 +5,10 @@
  *
  */
 
-#include "../../print_build_info.h"
-#include "../../print_version_info.h"
-#include "../../set_start_options.h"
-#include "../../show_ip_address.h"
+#include "../../../print_build_info.h"
+#include "../../../print_version_info.h"
+#include "../../../set_start_options.h"
+#include "../../../show_ip_address.h"
 #if BOOST_OS_WINDOWS
 #include <boost/asio.hpp>
 #endif

@@ -3,27 +3,27 @@ set (node_iec_62056)
 
 set (node_iec_62056_cpp
 
-	nodes/iec-62056/src/main.cpp	
-	nodes/iec-62056/src/controller.cpp
-	nodes/iec-62056/src/sync_db.cpp
+	src/main.cpp	
+	src/controller.cpp
+	src/sync_db.cpp
 )
 
 set (node_iec_62056_h
 
-	nodes/iec-62056/src/controller.h
-	nodes/iec-62056/src/sync_db.h
+	src/controller.h
+	src/sync_db.h
 
 )
 
 set (node_shared
-	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
+	${CMAKE_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
-	nodes/print_build_info.h
-	nodes/print_version_info.h
-	nodes/set_start_options.h
-	nodes/show_ip_address.h
+	../../print_build_info.h
+	../../print_version_info.h
+	../../set_start_options.h
+	../../show_ip_address.h
 
-	src/main/include/smf/shared/ctl.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
 )
 
 
@@ -33,25 +33,25 @@ if (UNIX)
 endif(UNIX)
 
 set (node_iec_62056_tasks
-	nodes/iec-62056/src/tasks/cluster.h
-	nodes/iec-62056/src/tasks/cluster.cpp
+	src/tasks/cluster.h
+	src/tasks/cluster.cpp
 )
 
 	
 if(WIN32)
 
 	set (node_iec_62056_service
-		nodes/iec-62056/templates/iec_62056_create_service.cmd.in
-		nodes/iec-62056/templates/iec_62056_delete_service.cmd.in
-		nodes/iec-62056/templates/iec_62056_restart_service.cmd.in
-		nodes/iec-62056/templates/iec_62056.windows.cgf.in
+		templates/iec_62056_create_service.cmd.in
+		templates/iec_62056_delete_service.cmd.in
+		templates/iec_62056_restart_service.cmd.in
+		templates/iec_62056.windows.cgf.in
 	)
  
 else()
 
 	set (node_iec_62056_service
-		nodes/iec-62056/templates/iec_62056.service.in
-		nodes/iec-62056/templates/iec_62056.linux.cgf.in
+		templates/iec_62056.service.in
+		templates/iec_62056.linux.cgf.in
 	)
 
 endif()

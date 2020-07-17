@@ -160,11 +160,29 @@ configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup.service.in"
 		"${PROJECT_BINARY_DIR}/config/node-setup.service")
 	  
-    # csv
-    configure_file (
-        "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.linux.cgf.in"
-        "${PROJECT_BINARY_DIR}/config/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+# csv
+configure_file (
+    "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.linux.cgf.in"
+    "${PROJECT_BINARY_DIR}/config/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
-    configure_file (
-        "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.service.in"
-        "${PROJECT_BINARY_DIR}/config/task-csv.service")
+configure_file (
+    "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.service.in"
+    "${PROJECT_BINARY_DIR}/config/task-csv.service")
+
+# iec_62056
+configure_file (
+		"${PROJECT_SOURCE_DIR}/nodes/broker/iec-62056/templates/iec_62056.linux.cgf.in"
+		"${PROJECT_BINARY_DIR}/config/iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+configure_file (
+		"${PROJECT_SOURCE_DIR}/nodes/broker/iec-62056/templates/iec_62056.service.in"
+		"${PROJECT_BINARY_DIR}/config/node-iec_62056.service")
+
+# iec_62056
+configure_file (
+		"${PROJECT_SOURCE_DIR}/nodes/broker/mbus-radio/templates/mbus_radio.linux.cgf.in"
+		"${PROJECT_BINARY_DIR}/config/mbus_radio_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+	  
+configure_file (
+		"${PROJECT_SOURCE_DIR}/nodes/broker/mbus-radio/templates/mbus_radio.service.in"
+		"${PROJECT_BINARY_DIR}/config/node-mbus_radio.service")
