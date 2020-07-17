@@ -31,12 +31,12 @@ namespace node
 		case 0:
 			//	ttyAPP0 (wireless mBus)
 			//	IF_wMBUS:transparent-mode
-			return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "transparent-mode" ), false);
+			return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "broker-mode" ), false);
 
 		case 1:
 			//	ttyAPP1 (serial Interface)
 			//	rs485:transparent-mode
-			return cache_.get_cfg(build_cfg_key({ "rs485", "transparent-mode" }), false);
+			return cache_.get_cfg(build_cfg_key({ "rs485", "broker-mode" }), false);
 		default:
 			break;
 		}
