@@ -1,15 +1,16 @@
 # top level files
 set (task_stat)
+set (task_stat_root nodes/tasks/stat)
 
 set (task_stat_cpp
 
-	tasks/stat/src/main.cpp	
-	tasks/stat/src/controller.cpp
+	${task_stat_root}/src/main.cpp	
+	${task_stat_root}/src/controller.cpp
 )
 
 set (task_stat_h
 
-	tasks/stat/src/controller.h
+	${task_stat_root}/src/controller.h
 )
 
 set (task_stat_schemes
@@ -22,8 +23,8 @@ set (task_stat_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
-	tasks/print_version_info.h
-	tasks/set_start_options.h
+	nodes/tasks/print_version_info.h
+	nodes/tasks/set_start_options.h
 	nodes/show_ip_address.h
 
 	src/main/include/smf/shared/ctl.h
@@ -35,21 +36,21 @@ if (UNIX)
 endif(UNIX)
 
 set (task_stat_tasks
-	tasks/stat/src/tasks/cluster.h
-	tasks/stat/src/tasks/cluster.cpp
+	${task_stat_root}/src/tasks/cluster.h
+	${task_stat_root}/src/tasks/cluster.cpp
 )
 	
 if(WIN32)
 
 	set (task_stat_service
-		tasks/stat/templates/stat_create_service.cmd.in
-		tasks/stat/templates/stat_delete_service.cmd.in
-		tasks/stat/templates/stat_restart_service.cmd.in
-		tasks/stat/templates/stat.windows.cgf.in
+		${task_stat_root}/templates/stat_create_service.cmd.in
+		${task_stat_root}/templates/stat_delete_service.cmd.in
+		${task_stat_root}/templates/stat_restart_service.cmd.in
+		${task_stat_root}/templates/stat.windows.cgf.in
 	)
  
  	set (task_stat_manifest
-		tasks/stat/templates/stat.exe.manifest
+		${task_stat_root}/templates/stat.exe.manifest
 	)
 
  	set (task_stat_res
@@ -60,8 +61,8 @@ if(WIN32)
 else()
 
 	set (task_stat_service
-		tasks/stat/templates/stat.service.in
-		tasks/stat/templates/stat.linux.cgf.in
+		${task_stat_root}/templates/stat.service.in
+		${task_stat_root}/templates/stat.linux.cgf.in
 	)
 
 endif()

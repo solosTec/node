@@ -322,66 +322,66 @@ configure_file (
 
 # csv
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.windows.cgf.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/csv/templates/csv.windows.cgf.in"
     "${PROJECT_BINARY_DIR}/config/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv_create_service.cmd.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/csv/templates/csv_create_service.cmd.in"
     "${PROJECT_BINARY_DIR}/config/csv_create_service.cmd")
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv_delete_service.cmd.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/csv/templates/csv_delete_service.cmd.in"
     "${PROJECT_BINARY_DIR}/config/csv_delete_service.cmd")
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv_restart_service.cmd.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/csv/templates/csv_restart_service.cmd.in"
     "${PROJECT_BINARY_DIR}/config/csv_restart_service.cmd")
 
 configure_file (
-		"${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.rc.in"
+		"${PROJECT_SOURCE_DIR}/nodes/tasks/csv/templates/csv.rc.in"
 		"${PROJECT_BINARY_DIR}/csv.rc")
 
 # stat
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.windows.cgf.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/stat/templates/stat.windows.cgf.in"
     "${PROJECT_BINARY_DIR}/config/stat_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_create_service.cmd.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/stat/templates/stat_create_service.cmd.in"
     "${PROJECT_BINARY_DIR}/config/stat_create_service.cmd")
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_delete_service.cmd.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/stat/templates/stat_delete_service.cmd.in"
     "${PROJECT_BINARY_DIR}/config/stat_delete_service.cmd")
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat_restart_service.cmd.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/stat/templates/stat_restart_service.cmd.in"
     "${PROJECT_BINARY_DIR}/config/stat_restart_service.cmd")
 
 configure_file (
-		"${PROJECT_SOURCE_DIR}/tasks/stat/templates/stat.rc.in"
+		"${PROJECT_SOURCE_DIR}/nodes/tasks/stat/templates/stat.rc.in"
 		"${PROJECT_BINARY_DIR}/stat.rc")
 
 
  # tsdb
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb.windows.cgf.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/tsdb/templates/tsdb.windows.cgf.in"
     "${PROJECT_BINARY_DIR}/config/tsdb_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb_create_service.cmd.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/tsdb/templates/tsdb_create_service.cmd.in"
     "${PROJECT_BINARY_DIR}/config/tsdb_create_service.cmd")
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb_delete_service.cmd.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/tsdb/templates/tsdb_delete_service.cmd.in"
     "${PROJECT_BINARY_DIR}/config/tsdb_delete_service.cmd")
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb_restart_service.cmd.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/tsdb/templates/tsdb_restart_service.cmd.in"
     "${PROJECT_BINARY_DIR}/config/tsdb_restart_service.cmd")
 
 configure_file (
-		"${PROJECT_SOURCE_DIR}/tasks/tsdb/templates/tsdb.rc.in"
+		"${PROJECT_SOURCE_DIR}/nodes/tasks/tsdb/templates/tsdb.rc.in"
 		"${PROJECT_BINARY_DIR}/tsdb.rc")
 
 # iec_62056

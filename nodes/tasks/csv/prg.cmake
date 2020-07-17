@@ -1,15 +1,16 @@
 # top level files
 set (task_csv)
+set (task_csv_root nodes/tasks/csv)
 
 set (task_csv_cpp
 
-	tasks/csv/src/main.cpp	
-	tasks/csv/src/controller.cpp
+	${task_csv_root}/src/main.cpp	
+	${task_csv_root}/src/controller.cpp
 )
 
 set (task_csv_h
 
-	tasks/csv/src/controller.h
+	${task_csv_root}/src/controller.h
 )
 
 set (task_csv_schemes
@@ -19,29 +20,29 @@ set (task_csv_schemes
 )
 
 set (task_csv_tasks
-	tasks/csv/src/tasks/cluster.h
-	tasks/csv/src/tasks/cluster.cpp
-	tasks/csv/src/tasks/storage_db.h
-	tasks/csv/src/tasks/storage_db.cpp
-	tasks/csv/src/tasks/profile_15_min.h
-	tasks/csv/src/tasks/profile_15_min.cpp
-	tasks/csv/src/tasks/profile_60_min.h
-	tasks/csv/src/tasks/profile_60_min.cpp
-	tasks/csv/src/tasks/profile_24_h.h
-	tasks/csv/src/tasks/profile_24_h.cpp
+	${task_csv_root}/src/tasks/cluster.h
+	${task_csv_root}/src/tasks/cluster.cpp
+	${task_csv_root}/src/tasks/storage_db.h
+	${task_csv_root}/src/tasks/storage_db.cpp
+	${task_csv_root}/src/tasks/profile_15_min.h
+	${task_csv_root}/src/tasks/profile_15_min.cpp
+	${task_csv_root}/src/tasks/profile_60_min.h
+	${task_csv_root}/src/tasks/profile_60_min.cpp
+	${task_csv_root}/src/tasks/profile_24_h.h
+	${task_csv_root}/src/tasks/profile_24_h.cpp
 )
 	
 if(WIN32)
 
 	set (task_csv_service
-		tasks/csv/templates/csv_create_service.cmd.in
-		tasks/csv/templates/csv_delete_service.cmd.in
-		tasks/csv/templates/csv_restart_service.cmd.in
-		tasks/csv/templates/csv.windows.cgf.in
+		${task_csv_root}/templates/csv_create_service.cmd.in
+		${task_csv_root}/templates/csv_delete_service.cmd.in
+		${task_csv_root}/templates/csv_restart_service.cmd.in
+		${task_csv_root}/templates/csv.windows.cgf.in
 	)
  
  	set (task_csv_manifest
-		tasks/csv/templates/csv.exe.manifest
+		${task_csv_root}/templates/csv.exe.manifest
 	)
 
  	set (task_csv_res
@@ -52,8 +53,8 @@ if(WIN32)
 else()
 
 	set (task_csv_service
-		tasks/csv/templates/csv.service.in
-		tasks/csv/templates/csv.linux.cgf.in
+		${task_csv_root}/templates/csv.service.in
+		${task_csv_root}/templates/csv.linux.cgf.in
 	)
 
 endif()
@@ -63,13 +64,13 @@ set (task_csv_shared
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	nodes/print_build_info.h
-	tasks/print_version_info.h
-	tasks/set_start_options.h
+	nodes/tasks/print_version_info.h
+	nodes/tasks/set_start_options.h
 	nodes/show_ip_address.h
 
 	nodes/print_build_info.cpp
-	tasks/print_version_info.cpp
-	tasks/set_start_options.cpp
+	nodes/tasks/print_version_info.cpp
+	nodes/tasks/set_start_options.cpp
 	nodes/show_ip_address.cpp
 
 	src/main/include/smf/shared/ctl.h

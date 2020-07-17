@@ -1,44 +1,45 @@
 # top level files
 set (node_ipt_segw)
+set (node_segw_root nodes/ipt/segw)
 
 set (node_ipt_segw_cpp
 
-	nodes/ipt/segw/src/main.cpp	
-	nodes/ipt/segw/src/segw.cpp	
-	nodes/ipt/segw/src/controller.cpp
-	nodes/ipt/segw/src/storage.cpp
-	nodes/ipt/segw/src/storage_global.cpp
-	nodes/ipt/segw/src/cache.cpp
-	nodes/ipt/segw/src/cfg_ipt.cpp
-	nodes/ipt/segw/src/cfg_rs485.cpp
-	nodes/ipt/segw/src/cfg_wmbus.cpp
-	nodes/ipt/segw/src/cfg_mbus.cpp
-	nodes/ipt/segw/src/cfg_broker.cpp
-	nodes/ipt/segw/src/bridge.cpp
-	nodes/ipt/segw/src/router.cpp
-	nodes/ipt/segw/src/lmn.cpp
-	nodes/ipt/segw/src/decoder.cpp
-	nodes/ipt/segw/src/profiles.cpp
+	${node_segw_root}/src/main.cpp	
+	${node_segw_root}/src/segw.cpp	
+	${node_segw_root}/src/controller.cpp
+	${node_segw_root}/src/storage.cpp
+	${node_segw_root}/src/storage_global.cpp
+	${node_segw_root}/src/cache.cpp
+	${node_segw_root}/src/cfg_ipt.cpp
+	${node_segw_root}/src/cfg_rs485.cpp
+	${node_segw_root}/src/cfg_wmbus.cpp
+	${node_segw_root}/src/cfg_mbus.cpp
+	${node_segw_root}/src/cfg_broker.cpp
+	${node_segw_root}/src/bridge.cpp
+	${node_segw_root}/src/router.cpp
+	${node_segw_root}/src/lmn.cpp
+	${node_segw_root}/src/decoder.cpp
+	${node_segw_root}/src/profiles.cpp
 
 )
 
 set (node_ipt_segw_h
 
-	nodes/ipt/segw/src/controller.h
-	nodes/ipt/segw/src/segw.h
-	nodes/ipt/segw/src/storage.h
-	nodes/ipt/segw/src/storage_global.h
-	nodes/ipt/segw/src/cache.h
-	nodes/ipt/segw/src/cfg_ipt.h
-	nodes/ipt/segw/src/cfg_rs485.h
-	nodes/ipt/segw/src/cfg_wmbus.h
-	nodes/ipt/segw/src/cfg_mbus.h
-	nodes/ipt/segw/src/cfg_broker.h
-	nodes/ipt/segw/src/bridge.h
-	nodes/ipt/segw/src/router.h
-	nodes/ipt/segw/src/lmn.h
-	nodes/ipt/segw/src/decoder.h
-	nodes/ipt/segw/src/profiles.h
+	${node_segw_root}/src/controller.h
+	${node_segw_root}/src/segw.h
+	${node_segw_root}/src/storage.h
+	${node_segw_root}/src/storage_global.h
+	${node_segw_root}/src/cache.h
+	${node_segw_root}/src/cfg_ipt.h
+	${node_segw_root}/src/cfg_rs485.h
+	${node_segw_root}/src/cfg_wmbus.h
+	${node_segw_root}/src/cfg_mbus.h
+	${node_segw_root}/src/cfg_broker.h
+	${node_segw_root}/src/bridge.h
+	${node_segw_root}/src/router.h
+	${node_segw_root}/src/lmn.h
+	${node_segw_root}/src/decoder.h
+	${node_segw_root}/src/profiles.h
 
 )
 
@@ -62,86 +63,86 @@ endif(UNIX)
 
 set (node_ipt_segw_tasks
 
-	nodes/ipt/segw/src/tasks/gpio.h
-	nodes/ipt/segw/src/tasks/gpio.cpp
-	nodes/ipt/segw/src/tasks/obislog.h
-	nodes/ipt/segw/src/tasks/obislog.cpp
-	nodes/ipt/segw/src/tasks/readout.h
-	nodes/ipt/segw/src/tasks/readout.cpp
-	nodes/ipt/segw/src/tasks/network.h
-	nodes/ipt/segw/src/tasks/network.cpp
-	nodes/ipt/segw/src/tasks/connect.h
-	nodes/ipt/segw/src/tasks/connect.cpp
-	nodes/ipt/segw/src/tasks/lmn_port.h
-	nodes/ipt/segw/src/tasks/lmn_port.cpp
-	nodes/ipt/segw/src/tasks/parser_wmbus.h
-	nodes/ipt/segw/src/tasks/parser_wmbus.cpp
-	nodes/ipt/segw/src/tasks/parser_serial.h
-	nodes/ipt/segw/src/tasks/parser_serial.cpp
-	nodes/ipt/segw/src/tasks/parser_CP210x.h
-	nodes/ipt/segw/src/tasks/parser_CP210x.cpp
-	nodes/ipt/segw/src/tasks/push.h
-	nodes/ipt/segw/src/tasks/push.cpp
-	nodes/ipt/segw/src/tasks/limiter.h
-	nodes/ipt/segw/src/tasks/limiter.cpp
-	nodes/ipt/segw/src/tasks/rs485.h
-	nodes/ipt/segw/src/tasks/rs485.cpp
-	nodes/ipt/segw/src/tasks/clock.h
-	nodes/ipt/segw/src/tasks/clock.cpp
-	nodes/ipt/segw/src/tasks/broker_wmbus.h
-	nodes/ipt/segw/src/tasks/broker_wmbus.cpp
+	${node_segw_root}/src/tasks/gpio.h
+	${node_segw_root}/src/tasks/gpio.cpp
+	${node_segw_root}/src/tasks/obislog.h
+	${node_segw_root}/src/tasks/obislog.cpp
+	${node_segw_root}/src/tasks/readout.h
+	${node_segw_root}/src/tasks/readout.cpp
+	${node_segw_root}/src/tasks/network.h
+	${node_segw_root}/src/tasks/network.cpp
+	${node_segw_root}/src/tasks/connect.h
+	${node_segw_root}/src/tasks/connect.cpp
+	${node_segw_root}/src/tasks/lmn_port.h
+	${node_segw_root}/src/tasks/lmn_port.cpp
+	${node_segw_root}/src/tasks/parser_wmbus.h
+	${node_segw_root}/src/tasks/parser_wmbus.cpp
+	${node_segw_root}/src/tasks/parser_serial.h
+	${node_segw_root}/src/tasks/parser_serial.cpp
+	${node_segw_root}/src/tasks/parser_CP210x.h
+	${node_segw_root}/src/tasks/parser_CP210x.cpp
+	${node_segw_root}/src/tasks/push.h
+	${node_segw_root}/src/tasks/push.cpp
+	${node_segw_root}/src/tasks/limiter.h
+	${node_segw_root}/src/tasks/limiter.cpp
+	${node_segw_root}/src/tasks/rs485.h
+	${node_segw_root}/src/tasks/rs485.cpp
+	${node_segw_root}/src/tasks/clock.h
+	${node_segw_root}/src/tasks/clock.cpp
+	${node_segw_root}/src/tasks/broker_wmbus.h
+	${node_segw_root}/src/tasks/broker_wmbus.cpp
 )
 	
 set (node_ipt_segw_server
 
-	nodes/ipt/segw/src/server/server.h
-	nodes/ipt/segw/src/server/server.cpp	
-	nodes/ipt/segw/src/server/connection.h
-	nodes/ipt/segw/src/server/connection.cpp	
-	nodes/ipt/segw/src/server/session.h
-	nodes/ipt/segw/src/server/session.cpp	
+	${node_segw_root}/src/server/server.h
+	${node_segw_root}/src/server/server.cpp	
+	${node_segw_root}/src/server/connection.h
+	${node_segw_root}/src/server/connection.cpp	
+	${node_segw_root}/src/server/session.h
+	${node_segw_root}/src/server/session.cpp	
 
 )
 
 set (node_ipt_segw_msg
 
-	nodes/ipt/segw/src/msg/get_proc_parameter.cpp
-	nodes/ipt/segw/src/msg/get_proc_parameter.h	
-	nodes/ipt/segw/src/msg/get_profile_list.h
-	nodes/ipt/segw/src/msg/get_profile_list.cpp	
-	nodes/ipt/segw/src/msg/get_list.h
-	nodes/ipt/segw/src/msg/get_list.cpp	
-	nodes/ipt/segw/src/msg/set_proc_parameter.h
-	nodes/ipt/segw/src/msg/set_proc_parameter.cpp	
-	nodes/ipt/segw/src/msg/config_ipt.h
-	nodes/ipt/segw/src/msg/config_ipt.cpp	
-	nodes/ipt/segw/src/msg/attention.h
-	nodes/ipt/segw/src/msg/attention.cpp	
-	nodes/ipt/segw/src/msg/config_sensor_params.h
-	nodes/ipt/segw/src/msg/config_sensor_params.cpp
-	nodes/ipt/segw/src/msg/config_data_collector.h
-	nodes/ipt/segw/src/msg/config_data_collector.cpp
-	nodes/ipt/segw/src/msg/config_security.h
-	nodes/ipt/segw/src/msg/config_security.cpp
-	nodes/ipt/segw/src/msg/config_access.h
-	nodes/ipt/segw/src/msg/config_access.cpp
-	nodes/ipt/segw/src/msg/config_iec.h
-	nodes/ipt/segw/src/msg/config_iec.cpp
-	nodes/ipt/segw/src/msg/config_broker.h
-	nodes/ipt/segw/src/msg/config_broker.cpp
+	${node_segw_root}/src/msg/get_proc_parameter.cpp
+	${node_segw_root}/src/msg/get_proc_parameter.h	
+	${node_segw_root}/src/msg/get_profile_list.h
+	${node_segw_root}/src/msg/get_profile_list.cpp	
+	${node_segw_root}/src/msg/get_list.h
+	${node_segw_root}/src/msg/get_list.cpp	
+	${node_segw_root}/src/msg/set_proc_parameter.h
+	${node_segw_root}/src/msg/set_proc_parameter.cpp	
+	${node_segw_root}/src/msg/config_ipt.h
+	${node_segw_root}/src/msg/config_ipt.cpp	
+	${node_segw_root}/src/msg/attention.h
+	${node_segw_root}/src/msg/attention.cpp	
+	${node_segw_root}/src/msg/config_sensor_params.h
+	${node_segw_root}/src/msg/config_sensor_params.cpp
+	${node_segw_root}/src/msg/config_data_collector.h
+	${node_segw_root}/src/msg/config_data_collector.cpp
+	${node_segw_root}/src/msg/config_security.h
+	${node_segw_root}/src/msg/config_security.cpp
+	${node_segw_root}/src/msg/config_access.h
+	${node_segw_root}/src/msg/config_access.cpp
+	${node_segw_root}/src/msg/config_iec.h
+	${node_segw_root}/src/msg/config_iec.cpp
+	${node_segw_root}/src/msg/config_broker.h
+	${node_segw_root}/src/msg/config_broker.cpp
 )
 
 if(WIN32)
 
 	set (node_ipt_segw_service
-		nodes/ipt/segw/templates/segw_create_service.cmd.in
-		nodes/ipt/segw/templates/segw_delete_service.cmd.in
-		nodes/ipt/segw/templates/segw_restart_service.cmd.in
-		nodes/ipt/segw/templates/segw.windows.cgf.in
+		${node_segw_root}/templates/segw_create_service.cmd.in
+		${node_segw_root}/templates/segw_delete_service.cmd.in
+		${node_segw_root}/templates/segw_restart_service.cmd.in
+		${node_segw_root}/templates/segw.windows.cgf.in
 	)
  
 	set (node_ipt_segw_manifest
-		nodes/ipt/segw/templates/segw.exe.manifest
+		${node_segw_root}/templates/segw.exe.manifest
 	)
 
 	set (node_ipt_segw_res
@@ -151,8 +152,8 @@ if(WIN32)
 else()
 
 	set (node_ipt_segw_service
-		nodes/ipt/segw/templates/segw.service.in
-		nodes/ipt/segw/templates/segw.linux.cgf.in
+		${node_segw_root}/templates/segw.service.in
+		${node_segw_root}/templates/segw.linux.cgf.in
 	)
 
 endif()

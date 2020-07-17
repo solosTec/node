@@ -1027,7 +1027,7 @@ target_link_libraries(setup
 #
 # task: csv
 #
-include (tasks/csv/prg.cmake)
+include (nodes/tasks/csv/prg.cmake)
 add_executable(csv ${task_csv})
 target_include_directories(csv
 	PRIVATE
@@ -1049,7 +1049,7 @@ target_link_libraries(csv
 #
 # task: tsdb (time series database)
 #
-include (tasks/tsdb/prg.cmake)
+include (nodes/tasks/tsdb/prg.cmake)
 add_executable(tsdb ${task_tsdb})
 target_include_directories(tsdb
 	PRIVATE
@@ -1069,7 +1069,7 @@ target_link_libraries(tsdb
 #
 # task: stat (statistics - detecting gaps, etc)
 #
-include (tasks/stat/prg.cmake)
+include (nodes/tasks/stat/prg.cmake)
 add_executable(stat ${task_stat})
 target_include_directories(stat
 	PRIVATE
