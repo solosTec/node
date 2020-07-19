@@ -3,7 +3,7 @@ set (node_as)
 
 set (node_as_cpp
 
-	nodes/as/src/main.cpp	
+	src/main.cpp	
 )
 
 set (node_as_h

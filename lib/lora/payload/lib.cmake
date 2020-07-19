@@ -3,16 +3,16 @@ set (lora_payload_lib)
 
 set (lora_payload_cpp
 
-	lib/lora/payload/src/parser.cpp
+	src/parser.cpp
 )
 
 set (lora_payload_h
-	src/main/include/smf/lora/payload/parser.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/lora/payload/parser.h
 )
 
 set (lora_data
-	lib/lora/payload/src/data/uplinkMsg.xml
-	lib/lora/payload/src/data/localisationMsg.xml
+	src/data/uplinkMsg.xml
+	src/data/localisationMsg.xml
 )
 
 source_group("data" FILES ${lora_data})

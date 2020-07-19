@@ -3,72 +3,72 @@ set (node_lora)
 
 set (node_lora_cpp
 
-	nodes/lora/src/main.cpp	
-	nodes/lora/src/controller.cpp
-	nodes/lora/src/processor.cpp
-	nodes/lora/src/dispatcher.cpp
-	nodes/lora/src/sync_db.cpp
+	src/main.cpp	
+	src/controller.cpp
+	src/processor.cpp
+	src/dispatcher.cpp
+	src/sync_db.cpp
 )
 
 set (node_lora_h
 
-	nodes/lora/src/controller.h
-	nodes/lora/src/processor.h
-	nodes/lora/src/dispatcher.h
-	nodes/lora/src/sync_db.h
+	src/controller.h
+	src/processor.h
+	src/dispatcher.h
+	src/sync_db.h
 
 )
 set (node_lora_shared
-	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
+	${CMAKE_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
-	nodes/print_build_info.h
-	nodes/print_version_info.h
-	nodes/set_start_options.h
-	nodes/show_ip_address.h
+	${CMAKE_SOURCE_DIR}/nodes/print_build_info.h
+	${CMAKE_SOURCE_DIR}/nodes/print_version_info.h
+	${CMAKE_SOURCE_DIR}/nodes/set_start_options.h
+	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.h
 
-	src/main/include/smf/shared/ctl.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
 
 )
 
 if (UNIX)
-	list(APPEND node_lora_shared src/main/include/smf/shared/write_pid.h)
-	list(APPEND node_lora_shared nodes/shared/sys/write_pid.cpp)
+	list(APPEND node_lora_shared ${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_lora_shared ${CMAKE_SOURCE_DIR}/nodes/shared/sys/write_pid.cpp)
 endif(UNIX)
 
 set (node_lora_tasks
-	nodes/lora/src/tasks/cluster.h
-	nodes/lora/src/tasks/cluster.cpp
+	src/tasks/cluster.h
+	src/tasks/cluster.cpp
 )
 
 set (node_lora_assets
-	nodes/lora/src/assets/index.html
+	src/assets/index.html
 )
 	
 set (node_lora_examples
-	nodes/lora/src/examples/example.xml
-	nodes/lora/src/examples/water.xml
+	src/examples/example.xml
+	src/examples/water.xml
 )
 
 set (node_lora_schemes
 
-	src/main/include/smf/shared/db_schemes.h
-	nodes/shared/db/db_schemes.cpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/db_schemes.h
+	${CMAKE_SOURCE_DIR}/nodes/shared/db/db_schemes.cpp
 )
 
 if(WIN32)
 
 	set (node_lora_service
-		nodes/lora/templates/lora_create_service.cmd.in
-		nodes/lora/templates/lora_delete_service.cmd.in
-		nodes/lora/templates/lora_restart_service.cmd.in
-		nodes/lora/templates/lora.windows.cgf.in
+		templates/lora_create_service.cmd.in
+		templates/lora_delete_service.cmd.in
+		templates/lora_restart_service.cmd.in
+		templates/lora.windows.cgf.in
 	)
  
 else()
 
 	set (node_lora_service
-		nodes/lora/templates/lora.service.in
-		nodes/lora/templates/lora.linux.cgf.in
+		templates/lora.service.in
+		templates/lora.linux.cgf.in
 	)
 
 endif()

@@ -1,0 +1,17 @@
+#
+#	cluster library (client side)
+#
+add_subdirectory(cluster)
+add_subdirectory(hci)
+add_subdirectory(http)
+add_subdirectory(https)
+add_subdirectory(iec)
+add_subdirectory(imega)
+add_subdirectory(info)
+add_subdirectory(ipt)
+add_subdirectory(lora)
+add_subdirectory(mbus)
+add_subdirectory(modem)
+add_subdirectory(serial)
+add_subdirectory(sml)
+add_subdirectory(telnet)

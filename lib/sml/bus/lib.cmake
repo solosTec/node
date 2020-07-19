@@ -3,12 +3,12 @@ set (sml_bus_lib)
 
 set (sml_bus_cpp
 
-	lib/sml/bus/src/serializer.cpp
+	src/serializer.cpp
 )
 
 set (sml_bus_h
-	src/main/include/smf/sml/defs.h
-	src/main/include/smf/sml/bus/serializer.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/defs.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/bus/serializer.h
 )
 
 

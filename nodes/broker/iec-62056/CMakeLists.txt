@@ -1,12 +1,12 @@
 include (prg.cmake)
-add_executable(iec_62056 ${node_iec_62056})
-target_include_directories(iec_62056
+add_executable(broker_iec ${node_iec_62056})
+target_include_directories(broker_iec
 	PRIVATE
 		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
 		${CYNG_INCLUDE_DIRS}
 		${BOOST_INCLUDE_DIR}
 )
-target_link_libraries(iec_62056 
+target_link_libraries(broker_iec 
 	smf_info 
 	smf_cluster 
 	${CYNG_LIBRARIES}

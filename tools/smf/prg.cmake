@@ -3,48 +3,48 @@ set (tool_smf)
 
 set (tool_smf_cpp
 
-	tools/smf/src/main.cpp	
-	tools/smf/src/controller.cpp
-	tools/smf/src/console.cpp
-	tools/smf/src/cli.cpp
+	src/main.cpp	
+	src/controller.cpp
+	src/console.cpp
+	src/cli.cpp
 )
 
 set (tool_smf_h
 
-	tools/smf/src/controller.h	
-	tools/smf/src/console.h	
-	tools/smf/src/cli.h	
+	src/controller.h	
+	src/console.h	
+	src/cli.h	
 
 )
 
 set (tool_smf_shared
 
-	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
+	${CMAKE_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
-	nodes/print_build_info.h
-	nodes/print_version_info.h
-	nodes/show_ip_address.h
-	tools/set_start_options.h
+	${CMAKE_SOURCE_DIR}/nodes/print_build_info.h
+	${CMAKE_SOURCE_DIR}/nodes/print_version_info.h
+	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.h
+	${CMAKE_SOURCE_DIR}/tools/set_start_options.h
 
-	src/main/include/smf/shared/ctl.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
 
-	lib/sml/exporter/src/abl_sml_exporter.cpp
+	${CMAKE_SOURCE_DIR}/lib/sml/exporter/src/abl_sml_exporter.cpp
 )
 
 if (UNIX)
-	list(APPEND tool_smf_shared src/main/include/smf/shared/write_pid.h)
-	list(APPEND tool_smf_shared nodes/shared/sys/write_pid.cpp)
+	list(APPEND tool_smf_shared ${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/write_pid.h)
+	list(APPEND tool_smf_shared ${CMAKE_SOURCE_DIR}/nodes/shared/sys/write_pid.cpp)
 endif(UNIX)
 
 set (tool_smf_plugin
 
-	tools/smf/src/plugins/convert.h
-	tools/smf/src/plugins/convert_csv_abl.h
-	tools/smf/src/plugins/convert.cpp
-	tools/smf/src/plugins/tracking.h
-	tools/smf/src/plugins/tracking.cpp
-	tools/smf/src/plugins/cleanup-v4.h
-	tools/smf/src/plugins/cleanup-v4.cpp
+	src/plugins/convert.h
+	src/plugins/convert_csv_abl.h
+	src/plugins/convert.cpp
+	src/plugins/tracking.h
+	src/plugins/tracking.cpp
+	src/plugins/cleanup-v4.h
+	src/plugins/cleanup-v4.cpp
 )
 
 source_group("shared" FILES ${tool_smf_shared})

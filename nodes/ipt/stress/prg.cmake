@@ -3,39 +3,39 @@ set (node_ipt_stress)
 
 set (node_ipt_stress_cpp
 
-	nodes/ipt/stress/src/main.cpp	
-	nodes/ipt/stress/src/controller.cpp
+	src/main.cpp	
+	src/controller.cpp
 )
 
 set (node_ipt_stress_h
 
-	nodes/ipt/stress/src/controller.h
+	src/controller.h
 
 )
 
 set (node_ipt_stress_shared
-	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
+	${CMAKE_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
-	nodes/print_build_info.h
-	nodes/print_version_info.h
-	nodes/set_start_options.h
-	nodes/show_ip_address.h
+	${CMAKE_SOURCE_DIR}/nodes/print_build_info.h
+	${CMAKE_SOURCE_DIR}/nodes/print_version_info.h
+	${CMAKE_SOURCE_DIR}/nodes/set_start_options.h
+	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.h
 
-	nodes/print_build_info.cpp
-	nodes/print_version_info.cpp
-	nodes/set_start_options.cpp
-	nodes/show_ip_address.cpp
+#	${CMAKE_SOURCE_DIR}/nodes/print_build_info.cpp
+#	${CMAKE_SOURCE_DIR}/nodes/print_version_info.cpp
+#	${CMAKE_SOURCE_DIR}/nodes/set_start_options.cpp
+#	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.cpp
 
-	src/main/include/smf/shared/ctl.h
-	nodes/shared/sys/ctl.cpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
+	${CMAKE_SOURCE_DIR}/nodes/shared/sys/ctl.cpp
 
 )
 
 set (node_ipt_stress_tasks
-	nodes/ipt/stress/src/tasks/sender.h
-	nodes/ipt/stress/src/tasks/sender.cpp
-	nodes/ipt/stress/src/tasks/receiver.h
-	nodes/ipt/stress/src/tasks/receiver.cpp
+	src/tasks/sender.h
+	src/tasks/sender.cpp
+	src/tasks/receiver.h
+	src/tasks/receiver.cpp
 )
 
 if (UNIX)
@@ -49,17 +49,17 @@ set (node_ipt_stress_res
 if(WIN32)
 
 	set (node_ipt_stress_service
-		nodes/ipt/stress/templates/stress_create_service.cmd.in
-		nodes/ipt/stress/templates/stress_delete_service.cmd.in
-		nodes/ipt/stress/templates/stress_restart_service.cmd.in
-		nodes/ipt/stress/templates/stress.windows.cgf.in
+		templates/stress_create_service.cmd.in
+		templates/stress_delete_service.cmd.in
+		templates/stress_restart_service.cmd.in
+		templates/stress.windows.cgf.in
 	)
  
 else()
 
 	set (node_ipt_stress_service
-		nodes/ipt/stress/templates/stress.service.in
-		nodes/ipt/stress/templates/stress.linux.cgf.in
+		templates/stress.service.in
+		templates/stress.linux.cgf.in
 	)
 
 endif()

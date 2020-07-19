@@ -3,21 +3,21 @@ set (cluster_lib)
 
 set (cluster_cpp
 
-	lib/cluster/src/bus.cpp
-	lib/cluster/src/config.cpp
+	src/bus.cpp
+	src/config.cpp
 )
 
 set (cluster_h
-	src/main/include/smf/cluster/bus.h
-	src/main/include/smf/cluster/config.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/cluster/bus.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/cluster/config.h
 )
 
 set (cluster_shared
 
-	src/main/include/smf/cluster/generator.h
-	src/main/include/smf/cluster/serializer.h
-	lib/shared/src/generator.cpp
-	lib/shared/src/serializer.cpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/cluster/generator.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/cluster/serializer.h
+	${CMAKE_SOURCE_DIR}/lib/shared/src/generator.cpp
+	${CMAKE_SOURCE_DIR}/lib/shared/src/serializer.cpp
 )
 
 source_group("shared" FILES ${cluster_shared})

@@ -573,7 +573,8 @@ namespace node
 					return std::to_string(u);
 				}
 				catch (std::exception const& ex) {
-					;	//	continue
+					boost::ignore_unused(ex);
+					//	continue
 				}
 			}
 

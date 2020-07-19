@@ -3,13 +3,13 @@ set (node_assl)
 
 set (node_assl_cpp
 
-	nodes/assl/src/main.cpp	
+	src/main.cpp	
 )
 
 set (node_assl_h
 
-	nodes/assl/src/server_certificate.hpp
-	nodes/assl/src/detect_ssl.hpp
+	src/server_certificate.hpp
+	src/detect_ssl.hpp
 )
 
 # define the main program

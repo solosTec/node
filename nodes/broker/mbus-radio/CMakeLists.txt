@@ -1,12 +1,12 @@
 include (prg.cmake)
-add_executable(mbus_radio ${node_mbus_radio})
-target_include_directories(mbus_radio
+add_executable(broker_mbus_radio ${node_mbus_radio})
+target_include_directories(broker_mbus_radio
 	PRIVATE
 		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
 		${CYNG_INCLUDE_DIRS}
 		${BOOST_INCLUDE_DIR}
 )
-target_link_libraries(mbus_radio 
+target_link_libraries(broker_mbus_radio 
 	smf_info 
 	smf_cluster 
 	${CYNG_LIBRARIES}

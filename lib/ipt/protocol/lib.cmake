@@ -3,25 +3,25 @@ set (ipt_protocol_lib)
 
 set (ipt_protocol_cpp
 
-	lib/ipt/protocol/src/codes.cpp
-	lib/ipt/protocol/src/header.cpp
-	lib/ipt/protocol/src/response.cpp
-	lib/ipt/protocol/src/scramble_key.cpp
-	lib/ipt/protocol/src/scramble_key_format.cpp
-	lib/ipt/protocol/src/parser.cpp
-	lib/ipt/protocol/src/serializer.cpp
+	src/codes.cpp
+	src/header.cpp
+	src/response.cpp
+	src/scramble_key.cpp
+	src/scramble_key_format.cpp
+	src/parser.cpp
+	src/serializer.cpp
 )
 
 set (ipt_protocol_h
-	src/main/include/smf/ipt/defs.h
-	src/main/include/smf/ipt/codes.h
-	src/main/include/smf/ipt/header.h
-	src/main/include/smf/ipt/response.hpp
-	src/main/include/smf/ipt/scramble_key.h
-	src/main/include/smf/ipt/scramble_key_format.h
-	src/main/include/smf/ipt/scramble_key_io.hpp
-	src/main/include/smf/ipt/parser.h
-	src/main/include/smf/ipt/serializer.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/defs.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/codes.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/header.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/response.hpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/scramble_key.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/scramble_key_format.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/scramble_key_io.hpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/parser.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/serializer.h
 )
 
 

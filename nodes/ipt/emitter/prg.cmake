@@ -3,23 +3,23 @@ set (node_ipt_emitter)
 
 set (node_ipt_emitter_cpp
 
-	nodes/ipt/emitter/src/main.cpp	
-	nodes/ipt/emitter/src/controller.cpp
+	src/main.cpp	
+	src/controller.cpp
 )
 
 set (node_ipt_emitter_h
-	nodes/ipt/emitter/src/controller.h
+	src/controller.h
 )
 
 set (node_ipt_emitter_shared
-	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
+	${CMAKE_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
-	nodes/print_build_info.h
-	nodes/print_version_info.h
-	nodes/set_start_options.h
-	nodes/show_ip_address.h	
+	${CMAKE_SOURCE_DIR}/nodes/print_build_info.h
+	${CMAKE_SOURCE_DIR}/nodes/print_version_info.h
+	${CMAKE_SOURCE_DIR}/nodes/set_start_options.h
+	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.h	
 
-	src/main/include/smf/shared/ctl.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
 )
 
 if (UNIX)
@@ -27,24 +27,24 @@ if (UNIX)
 endif(UNIX)
 
 set (node_ipt_emitter_tasks
-	nodes/ipt/emitter/src/tasks/network.h
-	nodes/ipt/emitter/src/tasks/network.cpp
+	src/tasks/network.h
+	src/tasks/network.cpp
 )
 	
 if(WIN32)
 
 	set (node_ipt_emitter_service
-		nodes/ipt/emitter/templates/emitter_create_service.cmd.in
-		nodes/ipt/emitter/templates/emitter_delete_service.cmd.in
-		nodes/ipt/emitter/templates/emitter_restart_service.cmd.in
-		nodes/ipt/emitter/templates/emitter.windows.cgf.in
+		templates/emitter_create_service.cmd.in
+		templates/emitter_delete_service.cmd.in
+		templates/emitter_restart_service.cmd.in
+		templates/emitter.windows.cgf.in
 	)
  
 else()
 
 	set (node_ipt_emitter_service
-		nodes/ipt/emitter/templates/emitter.service.in
-		nodes/ipt/emitter/templates/emitter.linux.cgf.in
+		templates/emitter.service.in
+		templates/emitter.linux.cgf.in
 	)
 
 endif()

@@ -3,26 +3,26 @@ set (node_mqtt)
 
 set (node_mqtt_cpp
 
-	nodes/mqtt/src/main.cpp	
-	nodes/mqtt/src/controller.cpp
-	nodes/mqtt/src/server.cpp
+	src/main.cpp	
+	src/controller.cpp
+	src/server.cpp
 )
 
 set (node_mqtt_h
 
-	nodes/mqtt/src/controller.h
-	nodes/mqtt/src/server.h
+	src/controller.h
+	src/server.h
 )
 
 set (node_mqtt_shared
-	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
+	${CMAKE_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
-	nodes/print_build_info.h
-	nodes/print_version_info.h
-	nodes/set_start_options.h
-	nodes/show_ip_address.h
+	${CMAKE_SOURCE_DIR}/nodes/print_build_info.h
+	${CMAKE_SOURCE_DIR}/nodes/print_version_info.h
+	${CMAKE_SOURCE_DIR}/nodes/set_start_options.h
+	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.h
 
-	src/main/include/smf/shared/ctl.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
 )
 
 
@@ -32,8 +32,8 @@ if (UNIX)
 endif(UNIX)
 
 set (node_mqtt_tasks
-	nodes/mqtt/src/tasks/cluster.h
-	nodes/mqtt/src/tasks/cluster.cpp
+	src/tasks/cluster.h
+	src/tasks/cluster.cpp
 )
 
 #
@@ -63,17 +63,17 @@ set (node_mqtt_srv
 if(WIN32)
 
 	set (node_mqtt_service
-		nodes/mqtt/templates/mqtt_create_service.cmd.in
-		nodes/mqtt/templates/mqtt_delete_service.cmd.in
-		nodes/mqtt/templates/mqtt_restart_service.cmd.in
-		nodes/mqtt/templates/mqtt.windows.cgf.in
+		templates/mqtt_create_service.cmd.in
+		templates/mqtt_delete_service.cmd.in
+		templates/mqtt_restart_service.cmd.in
+		templates/mqtt.windows.cgf.in
 	)
  
 else()
 
 	set (node_mqtt_service
-		nodes/mqtt/templates/mqtt.service.in
-		nodes/mqtt/templates/mqtt.linux.cgf.in
+		templates/mqtt.service.in
+		templates/mqtt.linux.cgf.in
 	)
 
 endif()

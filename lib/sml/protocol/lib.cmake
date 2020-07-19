@@ -3,68 +3,68 @@ set (sml_protocol_lib)
 
 set (sml_protocol_cpp
 
-	lib/sml/protocol/src/crc16.cpp
-#	lib/sml/protocol/src/units.cpp
-	lib/sml/protocol/src/scaler.cpp
-	lib/sml/protocol/src/writer.hpp
-	lib/sml/protocol/src/writer.cpp
-	lib/sml/protocol/src/readout.cpp
-	lib/sml/protocol/src/mbus_defs.cpp
-	lib/sml/protocol/src/obis_db.cpp
-	lib/sml/protocol/src/obis_io.cpp
-	lib/sml/protocol/src/srv_id_io.cpp
-	lib/sml/protocol/src/ip_io.cpp
+	src/crc16.cpp
+#	src/units.cpp
+	src/scaler.cpp
+	src/writer.hpp
+	src/writer.cpp
+	src/readout.cpp
+	src/mbus_defs.cpp
+	src/obis_db.cpp
+	src/obis_io.cpp
+	src/srv_id_io.cpp
+	src/ip_io.cpp
 	# moved from bus
-	lib/sml/protocol/src/status.cpp
-	lib/sml/protocol/src/event.cpp
+	src/status.cpp
+	src/event.cpp
 )
 
 set (sml_protocol_h
-	src/main/include/smf/sml/defs.h
-	src/main/include/smf/sml/crc16.h
-	src/main/include/smf/sml/scaler.h
-	src/main/include/smf/mbus/defs.h
-	src/main/include/smf/sml/obis_db.h
-	src/main/include/smf/sml/obis_io.h
-	src/main/include/smf/sml/srv_id_io.h
-	src/main/include/smf/sml/ip_io.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/defs.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/crc16.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/scaler.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/mbus/defs.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/obis_db.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/obis_io.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/srv_id_io.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/ip_io.h
 	# moved from bus
-	src/main/include/smf/sml/status.h
-	src/main/include/smf/sml/event.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/status.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/event.h
 )
 
 set (sml_generator
-	src/main/include/smf/sml/protocol/parser.h
-	src/main/include/smf/sml/protocol/readout.h
-	src/main/include/smf/sml/protocol/serializer.h
-	src/main/include/smf/sml/protocol/message.h
-	src/main/include/smf/sml/protocol/generator.h
-	src/main/include/smf/sml/protocol/value.hpp
-	src/main/include/smf/sml/protocol/reader.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/protocol/parser.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/protocol/readout.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/protocol/serializer.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/protocol/message.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/protocol/generator.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/protocol/value.hpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/protocol/reader.h
 
-	lib/sml/protocol/src/parser.cpp
-	lib/sml/protocol/src/serializer.cpp
-	lib/sml/protocol/src/message.cpp
-	lib/sml/protocol/src/generator.cpp
-	lib/sml/protocol/src/value.cpp
-	lib/sml/protocol/src/reader.cpp
+	src/parser.cpp
+	src/serializer.cpp
+	src/message.cpp
+	src/generator.cpp
+	src/value.cpp
+	src/reader.cpp
 )
 
 set (sml_parser
-	src/main/include/smf/sml/parser/obis_parser.h
-	src/main/include/smf/sml/parser/srv_id_parser.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/parser/obis_parser.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/parser/srv_id_parser.h
 
-	lib/sml/protocol/src/parser/obis_parser.cpp
-	lib/sml/protocol/src/parser/obis_parser.hpp
-	lib/sml/protocol/src/parser/srv_id_parser.cpp
-	lib/sml/protocol/src/parser/srv_id_parser.hpp
+	src/parser/obis_parser.cpp
+	src/parser/obis_parser.hpp
+	src/parser/srv_id_parser.cpp
+	src/parser/srv_id_parser.hpp
 )
 
 set (sml_intrinsics
-	src/main/include/smf/sml/intrinsics/obis.h
-	lib/sml/protocol/src/intrinsics/obis.cpp
-	src/main/include/smf/sml/intrinsics/obis_factory.hpp
-	lib/sml/protocol/src/intrinsics/obis_factory.cpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/intrinsics/obis.h
+	src/intrinsics/obis.cpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/intrinsics/obis_factory.hpp
+	src/intrinsics/obis_factory.cpp
 )
 
 source_group("generator" FILES ${sml_generator})

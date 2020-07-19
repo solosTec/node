@@ -3,12 +3,12 @@ set (hci_protocol_lib)
 
 set (hci_protocol_cpp
 
-	lib/hci/protocol/src/parser.cpp
-#	lib/hci/protocol/src/serializer.cpp
+	src/parser.cpp
+#	src/serializer.cpp
 )
 
 set (hci_protocol_h
-	src/main/include/smf/hci/parser.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/hci/parser.h
 #	src/main/include/smf/hci/serializer.h
 )
 

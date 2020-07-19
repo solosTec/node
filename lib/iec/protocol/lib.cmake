@@ -3,14 +3,13 @@ set (iec_protocol_lib)
 
 set (iec_protocol_cpp
 
-	lib/iec/protocol/src/parser.cpp
-#	lib/iec/protocol/src/serializer.cpp
+	src/parser.cpp
+#	src/serializer.cpp
 )
 
 set (iec_protocol_h
-	src/main/include/smf/iec/defs.h
-	src/main/include/smf/iec/parser.h
-#	src/main/include/smf/iec/serializer.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/iec/defs.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/iec/parser.h
 )
 
 # define the main program

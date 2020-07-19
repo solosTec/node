@@ -3,38 +3,38 @@ set (ipt_bus_lib)
 
 set (ipt_bus_cpp
 
-	lib/ipt/bus/src/bus_interface.cpp
-	lib/ipt/bus/src/bus.cpp
-	lib/ipt/bus/src/generator.cpp
-	lib/ipt/bus/src/config.cpp
+	src/bus_interface.cpp
+	src/bus.cpp
+	src/generator.cpp
+	src/config.cpp
 )
 
 set (ipt_bus_h
-	src/main/include/smf/ipt/defs.h
-	src/main/include/smf/ipt/bus_interface.h
-	src/main/include/smf/ipt/bus.h
-	src/main/include/smf/ipt/generator.h
-	src/main/include/smf/ipt/config.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/defs.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/bus_interface.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/bus.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/generator.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/config.h
 )
 
 if(${PROJECT_NAME}_SSL_SUPPORT)
-	list(APPEND ipt_bus_cpp lib/ipt/bus/src/bus_tls.cpp)
-	list(APPEND ipt_bus_h src/main/include/smf/ipt/bus_tls.h)
+	list(APPEND ipt_bus_cpp src/bus_tls.cpp)
+	list(APPEND ipt_bus_h ${CMAKE_SOURCE_DIR}/src/main/include/smf/ipt/bus_tls.h)
 endif()
 
 set (ipt_bus_tasks
-	lib/ipt/bus/src/tasks/open_connection.h
-	lib/ipt/bus/src/tasks/open_connection.cpp
-	lib/ipt/bus/src/tasks/close_connection.h
-	lib/ipt/bus/src/tasks/close_connection.cpp
-	lib/ipt/bus/src/tasks/register_target.h
-	lib/ipt/bus/src/tasks/register_target.cpp
-	lib/ipt/bus/src/tasks/open_channel.h
-	lib/ipt/bus/src/tasks/open_channel.cpp
-	lib/ipt/bus/src/tasks/transfer_data.h
-	lib/ipt/bus/src/tasks/transfer_data.cpp
-	lib/ipt/bus/src/tasks/watchdog.h
-	lib/ipt/bus/src/tasks/watchdog.cpp
+	src/tasks/open_connection.h
+	src/tasks/open_connection.cpp
+	src/tasks/close_connection.h
+	src/tasks/close_connection.cpp
+	src/tasks/register_target.h
+	src/tasks/register_target.cpp
+	src/tasks/open_channel.h
+	src/tasks/open_channel.cpp
+	src/tasks/transfer_data.h
+	src/tasks/transfer_data.cpp
+	src/tasks/watchdog.h
+	src/tasks/watchdog.cpp
 )
 
 source_group("tasks" FILES ${ipt_bus_tasks})

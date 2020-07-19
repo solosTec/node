@@ -3,32 +3,32 @@ set (info_lib)
 
 set (segw_info_cpp
 
-	nodes/print_build_info.cpp
-	nodes/print_version_info.cpp
-	nodes/set_start_options.cpp
-	nodes/show_ip_address.cpp
-	nodes/show_fs_drives.cpp
-	nodes/show_ports.cpp
+	src/print_build_info.cpp
+	src/print_version_info.cpp
+	src/set_start_options.cpp
+	src/show_ip_address.cpp
+	src/show_fs_drives.cpp
+	src/show_ports.cpp
 
-	nodes/shared/sys/ctl.cpp
+	${CMAKE_SOURCE_DIR}/nodes/shared/sys/ctl.cpp
 
 )
 
 set (segw_info_h
 	
-	nodes/print_build_info.h
-	nodes/print_version_info.h
-	nodes/set_start_options.h
-	nodes/show_ip_address.h
-	nodes/show_fs_drives.h
-	nodes/show_ports.h
+	${CMAKE_SOURCE_DIR}/nodes/print_build_info.h
+	${CMAKE_SOURCE_DIR}/nodes/print_version_info.h
+	${CMAKE_SOURCE_DIR}/nodes/set_start_options.h
+	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.h
+	${CMAKE_SOURCE_DIR}/nodes/show_fs_drives.h
+	${CMAKE_SOURCE_DIR}/nodes/show_ports.h
 
-	src/main/include/smf/shared/ctl.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
 )
 
 if (UNIX)
-	list(APPEND segw_info_h src/main/include/smf/shared/write_pid.h)
-	list(APPEND segw_info_cpp nodes/shared/sys/write_pid.cpp)
+	list(APPEND segw_info_h ${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/write_pid.h)
+	list(APPEND segw_info_cpp ${CMAKE_SOURCE_DIR}/lib/shared/sys/write_pid.cpp)
 endif(UNIX)
 
 

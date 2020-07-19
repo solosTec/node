@@ -4,74 +4,74 @@ set (node_dashs)
 
 set (node_dash_cpp
 
-	nodes/admin/dash/src/main.cpp	
-	nodes/admin/dash/src/controller.cpp
+	dash/src/main.cpp	
+	dash/src/controller.cpp
 )
 
 set (node_dash_h
 
-	nodes/admin/dash/src/controller.h
+	dash/src/controller.h
 
 )
 
 set (node_dash_tasks
-	nodes/admin/dash/src/tasks/cluster.h
-	nodes/admin/dash/src/tasks/cluster.cpp
-	nodes/admin/dash/src/tasks/system.h
-	nodes/admin/dash/src/tasks/system.cpp
+	dash/src/tasks/cluster.h
+	dash/src/tasks/cluster.cpp
+	dash/src/tasks/system.h
+	dash/src/tasks/system.cpp
 )
 
 set (node_admin_shared
-	nodes/admin/shared/src/sync_db.h
-	nodes/admin/shared/src/sync_db.cpp
-	nodes/admin/shared/src/dispatcher.h
-	nodes/admin/shared/src/dispatcher.cpp
-	nodes/admin/shared/src/forwarder.h
-	nodes/admin/shared/src/forwarder.cpp
-	nodes/admin/shared/src/form_data.h
-	nodes/admin/shared/src/form_data.cpp
+	shared/src/sync_db.h
+	shared/src/sync_db.cpp
+	shared/src/dispatcher.h
+	shared/src/dispatcher.cpp
+	shared/src/forwarder.h
+	shared/src/forwarder.cpp
+	shared/src/form_data.h
+	shared/src/form_data.cpp
 
-	nodes/admin/shared/src/tables.h
-	nodes/admin/shared/src/tables.cpp
+	shared/src/tables.h
+	shared/src/tables.cpp
 
-	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
+	${CMAKE_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
-	nodes/print_build_info.h
-	nodes/print_version_info.h
-	nodes/set_start_options.h
-	nodes/show_ip_address.h
+	${CMAKE_SOURCE_DIR}/nodes/print_build_info.h
+	${CMAKE_SOURCE_DIR}/nodes/print_version_info.h
+	${CMAKE_SOURCE_DIR}/nodes/set_start_options.h
+	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.h
 
-	src/main/include/smf/shared/ctl.h
-	nodes/shared/sys/ctl.cpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
+#	${CMAKE_SOURCE_DIR}/nodes/shared/sys/ctl.cpp
 
 )
 
 set (node_schemes
 
-	src/main/include/smf/shared/db_schemes.h
-	nodes/shared/db/db_schemes.cpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/db_schemes.h
+	${CMAKE_SOURCE_DIR}/nodes/shared/db/db_schemes.cpp
 )
 	
 if(WIN32)
 
 	set (node_dash_service
-		nodes/admin/templates/dash_create_service.cmd.in
-		nodes/admin/templates/dash_delete_service.cmd.in
-		nodes/admin/templates/dash_restart_service.cmd.in
-		nodes/admin/templates/dash.windows.cgf.in
+		templates/dash_create_service.cmd.in
+		templates/dash_delete_service.cmd.in
+		templates/dash_restart_service.cmd.in
+		templates/dash.windows.cgf.in
 	)
  
  	set (node_dash_res
-		${CMAKE_CURRENT_BINARY_DIR}/dash.rc 
-		src/main/resources/logo.ico
-		nodes/admin/templates/dash.exe.manifest
+		${CMAKE_BINARY_DIR}/dash.rc 
+		${CMAKE_SOURCE_DIR}/src/main/resources/logo.ico
+		templates/dash.exe.manifest
 	)
 
 else()
 
 	set (node_dash_service
-		nodes/admin/templates/dash.service.in
-		nodes/admin/templates/dash.linux.cgf.in
+		templates/dash.service.in
+		templates/dash.linux.cgf.in
 	)
 
 endif()
@@ -110,49 +110,49 @@ endif()
 # --------------------------------------------------------------------+
 set (node_dashs_cpp
 
-	nodes/admin/dashs/src/main.cpp	
-	nodes/admin/dashs/src/controller.cpp
+	dashs/src/main.cpp	
+	dashs/src/controller.cpp
 )
 
 set (node_dashs_h
 
-	nodes/admin/dashs/src/controller.h
+	dashs/src/controller.h
 
 )
 
 set (node_dashs_tasks
-	nodes/admin/dashs/src/tasks/cluster.h
-	nodes/admin/dashs/src/tasks/cluster.cpp
-	nodes/admin/dashs/src/tasks/system.h
-	nodes/admin/dashs/src/tasks/system.cpp
+	dashs/src/tasks/cluster.h
+	dashs/src/tasks/cluster.cpp
+	dashs/src/tasks/system.h
+	dashs/src/tasks/system.cpp
 )
 
 set (node_dashs_schemes
 
-	src/main/include/smf/shared/db_schemes.h
-	nodes/shared/db/db_schemes.cpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/db_schemes.h
+	${CMAKE_SOURCE_DIR}/nodes/shared/db/db_schemes.cpp
 )
 	
 if(WIN32)
 
 	set (node_dashs_service
-		nodes/admin/templates/dashs_create_service.cmd.in
-		nodes/admin/templates/dashs_delete_service.cmd.in
-		nodes/admin/templates/dashs_restart_service.cmd.in
-		nodes/admin/templates/dashs.windows.cgf.in
+		templates/dashs_create_service.cmd.in
+		templates/dashs_delete_service.cmd.in
+		templates/dashs_restart_service.cmd.in
+		templates/dashs.windows.cgf.in
 	)
 
  	set (node_dashs_res
-		${CMAKE_CURRENT_BINARY_DIR}/dashs.rc 
-		src/main/resources/logo.ico
-		nodes/admin/templates/dashs.exe.manifest
+		${CMAKE_BINARY_DIR}/dashs.rc 
+		${CMAKE_SOURCE_DIR}/src/main/resources/logo.ico
+		templates/dashs.exe.manifest
 	)
 
 else()
 
 	set (node_dashs_service
-		nodes/admin/templates/dashs.service.in
-		nodes/admin/templates/dashs.linux.cgf.in
+		templates/dashs.service.in
+		templates/dashs.linux.cgf.in
 	)
 
 endif()

@@ -3,25 +3,25 @@ set (node_ipt_collector)
 
 set (node_ipt_collector_cpp
 
-	nodes/ipt/collector/src/main.cpp	
-	nodes/ipt/collector/src/controller.cpp
+	src/main.cpp	
+	src/controller.cpp
 )
 
 set (node_ipt_collector_h
 
-	nodes/ipt/collector/src/controller.h
+	src/controller.h
 
 )
 
 set (node_ipt_collector_shared
-	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_project_info.h
+	${CMAKE_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
-	nodes/print_build_info.h
-	nodes/print_version_info.h
-	nodes/set_start_options.h
-	nodes/show_ip_address.h
+	${CMAKE_SOURCE_DIR}/nodes/print_build_info.h
+	${CMAKE_SOURCE_DIR}/nodes/print_version_info.h
+	${CMAKE_SOURCE_DIR}/nodes/set_start_options.h
+	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.h
 
-	src/main/include/smf/shared/ctl.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
 
 )
 
@@ -31,24 +31,24 @@ endif(UNIX)
 
 
 set (node_ipt_collector_tasks
-	nodes/ipt/collector/src/tasks/network.h
-	nodes/ipt/collector/src/tasks/network.cpp
+	src/tasks/network.h
+	src/tasks/network.cpp
 )
 	
 if(WIN32)
 
 	set (node_ipt_collector_service
-		nodes/ipt/collector/templates/collector_create_service.cmd.in
-		nodes/ipt/collector/templates/collector_delete_service.cmd.in
-		nodes/ipt/collector/templates/collector_restart_service.cmd.in
-		nodes/ipt/collector/templates/collector.windows.cgf.in
+		templates/collector_create_service.cmd.in
+		templates/collector_delete_service.cmd.in
+		templates/collector_restart_service.cmd.in
+		templates/collector.windows.cgf.in
 	)
  
 else()
 
 	set (node_ipt_collector_service
-		nodes/ipt/collector/templates/collector.service.in
-		nodes/ipt/collector/templates/collector.linux.cgf.in
+		templates/collector.service.in
+		templates/collector.linux.cgf.in
 	)
 
 endif()
