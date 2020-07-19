@@ -178,7 +178,7 @@ configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/broker/iec-62056/templates/iec_62056.service.in"
 		"${PROJECT_BINARY_DIR}/config/node-iec_62056.service")
 
-# iec_62056
+#  EN13757 mBus
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/broker/mbus-radio/templates/mbus_radio.linux.cgf.in"
 		"${PROJECT_BINARY_DIR}/config/mbus_radio_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")

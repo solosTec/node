@@ -141,7 +141,7 @@ namespace node
 			, config_.get().pwd_
 			, config_.get().auto_config_
 			, config_.get().group_
-			, "mBus broker (radio)"));
+			, "EN13757-4 wM-Bus broker"));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
 			<< config_.get().host_
