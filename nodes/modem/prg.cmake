@@ -34,7 +34,7 @@ set (node_modem_shared
 )
 
 if (UNIX)
-	list(APPEND node_modem_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_modem_shared ${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/write_pid.h)
 endif(UNIX)
 
 set (node_modem_tasks

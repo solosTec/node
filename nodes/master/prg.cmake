@@ -47,8 +47,8 @@ set (node_master_shared
 )
 
 if (UNIX)
-	list(APPEND node_master_shared src/main/include/smf/shared/write_pid.h)
-	list(APPEND node_master_shared nodes/shared/sys/write_pid.cpp)
+	list(APPEND node_master_shared ${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_master_shared ${CMAKE_SOURCE_DIR}/nodes/shared/sys/write_pid.cpp)
 endif(UNIX)
 
 set (node_master_schemes

@@ -56,7 +56,7 @@ set (node_ipt_segw_shared
 )
 
 if (UNIX)
-	list(APPEND node_ipt_segw_shared src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_ipt_segw_shared ${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/write_pid.h)
 endif(UNIX)
 
 

@@ -162,11 +162,11 @@ configure_file (
 	  
 # csv
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.linux.cgf.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/csv/templates/csv.linux.cgf.in"
     "${PROJECT_BINARY_DIR}/config/csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/tasks/csv/templates/csv.service.in"
+    "${PROJECT_SOURCE_DIR}/nodes/tasks/csv/templates/csv.service.in"
     "${PROJECT_BINARY_DIR}/config/task-csv.service")
 
 # iec_62056

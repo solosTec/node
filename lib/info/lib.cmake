@@ -28,7 +28,7 @@ set (segw_info_h
 
 if (UNIX)
 	list(APPEND segw_info_h ${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/write_pid.h)
-	list(APPEND segw_info_cpp ${CMAKE_SOURCE_DIR}/lib/shared/sys/write_pid.cpp)
+	list(APPEND segw_info_cpp ${CMAKE_SOURCE_DIR}/nodes/shared/sys/write_pid.cpp)
 endif(UNIX)
 
 
