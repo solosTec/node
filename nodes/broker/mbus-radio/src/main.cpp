@@ -63,11 +63,11 @@ int main(int argc, char **argv)
 #endif    
 	
     //
-    //	IEC 62056 node options
+    //	mBus (radio) node options
     //
-    boost::program_options::options_description node_options("IEC 62056");
+    boost::program_options::options_description node_options("mBus (radio)");
 	node::set_start_options(node_options
-		, "mBus (radio)"
+		, "mbus_radio"
 		, json_path
 		, pool_size
 		, config_index
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 
         if (vm.count("version"))
         {
-            return node::print_version_info(std::cout, "IEC 62056");
+            return node::print_version_info(std::cout, "mBus (radio)");
         }
 
         if (vm.count("build"))

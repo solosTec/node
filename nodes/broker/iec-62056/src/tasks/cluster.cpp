@@ -141,7 +141,7 @@ namespace node
 			, config_.get().pwd_
 			, config_.get().auto_config_
 			, config_.get().group_
-			, "IEC-62056-21:2002"));
+			, "IEC-62056-21:2002 broker"));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
 			<< config_.get().host_
