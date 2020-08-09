@@ -29,5 +29,6 @@ target_link_libraries(unit_test
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${SQLite3_LIBRARY};${Boost_UNIT_TEST_FRAMEWORK_LIBRARY};${Boost_LIBRARIES};pthread;${CMAKE_DL_LIBS}>"
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
-    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
+	$<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
+	$<$<AND:$<VERSION_LESS:${CMAKE_CXX_COMPILER_VERSION},9.0>,$<CXX_COMPILER_ID:Clang>>:stdc++fs>   
 )
