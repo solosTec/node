@@ -15,7 +15,7 @@ clean:
 
 install: build
 	install -d $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/lib*.so $(INSTALLDIR)/usr/local/lib
+#	install -m 755 @PROJECT_BINARY_DIR@/lib*.so $(INSTALLDIR)/usr/local/lib
 	install -m 755 @__cyng_async@ $(INSTALLDIR)/usr/local/lib
 	install -m 755 @__cyng_csv@ $(INSTALLDIR)/usr/local/lib
 	install -m 755 @__cyng_domain@ $(INSTALLDIR)/usr/local/lib
@@ -35,11 +35,11 @@ install: build
 	install -m 755 @__cyng_table@ $(INSTALLDIR)/usr/local/lib
 	install -m 755 @CRYPT_BUILD@/libcrypto.so $(INSTALLDIR)/usr/local/lib
 	
-	install -m 755 @Boost_FILESYSTEM_LIBRARY_RELEASE@ $(INSTALLDIR)/usr/local/lib/libboost_filesystem.so.1.73.0
-	install -m 755 @Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE@ $(INSTALLDIR)/usr/local/lib/libboost_program_options.so.1.73.0
-	install -m 755 @Boost_RANDOM_LIBRARY_RELEASE@ $(INSTALLDIR)/usr/local/lib/libboost_random.so.1.73.0
-	install -m 755 @Boost_SYSTEM_LIBRARY_RELEASE@ $(INSTALLDIR)/usr/local/lib/libboost_system.so.1.73.0
-	install -m 755 @Boost_THREAD_LIBRARY_RELEASE@ $(INSTALLDIR)/usr/local/lib/libboost_thread.so.1.73.0
+#	install -m 755 @Boost_FILESYSTEM_LIBRARY_RELEASE@ $(INSTALLDIR)/usr/local/lib/libboost_filesystem.so.1.73.0
+#	install -m 755 @Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE@ $(INSTALLDIR)/usr/local/lib/libboost_program_options.so.1.73.0
+#	install -m 755 @Boost_RANDOM_LIBRARY_RELEASE@ $(INSTALLDIR)/usr/local/lib/libboost_random.so.1.73.0
+#	install -m 755 @Boost_SYSTEM_LIBRARY_RELEASE@ $(INSTALLDIR)/usr/local/lib/libboost_system.so.1.73.0
+#	install -m 755 @Boost_THREAD_LIBRARY_RELEASE@ $(INSTALLDIR)/usr/local/lib/libboost_thread.so.1.73.0
 
 	install -d $(INSTALLDIR)/usr/local/sbin
 	install -m 755 @PROJECT_BINARY_DIR@/segw $(INSTALLDIR)/usr/local/sbin
