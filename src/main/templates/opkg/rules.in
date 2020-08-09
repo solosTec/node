@@ -42,7 +42,7 @@ install: build
 #	install -m 755 @Boost_THREAD_LIBRARY_RELEASE@ $(INSTALLDIR)/usr/local/lib/libboost_thread.so.1.73.0
 
 	install -d $(INSTALLDIR)/usr/local/sbin
-	install -m 755 @PROJECT_BINARY_DIR@/segw $(INSTALLDIR)/usr/local/sbin
+#	install -m 755 @PROJECT_BINARY_DIR@/segw $(INSTALLDIR)/usr/local/sbin
 	install -m 755 @CYNG_ROOT_DEV@/@CYNG_ROOT_BUILD_SUBDIR@/sqlite3 $(INSTALLDIR)/usr/local/sbin 
 
 	install -d $(INSTALLDIR)/usr/local/etc/smf
