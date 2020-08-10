@@ -305,7 +305,6 @@ namespace node
 		cyng::buffer_t session::parse(read_buffer_const_iterator begin, read_buffer_const_iterator end)
 		{
 			const auto bytes_transferred = std::distance(begin, end);
-			vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt connection received ", bytes_transferred, cyng::invoke("log.fmt.byte")));
 
 			//
 			//	size == parsed bytes

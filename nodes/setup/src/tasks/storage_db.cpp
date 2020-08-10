@@ -232,9 +232,17 @@ namespace node
 							stmt->push(cyng::make_object(gen), col.width_);
 						}
 						else {
+							
 							//BOOST_ASSERT_MSG(col.type_ == data.at(col.pos_ - 1).get_class().tag(), "wrong data type");
 							if (col.type_ != data.at(col.pos_ - 1).get_class().tag()) {
-								CYNG_LOG_WARNING(logger_, "wrong data type in tbale " << name << " at index: " << col.pos_);
+								CYNG_LOG_WARNING(logger_, "wrong data type in table " 
+									<< name 
+									<< " at position: " 
+									<< col.pos_
+									<< " - "
+									<< col.type_
+									<< " != "
+									<< data.at(col.pos_ - 1).get_class().type_name());
 							}
 							stmt->push(data.at(col.pos_ - 1), col.width_);
 						}
@@ -703,7 +711,7 @@ namespace node
 		//	vFirmware: (i.e. 11600000)
 		//	item: artikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 		//	class: Metrological Class: A, B, C, Q3/Q1, ...
-		insert(meta_map, cyng::table::make_meta_table_gen<1, 11>("TMeter",
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 12>("TMeter",
 			{ "pk"
 			, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 			, "meter"		//	meter number (i.e. 16000913) 4 bytes 
@@ -716,6 +724,7 @@ namespace node
 			, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 			, "mClass"		//	Metrological Class: A, B, C, Q3/Q1, ...
 			, "gw"			//	optional gateway pk
+			, "protocol"	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
 			},
 			{ cyng::TC_UUID			//	pk
 			, cyng::TC_STRING		//	ident
@@ -729,6 +738,7 @@ namespace node
 			, cyng::TC_STRING		//	item
 			, cyng::TC_STRING		//	mClass
 			, cyng::TC_UUID			//	gw
+			, cyng::TC_STRING		//	protocol
 			},
 			{ 36	//	pk
 			, 24	//	ident
@@ -742,6 +752,7 @@ namespace node
 			, 128	//	item
 			, 8		//	mClass 
 			, 36	//	gw
+			, 32	//	protocol
 			}));
 
 		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices

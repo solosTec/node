@@ -21,6 +21,7 @@
 #include <cyng/xml.h>
 #include <cyng/csv.h>
 #include <cyng/json.h>
+#include <cyng/io/io_bytes.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/uuid/string_generator.hpp>
@@ -56,6 +57,24 @@ namespace node
 				, 0
 				, ctx.tag()));
 		}
+		//else if (boost::algorithm::starts_with(channel, "config.iec"))
+		//{
+		//	CYNG_LOG_WARNING(logger, "config.iec - not implemented yet: "
+		//		<< cyng::io::to_type(reader.get("rec")));
+
+		//	ctx.queue(bus_req_db_insert("TIECBridge"
+		//		//	generate new key
+		//		, cyng::table::key_generator(tag)
+		//		//	build data vector
+		//		, cyng::vector_t{ reader["rec"]["data"].get("address")
+		//			, reader["rec"]["data"].get("port")
+		//			, reader["rec"]["data"].get("direction")
+		//			, cyng::make_seconds(2)
+		//		}
+		//		, 0
+		//		, ctx.tag()));
+
+		//}
 		else
 		{
 			CYNG_LOG_WARNING(logger, "ws.read - unknown insert channel [" << channel << "]");
@@ -679,6 +698,7 @@ namespace node
 		vm.register_function("cfg.upload.gateways", 2, std::bind(&forward::cfg_upload_gateways, this, std::placeholders::_1));
 		vm.register_function("cfg.upload.meter", 2, std::bind(&forward::cfg_upload_meter, this, std::placeholders::_1));
 		vm.register_function("cfg.upload.LoRa", 2, std::bind(&forward::cfg_upload_LoRa, this, std::placeholders::_1));
+		vm.register_function("cfg.upload.onee", 2, std::bind(&forward::cfg_upload_onee, this, std::placeholders::_1));
 
 		vm.register_function("http.post.json", 5, std::bind(&forward::cfg_post_json, this, std::placeholders::_1));
 		vm.register_function("http.post.form.urlencoded", 5, std::bind(&forward::cfg_post_form_urlencoded, this, std::placeholders::_1));
@@ -991,6 +1011,32 @@ namespace node
 		}
 	}
 
+	void forward::cfg_upload_onee(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		//CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,	//	[0] session tag
+			cyng::param_map_t	//	[1] variables
+		>(frame);
+
+
+		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "data"), "");
+		auto const policy = cyng::table::to_policy(cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "policy"), "subst"));
+		auto const data = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "file"), "");
+
+		CYNG_LOG_TRACE(logger_, ctx.get_name() 
+			<< ", file name: " 
+			<< file_name
+			<< ", policy: "
+			<< policy
+			<< ", content length: "
+			<< cyng::bytes_to_str(data.size()));
+
+		//Meter_ID, Ift_Type, GWY_IP, Port, Manufacturer, Meter_Type, Protocol, Area, Name, In_enDS, Key, AMR Address, Comments
+		//	MA0000000000000000000000003496219, RS485, 10.132.28.150, 6000, Elster, Elster AS 1440, IEC 62056, Lot Yakut, C1 House 101, Yes, , ,
+	}
 	void forward::read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc, bool insert)
 	{
 		//

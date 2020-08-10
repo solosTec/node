@@ -16,6 +16,7 @@
 #include <cyng/value_cast.hpp>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_bytes.hpp>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/async/task/task_builder.hpp>
 #include <boost/uuid/nil_generator.hpp>
@@ -247,10 +248,10 @@ namespace node
 			{
 				if (!ec)
 				{
-					//CYNG_LOG_TRACE(logger_, bytes_transferred << " bytes read");"log.hex.dump"
-					vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt client received ", bytes_transferred, cyng::invoke("log.fmt.byte")));
+					CYNG_LOG_TRACE(logger_, "ipt client received "
+						<< cyng::bytes_to_str(bytes_transferred));
+
 					auto const buffer = parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
-					//auto const prg = cyng::generate_invoke("log.msg.trace", "ipt client received ", buffer, cyng::invoke("log.hex.dump"));
 					vm_.async_run(cyng::generate_invoke("log.msg.trace", buffer, cyng::invoke("log.hex.dump")));
 
 #ifdef SMF_IO_DEBUG

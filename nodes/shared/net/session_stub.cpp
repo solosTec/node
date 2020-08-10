@@ -10,6 +10,7 @@
 #include <cyng/vm/domain/log_domain.h>
 #include <cyng/vm/domain/asio_domain.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/io/io_bytes.hpp>
 
 #ifdef SMF_IO_DEBUG
 #include <cyng/io/hex_dump.hpp>
@@ -275,12 +276,11 @@ namespace node
 		{
 			if (!ec && !pending_)
 			{
-				//vm_.async_run(cyng::generate_invoke("log.msg.trace", "ipt connection received", bytes_transferred, "bytes"));
-				CYNG_LOG_TRACE(logger_, "session " 
-					<< vm_.tag() 
+				CYNG_LOG_TRACE(logger_, "session "
+					<< vm_.tag()
 					<< " received "
-					<< bytes_transferred
-					<< " bytes");
+					<< cyng::bytes_to_str(bytes_transferred));
+
 
 				//
 				//	buffer contains the unscrambled input

@@ -40,6 +40,7 @@ namespace node
 				PARSE_ERROR,
 				START,
 				LENGTH,	//!<	check MSB
+				LIST,	//!< different handling of length
 				STRING,
 				OCTET,
 				BOOLEAN,
@@ -64,14 +65,14 @@ namespace node
 
 			struct sml_start {};
 			struct sml_length {};
-			struct sml_string 
+			struct sml_list {};
+			struct sml_bool {};
+			struct sml_string
 			{
 				sml_string(std::size_t size);
 				bool push(char);
 				std::size_t size_;
 				cyng::buffer_t octet_;
-			};
-			struct sml_bool {
 			};
 
 			/**
@@ -145,7 +146,8 @@ namespace node
 
 			using parser_state_t = boost::variant<sml_start,
 				sml_length,
-				sml_string,	
+				sml_list,
+				sml_string,
 				sml_bool,
 				sml_uint8,
 				sml_uint16,
@@ -172,6 +174,7 @@ namespace node
 				state_visitor(parser&, char c);
 				state operator()(sml_start&) const;
 				state operator()(sml_length&) const;
+				state operator()(sml_list&) const;
 				state operator()(sml_string&) const;
 				state operator()(sml_bool&) const;
 				state operator()(sml_uint8&) const;
@@ -280,6 +283,7 @@ namespace node
 			 * debug helper
 			 */
 			std::string prefix() const;
+			void dump_stack(std::ostream&) const;
 
 			/**
 			 * push element on list stack
