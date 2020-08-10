@@ -19,12 +19,15 @@
 #include <cyng/vm/generator.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>
+#if defined(SMF_IO_DEBUG) || defined(_DEBUG)
+#include <cyng/io/hex_dump.hpp>
+#include <cyng/io/cpp_dump.hpp>
+#endif
 
 #include <boost/core/ignore_unused.hpp>
 
 namespace node
 {
-
 	router::router(cyng::logging::log_ptr logger
 		, bool const server_mode
 		, cyng::controller& vm
@@ -92,7 +95,7 @@ namespace node
 		vm.register_function("sml.get.proc.parameter.request", 6, std::bind(&router::sml_get_proc_parameter_request, this, std::placeholders::_1));
 		vm.register_function("sml.set.proc.parameter.request", 6, std::bind(&router::sml_set_proc_parameter_request, this, std::placeholders::_1));
 		vm.register_function("sml.get.profile.list.request", 8, std::bind(&router::sml_get_profile_list_request, this, std::placeholders::_1));
-		vm.register_function("sml.get.list.request", 7, std::bind(&router::sml_get_ist_request, this, std::placeholders::_1));
+		vm.register_function("sml.get.list.request", 7, std::bind(&router::sml_get_list_request, this, std::placeholders::_1));
 
 		attention_.register_this(vm);
 
@@ -138,6 +141,13 @@ namespace node
 		//	build SML message frame
 		//
 		cyng::buffer_t buf = sml_gen_.boxing();
+
+#ifdef _DEBUG
+		cyng::io::cpp_dump cd;
+		std::stringstream ss;
+		cd(ss, buf.begin(), buf.end(), "var");
+		CYNG_LOG_TRACE(logger_, "response:\n" << ss.str());
+#endif
 
 #ifdef SMF_IO_DEBUG
 		cyng::io::hex_dump hd;
@@ -393,7 +403,7 @@ namespace node
 
 	}
 
-	void router::sml_get_ist_request(cyng::context& ctx)
+	void router::sml_get_list_request(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));

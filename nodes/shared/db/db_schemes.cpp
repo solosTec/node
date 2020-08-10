@@ -135,7 +135,7 @@ namespace node
 			//
 			//	"ident" + "gw" have to be unique
 			//
-			return cyng::table::make_meta_table<1, 11>(name, 
+			return cyng::table::make_meta_table<1, 12>(name, 
 				{ "pk"
 				, "ident"		//	[string] ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 				, "meter"		//	[string] meter number (i.e. 16000913) 4 bytes 
@@ -148,6 +148,7 @@ namespace node
 				, "item"		//	[string] ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 				, "mClass"		//	[string] Metrological Class: A, B, C, Q3/Q1, ...
 				, "gw"			//	[uuid] optional gateway pk
+				, "protocol"	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
 				},
 				{ cyng::TC_UUID
 				, cyng::TC_STRING		//	ident
@@ -161,6 +162,7 @@ namespace node
 				, cyng::TC_STRING		//	item
 				, cyng::TC_STRING		//	mClass
 				, cyng::TC_UUID			//	gw
+				, cyng::TC_STRING		//	protocol
 				},
 				{ 36
 				, 24	//	ident
@@ -174,6 +176,7 @@ namespace node
 				, 128	//	item
 				, 8		//	mClass 
 				, 36	//	gw
+				, 32	//	protocol
 				});
 		}
 		else if (boost::algorithm::equals(name, "TLL")) {

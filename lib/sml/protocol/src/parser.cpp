@@ -22,6 +22,19 @@ namespace node
 {
 	namespace sml
 	{
+//#ifdef _DEBUG
+		template <class STACK>
+		typename STACK::container_type const& get_container(STACK& a)
+		{
+			struct hack : STACK {
+				static typename STACK::container_type const& get(STACK& a) {
+					return a.* & hack::c;
+				}
+			};
+			return hack::get(a);
+		}
+//#endif
+
 		//
 		//	parser
 		//
@@ -141,6 +154,9 @@ namespace node
 				case state::LENGTH:
 					parser_state_ = sml_length();
 					break;
+				case state::LIST:
+					parser_state_ = sml_list();
+					break;
 				case state::STRING:
 					parser_state_ = sml_string(tl_.length_ - offset_);
 					break;
@@ -227,6 +243,7 @@ namespace node
 			case state::PARSE_ERROR:	break;
 			case state::START:	return "START";
 			case state::LENGTH:	return "LENGTH";
+			case state::LIST:	return "LIST";
 			case state::STRING:	return "STRING";
 			case state::OCTET:	return "OCTECT";
 			case state::BOOLEAN:	return "BOOLEAN";
@@ -258,14 +275,6 @@ namespace node
 
 		parser::state parser::state_visitor::operator()(sml_start& s) const
 		{
-			//if (parser_.is_msg_complete()) {
-
-			//	//
-			//	//	ignore CRC data as long as pos_ is not aligned
-			//	//
-			//	return state::START;
-			//}
-
 			if (c_ == ESCAPE_SIGN)
 			{
 				return state::ESC;
@@ -326,7 +335,10 @@ namespace node
 
 				if ((c_ & 0x80) == 0x80)
 				{
-					return state::LENGTH;
+					return (SML_LIST == parser_.tl_.type_)
+						? state::LIST
+						: state::LENGTH
+						;
 				}
 				else
 				{
@@ -340,32 +352,30 @@ namespace node
 		parser::state parser::state_visitor::operator()(sml_length& s) const
 		{
 			//
-			//	check MSB
+			//	calculate length.
+			//	4 bits are used to encode the length info.
 			//
-			//if (!(((c_ & 0x70) >> 4) == 0))
-			//{
-			//	//	error
-			//	if (parser_.verbose_)
-			//	{
-			//		std::cerr 
-			//			<< "***FATAL type "
-			//			<< std::dec
-			//			<< parser_.tl_.type_
-			//			<< " during MSB check @"
-			//			<< std::hex
-			//			<< parser_.pos_
-			//			<< std::endl;
-			//	}
+			parser_.tl_.length_ *= 16;
+			parser_.tl_.length_ |= (c_ & 0x0f);
+			parser_.offset_++;
 
-			//	return state::START;
-			//}
-
+			//
+			//	if MSB is on: more length fields are following
+			//
+			return ((c_ & 0x80) != 0x80)
+				? parser_.next_state()
+				: parser_.stream_state_
+				;
+		}
+		parser::state parser::state_visitor::operator()(sml_list& s) const
+		{
 			//
 			//	calculate length.
 			//	4 bits are used to encode the length info.
 			//
 			parser_.tl_.length_ *= 16;
 			parser_.tl_.length_ |= (c_ & 0x0f);
+			--parser_.tl_.length_;
 			parser_.offset_++;
 
 			//
@@ -957,6 +967,7 @@ namespace node
 							<< " @"
 							<< std::hex
 							<< pos_
+							<< std::dec
 							;
 						cb_(cyng::generate_invoke("log.msg.fatal", ss.str()));
 					}
@@ -972,8 +983,6 @@ namespace node
 					ss
 						<< "open list with "
 						<< std::dec
-						<< stack_.size()
-						<< ':'
 						<< tl_.length_
 						<< " entries @"
 						<< std::hex
@@ -1082,7 +1091,25 @@ namespace node
 					//	generate SML message
 					//
 					//BOOST_ASSERT_MSG(stack_.top().values_.size() == 5, "sml.msg");
-					cyng::vector_t prg{ cyng::generate_invoke("sml.msg", stack_.top().values_, counter_, pk_) };
+					if (stack_.top().values_.size() == 5) {
+						cyng::vector_t prg{ cyng::generate_invoke("sml.msg", stack_.top().values_, counter_, pk_) };
+
+						//
+						//	message complete
+						//
+						cb_(std::move(prg));
+					}
+					else {
+						std::stringstream ss;
+						ss
+							<< "invalid message size: "
+							<< stack_.top().values_.size()
+							<< ":\n"
+							<< cyng::io::to_type(stack_.top().values_);
+							;
+						cb_(cyng::generate_invoke("log.msg.error", ss.str()));
+
+					}
 
 					if (verbose_)
 					{
@@ -1090,11 +1117,6 @@ namespace node
 							<< "*** SML message complete"
 							<< std::endl;
 					}
-
-					//
-					//	message complete
-					//
-					cb_(std::move(prg));
 				}
 
 				//
@@ -1148,7 +1170,7 @@ namespace node
 				{
 					std::cerr
 						<< ss.rdbuf()
-						<< std::endl;
+						;
 				}
 				if (log_)
 				{
@@ -1195,16 +1217,20 @@ namespace node
 					//
 					//	list is complete
 					//
-					auto values = stack_.top().values_;
+					auto const values = stack_.top().values_;
 					if (verbose_ || log_) {
 						std::stringstream ss;
 						ss 
-							<< "reduce list [stack size "
+							<< "reduce list with "
 							<< std::dec
+							<< std::setw(2)
+							<< values.size()
+							<< " values [stack size "
+							<< std::setw(2)
 							<< stack_.size()
 							<< "] "
-							<< values.size()
 							;
+						dump_stack(ss);
 						
 						if (verbose_)
 						{
@@ -1251,26 +1277,50 @@ namespace node
 			pos_ = 0;
 		}
 
+		void parser::dump_stack(std::ostream& os) const
+		{
+			auto c = get_container(stack_);
+			os << "[";
+			bool init{ false };
+			for (auto const& e : c) {
+				if (init) {
+					os 
+						<< "," 
+						<< e.values_.size()
+						<< "/"
+						<< e.target_
+						;
+				}
+				else {
+					init = true;
+					os << e.values_.size() - 1;
+				}
+			}
+			os << "] ";
+		}
+
 		std::string parser::prefix() const
 		{
 			std::stringstream ss;
 			if (verbose_)
 			{
-				if (!stack_.empty())
+				if (stack_.empty()) {
+					ss
+						<< "[START] "
+						;
+				}
+				else if (stack_.size() == 1)
 				{
 					ss 
 						<< "[" 
-						<< std::setw(stack_.size() * 2) 
-						<< std::setfill('.') 
-						<< stack_.top().pos() 
+						<< stack_.top().pos() - 1
 						<< "] "
 						;
 				}
 				else
 				{
-					ss
-						<< "[START] "
-						;
+					//	get container
+					dump_stack(ss);
 				}
 			}
 			return ss.str();

@@ -67,7 +67,7 @@ namespace node
 		void sml_get_proc_parameter_request(cyng::context& ctx);
 		void sml_set_proc_parameter_request(cyng::context& ctx);
 		void sml_get_profile_list_request(cyng::context& ctx);
-		void sml_get_ist_request(cyng::context& ctx);
+		void sml_get_list_request(cyng::context& ctx);
 
 	private:
 		/**

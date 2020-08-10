@@ -106,6 +106,7 @@ namespace node
 		void cfg_upload_gateways(cyng::context& ctx);
 		void cfg_upload_meter(cyng::context& ctx);
 		void cfg_upload_LoRa(cyng::context& ctx);
+		void cfg_upload_onee(cyng::context& ctx);
 
 		void read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc, bool);
 		void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc, bool);

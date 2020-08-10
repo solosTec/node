@@ -97,7 +97,7 @@ namespace node
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 13>("TMeter", { "pk"
+		if (!db.create_table(cyng::table::make_meta_table<1, 14>("TMeter", { "pk"
 					, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 					, "meter"		//	meter number (i.e. 16000913) 4 bytes 
 					, "code"		//	metering code - changed at 2019-01-31
@@ -109,6 +109,7 @@ namespace node
 					, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 					, "mClass"		//	Metrological Class: A, B, C, Q3/Q1, ...
 					, "gw"			//	optional gateway pk
+					, "protocol"	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
 					//	-- additional columns
 					, "serverId"	//	optional gateway server ID
 					, "online"		//	gateway online state (1,2,3)
@@ -125,6 +126,7 @@ namespace node
 			, cyng::TC_STRING		//	item
 			, cyng::TC_STRING		//	mClass
 			, cyng::TC_UUID			//	gw
+			, cyng::TC_STRING		//	protocol
 			, cyng::TC_STRING		//	serverID
 			, cyng::TC_INT32		//	on/offline state
 			},
@@ -140,6 +142,7 @@ namespace node
 			, 128	//	item
 			, 8		//	mClass 
 			, 36	//	gw
+			, 32	//	protocol
 			, 23 	//	serverId
 			, 0		//	on/offline state
 			})))

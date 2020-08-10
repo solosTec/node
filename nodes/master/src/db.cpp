@@ -127,7 +127,8 @@ namespace node
 				, "06441734"
 				, "NXT4-S20EW-6N00-4000-5020-E50/Q"
 				, "Q3"
-				, boost::uuids::string_generator()("8d04b8e0-0faf-44ea-b32b-8405d407f2c1"))	//	reference to TGateway 8d04b8e0-0faf-44ea-b32b-8405d407f2c1
+				, boost::uuids::string_generator()("8d04b8e0-0faf-44ea-b32b-8405d407f2c1")	//	reference to TGateway 8d04b8e0-0faf-44ea-b32b-8405d407f2c1
+				, "SML")
 			, 5
 			, tag);
 

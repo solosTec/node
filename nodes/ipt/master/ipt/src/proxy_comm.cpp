@@ -61,12 +61,17 @@ namespace node
 		//
 		auto const msg = cyng::to_tuple(frame.at(0));
 
-		//
-		//	This effectively converts the SML message into function calls
-		//	into the VM.
-		//
-		ctx.queue(sml::reader::read(msg));
-
+		if (msg.size() == 5) {
+			//
+			//	This effectively converts the SML message into function calls
+			//	into the VM.
+			//
+			ctx.queue(sml::reader::read(msg));
+		}
+		else {
+			auto const s = cyng::io::to_type(msg);
+			ctx.queue(cyng::generate_invoke("log.msg.error", ctx.get_name(), " - wrong message size:\n", s));
+		}
 	}
 
 	void proxy_comm::sml_eom(cyng::context& ctx)

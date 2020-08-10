@@ -509,7 +509,7 @@ namespace node
 
 			std::uint8_t 
 				quant{ 1 }, //	outer loop counter (0x01 - 0xFA)
-				store{ 1 }	//	inner loop counter (0x01 - 0xFE)
+				store{ 0 }	//	inner loop counter (0x01 - 0xFE)
 			;
 
 			auto const now = std::chrono::system_clock::now();
@@ -520,6 +520,16 @@ namespace node
 
 			cyng::buffer_t tmp;
 			cache_.loop("_DeviceMBUS", [&](cyng::table::record const& rec)->bool {
+
+				//
+				//	update counter
+				//
+				++store;
+				if (store == 0xFE) {
+					++quant;
+					store = 0x01;
+				}
+
 				//
 				//	set server ID
 				//
@@ -531,7 +541,9 @@ namespace node
 					OBIS_SERVER_ID
 					}, make_value(srv_id));
 
-				CYNG_LOG_TRACE(logger_, "list active device: "
+				CYNG_LOG_TRACE(logger_, "list active device "
+					<< (((quant - 1) * 256) + store)
+					<< ": "
 					<< cyng::io::to_hex(srv_id));
 
 				//
@@ -554,20 +566,15 @@ namespace node
 					OBIS_CURRENT_UTC
 					}, make_value(cyng::value_cast(rec["lastSeen"], now)));
 
-				//
-				//	update counter
-				//
-				++store;
-				if (store == 0xFE) {
-					++quant;
-					store = 0x01;
-				}
-
 				return true;	//	continue
 			});
 
-			CYNG_LOG_TRACE(logger_, "code_root_active_devices: "
-				<< cyng::io::to_str(msg));
+			CYNG_LOG_TRACE(logger_, "ROOT_ACTIVE_DEVICES: "
+				<< (((quant - 1) * 256) + store)
+				<< "/"
+				<< msg.size()
+				<< " - "
+				<< cyng::io::to_type(msg));
 
 			//
 			//	append to message queue
@@ -582,7 +589,7 @@ namespace node
 
 			std::uint8_t
 				quant{ 1 }, //	outer loop counter (0x01 - 0xFA)
-				store{ 1 }	//	inner loop counter (0x01 - 0xFE)
+				store{ 0 }	//	inner loop counter (0x01 - 0xFE)
 			;
 
 			auto const now = std::chrono::system_clock::now();
@@ -591,6 +598,15 @@ namespace node
 			//	list all visible M-Bus devices
 			//
 			cache_.loop("_DeviceMBUS", [&](cyng::table::record const& rec) {
+
+				//
+				//	update counter
+				//
+				++store;
+				if (store == 0xFE) {
+					++quant;
+					store = 0x01;
+				}
 
 				//
 				//	set server ID
@@ -603,8 +619,10 @@ namespace node
 					OBIS_SERVER_ID
 				}, make_value(srv_id));
 
-				CYNG_LOG_TRACE(logger_, "list visible device: "
-				<< cyng::io::to_hex(srv_id));
+				CYNG_LOG_TRACE(logger_, "list visible device "
+					<< (((quant - 1) * 256) + store)
+					<< ": "
+					<< cyng::io::to_hex(srv_id));
 				
 				//
 				//	device class
@@ -626,14 +644,6 @@ namespace node
 					OBIS_CURRENT_UTC
 					}, make_value(cyng::value_cast(rec["lastSeen"], now)));
 
-				//
-				//	update counter
-				//
-				++store;
-				if (store == 0xFE) {
-					++quant;
-					store = 0x01;
-				}
 
 				return true;	//	continue
 			});
@@ -644,7 +654,11 @@ namespace node
 			sml_gen_.append(std::move(msg));
 
 			CYNG_LOG_TRACE(logger_, "ROOT_VISIBLE_DEVICES: "
-				<< cyng::io::to_str(msg));
+				<< (((quant - 1) * 256) + store)
+				<< "/"
+				<< msg.size()
+				<< " - "
+				<< cyng::io::to_type(msg));
 
 		}
 
