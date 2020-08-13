@@ -73,26 +73,20 @@ namespace node
 		return boost::asio::serial_port_base::character_size(cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "databits"), 8u));
 	}
 
-	bool cfg_wmbus::is_broker_mode() const
-	{
-		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "broker-mode"), false);
-	}
-
-	std::uint16_t cfg_wmbus::get_broker_port() const
-	{
-		constexpr std::uint16_t def_port{ 12001u };
-		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "broker-port"), def_port);
-	}
-
-	std::string cfg_wmbus::get_broker_address() const
-	{
-		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "broker-address"), std::string("segw.ch"));
-	}
 
 	std::string cfg_wmbus::get_hci() const
 	{
 		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "HCI"), std::string("none"));
 	}
 
+	bool cfg_wmbus::is_CP210x() const
+	{
+		return boost::algorithm::equals(get_hci(), "CP210x");
+	}
+
+	bool cfg_wmbus::generate_profile() const
+	{
+		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "generate-profile"), true);
+	}
 
 }

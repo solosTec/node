@@ -34,13 +34,13 @@ namespace node
 		{
 			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_BROKER);
 
-			append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_ENABLED, make_obis(0x90, 0x00, 0x00, 0x00, 0x01, 1u) }, make_value(cfg_.is_transparent_mode(0)));
-			append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_SERVER, make_obis(0x90, 0x00, 0x00, 0x00, 0x02, 1u) }, make_value("segw.ch"));
-			append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_PORT, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 1u) }, make_value(12001u));
+			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_ENABLED, make_obis(0x90, 0x00, 0x00, 0x00, 0x01, 1u) }, make_value(cfg_.is_transparent_mode(0)));
+			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_SERVER, make_obis(0x90, 0x00, 0x00, 0x00, 0x02, 1u) }, make_value("segw.ch"));
+			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_PORT, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 1u) }, make_value(12001u));
 
-			append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_ENABLED, make_obis(0x90, 0x00, 0x00, 0x00, 0x01, 2u) }, make_value(cfg_.is_transparent_mode(1)));
-			append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_SERVER, make_obis(0x90, 0x00, 0x00, 0x00, 0x02, 2u) }, make_value("192.168.1.21"));
-			append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_PORT, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 2u) }, make_value(12002u));
+			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_ENABLED, make_obis(0x90, 0x00, 0x00, 0x00, 0x01, 2u) }, make_value(cfg_.is_transparent_mode(1)));
+			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_SERVER, make_obis(0x90, 0x00, 0x00, 0x00, 0x02, 2u) }, make_value("192.168.1.21"));
+			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_PORT, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 2u) }, make_value(12002u));
 
 
 			//

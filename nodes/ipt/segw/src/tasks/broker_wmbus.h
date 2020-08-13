@@ -42,7 +42,9 @@ namespace node
 		broker_wmbus(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, cyng::controller&
-			, cache& cfg);
+			, cache& cfg
+			, std::string address
+			, std::uint16_t port);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -77,6 +79,12 @@ namespace node
 		 * configuration management
 		 */
 		cfg_wmbus cfg_;
+
+		/**
+		 * IP address
+		 */
+		std::string const host_;
+		std::uint16_t const port_;
 
 		/**
 		 * connection socket

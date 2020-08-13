@@ -35,7 +35,7 @@ namespace node
 			, boost::asio::serial_port_base::flow_control flow_control
 			, boost::asio::serial_port_base::stop_bits stopbits
 			, boost::asio::serial_port_base::baud_rate speed
-			, std::size_t receiver_data
+			, cyng::async::task_list_t const& receiver_data
 			, std::size_t receiver_status
 			, cyng::buffer_t&& init);
 
@@ -76,7 +76,7 @@ namespace node
 		boost::asio::serial_port_base::flow_control flow_control_;
 		boost::asio::serial_port_base::stop_bits stopbits_;
 		boost::asio::serial_port_base::baud_rate baud_rate_;
-		std::size_t const receiver_data_;
+		cyng::async::task_list_t const receiver_data_;
 		std::size_t const receiver_status_;
 		cyng::buffer_t init_;
 

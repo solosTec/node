@@ -25,7 +25,7 @@ namespace node
 		, boost::asio::serial_port_base::flow_control flow_control
 		, boost::asio::serial_port_base::stop_bits stopbits
 		, boost::asio::serial_port_base::baud_rate speed
-		, std::size_t receiver_data
+		, cyng::async::task_list_t const& receiver_data
 		, std::size_t receiver_status
 		, cyng::buffer_t&& init)
 	: base_(*btp) 
@@ -105,7 +105,7 @@ namespace node
 				//
 				//	update status.word
 				//
-				base_.mux_.post(receiver_status_, 1u, cyng::tuple_factory(true));
+				if (receiver_status_ != cyng::async::NO_TASK)	base_.mux_.post(receiver_status_, 1u, cyng::tuple_factory(true));
 
 				//
 				//	start reading
@@ -170,9 +170,17 @@ namespace node
 				CYNG_LOG_TRACE(logger_, "\n" << ss.str());
 
 //#endif
-				base_.mux_.post(receiver_data_
-					, 0u
-					, cyng::tuple_factory(cyng::buffer_t(buffer_.cbegin(), buffer_.cbegin() + bytes_transferred), msg_counter_++));
+				//
+				//	post data to receiver 
+				//
+				for (auto tsk : receiver_data_) {
+					base_.mux_.post(tsk, 0u, cyng::tuple_factory(cyng::buffer_t(buffer_.cbegin(), buffer_.cbegin() + bytes_transferred), msg_counter_));
+				}
+
+				//
+				//	update message counter
+				//
+				++msg_counter_;
 
 				//
 				//	continue reading
@@ -191,7 +199,7 @@ namespace node
 				//
 				//	update status.word
 				//
-				base_.mux_.post(receiver_status_, 1u, cyng::tuple_factory(false));
+				if (receiver_status_ != cyng::async::NO_TASK)	base_.mux_.post(receiver_status_, 1u, cyng::tuple_factory(false));
 
 			}
 		});

@@ -18,7 +18,7 @@ namespace node
 	parser_CP210x::parser_CP210x(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, cyng::controller& vm
-		, std::size_t receiver)
+		, cyng::async::task_list_t const& receiver)
 	: base_(*btp) 
 		, logger_(logger)
 		, receiver_(receiver)
@@ -44,7 +44,9 @@ namespace node
 			//
 			//	send data to receiver (parser)
 			//
-			base_.mux_.post(receiver_, 0, cyng::to_tuple(frame));
+			for (auto const tsk : receiver_) {
+				base_.mux_.post(tsk, 0, cyng::to_tuple(frame));
+			}
 			//base_.mux_.post(receiver_, 0, cyng::tuple_factory(cyng::make_buffer({ 0x1, 0x2, 0x3 }), static_cast<std::size_t>(42u)));
 		});
 

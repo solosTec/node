@@ -161,6 +161,10 @@ namespace node
 				//	cat /dev/ttyAPP0 | hexdump 
 				, cyng::param_factory("wireless-LMN", cyng::tuple_factory(
 					cyng::param_factory("monitor", rnd_monitor()),	//	seconds
+					//	if task <readout> receives data and there is no data collector/mirror defined, create one
+					cyng::param_factory("autogen-data-collector", true),
+					//	disable collecting/storing meter data
+					cyng::param_factory("generate-profile", true),
 #if BOOST_OS_WINDOWS
 					//	iM871A
 					cyng::param_factory("enabled", false),
@@ -190,11 +194,13 @@ namespace node
 					cyng::param_factory(sml::OBIS_W_MBUS_POWER.to_str(), static_cast<std::uint8_t>(mbus::STRONG)),	//	low, basic, average, strong (unused)
 					cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str(), true),	//	install mode
 
-					cyng::param_factory("broker-mode", false),
-					cyng::param_factory("broker-address", "segw.ch"),
-					cyng::param_factory("broker-port", 12001),
-					//	if task <readout> receives data and there is no data collector/mirror defined, create one
-					cyng::param_factory("autogen-data-collector", true)
+					cyng::param_factory("broker", cyng::vector_factory({
+						//	define multiple broker here
+						cyng::tuple_factory(
+							cyng::param_factory("address", "segw.ch"),
+							cyng::param_factory("port", 12001))
+						})
+					)
 				))
 
 				, cyng::param_factory("wired-LMN", cyng::tuple_factory(
@@ -213,9 +219,14 @@ namespace node
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 					cyng::param_factory("speed", 2400),		//	initial
-					cyng::param_factory("broker-mode", false),
-					cyng::param_factory("broker-address", "segw.ch"),
-					cyng::param_factory("broker-port", 12002)
+
+					cyng::param_factory("broker", cyng::vector_factory({
+						//	define multiple broker here
+						cyng::tuple_factory(
+							cyng::param_factory("address", "segw.ch"),
+							cyng::param_factory("port", 12002))
+						})
+					)
 				))
 
 				, cyng::param_factory("if-1107", cyng::tuple_factory(

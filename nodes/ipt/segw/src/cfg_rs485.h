@@ -17,6 +17,10 @@ namespace node
 {
 
 	class cache;
+
+	/**
+	 * RS 485 configuration
+	 */
 	class cfg_rs485
 	{
 	public:

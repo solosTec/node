@@ -12,6 +12,7 @@
 #include "cfg_rs485.h"
 #include "cfg_wmbus.h"
 
+
 #include "tasks/lmn_port.h"
 #include "tasks/parser_serial.h"
 #include "tasks/parser_wmbus.h"
@@ -53,7 +54,7 @@ namespace node
 		, serial_mgr_(cyng::async::NO_TASK)
 		, serial_port_(cyng::async::NO_TASK)
 
-		, radio_parser_(cyng::async::NO_TASK)
+		//, radio_parser_(cyng::async::NO_TASK)
 		, radio_port_(cyng::async::NO_TASK)
 	{
 		cyng::register_logger(logger_, vm_);
@@ -120,8 +121,9 @@ namespace node
 
 				//
 				//	open port and start manager
+				//	ToDo: take a list of receiver
 				//
-				auto const sender = start_lmn_port_wired(receiver.first);
+				auto const sender = start_lmn_port_wired(cyng::async::task_list_t{ receiver.first });
 				if (sender.second) {
 					serial_mgr_ = sender.first;
 				}
@@ -139,21 +141,24 @@ namespace node
 			//
 			//	config reader
 			//
-			cfg_wmbus cfg(cache_);
+			cfg_wmbus wmbus(cache_);
+			cfg_broker broker(cache_);
 
 			//
-			//	start receiver
-			//	if  "broker-mode" is true, the receiver is remote server
-			//	ready to get all raw data.
+			//	Get a list of receiver for the wireless M-Bus data.
 			//
-			auto const receiver = start_mbus_receiver(cfg.is_broker_mode());
+			auto const receiver = start_mbus_receiver(wmbus.generate_profile(), broker.get_broker(cfg_broker::source::WIRELESS_LMN));
+			BOOST_ASSERT_MSG(!receiver.empty(), "no receiver for wireless M-Bus data");
 
-			if (receiver.second) {
+			//
+			//	Without an receiver there is no need to start the sender
+			//
+			if (!receiver.empty()) {
 
-				radio_parser_ = receiver.first;
-
-				auto const hci = cfg.get_hci();
-				if (boost::algorithm::equals(hci, "CP210x")) {
+				//
+				//	Data coming from CP210x (USB receiver) and have to be be unpacked.
+				//
+				if (wmbus.is_CP210x()) {
 
 					//
 					//	LMN port send incoming data to HCI (CP210x) parser
@@ -188,11 +193,12 @@ namespace node
 					auto const unwrapper = cyng::async::start_task_sync<parser_CP210x>(mux_
 						, logger_
 						, vm_
-						, radio_parser_);
+						, receiver);
 
 					if (unwrapper.second) {
-						auto const sender = start_lmn_port_wireless(unwrapper.first
-							, radio_parser_
+						//cyng::async::task_list_t rec{ unwrapper.first };
+						auto const sender = start_lmn_port_wireless(cyng::async::task_list_t{ unwrapper.first }
+							, receiver.at(0)	//	parser is also receiver for update messages
 							, std::move(init));
 						if (sender.second) {
 							radio_port_ = sender.first;
@@ -204,15 +210,14 @@ namespace node
 				}
 				else {
 
-					BOOST_ASSERT(boost::algorithm::equals("none", hci));
 					//
 					//	LMN port send incoming data to wmbus parser
 					//
-					auto const sender = start_lmn_port_wireless(receiver.first, receiver.first, cyng::make_buffer({}));
+					auto const sender = start_lmn_port_wireless(receiver, receiver.at(0), cyng::make_buffer({}));
 				}
 			}
 			else {
-				CYNG_LOG_FATAL(logger_, "cannot start receiver for wireless mbus data");
+				CYNG_LOG_FATAL(logger_, "no receiver for wireless mbus data configured");
 			}
 		}
 		catch (boost::system::system_error const& ex) {
@@ -220,21 +225,50 @@ namespace node
 		}
 	}
 
-	std::pair<std::size_t, bool> lmn::start_mbus_receiver(bool transparent)
+	std::vector<std::size_t> lmn::start_mbus_receiver(bool profile, cfg_broker::broker_list_t&& nodes)
 	{
-		return (transparent)
-			? cyng::async::start_task_sync<broker_wmbus>(mux_
-				, logger_
-				, vm_
-				, cache_)
-			: cyng::async::start_task_sync<parser_wmbus>(mux_
+		//
+		//	list of task IDs
+		//
+		std::vector<std::size_t> vec;
+
+		//
+		//	profile generation
+		//
+		if (profile) {
+			auto const r = cyng::async::start_task_sync<parser_wmbus>(mux_
 				, logger_
 				, vm_
 				, cache_);
+			if (r.second) {
+				vec.push_back(r.first);
+			}
+			else {
+				vec.push_back(cyng::async::NO_TASK);
+			}
+		}
+		else {
+			vec.push_back(cyng::async::NO_TASK);
+		}
+
+		//
+		//	broker
+		//
+		for (auto const node : nodes) {
+			auto const r = cyng::async::start_task_sync<broker_wmbus>(mux_
+				, logger_
+				, vm_
+				, cache_
+				, node.get_address()
+				, node.get_port());
+			if (r.second) vec.push_back(r.first);
+		}
+
+		return vec;
 	}
 
-	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(std::size_t receiver_data
-		, std::size_t receiver_status
+	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(cyng::async::task_list_t const& receiver_data
+		, std::size_t status_receiver
 		, cyng::buffer_t&& init)
 	{
 		cfg_wmbus cfg(cache_);
@@ -252,11 +286,11 @@ namespace node
 			, cfg.get_stopbits()		//	[s] stopbits
 			, cfg.get_baud_rate()		//	[u32] speed
 			, receiver_data				//	optional unwrapper
-			, receiver_status			//	receive status change
-			, std::move(init));					//	initialization message
+			, status_receiver			//	receive status change
+			, std::move(init));			//	initialization message
 	}
 
-	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(std::size_t receiver)
+	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(cyng::async::task_list_t const& receiver)
 	{
 		cfg_rs485 cfg(cache_);
 
@@ -274,8 +308,8 @@ namespace node
 			, cfg.get_stopbits()		//	[s] stopbits
 			, cfg.get_baud_rate()		//	[u32] speed
 			, receiver					//	receive data
-			, receiver
-			, cyng::make_buffer({}));				//	receive status change
+			, receiver.at(0)
+			, cyng::make_buffer({}));	//	receive status change
 
 		return (r.second)
 			? start_rs485_mgr(r.first, cfg.get_monitor() + std::chrono::seconds(2))

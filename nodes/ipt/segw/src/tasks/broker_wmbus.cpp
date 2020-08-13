@@ -11,6 +11,7 @@
 #include <cyng/vm/controller.h>
 #include <cyng/io/serializer.h>
 #include <cyng/io/io_bytes.hpp>
+#include <cyng/compatibility.h>
 
 #include <iostream>
 
@@ -19,18 +20,24 @@ namespace node
 	broker_wmbus::broker_wmbus(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, cyng::controller& vm
-		, cache& cfg)
+		, cache& cfg
+		, std::string host
+		, std::uint16_t port)
 	: base_(*btp) 
 		, logger_(logger)
 		, cfg_(cfg)
+		, host_(host)
+		, port_(port)
 		, stream_()
-		//, socket_(base_.mux_.get_io_service())
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< ">");
+			<< "> "
+			<< host_
+			<< ':'
+			<< port_);
 	}
 
 	cyng::continuation broker_wmbus::run()
@@ -131,21 +138,35 @@ namespace node
 	bool broker_wmbus::connect()
 	{
 		//
-		//	get configuration
+		//	try to connect
 		//
-		auto const host = cfg_.get_broker_address();
-		auto const service = std::to_string(cfg_.get_broker_port());
+		CYNG_LOG_INFO(logger_, "initialize task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> open connection to "
+			<< host_
+			<< ':'
+			<< port_);
 
-		//
-		//	resolve address
-		//
-		//boost::asio::ip::tcp::resolver resolver(base_.mux_.get_io_service());
-		//auto const results = resolver.resolve(host, service);
-
-		//boost::asio::connect(socket_, results);
-		//return socket_.is_open();
-		stream_.connect(host, service);
-		return stream_.socket().is_open();
+		try {
+			stream_.connect(host_, std::to_string(port_));
+			if (stream_.fail())
+			{
+				stream_.socket().close();
+				return false;
+			}
+			return true;
+		}
+		catch (std::exception const& ex) {
+			CYNG_LOG_INFO(logger_, "initialize task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> open connection failed "
+				<< ex.what());
+		}
+		return false;
 	}
 
 }

@@ -35,7 +35,7 @@ namespace node
 		parser_CP210x(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, cyng::controller&
-			, std::size_t receiver);
+			, cyng::async::task_list_t const& receiver);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -57,7 +57,7 @@ namespace node
 		/**
 		 * Receiver task for payloads
 		 */
-		std::size_t const receiver_;
+		cyng::async::task_list_t const receiver_;
 
 		/**
 		 * HCI parser to unwrap payload data

@@ -598,8 +598,7 @@ namespace node
 			//	transfer IP-T configuration
 			//
 			{
-				cyng::vector_t vec;
-				vec = cyng::value_cast(dom.get("ipt"), vec);
+				auto const vec = cyng::to_vector(dom.get("ipt"));
 				auto const cfg_ipt = ipt::load_cluster_cfg(vec);
 				std::uint8_t idx{ 1 };
 				for (auto const rec : cfg_ipt.config_) {
@@ -879,9 +878,31 @@ namespace node
 						auto const val = cyng::numeric_cast(param.second, 30);
 						init_config_record(s, build_cfg_key({ sml::OBIS_IF_wMBUS }, param.first ), cyng::make_seconds(val));
 					}
-					else if (boost::algorithm::equals(param.first, "broker-port")) {
-						auto const val = cyng::numeric_cast<std::uint16_t> (param.second, 12002u);
-						init_config_record(s, build_cfg_key({ sml::OBIS_IF_wMBUS }, param.first), cyng::make_object(val));
+					else if (boost::algorithm::equals(param.first, "broker")) {
+						//	vector of broker nodes
+						auto const vec = cyng::to_vector(param.second);
+
+						//	build a space separated list
+						if (!vec.empty()) {
+
+							std::stringstream ss;
+							bool initialized{ false };
+							for (auto const broker : vec) {
+								if (initialized) {
+									ss << ' ';
+								}
+								else {
+									initialized = true;
+								}
+								auto const reader = cyng::make_reader(broker);
+								ss
+									<< cyng::value_cast<std::string>(reader.get("address"), "segw.ch")
+									<< ':'
+									<< cyng::value_cast(reader.get("port"), 0)
+									;
+							}
+							init_config_record(s, build_cfg_key({ sml::OBIS_IF_wMBUS }, "broker-vector"), cyng::make_object(ss.str()));
+						}
 					}
 					else {
 
@@ -948,6 +969,32 @@ namespace node
 						//	int
 						auto const val = cyng::numeric_cast(param.second, 30);
 						init_config_record(s, build_cfg_key({ "rs485", param.first }), cyng::make_seconds(val));
+					}
+					else if (boost::algorithm::equals(param.first, "broker")) {
+						//	vector of broker nodes
+						auto const vec = cyng::to_vector(param.second);
+						//init_config_record(s, build_cfg_key({ "rs485" , "broker-count" }), cyng::make_object(vec.size()));
+						//	build a space separated list
+						if (!vec.empty()) {
+
+							std::stringstream ss;
+							bool initialized{ false };
+							for (auto const broker : vec) {
+								if (initialized) {
+									ss << ' ';
+								}
+								else {
+									initialized = true;
+								}
+								auto const reader = cyng::make_reader(broker);
+								ss
+									<< cyng::value_cast<std::string>(reader.get("address"), "segw.ch")
+									<< ':'
+									<< cyng::numeric_cast(reader.get("port"), 0)
+									;
+							}
+							init_config_record(s, build_cfg_key({ "rs485", "broker-vector", }), cyng::make_object(ss.str()));
+						}
 					}
 					else {
 						init_config_record(s, build_cfg_key({ "rs485", param.first }), param.second);
@@ -1020,7 +1067,6 @@ namespace node
 							}), cyng::make_object(serial));
 
 					}
-
 				}
 			}
 
