@@ -23,7 +23,6 @@
 
 To build the SMF first install the [CYNG](https://github.com/solosTec/cyng) library, then run:
 
-### on Linux ###
 
 ### on Linux ###
 #### native build ####
@@ -34,6 +33,7 @@ To build the SMF first install the [CYNG](https://github.com/solosTec/cyng) libr
 git clone https://github.com/solosTec/node.git
 mkdir build/x64 && cd build/x64
 cmake -DNODE_BUILD_TEST:BOOL=ON -DNODE_CROSS_COMPILE:bool=OFF -DNODE_SSL_SUPPORT:BOOL=ON -DOPENSSL_ROOT_DIR:PATH=$HOME/projects/install/x64/openssl -DBOOST_ROOT:PATH=$HOME/projects/install/x64/boost -DDCYNG_ROOT:PATH=$HOME/projects/cyng -DCYNG_ROOT_BUILD_SUBDIR:STRING=build/x64 -DCRYPT_ROOT:PATH=$HOME/projects/crypto -DCMAKE_BUILD_TYPE=Debug ../..
+sudo apt-get install libreadline-dev
 make -j4 all
 sudo make install
 
