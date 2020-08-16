@@ -63,18 +63,18 @@ namespace node
 		return vec << cyng::generate_invoke("stream.serialize"
 
 			//	bounce back 
-			, cyng::generate_invoke_remote("stream.serialize", cyng::generate_invoke_reflect("db.trx.start"))
+			, cyng::generate_invoke_remote("stream.serialize", cyng::generate_invoke_reflect("db.trx.start", table))
 			, cyng::generate_invoke_remote("stream.flush")
 
 			, cyng::generate_invoke_remote("bus.req.subscribe", table, cyng::code::IDENT, tsk)
 
 			//	bounce back 
-			, cyng::generate_invoke_remote("stream.serialize", cyng::generate_invoke_reflect("db.trx.commit"))
+			, cyng::generate_invoke_remote("stream.serialize", cyng::generate_invoke_reflect("db.trx.commit", table))
 			, cyng::generate_invoke_remote("stream.flush")
 			)
 
 			<< cyng::generate_invoke("stream.flush")
-			<< cyng::unwind_vec(72)	//	optimization
+			<< cyng::unwind_vec(74)	//	optimization
 			;
 	}
 

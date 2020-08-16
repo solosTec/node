@@ -74,6 +74,8 @@ set (node_ipt_segw_tasks
 	src/tasks/connect.cpp
 	src/tasks/lmn_port.h
 	src/tasks/lmn_port.cpp
+	src/tasks/lmn_status.h
+	src/tasks/lmn_status.cpp
 	src/tasks/parser_wmbus.h
 	src/tasks/parser_wmbus.cpp
 	src/tasks/parser_serial.h
@@ -88,8 +90,8 @@ set (node_ipt_segw_tasks
 	src/tasks/rs485.cpp
 	src/tasks/clock.h
 	src/tasks/clock.cpp
-	src/tasks/broker_wmbus.h
-	src/tasks/broker_wmbus.cpp
+	src/tasks/broker.h
+	src/tasks/broker.cpp
 )
 	
 set (node_ipt_segw_server

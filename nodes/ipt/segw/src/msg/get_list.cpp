@@ -73,7 +73,9 @@ namespace node
 			cache_.read_tables("_Readout", "_ReadoutData", [&](cyng::store::table const* tbl_ro, cyng::store::table const* tbl_data) {
 				tbl_ro->loop([&](cyng::table::record const& rec_meta) {
 
-					if (srv_id == cyng::to_buffer(rec_meta["serverID"])) {
+					auto const tmp = cyng::to_buffer(rec_meta["serverID"]);
+					BOOST_ASSERT_MSG(tmp.size() == 9, "invalid server ID");
+					if (srv_id == tmp) {
 
 						//
 						//	get primary key

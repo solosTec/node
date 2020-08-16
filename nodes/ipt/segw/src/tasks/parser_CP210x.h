@@ -21,7 +21,7 @@ namespace cyng
 namespace node
 {
 	/**
-	 * receiver and parser for serial data (RS485) aka IEC
+	 * receiver and parser for CP210x host control protocol (HCP)
 	 */
 	class parser_CP210x
 	{

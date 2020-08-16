@@ -5,12 +5,14 @@
  *
  */
 
-#ifndef NODE_IEC_62056_TASK_CLUSTER_H
-#define NODE_IEC_62056_TASK_CLUSTER_H
+#ifndef NODE_MBUS_BROKER_TASK_CLUSTER_H
+#define NODE_MBUS_BROKER_TASK_CLUSTER_H
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
 #include "../sync_db.h"
+#include "../server.h"
+
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -80,6 +82,10 @@ namespace node
 		 */
 		db_sync db_sync_;
 
+		/**
+		 *  TCP/IP server
+		 */
+		server server_;
 	};
 	
 }

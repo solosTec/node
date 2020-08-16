@@ -45,6 +45,8 @@ namespace node
 		 */
 		bool is_auto_activation() const;
 
+		bool generate_profile() const;
+
 	private:
 		cache& cache_;
 	};

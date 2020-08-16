@@ -176,6 +176,7 @@ namespace node
 				for (auto tsk : receiver_data_) {
 					base_.mux_.post(tsk, 0u, cyng::tuple_factory(cyng::buffer_t(buffer_.cbegin(), buffer_.cbegin() + bytes_transferred), msg_counter_));
 				}
+				if (receiver_status_ != cyng::async::NO_TASK)	base_.mux_.post(receiver_status_, 0u, cyng::tuple_factory(buffer_.size(), msg_counter_));
 
 				//
 				//	update message counter

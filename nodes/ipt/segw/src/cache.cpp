@@ -58,7 +58,7 @@ namespace node
 			//
 			set_config_value(tbl, "status.word", status_word_);
 
-			}, cyng::store::write_access("_Cfg"));
+		}, cyng::store::write_access("_Cfg"));
 	}
 
 	std::uint64_t cache::get_status_word() const

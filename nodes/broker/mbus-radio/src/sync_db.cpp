@@ -20,24 +20,21 @@ namespace node
 {
 	void create_cache(cyng::logging::log_ptr logger, cyng::store::db& db)
 	{
-		//CYNG_LOG_TRACE(logger, "create "
-		//	<< tables::list_.size()
-		//	<< " cache tables");
+		CYNG_LOG_TRACE(logger, "create "
+			<< db_sync::tables_.size()
+			<< " cache tables");
 
-		//for (auto const& tbl : tables::list_) {
-		//	if (!tbl.custom_) {
-		//		if (!create_table(db, tbl.name_)) {
-		//			CYNG_LOG_FATAL(logger, "cannot create table: " << tbl.name_);
-		//		}
-		//		else {
-		//			CYNG_LOG_DEBUG(logger, "create table: " << tbl.name_);
-		//		}
-		//	}
-		//}
+		for (auto const& tbl : db_sync::tables_) {
+			if (!tbl.custom_) {
+				if (!create_table(db, tbl.name_)) {
+					CYNG_LOG_FATAL(logger, "cannot create table: " << tbl.name_);
+				}
+				else {
+					CYNG_LOG_DEBUG(logger, "create table: " << tbl.name_);
+				}
+			}
+		}
 
-		//
-		//	Has more columns than original TGateway definition
-		//
 		//
 		//	all tables created
 		//
@@ -74,7 +71,8 @@ namespace node
 
 	void db_sync::db_res_insert(cyng::context& ctx)
 	{
-		const cyng::vector_t frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
+
 		//
 		//	[TDevice,[32f1a373-83c9-4f24-8fac-b13103bc7466],[00000006,2018-03-11 18:35:33.61302590,true,,,comment #10,1010000,secret,device-10000],0]
 		//
@@ -304,6 +302,20 @@ namespace node
 		, std::uint64_t	gen
 		, boost::uuids::uuid origin)
 	{
+		//
+		//	insert new record
+		//
+		if (!db_.insert(table	//	table name
+			, key	//	table key
+			, data	//	table data
+			, gen	//	generation
+			, origin))
+		{
+			CYNG_LOG_WARNING(logger_, "res.insert failed "
+				<< table		// table name
+				<< " - "
+				<< cyng::io::to_str(key));
+		}
 	}
 
 	void db_sync::res_subscribe(cyng::context& ctx)
@@ -317,7 +329,7 @@ namespace node
 		//	* origin session id
 		//	* optional task id
 		//	
-		//CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 		auto tpl = cyng::tuple_cast<
 			std::string,			//	[0] table name
@@ -340,6 +352,30 @@ namespace node
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
 
+		//
+		//	insert new record
+		//
+		if (!db_.insert(std::get<0>(tpl)	//	table name
+			, std::get<1>(tpl)	//	table key
+			, std::get<2>(tpl)	//	table data
+			, std::get<3>(tpl)	//	generation
+			, std::get<4>(tpl)))
+		{
+			CYNG_LOG_WARNING(logger_, "res.subscribe failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_str(std::get<1>(tpl)));
+		}
 	}
+
+	/**
+	 * Initialize all used table names
+	 */
+	const std::array<db_sync::tbl_descr, 2>	db_sync::tables_ =
+	{
+		tbl_descr{"TMeter", false},
+		tbl_descr{"TBroker", false},	//	broker
+	};
+
 
 }

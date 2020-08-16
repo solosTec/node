@@ -42,11 +42,11 @@ namespace node
 		, cache_(cfg)
 		, vm_(mux.get_io_service(), stag)
 		, parser_([this](cyng::vector_t&& prg) {
-			CYNG_LOG_TRACE(logger_, prg.size() 
-				<< " instructions received (including "
-				<< cyng::op_counter(prg, cyng::code::INVOKE)
-				<< " invoke(s))");
-			CYNG_LOG_DEBUG(logger_, "exec: " << cyng::io::to_str(prg));
+			//CYNG_LOG_TRACE(logger_, prg.size() 
+			//	<< " instructions received (including "
+			//	<< cyng::op_counter(prg, cyng::code::INVOKE)
+			//	<< " invoke(s))");
+			//CYNG_LOG_DEBUG(logger_, "exec: " << cyng::io::to_str(prg));
 			vm_.async_run(std::move(prg));
 		})
 		, account_(account)
@@ -341,7 +341,7 @@ namespace node
 	void session::bus_req_login(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		//CYNG_LOG_INFO(logger_, "bus.req.login " << cyng::io::to_str(frame));
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 		//	[root,X0kUj59N,46ca0590-e852-417d-a1c7-54ed17d9148f,setup,0.2,-1:00:0.000000,2018-03-19 10:01:36.40087970,false]
 		//
@@ -418,8 +418,8 @@ namespace node
 				bool,					//	[7] autologin
 				std::uint32_t,			//	[8] group
 				boost::asio::ip::tcp::endpoint,	//	[9] remote ep
-				std::string,				//	[10] platform
-				boost::process::pid_t		//	[11] process id
+				std::string,			//	[10] platform
+				std::int64_t			//	[11] process id (boost::process::pid_t)
 			>(frame);
 
 			BOOST_ASSERT_MSG(std::get<0>(tpl) > cyng::version(0, 3), "version 0.4 or higher expected");
@@ -452,7 +452,7 @@ namespace node
 		, std::uint32_t group
 		, boost::asio::ip::tcp::endpoint ep
 		, std::string platform
-		, boost::process::pid_t pid)
+		, std::int64_t pid) //	
 	{
 		//
 		//	ToDo: check for duplicate tags

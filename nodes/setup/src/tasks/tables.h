@@ -18,7 +18,7 @@ namespace node
         struct tbl_descr {
             std::string const name_;
             bool const cache_;
-            bool const custom_;
+            bool const custom_; //  mapping to db with special rules
             inline tbl_descr(std::string name, bool cache, bool custom)
                 : name_(name)
                 , cache_(cache)
@@ -26,7 +26,7 @@ namespace node
             {}
         };
 
-        using array_t = std::array<tbl_descr, 10>;
+        using array_t = std::array<tbl_descr, 11>;
         static const array_t list_;
 
         static array_t::const_iterator find(std::string);

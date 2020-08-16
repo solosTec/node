@@ -47,11 +47,12 @@ namespace node
 		//	ToDo: implement in data handler task
 		//
 		bus_->vm_.register_function("db.trx.start", 0, [this](cyng::context& ctx) {
-			CYNG_LOG_TRACE(logger_, "db.trx.start");
-		});
-		bus_->vm_.register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
-			CYNG_LOG_TRACE(logger_, "db.trx.commit");
-		});
+			CYNG_LOG_TRACE(logger_, ctx.get_name());
+			});
+		bus_->vm_.register_function("db.trx.commit", 1, [this](cyng::context& ctx) {
+			auto const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+			});
 
 		bus_->vm_.register_function("bus.res.subscribe", 6, std::bind(&cluster::res_subscribe, this, std::placeholders::_1));
 		bus_->vm_.register_function("db.req.insert", 4, std::bind(&cluster::db_req_insert, this, std::placeholders::_1));
@@ -163,7 +164,7 @@ namespace node
 		while (pos != std::end(tables::list_)) {
 			++pos;
 			if (pos != std::end(tables::list_) && pos->cache_) {
-
+				 
 				CYNG_LOG_INFO(logger_, "sync table "
 					<< pos->name_
 					<< "["

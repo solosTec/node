@@ -5,7 +5,7 @@
  *
  */
 
-#include "broker_wmbus.h"
+#include "broker.h"
 #include "../cache.h"
 
 #include <cyng/vm/controller.h>
@@ -17,7 +17,7 @@
 
 namespace node
 {
-	broker_wmbus::broker_wmbus(cyng::async::base_task* btp
+	broker::broker(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
 		, cyng::controller& vm
 		, cache& cfg
@@ -40,7 +40,7 @@ namespace node
 			<< port_);
 	}
 
-	cyng::continuation broker_wmbus::run()
+	cyng::continuation broker::run()
 	{
 #ifdef _DEBUG
 		CYNG_LOG_TRACE(logger_, "task #"
@@ -63,6 +63,16 @@ namespace node
 					<< "> is connected to "
 					<< stream_.socket().remote_endpoint());
 			}
+			else {
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> cannot connect to "
+					<< host_
+					<< ':'
+					<< port_);
+			}
 		}
 
 		//
@@ -73,7 +83,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	void broker_wmbus::stop(bool shutdown)
+	void broker::stop(bool shutdown)
 	{
 		//
 		//  close socket
@@ -87,7 +97,7 @@ namespace node
 			<< "> is stopped");
 	}
 
-	cyng::continuation broker_wmbus::process(cyng::buffer_t data, std::size_t msg_counter)
+	cyng::continuation broker::process(cyng::buffer_t data, std::size_t msg_counter)
 	{
 
 		CYNG_LOG_TRACE(logger_, "task #"
@@ -102,7 +112,9 @@ namespace node
 		//
 		//  send to receiver
 		//
-		stream_.write(data.data(), data.size());
+		if (stream_.socket().is_open()) {
+			stream_.write(data.data(), data.size());
+		}
 
 		//
 		//	continue task
@@ -110,32 +122,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	cyng::continuation broker_wmbus::process(bool b)
-	{
-		//cache_.set_status_word(sml::STATUS_BIT_MBUS_IF_AVAILABLE, b);
-
-		//if (b) {
-		//	CYNG_LOG_TRACE(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> wireless M-Bus interface available");
-		//}
-		//else {
-		//	CYNG_LOG_WARNING(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> wireless M-Bus interface closed");
-		//}
-
-		//
-		//	continue task
-		//
-		return cyng::continuation::TASK_CONTINUE;
-	}
-
-	bool broker_wmbus::connect()
+	bool broker::connect()
 	{
 		//
 		//	try to connect

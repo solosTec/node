@@ -106,7 +106,7 @@ namespace node
 		/**
 		 * List of all used table names
 		 */
-		const static std::array<tbl_descr, 19>	tables_;
+		const static std::array<tbl_descr, 20>	tables_;
 
 	public:
 		cache(cyng::store::db&, boost::uuids::uuid tag);

@@ -132,18 +132,20 @@ namespace node
 			, 5
 			, tag);
 
-		//	segw.ch
-		auto const host = cyng::make_address("138.201.95.180");
-		auto const ep = boost::asio::ip::tcp::endpoint{ host, 4004 };
+		{
+			//	segw.ch
+			auto const host = cyng::make_address("138.201.95.180");
+			auto const ep = boost::asio::ip::tcp::endpoint{ host, 4004 };
 
-		db.insert("TIECBridge"
-			, cyng::table::key_generator(tag)
-			, cyng::table::data_generator(host.to_string()
-				, ep.port()
-				, true
-				, std::chrono::seconds(60))
-			, 12
-			, tag);
+			db.insert("TIECBridge"
+				, cyng::table::key_generator(tag)
+				, cyng::table::data_generator(ep.address()
+					, ep.port()
+					, true
+					, std::chrono::seconds(60))
+				, 12
+				, tag);
+		}
 
 		db.insert("TGWSnapshot"
 			, cyng::table::key_generator(tag)
@@ -381,7 +383,7 @@ namespace node
 	/**
 	 * Initialize all used table names
 	 */
-	const std::array<cache::tbl_descr, 19>	cache::tables_ =
+	const std::array<cache::tbl_descr, 20>	cache::tables_ =
 	{
 		tbl_descr{"TDevice", false},
 		tbl_descr{"TGateway", false},
@@ -402,6 +404,7 @@ namespace node
 		tbl_descr{"_TimeSeries", false},
 		tbl_descr{"_LoRaUplink", false},
 		tbl_descr{"_CSV", false},
+		tbl_descr{"TBroker", false}	//	broker 
 	};
 
 	cache::cache(cyng::store::db& db, boost::uuids::uuid tag)

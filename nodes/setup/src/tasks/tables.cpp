@@ -15,6 +15,7 @@ namespace node
 	 */
 	const tables::array_t	tables::list_ =
 	{
+		//	name, cache, custom
 		tables::tbl_descr{"TDevice", true, false},
 		tables::tbl_descr{"TGateway", true, false},
 		tables::tbl_descr{"TLoRaDevice", true, false},
@@ -22,7 +23,8 @@ namespace node
 		tables::tbl_descr{"TLL", false, false},
 		tables::tbl_descr{"TGUIUser", true, false},
 		tables::tbl_descr{"TNodeNames", true, false},
-		tables::tbl_descr{"TIECBridge", true, false},
+		tables::tbl_descr{"TIECBridge", true, false},	//	TIECBroker
+		tables::tbl_descr{"TBroker", true, false},		//	broker
 		tables::tbl_descr{"TGWSnapshot", false, false},
 		tables::tbl_descr{"TLoraUplink", false, true}	//	custom handling
 	};

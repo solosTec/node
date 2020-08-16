@@ -6,12 +6,17 @@ set (node_mbus_radio_cpp
 	src/main.cpp	
 	src/controller.cpp
 	src/sync_db.cpp
+	src/server.cpp
+	src/session.cpp
+
 )
 
 set (node_mbus_radio_h
 
 	src/controller.h
 	src/sync_db.h
+	src/server.h
+	src/session.h
 
 )
 
@@ -37,6 +42,11 @@ set (node_mbus_radio_tasks
 	src/tasks/cluster.cpp
 )
 
+set (node_schemes
+
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/db_schemes.h
+	${CMAKE_SOURCE_DIR}/nodes/shared/db/db_schemes.cpp
+)
 	
 if(WIN32)
 
@@ -60,6 +70,7 @@ source_group("tasks" FILES ${node_mbus_radio_tasks})
 source_group("resources" FILES ${node_mbus_radio_res})
 source_group("service" FILES ${node_mbus_radio_service})
 source_group("shared" FILES ${node_shared})
+source_group("schemes" FILES ${node_schemes})
 
 
 # define the main program
@@ -69,6 +80,7 @@ set (node_mbus_radio
   ${node_mbus_radio_tasks}
   ${node_mbus_radio_service}
   ${node_shared}
+  ${node_schemes}
 )
 
 

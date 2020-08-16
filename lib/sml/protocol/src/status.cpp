@@ -90,7 +90,7 @@ namespace node
 
 		void status::set_mbus_if_available(bool b)
 		{
-			set_flag(STATUS_BIT_MBUS_IF_AVAILABLE, b);
+			set_flag(STATUS_BIT_WIRELESS_MBUS_IF_AVAILABLE, b);
 		}
 
 		void status::set_flag(status_bits e, bool b)
@@ -124,9 +124,14 @@ namespace node
 			return is_set(STATUS_BIT_EXT_IF_AVAILABLE);
 		}
 
-		bool status::is_mbus_available() const
+		bool status::is_wireless_mbus_available() const
 		{
-			return is_set(STATUS_BIT_MBUS_IF_AVAILABLE);
+			return is_set(STATUS_BIT_WIRELESS_MBUS_IF_AVAILABLE);
+		}
+
+		bool status::is_wired_mbus_available() const
+		{
+			return is_set(STATUS_BIT_WIRED_MBUS_IF_AVAILABLE);
 		}
 
 		bool status::is_plc_available() const
@@ -162,7 +167,7 @@ namespace node
 				(sml::STATUS_BIT_OUT_OF_MEMORY, word.is_out_of_memory())
 				(sml::STATUS_BIT_SERVICE_IF_AVAILABLE, word.is_service_if_available())
 				(sml::STATUS_BIT_EXT_IF_AVAILABLE, word.is_ext_if_available())
-				(sml::STATUS_BIT_MBUS_IF_AVAILABLE, word.is_mbus_available())
+				(sml::STATUS_BIT_WIRELESS_MBUS_IF_AVAILABLE, word.is_wireless_mbus_available())
 				(sml::STATUS_BIT_PLC_AVAILABLE, word.is_plc_available())
 				//	doesn't fit into size_t on 32 bit system
 				(sml::STATUS_BIT_NO_TIMEBASE, word.is_timebase_uncertain())
@@ -177,10 +182,54 @@ namespace node
 				("OUT_OF_MEMORY", word.is_out_of_memory())
 				("SERVICE_IF_AVAILABLE", word.is_service_if_available())
 				("EXT_IF_AVAILABLE", word.is_ext_if_available())
-				("MBUS_IF_AVAILABLE", word.is_mbus_available())
+				("WIRELESS_BUS_IF_AVAILABLE", word.is_wireless_mbus_available())	//	wireless
+				("WIRED_MBUS_IF_AVAILABLE", word.is_wired_mbus_available())	//	wired
 				("PLC_AVAILABLE", word.is_plc_available())
 				("NO_TIMEBASE", word.is_timebase_uncertain())
 				;
+		}
+
+		char const* get_status_name(status_bits sb) {
+
+			switch (sb) {
+			case STAUS_BIT_0:	return "0";
+			case STATUS_BIT_ON:	return "ON";
+			case STATUS_BIT_2:	return "2";
+			case STATUS_BIT_3:	return "3";
+			case STATUS_BIT_4:	return "4";
+			case STATUS_BIT_5:	return "5";
+			case STATUS_BIT_6:	return "6";
+			case STATUS_BIT_7:	return "7";
+			case STATUS_BIT_FATAL_ERROR: return "FATAL_ERROR";
+			case STATUS_BIT_RESET_BY_WATCHDOG:	return "RESET-BY-WATCHDOG";
+			case STATUS_BIT_IP_ADDRESS_AVAILABLE:	return "IP-ADDRESS-AVAILABLE";
+			case STATUS_BIT_ETHERNET_AVAILABLE:	return "ETHERNET-AVAILABLE";
+			case STATUS_BIT_RADIO_AVAILABLE:	return "RADIO-AVAILABLE";
+			case STATUS_BIT_NOT_AUTHORIZED_IPT:	return "NOT-AUTHORIZED-IPT";
+			case STATUS_BIT_OUT_OF_MEMORY:	return "OUT-OF-MEMORY";
+			case STATUS_BIT_15: return "15";
+			case STATUS_BIT_SERVICE_IF_AVAILABLE:	return "SERVICE-IF-AVAILABLE";
+			case STATUS_BIT_EXT_IF_AVAILABLE:	return "EXT-IF-AVAILABLE";
+			case STATUS_BIT_WIRELESS_MBUS_IF_AVAILABLE:	return "WIRELESS-MBUS-IF-AVAILABLE";
+			case STATUS_BIT_PLC_AVAILABLE:	return "PLC-AVAILABLE";
+			case STATUS_BIT_WIRED_MBUS_IF_AVAILABLE: return "WIRED-MBUS-IF-AVAILABLE";
+			case STATUS_BIT_21:	return "21";
+			case STATUS_BIT_22:	return "22";
+			case STATUS_BIT_23:	return "23";
+			case STATUS_BIT_24:	return "24";
+			case STATUS_BIT_25:	return "25";
+			case STATUS_BIT_26:	return "26";
+			case STATUS_BIT_27:	return "27";
+			case STATUS_BIT_28:	return "28";
+			case STATUS_BIT_29:	return "29";
+			case STATUS_BIT_30:	return "30";
+			case STATUS_BIT_31:	return "31";
+			case STATUS_BIT_NO_TIMEBASE:	return "NO-TIMEBASE";
+			default:
+				break;
+			}
+
+			return "-";
 		}
 
 	}	//	sml

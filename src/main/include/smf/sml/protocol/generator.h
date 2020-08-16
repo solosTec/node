@@ -363,6 +363,10 @@ namespace node
 				, std::int32_t
 				, bool);
 
+			std::size_t get_status_word(std::string trx
+				, cyng::buffer_t server_id
+				, std::int32_t);
+
 			std::size_t get_proc_actuators(std::string trx
 				, cyng::buffer_t server_id);
 

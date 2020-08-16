@@ -10,6 +10,7 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
+
 #include <boost/uuid/random_generator.hpp>
 
 namespace node
@@ -20,17 +21,23 @@ namespace node
 		, cluster_config_t const& cfg
 		, boost::asio::ip::tcp::endpoint ep)
 	: base_(*btp)
-		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
+		, bus_(bus_factory(btp->mux_, logger, tag, btp->get_id()))
 		, logger_(logger)
 		, config_(cfg)
 		, cache_()
 		, db_sync_(logger, cache_)
+		, server_(btp->mux_.get_io_service(), logger, ep)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
 			<< ">");
+
+		//
+		//	init cache
+		//
+		create_cache(logger_, cache_);
 
 		//
 		//	implement request handler
@@ -42,11 +49,25 @@ namespace node
 		//	data handling
 		//
 		bus_->vm_.register_function("db.trx.start", 0, [this](cyng::context& ctx) {
-			CYNG_LOG_TRACE(logger_, "db.trx.start");
-			});
-		bus_->vm_.register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
-			CYNG_LOG_TRACE(logger_, "db.trx.commit");
-			});
+			CYNG_LOG_TRACE(logger_, ctx.get_name());
+		});
+
+		bus_->vm_.register_function("db.trx.commit", 1, [this, tag, ep](cyng::context& ctx) {
+			auto const frame = ctx.get_frame();
+			auto const table = cyng::value_cast<std::string>(frame.at(0), "");;
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << table);
+			if (boost::algorithm::equals(table, "TBroker")) {
+
+				ctx.queue(bus_req_db_insert(table
+					//	generate new key
+					, cyng::table::key_generator(tag)
+					//	build data vector
+					, cyng::table::data_generator(ep.address(), ep.port(), "EN13757-4 wM-Bus")
+					, 0
+					, ctx.tag()));
+			}
+		});
+
 		db_sync_.register_this(bus_->vm_);
 
 	}
@@ -70,7 +91,7 @@ namespace node
 		//
 		//	stop server
 		//
-// 		server_.close();
+ 		server_.close();
 
 		//
 		//	sign off from cluster
@@ -95,13 +116,13 @@ namespace node
 		//
 		//	start broker server
 		//
-// 		server_.run();
+ 		server_.run();
 
 		//
 		//	sync tables
 		//
 		sync_table("TMeter");
-		sync_table("TIECBridge");
+		sync_table("TBroker");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -176,8 +197,8 @@ namespace node
 		//	trigger reconnect 
 		//
 		CYNG_LOG_INFO(logger_, "reconnect to cluster in "
-			<< config_.get().monitor_.count()
-			<< " seconds");
+			<< cyng::to_str(config_.get().monitor_));
+
 		base_.suspend(config_.get().monitor_);
 
 	}

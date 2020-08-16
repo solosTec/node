@@ -49,9 +49,10 @@ namespace node
 		 * @param init initialization message
 		 */
 		std::pair<std::size_t, bool> start_lmn_port_wireless(cyng::async::task_list_t const& receiver
-			, std::size_t
+			, std::size_t	//	status task
 			, cyng::buffer_t&& init);
-		std::pair<std::size_t, bool> start_lmn_port_wired(cyng::async::task_list_t const& receiver);
+		std::pair<std::size_t, bool> start_lmn_port_wired(cyng::async::task_list_t const& receiver
+			, std::size_t);	//	status task
 
 		/**
 		 * Start RS485 interface manager
@@ -63,7 +64,8 @@ namespace node
 		 * or a server connected via TCP/IP.
 		 * @return a list of receiver tasks. The first one is the wireless M-Bus parser
 		 */
-		std::vector<std::size_t> start_mbus_receiver(bool profile, cfg_broker::broker_list_t&&);
+		cyng::async::task_list_t start_wireless_mbus_receiver(bool profile, cfg_broker::broker_list_t&&);
+		cyng::async::task_list_t start_wired_mbus_receiver(bool profile, cfg_broker::broker_list_t&&);
 
 		void wmbus_push_frame(cyng::context& ctx);
 		void sml_msg(cyng::context& ctx);
@@ -82,7 +84,7 @@ namespace node
 		cache& cache_;
 		decoder_wireless_mbus decoder_wmbus_;
 
-		std::size_t serial_parser_;	//	wired mbus
+		//std::size_t serial_parser_;	//	wired mbus
 		std::size_t serial_mgr_;
 		std::size_t serial_port_;	//	incoming data
 

@@ -273,11 +273,18 @@ namespace node
 
 			if (sml::OBIS_CLASS_OP_LOG_STATUS_WORD == root) {
 
-				sml::status_word_t word;
+				sml::status_word_t word{ 0 } ;
 				sml::status wrapper(word);
-				wrapper.reset(cyng::value_cast<std::uint32_t>(values.second, 0u));
+				wrapper.reset(cyng::numeric_cast<std::uint32_t>(values.second, 0u));
 
 				params.emplace("word", cyng::make_object(sml::to_param_map(word)));
+
+				CYNG_LOG_DEBUG(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> status word: "
+					<< cyng::io::to_str(sml::to_param_map(word)));
 			}
 
 			//

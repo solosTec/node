@@ -39,7 +39,12 @@ namespace node
 		vm.register_function("hci.payload", 2, [&](cyng::context& ctx) {
 
 			cyng::vector_t const frame = ctx.get_frame();
-			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+			CYNG_LOG_TRACE(logger_, ctx.get_name() 
+				<< " - " 
+				<< cyng::io::to_str(frame)
+				<< " => "
+				<< receiver_.size()
+				<< " receiver");
 
 			//
 			//	send data to receiver (parser)
@@ -47,7 +52,6 @@ namespace node
 			for (auto const tsk : receiver_) {
 				base_.mux_.post(tsk, 0, cyng::to_tuple(frame));
 			}
-			//base_.mux_.post(receiver_, 0, cyng::tuple_factory(cyng::make_buffer({ 0x1, 0x2, 0x3 }), static_cast<std::size_t>(42u)));
 		});
 
 	}

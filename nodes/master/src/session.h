@@ -68,8 +68,8 @@ namespace node
 			, bool					//	[7] autologin
 			, std::uint32_t			//	[8] group
 			, boost::asio::ip::tcp::endpoint	//	[9] remote ep
-			, std::string				//	[10] platform
-			, boost::process::pid_t);
+			, std::string			//	[10] platform
+			, std::int64_t);		//	boost::process::pid_t
 		void bus_req_subscribe(cyng::context& ctx);
 		void bus_req_unsubscribe(cyng::context& ctx);
 		void bus_start_watchdog(cyng::context& ctx);

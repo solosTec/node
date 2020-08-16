@@ -27,11 +27,12 @@ namespace node
 		//	data handling
 		//
 		vm.register_function("db.trx.start", 0, [this](cyng::context& ctx) {
-			CYNG_LOG_TRACE(logger_, "db.trx.start");
-		});
-		vm.register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
-			CYNG_LOG_TRACE(logger_, "db.trx.commit");
-		});
+			CYNG_LOG_TRACE(logger_, ctx.get_name());
+			});
+		vm.register_function("db.trx.commit", 1, [this](cyng::context& ctx) {
+			auto const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+			});
 		vm.register_function("bus.res.subscribe", 6, std::bind(&dispatcher::res_subscribe, this, std::placeholders::_1));
 	}
 

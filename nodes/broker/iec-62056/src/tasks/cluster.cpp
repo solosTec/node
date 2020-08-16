@@ -42,10 +42,11 @@ namespace node
 		//	data handling
 		//
 		bus_->vm_.register_function("db.trx.start", 0, [this](cyng::context& ctx) {
-			CYNG_LOG_TRACE(logger_, "db.trx.start");
+			CYNG_LOG_TRACE(logger_, ctx.get_name());
 			});
-		bus_->vm_.register_function("db.trx.commit", 0, [this](cyng::context& ctx) {
-			CYNG_LOG_TRACE(logger_, "db.trx.commit");
+		bus_->vm_.register_function("db.trx.commit", 1, [this](cyng::context& ctx) {
+			auto const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 			});
 		db_sync_.register_this(bus_->vm_);
 
@@ -176,8 +177,8 @@ namespace node
 		//	trigger reconnect 
 		//
 		CYNG_LOG_INFO(logger_, "reconnect to cluster in "
-			<< config_.get().monitor_.count()
-			<< " seconds");
+			<< cyng::to_str(config_.get().monitor_));
+
 		base_.suspend(config_.get().monitor_);
 
 	}

@@ -655,6 +655,31 @@ namespace node
 			}))));
 		}
 
+		std::size_t res_generator::get_status_word(std::string trx
+			, cyng::buffer_t server_id
+			, std::int32_t word)
+		{
+			//	example:
+			//	81 00 60 05 00 00: 459266
+
+			return append(message(trx	//	trx
+				, ++group_no_	//	group
+				, 0 //	abort code
+				, message_e::GET_PROC_PARAMETER_RESPONSE
+
+				//
+				//	generate get process parameter response
+				//
+				, get_proc_parameter_response(server_id	//	server id
+					, OBIS_CLASS_OP_LOG_STATUS_WORD		//	path entry
+
+					//
+					//	generate get process parameter response
+					//	2 uint8 values 
+					//
+					, parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(word)))));
+		}
+
 		std::size_t res_generator::get_proc_actuators(std::string trx
 			, cyng::buffer_t server_id)
 		{

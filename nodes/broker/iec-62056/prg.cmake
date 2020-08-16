@@ -26,6 +26,12 @@ set (node_shared
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
 )
 
+set (node_schemes
+
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/db_schemes.h
+	${CMAKE_SOURCE_DIR}/nodes/shared/db/db_schemes.cpp
+)
+
 
 if (UNIX)
 	list(APPEND node_iec_62056_shared src/main/include/smf/shared/write_pid.h)
@@ -60,6 +66,7 @@ source_group("tasks" FILES ${node_iec_62056_tasks})
 source_group("resources" FILES ${node_iec_62056_res})
 source_group("service" FILES ${node_iec_62056_service})
 source_group("shared" FILES ${node_shared})
+source_group("schemes" FILES ${node_schemes})
 
 
 # define the main program
@@ -69,6 +76,7 @@ set (node_iec_62056
   ${node_iec_62056_tasks}
   ${node_iec_62056_service}
   ${node_shared}
+  ${node_schemes}
 )
 
 

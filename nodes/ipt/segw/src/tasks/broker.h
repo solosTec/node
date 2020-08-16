@@ -28,18 +28,16 @@ namespace node
 	 * receiver and parser for wireless mbus data
 	 */
 	class cache;
-	class broker_wmbus
+	class broker
 	{
 	public:
 		//	[0] receive data
 		using msg_0 = std::tuple<cyng::buffer_t, std::size_t>;
-		//	[1] status (open/closed)
-		using msg_1 = std::tuple<bool>;
 
-		using signatures_t = std::tuple<msg_0, msg_1>;
+		using signatures_t = std::tuple<msg_0>;
 
 	public:
-		broker_wmbus(cyng::async::base_task* bt
+		broker(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, cyng::controller&
 			, cache& cfg
@@ -54,12 +52,6 @@ namespace node
 		 *
 		 */
 		cyng::continuation process(cyng::buffer_t, std::size_t);
-
-		/**
-		 * @brief slot [1] - status (open/closed)
-		 *
-		 */
-		cyng::continuation process(bool);
 
 		/**
 		 * connect to server

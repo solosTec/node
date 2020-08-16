@@ -250,7 +250,8 @@ namespace node
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_SEARCH_INTERVAL.to_str(), 0),	//	search interval in seconds
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_SEARCH_DEVICE.to_str(), true),	//	search device now and by restart
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_AUTO_ACTICATE.to_str(), false),	//	automatic activation of meters 
-					cyng::param_factory(sml::OBIS_CLASS_MBUS_BITRATE.to_str(), 82)	//	used baud rates(bitmap)
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_BITRATE.to_str(), 82),	//	used baud rates(bitmap)
+					cyng::param_factory("generate-profile", true)
 				))
 				, cyng::param_factory("ipt", cyng::vector_factory({
 					cyng::tuple_factory(

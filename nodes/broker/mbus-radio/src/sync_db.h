@@ -20,6 +20,21 @@ namespace node
 	class db_sync
 	{
 	public:
+		struct tbl_descr {
+			std::string const name_;
+			bool const custom_;
+			inline tbl_descr(std::string name, bool custom)
+				: name_(name)
+				, custom_(custom)
+			{}
+		};
+
+
+		/**
+		 * List of all required tables
+		 */
+		const static std::array<tbl_descr, 2>	tables_;
+	public:
 		db_sync(cyng::logging::log_ptr, cyng::store::db&);
 
 		/**

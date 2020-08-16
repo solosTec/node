@@ -18,8 +18,16 @@ namespace node
 	{
 		enum status_bits : std::uint64_t
 		{
+			STAUS_BIT_0 = 0u,	// always zero
 			//	always 1 - 0b0000000000000010
 			STATUS_BIT_ON = (1ull << 1),
+
+			STATUS_BIT_2 = (1ull << 2),	// always zero
+			STATUS_BIT_3 = (1ull << 3),	// always zero
+			STATUS_BIT_4 = (1ull << 4),	// always zero
+			STATUS_BIT_5 = (1ull << 5),	// always zero
+			STATUS_BIT_6 = (1ull << 6),	// always zero
+			STATUS_BIT_7 = (1ull << 7),	// always zero
 
 			//	fatal error - 0b0000000100000000
 			STATUS_BIT_FATAL_ERROR = (1ull << 8),
@@ -27,7 +35,7 @@ namespace node
 			//	restart triggered by watchdog reset - 0b00000011000000000
 			STATUS_BIT_RESET_BY_WATCHDOG = (1ull << 9),
 
-			//	IP address is available (DHCP)
+			//	IP address is available (DHCP) 
 			//	0 if address available
 			STATUS_BIT_IP_ADDRESS_AVAILABLE = (1ull << 10),
 
@@ -35,7 +43,7 @@ namespace node
 			//	0 if WAN is available
 			STATUS_BIT_ETHERNET_AVAILABLE = (1ull << 11),
 
-			//	0 if radio network is available
+			//	0 if radio network is available (mobile network)
 			STATUS_BIT_RADIO_AVAILABLE = (1ull << 12),
 
 			//	not authorized on IP-T server
@@ -47,22 +55,39 @@ namespace node
 			STATUS_BIT_OUT_OF_MEMORY = (1ull << 14),
 
 			//	bit 15 is reserved
+			STATUS_BIT_15 = 15u,	// always zero
 
 			//	 Service interface is available (Kundenschnittstelle)
 			//	1 if available
 			STATUS_BIT_SERVICE_IF_AVAILABLE = (1ull << 16),
 
-			//	  extension interface is available (Erweiterungs-Schnittstelle)
+			//	extension interface is available (Erweiterungs-Schnittstelle)
 			//	1 if available
 			STATUS_BIT_EXT_IF_AVAILABLE = (1ull << 17),
 
-			//	 Wireless M-Bus interface is available
+			//	 wireless M-Bus interface is available
 			//	1 if available
-			STATUS_BIT_MBUS_IF_AVAILABLE = (1ull << 18),
+			STATUS_BIT_WIRELESS_MBUS_IF_AVAILABLE = (1ull << 18),
 
 			//	PLC is available
 			//	1 if available
 			STATUS_BIT_PLC_AVAILABLE = (1ull << 19),
+
+			//	wired M-Bus is available 
+			//	1 if available (supported by SMF firmware only)
+			STATUS_BIT_WIRED_MBUS_IF_AVAILABLE = (1ull << 20),
+
+			STATUS_BIT_21 = (1ull << 21),	// always zero
+			STATUS_BIT_22 = (1ull << 22),	// always zero
+			STATUS_BIT_23 = (1ull << 23),	// always zero
+			STATUS_BIT_24 = (1ull << 24),	// always zero
+			STATUS_BIT_25 = (1ull << 25),	// always zero
+			STATUS_BIT_26 = (1ull << 26),	// always zero
+			STATUS_BIT_27 = (1ull << 27),	// always zero
+			STATUS_BIT_28 = (1ull << 28),	// always zero
+			STATUS_BIT_29 = (1ull << 29),	// always zero
+			STATUS_BIT_30 = (1ull << 30),	// always zero
+			STATUS_BIT_31 = (1ull << 31),	// always zero
 
 			//	time base is unsure
 			//	1 if unsafe
@@ -170,9 +195,14 @@ namespace node
 			bool is_ext_if_available() const;
 
 			/**
-			 * @return true if STATUS_BIT_MBUS_IF_AVAILABLE bit is set
+			 * @return true if STATUS_BIT_WIRELESS_MBUS_IF_AVAILABLE bit is set
 			 */
-			bool is_mbus_available() const;
+			bool is_wireless_mbus_available() const;
+
+			/**
+			 * @return true if STATUS_BIT_WIRED_MBUS_IF_AVAILABLE bit is set
+			 */
+			bool is_wired_mbus_available() const;
 
 			/**
 			 * @return true if STATUS_BIT_PLC_AVAILABLE bit is set
@@ -201,6 +231,8 @@ namespace node
 		 */
 		cyng::attr_map_t to_attr_map(status const&);
 		cyng::param_map_t to_param_map(status const&);
+
+		char const* get_status_name(status_bits sb);
 
 	}	//	sml
 }

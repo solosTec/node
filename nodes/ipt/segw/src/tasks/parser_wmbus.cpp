@@ -100,7 +100,7 @@ namespace node
 
 	cyng::continuation parser_wmbus::process(bool b)
 	{
-		cache_.set_status_word(sml::STATUS_BIT_MBUS_IF_AVAILABLE, b);
+		cache_.set_status_word(sml::STATUS_BIT_WIRELESS_MBUS_IF_AVAILABLE, b);
 
 		if (b) {
 			CYNG_LOG_TRACE(logger_, "task #"

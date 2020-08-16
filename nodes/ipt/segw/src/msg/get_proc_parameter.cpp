@@ -184,16 +184,17 @@ namespace node
 			auto const word = cache_.get_status_word();
 			CYNG_LOG_DEBUG(logger_, "status word: " << word);
 
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CLASS_OP_LOG_STATUS_WORD);
+			//auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CLASS_OP_LOG_STATUS_WORD);
 
-			append_get_proc_response(msg, {
-				OBIS_CLASS_OP_LOG_STATUS_WORD,
-				}, make_value(static_cast<std::uint32_t>(word)));
+			//append_get_proc_response(msg, {
+			//	OBIS_CLASS_OP_LOG_STATUS_WORD,
+			//	}, make_value(static_cast<std::uint32_t>(word)));
 
 			//
 			//	append to message queue
 			//
-			sml_gen_.append(std::move(msg));
+			//sml_gen_.append(std::move(msg));
+			sml_gen_.get_status_word(trx, srv_id, static_cast<std::uint32_t>(word));
 		}
 
 		void get_proc_parameter::code_root_device_ident(std::string trx, cyng::buffer_t srv_id)
