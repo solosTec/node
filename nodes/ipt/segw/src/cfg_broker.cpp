@@ -58,12 +58,16 @@ namespace node
 		auto const str = cache_.get_cfg(path, "");
 		if (!str.empty()) {
 			//	example:
-			//	segw.ch:12002 segw.ch:12004
+			//	user:pwd@segw.ch:12002 user:pwd@segw.ch:12004
 			auto const vec = cyng::split(str, "\t ");
 			for (auto const& node : vec) {
-				auto const data = cyng::split(node, ":");
+				auto const data = cyng::split(node, "@");
 				if (data.size() == 2) {
-					r.emplace_back(data.at(0), static_cast<std::uint16_t>(stoul(data.at(1))));
+					auto const cred = cyng::split(data.at(0), ":");
+					auto const uri = cyng::split(data.at(1), ":");
+					if (cred.size() == 2 && uri.size() == 2) {
+						r.emplace_back(cred.at(0), cred.at(1), uri.at(0), static_cast<std::uint16_t>(stoul(uri.at(1))));
+					}
 				}
 			}
 		}
@@ -79,10 +83,22 @@ namespace node
 			;
 	}
 
-	cfg_broker::broker::broker(std::string address, std::uint16_t port)
-		: address_(address)
+	cfg_broker::broker::broker(std::string account, std::string pwd, std::string address, std::uint16_t port)
+		: account_(account)
+		, pwd_(pwd)
+		, address_(address)
 		, port_(port)
 	{}
+
+	std::string const& cfg_broker::broker::get_account() const
+	{
+		return account_;
+	}
+
+	std::string const& cfg_broker::broker::get_pwd() const
+	{
+		return pwd_;
+	}
 
 	std::string const& cfg_broker::broker::get_address() const
 	{

@@ -8,9 +8,8 @@
 #ifndef NODE_SEGW_TASK_BROKER_WMBUS_H
 #define NODE_SEGW_TASK_BROKER_WMBUS_H
 
-//#include <smf/mbus/parser.h>
+#include <NODE_project_info.h>
 #include "../cfg_wmbus.h"
-
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -30,6 +29,8 @@ namespace node
 	class cache;
 	class broker
 	{
+		using read_buffer_t = std::array<char, NODE::PREFERRED_BUFFER_SIZE>;
+
 	public:
 		//	[0] receive data
 		using msg_0 = std::tuple<cyng::buffer_t, std::size_t>;
@@ -41,6 +42,8 @@ namespace node
 			, cyng::logging::log_ptr
 			, cyng::controller&
 			, cache& cfg
+			, std::string account
+			, std::string pwd
 			, std::string address
 			, std::uint16_t port);
 
@@ -56,8 +59,9 @@ namespace node
 		/**
 		 * connect to server
 		 */
-		bool connect();
-
+		void do_connect(const boost::asio::ip::tcp::resolver::results_type& endpoints);
+		void do_read();
+		void do_write();
 
 	private:
 		cyng::async::base_task& base_;
@@ -73,16 +77,23 @@ namespace node
 		cfg_wmbus cfg_;
 
 		/**
-		 * IP address
+		 * credentials & IP address
 		 */
+		std::string const account_;
+		std::string const pwd_;
 		std::string const host_;
 		std::uint16_t const port_;
 
 		/**
 		 * connection socket
 		 */
-		//boost::asio::ip::tcp::socket socket_;
-		boost::asio::ip::tcp::iostream stream_;
+		boost::asio::ip::tcp::socket socket_;
+
+		/**
+		 * Buffer for incoming data.
+		 */
+		read_buffer_t buffer_read_;
+		std::deque<cyng::buffer_t>	buffer_write_;
 
 	};
 

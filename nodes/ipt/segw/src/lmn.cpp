@@ -274,6 +274,8 @@ namespace node
 				, logger_
 				, vm_
 				, cache_
+				, node.get_account()
+				, node.get_pwd()
 				, node.get_address()
 				, node.get_port());
 			if (r.second) vec.push_back(r.first);
@@ -314,6 +316,8 @@ namespace node
 				, logger_
 				, vm_
 				, cache_
+				, node.get_account()
+				, node.get_pwd()
 				, node.get_address()
 				, node.get_port());
 			if (r.second) vec.push_back(r.first);

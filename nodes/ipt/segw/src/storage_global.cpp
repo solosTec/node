@@ -590,6 +590,12 @@ namespace node
 		if (r.second) {
 
 			//
+			//	generate radnom account names + passwords
+			//
+			auto gen_user = cyng::crypto::make_rnd_alnum();
+			auto gen_pwd = cyng::crypto::make_rnd_pwd();
+
+			//
 			//	start transaction
 			//
 			s.begin();
@@ -896,6 +902,10 @@ namespace node
 								}
 								auto const reader = cyng::make_reader(broker);
 								ss
+									<< cyng::value_cast<std::string>(reader.get("account"), gen_user(6))
+									<< ':'
+									<< cyng::value_cast<std::string>(reader.get("pwd"), gen_pwd(8))
+									<< '@'
 									<< cyng::value_cast<std::string>(reader.get("address"), "segw.ch")
 									<< ':'
 									<< cyng::value_cast(reader.get("port"), 0)
@@ -988,6 +998,10 @@ namespace node
 								}
 								auto const reader = cyng::make_reader(broker);
 								ss
+									<< cyng::value_cast<std::string>(reader.get("account"), gen_user(6))
+									<< ':'
+									<< cyng::value_cast<std::string>(reader.get("pwd"), gen_pwd(8))
+									<< '@'
 									<< cyng::value_cast<std::string>(reader.get("address"), "segw.ch")
 									<< ':'
 									<< cyng::numeric_cast(reader.get("port"), 0)

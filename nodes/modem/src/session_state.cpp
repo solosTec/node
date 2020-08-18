@@ -14,7 +14,6 @@
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/ip_io.h>
 #include <smf/mbus/defs.h>
-//#include <smf/ipt/defs.h>
 
 #include <cyng/dom/reader.h>
 #include <cyng/tuple_cast.hpp>

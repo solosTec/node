@@ -82,13 +82,22 @@ namespace node
 			macs.push_back(cyng::generate_random_mac48());
 		}
 		
-		//std::pair<std::chrono::system_clock::time_point, bool >
+		//
+		//	get build data/time
+		//
 		auto const r = cyng::parse_rfc3339_timestamp(NODE_BUILD_DATE);
 
 		//
 		//	get hostname
 		//
 		auto const host = boost::asio::ip::host_name();
+
+		//
+		//	generate radnom account names + passwords
+		//
+		auto gen_user = cyng::crypto::make_rnd_alnum();
+		auto gen_pwd = cyng::crypto::make_rnd_pwd();
+
 
 		return cyng::vector_factory({
 			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
@@ -168,7 +177,7 @@ namespace node
 #if BOOST_OS_WINDOWS
 					//	iM871A
 					cyng::param_factory("enabled", false),
-					cyng::param_factory("port", "COM4"),	//	USB serial port
+					cyng::param_factory("port", "COM3"),	//	USB serial port
 					//	if port number is greater than 9 the following syntax is required: "\\\\.\\COM12"
 					cyng::param_factory("HCI", "CP210x"),	//	iM871A mbus-USB converter
 					cyng::param_factory("databits", 8),
@@ -198,8 +207,10 @@ namespace node
 						//	define multiple broker here
 						cyng::tuple_factory(
 							cyng::param_factory("address", "segw.ch"),
-							cyng::param_factory("port", 12001))
-						})
+							cyng::param_factory("port", 12001),
+							cyng::param_factory("account", gen_user(6)),
+							cyng::param_factory("pwd", gen_user(8)))
+					})
 					)
 				))
 
@@ -224,7 +235,9 @@ namespace node
 						//	define multiple broker here
 						cyng::tuple_factory(
 							cyng::param_factory("address", "segw.ch"),
-							cyng::param_factory("port", 12002))
+							cyng::param_factory("port", 12002),
+							cyng::param_factory("account", gen_user(6)),
+							cyng::param_factory("pwd", gen_user(8)))
 						})
 					)
 				))

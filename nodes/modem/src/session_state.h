@@ -126,11 +126,9 @@ namespace node
 			struct evt_ipt_req_open_connection
 			{
 				const boost::uuids::uuid tag_;
-				//const sequence_type seq_;
 				const std::string number_;
 
 				evt_ipt_req_open_connection(boost::uuids::uuid,
-					//sequence_type,
 					std::string);
 			};
 
@@ -141,9 +139,7 @@ namespace node
 			{
 				std::size_t const tsk_;
 				std::size_t const slot_;
-				//response_type const res_;
-				evt_modem_res_open_connection(std::size_t, std::size_t//, response_type
-				);
+				evt_modem_res_open_connection(std::size_t, std::size_t);
 			};
 
 			/**
@@ -163,8 +159,7 @@ namespace node
 				std::size_t const tsk_;
 				std::size_t const slot_;
 				//response_type const res_;
-				evt_modem_res_close_connection(std::size_t, std::size_t//, response_type
-				);
+				evt_modem_res_close_connection(std::size_t, std::size_t);
 			};
 
 			/**

@@ -36,15 +36,19 @@ namespace node
 	public:
 		class broker {
 		public:
-			explicit broker(std::string, std::uint16_t);
+			explicit broker(std::string, std::string, std::string, std::uint16_t);
 			broker() = delete;
 			broker(broker const&) = default;
 			broker(broker&&) = default;
 
+			std::string const& get_account() const;
+			std::string const& get_pwd() const;
 			std::string const& get_address() const;
 			std::uint16_t get_port() const;
 
 		private:
+			std::string const account_;
+			std::string const pwd_;
 			std::string const address_;
 			std::uint16_t const port_;
 		};

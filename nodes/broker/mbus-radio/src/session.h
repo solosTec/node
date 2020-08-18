@@ -32,6 +32,8 @@ namespace node
 
 	private:
 		void do_read();
+		void process_data(cyng::buffer_t&&);
+		void process_login(cyng::buffer_t&&);
 
 	private:
 		boost::asio::ip::tcp::socket socket_;
@@ -42,6 +44,16 @@ namespace node
 		 * Buffer for incoming data.
 		 */
 		read_buffer_t buffer_;
+
+		/**
+		 * authorization state
+		 */
+		bool authorized_;
+
+		/**
+		 * temporary data buffer
+		 */
+		cyng::buffer_t data_;
 
 	};
 	

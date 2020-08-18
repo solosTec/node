@@ -18,8 +18,10 @@ namespace node
 		, cyng::controller& vm)
 	: socket_(std::move(socket))
 		, logger_(logger)
-		, buffer_()
 		, vm_(vm)
+		, buffer_()
+		, authorized_(false)
+		, data_()
 	{
 		CYNG_LOG_INFO(logger_, "session at  " << socket_.remote_endpoint());
 	}
@@ -39,6 +41,7 @@ namespace node
 	void session::do_read()
 	{
 		auto self(shared_from_this());
+
 		socket_.async_read_some(boost::asio::buffer(buffer_.data(), buffer_.size()),
 			[this, self](boost::system::error_code ec, std::size_t bytes_transferred)
 			{
@@ -53,6 +56,23 @@ namespace node
 					hd(ss, buffer_.begin(), buffer_.begin() + bytes_transferred);
 					CYNG_LOG_TRACE(logger_, "\n" << ss.str());
 #endif
+					if (authorized_) {
+						//
+						//	raw data
+						//
+						process_data(cyng::buffer_t{ buffer_.begin(), buffer_.begin() + bytes_transferred });
+					}
+					else {
+
+						//
+						//	login data
+						//
+						process_login(cyng::buffer_t{ buffer_.begin(), buffer_.begin() + bytes_transferred });
+					}
+
+					//
+					//	continue reading
+					//
 					do_read();
 				}
 				else
@@ -63,5 +83,26 @@ namespace node
 				}
 			});
 	}
+
+	void session::process_data(cyng::buffer_t&& data)
+	{
+
+	}
+
+	void session::process_login(cyng::buffer_t&& data)
+	{
+		data_.insert(data_.end(), data.begin(), data.end());
+		if (data.back() == '\n') {
+
+			CYNG_LOG_INFO(logger_, "session authorized: "
+				<< socket_.remote_endpoint());
+
+			//
+			//	login complete
+			//
+			authorized_ = true;
+		}
+	}
+
 
 }

@@ -21,57 +21,70 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cyng::controller& vm
 		, cache& cfg
+		, std::string account
+		, std::string pwd
 		, std::string host
 		, std::uint16_t port)
 	: base_(*btp) 
 		, logger_(logger)
 		, cfg_(cfg)
+		, account_(account)
+		, pwd_(pwd)
 		, host_(host)
 		, port_(port)
-		, stream_()
+		, socket_(base_.mux_.get_io_service())
+		, buffer_read_()
+		, buffer_write_()
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
 			<< "> "
+			<< account_
+			<< ':'
+			<< pwd_
+			<< '@'
 			<< host_
 			<< ':'
 			<< port_);
+
+		//
+		//	login message
+		//
+		buffer_write_.emplace_back(cyng::buffer_t(account_.begin(), account_.end()));
+		buffer_write_.emplace_back(cyng::buffer_t(1, '@'));
+		buffer_write_.emplace_back(cyng::buffer_t(pwd_.begin(), pwd_.end()));
+		buffer_write_.emplace_back(cyng::buffer_t(1, '\n'));
 	}
 
 	cyng::continuation broker::run()
 	{
-#ifdef _DEBUG
-		CYNG_LOG_TRACE(logger_, "task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< ">");
-#endif
-		if (!stream_.socket().is_open()) {
+		if (!socket_.is_open()) {
 
-			//
-			//	open connection
-			//
-			if (connect()) {
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> open connection to "
+				<< host_
+				<< ':'
+				<< port_);
 
-				CYNG_LOG_INFO(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> is connected to "
-					<< stream_.socket().remote_endpoint());
+			try {
+
+				boost::asio::ip::tcp::resolver resolver(base_.mux_.get_io_service());
+				auto const endpoints = resolver.resolve(host_, std::to_string(port_));
+				do_connect(endpoints);
 			}
-			else {
+			catch (std::exception const& ex) {
+
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> cannot connect to "
-					<< host_
-					<< ':'
-					<< port_);
+					<< "> "
+					<< ex.what());
 			}
 		}
 
@@ -85,10 +98,13 @@ namespace node
 
 	void broker::stop(bool shutdown)
 	{
-		//
-		//  close socket
-		//
-		stream_.close();
+		try {
+			//
+			//  close socket
+			//
+			socket_.close();
+		}
+		catch (std::exception const&) {}
 
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -99,7 +115,6 @@ namespace node
 
 	cyng::continuation broker::process(cyng::buffer_t data, std::size_t msg_counter)
 	{
-
 		CYNG_LOG_TRACE(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -109,11 +124,13 @@ namespace node
 			<< " with "
 			<< cyng::bytes_to_str(data.size()));
 
+		buffer_write_.push_back(data);
+
 		//
 		//  send to receiver
 		//
-		if (stream_.socket().is_open()) {
-			stream_.write(data.data(), data.size());
+		if (socket_.is_open()) {
+			do_write();
 		}
 
 		//
@@ -122,39 +139,132 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	bool broker::connect()
+	void broker::do_connect(const boost::asio::ip::tcp::resolver::results_type& endpoints)
 	{
-		//
-		//	try to connect
-		//
-		CYNG_LOG_INFO(logger_, "initialize task #"
-			<< base_.get_id()
-			<< " <"
-			<< base_.get_class_name()
-			<< "> open connection to "
-			<< host_
-			<< ':'
-			<< port_);
-
-		try {
-			stream_.connect(host_, std::to_string(port_));
-			if (stream_.fail())
+		boost::asio::async_connect(socket_, endpoints,
+			[this](boost::system::error_code ec, boost::asio::ip::tcp::endpoint ep)
 			{
-				stream_.socket().close();
-				return false;
-			}
-			return true;
-		}
-		catch (std::exception const& ex) {
-			CYNG_LOG_INFO(logger_, "initialize task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> open connection failed "
-				<< ex.what());
-		}
-		return false;
+				if (!ec) {
+					CYNG_LOG_INFO(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> connected to "
+						<< ep);
+
+					//
+					//	send login
+					//
+					do_write();
+
+					//
+					//	start reading
+					//
+					do_read();
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> "
+						<< ec.message());
+				}
+		});
 	}
+
+	void broker::do_read()
+	{
+		socket_.async_read_some(boost::asio::buffer(buffer_read_.data(), buffer_read_.size()),
+			[this](boost::system::error_code ec, std::size_t bytes_transferred)
+			{
+				if (!ec) {
+
+					//
+					//	ToDo: forward to serial interface
+					//
+
+					//
+					//	continue reading
+					//
+					do_read();
+
+					CYNG_LOG_TRACE(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> received "
+						<< cyng::bytes_to_str(bytes_transferred));
+				}
+				else
+				{
+					socket_.close();
+					CYNG_LOG_WARNING(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> "
+						<< ec.message());
+				}
+
+			});
+			
+	}
+
+	void broker::do_write()
+	{
+		boost::asio::async_write(socket_,
+			boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
+			[this](boost::system::error_code ec, std::size_t bytes_transferred)
+			{
+				if (!ec)
+				{
+					buffer_write_.pop_front();
+					if (!buffer_write_.empty())
+					{
+						do_write();
+					}
+				}
+				else
+				{
+					socket_.close();
+				}
+			});
+	}
+
+	//bool broker::connect()
+	//{
+	//	//
+	//	//	try to connect
+	//	//
+	//	CYNG_LOG_INFO(logger_, "initialize task #"
+	//		<< base_.get_id()
+	//		<< " <"
+	//		<< base_.get_class_name()
+	//		<< "> open connection to "
+	//		<< host_
+	//		<< ':'
+	//		<< port_);
+
+	//	try {
+	//		stream_.connect(host_, std::to_string(port_));
+	//		if (stream_.fail())
+	//		{
+	//			stream_.socket().close();
+	//			return false;
+	//		}
+	//		return true;
+	//	}
+	//	catch (std::exception const& ex) {
+	//		CYNG_LOG_INFO(logger_, "initialize task #"
+	//			<< base_.get_id()
+	//			<< " <"
+	//			<< base_.get_class_name()
+	//			<< "> open connection failed "
+	//			<< ex.what());
+	//	}
+	//	return false;
+	//}
 
 }
 
