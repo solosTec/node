@@ -26,7 +26,7 @@ namespace node
 		, config_(cfg)
 		, cache_()
 		, db_sync_(logger, cache_)
-		, server_(btp->mux_.get_io_service(), logger, ep)
+		, server_(btp->mux_.get_io_service(), logger, bus_->vm_, ep)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -56,7 +56,7 @@ namespace node
 			auto const frame = ctx.get_frame();
 			auto const table = cyng::value_cast<std::string>(frame.at(0), "");;
 			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << table);
-			if (boost::algorithm::equals(table, "TBroker")) {
+			if (boost::algorithm::equals(table, "_Broker")) {
 
 				ctx.queue(bus_req_db_insert(table
 					//	generate new key
@@ -122,7 +122,7 @@ namespace node
 		//	sync tables
 		//
 		sync_table("TMeter");
-		sync_table("TBroker");
+		sync_table("_Broker");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

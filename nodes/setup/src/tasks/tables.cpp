@@ -24,7 +24,6 @@ namespace node
 		tables::tbl_descr{"TGUIUser", true, false},
 		tables::tbl_descr{"TNodeNames", true, false},
 		tables::tbl_descr{"TIECBridge", true, false},	//	TIECBroker
-		tables::tbl_descr{"TBroker", true, false},		//	broker
 		tables::tbl_descr{"TGWSnapshot", false, false},
 		tables::tbl_descr{"TLoraUplink", false, true}	//	custom handling
 	};

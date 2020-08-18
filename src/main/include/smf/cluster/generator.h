@@ -100,6 +100,11 @@ namespace node
 	cyng::vector_t bus_insert_msg(cyng::logging::severity, std::string const&);
 
 	/**
+	 *  Update the "clients" counter in the "_Cluster" table
+	 */
+	cyng::vector_t bus_update_client_count(std::uint64_t count);
+
+	/**
 	 * place a LoRa uplink event
 	 */
 	cyng::vector_t bus_insert_LoRa_uplink(cyng::object tp

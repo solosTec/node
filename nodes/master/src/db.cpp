@@ -404,7 +404,7 @@ namespace node
 		tbl_descr{"_TimeSeries", false},
 		tbl_descr{"_LoRaUplink", false},
 		tbl_descr{"_CSV", false},
-		tbl_descr{"TBroker", false}	//	broker 
+		tbl_descr{"_Broker", false}	//	broker 
 	};
 
 	cache::cache(cyng::store::db& db, boost::uuids::uuid tag)

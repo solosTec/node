@@ -9,8 +9,10 @@
 #define NODE_MBUS_BROKER_SESSION_H
 
 #include <NODE_project_info.h>
+
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
+#include <cyng/vm/controller_fwd.h>
 
 namespace node
 {
@@ -21,7 +23,9 @@ namespace node
 
 	public:
 		session(boost::asio::ip::tcp::socket socket
-			, cyng::logging::log_ptr);
+			, cyng::logging::log_ptr
+			, cyng::controller&);
+		virtual ~session();
 
 	public:
 		void start();
@@ -32,6 +36,7 @@ namespace node
 	private:
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logging::log_ptr logger_;
+		cyng::controller& vm_;	//!< cluster bus VM
 
 		/**
 		 * Buffer for incoming data.

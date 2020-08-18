@@ -100,11 +100,15 @@ namespace node
 
 		void stop_cb(cyng::vm&, cyng::object);
 
+		/**
+		 * remove this cluster session from cluster table
+		 * @return node type
+		 */
+		std::string cleanup_cluster_table(boost::uuids::uuid tag);
 
 	private:
 		cyng::async::mux& mux_;
 		cyng::logging::log_ptr logger_;
-		//boost::uuids::uuid mtag_;	// master tag
 		cache& cache_;
 		cyng::controller vm_;
 		

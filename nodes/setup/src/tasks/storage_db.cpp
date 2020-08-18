@@ -980,27 +980,6 @@ namespace node
 			, 0
 			}));
 
-		//
-		//	Define a list of all servers to listen for incoming raw wired
-		//	M-Bus data
-		//
-		insert(meta_map, cyng::table::make_meta_table_gen<1, 3>("TBroker",
-			{ "pk"			//	[uuid] tag from node
-			, "address"		//	[ip] incoming/outgoing IP connection
-			, "port"		//	[ip] incoming/outgoing IP connection
-			, "protocol"	//	[string] M-Bus, IEC, ...
-			},
-			{ cyng::TC_UUID			//	pk
-			, cyng::TC_IP_ADDRESS	//	host address
-			, cyng::TC_UINT16		//	TCP/IP port
-			, cyng::TC_STRING
-			},
-			{ 36
-			, 0		//	address
-			, 0		//	port
-			, 32	//	protocol
-			}));
-
 		return meta_map;
 	}
 

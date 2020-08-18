@@ -9,16 +9,26 @@
 
 #include <cyng/io/io_bytes.hpp>
 #include <cyng/io/hex_dump.hpp>
+#include <cyng/vm/controller.h>
 
 namespace node
 {
 	session::session(boost::asio::ip::tcp::socket socket
-		, cyng::logging::log_ptr logger)
+		, cyng::logging::log_ptr logger
+		, cyng::controller& vm)
 	: socket_(std::move(socket))
 		, logger_(logger)
 		, buffer_()
+		, vm_(vm)
 	{
 		CYNG_LOG_INFO(logger_, "session at  " << socket_.remote_endpoint());
+	}
+
+	session::~session()
+	{
+		//
+		//	remove from session list
+		//
 	}
 
 	void session::start()

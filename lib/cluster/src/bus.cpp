@@ -31,7 +31,7 @@ namespace node
 			vm_.async_run(std::move(prg));
 		})
 		, serializer_(socket_, vm_)
-		, state_(STATE_INITIAL_)
+		, state_(state::INITIAL_)
 		, remote_tag_(boost::uuids::nil_uuid())
 		, remote_version_(0, 0)
 		, seq_(0)
@@ -85,7 +85,7 @@ namespace node
 
 			if (cyng::value_cast(frame.at(0), false))
 			{
-				state_ = STATE_AUTHORIZED_;
+				state_ = state::AUTHORIZED_;
 				remote_tag_ = cyng::value_cast(frame.at(1), boost::uuids::nil_uuid());
 				remote_version_ = cyng::value_cast(frame.at(2), remote_version_);
 				ctx.run(cyng::generate_invoke("log.msg.info", "successful cluster login", remote_tag_, remote_version_));
@@ -102,13 +102,13 @@ namespace node
 			}
 			else
 			{
-				state_ = STATE_ERROR_;
+				state_ = state::ERROR_;
 				ctx.run(cyng::generate_invoke("log.msg.warning", "cluster login failed"));
 
 				//
 				//	slot [1] - go offline
 				//
-				mux_.post(task_, 1, cyng::tuple_t());
+				mux_.post(task_, 1, cyng::tuple_t{});
 			}
 
 		});
@@ -141,7 +141,7 @@ namespace node
 	void bus::start()
 	{
 		//CYNG_LOG_TRACE(logger_, "start cluster bus");
-        state_ = STATE_INITIAL_;
+        state_ = state::INITIAL_;
 		do_read();
 	}
 
@@ -152,7 +152,7 @@ namespace node
         //
         //  update state
         //
-        state_ = STATE_SHUTDOWN_;
+        state_ = state::SHUTDOWN_;
 
 		//
 		//  close socket
@@ -173,7 +173,7 @@ namespace node
 
     bool bus::is_online() const
 	{
-		return state_ == STATE_AUTHORIZED_;
+		return state_ == state::AUTHORIZED_;
 	}
 
 	void bus::do_read()
@@ -181,7 +181,7 @@ namespace node
         //
         //  do nothing during shutdown
         //
-        if (state_ == STATE_SHUTDOWN_)  return;
+        if (state_ == state::SHUTDOWN_)  return;
 
 		auto self(this->shared_from_this());
 		socket_.async_read_some(boost::asio::buffer(buffer_),
@@ -202,7 +202,7 @@ namespace node
 			else if (ec != boost::asio::error::operation_aborted)
 			{
 				CYNG_LOG_WARNING(logger_, "cluster read <" << ec << ':' << ec.message() << '>');
-				state_ = STATE_ERROR_;
+				state_ = state::ERROR_;
 				remote_tag_ = boost::uuids::nil_uuid();
 				remote_version_ = cyng::version(0, 0);
 				//lag_ = std::chrono::microseconds::max();
@@ -210,7 +210,7 @@ namespace node
 				//
 				//	slot [1] - go offline
 				//
-				mux_.post(task_, 1, cyng::tuple_t());
+				mux_.post(task_, 1, cyng::tuple_t{});
 
 			}
 			else

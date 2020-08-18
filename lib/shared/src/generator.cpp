@@ -229,6 +229,23 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_update_client_count(std::uint64_t count)
+	{
+		//tbl_cluster->modify(cyng::table::key_generator(cache_.get_tag()), cyng::param_factory("clients", tbl_cluster->size()), tag);
+
+		cyng::vector_t vec{};
+		return vec << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("db.req.modify.by.param"
+				, "_Cluster"
+				, cyng::vector_generator_unwinded({ cyng::code::IDENT })
+				, cyng::param_factory("clients", count)
+				, 0u
+				, cyng::code::IDENT))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+
+	}
+
 	cyng::vector_t bus_insert_LoRa_uplink(cyng::object tp
 		, cyng::mac64 devEUI
 		, std::uint16_t FPort

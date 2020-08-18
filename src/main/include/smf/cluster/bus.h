@@ -60,6 +60,9 @@ namespace node
 		 */
 		std::array<char, NODE::PREFERRED_BUFFER_SIZE> buffer_;
 
+		/**
+		 * task multiplexer 
+		 */
 		cyng::async::mux& mux_;
 
 		/**
@@ -67,7 +70,10 @@ namespace node
 		 */
 		cyng::logging::log_ptr logger_;
 
-		const std::size_t task_;
+		/**
+		 * task to signal a change in the bus state
+		 */
+		std::size_t const task_;
 
 		/**
 		 * Parser for binary cyng data stream (from cluster master)
@@ -83,11 +89,11 @@ namespace node
 		/**
 		 * session state
 		 */
-		enum {
-			STATE_ERROR_,
-			STATE_INITIAL_,
-			STATE_AUTHORIZED_,
-			STATE_SHUTDOWN_,
+		enum class state {
+			ERROR_,
+			INITIAL_,
+			AUTHORIZED_,
+			SHUTDOWN_,
 		} state_;
 
 		/**

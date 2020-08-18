@@ -502,12 +502,12 @@ namespace node
 				});
 		}
 
-		else if (boost::algorithm::equals(name, "TBroker")) {
+		else if (boost::algorithm::equals(name, "_Broker")) {
 			//
 			//	Define a list of all servers to listen for incoming raw wireless
 			//	M-Bus data
 			//
-			return cyng::table::make_meta_table<1, 3>("TBroker",
+			return cyng::table::make_meta_table<1, 3>("_Broker",
 				{ "pk"			//	[uuid] tag from node (cluster session tag)
 				, "address"		//	[ip] incoming/outgoing IP connection
 				, "port"		//	[u16] incoming/outgoing IP connection

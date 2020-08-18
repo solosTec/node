@@ -274,52 +274,55 @@ namespace node
 			, cyng::store::write_access("_TimeSeries"));
 
 		//
-		//	cluster table
+		//	clean up cluster table (CSV tasks)
 		//
-		std::string node_class;
-		cache_.write_tables("_Cluster", "_CSV", [&](cyng::store::table* tbl_cluster, cyng::store::table* tbl_csv)->void {
 
-			//
-			//	get node class
-			//
-			const auto key = cyng::table::key_generator(cluster_tag_);
-			const auto rec = tbl_cluster->lookup(key);
-			if (!rec.empty())
-			{
-				//
-				//	get node class
-				//
-				node_class = cyng::value_cast<std::string>(rec["class"], "");
+		auto node_class = cleanup_cluster_table(ctx.tag());
 
-				CYNG_LOG_INFO(logger_, "cluster member "
-					<< node_class
-					<< '@'
-					<< cluster_tag_
-					<< " will be removed");
+		//
+		//	clean up CSV task
+		//
+		if (boost::algorithm::equals(node_class, "csv")) {
 
-				//
-				//	remove from cluster table
-				//
-				tbl_cluster->erase(key, ctx.tag());
-			}
-
-
-			//
-			//	update master record
-			//
-			tbl_cluster->modify(cyng::table::key_generator(cache_.get_tag()), cyng::param_factory("clients", tbl_cluster->size()), ctx.tag());
-
-			//
-			//	check CSV table
-			//
-			if (boost::algorithm::equals(node_class, "csv")) {
+			cache_.write_table("_CSV", [&](cyng::store::table* tbl_csv)->void {
 
 				//
 				//	remove from CSV table (same key)
 				//
+				auto const key = cyng::table::key_generator(cluster_tag_);
 				tbl_csv->erase(key, ctx.tag());
-			}
-		});
+			});
+		}
+
+		//
+		//	clean up "EN13757-4 wM-Bus broker" broker
+		//
+		if (boost::algorithm::equals(node_class, "EN13757-4 wM-Bus broker")) {
+
+			cache_.write_table("_Broker", [&](cyng::store::table* tbl_broker)->void {
+
+				//
+				//	remove from TBroker table (same key)
+				//
+				auto const key = cyng::table::key_generator(cluster_tag_);
+				tbl_broker->erase(key, ctx.tag());
+			});
+		}
+
+		//
+		//	clean up "IEC-62056-21:2002 broker" broker
+		//
+		if (boost::algorithm::equals(node_class, "IEC-62056-21:2002 broker")) {
+
+			cache_.write_table("_Broker", [&](cyng::store::table* tbl_broker)->void {
+
+				//
+				//	remove from TBroker table (same key)
+				//
+				auto const key = cyng::table::key_generator(cluster_tag_);
+				tbl_broker->erase(key, ctx.tag());
+			});
+		}
 
 		//
 		//	emit a system message
@@ -336,6 +339,45 @@ namespace node
 			, ss.str()
 			, ctx.tag());
 
+	}
+
+	std::string session::cleanup_cluster_table(boost::uuids::uuid tag)
+	{
+		std::string node_class;
+		cache_.write_table("_Cluster", [&](cyng::store::table* tbl_cluster)->void {
+
+			//
+			//	get node class
+			//
+			auto const key = cyng::table::key_generator(cluster_tag_);
+			auto const rec = tbl_cluster->lookup(key);
+			if (!rec.empty())
+			{
+				//
+				//	get node class
+				//
+				node_class = cyng::value_cast<std::string>(rec["class"], "");
+
+				CYNG_LOG_INFO(logger_, "cluster member "
+					<< node_class
+					<< '@'
+					<< cluster_tag_
+					<< " will be removed");
+
+				//
+				//	remove from cluster table
+				//
+				tbl_cluster->erase(key, tag);
+			}
+
+			//
+			//	update master record
+			//
+			tbl_cluster->modify(cyng::table::key_generator(cache_.get_tag()), cyng::param_factory("clients", tbl_cluster->size()), tag);
+
+		});
+
+		return node_class;
 	}
 
 	void session::bus_req_login(cyng::context& ctx)

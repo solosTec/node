@@ -10,6 +10,7 @@
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
+#include <cyng/vm/controller_fwd.h>
 
 namespace node
 {
@@ -19,6 +20,7 @@ namespace node
 	public:
 		server(cyng::io_service_t&
 			, cyng::logging::log_ptr
+			, cyng::controller&
 			, boost::asio::ip::tcp::endpoint ep);
 
 	public:
@@ -30,9 +32,9 @@ namespace node
 
 	private:
 		boost::asio::ip::tcp::acceptor acceptor_;
-		//cyng::io_service_t& ios_;
 		cyng::logging::log_ptr logger_;
-		//boost::asio::ip::tcp::endpoint const ep_;
+		cyng::controller& vm_;
+		std::uint64_t session_counter_;
 	};
 	
 }
