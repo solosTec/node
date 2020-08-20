@@ -47,3 +47,4 @@ target_link_libraries(dashs
 	$<$<AND:$<VERSION_LESS:${CMAKE_CXX_COMPILER_VERSION},9.0>,$<CXX_COMPILER_ID:Clang>>:stdc++fs>   
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
+
