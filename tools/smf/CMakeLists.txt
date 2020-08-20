@@ -16,5 +16,6 @@ target_link_libraries(smf
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;readline>"
-    $<$<AND:$<CXX_COMPILER_VERSION:8.2.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
+	$<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
+	$<$<AND:$<VERSION_LESS:${CMAKE_CXX_COMPILER_VERSION},9.0>,$<CXX_COMPILER_ID:Clang>>:stdc++fs>   
 )
