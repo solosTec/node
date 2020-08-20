@@ -469,15 +469,6 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/main/include/smf" # source directory
         PATTERN "*hpp"
 )
 
-set(NODE_TARGET_LIST "smf_cluster;smf_protocol_hci")	
-
-install(TARGETS ${NODE_TARGET_LIST} 
-    EXPORT CyngTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib/static
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
 
 #
 # CPack configuration
