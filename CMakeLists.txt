@@ -506,10 +506,10 @@ export(EXPORT SMFTargets
   FILE "${CMAKE_CURRENT_BINARY_DIR}/node/NodeTargets.cmake"
   NAMESPACE SMF::
 )
-configure_file(cmake/NodeConfig.cmake
-    "${CMAKE_CURRENT_BINARY_DIR}/node/NodeConfig.cmake"
-    COPYONLY
-)
+# configure_file(cmake/NodeConfig.cmake
+#     "${CMAKE_CURRENT_BINARY_DIR}/node/NodeConfig.cmake"
+#     COPYONLY
+# )
 
 set(ConfigPackageLocation lib/cmake/node)
 

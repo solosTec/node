@@ -39,8 +39,8 @@ set (node_ipt_stress_tasks
 )
 
 if (UNIX)
-	list(APPEND node_ipt_stress_shared src/main/include/smf/shared/write_pid.h)
-	list(APPEND node_ipt_stress_shared nodes/shared/sys/write_pid.cpp)
+	list(APPEND node_ipt_stress_shared ${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/write_pid.h)
+	list(APPEND node_ipt_stress_shared ${CMAKE_SOURCE_DIR}/nodes/shared/sys/write_pid.cpp)
 endif(UNIX)
 
 set (node_ipt_stress_res
