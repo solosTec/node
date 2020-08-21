@@ -31,6 +31,7 @@ To build the SMF first install the [CYNG](https://github.com/solosTec/cyng) libr
 #!shell
 
 git clone https://github.com/solosTec/node.git
+git checkout v0.8
 mkdir build/x64 && cd build/x64
 cmake -DNODE_BUILD_TEST:BOOL=ON -DNODE_CROSS_COMPILE:bool=OFF -DNODE_SSL_SUPPORT:BOOL=ON -DOPENSSL_ROOT_DIR:PATH=$HOME/projects/install/x64/openssl -DBOOST_ROOT:PATH=$HOME/projects/install/x64/boost -DDCYNG_ROOT:PATH=$HOME/projects/cyng -DCYNG_ROOT_BUILD_SUBDIR:STRING=build/x64 -DCRYPT_ROOT:PATH=$HOME/projects/crypto -DCMAKE_BUILD_TYPE=Debug ../..
 sudo apt-get install libreadline-dev
@@ -44,6 +45,7 @@ sudo make install
 #!shell
 
 git clone https://github.com/solosTec/node.git
+git checkout v0.8
 mkdir build/v5te && cd build/v5te
 cmake -DNODE_BUILD_TEST:BOOL=OFF -DNODE_CROSS_COMPILE:BOOL=ON -DNODE_SSL_SUPPORT:BOOL=ON -DBOOST_ROOT:PATH=$HOME/projects/install/x64/boost -DDCYNG_ROOT:PATH=$HOME/projects/cyng -DCYNG_ROOT_BUILD_SUBDIR:STRING=build/v5te -DCRYPT_ROOT:PATH=$HOME/projects/crypto -DCMAKE_TOOLCHAIN_FILE=../../../cross-oecp.cmake -DCMAKE_BUILD_TYPE=Release ../..
 make -j4 all
@@ -54,6 +56,7 @@ make -j4 all
 
 ```
 git clone https://github.com/solosTec/node.git
+git checkout v0.8
 mkdir build 
 cd build
 cmake -DNODE_BUILD_TEST:bool=ON -G "Visual Studio 15 2017" -A x64 ..
