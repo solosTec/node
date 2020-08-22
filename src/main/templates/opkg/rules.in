@@ -45,11 +45,11 @@ install: build
 	install -m 755 @CRYPT_BUILD@/libcrypto.so $(INSTALLDIR)/usr/local/lib
 
 	# maybe another path is required to build in a docker environment
-	install -m 755 @Boost_LIBRARY_DIR@/libboost_filesystem.so.1.74.0 $(INSTALLDIR)/usr/local/lib/libboost_filesystem.so.1.74.0
-	install -m 755 @Boost_LIBRARY_DIR@/libboost_program_options.so.1.74.0 $(INSTALLDIR)/usr/local/lib/libboost_program_options.so.1.74.0
-	install -m 755 @Boost_LIBRARY_DIR@/libboost_random.so.1.74.0 $(INSTALLDIR)/usr/local/lib/libboost_random.so.1.74.0
-	install -m 755 @Boost_LIBRARY_DIR@/libboost_system.so.1.74.0 $(INSTALLDIR)/usr/local/lib/libboost_system.so.1.74.0
-	install -m 755 @Boost_LIBRARY_DIR@/libboost_thread.so.1.74.0 $(INSTALLDIR)/usr/local/lib/libboost_thread.so.1.74.0
+	install -m 755 @Boost_LIBRARY_DIR_RELEASE@/libboost_filesystem.so.1.74.0 $(INSTALLDIR)/usr/local/lib/libboost_filesystem.so.1.74.0
+	install -m 755 @Boost_LIBRARY_DIR_RELEASE@/libboost_program_options.so.1.74.0 $(INSTALLDIR)/usr/local/lib/libboost_program_options.so.1.74.0
+	install -m 755 @Boost_LIBRARY_DIR_RELEASE@/libboost_random.so.1.74.0 $(INSTALLDIR)/usr/local/lib/libboost_random.so.1.74.0
+	install -m 755 @Boost_LIBRARY_DIR_RELEASE@/libboost_system.so.1.74.0 $(INSTALLDIR)/usr/local/lib/libboost_system.so.1.74.0
+	install -m 755 @Boost_LIBRARY_DIR_RELEASE@/libboost_thread.so.1.74.0 $(INSTALLDIR)/usr/local/lib/libboost_thread.so.1.74.0
 
 	install -d $(INSTALLDIR)/usr/local/sbin
 #	install -m 755 @PROJECT_BINARY_DIR@/segw $(INSTALLDIR)/usr/local/sbin
