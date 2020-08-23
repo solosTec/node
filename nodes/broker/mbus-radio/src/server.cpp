@@ -10,6 +10,7 @@
 #include <smf/cluster/generator.h>
 
 #include <cyng/vm/controller.h>
+#include <cyng/vm/context.h>
 #include <cyng/io/serializer.h>
 
 namespace node
