@@ -18,7 +18,7 @@
 
 ## How do I get set up? ##
 
-* Buildsystem is based on [cmake](http://www.cmake.org/) >= 3.5
+* Buildsystem is based on [cmake](http://www.cmake.org/) >= 3.13
 * Download or clone from [github](https://github.com/solosTec/node.git)
 
 To build the SMF first install the [CYNG](https://github.com/solosTec/cyng) library, then run:
@@ -26,6 +26,20 @@ To build the SMF first install the [CYNG](https://github.com/solosTec/cyng) libr
 
 ### on Linux ###
 #### native build ####
+
+You may need to update CMake to version 3.13 first
+
+```
+#!shell
+wget https://github.com/Kitware/CMake/releases/download/v3.18.2/cmake-3.18.2.tar.gz
+tar -xvjf cmake-3.18.2.tar.gz
+cd cmake-3.18.2.tar.gz
+./configure
+make 
+sudo make install
+```
+
+Then start CMake:
 
 ```
 #!shell
@@ -39,6 +53,7 @@ make -j4 all
 sudo make install
 
 ```
+
 #### OECP build ####
 
 ```
