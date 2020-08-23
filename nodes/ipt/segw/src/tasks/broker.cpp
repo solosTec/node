@@ -52,8 +52,14 @@ namespace node
 		//
 		//	login message
 		//
+		reset_write_buffer();
+	}
+
+	void broker::reset_write_buffer()
+	{
+		buffer_write_.clear();
 		buffer_write_.emplace_back(cyng::buffer_t(account_.begin(), account_.end()));
-		buffer_write_.emplace_back(cyng::buffer_t(1, '@'));
+		buffer_write_.emplace_back(cyng::buffer_t(1, ':'));
 		buffer_write_.emplace_back(cyng::buffer_t(pwd_.begin(), pwd_.end()));
 		buffer_write_.emplace_back(cyng::buffer_t(1, '\n'));
 	}
@@ -168,7 +174,12 @@ namespace node
 						<< " <"
 						<< base_.get_class_name()
 						<< "> "
+						<< host_
+						<< ':'
+						<< port_
+						<< ' '
 						<< ec.message());
+
 				}
 		});
 	}
@@ -204,7 +215,14 @@ namespace node
 						<< " <"
 						<< base_.get_class_name()
 						<< "> "
+						<< host_
+						<< ':'
+						<< port_
+						<< ' '
 						<< ec.message());
+
+					reset_write_buffer();
+
 				}
 
 			});
@@ -229,42 +247,8 @@ namespace node
 				{
 					socket_.close();
 				}
-			});
+		});
 	}
-
-	//bool broker::connect()
-	//{
-	//	//
-	//	//	try to connect
-	//	//
-	//	CYNG_LOG_INFO(logger_, "initialize task #"
-	//		<< base_.get_id()
-	//		<< " <"
-	//		<< base_.get_class_name()
-	//		<< "> open connection to "
-	//		<< host_
-	//		<< ':'
-	//		<< port_);
-
-	//	try {
-	//		stream_.connect(host_, std::to_string(port_));
-	//		if (stream_.fail())
-	//		{
-	//			stream_.socket().close();
-	//			return false;
-	//		}
-	//		return true;
-	//	}
-	//	catch (std::exception const& ex) {
-	//		CYNG_LOG_INFO(logger_, "initialize task #"
-	//			<< base_.get_id()
-	//			<< " <"
-	//			<< base_.get_class_name()
-	//			<< "> open connection failed "
-	//			<< ex.what());
-	//	}
-	//	return false;
-	//}
 
 }
 

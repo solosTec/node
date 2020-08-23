@@ -12,6 +12,8 @@
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller_fwd.h>
 
+#include <boost/uuid/uuid_generators.hpp>
+
 namespace node
 {
 
@@ -35,6 +37,7 @@ namespace node
 		cyng::logging::log_ptr logger_;
 		cyng::controller& vm_;
 		std::uint64_t session_counter_;
+		boost::uuids::random_generator uuid_gen_;
 	};
 	
 }

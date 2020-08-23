@@ -56,12 +56,15 @@ namespace node
 		 */
 		cyng::continuation process(cyng::buffer_t, std::size_t);
 
+
+	private:
 		/**
 		 * connect to server
 		 */
 		void do_connect(const boost::asio::ip::tcp::resolver::results_type& endpoints);
 		void do_read();
 		void do_write();
+		void reset_write_buffer();
 
 	private:
 		cyng::async::base_task& base_;

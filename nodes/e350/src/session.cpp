@@ -371,25 +371,6 @@ namespace node
 						, "plain" //	login scheme
 						, bag));
 				}
-				//if (use_global_pwd_) {
-				//	bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-				//		, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
-				//		, global_pwd_	//	fixed password
-				//		, "plain" //	login scheme
-				//		, bag));
-				//}
-				//else {
-
-				//	CYNG_LOG_INFO(logger_, "use login credentials: " << cyng::io::to_str(frame));
-
-				//	bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-				//		, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
-				//		, cyng::value_cast<std::string>(frame.at(4), "")	//	as username and password
-				//		, "plain" //	login scheme
-				//		, bag));
-
-				//}
-
 			}
 			else
 			{

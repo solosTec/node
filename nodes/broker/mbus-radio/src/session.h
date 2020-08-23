@@ -24,6 +24,7 @@ namespace node
 	public:
 		session(boost::asio::ip::tcp::socket socket
 			, cyng::logging::log_ptr
+			, cyng::controller&
 			, cyng::controller&);
 		virtual ~session();
 
@@ -38,7 +39,13 @@ namespace node
 	private:
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logging::log_ptr logger_;
-		cyng::controller& vm_;	//!< cluster bus VM
+		cyng::controller& cluster_;	//!< cluster bus VM
+		cyng::controller& vm_;	//!< session VM
+
+		/**
+		 * session tag
+		 */
+		//boost::uuids::uuid const tag_;
 
 		/**
 		 * Buffer for incoming data.

@@ -683,7 +683,7 @@ namespace node
 				ctx.queue(cyng::generate_invoke("log.msg.warning"
 					, "client session "
 					, tag
-					, " not found"));
+					, " cannot be removed because it does not exist"));
 			}
 
 		}	, cyng::store::write_access("_Session")

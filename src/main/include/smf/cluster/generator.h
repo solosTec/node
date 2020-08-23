@@ -278,9 +278,13 @@ namespace node
 		, std::string const& channel_name
 		, std::size_t);
 
-	/**
-	 * client management
-	 */
+	//
+	// client management
+	//
+
+	 /**
+	  * client login
+	  */
 	cyng::vector_t client_req_login(boost::uuids::uuid tag
 		, std::string const& name
 		, std::string const& pwd
@@ -295,6 +299,9 @@ namespace node
 		, std::uint32_t query
 		, cyng::param_map_t const& bag);
 
+	/**
+	 * client is gone (logout)
+	 */
 	cyng::vector_t client_req_close(boost::uuids::uuid tag, int);
 	cyng::vector_t client_res_close(boost::uuids::uuid tag, std::uint64_t seq, bool success);
 
