@@ -8,3 +8,4 @@ target_include_directories(smf_protocol_modem
 		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
 		${CYNG_INCLUDE_DIRS}
 )
+

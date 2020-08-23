@@ -4,23 +4,23 @@
 cmake_minimum_required (VERSION 3.5)
 
 
-#                                                
-#                                **              
-#                                 **             
-#                                 **             
-#                                 **             
-#                   ****          **             
-#   ***  ****      * ***  *   *** **      ***    
-#    **** **** *  *   ****   *********   * ***   
-#     **   ****  **    **   **   ****   *   ***  
-#     **    **   **    **   **    **   **    *** 
-#     **    **   **    **   **    **   ********  
-#     **    **   **    **   **    **   *******   
-#     **    **   **    **   **    **   **        
-#     **    **    ******    **    **   ****    * 
-#     ***   ***    ****      *****      *******  
-#      ***   ***              ***        *****   
-#                                                      
+#
+#                                **
+#                                 **
+#                                 **
+#                                 **
+#                   ****          **
+#   ***  ****      * ***  *   *** **      ***
+#    **** **** *  *   ****   *********   * ***
+#     **   ****  **    **   **   ****   *   ***
+#     **    **   **    **   **    **   **    ***
+#     **    **   **    **   **    **   ********
+#     **    **   **    **   **    **   *******
+#     **    **   **    **   **    **   **
+#     **    **    ******    **    **   ****    *
+#     ***   ***    ****      *****      *******
+#      ***   ***              ***        *****
+#
 # get timestamp and build a patch level from the year and
 # the day of the year. This is a unique number to distinguish
 # different builds
@@ -32,7 +32,7 @@ math(EXPR PATCH_LEVEL "((${THIS_YEAR} - 2018) * 1000) + ${PATCH_LEVEL}")
 #
 # set project name/properties
 #
-project(NODE 
+project(NODE
 	VERSION 0.8.${PATCH_LEVEL}.1
 	LANGUAGES CXX C
 	DESCRIPTION "Smart Metering Framework")
@@ -42,23 +42,23 @@ project(NODE
 set (${PROJECT_NAME}_COPYRIGHT_YEAR ${THIS_YEAR})
 
 
-message(STATUS "**                                                  ") 
-message(STATUS "**                                **                ")  
-message(STATUS "**                                 **               ")  
-message(STATUS "**                                 **               ")  
-message(STATUS "**                                 **               ")  
-message(STATUS "**                   ****          **               ")  
-message(STATUS "**   ***  ****      * ***  *   *** **      ***      ")  
-message(STATUS "**    **** **** *  *   ****   *********   * ***     ")  
-message(STATUS "**     **   ****  **    **   **   ****   *   ***    ")  
-message(STATUS "**     **    **   **    **   **    **   **    ***   ")  
-message(STATUS "**     **    **   **    **   **    **   ********    ")  
-message(STATUS "**     **    **   **    **   **    **   *******     ")  
-message(STATUS "**     **    **   **    **   **    **   **          ")  
-message(STATUS "**     **    **    ******    **    **   ****    *   ")  
-message(STATUS "**     ***   ***    ****      *****      *******    ")  
-message(STATUS "**      ***   ***              ***        *****     ")  
-message(STATUS "**")                                        
+message(STATUS "**                                                  ")
+message(STATUS "**                                **                ")
+message(STATUS "**                                 **               ")
+message(STATUS "**                                 **               ")
+message(STATUS "**                                 **               ")
+message(STATUS "**                   ****          **               ")
+message(STATUS "**   ***  ****      * ***  *   *** **      ***      ")
+message(STATUS "**    **** **** *  *   ****   *********   * ***     ")
+message(STATUS "**     **   ****  **    **   **   ****   *   ***    ")
+message(STATUS "**     **    **   **    **   **    **   **    ***   ")
+message(STATUS "**     **    **   **    **   **    **   ********    ")
+message(STATUS "**     **    **   **    **   **    **   *******     ")
+message(STATUS "**     **    **   **    **   **    **   **          ")
+message(STATUS "**     **    **    ******    **    **   ****    *   ")
+message(STATUS "**     ***   ***    ****      *****      *******    ")
+message(STATUS "**      ***   ***              ***        *****     ")
+message(STATUS "**")
 
 
 #
@@ -212,7 +212,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 	#
 	# gnu C++ select dialect
 	#
-	
+
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS  "4.7")
 		set(CMAKE_CXX_STANDARD 11)
 		message(STATUS "** C++ support     : C++11")
@@ -226,31 +226,31 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 		message(STATUS "** C++ support     : C++17")
 	else()
     # partly since 8.0
-		if(${CMAKE_VERSION} VERSION_LESS "3.12.4") 
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a")			
+		if(${CMAKE_VERSION} VERSION_LESS "3.12.4")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a")
 			message(STATUS "** C++ support     : C++2a")
 		else()
 			set(CMAKE_CXX_STANDARD 20 CACHE STRING "C++ standard to be used")
 			message(STATUS "** C++ support     : C++2a")
 		endif()
-		
+
 		#	suppress messages about ABI incompatibilities
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")	
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
 	endif()
-	
+
 	# only shared libraries
 	set(GLOBAL_LIBRARY_TYPE SHARED)
 
 	# since  CMake 3.1.0
 	set(THREADS_PREFER_PTHREAD_FLAG ON)
 	find_package(Threads REQUIRED)
-	
+
 elseif(MSVC)
 
 	#
 	# Microsoft C++
 	#
-	
+
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "18.0")
 	# 	prior Visual Studio 2013
 		message(FATAL_ERROR "Insufficient MSVC version")
@@ -262,9 +262,9 @@ elseif(MSVC)
 	#
 	#	Target is Windows 10
 	#
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /bigobj /std:c++latest /MP")	
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /bigobj /std:c++latest /MP")
 	add_compile_definitions(_WIN32_WINNT=0x0A00 _SCL_SECURE_NO_WARNINGS _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE BOOST_BIND_NO_PLACEHOLDERS)
-	
+
 	#
 	# help CMake to find OpenSSL
 	#
@@ -275,13 +275,13 @@ elseif(MSVC)
 else()
 
 	message( FATAL_ERROR "Unknown or missing compiler: ${CMAKE_CXX_COMPILER_ID}" )
-	
+
 endif()
 
 #
 #	add NODE_ADDRESS_MODEL=N (since CMake 3.12.4)
 #
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.4") 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.4")
 	add_compile_definitions(${PROJECT_NAME}_ADDRESS_MODEL=${${PROJECT_NAME}_ADDRESS_MODEL})
 endif()
 
@@ -308,29 +308,29 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
     if(OPENSSL_FOUND)
 
         add_definitions(-D${PROJECT_NAME}_SSL_INSTALLED)
-        
+
     #	message(STATUS "** openSSL Found         : ${OPENSSL_FOUND}")
         message(STATUS "** openSSL Version       : ${OPENSSL_VERSION}")
         message(STATUS "** openSSL Include       : ${OPENSSL_INCLUDE_DIR}")
         message(STATUS "** openSSL crypto library: ${OPENSSL_CRYPTO_LIBRARY}")
         message(STATUS "** openSSL SSL library   : ${OPENSSL_SSL_LIBRARY}")
         message(STATUS "** openSSL Libraries     : ${OPENSSL_LIBRARIES}")
-    
+
         set(${PROJECT_NAME}_SSL_VERSION ${OPENSSL_VERSION})
     #
     else()
             set(${PROJECT_NAME}_SSL_VERSION "unknown")
     endif()
-    
+
 else()
 
     message(WARNING "** no SSL support")
-    
+
 endif()
 
 #
 # libpugixml-dev (v1.9)
-# On Windows set CMake variables PugiXML_INCLUDE_DIRS and PugiXML_LIBRARIES 
+# On Windows set CMake variables PugiXML_INCLUDE_DIRS and PugiXML_LIBRARIES
 #
 # Included as 3party software
 #
@@ -350,7 +350,7 @@ configure_file (
 #
 # minimal test program
 # hello world!
-# cross compile with 
+# cross compile with
 # arm-linux-gnueabihf-g++ -O3 -g3 -Wall -fPIC -o "main.o" -c "main.cpp"
 # arm-linux-gnueabihf-g++ -o "hello" main.o
 #
@@ -432,7 +432,7 @@ include(GenerateDoxygenDoc)
 # target_link_libraries(unit_test
 # 	cyng_core cyng_io cyng_async cyng_log cyng_store cyng_vm cyng_sql
 # 	${Boost_LIBRARIES})
-# 	
+#
 # # BOOST_TEST_DYN_LINK is required to build a main() function
 # set_property(
 # 	TARGET unit_test
@@ -459,8 +459,78 @@ if(${PROJECT_NAME}_CROSS_COMPILE)
 	configure_file (
 		  "${PROJECT_SOURCE_DIR}/src/main/templates/opkg/rules.in"
 		  "${PROJECT_BINARY_DIR}/opkg/rules")
-		  
+
 endif()
+
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/main/include/smf" # source directory
+        DESTINATION "include" # target directory
+        FILES_MATCHING # install only matched files
+        PATTERN "*.h"
+        PATTERN "*hpp"
+)
+
+set(NODE_TARGET_LIST "smf_cluster;smf_protocol_hci;smf_http_srv;smf_https_srv;smf_protocol_iec;smf_protocol_imega;smf_info;smf_bus_ipt;smf_protocol_ipt;smf_lora;smf_protocol_mbus;smf_protocol_modem;smf_bus_serial;smf_bus_sml;smf_protocol_sml;smf_protocol_telnet;dash;dashs;broker_iec;broker_mbus_radio;e350;collector;emitter;ipt;ipts;segw;store;lora;master;modem;setup;csv")
+
+if(${PROJECT_NAME}_SSL_SUPPORT)
+    list(APPEND "lora" NODE_TARGET_LIST)
+    list(APPEND "admin" NODE_TARGET_LIST)
+endif()
+if(MSVC)
+    list(APPEND "mqtt" NODE_TARGET_LIST)
+endif(MSVC)
+
+list(LENGTH NODE_TARGET_LIST NODE_TARGET_LIST_SIZE)
+message(STATUS "** Target list [${NODE_TARGET_LIST_SIZE}] : ${NODE_TARGET_LIST}")
+
+install(TARGETS ${NODE_TARGET_LIST}
+    EXPORT SMFTargets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib/static
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include
+)
+
+#
+# Packaging
+# see https://cliutils.gitlab.io/modern-cmake/chapters/install/installing.html
+#
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/node/ConfigVersion.cmake"
+  VERSION "${PROJECT_VERSION}"
+  COMPATIBILITY AnyNewerVersion
+)
+
+export(EXPORT SMFTargets
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/node/NodeTargets.cmake"
+  NAMESPACE SMF::
+)
+# configure_file(cmake/NodeConfig.cmake
+#     "${CMAKE_CURRENT_BINARY_DIR}/node/NodeConfig.cmake"
+#     COPYONLY
+# )
+
+set(ConfigPackageLocation lib/cmake/node)
+
+# install(EXPORT SMFTargets
+#   FILE
+#     NodeTargets.cmake
+#   NAMESPACE
+#     Upstream::
+#   DESTINATION
+#     ${ConfigPackageLocation}
+# )
+
+install(
+  FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/node/NodeTargets.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/node/ConfigVersion.cmake"
+  DESTINATION
+    ${ConfigPackageLocation}
+  COMPONENT
+    Devel
+)
 
 #
 # CPack configuration
@@ -480,9 +550,24 @@ set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGE_ICON ${PROJECT_SOURCE_DIR}/logo.ico)
 
 if(UNIX)
-#	set(CPACK_PACKAGING_INSTALL_PREFIX "/opt")
-	set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-	set(CPACK_GENERATOR "RPM")
+
+    if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+        if(EXISTS "/etc/issue")
+            file(READ "/etc/issue" LINUX_ISSUE)
+
+            if(LINUX_ISSUE MATCHES "SUSE")
+                #set(CPACK_PACKAGING_INSTALL_PREFIX "/opt")
+                set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+                set(CPACK_GENERATOR "RPM")
+            endif(LINUX_ISSUE MATCHES "SUSE")
+
+            if(LINUX_ISSUE MATCHES "Ubuntu")
+                set(CPACK_GENERATOR "DEB")
+            endif(LINUX_ISSUE MATCHES "Ubuntu")
+
+        endif(EXISTS "/etc/issue")
+    endif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+
 elseif(WIN32)
 
 	set(CPACK_GENERATOR "NSIS64")
@@ -492,8 +577,6 @@ elseif(WIN32)
 	set(CPACK_NSIS_MODIFY_PATH ON)
 	set(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.solostec.com")
 
-else()
-	set(CPACK_GENERATOR "DEB")
 endif()
 
 

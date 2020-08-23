@@ -12,5 +12,5 @@ if(${PROJECT_NAME}_SSL_SUPPORT)
 			${OPENSSL_INCLUDE_DIR}
 			${CRYPT_INCLUDE_DIR}
 	)
-	
+        
 endif()

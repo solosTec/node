@@ -83,6 +83,7 @@ if(NOT CYNG_FOUND)
          HINTS
             "${CYNG_ROOT_DEV}/build"
             "${CYNG_ROOT_DEV}/build/x64"
+            "${CYNG_ROOT_DEV}/build/v5te"
             /usr/include/
             /usr/local/include/
         DOC 

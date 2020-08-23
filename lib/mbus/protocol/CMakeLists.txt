@@ -10,5 +10,3 @@ target_include_directories(smf_protocol_mbus
 		${CRYPT_INCLUDE_DIR}
 		${OPENSSL_INCLUDE_DIR}
 )
-
-
