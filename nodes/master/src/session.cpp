@@ -101,6 +101,7 @@ namespace node
 		vm_.register_function("bus.insert.msg", 2, std::bind(&session::bus_insert_msg, this, std::placeholders::_1));
 		vm_.register_function("bus.req.push.data", 7, std::bind(&session::bus_req_push_data, this, std::placeholders::_1));
 		vm_.register_function("bus.insert.LoRa.uplink", 0, std::bind(&session::bus_insert_lora_uplink, this, std::placeholders::_1));
+		vm_.register_function("bus.insert.wMBus.uplink", 0, std::bind(&session::bus_insert_wmbus_uplink, this, std::placeholders::_1));
 
 		//
 		//	statistical data
@@ -1137,6 +1138,26 @@ namespace node
 			, std::get<10>(tpl)
 			, ctx.tag());
 	}
+
+	void session::bus_insert_wmbus_uplink(cyng::context& ctx)
+	{
+		const cyng::vector_t frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,			//	[0] origin client tag
+			std::chrono::system_clock::time_point,	//	[1] tp
+			std::string,					//	[9] payload
+			boost::uuids::uuid				//	[10] tag
+		>(frame);
+
+		insert_wmbus_uplink(cache_.db_
+			, std::get<1>(tpl)
+			, std::get<2>(tpl)
+			, std::get<3>(tpl)
+			, ctx.tag());
+	}
+
 
 	void session::bus_req_push_data(cyng::context& ctx)
 	{

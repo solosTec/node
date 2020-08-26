@@ -14,6 +14,7 @@
 #include <cyng/intrinsics/traits.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/value_cast.hpp>
+#include <cyng/numeric_cast.hpp>
 
 #include <algorithm>
 
@@ -265,10 +266,10 @@ namespace node
 		, boost::uuids::uuid origin)
 	{
 		db.access([&](cyng::store::table* tbl, cyng::store::table const* tbl_cfg)->void {
-			auto rec = tbl_cfg->lookup(cyng::table::key_generator("max-messages"));
+			auto rec = tbl_cfg->lookup(cyng::table::key_generator("max-LoRa-records"));
 			const std::uint64_t max_messages = (!rec.empty())
-				? cyng::value_cast<std::uint64_t>(rec["value"], 1000u)
-				: 1000u
+				? cyng::numeric_cast<std::uint64_t>(rec["value"], 500u)
+				: 500u
 				;
 
 			insert_lora_uplink(tbl, tp, devEUI, FPort, FCntUp, ADRbit, MType, FCntDn, customerID, payload, tag, origin, max_messages);
@@ -292,7 +293,7 @@ namespace node
 		, std::uint64_t max_messages)
 	{
 		//
-		//	upper limit is 1000 messages
+		//	upper limit is defined in "max-LoRa-records"
 		//
 		if (tbl->size() > max_messages)
 		{
@@ -322,6 +323,62 @@ namespace node
 		}
 	}
 
+	void insert_wmbus_uplink(cyng::store::db& db
+		, std::chrono::system_clock::time_point tp
+		, std::string const& payload
+		, boost::uuids::uuid tag
+		, boost::uuids::uuid origin)
+	{
+		db.access([&](cyng::store::table* tbl, cyng::store::table const* tbl_cfg)->void {
+			auto rec = tbl_cfg->lookup(cyng::table::key_generator("max-wMBus-records"));
+			const std::uint64_t max_messages = (!rec.empty())
+				? cyng::numeric_cast<std::uint64_t>(rec["value"], 500u)
+				: 500u
+				;
+
+			insert_wmbus_uplink(tbl, tp, payload, tag, origin, max_messages);
+			}, cyng::store::write_access("_wMBusUplink")
+				, cyng::store::read_access("_Config"));
+
+	}
+
+	void insert_wmbus_uplink(cyng::store::table* tbl
+		, std::chrono::system_clock::time_point tp
+		, std::string const& payload
+		, boost::uuids::uuid tag
+		, boost::uuids::uuid origin
+		, std::uint64_t max_messages)
+	{
+		//
+		//	upper limit is defined in "max-wMBus-records"
+		//
+		if (tbl->size() > max_messages)
+		{
+			auto max_rec = tbl->max_record();
+			if (!max_rec.empty()) {
+
+				//	get next message id
+				auto next_idx = cyng::value_cast<std::uint64_t>(max_rec["id"], 0u);
+
+				tbl->insert(cyng::table::key_generator(++next_idx)
+					, cyng::table::data_generator(tp, payload, tag)
+					, 1, origin);
+			}
+
+			//
+			//	remove oldest message (message with the lowest id)
+			//
+			auto min_rec = tbl->min_record();
+			if (!min_rec.empty()) {
+				tbl->erase(min_rec.key(), origin);
+			}
+		}
+		else {
+			tbl->insert(cyng::table::key_generator(static_cast<std::uint64_t>(tbl->size()))
+				, cyng::table::data_generator(tp, payload, tag)
+				, 1, origin);
+		}
+	}
 
 	cyng::table::record connection_lookup(cyng::store::table* tbl, cyng::table::key_type&& key)
 	{
@@ -383,12 +440,13 @@ namespace node
 	/**
 	 * Initialize all used table names
 	 */
-	const std::array<cache::tbl_descr, 20>	cache::tables_ =
+	const std::array<cache::tbl_descr, 22>	cache::tables_ =
 	{
 		tbl_descr{"TDevice", false},
 		tbl_descr{"TGateway", false},
 		tbl_descr{"TLoRaDevice", false},
 		tbl_descr{"TMeter", false},
+		tbl_descr{"TMeterwMBUS", false},
 		tbl_descr{"TLL", false},
 		tbl_descr{"TGUIUser", false},
 		tbl_descr{"TGWSnapshot", false},
@@ -403,6 +461,7 @@ namespace node
 		tbl_descr{"_SysMsg", false},
 		tbl_descr{"_TimeSeries", false},
 		tbl_descr{"_LoRaUplink", false},
+		tbl_descr{"_wMBusUplink", false},
 		tbl_descr{"_CSV", false},
 		tbl_descr{"_Broker", false}	//	broker 
 	};
@@ -674,6 +733,16 @@ namespace node
 	std::uint64_t cache::get_max_messages()
 	{
 		return get_cfg<std::uint64_t>("max-messages", 1000u);
+	}
+
+	std::uint64_t cache::get_max_LoRa_records()
+	{
+		return get_cfg<std::uint64_t>("max-LoRa-records", 500u);
+	}
+
+	std::uint64_t cache::get_max_wMBus_records()
+	{
+		return get_cfg<std::uint64_t>("max-wMBus-records", 500u);
 	}
 
 }

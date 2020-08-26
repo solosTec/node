@@ -33,7 +33,7 @@ namespace node
 		/**
 		 * List of all required tables
 		 */
-		const static std::array<tbl_descr, 2>	tables_;
+		const static std::array<tbl_descr, 3>	tables_;
 	public:
 		db_sync(cyng::logging::log_ptr, cyng::store::db&);
 

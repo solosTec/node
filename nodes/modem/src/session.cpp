@@ -639,7 +639,10 @@ namespace node
 
 				bus_->vm_.async_run(node::client_req_close_connection(ctx.tag()
 					, false //	no shutdown
-					, cyng::param_map_factory("tp-layer", "modem")("origin-tag", ctx.tag())("start", std::chrono::system_clock::now())));
+					, cyng::param_map_factory("tp-layer", "AT")
+					("data-layer", "any")
+					("origin-tag", ctx.tag())
+					("start", std::chrono::system_clock::now())));
 			}
 			else
 			{

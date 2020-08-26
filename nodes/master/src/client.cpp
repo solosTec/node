@@ -183,6 +183,7 @@ namespace node
 								, std::chrono::system_clock::now()
 								, boost::uuids::nil_uuid()
 								, cyng::value_cast<std::string>(dom.get("tp-layer"), "tcp/ip")
+								, cyng::value_cast<std::string>(dom.get("data-layer"), "any")
 								, 0u, 0u, 0u)
 							, 1
 							, tag))
@@ -206,6 +207,8 @@ namespace node
 								<< tbl_session->size()
 								<< ", tp-layer: "
 								<< cyng::value_cast<std::string>(dom.get("tp-layer"), "tcp/ip")
+								<< ", data-layer: "
+								<< cyng::value_cast<std::string>(dom.get("data-layer"), "any")
 								<< ", local-ep: "
 								<< cyng::value_cast(dom.get("local-ep"), boost::asio::ip::tcp::endpoint())
 								<< ", remote-ep: "
@@ -1050,8 +1053,8 @@ namespace node
 						, cyng::table::data_generator(caller_rec["name"]	//	caller
 							, callee_rec["name"]	//	callee
 							, local	// local/distinguished
-							, caller_rec["layer"]	//	protocol layer of caller
-							, callee_rec["layer"]	//	protocol layer of callee
+							, caller_rec["pLayer"]	//	protocol layer of caller
+							, callee_rec["pLayer"]	//	protocol layer of callee
 							, 0u	//	data throughput
 							, std::chrono::system_clock::now())	//	start time
 						, 1, tag))

@@ -9,10 +9,13 @@
 #include <smf/cluster/generator.h>
 
 #include <cyng/io/io_bytes.hpp>
+#include <cyng/io/io_buffer.h>
 #include <cyng/io/hex_dump.hpp>
+#include <cyng/io/serializer.h>
 #include <cyng/vm/controller.h>
 #include <cyng/util/split.h>
-#include <cyng/io/serializer.h>
+#include <cyng/table/key.hpp>
+#include <cyng/table/body.hpp>
 
 namespace node
 {
@@ -27,6 +30,8 @@ namespace node
 		, buffer_()
 		, authorized_(false)
 		, data_()
+		, rx_(0)
+		, sx_(0)
 	{
 		CYNG_LOG_INFO(logger_, "new session [" 
 			<< vm_.tag()
@@ -111,6 +116,25 @@ namespace node
 
 	void session::process_data(cyng::buffer_t&& data)
 	{
+		//
+		//	insert new record into "_wMBusUplink" table
+		//	
+		auto const str = cyng::io::to_hex(data);
+
+		cluster_.async_run(bus_insert_wMBus_uplink(std::chrono::system_clock::now()
+			, str
+			, cluster_.tag()));
+
+		//
+		//	update "sx" value of this session/device
+		//
+		sx_ += data.size();
+		cluster_.async_run(bus_req_db_modify("_Session"
+			, cyng::table::key_generator(vm_.tag())
+			, cyng::param_factory("sx", sx_)
+			, 0u
+			, vm_.tag()));
+
 
 	}
 
@@ -133,7 +157,7 @@ namespace node
 					, vec.at(0)
 					, vec.at(1)
 					, "plain" //	login scheme
-					, cyng::param_map_factory("tp-layer", "raw")
+					, cyng::param_map_factory("tp-layer", "TCP/IP")
 					("data-layer", "wM-Bus")
 					("security", "public")
 					("time", std::chrono::system_clock::now())

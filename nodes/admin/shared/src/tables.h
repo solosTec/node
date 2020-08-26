@@ -26,7 +26,7 @@ namespace node
             {}
         };
 
-        using array_t = std::array<tbl_descr, 18>;
+        using array_t = std::array<tbl_descr, 20>;
         static const array_t list_;
 
         static array_t::const_iterator find(std::string);
@@ -62,10 +62,15 @@ namespace node
         static rel find_rel_by_channel(std::string);
         static rel find_rel_by_counter(std::string);
 
-        using array_t = std::array<rel, 18>;
+        /**
+         * same size as tables::array_t
+         */
+        using array_t = std::array<rel, 20>;
         static array_t const rel_;
 
     };
+
+    static_assert(std::tuple_size<tables::array_t>() == std::tuple_size<channel::array_t>(), "different array size for tables and relations");
 }
 
 #endif

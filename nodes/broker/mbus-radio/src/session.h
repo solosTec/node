@@ -62,6 +62,7 @@ namespace node
 		 */
 		cyng::buffer_t data_;
 
+		std::uint64_t rx_, sx_;
 	};
 	
 }

@@ -14,6 +14,7 @@
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
 #include <cyng/set_cast.h>
+#include <cyng/numeric_cast.hpp>
 #include <cyng/parser/buffer_parser.h>
 #include <cyng/parser/mac_parser.h>
 #include <cyng/json/json_parser.h>
@@ -285,15 +286,32 @@ namespace node
 		BOOST_ASSERT(tbl_name == "_Config");
 
 		//	{"cmd":"modify","channel":"config.system","rec":{"key":{"name":"connection-auto-login"},"data":{"value":true}}}
-		std::string const name = cyng::value_cast<std::string>(reader["rec"]["key"].get("name"), "?");
-		cyng::object const value = reader["rec"]["data"].get("value");
-		ctx.queue(bus_req_db_modify(tbl_name
-			//	generate new key
-			, cyng::table::key_generator(reader["rec"]["key"].get("name"))
-			//	build parameter
-			, cyng::param_t("value", value)
-			, 0
-			, ctx.tag()));
+		auto const name = cyng::value_cast<std::string>(reader["rec"]["key"].get("name"), "?");
+		auto const value = reader["rec"]["data"].get("value");
+
+		if (boost::algorithm::equals(name, "max-messages")
+			|| boost::algorithm::equals(name, "max-events")
+			|| boost::algorithm::equals(name, "max-LoRa-records")
+			|| boost::algorithm::equals(name, "max-wMBus-records")) {
+
+			//
+			//	convert value to an u64 value
+			//
+
+			ctx.queue(bus_req_db_modify(tbl_name
+				, cyng::table::key_generator(name)
+				, cyng::param_factory("value", cyng::numeric_cast<std::uint64_t>(value, 1000u))
+				, 0
+				, ctx.tag()));
+
+		}
+		else {
+			ctx.queue(bus_req_db_modify(tbl_name
+				, cyng::table::key_generator(name)
+				, cyng::param_t("value", value)
+				, 0
+				, ctx.tag()));
+		}
 
 		std::stringstream ss;
 		ss

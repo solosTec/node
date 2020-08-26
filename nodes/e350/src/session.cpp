@@ -335,6 +335,7 @@ namespace node
 				//const std::string name = cyng::value_cast<std::string>(frame.at(0));
 				cyng::param_map_t bag = cyng::param_map_factory
 					("tp-layer", "imega")
+					("data-layer", "IEC")
 					("security", "public")
 					("time", std::chrono::system_clock::now())
 					("imega-protocol", frame.at(1))

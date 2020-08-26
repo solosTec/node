@@ -119,6 +119,13 @@ namespace node
 		, boost::uuids::uuid tag);
 
 	/**
+	 * place a wMBus uplink event
+	 */
+	cyng::vector_t bus_insert_wMBus_uplink(std::chrono::system_clock::time_point
+		, std::string const& payload
+		, boost::uuids::uuid tag);
+
+	/**
 	 * Send an arbitrary function call to receiver, which will send it back.
 	 */
 	template < typename ...Args >

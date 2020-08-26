@@ -371,9 +371,10 @@ namespace node
 	/**
 	 * Initialize all used table names
 	 */
-	const std::array<db_sync::tbl_descr, 2>	db_sync::tables_ =
+	const std::array<db_sync::tbl_descr, 3>	db_sync::tables_ =
 	{
 		tbl_descr{"TMeter", false},
+		tbl_descr{"TMeterwMBUS", false},
 		tbl_descr{"_Broker", false},	//	broker
 	};
 

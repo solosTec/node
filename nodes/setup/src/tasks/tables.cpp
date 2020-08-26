@@ -20,6 +20,7 @@ namespace node
 		tables::tbl_descr{"TGateway", true, false},
 		tables::tbl_descr{"TLoRaDevice", true, false},
 		tables::tbl_descr{"TMeter", true, false},
+		tables::tbl_descr{"TMeterwMBUS", true, false},
 		tables::tbl_descr{"TLL", false, false},
 		tables::tbl_descr{"TGUIUser", true, false},
 		tables::tbl_descr{"TNodeNames", true, false},

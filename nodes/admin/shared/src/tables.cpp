@@ -19,6 +19,7 @@ namespace node
 		tables::tbl_descr{"TGateway", true, false},	//	custom
 		tables::tbl_descr{"TLoRaDevice", false, false},
 		tables::tbl_descr{"TMeter", true, false},		//	custom
+		tables::tbl_descr{"TMeterwMBUS", false, false},
 		tables::tbl_descr{"TGUIUser", false, false},
 		tables::tbl_descr{"TGWSnapshot", false, false},
 		tables::tbl_descr{"TNodeNames", false, false},
@@ -31,6 +32,7 @@ namespace node
 		tables::tbl_descr{"_SysMsg", false, false},
 		tables::tbl_descr{"_TimeSeries", false, false},
 		tables::tbl_descr{"_LoRaUplink", false, false},
+		tables::tbl_descr{"_wMBusUplink", false, false},
 		tables::tbl_descr{"_CSV", false, false},
 		tables::tbl_descr{"_HTTPSession", false, true}	//	local handling
 	};
@@ -66,24 +68,26 @@ namespace node
 	//	initilize static member
 	//
 	channel::array_t const channel::rel_{
-		channel::rel("TDevice", "config.device", "table.device.count"),
-		channel::rel("TGateway", "config.gateway", "table.gateway.count"),
-		channel::rel("TMeter", "config.meter", "table.meter.count"),
-		channel::rel("TIECBridge", "config.iec", "table.iec.count"),
-		channel::rel("TLoRaDevice", "config.lora", "table.LoRa.count"),
-		channel::rel("TGUIUser", "config.user", "table.user.count"),
-		channel::rel("_Session", "status.session", "table.session.count"),
-		channel::rel("_Target", "status.target", "table.target.count"),
-		channel::rel("_Connection", "status.connection", "table.connection.count"),
-		channel::rel("_Config", "config.system", ""),
-		channel::rel("_SysMsg", "monitor.msg", "table.msg.count"),
-		channel::rel("---", "config.web", ""),
-		channel::rel("_HTTPSession", "web.sessions", "table.web.count"),
-		channel::rel("_Cluster", "status.cluster", "table.cluster.count"),
-		channel::rel("_TimeSeries", "monitor.tsdb", ""),
-		channel::rel("_LoRaUplink", "monitor.lora", "table.uplink.count"),
-		channel::rel("_CSV", "task.csv", ""),
-		channel::rel("TGWSnapshot", "monitor.snapshot", "table.snapshot.count")
+		channel::rel{"TDevice", "config.device", "table.device.count"},
+		channel::rel{"TGateway", "config.gateway", "table.gateway.count"},
+		channel::rel{"TMeter", "config.meter", "table.meter.count"},
+		channel::rel{"TMeterwMBUS", "config.meterwMBus", "table.meterwMBus.count"},
+		channel::rel{"TIECBridge", "config.iec", "table.iec.count"},
+		channel::rel{"TLoRaDevice", "config.lora", "table.LoRa.count"},
+		channel::rel{"TGUIUser", "config.user", "table.user.count"},
+		channel::rel{"_Session", "status.session", "table.session.count"},
+		channel::rel{"_Target", "status.target", "table.target.count"},
+		channel::rel{"_Connection", "status.connection", "table.connection.count"},
+		channel::rel{"_Config", "config.system", ""},
+		channel::rel{"_SysMsg", "monitor.msg", "table.msg.count"},
+		channel::rel{"---", "config.web", ""},
+		channel::rel{"_HTTPSession", "web.sessions", "table.web.count"},
+		channel::rel{"_Cluster", "status.cluster", "table.cluster.count"},
+		channel::rel{"_TimeSeries", "monitor.tsdb", ""},
+		channel::rel{"_LoRaUplink", "monitor.lora", "table.uplink.count"},
+		channel::rel{"_wMBusUplink", "monitor.wMBus", "table.wMBus.count"},
+		channel::rel{"_CSV", "task.csv", ""},
+		channel::rel{"TGWSnapshot", "monitor.snapshot", "table.snapshot.count"}
 	};
 
 	//

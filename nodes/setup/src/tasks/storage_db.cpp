@@ -755,6 +755,29 @@ namespace node
 			, 32	//	protocol
 			}));
 
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 5>("TMeterwMBUS",
+			{ "pk"
+			, "status"		//	"Statusinformation: 00"
+			, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
+			, "aes"		//	AES-Key
+			, "user"
+			, "pwd"
+			},
+			{ cyng::TC_UUID
+			, cyng::TC_UINT32		//	status (81 00 60 05 00 00)
+			, cyng::TC_BUFFER		//	pubKey
+			, cyng::TC_AES128		//	AES 128 (16 bytes)
+			, cyng::TC_STRING		//	user
+			, cyng::TC_STRING		//	pwd
+			},
+			{ 36
+			, 0		//	status
+			, 16	//	pubKey
+			, 32	//	aes
+			, 32	//	user
+			, 32	//	pwd
+			}));
+
 		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices
 		//	DevEUI - 64 bit end-device identifier, EUI-64 (unique)
 		//	DevAddr - 32 bit device address (non-unique)
@@ -785,8 +808,17 @@ namespace node
 			, "descr"
 			, "enabled"
 			, "creationTime" },
-			{ cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_BOOL, cyng::TC_TIME_POINT },
-			{ 36, 36, 128, 0, 0 }));
+			{ cyng::TC_UUID
+			, cyng::TC_UUID
+			, cyng::TC_STRING
+			, cyng::TC_BOOL
+			, cyng::TC_TIME_POINT 
+			},
+			{ 36
+			, 36
+			, 128
+			, 0
+			, 0 }));
 
 		//
 		//	no "gen" column
@@ -796,8 +828,14 @@ namespace node
 			, "ts"
 			, "severity"
 			, "msg" },
-			{ cyng::TC_UINT64, cyng::TC_TIME_POINT, cyng::TC_UINT8, cyng::TC_STRING },
-			{ 0, 0, 0, 256 }));
+			{ cyng::TC_UINT64
+			, cyng::TC_TIME_POINT
+			, cyng::TC_UINT8
+			, cyng::TC_STRING },
+			{ 0
+			, 0
+			, 0
+			, 256 }));
 
 		//
 		//	meta data (without payload)

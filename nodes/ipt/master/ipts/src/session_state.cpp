@@ -509,6 +509,7 @@ namespace node
 					, "plain" //	login scheme
 					, cyng::param_map_factory
 						("tp-layer", "ipt")
+						("data-layer", "SML")
 						("security", "public")
 						("time", std::chrono::system_clock::now())
 						("local-ep", evt.lep_)
@@ -565,6 +566,7 @@ namespace node
 					, "plain" //	login scheme
 					, cyng::param_map_factory
 						("tp-layer", "ipt")
+						("data-layer", "SML")
 						("security", "scrambled")
 						("time", std::chrono::system_clock::now())
 						("local-ep", evt.lep_)

@@ -7,9 +7,9 @@
 
 
 #include "server.h"
-//#include "db.h"
 #include "connection.h"
 #include <cyng/dom/reader.h>
+#include <cyng/numeric_cast.hpp>
 
 namespace node 
 {
@@ -65,15 +65,26 @@ namespace node
 		cache_.set_cfg("language-code", language_code);
 		cache_.set_cfg("language-code-default", language_code);
 
-		auto max_messages = cyng::value_cast<std::uint64_t>(dom.get("max-messages"), 1000);
+		auto max_messages = cyng::numeric_cast<std::uint64_t>(dom.get("max-messages"), 1000);
 		CYNG_LOG_INFO(logger_, "store max. " << max_messages << " messages");
 		cache_.set_cfg("max-messages", max_messages);
 		cache_.set_cfg("max-messages-default", max_messages);
 
-		auto max_events = cyng::value_cast<std::uint64_t>(dom.get("max-events"), 2000);
+		auto max_events = cyng::numeric_cast<std::uint64_t>(dom.get("max-events"), 2000);
 		CYNG_LOG_INFO(logger_, "store max. " << max_events << " events");
 		cache_.set_cfg("max-events", max_events);
 		cache_.set_cfg("max-events-default", max_events);
+
+		auto max_LoRa_records = cyng::numeric_cast<std::uint64_t>(dom.get("max-LoRa-records"), 500);
+		CYNG_LOG_INFO(logger_, "store max. " << max_LoRa_records << " LoRa records");
+		cache_.set_cfg("max-LoRa-records", max_LoRa_records);
+		cache_.set_cfg("max-LoRa-records-default", max_LoRa_records);
+
+		auto max_wMBus_records = cyng::numeric_cast<std::uint64_t>(dom.get("max-wMBus-records"), 500);
+		CYNG_LOG_INFO(logger_, "store max. " << max_wMBus_records << " wireless M-Bus records");
+		cache_.set_cfg("max-wMBus-records", max_wMBus_records);
+		cache_.set_cfg("max-wMBus-records-default", max_wMBus_records);
+
 
 		CYNG_LOG_INFO(logger_, "cluster heartbeat " << cyng::to_str(std::chrono::seconds(monitor)));
 		cache_.set_cfg("cluster-heartbeat", std::chrono::seconds(monitor));

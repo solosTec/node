@@ -172,85 +172,85 @@ namespace node
 				, 24	//	status
 				});
 		}
-		else if (boost::algorithm::equals(name, "mbus-devices")) {
-			return cyng::table::make_meta_table<1, 11>(name,
-				{ "serverID"	//	server/meter ID
-				, "lastSeen"	//	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
-				, "class"		//	device class (always "---" == 2D 2D 2D)
-				, "active"
-				, "descr"
-				//	---
-				, "status"	//	"Statusinformation: 00"
+		//else if (boost::algorithm::equals(name, "mbus-devices")) {
+		//	return cyng::table::make_meta_table<1, 11>(name,
+		//		{ "serverID"	//	server/meter ID
+		//		, "lastSeen"	//	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
+		//		, "class"		//	device class (always "---" == 2D 2D 2D)
+		//		, "active"
+		//		, "descr"
+		//		//	---
+		//		, "status"	//	"Statusinformation: 00"
 
-				//	The bit mask defines the bits of the status word, that if changed
-				//	will result in an entry in the log-book.
-				, "mask"	//	"Bitmaske: 00 00"
-				, "interval"	//	"Zeit zwischen zwei Datensätzen: 49000"
-								//	--- optional data
-				, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
-				, "aes"		//	AES-Key
-				, "user"
-				, "pwd"
-				},
-				{ cyng::TC_BUFFER		//	server ID
-				, cyng::TC_TIME_POINT	//	last seen
-				, cyng::TC_STRING		//	device class
-				, cyng::TC_BOOL			//	active
-				, cyng::TC_STRING		//	manufacturer/description
+		//		//	The bit mask defines the bits of the status word, that if changed
+		//		//	will result in an entry in the log-book.
+		//		, "mask"	//	"Bitmaske: 00 00"
+		//		, "interval"	//	"Zeit zwischen zwei Datensätzen: 49000"
+		//						//	--- optional data
+		//		, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
+		//		, "aes"		//	AES-Key
+		//		, "user"
+		//		, "pwd"
+		//		},
+		//		{ cyng::TC_BUFFER		//	server ID
+		//		, cyng::TC_TIME_POINT	//	last seen
+		//		, cyng::TC_STRING		//	device class
+		//		, cyng::TC_BOOL			//	active
+		//		, cyng::TC_STRING		//	manufacturer/description
 
-				, cyng::TC_BUFFER		//	status (81 00 60 05 00 00)
-				, cyng::TC_BUFFER		//	bit mask (81 81 C7 86 01 FF)
-				, cyng::TC_UINT32		//	interval (milliseconds)
-				, cyng::TC_BUFFER		//	pubKey
-				, cyng::TC_AES128		//	AES 128 (16 bytes)
-				, cyng::TC_STRING		//	user
-				, cyng::TC_STRING		//	pwd
-				},
-				{ 9		//	serverID
-				, 0		//	lastSeen
-				, 16	//	device class
-				, 0		//	active
-				, 128	//	manufacturer/description
+		//		, cyng::TC_BUFFER		//	status (81 00 60 05 00 00)
+		//		, cyng::TC_BUFFER		//	bit mask (81 81 C7 86 01 FF)
+		//		, cyng::TC_UINT32		//	interval (milliseconds)
+		//		, cyng::TC_BUFFER		//	pubKey
+		//		, cyng::TC_AES128		//	AES 128 (16 bytes)
+		//		, cyng::TC_STRING		//	user
+		//		, cyng::TC_STRING		//	pwd
+		//		},
+		//		{ 9		//	serverID
+		//		, 0		//	lastSeen
+		//		, 16	//	device class
+		//		, 0		//	active
+		//		, 128	//	manufacturer/description
 
-				, 0		//	status
-				, 8		//	mask
-				, 0		//	interval
-				, 16	//	pubKey
-				, 32	//	aes
-				, 32	//	user
-				, 32	//	pwd
-				});
-		}
-		else if (boost::algorithm::equals(name, "iec62056-21-devices")) {
+		//		, 0		//	status
+		//		, 8		//	mask
+		//		, 0		//	interval
+		//		, 16	//	pubKey
+		//		, 32	//	aes
+		//		, 32	//	user
+		//		, 32	//	pwd
+		//		});
+		//}
+		//else if (boost::algorithm::equals(name, "iec62056-21-devices")) {
 
-			//
-			//	ToDo: use an u8 data type as index and maintain the index to avoid
-			//	gaps between the indexes and to start 0.
-			//
-			return cyng::table::make_meta_table<1, 5>(name,
-				{ "meterID"		//	max. 32 bytes (8181C7930AFF)
-				, "address"		//	mostly the same as meterID (8181C7930CFF)
-				, "descr"
-				, "baudrate"	//	9600, ... (in opening sequence) (8181C7930BFF)
-				, "p1"			//	login password (8181C7930DFF)
-				//, "p2"		//	login password
-				, "w5"			//	W5 password (reserved for national applications) (8181C7930EFF)
-				},
-				{ cyng::TC_BUFFER		//	meterID (max. 32)
-				, cyng::TC_BUFFER		//	address
-				, cyng::TC_STRING		//	description
-				, cyng::TC_UINT32		//	speed
-				, cyng::TC_STRING		//	pwd
-				, cyng::TC_STRING		//	w5
-				},
-				{ 32	//	meterID
-				, 32	//	address
-				, 128	//	description
-				, 0		//	speed
-				, 32	//	pwd
-				, 32	//	w5
-				});
-		}
+		//	//
+		//	//	ToDo: use an u8 data type as index and maintain the index to avoid
+		//	//	gaps between the indexes and to start 0.
+		//	//
+		//	return cyng::table::make_meta_table<1, 5>(name,
+		//		{ "meterID"		//	max. 32 bytes (8181C7930AFF)
+		//		, "address"		//	mostly the same as meterID (8181C7930CFF)
+		//		, "descr"
+		//		, "baudrate"	//	9600, ... (in opening sequence) (8181C7930BFF)
+		//		, "p1"			//	login password (8181C7930DFF)
+		//		//, "p2"		//	login password
+		//		, "w5"			//	W5 password (reserved for national applications) (8181C7930EFF)
+		//		},
+		//		{ cyng::TC_BUFFER		//	meterID (max. 32)
+		//		, cyng::TC_BUFFER		//	address
+		//		, cyng::TC_STRING		//	description
+		//		, cyng::TC_UINT32		//	speed
+		//		, cyng::TC_STRING		//	pwd
+		//		, cyng::TC_STRING		//	w5
+		//		},
+		//		{ 32	//	meterID
+		//		, 32	//	address
+		//		, 128	//	description
+		//		, 0		//	speed
+		//		, 32	//	pwd
+		//		, 32	//	w5
+		//		});
+		//}
 		else if (boost::algorithm::equals(name, "push.ops")) {
 
 			//

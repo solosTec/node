@@ -148,11 +148,18 @@ namespace node
 		//
 		//	Tables are sync'd in the following order:
 		//
+		//	see tables::list_
 		//	* TDevice
 		//	* TGateway
 		//	* TLoRaDevice
 		//	* TMeter
+		//	* TMeterwMBUS
+		//	* TLL
 		//	* TGUIUser
+		//	* TNodeNames
+		//	* TIECBridge
+		//	* TGWSnapshot
+		//	* TLoraUplink
 		//
 
 		//

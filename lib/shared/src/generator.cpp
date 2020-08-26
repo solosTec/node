@@ -264,6 +264,17 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_insert_wMBus_uplink(std::chrono::system_clock::time_point tp
+		, std::string const& payload
+		, boost::uuids::uuid tag)
+	{
+		cyng::vector_t vec{};
+		return vec << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.insert.wMBus.uplink", cyng::code::IDENT, tp, payload, tag))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
 
 	cyng::vector_t bus_req_stop_client(cyng::vector_t const& key
 		, boost::uuids::uuid source)

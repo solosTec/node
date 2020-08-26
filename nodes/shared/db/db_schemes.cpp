@@ -89,7 +89,7 @@ namespace node
 			//
 			//	[uuid] device - index
 			//
-			return cyng::table::make_meta_table<1, 12, 4>(name, { "tag"	//	client session - primary key [uuid]
+			return cyng::table::make_meta_table<1, 13, 4>(name, { "tag"	//	client session - primary key [uuid]
 				, "local"	//	[object] local peer object (hold session reference)
 				, "remote"	//	[object] remote peer object (if session connected)
 				, "peer"	//	[uuid] remote peer
@@ -97,14 +97,28 @@ namespace node
 				, "name"	//	[string] - account
 				, "source"	//	[uint32] - ipt source id (unique)
 				, "loginTime"	//	last login time
-				, "rtag"	//	[uuid] client session if connected
-				, "layer"	//	[string] protocol layer
+				, "rtag"	//	[uuid] remote client session if connected
+				, "pLayer"	//	[string] protocol layer (5)
+				, "dLayer"	//	[string] data layer (7)
 				, "rx"		//	[uint64] received bytes (from device)
 				, "sx"		//	[uint64] sent bytes (to device)
 				, "px"		//	[uint64] sent push data (to push target)
 				},
-				{ cyng::TC_UUID, cyng::TC_STRING, cyng::TC_STRING, cyng::TC_UUID, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT32, cyng::TC_TIME_POINT, cyng::TC_UUID, cyng::TC_STRING, cyng::TC_UINT64, cyng::TC_UINT64, cyng::TC_UINT64 },
-				{ 36, 0, 0, 36, 36, 64, 0, 0, 36, 16, 0, 0, 0 });
+				{ cyng::TC_UUID		//	tag
+				, cyng::TC_STRING	//	local	
+				, cyng::TC_STRING	//	remote
+				, cyng::TC_UUID		//	peer
+				, cyng::TC_UUID		//	device
+				, cyng::TC_STRING	//	name
+				, cyng::TC_UINT32	//	source
+				, cyng::TC_TIME_POINT	//	loginTime
+				, cyng::TC_UUID		//	rtag
+				, cyng::TC_STRING	//	p-layer
+				, cyng::TC_STRING	//	d-layer
+				, cyng::TC_UINT64	//	rx
+				, cyng::TC_UINT64	//	sx
+				, cyng::TC_UINT64 },	//	px
+				{ 36, 0, 0, 36, 36, 64, 0, 0, 36, 16, 16, 0, 0, 0 });
 		}
 		else if (boost::algorithm::equals(name, "_Target")) {
 
@@ -178,6 +192,34 @@ namespace node
 				, 36	//	gw
 				, 32	//	protocol
 				});
+		}
+		else if (boost::algorithm::equals(name, "TMeterwMBUS")) {
+
+			//
+			//	pk is key to table TMeter
+			//
+			return cyng::table::make_meta_table<1, 5>(name,
+				{ "pk"
+				, "status"		//	"Statusinformation: 00"
+				, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
+				, "aes"		//	AES-Key
+				, "user"
+				, "pwd"
+				},
+				{ cyng::TC_UUID
+				, cyng::TC_UINT32		//	status (81 00 60 05 00 00)
+				, cyng::TC_BUFFER		//	pubKey
+				, cyng::TC_AES128		//	AES 128 (16 bytes)
+				, cyng::TC_STRING		//	user
+				, cyng::TC_STRING		//	pwd
+				},
+				{ 36
+				, 0		//	status
+				, 16	//	pubKey
+				, 32	//	aes
+				, 32	//	user
+				, 32	//	pwd
+			});
 		}
 		else if (boost::algorithm::equals(name, "TLL")) {
 
@@ -381,6 +423,24 @@ namespace node
 				, 0		//	FCntDn
 				, 64	//	CustomerID
 				, 51	//	Payload
+				, 0		//	tag
+				});
+		}
+		else if (boost::algorithm::equals(name, "_wMBusUplink")) {
+
+			return cyng::table::make_meta_table<1, 3>(name, { "id"	//	message number
+				, "ts"	//	timestamp
+				, "Payload"
+				, "tag"
+				},
+				{ cyng::TC_UINT64		//	id
+				, cyng::TC_TIME_POINT	//	ts
+				, cyng::TC_STRING		//	Payload
+				, cyng::TC_UUID			//	tag
+				},
+				{ 0		//	id
+				, 0		//	ts
+				, 512	//	Payload
 				, 0		//	tag
 				});
 		}

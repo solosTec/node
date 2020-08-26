@@ -45,6 +45,33 @@ namespace node
 		, bool accept_all
 		, boost::uuids::uuid tag);
 
+	std::vector<std::string> get_sub_vector(std::vector<std::string> const& vec)
+	{
+		if (boost::algorithm::equals(vec.at(2), "broker-vector")) {
+			//	example:
+			//	s:IF_wMBUS:broker-vector:amrd:amrd@localhost:12001
+			return cyng::slice(vec, 1, 2);
+		}
+
+		//
+		//	produce a subvector
+		//
+		return cyng::slice(vec, 1, vec.size() - 2);
+
+	}
+
+	std::string collect_value(std::size_t start, std::vector<std::string> const& vec)
+	{
+		std::string value;
+		for (std::size_t idx = start + 1; idx < vec.size(); ++idx) {
+			if (!value.empty()) {
+				value += ':';
+			}
+			value += vec.at(idx);
+		}
+		return value;
+	}
+	 
 	controller::controller(unsigned int index
 		, unsigned int pool_size
 		, std::string const& json_path
@@ -583,7 +610,7 @@ namespace node
 				//
 				//	produce a subvector
 				//
-				auto const sub = cyng::slice(vec, 1, vec.size() - 2);
+				auto const sub = get_sub_vector(vec);
 
 				if (boost::algorithm::equals(vec.front(), "bool")) {
 					if (node::set_value(cyng::to_param_map(tpl), sub, boost::algorithm::equals(vec.back(), "true"))) {
@@ -604,7 +631,7 @@ namespace node
 					std::cout << "failed" << std::endl;
 				}
 				else if (boost::algorithm::equals(vec.front(), "s")) {
-					if (node::set_value(cyng::to_param_map(tpl), sub, vec.back())) {
+					if (node::set_value(cyng::to_param_map(tpl), sub, collect_value(sub.size(), vec))) {
 						return EXIT_SUCCESS;
 					}
 					std::cout << "failed" << std::endl;

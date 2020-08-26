@@ -53,7 +53,9 @@ namespace node
 					cyng::param_factory("catch-lora", true),
 					cyng::param_factory("stat-dir", tmp.string()),	//	store statistics
 					cyng::param_factory("max-messages", 1000),	//	system log
-					cyng::param_factory("max-events", 2000)		//	time series events
+					cyng::param_factory("max-events", 2000),		//	time series events
+					cyng::param_factory("max-LoRa-records", 500),		//	LoRa uplink records
+					cyng::param_factory("max-wMBus-records", 500)		//	wireless M-Bus uplink records
 					//cyng::param_factory("auto-gw", true)	//	insert gateways automatically
 				))
 				, cyng::param_factory("cluster", cyng::tuple_factory(
