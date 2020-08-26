@@ -1,7 +1,7 @@
 #
 #
 # CMake compatibility issues: don't modify this, please!
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.10)
 
 
 #
@@ -469,68 +469,74 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/main/include/smf" # source directory
         PATTERN "*hpp"
 )
 
-set(NODE_TARGET_LIST "smf_cluster;smf_protocol_hci;smf_http_srv;smf_https_srv;smf_protocol_iec;smf_protocol_imega;smf_info;smf_bus_ipt;smf_protocol_ipt;smf_lora;smf_protocol_mbus;smf_protocol_modem;smf_bus_serial;smf_bus_sml;smf_protocol_sml;smf_protocol_telnet;dash;dashs;broker_iec;broker_mbus_radio;e350;collector;emitter;ipt;ipts;segw;store;lora;master;modem;setup;csv")
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
+    set(NODE_TARGET_LIST smf_cluster smf_protocol_hci smf_http_srv smf_https_srv smf_protocol_iec smf_protocol_imega smf_info smf_bus_ipt smf_protocol_ipt smf_lora smf_protocol_mbus smf_protocol_modem smf_bus_serial smf_bus_sml smf_protocol_sml smf_protocol_telnet dash dashs broker_iec broker_mbus_radio e350 collector emitter ipt ipts segw store lora master modem setup csv)
 
-if(${PROJECT_NAME}_SSL_SUPPORT)
-    list(APPEND "lora" NODE_TARGET_LIST)
-    list(APPEND "admin" NODE_TARGET_LIST)
-endif()
-if(MSVC)
-    list(APPEND "mqtt" NODE_TARGET_LIST)
-endif(MSVC)
+    if(${PROJECT_NAME}_SSL_SUPPORT)
+        list(APPEND "lora" NODE_TARGET_LIST)
+        list(APPEND "admin" NODE_TARGET_LIST)
+    endif()
+    if(MSVC)
+        list(APPEND "mqtt" NODE_TARGET_LIST)
+    endif(MSVC)
 
-list(LENGTH NODE_TARGET_LIST NODE_TARGET_LIST_SIZE)
-message(STATUS "** Target list [${NODE_TARGET_LIST_SIZE}] : ${NODE_TARGET_LIST}")
+    list(LENGTH NODE_TARGET_LIST NODE_TARGET_LIST_SIZE)
+    message(STATUS "** Target list [${NODE_TARGET_LIST_SIZE}] : ${NODE_TARGET_LIST}")
 
-install(TARGETS ${NODE_TARGET_LIST}
-    EXPORT SMFTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib/static
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
+    install(TARGETS ${NODE_TARGET_LIST}
+        EXPORT SMFTargets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib/static
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include
+    )
+    
+    #
+    # Packaging
+    # see https://cliutils.gitlab.io/modern-cmake/chapters/install/installing.html
+    #
+    include(CMakePackageConfigHelpers)
 
-#
-# Packaging
-# see https://cliutils.gitlab.io/modern-cmake/chapters/install/installing.html
-#
-include(CMakePackageConfigHelpers)
-
-write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/node/ConfigVersion.cmake"
-  VERSION "${PROJECT_VERSION}"
-  COMPATIBILITY AnyNewerVersion
-)
-
-export(EXPORT SMFTargets
-  FILE "${CMAKE_CURRENT_BINARY_DIR}/node/NodeTargets.cmake"
-  NAMESPACE SMF::
-)
-# configure_file(cmake/NodeConfig.cmake
-#     "${CMAKE_CURRENT_BINARY_DIR}/node/NodeConfig.cmake"
-#     COPYONLY
-# )
-
-set(ConfigPackageLocation lib/cmake/node)
-
-# install(EXPORT SMFTargets
-#   FILE
-#     NodeTargets.cmake
-#   NAMESPACE
-#     Upstream::
-#   DESTINATION
-#     ${ConfigPackageLocation}
-# )
-
-install(
-  FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/node/NodeTargets.cmake"
+    write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/node/ConfigVersion.cmake"
-  DESTINATION
-    ${ConfigPackageLocation}
-  COMPONENT
-    Devel
-)
+    VERSION "${PROJECT_VERSION}"
+    COMPATIBILITY AnyNewerVersion
+    )
+
+    export(EXPORT SMFTargets
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/node/NodeTargets.cmake"
+    NAMESPACE SMF::
+    )
+    # configure_file(cmake/NodeConfig.cmake
+    #     "${CMAKE_CURRENT_BINARY_DIR}/node/NodeConfig.cmake"
+    #     COPYONLY
+    # )
+
+    set(ConfigPackageLocation lib/cmake/node)
+
+    # install(EXPORT SMFTargets
+    #   FILE
+    #     NodeTargets.cmake
+    #   NAMESPACE
+    #     Upstream::
+    #   DESTINATION
+    #     ${ConfigPackageLocation}
+    # )
+
+    install(
+    FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/node/NodeTargets.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/node/ConfigVersion.cmake"
+    DESTINATION
+        ${ConfigPackageLocation}
+    COMPONENT
+        Devel
+    )
+    
+else()
+    message(WARNING "CMake version higher then 3.13 required to install targets")
+endif()
+
 
 #
 # CPack configuration
