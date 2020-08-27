@@ -504,7 +504,14 @@ namespace node
 			//	open output file
 			//
 			auto file = open_file_24_h_profile(year, month, server_ids.size(), start, end);
+			std::size_t counter{ 0 };
 			for (auto id : server_ids) {
+
+				//
+				//	update counter
+				//
+				++counter;
+
 
 				//
 				//	get all unique OBIS codes for this server of this profile in this time range
@@ -515,7 +522,10 @@ namespace node
 					<< base_.get_id()
 					<< " <"
 					<< base_.get_class_name()
-					<< "> 24h - server "
+					<< "> 24h - at "
+					<< std::setprecision(2)
+					<< ((counter * 100u) / server_ids.size())
+					<< "% server "
 					<< id
 					<< " has "
 					<< obis_codes.size()
