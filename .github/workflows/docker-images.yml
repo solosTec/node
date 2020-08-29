@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - '*'
+    inputs:
+      start_at:
+        default: 'node'
   workflow_dispatch:
     inputs:
       start_at:
