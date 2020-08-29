@@ -3,7 +3,7 @@ name: Start Docker Build on CircleCi
 on:
   push:
     branches:
-      - *
+      - '*'
   workflow_dispatch:
     inputs:
       start_at:
