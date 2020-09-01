@@ -428,18 +428,30 @@ namespace node
 		}
 		else if (boost::algorithm::equals(name, "_wMBusUplink")) {
 
-			return cyng::table::make_meta_table<1, 3>(name, { "id"	//	message number
-				, "ts"	//	timestamp
+			return cyng::table::make_meta_table<1, 7>(name, { "id"	//	message number
+				, "ts"			//	timestamp
+				, "serverId"	//	example: 01-e61e-13090016-3c-07
+				, "medium"
+				, "manufacturer"
+				, "frameType"
 				, "Payload"
 				, "tag"
 				},
 				{ cyng::TC_UINT64		//	id
 				, cyng::TC_TIME_POINT	//	ts
+				, cyng::TC_STRING		//	serverId
+				, cyng::TC_UINT8		//	medium
+				, cyng::TC_STRING		//	manufacturer
+				, cyng::TC_UINT8		//	frameType
 				, cyng::TC_STRING		//	Payload
 				, cyng::TC_UUID			//	tag
 				},
 				{ 0		//	id
 				, 0		//	ts
+				, 22	//	serverId
+				, 0		//	medium	
+				, 3		//	manufacturer
+				, 0		//	frameType
 				, 512	//	Payload
 				, 0		//	tag
 				});

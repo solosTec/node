@@ -328,12 +328,12 @@ namespace node
 			if (wrong_pwd)
 			{
 				cache_.insert_msg(cyng::logging::severity::LEVEL_WARNING
-					, "login of [" + account + "] failed (cause: incorrect password)"
+					, "login of [" + account + "] failed (reason: incorrect password)"
 					, tag);
 			}
 			else {
 				cache_.insert_msg(cyng::logging::severity::LEVEL_WARNING
-					, "login of [" + account + "] failed (cause: unknown device)"
+					, "login of [" + account + "] failed (reason: unknown device)"
 					, tag);
 			}
 		}

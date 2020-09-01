@@ -120,8 +120,14 @@ namespace node
 
 	/**
 	 * place a wMBus uplink event
+	 * 
+	 * @param frame_type ci_field
 	 */
 	cyng::vector_t bus_insert_wMBus_uplink(std::chrono::system_clock::time_point
+		, std::string const& srv_id
+		, std::uint8_t medium
+		, std::string  manufacturer
+		, std::uint8_t frame_type
 		, std::string const& payload
 		, boost::uuids::uuid tag);
 

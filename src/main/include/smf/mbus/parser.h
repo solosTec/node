@@ -7,7 +7,6 @@
 #ifndef NODE_MBUS_PARSER_H
 #define NODE_MBUS_PARSER_H
 
-
 #include <smf/mbus/defs.h>
 #include <cyng/intrinsics/sets.h>
 #include <cyng/intrinsics/buffer.h>
@@ -21,6 +20,12 @@
 #ifdef _DEBUG
 #include <set>
 #endif
+
+ /** @file parser.h
+  * This file defines two namespaces: node::mbus for the wired M-Bus protocol 
+  * and node::wmbus for the wireless M-Bus protocol which use different frames
+  * to package the data.
+  */
 
 namespace node 
 {
@@ -271,6 +276,62 @@ namespace node
 
 	namespace wmbus
 	{
+		class parser;
+		class header;
+
+		/**
+		 * convert header into a "wmbus.push.frame" call
+		 */
+		cyng::vector_t to_code(header const&, cyng::buffer_t const&);
+
+		/**
+		 * helper class to store the frame of an wireless M-Bus package
+		 */
+		class header
+		{
+			friend class parser;
+			friend cyng::vector_t to_code(header const&, cyng::buffer_t const&);
+
+		public:
+			header();
+
+			void reset();
+
+			std::size_t	size() const;
+			std::string get_manufacturer() const;
+			std::uint8_t get_version() const;
+			std::uint8_t get_medium() const;
+			std::uint32_t get_dev_id() const;
+			std::uint8_t get_frame_type() const;
+
+			/**
+			 * [0] 1 byte 01/02 01 == wireless, 02 == wired
+			 * [1-2] 2 bytes manufacturer ID
+			 * [3-6] 4 bytes serial number
+			 * [7] 1 byte device type / media
+			 * [8] 1 byte product revision
+			 *
+			 * 9 bytes in total
+			 * example: 01-e61e-13090016-3c-07
+			 *
+			 */
+			cyng::buffer_t get_server_id() const;
+
+		private:
+			/**
+			 * packet size without CRC (S, T, R2 Mode)
+			 * packet size with CRC (C Mode)
+			 */
+			std::size_t	packet_size_;
+
+			std::array<char, 2>	manufacturer_;
+			std::uint8_t version_;
+			std::uint8_t medium_;
+			std::array<char, 4>	dev_id_;
+			std::uint8_t frame_type_;
+		};
+
+
 		/**
  		 * Parser for wireless m-bus communication.
 		 *
@@ -287,10 +348,12 @@ namespace node
 		 *	-> 1 byte: version
 		 *	-> 1 byte: device type
 		 */
+
 		class parser
 		{
 		public:
-			using parser_callback = std::function<void(cyng::vector_t&&)>;
+			using parser_callback = std::function<void(header const&, cyng::buffer_t const&)>;
+			//using parser_callback = std::function<void(cyng::vector_t&&)>;
 
 		private:
 			/**
@@ -375,7 +438,6 @@ namespace node
 			using parser_state_t = boost::variant<error
 				, manufacturer
 				, dev_id
-				//, crc
 				, frame_data>;
 
 			//
@@ -386,9 +448,7 @@ namespace node
 				state_visitor(parser&, char c);
 				state operator()(error&) const;
 				state operator()(manufacturer&) const;
-				//state operator()(dev_version&) const;
 				state operator()(dev_id&) const;
-				//state operator()(crc&) const;
 				state operator()(frame_data&) const;
 
 				parser& parser_;
@@ -457,11 +517,6 @@ namespace node
 			parser_callback	cb_;
 
 			/**
-			 * instruction buffer
-			 */
-			cyng::vector_t	code_;
-
-			/**
 			 *	input stream buffer
 			 */
 			boost::asio::streambuf	stream_buffer_;
@@ -478,27 +533,9 @@ namespace node
 			parser_state_t	parser_state_;
 
 			/**
-			 * packet size without CRC (S, T, R2 Mode)
-			 * packet size with CRC (C Mode)
+			 * container for all data from header frame
 			 */
-			std::size_t	packet_size_;
-
-			std::string manufacturer_;
-			std::uint8_t version_;
-			std::uint8_t medium_;
-			std::uint32_t dev_id_;
-			std::uint8_t frame_type_;
-			/**
-			 * [0] 1 byte 01/02 01 == wireless, 02 == wired
-			 * [1-2] 2 bytes manufacturer ID
-			 * [3-6] 4 bytes serial number
-			 * [7] 1 byte device type / media
-			 * [8] 1 byte product revision
-			 *
-			 * 9 bytes in total
-			 * example: 01-e61e-13090016-3c-07
-			 */
-			std::array<char, 9>	server_id_;
+			header header_;
 
 #ifdef _DEBUG
 			std::set<std::uint32_t>	meter_set_;

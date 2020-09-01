@@ -283,23 +283,17 @@ namespace node
 		//
 		parser::parser(parser_callback cb)
 			: cb_(cb)
-			, code_()
 			, stream_buffer_()
 			, input_(&stream_buffer_)
 			, stream_state_(state::LENGTH)
 			, parser_state_()
-			, packet_size_(0)
-			, version_(0)
-			, medium_(0)
-			, dev_id_(0)
-			, server_id_()
+			, header_()
 #ifdef _DEBUG
 			, meter_set_()
 #endif
 		{
 			BOOST_ASSERT_MSG(cb_, "no callback specified");
 			parser_state_ = error();
-			server_id_[0] = 1;	//	wireless M-Bus
 		}
 
 		parser::~parser()
@@ -324,12 +318,8 @@ namespace node
 		{
 			stream_state_ = state::LENGTH;
 			parser_state_ = error();
-			packet_size_ = 0u;
-			manufacturer_.clear();
-			version_ = 0;
-			medium_ = 0;
-			dev_id_ = 0;
-			server_id_.fill(0);
+			header_.reset();
+			//server_id_.fill(0);
 #ifdef _DEBUG
 			std::cout << meter_set_.size() << " meter(s) read" << std::endl;
 			for (auto m : meter_set_) {
@@ -345,7 +335,6 @@ namespace node
 
 		}
 
-
 		char parser::put(char c)
 		{
 			switch (stream_state_)
@@ -359,38 +348,36 @@ namespace node
 				//	C1B Mode: max 241 bytes
 				//	R/S Mode: max 213 bytes
 				//
-				packet_size_ = static_cast<std::size_t>(c) & 0xFF;
-				BOOST_ASSERT_MSG(packet_size_ > 9, "packet size to small");
+				header_.packet_size_ = static_cast<std::size_t>(c) & 0xFF;
+				BOOST_ASSERT_MSG(header_.packet_size_ > 9, "packet size to small");
 				stream_state_ = state::CTRL_FIELD;
 				break;
 			case state::CTRL_FIELD:
-				--packet_size_;
+				--header_.packet_size_;
 				std::tie(stream_state_, parser_state_) = ctrl_field(c);
 				break;
 			case state::MANUFACTURER:
-				--packet_size_;
+				--header_.packet_size_;
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 				if (stream_state_ == state::DEV_ID) {
 					parser_state_ = dev_id();
 				}
 				break;
 			case state::DEV_ID:
-				--packet_size_;
+				--header_.packet_size_;
 				//	address
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 				break;
 			case state::DEV_VERSION:
 				//	Version (or Generation number) 
-				--packet_size_;
-				version_ = static_cast<std::uint8_t>(c);
-				server_id_[7] = version_;
+				--header_.packet_size_;
+				header_.version_ = static_cast<std::uint8_t>(c);
 				stream_state_ = state::DEV_TYPE;
 				break;
 			case state::DEV_TYPE:
 				//	Device type/Medium
-				--packet_size_;
-				medium_ = static_cast<std::uint8_t>(c);
-				server_id_[8] = medium_;
+				--header_.packet_size_;
+				header_.medium_ = static_cast<std::uint8_t>(c);
 				stream_state_ = state::FRAME_TYPE;
 				break;
 			case state::FRAME_TYPE:
@@ -403,7 +390,7 @@ namespace node
 				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 				break;
 			default:
-				cb_(cyng::generate_invoke("log.msg.warning", "invalid w-mbus parser state"));
+				//cb_(cyng::generate_invoke("log.msg.warning", "invalid w-mbus parser state"));
 				break;
 			}
 
@@ -432,7 +419,8 @@ namespace node
 
 			default:
 				//stream_state_ = state::INVALID_STATE;
-				cb_(cyng::generate_invoke("log.msg.error", "w-mbus: unknown control field: ", +c));
+				//	ToDo:
+				//cb_(cyng::generate_invoke("log.msg.error", "w-mbus: unknown control field: ", +c));
 				break;
 			}
 
@@ -447,38 +435,38 @@ namespace node
 			//	0x7A: short data header
 			//	0x78: no data header
 
-			frame_type_ = static_cast<std::uint8_t>(c);
-			cb_(cyng::generate_invoke("log.msg.trace", "frame type: ", frame_type_));
+			header_.frame_type_ = static_cast<std::uint8_t>(c);
+			//cb_(cyng::generate_invoke("log.msg.trace", "frame type: ", header_.frame_type_));
 
-			switch (frame_type_) {
+			switch (header_.frame_type_) {
 			case FIELD_CI_APL_ERROR:
 				//	RSP_UD telegram
-				return std::make_pair(state::APL_ERROR, frame_data(packet_size_));
+				return std::make_pair(state::APL_ERROR, frame_data(header_.packet_size_));
 			case FIELD_CI_HEADER_LONG:	//	0x72
 				//	secondary address (8 bytes) + short header
 				//
-				return std::make_pair(state::HEADER_LONG, frame_data(packet_size_));
+				return std::make_pair(state::HEADER_LONG, frame_data(header_.packet_size_));
 			case FIELD_CI_HEADER_SHORT:	//	0x7A
 				//	byte1: counter (EN 13757-)
 				//	byte2: status
 				//	byte3/4: configuration (encryption mode and number of encrypted bytes)
 				//
-				return std::make_pair(state::HEADER_SHORT, frame_data(packet_size_));
+				return std::make_pair(state::HEADER_SHORT, frame_data(header_.packet_size_));
 			case FIELD_CI_HEADER_NO:	//	 0x78
-				return std::make_pair(state::HEADER_NONE, frame_data(packet_size_));
+				return std::make_pair(state::HEADER_NONE, frame_data(header_.packet_size_));
 			case FIELD_CI_EXT_DLL_I:	//	0x8C
 				break;
 			case FIELD_CI_NULL:	//	0xFF
-				cb_(cyng::generate_invoke("log.msg.warning", "unsupported frame type FIELD_CI_NULL", frame_type_));
+				//cb_(cyng::generate_invoke("log.msg.warning", "unsupported frame type FIELD_CI_NULL", header_.frame_type_));
 				break;
 			case FIELD_CI_MANU_SPEC:	//	0xA0
-				cb_(cyng::generate_invoke("log.msg.warning", "unsupported frame type FIELD_CI_MANU_SPEC", frame_type_));
+				//cb_(cyng::generate_invoke("log.msg.warning", "unsupported frame type FIELD_CI_MANU_SPEC", header_.frame_type_));
 				break;
 			default:
 				BOOST_ASSERT(c == 0x70 || c == 0x72 || c == 0x78 || c == 0x7A || c == 0x7F);
 				break;
 			}
-			return std::make_pair(state::HEADER_NONE, frame_data(packet_size_));
+			return std::make_pair(state::HEADER_NONE, frame_data(header_.packet_size_));
 		}
 
 		void parser::post_processing()
@@ -502,11 +490,9 @@ namespace node
 		parser::state parser::state_visitor::operator()(manufacturer& v) const
 		{
 			v.data_[v.pos_++] = this->c_;
-			this->parser_.server_id_[v.pos_] = this->c_;
 			if (v.pos_ == v.data_.size()) {
 
-				this->parser_.manufacturer_ = node::sml::decode(v.data_.at(0), v.data_.at(1));
-				this->parser_.cb_(cyng::generate_invoke("log.msg.trace", "manufacturer: ", this->parser_.manufacturer_));
+				this->parser_.header_.manufacturer_ = v.data_;
 				return state::DEV_ID;
 			}
 			return state::MANUFACTURER;
@@ -515,36 +501,24 @@ namespace node
 		parser::state parser::state_visitor::operator()(dev_id& v) const
 		{
 			v.data_[v.pos_++] = this->c_;
-			this->parser_.server_id_[v.pos_ + 2] = this->c_;
 			if (v.pos_ == v.data_.size()) {
 
 				//
-				//	get the device ID as u32 value
+				//	copy data
 				//
-				auto idp = reinterpret_cast<std::uint32_t*>(v.data_.data());
+				this->parser_.header_.dev_id_ = v.data_;
 
-				//
-				//	read this value as a hex value
-				//
-				std::stringstream ss;
-				ss.fill('0');
-				ss << std::setw(8) << std::setbase(16) << *idp;
-
-				//
-				//	write this value as decimal value
-				//
-				ss >> std::setbase(10) >> this->parser_.dev_id_;
 #ifdef _DEBUG
-				this->parser_.cb_(cyng::generate_invoke("log.msg.trace", "device ID", this->parser_.dev_id_));
+				//this->parser_.cb_(cyng::generate_invoke("log.msg.trace", "device ID", this->parser_.header_.get_dev_id()));
 
-				if (this->parser_.meter_set_.find(this->parser_.dev_id_) == this->parser_.meter_set_.end()) {
-					this->parser_.meter_set_.emplace(this->parser_.dev_id_);
+				if (this->parser_.meter_set_.find(this->parser_.header_.get_dev_id()) == this->parser_.meter_set_.end()) {
+					this->parser_.meter_set_.emplace(this->parser_.header_.get_dev_id());
 					std::cout
 						<< "new meter: "
 						<< std::dec
 						<< std::setfill('0')
 						<< std::setw(8)
-						<< this->parser_.dev_id_
+						<< this->parser_.header_.get_dev_id()
 						<< std::endl
 						;
 				}
@@ -653,19 +627,130 @@ namespace node
 			if (v.size_ == 0) {
 				//std::cout << "frame with " << v.data_.size() << " bytes complete" << std::endl;
 
-				parser_.cb_(cyng::generate_invoke("wmbus.push.frame"
-					, cyng::buffer_t(this->parser_.server_id_.begin(), this->parser_.server_id_.end())
-					, this->parser_.manufacturer_
-					, this->parser_.version_
-					, this->parser_.medium_
-					, this->parser_.dev_id_
-					, this->parser_.frame_type_
-					, v.data_));
+				//parser_.cb_(to_code(this->parser_.header_, v.data_));
+				parser_.cb_(this->parser_.header_, v.data_);
+
+				//parser_.cb_(cyng::generate_invoke("wmbus.push.frame"
+				//	, cyng::buffer_t(this->parser_.server_id_.begin(), this->parser_.server_id_.end())
+				//	, this->parser_.header_.manufacturer_
+				//	, this->parser_.header_.version_
+				//	, this->parser_.header_.medium_
+				//	, this->parser_.header_.dev_id_
+				//	, this->parser_.header_.frame_type_
+				//	, v.data_));
 
 				return state::LENGTH;
 			}
 			return state::HEADER_NONE;
 		}
+
+		header::header()
+			: packet_size_(0)
+			, manufacturer_()
+			, version_()
+			, medium_()
+			, dev_id_()
+			, frame_type_()
+		{}
+
+		std::size_t	header::size() const
+		{
+			return packet_size_;
+		}
+
+		std::string header::get_manufacturer() const
+		{
+			return node::sml::decode(manufacturer_.at(0), manufacturer_.at(1));
+		}
+
+		std::uint8_t header::get_version() const
+		{
+			return version_;
+		}
+
+		std::uint8_t header::get_medium() const
+		{
+			return medium_;
+		}
+
+		std::uint32_t header::get_dev_id() const
+		{
+			std::uint32_t id{ 0 };
+
+			//
+			//	get the device ID as u32 value
+			//
+			auto idp = reinterpret_cast<std::uint32_t const*>(dev_id_.data());
+
+			//
+			//	read this value as a hex value
+			//
+			std::stringstream ss;
+			ss.fill('0');
+			ss
+				<< std::setw(8)
+				<< std::setbase(16)
+				<< *idp;
+
+			//
+			//	write this value as decimal value
+			//
+			ss
+				>> std::setbase(10)
+				>> id
+				;
+
+			return id;
+		}
+
+		std::uint8_t header::get_frame_type() const
+		{
+			return frame_type_;
+		}
+
+		void header::reset()
+		{
+			packet_size_ = 0;
+			std::fill(std::begin(manufacturer_), std::end(manufacturer_), 0);
+			version_ = 0;
+			medium_ = 0;
+			std::fill(std::begin(dev_id_), std::end(dev_id_), 0);
+			frame_type_ = 0;
+		}
+
+		cyng::buffer_t header::get_server_id() const
+		{
+			std::array<char, 9>	server_id;
+			server_id[0] = 1;	//	wireless M-Bus
+
+			//	[1-2] 2 bytes manufacturer ID
+			server_id[1] = manufacturer_[0];
+			server_id[2] = manufacturer_[1];
+
+			//	[3-6] 4 bytes serial number (reversed)
+			server_id[3] = dev_id_[0];
+			server_id[4] = dev_id_[1];
+			server_id[5] = dev_id_[2];
+			server_id[6] = dev_id_[3];
+
+			server_id[7] = version_;
+			server_id[8] = medium_;
+
+			return cyng::buffer_t(server_id.begin(), server_id.end());
+		}
+
+		cyng::vector_t to_code(header const& h, cyng::buffer_t const& data)
+		{
+			return cyng::generate_invoke("wmbus.push.frame"
+				, h.get_server_id()
+				, h.get_manufacturer()
+				, h.version_
+				, h.medium_
+				, h.get_dev_id()
+				, h.frame_type_
+				, data);
+		}
+
 	}
 }	//	node
 

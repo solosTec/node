@@ -59,14 +59,22 @@ namespace node
 		, boost::uuids::uuid origin
 		, std::uint64_t max_messages);
 
-	void insert_wmbus_uplink(cyng::store::db& db
+	bool insert_wmbus_uplink(cyng::store::db& db
 		, std::chrono::system_clock::time_point tp
+		, std::string const& srv_id
+		, std::uint8_t medium
+		, std::string  manufacturer
+		, std::uint8_t frame_type
 		, std::string const& payload
 		, boost::uuids::uuid tag
 		, boost::uuids::uuid origin);
 
-	void insert_wmbus_uplink(cyng::store::table* tbl
+	bool insert_wmbus_uplink(cyng::store::table* tbl
 		, std::chrono::system_clock::time_point tp
+		, std::string const& srv_id
+		, std::uint8_t medium
+		, std::string  manufacturer
+		, std::uint8_t frame_type
 		, std::string const& payload
 		, boost::uuids::uuid tag
 		, boost::uuids::uuid origin

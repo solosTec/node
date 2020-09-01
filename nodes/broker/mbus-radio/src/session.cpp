@@ -7,6 +7,7 @@
 
 #include "session.h"
 #include <smf/cluster/generator.h>
+#include <smf/sml/srv_id_io.h>
 
 #include <cyng/io/io_bytes.hpp>
 #include <cyng/io/io_buffer.h>
@@ -32,6 +33,24 @@ namespace node
 		, data_()
 		, rx_(0)
 		, sx_(0)
+		, parser_([&](wmbus::header const& h, cyng::buffer_t const& data) {
+
+			auto const str = cyng::io::to_hex(data);
+			auto const srv_id = sml::from_server_id(h.get_server_id());
+
+			CYNG_LOG_INFO(logger_, srv_id
+				<< " sent " 
+				<< cyng::bytes_to_str(data.size()));
+
+			cluster_.async_run(bus_insert_wMBus_uplink(std::chrono::system_clock::now()
+				, srv_id
+				, h.get_medium()
+				, h.get_manufacturer()
+				, h.get_frame_type()
+				, str
+				, cluster_.tag()));
+
+		})
 	{
 		CYNG_LOG_INFO(logger_, "new session [" 
 			<< vm_.tag()
@@ -119,11 +138,7 @@ namespace node
 		//
 		//	insert new record into "_wMBusUplink" table
 		//	
-		auto const str = cyng::io::to_hex(data);
-
-		cluster_.async_run(bus_insert_wMBus_uplink(std::chrono::system_clock::now()
-			, str
-			, cluster_.tag()));
+		parser_.read(data.begin(), data.end());
 
 		//
 		//	update "sx" value of this session/device
@@ -141,9 +156,11 @@ namespace node
 	void session::process_login(cyng::buffer_t&& data)
 	{
 		data_.insert(data_.end(), data.begin(), data.end());
-		if (data.back() == '\n') {
 
-			auto const vec = cyng::split(std::string(data_.begin(), data_.end() - 1), ":");
+		auto pos = std::find(data_.begin(), data_.end(), '\n');
+		if (pos != data_.end()) {
+
+			auto const vec = cyng::split(std::string(data_.begin(), pos), ":");
 			if (vec.size() == 2) {
 
 				CYNG_LOG_INFO(logger_, "send authorization request to cluster: "
@@ -167,9 +184,27 @@ namespace node
 			}
 
 			//
+			//	move iterator behind '\n' and
+			//	remove login data from data stream
+			//
+			if (pos != data_.end())	++pos;
+			data_.erase(data_.begin(), pos);
+
+			//
 			//	login complete
 			//
 			authorized_ = true;
+
+			if (!data_.empty()) {
+				process_data(std::move(data_));
+			}
+		}
+		else {
+			if (data_.size() > 256) {
+				CYNG_LOG_WARNING(logger_, "give up on waiting for login after "
+					<< cyng::bytes_to_str(data_.size()));
+				authorized_ = true;
+			}
 		}
 	}
 

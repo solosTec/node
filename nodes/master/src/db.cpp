@@ -323,12 +323,17 @@ namespace node
 		}
 	}
 
-	void insert_wmbus_uplink(cyng::store::db& db
+	bool insert_wmbus_uplink(cyng::store::db& db
 		, std::chrono::system_clock::time_point tp
+		, std::string const& srv_id
+		, std::uint8_t medium
+		, std::string  manufacturer
+		, std::uint8_t frame_type
 		, std::string const& payload
 		, boost::uuids::uuid tag
 		, boost::uuids::uuid origin)
 	{
+		bool r{ false };
 		db.access([&](cyng::store::table* tbl, cyng::store::table const* tbl_cfg)->void {
 			auto rec = tbl_cfg->lookup(cyng::table::key_generator("max-wMBus-records"));
 			const std::uint64_t max_messages = (!rec.empty())
@@ -336,14 +341,21 @@ namespace node
 				: 500u
 				;
 
-			insert_wmbus_uplink(tbl, tp, payload, tag, origin, max_messages);
-			}, cyng::store::write_access("_wMBusUplink")
-				, cyng::store::read_access("_Config"));
+			r = insert_wmbus_uplink(tbl, tp, srv_id, medium, manufacturer, frame_type, payload, tag, origin, max_messages);
+
+		}	, cyng::store::write_access("_wMBusUplink")
+			, cyng::store::read_access("_Config"));
+
+		return r;
 
 	}
 
-	void insert_wmbus_uplink(cyng::store::table* tbl
+	bool insert_wmbus_uplink(cyng::store::table* tbl
 		, std::chrono::system_clock::time_point tp
+		, std::string const& srv_id
+		, std::uint8_t medium
+		, std::string  manufacturer
+		, std::uint8_t frame_type
 		, std::string const& payload
 		, boost::uuids::uuid tag
 		, boost::uuids::uuid origin
@@ -354,17 +366,6 @@ namespace node
 		//
 		if (tbl->size() > max_messages)
 		{
-			auto max_rec = tbl->max_record();
-			if (!max_rec.empty()) {
-
-				//	get next message id
-				auto next_idx = cyng::value_cast<std::uint64_t>(max_rec["id"], 0u);
-
-				tbl->insert(cyng::table::key_generator(++next_idx)
-					, cyng::table::data_generator(tp, payload, tag)
-					, 1, origin);
-			}
-
 			//
 			//	remove oldest message (message with the lowest id)
 			//
@@ -372,12 +373,23 @@ namespace node
 			if (!min_rec.empty()) {
 				tbl->erase(min_rec.key(), origin);
 			}
+
+			auto max_rec = tbl->max_record();
+			if (!max_rec.empty()) {
+
+				//	get next message id
+				auto next_idx = cyng::value_cast<std::uint64_t>(max_rec["id"], 0u);
+
+				return tbl->insert(cyng::table::key_generator(++next_idx)
+					, cyng::table::data_generator(tp, srv_id, medium, manufacturer, frame_type, payload, tag)
+					, 1, origin);
+			}
+
 		}
-		else {
-			tbl->insert(cyng::table::key_generator(static_cast<std::uint64_t>(tbl->size()))
-				, cyng::table::data_generator(tp, payload, tag)
+
+		return tbl->insert(cyng::table::key_generator(static_cast<std::uint64_t>(tbl->size()))
+				, cyng::table::data_generator(tp, srv_id, medium, manufacturer, frame_type, payload, tag)
 				, 1, origin);
-		}
 	}
 
 	cyng::table::record connection_lookup(cyng::store::table* tbl, cyng::table::key_type&& key)

@@ -9,6 +9,8 @@ target_include_directories(broker_mbus_radio
 target_link_libraries(broker_mbus_radio 
 	smf_info 
 	smf_cluster 
+	smf_protocol_mbus
+	smf_protocol_sml
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"

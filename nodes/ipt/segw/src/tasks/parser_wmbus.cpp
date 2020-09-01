@@ -23,11 +23,11 @@ namespace node
 	: base_(*btp) 
 		, logger_(logger)
 		, cache_(cfg)
-		, parser_([&](cyng::vector_t&& prg) {
+		, parser_([&](wmbus::header const& h, cyng::buffer_t const& data) {
 
 			//CYNG_LOG_DEBUG(logger_, prg.size() << " m-bus instructions received");
 			//CYNG_LOG_TRACE(logger_, vm.tag() << ": " << cyng::io::to_str(prg));
-			vm.async_run(std::move(prg));
+			vm.async_run(to_code(h, data));
 
 		})
 	{

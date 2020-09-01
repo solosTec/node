@@ -9,6 +9,7 @@
 #define NODE_MBUS_BROKER_SESSION_H
 
 #include <NODE_project_info.h>
+#include <smf/mbus/parser.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -43,11 +44,6 @@ namespace node
 		cyng::controller& vm_;	//!< session VM
 
 		/**
-		 * session tag
-		 */
-		//boost::uuids::uuid const tag_;
-
-		/**
 		 * Buffer for incoming data.
 		 */
 		read_buffer_t buffer_;
@@ -62,7 +58,16 @@ namespace node
 		 */
 		cyng::buffer_t data_;
 
+		/**
+		 * in/out byte counter
+		 */
 		std::uint64_t rx_, sx_;
+
+		/**
+		 * M-Bus parser
+		 */
+		wmbus::parser parser_;
+
 	};
 	
 }
