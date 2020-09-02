@@ -620,7 +620,6 @@ namespace node
 					<< cyng::io::to_str(params));
 
 #endif
-				//	"bus.req.proxy.gateway"
 				ctx.queue(bus_req_com_sml(tag_ws	//	web-socket tag (origin)
 					, channel
 					, r.first	//	OBIS root code

@@ -678,6 +678,59 @@ namespace node
 			, pwd
 			, false));	//	no job
 
+#ifdef _DEBUG
+		if (root == sml::OBIS_ROOT_BROKER) {
+
+			//
+			//	send test response 
+			//
+			bus_->vm_.async_run(bus_res_com_sml(tag
+				, source
+				, seq
+				, gw
+				, origin
+				, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
+				, sml::from_server_id(srv_id)
+				, transform_to_str_vector(pd.get_path(), false)	//	vector of string
+				, cyng::param_map_factory("brokers", cyng::vector_factory({
+					cyng::tuple_factory(
+						cyng::param_factory("hardwarePort", "ttyAPP0"),
+						cyng::param_factory("transparent", false),
+						cyng::param_factory("addresses", cyng::vector_factory({
+							cyng::tuple_factory(
+								cyng::param_factory("host", "segw.ch"),
+								cyng::param_factory("service", 12000),
+								cyng::param_factory("user", "demo"),
+								cyng::param_factory("pwd", "demo")
+							),
+							cyng::tuple_factory(
+								cyng::param_factory("host", "localhost"),
+								cyng::param_factory("service", 12001),
+								cyng::param_factory("user", "demo"),
+								cyng::param_factory("pwd", "demo")
+							)
+						}))
+					),
+					cyng::tuple_factory(
+						cyng::param_factory("hardwarePort", "ttyAPP1"),
+						cyng::param_factory("transparent", true),
+						cyng::param_factory("addresses", cyng::vector_factory({
+							cyng::tuple_factory(
+								cyng::param_factory("host", "segw.ch"),
+								cyng::param_factory("service", 12002),
+								cyng::param_factory("user", "solosTec"),
+								cyng::param_factory("pwd", "secret")
+							)
+						}))
+					)
+				}))
+				//, cyng::param_map_factory("8181C78203FF", "DEMO")("814917070000", "127.0.0.1")
+			));
+
+			return cyng::continuation::TASK_CONTINUE;
+		}
+#endif
+
 		if (cache_enabled && config_cache_.is_cached(pd.get_path())) {
 
 			//
