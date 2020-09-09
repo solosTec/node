@@ -230,6 +230,7 @@ namespace node
 					cyng::param_factory(sml::OBIS_W_MBUS_POWER.to_str(), static_cast<std::uint8_t>(mbus::STRONG)),	//	low, basic, average, strong (unused)
 					cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str(), true),	//	install mode
 
+					cyng::param_factory("broker-login", true),		//	send login
 					cyng::param_factory("broker", cyng::vector_factory({
 						//	define multiple broker here
 						cyng::tuple_factory(
@@ -258,6 +259,7 @@ namespace node
 					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 					cyng::param_factory("speed", 2400),		//	initial
 
+					cyng::param_factory("broker-login", true),		//	send login
 					cyng::param_factory("broker", cyng::vector_factory({
 						//	define multiple broker here
 						cyng::tuple_factory(

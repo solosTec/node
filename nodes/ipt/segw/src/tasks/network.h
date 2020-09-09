@@ -205,6 +205,11 @@ namespace node
 			 */
 			std::size_t task_gpio_;
 
+			/**
+			 * number of retries to connect after connection to master get lost
+			 */
+			std::uint32_t retries_;
+
 		};
 	}
 }

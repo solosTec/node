@@ -209,7 +209,6 @@ namespace node
 				}
 				else
 				{
-					socket_.close();
 					CYNG_LOG_WARNING(logger_, "task #"
 						<< base_.get_id()
 						<< " <"
@@ -220,6 +219,11 @@ namespace node
 						<< port_
 						<< ' '
 						<< ec.message());
+
+					//
+					//	socket should already be closed
+					//
+					socket_.close(ec);
 
 					reset_write_buffer();
 
@@ -245,7 +249,10 @@ namespace node
 				}
 				else
 				{
-					socket_.close();
+					//
+					//	no more data will be send
+					//
+					socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
 				}
 		});
 	}

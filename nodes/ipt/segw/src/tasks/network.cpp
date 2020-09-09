@@ -70,6 +70,7 @@ namespace node
 				, pwd
 				, accept_all)
 			, task_gpio_(cyng::async::NO_TASK)
+			, retries_(cfg_.get_ipt_tcp_connect_retries())
 		{
 			CYNG_LOG_INFO(logger_, "initialize task #"
 				<< base_.get_id()
@@ -260,6 +261,11 @@ namespace node
 			//	update IP address
 			//
 			vm_.async_run(cyng::generate_invoke("update.status.ip", cyng::invoke("ip.tcp.socket.ep.local"), cyng::invoke("ip.tcp.socket.ep.remote")));
+
+			//
+			//	reset retry counter for attempts to reconnect
+			//
+			retries_ = cfg_.get_ipt_tcp_connect_retries();
 		}
 
 		//	slot [1] - connection lost / reconnect
@@ -425,24 +431,39 @@ namespace node
 
 		void network::reconfigure_impl()
 		{
-			//
-			//	switch to other master
-			//
-			auto const rec = cfg_.switch_ipt_redundancy();
+			if (retries_ != 0u) {
 
-			CYNG_LOG_INFO(logger_, "switch to redundancy ["
-				<< rec.host_
-				<< ':'
-				<< rec.service_
-				<< "]"	);
+				//
+				//	wait a shorter time
+				//
+				base_.suspend(cfg_.get_ipt_tcp_wait_to_reconnect()/retries_);
 
-			//
-			//	trigger reconnect 
-			//
-			CYNG_LOG_INFO(logger_, "reconnect to network in "
-				<< cyng::to_str(rec.monitor_));
+				CYNG_LOG_INFO(logger_, "reconnect to network in "
+					<< cyng::to_str(cfg_.get_ipt_tcp_wait_to_reconnect() / retries_));
 
-			base_.suspend(cfg_.get_ipt_tcp_wait_to_reconnect());
+				--retries_;
+
+			}
+			else {
+				//
+				//	switch to other master
+				//
+				auto const rec = cfg_.switch_ipt_redundancy();
+
+				CYNG_LOG_INFO(logger_, "switch to redundancy ["
+					<< rec.host_
+					<< ':'
+					<< rec.service_
+					<< "]");
+
+				//
+				//	trigger reconnect 
+				//
+				CYNG_LOG_INFO(logger_, "reconnect to network in "
+					<< cyng::to_str(rec.monitor_));
+
+				base_.suspend(cfg_.get_ipt_tcp_wait_to_reconnect());
+			}
 		}
 
 		void network::load_push_ops()

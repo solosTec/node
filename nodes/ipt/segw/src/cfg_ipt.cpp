@@ -55,7 +55,7 @@ namespace node
 	ipt::master_record cfg_ipt::switch_ipt_redundancy()
 	{
 		//
-		//	This reambles the logic from the class ipt::redundancy
+		//	Simulate the logic from the class ipt::redundancy
 		//
 		auto const idx = (get_ipt_master_index() == 0)
 			? 1

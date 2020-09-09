@@ -64,9 +64,22 @@ namespace node
 		 std::size_t get_broker_count(cfg_broker::source s) const;
 		 std::vector<broker> get_broker(source s) const;
 
+		 /**
+		  * Reference to "broker-login" configuration
+		  */
+		 bool is_login_required(cfg_broker::source s) const;
+
+		 /**
+		  * /dev/ttyAPP0 and /dev/ttyAPP1 on linux systems
+		  */
+		 std::string get_port_name(cfg_broker::source s) const;
+
 	private:
 		std::size_t get_broker_count(std::string) const;
 		broker_list_t get_broker(std::string) const;
+
+		bool is_login_required(std::string) const;
+		std::string get_port_name(std::string) const;
 
 	private:
 		cache& cache_;

@@ -659,7 +659,14 @@ namespace node
 
 			BOOST_ASSERT(counter == 0);
 			boost::ignore_unused(counter);	//	release version
-			CYNG_LOG_INFO(logger_, tbl->size() << ' ' << tbl->meta().get_name() << " records sent");
+			CYNG_LOG_INFO(logger_, "channel " 
+				<< channel
+				<< " sent "
+				<< tbl->size() 
+				<< ' ' 
+				<< tbl->meta().get_name() 
+				<< " records to client "
+				<< tag);
 
 			//
 			//	inform client that data upload is finished

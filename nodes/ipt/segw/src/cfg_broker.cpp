@@ -83,6 +83,43 @@ namespace node
 			;
 	}
 
+	bool cfg_broker::is_login_required(cfg_broker::source s) const
+	{
+		switch (s) {
+		case source::WIRELESS_LMN:
+			return is_login_required(build_cfg_key({ sml::OBIS_IF_wMBUS }, "broker-login"));
+		case source::WIRED_LMN:
+			return is_login_required(build_cfg_key({ "rs485", "broker-login" }));
+		default:
+			break;
+		}
+		return false;
+	}
+
+	bool cfg_broker::is_login_required(std::string path) const
+	{
+		return cache_.get_cfg(path, true);
+	}
+
+	std::string cfg_broker::get_port_name(cfg_broker::source s) const
+	{
+		switch (s) {
+		case source::WIRELESS_LMN:
+			return get_port_name(build_cfg_key({ sml::OBIS_IF_wMBUS }, "port"));
+		case source::WIRED_LMN:
+			return get_port_name(build_cfg_key({ "rs485", "port" }));
+		default:
+			break;
+		}
+		return "";
+	}
+
+	std::string cfg_broker::get_port_name(std::string path) const
+	{
+		return cache_.get_cfg(path, "");
+	}
+
+
 	cfg_broker::broker::broker(std::string account, std::string pwd, std::string address, std::uint16_t port)
 		: account_(account)
 		, pwd_(pwd)

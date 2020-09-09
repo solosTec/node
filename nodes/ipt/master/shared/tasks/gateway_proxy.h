@@ -260,32 +260,36 @@ namespace node
 		void execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen
 			, proxy_data const&
 			, std::uint8_t idx
-			, cyng::tuple_t tpl);
+			, cyng::tuple_t&& tpl);
 		void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen
 			, proxy_data const&
-			, cyng::tuple_t const& params);
+			, cyng::tuple_t&& params);
 		void execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen
 			, proxy_data const&
-			, cyng::tuple_t const& params);
-		void execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
+			, cyng::tuple_t&& params);
+		bool execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
 			, proxy_data const&
 			, std::uint8_t nr
-			, cyng::buffer_t const&);
-		void execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
+			, std::string&& str);
+		bool execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
 			, proxy_data const&
 			, std::uint8_t nr
-			, cyng::buffer_t const&);
-		void execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
+			, std::string&& str);
+		bool execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
 			, proxy_data const&
 			, std::uint8_t nr
-			, cyng::buffer_t const&);
-		void execute_cmd_set_proc_param_meter(sml::req_generator& sml_gen
+			, std::string&& );
+		bool execute_cmd_set_proc_param_meter(sml::req_generator& sml_gen
 			, proxy_data const&
-			, cyng::buffer_t const&
+			, std::string &&
 			, std::string 
 			, std::string
 			, std::string
 			, std::string);
+
+		void execute_cmd_set_proc_param_broker(sml::req_generator& sml_gen
+			, proxy_data const&
+			, cyng::vector_t&& params);
 
 		/**
 		 * Store proxy data in transaction/output map
@@ -396,6 +400,12 @@ namespace node
 	};
 
 	cyng::mac48 get_mac();
+
+	/**
+	 * transform OBIS code tree into a web-friendly JSON like structure
+	 */
+	cyng::param_map_t transform_status_word(cyng::object);
+	cyng::param_map_t transform_broker_params(cyng::logging::log_ptr, cyng::param_map_t const&);
 
 }
 

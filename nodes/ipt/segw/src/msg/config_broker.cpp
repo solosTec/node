@@ -16,6 +16,7 @@
 
 #include <cyng/numeric_cast.hpp>
 #include <cyng/buffer_cast.h>
+#include <cyng/json.h>
 
 namespace node
 {
@@ -34,14 +35,45 @@ namespace node
 		{
 			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_BROKER);
 
-			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_ENABLED, make_obis(0x90, 0x00, 0x00, 0x00, 0x01, 1u) }, make_value(cfg_.is_transparent_mode(0)));
-			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_SERVER, make_obis(0x90, 0x00, 0x00, 0x00, 0x02, 1u) }, make_value("segw.ch"));
-			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_PORT, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 1u) }, make_value(12001u));
+			CYNG_LOG_DEBUG(logger_, cyng::io::to_type(msg));
 
-			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_ENABLED, make_obis(0x90, 0x00, 0x00, 0x00, 0x01, 2u) }, make_value(cfg_.is_transparent_mode(1)));
-			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_SERVER, make_obis(0x90, 0x00, 0x00, 0x00, 0x02, 2u) }, make_value("192.168.1.21"));
-			//append_get_proc_response(msg, { OBIS_ROOT_BROKER, OBIS_BROKER_PORT, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 2u) }, make_value(12002u));
+			//
+			//	wireless
+			//
+			auto const lmn_wireless = cfg_.get_broker(cfg_broker::source::WIRELESS_LMN);
+			  
+			append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x01, 1u) }, make_value(cfg_.is_login_required(cfg_broker::source::WIRELESS_LMN)));
+			//CYNG_LOG_DEBUG(logger_, cyng::io::to_type(msg));
+			append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x02, 1u) }, make_value(cfg_.get_port_name(cfg_broker::source::WIRELESS_LMN)));
+			//CYNG_LOG_DEBUG(logger_, cyng::io::to_type(msg));
 
+			std::uint8_t idx{ 1 };
+			for (auto const& lmn : lmn_wireless) {
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 1u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idx) }, make_value(lmn.get_address()));
+				//CYNG_LOG_DEBUG(logger_, cyng::io::to_type(msg));
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 1u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idx) }, make_value(lmn.get_port()));
+				//CYNG_LOG_DEBUG(logger_, cyng::io::to_type(msg));
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 1u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idx) }, make_value(lmn.get_account()));
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 1u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idx) }, make_value(lmn.get_pwd()));
+				++idx;
+			}
+
+			//
+			//	wired (rs485)
+			//	reset index
+			//
+			auto const lmn_wired = cfg_.get_broker(cfg_broker::source::WIRED_LMN);	//	rs485
+			idx = 1;
+
+			append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x01, 2u) }, make_value(cfg_.is_login_required(cfg_broker::source::WIRED_LMN)));
+			append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x02, 2u) }, make_value(cfg_.get_port_name(cfg_broker::source::WIRED_LMN)));
+			for (auto const& lmn : lmn_wired) {
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 2u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idx) }, make_value(lmn.get_address()));
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 2u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idx) }, make_value(lmn.get_port()));
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 2u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idx) }, make_value(lmn.get_account()));
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 2u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idx) }, make_value(lmn.get_pwd()));
+				++idx;
+			}
 
 			//
 			//	append to message queue
