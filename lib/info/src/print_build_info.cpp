@@ -120,15 +120,51 @@ namespace node
 		//
 		//	ARM platform
 		//	
+        //  #define __ARM_SIZEOF_WCHAR_T 4
+        //  #define __ARM_ARCH_ISA_ARM 1
+        //  #define __ARMEL__ 1
+        //  #define __ARM_SIZEOF_MINIMAL_ENUM 4
+        //  #define __ARM_PCS 1
+        //  #define __ARM_FEATURE_QBIT 1
+        //  #define __ARM_ARCH_5TEJ__ 1
+        //  #define __ARM_32BIT_STATE 1
+        //  #define __ARM_FEATURE_CLZ 1
+        //  #define __ARM_ARCH_ISA_THUMB 1
+        //  #define __ARM_ARCH 5
+        //  #define __ARM_FEATURE_COPROC 7
+        //  #define __ARM_EABI__ 1
+        //  #define __ARM_FEATURE_DSP 1
+		
+		<< "ARM ARCH     : "
+#if defined(__ARM_ARCH)
+        << __ARM_ARCH
+#else
+        << "undefined"
+#endif
+
+        << "COPROC       : "
+#if defined(__ARM_FEATURE_COPROC)
+        << __ARM_FEATURE_COPROC
+#else
+        << "undefined"
+#endif
+
 #if defined(__ARMEL__)
 		<< "ARM FP       : " 
-		<< __ARM_FP
+#if !defined(__ARM_FP)
+		<< "un"
+#endif
+		<< "defined"
 		<< std::endl
 
 		<< "ARM NEON FP  : "
-		<< __ARM_NEON_FP
+#if !defined(__ARM_NEON_FP)
+		<< "un"
+#endif
+		<< "defined"
 		<< std::endl
 #endif
+
 			
 #ifdef __CPP_SUPPORT_P1099R5
 		<< "P1099R5: using enums" << std::endl
