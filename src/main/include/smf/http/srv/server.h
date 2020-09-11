@@ -44,7 +44,8 @@ namespace node
 				, auth_dirs const& ad
 #endif
 				, std::set<boost::asio::ip::address> const& blocklist
-				, std::map<std::string, std::string> const& redirects
+				, std::map<std::string, std::string> const& redirects_specific
+				, std::map<std::string, std::string> const& redirects_generic
 				, cyng::controller& vm
 				, bool https_rewrite);
 

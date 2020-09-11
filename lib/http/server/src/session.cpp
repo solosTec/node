@@ -363,11 +363,6 @@ namespace node
 						, target));
 				}
 
-				////
-				////	test authorization
-				////
-				//if (!check_auth(req, target)) return;
-
 				//	apply redirections
 				connection_manager_.redirect(target);
 

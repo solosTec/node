@@ -47,8 +47,9 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 				, auth_dirs const& ad
 #endif
-				, std::map<std::string, std::string> const&
-                , std::size_t timeout
+				, std::map<std::string, std::string> const& redirects_specific
+				, std::map<std::string, std::string> const& redirects_generic
+				, std::size_t timeout
 				, std::uint64_t max_upload_size
 				, bool https_rewrite
 			);
@@ -146,8 +147,9 @@ namespace node
 			auth_dirs const auth_dirs_;
 #endif
 
-			std::map<std::string, std::string> const redirects_;
-            std::chrono::seconds timeout_;
+			std::map<std::string, std::string> const redirects_specific_;
+			std::map<std::string, std::string> const redirects_generic_;
+			std::chrono::seconds timeout_;
 			std::uint64_t max_upload_size_;
 			bool https_rewrite_;
 

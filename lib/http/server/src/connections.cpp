@@ -17,6 +17,7 @@
 #include <cyng/table/key.hpp>
 #include <cyng/table/body.hpp>
 #include <cyng/io/serializer.h>
+#include <cyng/util/split.h>
 
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -32,8 +33,9 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs const& ad
 #endif
-			, std::map<std::string, std::string> const& redirects
-            , std::size_t timeout
+			, std::map<std::string, std::string> const& redirects_specific
+			, std::map<std::string, std::string> const& redirects_generic
+			, std::size_t timeout
 			, std::uint64_t max_upload_size
 			, bool https_rewrite)
 		: logger_(logger)
@@ -43,7 +45,8 @@ namespace node
 #ifdef NODE_SSL_INSTALLED
 			, auth_dirs_(ad)
 #endif
-			, redirects_(redirects)
+			, redirects_specific_(redirects_specific)
+			, redirects_generic_(redirects_generic)
             , timeout_(timeout)
 			, max_upload_size_(max_upload_size)
 			, https_rewrite_(https_rewrite)
@@ -85,17 +88,55 @@ namespace node
 
 		bool connections::redirect(std::string& path) const
 		{
-			if (cyng::filesystem::is_directory(path)) {
-				path.append("/index.html");
+			//	skip all characters after '?'
+			//	example: /sockjs-node/info?t=1599821614083
+			auto vec = cyng::split(path, "?");
+			auto const p = (vec.size() == 2)
+				? vec.at(0)
+				: path
+				;
+
+			if (vec.size() < 2) {
+				if (cyng::filesystem::is_directory(path)) {
+					path.append("/index.html");
+				}
 			}
 
-			auto const pos = redirects_.find(path);
-			if (pos != redirects_.end()) {
+			//
+			//	specific redirects first
+			//
+			{
+				auto const pos = redirects_specific_.find(p);
+				if (pos != redirects_specific_.end()) {
 
-				CYNG_LOG_TRACE(logger_, "redirect " << path << " ==> " << pos->second);
-				path = pos->second;
-				return true;
+					CYNG_LOG_TRACE(logger_, "redirect (specific rule) " << path << " ==> " << pos->second);
+					if (vec.size() < 2) {
+						path = pos->second;
+					}
+					else {
+						path = pos->second + '?' + vec.at(1);
+					}
+					return true;
+				}
 			}
+
+			//
+			//	generic redirects second
+			//
+			{
+				auto const pos = redirects_generic_.lower_bound(path);
+				if (pos != redirects_generic_.end()) {
+
+					auto const& key = pos->first;
+					if (boost::algorithm::starts_with(path, key)) {
+
+						CYNG_LOG_TRACE(logger_, "redirect (generic rule) " << path << " ==> " << pos->second);
+						path.replace(path.begin(), path.begin() + key.size(), key);
+						return true;
+					}
+				}
+			}
+
 			return false;
 		}
 

@@ -45,7 +45,8 @@ namespace node
 		, auth_dirs const& ad
 #endif
 		, std::set<boost::asio::ip::address> const& blocklist
-		, std::map<std::string, std::string> const& redirects
+		, std::map<std::string, std::string> const& redirects_specific
+		, std::map<std::string, std::string> const& redirects_generic
 		, bool https_rewrite)
 	: base_(*btp)
 		, uidgen_()
@@ -65,7 +66,8 @@ namespace node
 			, ad
 #endif
 			, blocklist
-			, redirects
+			, redirects_specific
+			, redirects_generic
 			, bus_->vm_
 			, https_rewrite)
 		, dispatcher_(logger, server_.get_cm())

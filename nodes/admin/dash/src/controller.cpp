@@ -105,31 +105,18 @@ namespace node
 						cyng::make_address("185.104.184.126"),	//	M247 Ltd
 						cyng::make_address("185.162.235.56")	//	SILEX malware
 						})),	//	blocklist
-					cyng::param_factory("redirect", cyng::vector_factory({
-						cyng::param_factory("/", "/index.html"),
-						cyng::param_factory("/config/device", "/index.html"),
-						cyng::param_factory("/config/gateway", "/index.html"),
-						cyng::param_factory("/config/meter", "/index.html"),
-						cyng::param_factory("/config/iec", "/index.html"),
-						cyng::param_factory("/config/lora", "/index.html"),
-						cyng::param_factory("/config/upload", "/index.html"),
-						cyng::param_factory("/config/download", "/index.html"),
-						cyng::param_factory("/config/system", "/index.html"),
-						cyng::param_factory("/config/web", "/index.html"),
-
-						cyng::param_factory("/status/sessions", "/index.html"),
-						cyng::param_factory("/status/targets", "/index.html"),
-						cyng::param_factory("/status/connections", "/index.html"),
-
-						cyng::param_factory("/monitor/system", "/index.html"),
-						cyng::param_factory("/monitor/messages", "/index.html"),
-						cyng::param_factory("/monitor/tsdb", "/index.html"),
-						cyng::param_factory("/monitor/lora", "/index.html"),
-
-						cyng::param_factory("/task/csv", "/index.html"),
-						//cyng::param_factory("/task/tsdb", "/index.html"),
-						cyng::param_factory("/task/plausibility", "/index.html")
-					})),
+					cyng::param_factory("redirect-specific", cyng::tuple_factory(
+						//	specific redirects 
+						cyng::param_factory("/", "/index.html")
+					)),
+					cyng::param_factory("redirect-generic", cyng::tuple_factory(
+						//	generic redirects (if starts with ..., then
+						cyng::param_factory("/config", "/index.html"),
+						cyng::param_factory("/status", "/index.html"),
+						cyng::param_factory("/monitor", "/index.html"),
+						cyng::param_factory("/task", "/index.html"),
+						cyng::param_factory("/collector", "/index.html")
+					)),
 					cyng::param_factory("https-rewrite", false)	//	301 - Moved Permanently
 				))
 
@@ -237,21 +224,28 @@ namespace node
 		}
 
 		//
-		//	redirects
+		//	specific redirects
 		//
-		cyng::vector_t vec;
-		auto const rv = cyng::value_cast(dom.get("redirect"), vec);
-		auto const rs = cyng::to_param_map(rv);	// cyng::param_map_t
-		CYNG_LOG_INFO(logger, rs.size() << " redirects configured");
-		std::map<std::string, std::string> redirects;
-		for (auto const& redirect : rs) {
-			auto const target = cyng::value_cast<std::string>(redirect.second, "");
-			CYNG_LOG_TRACE(logger, redirect.first
-				<< " ==> "
-				<< target);
-			redirects.emplace(redirect.first, target);
+		std::map<std::string, std::string> redirects_specific;
+		{
+			auto const rs = cyng::to_param_map(dom.get("redirect-specific"));	// cyng::param_map_t
+			CYNG_LOG_INFO(logger, rs.size() << " specific redirects configured");
+			std::transform(std::begin(rs), std::end(rs), std::inserter(redirects_specific, redirects_specific.begin()), [](auto const& redirect) -> std::map<std::string, std::string>::value_type {
+				return { redirect.first, cyng::value_cast<std::string>(redirect.second, "") };
+				});
 		}
 
+		//
+		//	generic redirects
+		//
+		std::map<std::string, std::string> redirects_generic;
+		{
+			auto const rg = cyng::to_param_map(dom.get("redirect-generic"));	// cyng::param_map_t
+			CYNG_LOG_INFO(logger, rg.size() << " generic redirects configured");
+			std::transform(std::begin(rg), std::end(rg), std::inserter(redirects_generic, redirects_generic.begin()), [](auto const& redirect) -> std::map<std::string, std::string>::value_type {
+				return { redirect.first, cyng::value_cast<std::string>(redirect.second, "") };
+				});
+		}
 
 		cyng::async::start_task_delayed<cluster>(mux
 			, std::chrono::seconds(1)
@@ -267,7 +261,8 @@ namespace node
 			, ad
 #endif
 			, blocklist
-			, redirects
+			, redirects_specific
+			, redirects_generic
 			, https_rewrite);
 
 	}
