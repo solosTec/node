@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStart=/opt/smf/emitter -C/opt/smf/emitter_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
-Restart=always
+Restart=on-failure
 RestartSec=12
 
 [Install]

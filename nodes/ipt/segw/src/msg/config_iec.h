@@ -41,7 +41,7 @@ namespace node
 			//	, cyng::param_t const& param);
 
 			void set_meter(std::uint8_t nr, cyng::param_map_t&& map);
-			void set_param(obis&& code, cyng::param_t param);
+			void set_param(obis const& code, cyng::param_t param);
 
 		private:
 

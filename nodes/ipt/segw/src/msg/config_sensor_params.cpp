@@ -175,14 +175,14 @@ namespace node
 
 		}
 
-		void config_sensor_params::set_param(node::sml::obis code
+		void config_sensor_params::set_param(obis_path_t const& path
 			, cyng::buffer_t srv_id
 			, cyng::param_t const& param)
 		{
 
 			cache_.write_table("_DeviceMBUS", [&](cyng::store::table* tbl) {
 
-				switch (code.to_uint64()) {
+				switch (path.back().to_uint64()) {
 
 				case CODE_SERVER_ID:
 				case CODE_DEVICE_CLASS:

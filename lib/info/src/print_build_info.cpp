@@ -117,6 +117,18 @@ namespace node
 		<< "features      : C++2a"
 		<< std::endl
 		
+		//
+		//	ARM platform
+		//	
+#if defined(__ARMEL__)
+		<< "ARM FP       : " 
+		<< __ARM_FP
+		<< std::endl
+
+		<< "ARM NEON FP  : "
+		<< __ARM_NEON_FP
+		<< std::endl
+#endif
 			
 #ifdef __CPP_SUPPORT_P1099R5
 		<< "P1099R5: using enums" << std::endl

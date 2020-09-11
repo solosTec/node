@@ -45,33 +45,6 @@ namespace node
 		, bool accept_all
 		, boost::uuids::uuid tag);
 
-	std::vector<std::string> get_sub_vector(std::vector<std::string> const& vec)
-	{
-		if (boost::algorithm::equals(vec.at(2), "broker-vector")) {
-			//	example:
-			//	s:IF_wMBUS:broker-vector:amrd:amrd@localhost:12001
-			return cyng::slice(vec, 1, 2);
-		}
-
-		//
-		//	produce a subvector
-		//
-		return cyng::slice(vec, 1, vec.size() - 2);
-
-	}
-
-	std::string collect_value(std::size_t start, std::vector<std::string> const& vec)
-	{
-		std::string value;
-		for (std::size_t idx = start + 1; idx < vec.size(); ++idx) {
-			if (!value.empty()) {
-				value += ':';
-			}
-			value += vec.at(idx);
-		}
-		return value;
-	}
-	 
 	controller::controller(unsigned int index
 		, unsigned int pool_size
 		, std::string const& json_path
@@ -230,7 +203,7 @@ namespace node
 					cyng::param_factory(sml::OBIS_W_MBUS_POWER.to_str(), static_cast<std::uint8_t>(mbus::STRONG)),	//	low, basic, average, strong (unused)
 					cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str(), true),	//	install mode
 
-					cyng::param_factory("broker-login", true),		//	send login
+					cyng::param_factory("collector-login", true),		//	send login
 					cyng::param_factory("broker", cyng::vector_factory({
 						//	define multiple broker here
 						cyng::tuple_factory(
@@ -259,7 +232,7 @@ namespace node
 					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 					cyng::param_factory("speed", 2400),		//	initial
 
-					cyng::param_factory("broker-login", true),		//	send login
+					cyng::param_factory("collector-login", true),		//	send login
 					cyng::param_factory("broker", cyng::vector_factory({
 						//	define multiple broker here
 						cyng::tuple_factory(
@@ -605,42 +578,60 @@ namespace node
 			//
 			auto const tpl = cyng::to_tuple(dom.get("DB"));
 
-			//std::cout << kv << std::endl;
-			auto const vec = cyng::split(kv, ":");
+			//
+			//	path/value/type
+			//
+			auto const vec = cyng::split(kv, "/");
 			if (vec.size() > 2) {
+
+				auto const value = vec.at(1);
 
 				//
 				//	produce a subvector
 				//
-				auto const sub = get_sub_vector(vec);
+				auto const sub = cyng::split(vec.at(0), ":");
 
-				if (boost::algorithm::equals(vec.front(), "bool")) {
-					if (node::set_value(cyng::to_param_map(tpl), sub, boost::algorithm::equals(vec.back(), "true"))) {
+				if (boost::algorithm::equals(vec.back(), "bool")) {
+					if (node::set_value(cyng::to_param_map(tpl), vec, boost::algorithm::equals(value, "true"))) {
 						return EXIT_SUCCESS;
 					}
-					std::cout << "failed" << std::endl;
+					std::cout << "failed (" << value << ":bool)" << std::endl;
 				}
-				else if (boost::algorithm::equals(vec.front(), "u16")) {
-					if (node::set_value(cyng::to_param_map(tpl), sub, static_cast<std::uint16_t>(std::stoul(vec.back())))) {
+				else if (boost::algorithm::equals(vec.back(), "u16")) {
+					if (node::set_value(cyng::to_param_map(tpl), sub, static_cast<std::uint16_t>(std::stoul(value)))) {
 						return EXIT_SUCCESS;
 					}
-					std::cout << "failed" << std::endl;
+					std::cout << "failed (" << value << ":u16)" << std::endl;
 				}
-				else if (boost::algorithm::equals(vec.front(), "u32")) {
-					if (node::set_value(cyng::to_param_map(tpl), sub, static_cast<std::uint32_t>(std::stoul(vec.back())))) {
+				else if (boost::algorithm::equals(vec.back(), "u32")) {
+					if (node::set_value(cyng::to_param_map(tpl), sub, static_cast<std::uint32_t>(std::stoul(value)))) {
 						return EXIT_SUCCESS;
 					}
-					std::cout << "failed" << std::endl;
+					std::cout << "failed (" << value << ":u32)" << std::endl;
 				}
-				else if (boost::algorithm::equals(vec.front(), "s")) {
-					if (node::set_value(cyng::to_param_map(tpl), sub, collect_value(sub.size(), vec))) {
+				else if (boost::algorithm::equals(vec.back(), "s")) {
+					if (node::set_value(cyng::to_param_map(tpl), sub, value)) {
 						return EXIT_SUCCESS;
 					}
-					std::cout << "failed" << std::endl;
+					std::cout << "failed (" << value << ":s)" << std::endl;
+				}
+				else if (boost::algorithm::equals(vec.back(), "chrono:min")) {
+					auto const n = static_cast<std::uint32_t>(std::stoul(value));
+					if (node::set_value(cyng::to_param_map(tpl), sub, std::chrono::minutes(n))) {
+						return EXIT_SUCCESS;
+					}
+					std::cout << "failed (" << value << ":chrono:min)" << std::endl;
+				}
+				else if (boost::algorithm::equals(vec.back(), "chrono:sec")) {
+					auto const n = static_cast<std::uint32_t>(std::stoul(value));
+					if (node::set_value(cyng::to_param_map(tpl), sub, std::chrono::seconds(n))) {
+						return EXIT_SUCCESS;
+					}
+					std::cout << "failed (" << value << ":chrono:sec)" << std::endl;
 				}
 				else {
 					std::cout
-						<< "data type not supported - use [bool, u16, u32, s]"
+						<< "data type not supported - use [bool, u16, u32, s, chrono:min, chrono:sec]"
 						<< std::endl;
 				}
 			}

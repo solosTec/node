@@ -28,9 +28,9 @@ namespace node
 
 		/** @brief 81 48 27 32 06 01
 		 *
-		 * @return wait before TCP/IP reconnect (minutes)
+		 * @return wait before TCP/IP reconnect (seconds)
 		 */
-		std::chrono::minutes get_ipt_tcp_wait_to_reconnect();
+		std::chrono::seconds get_ipt_tcp_wait_to_reconnect();
 
 		/** @brief 81 48 31 32 02 01
 		 *

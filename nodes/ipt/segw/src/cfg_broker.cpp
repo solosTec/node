@@ -9,6 +9,7 @@
 #include "segw.h"
 #include "cache.h"
 #include <smf/sml/obis_db.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 
 #include <cyng/value_cast.hpp>
 #include <cyng/util/split.h>
@@ -25,71 +26,60 @@ namespace node
 		: cache_(c)
 	{}
 
-	std::size_t cfg_broker::get_broker_count(cfg_broker::source s) const
-	{
-		switch (s) {
-		case source::WIRELESS_LMN:
-			return get_broker_count(build_cfg_key({ sml::OBIS_IF_wMBUS }, "broker-mode"));
-		case source::WIRED_LMN:
-			return get_broker_count(build_cfg_key({ "rs485", "broker-vector" }));
-		default:
-			break;
-		}
-		return 0;
-	}
-
 	cfg_broker::broker_list_t cfg_broker::get_broker(cfg_broker::source s) const
 	{
 		switch (s) {
 		case source::WIRELESS_LMN:
-			return get_broker(build_cfg_key({ sml::OBIS_IF_wMBUS }, "broker-vector"));
 		case source::WIRED_LMN:
-			return get_broker(build_cfg_key({ "rs485", "broker-vector" }));
+			return get_broker(static_cast<std::uint8_t>(s));
 		default:
 			break;
 		}
 		return std::vector<cfg_broker::broker>();
 	}
 
-	cfg_broker::broker_list_t cfg_broker::get_broker(std::string path) const
+	cfg_broker::broker_list_t cfg_broker::get_broker(std::uint8_t port_idx) const
 	{
 		std::vector<cfg_broker::broker> r;
 
-		auto const str = cache_.get_cfg(path, "");
-		if (!str.empty()) {
-			//	example:
-			//	user:pwd@segw.ch:12002 user:pwd@segw.ch:12004
-			auto const vec = cyng::split(str, "\t ");
-			for (auto const& node : vec) {
-				auto const data = cyng::split(node, "@");
-				if (data.size() == 2) {
-					auto const cred = cyng::split(data.at(0), ":");
-					auto const uri = cyng::split(data.at(1), ":");
-					if (cred.size() == 2 && uri.size() == 2) {
-						r.emplace_back(cred.at(0), cred.at(1), uri.at(0), static_cast<std::uint16_t>(stoul(uri.at(1))));
-					}
-				}
+		//	
+		//	test for up to 16 broker
+		//	
+		for (std::uint8_t idx = 1; idx < 16; ++idx) {
+
+			auto const address = cache_.get_cfg(build_cfg_key({ 
+				sml::OBIS_ROOT_BROKER, 
+				sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+				sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idx) }), "?");
+
+			if (!boost::algorithm::equals(address, "?")) {
+
+				auto const port = cache_.get_cfg(build_cfg_key({
+					sml::OBIS_ROOT_BROKER,
+					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idx) }), static_cast<std::uint16_t>(12001u));
+				auto const account = cache_.get_cfg(build_cfg_key({
+					sml::OBIS_ROOT_BROKER,
+					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idx) }), "");
+				auto const pwd = cache_.get_cfg(build_cfg_key({
+					sml::OBIS_ROOT_BROKER,
+					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idx) }), "");
+
+				r.emplace_back(account, pwd, address, port);
 			}
 		}
-		return r;
-	}
 
-	std::size_t cfg_broker::get_broker_count(std::string path) const
-	{
-		auto const str = cache_.get_cfg(path, "");
-		return (str.empty()) 
-			? 0u
-			: cyng::split(str, " ").size()
-			;
+		return r;
 	}
 
 	bool cfg_broker::is_login_required(cfg_broker::source s) const
 	{
 		switch (s) {
 		case source::WIRELESS_LMN:
-			return is_login_required(build_cfg_key({ sml::OBIS_IF_wMBUS }, "broker-login"));
 		case source::WIRED_LMN:
-			return is_login_required(build_cfg_key({ "rs485", "broker-login" }));
+			return is_login_required(build_cfg_key({ sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x01, static_cast<std::uint8_t>(s)) }));
 		default:
 			break;
 		}

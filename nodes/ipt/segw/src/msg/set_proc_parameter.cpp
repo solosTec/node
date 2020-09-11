@@ -11,6 +11,7 @@
 #include "config_data_collector.h"
 #include "config_access.h"
 #include "config_iec.h"
+#include "config_broker.h"
 #include "../cache.h"
 #include "../segw.h"
 
@@ -60,56 +61,43 @@ namespace node
 			//	[190919215155673187-2,81490D0700FF 81490D070002 81491A070002,0500FFB04B94F8,operator,operator,("81491A070002":68f0)]
 			if (!path.empty()) {
 
-				auto pos = path.begin();
-				auto end = path.end();
-				obis const code(*pos);
-				if (pos != end)	++pos;
+				BOOST_ASSERT(path.back().to_str() == param.first);
 
-				switch (code.to_uint64()) {
+				switch (path.front().to_uint64()) {
 				case CODE_ROOT_IPT_PARAM:	//	IP-T (0x81490D0700FF)
-					if (pos != end)	_81490d0700ff(pos, end, trx, srv_id, user, pwd, param);
+					config_ipt_.set_param(path, param);
 					break;
 				case CODE_ROOT_SENSOR_PARAMS:	//	0x8181C78600FF
-					if (pos != end)	config_sensor_params_.set_param(*pos, srv_id, param);
+					config_sensor_params_.set_param(path, srv_id, param);
 					break;
 				case CODE_ROOT_DATA_COLLECTOR:	//	 0x8181C78620FF (Datenspiegel)
-					BOOST_ASSERT(pos->to_str() == param.first);
-					if (pos != end)	config_data_collector_.set_param(srv_id, obis(*pos).get_data().at(obis::VG_STORAGE), cyng::to_param_map(param.second));
+					config_data_collector_.set_param(path.back().get_data().at(obis::VG_STORAGE), srv_id, cyng::to_param_map(param.second));
 					break;
 				case CODE_CLEAR_DATA_COLLECTOR:	//	8181C7838205
 					config_data_collector_.clear_data_collector(srv_id, cyng::to_param_map(param.second));
 					break;
 				case CODE_STORAGE_TIME_SHIFT:	//	0x0080800000FF
-					storage_time_shift(pos, end, trx, srv_id, user, pwd, param);
+					storage_time_shift(cyng::numeric_cast<std::int32_t>(param.second, 0u));
 					break;
 				case CODE_ROOT_PUSH_OPERATIONS:	//	0x8181C78A01FF
-					BOOST_ASSERT(pos->to_str() == param.first);
-					if (pos != end)	config_data_collector_.set_push_operations(srv_id, user, pwd, obis(*pos).get_data().at(obis::VG_STORAGE), cyng::to_param_map(param.second));
+					config_data_collector_.set_push_operations(path.back().get_data().at(obis::VG_STORAGE), srv_id, cyng::to_param_map(param.second));
 					break;
 				case CODE_ROOT_SECURITY:	//	00 80 80 01 00 FF
 					//config_data_security_.set_proc_params(trx, srv_id);
 					break;
 				case CODE_CLASS_MBUS:	//	0x00B000020000
-					BOOST_ASSERT(pos != end);
-					BOOST_ASSERT(pos->to_str() == param.first);
-					class_mbus(obis(*pos), param);
+					class_mbus(path.back(), param);
 					break;
 				case CODE_IF_1107:	//	81 81 C7 93 00 FF
-					BOOST_ASSERT(pos != end);
-					if (OBIS_IF_1107_METER_LIST == obis(*pos)) {
+					if (OBIS_IF_1107_METER_LIST == path.back()) {
 						//
 						//	add/modify meter list
 						//
-						++pos;
-						auto const nr = obis(*pos).get_data().at(obis::VG_STORAGE);
-						BOOST_ASSERT(pos != end);
-						BOOST_ASSERT(pos->to_str() == param.first);
-						//iec_meter(nr, cyng::to_param_map(param.second));
+						auto const nr = path.back().get_data().at(obis::VG_STORAGE);
 						config_iec_.set_meter(nr, cyng::to_param_map(param.second));
 					}
 					else {
-						BOOST_ASSERT(pos->to_str() == param.first);
-						config_iec_.set_param(obis(*pos), param);
+						config_iec_.set_param(path.back(), param);
 					}
 					break;
 				case CODE_REBOOT:
@@ -117,12 +105,13 @@ namespace node
 					reboot(trx, srv_id);
 					break;
 				case CODE_ROOT_BROKER:
+					config_broker_.set_proc_params(path, srv_id, param.second);
 					break;
 				default:
-					CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request - unknown OBIS code "
-						<< code.to_str()
-						<< " / "
-						<< get_name(code));
+					CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request - unknown OBIS path "
+						<< sml::to_hex(path, ':')
+						<< " = "
+						<< cyng::io::to_type(param.second));
 					break;
 				}
 			}
@@ -131,51 +120,17 @@ namespace node
 			}
 		}
 
-		void set_proc_parameter::_81490d0700ff(obis_path_t::const_iterator pos
-			, obis_path_t::const_iterator end
-			, std::string trx
-			, cyng::buffer_t srv_id
-			, std::string user
-			, std::string pwd
-			, cyng::param_t	param)
-		{
-			switch (pos->to_uint64()) {
-			case 0x81490D070001:
-			case 0x81490D070002:
-				if (pos != end)	config_ipt_.set_param(*++pos, param);
-				break;
-			case 0x814827320601:	//	WAIT_TO_RECONNECT
-			case 0x814831320201:	//	TCP_CONNECT_RETRIES
-			case 0x0080800003FF:	//	use SSL
-				config_ipt_.set_param(*pos, param);
-				break;
-			default:
-				CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request <_81490d0700ff> - unknown OBIS code "
-					<< to_string(*pos)
-					<< " / "
-					<< cyng::io::to_hex(pos->to_buffer()));
-				break;
-			}
-		}
-
-		void set_proc_parameter::storage_time_shift(obis_path_t::const_iterator
-			, obis_path_t::const_iterator
-			, std::string trx
-			, cyng::buffer_t srv_id
-			, std::string user
-			, std::string pwd
-			, cyng::param_t	param)
+		void set_proc_parameter::storage_time_shift(std::int32_t sts)
 		{
 			CYNG_LOG_DEBUG(logger_, "sml.set.proc.parameter.request <0080800000FF> - storage time shift "
-				<< param.first
+				<< sml::OBIS_STORAGE_TIME_SHIFT.to_str()
 				<< " = "
-				<< cyng::io::to_str(param.second));
+				<< sts);
 
-			auto const sts(cyng::numeric_cast<std::int32_t>(param.second, 0u));
 			cache_.set_cfg(sml::OBIS_STORAGE_TIME_SHIFT.to_str(), sts);
 		}
 
-		void set_proc_parameter::class_mbus(obis&& code
+		void set_proc_parameter::class_mbus(obis const& code
 			, cyng::param_t param)
 		{
 			CYNG_LOG_DEBUG(logger_, "sml.set.proc.parameter.request (m-bus) "

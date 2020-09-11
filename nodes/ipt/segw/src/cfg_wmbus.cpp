@@ -27,6 +27,11 @@ namespace node
 		: cache_(c)
 	{}
 
+	bool cfg_wmbus::is_enabled() const
+	{
+		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "enabled"), false);
+	}
+
 	std::string cfg_wmbus::get_port() const
 	{
 

@@ -22,6 +22,11 @@ namespace node
 		: cache_(c)
 	{}
 
+	bool cfg_mbus::is_enabled() const
+	{
+		return cache_.get_cfg(build_cfg_key({ "rs485", "enabled" }), false);
+	}
+
 	std::chrono::seconds cfg_mbus::get_readout_interval() const
 	{
 		return cache_.get_cfg(build_cfg_key({ sml::OBIS_CLASS_MBUS, sml::OBIS_CLASS_MBUS_RO_INTERVAL }), std::chrono::seconds(3600));

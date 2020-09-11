@@ -23,7 +23,10 @@ namespace node
 		//	[0] send data
 		using msg_0 = std::tuple<cyng::buffer_t>;
 
-		using signatures_t = std::tuple<msg_0>;
+		//	[1] add/remove receiver
+		using msg_1 = std::tuple<std::size_t, bool>;
+
+		using signatures_t = std::tuple<msg_0, msg_1>;
 
 	public:
 		lmn_port(cyng::async::base_task* bt
@@ -35,7 +38,6 @@ namespace node
 			, boost::asio::serial_port_base::flow_control flow_control
 			, boost::asio::serial_port_base::stop_bits stopbits
 			, boost::asio::serial_port_base::baud_rate speed
-			, cyng::async::task_list_t const& receiver_data
 			, std::size_t receiver_status
 			, cyng::buffer_t&& init);
 
@@ -47,6 +49,12 @@ namespace node
 		 *
 		 */
 		cyng::continuation process(cyng::buffer_t);
+
+		/**
+		 * @brief slot [1] - add/remove receiver
+		 *
+		 */
+		cyng::continuation process(std::size_t, bool);
 
 	private:
 		void do_read();
@@ -76,7 +84,7 @@ namespace node
 		boost::asio::serial_port_base::flow_control flow_control_;
 		boost::asio::serial_port_base::stop_bits stopbits_;
 		boost::asio::serial_port_base::baud_rate baud_rate_;
-		cyng::async::task_list_t const receiver_data_;
+		cyng::async::task_list_t receiver_data_;
 		std::size_t const receiver_status_;
 		cyng::buffer_t init_;
 

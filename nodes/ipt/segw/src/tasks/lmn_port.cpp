@@ -25,7 +25,7 @@ namespace node
 		, boost::asio::serial_port_base::flow_control flow_control
 		, boost::asio::serial_port_base::stop_bits stopbits
 		, boost::asio::serial_port_base::baud_rate speed
-		, cyng::async::task_list_t const& receiver_data
+		//, cyng::async::task_list_t const& receiver_data
 		, std::size_t receiver_status
 		, cyng::buffer_t&& init)
 	: base_(*btp) 
@@ -38,7 +38,8 @@ namespace node
 		, flow_control_(flow_control)
 		, stopbits_(stopbits)
 		, baud_rate_(speed)
-		, receiver_data_(receiver_data)
+		, receiver_data_()
+		//, receiver_data_(receiver_data)
 		, receiver_status_(receiver_status)
 		, init_(std::move(init))
 		, buffer_()
@@ -155,10 +156,12 @@ namespace node
 					<< "> "
 					<< name_
 					<< " received "
-					<< bytes_transferred
-					<< " bytes");
+					<< cyng::bytes_to_str(bytes_transferred)
+					<< " => "
+					<< receiver_data_.size()
+					<< " receiver");
 
-//#ifdef SMF_IO_DEBUG
+#ifdef SMF_IO_DEBUG
 				cyng::io::hex_dump hd;
 				std::stringstream ss;
 				if (bytes_transferred > 128) {
@@ -169,7 +172,7 @@ namespace node
 				}
 				CYNG_LOG_TRACE(logger_, "\n" << ss.str());
 
-//#endif
+#endif
 				//
 				//	post data to receiver 
 				//
@@ -287,5 +290,67 @@ namespace node
 		//
 		return cyng::continuation::TASK_CONTINUE;
 	}
+
+	cyng::continuation lmn_port::process(std::size_t tsk, bool add)
+	{
+		auto pos = std::find(std::begin(receiver_data_), std::end(receiver_data_), tsk);
+		if (add) {
+			if (pos != std::end(receiver_data_)) {
+
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> receiver task #"
+					<< tsk
+					<< " already inserted");
+			}
+			else {
+				receiver_data_.push_back(tsk);
+
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> receiver task #"
+					<< tsk
+					<< " added - "
+					<< receiver_data_.size()
+					<< " in total");
+			}
+		}
+		else {
+			if (pos != std::end(receiver_data_)) {
+
+				receiver_data_.erase(pos);
+
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> receiver task #"
+					<< tsk
+					<< " removed - "
+					<< receiver_data_.size()
+					<< " in total");
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> cannot remove receiver task #"
+					<< tsk
+					<< " - not found");
+			}
+		}
+
+		//
+		//
+		//	continue task
+		//
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
 }
 

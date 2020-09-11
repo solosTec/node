@@ -51,12 +51,11 @@ namespace node
 		, cache_(cfg)
 		, decoder_wmbus_(logger, cfg, vm_)
 
-		//, serial_parser_(cyng::async::NO_TASK)
 		, serial_mgr_(cyng::async::NO_TASK)
 		, serial_port_(cyng::async::NO_TASK)
-
-		//, radio_parser_(cyng::async::NO_TASK)
 		, radio_port_(cyng::async::NO_TASK)
+
+		, radio_distributor_(cyng::async::NO_TASK)
 	{
 		cyng::register_logger(logger_, vm_);
 		vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
@@ -87,172 +86,161 @@ namespace node
 
 	void lmn::start()
 	{
-		auto const wired = cache_.get_cfg(build_cfg_key({ "rs485", "enabled" }), false);
-		if (wired) {
-			start_lmn_wired();
+		//
+		//	rs485 port
+		//
+		cfg_mbus const mbus(cache_);
+		if (mbus.is_enabled()) {
+			start_lmn_wired(mbus);
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "LMN wired (RS485) is disabled");
 		}
 
-		auto const wireless = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "enabled"), false);	
-		if (wireless) {
-			start_lmn_wireless();
+		//
+		//	wireless M-Bus port
+		//
+		cfg_wmbus const wmbus(cache_);
+		if (wmbus.is_enabled()) {
+			start_lmn_wireless(wmbus);
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "LMN wireless (M-Bus) is disabled");
 		}
 	}
 
-	void lmn::start_lmn_wired()
+	void lmn::start_lmn_wired(cfg_mbus const& mbus)
 	{
 		try {
 
-			cfg_broker broker(cache_);
-			cfg_mbus mbus(cache_);
-			
-
-			auto const receiver = start_wired_mbus_receiver(mbus.generate_profile(), broker.get_broker(cfg_broker::source::WIRED_LMN));
+			cfg_broker broker(cache_);		
 
 			//
-			//	Without an receiver there is no need to start the sender
+			//	task to control SML status of wired (M-Bus)
 			//
-			if (!receiver.empty()) {
+			auto const tsk_status = cyng::async::start_task_sync<lmn_status>(mux_
+				, logger_
+				, cache_
+				, sml::STATUS_BIT_WIRED_MBUS_IF_AVAILABLE).first;
 
-				//
-				//	task to control SML status of wired (M-Bus)
-				//
-				auto const tsk_status = cyng::async::start_task_sync<lmn_status>(mux_
-					, logger_
-					, cache_
-					, sml::STATUS_BIT_WIRED_MBUS_IF_AVAILABLE).first;
+			//
+			//	open port and start manager
+			//	take a list of receivers
+			//
+			auto const sender = start_lmn_port_wired(tsk_status);
+			if (sender.second) {
+				serial_mgr_ = sender.first;
+			}
 
-				//
-				//	open port and start manager
-				//	take a list of receivers
-				//
-				auto const sender = start_lmn_port_wired(receiver, tsk_status);
-				if (sender.second) {
-					serial_mgr_ = sender.first;
-				}
-			}
-			else {
-				CYNG_LOG_FATAL(logger_, "no receiver for wired (mbus) data configured");
-			}
+			//
+			//	update receiver list
+			//
+			//CYNG_LOG_FATAL(logger_, "ToDo: update receiver list");
+			start_wired_mbus_receiver(mbus.generate_profile(), broker.get_broker(cfg_broker::source::WIRED_LMN));
+
 		}
 		catch (boost::system::system_error const& ex) {
 			CYNG_LOG_FATAL(logger_, ex.what() << ":" << ex.code());
 		}
 	}
 
-	void lmn::start_lmn_wireless()
+	void lmn::start_lmn_wireless(cfg_wmbus const& wmbus)
 	{
 		try {
 
 			//
 			//	config reader
 			//
-			cfg_wmbus wmbus(cache_);
 			cfg_broker broker(cache_);
 
 			//
-			//	Get a list of receiver for the wireless M-Bus data.
+			//	task to control SML status of wireless M-Bus
 			//
-			auto const receiver = start_wireless_mbus_receiver(wmbus.generate_profile(), broker.get_broker(cfg_broker::source::WIRELESS_LMN));
+			auto const tsk_status = cyng::async::start_task_sync<lmn_status>(mux_
+				, logger_
+				, cache_
+				, sml::STATUS_BIT_WIRELESS_MBUS_IF_AVAILABLE).first;
 
 			//
-			//	Without an receiver there is no need to start the sender
+			//	the wireless sende is either a LMN port or the CP210x parser (on windows)
 			//
-			if (!receiver.empty()) {
+			radio_distributor_ = start_wireless_sender(wmbus, tsk_status);
 
-				//
-				//	Data coming from CP210x (USB receiver) and have to be be unpacked.
-				//
-				if (wmbus.is_CP210x()) {
+			//
+			//	Update receiver list
+			//
+			start_wireless_mbus_receiver(wmbus.generate_profile(), broker.get_broker(cfg_broker::source::WIRELESS_LMN));
 
-					//
-					//	LMN port send incoming data to HCI (CP210x) parser
-					//	which sends data to wmbus parser.
-					//	CP210x hst to bi initialized with:
-					//	
-					//	Device Mode: Other (0)
-					//	Link Mode: T1 (3)
-					//	Ctrl Field: 0x00
-					//	Man ID: 0x25B3
-					//	Device ID: 0x00101851
-					//	Version: 0x01
-					//	Device Type: 0x00
-					//	Radio Channel: 1 (1..8)
-					//	Radio Power Level: 13db (7) [0=-8dB,1=-5dB,2=-2dB,3=1dB,4=4dB,5=7dB,6=10dB,7=13dB]
-					//	Rx Window (ms): 50 (0x32)
-					//	Power Saving Mode: 0
-					//	RSSI Attachment: 1
-					//	Rx Timestamp: 1
-					//	LED Control: 2
-					//	RTC: 1
-					//	Store NVM: 0
-					//	
-					//	[A5 81 03 17 00 FF] 00 03 00 [B3 25] [51 18 10 00] 01
-					//	00 01 FD 07 32 00 01 01 02 01 00 [83 C9]
-					//
-					//	Fletcher Checksum (https://www.silabs.com/documents/public/application-notes/AN978-cp210x-usb-to-uart-api-specification.pdf)
-
-					auto init = cyng::make_buffer({ 0xA5, 0x81, 0x03, 0x17, 0x00, 0xFF, 0x00, 0x03, 0x00, 0xB3, 0x25, 0x51, 0x18, 0x10, 0x00, 0x01, 0x00, 0x01, 0xFD, 0x07, 0x32, 0x00, 0x01, 0x01, 0x02, 0x01, 0x00, 0x83, 0xC9 });
-
-					//	start 
-					auto const unwrapper = cyng::async::start_task_sync<parser_CP210x>(mux_
-						, logger_
-						, vm_
-						, receiver);
-
-					if (unwrapper.second) {
-
-						//
-						//	task to control SML status of wireless M-Bus
-						//
-						auto const tsk_status = cyng::async::start_task_sync<lmn_status>(mux_
-							, logger_
-							, cache_
-							, sml::STATUS_BIT_WIRELESS_MBUS_IF_AVAILABLE).first;
-
-						//
-						//	open port for wireless M-Bus data
-						//
-						auto const sender = start_lmn_port_wireless(cyng::async::task_list_t{ unwrapper.first }
-							, tsk_status	//	control status bit for wireless M-Bus
-							, std::move(init));
-						if (sender.second) {
-							radio_port_ = sender.first;
-						}
-					}
-					else {
-						CYNG_LOG_FATAL(logger_, "cannot start CP210x parser for HCI messages");
-					}
-				}
-				else {
-
-					//
-					//	LMN port send incoming data to wmbus parser
-					//
-					auto const sender = start_lmn_port_wireless(receiver, receiver.at(0), cyng::make_buffer({}));
-				}
-			}
-			else {
-				CYNG_LOG_FATAL(logger_, "no receiver for wireless mbus data configured");
-			}
 		}
 		catch (boost::system::system_error const& ex) {
 			CYNG_LOG_FATAL(logger_, ex.what() << ":" << ex.code());
 		}
 	}
 
-	cyng::async::task_list_t lmn::start_wireless_mbus_receiver(bool profile, cfg_broker::broker_list_t&& nodes)
+	std::size_t lmn::start_wireless_sender(cfg_wmbus const& wmbus, std::size_t tsk_status)
 	{
 		//
-		//	list of task IDs
+		//	Data coming from CP210x (USB receiver) and have to be be unpacked.
 		//
-		cyng::async::task_list_t vec;
+		if (wmbus.is_CP210x()) {
 
+
+			//	start 
+			auto const unwrapper = cyng::async::start_task_sync<parser_CP210x>(mux_
+				, logger_
+				, vm_);
+
+			if (unwrapper.second) {
+
+				//
+				//	LMN port send incoming data to HCI (CP210x) parser
+				//	which sends data to wmbus parser.
+				//	CP210x hst to bi initialized with:
+				//	
+				//	Device Mode: Other (0)
+				//	Link Mode: T1 (3)
+				//	Ctrl Field: 0x00
+				//	Man ID: 0x25B3
+				//	Device ID: 0x00101851
+				//	Version: 0x01
+				//	Device Type: 0x00
+				//	Radio Channel: 1 (1..8)
+				//	Radio Power Level: 13db (7) [0=-8dB,1=-5dB,2=-2dB,3=1dB,4=4dB,5=7dB,6=10dB,7=13dB]
+				//	Rx Window (ms): 50 (0x32)
+				//	Power Saving Mode: 0
+				//	RSSI Attachment: 1
+				//	Rx Timestamp: 1
+				//	LED Control: 2
+				//	RTC: 1
+				//	Store NVM: 0
+				//	
+				//	[A5 81 03 17 00 FF] 00 03 00 [B3 25] [51 18 10 00] 01
+				//	00 01 FD 07 32 00 01 01 02 01 00 [83 C9]
+				//
+				//	Fletcher Checksum (https://www.silabs.com/documents/public/application-notes/AN978-cp210x-usb-to-uart-api-specification.pdf)
+					
+				//
+				//	open port for wireless M-Bus data
+				//
+				radio_port_ = start_lmn_port_wireless(tsk_status	//	control status bit for wireless M-Bus
+					, cyng::make_buffer({ 0xA5, 0x81, 0x03, 0x17, 0x00, 0xFF, 0x00, 0x03, 0x00, 0xB3, 0x25, 0x51, 0x18, 0x10, 0x00, 0x01, 0x00, 0x01, 0xFD, 0x07, 0x32, 0x00, 0x01, 0x01, 0x02, 0x01, 0x00, 0x83, 0xC9 })).first;
+
+				return unwrapper.first;
+			}
+			else {
+				CYNG_LOG_FATAL(logger_, "cannot start CP210x parser for HCI messages");
+			}
+		}
+
+		//
+		//	LMN port send incoming data to wmbus parser
+		//
+		return start_lmn_port_wireless(tsk_status, cyng::make_buffer({})).first;
+	}
+
+
+	void lmn::start_wireless_mbus_receiver(bool profile, cfg_broker::broker_list_t&& nodes)
+	{
 		//
 		//	profile generation
 		//
@@ -261,9 +249,7 @@ namespace node
 				, logger_
 				, vm_
 				, cache_);
-			if (r.second) {
-				vec.push_back(r.first);
-			}
+			mux_.post(radio_distributor_, 1u, cyng::tuple_factory(r.first, r.second));
 		}
 
 		//
@@ -278,18 +264,13 @@ namespace node
 				, node.get_pwd()
 				, node.get_address()
 				, node.get_port());
-			if (r.second) vec.push_back(r.first);
+			mux_.post(radio_distributor_, 1u, cyng::tuple_factory(r.first, r.second));
 		}
 
-		return vec;
 	}
 
-	cyng::async::task_list_t lmn::start_wired_mbus_receiver(bool profile, cfg_broker::broker_list_t&& nodes)
+	void lmn::start_wired_mbus_receiver(bool profile, cfg_broker::broker_list_t&& nodes)
 	{
-		//
-		//	list of task IDs
-		//
-		cyng::async::task_list_t vec;
 
 		//
 		//	profile generation
@@ -303,9 +284,7 @@ namespace node
 				, vm_
 				, cache_);
 
-			if (r.second) {
-				vec.push_back(r.first);
-			}
+			mux_.post(serial_port_, 1u, cyng::tuple_factory(r.first, r.second));
 		}
 
 		//
@@ -320,14 +299,13 @@ namespace node
 				, node.get_pwd()
 				, node.get_address()
 				, node.get_port());
-			if (r.second) vec.push_back(r.first);
+
+			mux_.post(serial_port_, 1u, cyng::tuple_factory(r.first, r.second));
 		}
-		return vec;
 	}
 
 
-	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(cyng::async::task_list_t const& receiver_data
-		, std::size_t status_receiver
+	std::pair<std::size_t, bool> lmn::start_lmn_port_wireless(std::size_t status_receiver
 		, cyng::buffer_t&& init)
 	{
 		cfg_wmbus cfg(cache_);
@@ -344,12 +322,11 @@ namespace node
 			, cfg.get_flow_control()	//	[s] flow_control
 			, cfg.get_stopbits()		//	[s] stopbits
 			, cfg.get_baud_rate()		//	[u32] speed
-			, receiver_data				//	optional unwrapper
 			, status_receiver			//	receive status change
 			, std::move(init));			//	initialization message
 	}
 
-	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(cyng::async::task_list_t const& receiver, std::size_t status_receiver)
+	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(std::size_t status_receiver)
 	{
 		cfg_rs485 cfg(cache_);
 
@@ -366,9 +343,8 @@ namespace node
 			, cfg.get_flow_control()	//	[s] flow_control
 			, cfg.get_stopbits()		//	[s] stopbits
 			, cfg.get_baud_rate()		//	[u32] speed
-			, receiver					//	receive data
 			, status_receiver			//	receive status change
-			, cyng::make_buffer({}));	//	receive status change
+			, cyng::make_buffer({}));	//	no initialization data
 
 		return (r.second)
 			? start_rs485_mgr(r.first, cfg.get_monitor() + std::chrono::seconds(2))

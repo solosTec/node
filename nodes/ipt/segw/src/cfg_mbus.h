@@ -16,10 +16,20 @@ namespace node
 {
 
 	class cache;
+
+	/**
+	 * wired m-bus configuration
+	 */
 	class cfg_mbus
 	{
 	public:
 		cfg_mbus(cache&);
+
+		/**
+		 * rs485:enabled"
+		 * @return "rs485:enabled"
+		 */
+		bool is_enabled() const;
 
 		/**
 		 * @return "OBIS_CLASS_MBUS:OBIS_CLASS_MBUS_RO_INTERVAL"

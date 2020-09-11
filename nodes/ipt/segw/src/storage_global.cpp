@@ -28,6 +28,7 @@
 #include <cyng/io/serializer.h>
 #include <cyng/util/split.h>
 #include <cyng/sql/dsl/assign.hpp>
+#include <cyng/sql/dsl/list_expr.hpp>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -646,8 +647,9 @@ namespace node
 					//	scrambled
 					init_config_record(s, build_cfg_key({
 						sml::OBIS_ROOT_IPT_PARAM,
-						sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
-						}, "scrambled"), cyng::make_object(rec.scrambled_));
+						sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
+						sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x03, idx)
+						}), cyng::make_object(rec.scrambled_));
 
 					//	scramble key
 					init_config_record(s, build_cfg_key({
@@ -660,13 +662,13 @@ namespace node
 				}
 
 				//	ip-t reconnect time in minutes
-				auto reconnect = cyng::numeric_cast<std::uint32_t>(dom["ipt-param"].get(sml::OBIS_TCP_WAIT_TO_RECONNECT.to_str()), 1u);
+				auto reconnect = cyng::numeric_cast<std::uint32_t>(dom["ipt-param"].get(sml::OBIS_TCP_WAIT_TO_RECONNECT.to_str()), 1u) * 60u;
 				init_config_record(s, build_cfg_key({
 					sml::OBIS_ROOT_IPT_PARAM,
 					sml::OBIS_TCP_WAIT_TO_RECONNECT
-					}), cyng::make_minutes(reconnect));
+					}), cyng::make_seconds(reconnect));
 
-				auto retries = cyng::numeric_cast<std::uint32_t>(dom["ipt-param"].get(sml::OBIS_TCP_CONNECT_RETRIES.to_str()), 3u);
+				auto retries = cyng::numeric_cast<std::uint32_t>(dom["ipt-param"].get(sml::OBIS_TCP_CONNECT_RETRIES.to_str()), 18u);
 				init_config_record(s, build_cfg_key({
 					sml::OBIS_ROOT_IPT_PARAM,
 					sml::OBIS_TCP_CONNECT_RETRIES
@@ -848,9 +850,14 @@ namespace node
 
 			//
 			//	transfer wireless-LMN configuration
-			//	81 06 19 07 01 FF
+			//	81 06 19 07 01 FF (IF_wMBUS)
 			//
 			{
+				//
+				//	port index
+				//
+				std::uint8_t const port_idx{ 1 };
+
 				init_config_record(s, build_cfg_key({
 					sml::OBIS_IF_wMBUS
 					}, "descr"), cyng::make_object("wireless-LMN configuration (M-Bus)"));
@@ -886,33 +893,37 @@ namespace node
 					}
 					else if (boost::algorithm::equals(param.first, "broker")) {
 						//	vector of broker nodes
+						std::uint8_t idx{ 0 };
 						auto const vec = cyng::to_vector(param.second);
+						for (auto const broker : vec) {
 
-						//	build a space separated list
-						if (!vec.empty()) {
+							++idx;
+							auto const reader = cyng::make_reader(broker);
 
-							std::stringstream ss;
-							bool initialized{ false };
-							for (auto const broker : vec) {
-								if (initialized) {
-									ss << ' ';
-								}
-								else {
-									initialized = true;
-								}
-								auto const reader = cyng::make_reader(broker);
-								ss
-									<< cyng::value_cast<std::string>(reader.get("account"), gen_user(6))
-									<< ':'
-									<< cyng::value_cast<std::string>(reader.get("pwd"), gen_pwd(8))
-									<< '@'
-									<< cyng::value_cast<std::string>(reader.get("address"), "segw.ch")
-									<< ':'
-									<< cyng::value_cast(reader.get("port"), 0)
-									;
-							}
-							init_config_record(s, build_cfg_key({ sml::OBIS_IF_wMBUS }, "broker-vector"), cyng::make_object(ss.str()));
+							init_config_record(s, build_cfg_key({ 
+								sml::OBIS_ROOT_BROKER, 
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idx) }), reader.get("address"));
+
+							auto const port = cyng::numeric_cast<std::uint16_t>(reader.get("port"), 12001u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_BROKER,
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idx) }), cyng::make_object(port));
+
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_BROKER,
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idx) }), reader.get("account"));
+
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_BROKER,
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idx) }), reader.get("pwd"));
 						}
+					}
+					else if (boost::algorithm::equals(param.first, "collector-login")) {
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
 					}
 					else {
 
@@ -929,6 +940,7 @@ namespace node
 			//	81 06 0F 06 00 FF (ROOT_W_MBUS_STATUS)
 			//
 			{
+
 				init_config_record(s, build_cfg_key({
 					sml::OBIS_ROOT_W_MBUS_STATUS
 					}, "descr"), cyng::make_object("wireless-LMN adapter"));
@@ -960,6 +972,11 @@ namespace node
 			//	81 81 C7 93 00 FF
 			//
 			{
+				//
+				//	port index
+				//
+				std::uint8_t const port_idx{ 2 };
+
 				init_config_record(s, build_cfg_key({
 					"rs485", "descr" 
 					}), cyng::make_object("RS485 interface"));
@@ -982,33 +999,37 @@ namespace node
 					}
 					else if (boost::algorithm::equals(param.first, "broker")) {
 						//	vector of broker nodes
+						std::uint8_t idx{ 0 };
 						auto const vec = cyng::to_vector(param.second);
-						//init_config_record(s, build_cfg_key({ "rs485" , "broker-count" }), cyng::make_object(vec.size()));
-						//	build a space separated list
-						if (!vec.empty()) {
+						for (auto const broker : vec) {
 
-							std::stringstream ss;
-							bool initialized{ false };
-							for (auto const broker : vec) {
-								if (initialized) {
-									ss << ' ';
-								}
-								else {
-									initialized = true;
-								}
-								auto const reader = cyng::make_reader(broker);
-								ss
-									<< cyng::value_cast<std::string>(reader.get("account"), gen_user(6))
-									<< ':'
-									<< cyng::value_cast<std::string>(reader.get("pwd"), gen_pwd(8))
-									<< '@'
-									<< cyng::value_cast<std::string>(reader.get("address"), "segw.ch")
-									<< ':'
-									<< cyng::numeric_cast(reader.get("port"), 0)
-									;
-							}
-							init_config_record(s, build_cfg_key({ "rs485", "broker-vector", }), cyng::make_object(ss.str()));
+							++idx;
+							auto const reader = cyng::make_reader(broker);
+
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_BROKER,
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idx) }), reader.get("address"));
+
+							auto const port = cyng::numeric_cast<std::uint16_t>(reader.get("port"), 12001u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_BROKER,
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idx) }), cyng::make_object(port));
+
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_BROKER,
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idx) }), reader.get("account"));
+
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_BROKER,
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
+								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idx) }), reader.get("pwd"));
 						}
+					}
+					else if (boost::algorithm::equals(param.first, "collector-login")) {
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
 					}
 					else {
 						init_config_record(s, build_cfg_key({ "rs485", param.first }), param.second);
@@ -1133,6 +1154,12 @@ namespace node
 						;
 				}
 				init_config_record(s, "gpio-vector", cyng::make_object(ss.str()));
+
+				//
+				//	set GPIO enabled flag
+				//
+				init_config_record(s, "gpio-enabled", dom.get("gpio-enabled"));
+				
 			}
 
 			//
@@ -1654,7 +1681,18 @@ namespace node
 		return set_value(std::move(cfg), vec, cyng::make_object(value));
 	}
 
-	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, cyng::object value)
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, std::chrono::minutes value)
+	{
+		return set_value(std::move(cfg), vec, cyng::make_object(value));
+	}
+
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, std::chrono::seconds value)
+	{
+		return set_value(std::move(cfg), vec, cyng::make_object(value));
+	}
+
+
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, cyng::object obj)
 	{
 		//
 		//	get OBIS path
@@ -1662,8 +1700,8 @@ namespace node
 		auto const op = sml::translate_obis_names(vec);
 		std::cout 
 			<< op 
-			<< " = "
-			<< cyng::io::to_str(value)
+			<< " = " 
+			<< cyng::io::to_type(obj)
 			<< std::endl;
 
 		//
@@ -1677,13 +1715,21 @@ namespace node
 			cyng::table::meta_table_ptr meta = storage::mm_.at("TCfg");
 			cyng::sql::command cmd(meta, s.get_dialect());
 
-			auto sql = cmd.update(cyng::sql::make_assign(meta->get_name(2), cyng::sql::make_placeholder())).by_key()();
+			//auto sql = cmd.update(cyng::sql::make_assign(meta->get_name(2), cyng::sql::make_placeholder())).by_key()();
+
+			auto sql = cmd.update(cyng::sql::make_list(
+				cyng::sql::make_assign(meta->get_name(2), cyng::sql::make_placeholder()),	//	val	
+				cyng::sql::make_assign(meta->get_name(4), cyng::sql::make_placeholder()))	//	type
+			).by_key()();
 			//std::cout << sql << std::endl;
 			auto stmt = s.create_statement();
 			std::pair<int, bool> r = stmt->prepare(sql);
 			if (r.second) {
 
-				stmt->push(cyng::make_object(value), 256);	//	val
+				//	repackaging as string
+				auto const value = cyng::make_object(cyng::io::to_str(obj));
+				stmt->push(cyng::make_object(value), 256);	//	val 
+				stmt->push(cyng::make_object(obj.get_class().tag()), 0);	//	type
 				stmt->push(cyng::make_object(op), 128);	//	path
 
 				if (!stmt->execute()) {

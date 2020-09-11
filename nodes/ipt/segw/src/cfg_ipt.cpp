@@ -29,10 +29,10 @@ namespace node
 		return get_ipt_sk(get_ipt_master_index() + 1);
 	}
 
-	std::chrono::minutes cfg_ipt::get_ipt_tcp_wait_to_reconnect()
+	std::chrono::seconds cfg_ipt::get_ipt_tcp_wait_to_reconnect()
 	{
 		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
-			, sml::OBIS_TCP_WAIT_TO_RECONNECT }), std::chrono::minutes(1u));
+			, sml::OBIS_TCP_WAIT_TO_RECONNECT }), std::chrono::seconds(60u));
 	}
 
 	std::uint32_t cfg_ipt::get_ipt_tcp_connect_retries()
@@ -93,6 +93,9 @@ namespace node
 
 	ipt::redundancy cfg_ipt::get_ipt_redundancy()
 	{
+		//
+		//	ToDo: enable more than 2 redundancies
+		//
 		ipt::master_config_t const vec{ get_ipt_cfg(1) , get_ipt_cfg(2) };
 		return ipt::redundancy(vec, get_ipt_master_index());
 	}
@@ -146,8 +149,8 @@ namespace node
 	bool cfg_ipt::is_ipt_scrambled(std::uint8_t idx)
 	{
 		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
-			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx) }
-		, "scrambled"), false);
+			, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx)
+			, sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x03, idx) }), true);
 	}
 
 	ipt::scramble_key cfg_ipt::get_ipt_sk(std::uint8_t idx)

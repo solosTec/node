@@ -15,6 +15,7 @@
 #include <smf/sml/intrinsics/obis_factory.hpp>
 
 #include <cyng/numeric_cast.hpp>
+#include <cyng/buffer_cast.h>
 
 namespace node
 {
@@ -92,6 +93,15 @@ namespace node
 						}, node::sml::make_value(rec.pwd_));
 
 					//
+					//	scrambled
+					//
+					node::sml::append_get_proc_response(msg, {
+						node::sml::OBIS_ROOT_IPT_PARAM,
+						node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
+						node::sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x03, nr)
+						}, node::sml::make_value(rec.scrambled_));
+
+					//
 					//	update index
 					//
 					++nr;
@@ -142,107 +152,48 @@ namespace node
 
 		}
 
-		void config_ipt::set_param(node::sml::obis code, cyng::param_t const& param)
+		void config_ipt::set_param(obis_path_t const& path, cyng::param_t const& param)
 		{
-			switch (code.to_uint64()) {
-
-			//
-			//	reduncancy 
-			//
-			case 0x814917070001:
+			if (path.back().is_matching(0x81, 0x49, 0x17, 0x07, 0x00).second) {
+				//	IP address
 				if (param.second.get_class().tag() == cyng::TC_STRING) {
-					cache_.set_cfg(build_cfg_key({ node::sml::OBIS_ROOT_IPT_PARAM
-						, node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, 1)
-						, code }), cyng::io::to_str(param.second));
+					cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(param.second));
 				}
 				else {
-					cyng::buffer_t tmp;
-					tmp = cyng::value_cast(param.second, tmp);
-					cache_.set_cfg(build_cfg_key({ node::sml::OBIS_ROOT_IPT_PARAM
-						, node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, 1)
-						, code }), cyng::io::to_ascii(tmp));
+					auto const tmp = cyng::to_buffer(param.second);
+					cache_.set_cfg(build_cfg_key(path), cyng::io::to_ascii(tmp));
 				}
-				break;
-
-			case 0x81491A070001:	//	target port
-				cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
-					, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, 1)
-					, code }), std::to_string(cyng::numeric_cast<std::uint16_t>(param.second, 26862)));
-				break;
-
-			case 0x8149633C0101:	//	account
-				cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
-					, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, 1)
-					, code }), cyng::io::to_str(param.second));
-				break;
-
-			case 0x8149633C0201:	//	pwd
-				cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
-					, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, 1)
-					, code }), cyng::io::to_str(param.second));
-				break;
-
-			//
-			//	reduncancy 2
-			//
-			case 0x814917070002:	//	host
-				if (param.second.get_class().tag() == cyng::TC_STRING) {
-					cache_.set_cfg(build_cfg_key({ node::sml::OBIS_ROOT_IPT_PARAM
-						, node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, 2)
-						, code }), cyng::io::to_str(param.second));
-				}
-				else {
-					cyng::buffer_t tmp;
-					tmp = cyng::value_cast(param.second, tmp);
-					cache_.set_cfg(build_cfg_key({ node::sml::OBIS_ROOT_IPT_PARAM
-						, node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, 2)
-						, code }), cyng::io::to_ascii(tmp));
-				}
-				break;
-
-			case 0x81491A070002:	//	target port
-				cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
-					, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, 2)
-					, code }), std::to_string(cyng::numeric_cast<std::uint16_t>(param.second, 26862)));
-				break;
-
-			case 0x8149633C0102:	//	account
-				cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
-					, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, 2)
-					, code }), cyng::io::to_str(param.second));
-				break;
-
-			case 0x8149633C0202:	//	pwd
-				cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
-					, sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, 2)
-					, code }), cyng::io::to_str(param.second));
-				break;
-
-			//
-			//	general values
-			//
-			case 0x814827320601:	//	WAIT_TO_RECONNECT
-				cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
-					, sml::OBIS_TCP_WAIT_TO_RECONNECT }), cyng::numeric_cast<std::uint8_t>(param.second, 1u));
-				break;
-
-			case 0x814831320201:	//	TCP_CONNECT_RETRIES
-				cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
-					, sml::OBIS_TCP_CONNECT_RETRIES }), cyng::numeric_cast<std::uint32_t>(param.second, 1u));
-				break;
-
-			case 0x0080800003FF:	//	use SSL
+			}
+			else if (path.back().is_matching(0x81, 0x49, 0x1A, 0x07, 0x00).second) {
+				//	target port
+				cache_.set_cfg(build_cfg_key(path), std::to_string(cyng::numeric_cast<std::uint16_t>(param.second, 26862)));
+			}
+			else if (path.back().is_matching(0x81, 0x49, 0x63, 0x3C, 0x01).second) {
+				//	account
+				cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(param.second));
+			}
+			else if (path.back().is_matching(0x81, 0x49, 0x63, 0x3C, 0x02).second) {
+				//	pwd
+				cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(param.second));
+			}
+			else if (path.back().is_matching(0x81, 0x49, 0x63, 0x3C, 0x03).second) {
+				//	scrambled
+				cache_.set_cfg(build_cfg_key(path), param.second);
+			}
+			else if (path.back() == sml::OBIS_TCP_WAIT_TO_RECONNECT) {
+				//	WAIT_TO_RECONNECT
+				cache_.set_cfg(build_cfg_key(path), cyng::numeric_cast<std::uint8_t>(param.second, 1u));
+			}
+			else if (path.back() == sml::OBIS_TCP_CONNECT_RETRIES) {
+				//	TCP_CONNECT_RETRIES
+				cache_.set_cfg(build_cfg_key(path), cyng::numeric_cast<std::uint32_t>(param.second, 1u));
+			}
+			else if (path.back().to_uint64() == 0x0080800003FF) {
+				//	use SSL
 				cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 					, sml::OBIS_HAS_SSL_CONFIG }), param.second);
-				break;
-
-			default:
-				break;
 			}
-
 		}
-
-
 	}	//	ipt
 }
 

@@ -36,7 +36,7 @@ namespace node
 				, cache& c);
 
 			void get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
-			void set_param(node::sml::obis code
+			void set_param(obis_path_t const& path
 				, cyng::buffer_t srv_id
 				, cyng::param_t const& param);
 

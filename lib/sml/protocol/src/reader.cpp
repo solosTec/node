@@ -331,19 +331,19 @@ namespace node
 				auto const r = ro.read_set_proc_parameter_request(pos, end);
 
 				cyng::vector_t prg;
-				prg << cyng::unwinder(cyng::generate_invoke("sml.attention.init"
+				prg << cyng::generate_invoke_unwinded("sml.attention.init"
 						, ro.trx_
 						, ro.server_id_
 						, OBIS_ATTENTION_OK.to_buffer()
-						, "Set Proc Parameter Request"))
-					<< cyng::unwinder(cyng::generate_invoke("sml.set.proc.parameter.request"
+						, "Set Proc Parameter Request")
+					<< cyng::generate_invoke_unwinded("sml.set.proc.parameter.request"
 						, ro.trx_
 						, to_hex(r.first, ' ')	//	string
 						, ro.server_id_
 						, ro.get_value("userName")
 						, ro.get_value("password")
-						, r.second))
-					<< cyng::unwinder(cyng::generate_invoke("sml.attention.send", ro.trx_))
+						, r.second)
+					<< cyng::generate_invoke_unwinded("sml.attention.send", ro.trx_)
 					;
 
 				return prg;

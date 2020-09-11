@@ -1174,7 +1174,8 @@ namespace node
 
 		case sml::CODE_REBOOT:
 			//
-			//	reboot the gateway
+			//	reboot the gateway.
+			//	A "get process parameter request" doesn't make sense after reboot
 			//
 			sml_gen.set_proc_parameter_restart(data.get_srv());
 			break;
@@ -1305,7 +1306,7 @@ namespace node
 
 			if (boost::algorithm::equals(param.first, "host")) {
 
-				auto address = cyng::value_cast<std::string>(param.second, "0.0.0.0");
+				auto address = cyng::value_cast<std::string>(param.second, "localhost");
 				push_trx(sml_gen.set_proc_parameter_ipt_host(data.get_srv()
 					, idx
 					, address), data);
@@ -1613,7 +1614,7 @@ namespace node
 	}
 
 	void gateway_proxy::execute_cmd_set_proc_param_broker(sml::req_generator& sml_gen
-		, proxy_data const&
+		, proxy_data const& data
 		, cyng::vector_t&& params)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -1622,6 +1623,86 @@ namespace node
 			<< base_.get_class_name()
 			<< "> set broker values: "
 			<< cyng::io::to_type(params));
+
+		//	example:
+		//	[
+		//	{("hardwarePort":COM3),("login":true),("addresses":[
+		//		{("host":localhost),("service":12001),("user":w-MBus),("pwd":w-MBus)},
+		//		{("host":segw.ch),("service":12001),("user":w-MBus),("pwd":w-MBus)}])},
+		//	{("hardwarePort":COM6),("login":true),("addresses":[
+		//		{("host":demo.com),("service":12007),("user":DEMO),("pwd":secret)}])}
+		//	]
+
+
+		std::uint8_t idxo{ 0 };
+		for (auto const& p : params) {
+			auto const port = cyng::to_param_map(p);
+			try {
+
+				++idxo;
+
+				//
+				//	login required
+				//	
+				auto const login = cyng::value_cast(port.at("login"), true);
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
+					, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x01, idxo) }
+				, login), data);
+
+				//
+				//	name of hardware port
+				//	
+				auto const hardware_port = cyng::value_cast<std::string>(port.at("hardwarePort"), "");
+				push_trx(sml_gen.set_proc_parameter(data.get_srv()
+					, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x02, idxo) }
+				, hardware_port), data);
+
+				//
+				//	target addresses
+				//
+				auto const addresses = cyng::to_vector(port.at("addresses"));
+
+				std::uint8_t idxi{ 0 };
+				for (auto const& a : addresses) {
+
+					++idxi;
+					auto const address = cyng::to_param_map(a);
+
+					//
+					//	host name
+					//
+					auto const host = cyng::value_cast<std::string>(address.at("host"), "");
+					push_trx(sml_gen.set_proc_parameter(data.get_srv()
+						, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxo),  sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxi) }
+					, host), data);
+
+					//
+					//	IP port
+					//
+					auto const service = cyng::numeric_cast<std::uint16_t>(address.at("service"), 26862u + idxi);
+					push_trx(sml_gen.set_proc_parameter(data.get_srv()
+						, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxo),  sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idxi) }
+					, service), data);
+
+					//
+					//	login name / account
+					//
+					auto const user = cyng::value_cast<std::string>(address.at("user"), "");
+					push_trx(sml_gen.set_proc_parameter(data.get_srv()
+						, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxo),  sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idxi) }
+					, user), data);
+
+					//
+					//	password
+					//
+					auto const pwd = cyng::value_cast<std::string>(address.at("pwd"), "");
+					push_trx(sml_gen.set_proc_parameter(data.get_srv()
+						, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxo),  sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idxi) }
+					, pwd), data);
+				}
+			}
+			catch(std::out_of_range const&) {}
+		}
 
 	}
 

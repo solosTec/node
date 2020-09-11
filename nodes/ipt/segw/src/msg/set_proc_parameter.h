@@ -55,23 +55,10 @@ namespace node
 				, cyng::param_t	param);
 
 		private:
-			void _81490d0700ff(obis_path_t::const_iterator
-				, obis_path_t::const_iterator
-				, std::string trx
-				, cyng::buffer_t srv_id
-				, std::string user
-				, std::string pwd
-				, cyng::param_t	param);
 
-			void storage_time_shift(obis_path_t::const_iterator
-				, obis_path_t::const_iterator
-				, std::string trx
-				, cyng::buffer_t srv_id
-				, std::string user
-				, std::string pwd
-				, cyng::param_t	param);
+			void storage_time_shift(std::int32_t);
 
-			void class_mbus(obis&& code, cyng::param_t param);
+			void class_mbus(obis const& code, cyng::param_t param);
 
 			/**
 			 * Only implemented for OECP hardware

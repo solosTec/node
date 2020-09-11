@@ -6,7 +6,7 @@ After=network.target node-ipt.service
 [Service]
 Type=simple
 ExecStart=/opt/smf/store -C/opt/smf/store_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
-Restart=always
+Restart=on-failure
 RestartSec=12
 
 [Install]

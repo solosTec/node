@@ -8,6 +8,7 @@
 #include "bridge.h"
 #include "cache.h"
 #include "storage.h"
+#include "segw.h"
 #include "tasks/gpio.h"
 #include "tasks/obislog.h"
 #include "tasks/clock.h"
@@ -82,6 +83,11 @@ namespace node
 		//	store boot time
 		//
 		cache_.set_cfg("boot.time", std::chrono::system_clock::now());
+
+		//
+		//	reset IP-T master index (ROOT_IPT_PARAM:master)
+		//
+		cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "master"), static_cast<std::uint8_t>(0));
 
 		//
 		//	start task clock
@@ -207,7 +213,6 @@ namespace node
 
 				return true;	//	continue
 			});
-
 		});
 
 		//
@@ -879,7 +884,13 @@ namespace node
 		//gpio-path|1|/sys/class/gpio|/sys/class/gpio|15
 		//gpio-vector|1|46 47 50 53|46 47 50 53|15
 
-		auto const gpio_enabled = cache_.get_cfg("gpio-enabled", false);
+		auto const gpio_enabled = cache_.get_cfg("gpio-enabled", 
+#if defined(__ARMEL__)
+			true
+#else
+			false
+#endif
+		);
 		auto const gpio_path = cache_.get_cfg<std::string>("gpio-path", "/sys/class/gpio");
 		auto const gpio_vector = cache_.get_cfg<std::string>("gpio-vector", "46 47 50 53");
 

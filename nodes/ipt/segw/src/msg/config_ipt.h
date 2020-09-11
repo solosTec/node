@@ -25,6 +25,7 @@ namespace node
 	class cache;
 	namespace ipt
 	{
+		using node::sml::obis_path_t;
 
 		/**
 		 * manage IP-T configuration
@@ -37,7 +38,7 @@ namespace node
 				, cache& c);
 
 			void get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
-			void set_param(node::sml::obis code, cyng::param_t const& param);
+			void set_param(obis_path_t const& path, cyng::param_t const& param);
 
 		private:
 			cyng::logging::log_ptr logger_;

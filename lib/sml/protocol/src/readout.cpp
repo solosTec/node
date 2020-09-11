@@ -759,8 +759,7 @@ namespace node
 
 		cyng::object customize_value(obis code, cyng::object obj)
 		{
-			if (OBIS_CODE(81, 49, 17, 07, 00, 01) == code
-				|| OBIS_CODE(81, 49, 17, 07, 00, 02) == code) {
+			if (code.is_matching(0x81, 0x49, 0x17, 0x07, 0x00).second) {
 				return cyng::make_object(ip_address_to_str(obj));
 			}
 			else if (code.is_matching(0x81, 0x49, 0x1A, 0x07, 0x00).second	//	TARGET_PORT_ADDRESS

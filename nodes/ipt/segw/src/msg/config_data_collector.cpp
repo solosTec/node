@@ -197,10 +197,8 @@ namespace node
 
 		}
 
-		void config_data_collector::set_push_operations(cyng::buffer_t srv_id
-			, std::string user
-			, std::string pwd
-			, std::uint8_t nr
+		void config_data_collector::set_push_operations(std::uint8_t nr
+			, cyng::buffer_t srv_id
 			, cyng::param_map_t&& params)
 		{
 			cache_.get_db().access([&](cyng::store::table* tbl_po, cyng::store::table const* tbl_dc) {
@@ -293,8 +291,8 @@ namespace node
 				, cyng::store::read_access("_DataCollector"));
 		}
 
-		void config_data_collector::set_param(cyng::buffer_t srv_id
-			, std::uint8_t nr
+		void config_data_collector::set_param(std::uint8_t nr
+			, cyng::buffer_t srv_id
 			, cyng::param_map_t&& params)
 		{
 

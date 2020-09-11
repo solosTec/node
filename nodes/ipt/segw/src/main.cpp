@@ -54,8 +54,8 @@ int main(int argc, char **argv)
 		("transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")
 		("clear", boost::program_options::bool_switch()->default_value(false), "delete configuration from database")
 		("dump", boost::program_options::value<std::uint32_t>(&profile)->default_value(0)->implicit_value(11), "dump profile data (11 .. 18), 1 == PushOps, 2 == Devices")
-		("set-value", boost::program_options::value<std::string>(&value), "set configuration value")
-		("connect", boost::program_options::value<std::string>(&connect), "test connection to IP-T server")
+		("set-value", boost::program_options::value<std::string>(&value), "set configuration value: path/value/type")
+		("connect", boost::program_options::value<std::string>(&connect), "test connection to IP-T server: usr:pwd@host:port")
 		;
 
 	//	path to JSON configuration file

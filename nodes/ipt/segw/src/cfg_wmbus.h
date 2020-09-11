@@ -26,6 +26,12 @@ namespace node
 		cfg_wmbus(cache&);
 
 		/**
+		 * OBIS_IF_wMBUS:enabled"
+		 * @return "8106190700FF:enabled"
+		 */
+		bool is_enabled() const;
+
+		/**
 		 * OBIS_IF_wMBUS:... ("wireless-LMN")
 		 * @return "8106190700FF:port"
 		 */

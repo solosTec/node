@@ -327,7 +327,7 @@ namespace node
 			});
 		}
 
-		void config_iec::set_param(obis&& code, cyng::param_t param)
+		void config_iec::set_param(obis const& code, cyng::param_t param)
 		{
 			CYNG_LOG_DEBUG(logger_, "sml.set.proc.parameter.request (if 1107) "
 				<< param.first

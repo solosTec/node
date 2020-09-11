@@ -25,11 +25,11 @@ namespace node
 	{
 	public:
 		/**
-		 * data source
+		 * pre-configured data sources
 		 */
-		enum class source {
-			WIRELESS_LMN,	//	IF_wMBUS
-			WIRED_LMN,		//	rs485
+		enum class source : std::uint8_t {
+			WIRELESS_LMN = 1,	//	IF_wMBUS
+			WIRED_LMN = 2,		//	rs485
 			ETHERNET,
 		};
 
@@ -61,7 +61,6 @@ namespace node
 		 * @param tty index to select port (ttyAPP[N], COM[N])
 		 * @return number of defined broker nodes
 		 */
-		 std::size_t get_broker_count(cfg_broker::source s) const;
 		 std::vector<broker> get_broker(source s) const;
 
 		 /**
@@ -75,8 +74,7 @@ namespace node
 		 std::string get_port_name(cfg_broker::source s) const;
 
 	private:
-		std::size_t get_broker_count(std::string) const;
-		broker_list_t get_broker(std::string) const;
+		broker_list_t get_broker(std::uint8_t) const;
 
 		bool is_login_required(std::string) const;
 		std::string get_port_name(std::string) const;

@@ -144,7 +144,7 @@ namespace node
 			 */
 			template< typename T >
 			std::string set_proc_parameter(cyng::buffer_t const& server_id
-				, obis_path_t tree_path
+				, obis_path_t&& tree_path
 				, T&& val)
 			{
 				++trx_;

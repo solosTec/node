@@ -17,11 +17,10 @@ namespace node
 {
 	parser_CP210x::parser_CP210x(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, cyng::controller& vm
-		, cyng::async::task_list_t const& receiver)
+		, cyng::controller& vm)
 	: base_(*btp) 
 		, logger_(logger)
-		, receiver_(receiver)
+		, receiver_()
 		, parser_([&](cyng::vector_t&& prg) {
 			
 			//
@@ -100,6 +99,67 @@ namespace node
 		//
 		parser_.read(data.cbegin(), data.cend());
 
+		//
+		//	continue task
+		//
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	cyng::continuation parser_CP210x::process(std::size_t tsk, bool add)
+	{
+		auto pos = std::find(std::begin(receiver_), std::end(receiver_), tsk);
+		if (add) {
+			if (pos != std::end(receiver_)) {
+
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> receiver task #"
+					<< tsk
+					<< " already inserted");
+			}
+			else {
+				receiver_.push_back(tsk);
+
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> receiver task #"
+					<< tsk
+					<< " added - "
+					<< receiver_.size()
+					<< " in total");
+			}
+		}
+		else {
+			if (pos != std::end(receiver_)) {
+
+				receiver_.erase(pos);
+
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> receiver task #"
+					<< tsk
+					<< " removed- "
+					<< receiver_.size()
+					<< " in total");
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> cannot remove receiver task #"
+					<< tsk
+					<< " - not found");
+			}
+		}
+
+		//
 		//
 		//	continue task
 		//
