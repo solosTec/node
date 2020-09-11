@@ -13,7 +13,7 @@ namespace node
 	{
 		enum
 		{
-			SEARCH = 0, ///< searching for an ampersand to convert
+			SEARCH = 0,		///< searching for an ampersand to convert
 			DECODE_1,		///< convert the two proceeding characters from hex
 			DECODE_2,		///< convert the two proceeding characters from hex
 		} state = SEARCH;

@@ -12,6 +12,7 @@
 #ifdef NODE_SSL_INSTALLED
 #include <smf/http/srv/auth.h>
 #endif
+#include <smf/http/srv/counter.h>
 
 #include <cyng/log.h>
 #include <cyng/compatibility/async.h>
@@ -95,6 +96,11 @@ namespace node
 			 * generate unique session tags
 			 */
 			boost::uuids::random_generator uidgen_;
+
+			/**
+			 * log statistics
+			 */
+			connection_counter counter_;
 
 		};
 	}

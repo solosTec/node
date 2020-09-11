@@ -15,7 +15,7 @@ set (http_srv_h
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/http/srv/server.h
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/http/srv/session.h
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/http/srv/connections.h
-	${CMAKE_SOURCE_DIR}/src/main/include/smf/http/srv/mail_config.h
+#	${CMAKE_SOURCE_DIR}/src/main/include/smf/http/srv/mail_config.h
 )
 
 set (http_parser 
@@ -39,6 +39,8 @@ set (http_shared
 	src/url.cpp
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/http/srv/generator.h
 	src/generator.cpp
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/http/srv/counter.h
+	src/counter.cpp
 )
 
 source_group("parser" FILES ${http_parser})

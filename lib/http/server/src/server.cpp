@@ -52,6 +52,7 @@ namespace node
 			, shutdown_complete_()
 			, mutex_()
 			, uidgen_()
+			, counter_()
 		{
 #if (BOOST_BEAST_VERSION < 248)
 			boost::system::error_code ec;
@@ -226,7 +227,9 @@ namespace node
 					// Create the http_session and run it
 					connection_manager_.create_session(std::move(socket_));
 #else
-					CYNG_LOG_TRACE(logger_, "accept "
+					CYNG_LOG_INFO(logger_, "accept incoming HTTP connection ("
+						<< counter_.insert(socket.remote_endpoint().address())
+						<< ") from "
 						<< socket.remote_endpoint()
 						<< " - "
 						<< tag);
