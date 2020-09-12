@@ -24,7 +24,7 @@ namespace node
 			, verbose_(verbose)
 			, bcc_(0)
 			, bcc_flag_(false)
-			, state_(STATE_START)
+			, state_(state::START)
 			, parser_state_(iec_start())
 			, value_()
 			, unit_()
@@ -48,7 +48,7 @@ namespace node
 				update_bcc(c);
 			}
 
-			if (state_ == STATE_START) {
+			if (state_ == state::START) {
 				cb_(cyng::generate_invoke("iec.data.start", pk_));
 			}
 
@@ -56,40 +56,40 @@ namespace node
 			state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 			if (state_ != prev_state) {
 				switch (state_) {
-				case STATE_OBIS:
+				case state::OBIS:
 					parser_state_ = iec_obis();
 					break;
-				case STATE_VALUE:
+				case state::VALUE:
 					parser_state_ = iec_value();
 					break;
-				case STATE_DATA_LINE:
+				case state::DATA_LINE:
 					parser_state_ = iec_data_line();
 					break;
-				case STATE_CHOICE_VALUE:
+				case state::CHOICE_VALUE:
 					parser_state_ = iec_choice_value();
 					break;
-				case STATE_CHOICE_STATUS:
+				case state::CHOICE_STATUS:
 					parser_state_ = iec_choice_status();
 					break;
-				case STATE_UNIT:
+				case state::UNIT:
 					parser_state_ = iec_unit();
 					break;
-				case STATE_DATA_BLOCK:
+				case state::DATA_BLOCK:
 					parser_state_ = iec_data_block();
 					break;
-				case STATE_DATA_SET:
+				case state::DATA_SET:
 					parser_state_ = iec_data_set();
 					break;
-				case STATE_ETX:
+				case state::ETX:
 					parser_state_ = iec_etx();
 					break;
-				case STATE_BCC:
+				case state::BCC:
 					parser_state_ = iec_bcc();
 					break;
-				case STATE_START:
+				case state::START:
 					parser_state_ = iec_start();
 					break;
-				case STATE_STATUS:
+				case state::STATUS:
 					parser_state_ = iec_status();
 					break;
 				default:
@@ -126,17 +126,10 @@ namespace node
 		{
 			if (verbose_) {
 				if (bcc_ == c) {
-					std::cerr
-						<< "IEC - BBC is OK "
-						<< std::endl;
+					cb_(cyng::generate_invoke("log.msg.debug", "IEC - BBC is OK"));
 				}
 				else {
-					std::cerr
-						<< "IEC - invalid BCC "
-						<< +bcc_
-						<< "/"
-						<< +c
-						<< std::endl;
+					cb_(cyng::generate_invoke("log.msg.warning", "IEC - invalid BCC ", +bcc_, "/", +c));
 				}
 			}
 		}
@@ -151,19 +144,11 @@ namespace node
 			if (r.second) {
 				this->id_ = r.first;
 				if (verbose_) {
-					std::cerr
-						<< "IEC: OBIS "
-						<< this->id_
-						<< std::endl;
+					cb_(cyng::generate_invoke("log.msg.debug", "IEC: OBIS ", this->id_));
 				}
 			}
 			else if (verbose_) {
-				std::cerr
-					<< "IEC: parsing OBIS code "
-					<< val
-					<< " failed"
-					<< std::endl;
-
+				cb_(cyng::generate_invoke("log.msg.warning", "IEC: parsing OBIS code ", val, " failed"));
 			}
 		}
 
@@ -195,12 +180,7 @@ namespace node
 			else {
 				value_ = val;
 				if (verbose_) {
-					std::cerr
-						<< "IEC: "
-						<< node::sml::to_string(id_)
-						<< " = "
-						<< value_
-						<< std::endl;
+					cb_(cyng::generate_invoke("log.msg.debug", "IEC: ", node::sml::to_string(id_), " = ", value_));
 				}
 			}
 		}
@@ -219,10 +199,7 @@ namespace node
 			//
 			unit_ = val;
 			if (verbose_) {
-				std::cerr
-					<< "IEC: unit = "
-					<< val
-					<< std::endl;
+				cb_(cyng::generate_invoke("log.msg.debug", "IEC: unit = ", val));
 			}
 		}
 
@@ -238,9 +215,9 @@ namespace node
 			if (c_ == STX) {
 				this->parser_.clear();
 				this->parser_.bcc_flag_ = true;
-				return STATE_OBIS;
+				return state::OBIS;
 			}
-			return STATE_ERROR;
+			return state::_ERROR;
 		}
 
 		parser::state parser::state_visitor::operator()(iec_obis& s) const
@@ -253,21 +230,21 @@ namespace node
 				//	parse OBIS code
 				//
 				this->parser_.set_id(s.value_);
-				return STATE_VALUE;
+				return state::VALUE;
 			case CR:
-				return STATE_OBIS;
+				return state::OBIS;
 			case '!':	
 				//
 				//	produce code
 				//
 				this->parser_.cb_(cyng::generate_invoke("iec.data.eof", this->parser_.pk_, this->parser_.counter_));
 				this->parser_.reset();
-				return STATE_DATA_BLOCK;
+				return state::DATA_BLOCK;
 			default:
 				s.value_ += this->c_;
 				break;
 			}
-			return STATE_ERROR;
+			return state::_ERROR;
 		}
 
 		parser::state parser::state_visitor::operator()(iec_value& s) const
@@ -275,34 +252,34 @@ namespace node
 			switch (this->c_) {
 			case ')':
 				this->parser_.set_value(s.value_);
-				return STATE_CHOICE_VALUE;
+				return state::CHOICE_VALUE;
 			case '*':
 				this->parser_.set_value(s.value_);
-				return STATE_UNIT;
+				return state::UNIT;
 			case '.':
 			default:
 				s.value_ += this->c_;
 				break;
 			}
-			return STATE_VALUE;
+			return state::VALUE;
 		}
 
 		parser::state parser::state_visitor::operator()(iec_choice_value& s) const
 		{
 			switch (this->c_) {
-			case '(':	return STATE_STATUS;
-			case CR:	return STATE_DATA_LINE;
+			case '(':	return state::STATUS;
+			case CR:	return state::DATA_LINE;
 			default:
 				break;
 			}
-			return STATE_START;
+			return state::START;
 		}
 
 		parser::state parser::state_visitor::operator()(iec_choice_status& s) const
 		{
 			return (this->c_ == CR)
-				? STATE_DATA_LINE
-				: STATE_ERROR
+				? state::DATA_LINE
+				: state::_ERROR
 				;
 		}
 
@@ -313,10 +290,10 @@ namespace node
 				//	set status
 				//
 				this->parser_.set_status(s.value_);
-				return STATE_CHOICE_STATUS;
+				return state::CHOICE_STATUS;
 			}
 			s.value_ += this->c_;
-			return STATE_STATUS;
+			return state::STATUS;
 		}
 
 		parser::state parser::state_visitor::operator()(iec_data_line& s) const
@@ -335,34 +312,34 @@ namespace node
 					, this->parser_.counter_));
 				++this->parser_.counter_;
 				this->parser_.clear();
-				return STATE_OBIS;
+				return state::OBIS;
 			}
-			return STATE_ERROR;
+			return state::_ERROR;
 		}
 
 		parser::state parser::state_visitor::operator()(iec_unit& s) const
 		{
 			if (this->c_ == ')') {
 				this->parser_.set_unit(s.value_);
-				return STATE_CHOICE_VALUE;
+				return state::CHOICE_VALUE;
 			}
 			s.value_ += this->c_;
-			return STATE_UNIT;
+			return state::UNIT;
 		}
 
 		parser::state parser::state_visitor::operator()(iec_data_block& s) const
 		{
 			return (this->c_ == CR)
-				? STATE_DATA_SET
-				: STATE_ERROR
+				? state::DATA_SET
+				: state::_ERROR
 				;
 		}
 
 		parser::state parser::state_visitor::operator()(iec_data_set&) const
 		{
 			return (this->c_ == LF)
-				? STATE_ETX
-				: STATE_ERROR
+				? state::ETX
+				: state::_ERROR
 				;
 		}
 
@@ -374,15 +351,15 @@ namespace node
 
 				//	ETX is part of BCC
 				this->parser_.bcc_flag_ = false;
-				return STATE_BCC;
+				return state::BCC;
 			}
-			return STATE_ERROR;
+			return state::_ERROR;
 		}
 
 		parser::state parser::state_visitor::operator()(iec_bcc&) const
 		{
 			this->parser_.test_bcc(this->c_);
-			return STATE_START;
+			return state::START;
 		}
 	}
 }	

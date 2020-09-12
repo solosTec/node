@@ -11,6 +11,7 @@
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
 #include "../sync_db.h"
+#include "../server.h"
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -79,6 +80,11 @@ namespace node
 		 * data synchronizer
 		 */
 		db_sync db_sync_;
+
+		/**
+		 *  TCP/IP server
+		 */
+		server server_;
 
 	};
 	

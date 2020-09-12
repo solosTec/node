@@ -36,24 +36,22 @@ namespace node
 			* are different helper variables mostly
 			* declared in the private section of this class.
 			*/
-			enum state
+			enum class state
 			{
-				STATE_ERROR,
-				STATE_START,		//!< initial state
-				STATE_STX,			//!< after STX
-				STATE_DATA_BLOCK,	//!< data block
-				STATE_DATA_LINE,
-				STATE_DATA_SET,
-				STATE_OBIS,			//!< ID
-				STATE_CHOICE_VALUE,
-				STATE_CHOICE_STATUS,
-				STATE_VALUE,
-				STATE_STATUS,	//!< new;old status
-				//STATE_NEW_STATUS,	//!< new;old status
-				//STATE_OLD_STATUS,	//!< new;old status
-				STATE_UNIT,
-				STATE_ETX,
-				STATE_BCC,	//!< XOR of all characters after STX and before ETX
+				_ERROR,
+				START,		//!< initial state
+				STX,			//!< after STX
+				DATA_BLOCK,	//!< data block
+				DATA_LINE,
+				DATA_SET,
+				OBIS,			//!< ID
+				CHOICE_VALUE,
+				CHOICE_STATUS,
+				VALUE,
+				STATUS,	//!< new;old status
+				UNIT,
+				ETX,
+				BCC,	//!< XOR of all characters after STX and before ETX
 				//STATE_EOF	//!> after !
 			};
 
@@ -140,12 +138,6 @@ namespace node
 			 *	Parse data
 			 */
 			void put(char);
-
-			/**
-			 * Probe if parsing is completed and
-			 * inform listener.
-			 */
-			//void post_processing();
 
 			/**
 			 * reset all values

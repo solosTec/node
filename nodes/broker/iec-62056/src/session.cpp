@@ -33,24 +33,23 @@ namespace node
 		, data_()
 		, rx_(0)
 		, sx_(0)
-		, parser_([&](wmbus::header const& h, cyng::buffer_t const& data) {
+		, parser_([&](cyng::vector_t&& prg) {
 
-			auto const str = cyng::io::to_hex(data);
-			auto const srv_id = sml::from_server_id(h.get_server_id());
+		//	auto const str = cyng::io::to_hex(data);
+		//	auto const srv_id = sml::from_server_id(h.get_server_id());
 
-			CYNG_LOG_INFO(logger_, srv_id
-				<< " sent " 
-				<< cyng::bytes_to_str(data.size()));
+			CYNG_LOG_TRACE(logger_, vm_.tag() << ": " << cyng::io::to_str(prg));
+			//vm_.async_run(std::move(prg));
 
-			cluster_.async_run(bus_insert_wMBus_uplink(std::chrono::system_clock::now()
-				, srv_id
-				, h.get_medium()
-				, h.get_manufacturer()
-				, h.get_frame_type()
-				, str
-				, cluster_.tag()));
+		//	cluster_.async_run(bus_insert_wMBus_uplink(std::chrono::system_clock::now()
+		//		, srv_id
+		//		, h.get_medium()
+		//		, h.get_manufacturer()
+		//		, h.get_frame_type()
+		//		, str
+		//		, cluster_.tag()));
 
-		})
+		}, true)
 	{
 		CYNG_LOG_INFO(logger_, "new session [" 
 			<< vm_.tag()
@@ -138,7 +137,7 @@ namespace node
 		//
 		//	insert new record into "_wMBusUplink" table
 		//	
-		parser_.read(data.begin(), data.end());
+		//parser_.read(data.begin(), data.end());
 
 		//
 		//	update "sx" value of this session/device
@@ -175,7 +174,7 @@ namespace node
 					, vec.at(1)
 					, "plain" //	login scheme
 					, cyng::param_map_factory("tp-layer", "TCP/IP")
-					("data-layer", "EN13757-4 wM-Bus")
+					("data-layer", "IEC-62056-21:2002")
 					("security", "public")
 					("time", std::chrono::system_clock::now())
 					("local-ep", socket_.remote_endpoint())
@@ -207,6 +206,4 @@ namespace node
 			}
 		}
 	}
-
-
 }

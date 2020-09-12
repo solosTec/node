@@ -25,6 +25,7 @@ namespace node
 		, config_(cfg)
 		, cache_()
 		, db_sync_(logger, cache_)
+		, server_(btp->mux_.get_io_service(), logger, bus_->vm_, ep)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -43,11 +44,23 @@ namespace node
 		//
 		bus_->vm_.register_function("db.trx.start", 0, [this](cyng::context& ctx) {
 			CYNG_LOG_TRACE(logger_, ctx.get_name());
-			});
-		bus_->vm_.register_function("db.trx.commit", 1, [this](cyng::context& ctx) {
+		});
+
+		bus_->vm_.register_function("db.trx.commit", 1, [this, tag, ep](cyng::context& ctx) {
 			auto const frame = ctx.get_frame();
-			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
-			});
+			auto const table = cyng::value_cast<std::string>(frame.at(0), "");;
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << table);
+			if (boost::algorithm::equals(table, "_Broker")) {
+
+				ctx.queue(bus_req_db_insert(table
+					//	generate new key
+					, cyng::table::key_generator(tag)
+					//	build data vector
+					, cyng::table::data_generator(ep.address(), ep.port(), "IEC-62056-21:2002")
+					, 0
+					, ctx.tag()));
+			}
+		});
 		db_sync_.register_this(bus_->vm_);
 
 	}
@@ -71,7 +84,7 @@ namespace node
 		//
 		//	stop server
 		//
-// 		server_.close();
+ 		server_.close();
 
 		//
 		//	sign off from cluster
@@ -94,9 +107,9 @@ namespace node
 		}
 
 		//
-		//	start IEC server
+		//	start IEC broker server
 		//
-// 		server_.run();
+ 		server_.run();
 
 		//
 		//	sync tables

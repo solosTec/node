@@ -114,7 +114,7 @@ namespace node
 		}
 
 		//
-		//	start broker server
+		//	start wM-Bus broker server
 		//
  		server_.run();
 
