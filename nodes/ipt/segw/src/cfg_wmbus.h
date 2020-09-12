@@ -78,6 +78,8 @@ namespace node
 		 */
 		bool generate_profile() const;
 
+		static constexpr std::uint8_t port_idx = 1;
+
 	private:
 		cache& cache_;
 	};

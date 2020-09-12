@@ -61,6 +61,8 @@ namespace node
 		 */
 		boost::asio::serial_port_base::character_size get_databits() const;
 
+		static constexpr std::uint8_t port_idx = 2;
+
 	private:
 		cache& cache_;
 	};

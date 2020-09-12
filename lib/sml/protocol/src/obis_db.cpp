@@ -398,6 +398,7 @@ namespace node
 			{ OBIS_LOG_SOURCE_WANPLC, {"LOG_SOURCE_WANPLC", cyng::TC_NULL } },
 
 			{ OBIS_ROOT_BROKER, {"ROOT_BROKER", cyng::TC_NULL } },
+			{ OBIS_ROOT_HARDWARE_PORT, {"ROOT_HARDWARE_PORT", cyng::TC_NULL } },
 
 			//{ OBIS_, {"", cyng::TC_NULL } },
 		};

@@ -925,6 +925,34 @@ namespace node
 					else if (boost::algorithm::equals(param.first, "collector-login")) {
 						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
 					}
+					else if (boost::algorithm::equals(param.first, "port")) {
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "databits")) {
+						//	unsigned int
+						auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 8u);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x02, port_idx) }), cyng::make_object(val));
+					}
+					else if (boost::algorithm::equals(param.first, "parity")) {
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x03, port_idx) }), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "flow-control")) {
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x04, port_idx) }), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "stopbits")) {
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x05, port_idx) }), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "speed")) {
+						//	unsigned int
+						auto const val = cyng::numeric_cast<std::uint32_t>(param.second,
+#if BOOST_OS_WINDOWS
+							57600u
+#else
+							115200u
+#endif
+							);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, port_idx) }), cyng::make_object(val));
+					}
 					else {
 
 						init_config_record(s, build_cfg_key({
@@ -1030,6 +1058,28 @@ namespace node
 					}
 					else if (boost::algorithm::equals(param.first, "collector-login")) {
 						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "port")) {
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "databits")) {
+						//	unsigned int
+						auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 8u);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x02, port_idx) }), cyng::make_object(val));
+					}
+					else if (boost::algorithm::equals(param.first, "parity")) {
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x03, port_idx) }), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "flow-control")) {
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x04, port_idx) }), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "stopbits")) {
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x05, port_idx) }), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "speed")) {
+						//	unsigned int
+						auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 2400u);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, port_idx) }), cyng::make_object(val));
 					}
 					else {
 						init_config_record(s, build_cfg_key({ "rs485", param.first }), param.second);

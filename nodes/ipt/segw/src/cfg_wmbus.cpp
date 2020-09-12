@@ -12,6 +12,7 @@
 #include <smf/serial/stopbits.h>
 #include <smf/serial/flow_control.h>
 #include <smf/sml/obis_db.h>
+#include <smf/sml/intrinsics/obis_factory.hpp>
 
 #include <cyng/value_cast.hpp>
 
@@ -34,12 +35,13 @@ namespace node
 
 	std::string cfg_wmbus::get_port() const
 	{
-
+		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x01, port_idx) }),
 #if BOOST_OS_WINDOWS
-		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "port"), std::string("COM8"));
+			std::string("COM8")
 #else
-		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "port"), std::string("/dev/ttyAPP1"));
+			std::string("/dev/ttyAPP1")
 #endif
+		);
 	}
 
 	std::chrono::seconds cfg_wmbus::get_monitor() const
@@ -49,7 +51,7 @@ namespace node
 
 	boost::asio::serial_port_base::baud_rate cfg_wmbus::get_baud_rate() const
 	{
-		return boost::asio::serial_port_base::baud_rate(cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "speed"), 
+		return boost::asio::serial_port_base::baud_rate(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, port_idx) }), 
 #if BOOST_OS_WINDOWS
 			57600u
 #else
@@ -60,24 +62,23 @@ namespace node
 
 	boost::asio::serial_port_base::parity cfg_wmbus::get_parity() const
 	{
-		return serial::to_parity(cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "parity"), "none"));
+		return serial::to_parity(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x03, port_idx) }), "none"));
 	}
 
 	boost::asio::serial_port_base::flow_control cfg_wmbus::get_flow_control() const
 	{
-		return serial::to_flow_control(cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "flow_control"), "none"));
+		return serial::to_flow_control(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x04, port_idx) }), "none"));
 	}
 
 	boost::asio::serial_port_base::stop_bits cfg_wmbus::get_stopbits() const
 	{
-		return serial::to_stopbits(cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "stopbits"), "one"));
+		return serial::to_stopbits(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x05, port_idx) }), "one"));
 	}
 
 	boost::asio::serial_port_base::character_size cfg_wmbus::get_databits() const
 	{
-		return boost::asio::serial_port_base::character_size(cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "databits"), 8u));
+		return boost::asio::serial_port_base::character_size(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x02, port_idx) }), 8u));
 	}
-
 
 	std::string cfg_wmbus::get_hci() const
 	{
