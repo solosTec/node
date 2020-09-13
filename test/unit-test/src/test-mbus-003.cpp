@@ -47,17 +47,17 @@ namespace node
 			cyng::buffer_t data;
 			data.insert(data.begin(), std::istream_iterator<char>(ifs), std::istream_iterator<char>());
 
-			wmbus::parser p([](cyng::vector_t&& prg) {
+			wmbus::parser p([](wmbus::header const& header, cyng::buffer_t const& data) {
 
 				//	[op:ESBA,GWF,0,e,0009b5f8,72,13090016E61E3C07430020654C96AED902C8485C9E381D5AF2791A2818DF3763271C9EB2C29321E5EAC458C7,mbus.push.frame,op:INVOKE,op:REBA]
 				//	[op:ESBA,01242396072000630E,HYD,63,e,0003105c,72,29436587E61EBF03B900200540C83A80A8E0668CAAB369804FBEFBA35725B34A55369C7877E42924BD812D6D,mbus.push.frame,op:INVOKE,op:REBA]
 				//std::cout << cyng::io::to_str(prg) << std::endl;
 
-				if (prg.size() == 0xb) {
+				//if (prg.size() == 0xb) {
 
-					auto const server_id = cyng::to_buffer(prg.at(1));
-					std::uint8_t const ci = cyng::value_cast<std::uint8_t>(prg.at(6), 0u);
-					auto const data = cyng::to_buffer(prg.at(7));
+				auto const server_id = header.get_server_id(); //cyng::to_buffer(prg.at(1));
+				std::uint8_t const ci = header.get_frame_type(); //cyng::value_cast<std::uint8_t>(prg.at(6), 0u);
+				//auto const data = cyng::to_buffer(prg.at(7));
 
 					std::cout
 						<< sml::from_server_id(server_id)
@@ -204,7 +204,7 @@ namespace node
 							sml_parser.read(r2.first.begin() + 2, r2.first.end());
 						}
 					}
-				}
+				//}
 
 			});
 			p.read(data.begin(), data.end());
