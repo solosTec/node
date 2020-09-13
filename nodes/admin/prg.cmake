@@ -42,7 +42,6 @@ set (node_admin_shared
 	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.h
 
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
-#	${CMAKE_SOURCE_DIR}/nodes/shared/sys/ctl.cpp
 
 )
 
@@ -76,9 +75,9 @@ else()
 
 endif()
 
-source_group("dash/tasks" FILES ${node_dash_tasks})
-source_group("dash/service" FILES ${node_dash_service})
-source_group("admin" FILES ${node_admin_shared})
+source_group("dash\\tasks" FILES ${node_dash_tasks})
+source_group("dash\\service" FILES ${node_dash_service})
+source_group("shared" FILES ${node_admin_shared})
 source_group("schemes" FILES ${node_schemes})
 
 
@@ -98,12 +97,12 @@ if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 		${PUGIXML_INCLUDE_DIR}/pugixml.cpp
 	)
 	list(APPEND node_dash ${node_dash_xml})
-	source_group("dash/XML" FILES ${node_dash_xml})
+	source_group("dash\\XML" FILES ${node_dash_xml})
 
 endif()
 
 if(WIN32)
-	source_group("dash/resources" FILES ${node_dash_res})
+	source_group("dash\\resources" FILES ${node_dash_res})
 	list(APPEND node_dash ${node_dash_res})
 endif()
 
@@ -157,8 +156,8 @@ else()
 
 endif()
 
-source_group("dashs/tasks" FILES ${node_dashs_tasks})
-source_group("dashs/service" FILES ${node_dashs_service})
+source_group("dashs\\tasks" FILES ${node_dashs_tasks})
+source_group("dashs\\service" FILES ${node_dashs_service})
 
 
 # define the main program
@@ -177,11 +176,11 @@ if (${PROJECT_NAME}_PUGIXML_INSTALLED)
 		${PUGIXML_INCLUDE_DIR}/pugixml.cpp
 	)
 	list(APPEND node_dashs ${node_dashs_xml})
-	source_group("dashs/XML" FILES ${node_dashs_xml})
+	source_group("dashs\\XML" FILES ${node_dashs_xml})
 
 endif()
 
 if(WIN32)
-	source_group("dashs/resources" FILES ${node_dashs_res})
+	source_group("dashs\\resources" FILES ${node_dashs_res})
 	list(APPEND node_dashs ${node_dashs_res})
 endif()

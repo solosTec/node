@@ -109,7 +109,8 @@ namespace node
 					<< p);
 			}
 			pos->second.emplace(std::get<1>(tpl), p.string());
-			pos->second.emplace(std::get<2>(tpl), std::get<3>(tpl));
+			pos->second.emplace("filename", std::get<2>(tpl));
+			pos->second.emplace("content-type", std::get<3>(tpl));
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "http.upload.data - session "

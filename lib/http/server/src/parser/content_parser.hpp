@@ -62,6 +62,8 @@ namespace node
 				>> *r_phrase
 				;
 
+			//	Error: doesn't push back into params_
+			//	I'm tired of poking around with Boost.Spirit. It simply kills too much time.
 			r_phrase
 				%= boost::spirit::qi::lit(';')
 				>> +r_ws

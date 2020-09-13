@@ -1039,7 +1039,7 @@ namespace node
 		>(frame);
 
 
-		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "data"), "");
+		auto const file_name = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "filename"), "");
 		auto const policy = cyng::table::to_policy(cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "policy"), "subst"));
 		auto const data = cyng::value_cast<std::string>(cyng::find(std::get<1>(tpl), "file"), "");
 
@@ -1053,6 +1053,23 @@ namespace node
 
 		//Meter_ID, Ift_Type, GWY_IP, Port, Manufacturer, Meter_Type, Protocol, Area, Name, In_enDS, Key, AMR Address, Comments
 		//	MA0000000000000000000000003496219, RS485, 10.132.28.150, 6000, Elster, Elster AS 1440, IEC 62056, Lot Yakut, C1 House 101, Yes, , ,
+
+		auto const vec = cyng::csv::read_file_to_param_map(data);
+		//auto const vec = cyng::csv::read_file(data);
+		if (!vec.empty()) {
+
+			for (auto const& row : vec) {
+				CYNG_LOG_TRACE(logger_, cyng::io::to_type(row));
+			}
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, ctx.get_name()
+				<< " - file "
+				<< file_name
+				<< " contains no data");
+
+		}
+
 	}
 	void forward::read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc, bool insert)
 	{
