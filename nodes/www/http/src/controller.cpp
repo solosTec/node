@@ -355,6 +355,7 @@ namespace node
 #endif
 			, blocklist
 			, redirects
+			, cyng::vector_t{}
 			, vm
 			, https_rewrite);
 
