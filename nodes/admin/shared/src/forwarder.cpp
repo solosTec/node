@@ -1054,15 +1054,44 @@ namespace node
 		//Meter_ID, Ift_Type, GWY_IP, Port, Manufacturer, Meter_Type, Protocol, Area, Name, In_enDS, Key, AMR Address, Comments
 		//	MA0000000000000000000000003496219, RS485, 10.132.28.150, 6000, Elster, Elster AS 1440, IEC 62056, Lot Yakut, C1 House 101, Yes, , ,
 
-		auto const vec = cyng::csv::read_file_to_param_map(data);
-		//auto const vec = cyng::csv::read_file(data);
-		if (!vec.empty()) {
+		auto const size = cyng::csv::read_file(data, [this, &ctx, policy](cyng::param_map_t const& pm) {
+			CYNG_LOG_TRACE(logger_, cyng::io::to_type(pm));
 
-			for (auto const& row : vec) {
-				CYNG_LOG_TRACE(logger_, cyng::io::to_type(row));
+			auto const mc = cyng::value_cast<std::string>(pm.at("Meter_ID"), "");
+			std::string meter_id = (mc.size() > 8) 
+				? mc.substr(mc.length() - 8)
+				: mc
+				;
+
+			auto const row = cyng::table::data_generator(
+				meter_id,	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				meter_id,	//	meter number (i.e. 16000913) 4 bytes 
+				mc,	//	metering code - changed at 2019-01-31
+				pm.at("Manufacturer"),	//	manufacturer
+				std::chrono::system_clock::now(),			//	time of manufacture
+				pm.at("Meter_Type"),	//	firmware version (i.e. 11600000)
+				"",		//	parametrierversion (i.e. 16A098828.pse)
+				"",		//	fabrik nummer (i.e. 06441734)
+				pm.at("Meter_Type"),		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				"",		//	Metrological Class: A, B, C, Q3/Q1, ...
+				"",			//	optional gateway pk
+				pm.at("Protocol"));	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+
+			switch (policy) {
+			case cyng::table::POLICY_MERGE:
+				//ctx.queue(bus_req_db_merge("TMeter", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+				break;
+			case cyng::table::POLICY_SUBSTITUTE:
+				//ctx.queue(bus_req_db_update("TMeter", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+				break;
+			default:
+				ctx.queue(bus_req_db_insert("TMeter", cyng::table::key_generator(uidgen_()), row, 1u, ctx.tag()));
+				break;
 			}
-		}
-		else {
+
+		});
+
+		if (size == 0) {
 			CYNG_LOG_WARNING(logger_, ctx.get_name()
 				<< " - file "
 				<< file_name
