@@ -20,24 +20,21 @@ namespace node
 {
 	void create_cache(cyng::logging::log_ptr logger, cyng::store::db& db)
 	{
-		//CYNG_LOG_TRACE(logger, "create "
-		//	<< tables::list_.size()
-		//	<< " cache tables");
+		CYNG_LOG_TRACE(logger, "create "
+			<< db_sync::tables_.size()
+			<< " cache tables");
 
-		//for (auto const& tbl : tables::list_) {
-		//	if (!tbl.custom_) {
-		//		if (!create_table(db, tbl.name_)) {
-		//			CYNG_LOG_FATAL(logger, "cannot create table: " << tbl.name_);
-		//		}
-		//		else {
-		//			CYNG_LOG_DEBUG(logger, "create table: " << tbl.name_);
-		//		}
-		//	}
-		//}
+		for (auto const& tbl : db_sync::tables_) {
+			if (!tbl.custom_) {
+				if (!create_table(db, tbl.name_)) {
+					CYNG_LOG_FATAL(logger, "cannot create table: " << tbl.name_);
+				}
+				else {
+					CYNG_LOG_DEBUG(logger, "create table: " << tbl.name_);
+				}
+			}
+		}
 
-		//
-		//	Has more columns than original TGateway definition
-		//
 		//
 		//	all tables created
 		//
@@ -46,12 +43,9 @@ namespace node
 
 	void clear_cache(cyng::store::db& db, boost::uuids::uuid tag)
 	{
-		//for (auto const& tbl : tables::list_) {
-		//	if (!tbl.local_) {
-		//		db.clear(tbl.name_, tag);
-		//	}
-		//}
-		//db.insert("_Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, tag);
+		for (auto const& tbl : db_sync::tables_) {
+				db.clear(tbl.name_, tag);
+		}
 	}
 
 	db_sync::db_sync(cyng::logging::log_ptr logger, cyng::store::db& db)
@@ -297,13 +291,48 @@ namespace node
 		//	, std::get<4>(tpl));	//	[4] source
 	}
 
-	void db_sync::db_insert(cyng::context& ctx
+	bool db_sync::db_insert(cyng::context& ctx
 		, std::string const& table		//	[0] table name
 		, cyng::table::key_type key		//	[1] table key
 		, cyng::table::data_type data	//	[2] record
 		, std::uint64_t	gen
 		, boost::uuids::uuid origin)
 	{
+		//
+		//	insert new record
+		//
+		if (!db_.insert(table	//	table name
+			, key	//	table key
+			, data	//	table data
+			, gen	//	generation
+			, origin))
+		{
+			CYNG_LOG_WARNING(logger_, "res.insert failed "
+				<< table		// table name
+				<< " - "
+				<< cyng::io::to_str(key));
+			return false;
+		}
+
+		if (boost::algorithm::equals(table, "TIECBridge")) {
+			//
+			//	if connection is outgoin - start a new task
+			//
+			auto const rec = db_.lookup("TIECBridge", key);
+			if (!rec.empty()) {
+				auto direction = cyng::value_cast(rec["direction"], false);
+				if (!direction) {
+
+					auto const tpl = rec.convert();
+					CYNG_LOG_INFO(logger_, "start client task for "
+						<< cyng::io::to_str(tpl));
+
+
+
+				}
+			}
+		}
+		return true;
 	}
 
 	void db_sync::res_subscribe(cyng::context& ctx)
@@ -340,6 +369,32 @@ namespace node
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 		std::reverse(std::get<2>(tpl).begin(), std::get<2>(tpl).end());
 
+		//
+		//	insert new record
+		//
+		if (!db_insert(ctx
+			, std::get<0>(tpl)	//	table name
+			, std::get<1>(tpl)	//	table key
+			, std::get<2>(tpl)	//	table data
+			, std::get<3>(tpl)	//	generation
+			, std::get<4>(tpl)))
+		{
+			CYNG_LOG_WARNING(logger_, "res.subscribe failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_str(std::get<1>(tpl)));
+		}
+
 	}
+
+	/**
+	 * Initialize all used table names
+	 */
+	const std::array<db_sync::tbl_descr, 3>	db_sync::tables_ =
+	{
+		tbl_descr{"TMeter", false},
+		tbl_descr{"TIECBridge", false},
+		tbl_descr{"_Broker", false},	//	broker
+	};
 
 }

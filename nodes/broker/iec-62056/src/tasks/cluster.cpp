@@ -6,10 +6,13 @@
  */
 
 #include "cluster.h"
+#include "client.h"
+
 #include <smf/cluster/generator.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
+
 #include <boost/uuid/random_generator.hpp>
 
 namespace node
@@ -34,6 +37,11 @@ namespace node
 			<< ">");
 
 		//
+		//	init cache
+		//
+		create_cache(logger_, cache_);
+
+		//
 		//	implement request handler
 		//
 		bus_->vm_.register_function("bus.reconfigure", 1, std::bind(&cluster::reconfigure, this, std::placeholders::_1));
@@ -50,6 +58,8 @@ namespace node
 			auto const frame = ctx.get_frame();
 			auto const table = cyng::value_cast<std::string>(frame.at(0), "");;
 			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << table);
+			CYNG_LOG_INFO(logger_, table << " size: " << cache_.size(table));
+
 			if (boost::algorithm::equals(table, "_Broker")) {
 
 				ctx.queue(bus_req_db_insert(table
@@ -61,8 +71,21 @@ namespace node
 					, ctx.tag()));
 			}
 		});
+
+		//
+		//	register all database/cache related functions
+		//
 		db_sync_.register_this(bus_->vm_);
 
+		bus_->vm_.register_function("iec.client.start", 0, [this](cyng::context& ctx) {
+			auto const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
+			});
+
+		bus_->vm_.register_function("iec.client.stop", 0, [this](cyng::context& ctx) {
+			auto const frame = ctx.get_frame();
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
+			});
 	}
 
 	cyng::continuation cluster::run()

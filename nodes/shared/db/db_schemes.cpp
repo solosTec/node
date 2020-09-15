@@ -557,7 +557,7 @@ namespace node
 				{ "pk"		//	same key as in TMeter table
 				, "address"		//	[ip] incoming/outgoing IP connection
 				, "port"		//	[ip] incoming/outgoing IP connection
-				, "direction"	//	[bool] incoming/outgoing
+				, "direction"	//	[bool] true = incoming, false = outgoing
 				, "interval"	//	[seconds] pull cycle
 				},
 				{ cyng::TC_UUID			//	pk

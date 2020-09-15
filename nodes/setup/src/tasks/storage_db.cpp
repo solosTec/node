@@ -88,7 +88,7 @@ namespace node
 			cyng::table::meta_table_ptr meta = (*pos).second;
 			cyng::sql::command cmd(meta, s.get_dialect());
 			auto const sql = cmd.select().all()();
-			CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
+			CYNG_LOG_DEBUG(logger_, sql);	//	select ... from name
 
 			auto stmt = s.create_statement();
 			stmt->prepare(sql);
@@ -498,6 +498,7 @@ namespace node
 			{
 				cyng::sql::command cmd(tbl.second, s.get_dialect());
 				auto sql = cmd.create()();
+
 #ifdef _DEBUG
 				std::cout << sql << std::endl;
 #endif
@@ -712,7 +713,7 @@ namespace node
 		//	item: artikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 		//	class: Metrological Class: A, B, C, Q3/Q1, ...
 		insert(meta_map, cyng::table::make_meta_table_gen<1, 12>("TMeter",
-			{ "pk"
+			{ "pk"			//	UUID
 			, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 			, "meter"		//	meter number (i.e. 16000913) 4 bytes 
 			, "code"		//	metering code - changed at 2019-01-31
@@ -757,7 +758,7 @@ namespace node
 
 		insert(meta_map, cyng::table::make_meta_table_gen<1, 5>("TMeterwMBUS",
 			{ "pk"
-			, "status"		//	"Statusinformation: 00"
+			, "status"	//	"Statusinformation: 00"
 			, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
 			, "aes"		//	AES-Key
 			, "user"
@@ -999,7 +1000,7 @@ namespace node
 		//	meters with IEC communiction.
 		//
 		insert(meta_map, cyng::table::make_meta_table_gen<1, 4>("TIECBridge",
-			{ "pk"		//	same key as in TMeter table
+			{ "pk"			//	same key as in TMeter table
 			, "address"		//	[ip] incoming/outgoing IP connection
 			, "port"		//	[ip] incoming/outgoing IP connection
 			, "direction"	//	[bool] incoming/outgoing

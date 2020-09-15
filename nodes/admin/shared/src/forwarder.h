@@ -106,7 +106,7 @@ namespace node
 		void cfg_upload_gateways(cyng::context& ctx);
 		void cfg_upload_meter(cyng::context& ctx);
 		void cfg_upload_LoRa(cyng::context& ctx);
-		void cfg_upload_onee(cyng::context& ctx);
+		void cfg_upload_iec(cyng::context& ctx);
 
 		void read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc, bool);
 		void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc, bool);
@@ -118,6 +118,12 @@ namespace node
 		void trigger_download_xml(boost::uuids::uuid tag, std::string table, std::string filename);
 		void trigger_download_csv(boost::uuids::uuid tag, std::string table, std::string filename);
 		void trigger_download_json(boost::uuids::uuid tag, std::string table, std::string filename);
+
+		/**
+		 * search TMeter table for a meter id. If meter was found returns primary key.
+		 * If not return a random new pk.
+		 */
+		cyng::table::record lookup_meter_by_id(std::string const&);
 
 	private:
 		cyng::logging::log_ptr logger_;

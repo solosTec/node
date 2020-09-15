@@ -52,7 +52,7 @@ namespace node
 
 				, cyng::param_factory("server", cyng::tuple_factory(
 					cyng::param_factory("address", "0.0.0.0"),
-					cyng::param_factory("service", "14000")))
+					cyng::param_factory("service", "6000")))
                     
 				, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
 					cyng::param_factory("host", "127.0.0.1"),

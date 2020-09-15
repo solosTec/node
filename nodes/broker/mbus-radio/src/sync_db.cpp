@@ -43,12 +43,9 @@ namespace node
 
 	void clear_cache(cyng::store::db& db, boost::uuids::uuid tag)
 	{
-		//for (auto const& tbl : tables::list_) {
-		//	if (!tbl.local_) {
-		//		db.clear(tbl.name_, tag);
-		//	}
-		//}
-		//db.insert("_Config", cyng::table::key_generator("cpu:load"), cyng::table::data_generator(0.0), 0, tag);
+		for (auto const& tbl : db_sync::tables_) {
+			db.clear(tbl.name_, tag);
+		}
 	}
 
 	db_sync::db_sync(cyng::logging::log_ptr logger, cyng::store::db& db)

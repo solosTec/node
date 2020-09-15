@@ -715,7 +715,7 @@ namespace node
 		vm.register_function("cfg.upload.gateways", 2, std::bind(&forward::cfg_upload_gateways, this, std::placeholders::_1));
 		vm.register_function("cfg.upload.meter", 2, std::bind(&forward::cfg_upload_meter, this, std::placeholders::_1));
 		vm.register_function("cfg.upload.LoRa", 2, std::bind(&forward::cfg_upload_LoRa, this, std::placeholders::_1));
-		vm.register_function("cfg.upload.onee", 2, std::bind(&forward::cfg_upload_onee, this, std::placeholders::_1));
+		vm.register_function("cfg.upload.iec", 2, std::bind(&forward::cfg_upload_iec, this, std::placeholders::_1));
 
 		vm.register_function("http.post.json", 5, std::bind(&forward::cfg_post_json, this, std::placeholders::_1));
 		vm.register_function("http.post.form.urlencoded", 5, std::bind(&forward::cfg_post_form_urlencoded, this, std::placeholders::_1));
@@ -1028,7 +1028,7 @@ namespace node
 		}
 	}
 
-	void forward::cfg_upload_onee(cyng::context& ctx)
+	void forward::cfg_upload_iec(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
 		//CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
@@ -1054,15 +1054,39 @@ namespace node
 		//Meter_ID, Ift_Type, GWY_IP, Port, Manufacturer, Meter_Type, Protocol, Area, Name, In_enDS, Key, AMR Address, Comments
 		//	MA0000000000000000000000003496219, RS485, 10.132.28.150, 6000, Elster, Elster AS 1440, IEC 62056, Lot Yakut, C1 House 101, Yes, , ,
 
+		//
+		//	read specified file and loop over all entries
+		//
 		auto const size = cyng::csv::read_file(data, [this, &ctx, policy](cyng::param_map_t const& pm) {
+
 			CYNG_LOG_TRACE(logger_, cyng::io::to_type(pm));
 
+			//
+			//	extract Meter_ID
+			//	have to contain at least 8 bytes
+			//
 			auto const mc = cyng::value_cast<std::string>(pm.at("Meter_ID"), "");
-			std::string meter_id = (mc.size() > 8) 
+			if (mc.size() < 8)	return;
+
+			std::string meter_id = (mc.size() > 8)
 				? mc.substr(mc.length() - 8)
 				: mc
 				;
 
+			//
+			//	Search for an existing meter with the same ID.
+			//	If meter ID already exists use this PK otherwise create a new one.
+			//
+			auto const rec = lookup_meter_by_id(meter_id);
+			auto const pk = (rec.empty())
+				? cyng::table::key_generator(uidgen_())
+				: rec.key()
+				;
+
+			//
+			//	Create a new TMeter record from uploaded data and fill missing data
+			//	if available
+			//
 			auto const row = cyng::table::data_generator(
 				meter_id,	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 				meter_id,	//	meter number (i.e. 16000913) 4 bytes 
@@ -1070,23 +1094,87 @@ namespace node
 				pm.at("Manufacturer"),	//	manufacturer
 				std::chrono::system_clock::now(),			//	time of manufacture
 				pm.at("Meter_Type"),	//	firmware version (i.e. 11600000)
-				"",		//	parametrierversion (i.e. 16A098828.pse)
-				"",		//	fabrik nummer (i.e. 06441734)
+				(rec.empty() ? cyng::make_object("") : rec["vParam"]),		//	parametrierversion (i.e. 16A098828.pse)
+				(rec.empty() ? cyng::make_object("") : rec["factoryNr"]),		//	fabrik nummer (i.e. 06441734)
 				pm.at("Meter_Type"),		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
-				"",		//	Metrological Class: A, B, C, Q3/Q1, ...
-				"",			//	optional gateway pk
+				"C",		//	Metrological Class: A, B, C, Q3/Q1, ...
+				(rec.empty() ? cyng::make_object(boost::uuids::nil_uuid()) : rec["gw"]),			//	optional gateway pk
 				pm.at("Protocol"));	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
 
+			//
+			//	use specified policy
+			//
 			switch (policy) {
 			case cyng::table::POLICY_MERGE:
-				//ctx.queue(bus_req_db_merge("TMeter", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+				ctx.queue(bus_req_db_merge("TMeter", pk, row, (rec.empty() ? 1u : rec.get_generation()), ctx.tag()));
 				break;
 			case cyng::table::POLICY_SUBSTITUTE:
-				//ctx.queue(bus_req_db_update("TMeter", rec.key(), rec.data(), rec.get_generation(), ctx.tag()));
+				ctx.queue(bus_req_db_update("TMeter", pk, row, (rec.empty() ? 1u : rec.get_generation()), ctx.tag()));
 				break;
 			default:
-				ctx.queue(bus_req_db_insert("TMeter", cyng::table::key_generator(uidgen_()), row, 1u, ctx.tag()));
+				ctx.queue(bus_req_db_insert("TMeter", pk, row, 1u, ctx.tag()));
 				break;
+			}
+
+			//
+			//	update/create entry for "TIECBridge"
+			//
+			auto const rec_iec = db_.lookup("TIECBridge", pk);
+
+			try {
+				auto const str_port = cyng::value_cast<std::string>(pm.at("Port"), "6000");
+				auto const port = static_cast<std::uint16_t>(std::stoul(str_port));
+				auto const str_address = cyng::value_cast<std::string>(pm.at("GWY_IP"), "0.0.0.0");
+				if (str_address.empty()) {
+
+					std::stringstream ss;
+					ss
+						<< "IEC upload: record for meter "
+						<< meter_id
+						<< " has no IP address";
+						;
+					CYNG_LOG_WARNING(logger_, ss.str());
+					ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+					return;	//	invalid value
+				}
+
+				boost::system::error_code ec;
+				auto const address = boost::asio::ip::make_address(str_address, ec);
+				auto const row_iec = cyng::table::data_generator(
+					address,	//	[ip] incoming/outgoing IP connection
+					port,		//	[ip] incoming/outgoing IP connection
+										//	[bool] incoming/outgoing
+					(rec_iec.empty() ? cyng::make_object(false) : rec["direction"]),
+					//	[seconds] pull cycle
+					(rec_iec.empty() ? cyng::make_seconds(15 * 60) : rec["interval"]));
+
+				//
+				//	use specified policy to insert/update table TIECBridge
+				//
+				switch (policy) {
+				case cyng::table::POLICY_MERGE:
+					ctx.queue(bus_req_db_merge("TIECBridge", pk, row_iec, (rec_iec.empty() ? 1u : rec_iec.get_generation()), ctx.tag()));
+					break;
+				case cyng::table::POLICY_SUBSTITUTE:
+					ctx.queue(bus_req_db_update("TIECBridge", pk, row_iec, (rec_iec.empty() ? 1u : rec_iec.get_generation()), ctx.tag()));
+					break;
+				default:
+					ctx.queue(bus_req_db_insert("TIECBridge", pk, row_iec, 1u, ctx.tag()));
+					break;
+				}
+			}
+			catch (std::exception const& ex) {
+
+				std::stringstream ss;
+				ss
+					<< "IEC upload: record for meter " 
+					<< meter_id 
+					<< " has no valid IP address: "
+					<< ex.what()
+					;
+				CYNG_LOG_WARNING(logger_, ss.str());
+
+				ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
 			}
 
 		});
@@ -1098,8 +1186,41 @@ namespace node
 				<< " contains no data");
 
 		}
+		else {
 
+			CYNG_LOG_INFO(logger_, ctx.get_name()
+				<< size
+				<< " TMeter/TIECBridge records inserted/updated");
+
+		}
 	}
+
+	cyng::table::record forward::lookup_meter_by_id(std::string const& id)
+	{	
+		return db_.access([&](cyng::store::table const* tbl) -> cyng::table::record {
+
+			auto result = cyng::table::make_empty_record(tbl->meta_ptr());
+			const auto counter = tbl->loop([&](cyng::table::record const& rec) -> bool {
+				
+				auto const meter = cyng::value_cast<std::string>(rec["meter"], "00000000");
+				if (boost::algorithm::equals(id, meter)) {
+#ifdef _DEBUG
+					CYNG_LOG_DEBUG(logger_, "meter id " << id << " found");
+#endif
+					result = rec;
+					return false;
+				}
+
+				//	continue
+				return true;
+			});
+
+			return result;
+
+		}, cyng::store::read_access("TMeter"));
+	}
+
+
 	void forward::read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc, bool insert)
 	{
 		//

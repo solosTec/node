@@ -355,7 +355,7 @@ namespace node
 #endif
 			, blocklist
 			, redirects
-			, cyng::vector_t{}
+			, std::map<std::string, std::string>{}
 			, vm
 			, https_rewrite);
 

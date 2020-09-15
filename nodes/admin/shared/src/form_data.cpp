@@ -228,8 +228,8 @@ namespace node
 		else if (boost::algorithm::equals(std::get<3>(tpl), "/config/upload.LoRa")) {
 			ctx.queue(cyng::generate_invoke("cfg.upload.LoRa", std::get<0>(tpl), params));
 		}
-		else if (boost::algorithm::equals(std::get<3>(tpl), "/upload/config/onee/")) {
-			ctx.queue(cyng::generate_invoke("cfg.upload.onee", std::get<0>(tpl), params));
+		else if (boost::algorithm::equals(std::get<3>(tpl), "/upload/config/iec/")) {
+			ctx.queue(cyng::generate_invoke("cfg.upload.iec", std::get<0>(tpl), params));
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, ctx.get_name() << " - unknown upload path: " << std::get<3>(tpl));

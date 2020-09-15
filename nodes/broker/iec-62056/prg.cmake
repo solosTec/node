@@ -45,6 +45,8 @@ endif(UNIX)
 set (node_iec_62056_tasks
 	src/tasks/cluster.h
 	src/tasks/cluster.cpp
+	src/tasks/client.h
+	src/tasks/client.cpp
 )
 
 	
