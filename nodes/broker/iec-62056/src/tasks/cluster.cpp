@@ -9,9 +9,11 @@
 #include "client.h"
 
 #include <smf/cluster/generator.h>
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
+#include <cyng/tuple_cast.hpp>
 
 #include <boost/uuid/random_generator.hpp>
 
@@ -78,8 +80,29 @@ namespace node
 		db_sync_.register_this(bus_->vm_);
 
 		bus_->vm_.register_function("iec.client.start", 0, [this](cyng::context& ctx) {
+
+			//	9158fa72-7855-403c-a0fb-55a96e1d3af7,"10.132.24.165"ip.v4,1770u16,00:15:0.000000
 			auto const frame = ctx.get_frame();
-			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
+
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] key to TMeter table
+				boost::asio::ip::address,			//	[1] address
+				std::uint16_t,	//	[2] port
+				std::chrono::seconds
+			>(frame);
+
+			auto tsk = cyng::async::start_task_detached<client>(base_.mux_
+				, logger_
+				, cache_
+				, boost::asio::ip::tcp::endpoint{ std::get<1>(tpl), std::get<2>(tpl) }
+				, std::get<3>(tpl));
+
+			CYNG_LOG_TRACE(logger_,
+				ctx.get_name()
+				<< " #"
+				<< tsk
+				<< " - "
+				<< cyng::io::to_type(frame));
 			});
 
 		bus_->vm_.register_function("iec.client.stop", 0, [this](cyng::context& ctx) {

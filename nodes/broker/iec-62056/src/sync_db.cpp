@@ -323,11 +323,20 @@ namespace node
 				auto direction = cyng::value_cast(rec["direction"], false);
 				if (!direction) {
 
-					auto const tpl = rec.convert();
-					CYNG_LOG_INFO(logger_, "start client task for "
-						<< cyng::io::to_str(tpl));
+					//	{
+					//	("key":%(("pk":47f5f627-5c6c-4119-8660-60b4301c8eda))),
+					//	("data":%(("address":10.132.24.165),("direction":false),("gen":1),("interval":00:15:0.000000),("port":1770)))
+					//	}
+					//auto const tpl = rec.convert();
 
-
+					//CYNG_LOG_INFO(logger_, "start client task for "
+					//	<< cyng::io::to_str(tpl));
+					ctx.queue(cyng::generate_invoke("iec.client.start"
+						, rec["pk"]
+						, rec["address"]
+						, rec["port"]
+						, rec["interval"]
+					));
 
 				}
 			}
