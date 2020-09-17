@@ -67,7 +67,7 @@ int main(int argc, char **argv)
     //
     boost::program_options::options_description node_options("mBus (radio)");
 	node::set_start_options(node_options
-		, "mbus_radio"
+		, "mbus-radio-broker"
 		, json_path
 		, pool_size
 		, config_index

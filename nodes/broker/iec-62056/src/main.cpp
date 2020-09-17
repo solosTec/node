@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     //
     boost::program_options::options_description node_options("IEC 62056");
 	node::set_start_options(node_options
-		, "IEC 62056"
+		, "IEC-62056-broker"
 		, json_path
 		, pool_size
 		, config_index
