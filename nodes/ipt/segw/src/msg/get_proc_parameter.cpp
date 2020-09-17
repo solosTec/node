@@ -170,6 +170,9 @@ namespace node
 			case CODE_ROOT_BROKER:
 				config_broker_.get_proc_params(trx, srv_id);
 				break;
+			case CODE_ROOT_HARDWARE_PORT:
+				config_broker_.get_proc_params_port(trx, srv_id);
+				break;
 			default:
 				CYNG_LOG_ERROR(logger_, "sml.get.proc.parameter.request - unknown OBIS code "
 					<< path.front().to_str()

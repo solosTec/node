@@ -645,7 +645,6 @@ namespace node
 		if (!gw.empty()) {
 
 			auto const sections = cyng::to_vector(reader.get("sections"));
-#ifdef _DEBUG
 			CYNG_LOG_DEBUG(logger, "\"sml:proxy\" ws: "
 				<< tag_ws
 				<< " job "
@@ -653,7 +652,6 @@ namespace node
 				<< " ==> "
 				<< cyng::io::to_str(sections));
 
-#endif
 			//	"bus.req.proxy.job"
 			ctx.queue(bus_req_com_proxy(tag_ws	//	web-socket tag (origin)
 				, job

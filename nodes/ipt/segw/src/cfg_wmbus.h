@@ -32,8 +32,8 @@ namespace node
 		bool is_enabled() const;
 
 		/**
-		 * OBIS_IF_wMBUS:... ("wireless-LMN")
-		 * @return "8106190700FF:port"
+		 * Name of the serial port.
+		 * @return "ROOT_HARDWARE_PORT:910000000101"
 		 */
 		std::string get_port() const;
 

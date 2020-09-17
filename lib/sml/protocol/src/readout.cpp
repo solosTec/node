@@ -776,6 +776,10 @@ namespace node
 				|| code.is_matching(0x90, 0x00, 0x00, 0x00, 0x03).second	//	BROKER_SERVER
 				|| code.is_matching(0x90, 0x00, 0x00, 0x00, 0x05).second	//	BROKER_USER
 				|| code.is_matching(0x90, 0x00, 0x00, 0x00, 0x06).second	//	BROKER_PWD
+				|| code.is_matching(0x91, 0x00, 0x00, 0x00, 0x01).second	//	HARDWARE_PORT_NAME
+				|| code.is_matching(0x91, 0x00, 0x00, 0x00, 0x03).second	//	HARDWARE_PORT_PARITY
+				|| code.is_matching(0x91, 0x00, 0x00, 0x00, 0x04).second	//	HARDWARE_PORT_FLOW_CONTROL
+				|| code.is_matching(0x91, 0x00, 0x00, 0x00, 0x05).second	//	HARDWARE_PORT_STOPBITS
 				|| OBIS_W_MBUS_ADAPTER_MANUFACTURER == code
 				|| OBIS_W_MBUS_FIRMWARE == code
 				|| OBIS_W_MBUS_HARDWARE == code
