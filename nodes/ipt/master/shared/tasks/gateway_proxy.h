@@ -406,6 +406,7 @@ namespace node
 	 */
 	cyng::param_map_t transform_status_word(cyng::object);
 	cyng::param_map_t transform_broker_params(cyng::logging::log_ptr, cyng::param_map_t const&);
+	cyng::param_map_t transform_broker_hw_params(cyng::logging::log_ptr, cyng::param_map_t const&);
 
 }
 

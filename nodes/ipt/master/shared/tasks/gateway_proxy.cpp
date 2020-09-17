@@ -234,7 +234,7 @@ namespace node
 			<< "> "
 			<< sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
 			<< " #"
-			<< std::string(trx.begin(), trx.end()));
+			<< trx);
 
 		auto const path = sml::vector_to_path(vec);
 
@@ -333,6 +333,26 @@ namespace node
 						, srv_str
 						, transform_to_str_vector(path, false)	//	vector of string
 						, transform_broker_params(logger_, params)));
+
+				}
+				else if (sml::OBIS_ROOT_HARDWARE_PORT == root) {
+
+					CYNG_LOG_DEBUG(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> ROOT_HARDWARE_PORT: "
+						<< cyng::io::to_type(params));
+
+					bus_->vm_.async_run(bus_res_com_sml(pos->second.get_tag_ident()
+						, pos->second.get_tag_source()
+						, pos->second.get_sequence()
+						, pos->second.get_key_gw()
+						, pos->second.get_tag_origin()
+						, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
+						, srv_str
+						, transform_to_str_vector(path, false)	//	vector of string
+						, transform_broker_hw_params(logger_, params)));
 
 				}
 				else {
@@ -719,6 +739,26 @@ namespace node
 					, transform_to_str_vector(pd.get_path(), false)	//	vector of string
 					, transform_broker_params(logger_, config_cache_.get_section(pd.get_path()))));
 
+
+			}
+			else if (sml::OBIS_ROOT_HARDWARE_PORT == root) {
+
+				CYNG_LOG_DEBUG(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> ROOT_HARDWARE_PORT: "
+					<< cyng::io::to_type(params));
+
+				bus_->vm_.async_run(bus_res_com_sml(tag
+					, source
+					, seq
+					, gw
+					, origin
+					, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
+					, sml::from_server_id(srv_id)
+					, transform_to_str_vector(pd.get_path(), false)	//	vector of string
+					, transform_broker_hw_params(logger_, config_cache_.get_section(pd.get_path()))));
 
 			}
 			else {
@@ -2220,6 +2260,54 @@ namespace node
 		return cyng::param_map_factory("brokers", brokers);
 	}
 
+	cyng::param_map_t transform_broker_hw_params(cyng::logging::log_ptr logger, cyng::param_map_t const& pm)
+	{
+		//	%(("910000000101":COM3),("910000000102":COM6),("910000000201":8),("910000000202":8),("910000000301":none),("910000000302":even),("910000000401":none),("910000000402":none),("910000000501":one),("910000000502":one),("910000000601":e100),("910000000602":0960))
+
+		BOOST_ASSERT_MSG(pm.size() % 6 == 0, "invalid broker hardware data");
+
+		//name: {}
+
+		cyng::param_map_t result;
+		for (std::uint8_t idx = 1; idx < (pm.size() / 6) + 1; ++idx) {
+
+			//	port name
+			auto pos = pm.find(sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x01, idx).to_str());
+			if (pos != pm.end()) {
+
+				auto const name = cyng::value_cast<std::string>(pos->second, "");
+
+				auto pos_databits = pm.find(sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x02, idx).to_str());
+				if (pos_databits != pm.end()) {
+					auto pos_parity = pm.find(sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x03, idx).to_str());
+					if (pos_parity != pm.end()) {
+						auto pos_flow_control = pm.find(sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x04, idx).to_str());
+						if (pos_flow_control != pm.end()) {
+							auto pos_stopbits = pm.find(sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x05, idx).to_str());
+							if (pos_stopbits != pm.end()) {
+								auto pos_speed = pm.find(sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, idx).to_str());
+
+								//
+								//	serial port complete - build tuple
+								//
+								auto const tpl = cyng::tuple_factory(
+									cyng::param_t("databits", pos_databits->second),
+									cyng::param_t("parity", pos_parity->second),
+									cyng::param_t("flowcontrol", pos_flow_control->second),
+									cyng::param_t("stopbits", pos_flow_control->second));
+
+								result.emplace(name, cyng::make_object(tpl));
+
+							}
+						}
+					}
+				}
+
+			}
+		}
+
+		return result;
+	}
 }
 
 #include <cyng/async/task/task.hpp>
