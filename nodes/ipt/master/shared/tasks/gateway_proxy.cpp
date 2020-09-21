@@ -2294,7 +2294,8 @@ namespace node
 									cyng::param_t("databits", pos_databits->second),
 									cyng::param_t("parity", pos_parity->second),
 									cyng::param_t("flowcontrol", pos_flow_control->second),
-									cyng::param_t("stopbits", pos_flow_control->second));
+									cyng::param_t("stopbits", pos_stopbits->second),
+									cyng::param_t("baudrate", pos_speed->second));
 
 								result.emplace(name, cyng::make_object(tpl));
 
