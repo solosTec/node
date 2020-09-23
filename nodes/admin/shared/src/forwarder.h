@@ -88,6 +88,11 @@ namespace node
 		, std::string const& channel
 		, cyng::reader<cyng::object> const&);
 
+	/**
+	 * try to convert a string into a valid manufacturer code
+	 */
+	std::string cleanup_manufacturer_code(std::string);
+
 	class forward
 	{
 	public:
