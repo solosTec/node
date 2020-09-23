@@ -1089,7 +1089,7 @@ namespace node
 				meter_id,	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 				meter_id,	//	meter number (i.e. 16000913) 4 bytes 
 				mc,	//	metering code - changed at 2019-01-31
-				pm.at("Manufacturer"),	//	manufacturer
+				cleanup_manufacturer_code(cyng::value_cast<std::string>(pm.at("Manufacturer"), "")),	//	manufacturer
 				std::chrono::system_clock::now(),			//	time of manufacture
 				pm.at("Meter_Type"),	//	firmware version (i.e. 11600000)
 				(rec.empty() ? cyng::make_object("") : rec["vParam"]),		//	parametrierversion (i.e. 16A098828.pse)
@@ -1174,6 +1174,9 @@ namespace node
 
 				ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
 			}
+
+			//	ToDo: update table "TMeterwMBUS" with AES key - if defined
+			//	pm.at("Key") 
 
 		});
 
@@ -1607,6 +1610,143 @@ namespace node
 		else {
 			CYNG_LOG_ERROR(logger_, "cannot open file " << out);
 		}
+	}
+
+	std::string cleanup_manufacturer_code(std::string manufacturer)
+	{
+		if (manufacturer.size() != 3) {
+			if (boost::algorithm::istarts_with(manufacturer, "Easymeter")) return "ESY";	//	not offical
+			//ABB	0442	ABB AB, P.O. Box 1005, SE-61129 Nyköping, Nyköping,Sweden
+			//ACE	0465	Actaris (Elektrizität)
+			//ACG	0467	Actaris (Gas)
+			//ACW	0477	Actaris (Wasser und Wärme)
+			else if (boost::algorithm::istarts_with(manufacturer, "Actaris"))	return "ACE";
+//AEG	04A7	AEG
+//AEL	04AC	Kohler, Türkei
+			else if (boost::algorithm::istarts_with(manufacturer, "Kohler"))	return "AEL";
+			//AEM	04AD	S.C. AEM S.A. Romania
+			else if (boost::algorithm::istarts_with(manufacturer, "S.C. AEM"))	return "AEM";
+			//AMP	05B0	Ampy Automation Digilog Ltd
+			else if (boost::algorithm::istarts_with(manufacturer, "Ampy"))	return "AMP";
+			//AMT	05B4	Aquametro
+//APS	0613	Apsis Kontrol Sistemleri, Türkei
+//BEC	08A3	Berg Energiekontrollsysteme GmbH
+//BER	08B2	Bernina Electronic AG
+//BSE	0A65	Basari Elektronik A.S., Türkei
+//BST	0A74	BESTAS Elektronik Optik, Türkei
+//CBI	0C49	Circuit Breaker Industries, Südafrika
+//CLO	0D8F	Clorius Raab Karcher Energie Service A/S
+//CON	0DEE	Conlog
+//CZM	0F4D	Cazzaniga S.p.A.
+//DAN	102E	Danubia
+//DFS	10D3	Danfoss A/S
+//DME	11A5	DIEHL Metering, Industriestrasse 13, 91522 Ansbach, Germany
+			else if (boost::algorithm::istarts_with(manufacturer, "Diehl"))	return "DME";
+			//DZG	1347	Deutsche Zählergesellschaft
+			else if (boost::algorithm::istarts_with(manufacturer, "Deutsche Zählergesellschaft"))	return "DZG";
+			//EDM	148D	EDMI Pty.Ltd.
+//EFE	14C5	Engelmann Sensor GmbH
+//EKT	1574	PA KVANT J.S., Russland
+//ELM	158D	Elektromed Elektronik Ltd, Türkei
+//ELS	1593	ELSTER Produktion GmbH
+			else if (boost::algorithm::istarts_with(manufacturer, "Elster")) return "ELS";
+			//EMH	15A8	EMH Elektrizitätszähler GmbH & CO KG
+			else if (boost::algorithm::istarts_with(manufacturer, "EMH")) return "EMH";
+			//EMU	15B5	EMU Elektronik AG
+//EMO	15AF	Enermet
+//END	15C4	ENDYS GmbH
+//ENP	15D0	Kiev Polytechnical Scientific Research
+//ENT	15D4	ENTES Elektronik, Türkei
+//ERL	164C	Erelsan Elektrik ve Elektronik, Türkei
+//ESM	166D	Starion Elektrik ve Elektronik, Türkei
+//EUR	16B2	Eurometers Ltd
+//EWT	16F4	Elin Wasserwerkstechnik
+//FED	18A4	Federal Elektrik, Türkei
+//FML	19AC	Siemens Measurements Ltd.( Formerly FML Ltd.)
+//GBJ	1C4A	Grundfoss A/S
+//GEC	1CA3	GEC Meters Ltd.
+//GSP	1E70	Ingenieurbuero Gasperowicz
+//GWF	1EE6	Gas- u. Wassermessfabrik Luzern
+//HEG	20A7	Hamburger Elektronik Gesellschaft
+//HEL	20AC	Heliowatt
+//HTC	2283	Horstmann Timers and Controls Ltd.
+//HYD	2324	Hydrometer GmbH
+			else if (boost::algorithm::istarts_with(manufacturer, "Hydrometer"))	return "HYD";
+			//ICM	246D	Intracom, Griechenland
+//IDE	2485	IMIT S.p.A.
+//INV	25D6	Invensys Metering Systems AG
+//ISK	266B	Iskraemeco, Slovenia
+			else if (boost::algorithm::istarts_with(manufacturer, "Iskraemeco"))	return "ISK";
+			//IST	2674	ista Deutschland (bis 2005 Viterra Energy Services)
+//ITR	2692	Itron
+			else if (boost::algorithm::istarts_with(manufacturer, "Itron"))	return "ITR";
+			//IWK	26EB	IWK Regler und Kompensatoren GmbH
+//KAM	2C2D	Kamstrup Energie A/S
+			else if (boost::algorithm::istarts_with(manufacturer, "Kamstrup"))	return "KAM";
+			//KHL	2D0C	Kohler, Türkei
+//KKE	2D65	KK-Electronic A/S
+//KNX	2DD8	KONNEX-based users (Siemens Regensburg)
+//KRO	2E4F	Kromschröder
+//KST	2E74	Kundo SystemTechnik GmbH
+//LEM	30AD	LEM HEME Ltd., UK
+//LGB	30E2	Landis & Gyr Energy Management (UK) Ltd.
+			else if (boost::algorithm::istarts_with(manufacturer, "Landis & Gyr Energy"))	return "LGB";	
+//LGD	30E4	Landis & Gyr Deutschland
+			else if (boost::algorithm::istarts_with(manufacturer, "Landis & Gyr Deutschland"))	return "LGD";
+			//LGZ	30FA	Landis & Gyr Zug
+			else if (boost::algorithm::istarts_with(manufacturer, "Landis & Gyr Zug"))	return "LGZ";
+			else if (boost::algorithm::istarts_with(manufacturer, "L & G"))	return "LGZ";	//	switzerland / zug
+
+//LHA	3101	Atlantic Meters, Südafrika
+//LML	31AC	LUMEL, Polen
+//LSE	3265	Landis & Staefa electronic
+//LSP	3270	Landis & Staefa production
+//LUG	32A7	Landis & Staefa
+//LSZ	327A	Siemens Building Technologies
+//MAD	3424	Maddalena S.r.I., Italien
+//MEI	34A9	H. Meinecke AG (jetzt Invensys Metering Systems AG)
+//MKS	3573	MAK-SAY Elektrik Elektronik, Türkei
+//MNS	35D3	MANAS Elektronik, Türkei
+//MPS	3613	Multiprocessor Systems Ltd, Bulgarien
+//MTC	3683	Metering Technology Corporation, USA
+//NIS	3933	Nisko Industries Israel
+//NMS	39B3	Nisko Advanced Metering Solutions Israel
+//NRM	3A4D	Norm Elektronik, Türkei
+//ONR	3DD2	ONUR Elektroteknik, Türkei
+//PAD	4024	PadMess GmbH
+//PMG	41A7	Spanner-Pollux GmbH (jetzt Invensys Metering Systems AG)
+//PRI	4249	Polymeters Response International Ltd.
+//RAS	4833	Hydrometer GmbH
+//REL	48AC	Relay GmbH
+//RKE	4965	Raab Karcher ES (jetzt ista Deutschland)
+//SAP	4C30	Sappel
+//SCH	4C68	Schnitzel GmbH
+//SEN	4CAE	Sensus GmbH
+//SMC	4DA3	 
+//SME	4DA5	Siame, Tunesien
+//SML	4DAC	Siemens Measurements Ltd.
+//SIE	4D25	Siemens AG
+			else if (boost::algorithm::istarts_with(manufacturer, "Siemens"))	return "SIE";
+			//SLB	4D82	Schlumberger Industries Ltd.
+//SON	4DEE	Sontex SA
+//SOF	4DE6	softflow.de GmbH
+//SPL	4E0C	Sappel
+//SPX	4E18	Spanner Pollux GmbH (jetzt Invensys Metering Systems AG)
+//SVM	4ECD	AB Svensk Värmemätning SVM
+//TCH	5068	Techem Service AG
+//TIP	5130	TIP Thüringer Industrie Produkte GmbH
+//UAG	5427	Uher
+//UGI	54E9	United Gas Industries
+//VES	58B3	ista Deutschland (bis 2005 Viterra Energy Services)
+//VPI	5A09	Van Putten Instruments B.V.
+//WMO	5DAF	Westermo Teleindustri AB, Schweden
+//YTE	6685	Yuksek Teknoloji, Türkei
+//ZAG	6827	Zellwerg Uster AG
+//ZAP	6830	Zaptronix
+//ZIV	6936	ZIV Aplicaciones y Tecnologia, S.A.
+
+		}
+		return manufacturer;
 	}
 
 }

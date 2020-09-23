@@ -199,10 +199,10 @@ namespace node
 			//	pk is key to table TMeter
 			//
 			return cyng::table::make_meta_table<1, 5>(name,
-				{ "pk"
+				{ "pk"			//	same as TMeter
 				, "status"		//	"Statusinformation: 00"
 				, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
-				, "aes"		//	AES-Key
+				, "aes"		//	AES-Key: 0102010409060911223344556677AABB
 				, "user"
 				, "pwd"
 				},
