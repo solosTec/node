@@ -90,6 +90,16 @@ namespace node
 			return std::make_pair(value_[5], is_matching(a, b, c, d) && (value_[4] == e));
 		}
 
+		std::pair<std::uint8_t, bool> obis::is_matching_5(obis const& code) const
+		{
+			return std::make_pair(value_[5], is_matching(
+				code.get_medium(), 
+				code.get_channel(), 
+				code.get_indicator(),
+				code.get_mode()) && (value_[4] == code.get_quantities()));
+		}
+
+
 		bool obis::match(std::initializer_list<std::uint8_t> il) const
 		{
 			return (il.size() > size())

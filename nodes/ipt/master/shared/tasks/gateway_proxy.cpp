@@ -1686,7 +1686,7 @@ namespace node
 				//	
 				auto const login = cyng::value_cast(port.at("login"), true);
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x01, idxo) }
+					, { sml::OBIS_ROOT_BROKER, sml::make_obis(sml::OBIS_ROOT_BROKER, idxo), sml::OBIS_BROKER_LOGIN }
 				, login), data);
 
 				//
@@ -1694,7 +1694,7 @@ namespace node
 				//	
 				auto const hardware_port = cyng::value_cast<std::string>(port.at("hardwarePort"), "");
 				push_trx(sml_gen.set_proc_parameter(data.get_srv()
-					, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x02, idxo) }
+					, { sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_NAME, idxo) }
 				, hardware_port), data);
 
 				//
@@ -1713,7 +1713,7 @@ namespace node
 					//
 					auto const host = cyng::value_cast<std::string>(address.at("host"), "");
 					push_trx(sml_gen.set_proc_parameter(data.get_srv()
-						, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxo),  sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxi) }
+						, { sml::OBIS_ROOT_BROKER, sml::make_obis(sml::OBIS_ROOT_BROKER, idxo),  sml::make_obis(sml::OBIS_BROKER_SERVER, idxi) }
 					, host), data);
 
 					//
@@ -1721,7 +1721,7 @@ namespace node
 					//
 					auto const service = cyng::numeric_cast<std::uint16_t>(address.at("service"), 26862u + idxi);
 					push_trx(sml_gen.set_proc_parameter(data.get_srv()
-						, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxo),  sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idxi) }
+						, { sml::OBIS_ROOT_BROKER, sml::make_obis(sml::OBIS_ROOT_BROKER, idxo),  sml::make_obis(sml::OBIS_BROKER_SERVICE, idxi) }
 					, service), data);
 
 					//
@@ -1729,7 +1729,7 @@ namespace node
 					//
 					auto const user = cyng::value_cast<std::string>(address.at("user"), "");
 					push_trx(sml_gen.set_proc_parameter(data.get_srv()
-						, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxo),  sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idxi) }
+						, { sml::OBIS_ROOT_BROKER, sml::make_obis(sml::OBIS_ROOT_BROKER, idxo),  sml::make_obis(sml::OBIS_BROKER_USER, idxi) }
 					, user), data);
 
 					//
@@ -1737,7 +1737,7 @@ namespace node
 					//
 					auto const pwd = cyng::value_cast<std::string>(address.at("pwd"), "");
 					push_trx(sml_gen.set_proc_parameter(data.get_srv()
-						, { sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxo),  sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idxi) }
+						, { sml::OBIS_ROOT_BROKER, sml::make_obis(sml::OBIS_ROOT_BROKER, idxo),  sml::make_obis(sml::OBIS_BROKER_PWD , idxi) }
 					, pwd), data);
 				}
 			}
@@ -1755,7 +1755,7 @@ namespace node
 		auto const r = cyng::parse_hex_string(meter);
 		if (r.second) {
 			push_trx(sml_gen.set_proc_parameter(data.get_srv()
-				, { sml::OBIS_ACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFB, nr), sml::OBIS_SERVER_ID }
+				, { sml::OBIS_ACTIVATE_DEVICE, sml::make_obis(sml::OBIS_ACTIVATE_DEVICE, nr), sml::OBIS_SERVER_ID }
 			, r.first), data);
 		}
 		else {
@@ -1778,7 +1778,7 @@ namespace node
 		auto const r = cyng::parse_hex_string(meter);
 		if (r.second) {
 			push_trx(sml_gen.set_proc_parameter(data.get_srv()
-				, { sml::OBIS_DEACTIVATE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFC, nr), sml::OBIS_SERVER_ID }
+				, { sml::OBIS_DEACTIVATE_DEVICE, sml::make_obis(sml::OBIS_DEACTIVATE_DEVICE, nr), sml::OBIS_SERVER_ID }
 			, r.first), data);
 		}
 		else {
@@ -1801,7 +1801,7 @@ namespace node
 
 		if (r.second) {
 			push_trx(sml_gen.set_proc_parameter(data.get_srv()
-				, { sml::OBIS_DELETE_DEVICE, sml::make_obis(0x81, 0x81, 0x11, 0x06, 0xFD, nr), sml::OBIS_SERVER_ID }
+				, { sml::OBIS_DELETE_DEVICE, sml::make_obis(sml::OBIS_DELETE_DEVICE, nr), sml::OBIS_SERVER_ID }
 			, r.first), data);
 		}
 		else {
@@ -2183,23 +2183,25 @@ namespace node
 
 	cyng::param_map_t transform_broker_params(cyng::logging::log_ptr logger, cyng::param_map_t const& pm)
 	{
-		BOOST_ASSERT_MSG(pm.size() % 3 == 0, "invalid broker data");
+		BOOST_ASSERT_MSG(pm.size() % 2 == 0, "invalid broker data");
 
 		//
 		//	collect all broker
 		//
 		cyng::vector_t brokers;
 
-		for (std::uint8_t idxo = 1; idxo < (pm.size() / 3) + 1; ++idxo) {
+		for (std::uint8_t idx_pm = 1; idx_pm < pm.size() + 1; ++idx_pm) {
 
-			auto pos_login = pm.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x01, idxo).to_str());
-			if (pos_login != pm.end()) {
-				auto pos_port = pm.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x02, idxo).to_str());
-				if (pos_port != pm.end()) {
-					auto pos_targets = pm.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxo).to_str());
-					if (pos_targets != pm.end()) {
-						auto const targets = cyng::to_param_map(pos_targets->second);
-						BOOST_ASSERT_MSG(targets.size() % 4 == 0, "invalid broker target data");
+			auto pos_broker = pm.find(sml::make_obis(sml::OBIS_ROOT_BROKER, idx_pm).to_str());
+			if (pos_broker != pm.end()) {
+
+				auto const targets = cyng::to_param_map(pos_broker->second);
+				//BOOST_ASSERT_MSG((targets.size() - 1) % 4 == 0, "invalid broker target data");
+
+				auto pos_port = targets.find(sml::OBIS_HARDWARE_PORT_NAME.to_str());
+				if (pos_port != targets.end()) {
+					auto pos_login = targets.find(sml::OBIS_BROKER_LOGIN.to_str());
+					if (pos_login != targets.end()) {
 
 						//
 						//	collect all addresses of this broker
@@ -2207,17 +2209,17 @@ namespace node
 						cyng::vector_t addresses;
 
 						for (std::uint8_t idxi = 1; idxi < (targets.size() / 4) + 1; ++idxi) {
-							auto pos_host = targets.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxi).to_str());
+							auto pos_host = targets.find(sml::make_obis(sml::OBIS_BROKER_SERVER, idxi).to_str());
 							if (pos_host != targets.end()) {
-								auto pos_service = targets.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idxi).to_str());
+								auto pos_service = targets.find(sml::make_obis(sml::OBIS_BROKER_SERVICE, idxi).to_str());
 								if (pos_service != targets.end()) {
-									auto pos_user = targets.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idxi).to_str());
+									auto pos_user = targets.find(sml::make_obis(sml::OBIS_BROKER_USER, idxi).to_str());
 									if (pos_user != targets.end()) {
-										auto pos_pwd = targets.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idxi).to_str());
+										auto pos_pwd = targets.find(sml::make_obis(sml::OBIS_BROKER_PWD, idxi).to_str());
 										if (pos_pwd != targets.end()) {
 
 											//
-											//	broker data complete
+											//	addresses complete - build broker tuple
 											//
 											auto const tpl = cyng::tuple_factory(
 												cyng::param_t("host", pos_host->second),
@@ -2232,7 +2234,7 @@ namespace node
 									}
 								}
 							}
-						}	//	idxi loop
+						}
 
 						//
 						//	addresses complete - build broker tuple
@@ -2247,6 +2249,58 @@ namespace node
 
 					}
 				}
+				//if (pos_port != pm.end()) {
+				//	auto pos_targets = pm.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxo).to_str());
+				//	if (pos_targets != pm.end()) {
+				//		auto const targets = cyng::to_param_map(pos_targets->second);
+				//		BOOST_ASSERT_MSG(targets.size() % 4 == 0, "invalid broker target data");
+
+				//		//
+				//		//	collect all addresses of this broker
+				//		//
+				//		cyng::vector_t addresses;
+
+				//		for (std::uint8_t idxi = 1; idxi < (targets.size() / 4) + 1; ++idxi) {
+				//			auto pos_host = targets.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idxi).to_str());
+				//			if (pos_host != targets.end()) {
+				//				auto pos_service = targets.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idxi).to_str());
+				//				if (pos_service != targets.end()) {
+				//					auto pos_user = targets.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idxi).to_str());
+				//					if (pos_user != targets.end()) {
+				//						auto pos_pwd = targets.find(sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idxi).to_str());
+				//						if (pos_pwd != targets.end()) {
+
+				//							//
+				//							//	broker data complete
+				//							//
+				//							auto const tpl = cyng::tuple_factory(
+				//								cyng::param_t("host", pos_host->second),
+				//								cyng::param_t("service", pos_service->second),
+				//								cyng::param_t("user", pos_user->second),
+				//								cyng::param_t("pwd", pos_pwd->second)
+				//							);
+
+				//							addresses.push_back(cyng::make_object(tpl));
+
+				//						}
+				//					}
+				//				}
+				//			}
+				//		}	//	idxi loop
+
+				//		//
+				//		//	addresses complete - build broker tuple
+				//		//
+				//		auto const tpl = cyng::tuple_factory(
+				//			cyng::param_t("hardwarePort", pos_port->second),
+				//			cyng::param_t("login", pos_login->second),
+				//			cyng::param_factory("addresses", addresses)
+				//		);
+
+				//		brokers.push_back(cyng::make_object(tpl));
+
+				//	}
+				//}
 			}
 			else {
 				CYNG_LOG_WARNING(logger, "missing login data: "

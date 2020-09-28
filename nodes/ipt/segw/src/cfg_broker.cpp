@@ -49,23 +49,23 @@ namespace node
 
 			auto const address = cache_.get_cfg(build_cfg_key({ 
 				sml::OBIS_ROOT_BROKER, 
-				sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-				sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idx) }), "?");
+				sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+				sml::make_obis(sml::OBIS_BROKER_SERVER, idx) }), "?");
 
 			if (!boost::algorithm::equals(address, "?")) {
 
 				auto const port = cache_.get_cfg(build_cfg_key({
 					sml::OBIS_ROOT_BROKER,
-					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idx) }), static_cast<std::uint16_t>(12001u));
+					sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+					sml::make_obis(sml::OBIS_BROKER_SERVICE, idx) }), static_cast<std::uint16_t>(12001u));
 				auto const account = cache_.get_cfg(build_cfg_key({
 					sml::OBIS_ROOT_BROKER,
-					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idx) }), "");
+					sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+					sml::make_obis(sml::OBIS_BROKER_USER, idx) }), "");
 				auto const pwd = cache_.get_cfg(build_cfg_key({
 					sml::OBIS_ROOT_BROKER,
-					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-					sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idx) }), "");
+					sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+					sml::make_obis(sml::OBIS_BROKER_PWD, idx) }), "");
 
 				r.emplace_back(account, pwd, address, port);
 			}
@@ -79,7 +79,10 @@ namespace node
 		switch (s) {
 		case source::WIRELESS_LMN:
 		case source::WIRED_LMN:
-			return is_login_required(build_cfg_key({ sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x01, static_cast<std::uint8_t>(s)) }));
+			return is_login_required(build_cfg_key({ 
+				sml::OBIS_ROOT_BROKER, 
+				sml::make_obis(sml::OBIS_ROOT_BROKER, static_cast<std::uint8_t>(s)),
+				sml::OBIS_BROKER_LOGIN }));
 		default:
 			break;
 		}
@@ -95,9 +98,8 @@ namespace node
 	{
 		switch (s) {
 		case source::WIRELESS_LMN:
-			return get_port_name(build_cfg_key({ sml::OBIS_IF_wMBUS }, "port"));
 		case source::WIRED_LMN:
-			return get_port_name(build_cfg_key({ "rs485", "port" }));
+			return get_port_name(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_NAME, static_cast<std::uint8_t>(s)) }));
 		default:
 			break;
 		}

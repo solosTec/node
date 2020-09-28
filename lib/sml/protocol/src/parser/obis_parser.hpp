@@ -17,6 +17,18 @@ namespace node
 {
 	namespace sml
 	{
+		/**
+		 * boost::phoenix::bind cannot distinguish between overloaded function names
+		 */
+		obis make_obis_phoenix(std::uint32_t a
+			, std::uint32_t b
+			, std::uint32_t c
+			, std::uint32_t d
+			, std::uint32_t e
+			, std::uint32_t f)
+		{
+			return make_obis(a, b, c, d, e, f);
+		}
 
 		/**
 		 * The string representation of an OBIS is xxx-xxx:xxx.xxx.xxx*xxx where xxx is a decimal number
@@ -47,14 +59,14 @@ namespace node
 					>> '.'
 					>> boost::spirit::qi::ushort_
 					>> '*'
-					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis, 0, 0, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, boost::spirit::qi::_4)]
+					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, boost::spirit::qi::_4)]
 				| (boost::spirit::qi::ushort_
 					>> '.'
 					>> boost::spirit::qi::ushort_
 					>> '.'
 					>> boost::spirit::qi::ushort_
 					>> '&'
-					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis, 0, 0, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, boost::spirit::qi::_4)]
+					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, boost::spirit::qi::_4)]
 				;
 
 			//	example: 0.1.0
@@ -63,23 +75,23 @@ namespace node
 					>> '.'
 					>> boost::spirit::qi::ushort_
 					>> '.'
-					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis, 0, 0, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, 255)]
+					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, 255)]
 				| (boost::spirit::qi::lit("C.")
 					>> boost::spirit::qi::ushort_
 					>> '.'
-					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis, 0, 0, 96, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]
+					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, 96, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]
 				| (boost::spirit::qi::lit("F.")
 					>> boost::spirit::qi::ushort_
 					>> '.'
-					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis, 0, 0, 97, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]
+					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, 97, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]
 				| (boost::spirit::qi::lit("L.")
 					>> boost::spirit::qi::ushort_
 					>> '.'
-					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis, 0, 0, 98, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]
+					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, 98, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]
 				| (boost::spirit::qi::lit("P.")
 					>> boost::spirit::qi::ushort_
 					>> '.'
-					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis, 0, 0, 99, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]
+					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, 99, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]
 				;
 
 			//
@@ -97,7 +109,7 @@ namespace node
 					>> boost::spirit::qi::ushort_
 					>> '*'
 					>> boost::spirit::qi::ushort_)
-					[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, boost::spirit::qi::_4, boost::spirit::qi::_5, boost::spirit::qi::_6)]
+					[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, boost::spirit::qi::_4, boost::spirit::qi::_5, boost::spirit::qi::_6)]
 			| (boost::spirit::qi::ushort_
 					>> '-'
 					>> boost::spirit::qi::ushort_
@@ -107,7 +119,7 @@ namespace node
 					>> boost::spirit::qi::ushort_
 					>> '.'
 					>> boost::spirit::qi::ushort_)
-					[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, boost::spirit::qi::_4, boost::spirit::qi::_5, 255)]
+					[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, boost::spirit::qi::_4, boost::spirit::qi::_5, 255)]
 				;
 
 			r_obis_hex
@@ -116,7 +128,7 @@ namespace node
 				>> r_byte
 				>> r_byte
 				>> r_byte
-				>> r_byte)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, boost::spirit::qi::_4, boost::spirit::qi::_5, boost::spirit::qi::_6)]
+				>> r_byte)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, boost::spirit::qi::_4, boost::spirit::qi::_5, boost::spirit::qi::_6)]
 				;
 		}
 

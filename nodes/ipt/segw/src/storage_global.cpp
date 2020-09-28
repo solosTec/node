@@ -902,28 +902,31 @@ namespace node
 
 							init_config_record(s, build_cfg_key({ 
 								sml::OBIS_ROOT_BROKER, 
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idx) }), reader.get("address"));
+								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+								sml::make_obis(sml::OBIS_BROKER_SERVER, idx) }), reader.get("address"));
 
 							auto const port = cyng::numeric_cast<std::uint16_t>(reader.get("port"), 12001u);
 							init_config_record(s, build_cfg_key({
 								sml::OBIS_ROOT_BROKER,
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idx) }), cyng::make_object(port));
+								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+								sml::make_obis(sml::OBIS_BROKER_SERVICE, idx) }), cyng::make_object(port));
 
 							init_config_record(s, build_cfg_key({
 								sml::OBIS_ROOT_BROKER,
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idx) }), reader.get("account"));
+								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+								sml::make_obis(sml::OBIS_BROKER_USER, idx) }), reader.get("account"));
 
 							init_config_record(s, build_cfg_key({
 								sml::OBIS_ROOT_BROKER,
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idx) }), reader.get("pwd"));
+								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+								sml::make_obis(sml::OBIS_BROKER_PWD, idx) }), reader.get("pwd"));
 						}
 					}
 					else if (boost::algorithm::equals(param.first, "collector-login")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ 
+							sml::OBIS_ROOT_BROKER, 
+							sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx), 
+							sml::OBIS_BROKER_LOGIN }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "port")) {
 						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
@@ -1036,28 +1039,31 @@ namespace node
 
 							init_config_record(s, build_cfg_key({
 								sml::OBIS_ROOT_BROKER,
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idx) }), reader.get("address"));
+								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+								sml::make_obis(sml::OBIS_BROKER_SERVER, idx) }), reader.get("address"));
 
 							auto const port = cyng::numeric_cast<std::uint16_t>(reader.get("port"), 12001u);
 							init_config_record(s, build_cfg_key({
 								sml::OBIS_ROOT_BROKER,
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idx) }), cyng::make_object(port));
+								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+								sml::make_obis(sml::OBIS_BROKER_SERVICE, idx) }), cyng::make_object(port));
 
 							init_config_record(s, build_cfg_key({
 								sml::OBIS_ROOT_BROKER,
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idx) }), reader.get("account"));
+								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+								sml::make_obis(sml::OBIS_BROKER_USER, idx) }), reader.get("account"));
 
 							init_config_record(s, build_cfg_key({
 								sml::OBIS_ROOT_BROKER,
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x03, port_idx),
-								sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idx) }), reader.get("pwd"));
+								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+								sml::make_obis(sml::OBIS_BROKER_PWD, idx) }), reader.get("pwd"));
 						}
 					}
 					else if (boost::algorithm::equals(param.first, "collector-login")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_BROKER, sml::make_obis(0x90, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ 
+							sml::OBIS_ROOT_BROKER, 
+							sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx), 
+							sml::OBIS_BROKER_LOGIN }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "port")) {
 						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);

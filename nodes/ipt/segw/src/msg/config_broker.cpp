@@ -47,17 +47,19 @@ namespace node
 			//	wireless
 			//
 			auto const lmn_wireless = cfg_.get_broker(cfg_broker::source::WIRELESS_LMN);
-			  
-			append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x01, 1u) }, make_value(cfg_.is_login_required(cfg_broker::source::WIRELESS_LMN)));
-			append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x02, 1u) }, make_value(cfg_.get_port_name(cfg_broker::source::WIRELESS_LMN)));
+			if (!lmn_wireless.empty()) {
 
-			std::uint8_t idx{ 1 };
-			for (auto const& lmn : lmn_wireless) {
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 1u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idx) }, make_value(lmn.get_address()));
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 1u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idx) }, make_value(lmn.get_port()));
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 1u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idx) }, make_value(lmn.get_account()));
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 1u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idx) }, make_value(lmn.get_pwd()));
-				++idx;
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u), sml::OBIS_BROKER_LOGIN }, make_value(cfg_.is_login_required(cfg_broker::source::WIRELESS_LMN)));
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u), sml::OBIS_HARDWARE_PORT_NAME }, make_value(cfg_.get_port_name(cfg_broker::source::WIRELESS_LMN)));
+
+				std::uint8_t idx{ 1 };
+				for (auto const& lmn : lmn_wireless) {
+					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_SERVER, idx) }, make_value(lmn.get_address()));
+					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_SERVICE, idx) }, make_value(lmn.get_port()));
+					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_USER, idx) }, make_value(lmn.get_account()));
+					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_PWD, idx) }, make_value(lmn.get_pwd()));
+					++idx;
+				}
 			}
 
 			//
@@ -65,17 +67,22 @@ namespace node
 			//	reset index
 			//
 			auto const lmn_wired = cfg_.get_broker(cfg_broker::source::WIRED_LMN);	//	rs485
-			idx = 1;
+			if (!lmn_wired.empty()) {
 
-			append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x01, 2u) }, make_value(cfg_.is_login_required(cfg_broker::source::WIRED_LMN)));
-			append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x02, 2u) }, make_value(cfg_.get_port_name(cfg_broker::source::WIRED_LMN)));
-			for (auto const& lmn : lmn_wired) {
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 2u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x03, idx) }, make_value(lmn.get_address()));
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 2u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x04, idx) }, make_value(lmn.get_port()));
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 2u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x05, idx) }, make_value(lmn.get_account()));
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(0x90, 0x00, 0x00, 0x00, 0x03, 2u),  make_obis(0x90, 0x00, 0x00, 0x00, 0x06, idx) }, make_value(lmn.get_pwd()));
-				++idx;
+				std::uint8_t idx{ 1 };
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u), sml::OBIS_BROKER_LOGIN }, make_value(cfg_.is_login_required(cfg_broker::source::WIRED_LMN)));
+				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u), sml::OBIS_HARDWARE_PORT_NAME }, make_value(cfg_.get_port_name(cfg_broker::source::WIRED_LMN)));
+
+				for (auto const& lmn : lmn_wired) {
+					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_SERVER, idx) }, make_value(lmn.get_address()));
+					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_SERVICE, idx) }, make_value(lmn.get_port()));
+					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_USER, idx) }, make_value(lmn.get_account()));
+					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_PWD, idx) }, make_value(lmn.get_pwd()));
+					++idx;
+				}
 			}
+
+			CYNG_LOG_DEBUG(logger_, cyng::io::to_type(msg));
 
 			//
 			//	append to message queue
@@ -91,19 +98,19 @@ namespace node
 			cfg_wmbus wmbus(cache_);
 			cfg_rs485 rs485(cache_);
 
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x01, wmbus.port_idx) }, make_value(wmbus.get_port()));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x02, wmbus.port_idx) }, make_value(wmbus.get_databits().value()));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x03, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_parity())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x04, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_flow_control())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x05, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_stopbits())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x06, wmbus.port_idx) }, make_value(wmbus.get_baud_rate().value()));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_ROOT_HARDWARE_PORT, wmbus.port_idx) }, make_value(wmbus.get_port()));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_DATABITS, wmbus.port_idx) }, make_value(wmbus.get_databits().value()));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_PARITY, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_parity())));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_FLOW_CONTROL, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_flow_control())));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_STOPBITS, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_stopbits())));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_SPEED, wmbus.port_idx) }, make_value(wmbus.get_baud_rate().value()));
 
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x01, rs485.port_idx) }, make_value(rs485.get_port()));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x02, rs485.port_idx) }, make_value(rs485.get_databits().value()));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x03, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_parity())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x04, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_flow_control())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x05, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_stopbits())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(0x91, 0x00, 0x00, 0x00, 0x06, rs485.port_idx) }, make_value(rs485.get_baud_rate().value()));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_ROOT_HARDWARE_PORT, rs485.port_idx) }, make_value(rs485.get_port()));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_DATABITS, rs485.port_idx) }, make_value(rs485.get_databits().value()));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_PARITY, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_parity())));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_FLOW_CONTROL, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_flow_control())));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_STOPBITS, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_stopbits())));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_SPEED, rs485.port_idx) }, make_value(rs485.get_baud_rate().value()));
 
 			//
 			//	append to message queue

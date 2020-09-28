@@ -34,6 +34,16 @@ namespace node
 				, static_cast<std::uint8_t>(f & 0xFF));
 		}
 
+		obis make_obis(obis const& code, std::uint32_t f)
+		{
+			return obis(code.get_medium()
+				, code.get_channel()
+				, code.get_indicator()
+				, code.get_mode()
+				, code.get_quantities()
+				, static_cast<std::uint8_t>(f & 0xFF));
+		}
+
 		namespace {
 			template<typename C>
 			C C_from_path(obis_path_t path)

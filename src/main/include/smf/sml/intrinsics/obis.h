@@ -85,6 +85,7 @@ namespace node
 			 * @return a pair consisting of an value of the last element and a bool denoting whether the pattern is matching.
 			 */
 			std::pair<std::uint8_t, bool> is_matching(std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t) const;
+			std::pair<std::uint8_t, bool> is_matching_5(obis const&) const;
 
 			/**
 			 * partial match

@@ -159,7 +159,7 @@ namespace node
 			, std::string const& address)
 		{
 			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx) }
+				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_TARGET_IP_ADDRESS, idx) }
 				, address);
 		}
 
@@ -168,7 +168,7 @@ namespace node
 			, std::uint16_t port)
 		{
 			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx) }
+				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_TARGET_PORT_ADDRESS, idx) }
 				, port);
 		}
 
@@ -177,7 +177,7 @@ namespace node
 			, std::uint16_t port)
 		{
 			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx) }
+				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_SOURCE_PORT_ADDRESS, idx) }
 				, port);
 		}
 
@@ -186,7 +186,7 @@ namespace node
 			, std::string const& user)
 		{
 			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx) }
+				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_IPT_ACCOUNT, idx) }
 				, user);
 		}
 
@@ -195,7 +195,7 @@ namespace node
 			, std::string const& pwd)
 		{
 			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx), make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx) }
+				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_IPT_PASSWORD, idx) }
 				, pwd);
 		}
 

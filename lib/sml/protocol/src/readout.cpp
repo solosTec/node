@@ -318,7 +318,6 @@ namespace node
 			//	this is a parameter tree
 			//
 			auto const param = post_processing(path, read_param_tree(0u, tpl.begin(), tpl.end()));
-			//auto const param = read_param_tree(0u, tpl.begin(), tpl.end());
 
 			return std::make_pair(path, param);
 		}
@@ -671,6 +670,7 @@ namespace node
 			}
 
 
+			std::size_t duplicates{ 0 };
 			for (auto const child : tpl)
 			{
 				BOOST_ASSERT(child.get_class().tag() == cyng::TC_TUPLE);
@@ -684,7 +684,18 @@ namespace node
 				//	No duplicates allowed
 				//
 				BOOST_ASSERT(params.find(param.first) == params.end());
-				params.emplace(param.first, param.second);
+				auto const r = params.emplace(param.first, param.second);
+				if (!r.second) {
+					std::stringstream ss;
+					ss
+						<< "duplicate-"
+						<< duplicates
+						<< '-'
+						<< param.first
+						;
+					params.emplace(ss.str(), param.second);
+					++duplicates;
+				}
 			}
 
 			//
@@ -762,24 +773,24 @@ namespace node
 			if (code.is_matching(0x81, 0x49, 0x17, 0x07, 0x00).second) {
 				return cyng::make_object(ip_address_to_str(obj));
 			}
-			else if (code.is_matching(0x81, 0x49, 0x1A, 0x07, 0x00).second	//	TARGET_PORT_ADDRESS
-				|| code.is_matching(0x81, 0x49, 0x19, 0x07, 0x00).second) {	//	SOURCE_PORT_ADDRESS
+			else if (code.is_matching_5(OBIS_TARGET_PORT_ADDRESS).second	//	TARGET_PORT_ADDRESS
+				|| code.is_matching_5(OBIS_SOURCE_PORT_ADDRESS).second) {	//	SOURCE_PORT_ADDRESS
 				return cyng::make_object(cyng::numeric_cast<std::uint16_t>(obj, 0u));
 			}
 			else if (OBIS_W_MBUS_MODE_S == code
 				|| OBIS_W_MBUS_MODE_T == code) {	
 				return cyng::make_object(cyng::numeric_cast<std::uint8_t>(obj, 0u));
 			}
-			else if (code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x01).second
-				|| code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x02).second
-				|| code.is_matching(0x90, 0x00, 0x00, 0x00, 0x02).second	//	BROKER_PORT
-				|| code.is_matching(0x90, 0x00, 0x00, 0x00, 0x03).second	//	BROKER_SERVER
-				|| code.is_matching(0x90, 0x00, 0x00, 0x00, 0x05).second	//	BROKER_USER
-				|| code.is_matching(0x90, 0x00, 0x00, 0x00, 0x06).second	//	BROKER_PWD
-				|| code.is_matching(0x91, 0x00, 0x00, 0x00, 0x01).second	//	HARDWARE_PORT_NAME
-				|| code.is_matching(0x91, 0x00, 0x00, 0x00, 0x03).second	//	HARDWARE_PORT_PARITY
-				|| code.is_matching(0x91, 0x00, 0x00, 0x00, 0x04).second	//	HARDWARE_PORT_FLOW_CONTROL
-				|| code.is_matching(0x91, 0x00, 0x00, 0x00, 0x05).second	//	HARDWARE_PORT_STOPBITS
+			else if (code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x01).second	//	IP-T user name redundancy 1
+				|| code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x02).second	//	IP-T user name redundancy 2
+				|| code.is_matching_5(OBIS_HARDWARE_PORT_NAME).second	//	HARDWARE_PORT_NAME
+				|| code.is_matching_5(OBIS_BROKER_SERVER).second	//	BROKER_SERVER
+				|| code.is_matching_5(OBIS_BROKER_USER).second	//	BROKER_USER
+				|| code.is_matching_5(OBIS_BROKER_PWD).second	//	BROKER_PWD
+				|| code.is_matching_5(OBIS_HARDWARE_PORT_NAME).second	//	HARDWARE_PORT_NAME
+				|| code.is_matching_5(OBIS_HARDWARE_PORT_PARITY).second	//	HARDWARE_PORT_PARITY
+				|| code.is_matching_5(OBIS_HARDWARE_PORT_FLOW_CONTROL).second	//	HARDWARE_PORT_FLOW_CONTROL
+				|| code.is_matching_5(OBIS_HARDWARE_PORT_STOPBITS).second	//	HARDWARE_PORT_STOPBITS
 				|| OBIS_W_MBUS_ADAPTER_MANUFACTURER == code
 				|| OBIS_W_MBUS_FIRMWARE == code
 				|| OBIS_W_MBUS_HARDWARE == code

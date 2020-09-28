@@ -21,6 +21,11 @@ namespace node
 		obis make_obis(std::uint32_t, std::uint32_t, std::uint32_t, std::uint32_t, std::uint32_t, std::uint32_t);
 
 		/**
+		 * Generate an OBIS code from an existing code but change the storage field
+		 */
+		obis make_obis(obis const&, std::uint32_t);
+
+		/**
 		 * @return a tuple of buffer_t objects
 		 */
 		cyng::tuple_t tuple_from_path(obis_path_t path);
